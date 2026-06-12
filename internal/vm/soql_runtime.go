@@ -446,7 +446,11 @@ func (vm *VM) searchQuery(args []Value) (Value, error) {
 	if len(args) == 2 && args[1].Kind != ValueNull && !isDatabaseAccessLevelValue(args[1]) {
 		return Null, fmt.Errorf("Search.query expects AccessLevel")
 	}
-	return vm.executeSOSL(args[0].Text, nil)
+	accessLevel := Null
+	if len(args) == 2 {
+		accessLevel = args[1]
+	}
+	return vm.executeSOSLWithAccessLevel(args[0].Text, nil, accessLevel)
 }
 
 func (vm *VM) searchFind(args []Value) (Value, error) {
@@ -458,6 +462,10 @@ func (vm *VM) searchFind(args []Value) (Value, error) {
 	}
 	if len(args) == 2 && args[1].Kind != ValueNull && !isDatabaseAccessLevelValue(args[1]) {
 		return Null, fmt.Errorf("Search.find expects AccessLevel")
+	}
+	accessLevel := Null
+	if len(args) == 2 {
+		accessLevel = args[1]
 	}
 	queryText, err := vm.expandSOQLBinds(args[0].Text)
 	if err != nil {
@@ -471,33 +479,54 @@ func (vm *VM) searchFind(args []Value) (Value, error) {
 	results := Object("Search.SearchResults")
 	byObject := typedMap("Map<String,List<Search.SearchResult>>")
 	if vm.Org != nil {
-		for _, idValue := range vm.fixedSearchResults {
-			id, ok := valueIDString(idValue)
-			if !ok {
-				continue
+		objects, err := parseSOSLReturningObjects(queryText)
+		if err != nil {
+			return Null, err
+		}
+		for _, spec := range objects {
+			objectName := spec.ObjectName
+			if canonical, ok := vm.resolveObjectName(spec.ObjectName); ok {
+				objectName = canonical
 			}
-			objectName, ok := vm.sObjectNameForIDPrefix(idPrefix(id))
-			if !ok {
-				objectName, ok = vm.sObjectNameForExistingID(id)
-			}
-			if !ok {
-				continue
-			}
-			record, ok := vm.findOrgRecord(objectName, storage.ID(id))
-			if !ok {
-				continue
+			records, err := vm.soslRecordsForSpec(spec, objectName, parseSOSLSearchPatterns(queryText), "", accessLevel)
+			if err != nil {
+				return Null, err
 			}
 			key := mapKey(String(objectName))
 			list := byObject.Map[key]
 			if list.Kind != ValueList {
 				list = typedList("List<Search.SearchResult>")
 			}
-			row := Object("Search.SearchResult")
-			row.Fields["sObject"] = vm.vmValueFromRecord(record)
-			snippet, snippets := soslSnippetsForRecord(record, withSnippet, searchTerms)
-			row.Fields["snippet"] = String(snippet)
-			row.Fields["snippets"] = snippets
-			list.List = append(list.List, row)
+			values := List()
+			values.Type = "List<" + objectName + ">"
+			for _, record := range records {
+				value := vm.vmValueFromRecord(record)
+				vm.applySOSLReturningFunctionAliases(&value, record, spec)
+				if len(spec.Fields) > 0 {
+					value.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue(record.Object, spec.Fields)
+					vm.hydrateQueriedRecordTypeRelationships(value)
+				}
+				values.List = append(values.List, value)
+			}
+			sortSOSLRows(values, spec.OrderBy)
+			applySOSLReturningOffset(&values, spec)
+			applySOSLReturningLimit(&values, spec)
+			for _, value := range values.List {
+				record := storage.Record{}
+				if value.Kind == ValueObject {
+					if id, ok := valueIDString(value.Fields["Id"]); ok {
+						if found, foundOK := vm.findOrgRecord(objectName, storage.ID(id)); foundOK {
+							record = found
+						}
+					}
+				}
+				row := Object("Search.SearchResult")
+				row.Fields["sObject"] = value
+				snippet, snippets := soslSnippetsForRecord(record, withSnippet, searchTerms)
+				row.Fields["snippet"] = String(snippet)
+				row.Fields["snippets"] = snippets
+				list.List = append(list.List, row)
+			}
 			byObject.Map[key] = list
 			byObject.MapKeys[key] = String(objectName)
 		}
@@ -519,8 +548,16 @@ func (vm *VM) searchSuggest(args []Value) (Value, error) {
 	if len(args) == 4 && args[3].Kind != ValueNull && !isDatabaseAccessLevelValue(args[3]) {
 		return Null, fmt.Errorf("Search.suggest expects AccessLevel")
 	}
+	accessLevel := Null
+	if len(args) == 4 {
+		accessLevel = args[3]
+	}
 	results := Object("Search.SuggestionResults")
-	results.Fields["suggestionResults"] = typedList("List<Search.SuggestionResult>")
+	suggestions, err := vm.searchSuggestionRows(args[0].Text, args[1].Text, args[2], accessLevel)
+	if err != nil {
+		return Null, err
+	}
+	results.Fields["suggestionResults"] = suggestions
 	results.Fields["hasMoreResults"] = Bool(false)
 	return results, nil
 }
@@ -530,6 +567,10 @@ func isSearchSuggestionOptionValue(value Value) bool {
 }
 
 func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
+	return vm.executeSOSLWithAccessLevel(raw, execResult, Null)
+}
+
+func (vm *VM) executeSOSLWithAccessLevel(raw string, execResult *Result, accessLevel Value) (Value, error) {
 	queryText, err := vm.expandSOQLBinds(raw)
 	if err != nil {
 		return Null, newExceptionError("QueryException", fmt.Sprintf("%s in query %q", err.Error(), raw))
@@ -543,6 +584,7 @@ func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
 		return Null, err
 	}
 	groups := make([]Value, 0, len(objects))
+	rowCount := 0
 	for _, spec := range objects {
 		specObjectName := spec.ObjectName
 		if vm.Org != nil {
@@ -553,28 +595,11 @@ func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
 		rows := List()
 		rows.Type = "List<" + specObjectName + ">"
 		if vm.Org != nil {
-			for _, idValue := range vm.fixedSearchResults {
-				id, ok := valueIDString(idValue)
-				if !ok {
-					continue
-				}
-				objectName, ok := vm.sObjectNameForIDPrefix(idPrefix(id))
-				if !ok {
-					objectName, ok = vm.sObjectNameForExistingID(id)
-				}
-				if !ok || !strings.EqualFold(objectName, specObjectName) {
-					continue
-				}
-				record, ok := vm.findOrgRecord(objectName, storage.ID(id))
-				if !ok {
-					continue
-				}
-				if !soslRecordMatchesWhere(record, spec.Where) {
-					continue
-				}
-				if !vm.soslRecordMatchesPricebook(specObjectName, record, pricebookID) {
-					continue
-				}
+			records, err := vm.soslRecordsForSpec(spec, specObjectName, parseSOSLSearchPatterns(queryText), pricebookID, accessLevel)
+			if err != nil {
+				return Null, err
+			}
+			for _, record := range records {
 				value := vm.vmValueFromRecord(record)
 				vm.applySOSLReturningFunctionAliases(&value, record, spec)
 				if len(spec.Fields) > 0 {
@@ -587,11 +612,12 @@ func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
 		sortSOSLRows(rows, spec.OrderBy)
 		applySOSLReturningOffset(&rows, spec)
 		applySOSLReturningLimit(&rows, spec)
+		rowCount += len(rows.List)
 		groups = append(groups, rows)
 	}
 	appendTrace(execResult, "apex.sosl", "apex.sosl", map[string]any{
 		"query": queryText,
-		"rows":  len(vm.fixedSearchResults),
+		"rows":  rowCount,
 	})
 	return List(groups...), nil
 }
@@ -624,6 +650,274 @@ type soslWhere struct {
 	Operator    string
 	Value       string
 	ValueIsNull bool
+}
+
+type soslSearchPattern struct {
+	Term   string
+	Prefix bool
+}
+
+func (vm *VM) soslRecordsForSpec(spec soslReturningObject, objectName string, patterns []soslSearchPattern, pricebookID string, accessLevel Value) ([]storage.Record, error) {
+	if vm == nil || vm.Org == nil {
+		return nil, nil
+	}
+	state, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return nil, nil
+	}
+	if err := vm.enforceSOSLAccess(objectName, spec, accessLevel); err != nil {
+		return nil, err
+	}
+	var records []storage.Record
+	if len(vm.fixedSearchResults) > 0 {
+		for _, idValue := range vm.fixedSearchResults {
+			id, ok := valueIDString(idValue)
+			if !ok {
+				continue
+			}
+			foundObject, ok := vm.sObjectNameForIDPrefix(idPrefix(id))
+			if !ok {
+				foundObject, ok = vm.sObjectNameForExistingID(id)
+			}
+			if !ok || !strings.EqualFold(foundObject, objectName) {
+				continue
+			}
+			record, ok := vm.findOrgRecord(objectName, storage.ID(id))
+			if !ok || !soslRecordMatchesWhere(record, spec.Where) || !vm.soslRecordMatchesPricebook(objectName, record, pricebookID) {
+				continue
+			}
+			records = append(records, record)
+		}
+		return records, nil
+	}
+	ids := make([]string, 0, len(state.Records))
+	for id := range state.Records {
+		ids = append(ids, string(id))
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		record := state.Records[storage.ID(id)]
+		if !soslRecordMatchesWhere(record, spec.Where) || !vm.soslRecordMatchesPricebook(objectName, record, pricebookID) {
+			continue
+		}
+		if !vm.soslRecordMatchesSearch(objectName, record, patterns, accessLevel) {
+			continue
+		}
+		records = append(records, record)
+	}
+	return records, nil
+}
+
+func (vm *VM) enforceSOSLAccess(objectName string, spec soslReturningObject, accessLevel Value) error {
+	if databaseAccessLevelSecurityMode(accessLevel) != "USER_MODE" {
+		return nil
+	}
+	permissionSetID := accessLevelPermissionSetID(accessLevel)
+	if !vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", permissionSetID) {
+		return newExceptionError("QueryException", fmt.Sprintf("sObject type '%s' is not supported by USER_MODE", objectName))
+	}
+	for field := range spec.Fields {
+		if projection, ok := parseSOSLReturningFunctionAlias(field); ok {
+			field = projection.Source
+		}
+		if strings.EqualFold(field, "Id") {
+			continue
+		}
+		canonical := field
+		if vm.Org != nil {
+			if object, ok := vm.Org.Objects[objectName]; ok {
+				if resolved, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, field); ok {
+					canonical = resolved
+				}
+			}
+		}
+		if !vm.currentUserFieldPermissionWithScope(objectName, canonical, "isAccessible", permissionSetID) {
+			return newExceptionError("QueryException", fmt.Sprintf("No such column '%s' on entity '%s'.", canonical, objectName))
+		}
+	}
+	return nil
+}
+
+func (vm *VM) soslRecordMatchesSearch(objectName string, record storage.Record, patterns []soslSearchPattern, accessLevel Value) bool {
+	if len(patterns) == 0 {
+		return true
+	}
+	for _, pattern := range patterns {
+		if vm.soslRecordMatchesSearchPattern(objectName, record, pattern, accessLevel) {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) soslRecordMatchesSearchPattern(objectName string, record storage.Record, pattern soslSearchPattern, accessLevel Value) bool {
+	if pattern.Term == "" {
+		return true
+	}
+	if soslTextMatchesPattern(string(record.ID), pattern) {
+		return true
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return false
+	}
+	permissionSetID := accessLevelPermissionSetID(accessLevel)
+	userMode := databaseAccessLevelSecurityMode(accessLevel) == "USER_MODE"
+	fields := make([]string, 0, len(record.Fields))
+	for field := range record.Fields {
+		fields = append(fields, field)
+	}
+	sort.Strings(fields)
+	for _, field := range fields {
+		canonical, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, field)
+		if !ok {
+			canonical = field
+		}
+		definition, hasDefinition := object.Definition.Fields[canonical]
+		if !hasDefinition || !soslSearchableField(definition) {
+			continue
+		}
+		if userMode && !vm.currentUserFieldPermissionWithScope(objectName, canonical, "isAccessible", permissionSetID) {
+			continue
+		}
+		value, ok := record.GetField(canonical)
+		if !ok {
+			continue
+		}
+		if soslTextMatchesPattern(storageValueText(value), pattern) {
+			return true
+		}
+	}
+	return false
+}
+
+func soslSearchableField(field storage.Field) bool {
+	switch field.Type {
+	case storage.FieldID, storage.FieldString, storage.FieldPicklist, storage.FieldMultiPicklist, storage.FieldReference:
+		return true
+	default:
+		return false
+	}
+}
+
+func soslTextMatchesPattern(text string, pattern soslSearchPattern) bool {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return false
+	}
+	if pattern.Prefix {
+		return strings.HasPrefix(strings.ToLower(text), strings.ToLower(pattern.Term))
+	}
+	return containsFold(text, pattern.Term)
+}
+
+func parseSOSLSearchPatterns(query string) []soslSearchPattern {
+	raw := rawSOSLFindText(query)
+	if raw == "" {
+		return nil
+	}
+	var patterns []soslSearchPattern
+	for _, part := range strings.FieldsFunc(raw, func(r rune) bool {
+		return r == '?' || r == '"' || r == '\'' || r == '(' || r == ')' || r == '{' || r == '}' || r == ' ' || r == '\t' || r == '\n' || r == '\r'
+	}) {
+		part = strings.TrimSpace(part)
+		if part == "" || strings.EqualFold(part, "AND") || strings.EqualFold(part, "OR") {
+			continue
+		}
+		prefix := strings.HasSuffix(part, "*")
+		part = strings.Trim(part, "*")
+		if part == "" {
+			continue
+		}
+		patterns = append(patterns, soslSearchPattern{Term: part, Prefix: prefix})
+	}
+	return patterns
+}
+
+func rawSOSLFindText(query string) string {
+	index := indexFold(query, "find")
+	if index < 0 {
+		return ""
+	}
+	rest := strings.TrimSpace(query[index+len("find"):])
+	if rest == "" {
+		return ""
+	}
+	switch rest[0] {
+	case '{':
+		if end := strings.IndexByte(rest[1:], '}'); end >= 0 {
+			return rest[1 : end+1]
+		}
+	case '\'':
+		if end := strings.IndexByte(rest[1:], '\''); end >= 0 {
+			return rest[1 : end+1]
+		}
+	default:
+		fields := strings.Fields(rest)
+		if len(fields) > 0 {
+			return fields[0]
+		}
+	}
+	return ""
+}
+
+func (vm *VM) searchSuggestionRows(query, objectName string, option Value, accessLevel Value) (Value, error) {
+	out := typedList("List<Search.SuggestionResult>")
+	if vm == nil || vm.Org == nil {
+		return out, nil
+	}
+	if canonical, ok := vm.resolveObjectName(objectName); ok {
+		objectName = canonical
+	}
+	state, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return out, nil
+	}
+	spec := soslReturningObject{ObjectName: objectName, Fields: map[string]bool{"id": true, "name": true}}
+	if err := vm.enforceSOSLAccess(objectName, spec, accessLevel); err != nil {
+		return Null, err
+	}
+	limit := 10
+	if option.Fields != nil {
+		if value, ok := option.Fields["limit"]; ok && value.Kind == ValueInt && value.Int > 0 {
+			limit = int(value.Int)
+		}
+	}
+	pattern := soslSearchPattern{Term: strings.TrimSpace(query), Prefix: true}
+	ids := make([]string, 0, len(state.Records))
+	for id := range state.Records {
+		ids = append(ids, string(id))
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		if len(out.List) >= limit {
+			break
+		}
+		record := state.Records[storage.ID(id)]
+		if !vm.soslRecordMatchesSuggestion(objectName, record, pattern, accessLevel) {
+			continue
+		}
+		value := vm.vmValueFromRecord(record)
+		value.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue(record.Object, spec.Fields)
+		row := Object("Search.SuggestionResult")
+		row.Fields["sObject"] = value
+		out.List = append(out.List, row)
+	}
+	return out, nil
+}
+
+func (vm *VM) soslRecordMatchesSuggestion(objectName string, record storage.Record, pattern soslSearchPattern, accessLevel Value) bool {
+	for _, field := range []string{"Name", "LastName", "FirstName", "Subject"} {
+		canonical := vm.resolveSObjectFieldName(objectName, field)
+		if databaseAccessLevelSecurityMode(accessLevel) == "USER_MODE" && !vm.currentUserFieldPermissionWithScope(objectName, canonical, "isAccessible", accessLevelPermissionSetID(accessLevel)) {
+			continue
+		}
+		value, ok := record.GetField(canonical)
+		if ok && soslTextMatchesPattern(storageValueText(value), pattern) {
+			return true
+		}
+	}
+	return false
 }
 
 func soslHasSearchOption(query, option string) bool {

@@ -1067,7 +1067,7 @@ Search.SearchResults found = Search.find('FIND {Nook*} IN ALL FIELDS RETURNING A
 System.assertEquals(1, found.get('Account').size());
 Search.SuggestionOption option = new Search.SuggestionOption();
 Search.SuggestionResults suggestions = Search.suggest('Nook', 'Account', option);
-System.assertEquals(0, suggestions.getSuggestionResults().size());
+System.assertEquals(1, suggestions.getSuggestionResults().size());
 Search.SuggestionResults userSuggestions = Search.suggest('Nook', 'Account', option, AccessLevel.USER_MODE);
 System.assertEquals(false, userSuggestions.hasMoreResults());
 List<List<SObject>> objectRows = Search.query('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name)', (Object)AccessLevel.SYSTEM_MODE);
@@ -1075,7 +1075,7 @@ System.assertEquals(1, objectRows[0].size());
 Search.SearchResults objectFound = Search.find('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name)', (Object)AccessLevel.USER_MODE);
 System.assertEquals(1, objectFound.get('Account').size());
 Search.SuggestionResults objectSuggestions = Search.suggest('Nook', 'Account', (Object)new Search.SuggestionOption());
-System.assertEquals(0, objectSuggestions.getSuggestionResults().size());
+System.assertEquals(1, objectSuggestions.getSuggestionResults().size());
 Search.SuggestionResults objectUserSuggestions = Search.suggest('Nook', 'Account', (Object)new Search.SuggestionOption(), (Object)AccessLevel.SYSTEM_MODE);
 System.assertEquals(false, objectUserSuggestions.hasMoreResults());
 `)
@@ -1103,6 +1103,100 @@ Search.query('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name)', arbitrary
 	}
 	if _, err := machine.Execute(badProgram); err == nil || !strings.Contains(err.Error(), "AccessLevel") {
 		t.Fatalf("expected AccessLevel error, got %v", err)
+	}
+}
+
+func TestExecSearchUsesOrgBackedSOSLRows(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Nook Supply', Site = 'North dock');
+insert new Contact(LastName = 'Nook Buyer', Email = 'buyer@example.test');
+
+List<List<SObject>> rows = Search.query(
+	'FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name, Site), Contact(Id, Name, Email)'
+);
+System.assertEquals(2, rows.size());
+System.assertEquals(1, rows[0].size());
+System.assertEquals(1, rows[1].size());
+System.assertEquals('Nook Supply', ((Account)rows[0][0]).Name);
+System.assertEquals('buyer@example.test', ((Contact)rows[1][0]).Email);
+
+Search.SearchResults results = Search.find(
+	'FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name, Site), Contact(Id, Name)'
+);
+System.assertEquals(1, results.get('Account').size());
+System.assertEquals(1, results.get('Contact').size());
+System.assertEquals('Nook Supply', ((Account)results.get('Account')[0].getSObject()).Name);
+
+Search.SearchResults snippetResults = Search.find(
+	'FIND {North} IN ALL FIELDS RETURNING Account(Id, Name, Site) WITH SNIPPET'
+);
+System.assertEquals('North dock', snippetResults.get('Account')[0].getSnippet('Site'));
+
+Search.SuggestionOption option = new Search.SuggestionOption();
+option.setLimit(5);
+Search.SuggestionResults suggestions = Search.suggest('Noo', 'Account', option);
+System.assertEquals(1, suggestions.getSuggestionResults().size());
+System.assertEquals('Nook Supply', ((Account)suggestions.getSuggestionResults()[0].getSObject()).Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSearchAccessLevelAppliesLocalPermissions(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Nook Supply', Score__c = 7);
+insert account;
+Profile p = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce'];
+User u = new User(
+	Username = 'search-user@example.invalid',
+	Alias = 'suser',
+	Email = 'search-user@example.invalid',
+	LastName = 'Search',
+	ProfileId = p.Id,
+	TimeZoneSidKey = 'UTC',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	EmailEncodingKey = 'UTF-8'
+);
+insert u;
+System.runAs(u) {
+	Boolean caught = false;
+	try {
+		Search.query('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name, Score__c)', AccessLevel.USER_MODE);
+	} catch (QueryException qe) {
+		caught = qe.getMessage().contains('Account') || qe.getMessage().contains('Score__c');
+	}
+	System.assert(caught);
+	List<List<SObject>> systemRows = Search.query(
+		'FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name, Score__c)',
+		AccessLevel.SYSTEM_MODE
+	);
+	System.assertEquals(1, systemRows[0].size());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	account := org.Objects["Account"]
+	account.Definition.Fields["Score__c"] = storage.Field{APIName: "Score__c", Type: storage.FieldDecimal}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
