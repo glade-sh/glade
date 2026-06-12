@@ -5710,6 +5710,72 @@ try {
 	}
 }
 
+func TestExecMessagingRenderStoredEmailTemplateLocalAttachments(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage withBody = Messaging.renderStoredEmailTemplate(
+	'00X000000000010AAA',
+	null,
+	null,
+	Messaging.AttachmentRetrievalOption.METADATA_WITH_BODY
+);
+System.assertEquals(1, withBody.getFileAttachments().size());
+Messaging.EmailFileAttachment bodyAttachment = withBody.getFileAttachments().get(0);
+System.assertEquals('welcome.txt', bodyAttachment.getFileName());
+System.assertEquals('text/plain', bodyAttachment.getContentType());
+System.assertEquals('welcome attachment', bodyAttachment.getBody().toString());
+
+Messaging.SingleEmailMessage metadataOnly = Messaging.renderStoredEmailTemplate(
+	'00X000000000010AAA',
+	null,
+	null,
+	Messaging.AttachmentRetrievalOption.METADATA_ONLY,
+	false
+);
+System.assertEquals(1, metadataOnly.getFileAttachments().size());
+Messaging.EmailFileAttachment metadataAttachment = metadataOnly.getFileAttachments().get(0);
+System.assertEquals('welcome.txt', metadataAttachment.getFileName());
+System.assertEquals('text/plain', metadataAttachment.getContentType());
+System.assertEquals(null, metadataAttachment.getBody());
+
+Messaging.SingleEmailMessage none = Messaging.renderStoredEmailTemplate(
+	'00X000000000010AAA',
+	null,
+	null,
+	Messaging.AttachmentRetrievalOption.NONE
+);
+System.assertEquals(0, none.getFileAttachments().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "EmailTemplate")
+	templateObject := org.Objects["EmailTemplate"]
+	templateObject.Records["00X000000000010AAA"] = storage.Record{
+		ID:     "00X000000000010AAA",
+		Object: "EmailTemplate",
+		Fields: map[string]storage.Value{
+			"DeveloperName": storage.StringValue("WelcomeWithAttachment"),
+			"Subject":       storage.StringValue("Welcome"),
+			"Body":          storage.StringValue("Hello"),
+			"Attachment":    storage.StringValue("WelcomeAttachment"),
+		},
+	}
+	org.Objects["EmailTemplate"] = templateObject
+	org.Metadata.StaticResources = []storage.StaticResourceMetadata{{
+		Name:        "WelcomeAttachment",
+		Content:     "welcome attachment",
+		ContentType: "text/plain",
+		Description: "welcome.txt",
+	}}
+
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRenderStoredVisualforceEmailTemplateContent(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.SingleEmailMessage rendered = Messaging.renderStoredEmailTemplate('00X000000000004AAA', null, null);
@@ -6322,6 +6388,26 @@ System.assertEquals(3, ApexPages.getMessages().size());
 	}
 	machine := New(nil)
 	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecLimitsSOSLQueriesCountsSearches(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme Trail');
+System.assertEquals(0, Limits.getSoslQueries());
+List<List<SObject>> rows = Search.query('FIND {Acme} RETURNING Account(Id, Name)');
+System.assertEquals(1, Limits.getSoslQueries());
+System.assertEquals(20, Limits.getLimitSoslQueries());
+System.assertEquals(1, rows.get(0).size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
