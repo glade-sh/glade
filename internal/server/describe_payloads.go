@@ -89,7 +89,13 @@ func describePayload(def storage.ObjectDefinition, org *storage.OrgState) map[st
 
 func describeFieldPayload(field storage.Field) map[string]any {
 	createable := field.Type != storage.FieldID && field.Type != storage.FieldCalculated
+	if field.Createable != nil {
+		createable = *field.Createable
+	}
 	updateable := createable
+	if field.Updateable != nil {
+		updateable = *field.Updateable
+	}
 	referenceTo := append([]string(nil), field.ReferenceTo...)
 	sort.Strings(referenceTo)
 	nillable := !field.Required && field.Type != storage.FieldID && !strings.EqualFold(field.APIName, "Id")

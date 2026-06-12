@@ -22,6 +22,10 @@ func (vm *VM) parseSOQLAt(queryText string) (soql.Query, error) {
 }
 
 func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand func(string) (string, error), binds Value, accessLevelMode string) ([]Value, error) {
+	return vm.executeSOQLRowsWithExpanderAndScope(raw, execResult, expand, binds, accessLevelMode, "")
+}
+
+func (vm *VM) executeSOQLRowsWithExpanderAndScope(raw string, execResult *Result, expand func(string) (string, error), binds Value, accessLevelMode, permissionSetID string) ([]Value, error) {
 	if soql.IsSOSLFind(raw) {
 		return nil, unsupportedCallError("SOSL/FIND local search surface")
 	}
@@ -59,7 +63,7 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 	if vm.Org == nil {
 		return nil, fmt.Errorf("SOQL requires org state")
 	}
-	if err := vm.enforceSOQLSecurity(query); err != nil {
+	if err := vm.enforceSOQLSecurity(query, permissionSetID); err != nil {
 		return nil, err
 	}
 	if err := vm.enforceOrgShapeObjectAvailability(query); err != nil {
@@ -1631,7 +1635,7 @@ func lookupFieldRelationshipName(field string) string {
 	return ""
 }
 
-func (vm *VM) enforceSOQLSecurity(query soql.Query) error {
+func (vm *VM) enforceSOQLSecurity(query soql.Query, permissionSetID string) error {
 	mode := strings.ToUpper(strings.TrimSpace(query.SecurityMode))
 	if mode == "" || mode == "SYSTEM_MODE" {
 		return nil
@@ -1642,30 +1646,30 @@ func (vm *VM) enforceSOQLSecurity(query soql.Query) error {
 			objectName = canonical
 		}
 	}
-	if !vm.currentUserObjectPermission(objectName, "isAccessible") {
+	if !vm.currentUserObjectPermissionWithScope(objectName, "isAccessible", permissionSetID) {
 		return newExceptionError("QueryException", fmt.Sprintf("sObject type '%s' is not supported by %s", objectName, mode))
 	}
 	for _, field := range query.Fields {
-		if err := vm.enforceSOQLRelationshipSecurity(objectName, field, mode); err != nil {
+		if err := vm.enforceSOQLRelationshipSecurityWithScope(objectName, field, mode, permissionSetID); err != nil {
 			return err
 		}
 		for _, fieldName := range vm.securityFieldNames(objectName, field) {
-			if !vm.currentUserFieldPermission(objectName, fieldName, "isAccessible") {
+			if !vm.currentUserFieldPermissionWithScope(objectName, fieldName, "isAccessible", permissionSetID) {
 				return newExceptionError("QueryException", fmt.Sprintf("No such column '%s' on entity '%s'.", fieldName, objectName))
 			}
 		}
 	}
 	for _, field := range soqlConditionFields(query.Where) {
-		if err := vm.enforceSOQLRelationshipSecurity(objectName, field, mode); err != nil {
+		if err := vm.enforceSOQLRelationshipSecurityWithScope(objectName, field, mode, permissionSetID); err != nil {
 			return err
 		}
 	}
 	for _, order := range query.Order {
-		if err := vm.enforceSOQLRelationshipSecurity(objectName, order.Field, mode); err != nil {
+		if err := vm.enforceSOQLRelationshipSecurityWithScope(objectName, order.Field, mode, permissionSetID); err != nil {
 			return err
 		}
 		for _, fieldName := range vm.securityFieldNames(objectName, order.Field) {
-			if !vm.currentUserFieldPermission(objectName, fieldName, "isAccessible") {
+			if !vm.currentUserFieldPermissionWithScope(objectName, fieldName, "isAccessible", permissionSetID) {
 				return newExceptionError("QueryException", fmt.Sprintf("No such column '%s' on entity '%s'.", fieldName, objectName))
 			}
 		}
@@ -1678,7 +1682,7 @@ func (vm *VM) enforceSOQLSecurity(query soql.Query) error {
 		if childObject, ok := vm.soqlChildRelationshipObject(objectName, child.Relationship); ok {
 			childQuery.Object = childObject
 		}
-		if err := vm.enforceSOQLSecurity(childQuery); err != nil {
+		if err := vm.enforceSOQLSecurity(childQuery, permissionSetID); err != nil {
 			return err
 		}
 	}
@@ -1783,6 +1787,10 @@ func (vm *VM) validateSOQLIDLiteralCondition(definition storage.ObjectDefinition
 }
 
 func (vm *VM) enforceSOQLRelationshipSecurity(objectName, expression, mode string) error {
+	return vm.enforceSOQLRelationshipSecurityWithScope(objectName, expression, mode, "")
+}
+
+func (vm *VM) enforceSOQLRelationshipSecurityWithScope(objectName, expression, mode, permissionSetID string) error {
 	if vm == nil || vm.Org == nil {
 		return nil
 	}
@@ -1807,13 +1815,13 @@ func (vm *VM) enforceSOQLRelationshipSecurity(objectName, expression, mode strin
 	if !ok || len(targets) == 0 {
 		return nil
 	}
-	if !vm.soqlRelationshipSecurityTargetsAllowed(targets, parts[1:]) {
+	if !vm.soqlRelationshipSecurityTargetsAllowed(targets, parts[1:], permissionSetID) {
 		return newExceptionError("QueryException", fmt.Sprintf("No such column '%s' on entity '%s' for %s", expression, objectName, mode))
 	}
 	return nil
 }
 
-func (vm *VM) soqlRelationshipSecurityTargetsAllowed(targets []string, parts []string) bool {
+func (vm *VM) soqlRelationshipSecurityTargetsAllowed(targets []string, parts []string, permissionSetID string) bool {
 	if len(targets) == 0 || len(parts) == 0 {
 		return false
 	}
@@ -1828,7 +1836,7 @@ func (vm *VM) soqlRelationshipSecurityTargetsAllowed(targets []string, parts []s
 		}
 		if len(parts) == 1 {
 			canonicalField, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, parts[0])
-			if !ok || !vm.currentUserFieldPermission(targetName, canonicalField, "isAccessible") {
+			if !ok || !vm.currentUserFieldPermissionWithScope(targetName, canonicalField, "isAccessible", permissionSetID) {
 				return false
 			}
 			continue
@@ -1837,7 +1845,7 @@ func (vm *VM) soqlRelationshipSecurityTargetsAllowed(targets []string, parts []s
 		if !ok || len(nestedTargets) == 0 {
 			return false
 		}
-		if !vm.soqlRelationshipSecurityTargetsAllowed(nestedTargets, parts[1:]) {
+		if !vm.soqlRelationshipSecurityTargetsAllowed(nestedTargets, parts[1:], permissionSetID) {
 			return false
 		}
 	}
@@ -2416,9 +2424,9 @@ func (vm *VM) executeSOQLWithBindMap(raw string, binds Value, execResult *Result
 	return out, nil
 }
 func (vm *VM) executeSOQLWithBindMapAccessLevel(raw string, binds Value, accessLevel Value, execResult *Result) (Value, error) {
-	values, err := vm.executeSOQLRowsWithExpander(raw, execResult, func(query string) (string, error) {
+	values, err := vm.executeSOQLRowsWithExpanderAndScope(raw, execResult, func(query string) (string, error) {
 		return vm.expandSOQLBindsFromMap(query, binds)
-	}, binds, databaseAccessLevelSecurityMode(accessLevel))
+	}, binds, databaseAccessLevelSecurityMode(accessLevel), accessLevelPermissionSetID(accessLevel))
 	if err != nil {
 		return Null, err
 	}
@@ -2499,7 +2507,7 @@ func (vm *VM) executeSOQLRows(raw string, execResult *Result) ([]Value, error) {
 	return vm.executeSOQLRowsWithExpander(raw, execResult, vm.expandSOQLBinds, typedMap("Map<String,Object>"), "")
 }
 func (vm *VM) executeSOQLRowsWithAccessLevel(raw string, execResult *Result, accessLevel Value) ([]Value, error) {
-	return vm.executeSOQLRowsWithExpander(raw, execResult, vm.expandSOQLBinds, typedMap("Map<String,Object>"), databaseAccessLevelSecurityMode(accessLevel))
+	return vm.executeSOQLRowsWithExpanderAndScope(raw, execResult, vm.expandSOQLBinds, typedMap("Map<String,Object>"), databaseAccessLevelSecurityMode(accessLevel), accessLevelPermissionSetID(accessLevel))
 }
 func writeSOQLBindExpansion(out *strings.Builder, value Value, consumed string) {
 	out.WriteString(soqlLiteral(value))
