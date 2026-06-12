@@ -1,6 +1,10 @@
-# Affected-Test Selection
+# Run Only Affected Tests
 
 Affected-test selection trims the test set by comparing local changes against a static Apex reference graph. It is designed for the inner loop: run the tests most likely to observe the files you changed.
+
+```text
+Changed file -> Apex reference graph -> selected tests
+```
 
 ## Changed files from git
 
@@ -45,7 +49,15 @@ The affected-test report distinguishes three useful outcomes:
 - `all` — the safe fallback when Glade cannot narrow the impact.
 - `none` — no tests selected for the observed change set.
 
-A quiet `none` is useful. It tells you the saw did not touch the testable log.
+`none` means Glade did not find tests affected by the current change set.
+
+```json
+{
+  "mode": "direct",
+  "changed": ["force-app/main/default/classes/AccountService.cls"],
+  "tests": ["AccountServiceTest"]
+}
+```
 
 ## NDJSON watch events
 
@@ -73,4 +85,5 @@ During a focused edit:
 glade test --project . --filter AccountServiceTest --watch
 ```
 
-When the graph cannot prove safety, Glade chooses the larger run. Better a few extra tests than a hidden split in the handle.
+When Glade cannot prove a smaller safe set, it runs more tests rather than risk
+missing a failure.

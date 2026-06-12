@@ -1,8 +1,7 @@
-# Developer Reports
+# Maintainer Proof Reports
 
-Start with [Apex and Salesforce Support](/guide/support-map) when you want to
-know whether Glade can run a project or test path. This page is for maintainers
-who need the generated proof reports.
+Most users should start with [What Glade supports](/guide/support-map). This
+page summarizes generated reports used by maintainers and release gates.
 
 The checked source report lives at `docs/COMPATIBILITY_DASHBOARD.md` in the
 repository. The first-party `compat` plugin regenerates it.

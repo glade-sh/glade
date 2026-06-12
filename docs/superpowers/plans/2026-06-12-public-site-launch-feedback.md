@@ -195,7 +195,7 @@ the public routes:
 ```bash
 curl -fsSL https://glade.sh/install.sh | head -n 5
 curl -fsSI https://glade.sh/install.sh | grep -i content-type
-curl -fsSL https://glade.sh/docs/guide/support-map >/dev/null
+curl -fsSL https://glade.sh/guide/support-map >/dev/null
 curl -fsSL https://glade.sh/ >/dev/null
 ```
 
@@ -1359,9 +1359,9 @@ Run after GitHub Pages or Cloudflare Pages points `glade.sh` at this site:
 
 ```bash
 curl -fsSL https://glade.sh/ >/dev/null
-curl -fsSL https://glade.sh/docs/guide/overview >/dev/null
-curl -fsSL https://glade.sh/docs/guide/quickstart >/dev/null
-curl -fsSL https://glade.sh/docs/guide/support-map >/dev/null
+curl -fsSL https://glade.sh/guide/overview >/dev/null
+curl -fsSL https://glade.sh/guide/quickstart >/dev/null
+curl -fsSL https://glade.sh/guide/support-map >/dev/null
 ```
 
 Expected: every command exits 0.

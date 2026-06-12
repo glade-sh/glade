@@ -1,8 +1,17 @@
-# Project Configuration
+# Configure a Glade Project
 
 Glade reads `glade.yml` from the project tree and layers it with
 `sfdx-project.json` when present. The Glade file carries local runtime choices
 that Salesforce project files do not.
+
+## Configuration Precedence
+
+Glade resolves settings in this order:
+
+1. CLI flags
+2. `glade.yml`
+3. `sfdx-project.json`
+4. Glade defaults
 
 ## Create config
 
@@ -33,7 +42,8 @@ Use `--force` to replace an existing file.
 
 ## File shape
 
-The parser accepts a small YAML subset. Lists use inline brackets.
+`glade.yml` intentionally supports a small YAML subset. Use inline lists such
+as `[force-app]`; avoid anchors, merges, and complex YAML features.
 
 ```yaml
 project:
@@ -53,6 +63,20 @@ org:
 | `project.managedPackageDependencies` | Managed package source or artifact references. |
 | `org.features` | Scratch-org style features for local runtime behavior. |
 
+## Common Validation Errors
+
+```text
+unknown package directory: force-app/main/default
+```
+
+Check `project.packageDirs` against `sfdx-project.json`.
+
+```text
+unsupported org feature: SomeFeature
+```
+
+Use only features Glade models locally.
+
 ::: tip Next step
-Run local tests without an org: [Local Testing](/guide/local-testing).
+Run local tests without an org: [Run Apex Tests Locally](/guide/local-testing).
 :::

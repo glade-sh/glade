@@ -1,4 +1,4 @@
-# Local Testing
+# Run Apex Tests Locally
 
 `glade test` discovers Apex test classes from an SFDX project, compiles supported code, runs tests in the local VM, and reports stable outcomes. It uses the same project loader, parser, semantic analyzer, storage, DML, SOQL, trigger, and limit stack as the rest of the CLI.
 
@@ -6,6 +6,11 @@
 
 ```bash
 glade test --project .
+```
+
+```text
+PASS AccountServiceTest.testCreatesAccount 42ms
+Result: 1 passed, 0 failed
 ```
 
 Machine-readable output:
@@ -117,13 +122,24 @@ glade test changed --project . --since origin/main --json
 glade test --project . --junit reports/glade-junit.xml
 ```
 
-Saved run artifacts and CI annotations are covered in [CI And Artifacts](/guide/ci-artifacts).
+Saved run artifacts and CI annotations are covered in [Add Glade to CI](/guide/ci-artifacts).
 
 ## Outcomes
 
 Local test runs separate assertion failures from load errors, compile errors,
 unsupported features, and internal errors. That split matters. A failing
-assertion and an unsupported platform API leave different tracks.
+assertion means the test ran and failed. An unsupported feature means
+the runtime stopped at a known unsupported Salesforce surface.
+
+```text
+PASS AccountServiceTest.testCreatesAccount 42ms
+FAIL AccountServiceTest.testRejectsBlankName: System.AssertException
+UNSUPPORTED ApprovalProcessTest.testSubmit: Approval.process is not supported locally
+COMPILE_ERROR InvoiceServiceTest: Unknown type Invoice__c
+```
+
+Check [What Glade supports](/guide/support-map) before relying on platform
+service APIs, Visualforce rendering, live side effects, or broad REST parity.
 
 ::: tip Try it
 Exercise the runtime your tests rely on - DML, triggers, and governor limits - in the local playground:

@@ -51,6 +51,14 @@ jobs:
           cp site/install.sh site-pages/install.sh
           cp site/CNAME site-pages/CNAME
 
+      - name: Check Pages artifact routes
+        run: |
+          set -euo pipefail
+          test -s site-pages/install.sh
+          grep -q 'repo="glade-sh/glade"' site-pages/install.sh
+          test -s site-pages/CNAME
+          grep -q '^glade.sh$' site-pages/CNAME
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

@@ -2,7 +2,7 @@
 
 Glade separates public support claims from maintainer proof reports.
 
-Use [Apex and Salesforce Support](/guide/support-map) first. It answers what
+Use [What Glade supports](/guide/support-map) first. It answers what
 works, what works with limits, and what is not supported today.
 
 Use this page when you need the policy behind those claims.
@@ -38,7 +38,26 @@ release gates, and compatibility work:
 - [`docs/KNOWN_GAPS.md`](https://github.com/glade-sh/glade/blob/main/docs/KNOWN_GAPS.md)
 
 The docs-site summary of those reports lives at
-[Developer Reports](/guide/compatibility-dashboard).
+[Maintainer Proof Reports](/guide/compatibility-dashboard).
+
+## How Support Moves
+
+Unsupported behavior moves only when there is runtime behavior and evidence.
+
+1. Add or confirm a compatibility fixture.
+2. Implement the smallest runtime behavior that matches the public contract.
+3. Run the focused package gate.
+4. Regenerate checked compatibility reports when generated rows change.
+5. Promote the row from `unsupported` to `partial` or `supported`.
+
+## Report a Gap
+
+When Glade stops at an unsupported surface you need, include:
+
+- the Apex snippet or test that hits the gap
+- the command you ran
+- the unsupported diagnostic
+- whether the behavior is required for local tests, local API use, or editor feedback
 
 ## Fixtures
 

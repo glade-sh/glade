@@ -18,11 +18,11 @@ hero:
       text: Install Glade
       link: /guide/installation
     - theme: alt
-      text: Open Playground
+      text: Playground Docs
       link: /guide/playground
     - theme: alt
       text: Read Docs
-      link: /guide/installation
+      link: /guide/overview
 ---
 
 <p class="home-proof-line">Single Go binary · local SQLite state · macOS/Linux · no deploy loop for fast checks</p>
@@ -36,12 +36,18 @@ hero:
     <div class="home-install-actions">
       <button class="home-install-copy" data-copy-target="install-cmd">Copy</button>
       <a class="home-install-link" href="https://glade.sh/install.sh">View install script</a>
+      <a class="home-install-link" href="https://github.com/glade-sh/glade/releases">Releases</a>
+      <a class="home-install-link" href="https://github.com/glade-sh/glade/releases/latest/download/SHA256SUMS.txt">Checksums</a>
     </div>
   </div>
   <div class="home-install-meta">
     <span>release channel preview</span>
     <span>macOS/Linux</span>
     <span>installs to ~/.local/bin</span>
+  </div>
+  <div class="home-install-verify" aria-label="Verify Glade install">
+    <code>glade version</code>
+    <code>glade doctor</code>
   </div>
 </div>
 
@@ -72,6 +78,16 @@ hero:
   </a>
 </div>
 
+<div class="home-section home-loop-section">
+  <p class="home-eyebrow">LOCAL LOOP</p>
+  <h2 class="home-h2">The local loop before the deploy loop.</h2>
+  <pre class="home-code-block"><code class="language-bash">glade check --project .
+glade test --project . --filter AccountServiceTest
+glade test changed --project . --since origin/main
+glade playground --project . --open</code></pre>
+  <p class="home-p">Run the checks that fit your edit before Salesforce enters the path.</p>
+</div>
+
 <div class="home-section">
   <div class="home-section-grid">
     <div>
@@ -89,7 +105,7 @@ hero:
   <div class="home-panel home-panel-soft">
     <div class="home-panel-top">
       <span>glade playground / local workspace</span>
-      <span class="home-status-pill home-status-idle" data-run-status>idle</span>
+      <span class="home-status-pill home-status-pass" data-run-status>pass</span>
     </div>
     <div class="home-playground-grid">
       <div class="home-playground-side" data-example-active="account">
@@ -109,19 +125,19 @@ hero:
         <p>OUTPUT</p>
         <div class="home-output-item">
           <span>status</span>
-          <strong data-output-key="status">Not run</strong>
+          <strong class="home-output-pass" data-output-key="status">Pass</strong>
         </div>
         <div class="home-output-item">
           <span>compile + execute</span>
-          <strong data-output-key="timing">--</strong>
+          <strong data-output-key="timing">38 ms</strong>
         </div>
         <div class="home-output-item">
           <span>log</span>
-          <strong data-output-key="log">Run Example to see output</strong>
+          <strong data-output-key="log">USER_DEBUG | Account count: 1</strong>
         </div>
         <div class="home-output-item">
           <span>local state</span>
-          <strong data-output-key="state">No local writes yet</strong>
+          <strong data-output-key="state">1 Account inserted · rolled back after run</strong>
         </div>
       </div>
     </div>
@@ -136,22 +152,29 @@ hero:
       <p class="home-p">Glade keeps parsing, local execution, data, and proof surfaces inspectable instead of hidden.</p>
     </div>
     <div class="home-runtime-cards home-runtime-flow">
-      <div class="home-runtime-card">
+      <a class="home-runtime-card" href="/guide/support-map#works-well">
         <span>parse / sema</span>
         <h3>Apex front end</h3>
         <p>Source model, symbols, grouping, diagnostics, and lowering.</p>
-      </div>
-      <div class="home-runtime-card">
+        <small>View parser and semantic support →</small>
+      </a>
+      <a class="home-runtime-card" href="/guide/support-map#works-well">
         <span>vm / data</span>
         <h3>Local execution</h3>
         <p>SObjects, SOQL, DML, triggers, limits, and storage.</p>
-      </div>
-      <div class="home-runtime-card">
+        <small>View runtime and test support →</small>
+      </a>
+      <a class="home-runtime-card" href="/guide/support-map#not-supported-today">
         <span>support / proof</span>
         <h3>Visible support map</h3>
         <p>What works, what has limits, and the checked rows behind each claim.</p>
-      </div>
+        <small>See supported, limited, and unsupported areas →</small>
+      </a>
     </div>
+    <p class="home-support-note">
+      Glade models the local paths it can prove. Unsupported platform services fail with stable diagnostics instead of pretending to work.
+      <a href="/guide/support-map">View the support map</a>.
+    </p>
   </div>
 </div>
 
@@ -173,11 +196,11 @@ hero:
   <div class="home-next-cards">
     <a class="home-next-card" href="/guide/installation">
       <strong>Docs</strong>
-      <span>Install, editor setup, server use, CLI reference, and compatibility notes.</span>
+      <span>Overview, quickstart, install, support, and local workflow docs.</span>
     </a>
     <a class="home-next-card" href="/guide/playground">
-      <strong>Playground</strong>
-      <span>Start the local browser workbench from your machine.</span>
+      <strong>Playground Docs</strong>
+      <span>Run the local browser workbench from your machine.</span>
     </a>
     <a class="home-next-card" href="https://github.com/glade-sh/glade">
       <strong>GitHub</strong>

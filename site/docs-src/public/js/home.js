@@ -11,16 +11,16 @@
         "}"
       ].join("\n"),
       idle: {
-        status: "Not run",
-        timing: "--",
-        log: "Run Example to see output",
-        state: "No local writes yet"
+        status: "Pass",
+        timing: "38 ms",
+        log: "USER_DEBUG | Account count: 1",
+        state: "1 Account inserted · rolled back after run"
       },
       result: {
         status: "Pass",
         timing: "38 ms",
         log: "USER_DEBUG | Account count: 1",
-        state: "local.sqlite · 1 Account inserted"
+        state: "1 Account inserted · rolled back after run"
       }
     },
     soql: {
@@ -147,7 +147,7 @@
     if (window.gladeHighlightCodeBlock) {
       window.gladeHighlightCodeBlock(code)
     }
-    setStatus("idle")
+    setStatus(example.idle.status === "Pass" ? "pass" : "idle")
     setOutput(example.idle)
   }
 
@@ -178,8 +178,8 @@
       '<a href="/guide/installation" class="home-cmd-item"><strong>Install Glade</strong><code>curl -fsSL https://glade.sh/install.sh | sh</code></a>' +
       '<a href="/guide/cli-reference" class="home-cmd-item"><strong>Check source</strong><code>glade check --project . --json</code></a>' +
       '<a href="/guide/local-testing" class="home-cmd-item"><strong>Run tests</strong><code>glade test --project . --json</code></a>' +
-      '<a href="/guide/installation" class="home-cmd-item"><strong>Open docs</strong><code>/guide/installation</code></a>' +
-      '<a href="/guide/playground" class="home-cmd-item"><strong>Open Playground</strong><code>glade playground --examples --open</code></a>' +
+      '<a href="/guide/overview" class="home-cmd-item"><strong>Open docs</strong><code>/guide/overview</code></a>' +
+      '<a href="/guide/playground" class="home-cmd-item"><strong>Playground Docs</strong><code>glade playground --examples --open</code></a>' +
       "</div></div>"
     document.body.appendChild(overlay)
 

@@ -232,6 +232,11 @@ body::before {
   letter-spacing: 0;
 }
 
+.VPSidebarItem.is-active > .item > .link {
+  color: var(--vp-c-brand-1);
+  font-weight: 700;
+}
+
 .VPNavBarTitle .title {
   color: var(--vp-c-text-1);
   font-weight: 700;
@@ -1228,6 +1233,23 @@ body::before {
   font-size: 12px;
 }
 
+.home-install-verify {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.home-install-verify code {
+  border: 1px solid var(--glade-code-border);
+  border-radius: 6px;
+  background: var(--glade-code-bg);
+  color: var(--vp-c-text-1);
+  font-family: var(--vp-font-family-mono);
+  font-size: 12px;
+  padding: 8px 10px;
+}
+
 @media (max-width: 640px) {
   .home-install {
     padding: 0 24px 48px;
@@ -1257,6 +1279,11 @@ body::before {
   min-width: 0;
   margin-left: auto;
   margin-right: auto;
+}
+
+.home-loop-section {
+  max-width: 960px;
+  margin-inline: auto;
 }
 
 .home-eyebrow {
@@ -1542,12 +1569,20 @@ body::before {
 }
 
 .home-runtime-card {
+  display: block;
   position: relative;
   padding: 16px;
   border: 1px solid var(--glade-border);
   border-radius: 8px;
   background:
     linear-gradient(180deg, var(--glade-surface), var(--glade-surface-soft));
+  text-decoration: none;
+  transition: border-color 140ms ease, transform 140ms ease;
+}
+
+.home-runtime-card:hover {
+  border-color: var(--vp-button-brand-hover-border);
+  transform: translateY(-1px);
 }
 
 @media (min-width: 768px) {
@@ -1581,6 +1616,27 @@ body::before {
   color: var(--vp-c-text-2);
   font-size: 13px;
   line-height: 1.6;
+}
+
+.home-runtime-card small {
+  display: inline-block;
+  margin-top: 12px;
+  color: var(--vp-c-brand-1);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.home-support-note {
+  margin: 18px 0 0;
+  color: var(--vp-c-text-2);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.home-support-note a {
+  color: var(--vp-c-brand-1);
+  font-weight: 700;
+  text-decoration: none;
 }
 
 /* --- next door cards --- */
