@@ -258,7 +258,7 @@ func (vm *VM) splitClassMember(name string) (string, string, bool) {
 		if resolved, ok := vm.resolveClassName(className); ok {
 			return resolved, strings.Join(parts[i:], "."), true
 		}
-		if generated, ok := generatedPlatformTypeIndex[strings.ToLower(className)]; ok {
+		if generated, ok := generatedPlatformTypes()[strings.ToLower(className)]; ok {
 			return generated.Name, strings.Join(parts[i:], "."), true
 		}
 		if class, ok := vm.resolveEnumClass(className); ok {

@@ -5,15 +5,49 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
+var (
+	commonSObjectTypeNamesOnce       sync.Once
+	generatedPlatformTypeIndexOnce   sync.Once
+	generatedPlatformMethodIndexOnce sync.Once
+)
+
 func CommonSObjectTypeNames() []string {
+	if commonSObjectTypeNames != nil {
+		return commonSObjectTypeNames
+	}
+	commonSObjectTypeNamesOnce.Do(func() {
+		commonSObjectTypeNames = buildCommonSObjectTypeNames()
+	})
 	return commonSObjectTypeNames
 }
+
+func generatedPlatformTypes() map[string]generatedPlatformType {
+	if generatedPlatformTypeIndex != nil {
+		return generatedPlatformTypeIndex
+	}
+	generatedPlatformTypeIndexOnce.Do(func() {
+		generatedPlatformTypeIndex = buildGeneratedPlatformTypeIndex()
+	})
+	return generatedPlatformTypeIndex
+}
+
+func generatedPlatformMethods() map[string]map[string][]Method {
+	if generatedPlatformMethodIndex != nil {
+		return generatedPlatformMethodIndex
+	}
+	generatedPlatformMethodIndexOnce.Do(func() {
+		generatedPlatformMethodIndex = buildGeneratedPlatformMethodIndex()
+	})
+	return generatedPlatformMethodIndex
+}
+
 func buildGeneratedPlatformTypeIndex() map[string]generatedPlatformType {
 	out := make(map[string]generatedPlatformType)
 	for _, typ := range typesys.StandardPlatformSymbolView() {

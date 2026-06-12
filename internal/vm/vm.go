@@ -452,7 +452,7 @@ func (vm *VM) hasExactRuntimeClass(name string) bool {
 	if _, ok := vm.Classes[name]; ok {
 		return true
 	}
-	if _, ok := generatedPlatformTypeIndex[strings.ToLower(name)]; ok {
+	if _, ok := generatedPlatformTypes()[strings.ToLower(name)]; ok {
 		return true
 	}
 	if class, ok := vm.resolveEnumClass(name); ok && class.Name == name {
@@ -873,9 +873,6 @@ func init() {
 			standardSObjectPrefixes[prefix] = objectName
 		}
 	}
-	commonSObjectTypeNames = buildCommonSObjectTypeNames()
-	generatedPlatformTypeIndex = buildGeneratedPlatformTypeIndex()
-	generatedPlatformMethodIndex = buildGeneratedPlatformMethodIndex()
 }
 
 type generatedPlatformType struct {

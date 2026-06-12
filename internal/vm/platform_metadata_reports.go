@@ -1143,7 +1143,7 @@ func callNamedEnumStaticMember(typeName string, names []string, method string, a
 }
 
 func (vm *VM) callGeneratedPlatformEnumStaticMember(typeName, method string, args []Value) (Value, bool, error) {
-	generated, ok := generatedPlatformTypeIndex[strings.ToLower(typeName)]
+	generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]
 	if !ok || generated.Kind != apexast.DeclarationEnum {
 		return Null, false, nil
 	}
@@ -1314,7 +1314,7 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	if receiver.Type == "Metadata.MetadataType" {
 		return callNamedEnumMember("Metadata.MetadataType", metadataMetadataTypeNames, receiver, method, args)
 	}
-	if generated, ok := generatedPlatformTypeIndex[strings.ToLower(receiver.Type)]; ok && generated.Kind == apexast.DeclarationEnum {
+	if generated, ok := generatedPlatformTypes()[strings.ToLower(receiver.Type)]; ok && generated.Kind == apexast.DeclarationEnum {
 		return callGeneratedPlatformEnumMember(generated, receiver, method, args)
 	}
 	class, ok := vm.resolveEnumClass(receiver.Type)
