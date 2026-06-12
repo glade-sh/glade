@@ -20,6 +20,17 @@ func BenchmarkAnalyzeIndex(b *testing.B) {
 	}
 }
 
+func BenchmarkAnalyzeIndexLightTypesOnly(b *testing.B) {
+	index := benchmarkIndex(200)
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		result := AnalyzeWithOptions(index, AnalyzeOptions{Diagnostics: false, ExportTypes: true})
+		if len(result.Types) == 0 {
+			b.Fatalf("expected exported types")
+		}
+	}
+}
+
 func benchmarkIndex(classes int) typesys.Index {
 	index := typesys.Index{
 		Objects: []schema.Object{{Name: "Account"}, {Name: "Contact"}, {Name: "Thing__c"}},

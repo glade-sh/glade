@@ -26,6 +26,17 @@ func BenchmarkWorkspaceSymbols(b *testing.B) {
 	}
 }
 
+func BenchmarkNewHandler(b *testing.B) {
+	index := benchmarkLSPIndex(200)
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		handler := NewHandler(index)
+		if handler == nil {
+			b.Fatal("nil handler")
+		}
+	}
+}
+
 func benchmarkLSPIndex(classes int) typesys.Index {
 	index := typesys.Index{
 		Objects: []schema.Object{{

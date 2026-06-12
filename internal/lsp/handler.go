@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -14,10 +15,11 @@ import (
 )
 
 type Handler struct {
-	index     typesys.Index
-	analysis  sema.Result
-	documents map[DocumentURI]openDocument
-	shutdown  bool
+	index        typesys.Index
+	analysisOnce sync.Once
+	analysis     sema.Result
+	documents    map[DocumentURI]openDocument
+	shutdown     bool
 }
 
 type openDocument struct {
@@ -30,9 +32,15 @@ type openDocument struct {
 func NewHandler(index typesys.Index) *Handler {
 	return &Handler{
 		index:     index,
-		analysis:  sema.Analyze(index),
 		documents: make(map[DocumentURI]openDocument),
 	}
+}
+
+func (h *Handler) analysisResult() sema.Result {
+	h.analysisOnce.Do(func() {
+		h.analysis = sema.Analyze(h.index)
+	})
+	return h.analysis
 }
 
 func (h *Handler) Shutdown() bool {
@@ -114,7 +122,7 @@ func (h *Handler) documentDiagnostics(doc openDocument) []Notification {
 func (h *Handler) diagnosticsForDocument(uri DocumentURI) []diagnostic.Diagnostic {
 	path := pathFromURI(uri)
 	var diagnostics []diagnostic.Diagnostic
-	for _, diag := range h.analysis.Diagnostics {
+	for _, diag := range h.analysisResult().Diagnostics {
 		if diag.File != "" && (sameDocument(path, diag.File) || sameDocument(string(uri), diag.File)) {
 			diagnostics = append(diagnostics, diag)
 		}
@@ -407,7 +415,7 @@ func (h *Handler) HoverForName(name string, hoverRange *Range) *Hover {
 		}
 	}
 
-	for _, ref := range h.analysis.Types {
+	for _, ref := range h.analysisResult().Types {
 		if !strings.EqualFold(ref.Name, name) {
 			continue
 		}
