@@ -1329,6 +1329,14 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 	}
 	return coerceAssignable(typeName, value)
 }
+
+func (vm *VM) typedJSONMapKey(typeName, key string) (Value, error) {
+	resolvedType := vm.resolveAssignableTargetType(typeName)
+	if _, ok := vm.resolveEnumClass(resolvedType); ok {
+		return vm.coerceAssignable(resolvedType, String(key))
+	}
+	return typedJSONMapKey(typeName, key)
+}
 func (vm *VM) resolveAssignableTargetType(typeName string) string {
 	base := collectionBase(typeName)
 	element, ok := collectionElementType(typeName)
