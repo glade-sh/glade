@@ -485,6 +485,7 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 		state.Definition.KeyPrefix = AssignDeterministicPrefixes([]string{objectName}, nil)[objectName]
 	}
 	org.Objects[objectName] = state
+	org.ClearRuntimeSchemaStamp()
 	if len(state.Definition.RecordTypes) > 0 {
 		ensureRecordTypeObject(org)
 		ensureRecordTypeRecordsForObject(org, objectName)

@@ -6,7 +6,8 @@ import (
 )
 
 type RuntimeTemplate struct {
-	Org OrgState
+	Org                OrgState
+	RuntimeSchemaStamp string
 }
 
 func NewRuntimeTemplate(org OrgState) RuntimeTemplate {
@@ -16,6 +17,7 @@ func NewRuntimeTemplate(org OrgState) RuntimeTemplate {
 func (t RuntimeTemplate) CloneRuntimeOrg() OrgState {
 	cloneStats.cloneRuntime.Add(1)
 	out := t.Org
+	out.RuntimeSchemaStamp = t.RuntimeSchemaStamp
 	out.objectNameCache = &sync.Map{}
 	if t.Org.Objects != nil {
 		out.Objects = make(map[string]ObjectState, len(t.Org.Objects))
@@ -66,6 +68,7 @@ func EnsureMutableObjectDefinition(org *OrgState, objectName string) (*ObjectDef
 	object := org.Objects[canonical]
 	object.Definition = object.Definition.Clone()
 	org.Objects[canonical] = object
+	org.ClearRuntimeSchemaStamp()
 	return &object.Definition, true
 }
 

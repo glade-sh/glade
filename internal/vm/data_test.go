@@ -926,6 +926,43 @@ func TestSetOrgSameCountsClearsDescribeCachesWhenMetadataChanges(t *testing.T) {
 	}
 }
 
+func TestSetOrgTrustedSchemaStampDoesNotHideDefinitionMutation(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	template := storage.NewRuntimeTemplate(org)
+	PrimeRuntimeTemplateSchema(&template)
+	clone := template.CloneRuntimeOrg()
+
+	machine := New(nil)
+	machine.SetOrg(&clone)
+	name, definition, ok := machine.describeObjectDefinition("Account")
+	if !ok {
+		t.Fatalf("Account definition not found")
+	}
+	firstDescribe := machine.describeSObjectValue(name, definition)
+	if got := firstDescribe.Fields["label"].Text; got != "Account" {
+		t.Fatalf("first Account label = %q, want Account", got)
+	}
+
+	_, cloned := storage.EnsureMutableObjectDefinition(&clone, "Account")
+	if !cloned {
+		t.Fatalf("expected mutable Account definition")
+	}
+	account := clone.Objects["Account"]
+	account.Definition.Label = "Runtime Account"
+	clone.Objects["Account"] = account
+	machine.SetOrg(&clone)
+
+	name, definition, ok = machine.describeObjectDefinition("Account")
+	if !ok {
+		t.Fatalf("Account definition not found after mutation")
+	}
+	secondDescribe := machine.describeSObjectValue(name, definition)
+	if got := secondDescribe.Fields["label"].Text; got != "Runtime Account" {
+		t.Fatalf("second Account label = %q, want Runtime Account", got)
+	}
+}
+
 func TestSObjectFieldMapLookupAliasesUsesWarmCache(t *testing.T) {
 	machine := New(nil)
 	machine.SetOrg(&storage.OrgState{Namespace: "pkg", Objects: map[string]storage.ObjectState{}})

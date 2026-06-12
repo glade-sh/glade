@@ -41,8 +41,15 @@ type OrgState struct {
 
 	SystemTimestampBase     string `json:"-"`
 	SystemTimestampSequence int64  `json:"-"`
+	RuntimeSchemaStamp      string `json:"-"`
 
 	objectNameCache *sync.Map
+}
+
+func (o *OrgState) ClearRuntimeSchemaStamp() {
+	if o != nil {
+		o.RuntimeSchemaStamp = ""
+	}
 }
 
 type MetadataRegistry struct {

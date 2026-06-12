@@ -56,7 +56,7 @@ func TestExecWebStoreContextGetCommerceContextUnsupported(t *testing.T) {
 }
 
 func findPassiveGeneratedStaticFamilyCalleeForTest(vm *VM) (string, bool) {
-	for className, methodsByName := range generatedPlatformMethodIndex {
+	for className, methodsByName := range generatedPlatformMethods() {
 		if !generatedFamilyUnsupportedTypePrefix(className) {
 			continue
 		}

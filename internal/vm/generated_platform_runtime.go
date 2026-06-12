@@ -285,7 +285,7 @@ func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value
 	}
 }
 func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, namedArgs map[string]Value) (Value, bool, error) {
-	generated, ok := generatedPlatformTypeIndex[strings.ToLower(typeName)]
+	generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]
 	if !ok || generated.Kind == apexast.DeclarationInterface || generated.Kind == apexast.DeclarationEnum || vm.isSObjectLikeType(generated.Name) {
 		return Null, false, nil
 	}
@@ -402,7 +402,7 @@ func (vm *VM) newGeneratedPlatformObjectSeen(generated generatedPlatformType, se
 	}
 	seen[key] = true
 	if generated.SuperClass != "" {
-		if parent, ok := generatedPlatformTypeIndex[strings.ToLower(generated.SuperClass)]; ok {
+		if parent, ok := generatedPlatformTypes()[strings.ToLower(generated.SuperClass)]; ok {
 			for name, field := range parent.Fields {
 				object.Fields[name] = vm.generatedPlatformDefaultValueSeen(field.Type, Null, seen)
 			}
@@ -523,7 +523,7 @@ func (vm *VM) generatedPlatformStaticFieldValue(typeName, fieldName string) (Val
 }
 func (vm *VM) generatedPlatformField(typeName, fieldName string, static bool) (Field, generatedPlatformType, bool) {
 	for search := typeName; search != ""; {
-		generated, ok := generatedPlatformTypeIndex[strings.ToLower(search)]
+		generated, ok := generatedPlatformTypes()[strings.ToLower(search)]
 		if !ok {
 			break
 		}
@@ -555,7 +555,7 @@ func (vm *VM) generatedPlatformDefaultValue(typeName string, explicit Value) Val
 }
 func (vm *VM) generatedPlatformDefaultValueSeen(typeName string, explicit Value, seen map[string]bool) Value {
 	typeName = vm.resolveTypeNameInClass(vm.currentClass, typeName)
-	if generated, ok := generatedPlatformTypeIndex[strings.ToLower(typeName)]; ok &&
+	if generated, ok := generatedPlatformTypes()[strings.ToLower(typeName)]; ok &&
 		generated.Kind == apexast.DeclarationClass &&
 		vm.isPassivePlatformDTOType(generated.Name) {
 		if seen[strings.ToLower(generated.Name)] {

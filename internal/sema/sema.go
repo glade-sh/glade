@@ -49,6 +49,11 @@ type Analyzer struct {
 	namespace string
 }
 
+type AnalyzeOptions struct {
+	Diagnostics bool
+	ExportTypes bool
+}
+
 func NewAnalyzer() *Analyzer {
 	a := &Analyzer{known: make(map[string]TypeReference)}
 	for _, name := range builtinTypes {
@@ -70,15 +75,25 @@ func NewAnalyzer() *Analyzer {
 }
 
 func Analyze(index typesys.Index) Result {
-	return NewAnalyzer().Analyze(index)
+	return AnalyzeWithOptions(index, AnalyzeOptions{Diagnostics: true, ExportTypes: true})
+}
+
+func AnalyzeWithOptions(index typesys.Index, opts AnalyzeOptions) Result {
+	return NewAnalyzer().AnalyzeWithOptions(index, opts)
 }
 
 func (a *Analyzer) Analyze(index typesys.Index) (result Result) {
+	return a.AnalyzeWithOptions(index, AnalyzeOptions{Diagnostics: true, ExportTypes: true})
+}
+
+func (a *Analyzer) AnalyzeWithOptions(index typesys.Index, opts AnalyzeOptions) (result Result) {
 	a.namespace = index.Project.Namespace
 	index = enrichIndexWithStandardSymbols(index)
 	result = Result{
-		Project:     index.Project,
-		Diagnostics: append([]diagnostic.Diagnostic{}, index.Diagnostics...),
+		Project: index.Project,
+	}
+	if opts.Diagnostics {
+		result.Diagnostics = append([]diagnostic.Diagnostic{}, index.Diagnostics...)
 	}
 	defer func() {
 		if recovered := recover(); recovered != nil {
@@ -120,15 +135,17 @@ func (a *Analyzer) Analyze(index typesys.Index) (result Result) {
 		}
 	}
 
-	result.Diagnostics = append(result.Diagnostics, a.checkTriggers(index)...)
-	result.Diagnostics = append(result.Diagnostics, a.checkMemberTypes(index)...)
-	result.Diagnostics = append(result.Diagnostics, a.checkMethodParameters(index)...)
-	result.Diagnostics = append(result.Diagnostics, a.checkAnnotations(index)...)
-	result.Diagnostics = append(result.Diagnostics, a.checkMethodBodies(index)...)
-	result.Diagnostics = append(result.Diagnostics, a.checkVisibility(index)...)
-	result.Diagnostics = append(result.Diagnostics, a.checkManagedPackageAccess(index)...)
-	result.Diagnostics = append(result.Diagnostics, a.checkInheritanceContracts(index)...)
-	result.Diagnostics = append(result.Diagnostics, a.checkSchemaReferences(index)...)
+	if opts.Diagnostics {
+		result.Diagnostics = append(result.Diagnostics, a.checkTriggers(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkMemberTypes(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkMethodParameters(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkAnnotations(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkMethodBodies(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkVisibility(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkManagedPackageAccess(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkInheritanceContracts(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkSchemaReferences(index)...)
+	}
 
 	result.Summary = Summary{
 		Types:       countProjectTypes(index.Types),
@@ -136,7 +153,9 @@ func (a *Analyzer) Analyze(index typesys.Index) (result Result) {
 		Objects:     len(index.Objects),
 		Diagnostics: len(result.Diagnostics),
 	}
-	result.Types = a.exportKnownTypes()
+	if opts.ExportTypes {
+		result.Types = a.exportKnownTypes()
+	}
 	return result
 }
 

@@ -239,7 +239,7 @@ func (vm *VM) isEnumObjectValue(value Value) bool {
 		strings.EqualFold(value.Type, "Metadata.MetadataType"):
 		return true
 	}
-	if generated, ok := generatedPlatformTypeIndex[strings.ToLower(value.Type)]; ok && generated.Kind == apexast.DeclarationEnum {
+	if generated, ok := generatedPlatformTypes()[strings.ToLower(value.Type)]; ok && generated.Kind == apexast.DeclarationEnum {
 		return true
 	}
 	if _, ok := vm.resolveEnumClass(value.Type); ok {

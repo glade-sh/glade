@@ -447,6 +447,9 @@ func (vm *VM) clearCustomDataCache() {
 }
 
 func (vm *VM) clearMetadataCaches() {
+	if vm != nil && vm.Org != nil {
+		vm.Org.ClearRuntimeSchemaStamp()
+	}
 	vm.describeCache = make(map[string]Value)
 	vm.fieldDescribeCache = make(map[string]Value)
 	vm.describeDefCache = make(map[string]storage.ObjectDefinition)

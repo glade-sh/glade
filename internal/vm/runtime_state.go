@@ -473,6 +473,7 @@ type Trigger struct {
 }
 
 func New(stdout io.Writer) *VM {
+	warmGeneratedPlatformRuntimeIndexes()
 	return &VM{
 		Globals:                      make(map[string]Value),
 		VarTypes:                     make(map[string]string),
@@ -896,9 +897,10 @@ func (vm *VM) SetCurrentPageURLNull() {
 }
 
 func (vm *VM) SetOrg(org *storage.OrgState) {
-	if vm.Org != org {
-		currentStamp := vm.schemaCacheStamp()
-		nextStamp := schemaCacheStampForOrg(org)
+	currentStamp := vm.schemaCacheStamp()
+	nextStamp := trustedSchemaCacheStampForOrg(org)
+	schemaChanged := currentStamp != "" && nextStamp != "" && currentStamp != nextStamp
+	if vm.Org != org || schemaChanged {
 		if currentStamp != "" && nextStamp != "" && currentStamp == nextStamp {
 			vm.metadataCacheStamp = nextStamp
 		} else {
@@ -920,7 +922,7 @@ func (vm *VM) schemaCacheStamp() string {
 	if strings.TrimSpace(vm.metadataCacheStamp) != "" {
 		return vm.metadataCacheStamp
 	}
-	return schemaCacheStampForOrg(vm.Org)
+	return trustedSchemaCacheStampForOrg(vm.Org)
 }
 
 // PrimeMetadataSchema records the schema stamp for org without touching the org
@@ -931,9 +933,28 @@ func (vm *VM) PrimeMetadataSchema(org *storage.OrgState) {
 	if vm == nil {
 		return
 	}
-	if stamp := schemaCacheStampForOrg(org); stamp != "" {
+	if stamp := trustedSchemaCacheStampForOrg(org); stamp != "" {
 		vm.metadataCacheStamp = stamp
 	}
+}
+
+func PrimeRuntimeTemplateSchema(template *storage.RuntimeTemplate) {
+	if template == nil {
+		return
+	}
+	stamp := schemaCacheStampForOrg(&template.Org)
+	template.RuntimeSchemaStamp = stamp
+	template.Org.RuntimeSchemaStamp = stamp
+}
+
+func trustedSchemaCacheStampForOrg(org *storage.OrgState) string {
+	if org == nil {
+		return ""
+	}
+	if stamp := strings.TrimSpace(org.RuntimeSchemaStamp); stamp != "" {
+		return stamp
+	}
+	return schemaCacheStampForOrg(org)
 }
 
 const (
