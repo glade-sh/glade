@@ -8417,6 +8417,69 @@ func TestOrgFromIndexIncludesProjectStaticResources(t *testing.T) {
 	t.Fatalf("resetcss StaticResource record was not created; records=%#v", object.Records)
 }
 
+func TestRunTestLoadDataHandlesCsvEdgesAndTypedFields(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Load_Row__c/Load_Row__c.object-meta.xml"), `
+<CustomObject>
+  <label>Load Row</label>
+  <pluralLabel>Load Rows</pluralLabel>
+  <nameField><type>Text</type><label>Name</label></nameField>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Load_Row__c/fields/Quoted__c.field-meta.xml"), `<CustomField><fullName>Quoted__c</fullName><label>Quoted</label><type>Text</type></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Load_Row__c/fields/Blank__c.field-meta.xml"), `<CustomField><fullName>Blank__c</fullName><label>Blank</label><type>Text</type></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Load_Row__c/fields/When__c.field-meta.xml"), `<CustomField><fullName>When__c</fullName><label>When</label><type>Date</type></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Load_Row__c/fields/At__c.field-meta.xml"), `<CustomField><fullName>At__c</fullName><label>At</label><type>DateTime</type></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Load_Row__c/fields/Ready__c.field-meta.xml"), `<CustomField><fullName>Ready__c</fullName><label>Ready</label><type>Checkbox</type><defaultValue>false</defaultValue></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Load_Row__c/fields/Amount__c.field-meta.xml"), `<CustomField><fullName>Amount__c</fullName><label>Amount</label><type>Number</type><precision>16</precision><scale>2</scale></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Load_Row__c/fields/Lookup__c.field-meta.xml"), `<CustomField><fullName>Lookup__c</fullName><label>Lookup</label><type>Lookup</type><referenceTo>Account</referenceTo></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/staticresources/LoadRows.resource"), "Name,Quoted__c,Blank__c,When__c,At__c,Ready__c,Amount__c,Lookup__c\r\n\"Acme, Inc.\",\"said \"\"hello\"\"\",,2024-02-29,2024-02-29T12:34:56Z,true,42.50,001000000000001AAA\r\n")
+	writeFile(t, filepath.Join(root, "force-app/main/default/staticresources/LoadRows.resource-meta.xml"), `<StaticResource><contentType>text/csv</contentType><cacheControl>Private</cacheControl></StaticResource>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/staticresources/BadLoadRows.resource"), "Name,Missing__c\nBad,bad\n")
+	writeFile(t, filepath.Join(root, "force-app/main/default/staticresources/BadLoadRows.resource-meta.xml"), `<StaticResource><contentType>text/csv</contentType><cacheControl>Private</cacheControl></StaticResource>`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/LoadDataEdgesTest.cls"), `
+@isTest
+private class LoadDataEdgesTest {
+  @isTest static void loadsCsvEdgesThroughDml() {
+    List<Load_Row__c> rows = Test.loadData(Load_Row__c.SObjectType, 'LoadRows');
+    System.assertEquals(1, rows.size());
+    Load_Row__c row = [SELECT Name, Quoted__c, Blank__c, When__c, At__c, Ready__c, Amount__c, Lookup__c FROM Load_Row__c LIMIT 1];
+    System.assertEquals('Acme, Inc.', row.Name);
+    System.assertEquals('said "hello"', row.Quoted__c);
+    System.assertEquals(null, row.Blank__c);
+    System.assertEquals(Date.newInstance(2024, 2, 29), row.When__c);
+    System.assertEquals(Datetime.valueOfGmt('2024-02-29T12:34:56Z'), row.At__c);
+    System.assertEquals(true, row.Ready__c);
+    System.assertEquals(42.50, row.Amount__c);
+    System.assertEquals('001000000000001AAA', row.Lookup__c);
+    System.assertEquals(1, Limits.getDmlStatements());
+    System.assertEquals(1, Limits.getDmlRows());
+  }
+
+  @isTest static void reportsMissingResourceAndBadHeader() {
+    try {
+      Test.loadData(Load_Row__c.SObjectType, 'MissingRows');
+      System.assert(false, 'missing resource should fail');
+    } catch (Exception e) {
+      System.assert(e.getMessage().contains('static resource MissingRows not found'));
+    }
+    try {
+      Test.loadData(Load_Row__c.SObjectType, 'BadLoadRows');
+      System.assert(false, 'bad header should fail');
+    } catch (Exception e) {
+      System.assert(e.getMessage().contains('Unknown field Missing__c'));
+    }
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+}
+
 func TestOrgFromIndexNamespacesProjectStaticResources(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)

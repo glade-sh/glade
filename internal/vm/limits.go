@@ -23,6 +23,7 @@ type Limits struct {
 	BatchJobs           int `json:"batchJobs"`
 	ScheduledJobs       int `json:"scheduledJobs"`
 	EmailInvokes        int `json:"emailInvocations"`
+	SOSLQueries         int `json:"soslQueries"`
 	RunAs               int `json:"runAs"`
 	Savepoints          int `json:"savepoints"`
 	PublishImmediateDML int `json:"publishImmediateDml"`
@@ -42,6 +43,7 @@ type LimitCaps struct {
 	BatchJobs           int `json:"batchJobs"`
 	ScheduledJobs       int `json:"scheduledJobs"`
 	EmailInvokes        int `json:"emailInvocations"`
+	SOSLQueries         int `json:"soslQueries"`
 	RunAs               int `json:"runAs"`
 	Savepoints          int `json:"savepoints"`
 	PublishImmediateDML int `json:"publishImmediateDml"`
@@ -68,6 +70,7 @@ func defaultLimitCaps() LimitCaps {
 		BatchJobs:           5,
 		ScheduledJobs:       100,
 		EmailInvokes:        10,
+		SOSLQueries:         20,
 		RunAs:               100,
 		Savepoints:          5,
 		PublishImmediateDML: 150,
@@ -128,6 +131,9 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 	case "emailInvocations":
 		vm.limits.EmailInvokes += delta
 		return vm.checkLimit(name, vm.limits.EmailInvokes, vm.limitCaps.EmailInvokes)
+	case "soslQueries":
+		vm.limits.SOSLQueries += delta
+		return vm.checkLimit(name, vm.limits.SOSLQueries, vm.limitCaps.SOSLQueries)
 	case "runAs":
 		vm.limits.RunAs += delta
 		return vm.checkLimit(name, vm.limits.RunAs, vm.limitCaps.RunAs)
@@ -236,6 +242,8 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		return Int(int64(vm.limits.EmailInvokes)), true
 	case "getLimitEmailInvocations":
 		return Int(int64(vm.limitCaps.EmailInvokes)), true
+	case "getSoslQueries":
+		return Int(int64(vm.limits.SOSLQueries)), true
 	case "getPublishImmediateDML":
 		return Int(int64(vm.limits.PublishImmediateDML)), true
 	case "getLimitPublishImmediateDML":
@@ -245,7 +253,7 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		"getFetchCallsOnApexCursor", "getFieldSetsDescribes", "getFieldsDescribes",
 		"getFindSimilarCalls", "getMobilePushApexCalls", "getPicklistDescribes",
 		"getQueryLocatorRows", "getRecordTypesDescribes", "getSavepointRollbacks",
-		"getScriptStatements", "getSoslQueries":
+		"getScriptStatements":
 		return Int(0), true
 	case "getLimitAggregateQueries":
 		return Int(300), true
@@ -279,7 +287,7 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getLimitScriptStatements":
 		return Int(200000), true
 	case "getLimitSoslQueries":
-		return Int(20), true
+		return Int(int64(vm.limitCaps.SOSLQueries)), true
 	default:
 		return Null, false
 	}

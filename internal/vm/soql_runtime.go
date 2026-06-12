@@ -471,6 +471,9 @@ func (vm *VM) searchFind(args []Value) (Value, error) {
 	if err != nil {
 		return Null, newExceptionError("QueryException", fmt.Sprintf("%s in query %q", err.Error(), args[0].Text))
 	}
+	if err := vm.incrementLimit("soslQueries", 1); err != nil {
+		return Null, err
+	}
 	if err := validateSOSLSpellCorrectionOption(queryText); err != nil {
 		return Null, err
 	}
@@ -574,6 +577,9 @@ func (vm *VM) executeSOSLWithAccessLevel(raw string, execResult *Result, accessL
 	queryText, err := vm.expandSOQLBinds(raw)
 	if err != nil {
 		return Null, newExceptionError("QueryException", fmt.Sprintf("%s in query %q", err.Error(), raw))
+	}
+	if err := vm.incrementLimit("soslQueries", 1); err != nil {
+		return Null, err
 	}
 	if err := validateSOSLSpellCorrectionOption(queryText); err != nil {
 		return Null, err

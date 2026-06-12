@@ -2336,9 +2336,9 @@ platformStaticCall:
 			if len(args) == 5 && args[4].Kind != ValueBool {
 				return Null, fmt.Errorf("Messaging.renderStoredEmailTemplate updateEmailTemplateUsage expects Boolean")
 			}
-			return vm.renderStoredEmailTemplate(args[:3])
+			return vm.renderStoredEmailTemplate(args[:3], args[3])
 		}
-		return vm.renderStoredEmailTemplate(args)
+		return vm.renderStoredEmailTemplate(args, Null)
 	case "Messaging.reserveSingleEmailCapacity", "Messaging.reserveMassEmailCapacity":
 		return vm.reserveEmailCapacity(callee, args, result)
 	case "Messaging.PushNotificationPayload.apple":
