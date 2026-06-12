@@ -48,6 +48,12 @@ func generatedPlatformMethods() map[string]map[string][]Method {
 	return generatedPlatformMethodIndex
 }
 
+func warmGeneratedPlatformRuntimeIndexes() {
+	_ = CommonSObjectTypeNames()
+	_ = generatedPlatformTypes()
+	_ = generatedPlatformMethods()
+}
+
 func buildGeneratedPlatformTypeIndex() map[string]generatedPlatformType {
 	out := make(map[string]generatedPlatformType)
 	for _, typ := range typesys.StandardPlatformSymbolView() {

@@ -473,6 +473,7 @@ type Trigger struct {
 }
 
 func New(stdout io.Writer) *VM {
+	warmGeneratedPlatformRuntimeIndexes()
 	return &VM{
 		Globals:                      make(map[string]Value),
 		VarTypes:                     make(map[string]string),

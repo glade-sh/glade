@@ -44,7 +44,7 @@ const (
 func (h *Handler) StartLiveSession(machine *vm.VM, program ir.Program) *LiveSession {
 	session := &LiveSession{
 		handler: h,
-		control: make(chan liveControl),
+		control: make(chan liveControl, 1),
 		paused:  make(chan vm.DebugPause, 1),
 		done:    make(chan error, 1),
 		mode:    liveModeContinue,
