@@ -2,7 +2,14 @@
 
 Use canonical coordinates for marketplace installs.
 
+::: warning Registry preview
+The default public plugin registry is not live yet. Coordinate installs need a
+live registry or custom registry. Direct archives and local links are the
+fallback paths until the registry is published.
+:::
+
 ```bash
+# Requires a live plugin registry or configured custom registry.
 glade plugins available
 glade plugins install @glade/compat
 glade plugins install @glade/performance

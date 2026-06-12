@@ -1,4 +1,4 @@
-# Local API Server
+# Run a Local Salesforce-Shaped API
 
 `glade server` starts a local Salesforce-shaped HTTP surface backed by the same runtime used by the CLI. It is meant for local integration tests, tools, and development loops that need REST-shaped org behavior without a live Salesforce org.
 
@@ -37,6 +37,17 @@ glade db inspect --db .glade/local-org.sqlite --json
 
 The server exposes a Salesforce-shaped baseline for local work: API discovery, object describe and CRUD-style record operations, SOQL query execution, and execute-anonymous routes where supported by the runtime.
 
+Check [What Glade supports](/guide/support-map) before relying on full auth,
+Bulk API, Streaming, Pub/Sub, GraphQL, or broad Tooling API parity.
+
+| Area | Endpoint shape | Status |
+| --- | --- | --- |
+| API discovery | `/services/data/` | supported |
+| Describe | `/services/data/vXX.X/sobjects/<Object>/describe` | supported baseline |
+| Query | `/services/data/vXX.X/query?q=...` | supported baseline |
+| SObject CRUD | `/services/data/vXX.X/sobjects/<Object>/<Id>` | supported baseline |
+| Execute Anonymous | Tooling executeAnonymous route | supported where runtime supports code |
+
 Example request:
 
 ```bash
@@ -45,10 +56,30 @@ curl -s http://127.0.0.1:8080/services/data/v60.0/sobjects/Account/describe
 curl -s 'http://127.0.0.1:8080/services/data/v60.0/query?q=SELECT+Id,Name+FROM+Account'
 ```
 
-## Security note
+Example query response:
 
-The local API server does not implement full OAuth or production Salesforce authentication. Do not expose it to untrusted networks unless an authenticating reverse proxy stands in front of it.
+```json
+{
+  "totalSize": 1,
+  "done": true,
+  "records": [
+    {
+      "attributes": {
+        "type": "Account"
+      },
+      "Name": "Twin Lakes"
+    }
+  ]
+}
+```
+
+::: warning Local server only
+The local API server does not implement full OAuth or production Salesforce
+authentication. Do not expose it to untrusted networks unless an authenticating
+reverse proxy stands in front of it.
+:::
 
 ::: tip Try it
-Use the playground when you want the same local org ideas with a browser UI: [Playground](/guide/playground).
+Use the playground when you want the same local org ideas with a browser UI:
+[Use the Local Playground](/guide/playground).
 :::

@@ -1,6 +1,23 @@
-# CI And Artifacts
+# Add Glade to CI
 
 Glade writes machine-readable check results and saved test reports for CI.
+
+```yaml
+name: glade
+on: [pull_request]
+jobs:
+  glade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: curl -fsSL https://glade.sh/install.sh | sh
+      - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: glade doctor
+      - run: glade check --project . --format sarif --output glade-check.sarif
+      - run: glade test changed --project . --since origin/main --json
+      - run: mkdir -p reports
+      - run: glade test --project . --junit reports/glade-junit.xml
+```
 
 ## Semantic checks
 
@@ -58,3 +75,20 @@ The default export remains a zip:
 ```bash
 glade report export latest --runs-dir .glade/runs --output glade-report.zip
 ```
+
+Upload the files after a gate, even when the test or check step fails:
+
+```yaml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: glade-results
+          path: |
+            glade-check.sarif
+            reports/glade-junit.xml
+            .glade/runs
+```
+
+`glade check` and `glade test` return non-zero for diagnostics or failed test
+outcomes that should block a gate. Use `if: always()` only for upload steps that
+must run after a failure.

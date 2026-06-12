@@ -4,6 +4,13 @@
 large projects, but a stale cache can make tests pass or fail against the wrong
 local org or compiled helpers.
 
+## TL;DR
+
+- Glade caches warmed project state at `.glade/test/startup.gob`.
+- Clear it after branch switches, Glade upgrades, or confusing stale behavior.
+- Use `--no-cache` once to confirm whether the cache is involved.
+- Restart `glade test serve` if the warm server still has old state.
+
 ## What is cached
 
 The disk cache stores harness work that happens **before** tests run:

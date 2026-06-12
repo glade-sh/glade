@@ -1,9 +1,18 @@
 # Installation
 
-Glade ships as a single binary. Release archives are parser-capable CGO builds,
-and the public site serves an install script at the root domain.
+Glade ships as a single local binary for macOS and Linux. Install it, verify
+your environment with `glade doctor`, then run your first project check from an
+SFDX workspace.
 
 ## One-line install
+
+| OS | CPU | Status |
+| --- | --- | --- |
+| macOS | arm64 | supported release archive |
+| macOS | amd64 | supported release archive |
+| Linux | amd64 | supported release archive |
+| Linux | arm64 | supported release archive |
+| Windows | amd64/arm64 | build from source for now |
 
 For macOS and Linux:
 
@@ -24,6 +33,18 @@ Check the binary after it is on your path:
 glade version
 glade doctor
 ```
+
+Expected:
+
+```text
+glade doctor
+parser: ok (tree-sitter)
+```
+
+Manual fallback:
+
+- Release archives: <https://github.com/glade-sh/glade/releases>
+- Checksums: <https://github.com/glade-sh/glade/releases/latest/download/SHA256SUMS.txt>
 
 ## Build from source
 
@@ -106,6 +127,22 @@ Or download a release artifact and verify checksums:
     glade version
 ```
 
+## Troubleshooting
+
+If `glade` is not found after install, add `~/.local/bin` to your shell path:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Then open a new shell and run:
+
+```bash
+glade version
+glade doctor
+```
+
 ::: tip Next step
-Create project config: [Project Configuration](/guide/configuration).
+Create project config: [Configure a Glade Project](/guide/configuration), then
+check [What Glade supports](/guide/support-map).
 :::

@@ -8,7 +8,7 @@ export default defineConfig({
   outDir: '.vitepress/dist',
   cleanUrls: true,
   appearance: 'dark',
-  lastUpdated: true,
+  lastUpdated: false,
   vite: {
     server: {
       allowedHosts: ['apollo.local']
@@ -29,52 +29,59 @@ export default defineConfig({
     search: { provider: 'local' },
     nav: [
       { text: 'Home', link: '/' },
-      { text: 'Docs', link: '/guide/installation' },
-      { text: 'Playground', link: '/guide/playground' },
+      { text: 'Docs', link: '/guide/overview' },
+      { text: 'Playground Docs', link: '/guide/playground' },
       { text: 'GitHub', link: 'https://github.com/glade-sh/glade' }
     ],
     sidebar: [
       {
         text: 'Start',
         items: [
+          { text: 'Overview', link: '/guide/overview' },
+          { text: 'Quickstart', link: '/guide/quickstart' },
           { text: 'Installation', link: '/guide/installation' },
-          { text: 'Project Configuration', link: '/guide/configuration' },
+          { text: 'What Glade Supports', link: '/guide/support-map' }
+        ]
+      },
+      {
+        text: 'Core Workflows',
+        items: [
+          { text: 'Configure A Glade Project', link: '/guide/configuration' },
           { text: 'CLI Reference', link: '/guide/cli-reference' },
-          { text: 'Brand Guide', link: '/guide/brand-guide' }
+          { text: 'Run Apex Tests Locally', link: '/guide/local-testing' },
+          { text: 'Run Only Affected Tests', link: '/guide/affected-tests' },
+          { text: 'Use The Local Playground', link: '/guide/playground' },
+          { text: 'Run A Local Salesforce-Shaped API', link: '/guide/local-api-server' },
+          { text: 'Add Glade To CI', link: '/guide/ci-artifacts' }
         ]
       },
       {
-        text: 'Workflows',
+        text: 'Advanced',
         items: [
-          { text: 'Local Testing', link: '/guide/local-testing' },
-          { text: 'Test Startup Cache', link: '/guide/test-startup-cache' },
-          { text: 'Affected-Test Selection', link: '/guide/affected-tests' },
-          { text: 'CI And Artifacts', link: '/guide/ci-artifacts' },
-          { text: 'Rich Local Workflows', link: '/guide/rich-local-workflows' },
+          { text: 'Speed Up Test Startup', link: '/guide/test-startup-cache' },
           { text: 'Editor, LSP, and DAP', link: '/guide/editor' },
-          { text: 'Local API Server', link: '/guide/local-api-server' },
-          { text: 'Playground', link: '/guide/playground' }
+          { text: 'Progress, Wizards, and Package Artifacts', link: '/guide/rich-local-workflows' }
         ]
       },
       {
-        text: 'Plugins',
+        text: 'Plugin Authors',
         items: [
-          { text: 'Overview', link: '/guide/plugins' },
+          { text: 'Use Plugins', link: '/guide/plugins' },
           { text: 'First-Party Plugins', link: '/guide/plugins/first-party' },
-          { text: 'Marketplace', link: '/guide/plugins/marketplace' },
+          { text: 'Marketplace And Trust', link: '/guide/plugins/marketplace' },
           { text: 'Install And Manage', link: '/guide/plugins/install-manage' },
           { text: 'Build A Plugin', link: '/guide/plugins/build' },
-          { text: 'Publish A Plugin', link: '/guide/plugins/publish' },
           { text: 'Manifest Reference', link: '/guide/plugins/manifest' },
-          { text: 'Lock Files And CI', link: '/guide/plugins/lock-ci' }
+          { text: 'Publish A Plugin', link: '/guide/plugins/publish' },
+          { text: 'Plugin Lock Files And CI', link: '/guide/plugins/lock-ci' }
         ]
       },
       {
-        text: 'Project Status',
+        text: 'Project',
         items: [
-          { text: 'Apex and Salesforce Support', link: '/guide/support-map' },
           { text: 'Compatibility Policy', link: '/guide/compatibility' },
-          { text: 'Developer Reports', link: '/guide/compatibility-dashboard' }
+          { text: 'Maintainer Proof Reports', link: '/guide/compatibility-dashboard' },
+          { text: 'Brand Guide', link: '/guide/brand-guide' }
         ]
       }
     ],

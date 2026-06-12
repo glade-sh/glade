@@ -3,9 +3,20 @@
 First-party plugins ship heavier Glade workflows without adding them to the
 default install. They use the same executable runtime as third-party plugins.
 
+Install these only when the base local runtime is not enough for the job.
+`@glade/compat` is for maintainers and compatibility work. `@glade/performance`
+is for advisory project scans.
+
+::: warning Registry preview
+The default public plugin registry is not live yet. The install commands below
+are the canonical coordinates once the registry or a custom registry serves
+the archives. Until then, install from a direct archive or link a local plugin
+executable when you are doing maintainer work.
+:::
+
 ## `@glade/compat`
 
-Install:
+Registry install:
 
 ```bash
 glade plugins install @glade/compat
@@ -29,7 +40,7 @@ surface ledgers, generated support reports, and parity scanners.
 
 ## `@glade/performance`
 
-Install:
+Registry install:
 
 ```bash
 glade plugins install @glade/performance

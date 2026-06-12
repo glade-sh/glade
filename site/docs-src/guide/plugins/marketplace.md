@@ -4,7 +4,12 @@ The marketplace is a catalog of plugin archives. Glade downloads the archive
 for your OS and CPU, verifies SHA-256, verifies the archive checksums, reads
 `manifest --json`, then records the install.
 
+The marketplace model is preview until the production registry is live. The
+default registry host is not required for base Glade use. Use these commands
+only with a live registry, a custom registry, or a direct archive URL.
+
 ```bash
+# Requires a live plugin registry or configured custom registry.
 glade plugins available
 glade plugins search
 glade plugins search quality

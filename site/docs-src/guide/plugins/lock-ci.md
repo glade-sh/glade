@@ -1,8 +1,15 @@
-# Lock Files And CI
+# Plugin Lock Files And CI
 
 `glade plugins lock` records exact plugin state for repeatable CI runs.
 
+::: warning Registry preview
+The default public plugin registry is not live yet. Coordinate installs and
+lock restores need a live registry or custom registry. Direct archives and
+local links remain available for maintainer workflows.
+:::
+
 ```bash
+# Requires a live plugin registry or configured custom registry.
 glade plugins install @glade/compat
 glade plugins lock
 glade plugins restore

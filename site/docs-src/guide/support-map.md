@@ -1,8 +1,15 @@
-# Apex and Salesforce Support
+# What Glade Supports
 
 Start here when deciding whether Glade can run a project, a test class, or a
 local Salesforce-shaped API flow. This page is the public map. The generated
 ledgers carry the exact ledger rows.
+
+## Before You Adopt Glade
+
+- Your local loop uses supported Apex parse, check, test, SOQL, DML, trigger, and SObject paths.
+- Your test suite can mock callouts and live side effects.
+- Your project can tolerate explicit unsupported diagnostics for Salesforce-hosted services.
+- You will keep a Salesforce org gate for features Glade does not model.
 
 ## Status Key
 
@@ -56,6 +63,12 @@ This is the smaller list a first user should check before betting on Glade.
 | Live outbound side effects | Real callouts, delivered email, push notifications, and external service mutations are not performed. Tests should use local mocks and result objects. |
 | Exact Salesforce governor accounting | Glade tracks deterministic local limits. Salesforce's full production accounting and every platform-specific counter are not complete. |
 
+Example diagnostic:
+
+```text
+UnsupportedFeature: Approval.process is not supported by Glade's local runtime.
+```
+
 ## Area Detail
 
 | Area | First-layer status | Notes |
@@ -100,7 +113,7 @@ Use this map first, then cut down to the exact checked row.
 
 - Ledger standard-library rows: [`docs/STDLIB_COVERAGE.md`](https://github.com/glade-sh/glade/blob/main/docs/STDLIB_COVERAGE.md)
 - Current known gaps: [`docs/KNOWN_GAPS.md`](https://github.com/glade-sh/glade/blob/main/docs/KNOWN_GAPS.md)
-- Developer compatibility reports: [Developer Reports](/guide/compatibility-dashboard)
+- Maintainer proof reports: [Maintainer Proof Reports](/guide/compatibility-dashboard)
 
 One rule keeps the marks honest. Do not call a surface supported until the row
 has implementation and compatibility evidence.
