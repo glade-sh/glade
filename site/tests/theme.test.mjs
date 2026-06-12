@@ -161,9 +161,9 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(supportMap, /## Not Supported Today/);
   assert.match(supportMap, /Counts come from the checked standard library coverage report/);
   assert.match(supportMap, /\| String, Decimal, Boolean, Math \| Wide local support \| 29 supported, 3 partial \/ 32 tracked \|/);
-  assert.match(supportMap, /\| UserInfo, URL, and Label \| Wide local support \| 19 supported, 2 unsupported \/ 21 tracked \|/);
+  assert.match(supportMap, /\| UserInfo, URL, and Label \| Wide local support \| 21 supported \/ 21 tracked \|/);
   assert.match(supportMap, /\| Type, FeatureManagement, Exception, and diagnostics \| Works with limits \| 6 supported, 3 partial \/ 9 tracked \|/);
-  assert.match(supportMap, /\| Service-only platform APIs \| Not supported \| 35 unsupported \/ 35 tracked \|/);
+  assert.match(supportMap, /\| Fenced live service APIs \| Not supported \| 5 unsupported \/ 5 tracked \|/);
   assert.match(compatibilityDashboard, /^# Maintainer Proof Reports/m);
   assert.match(compatibilityDashboard, /Most users should start/);
   assert.match(compatibilityDashboard, /\| Readiness \| ready \|/);

@@ -56,6 +56,13 @@ and composed by the CLI.
   type-dependency graph, refreshed incrementally).
 - `internal/profile`: native trace/profile aggregation and JSON/Markdown
   reporting.
+- `internal/enterprise`, `internal/enterprisegraph`,
+  `internal/enterpriseassess`, `internal/enterprisecruft`, and
+  `internal/refactorproof`: enterprise report contracts, static project graph,
+  assessment findings, conservative cruft classification, and branch proof
+  reports. These packages consume the product parser, type index, semantic
+  analyzer, trace model, and test-selection graph. They do not regenerate
+  support ledgers or compatibility dashboards.
 - `internal/server`: Salesforce-shaped HTTP handler for supported SObject CRUD,
   query/queryAll, describe/recent, limits, identity/userinfo stubs, Tooling
   `executeAnonymous`, composite sObject insert, fixture/scoped reset endpoints,

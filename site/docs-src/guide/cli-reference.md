@@ -61,6 +61,15 @@ glade inspect symbols --project .
 glade inspect symbols --project . --json
 ```
 
+## `glade inspect graph`
+
+Build the enterprise graph for Apex, triggers, metadata references, SObjects, and
+conservative source references.
+
+```bash
+glade inspect graph --project . --json
+```
+
 ## `glade schema load`
 
 Load supported Salesforce metadata from an SFDX project.
@@ -90,6 +99,33 @@ glade check --project .
 glade check --project . --json
 glade check --project . --format sarif --output glade-check.sarif
 glade check --project . --format github
+```
+
+## `glade report assess`
+
+Generate an enterprise assessment report.
+
+```bash
+glade report assess --project . --format json
+glade report assess --project . --format html --out reports/glade-assessment.html --include-metadata --include-tests
+```
+
+## `glade report cruft`
+
+Classify conservative delete, deprecate, review, and do-not-delete candidates.
+
+```bash
+glade report cruft --project . --format json
+glade report cruft --project . --format html --out reports/glade-cruft.html
+```
+
+## `glade report refactor-proof`
+
+Collect local proof for changed Apex and metadata.
+
+```bash
+glade report refactor-proof --project . --since origin/main --format json
+glade report refactor-proof --project . --since origin/main --format html --out reports/glade-refactor-proof.html
 ```
 
 ## `glade exec`

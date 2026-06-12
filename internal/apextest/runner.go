@@ -40,6 +40,7 @@ type Options struct {
 	SelectedMethod      string
 	LimitMode           vm.LimitMode
 	TraceBlocked        bool
+	TraceAll            bool
 	SlowTestThresholdMS int64
 	TimeoutMS           int64
 	Parallelism         int
@@ -1053,7 +1054,7 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 	}
 	machine := baseMachine.CloneRuntime(nil)
 	machine.SetDeterministicRandomState(setupRandom)
-	machine.SetTraceEnabled(opts.TraceBlocked || opts.SlowTestThresholdMS > 0)
+	machine.SetTraceEnabled(opts.TraceAll || opts.TraceBlocked || opts.SlowTestThresholdMS > 0)
 	if opts.LimitMode != "" {
 		machine.SetLimitMode(opts.LimitMode)
 	}
@@ -1091,6 +1092,12 @@ func attachTraceProfile(out *testreport.Case, result vm.Result, opts Options) {
 	}
 	blocked := out.Status != testreport.StatusPass
 	slow := opts.SlowTestThresholdMS > 0 && out.DurationMS >= opts.SlowTestThresholdMS
+	if opts.TraceAll {
+		out.Trace = append([]trace.Event(nil), result.Trace...)
+		report := profile.Analyze(trace.NewDocument(out.Trace))
+		out.Profile = &report
+		return
+	}
 	if !blocked && !slow {
 		return
 	}

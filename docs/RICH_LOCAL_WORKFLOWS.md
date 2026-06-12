@@ -79,3 +79,19 @@ glade package diff .glade/pkg-1.2.2.json .glade/pkg-1.2.3.json --json
 
 The diff reports added, removed, and changed global Apex types, custom objects,
 and source hash changes.
+
+## Enterprise Workflows
+
+Use enterprise reports when a large Apex project needs a map before it needs
+edits.
+
+```bash
+glade inspect graph --project . --json
+glade report assess --project . --format html --out reports/glade-assessment.html
+glade report cruft --project . --format html --out reports/glade-cruft.html
+glade report refactor-proof --project . --since origin/main --format html --out reports/glade-refactor-proof.html
+```
+
+Assessment and cruft reports use static evidence and confidence levels.
+Refactor proof records what Glade checked, what it did not run, and which
+public or global API surfaces need review.

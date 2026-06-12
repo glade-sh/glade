@@ -166,7 +166,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		}
 		return 0
 	case "report":
-		if err := runReport(args[1:], stdout); err != nil {
+		if err := runReport(ctx, args[1:], stdout); err != nil {
 			writeCommandError(stderr, args[0], err)
 			return 1
 		}
@@ -845,6 +845,9 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 	}
 	if len(args) == 0 {
 		return typesys.Index{}, errors.New("usage: glade inspect symbols [--project <root>] [--json]")
+	}
+	if args[0] == "graph" {
+		return typesys.Index{}, runInspectGraph(ctx, args[1:], w)
 	}
 	if args[0] != "symbols" {
 		if args[0] == "performance" {
