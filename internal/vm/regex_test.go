@@ -329,6 +329,26 @@ System.assertEquals('3', parts[2]);
 	}
 }
 
+func TestExecStringSplitUsesJavaRegexQuoteEscapes(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<String> parts = 'alpha.beta.gamma'.split('\\Q.\\E');
+System.assertEquals(3, parts.size());
+System.assertEquals('alpha', parts[0]);
+System.assertEquals('beta', parts[1]);
+System.assertEquals('gamma', parts[2]);
+List<String> limited = 'alpha.beta.gamma'.split('\\Q.\\E', 2);
+System.assertEquals(2, limited.size());
+System.assertEquals('alpha', limited[0]);
+System.assertEquals('beta.gamma', limited[1]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPatternFlagsSubset(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(2, Pattern.CASE_INSENSITIVE);

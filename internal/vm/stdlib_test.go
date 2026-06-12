@@ -2076,6 +2076,9 @@ System.assertEquals('2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938
 System.assertEquals('9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca72323c3d99ba5c11d7c7acc6e14b8c5da0c4663475c2e5c3adef46f73bcdec043', EncodingUtil.convertToHex(sha512));
 System.assertEquals('3338be694f50c5f338814986cdf0686453a888b84f424d792af4b9202398f392', EncodingUtil.convertToHex(sha3));
 System.assertEquals(EncodingUtil.convertToHex(sha512), EncodingUtil.convertToHex(normalizedSha512));
+System.assertEquals(EncodingUtil.convertToHex(sha256), EncodingUtil.convertToHex(Crypto.generateDigest(' sha_256 ', hello)));
+System.assertEquals('snow+trail', EncodingUtil.urlEncode('snow trail', ' utf_8 '));
+System.assertEquals('A B+Ω', EncodingUtil.urlDecode('A+B%2B%CE%A9', 'UTF8'));
 Blob message = Blob.valueOf('message');
 Blob key = Blob.valueOf('key');
 Blob hmacMD5 = Crypto.generateMac('hmacMD5', message, key);
@@ -4341,11 +4344,16 @@ Decimal nickel = Decimal.valueOf('1.005');
 Decimal bankersDown = Decimal.valueOf('2.685');
 Decimal bankersUp = Decimal.valueOf('2.675');
 Decimal negative = Decimal.valueOf('-1.005');
+Decimal negativeDirected = Decimal.valueOf('-1.25');
 System.assertEquals(1.01, nickel.setScale(2));
 System.assertEquals(1.00, nickel.setScale(2, RoundingMode.valueOf('HALF_DOWN')));
 System.assertEquals(2.68, bankersDown.setScale(2, RoundingMode.valueOf('HALF_EVEN')));
 System.assertEquals(2.68, bankersUp.setScale(2, RoundingMode.valueOf('HALF_EVEN')));
 System.assertEquals(-1.01, negative.setScale(2, RoundingMode.valueOf('HALF_UP')));
+System.assertEquals(-1.2, negativeDirected.setScale(1, RoundingMode.CEILING));
+System.assertEquals(-1.3, negativeDirected.setScale(1, RoundingMode.FLOOR));
+System.assertEquals(130, Decimal.valueOf('125').setScale(-1, RoundingMode.HALF_UP));
+System.assertEquals(120, Decimal.valueOf('125').setScale(-1, RoundingMode.HALF_DOWN));
 System.assertEquals(3, Decimal.valueOf('2.5').round());
 System.assertEquals(-3, Decimal.valueOf('-2.5').round());
 `)
