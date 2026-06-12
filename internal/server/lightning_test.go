@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	gladeschema "github.com/glade-sh/glade/internal/schema"
-	"github.com/glade-sh/glade/internal/lwc/compile"
 	"github.com/glade-sh/glade/internal/lwcbrowser"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/resource"
@@ -22,7 +21,7 @@ func TestVFPageBootstrapsLightningOut(t *testing.T) {
 	if _, err := os.Stat(filepath.Join("..", "..", "third_party", "lwc", "node_modules")); err != nil {
 		t.Skip("npm install required in third_party/lwc")
 	}
-	root, err := compile.FindRepoRoot()
+	root, err := lightningTestRepoRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +62,7 @@ func TestLightningModulesServesCompiledJS(t *testing.T) {
 	if _, err := os.Stat(filepath.Join("..", "..", "third_party", "lwc", "node_modules")); err != nil {
 		t.Skip("npm install required in third_party/lwc")
 	}
-	root, err := compile.FindRepoRoot()
+	root, err := lightningTestRepoRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +136,7 @@ func writeLightningFixtureFile(t *testing.T, path, content string) {
 }
 
 func TestLightningLabelShimResolvesPackageCPrefix(t *testing.T) {
-	root, err := compile.FindRepoRoot()
+	root, err := lightningTestRepoRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -168,7 +167,7 @@ func TestLightningLabelShimResolvesPackageCPrefix(t *testing.T) {
 }
 
 func TestLightningLabelShim(t *testing.T) {
-	root, err := compile.FindRepoRoot()
+	root, err := lightningTestRepoRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -198,7 +197,7 @@ func TestLightningLabelShim(t *testing.T) {
 }
 
 func TestLightningWireApexReturnsData(t *testing.T) {
-	root, err := compile.FindRepoRoot()
+	root, err := lightningTestRepoRoot()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -234,9 +233,30 @@ func TestLightningWireApexReturnsData(t *testing.T) {
 	if out.Error != nil {
 		t.Fatalf("error = %#v", out.Error)
 	}
-	if out.Data != "items:001XX0000000001" {
+	rows, ok := out.Data.([]any)
+	if !ok || len(rows) != 1 {
 		t.Fatalf("data = %#v", out.Data)
 	}
+	row, ok := rows[0].(map[string]any)
+	if !ok {
+		t.Fatalf("row = %#v", rows[0])
+	}
+	if row["Id"] != "001XX0000000001" || row["Name"] != "Local Widget" {
+		t.Fatalf("row = %#v", row)
+	}
+}
+
+func lightningTestRepoRoot() (string, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	for dir := wd; dir != "" && dir != filepath.Dir(dir); dir = filepath.Dir(dir) {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir, nil
+		}
+	}
+	return "", os.ErrNotExist
 }
 
 func TestLightningWireGetRecordReturnsStoredName(t *testing.T) {
