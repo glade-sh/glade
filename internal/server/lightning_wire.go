@@ -21,6 +21,8 @@ func (s *Server) handleLightningWire(w http.ResponseWriter, r *http.Request, par
 		s.handleLightningWireApex(w, r)
 	case "getRecord":
 		s.handleLightningWireGetRecord(w, r)
+	case "getObjectInfo":
+		s.handleLightningWireGetObjectInfo(w, r)
 	default:
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning wire endpoint")
 	}
@@ -91,6 +93,29 @@ func (s *Server) handleLightningWireGetRecord(w http.ResponseWriter, r *http.Req
 	writeWireJSON(w, lwcbrowser.WireResponse{Data: data})
 }
 
+func (s *Server) handleLightningWireGetObjectInfo(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: err.Error()}})
+		return
+	}
+	var req lwcbrowser.WireGetObjectInfoRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: "invalid getObjectInfo wire request"}})
+		return
+	}
+	if s.Org == nil {
+		org := storage.NewOrgState()
+		s.Org = &org
+	}
+	data, wireErr := getObjectInfoWireData(s.Org, req.ObjectAPIName)
+	if wireErr != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: wireErr})
+		return
+	}
+	writeWireJSON(w, lwcbrowser.WireResponse{Data: data})
+}
+
 func getRecordWireData(org *storage.OrgState, recordID string, fields []string) (map[string]any, *lwcbrowser.WireError) {
 	recordID = strings.TrimSpace(recordID)
 	if recordID == "" {
@@ -121,22 +146,62 @@ func getRecordWireData(org *storage.OrgState, recordID string, fields []string) 
 	}
 	fieldsOut := make(map[string]any, len(fieldNames))
 	for _, name := range fieldNames {
+		fieldName := name
+		field, hasField := storage.Field{}, false
+		if object, ok := org.Objects[objectName]; ok {
+			if canonical, ok := storage.ResolveFieldName(object.Definition, org.Namespace, name); ok {
+				fieldName = canonical
+				field = object.Definition.Fields[canonical]
+				hasField = true
+			}
+		}
 		value, ok := record.Fields[name]
+		if !ok && fieldName != name {
+			value, ok = record.Fields[fieldName]
+		}
+		label := fieldName
+		if hasField {
+			label = labelOrFallback(field.Label, fieldName)
+		}
 		if !ok {
-			fieldsOut[name] = map[string]any{"value": nil, "displayValue": nil}
+			fieldsOut[fieldName] = map[string]any{"value": nil, "displayValue": nil, "label": label}
 			continue
 		}
 		jsonVal := storageValueJSON(value)
-		fieldsOut[name] = map[string]any{
+		fieldsOut[fieldName] = map[string]any{
 			"value":        jsonVal,
 			"displayValue": fmt.Sprint(jsonVal),
+			"label":        label,
 		}
 	}
 	return map[string]any{
-		"id":     recordID,
+		"id":      recordID,
 		"apiName": objectName,
-		"fields": fieldsOut,
+		"fields":  fieldsOut,
 	}, nil
+}
+
+func getObjectInfoWireData(org *storage.OrgState, objectAPIName string) (map[string]any, *lwcbrowser.WireError) {
+	objectAPIName = strings.TrimSpace(objectAPIName)
+	if objectAPIName == "" {
+		return nil, &lwcbrowser.WireError{Message: "objectApiName is required"}
+	}
+	objectName, object, ok := findOrgObject(org, objectAPIName)
+	if !ok {
+		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("object not found: %s", objectAPIName)}
+	}
+	payload := describePayload(object.Definition, org)
+	payload["apiName"] = objectName
+	fieldList, _ := payload["fields"].([]map[string]any)
+	fields := make(map[string]any, len(fieldList))
+	for _, field := range fieldList {
+		name, _ := field["name"].(string)
+		if name != "" {
+			fields[name] = field
+		}
+	}
+	payload["fields"] = fields
+	return payload, nil
 }
 
 func findOrgRecord(org *storage.OrgState, recordID string) (objectName string, record storage.Record, ok bool) {
@@ -154,6 +219,18 @@ func findOrgRecord(org *storage.OrgState, recordID string) (objectName string, r
 		}
 	}
 	return "", storage.Record{}, false
+}
+
+func findOrgObject(org *storage.OrgState, objectAPIName string) (objectName string, object storage.ObjectState, ok bool) {
+	if org == nil {
+		return "", storage.ObjectState{}, false
+	}
+	for name, candidate := range org.Objects {
+		if strings.EqualFold(name, objectAPIName) || strings.EqualFold(candidate.Definition.APIName, objectAPIName) {
+			return name, candidate, true
+		}
+	}
+	return "", storage.ObjectState{}, false
 }
 
 func writeWireJSON(w http.ResponseWriter, payload lwcbrowser.WireResponse) {

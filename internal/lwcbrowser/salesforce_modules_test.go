@@ -26,6 +26,13 @@ func TestApexWireModuleJS(t *testing.T) {
 	}
 }
 
+func TestUIRecordAPIModuleJSExportsRecordAndObjectInfoWires(t *testing.T) {
+	js := UIRecordAPIModuleJS()
+	if !containsAll(js, "createGetRecordWireAdapter", "getRecord", "getObjectInfo") {
+		t.Fatalf("js = %q", js)
+	}
+}
+
 func containsAll(s string, parts ...string) bool {
 	for _, part := range parts {
 		if !strings.Contains(s, part) {

@@ -11,6 +11,10 @@ type WireGetRecordRequest struct {
 	Fields   []string `json:"fields"`
 }
 
+type WireGetObjectInfoRequest struct {
+	ObjectAPIName string `json:"objectApiName"`
+}
+
 type WireError struct {
 	Type    string `json:"type,omitempty"`
 	Message string `json:"message"`
