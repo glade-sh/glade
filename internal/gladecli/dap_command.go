@@ -12,6 +12,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/dap"
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -20,6 +21,8 @@ func runDAP(ctx context.Context, args []string, r io.Reader, w io.Writer) error 
 		return err
 	}
 	projectRoot := "."
+	dbPath := ""
+	dryRun := false
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--project":
@@ -28,6 +31,14 @@ func runDAP(ctx context.Context, args []string, r io.Reader, w io.Writer) error 
 			}
 			projectRoot = args[i+1]
 			i++
+		case "--db":
+			if i+1 >= len(args) {
+				return errors.New("--db requires a path")
+			}
+			dbPath = args[i+1]
+			i++
+		case "--dry-run":
+			dryRun = true
 		default:
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
@@ -35,12 +46,12 @@ func runDAP(ctx context.Context, args []string, r io.Reader, w io.Writer) error 
 
 	handler := dap.NewHandler(dap.Snapshot{})
 	handler.SetLaunchHandler(func(request dap.LaunchRequest) error {
-		return handleDAPLaunch(ctx, handler, request, projectRoot)
+		return handleDAPLaunch(ctx, handler, request, projectRoot, dbPath, dryRun)
 	})
 	return dap.Serve(r, w, handler)
 }
 
-func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.LaunchRequest, defaultProject string) error {
+func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.LaunchRequest, defaultProject string, defaultDBPath string, dryRun bool) error {
 	trace := newDAPStartupTrace()
 	defer trace.done()
 	if err := ctx.Err(); err != nil {
@@ -50,6 +61,11 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 	if projectRoot == "" {
 		projectRoot = defaultProject
 	}
+	dbPath := strings.TrimSpace(launch.DBPath)
+	if dbPath == "" {
+		dbPath = strings.TrimSpace(defaultDBPath)
+	}
+	testLaunch := strings.TrimSpace(launch.ClassName) != "" && strings.TrimSpace(launch.MethodName) != ""
 	source, err := launchSource(launch)
 	if err != nil {
 		return err
@@ -65,15 +81,47 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 		return err
 	}
 	trace.mark("load-startup-state")
+	if dbPath != "" {
+		loadedStore, dbOrg, err := openDBStore(dbPath, projectRoot)
+		if err != nil {
+			return err
+		}
+		org = dbOrg
+		if err := loadedStore.Close(); err != nil {
+			return err
+		}
+	}
 	machine := vm.New(nil)
 	machine.SetTraceEnabled(true)
 	machine.SetOrg(&org)
 	machine.SetCurrentNamespace(org.Namespace)
+	if testLaunch {
+		machine.EnableTestContext()
+	}
 	if err := apextest.RegisterCompiledProjectRuntimeForRequest(machine, runtime); err != nil {
 		return err
 	}
+	if testLaunch {
+		index, err := loadIndex(projectRoot)
+		if err != nil {
+			return err
+		}
+		if err := apextest.RegisterTestMethodForRequest(machine, index, launch.ClassName, launch.MethodName); err != nil {
+			return err
+		}
+	}
 	trace.mark("register-project-runtime")
-	handler.PrepareLiveSession(machine, program)
+	handler.PrepareLiveSessionInClassWithDone(machine, program, strings.TrimSpace(launch.ClassName), func(machine *vm.VM, execErr error) error {
+		if dbPath == "" || execErr != nil || dryRun || testLaunch || machine.Org == nil {
+			return nil
+		}
+		store, _, err := openDBStore(dbPath, projectRoot)
+		if err != nil {
+			return err
+		}
+		defer store.Close()
+		return store.Save(storage.SnapshotRuntimeOrg(machine.Org))
+	})
 	return nil
 }
 

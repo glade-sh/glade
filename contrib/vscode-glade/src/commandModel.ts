@@ -11,6 +11,9 @@ export interface GladeDebugConfig {
   request: "launch";
   name: string;
   project?: string;
+  dbPath?: string;
+  className?: string;
+  methodName?: string;
   source: string;
 }
 
@@ -28,16 +31,47 @@ export function editorAnonymousSource(source: TextSource): string | undefined {
 	return text || undefined;
 }
 
-export function execAnonymousArgs(source: string): string[] {
-	return ["exec", "--debug-log", "-", source];
+export function execAnonymousArgs(source: string, projectRoot?: string, dbPath?: string): string[] {
+  const args = ["exec", "--debug-log", "-"];
+  if (projectRoot) {
+    args.push("--project", projectRoot);
+  }
+  if (dbPath) {
+    args.push("--db", dbPath);
+  }
+  args.push(source);
+  return args;
 }
 
-export function debugAnonymousConfig(project: string | undefined, source: string): GladeDebugConfig {
-  return {
+export function debugAnonymousConfig(project: string | undefined, source: string, dbPath?: string): GladeDebugConfig {
+  const config: GladeDebugConfig = {
     type: "glade",
     request: "launch",
     name: "Glade: Debug Anonymous Apex",
     project,
     source,
   };
+  if (dbPath) {
+    config.dbPath = dbPath;
+  }
+  return config;
+}
+
+export function debugTestConfig(project: string, className: string, methodName: string | undefined, dbPath?: string): GladeDebugConfig {
+  const source = methodName ? `${methodName}();` : `${className}();`;
+  const config: GladeDebugConfig = {
+    type: "glade",
+    request: "launch",
+    name: methodName ? `Glade: Debug ${className}.${methodName}` : `Glade: Debug ${className}`,
+    project,
+    source,
+  };
+  if (methodName) {
+    config.className = className;
+    config.methodName = methodName;
+  }
+  if (dbPath) {
+    config.dbPath = dbPath;
+  }
+  return config;
 }

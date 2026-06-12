@@ -13,6 +13,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/apexlog"
+	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/cliui"
 	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/dap"
@@ -1215,6 +1216,9 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	parsed, err := flagparse.New("glade exec").
 		Bool("json", "j").
 		Bool("debug", "").
+		String("project", "p").
+		String("db", "").
+		Bool("dry-run", "").
 		String("trace", "t").
 		String("debug-log", "").
 		String("limit-mode", "").
@@ -1225,6 +1229,13 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	}
 	jsonOut := parsed.Bool("json")
 	debug = parsed.Bool("debug")
+	projectRoot := strings.TrimSpace(parsed.String("project"))
+	runtimeProjectRoot := projectRoot
+	dbPath := strings.TrimSpace(parsed.String("db"))
+	dryRun := parsed.Bool("dry-run")
+	if dbPath != "" && projectRoot == "" {
+		projectRoot = "."
+	}
 	tracePath = parsed.String("trace")
 	debugLogPath = parsed.String("debug-log")
 	if parsed.String("limit-mode") != "" {
@@ -1236,7 +1247,7 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	}
 	sourceParts := parsed.Positionals
 	if len(sourceParts) == 0 {
-		return errors.New("usage: glade exec [--json] [--trace <path>] [--debug-log <path>] '<anonymous apex>'")
+		return errors.New("usage: glade exec [--project <root>] [--db <path>] [--dry-run] [--json] [--trace <path>] [--debug-log <path>] '<anonymous apex>'")
 	}
 
 	program, err := vm.CompileAnonymous(strings.Join(sourceParts, " "))
@@ -1253,6 +1264,37 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	if limitMode != "" {
 		machine.SetLimitMode(limitMode)
 	}
+	var store *storage.SQLiteStore
+	var projectIndex typesys.Index
+	hasProjectRuntime := false
+	if runtimeProjectRoot != "" {
+		p, index, err := loadProjectIndex(runtimeProjectRoot)
+		if err != nil {
+			return err
+		}
+		projectIndex = index
+		hasProjectRuntime = true
+		if dbPath == "" {
+			org := orgStateFromIndex(runtimeProjectRoot, p, index)
+			machine.SetOrg(&org)
+			machine.SetCurrentNamespace(org.Namespace)
+		}
+	}
+	if dbPath != "" {
+		loadedStore, org, err := openDBStore(dbPath, projectRoot)
+		if err != nil {
+			return err
+		}
+		defer loadedStore.Close()
+		store = loadedStore
+		machine.SetOrg(&org)
+		machine.SetCurrentNamespace(org.Namespace)
+	}
+	if hasProjectRuntime {
+		if err := apextest.RegisterProjectRuntimeForRequest(machine, projectIndex); err != nil {
+			return err
+		}
+	}
 	result, execErr := machine.Execute(program)
 	if debugLogPath != "" {
 		log := apexlog.Format(&result, execErr, apexlog.Options{})
@@ -1262,6 +1304,11 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	}
 	if execErr != nil {
 		return execErr
+	}
+	if store != nil && !dryRun && machine.Org != nil {
+		if err := store.Save(storage.SnapshotRuntimeOrg(machine.Org)); err != nil {
+			return err
+		}
 	}
 	if tracePath != "" {
 		if err := writeTraceFile(tracePath, result.Trace); err != nil {

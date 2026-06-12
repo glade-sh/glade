@@ -1,0 +1,30 @@
+name: VS Code Extension
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/vscode-glade.yml"
+      - "contrib/vscode-glade/**"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/vscode-glade.yml"
+      - "contrib/vscode-glade/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contrib/vscode-glade
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: contrib/vscode-glade/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run package

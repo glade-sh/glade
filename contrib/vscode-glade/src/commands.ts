@@ -1,6 +1,8 @@
 import { spawn } from "child_process";
 import * as vscode from "vscode";
 import { debugAnonymousConfig, editorAnonymousSource, execAnonymousArgs } from "./commandModel";
+import { configuredActiveEnvironment } from "./localOrg";
+import { findProjectContext } from "./projectContext";
 
 export function registerGladeCommands(context: vscode.ExtensionContext): void {
   const output = vscode.window.createOutputChannel("Glade");
@@ -11,11 +13,16 @@ export function registerGladeCommands(context: vscode.ExtensionContext): void {
       if (!source) {
         return;
       }
-      const project = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      const project = await findProjectContext();
+      if (!project) {
+        void vscode.window.showErrorMessage("Glade execute requires an SFDX project.");
+        return;
+      }
+      const environment = configuredActiveEnvironment(project);
       output.clear();
       output.show(true);
-      output.appendLine("> glade exec --debug-log - <anonymous apex>");
-      const child = spawn("glade", execAnonymousArgs(source), { cwd: project });
+      output.appendLine(`> glade exec --debug-log - --project ${project.projectRoot} --db ${environment.dbPath} <anonymous apex>`);
+      const child = spawn("glade", execAnonymousArgs(source, project.projectRoot, environment.dbPath), { cwd: project.projectRoot });
       child.stdout.on("data", (chunk: Buffer) => output.append(chunk.toString()));
       child.stderr.on("data", (chunk: Buffer) => output.append(chunk.toString()));
       child.on("error", (error: Error) => {
@@ -34,9 +41,14 @@ export function registerGladeCommands(context: vscode.ExtensionContext): void {
       if (!source) {
         return;
       }
-      const folder = vscode.workspace.workspaceFolders?.[0];
-      const project = folder?.uri.fsPath;
-      await vscode.debug.startDebugging(folder, debugAnonymousConfig(project, source));
+      const project = await findProjectContext();
+      if (!project) {
+        void vscode.window.showErrorMessage("Glade debug requires an SFDX project.");
+        return;
+      }
+      const environment = configuredActiveEnvironment(project);
+      const folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(project.projectRoot));
+      await vscode.debug.startDebugging(folder, debugAnonymousConfig(project.projectRoot, source, environment.dbPath));
     }),
   );
 }

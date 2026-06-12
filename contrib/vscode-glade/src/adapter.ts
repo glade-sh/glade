@@ -4,6 +4,9 @@ import * as vscode from "vscode";
 export interface GladeDebugConfiguration extends vscode.DebugConfiguration {
   program: string;
   project?: string;
+  dbPath?: string;
+  className?: string;
+  methodName?: string;
 }
 
 export function resolveGladeConfiguration(
@@ -27,6 +30,9 @@ export function adapterExecutable(config: GladeDebugConfiguration): vscode.Debug
   const args = ["dap"];
   if (config.project) {
     args.push("--project", config.project);
+  }
+  if (config.dbPath) {
+    args.push("--db", config.dbPath);
   }
   return new vscode.DebugAdapterExecutable("glade", args);
 }

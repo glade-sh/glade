@@ -1221,6 +1221,35 @@ func RegisterCompiledProjectRuntimeForRequest(machine *vm.VM, runtime CompiledPr
 	return registerBaseRuntime(machine, runtime.Methods, runtime.Classes, runtime.Triggers)
 }
 
+func RegisterTestMethodForRequest(machine *vm.VM, index typesys.Index, className, methodName string) error {
+	className = strings.TrimSpace(className)
+	methodName = strings.TrimSpace(methodName)
+	if className == "" || methodName == "" {
+		return fmt.Errorf("test method requires class and method")
+	}
+	var selected *TestCase
+	for _, testCase := range Discover(index, Options{}) {
+		if testCase.ClassName == className && testCase.MethodName == methodName {
+			copy := testCase
+			selected = &copy
+			break
+		}
+	}
+	if selected == nil {
+		return fmt.Errorf("test method %s.%s not found", className, methodName)
+	}
+	methods, errs := compileTestMethods([]TestCase{*selected})
+	key := testCaseKey(*selected)
+	if err := errs[key]; err != nil {
+		return err
+	}
+	method, ok := methods[key]
+	if !ok {
+		return fmt.Errorf("test method %s.%s was not compiled", className, methodName)
+	}
+	return registerTestRuntime(machine, []vm.Method{method})
+}
+
 func compiledProjectRuntimeFromEntry(runtime runtimeCacheEntry) CompiledProjectRuntime {
 	return CompiledProjectRuntime{
 		Methods:   runtime.Methods,

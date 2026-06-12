@@ -42,6 +42,14 @@ const (
 )
 
 func (h *Handler) StartLiveSession(machine *vm.VM, program ir.Program) *LiveSession {
+	return h.StartLiveSessionWithDone(machine, program, nil)
+}
+
+func (h *Handler) StartLiveSessionWithDone(machine *vm.VM, program ir.Program, doneHook LiveSessionDoneHook) *LiveSession {
+	return h.StartLiveSessionInClassWithDone(machine, program, "", doneHook)
+}
+
+func (h *Handler) StartLiveSessionInClassWithDone(machine *vm.VM, program ir.Program, className string, doneHook LiveSessionDoneHook) *LiveSession {
 	session := &LiveSession{
 		handler: h,
 		control: make(chan liveControl),
@@ -60,7 +68,12 @@ func (h *Handler) StartLiveSession(machine *vm.VM, program ir.Program) *LiveSess
 		}))
 	})
 	go func() {
-		_, err := machine.Execute(program)
+		_, err := machine.ExecuteInClass(program, className)
+		if doneHook != nil {
+			if hookErr := doneHook(machine, err); hookErr != nil {
+				err = hookErr
+			}
+		}
 		if err != nil {
 			session.handler.PublishEvent(session.handler.EventMessage("output", map[string]any{
 				"category": "stderr",
