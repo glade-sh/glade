@@ -1923,27 +1923,30 @@ func normalizeCryptoAlgorithm(algorithm string) string {
 }
 
 func generateDigest(algorithm string, data []byte) ([]byte, error) {
-	normalized := normalizeCryptoAlgorithm(algorithm)
+	normalized := strings.ToUpper(algorithm)
 	switch normalized {
 	case "MD5":
 		sum := md5.Sum(data)
 		return sum[:], nil
-	case "SHA1":
+	case "SHA1", "SHA-1":
 		sum := sha1.Sum(data)
 		return sum[:], nil
-	case "SHA256":
+	case "SHA256", "SHA-256":
 		sum := sha256.Sum256(data)
 		return sum[:], nil
-	case "SHA512":
+	case "SHA384", "SHA-384":
+		sum := sha512.Sum384(data)
+		return sum[:], nil
+	case "SHA512", "SHA-512":
 		sum := sha512.Sum512(data)
 		return sum[:], nil
-	case "SHA3256":
+	case "SHA3-256":
 		sum := sha3.Sum256(data)
 		return sum[:], nil
-	case "SHA3384":
+	case "SHA3-384":
 		sum := sha3.Sum384(data)
 		return sum[:], nil
-	case "SHA3512":
+	case "SHA3-512":
 		sum := sha3.Sum512(data)
 		return sum[:], nil
 	default:

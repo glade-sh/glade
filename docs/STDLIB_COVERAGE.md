@@ -36,7 +36,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | BusinessHours | `BusinessHours.diff(String, Datetime, Datetime)` | `partial` | Local BusinessHours record-backed week schedule math; holiday and service-calendar edge behavior is not modeled. |
 | BusinessHours | `BusinessHours.isWithin(String, Datetime)` | `partial` | Local BusinessHours record-backed week schedule math; holiday and service-calendar edge behavior is not modeled. |
 | BusinessHours | `BusinessHours.nextStartDate(String, Datetime)` | `partial` | Local BusinessHours record-backed week schedule math; holiday and service-calendar edge behavior is not modeled. |
-| Crypto | `Crypto.generateDigest` | `partial` | MD5, SHA1, and SHA-256. |
+| Crypto | `Crypto.generateDigest` | `partial` | MD5, SHA-1/SHA1, SHA-256/SHA256, SHA-384/SHA384, SHA-512/SHA512, and SHA3-256/384/512 are modeled; unsupported digest names raise local SecurityException. |
 | Database | `Database.UnitOfWork` | `supported` | Queues local DML operations and applies them on commitWork; discardWork drops pending local work. |
 | Database | `Database.convertLead` | `supported` | Local lead conversion creates Account, Contact, and optional Opportunity records and updates Lead conversion fields. |
 | Database | `Database.countQuery` | `supported` | Dynamic SOQL count execution against the local org with local AccessLevel parsing. |
@@ -94,14 +94,14 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Decimal | `Decimal.divide(Decimal,Integer,RoundingMode)` | `supported` | Divides local Decimal values with explicit scale and RoundingMode. |
 | Decimal | `Decimal.doubleValue` | `supported` | Returns local Decimal value. |
 | Decimal | `Decimal.intValue` | `supported` | Truncates to integer. |
-| Decimal | `Decimal.round` | `partial` | Uses Go round-half-away behavior. |
-| Decimal | `Decimal.setScale` | `partial` | Non-negative scale only; advanced rounding modes not modeled. |
+| Decimal | `Decimal.round` | `partial` | Uses deterministic local HALF_UP tie behavior for finite local Decimal values; full Salesforce Decimal precision is not modeled. |
+| Decimal | `Decimal.setScale` | `partial` | Models finite local Decimal values, negative scale, and common RoundingMode ties up to the local scale fence; full Salesforce Decimal precision is not modeled. |
 | EncodingUtil | `EncodingUtil.base64Decode` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.base64Encode` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.convertFromHex` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.convertToHex` | `supported` | Blob-shaped local value. |
-| EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape; charset validation is not modeled. |
-| EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape; charset validation is not modeled. |
+| EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Models URL form decoding for UTF-8, US-ASCII, and ISO-8859-1 aliases; broader Salesforce charset replacement behavior is not modeled. |
+| EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Models URL form encoding for UTF-8, US-ASCII, and ISO-8859-1 aliases with strict local charset checks; broader Salesforce charset replacement behavior is not modeled. |
 | Exception | `InvalidParameterValueException constructors` | `supported` | Supports zero-arg, message, cause, and existing platform-specific constructor shapes. |
 | Exception | `NoAccessException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
 | Exception | `NoDataFoundException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
@@ -118,7 +118,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Label | `Label.get(String,String)` | `supported` | Resolves local custom label metadata with existing platform and managed-namespace fallbacks. |
 | Label | `Label.get(String,String,String)` | `supported` | Resolves local custom label metadata for an explicit language, then falls back to the local label resolver. |
 | Label | `Label.translationExists(String,String,String)` | `supported` | Returns true when local label metadata has a matching explicit language translation. |
-| Limits | `Limits.get*` | `partial` | SOQL, DML, heap, CPU, async, callout, and email counters. |
+| Limits | `Limits.get*` | `partial` | SOQL, SOSL, DML, heap, CPU, async, callout, email, runAs, and savepoint counters are modeled; unmodeled getter families remain local defaults. |
 | Limits | `Limits.getAsyncCalls` | `supported` | Returns the local async-call counter. |
 | Limits | `Limits.getLimitAsyncCalls` | `supported` | Returns the local async-call limit. |
 | Math | `Math.abs` | `supported` | Integer and Decimal values. |
@@ -129,19 +129,19 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Math | `Math.pow` | `supported` | Numeric values. |
 | Math | `Math.round` | `supported` | Numeric values. |
 | Math | `Math.sqrt` | `supported` | Numeric values. |
-| Messaging | `Messaging.SingleEmailMessage` | `partial` | Common setters only; no delivery transport. |
-| Messaging | `Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption)` | `partial` | Uses local stored-template rendering and accepts the attachment option shape; attachment retrieval is not modeled. |
-| Messaging | `Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption,Boolean)` | `partial` | Uses local stored-template rendering; updateEmailTemplateUsage is accepted for shape and ignored locally. |
-| Messaging | `Messaging.sendEmail` | `partial` | Returns local SendEmailResult and increments email limits. |
+| Messaging | `Messaging.SingleEmailMessage` | `partial` | Common DTO setters/getters and local file attachments are modeled; no delivery transport or Salesforce content attachment service. |
+| Messaging | `Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption)` | `partial` | Uses local stored-template rendering and static-resource attachment retrieval for METADATA_ONLY/METADATA_WITH_BODY; Salesforce content attachment relationships are not modeled. |
+| Messaging | `Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption,Boolean)` | `partial` | Uses local stored-template rendering and static-resource attachment retrieval; updateEmailTemplateUsage is accepted for shape and ignored locally. |
+| Messaging | `Messaging.sendEmail` | `partial` | Returns local SendEmailResult values, validates supported DTOs, and increments email limits; no delivery transport or send-options overloads. |
 | Messaging | `Messaging.sendEmail(Messaging.Email[],Boolean)` | `supported` | Returns ordered local SendEmailResult values for supported email message DTOs; no delivery transport. |
 | PageReference | `PageReference` | `partial` | Constructor, URL, redirect, mutable parameters, headers, and current-page state; getContent, PDF, and full rendering remain outside the local model. |
 | PageReference | `PageReference(partialURL)` | `supported` | Builds a VM-local PageReference from a partial URL with mutable parameters and headers. |
 | PageReference | `PageReference(record)` | `supported` | Builds a Visualforce PageReference from a local ApexPage SObject record. |
-| Pattern | `Matcher.find` | `partial` | Go regexp-backed matching. |
-| Pattern | `Matcher.group` | `partial` | Latest matched group only. |
-| Pattern | `Matcher.matches` | `partial` | Go regexp-backed matching. |
-| Pattern | `Pattern.compile` | `partial` | Go regexp syntax. |
-| Pattern | `Pattern.matches` | `partial` | Whole-string Go regexp match. |
+| Pattern | `Matcher.find` | `partial` | Go regexp-backed Java subset with local match state; Java-only matcher and regex features remain fenced. |
+| Pattern | `Matcher.group` | `partial` | Returns local whole-match and capture groups after find/matches over the supported regex subset; Java-only matcher features remain fenced. |
+| Pattern | `Matcher.matches` | `partial` | Whole-string matching over the local Go regexp-backed Java subset; Java-only regex features remain fenced. |
+| Pattern | `Pattern.compile` | `partial` | Compiles the local Go regexp-backed Java subset with common flags and quote escapes; Java-only regex classes and flags remain fenced. |
+| Pattern | `Pattern.matches` | `partial` | Whole-string matching over the local Go regexp-backed Java subset; Java-only regex features remain fenced. |
 | QuickAction | `QuickAction.describeAvailableActions` | `partial` | Local QuickAction metadata and deterministic DTO results; no live UI action service execution. |
 | QuickAction | `QuickAction.describeAvailableQuickActions(String)` | `partial` | Local QuickAction metadata and deterministic DTO results; no live UI action service execution. |
 | QuickAction | `QuickAction.describeQuickActions(List<String>)` | `partial` | Local QuickAction metadata and deterministic DTO results; no live UI action service execution. |
@@ -191,7 +191,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.lastIndexOf` | `supported` | UTF-8 byte index behavior from Go strings. |
 | String | `String.length` | `supported` | Counts runes. |
 | String | `String.replace` | `supported` | Literal replacement. |
-| String | `String.split` | `partial` | Literal separator, not full Java regex split. |
+| String | `String.split` | `partial` | Uses local Java-regex-like split for the supported Go regexp subset, including limits and \Q...\E quote escapes; empty-match regexes and Java-only features remain fenced. |
 | String | `String.startsWith` | `supported` | UTF-8 string prefix. |
 | String | `String.substring` | `supported` | Rune-indexed substring. |
 | String | `String.toLowerCase` | `supported` | Go Unicode lowercasing. |
@@ -218,15 +218,15 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Test | `Test.invokeContinuationMethod(Object,Continuation)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
 | Test | `Test.invokePage(PageReference)` | `supported` | Returns a typed Component.apex.page handle in test context without rendering Visualforce. |
 | Test | `Test.isRunningTest` | `supported` | Reflects local test context. |
-| Test | `Test.loadData` | `partial` | Loads CSV static-resource content into local org storage through DML. |
+| Test | `Test.loadData` | `partial` | Loads CSV static-resource content with Go CSV parsing, typed field coercion, DML routing, missing-resource errors, and bad-header diagnostics; full Salesforce fixture semantics are not modeled. |
 | Test | `Test.newSendEmailQuickActionDefaults(Id,Id)` | `supported` | Builds deterministic local send-email QuickAction defaults for test execution. |
 | Test | `Test.setContinuationResponse(String,HttpResponse)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
 | Test | `Test.setCurrentPage(PageReference)` | `supported` | Sets the VM-local current PageReference in test context. |
 | Test | `Test.setCurrentPageReference(Object)` | `partial` | Accepts local PageReference object values; arbitrary Object values remain rejected. |
 | Test | `Test.setCurrentPageReference(PageReference)` | `supported` | Sets the VM-local current PageReference in test context. |
 | Test | `Test.setMock` | `partial` | HttpCalloutMock and WebServiceMock routing for local tests; live transport is not executed. |
-| Test | `Test.startTest` | `partial` | Governor-window reset/restore for supported counters. |
-| Test | `Test.stopTest` | `partial` | Drains supported async work. |
+| Test | `Test.startTest` | `partial` | Resets the active governor window for supported local counters; unmodeled service counters remain local boundaries. |
+| Test | `Test.stopTest` | `partial` | Restores outer governor counters and drains supported async work; unmodeled async/service work remains outside the local model. |
 | Test | `Test.testInstall(InstallHandler,Version)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
 | Test | `Test.testInstall(InstallHandler,Version,Boolean)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
 | Test | `Test.testNotificationActionHandler(Messaging.NotificationActionHandler,Messaging.ActionableNotification)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |

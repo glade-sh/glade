@@ -458,7 +458,7 @@ func (vm *VM) renderCapturedEmailTemplate(captured *CapturedEmail) {
 		captured.PlainTextBody = vm.renderEmailTemplateText(storageStringField(template, "Body"), whoID, whatID)
 	}
 }
-func (vm *VM) renderStoredEmailTemplate(args []Value) (Value, error) {
+func (vm *VM) renderStoredEmailTemplate(args []Value, attachmentOption Value) (Value, error) {
 	if len(args) != 3 {
 		return Null, fmt.Errorf("Messaging.renderStoredEmailTemplate expects templateId, whoId, whatId")
 	}
@@ -487,7 +487,71 @@ func (vm *VM) renderStoredEmailTemplate(args []Value) (Value, error) {
 	message.Fields["subject"] = String(vm.renderEmailTemplateText(storageStringField(template, "Subject"), args[1], args[2]))
 	message.Fields["htmlBody"] = String(vm.renderEmailTemplateHTML(template, args[1], args[2]))
 	message.Fields["plainTextBody"] = String(vm.renderEmailTemplateText(storageStringField(template, "Body"), args[1], args[2]))
+	message.Fields["fileAttachments"] = vm.renderStoredEmailTemplateAttachments(template, attachmentOption)
 	return message, nil
+}
+func (vm *VM) renderStoredEmailTemplateAttachments(template storage.Record, option Value) Value {
+	if option.Kind == ValueNull {
+		return List()
+	}
+	optionName := strings.ToUpper(strings.TrimSpace(option.Text))
+	if optionName == "" || optionName == "NONE" {
+		return List()
+	}
+	names := localEmailTemplateAttachmentNames(template)
+	if len(names) == 0 || vm == nil || vm.Org == nil {
+		return List()
+	}
+	withBody := optionName == "METADATA_WITH_BODY"
+	attachments := make([]Value, 0, len(names))
+	for _, name := range names {
+		resource, ok := vm.staticResourceMetadata(name)
+		if !ok {
+			continue
+		}
+		attachment := newEmailFileAttachment()
+		fileName := strings.TrimSpace(resource.Description)
+		if fileName == "" {
+			fileName = resource.Name
+		}
+		attachment.Fields["fileName"] = String(fileName)
+		if strings.TrimSpace(resource.ContentType) != "" {
+			attachment.Fields["contentType"] = String(strings.TrimSpace(resource.ContentType))
+		}
+		if withBody {
+			if content, ok := vm.staticResourceContent(resource.Name); ok {
+				attachment.Fields["body"] = platformScalar("Blob", content)
+			}
+		}
+		attachments = append(attachments, attachment)
+	}
+	return List(attachments...)
+}
+func localEmailTemplateAttachmentNames(template storage.Record) []string {
+	var names []string
+	for _, field := range []string{"Attachment", "Attachments", "StaticResource", "StaticResources", "StaticResourceName", "StaticResourceNames"} {
+		raw := strings.TrimSpace(storageStringField(template, field))
+		if raw == "" {
+			continue
+		}
+		for _, part := range strings.Split(raw, ",") {
+			if name := strings.TrimSpace(part); name != "" {
+				names = append(names, name)
+			}
+		}
+	}
+	return names
+}
+func (vm *VM) staticResourceMetadata(name string) (storage.StaticResourceMetadata, bool) {
+	if vm == nil || vm.Org == nil {
+		return storage.StaticResourceMetadata{}, false
+	}
+	for _, resource := range vm.Org.Metadata.StaticResources {
+		if strings.EqualFold(resource.Name, name) {
+			return resource, true
+		}
+	}
+	return storage.StaticResourceMetadata{}, false
 }
 func (vm *VM) emailTemplateByID(templateID string) (storage.Record, bool) {
 	if vm.Org == nil {
