@@ -198,7 +198,7 @@ Then run focused tests from another terminal. `glade test` auto-connects when
 
 ```bash
 glade test daemon status --project .
-glade test --project . --filter AccountServiceTest
+glade test --project . --class AccountServiceTest
 glade test daemon stop --project .
 ```
 

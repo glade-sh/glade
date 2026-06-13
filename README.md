@@ -85,8 +85,8 @@ The rule is simple. A supported row has code and checked coverage.
 Run one class, one method, or only tests affected by local changes:
 
 ```bash
-glade test --project . --filter AccountServiceTest --json
-glade test --project . --filter AccountServiceTest.testCreatesAccount --json
+glade test --project . --class AccountServiceTest --json
+glade test --project . --class AccountServiceTest --method testCreatesAccount --json
 glade test changed --project . --since origin/main --json
 glade test failed --project .
 glade performance scan --project . --json > reports/glade-performance.json

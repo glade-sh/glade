@@ -260,7 +260,7 @@ var commandReferences = []CommandHelp{
 			{Name: "--gc-aggressive", Description: "Run with GOGC=50."},
 			{Name: "--limit-mode", Value: "<mode>", Description: "Governor limit mode: permissive or strict."},
 		},
-		Examples: []string{"glade test serve --project .", "glade test --project . --filter AccountServiceTest"},
+		Examples: []string{"glade test serve --project .", "glade test --project . --class AccountServiceTest"},
 	},
 	{
 		Name:        "dev",
@@ -742,9 +742,9 @@ Examples:
   glade test changed --project . --since HEAD
   glade test failed --project .
   glade test clear-cache --project .
-  glade test --project . --filter AccountServiceTest
-  glade test --project . --no-cache --filter AccountServiceTest
-  glade test --project . --connect --filter AccountServiceTest
+  glade test --project . --class AccountServiceTest
+  glade test --project . --no-cache --class AccountServiceTest
+  glade test --project . --connect --class AccountServiceTest
   glade test --project . --daemon --watch
   glade test --project . --changed-since origin/main --json
 `)

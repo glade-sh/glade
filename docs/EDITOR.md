@@ -309,7 +309,7 @@ in place, and how `glade test serve` interacts with the on-disk file.
 
 ```bash
 glade test clear-cache --project .
-glade test --project . --no-cache --filter AccountServiceTest
+glade test --project . --no-cache --class AccountServiceTest
 ```
 
 Clear the cache after branch switches or Glade upgrades. Restart

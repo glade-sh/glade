@@ -150,10 +150,10 @@ treat the cache as suspect.
 glade test clear-cache --project .
 
 # One run without reading or writing startup.gob (also skips test-server auto-connect)
-glade test --project . --no-cache --filter MyTest
+glade test --project . --no-cache --class MyTest
 
 # Force a local harness build even if a test server is running
-glade test --project . --no-serve --filter MyTest
+glade test --project . --no-serve --class MyTest
 
 # Persistent warm server (separate from startup.gob, but shares .glade/test/)
 glade test serve --project .

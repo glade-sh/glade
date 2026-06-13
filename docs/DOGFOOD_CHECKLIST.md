@@ -49,7 +49,7 @@ at its root.
 
 ## 4. Focused Class Or Method
 
-Day-to-day test runs use `--filter`:
+Day-to-day test runs use exact class and method selectors:
 
 ```bash
 glade test --project . --class AccountServiceTest --json
@@ -78,7 +78,7 @@ On large projects, also smoke the warm path:
 
 ```bash
 glade test serve --project .
-glade test --project . --filter <OneTestClass>
+glade test --project . --class <OneTestClass>
 ```
 
 The second command should auto-connect and skip a full cold startup when

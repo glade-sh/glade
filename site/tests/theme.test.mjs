@@ -601,8 +601,9 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(supportMap, /## Not supported today/);
   assert.match(supportMap, /Counts come from the checked standard library coverage report/);
   assert.match(supportMap, /\| String, Decimal, Boolean, Math \| Wide local support \| 29 supported, 3 partial \/ 32 tracked \|/);
+  assert.match(supportMap, /\| ApexPages and PageReference \| Wide controller support \| 13 supported, 2 partial \/ 15 tracked \|/);
   assert.match(supportMap, /\| UserInfo, URL, and Label \| Wide local support \| 21 supported \/ 21 tracked \|/);
-  assert.match(supportMap, /\| Type, FeatureManagement, Exception, and diagnostics \| Works with limits \| 6 supported, 3 partial \/ 9 tracked \|/);
+  assert.match(supportMap, /\| Type, FeatureManagement, and Exception \| Works with limits \| 6 supported, 2 partial \/ 8 tracked \|/);
   assert.match(supportMap, /\| Fenced live service APIs \| Not supported \| 5 unsupported \/ 5 tracked \|/);
   assert.match(installation, /Recommended path: use the one-line installer/);
   assert.match(installation, /class="docs-install-grid"/);
