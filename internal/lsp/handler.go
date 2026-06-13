@@ -430,7 +430,14 @@ func (h *Handler) HoverForName(name string, hoverRange *Range) *Hover {
 	return nil
 }
 
-func (h *Handler) Completion(_ CompletionParams) CompletionList {
+type completionContext int
+
+const (
+	completionContextDefault completionContext = iota
+	completionContextSOQLSelect
+)
+
+func (h *Handler) Completion(params CompletionParams) CompletionList {
 	items := make([]CompletionItem, 0, len(h.index.Types)+len(h.index.Objects))
 	seen := make(map[string]bool)
 	add := func(item CompletionItem) {
@@ -478,8 +485,29 @@ func (h *Handler) Completion(_ CompletionParams) CompletionList {
 	for _, keyword := range []string{"class", "trigger", "interface", "enum", "public", "private", "protected", "global", "static", "void", "return", "new", "for", "if", "else"} {
 		add(CompletionItem{Label: keyword, Kind: completionItemKindKeyword, Detail: "Apex keyword"})
 	}
-	sortCompletionItems(items)
+	sortCompletionItems(items, h.completionContext(params))
 	return CompletionList{Items: items}
+}
+
+func (h *Handler) completionContext(params CompletionParams) completionContext {
+	text, ok := h.documentText(pathFromURI(params.TextDocument.URI))
+	if !ok {
+		return completionContextDefault
+	}
+	offset, err := offsetForPosition(text, params.Position)
+	if err != nil {
+		return completionContextDefault
+	}
+	prefix := strings.ToLower(text[:offset])
+	queryStart := strings.LastIndex(prefix, "[")
+	if queryStart < 0 || strings.LastIndex(prefix, "]") > queryStart {
+		return completionContextDefault
+	}
+	clause := prefix[queryStart+1:]
+	if strings.Contains(clause, "select") && !strings.Contains(clause, " from ") {
+		return completionContextSOQLSelect
+	}
+	return completionContextDefault
 }
 
 func (h *Handler) Definition(params DefinitionParams) []Location {

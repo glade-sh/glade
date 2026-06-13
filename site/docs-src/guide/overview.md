@@ -59,7 +59,7 @@ glade test changed --project . --since origin/main
 
 - You need live auth, sessions, identity, or org-hosted process engines.
 - You need full Visualforce rendering or PDF generation.
-- You need Bulk API, Streaming, Pub/Sub, GraphQL, metadata deploy/retrieve jobs, or Tooling objects beyond the checked local source/schema metadata baseline.
+- You need Bulk API beyond simple scalar local query whole-result CSV, Streaming, Pub/Sub, GraphQL, metadata deploy/retrieve jobs, or Tooling objects beyond the checked local source/schema metadata baseline.
 - You need exact production governor accounting.
 
 ## Support claims

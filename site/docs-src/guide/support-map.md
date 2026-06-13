@@ -77,7 +77,7 @@ This is the smaller list a first user should check before betting on Glade.
 | Live Salesforce auth and sessions | The local server exposes local stubs. It does not implement real Salesforce OAuth, session validation, or org identity services. |
 | Fenced live service APIs | Answers zone search, password reset output, live identity/admin mutation, and hosted process/service engines require Salesforce-hosted data or execution. |
 | Full Visualforce rendering | Controller logic is the supported path. Component rendering, page lifecycle, `getContent`, and PDF generation remain outside the current runtime. |
-| Broad REST and Tooling API parity | The local API server covers the checked local baseline. Bulk API, Composite Batch/Graph, Streaming/PubSub, GraphQL, layout/default-value metadata, metadata deploy/retrieve jobs, and live org-only Tooling surfaces remain future work. |
+| Broad REST and Tooling API parity | The local API server covers the checked local baseline, including Composite Batch local subrequests and Bulk API v2 simple scalar query job create/status/whole-result CSV. Broader Bulk API including locator paging, Composite Graph/Tree, Streaming/PubSub, GraphQL, layout/default-value metadata, metadata deploy/retrieve jobs, and live org-only Tooling surfaces remain future work. |
 | Live outbound side effects | Real callouts, delivered email, push notifications, and external service mutations are not performed. Tests should use local mocks and result objects. |
 | Exact Salesforce governor accounting | Glade tracks deterministic local limits. Salesforce's full production accounting and every platform-specific counter are not complete. |
 
@@ -133,11 +133,11 @@ checked landscape it reports:
 
 | Bucket | Rows |
 | --- | ---: |
-| Implemented | 130266 |
+| Implemented | 130268 |
 | Partial | 1 |
-| Passive shape | 47494 |
+| Passive shape | 47493 |
 | Stub/no-op | 262 |
-| Explicit unsupported | 6338 |
+| Explicit unsupported | 6337 |
 | Missing shape gaps | 0 |
 | Missing behavior gaps | 0 |
 | Missing evidence gaps | 0 |

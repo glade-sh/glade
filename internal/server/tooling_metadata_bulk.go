@@ -1,13 +1,17 @@
 package server
 
 import (
+	"bytes"
+	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/soql"
@@ -724,7 +728,7 @@ func (s *Server) handleBulkJobs(w http.ResponseWriter, r *http.Request, version 
 	}
 	switch parts[0] {
 	case "query":
-		writeUnsupportedBulkQueryJob(w, r, parts[1:])
+		s.handleBulkQueryJob(w, r, version, parts[1:])
 	case "ingest":
 		writeUnsupportedBulkIngestJob(w, r, parts[1:])
 	default:
@@ -732,7 +736,16 @@ func (s *Server) handleBulkJobs(w http.ResponseWriter, r *http.Request, version 
 	}
 }
 
-func writeUnsupportedBulkQueryJob(w http.ResponseWriter, r *http.Request, parts []string) {
+type bulkQueryJob struct {
+	id      string
+	version string
+	query   string
+	object  string
+	fields  []string
+	records []storage.Record
+}
+
+func (s *Server) handleBulkQueryJob(w http.ResponseWriter, r *http.Request, version string, parts []string) {
 	switch {
 	case len(parts) == 0:
 		if !methodAllowed(r, http.MethodGet, http.MethodPost) {
@@ -740,14 +753,17 @@ func writeUnsupportedBulkQueryJob(w http.ResponseWriter, r *http.Request, parts 
 			return
 		}
 		if r.Method == http.MethodPost {
-			if _, ok := decodeOptionalJSONObject(w, r); !ok {
-				return
-			}
+			s.createBulkQueryJob(w, r, version)
+			return
 		}
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 query jobs are not implemented in the local server")
 	case len(parts) == 1:
 		if !methodAllowed(r, http.MethodGet, http.MethodPatch, http.MethodDelete) {
 			writeMethodNotAllowed(w, http.MethodGet, http.MethodPatch, http.MethodDelete)
+			return
+		}
+		if r.Method == http.MethodGet {
+			s.writeBulkQueryJobRecord(w, parts[0])
 			return
 		}
 		if r.Method == http.MethodPatch {
@@ -761,9 +777,183 @@ func writeUnsupportedBulkQueryJob(w http.ResponseWriter, r *http.Request, parts 
 			writeMethodNotAllowed(w, http.MethodGet)
 			return
 		}
-		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 query job results are not implemented in the local server")
+		s.writeBulkQueryJobResults(w, parts[0])
 	default:
 		writeSalesforceError(w, errUnknownEndpoint)
+	}
+}
+
+func (s *Server) createBulkQueryJob(w http.ResponseWriter, r *http.Request, version string) {
+	body, ok := decodeOptionalJSONObject(w, r)
+	if !ok {
+		return
+	}
+	operation := bulkJSONString(body, "operation")
+	if operation == "" {
+		writeSalesforceError(w, errRequiredFieldMissing, "operation is required")
+		return
+	}
+	if !strings.EqualFold(operation, "query") {
+		writeSalesforceError(w, errUnsupportedFeature, "Only Bulk API v2 query jobs are implemented in the local server")
+		return
+	}
+	queryText := bulkJSONString(body, "query")
+	if strings.TrimSpace(queryText) == "" {
+		writeSalesforceError(w, errRequiredFieldMissing, "query is required")
+		return
+	}
+	query, err := soql.Parse(queryText)
+	if err != nil {
+		writeSalesforceError(w, errMalformedQuery, err.Error())
+		return
+	}
+	if len(query.ChildQueries) > 0 || len(query.Typeofs) > 0 || len(query.Aggregates) > 0 || query.Count {
+		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 query jobs support simple local SOQL projections only")
+		return
+	}
+	if !bulkQueryHasSimpleScalarProjection(query) {
+		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 query jobs support simple scalar field projections only")
+		return
+	}
+	result, err := soql.Execute(*s.Org, query)
+	if err != nil {
+		writeSalesforceError(w, errMalformedQuery, err.Error())
+		return
+	}
+	if s.bulkQueryJobs == nil {
+		s.bulkQueryJobs = make(map[string]bulkQueryJob)
+	}
+	s.nextBulkJobID++
+	id := fmt.Sprintf("750%012d", s.nextBulkJobID)
+	job := bulkQueryJob{
+		id:      id,
+		version: version,
+		query:   queryText,
+		object:  query.Object,
+		fields:  append([]string(nil), query.Fields...),
+		records: cloneQueryRecords(result.Records),
+	}
+	s.bulkQueryJobs[id] = job
+	writeJSON(w, http.StatusOK, bulkQueryJobPayload(job))
+}
+
+func bulkQueryHasSimpleScalarProjection(query soql.Query) bool {
+	if len(query.Fields) == 0 {
+		return false
+	}
+	for _, field := range query.Fields {
+		if strings.ContainsAny(field, "(). ") {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *Server) writeBulkQueryJobRecord(w http.ResponseWriter, id string) {
+	job, ok := s.lookupBulkQueryJob(id)
+	if !ok {
+		writeSalesforceError(w, errUnknownEndpoint, "Bulk API v2 query job not found")
+		return
+	}
+	writeJSON(w, http.StatusOK, bulkQueryJobPayload(job))
+}
+
+func (s *Server) writeBulkQueryJobResults(w http.ResponseWriter, id string) {
+	job, ok := s.lookupBulkQueryJob(id)
+	if !ok {
+		writeSalesforceError(w, errUnknownEndpoint, "Bulk API v2 query job not found")
+		return
+	}
+	var buffer bytes.Buffer
+	writer := csv.NewWriter(&buffer)
+	if err := writer.Write(job.fields); err != nil {
+		writeSalesforceError(w, errStoreFailure, err.Error())
+		return
+	}
+	for _, record := range job.records {
+		row := make([]string, 0, len(job.fields))
+		for _, field := range job.fields {
+			row = append(row, bulkCSVValue(record, field))
+		}
+		if err := writer.Write(row); err != nil {
+			writeSalesforceError(w, errStoreFailure, err.Error())
+			return
+		}
+	}
+	writer.Flush()
+	if err := writer.Error(); err != nil {
+		writeSalesforceError(w, errStoreFailure, err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "text/csv")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(buffer.Bytes())
+}
+
+func (s *Server) lookupBulkQueryJob(id string) (bulkQueryJob, bool) {
+	job, ok := s.bulkQueryJobs[id]
+	return job, ok
+}
+
+func bulkQueryJobPayload(job bulkQueryJob) map[string]any {
+	return map[string]any{
+		"id":                     job.id,
+		"operation":              "query",
+		"object":                 job.object,
+		"createdById":            string(defaultLocalUserID),
+		"state":                  "JobComplete",
+		"concurrencyMode":        "Parallel",
+		"contentType":            "CSV",
+		"apiVersion":             strings.TrimPrefix(job.version, "v"),
+		"query":                  job.query,
+		"numberRecordsProcessed": len(job.records),
+		"retries":                0,
+		"totalProcessingTime":    0,
+	}
+}
+
+func bulkJSONString(body map[string]json.RawMessage, key string) string {
+	raw, ok := body[key]
+	if !ok {
+		return ""
+	}
+	var value string
+	if err := json.Unmarshal(raw, &value); err != nil {
+		return ""
+	}
+	return value
+}
+
+func bulkCSVValue(record storage.Record, field string) string {
+	if strings.EqualFold(field, "Id") {
+		return string(record.ID)
+	}
+	value, ok := record.Fields[field]
+	if !ok {
+		for name, candidate := range record.Fields {
+			if strings.EqualFold(name, field) {
+				value = candidate
+				ok = true
+				break
+			}
+		}
+	}
+	if !ok {
+		return ""
+	}
+	switch value.Kind {
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
+		return value.String
+	case storage.ValueInteger:
+		return strconv.FormatInt(value.Integer, 10)
+	case storage.ValueBoolean:
+		return strconv.FormatBool(value.Boolean)
+	case storage.ValueDecimal:
+		return value.Decimal
+	case storage.ValueID:
+		return string(value.ID)
+	default:
+		return ""
 	}
 }
 

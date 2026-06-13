@@ -644,8 +644,8 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(supportMap, /\| Type, FeatureManagement, and Exception \| Works with limits \| 6 supported, 2 partial \/ 8 tracked \|/);
   assert.match(supportMap, /\| Fenced live service APIs \| Not supported \| 2 unsupported \/ 2 tracked \|/);
   assert.match(supportMap, /## Current Surface Landscape/);
-  assert.match(supportMap, /\| Implemented \| 130266 \|/);
-  assert.match(supportMap, /\| Explicit unsupported \| 6338 \|/);
+  assert.match(supportMap, /\| Implemented \| 130268 \|/);
+  assert.match(supportMap, /\| Explicit unsupported \| 6337 \|/);
   assert.match(supportMap, /\| Missing shape gaps \| 0 \|/);
   assert.match(supportMap, /\| Failure rows \| 0 \|/);
   assert.doesNotMatch(supportMap, /Approval\.process is not supported/);
@@ -666,14 +666,16 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(compatibilityDashboard, /\| Required supported capabilities \| 21 \|/);
   assert.match(compatibilityDashboard, /\| Tracked post-MVP partial capabilities \| 9 \|/);
   assert.match(compatibilityDashboard, /## Current Surface Landscape/);
-  assert.match(compatibilityDashboard, /\| Implemented rows \| 130266 \|/);
-  assert.match(compatibilityDashboard, /\| Explicit unsupported rows \| 6338 \|/);
+  assert.match(compatibilityDashboard, /\| Implemented rows \| 130268 \|/);
+  assert.match(compatibilityDashboard, /\| Explicit unsupported rows \| 6337 \|/);
   assert.match(compatibilityDashboard, /\| Failure rows \| 0 \|/);
   assert.match(localApiServer, /^# Run a Local Salesforce-Shaped API/m);
   assert.match(localApiServer, /record counts/);
   assert.match(localApiServer, /Tooling source metadata/);
   assert.match(localApiServer, /Tooling schema metadata/);
   assert.match(localApiServer, /Composite sObject insert/);
+  assert.match(localApiServer, /Composite Batch local subrequests/);
+  assert.match(localApiServer, /Bulk API v2 simple scalar query job create\/status\/whole-result CSV/);
   assert.match(localApiServer, /limits\/recordCount\?sObjects=Account/);
 });
 

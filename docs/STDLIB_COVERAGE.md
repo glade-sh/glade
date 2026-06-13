@@ -31,12 +31,12 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Assert | `Assert.isTrue` | `supported` | Routes through local assertion failures with optional message text. |
 | Boolean | `Boolean.valueOf(Object)` | `supported` | Converts supported local field/object values into Boolean values. |
 | Boolean | `Boolean.valueOf(String)` | `supported` | Converts strings to Boolean using Apex-shaped true/false parsing. |
-| BusinessHours | `BusinessHours.add(String, Datetime, Long)` | `partial` | Local BusinessHours record-backed week schedule math; holiday and service-calendar edge behavior is not modeled. |
-| BusinessHours | `BusinessHours.addGmt(String, Datetime, Long)` | `partial` | Local BusinessHours record-backed week schedule math; holiday and service-calendar edge behavior is not modeled. |
-| BusinessHours | `BusinessHours.diff(String, Datetime, Datetime)` | `partial` | Local BusinessHours record-backed week schedule math; holiday and service-calendar edge behavior is not modeled. |
-| BusinessHours | `BusinessHours.isWithin(String, Datetime)` | `partial` | Local BusinessHours record-backed week schedule math; holiday and service-calendar edge behavior is not modeled. |
-| BusinessHours | `BusinessHours.nextStartDate(String, Datetime)` | `partial` | Local BusinessHours record-backed week schedule math; holiday and service-calendar edge behavior is not modeled. |
-| Crypto | `Crypto.generateDigest` | `partial` | MD5, SHA-1/SHA1, SHA-256/SHA256, SHA-384/SHA384, SHA-512/SHA512, and SHA3-256/384/512 are modeled; unsupported digest names raise local SecurityException. |
+| BusinessHours | `BusinessHours.add(String, Datetime, Long)` | `partial` | Fixture-backed local BusinessHours record week schedule math; holiday and service-calendar edge behavior is not modeled. |
+| BusinessHours | `BusinessHours.addGmt(String, Datetime, Long)` | `partial` | Fixture-backed local BusinessHours record week schedule math; holiday and service-calendar edge behavior is not modeled. |
+| BusinessHours | `BusinessHours.diff(String, Datetime, Datetime)` | `partial` | Fixture-backed local BusinessHours record week schedule math; holiday and service-calendar edge behavior is not modeled. |
+| BusinessHours | `BusinessHours.isWithin(String, Datetime)` | `partial` | Fixture-backed local BusinessHours record week schedule math; holiday and service-calendar edge behavior is not modeled. |
+| BusinessHours | `BusinessHours.nextStartDate(String, Datetime)` | `partial` | Fixture-backed local BusinessHours record week schedule math; holiday and service-calendar edge behavior is not modeled. |
+| Crypto | `Crypto.generateDigest` | `partial` | MD5, SHA-1/SHA1, SHA-256/SHA256, SHA-384/SHA384, SHA-512/SHA512, and SHA3-256/384/512 are modeled and SHA-256 is fixture-pinned; unsupported digest names raise local SecurityException. |
 | Database | `Database.UnitOfWork` | `supported` | Queues local DML operations and applies them on commitWork; discardWork drops pending local work. |
 | Database | `Database.convertLead` | `supported` | Local lead conversion creates Account, Contact, and optional Opportunity records and updates Lead conversion fields. |
 | Database | `Database.countQuery` | `supported` | Dynamic SOQL count execution against the local org with local AccessLevel parsing. |
@@ -94,27 +94,27 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Decimal | `Decimal.divide(Decimal,Integer,RoundingMode)` | `supported` | Divides local Decimal values with explicit scale and RoundingMode. |
 | Decimal | `Decimal.doubleValue` | `supported` | Returns local Decimal value. |
 | Decimal | `Decimal.intValue` | `supported` | Truncates to integer. |
-| Decimal | `Decimal.round` | `partial` | Uses deterministic local HALF_UP tie behavior for finite local Decimal values; full Salesforce Decimal precision is not modeled. |
-| Decimal | `Decimal.setScale` | `partial` | Models finite local Decimal values, negative scale, and common RoundingMode ties up to the local scale fence; full Salesforce Decimal precision is not modeled. |
+| Decimal | `Decimal.round` | `partial` | Uses deterministic local HALF_UP tie behavior for finite local Decimal values and is fixture-pinned for simple ties; full Salesforce Decimal precision is not modeled. |
+| Decimal | `Decimal.setScale` | `partial` | Models finite local Decimal values, negative scale, and common RoundingMode ties up to the local scale fence; fixture covers simple scale and HALF_UP ties, while full Salesforce Decimal precision is not modeled. |
 | EncodingUtil | `EncodingUtil.base64Decode` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.base64Encode` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.convertFromHex` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.convertToHex` | `supported` | Blob-shaped local value. |
-| EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Models URL form decoding for UTF-8, US-ASCII, and ISO-8859-1 aliases; broader Salesforce charset replacement behavior is not modeled. |
-| EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Models URL form encoding for UTF-8, US-ASCII, and ISO-8859-1 aliases with strict local charset checks; broader Salesforce charset replacement behavior is not modeled. |
+| EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Models URL form decoding for UTF-8, US-ASCII, and ISO-8859-1 aliases and is fixture-pinned for UTF-8; broader Salesforce charset replacement behavior is not modeled. |
+| EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Models URL form encoding for UTF-8, US-ASCII, and ISO-8859-1 aliases with strict local charset checks and is fixture-pinned for UTF-8; broader Salesforce charset replacement behavior is not modeled. |
 | Exception | `InvalidParameterValueException constructors` | `supported` | Supports zero-arg, message, cause, and existing platform-specific constructor shapes. |
 | Exception | `NoAccessException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
 | Exception | `NoDataFoundException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
 | Exception | `NullPointerException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
 | FeatureManagement | `FeatureManagement.checkPermission` | `partial` | Checks local runAs permission-list state. |
 | HTTP | `Http.send(HttpRequest)` | `supported` | Routes local callouts through registered HttpCalloutMock implementations; real outbound network transport is intentionally not executed by the local runtime. |
-| HTTP | `HttpRequest` | `partial` | Endpoint, method, headers, timeout, body, and blob body accessors. |
-| HTTP | `HttpResponse` | `partial` | Status, status code, headers, body, and blob body accessors. |
-| JSON | `JSON.deserialize` | `partial` | SObject, class, inner DTO, enum, collection, primitive, and string-key map shapes for supported targets; unsupported map key targets remain fenced. |
-| JSON | `JSON.deserializeStrict` | `partial` | Rejects unknown fields for supported schema/class targets, including nested local DTO fields; unsupported target coercions remain outside the local model. |
-| JSON | `JSON.deserializeUntyped` | `partial` | Maps JSON into local primitive/list/map values with deterministic Apex-shaped containers; full Salesforce parser edge parity is not modeled. |
-| JSON | `JSON.serialize` | `partial` | Serializes supported Apex DTO, enum, SObject, collection, primitive, and suppressApexObjectNulls values; full Salesforce generator edge parity is not modeled. |
-| JSON | `JSON.serializePretty` | `partial` | Pretty output for supported Apex DTO, SObject, collection, and primitive values; full Salesforce generator edge parity is not modeled. |
+| HTTP | `HttpRequest` | `partial` | Endpoint, method, headers, timeout, body, and blob body accessors are local-fixture pinned; client certificates and live transport remain outside local support. |
+| HTTP | `HttpResponse` | `partial` | Status, status code, headers, body, and blob body accessors are local-fixture pinned; live transport response behavior remains outside local support. |
+| JSON | `JSON.deserialize` | `partial` | Maps supported source DTOs, including String, Integer, and List<String> fields, plus SObject, enum, collection, primitive, and string-key map targets; unsupported map key targets remain fenced. |
+| JSON | `JSON.deserializeStrict` | `partial` | Accepts known fields and rejects unknown fields for supported schema/class targets, including source DTO and nested local DTO fields; unsupported target coercions remain outside the local model. |
+| JSON | `JSON.deserializeUntyped` | `partial` | Maps nested JSON primitive/list/map graphs into deterministic Apex-shaped local containers; full Salesforce parser edge parity is not modeled. |
+| JSON | `JSON.serialize` | `partial` | Serializes supported source DTO, Apex DTO, enum, SObject, collection, primitive, and suppressApexObjectNulls values; full Salesforce generator edge parity is not modeled. |
+| JSON | `JSON.serializePretty` | `partial` | Pretty output for supported source DTO, Apex DTO, SObject, collection, and primitive values; full Salesforce generator edge parity is not modeled. |
 | Label | `Label.get(String,String)` | `supported` | Resolves local custom label metadata with existing platform and managed-namespace fallbacks. |
 | Label | `Label.get(String,String,String)` | `supported` | Resolves local custom label metadata for an explicit language, then falls back to the local label resolver. |
 | Label | `Label.translationExists(String,String,String)` | `supported` | Returns true when local label metadata has a matching explicit language translation. |
@@ -137,11 +137,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | PageReference | `PageReference` | `partial` | Constructor, URL, redirect, mutable parameters, headers, and current-page state; getContent, PDF, and full rendering remain outside the local model. |
 | PageReference | `PageReference(partialURL)` | `supported` | Builds a VM-local PageReference from a partial URL with mutable parameters and headers. |
 | PageReference | `PageReference(record)` | `supported` | Builds a Visualforce PageReference from a local ApexPage SObject record. |
-| Pattern | `Matcher.find` | `partial` | Go regexp-backed Java subset with local match state; Java-only matcher and regex features remain fenced. |
-| Pattern | `Matcher.group` | `partial` | Returns local whole-match and capture groups after find/matches over the supported regex subset; Java-only matcher features remain fenced. |
-| Pattern | `Matcher.matches` | `partial` | Whole-string matching over the local Go regexp-backed Java subset; Java-only regex features remain fenced. |
-| Pattern | `Pattern.compile` | `partial` | Compiles the local Go regexp-backed Java subset with common flags and quote escapes; Java-only regex classes and flags remain fenced. |
-| Pattern | `Pattern.matches` | `partial` | Whole-string matching over the local Go regexp-backed Java subset; Java-only regex features remain fenced. |
+| Pattern | `Matcher.find` | `partial` | Go regexp-backed Java subset with fixture-pinned local match state; Java-only matcher and regex features remain fenced. |
+| Pattern | `Matcher.group` | `partial` | Fixture-pinned whole-match and capture groups after find/matches over the supported regex subset; Java-only matcher features remain fenced. |
+| Pattern | `Matcher.matches` | `partial` | Fixture-pinned whole-string matching over the local Go regexp-backed Java subset; Java-only regex features remain fenced. |
+| Pattern | `Pattern.compile` | `partial` | Compiles the local Go regexp-backed Java subset with common flags and quote escapes; fixture pins simple captures, while Java-only regex classes and flags remain fenced. |
+| Pattern | `Pattern.matches` | `partial` | Fixture-pinned whole-string matching over the local Go regexp-backed Java subset; Java-only regex features remain fenced. |
 | QuickAction | `QuickAction.describeAvailableActions` | `partial` | Local QuickAction metadata and deterministic DTO results; no live UI action service execution. |
 | QuickAction | `QuickAction.describeAvailableQuickActions(String)` | `partial` | Local QuickAction metadata and deterministic DTO results; no live UI action service execution. |
 | QuickAction | `QuickAction.describeQuickActions(List<String>)` | `partial` | Local QuickAction metadata and deterministic DTO results; no live UI action service execution. |
@@ -165,11 +165,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Schedulable | `Schedulable.execute(SchedulableContext)` | `supported` | Queues and drains local Scheduled Apex jobs during Test.stopTest with deterministic CronTrigger IDs. |
 | Schedulable | `SchedulableContext.getTriggerId()` | `supported` | Queues and drains local Scheduled Apex jobs during Test.stopTest with deterministic CronTrigger IDs. |
 | Schema | `DescribeFieldResult` | `partial` | Local metadata-backed field labels, picklists, reference targets, and access/create/update booleans; full org metadata parity is not modeled. |
-| Schema | `DescribeSObjectResult` | `partial` | Local metadata-backed object labels, key prefixes, query/search flags, fields, record types, and child relationships; full org metadata parity is not modeled. |
+| Schema | `DescribeSObjectResult` | `partial` | Fixture-backed local object labels, key prefixes, query/search flags, fields, record types, and child relationships; full org metadata parity is not modeled. |
 | Schema | `Schema.describeDataCategoryGroupStructures(List<Schema.DataCategoryGroupSobjectTypePair>,Boolean)` | `partial` | Deterministic local data category structures from org metadata; no external category service lookup. |
 | Schema | `Schema.describeDataCategoryGroups(List<String>)` | `partial` | Deterministic local data category group describes from org metadata; empty when no metadata is loaded. |
-| Schema | `Schema.describeSObjects(List<String>)` | `partial` | Local metadata-backed object names, labels, key prefixes, access booleans, fields, record types, and SObjectType tokens; full org metadata parity is not modeled. |
-| Schema | `Schema.getGlobalDescribe()` | `partial` | Local metadata-backed describe map for loaded standard and project objects; full org metadata parity is not modeled. |
+| Schema | `Schema.describeSObjects(List<String>)` | `partial` | Fixture-backed local metadata object names, labels, key prefixes, access booleans, fields, record types, and SObjectType tokens; full org metadata parity is not modeled. |
+| Schema | `Schema.getGlobalDescribe()` | `partial` | Fixture-backed local describe map for loaded standard and project objects; full org metadata parity is not modeled. |
 | Search | `Search.find` | `partial` | Returns deterministic SearchResult DTOs from fixed search results or local org records; no external ranking, stemming, synonyms, language, or rich snippets. |
 | Search | `Search.find(String,AccessLevel)` | `partial` | Uses deterministic local org search with AccessLevel permission checks; no external ranking, stemming, synonyms, language, or rich snippets. |
 | Search | `Search.find(String,Object)` | `partial` | Accepts recognized local AccessLevel or SuggestionOption object values against deterministic local org search; no external ranking, stemming, synonyms, or language model. |
@@ -191,7 +191,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.lastIndexOf` | `supported` | UTF-8 byte index behavior from Go strings. |
 | String | `String.length` | `supported` | Counts runes. |
 | String | `String.replace` | `supported` | Literal replacement. |
-| String | `String.split` | `partial` | Uses local Java-regex-like split for the supported Go regexp subset, including limits and \Q...\E quote escapes; empty-match regexes and Java-only features remain fenced. |
+| String | `String.split` | `partial` | Uses local Java-regex-like split for the supported Go regexp subset, including fixture-pinned simple delimiters and limits plus \Q...\E quote escapes; empty-match regexes and Java-only features remain fenced. |
 | String | `String.startsWith` | `supported` | UTF-8 string prefix. |
 | String | `String.substring` | `supported` | Rune-indexed substring. |
 | String | `String.toLowerCase` | `supported` | Go Unicode lowercasing. |
@@ -245,7 +245,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | TrailblazerIdentity | `TrailblazerIdentity.generateUserEmailVerificationToken(String,String,String)` | `supported` | Returns a deterministic local verification token for test execution; no live identity service is contacted. |
 | TrailblazerIdentity | `TrailblazerIdentity.getUserOrgInfo(List<String>)` | `supported` | Returns an empty local UserOrgInfo list for deterministic test execution; no live identity service lookup is performed. |
 | TrailblazerIdentity | `TrailblazerIdentity.splunkLog(String,String)` | `supported` | Accepts local log calls and returns null for deterministic test execution; no live logging service is contacted. |
-| Type | `Type.forName` | `partial` | Local class/type token lookup. |
+| Type | `Type.forName` | `partial` | Fixture-pinned local class/type token lookup; full platform namespace and org type resolution remains partial. |
 | Type | `Type.getName` | `supported` | Returns local type token name. |
 | Type | `Type.newInstance` | `supported` | Constructs local classes through zero-argument constructor dispatch and rejects uninstantiable built-ins. |
 | UIRequest | `UIRequest.getCurrent()` | `supported` | Returns deterministic local request context values for local Apex execution. |
@@ -269,5 +269,5 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | UserInfo | `UserInfo.hasPackageLicense(Id)` | `supported` | Checks local PackageLicense and UserPackageLicense records for the current runAs/default user. |
 | UserInfo | `UserInfo.isCurrentUserLicensedForPackage(Id)` | `supported` | Checks local PackageLicense and UserPackageLicense records for the current runAs/default user. |
 | UserInfo | `UserInfo.isMultiCurrencyOrganization` | `supported` | Returns the local org multi-currency metadata flag. |
-| WebServiceCallout | `WebServiceCallout.invoke(Object,Object,Map,List)` | `partial` | Routes generated SOAP callouts through registered WebServiceMock implementations and materializes a deterministic local response shell when no mock is registered; real outbound SOAP transport is not executed. |
-| WebServiceCallout | `WebServiceCallout.invoke(Object,Object,Map<String,Object>,List<String>)` | `partial` | Routes generated SOAP callouts through registered WebServiceMock implementations and materializes a deterministic local response shell when no mock is registered; real outbound SOAP transport is not executed. |
+| WebServiceCallout | `WebServiceCallout.invoke(Object,Object,Map,List)` | `partial` | Fixture-pinned path routes generated SOAP callouts through registered WebServiceMock implementations and materializes a deterministic local response shell when no mock is registered; real outbound SOAP transport is not executed. |
+| WebServiceCallout | `WebServiceCallout.invoke(Object,Object,Map<String,Object>,List<String>)` | `partial` | Fixture-pinned path routes generated SOAP callouts through registered WebServiceMock implementations and materializes a deterministic local response shell when no mock is registered; real outbound SOAP transport is not executed. |

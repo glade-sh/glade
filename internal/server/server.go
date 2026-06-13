@@ -26,6 +26,8 @@ type Server struct {
 	queryLocators map[string]queryLocatorState
 	queryOrder    []string
 	nextQueryID   int
+	bulkQueryJobs map[string]bulkQueryJob
+	nextBulkJobID int
 	lightning     lightningState
 }
 

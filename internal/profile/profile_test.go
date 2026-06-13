@@ -56,6 +56,18 @@ func TestAnalyzeAggregatesDurationEvents(t *testing.T) {
 	}
 }
 
+func TestAnalyzeWallClockTreatsZeroTimestampAsStart(t *testing.T) {
+	report := Analyze(trace.NewDocument([]trace.Event{
+		trace.Instant("apex.statement.first", "apex.statement", 0, nil),
+		trace.Instant("apex.statement.last", "apex.statement", 5000, nil),
+		trace.Instant("apex.statement.middle", "apex.statement", 3000, nil),
+	}))
+
+	if report.WallClockMS != 5 {
+		t.Fatalf("wall clock = %d ms, want 5 ms", report.WallClockMS)
+	}
+}
+
 func TestAnalyzeAttributesExpandedRuntimeEvents(t *testing.T) {
 	doc := trace.NewDocument([]trace.Event{
 		trace.Instant("apex.soql", "apex.soql", 1, map[string]any{"rows": 3}),
@@ -120,12 +132,12 @@ func TestAnalyzeAggregatesPostParitySurfaces(t *testing.T) {
 
 func TestWriteMarkdown(t *testing.T) {
 	report := Analyze(trace.NewDocument([]trace.Event{
-		trace.Instant("apex.statement.expr", "apex.statement", 1, map[string]any{"sourceOffset": 5}),
-		trace.Duration("apex.statement.expr", "apex.statement", 2, 1000, map[string]any{"sourceOffset": 5}),
-		trace.Instant("apex.method.Work.run", "apex.method", 2, nil),
-		trace.Instant("apex.soql", "apex.soql", 3, map[string]any{"rows": 4}),
-		trace.Instant("apex.metadata.deploy.status", "apex.metadata", 5, map[string]any{"status": "SUCCEEDED"}),
-		trace.Instant("apex.limits", "apex.limits", 4, map[string]any{"cpuTimeMs": 7, "heapSize": 64}),
+		trace.Instant("apex.statement.expr", "apex.statement", 1000, map[string]any{"sourceOffset": 5}),
+		trace.Duration("apex.statement.expr", "apex.statement", 2000, 1000, map[string]any{"sourceOffset": 5}),
+		trace.Instant("apex.method.Work.run", "apex.method", 2000, nil),
+		trace.Instant("apex.soql", "apex.soql", 3000, map[string]any{"rows": 4}),
+		trace.Instant("apex.metadata.deploy.status", "apex.metadata", 5000, map[string]any{"status": "SUCCEEDED"}),
+		trace.Instant("apex.limits", "apex.limits", 4000, map[string]any{"cpuTimeMs": 7, "heapSize": 64}),
 	}))
 	var out bytes.Buffer
 	if err := WriteMarkdown(&out, report); err != nil {
@@ -134,6 +146,9 @@ func TestWriteMarkdown(t *testing.T) {
 	markdown := out.String()
 	if !strings.Contains(markdown, "## Runtime summary") || !strings.Contains(markdown, "CPU: 7 ms") || !strings.Contains(markdown, "Heap: 64 bytes") {
 		t.Fatalf("markdown summary = %q", markdown)
+	}
+	if !strings.Contains(markdown, "Wall clock: 4 ms") {
+		t.Fatalf("markdown missing wall-clock attribution = %q", markdown)
 	}
 	for _, section := range []string{"## Categories", "## Measured spans", "## Hot events", "## Statements", "## Methods", "## SOQL", "## Platform", "## Metadata"} {
 		if !strings.Contains(markdown, section) {

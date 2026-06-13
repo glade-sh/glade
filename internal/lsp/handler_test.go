@@ -369,6 +369,38 @@ func TestCompletionIncludesTopLevelApexTypesAndSObjects(t *testing.T) {
 	}
 }
 
+func TestCompletionRanksSObjectFieldsBeforeTopLevelNamesInsideSOQLSelect(t *testing.T) {
+	idx := sampleIndex(t)
+	handler := NewHandler(idx)
+	uri := uriFromPath(filepath.Join(idx.Project.Root, "Draft.cls"))
+	handler.DidOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{
+		URI: uri,
+		Text: strings.Join([]string{
+			"public class Draft {",
+			"  public void run() {",
+			"    List<Account> accounts = [SELECT  FROM Account];",
+			"  }",
+			"}",
+			"",
+		}, "\n"),
+	}})
+
+	items := handler.Completion(CompletionParams{
+		TextDocument: TextDocumentIdentifier{URI: uri},
+		Position:     Position{Line: 2, Character: 37},
+	}).Items
+
+	fieldIndex := completionItemIndex(items, "Name", "Account.Name")
+	objectIndex := completionItemIndex(items, "Account", "SObject: Account")
+	typeIndex := completionItemIndex(items, "InvoiceService", string(apexast.DeclarationClass))
+	if fieldIndex < 0 || objectIndex < 0 || typeIndex < 0 {
+		t.Fatalf("completion indexes: field=%d object=%d type=%d items=%#v", fieldIndex, objectIndex, typeIndex, items)
+	}
+	if fieldIndex > objectIndex || fieldIndex > typeIndex {
+		t.Fatalf("field ranked after top-level names: field=%d object=%d type=%d", fieldIndex, objectIndex, typeIndex)
+	}
+}
+
 func TestDefinitionReferencesRenameAndSemanticTokens(t *testing.T) {
 	idx := sampleIndex(t)
 	writeSampleSources(t, idx)
@@ -535,6 +567,15 @@ func containsString(values []string, needle string) bool {
 		}
 	}
 	return false
+}
+
+func completionItemIndex(items []CompletionItem, label, detail string) int {
+	for i, item := range items {
+		if item.Label == label && item.Detail == detail {
+			return i
+		}
+	}
+	return -1
 }
 
 func mustJSON(t *testing.T, value any) []byte {
