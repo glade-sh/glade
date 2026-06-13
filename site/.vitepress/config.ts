@@ -1,8 +1,8 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: 'Glade - Local Workbench for Salesforce Apex',
-  description: 'Glade is a local Apex workbench for checking, testing, debugging, and exercising Salesforce-shaped APIs from one Go binary.',
+  title: 'Glade — Local Apex Workbench',
+  description: 'Run local Apex checks, focused tests, snippets, and debug-log profiling from one binary with visible runtime boundaries.',
   base: '/',
   srcDir: 'docs-src',
   outDir: '.vitepress/dist',
@@ -11,27 +11,26 @@ export default defineConfig({
   lastUpdated: false,
   vite: {
     server: {
-      allowedHosts: ['apollo.local']
+      allowedHosts: ['apollo.local', 'tract-rear-consumers-isa.trycloudflare.com']
     }
   },
   head: [
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo-mark.svg' }],
     ['meta', { name: 'theme-color', content: '#060a0d' }],
-    ['meta', { name: 'description', content: 'Glade is a local Apex workbench for checking, testing, debugging, and exercising Salesforce-shaped APIs from one Go binary.' }],
-    ['meta', { property: 'og:title', content: 'Glade: The local workbench for Apex.' }],
-    ['meta', { property: 'og:description', content: 'Build and test Apex workflows locally before Salesforce gets involved.' }],
-    ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
-    ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
-    ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400..700&family=Lora:ital,wght@0,400..700;1,400..700&family=Mona+Sans:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&family=Space+Grotesk:wght@400;500;600;700&display=swap' }]
+    ['meta', { name: 'description', content: 'Run local Apex checks, focused tests, snippets, and debug-log profiling from one binary with visible runtime boundaries.' }],
+    ['meta', { property: 'og:title', content: 'Glade — Apex feedback before you deploy' }],
+    ['meta', { property: 'og:description', content: 'Local-first Apex tooling for checks, tests, snippets, debug-log profiling, and copyable CI commands.' }],
+    ['meta', { property: 'og:type', content: 'website' }]
   ],
   themeConfig: {
     siteTitle: 'Glade',
     logo: '/logo-mark.svg',
     search: { provider: 'local' },
     nav: [
-      { text: 'Home', link: '/' },
-      { text: 'Docs', link: '/guide/overview' },
-      { text: 'Playground Docs', link: '/guide/playground' },
-      { text: 'GitHub', link: 'https://github.com/glade-sh/glade' }
+      { text: 'Playground', link: '/guide/playground' },
+      { text: 'Support', link: '/guide/support-map' },
+      { text: 'GitHub', link: 'https://github.com/glade-sh/glade' },
+      { text: 'Install', link: '/guide/installation' }
     ],
     sidebar: [
       {
@@ -41,20 +40,20 @@ export default defineConfig({
           { text: 'Quickstart', link: '/guide/quickstart' },
           { text: 'Tester Field Guide', link: '/guide/tester-field-guide' },
           { text: 'Installation', link: '/guide/installation' },
-          { text: 'What Glade Supports', link: '/guide/support-map' }
+          { text: 'Support map', link: '/guide/support-map' }
         ]
       },
       {
         text: 'Core Workflows',
         items: [
-          { text: 'Configure A Glade Project', link: '/guide/configuration' },
+          { text: 'Configure a Glade project', link: '/guide/configuration' },
           { text: 'CLI Reference', link: '/guide/cli-reference' },
-          { text: 'Run Apex Tests Locally', link: '/guide/local-testing' },
-          { text: 'Run Only Affected Tests', link: '/guide/affected-tests' },
-          { text: 'Map Enterprise Projects', link: '/guide/enterprise-workflows' },
-          { text: 'Use The Local Playground', link: '/guide/playground' },
-          { text: 'Run A Local Salesforce-Shaped API', link: '/guide/local-api-server' },
-          { text: 'Add Glade To CI', link: '/guide/ci-artifacts' }
+          { text: 'Run Apex tests locally', link: '/guide/local-testing' },
+          { text: 'Run only affected tests', link: '/guide/affected-tests' },
+          { text: 'Map enterprise projects', link: '/guide/enterprise-workflows' },
+          { text: 'Use the local playground', link: '/guide/playground' },
+          { text: 'Run a local Salesforce-shaped API', link: '/guide/local-api-server' },
+          { text: 'Add Glade to CI', link: '/guide/ci-artifacts' }
         ]
       },
       {
@@ -67,6 +66,7 @@ export default defineConfig({
       },
       {
         text: 'Plugin Authors',
+        collapsed: true,
         items: [
           { text: 'Use Plugins', link: '/guide/plugins' },
           { text: 'First-Party Plugins', link: '/guide/plugins/first-party' },
@@ -80,6 +80,7 @@ export default defineConfig({
       },
       {
         text: 'Project',
+        collapsed: true,
         items: [
           { text: 'Compatibility Policy', link: '/guide/compatibility' },
           { text: 'Maintainer Proof Reports', link: '/guide/compatibility-dashboard' },
@@ -91,7 +92,7 @@ export default defineConfig({
       { icon: 'github', link: 'https://github.com/glade-sh/glade' }
     ],
     footer: {
-      message: '127.0.0.1 is a fine place to test Apex.',
+      message: 'Glade is local-first Apex tooling.',
       copyright: 'Released by the Glade project.'
     }
   }

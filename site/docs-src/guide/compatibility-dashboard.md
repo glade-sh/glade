@@ -1,6 +1,6 @@
 # Maintainer Proof Reports
 
-Most users should start with [What Glade supports](/guide/support-map). This
+Most users should start with the [Support map](/guide/support-map). This
 page summarizes generated reports used by maintainers and release gates.
 
 The checked source report lives at `docs/COMPATIBILITY_DASHBOARD.md` in the

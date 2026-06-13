@@ -74,7 +74,7 @@ If tests act like an old project is still loaded, use `--no-cache` once, then
 
 ```bash
 glade test clear-cache --project .
-glade test --project . --no-cache --filter MyTest
+glade test --project . --no-cache --class MyTest
 glade test serve --project .
 glade test daemon status --project .
 glade test daemon stop --project .

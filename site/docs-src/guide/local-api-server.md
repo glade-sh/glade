@@ -37,7 +37,7 @@ glade db inspect --db .glade/local-org.sqlite --json
 
 The server exposes a Salesforce-shaped baseline for local work: API discovery, object describe and CRUD-style record operations, SOQL query execution, and execute-anonymous routes where supported by the runtime.
 
-Check [What Glade supports](/guide/support-map) before relying on full auth,
+Check the [Support map](/guide/support-map) before relying on full auth,
 Bulk API, Streaming, Pub/Sub, GraphQL, or broad Tooling API parity.
 
 | Area | Endpoint shape | Status |

@@ -1,8 +1,43 @@
 # Installation
 
+<div class="docs-intro">
+  <p class="docs-intro-eyebrow">Install</p>
+  <p>Recommended path: use the one-line installer, then run <code>glade doctor</code>.</p>
+  <ul>
+    <li>Use the script for macOS and Linux release archives.</li>
+    <li>Use a manual archive when CI or policy requires pinned artifacts.</li>
+    <li>Build from source when you are developing Glade.</li>
+  </ul>
+</div>
+
 Glade ships as a single local binary for macOS and Linux. Install it, verify
 your environment with `glade doctor`, then run your first project check from an
 SFDX workspace.
+
+## Choose an install path
+
+<div class="docs-install-grid">
+  <div class="docs-install-card">
+    <p class="docs-card-kicker">Recommended</p>
+    <strong>macOS/Linux script</strong>
+    <span>Installs the current release to <code>~/.local/bin</code>, then you run <code>glade doctor</code>.</span>
+  </div>
+  <div class="docs-install-card">
+    <p class="docs-card-kicker">Pinned</p>
+    <strong>Manual release archive</strong>
+    <span>Download from GitHub releases, verify checksums, and install the binary yourself.</span>
+  </div>
+  <div class="docs-install-card">
+    <p class="docs-card-kicker">Source</p>
+    <strong>Build from source</strong>
+    <span>Use this for Glade development or testing a repository checkout before release.</span>
+  </div>
+  <div class="docs-install-card">
+    <p class="docs-card-kicker">Editor and CI</p>
+    <strong>VS Code and automation</strong>
+    <span>Install the bundled VS Code extension or place the binary in a CI runner.</span>
+  </div>
+</div>
 
 ## One-line install
 
@@ -111,8 +146,8 @@ glade test --project . --json
 Run one class, one method, or tests affected by a git ref:
 
 ```bash
-glade test --project . --filter AccountServiceTest --json
-glade test --project . --filter AccountServiceTest.testCreatesAccount --json
+glade test --project . --class AccountServiceTest --json
+glade test --project . --class AccountServiceTest --method testCreatesAccount --json
 glade test changed --project . --since origin/main --json
 ```
 
@@ -161,5 +196,5 @@ glade doctor
 For a pilot handoff, use the [Tester Field Guide](/guide/tester-field-guide).
 For a narrow first run, create project config:
 [Configure a Glade Project](/guide/configuration), then check
-[What Glade supports](/guide/support-map).
+[Support map](/guide/support-map).
 :::

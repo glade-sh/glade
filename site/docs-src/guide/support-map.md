@@ -1,24 +1,41 @@
-# What Glade Supports
+# Support map
+
+<div class="docs-intro">
+  <p class="docs-intro-eyebrow">Support</p>
+  <p>Use this page to decide what Glade can run locally, what works with named limits, and what still needs Salesforce.</p>
+  <ul>
+    <li>Start with the status legend.</li>
+    <li>Check the unsupported list before a pilot.</li>
+    <li>Use the generated ledgers for exact method rows.</li>
+  </ul>
+</div>
 
 Start here when deciding whether Glade can run a project, a test class, or a
 local Salesforce-shaped API flow. This page is the public map. The generated
 ledgers carry the exact ledger rows.
 
-## Before You Adopt Glade
+## Before you adopt Glade
 
 - Your local loop uses supported Apex parse, check, test, SOQL, DML, trigger, and SObject paths.
 - Your test suite can mock callouts and live side effects.
 - Your project can tolerate explicit unsupported diagnostics for Salesforce-hosted services.
 - You will keep a Salesforce org gate for features Glade does not model.
 
-## Status Key
+## Status key
+
+<div class="docs-support-legend" aria-label="Support status legend">
+  <span class="docs-status-chip docs-status-supported">Works well</span>
+  <span class="docs-status-chip docs-status-partial">Works with limits</span>
+  <span class="docs-status-chip docs-status-unsupported">Not supported</span>
+  <span class="docs-status-chip docs-status-unknown">Not measured</span>
+</div>
 
 | Status | Meaning |
 | --- | --- |
-| Works well | Implemented, fixture-backed, and fit for normal local use. |
-| Works with limits | Common local paths work. The limits are named. |
-| Not supported | Glade should stop with a stable unsupported diagnostic. |
-| Not measured | A row exists, but the team has not measured it yet. |
+| <span class="docs-status-chip docs-status-supported">Works well</span> | Implemented, fixture-backed, and fit for normal local use. |
+| <span class="docs-status-chip docs-status-partial">Works with limits</span> | Common local paths work. The limits are named. |
+| <span class="docs-status-chip docs-status-unsupported">Not supported</span> | Glade should stop with a stable unsupported diagnostic. |
+| <span class="docs-status-chip docs-status-unknown">Not measured</span> | A row exists, but the team has not measured it yet. |
 
 ## Works Well
 
@@ -33,7 +50,7 @@ These areas are the main local development contract.
 | Local API server | Salesforce-shaped REST discovery, SObject CRUD, query/queryAll, limits, userinfo stubs, Tooling `executeAnonymous`, Composite sObject insert, reset endpoints, and optional SQLite persistence. |
 | Editor and debug tools | LSP diagnostics, symbols, hover, completion, rename, semantic tokens, DAP stepping, watch mode, and trace/profile reports. |
 
-## Works With Limits
+## Works with limits
 
 These areas cover useful local test paths. They are not full Salesforce
 service parity.
@@ -50,7 +67,7 @@ service parity.
 | Test helpers | Many common `Test.*` paths work. Service-dependent helpers and org-global behavior remain explicit gaps. |
 | Local test harness and request context | Request/UIRequest context, install/uninstall hooks, sandbox post-copy helpers, scheduled Apex, QuickAction DTOs, BusinessHours week schedules, and approval result shapes have deterministic local models. Live hosted engines are not contacted. |
 
-## Not Supported Today
+## Not supported today
 
 This is the smaller list a first user should check before betting on Glade.
 
@@ -73,11 +90,11 @@ UnsupportedFeature: Approval.process is not supported by Glade's local runtime.
 
 | Area | First-layer status | Notes |
 | --- | --- | --- |
-| Apex front end | Works well | Parser, project loader, symbols, semantic checks, LSP, and diagnostics form the front door. |
-| Runtime and tests | Works well | VM execution, local tests, SObjects, SOQL, DML, triggers, async drain, and local storage are the core contract. |
-| Local Salesforce API | Works well | Useful for local REST and Tooling `executeAnonymous` flows. It is not a hosted-org replacement. |
-| Standard library | Works with limits | Broad local support, with exact method status in the checked ledger. |
-| Platform service APIs | Not supported by default | Service-backed rows should fail with explicit unsupported diagnostics unless the ledger says otherwise. |
+| Apex front end | <span class="docs-status-chip docs-status-supported">Works well</span> | Parser, project loader, symbols, semantic checks, LSP, and diagnostics form the front door. |
+| Runtime and tests | <span class="docs-status-chip docs-status-supported">Works well</span> | VM execution, local tests, SObjects, SOQL, DML, triggers, async drain, and local storage are the core contract. |
+| Local Salesforce API | <span class="docs-status-chip docs-status-supported">Works well</span> | Useful for local REST and Tooling `executeAnonymous` flows. It is not a hosted-org replacement. |
+| Standard library | <span class="docs-status-chip docs-status-partial">Works with limits</span> | Broad local support, with exact method status in the checked ledger. |
+| Platform service APIs | <span class="docs-status-chip docs-status-unsupported">Not supported by default</span> | Service-backed rows should fail with explicit unsupported diagnostics unless the ledger says otherwise. |
 
 ## Standard Library Families
 

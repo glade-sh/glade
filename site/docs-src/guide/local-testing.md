@@ -30,13 +30,13 @@ glade test --project . --junit reports/glade-junit.xml
 Run a test class:
 
 ```bash
-glade test --project . --filter AccountServiceTest
+glade test --project . --class AccountServiceTest
 ```
 
 Run a single method:
 
 ```bash
-glade test --project . --filter AccountServiceTest.testCreatesAccount
+glade test --project . --class AccountServiceTest --method testCreatesAccount
 ```
 
 Use filters for the short inner loop. Then run the broader suite before shipping.
@@ -103,10 +103,10 @@ created, how it stays up to date, when it can be wrong, and how to recover.
 ```bash
 glade test serve --project .
 glade test daemon status --project .
-glade test --project . --filter AccountServiceTest
+glade test --project . --class AccountServiceTest
 glade test daemon stop --project .
 glade test clear-cache --project .
-glade test --project . --no-cache --filter AccountServiceTest
+glade test --project . --no-cache --class AccountServiceTest
 ```
 
 Clear the cache after `git pull` or Glade upgrades. Use `--no-cache` when
@@ -138,7 +138,7 @@ UNSUPPORTED ApprovalProcessTest.testSubmit: Approval.process is not supported lo
 COMPILE_ERROR InvoiceServiceTest: Unknown type Invoice__c
 ```
 
-Check [What Glade supports](/guide/support-map) before relying on platform
+Check the [Support map](/guide/support-map) before relying on platform
 service APIs, Visualforce rendering, live side effects, or broad REST parity.
 
 ::: tip Try it

@@ -1,75 +1,691 @@
 (function () {
-  var examples = {
-    account: {
-      source: [
-        "public class RunMe {",
-        "  public static void main() {",
-        "    Account a = new Account(Name = 'Twin Lakes');",
-        "    insert a;",
-        "    System.debug([SELECT Name FROM Account].size());",
+  var scenarioOrder = ["check", "test", "exec", "debug"]
+  var outputViewOrder = ["output", "json", "trace"]
+  var activeScenarioId = "check"
+  var activeOutputView = "output"
+  var runTimers = []
+  var copyTimer = 0
+  var scenarioAliases = {
+    "check-source": "check",
+    "test-changed": "test",
+    "exec-apex": "exec",
+    "debug-log": "debug",
+    "logs": "debug"
+  }
+
+  var checkOutput = [
+    "$ glade check --project . --no-progress",
+    "+- Check ----------------------------------------------------------------------+",
+    "|  project: /private/tmp/glade-home-account-field                              |",
+    "|  " + pluralize(1, "type") + " · " + pluralize(0, "trigger") + " · " + pluralize(0, "object") + "                                            |",
+    "|  1 diagnostic (1 error)                                                      |",
+    "+------------------------------------------------------------------------------+",
+    "",
+    "  ✗  force-app/main/default/classes/AccountService.cls:2:3",
+    '     error[GLADESEMA002]: method "latestInvoice" references unknown type "Invoice__c"'
+  ].join("\n")
+
+  var checkJSON = [
+    "{",
+    '  "project": {',
+    '    "root": "/private/tmp/glade-home-account-field",',
+    '    "sourceApiVersion": "60.0"',
+    "  },",
+    '  "summary": {',
+    '    "types": 1,',
+    '    "triggers": 0,',
+    '    "objects": 0,',
+    '    "diagnostics": 1',
+    "  },",
+    '  "diagnostics": [',
+    "    {",
+    '      "severity": "error",',
+    '      "code": "GLADESEMA002",',
+    '      "message": "method \\"latestInvoice\\" references unknown type \\"Invoice__c\\"",',
+    '      "file": "/private/tmp/glade-home-account-field/force-app/main/default/classes/AccountService.cls",',
+    '      "range": {',
+    '        "start": {',
+    '          "line": 2,',
+    '          "column": 3,',
+    '          "offset": 45',
+    "        },",
+    '        "end": {',
+    '          "line": 4,',
+    '          "column": 4,',
+    '          "offset": 108',
+    "        }",
+    "      }",
+    "    }",
+    "  ]",
+    "}"
+  ].join("\n")
+
+  var checkTrace = [
+    "$ glade check --project . --json --progress-json",
+    '{"kind":"phase_start","phase":"check","label":"Loading project","at":"2026-06-13T02:11:48.373515Z"}',
+    '{"kind":"phase_tick","phase":"check","label":"Loading metadata","current":1,"total":4,"at":"2026-06-13T02:11:48.373811Z"}',
+    '{"kind":"phase_tick","phase":"check","label":"Indexing Apex symbols","current":2,"total":4,"at":"2026-06-13T02:11:48.373822Z"}',
+    '{"kind":"phase_tick","phase":"check","label":"Running semantic checks","current":3,"total":4,"at":"2026-06-13T02:11:48.374006Z"}',
+    '{"kind":"phase_end","phase":"check","label":"Semantic checks complete","current":4,"total":4,"at":"2026-06-13T02:11:50.294097Z"}',
+    '{"kind":"done","label":"check complete","at":"2026-06-13T02:11:50.294125Z"}',
+    "",
+    checkJSON
+  ].join("\n")
+
+  var testOutput = [
+    "$ glade test --project . --class PassingTest --no-progress",
+    "+- Tests ----------------------------------------------------------------------+",
+    "|  1 selected · 1 passed · 0 failed · 1s                                       |",
+    "+------------------------------------------------------------------------------+",
+    "",
+    "  ✓  PassingTest.passes    8ms",
+    "",
+    "+- Result ---------------------------------------------------------------------+",
+    "|  1 passed · 0 failed · 1 total · 1s                                          |",
+    "+------------------------------------------------------------------------------+"
+  ].join("\n")
+
+  var testJSON = [
+    "{",
+    '  "name": "glade test",',
+    '  "durationMs": 1662,',
+    '  "summary": {',
+    '    "total": 1,',
+    '    "passed": 1,',
+    '    "failed": 0,',
+    '    "skipped": 0,',
+    '    "compileErrors": 0,',
+    '    "runtimeErrors": 0,',
+    '    "unsupported": 0,',
+    '    "errors": 0,',
+    '    "durationMs": 1662',
+    "  },",
+    '  "suites": [',
+    "    {",
+    '      "name": "PassingTest",',
+    '      "cases": [',
+    "        {",
+    '          "className": "PassingTest",',
+    '          "methodName": "passes",',
+    '          "status": "pass",',
+    '          "durationMs": 11',
+    "        }",
+    "      ]",
+    "    }",
+    "  ]",
+    "}"
+  ].join("\n")
+
+  var testTrace = [
+    "$ glade test --project . --class PassingTest --json --progress-json",
+    '{"kind":"phase_start","phase":"test","label":"Discovering tests","at":"2026-06-13T02:11:48.073214Z"}',
+    '{"kind":"warn","phase":"test","label":"startup cache: fresh","at":"2026-06-13T02:11:48.186572Z"}',
+    '{"kind":"phase_tick","phase":"test","label":"Running tests","total":1,"at":"2026-06-13T02:11:48.186601Z"}',
+    '{"kind":"phase_tick","phase":"test","label":"compile test harness","total":1,"at":"2026-06-13T02:11:48.186642Z"}',
+    '{"kind":"phase_tick","phase":"test","label":"compile complete 1480ms","total":1,"at":"2026-06-13T02:11:49.666883Z"}',
+    '{"kind":"phase_tick","phase":"test","label":"running PassingTest.passes · 1 running · 1 left","total":1,"at":"2026-06-13T02:11:49.723848Z"}',
+    '{"kind":"phase_tick","phase":"test","current":1,"total":1,"at":"2026-06-13T02:11:49.735651Z"}',
+    '{"kind":"phase_tick","phase":"test","label":"tests complete","current":1,"total":1,"at":"2026-06-13T02:11:49.735696Z"}',
+    '{"kind":"done","label":"1 passed, 0 failed, 0 errors · 2s","at":"2026-06-13T02:11:49.7357Z"}',
+    "",
+    testJSON
+  ].join("\n")
+
+  var execOutput = [
+    "$ glade exec --debug-log - \"System.debug('local');\"",
+    "64.0 APEX_CODE,DEBUG;APEX_PROFILING,INFO;CALLOUT,INFO;DB,INFO;NBA,INFO;SYSTEM,DEBUG;VALIDATION,INFO;VISUALFORCE,INFO;WAVE,INFO;WORKFLOW,INFO",
+    "00:00:00.000 (0)|USER_INFO|[EXTERNAL]|005000000000000AAA|glade@local.run|Greenwich Mean Time (GMT)|GMT+00:00",
+    "00:00:00.001 (1000000)|EXECUTION_STARTED",
+    "00:00:00.002 (2000000)|CODE_UNIT_STARTED|[EXTERNAL]|execute_anonymous_apex",
+    "00:00:00.003 (3000000)|USER_DEBUG|[1]|DEBUG|local",
+    "00:00:00.004 (4000000)|CUMULATIVE_LIMIT_USAGE",
+    "00:00:00.005 (5000000)|LIMIT_USAGE_FOR_NS|(default)|",
+    "  Number of SOQL queries: 0 out of 100",
+    "  Number of query rows: 0 out of 50000",
+    "  Number of SOSL queries: 0 out of 20",
+    "  Number of DML statements: 0 out of 150",
+    "  Number of Publish Immediate DML: 0 out of 150",
+    "  Number of DML rows: 0 out of 10000",
+    "  Maximum CPU time: 1 out of 10000",
+    "  Maximum heap size: 0 out of 6000000",
+    "  Number of callouts: 0 out of 100",
+    "  Number of Email Invocations: 0 out of 10",
+    "  Number of future calls: 0 out of 50",
+    "  Number of queueable jobs added to the queue: 0 out of 50",
+    "  Number of Mobile Apex push calls: 0 out of 10",
+    "00:00:00.006 (6000000)|CUMULATIVE_LIMIT_USAGE_END",
+    "00:00:00.007 (7000000)|CODE_UNIT_FINISHED|execute_anonymous_apex",
+    "00:00:00.008 (8000000)|EXECUTION_FINISHED"
+  ].join("\n")
+
+  var execJSON = [
+    "{",
+    '  "debug": ["local"],',
+    '  "debugEvents": [',
+    '    { "level": "DEBUG", "message": "local", "tracePos": 1 }',
+    "  ],",
+    '  "traceFormat": "chrome-trace-event",',
+    '  "trace": [',
+    "    {",
+    '      "name": "apex.statement.expr",',
+    '      "cat": "apex.statement",',
+    '      "ph": "i",',
+    '      "ts": 0,',
+    '      "pid": 1,',
+    '      "tid": 1,',
+    '      "s": "t",',
+    '      "args": {',
+    '        "column": 1,',
+    '        "line": 1,',
+    '        "op": "expr",',
+    '        "sourceOffset": 0',
+    "      }",
+    "    },",
+    "    {",
+    '      "name": "apex.limits",',
+    '      "cat": "apex.limits",',
+    '      "ph": "i",',
+    '      "ts": 1,',
+    '      "pid": 1,',
+    '      "tid": 1,',
+    '      "s": "t",',
+    '      "args": {',
+    '        "asyncJobs": 0,',
+    '        "batchJobs": 0,',
+    '        "callouts": 0,',
+    '        "cpuTimeMs": 1,',
+    '        "dmlRows": 0,',
+    '        "dmlStatements": 0,',
+    '        "emailInvocations": 0,',
+    '        "futureCalls": 0,',
+    '        "heapSize": 0,',
+    '        "queries": 0,',
+    '        "queryRows": 0,',
+    '        "queueableJobs": 0,',
+    '        "runAs": 0,',
+    '        "scheduledJobs": 0',
+    "      }",
+    "    }",
+    "  ],",
+    '  "limits": {',
+    '    "queries": 0,',
+    '    "queryRows": 0,',
+    '    "dmlStatements": 0,',
+    '    "dmlRows": 0,',
+    '    "heapSize": 0,',
+    '    "cpuTimeMs": 1,',
+    '    "callouts": 0,',
+    '    "asyncJobs": 0,',
+    '    "futureCalls": 0,',
+    '    "queueableJobs": 0,',
+    '    "batchJobs": 0,',
+    '    "scheduledJobs": 0,',
+    '    "emailInvocations": 0,',
+    '    "soslQueries": 0,',
+    '    "runAs": 0,',
+    '    "savepoints": 0,',
+    '    "publishImmediateDml": 0',
+    "  },",
+    '  "limitMode": "permissive"',
+    "}"
+  ].join("\n")
+
+  var execTrace = [
+    "$ glade exec --trace /tmp/glade-home-exec-trace.json \"System.debug('local');\"",
+    "local",
+    "",
+    "$ cat /tmp/glade-home-exec-trace.json",
+    "{",
+    '  "format": "chrome-trace-event",',
+    '  "version": 1,',
+    '  "traceEvents": [',
+    "    {",
+    '      "name": "apex.statement.expr",',
+    '      "cat": "apex.statement",',
+    '      "ph": "i",',
+    '      "ts": 0,',
+    '      "pid": 1,',
+    '      "tid": 1,',
+    '      "s": "t",',
+    '      "args": {',
+    '        "column": 1,',
+    '        "line": 1,',
+    '        "op": "expr",',
+    '        "sourceOffset": 0',
+    "      }",
+    "    },",
+    "    {",
+    '      "name": "apex.limits",',
+    '      "cat": "apex.limits",',
+    '      "ph": "i",',
+    '      "ts": 1,',
+    '      "pid": 1,',
+    '      "tid": 1,',
+    '      "s": "t",',
+    '      "args": {',
+    '        "asyncJobs": 0,',
+    '        "batchJobs": 0,',
+    '        "callouts": 0,',
+    '        "cpuTimeMs": 1,',
+    '        "dmlRows": 0,',
+    '        "dmlStatements": 0,',
+    '        "emailInvocations": 0,',
+    '        "futureCalls": 0,',
+    '        "heapSize": 0,',
+    '        "queries": 0,',
+    '        "queryRows": 0,',
+    '        "queueableJobs": 0,',
+    '        "runAs": 0,',
+    '        "scheduledJobs": 0',
+    "      }",
+    "    }",
+    "  ]",
+    "}"
+  ].join("\n")
+
+  var debugOutput = [
+    "$ glade debug profile --log internal/debuglog/testdata/subscriber.log",
+    "# glade profile",
+    "",
+    "Events: 4",
+    "",
+    "## Runtime summary",
+    "",
+    "SOQL: 1 queries / 1 rows",
+    "",
+    "DML: 1 statements / 1 rows",
+    "",
+    "Callouts: 0",
+    "",
+    "Async: 0 jobs",
+    "",
+    "Email: 0 invocations",
+    "",
+    "CPU: 0 ms",
+    "",
+    "Heap: 0 bytes",
+    "",
+    "## Categories",
+    "",
+    "| Category | Count |",
+    "| --- | ---: |",
+    "| `apex.debug` | 2 |",
+    "| `apex.dml` | 1 |",
+    "| `apex.soql` | 1 |",
+    "",
+    "## Hot events",
+    "",
+    "| Rank | Event | Category | Count | Rows | Duration ms | Source offsets |",
+    "| --- | --- | --- | ---: | ---: | ---: | --- |",
+    "| 1 | `apex.debug` | `apex.debug` | 2 | 0 | 0 | [] |",
+    "| 2 | `SELECT Id, Name FROM Account WHERE Name = 'Acme'` | `apex.soql` | 1 | 1 | 0 | [] |",
+    "| 3 | `apex.dml.insert` | `apex.dml` | 1 | 1 | 0 | [] |",
+    "",
+    "## SOQL",
+    "",
+    "| Rank | Event | Category | Count | Rows | Duration ms | Source offsets |",
+    "| --- | --- | --- | ---: | ---: | ---: | --- |",
+    "| 1 | `SELECT Id, Name FROM Account WHERE Name = 'Acme'` | `apex.soql` | 1 | 1 | 0 | [] |",
+    "",
+    "## DML",
+    "",
+    "| Rank | Event | Category | Count | Rows | Duration ms | Source offsets |",
+    "| --- | --- | --- | ---: | ---: | ---: | --- |",
+    "| 1 | `apex.dml.insert` | `apex.dml` | 1 | 1 | 0 | [] |"
+  ].join("\n")
+
+  var debugJSON = [
+    "$ glade debug profile --log internal/debuglog/testdata/subscriber.log --json",
+    "{",
+    '  "format": "chrome-trace-event",',
+    '  "events": 4,',
+    '  "hot": [',
+    "    {",
+    '      "name": "apex.debug",',
+    '      "category": "apex.debug",',
+    '      "count": 2,',
+    '      "firstTs": 3000000,',
+    '      "lastTs": 8000000,',
+    '      "sourceRanges": [',
+    "        {",
+    '          "offset": -1,',
+    '          "line": 3,',
+    '          "column": 0',
+    "        },",
+    "        {",
+    '          "offset": -1,',
+    '          "line": 7,',
+    '          "column": 0',
+    "        }",
+    "      ]",
+    "    },",
+    "    {",
+      '      "name": "SELECT Id, Name FROM Account WHERE Name = \'Acme\'",',
+      '      "category": "apex.soql",',
+      '      "count": 1,',
+      '      "rows": 1,',
+      '      "firstTs": 7000000,',
+      '      "lastTs": 7000000,',
+      '      "sourceRanges": [',
+      "        {",
+      '          "offset": -1,',
+      '          "line": 6,',
+      '          "column": 0',
+      "        }",
+      "      ]",
+    "    },",
+    "    {",
+      '      "name": "apex.dml.insert",',
+      '      "category": "apex.dml",',
+      '      "count": 1,',
+      '      "rows": 1,',
+      '      "firstTs": 4000000,',
+      '      "lastTs": 4000000,',
+      '      "sourceRanges": [',
+      "        {",
+      '          "offset": -1,',
+      '          "line": 5,',
+      '          "column": 0',
+      "        }",
+      "      ]",
+    "    }",
+    "  ],",
+    '  "categories": {',
+    '    "apex.debug": 2,',
+    '    "apex.dml": 1,',
+    '    "apex.soql": 1',
+    "  },",
+    '  "limits": {',
+    '    "soqlQueries": 1,',
+    '    "soqlRows": 1,',
+    '    "dml": 1,',
+    '    "dmlRows": 1',
+    "  },",
+    '  "soql": [',
+    "    {",
+    '      "name": "SELECT Id, Name FROM Account WHERE Name = \'Acme\'",',
+    '      "category": "apex.soql",',
+    '      "count": 1,',
+    '      "rows": 1,',
+    '      "firstTs": 7000000,',
+    '      "lastTs": 7000000,',
+    '      "sourceRanges": [',
+    "        {",
+    '          "offset": -1,',
+    '          "line": 6,',
+    '          "column": 0',
+    "        }",
+    "      ]",
+    "    }",
+    "  ],",
+    '  "dml": [',
+    "    {",
+    '      "name": "apex.dml.insert",',
+    '      "category": "apex.dml",',
+    '      "count": 1,',
+    '      "rows": 1,',
+    '      "firstTs": 4000000,',
+    '      "lastTs": 4000000,',
+    '      "sourceRanges": [',
+    "        {",
+    '          "offset": -1,',
+    '          "line": 5,',
+    '          "column": 0',
+    "        }",
+    "      ]",
+    "    }",
+    "  ]",
+    "}"
+  ].join("\n")
+
+  var debugTrace = debugJSON
+
+  var scenarios = {
+    "check": {
+      shortLabel: "Check",
+      title: "Catch deploy issues",
+      preview: "1 diagnostic caught",
+      actionLabel: "Run local check",
+      commandLabel: "glade check",
+      command: "glade check --project . --no-progress",
+      ciCommand: "glade check --project . --json --no-progress",
+      sourceLabel: "AccountService.cls:2",
+      highlightedLine: 2,
+      sourceCode: [
+        "public with sharing class AccountService {",
+        "  public static Invoice__c latestInvoice() {",
+        "    return null;",
         "  }",
         "}"
       ].join("\n"),
-      idle: {
-        status: "Pass",
-        timing: "38 ms",
-        log: "USER_DEBUG | Account count: 1",
-        state: "1 Account inserted · rolled back after run"
+      outputViews: {
+        output: checkOutput,
+        json: checkJSON,
+        trace: checkTrace
       },
-      result: {
-        status: "Pass",
-        timing: "38 ms",
-        log: "USER_DEBUG | Account count: 1",
-        state: "1 Account inserted · rolled back after run"
-      }
+      resultStatus: "failed",
+      resultSummary: "FAILED · 1 diagnostic · 1 type checked · exit code 1",
+      runningSummary: "RUNNING · loading metadata · indexing Apex · semantic checks",
+      runningOutput: "$ glade check --project . --no-progress\n\nRunning locally...",
+      resultMetrics: [
+        ["Diagnostics", "1"],
+        ["Types checked", "1"],
+        ["Org calls", "0"],
+        ["Exit code", "1"]
+      ],
+      runningMetrics: [
+        ["Phase", "loading"],
+        ["Types checked", "1"],
+        ["Org calls", "0"],
+        ["Exit code", "..."]
+      ],
+      proofTitle: "What Glade proved",
+      changedSummary: [
+        "Deploy-blocking type reference caught locally.",
+        "No Salesforce deploy required.",
+        "No local records changed.",
+        "JSON output available for CI."
+      ],
+      runningSummaryItems: [
+        "Loading local metadata.",
+        "Indexing Apex symbols.",
+        "Running semantic checks.",
+        "Preparing JSON diagnostics."
+      ],
+      supportStatus: "supported locally",
+      installCommands: [
+        "curl -fsSL https://glade.sh/install.sh | sh",
+        "glade doctor",
+        "glade check --project . --no-progress"
+      ],
+      installLabel: "Selected workflow: Catch deploy issues",
+      docsHref: "/guide/cli-reference"
     },
-    soql: {
-      source: [
-        "public class RunMe {",
-        "  public static void main() {",
-        "    List<Account> rows = [",
-        "      SELECT Name FROM Account WHERE Name LIKE 'Twin%'",
-        "    ];",
-        "    System.debug(rows.size());",
+    "test": {
+      shortLabel: "Test",
+      title: "Run focused tests",
+      preview: "1 passed · 0 failed",
+      actionLabel: "Run focused tests",
+      commandLabel: "glade test",
+      command: "glade test --project . --class PassingTest --no-progress",
+      ciCommand: "glade test --project . --class PassingTest --json --no-progress",
+      sourceLabel: "PassingTest.cls",
+      sourceCode: [
+        "@IsTest",
+        "private class PassingTest {",
+        "  @IsTest",
+        "  static void passes() {",
+        "    System.assertEquals(1, 1);",
         "  }",
         "}"
       ].join("\n"),
-      idle: {
-        status: "Not run",
-        timing: "--",
-        log: "Run Example to see output",
-        state: "No query cursor yet"
+      outputViews: {
+        output: testOutput,
+        json: testJSON,
+        trace: testTrace
       },
-      result: {
-        status: "Pass",
-        timing: "24 ms",
-        log: "USER_DEBUG | SOQL rows: 1",
-        state: "local.sqlite · Account read"
-      }
+      resultStatus: "passed",
+      resultSummary: "PASSED · 1 test · 0 failed · exit code 0",
+      runningSummary: "RUNNING · discovering tests · compiling harness · executing",
+      runningOutput: "$ glade test --project . --class PassingTest --no-progress\n\nRunning locally...",
+      resultMetrics: [
+        ["Tests run", "1"],
+        ["Failures", "0"],
+        ["Runtime", "281ms"],
+        ["Exit code", "0"]
+      ],
+      runningMetrics: [
+        ["Phase", "running"],
+        ["Tests run", "1"],
+        ["Failures", "..."],
+        ["Exit code", "..."]
+      ],
+      proofTitle: "What Glade proved",
+      changedSummary: [
+        "PassingTest.passes ran in the local fixture.",
+        "The test run reported 1 passed and 0 failed.",
+        "The command returned exit code 0.",
+        "No org deploy required."
+      ],
+      runningSummaryItems: [
+        "Loading local metadata.",
+        "Discovering test methods.",
+        "Compiling the test harness.",
+        "Running PassingTest.passes."
+      ],
+      supportStatus: "supported locally",
+      installCommands: [
+        "curl -fsSL https://glade.sh/install.sh | sh",
+        "glade doctor",
+        "glade test --project . --class PassingTest --no-progress"
+      ],
+      installLabel: "Selected workflow: Run focused tests",
+      docsHref: "/guide/local-testing"
     },
-    rollback: {
-      source: [
-        "public class RunMe {",
-        "  public static void main() {",
-        "    Savepoint sp = Database.setSavepoint();",
-        "    insert new Account(Name = 'Temporary');",
-        "    Database.rollback(sp);",
-        "    System.debug([SELECT Id FROM Account].size());",
-        "  }",
-        "}"
-      ].join("\n"),
-      idle: {
-        status: "Not run",
-        timing: "--",
-        log: "Run Example to see output",
-        state: "No transaction opened"
+    "exec": {
+      shortLabel: "Exec",
+      title: "Execute Apex locally",
+      preview: "USER_DEBUG emitted",
+      actionLabel: "Execute snippet",
+      commandLabel: "glade exec",
+      command: "glade exec --debug-log - \"System.debug('local');\"",
+      ciCommand: "glade exec --json \"System.debug('local');\"",
+      sourceLabel: "anonymous.apex",
+      sourceCode: "System.debug('local');",
+      outputViews: {
+        output: execOutput,
+        json: execJSON,
+        trace: execTrace
       },
-      result: {
-        status: "Pass",
-        timing: "42 ms",
-        log: "USER_DEBUG | Records after rollback: 0",
-        state: "local.sqlite · rollback restored state"
-      }
+      resultStatus: "passed",
+      resultSummary: "PASSED · USER_DEBUG emitted · exit code 0",
+      runningSummary: "RUNNING · compiling snippet · executing Apex · collecting limits",
+      runningOutput: "$ glade exec --debug-log - \"System.debug('local');\"\n\nRunning locally...",
+      resultMetrics: [
+        ["Debug lines", "1"],
+        ["SOQL", "0"],
+        ["DML", "0"],
+        ["CPU", "1"]
+      ],
+      runningMetrics: [
+        ["Phase", "execute"],
+        ["Debug lines", "..."],
+        ["SOQL", "..."],
+        ["DML", "..."]
+      ],
+      proofTitle: "What Glade proved",
+      changedSummary: [
+        "The debug log reports USER_DEBUG local.",
+        "The limit block reports 0 SOQL and 0 DML.",
+        "Trace output can be written for profiling.",
+        "No live org was touched."
+      ],
+      runningSummaryItems: [
+        "Loading local metadata.",
+        "Compiling anonymous Apex.",
+        "Collecting debug log events.",
+        "Collecting limit counters."
+      ],
+      supportStatus: "supported locally",
+      installCommands: [
+        "curl -fsSL https://glade.sh/install.sh | sh",
+        "glade doctor",
+        "glade exec --debug-log - \"System.debug('local');\""
+      ],
+      installLabel: "Selected workflow: Execute Apex locally",
+      docsHref: "/guide/cli-reference"
+    },
+    "debug": {
+      shortLabel: "Debug",
+      title: "Profile debug logs",
+      preview: "4 events parsed",
+      actionLabel: "Profile debug log",
+      commandLabel: "glade debug",
+      command: "glade debug profile --log internal/debuglog/testdata/subscriber.log",
+      ciCommand: "glade debug profile --log internal/debuglog/testdata/subscriber.log --json",
+      sourceTitle: "Debug log input",
+      sourceLabel: "subscriber.log:8",
+      highlightedLine: 8,
+      sourceCode: [
+        "64.0 APEX_CODE,DEBUG;APEX_PROFILING,INFO;CALLOUT,INFO;DB,INFO;SYSTEM,DEBUG",
+        "00:00:00.000 (0)|USER_INFO|[EXTERNAL]|005000000000000AAA|isv@example.com|GMT|GMT+00:00",
+        "00:00:00.001 (1000000)|EXECUTION_STARTED",
+        "00:00:00.002 (2000000)|CODE_UNIT_STARTED|[EXTERNAL]|ns.TestProcessor.run",
+        "00:00:00.003 (3000000)|USER_DEBUG|[3]|INFO|start work",
+        "00:00:00.004 (4000000)|DML_BEGIN|[5]|Op:Insert|Type:Account|Rows:1",
+        "00:00:00.005 (5000000)|DML_END|[5]",
+        "00:00:00.006 (6000000)|SOQL_EXECUTE_BEGIN|[6]|Aggregations:0|SELECT Id, Name FROM Account WHERE Name = 'Acme'",
+        "00:00:00.007 (7000000)|SOQL_EXECUTE_END|[6]|Rows:1",
+        "00:00:00.008 (8000000)|USER_DEBUG|[7]|DEBUG|rows=1",
+        "00:00:00.009 (9000000)|CODE_UNIT_FINISHED|ns.TestProcessor.run",
+        "00:00:00.010 (10000000)|EXECUTION_FINISHED"
+      ].join("\n"),
+      outputViews: {
+        output: debugOutput,
+        json: debugJSON,
+        trace: debugTrace
+      },
+      resultStatus: "passed",
+      resultSummary: "PASSED · 4 events parsed · 1 log profile",
+      runningSummary: "RUNNING · reading log · parsing events · profiling hotspots",
+      runningOutput: "$ glade debug profile --log internal/debuglog/testdata/subscriber.log\n\nReading debug log...",
+      resultMetrics: [
+        ["Events", "4"],
+        ["SOQL", "1"],
+        ["DML", "1"],
+        ["CPU", "0ms"]
+      ],
+      runningMetrics: [
+        ["Phase", "profile"],
+        ["Events", "..."],
+        ["SOQL", "..."],
+        ["DML", "..."]
+      ],
+      proofTitle: "What Glade proved",
+      changedSummary: [
+        "The saved Salesforce log parsed locally.",
+        "The profile found 4 categorized events.",
+        "SOQL and DML counts came from the log.",
+        "JSON output is available for trace tooling."
+      ],
+      runningSummaryItems: [
+        "Reading debug log.",
+        "Parsing log entries.",
+        "Grouping SOQL, DML, and debug events.",
+        "Preparing JSON profile output."
+      ],
+      runningSteps: [
+        "Reading debug log...",
+        "Reading debug log...\nParsing log entries..."
+      ],
+      supportStatus: "offline log analysis",
+      installCommands: [
+        "curl -fsSL https://glade.sh/install.sh | sh",
+        "glade doctor",
+        "glade debug profile --log apex.log"
+      ],
+      installLabel: "Selected workflow: Profile debug logs",
+      docsHref: "/guide/cli-reference#glade-debug"
     }
   }
 
@@ -80,8 +696,42 @@
   }
 
   function init() {
+    initHomeSearchState()
     initHomeControls()
     initCommandPalette()
+    setScenarioFromHash()
+    window.addEventListener("hashchange", setScenarioFromHash)
+  }
+
+  function initHomeSearchState() {
+    hideHomeSearch()
+    var app = document.getElementById("app")
+    if (!app || !window.MutationObserver) return
+    var observer = new MutationObserver(function () {
+      hideHomeSearch()
+    })
+    observer.observe(app, { childList: true, subtree: true })
+  }
+
+  function hideHomeSearch() {
+    var search = document.querySelector(".VPNavBarSearch")
+    if (!search) {
+      window.setTimeout(hideHomeSearch, 120)
+      return
+    }
+    if (document.querySelector(".VPHome")) {
+      search.setAttribute("aria-hidden", "true")
+      search.setAttribute("inert", "")
+      search.setAttribute("data-home-hidden", "true")
+      search.inert = true
+      return
+    }
+    if (search.getAttribute("data-home-hidden") === "true") {
+      search.removeAttribute("aria-hidden")
+      search.removeAttribute("inert")
+      search.removeAttribute("data-home-hidden")
+      search.inert = false
+    }
   }
 
   function initHomeControls() {
@@ -91,79 +741,411 @@
 
       var copyButton = target.closest("[data-copy-target]")
       if (copyButton) {
-        var copyTarget = document.getElementById(copyButton.getAttribute("data-copy-target"))
-        if (!copyTarget) return
-        var text = copyTarget.textContent.trim()
+        copyToClipboard(copyButton)
+        return
+      }
+
+      var demoLink = target.closest("[data-demo-link]")
+      if (demoLink) {
+        var workbench = document.querySelector("[data-scenario-workbench]")
+        if (workbench) {
+          e.preventDefault()
+          workbench.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" })
+          window.history.replaceState(null, "", "#local-apex-workbench")
+          window.setTimeout(focusWorkbenchRunButton, prefersReducedMotion() ? 0 : 180)
+        }
+        return
+      }
+
+      var outputTab = target.closest("[data-output-tab]")
+      if (outputTab) {
+        e.preventDefault()
+        setOutputView(outputTab.getAttribute("data-output-tab"))
+        return
+      }
+
+      var runButton = target.closest("[data-run-scenario]")
+      if (runButton) {
+        e.preventDefault()
+        runActiveScenario()
+        return
+      }
+
+      var scenarioButton = target.closest("[data-scenario-id]")
+      if (scenarioButton) {
+        e.preventDefault()
+        setActiveScenario(scenarioButton.getAttribute("data-scenario-id"))
+      }
+    })
+
+    window.addEventListener("keydown", function (e) {
+      if (!(e instanceof KeyboardEvent)) return
+      var tag = document.activeElement && document.activeElement.tagName
+      var typing = tag === "INPUT" || tag === "TEXTAREA" || String(document.activeElement && document.activeElement.isContentEditable) === "true"
+      if (typing) return
+      if (!isWorkbenchKeyboardScope()) return
+      var focusedOutputTab = document.activeElement && document.activeElement.closest && document.activeElement.closest("[data-output-tab]")
+      if (focusedOutputTab && (e.key === "ArrowRight" || e.key === "ArrowLeft" || e.key === "Home" || e.key === "End")) {
+        e.preventDefault()
+        if (e.key === "Home") {
+          moveOutputTab(-activeOutputViewIndex())
+          return
+        }
+        if (e.key === "End") {
+          moveOutputTab(outputViewOrder.length - activeOutputViewIndex() - 1)
+          return
+        }
+        moveOutputTab(e.key === "ArrowRight" ? 1 : -1)
+        return
+      }
+      if (/^[1-4]$/.test(e.key)) {
+        e.preventDefault()
+        setActiveScenario(scenarioOrder[Number(e.key) - 1])
+      }
+      if (e.key.toLowerCase() === "r") {
+        e.preventDefault()
+        runActiveScenario()
+      }
+      if (e.key.toLowerCase() === "c") {
+        e.preventDefault()
+        copyActiveCommand()
+      }
+    })
+  }
+
+  function copyToClipboard(copyButton) {
+    var copyTarget = document.getElementById(copyButton.getAttribute("data-copy-target"))
+    if (!copyTarget) return
+    var text = copyLinesFromTarget(copyTarget)
+    var copyLabel = copyButton.getAttribute("data-copy-label") || copyButton.textContent
+    copyButton.setAttribute("data-copy-label", copyLabel)
+    copyText(text, function (success) {
+      copyButton.textContent = success ? "Copied" : "Copy failed"
+      setCopyStatus(success ? copyLabel + " copied to clipboard" : "Copy failed")
+      window.setTimeout(function () {
+        copyButton.textContent = copyLabel
+      }, 1400)
+    })
+  }
+
+  function copyLinesFromTarget(target) {
+    return target.textContent.trim()
+  }
+
+  function copyActiveCommand() {
+    var scenario = scenarios[activeScenarioId]
+    if (!scenario) return
+    copyText(scenario.command, function (success) {
+      setCopyStatus(success ? "Command copied" : "Copy failed")
+    })
+  }
+
+  function copyText(text, done) {
+    var settled = false
+    var fallbackSuccess = fallbackCopyText(text)
+
+    function complete(success) {
+      if (settled) return
+      settled = true
+      done(success)
+    }
+
+    if (fallbackSuccess) {
+      complete(true)
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
         navigator.clipboard.writeText(text).then(function () {
-          copyButton.textContent = "Copied"
-          setTimeout(function () {
-            copyButton.textContent = "Copy"
-          }, 1400)
+          complete(true)
+        }, function () {
+          if (!fallbackSuccess) complete(false)
         })
         return
-      }
-
-      var runButton = target.closest("[data-run-example]")
-      if (runButton) {
-        var activeId = activeExampleId()
-        var example = examples[activeId]
-        if (!example || runButton.hasAttribute("disabled")) return
-        runButton.setAttribute("disabled", "true")
-        setStatus("running")
-        setTimeout(function () {
-          setStatus("pass")
-          setOutput(example.result)
-          runButton.removeAttribute("disabled")
-        }, 520)
+      } catch (e) {
+        if (!fallbackSuccess) complete(false)
         return
       }
+    }
 
-      var exampleButton = target.closest("[data-example-id]")
-      if (exampleButton) {
-        setActiveExample(exampleButton.getAttribute("data-example-id"))
-      }
+    if (!fallbackSuccess) complete(false)
+  }
+
+  function fallbackCopyText(text) {
+    var input = document.createElement("textarea")
+    input.value = text
+    input.setAttribute("readonly", "readonly")
+    input.style.position = "fixed"
+    input.style.top = "-1000px"
+    document.body.appendChild(input)
+    input.select()
+    var copied = false
+    try {
+      copied = document.execCommand("copy")
+    } catch (e) {
+      copied = false
+    }
+    document.body.removeChild(input)
+    return copied
+  }
+
+  function setCopyStatus(message) {
+    var target = document.querySelector("[data-copy-status]")
+    if (!target) return
+    if (copyTimer) window.clearTimeout(copyTimer)
+    target.textContent = message
+    copyTimer = window.setTimeout(function () {
+      target.textContent = ""
+    }, 1600)
+  }
+
+  function isWorkbenchKeyboardScope() {
+    var workbench = document.querySelector("[data-scenario-workbench]")
+    var active = document.activeElement
+    return !!(workbench && active && workbench.contains(active))
+  }
+
+  function focusWorkbenchRunButton() {
+    var runButton = document.querySelector("[data-run-scenario]")
+    if (runButton) runButton.focus({ preventScroll: true })
+  }
+
+  function prefersReducedMotion() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+  }
+
+  function setScenarioFromHash() {
+    var hash = window.location.hash.replace(/^#/, "")
+    var id = scenarios[hash] ? hash : scenarioAliases[hash]
+    setActiveScenario(id || "check", false)
+  }
+
+  function setActiveScenario(id, updateHash) {
+    var scenario = scenarios[id]
+    if (!scenario) return
+    activeScenarioId = id
+    activeOutputView = "output"
+    clearRunTimers()
+
+    document.querySelectorAll("[data-scenario-id]").forEach(function (button) {
+      var active = button.getAttribute("data-scenario-id") === id
+      button.classList.toggle("active", active)
+      button.setAttribute("data-active", active ? "true" : "false")
+      button.setAttribute("aria-pressed", active ? "true" : "false")
+      button.setAttribute("aria-selected", active ? "true" : "false")
+      var label = button.querySelector("[data-selected-label]")
+      if (label) label.textContent = active ? "Selected" : ""
     })
+
+    setText("[data-command-label]", scenario.commandLabel)
+    setText("[data-source-title]", scenario.sourceTitle || "Apex input")
+    setText("[data-source-label]", scenario.sourceLabel)
+    setText("[data-command-strip]", scenario.command)
+    setText("[data-ci-command-strip]", scenario.ciCommand || scenario.command)
+    setText("[data-support-status]", scenario.supportStatus)
+    setText("[data-run-scenario]", scenario.actionLabel)
+    setText("[data-result-summary]", scenario.resultSummary)
+    setText("[data-proof-title]", scenario.proofTitle)
+
+    var runButton = document.querySelector("[data-run-scenario]")
+    if (runButton) {
+      runButton.disabled = false
+      runButton.setAttribute("data-run-state", "idle")
+    }
+
+    var count = scenarioOrder.indexOf(id) + 1
+    setText("[data-workflow-count]", count + " / 4")
+    var workflowCount = document.querySelector("[data-workflow-count]")
+    if (workflowCount) workflowCount.setAttribute("aria-label", "Workflow " + count + " of 4")
+    updateOutputTabs()
+    renderOutputView(scenario)
+    setStatus(scenario.resultStatus)
+    renderMetrics(scenario.resultMetrics)
+    renderChangedSummary(scenario.changedSummary)
+    renderInstallCommands(scenario.installCommands)
+    setText("[data-install-workflow-label]", scenario.installLabel)
+
+    var docs = document.querySelector("[data-docs-link]")
+    if (docs) docs.setAttribute("href", scenario.docsHref)
+
+    var source = document.querySelector("[data-source-code]")
+    if (source) {
+      source.textContent = scenario.sourceCode
+      if (scenario.highlightedLine) {
+        source.setAttribute("data-highlighted-line", String(scenario.highlightedLine))
+      } else {
+        source.removeAttribute("data-highlighted-line")
+      }
+    }
+    if (source && window.gladeHighlightCodeBlock) {
+      window.gladeHighlightCodeBlock(source)
+    }
+    if (source) markHighlightedSourceLine(source, scenario.highlightedLine)
+
+    if (updateHash !== false && window.location.hash !== "#" + id) {
+      window.history.replaceState(null, "", "#" + id)
+    }
   }
 
-  function activeExampleId() {
-    var side = document.querySelector("[data-example-active]")
-    return side ? side.getAttribute("data-example-active") : "account"
+  function setOutputView(view) {
+    var scenario = scenarios[activeScenarioId]
+    if (!scenario || !scenario.outputViews[view]) return
+    activeOutputView = view
+    updateOutputTabs()
+    renderOutputView(scenario)
   }
 
-  function setActiveExample(id) {
-    var example = examples[id]
-    var side = document.querySelector("[data-example-active]")
-    var code = document.querySelector("[data-example-code]")
-    if (!example || !side || !code) return
-
-    side.setAttribute("data-example-active", id)
-    document.querySelectorAll("[data-example-id]").forEach(function (button) {
-      var active = button.getAttribute("data-example-id") === id
+  function updateOutputTabs() {
+    document.querySelectorAll("[data-output-tab]").forEach(function (button) {
+      var active = button.getAttribute("data-output-tab") === activeOutputView
       button.classList.toggle("active", active)
       button.setAttribute("aria-pressed", active ? "true" : "false")
+      button.setAttribute("aria-selected", active ? "true" : "false")
     })
+  }
 
-    code.textContent = example.source
-    if (window.gladeHighlightCodeBlock) {
-      window.gladeHighlightCodeBlock(code)
+  function activeOutputViewIndex() {
+    var index = outputViewOrder.indexOf(activeOutputView)
+    return index < 0 ? 0 : index
+  }
+
+  function moveOutputTab(delta) {
+    var nextIndex = (activeOutputViewIndex() + delta + outputViewOrder.length) % outputViewOrder.length
+    setOutputView(outputViewOrder[nextIndex])
+    var nextTab = document.querySelector('[data-output-tab="' + outputViewOrder[nextIndex] + '"]')
+    if (nextTab) nextTab.focus({ preventScroll: true })
+  }
+
+  function renderOutputView(scenario) {
+    var output = document.querySelector("[data-command-output]")
+    if (!output) return
+    output.textContent = scenario.outputViews[activeOutputView] || scenario.outputViews.output
+    output.setAttribute("data-output-view", activeOutputView)
+    var panel = document.getElementById("command-output-panel")
+    if (panel) panel.setAttribute("aria-labelledby", "output-tab-" + activeOutputView)
+  }
+
+  function runActiveScenario() {
+    var scenario = scenarios[activeScenarioId]
+    if (!scenario) return
+    var runButton = document.querySelector("[data-run-scenario]")
+    activeOutputView = "output"
+    clearRunTimers()
+    updateOutputTabs()
+    setStatus("running")
+    setText("[data-result-summary]", scenario.runningSummary)
+    setText("[data-proof-title]", "Running locally")
+    setText("[data-command-output]", scenario.runningOutput)
+    renderMetrics(scenario.runningMetrics)
+    renderChangedSummary(scenario.runningSummaryItems)
+    if (runButton) {
+      runButton.disabled = true
+      runButton.textContent = "Running..."
+      runButton.setAttribute("data-run-state", "running")
     }
-    setStatus(example.idle.status === "Pass" ? "pass" : "idle")
-    setOutput(example.idle)
+
+    if (prefersReducedMotion()) {
+      finishRun(scenario, runButton)
+      return
+    }
+
+    var runSteps = scenario.runningSteps || [
+      "Loading local metadata...",
+      "Loading local metadata...\nIndexing Apex symbols..."
+    ]
+
+    runTimers.push(window.setTimeout(function () {
+      setText("[data-command-output]", "$ " + scenario.command + "\n\n" + runSteps[0])
+    }, 260))
+
+    runTimers.push(window.setTimeout(function () {
+      setText("[data-command-output]", "$ " + scenario.command + "\n\n" + runSteps[1])
+    }, 560))
+
+    runTimers.push(window.setTimeout(function () {
+      finishRun(scenario, runButton)
+    }, 940))
   }
 
-  function setStatus(value) {
-    var status = document.querySelector("[data-run-status]")
-    if (!status) return
-    status.textContent = value
-    status.className = "home-status-pill home-status-" + value
+  function finishRun(scenario, runButton) {
+    setStatus(scenario.resultStatus)
+    setText("[data-result-summary]", scenario.resultSummary)
+    setText("[data-proof-title]", scenario.proofTitle)
+    renderMetrics(scenario.resultMetrics)
+    renderChangedSummary(scenario.changedSummary)
+    renderOutputView(scenario)
+    if (runButton) {
+      runButton.disabled = false
+      runButton.textContent = "Run again"
+      runButton.setAttribute("data-run-state", "complete")
+    }
   }
 
-  function setOutput(output) {
-    Object.keys(output).forEach(function (key) {
-      var target = document.querySelector('[data-output-key="' + key + '"]')
-      if (!target) return
-      target.textContent = output[key]
-      target.className = key === "status" && output[key] === "Pass" ? "home-output-pass" : ""
+  function clearRunTimers() {
+    runTimers.forEach(function (timer) {
+      window.clearTimeout(timer)
+    })
+    runTimers = []
+  }
+
+  function setText(selector, value) {
+    var target = document.querySelector(selector)
+    if (target) target.textContent = value
+  }
+
+  function setStatus(status) {
+    var summary = document.querySelector("[data-result-summary]")
+    if (summary) summary.setAttribute("data-result-state", status)
+    var target = document.querySelector("[data-result-status]")
+    if (!target) return
+    target.className = "home-status home-status-" + status
+    target.innerHTML = '<span class="home-status-dot"></span>' + escapeHTML(status)
+  }
+
+  function renderMetrics(metrics) {
+    var target = document.querySelector("[data-result-metrics]")
+    if (!target) return
+    target.textContent = ""
+    metrics.forEach(function (metric) {
+      var row = document.createElement("div")
+      var label = document.createElement("dt")
+      var value = document.createElement("dd")
+      label.textContent = metric[0]
+      value.textContent = metric[1]
+      row.appendChild(label)
+      row.appendChild(value)
+      target.appendChild(row)
+    })
+  }
+
+  function renderChangedSummary(changedSummary) {
+    var target = document.querySelector("[data-changed-summary]")
+    if (!target) return
+    target.textContent = ""
+    changedSummary.forEach(function (item) {
+      var row = document.createElement("li")
+      row.textContent = item
+      target.appendChild(row)
+    })
+  }
+
+  function renderInstallCommands(installCommands) {
+    var target = document.querySelector("[data-install-commands]")
+    if (!target) return
+    target.textContent = installCommands.join("\n")
+  }
+
+  function pluralize(count, singular, plural) {
+    return count + " " + (count === 1 ? singular : (plural || singular + "s"))
+  }
+
+  function markHighlightedSourceLine(source, highlightedLine) {
+    source.querySelectorAll(".line").forEach(function (line, index) {
+      if (highlightedLine && index + 1 === highlightedLine) {
+        line.setAttribute("data-highlighted", "true")
+      } else {
+        line.removeAttribute("data-highlighted")
+      }
     })
   }
 
@@ -171,23 +1153,26 @@
     var overlay = document.createElement("div")
     overlay.className = "home-cmd-overlay"
     overlay.setAttribute("aria-hidden", "true")
+    overlay.inert = true
     overlay.innerHTML =
       '<div class="home-cmd-panel">' +
-      '<div class="home-cmd-header"><span>glade</span><button class="home-cmd-close">esc</button></div>' +
+      '<div class="home-cmd-header"><span>glade</span><button class="home-cmd-close" type="button">esc</button></div>' +
       '<div class="home-cmd-items">' +
-      '<a href="/guide/installation" class="home-cmd-item"><strong>Install Glade</strong><code>curl -fsSL https://glade.sh/install.sh | sh</code></a>' +
-      '<a href="/guide/cli-reference" class="home-cmd-item"><strong>Check source</strong><code>glade check --project . --json</code></a>' +
-      '<a href="/guide/local-testing" class="home-cmd-item"><strong>Run tests</strong><code>glade test --project . --json</code></a>' +
-      '<a href="/guide/overview" class="home-cmd-item"><strong>Open docs</strong><code>/guide/overview</code></a>' +
-      '<a href="/guide/playground" class="home-cmd-item"><strong>Playground Docs</strong><code>glade playground --examples --open</code></a>' +
+      '<a href="/guide/installation" class="home-cmd-item"><strong>Install</strong><code>curl -fsSL https://glade.sh/install.sh | sh</code></a>' +
+      '<a href="#check" class="home-cmd-item"><strong>Run local check</strong><code>glade check --project . --no-progress</code></a>' +
+      '<a href="#test" class="home-cmd-item"><strong>Run focused tests</strong><code>glade test --project . --class PassingTest --no-progress</code></a>' +
+      '<a href="#exec" class="home-cmd-item"><strong>Execute Apex locally</strong><code>glade exec --debug-log - "System.debug(\\\'local\\\');"</code></a>' +
+      '<a href="#debug" class="home-cmd-item"><strong>Profile debug logs</strong><code>glade debug profile --log apex.log</code></a>' +
       "</div></div>"
     document.body.appendChild(overlay)
 
     var close = function () {
       overlay.setAttribute("aria-hidden", "true")
+      overlay.inert = true
     }
     var open = function () {
       overlay.setAttribute("aria-hidden", "false")
+      overlay.inert = false
     }
     overlay.addEventListener("click", function (e) {
       if (e.target === overlay) close()
@@ -204,6 +1189,18 @@
         open()
       }
       if (e.key === "Escape") close()
+    })
+  }
+
+  function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, function (char) {
+      return {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[char]
     })
   }
 })()

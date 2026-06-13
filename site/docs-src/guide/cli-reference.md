@@ -1,6 +1,56 @@
 # CLI Reference
 
+<div class="docs-intro">
+  <p class="docs-intro-eyebrow">Reference</p>
+  <p>Find the command you need, then copy a real example. Most project commands accept <code>--project &lt;root&gt;</code> and default to the current directory when a project is discoverable.</p>
+  <ul>
+    <li>Use setup commands when starting a workspace.</li>
+    <li>Use check/test commands in the local loop.</li>
+    <li>Use report, editor, and plugin commands for larger teams.</li>
+  </ul>
+</div>
+
 All commands are local unless you point Glade at an external path or start a server. Most project commands accept `--project <root>` and default to the current directory when a project is discoverable.
+
+<div class="docs-command-filter">
+  <label for="cli-command-filter">Filter commands</label>
+  <input id="cli-command-filter" data-command-filter=".docs-command-card" type="search" placeholder="Try check, test, report, plugin, playground" autocomplete="off" />
+</div>
+
+<div class="docs-command-grid" aria-label="Command groups">
+  <a class="docs-command-card" href="#glade-config">
+    <strong>Project setup</strong>
+    <span><code>glade doctor</code>, <code>glade init</code>, <code>glade config</code>, and shell completion.</span>
+  </a>
+  <a class="docs-command-card" href="#glade-check">
+    <strong>Check and inspect</strong>
+    <span><code>glade parse</code>, <code>glade inspect</code>, <code>glade schema</code>, and <code>glade check</code>.</span>
+  </a>
+  <a class="docs-command-card" href="#glade-test">
+    <strong>Test</strong>
+    <span>Run all tests, one class, one method, changed tests, daemon mode, and cache controls.</span>
+  </a>
+  <a class="docs-command-card" href="#glade-report-assess">
+    <strong>Reports</strong>
+    <span>Assessment, cruft, refactor-proof, saved run reports, and CI artifacts.</span>
+  </a>
+  <a class="docs-command-card" href="#glade-debug">
+    <strong>Editor and debug</strong>
+    <span>LSP, DAP, VS Code install, debug-log parsing, and profile analysis.</span>
+  </a>
+  <a class="docs-command-card" href="#glade-plugins">
+    <strong>Plugins</strong>
+    <span>Install, link, inspect, lock, restore, and run first-party plugins.</span>
+  </a>
+  <a class="docs-command-card" href="#glade-playground">
+    <strong>Server and playground</strong>
+    <span>Start local Salesforce-shaped APIs and browser playground examples.</span>
+  </a>
+  <a class="docs-command-card" href="#glade-db">
+    <strong>Database</strong>
+    <span>Seed, reset, inspect, and export persistent local org state.</span>
+  </a>
+</div>
 
 ## `glade version`
 
@@ -142,7 +192,7 @@ glade exec --project . --limit-mode strict "System.debug(Limits.getDmlStatements
 
 Discover and run local Apex tests. Useful flags include `changed --since <ref>`,
 `--watch`, `--watch-once`, `--last-failed`, `--wizard`, `--daemon`,
-`--connect`, `--no-serve`, `--filter`, `--json`, `--junit`, and `--limit-mode`.
+`--connect`, `--no-serve`, `--class`, `--method`, `--json`, `--junit`, and `--limit-mode`.
 
 `glade test serve` keeps the runtime warm across CLI invocations. Later runs
 auto-connect through `.glade/test/serve.sock` unless `--no-serve` is set.
@@ -154,9 +204,9 @@ build. See [Test Startup Cache](/guide/test-startup-cache) for freshness rules.
 glade test serve --project .
 glade test daemon status --project .
 glade test --project .
-glade test --project . --filter AccountServiceTest --json
-glade test --project . --filter AccountServiceTest.testCreatesAccount --junit reports/glade-junit.xml
-glade test --project . --connect --filter AccountServiceTest
+glade test --project . --class AccountServiceTest --json
+glade test --project . --class AccountServiceTest --method testCreatesAccount --junit reports/glade-junit.xml
+glade test --project . --connect --class AccountServiceTest
 glade test changed --project . --since origin/main --json
 glade test failed --project .
 glade test --project . --wizard
@@ -170,7 +220,7 @@ Clear the on-disk startup cache or skip it for one run:
 
 ```bash
 glade test clear-cache --project .
-glade test --project . --no-cache --filter AccountServiceTest
+glade test --project . --no-cache --class AccountServiceTest
 ```
 
 Run `glade help test` for the full flag list.
