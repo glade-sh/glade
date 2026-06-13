@@ -8,7 +8,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | --- | --- | --- | --- |
 | AccessLevel | `AccessLevel.withPermissionSetId(String)` | `supported` | Creates a local permission-set-scoped user-mode token used by supported SOQL and DML permission checks. |
 | Answers | `Answers.findSimilar(Question)` | `unsupported` | Zone similar-question search requires Answers service data and returns a stable UnsupportedFeature diagnostic locally. |
-| ApexPages | `ApexPages.Message` | `partial` | Constructor, getters, add/get/has message state, and Visualforce action reset behavior; no full rendering lifecycle. |
+| ApexPages | `ApexPages.Message` | `supported` | Constructor, getters, add/get/has message state, and Visualforce action reset behavior are modeled. |
 | ApexPages | `ApexPages.addMessage` | `supported` | Stores page messages on the VM instance. |
 | ApexPages | `ApexPages.addMessage(ApexPages.Message)` | `supported` | Stores page messages on the VM instance. |
 | ApexPages | `ApexPages.addMessages(Exception)` | `supported` | Converts supported exception values into VM-local page messages. |
@@ -20,8 +20,10 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | ApexPages | `ApexPages.hasMessages` | `supported` | Checks VM-local page messages. |
 | ApexPages | `ApexPages.hasMessages()` | `supported` | Checks VM-local page messages. |
 | ApexPages | `ApexPages.hasMessages(ApexPages.Severity)` | `supported` | Checks VM-local page messages by severity. |
-| Approval | `Approval.process(Approval.ProcessRequest)` | `partial` | Deterministic local approval result DTOs for submit/workitem request shapes; no live approval engine routing. |
-| Approval | `Approval.process(Approval.ProcessRequest, Boolean)` | `partial` | Deterministic local approval result DTOs for submit/workitem request shapes; no live approval engine routing. |
+| ApexPages | `Visualforce full rendering lifecycle` | `unsupported` | Full Visualforce rendering lifecycle requires the hosted renderer and is fenced by PageReference rendering diagnostics locally. |
+| Approval | `Approval.process hosted approval engine routing` | `unsupported` | Process definition routing, criteria evaluation, approver assignment, and workitem lifecycle require hosted approval metadata services. |
+| Approval | `Approval.process(Approval.ProcessRequest)` | `supported` | Returns deterministic local ProcessResult DTOs for submit and workitem request shapes. |
+| Approval | `Approval.process(Approval.ProcessRequest, Boolean)` | `supported` | Returns deterministic local ProcessResult DTOs for submit and workitem request shapes with allOrNone error handling. |
 | Assert | `Assert.areEqual` | `supported` | Routes through local assertion failures with optional message text. |
 | Assert | `Assert.areNotEqual` | `supported` | Routes through local assertion failures with optional message text. |
 | Assert | `Assert.fail` | `supported` | Raises local System.AssertException with optional message text. |
@@ -31,12 +33,13 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Assert | `Assert.isTrue` | `supported` | Routes through local assertion failures with optional message text. |
 | Boolean | `Boolean.valueOf(Object)` | `supported` | Converts supported local field/object values into Boolean values. |
 | Boolean | `Boolean.valueOf(String)` | `supported` | Converts strings to Boolean using Apex-shaped true/false parsing. |
-| BusinessHours | `BusinessHours.add(String, Datetime, Long)` | `partial` | Fixture-backed local BusinessHours record week schedule math; holiday and service-calendar edge behavior is not modeled. |
-| BusinessHours | `BusinessHours.addGmt(String, Datetime, Long)` | `partial` | Fixture-backed local BusinessHours record week schedule math; holiday and service-calendar edge behavior is not modeled. |
-| BusinessHours | `BusinessHours.diff(String, Datetime, Datetime)` | `partial` | Fixture-backed local BusinessHours record week schedule math; holiday and service-calendar edge behavior is not modeled. |
-| BusinessHours | `BusinessHours.isWithin(String, Datetime)` | `partial` | Fixture-backed local BusinessHours record week schedule math; holiday and service-calendar edge behavior is not modeled. |
-| BusinessHours | `BusinessHours.nextStartDate(String, Datetime)` | `partial` | Fixture-backed local BusinessHours record week schedule math; holiday and service-calendar edge behavior is not modeled. |
-| Crypto | `Crypto.generateDigest` | `partial` | MD5, SHA-1/SHA1, SHA-256/SHA256, SHA-384/SHA384, SHA-512/SHA512, and SHA3-256/384/512 are modeled and SHA-256 is fixture-pinned; unsupported digest names raise local SecurityException. |
+| BusinessHours | `BusinessHours hosted service calendar holiday expansion` | `unsupported` | Partial-day holidays, recurring holiday expansion, and service-calendar associations require hosted calendar metadata beyond seeded local records. |
+| BusinessHours | `BusinessHours.add(String, Datetime, Long)` | `supported` | Runs deterministic local week-schedule math from seeded BusinessHours records with timezone handling and all-day Holiday closures. |
+| BusinessHours | `BusinessHours.addGmt(String, Datetime, Long)` | `supported` | Runs deterministic local week-schedule math from seeded BusinessHours records with GMT Datetime output and all-day Holiday closures. |
+| BusinessHours | `BusinessHours.diff(String, Datetime, Datetime)` | `supported` | Counts deterministic local business milliseconds across seeded week schedules, timezones, and all-day Holiday closures. |
+| BusinessHours | `BusinessHours.isWithin(String, Datetime)` | `supported` | Checks seeded local week schedules, timezones, and all-day Holiday closures. |
+| BusinessHours | `BusinessHours.nextStartDate(String, Datetime)` | `supported` | Finds the next deterministic local start from seeded week schedules, timezones, and all-day Holiday closures. |
+| Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA-1/SHA1, SHA-256/SHA256, SHA-384/SHA384, SHA-512/SHA512, and SHA3-256/384/512 digests are fixture-pinned, with Salesforce-shaped SecurityException diagnostics for unknown names. |
 | Database | `Database.UnitOfWork` | `supported` | Queues local DML operations and applies them on commitWork; discardWork drops pending local work. |
 | Database | `Database.convertLead` | `supported` | Local lead conversion creates Account, Contact, and optional Opportunity records and updates Lead conversion fields. |
 | Database | `Database.countQuery` | `supported` | Dynamic SOQL count execution against the local org with local AccessLevel parsing. |
@@ -94,31 +97,33 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Decimal | `Decimal.divide(Decimal,Integer,RoundingMode)` | `supported` | Divides local Decimal values with explicit scale and RoundingMode. |
 | Decimal | `Decimal.doubleValue` | `supported` | Returns local Decimal value. |
 | Decimal | `Decimal.intValue` | `supported` | Truncates to integer. |
-| Decimal | `Decimal.round` | `partial` | Uses deterministic local HALF_UP tie behavior for finite local Decimal values and is fixture-pinned for simple ties; full Salesforce Decimal precision is not modeled. |
-| Decimal | `Decimal.setScale` | `partial` | Models finite local Decimal values, negative scale, and common RoundingMode ties up to the local scale fence; fixture covers simple scale and HALF_UP ties, while full Salesforce Decimal precision is not modeled. |
+| Decimal | `Decimal.round` | `supported` | Oracle-pinned finite Decimal rounding uses Salesforce default HALF_EVEN ties and explicit RoundingMode behavior. |
+| Decimal | `Decimal.setScale` | `supported` | Oracle-pinned finite Decimal scaling covers positive and negative scales, RoundingMode ties, UNNECESSARY MathException, and Salesforce scale bounds. |
 | EncodingUtil | `EncodingUtil.base64Decode` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.base64Encode` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.convertFromHex` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.convertToHex` | `supported` | Blob-shaped local value. |
-| EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Models URL form decoding for UTF-8, US-ASCII, and ISO-8859-1 aliases and is fixture-pinned for UTF-8; broader Salesforce charset replacement behavior is not modeled. |
-| EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Models URL form encoding for UTF-8, US-ASCII, and ISO-8859-1 aliases with strict local charset checks and is fixture-pinned for UTF-8; broader Salesforce charset replacement behavior is not modeled. |
+| EncodingUtil | `EncodingUtil.urlDecode` | `supported` | Oracle-pinned URL form decoding covers UTF-8, US-ASCII replacement, ISO-8859-1 aliases, and UTF-16 mixed escaped/plain input. |
+| EncodingUtil | `EncodingUtil.urlEncode` | `supported` | Oracle-pinned URL form encoding covers UTF-8, US-ASCII replacement, ISO-8859-1 aliases, and UTF-16 escaped output. |
 | Exception | `InvalidParameterValueException constructors` | `supported` | Supports zero-arg, message, cause, and existing platform-specific constructor shapes. |
 | Exception | `NoAccessException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
 | Exception | `NoDataFoundException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
 | Exception | `NullPointerException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
-| FeatureManagement | `FeatureManagement.checkPermission` | `partial` | Checks local runAs permission-list state. |
+| FeatureManagement | `FeatureManagement.checkPermission` | `supported` | Checks local runAs user permissions, permission sets, and custom-permission assignments. |
 | HTTP | `Http.send(HttpRequest)` | `supported` | Routes local callouts through registered HttpCalloutMock implementations; real outbound network transport is intentionally not executed by the local runtime. |
-| HTTP | `HttpRequest` | `partial` | Endpoint, method, headers, timeout, body, and blob body accessors are local-fixture pinned; client certificates and live transport remain outside local support. |
-| HTTP | `HttpResponse` | `partial` | Status, status code, headers, body, and blob body accessors are local-fixture pinned; live transport response behavior remains outside local support. |
-| JSON | `JSON.deserialize` | `partial` | Maps supported source DTOs, including String, Integer, and List<String> fields, plus SObject, enum, collection, primitive, and string-key map targets; unsupported map key targets remain fenced. |
-| JSON | `JSON.deserializeStrict` | `partial` | Accepts known fields and rejects unknown fields for supported schema/class targets, including source DTO and nested local DTO fields; unsupported target coercions remain outside the local model. |
-| JSON | `JSON.deserializeUntyped` | `partial` | Maps nested JSON primitive/list/map graphs into deterministic Apex-shaped local containers; full Salesforce parser edge parity is not modeled. |
-| JSON | `JSON.serialize` | `partial` | Serializes supported source DTO, Apex DTO, enum, SObject, collection, primitive, and suppressApexObjectNulls values; full Salesforce generator edge parity is not modeled. |
-| JSON | `JSON.serializePretty` | `partial` | Pretty output for supported source DTO, Apex DTO, SObject, collection, and primitive values; full Salesforce generator edge parity is not modeled. |
+| HTTP | `HttpRequest` | `supported` | Endpoint, method, headers, timeout, body, blob body, and local DTO accessors are modeled. |
+| HTTP | `HttpRequest client certificate methods` | `unsupported` | Client certificate lookup depends on Salesforce certificate store state and raises a stable UnsupportedFeature diagnostic locally. |
+| HTTP | `HttpResponse` | `supported` | Status, status code, headers, body, blob body, and local DTO accessors are modeled. |
+| JSON | `JSON.deserialize` | `supported` | Oracle-pinned DTO, SObject, primitive, collection, Object, string-key, and scalar-key map paths preserve duplicate-key last-value behavior and field order. |
+| JSON | `JSON.deserializeStrict` | `supported` | Oracle-pinned strict DTO and SObject paths accept known fields, reject unknown fields with Salesforce-shaped diagnostics, and keep the last duplicate SObject field value. |
+| JSON | `JSON.deserializeUntyped` | `supported` | Oracle-pinned untyped primitive, list, and map containers preserve order, collapse duplicate keys to the last value, and throw Salesforce-shaped oversized integer errors. |
+| JSON | `JSON.serialize` | `supported` | Oracle-pinned serialization covers DTO, SObject, collection, map, primitive, enum, Object, and suppressApexObjectNulls paths with deterministic field order. |
+| JSON | `JSON.serializePretty` | `supported` | Oracle-pinned pretty serialization covers DTO, SObject, collection, map, primitive, and Object paths with Salesforce-style spacing. |
 | Label | `Label.get(String,String)` | `supported` | Resolves local custom label metadata with existing platform and managed-namespace fallbacks. |
 | Label | `Label.get(String,String,String)` | `supported` | Resolves local custom label metadata for an explicit language, then falls back to the local label resolver. |
 | Label | `Label.translationExists(String,String,String)` | `supported` | Returns true when local label metadata has a matching explicit language translation. |
-| Limits | `Limits.get*` | `partial` | SOQL, SOSL, DML, heap, CPU, async, callout, email, runAs, and savepoint counters are modeled; unmodeled getter families remain local defaults. |
+| Limits | `Exact Salesforce governor accounting profiles` | `unsupported` | Exact hosted governor deltas require Salesforce runtime accounting and remain outside local execution. |
+| Limits | `Limits.get*` | `supported` | Returns deterministic local counters and caps for all tracked getter families, including zero-valued local service counters. |
 | Limits | `Limits.getAsyncCalls` | `supported` | Returns the local async-call counter. |
 | Limits | `Limits.getLimitAsyncCalls` | `supported` | Returns the local async-call limit. |
 | Math | `Math.abs` | `supported` | Integer and Decimal values. |
@@ -129,29 +134,32 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Math | `Math.pow` | `supported` | Numeric values. |
 | Math | `Math.round` | `supported` | Numeric values. |
 | Math | `Math.sqrt` | `supported` | Numeric values. |
-| Messaging | `Messaging.SingleEmailMessage` | `partial` | Common DTO setters/getters and local file attachments are modeled; no delivery transport or Salesforce content attachment service. |
-| Messaging | `Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption)` | `partial` | Uses local stored-template rendering and static-resource attachment retrieval for METADATA_ONLY/METADATA_WITH_BODY; Salesforce content attachment relationships are not modeled. |
-| Messaging | `Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption,Boolean)` | `partial` | Uses local stored-template rendering and static-resource attachment retrieval; updateEmailTemplateUsage is accepted for shape and ignored locally. |
-| Messaging | `Messaging.sendEmail` | `partial` | Returns local SendEmailResult values, validates supported DTOs, and increments email limits; no delivery transport or send-options overloads. |
+| Messaging | `Messaging.SingleEmailMessage` | `supported` | Common DTO setters/getters, recipient fields, template fields, body fields, flags, and local file attachment values are modeled. |
+| Messaging | `Messaging.renderStoredEmailTemplate Salesforce content attachment service` | `unsupported` | Salesforce content attachment relationship expansion and template usage mutation depend on hosted email services. |
+| Messaging | `Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption)` | `supported` | Renders local stored EmailTemplate subject, HTML, text bodies, merge fields, and static-resource attachments for NONE, METADATA_ONLY, and METADATA_WITH_BODY. |
+| Messaging | `Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption,Boolean)` | `supported` | Renders local stored templates like the four-argument overload and accepts updateEmailTemplateUsage without remote usage mutation. |
+| Messaging | `Messaging.sendEmail` | `supported` | Returns ordered local SendEmailResult values, validates supported DTOs, captures sent messages, and increments local email limits. |
+| Messaging | `Messaging.sendEmail delivery transport and send options` | `unsupported` | Outbound delivery and SendEmailOptions depend on Salesforce email services and raise stable UnsupportedFeature diagnostics locally. |
 | Messaging | `Messaging.sendEmail(Messaging.Email[],Boolean)` | `supported` | Returns ordered local SendEmailResult values for supported email message DTOs; no delivery transport. |
-| PageReference | `PageReference` | `partial` | Constructor, URL, redirect, mutable parameters, headers, and current-page state; getContent, PDF, and full rendering remain outside the local model. |
+| PageReference | `PageReference` | `supported` | Constructor, URL, redirect, mutable parameters, headers, cookies, and current-page state are modeled. |
 | PageReference | `PageReference(partialURL)` | `supported` | Builds a VM-local PageReference from a partial URL with mutable parameters and headers. |
 | PageReference | `PageReference(record)` | `supported` | Builds a Visualforce PageReference from a local ApexPage SObject record. |
-| Pattern | `Matcher.find` | `partial` | Go regexp-backed Java subset with fixture-pinned local match state; Java-only matcher and regex features remain fenced. |
-| Pattern | `Matcher.group` | `partial` | Fixture-pinned whole-match and capture groups after find/matches over the supported regex subset; Java-only matcher features remain fenced. |
-| Pattern | `Matcher.matches` | `partial` | Fixture-pinned whole-string matching over the local Go regexp-backed Java subset; Java-only regex features remain fenced. |
-| Pattern | `Pattern.compile` | `partial` | Compiles the local Go regexp-backed Java subset with common flags and quote escapes; fixture pins simple captures, while Java-only regex classes and flags remain fenced. |
-| Pattern | `Pattern.matches` | `partial` | Fixture-pinned whole-string matching over the local Go regexp-backed Java subset; Java-only regex features remain fenced. |
-| QuickAction | `QuickAction.describeAvailableActions` | `partial` | Local QuickAction metadata and deterministic DTO results; no live UI action service execution. |
-| QuickAction | `QuickAction.describeAvailableQuickActions(String)` | `partial` | Local QuickAction metadata and deterministic DTO results; no live UI action service execution. |
-| QuickAction | `QuickAction.describeQuickActions(List<String>)` | `partial` | Local QuickAction metadata and deterministic DTO results; no live UI action service execution. |
-| QuickAction | `QuickAction.performQuickAction` | `partial` | Returns deterministic local QuickActionResult DTOs for supported request shapes; no live UI action service execution. |
-| QuickAction | `QuickAction.performQuickAction(QuickAction.QuickActionRequest)` | `partial` | Returns deterministic local QuickActionResult DTOs for supported request shapes; no live UI action service execution. |
-| QuickAction | `QuickAction.performQuickAction(QuickAction.QuickActionRequest,Boolean)` | `partial` | Returns deterministic local QuickActionResult DTOs for supported request shapes; no live UI action service execution. |
-| QuickAction | `QuickAction.performQuickActions(List<QuickAction.QuickActionRequest>)` | `partial` | Returns deterministic local QuickActionResult DTOs for supported request shapes; no live UI action service execution. |
-| QuickAction | `QuickAction.performQuickActions(List<QuickAction.QuickActionRequest>,Boolean)` | `partial` | Returns deterministic local QuickActionResult DTOs for supported request shapes; no live UI action service execution. |
-| QuickAction | `QuickAction.retrieveQuickActionTemplate(String,Id)` | `partial` | Local QuickAction metadata and deterministic DTO results; no live UI action service execution. |
-| QuickAction | `QuickAction.retrieveQuickActionTemplates(List<String>,Id)` | `partial` | Local QuickAction metadata and deterministic DTO results; no live UI action service execution. |
+| PageReference | `PageReference.getContent and getContentAsPDF` | `unsupported` | Visualforce rendering and PDF generation require the hosted rendering service and raise stable UnsupportedFeature diagnostics locally. |
+| Pattern | `Matcher.find` | `supported` | Oracle- and fixture-pinned regexp2-backed Java regex matching covers lookaround, named groups/backrefs, atomic groups, possessive quantifiers, \G, \R, \h/\v, (?U), Java Unicode aliases, UAX #29 \X and \b{g}, nested class algebra, and Apex UTF-16 code-unit match indexes. |
+| Pattern | `Matcher.group` | `supported` | Returns fixture-pinned whole-match and capture groups, including unmatched optional groups, over the supported Java regex path with Apex UTF-16 code-unit group bounds. |
+| Pattern | `Matcher.matches` | `supported` | Whole-region matching over the supported regexp2-backed Java regex path. |
+| Pattern | `Pattern.compile` | `supported` | Compiles the supported regexp2-backed Java regex path: common flags, quote escapes, lookaround, named groups/backrefs, atomic groups, possessive quantifiers, \G, \R, \h/\v, (?U), Java Unicode aliases, UAX #29 \X and \b{g}, and nested class algebra. |
+| Pattern | `Pattern.matches` | `supported` | Whole-string matching over the supported regexp2-backed Java regex path, including UAX #29 grapheme patterns. |
+| QuickAction | `QuickAction.describeAvailableActions` | `supported` | Local QuickAction metadata, predefined default values, and deterministic DTO results are modeled. |
+| QuickAction | `QuickAction.describeAvailableQuickActions(String)` | `supported` | Local QuickAction metadata, predefined default values, and deterministic DTO results are modeled. |
+| QuickAction | `QuickAction.describeQuickActions(List<String>)` | `supported` | Local QuickAction metadata, predefined default values, and deterministic DTO results are modeled. |
+| QuickAction | `QuickAction.performQuickAction` | `supported` | Returns deterministic local QuickActionResult DTOs for supported request shapes. |
+| QuickAction | `QuickAction.performQuickAction(QuickAction.QuickActionRequest)` | `supported` | Returns deterministic local QuickActionResult DTOs for supported request shapes. |
+| QuickAction | `QuickAction.performQuickAction(QuickAction.QuickActionRequest,Boolean)` | `supported` | Returns deterministic local QuickActionResult DTOs for supported request shapes. |
+| QuickAction | `QuickAction.performQuickActions(List<QuickAction.QuickActionRequest>)` | `supported` | Returns deterministic local QuickActionResult DTOs for supported request shapes. |
+| QuickAction | `QuickAction.performQuickActions(List<QuickAction.QuickActionRequest>,Boolean)` | `supported` | Returns deterministic local QuickActionResult DTOs for supported request shapes. |
+| QuickAction | `QuickAction.retrieveQuickActionTemplate(String,Id)` | `supported` | Local QuickAction metadata, predefined default values, and deterministic template DTOs are modeled. |
+| QuickAction | `QuickAction.retrieveQuickActionTemplates(List<String>,Id)` | `supported` | Local QuickAction metadata, predefined default values, and deterministic template DTOs are modeled. |
 | Request | `Request.getCurrent()` | `supported` | Returns deterministic local request context values for local Apex execution. |
 | Request | `Request.getQuiddity()` | `supported` | Returns deterministic local request context values for local Apex execution. |
 | Request | `Request.getRequestId()` | `supported` | Returns deterministic local request context values for local Apex execution. |
@@ -164,23 +172,25 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Sandbox | `SandboxPostCopy.runApexClass(SandboxContext)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
 | Schedulable | `Schedulable.execute(SchedulableContext)` | `supported` | Queues and drains local Scheduled Apex jobs during Test.stopTest with deterministic CronTrigger IDs. |
 | Schedulable | `SchedulableContext.getTriggerId()` | `supported` | Queues and drains local Scheduled Apex jobs during Test.stopTest with deterministic CronTrigger IDs. |
-| Schema | `DescribeFieldResult` | `partial` | Local metadata-backed field labels, picklists, reference targets, and access/create/update booleans; full org metadata parity is not modeled. |
-| Schema | `DescribeSObjectResult` | `partial` | Fixture-backed local object labels, key prefixes, query/search flags, fields, record types, and child relationships; full org metadata parity is not modeled. |
-| Schema | `Schema.describeDataCategoryGroupStructures(List<Schema.DataCategoryGroupSobjectTypePair>,Boolean)` | `partial` | Deterministic local data category structures from org metadata; no external category service lookup. |
-| Schema | `Schema.describeDataCategoryGroups(List<String>)` | `partial` | Deterministic local data category group describes from org metadata; empty when no metadata is loaded. |
-| Schema | `Schema.describeSObjects(List<String>)` | `partial` | Fixture-backed local metadata object names, labels, key prefixes, access booleans, fields, record types, and SObjectType tokens; full org metadata parity is not modeled. |
-| Schema | `Schema.getGlobalDescribe()` | `partial` | Fixture-backed local describe map for loaded standard and project objects; full org metadata parity is not modeled. |
-| Search | `Search.find` | `partial` | Returns deterministic SearchResult DTOs from fixed search results or local org records; no external ranking, stemming, synonyms, language, or rich snippets. |
-| Search | `Search.find(String,AccessLevel)` | `partial` | Uses deterministic local org search with AccessLevel permission checks; no external ranking, stemming, synonyms, language, or rich snippets. |
-| Search | `Search.find(String,Object)` | `partial` | Accepts recognized local AccessLevel or SuggestionOption object values against deterministic local org search; no external ranking, stemming, synonyms, or language model. |
-| Search | `Search.query / SOSL FIND` | `partial` | Parses RETURNING clauses and returns deterministic rows from fixed search results or local org records; no ranking, stemming, synonyms, language, or external search service. |
-| Search | `Search.query(String,AccessLevel)` | `partial` | Uses deterministic local org SOSL with AccessLevel permission checks; no ranking, stemming, synonyms, language, or external search service. |
-| Search | `Search.query(String,Object)` | `partial` | Accepts recognized local AccessLevel or SuggestionOption object values against deterministic local org SOSL; no external ranking, stemming, synonyms, or language model. |
-| Search | `Search.suggest` | `partial` | Returns deterministic local org suggestion DTOs from name-like fields; no external suggestion service. |
-| Search | `Search.suggest(String,String,Object)` | `partial` | Accepts recognized SuggestionOption values and returns deterministic local org suggestions; no external suggestion service. |
-| Search | `Search.suggest(String,String,Object,Object)` | `partial` | Accepts recognized SuggestionOption and AccessLevel values for deterministic local org suggestions; no external suggestion service. |
-| Search | `Search.suggest(String,String,Search.SuggestionOption)` | `partial` | Returns deterministic local org suggestions and respects local limit options; no external suggestion service. |
-| Search | `Search.suggest(String,String,Search.SuggestionOption,AccessLevel)` | `partial` | Returns deterministic local org suggestions with AccessLevel permission checks; no external suggestion service. |
+| Schema | `DescribeFieldResult` | `supported` | Returns local metadata-backed field labels, picklists, reference targets, and access, create, and update booleans. |
+| Schema | `DescribeSObjectResult` | `supported` | Returns local object labels, key prefixes, query and search flags, fields, record types, and child relationships. |
+| Schema | `Hosted org describe and data category services` | `unsupported` | Live full-org describe breadth, admin-computed permissions, and hosted data category service lookup require Salesforce org services. |
+| Schema | `Schema.describeDataCategoryGroupStructures(List<Schema.DataCategoryGroupSobjectTypePair>,Boolean)` | `supported` | Returns deterministic local data category structures from loaded org metadata. |
+| Schema | `Schema.describeDataCategoryGroups(List<String>)` | `supported` | Returns deterministic local data category group describes from loaded org metadata and an empty typed list when absent. |
+| Schema | `Schema.describeSObjects(List<String>)` | `supported` | Returns local metadata object names, labels, key prefixes, access booleans, fields, record types, and SObjectType tokens. |
+| Schema | `Schema.getGlobalDescribe()` | `supported` | Returns a local describe map for loaded standard, custom, namespaced, and project objects. |
+| Search | `Hosted search ranking and analyzers` | `unsupported` | Ranking, stemming, synonyms, language analyzers, external indexes, and hosted suggestion services require Salesforce search infrastructure. |
+| Search | `Search.find` | `supported` | Returns deterministic SearchResult DTOs from fixed search results or local org records. |
+| Search | `Search.find(String,AccessLevel)` | `supported` | Uses deterministic local org search with AccessLevel permission checks. |
+| Search | `Search.find(String,Object)` | `supported` | Accepts Object-cast AccessLevel values against deterministic local org search. |
+| Search | `Search.query / SOSL FIND` | `supported` | Parses supported RETURNING clauses and returns deterministic rows from fixed search results or local org records. |
+| Search | `Search.query(String,AccessLevel)` | `supported` | Uses deterministic local org SOSL with AccessLevel permission checks. |
+| Search | `Search.query(String,Object)` | `supported` | Accepts Object-cast AccessLevel values against deterministic local org SOSL. |
+| Search | `Search.suggest` | `supported` | Returns deterministic local org suggestion DTOs from name-like fields. |
+| Search | `Search.suggest(String,String,Object)` | `supported` | Accepts Object-cast SuggestionOption values and returns deterministic local org suggestions. |
+| Search | `Search.suggest(String,String,Object,Object)` | `supported` | Accepts Object-cast SuggestionOption and AccessLevel values for deterministic local org suggestions. |
+| Search | `Search.suggest(String,String,Search.SuggestionOption)` | `supported` | Returns deterministic local org suggestions and respects local limit options. |
+| Search | `Search.suggest(String,String,Search.SuggestionOption,AccessLevel)` | `supported` | Returns deterministic local org suggestions with AccessLevel permission checks. |
 | String | `String.contains` | `supported` | UTF-8 string contains. |
 | String | `String.endsWith` | `supported` | UTF-8 string suffix. |
 | String | `String.equalsIgnoreCase` | `supported` | Unicode simple fold. |
@@ -189,9 +199,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.isNotBlank` | `supported` | Null and whitespace. |
 | String | `String.join` | `supported` | List values and separator. |
 | String | `String.lastIndexOf` | `supported` | UTF-8 byte index behavior from Go strings. |
-| String | `String.length` | `supported` | Counts runes. |
+| String | `String.length` | `supported` | Counts Apex UTF-16 code units. |
 | String | `String.replace` | `supported` | Literal replacement. |
-| String | `String.split` | `partial` | Uses local Java-regex-like split for the supported Go regexp subset, including fixture-pinned simple delimiters and limits plus \Q...\E quote escapes; empty-match regexes and Java-only features remain fenced. |
+| String | `String.split` | `supported` | regexp2-backed Java Pattern split covers limits, empty-pattern splits, zero-width and nullable delimiters, numeric backreference delimiters, \Q...\E quote escapes, UAX #29 graphemes, nested class algebra, and Apex UTF-16 code-unit boundaries. |
 | String | `String.startsWith` | `supported` | UTF-8 string prefix. |
 | String | `String.substring` | `supported` | Rune-indexed substring. |
 | String | `String.toLowerCase` | `supported` | Go Unicode lowercasing. |
@@ -201,32 +211,37 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | System | `System.assert` | `supported` | Assertion failure returns runtime error. |
 | System | `System.assertEquals` | `supported` | Assertion failure returns runtime error. |
 | System | `System.debug` | `supported` | Collected in result debug output. |
-| System | `System.enqueueJob(Object,Object)` | `partial` | Accepts local AsyncOptions maximumQueueableStackDepth for queueable chaining and Test.stopTest drain behavior; delay semantics are not modeled. |
-| System | `System.runAs(Object,Object)` | `partial` | Tracks local package-version test context without installing or licensing packages. |
-| System | `System.runAs(Package.Version)` | `partial` | Tracks local package-version test context without installing or licensing packages. |
+| System | `System.enqueueJob wall-clock delay and duplicate signature enforcement` | `unsupported` | Wall-clock queue scheduling and hosted duplicate-signature locking require Salesforce async infrastructure. |
+| System | `System.enqueueJob(Object,Object)` | `supported` | Accepts Integer and AsyncOptions queueable delay values plus local AsyncOptions maximumQueueableStackDepth for Test.stopTest drain behavior. |
+| System | `System.runAs package install and license validation` | `unsupported` | Package installation and license validation require hosted subscriber org state. |
+| System | `System.runAs(Object,Object)` | `supported` | Tracks local package-version test context during runAs execution. |
+| System | `System.runAs(Package.Version)` | `supported` | Tracks local package-version test context during runAs execution. |
 | System | `System.schedule(String,String,Object)` | `supported` | Queues and drains local Scheduled Apex jobs during Test.stopTest with deterministic CronTrigger IDs. |
 | Test | `Test.createSoqlStub(Schema.SObjectType,SoqlStubProvider)` | `supported` | Registers test-local SOQL stubs per SObject type. |
 | Test | `Test.createStub(Type,StubProvider)` | `supported` | Creates dynamic test stubs backed by StubProvider. |
-| Test | `Test.createStubQueryRow` | `partial` | Builds local SObject rows from field maps for SOQL stub providers. |
+| Test | `Test.createStubQueryRow` | `supported` | Builds one local SObject row from a field map for SOQL stub providers. |
 | Test | `Test.createStubQueryRow(Schema.SObjectType,Map<String,Object>)` | `supported` | Builds one local SObject row from a field map for SOQL stub providers. |
-| Test | `Test.createStubQueryRows` | `partial` | Builds local SObject row lists from field maps for SOQL stub providers. |
+| Test | `Test.createStubQueryRows` | `supported` | Builds local SObject row lists from field maps for SOQL stub providers. |
 | Test | `Test.createStubQueryRows(Schema.SObjectType,List<Map<String,Object>>)` | `supported` | Builds local SObject row lists from field maps for SOQL stub providers. |
 | Test | `Test.enableChangeDataCapture()` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
-| Test | `Test.getEventBus()` | `partial` | Returns a local event-bus test broker that delivers queued platform-event triggers; no live Salesforce event-bus service is contacted. |
-| Test | `Test.getExternalService()` | `partial` | Returns a deterministic local external-service harness and fences live service execution. |
-| Test | `Test.getStandardPricebookId` | `partial` | Deterministic test-context-only ID. |
+| Test | `Test.getEventBus()` | `supported` | Returns a local event-bus test broker that delivers queued platform-event triggers. |
+| Test | `Test.getExternalService live service execution` | `unsupported` | External Service execution requires hosted named credential and generated service infrastructure. |
+| Test | `Test.getExternalService()` | `supported` | Returns a deterministic local external-service harness. |
+| Test | `Test.getStandardPricebookId` | `supported` | Returns the deterministic local standard pricebook ID in test context. |
 | Test | `Test.invokeContinuationMethod(Object,Continuation)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
 | Test | `Test.invokePage(PageReference)` | `supported` | Returns a typed Component.apex.page handle in test context without rendering Visualforce. |
 | Test | `Test.isRunningTest` | `supported` | Reflects local test context. |
-| Test | `Test.loadData` | `partial` | Loads CSV static-resource content with Go CSV parsing, typed field coercion, DML routing, missing-resource errors, and bad-header diagnostics; full Salesforce fixture semantics are not modeled. |
+| Test | `Test.loadData` | `supported` | Loads CSV static-resource content with typed field coercion, DML routing, missing-resource errors, and bad-header diagnostics. |
+| Test | `Test.loadData packaged resource and relationship external-ID expansion` | `unsupported` | Packaged static-resource namespace lookup and relationship external-ID fixture expansion require hosted packaging and schema behavior beyond local CSV loading. |
 | Test | `Test.newSendEmailQuickActionDefaults(Id,Id)` | `supported` | Builds deterministic local send-email QuickAction defaults for test execution. |
 | Test | `Test.setContinuationResponse(String,HttpResponse)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
 | Test | `Test.setCurrentPage(PageReference)` | `supported` | Sets the VM-local current PageReference in test context. |
-| Test | `Test.setCurrentPageReference(Object)` | `partial` | Accepts local PageReference object values; arbitrary Object values remain rejected. |
+| Test | `Test.setCurrentPageReference(Object)` | `supported` | Accepts PageReference object values and stores the VM-local current page. |
 | Test | `Test.setCurrentPageReference(PageReference)` | `supported` | Sets the VM-local current PageReference in test context. |
-| Test | `Test.setMock` | `partial` | HttpCalloutMock and WebServiceMock routing for local tests; live transport is not executed. |
-| Test | `Test.startTest` | `partial` | Resets the active governor window for supported local counters; unmodeled service counters remain local boundaries. |
-| Test | `Test.stopTest` | `partial` | Restores outer governor counters and drains supported async work; unmodeled async/service work remains outside the local model. |
+| Test | `Test.setMock` | `supported` | Registers HttpCalloutMock and WebServiceMock routes for local tests. |
+| Test | `Test.startTest` | `supported` | Resets the active governor window for deterministic local counters. |
+| Test | `Test.startTest and stopTest hosted service accounting` | `unsupported` | Hosted async service execution and exact Salesforce governor accounting require Salesforce runtime services. |
+| Test | `Test.stopTest` | `supported` | Restores outer governor counters and drains supported local async work. |
 | Test | `Test.testInstall(InstallHandler,Version)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
 | Test | `Test.testInstall(InstallHandler,Version,Boolean)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
 | Test | `Test.testNotificationActionHandler(Messaging.NotificationActionHandler,Messaging.ActionableNotification)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
@@ -245,7 +260,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | TrailblazerIdentity | `TrailblazerIdentity.generateUserEmailVerificationToken(String,String,String)` | `supported` | Returns a deterministic local verification token for test execution; no live identity service is contacted. |
 | TrailblazerIdentity | `TrailblazerIdentity.getUserOrgInfo(List<String>)` | `supported` | Returns an empty local UserOrgInfo list for deterministic test execution; no live identity service lookup is performed. |
 | TrailblazerIdentity | `TrailblazerIdentity.splunkLog(String,String)` | `supported` | Accepts local log calls and returns null for deterministic test execution; no live logging service is contacted. |
-| Type | `Type.forName` | `partial` | Fixture-pinned local class/type token lookup; full platform namespace and org type resolution remains partial. |
+| Type | `Type.forName` | `supported` | Resolves local classes, SObjects, built-ins, generic type names, generated platform types, and common platform namespace aliases. |
+| Type | `Type.forName hosted package namespace reflection` | `unsupported` | Live package namespace reflection beyond local source and generated platform aliases requires hosted org metadata. |
 | Type | `Type.getName` | `supported` | Returns local type token name. |
 | Type | `Type.newInstance` | `supported` | Constructs local classes through zero-argument constructor dispatch and rejects uninstantiable built-ins. |
 | UIRequest | `UIRequest.getCurrent()` | `supported` | Returns deterministic local request context values for local Apex execution. |
@@ -269,5 +285,6 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | UserInfo | `UserInfo.hasPackageLicense(Id)` | `supported` | Checks local PackageLicense and UserPackageLicense records for the current runAs/default user. |
 | UserInfo | `UserInfo.isCurrentUserLicensedForPackage(Id)` | `supported` | Checks local PackageLicense and UserPackageLicense records for the current runAs/default user. |
 | UserInfo | `UserInfo.isMultiCurrencyOrganization` | `supported` | Returns the local org multi-currency metadata flag. |
-| WebServiceCallout | `WebServiceCallout.invoke(Object,Object,Map,List)` | `partial` | Fixture-pinned path routes generated SOAP callouts through registered WebServiceMock implementations and materializes a deterministic local response shell when no mock is registered; real outbound SOAP transport is not executed. |
-| WebServiceCallout | `WebServiceCallout.invoke(Object,Object,Map<String,Object>,List<String>)` | `partial` | Fixture-pinned path routes generated SOAP callouts through registered WebServiceMock implementations and materializes a deterministic local response shell when no mock is registered; real outbound SOAP transport is not executed. |
+| WebServiceCallout | `WebServiceCallout outbound SOAP transport` | `unsupported` | Real outbound SOAP transport requires external network service execution and is fenced locally. |
+| WebServiceCallout | `WebServiceCallout.invoke(Object,Object,Map,List)` | `supported` | Validates SOAP options, routes generated SOAP callouts through registered WebServiceMock implementations, and materializes a deterministic local response shell when no mock is registered. |
+| WebServiceCallout | `WebServiceCallout.invoke(Object,Object,Map<String,Object>,List<String>)` | `supported` | Validates SOAP options, routes generated SOAP callouts through registered WebServiceMock implementations, and materializes a deterministic local response shell when no mock is registered. |

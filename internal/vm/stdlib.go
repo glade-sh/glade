@@ -203,6 +203,28 @@ func roundDecimalToScale(callee string, value float64, scaleValue int64, mode st
 	return rounded, nil
 }
 
+func roundDecimalValueToScale(callee string, value Value, scaleValue int64, mode string) (Value, error) {
+	if err := ensureFiniteDecimal(callee, value.Decimal); err != nil {
+		return Null, err
+	}
+	rat := new(big.Rat)
+	if _, ok := rat.SetString(decimalPlainText(value)); !ok {
+		return Null, fmt.Errorf("%s value cannot be represented by local decimal model", callee)
+	}
+	rounded, err := roundRatToScale(callee, rat, scaleValue, mode)
+	if err != nil {
+		return Null, err
+	}
+	text := ratFixedText(rounded, scaleValue)
+	parsed, err := strconv.ParseFloat(text, 64)
+	if err != nil {
+		return Null, fmt.Errorf("%s rounded value cannot be represented by local decimal model", callee)
+	}
+	out := Decimal(parsed)
+	out.Text = text
+	return out, nil
+}
+
 func ensureFiniteDecimal(callee string, value float64) error {
 	if math.IsInf(value, 0) || math.IsNaN(value) {
 		return fmt.Errorf("%s value must be finite", callee)
@@ -214,6 +236,22 @@ func roundLocalDecimalStringToScale(callee string, value float64, scaleValue int
 	rat := new(big.Rat)
 	if _, ok := rat.SetString(strconv.FormatFloat(value, 'f', -1, 64)); !ok {
 		return 0, fmt.Errorf("%s value cannot be represented by local decimal model", callee)
+	}
+	resultRat, err := roundRatToScale(callee, rat, scaleValue, mode)
+	if err != nil {
+		return 0, err
+	}
+	result, _ := resultRat.Float64()
+	if math.IsInf(result, 0) || math.IsNaN(result) {
+		return 0, fmt.Errorf("%s rounded value must be finite", callee)
+	}
+	return result, nil
+}
+
+func roundRatToScale(callee string, rat *big.Rat, scaleValue int64, mode string) (*big.Rat, error) {
+	const maxSalesforceDecimalScale int64 = 33
+	if scaleValue > maxSalesforceDecimalScale || scaleValue < -maxSalesforceDecimalScale {
+		return nil, newExceptionError("MathException", fmt.Sprintf("Invalid scale: %d", scaleValue))
 	}
 	absScale := scaleValue
 	if absScale < 0 {
@@ -229,7 +267,7 @@ func roundLocalDecimalStringToScale(callee string, value float64, scaleValue int
 	}
 	rounded, err := roundScaledRat(callee, scaled, mode)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	resultRat := new(big.Rat)
 	if scaleValue >= 0 {
@@ -237,11 +275,17 @@ func roundLocalDecimalStringToScale(callee string, value float64, scaleValue int
 	} else {
 		resultRat.Mul(new(big.Rat).SetInt(rounded), factorRat)
 	}
-	result, _ := resultRat.Float64()
-	if math.IsInf(result, 0) || math.IsNaN(result) {
-		return 0, fmt.Errorf("%s rounded value must be finite", callee)
+	return resultRat, nil
+}
+
+func ratFixedText(rat *big.Rat, scaleValue int64) string {
+	if scaleValue < 0 {
+		if rat.IsInt() {
+			return rat.Num().String()
+		}
+		return rat.FloatString(0)
 	}
-	return result, nil
+	return rat.FloatString(int(scaleValue))
 }
 
 func roundScaledRat(callee string, value *big.Rat, mode string) (*big.Int, error) {
@@ -288,7 +332,7 @@ func roundScaledRat(callee string, value *big.Rat, mode string) (*big.Int, error
 		}
 		return q, nil
 	case "UNNECESSARY":
-		return nil, fmt.Errorf("%s rounding necessary for RoundingMode.UNNECESSARY", callee)
+		return nil, newExceptionError("MathException", "Scale insufficient")
 	default:
 		return nil, fmt.Errorf("unsupported Decimal rounding mode %q", mode)
 	}
@@ -538,14 +582,11 @@ func stringStatic(callee string, args []Value) (Value, error) {
 		if len(args) != 1 || args[0].Kind != ValueList {
 			return Null, fmt.Errorf("String.fromCharArray expects List<Integer>")
 		}
-		var b strings.Builder
-		for _, item := range args[0].List {
-			if item.Kind != ValueInt || item.Int < 0 || item.Int > utf8.MaxRune {
-				return Null, fmt.Errorf("String.fromCharArray expects valid code points")
-			}
-			b.WriteRune(rune(item.Int))
+		text, err := apexStringFromCharArray(args[0].List)
+		if err != nil {
+			return Null, err
 		}
-		return String(b.String()), nil
+		return String(text), nil
 	case "String.escapeSingleQuotes":
 		if len(args) != 1 {
 			return Null, fmt.Errorf("String.escapeSingleQuotes expects String argument")
@@ -766,7 +807,7 @@ const (
 	patternFlagUnicodeCharacterClass int64 = 256
 )
 
-const patternSupportedFlags = patternFlagCaseInsensitive | patternFlagMultiline | patternFlagLiteral | patternFlagDotall | patternFlagUnicodeCase
+const patternSupportedFlags = patternFlagCaseInsensitive | patternFlagMultiline | patternFlagLiteral | patternFlagDotall | patternFlagUnicodeCase | patternFlagUnicodeCharacterClass
 
 func patternCompile(args []Value) (Value, error) {
 	if len(args) != 1 && len(args) != 2 {
@@ -779,26 +820,25 @@ func patternCompile(args []Value) (Value, error) {
 	if len(args) == 2 {
 		flags = args[1].Int
 	}
-	regexpSource, lookaheadSource, backreferencePairs, err := compilePatternSourceWithMetadata("Pattern.compile", args[0].Text, flags)
+	regexp2Source, _, err := compileRegexp2Pattern("Pattern.compile", args[0].Text, flags)
 	if err != nil {
 		return Null, err
 	}
-	if _, err := regexp.Compile(regexpSource); err != nil {
-		return Null, newPatternSyntaxExceptionError(args[0].Text, err)
-	}
-	if lookaheadSource != "" {
-		if _, err := regexp.Compile("^(?:" + lookaheadSource + ")"); err != nil {
-			return Null, newPatternSyntaxExceptionError(args[0].Text, err)
-		}
-	}
 	pattern := Object("Pattern")
 	pattern.Fields["source"] = args[0]
-	pattern.Fields["regexpSource"] = String(regexpSource)
-	if lookaheadSource != "" {
-		pattern.Fields["lookaheadSource"] = String(lookaheadSource)
-	}
-	if backreferencePairs != "" {
-		pattern.Fields["backreferencePairs"] = String(backreferencePairs)
+	pattern.Fields["regexp2Source"] = String(regexp2Source)
+	if regexpSource, lookaheadSource, backreferencePairs, err := compilePatternSourceWithMetadata("Pattern.compile", args[0].Text, flags); err == nil {
+		if _, err := regexp.Compile(regexpSource); err == nil {
+			pattern.Fields["regexpSource"] = String(regexpSource)
+			if lookaheadSource != "" {
+				if _, err := regexp.Compile("^(?:" + lookaheadSource + ")"); err == nil {
+					pattern.Fields["lookaheadSource"] = String(lookaheadSource)
+				}
+			}
+			if backreferencePairs != "" {
+				pattern.Fields["backreferencePairs"] = String(backreferencePairs)
+			}
+		}
 	}
 	pattern.Fields["flags"] = Int(flags)
 	return pattern, nil
@@ -816,37 +856,24 @@ func patternMatches(args []Value) (Value, error) {
 	if err != nil {
 		return Null, err
 	}
-	source, positiveLookaheads, negativeLookaheads, err := compilePatternMatchesSource(pattern)
+	plan, err := compileRegexp2PlanForInput("Pattern.matches", pattern, 0, input)
 	if err != nil {
 		return Null, err
 	}
-	re, err := regexp.Compile(source)
+	match, err := plan.findValidStartingAt(input, 0)
 	if err != nil {
 		return Null, newPatternSyntaxExceptionError(pattern, err)
 	}
-	indices := re.FindStringIndex(input)
-	matched := indices != nil && indices[0] == 0 && indices[1] == len(input)
-	if matched {
-		for _, lookahead := range positiveLookaheads {
-			if !regexLookaheadMatches(lookahead, input, 0) {
-				matched = false
-				break
-			}
-		}
-	}
-	if matched {
-		for _, lookahead := range negativeLookaheads {
-			if negativeRegexLookaheadMatches(lookahead, input) {
-				matched = false
-				break
-			}
-		}
-	}
+	inputRunes := utf8.RuneCountInString(input)
+	matched := match != nil && match.Index == 0 && match.Length == inputRunes
 	return Bool(matched), nil
 }
 
 func newPatternSyntaxExceptionError(pattern string, err error) error {
 	description := err.Error()
+	if strings.Contains(description, "unterminated [] set") {
+		description = "missing closing ]"
+	}
 	value := Object("PatternSyntaxException")
 	value.Fields["message"] = String(description)
 	value.Fields["description"] = String(description)
@@ -1156,10 +1183,12 @@ func matcherBoolField(matcher Value, name string, defaultValue bool) bool {
 }
 
 type matcherRegionBounds struct {
-	startRune int
-	endRune   int
-	startByte int
-	endByte   int
+	startIndex int
+	endIndex   int
+	startRune  int
+	endRune    int
+	startByte  int
+	endByte    int
 }
 
 type matcherOp int
@@ -1170,9 +1199,8 @@ const (
 )
 
 func matcherRegion(matcher Value, input string) (matcherRegionBounds, error) {
-	inputRunes := utf8.RuneCountInString(input)
 	start := 0
-	end := inputRunes
+	end := apexStringLength(input)
 	if value, ok := matcher.Fields["regionStart"]; ok {
 		if value.Kind != ValueInt {
 			return matcherRegionBounds{}, fmt.Errorf("Matcher stored invalid region start")
@@ -1188,15 +1216,17 @@ func matcherRegion(matcher Value, input string) (matcherRegionBounds, error) {
 	if err := validateMatcherRegion(input, start, end); err != nil {
 		return matcherRegionBounds{}, err
 	}
-	startByte, err := byteIndexForRuneIndex(input, start)
+	startByte, err := byteIndexForApexStringIndex(input, start)
 	if err != nil {
 		return matcherRegionBounds{}, err
 	}
-	endByte, err := byteIndexForRuneIndex(input, end)
+	endByte, err := byteIndexForApexStringIndex(input, end)
 	if err != nil {
 		return matcherRegionBounds{}, err
 	}
-	return matcherRegionBounds{startRune: start, endRune: end, startByte: startByte, endByte: endByte}, nil
+	startRune := utf8.RuneCountInString(input[:startByte])
+	endRune := utf8.RuneCountInString(input[:endByte])
+	return matcherRegionBounds{startIndex: start, endIndex: end, startRune: startRune, endRune: endRune, startByte: startByte, endByte: endByte}, nil
 }
 
 func matcherUsesFullInputBounds(matcher Value) bool {
@@ -1410,15 +1440,21 @@ func negativeRegexLookaheadMatches(assertion regexNegativeLookaheadAssertion, in
 }
 
 func validateMatcherRegion(input string, start, end int) error {
-	inputRunes := utf8.RuneCountInString(input)
+	inputLength := apexStringLength(input)
 	if start < 0 || end < 0 {
 		return fmt.Errorf("Matcher.region bounds must be non-negative")
 	}
 	if start > end {
 		return fmt.Errorf("Matcher.region start must be less than or equal to end")
 	}
-	if end > inputRunes {
+	if end > inputLength {
 		return fmt.Errorf("Matcher.region end out of range")
+	}
+	if _, err := byteIndexForApexStringIndex(input, start); err != nil {
+		return err
+	}
+	if _, err := byteIndexForApexStringIndex(input, end); err != nil {
+		return err
 	}
 	return nil
 }
@@ -1483,7 +1519,15 @@ func matcherGroupBounds(matcher Value, input string, groupIndex int) (int, int, 
 	if start < 0 || end < 0 {
 		return -1, -1, nil
 	}
-	return utf8.RuneCountInString(input[:start]), utf8.RuneCountInString(input[:end]), nil
+	startIndex, err := apexStringIndexForByteIndex(input, start)
+	if err != nil {
+		return 0, 0, err
+	}
+	endIndex, err := apexStringIndexForByteIndex(input, end)
+	if err != nil {
+		return 0, 0, err
+	}
+	return startIndex, endIndex, nil
 }
 
 func matcherGroupByteBounds(matcher Value, groupIndex int) (int, int, error) {
@@ -1591,38 +1635,51 @@ func regexBackreferencesMatch(input string, indices []int, pairs []regexBackrefe
 	return true
 }
 
-func javaReplacementToGoTemplate(callee, replacement string, groupCount int) (string, error) {
-	var out strings.Builder
+type javaReplacementSegment struct {
+	literal string
+	group   int
+}
+
+func parseJavaReplacement(callee, replacement string, groupCount int) ([]javaReplacementSegment, error) {
+	var segments []javaReplacementSegment
+	var literal strings.Builder
+	flushLiteral := func() {
+		if literal.Len() == 0 {
+			return
+		}
+		segments = append(segments, javaReplacementSegment{literal: literal.String(), group: -1})
+		literal.Reset()
+	}
 	for i := 0; i < len(replacement); i++ {
 		ch := replacement[i]
 		if ch == '\\' {
 			if i+1 >= len(replacement) {
-				return "", fmt.Errorf("replacement trailing escape")
+				return nil, fmt.Errorf("replacement trailing escape")
 			}
 			next := replacement[i+1]
 			if next == '$' {
-				out.WriteString("$$")
+				literal.WriteByte('$')
 				i++
 				continue
 			}
-			out.WriteByte(next)
+			literal.WriteByte(next)
 			i++
 			continue
 		}
 		if ch == '$' {
 			if i+1 >= len(replacement) {
-				return "", fmt.Errorf("replacement missing group reference after $")
+				return nil, fmt.Errorf("replacement missing group reference after $")
 			}
 			next := replacement[i+1]
 			if next == '{' {
-				return "", unsupportedCallError(callee + " replacement named group references")
+				return nil, unsupportedCallError(callee + " replacement named group references")
 			}
 			if next < '0' || next > '9' {
-				return "", fmt.Errorf("replacement invalid group reference")
+				return nil, fmt.Errorf("replacement invalid group reference")
 			}
 			group := int(next - '0')
 			if group > groupCount {
-				return "", fmt.Errorf("replacement groupIndex out of range")
+				return nil, fmt.Errorf("replacement groupIndex out of range")
 			}
 			i += 1
 			for i+1 < len(replacement) {
@@ -1637,12 +1694,30 @@ func javaReplacementToGoTemplate(callee, replacement string, groupCount int) (st
 				group = candidate
 				i++
 			}
+			flushLiteral()
+			segments = append(segments, javaReplacementSegment{group: group})
+			continue
+		}
+		literal.WriteByte(ch)
+	}
+	flushLiteral()
+	return segments, nil
+}
+
+func javaReplacementToGoTemplate(callee, replacement string, groupCount int) (string, error) {
+	segments, err := parseJavaReplacement(callee, replacement, groupCount)
+	if err != nil {
+		return "", err
+	}
+	var out strings.Builder
+	for _, segment := range segments {
+		if segment.group >= 0 {
 			out.WriteString("${")
-			out.WriteString(strconv.Itoa(group))
+			out.WriteString(strconv.Itoa(segment.group))
 			out.WriteByte('}')
 			continue
 		}
-		out.WriteByte(ch)
+		out.WriteString(strings.ReplaceAll(segment.literal, "$", "$$"))
 	}
 	return out.String(), nil
 }
@@ -2470,43 +2545,14 @@ func stringRegexSplit(text string, args []Value) ([]string, error) {
 }
 
 func splitRegex(name, pattern, text string, limit int64) ([]string, error) {
+	return splitRegexWithFlags(name, pattern, 0, text, limit)
+}
+
+func splitRegexWithFlags(name, pattern string, flags int64, text string, limit int64) ([]string, error) {
 	if pattern == "" {
 		return splitStringCharacters(text, limit), nil
 	}
-	converted, err := javaRegexQuoteEscapesToGo(pattern)
-	if err != nil {
-		return nil, unsupportedCallError(name + " " + err.Error())
-	}
-	pattern = converted
-	if lookahead, ok := wholePositiveLookahead(pattern); ok {
-		return splitRegexPositiveLookahead(name, lookahead, text, limit)
-	}
-	if feature := unsupportedJavaRegexFeature(pattern); feature != "" {
-		return nil, unsupportedCallError(name + " " + feature)
-	}
-	re, err := regexp.Compile(pattern)
-	if err != nil {
-		return nil, fmt.Errorf("%s invalid regex: %w", name, err)
-	}
-	if splitRegexCanMatchEmpty(pattern, re) {
-		return nil, unsupportedCallError(name + " regexes that can match empty strings")
-	}
-	if !re.MatchString(text) {
-		return []string{text}, nil
-	}
-	if limit == 1 {
-		return []string{text}, nil
-	}
-	if limit > 0 {
-		return re.Split(text, int(limit)), nil
-	}
-	parts := re.Split(text, -1)
-	if limit == 0 {
-		for len(parts) > 0 && parts[len(parts)-1] == "" {
-			parts = parts[:len(parts)-1]
-		}
-	}
-	return parts, nil
+	return splitRegexRegexp2WithFlags(name, pattern, flags, text, limit)
 }
 
 func splitStringCharacters(text string, limit int64) []string {
@@ -2604,6 +2650,24 @@ func patternSplit(source string, args []Value) ([]string, error) {
 		limit = args[1].Int
 	}
 	return splitRegex("Pattern.split", source, args[0].Text, limit)
+}
+
+func patternSplitValue(pattern Value, args []Value) ([]string, error) {
+	if len(args) != 1 && len(args) != 2 {
+		return nil, fmt.Errorf("Pattern.split expects input String and optional Integer limit")
+	}
+	if args[0].Kind != ValueString || (len(args) == 2 && args[1].Kind != ValueInt) {
+		return nil, fmt.Errorf("Pattern.split expects input String and optional Integer limit")
+	}
+	limit := int64(0)
+	if len(args) == 2 {
+		limit = args[1].Int
+	}
+	source, err := patternSourceOnly(pattern)
+	if err != nil {
+		return nil, err
+	}
+	return splitRegexWithFlags("Pattern.split", source, patternFlags(pattern), args[0].Text, limit)
 }
 
 func unsupportedJavaRegexFeature(source string) string {
@@ -2902,8 +2966,11 @@ func unsupportedInlineJavaRegexFlags(suffix string) bool {
 		case 'i', 'm', 's', '-':
 			sawFlag = true
 			continue
-		case 'd', 'u', 'x', 'U':
+		case 'd', 'u', 'U':
 			return true
+		case 'x':
+			sawFlag = true
+			continue
 		case ':', ')':
 			return false
 		default:

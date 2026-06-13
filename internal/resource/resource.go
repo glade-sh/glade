@@ -41,9 +41,15 @@ type tabXML struct {
 }
 
 type quickActionXML struct {
-	Label        string `xml:"label"`
-	Type         string `xml:"type"`
-	TargetObject string `xml:"targetObject"`
+	Label                 string                     `xml:"label"`
+	Type                  string                     `xml:"type"`
+	TargetObject          string                     `xml:"targetObject"`
+	PredefinedFieldValues []quickActionFieldValueXML `xml:"predefinedFieldValues"`
+}
+
+type quickActionFieldValueXML struct {
+	Field string `xml:"field"`
+	Value string `xml:"value"`
 }
 
 type fieldSetXML struct {
@@ -325,12 +331,24 @@ func loadQuickAction(path string) (storage.QuickActionMetadata, error) {
 	if label == "" {
 		label = name
 	}
+	defaults := make([]storage.QuickActionFieldValue, 0, len(raw.PredefinedFieldValues))
+	for _, fieldValue := range raw.PredefinedFieldValues {
+		field := strings.TrimSpace(fieldValue.Field)
+		if field == "" {
+			continue
+		}
+		defaults = append(defaults, storage.QuickActionFieldValue{
+			Field: field,
+			Value: strings.TrimSpace(fieldValue.Value),
+		})
+	}
 	return storage.QuickActionMetadata{
-		Name:         name,
-		Label:        label,
-		Type:         strings.TrimSpace(raw.Type),
-		TargetObject: targetObject,
-		File:         path,
+		Name:                  name,
+		Label:                 label,
+		Type:                  strings.TrimSpace(raw.Type),
+		TargetObject:          targetObject,
+		PredefinedFieldValues: defaults,
+		File:                  path,
 	}, nil
 }
 

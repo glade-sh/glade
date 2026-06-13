@@ -24,8 +24,10 @@ type Limits struct {
 	ScheduledJobs       int `json:"scheduledJobs"`
 	EmailInvokes        int `json:"emailInvocations"`
 	SOSLQueries         int `json:"soslQueries"`
+	QueryLocatorRows    int `json:"queryLocatorRows"`
 	RunAs               int `json:"runAs"`
 	Savepoints          int `json:"savepoints"`
+	SavepointRollbacks  int `json:"savepointRollbacks"`
 	PublishImmediateDML int `json:"publishImmediateDml"`
 }
 
@@ -44,8 +46,10 @@ type LimitCaps struct {
 	ScheduledJobs       int `json:"scheduledJobs"`
 	EmailInvokes        int `json:"emailInvocations"`
 	SOSLQueries         int `json:"soslQueries"`
+	QueryLocatorRows    int `json:"queryLocatorRows"`
 	RunAs               int `json:"runAs"`
 	Savepoints          int `json:"savepoints"`
+	SavepointRollbacks  int `json:"savepointRollbacks"`
 	PublishImmediateDML int `json:"publishImmediateDml"`
 }
 
@@ -71,8 +75,10 @@ func defaultLimitCaps() LimitCaps {
 		ScheduledJobs:       100,
 		EmailInvokes:        10,
 		SOSLQueries:         20,
+		QueryLocatorRows:    10000,
 		RunAs:               100,
 		Savepoints:          5,
+		SavepointRollbacks:  100,
 		PublishImmediateDML: 150,
 	}
 }
@@ -134,12 +140,18 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 	case "soslQueries":
 		vm.limits.SOSLQueries += delta
 		return vm.checkLimit(name, vm.limits.SOSLQueries, vm.limitCaps.SOSLQueries)
+	case "queryLocatorRows":
+		vm.limits.QueryLocatorRows += delta
+		return vm.checkLimit(name, vm.limits.QueryLocatorRows, vm.limitCaps.QueryLocatorRows)
 	case "runAs":
 		vm.limits.RunAs += delta
 		return vm.checkLimit(name, vm.limits.RunAs, vm.limitCaps.RunAs)
 	case "savepoints":
 		vm.limits.Savepoints += delta
 		return vm.checkLimit(name, vm.limits.Savepoints, vm.limitCaps.Savepoints)
+	case "savepointRollbacks":
+		vm.limits.SavepointRollbacks += delta
+		return vm.checkLimit(name, vm.limits.SavepointRollbacks, vm.limitCaps.SavepointRollbacks)
 	case "publishImmediateDml":
 		vm.limits.PublishImmediateDML += delta
 		return vm.checkLimit(name, vm.limits.PublishImmediateDML, vm.limitCaps.PublishImmediateDML)
@@ -172,6 +184,13 @@ func (vm *VM) checkLimit(name string, used, cap int) error {
 		}
 	}
 	return nil
+}
+
+func (vm *VM) incrementQueryLocatorRows(value Value) error {
+	if value.Kind != ValueList {
+		return nil
+	}
+	return vm.incrementLimit("queryLocatorRows", len(value.List))
 }
 
 func (vm *VM) limitValue(name string) (Value, bool) {
@@ -252,8 +271,7 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		"getApexPaginationCursors", "getChildRelationshipsDescribes", "getDatabaseTime",
 		"getFetchCallsOnApexCursor", "getFieldSetsDescribes", "getFieldsDescribes",
 		"getFindSimilarCalls", "getMobilePushApexCalls", "getPicklistDescribes",
-		"getQueryLocatorRows", "getRecordTypesDescribes", "getSavepointRollbacks",
-		"getScriptStatements":
+		"getRecordTypesDescribes", "getScriptStatements":
 		return Int(0), true
 	case "getLimitAggregateQueries":
 		return Int(300), true
@@ -273,13 +291,17 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getLimitMobilePushApexCalls":
 		return Int(10), true
 	case "getLimitQueryLocatorRows":
-		return Int(10000), true
+		return Int(int64(vm.limitCaps.QueryLocatorRows)), true
+	case "getQueryLocatorRows":
+		return Int(int64(vm.limits.QueryLocatorRows)), true
 	case "getLimitRunAs":
 		return Int(int64(vm.limitCaps.RunAs)), true
 	case "getRunAs":
 		return Int(int64(vm.limits.RunAs)), true
 	case "getLimitSavepointRollbacks":
-		return Int(100), true
+		return Int(int64(vm.limitCaps.SavepointRollbacks)), true
+	case "getSavepointRollbacks":
+		return Int(int64(vm.limits.SavepointRollbacks)), true
 	case "getLimitSavepoints":
 		return Int(int64(vm.limitCaps.Savepoints)), true
 	case "getSavepoints":

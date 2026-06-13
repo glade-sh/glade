@@ -18,7 +18,9 @@ import (
 	"github.com/glade-sh/glade/internal/trace"
 )
 
-const maxLoopIterations = 1000000
+const defaultMaxLoopIterations = 1000000
+
+var maxLoopIterations = defaultMaxLoopIterations
 
 const (
 	triggerTimingBefore = "before"
@@ -99,6 +101,7 @@ type VM struct {
 	currentAsyncKind         string
 	currentQueueableDepth    int
 	currentQueueableMaxDepth int
+	currentQueueableDelay    int
 	currentFinalizer         Value
 	activeExceptions         []activeException
 	// --- Exception / statement / trigger-depth tracking ---
@@ -447,6 +450,7 @@ type AsyncJob struct {
 	SuppressWorkerRecords bool
 	QueueableDepth        int
 	QueueableMaxDepth     int
+	QueueableDelayMinutes int
 }
 
 type cacheEntry struct {

@@ -1740,12 +1740,12 @@ System.assertEquals('\/', '/'.escapeEcmaScript());
 
 String face = String.fromCharArray(new List<Integer>{128512});
 System.assertEquals(1, face.length());
-System.assertEquals(128512, face.codePointAt(0));
-System.assertEquals(128512, face.codePointBefore(1));
+System.assertEquals(62976, face.codePointAt(0));
+System.assertEquals(62976, face.codePointBefore(1));
 System.assertEquals(1, face.codePointCount(0, 1));
 List<Integer> faceChars = face.getChars();
 System.assertEquals(1, faceChars.size());
-System.assertEquals(128512, faceChars.get(0));
+System.assertEquals(62976, faceChars.get(0));
 
 System.assertEquals('abc...', 'abcdefg'.abbreviate(6));
 System.assertEquals('...mnopq...', 'abcdefghijklmnopqrstuvwxyz'.abbreviate(12, 11));
@@ -1759,7 +1759,7 @@ System.assertEquals(8, xml10Escaped.length());
 System.assertEquals(9, xml10Escaped.codePointAt(0));
 System.assertEquals(32, xml10Escaped.codePointAt(3));
 System.assertEquals(55295, xml10Escaped.codePointAt(4));
-System.assertEquals(128512, xml10Escaped.codePointAt(7));
+System.assertEquals(62976, xml10Escaped.codePointAt(7));
 String xml11Boundary = String.fromCharArray(new List<Integer>{0, 1, 8, 9, 10, 13, 31, 32});
 String xml11Escaped = xml11Boundary.escapeXml11();
 System.assertEquals(0, xml11Escaped.indexOf('&#1;'));
@@ -1897,9 +1897,9 @@ func TestStringRegexReplacementSplitAndUnsupportedEdges(t *testing.T) {
 	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "String.replaceAll replacement named group references") {
 		t.Fatalf("replaceAll named replacement unsupported err = %#v", err)
 	}
-	_, _, err = callStringMember(String("abc"), "split", []Value{String(`(.)\1`)})
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "String.split Java regex backreferences") {
-		t.Fatalf("split unsupported err = %#v", err)
+	backrefSplit, handled, err := callStringMember(String("axa axb bxb"), "split", []Value{String(`([ab])x\1`), Int(-1)})
+	if err != nil || !handled || backrefSplit.Kind != ValueList || len(backrefSplit.List) != 3 || backrefSplit.List[0].Text != "" || backrefSplit.List[1].Text != " axb " || backrefSplit.List[2].Text != "" {
+		t.Fatalf("split backreference = %#v handled=%v err=%v", backrefSplit, handled, err)
 	}
 }
 
@@ -1969,31 +1969,58 @@ System.assert(!Pattern.matches(settledDatePattern, '20240101'));
 	}
 }
 
-func TestExecPatternMatchesRejectsVariablePossessiveQuantifier(t *testing.T) {
-	program, err := CompileAnonymous(`Pattern.matches('a++a', 'aa');`)
-	if err != nil {
-		t.Fatal(err)
+func TestExecPatternMatchesSupportsVariablePossessiveQuantifier(t *testing.T) {
+	tests := []struct {
+		pattern string
+		input   string
+		want    bool
+	}{
+		{pattern: "a++a", input: "aa", want: false},
+		{pattern: "a*+", input: "aaa", want: true},
+		{pattern: "a?+", input: "a", want: true},
+		{pattern: "a?+a", input: "a", want: false},
+		{pattern: "a{1,3}+", input: "aaa", want: true},
 	}
-	_, err = Execute(program, nil)
-	var runtimeErr *RuntimeError
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "possessive quantifiers") {
-		t.Fatalf("err = %#v, want unsupported possessive quantifier", err)
+	for _, tc := range tests {
+		t.Run(tc.pattern, func(t *testing.T) {
+			got, err := patternMatches([]Value{String(tc.pattern), String(tc.input)})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got.Kind != ValueBool || got.Bool != tc.want {
+				compiled, compileErr := compileRegexp2Source("Pattern.matches", tc.pattern, 0)
+				t.Fatalf("Pattern.matches(%q, %q) compiled %q err %v = %#v, want %v", tc.pattern, tc.input, compiled, compileErr, got, tc.want)
+			}
+		})
 	}
 }
 
 func TestStringRegexSplitRejectsNullableEdges(t *testing.T) {
-	var runtimeErr *RuntimeError
-	for _, pattern := range []string{`\b`, "^"} {
-		_, _, err := callStringMember(String("abc"), "split", []Value{String(pattern), Int(-1)})
-		if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "String.split regexes that can match empty strings") {
-			t.Fatalf("split %q err = %#v", pattern, err)
-		}
+	split, handled, err := callStringMember(String("axa axb bxb"), "split", []Value{String(`([ab])x\1`), Int(-1)})
+	if err != nil || !handled || split.Kind != ValueList || len(split.List) != 3 || split.List[0].Text != "" || split.List[1].Text != " axb " || split.List[2].Text != "" {
+		t.Fatalf("backreference split = %#v handled=%v err=%v", split, handled, err)
+	}
+	defaultSplit, handled, err := callStringMember(String("axa axb bxb"), "split", []Value{String(`([ab])x\1`)})
+	if err != nil || !handled || defaultSplit.Kind != ValueList || len(defaultSplit.List) != 2 || defaultSplit.List[0].Text != "" || defaultSplit.List[1].Text != " axb " {
+		t.Fatalf("default backreference split = %#v handled=%v err=%v", defaultSplit, handled, err)
+	}
+	nullable, handled, err := callStringMember(String("ab cd"), "split", []Value{String("a*"), Int(-1)})
+	if err != nil || !handled || nullable.Kind != ValueList || len(nullable.List) != 7 || nullable.List[0].Text != "" || nullable.List[1].Text != "" || nullable.List[2].Text != "b" || nullable.List[6].Text != "" {
+		t.Fatalf("nullable split = %#v handled=%v err=%v", nullable, handled, err)
+	}
+	anchorStart, handled, err := callStringMember(String("abc"), "split", []Value{String("^"), Int(-1)})
+	if err != nil || !handled || anchorStart.Kind != ValueList || len(anchorStart.List) != 1 || anchorStart.List[0].Text != "abc" {
+		t.Fatalf("anchor start split = %#v handled=%v err=%v", anchorStart, handled, err)
+	}
+	anchorEnd, handled, err := callStringMember(String("abc"), "split", []Value{String("$"), Int(-1)})
+	if err != nil || !handled || anchorEnd.Kind != ValueList || len(anchorEnd.List) != 2 || anchorEnd.List[0].Text != "abc" || anchorEnd.List[1].Text != "" {
+		t.Fatalf("anchor end split = %#v handled=%v err=%v", anchorEnd, handled, err)
 	}
 	charSplit, handled, err := callStringMember(String("abc"), "split", []Value{String(""), Int(-1)})
 	if err != nil || !handled || charSplit.Kind != ValueList || len(charSplit.List) != 4 || charSplit.List[0].Text != "a" || charSplit.List[3].Text != "" {
 		t.Fatalf("empty regex split = %#v handled=%v err=%v", charSplit, handled, err)
 	}
-	split, handled, err := callStringMember(String(""), "split", []Value{String("x")})
+	split, handled, err = callStringMember(String(""), "split", []Value{String("x")})
 	if err != nil || !handled || split.Kind != ValueList || len(split.List) != 1 || split.List[0].Text != "" {
 		t.Fatalf("empty no-match split = %#v handled=%v err=%v", split, handled, err)
 	}
@@ -3094,17 +3121,12 @@ func TestBlobEncodingCryptoStdlibRejectsBadInputs(t *testing.T) {
 		{source: "EncodingUtil.convertFromHex('abc');", want: "invalid hexadecimal string"},
 		{source: "EncodingUtil.convertFromHex('zz');", want: "invalid hexadecimal string"},
 		{source: "Blob bad = EncodingUtil.convertFromHex('80'); bad.toString();", want: "Blob.toString invalid UTF-8 data"},
-		{source: "EncodingUtil.urlEncode('Ω', 'ISO-8859-1');", want: `EncodingUtil.urlEncode charset "ISO-8859-1" cannot encode U+03A9`},
-		{source: "EncodingUtil.urlEncode('é', 'US-ASCII');", want: `EncodingUtil.urlEncode charset "US-ASCII" cannot encode U+00E9`},
 		{source: "EncodingUtil.urlEncode(null, 'UTF-8');", want: `Argument cannot be null.`},
-		{source: "EncodingUtil.urlDecode('%E9', 'ASCII');", want: `EncodingUtil.urlDecode charset "US-ASCII" cannot decode byte 0xE9`},
-		{source: "EncodingUtil.urlEncode('x', 'UTF-16');", want: `unsupported call "EncodingUtil.urlEncode charset \"UTF-16\""`},
-		{source: "EncodingUtil.urlDecode('x', 'UTF-16');", want: `unsupported call "EncodingUtil.urlDecode charset \"UTF-16\""`},
 		{source: "EncodingUtil.urlDecode('%zz', 'UTF-8');", want: "invalid URL escape"},
 		{source: "Crypto.areEqualConstantTime(Blob.valueOf('x'), 'x');", want: "Crypto.areEqualConstantTime right expects Blob"},
-		{source: "Crypto.generateDigest('SHA-999', Blob.valueOf('x'));", want: `unsupported digest algorithm "SHA-999"`},
-		{source: "Crypto.generateDigest(' sha_256 ', Blob.valueOf('x'));", want: `unsupported digest algorithm " sha_256 "`},
-		{source: "Crypto.generateDigest('SHA3_256', Blob.valueOf('x'));", want: `unsupported digest algorithm "SHA3_256"`},
+		{source: "Crypto.generateDigest('SHA-999', Blob.valueOf('x'));", want: `SHA-999 MessageDigest not available`},
+		{source: "Crypto.generateDigest(' sha_256 ', Blob.valueOf('x'));", want: ` sha_256  MessageDigest not available`},
+		{source: "Crypto.generateDigest('SHA3_256', Blob.valueOf('x'));", want: `SHA3_256 MessageDigest not available`},
 		{source: "Crypto.generateMac('hmacSHA999', Blob.valueOf('x'), Blob.valueOf('key'));", want: `unsupported MAC algorithm "hmacSHA999"`},
 		{source: "Crypto.generateMac('hmacSHA256', Blob.valueOf('x'), 'key');", want: "Crypto.generateMac privateKey expects Blob"},
 		{source: "Crypto.verifyHmac('hmacSHA999', Blob.valueOf('x'), Blob.valueOf('key'), Blob.valueOf('mac'));", want: `unsupported MAC algorithm "hmacSHA999"`},
@@ -4332,15 +4354,33 @@ System.assert(caughtLong);
 	}
 }
 
-func TestExecDecimalScaleFenceUnsupported(t *testing.T) {
-	program, err := CompileAnonymous("Decimal d = Decimal.valueOf('1.25');\nd.setScale(16);")
+func TestExecDecimalScaleSupportsLargePositiveScale(t *testing.T) {
+	program, err := CompileAnonymous(`
+Decimal d = Decimal.valueOf('1.234567890123456789');
+System.assertEquals(1.234567890123456789, d.setScale(18, RoundingMode.HALF_UP));
+System.assertEquals(1.234567890123456789000000000000000, d.setScale(33, RoundingMode.HALF_UP));
+Boolean highCaught = false;
+try {
+	d.setScale(34, RoundingMode.HALF_UP);
+} catch (MathException e) {
+	highCaught = true;
+	System.assertEquals('Invalid scale: 34', e.getMessage());
+}
+System.assert(highCaught);
+Boolean lowCaught = false;
+try {
+	d.setScale(-34, RoundingMode.HALF_UP);
+} catch (MathException e) {
+	lowCaught = true;
+	System.assertEquals('Invalid scale: -34', e.getMessage());
+}
+System.assert(lowCaught);
+`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err == nil {
-		t.Fatal("expected Decimal.setScale scale fence error")
-	} else if !strings.Contains(err.Error(), `unsupported call "Decimal.setScale absolute scale greater than 15 is not supported by the local decimal model"`) {
-		t.Fatalf("Decimal.setScale scale fence error = %q", err.Error())
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -4360,8 +4400,59 @@ System.assertEquals(-1.2, negativeDirected.setScale(1, RoundingMode.CEILING));
 System.assertEquals(-1.3, negativeDirected.setScale(1, RoundingMode.FLOOR));
 System.assertEquals(130, Decimal.valueOf('125').setScale(-1, RoundingMode.HALF_UP));
 System.assertEquals(120, Decimal.valueOf('125').setScale(-1, RoundingMode.HALF_DOWN));
-System.assertEquals(3, Decimal.valueOf('2.5').round());
-System.assertEquals(-3, Decimal.valueOf('-2.5').round());
+System.assertEquals(2, Decimal.valueOf('2.5').round());
+System.assertEquals(-2, Decimal.valueOf('-2.5').round());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDecimalEncodingCryptoOracleEdges(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(2, Decimal.valueOf('2.5').round());
+System.assertEquals(-2, Decimal.valueOf('-2.5').round());
+System.assertEquals(3, Decimal.valueOf('2.5').round(RoundingMode.HALF_UP));
+System.assertEquals(12, Decimal.valueOf('12.5').round(RoundingMode.HALF_EVEN));
+System.assertEquals(14, Decimal.valueOf('13.5').round(RoundingMode.HALF_EVEN));
+System.assertEquals(1.234567890123456789, Decimal.valueOf('1.234567890123456789').setScale(18, RoundingMode.HALF_UP));
+System.assertEquals(1.3E+2, Decimal.valueOf('125').setScale(-1, RoundingMode.HALF_UP));
+System.assertEquals(1.20, Decimal.valueOf('1.20').setScale(2, RoundingMode.UNNECESSARY));
+try {
+	Decimal.valueOf('1.21').setScale(1, RoundingMode.UNNECESSARY);
+	System.assert(false, 'expected MathException');
+} catch (MathException e) {
+	System.assertEquals('Scale insufficient', e.getMessage());
+}
+
+System.assertEquals('A+B%2B', EncodingUtil.urlEncode('A B+', 'UTF-8'));
+System.assertEquals('A B+Ω', EncodingUtil.urlDecode('A+B%2B%CE%A9', 'utf8'));
+System.assertEquals('caf%E9+trail', EncodingUtil.urlEncode(EncodingUtil.urlDecode('caf%E9+trail', 'ISO-8859-1'), 'ISO-8859-1'));
+System.assertEquals('café trail', EncodingUtil.urlDecode('caf%E9+trail', 'latin1'));
+System.assertEquals('caf%3F', EncodingUtil.urlEncode(EncodingUtil.urlDecode('caf%E9', 'ISO-8859-1'), 'US-ASCII'));
+System.assertEquals('%3F', EncodingUtil.urlEncode('Ω', 'ISO-8859-1'));
+System.assertEquals('�', EncodingUtil.urlDecode('%E9', 'ASCII'));
+System.assertEquals('x', EncodingUtil.urlEncode('x', 'UTF-16'));
+System.assertEquals('%FE%FF%03%A9', EncodingUtil.urlEncode('Ω', 'UTF-16'));
+System.assertEquals('x', EncodingUtil.urlDecode('x', 'UTF-16'));
+System.assertEquals('Ω', EncodingUtil.urlDecode('%FE%FF%03%A9', 'UTF-16'));
+System.assertEquals('A B+Ω', EncodingUtil.urlDecode(EncodingUtil.urlEncode('A B+Ω', 'UTF-16'), 'UTF-16'));
+
+System.assertEquals('900150983cd24fb0d6963f7d28e17f72', EncodingUtil.convertToHex(Crypto.generateDigest('MD5', Blob.valueOf('abc'))));
+System.assertEquals('a9993e364706816aba3e25717850c26c9cd0d89d', EncodingUtil.convertToHex(Crypto.generateDigest('SHA1', Blob.valueOf('abc'))));
+System.assertEquals(EncodingUtil.convertToHex(Crypto.generateDigest('SHA1', Blob.valueOf('abc'))), EncodingUtil.convertToHex(Crypto.generateDigest('SHA-1', Blob.valueOf('abc'))));
+System.assertEquals('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad', EncodingUtil.convertToHex(Crypto.generateDigest('SHA256', Blob.valueOf('abc'))));
+System.assertEquals(EncodingUtil.convertToHex(Crypto.generateDigest('SHA256', Blob.valueOf('abc'))), EncodingUtil.convertToHex(Crypto.generateDigest('SHA-256', Blob.valueOf('abc'))));
+System.assertEquals('3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532', EncodingUtil.convertToHex(Crypto.generateDigest('SHA3-256', Blob.valueOf('abc'))));
+try {
+	Crypto.generateDigest('SHA-999', Blob.valueOf('abc'));
+	System.assert(false, 'expected SecurityException');
+} catch (SecurityException e) {
+	System.assertEquals('SHA-999 MessageDigest not available', e.getMessage());
+}
 `)
 	if err != nil {
 		t.Fatal(err)

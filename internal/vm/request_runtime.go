@@ -528,7 +528,7 @@ func (vm *VM) quickActionDescribe(args []Value) (Value, error) {
 		result.Fields["actionenumorid"] = String(action.Name)
 		result.Fields["contextsobjecttype"] = String(action.TargetObject)
 		result.Fields["targetsobjecttype"] = String(action.TargetObject)
-		result.Fields["defaultvalues"] = typedList("List<QuickAction.DescribeQuickActionDefaultValue>")
+		result.Fields["defaultvalues"] = quickActionDescribeDefaultValues(action)
 		result.Fields["parameters"] = typedList("List<QuickAction.DescribeQuickActionParameter>")
 		result.Fields["colors"] = typedList("List<Schema.DescribeColorResult>")
 		result.Fields["icons"] = typedList("List<Schema.DescribeIconResult>")
@@ -647,7 +647,29 @@ func (vm *VM) quickActionTemplateSObject(name string) Value {
 	}
 	record := Object(objectName)
 	record.Fields["QuickActionName"] = String(name)
+	for _, fieldValue := range action.PredefinedFieldValues {
+		field := strings.TrimSpace(fieldValue.Field)
+		if field == "" {
+			continue
+		}
+		record.Fields[field] = String(fieldValue.Value)
+	}
 	return record
+}
+
+func quickActionDescribeDefaultValues(action storage.QuickActionMetadata) Value {
+	out := typedList("List<QuickAction.DescribeQuickActionDefaultValue>")
+	for _, fieldValue := range action.PredefinedFieldValues {
+		field := strings.TrimSpace(fieldValue.Field)
+		if field == "" {
+			continue
+		}
+		item := Object("QuickAction.DescribeQuickActionDefaultValue")
+		item.Fields["field"] = String(field)
+		item.Fields["defaultvalue"] = String(fieldValue.Value)
+		out.List = append(out.List, item)
+	}
+	return out
 }
 
 func (vm *VM) quickActionByName(name string) (storage.QuickActionMetadata, bool) {

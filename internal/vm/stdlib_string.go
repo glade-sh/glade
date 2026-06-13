@@ -14,7 +14,7 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.length expects 0 arguments")
 		}
-		return Int(int64(utf8.RuneCountInString(receiver.Text))), true, nil
+		return Int(int64(apexStringLength(receiver.Text))), true, nil
 	case "contains":
 		needle, err := stringArg("String.contains", args)
 		if err != nil {
@@ -418,39 +418,38 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if err != nil {
 			return Null, true, err
 		}
-		runes := []rune(receiver.Text)
-		if index < 0 || index >= len(runes) {
+		codePoint, err := codePointAtApexIndex(receiver.Text, index)
+		if err != nil {
 			return Null, true, fmt.Errorf("String.codePointAt index out of bounds: %d", index)
 		}
-		return Int(int64(runes[index])), true, nil
+		return Int(int64(codePoint)), true, nil
 	case "codePointBefore":
 		index, err := stringIntArg("String.codePointBefore", args)
 		if err != nil {
 			return Null, true, err
 		}
-		runes := []rune(receiver.Text)
-		if index <= 0 || index > len(runes) {
+		codePoint, err := codePointBeforeApexIndex(receiver.Text, index)
+		if err != nil {
 			return Null, true, fmt.Errorf("String.codePointBefore index out of bounds: %d", index)
 		}
-		return Int(int64(runes[index-1])), true, nil
+		return Int(int64(codePoint)), true, nil
 	case "codePointCount":
 		begin, end, err := stringTwoIntArgs("String.codePointCount", args)
 		if err != nil {
 			return Null, true, err
 		}
-		runes := []rune(receiver.Text)
-		if begin < 0 || end < begin || end > len(runes) {
+		count, err := codePointCountForApexRange(receiver.Text, begin, end)
+		if err != nil {
 			return Null, true, fmt.Errorf("String.codePointCount index out of bounds")
 		}
-		return Int(int64(end - begin)), true, nil
+		return Int(int64(count)), true, nil
 	case "offsetByCodePoints":
 		index, offset, err := stringTwoIntArgs("String.offsetByCodePoints", args)
 		if err != nil {
 			return Null, true, err
 		}
-		runes := []rune(receiver.Text)
-		result := index + offset
-		if index < 0 || index > len(runes) || result < 0 || result > len(runes) {
+		result, err := offsetApexIndexByCodePoints(receiver.Text, index, offset)
+		if err != nil {
 			return Null, true, fmt.Errorf("String.offsetByCodePoints index out of bounds")
 		}
 		return Int(int64(result)), true, nil
@@ -458,9 +457,10 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
 		}
-		chars := make([]Value, 0, len([]rune(receiver.Text)))
-		for _, r := range receiver.Text {
-			chars = append(chars, Int(int64(r)))
+		units := apexStringUTF16Units(receiver.Text)
+		chars := make([]Value, 0, len(units))
+		for _, unit := range units {
+			chars = append(chars, Int(int64(unit)))
 		}
 		return List(chars...), true, nil
 	case "left":

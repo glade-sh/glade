@@ -53,18 +53,16 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 			}
 			mode = parsedMode
 		}
-		rounded, err := roundDecimalToScale("Decimal.setScale", receiver.Decimal, args[0].Int, mode)
+		value, err := roundDecimalValueToScale("Decimal.setScale", receiver, args[0].Int, mode)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		value := Decimal(rounded)
-		value.Text = strconv.FormatFloat(rounded, 'f', int(args[0].Int), 64)
 		return value, receiver, false, true, nil
 	case "round":
 		if len(args) > 1 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.round expects optional RoundingMode")
 		}
-		mode := "HALF_UP"
+		mode := "HALF_EVEN"
 		if len(args) == 1 {
 			parsedMode, err := decimalRoundingMode(args[0])
 			if err != nil {
@@ -72,11 +70,11 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 			}
 			mode = parsedMode
 		}
-		roundedDecimal, err := roundDecimalToScale("Decimal.round", receiver.Decimal, 0, mode)
+		roundedDecimal, err := roundDecimalValueToScale("Decimal.round", receiver, 0, mode)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		rounded, err := int64FromFloat("Decimal.round", roundedDecimal)
+		rounded, err := strconv.ParseInt(decimalPlainText(roundedDecimal), 10, 64)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}

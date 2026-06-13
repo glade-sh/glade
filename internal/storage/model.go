@@ -101,11 +101,17 @@ type DataCategory struct {
 }
 
 type QuickActionMetadata struct {
-	Name         string `json:"name"`
-	Label        string `json:"label,omitempty"`
-	Type         string `json:"type,omitempty"`
-	TargetObject string `json:"targetObject,omitempty"`
-	File         string `json:"file,omitempty"`
+	Name                  string                  `json:"name"`
+	Label                 string                  `json:"label,omitempty"`
+	Type                  string                  `json:"type,omitempty"`
+	TargetObject          string                  `json:"targetObject,omitempty"`
+	PredefinedFieldValues []QuickActionFieldValue `json:"predefinedFieldValues,omitempty"`
+	File                  string                  `json:"file,omitempty"`
+}
+
+type QuickActionFieldValue struct {
+	Field string `json:"field"`
+	Value string `json:"value,omitempty"`
 }
 
 type FieldSetMetadata struct {

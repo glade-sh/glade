@@ -713,6 +713,9 @@ platformStaticCall:
 		locator := Object("Database.QueryLocator")
 		locator.Fields["Records"] = value
 		locator.Fields["Query"] = String(query)
+		if err := vm.incrementQueryLocatorRows(value); err != nil {
+			return Null, err
+		}
 		return locator, nil
 	case "Database.getQueryLocatorWithBinds":
 		if len(args) != 3 {
@@ -731,6 +734,9 @@ platformStaticCall:
 		locator := Object("Database.QueryLocator")
 		locator.Fields["Records"] = value
 		locator.Fields["Query"] = String(args[0].Text)
+		if err := vm.incrementQueryLocatorRows(value); err != nil {
+			return Null, err
+		}
 		return locator, nil
 	case "Database.getAsyncLocator":
 		if len(args) != 1 {
@@ -860,6 +866,9 @@ platformStaticCall:
 			*vm.Org = restored
 		}
 		vm.capturedEmails = append([]CapturedEmail(nil), vm.emailSavepoints[idValue.Text]...)
+		if err := vm.incrementLimit("savepointRollbacks", 1); err != nil {
+			return Null, err
+		}
 		vm.clearCustomDataCache()
 		for id, order := range vm.savepointOrder {
 			if order > targetOrder {
@@ -1281,7 +1290,7 @@ platformStaticCall:
 		if vm.currentAsyncKind != "Queueable" {
 			return Null, newExceptionError("System.AsyncException", "getMinimumQueueableDelayInMinutes is not allowed outside a Queueable or Finalizer execution")
 		}
-		return Int(0), nil
+		return Int(int64(vm.currentQueueableDelay)), nil
 	case "Datetime.newInstance", "Datetime.newInstanceGmt":
 		if len(args) == 1 {
 			if args[0].Kind != ValueInt {

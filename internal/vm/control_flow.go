@@ -289,20 +289,22 @@ func (vm *VM) appendTrace(result *Result, name, category string, args map[string
 
 func limitTraceArgs(limits Limits) map[string]any {
 	return map[string]any{
-		"queries":          limits.Queries,
-		"queryRows":        limits.QueryRows,
-		"dmlStatements":    limits.DMLStatements,
-		"dmlRows":          limits.DMLRows,
-		"heapSize":         limits.HeapSize,
-		"cpuTimeMs":        limits.CPUTimeMS,
-		"callouts":         limits.Callouts,
-		"asyncJobs":        limits.AsyncJobs,
-		"futureCalls":      limits.FutureCalls,
-		"queueableJobs":    limits.QueueableJobs,
-		"batchJobs":        limits.BatchJobs,
-		"scheduledJobs":    limits.ScheduledJobs,
-		"emailInvocations": limits.EmailInvokes,
-		"runAs":            limits.RunAs,
+		"queries":            limits.Queries,
+		"queryRows":          limits.QueryRows,
+		"dmlStatements":      limits.DMLStatements,
+		"dmlRows":            limits.DMLRows,
+		"heapSize":           limits.HeapSize,
+		"cpuTimeMs":          limits.CPUTimeMS,
+		"callouts":           limits.Callouts,
+		"asyncJobs":          limits.AsyncJobs,
+		"futureCalls":        limits.FutureCalls,
+		"queueableJobs":      limits.QueueableJobs,
+		"batchJobs":          limits.BatchJobs,
+		"scheduledJobs":      limits.ScheduledJobs,
+		"emailInvocations":   limits.EmailInvokes,
+		"queryLocatorRows":   limits.QueryLocatorRows,
+		"runAs":              limits.RunAs,
+		"savepointRollbacks": limits.SavepointRollbacks,
 	}
 }
 

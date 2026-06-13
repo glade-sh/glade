@@ -229,22 +229,7 @@ func TestExecPatternRejectsJavaOnlyRegex(t *testing.T) {
 		source  string
 		message string
 	}{
-		{name: "lookbehind", source: `Pattern.compile('(?<=a)b');`, message: "Java regex lookbehind"},
-		{name: "lookahead", source: `Pattern.compile('(?=b)a');`, message: "Java regex lookahead"},
-		{name: "namedGroup", source: `Pattern.compile('(?<word>a)');`, message: "Java regex named groups"},
-		{name: "atomicGroup", source: `Pattern.compile('(?>a)');`, message: "Java regex atomic groups"},
-		{name: "possessiveQuantifier", source: `Pattern.compile('a++');`, message: "Java regex possessive quantifiers"},
-		{name: "previousMatchBoundary", source: `Pattern.compile('\Gabc');`, message: "Java regex previous-match boundary"},
 		{name: "pythonNamedGroup", source: `Pattern.compile('(?P<word>a)');`, message: "Java regex named groups"},
-		{name: "unicodeJavaClass", source: `Pattern.compile('\p{javaLowerCase}+');`, message: "Java regex Unicode character classes"},
-		{name: "unicodeIsClass", source: `Pattern.compile('\p{IsAlphabetic}+');`, message: "Java regex Unicode character classes"},
-		{name: "linebreakMatcher", source: `Pattern.compile('\R');`, message: "Java regex linebreak matcher"},
-		{name: "graphemeMatcher", source: `Pattern.compile('\X');`, message: "Java regex grapheme matcher"},
-		{name: "horizontalWhitespaceClass", source: `Pattern.compile('\h+');`, message: "Java regex horizontal/vertical whitespace classes"},
-		{name: "verticalWhitespaceClass", source: `Pattern.compile('\V+');`, message: "Java regex horizontal/vertical whitespace classes"},
-		{name: "inlineCommentsFlag", source: `Pattern.compile('(?x)a b');`, message: "Java regex inline flags"},
-		{name: "inlineUnicodeFlag", source: `Pattern.compile('(?U)\w+');`, message: "Java regex inline flags"},
-		{name: "classIntersection", source: `Pattern.compile('[a-z&&[^aeiou]]+');`, message: "Java regex character-class intersections"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -261,6 +246,313 @@ func TestExecPatternRejectsJavaOnlyRegex(t *testing.T) {
 				t.Fatalf("expected UnsupportedFeature runtime error, got %T %v", err, err)
 			}
 		})
+	}
+}
+
+func TestExecPatternSupportsJavaLookaroundNamedGroupsAndClassIntersection(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assert(!Pattern.matches('(?>a+)a', 'aa'));
+System.assert(Pattern.matches('a+a', 'aa'));
+System.assert(!Pattern.matches('a++a', 'aa'));
+System.assert(Pattern.matches('a++', 'aaa'));
+System.assert(Pattern.matches('[a-z]++', 'abc'));
+System.assert(Pattern.matches('\\w++', 'abc_123'));
+
+Pattern lookbehind = Pattern.compile('(?<=foo)bar');
+Matcher behind = lookbehind.matcher('xx foobar baz');
+System.assert(behind.find());
+System.assertEquals('bar', behind.group());
+System.assertEquals(6, behind.start());
+System.assertEquals(9, behind.end());
+System.assert(!behind.find());
+
+Pattern negativeBehind = Pattern.compile('(?<!foo)bar');
+Matcher notBehind = negativeBehind.matcher('bar foobar');
+System.assert(notBehind.find());
+System.assertEquals(0, notBehind.start());
+System.assertEquals('bar', notBehind.group());
+System.assert(!notBehind.find());
+
+Pattern ahead = Pattern.compile('foo(?=bar)');
+Matcher aheadMatcher = ahead.matcher('xx foobar foozap');
+System.assert(aheadMatcher.find());
+System.assertEquals('foo', aheadMatcher.group());
+System.assertEquals(3, aheadMatcher.start());
+System.assert(!aheadMatcher.find());
+
+Pattern named = Pattern.compile('(?<word>[A-Z]+)-(?<num>[0-9]+)');
+Matcher namedMatcher = named.matcher('abc DEF-42 ghi');
+System.assert(namedMatcher.find());
+System.assertEquals('DEF-42', namedMatcher.group());
+System.assertEquals('DEF', namedMatcher.group(1));
+System.assertEquals('42', namedMatcher.group(2));
+System.assertEquals(2, namedMatcher.groupCount());
+System.assert(Pattern.matches('(?<word>[A-Z]+)-\\k<word>', 'ABC-ABC'));
+System.assert(!Pattern.matches('(?<word>[A-Z]+)-\\k<word>', 'ABC-DEF'));
+
+Pattern consonants = Pattern.compile('[a-z&&[^aeiou]]+');
+Matcher consonantMatcher = consonants.matcher('aei bcdf ou');
+System.assert(consonantMatcher.find());
+System.assertEquals('bcdf', consonantMatcher.group());
+System.assert(!Pattern.matches('[a-z&&[^aeiou]]+', 'ae'));
+System.assert(Pattern.matches('[a-z&&[^aeiou]]+', 'bcdf'));
+System.assert(Pattern.matches('[a-z&&[m-p]]+', 'mnop'));
+System.assert(!Pattern.matches('[a-z&&[m-p]]+', 'abc'));
+System.assert(Pattern.matches('[a-z&&[^aeiou]&&[^xyz]]+', 'bcdf'));
+System.assert(!Pattern.matches('[a-z&&[^aeiou]&&[^xyz]]+', 'ae'));
+System.assert(!Pattern.matches('[a-z&&[^aeiou]&&[^xyz]]+', 'xyz'));
+System.assert(Pattern.matches('[\\p{L}&&[^\\p{Lu}]]+', 'abcé'));
+System.assert(!Pattern.matches('[\\p{L}&&[^\\p{Lu}]]+', 'ABC'));
+System.assert(Pattern.matches('[\\w&&[^\\d]]+', 'abc_'));
+System.assert(!Pattern.matches('[\\w&&[^\\d]]+', '123'));
+
+System.assert(Pattern.matches('(?x)a b', 'ab'));
+System.assert(Pattern.matches('(?x)a\\ b', 'a b'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPatternSupportsJavaUnicodeAliasesAndClassFlag(t *testing.T) {
+	tests := []struct {
+		name    string
+		pattern string
+		input   string
+		want    bool
+	}{
+		{name: "plain word ascii", pattern: `\w+`, input: "abc_123", want: true},
+		{name: "plain word excludes omega", pattern: `\w+`, input: "Ω", want: false},
+		{name: "unicode word includes omega", pattern: `(?U)\w+`, input: "Ω", want: true},
+		{name: "java lower", pattern: `\p{javaLowerCase}+`, input: "abcé", want: true},
+		{name: "java lower rejects upper", pattern: `\p{javaLowerCase}+`, input: "ABC", want: false},
+		{name: "java upper", pattern: `\p{javaUpperCase}+`, input: "ABCÉ", want: true},
+		{name: "java digit", pattern: `\p{javaDigit}+`, input: "123", want: true},
+		{name: "java whitespace includes controls", pattern: `\p{javaWhitespace}+`, input: "\t\n\r", want: true},
+		{name: "java whitespace complement", pattern: `\P{javaWhitespace}+`, input: "abc", want: true},
+		{name: "is alphabetic", pattern: `\p{IsAlphabetic}+`, input: "abcΩ", want: true},
+		{name: "is alphabetic rejects digit", pattern: `\p{IsAlphabetic}+`, input: "abc1", want: false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := patternMatches([]Value{String(tc.pattern), String(tc.input)})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got.Kind != ValueBool || got.Bool != tc.want {
+				compiled, compileErr := compileRegexp2Source("Pattern.matches", tc.pattern, 0)
+				t.Fatalf("Pattern.matches(%q, %q) compiled %q err %v = %#v, want %v", tc.pattern, tc.input, compiled, compileErr, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestExecMatcherReplacementUsesRegexp2Features(t *testing.T) {
+	program, err := CompileAnonymous(`
+Pattern behind = Pattern.compile('(?<=foo)(bar)');
+System.assertEquals('foobar! baz', behind.matcher('foobar baz').replaceAll('$1!'));
+
+Pattern consonants = Pattern.compile('[a-z&&[^aeiou]]+');
+System.assertEquals('x aei', consonants.matcher('bcdf aei').replaceFirst('x'));
+
+Pattern named = Pattern.compile('(?<word>[A-Z]+)-\\k<word>');
+System.assertEquals('ok bad', named.matcher('ABC-ABC bad').replaceAll('ok'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMatcherFindSupportsZeroWidthJavaAssertions(t *testing.T) {
+	program, err := CompileAnonymous(`
+Matcher previous = Pattern.compile('\\G\\w').matcher('ab cd');
+System.assert(previous.find());
+System.assertEquals('a', previous.group());
+System.assert(previous.find());
+System.assertEquals('b', previous.group());
+System.assert(!previous.find());
+Matcher previousFromStart = Pattern.compile('\\G\\w').matcher('ab cd');
+System.assert(previousFromStart.find(3));
+System.assertEquals('c', previousFromStart.group());
+
+Matcher m = Pattern.compile('(?=a)').matcher('aba');
+System.assert(m.find());
+System.assertEquals('', m.group());
+System.assertEquals(0, m.start());
+System.assertEquals(0, m.end());
+System.assert(m.find());
+System.assertEquals(2, m.start());
+System.assertEquals(2, m.end());
+System.assert(!m.find());
+
+Matcher wordEnd = Pattern.compile('(?<=\\w)(?=\\W|$)').matcher('ab cd');
+System.assert(wordEnd.find());
+System.assertEquals(2, wordEnd.start());
+System.assert(wordEnd.find());
+System.assertEquals(5, wordEnd.start());
+System.assert(!wordEnd.find());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPatternSupportsJavaLinebreakAndWhitespaceClasses(t *testing.T) {
+	program, err := CompileAnonymous(`
+String linebreaks = String.fromCharArray(new List<Integer>{65,13,10,66,10,67});
+Matcher r = Pattern.compile('\\R').matcher(linebreaks);
+System.assert(r.find());
+System.assertEquals(1, r.start());
+System.assertEquals(3, r.end());
+System.assert(r.find());
+System.assertEquals(4, r.start());
+List<String> rows = linebreaks.split('\\R');
+System.assertEquals(3, rows.size());
+System.assertEquals('A', rows[0]);
+System.assertEquals('B', rows[1]);
+System.assertEquals('C', rows[2]);
+
+String horizontal = String.fromCharArray(new List<Integer>{9,32,160});
+System.assert(Pattern.matches('\\h+', horizontal));
+System.assert(Pattern.matches('\\H+', 'abc'));
+String vertical = String.fromCharArray(new List<Integer>{10,13,11,12});
+System.assert(Pattern.matches('\\v+', vertical));
+System.assert(Pattern.matches('\\V+', 'abc'));
+System.assert(Pattern.matches('[\\h]+', horizontal));
+System.assert(Pattern.matches('[\\v]+', vertical));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPatternSupportsJavaGraphemeMatcherForCombiningMarks(t *testing.T) {
+	program, err := CompileAnonymous(`
+String combining = 'e' + String.fromCharArray(new List<Integer>{769});
+String mark = String.fromCharArray(new List<Integer>{769});
+System.assert(Pattern.matches('\\X', 'e'));
+System.assert(Pattern.matches('\\X', combining));
+System.assert(Pattern.matches('\\X', mark));
+System.assert(!Pattern.matches('\\X', 'ee'));
+
+Matcher m = Pattern.compile('\\X').matcher(combining + 'x');
+System.assert(m.find());
+System.assertEquals(combining, m.group());
+System.assertEquals(0, m.start());
+System.assertEquals(2, m.end());
+System.assert(m.find());
+System.assertEquals('x', m.group());
+System.assertEquals(2, m.start());
+System.assertEquals(3, m.end());
+System.assert(!m.find());
+
+List<String> split = (combining + 'x').split('\\X', -1);
+System.assertEquals(3, split.size());
+System.assertEquals('', split[0]);
+System.assertEquals('', split[1]);
+System.assertEquals('', split[2]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPatternSupportsExtendedGraphemeClustersAndBoundaries(t *testing.T) {
+	program, err := CompileAnonymous(`
+String gx = String.fromCharArray(new List<Integer>{92}) + 'X';
+String bg = String.fromCharArray(new List<Integer>{92}) + 'b{g}';
+String crlf = String.fromCharArray(new List<Integer>{13,10});
+String jamo = String.fromCharArray(new List<Integer>{4352,4449});
+String flagUS = String.fromCharArray(new List<Integer>{55356,56826,55356,56824});
+String thumbTone = String.fromCharArray(new List<Integer>{55357,56397,55356,57341});
+String family = String.fromCharArray(new List<Integer>{55357,56424,8205,55357,56425,8205,55357,56423,8205,55357,56422});
+String mark = String.fromCharArray(new List<Integer>{769});
+String combining = 'e' + mark;
+
+System.assert(Pattern.matches(gx, crlf));
+System.assert(Pattern.matches(gx, jamo));
+System.assert(Pattern.matches(gx, flagUS));
+System.assert(Pattern.matches(gx, thumbTone));
+System.assert(Pattern.matches(gx, family));
+System.assert(Pattern.matches(gx, mark));
+System.assert(Pattern.matches(gx, combining));
+
+Matcher thumb = Pattern.compile(gx).matcher(thumbTone + 'x');
+System.assert(thumb.find());
+System.assertEquals(thumbTone, thumb.group());
+System.assertEquals(0, thumb.start());
+System.assertEquals(4, thumb.end());
+System.assert(thumb.find());
+System.assertEquals('x', thumb.group());
+System.assertEquals(4, thumb.start());
+System.assertEquals(5, thumb.end());
+
+Matcher boundary = Pattern.compile(bg).matcher(combining + 'x');
+System.assert(boundary.find());
+System.assertEquals(0, boundary.start());
+System.assert(boundary.find());
+System.assertEquals(2, boundary.start());
+System.assert(boundary.find());
+System.assertEquals(3, boundary.start());
+System.assert(!boundary.find());
+
+List<String> stringParts = (thumbTone + 'x').split(gx, -1);
+System.assertEquals(3, stringParts.size());
+System.assertEquals('', stringParts[0]);
+System.assertEquals('', stringParts[1]);
+System.assertEquals('', stringParts[2]);
+
+List<String> patternParts = Pattern.compile(gx).split(thumbTone + 'x', -1);
+System.assertEquals(3, patternParts.size());
+System.assertEquals('', patternParts[0]);
+System.assertEquals('', patternParts[1]);
+System.assertEquals('', patternParts[2]);
+
+System.assertEquals('Qx', Pattern.compile(gx).matcher(thumbTone + 'x').replaceFirst('Q'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPatternSupportsNestedJavaClassIntersectionShapes(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assert(Pattern.matches('[a-z&&[m-p]&&[n-o]]+', 'no'));
+System.assert(!Pattern.matches('[a-z&&[m-p]&&[n-o]]+', 'mp'));
+System.assert(Pattern.matches('[a-z&&[m-p]&&[^o]]+', 'mnp'));
+System.assert(!Pattern.matches('[a-z&&[m-p]&&[^o]]+', 'o'));
+System.assert(Pattern.matches('[a-z&&[m-p&&[^o]]]+', 'mnp'));
+System.assert(!Pattern.matches('[a-z&&[m-p&&[^o]]]+', 'o'));
+System.assert(Pattern.matches('[a-c[x-z]]+', 'abcxyz'));
+System.assert(!Pattern.matches('[a-c[x-z]]+', 'm'));
+System.assert(Pattern.matches('[\\p{L}&&[\\p{Ll}]&&[^x]]+', 'abcé'));
+System.assert(!Pattern.matches('[\\p{L}&&[\\p{Ll}]&&[^x]]+', 'x'));
+List<String> split = 'amnoq'.split('[a-z&&[m-p]&&[^o]]', -1);
+System.assertEquals(3, split.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -320,6 +612,39 @@ List<String> parts = '123'.split('');
 System.assertEquals(3, parts.size());
 System.assertEquals('1', parts[0]);
 System.assertEquals('3', parts[2]);
+
+List<String> keepTrailing = '123'.split('', -1);
+System.assertEquals(4, keepTrailing.size());
+System.assertEquals('', keepTrailing[3]);
+
+List<String> limited = '123'.split('', 2);
+System.assertEquals(2, limited.size());
+System.assertEquals('1', limited[0]);
+System.assertEquals('23', limited[1]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringSplitSupportsZeroWidthWordBoundary(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<String> boundary = 'ab cd'.split('\\b');
+System.assertEquals(3, boundary.size());
+System.assertEquals('ab', boundary[0]);
+System.assertEquals(' ', boundary[1]);
+System.assertEquals('cd', boundary[2]);
+
+List<String> keepTrailing = 'ab cd'.split('\\b', -1);
+System.assertEquals(4, keepTrailing.size());
+System.assertEquals('', keepTrailing[3]);
+
+List<String> limited = 'ab cd'.split('\\b', 3);
+System.assertEquals(3, limited.size());
+System.assertEquals('cd', limited[2]);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -356,6 +681,7 @@ System.assertEquals(8, Pattern.MULTILINE);
 System.assertEquals(16, Pattern.LITERAL);
 System.assertEquals(32, Pattern.DOTALL);
 System.assertEquals(64, Pattern.UNICODE_CASE);
+System.assertEquals(256, Pattern.UNICODE_CHARACTER_CLASS);
 
 Pattern inline = Pattern.compile('(?i)abc');
 System.assert(inline.matcher('ABC').matches());
@@ -379,6 +705,9 @@ System.assertEquals('a.b', literalMatcher.group());
 literalMatcher.usePattern(Pattern.compile('[0-9]+'));
 System.assert(literalMatcher.find());
 System.assertEquals('9', literalMatcher.group());
+
+Pattern unicodeClass = Pattern.compile('\\w+', Pattern.UNICODE_CHARACTER_CLASS);
+System.assert(unicodeClass.matcher('Ω').matches());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -397,7 +726,6 @@ func TestExecPatternCompileRejectsUnsupportedFlags(t *testing.T) {
 		{name: "comments", source: `Pattern.compile('a b', Pattern.COMMENTS);`, want: "unsupported regex flags COMMENTS"},
 		{name: "unixLines", source: `Pattern.compile('^a$', Pattern.UNIX_LINES);`, want: "unsupported regex flags UNIX_LINES"},
 		{name: "canonEq", source: `Pattern.compile('a', Pattern.CANON_EQ);`, want: "unsupported regex flags CANON_EQ"},
-		{name: "unicodeCharacterClass", source: `Pattern.compile('\w+', Pattern.UNICODE_CHARACTER_CLASS);`, want: "unsupported regex flags UNICODE_CHARACTER_CLASS"},
 		{name: "unknown", source: `Pattern.compile('a', 1024);`, want: "unsupported regex flags unknown flags 0x400"},
 		{name: "negative", source: `Pattern.compile('a', -1);`, want: "negative regex flags"},
 	}
@@ -650,33 +978,25 @@ m.group(3);
 	}
 }
 
-func TestRegexSplitRejectsNullablePatterns(t *testing.T) {
-	tests := []struct {
-		name   string
-		source string
-		want   string
-	}{
-		{
-			name:   "patternNullableDelimiter",
-			source: `Pattern p = Pattern.compile('a*'); p.split('ab cd', -1);`,
-			want:   `Pattern.split regexes that can match empty strings`,
-		},
+func TestRegexSplitSupportsNullablePatterns(t *testing.T) {
+	program, err := CompileAnonymous(`
+Pattern p = Pattern.compile('a*');
+List<String> keepTrailing = p.split('ab cd', -1);
+System.assertEquals(7, keepTrailing.size());
+System.assertEquals('', keepTrailing[0]);
+System.assertEquals('', keepTrailing[1]);
+System.assertEquals('b', keepTrailing[2]);
+System.assertEquals('', keepTrailing[6]);
+
+List<String> trimTrailing = p.split('ab cd');
+System.assertEquals(6, trimTrailing.size());
+System.assertEquals('d', trimTrailing[5]);
+`)
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			program, err := CompileAnonymous(tc.source)
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = Execute(program, nil)
-			if err == nil || !strings.Contains(err.Error(), tc.want) {
-				t.Fatalf("expected %q error, got %v", tc.want, err)
-			}
-			var runtimeErr *RuntimeError
-			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" {
-				t.Fatalf("expected UnsupportedFeature runtime error, got %T %v", err, err)
-			}
-		})
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 

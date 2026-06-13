@@ -13210,6 +13210,9 @@ System.assertEquals('2026-05-07T00:00:00Z', value.formatGmt('yyyy-MM-dd''T''HH:m
 }
 
 func TestExecWhileLoopIterationGuard(t *testing.T) {
+	oldMaxLoopIterations := maxLoopIterations
+	maxLoopIterations = 25
+	defer func() { maxLoopIterations = oldMaxLoopIterations }()
 	program, err := CompileAnonymous("while (true) { System.debug('loop'); }")
 	if err != nil {
 		t.Fatal(err)
