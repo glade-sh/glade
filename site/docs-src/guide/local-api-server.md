@@ -38,12 +38,14 @@ glade db inspect --db .glade/local-org.sqlite --json
 The server exposes a Salesforce-shaped baseline for local work: API discovery,
 object describe and CRUD-style record operations, SOQL query execution, limits
 and record counts, source-backed Tooling metadata reads, virtual schema metadata
-queries, Composite sObject inserts, and execute-anonymous routes where supported
-by the runtime.
+queries, Composite sObject inserts, Composite Batch local subrequests,
+Bulk API v2 simple scalar query job create/status/whole-result CSV routes,
+and execute-anonymous routes where supported by the runtime.
 
 Check the [Support map](/guide/support-map) before relying on full auth,
-Bulk API, Streaming, Pub/Sub, GraphQL, metadata deploy/retrieve jobs, or
-Tooling surfaces outside the checked local source/schema metadata baseline.
+Composite Graph/Tree, broader Bulk API including locator paging, Streaming, Pub/Sub, GraphQL, metadata
+deploy/retrieve jobs, or Tooling surfaces outside the checked local
+source/schema metadata baseline.
 
 | Area | Endpoint shape | Status |
 | --- | --- | --- |
@@ -56,6 +58,8 @@ Tooling surfaces outside the checked local source/schema metadata baseline.
 | Tooling source metadata | Tooling `ApexClass`, `ApexTrigger`, `ApexPage`, `ApexComponent`, `StaticResource`, `CustomObject`, `CustomField`, `Layout`, `CompactLayout`, `RecordType`, and `ValidationRule` query/read paths | supported local baseline |
 | Tooling schema metadata | Tooling `EntityDefinition`, `EntityParticle`, `FieldDefinition`, and `RelationshipDomain` query paths | supported local baseline |
 | Composite sObject insert | `/services/data/vXX.X/composite/sobjects` | supported baseline |
+| Composite Batch | `/services/data/vXX.X/composite/batch` | supported local subrequests |
+| Bulk API v2 query | `/services/data/vXX.X/jobs/query` and `/results` | supported simple scalar local query whole-result CSV |
 | Glade reset endpoints | `/services/data/vXX.X/glade/reset` and scoped reset routes | supported local-only baseline |
 
 Example request:

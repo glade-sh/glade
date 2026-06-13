@@ -38,6 +38,11 @@ type compositeRequestEnvelope struct {
 	CompositeRequest []compositeSubrequestEnvelope `json:"compositeRequest"`
 }
 
+type compositeBatchEnvelope struct {
+	BatchRequests []compositeSubrequestEnvelope `json:"batchRequests"`
+	HaltOnError   bool                          `json:"haltOnError"`
+}
+
 func requireCompositeRequestEnvelope(w http.ResponseWriter, r *http.Request) bool {
 	_, ok := decodeCompositeRequestEnvelope(w, r)
 	return ok
@@ -63,18 +68,31 @@ func decodeCompositeRequestEnvelope(w http.ResponseWriter, r *http.Request) (com
 }
 
 func requireCompositeBatchEnvelope(w http.ResponseWriter, r *http.Request) bool {
+	_, ok := decodeCompositeBatchEnvelope(w, r)
+	return ok
+}
+
+func decodeCompositeBatchEnvelope(w http.ResponseWriter, r *http.Request) (compositeBatchEnvelope, bool) {
 	var body struct {
 		BatchRequests *[]compositeSubrequestEnvelope `json:"batchRequests"`
+		HaltOnError   bool                           `json:"haltOnError"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeSalesforceError(w, errMalformedJSON, err.Error())
-		return false
+		return compositeBatchEnvelope{}, false
 	}
 	if body.BatchRequests == nil || len(*body.BatchRequests) == 0 {
 		writeSalesforceError(w, errRequiredFieldMissing, "batchRequests is required and must contain at least one subrequest")
-		return false
+		return compositeBatchEnvelope{}, false
 	}
-	return validateCompositeSubrequests(w, *body.BatchRequests, "batchRequests", false)
+	if len(*body.BatchRequests) > 25 {
+		writeSalesforceError(w, errRequestLimitExceeded, "batchRequests cannot contain more than 25 subrequests")
+		return compositeBatchEnvelope{}, false
+	}
+	if !validateCompositeSubrequests(w, *body.BatchRequests, "batchRequests", false) {
+		return compositeBatchEnvelope{}, false
+	}
+	return compositeBatchEnvelope{BatchRequests: *body.BatchRequests, HaltOnError: body.HaltOnError}, true
 }
 
 func requireCompositeTreeEnvelope(w http.ResponseWriter, r *http.Request) bool {
@@ -348,9 +366,10 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 			writeJSON(w, http.StatusOK, map[string]any{
 				"resources": map[string]string{
 					"composite": "/services/data/" + version + "/composite",
+					"batch":     "/services/data/" + version + "/composite/batch",
 					"sobjects":  "/services/data/" + version + "/composite/sobjects",
 				},
-				"unsupported": []string{"batch", "graph", "tree"},
+				"unsupported": []string{"graph", "tree"},
 			})
 		case http.MethodPost:
 			body, ok := decodeCompositeRequestEnvelope(w, r)
@@ -372,10 +391,11 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 			writeMethodNotAllowed(w, http.MethodPost)
 			return
 		}
-		if !requireCompositeBatchEnvelope(w, r) {
+		body, ok := decodeCompositeBatchEnvelope(w, r)
+		if !ok {
 			return
 		}
-		writeSalesforceError(w, errUnsupportedFeature, "Composite batch is not implemented in the local server")
+		s.handleCompositeBatch(w, r, version, body)
 		return
 	}
 	if len(parts) >= 1 && parts[0] == "tree" {
@@ -414,6 +434,52 @@ type compositeSubresponse struct {
 	ReferenceID    string            `json:"referenceId"`
 }
 
+type compositeBatchSubresponse struct {
+	Result     any `json:"result"`
+	StatusCode int `json:"statusCode"`
+}
+
+func (s *Server) handleCompositeBatch(w http.ResponseWriter, r *http.Request, version string, body compositeBatchEnvelope) {
+	next := s.Org.Clone()
+	child := *s
+	child.Org = &next
+	child.Store = nil
+	responses := make([]compositeBatchSubresponse, 0, len(body.BatchRequests))
+	hasFailure := false
+	hasMutation := false
+	for _, subrequest := range body.BatchRequests {
+		if isCompositeMutationMethod(subrequest.Method) {
+			hasMutation = true
+		}
+		response := child.executeCompositeSubrequest(r, version, subrequest)
+		if response.HTTPStatusCode >= 400 {
+			hasFailure = true
+		}
+		responses = append(responses, compositeBatchSubresponse{
+			Result:     response.Body,
+			StatusCode: response.HTTPStatusCode,
+		})
+		if body.HaltOnError && response.HTTPStatusCode >= 400 {
+			break
+		}
+	}
+	s.queryLocators = child.queryLocators
+	s.queryOrder = child.queryOrder
+	s.nextQueryID = child.nextQueryID
+	s.bulkQueryJobs = child.bulkQueryJobs
+	s.nextBulkJobID = child.nextBulkJobID
+	if hasMutation {
+		if err := s.commitOrg(next); err != nil {
+			writeSalesforceError(w, errStoreFailure, err.Error())
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"hasErrors": hasFailure,
+		"results":   responses,
+	})
+}
+
 func (s *Server) handleGenericComposite(w http.ResponseWriter, r *http.Request, version string, body compositeRequestEnvelope) {
 	next := s.Org.Clone()
 	child := *s
@@ -444,6 +510,8 @@ func (s *Server) handleGenericComposite(w http.ResponseWriter, r *http.Request, 
 		s.queryLocators = child.queryLocators
 		s.queryOrder = child.queryOrder
 		s.nextQueryID = child.nextQueryID
+		s.bulkQueryJobs = child.bulkQueryJobs
+		s.nextBulkJobID = child.nextBulkJobID
 	}
 	if hasMutation && (!body.AllOrNone || !hasFailure) {
 		if err := s.commitOrg(next); err != nil {

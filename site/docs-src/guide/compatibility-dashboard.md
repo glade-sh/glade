@@ -24,11 +24,11 @@ The current maintainer surface refresh reports zero gaps and zero failure rows.
 
 | Measure | Value |
 | --- | ---: |
-| Implemented rows | 130266 |
+| Implemented rows | 130268 |
 | Partial rows | 1 |
-| Passive shape rows | 47494 |
+| Passive shape rows | 47493 |
 | Stub/no-op rows | 262 |
-| Explicit unsupported rows | 6338 |
+| Explicit unsupported rows | 6337 |
 | Missing shape gaps | 0 |
 | Missing behavior gaps | 0 |
 | Missing evidence gaps | 0 |

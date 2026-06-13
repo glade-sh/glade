@@ -13,6 +13,8 @@ import (
 type Report struct {
 	Format      string           `json:"format"`
 	Events      int              `json:"events"`
+	WallClockUS int64            `json:"wallClockUs,omitempty"`
+	WallClockMS int64            `json:"wallClockMs,omitempty"`
 	Hot         []Entry          `json:"hot"`
 	Spans       []Entry          `json:"spans,omitempty"`
 	Categories  map[string]int   `json:"categories,omitempty"`
@@ -70,7 +72,20 @@ type LimitAttribution struct {
 
 func Analyze(doc trace.Document) Report {
 	byKey := make(map[string]*Entry)
+	var firstTS, lastTS int64
+	hasTimestamps := false
 	for _, event := range doc.TraceEvents {
+		endTS := event.Timestamp
+		if event.Duration > 0 {
+			endTS += event.Duration
+		}
+		if !hasTimestamps || event.Timestamp < firstTS {
+			firstTS = event.Timestamp
+		}
+		if endTS > lastTS {
+			lastTS = endTS
+		}
+		hasTimestamps = true
 		key := profileEntryKey(event)
 		entry := byKey[key]
 		if entry == nil {
@@ -128,6 +143,10 @@ func Analyze(doc trace.Document) Report {
 	}
 
 	report := Report{Format: doc.Format, Events: len(doc.TraceEvents), Hot: make([]Entry, 0, len(byKey)), Categories: make(map[string]int)}
+	if lastTS > firstTS {
+		report.WallClockUS = lastTS - firstTS
+		report.WallClockMS = report.WallClockUS / 1000
+	}
 	for _, entry := range byKey {
 		sort.Ints(entry.SourceOffsets)
 		sort.Slice(entry.SourceRanges, func(i, j int) bool {
@@ -258,7 +277,7 @@ func WriteMarkdown(w io.Writer, report Report) error {
 	if _, err := fmt.Fprintf(w, "# glade profile\n\nEvents: %d\n\n", report.Events); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(w, "## Runtime summary\n\nSOQL: %d queries / %d rows\n\nDML: %d statements / %d rows\n\nCallouts: %d\n\nAsync: %d jobs\n\nEmail: %d invocations\n\nCPU: %d ms\n\nHeap: %d bytes\n\n", report.Limits.SOQLQueries, report.Limits.SOQLRows, report.Limits.DML, report.Limits.DMLRows, report.Limits.Callouts, report.Limits.AsyncJobs, report.Limits.EmailInvocations, report.Limits.CPUTimeMS, report.Limits.HeapSize); err != nil {
+	if _, err := fmt.Fprintf(w, "## Runtime summary\n\nSOQL: %d queries / %d rows\n\nDML: %d statements / %d rows\n\nCallouts: %d\n\nAsync: %d jobs\n\nEmail: %d invocations\n\nCPU: %d ms\n\nWall clock: %d ms\n\nHeap: %d bytes\n\n", report.Limits.SOQLQueries, report.Limits.SOQLRows, report.Limits.DML, report.Limits.DMLRows, report.Limits.Callouts, report.Limits.AsyncJobs, report.Limits.EmailInvocations, report.Limits.CPUTimeMS, report.WallClockMS, report.Limits.HeapSize); err != nil {
 		return err
 	}
 	if err := writeCategorySummary(w, report.Categories); err != nil {
@@ -316,6 +335,7 @@ func WriteText(w io.Writer, report Report, logPath string) error {
 		{"DML statements", fmt.Sprintf("%d statement / %d rows", report.Limits.DML, report.Limits.DMLRows)},
 		{"Callouts", fmt.Sprint(report.Limits.Callouts)},
 		{"CPU", fmt.Sprintf("%dms", report.Limits.CPUTimeMS)},
+		{"Wall clock", fmt.Sprintf("%dms", report.WallClockMS)},
 		{"Heap", fmt.Sprintf("%d bytes", report.Limits.HeapSize)},
 	}
 	for _, row := range rows {

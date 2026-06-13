@@ -1791,10 +1791,6 @@ func TestUnsupportedDiscoveryNamespacesReturnStableErrors(t *testing.T) {
 		body string
 	}{
 		{
-			path: serverTestDataPath + "/composite/batch",
-			body: `{"batchRequests":[{"method":"GET","url":"` + serverTestDataPath + `/limits"}]}`,
-		},
-		{
 			path: serverTestDataPath + "/composite/tree/Account",
 			body: `{"records":[{"attributes":{"referenceId":"AccountRef"},"Name":"Acme"}]}`,
 		},
@@ -1920,6 +1916,139 @@ func TestGenericCompositeOrchestratesSupportedRESTSubrequests(t *testing.T) {
 	if got := len(org.Objects["Account"].Records); got != 1 {
 		t.Fatalf("committed Account records = %d", got)
 	}
+}
+
+func TestCompositeBatchOrchestratesSupportedRESTSubrequests(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite/batch", strings.NewReader(`{
+  "batchRequests": [
+    {"method":"GET","url":"`+serverTestDataPath+`/limits"},
+    {"method":"POST","url":"`+serverTestDataPath+`/sobjects/Account","body":{"Name":"Batch Local"}},
+    {"method":"GET","url":"`+serverTestDataPath+`/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Batch%20Local'"}
+  ]
+}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("batch status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var body struct {
+		HasErrors bool `json:"hasErrors"`
+		Results   []struct {
+			Result     map[string]any `json:"result"`
+			StatusCode int            `json:"statusCode"`
+		} `json:"results"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body.HasErrors {
+		t.Fatalf("batch hasErrors = true body=%s", rec.Body.String())
+	}
+	if len(body.Results) != 3 {
+		t.Fatalf("results = %#v", body.Results)
+	}
+	if _, ok := body.Results[0].Result["DailyApiRequests"]; !ok || body.Results[0].StatusCode != http.StatusOK {
+		t.Fatalf("limits response = %#v", body.Results[0])
+	}
+	if body.Results[1].StatusCode != http.StatusCreated {
+		t.Fatalf("create response = %#v", body.Results[1])
+	}
+	if got := body.Results[2].Result["totalSize"]; got != float64(1) {
+		t.Fatalf("query totalSize = %#v body=%#v", got, body.Results[2].Result)
+	}
+	if got := len(org.Objects["Account"].Records); got != 1 {
+		t.Fatalf("committed Account records = %d", got)
+	}
+}
+
+func TestCompositeBatchPartialFailureCommitsSuccessfulSubrequests(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite/batch", strings.NewReader(`{
+  "batchRequests": [
+    {"method":"POST","url":"`+serverTestDataPath+`/sobjects/Account","body":{"Name":"Batch Good"}},
+    {"method":"POST","url":"`+serverTestDataPath+`/sobjects/Account","body":{"Description":"Missing name"}}
+  ]
+}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("batch status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var body struct {
+		HasErrors bool `json:"hasErrors"`
+		Results   []struct {
+			StatusCode int `json:"statusCode"`
+		} `json:"results"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if !body.HasErrors {
+		t.Fatalf("batch hasErrors = false body=%s", rec.Body.String())
+	}
+	if len(body.Results) != 2 || body.Results[0].StatusCode != http.StatusCreated || body.Results[1].StatusCode < 400 {
+		t.Fatalf("batch results = %#v body=%s", body.Results, rec.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 1 {
+		t.Fatalf("committed Account records = %d", got)
+	}
+}
+
+func TestCompositeBatchHaltOnErrorStopsAfterFirstFailure(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite/batch", strings.NewReader(`{
+  "haltOnError": true,
+  "batchRequests": [
+    {"method":"POST","url":"`+serverTestDataPath+`/sobjects/Account","body":{"Name":"Batch Before Failure"}},
+    {"method":"POST","url":"`+serverTestDataPath+`/sobjects/Account","body":{"Description":"Missing name"}},
+    {"method":"POST","url":"`+serverTestDataPath+`/sobjects/Account","body":{"Name":"Should Not Run"}}
+  ]
+}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("batch status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var body struct {
+		HasErrors bool `json:"hasErrors"`
+		Results   []struct {
+			StatusCode int `json:"statusCode"`
+		} `json:"results"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if !body.HasErrors {
+		t.Fatalf("batch hasErrors = false body=%s", rec.Body.String())
+	}
+	if len(body.Results) != 2 || body.Results[0].StatusCode != http.StatusCreated || body.Results[1].StatusCode < 400 {
+		t.Fatalf("batch results = %#v body=%s", body.Results, rec.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 1 {
+		t.Fatalf("committed Account records = %d", got)
+	}
+	for _, record := range org.Objects["Account"].Records {
+		if value, ok := record.Fields["Name"]; ok && value.String == "Should Not Run" {
+			t.Fatalf("haltOnError allowed later request to run: %#v", record)
+		}
+	}
+}
+
+func TestCompositeBatchRejectsMoreThanTwentyFiveSubrequests(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	requests := make([]string, 0, 26)
+	for i := 0; i < 26; i++ {
+		requests = append(requests, `{"method":"GET","url":"`+serverTestDataPath+`/limits"}`)
+	}
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite/batch", strings.NewReader(`{"batchRequests":[`+strings.Join(requests, ",")+`]}`)))
+	assertSalesforceError(t, rec, http.StatusBadRequest, "REQUEST_LIMIT_EXCEEDED", "25 subrequests")
 }
 
 func TestGenericCompositeAllOrNoneRollsBackMutatingSubrequests(t *testing.T) {
@@ -2443,11 +2572,6 @@ func TestBulkAPIJobsReturnStableUnsupportedErrors(t *testing.T) {
 		message string
 	}{
 		{method: http.MethodGet, path: serverTestDataPath + "/jobs/query", message: "Bulk API v2 query jobs"},
-		{method: http.MethodPost, path: serverTestDataPath + "/jobs/query", message: "Bulk API v2 query jobs"},
-		{method: http.MethodGet, path: serverTestDataPath + "/jobs/query/750000000000001", message: "Bulk API v2 query job records"},
-		{method: http.MethodPatch, path: serverTestDataPath + "/jobs/query/750000000000001", message: "Bulk API v2 query job records"},
-		{method: http.MethodDelete, path: serverTestDataPath + "/jobs/query/750000000000001", message: "Bulk API v2 query job records"},
-		{method: http.MethodGet, path: serverTestDataPath + "/jobs/query/750000000000001/results", message: "Bulk API v2 query job results"},
 		{method: http.MethodPost, path: serverTestDataPath + "/jobs/ingest", message: "Bulk API v2 ingest jobs"},
 		{method: http.MethodGet, path: serverTestDataPath + "/jobs/ingest/750000000000001", message: "Bulk API v2 ingest job records"},
 		{method: http.MethodPatch, path: serverTestDataPath + "/jobs/ingest/750000000000001", message: "Bulk API v2 ingest job records"},
@@ -2465,6 +2589,111 @@ func TestBulkAPIJobsReturnStableUnsupportedErrors(t *testing.T) {
 		if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"UNSUPPORTED_FEATURE"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(tc.message)) {
 			t.Fatalf("%s %s unsupported shape = %s", tc.method, tc.path, rec.Body.String())
 		}
+	}
+}
+
+func TestBulkAPIQueryJobLifecycleReturnsLocalCSVResults(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Acme")
+	addAccountForTest(&org, "001000000000002", "Trail")
+	handler := New(&org)
+
+	queryText := "SELECT Id, Name FROM Account ORDER BY Name"
+	createBody := fmt.Sprintf(`{"operation":"query","query":%q}`, queryText)
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/jobs/query", strings.NewReader(createBody)))
+	if create.Code != http.StatusOK {
+		t.Fatalf("create status = %d body=%s", create.Code, create.Body.String())
+	}
+	var created struct {
+		ID                     string `json:"id"`
+		Operation              string `json:"operation"`
+		State                  string `json:"state"`
+		Query                  string `json:"query"`
+		NumberRecordsProcessed int    `json:"numberRecordsProcessed"`
+	}
+	if err := json.Unmarshal(create.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if created.ID != "750000000000001" || created.Operation != "query" || created.State != "JobComplete" || created.Query != queryText || created.NumberRecordsProcessed != 2 {
+		t.Fatalf("created job = %#v", created)
+	}
+
+	getJob := httptest.NewRecorder()
+	handler.ServeHTTP(getJob, httptest.NewRequest(http.MethodGet, serverTestDataPath+"/jobs/query/"+created.ID, nil))
+	if getJob.Code != http.StatusOK {
+		t.Fatalf("get job status = %d body=%s", getJob.Code, getJob.Body.String())
+	}
+	var fetched struct {
+		ID                     string `json:"id"`
+		State                  string `json:"state"`
+		NumberRecordsProcessed int    `json:"numberRecordsProcessed"`
+	}
+	if err := json.Unmarshal(getJob.Body.Bytes(), &fetched); err != nil {
+		t.Fatal(err)
+	}
+	if fetched.ID != created.ID || fetched.State != "JobComplete" || fetched.NumberRecordsProcessed != 2 {
+		t.Fatalf("fetched job = %#v", fetched)
+	}
+
+	results := httptest.NewRecorder()
+	handler.ServeHTTP(results, httptest.NewRequest(http.MethodGet, serverTestDataPath+"/jobs/query/"+created.ID+"/results", nil))
+	if results.Code != http.StatusOK {
+		t.Fatalf("results status = %d body=%s", results.Code, results.Body.String())
+	}
+	if got := results.Header().Get("Content-Type"); got != "text/csv" {
+		t.Fatalf("results Content-Type = %q", got)
+	}
+	want := "Id,Name\n001000000000001,Acme\n001000000000002,Trail\n"
+	if results.Body.String() != want {
+		t.Fatalf("results csv = %q, want %q", results.Body.String(), want)
+	}
+}
+
+func TestBulkAPIQueryJobResultsReadCaseInsensitiveSelectedFields(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Acme")
+	handler := New(&org)
+
+	queryText := "SELECT id, name FROM Account"
+	createBody := fmt.Sprintf(`{"operation":"query","query":%q}`, queryText)
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/jobs/query", strings.NewReader(createBody)))
+	if create.Code != http.StatusOK {
+		t.Fatalf("create status = %d body=%s", create.Code, create.Body.String())
+	}
+	var created struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(create.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+
+	results := httptest.NewRecorder()
+	handler.ServeHTTP(results, httptest.NewRequest(http.MethodGet, serverTestDataPath+"/jobs/query/"+created.ID+"/results", nil))
+	if results.Code != http.StatusOK {
+		t.Fatalf("results status = %d body=%s", results.Code, results.Body.String())
+	}
+	want := "id,name\n001000000000001,Acme\n"
+	if results.Body.String() != want {
+		t.Fatalf("results csv = %q, want %q", results.Body.String(), want)
+	}
+}
+
+func TestBulkAPIQueryJobsRejectNonScalarProjections(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	for _, queryText := range []string{
+		"SELECT FIELDS(ALL) FROM Account",
+		"SELECT Owner.Name FROM Account",
+	} {
+		t.Run(queryText, func(t *testing.T) {
+			createBody := fmt.Sprintf(`{"operation":"query","query":%q}`, queryText)
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/jobs/query", strings.NewReader(createBody)))
+			assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "simple scalar field projections")
+		})
 	}
 }
 
@@ -2499,19 +2728,22 @@ func TestBulkAPIJobsRejectDisallowedMethodsWithAllowHeader(t *testing.T) {
 	}
 }
 
-func TestBulkAPIJobMutatorsValidateJSONBodiesBeforeUnsupported(t *testing.T) {
+func TestBulkAPIJobMutatorsValidateJSONBodies(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
 
 	for _, tc := range []struct {
-		name   string
-		method string
-		path   string
+		name            string
+		method          string
+		path            string
+		wantWellFormed  int
+		wantCode        string
+		wantMessagePart string
 	}{
-		{name: "query create", method: http.MethodPost, path: serverTestDataPath + "/jobs/query"},
-		{name: "query update", method: http.MethodPatch, path: serverTestDataPath + "/jobs/query/750000000000001"},
-		{name: "ingest create", method: http.MethodPost, path: serverTestDataPath + "/jobs/ingest"},
-		{name: "ingest update", method: http.MethodPatch, path: serverTestDataPath + "/jobs/ingest/750000000000001"},
+		{name: "query create", method: http.MethodPost, path: serverTestDataPath + "/jobs/query", wantWellFormed: http.StatusBadRequest, wantCode: "REQUIRED_FIELD_MISSING", wantMessagePart: "query is required"},
+		{name: "query update", method: http.MethodPatch, path: serverTestDataPath + "/jobs/query/750000000000001", wantWellFormed: http.StatusNotImplemented, wantCode: "UNSUPPORTED_FEATURE", wantMessagePart: "Bulk API v2"},
+		{name: "ingest create", method: http.MethodPost, path: serverTestDataPath + "/jobs/ingest", wantWellFormed: http.StatusNotImplemented, wantCode: "UNSUPPORTED_FEATURE", wantMessagePart: "Bulk API v2"},
+		{name: "ingest update", method: http.MethodPatch, path: serverTestDataPath + "/jobs/ingest/750000000000001", wantWellFormed: http.StatusNotImplemented, wantCode: "UNSUPPORTED_FEATURE", wantMessagePart: "Bulk API v2"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			malformed := httptest.NewRecorder()
@@ -2520,7 +2752,7 @@ func TestBulkAPIJobMutatorsValidateJSONBodiesBeforeUnsupported(t *testing.T) {
 
 			wellFormed := httptest.NewRecorder()
 			handler.ServeHTTP(wellFormed, httptest.NewRequest(tc.method, tc.path, strings.NewReader(`{"operation":"query"}`)))
-			assertSalesforceError(t, wellFormed, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Bulk API v2")
+			assertSalesforceError(t, wellFormed, tc.wantWellFormed, tc.wantCode, tc.wantMessagePart)
 		})
 	}
 }
@@ -4537,8 +4769,11 @@ func TestCompositeNamespaceDiscoveryListsSupportedGenericRoutes(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("discovery status = %d body=%s", rec.Code, rec.Body.String())
 	}
-	if !bytes.Contains(rec.Body.Bytes(), []byte(`"composite"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`"tree"`)) {
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"batch"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`"tree"`)) {
 		t.Fatalf("discovery body = %s", rec.Body.String())
+	}
+	if bytes.Contains(rec.Body.Bytes(), []byte(`"unsupported":["batch"`)) {
+		t.Fatalf("batch should not be listed as unsupported: %s", rec.Body.String())
 	}
 }
 
@@ -5126,9 +5361,9 @@ func TestBulkJobResultRoutesPinUnsupportedBodyShapes(t *testing.T) {
 			name:          "query results with locator",
 			method:        http.MethodGet,
 			path:          serverTestDataPath + "/jobs/query/750000000000001/results?locator=abc&maxRecords=2",
-			wantStatus:    http.StatusNotImplemented,
-			wantCode:      "UNSUPPORTED_FEATURE",
-			wantMessageIn: "Bulk API v2 query job results",
+			wantStatus:    http.StatusNotFound,
+			wantCode:      "NOT_FOUND",
+			wantMessageIn: "Bulk API v2 query job not found",
 		},
 		{
 			name:       "query unknown result subroute",

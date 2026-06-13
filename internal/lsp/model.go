@@ -430,8 +430,25 @@ func sortSymbols(symbols []SymbolInformation) {
 	})
 }
 
-func sortCompletionItems(items []CompletionItem) {
+func sortCompletionItems(items []CompletionItem, context completionContext) {
 	sort.Slice(items, func(i, j int) bool {
+		if context != completionContextDefault {
+			leftRank := completionItemContextRank(items[i], context)
+			rightRank := completionItemContextRank(items[j], context)
+			if leftRank != rightRank {
+				return leftRank < rightRank
+			}
+		}
 		return items[i].Label < items[j].Label
 	})
+}
+
+func completionItemContextRank(item CompletionItem, context completionContext) int {
+	switch context {
+	case completionContextSOQLSelect:
+		if item.Kind == completionItemKindField {
+			return 0
+		}
+	}
+	return 1
 }

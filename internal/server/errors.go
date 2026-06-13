@@ -18,7 +18,7 @@ const (
 	errUnknownObject        serverErrorKind = "unknown_object"
 	errUnknownRecord        serverErrorKind = "unknown_record"
 	errUnknownSObject       serverErrorKind = "unknown_sobject_endpoint"
-	errUnknownGLADE          serverErrorKind = "unknown_glade_endpoint"
+	errUnknownGLADE         serverErrorKind = "unknown_glade_endpoint"
 	errUnknownTooling       serverErrorKind = "unknown_tooling_endpoint"
 	errUnknownComposite     serverErrorKind = "unknown_composite_endpoint"
 	errMethodNotAllowed     serverErrorKind = "method_not_allowed"
@@ -33,6 +33,7 @@ const (
 	errStoreFailure         serverErrorKind = "store_failure"
 	errRequiredFieldMissing serverErrorKind = "required_field_missing"
 	errDuplicateValue       serverErrorKind = "duplicate_value"
+	errRequestLimitExceeded serverErrorKind = "request_limit_exceeded"
 )
 
 type serverErrorSpec struct {
@@ -46,7 +47,7 @@ var serverErrorSpecs = map[serverErrorKind]serverErrorSpec{
 	errUnknownObject:        {status: http.StatusNotFound, code: "NOT_FOUND", message: "unknown object"},
 	errUnknownRecord:        {status: http.StatusNotFound, code: "NOT_FOUND", message: "record not found"},
 	errUnknownSObject:       {status: http.StatusNotFound, code: "NOT_FOUND", message: "unknown sobject endpoint"},
-	errUnknownGLADE:          {status: http.StatusNotFound, code: "NOT_FOUND", message: "unknown glade endpoint"},
+	errUnknownGLADE:         {status: http.StatusNotFound, code: "NOT_FOUND", message: "unknown glade endpoint"},
 	errUnknownTooling:       {status: http.StatusNotFound, code: "NOT_FOUND", message: "unknown tooling endpoint"},
 	errUnknownComposite:     {status: http.StatusNotFound, code: "NOT_FOUND", message: "unknown composite endpoint"},
 	errMethodNotAllowed:     {status: http.StatusMethodNotAllowed, code: "METHOD_NOT_ALLOWED", message: "method not allowed"},
@@ -61,6 +62,7 @@ var serverErrorSpecs = map[serverErrorKind]serverErrorSpec{
 	errStoreFailure:         {status: http.StatusInternalServerError, code: "SERVER_ERROR", message: "store failure"},
 	errRequiredFieldMissing: {status: http.StatusBadRequest, code: "REQUIRED_FIELD_MISSING", message: "required field missing"},
 	errDuplicateValue:       {status: http.StatusBadRequest, code: "DUPLICATE_VALUE", message: "duplicate value"},
+	errRequestLimitExceeded: {status: http.StatusBadRequest, code: "REQUEST_LIMIT_EXCEEDED", message: "request limit exceeded"},
 }
 
 func writeSalesforceError(w http.ResponseWriter, kind serverErrorKind, message ...string) {
