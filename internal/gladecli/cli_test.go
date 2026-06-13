@@ -1215,6 +1215,66 @@ func TestRunEditorInstallVSCodeUsesGladeHomeBundledVSIX(t *testing.T) {
 	}
 }
 
+func TestRunEditorInstallVSCodeFindsSourceCheckoutVSIX(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module github.com/glade-sh/glade\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	extensionRoot := filepath.Join(root, "contrib", "vscode-glade")
+	if err := os.MkdirAll(filepath.Join(extensionRoot, "dist"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(extensionRoot, "package.json"), []byte(`{"name":"vscode-glade"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	vsix := filepath.Join(extensionRoot, "dist", "vscode-glade-0.0.1.vsix")
+	if err := os.WriteFile(vsix, []byte("vsix"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if resolved, err := filepath.EvalSymlinks(vsix); err == nil {
+		vsix = resolved
+	}
+	t.Setenv("GLADE_VSCODE_VSIX", "")
+	t.Setenv("GLADE_HOME", filepath.Join(root, "missing-glade-home"))
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "xdg"))
+	originalCWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(filepath.Join(root, "contrib", "vscode-glade")); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(originalCWD); err != nil {
+			t.Fatalf("restore cwd: %v", err)
+		}
+	})
+
+	var ranArgs []string
+	restore := stubEditorCommandDeps(t,
+		func(name string) (string, error) {
+			if name != "code" {
+				t.Fatalf("looked up %q, want code", name)
+			}
+			return "/usr/local/bin/code", nil
+		},
+		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+			ranArgs = append([]string(nil), args...)
+			return []byte("installed\n"), nil
+		},
+	)
+	defer restore()
+
+	var stdout bytes.Buffer
+	if err := runEditor(context.Background(), []string{"install", "vscode"}, &stdout); err != nil {
+		t.Fatal(err)
+	}
+	wantArgs := []string{"--install-extension", vsix}
+	if strings.Join(ranArgs, "\x00") != strings.Join(wantArgs, "\x00") {
+		t.Fatalf("ran args = %#v, want %#v", ranArgs, wantArgs)
+	}
+}
+
 func stubEditorCommandDeps(t *testing.T, lookPath func(string) (string, error), run func(context.Context, string, ...string) ([]byte, error)) func() {
 	t.Helper()
 	origLookPath := editorCommandLookPath

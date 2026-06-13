@@ -15,13 +15,13 @@ glade editor install vscode --force
 
 The VSIX lives in the release archive at
 `share/glade/editor/vscode-glade.vsix`. For extension development, package from
-the source tree:
+the source tree, then run the same install command from anywhere inside the
+checkout:
 
 ```bash
-cd contrib/vscode-glade
-npm install
-npm run package
-glade editor install vscode --vsix dist/vscode-glade-0.0.1.vsix --force
+npm --prefix contrib/vscode-glade install
+npm --prefix contrib/vscode-glade run package
+glade editor install vscode --force
 ```
 
 Open an SFDX project. The extension adds a `Glade` Activity Bar with Project,

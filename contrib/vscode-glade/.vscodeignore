@@ -3,7 +3,6 @@
 src/**
 test/**
 dist/**
-node_modules/**
 *.vsix
 tsconfig.json
 package-lock.json

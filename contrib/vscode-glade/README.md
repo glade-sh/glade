@@ -14,12 +14,12 @@ glade editor install vscode --force
 
 That command installs the bundled VSIX at
 `share/glade/editor/vscode-glade.vsix`. During extension development, package
-and install a local VSIX:
+and install the local VSIX from this checkout:
 
 ```bash
 npm install
 npm run package
-glade editor install vscode --vsix dist/vscode-glade-0.0.1.vsix --force
+glade editor install vscode --force
 ```
 
 The extension requires a global `glade` command on `PATH`.

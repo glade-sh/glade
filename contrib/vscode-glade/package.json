@@ -262,7 +262,7 @@
   "scripts": {
     "compile": "tsc -p ./",
     "package": "mkdir -p dist && npm run compile && vsce package --allow-missing-repository --out dist/vscode-glade-${npm_package_version}.vsix",
-    "test": "npm run compile && node test/commands.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/localOrg.test.js && node test/watch.test.js"
+    "test": "npm run compile && node test/commands.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/localOrg.test.js && node test/watch.test.js && node test/package.test.js"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

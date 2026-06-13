@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/gladehome"
@@ -208,7 +209,7 @@ func resolveBundledVSIX() (string, error) {
 			return vsix, nil
 		}
 	}
-	return "", fmt.Errorf("vscode-glade.vsix not found")
+	return "", fmt.Errorf("vscode-glade.vsix not found; from a source checkout run `npm --prefix contrib/vscode-glade install && npm --prefix contrib/vscode-glade run package`, then retry")
 }
 
 func bundledVSIXCandidates() []string {
@@ -225,7 +226,57 @@ func bundledVSIXCandidates() []string {
 			filepath.Join(exeDir, "..", "share", "glade", "editor", "vscode-glade.vsix"),
 		)
 	}
+	candidates = append(candidates, sourceCheckoutVSIXCandidates()...)
 	return candidates
+}
+
+func sourceCheckoutVSIXCandidates() []string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil
+	}
+	var candidates []string
+	seen := make(map[string]bool)
+	for _, root := range editorSourceCheckoutRoots(cwd) {
+		if seen[root] {
+			continue
+		}
+		seen[root] = true
+		pattern := filepath.Join(root, "contrib", "vscode-glade", "dist", "vscode-glade-*.vsix")
+		matches, err := filepath.Glob(pattern)
+		if err != nil {
+			continue
+		}
+		sort.Sort(sort.Reverse(sort.StringSlice(matches)))
+		candidates = append(candidates, matches...)
+	}
+	return candidates
+}
+
+func editorSourceCheckoutRoots(start string) []string {
+	var roots []string
+	dir := filepath.Clean(start)
+	for {
+		if isEditorSourceCheckout(dir) {
+			roots = append(roots, dir)
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	return roots
+}
+
+func isEditorSourceCheckout(root string) bool {
+	if _, err := os.Stat(filepath.Join(root, "go.mod")); err != nil {
+		return false
+	}
+	if _, err := os.Stat(filepath.Join(root, "contrib", "vscode-glade", "package.json")); err != nil {
+		return false
+	}
+	return true
 }
 
 func existingVSIX(path string) (string, error) {

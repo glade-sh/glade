@@ -335,7 +335,7 @@ Install and check editor integrations, or run the Debug Adapter Protocol server.
 
 ```bash
 glade editor doctor vscode
-glade editor install vscode --vsix vscode-glade.vsix --force
+glade editor install vscode --force
 glade dap --project .
 ```
 

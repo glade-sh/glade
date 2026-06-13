@@ -202,12 +202,12 @@ var commandReferences = []CommandHelp{
 			{Name: "doctor", Description: "Check editor and glade executable paths."},
 		},
 		Flags: []FlagHelp{
-			{Name: "--vsix", Value: "<path>", Description: "VS Code extension package. Defaults to bundled VSIX when available."},
+			{Name: "--vsix", Value: "<path>", Description: "VS Code extension package. Defaults to bundled or source-checkout VSIX when available."},
 			{Name: "--editor", Value: "<name>", Description: "Editor command: code, cursor, or windsurf."},
 			{Name: "--force", Description: "Force extension installation."},
 			{Name: "--json", Description: "Write editor doctor status as JSON."},
 		},
-		Examples: []string{"glade editor doctor vscode", "glade editor install vscode --vsix vscode-glade.vsix --force"},
+		Examples: []string{"glade editor doctor vscode", "glade editor install vscode --force"},
 	},
 	{
 		Name:        "dap",

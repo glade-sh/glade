@@ -16,6 +16,15 @@ glade editor doctor vscode
 glade editor install vscode --force
 ```
 
+From a source checkout, build the local VSIX once and run the same install
+command from anywhere inside the checkout:
+
+```bash
+npm --prefix contrib/vscode-glade install
+npm --prefix contrib/vscode-glade run package
+glade editor install vscode --force
+```
+
 The extension adds a `Glade` Activity Bar beside the Salesforce VS Code
 extensions. It does not replace Salesforce org-backed commands, CodeLens,
 language features, or scratch-org test runs. Glade surfaces use `Glade: ...`
