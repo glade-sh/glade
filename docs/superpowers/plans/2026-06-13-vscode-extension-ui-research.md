@@ -2,7 +2,7 @@
 
 **Goal:** Shape the Glade VS Code extension into a daily Salesforce development tool, not a command shelf.
 
-**Audience:** Salesforce developers who already live in VS Code with the Salesforce Extension Pack, Salesforce CLI, scratch orgs, Apex tests, source tracking, Code Analyzer, SOQL Builder, Git, and a terminal.
+**Audience:** Salesforce developers who already live in VS Code with Salesforce CLI, scratch orgs, Apex tests, source tracking, Code Analyzer, SOQL Builder, Git, and a terminal.
 
 **Mockups:**
 
@@ -477,7 +477,7 @@ Use one Glade test controller:
 - Tags: `local`, `affected`, `failed`, maybe `requiresData`.
 - Profiles: `Run Local`, `Debug Local`.
 
-This is how Glade sits beside Salesforce tests. Salesforce can keep org-backed runs. Glade contributes local runs.
+This is how Glade separates local runs from org-backed runs.
 
 ### Data
 
@@ -491,9 +491,9 @@ Make the active data environment impossible to miss but not loud:
 
 This prevents a bad local run where the developer used the wrong data.
 
-### Salesforce Coexistence
+### Org Boundary
 
-Glade should not copy official Salesforce extension jobs.
+Glade should not copy org-backed jobs.
 
 Do not build:
 
@@ -509,17 +509,6 @@ Build:
 - Local data state manager.
 - Local debug session.
 - Local failure explanation.
-- Handoff rows to run Salesforce commands where helpful.
-
-Example row:
-
-```text
-Ready to validate in org
-Run local proof passed. Use Salesforce: Deploy This Source to Org.
-```
-
-That row should call or reveal the Salesforce command only if integration is safe. Otherwise it should explain the handoff.
-
 ---
 
 ## Mockup Notes

@@ -108,12 +108,11 @@ glade exec --project <root> --db <active-db> --debug-log - <anonymous-apex>
 Successful DML persists to the active DB. Failed and dry-run executions do not
 persist.
 
-## Salesforce Extension Coexistence
+## Local And Org Boundaries
 
 Glade uses its own Activity Bar, `glade.*` commands, `Glade Apex` Test Explorer
-controller, and local CodeLens labels. It does not contribute `SFDX:*`
-commands, replace Salesforce test items, or start the Glade LSP unless
-`glade.enableLsp` is true.
+controller, and local CodeLens labels. It does not contribute org-backed
+commands or start the Glade LSP unless `glade.enableLsp` is true.
 
 Useful settings:
 

@@ -261,9 +261,6 @@ Last run
 
 Watch
   stopped · click to start
-
-Salesforce handoff
-  validate deploy after local proof
 ```
 
 Only two or three rows should be clickable by default:

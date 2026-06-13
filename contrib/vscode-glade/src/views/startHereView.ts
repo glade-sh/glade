@@ -66,8 +66,6 @@ function iconFor(row: StartHereRow): vscode.ThemeIcon | undefined {
       return new vscode.ThemeIcon("history");
     case "watch":
       return new vscode.ThemeIcon("sync");
-    case "salesforce":
-      return new vscode.ThemeIcon("cloud");
     default:
       return undefined;
   }
