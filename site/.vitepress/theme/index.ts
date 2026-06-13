@@ -1,15 +1,19 @@
 import type { Theme } from 'vitepress'
-import DefaultTheme from 'vitepress/theme'
-import { FlaskConical, PlayCircle, SearchCheck, ServerCog, SquareTerminal } from '@lucide/vue'
+import DefaultTheme from 'vitepress/theme-without-fonts'
+import { h } from 'vue'
+import '@fontsource-variable/host-grotesk'
+import '@fontsource/monaspace-argon/400.css'
+import '@fontsource/monaspace-argon/600.css'
 import './custom.css'
+import DocsEnhancer from './DocsEnhancer.vue'
+import DocsNavTitleSuffix from './DocsNavTitleSuffix.vue'
 
 export default {
   extends: DefaultTheme,
-  enhanceApp({ app }) {
-    app.component('IconSearchCheck', SearchCheck)
-    app.component('IconFlaskConical', FlaskConical)
-    app.component('IconPlayCircle', PlayCircle)
-    app.component('IconSquareTerminal', SquareTerminal)
-    app.component('IconServerCog', ServerCog)
+  Layout() {
+    return h(DefaultTheme.Layout, null, {
+      'layout-bottom': () => h(DocsEnhancer),
+      'nav-bar-title-after': () => h(DocsNavTitleSuffix)
+    })
   }
 } satisfies Theme

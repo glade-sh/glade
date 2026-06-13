@@ -6,8 +6,12 @@
     "preview": "vitepress preview ."
   },
   "devDependencies": {
-    "@lucide/vue": "^1.17.0",
-    "vitepress": "^1.5.0"
+    "@fontsource-variable/host-grotesk": "^5.2.8",
+    "@fontsource/monaspace-argon": "^5.2.5",
+    "vitepress": "2.0.0-alpha.17"
+  },
+  "overrides": {
+    "esbuild": "^0.28.1"
   },
   "type": "module"
 }

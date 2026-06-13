@@ -1,5 +1,15 @@
 # Use the Local Playground
 
+<div class="docs-intro">
+  <p class="docs-intro-eyebrow">Playground</p>
+  <p>Use built-in examples when you want a safe scratch workspace. Use <code>--project</code> when you want to run against a local SFDX project.</p>
+  <ul>
+    <li>Start examples without touching project source.</li>
+    <li>Persist or reset local org state.</li>
+    <li>Inspect snippets, SOQL, DML, limits, traces, and diffs.</li>
+  </ul>
+</div>
+
 `glade playground` starts a local browser workbench for Apex snippets, SOQL, DML, logs, limits, traces, and local org diffs. It runs from your machine and can use built-in examples, a scratch workspace, or an SFDX project.
 
 ## Start with built-in examples
@@ -70,21 +80,21 @@ glade playground --list-examples
 
 ## Built-in examples
 
-| Group | ID | Name | Command |
-| --- | --- | --- | --- |
-| Data and SOQL | `contact-relationship-drill` | Account + Contact Query | `glade playground --example contact-relationship-drill` |
-| Data and SOQL | `account-service` | Account Factory + Selector | `glade playground --example account-service` |
-| Triggers and DML | `trigger-contact-task` | Before Insert Trigger | `glade playground --example trigger-contact-task` |
-| Triggers and DML | `bulk-trigger-rollup` | Bulk Trigger Rollup | `glade playground --example bulk-trigger-rollup` |
-| Data and SOQL | `collection-selector` | Collection Selector | `glade playground --example collection-selector` |
-| Business workflow | `deal-desk-discount-guard` | Deal Desk Discount Guard | `glade playground --example deal-desk-discount-guard` |
-| Limits | `limit-counter-drill` | Governor Counter Drill | `glade playground --example limit-counter-drill` |
-| Limits | `governor-limits-strict` | Governor Limits (strict) | `glade playground --example governor-limits-strict` |
-| Data and SOQL | `map-selector-drill` | Map Selector Drill | `glade playground --example map-selector-drill` |
-| Org diff and persistence | `org-diff-review-loop` | Org Diff Review Loop | `glade playground --example org-diff-review-loop` |
-| Org diff and persistence | `org-diff-dml` | Org Diff after DML | `glade playground --example org-diff-dml` |
-| Org diff and persistence | `persist-mode-ledger` | Persist Mode Ledger | `glade playground --example persist-mode-ledger` |
-| Business workflow | `renewal-health-scorecard` | Renewal Health Scorecard | `glade playground --example renewal-health-scorecard` |
+| Group | Example | Command |
+| --- | --- | --- |
+| Data and SOQL | Account + Contact Query | `glade playground --example contact-relationship-drill` |
+| Data and SOQL | Account Factory + Selector | `glade playground --example account-service` |
+| Triggers and DML | Before Insert Trigger | `glade playground --example trigger-contact-task` |
+| Triggers and DML | Bulk Trigger Rollup | `glade playground --example bulk-trigger-rollup` |
+| Data and SOQL | Collection Selector | `glade playground --example collection-selector` |
+| Business workflow | Deal Desk Discount Guard | `glade playground --example deal-desk-discount-guard` |
+| Limits | Governor Counter Drill | `glade playground --example limit-counter-drill` |
+| Limits | Governor Limits (strict) | `glade playground --example governor-limits-strict` |
+| Data and SOQL | Map Selector Drill | `glade playground --example map-selector-drill` |
+| Org diff and persistence | Org Diff Review Loop | `glade playground --example org-diff-review-loop` |
+| Org diff and persistence | Org Diff after DML | `glade playground --example org-diff-dml` |
+| Org diff and persistence | Persist Mode Ledger | `glade playground --example persist-mode-ledger` |
+| Business workflow | Renewal Health Scorecard | `glade playground --example renewal-health-scorecard` |
 
 ## What the playground shows
 

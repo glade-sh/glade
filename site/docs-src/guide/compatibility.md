@@ -2,7 +2,7 @@
 
 Glade separates public support claims from maintainer proof reports.
 
-Use [What Glade supports](/guide/support-map) first. It answers what
+Use the [Support map](/guide/support-map) first. It answers what
 works, what works with limits, and what is not supported today.
 
 Use this page when you need the policy behind those claims.

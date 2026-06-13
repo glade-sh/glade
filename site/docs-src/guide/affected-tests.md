@@ -82,7 +82,7 @@ glade test --project . --junit reports/glade-junit.xml
 During a focused edit:
 
 ```bash
-glade test --project . --filter AccountServiceTest --watch
+glade test --project . --class AccountServiceTest --watch
 ```
 
 When Glade cannot prove a smaller safe set, it runs more tests rather than risk

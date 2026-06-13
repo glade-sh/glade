@@ -8,207 +8,243 @@ head:
   - - script
     - defer: true
       src: /js/home.js
-
-hero:
-  name: "GLADE / LOCAL APEX RUNTIME"
-  text: "The local workbench for Apex."
-  tagline: Build, check, test, and debug Apex workflows locally - from one Go binary.
-  actions:
-    - theme: brand
-      text: Install Glade
-      link: /guide/installation
-    - theme: alt
-      text: Playground Docs
-      link: /guide/playground
-    - theme: alt
-      text: Read Docs
-      link: /guide/overview
 ---
 
-<p class="home-proof-line">Single Go binary · local SQLite state · macOS/Linux · no deploy loop for fast checks</p>
+<section class="home-hero-shell" aria-label="Glade homepage hero">
+  <div class="home-hero-copy">
+    <p class="home-type-eyebrow">Open-source local runtime</p>
+    <h1>Apex feedback before you deploy.</h1>
+    <p class="home-lead">Glade runs local checks, focused tests, Apex snippets, and debug-log profiling from one binary — with copyable commands and visible runtime boundaries.</p>
+    <div class="home-cta-row">
+      <a class="home-cta primary" href="#local-apex-workbench" data-demo-link>Run the demo</a>
+      <a class="home-cta" href="/guide/installation">Install Glade</a>
+      <a class="home-cta link" href="/guide/support-map">What's supported</a>
+    </div>
+    <p class="home-local-line">127.0.0.1 is a fine place to test Apex.</p>
+    <p class="home-boundary-line">Supported workflows run locally; org-backed behavior stays named.</p>
+    <p class="home-proof-line">check source · run focused tests · execute snippets · profile logs · emit JSON</p>
+  </div>
+  <aside class="home-hero-readout" aria-label="Current Glade check preview">
+    <div class="home-hero-readout-head">
+      <span>LOCAL CHECK OUTPUT</span>
+      <strong class="home-hero-state-failed">caught locally</strong>
+    </div>
+    <pre class="home-hero-output" aria-label="Glade check failure output"><code data-hero-command>✗ 1 diagnostic found&#10;AccountService.cls:2:3&#10;Unknown type "Invoice__c"&#10;&#10;1 type checked · 0 org calls · exit code 1</code></pre>
+  </aside>
+</section>
 
-<div class="home-install">
+<section class="home-workbench home-panel" id="local-apex-workbench" data-scenario-workbench aria-label="Local Apex workbench demo">
+  <div class="home-workbench-head">
+    <div>
+      <p class="home-eyebrow">Local Workbench</p>
+      <h2 class="home-h2">Pick a workflow. Run the command. Inspect what Glade proved.</h2>
+      <p class="home-p">Each workflow swaps the Apex input, command output, result, and local command.</p>
+    </div>
+    <div class="home-workbench-actions">
+      <span class="home-workflow-count" data-workflow-count aria-label="Workflow 1 of 4">1 / 4</span>
+      <button class="home-run-button" type="button" data-run-scenario data-run-state="idle">Run local check</button>
+    </div>
+  </div>
+  <div class="home-workflow-tabs" role="tablist" aria-label="Demo workflows">
+    <button class="home-workflow-tab active" type="button" role="tab" data-scenario-id="check" data-active="true" aria-pressed="true" aria-selected="true">
+      <span class="home-scenario-kicker"><span>Check</span><em class="home-selected-indicator" data-selected-label>Selected</em></span>
+      <strong>Catch deploy issues</strong>
+      <small>1 diagnostic caught</small>
+    </button>
+    <button class="home-workflow-tab" type="button" role="tab" data-scenario-id="test" data-active="false" aria-pressed="false" aria-selected="false">
+      <span class="home-scenario-kicker"><span>Test</span><em class="home-selected-indicator" data-selected-label></em></span>
+      <strong>Run focused tests</strong>
+      <small>1 passed · 0 failed</small>
+    </button>
+    <button class="home-workflow-tab" type="button" role="tab" data-scenario-id="exec" data-active="false" aria-pressed="false" aria-selected="false">
+      <span class="home-scenario-kicker"><span>Exec</span><em class="home-selected-indicator" data-selected-label></em></span>
+      <strong>Execute Apex locally</strong>
+      <small>USER_DEBUG emitted</small>
+    </button>
+    <button class="home-workflow-tab" type="button" role="tab" data-scenario-id="debug" data-active="false" aria-pressed="false" aria-selected="false">
+      <span class="home-scenario-kicker"><span>Debug</span><em class="home-selected-indicator" data-selected-label></em></span>
+      <strong>Profile debug logs</strong>
+      <small>4 events parsed</small>
+    </button>
+  </div>
+  <div class="home-result-summary" data-result-summary data-result-state="failed" aria-live="polite">FAILED · 1 diagnostic · 1 type checked · exit code 1</div>
+  <div class="home-workbench-grid">
+    <section class="home-command-panel" aria-label="Command output">
+      <div class="home-panel-top">
+        <strong>Command output</strong>
+        <span data-command-label>glade check</span>
+      </div>
+      <div class="home-output-tabs" role="tablist" aria-label="Command output format">
+        <button id="output-tab-output" class="home-output-tab active" type="button" role="tab" data-output-tab="output" aria-pressed="true" aria-selected="true" aria-controls="command-output-panel">Output</button>
+        <button id="output-tab-json" class="home-output-tab" type="button" role="tab" data-output-tab="json" aria-pressed="false" aria-selected="false" aria-controls="command-output-panel">JSON</button>
+        <button id="output-tab-trace" class="home-output-tab" type="button" role="tab" data-output-tab="trace" aria-pressed="false" aria-selected="false" aria-controls="command-output-panel">Trace</button>
+      </div>
+      <pre id="command-output-panel" class="home-command-output" role="tabpanel" aria-labelledby="output-tab-output"><code data-command-output data-output-view="output">$ glade check --project . --no-progress&#10;+- Check ----------------------------------------------------------------------+&#10;|  project: /private/tmp/glade-home-account-field                              |&#10;|  1 type · 0 triggers · 0 objects                                             |&#10;|  1 diagnostic (1 error)                                                      |&#10;+------------------------------------------------------------------------------+&#10;&#10;  ✗  force-app/main/default/classes/AccountService.cls:2:3&#10;     error[GLADESEMA002]: method "latestInvoice" references unknown type "Invoice__c"</code></pre>
+    </section>
+    <section class="home-source-panel" aria-label="Workflow input">
+      <div class="home-panel-top">
+        <strong data-source-title>Apex input</strong>
+        <span data-source-label>AccountService.cls:2</span>
+      </div>
+      <pre class="home-source-code"><code class="language-apex" data-source-code data-highlighted-line="2">public with sharing class AccountService {&#10;  public static Invoice__c latestInvoice() {&#10;    return null;&#10;  }&#10;}</code></pre>
+    </section>
+    <section class="home-changed-panel" aria-label="What changed">
+      <div class="home-panel-top">
+        <strong data-proof-title>What Glade proved</strong>
+        <span data-support-status>supported locally</span>
+      </div>
+      <ul data-changed-summary>
+        <li>Deploy-blocking type reference caught locally.</li>
+        <li>No Salesforce deploy required.</li>
+        <li>No local records changed.</li>
+        <li>JSON output available for CI.</li>
+      </ul>
+    </section>
+    <section class="home-result-panel" aria-label="Command result">
+      <div class="home-panel-top">
+        <strong>Result</strong>
+        <span class="home-status home-status-failed" data-result-status><span class="home-status-dot"></span>failed</span>
+      </div>
+      <dl class="home-result-metrics" data-result-metrics>
+        <div><dt>Diagnostics</dt><dd>1</dd></div>
+        <div><dt>Types checked</dt><dd>1</dd></div>
+        <div><dt>Org calls</dt><dd>0</dd></div>
+        <div><dt>Exit code</dt><dd>1</dd></div>
+      </dl>
+    </section>
+  </div>
+  <div class="home-command-strip">
+    <div class="home-command-row">
+      <span>Local run</span>
+      <code id="workbench-command" data-command-strip>glade check --project . --no-progress</code>
+      <button type="button" data-copy-target="workbench-command">Copy command</button>
+    </div>
+    <div class="home-command-row">
+      <span>CI / automation</span>
+      <code id="workbench-ci-command" data-ci-command-strip>glade check --project . --json --no-progress</code>
+      <button type="button" data-copy-target="workbench-ci-command">Copy JSON command</button>
+    </div>
+    <div class="home-command-strip-foot">
+      <a href="/guide/cli-reference" data-docs-link>View docs</a>
+      <span class="home-shortcuts">Shortcuts: 1-4 switch jobs · R run · C copy</span>
+      <span class="home-copy-status" data-copy-status role="status" aria-live="polite"></span>
+    </div>
+  </div>
+</section>
+
+<section class="home-support-map home-section" aria-label="Runtime Support">
+  <div class="home-section-grid">
+    <div>
+      <p class="home-eyebrow">Support map</p>
+      <h2 class="home-h2">No hidden runtime boundary.</h2>
+      <p class="home-p">Glade runs supported workflows locally and names the places where config or an org is still required.</p>
+      <a class="home-section-link" href="/guide/support-map">Read the full support map</a>
+    </div>
+    <div class="home-support-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th>Local support</th>
+            <th>Boundary</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Apex source checks</td>
+            <td><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
+            <td>project files</td>
+          </tr>
+          <tr>
+            <td>Changed-test selection</td>
+            <td><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
+            <td>project graph</td>
+          </tr>
+          <tr>
+            <td>Anonymous Apex</td>
+            <td><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
+            <td>local state</td>
+          </tr>
+          <tr>
+            <td>DML insert/update</td>
+            <td><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
+            <td>SQLite-backed</td>
+          </tr>
+          <tr>
+            <td>SOQL query</td>
+            <td><span class="home-status home-status-partial"><span class="home-status-dot"></span>partial</span></td>
+            <td>supported subset</td>
+          </tr>
+          <tr>
+            <td>Debug-log profiling</td>
+            <td><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
+            <td>saved logs</td>
+          </tr>
+          <tr>
+            <td>Org-specific metadata</td>
+            <td><span class="home-status home-status-requires-config"><span class="home-status-dot"></span>requires config</span></td>
+            <td>supply local metadata</td>
+          </tr>
+          <tr>
+            <td>Live org services</td>
+            <td><span class="home-status home-status-requires-org"><span class="home-status-dot"></span>requires org</span></td>
+            <td>not emulated</td>
+          </tr>
+          <tr>
+            <td>Unsupported platform APIs</td>
+            <td><span class="home-status home-status-unsupported"><span class="home-status-dot"></span>unsupported</span></td>
+            <td>surfaced visibly</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="home-install home-section">
+  <div class="home-install-copyblock">
+    <p class="home-eyebrow">Install</p>
+    <h2 class="home-h2">Run this workflow locally.</h2>
+    <p class="home-p">Install Glade, check your environment, then run the selected workflow command:</p>
+    <p class="home-install-workflow" data-install-workflow-label>Selected workflow: Catch deploy issues</p>
+  </div>
   <div class="home-install-inner" role="group" aria-label="Install Glade command">
     <div class="home-terminal-command">
       <span class="home-terminal-prompt">$</span>
       <code id="install-cmd">curl -fsSL https://glade.sh/install.sh | sh</code>
     </div>
     <div class="home-install-actions">
-      <button class="home-install-copy" data-copy-target="install-cmd">Copy</button>
+      <button class="home-install-copy" type="button" data-copy-target="install-cmd">Copy install</button>
+      <button class="home-install-copy" type="button" data-copy-target="install-workflow-cmds">Copy full sequence</button>
       <a class="home-install-link" href="https://glade.sh/install.sh">View install script</a>
       <a class="home-install-link" href="https://github.com/glade-sh/glade/releases">Releases</a>
       <a class="home-install-link" href="https://github.com/glade-sh/glade/releases/latest/download/SHA256SUMS.txt">Checksums</a>
     </div>
   </div>
-  <div class="home-install-meta">
-    <span>release channel preview</span>
-    <span>macOS/Linux</span>
-    <span>installs to ~/.local/bin</span>
-  </div>
-  <div class="home-install-verify" aria-label="Verify Glade install">
-    <code>glade version</code>
-    <code>glade doctor</code>
-  </div>
-</div>
+  <pre class="home-install-verify" aria-label="Verify Glade install"><code id="install-workflow-cmds" data-install-commands>curl -fsSL https://glade.sh/install.sh | sh&#10;glade doctor&#10;glade check --project . --no-progress</code></pre>
+</section>
 
-<div class="home-features">
-  <a class="home-feature" href="/guide/cli-reference">
-    <span class="home-feature-icon"><IconSearchCheck aria-hidden="true" :size="32" :stroke-width="1.8" /></span>
-    <strong>Check source</strong>
-    <span>Catch Apex issues locally before deploys fail.</span>
-    <code><span class="home-command-line">glade check</span><span class="home-command-line">--project .</span><span class="home-command-line">--json</span></code>
-  </a>
-  <a class="home-feature" href="/guide/local-testing">
-    <span class="home-feature-icon"><IconFlaskConical aria-hidden="true" :size="32" :stroke-width="1.8" /></span>
-    <strong>Run tests</strong>
-    <span>Run supported Apex tests with isolated local data.</span>
-    <code><span class="home-command-line">glade test changed</span><span class="home-command-line">--project .</span><span class="home-command-line">--since HEAD</span></code>
-  </a>
-  <a class="home-feature" href="/guide/cli-reference">
-    <span class="home-feature-icon"><IconSquareTerminal aria-hidden="true" :size="32" :stroke-width="1.8" /></span>
-    <strong>Try anonymous Apex</strong>
-    <span>Run quick Apex snippets and probes against the local runtime.</span>
-    <code><span class="home-command-line">glade exec</span><span class="home-command-line">'System.debug(1+1);'</span></code>
-  </a>
-  <a class="home-feature" href="/guide/local-api-server">
-    <span class="home-feature-icon"><IconServerCog aria-hidden="true" :size="32" :stroke-width="1.8" /></span>
-    <strong>Run a local API</strong>
-    <span>Test Salesforce-shaped REST flows against local state.</span>
-    <code><span class="home-command-line">glade server --db</span><span class="home-command-line">local.sqlite</span></code>
-  </a>
-</div>
-
-<div class="home-section home-loop-section">
-  <p class="home-eyebrow">LOCAL LOOP</p>
-  <h2 class="home-h2">The local loop before the deploy loop.</h2>
-  <pre class="home-code-block"><code class="language-bash">glade check --project .
-glade test --project . --filter AccountServiceTest
-glade test changed --project . --since origin/main
-glade playground --project . --open</code></pre>
-  <p class="home-p">Run the checks that fit your edit before Salesforce enters the path.</p>
-</div>
-
-<div class="home-section">
-  <div class="home-section-grid">
-    <div>
-      <p class="home-eyebrow">PLAYGROUND</p>
-      <h2 class="home-h2">Try the runtime before installing.</h2>
-      <p class="home-p">Load examples, inspect source, run anonymous Apex, and view output in a local-style workbench.</p>
-    </div>
-    <div class="home-section-action">
-      <button class="home-run-example" type="button" data-run-example>
-        <IconPlayCircle aria-hidden="true" :size="17" :stroke-width="2" />
-        <span>Run Example</span>
-      </button>
-    </div>
-  </div>
-  <div class="home-panel home-panel-soft">
-    <div class="home-panel-top">
-      <span>glade playground / local workspace</span>
-      <span class="home-status-pill home-status-pass" data-run-status>pass</span>
-    </div>
-    <div class="home-playground-grid">
-      <div class="home-playground-side" data-example-active="account">
-        <p>EXAMPLES</p>
-        <button class="home-playground-item active" type="button" data-example-id="account" aria-pressed="true">Account trigger basics</button>
-        <button class="home-playground-item" type="button" data-example-id="soql" aria-pressed="false">SOQL query shape</button>
-        <button class="home-playground-item" type="button" data-example-id="rollback" aria-pressed="false">DML rollback path</button>
-      </div>
-      <pre class="home-code-block"><code class="language-apex" data-example-code>public class RunMe {
-  public static void main() {
-    Account a = new Account(Name = 'Twin Lakes');
-    insert a;
-    System.debug([SELECT Name FROM Account].size());
-  }
-}</code></pre>
-      <div class="home-playground-output">
-        <p>OUTPUT</p>
-        <div class="home-output-item">
-          <span>status</span>
-          <strong class="home-output-pass" data-output-key="status">Pass</strong>
-        </div>
-        <div class="home-output-item">
-          <span>compile + execute</span>
-          <strong data-output-key="timing">38 ms</strong>
-        </div>
-        <div class="home-output-item">
-          <span>log</span>
-          <strong data-output-key="log">USER_DEBUG | Account count: 1</strong>
-        </div>
-        <div class="home-output-item">
-          <span>local state</span>
-          <strong data-output-key="state">1 Account inserted · rolled back after run</strong>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="home-section">
-  <div class="home-section-grid">
-    <div>
-      <p class="home-eyebrow">RUNTIME MAP</p>
-      <h2 class="home-h2">A small runtime with visible parts.</h2>
-      <p class="home-p">Glade keeps parsing, local execution, data, and proof surfaces inspectable instead of hidden.</p>
-    </div>
-    <div class="home-runtime-cards home-runtime-flow">
-      <a class="home-runtime-card" href="/guide/support-map#works-well">
-        <span>parse / sema</span>
-        <h3>Apex front end</h3>
-        <p>Source model, symbols, grouping, diagnostics, and lowering.</p>
-        <small>View parser and semantic support →</small>
-      </a>
-      <a class="home-runtime-card" href="/guide/support-map#works-well">
-        <span>vm / data</span>
-        <h3>Local execution</h3>
-        <p>SObjects, SOQL, DML, triggers, limits, and storage.</p>
-        <small>View runtime and test support →</small>
-      </a>
-      <a class="home-runtime-card" href="/guide/support-map#not-supported-today">
-        <span>support / proof</span>
-        <h3>Visible support map</h3>
-        <p>What works, what has limits, and the checked rows behind each claim.</p>
-        <small>See supported, limited, and unsupported areas →</small>
-      </a>
-    </div>
-    <p class="home-support-note">
-      Glade models the local paths it can prove. Unsupported platform services fail with stable diagnostics instead of pretending to work.
-      <a href="/guide/support-map">View the support map</a>.
-    </p>
-  </div>
-</div>
-
-<div class="home-section">
-  <div class="home-final-cta">
-    <p class="home-eyebrow">LOCAL FIRST</p>
-    <h2 class="home-h2">Ready to try it locally?</h2>
-    <p class="home-p">Install Glade, open a workspace, and start checking Apex from your machine.</p>
-    <div class="home-install-inner home-install-inner-compact" role="group" aria-label="Install Glade command">
-      <div class="home-terminal-command">
-        <span class="home-terminal-prompt">$</span>
-        <code id="install-cmd-final">curl -fsSL https://glade.sh/install.sh | sh</code>
-      </div>
-      <div class="home-install-actions">
-        <button class="home-install-copy" data-copy-target="install-cmd-final">Copy</button>
-      </div>
-    </div>
-  </div>
+<section class="home-section">
   <div class="home-next-cards">
     <a class="home-next-card" href="/guide/tester-field-guide">
-      <strong>Tester Field Guide</strong>
-      <span>Install, first run, VS Code, AI, CI, and pilot feedback.</span>
+      <span>START HERE</span>
+      <strong>First run guide</strong>
+      <span>Install, run doctor, and check a project.</span>
     </a>
     <a class="home-next-card" href="/guide/playground">
-      <strong>Playground Docs</strong>
-      <span>Run the local browser workbench from your machine.</span>
+      <span>DOCS</span>
+      <strong>Browser workbench</strong>
+      <span>Try the workflows without installing.</span>
     </a>
     <a class="home-next-card" href="/guide/editor">
-      <strong>VS Code Extension</strong>
-      <span>Install the bundled extension and run local Apex work from VS Code.</span>
+      <span>EDITOR</span>
+      <strong>VS Code extension</strong>
+      <span>Run Glade from your editor.</span>
     </a>
     <a class="home-next-card" href="https://github.com/glade-sh/glade">
+      <span>SOURCE</span>
       <strong>GitHub</strong>
-      <span>Source, issues, releases, fixtures, and history.</span>
+      <span>Source, issues, releases, and roadmap.</span>
     </a>
   </div>
-</div>
+</section>

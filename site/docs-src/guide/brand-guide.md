@@ -13,7 +13,7 @@ aside: false
       <img class="brand-guide-logo-open" src="/logo-mark-open.svg" alt="Glade open contour logo" />
       <div class="brand-guide-logo-copy">
         <h2>Glade</h2>
-        <p>The local workbench for Apex.</p>
+        <p>Apex feedback before you deploy.</p>
         <code>glade check --project .</code>
       </div>
     </div>
@@ -56,7 +56,7 @@ aside: false
       </article>
       <article class="brand-rule-card">
         <span>background</span>
-        <strong>Prefer ink water and tarn surface.</strong>
+        <strong>Prefer near-black and raised surfaces.</strong>
         <p>Avoid noisy images and mid-tone backgrounds unless the mark sits in a controlled dark container.</p>
       </article>
       <article class="brand-rule-card">
@@ -75,85 +75,83 @@ aside: false
   <section class="brand-guide-section">
     <div class="brand-guide-heading">
       <p class="brand-guide-kicker">color</p>
-      <h2>Deep tarn, lichen, and near-black water.</h2>
+      <h2>Host Signal uses green, dark surfaces, and named states.</h2>
     </div>
     <div class="brand-color-grid">
       <article class="brand-color-card">
-        <span class="brand-color-swatch" style="--swatch: #7897B8"></span>
-        <strong>Deep tarn</strong>
-        <code>#7897B8</code>
-        <p>Primary dark-mode accent. Use for links, icons, progress, active state, and logo contours.</p>
+        <span class="brand-color-swatch" style="--swatch: #9BE870"></span>
+        <strong>Glade green</strong>
+        <code>#9BE870</code>
+        <p>Primary action, selected state, local support, and success.</p>
       </article>
       <article class="brand-color-card">
-        <span class="brand-color-swatch" style="--swatch: #B7C68F"></span>
-        <strong>Lichen</strong>
-        <code>#B7C68F</code>
-        <p>Support and success color. Use for pass states and small support accents.</p>
+        <span class="brand-color-swatch" style="--swatch: #B7FF8A"></span>
+        <strong>Glade strong</strong>
+        <code>#B7FF8A</code>
+        <p>Hover, focus, and strong active borders.</p>
       </article>
       <article class="brand-color-card">
-        <span class="brand-color-swatch" style="--swatch: #060A0D"></span>
-        <strong>Ink water</strong>
-        <code>#060A0D</code>
-        <p>Primary dark background. Keep it deep enough for the serif and contour field to carry.</p>
+        <span class="brand-color-swatch" style="--swatch: #070B0D"></span>
+        <strong>Background</strong>
+        <code>#070B0D</code>
+        <p>Primary page background. Keep it calm and developer-native.</p>
       </article>
       <article class="brand-color-card">
-        <span class="brand-color-swatch" style="--swatch: #0E171D"></span>
-        <strong>Tarn surface</strong>
-        <code>#0E171D</code>
-        <p>Card and nav surface. Use it as a quiet layer over the grid.</p>
+        <span class="brand-color-swatch" style="--swatch: #10191E"></span>
+        <strong>Surface</strong>
+        <code>#10191E</code>
+        <p>Workbench, cards, nav, and docs panels.</p>
       </article>
       <article class="brand-color-card">
-        <span class="brand-color-swatch" style="--swatch: #435F7C"></span>
-        <strong>Light tarn</strong>
-        <code>#435F7C</code>
-        <p>Light-mode primary accent. In dark mode, keep it to borders and large UI.</p>
+        <span class="brand-color-swatch" style="--swatch: #152229"></span>
+        <strong>Raised surface</strong>
+        <code>#152229</code>
+        <p>Active controls and lifted workbench panels.</p>
       </article>
       <article class="brand-color-card">
-        <span class="brand-color-swatch" style="--swatch: #6E7650"></span>
-        <strong>Light lichen</strong>
-        <code>#6E7650</code>
-        <p>Light-mode support. In dark mode, use it for quiet accents, not core copy.</p>
+        <span class="brand-color-swatch" style="--swatch: #26363D"></span>
+        <strong>Line</strong>
+        <code>#26363D</code>
+        <p>Panel edges, table rules, and quiet dividers.</p>
       </article>
       <article class="brand-color-card">
-        <span class="brand-color-swatch" style="--swatch: #B6CADF"></span>
-        <strong>Pale tarn</strong>
-        <code>#B6CADF</code>
-        <p>High-contrast interaction color. Use for primary buttons, focus rings, and diagnostic codes.</p>
-      </article>
-      <article class="brand-color-card">
-        <span class="brand-color-swatch" style="--swatch: #D8B36C"></span>
+        <span class="brand-color-swatch" style="--swatch: #F5C95F"></span>
         <strong>Warning</strong>
-        <code>#D8B36C</code>
-        <p>Operational token for warnings, caution callouts, and partial runtime states.</p>
+        <code>#F5C95F</code>
+        <p>Partial support, warning states, and degraded behavior.</p>
       </article>
       <article class="brand-color-card">
-        <span class="brand-color-swatch" style="--swatch: #D48178"></span>
+        <span class="brand-color-swatch" style="--swatch: #FF6B61"></span>
         <strong>Danger</strong>
-        <code>#D48178</code>
-        <p>Operational token for failures, invalid inputs, and error diagnostics.</p>
+        <code>#FF6B61</code>
+        <p>Failures, invalid inputs, and error diagnostics.</p>
+      </article>
+      <article class="brand-color-card">
+        <span class="brand-color-swatch" style="--swatch: #7DB7FF"></span>
+        <strong>Info</strong>
+        <code>#7DB7FF</code>
+        <p>Requires-org state, neutral runtime details, and informational status.</p>
       </article>
     </div>
     <pre class="brand-token-block"><code>:root &#123;
-  --color-ink-water: #060A0D;
-  --color-tarn-surface: #0E171D;
-  --color-deep-tarn: #7897B8;
-  --color-lichen: #B7C68F;
-  --color-light-tarn: #435F7C;
-  --color-light-lichen: #6E7650;
-  --text-primary: #EDF3F6;
-  --text-secondary: #B7C2C8;
-  --text-muted: #8D9AA2;
-  --surface-page: var(--color-ink-water);
-  --surface-card: var(--color-tarn-surface);
-  --surface-code: #101B21;
-  --border-subtle: rgba(120, 151, 184, 0.18);
-  --border-strong: rgba(120, 151, 184, 0.38);
-  --focus-ring: #B6CADF;
-  --button-primary-bg: #B6CADF;
-  --button-primary-text: #060A0D;
-  --status-success: #B7C68F;
-  --status-warning: #D8B36C;
-  --status-danger: #D48178;
+  --bg: #070B0D;
+  --surface: #10191E;
+  --surface-raised: #14232A;
+  --terminal: #05090B;
+  --line: #26363D;
+  --line-strong: #38505A;
+  --text: #F3F7F5;
+  --text-muted: #9AABA5;
+  --text-soft: #6F817B;
+  --text-inverse: #061009;
+  --glade: #9BE870;
+  --glade-strong: #B7FF8A;
+  --glade-muted: rgba(155,232,112,0.14);
+  --success: #9BE870;
+  --warning: #F5C95F;
+  --danger: #FF6B61;
+  --info: #7DB7FF;
+  --focus: #B7FF8A;
 &#125;</code></pre>
     <p class="brand-guide-note">Warning and danger colors exist for product clarity, not brand decoration. Use them only for CLI output, form states, docs callouts, and runtime diagnostics.</p>
   </section>
@@ -161,52 +159,52 @@ aside: false
   <section class="brand-guide-section">
     <div class="brand-guide-heading">
       <p class="brand-guide-kicker">type</p>
-      <h2>Editorial head, quiet UI, clear code.</h2>
+      <h2>Host Signal keeps the interface legible and direct.</h2>
     </div>
     <div class="brand-stack-grid">
       <article class="brand-stack-card brand-stack-recommended">
         <span>recommended stack</span>
         <h3>Glade</h3>
-        <p class="brand-stack-line">The local workbench for Apex.</p>
-        <p class="brand-stack-copy">Newsreader Italic gives the page its field-note voice. Mona Sans keeps controls and docs text crisp. Monaspace Neon is the preferred code face, with JetBrains Mono as the stable fallback.</p>
+        <p class="brand-stack-line">Apex feedback before you deploy.</p>
+        <p class="brand-stack-copy">Host Grotesk carries headings, UI, and body copy. Monaspace Argon carries commands, terminal output, JSON, traces, and code. Keep tracking at zero and let size, weight, and spacing do the work.</p>
         <code>glade test changed --since HEAD</code>
         <dl>
-          <div><dt>serif</dt><dd>Newsreader Italic</dd></div>
-          <div><dt>sans</dt><dd>Mona Sans</dd></div>
-          <div><dt>mono</dt><dd>Monaspace Neon / JetBrains Mono</dd></div>
+          <div><dt>sans</dt><dd>Host Grotesk</dd></div>
+          <div><dt>mono</dt><dd>Monaspace Argon</dd></div>
+          <div><dt>accent</dt><dd>None by default</dd></div>
         </dl>
       </article>
     </div>
     <div class="brand-rule-grid">
       <article class="brand-rule-card">
         <span>Hero display</span>
-        <strong>Newsreader Italic, 72-104px desktop.</strong>
-        <p>Use it only for major page openings. Mobile range is 44-56px.</p>
+        <strong>Host Grotesk, clamp(3.05rem, 6.2vw, 4.625rem).</strong>
+        <p>Use 700 weight and zero tracking. Adjust wording before forcing cramped lines.</p>
       </article>
       <article class="brand-rule-card">
         <span>Page H1</span>
-        <strong>Newsreader Italic, 44-56px desktop.</strong>
-        <p>Use it for brand and docs openings. Keep line height near 1.04.</p>
+        <strong>Host Grotesk, 44-56px desktop.</strong>
+        <p>Use it for brand and docs openings. Keep the line height close to 1.04.</p>
       </article>
       <article class="brand-rule-card">
         <span>Section headline</span>
-        <strong>Newsreader Italic, 30-38px desktop.</strong>
-        <p>Keep it elegant, but not hero-sized inside compact panels.</p>
+        <strong>Host Grotesk, 30-38px desktop.</strong>
+        <p>Keep it clear, but not hero-sized inside compact panels.</p>
       </article>
       <article class="brand-rule-card">
         <span>Body</span>
-        <strong>Mona Sans, 15-16px.</strong>
-        <p>Use line height 1.55-1.65 and brighter secondary text for product copy.</p>
+        <strong>Host Grotesk, 16-17px.</strong>
+        <p>Use line height 1.6-1.7 and zero tracking for docs and product copy.</p>
       </article>
       <article class="brand-rule-card">
         <span>Code</span>
-        <strong>Monaspace Neon, 12.5-13.5px.</strong>
-        <p>Use line height 1.45-1.55 for CLI, snippets, and output panels.</p>
+        <strong>Monaspace Argon, 13.5-14px.</strong>
+        <p>Use line height 1.55 for CLI, snippets, and output panels.</p>
       </article>
       <article class="brand-rule-card">
         <span>Eyebrow</span>
-        <strong>Mona Sans, 11-12px uppercase.</strong>
-        <p>Use 0.06-0.1em tracking. Keep it short.</p>
+        <strong>Host Grotesk, 11-12px uppercase.</strong>
+        <p>Keep it short and keep tracking at zero.</p>
       </article>
     </div>
   </section>
@@ -261,12 +259,12 @@ aside: false
     <div class="brand-rule-grid">
       <article class="brand-rule-card">
         <span>Primary button</span>
-        <strong>Filled pale tarn, ink text, visible focus.</strong>
+        <strong>Filled Glade green, inverse text, visible focus.</strong>
         <p>Use for Install Glade and the single main action on a page.</p>
       </article>
       <article class="brand-rule-card">
         <span>Secondary button</span>
-        <strong>Subtle tarn surface with a firm border.</strong>
+        <strong>Subtle raised surface with a firm border.</strong>
         <p>Use for Playground, Docs, and lateral navigation.</p>
       </article>
       <article class="brand-rule-card">
@@ -311,7 +309,7 @@ aside: false
     <div class="brand-rule-grid">
       <article class="brand-rule-card">
         <span>grid</span>
-        <strong>Keep it 4-8% visible over ink water.</strong>
+        <strong>Keep it 4-8% visible over the page background.</strong>
         <p>It should read as structure, not decoration.</p>
       </article>
       <article class="brand-rule-card">
@@ -335,28 +333,28 @@ aside: false
     <div class="brand-rule-grid">
       <article class="brand-rule-card">
         <span>primary</span>
-        <strong>Use deep tarn for progress and active details.</strong>
-        <p>ANSI truecolor: <code>38;2;120;151;184</code>.</p>
+        <strong>Use Glade green for progress and active details.</strong>
+        <p>ANSI truecolor: <code>38;2;155;232;112</code>.</p>
       </article>
       <article class="brand-rule-card">
         <span>success</span>
-        <strong>Use lichen for pass states.</strong>
-        <p>ANSI truecolor: <code>38;2;183;198;143</code>.</p>
+        <strong>Use strong Glade green for pass emphasis.</strong>
+        <p>ANSI truecolor: <code>38;2;183;255;138</code>.</p>
       </article>
       <article class="brand-rule-card">
-        <span>support</span>
-        <strong>Use pale tarn for diagnostic codes.</strong>
-        <p>ANSI truecolor: <code>38;2;182;202;223</code>.</p>
+        <span>info</span>
+        <strong>Use info blue for requires-org and neutral details.</strong>
+        <p>ANSI truecolor: <code>38;2;125;183;255</code>.</p>
       </article>
       <article class="brand-rule-card">
         <span>warning</span>
         <strong>Use warning only when action may be needed.</strong>
-        <p>ANSI truecolor: <code>38;2;216;179;108</code>.</p>
+        <p>ANSI truecolor: <code>38;2;245;201;95</code>.</p>
       </article>
       <article class="brand-rule-card">
         <span>danger</span>
         <strong>Use danger for failed commands and invalid states.</strong>
-        <p>ANSI truecolor: <code>38;2;212;129;120</code>.</p>
+        <p>ANSI truecolor: <code>38;2;255;107;97</code>.</p>
       </article>
     </div>
   </section>
@@ -369,7 +367,7 @@ aside: false
     <div class="brand-rule-grid">
       <article class="brand-rule-card">
         <span>tagline</span>
-        <strong>The local workbench for Apex.</strong>
+        <strong>Apex feedback before you deploy.</strong>
         <p>Use this in metadata, hero copy, and compact product descriptions.</p>
       </article>
       <article class="brand-rule-card">

@@ -22,7 +22,7 @@ func WriteCheckResult(w io.Writer, info CheckResultInfo) error {
 	summary := FormatDiagnosticSummary(len(info.Diagnostics), errors, warnings)
 	body := strings.Join([]string{
 		"project: " + info.ProjectRoot,
-		fmt.Sprintf("%d types · %d triggers · %d objects", info.Types, info.Triggers, info.Objects),
+		fmt.Sprintf("%s · %s · %s", formatCheckCount(info.Types, "type"), formatCheckCount(info.Triggers, "trigger"), formatCheckCount(info.Objects, "object")),
 		summary,
 	}, "\n")
 	if _, err := fmt.Fprintln(w, FormatBox(t, "Check", body, defaultBoxWidth)); err != nil {
@@ -35,4 +35,11 @@ func WriteCheckResult(w io.Writer, info CheckResultInfo) error {
 		return err
 	}
 	return WriteDiagnostics(w, t, info.Diagnostics)
+}
+
+func formatCheckCount(count int, noun string) string {
+	if count == 1 {
+		return fmt.Sprintf("%d %s", count, noun)
+	}
+	return fmt.Sprintf("%d %ss", count, noun)
 }

@@ -6,7 +6,7 @@ login, scratch org, source push, or metadata deploy is required for the core
 commands.
 
 Glade does not replace Salesforce. It gives a fast local loop before Salesforce
-enters the path. Check [What Glade Supports](/guide/support-map) before treating
+enters the path. Check the [Support map](/guide/support-map) before treating
 any platform service, live auth flow, Visualforce rendering path, or broad API
 surface as supported.
 
@@ -197,4 +197,4 @@ Useful pilot feedback includes:
 - [Add Glade to CI](/guide/ci-artifacts)
 - [Enterprise Workflows](/guide/enterprise-workflows)
 - [Plugins](/guide/plugins)
-- [What Glade Supports](/guide/support-map)
+- [Support map](/guide/support-map)
