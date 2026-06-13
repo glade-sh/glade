@@ -117,11 +117,15 @@ func (vm *VM) businessHoursCalendar(id string) (businessHoursCalendar, error) {
 	if err != nil {
 		return businessHoursCalendar{}, unsupportedCallError("BusinessHours timezone " + zoneID)
 	}
+	holidays, err := vm.businessHoursAllDayHolidays()
+	if err != nil {
+		return businessHoursCalendar{}, err
+	}
 	calendar := businessHoursCalendar{
 		id:       string(record.ID),
 		location: location,
 		windows:  make(map[time.Weekday]businessHoursWindow),
-		holidays: vm.businessHoursAllDayHolidays(),
+		holidays: holidays,
 	}
 	for _, day := range businessHoursDayFields {
 		startText := strings.TrimSpace(storageStringField(record, day.name+"StartTime"))
@@ -144,16 +148,22 @@ func (vm *VM) businessHoursCalendar(id string) (businessHoursCalendar, error) {
 	return calendar, nil
 }
 
-func (vm *VM) businessHoursAllDayHolidays() map[string]struct{} {
+func (vm *VM) businessHoursAllDayHolidays() (map[string]struct{}, error) {
 	holidays := make(map[string]struct{})
 	if vm == nil || vm.Org == nil {
-		return holidays
+		return holidays, nil
+	}
+	if vm.businessHoursHasServiceCalendarHolidayLinks() {
+		return nil, unsupportedCallError("BusinessHours service-calendar associations")
 	}
 	object, ok := vm.Org.Objects["Holiday"]
 	if !ok {
-		return holidays
+		return holidays, nil
 	}
 	for _, record := range object.Records {
+		if reason := businessHoursUnsupportedHolidayReason(record); reason != "" {
+			return nil, unsupportedCallError(reason)
+		}
 		if !strings.EqualFold(storageStringField(record, "IsAllDay"), "true") {
 			continue
 		}
@@ -163,7 +173,72 @@ func (vm *VM) businessHoursAllDayHolidays() map[string]struct{} {
 		}
 		holidays[dateText] = struct{}{}
 	}
-	return holidays
+	return holidays, nil
+}
+
+func (vm *VM) businessHoursHasServiceCalendarHolidayLinks() bool {
+	for _, objectName := range []string{"OperatingHoursHoliday", "BusinessHoursHoliday"} {
+		object, ok := vm.Org.Objects[objectName]
+		if ok && len(object.Records) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func businessHoursUnsupportedHolidayReason(record storage.Record) string {
+	if businessHoursHolidayFieldPresent(record, "BusinessHoursId") || businessHoursHolidayFieldPresent(record, "OperatingHoursId") {
+		return "BusinessHours service-calendar associations"
+	}
+	isAllDay := strings.TrimSpace(storageStringField(record, "IsAllDay"))
+	if isAllDay != "" && !strings.EqualFold(isAllDay, "true") {
+		return "BusinessHours partial-day holidays"
+	}
+	if !strings.EqualFold(isAllDay, "true") && (businessHoursHolidayFieldPresent(record, "StartTimeInMinutes") || businessHoursHolidayFieldPresent(record, "EndTimeInMinutes")) {
+		return "BusinessHours partial-day holidays"
+	}
+	if businessHoursHolidayMeaningfulField(record, "IsRecurrence") {
+		return "BusinessHours recurring holiday expansion"
+	}
+	for _, field := range []string{
+		"RecurrenceDayOfMonth",
+		"RecurrenceDayOfWeekMask",
+		"RecurrenceEndDateOnly",
+		"RecurrenceInstance",
+		"RecurrenceInterval",
+		"RecurrenceMonthOfYear",
+		"RecurrenceStartDate",
+		"RecurrenceType",
+	} {
+		if businessHoursHolidayMeaningfulField(record, field) {
+			return "BusinessHours recurring holiday expansion"
+		}
+	}
+	return ""
+}
+
+func businessHoursHolidayFieldPresent(record storage.Record, field string) bool {
+	value, ok := record.GetField(field)
+	return ok && value.Kind != storage.ValueNull
+}
+
+func businessHoursHolidayMeaningfulField(record storage.Record, field string) bool {
+	value, ok := record.GetField(field)
+	if !ok || value.Kind == storage.ValueNull {
+		return false
+	}
+	switch value.Kind {
+	case storage.ValueBoolean:
+		return value.Boolean
+	case storage.ValueInteger:
+		return value.Integer != 0
+	case storage.ValueDecimal:
+		text := strings.TrimSpace(value.Decimal)
+		return text != "" && text != "0" && text != "0.0"
+	default:
+		text := strings.TrimSpace(storageStringField(record, field))
+		return text != "" && text != "0" && text != "0.0" && !strings.EqualFold(text, "false")
+	}
 }
 
 func (vm *VM) businessHoursRecord(id string) (storage.Record, bool) {

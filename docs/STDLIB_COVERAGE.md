@@ -50,7 +50,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Database | `Database.emptyRecycleBin` | `supported` | Local hard-delete result shape with allOrNone rollback for supported SObjects. |
 | Database | `Database.executeBatch` | `supported` | Queues local Batchable jobs and drains start/execute chunks/finish during Test.stopTest. |
 | Database | `Database.getAsyncDeleteResult` | `supported` | Returns materialized local DeleteResult values and rejects unknown async locator strings instead of fabricating pending results. |
-| Database | `Database.getAsyncLocator` | `supported` | Returns deterministic VM-local locator strings for local result and locator objects; no external async service lookup. |
+| Database | `Database.getAsyncLocator` | `supported` | Returns deterministic VM-local locator strings for local result and locator objects. |
 | Database | `Database.getAsyncSaveResult` | `supported` | Returns materialized local SaveResult values and rejects unknown async locator strings instead of fabricating pending results. |
 | Database | `Database.getCursor` | `supported` | Local cursor over supported SOQL results with deterministic fetch windows. |
 | Database | `Database.getCursorWithBinds` | `supported` | Bind-map local cursor over supported SOQL results with deterministic fetch windows. |
@@ -68,7 +68,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Database | `Database.query` | `supported` | Dynamic SOQL execution against the local org with catchable QueryException parse errors. |
 | Database | `Database.queryWithBinds` | `supported` | Bind-map dynamic SOQL execution with scalar and collection binds. |
 | Database | `Database.releaseSavepoint` | `supported` | Releases the selected local savepoint and later savepoints without rolling back org state. |
-| Database | `Database.rollback` | `supported` | Local org-state savepoint rollback with no external side effects. |
+| Database | `Database.rollback` | `supported` | Restores the local org-state snapshot for the selected savepoint. |
 | Database | `Database.setSavepoint` | `supported` | Local org-state snapshots with later-savepoint invalidation. |
 | Database | `Database.treeSave` | `supported` | Local parent insert/update plus first-level child insert/update with NestedSaveResult relationship result shape. |
 | Database | `Database.undelete` | `supported` | Soft-delete restoration with local AccessLevel parsing for supported local records. |
@@ -110,7 +110,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Exception | `NoDataFoundException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
 | Exception | `NullPointerException constructors` | `supported` | Supports zero-arg, message, cause, and message-plus-cause constructor shapes. |
 | FeatureManagement | `FeatureManagement.checkPermission` | `supported` | Checks local runAs user permissions, permission sets, and custom-permission assignments. |
-| HTTP | `Http.send(HttpRequest)` | `supported` | Routes local callouts through registered HttpCalloutMock implementations; real outbound network transport is intentionally not executed by the local runtime. |
+| HTTP | `Http.send(HttpRequest)` | `supported` | Routes local callouts through registered HttpCalloutMock implementations and records local callout limits. |
 | HTTP | `HttpRequest` | `supported` | Endpoint, method, headers, timeout, body, blob body, and local DTO accessors are modeled. |
 | HTTP | `HttpRequest client certificate methods` | `unsupported` | Client certificate lookup depends on Salesforce certificate store state and raises a stable UnsupportedFeature diagnostic locally. |
 | HTTP | `HttpResponse` | `supported` | Status, status code, headers, body, blob body, and local DTO accessors are modeled. |
@@ -166,10 +166,10 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Request | `RequestImpl.getCurrent()` | `supported` | Returns deterministic local request context values for local Apex execution. |
 | ResetPasswordResult | `ResetPasswordResult.getPassword()` | `unsupported` | Password reset output is produced by Salesforce identity services and is not generated locally. |
 | SObject | `SObject.setOptions(Database.DMLOptions)` | `supported` | Stores a cloned DMLOptions value on the local SObject for later DML option use. |
-| Sandbox | `SandboxContext.organizationId()` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
-| Sandbox | `SandboxContext.sandboxId()` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
-| Sandbox | `SandboxContext.sandboxName()` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
-| Sandbox | `SandboxPostCopy.runApexClass(SandboxContext)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
+| Sandbox | `SandboxContext.organizationId()` | `supported` | Invokes the local test harness implementation. |
+| Sandbox | `SandboxContext.sandboxId()` | `supported` | Invokes the local test harness implementation. |
+| Sandbox | `SandboxContext.sandboxName()` | `supported` | Invokes the local test harness implementation. |
+| Sandbox | `SandboxPostCopy.runApexClass(SandboxContext)` | `supported` | Invokes the local test harness implementation. |
 | Schedulable | `Schedulable.execute(SchedulableContext)` | `supported` | Queues and drains local Scheduled Apex jobs during Test.stopTest with deterministic CronTrigger IDs. |
 | Schedulable | `SchedulableContext.getTriggerId()` | `supported` | Queues and drains local Scheduled Apex jobs during Test.stopTest with deterministic CronTrigger IDs. |
 | Schema | `DescribeFieldResult` | `supported` | Returns local metadata-backed field labels, picklists, reference targets, and access, create, and update booleans. |
@@ -223,18 +223,18 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Test | `Test.createStubQueryRow(Schema.SObjectType,Map<String,Object>)` | `supported` | Builds one local SObject row from a field map for SOQL stub providers. |
 | Test | `Test.createStubQueryRows` | `supported` | Builds local SObject row lists from field maps for SOQL stub providers. |
 | Test | `Test.createStubQueryRows(Schema.SObjectType,List<Map<String,Object>>)` | `supported` | Builds local SObject row lists from field maps for SOQL stub providers. |
-| Test | `Test.enableChangeDataCapture()` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
+| Test | `Test.enableChangeDataCapture()` | `supported` | Invokes the local test harness implementation. |
 | Test | `Test.getEventBus()` | `supported` | Returns a local event-bus test broker that delivers queued platform-event triggers. |
 | Test | `Test.getExternalService live service execution` | `unsupported` | External Service execution requires hosted named credential and generated service infrastructure. |
 | Test | `Test.getExternalService()` | `supported` | Returns a deterministic local external-service harness. |
 | Test | `Test.getStandardPricebookId` | `supported` | Returns the deterministic local standard pricebook ID in test context. |
-| Test | `Test.invokeContinuationMethod(Object,Continuation)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
+| Test | `Test.invokeContinuationMethod(Object,Continuation)` | `supported` | Invokes the local test harness implementation. |
 | Test | `Test.invokePage(PageReference)` | `supported` | Returns a typed Component.apex.page handle in test context without rendering Visualforce. |
 | Test | `Test.isRunningTest` | `supported` | Reflects local test context. |
 | Test | `Test.loadData` | `supported` | Loads CSV static-resource content with typed field coercion, DML routing, missing-resource errors, and bad-header diagnostics. |
 | Test | `Test.loadData packaged resource and relationship external-ID expansion` | `unsupported` | Packaged static-resource namespace lookup and relationship external-ID fixture expansion require hosted packaging and schema behavior beyond local CSV loading. |
 | Test | `Test.newSendEmailQuickActionDefaults(Id,Id)` | `supported` | Builds deterministic local send-email QuickAction defaults for test execution. |
-| Test | `Test.setContinuationResponse(String,HttpResponse)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
+| Test | `Test.setContinuationResponse(String,HttpResponse)` | `supported` | Invokes the local test harness implementation. |
 | Test | `Test.setCurrentPage(PageReference)` | `supported` | Sets the VM-local current PageReference in test context. |
 | Test | `Test.setCurrentPageReference(Object)` | `supported` | Accepts PageReference object values and stores the VM-local current page. |
 | Test | `Test.setCurrentPageReference(PageReference)` | `supported` | Sets the VM-local current PageReference in test context. |
@@ -242,12 +242,12 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Test | `Test.startTest` | `supported` | Resets the active governor window for deterministic local counters. |
 | Test | `Test.startTest and stopTest hosted service accounting` | `unsupported` | Hosted async service execution and exact Salesforce governor accounting require Salesforce runtime services. |
 | Test | `Test.stopTest` | `supported` | Restores outer governor counters and drains supported local async work. |
-| Test | `Test.testInstall(InstallHandler,Version)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
-| Test | `Test.testInstall(InstallHandler,Version,Boolean)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
-| Test | `Test.testNotificationActionHandler(Messaging.NotificationActionHandler,Messaging.ActionableNotification)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
-| Test | `Test.testSandboxPostCopyScript(SandboxPostCopy,Id,Id,String)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
-| Test | `Test.testSandboxPostCopyScript(SandboxPostCopy,Id,Id,String,Boolean)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
-| Test | `Test.testUninstall(UninstallHandler)` | `supported` | Invokes the local test harness implementation; no live Salesforce service is contacted. |
+| Test | `Test.testInstall(InstallHandler,Version)` | `supported` | Invokes the local test harness implementation. |
+| Test | `Test.testInstall(InstallHandler,Version,Boolean)` | `supported` | Invokes the local test harness implementation. |
+| Test | `Test.testNotificationActionHandler(Messaging.NotificationActionHandler,Messaging.ActionableNotification)` | `supported` | Invokes the local test harness implementation. |
+| Test | `Test.testSandboxPostCopyScript(SandboxPostCopy,Id,Id,String)` | `supported` | Invokes the local test harness implementation. |
+| Test | `Test.testSandboxPostCopyScript(SandboxPostCopy,Id,Id,String,Boolean)` | `supported` | Invokes the local test harness implementation. |
+| Test | `Test.testUninstall(UninstallHandler)` | `supported` | Invokes the local test harness implementation. |
 | Time | `Time.hour` | `supported` | Local time component. |
 | Time | `Time.minute` | `supported` | Local time component. |
 | Time | `Time.newInstance` | `supported` | Validates time parts. |
@@ -257,9 +257,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | TimeZone | `TimeZone.getID` | `supported` | Returns local timezone IDs. |
 | TimeZone | `TimeZone.getOffset` | `supported` | Returns offsets from the deterministic local timezone model. |
 | TimeZone | `TimeZone.getTimeZone` | `supported` | Resolves timezone IDs into local timezone values. |
-| TrailblazerIdentity | `TrailblazerIdentity.generateUserEmailVerificationToken(String,String,String)` | `supported` | Returns a deterministic local verification token for test execution; no live identity service is contacted. |
-| TrailblazerIdentity | `TrailblazerIdentity.getUserOrgInfo(List<String>)` | `supported` | Returns an empty local UserOrgInfo list for deterministic test execution; no live identity service lookup is performed. |
-| TrailblazerIdentity | `TrailblazerIdentity.splunkLog(String,String)` | `supported` | Accepts local log calls and returns null for deterministic test execution; no live logging service is contacted. |
+| TrailblazerIdentity | `TrailblazerIdentity.generateUserEmailVerificationToken(String,String,String)` | `supported` | Returns a deterministic local verification token for test execution. |
+| TrailblazerIdentity | `TrailblazerIdentity.getUserOrgInfo(List<String>)` | `supported` | Returns an empty local UserOrgInfo list for deterministic test execution. |
+| TrailblazerIdentity | `TrailblazerIdentity.splunkLog(String,String)` | `supported` | Accepts local log calls and returns null for deterministic test execution. |
 | Type | `Type.forName` | `supported` | Resolves local classes, SObjects, built-ins, generic type names, generated platform types, and common platform namespace aliases. |
 | Type | `Type.forName hosted package namespace reflection` | `unsupported` | Live package namespace reflection beyond local source and generated platform aliases requires hosted org metadata. |
 | Type | `Type.getName` | `supported` | Returns local type token name. |
