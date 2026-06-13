@@ -2746,10 +2746,7 @@ platformStaticCall:
 	case "Test.setCreatedDate":
 		return vm.testSetCreatedDate(args)
 	case "DataWeave.Script.createScript", "dataweave.Script.createScript":
-		if len(args) != 1 || args[0].Kind != ValueString {
-			return Null, fmt.Errorf("DataWeave.Script.createScript expects script name String")
-		}
-		return newDataWeaveScript(args[0].Text), nil
+		return dataWeaveCreateScript(args)
 	case "Location.newInstance":
 		if len(args) != 2 || !isMathNumeric(args[0]) || !isMathNumeric(args[1]) {
 			return Null, fmt.Errorf("Location.newInstance expects latitude and longitude")

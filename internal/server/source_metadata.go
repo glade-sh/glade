@@ -68,6 +68,27 @@ type compactLayoutXML struct {
 	Fields []string `xml:"fields"`
 }
 
+type customObjectXML struct {
+	Label string `xml:"label"`
+}
+
+type customFieldXML struct {
+	FullName string `xml:"fullName"`
+	Label    string `xml:"label"`
+	Type     string `xml:"type"`
+}
+
+type recordTypeXML struct {
+	Label  string `xml:"label"`
+	Active string `xml:"active"`
+}
+
+type validationRuleXML struct {
+	Active       string `xml:"active"`
+	ErrorMessage string `xml:"errorMessage"`
+	Description  string `xml:"description"`
+}
+
 func NewSourceMetadataFromProject(p project.Project) (SourceMetadata, error) {
 	meta := SourceMetadata{
 		Project:     p,
@@ -103,6 +124,12 @@ func (m *SourceMetadata) loadToolingObjects() error {
 		"ApexPage":       toolingObjectDefinition("ApexPage", "Apex Page", "066", []string{"Name", "Markup", "ApiVersion", "MasterLabel"}),
 		"ApexComponent":  toolingObjectDefinition("ApexComponent", "Apex Component", "099", []string{"Name", "Markup", "ApiVersion", "MasterLabel"}),
 		"StaticResource": toolingObjectDefinition("StaticResource", "Static Resource", "081", []string{"Name", "Body", "ContentType", "CacheControl", "Description"}),
+		"CustomObject":   toolingObjectDefinition("CustomObject", "Custom Object", "01I", []string{"DeveloperName", "FullName", "MasterLabel", "NamespacePrefix", "ManageableState"}),
+		"CustomField":    toolingObjectDefinition("CustomField", "Custom Field", "00N", []string{"DeveloperName", "FullName", "TableEnumOrId", "NamespacePrefix", "ManageableState", "MetadataType"}),
+		"Layout":         toolingObjectDefinition("Layout", "Layout", "00h", []string{"Name", "FullName", "TableEnumOrId", "ManageableState"}),
+		"CompactLayout":  toolingObjectDefinition("CompactLayout", "Compact Layout", "0CL", []string{"DeveloperName", "FullName", "MasterLabel", "SobjectType", "NamespacePrefix", "ManageableState"}),
+		"RecordType":     toolingObjectDefinition("RecordType", "Record Type", "012", []string{"DeveloperName", "FullName", "Name", "SobjectType", "Active", "IsActive"}),
+		"ValidationRule": toolingObjectDefinition("ValidationRule", "Validation Rule", "03d", []string{"ValidationName", "FullName", "EntityDefinitionId", "Active", "ErrorMessage", "Description"}),
 	}
 	for name, def := range defs {
 		m.ToolingOrg.Objects[name] = storage.ObjectState{Definition: def, Records: make(map[storage.ID]storage.Record)}
@@ -205,6 +232,9 @@ func (m *SourceMetadata) loadObjectMetadata() error {
 	for _, component := range schemaBackedComponents(m.Project) {
 		m.Components = append(m.Components, component)
 	}
+	if err := m.addToolingSchemaMetadataRecords(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -266,6 +296,177 @@ func loadLayout(path string, ordinal int) layoutMetadata {
 		objectName = name[:idx]
 	}
 	return layoutMetadata{ID: string(sequenceID("00h", ordinal)), ObjectName: objectName, Name: name, FileName: path}
+}
+
+func (m *SourceMetadata) addToolingSchemaMetadataRecords() error {
+	for i, path := range m.Project.ObjectFiles {
+		name := trimKnownSuffix(filepath.Base(path), ".object-meta.xml")
+		label, err := customObjectLabel(path, name)
+		if err != nil {
+			return err
+		}
+		m.addToolingRecord("CustomObject", sequenceID("01I", i+1), map[string]storage.Value{
+			"DeveloperName":   storage.StringValue(name),
+			"FullName":        storage.StringValue(name),
+			"MasterLabel":     storage.StringValue(label),
+			"NamespacePrefix": storage.StringValue(m.Project.Namespace),
+			"ManageableState": storage.StringValue("unmanaged"),
+		})
+	}
+	for i, path := range m.Project.FieldFiles {
+		objectName := objectNameFromNestedMetadata(path, "fields")
+		name := trimKnownSuffix(filepath.Base(path), ".field-meta.xml")
+		field, err := loadCustomField(path)
+		if err != nil {
+			return err
+		}
+		if field.FullName != "" {
+			name = field.FullName
+		}
+		m.addToolingRecord("CustomField", sequenceID("00N", i+1), map[string]storage.Value{
+			"DeveloperName":   storage.StringValue(name),
+			"FullName":        storage.StringValue(objectName + "." + name),
+			"TableEnumOrId":   storage.StringValue(objectName),
+			"NamespacePrefix": storage.StringValue(m.Project.Namespace),
+			"ManageableState": storage.StringValue("unmanaged"),
+			"MetadataType":    storage.StringValue(field.Type),
+		})
+	}
+	for _, layouts := range m.Layouts {
+		for _, layout := range layouts {
+			m.addToolingRecord("Layout", storage.ID(layout.ID), map[string]storage.Value{
+				"Name":            storage.StringValue(layout.Name),
+				"FullName":        storage.StringValue(layout.Name),
+				"TableEnumOrId":   storage.StringValue(layout.ObjectName),
+				"ManageableState": storage.StringValue("unmanaged"),
+			})
+		}
+	}
+	for _, compactLayouts := range m.Compact {
+		for _, compact := range compactLayouts {
+			m.addToolingRecord("CompactLayout", storage.ID(compact.ID), map[string]storage.Value{
+				"DeveloperName":   storage.StringValue(compact.DeveloperName),
+				"FullName":        storage.StringValue(compact.ObjectName + "." + compact.DeveloperName),
+				"MasterLabel":     storage.StringValue(compact.Label),
+				"SobjectType":     storage.StringValue(compact.ObjectName),
+				"NamespacePrefix": storage.StringValue(m.Project.Namespace),
+				"ManageableState": storage.StringValue("unmanaged"),
+			})
+		}
+	}
+	for i, path := range m.Project.RecordTypeFiles {
+		objectName := objectNameFromNestedMetadata(path, "recordTypes")
+		name := trimKnownSuffix(filepath.Base(path), ".recordType-meta.xml")
+		recordType, err := loadRecordType(path)
+		if err != nil {
+			return err
+		}
+		label := strings.TrimSpace(recordType.Label)
+		if label == "" {
+			label = name
+		}
+		active := metadataBoolean(recordType.Active, true)
+		m.addToolingRecord("RecordType", sequenceID("012", i+1), map[string]storage.Value{
+			"DeveloperName": storage.StringValue(name),
+			"FullName":      storage.StringValue(objectName + "." + name),
+			"Name":          storage.StringValue(label),
+			"SobjectType":   storage.StringValue(objectName),
+			"Active":        storage.BooleanValue(active),
+			"IsActive":      storage.BooleanValue(active),
+		})
+	}
+	for i, path := range m.Project.ValidationRuleFiles {
+		objectName := objectNameFromNestedMetadata(path, "validationRules")
+		name := trimKnownSuffix(filepath.Base(path), ".validationRule-meta.xml")
+		rule, err := loadValidationRule(path)
+		if err != nil {
+			return err
+		}
+		m.addToolingRecord("ValidationRule", sequenceID("03d", i+1), map[string]storage.Value{
+			"ValidationName":     storage.StringValue(name),
+			"FullName":           storage.StringValue(objectName + "." + name),
+			"EntityDefinitionId": storage.StringValue(objectName),
+			"Active":             storage.BooleanValue(metadataBoolean(rule.Active, false)),
+			"ErrorMessage":       storage.StringValue(strings.TrimSpace(rule.ErrorMessage)),
+			"Description":        storage.StringValue(strings.TrimSpace(rule.Description)),
+		})
+	}
+	return nil
+}
+
+func (m *SourceMetadata) addToolingRecord(objectName string, id storage.ID, fields map[string]storage.Value) {
+	state := m.ToolingOrg.Objects[objectName]
+	if state.Records == nil {
+		state.Records = make(map[storage.ID]storage.Record)
+	}
+	state.Records[id] = storage.Record{ID: id, Object: objectName, Fields: fields}
+	m.ToolingOrg.Objects[objectName] = state
+}
+
+func customObjectLabel(path, fallback string) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	var raw customObjectXML
+	if err := xml.Unmarshal(data, &raw); err != nil {
+		return "", err
+	}
+	label := strings.TrimSpace(raw.Label)
+	if label == "" {
+		label = fallback
+	}
+	return label, nil
+}
+
+func loadCustomField(path string) (customFieldXML, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return customFieldXML{}, err
+	}
+	var raw customFieldXML
+	if err := xml.Unmarshal(data, &raw); err != nil {
+		return customFieldXML{}, err
+	}
+	raw.FullName = strings.TrimSpace(raw.FullName)
+	raw.Label = strings.TrimSpace(raw.Label)
+	raw.Type = strings.TrimSpace(raw.Type)
+	return raw, nil
+}
+
+func loadRecordType(path string) (recordTypeXML, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return recordTypeXML{}, err
+	}
+	var raw recordTypeXML
+	if err := xml.Unmarshal(data, &raw); err != nil {
+		return recordTypeXML{}, err
+	}
+	return raw, nil
+}
+
+func loadValidationRule(path string) (validationRuleXML, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return validationRuleXML{}, err
+	}
+	var raw validationRuleXML
+	if err := xml.Unmarshal(data, &raw); err != nil {
+		return validationRuleXML{}, err
+	}
+	return raw, nil
+}
+
+func metadataBoolean(value string, fallback bool) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "true":
+		return true
+	case "false":
+		return false
+	default:
+		return fallback
+	}
 }
 
 func schemaBackedComponents(p project.Project) []metadataComponent {
@@ -334,7 +535,7 @@ func toolingObjectDefinition(apiName, label, prefix string, fields []string) sto
 			fieldType = storage.FieldInteger
 		case "ApiVersion":
 			fieldType = storage.FieldDecimal
-		case "IsValid":
+		case "IsValid", "Active", "IsActive":
 			fieldType = storage.FieldBoolean
 		}
 		def.Fields[field] = storage.Field{APIName: field, Type: fieldType}
