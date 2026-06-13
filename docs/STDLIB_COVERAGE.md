@@ -242,9 +242,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | TimeZone | `TimeZone.getID` | `supported` | Returns local timezone IDs. |
 | TimeZone | `TimeZone.getOffset` | `supported` | Returns offsets from the deterministic local timezone model. |
 | TimeZone | `TimeZone.getTimeZone` | `supported` | Resolves timezone IDs into local timezone values. |
-| TrailblazerIdentity | `TrailblazerIdentity.generateUserEmailVerificationToken(String,String,String)` | `unsupported` | Trailblazer identity service calls are not executed by the local Apex runtime. |
-| TrailblazerIdentity | `TrailblazerIdentity.getUserOrgInfo(List<String>)` | `unsupported` | Trailblazer identity service calls are not executed by the local Apex runtime. |
-| TrailblazerIdentity | `TrailblazerIdentity.splunkLog(String,String)` | `unsupported` | Trailblazer identity service calls are not executed by the local Apex runtime. |
+| TrailblazerIdentity | `TrailblazerIdentity.generateUserEmailVerificationToken(String,String,String)` | `supported` | Returns a deterministic local verification token for test execution; no live identity service is contacted. |
+| TrailblazerIdentity | `TrailblazerIdentity.getUserOrgInfo(List<String>)` | `supported` | Returns an empty local UserOrgInfo list for deterministic test execution; no live identity service lookup is performed. |
+| TrailblazerIdentity | `TrailblazerIdentity.splunkLog(String,String)` | `supported` | Accepts local log calls and returns null for deterministic test execution; no live logging service is contacted. |
 | Type | `Type.forName` | `partial` | Local class/type token lookup. |
 | Type | `Type.getName` | `supported` | Returns local type token name. |
 | Type | `Type.newInstance` | `supported` | Constructs local classes through zero-argument constructor dispatch and rejects uninstantiable built-ins. |

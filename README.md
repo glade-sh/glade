@@ -54,12 +54,12 @@ repository.
 | --- | --- |
 | Apex parse, indexing, and semantic checks | Works well for the local development contract. |
 | Local Apex tests | Works well for the VM subset, with isolated test data, statics, limits, async drain, and JSON/JUnit output. |
-| SOQL, DML, triggers, SObjects, and storage | Works well for the checked local data runtime contract. |
+| SOQL, DML, triggers, SObjects, and storage | Work well for the checked local data runtime contract. |
 | `Database` methods | Supported for the tracked local rows in the stdlib ledger. |
 | `String`, dates, time, math, assertions, labels, URLs, and user info | Wide support, with exact rows in the stdlib ledger. |
 | `Schema`, describe APIs, JSON, regex, HTTP mocks, email, Visualforce controller helpers, and many `Test.*` helpers | Works with limits. The local model covers common test paths and records gaps by method. |
-| Platform services such as approval execution, quick actions, business-hours services, sandbox lifecycle, live request context, and identity services | Not supported unless a row says otherwise. Glade should return a stable unsupported diagnostic, not silent wrong behavior. |
-| Local API server, LSP, DAP, watch, and profile tools | Work well for local development. |
+| Platform services such as approval, quick actions, business hours, sandbox lifecycle, request context, and Trailblazer identity helpers | Deterministic local harnesses exist where the checked ledger says `supported` or `partial`. Hosted service execution still stays outside the local contract. |
+| Local API server, LSP, DAP, watch, and profile tools | Work well for local development. The local API now covers REST discovery, SObject CRUD/query, limits and record counts, Tooling executeAnonymous, local Tooling source/schema metadata queries, Composite sObject insert, fixture resets, and SQLite persistence. |
 | Enterprise graph and report tools | Work as conservative local evidence for assessment, cruft review, and refactor proof. |
 
 Drill down from there:
@@ -67,11 +67,9 @@ Drill down from there:
 ```bash
 glade check --project .
 glade test --project . --json
-glade performance scan --project . --json
+glade support
+glade report assess --project . --format html --out reports/glade-assessment.html
 ```
-
-The performance scan is a plugin command. Use it after installing from a live
-registry, a direct archive, or a locally linked plugin.
 
 - Public support map: <https://glade.sh/guide/support-map>
 - Method-level standard library coverage: [docs/STDLIB_COVERAGE.md](docs/STDLIB_COVERAGE.md)
@@ -89,6 +87,7 @@ glade test --project . --class AccountServiceTest --json --no-progress
 glade test --project . --class AccountServiceTest --method testCreatesAccount --json --no-progress
 glade test changed --project . --since origin/main --json --no-progress
 glade test failed --project .
+glade plugins install @glade/performance
 glade performance scan --project . --json > reports/glade-performance.json
 glade performance scan --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
 ```

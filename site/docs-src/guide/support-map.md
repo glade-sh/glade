@@ -2,7 +2,7 @@
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Support</p>
-  <p>Use this page to decide what Glade can run locally, what works with named limits, and what still needs Salesforce.</p>
+  <p>Use this page to decide what Glade can run locally, what works with named limits, and what still needs Salesforce or a plugin.</p>
   <ul>
     <li>Start with the status legend.</li>
     <li>Check the unsupported list before a pilot.</li>
@@ -20,6 +20,7 @@ ledgers carry the exact ledger rows.
 - Your test suite can mock callouts and live side effects.
 - Your project can tolerate explicit unsupported diagnostics for Salesforce-hosted services.
 - You will keep a Salesforce org gate for features Glade does not model.
+- You will use first-party plugins for maintainer ledgers and advisory scans instead of expecting those scanners in base `glade --help`.
 
 ## Status key
 
@@ -47,7 +48,7 @@ These areas are the main local development contract.
 | Semantic checks | Type references, inheritance, interfaces, overloads, locals, assignments, return paths, and token ranges for the supported VM subset. |
 | Local Apex tests | `@isTest`, `@TestSetup`, isolated org state, static reset, governor windows, async drain, stack frames, JSON, and JUnit output. |
 | SOQL, DML, triggers, and SObjects | Static and dynamic SOQL, DML statements, `Database.*` result shapes, trigger context, schema-backed SObjects, and local SQLite-backed storage. |
-| Local API server | Salesforce-shaped REST discovery, SObject CRUD, query/queryAll, limits, userinfo stubs, Tooling `executeAnonymous`, Composite sObject insert, reset endpoints, and optional SQLite persistence. |
+| Local API server | Salesforce-shaped REST discovery, SObject CRUD, query/queryAll, limits and record counts, userinfo stubs, Tooling `executeAnonymous`, local Tooling source/schema metadata queries, Composite sObject insert, reset endpoints, and optional SQLite persistence. |
 | Editor and debug tools | LSP diagnostics, symbols, hover, completion, rename, semantic tokens, DAP stepping, watch mode, and trace/profile reports. |
 
 ## Works with limits
@@ -65,7 +66,7 @@ service parity.
 | Visualforce controller helpers | PageReference, messages, current page, and controller test helpers are modeled for controller tests. Glade does not render full Visualforce pages. |
 | Search and SOSL helpers | Local deterministic test paths exist. Full Salesforce search ranking and index behavior are not modeled. |
 | Test helpers | Many common `Test.*` paths work. Service-dependent helpers and org-global behavior remain explicit gaps. |
-| Local test harness and request context | Request/UIRequest context, install/uninstall hooks, sandbox post-copy helpers, scheduled Apex, QuickAction DTOs, BusinessHours week schedules, and approval result shapes have deterministic local models. Live hosted engines are not contacted. |
+| Local test harness and request context | Request/UIRequest context, install/uninstall hooks, sandbox post-copy helpers, scheduled Apex, QuickAction DTOs, BusinessHours week schedules, approval result shapes, and TrailblazerIdentity helper calls have deterministic local models. Live hosted engines are not contacted. |
 
 ## Not supported today
 
@@ -74,16 +75,16 @@ This is the smaller list a first user should check before betting on Glade.
 | Area | Why it is outside the current local contract |
 | --- | --- |
 | Live Salesforce auth and sessions | The local server exposes local stubs. It does not implement real Salesforce OAuth, session validation, or org identity services. |
-| Fenced live service APIs | Trailblazer identity, Answers, and password reset services require Salesforce-hosted engines. |
+| Fenced live service APIs | Answers zone search, password reset output, live identity/admin mutation, and hosted process/service engines require Salesforce-hosted data or execution. |
 | Full Visualforce rendering | Controller logic is the supported path. Component rendering, page lifecycle, `getContent`, and PDF generation remain outside the current runtime. |
-| Broad REST and Tooling API parity | The local API server covers the checked local baseline. Bulk API, Composite Graph, Streaming/PubSub, GraphQL, layout metadata, and broad Tooling object coverage remain future work. |
+| Broad REST and Tooling API parity | The local API server covers the checked local baseline. Bulk API, Composite Batch/Graph, Streaming/PubSub, GraphQL, layout/default-value metadata, metadata deploy/retrieve jobs, and live org-only Tooling surfaces remain future work. |
 | Live outbound side effects | Real callouts, delivered email, push notifications, and external service mutations are not performed. Tests should use local mocks and result objects. |
 | Exact Salesforce governor accounting | Glade tracks deterministic local limits. Salesforce's full production accounting and every platform-specific counter are not complete. |
 
 Example diagnostic:
 
 ```text
-UnsupportedFeature: Approval.process is not supported by Glade's local runtime.
+UnsupportedFeature: unsupported call "Answers.findSimilar local Answers zone search surface"
 ```
 
 ## Area Detail
@@ -92,9 +93,9 @@ UnsupportedFeature: Approval.process is not supported by Glade's local runtime.
 | --- | --- | --- |
 | Apex front end | <span class="docs-status-chip docs-status-supported">Works well</span> | Parser, project loader, symbols, semantic checks, LSP, and diagnostics form the front door. |
 | Runtime and tests | <span class="docs-status-chip docs-status-supported">Works well</span> | VM execution, local tests, SObjects, SOQL, DML, triggers, async drain, and local storage are the core contract. |
-| Local Salesforce API | <span class="docs-status-chip docs-status-supported">Works well</span> | Useful for local REST and Tooling `executeAnonymous` flows. It is not a hosted-org replacement. |
+| Local Salesforce API | <span class="docs-status-chip docs-status-supported">Works well</span> | Useful for local REST, SObject CRUD/query, record count, Tooling `executeAnonymous`, and local source/schema metadata flows. It is not a hosted-org replacement. |
 | Standard library | <span class="docs-status-chip docs-status-partial">Works with limits</span> | Broad local support, with exact method status in the checked ledger. |
-| Platform service APIs | <span class="docs-status-chip docs-status-unsupported">Not supported by default</span> | Service-backed rows should fail with explicit unsupported diagnostics unless the ledger says otherwise. |
+| Platform service APIs | <span class="docs-status-chip docs-status-partial">Works with limits</span> | Deterministic DTO and harness rows are modeled when the ledger says so. Hosted service execution stays explicit unsupported. |
 
 ## Standard Library Families
 
@@ -114,15 +115,33 @@ state.
 | HTTP and WebServiceCallout | Works with limits | 1 supported, 4 partial / 5 tracked |
 | Messaging | Works with limits | 1 supported, 4 partial / 5 tracked |
 | Search and SOSL helpers | Works with limits | 11 partial / 11 tracked |
-| UserInfo, URL, and Label | Wide local support | 21 supported / 21 tracked |
+| UserInfo, URL, Label, and TrailblazerIdentity | Wide local support | 24 supported / 24 tracked |
 | Type, FeatureManagement, and Exception | Works with limits | 6 supported, 2 partial / 8 tracked |
 | Local test harness and request context | Works with limits | 13 supported, 17 partial / 30 tracked |
-| Fenced live service APIs | Not supported | 5 unsupported / 5 tracked |
+| Fenced live service APIs | Not supported | 2 unsupported / 2 tracked |
 
 The local test harness and request-context group includes Approval,
 BusinessHours, QuickAction, Request, UIRequest, Sandbox, Schedulable, and
-AccessLevel edge rows. The fenced live-service group includes Answers,
-ResetPasswordResult, and TrailblazerIdentity rows.
+AccessLevel edge rows. The fenced live-service group includes Answers and
+ResetPasswordResult rows.
+
+## Current Surface Landscape
+
+The maintainer surface refresh separates product support from generated shape,
+passive DTOs, stub/no-op rows, and explicit unsupported fences. In the current
+checked landscape it reports:
+
+| Bucket | Rows |
+| --- | ---: |
+| Implemented | 130266 |
+| Partial | 1 |
+| Passive shape | 47494 |
+| Stub/no-op | 262 |
+| Explicit unsupported | 6338 |
+| Missing shape gaps | 0 |
+| Missing behavior gaps | 0 |
+| Missing evidence gaps | 0 |
+| Failure rows | 0 |
 
 ## Drill Down
 

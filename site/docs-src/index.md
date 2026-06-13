@@ -188,8 +188,13 @@ head:
           </tr>
           <tr>
             <td data-label="Capability">SOQL query</td>
-            <td data-label="Local support"><span class="home-status home-status-partial"><span class="home-status-dot"></span>partial</span></td>
-            <td data-label="Boundary">supported subset</td>
+            <td data-label="Local support"><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
+            <td data-label="Boundary">local data model</td>
+          </tr>
+          <tr>
+            <td data-label="Capability">Local API server</td>
+            <td data-label="Local support"><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
+            <td data-label="Boundary">REST and Tooling baseline</td>
           </tr>
           <tr>
             <td data-label="Capability">Debug-log profiling</td>

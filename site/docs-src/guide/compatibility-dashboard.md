@@ -18,6 +18,22 @@ The checked dashboard in this repository state reports:
 | Required supported capabilities | 21 |
 | Tracked post-MVP partial capabilities | 9 |
 
+## Current Surface Landscape
+
+The current maintainer surface refresh reports zero gaps and zero failure rows.
+
+| Measure | Value |
+| --- | ---: |
+| Implemented rows | 130266 |
+| Partial rows | 1 |
+| Passive shape rows | 47494 |
+| Stub/no-op rows | 262 |
+| Explicit unsupported rows | 6338 |
+| Missing shape gaps | 0 |
+| Missing behavior gaps | 0 |
+| Missing evidence gaps | 0 |
+| Failure rows | 0 |
+
 ## Report Set
 
 | Report | Use |

@@ -64,10 +64,10 @@ and composed by the CLI.
   analyzer, trace model, and test-selection graph. They do not regenerate
   support ledgers or compatibility dashboards.
 - `internal/server`: Salesforce-shaped HTTP handler for supported SObject CRUD,
-  query/queryAll, describe/recent, limits, identity/userinfo stubs, Tooling
-  `executeAnonymous`, composite sObject insert, fixture/scoped reset endpoints,
-  stable unsupported Apex REST dispatch errors, and optional SQLite-backed
-  persistence.
+  query/queryAll, describe/recent, limits and record counts, identity/userinfo
+  stubs, Tooling `executeAnonymous`, local Tooling source/schema metadata reads,
+  composite sObject insert, fixture/scoped reset endpoints, stable unsupported
+  Apex REST dispatch errors, and optional SQLite-backed persistence.
 - Maintenance scanners, compatibility fixtures, capability catalogs, advisory
   performance scans, docs inventory, and surface ledgers ship as plugins.
   Salesforce docs inventory extraction lives in the compat plugin because it

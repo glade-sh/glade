@@ -22,6 +22,7 @@ const playground = await readFile(new URL("../docs-src/guide/playground.md", imp
 const testerFieldGuide = await readFile(new URL("../docs-src/guide/tester-field-guide.md", import.meta.url), "utf8");
 const editor = await readFile(new URL("../docs-src/guide/editor.md", import.meta.url), "utf8");
 const supportMap = await readFile(new URL("../docs-src/guide/support-map.md", import.meta.url), "utf8");
+const localApiServer = await readFile(new URL("../docs-src/guide/local-api-server.md", import.meta.url), "utf8");
 const enterpriseWorkflows = await readFile(new URL("../docs-src/guide/enterprise-workflows.md", import.meta.url), "utf8");
 const compatibilityDashboard = await readFile(new URL("../docs-src/guide/compatibility-dashboard.md", import.meta.url), "utf8");
 const plugins = await readFile(new URL("../docs-src/guide/plugins.md", import.meta.url), "utf8");
@@ -215,7 +216,8 @@ test("home page balances a modern product demo with honest proof", () => {
   assert.match(index, /Apex source checks[\s\S]*supported locally[\s\S]*project files/);
   assert.match(index, /Anonymous Apex[\s\S]*supported locally[\s\S]*local state/);
   assert.match(index, /Org-specific metadata[\s\S]*requires config[\s\S]*supply local metadata/);
-  assert.match(index, /SOQL query[\s\S]*partial[\s\S]*supported subset/);
+  assert.match(index, /SOQL query[\s\S]*supported locally[\s\S]*local data model/);
+  assert.match(index, /Local API server[\s\S]*supported locally[\s\S]*REST and Tooling baseline/);
   assert.match(index, /Live org services[\s\S]*requires org[\s\S]*not emulated/);
   assert.match(index, /Unsupported platform APIs[\s\S]*unsupported[\s\S]*surfaced visibly/);
   assert.match(index, /Run this workflow locally\./);
@@ -638,9 +640,15 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(supportMap, /Counts come from the checked standard library coverage report/);
   assert.match(supportMap, /\| String, Decimal, Boolean, Math \| Wide local support \| 29 supported, 3 partial \/ 32 tracked \|/);
   assert.match(supportMap, /\| ApexPages and PageReference \| Wide controller support \| 13 supported, 2 partial \/ 15 tracked \|/);
-  assert.match(supportMap, /\| UserInfo, URL, and Label \| Wide local support \| 21 supported \/ 21 tracked \|/);
+  assert.match(supportMap, /\| UserInfo, URL, Label, and TrailblazerIdentity \| Wide local support \| 24 supported \/ 24 tracked \|/);
   assert.match(supportMap, /\| Type, FeatureManagement, and Exception \| Works with limits \| 6 supported, 2 partial \/ 8 tracked \|/);
-  assert.match(supportMap, /\| Fenced live service APIs \| Not supported \| 5 unsupported \/ 5 tracked \|/);
+  assert.match(supportMap, /\| Fenced live service APIs \| Not supported \| 2 unsupported \/ 2 tracked \|/);
+  assert.match(supportMap, /## Current Surface Landscape/);
+  assert.match(supportMap, /\| Implemented \| 130266 \|/);
+  assert.match(supportMap, /\| Explicit unsupported \| 6338 \|/);
+  assert.match(supportMap, /\| Missing shape gaps \| 0 \|/);
+  assert.match(supportMap, /\| Failure rows \| 0 \|/);
+  assert.doesNotMatch(supportMap, /Approval\.process is not supported/);
   assert.match(installation, /Recommended path: use the one-line installer/);
   assert.match(installation, /class="docs-install-grid"/);
   assert.match(installation, /glade test --project \. --class AccountServiceTest --method testCreatesAccount --json/);
@@ -657,6 +665,16 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(compatibilityDashboard, /\| Required incomplete \| 0 \|/);
   assert.match(compatibilityDashboard, /\| Required supported capabilities \| 21 \|/);
   assert.match(compatibilityDashboard, /\| Tracked post-MVP partial capabilities \| 9 \|/);
+  assert.match(compatibilityDashboard, /## Current Surface Landscape/);
+  assert.match(compatibilityDashboard, /\| Implemented rows \| 130266 \|/);
+  assert.match(compatibilityDashboard, /\| Explicit unsupported rows \| 6338 \|/);
+  assert.match(compatibilityDashboard, /\| Failure rows \| 0 \|/);
+  assert.match(localApiServer, /^# Run a Local Salesforce-Shaped API/m);
+  assert.match(localApiServer, /record counts/);
+  assert.match(localApiServer, /Tooling source metadata/);
+  assert.match(localApiServer, /Tooling schema metadata/);
+  assert.match(localApiServer, /Composite sObject insert/);
+  assert.match(localApiServer, /limits\/recordCount\?sObjects=Account/);
 });
 
 test("enterprise workflow docs expose current report commands", () => {

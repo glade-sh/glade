@@ -35,10 +35,15 @@ glade db inspect --db .glade/local-org.sqlite --json
 
 ## REST surface
 
-The server exposes a Salesforce-shaped baseline for local work: API discovery, object describe and CRUD-style record operations, SOQL query execution, and execute-anonymous routes where supported by the runtime.
+The server exposes a Salesforce-shaped baseline for local work: API discovery,
+object describe and CRUD-style record operations, SOQL query execution, limits
+and record counts, source-backed Tooling metadata reads, virtual schema metadata
+queries, Composite sObject inserts, and execute-anonymous routes where supported
+by the runtime.
 
 Check the [Support map](/guide/support-map) before relying on full auth,
-Bulk API, Streaming, Pub/Sub, GraphQL, or broad Tooling API parity.
+Bulk API, Streaming, Pub/Sub, GraphQL, metadata deploy/retrieve jobs, or
+Tooling surfaces outside the checked local source/schema metadata baseline.
 
 | Area | Endpoint shape | Status |
 | --- | --- | --- |
@@ -46,7 +51,12 @@ Bulk API, Streaming, Pub/Sub, GraphQL, or broad Tooling API parity.
 | Describe | `/services/data/vXX.X/sobjects/<Object>/describe` | supported baseline |
 | Query | `/services/data/vXX.X/query?q=...` | supported baseline |
 | SObject CRUD | `/services/data/vXX.X/sobjects/<Object>/<Id>` | supported baseline |
+| Record counts | `/services/data/vXX.X/limits/recordCount?sObjects=Account,Contact` | supported baseline |
 | Execute Anonymous | Tooling executeAnonymous route | supported where runtime supports code |
+| Tooling source metadata | Tooling `ApexClass`, `ApexTrigger`, `ApexPage`, `ApexComponent`, `StaticResource`, `CustomObject`, `CustomField`, `Layout`, `CompactLayout`, `RecordType`, and `ValidationRule` query/read paths | supported local baseline |
+| Tooling schema metadata | Tooling `EntityDefinition`, `EntityParticle`, `FieldDefinition`, and `RelationshipDomain` query paths | supported local baseline |
+| Composite sObject insert | `/services/data/vXX.X/composite/sobjects` | supported baseline |
+| Glade reset endpoints | `/services/data/vXX.X/glade/reset` and scoped reset routes | supported local-only baseline |
 
 Example request:
 
@@ -54,6 +64,7 @@ Example request:
 curl -s http://127.0.0.1:8080/services/data/
 curl -s http://127.0.0.1:8080/services/data/v60.0/sobjects/Account/describe
 curl -s 'http://127.0.0.1:8080/services/data/v60.0/query?q=SELECT+Id,Name+FROM+Account'
+curl -s 'http://127.0.0.1:8080/services/data/v60.0/limits/recordCount?sObjects=Account'
 ```
 
 Example query response:
