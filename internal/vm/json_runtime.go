@@ -522,6 +522,36 @@ func jsonObjectMap(raw any) (map[string]any, bool) {
 	return fields, true
 }
 
+func jsonObjectFields(raw any) ([]orderedJSONField, bool) {
+	if object, ok := raw.(orderedJSONObject); ok {
+		out := make([]orderedJSONField, 0, len(object))
+		positions := make(map[string]int, len(object))
+		for _, field := range object {
+			if index, ok := positions[field.name]; ok {
+				out[index].value = field.value
+				continue
+			}
+			positions[field.name] = len(out)
+			out = append(out, field)
+		}
+		return out, true
+	}
+	fields, ok := raw.(map[string]any)
+	if !ok {
+		return nil, false
+	}
+	keys := make([]string, 0, len(fields))
+	for key := range fields {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	out := make([]orderedJSONField, 0, len(keys))
+	for _, key := range keys {
+		out = append(out, orderedJSONField{name: key, value: fields[key]})
+	}
+	return out, true
+}
+
 func jsonMapHasAnyNamedKey(value Value, names []string) bool {
 	for _, name := range names {
 		if _, ok := value.Map[mapKey(String(name))]; ok {
@@ -594,24 +624,74 @@ func (vm *VM) getterOwner(typeName string, field Field) string {
 func decodeJSONValue(text string) (any, error) {
 	decoder := json.NewDecoder(strings.NewReader(text))
 	decoder.UseNumber()
-	var decoded any
-	if err := decoder.Decode(&decoded); err != nil {
+	return decodeJSONToken(decoder, text)
+}
+
+func decodeJSONToken(decoder *json.Decoder, source string) (any, error) {
+	token, err := decoder.Token()
+	if err != nil {
 		return nil, err
 	}
-	return decoded, nil
+	switch value := token.(type) {
+	case json.Delim:
+		switch value {
+		case '{':
+			out := orderedJSONObject{}
+			for decoder.More() {
+				keyToken, err := decoder.Token()
+				if err != nil {
+					return nil, err
+				}
+				key, ok := keyToken.(string)
+				if !ok {
+					return nil, fmt.Errorf("expected object field name")
+				}
+				item, err := decodeJSONToken(decoder, source)
+				if err != nil {
+					return nil, err
+				}
+				out = append(out, orderedJSONField{name: key, value: item})
+			}
+			if end, err := decoder.Token(); err != nil {
+				return nil, err
+			} else if end != json.Delim('}') {
+				return nil, fmt.Errorf("expected object end")
+			}
+			return out, nil
+		case '[':
+			out := []any{}
+			for decoder.More() {
+				item, err := decodeJSONToken(decoder, source)
+				if err != nil {
+					return nil, err
+				}
+				out = append(out, item)
+			}
+			if end, err := decoder.Token(); err != nil {
+				return nil, err
+			} else if end != json.Delim(']') {
+				return nil, fmt.Errorf("expected array end")
+			}
+			return out, nil
+		default:
+			return nil, fmt.Errorf("unexpected JSON delimiter %q", value)
+		}
+	default:
+		return value, nil
+	}
 }
 
 func decodeJSONUntypedValue(text string) (Value, error) {
 	decoder := json.NewDecoder(strings.NewReader(text))
 	decoder.UseNumber()
-	value, err := decodeJSONUntypedToken(decoder)
+	value, err := decodeJSONUntypedToken(decoder, text)
 	if err != nil {
 		return Null, err
 	}
 	return value, nil
 }
 
-func decodeJSONUntypedToken(decoder *json.Decoder) (Value, error) {
+func decodeJSONUntypedToken(decoder *json.Decoder, source string) (Value, error) {
 	token, err := decoder.Token()
 	if err != nil {
 		return Null, err
@@ -630,14 +710,16 @@ func decodeJSONUntypedToken(decoder *json.Decoder) (Value, error) {
 				if !ok {
 					return Null, fmt.Errorf("expected object field name")
 				}
-				item, err := decodeJSONUntypedToken(decoder)
+				item, err := decodeJSONUntypedToken(decoder, source)
 				if err != nil {
 					return Null, err
 				}
 				encoded := mapKey(String(key))
+				if _, exists := out.Map[encoded]; !exists {
+					out.MapOrder = append(out.MapOrder, encoded)
+				}
 				out.Map[encoded] = item
 				out.MapKeys[encoded] = String(key)
-				out.MapOrder = append(out.MapOrder, encoded)
 			}
 			if end, err := decoder.Token(); err != nil {
 				return Null, err
@@ -648,7 +730,7 @@ func decodeJSONUntypedToken(decoder *json.Decoder) (Value, error) {
 		case '[':
 			out := List()
 			for decoder.More() {
-				item, err := decodeJSONUntypedToken(decoder)
+				item, err := decodeJSONUntypedToken(decoder, source)
 				if err != nil {
 					return Null, err
 				}
@@ -673,6 +755,10 @@ func decodeJSONUntypedToken(decoder *json.Decoder) (Value, error) {
 		if integer, err := strconv.ParseInt(value.String(), 10, 64); err == nil {
 			return Int(integer), nil
 		}
+		if !strings.ContainsAny(value.String(), ".eE") {
+			line, column := jsonNumberStartLineColumn(source, decoder.InputOffset(), value.String())
+			return Null, &jsonNumberInputError{text: value.String(), line: line, column: column}
+		}
 		decimal, err := strconv.ParseFloat(value.String(), 64)
 		if err != nil {
 			return Null, err
@@ -685,12 +771,38 @@ func decodeJSONUntypedToken(decoder *json.Decoder) (Value, error) {
 	}
 }
 
-func decodeJSONValueForDeserialize(text string, strict bool) (any, error) {
-	if strict {
-		if err := validateJSONNoDuplicateObjectFields(text); err != nil {
-			return nil, normalizeJSONDeserializeError(err)
-		}
+type jsonNumberInputError struct {
+	text   string
+	line   int
+	column int
+}
+
+func (err *jsonNumberInputError) Error() string {
+	return fmt.Sprintf("For input string: %q at [line:%d, column:%d]", err.text, err.line, err.column)
+}
+
+func jsonNumberStartLineColumn(source string, endOffset int64, number string) (int, int) {
+	start := int(endOffset) - len(number)
+	if start < 0 {
+		start = 0
 	}
+	line := 1
+	column := 1
+	for i, r := range source {
+		if i >= start {
+			break
+		}
+		if r == '\n' {
+			line++
+			column = 1
+			continue
+		}
+		column++
+	}
+	return line, column
+}
+
+func decodeJSONValueForDeserialize(text string, strict bool) (any, error) {
 	decoded, err := decodeJSONValue(text)
 	if err != nil {
 		if strings.Contains(err.Error(), "unexpected EOF") && strings.HasPrefix(strings.TrimSpace(text), `"`) {
@@ -829,9 +941,12 @@ func valueFromJSON(raw any) Value {
 	case orderedJSONObject:
 		out := Map()
 		for _, field := range v {
-			out.Map[mapKey(String(field.name))] = valueFromJSON(field.value)
-			out.MapKeys[mapKey(String(field.name))] = String(field.name)
-			out.MapOrder = append(out.MapOrder, mapKey(String(field.name)))
+			encoded := mapKey(String(field.name))
+			if _, exists := out.Map[encoded]; !exists {
+				out.MapOrder = append(out.MapOrder, encoded)
+			}
+			out.Map[encoded] = valueFromJSON(field.value)
+			out.MapKeys[encoded] = String(field.name)
 		}
 		return out
 	default:
@@ -885,7 +1000,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		return out, nil
 	}
 	if isMapType(typeName) {
-		fields, ok := jsonObjectMap(raw)
+		_, ok := jsonObjectMap(raw)
 		if !ok {
 			return Null, jsonTypeMappingError(typeName, raw)
 		}
@@ -895,16 +1010,20 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		}
 		out := Map()
 		out.Type = typeName
-		for key, item := range fields {
-			keyValue, err := vm.typedJSONMapKey(keyType, key)
+		orderedFields, _ := jsonObjectFields(raw)
+		for _, field := range orderedFields {
+			keyValue, err := vm.typedJSONMapKey(keyType, field.name)
 			if err != nil {
 				return Null, err
 			}
-			value, err := vm.typedValueFromJSON(valueType, item, strict)
+			value, err := vm.typedValueFromJSON(valueType, field.value, strict)
 			if err != nil {
 				return Null, err
 			}
-			encodedKey := mapKey(keyValue)
+			encodedKey := vm.mapKey(keyValue)
+			if _, exists := out.Map[encodedKey]; !exists {
+				out.MapOrder = append(out.MapOrder, encodedKey)
+			}
 			out.Map[encodedKey] = value
 			out.MapKeys[encodedKey] = keyValue
 		}
@@ -942,6 +1061,9 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 					continue
 				}
 				if !jsonAllowedFieldContains(allowed, key) && !vm.jsonStrictAllowsRelationshipPayload(typeName, key, fields[key]) {
+					if typedObjectIsSObject && len(fields) == 1 {
+						return Null, newExceptionError("JSONException", fmt.Sprintf("No such column '%s' on sobject of type %s", key, typeName))
+					}
 					return Null, newExceptionError("JSONException", fmt.Sprintf("JSON.deserializeStrict found unknown field %q for %s", key, typeName))
 				}
 			}
@@ -1191,7 +1313,7 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 		return Null, jsonTypeMappingError("sObject", raw)
 	}
 	typeName := "sObject"
-	if attrs, ok := fields["attributes"].(map[string]any); ok {
+	if attrs, ok := jsonObjectMap(fields["attributes"]); ok {
 		if rawType, ok := attrs["type"].(string); ok && strings.TrimSpace(rawType) != "" {
 			typeName = strings.TrimSpace(rawType)
 		}
@@ -2036,6 +2158,11 @@ func jsonTypeMappingError(typeName string, raw any) error {
 	return jsonDeserializeException("JSON.deserialize cannot map JSON %s to %s", jsonRawKind(raw), typeName)
 }
 func jsonDeserializeException(format string, args ...any) error {
+	if format == "JSON.deserializeUntyped invalid JSON input: %v" && len(args) == 1 {
+		if err, ok := args[0].(*jsonNumberInputError); ok {
+			return newExceptionError("JSONException", err.Error())
+		}
+	}
 	return newExceptionError("JSONException", fmt.Sprintf(format, args...))
 }
 func jsonRawKind(raw any) string {
@@ -2050,7 +2177,7 @@ func jsonRawKind(raw any) string {
 		return "String"
 	case []any:
 		return "array"
-	case map[string]any:
+	case map[string]any, orderedJSONObject:
 		return "object"
 	default:
 		return fmt.Sprintf("%T", raw)

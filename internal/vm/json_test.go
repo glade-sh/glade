@@ -2206,9 +2206,10 @@ System.assertEquals('Test School', records[0].SchoolName__c);
 	}
 }
 
-func TestExecJSONDeserializeStrictRejectsDuplicateFields(t *testing.T) {
+func TestExecJSONDeserializeStrictAllowsDuplicateSObjectFields(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account decoded = JSON.deserializeStrict('{"Name":"First","Name":"Second"}', Account.class);
+System.assertEquals('Second', decoded.Name);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2216,8 +2217,8 @@ Account decoded = JSON.deserializeStrict('{"Name":"First","Name":"Second"}', Acc
 	machine := New(nil)
 	org := testDataOrg()
 	machine.SetOrg(&org)
-	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), `duplicate field "Name"`) {
-		t.Fatalf("err = %v", err)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -2369,12 +2370,11 @@ Object value = JSON.deserialize('{"Name":"Acme"}', UnknownJsonShape.class);
 
 func TestExecJSONDeserializeUntypedEdgesAndCatchableMalformedInput(t *testing.T) {
 	program, err := CompileAnonymous(`
-Object root = JSON.deserializeUntyped('{"name":"Acme","ok":true,"missing":null,"whole":12,"big":9223372036854775808,"ratio":1.25,"items":[1,"two",false,{"inner":null}]}');
+Object root = JSON.deserializeUntyped('{"name":"Acme","ok":true,"missing":null,"whole":12,"ratio":1.25,"items":[1,"two",false,{"inner":null}]}');
 System.assertEquals('Acme', root.get('name'));
 System.assertEquals(true, root.get('ok'));
 System.assertEquals(null, root.get('missing'));
 System.assertEquals(12, root.get('whole'));
-System.assertEquals(9223372036854775808.0, root.get('big'));
 System.assertEquals(1.25, root.get('ratio'));
 Object items = root.get('items');
 System.assertEquals(4, items.size());
@@ -2397,6 +2397,68 @@ System.assert(caught.contains('JSONException:JSON.deserializeUntyped invalid JSO
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONOracleRows(t *testing.T) {
+	program, err := CompileAnonymous(`
+String caught = '';
+try {
+	JSON.deserializeUntyped('{"payload":9223372036854775808}');
+} catch (JSONException e) {
+	caught = e.getMessage();
+}
+System.assertEquals('For input string: "9223372036854775808" at [line:1, column:12]', caught);
+
+Object duplicateUntyped = JSON.deserializeUntyped('{"Name":"First","Name":"Second"}');
+System.assertEquals('{"Name":"Second"}', JSON.serialize(duplicateUntyped));
+Object duplicateObject = JSON.deserialize('{"Name":"First","Name":"Second"}', Object.class);
+System.assertEquals('{"Name":"Second"}', JSON.serialize(duplicateObject));
+
+Map<String,Object> primitive = new Map<String,Object>();
+primitive.put('n', null);
+primitive.put('a', 1);
+primitive.put('b', 2);
+System.assertEquals('{"n":null,"a":1,"b":2}', JSON.serialize(primitive));
+String expectedPretty = '{' + '\n' +
+	'  "n" : null,' + '\n' +
+	'  "a" : 1,' + '\n' +
+	'  "b" : 2' + '\n' +
+	'}';
+System.assertEquals(expectedPretty, JSON.serializePretty(primitive));
+
+Map<String,Integer> stringKeys = (Map<String,Integer>)JSON.deserialize('{"b":null,"a":1}', Map<String,Integer>.class);
+System.assertEquals('{"b":null,"a":1}', JSON.serialize(stringKeys));
+Map<String,Integer> duplicateTypedMap = (Map<String,Integer>)JSON.deserialize('{"a":"bad","a":1}', Map<String,Integer>.class);
+System.assertEquals('{"a":1}', JSON.serialize(duplicateTypedMap));
+
+Map<Id,String> idKeys = (Map<Id,String>)JSON.deserialize('{"001B000001DVM9tIAH":"Acme"}', Map<Id,String>.class);
+System.assertEquals('{"001B000001DVM9tIAH":"Acme"}', JSON.serialize(idKeys));
+
+caught = '';
+try {
+	Integer wrongShape = (Integer)JSON.deserialize('{"a":1}', Integer.class);
+} catch (JSONException e) {
+	caught = e.getMessage();
+}
+System.assertEquals('JSON.deserialize cannot map JSON object to Integer', caught);
+
+caught = '';
+try {
+	Account unknownField = JSON.deserializeStrict('{"NoSuchField__c":"x"}', Account.class);
+} catch (JSONException e) {
+	caught = e.getMessage();
+}
+System.assertEquals('No such column \'NoSuchField__c\' on sobject of type Account', caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -2487,7 +2549,7 @@ try {
 } catch (JSONException e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
 }
-System.assert(caught.contains('JSONException:JSON.deserializeStrict found duplicate field "Name"'), caught);
+System.assertEquals('', caught);
 `)
 	if err != nil {
 		t.Fatal(err)

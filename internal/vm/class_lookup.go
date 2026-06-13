@@ -292,6 +292,9 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 		return Null
 	}
 	if namespace != "" {
+		if resolved, ok := generatedPlatformTypeForName(namespace, name); ok {
+			return platformScalar("Type", resolved)
+		}
 		for _, candidate := range namespaceTypeNameCandidates(namespace, name) {
 			if class, ok := vm.lookupClass(candidate); ok {
 				return platformScalar("Type", typeForNameClassToken(namespace, class))
@@ -320,6 +323,32 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 		return platformScalar("Type", name)
 	}
 	return Null
+}
+func generatedPlatformTypeForName(namespace, name string) (string, bool) {
+	name = strings.TrimSpace(name)
+	namespace = strings.TrimSpace(namespace)
+	if name == "" {
+		return "", false
+	}
+	candidates := []string{name}
+	if namespace != "" {
+		qualifiedName := name
+		if prefix, rest, ok := strings.Cut(name, "."); !ok || !strings.EqualFold(prefix, namespace) {
+			qualifiedName = namespace + "." + name
+		} else {
+			qualifiedName = namespace + "." + rest
+		}
+		candidates = append([]string{qualifiedName}, candidates...)
+	}
+	for _, candidate := range candidates {
+		if generated, ok := generatedPlatformTypes()[strings.ToLower(candidate)]; ok {
+			return generated.Name, true
+		}
+		if alias, ok := platformShortTypeAlias(candidate); ok {
+			return alias, true
+		}
+	}
+	return "", false
 }
 func typeForNameClassVisible(class Class) bool {
 	if !class.IsTest || strings.Contains(class.Name, ".") {
@@ -414,6 +443,9 @@ func (vm *VM) resolveTypeNameToken(name string) (string, bool) {
 		if canonical, ok := vm.resolveObjectName(name); ok {
 			return canonical, true
 		}
+	}
+	if resolved, ok := generatedPlatformTypeForName("", name); ok {
+		return resolved, true
 	}
 	if isBuiltinTypeName(name) || isCommonSObjectTypeName(name) {
 		return name, true

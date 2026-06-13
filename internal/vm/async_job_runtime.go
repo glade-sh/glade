@@ -116,16 +116,24 @@ func (vm *VM) drainTestWork(result *Result) error {
 	return fmt.Errorf("Test.stopTest async/event drain exceeded %d iterations", maxLoopIterations)
 }
 func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
-	if len(args) == 2 {
-		if args[1].Kind != ValueObject || !strings.EqualFold(args[1].Type, "AsyncOptions") {
-			return Null, fmt.Errorf("System.enqueueJob options expects AsyncOptions")
-		}
-	}
 	if len(args) < 1 || len(args) > 2 {
-		return Null, fmt.Errorf("System.enqueueJob expects Queueable[, AsyncOptions]")
+		return Null, fmt.Errorf("System.enqueueJob expects Queueable[, Integer|AsyncOptions]")
 	}
 	if args[0].Kind != ValueObject {
 		return Null, fmt.Errorf("System.enqueueJob expects Queueable object")
+	}
+	delayMinutes := 0
+	if len(args) == 2 {
+		switch {
+		case args[1].Kind == ValueInt:
+			delayMinutes = int(args[1].Int)
+		case args[1].Kind == ValueObject && strings.EqualFold(args[1].Type, "AsyncOptions"):
+			if delay, ok := asyncOptionsInt(args[1], "minimumQueueableDelayInMinutes"); ok {
+				delayMinutes = delay
+			}
+		default:
+			return Null, fmt.Errorf("System.enqueueJob options expects Integer or AsyncOptions")
+		}
 	}
 	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
 		return Null, err
@@ -138,14 +146,14 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 		return Null, fmt.Errorf("Queueable chaining limit exceeded")
 	}
 	vm.markAsyncChainEnqueued()
-	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "Queueable", Object: cloneValue(args[0])}
+	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "Queueable", Object: cloneValue(args[0]), QueueableDelayMinutes: delayMinutes}
 	if vm.currentAsyncKind == "Queueable" {
 		job.QueueableDepth = vm.currentQueueableDepth + 1
 		job.QueueableMaxDepth = vm.currentQueueableMaxDepth
 	} else {
 		job.QueueableDepth = 1
 	}
-	if len(args) == 2 {
+	if len(args) == 2 && args[1].Kind == ValueObject {
 		if maxDepth, ok := asyncOptionsInt(args[1], "maximumQueueableStackDepth"); ok {
 			job.QueueableMaxDepth = maxDepth
 		}
@@ -860,16 +868,19 @@ func (vm *VM) withQueueableJob(job AsyncJob, run func() (Value, error)) (Value, 
 	previousKind := vm.currentAsyncKind
 	previousDepth := vm.currentQueueableDepth
 	previousMaxDepth := vm.currentQueueableMaxDepth
+	previousDelay := vm.currentQueueableDelay
 	vm.currentAsyncKind = "Queueable"
 	vm.currentQueueableDepth = job.QueueableDepth
 	if vm.currentQueueableDepth <= 0 {
 		vm.currentQueueableDepth = 1
 	}
 	vm.currentQueueableMaxDepth = job.QueueableMaxDepth
+	vm.currentQueueableDelay = job.QueueableDelayMinutes
 	defer func() {
 		vm.currentAsyncKind = previousKind
 		vm.currentQueueableDepth = previousDepth
 		vm.currentQueueableMaxDepth = previousMaxDepth
+		vm.currentQueueableDelay = previousDelay
 	}()
 	return run()
 }

@@ -171,7 +171,7 @@ func dataWeaveJSONObjects(decoded any, typeName string) Value {
 	out := List()
 	out.Type = "List<" + typeName + ">"
 	for _, item := range items {
-		if fields, ok := item.(map[string]any); ok {
+		if fields, ok := jsonObjectMap(item); ok {
 			record := Object(typeName)
 			for key, raw := range fields {
 				if strings.EqualFold(key, "attributes") {
@@ -324,7 +324,7 @@ func dataWeaveReservedApexKeywords(payload string) Value {
 	}
 	out := List()
 	for _, item := range items {
-		fields, ok := item.(map[string]any)
+		fields, ok := jsonObjectMap(item)
 		if !ok {
 			continue
 		}
@@ -350,7 +350,7 @@ func dataWeaveLogFilter(payload string) Value {
 	}
 	out := List()
 	for _, item := range items {
-		fields, ok := item.(map[string]any)
+		fields, ok := jsonObjectMap(item)
 		if !ok {
 			continue
 		}
@@ -400,19 +400,19 @@ func dataWeaveMultipleInputsXML(inputs Value) Value {
 		return String("")
 	}
 	products, _ := productsRaw.([]any)
-	attributes, _ := attributesRaw.(map[string]any)
-	exchangeRates, _ := exchangeRatesRaw.(map[string]any)
+	attributes, _ := jsonObjectMap(attributesRaw)
+	exchangeRates, _ := jsonObjectMap(exchangeRatesRaw)
 	publishedAfter := dataWeaveJSONNumber(attributes["publishedAfter"])
 	rates := dataWeaveJSONList(exchangeRates["USD"])
 
 	var b strings.Builder
 	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?><books>`)
 	for _, rawProduct := range products {
-		product, ok := rawProduct.(map[string]any)
+		product, ok := jsonObjectMap(rawProduct)
 		if !ok {
 			continue
 		}
-		properties, _ := product["properties"].(map[string]any)
+		properties, _ := jsonObjectMap(product["properties"])
 		year := dataWeaveJSONNumber(properties["year"])
 		if year <= publishedAfter {
 			continue
@@ -422,7 +422,7 @@ func dataWeaveMultipleInputsXML(inputs Value) Value {
 		b.WriteString(escapeXMLAttr(dataWeaveFormatJSONNumber(year)))
 		b.WriteString(`">`)
 		for _, rawRate := range rates {
-			rate, ok := rawRate.(map[string]any)
+			rate, ok := jsonObjectMap(rawRate)
 			if !ok {
 				continue
 			}

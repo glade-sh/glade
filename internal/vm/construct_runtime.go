@@ -467,6 +467,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		options := Object("AsyncOptions")
 		options.Fields["maximumQueueableStackDepth"] = Null
+		options.Fields["minimumQueueableDelayInMinutes"] = Null
 		for field, value := range namedArgs {
 			options.Fields[field] = value
 		}

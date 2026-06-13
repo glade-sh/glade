@@ -34,6 +34,8 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
   <label>New Task</label>
   <type>Create</type>
   <targetObject>Account</targetObject>
+  <predefinedFieldValues><field>Name</field><value>Seed Account</value></predefinedFieldValues>
+  <predefinedFieldValues><field>Phone</field><value>555-0100</value></predefinedFieldValues>
 </QuickAction>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fieldSets/Summary.fieldSet-meta.xml"), `<FieldSet>
   <fullName>Summary</fullName>
@@ -117,6 +119,9 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	}
 	if len(registry.QuickActions) != 1 || registry.QuickActions[0].Name != "Account.NewTask" || registry.QuickActions[0].TargetObject != "Account" || registry.QuickActions[0].Label != "New Task" {
 		t.Fatalf("quick actions = %#v", registry.QuickActions)
+	}
+	if got := registry.QuickActions[0].PredefinedFieldValues; len(got) != 2 || got[0].Field != "Name" || got[0].Value != "Seed Account" || got[1].Field != "Phone" || got[1].Value != "555-0100" {
+		t.Fatalf("quick action defaults = %#v", got)
 	}
 	if len(registry.FieldSets) != 2 || registry.FieldSets[0].ObjectName != "Account" || registry.FieldSets[0].Name != "InlineSummary" || len(registry.FieldSets[0].Fields) != 1 || !registry.FieldSets[0].Fields[0].Required || registry.FieldSets[1].Name != "Summary" || len(registry.FieldSets[1].Fields) != 2 {
 		t.Fatalf("field sets = %#v", registry.FieldSets)

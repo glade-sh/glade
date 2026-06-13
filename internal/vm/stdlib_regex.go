@@ -2,8 +2,9 @@ package vm
 
 import (
 	"fmt"
-	"regexp"
-	"unicode/utf8"
+	"strings"
+
+	"github.com/dlclark/regexp2"
 )
 
 func callPatternMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -16,12 +17,17 @@ func callPatternMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("Pattern.matcher expects input String")
 		}
-		regexpSource, err := patternRegexpSource(receiver)
+		regexp2Source, err := patternRegexp2Source(receiver)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
 		matcher := Object("Matcher")
-		matcher.Fields["source"] = String(regexpSource)
+		if regexpSource, err := patternRegexpSource(receiver); err == nil {
+			matcher.Fields["source"] = String(regexpSource)
+		} else {
+			matcher.Fields["source"] = String(regexp2Source)
+		}
+		matcher.Fields["regexp2Source"] = String(regexp2Source)
 		matcher.Fields["patternSource"] = receiver.Fields["source"]
 		if lookaheadSource := patternLookaheadSource(receiver); lookaheadSource != "" {
 			matcher.Fields["lookaheadSource"] = String(lookaheadSource)
@@ -36,7 +42,7 @@ func callPatternMember(receiver Value, method string, args []Value) (Value, Valu
 		matcherClearMatch(matcher)
 		matcher.Fields["index"] = Int(0)
 		matcher.Fields["regionStart"] = Int(0)
-		matcher.Fields["regionEnd"] = Int(int64(utf8.RuneCountInString(args[0].Text)))
+		matcher.Fields["regionEnd"] = Int(int64(apexStringLength(args[0].Text)))
 		return matcher, receiver, false, true, nil
 	case "pattern":
 		if len(args) != 0 {
@@ -48,18 +54,7 @@ func callPatternMember(receiver Value, method string, args []Value) (Value, Valu
 		}
 		return source, receiver, false, true, nil
 	case "split":
-		if len(args) != 1 && len(args) != 2 {
-			return Null, receiver, false, true, fmt.Errorf("Pattern.split expects input String and optional Integer limit")
-		}
-		source, ok := receiver.Fields["source"]
-		if !ok || source.Kind != ValueString {
-			return Null, receiver, false, true, fmt.Errorf("Pattern missing source")
-		}
-		regexpSource, err := patternRegexpSource(receiver)
-		if err != nil {
-			return Null, receiver, false, true, err
-		}
-		parts, err := patternSplit(regexpSource, args)
+		parts, err := patternSplitValue(receiver, args)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -79,13 +74,9 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		"usePattern", "hasAnchoringBounds", "hasTransparentBounds", "useAnchoringBounds",
 		"useTransparentBounds", "hitEnd", "pattern", "requireEnd",
 	)
-	source, input, err := matcherSourceInput(receiver)
+	_, input, err := matcherSourceInput(receiver)
 	if err != nil {
 		return Null, receiver, false, true, err
-	}
-	re, err := regexp.Compile(source)
-	if err != nil {
-		return Null, receiver, false, true, fmt.Errorf("Matcher invalid regex: %w", err)
 	}
 	switch method {
 	case "matches":
@@ -96,7 +87,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		indices, err := matcherMatchIndices(receiver, source, input, region, matcherOpMatches)
+		indices, err := matcherRegexp2MatchIndices(receiver, input, region, matcherOpMatches)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -115,7 +106,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		indices, err := matcherMatchIndices(receiver, source, input, region, matcherOpLookingAt)
+		indices, err := matcherRegexp2MatchIndices(receiver, input, region, matcherOpLookingAt)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -136,11 +127,11 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		}
 		startByte := region.startByte
 		if len(args) == 1 {
-			startRune := int(args[0].Int)
-			if startRune < region.startRune || startRune > region.endRune {
+			startIndex := int(args[0].Int)
+			if startIndex < region.startIndex || startIndex > region.endIndex {
 				return Null, receiver, false, true, fmt.Errorf("Matcher.find start out of region")
 			}
-			startByte, err = byteIndexForRuneIndex(input, startRune)
+			startByte, err = byteIndexForApexStringIndex(input, startIndex)
 			if err != nil {
 				return Null, receiver, false, true, fmt.Errorf("Matcher.find %w", err)
 			}
@@ -156,7 +147,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 			receiver.Fields["index"] = Int(int64(region.endByte + 1))
 			return Bool(false), receiver, true, true, nil
 		}
-		indices, err := matcherFindIndices(receiver, re, input, region, startByte)
+		indices, err := matcherRegexp2FindIndices(receiver, input, region, startByte)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -186,7 +177,11 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.groupCount expects 0 arguments")
 		}
-		return Int(int64(re.NumSubexp())), receiver, false, true, nil
+		plan, err := matcherRegexp2PlanForInput(receiver, input)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		return Int(int64(plan.publicGroupCount())), receiver, false, true, nil
 	case "start":
 		groupIndex, err := matcherOptionalGroupIndex("Matcher.start", args)
 		if err != nil {
@@ -212,7 +207,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		replaced, err := matcherReplaceWithMetadata(receiver, "Matcher.replaceAll", re, input, region, args, true)
+		replaced, err := matcherReplaceRegexp2("Matcher.replaceAll", receiver, input, region, args, true)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -224,7 +219,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		replaced, err := matcherReplaceWithMetadata(receiver, "Matcher.replaceFirst", re, input, region, args, false)
+		replaced, err := matcherReplaceRegexp2("Matcher.replaceFirst", receiver, input, region, args, false)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -242,7 +237,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		receiver.Fields["index"] = Int(0)
 		input := receiver.Fields["input"]
 		receiver.Fields["regionStart"] = Int(0)
-		receiver.Fields["regionEnd"] = Int(int64(utf8.RuneCountInString(input.Text)))
+		receiver.Fields["regionEnd"] = Int(int64(apexStringLength(input.Text)))
 		return receiver, receiver, true, true, nil
 	case "region":
 		if len(args) != 2 || args[0].Kind != ValueInt || args[1].Kind != ValueInt {
@@ -252,7 +247,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err := validateMatcherRegion(input, start, end); err != nil {
 			return Null, receiver, false, true, err
 		}
-		startByte, _ := byteIndexForRuneIndex(input, start)
+		startByte, _ := byteIndexForApexStringIndex(input, start)
 		receiver.Fields["regionStart"] = args[0]
 		receiver.Fields["regionEnd"] = args[1]
 		matcherClearMatch(receiver)
@@ -266,7 +261,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		return Int(int64(region.startRune)), receiver, false, true, nil
+		return Int(int64(region.startIndex)), receiver, false, true, nil
 	case "regionEnd":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.regionEnd expects 0 arguments")
@@ -275,7 +270,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		return Int(int64(region.endRune)), receiver, false, true, nil
+		return Int(int64(region.endIndex)), receiver, false, true, nil
 	case "usePattern":
 		if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Pattern" {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.usePattern expects Pattern")
@@ -284,14 +279,16 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if !ok || source.Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.usePattern Pattern missing source")
 		}
-		regexpSource, err := patternRegexpSource(args[0])
+		regexp2Source, err := patternRegexp2Source(args[0])
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		if _, err := regexp.Compile(regexpSource); err != nil {
-			return Null, receiver, false, true, fmt.Errorf("Matcher.usePattern invalid regex: %w", err)
+		if regexpSource, err := patternRegexpSource(args[0]); err == nil {
+			receiver.Fields["source"] = String(regexpSource)
+		} else {
+			receiver.Fields["source"] = String(regexp2Source)
 		}
-		receiver.Fields["source"] = String(regexpSource)
+		receiver.Fields["regexp2Source"] = String(regexp2Source)
 		receiver.Fields["patternSource"] = source
 		if flags, ok := args[0].Fields["flags"]; ok {
 			receiver.Fields["flags"] = flags
@@ -350,6 +347,9 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if lookahead, ok := receiver.Fields["lookaheadSource"]; ok {
 			pattern.Fields["lookaheadSource"] = lookahead
 		}
+		if regexp2Source, ok := receiver.Fields["regexp2Source"]; ok {
+			pattern.Fields["regexp2Source"] = regexp2Source
+		}
 		if flags, ok := receiver.Fields["flags"]; ok {
 			pattern.Fields["flags"] = flags
 		}
@@ -357,4 +357,93 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+func matcherReplaceRegexp2(name string, matcher Value, input string, region matcherRegionBounds, args []Value, all bool) (string, error) {
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return "", fmt.Errorf("%s expects replacement String", name)
+	}
+	regionText := input[region.startByte:region.endByte]
+	plan, err := matcherRegexp2PlanForInput(matcher, regionText)
+	if err != nil {
+		return "", err
+	}
+	segments, err := parseJavaReplacement(name, args[0].Text, plan.publicGroupCount())
+	if err != nil {
+		return "", fmt.Errorf("%s %w", name, err)
+	}
+	regionRunes := []rune(regionText)
+	match, err := plan.findValidStartingAt(regionText, 0)
+	if err != nil {
+		return "", err
+	}
+	if match == nil {
+		return input, nil
+	}
+	var out strings.Builder
+	last := 0
+	replaced := false
+	for match != nil {
+		start := match.Index
+		end := match.Index + match.Length
+		if start < last {
+			match, err = plan.findNextValid(regionText, match)
+			if err != nil {
+				return "", err
+			}
+			continue
+		}
+		out.WriteString(string(regionRunes[last:start]))
+		out.WriteString(expandRegexp2PlanReplacement(plan, match, segments))
+		last = end
+		replaced = true
+		if !all {
+			break
+		}
+		match, err = plan.findNextValid(regionText, match)
+		if err != nil {
+			return "", err
+		}
+	}
+	if !replaced {
+		return input, nil
+	}
+	out.WriteString(string(regionRunes[last:]))
+	return input[:region.startByte] + out.String() + input[region.endByte:], nil
+}
+
+func expandRegexp2Replacement(match *regexp2.Match, segments []javaReplacementSegment) string {
+	var out strings.Builder
+	for _, segment := range segments {
+		if segment.group < 0 {
+			out.WriteString(segment.literal)
+			continue
+		}
+		group := match.GroupByNumber(segment.group)
+		if group == nil || len(group.Captures) == 0 {
+			continue
+		}
+		out.WriteString(group.String())
+	}
+	return out.String()
+}
+
+func expandRegexp2PlanReplacement(plan *regexp2Plan, match *regexp2.Match, segments []javaReplacementSegment) string {
+	var out strings.Builder
+	for _, segment := range segments {
+		if segment.group < 0 {
+			out.WriteString(segment.literal)
+			continue
+		}
+		groupNumber, ok := plan.publicGroupNumber(segment.group)
+		if !ok {
+			continue
+		}
+		group := match.GroupByNumber(groupNumber)
+		if group == nil || len(group.Captures) == 0 {
+			continue
+		}
+		out.WriteString(group.String())
+	}
+	return out.String()
 }

@@ -17,6 +17,7 @@ type businessHoursCalendar struct {
 	id       string
 	location *time.Location
 	windows  map[time.Weekday]businessHoursWindow
+	holidays map[string]struct{}
 }
 
 var businessHoursDayFields = []struct {
@@ -120,6 +121,7 @@ func (vm *VM) businessHoursCalendar(id string) (businessHoursCalendar, error) {
 		id:       string(record.ID),
 		location: location,
 		windows:  make(map[time.Weekday]businessHoursWindow),
+		holidays: vm.businessHoursAllDayHolidays(),
 	}
 	for _, day := range businessHoursDayFields {
 		startText := strings.TrimSpace(storageStringField(record, day.name+"StartTime"))
@@ -140,6 +142,28 @@ func (vm *VM) businessHoursCalendar(id string) (businessHoursCalendar, error) {
 		}
 	}
 	return calendar, nil
+}
+
+func (vm *VM) businessHoursAllDayHolidays() map[string]struct{} {
+	holidays := make(map[string]struct{})
+	if vm == nil || vm.Org == nil {
+		return holidays
+	}
+	object, ok := vm.Org.Objects["Holiday"]
+	if !ok {
+		return holidays
+	}
+	for _, record := range object.Records {
+		if !strings.EqualFold(storageStringField(record, "IsAllDay"), "true") {
+			continue
+		}
+		dateText := strings.TrimSpace(storageStringField(record, "ActivityDate"))
+		if _, err := time.Parse("2006-01-02", dateText); err != nil {
+			continue
+		}
+		holidays[dateText] = struct{}{}
+	}
+	return holidays
 }
 
 func (vm *VM) businessHoursRecord(id string) (storage.Record, bool) {
@@ -187,6 +211,9 @@ func businessHoursTimeOfDay(text string) (time.Duration, error) {
 
 func (calendar businessHoursCalendar) isWithin(instant time.Time) bool {
 	local := instant.In(calendar.location)
+	if calendar.isHoliday(local) {
+		return false
+	}
 	window, ok := calendar.windows[local.Weekday()]
 	if !ok {
 		return false
@@ -207,7 +234,7 @@ func (calendar businessHoursCalendar) add(start time.Time, amount time.Duration)
 	for remaining > 0 {
 		window, ok := calendar.windows[cursor.Weekday()]
 		offset := businessHoursLocalOffset(cursor)
-		if !ok || offset >= window.end {
+		if calendar.isHoliday(cursor) || !ok || offset >= window.end {
 			next, nextOK := calendar.nextStart(cursor)
 			if !nextOK {
 				return cursor.UTC()
@@ -235,7 +262,7 @@ func (calendar businessHoursCalendar) addBackward(start time.Time, amount time.D
 	for remaining > 0 {
 		window, ok := calendar.windows[cursor.Weekday()]
 		offset := businessHoursLocalOffset(cursor)
-		if !ok || offset <= window.start {
+		if calendar.isHoliday(cursor) || !ok || offset <= window.start {
 			previous, previousOK := calendar.previousEnd(cursor)
 			if !previousOK {
 				return cursor.UTC()
@@ -267,7 +294,7 @@ func (calendar businessHoursCalendar) diff(start, end time.Time) time.Duration {
 	for cursor.Before(limit) {
 		window, ok := calendar.windows[cursor.Weekday()]
 		offset := businessHoursLocalOffset(cursor)
-		if !ok || offset >= window.end {
+		if calendar.isHoliday(cursor) || !ok || offset >= window.end {
 			next, nextOK := calendar.nextStart(cursor)
 			if !nextOK || !next.Before(limit) {
 				break
@@ -302,6 +329,9 @@ func (calendar businessHoursCalendar) nextStart(instant time.Time) (time.Time, b
 	local := instant.In(calendar.location)
 	for i := 0; i < 8; i++ {
 		day := local.AddDate(0, 0, i)
+		if calendar.isHoliday(day) {
+			continue
+		}
 		window, ok := calendar.windows[day.Weekday()]
 		if !ok {
 			continue
@@ -318,6 +348,9 @@ func (calendar businessHoursCalendar) previousEnd(instant time.Time) (time.Time,
 	local := instant.In(calendar.location)
 	for i := 0; i < 8; i++ {
 		day := local.AddDate(0, 0, -i)
+		if calendar.isHoliday(day) {
+			continue
+		}
 		window, ok := calendar.windows[day.Weekday()]
 		if !ok {
 			continue
@@ -328,6 +361,14 @@ func (calendar businessHoursCalendar) previousEnd(instant time.Time) (time.Time,
 		}
 	}
 	return time.Time{}, false
+}
+
+func (calendar businessHoursCalendar) isHoliday(local time.Time) bool {
+	if len(calendar.holidays) == 0 {
+		return false
+	}
+	_, ok := calendar.holidays[local.Format("2006-01-02")]
+	return ok
 }
 
 func businessHoursLocalOffset(value time.Time) time.Duration {

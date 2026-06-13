@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf16"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/dml"
@@ -472,8 +473,13 @@ func (vm *VM) webServiceCalloutInvoke(args []Value, result *Result) (Value, erro
 	if args[2].Kind != ValueMap {
 		return Null, fmt.Errorf("WebServiceCallout.invoke expects response map")
 	}
-	if args[3].Kind != ValueList || len(args[3].List) < 7 {
+	if args[3].Kind != ValueList || len(args[3].List) != 7 {
 		return Null, fmt.Errorf("WebServiceCallout.invoke expects 7 option strings")
+	}
+	for _, option := range args[3].List {
+		if option.Kind != ValueString {
+			return Null, fmt.Errorf("WebServiceCallout.invoke expects 7 option strings")
+		}
 	}
 	responseType := scalarText(args[3].List[6])
 	responseKey := mapKey(String("response_x"))
@@ -1778,6 +1784,8 @@ func urlEncodeWithCharset(name, text, charset string) (string, error) {
 		return urlEncodeASCII(name, text)
 	case "iso-8859-1":
 		return urlEncodeLatin1(name, text)
+	case "utf-16":
+		return urlEncodeUTF16(text), nil
 	default:
 		return "", unsupportedCallError(fmt.Sprintf("%s charset %q", name, charset))
 	}
@@ -1791,6 +1799,8 @@ func urlDecodeWithCharset(name, text, charset string) (string, error) {
 		return urlDecodeASCII(name, text)
 	case "iso-8859-1":
 		return urlDecodeLatin1(text)
+	case "utf-16":
+		return urlDecodeUTF16(text)
 	default:
 		return "", unsupportedCallError(fmt.Sprintf("%s charset %q", name, charset))
 	}
@@ -1805,31 +1815,76 @@ func normalizeURLCharset(charset string) string {
 		return "us-ascii"
 	case "iso-8859-1", "iso8859-1", "iso-88591", "iso88591", "latin1", "latin-1":
 		return "iso-8859-1"
+	case "utf-16", "utf16":
+		return "utf-16"
 	default:
 		return normalized
 	}
 }
 
-func urlEncodeASCII(name, text string) (string, error) {
+func urlEncodeASCII(_ string, text string) (string, error) {
 	var out strings.Builder
 	for _, r := range text {
 		if r > 0x7f {
-			return "", fmt.Errorf("%s charset \"US-ASCII\" cannot encode U+%04X", name, r)
+			r = '?'
 		}
 		writeURLEncodedByte(&out, byte(r))
 	}
 	return out.String(), nil
 }
 
-func urlEncodeLatin1(name, text string) (string, error) {
+func urlEncodeLatin1(_ string, text string) (string, error) {
 	var out strings.Builder
 	for _, r := range text {
 		if r > 0xff {
-			return "", fmt.Errorf("%s charset \"ISO-8859-1\" cannot encode U+%04X", name, r)
+			r = '?'
 		}
 		writeURLEncodedByte(&out, byte(r))
 	}
 	return out.String(), nil
+}
+
+func urlEncodeUTF16(text string) string {
+	var out strings.Builder
+	unsafeRunes := make([]rune, 0, len(text))
+	flushUnsafeRunes := func() {
+		if len(unsafeRunes) == 0 {
+			return
+		}
+		for _, b := range utf16BytesForRunes(unsafeRunes) {
+			writeURLEncodedByte(&out, b)
+		}
+		unsafeRunes = unsafeRunes[:0]
+	}
+	for _, r := range text {
+		if isURLEncodedSafeASCII(r) {
+			flushUnsafeRunes()
+			writeURLEncodedByte(&out, byte(r))
+			continue
+		}
+		if r == ' ' {
+			flushUnsafeRunes()
+			out.WriteByte('+')
+			continue
+		}
+		unsafeRunes = append(unsafeRunes, r)
+	}
+	flushUnsafeRunes()
+	return out.String()
+}
+
+func isURLEncodedSafeASCII(r rune) bool {
+	return (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' || r == '_' || r == '.' || r == '*'
+}
+
+func utf16BytesForRunes(runes []rune) []byte {
+	units := utf16.Encode(runes)
+	out := make([]byte, 0, 2+len(units)*2)
+	out = append(out, 0xfe, 0xff)
+	for _, unit := range units {
+		out = append(out, byte(unit>>8), byte(unit))
+	}
+	return out
 }
 
 func writeURLEncodedByte(out *strings.Builder, b byte) {
@@ -1846,17 +1901,20 @@ func writeURLEncodedByte(out *strings.Builder, b byte) {
 	}
 }
 
-func urlDecodeASCII(name, text string) (string, error) {
+func urlDecodeASCII(_ string, text string) (string, error) {
 	decoded, err := urlDecodeBytes(text)
 	if err != nil {
 		return "", err
 	}
+	var out strings.Builder
 	for _, b := range decoded {
 		if b > 0x7f {
-			return "", fmt.Errorf("%s charset \"US-ASCII\" cannot decode byte 0x%02X", name, b)
+			out.WriteRune('\ufffd')
+			continue
 		}
+		out.WriteByte(b)
 	}
-	return string(decoded), nil
+	return out.String(), nil
 }
 
 func urlDecodeLatin1(text string) (string, error) {
@@ -1869,6 +1927,67 @@ func urlDecodeLatin1(text string) (string, error) {
 		out.WriteRune(rune(b))
 	}
 	return out.String(), nil
+}
+
+func urlDecodeUTF16(text string) (string, error) {
+	var out strings.Builder
+	for i := 0; i < len(text); i++ {
+		switch ch := text[i]; ch {
+		case '+':
+			out.WriteByte(' ')
+		case '%':
+			bytes := make([]byte, 0)
+			for i < len(text) && text[i] == '%' {
+				if i+2 >= len(text) {
+					return "", fmt.Errorf("invalid URL escape %q", text[i:])
+				}
+				hi, ok := fromHex(text[i+1])
+				if !ok {
+					return "", fmt.Errorf("invalid URL escape %q", text[i:i+3])
+				}
+				lo, ok := fromHex(text[i+2])
+				if !ok {
+					return "", fmt.Errorf("invalid URL escape %q", text[i:i+3])
+				}
+				bytes = append(bytes, hi<<4|lo)
+				i += 3
+			}
+			i--
+			out.WriteString(decodeUTF16Bytes(bytes))
+		default:
+			out.WriteByte(ch)
+		}
+	}
+	return out.String(), nil
+}
+
+func decodeUTF16Bytes(decoded []byte) string {
+	if len(decoded) == 0 {
+		return ""
+	}
+	bigEndian := true
+	start := 0
+	if len(decoded) >= 2 {
+		switch {
+		case decoded[0] == 0xfe && decoded[1] == 0xff:
+			start = 2
+		case decoded[0] == 0xff && decoded[1] == 0xfe:
+			bigEndian = false
+			start = 2
+		}
+	}
+	if (len(decoded)-start)%2 != 0 {
+		decoded = append(decoded, 0)
+	}
+	units := make([]uint16, 0, (len(decoded)-start)/2)
+	for i := start; i+1 < len(decoded); i += 2 {
+		if bigEndian {
+			units = append(units, uint16(decoded[i])<<8|uint16(decoded[i+1]))
+		} else {
+			units = append(units, uint16(decoded[i+1])<<8|uint16(decoded[i]))
+		}
+	}
+	return string(utf16.Decode(units))
 }
 
 func urlDecodeBytes(text string) ([]byte, error) {
@@ -1947,7 +2066,7 @@ func generateDigest(algorithm string, data []byte) ([]byte, error) {
 		sum := sha3.Sum512(data)
 		return sum[:], nil
 	default:
-		return nil, fmt.Errorf("unsupported digest algorithm %q", algorithm)
+		return nil, newExceptionError("SecurityException", fmt.Sprintf("%s MessageDigest not available", algorithm))
 	}
 }
 

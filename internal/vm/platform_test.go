@@ -1396,7 +1396,11 @@ List<QuickAction.DescribeQuickActionResult> described =
 	QuickAction.describeQuickActions(new List<String>{'Account.NewTask', 'Account.Unknown'});
 System.assertEquals(2, described.size());
 System.assertEquals('Account', described[0].getTargetSobjectType());
-System.assertEquals(0, described[0].getDefaultValues().size());
+System.assertEquals(2, described[0].getDefaultValues().size());
+System.assertEquals('Name', described[0].getDefaultValues()[0].getField());
+System.assertEquals('Seed Account', described[0].getDefaultValues()[0].getDefaultValue());
+System.assertEquals('Phone', described[0].getDefaultValues()[1].getField());
+System.assertEquals('555-0100', described[0].getDefaultValues()[1].getDefaultValue());
 System.assertEquals('Account.Unknown', described[1].getName());
 
 QuickAction.QuickActionTemplateResult template =
@@ -1404,6 +1408,8 @@ QuickAction.QuickActionTemplateResult template =
 System.assertEquals(true, template.isSuccess());
 System.assertEquals('001000000000001', template.getContextId());
 System.assertEquals('Account.NewTask', template.getDefaultValues().getQuickActionName());
+System.assertEquals('Seed Account', (String)template.getDefaultValues().get('Name'));
+System.assertEquals('555-0100', (String)template.getDefaultValues().get('Phone'));
 
 List<QuickAction.QuickActionTemplateResult> templates =
 	QuickAction.retrieveQuickActionTemplates(new List<String>{'Account.NewTask'}, '001000000000001');
@@ -1420,6 +1426,13 @@ System.assertEquals(true, templates[0].isSuccess());
 		Label:        "New Task",
 		Type:         "Create",
 		TargetObject: "Account",
+		PredefinedFieldValues: []storage.QuickActionFieldValue{{
+			Field: "Name",
+			Value: "Seed Account",
+		}, {
+			Field: "Phone",
+			Value: "555-0100",
+		}},
 	}}
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
@@ -6973,6 +6986,50 @@ shell.result = 'mocked';
 	}
 }
 
+func TestExecWebServiceCalloutRejectsMalformedOptions(t *testing.T) {
+	cases := []struct {
+		name string
+		src  string
+	}{
+		{
+			name: "too-many-options",
+			src: `
+Map<String, Object> response = new Map<String, Object>();
+WebServiceCallout.invoke(
+  new Object(),
+  'request',
+  response,
+  new String[]{'https://example.test', 'soapAction', 'requestNS', 'requestName', 'responseNS', 'responseName', 'ResponseType', 'extra'}
+);
+`,
+		},
+		{
+			name: "non-string-option",
+			src: `
+Map<String, Object> response = new Map<String, Object>();
+WebServiceCallout.invoke(
+  new Object(),
+  'request',
+  response,
+  new Object[]{'https://example.test', 'soapAction', 'requestNS', 7, 'responseNS', 'responseName', 'ResponseType'}
+);
+`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = New(nil).Execute(program)
+			if err == nil || !strings.Contains(err.Error(), "WebServiceCallout.invoke expects 7 option strings") {
+				t.Fatalf("err = %v, want option validation", err)
+			}
+		})
+	}
+}
+
 func TestExecUnsupportedTestHelperAPIsHaveStableShape(t *testing.T) {
 	cases := []struct {
 		name string
@@ -7144,6 +7201,8 @@ insert new Account(Name = 'Acme');
 Object locator = Database.getQueryLocator('SELECT Id, Name FROM Account');
 System.assertEquals(1, Limits.getQueries());
 System.assertEquals(1, Limits.getQueryRows());
+System.assertEquals(1, Limits.getQueryLocatorRows());
+System.assertEquals(10000, Limits.getLimitQueryLocatorRows());
 System.assertEquals('SELECT Id, Name FROM Account', locator.getQuery());
 Object iterator = locator.iterator();
 System.assert(iterator.hasNext());
@@ -8690,6 +8749,30 @@ System.assertEquals(2, Limits.getSavepoints());
 System.assertEquals(5, Limits.getLimitSavepoints());
 System.assertNotEquals(null, first);
 System.assertNotEquals(null, second);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseRollbackIncrementsRollbackLimitCounter(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(0, Limits.getSavepointRollbacks());
+System.assertEquals(100, Limits.getLimitSavepointRollbacks());
+System.Savepoint first = Database.setSavepoint();
+insert new Account(Name = 'rolled back');
+Database.rollback(first);
+System.assertEquals(1, Limits.getSavepointRollbacks());
+System.assertEquals(1, Limits.getSavepoints());
+System.Savepoint second = Database.setSavepoint();
+Database.rollback(second);
+System.assertEquals(2, Limits.getSavepointRollbacks());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -10476,6 +10559,84 @@ System.assertEquals(0, System.AsyncInfo.getMinimumQueueableDelayInMinutes());
 	}
 }
 
+func TestExecQueueableIntegerDelayIsVisibleToAsyncInfo(t *testing.T) {
+	program, err := CompileAnonymous(`
+Test.startTest();
+System.enqueueJob(new QueueWorker(), 3);
+Test.stopTest();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queueProgram, err := CompileAnonymous(`
+System.assertEquals(3, System.AsyncInfo.getMinimumQueueableDelayInMinutes());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "QueueWorker",
+		Interfaces: []string{"Queueable"},
+		Methods: map[string]Method{
+			"execute": {
+				Name:       "QueueWorker.execute",
+				ClassName:  "QueueWorker",
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "QueueableContext"}},
+				Program:    queueProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecQueueableAsyncOptionsDelayIsVisibleToAsyncInfo(t *testing.T) {
+	program, err := CompileAnonymous(`
+AsyncOptions opts = new AsyncOptions();
+System.assertEquals(null, opts.getMinimumQueueableDelayInMinutes());
+opts.setMinimumQueueableDelayInMinutes(4);
+System.assertEquals(4, opts.getMinimumQueueableDelayInMinutes());
+Test.startTest();
+System.enqueueJob(new QueueWorker(), opts);
+Test.stopTest();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queueProgram, err := CompileAnonymous(`
+System.assertEquals(4, System.AsyncInfo.getMinimumQueueableDelayInMinutes());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "QueueWorker",
+		Interfaces: []string{"Queueable"},
+		Methods: map[string]Method{
+			"execute": {
+				Name:       "QueueWorker.execute",
+				ClassName:  "QueueWorker",
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "QueueableContext"}},
+				Program:    queueProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecAbortJobCompletedRecordsAreIdempotent(t *testing.T) {
 	program, err := CompileAnonymous(`Test.startTest(); String id = System.enqueueJob(new QueueWorker()); Test.stopTest(); System.abortJob(id);`)
 	if err != nil {
@@ -11159,9 +11320,9 @@ System.assert(jobId.startsWith('707'));
 		want string
 	}{
 		{
-			name: "async options setter",
-			src:  `AsyncOptions opts = new AsyncOptions(); opts.setMinimumQueueableDelayInMinutes(1);`,
-			want: `unsupported call "AsyncOptions.setMinimumQueueableDelayInMinutes local async options surface"`,
+			name: "async options duplicate signature getter",
+			src:  `AsyncOptions opts = new AsyncOptions(); opts.getDuplicateSignature();`,
+			want: `unsupported call "AsyncOptions.getDuplicateSignature local async options surface"`,
 		},
 	}
 	for _, tc := range cases {
@@ -12460,8 +12621,6 @@ System.assertEquals(32, md5Hex.length());
 String jsonText = JSON.serialize(new Account(Name = 'Acme'));
 	Object decodedJson = JSON.deserializeUntyped('{"name":"Acme","ok":true}');
 	System.assertEquals('Acme', decodedJson.get('name'));
-	Object decodedLargeJson = JSON.deserializeUntyped('{"n":9223372036854775808}');
-	System.assertEquals(9223372036854775808.0, decodedLargeJson.get('n'));
 	Account decodedAccount = JSON.deserialize('{"Name":"Typed"}', Account.class);
 System.assertEquals('Typed', decodedAccount.Name);
 Type accountType = Account.class;

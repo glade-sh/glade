@@ -1080,8 +1080,21 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			receiver.Fields["maximumQueueableStackDepth"] = args[0]
 			return receiver, receiver, true, true, nil
-		case "getDuplicateSignature", "setDuplicateSignature",
-			"getMinimumQueueableDelayInMinutes", "setMinimumQueueableDelayInMinutes":
+		case "getMinimumQueueableDelayInMinutes":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("AsyncOptions.getMinimumQueueableDelayInMinutes expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["minimumQueueableDelayInMinutes"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
+		case "setMinimumQueueableDelayInMinutes":
+			if len(args) != 1 || (args[0].Kind != ValueInt && args[0].Kind != ValueNull) {
+				return Null, receiver, false, true, fmt.Errorf("AsyncOptions.setMinimumQueueableDelayInMinutes expects Integer")
+			}
+			receiver.Fields["minimumQueueableDelayInMinutes"] = args[0]
+			return receiver, receiver, true, true, nil
+		case "getDuplicateSignature", "setDuplicateSignature":
 			return Null, receiver, false, true, unsupportedCallError("AsyncOptions." + method + " local async options surface")
 		}
 	case "JSONGenerator":

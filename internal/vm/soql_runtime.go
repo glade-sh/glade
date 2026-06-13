@@ -2639,6 +2639,9 @@ func (vm *VM) queryLocatorFromSOQL(query string, result *Result) (Value, error) 
 	locator := Object("Database.QueryLocator")
 	locator.Fields["Records"] = value
 	locator.Fields["Query"] = String(query)
+	if err := vm.incrementQueryLocatorRows(value); err != nil {
+		return Null, err
+	}
 	return locator, nil
 }
 func (vm *VM) executeSOQL(raw string, execResult *Result) (Value, error) {
