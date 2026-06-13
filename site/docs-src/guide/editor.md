@@ -24,15 +24,38 @@ npm --prefix contrib/vscode-glade run package
 glade editor install vscode --force
 ```
 
-Open an SFDX project. The extension adds a `Glade` Activity Bar with Project,
-Recommended Runs, Apex Tests, Data Environments, Local Org, and Debug And Logs
-views.
+Open an SFDX project. The extension adds one `Glade` Activity Bar with Start
+Here, Local Runs, Data Environments, Local Org, and Debug views.
 
 Glade sits beside the Salesforce VS Code Extension Pack. It keeps separate
 `glade.*` command ids, a `Glade Apex` Test Explorer controller, and CodeLens
 labels that include `Local`. It does not take over `SFDX:*` commands,
 Salesforce scratch-org tests, Salesforce CodeLens, Apex Replay Debugger, or the
 Salesforce Apex language server.
+
+## Daily Local Apex Loop
+
+Open the Glade Activity Bar and start in **Start Here**.
+
+1. Confirm the SFDX root and active local data environment.
+2. Click **Run local proof** before pushing work to a scratch org.
+3. Use **Data Environments** to clone, seed, reset, inspect, and export local state.
+4. Use Salesforce extension commands for org deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
+
+Glade actions are local. Salesforce actions stay org-backed.
+
+## Native VS Code Surfaces
+
+Glade uses one Activity Bar item and one Status Bar item. The sidebar shows
+Start Here, Local Runs, Data Environments, Local Org, and Debug.
+
+Local Apex tests appear in the native VS Code Testing view under `Glade Apex`.
+Glade does not add a second Apex Tests sidebar tree. Breakpoints stay in the
+normal editor gutter and debug state stays in VS Code Run and Debug.
+
+The Status Bar shows the active local data environment and the latest local
+state, such as `Glade: dev`, `Glade: dev 18ms`, or `Glade: billing-case 1 fail`.
+Click it to switch data, inspect local data, run local proof, or open output.
 
 ## Local Tests
 

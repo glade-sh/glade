@@ -6,7 +6,10 @@ import { watchArgs } from "./watchModel";
 export class GladeTestWatch implements vscode.Disposable {
   private child?: ChildProcessWithoutNullStreams;
 
-  constructor(private readonly output: vscode.OutputChannel) {}
+  constructor(
+    private readonly output: vscode.OutputChannel,
+    private readonly onStateChange?: (running: boolean) => void,
+  ) {}
 
   get running(): boolean {
     return !!this.child;
@@ -22,14 +25,17 @@ export class GladeTestWatch implements vscode.Disposable {
     this.output.appendLine(`$ glade ${args.join(" ")}`);
     const child = spawn("glade", args, { cwd: project.projectRoot });
     this.child = child;
+    this.onStateChange?.(true);
     child.stdout.on("data", (chunk: Buffer) => this.output.append(chunk.toString()));
     child.stderr.on("data", (chunk: Buffer) => this.output.append(chunk.toString()));
     child.on("error", (error: Error) => {
       this.child = undefined;
+      this.onStateChange?.(false);
       void vscode.window.showErrorMessage(`glade test watch failed: ${error.message}`);
     });
     child.on("close", (code: number | null, signal: NodeJS.Signals | null) => {
       this.child = undefined;
+      this.onStateChange?.(false);
       this.output.appendLine(`glade test watch stopped${code === null ? "" : ` with code ${code}`}${signal ? ` signal ${signal}` : ""}`);
     });
   }
@@ -46,5 +52,6 @@ export class GladeTestWatch implements vscode.Disposable {
   dispose(): void {
     this.child?.kill();
     this.child = undefined;
+    this.onStateChange?.(false);
   }
 }

@@ -43,15 +43,29 @@ export function parseJSONOutput<T>(stdout: string, label: string): T {
   }
 }
 
+export function parseJSONRunResult<T>(result: GladeRunResult, label: string, allowedCodes: Array<number | null> = [0]): T {
+  if (!allowedCodes.includes(result.code)) {
+    const detail = result.stderr.trim() || result.stdout.trim() || `exit code ${result.code}`;
+    throw new Error(`${label} failed: ${detail}`);
+  }
+  return parseJSONOutput<T>(result.stdout, label);
+}
+
 export async function runGladeJSON<T>(
   args: string[],
   options: GladeRunOptions = {},
   label = "glade",
 ): Promise<T> {
   const result = await runGlade(args, options);
-  if (result.code !== 0) {
-    const detail = result.stderr.trim() || result.stdout.trim() || `exit code ${result.code}`;
-    throw new Error(`${label} failed: ${detail}`);
-  }
-  return parseJSONOutput<T>(result.stdout, label);
+  return parseJSONRunResult<T>(result, label);
+}
+
+export async function runGladeJSONWithCodes<T>(
+  args: string[],
+  options: GladeRunOptions = {},
+  label = "glade",
+  allowedCodes: Array<number | null> = [0],
+): Promise<T> {
+  const result = await runGlade(args, options);
+  return parseJSONRunResult<T>(result, label, allowedCodes);
 }

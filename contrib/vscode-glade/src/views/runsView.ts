@@ -15,30 +15,11 @@ export class RunsView implements vscode.TreeDataProvider<GladeTreeItem> {
 
   getChildren(): GladeTreeItem[] {
     return [
-      commandItem("Run changed since origin/main", "glade.runChangedTests"),
-      commandItem("Run failed tests", "glade.runFailedTests"),
-      commandItem("Start watch", "glade.startWatch"),
-      commandItem("Stop watch", "glade.stopWatch"),
-    ];
-  }
-}
-
-export class ApexTestsView implements vscode.TreeDataProvider<GladeTreeItem> {
-  private readonly changed = new vscode.EventEmitter<GladeTreeItem | undefined | null | void>();
-  readonly onDidChangeTreeData = this.changed.event;
-
-  refresh(): void {
-    this.changed.fire();
-  }
-
-  getTreeItem(element: GladeTreeItem): vscode.TreeItem {
-    return element;
-  }
-
-  getChildren(): GladeTreeItem[] {
-    return [
-      commandItem("Refresh local tests", "glade.refresh"),
-      new GladeTreeItem("Test Explorer wiring pending"),
+      commandItem("Run local proof", "glade.runLocalProof", "Run changed local Apex tests and inspect active local data.", new vscode.ThemeIcon("play")),
+      commandItem("Changed since origin/main", "glade.runChangedTests", "Run local tests affected by changes since origin/main.", new vscode.ThemeIcon("git-compare")),
+      commandItem("Run failed local tests", "glade.runFailedTests", "Run the failed local Apex tests again.", new vscode.ThemeIcon("debug-rerun")),
+      commandItem("Start watch", "glade.startWatch", "Start the local Apex watch loop.", new vscode.ThemeIcon("eye")),
+      commandItem("Stop watch", "glade.stopWatch", "Stop the local Apex watch loop.", new vscode.ThemeIcon("circle-slash")),
     ];
   }
 }

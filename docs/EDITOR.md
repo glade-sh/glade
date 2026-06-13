@@ -33,13 +33,36 @@ controller, and CodeLens labels that include `Local`.
 
 The sidebar shows:
 
-- Project: SFDX root, package dirs, namespace, API version, and Salesforce
-  extension detection.
-- Recommended Runs: changed tests, failed tests, and warm watch controls.
-- Apex Tests: local Apex tests through the VS Code Testing API.
+- Start Here: SFDX root, active local data environment, local DB state, watch
+  state, last run state, and top daily actions.
+- Local Runs: changed tests, failed tests, and warm watch controls.
 - Data Environments: named SQLite-backed local org states.
 - Local Org: inspect, seed, reset, and export for the active environment.
-- Debug And Logs: active Apex breakpoint count.
+- Debug: active Apex breakpoint count and local debug actions.
+
+## Daily Local Apex Loop
+
+Open the Glade Activity Bar and start in **Start Here**.
+
+1. Confirm the SFDX root and active local data environment.
+2. Click **Run local proof** before pushing work to a scratch org.
+3. Use **Data Environments** to clone, seed, reset, inspect, and export local state.
+4. Use Salesforce extension commands for org deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
+
+Glade actions are local. Salesforce actions stay org-backed.
+
+## Native VS Code Surfaces
+
+Glade uses one Activity Bar item and one Status Bar item. The sidebar shows
+Start Here, Local Runs, Data Environments, Local Org, and Debug.
+
+Local Apex tests appear in the native VS Code Testing view under `Glade Apex`.
+Glade does not add a second Apex Tests sidebar tree. Breakpoints stay in the
+normal editor gutter and debug state stays in VS Code Run and Debug.
+
+The Status Bar shows the active local data environment and the latest local
+state, such as `Glade: dev`, `Glade: dev 18ms`, or `Glade: billing-case 1 fail`.
+Click it to switch data, inspect local data, run local proof, or open output.
 
 The default local data environment is `dev` at `.glade/envs/dev.sqlite`.
 `Glade: Execute Local Anonymous Apex`, CodeLens debug, and Test Explorer debug

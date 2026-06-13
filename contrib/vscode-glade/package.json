@@ -18,7 +18,6 @@
     "onLanguage:apex",
     "onView:glade.project",
     "onView:glade.recommendedRuns",
-    "onView:glade.apexTests",
     "onView:glade.environments",
     "onView:glade.localOrg",
     "onView:glade.debugLogs",
@@ -29,7 +28,14 @@
     "onCommand:glade.debugLocalTestFromCodeLens",
     "onCommand:glade.executeAnonymous",
     "onCommand:glade.debugAnonymous",
-    "onCommand:glade.debugCurrentTest"
+    "onCommand:glade.debugCurrentTest",
+    "onCommand:glade.runLocalProof",
+    "onCommand:glade.cloneEnvironment",
+    "onCommand:glade.deleteEnvironment",
+    "onCommand:glade.revealEnvironmentDb",
+    "onCommand:glade.inspectEnvironment",
+    "onCommand:glade.statusQuickPick",
+    "onCommand:glade.openOutput"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -46,17 +52,12 @@
       "glade": [
         {
           "id": "glade.project",
-          "name": "Project",
+          "name": "Start Here",
           "when": "config.glade.enableSidebar"
         },
         {
           "id": "glade.recommendedRuns",
-          "name": "Recommended Runs",
-          "when": "config.glade.enableSidebar"
-        },
-        {
-          "id": "glade.apexTests",
-          "name": "Apex Tests",
+          "name": "Local Runs",
           "when": "config.glade.enableSidebar"
         },
         {
@@ -71,7 +72,7 @@
         },
         {
           "id": "glade.debugLogs",
-          "name": "Debug And Logs",
+          "name": "Debug",
           "when": "config.glade.enableSidebar"
         }
       ]
@@ -88,6 +89,10 @@
       {
         "command": "glade.runFailedTests",
         "title": "Glade: Run Local Failed Tests"
+      },
+      {
+        "command": "glade.runLocalProof",
+        "title": "Glade: Run Local Proof"
       },
       {
         "command": "glade.runLocalTestFromCodeLens",
@@ -112,6 +117,22 @@
       {
         "command": "glade.switchEnvironment",
         "title": "Glade: Switch Local Data Environment"
+      },
+      {
+        "command": "glade.cloneEnvironment",
+        "title": "Glade: Clone Local Data Environment"
+      },
+      {
+        "command": "glade.deleteEnvironment",
+        "title": "Glade: Delete Local Data Environment"
+      },
+      {
+        "command": "glade.revealEnvironmentDb",
+        "title": "Glade: Reveal Local Data Environment DB"
+      },
+      {
+        "command": "glade.inspectEnvironment",
+        "title": "Glade: Inspect Local Data Environment"
       },
       {
         "command": "glade.seedLocalOrg",
@@ -140,8 +161,50 @@
       {
         "command": "glade.debugCurrentTest",
         "title": "Glade: Debug Local Current Test"
+      },
+      {
+        "command": "glade.statusQuickPick",
+        "title": "Glade: Show Local Status"
+      },
+      {
+        "command": "glade.openOutput",
+        "title": "Glade: Open Output"
       }
     ],
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "glade.switchEnvironment",
+          "when": "view == glade.environments && viewItem == gladeEnvironment",
+          "group": "inline@1"
+        },
+        {
+          "command": "glade.cloneEnvironment",
+          "when": "view == glade.environments && viewItem =~ /gladeEnvironment/",
+          "group": "inline@2"
+        },
+        {
+          "command": "glade.inspectEnvironment",
+          "when": "view == glade.environments && viewItem =~ /gladeEnvironment/",
+          "group": "inline@3"
+        },
+        {
+          "command": "glade.revealEnvironmentDb",
+          "when": "view == glade.environments && viewItem =~ /gladeEnvironment/",
+          "group": "navigation@1"
+        },
+        {
+          "command": "glade.deleteEnvironment",
+          "when": "view == glade.environments && viewItem == gladeEnvironment",
+          "group": "navigation@9"
+        },
+        {
+          "command": "glade.deleteEnvironment",
+          "when": "view == glade.environments && viewItem == gladeEnvironmentActive",
+          "group": "navigation@9"
+        }
+      ]
+    },
     "languages": [
       {
         "id": "apex",
@@ -262,7 +325,7 @@
   "scripts": {
     "compile": "tsc -p ./",
     "package": "mkdir -p dist && npm run compile && vsce package --allow-missing-repository --out dist/vscode-glade-${npm_package_version}.vsix",
-    "test": "npm run compile && node test/commands.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/localOrg.test.js && node test/watch.test.js && node test/package.test.js"
+    "test": "npm run compile && node test/commands.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/environmentActions.test.js && node test/localOrg.test.js && node test/watch.test.js && node test/statusModel.test.js && node test/package.test.js && node test/startHereModel.test.js && node test/startHereState.test.js"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

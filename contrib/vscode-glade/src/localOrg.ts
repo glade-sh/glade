@@ -21,7 +21,7 @@ export async function inspectLocalOrg(
   environment = configuredActiveEnvironment(project),
 ): Promise<DBInspectResult> {
   return runGladeJSON<DBInspectResult>(
-    ["db", "inspect", "--db", environment.dbPath, "--project", project.projectRoot, "--json"],
+    dbInspectArgs(project, environment),
     { cwd: project.projectRoot },
     "glade db inspect",
   );
@@ -36,6 +36,22 @@ export async function inspectLocalOrgRows(
 
 export function defaultEnvironmentEntry(name: string): GladeEnvironment {
   return { name, dbPath: path.join(".glade", "envs", `${name}.sqlite`) };
+}
+
+export function dbSeedArgs(project: GladeProjectContext, environment: GladeEnvironment, fixture: string): string[] {
+  return ["db", "seed", "--db", environment.dbPath, "--project", project.projectRoot, "--json", fixture];
+}
+
+export function dbResetArgs(project: GladeProjectContext, environment: GladeEnvironment): string[] {
+  return ["db", "reset", "--db", environment.dbPath, "--project", project.projectRoot, "--json"];
+}
+
+export function dbExportArgs(project: GladeProjectContext, environment: GladeEnvironment): string[] {
+  return ["db", "export", "--db", environment.dbPath, "--project", project.projectRoot];
+}
+
+export function dbInspectArgs(project: GladeProjectContext, environment: GladeEnvironment): string[] {
+  return ["db", "inspect", "--db", environment.dbPath, "--project", project.projectRoot, "--json"];
 }
 
 export function terminalCommand(args: string[], redirectPath?: string): string {

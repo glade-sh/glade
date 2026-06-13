@@ -35,19 +35,28 @@ export class EnvironmentsView implements vscode.TreeDataProvider<GladeTreeItem> 
       items.push(new GladeTreeItem("No SFDX project"));
     }
     items.push(
-      commandItem("Create Environment", "glade.createEnvironment"),
-      commandItem("Switch Environment", "glade.switchEnvironment"),
-      commandItem("Seed Active Environment", "glade.seedLocalOrg"),
-      commandItem("Reset Active Environment", "glade.resetLocalOrg"),
-      commandItem("Export Active Environment", "glade.exportLocalOrg"),
+      commandItem("Create", "glade.createEnvironment", "Create a local data environment.", new vscode.ThemeIcon("add")),
+      commandItem("Seed Active", "glade.seedLocalOrg", "Seed the active local data environment.", new vscode.ThemeIcon("cloud-upload")),
+      commandItem("Reset Active", "glade.resetLocalOrg", "Reset the active local data environment.", new vscode.ThemeIcon("discard")),
+      commandItem("Export Active", "glade.exportLocalOrg", "Export the active local data environment.", new vscode.ThemeIcon("save")),
     );
     return items;
   }
 }
 
 function environmentItem(environment: GladeEnvironment, activeName: string): GladeTreeItem {
-  const prefix = environment.name === activeName ? "Active" : "Environment";
-  return labelItem(`${prefix}: ${environment.name}`, path.basename(environment.dbPath), environment.dbPath);
+  const active = environment.name === activeName;
+  const item = labelItem(environment.name, active ? "active" : path.basename(environment.dbPath), environment.dbPath);
+  item.contextValue = active
+    ? environment.name === "dev" ? "gladeEnvironmentActiveDev" : "gladeEnvironmentActive"
+    : environment.name === "dev" ? "gladeEnvironmentDev" : "gladeEnvironment";
+  item.iconPath = new vscode.ThemeIcon(active ? "check" : "database");
+  item.command = {
+    command: "glade.switchEnvironment",
+    title: "Switch Environment",
+    arguments: [environment],
+  };
+  return item;
 }
 
 function labelItem(label: string, description?: string, tooltip?: string): GladeTreeItem {

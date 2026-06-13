@@ -2,10 +2,11 @@ import * as fs from "fs";
 import * as vscode from "vscode";
 import { debugTestConfig } from "../commandModel";
 import { configuredActiveEnvironment } from "../localOrg";
+import { StartHereRunSummary } from "../startHereModel";
 import { flattenTestCases, FlatTestCaseResult } from "../testResults";
 import { GladeProjectContext } from "../projectModel";
 import { discoverApexTests } from "./discovery";
-import { changedTestArgs, runApexTest, runChangedTests, apexTestArgs } from "./runner";
+import { changedTestArgs, runApexTest, runChangedTests, apexTestArgs, startHereSummary } from "./runner";
 
 interface TestData {
   className: string;
@@ -21,6 +22,7 @@ export class GladeTestController {
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly output?: vscode.OutputChannel,
+    private readonly onRunComplete?: (summary: StartHereRunSummary) => void,
   ) {
     context.subscriptions.push(this.controller);
     this.controller.refreshHandler = () => this.discover();
@@ -99,6 +101,7 @@ export class GladeTestController {
     this.logCommand(changedTestArgs(this.project, since));
     try {
       const result = await runChangedTests(this.project, since);
+      this.onRunComplete?.(startHereSummary("Changed tests", result));
       for (const testCase of flattenTestCases(result)) {
         const item = this.findTestItem(testCase);
         if (!item) {
@@ -147,6 +150,7 @@ export class GladeTestController {
     this.logCommand(apexTestArgs(this.project, data.className, data.methodName));
     try {
       const result = await runApexTest(this.project, data.className, data.methodName);
+      this.onRunComplete?.(startHereSummary("Test Explorer", result));
       const flat = flattenTestCases(result);
       const childResults = flat.filter((testCase) => testCase.className === data.className);
       for (const testCase of childResults) {
@@ -199,6 +203,10 @@ export class GladeTestController {
   }
 
   private logCommand(args: string[]): void {
+    const environment = this.project ? configuredActiveEnvironment(this.project) : undefined;
+    if (environment) {
+      this.output?.appendLine(`Environment: ${environment.name} (${environment.dbPath})`);
+    }
     this.output?.appendLine(`$ glade ${args.join(" ")}`);
   }
 }

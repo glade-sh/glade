@@ -9,9 +9,10 @@ export class GladeTreeItem extends vscode.TreeItem {
   }
 }
 
-export function commandItem(label: string, command: string, tooltip?: string): GladeTreeItem {
+export function commandItem(label: string, command: string, tooltip?: string, icon?: vscode.ThemeIcon): GladeTreeItem {
   const item = new GladeTreeItem(label);
   item.command = { command, title: label };
   item.tooltip = tooltip || label;
+  item.iconPath = icon;
   return item;
 }
