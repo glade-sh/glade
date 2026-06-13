@@ -1,4 +1,4 @@
-# First-Party Plugins
+# First-party plugins
 
 First-party plugins ship heavier Glade workflows without adding them to the
 default install. They use the same executable runtime as third-party plugins.

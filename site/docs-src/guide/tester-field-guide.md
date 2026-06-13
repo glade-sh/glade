@@ -1,4 +1,4 @@
-# Tester Field Guide
+# Tester field guide
 
 Use this guide when you hand Glade to Salesforce engineers for a small pilot.
 It starts from an existing SFDX project and keeps the first loop local. No org

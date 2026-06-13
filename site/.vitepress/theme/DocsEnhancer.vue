@@ -68,4 +68,6 @@ onContentUpdated(enhanceDocs)
 watch(() => route.path, enhanceDocs)
 </script>
 
-<template></template>
+<template>
+  <span class="docs-enhancer-root" hidden aria-hidden="true"></span>
+</template>

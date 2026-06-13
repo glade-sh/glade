@@ -1,4 +1,4 @@
-# Plugin Lock Files And CI
+# Plugin lock files and CI
 
 `glade plugins lock` records exact plugin state for repeatable CI runs.
 

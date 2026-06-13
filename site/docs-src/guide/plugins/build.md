@@ -1,4 +1,4 @@
-# Build A Plugin
+# Build a plugin
 
 A Glade plugin is an executable process. Glade does not load plugin code into
 the product binary. The executable must support `manifest --json`.

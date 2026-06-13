@@ -1,4 +1,4 @@
-# Install And Manage Plugins
+# Install and manage plugins
 
 Use canonical coordinates for marketplace installs.
 

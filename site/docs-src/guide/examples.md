@@ -1,4 +1,4 @@
-# Built-In Examples
+# Built-in examples
 
 Use `glade examples` to find local playground examples without opening the website.
 

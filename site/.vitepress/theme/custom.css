@@ -1529,11 +1529,24 @@ body:has(.VPHome) .VPNavBarSearch {
 }
 
 .home-boundary-line {
-  margin: 8px 0 0;
-  padding: 0;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 12px 0 0;
   color: var(--vp-c-text-2);
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.45;
+}
+
+.home-boundary-line span {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.035);
+  padding: 0 10px;
 }
 
 .home-proof-line {
@@ -1548,7 +1561,7 @@ body:has(.VPHome) .VPNavBarSearch {
   display: grid;
   gap: 10px;
   width: 100%;
-  max-width: 410px;
+  max-width: 460px;
   justify-self: end;
   margin: 0;
   border: 1px solid var(--glade-home-border);
@@ -1558,6 +1571,11 @@ body:has(.VPHome) .VPNavBarSearch {
     var(--glade-home-surface);
   box-shadow: 0 20px 70px rgba(0,0,0,0.42);
   padding: 16px;
+}
+
+.home-hero-proof {
+  display: grid;
+  gap: 10px;
 }
 
 .home-hero-readout-head {
@@ -1580,14 +1598,24 @@ body:has(.VPHome) .VPNavBarSearch {
   display: inline-flex;
   min-height: 24px;
   align-items: center;
-  border: 1px solid color-mix(in srgb, var(--danger) 52%, var(--line));
+  border: 1px solid var(--line);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--danger) 14%, transparent);
-  color: var(--danger-text);
   font-size: var(--fs-label);
   font-weight: 780;
   padding: 0 9px;
   text-transform: uppercase;
+}
+
+.home-hero-state-failed {
+  border-color: color-mix(in srgb, var(--danger) 52%, var(--line)) !important;
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger-text);
+}
+
+.home-hero-state-passed {
+  border-color: color-mix(in srgb, var(--glade) 52%, var(--line)) !important;
+  background: color-mix(in srgb, var(--glade) 14%, transparent);
+  color: var(--success-text);
 }
 
 .home-hero-output {
@@ -1701,6 +1729,11 @@ body:has(.VPHome) .VPNavBarSearch {
   .home-proof-line {
     max-width: 34ch;
     overflow-wrap: normal;
+  }
+
+  .home-boundary-line span {
+    width: 100%;
+    border-radius: 8px;
   }
 
   .home-hero-readout {
@@ -3109,7 +3142,6 @@ body:has(.VPHome) .VPNavBarSearch {
 
 .home-support-map table {
   width: 100%;
-  min-width: 620px;
   border-collapse: collapse;
   color: var(--vp-c-text-2);
   font-size: var(--fs-table);
@@ -3155,6 +3187,86 @@ body:has(.VPHome) .VPNavBarSearch {
 .home-support-map .home-status {
   font-size: var(--fs-label);
   text-transform: none;
+}
+
+.home-boundary-note {
+  display: grid;
+  gap: 4px;
+  margin: 18px 0 16px;
+  border: 1px solid color-mix(in srgb, var(--info) 44%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--info) 10%, transparent);
+  padding: 12px 14px;
+}
+
+.home-boundary-note strong {
+  color: var(--vp-c-text-1);
+  font-size: var(--fs-ui);
+  line-height: var(--lh-ui);
+}
+
+.home-boundary-note span {
+  color: var(--vp-c-text-2);
+  font-size: var(--fs-helper);
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .home-support-table-wrap {
+    overflow-x: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .home-support-map table {
+    display: block;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .home-support-map thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .home-support-map tbody {
+    display: grid;
+    gap: 10px;
+  }
+
+  .home-support-map tr {
+    display: grid;
+    overflow: hidden;
+    border: 1px solid var(--glade-border);
+    border-radius: 10px;
+    background: var(--glade-surface-solid);
+  }
+
+  .home-support-map td {
+    display: grid;
+    grid-template-columns: minmax(8.75rem, 0.8fr) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    border-bottom: 1px solid var(--glade-border);
+    padding: 11px 12px;
+  }
+
+  .home-support-map td::before {
+    content: attr(data-label);
+    color: var(--vp-c-text-3);
+    font-size: var(--fs-label);
+    font-weight: 800;
+    line-height: var(--lh-ui);
+  }
+
+  .home-support-map td:first-child {
+    font-size: var(--fs-ui);
+  }
 }
 
 .home-install.home-section {

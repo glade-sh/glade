@@ -12,7 +12,7 @@
 
 All commands are local unless you point Glade at an external path or start a server. Most project commands accept `--project <root>` and default to the current directory when a project is discoverable.
 
-Human output is a terminal surface. Use `--json` or `--format` for scripts. See [CLI Output Modes](/guide/cli-output), [Automation And JSON](/guide/automation), and [Exit Codes](/guide/exit-codes) for the stable contract.
+Human output is a terminal surface. Use `--json` or `--format` for scripts. See [CLI output modes](/guide/cli-output), [Automation and JSON](/guide/automation), and [Exit codes](/guide/exit-codes) for the stable contract.
 
 <div class="docs-command-filter">
   <label for="cli-command-filter">Filter commands</label>

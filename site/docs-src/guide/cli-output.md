@@ -1,4 +1,4 @@
-# CLI Output Modes
+# CLI output modes
 
 Glade writes human output first. It names the result, the file or artifact that changed, and the next command to run.
 

@@ -66,4 +66,4 @@ glade test changed --project . --since origin/main
 Glade models the local paths it can prove. Unsupported platform services fail
 with stable diagnostics instead of pretending to work.
 
-Next: [Tester Field Guide](/guide/tester-field-guide), [Quickstart](/guide/quickstart), [Enterprise Workflows](/guide/enterprise-workflows), or [Support map](/guide/support-map).
+Next: [Tester field guide](/guide/tester-field-guide), [Quickstart](/guide/quickstart), [Enterprise workflows](/guide/enterprise-workflows), or [Support map](/guide/support-map).

@@ -1,4 +1,4 @@
-# Automation And JSON
+# Automation and JSON
 
 Use JSON modes in scripts. Human output is for people and may evolve.
 

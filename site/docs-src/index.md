@@ -12,24 +12,36 @@ head:
 
 <section class="home-hero-shell" aria-label="Glade homepage hero">
   <div class="home-hero-copy">
-    <p class="home-type-eyebrow">Open-source local runtime</p>
+    <p class="home-type-eyebrow">Local Apex runtime for Salesforce teams</p>
     <h1>Apex feedback before you deploy.</h1>
-    <p class="home-lead">Glade runs local checks, focused tests, Apex snippets, and debug-log profiling from one binary — with copyable commands and visible runtime boundaries.</p>
+    <p class="home-lead">Run Apex checks, focused tests, snippets, and debug-log profiling locally — with copyable commands and visible Salesforce boundaries.</p>
     <div class="home-cta-row">
-      <a class="home-cta primary" href="#local-apex-workbench" data-demo-link>Run the demo</a>
+      <a class="home-cta primary" href="#local-apex-workbench" data-demo-link>Try the playground</a>
       <a class="home-cta" href="/guide/installation">Install Glade</a>
-      <a class="home-cta link" href="/guide/support-map">What's supported</a>
+      <a class="home-cta link" href="/guide/support-map">View support map</a>
     </div>
     <p class="home-local-line">127.0.0.1 is a fine place to test Apex.</p>
-    <p class="home-boundary-line">Supported workflows run locally; org-backed behavior stays named.</p>
+    <div class="home-boundary-line" aria-label="Local runtime boundary">
+      <span>No org login required for supported local loops.</span>
+      <span>Live org services still require Salesforce.</span>
+    </div>
     <p class="home-proof-line">check source · run focused tests · execute snippets · profile logs · emit JSON</p>
   </div>
   <aside class="home-hero-readout" aria-label="Current Glade check preview">
-    <div class="home-hero-readout-head">
-      <span>LOCAL CHECK OUTPUT</span>
-      <strong class="home-hero-state-failed">caught locally</strong>
+    <div class="home-hero-proof home-hero-proof-failed">
+      <div class="home-hero-readout-head">
+        <span>LOCAL CHECK OUTPUT</span>
+        <strong class="home-hero-state-failed">caught locally</strong>
+      </div>
+      <pre class="home-hero-output" aria-label="Glade check failure output"><code data-hero-command>✗ 1 diagnostic found&#10;force-app/main/default/classes/AccountService.cls:2:3&#10;error GLADESEMA002 unknown type "Invoice__c"&#10;&#10;Try: glade schema load --project .</code></pre>
     </div>
-    <pre class="home-hero-output" aria-label="Glade check failure output"><code data-hero-command>✗ 1 diagnostic found&#10;force-app/main/default/classes/AccountService.cls:2:3&#10;error GLADESEMA002 unknown type "Invoice__c"&#10;&#10;Try: glade schema load --project .</code></pre>
+    <div class="home-hero-proof home-hero-proof-passed">
+      <div class="home-hero-readout-head">
+        <span>LOCAL TEST OUTPUT</span>
+        <strong class="home-hero-state-passed">passed locally</strong>
+      </div>
+      <pre class="home-hero-output" aria-label="Glade test passing output"><code data-hero-success>✓ 1 selected, 1 passed, 0 failed&#10;PassingTest.passes 8ms&#10;&#10;No org deploy required.</code></pre>
+    </div>
   </aside>
 </section>
 
@@ -137,7 +149,11 @@ head:
     <div>
       <p class="home-eyebrow">Support map</p>
       <h2 class="home-h2">No hidden runtime boundary.</h2>
-      <p class="home-p">Glade runs supported workflows locally and names the places where config or an org is still required.</p>
+      <p class="home-p">Glade runs supported workflows locally and marks the places where Salesforce is still required.</p>
+      <div class="home-boundary-note" role="note">
+        <strong>Live org services require Salesforce.</strong>
+        <span>Glade keeps that boundary visible instead of folding it into local proof.</span>
+      </div>
       <a class="home-section-link" href="/guide/support-map">Read the full support map</a>
     </div>
     <div class="home-support-table-wrap">
@@ -151,49 +167,49 @@ head:
         </thead>
         <tbody>
           <tr>
-            <td>Apex source checks</td>
-            <td><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
-            <td>project files</td>
+            <td data-label="Capability">Apex source checks</td>
+            <td data-label="Local support"><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
+            <td data-label="Boundary">project files</td>
           </tr>
           <tr>
-            <td>Changed-test selection</td>
-            <td><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
-            <td>project graph</td>
+            <td data-label="Capability">Changed-test selection</td>
+            <td data-label="Local support"><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
+            <td data-label="Boundary">project graph</td>
           </tr>
           <tr>
-            <td>Anonymous Apex</td>
-            <td><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
-            <td>local state</td>
+            <td data-label="Capability">Anonymous Apex</td>
+            <td data-label="Local support"><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
+            <td data-label="Boundary">local state</td>
           </tr>
           <tr>
-            <td>DML insert/update</td>
-            <td><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
-            <td>SQLite-backed</td>
+            <td data-label="Capability">DML insert/update</td>
+            <td data-label="Local support"><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
+            <td data-label="Boundary">SQLite-backed</td>
           </tr>
           <tr>
-            <td>SOQL query</td>
-            <td><span class="home-status home-status-partial"><span class="home-status-dot"></span>partial</span></td>
-            <td>supported subset</td>
+            <td data-label="Capability">SOQL query</td>
+            <td data-label="Local support"><span class="home-status home-status-partial"><span class="home-status-dot"></span>partial</span></td>
+            <td data-label="Boundary">supported subset</td>
           </tr>
           <tr>
-            <td>Debug-log profiling</td>
-            <td><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
-            <td>saved logs</td>
+            <td data-label="Capability">Debug-log profiling</td>
+            <td data-label="Local support"><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
+            <td data-label="Boundary">saved logs</td>
           </tr>
           <tr>
-            <td>Org-specific metadata</td>
-            <td><span class="home-status home-status-requires-config"><span class="home-status-dot"></span>requires config</span></td>
-            <td>supply local metadata</td>
+            <td data-label="Capability">Org-specific metadata</td>
+            <td data-label="Local support"><span class="home-status home-status-requires-config"><span class="home-status-dot"></span>requires config</span></td>
+            <td data-label="Boundary">supply local metadata</td>
           </tr>
           <tr>
-            <td>Live org services</td>
-            <td><span class="home-status home-status-requires-org"><span class="home-status-dot"></span>requires org</span></td>
-            <td>not emulated</td>
+            <td data-label="Capability">Live org services</td>
+            <td data-label="Local support"><span class="home-status home-status-requires-org"><span class="home-status-dot"></span>requires org</span></td>
+            <td data-label="Boundary">not emulated</td>
           </tr>
           <tr>
-            <td>Unsupported platform APIs</td>
-            <td><span class="home-status home-status-unsupported"><span class="home-status-dot"></span>unsupported</span></td>
-            <td>surfaced visibly</td>
+            <td data-label="Capability">Unsupported platform APIs</td>
+            <td data-label="Local support"><span class="home-status home-status-unsupported"><span class="home-status-dot"></span>unsupported</span></td>
+            <td data-label="Boundary">surfaced visibly</td>
           </tr>
         </tbody>
       </table>

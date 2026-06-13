@@ -31,7 +31,7 @@ Machine-readable output:
 glade test --project . --json
 ```
 
-`--json` writes the versioned envelope described in [Automation And JSON](/guide/automation).
+`--json` writes the versioned envelope described in [Automation and JSON](/guide/automation).
 
 JUnit output for CI:
 

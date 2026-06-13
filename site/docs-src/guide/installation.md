@@ -195,7 +195,7 @@ glade doctor
 ```
 
 ::: tip Next step
-For a pilot handoff, use the [Tester Field Guide](/guide/tester-field-guide).
+For a pilot handoff, use the [Tester field guide](/guide/tester-field-guide).
 For a narrow first run, create project config:
 [Configure a Glade Project](/guide/configuration), then check
 [Support map](/guide/support-map).

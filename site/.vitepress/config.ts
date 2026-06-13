@@ -1,5 +1,21 @@
 import { defineConfig } from 'vitepress'
 
+const tunnelAllowedHosts = [
+  'apollo.local',
+  '.trycloudflare.com',
+  '.ngrok-free.app',
+  '.ngrok.app',
+  '.ngrok.io'
+]
+
+function isVueUsePureAnnotationWarning(warning: { code?: string; id?: string; message?: string }) {
+  return (
+    warning.code === 'INVALID_ANNOTATION' &&
+    warning.id?.includes('@vueuse/core') &&
+    warning.message?.includes('#__PURE__')
+  )
+}
+
 export default defineConfig({
   title: 'Glade — Local Apex Workbench',
   description: 'Run local Apex checks, focused tests, snippets, and debug-log profiling from one binary with visible runtime boundaries.',
@@ -11,7 +27,18 @@ export default defineConfig({
   lastUpdated: false,
   vite: {
     server: {
-      allowedHosts: ['apollo.local', 'tract-rear-consumers-isa.trycloudflare.com']
+      allowedHosts: tunnelAllowedHosts
+    },
+    preview: {
+      allowedHosts: tunnelAllowedHosts
+    },
+    build: {
+      rollupOptions: {
+        onwarn(warning, warn) {
+          if (isVueUsePureAnnotationWarning(warning)) return
+          warn(warning)
+        }
+      }
     }
   },
   head: [
@@ -28,7 +55,8 @@ export default defineConfig({
     search: { provider: 'local' },
     nav: [
       { text: 'Playground', link: '/guide/playground' },
-      { text: 'Support', link: '/guide/support-map' },
+      { text: 'Support map', link: '/guide/support-map' },
+      { text: 'Docs', link: '/guide/overview' },
       { text: 'GitHub', link: 'https://github.com/glade-sh/glade' },
       { text: 'Install', link: '/guide/installation' }
     ],
@@ -36,67 +64,48 @@ export default defineConfig({
       {
         text: 'Start',
         items: [
-          { text: 'Overview', link: '/guide/overview' },
-          { text: 'Quickstart', link: '/guide/quickstart' },
-          { text: 'Tester Field Guide', link: '/guide/tester-field-guide' },
-          { text: 'Installation', link: '/guide/installation' },
-          { text: 'CLI Output Modes', link: '/guide/cli-output' },
-          { text: 'Exit Codes', link: '/guide/exit-codes' },
-          { text: 'Support map', link: '/guide/support-map' }
+          { text: 'What is Glade?', link: '/guide/overview' },
+          { text: 'Install', link: '/guide/installation' },
+          { text: 'First local check', link: '/guide/quickstart' },
+          { text: 'Support map', link: '/guide/support-map' },
+          { text: 'Playground', link: '/guide/playground' }
         ]
       },
       {
-        text: 'Core Workflows',
+        text: 'Workflows',
+        collapsed: true,
         items: [
-          { text: 'Configure a Glade project', link: '/guide/configuration' },
-          { text: 'CLI Reference', link: '/guide/cli-reference' },
-          { text: 'Run Apex tests locally', link: '/guide/local-testing' },
-          { text: 'Run only affected tests', link: '/guide/affected-tests' },
-          { text: 'Map enterprise projects', link: '/guide/enterprise-workflows' },
-          { text: 'Use the local playground', link: '/guide/playground' },
-          { text: 'Run a local Salesforce-shaped API', link: '/guide/local-api-server' },
-          { text: 'Add Glade to CI', link: '/guide/ci-artifacts' },
-          { text: 'Automation And JSON', link: '/guide/automation' },
-          { text: 'Built-In Examples', link: '/guide/examples' },
-          { text: 'Error Codes And Explain', link: '/guide/errors' }
+          { text: 'Check source', link: '/guide/quickstart#3-check-source' },
+          { text: 'Run tests', link: '/guide/local-testing' },
+          { text: 'Affected tests', link: '/guide/affected-tests' },
+          { text: 'Local API server', link: '/guide/local-api-server' },
+          { text: 'CI', link: '/guide/ci-artifacts' },
+          { text: 'VS Code', link: '/guide/editor' }
         ]
       },
       {
         text: 'Reference',
         collapsed: true,
         items: [
-          { text: 'JSON Envelope', link: '/reference/json-schema' }
+          { text: 'CLI reference', link: '/guide/cli-reference' },
+          { text: 'Output modes', link: '/guide/cli-output' },
+          { text: 'Exit codes', link: '/guide/exit-codes' },
+          { text: 'JSON envelope', link: '/reference/json-schema' },
+          { text: 'Automation and JSON', link: '/guide/automation' },
+          { text: 'Error codes and `glade explain`', link: '/guide/errors' }
         ]
       },
       {
         text: 'Advanced',
-        items: [
-          { text: 'Speed Up Test Startup', link: '/guide/test-startup-cache' },
-          { text: 'VS Code Extension, LSP, and DAP', link: '/guide/editor' },
-          { text: 'Progress, Wizards, and Package Artifacts', link: '/guide/rich-local-workflows' }
-        ]
-      },
-      {
-        text: 'Plugin Authors',
         collapsed: true,
         items: [
-          { text: 'Use Plugins', link: '/guide/plugins' },
-          { text: 'First-Party Plugins', link: '/guide/plugins/first-party' },
-          { text: 'Marketplace And Trust', link: '/guide/plugins/marketplace' },
-          { text: 'Install And Manage', link: '/guide/plugins/install-manage' },
-          { text: 'Build A Plugin', link: '/guide/plugins/build' },
-          { text: 'Manifest Reference', link: '/guide/plugins/manifest' },
-          { text: 'Publish A Plugin', link: '/guide/plugins/publish' },
-          { text: 'Plugin Lock Files And CI', link: '/guide/plugins/lock-ci' }
-        ]
-      },
-      {
-        text: 'Project',
-        collapsed: true,
-        items: [
-          { text: 'Compatibility Policy', link: '/guide/compatibility' },
-          { text: 'Maintainer Proof Reports', link: '/guide/compatibility-dashboard' },
-          { text: 'Brand Guide', link: '/guide/brand-guide' }
+          { text: 'Enterprise projects', link: '/guide/enterprise-workflows' },
+          { text: 'Test startup cache', link: '/guide/test-startup-cache' },
+          { text: 'Reports and package artifacts', link: '/guide/rich-local-workflows' },
+          { text: 'Built-in examples', link: '/guide/examples' },
+          { text: 'Plugins', link: '/guide/plugins' },
+          { text: 'Compatibility / proof reports', link: '/guide/compatibility-dashboard' },
+          { text: 'Brand guide', link: '/guide/brand-guide' }
         ]
       }
     ],

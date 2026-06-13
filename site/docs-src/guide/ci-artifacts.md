@@ -46,7 +46,7 @@ glade check --project . --format json --output glade-check.json --no-progress
 ```
 
 `--json` is still accepted as the short form for `--format json`.
-JSON output uses the versioned envelope in [Automation And JSON](/guide/automation).
+JSON output uses the versioned envelope in [Automation and JSON](/guide/automation).
 
 ## Saved test runs
 
@@ -111,4 +111,4 @@ Upload the files after a gate, even when the test or check step fails:
 
 `glade check` and `glade test` return non-zero for diagnostics or failed test
 outcomes that should block a gate. Use `if: always()` only for upload steps that
-must run after a failure. Exit codes are listed in [Exit Codes](/guide/exit-codes).
+must run after a failure. Exit codes are listed in [Exit codes](/guide/exit-codes).

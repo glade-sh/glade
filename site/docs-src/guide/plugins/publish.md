@@ -1,4 +1,4 @@
-# Publish A Plugin
+# Publish a plugin
 
 Marketplace publication starts as a pull request to the curated catalog. The
 catalog points to release archives at durable URLs.

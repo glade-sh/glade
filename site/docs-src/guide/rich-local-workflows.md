@@ -1,4 +1,4 @@
-# Progress, Wizards, and Package Artifacts
+# Reports and package artifacts
 
 These commands keep local work visible while it runs and easy to repeat after it
 finishes.

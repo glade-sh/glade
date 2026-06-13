@@ -1,4 +1,4 @@
-# Error Codes And Explain
+# Error codes and `glade explain`
 
 Actionable diagnostics include stable codes. Use `glade explain <code>` for the short local note.
 
