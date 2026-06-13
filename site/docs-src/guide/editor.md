@@ -27,11 +27,10 @@ glade editor install vscode --force
 Open an SFDX project. The extension adds one `Glade` Activity Bar with Start
 Here, Local Runs, Data Environments, Local Org, and Debug views.
 
-Glade sits beside the Salesforce VS Code Extension Pack. It keeps separate
-`glade.*` command ids, a `Glade Apex` Test Explorer controller, and CodeLens
-labels that include `Local`. It does not take over `SFDX:*` commands,
-Salesforce scratch-org tests, Salesforce CodeLens, Apex Replay Debugger, or the
-Salesforce Apex language server.
+Glade keeps a separate local lane with `glade.*` command ids, a `Glade Apex`
+Test Explorer controller, and CodeLens labels that include `Local`. It does not
+take over org-backed commands, scratch-org tests, CodeLens, replay debugging, or
+language-server ownership.
 
 ## Daily Local Apex Loop
 
@@ -40,7 +39,7 @@ Open the Glade Activity Bar and start in **Start Here**.
 1. Confirm the SFDX root and active local data environment.
 2. Click **Run local proof** before pushing work to a scratch org.
 3. Use **Data Environments** to clone, seed, reset, inspect, and export local state.
-4. Use Salesforce extension commands for org deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
+4. Use org-backed tools for deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
 
 Glade actions are local. Salesforce actions stay org-backed.
 

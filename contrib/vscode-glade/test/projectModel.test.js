@@ -19,7 +19,6 @@ assert.deepStrictEqual(
       packageDirs: ["force-app", "unpackaged"],
     },
     "/repo",
-    { apex: false, apexTesting: false, apexLanguageServerTypescript: false },
   ),
   {
     workspaceFolder: "/repo",
@@ -29,14 +28,5 @@ assert.deepStrictEqual(
     namespace: "namz",
     sourceApiVersion: "63.0",
     packageDirs: ["force-app", "unpackaged"],
-    salesforceExtensions: { apex: false, apexTesting: false, apexLanguageServerTypescript: false },
   },
-);
-
-assert.deepStrictEqual(
-  project.detectSalesforceExtensions([
-    "salesforce.salesforcedx-vscode-apex",
-    "salesforce.salesforcedx-vscode-apex-testing",
-  ]),
-  { apex: true, apexTesting: true, apexLanguageServerTypescript: false },
 );

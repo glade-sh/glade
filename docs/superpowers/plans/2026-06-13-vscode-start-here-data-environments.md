@@ -4,7 +4,7 @@
 
 **Goal:** Turn the top Glade sidebar into a useful daily control panel and make local data environments visible, switchable, cloneable, seedable, resettable, inspectable, and debug-aware.
 
-**Architecture:** Keep Salesforce VS Code extensions in charge of org-backed deploy, retrieve, SOQL Builder, Code Analyzer, and scratch-org test workflows. Keep Glade in charge of the fast local loop: SFDX project context, active local DB, affected local tests, watch status, local DAP launches, and local data environment state. Build pure model functions first, then keep VS Code tree providers as thin renderers over those models.
+**Architecture:** Keep org-backed deploy, retrieve, SOQL Builder, Code Analyzer, and scratch-org test workflows outside the Glade sidebar. Keep Glade in charge of the fast local loop: SFDX project context, active local DB, affected local tests, watch status, local DAP launches, and local data environment state. Build pure model functions first, then keep VS Code tree providers as thin renderers over those models.
 
 **Tech Stack:** TypeScript VS Code extension under `contrib/vscode-glade`, plain Node tests under `contrib/vscode-glade/test`, Glade CLI commands through `gladeCli.ts`, local data commands through `glade db`, VS Code TreeDataProvider, VS Code commands and menus.
 
@@ -387,7 +387,6 @@ const snapshot = {
     namespace: "acme",
     sourceApiVersion: "63.0",
     packageDirs: ["force-app"],
-    salesforceExtensions: { apex: true, apexTesting: true, apexLanguageServerTypescript: true },
   },
   activeEnvironment: { name: "dev", dbPath: "/repo/.glade/envs/dev.sqlite" },
   localOrgSummary: { objects: 3, records: 48, users: 1, profiles: 1, permissions: 2 },
@@ -404,7 +403,6 @@ assert.deepStrictEqual(rows.map((row) => row.id), [
   "local-proof",
   "last-run",
   "watch",
-  "salesforce",
 ]);
 assert.strictEqual(rows[0].label, "Ready");
 assert.strictEqual(rows[2].label, "Active data: dev");
@@ -532,13 +530,6 @@ export function buildStartHereRows(snapshot: StartHereSnapshot): StartHereRow[] 
       command: snapshot.watchRunning ? "glade.stopWatch" : "glade.startWatch",
       contextValue: "gladeStartHereAction",
     },
-    {
-      id: "salesforce",
-      label: "Salesforce extensions",
-      description: salesforceSummary(project),
-      tooltip: "Glade sits beside Salesforce org-backed tools.",
-      contextValue: "gladeStartHereStatus",
-    },
   ];
 }
 
@@ -547,11 +538,6 @@ function shortPath(file: string): string {
   return parts[parts.length - 1] || file;
 }
 
-function salesforceSummary(project: GladeProjectContext): string {
-  const state = project.salesforceExtensions;
-  const count = [state.apex, state.apexTesting, state.apexLanguageServerTypescript].filter(Boolean).length;
-  return `${count}/3 detected`;
-}
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -1492,7 +1478,7 @@ Open the Glade Activity Bar and start in **Start Here**.
 1. Confirm the SFDX root and active local data environment.
 2. Click **Run local proof** before pushing work to a scratch org.
 3. Use **Data Environments** to clone, seed, reset, inspect, and export local state.
-4. Use Salesforce extension commands for org deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
+4. Use org-backed tools for deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
 
 Glade actions are local. Salesforce actions stay org-backed.
 ```
@@ -1544,7 +1530,7 @@ In VS Code:
 1. Run `Developer: Reload Window`.
 2. Open the Glade Activity Bar.
 3. Confirm the first view title is `START HERE`.
-4. Confirm Start Here shows a project row, active data row, local proof row, last run row, watch row, and Salesforce extensions row.
+4. Confirm Start Here shows a project row, active data row, local proof row, last run row, and watch row.
 5. Open `DATA ENVIRONMENTS`.
 6. Confirm `dev` appears as active.
 7. Run `Glade: Create Local Data Environment` with `bug-123`.

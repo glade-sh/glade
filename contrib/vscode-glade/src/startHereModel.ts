@@ -95,23 +95,10 @@ export function buildStartHereRows(snapshot: StartHereSnapshot): StartHereRow[] 
       command: snapshot.watchRunning ? "glade.stopWatch" : "glade.startWatch",
       contextValue: "gladeStartHereAction",
     },
-    {
-      id: "salesforce",
-      label: "Salesforce extensions",
-      description: salesforceSummary(project),
-      tooltip: "Glade sits beside Salesforce org-backed tools.",
-      contextValue: "gladeStartHereStatus",
-    },
   ];
 }
 
 function shortPath(file: string): string {
   const parts = file.split(/[\\/]+/).filter(Boolean);
   return parts[parts.length - 1] || file;
-}
-
-function salesforceSummary(project: GladeProjectContext): string {
-  const state = project.salesforceExtensions;
-  const count = [state.apex, state.apexTesting, state.apexLanguageServerTypescript].filter(Boolean).length;
-  return `${count}/3 detected`;
 }

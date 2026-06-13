@@ -1,6 +1,6 @@
 # Glade Local Apex for VS Code
 
-Glade Local Apex adds a local Apex lane beside the Salesforce VS Code extensions.
+Glade Local Apex adds a local Apex lane inside VS Code.
 It does not replace org-backed Salesforce commands.
 
 ## Install
@@ -42,7 +42,7 @@ Open the Glade Activity Bar and start in **Start Here**.
 1. Confirm the SFDX root and active local data environment.
 2. Click **Run local proof** before pushing work to a scratch org.
 3. Use **Data Environments** to clone, seed, reset, inspect, and export local state.
-4. Use Salesforce extension commands for org deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
+4. Use org-backed tools for deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
 
 Glade actions are local. Salesforce actions stay org-backed.
 

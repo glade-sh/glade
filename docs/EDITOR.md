@@ -25,11 +25,11 @@ npm --prefix contrib/vscode-glade run package
 glade editor install vscode --force
 ```
 
-The extension adds a `Glade` Activity Bar beside the Salesforce VS Code
-extensions. It does not replace Salesforce org-backed commands, CodeLens,
-language features, or scratch-org test runs. Glade surfaces use `Glade: ...`
-command titles, `glade.*` command ids, a separate `Glade Apex` Test Explorer
-controller, and CodeLens labels that include `Local`.
+The extension adds a `Glade` Activity Bar for the local Apex loop. It does not
+replace org-backed commands, CodeLens, language features, or scratch-org test
+runs. Glade surfaces use `Glade: ...` command titles, `glade.*` command ids, a
+separate `Glade Apex` Test Explorer controller, and CodeLens labels that include
+`Local`.
 
 The sidebar shows:
 
@@ -47,7 +47,7 @@ Open the Glade Activity Bar and start in **Start Here**.
 1. Confirm the SFDX root and active local data environment.
 2. Click **Run local proof** before pushing work to a scratch org.
 3. Use **Data Environments** to clone, seed, reset, inspect, and export local state.
-4. Use Salesforce extension commands for org deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
+4. Use org-backed tools for deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
 
 Glade actions are local. Salesforce actions stay org-backed.
 

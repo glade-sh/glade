@@ -1,8 +1,8 @@
 # VS Code UI Polish Deep Dive
 
-**Goal:** Make the Glade VS Code extension feel useful on first open, clear during normal Salesforce development, and hard to misuse beside the Salesforce Extension Pack.
+**Goal:** Make the Glade VS Code extension feel useful on first open, clear during normal Salesforce development, and hard to misuse in a full VS Code setup.
 
-**Audience:** Salesforce developers who already use VS Code, Salesforce CLI, Salesforce extensions, scratch orgs, source tracking, Apex tests, SOQL Builder, and Code Analyzer.
+**Audience:** Salesforce developers who already use VS Code, Salesforce CLI, scratch orgs, source tracking, Apex tests, SOQL Builder, and Code Analyzer.
 
 **Current Source Read:** `contrib/vscode-glade/package.json`, `src/extension.ts`, `src/views/*`, `src/localOrg.ts`, `src/projectContext.ts`, and the current installed sidebar screenshot.
 
@@ -115,7 +115,6 @@ That is useful, but not enough. A daily first panel should also show:
 - Local proof action.
 - Last run status.
 - Watch status.
-- Salesforce extension detection.
 - LSP diagnostics state.
 
 The user should not have to open five panels to know whether they can run a local test.
@@ -246,7 +245,7 @@ Recommended rows:
 
 ```text
 Ready
-  Glade CLI found · Salesforce extensions found · SFDX root loaded
+  Glade CLI found · SFDX root loaded
 
 Project
   enterprise-composed · API 63.0 · namespace acme
@@ -478,7 +477,6 @@ After activation, silently compute readiness:
 - SFDX project found.
 - `glade` found on PATH.
 - VSIX version.
-- Salesforce extensions found.
 - Active DB path exists.
 
 Do not pop notifications unless an action fails. Show readiness in Start Here.
@@ -593,7 +591,6 @@ Must have:
 - Local proof.
 - Last run.
 - Watch.
-- Salesforce extension status.
 
 Nice to have:
 

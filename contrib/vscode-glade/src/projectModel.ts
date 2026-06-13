@@ -8,13 +8,6 @@ export interface GladeProjectContext {
   namespace?: string;
   sourceApiVersion?: string;
   packageDirs: string[];
-  salesforceExtensions: SalesforceExtensionState;
-}
-
-export interface SalesforceExtensionState {
-  apex: boolean;
-  apexTesting: boolean;
-  apexLanguageServerTypescript: boolean;
 }
 
 export interface ConfigShowInfo {
@@ -47,7 +40,6 @@ export function nearestSfdxRoot(startPath: string, sfdxProjectFiles: string[]): 
 export function parseConfigShowInfo(
   info: ConfigShowInfo,
   workspaceFolder: string | undefined,
-  salesforceExtensions: SalesforceExtensionState,
 ): GladeProjectContext {
   return {
     workspaceFolder: workspaceFolder || info.projectRoot,
@@ -57,15 +49,5 @@ export function parseConfigShowInfo(
     namespace: info.namespace,
     sourceApiVersion: info.sourceApiVersion,
     packageDirs: info.packageDirs || [],
-    salesforceExtensions,
-  };
-}
-
-export function detectSalesforceExtensions(extensionIds: string[]): SalesforceExtensionState {
-  const ids = new Set(extensionIds);
-  return {
-    apex: ids.has("salesforce.salesforcedx-vscode-apex"),
-    apexTesting: ids.has("salesforce.salesforcedx-vscode-apex-testing"),
-    apexLanguageServerTypescript: ids.has("salesforce.apex-language-server-extension"),
   };
 }

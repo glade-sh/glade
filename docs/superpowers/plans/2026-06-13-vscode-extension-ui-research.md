@@ -602,7 +602,7 @@ This is the shape to build toward.
 
 Glade should feel like the local half of Salesforce development.
 
-Salesforce extensions answer: what is in the org, what deploys, what validates in Salesforce.
+Org-backed tools answer: what is in the org, what deploys, what validates in Salesforce.
 
 Glade answers: what happens here, with this code, this data, and this local Apex run.
 

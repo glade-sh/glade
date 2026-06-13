@@ -4,15 +4,10 @@ import * as vscode from "vscode";
 import { runGladeJSON } from "./gladeCli";
 import {
   ConfigShowInfo,
-  detectSalesforceExtensions,
   GladeProjectContext,
   nearestSfdxRoot,
   parseConfigShowInfo,
 } from "./projectModel";
-
-function detectInstalledSalesforceExtensions() {
-  return detectSalesforceExtensions(vscode.extensions.all.map((extension) => extension.id));
-}
 
 export async function findProjectContext(): Promise<GladeProjectContext | undefined> {
   const folders = vscode.workspace.workspaceFolders || [];
@@ -38,7 +33,7 @@ export async function findProjectContext(): Promise<GladeProjectContext | undefi
     { cwd: root },
     "glade config show",
   );
-  return parseConfigShowInfo(info, folder.uri.fsPath, detectInstalledSalesforceExtensions());
+  return parseConfigShowInfo(info, folder.uri.fsPath);
 }
 
 export function defaultDbPath(context: GladeProjectContext): string {

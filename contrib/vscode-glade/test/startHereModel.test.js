@@ -9,7 +9,6 @@ const snapshot = {
     namespace: "acme",
     sourceApiVersion: "63.0",
     packageDirs: ["force-app"],
-    salesforceExtensions: { apex: true, apexTesting: true, apexLanguageServerTypescript: true },
   },
   activeEnvironment: { name: "dev", dbPath: "/repo/.glade/envs/dev.sqlite" },
   localOrgSummary: { objects: 3, records: 48, users: 1, profiles: 1, permissions: 2 },
@@ -26,7 +25,6 @@ assert.deepStrictEqual(rows.map((row) => row.id), [
   "local-proof",
   "last-run",
   "watch",
-  "salesforce",
 ]);
 assert.strictEqual(rows[0].label, "Ready for local Apex");
 assert.strictEqual(rows[2].label, "Data env: dev");
@@ -34,7 +32,11 @@ assert.strictEqual(rows[2].description, "48 records");
 assert.strictEqual(rows[3].label, "Run local proof");
 assert.strictEqual(rows[3].command, "glade.runLocalProof");
 assert.strictEqual(rows[4].description, "8 passed, 1 failed");
-assert(rows.length <= 7, "Start Here must stay compact");
+assert(rows.length <= 6, "Start Here must stay compact");
+assert(
+  !rows.some((row) => /salesforce/i.test(`${row.id} ${row.label} ${row.description || ""} ${row.tooltip || ""}`)),
+  "Start Here must only surface Glade local workflow state"
+);
 
 const missingRows = model.buildStartHereRows({ project: undefined, changedSince: "origin/main" });
 assert.strictEqual(missingRows[0].label, "Open an SFDX project");
