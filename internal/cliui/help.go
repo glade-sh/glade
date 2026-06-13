@@ -925,7 +925,7 @@ Examples:
   glade test --project . --no-cache --class AccountServiceTest
   glade test --project . --connect --class AccountServiceTest
   glade test --project . --daemon --watch
-  glade test --project . --changed-since origin/main --json
+  glade test --project . --changed-since origin/main --json --no-progress
 `)
 	_, err := fmt.Fprintln(w, body)
 	return err

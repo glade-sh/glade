@@ -110,13 +110,13 @@ state.
 | Schema and SObject | Works with limits | 1 supported, 6 partial / 7 tracked |
 | Test helpers | Works with limits | 18 supported, 10 partial / 28 tracked |
 | JSON, Pattern, EncodingUtil, Crypto | Works with limits | 4 supported, 13 partial / 17 tracked |
-| ApexPages and PageReference | Wide controller support | 12 supported, 2 partial, 1 unknown / 15 tracked |
+| ApexPages and PageReference | Wide controller support | 13 supported, 2 partial / 15 tracked |
 | HTTP and WebServiceCallout | Works with limits | 1 supported, 4 partial / 5 tracked |
 | Messaging | Works with limits | 1 supported, 4 partial / 5 tracked |
 | Search and SOSL helpers | Works with limits | 11 partial / 11 tracked |
 | UserInfo, URL, and Label | Wide local support | 21 supported / 21 tracked |
-| Type, FeatureManagement, Exception, and diagnostics | Works with limits | 6 supported, 3 partial / 9 tracked |
-| Local test harness and request context | Works with limits | 12 supported, 18 partial / 30 tracked |
+| Type, FeatureManagement, and Exception | Works with limits | 6 supported, 2 partial / 8 tracked |
+| Local test harness and request context | Works with limits | 13 supported, 17 partial / 30 tracked |
 | Fenced live service APIs | Not supported | 5 unsupported / 5 tracked |
 
 The local test harness and request-context group includes Approval,
