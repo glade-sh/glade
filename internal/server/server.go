@@ -230,6 +230,8 @@ func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request) {
 		writeSalesforceError(w, errUnsupportedFeature, "Search/SOSL is not implemented in the local server")
 	case len(rest) == 1 && rest[0] == "limits":
 		s.handleLimits(w, r)
+	case len(rest) == 2 && rest[0] == "limits" && rest[1] == "recordCount":
+		s.handleRecordCount(w, r)
 	case len(rest) >= 1 && rest[0] == "tooling":
 		s.handleTooling(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "jobs":

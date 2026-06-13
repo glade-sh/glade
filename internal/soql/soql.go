@@ -335,12 +335,13 @@ func hydrateVirtualSchemaObjects(org *storage.OrgState) {
 	if virtualSchemaAlreadyHydrated(*org, stamp) {
 		return
 	}
-	for _, objectName := range []string{"EntityDefinition", "EntityParticle", "RelationshipDomain", "UserEntityAccess", "UserFieldAccess"} {
+	for _, objectName := range []string{"EntityDefinition", "EntityParticle", "FieldDefinition", "RelationshipDomain", "UserEntityAccess", "UserFieldAccess"} {
 		storage.EnsureStandardObject(org, objectName)
 		storage.EnsureMutableObjectRecords(org, objectName)
 	}
 	entityDefinitions := org.Objects["EntityDefinition"]
 	entityParticles := org.Objects["EntityParticle"]
+	fieldDefinitions := org.Objects["FieldDefinition"]
 	relationshipDomains := org.Objects["RelationshipDomain"]
 	userEntityAccess := org.Objects["UserEntityAccess"]
 	userFieldAccess := org.Objects["UserFieldAccess"]
@@ -349,6 +350,9 @@ func hydrateVirtualSchemaObjects(org *storage.OrgState) {
 	}
 	if entityParticles.Records == nil {
 		entityParticles.Records = make(map[storage.ID]storage.Record)
+	}
+	if fieldDefinitions.Records == nil {
+		fieldDefinitions.Records = make(map[storage.ID]storage.Record)
 	}
 	if relationshipDomains.Records == nil {
 		relationshipDomains.Records = make(map[storage.ID]storage.Record)
@@ -381,6 +385,9 @@ func hydrateVirtualSchemaObjects(org *storage.OrgState) {
 			if _, exists := entityParticles.Records[particleID]; !exists {
 				entityParticles.Records[particleID] = virtualEntityParticleRecord(object.Definition, field)
 			}
+			if _, exists := fieldDefinitions.Records[particleID]; !exists {
+				fieldDefinitions.Records[particleID] = virtualFieldDefinitionRecord(object.Definition, field)
+			}
 			if _, exists := userFieldAccess.Records[particleID]; !exists {
 				userFieldAccess.Records[particleID] = virtualUserFieldAccessRecord(particleID, object.Definition.APIName)
 			}
@@ -402,6 +409,7 @@ func hydrateVirtualSchemaObjects(org *storage.OrgState) {
 	}
 	org.Objects["EntityDefinition"] = entityDefinitions
 	org.Objects["EntityParticle"] = entityParticles
+	org.Objects["FieldDefinition"] = fieldDefinitions
 	org.Objects["RelationshipDomain"] = relationshipDomains
 	org.Objects["UserEntityAccess"] = userEntityAccess
 	org.Objects["UserFieldAccess"] = userFieldAccess
@@ -455,6 +463,7 @@ func setVirtualSchemaHydrationStamp(org *storage.OrgState, stamp string) {
 func isVirtualSchemaObjectName(objectName string) bool {
 	return strings.EqualFold(objectName, "EntityDefinition") ||
 		strings.EqualFold(objectName, "EntityParticle") ||
+		strings.EqualFold(objectName, "FieldDefinition") ||
 		strings.EqualFold(objectName, "RelationshipDomain")
 }
 
@@ -509,6 +518,33 @@ func virtualEntityParticleRecord(definition storage.ObjectDefinition, field stor
 		"Length":             storage.IntegerValue(length),
 		"EntityDefinitionId": storage.StringValue(definition.APIName),
 		"FieldDefinitionId":  storage.StringValue(fieldID),
+	}}
+}
+
+func virtualFieldDefinitionRecord(definition storage.ObjectDefinition, field storage.Field) storage.Record {
+	label := field.Label
+	if label == "" {
+		label = field.APIName
+	}
+	dataType := field.DisplayType
+	if dataType == "" {
+		dataType = storageFieldDisplayType(field.Type)
+	}
+	length := int64(field.Length)
+	if length == 0 {
+		length = 255
+	}
+	fieldID := definition.APIName + "." + field.APIName
+	return storage.Record{ID: storage.ID(fieldID), Object: "FieldDefinition", Fields: map[string]storage.Value{
+		"DurableId":                storage.StringValue(fieldID),
+		"QualifiedApiName":         storage.StringValue(field.APIName),
+		"DeveloperName":            storage.StringValue(strings.TrimSuffix(field.APIName, "__c")),
+		"Label":                    storage.StringValue(label),
+		"MasterLabel":              storage.StringValue(label),
+		"DataType":                 storage.StringValue(dataType),
+		"Length":                   storage.IntegerValue(length),
+		"EntityDefinitionId":       storage.StringValue(definition.APIName),
+		"RunningUserFieldAccessId": storage.StringValue(fieldID),
 	}}
 }
 

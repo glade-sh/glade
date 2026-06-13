@@ -22,6 +22,57 @@ func (s *Server) handleLimits(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, localAPILimits)
 }
 
+func (s *Server) handleRecordCount(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w, http.MethodGet)
+		return
+	}
+	writeJSON(w, http.StatusOK, s.recordCountPayload(r))
+}
+
+type recordCountObject struct {
+	Name  string `json:"name"`
+	Count int    `json:"count"`
+}
+
+func (s *Server) recordCountPayload(r *http.Request) map[string]any {
+	allowed := recordCountFilter(r.URL.Query().Get("sObjects"))
+	names := make([]string, 0, len(s.Org.Objects))
+	recordsByName := make(map[string]map[storage.ID]storage.Record, len(s.Org.Objects))
+	for key, object := range s.Org.Objects {
+		name := object.Definition.APIName
+		if name == "" {
+			name = key
+		}
+		if allowed != nil && !allowed[name] {
+			continue
+		}
+		names = append(names, name)
+		recordsByName[name] = object.Records
+	}
+	sort.Strings(names)
+
+	objects := make([]recordCountObject, 0, len(names))
+	for _, name := range names {
+		objects = append(objects, recordCountObject{Name: name, Count: len(recordsByName[name])})
+	}
+	return map[string]any{"sObjects": objects}
+}
+
+func recordCountFilter(raw string) map[string]bool {
+	if raw == "" {
+		return nil
+	}
+	out := make(map[string]bool)
+	for _, part := range strings.Split(raw, ",") {
+		name := strings.TrimSpace(part)
+		if name != "" {
+			out[name] = true
+		}
+	}
+	return out
+}
+
 func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version string, parts []string) {
 	switch {
 	case len(parts) == 0:
@@ -131,7 +182,7 @@ func (s *Server) handleToolingQuery(w http.ResponseWriter, r *http.Request, vers
 		return
 	}
 	if !s.isModeledToolingObject(query.Object) {
-		if _, ok := storage.ResolveObjectName(*s.Org, query.Object); ok {
+		if _, ok := storage.ResolveObjectName(*s.Org, query.Object); ok || isToolingLocalSchemaQueryObject(query.Object) {
 			s.handleQuery(w, r, version, "tooling/query", allRows)
 			return
 		}
@@ -145,6 +196,20 @@ func (s *Server) handleToolingQuery(w http.ResponseWriter, r *http.Request, vers
 		return
 	}
 	writeJSON(w, http.StatusOK, toolingQueryResultPayload(result.Rows, true, result.Records, version))
+}
+
+func isToolingLocalSchemaQueryObject(name string) bool {
+	switch {
+	case strings.EqualFold(name, "EntityDefinition"),
+		strings.EqualFold(name, "EntityParticle"),
+		strings.EqualFold(name, "FieldDefinition"),
+		strings.EqualFold(name, "RelationshipDomain"),
+		strings.EqualFold(name, "UserEntityAccess"),
+		strings.EqualFold(name, "UserFieldAccess"):
+		return true
+	default:
+		return false
+	}
 }
 
 func (s *Server) toolingSObjectsPayload(version string) map[string]any {

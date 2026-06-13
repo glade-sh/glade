@@ -2209,6 +2209,72 @@ func TestToolingQueryReadsLocalSourceMetadata(t *testing.T) {
 	}
 }
 
+func TestToolingQueryReadsVirtualSchemaMetadata(t *testing.T) {
+	org := testOrg()
+	storage.EnsureStandardObject(&org, "Contact")
+	handler := New(&org)
+
+	tests := []struct {
+		name     string
+		query    string
+		contains []string
+	}{
+		{
+			name:  "entity-definition",
+			query: "SELECT Id, QualifiedApiName, Label FROM EntityDefinition WHERE QualifiedApiName = 'Account'",
+			contains: []string{
+				`"totalSize":1`,
+				`"QualifiedApiName":"Account"`,
+				`"Label":"Account"`,
+			},
+		},
+		{
+			name:  "entity-particle",
+			query: "SELECT Id, QualifiedApiName, DataType FROM EntityParticle WHERE EntityDefinitionId = 'Account' AND QualifiedApiName = 'Name'",
+			contains: []string{
+				`"totalSize":1`,
+				`"QualifiedApiName":"Name"`,
+				`"DataType":"STRING"`,
+			},
+		},
+		{
+			name:  "field-definition",
+			query: "SELECT Id, QualifiedApiName, DataType FROM FieldDefinition WHERE EntityDefinitionId = 'Account' AND QualifiedApiName = 'Name'",
+			contains: []string{
+				`"totalSize":1`,
+				`"QualifiedApiName":"Name"`,
+				`"DataType":"STRING"`,
+			},
+		},
+		{
+			name:  "relationship-domain",
+			query: "SELECT Id, ParentSobjectId, ChildSobjectId, FieldId, RelationshipName FROM RelationshipDomain WHERE ParentSobjectId = 'Account' AND ChildSobjectId = 'Contact'",
+			contains: []string{
+				`"totalSize":1`,
+				`"ParentSobjectId":"Account"`,
+				`"ChildSobjectId":"Contact"`,
+				`"FieldId":"Contact.AccountId"`,
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			path := serverTestDataPath + "/tooling/query?q=" + url.QueryEscape(tc.query)
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+			if rec.Code != http.StatusOK {
+				t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+			}
+			for _, want := range tc.contains {
+				if !bytes.Contains(rec.Body.Bytes(), []byte(want)) {
+					t.Fatalf("body missing %q: %s", want, rec.Body.String())
+				}
+			}
+		})
+	}
+}
+
 func TestToolingSObjectDiscoveryDescribeAndRecordRead(t *testing.T) {
 	org := testOrg()
 	handler := NewWithSource(&org, testSourceMetadata(t))

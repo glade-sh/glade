@@ -1164,6 +1164,9 @@ System.assertEquals('"Hello World"', script.execute().getValueAsString());
 Map<String,Object> inputs = new Map<String,Object>{'records' => new List<String>{'a', 'b'}};
 DataWeave.Result projected = DataWeave.Script.createScript('records').execute(inputs);
 System.assertEquals(2, ((List<String>)projected.getValue()).size());
+
+dataweave.Script namespaced = dataweave.Script.createScript('localNs', 'helloWorld');
+System.assertEquals('"Hello World"', namespaced.execute().getValueAsString());
 `)
 	if err != nil {
 		t.Fatal(err)
