@@ -37,7 +37,7 @@ The default local data environment is `dev` at `.glade/envs/dev.sqlite`.
 all pass the active DB to Glade:
 
 ```bash
-glade exec --project <root> --db <active-db> --debug-log - "insert new Account(Name='local');"
+glade exec --project <root> --db <active-db> --log-out reports/exec.log "insert new Account(Name='local');"
 glade dap --project <root> --db <active-db>
 ```
 
@@ -294,7 +294,7 @@ by changed Apex and metadata dependencies:
 ```bash
 git fetch origin main
 glade test serve --project .
-glade test changed --project . --since origin/main --json
+glade test changed --project . --since origin/main --json --no-progress
 ```
 
 ## Test Startup Cache
@@ -374,10 +374,10 @@ glade test --project . --watch --debounce 750ms --watch-backend auto
 For CI or editor tasks that need a single machine-readable run, use:
 
 ```bash
-glade test --project . --json
-glade test changed --project . --since origin/main --json
+glade test --project . --json --no-progress
+glade test changed --project . --since origin/main --json --no-progress
 glade test --project . --junit reports/glade-junit.xml
-glade check --project . --json
+glade check --project . --json --no-progress
 ```
 
 Trace analysis stays native to `glade`:
@@ -399,7 +399,7 @@ Salesforce-style debug log:
 
 ```bash
 glade exec --debug-log reports/apex.log 'System.debug('"'"'hi'"'"'); Integer x = 1;'
-glade exec --debug-log - 'System.debug('"'"'hi'"'"');'   # write to stdout
+glade exec --debug-log raw 'System.debug('"'"'hi'"'"');'   # write raw log to stdout
 ```
 
 The log uses the familiar `HH:MM:SS.mmm (nanos)|EVENT|details` format with

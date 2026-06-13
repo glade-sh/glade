@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/apexlog"
@@ -39,6 +40,105 @@ type versionInfo struct {
 	Go      string `json:"go"`
 	OS      string `json:"os"`
 	Arch    string `json:"arch"`
+}
+
+type cliJSONEnvelope struct {
+	SchemaVersion string   `json:"schemaVersion"`
+	Command       string   `json:"command"`
+	Status        string   `json:"status"`
+	ExitCode      int      `json:"exitCode"`
+	Project       any      `json:"project,omitempty"`
+	Summary       any      `json:"summary,omitempty"`
+	Diagnostics   any      `json:"diagnostics,omitempty"`
+	Artifacts     []any    `json:"artifacts,omitempty"`
+	Timings       any      `json:"timings,omitempty"`
+	Suggestions   []string `json:"suggestions,omitempty"`
+	Tests         any      `json:"tests,omitempty"`
+	Data          any      `json:"data,omitempty"`
+}
+
+func writeCLIJSONEnvelope(w io.Writer, env cliJSONEnvelope) error {
+	env.SchemaVersion = "1.0"
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	return enc.Encode(env)
+}
+
+func statusForOK(ok bool) string {
+	if ok {
+		return "passed"
+	}
+	return "failed"
+}
+
+func exitCodeForOK(ok bool) int {
+	if ok {
+		return 0
+	}
+	return 1
+}
+
+func progressModeForFlags(jsonOut, progress, progressJSON, noProgress bool) cliui.ProgressMode {
+	switch {
+	case progressJSON:
+		return cliui.ProgressJSON
+	case progress:
+		return cliui.ProgressLine
+	case noProgress || jsonOut:
+		return cliui.ProgressOff
+	default:
+		return cliui.ProgressAuto
+	}
+}
+
+func diagnosticsJSON(projectRoot string, diags []diagnostic.Diagnostic) []map[string]any {
+	out := []map[string]any{}
+	for _, diag := range diags {
+		row := map[string]any{
+			"severity": diag.Severity,
+			"message":  diag.Message,
+		}
+		if diag.Code != "" {
+			row["code"] = diag.Code
+			row["docs"] = "https://glade.sh/guide/errors#" + strings.ToLower(diag.Code)
+		}
+		if diag.File != "" {
+			row["file"] = cliui.ProjectRelativePath(projectRoot, diag.File)
+		}
+		if diag.Range != nil {
+			row["line"] = diag.Range.Start.Line
+			row["column"] = diag.Range.Start.Column
+			row["range"] = diag.Range
+		}
+		if why := diagnosticWhy(diag.Code); why != "" {
+			row["why"] = why
+		}
+		if try := diagnosticTry(diag.Code); len(try) > 0 {
+			row["try"] = try
+		}
+		out = append(out, row)
+	}
+	return out
+}
+
+func diagnosticWhy(code string) string {
+	switch code {
+	case "GLADESEMA002":
+		return "The Apex type reference is not present in local Apex, schema, or platform symbols."
+	case "GLADESCHEMA001":
+		return "Glade could not load local Salesforce metadata for this project."
+	default:
+		return ""
+	}
+}
+
+func diagnosticTry(code string) []string {
+	switch code {
+	case "GLADESEMA002", "GLADESCHEMA001":
+		return []string{"glade schema load --project .", "glade check --project ."}
+	default:
+		return nil
+	}
 }
 
 // Run executes the glade CLI and returns a process exit code.
@@ -76,12 +176,36 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		return 0
-	case "doctor":
-		if err := runDoctor(ctx, args[1:], stdout); err != nil {
-			_ = cliui.WriteCLIError(stderr, err)
+	case "examples":
+		if err := runExamples(args[1:], stdout); err != nil {
+			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		return 0
+	case "explain":
+		if len(args) != 2 {
+			writeCommandError(stderr, args[0], errors.New("usage: glade explain <error-code>"))
+			return 1
+		}
+		if err := cliui.WriteErrorCodeHelp(stdout, args[1]); err != nil {
+			writeCommandError(stderr, args[0], err)
+			return 1
+		}
+		return 0
+	case "support":
+		if len(args) > 1 {
+			writeCommandError(stderr, args[0], errors.New("usage: glade support"))
+			return 1
+		}
+		_ = cliui.WriteSupportHelp(stdout)
+		return 0
+	case "doctor":
+		code, err := runDoctor(ctx, args[1:], stdout)
+		if err != nil {
+			_ = cliui.WriteCLIError(stderr, err)
+			return 1
+		}
+		return code
 	case "config":
 		if err := runConfig(".", args[1:], stdout); err != nil {
 			writeCommandError(stderr, args[0], err)
@@ -266,6 +390,10 @@ func printHelpTopic(w io.Writer, args []string) {
 		return
 	}
 	switch args[0] {
+	case "commands":
+		_ = cliui.WriteCommandsHelp(w)
+	case "workflows":
+		_ = cliui.WriteWorkflowsHelp(w)
 	case "exit-codes":
 		_ = cliui.WriteExitCodesHelp(w)
 	case "test":
@@ -457,15 +585,7 @@ func runPackageBuild(ctx context.Context, args []string, w io.Writer, progressW 
 	if output == "" {
 		return errors.New("--output is required")
 	}
-	progressMode := cliui.ProgressAuto
-	switch {
-	case parsed.Bool("progress-json"):
-		progressMode = cliui.ProgressJSON
-	case parsed.Bool("progress"):
-		progressMode = cliui.ProgressLine
-	case parsed.Bool("no-progress") || parsed.Bool("quiet"):
-		progressMode = cliui.ProgressOff
-	}
+	progressMode := progressModeForFlags(jsonOut, parsed.Bool("progress"), parsed.Bool("progress-json"), parsed.Bool("no-progress") || parsed.Bool("quiet"))
 	renderer := cliui.NewRenderer(cliui.RendererOptions{
 		Stderr: progressW,
 		Mode:   progressMode,
@@ -680,9 +800,9 @@ func packageArtifactMembers(members []typesys.MemberSymbol) []packageartifact.Ap
 	return out
 }
 
-func runDoctor(ctx context.Context, args []string, w io.Writer) error {
+func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 	if err := ctx.Err(); err != nil {
-		return err
+		return 1, err
 	}
 
 	root := "."
@@ -691,30 +811,32 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) error {
 		Bool("json", "j").
 		Parse(args)
 	if err != nil {
-		return err
+		return 1, err
 	}
 	if parsed.String("project") != "" {
 		root = parsed.String("project")
 	}
 	if info, err := os.Stat(root); err != nil {
-		return fmt.Errorf("project root %q: %w", root, err)
+		return 1, fmt.Errorf("project root %q: %w", root, err)
 	} else if !info.IsDir() {
-		return fmt.Errorf("project root %q is not a directory", root)
+		return 1, fmt.Errorf("project root %q is not a directory", root)
 	}
 
 	cwd, err := os.Getwd()
 	if err != nil {
-		return err
+		return 1, err
 	}
 
 	cfg, cfgPath, err := config.LoadNearest(root)
 	if err != nil && !errors.Is(err, config.ErrNotFound) {
-		return err
+		return 1, err
 	}
 
 	parserStatus := parserSelfCheck()
 	toolchainPath, toolchainOK, toolchainDetail := gladehome.ToolchainStatus()
 	info := cliui.DoctorInfo{
+		SchemaVersion:   "1.0",
+		Command:         "doctor",
 		Version:         Version,
 		GoVersion:       runtime.Version(),
 		OSArch:          runtime.GOOS + "/" + runtime.GOARCH,
@@ -732,12 +854,16 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) error {
 		info.ProjectRoot = cfg.Project.Root
 		info.DefaultNamespace = cfg.Project.DefaultNamespace
 	}
+	ok := info.ParserOK && info.ToolchainOK && !info.ConfigMissing
+	info.Status = statusForOK(ok)
+	info.ExitCode = exitCodeForOK(ok)
+	info.Suggestions = []string{"glade check", "glade test changed --since origin/main", "glade playground --examples --open"}
 	if parsed.Bool("json") {
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
-		return enc.Encode(info)
+		return info.ExitCode, enc.Encode(info)
 	}
-	return cliui.WriteDoctor(w, info)
+	return info.ExitCode, cliui.WriteDoctor(w, info)
 }
 
 // parserSelfCheck parses a trivial Apex class and reports whether the bundled
@@ -778,15 +904,7 @@ func runParse(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 	if len(paths) == 0 {
 		return apexast.Result{}, errors.New("usage: glade parse <paths...> [--json]")
 	}
-	progressMode := cliui.ProgressAuto
-	switch {
-	case parsed.Bool("progress-json"):
-		progressMode = cliui.ProgressJSON
-	case parsed.Bool("progress"):
-		progressMode = cliui.ProgressLine
-	case parsed.Bool("no-progress") || parsed.Bool("quiet"):
-		progressMode = cliui.ProgressOff
-	}
+	progressMode := progressModeForFlags(jsonOut, parsed.Bool("progress"), parsed.Bool("progress-json"), parsed.Bool("no-progress") || parsed.Bool("quiet"))
 	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: progressMode})
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "parse", Label: "Finding Apex files"})
 
@@ -858,7 +976,7 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 		return typesys.Index{}, errors.New("usage: glade inspect symbols [--project <root>] [--json]")
 	}
 
-	root, jsonOut, err := parseProjectFlags(args[1:])
+	root, jsonOut, fullPaths, kindFilter, err := parseInspectSymbolsFlags(args[1:])
 	if err != nil {
 		return typesys.Index{}, err
 	}
@@ -873,45 +991,98 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 	index := typesys.Build(p, s)
 
 	if jsonOut {
-		enc := json.NewEncoder(w)
-		enc.SetIndent("", "  ")
-		return index, enc.Encode(index)
+		return index, writeCLIJSONEnvelope(w, cliJSONEnvelope{
+			Command:     "inspect symbols",
+			Status:      statusForOK(!index.HasErrors()),
+			ExitCode:    exitCodeForOK(!index.HasErrors()),
+			Project:     index.Project,
+			Summary:     inspectSymbolsSummary(index),
+			Diagnostics: diagnosticsJSON(index.Project.Root, index.Diagnostics),
+			Data:        index,
+			Suggestions: []string{"glade check --project .", "glade inspect graph --project ."},
+		})
 	}
 
-	fmt.Fprintf(w, "project: %s\n", index.Project.Root)
+	fmt.Fprintln(w, "Project symbols")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Summary:")
+	fmt.Fprintf(w, "  Apex types   %d\n", len(index.Types))
+	fmt.Fprintf(w, "  Triggers     %d\n", len(index.Triggers))
+	fmt.Fprintf(w, "  Objects      %d\n", len(index.Objects))
+	fmt.Fprintf(w, "  Fields       %d\n", countIndexFields(index))
 	if index.Project.Namespace != "" {
-		fmt.Fprintf(w, "namespace: %s\n", index.Project.Namespace)
+		fmt.Fprintf(w, "  Namespace    %s\n", index.Project.Namespace)
 	}
-	fmt.Fprintf(w, "types: %d\n", len(index.Types))
-	fmt.Fprintf(w, "triggers: %d\n", len(index.Triggers))
-	fmt.Fprintf(w, "objects: %d\n", len(index.Objects))
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Symbols:")
+	fmt.Fprintln(w, "  Kind     Name             File")
 	for _, typ := range index.Types {
-		fmt.Fprintf(w, "%s %s %s\n", typ.Kind, typ.Name, typ.File)
-		for _, member := range typ.Members {
-			fmt.Fprintf(w, "  %s %s", member.Kind, member.Name)
-			if member.Type != "" {
-				fmt.Fprintf(w, " %s", member.Type)
-			}
-			if member.IsTest {
-				fmt.Fprint(w, " @isTest")
-			}
-			fmt.Fprintln(w)
+		if kindFilter != "" && kindFilter != string(typ.Kind) {
+			continue
 		}
+		file := typ.File
+		if !fullPaths {
+			file = cliui.ProjectRelativePath(index.Project.Root, file)
+		}
+		fmt.Fprintf(w, "  %-8s %-16s %s\n", typ.Kind, typ.Name, file)
 	}
 	for _, trigger := range index.Triggers {
-		fmt.Fprintf(w, "trigger %s on %s %s\n", trigger.Name, trigger.ObjectName, trigger.File)
+		if kindFilter != "" && kindFilter != "trigger" {
+			continue
+		}
+		file := trigger.File
+		if !fullPaths {
+			file = cliui.ProjectRelativePath(index.Project.Root, file)
+		}
+		fmt.Fprintf(w, "  %-8s %-16s %s\n", "trigger", trigger.Name, file)
 	}
 	for _, object := range index.Objects {
-		fmt.Fprintf(w, "sobject %s fields=%d\n", object.Name, len(object.Fields))
-		for _, field := range object.Fields {
-			fmt.Fprintf(w, "  field %s %s\n", field.Name, field.Type)
+		if kindFilter != "" && kindFilter != "object" && kindFilter != "sobject" {
+			continue
 		}
+		fmt.Fprintf(w, "  %-8s %-16s %s\n", "object", object.Name, "local schema")
 	}
 	if len(index.Diagnostics) > 0 {
+		fmt.Fprintln(w)
 		_ = diagnostic.Report{Diagnostics: index.Diagnostics}.WriteText(w)
 		fmt.Fprintln(w)
 	}
 	return index, nil
+}
+
+func parseInspectSymbolsFlags(args []string) (root string, jsonOut bool, fullPaths bool, kind string, err error) {
+	root = "."
+	parsed, err := flagparse.New("glade inspect symbols").
+		String("project", "p").
+		Bool("json", "j").
+		Bool("full-paths", "").
+		String("kind", "").
+		Parse(args)
+	if err != nil {
+		return "", false, false, "", err
+	}
+	if parsed.String("project") != "" {
+		root = parsed.String("project")
+	}
+	kind = strings.ToLower(strings.TrimSpace(parsed.String("kind")))
+	return root, parsed.Bool("json"), parsed.Bool("full-paths"), kind, nil
+}
+
+func inspectSymbolsSummary(index typesys.Index) map[string]int {
+	return map[string]int{
+		"apexTypes": len(index.Types),
+		"triggers":  len(index.Triggers),
+		"objects":   len(index.Objects),
+		"fields":    countIndexFields(index),
+	}
+}
+
+func countIndexFields(index typesys.Index) int {
+	fields := 0
+	for _, object := range index.Objects {
+		fields += len(object.Fields)
+	}
+	return fields
 }
 
 func runSchema(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
@@ -965,16 +1136,59 @@ func runSchema(ctx context.Context, args []string, w io.Writer, progressW io.Wri
 	})
 	renderer.Finish(cliui.Result{OK: true, Label: "schema loaded"})
 	if jsonOut {
-		enc := json.NewEncoder(w)
-		enc.SetIndent("", "  ")
-		return enc.Encode(s)
+		return writeCLIJSONEnvelope(w, cliJSONEnvelope{
+			Command:  "schema load",
+			Status:   "passed",
+			ExitCode: 0,
+			Project:  p,
+			Summary: map[string]any{
+				"objects": len(s.Objects),
+				"fields":  countSchemaFields(s),
+				"sources": packageDirectoryPaths(p),
+			},
+			Data:        s,
+			Suggestions: []string{"glade check"},
+		})
 	}
 
-	fmt.Fprintf(w, "objects: %d\n", len(s.Objects))
-	for _, object := range s.Objects {
-		fmt.Fprintf(w, "%s fields=%d\n", object.Name, len(object.Fields))
+	fmt.Fprintln(w, "Glade schema load")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Loaded local metadata")
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "Objects   %d\n", len(s.Objects))
+	fmt.Fprintf(w, "Fields    %d\n", countSchemaFields(s))
+	if sources := packageDirectoryPaths(p); len(sources) > 0 {
+		fmt.Fprintf(w, "Sources   %s\n", strings.Join(sources, ", "))
 	}
+	if len(s.Objects) > 0 {
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "Objects:")
+		for _, object := range s.Objects {
+			fmt.Fprintf(w, "  %s\n", object.Name)
+		}
+	}
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Next:")
+	fmt.Fprintln(w, "  glade check")
 	return nil
+}
+
+func countSchemaFields(s gladeschema.Schema) int {
+	total := 0
+	for _, object := range s.Objects {
+		total += len(object.Fields)
+	}
+	return total
+}
+
+func packageDirectoryPaths(p project.Project) []string {
+	out := make([]string, 0, len(p.PackageDirectories))
+	for _, dir := range p.PackageDirectories {
+		if strings.TrimSpace(dir.Path) != "" {
+			out = append(out, filepath.ToSlash(dir.Path))
+		}
+	}
+	return out
 }
 
 func runSchemaImportDescribe(args []string, w io.Writer) error {
@@ -1096,8 +1310,9 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		Total:   4,
 	})
 	renderer.Finish(cliui.Result{
-		OK:    !result.HasErrors(),
-		Label: "check complete",
+		OK:       !result.HasErrors(),
+		Label:    "check complete",
+		ExitCode: exitCodeForOK(!result.HasErrors()),
 	})
 
 	out := w
@@ -1116,13 +1331,17 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 
 	switch outputFormat {
 	case "json":
-		enc := json.NewEncoder(w)
-		enc.SetIndent("", "  ")
-		if out != w {
-			enc = json.NewEncoder(out)
-			enc.SetIndent("", "  ")
-		}
-		return result, enc.Encode(result)
+		return result, writeCLIJSONEnvelope(out, cliJSONEnvelope{
+			Command:     "check",
+			Status:      statusForOK(!result.HasErrors()),
+			ExitCode:    exitCodeForOK(!result.HasErrors()),
+			Project:     result.Project,
+			Summary:     result.Summary,
+			Diagnostics: diagnosticsJSON(result.Project.Root, result.Diagnostics),
+			Artifacts:   []any{},
+			Suggestions: []string{"glade schema load --project .", "glade check --project ."},
+			Data:        result,
+		})
 	case "sarif":
 		return result, diagnostic.Report{Diagnostics: result.Diagnostics}.WriteSARIF(out)
 	case "github":
@@ -1141,7 +1360,6 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 func parseCheckFlags(args []string) (root string, outputFormat string, outputPath string, progressMode cliui.ProgressMode, err error) {
 	root = "."
 	outputFormat = "text"
-	progressMode = cliui.ProgressAuto
 	parsed, err := flagparse.New("glade check").
 		String("project", "p").
 		Bool("json", "j").
@@ -1170,14 +1388,7 @@ func parseCheckFlags(args []string) (root string, outputFormat string, outputPat
 		return "", "", "", cliui.ProgressOff, fmt.Errorf("--format must be text, json, sarif, or github")
 	}
 	outputPath = parsed.String("output")
-	switch {
-	case parsed.Bool("progress-json"):
-		progressMode = cliui.ProgressJSON
-	case parsed.Bool("progress"):
-		progressMode = cliui.ProgressLine
-	case parsed.Bool("no-progress") || parsed.Bool("quiet"):
-		progressMode = cliui.ProgressOff
-	}
+	progressMode = progressModeForFlags(outputFormat == "json", parsed.Bool("progress"), parsed.Bool("progress-json"), parsed.Bool("no-progress") || parsed.Bool("quiet"))
 	return root, outputFormat, outputPath, progressMode, nil
 }
 
@@ -1215,6 +1426,7 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	debug := false
 	tracePath := ""
 	debugLogPath := ""
+	debugLogMode := "summary"
 	limitMode := vm.LimitMode("")
 	parsed, err := flagparse.New("glade exec").
 		Bool("json", "j").
@@ -1224,6 +1436,7 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 		Bool("dry-run", "").
 		String("trace", "t").
 		String("debug-log", "").
+		String("log-out", "").
 		String("limit-mode", "").
 		AllowPositionals(true).
 		Parse(args)
@@ -1240,7 +1453,22 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 		projectRoot = "."
 	}
 	tracePath = parsed.String("trace")
-	debugLogPath = parsed.String("debug-log")
+	debugLogArg := strings.TrimSpace(parsed.String("debug-log"))
+	logOutPath := strings.TrimSpace(parsed.String("log-out"))
+	switch debugLogArg {
+	case "", "summary":
+		debugLogMode = "summary"
+	case "raw":
+		debugLogMode = "raw"
+	case "-":
+		debugLogMode = "raw"
+		debugLogPath = "-"
+	default:
+		debugLogPath = debugLogArg
+	}
+	if logOutPath != "" {
+		debugLogPath = logOutPath
+	}
 	if parsed.String("limit-mode") != "" {
 		mode, err := parseLimitMode(parsed.String("limit-mode"))
 		if err != nil {
@@ -1259,11 +1487,11 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	}
 
 	stdout := w
-	if jsonOut || debugLogPath != "" {
+	if jsonOut || debug || debugLogMode == "summary" || debugLogMode == "raw" || debugLogPath != "" {
 		stdout = nil
 	}
 	machine := vm.New(stdout)
-	machine.SetTraceEnabled(tracePath != "" || debug || jsonOut || debugLogPath != "")
+	machine.SetTraceEnabled(tracePath != "" || debug || jsonOut || debugLogMode != "" || debugLogPath != "")
 	if limitMode != "" {
 		machine.SetLimitMode(limitMode)
 	}
@@ -1299,9 +1527,16 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 		}
 	}
 	result, execErr := machine.Execute(program)
-	if debugLogPath != "" {
+	logPathForSummary := debugLogPath
+	if debugLogMode == "raw" && logPathForSummary == "" {
+		logPathForSummary = "-"
+	}
+	if !jsonOut && !debug && debugLogMode != "raw" && logPathForSummary == "" {
+		logPathForSummary = defaultExecLogPath(projectRoot)
+	}
+	if logPathForSummary != "" {
 		log := apexlog.Format(&result, execErr, apexlog.Options{})
-		if err := writeDebugLog(debugLogPath, log, w); err != nil {
+		if err := writeDebugLog(logPathForSummary, log, w); err != nil {
 			return err
 		}
 	}
@@ -1323,11 +1558,87 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	}
 
 	if jsonOut {
-		enc := json.NewEncoder(w)
-		enc.SetIndent("", "  ")
-		return enc.Encode(result)
+		return writeCLIJSONEnvelope(w, cliJSONEnvelope{
+			Command:   "exec",
+			Status:    "passed",
+			ExitCode:  0,
+			Summary:   execSummary(result, logPathForSummary),
+			Artifacts: execArtifacts(logPathForSummary, tracePath),
+			Suggestions: []string{
+				"glade debug profile --log " + defaultLogSuggestion(logPathForSummary),
+				"glade db inspect",
+			},
+			Data: result,
+		})
 	}
 
+	if debugLogMode == "raw" && logPathForSummary == "-" {
+		return nil
+	}
+	return writeExecSummary(w, result, logPathForSummary)
+}
+
+func defaultExecLogPath(root string) string {
+	base := strings.TrimSpace(root)
+	if base == "" {
+		base = "."
+	}
+	return filepath.Join(base, ".glade", "logs", "exec-"+time.Now().UTC().Format("20060102T150405Z")+".log")
+}
+
+func defaultLogSuggestion(path string) string {
+	if strings.TrimSpace(path) == "" {
+		return "<log>"
+	}
+	return path
+}
+
+func execSummary(result vm.Result, logPath string) map[string]any {
+	return map[string]any{
+		"debugEvents": len(result.Debug),
+		"soqlQueries": result.Limits.Queries,
+		"dml":         result.Limits.DMLStatements,
+		"cpuTimeMs":   result.Limits.CPUTimeMS,
+		"log":         logPath,
+	}
+}
+
+func execArtifacts(logPath, tracePath string) []any {
+	artifacts := []any{}
+	if strings.TrimSpace(logPath) != "" && logPath != "-" {
+		artifacts = append(artifacts, map[string]string{"kind": "debugLog", "path": logPath})
+	}
+	if strings.TrimSpace(tracePath) != "" {
+		artifacts = append(artifacts, map[string]string{"kind": "trace", "path": tracePath})
+	}
+	return artifacts
+}
+
+func writeExecSummary(w io.Writer, result vm.Result, logPath string) error {
+	fmt.Fprintln(w, "Glade exec")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "✓ Anonymous Apex executed")
+	if len(result.Debug) > 0 {
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "Debug:")
+		for _, line := range result.Debug {
+			fmt.Fprintln(w, "  USER_DEBUG "+line)
+		}
+	}
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Limits:")
+	fmt.Fprintf(w, "  SOQL queries    %d / 100\n", result.Limits.Queries)
+	fmt.Fprintf(w, "  DML statements  %d / 150\n", result.Limits.DMLStatements)
+	fmt.Fprintf(w, "  CPU time        %dms / 10000ms\n", result.Limits.CPUTimeMS)
+	if strings.TrimSpace(logPath) != "" && logPath != "-" {
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "Log:")
+		fmt.Fprintln(w, "  "+filepath.ToSlash(logPath))
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "Next:")
+		fmt.Fprintf(w, "  glade debug profile --log %s\n", filepath.ToSlash(logPath))
+		fmt.Fprintln(w, "  glade db inspect")
+	}
 	return nil
 }
 
@@ -1390,6 +1701,7 @@ func runProfile(ctx context.Context, args []string, w io.Writer) error {
 	tracePath := ""
 	parsed, err := flagparse.New("glade profile analyze").
 		Bool("json", "j").
+		String("format", "").
 		AllowPositionals(true).
 		Parse(args[1:])
 	if err != nil {
@@ -1415,9 +1727,25 @@ func runProfile(ctx context.Context, args []string, w io.Writer) error {
 	}
 	report := profile.Analyze(doc)
 	if parsed.Bool("json") {
-		return profile.WriteJSON(w, report)
+		return writeCLIJSONEnvelope(w, cliJSONEnvelope{
+			Command:  "profile analyze",
+			Status:   "passed",
+			ExitCode: 0,
+			Summary:  map[string]any{"events": report.Events, "limits": report.Limits},
+			Data:     report,
+			Suggestions: []string{
+				"glade debug profile --log <apex.log>",
+			},
+		})
 	}
-	return profile.WriteMarkdown(w, report)
+	switch strings.ToLower(strings.TrimSpace(parsed.String("format"))) {
+	case "", "text":
+		return profile.WriteText(w, report, tracePath)
+	case "markdown":
+		return profile.WriteMarkdown(w, report)
+	default:
+		return fmt.Errorf("--format must be text or markdown")
+	}
 }
 
 func storageBaseline() storage.OrgState {
@@ -1454,7 +1782,6 @@ func parseProjectFlags(args []string) (root string, jsonOut bool, err error) {
 
 func parseProjectProgressFlags(args []string) (root string, jsonOut bool, progressMode cliui.ProgressMode, err error) {
 	root = "."
-	progressMode = cliui.ProgressAuto
 	parsed, err := flagparse.New("glade project progress").
 		String("project", "p").
 		Bool("json", "j").
@@ -1469,14 +1796,7 @@ func parseProjectProgressFlags(args []string) (root string, jsonOut bool, progre
 	if parsed.String("project") != "" {
 		root = parsed.String("project")
 	}
-	switch {
-	case parsed.Bool("progress"):
-		progressMode = cliui.ProgressLine
-	case parsed.Bool("progress-json"):
-		progressMode = cliui.ProgressJSON
-	case parsed.Bool("no-progress") || parsed.Bool("quiet"):
-		progressMode = cliui.ProgressOff
-	}
+	progressMode = progressModeForFlags(parsed.Bool("json"), parsed.Bool("progress"), parsed.Bool("progress-json"), parsed.Bool("no-progress") || parsed.Bool("quiet"))
 	return root, parsed.Bool("json"), progressMode, nil
 }
 

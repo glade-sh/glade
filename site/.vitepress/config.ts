@@ -40,6 +40,8 @@ export default defineConfig({
           { text: 'Quickstart', link: '/guide/quickstart' },
           { text: 'Tester Field Guide', link: '/guide/tester-field-guide' },
           { text: 'Installation', link: '/guide/installation' },
+          { text: 'CLI Output Modes', link: '/guide/cli-output' },
+          { text: 'Exit Codes', link: '/guide/exit-codes' },
           { text: 'Support map', link: '/guide/support-map' }
         ]
       },
@@ -53,7 +55,17 @@ export default defineConfig({
           { text: 'Map enterprise projects', link: '/guide/enterprise-workflows' },
           { text: 'Use the local playground', link: '/guide/playground' },
           { text: 'Run a local Salesforce-shaped API', link: '/guide/local-api-server' },
-          { text: 'Add Glade to CI', link: '/guide/ci-artifacts' }
+          { text: 'Add Glade to CI', link: '/guide/ci-artifacts' },
+          { text: 'Automation And JSON', link: '/guide/automation' },
+          { text: 'Built-In Examples', link: '/guide/examples' },
+          { text: 'Error Codes And Explain', link: '/guide/errors' }
+        ]
+      },
+      {
+        text: 'Reference',
+        collapsed: true,
+        items: [
+          { text: 'JSON Envelope', link: '/reference/json-schema' }
         ]
       },
       {

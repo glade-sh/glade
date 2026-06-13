@@ -9,8 +9,20 @@ glade test --project .
 ```
 
 ```text
-PASS AccountServiceTest.testCreatesAccount 42ms
-Result: 1 passed, 0 failed
+Glade test
+
+1 selected, 1 passed, 0 failed
+
+Selected: 1
+Passed:   1
+Failed:   0
+Runtime:  420ms
+
+  ✓  AccountServiceTest.testCreatesAccount  42ms
+
+Next:
+  glade test --watch
+  glade test failed
 ```
 
 Machine-readable output:
@@ -18,6 +30,8 @@ Machine-readable output:
 ```bash
 glade test --project . --json
 ```
+
+`--json` writes the versioned envelope described in [Automation And JSON](/guide/automation).
 
 JUnit output for CI:
 
@@ -39,7 +53,7 @@ Run a single method:
 glade test --project . --class AccountServiceTest --method testCreatesAccount
 ```
 
-Use filters for the short inner loop. Then run the broader suite before shipping.
+Use exact class and method selectors for the short inner loop. Then run the broader suite before shipping.
 
 ## Limit modes
 
@@ -118,7 +132,7 @@ A small CI gate can check the project, run affected tests, then write JUnit outp
 
 ```bash
 glade check --project . --json
-glade test changed --project . --since origin/main --json
+glade test changed --project . --since origin/main --json --no-progress
 glade test --project . --junit reports/glade-junit.xml
 ```
 
@@ -132,10 +146,13 @@ assertion means the test ran and failed. An unsupported feature means
 the runtime stopped at a known unsupported Salesforce surface.
 
 ```text
-PASS AccountServiceTest.testCreatesAccount 42ms
-FAIL AccountServiceTest.testRejectsBlankName: System.AssertException
-UNSUPPORTED ApprovalProcessTest.testSubmit: Approval.process is not supported locally
-COMPILE_ERROR InvoiceServiceTest: Unknown type Invoice__c
+  ✓  AccountServiceTest.testCreatesAccount  42ms
+  ✗  AccountServiceTest.testRejectsBlankName  12ms
+
+  AccountServiceTest.testRejectsBlankName
+  System.AssertException: expected 1, got 0
+
+  force-app/main/default/classes/AccountServiceTest.cls:42
 ```
 
 Check the [Support map](/guide/support-map) before relying on platform

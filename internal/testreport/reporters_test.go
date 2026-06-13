@@ -14,18 +14,24 @@ func TestWriteConsole(t *testing.T) {
 
 	got := out.String()
 	for _, want := range []string{
-		"Tests",
-		"6 selected · 1 passed · 1 failed",
+		"Glade test",
+		"6 selected, 1 passed, 1 failed",
+		"Selected: 6",
+		"Passed:   1",
+		"Failed:   1",
 		"AccountTest.testCreatesAccount",
 		"AccountTest.testRejectsBlankName",
 		"System.AssertException: Expected true",
-		"at AccountTest.testRejectsBlankName:42",
-		"Result",
-		"1 passed · 1 failed · 6 total",
+		"force-app/main/classes/AccountTest.cls:42",
+		"Next:",
+		"glade test failed",
 	} {
 		if !bytes.Contains([]byte(got), []byte(want)) {
 			t.Fatalf("console output missing %q:\n%s", want, got)
 		}
+	}
+	if bytes.Contains([]byte(got), []byte("+")) || bytes.Contains([]byte(got), []byte("╭")) {
+		t.Fatalf("console output used decorative box:\n%s", got)
 	}
 }
 
@@ -61,7 +67,7 @@ func TestWriteConsoleOmitsLargePassListing(t *testing.T) {
 		t.Fatalf("expected pass listing to be omitted for large run:\n%s", got)
 	}
 	for _, want := range []string{
-		"... 81 tests passed (listing omitted)",
+		"... 81 passed tests omitted from listing",
 		"3s",
 	} {
 		if !bytes.Contains([]byte(got), []byte(want)) {
@@ -76,7 +82,7 @@ func TestWriteConsoleWithReportPath(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := out.String(); !bytes.Contains([]byte(got), []byte("Report: .glade/runs/latest/summary.md\n")) {
+	if got := out.String(); !bytes.Contains([]byte(got), []byte("Artifacts:\n  Report  .glade/runs/latest/summary.md\n")) {
 		t.Fatalf("console output missing report path:\n%s", got)
 	}
 }

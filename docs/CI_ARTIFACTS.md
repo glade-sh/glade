@@ -23,7 +23,7 @@ glade check --project . --format github
 JSON remains available:
 
 ```bash
-glade check --project . --format json --output glade-check.json
+glade check --project . --format json --output glade-check.json --no-progress
 ```
 
 `--json` is still accepted as the short form for `--format json`.

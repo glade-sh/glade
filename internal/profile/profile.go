@@ -295,6 +295,73 @@ func WriteMarkdown(w io.Writer, report Report) error {
 	return nil
 }
 
+func WriteText(w io.Writer, report Report, logPath string) error {
+	if _, err := fmt.Fprintln(w, "Glade debug profile"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "Events: %d\n\n", report.Events); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "Runtime:"); err != nil {
+		return err
+	}
+	rows := []struct {
+		label string
+		value string
+	}{
+		{"SOQL queries", fmt.Sprintf("%d query / %d rows", report.Limits.SOQLQueries, report.Limits.SOQLRows)},
+		{"DML statements", fmt.Sprintf("%d statement / %d rows", report.Limits.DML, report.Limits.DMLRows)},
+		{"Callouts", fmt.Sprint(report.Limits.Callouts)},
+		{"CPU", fmt.Sprintf("%dms", report.Limits.CPUTimeMS)},
+		{"Heap", fmt.Sprintf("%d bytes", report.Limits.HeapSize)},
+	}
+	for _, row := range rows {
+		if _, err := fmt.Fprintf(w, "  %-15s %s\n", row.label, row.value); err != nil {
+			return err
+		}
+	}
+	if len(report.Hot) > 0 {
+		if _, err := fmt.Fprintln(w); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "Hot events:"); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "  Rank  Event                  Count  Rows  Duration"); err != nil {
+			return err
+		}
+		limit := len(report.Hot)
+		if limit > 8 {
+			limit = 8
+		}
+		for i := 0; i < limit; i++ {
+			entry := report.Hot[i]
+			name := entry.Name
+			if len(name) > 22 {
+				name = name[:19] + "..."
+			}
+			if _, err := fmt.Fprintf(w, "  %-4d  %-22s %-5d  %-4d  %dms\n", i+1, name, entry.Count, entry.Rows, entry.DurationMS); err != nil {
+				return err
+			}
+		}
+	}
+	if strings.TrimSpace(logPath) != "" {
+		if _, err := fmt.Fprintln(w); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "Next:"); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(w, "  glade debug explain --log %s --project .\n", logPath); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func writeCategorySummary(w io.Writer, categories map[string]int) error {
 	if len(categories) == 0 {
 		return nil

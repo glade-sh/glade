@@ -12,6 +12,8 @@
 
 All commands are local unless you point Glade at an external path or start a server. Most project commands accept `--project <root>` and default to the current directory when a project is discoverable.
 
+Human output is a terminal surface. Use `--json` or `--format` for scripts. See [CLI Output Modes](/guide/cli-output), [Automation And JSON](/guide/automation), and [Exit Codes](/guide/exit-codes) for the stable contract.
+
 <div class="docs-command-filter">
   <label for="cli-command-filter">Filter commands</label>
   <input id="cli-command-filter" data-command-filter=".docs-command-card" type="search" placeholder="Try check, test, report, plugin, playground" autocomplete="off" />
@@ -79,6 +81,23 @@ glade completion zsh > ~/.zsh/completions/_glade
 glade completion fish > ~/.config/fish/completions/glade.fish
 ```
 
+## Discovery commands
+
+Use these when you are not sure where to start:
+
+```bash
+glade help workflows
+glade help commands
+glade help exit-codes
+glade examples
+glade examples --tag limits
+glade examples show account-service
+glade explain GLADESEMA002
+glade support
+```
+
+`glade` without arguments shows the short workflow doorway. `glade help commands` shows the full command inventory.
+
 ## `glade config`
 
 Inspect, validate, and create `glade.yml`.
@@ -108,6 +127,8 @@ Build the project symbol index and print declarations, members, triggers, and sc
 
 ```bash
 glade inspect symbols --project .
+glade inspect symbols --project . --kind class
+glade inspect symbols --project . --full-paths
 glade inspect symbols --project . --json
 ```
 
@@ -181,10 +202,13 @@ glade report refactor-proof --project . --since origin/main --format html --out 
 ## `glade exec`
 
 Run execute-anonymous Apex against local source and storage.
+Default output summarizes debug lines and limit counters, then writes the raw log under `.glade/logs`.
 
 ```bash
 glade exec --project . "System.debug('hello from glade');"
 glade exec --project . --trace reports/trace.json "System.debug(1);"
+glade exec --project . --debug-log raw "System.debug('hello from glade');"
+glade exec --project . --log-out reports/exec.log "System.debug('hello from glade');"
 glade exec --project . --limit-mode strict "System.debug(Limits.getDmlStatements());"
 ```
 
@@ -207,7 +231,7 @@ glade test --project .
 glade test --project . --class AccountServiceTest --json
 glade test --project . --class AccountServiceTest --method testCreatesAccount --junit reports/glade-junit.xml
 glade test --project . --connect --class AccountServiceTest
-glade test changed --project . --since origin/main --json
+glade test changed --project . --since origin/main --json --no-progress
 glade test failed --project .
 glade test --project . --wizard
 glade test --project . --watch
@@ -250,12 +274,13 @@ glade lsp --project . --diagnostics-once
 
 ## `glade profile analyze`
 
-Read a native trace and emit JSON or Markdown profile output.
+Read a Glade native trace and emit terminal, JSON, or Markdown profile output.
 
 ```bash
 glade exec --project . --trace reports/trace.json "System.debug(1);"
 glade profile analyze reports/trace.json
 glade profile analyze reports/trace.json --json
+glade profile analyze reports/trace.json --format markdown
 ```
 
 ## `glade plugins`
@@ -298,8 +323,11 @@ Parse, profile, explain, or synthesize from Salesforce debug logs.
 ```bash
 glade debug parse --log apex.log --json
 glade debug profile --log apex.log
+glade debug profile --log apex.log --format markdown
 glade debug explain --log apex.log --project . --json
 ```
+
+`glade debug profile --log apex.log` profiles a Salesforce debug log. `glade profile analyze reports/trace.json` profiles a Glade native trace.
 
 ## `glade editor` and `glade dap`
 

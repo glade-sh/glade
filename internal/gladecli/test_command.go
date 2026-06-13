@@ -224,6 +224,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	}
 	if parsed.Bool("json") {
 		format = "json"
+		progressMode = cliui.ProgressOff
 	}
 	traceBlocked = parsed.Bool("trace-blockers")
 	if parsed.String("slow-test-ms") != "" {
@@ -433,7 +434,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		}
 		switch format {
 		case "json":
-			return result, testreport.WriteJSON(w, result)
+			return result, writeTestJSONEnvelope(w, result, junitPath)
 		default:
 			return result, testreport.WriteConsole(w, result)
 		}
@@ -534,10 +535,65 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	}
 	switch format {
 	case "json":
-		return result, testreport.WriteJSON(w, result)
+		return result, writeTestJSONEnvelope(w, result, junitPath)
 	default:
 		return result, testreport.WriteConsole(w, result)
 	}
+}
+
+func writeTestJSONEnvelope(w io.Writer, result testreport.Run, junitPath string) error {
+	summary := result.Summary()
+	ok := summary.Failed == 0 && summary.Errors == 0
+	artifacts := []any{}
+	if strings.TrimSpace(junitPath) != "" {
+		artifacts = append(artifacts, map[string]string{"kind": "junit", "path": junitPath})
+	}
+	return writeCLIJSONEnvelope(w, cliJSONEnvelope{
+		Command:   "test",
+		Status:    statusForOK(ok),
+		ExitCode:  exitCodeForOK(ok),
+		Summary:   summary,
+		Tests:     flattenTestCases(result),
+		Artifacts: artifacts,
+		Suggestions: []string{
+			"glade test --watch",
+			"glade test failed",
+		},
+		Data: result,
+	})
+}
+
+func flattenTestCases(result testreport.Run) []map[string]any {
+	out := []map[string]any{}
+	for _, suite := range result.Suites {
+		for _, testCase := range suite.Cases {
+			name := testCase.Name
+			if name == "" {
+				switch {
+				case testCase.ClassName != "" && testCase.MethodName != "":
+					name = testCase.ClassName + "." + testCase.MethodName
+				case testCase.ClassName != "":
+					name = testCase.ClassName
+				case testCase.MethodName != "":
+					name = testCase.MethodName
+				default:
+					name = suite.Name
+				}
+			}
+			row := map[string]any{
+				"name":       name,
+				"className":  testCase.ClassName,
+				"methodName": testCase.MethodName,
+				"status":     testCase.Status,
+				"durationMs": testCase.DurationMS,
+			}
+			if testCase.Problem != nil {
+				row["problem"] = testCase.Problem
+			}
+			out = append(out, row)
+		}
+	}
+	return out
 }
 
 func writeTestTraceFile(path string, result testreport.Run) error {
@@ -1113,8 +1169,9 @@ func (r *cliTestProgressReporter) finish() {
 		Total:   r.total,
 	})
 	r.renderer.Finish(cliui.Result{
-		OK:    ok,
-		Label: fmt.Sprintf("%d passed, %d failed, %d errors · %s", r.passed, r.failed, r.errors, elapsed),
+		OK:       ok,
+		Label:    fmt.Sprintf("%d passed, %d failed, %d errors · %s", r.passed, r.failed, r.errors, elapsed),
+		ExitCode: exitCodeForOK(ok),
 	})
 }
 

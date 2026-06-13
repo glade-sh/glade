@@ -60,7 +60,7 @@ func runDebugProfile(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 
-	logPath, jsonOut, err := parseDebugCommandArgs(args)
+	logPath, jsonOut, format, err := parseDebugProfileArgs(args)
 	if err != nil {
 		return err
 	}
@@ -71,9 +71,21 @@ func runDebugProfile(ctx context.Context, args []string, w io.Writer) error {
 	doc := apexlog.TraceDocument(log)
 	report := profile.Analyze(doc)
 	if jsonOut {
-		return profile.WriteJSON(w, report)
+		return writeCLIJSONEnvelope(w, cliJSONEnvelope{
+			Command:  "debug profile",
+			Status:   "passed",
+			ExitCode: 0,
+			Summary:  map[string]any{"events": report.Events, "limits": report.Limits},
+			Data:     report,
+			Suggestions: []string{
+				"glade debug explain --log " + logPath + " --project .",
+			},
+		})
 	}
-	return profile.WriteMarkdown(w, report)
+	if format == "markdown" {
+		return profile.WriteMarkdown(w, report)
+	}
+	return profile.WriteText(w, report, logPath)
 }
 
 func runDebugExplain(ctx context.Context, args []string, w io.Writer) error {
@@ -154,6 +166,39 @@ func parseDebugCommandArgs(args []string) (logPath string, jsonOut bool, err err
 		return "", jsonOut, errors.New("--log is required")
 	}
 	return logPath, jsonOut, nil
+}
+
+func parseDebugProfileArgs(args []string) (logPath string, jsonOut bool, format string, err error) {
+	format = "text"
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--log":
+			if i+1 >= len(args) {
+				return "", false, "", errors.New("--log requires a path")
+			}
+			logPath = args[i+1]
+			i++
+		case "--json":
+			jsonOut = true
+		case "--format":
+			if i+1 >= len(args) {
+				return "", false, "", errors.New("--format requires a value")
+			}
+			format = strings.ToLower(strings.TrimSpace(args[i+1]))
+			i++
+		default:
+			return "", false, "", fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	if logPath == "" {
+		return "", jsonOut, format, errors.New("--log is required")
+	}
+	switch format {
+	case "text", "markdown":
+	default:
+		return "", false, "", fmt.Errorf("--format must be text or markdown")
+	}
+	return logPath, jsonOut, format, nil
 }
 
 func parseDebugExplainArgs(args []string) (logPath string, jsonOut bool, minConfidence float64, projectRoot string, err error) {

@@ -24,7 +24,9 @@ glade doctor
 `glade doctor` must print:
 
 ```text
-parser: ok (tree-sitter)
+Glade doctor
+
+Ready.
 ```
 
 Open an SFDX project:
@@ -62,7 +64,7 @@ launches, and named SQLite-backed data environments.
 | Check source after a pull | `glade check --project .` |
 | Run one test class | `glade test --project . --class AccountServiceTest --json` |
 | Run one test method | `glade test --project . --class AccountServiceTest --method testCreatesAccount --json` |
-| Run tests affected by a branch | `glade test changed --project . --since origin/main --json` |
+| Run tests affected by a branch | `glade test changed --project . --since origin/main --json --no-progress` |
 | Rerun last failures | `glade test failed --project .` |
 | Let Glade pick the next loop | `glade test --project . --wizard` |
 | Keep repeated CLI runs warm | `glade test serve --project .` |
@@ -96,8 +98,8 @@ Do not connect to a Salesforce org for the first pass.
 Run:
   glade doctor
   glade config validate --project .
-  glade check --project . --format json --output reports/glade-check.json
-  glade test changed --project . --since origin/main --json > reports/glade-test-changed.json
+  glade check --project . --format json --output reports/glade-check.json --no-progress
+  glade test changed --project . --since origin/main --json --no-progress > reports/glade-test-changed.json
 If a command fails, quote the exact diagnostic, fix only the relevant source,
 and rerun the same command before claiming success.
 Check the Glade support map before treating unsupported platform services as bugs.
@@ -134,7 +136,7 @@ jobs:
       - run: glade doctor
       - run: mkdir -p reports
       - run: glade check --project . --format sarif --output reports/glade-check.sarif
-      - run: glade test changed --project . --since origin/main --json > reports/glade-test-changed.json
+      - run: glade test changed --project . --since origin/main --json --no-progress > reports/glade-test-changed.json
       - run: glade test --project . --junit reports/glade-junit.xml
       - uses: actions/upload-artifact@v4
         if: always()

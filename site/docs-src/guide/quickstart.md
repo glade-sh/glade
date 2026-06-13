@@ -27,7 +27,18 @@ If `glade` is not found, add `~/.local/bin` to `PATH` and restart your shell.
 Expected:
 
 ```text
-parser: ok (tree-sitter)
+Glade doctor
+
+Project     ✓ SFDX project found
+Parser      ✓ tree-sitter parser ready
+Toolchain   ✓ local runtime ready
+
+Ready.
+
+Next:
+  glade check
+  glade test changed --since origin/main
+  glade playground --examples --open
 ```
 
 ## 2. Open an SFDX Project
@@ -67,7 +78,15 @@ glade test changed --project . --since origin/main
 
 Expected: Glade maps changed Apex and metadata to the smallest local test set it can prove.
 
-## 6. Know The Limits
+## 6. Open The Playground
+
+```bash
+glade playground --examples --open
+```
+
+Expected: Glade starts the browser workbench and prints the local URL, example mode, database mode, and stop command.
+
+## 7. Know The Limits
 
 Glade is not a full Salesforce emulator. Check the [Support map](/guide/support-map)
 before relying on platform service APIs, live auth, Visualforce rendering, or

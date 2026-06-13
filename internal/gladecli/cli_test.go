@@ -103,6 +103,18 @@ asyncMaxDepth: 5
 	}
 }
 
+func TestProgressModeForJSONDefaultsOff(t *testing.T) {
+	if got := progressModeForFlags(true, false, false, false); string(got) != "off" {
+		t.Fatalf("json progress mode = %q, want off", got)
+	}
+	if got := progressModeForFlags(true, true, false, false); string(got) != "line" {
+		t.Fatalf("explicit line progress mode = %q, want line", got)
+	}
+	if got := progressModeForFlags(true, false, true, false); string(got) != "json" {
+		t.Fatalf("explicit json progress mode = %q, want json", got)
+	}
+}
+
 func TestRunVersionJSON(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"version", "--json"}, &stdout, &stderr)
@@ -130,12 +142,13 @@ func TestRunDoctorReportsParser(t *testing.T) {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
 	out := stdout.String()
-	if !strings.Contains(out, "parser") {
-		t.Fatalf("doctor output missing parser line:\n%s", out)
+	for _, want := range []string{"Glade doctor", "Project", "Toolchain", "Parser", "Next:", "glade check", "glade test changed --since origin/main"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("doctor output missing %q:\n%s", want, out)
+		}
 	}
-	// This test binary is built with CGO, so the parser must be available.
-	if !strings.Contains(out, "ok (tree-sitter)") {
-		t.Fatalf("expected parser ok in CGO build, got:\n%s", out)
+	if strings.Contains(out, "+") || strings.Contains(out, "╭") {
+		t.Fatalf("doctor output used decorative box:\n%s", out)
 	}
 }
 
@@ -150,6 +163,7 @@ func TestRunDoctorJSON(t *testing.T) {
 		GoVersion    string `json:"goVersion"`
 		OSArch       string `json:"osArch"`
 		CWD          string `json:"cwd"`
+		ExitCode     int    `json:"exitCode"`
 		ParserStatus string `json:"parserStatus"`
 		ParserOK     bool   `json:"parserOK"`
 	}
@@ -164,6 +178,30 @@ func TestRunDoctorJSON(t *testing.T) {
 	}
 	if !got.ParserOK {
 		t.Fatalf("parserOK = false, want true: %#v", got)
+	}
+	if got.ExitCode != code {
+		t.Fatalf("doctor JSON exitCode = %d, process code = %d", got.ExitCode, code)
+	}
+}
+
+func TestRunDoctorJSONExitCodeMatchesSetupStatus(t *testing.T) {
+	root := t.TempDir()
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"doctor", "--project", root, "--json"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	var got struct {
+		Status        string `json:"status"`
+		ExitCode      int    `json:"exitCode"`
+		ConfigMissing bool   `json:"configMissing"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
+	}
+	if got.Status != "failed" || got.ExitCode != code || !got.ConfigMissing {
+		t.Fatalf("doctor JSON did not match setup failure: code=%d got=%#v", code, got)
 	}
 }
 
@@ -712,6 +750,7 @@ echo "called plugin with $*"
 }
 
 func TestRunExecDoubleDashStopsFlagParsing(t *testing.T) {
+	t.Chdir(t.TempDir())
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"exec", "--", "String value = '--json'; System.assertEquals('--json', value);"}, &stdout, &stderr)
 	if code != 0 {
@@ -806,6 +845,82 @@ func TestRunCommandHelp(t *testing.T) {
 	}
 }
 
+func TestRunTopLevelHelpIsWorkflowDoorway(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), nil, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	got := stdout.String()
+	for _, want := range []string{
+		"Glade — local Apex runtime",
+		"Start here:",
+		"glade doctor",
+		"glade check",
+		"glade test changed --since origin/main",
+		"Workflows:",
+		"More:",
+		"glade help workflows",
+		"glade examples",
+		"glade support",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("top-level help missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "Commands\n  version") {
+		t.Fatalf("top-level help still leads with full command inventory:\n%s", got)
+	}
+}
+
+func TestRunDiscoveryCommands(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+		want []string
+	}{
+		{
+			name: "examples",
+			args: []string{"examples"},
+			want: []string{"Built-in examples", "account-service", "Try:", "glade playground --example account-service --open"},
+		},
+		{
+			name: "example show",
+			args: []string{"examples", "show", "account-service"},
+			want: []string{"account-service", "Account", "Try:", "glade playground --example account-service --open"},
+		},
+		{
+			name: "explain",
+			args: []string{"explain", "GLADESEMA002"},
+			want: []string{"GLADESEMA002", "unknown type", "Try:", "glade schema load --project ."},
+		},
+		{
+			name: "support",
+			args: []string{"support"},
+			want: []string{"Glade support", "Diagnostics", "glade doctor", "glade check --json"},
+		},
+		{
+			name: "workflows help",
+			args: []string{"help", "workflows"},
+			want: []string{"Workflows", "Local check loop", "glade test changed --since origin/main"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			code := Run(context.Background(), tt.args, &stdout, &stderr)
+			if code != 0 {
+				t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+			}
+			for _, want := range tt.want {
+				if !strings.Contains(stdout.String(), want) {
+					t.Fatalf("stdout missing %q:\n%s", want, stdout.String())
+				}
+			}
+		})
+	}
+}
+
 func TestRunCompletionBash(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"completion", "bash"}, &stdout, &stderr)
@@ -865,7 +980,7 @@ func TestRunCompletionRejectsUnknownShell(t *testing.T) {
 
 func TestRunTopLevelHelpAlignment(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), nil, &stdout, &stderr)
+	code := Run(context.Background(), []string{"help", "commands"}, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
@@ -1117,11 +1232,14 @@ func TestRunDevStatus(t *testing.T) {
 	}
 	got := stdout.String()
 	for _, want := range []string{
-		"Project: " + root,
-		"Package dirs: 1",
-		"Apex classes: 2",
-		"Apex tests: 1",
-		"Metadata: loaded",
+		"Glade dev",
+		"Local feedback loop",
+		"Project       " + filepath.Base(root),
+		"Package dirs  1",
+		"Apex classes  2",
+		"Apex tests    1",
+		"Metadata      loaded",
+		"On change:",
 		"Next:",
 		"glade dev test --project " + root,
 	} {
@@ -1171,7 +1289,7 @@ func TestRunDevWatchOnceUsesHumanOutput(t *testing.T) {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
 	got := stdout.String()
-	for _, want := range []string{"Watching ", "Strategy: affected tests", "1 passed", "Report: "} {
+	for _, want := range []string{"Glade dev", "Watching project for Apex changes.", "On change:", "Press Ctrl-C to stop.", "1 passed", "Report: "} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("stdout missing %q:\n%s", want, got)
 		}
@@ -1208,6 +1326,9 @@ func TestRunReportCommands(t *testing.T) {
 	}
 	if got := showOut.String(); !strings.Contains(got, "1 passed") {
 		t.Fatalf("report show output = %q", got)
+	}
+	if got := showOut.String(); !strings.Contains(got, "Glade report") || !strings.Contains(got, "Artifacts:") || !strings.Contains(got, "glade report export latest") {
+		t.Fatalf("report show output missing report shell:\n%s", got)
 	}
 
 	zipPath := filepath.Join(root, "report.zip")
@@ -1599,6 +1720,39 @@ func TestRunInspectSymbolsJSON(t *testing.T) {
 	}
 }
 
+func TestRunInspectSymbolsTextIsScannableAndRelative(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"pkg","sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/Hello.cls"), "public class Hello { public void run() {} }")
+	writeTestFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/Thing__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Thing</label></CustomObject>`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"inspect", "symbols", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	got := stdout.String()
+	for _, want := range []string{"Project symbols", "Summary:", "Apex types", "Objects", "Symbols:", "class", "Hello", "force-app/main/classes/Hello.cls", "object", "pkg__Thing__c"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("inspect symbols missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, root) {
+		t.Fatalf("inspect symbols leaked absolute project root:\n%s", got)
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"inspect", "symbols", "--project", root, "--kind", "object"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("kind-filtered inspect exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	got = stdout.String()
+	if strings.Contains(got, "Hello") || !strings.Contains(got, "pkg__Thing__c") {
+		t.Fatalf("inspect --kind object did not filter symbols:\n%s", got)
+	}
+}
+
 func TestInspectPerformanceMovedToPlugin(t *testing.T) {
 	t.Setenv("GLADE_HOME", t.TempDir())
 	var stdout, stderr bytes.Buffer
@@ -1622,8 +1776,11 @@ func TestRunSchemaLoad(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "Thing__c") {
-		t.Fatalf("stdout did not include schema object: %q", stdout.String())
+	got := stdout.String()
+	for _, want := range []string{"Glade schema load", "Loaded local metadata", "Objects   1", "Fields", "Next:", "glade check"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("schema load output missing %q:\n%s", want, got)
+		}
 	}
 }
 
@@ -1658,8 +1815,17 @@ func TestRunCheckJSON(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), `"diagnostics": 0`) {
-		t.Fatalf("stdout did not include zero diagnostics: %q", stdout.String())
+	var got map[string]any
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout is not JSON: %v\n%s", err, stdout.String())
+	}
+	for _, key := range []string{"schemaVersion", "command", "status", "exitCode", "project", "summary", "diagnostics", "suggestions"} {
+		if _, ok := got[key]; !ok {
+			t.Fatalf("check JSON missing %q: %#v", key, got)
+		}
+	}
+	if got["command"] != "check" || got["status"] != "passed" {
+		t.Fatalf("check JSON command/status = %#v", got)
 	}
 }
 
@@ -1673,8 +1839,11 @@ func TestRunCheckUnknownType(t *testing.T) {
 	if code != 1 {
 		t.Fatalf("exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), "GLADESEMA002") {
-		t.Fatalf("stdout did not include semantic diagnostic: %q", stdout.String())
+	got := stdout.String()
+	for _, want := range []string{"Glade check", "diagnostic found", "GLADESEMA002", "Try:", "glade schema load --project ."} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("check output missing %q:\n%s", want, got)
+		}
 	}
 }
 
@@ -1688,7 +1857,7 @@ func TestRunCheckProgressWritesPhasesToStderr(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), "no diagnostics") {
+	if !strings.Contains(stdout.String(), "No diagnostics") {
 		t.Fatalf("stdout missing check result: %q", stdout.String())
 	}
 	for _, want := range []string{
@@ -1725,6 +1894,9 @@ func TestRunCheckProgressJSONKeepsStdoutJSON(t *testing.T) {
 	if !strings.Contains(stderr.String(), `"phase":"check"`) {
 		t.Fatalf("stderr missing check phase:\n%s", stderr.String())
 	}
+	if !strings.Contains(stderr.String(), `"kind":"done"`) || !strings.Contains(stderr.String(), `"exitCode":0`) {
+		t.Fatalf("stderr missing done exit code:\n%s", stderr.String())
+	}
 }
 
 func TestRunCheckNoProgressSuppressesProgress(t *testing.T) {
@@ -1754,15 +1926,33 @@ func TestRunDebugParseJSON(t *testing.T) {
 	}
 }
 
-func TestRunDebugProfileMarkdown(t *testing.T) {
+func TestRunDebugProfileText(t *testing.T) {
 	logPath := filepath.Join("..", "apexlog", "testdata", "core.log")
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"debug", "profile", "--log", logPath}, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), "SOQL: 1 queries / 1 rows") {
-		t.Fatalf("profile stdout missing SOQL summary: %s", stdout.String())
+	got := stdout.String()
+	for _, want := range []string{"Glade debug profile", "Events:", "Runtime:", "SOQL queries", "DML statements", "Hot events:", "Next:", "glade debug explain --log"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("profile stdout missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "## ") || strings.Contains(got, "| Rank |") {
+		t.Fatalf("default profile output looks like Markdown:\n%s", got)
+	}
+}
+
+func TestRunDebugProfileMarkdownFormat(t *testing.T) {
+	logPath := filepath.Join("..", "apexlog", "testdata", "core.log")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"debug", "profile", "--log", logPath, "--format", "markdown"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "## Runtime summary") {
+		t.Fatalf("markdown profile stdout missing markdown heading:\n%s", stdout.String())
 	}
 }
 
@@ -2065,13 +2255,21 @@ private class SampleTest {
 }
 
 func TestRunExec(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"exec", "Integer x = 1 + 1; System.debug('x=' + x); System.assertEquals(2, x);"}, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if strings.TrimSpace(stdout.String()) != "x=2" {
-		t.Fatalf("stdout = %q", stdout.String())
+	got := stdout.String()
+	for _, want := range []string{"Glade exec", "Anonymous Apex executed", "USER_DEBUG x=2", "Limits:", "SOQL queries", "Log:", ".glade/logs/exec-", "Next:", "glade debug profile --log"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("exec output missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, "|EXECUTION_STARTED") {
+		t.Fatalf("exec default dumped raw debug log:\n%s", got)
 	}
 }
 
@@ -2286,6 +2484,7 @@ func TestRunExecJSON(t *testing.T) {
 }
 
 func TestRunExecTraceFile(t *testing.T) {
+	t.Chdir(t.TempDir())
 	tracePath := filepath.Join(t.TempDir(), "trace.json")
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"exec", "--trace", tracePath, "Integer x = 1; System.assertEquals(1, x);"}, &stdout, &stderr)
@@ -2326,6 +2525,9 @@ func TestRunExecDebugLogFile(t *testing.T) {
 			t.Fatalf("debug log missing %q; got:\n%s", want, text)
 		}
 	}
+	if !strings.Contains(stdout.String(), "Glade exec") || !strings.Contains(stdout.String(), "Log:") {
+		t.Fatalf("debug log file stdout should summarize artifact:\n%s", stdout.String())
+	}
 }
 
 func TestRunExecDebugLogStdout(t *testing.T) {
@@ -2337,9 +2539,28 @@ func TestRunExecDebugLogStdout(t *testing.T) {
 	if !strings.Contains(stdout.String(), "|EXECUTION_STARTED") || !strings.Contains(stdout.String(), "to stdout") {
 		t.Fatalf("expected debug log on stdout, got:\n%s", stdout.String())
 	}
+	if strings.Contains(stdout.String(), "Glade exec") {
+		t.Fatalf("--debug-log - should not append human summary:\n%s", stdout.String())
+	}
+}
+
+func TestRunExecDebugLogRawMode(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"exec", "--debug-log", "raw", "System.debug('raw mode');"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	got := stdout.String()
+	if !strings.Contains(got, "|EXECUTION_STARTED") || !strings.Contains(got, "raw mode") {
+		t.Fatalf("expected raw debug log on stdout, got:\n%s", got)
+	}
+	if strings.Contains(got, "Glade exec") {
+		t.Fatalf("raw mode should not append human summary:\n%s", got)
+	}
 }
 
 func TestRunExecFailure(t *testing.T) {
+	t.Chdir(t.TempDir())
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"exec", "System.assertEquals(3, 1 + 1);"}, &stdout, &stderr)
 	if code != 1 {
@@ -2668,8 +2889,17 @@ private class SampleTest {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), `"passed": 1`) {
-		t.Fatalf("stdout did not include passed result: %q", stdout.String())
+	var got map[string]any
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout is not JSON: %v\n%s", err, stdout.String())
+	}
+	for _, key := range []string{"schemaVersion", "command", "status", "exitCode", "summary", "tests", "artifacts", "suggestions"} {
+		if _, ok := got[key]; !ok {
+			t.Fatalf("test JSON missing %q: %#v", key, got)
+		}
+	}
+	if got["command"] != "test" || got["status"] != "passed" {
+		t.Fatalf("test JSON command/status = %#v", got)
 	}
 	junit, err := os.ReadFile(junitPath)
 	if err != nil {
@@ -2737,6 +2967,9 @@ private class SampleTest {
 		if !strings.Contains(stderr.String(), want) {
 			t.Fatalf("stderr missing %q:\n%s", want, stderr.String())
 		}
+	}
+	if !strings.Contains(stderr.String(), `"exitCode":0`) {
+		t.Fatalf("stderr missing done exit code:\n%s", stderr.String())
 	}
 }
 

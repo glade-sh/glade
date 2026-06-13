@@ -29,9 +29,8 @@ glade test --project .
 `@IsTest` classes and runs them locally. Add `--json` for machine-readable
 output and `--junit reports/glade-junit.xml` for CI reports.
 
-`glade doctor` must report `parser: ok (tree-sitter)`. If the parser is
-unavailable, install a C compiler and rebuild or reinstall a parser-capable
-release artifact.
+`glade doctor` must report `Ready.`. If the parser is unavailable, install a C
+compiler and rebuild or reinstall a parser-capable release artifact.
 
 ## Run Tests Without An Org
 
@@ -128,7 +127,7 @@ changed since a ref. The ref is passed to git, so common choices are
 
 ```bash
 git fetch origin main
-glade test changed --project . --since origin/main --json
+glade test changed --project . --since origin/main --json --no-progress
 ```
 
 Only the selected classes execute. If the change set hits a trigger or schema,

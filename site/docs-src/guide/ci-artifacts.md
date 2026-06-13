@@ -16,7 +16,7 @@ jobs:
       - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: glade doctor
       - run: glade check --project . --format sarif --output glade-check.sarif
-      - run: glade test changed --project . --since origin/main --json
+      - run: glade test changed --project . --since origin/main --json --no-progress
       - run: mkdir -p reports
       - run: glade test --project . --junit reports/glade-junit.xml
 ```
@@ -42,10 +42,11 @@ glade check --project . --format github
 JSON remains available:
 
 ```bash
-glade check --project . --format json --output glade-check.json
+glade check --project . --format json --output glade-check.json --no-progress
 ```
 
 `--json` is still accepted as the short form for `--format json`.
+JSON output uses the versioned envelope in [Automation And JSON](/guide/automation).
 
 ## Saved test runs
 
@@ -110,4 +111,4 @@ Upload the files after a gate, even when the test or check step fails:
 
 `glade check` and `glade test` return non-zero for diagnostics or failed test
 outcomes that should block a gate. Use `if: always()` only for upload steps that
-must run after a failure.
+must run after a failure. Exit codes are listed in [Exit Codes](/guide/exit-codes).

@@ -12,7 +12,7 @@ Use `glade test changed --since <ref>` to compare tracked project files against
 a git ref:
 
 ```bash
-glade test changed --project . --since origin/main --json
+glade test changed --project . --since origin/main --json --no-progress
 ```
 
 A changed production class selects tests that reference it. A changed test class selects itself. Metadata and unknown file types fall back to conservative behavior.
@@ -74,8 +74,8 @@ glade test --project . --watch --json
 Before opening a pull request:
 
 ```bash
-glade check --project . --json
-glade test changed --project . --since origin/main --json
+glade check --project . --json --no-progress
+glade test changed --project . --since origin/main --json --no-progress
 glade test --project . --junit reports/glade-junit.xml
 ```
 

@@ -102,7 +102,26 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 			return err
 		}
 	}
-	fmt.Fprintf(w, "glade server: %s\n", server.URL(addr))
+	url := server.URL(addr)
+	fmt.Fprintln(w, "Glade server")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Local Salesforce-shaped REST API started")
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "Address   %s\n", url)
+	if dbPath != "" {
+		fmt.Fprintf(w, "Database  %s\n", filepath.ToSlash(dbPath))
+	} else {
+		fmt.Fprintln(w, "Database  memory-only")
+	}
+	fmt.Fprintf(w, "Project   %s\n", filepath.ToSlash(root))
+	fmt.Fprintln(w, "Mode      local")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Try:")
+	fmt.Fprintf(w, "  curl %q\n", url+"/services/data/v60.0/query?q=SELECT+Name+FROM+Account")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Stop:")
+	fmt.Fprintln(w, "  Ctrl-C")
+	fmt.Fprintf(w, "glade server: %s\n", url)
 	return http.ListenAndServe(addr, handler)
 }
 
@@ -310,8 +329,24 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 		RatePerMinute:     ratePerMinute,
 	})
 	url := playgroundURL(addr, exampleID)
+	fmt.Fprintln(w, "Glade playground")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Started local browser workbench")
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "URL       %s\n", url)
+	if showExamples {
+		fmt.Fprintln(w, "Examples  enabled")
+	} else {
+		fmt.Fprintln(w, "Examples  disabled")
+	}
 	if noDB {
+		fmt.Fprintln(w, "Database  memory-only")
 		fmt.Fprintln(w, "state: memory-only")
+	} else {
+		fmt.Fprintf(w, "Database  %s\n", filepath.ToSlash(dbPath))
+	}
+	if resetOnStart {
+		fmt.Fprintln(w, "Reset     completed")
 	}
 	fmt.Fprintf(w, "glade playground: %s\n", url)
 	if once {
@@ -438,6 +473,87 @@ func writePlaygroundExamplesList(w io.Writer, refs []playground.ProjectReference
 		fmt.Fprintf(w, "  %s\t%s\t%d files\t%s\n", ref.ID, ref.Name, count, strings.Join(tags, ", "))
 	}
 	return nil
+}
+
+func runExamples(args []string, w io.Writer) error {
+	tag := ""
+	if len(args) > 0 && args[0] == "--tag" {
+		if len(args) < 2 {
+			return errors.New("--tag requires a value")
+		}
+		tag = strings.ToLower(strings.TrimSpace(args[1]))
+		args = args[2:]
+	}
+	if len(args) == 0 {
+		return writeExamplesList(w, tag)
+	}
+	switch args[0] {
+	case "show":
+		if len(args) != 2 {
+			return errors.New("usage: glade examples show <id>")
+		}
+		return writeExampleShow(w, args[1])
+	case "run":
+		if len(args) != 2 {
+			return errors.New("usage: glade examples run <id>")
+		}
+		if !playgroundExampleExists(args[1]) {
+			return fmt.Errorf("unknown example %q", args[1])
+		}
+		fmt.Fprintln(w, "Example run")
+		fmt.Fprintln(w)
+		fmt.Fprintf(w, "Run:\n  glade playground --example %s --open\n", args[1])
+		return nil
+	default:
+		return errors.New("usage: glade examples [--tag <tag>] | glade examples show <id> | glade examples run <id>")
+	}
+}
+
+func writeExamplesList(w io.Writer, tag string) error {
+	fmt.Fprintln(w, "Built-in examples")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "ID                           Name                         Tags")
+	for _, example := range playground.ListExampleProjects() {
+		if tag != "" && !exampleHasTag(example, tag) {
+			continue
+		}
+		fmt.Fprintf(w, "%-28s %-28s %s\n", example.ID, example.Name, strings.Join(example.Tags, ", "))
+	}
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Try:")
+	fmt.Fprintln(w, "  glade playground --example account-service --open")
+	fmt.Fprintln(w, "  glade examples show account-service")
+	return nil
+}
+
+func writeExampleShow(w io.Writer, id string) error {
+	for _, example := range playground.ListExampleProjects() {
+		if example.ID != id {
+			continue
+		}
+		fmt.Fprintf(w, "%s — %s\n\n", example.ID, example.Name)
+		if strings.TrimSpace(example.Description) != "" {
+			fmt.Fprintln(w, example.Description)
+			fmt.Fprintln(w)
+		}
+		fmt.Fprintf(w, "Files: %d\n", example.FileCount)
+		fmt.Fprintf(w, "Tags:  %s\n", strings.Join(example.Tags, ", "))
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "Try:")
+		fmt.Fprintf(w, "  glade playground --example %s --open\n", example.ID)
+		fmt.Fprintf(w, "  glade examples run %s\n", example.ID)
+		return nil
+	}
+	return fmt.Errorf("unknown example %q", id)
+}
+
+func exampleHasTag(example playground.ExampleProject, tag string) bool {
+	for _, candidate := range example.Tags {
+		if strings.EqualFold(candidate, tag) {
+			return true
+		}
+	}
+	return false
 }
 
 func normalizePlaygroundCLIProjectReferences(refs []playground.ProjectReference) []playground.ProjectReference {

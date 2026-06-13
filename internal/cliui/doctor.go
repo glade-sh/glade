@@ -3,29 +3,34 @@ package cliui
 import (
 	"fmt"
 	"io"
+	"path/filepath"
 	"strings"
 )
 
 type DoctorInfo struct {
-	Version          string `json:"version"`
-	GoVersion        string `json:"goVersion"`
-	OSArch           string `json:"osArch"`
-	CWD              string `json:"cwd"`
-	ConfigPath       string `json:"configPath,omitempty"`
-	ConfigMissing    bool   `json:"configMissing"`
-	ProjectRoot      string `json:"projectRoot,omitempty"`
-	DefaultNamespace string `json:"defaultNamespace,omitempty"`
-	ParserStatus     string `json:"parserStatus"`
-	ParserOK         bool   `json:"parserOK"`
-	ToolchainPath    string `json:"toolchainPath,omitempty"`
-	ToolchainStatus  string `json:"toolchainStatus"`
-	ToolchainOK      bool   `json:"toolchainOK"`
+	SchemaVersion    string   `json:"schemaVersion,omitempty"`
+	Command          string   `json:"command,omitempty"`
+	Status           string   `json:"status,omitempty"`
+	ExitCode         int      `json:"exitCode"`
+	Version          string   `json:"version"`
+	GoVersion        string   `json:"goVersion"`
+	OSArch           string   `json:"osArch"`
+	CWD              string   `json:"cwd"`
+	ConfigPath       string   `json:"configPath,omitempty"`
+	ConfigMissing    bool     `json:"configMissing"`
+	ProjectRoot      string   `json:"projectRoot,omitempty"`
+	DefaultNamespace string   `json:"defaultNamespace,omitempty"`
+	ParserStatus     string   `json:"parserStatus"`
+	ParserOK         bool     `json:"parserOK"`
+	ToolchainPath    string   `json:"toolchainPath,omitempty"`
+	ToolchainStatus  string   `json:"toolchainStatus"`
+	ToolchainOK      bool     `json:"toolchainOK"`
+	Suggestions      []string `json:"suggestions,omitempty"`
 }
 
 func WriteDoctor(w io.Writer, info DoctorInfo) error {
 	t := NewTheme(w)
-	header := FormatBox(t, "glade doctor", "glade "+info.Version, defaultBoxWidth)
-	if _, err := fmt.Fprintln(w, header); err != nil {
+	if _, err := fmt.Fprintln(w, "Glade doctor"); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintln(w); err != nil {
@@ -37,37 +42,35 @@ func WriteDoctor(w io.Writer, info DoctorInfo) error {
 		label string
 		value string
 	}{
-		{true, "go", info.GoVersion},
-		{info.ParserOK, "parser", info.ParserStatus},
-		{info.ToolchainOK, "lwc.toolchain", toolchainDoctorValue(info)},
+		{true, "Project", doctorProjectValue(info)},
+		{info.ParserOK, "Parser", info.ParserStatus},
+		{info.ToolchainOK, "Toolchain", toolchainDoctorValue(info)},
 	}
 	if info.ConfigMissing {
 		rows = append(rows, struct {
 			ok    bool
 			label string
 			value string
-		}{false, "config", "not found"})
+		}{false, "Config", "no glade.yml found"})
 	} else {
 		rows = append(rows, struct {
 			ok    bool
 			label string
 			value string
-		}{true, "config", info.ConfigPath})
-		if info.ProjectRoot != "" {
-			rows = append(rows, struct {
-				ok    bool
-				label string
-				value string
-			}{true, "project.root", info.ProjectRoot})
-		}
+		}{true, "Config", ProjectRelativePath(info.CWD, info.ConfigPath)})
 		if info.DefaultNamespace != "" {
 			rows = append(rows, struct {
 				ok    bool
 				label string
 				value string
-			}{true, "project.defaultNamespace", info.DefaultNamespace})
+			}{true, "Namespace", info.DefaultNamespace})
 		}
 	}
+	rows = append(rows, struct {
+		ok    bool
+		label string
+		value string
+	}{true, "Runtime", "glade " + info.Version + " · " + info.GoVersion + " · " + info.OSArch})
 
 	allOK := info.ParserOK && info.ToolchainOK && !info.ConfigMissing
 	for _, row := range rows {
@@ -83,7 +86,7 @@ func WriteDoctor(w io.Writer, info DoctorInfo) error {
 				icon = t.GlyphFail
 			}
 		}
-		if _, err := fmt.Fprintln(w, FormatRow(t, icon, row.label, row.value)); err != nil {
+		if _, err := fmt.Fprintf(w, "%-12s %s %s\n", row.label, icon, row.value); err != nil {
 			return err
 		}
 	}
@@ -91,23 +94,46 @@ func WriteDoctor(w io.Writer, info DoctorInfo) error {
 	if _, err := fmt.Fprintln(w); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintln(w, FormatSeparator(defaultBoxWidth)); err != nil {
+	if allOK {
+		if _, err := fmt.Fprintln(w, "Ready."); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "Next:"); err != nil {
+			return err
+		}
+		for _, step := range []string{"glade check", "glade test changed --since origin/main", "glade playground --examples --open"} {
+			if _, err := fmt.Fprintln(w, "  "+step); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if _, err := fmt.Fprintln(w, "Setup steps needed."); err != nil {
 		return err
 	}
-	finalIcon := t.Green(t.GlyphPass)
-	finalMsg := "All checks passed"
-	if !allOK {
-		finalIcon = t.Red(t.GlyphFail)
-		finalMsg = "Some checks failed"
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
 	}
-	if !t.Color {
-		if allOK {
-			finalIcon = t.GlyphPass
-		} else {
-			finalIcon = t.GlyphFail
+	if _, err := fmt.Fprintln(w, "Fix:"); err != nil {
+		return err
+	}
+	if info.ConfigMissing {
+		if _, err := fmt.Fprintln(w, "  glade init --project . --yes"); err != nil {
+			return err
 		}
 	}
-	_, err := fmt.Fprintln(w, FormatRow(t, finalIcon, finalMsg, ""))
+	if !info.ToolchainOK {
+		if _, err := fmt.Fprintln(w, "  glade toolchain install --from ."); err != nil {
+			return err
+		}
+	}
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+	_, err := fmt.Fprintln(w, "Then run:\n  glade doctor\n  glade check")
 	return err
 }
 
@@ -123,4 +149,11 @@ func toolchainDoctorValue(info DoctorInfo) string {
 		return info.ToolchainPath
 	}
 	return info.ToolchainPath + " (" + info.ToolchainStatus + ")"
+}
+
+func doctorProjectValue(info DoctorInfo) string {
+	if info.ProjectRoot != "" && info.ProjectRoot != "." {
+		return "SFDX project found at " + filepath.ToSlash(info.ProjectRoot)
+	}
+	return "SFDX project found"
 }
