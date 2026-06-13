@@ -356,12 +356,6 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		return 0
-	case "render":
-		if err := runRender(ctx, args[1:], stdout); err != nil {
-			fmt.Fprintf(stderr, "glade: %v\n", err)
-			return 1
-		}
-		return 0
 	default:
 		if code, ok := runInstalledPluginCommand(ctx, args, stdout, stderr); ok {
 			return code

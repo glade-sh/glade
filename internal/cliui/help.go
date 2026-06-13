@@ -234,6 +234,9 @@ var commandReferences = []CommandHelp{
 		Flags: []FlagHelp{
 			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
 			{Name: "--filter", Value: "<pattern>", Description: "Run matching test classes or methods."},
+			{Name: "--class", Value: "<name>", Description: "Run one exact test class."},
+			{Name: "--method", Value: "<name>", Description: "Run one exact test method. Requires --class."},
+			{Name: "--class-file", Value: "<path>", Description: "Read exact test class names, one per line."},
 			{Name: "--connect", Description: "Require a running test server."},
 			{Name: "--no-serve", Description: "Do not auto-connect to a running test server."},
 			{Name: "--no-cache", Description: "Skip the on-disk startup cache."},
@@ -262,7 +265,7 @@ var commandReferences = []CommandHelp{
 			{Name: "--gc-aggressive", Description: "Run with GOGC=50."},
 			{Name: "--limit-mode", Value: "<mode>", Description: "Governor limit mode: permissive or strict."},
 		},
-		Examples: []string{"glade test serve --project .", "glade test --project . --class AccountServiceTest"},
+		Examples: []string{"glade test serve --project .", "glade test --project . --class AccountServiceTest", "glade test --project . --class AccountServiceTest --method testCreatesAccount", "glade test --project . --class-file tests.txt"},
 	},
 	{
 		Name:        "dev",

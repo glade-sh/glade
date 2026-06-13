@@ -17,11 +17,12 @@ Management.
 Regenerate the catalog with:
 
 ```bash
+cd ../glade-tools
 mkdir -p tmp/standard-describes
 for obj in Account Contact Opportunity OpportunityContactRole Lead Order OrderItem Quote Pricebook2 Product2 Campaign CampaignMember Case Asset Contract Task Event User RecordType EmailTemplate ContentVersion ContentDocument ContentDocumentLink Attachment Document Organization UserRole Profile PermissionSet PermissionSetAssignment; do
   sf sobject describe --sobject "$obj" --target-org "$SF_TARGET_ORG" --json > "tmp/standard-describes/$obj.json"
 done
-node scripts/generate-standard-schema.mjs tmp/standard-describes internal/storage/standard_schema_generated.go
+node scripts/generate-standard-schema.mjs tmp/standard-describes ../glade/internal/storage/standard_schema_generated.go
 ```
 
 The generator writes `internal/storage/standard_schema_generated.go`. Do not
@@ -38,12 +39,13 @@ data.
 Regenerate the overlay with:
 
 ```bash
-node scripts/generate-sobject-stub-overlay.mjs /path/to/fulgor/stubs/apex-sobject-stubs internal/storage/standard_sobject_stub_overlay_generated.go
+cd ../glade-tools
+node scripts/generate-sobject-stub-overlay.mjs "$GLADE_APEX_SOBJECT_STUBS" ../glade/internal/storage/standard_sobject_stub_overlay_generated.go
 ```
 
-The overlay generator reads factual API shape from stub `.cls` files: standard
-object names, field names, field labels, simple Apex field types, and reference
-targets inferred from `*Id` fields. It writes
+The overlay generator reads API shape from an owned SObject stub corpus:
+standard object names, field names, field labels, simple Apex field types, and
+available relationship hints. It writes
 `internal/storage/standard_sobject_stub_overlay_generated.go`. Do not edit that
 file by hand.
 
@@ -55,7 +57,7 @@ System, Schema, Database, and product namespace Apex type shapes are refreshed
 separately from the system stub corpus:
 
 ```bash
-node scripts/generate-system-stub-symbols.mjs /path/to/fulgor/stubs/apex-system-stubs internal/typesys/system_stub_symbols_generated.go
+node scripts/generate-system-stub-symbols.mjs "$GLADE_APEX_SYSTEM_STUBS" internal/typesys/system_stub_symbols_generated.go
 ```
 
 ## Runtime Behavior

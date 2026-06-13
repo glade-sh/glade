@@ -76,6 +76,9 @@ func TestNDJSONRendererWritesOneEventPerLine(t *testing.T) {
 	if !strings.Contains(lines[0], `"kind":"phase_start"`) || !strings.Contains(lines[1], `"kind":"done"`) {
 		t.Fatalf("unexpected ndjson:\n%s", out.String())
 	}
+	if !strings.Contains(lines[1], `"ok":true`) || !strings.Contains(lines[1], `"exitCode":0`) {
+		t.Fatalf("done event omitted status fields:\n%s", lines[1])
+	}
 }
 
 func TestActivityFeedKeepsLastNEvents(t *testing.T) {

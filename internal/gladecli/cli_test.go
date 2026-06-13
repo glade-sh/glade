@@ -21,18 +21,6 @@ import (
 	"github.com/glade-sh/glade/internal/watch"
 )
 
-func TestRenderLWCCommandPrintsHTML(t *testing.T) {
-	root := filepath.Join("..", "..", "testdata", "local-tests", "lwc-rendering")
-	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"render", "lwc", "counter", "--project", root, "--props", `{"count":"9"}`}, &stdout, &stderr)
-	if code != 0 {
-		t.Fatalf("exit = %d stderr=%q", code, stderr.String())
-	}
-	if !strings.Contains(stdout.String(), "9") {
-		t.Fatalf("stdout = %q", stdout.String())
-	}
-}
-
 func TestRunVersion(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"version"}, &stdout, &stderr)
@@ -480,6 +468,18 @@ func TestCompatIsNotPublicCommand(t *testing.T) {
 	}
 	if strings.Contains(stdout.String(), "  compat ") || strings.Contains(stdout.String(), "glade compat") {
 		t.Fatalf("public help still mentions compat:\n%s", stdout.String())
+	}
+}
+
+func TestRenderIsNotPublicCommand(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"render"}, &stdout, &stderr)
+	if code != 2 {
+		t.Fatalf("exit code = %d, want 2", code)
+	}
+	if !strings.Contains(stderr.String(), `unknown command "render"`) {
+		t.Fatalf("stderr did not include unknown command diagnostic: %q", stderr.String())
 	}
 }
 
@@ -933,6 +933,9 @@ func TestRunCompletionBash(t *testing.T) {
 		"complete -F _glade_completion glade",
 		"version doctor toolchain config init parse inspect schema check exec",
 		"--project",
+		"--class",
+		"--method",
+		"--class-file",
 		"--package-dir",
 		"--progress-json",
 		"config show validate init",
@@ -958,6 +961,9 @@ func TestRunCompletionFish(t *testing.T) {
 		"complete -c glade",
 		"-a 'test'",
 		"-l project",
+		"-l class",
+		"-l method",
+		"-l class-file",
 		"-l progress-json",
 		"-a 'changed failed serve daemon clear-cache'",
 	} {
@@ -2527,6 +2533,22 @@ func TestRunExecDebugLogFile(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "Glade exec") || !strings.Contains(stdout.String(), "Log:") {
 		t.Fatalf("debug log file stdout should summarize artifact:\n%s", stdout.String())
+	}
+}
+
+func TestRunExecDebugLogCreatesParentDirs(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "reports", "exec.log")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"exec", "--debug-log", logPath, "System.debug('nested log');"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	content, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(content), "nested log") {
+		t.Fatalf("debug log missing user message:\n%s", content)
 	}
 }
 
