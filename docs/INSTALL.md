@@ -26,7 +26,7 @@ Then check the binary:
 
 ```bash
 glade version
-glade doctor   # confirm: "parser: ok (tree-sitter)"
+glade doctor   # confirm: "Ready."
 ```
 
 ## Install VS Code Extension
@@ -95,7 +95,7 @@ git clone https://github.com/glade-sh/glade.git
 cd glade
 go build -o glade ./cmd/glade
 ./glade version
-./glade doctor   # confirm: "parser: ok (tree-sitter)"
+./glade doctor   # confirm: "Ready."
 ```
 
 Run the locally built binary against an SFDX project. No Salesforce org login is
@@ -156,7 +156,7 @@ Run a focused class or only tests affected by changes since a git ref:
 
 ```bash
 glade test --project . --class AccountServiceTest --json
-glade test changed --project . --since origin/main --json
+glade test changed --project . --since origin/main --json --no-progress
 glade performance scan --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
 ```
 
@@ -188,7 +188,7 @@ scripts/build-local.sh
 ```
 
 This builds a CGO-enabled host binary into `dist/`, verifies the parser is wired
-up (`doctor` must report `parser: ok`), and writes a `.tar.gz` (or `.zip` on
+up (`doctor` must report `Ready.`), and writes a `.tar.gz` (or `.zip` on
 Windows) plus a `.sha256`. Override the version or output directory with
 `VERSION=` and `DIST_DIR=`.
 
@@ -211,7 +211,7 @@ tar -xzf glade_*_darwin_arm64.tar.gz
 install -m 0755 glade ~/.local/bin/glade
 
 glade version
-glade doctor          # MUST show "parser: ok (tree-sitter)"
+glade doctor          # MUST show "Ready."
 ```
 
 `glade doctor` is the acceptance check: if it prints `parser: UNAVAILABLE`, the

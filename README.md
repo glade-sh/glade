@@ -17,8 +17,8 @@ glade version
 glade doctor
 ```
 
-`glade doctor` must report `parser: ok (tree-sitter)` before project parsing,
-checking, or testing will work.
+`glade doctor` must report `Ready.` before project parsing, checking, or
+testing will work.
 
 For a small tester pilot, start with
 [docs/TESTER_FIELD_GUIDE.md](docs/TESTER_FIELD_GUIDE.md). It shows the install,
@@ -32,7 +32,7 @@ cd path/to/sfdx-project
 glade init --project . --yes
 glade config validate --project .
 glade check --project .
-glade test --project . --json
+glade test --project . --json --no-progress
 ```
 
 Build from source when working on Glade itself:
@@ -85,9 +85,9 @@ The rule is simple. A supported row has code and checked coverage.
 Run one class, one method, or only tests affected by local changes:
 
 ```bash
-glade test --project . --filter AccountServiceTest --json
-glade test --project . --filter AccountServiceTest.testCreatesAccount --json
-glade test changed --project . --since origin/main --json
+glade test --project . --class AccountServiceTest --json --no-progress
+glade test --project . --class AccountServiceTest --method testCreatesAccount --json --no-progress
+glade test changed --project . --since origin/main --json --no-progress
 glade test failed --project .
 glade performance scan --project . --json > reports/glade-performance.json
 glade performance scan --project . --trace reports/slow-test-trace.json > reports/glade-performance.md

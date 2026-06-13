@@ -73,7 +73,9 @@ Expected:
 
 ```text
 glade doctor
-parser: ok (tree-sitter)
+Glade doctor
+
+Ready.
 ```
 
 Manual fallback:
@@ -140,7 +142,7 @@ glade init --project . --yes
 glade config validate --project .
 glade config show --project .
 glade check --project .
-glade test --project . --json
+glade test --project . --json --no-progress
 ```
 
 Run one class, one method, or tests affected by a git ref:
@@ -148,7 +150,7 @@ Run one class, one method, or tests affected by a git ref:
 ```bash
 glade test --project . --class AccountServiceTest --json
 glade test --project . --class AccountServiceTest --method testCreatesAccount --json
-glade test changed --project . --since origin/main --json
+glade test changed --project . --since origin/main --json --no-progress
 ```
 
 ## CI usage

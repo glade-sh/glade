@@ -168,15 +168,16 @@ var commandReferences = []CommandHelp{
 			{Name: "--json", Description: "Write VM result and trace as JSON."},
 			{Name: "--debug", Description: "Serve one DAP snapshot for the run."},
 			{Name: "--trace", Value: "<path>", Description: "Write trace JSON to a file."},
-			{Name: "--debug-log", Value: "<path>", Description: "Write a Salesforce-style debug log. Use - for stdout."},
+			{Name: "--debug-log", Value: "<summary|raw|path>", Description: "Select debug-log mode or write a Salesforce-style debug log. Use - for stdout."},
+			{Name: "--log-out", Value: "<path>", Description: "Write the raw Salesforce-style debug log to a file."},
 			{Name: "--limit-mode", Value: "<mode>", Description: "Governor limit mode: permissive or strict."},
 		},
-		Examples: []string{`glade exec "System.debug('hello');"`, `glade exec --json "Integer x = 1;"`, `glade exec --project . --db .glade/envs/dev.sqlite "insert new Account(Name = 'Local');"`},
+		Examples: []string{`glade exec "System.debug('hello');"`, `glade exec --debug-log raw --log-out reports/exec.log "System.debug('hello');"`, `glade exec --json "Integer x = 1;"`, `glade exec --project . --db .glade/envs/dev.sqlite "insert new Account(Name = 'Local');"`},
 	},
 	{
 		Name:        "debug",
 		Description: "Parse, profile, explain, and synthesize from Salesforce debug logs.",
-		Usage:       []string{"glade debug parse --log <path> [--json]", "glade debug profile --log <path> [--json]", "glade debug explain --log <path> [--project <root>] [--min-confidence <n>] [--json]", "glade debug repro --log <path> [--project <root>] [--min-confidence <n>]"},
+		Usage:       []string{"glade debug parse --log <path> [--json]", "glade debug profile --log <path> [--json] [--format text|markdown]", "glade debug explain --log <path> [--project <root>] [--min-confidence <n>] [--json]", "glade debug repro --log <path> [--project <root>] [--min-confidence <n>]"},
 		Subcommands: []SubcommandHelp{
 			{Name: "parse", Description: "Parse a Salesforce debug log."},
 			{Name: "profile", Description: "Profile a parsed debug log."},
@@ -188,6 +189,7 @@ var commandReferences = []CommandHelp{
 			{Name: "--project", Value: "<root>", Description: "Project root for explain and repro."},
 			{Name: "--min-confidence", Value: "<n>", Description: "Minimum confidence for explain and repro."},
 			{Name: "--json", Description: "Write structured output where available."},
+			{Name: "--format", Value: "<mode>", Description: "Profile output format: text or markdown."},
 		},
 		Examples: []string{"glade debug profile --log apex.log", "glade debug explain --log apex.log --project ."},
 	},
@@ -260,7 +262,7 @@ var commandReferences = []CommandHelp{
 			{Name: "--gc-aggressive", Description: "Run with GOGC=50."},
 			{Name: "--limit-mode", Value: "<mode>", Description: "Governor limit mode: permissive or strict."},
 		},
-		Examples: []string{"glade test serve --project .", "glade test --project . --filter AccountServiceTest"},
+		Examples: []string{"glade test serve --project .", "glade test --project . --class AccountServiceTest"},
 	},
 	{
 		Name:        "dev",
@@ -326,11 +328,33 @@ var commandReferences = []CommandHelp{
 	},
 	{
 		Name:        "profile",
-		Description: "Analyze glade trace output.",
+		Description: "Analyze Glade native trace output.",
 		Usage:       []string{"glade profile analyze <trace.json> [--json]"},
-		Subcommands: []SubcommandHelp{{Name: "analyze", Description: "Analyze a glade trace JSON file."}},
-		Flags:       []FlagHelp{{Name: "--json", Description: "Write profile report as JSON."}},
-		Examples:    []string{"glade profile analyze trace.json", "glade profile analyze trace.json --json"},
+		Subcommands: []SubcommandHelp{{Name: "analyze", Description: "Analyze a Glade native trace JSON file."}},
+		Flags: []FlagHelp{
+			{Name: "--json", Description: "Write profile report as JSON."},
+			{Name: "--format", Value: "<mode>", Description: "Profile output format: text or markdown."},
+		},
+		Examples: []string{"glade profile analyze trace.json", "glade profile analyze trace.json --json", "glade profile analyze trace.json --format markdown"},
+	},
+	{
+		Name:        "examples",
+		Description: "List and inspect bundled playground examples.",
+		Usage:       []string{"glade examples [--tag <tag>]", "glade examples show <id>", "glade examples run <id>"},
+		Flags:       []FlagHelp{{Name: "--tag", Value: "<tag>", Description: "Filter examples by tag."}},
+		Examples:    []string{"glade examples", "glade examples show account-service", "glade examples run account-service"},
+	},
+	{
+		Name:        "explain",
+		Description: "Explain Glade diagnostic codes.",
+		Usage:       []string{"glade explain <error-code>"},
+		Examples:    []string{"glade explain GLADESEMA002"},
+	},
+	{
+		Name:        "support",
+		Description: "Print commands and artifacts useful for support reports.",
+		Usage:       []string{"glade support"},
+		Examples:    []string{"glade support"},
 	},
 	{
 		Name:        "plugins",
@@ -506,14 +530,13 @@ func CommandNames() []string {
 }
 
 func WriteHelp(w io.Writer) error {
-	t := NewTheme(w)
-	if _, err := fmt.Fprintln(w, t.Bold("glade")+" — local Apex runtime"); err != nil {
+	if _, err := fmt.Fprintln(w, "Glade — local Apex runtime"); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintln(w); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintln(w, t.Bold("Usage")); err != nil {
+	if _, err := fmt.Fprintln(w, "Usage:"); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintln(w, "  glade <command> [flags]"); err != nil {
@@ -522,7 +545,66 @@ func WriteHelp(w io.Writer) error {
 	if _, err := fmt.Fprintln(w); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintln(w, t.Bold("Commands")); err != nil {
+	if _, err := fmt.Fprintln(w, "Start here:"); err != nil {
+		return err
+	}
+	for _, command := range []string{
+		"glade doctor",
+		"glade check",
+		"glade test changed --since origin/main",
+		"glade playground --examples --open",
+	} {
+		if _, err := fmt.Fprintln(w, "  "+command); err != nil {
+			return err
+		}
+	}
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "Workflows:"); err != nil {
+		return err
+	}
+	workflows := []struct {
+		name string
+		desc string
+	}{
+		{"check", "catch Apex source and metadata issues"},
+		{"test", "run local Apex tests"},
+		{"exec", "run anonymous Apex against local state"},
+		{"debug", "parse, profile, and explain Salesforce debug logs"},
+		{"server", "serve a local Salesforce-shaped REST API"},
+		{"playground", "open the browser workbench"},
+	}
+	for _, row := range workflows {
+		if _, err := fmt.Fprintf(w, "  %-11s %s\n", row.name, row.desc); err != nil {
+			return err
+		}
+	}
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "More:"); err != nil {
+		return err
+	}
+	for _, command := range []string{
+		"glade help workflows",
+		"glade help commands",
+		"glade examples",
+		"glade support",
+		"glade help exit-codes",
+	} {
+		if _, err := fmt.Fprintln(w, "  "+command); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func WriteCommandsHelp(w io.Writer) error {
+	if _, err := fmt.Fprintln(w, "Glade commands"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w); err != nil {
 		return err
 	}
 	maxName := 0
@@ -532,28 +614,118 @@ func WriteHelp(w io.Writer) error {
 		}
 	}
 	for _, ref := range commandReferences {
-		name := t.Cyan(ref.Name)
-		if !t.Color {
-			name = ref.Name
+		if _, err := fmt.Fprintf(w, "  %-*s  %s\n", maxName, ref.Name, ref.Description); err != nil {
+			return err
 		}
-		desc := t.Dim(ref.Description)
-		if !t.Color {
-			desc = ref.Description
-		}
-		if _, err := fmt.Fprintf(w, "  %-*s  %s\n", maxName, name, desc); err != nil {
+	}
+	return nil
+}
+
+func WriteWorkflowsHelp(w io.Writer) error {
+	body := strings.TrimSpace(`
+Workflows
+
+Local check loop:
+  glade doctor
+  glade check
+  glade test changed --since origin/main
+
+Local execution:
+  glade exec --project . "System.debug('local');"
+  glade db inspect --db .glade/local-org.sqlite
+
+Debug logs:
+  glade exec "System.debug('local');"
+  glade debug profile --log .glade/logs/latest.log
+  glade debug explain --log .glade/logs/latest.log --project .
+
+Browser workbench:
+  glade examples
+  glade playground --examples --open
+`)
+	_, err := fmt.Fprintln(w, body)
+	return err
+}
+
+func WriteSupportHelp(w io.Writer) error {
+	body := strings.TrimSpace(`
+Glade support
+
+Diagnostics:
+  glade doctor
+  glade check --json
+  glade test --json --no-progress
+
+Artifacts:
+  glade report show latest --json
+  glade debug profile --log <log>
+
+Include:
+  glade version --json
+  sfdx-project.json
+  glade.yml
+`)
+	_, err := fmt.Fprintln(w, body)
+	return err
+}
+
+func WriteErrorCodeHelp(w io.Writer, code string) error {
+	code = strings.ToUpper(strings.TrimSpace(code))
+	explanations := map[string]struct {
+		title string
+		why   string
+		try   []string
+	}{
+		"GLADESEMA002": {
+			title: "unknown type",
+			why:   "Glade found an Apex type reference that is not present in local Apex, schema, or platform symbols.",
+			try:   []string{"glade schema load --project .", "glade check --project ."},
+		},
+		"GLADESCHEMA001": {
+			title: "metadata schema load failed",
+			why:   "Local metadata could not be parsed into the schema Glade uses for semantic checks.",
+			try:   []string{"glade schema load --project .", "glade check --project ."},
+		},
+		"GLADEPARSE000": {
+			title: "Apex parse failed",
+			why:   "Glade could not parse one of the Apex source files.",
+			try:   []string{"glade parse force-app/main/default/classes", "glade check --project ."},
+		},
+		"GLADECLI001": {
+			title: "unknown command",
+			why:   "The command name was not part of the Glade CLI surface or an installed plugin.",
+			try:   []string{"glade help", "glade help commands", "glade plugins list"},
+		},
+	}
+	info, ok := explanations[code]
+	if !ok {
+		return fmt.Errorf("unknown error code %q", code)
+	}
+	if _, err := fmt.Fprintf(w, "%s — %s\n\n", code, info.title); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "Why:"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "  "+info.why); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "Try:"); err != nil {
+		return err
+	}
+	for _, step := range info.try {
+		if _, err := fmt.Fprintln(w, "  "+step); err != nil {
 			return err
 		}
 	}
 	if _, err := fmt.Fprintln(w); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintln(w, t.Bold("Topics")); err != nil {
-		return err
-	}
-	if _, err := fmt.Fprintln(w, "  exit-codes  Explain process exit codes for scripts and CI."); err != nil {
-		return err
-	}
-	return nil
+	_, err := fmt.Fprintf(w, "Docs:\n  https://glade.sh/guide/errors#%s\n", strings.ToLower(code))
+	return err
 }
 
 func WriteCommandHelp(w io.Writer, args []string) error {
@@ -656,11 +828,17 @@ Exit codes
 
   0  Command completed without errors.
   1  Command failed, found diagnostics, or tests failed.
-  2  Command was not understood.
+  2  Command was not understood, used invalid flags, or hit a usage error.
+  3  Project or config discovery failed.
+  4  Unsupported local runtime boundary.
+  5  External dependency or toolchain failed.
+  70 Internal Glade error.
+  130 Interrupted by Ctrl-C.
 
 Notes:
   parse, inspect, and check return 1 when diagnostics include errors.
   test returns 1 when any test fails or errors.
+  some legacy usage and flag errors still return 1 during migration.
   unknown commands return 2 before command execution starts.
 `)
 	_, err := fmt.Fprintln(w, body)
@@ -742,9 +920,10 @@ Examples:
   glade test changed --project . --since HEAD
   glade test failed --project .
   glade test clear-cache --project .
-  glade test --project . --filter AccountServiceTest
-  glade test --project . --no-cache --filter AccountServiceTest
-  glade test --project . --connect --filter AccountServiceTest
+  glade test --project . --class AccountServiceTest
+  glade test --project . --class AccountServiceTest --method testCreatesAccount
+  glade test --project . --no-cache --class AccountServiceTest
+  glade test --project . --connect --class AccountServiceTest
   glade test --project . --daemon --watch
   glade test --project . --changed-since origin/main --json
 `)

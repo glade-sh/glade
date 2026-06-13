@@ -55,7 +55,7 @@ go build -o glade ./cmd/glade
 
 The playground container (`Dockerfile`) builds with `CGO_ENABLED=1` and runs on a
 glibc base image. `scripts/release-build.sh` also builds with CGO enabled and
-checks `glade doctor` for `parser: ok` before writing a release archive.
+checks `glade doctor` for `Ready.` before writing a release archive.
 
 ## Performance
 

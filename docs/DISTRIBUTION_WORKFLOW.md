@@ -24,7 +24,7 @@ git push <remote> vX.Y.Z
 
 The `Release` GitHub Actions workflow builds parser-capable macOS and Linux
 archives on matching CGO-enabled runners, verifies `glade doctor` reports
-`parser: ok`, and publishes `SHA256SUMS.txt`.
+`Ready.`, and publishes `SHA256SUMS.txt`.
 
 ## 3. Verify Artifacts
 

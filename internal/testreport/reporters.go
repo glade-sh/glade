@@ -37,8 +37,19 @@ func WriteConsoleWithOptions(w io.Writer, run Run, opts ConsoleOptions) error {
 	summary := run.Summary()
 	var out strings.Builder
 
-	out.WriteString(cliui.FormatBox(t, "Tests", formatTestHeaderSummary(summary), 80))
-	out.WriteString("\n\n")
+	out.WriteString("Glade test\n\n")
+	fmt.Fprintf(&out, "%d selected, %d passed, %d failed\n\n", summary.Total, summary.Passed, summary.Failed)
+	fmt.Fprintf(&out, "Selected: %d\n", summary.Total)
+	fmt.Fprintf(&out, "Passed:   %d\n", summary.Passed)
+	fmt.Fprintf(&out, "Failed:   %d\n", summary.Failed)
+	if summary.Skipped > 0 {
+		fmt.Fprintf(&out, "Skipped:  %d\n", summary.Skipped)
+	}
+	if summary.Errors > 0 {
+		fmt.Fprintf(&out, "Errors:   %d\n", summary.Errors)
+	}
+	fmt.Fprintf(&out, "Runtime:  %s\n", cliui.FormatDurationMS(summary.DurationMS))
+	out.WriteString("\n")
 
 	compact := summary.Total > consoleDetailLimit
 	if compact {
@@ -62,12 +73,14 @@ func WriteConsoleWithOptions(w io.Writer, run Run, opts ConsoleOptions) error {
 		writeStyledConsoleProblem(&out, problemCase.suiteName, problemCase.testCase)
 	}
 
-	out.WriteString("\n")
-	out.WriteString(cliui.FormatBox(t, "Result", formatTestResultSummary(summary), 80))
-	out.WriteString("\n")
 	if strings.TrimSpace(opts.ReportPath) != "" {
+		out.WriteString("\nArtifacts:\n")
+		fmt.Fprintf(&out, "  Report  %s\n", opts.ReportPath)
 		fmt.Fprintf(&out, "Report: %s\n", opts.ReportPath)
 	}
+	out.WriteString("\nNext:\n")
+	out.WriteString("  glade test --watch\n")
+	out.WriteString("  glade test failed\n")
 	_, err := io.WriteString(w, out.String())
 	return err
 }
@@ -148,7 +161,7 @@ func writeCompactConsoleCases(out *strings.Builder, t cliui.Theme, run Run, summ
 		}
 	}
 	if nonPass == 0 {
-		line := fmt.Sprintf("... %d tests passed (listing omitted)", summary.Passed)
+		line := fmt.Sprintf("... %d passed tests omitted from listing", summary.Passed)
 		if t.Color {
 			line = t.Dim(line)
 		}
@@ -192,14 +205,17 @@ func writeStyledConsoleProblem(out *strings.Builder, suiteName string, testCase 
 	if len(testCase.Problem.Stack) > 0 {
 		out.WriteString("\n")
 		frame := testCase.Problem.Stack[0]
-		symbol := frame.Symbol
-		if symbol == "" {
-			symbol = testCase.displayName(suiteName)
+		location := frame.File
+		if location == "" {
+			location = frame.Symbol
+		}
+		if location == "" {
+			location = testCase.displayName(suiteName)
 		}
 		if frame.Line > 0 {
-			fmt.Fprintf(out, "  at %s:%d\n", symbol, frame.Line)
+			fmt.Fprintf(out, "  %s:%d\n", location, frame.Line)
 		} else {
-			fmt.Fprintf(out, "  at %s\n", symbol)
+			fmt.Fprintf(out, "  %s\n", location)
 		}
 	}
 	out.WriteString("\n")

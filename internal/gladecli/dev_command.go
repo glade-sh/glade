@@ -87,16 +87,43 @@ func runDevStatus(args []string, w io.Writer) error {
 			break
 		}
 	}
-	fmt.Fprintf(w, "Project: %s\n", p.Root)
-	fmt.Fprintf(w, "Package dirs: %d\n", len(p.PackageDirectories))
-	fmt.Fprintf(w, "Apex classes: %d\n", classes)
-	fmt.Fprintf(w, "Apex tests: %d\n", tests)
-	fmt.Fprintf(w, "Metadata: %s\n", metadata)
-	fmt.Fprintf(w, "Last run: %s\n", devLastRun(filepath.Join(p.Root, ".glade", "runs")))
+	fmt.Fprintln(w, "Glade dev")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Local feedback loop")
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "Project       %s\n", devDisplayRoot(root, p.Root))
+	fmt.Fprintf(w, "Package dirs  %d\n", len(p.PackageDirectories))
+	fmt.Fprintf(w, "Apex classes  %d\n", classes)
+	fmt.Fprintf(w, "Apex tests    %d\n", tests)
+	fmt.Fprintf(w, "Metadata      %s\n", metadata)
+	fmt.Fprintf(w, "Last run      %s\n", devLastRun(filepath.Join(p.Root, ".glade", "runs")))
+	fmt.Fprint(w, "\nOn change:\n")
+	fmt.Fprint(w, "  run changed tests\n")
+	fmt.Fprint(w, "  rerun last failures\n")
+	fmt.Fprint(w, "  write artifacts to .glade/runs\n")
 	fmt.Fprint(w, "\nNext:\n")
-	fmt.Fprintf(w, "  glade dev test --project %s\n", p.Root)
-	fmt.Fprintf(w, "  glade dev watch --project %s\n", p.Root)
+	fmt.Fprintf(w, "  glade dev test --project %s\n", shellPathArg(root))
+	fmt.Fprintf(w, "  glade dev watch --project %s\n", shellPathArg(root))
 	return nil
+}
+
+func devDisplayRoot(inputRoot, loadedRoot string) string {
+	root := strings.TrimSpace(inputRoot)
+	if root == "" || root == "." {
+		return "."
+	}
+	if filepath.IsAbs(root) {
+		return filepath.Base(filepath.Clean(root))
+	}
+	return filepath.ToSlash(filepath.Clean(root))
+}
+
+func shellPathArg(path string) string {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return "."
+	}
+	return filepath.ToSlash(path)
 }
 
 func devLastRun(runsDir string) string {
@@ -286,8 +313,17 @@ func runDevWatch(ctx context.Context, root, outRoot string, once bool, w io.Writ
 	if err != nil {
 		return testreport.Run{}, err
 	}
-	fmt.Fprintf(w, "Watching %s.\n", watchDisplayRoot(root))
-	fmt.Fprint(w, "Strategy: affected tests\n\n")
+	fmt.Fprintln(w, "Glade dev")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Watching project for Apex changes.")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "On change:")
+	fmt.Fprintln(w, "  run changed tests")
+	fmt.Fprintln(w, "  rerun last failures")
+	fmt.Fprintf(w, "  write artifacts to %s\n", filepath.ToSlash(outRoot))
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Press Ctrl-C to stop.")
+	fmt.Fprintln(w)
 	var events bytes.Buffer
 	result, err := runWatchTests(ctx, root, index, apextest.Options{}, watch.Config{Root: root}, once, &events)
 	if err != nil {
@@ -507,12 +543,36 @@ func runReportShowLatest(runsDir string, jsonOut bool, w io.Writer) error {
 		enc.SetIndent("", "  ")
 		return enc.Encode(envelope)
 	}
-	data, err := os.ReadFile(latest.SummaryPath)
+	result, err := loadLatestTestResult(latest)
 	if err != nil {
 		return err
 	}
-	_, err = w.Write(data)
-	return err
+	summary := result.Summary()
+	status := "passed"
+	if summary.Failed > 0 || summary.Errors > 0 || summary.Unsupported > 0 {
+		status = "failed"
+	}
+	fmt.Fprintln(w, "Glade report")
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "Run:     %s\n", filepath.ToSlash(latest.RunDir))
+	fmt.Fprintf(w, "Status:  %s\n", status)
+	fmt.Fprintf(w, "Tests:   %d passed, %d failed", summary.Passed, summary.Failed)
+	if summary.Errors > 0 {
+		fmt.Fprintf(w, ", %d errors", summary.Errors)
+	}
+	fmt.Fprintln(w)
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Artifacts:")
+	fmt.Fprintf(w, "  Markdown  %s\n", filepath.ToSlash(latest.SummaryPath))
+	fmt.Fprintf(w, "  JSON      %s\n", filepath.ToSlash(latest.ResultsPath))
+	junitPath := filepath.Join(latest.RunDir, "junit.xml")
+	if _, err := os.Stat(junitPath); err == nil {
+		fmt.Fprintf(w, "  JUnit     %s\n", filepath.ToSlash(junitPath))
+	}
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Open:")
+	fmt.Fprintln(w, "  glade report export latest --format html --output glade-report.html")
+	return nil
 }
 
 func runReportGitHubLatest(runsDir string, w io.Writer) error {

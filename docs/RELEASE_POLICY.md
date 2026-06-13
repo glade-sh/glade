@@ -9,7 +9,7 @@ A release can be promoted when:
 
 - `go test ./...` passes.
 - `scripts/smoke.sh` passes against the built binary.
-- `glade doctor` reports `parser: ok` for release archives.
+- `glade doctor` reports `Ready.` for release archives.
 - Public support docs describe the current command surface and known gaps.
 
 ## Release Readiness Labels
@@ -75,7 +75,7 @@ git push <remote> vX.Y.Z
 
 3. Let the `Release` workflow publish artifacts.
    - Artifacts are built to `dist/` with CGO enabled on macOS and Linux runners.
-   - `glade doctor` must report `parser: ok` before an archive is written.
+   - `glade doctor` must report `Ready.` before an archive is written.
    - `SHA256SUMS.txt` is published with the release assets.
 
 4. Verify install from release artifacts.

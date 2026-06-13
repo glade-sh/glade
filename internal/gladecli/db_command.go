@@ -73,6 +73,9 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 	if wizard {
 		return writeDBWizard(w, command, dbPath, root, jsonOut, positionals)
 	}
+	if jsonOut && progressMode == cliui.ProgressAuto {
+		progressMode = cliui.ProgressOff
+	}
 	if dbPath == "" {
 		return errors.New("glade db requires --db <path>")
 	}
@@ -238,6 +241,9 @@ func writeDBInspect(w io.Writer, path string, org storage.OrgState, jsonOut bool
 		enc.SetIndent("", "  ")
 		return enc.Encode(summary)
 	}
+	fmt.Fprintln(w, "Glade db inspect")
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "Database: %s\n", filepath.ToSlash(path))
 	fmt.Fprintf(w, "db: %s\n", path)
 	if schemaVersion > 0 {
 		fmt.Fprintf(w, "schemaVersion: %d\n", schemaVersion)
@@ -252,10 +258,17 @@ func writeDBInspect(w io.Writer, path string, org storage.OrgState, jsonOut bool
 		objects = append(objects, object)
 	}
 	sort.Strings(objects)
+	if len(objects) > 0 {
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "Objects:")
+	}
 	for _, object := range objects {
 		count := summary.ByObject[object]
 		fmt.Fprintf(w, "%s: %d\n", object, count)
 	}
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "Next:")
+	fmt.Fprintf(w, "  glade db export --db %s > exported-fixture.json\n", filepath.ToSlash(path))
 	return nil
 }
 
@@ -274,6 +287,11 @@ func writeDebugLog(path, log string, stdout io.Writer) error {
 	if path == "-" {
 		_, err := io.WriteString(stdout, log)
 		return err
+	}
+	if dir := filepath.Dir(path); dir != "." && strings.TrimSpace(dir) != "" {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return err
+		}
 	}
 	file, err := os.Create(path)
 	if err != nil {

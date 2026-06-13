@@ -32,8 +32,8 @@ glade version
 glade doctor
 ```
 
-The parser line must read `parser: ok (tree-sitter)`. If it says
-`parser: UNAVAILABLE`, rebuild with CGO enabled and a C compiler present.
+The doctor output must include `Ready.`. If the parser reports unavailable,
+rebuild with CGO enabled and a C compiler present.
 
 ## 3. First Project Check
 
@@ -49,7 +49,7 @@ at its root.
 
 ## 4. Focused Class Or Method
 
-Day-to-day test runs use `--filter`:
+Day-to-day test runs use exact class and method selectors:
 
 ```bash
 glade test --project . --class AccountServiceTest --json
@@ -78,7 +78,7 @@ On large projects, also smoke the warm path:
 
 ```bash
 glade test serve --project .
-glade test --project . --filter <OneTestClass>
+glade test --project . --class <OneTestClass>
 ```
 
 The second command should auto-connect and skip a full cold startup when
@@ -90,14 +90,14 @@ The second command should auto-connect and skip a full cold startup when
 ```bash
 mkdir -p reports
 glade check --project . --json > reports/glade-check.json
-glade test --project . --json > reports/glade-test.json
+glade test --project . --json --no-progress > reports/glade-test.json
 # Requires a live plugin registry, custom registry, direct archive, or linked plugin.
 glade plugins install @glade/compat
 glade compat local-tests --project . --parallel auto --json > reports/glade-local-tests.json
 ```
 
-Use `glade test changed --project . --since origin/main --json` when the report
-should cover only affected tests.
+Use `glade test changed --project . --since origin/main --json --no-progress`
+when the report should cover only affected tests.
 
 ## 6b. Performance Scanner
 

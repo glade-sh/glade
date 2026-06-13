@@ -75,7 +75,7 @@ environments in workspace settings:
 Execute anonymous Apex persists successful DML to the active environment:
 
 ```bash
-glade exec --project <root> --db <active-db> --debug-log - "insert new Account(Name='local');"
+glade exec --project <root> --db <active-db> --log-out reports/exec.log "insert new Account(Name='local');"
 ```
 
 The Local Org view can inspect, seed, reset, and export the active DB.

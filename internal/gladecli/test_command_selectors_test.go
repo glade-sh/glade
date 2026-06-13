@@ -82,11 +82,23 @@ func runSelectionTestInRoot(t *testing.T, root string, args ...string) testrepor
 	if code != 0 {
 		t.Fatalf("exit=%d stderr=%s stdout=%s", code, stderr.String(), stdout.String())
 	}
-	var run testreport.Run
-	if err := json.Unmarshal(stdout.Bytes(), &run); err != nil {
+	run, err := decodeTestRunJSON(stdout.Bytes())
+	if err != nil {
 		t.Fatalf("decode run: %v\n%s", err, stdout.String())
 	}
 	return run
+}
+
+func decodeTestRunJSON(data []byte) (testreport.Run, error) {
+	var envelope struct {
+		Data testreport.Run `json:"data"`
+	}
+	if err := json.Unmarshal(data, &envelope); err == nil && len(envelope.Data.Suites) > 0 {
+		return envelope.Data, nil
+	}
+	var run testreport.Run
+	err := json.Unmarshal(data, &run)
+	return run, err
 }
 
 func selectionFixtureRoot(t *testing.T) string {
