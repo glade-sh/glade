@@ -27,11 +27,13 @@ assert.deepStrictEqual(viewIds, [
   "glade.environments",
   "glade.localOrg",
   "glade.debugLogs",
+  "glade.plugins",
 ]);
 assert(!viewIds.includes("glade.apexTests"), "local Apex tests must use native Testing, not a duplicate sidebar view");
 
 const activationEvents = manifest.activationEvents || [];
 assert(!activationEvents.includes("onView:glade.apexTests"), "glade.apexTests activation must be removed");
+assert(activationEvents.includes("onView:glade.plugins"), "glade.plugins view must activate the extension");
 
 const localRunsView = manifest.contributes.views.glade.find((view) => view.id === "glade.recommendedRuns");
 assert(localRunsView, "glade.recommendedRuns view must exist");
@@ -41,6 +43,10 @@ const debugView = manifest.contributes.views.glade.find((view) => view.id === "g
 assert(debugView, "glade.debugLogs view must exist");
 assert.strictEqual(debugView.name, "Debug");
 
+const pluginsView = manifest.contributes.views.glade.find((view) => view.id === "glade.plugins");
+assert(pluginsView, "glade.plugins view must exist");
+assert.strictEqual(pluginsView.name, "Plugins");
+
 for (const command of [
   "glade.runLocalProof",
   "glade.cloneEnvironment",
@@ -49,6 +55,11 @@ for (const command of [
   "glade.inspectEnvironment",
   "glade.statusQuickPick",
   "glade.openOutput",
+  "glade.refreshPlugins",
+  "glade.managePlugins",
+  "glade.runPluginAction",
+  "glade.linkLocalPlugin",
+  "glade.installPluginArchive",
 ]) {
   assert(
     manifest.contributes.commands.some((entry) => entry.command === command),

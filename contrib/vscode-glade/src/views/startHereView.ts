@@ -3,10 +3,13 @@ import { configuredActiveEnvironment } from "../localOrg";
 import { GladeProjectContext } from "../projectModel";
 import { StartHereState } from "../startHereState";
 import { buildStartHereRows, StartHereRow } from "../startHereModel";
+import { PluginActionRow } from "../plugins/controller";
+import { pluginActionTreeRows } from "./pluginsView";
 import { GladeTreeItem } from "./tree";
 
 export class StartHereView implements vscode.TreeDataProvider<GladeTreeItem> {
   private project?: GladeProjectContext;
+  private pluginActions: PluginActionRow[] = [];
   private readonly changed = new vscode.EventEmitter<GladeTreeItem | undefined | null | void>();
   readonly onDidChangeTreeData = this.changed.event;
 
@@ -19,6 +22,11 @@ export class StartHereView implements vscode.TreeDataProvider<GladeTreeItem> {
 
   refresh(): void {
     this.changed.fire();
+  }
+
+  setPluginActions(actions: PluginActionRow[]): void {
+    this.pluginActions = actions;
+    this.refresh();
   }
 
   getTreeItem(element: GladeTreeItem): vscode.TreeItem {
@@ -37,7 +45,7 @@ export class StartHereView implements vscode.TreeDataProvider<GladeTreeItem> {
       lastRun: runtime.lastRun,
       changedSince: config.get<string>("changedSince") || "origin/main",
     });
-    return rows.map(toTreeItem);
+    return [...rows.map(toTreeItem), ...pluginActionTreeRows(this.pluginActions)];
   }
 }
 
