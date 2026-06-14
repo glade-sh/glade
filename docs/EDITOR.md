@@ -33,7 +33,8 @@ separate `Glade Apex` Test Explorer controller, and CodeLens labels that include
 The sidebar shows:
 
 - Start Here: SFDX root, active local data environment, local DB state, watch
-  state, last run state, and top daily actions.
+  state, last run state, local preview state, plugin action count, and top
+  daily actions.
 - Local Runs: changed tests, failed tests, and warm watch controls.
 - Data Environments: named SQLite-backed local org states.
 - Local Org: inspect, seed, reset, and export for the active environment.
@@ -59,8 +60,10 @@ Local Apex tests appear in the native VS Code Testing view under `Glade Apex`.
 Glade does not add a second Apex Tests sidebar tree. Breakpoints stay in the
 normal editor gutter and debug state stays in VS Code Run and Debug.
 
-The Status Bar shows the active local data environment and the latest local
-state, such as `Glade: dev`, `Glade: dev 18ms`, or `Glade: billing-case 1 fail`.
+The Status Bar shows short local state, such as `Glade: dev`,
+`Glade: preview 5 routes`, `Glade: plugin 2 findings`, or
+`Glade: toolchain needed`. Details stay in the tooltip: project root, active
+DB, preview counts, plugin finding counts, toolchain detail, and last command.
 Click it to switch data, inspect local data, run local proof, or open output.
 
 The default local data environment is `dev` at `.glade/envs/dev.sqlite`.
@@ -83,6 +86,50 @@ Configure more environments in workspace settings:
   "glade.activeEnvironment": "dev"
 }
 ```
+
+## Local Preview
+
+The VS Code extension treats Local Preview as a local Glade surface. Start Here
+can show whether the preview toolchain is ready, whether installation is
+needed, or whether the extension has not checked it yet. It can also show the
+current LWC route count and Visualforce page count when preview servers are
+running, or `stopped` when they are not.
+
+Install the toolchain once:
+
+```bash
+glade toolchain install
+```
+
+Use the same preview servers that the CLI exposes:
+
+```bash
+glade dev lwc --project . --port 8080
+glade dev vf --project . --port 8080
+```
+
+LWC routes use `/lwc/preview/...`. Visualforce routes use `/apex/<Page>`.
+Visualforce-backed LWC tab routes resolve through the LWC shell and then open
+the Visualforce page.
+
+## Plugin Actions And Findings
+
+The extension reads installed and linked plugins through:
+
+```bash
+glade plugins list --json
+```
+
+Installed plugins may declare editor actions for Start Here, Local Runs, Local
+Org, Debug, Preview, or Plugins views. Linked local plugins work the same way
+after `glade plugins link --exec <plugin-executable>` because they appear in
+the same installed plugin state as archive or registry installs.
+
+When a plugin action declares `output: "glade.findings.v1"`, the extension can
+parse the action stdout and publish the findings into the VS Code Problems
+panel. Findings carry severity, message, optional file, line, column, rule id,
+and source. Plugin actions that produce artifacts can still write files or URLs
+for the user to open from the action result.
 
 ## Browser Playground
 
