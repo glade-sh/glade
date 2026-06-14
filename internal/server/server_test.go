@@ -1290,15 +1290,36 @@ func TestSObjectCompactLayoutDescribeMethodBoundary(t *testing.T) {
 
 func TestAdvertisedSObjectURLStubs(t *testing.T) {
 	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Type"] = storage.Field{
+		APIName: "Type",
+		Type:    storage.FieldPicklist,
+		PicklistValues: []storage.PicklistValue{
+			{Value: "Prospect", Label: "Prospect", Default: true, Active: true},
+			{Value: "Customer", Label: "Customer", Active: true},
+		},
+	}
+	account.Definition.Fields["Active__c"] = storage.Field{APIName: "Active__c", Type: storage.FieldBoolean, DefaultValue: "true"}
+	org.Objects["Account"] = account
 	handler := New(&org)
 
-	for _, path := range []string{
-		serverTestDataPath + "/sobjects/Account/defaultValues",
-		serverTestDataPath + "/sobjects/Account/defaultValues?recordTypeId&fields",
-	} {
-		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
-		assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "default value metadata")
+	defaults := httptest.NewRecorder()
+	handler.ServeHTTP(defaults, httptest.NewRequest(http.MethodGet, serverTestDataPath+"/sobjects/Account/defaultValues?fields=Type,Active__c,Name", nil))
+	if defaults.Code != http.StatusOK {
+		t.Fatalf("default values status = %d body=%s", defaults.Code, defaults.Body.String())
+	}
+	var defaultsPayload struct {
+		ObjectType    string         `json:"objectType"`
+		DefaultValues map[string]any `json:"defaultValues"`
+	}
+	if err := json.Unmarshal(defaults.Body.Bytes(), &defaultsPayload); err != nil {
+		t.Fatal(err)
+	}
+	if defaultsPayload.ObjectType != "Account" || defaultsPayload.DefaultValues["Type"] != "Prospect" || defaultsPayload.DefaultValues["Active__c"] != true {
+		t.Fatalf("default values payload = %#v raw=%s", defaultsPayload, defaults.Body.String())
+	}
+	if _, ok := defaultsPayload.DefaultValues["Name"]; ok {
+		t.Fatalf("default values should not include fields without defaults: %#v", defaultsPayload.DefaultValues)
 	}
 
 	postDefaultValues := httptest.NewRecorder()
@@ -1783,29 +1804,246 @@ func TestResourceDiscoveryIncludesStableServerEndpoints(t *testing.T) {
 	}
 }
 
-func TestUnsupportedDiscoveryNamespacesReturnStableErrors(t *testing.T) {
+func TestCompositeTreeCreatesAccountAndChildContact(t *testing.T) {
+	org := testOrg()
+	addContactChildForCompositeTreeTest(&org)
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite/tree/Account", strings.NewReader(`{
+  "records": [
+    {
+      "attributes": {"referenceId": "AccountRef"},
+      "Name": "Tree Account",
+      "Contacts": {
+        "records": [
+          {"attributes": {"referenceId": "ContactRef"},"LastName": "Needle"}
+        ]
+      }
+    }
+  ]
+}`)))
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("tree status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var body struct {
+		HasErrors bool `json:"hasErrors"`
+		Results   []struct {
+			ReferenceID string           `json:"referenceId"`
+			ID          string           `json:"id"`
+			Errors      []map[string]any `json:"errors"`
+		} `json:"results"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body.HasErrors || len(body.Results) != 2 || body.Results[0].ReferenceID != "AccountRef" || body.Results[1].ReferenceID != "ContactRef" {
+		t.Fatalf("tree body = %#v raw=%s", body, rec.Body.String())
+	}
+	accountID := storage.ID(body.Results[0].ID)
+	contactID := storage.ID(body.Results[1].ID)
+	contact := org.Objects["Contact"].Records[contactID]
+	if contact.Fields["AccountId"].ID != accountID {
+		t.Fatalf("contact AccountId = %#v want %s", contact.Fields["AccountId"], accountID)
+	}
+}
+
+func TestCompositeTreeCreatesGenericRelationshipChildren(t *testing.T) {
+	org := testOrg()
+	addOrderChildForCompositeTreeTest(&org)
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite/tree/Account", strings.NewReader(`{
+  "records": [
+    {
+      "attributes": {"referenceId": "AccountRef"},
+      "Name": "Tree Account",
+      "Orders__r": {
+        "records": [
+          {"attributes": {"referenceId": "OrderRef"},"Name": "Order One"}
+        ]
+      }
+    }
+  ]
+}`)))
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("generic tree status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var body struct {
+		Results []struct {
+			ReferenceID string `json:"referenceId"`
+			ID          string `json:"id"`
+		} `json:"results"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body.Results) != 2 || body.Results[1].ReferenceID != "OrderRef" {
+		t.Fatalf("generic tree body = %#v raw=%s", body, rec.Body.String())
+	}
+	order := org.Objects["Order__c"].Records[storage.ID(body.Results[1].ID)]
+	if order.Fields["Account__c"].ID != storage.ID(body.Results[0].ID) {
+		t.Fatalf("order Account__c = %#v want %s", order.Fields["Account__c"], body.Results[0].ID)
+	}
+}
+
+func TestCompositeTreeAllOrNoneRollsBackWithErrorArrays(t *testing.T) {
+	org := testOrg()
+	addContactChildForCompositeTreeTest(&org)
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite/tree/Account", strings.NewReader(`{
+  "records": [
+    {
+      "attributes": {"referenceId": "AccountRef"},
+      "Name": "Tree Account",
+      "Contacts": {
+        "records": [
+          {"attributes": {"referenceId": "ContactRef"},"Email": "missing-last-name@example.test"}
+        ]
+      }
+    }
+  ]
+}`)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("rollback status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var body struct {
+		HasErrors bool `json:"hasErrors"`
+		Results   []struct {
+			ReferenceID string           `json:"referenceId"`
+			Success     bool             `json:"success"`
+			Errors      []map[string]any `json:"errors"`
+		} `json:"results"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if !body.HasErrors || len(body.Results) != 2 || body.Results[0].Success || body.Results[1].Success || len(body.Results[0].Errors) == 0 || len(body.Results[1].Errors) == 0 {
+		t.Fatalf("rollback body = %#v raw=%s", body, rec.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 0 {
+		t.Fatalf("rollback Account records = %d", got)
+	}
+	if got := len(org.Objects["Contact"].Records); got != 0 {
+		t.Fatalf("rollback Contact records = %d", got)
+	}
+}
+
+func TestCompositeTreeRejectsNestedShapesBeyondLocalMetadata(t *testing.T) {
+	org := testOrg()
+	addContactChildForCompositeTreeTest(&org)
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite/tree/Account", strings.NewReader(`{
+  "records": [
+    {
+      "attributes": {"referenceId": "AccountRef"},
+      "Name": "Tree Account",
+      "Contacts": {
+        "records": [
+          {
+            "attributes": {"referenceId": "ContactRef"},
+            "LastName": "Needle",
+            "Cases": {"records": [{"attributes": {"referenceId": "CaseRef"},"Subject": "Nested"}]}
+          }
+        ]
+      }
+    }
+  ]
+}`)))
+	assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "nested Composite tree child relationships")
+}
+
+func TestCompositeGraphOrchestratesSupportedSubrequests(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
-	for _, tc := range []struct {
-		path string
-		body string
-	}{
-		{
-			path: serverTestDataPath + "/composite/tree/Account",
-			body: `{"records":[{"attributes":{"referenceId":"AccountRef"},"Name":"Acme"}]}`,
-		},
-		{
-			path: serverTestDataPath + "/composite/graph",
-			body: `{"graphs":[{"graphId":"GraphOne","compositeRequest":[{"method":"GET","url":"` + serverTestDataPath + `/limits","referenceId":"LimitsRef"}]}]}`,
-		},
-	} {
-		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, tc.path, strings.NewReader(tc.body)))
-		if rec.Code != http.StatusNotImplemented {
-			t.Fatalf("%s status = %d body=%s", tc.path, rec.Code, rec.Body.String())
-		}
-		if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"UNSUPPORTED_FEATURE"`)) {
-			t.Fatalf("%s unsupported shape = %s", tc.path, rec.Body.String())
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite/graph", strings.NewReader(`{
+  "graphs": [
+    {
+      "graphId": "GraphOne",
+      "compositeRequest": [
+        {"method":"POST","url":"`+serverTestDataPath+`/sobjects/Account","referenceId":"createAccount","body":{"Name":"Graph Account"}},
+        {"method":"GET","url":"`+serverTestDataPath+`/sobjects/Account/@{createAccount.id}","referenceId":"getAccount"}
+      ]
+    }
+  ]
+}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("graph status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var body struct {
+		Graphs []struct {
+			GraphID       string `json:"graphId"`
+			IsSuccessful  bool   `json:"isSuccessful"`
+			GraphResponse struct {
+				CompositeResponse []struct {
+					ReferenceID    string         `json:"referenceId"`
+					HTTPStatusCode int            `json:"httpStatusCode"`
+					Body           map[string]any `json:"body"`
+				} `json:"compositeResponse"`
+			} `json:"graphResponse"`
+		} `json:"graphs"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body.Graphs) != 1 || body.Graphs[0].GraphID != "GraphOne" || !body.Graphs[0].IsSuccessful || len(body.Graphs[0].GraphResponse.CompositeResponse) != 2 {
+		t.Fatalf("graph body = %#v raw=%s", body, rec.Body.String())
+	}
+	if got := body.Graphs[0].GraphResponse.CompositeResponse[1].Body["Name"]; got != "Graph Account" {
+		t.Fatalf("graph get Name = %#v body=%s", got, rec.Body.String())
+	}
+}
+
+func TestCompositeGraphPartialGraphFailureRollsBackFailedGraph(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite/graph", strings.NewReader(`{
+  "graphs": [
+    {
+      "graphId": "GoodGraph",
+      "compositeRequest": [
+        {"method":"POST","url":"`+serverTestDataPath+`/sobjects/Account","referenceId":"good","body":{"Name":"Good Graph"}}
+      ]
+    },
+    {
+      "graphId": "BadGraph",
+      "compositeRequest": [
+        {"method":"POST","url":"`+serverTestDataPath+`/sobjects/Account","referenceId":"beforeFailure","body":{"Name":"Rolled Back"}},
+        {"method":"POST","url":"`+serverTestDataPath+`/sobjects/Account","referenceId":"bad","body":{"Description":"Missing name"}}
+      ]
+    }
+  ]
+}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("partial graph status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var body struct {
+		Graphs []struct {
+			GraphID      string `json:"graphId"`
+			IsSuccessful bool   `json:"isSuccessful"`
+		} `json:"graphs"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body.Graphs) != 2 || !body.Graphs[0].IsSuccessful || body.Graphs[1].IsSuccessful {
+		t.Fatalf("partial graph body = %#v raw=%s", body, rec.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 1 {
+		t.Fatalf("committed Account records = %d", got)
+	}
+	for _, record := range org.Objects["Account"].Records {
+		if value, ok := record.Fields["Name"]; ok && value.String == "Rolled Back" {
+			t.Fatalf("failed graph committed record: %#v", record)
 		}
 	}
 }
@@ -2650,6 +2888,66 @@ func TestBulkAPIQueryJobLifecycleReturnsLocalCSVResults(t *testing.T) {
 	}
 }
 
+func TestBulkAPIQueryJobResultsUseLocatorPaging(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "A")
+	addAccountForTest(&org, "001000000000002", "B")
+	addAccountForTest(&org, "001000000000003", "C")
+	handler := New(&org)
+
+	queryText := "SELECT Id, Name FROM Account ORDER BY Name"
+	createBody := fmt.Sprintf(`{"operation":"query","query":%q}`, queryText)
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/jobs/query", strings.NewReader(createBody)))
+	if create.Code != http.StatusOK {
+		t.Fatalf("create status = %d body=%s", create.Code, create.Body.String())
+	}
+	var created struct {
+		ID    string `json:"id"`
+		State string `json:"state"`
+	}
+	if err := json.Unmarshal(create.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if created.State != "JobComplete" {
+		t.Fatalf("created state = %#v", created)
+	}
+
+	first := httptest.NewRecorder()
+	handler.ServeHTTP(first, httptest.NewRequest(http.MethodGet, serverTestDataPath+"/jobs/query/"+created.ID+"/results?maxRecords=2", nil))
+	if first.Code != http.StatusOK {
+		t.Fatalf("first results status = %d body=%s", first.Code, first.Body.String())
+	}
+	if got := first.Header().Get("Sforce-Locator"); got != "2" {
+		t.Fatalf("first locator = %q", got)
+	}
+	if got := first.Header().Get("Sforce-NumberOfRecords"); got != "2" {
+		t.Fatalf("first record count = %q", got)
+	}
+	if want := "Id,Name\n001000000000001,A\n001000000000002,B\n"; first.Body.String() != want {
+		t.Fatalf("first csv = %q want %q", first.Body.String(), want)
+	}
+
+	next := httptest.NewRecorder()
+	handler.ServeHTTP(next, httptest.NewRequest(http.MethodGet, serverTestDataPath+"/jobs/query/"+created.ID+"/results?locator=2&maxRecords=2", nil))
+	if next.Code != http.StatusOK {
+		t.Fatalf("next results status = %d body=%s", next.Code, next.Body.String())
+	}
+	if got := next.Header().Get("Sforce-Locator"); got != "null" {
+		t.Fatalf("next locator = %q", got)
+	}
+	if got := next.Header().Get("Sforce-NumberOfRecords"); got != "1" {
+		t.Fatalf("next record count = %q", got)
+	}
+	if want := "Id,Name\n001000000000003,C\n"; next.Body.String() != want {
+		t.Fatalf("next csv = %q want %q", next.Body.String(), want)
+	}
+
+	invalid := httptest.NewRecorder()
+	handler.ServeHTTP(invalid, httptest.NewRequest(http.MethodGet, serverTestDataPath+"/jobs/query/"+created.ID+"/results?locator=99", nil))
+	assertSalesforceError(t, invalid, http.StatusBadRequest, "MALFORMED_QUERY", "invalid bulk query locator")
+}
+
 func TestBulkAPIQueryJobResultsReadCaseInsensitiveSelectedFields(t *testing.T) {
 	org := testOrg()
 	addAccountForTest(&org, "001000000000001", "Acme")
@@ -2883,12 +3181,93 @@ func TestMetadataRESTReadsLocalSourceFiles(t *testing.T) {
 		t.Fatalf("component status=%d body=%s", component.Code, component.Body.String())
 	}
 
-	write := httptest.NewRecorder()
-	handler.ServeHTTP(write, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/metadata/deployRequest", strings.NewReader(`{}`)))
-	assertSalesforceError(t, write, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Metadata REST deploy requests")
+	deploy := httptest.NewRecorder()
+	handler.ServeHTTP(deploy, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/metadata/deployRequest", strings.NewReader(`{"deployOptions":{"checkOnly":true}}`)))
+	if deploy.Code != http.StatusOK || !bytes.Contains(deploy.Body.Bytes(), []byte(`"status":"Succeeded"`)) {
+		t.Fatalf("deploy status=%d body=%s", deploy.Code, deploy.Body.String())
+	}
 }
 
-func TestMetadataRESTRetrieveRoutesReturnExplicitUnsupportedBoundaries(t *testing.T) {
+func TestMetadataRESTRetrieveJobLifecycleUsesLocalSourceRecords(t *testing.T) {
+	org := testOrg()
+	handler := NewWithSource(&org, testSourceMetadata(t))
+
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/metadata/retrieveRequest", strings.NewReader(`{"packageNames":["unpackaged"]}`)))
+	if create.Code != http.StatusOK {
+		t.Fatalf("retrieve create status = %d body=%s", create.Code, create.Body.String())
+	}
+	var created struct {
+		ID         string `json:"id"`
+		Done       bool   `json:"done"`
+		Status     string `json:"status"`
+		Success    bool   `json:"success"`
+		Components int    `json:"numberComponentsTotal"`
+	}
+	if err := json.Unmarshal(create.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if created.ID != "0Ar000000000001" || !created.Done || created.Status != "Succeeded" || !created.Success || created.Components == 0 {
+		t.Fatalf("retrieve created = %#v raw=%s", created, create.Body.String())
+	}
+
+	status := httptest.NewRecorder()
+	handler.ServeHTTP(status, httptest.NewRequest(http.MethodGet, serverTestDataPath+"/metadata/retrieveRequest/"+created.ID, nil))
+	if status.Code != http.StatusOK || !bytes.Contains(status.Body.Bytes(), []byte(`"id":"`+created.ID+`"`)) {
+		t.Fatalf("retrieve status=%d body=%s", status.Code, status.Body.String())
+	}
+
+	results := httptest.NewRecorder()
+	handler.ServeHTTP(results, httptest.NewRequest(http.MethodGet, serverTestDataPath+"/metadata/retrieveRequest/"+created.ID+"/results", nil))
+	if results.Code != http.StatusOK || !bytes.Contains(results.Body.Bytes(), []byte(`"components"`)) || !bytes.Contains(results.Body.Bytes(), []byte(`"LocalOne"`)) {
+		t.Fatalf("retrieve results=%d body=%s", results.Code, results.Body.String())
+	}
+}
+
+func TestMetadataRESTDeployJobLifecycleValidatesLocalMetadata(t *testing.T) {
+	org := testOrg()
+	handler := NewWithSource(&org, testSourceMetadata(t))
+
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/metadata/deployRequest", strings.NewReader(`{"deployOptions":{"checkOnly":true}}`)))
+	if create.Code != http.StatusOK {
+		t.Fatalf("deploy create status = %d body=%s", create.Code, create.Body.String())
+	}
+	var created struct {
+		ID         string `json:"id"`
+		Done       bool   `json:"done"`
+		Status     string `json:"status"`
+		Success    bool   `json:"success"`
+		CheckOnly  bool   `json:"checkOnly"`
+		Components int    `json:"numberComponentsTotal"`
+	}
+	if err := json.Unmarshal(create.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if created.ID != "0Af000000000001" || !created.Done || created.Status != "Succeeded" || !created.Success || !created.CheckOnly || created.Components == 0 {
+		t.Fatalf("deploy created = %#v raw=%s", created, create.Body.String())
+	}
+
+	status := httptest.NewRecorder()
+	handler.ServeHTTP(status, httptest.NewRequest(http.MethodGet, serverTestDataPath+"/metadata/deployRequest/"+created.ID, nil))
+	if status.Code != http.StatusOK || !bytes.Contains(status.Body.Bytes(), []byte(`"id":"`+created.ID+`"`)) {
+		t.Fatalf("deploy status=%d body=%s", status.Code, status.Body.String())
+	}
+
+	results := httptest.NewRecorder()
+	handler.ServeHTTP(results, httptest.NewRequest(http.MethodGet, serverTestDataPath+"/metadata/deployRequest/"+created.ID+"/results", nil))
+	if results.Code != http.StatusOK || !bytes.Contains(results.Body.Bytes(), []byte(`"componentSuccesses"`)) || !bytes.Contains(results.Body.Bytes(), []byte(`"LocalOne"`)) {
+		t.Fatalf("deploy results=%d body=%s", results.Code, results.Body.String())
+	}
+
+	details := httptest.NewRecorder()
+	handler.ServeHTTP(details, httptest.NewRequest(http.MethodGet, serverTestDataPath+"/metadata/deployRequest/"+created.ID+"/deployDetails", nil))
+	if details.Code != http.StatusOK || !bytes.Contains(details.Body.Bytes(), []byte(`"componentFailures":[]`)) {
+		t.Fatalf("deploy details=%d body=%s", details.Code, details.Body.String())
+	}
+}
+
+func TestMetadataRESTJobRoutesValidateBodiesMethodsAndUnknownJobs(t *testing.T) {
 	tests := []struct {
 		name          string
 		method        string
@@ -2899,15 +3278,6 @@ func TestMetadataRESTRetrieveRoutesReturnExplicitUnsupportedBoundaries(t *testin
 		wantAllow     string
 		wantMessageIn string
 	}{
-		{
-			name:          "retrieve create unsupported",
-			method:        http.MethodPost,
-			path:          serverTestDataPath + "/metadata/retrieveRequest",
-			body:          `{"packageNames":["unpackaged"]}`,
-			wantStatus:    http.StatusNotImplemented,
-			wantCode:      "UNSUPPORTED_FEATURE",
-			wantMessageIn: "Metadata REST retrieve requests",
-		},
 		{
 			name:          "retrieve create malformed json",
 			method:        http.MethodPost,
@@ -2927,20 +3297,12 @@ func TestMetadataRESTRetrieveRoutesReturnExplicitUnsupportedBoundaries(t *testin
 			wantMessageIn: "method not allowed",
 		},
 		{
-			name:          "retrieve status unsupported",
+			name:          "retrieve unknown job",
 			method:        http.MethodGet,
-			path:          serverTestDataPath + "/metadata/retrieveRequest/0Ar000000000001",
-			wantStatus:    http.StatusNotImplemented,
-			wantCode:      "UNSUPPORTED_FEATURE",
-			wantMessageIn: "Metadata REST retrieve status",
-		},
-		{
-			name:          "retrieve results unsupported",
-			method:        http.MethodGet,
-			path:          serverTestDataPath + "/metadata/retrieveRequest/0Ar000000000001/results",
-			wantStatus:    http.StatusNotImplemented,
-			wantCode:      "UNSUPPORTED_FEATURE",
-			wantMessageIn: "Metadata REST retrieve results",
+			path:          serverTestDataPath + "/metadata/retrieveRequest/0Ar000000000999",
+			wantStatus:    http.StatusNotFound,
+			wantCode:      "NOT_FOUND",
+			wantMessageIn: "metadata job not found",
 		},
 		{
 			name:          "retrieve results method boundary",
@@ -2951,42 +3313,6 @@ func TestMetadataRESTRetrieveRoutesReturnExplicitUnsupportedBoundaries(t *testin
 			wantCode:      "METHOD_NOT_ALLOWED",
 			wantAllow:     http.MethodGet,
 			wantMessageIn: "method not allowed",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			org := testOrg()
-			handler := New(&org)
-			rec := httptest.NewRecorder()
-			handler.ServeHTTP(rec, httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body)))
-			assertSalesforceError(t, rec, tt.wantStatus, tt.wantCode, tt.wantMessageIn)
-			if got := rec.Header().Get("Allow"); got != tt.wantAllow {
-				t.Fatalf("Allow = %q, want %q", got, tt.wantAllow)
-			}
-		})
-	}
-}
-
-func TestMetadataRESTDeployRoutesReturnExplicitUnsupportedBoundaries(t *testing.T) {
-	tests := []struct {
-		name          string
-		method        string
-		path          string
-		body          string
-		wantStatus    int
-		wantCode      string
-		wantAllow     string
-		wantMessageIn string
-	}{
-		{
-			name:          "deploy create unsupported",
-			method:        http.MethodPost,
-			path:          serverTestDataPath + "/metadata/deployRequest",
-			body:          `{"deployOptions":{"checkOnly":true}}`,
-			wantStatus:    http.StatusNotImplemented,
-			wantCode:      "UNSUPPORTED_FEATURE",
-			wantMessageIn: "Metadata REST deploy requests",
 		},
 		{
 			name:          "deploy create malformed json",
@@ -3007,28 +3333,12 @@ func TestMetadataRESTDeployRoutesReturnExplicitUnsupportedBoundaries(t *testing.
 			wantMessageIn: "method not allowed",
 		},
 		{
-			name:          "deploy status unsupported",
+			name:          "deploy unknown job",
 			method:        http.MethodGet,
-			path:          serverTestDataPath + "/metadata/deployRequest/0Af000000000001",
-			wantStatus:    http.StatusNotImplemented,
-			wantCode:      "UNSUPPORTED_FEATURE",
-			wantMessageIn: "Metadata REST deploy status",
-		},
-		{
-			name:          "deploy results unsupported",
-			method:        http.MethodGet,
-			path:          serverTestDataPath + "/metadata/deployRequest/0Af000000000001/results",
-			wantStatus:    http.StatusNotImplemented,
-			wantCode:      "UNSUPPORTED_FEATURE",
-			wantMessageIn: "Metadata REST deploy results retrieval",
-		},
-		{
-			name:          "deploy details unsupported",
-			method:        http.MethodGet,
-			path:          serverTestDataPath + "/metadata/deployRequest/0Af000000000001/deployDetails",
-			wantStatus:    http.StatusNotImplemented,
-			wantCode:      "UNSUPPORTED_FEATURE",
-			wantMessageIn: "Metadata REST deploy details retrieval",
+			path:          serverTestDataPath + "/metadata/deployRequest/0Af000000000999",
+			wantStatus:    http.StatusNotFound,
+			wantCode:      "NOT_FOUND",
+			wantMessageIn: "metadata job not found",
 		},
 		{
 			name:          "deploy results method boundary",
@@ -4837,6 +5147,39 @@ func TestToolingExecuteAnonymousUsesServerLimitMode(t *testing.T) {
 	}
 }
 
+func TestToolingExecuteAnonymousUsesLimitProfileWithExplicitCaps(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	handler.LimitProfile = "strict-async"
+	handler.LimitCaps = vm.LimitCaps{
+		Queries:             7,
+		QueryRows:           50000,
+		DMLStatements:       150,
+		DMLRows:             10000,
+		HeapSize:            12 * 1024 * 1024,
+		CPUTimeMS:           60000,
+		Callouts:            100,
+		AsyncJobs:           50,
+		FutureCalls:         50,
+		QueueableJobs:       50,
+		BatchJobs:           5,
+		ScheduledJobs:       100,
+		EmailInvokes:        10,
+		SOSLQueries:         20,
+		QueryLocatorRows:    10000,
+		RunAs:               100,
+		Savepoints:          5,
+		SavepointRollbacks:  100,
+		PublishImmediateDML: 150,
+	}
+
+	exec := httptest.NewRecorder()
+	handler.ServeHTTP(exec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"System.assertEquals(7, Limits.getLimitQueries());"}`)))
+	if exec.Code != http.StatusOK || !bytes.Contains(exec.Body.Bytes(), []byte(`"success":true`)) {
+		t.Fatalf("executeAnonymous status = %d body=%s", exec.Code, exec.Body.String())
+	}
+}
+
 func TestToolingExecuteAnonymousAcceptsFormAnonymousBody(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -5635,6 +5978,54 @@ func addAccountForTest(org *storage.OrgState, id storage.ID, name string) {
 		},
 	}
 	org.Objects["Account"] = object
+}
+
+func addOrderChildForCompositeTreeTest(org *storage.OrgState) {
+	account := org.Objects["Account"]
+	account.Definition.Relations = append(account.Definition.Relations, storage.Relationship{
+		Field:              "Account__c",
+		ParentObjects:      []string{"Account"},
+		ParentRelationship: "Account__r",
+		ChildRelationship:  "Orders__r",
+	})
+	org.Objects["Account"] = account
+	org.Objects["Order__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Order__c",
+			Label:     "Order",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name":       {APIName: "Name", Type: storage.FieldString, Required: true},
+				"Account__c": {APIName: "Account__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account__r"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+}
+
+func addContactChildForCompositeTreeTest(org *storage.OrgState) {
+	account := org.Objects["Account"]
+	account.Definition.Relations = append(account.Definition.Relations, storage.Relationship{
+		Field:             "AccountId",
+		ParentObjects:     []string{"Account"},
+		ChildRelationship: "Contacts",
+		CascadeDelete:     true,
+	})
+	org.Objects["Account"] = account
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			Label:     "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"FirstName": {APIName: "FirstName", Type: storage.FieldString},
+				"LastName":  {APIName: "LastName", Type: storage.FieldString, Required: true},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
+				"Email":     {APIName: "Email", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
 }
 
 func resetScopeTestOrg() storage.OrgState {

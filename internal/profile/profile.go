@@ -1,6 +1,7 @@
 package profile
 
 import (
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -382,6 +383,161 @@ func WriteText(w io.Writer, report Report, logPath string) error {
 	return nil
 }
 
+func WritePprof(w io.Writer, report Report) error {
+	var table pprofStringTable
+	table.index("")
+	sampleTypeCount := pprofValueType(table.index("samples"), table.index("count"))
+	sampleTypeCPU := pprofValueType(table.index("cpu"), table.index("nanoseconds"))
+	defaultSampleType := table.index("cpu")
+	type pprofRow struct {
+		location []byte
+		function []byte
+		sample   []byte
+	}
+	rows := make([]pprofRow, 0, len(report.Spans))
+	for _, entry := range report.Spans {
+		if entry.DurationUS <= 0 {
+			continue
+		}
+		id := uint64(len(rows) + 1)
+		label := stablePprofFunctionLabel(entry)
+		nameID := table.index(label)
+		fileID := table.index(entry.File)
+		line := int64(0)
+		if len(entry.SourceRanges) > 0 {
+			line = int64(entry.SourceRanges[0].Line)
+		}
+		rows = append(rows, pprofRow{
+			function: pprofFunction(id, nameID, fileID),
+			location: pprofLocation(id, id, line),
+			sample:   pprofSample(id, []int64{int64(maxInt(entry.DurationCount, 1)), entry.DurationUS * 1000}),
+		})
+	}
+	var profile []byte
+	profile = appendMessageField(profile, 1, sampleTypeCount)
+	profile = appendMessageField(profile, 1, sampleTypeCPU)
+	for _, row := range rows {
+		profile = appendMessageField(profile, 2, row.sample)
+	}
+	for _, row := range rows {
+		profile = appendMessageField(profile, 4, row.location)
+	}
+	for _, row := range rows {
+		profile = appendMessageField(profile, 5, row.function)
+	}
+	for _, value := range table.values {
+		profile = appendBytesField(profile, 6, []byte(value))
+	}
+	profile = appendVarintField(profile, 10, uint64(maxInt64(report.WallClockUS*1000, 0)))
+	profile = appendMessageField(profile, 11, sampleTypeCPU)
+	profile = appendVarintField(profile, 12, 1_000_000)
+	profile = appendVarintField(profile, 14, uint64(defaultSampleType))
+
+	gz := gzip.NewWriter(w)
+	if _, err := gz.Write(profile); err != nil {
+		_ = gz.Close()
+		return err
+	}
+	return gz.Close()
+}
+
+type pprofStringTable struct {
+	values []string
+	seen   map[string]int64
+}
+
+func (t *pprofStringTable) index(value string) int64 {
+	value = strings.TrimSpace(value)
+	if t.seen == nil {
+		t.seen = map[string]int64{}
+	}
+	if id, ok := t.seen[value]; ok {
+		return id
+	}
+	id := int64(len(t.values))
+	t.seen[value] = id
+	t.values = append(t.values, value)
+	return id
+}
+
+func stablePprofFunctionLabel(entry Entry) string {
+	name := strings.TrimSpace(entry.Name)
+	if name == "" {
+		name = strings.TrimSpace(entry.Category)
+	}
+	if name == "" {
+		return "glade.trace.unknown"
+	}
+	return name
+}
+
+func pprofValueType(typeID, unitID int64) []byte {
+	var msg []byte
+	msg = appendVarintField(msg, 1, uint64(typeID))
+	msg = appendVarintField(msg, 2, uint64(unitID))
+	return msg
+}
+
+func pprofFunction(id uint64, nameID, fileID int64) []byte {
+	var msg []byte
+	msg = appendVarintField(msg, 1, id)
+	msg = appendVarintField(msg, 2, uint64(nameID))
+	msg = appendVarintField(msg, 3, uint64(nameID))
+	if fileID > 0 {
+		msg = appendVarintField(msg, 4, uint64(fileID))
+	}
+	return msg
+}
+
+func pprofLocation(id, functionID uint64, line int64) []byte {
+	var lineMsg []byte
+	lineMsg = appendVarintField(lineMsg, 1, functionID)
+	if line > 0 {
+		lineMsg = appendVarintField(lineMsg, 2, uint64(line))
+	}
+	var msg []byte
+	msg = appendVarintField(msg, 1, id)
+	msg = appendMessageField(msg, 4, lineMsg)
+	return msg
+}
+
+func pprofSample(locationID uint64, values []int64) []byte {
+	var msg []byte
+	msg = appendVarintField(msg, 1, locationID)
+	for _, value := range values {
+		if value < 0 {
+			value = 0
+		}
+		msg = appendVarintField(msg, 2, uint64(value))
+	}
+	return msg
+}
+
+func appendMessageField(out []byte, field int, msg []byte) []byte {
+	out = appendVarint(out, uint64(field<<3|2))
+	out = appendVarint(out, uint64(len(msg)))
+	return append(out, msg...)
+}
+
+func appendBytesField(out []byte, field int, data []byte) []byte {
+	out = appendVarint(out, uint64(field<<3|2))
+	out = appendVarint(out, uint64(len(data)))
+	return append(out, data...)
+}
+
+func appendVarintField(out []byte, field int, value uint64) []byte {
+	out = appendVarint(out, uint64(field<<3))
+	return appendVarint(out, value)
+}
+
+func appendVarint(out []byte, value uint64) []byte {
+	for value >= 0x80 {
+		out = append(out, byte(value)|0x80)
+		value >>= 7
+	}
+	return append(out, byte(value))
+}
+
 func writeCategorySummary(w io.Writer, categories map[string]int) error {
 	if len(categories) == 0 {
 		return nil
@@ -478,6 +634,13 @@ func entriesForCategories(entries []Entry, categories ...string) []Entry {
 }
 
 func maxInt(a, b int) int {
+	if b > a {
+		return b
+	}
+	return a
+}
+
+func maxInt64(a, b int64) int64 {
 	if b > a {
 		return b
 	}

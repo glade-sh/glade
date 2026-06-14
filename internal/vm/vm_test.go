@@ -4,10 +4,14 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/trace"
 )
@@ -630,6 +634,67 @@ System.assertEquals(0, category.getChildCategories().size());
 		t.Fatal(err)
 	}
 	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeDataCategoriesLoadsProjectMetadata(t *testing.T) {
+	root := t.TempDir()
+	writeDataCategoryVMTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeDataCategoryVMTestFile(t, filepath.Join(root, "force-app/main/default/dataCategoryGroups/Products.dataCategoryGroup-meta.xml"), `<DataCategoryGroup xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Products</label>
+  <description>Product categories</description>
+  <objectUsage><object>Knowledge__kav</object></objectUsage>
+  <dataCategory>
+    <name>Hardware</name>
+    <label>Hardware</label>
+    <dataCategory><name>Tools</name><label>Tools</label></dataCategory>
+  </dataCategory>
+</DataCategoryGroup>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	if err := resource.ApplyProject(&org, p); err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<Object> groups = Schema.describeDataCategoryGroups(new List<String>{'Knowledge__kav'});
+System.assertEquals(1, groups.size());
+Schema.DescribeDataCategoryGroupResult groupResult =
+	(Schema.DescribeDataCategoryGroupResult) groups[0];
+System.assertEquals('Products', groupResult.getName());
+System.assertEquals(2, groupResult.getCategoryCount());
+
+Schema.DataCategoryGroupSobjectTypePair pair =
+	new Schema.DataCategoryGroupSobjectTypePair();
+pair.setSobject('Knowledge__kav');
+pair.setDataCategoryGroupName('Products');
+List<Object> structures =
+	Schema.describeDataCategoryGroupStructures(new List<Schema.DataCategoryGroupSobjectTypePair>{pair}, false);
+System.assertEquals(1, structures.size());
+Schema.DataCategory top =
+	((Schema.DescribeDataCategoryGroupStructureResult) structures[0]).getTopCategories()[0];
+System.assertEquals('Hardware', top.getName());
+System.assertEquals('Tools', top.getChildCategories()[0].getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func writeDataCategoryVMTestFile(t *testing.T, path, content string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
 }

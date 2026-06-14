@@ -38,12 +38,14 @@ const (
 )
 
 type LaunchRequest struct {
-	Program    string `json:"program"`
-	Project    string `json:"project"`
-	Source     string `json:"source,omitempty"`
-	DBPath     string `json:"dbPath,omitempty"`
-	ClassName  string `json:"className,omitempty"`
-	MethodName string `json:"methodName,omitempty"`
+	Program       string `json:"program"`
+	Project       string `json:"project"`
+	ProjectRoot   string `json:"projectRoot,omitempty"`
+	Source        string `json:"source,omitempty"`
+	AnonymousBody string `json:"anonymousBody,omitempty"`
+	DBPath        string `json:"dbPath,omitempty"`
+	ClassName     string `json:"className,omitempty"`
+	MethodName    string `json:"methodName,omitempty"`
 }
 
 type LaunchHandler func(request LaunchRequest) error

@@ -401,6 +401,108 @@ func TestCompletionRanksSObjectFieldsBeforeTopLevelNamesInsideSOQLSelect(t *test
 	}
 }
 
+func TestCompletionRanksSObjectFieldsInSOQLClauses(t *testing.T) {
+	idx := sampleIndex(t)
+	handler := NewHandler(idx)
+	uri := uriFromPath(filepath.Join(idx.Project.Root, "Draft.cls"))
+	handler.DidOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{
+		URI: uri,
+		Text: strings.Join([]string{
+			"public class Draft {",
+			"  public void run() {",
+			"    List<Account> accounts = [SELECT Id FROM Account WHERE  ORDER BY  GROUP BY ];",
+			"  }",
+			"}",
+			"",
+		}, "\n"),
+	}})
+
+	tests := []struct {
+		name      string
+		character int
+	}{
+		{name: "where", character: 59},
+		{name: "order by", character: 67},
+		{name: "group by", character: 77},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			items := handler.Completion(CompletionParams{
+				TextDocument: TextDocumentIdentifier{URI: uri},
+				Position:     Position{Line: 2, Character: tt.character},
+			}).Items
+			fieldIndex := completionItemIndex(items, "Name", "Account.Name")
+			typeIndex := completionItemIndex(items, "InvoiceService", string(apexast.DeclarationClass))
+			if fieldIndex < 0 || typeIndex < 0 || fieldIndex > typeIndex {
+				t.Fatalf("%s completion rank: field=%d type=%d items=%#v", tt.name, fieldIndex, typeIndex, items)
+			}
+		})
+	}
+}
+
+func TestCompletionContextForMemberAccessAndTests(t *testing.T) {
+	idx := sampleIndex(t)
+	handler := NewHandler(idx)
+	uri := uriFromPath(filepath.Join(idx.Project.Root, "Draft.cls"))
+	handler.DidOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{
+		URI: uri,
+		Text: strings.Join([]string{
+			"@",
+			"@isTest",
+			"private class Draft {",
+			"  @isTest ",
+			"  static void run() {",
+			"    InvoiceService svc = new InvoiceService();",
+			"    Account account = new Account();",
+			"    List<Account> accounts = new List<Account>();",
+			"    Map<Id, Account> byId = new Map<Id, Account>();",
+			"    svc.",
+			"    account.",
+			"    accounts.",
+			"    byId.",
+			"    Schema.SObjectType.Account.",
+			"  }",
+			"}",
+			"",
+		}, "\n"),
+	}})
+
+	tests := []struct {
+		name     string
+		line     int
+		char     int
+		label    string
+		detail   string
+		notLabel string
+	}{
+		{name: "annotation", line: 0, char: 1, label: "isTest", detail: "Apex annotation"},
+		{name: "test method", line: 3, char: 10, label: "testSetup", detail: "Apex test method modifier"},
+		{name: "local class variable", line: 9, char: 8, label: "run", detail: "InvoiceService.run"},
+		{name: "sobject variable", line: 10, char: 12, label: "Name", detail: "Account.Name"},
+		{name: "list variable", line: 11, char: 13, label: "size", detail: "List method", notLabel: "Name"},
+		{name: "map variable", line: 12, char: 9, label: "containsKey", detail: "Map method", notLabel: "Name"},
+		{name: "schema token", line: 13, char: 31, label: "getDescribe", detail: "Schema token method"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			items := handler.Completion(CompletionParams{
+				TextDocument: TextDocumentIdentifier{URI: uri},
+				Position:     Position{Line: tt.line, Character: tt.char},
+			}).Items
+			if completionItemIndex(items, tt.label, tt.detail) < 0 {
+				t.Fatalf("completion missing %s/%s: %#v", tt.label, tt.detail, items)
+			}
+			if tt.notLabel != "" {
+				for _, item := range items {
+					if item.Label == tt.notLabel {
+						t.Fatalf("member completion leaked %s item: %#v", tt.notLabel, items)
+					}
+				}
+			}
+		})
+	}
+}
+
 func TestDefinitionReferencesRenameAndSemanticTokens(t *testing.T) {
 	idx := sampleIndex(t)
 	writeSampleSources(t, idx)

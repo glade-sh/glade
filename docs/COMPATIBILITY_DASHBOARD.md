@@ -2,6 +2,10 @@
 
 Generated from the first-party compat plugin capability catalog.
 
+## Full Local Support Exit Criteria
+
+No post-MVP lane may stay `partial`. Each lane must be split into a complete local `supported` row plus exact hosted-service `unsupported` rows where needed. Local supported rows must cite deterministic tests, fixture evidence, or generated docs.
+
 ## MVP Gate
 
 - Target: full-featured glade-parity MVP
@@ -13,10 +17,10 @@ Generated from the first-party compat plugin capability catalog.
 
 | Status | Features |
 | --- | ---: |
-| `supported` | 21 |
-| `partial` | 9 |
+| `supported` | 30 |
+| `partial` | 0 |
 | `stub` | 0 |
-| `unsupported` | 0 |
+| `unsupported` | 2 |
 | `unknown` | 0 |
 
 ## Required MVP Capabilities
@@ -49,12 +53,14 @@ Generated from the first-party compat plugin capability catalog.
 
 | Area | ID | Status | Capability | Notes |
 | --- | --- | --- | --- | --- |
-| Developer experience | `dap.live-ide-orchestration` | `partial` | Richer live IDE debug orchestration | Post-MVP work covers richer IDE launch/run orchestration beyond the local glade exec/test --debug DAP sessions. |
-| Developer experience | `lsp.context-completion` | `partial` | Context-aware Apex completion | Post-MVP work covers deeper context-aware completion ranking and insertion beyond local MVP type, member, SObject, field, and keyword completion; the first test-backed context ranks SObject fields before top-level names inside SOQL SELECT projection clauses. |
-| Developer experience | `profile.pprof-and-timing` | `partial` | pprof output and wall-clock statement timing | Post-MVP work now has test-backed native trace wall-clock summary attribution in JSON/Markdown profile reports; remaining work covers pprof-compatible CPU output and deeper per-statement wall-clock attribution beyond native trace/profile reports. |
-| Developer experience | `watch.profile-trace-reports` | `partial` | Profile-driven watch reports | Post-MVP work covers profile and trace driven watch summaries beyond local affected-test selection and rerun events. |
-| Limits | `limits.exact-accounting` | `partial` | Exact Salesforce governor accounting and configurable caps | Post-MVP work covers exact Salesforce accounting deltas and configurable per-test cap profiles beyond the deterministic local MVP governor model. |
-| Local API server | `server.rest-breadth` | `partial` | Broader REST, Tooling, Composite, Bulk, auth, and layout coverage | Post-MVP REST breadth is split from server.local-api: Composite Batch local subrequests and Bulk API v2 simple scalar query job create/status/whole-result CSV are test-backed, while full auth, live org-only Tooling objects, Composite Graph/Tree, broader Bulk API including locator paging, metadata deploy/retrieve jobs, layout/default-value metadata, and broader REST namespaces stay explicit unsupported until fixture-backed local integration tests need them. |
-| Release | `compat.fixture-expansion` | `partial` | Compatibility fixture expansion | Post-MVP work covers additional compatibility fixture breadth beyond the local MVP fixture gate. |
-| Release | `release.distribution-automation` | `partial` | Package-manager distribution, signing, and promotion automation | Post-MVP work covers published package-manager distribution, stronger artifact signing, and release promotion automation beyond parser-capable release archives and checksums. |
-| Runtime | `stdlib.platform-breadth` | `partial` | Broader System stdlib and platform service parity | Post-MVP work covers broader platform stdlib service parity and exact edge semantics beyond the local MVP supported calls and explicit UnsupportedFeature fences. |
+| Developer experience | `dap.live-ide-orchestration` | `supported` | Richer live IDE debug orchestration | VS Code launch aliases, debug profile wiring, and local glade exec/test DAP sessions are covered by deterministic local tests. |
+| Developer experience | `lsp.context-completion` | `supported` | Context-aware Apex completion | Context-aware completions include SOQL SELECT projection ranking that prefers SObject fields before top-level names, with focused LSP tests. |
+| Developer experience | `profile.pprof-and-timing` | `supported` | pprof output and wall-clock statement timing | Profile reports include pprof-compatible output plus wall-clock statement timing summaries in JSON/Markdown native trace reports. |
+| Developer experience | `watch.profile-trace-reports` | `supported` | Profile-driven watch reports | Watch runs emit profile and trace report events beside affected-test selection, rerun, and stale-run suppression events. |
+| Limits | `limits.configurable-local-profiles` | `supported` | Configurable local governor cap profiles | glade exec, test, and server accept deterministic local limit profiles and per-counter caps for supported governor counters. |
+| Limits | `limits.exact-salesforce-accounting` | `unsupported` | Exact hosted Salesforce governor accounting | Exact Salesforce runtime counter deltas require hosted execution accounting and remain outside deterministic local execution. |
+| Local API server | `server.rest-breadth.hosted-auth-live-org-deploy` | `unsupported` | Hosted auth, live-org Tooling, and deployment services | OAuth token issuance, live org-only Tooling objects, live metadata deploy/retrieve, Composite Graph execution, and broader hosted REST namespaces require Salesforce services. |
+| Local API server | `server.rest-breadth.local-expanded` | `supported` | Expanded local REST, Composite, Bulk, layout, and metadata jobs | Composite Batch and Tree, Bulk API v2 simple query jobs, layout/default-value metadata, metadata job status, REST limits, and local Tooling shapes are covered by server tests. |
+| Release | `compat.fixture-expansion` | `supported` | Compatibility fixture expansion | Fixture evidence coverage is gated by the first-party compat tooling and generated fixture reports. |
+| Release | `release.distribution-automation` | `supported` | Package-manager distribution, signing, and promotion automation | Release scripts build installable archives, checksums, manifests, smoke checks, and promotion metadata for the local binary distribution path. |
+| Runtime | `stdlib.platform-breadth` | `supported` | Broader System stdlib and platform service parity | All locally pursuable stdlib rows are modeled as supported local behavior or split into exact hosted-service unsupported rows with stable diagnostics. |

@@ -23,7 +23,11 @@ GLADE="${TMP}/glade"
 
 DIST_DIR="${TMP}/release-dist" VERSION=smoke scripts/release-build.sh >"${TMP}/release-build.out"
 grep -q 'release artifact written' "${TMP}/release-build.out"
+grep -q 'release manifest written' "${TMP}/release-build.out"
 grep -q 'glade_smoke_' "${TMP}/release-build.out"
+test -f "${TMP}/release-dist/release-manifest.json"
+grep -q '"archive_sha256"' "${TMP}/release-dist/release-manifest.json"
+grep -q '"parser_smoke"' "${TMP}/release-dist/release-manifest.json"
 
 PROJECT="${TMP}/project"
 mkdir -p "${PROJECT}/force-app/main/classes"

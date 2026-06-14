@@ -324,7 +324,10 @@ func (vm *VM) testLoadData(args []Value, result *Result) (Value, error) {
 	if err != nil {
 		return Null, err
 	}
-	content, ok := vm.staticResourceContent(args[1].Text)
+	content, ok, err := vm.testLoadDataStaticResourceContent(args[1].Text)
+	if err != nil {
+		return Null, err
+	}
 	if !ok {
 		return Null, newExceptionError("StringException", fmt.Sprintf("Test.loadData static resource %s not found", args[1].Text))
 	}
@@ -352,6 +355,13 @@ func (vm *VM) testLoadData(args []Value, result *Result) (Value, error) {
 			raw := ""
 			if i < len(csvRow) {
 				raw = csvRow[i]
+			}
+			if lookupField, value, handled, err := vm.testLoadDataRelationshipValue(objectName, fieldName, raw); handled || err != nil {
+				if err != nil {
+					return Null, err
+				}
+				setExplicitSObjectField(&record, lookupField, value)
+				continue
 			}
 			value, err := vm.testLoadDataFieldValue(objectName, fieldName, raw)
 			if err != nil {
@@ -386,18 +396,48 @@ func (vm *VM) validateTestLoadDataHeaders(objectName string, headers []string) e
 		if fieldName == "" {
 			return newExceptionError("StringException", fmt.Sprintf("Test.loadData %s CSV header contains a blank field name", objectName))
 		}
+		if vm.testLoadDataRelationshipHeader(object.Definition, fieldName) {
+			continue
+		}
 		if _, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, fieldName); !ok {
 			return newExceptionError("StringException", fmt.Sprintf("Test.loadData %s CSV header contains Unknown field %s", objectName, fieldName))
 		}
 	}
 	return nil
 }
+
+func (vm *VM) testLoadDataStaticResourceContent(name string) (string, bool, error) {
+	rawName := strings.TrimSpace(name)
+	resourceNamespace, resourceName, hasNamespace := strings.Cut(rawName, "__")
+	if hasNamespace {
+		if !strings.EqualFold(resourceNamespace, strings.TrimSpace(vm.Org.Namespace)) {
+			return "", false, newExceptionError("StringException", fmt.Sprintf("Test.loadData static resource %s namespace %s does not match local package namespace %s", rawName, resourceNamespace, vm.Org.Namespace))
+		}
+		content, ok := vm.staticResourceContent(resourceName)
+		return content, ok, nil
+	}
+	content, ok := vm.staticResourceContent(rawName)
+	return content, ok, nil
+}
 func (vm *VM) staticResourceContent(name string) (string, bool) {
 	if vm == nil || vm.Org == nil {
 		return "", false
 	}
+	resourceName, namespace, hasNamespace := strings.Cut(strings.TrimSpace(name), "__")
+	if hasNamespace {
+		if namespace == "" {
+			return "", false
+		}
+		if !strings.EqualFold(resourceName, vm.Org.Namespace) {
+			return "", false
+		}
+		name = namespace
+	}
 	for _, resource := range vm.Org.Metadata.StaticResources {
 		if !strings.EqualFold(resource.Name, name) {
+			continue
+		}
+		if hasNamespace && strings.TrimSpace(resource.NamespacePrefix) != "" && !strings.EqualFold(resource.NamespacePrefix, resourceName) {
 			continue
 		}
 		if resource.Content != "" {
@@ -412,6 +452,108 @@ func (vm *VM) staticResourceContent(name string) (string, bool) {
 		return "", false
 	}
 	return "", false
+}
+
+func (vm *VM) testLoadDataRelationshipHeader(definition storage.ObjectDefinition, header string) bool {
+	relationship, externalField, ok := strings.Cut(strings.TrimSpace(header), ".")
+	if !ok || relationship == "" || externalField == "" || vm == nil || vm.Org == nil {
+		return false
+	}
+	_, parentObject, ok := vm.testLoadDataRelationshipField(definition, relationship)
+	if !ok {
+		return false
+	}
+	parentState, ok := vm.Org.Objects[parentObject]
+	if !ok {
+		return false
+	}
+	parentFieldName, ok := storage.ResolveFieldName(parentState.Definition, vm.Org.Namespace, externalField)
+	if !ok {
+		return false
+	}
+	parentField := parentState.Definition.Fields[parentFieldName]
+	return parentField.ExternalID || strings.EqualFold(parentFieldName, "Id")
+}
+
+func (vm *VM) testLoadDataRelationshipValue(objectName, header, raw string) (string, Value, bool, error) {
+	relationship, externalField, ok := strings.Cut(strings.TrimSpace(header), ".")
+	if !ok || relationship == "" || externalField == "" || vm == nil || vm.Org == nil {
+		return "", Null, false, nil
+	}
+	canonicalObject := objectName
+	if resolved, ok := vm.resolveObjectName(objectName); ok {
+		canonicalObject = resolved
+	}
+	object, ok := vm.Org.Objects[canonicalObject]
+	if !ok {
+		return "", Null, false, nil
+	}
+	lookupField, parentObject, ok := vm.testLoadDataRelationshipField(object.Definition, relationship)
+	if !ok {
+		return "", Null, false, nil
+	}
+	if strings.TrimSpace(raw) == "" {
+		return lookupField.APIName, Null, true, nil
+	}
+	parentState, ok := vm.Org.Objects[parentObject]
+	if !ok {
+		return "", Null, true, newExceptionError("DmlException", fmt.Sprintf("FIELD_INTEGRITY_EXCEPTION: Test.loadData %s.%s references unknown object %s", objectName, header, parentObject))
+	}
+	parentFieldName, ok := storage.ResolveFieldName(parentState.Definition, vm.Org.Namespace, externalField)
+	if !ok {
+		return "", Null, true, newExceptionError("DmlException", fmt.Sprintf("FIELD_INTEGRITY_EXCEPTION: Test.loadData %s.%s references unknown external ID field", objectName, header))
+	}
+	parentField := parentState.Definition.Fields[parentFieldName]
+	if !parentField.ExternalID && !strings.EqualFold(parentFieldName, "Id") {
+		return "", Null, true, newExceptionError("DmlException", fmt.Sprintf("FIELD_INTEGRITY_EXCEPTION: Test.loadData %s.%s field is not an external ID", objectName, header))
+	}
+	matches := make([]storage.Record, 0, 1)
+	for _, record := range parentState.Records {
+		if strings.EqualFold(storageStringForExternalID(record, parentFieldName), strings.TrimSpace(raw)) {
+			matches = append(matches, record)
+		}
+	}
+	if len(matches) == 0 {
+		return "", Null, true, newExceptionError("DmlException", fmt.Sprintf("FIELD_INTEGRITY_EXCEPTION: Test.loadData %s.%s external ID %s matched no %s record", objectName, header, raw, parentObject))
+	}
+	if len(matches) > 1 {
+		return "", Null, true, newExceptionError("DmlException", fmt.Sprintf("DUPLICATE_VALUE: Test.loadData %s.%s external ID %s matched multiple %s records", objectName, header, raw, parentObject))
+	}
+	return lookupField.APIName, platformScalar("Id", string(matches[0].ID)), true, nil
+}
+
+func (vm *VM) testLoadDataRelationshipField(definition storage.ObjectDefinition, relationship string) (storage.Field, string, bool) {
+	for _, field := range definition.Fields {
+		if field.Type != storage.FieldReference {
+			continue
+		}
+		if !strings.EqualFold(storage.ParentRelationshipName(field), relationship) && !strings.EqualFold(field.RelationshipName, relationship) {
+			continue
+		}
+		for _, target := range field.ReferenceTo {
+			parentObject := target
+			if resolved, ok := vm.resolveObjectName(target); ok {
+				parentObject = resolved
+			}
+			return field, parentObject, true
+		}
+	}
+	return storage.Field{}, "", false
+}
+
+func storageStringForExternalID(record storage.Record, field string) string {
+	value, ok := record.GetField(field)
+	if !ok {
+		return ""
+	}
+	switch value.Kind {
+	case storage.ValueID:
+		return string(value.ID)
+	case storage.ValueString, storage.ValueBlob, storage.ValueDate, storage.ValueDateTime:
+		return value.String
+	default:
+		return ""
+	}
 }
 func (vm *VM) testLoadDataFieldValue(objectName, fieldName, raw string) (Value, error) {
 	if strings.TrimSpace(raw) == "" {

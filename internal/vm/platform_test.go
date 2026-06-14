@@ -5254,11 +5254,6 @@ System.assertEquals(0, results.get(0).getErrors().size());
 			want: `unsupported call "Messaging.sendPushNotification local messaging transport/template surface"`,
 		},
 		{
-			name: "send-options method",
-			src:  `Messaging.SendEmailOptions opts = new Messaging.SendEmailOptions(); opts.setTriggerUserEmail(true);`,
-			want: `unsupported call "Messaging.SendEmailOptions.setTriggerUserEmail local messaging send-options surface"`,
-		},
-		{
 			name: "setter-type",
 			src:  `Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage(); msg.setHtmlBody(7);`,
 			want: `Messaging.SingleEmailMessage.setHtmlBody expects String`,
@@ -11299,6 +11294,10 @@ AsyncOptions opts = new AsyncOptions();
 System.assertEquals(null, opts.getMaximumQueueableStackDepth());
 opts.setMaximumQueueableStackDepth(2);
 System.assertEquals(2, opts.getMaximumQueueableStackDepth());
+System.assertEquals(null, opts.getDuplicateSignature());
+QueueableDuplicateSignature sig = QueueableDuplicateSignature.builder().addString('typed').build();
+opts.setDuplicateSignature(sig);
+System.assertEquals(sig.toString(), opts.getDuplicateSignature().toString());
 String jobId = System.enqueueJob(new QueueWorker(), opts);
 System.assert(jobId.startsWith('707'));
 `)
@@ -11312,36 +11311,6 @@ System.assert(jobId.startsWith('707'));
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
-	}
-
-	cases := []struct {
-		name string
-		src  string
-		want string
-	}{
-		{
-			name: "async options duplicate signature getter",
-			src:  `AsyncOptions opts = new AsyncOptions(); opts.getDuplicateSignature();`,
-			want: `unsupported call "AsyncOptions.getDuplicateSignature local async options surface"`,
-		},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			program, err := CompileAnonymous(tc.src)
-			if err != nil {
-				t.Fatal(err)
-			}
-			machine := New(nil)
-			machine.EnableTestContext()
-			if err := machine.RegisterClass(Class{Name: "QueueWorker"}); err != nil {
-				t.Fatal(err)
-			}
-			_, err = machine.Execute(program)
-			var runtimeErr *RuntimeError
-			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want {
-				t.Fatalf("err = %#v, want UnsupportedFeature %q", err, tc.want)
-			}
-		})
 	}
 }
 
@@ -14409,6 +14378,87 @@ h.send(req);
 	}
 }
 
+func TestExecHttpRequestClientCertificateLocalStore(t *testing.T) {
+	respondProgram, err := CompileAnonymous(`
+System.assertEquals('LocalCert', req.clientCertificateName);
+System.assertEquals('named', req.clientCertificateSource);
+System.assertEquals(false, req.clientCertificatePasswordPresent);
+HttpResponse res = new HttpResponse();
+res.setStatusCode(204);
+return res;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.setMock('HttpCalloutMock', new CertMock());
+HttpRequest req = new HttpRequest();
+req.setEndpoint('https://example.test/cert');
+req.setMethod('GET');
+req.setClientCertificateName('LocalCert');
+HttpResponse res = new Http().send(req);
+System.assertEquals(204, res.getStatusCode());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Metadata.Endpoints = append(org.Metadata.Endpoints, storage.EndpointMetadata{Kind: "ClientCertificate", Name: "LocalCert", Active: true})
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterMethod(Method{
+		Name:       "CertMock.respond",
+		ClassName:  "CertMock",
+		ReturnType: "HttpResponse",
+		Params:     []Param{{Name: "req", Type: "HttpRequest"}},
+		Program:    respondProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecHttpRequestInlineClientCertificateLocalStore(t *testing.T) {
+	respondProgram, err := CompileAnonymous(`
+System.assertEquals('inline', req.clientCertificateSource);
+System.assertEquals('-----BEGIN CERTIFICATE----- local', req.clientCertificate);
+System.assertEquals(true, req.clientCertificatePasswordPresent);
+HttpResponse res = new HttpResponse();
+return res;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.setMock('HttpCalloutMock', new CertMock());
+HttpRequest req = new HttpRequest();
+req.setEndpoint('https://example.test/cert');
+req.setMethod('GET');
+req.setClientCertificate('-----BEGIN CERTIFICATE----- local', 'secret');
+new Http().send(req);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterMethod(Method{
+		Name:       "CertMock.respond",
+		ClassName:  "CertMock",
+		ReturnType: "HttpResponse",
+		Params:     []Param{{Name: "req", Type: "HttpRequest"}},
+		Program:    respondProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecUnsupportedHttpCalloutSurfacesHaveStableShape(t *testing.T) {
 	cases := []struct {
 		name string
@@ -14416,14 +14466,9 @@ func TestExecUnsupportedHttpCalloutSurfacesHaveStableShape(t *testing.T) {
 		want string
 	}{
 		{
-			name: "client-certificate-name",
+			name: "unknown-client-certificate-name",
 			src:  `HttpRequest req = new HttpRequest(); req.setClientCertificateName('LocalCert');`,
-			want: `unsupported call "HttpRequest.setClientCertificateName local client certificate callout surface"`,
-		},
-		{
-			name: "client-certificate-material",
-			src:  `HttpRequest req = new HttpRequest(); req.setClientCertificate('cert', 'password');`,
-			want: `unsupported call "HttpRequest.setClientCertificate local client certificate callout surface"`,
+			want: `CalloutException: HttpRequest client certificate LocalCert was not found in local certificate metadata`,
 		},
 	}
 	for _, tc := range cases {
@@ -14433,8 +14478,7 @@ func TestExecUnsupportedHttpCalloutSurfacesHaveStableShape(t *testing.T) {
 				t.Fatal(err)
 			}
 			_, err = New(nil).Execute(program)
-			var runtimeErr *RuntimeError
-			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want {
+			if err == nil || err.Error() != tc.want {
 				t.Fatalf("err = %#v, want %s", err, tc.want)
 			}
 		})

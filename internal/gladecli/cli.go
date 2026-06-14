@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -1422,7 +1423,10 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	debugLogPath := ""
 	debugLogMode := "summary"
 	limitMode := vm.LimitMode("")
-	parsed, err := flagparse.New("glade exec").
+	limitProfile := ""
+	var limitCaps vm.LimitCaps
+	limitCapsSet := false
+	execParser := flagparse.New("glade exec").
 		Bool("json", "j").
 		Bool("debug", "").
 		String("project", "p").
@@ -1432,8 +1436,28 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 		String("debug-log", "").
 		String("log-out", "").
 		String("limit-mode", "").
+		String("limit-profile", "").
 		AllowPositionals(true).
-		Parse(args)
+		String("limit-queries", "").
+		String("limit-query-rows", "").
+		String("limit-dml-statements", "").
+		String("limit-dml-rows", "").
+		String("limit-heap-size", "").
+		String("limit-cpu-ms", "").
+		String("limit-callouts", "").
+		String("limit-email-invocations", "").
+		String("limit-async-jobs", "").
+		String("limit-future-calls", "").
+		String("limit-queueable-jobs", "").
+		String("limit-batch-jobs", "").
+		String("limit-scheduled-jobs", "").
+		String("limit-sosl-queries", "").
+		String("limit-query-locator-rows", "").
+		String("limit-run-as", "").
+		String("limit-savepoints", "").
+		String("limit-savepoint-rollbacks", "").
+		String("limit-publish-immediate-dml", "")
+	parsed, err := execParser.Parse(args)
 	if err != nil {
 		return err
 	}
@@ -1470,6 +1494,11 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 		}
 		limitMode = mode
 	}
+	limitProfile = strings.TrimSpace(parsed.String("limit-profile"))
+	limitCaps, limitCapsSet, err = parseLimitCapsFromFlags(limitProfile, parsed.String)
+	if err != nil {
+		return err
+	}
 	sourceParts := parsed.Positionals
 	if len(sourceParts) == 0 {
 		return errors.New("usage: glade exec [--project <root>] [--db <path>] [--dry-run] [--json] [--trace <path>] [--debug-log <path>] '<anonymous apex>'")
@@ -1488,6 +1517,9 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	machine.SetTraceEnabled(tracePath != "" || debug || jsonOut || debugLogMode != "" || debugLogPath != "")
 	if limitMode != "" {
 		machine.SetLimitMode(limitMode)
+	}
+	if limitCapsSet {
+		machine.SetLimitCaps(limitCaps)
 	}
 	var store *storage.SQLiteStore
 	var projectIndex typesys.Index
@@ -1654,6 +1686,64 @@ func parseLimitMode(raw string) (vm.LimitMode, error) {
 	}
 }
 
+type limitCapFlag struct {
+	name  string
+	apply func(*vm.LimitCaps, int)
+}
+
+var limitCapFlags = []limitCapFlag{
+	{name: "limit-queries", apply: func(caps *vm.LimitCaps, value int) { caps.Queries = value }},
+	{name: "limit-query-rows", apply: func(caps *vm.LimitCaps, value int) { caps.QueryRows = value }},
+	{name: "limit-dml-statements", apply: func(caps *vm.LimitCaps, value int) { caps.DMLStatements = value }},
+	{name: "limit-dml-rows", apply: func(caps *vm.LimitCaps, value int) { caps.DMLRows = value }},
+	{name: "limit-heap-size", apply: func(caps *vm.LimitCaps, value int) { caps.HeapSize = value }},
+	{name: "limit-cpu-ms", apply: func(caps *vm.LimitCaps, value int) { caps.CPUTimeMS = value }},
+	{name: "limit-callouts", apply: func(caps *vm.LimitCaps, value int) { caps.Callouts = value }},
+	{name: "limit-email-invocations", apply: func(caps *vm.LimitCaps, value int) { caps.EmailInvokes = value }},
+	{name: "limit-async-jobs", apply: func(caps *vm.LimitCaps, value int) { caps.AsyncJobs = value }},
+	{name: "limit-future-calls", apply: func(caps *vm.LimitCaps, value int) { caps.FutureCalls = value }},
+	{name: "limit-queueable-jobs", apply: func(caps *vm.LimitCaps, value int) { caps.QueueableJobs = value }},
+	{name: "limit-batch-jobs", apply: func(caps *vm.LimitCaps, value int) { caps.BatchJobs = value }},
+	{name: "limit-scheduled-jobs", apply: func(caps *vm.LimitCaps, value int) { caps.ScheduledJobs = value }},
+	{name: "limit-sosl-queries", apply: func(caps *vm.LimitCaps, value int) { caps.SOSLQueries = value }},
+	{name: "limit-query-locator-rows", apply: func(caps *vm.LimitCaps, value int) { caps.QueryLocatorRows = value }},
+	{name: "limit-run-as", apply: func(caps *vm.LimitCaps, value int) { caps.RunAs = value }},
+	{name: "limit-savepoints", apply: func(caps *vm.LimitCaps, value int) { caps.Savepoints = value }},
+	{name: "limit-savepoint-rollbacks", apply: func(caps *vm.LimitCaps, value int) { caps.SavepointRollbacks = value }},
+	{name: "limit-publish-immediate-dml", apply: func(caps *vm.LimitCaps, value int) { caps.PublishImmediateDML = value }},
+}
+
+func isLimitCapFlag(name string) bool {
+	for _, flag := range limitCapFlags {
+		if flag.name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func parseLimitCapsFromFlags(profile string, flagValue func(string) string) (vm.LimitCaps, bool, error) {
+	profile = strings.TrimSpace(profile)
+	capsSet := profile != ""
+	caps, ok := vm.LimitCapsForProfile(profile)
+	if !ok {
+		return vm.LimitCaps{}, false, fmt.Errorf("unsupported limit profile %q", profile)
+	}
+	for _, flag := range limitCapFlags {
+		raw := strings.TrimSpace(flagValue(flag.name))
+		if raw == "" {
+			continue
+		}
+		value, err := strconv.Atoi(raw)
+		if err != nil || value < 0 {
+			return vm.LimitCaps{}, false, fmt.Errorf("--%s must be a non-negative integer", flag.name)
+		}
+		flag.apply(&caps, value)
+		capsSet = true
+	}
+	return caps, capsSet, nil
+}
+
 func runLSP(ctx context.Context, args []string, w io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -1737,8 +1827,10 @@ func runProfile(ctx context.Context, args []string, w io.Writer) error {
 		return profile.WriteText(w, report, tracePath)
 	case "markdown":
 		return profile.WriteMarkdown(w, report)
+	case "pprof":
+		return profile.WritePprof(w, report)
 	default:
-		return fmt.Errorf("--format must be text or markdown")
+		return fmt.Errorf("--format must be text, markdown, or pprof")
 	}
 }
 

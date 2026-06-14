@@ -98,12 +98,13 @@ type VM struct {
 	lastNow         time.Time
 	hasLastNow      bool
 	// --- Async/queueable scheduling ---
-	currentAsyncKind         string
-	currentQueueableDepth    int
-	currentQueueableMaxDepth int
-	currentQueueableDelay    int
-	currentFinalizer         Value
-	activeExceptions         []activeException
+	currentAsyncKind             string
+	currentQueueableDepth        int
+	currentQueueableMaxDepth     int
+	currentQueueableDelay        int
+	queueableDuplicateSignatures map[string]string
+	currentFinalizer             Value
+	activeExceptions             []activeException
 	// --- Exception / statement / trigger-depth tracking ---
 	currentStatement        callFrame
 	hasStatement            bool
@@ -322,22 +323,35 @@ type Result struct {
 }
 
 type CapturedEmail struct {
-	Kind                string   `json:"kind"`
-	ToAddresses         []string `json:"toAddresses,omitempty"`
-	CcAddresses         []string `json:"ccAddresses,omitempty"`
-	BccAddresses        []string `json:"bccAddresses,omitempty"`
-	TargetObjectIDs     []string `json:"targetObjectIds,omitempty"`
-	WhatIDs             []string `json:"whatIds,omitempty"`
-	Subject             string   `json:"subject,omitempty"`
-	PlainTextBody       string   `json:"plainTextBody,omitempty"`
-	HTMLBody            string   `json:"htmlBody,omitempty"`
-	TemplateID          string   `json:"templateId,omitempty"`
-	TargetObjectID      string   `json:"targetObjectId,omitempty"`
-	WhatID              string   `json:"whatId,omitempty"`
-	SaveAsActivity      bool     `json:"saveAsActivity,omitempty"`
-	FileAttachments     []string `json:"fileAttachments,omitempty"`
-	EntityAttachments   []string `json:"entityAttachments,omitempty"`
-	DocumentAttachments []string `json:"documentAttachments,omitempty"`
+	Kind                         string   `json:"kind"`
+	ToAddresses                  []string `json:"toAddresses,omitempty"`
+	CcAddresses                  []string `json:"ccAddresses,omitempty"`
+	BccAddresses                 []string `json:"bccAddresses,omitempty"`
+	TargetObjectIDs              []string `json:"targetObjectIds,omitempty"`
+	WhatIDs                      []string `json:"whatIds,omitempty"`
+	Subject                      string   `json:"subject,omitempty"`
+	PlainTextBody                string   `json:"plainTextBody,omitempty"`
+	HTMLBody                     string   `json:"htmlBody,omitempty"`
+	TemplateID                   string   `json:"templateId,omitempty"`
+	TargetObjectID               string   `json:"targetObjectId,omitempty"`
+	WhatID                       string   `json:"whatId,omitempty"`
+	SaveAsActivity               bool     `json:"saveAsActivity,omitempty"`
+	FileAttachments              []string `json:"fileAttachments,omitempty"`
+	EntityAttachments            []string `json:"entityAttachments,omitempty"`
+	DocumentAttachments          []string `json:"documentAttachments,omitempty"`
+	ReplyTo                      string   `json:"replyTo,omitempty"`
+	SenderDisplayName            string   `json:"senderDisplayName,omitempty"`
+	Charset                      string   `json:"charset,omitempty"`
+	OrgWideEmailAddressID        string   `json:"orgWideEmailAddressId,omitempty"`
+	OptOutPolicy                 string   `json:"optOutPolicy,omitempty"`
+	EmailPriority                string   `json:"emailPriority,omitempty"`
+	BccSender                    bool     `json:"bccSender,omitempty"`
+	UseSignature                 bool     `json:"useSignature,omitempty"`
+	TreatBodiesAsTemplate        bool     `json:"treatBodiesAsTemplate,omitempty"`
+	TreatTargetObjectAsRecipient bool     `json:"treatTargetObjectAsRecipient,omitempty"`
+	TriggerUserEmail             bool     `json:"triggerUserEmail,omitempty"`
+	TriggerOtherEmail            bool     `json:"triggerOtherEmail,omitempty"`
+	TriggerAutoResponseEmail     bool     `json:"triggerAutoResponseEmail,omitempty"`
 }
 
 type sideEffectSnapshot struct {
@@ -435,22 +449,24 @@ type eventPublishCallback struct {
 }
 
 type AsyncJob struct {
-	ID                    string
-	Kind                  string
-	Object                Value
-	Method                Method
-	Args                  []Value
-	BatchSize             int
-	Name                  string
-	Cron                  string
-	ParentJobID           string
-	LastProcessed         string
-	LastProcessedOffset   int
-	Deferred              bool
-	SuppressWorkerRecords bool
-	QueueableDepth        int
-	QueueableMaxDepth     int
-	QueueableDelayMinutes int
+	ID                          string
+	Kind                        string
+	Object                      Value
+	Method                      Method
+	Args                        []Value
+	BatchSize                   int
+	Name                        string
+	Cron                        string
+	ParentJobID                 string
+	LastProcessed               string
+	LastProcessedOffset         int
+	Deferred                    bool
+	SuppressWorkerRecords       bool
+	QueueableDepth              int
+	QueueableMaxDepth           int
+	QueueableDelayMinutes       int
+	QueueableDuplicateSignature string
+	NotBefore                   time.Time
 }
 
 type cacheEntry struct {
@@ -503,6 +519,7 @@ func New(stdout io.Writer) *VM {
 		limitCaps:                    defaultLimitCaps(),
 		limitMode:                    LimitModePermissive,
 		fakeNow:                      time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC),
+		queueableDuplicateSignatures: make(map[string]string),
 		savepoints:                   make(map[string]storage.OrgState),
 		savepointMarks:               make(map[string]storage.IsolationMark),
 		emailSavepoints:              make(map[string][]CapturedEmail),
@@ -1637,7 +1654,12 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 			return result, err
 		}
 	}
-	out, err := vm.executeProgram(program, &result)
+	var out execOutcome
+	_, err = vm.withQueueableDuplicateSignatureTransaction(func() (Value, error) {
+		var runErr error
+		out, runErr = vm.executeProgram(program, &result)
+		return Null, runErr
+	})
 	if err != nil {
 		var thrown *apexThrowError
 		if errors.As(err, &thrown) {
@@ -1655,6 +1677,10 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 		return result, fmt.Errorf("%s outside loop", out.signal)
 	}
 	return result, nil
+}
+
+func (vm *VM) AdvanceDeterministicTime(delta time.Duration) {
+	vm.fakeNow = vm.fakeNow.Add(delta)
 }
 
 func (vm *VM) DrainAsync(result *Result) error {

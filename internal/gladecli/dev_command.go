@@ -790,6 +790,11 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 			if err := writeJSONLine(w, watch.NewRunFinishedEvent(time.Now().UTC(), finished.RunID, watchSummary(result))); err != nil {
 				return result, err
 			}
+			if summary, ok := watchProfileSummary(result); ok {
+				if err := writeJSONLine(w, watch.NewProfileSummaryEvent(time.Now().UTC(), finished.RunID, summary)); err != nil {
+					return result, err
+				}
+			}
 			return result, nil
 		}
 	}
@@ -806,6 +811,11 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 			runDone = nil
 			if err := writeJSONLine(w, watch.NewRunFinishedEvent(time.Now().UTC(), finished.RunID, watchSummary(result))); err != nil {
 				return result, err
+			}
+			if summary, ok := watchProfileSummary(result); ok {
+				if err := writeJSONLine(w, watch.NewProfileSummaryEvent(time.Now().UTC(), finished.RunID, summary)); err != nil {
+					return result, err
+				}
 			}
 		case err, ok := <-watcher.Errors():
 			if !ok {
@@ -882,6 +892,11 @@ func runWatchTestsDaemon(ctx context.Context, root string, daemon *testdaemon.Da
 			if err := writeJSONLine(w, watch.NewRunFinishedEvent(time.Now().UTC(), finished.RunID, watchSummary(result))); err != nil {
 				return result, err
 			}
+			if summary, ok := watchProfileSummary(result); ok {
+				if err := writeJSONLine(w, watch.NewProfileSummaryEvent(time.Now().UTC(), finished.RunID, summary)); err != nil {
+					return result, err
+				}
+			}
 			return result, nil
 		}
 	}
@@ -898,6 +913,11 @@ func runWatchTestsDaemon(ctx context.Context, root string, daemon *testdaemon.Da
 			runDone = nil
 			if err := writeJSONLine(w, watch.NewRunFinishedEvent(time.Now().UTC(), finished.RunID, watchSummary(result))); err != nil {
 				return result, err
+			}
+			if summary, ok := watchProfileSummary(result); ok {
+				if err := writeJSONLine(w, watch.NewProfileSummaryEvent(time.Now().UTC(), finished.RunID, summary)); err != nil {
+					return result, err
+				}
 			}
 		case err, ok := <-watcher.Errors():
 			if !ok {
@@ -1030,6 +1050,41 @@ func watchSummary(result testreport.Run) watch.RunSummary {
 		Unsupported:   s.Unsupported,
 		PassedAll:     s.Failed == 0 && s.Errors == 0 && s.Unsupported == 0,
 	}
+}
+
+func watchProfileSummary(result testreport.Run) (watch.ProfileSummary, bool) {
+	var summary watch.ProfileSummary
+	for _, suite := range result.Suites {
+		for _, testCase := range suite.Cases {
+			if testCase.Profile == nil {
+				continue
+			}
+			summary.Profiles++
+			summary.Events += testCase.Profile.Events
+			summary.WallClockMS += testCase.Profile.WallClockMS
+			if testCase.Profile.Limits.CPUTimeMS > summary.CPUTimeMS {
+				summary.CPUTimeMS = testCase.Profile.Limits.CPUTimeMS
+			}
+			if len(testCase.Profile.Spans) > 0 && testCase.Profile.Spans[0].DurationMS > summary.TopSpanMS {
+				summary.TopSpan = testCase.Profile.Spans[0].Name
+				summary.TopSpanMS = testCase.Profile.Spans[0].DurationMS
+			}
+			if len(testCase.Trace) > 0 {
+				summary.TraceEventCount += len(testCase.Trace)
+			}
+			name := testCase.ClassName
+			if testCase.MethodName != "" {
+				if name != "" {
+					name += "."
+				}
+				name += testCase.MethodName
+			}
+			if strings.TrimSpace(name) != "" {
+				summary.ProfiledTests = append(summary.ProfiledTests, name)
+			}
+		}
+	}
+	return summary, summary.Profiles > 0
 }
 
 func writeJSONLine(w io.Writer, value any) error {

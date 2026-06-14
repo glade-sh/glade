@@ -32,7 +32,17 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 	root := "."
 	projectProvided := false
 	limitMode := vm.LimitMode("")
+	limitProfile := ""
+	limitCapValues := make(map[string]string)
 	for i := 0; i < len(args); i++ {
+		if name, ok := strings.CutPrefix(args[i], "--"); ok && isLimitCapFlag(name) {
+			value, err := takeFlagValue(args, &i, "--"+name+" requires a value")
+			if err != nil {
+				return err
+			}
+			limitCapValues[name] = value
+			continue
+		}
 		switch args[i] {
 		case "--addr":
 			value, err := takeFlagValue(args, &i, "--addr requires a value")
@@ -63,9 +73,21 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 				return err
 			}
 			limitMode = mode
+		case "--limit-profile":
+			value, err := takeFlagValue(args, &i, "--limit-profile requires a value")
+			if err != nil {
+				return err
+			}
+			limitProfile = value
 		default:
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
+	}
+	limitCaps, limitCapsSet, err := parseLimitCapsFromFlags(limitProfile, func(name string) string {
+		return limitCapValues[name]
+	})
+	if err != nil {
+		return err
 	}
 	var org storage.OrgState
 	var handler http.Handler
@@ -93,6 +115,12 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 	if limitMode != "" {
 		if srv, ok := handler.(*server.Server); ok {
 			srv.LimitMode = limitMode
+		}
+	}
+	if srv, ok := handler.(*server.Server); ok {
+		srv.LimitProfile = limitProfile
+		if limitCapsSet {
+			srv.LimitCaps = limitCaps
 		}
 	}
 	if srv, ok := handler.(*server.Server); ok {

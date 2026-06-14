@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"unicode"
 
@@ -125,12 +126,15 @@ func (vm *VM) sendEmail(args []Value, result *Result) (Value, error) {
 	if args[0].Kind != ValueList {
 		return Null, fmt.Errorf("Messaging.sendEmail expects List")
 	}
-	if len(args) == 2 && args[1].Kind != ValueBool {
+	if len(args) == 2 && args[1].Kind != ValueBool && !isSendEmailOptions(args[1]) {
 		return Null, unsupportedCallError("Messaging.sendEmail send options overloads")
 	}
 	allOrNothing := true
-	if len(args) == 2 {
+	sendOptions := Null
+	if len(args) == 2 && args[1].Kind == ValueBool {
 		allOrNothing = args[1].Bool
+	} else if len(args) == 2 {
+		sendOptions = args[1]
 	}
 	for _, message := range args[0].List {
 		if !isLocalEmailMessage(message) {
@@ -154,7 +158,7 @@ func (vm *VM) sendEmail(args []Value, result *Result) (Value, error) {
 			results = append(results, newFailedSendEmailResult(validationErrors[i]))
 			continue
 		}
-		captured := vm.captureEmail(message)
+		captured := vm.captureEmail(message, sendOptions)
 		if message.Type == "Messaging.SingleEmailMessage" && captured.TemplateID != "" {
 			message.Fields["subject"] = String(captured.Subject)
 			message.Fields["plainTextBody"] = String(captured.PlainTextBody)
@@ -165,6 +169,10 @@ func (vm *VM) sendEmail(args []Value, result *Result) (Value, error) {
 		results = append(results, newSendEmailResult())
 	}
 	return List(results...), nil
+}
+
+func isSendEmailOptions(value Value) bool {
+	return value.Kind == ValueObject && strings.EqualFold(value.Type, "Messaging.SendEmailOptions")
 }
 func (vm *VM) reserveEmailCapacity(callee string, args []Value, result *Result) (Value, error) {
 	if len(args) != 1 || args[0].Kind != ValueInt {
@@ -295,14 +303,14 @@ func emailFieldStrings(message Value, field string) []string {
 	}
 	return nil
 }
-func (vm *VM) captureEmail(message Value) CapturedEmail {
+func (vm *VM) captureEmail(message Value, sendOptions Value) CapturedEmail {
 	captured := CapturedEmail{Kind: message.Type}
 	switch message.Type {
 	case "Messaging.SingleEmailMessage":
 		captured.ToAddresses = emailFieldStrings(message, "toAddresses")
 		captured.CcAddresses = emailFieldStrings(message, "ccAddresses")
 		captured.BccAddresses = emailFieldStrings(message, "bccAddresses")
-		captured.FileAttachments = emailFieldStrings(message, "fileAttachments")
+		captured.FileAttachments = emailAttachmentNames(message, "fileAttachments")
 		captured.EntityAttachments = emailFieldStrings(message, "entityAttachments")
 		captured.DocumentAttachments = emailFieldStrings(message, "documentAttachments")
 		captured.TargetObjectIDs = emailFieldStrings(message, "targetObjectIds")
@@ -312,13 +320,30 @@ func (vm *VM) captureEmail(message Value) CapturedEmail {
 		captured.TemplateID = emailFieldString(message, "templateId")
 		captured.TargetObjectID = emailFieldString(message, "targetObjectId")
 		captured.WhatID = emailFieldString(message, "whatId")
+		captured.ReplyTo = emailFieldString(message, "replyTo")
+		captured.SenderDisplayName = emailFieldString(message, "senderDisplayName")
+		captured.Charset = emailFieldString(message, "charset")
+		captured.OrgWideEmailAddressID = emailFieldString(message, "orgWideEmailAddressId")
+		captured.OptOutPolicy = emailFieldString(message, "optOutPolicy")
+		captured.EmailPriority = emailFieldString(message, "emailPriority")
 		captured.SaveAsActivity = emailFieldBool(message, "saveAsActivity")
+		captured.BccSender = emailFieldBool(message, "bccSender")
+		captured.UseSignature = emailFieldBool(message, "useSignature")
+		captured.TreatBodiesAsTemplate = emailFieldBool(message, "treatBodiesAsTemplate")
+		captured.TreatTargetObjectAsRecipient = emailFieldBool(message, "treatTargetObjectAsRecipient")
 		vm.renderCapturedEmailTemplate(&captured)
 	case "Messaging.MassEmailMessage":
 		captured.TargetObjectIDs = emailFieldStrings(message, "targetObjectIds")
 		captured.WhatIDs = emailFieldStrings(message, "whatIds")
 		captured.TemplateID = emailFieldString(message, "templateId")
+		captured.ReplyTo = emailFieldString(message, "replyTo")
+		captured.SenderDisplayName = emailFieldString(message, "senderDisplayName")
+		captured.Subject = emailFieldString(message, "subject")
+		captured.OptOutPolicy = emailFieldString(message, "optOutPolicy")
+		captured.EmailPriority = emailFieldString(message, "emailPriority")
 		captured.SaveAsActivity = emailFieldBool(message, "saveAsActivity")
+		captured.BccSender = emailFieldBool(message, "bccSender")
+		captured.UseSignature = emailFieldBool(message, "useSignature")
 		if captured.TemplateID != "" && len(captured.TargetObjectIDs) > 0 {
 			captured.TargetObjectID = captured.TargetObjectIDs[0]
 			if len(captured.WhatIDs) > 0 {
@@ -327,7 +352,37 @@ func (vm *VM) captureEmail(message Value) CapturedEmail {
 			vm.renderCapturedEmailTemplate(&captured)
 		}
 	}
+	captureSendEmailOptions(&captured, sendOptions)
 	return captured
+}
+
+func emailAttachmentNames(message Value, field string) []string {
+	_, value, _ := objectFieldValue(message, field)
+	if value.Kind != ValueList {
+		return nil
+	}
+	out := make([]string, 0, len(value.List))
+	for _, item := range value.List {
+		if text := stringValue(item); text != "" {
+			out = append(out, text)
+			continue
+		}
+		if item.Kind == ValueObject {
+			if name := emailFieldString(item, "fileName"); name != "" {
+				out = append(out, name)
+			}
+		}
+	}
+	return out
+}
+
+func captureSendEmailOptions(captured *CapturedEmail, options Value) {
+	if captured == nil || !isSendEmailOptions(options) {
+		return
+	}
+	captured.TriggerUserEmail = emailFieldBool(options, "triggerUserEmail")
+	captured.TriggerOtherEmail = emailFieldBool(options, "triggerOtherEmail")
+	captured.TriggerAutoResponseEmail = emailFieldBool(options, "triggerAutoResponseEmail")
 }
 func (vm *VM) captureWorkflowEmail(alert storage.WorkflowEmailAlert, record storage.Record, result *Result) error {
 	if err := vm.incrementLimit("emailInvocations", 1); err != nil {
@@ -499,16 +554,23 @@ func (vm *VM) renderStoredEmailTemplateAttachments(template storage.Record, opti
 		return List()
 	}
 	names := localEmailTemplateAttachmentNames(template)
-	if len(names) == 0 || vm == nil || vm.Org == nil {
+	if vm == nil || vm.Org == nil {
 		return List()
 	}
-	withBody := optionName == "METADATA_WITH_BODY"
+	withBody := optionName == "METADATA_WITH_BODY" || optionName == "BODY"
 	attachments := make([]Value, 0, len(names))
 	for _, name := range names {
-		resource, ok := vm.staticResourceMetadata(name)
-		if !ok {
-			continue
+		if attachment, ok := vm.localEmailAttachmentByToken(template, name, withBody); ok {
+			attachments = append(attachments, attachment)
 		}
+	}
+	attachments = append(attachments, vm.localEmailTemplateRecordAttachments(template, withBody)...)
+	attachments = append(attachments, vm.localEmailTemplateContentDocumentAttachments(template, withBody)...)
+	return List(attachments...)
+}
+
+func (vm *VM) localEmailAttachmentByToken(template storage.Record, token string, withBody bool) (Value, bool) {
+	if resource, ok := vm.staticResourceMetadata(token); ok {
 		attachment := newEmailFileAttachment()
 		fileName := strings.TrimSpace(resource.Description)
 		if fileName == "" {
@@ -523,9 +585,209 @@ func (vm *VM) renderStoredEmailTemplateAttachments(template storage.Record, opti
 				attachment.Fields["body"] = platformScalar("Blob", content)
 			}
 		}
-		attachments = append(attachments, attachment)
+		return attachment, true
 	}
-	return List(attachments...)
+	if attachment, ok := vm.localAttachmentRecordByToken(template, token, withBody); ok {
+		return attachment, true
+	}
+	if attachment, ok := vm.localContentVersionAttachmentByToken(token, withBody); ok {
+		return attachment, true
+	}
+	return Null, false
+}
+
+func (vm *VM) localEmailTemplateRecordAttachments(template storage.Record, withBody bool) []Value {
+	if vm == nil || vm.Org == nil {
+		return nil
+	}
+	object, ok := vm.Org.Objects["Attachment"]
+	if !ok {
+		return nil
+	}
+	var records []storage.Record
+	for _, record := range object.Records {
+		if storageIDFromValueOrString(record, "ParentId") == template.ID {
+			records = append(records, record)
+		}
+	}
+	sort.Slice(records, func(i, j int) bool { return records[i].ID < records[j].ID })
+	out := make([]Value, 0, len(records))
+	for _, record := range records {
+		out = append(out, emailFileAttachmentFromAttachmentRecord(record, withBody))
+	}
+	return out
+}
+
+func (vm *VM) localAttachmentRecordByToken(template storage.Record, token string, withBody bool) (Value, bool) {
+	if vm == nil || vm.Org == nil {
+		return Null, false
+	}
+	object, ok := vm.Org.Objects["Attachment"]
+	if !ok {
+		return Null, false
+	}
+	for _, record := range object.Records {
+		if string(record.ID) == token || strings.EqualFold(storageStringField(record, "Name"), token) {
+			if parentID := storageIDFromValueOrString(record, "ParentId"); parentID == "" || parentID == template.ID {
+				return emailFileAttachmentFromAttachmentRecord(record, withBody), true
+			}
+		}
+	}
+	return Null, false
+}
+
+func emailFileAttachmentFromAttachmentRecord(record storage.Record, withBody bool) Value {
+	attachment := newEmailFileAttachment()
+	attachment.Fields["id"] = String(string(record.ID))
+	if name := storageStringField(record, "Name"); name != "" {
+		attachment.Fields["fileName"] = String(name)
+	}
+	if contentType := storageStringField(record, "ContentType"); contentType != "" {
+		attachment.Fields["contentType"] = String(contentType)
+	}
+	if withBody {
+		if body, ok := storageValueTextField(record, "Body"); ok {
+			attachment.Fields["body"] = platformScalar("Blob", body)
+		}
+	}
+	return attachment
+}
+
+func (vm *VM) localEmailTemplateContentDocumentAttachments(template storage.Record, withBody bool) []Value {
+	if vm == nil || vm.Org == nil {
+		return nil
+	}
+	links, ok := vm.Org.Objects["ContentDocumentLink"]
+	if !ok {
+		return nil
+	}
+	var documentIDs []storage.ID
+	for _, link := range links.Records {
+		if storageIDFromValueOrString(link, "LinkedEntityId") == template.ID {
+			if documentID := storageIDFromValueOrString(link, "ContentDocumentId"); documentID != "" {
+				documentIDs = append(documentIDs, documentID)
+			}
+		}
+	}
+	sort.Slice(documentIDs, func(i, j int) bool { return documentIDs[i] < documentIDs[j] })
+	out := make([]Value, 0, len(documentIDs))
+	for _, documentID := range documentIDs {
+		if attachment, ok := vm.localContentVersionAttachmentByDocumentID(documentID, withBody); ok {
+			out = append(out, attachment)
+		}
+	}
+	return out
+}
+
+func (vm *VM) localContentVersionAttachmentByToken(token string, withBody bool) (Value, bool) {
+	if vm == nil || vm.Org == nil {
+		return Null, false
+	}
+	if attachment, ok := vm.localContentVersionAttachmentByDocumentID(storage.ID(token), withBody); ok {
+		return attachment, true
+	}
+	versions, ok := vm.Org.Objects["ContentVersion"]
+	if !ok {
+		return Null, false
+	}
+	for _, record := range versions.Records {
+		if string(record.ID) == token || strings.EqualFold(storageStringField(record, "PathOnClient"), token) || strings.EqualFold(storageStringField(record, "Title"), token) {
+			return emailFileAttachmentFromContentVersion(record, withBody), true
+		}
+	}
+	return Null, false
+}
+
+func (vm *VM) localContentVersionAttachmentByDocumentID(documentID storage.ID, withBody bool) (Value, bool) {
+	if vm == nil || vm.Org == nil || documentID == "" {
+		return Null, false
+	}
+	versions, ok := vm.Org.Objects["ContentVersion"]
+	if !ok {
+		return Null, false
+	}
+	var matches []storage.Record
+	for _, record := range versions.Records {
+		if storageIDFromValueOrString(record, "ContentDocumentId") == documentID {
+			matches = append(matches, record)
+		}
+	}
+	if len(matches) == 0 {
+		return Null, false
+	}
+	sort.Slice(matches, func(i, j int) bool {
+		leftLatest := storageBoolField(matches[i], "IsLatest")
+		rightLatest := storageBoolField(matches[j], "IsLatest")
+		if leftLatest != rightLatest {
+			return leftLatest
+		}
+		return matches[i].ID > matches[j].ID
+	})
+	return emailFileAttachmentFromContentVersion(matches[0], withBody), true
+}
+
+func emailFileAttachmentFromContentVersion(record storage.Record, withBody bool) Value {
+	attachment := newEmailFileAttachment()
+	attachment.Fields["id"] = String(string(record.ID))
+	fileName := storageStringField(record, "PathOnClient")
+	if fileName == "" {
+		fileName = storageStringField(record, "Title")
+	}
+	if fileName != "" {
+		attachment.Fields["fileName"] = String(fileName)
+	}
+	if contentType := storageStringField(record, "ContentType"); contentType != "" {
+		attachment.Fields["contentType"] = String(contentType)
+	} else if fileType := storageStringField(record, "FileType"); fileType != "" {
+		attachment.Fields["contentType"] = String(emailContentTypeFromFileType(fileType))
+	}
+	if withBody {
+		if body, ok := storageValueTextField(record, "VersionData"); ok {
+			attachment.Fields["body"] = platformScalar("Blob", body)
+		}
+	}
+	return attachment
+}
+
+func emailContentTypeFromFileType(fileType string) string {
+	switch strings.ToUpper(strings.TrimSpace(fileType)) {
+	case "PDF":
+		return "application/pdf"
+	case "TXT", "TEXT":
+		return "text/plain"
+	case "HTML":
+		return "text/html"
+	default:
+		return strings.ToLower(strings.TrimSpace(fileType))
+	}
+}
+
+func storageIDFromValueOrString(record storage.Record, field string) storage.ID {
+	value, ok := record.GetField(field)
+	if !ok {
+		return ""
+	}
+	return storageIDFromValue(value)
+}
+
+func storageBoolField(record storage.Record, field string) bool {
+	value, ok := record.GetField(field)
+	return ok && value.Kind == storage.ValueBoolean && value.Boolean
+}
+
+func storageValueTextField(record storage.Record, field string) (string, bool) {
+	value, ok := record.GetField(field)
+	if !ok {
+		return "", false
+	}
+	switch value.Kind {
+	case storage.ValueBlob:
+		return value.String, true
+	case storage.ValueString:
+		return value.String, true
+	default:
+		return "", false
+	}
 }
 func localEmailTemplateAttachmentNames(template storage.Record) []string {
 	var names []string

@@ -52,6 +52,23 @@ type quickActionFieldValueXML struct {
 	Value string `xml:"value"`
 }
 
+type dataCategoryGroupXML struct {
+	Label          string                       `xml:"label"`
+	Description    string                       `xml:"description"`
+	ObjectUsage    []dataCategoryObjectUsageXML `xml:"objectUsage"`
+	DataCategories []dataCategoryXML            `xml:"dataCategory"`
+}
+
+type dataCategoryObjectUsageXML struct {
+	Object string `xml:"object"`
+}
+
+type dataCategoryXML struct {
+	Name       string            `xml:"name"`
+	Label      string            `xml:"label"`
+	Categories []dataCategoryXML `xml:"dataCategory"`
+}
+
 type fieldSetXML struct {
 	FullName        string              `xml:"fullName"`
 	Label           string              `xml:"label"`
@@ -163,6 +180,13 @@ func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 			return storage.MetadataRegistry{}, err
 		}
 		registry.QuickActions = append(registry.QuickActions, action)
+	}
+	for _, path := range p.DataCategoryGroupFiles {
+		groups, err := loadDataCategoryGroup(path)
+		if err != nil {
+			return storage.MetadataRegistry{}, err
+		}
+		registry.DataCategoryGroups = append(registry.DataCategoryGroups, groups...)
 	}
 	for _, path := range p.FieldSetFiles {
 		fieldSet, err := loadFieldSet(path, p.Namespace)
@@ -350,6 +374,59 @@ func loadQuickAction(path string) (storage.QuickActionMetadata, error) {
 		PredefinedFieldValues: defaults,
 		File:                  path,
 	}, nil
+}
+
+func loadDataCategoryGroup(path string) ([]storage.DataCategoryGroup, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var raw dataCategoryGroupXML
+	if len(strings.TrimSpace(string(data))) > 0 {
+		if err := xml.Unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+	}
+	name := metadataNameFromPath(path, ".dataCategoryGroup-meta.xml")
+	group := storage.DataCategoryGroup{
+		Name:        name,
+		Label:       strings.TrimSpace(raw.Label),
+		Description: strings.TrimSpace(raw.Description),
+		Categories:  dataCategoriesFromXML(raw.DataCategories),
+	}
+	objects := make([]string, 0, len(raw.ObjectUsage))
+	for _, usage := range raw.ObjectUsage {
+		objectName := strings.TrimSpace(usage.Object)
+		if objectName != "" {
+			objects = append(objects, objectName)
+		}
+	}
+	if len(objects) == 0 {
+		return []storage.DataCategoryGroup{group}, nil
+	}
+	out := make([]storage.DataCategoryGroup, 0, len(objects))
+	for _, objectName := range objects {
+		copy := group
+		copy.SObjectName = objectName
+		out = append(out, copy)
+	}
+	return out, nil
+}
+
+func dataCategoriesFromXML(raw []dataCategoryXML) []storage.DataCategory {
+	out := make([]storage.DataCategory, 0, len(raw))
+	for _, category := range raw {
+		name := strings.TrimSpace(category.Name)
+		if name == "" {
+			continue
+		}
+		out = append(out, storage.DataCategory{
+			Name:     name,
+			Label:    strings.TrimSpace(category.Label),
+			Children: dataCategoriesFromXML(category.Categories),
+		})
+	}
+	return out
 }
 
 func loadFieldSet(path, namespace string) (storage.FieldSetMetadata, error) {
@@ -547,6 +624,7 @@ func managedLabelNamespaces(p project.Project) []string {
 		p.ObjectFiles,
 		p.FieldFiles,
 		p.FieldSetFiles,
+		p.DataCategoryGroupFiles,
 		p.RecordTypeFiles,
 		p.ValidationRuleFiles,
 		p.CustomMetadataFiles,
@@ -1159,6 +1237,12 @@ func sortRegistry(registry *storage.MetadataRegistry) {
 	})
 	sort.Slice(registry.Tabs, func(i, j int) bool { return registry.Tabs[i].Name < registry.Tabs[j].Name })
 	sort.Slice(registry.QuickActions, func(i, j int) bool { return registry.QuickActions[i].Name < registry.QuickActions[j].Name })
+	sort.Slice(registry.DataCategoryGroups, func(i, j int) bool {
+		if registry.DataCategoryGroups[i].SObjectName != registry.DataCategoryGroups[j].SObjectName {
+			return registry.DataCategoryGroups[i].SObjectName < registry.DataCategoryGroups[j].SObjectName
+		}
+		return registry.DataCategoryGroups[i].Name < registry.DataCategoryGroups[j].Name
+	})
 	sort.Slice(registry.FieldSets, func(i, j int) bool {
 		if registry.FieldSets[i].ObjectName != registry.FieldSets[j].ObjectName {
 			return registry.FieldSets[i].ObjectName < registry.FieldSets[j].ObjectName
