@@ -15,6 +15,19 @@ type WireGetObjectInfoRequest struct {
 	ObjectAPIName string `json:"objectApiName"`
 }
 
+type WireCreateRecordRequest struct {
+	APIName string         `json:"apiName"`
+	Fields  map[string]any `json:"fields"`
+}
+
+type WireUpdateRecordRequest struct {
+	Fields map[string]any `json:"fields"`
+}
+
+type WireDeleteRecordRequest struct {
+	RecordID string `json:"recordId"`
+}
+
 type WireError struct {
 	Type    string `json:"type,omitempty"`
 	Message string `json:"message"`

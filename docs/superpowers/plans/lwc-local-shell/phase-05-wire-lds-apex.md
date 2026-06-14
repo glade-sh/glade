@@ -1,10 +1,10 @@
 # Phase 5: Wire, LDS, And Apex Controller Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan with parallel subagent squads. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make local LWC data flows useful: Apex wire, imperative Apex, LDS record wires, object info, picklists, record mutation, refresh, and cache notification.
+**Goal:** Make local LWC data flows useful in both hosts: Apex wire, imperative Apex, `getRecord`, `getObjectInfo`, selected record mutation helpers, and field helper functions.
 
-**Architecture:** Browser shims call Glade server routes. Server routes execute local Apex through the VM and read or mutate `storage.OrgState`. A small LDS-like cache in `lwcruntime` makes refresh and notification behavior testable.
+**Architecture:** Browser shims call Glade server routes. Server routes execute local Apex through the VM and read or mutate `storage.OrgState`. A later LDS cache phase can add refresh and notification behavior.
 
 **Tech Stack:** Go HTTP handlers, Glade VM `InvokeLWCMethod`, local storage, `lwcruntime` modules, wire adapter tests, browser tests.
 
@@ -12,7 +12,7 @@
 
 ## Feature Delivered
 
-Developers can test real `@AuraEnabled` controllers and record-backed LWC screens without deploying to Salesforce.
+Developers can test real `@AuraEnabled` controllers and record-backed LWC screens without deploying to Salesforce, whether the component runs in `/lwc/preview/*` or inside a Visualforce Lightning Out page.
 
 ## Files
 
@@ -26,13 +26,18 @@ Developers can test real `@AuraEnabled` controllers and record-backed LWC screen
 - Create: `lwcruntime/src/shims/lds-cache.mjs`
 - Add tests: `lwcruntime/test/lds-cache.test.mjs`
 - Test data: `testdata/local-tests/lwc-shell/force-app/main/default/lwc/wireProbe/*`
+- Test data: `testdata/local-tests/lightning-out-vf/force-app/main/default/lwc/apexWireHost/*`
+- Test data: `testdata/local-tests/lightning-out-vf/force-app/main/default/lwc/recordWireHost/*`
 
-## Parallel Squads
+## Parallel Subagent Squads
+
+Use parallel subagent squads where files do not overlap. The coordinator integrates one patch at a time.
 
 - Apex squad owns imperative Apex and wire parameter behavior.
 - LDS server squad owns record routes and storage mutation.
-- Runtime squad owns cache, refresh, and notification.
+- Runtime squad owns wire adapter behavior and future cache, refresh, and notification work.
 - Module squad owns generated shim exports.
+- Visualforce host squad owns the same wire, Apex, and LDS browser cases inside `/apex/<PageName>`.
 - Review squad runs Go, Node, and browser tests.
 
 ## Implementation Steps
@@ -40,30 +45,18 @@ Developers can test real `@AuraEnabled` controllers and record-backed LWC screen
 - [ ] Preserve existing Apex wire route `/lightning/wire/apex` and add imperative route `/lightning/apex/<class>/<method>`.
 - [ ] Match Salesforce Apex parameter rule: method params are passed as an object with properties matching Apex parameter names; `undefined` suppresses wire invocation; `null` invokes the method with null.
 - [ ] Add overload diagnostic: if multiple `@AuraEnabled` overloads match, return `GLADELWC013 overloaded AuraEnabled method unsupported`.
-- [ ] Extend `lightning/uiRecordApi` exports:
+- [ ] Extend `lightning/uiRecordApi` exports for the current local contract:
   - `getRecord`
-  - `getRecords`
   - `getFieldValue`
   - `getFieldDisplayValue`
   - `getObjectInfo`
-  - `getObjectInfos`
-  - `getPicklistValues`
-  - `getPicklistValuesByRecordType`
   - `createRecord`
   - `updateRecord`
   - `deleteRecord`
-  - `notifyRecordUpdateAvailable`
-  - `refreshApex`
-- [ ] Add route `/lightning/record-api/getRecords` for batch record requests.
-- [ ] Add route `/lightning/record-api/picklist-values` from local schema picklist metadata and record type selection.
-- [ ] Add record mutation routes. Mutations must update `storage.OrgState`, return UI API-shaped records, and trigger cache notifications in the browser.
-- [ ] Add `lds-cache.mjs` with cache keys based on adapter name and stable JSON config. It must fan out notifications to active subscribers.
-- [ ] Add cache tests:
-  - two `getRecord` subscribers receive one network load and two emissions.
-  - `updateRecord` updates local cache and notifies subscribers.
-  - `notifyRecordUpdateAvailable([{recordId}])` reloads affected records.
-  - `refreshApex(wiredValue)` reloads Apex wires.
-- [ ] Add browser fixture proving Apex wire, imperative Apex, `getRecord`, `updateRecord`, and `notifyRecordUpdateAvailable` in one component.
+- [ ] Leave `getRecords`, `getObjectInfos`, picklist wires, `notifyRecordUpdateAvailable`, and `refreshApex` as future LDS expansion unless implemented with tests in both hosts.
+- [ ] Add record mutation routes. Mutations must update `storage.OrgState` and return UI API-shaped records.
+- [ ] Add browser fixture proving Apex wire, imperative Apex, `getRecord`, `getObjectInfo`, and mutation helper behavior in one component.
+- [ ] Add Visualforce Lightning Out browser fixture proving the same Apex wire, imperative Apex, `getRecord`, `getObjectInfo`, and mutation helper behavior inside `/apex/<PageName>`.
 
 ## Verification
 
@@ -79,15 +72,20 @@ go test ./internal/server ./internal/lwcbrowser ./internal/vm -run 'Lightning|LW
 go test ./internal/server -run 'TestLightningWire|TestLightningRecordAPI' -count=1
 ```
 
-Scratch comparison:
+```bash
+(cd lwcruntime && npm run build && node --test test/visualforce-dev-server.test.mjs)
+```
+
+Fixture-manifest comparison:
 
 ```bash
-(cd ../glade-tools && go run ./cmd/glade-plugin-compat lwc capture --target-org oaer-probe-max --project ../glade/testdata/local-tests/lwc-shell --targets apex-wire,imperative-apex,record-wire --out /tmp/glade-lwc-wire-capture.json)
+(cd ../glade-tools && go run ./cmd/glade-plugin-compat lwc capture --target-org oaer-probe-max --project ../glade/testdata/local-tests/lwc-shell --include-hosts lightning-shell,visualforce-lightning-out --targets apex-wire,imperative-apex,record-wire --out /tmp/glade-lwc-wire-capture.json)
 ```
 
 ## Done Gate
 
 - Apex wire and imperative Apex execute real local controllers.
-- `getRecord`, `getRecords`, `getObjectInfo`, picklist wires, and record mutations pass tests.
-- Cache refresh behavior is observable in browser tests.
+- `getRecord`, `getObjectInfo`, field helpers, and record mutations pass tests.
+- Batch record APIs, picklist wires, refresh, and cache notifications remain named future work unless their tests exist in this phase.
 - Unsupported UI API modules return named diagnostics rather than generic thrown errors.
+- Every supported wire, Apex, LDS, and cache feature passes in both the Lightning shell and Visualforce Lightning Out host, or the support ledger names the host-specific gap.

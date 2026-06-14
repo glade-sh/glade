@@ -9,15 +9,17 @@ import (
 )
 
 type PageConfig struct {
-	Namespace string
-	OutApps   []string
-	Manifest  Manifest
+	Namespace     string
+	OutApps       []string
+	Manifest      Manifest
+	PageReference any
 }
 
 type pageConfigJSON struct {
-	Namespace string       `json:"namespace"`
-	OutApps   []string     `json:"outApps,omitempty"`
-	Manifest  manifestJSON `json:"manifest"`
+	Namespace     string       `json:"namespace"`
+	OutApps       []string     `json:"outApps,omitempty"`
+	Manifest      manifestJSON `json:"manifest"`
+	PageReference any          `json:"pageReference,omitempty"`
 }
 
 type manifestJSON struct {
@@ -31,8 +33,9 @@ type moduleJSON struct {
 
 func BootstrapHTML(cfg PageConfig) string {
 	payload := pageConfigJSON{
-		Namespace: cfg.Namespace,
-		OutApps:   append([]string(nil), cfg.OutApps...),
+		Namespace:     cfg.Namespace,
+		OutApps:       append([]string(nil), cfg.OutApps...),
+		PageReference: cfg.PageReference,
 		Manifest: manifestJSON{
 			Modules: make(map[string]moduleJSON, len(cfg.Manifest.Modules)),
 		},

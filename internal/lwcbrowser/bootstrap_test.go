@@ -37,3 +37,19 @@ func TestBootstrapHTMLIncludesLocalLWCImportMap(t *testing.T) {
 		t.Fatalf("missing verifiable/landing import map entry:\n%s", html)
 	}
 }
+
+func TestBootstrapHTMLIncludesPageReference(t *testing.T) {
+	html := BootstrapHTML(PageConfig{
+		PageReference: map[string]any{
+			"type": "standard__recordPage",
+			"attributes": map[string]any{
+				"recordId":      "001000000000001AAA",
+				"objectApiName": "Account",
+				"actionName":    "view",
+			},
+		},
+	})
+	if !strings.Contains(html, `"pageReference"`) || !strings.Contains(html, `"standard__recordPage"`) {
+		t.Fatalf("missing page reference in bootstrap:\n%s", html)
+	}
+}

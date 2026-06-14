@@ -1,10 +1,10 @@
-# LWC Local Shell Roadmap
+# LWC Local Shell And Visualforce Lightning Out Roadmap
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement a chosen phase. Each phase plan has checkbox (`- [ ]`) steps and must be executed to its done gate before claiming support.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement a chosen phase with parallel subagent squads wherever ownership is disjoint. Each phase plan has checkbox (`- [ ]`) steps and must be executed to its done gate before claiming support.
 
-**Goal:** Build practical local LWC rendering parity: components run in a Salesforce-like shell for direct component preview, record pages, app pages, home pages, custom tabs, and controller-backed data flows.
+**Goal:** Build practical local LWC rendering parity across both Glade LWC hosts: a Salesforce-like Lightning shell for direct component preview, record pages, app pages, home pages, custom tabs, and controller-backed data flows, plus Visualforce pages that render LWCs through Lightning Out.
 
-**Architecture:** Glade owns a local Lightning Experience shell, metadata resolver, LWC browser server, Salesforce module shims, LDS-like data cache, and Apex controller bridge. `glade-tools` owns scratch-org capture, corpus probes, generated support ledgers, and compatibility dashboards.
+**Architecture:** Glade owns a local Lightning Experience shell, a Visualforce Lightning Out host, metadata resolver, LWC browser server, Salesforce module shims, LDS-like data cache, and Apex controller bridge. Both hosts share `internal/lwcbrowser`, `lwcruntime`, wire routes, Apex invocation, LDS/UI API shims, base components, and service modules. `glade-tools` owns scratch-org capture, corpus probes, generated support ledgers, and compatibility dashboards.
 
 **Tech Stack:** Go server and CLI, existing `internal/lwc` compiler, `internal/lwcbrowser` module shims, `lwcruntime` browser runtime, Glade VM for Apex, local org storage, Playwright browser tests, `oaer-probe-max` scratch org probes.
 
@@ -37,6 +37,7 @@ Local docs scrape checked:
 - `internal/lwc` parses and renders a subset of LWC templates. `internal/lwc/meta.go` only reads `isExposed` and top-level targets.
 - `internal/lwcbrowser` compiles project LWCs, builds a manifest, serves import maps, and shims several `@salesforce/*` modules.
 - `internal/server/lightning_wire.go` handles Apex wire, `getRecord`, and `getObjectInfo` routes.
+- `internal/server/visualforce.go`, `internal/lightningout/parse.go`, and `testdata/local-tests/lightning-out-vf/` already provide a Visualforce Lightning Out host where LWCs render through `/apex/<PageName>`.
 - `lwcruntime/src/shims/wire-adapter.mjs` provides fetch-backed wire adapters.
 - `internal/lwcbrowser/salesforce_modules.go` makes `lightning/navigation` throw. No local shell injects real `CurrentPageReference`.
 - `internal/project` and `internal/metadata` already discover FlexiPage and tab files, but do not parse them for rendering.
@@ -46,21 +47,27 @@ Local docs scrape checked:
 
 Exact Lightning Experience parity is not practical. Salesforce owns private shell services, private page chrome, private LDS internals, private base component implementation details, and org runtime services that cannot be cloned with confidence.
 
-Practical parity is useful and reachable. Glade should render local LWC work in a shell that follows public targets, public FlexiPage metadata, public PageReference contracts, public `@salesforce` modules, local org data, and real local Apex controllers. When behavior is private or ambiguous, Glade must report a named unsupported feature and link the scratch-org capture evidence.
+Practical parity is useful and reachable. Glade should render local LWC work in two hosts: a local Lightning shell that follows public targets, public FlexiPage metadata, public PageReference contracts, public `@salesforce` modules, local org data, and real local Apex controllers; and a Visualforce Lightning Out host that follows public `$Lightning.use()` / `$Lightning.createComponent()` behavior inside `/apex/<PageName>`. When behavior is private or ambiguous, Glade must report a named unsupported feature and link the scratch-org capture evidence.
+
+Every feature marked supported must state host coverage:
+- `lwc.host.lightning-shell`
+- `lwc.host.visualforce-lightning-out`
+
+If a feature works in only one host, the support ledger must name the other host as `partial`, `unsupported`, or `salesforce-only` with a stable diagnostic.
 
 ## Feature Choice Matrix
 
 | Feature Set | Phase Plan | User Value | Depends On |
 | --- | --- | --- | --- |
-| Scratch oracle and fixture baseline | [Phase 0](lwc-local-shell/phase-00-baseline-oracle.md) | Know current gaps before building | none |
+| Scratch oracle and fixture baseline | [Phase 0](lwc-local-shell/phase-00-baseline-oracle.md) | Know current gaps in both Lightning shell and Visualforce Lightning Out hosts before building | none |
 | LWC meta and target config | [Phase 1](lwc-local-shell/phase-01-metadata-target-model.md) | Components know where and how they can render | Phase 0 recommended |
-| Direct component preview | [Phase 2](lwc-local-shell/phase-02-direct-component-shell.md) | Fast isolated local LWC development | Phase 1 |
+| Direct component preview and host contract | [Phase 2](lwc-local-shell/phase-02-direct-component-shell.md) | Fast isolated local LWC development and a shared runtime contract for Visualforce Lightning Out | Phase 1 |
 | Record page shell | [Phase 3](lwc-local-shell/phase-03-record-page-shell.md) | Record-context components get `recordId`, object, record header, and regions | Phase 1, Phase 2 |
 | App, home, and tab shells | [Phase 4](lwc-local-shell/phase-04-app-home-tab-shell.md) | FlexiPage app pages and custom tabs run locally | Phase 1, Phase 2 |
-| Wires, LDS, and Apex controllers | [Phase 5](lwc-local-shell/phase-05-wire-lds-apex.md) | Components test against real local controllers and records | Phase 2, Phase 3 for record context |
-| Base Lightning components and SLDS | [Phase 6](lwc-local-shell/phase-06-base-components-slds.md) | Common `lightning-*` components behave well in local pages | Phase 2, Phase 5 for data-bound forms |
-| Navigation, services, quick actions | [Phase 7](lwc-local-shell/phase-07-navigation-services-actions.md) | Navigation, toasts, LMS, modals, and actions act like shell services | Phase 3, Phase 4 |
-| Browser tests, support ledger, docs | [Phase 8](lwc-local-shell/phase-08-tests-ledger-docs.md) | CI proof and honest support map | Phases being certified |
+| Wires, LDS, and Apex controllers | [Phase 5](lwc-local-shell/phase-05-wire-lds-apex.md) | Components test against real local controllers and records in both hosts | Phase 2, Phase 3 for record context |
+| Base Lightning components and SLDS | [Phase 6](lwc-local-shell/phase-06-base-components-slds.md) | Common `lightning-*` components behave well in local shell and Visualforce Lightning Out pages | Phase 2, Phase 5 for data-bound forms |
+| Navigation, services, quick actions | [Phase 7](lwc-local-shell/phase-07-navigation-services-actions.md) | Navigation, toasts, LMS, modals, and actions act like host-aware shell services | Phase 3, Phase 4 |
+| Browser tests, support ledger, docs | [Phase 8](lwc-local-shell/phase-08-tests-ledger-docs.md) | CI proof and honest support map split by host | Phases being certified |
 
 ## Product UX Target
 
@@ -72,20 +79,27 @@ glade dev lwc --project . --record-page Account_Record_Page --record-id 00100000
 glade dev lwc --project . --app-page Sales_Dashboard --open
 glade dev lwc --project . --home-page Custom_Home --open
 glade dev lwc --project . --tab My_Custom_Tab --open
+glade dev vf --project . --page WidgetHost --open
 glade lwc test --project . --record-page Account_Record_Page --record-id 001000000000001AAA --browser
+glade lwc test --project . --visualforce WidgetHost --browser
 ```
 
-Maintenance and oracle commands stay in `glade-tools`:
+Maintenance and oracle commands stay in `glade-tools`. Today the LWC capture
+command prepares fixture-manifest targets; browser/org capture and ledger
+generation are later compat-plugin phases.
 
 ```bash
-glade compat lwc capture --target-org oaer-probe-max --project testdata/local-tests/lwc-shell --out /tmp/glade-lwc-capture.json
+glade compat lwc capture --target-org oaer-probe-max --project testdata/local-tests/lwc-shell --include-hosts lightning-shell,visualforce-lightning-out --out /tmp/glade-lwc-capture.json
+# future:
 glade compat lwc ledger --captures /tmp/glade-lwc-capture.json --output docs/generated/LWC_SHELL_SUPPORT.md
 ```
 
-## Parallel Squad Rule
+## Parallel Subagent Squad Rule
 
-Each phase should be executed by parallel squads only where work does not share mutable files. Shared file owners must land one patch at a time. A review squad checks the phase done gate, runs the commands, and rejects partial feature claims.
+Each phase must be executed with parallel subagent squads where work does not share mutable files. Use `superpowers:subagent-driven-development` and assign one squad per disjoint owner: metadata, shell routes, Visualforce host, runtime shims, LDS/UI API, Apex bridge, base components, CLI/docs, oracle, and review. Shared file owners land one patch at a time. The review squad checks the phase done gate, runs the commands, and rejects partial feature claims.
+
+Do not run multiple broad gates at once. The squads can build in parallel, but final verification is serial: focused package tests first, then one wide Go or browser suite at a time.
 
 ## Full-Phase Rule
 
-When an agent picks a phase, it implements the phase in full. No half-supported route, no silent placeholder, no hidden fallback. If Salesforce behavior is not practical, the agent adds a named unsupported diagnostic, test coverage for the diagnostic, and a support ledger row.
+When an agent picks a phase, it implements the phase in full for every host in that phase. No half-supported route, no silent placeholder, no hidden fallback, and no Lightning-shell-only claim when the same runtime feature should also work through Visualforce Lightning Out. If Salesforce behavior is not practical, the agent adds a named unsupported diagnostic, test coverage for the diagnostic, and a support ledger row naming the host.

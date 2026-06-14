@@ -1,0 +1,12 @@
+[
+  {
+    "attributes": {
+      "type": "Account",
+      "referenceId": "LocalShellAccount"
+    },
+    "Id": "001000000000001AAA",
+    "Name": "Local Shell Account",
+    "Industry": "Technology",
+    "Phone": "907-555-0100"
+  }
+]

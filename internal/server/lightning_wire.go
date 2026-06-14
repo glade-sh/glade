@@ -23,6 +23,12 @@ func (s *Server) handleLightningWire(w http.ResponseWriter, r *http.Request, par
 		s.handleLightningWireGetRecord(w, r)
 	case "getObjectInfo":
 		s.handleLightningWireGetObjectInfo(w, r)
+	case "createRecord":
+		s.handleLightningWireCreateRecord(w, r)
+	case "updateRecord":
+		s.handleLightningWireUpdateRecord(w, r)
+	case "deleteRecord":
+		s.handleLightningWireDeleteRecord(w, r)
 	default:
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning wire endpoint")
 	}
@@ -109,6 +115,75 @@ func (s *Server) handleLightningWireGetObjectInfo(w http.ResponseWriter, r *http
 		s.Org = &org
 	}
 	data, wireErr := getObjectInfoWireData(s.Org, req.ObjectAPIName)
+	if wireErr != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: wireErr})
+		return
+	}
+	writeWireJSON(w, lwcbrowser.WireResponse{Data: data})
+}
+
+func (s *Server) handleLightningWireCreateRecord(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: err.Error()}})
+		return
+	}
+	var req lwcbrowser.WireCreateRecordRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: "invalid createRecord request"}})
+		return
+	}
+	if s.Org == nil {
+		org := storage.NewOrgState()
+		s.Org = &org
+	}
+	data, wireErr := createRecordWireData(s.Org, req)
+	if wireErr != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: wireErr})
+		return
+	}
+	writeWireJSON(w, lwcbrowser.WireResponse{Data: data})
+}
+
+func (s *Server) handleLightningWireUpdateRecord(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: err.Error()}})
+		return
+	}
+	var req lwcbrowser.WireUpdateRecordRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: "invalid updateRecord request"}})
+		return
+	}
+	if s.Org == nil {
+		org := storage.NewOrgState()
+		s.Org = &org
+	}
+	data, wireErr := updateRecordWireData(s.Org, req)
+	if wireErr != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: wireErr})
+		return
+	}
+	writeWireJSON(w, lwcbrowser.WireResponse{Data: data})
+}
+
+func (s *Server) handleLightningWireDeleteRecord(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: err.Error()}})
+		return
+	}
+	var req lwcbrowser.WireDeleteRecordRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: "invalid deleteRecord request"}})
+		return
+	}
+	if s.Org == nil {
+		org := storage.NewOrgState()
+		s.Org = &org
+	}
+	data, wireErr := deleteRecordWireData(s.Org, req.RecordID)
 	if wireErr != nil {
 		writeWireJSON(w, lwcbrowser.WireResponse{Error: wireErr})
 		return
@@ -204,6 +279,99 @@ func getObjectInfoWireData(org *storage.OrgState, objectAPIName string) (map[str
 	return payload, nil
 }
 
+func createRecordWireData(org *storage.OrgState, req lwcbrowser.WireCreateRecordRequest) (map[string]any, *lwcbrowser.WireError) {
+	objectName, object, ok := findOrgObject(org, req.APIName)
+	if !ok {
+		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("object not found: %s", req.APIName)}
+	}
+	generator := storage.NewStandardIDGenerator()
+	for name, state := range org.Objects {
+		if strings.TrimSpace(state.Definition.KeyPrefix) != "" {
+			generator.Prefixes[name] = state.Definition.KeyPrefix
+		}
+	}
+	id, err := generator.Next(objectName)
+	if err != nil {
+		return nil, &lwcbrowser.WireError{Message: err.Error()}
+	}
+	record := storage.Record{
+		ID:     id,
+		Object: objectName,
+		Fields: map[string]storage.Value{},
+	}
+	for fieldName, raw := range req.Fields {
+		if strings.EqualFold(fieldName, "Id") {
+			continue
+		}
+		record.Fields[fieldName] = storageValueFromAny(raw)
+	}
+	if object.Records == nil {
+		object.Records = map[storage.ID]storage.Record{}
+	}
+	object.Records[id] = record
+	org.Objects[objectName] = object
+	return recordWireMutationPayload(objectName, record), nil
+}
+
+func updateRecordWireData(org *storage.OrgState, req lwcbrowser.WireUpdateRecordRequest) (map[string]any, *lwcbrowser.WireError) {
+	rawID, ok := req.Fields["Id"]
+	if !ok {
+		return nil, &lwcbrowser.WireError{Message: "fields.Id is required"}
+	}
+	recordID := strings.TrimSpace(fmt.Sprint(rawID))
+	objectName, record, ok := findOrgRecord(org, recordID)
+	if !ok {
+		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("record not found: %s", recordID)}
+	}
+	object := org.Objects[objectName]
+	if record.Fields == nil {
+		record.Fields = map[string]storage.Value{}
+	}
+	if record.ExplicitNulls == nil {
+		record.ExplicitNulls = map[string]bool{}
+	}
+	for fieldName, raw := range req.Fields {
+		if strings.EqualFold(fieldName, "Id") {
+			continue
+		}
+		if raw == nil {
+			delete(record.Fields, fieldName)
+			record.ExplicitNulls[fieldName] = true
+			continue
+		}
+		record.Fields[fieldName] = storageValueFromAny(raw)
+		delete(record.ExplicitNulls, fieldName)
+	}
+	object.Records[record.ID] = record
+	org.Objects[objectName] = object
+	return recordWireMutationPayload(objectName, record), nil
+}
+
+func deleteRecordWireData(org *storage.OrgState, recordID string) (map[string]any, *lwcbrowser.WireError) {
+	recordID = strings.TrimSpace(recordID)
+	objectName, record, ok := findOrgRecord(org, recordID)
+	if !ok {
+		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("record not found: %s", recordID)}
+	}
+	object := org.Objects[objectName]
+	record.System.IsDeleted = true
+	object.Records[record.ID] = record
+	org.Objects[objectName] = object
+	return map[string]any{"id": string(record.ID), "apiName": objectName, "deleted": true}, nil
+}
+
+func recordWireMutationPayload(objectName string, record storage.Record) map[string]any {
+	fields := map[string]any{}
+	for name, value := range record.Fields {
+		fields[name] = map[string]any{"value": storageValueJSON(value)}
+	}
+	return map[string]any{
+		"id":      string(record.ID),
+		"apiName": objectName,
+		"fields":  fields,
+	}
+}
+
 func findOrgRecord(org *storage.OrgState, recordID string) (objectName string, record storage.Record, ok bool) {
 	if org == nil || len(recordID) < 3 {
 		return "", storage.Record{}, false
@@ -215,10 +383,26 @@ func findOrgRecord(org *storage.OrgState, recordID string) (objectName string, r
 			continue
 		}
 		if rec, found := object.Records[id]; found {
+			rec.ID = id
 			return name, rec, true
 		}
 	}
 	return "", storage.Record{}, false
+}
+
+func storageValueFromAny(raw any) storage.Value {
+	switch value := raw.(type) {
+	case nil:
+		return storage.NullValue()
+	case bool:
+		return storage.BooleanValue(value)
+	case float64:
+		return storage.DecimalValue(fmt.Sprint(value))
+	case string:
+		return storage.StringValue(value)
+	default:
+		return storage.StringValue(fmt.Sprint(value))
+	}
 }
 
 func findOrgObject(org *storage.OrgState, objectAPIName string) (objectName string, object storage.ObjectState, ok bool) {

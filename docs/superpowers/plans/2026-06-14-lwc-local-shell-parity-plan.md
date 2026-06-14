@@ -1,12 +1,12 @@
-# LWC Local Shell Parity Implementation Plan
+# LWC Local Shell And Visualforce Lightning Out Parity Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan with parallel subagent squads wherever ownership is disjoint. Use superpowers:executing-plans only for serial integration checkpoints. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build first-class local Lightning Web Component rendering in Glade: direct components, record pages, app pages, home pages, custom tabs, URL-addressable components, real local Apex controller calls, LDS-like data, and a Salesforce-like shell with checked scratch-org parity.
+**Goal:** Build first-class local Lightning Web Component rendering in Glade across both supported hosts: the Salesforce-like local Lightning shell and Visualforce-hosted Lightning Out pages. Direct components, record pages, app pages, home pages, custom tabs, URL-addressable components, Visualforce `$Lightning.use()` / `$Lightning.createComponent()` mounts, real local Apex controller calls, LDS-like data, and shared browser runtime services all need checked scratch-org parity.
 
-**Architecture:** Add an `internal/lwcshell` product package that turns Salesforce project metadata into a shell page model. Keep `internal/lwcbrowser` focused on compilation, import maps, browser shims, and wire client code. Keep `internal/server` as the HTTP bridge to local org state and the Apex VM. Use `glade-tools` only for scratch-org probes, generated support ledgers, and corpus dashboards.
+**Architecture:** Add an `internal/lwcshell` product package that turns Salesforce project metadata into a shell page model, and make it share the same `internal/lwcbrowser`, `lwcruntime`, wire, Apex, LDS, base component, and service shims used by Visualforce Lightning Out. Keep `internal/server` as the HTTP bridge to local org state, Visualforce `/apex` pages, Lightning shell routes, and the Apex VM. Use `glade-tools` only for scratch-org probes, generated support ledgers, and corpus dashboards.
 
-**Tech Stack:** Go server and metadata parser, existing Glade project loader, existing LWC compiler/toolchain, browser ESM import maps, `lwcruntime` JavaScript shims, local `storage.OrgState`, Glade Apex VM, Playwright via `lwcruntime`, and the `oaer-probe-max` scratch org as the Salesforce oracle.
+**Tech Stack:** Go server and metadata parser, existing Glade project loader, existing LWC compiler/toolchain, browser ESM import maps, Visualforce renderer, Lightning Out parser, `lwcruntime` JavaScript shims, local `storage.OrgState`, Glade Apex VM, Playwright via `lwcruntime`, and the `oaer-probe-max` scratch org as the Salesforce oracle.
 
 ---
 
@@ -26,12 +26,16 @@ Navigation is PageReference-based. The shell must support app, nav item, object 
 
 Record context is automatic only in explicit record containers. The local shell must set `recordId` and `objectApiName` for record pages and actions, and it must leave them absent in shells where Salesforce leaves them absent. Source: [Make a Component Aware of Its Record Context](https://developer.salesforce.com/docs/platform/lwc/guide/use-record-context.html).
 
+Lightning Out through Visualforce is a first-class LWC host in this roadmap. Visualforce pages that call `$Lightning.use()` and `$Lightning.createComponent()` must mount LWCs through the same compiled modules, import maps, Apex wire routes, LDS/UI API shims, base components, and service modules as the local Lightning shell. Host-specific context must stay distinct: Lightning record pages inject record context from FlexiPage and route state, while Visualforce pages inject Visualforce page params, standard controller context when present, and explicit `$Lightning.createComponent()` attributes.
+
 ## Parity Boundary
 
 Full useful parity is practical. Literal internal Salesforce parity is not.
 
 Build:
 - Local shell parity for public LWC contracts, public metadata, public PageReference types, public LDS and UI API shapes, public base component contracts, and real local Apex controllers.
+- Visualforce Lightning Out parity for public `$Lightning.use()` / `$Lightning.createComponent()` contracts, including LWC rendering inside `/apex/<PageName>` routes.
+- Cross-host parity for shared runtime capabilities. If Apex wire, imperative Apex, LDS/UI API, base components, navigation, toasts, message service, or modals are marked supported, they must pass in both `/lwc/preview/*` and Visualforce Lightning Out hosts unless the support ledger names a host-specific exception.
 - Checked differences against `oaer-probe-max`, recorded as support data, screenshots, DOM snapshots, wire payloads, and console errors.
 - Fast local development that starts from project metadata and local data, not from hand-written harness HTML.
 
@@ -47,6 +51,7 @@ The product claim after this roadmap should be:
 
 ```text
 Glade renders and tests Lightning Web Components locally in Salesforce-like record, app, home, tab, action, and URL-addressable shells. It runs project Apex controllers in the local VM, serves LDS-style data from local org state, and reports checked differences from Salesforce scratch-org captures.
+Glade also renders LWCs embedded in Visualforce pages through Lightning Out, using the same local runtime services and checked support ledger.
 ```
 
 ## Current State From The Patch
@@ -58,10 +63,13 @@ Useful work already exists:
 - `internal/server/lightning_wire.go` serves Apex wire, `getRecord`, and `getObjectInfo`.
 - `lwcruntime/src/shims/wire-adapter.mjs` has fetch-backed wire adapters.
 - `lwcruntime/test/wire.test.mjs` and `record-wire.test.mjs` prove browser wire flow.
+- `internal/lightningout/parse.go`, `internal/server/visualforce.go`, `internal/server/lightning*.go`, and `testdata/local-tests/lightning-out-vf/` already prove a Visualforce Lightning Out host.
+- `lwcruntime/test/visualforce-dev-server.test.mjs` proves a Visualforce page can boot Lightning Out components through the local dev server.
 
 Gaps:
 - No first-class `glade dev lwc` command.
 - No local shell route model for direct component, record page, app page, home page, custom tab, or URL-addressable component.
+- No explicit requirement that every shared LWC runtime feature pass in both the Lightning shell and Visualforce Lightning Out host.
 - No FlexiPage parser or CustomTab resolver.
 - No full `targetConfig` parser for properties, objects, form factors, quick action types, or dynamic interaction events.
 - `lightning/navigation` currently throws.
@@ -84,8 +92,10 @@ glade dev lwc --project . --home-page Custom_Home
 glade dev lwc --project . --tab My_Custom_Tab
 glade dev lwc --project . --url /lightning/r/Account/001000000000001AAA/view
 glade dev lwc --project . --open --watch --seed testdata/local-tests/lwc-shell/seed.json
+glade dev vf --project . --page WidgetHost --open
 glade lwc test --project . --target record-page:Account_Record_Page --record-id 001000000000001AAA
-glade compat lwc capture --target-org oaer-probe-max --project . --targets record-page:Account_Record_Page --out /tmp/glade-lwc-shell-oracle
+glade lwc test --project . --target visualforce:WidgetHost
+glade compat lwc capture --target-org oaer-probe-max --project . --targets record-page --out /tmp/glade-lwc-shell-fixture-manifest
 ```
 
 Routes served by the local dev server:
@@ -97,6 +107,7 @@ Routes served by the local dev server:
 /lightning/home/Custom_Home
 /lightning/n/My_Custom_Tab
 /lightning/cmp/c__accountPanel?c__mode=compact
+/apex/WidgetHost
 ```
 
 Every route must expose a debug JSON endpoint:
@@ -131,7 +142,9 @@ Create:
 - `lwcruntime/src/shims/message-service.mjs` - Lightning Message Service shim.
 - `lwcruntime/src/base-components/*.mjs` - base Lightning component modules.
 - `lwcruntime/test/lwc-shell.test.mjs` - Playwright shell tests.
+- `lwcruntime/test/visualforce-lightning-out.test.mjs` - Playwright tests for LWC runtime behavior inside Visualforce Lightning Out.
 - `testdata/local-tests/lwc-shell/...` - full fixture project.
+- `testdata/local-tests/lightning-out-vf/...` - Visualforce Lightning Out fixture project.
 - `docs/LWC_LOCAL_SHELL.md` - user docs.
 - `docs/LWC_SUPPORT.md` - checked support table.
 
@@ -141,6 +154,8 @@ Modify:
 - `internal/lwcbrowser/manifest.go` - base component and context module entries.
 - `internal/server/lightning.go` - route dispatch.
 - `internal/server/lightning_wire.go` - UI API wire expansion.
+- `internal/server/visualforce.go` - keep `/apex/<PageName>` Lightning Out host on the same runtime services as the LWC shell.
+- `internal/lightningout/parse.go` - preserve and extend `$Lightning.use()` / `$Lightning.createComponent()` discovery only where Visualforce fixture evidence requires it.
 - `internal/gladecli/dev_command.go` or equivalent dev command registry - add `lwc`.
 - `internal/cliui/help.go` - discoverable but compact LWC command descriptions.
 - `internal/gladehome/root.go` and `internal/gladehome/install.go` - install shell and shim assets.
@@ -148,19 +163,24 @@ Modify:
 - `docs/LOCAL_TESTING.md` and `site/docs-src/guide/local-testing.md` - link the new LWC page without turning public help into a support matrix.
 - Sibling `../glade-tools` - add scratch capture and support-ledger generators only.
 
-## Parallel Squad Model
+## Parallel Subagent Squad Model
 
-Run this with parallel squads. Each squad gets one package boundary and one evidence command. Review between phases.
+Run this with parallel subagent squads. Use `superpowers:subagent-driven-development`; dispatch one fresh subagent per disjoint ownership boundary, then integrate serially. Each squad gets one package boundary, one host boundary when possible, and one evidence command. Do not run multiple broad gates at the same time; cap heavy verification to one wide Go or browser suite at a time.
 
 - Metadata squad: `internal/lwcshell/meta.go`, `flexipage.go`, `tabs.go`.
 - Shell squad: `internal/lwcshell/context.go`, `resolver.go`, `render.go`, `internal/server/lwc_shell.go`.
-- Runtime squad: `internal/lwcbrowser`, `lwcruntime/src/shell`, import maps, hot reload.
-- LDS squad: `internal/server/lightning_lds.go`, `lwcruntime/src/shims/lds-cache.mjs`, UI API modules.
-- Apex squad: `internal/server/lightning_apex.go`, VM invocation, JSON shaping, error shaping.
-- Base component squad: `lwcruntime/src/base-components`, SLDS-like contracts, form components.
+- Visualforce host squad: `internal/server/visualforce.go`, `internal/lightningout/parse.go`, and `testdata/local-tests/lightning-out-vf/`, proving LWC runtime behavior inside `/apex/<PageName>`.
+- Runtime squad: `internal/lwcbrowser`, `lwcruntime/src/shell`, Visualforce bootstrap reuse, import maps, hot reload.
+- LDS squad: `internal/server/lightning_lds.go`, `lwcruntime/src/shims/lds-cache.mjs`, UI API modules, with Lightning shell and Visualforce Lightning Out tests.
+- Apex squad: `internal/server/lightning_apex.go`, VM invocation, JSON shaping, error shaping, with wire and imperative coverage in both hosts.
+- Base component squad: `lwcruntime/src/base-components`, SLDS-like contracts, form components, with both-host browser tests.
 - CLI squad: `internal/gladecli/dev_lwc_command.go`, `lwc_test_command.go`, help and docs hooks.
 - Oracle squad: sibling `../glade-tools` scratch-org capture against `oaer-probe-max`.
 - Review squad: tests, screenshots, support map, docs, release packaging.
+
+Every phase review must answer two host questions before support is claimed:
+- Does this feature pass in the Lightning shell host?
+- Does this feature pass in the Visualforce Lightning Out host, or does the support ledger name the host-specific gap?
 
 ## Phase 0: Baseline And Fixture
 
@@ -220,23 +240,25 @@ The fixture must prove:
 - Apex wire and imperative Apex invoke the real local controller.
 - `getRecord`, `getObjectInfo`, `updateRecord`, and `notifyRecordUpdateAvailable` share data.
 
-- [ ] **Step 0.2: Capture Salesforce oracle output**
+- [ ] **Step 0.2: Prepare scratch fixture manifest**
 
-Use `../glade-tools` and `oaer-probe-max` to deploy the fixture and capture:
+Use `../glade-tools` and `oaer-probe-max` to deploy the fixture and write the
+stable manifest that the later browser oracle consumes:
 
 ```bash
 cd ../glade-tools
 go run ./cmd/glade-plugin-compat lwc capture \
   --project ../glade/.worktrees/full-visualforce-rendering/testdata/local-tests/lwc-shell \
   --target-org oaer-probe-max \
-  --targets record-page:Account_Record_Page,app-page:Sales_Dashboard,home-page:Custom_Home,tab:My_Custom_Tab \
-  --out /tmp/glade-lwc-shell-oracle
+  --targets record-page,app-page,home-page,custom-tab \
+  --include-hosts lightning-shell,visualforce-lightning-out \
+  --out /tmp/glade-lwc-shell-fixture-manifest.json
 ```
 
 Expected:
-- `/tmp/glade-lwc-shell-oracle/manifest.json` lists four targets.
-- Each target has `dom.html`, `screenshot.png`, `wire-payloads.jsonl`, `console.jsonl`, and `context.json`.
-- Capture failures name the Salesforce command, target, and URL.
+- `/tmp/glade-lwc-shell-fixture-manifest.json` has `mode:"fixture-manifest"`.
+- Each target row has `status:"prepared"` and a `fixture://lwc/...` URL.
+- Browser DOM, screenshot, wire payload, console, and context capture belongs to Phase 12.
 
 - [ ] **Step 0.3: Run current baseline tests**
 
@@ -1416,7 +1438,12 @@ git commit -m "feat: test LWC shell pages locally"
 - Create: `docs/LWC_SUPPORT.md`
 - Modify: `internal/gladecli/lwc_probe_command.go`
 
-- [ ] **Step 12.1: Implement capture command in `glade-tools`**
+- [ ] **Step 12.1: Extend capture command in `glade-tools`**
+
+The existing `lwc capture` command prepares fixture-manifest rows. This phase
+extends it, or adds a subcommand under `lwc`, so Salesforce pages open in a
+browser and produce oracle artifacts. Do not treat fixture-manifest output as
+parity evidence.
 
 Command:
 
@@ -1424,7 +1451,8 @@ Command:
 go run ./cmd/glade-plugin-compat lwc capture \
   --project ../glade/.worktrees/full-visualforce-rendering/testdata/local-tests/lwc-shell \
   --target-org oaer-probe-max \
-  --targets record-page:Account_Record_Page,app-page:Sales_Dashboard,home-page:Custom_Home,tab:My_Custom_Tab \
+  --targets record-page,app-page,home-page,custom-tab \
+  --include-hosts lightning-shell,visualforce-lightning-out \
   --out /tmp/glade-lwc-shell-oracle
 ```
 
@@ -1467,12 +1495,12 @@ Base `glade` must not add scratch-org capture code. Product docs may point to th
 go run ./cmd/glade-plugin-compat lwc capture \
   --project testdata/local-tests/lwc-shell \
   --target-org oaer-probe-max \
-  --targets record-page:Account_Record_Page \
+  --targets record-page \
   --out /tmp/glade-lwc-shell-probe
 ```
 
 Expected:
-- Capture exists.
+- Browser oracle capture exists, not just a fixture manifest.
 - Compare report lists pass/fail per contract.
 - Known differences have stable support codes.
 
@@ -1602,19 +1630,20 @@ cd lwcruntime && npm test
 Expected:
 - All focused tests pass.
 
-- [ ] **Step 14.3: Run scratch parity suite**
+- [ ] **Step 14.3: Run scratch fixture-manifest suite**
 
 ```bash
 glade compat lwc capture \
   --project testdata/local-tests/lwc-shell \
   --target-org oaer-probe-max \
-  --targets record-page:Account_Record_Page,app-page:Sales_Dashboard,home-page:Custom_Home,tab:My_Custom_Tab \
-  --out /tmp/glade-lwc-shell-final-probe
+  --targets record-page,app-page,home-page,custom-tab \
+  --include-hosts lightning-shell,visualforce-lightning-out \
+  --out /tmp/glade-lwc-shell-fixture-manifest.json
 ```
 
 Expected:
-- Report has no unclassified differences.
-- Any difference that remains has a support code and a docs row.
+- Report has `mode:"fixture-manifest"` and prepared target rows.
+- This proves fixture deploy and target enumeration only. Browser DOM, console, screenshot, and wire payload parity capture is future oracle work in `glade-tools`.
 
 - [ ] **Step 14.4: Run broader checks**
 
@@ -1672,5 +1701,5 @@ This roadmap reaches practical LWC parity when all of these pass:
 - Tier 1, Tier 2, and Tier 3 base Lightning components support the fixture suite.
 - Navigation, toasts, modals, and Lightning Message Service work inside one shell window.
 - `glade lwc test` runs browser tests against the real local shell and controllers.
-- `glade compat lwc capture --target-org oaer-probe-max` produces a checked parity report.
+- `glade compat lwc capture --target-org oaer-probe-max` prepares fixture-manifest targets, and the later browser/oracle command produces checked parity evidence.
 - `docs/LWC_SUPPORT.md` lists every supported, partial, and intentionally unsupported LWC surface with evidence.
