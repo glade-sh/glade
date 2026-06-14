@@ -73,6 +73,13 @@ paths, and local PDF fallback output. It does not promise Salesforce-hosted
 chrome, every component edge, exact lifecycle timing, Apex
 `PageReference.getContent*` parity, or byte-for-byte PDF output.
 
+Form posts carry signed Visualforce view state and a CSRF token. Controller and
+extension state comes back across posts, while Apex fields marked `transient`
+stay out of the saved state. Lightning Out pages validate `ltng:outApp`
+dependencies before creating local LWC modules, so a missing Aura dependency or
+component name reports a local rendering diagnostic instead of a browser fetch
+failure.
+
 ## Run Tests Without An Org
 
 Run every local Apex test:

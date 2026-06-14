@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html"
 	"net/url"
+	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/resource"
@@ -24,6 +25,9 @@ func EvaluateExpression(raw string, ctx *ExpressionContext) (string, error) {
 			return raw, nil
 		}
 		return "", err
+	}
+	if global := unsupportedVisualforceGlobal(expr); global != "" {
+		return "", fmt.Errorf("%s: unsupported Visualforce global", global)
 	}
 	value := expr.Eval(ctx)
 	if value == nil {
@@ -319,6 +323,9 @@ func (p *exprParser) parsePrimary() (Expression, error) {
 	if p.matchWord("FALSE") {
 		return literalExpr{value: vm.Bool(false)}, nil
 	}
+	if p.matchWord("NULL") {
+		return literalExpr{value: vm.Null}, nil
+	}
 	switch {
 	case ch == '\'' || ch == '"':
 		return p.parseString()
@@ -362,6 +369,121 @@ func (p *exprParser) parseIdentifierOrCall() (Expression, error) {
 		return functionExpr{name: strings.ToLower(parts[0]), args: args}, nil
 	}
 	return identifierExpr{parts: parts}, nil
+}
+
+func evalVisualforceURLFor(ctx *ExpressionContext, args []Expression) *vm.Value {
+	if len(args) == 0 {
+		return &vm.Null
+	}
+	target := evalExpressionValue(args[0], ctx)
+	if target.Kind == vm.ValueNull {
+		return &vm.Null
+	}
+	base := target.String()
+	if len(args) >= 2 {
+		path := evalExpressionValue(args[1], ctx)
+		if path.Kind != vm.ValueNull && strings.TrimSpace(path.String()) != "" {
+			base = strings.TrimRight(base, "/") + "/" + strings.TrimLeft(path.String(), "/")
+		}
+	}
+	if len(args) >= 3 {
+		params := evalExpressionValue(args[2], ctx)
+		base = appendURLForParams(base, params)
+	}
+	out := vm.String(base)
+	return &out
+}
+
+func appendURLForParams(base string, params vm.Value) string {
+	if params.Kind != vm.ValueMap {
+		return base
+	}
+	entries := vm.StringValueMapEntries(params)
+	if len(entries) == 0 {
+		return base
+	}
+	values := url.Values{}
+	keys := make([]string, 0, len(entries))
+	for key := range entries {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		values.Add(key, entries[key].String())
+	}
+	encoded := values.Encode()
+	if encoded == "" {
+		return base
+	}
+	separator := "?"
+	if strings.Contains(base, "?") {
+		separator = "&"
+	}
+	return base + separator + encoded
+}
+
+func unsupportedVisualforceGlobal(expr Expression) string {
+	switch typed := expr.(type) {
+	case visualforceIdentifierExpr:
+		return unsupportedVisualforceGlobalName(typed.parts)
+	case identifierExpr:
+		return unsupportedVisualforceGlobalName(typed.parts)
+	case binaryExpr:
+		if global := unsupportedVisualforceGlobal(typed.left); global != "" {
+			return global
+		}
+		return unsupportedVisualforceGlobal(typed.right)
+	case unaryExpr:
+		return unsupportedVisualforceGlobal(typed.value)
+	case indexExpr:
+		if global := unsupportedVisualforceGlobal(typed.target); global != "" {
+			return global
+		}
+		return unsupportedVisualforceGlobal(typed.key)
+	case memberExpr:
+		return unsupportedVisualforceGlobal(typed.target)
+	case methodCallExpr:
+		if global := unsupportedVisualforceGlobal(typed.target); global != "" {
+			return global
+		}
+		for _, arg := range typed.args {
+			if global := unsupportedVisualforceGlobal(arg); global != "" {
+				return global
+			}
+		}
+	case visualforceFunctionExpr:
+		for _, arg := range typed.args {
+			if global := unsupportedVisualforceGlobal(arg); global != "" {
+				return global
+			}
+		}
+	case functionExpr:
+		for _, arg := range typed.args {
+			if global := unsupportedVisualforceGlobal(arg); global != "" {
+				return global
+			}
+		}
+	}
+	return ""
+}
+
+func unsupportedVisualforceGlobalName(parts []string) string {
+	if len(parts) == 0 || !strings.HasPrefix(parts[0], "$") {
+		return ""
+	}
+	if supportedVisualforceGlobal(parts[0]) {
+		return ""
+	}
+	return parts[0]
+}
+
+func supportedVisualforceGlobal(name string) bool {
+	switch strings.ToLower(name) {
+	case "$currentpage", "$label", "$resource", "$objecttype", "$user", "$profile", "$organization", "$permission", "$setup", "$site", "$component", "$remoteaction":
+		return true
+	default:
+		return false
+	}
 }
 
 func (p *exprParser) parseArgList() ([]Expression, error) {
@@ -583,6 +705,9 @@ func isControllerValue(ctx *ExpressionContext, value vm.Value) bool {
 func valuesEqual(left, right vm.Value) bool {
 	if left.Kind != right.Kind {
 		return false
+	}
+	if left.Ref != 0 && right.Ref != 0 {
+		return left.Ref == right.Ref
 	}
 	if left.Type != "" && right.Type != "" {
 		return left.Type == right.Type

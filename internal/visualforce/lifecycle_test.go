@@ -678,6 +678,64 @@ func TestRenderPageRejectsOversizedViewStatePayload(t *testing.T) {
 	}
 }
 
+func TestRenderPageOmitsTransientControllerFieldsFromViewState(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Edit.page"), `<apex:page controller="EditController">
+  <apex:form>
+    <apex:inputText value="{!name}"/>
+    <apex:inputText value="{!secret}"/>
+  </apex:form>
+</apex:page>`)
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	idx, err := LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := testRunner(t)
+	if err := machine.RegisterClass(vm.Class{
+		Name: "EditController",
+		Fields: map[string]vm.Field{
+			"name":   {Name: "name", Type: "String", Modifiers: []string{"public"}},
+			"secret": {Name: "secret", Type: "String", Modifiers: []string{"public", "transient"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := RenderPage(PageRenderRequest{
+		Project:  p,
+		VFIndex:  idx,
+		Machine:  machine,
+		PageName: "Edit",
+		PageURL:  "/apex/Edit",
+		FormValues: map[string]string{
+			"name":   "stored",
+			"secret": "session-only",
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	decoded, err := DecodeViewState(result.ViewState, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := decoded.ControllerValues["secret"]; ok {
+		t.Fatalf("transient field leaked into typed view state: %#v", decoded.ControllerValues)
+	}
+	if _, ok := decoded.ControllerFields["secret"]; ok {
+		t.Fatalf("transient field leaked into string view state: %#v", decoded.ControllerFields)
+	}
+	if got := decoded.ControllerValues["name"]; got.Kind != vm.ValueString || got.Text != "stored" {
+		t.Fatalf("name view state = %#v", got)
+	}
+}
+
 func TestRenderPageIteratesControllerGetterLists(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

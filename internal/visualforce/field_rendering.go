@@ -54,20 +54,31 @@ func renderFieldInput(ctx *RenderContext, raw string, id string) (string, bool) 
 		if binding.Value.Kind == storage.ValueBoolean && binding.Value.Boolean {
 			checked = ` checked="checked"`
 		}
-		return `<input type="checkbox" class="inputField" name="` + html.EscapeString(name) + `"` + idAttr + ` value="true"` + checked + ` />`, true
+		escapedName := html.EscapeString(name)
+		return `<input type="hidden" name="` + escapedName + `" value="false" />` +
+			`<input type="checkbox" class="inputField" name="` + escapedName + `"` + idAttr + ` value="true"` + checked + ` />`, true
 	case FieldSelect:
 		builder := strings.Builder{}
 		builder.WriteString(`<select class="inputField" name="`)
 		builder.WriteString(html.EscapeString(name))
 		builder.WriteString(`"`)
 		builder.WriteString(idAttr)
+		multiSelect := fieldIsMultiSelect(binding.Field)
+		if multiSelect {
+			builder.WriteString(` multiple="multiple"`)
+		}
 		builder.WriteString(`>`)
 		valueText := storageValueText(binding.Value)
+		selectedValues := fieldSelectedValues(binding.Value)
 		for _, option := range binding.Field.PicklistValues {
-			if !option.Active && strings.TrimSpace(option.Value) != valueText {
+			optionValue := strings.TrimSpace(option.Value)
+			selected := optionValue == valueText
+			if multiSelect {
+				selected = selectedValues[optionValue]
+			}
+			if !option.Active && !selected {
 				continue
 			}
-			optionValue := strings.TrimSpace(option.Value)
 			if optionValue == "" {
 				continue
 			}
@@ -75,14 +86,14 @@ func renderFieldInput(ctx *RenderContext, raw string, id string) (string, bool) 
 			if label == "" {
 				label = optionValue
 			}
-			selected := ""
-			if optionValue == valueText {
-				selected = ` selected="selected"`
+			selectedAttr := ""
+			if selected {
+				selectedAttr = ` selected="selected"`
 			}
 			builder.WriteString(`<option value="`)
 			builder.WriteString(html.EscapeString(optionValue))
 			builder.WriteString(`"`)
-			builder.WriteString(selected)
+			builder.WriteString(selectedAttr)
 			builder.WriteString(`>`)
 			builder.WriteString(html.EscapeString(label))
 			builder.WriteString(`</option>`)
@@ -180,6 +191,30 @@ func fieldNumberAttrs(field storage.Field) string {
 		return ` step="` + html.EscapeString(decimalStep(field.Scale)) + `"`
 	}
 	return ` step="any"`
+}
+
+func fieldIsMultiSelect(field storage.Field) bool {
+	return field.Type == storage.FieldMultiPicklist || strings.EqualFold(strings.TrimSpace(field.DisplayType), "MULTIPICKLIST")
+}
+
+func fieldSelectedValues(value storage.Value) map[string]bool {
+	out := map[string]bool{}
+	add := func(text string) {
+		for _, part := range strings.Split(text, ";") {
+			part = strings.TrimSpace(part)
+			if part != "" {
+				out[part] = true
+			}
+		}
+	}
+	if value.Kind == storage.ValueList {
+		for _, item := range value.List {
+			add(storageValueText(item))
+		}
+		return out
+	}
+	add(storageValueText(value))
+	return out
 }
 
 func decimalStep(scale int) string {
@@ -439,6 +474,14 @@ func storageValueText(value storage.Value) string {
 			return "true"
 		}
 		return "false"
+	case storage.ValueList:
+		parts := make([]string, 0, len(value.List))
+		for _, item := range value.List {
+			if text := strings.TrimSpace(storageValueText(item)); text != "" {
+				parts = append(parts, text)
+			}
+		}
+		return strings.Join(parts, ";")
 	default:
 		return ""
 	}

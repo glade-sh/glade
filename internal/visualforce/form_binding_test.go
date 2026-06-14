@@ -1,6 +1,7 @@
 package visualforce
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -66,13 +67,16 @@ func TestApplyFormValuesConvertsFromExistingControllerFieldTypes(t *testing.T) {
 	controller.Fields["dueDate"] = vmPlatformScalar("Date", "2024-01-01")
 	controller.Fields["name"] = vm.String("old")
 
-	applyFormValues(controller, map[string]string{
+	diagnostics := applyFormValues(controller, map[string]string{
 		"isActive": "true",
 		"quantity": "7",
 		"amount":   "12.50",
 		"dueDate":  "2026-06-14",
 		"name":     "posted",
 	}, nil)
+	if len(diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v, want none", diagnostics)
+	}
 
 	if got := controller.Fields["isActive"]; got.Kind != vm.ValueBool || !got.Bool {
 		t.Fatalf("isActive = %#v, want true bool", got)
@@ -95,10 +99,50 @@ func TestApplyFormValuesLeavesInvalidTypedPostsAsStrings(t *testing.T) {
 	controller := vm.Object("EditController")
 	controller.Fields["quantity"] = vm.Int(1)
 
-	applyFormValues(controller, map[string]string{"quantity": "not-a-number"}, nil)
+	diagnostics := applyFormValues(controller, map[string]string{"quantity": "not-a-number"}, nil)
 
 	if got := controller.Fields["quantity"]; got.Kind != vm.ValueString || got.Text != "not-a-number" {
 		t.Fatalf("quantity = %#v, want conservative string fallback", got)
+	}
+	if len(diagnostics) != 1 || !strings.Contains(diagnostics[0], "quantity") || !strings.Contains(diagnostics[0], "INTEGER") {
+		t.Fatalf("diagnostics = %#v, want quantity integer conversion message", diagnostics)
+	}
+}
+
+func TestVisualforceTypedFormValueConvertsMultiSelectAndDatetimeLocal(t *testing.T) {
+	existing := vm.List(vm.String("old"))
+	got := visualforceTypedFormValue("Retail; Services ;", existing, nil)
+	if got.Kind != vm.ValueList || len(got.List) != 2 || got.List[0].Text != "Retail" || got.List[1].Text != "Services" {
+		t.Fatalf("multi-select list = %#v, want Retail and Services", got)
+	}
+
+	field := storage.Field{APIName: "Segments__c", Type: storage.FieldMultiPicklist}
+	got = visualforceTypedFormValue("Retail;Services", vm.Null, &field)
+	if got.Kind != vm.ValueString || got.Text != "Retail;Services" {
+		t.Fatalf("multi-picklist field = %#v, want semicolon storage text", got)
+	}
+
+	field = storage.Field{APIName: "StartsAt__c", Type: storage.FieldDateTime}
+	got = visualforceTypedFormValue("2026-06-14T09:30", vm.Null, &field)
+	if got.Kind != vm.ValueObject || got.Type != "Datetime" || got.String() != "2026-06-14T09:30" {
+		t.Fatalf("datetime-local = %#v, want Datetime scalar", got)
+	}
+}
+
+func TestVisualforceTypedFormValueReturnsFieldConversionDiagnostic(t *testing.T) {
+	field := storage.Field{APIName: "Amount__c", Type: storage.FieldDecimal}
+	got, diagnostic := visualforceTypedFormValueWithDiagnostic("not-a-decimal", vm.Null, &field, "Account.Amount__c")
+
+	if got.Kind != vm.ValueString || got.Text != "not-a-decimal" {
+		t.Fatalf("value = %#v, want conservative string fallback", got)
+	}
+	if diagnostic == nil {
+		t.Fatal("diagnostic = nil, want conversion diagnostic")
+	}
+	for _, want := range []string{"Account.Amount__c", "DECIMAL", "not-a-decimal"} {
+		if !strings.Contains(diagnostic.Message, want) {
+			t.Fatalf("diagnostic %q missing %q", diagnostic.Message, want)
+		}
 	}
 }
 
@@ -111,6 +155,8 @@ func TestApplyStandardControllerFormValuesUsesRecordValuesAndSchema(t *testing.T
 			"Count__c":    {APIName: "Count__c", Type: storage.FieldInteger},
 			"Amount__c":   {APIName: "Amount__c", Type: storage.FieldDecimal},
 			"CloseDate":   {APIName: "CloseDate", Type: storage.FieldDate},
+			"StartsAt__c": {APIName: "StartsAt__c", Type: storage.FieldDateTime},
+			"Segments__c": {APIName: "Segments__c", Type: storage.FieldMultiPicklist},
 		},
 	}}
 	machine := vm.New(nil)
@@ -120,13 +166,18 @@ func TestApplyStandardControllerFormValuesUsesRecordValuesAndSchema(t *testing.T
 	controller := vm.Object("ApexPages.StandardController")
 	controller.Fields["record"] = record
 
-	applyStandardControllerFormValues(&controller, map[string]string{
+	diagnostics := applyStandardControllerFormValues(&controller, map[string]string{
 		"ExistingFlag__c": "true",
 		"IsActive__c":     "true",
 		"Count__c":        "9",
 		"Amount__c":       "101.25",
 		"CloseDate":       "2026-06-14",
+		"StartsAt__c":     "2026-06-14T09:30",
+		"Segments__c":     "Retail;Services",
 	}, nil, machine)
+	if len(diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v, want none", diagnostics)
+	}
 
 	record = controller.Fields["record"]
 	if got := record.Fields["ExistingFlag__c"]; got.Kind != vm.ValueBool || !got.Bool {
@@ -143,5 +194,11 @@ func TestApplyStandardControllerFormValuesUsesRecordValuesAndSchema(t *testing.T
 	}
 	if got := record.Fields["CloseDate"]; got.Kind != vm.ValueObject || got.Type != "Date" || got.String() != "2026-06-14" {
 		t.Fatalf("CloseDate = %#v, want Date 2026-06-14 from schema", got)
+	}
+	if got := record.Fields["StartsAt__c"]; got.Kind != vm.ValueObject || got.Type != "Datetime" || got.String() != "2026-06-14T09:30" {
+		t.Fatalf("StartsAt__c = %#v, want Datetime 2026-06-14T09:30 from schema", got)
+	}
+	if got := record.Fields["Segments__c"]; got.Kind != vm.ValueString || got.Text != "Retail;Services" {
+		t.Fatalf("Segments__c = %#v, want semicolon storage text from schema", got)
 	}
 }

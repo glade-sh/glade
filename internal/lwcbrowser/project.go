@@ -29,9 +29,10 @@ func PreparePageConfig(p project.Project, cacheRoot string) (PageConfig, compile
 	}
 	ApplyAuraLWCPassthroughAliases(manifest, passthroughs, namespace)
 	cfg := PageConfig{
-		Namespace: namespace,
-		OutApps:   OutAppQualifiedNames(auraIdx.OutApps, namespace),
-		Manifest:  manifest,
+		Namespace:          namespace,
+		OutApps:            OutAppQualifiedNames(auraIdx.OutApps, namespace),
+		OutAppDependencies: OutAppDependencyMap(auraIdx.OutApps, namespace),
+		Manifest:           manifest,
 	}
 	return cfg, compiled, nil
 }

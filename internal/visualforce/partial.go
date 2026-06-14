@@ -77,12 +77,19 @@ func ParseRerenderTargets(raw string) []string {
 
 func findPartialTargetNode(node *nethtml.Node, id string) *nethtml.Node {
 	candidates := partialTargetCandidates(id)
+	if found := findPartialTargetNodeByAttr(node, candidates, "id"); found != nil {
+		return found
+	}
+	return findPartialTargetNodeByAttr(node, candidates, "data-rerender")
+}
+
+func findPartialTargetNodeByAttr(node *nethtml.Node, candidates map[string]bool, attrName string) *nethtml.Node {
 	var walk func(*nethtml.Node) *nethtml.Node
 	walk = func(current *nethtml.Node) *nethtml.Node {
 		if current == nil {
 			return nil
 		}
-		if current.Type == nethtml.ElementNode && partialNodeMatches(current, candidates) {
+		if current.Type == nethtml.ElementNode && partialNodeMatchesAttr(current, candidates, attrName) {
 			return current
 		}
 		for child := current.FirstChild; child != nil; child = child.NextSibling {
@@ -104,8 +111,12 @@ func partialTargetCandidates(id string) map[string]bool {
 }
 
 func partialNodeMatches(node *nethtml.Node, candidates map[string]bool) bool {
+	return partialNodeMatchesAttr(node, candidates, "id") || partialNodeMatchesAttr(node, candidates, "data-rerender")
+}
+
+func partialNodeMatchesAttr(node *nethtml.Node, candidates map[string]bool, attrName string) bool {
 	for _, attr := range node.Attr {
-		if (attr.Key == "id" || attr.Key == "data-rerender") && candidates[attr.Val] {
+		if attr.Key == attrName && candidates[attr.Val] {
 			return true
 		}
 	}

@@ -103,7 +103,7 @@ func TestUnsupportedComponentSpecsUseStableFamilyReasons(t *testing.T) {
 	}{
 		{namespace: "apex", component: "chart", want: "charting runtime"},
 		{namespace: "apex", component: "map", want: "map widget runtime"},
-		{namespace: "apex", component: "panelBar", want: "panel bar widget"},
+		{namespace: "apex", component: "canvasApp", want: "Canvas signed request"},
 		{namespace: "knowledge", component: "articleList", want: "Knowledge service"},
 		{namespace: "liveAgent", component: "clientChat", want: "Live Agent chat service"},
 		{namespace: "messaging", component: "emailTemplate", want: "email template render pipeline"},

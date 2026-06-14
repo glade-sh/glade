@@ -37,3 +37,24 @@ func TestBootstrapHTMLIncludesLocalLWCImportMap(t *testing.T) {
 		t.Fatalf("missing verifiable/landing import map entry:\n%s", html)
 	}
 }
+
+func TestBootstrapHTMLIncludesOutAppDependencies(t *testing.T) {
+	html := BootstrapHTML(PageConfig{
+		Namespace: "c",
+		OutApps:   []string{"c:lightningout"},
+		OutAppDependencies: map[string][]string{
+			"c:lightningout": {"c:apexwirehost", "c:recordwirehost"},
+		},
+		Manifest: Manifest{
+			Modules: map[string]ModuleEntry{
+				"c:apexwirehost": {
+					URL: "/lightning/modules/c/apexWireHost/apexWireHost.js",
+					Tag: "c-apex-wire-host",
+				},
+			},
+		},
+	})
+	if !strings.Contains(html, `"outAppDependencies":{"c:lightningout":["c:apexwirehost","c:recordwirehost"]}`) {
+		t.Fatalf("missing outAppDependencies in bootstrap:\n%s", html)
+	}
+}

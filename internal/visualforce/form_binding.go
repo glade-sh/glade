@@ -15,6 +15,14 @@ type FormBinding struct {
 	Value         string
 }
 
+type FormValueConversionDiagnostic struct {
+	FieldName string
+	FieldType string
+	RawValue  string
+	Reason    string
+	Message   string
+}
+
 func VisualforceFormBindings(values map[string]string) []FormBinding {
 	return VisualforceFormBindingsForFields(values, nil)
 }
@@ -56,6 +64,9 @@ func collectVisualforceFormFieldNames(node *MarkupNode, out map[string]bool) {
 			addVisualforceFormFieldName(out, inputFieldName(node))
 		case "selectlist", "selectcheckboxes", "selectradio":
 			addVisualforceFormFieldName(out, fieldName(node))
+		case "param":
+			addVisualforceFormFieldName(out, node.Attribute("name"))
+			addVisualforceFormFieldName(out, expressionFieldName(node.Attribute("assignTo")))
 		case "inputfile":
 			addVisualforceFormFieldName(out, inputFileUploadFieldName(node))
 			addVisualforceFormFieldName(out, expressionFieldName(node.Attribute("value")))
@@ -79,16 +90,27 @@ func addVisualforceFormFieldName(out map[string]bool, name string) {
 }
 
 func visualforceTypedFormValue(raw string, existing vm.Value, field *storage.Field) vm.Value {
+	value, _ := visualforceTypedFormValueWithDiagnostic(raw, existing, field, "")
+	return value
+}
+
+func visualforceTypedFormValueWithDiagnostic(raw string, existing vm.Value, field *storage.Field, fieldName string) (vm.Value, *FormValueConversionDiagnostic) {
 	if value, ok := visualforceFormValueFromExisting(raw, existing); ok {
-		return value
+		return value, nil
+	}
+	if target := visualforceExistingTargetName(existing); target != "" {
+		return vm.String(raw), visualforceConversionDiagnostic(fieldName, target, raw, "could not convert submitted Visualforce value")
 	}
 	if field == nil {
-		return vm.String(raw)
+		return vm.String(raw), nil
 	}
 	if value, ok := visualforceFormValueFromField(raw, *field); ok {
-		return value
+		return value, nil
 	}
-	return vm.String(raw)
+	if visualforceFieldTargetName(*field) != "" {
+		return vm.String(raw), visualforceConversionDiagnostic(fieldName, visualforceFieldTargetName(*field), raw, "could not convert submitted Visualforce value")
+	}
+	return vm.String(raw), nil
 }
 
 func visualforceFormValueFromExisting(raw string, existing vm.Value) (vm.Value, bool) {
@@ -99,6 +121,10 @@ func visualforceFormValueFromExisting(raw string, existing vm.Value) (vm.Value, 
 		return parseVisualforceFormInt(raw)
 	case vm.ValueDecimal:
 		return parseVisualforceFormDecimal(raw)
+	case vm.ValueList:
+		return parseVisualforceFormStringList(raw)
+	case vm.ValueSet:
+		return parseVisualforceFormStringSet(raw)
 	case vm.ValueObject:
 		switch strings.ToLower(existing.Type) {
 		case "date":
@@ -124,6 +150,8 @@ func visualforceFormValueFromField(raw string, field storage.Field) (vm.Value, b
 		return parseVisualforceFormDate(raw)
 	case storage.FieldDateTime:
 		return parseVisualforceFormDateTime(raw)
+	case storage.FieldMultiPicklist:
+		return parseVisualforceFormMultiPicklist(raw)
 	case storage.FieldID, storage.FieldReference:
 		return vmPlatformScalar("Id", strings.TrimSpace(raw)), true
 	default:
@@ -133,8 +161,13 @@ func visualforceFormValueFromField(raw string, field storage.Field) (vm.Value, b
 
 func parseVisualforceFormBool(raw string) (vm.Value, bool) {
 	text := strings.TrimSpace(raw)
-	if strings.EqualFold(text, "on") {
+	switch {
+	case text == "":
+		return vm.Bool(false), true
+	case strings.EqualFold(text, "on"), strings.EqualFold(text, "checked"), strings.EqualFold(text, "yes"):
 		return vm.Bool(true), true
+	case strings.EqualFold(text, "off"), strings.EqualFold(text, "unchecked"), strings.EqualFold(text, "no"):
+		return vm.Bool(false), true
 	}
 	parsed, err := strconv.ParseBool(text)
 	if err != nil {
@@ -172,10 +205,99 @@ func parseVisualforceFormDate(raw string) (vm.Value, bool) {
 
 func parseVisualforceFormDateTime(raw string) (vm.Value, bool) {
 	text := strings.TrimSpace(raw)
-	for _, layout := range []string{time.RFC3339, "2006-01-02 15:04:05", "2006-01-02T15:04:05.000-0700", "2006-01-02T15:04:05-0700"} {
+	for _, layout := range []string{time.RFC3339, "2006-01-02T15:04", "2006-01-02T15:04:05", "2006-01-02 15:04:05", "2006-01-02T15:04:05.000-0700", "2006-01-02T15:04:05-0700"} {
 		if _, err := time.Parse(layout, text); err == nil {
 			return vmPlatformScalar("Datetime", text), true
 		}
 	}
 	return vm.Null, false
+}
+
+func parseVisualforceFormStringList(raw string) (vm.Value, bool) {
+	values := visualforceSplitMultiValue(raw)
+	out := make([]vm.Value, 0, len(values))
+	for _, value := range values {
+		out = append(out, vm.String(value))
+	}
+	return vm.List(out...), true
+}
+
+func parseVisualforceFormStringSet(raw string) (vm.Value, bool) {
+	values := visualforceSplitMultiValue(raw)
+	out := make([]vm.Value, 0, len(values))
+	for _, value := range values {
+		out = append(out, vm.String(value))
+	}
+	return vm.Set(out...), true
+}
+
+func parseVisualforceFormMultiPicklist(raw string) (vm.Value, bool) {
+	return vm.String(strings.Join(visualforceSplitMultiValue(raw), ";")), true
+}
+
+func visualforceSplitMultiValue(raw string) []string {
+	parts := strings.FieldsFunc(raw, func(r rune) bool {
+		return r == ';'
+	})
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
+}
+
+func visualforceExistingTargetName(existing vm.Value) string {
+	switch existing.Kind {
+	case vm.ValueBool:
+		return "BOOLEAN"
+	case vm.ValueInt:
+		return "INTEGER"
+	case vm.ValueDecimal:
+		return "DECIMAL"
+	case vm.ValueList:
+		return "LIST"
+	case vm.ValueSet:
+		return "SET"
+	case vm.ValueObject:
+		switch strings.ToLower(strings.TrimSpace(existing.Type)) {
+		case "date":
+			return "DATE"
+		case "datetime":
+			return "DATETIME"
+		case "id":
+			return "ID"
+		}
+	}
+	return ""
+}
+
+func visualforceFieldTargetName(field storage.Field) string {
+	switch field.Type {
+	case storage.FieldBoolean, storage.FieldInteger, storage.FieldDecimal, storage.FieldDate, storage.FieldDateTime, storage.FieldMultiPicklist, storage.FieldID, storage.FieldReference:
+		return string(field.Type)
+	default:
+		return ""
+	}
+}
+
+func visualforceConversionDiagnostic(fieldName, fieldType, raw, reason string) *FormValueConversionDiagnostic {
+	fieldName = strings.TrimSpace(fieldName)
+	if fieldName == "" {
+		fieldName = "<unknown>"
+	}
+	fieldType = strings.TrimSpace(fieldType)
+	if fieldType == "" {
+		fieldType = "<unknown>"
+	}
+	message := "Visualforce form value " + strconv.Quote(raw) + " for " + fieldName + " could not be converted to " + fieldType + ": " + reason
+	return &FormValueConversionDiagnostic{
+		FieldName: fieldName,
+		FieldType: fieldType,
+		RawValue:  raw,
+		Reason:    reason,
+		Message:   message,
+	}
 }

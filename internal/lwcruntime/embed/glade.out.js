@@ -13,8 +13,36 @@ function readConfig() {
 }
 const config = readConfig();
 const modules = config.manifest && config.manifest.modules || {};
+let activeOutApp = "";
 function normalizeQualified(name) {
   return String(name || "").trim().toLowerCase();
+}
+function hasNamespace(name) {
+  return normalizeQualified(name).includes(":");
+}
+function isLightningService(name) {
+  return normalizeQualified(name).startsWith("lightning:");
+}
+function outAppDependencies(app) {
+  const deps = config.outAppDependencies || {};
+  const values = deps[normalizeQualified(app)];
+  if (!Array.isArray(values)) {
+    return null;
+  }
+  return values.map(normalizeQualified);
+}
+function validateComponentRequest(qualified) {
+  if (!hasNamespace(qualified)) {
+    return "Bad Lightning component name: " + qualified;
+  }
+  if (isLightningService(qualified)) {
+    return "Unsupported Lightning service: " + qualified;
+  }
+  const deps = outAppDependencies(activeOutApp);
+  if (deps && !deps.includes(normalizeQualified(qualified))) {
+    return "Lightning dependency not found: " + qualified;
+  }
+  return "";
 }
 function resolveHost(locator) {
   if (!locator) {
@@ -39,13 +67,22 @@ function applyPublicProperties(el, attrs) {
   }
 }
 async function mountComponent(qualified, attrs, locator) {
+  const diagnostic = validateComponentRequest(qualified);
+  if (diagnostic) {
+    throw new Error(diagnostic);
+  }
   const key = normalizeQualified(qualified);
   const entry = modules[key];
   if (!entry) {
     console.warn("[glade] unknown LWC component", qualified);
     return null;
   }
-  const mod = await import(entry.url);
+  let mod;
+  try {
+    mod = await import(entry.url);
+  } catch (err) {
+    throw new Error("Lightning LWC module not found: " + qualified, { cause: err });
+  }
   const Ctor = mod.default;
   if (typeof Ctor !== "function") {
     console.warn("[glade] LWC module missing default export", qualified);
@@ -74,6 +111,7 @@ window.$Lightning = {
       callback(null, "ERROR", "Lightning Out app not found: " + app);
       return;
     }
+    activeOutApp = outApp;
     callback();
   },
   createComponent(qualified, attrs, locator, callback) {
@@ -89,7 +127,7 @@ window.$Lightning = {
     }).catch((err) => {
       console.error("[glade] createComponent failed", err);
       if (typeof callback === "function") {
-        callback(null, "ERROR", String(err));
+        callback(null, "ERROR", err && err.message ? err.message : String(err));
       }
     });
   }

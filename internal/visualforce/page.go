@@ -109,8 +109,8 @@ func RenderPage(req PageRenderRequest) (PageRenderResult, error) {
 	}
 	allowedFormFields := VisualforceFormFieldNames(tree)
 	if len(req.FormValues) > 0 {
-		applyFormValues(controller, req.FormValues, allowedFormFields)
-		applyStandardControllerFormValues(&stdController, req.FormValues, allowedFormFields, machine)
+		savedPageMessages = mergePageMessages(savedPageMessages, applyFormValues(controller, req.FormValues, allowedFormFields))
+		savedPageMessages = mergePageMessages(savedPageMessages, applyStandardControllerFormValues(&stdController, req.FormValues, allowedFormFields, machine))
 	}
 	actionParams := visualforceActionParams(req.FormValues, allowedFormFields)
 	machine.SetVisualforceActionInvoker(func(actionExpr string, actionPageURL string) (vm.Value, error) {
@@ -214,10 +214,10 @@ func RenderPage(req PageRenderRequest) (PageRenderResult, error) {
 		Version:          CurrentViewStateVersion,
 		PageName:         req.PageName,
 		ControllerType:   pageMeta.Controller,
-		ControllerValues: valueFieldsToViewStateValues(controller),
-		ControllerFields: valueFieldsToStrings(controller),
-		ExtensionValues:  extensionFieldsToViewStateValues(extensions),
-		ExtensionFields:  extensionFieldsToStrings(extensions),
+		ControllerValues: valueFieldsToViewStateValues(machine, pageMeta.Controller, controller),
+		ControllerFields: valueFieldsToStrings(machine, pageMeta.Controller, controller),
+		ExtensionValues:  extensionFieldsToViewStateValues(machine, pageMeta.Extensions, extensions),
+		ExtensionFields:  extensionFieldsToStrings(machine, pageMeta.Extensions, extensions),
 		ComponentState:   map[string]string{},
 		PageMessages:     mergePageMessages(savedPageMessages, currentPageMessages),
 	}
@@ -702,30 +702,43 @@ func standardControllerRecord(machine *vm.VM, objectName string) vm.Value {
 	return record
 }
 
-func applyFormValues(controller vm.Value, values map[string]string, allowedFields map[string]bool) {
+func applyFormValues(controller vm.Value, values map[string]string, allowedFields map[string]bool) []string {
 	if controller.Kind != vm.ValueObject {
-		return
+		return nil
 	}
+	var diagnostics []string
 	for _, binding := range VisualforceFormBindingsForFields(values, allowedFields) {
-		controller.Fields[binding.FieldName] = visualforceTypedFormValue(binding.Value, controller.Fields[binding.FieldName], nil)
+		value, diagnostic := visualforceTypedFormValueWithDiagnostic(binding.Value, controller.Fields[binding.FieldName], nil, binding.FieldName)
+		controller.Fields[binding.FieldName] = value
+		if diagnostic != nil {
+			diagnostics = append(diagnostics, diagnostic.Message)
+		}
 	}
+	return diagnostics
 }
 
-func applyStandardControllerFormValues(controller *vm.Value, values map[string]string, allowedFields map[string]bool, machine *vm.VM) {
+func applyStandardControllerFormValues(controller *vm.Value, values map[string]string, allowedFields map[string]bool, machine *vm.VM) []string {
 	if controller == nil || controller.Kind != vm.ValueObject || len(values) == 0 {
-		return
+		return nil
 	}
 	record, ok := controller.Fields["record"]
 	if !ok || record.Kind != vm.ValueObject {
-		return
+		return nil
 	}
 	if record.Fields == nil {
 		record.Fields = make(map[string]vm.Value)
 	}
+	var diagnostics []string
 	for _, binding := range VisualforceFormBindingsForFields(values, allowedFields) {
-		record.Fields[binding.FieldName] = visualforceTypedFormValue(binding.Value, record.Fields[binding.FieldName], visualforceFormFieldSchema(machine, record, binding.FieldName))
+		field := visualforceFormFieldSchema(machine, record, binding.FieldName)
+		value, diagnostic := visualforceTypedFormValueWithDiagnostic(binding.Value, record.Fields[binding.FieldName], field, binding.FieldName)
+		record.Fields[binding.FieldName] = value
+		if diagnostic != nil {
+			diagnostics = append(diagnostics, diagnostic.Message)
+		}
 	}
 	controller.Fields["record"] = record
+	return diagnostics
 }
 
 func visualforceFormFieldSchema(machine *vm.VM, record vm.Value, fieldName string) *storage.Field {
@@ -893,12 +906,15 @@ func restoreViewStateValue(value vm.Value) vm.Value {
 	}
 }
 
-func valueFieldsToStrings(value vm.Value) map[string]string {
+func valueFieldsToStrings(machine *vm.VM, className string, value vm.Value) map[string]string {
 	out := make(map[string]string)
 	if value.Kind != vm.ValueObject {
 		return out
 	}
 	for key, field := range value.Fields {
+		if visualforceFieldIsTransient(machine, className, key) {
+			continue
+		}
 		if field.Kind == vm.ValueString {
 			out[key] = field.Text
 		} else if field.Kind != vm.ValueNull {
@@ -908,12 +924,15 @@ func valueFieldsToStrings(value vm.Value) map[string]string {
 	return out
 }
 
-func valueFieldsToViewStateValues(value vm.Value) map[string]vm.Value {
+func valueFieldsToViewStateValues(machine *vm.VM, className string, value vm.Value) map[string]vm.Value {
 	out := make(map[string]vm.Value)
 	if value.Kind != vm.ValueObject {
 		return out
 	}
 	for key, field := range value.Fields {
+		if visualforceFieldIsTransient(machine, className, key) {
+			continue
+		}
 		if field.Kind == vm.ValueNull {
 			continue
 		}
@@ -922,26 +941,52 @@ func valueFieldsToViewStateValues(value vm.Value) map[string]vm.Value {
 	return out
 }
 
-func extensionFieldsToStrings(values []vm.Value) []map[string]string {
+func extensionFieldsToStrings(machine *vm.VM, classNames []string, values []vm.Value) []map[string]string {
 	if len(values) == 0 {
 		return nil
 	}
 	out := make([]map[string]string, len(values))
 	for i, value := range values {
-		out[i] = valueFieldsToStrings(value)
+		out[i] = valueFieldsToStrings(machine, viewStateClassName(classNames, i, value), value)
 	}
 	return out
 }
 
-func extensionFieldsToViewStateValues(values []vm.Value) []map[string]vm.Value {
+func extensionFieldsToViewStateValues(machine *vm.VM, classNames []string, values []vm.Value) []map[string]vm.Value {
 	if len(values) == 0 {
 		return nil
 	}
 	out := make([]map[string]vm.Value, 0, len(values))
-	for _, value := range values {
-		out = append(out, valueFieldsToViewStateValues(value))
+	for i, value := range values {
+		out = append(out, valueFieldsToViewStateValues(machine, viewStateClassName(classNames, i, value), value))
 	}
 	return out
+}
+
+func viewStateClassName(classNames []string, index int, value vm.Value) string {
+	if index >= 0 && index < len(classNames) && strings.TrimSpace(classNames[index]) != "" {
+		return classNames[index]
+	}
+	return value.Type
+}
+
+func visualforceFieldIsTransient(machine *vm.VM, className string, fieldName string) bool {
+	class, ok := visualforceVMClass(machine, className)
+	if !ok {
+		return false
+	}
+	for key, field := range class.Fields {
+		if !strings.EqualFold(key, fieldName) && !strings.EqualFold(field.Name, fieldName) {
+			continue
+		}
+		for _, modifier := range field.Modifiers {
+			if strings.EqualFold(modifier, "transient") {
+				return true
+			}
+		}
+		return false
+	}
+	return false
 }
 
 func pageMessagesToStrings(machine *vm.VM) []string {

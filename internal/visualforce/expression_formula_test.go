@@ -1,11 +1,253 @@
 package visualforce
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/vm"
 )
+
+func TestVisualforceExpressionParserCoversPhase3Grammar(t *testing.T) {
+	cases := []struct {
+		name string
+		expr string
+		want string
+	}{
+		{name: "property chain", expr: "account.Owner.Name", want: "Ada"},
+		{name: "method call", expr: "controller.greeting()", want: "howdy"},
+		{name: "bracket then property", expr: "accounts[0].Name", want: "Acme"},
+		{name: "string literal", expr: "'Trail Head'", want: "Trail Head"},
+		{name: "numeric literal", expr: "7.5 + 2", want: "9.5"},
+		{name: "boolean literal", expr: "true", want: "true"},
+		{name: "null literal", expr: "NULL", want: ""},
+		{name: "unary not", expr: "!false", want: "true"},
+		{name: "arithmetic precedence", expr: "2 + 3 * 4", want: "14"},
+		{name: "comparison", expr: "5 >= 3", want: "true"},
+		{name: "and", expr: "true && false", want: "false"},
+		{name: "or", expr: "false || true", want: "true"},
+		{name: "nested function call", expr: "IF(ISBLANK(blank), UPPER('yes'), 'no')", want: "YES"},
+	}
+
+	controller := vm.Object("ParserController")
+	controller.Fields["greeting"] = vm.String("howdy")
+	account := vm.Object("Account")
+	owner := vm.Object("User")
+	owner.Fields["Name"] = vm.String("Ada")
+	account.Fields["Owner"] = owner
+	account.Fields["Name"] = vm.String("Acme")
+	ctx := &ExpressionContext{
+		Controller: controller,
+		Variables: map[string]vm.Value{
+			"account":    account,
+			"accounts":   vm.List(account),
+			"blank":      vm.String(""),
+			"controller": controller,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := parseExpression(tc.expr); err != nil {
+				t.Fatalf("parseExpression(%q): %v", tc.expr, err)
+			}
+			got, err := EvaluateExpression(tc.expr, ctx)
+			if err != nil {
+				t.Fatalf("EvaluateExpression(%q): %v", tc.expr, err)
+			}
+			if got != tc.want {
+				t.Fatalf("%s = %q, want %q", tc.expr, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestEvaluateVisualforceExpressionIndexesObjectsAndNulls(t *testing.T) {
+	account := vm.Object("Account")
+	account.Fields["Name"] = vm.String("Acme")
+	account.Fields["Rating"] = vm.String("Hot")
+	ctx := &ExpressionContext{
+		Variables: map[string]vm.Value{
+			"rows":     vm.List(vm.String("first"), vm.String("second")),
+			"byName":   vm.NewStringMapValue(map[string]string{"target": "mapped"}),
+			"accounts": vm.List(account),
+			"account":  account,
+			"nothing":  vm.Null,
+		},
+	}
+
+	cases := []struct {
+		expr string
+		want string
+	}{
+		{"rows[1]", "second"},
+		{"byName['target']", "mapped"},
+		{"account.Name", "Acme"},
+		{"accounts[0].Rating", "Hot"},
+		{"nothing.Name", ""},
+		{"rows[99]", ""},
+		{"byName['missing']", ""},
+	}
+	for _, tc := range cases {
+		got, err := EvaluateExpression(tc.expr, ctx)
+		if err != nil {
+			t.Fatalf("%s: %v", tc.expr, err)
+		}
+		if got != tc.want {
+			t.Fatalf("%s = %q, want %q", tc.expr, got, tc.want)
+		}
+	}
+}
+
+func TestEvaluateVisualforceExpressionCallsControllerMethod(t *testing.T) {
+	program, err := vm.CompileAnonymous(`return 'saved';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := vm.New(nil)
+	if err := machine.RegisterClass(vm.Class{
+		Name: "EditController",
+		Methods: map[string]vm.Method{
+			"status": {
+				Name:       "EditController.status",
+				ClassName:  "EditController",
+				ReturnType: "String",
+				Program:    program,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := EvaluateExpression("this.status()", &ExpressionContext{
+		VM:         machine,
+		Controller: vm.Object("EditController"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "saved" {
+		t.Fatalf("controller method = %q", got)
+	}
+}
+
+func TestEvaluateVisualforceExpressionWritesBackStandardControllerMethod(t *testing.T) {
+	machine := vm.New(nil)
+	controller := standardSetControllerForExpressionTest(1)
+	receiver := detachedExpressionReceiver(controller)
+	ctx := &ExpressionContext{
+		VM:                 machine,
+		StandardController: controller,
+		Variables: map[string]vm.Value{
+			"pager": receiver,
+		},
+	}
+
+	if _, err := EvaluateExpression("pager.next()", ctx); err != nil {
+		t.Fatal(err)
+	}
+	if got := ctx.StandardController.Fields["pageNumber"]; got.Kind != vm.ValueInt || got.Int != 2 {
+		t.Fatalf("standard controller pageNumber = %#v, want 2", got)
+	}
+}
+
+func TestEvaluateVisualforceExpressionWritesBackMatchingExtensionMethod(t *testing.T) {
+	machine := vm.New(nil)
+	first := standardSetControllerForExpressionTest(1)
+	target := standardSetControllerForExpressionTest(1)
+	receiver := detachedExpressionReceiver(target)
+	ctx := &ExpressionContext{
+		VM:         machine,
+		Extensions: []vm.Value{first, target},
+		Variables: map[string]vm.Value{
+			"target": receiver,
+		},
+	}
+
+	if _, err := EvaluateExpression("target.next()", ctx); err != nil {
+		t.Fatal(err)
+	}
+	if got := ctx.Extensions[0].Fields["pageNumber"]; got.Kind != vm.ValueInt || got.Int != 1 {
+		t.Fatalf("unmatched extension pageNumber = %#v, want 1", got)
+	}
+	if got := ctx.Extensions[1].Fields["pageNumber"]; got.Kind != vm.ValueInt || got.Int != 2 {
+		t.Fatalf("matched extension pageNumber = %#v, want 2", got)
+	}
+}
+
+func standardSetControllerForExpressionTest(pageNumber int64) vm.Value {
+	controller := vm.Object("ApexPages.StandardSetController")
+	controller.Fields["records"] = vm.List(vm.Object("Account"), vm.Object("Account"), vm.Object("Account"))
+	controller.Fields["selected"] = vm.List()
+	controller.Fields["pageSize"] = vm.Int(1)
+	controller.Fields["pageNumber"] = vm.Int(pageNumber)
+	return controller
+}
+
+func detachedExpressionReceiver(value vm.Value) vm.Value {
+	out := value
+	out.Fields = make(map[string]vm.Value, len(value.Fields))
+	for key, field := range value.Fields {
+		out.Fields[key] = field
+	}
+	return out
+}
+
+func TestEvaluateVisualforceURLFOR(t *testing.T) {
+	cases := []struct {
+		expr string
+		want string
+	}{
+		{"URLFOR('/apex/Edit')", "/apex/Edit"},
+		{"URLFOR($Resource.Bundle, 'img/logo.png')", "/resource/Bundle/img/logo.png"},
+		{"URLFOR($CurrentPage, null, byName)", "/apex/Search?term=Trail+Head"},
+	}
+	machine := vm.New(nil)
+	machine.SetCurrentPageURL("/apex/Search")
+	for _, tc := range cases {
+		ctx := &ExpressionContext{
+			VM: machine,
+			Variables: map[string]vm.Value{
+				"byName": vm.NewStringMapValue(map[string]string{"term": "Trail Head"}),
+			},
+		}
+		got, err := EvaluateExpression(tc.expr, ctx)
+		if err != nil {
+			t.Fatalf("%s: %v", tc.expr, err)
+		}
+		if got != tc.want {
+			t.Fatalf("%s = %q, want %q", tc.expr, got, tc.want)
+		}
+	}
+}
+
+func TestEvaluateVisualforceUnsupportedGlobalDiagnostic(t *testing.T) {
+	_, err := EvaluateExpression("$Action.Widget.save", &ExpressionContext{VM: vm.New(nil)})
+	if err == nil {
+		t.Fatal("EvaluateExpression succeeded, want unsupported global diagnostic")
+	}
+	if !strings.Contains(err.Error(), "$Action") || !strings.Contains(err.Error(), "unsupported Visualforce global") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestEvaluateVisualforceRemoteActionToken(t *testing.T) {
+	ctx := &ExpressionContext{VM: vm.New(nil)}
+	got, err := EvaluateExpression("$RemoteAction.RemoteController.inspect", ctx)
+	if err != nil {
+		t.Fatalf("EvaluateExpression err = %v", err)
+	}
+	if got != "{!$RemoteAction.RemoteController.inspect}" {
+		t.Fatalf("remote action token = %q", got)
+	}
+	rendered, err := RenderExpressionTemplate(`Visualforce.remoting.Manager.invokeAction('{!$RemoteAction.RemoteController.inspect}', callback)`, ctx)
+	if err != nil {
+		t.Fatalf("RenderExpressionTemplate err = %v", err)
+	}
+	if !strings.Contains(rendered, `'{!$RemoteAction.RemoteController.inspect}'`) {
+		t.Fatalf("rendered remote action = %q", rendered)
+	}
+}
 
 func TestEvaluateVisualforceExpressionOperatorsAndGlobals(t *testing.T) {
 	machine := vm.New(nil)

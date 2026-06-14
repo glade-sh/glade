@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 func TestParseAjaxPayloadIdentifiesActionTargetsAndSubmittedFields(t *testing.T) {
@@ -40,6 +42,12 @@ func TestVisualforceAjaxScriptPostsMarkersAndRefreshesViewState(t *testing.T) {
 	script := VisualforceAjaxScript()
 	for _, want := range []string{
 		"window.GLADEVF.submit",
+		"options=options||{}",
+		"appendControls(data,options.region)",
+		"setStatus(options.status,true)",
+		"setStatus(options.status,false)",
+		"appendParams(data,options.params)",
+		"window.location.assign(p.redirect)",
 		`data.set("__vf_ajax","1")`,
 		`data.set("__vf_rerender",targets||"")`,
 		"p.messages",
@@ -53,9 +61,38 @@ func TestVisualforceAjaxScriptPostsMarkersAndRefreshesViewState(t *testing.T) {
 	}
 }
 
+func TestVisualforceAjaxScriptClearsStatusBeforeRedirect(t *testing.T) {
+	script := VisualforceAjaxScript()
+	redirectIndex := strings.Index(script, "window.location.assign(p.redirect)")
+	clearIndex := strings.Index(script, "setStatus(options.status,false);window.location.assign(p.redirect)")
+	if redirectIndex == -1 {
+		t.Fatalf("script missing redirect assignment: %s", script)
+	}
+	if clearIndex == -1 {
+		t.Fatalf("script should clear actionStatus before redirect: %s", script)
+	}
+}
+
+func TestVisualforceAjaxFunctionCallIncludesAssignToParam(t *testing.T) {
+	call := VisualforceAjaxFunctionCall("{!save}", "out", "", []VisualforceAjaxParam{{Name: "delta", AssignTo: "deltaValue"}})
+	for _, want := range []string{"name:'delta'", "assignTo:'deltaValue'", "value:delta"} {
+		if !strings.Contains(call, want) {
+			t.Fatalf("call missing %q: %s", want, call)
+		}
+	}
+}
+
 func TestRenderPartialTargetsFindsScopedRerenderID(t *testing.T) {
 	targets := RenderPartialTargets(`<html><body><form id="f"><div id="count" data-rerender="count"><span>1</span></div></form></body></html>`, []string{"f:count"})
 	if got := targets["f:count"]; !strings.Contains(got, `id="count"`) || !strings.Contains(got, ">1<") {
+		t.Fatalf("target = %q", got)
+	}
+}
+
+func TestRenderPartialTargetsPrefersElementIDOverRerenderMetadata(t *testing.T) {
+	html := `<html><body><script data-rerender="count"></script><div id="count" data-rerender="count"><span>5</span></div></body></html>`
+	targets := RenderPartialTargets(html, []string{"count"})
+	if got := targets["count"]; !strings.Contains(got, `<div id="count"`) || !strings.Contains(got, ">5<") {
 		t.Fatalf("target = %q", got)
 	}
 }
@@ -124,6 +161,76 @@ func TestRenderAjaxActionFunctionFindsPageForm(t *testing.T) {
 	}
 	if strings.Contains(rendered, "this.form") {
 		t.Fatalf("actionFunction should not depend on this.form: %s", rendered)
+	}
+}
+
+func TestRenderAjaxActionFunctionSubmitsNamedParamsAndStatus(t *testing.T) {
+	rendered := renderAjaxMarkupForTest(t, `<apex:page><apex:form>
+		<apex:actionFunction name="refreshCount" action="{!increment}" reRender="count" status="saveStatus">
+			<apex:param name="delta"/>
+			<apex:param name="mode" value="fast"/>
+		</apex:actionFunction>
+	</apex:form></apex:page>`)
+	for _, want := range []string{
+		"function refreshCount(delta,mode)",
+		"window.GLADEVF.submit",
+		"{!increment}",
+		"count",
+		"status:'saveStatus'",
+		"{name:'delta',value:delta}",
+		"{name:'mode',value:(mode!==undefined?mode:'fast')}",
+	} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("rendered missing %q: %s", want, rendered)
+		}
+	}
+}
+
+func TestRenderAjaxActionFunctionEvaluatesParamDefaultValue(t *testing.T) {
+	tree, err := ParseMarkupTree(`<apex:page><apex:form>
+		<apex:actionFunction name="refreshCount" action="{!increment}" reRender="count">
+			<apex:param name="delta" value="{!count}"/>
+		</apex:actionFunction>
+	</apex:form></apex:page>`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rendered, err := RenderMarkupTree(tree, &RenderContext{
+		PageName: "Ajax",
+		Expression: &ExpressionContext{Variables: map[string]vm.Value{
+			"count": vm.Int(7),
+		}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"function refreshCount(delta)", "{name:'delta',value:(delta!==undefined?delta:'7')}"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("rendered missing %q: %s", want, rendered)
+		}
+	}
+	if strings.Contains(rendered, "{!count}") {
+		t.Fatalf("rendered leaked raw expression: %s", rendered)
+	}
+}
+
+func TestRenderAjaxCommandButtonPassesActionStatusAndNearestRegion(t *testing.T) {
+	rendered := renderAjaxMarkupForTest(t, `<apex:page><apex:form>
+		<apex:actionRegion id="editor">
+			<apex:inputText id="inside" value="{!inside}"/>
+			<apex:commandButton value="Save" action="{!save}" reRender="count" status="saveStatus"/>
+		</apex:actionRegion>
+		<apex:actionStatus id="saveStatus" startText="Saving" stopText="Saved"/>
+	</apex:form></apex:page>`)
+	for _, want := range []string{
+		`data-vf-region="editor"`,
+		"closest(&#39;[data-vf-region]&#39;)",
+		"status:&#39;saveStatus&#39;",
+		"window.GLADEVF.submit",
+	} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("rendered missing %q: %s", want, rendered)
+		}
 	}
 }
 

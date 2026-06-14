@@ -77,6 +77,135 @@ func TestHandleVisualforceAjaxPartialRefresh(t *testing.T) {
 	}
 }
 
+func TestHandleVisualforceGetRendersActionFunctionParamsStatusAndRegionHooks(t *testing.T) {
+	srv := newVisualforceFixtureServer(t, "Ajax.page", `<apex:page controller="AjaxController">
+<apex:form id="f">
+  <apex:actionFunction name="refreshCount" action="{!increment}" reRender="count" status="saveStatus">
+    <apex:param name="delta"/>
+  </apex:actionFunction>
+  <apex:actionRegion id="editor">
+    <apex:inputText id="inside" value="{!inside}"/>
+    <apex:commandButton value="Save" action="{!increment}" reRender="count" status="saveStatus"/>
+  </apex:actionRegion>
+  <apex:actionStatus id="saveStatus" startText="Saving" stopText="Saved"/>
+  <apex:outputPanel id="count"><apex:outputText value="{!count}"/></apex:outputPanel>
+</apex:form>
+</apex:page>`, `public class AjaxController {
+  public String inside { get; set; }
+  public String getCount() { return '0'; }
+  public PageReference increment() { return null; }
+}`)
+
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/apex/Ajax", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	for _, want := range []string{
+		"function refreshCount(delta)",
+		"{name:'delta',value:delta}",
+		"status:'saveStatus'",
+		"closest(&#39;[data-vf-region]&#39;)",
+		`data-vf-region="editor"`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("body missing %q: %s", want, body)
+		}
+	}
+}
+
+func TestHandleVisualforceAjaxActionFunctionParamsReachControllerAction(t *testing.T) {
+	srv := newVisualforceFixtureServer(t, "Ajax.page", `<apex:page controller="AjaxController">
+<apex:form id="f">
+  <apex:actionFunction name="refreshCount" action="{!increment}" reRender="count">
+    <apex:param name="delta" assignTo="{!deltaValue}"/>
+  </apex:actionFunction>
+  <apex:outputPanel id="count"><apex:outputText value="{!count}"/></apex:outputPanel>
+</apex:form>
+</apex:page>`, `public class AjaxController {
+  public static String latest = '0';
+  public String deltaValue { get; set; }
+  public String getCount() { return AjaxController.latest; }
+  public PageReference increment() {
+    AjaxController.latest = deltaValue + ':' + ApexPages.currentPage().getParameters().get('delta');
+    return null;
+  }
+}`)
+
+	first := httptest.NewRecorder()
+	srv.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/apex/Ajax", nil))
+	if first.Code != http.StatusOK {
+		t.Fatalf("initial status = %d body=%s", first.Code, first.Body.String())
+	}
+
+	form := url.Values{}
+	form.Set(visualforce.ViewStateFormFieldName(), extractHTMLInput(first.Body.String(), visualforce.ViewStateFormFieldName()))
+	form.Set("__vf_csrf", extractHTMLInput(first.Body.String(), "__vf_csrf"))
+	form.Set(visualforce.ViewStateActionFieldName(), "{!increment}")
+	form.Set("__vf_ajax", "1")
+	form.Set("__vf_rerender", "f:count")
+	form.Set("delta", "5")
+	form.Set("deltaValue", "5")
+	req := httptest.NewRequest(http.MethodPost, "/apex/Ajax", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var payload visualforce.PartialResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("partial response json: %v body=%s", err, rec.Body.String())
+	}
+	if got := payload.Targets["f:count"]; !strings.Contains(got, ">5:5<") {
+		t.Fatalf("target html = %s", got)
+	}
+}
+
+func TestHandleVisualforceAjaxResponseCarriesRedirect(t *testing.T) {
+	srv := newVisualforceFixtureServer(t, "Ajax.page", `<apex:page controller="AjaxController">
+<apex:form id="f">
+  <apex:commandButton value="Save" action="{!save}" reRender="f"/>
+</apex:form>
+</apex:page>`, `public class AjaxController {
+  public PageReference save() {
+    PageReference next = new PageReference('/apex/Done');
+    next.setRedirect(true);
+    return next;
+  }
+}`)
+
+	first := httptest.NewRecorder()
+	srv.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/apex/Ajax", nil))
+	if first.Code != http.StatusOK {
+		t.Fatalf("initial status = %d body=%s", first.Code, first.Body.String())
+	}
+
+	form := url.Values{}
+	form.Set(visualforce.ViewStateFormFieldName(), extractHTMLInput(first.Body.String(), visualforce.ViewStateFormFieldName()))
+	form.Set("__vf_csrf", extractHTMLInput(first.Body.String(), "__vf_csrf"))
+	form.Set(visualforce.ViewStateActionFieldName(), "{!save}")
+	form.Set("__vf_ajax", "1")
+	form.Set("__vf_rerender", "f")
+	req := httptest.NewRequest(http.MethodPost, "/apex/Ajax", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var payload visualforce.PartialResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("partial response json: %v body=%s", err, rec.Body.String())
+	}
+	if payload.Redirect != "/apex/Done" {
+		t.Fatalf("redirect = %q payload=%#v", payload.Redirect, payload)
+	}
+}
+
 func TestHandleVisualforcePostRequiresViewState(t *testing.T) {
 	srv := newVisualforceFixtureServer(t, "Ajax.page", `<apex:page controller="AjaxController">
 <apex:form><apex:commandButton value="Inc" action="{!increment}"/></apex:form>
@@ -98,6 +227,61 @@ func TestHandleVisualforcePostRequiresViewState(t *testing.T) {
 	}
 }
 
+func TestHandleVisualforcePostRejectsMissingCSRF(t *testing.T) {
+	srv := newVisualforceFixtureServer(t, "Ajax.page", `<apex:page controller="AjaxController">
+<apex:form><apex:commandButton value="Inc" action="{!increment}"/></apex:form>
+</apex:page>`, `public class AjaxController {
+  public PageReference increment() { return null; }
+}`)
+	first := httptest.NewRecorder()
+	srv.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/apex/Ajax", nil))
+	if first.Code != http.StatusOK {
+		t.Fatalf("initial status = %d body=%s", first.Code, first.Body.String())
+	}
+	form := url.Values{}
+	form.Set(visualforce.ViewStateFormFieldName(), extractHTMLInput(first.Body.String(), visualforce.ViewStateFormFieldName()))
+	form.Set(visualforce.ViewStateActionFieldName(), "{!increment}")
+	req := httptest.NewRequest(http.MethodPost, "/apex/Ajax", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotImplemented {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "view state csrf mismatch") {
+		t.Fatalf("body = %s", rec.Body.String())
+	}
+}
+
+func TestHandleVisualforcePostRejectsWrongCSRF(t *testing.T) {
+	srv := newVisualforceFixtureServer(t, "Ajax.page", `<apex:page controller="AjaxController">
+<apex:form><apex:commandButton value="Inc" action="{!increment}"/></apex:form>
+</apex:page>`, `public class AjaxController {
+  public PageReference increment() { return null; }
+}`)
+	first := httptest.NewRecorder()
+	srv.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/apex/Ajax", nil))
+	if first.Code != http.StatusOK {
+		t.Fatalf("initial status = %d body=%s", first.Code, first.Body.String())
+	}
+	form := url.Values{}
+	form.Set(visualforce.ViewStateFormFieldName(), extractHTMLInput(first.Body.String(), visualforce.ViewStateFormFieldName()))
+	form.Set("__vf_csrf", "wrong-token")
+	form.Set(visualforce.ViewStateActionFieldName(), "{!increment}")
+	req := httptest.NewRequest(http.MethodPost, "/apex/Ajax", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotImplemented {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "view state csrf mismatch") {
+		t.Fatalf("body = %s", rec.Body.String())
+	}
+}
+
 func TestVisualforceGetInjectsCSRFIntoEveryForm(t *testing.T) {
 	srv := newVisualforceFixtureServer(t, "Ajax.page", `<apex:page controller="AjaxController">
 <apex:form id="a"></apex:form>
@@ -114,6 +298,25 @@ func TestVisualforceGetInjectsCSRFIntoEveryForm(t *testing.T) {
 	}
 	if got := strings.Count(rec.Body.String(), `name="`+visualforce.ViewStateFormFieldName()+`"`); got != 2 {
 		t.Fatalf("view state fields = %d body=%s", got, rec.Body.String())
+	}
+}
+
+func TestLatestVisualforceFormValuesPreservesRepeatedFieldValues(t *testing.T) {
+	values := latestFormValues(map[string][]string{
+		"choices":                              {"A", "B"},
+		"flag":                                 {"false", "true"},
+		visualforce.ViewStateActionFieldName(): {"old", "{!save}"},
+		visualforce.ViewStateFormFieldName():   {"old-state", "new-state"},
+		"__vf_csrf":                            {"old-token", "new-token"},
+	})
+	if values["choices"] != "A;B" {
+		t.Fatalf("choices = %q", values["choices"])
+	}
+	if values["flag"] != "true" {
+		t.Fatalf("flag = %q", values["flag"])
+	}
+	if values[visualforce.ViewStateActionFieldName()] != "{!save}" || values[visualforce.ViewStateFormFieldName()] != "new-state" || values["__vf_csrf"] != "new-token" {
+		t.Fatalf("control values = %#v", values)
 	}
 }
 
