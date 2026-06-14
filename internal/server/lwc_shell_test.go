@@ -289,7 +289,7 @@ func TestResolveLWCShellRequestRendersFlexiPageTabUsingTargetPageType(t *testing
 	if shell.Context.Kind != lwcshell.RenderTargetTab || shell.Context.TabName != "Lwc_Probe" {
 		t.Fatalf("context = %#v", shell.Context)
 	}
-	if shell.Page.Type != "HomePage" {
+	if shell.Page.Type != "AppPage" {
 		t.Fatalf("page type = %q", shell.Page.Type)
 	}
 	ref := lwcShellPageReference(shell)

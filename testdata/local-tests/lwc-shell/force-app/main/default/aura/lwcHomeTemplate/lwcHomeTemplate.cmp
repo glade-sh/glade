@@ -1,0 +1,4 @@
+<aura:component implements="lightning:homeTemplate" description="Glade LWC shell home page template">
+    <aura:attribute name="main" type="Aura.Component[]" />
+    <div>{!v.main}</div>
+</aura:component>

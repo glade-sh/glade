@@ -48,11 +48,20 @@ done
 
 need_text "force-app/main/default/flexipages/Account_Record_Page.flexipage-meta.xml" "contextProbe"
 need_text "force-app/main/default/flexipages/Account_Record_Page.flexipage-meta.xml" "recordProbe"
+need_text "force-app/main/default/flexipages/Account_Record_Page.flexipage-meta.xml" "itemInstances"
 need_text "force-app/main/default/flexipages/Sales_Dashboard.flexipage-meta.xml" "wireProbe"
+need_text "force-app/main/default/flexipages/Sales_Dashboard.flexipage-meta.xml" "contextProbe"
 need_text "force-app/main/default/flexipages/Custom_Home.flexipage-meta.xml" "contextProbe"
+need_text "force-app/main/default/flexipages/Custom_Home.flexipage-meta.xml" "c:lwcHomeTemplate"
+
+need_file "force-app/main/default/aura/lwcHomeTemplate/lwcHomeTemplate.cmp"
+need_file "force-app/main/default/aura/lwcHomeTemplate/lwcHomeTemplate.cmp-meta.xml"
+need_file "force-app/main/default/aura/lwcHomeTemplate/lwcHomeTemplate.design"
+need_text "force-app/main/default/aura/lwcHomeTemplate/lwcHomeTemplate.cmp" "lightning:homeTemplate"
 
 need_file "force-app/main/default/tabs/Lwc_Probe.tab-meta.xml"
 need_text "force-app/main/default/tabs/Lwc_Probe.tab-meta.xml" "<label>LWC Probe</label>"
+need_text "force-app/main/default/tabs/Lwc_Probe.tab-meta.xml" "<flexiPage>Sales_Dashboard</flexiPage>"
 
 need_file "force-app/main/default/labels/CustomLabels.labels"
 need_file "force-app/main/default/staticresources/LwcProbeAssets.resource"
