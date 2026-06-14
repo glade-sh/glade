@@ -32,6 +32,60 @@ output and `--junit reports/glade-junit.xml` for CI reports.
 `glade doctor` must report `Ready.`. If the parser is unavailable, install a C
 compiler and rebuild or reinstall a parser-capable release artifact.
 
+## Run LWCs Locally
+
+Install the local LWC toolchain first:
+
+```bash
+glade toolchain install
+```
+
+Start the LWC dev shell from a Salesforce-shaped project:
+
+```bash
+glade dev lwc --project . --addr 127.0.0.1:8080
+```
+
+The startup output lists component, record page, app page, home page, and tab
+routes discovered from LWC bundle metadata, FlexiPages, and custom tabs:
+
+```text
+LWC dev shell: http://127.0.0.1:8080
+Routes:
+  /lwc/preview/component/c/contextProbe
+  /lwc/preview/record/Account/<recordId>?page=Account_Record_Page
+  /lwc/preview/app/Sales_Dashboard
+  /lwc/preview/home/Custom_Home
+  /lwc/preview/tab/Lwc_Probe
+  /lwc/preview/tab/Visualforce_Tab -> /apex/WidgetHost
+Watching ... for lwc, flexipage, tab, Visualforce, Apex, and static resource changes.
+```
+
+Route shapes:
+
+```text
+/lwc/preview/component/<namespace>/<component>
+/lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>
+/lwc/preview/app/<Page>
+/lwc/preview/home/<Page>
+/lwc/preview/tab/<Tab>
+```
+
+Visualforce-backed tabs redirect to `/apex/<Page>`. Visualforce pages that use
+`<apex:includeLightning/>`, `$Lightning.use()`, and
+`$Lightning.createComponent()` share the same local LWC runtime, Apex wire
+endpoint, LDS/UI API shims, labels, resources, and navigation basics as the LWC
+shell.
+
+The shell supports `CurrentPageReference`, basic `NavigationMixin` URL and
+navigation behavior for local targets, Apex wire and imperative controller
+imports, `getRecord`, `getObjectInfo`, schema tokens, custom labels, static
+resources, content assets, user values, and checked i18n values. Local org data
+comes from project schema plus Glade storage fixtures in `data/*.json`.
+
+Read [LWC_LOCAL_SHELL.md](LWC_LOCAL_SHELL.md) for route details and current
+limits. Read [LWC_SUPPORT.md](LWC_SUPPORT.md) for the support table.
+
 ## Run Visualforce Pages Locally
 
 Start the Visualforce dev server from a Salesforce-shaped project:

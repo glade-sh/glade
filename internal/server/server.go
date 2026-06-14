@@ -193,6 +193,10 @@ func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request) {
 		s.handleLightning(w, r, parts[1:])
 		return
 	}
+	if len(parts) >= 1 && parts[0] == "lwc" {
+		s.handleLWCShell(w, r, parts[1:])
+		return
+	}
 	if len(parts) >= 1 && parts[0] == "resource" {
 		s.handleStaticResource(w, r, parts[1:])
 		return

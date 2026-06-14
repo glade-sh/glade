@@ -20,6 +20,9 @@ func RepoRoot() (string, error) {
 
 // Root returns the active LWC toolchain root (typically ~/.local/share/glade).
 func Root() (string, error) {
+	if root, ok := explicitToolchainRoot(); ok {
+		return root, nil
+	}
 	if root, ok := userShareRoot(); ok {
 		return root, nil
 	}
@@ -34,6 +37,9 @@ func Root() (string, error) {
 // EnsureRoot returns the user-global toolchain directory, installing from a discovered
 // source checkout when needed.
 func EnsureRoot() (string, error) {
+	if root, ok := explicitToolchainRoot(); ok {
+		return root, nil
+	}
 	if root, ok := userShareRoot(); ok {
 		return root, nil
 	}
@@ -49,6 +55,19 @@ func EnsureRoot() (string, error) {
 		return "", fmt.Errorf("installed glade toolchain is incomplete at %s", UserShareDir())
 	}
 	return root, nil
+}
+
+func explicitToolchainRoot() (string, bool) {
+	for _, value := range []string{os.Getenv("GLADE_HOME"), os.Getenv("GLADE_ROOT")} {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			continue
+		}
+		if root, ok := validateRoot(value); ok {
+			return root, true
+		}
+	}
+	return "", false
 }
 
 // LWCToolchainDir is the directory passed to the Node compile script (third_party/lwc).

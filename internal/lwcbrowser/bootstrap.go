@@ -13,6 +13,7 @@ type PageConfig struct {
 	OutApps            []string
 	OutAppDependencies map[string][]string
 	Manifest           Manifest
+	PageReference      any
 }
 
 type pageConfigJSON struct {
@@ -20,6 +21,7 @@ type pageConfigJSON struct {
 	OutApps            []string            `json:"outApps,omitempty"`
 	OutAppDependencies map[string][]string `json:"outAppDependencies,omitempty"`
 	Manifest           manifestJSON        `json:"manifest"`
+	PageReference      any                 `json:"pageReference,omitempty"`
 }
 
 type manifestJSON struct {
@@ -36,6 +38,7 @@ func BootstrapHTML(cfg PageConfig) string {
 		Namespace:          cfg.Namespace,
 		OutApps:            append([]string(nil), cfg.OutApps...),
 		OutAppDependencies: copyStringSliceMap(cfg.OutAppDependencies),
+		PageReference:      cfg.PageReference,
 		Manifest: manifestJSON{
 			Modules: make(map[string]moduleJSON, len(cfg.Manifest.Modules)),
 		},

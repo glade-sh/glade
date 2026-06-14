@@ -404,6 +404,10 @@ func printHelpTopic(w io.Writer, args []string) {
 			printDevVFHelp(w)
 			return
 		}
+		if len(args) >= 2 && args[1] == "lwc" {
+			printDevLWCHelp(w)
+			return
+		}
 		_ = cliui.WriteCommandHelp(w, args)
 	default:
 		_ = cliui.WriteCommandHelp(w, args)

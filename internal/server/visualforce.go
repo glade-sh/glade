@@ -649,6 +649,7 @@ func (s *Server) renderVisualforceResult(pageURL string, parts []string, viewSta
 	if cfg, ok, err := s.lightningBootstrapConfigLocked(); err != nil {
 		lightningUnavailable = true
 	} else if ok {
+		cfg.PageReference = visualforcePageReference(pageName, req.PageURL)
 		req.LightningBootstrap = cfg
 	}
 	result, err := visualforce.RenderPage(req)
@@ -683,6 +684,18 @@ func injectLocalLightningUnavailableNotice(htmlText string) string {
 		return htmlText[:insertAt] + notice + htmlText[insertAt:]
 	}
 	return notice + htmlText
+}
+
+func visualforcePageReference(pageName, pageURL string) map[string]any {
+	return map[string]any{
+		"type": "standard__webPage",
+		"attributes": map[string]any{
+			"url": pageURL,
+		},
+		"state": map[string]string{
+			"pageName": pageName,
+		},
+	}
 }
 
 func localLightningUnavailableNotice() string {

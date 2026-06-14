@@ -1,6 +1,6 @@
 # Phase 1: Metadata And Target Model Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan with parallel subagent squads. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Parse LWC config, FlexiPage metadata, and custom tab metadata into a typed model that the shell can resolve.
 
@@ -26,7 +26,9 @@ After this phase, Glade can answer: “Which LWC can render on which page, with 
 - Modify: `internal/lwc/meta.go`
 - Test data: `testdata/local-tests/lwc-shell`
 
-## Parallel Squads
+## Parallel Subagent Squads
+
+Use parallel subagent squads where files do not overlap. The coordinator integrates one patch at a time.
 
 - LWC meta squad owns `component_meta.go` and `internal/lwc/meta.go`.
 - FlexiPage squad owns `flexipage.go`.
@@ -77,6 +79,11 @@ type PageContext struct {
 ```bash
 go test ./internal/lwc ./internal/lwcshell ./internal/project ./internal/metadata -count=1
 ```
+
+## Cross-Host Gate
+
+- Metadata target parsing must distinguish Lightning shell targets from Visualforce Lightning Out usage.
+- Visualforce-hosted components still use LWC bundle metadata, but they do not require App Builder targets unless Salesforce requires them for that use case.
 
 ```bash
 go test ./internal/lwcshell -run 'Meta|FlexiPage|Resolve|Tab' -count=1

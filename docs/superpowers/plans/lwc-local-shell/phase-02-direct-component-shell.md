@@ -1,8 +1,8 @@
 # Phase 2: Direct Component Shell Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan with parallel subagent squads. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add `glade dev lwc --component` for isolated local LWC preview with hot reload, shell context, property injection, and browser-testable routes.
+**Goal:** Add `glade dev lwc` for isolated local LWC preview with hot reload, shell context, route-discovered previews, and browser-testable routes.
 
 **Architecture:** Product server gets `/lwc/preview/component/<namespace>/<name>`. The route uses `lwcshell` target resolution, `lwcbrowser` compile manifest, and a small shell HTML template that boots the component inside Salesforce-like chrome.
 
@@ -12,7 +12,7 @@
 
 ## Feature Delivered
 
-Developers can preview a single LWC without Visualforce and without deploying to Salesforce.
+Developers can preview a single LWC without needing Visualforce and without deploying to Salesforce. The new direct shell must not break the existing Visualforce Lightning Out host.
 
 ## Files
 
@@ -26,47 +26,45 @@ Developers can preview a single LWC without Visualforce and without deploying to
 - Modify: `lwcruntime/src/glade.out.mjs`
 - Test data: `testdata/local-tests/lwc-shell`
 
-## Parallel Squads
+## Parallel Subagent Squads
+
+Use parallel subagent squads where files do not overlap. The coordinator integrates one patch at a time.
 
 - CLI squad owns `dev_lwc_command.go` and help text.
 - Server squad owns route handling and shell HTML.
 - Runtime squad owns bootstrap config and component mount.
+- Visualforce host squad owns regression tests that prove `$Lightning.use()` and `$Lightning.createComponent()` still mount LWCs under `/apex/<PageName>`.
 - Watch squad owns reload behavior.
 - Review squad runs server tests and browser smoke.
 
 ## Implementation Steps
 
-- [ ] Add `glade dev lwc` under `runDev` with flags:
+- [ ] Add `glade dev lwc` under `runDev` with server flags:
 
 ```text
 --project <root>
---component <namespace/name|c/name>
---record-id <id>
---object <apiName>
---property <name=value>
---form-factor <Large|Small>
 --port <port>
 --addr <host:port>
---open
+--ready-file <path>
 ```
 
 - [ ] Keep `glade dev vf` untouched except shared helpers that already exist.
 - [ ] Add startup output:
 
 ```text
-LWC dev server: http://127.0.0.1:8080
-Component:
+LWC dev shell: http://127.0.0.1:8080
+Routes:
   /lwc/preview/component/c/contextProbe
-Watching <root> for lwc, classes, labels, schema, static resources, flexipages, tabs, and apps.
+Watching <root> for lwc, flexipage, tab, Visualforce, Apex, and static resource changes.
 ```
 
 - [ ] Add `Server.HandleLWCShell` with route parsing and method checks. Unknown routes must return Glade JSON error, not a blank page.
-- [ ] Add `LWCShellPageConfig` sent to the browser. It must include namespace, component tag, public properties, `PageContext`, import map, manifest, and diagnostics.
+- [ ] Add shell context sent to the browser. It must include namespace, component tag, route-derived public properties, `PageContext`, import map, manifest, and diagnostics.
 - [ ] Update browser bootstrap so it can mount a component by tag without `$Lightning.createComponent`.
-- [ ] Inject `recordId` and `objectApiName` as public properties when flags are present.
+- [ ] Inject `recordId` and `objectApiName` as public properties when query parameters or page context are present.
 - [ ] Add a right-side dev context panel only in local shell pages. It shows target, page type, record id, object, form factor, and diagnostics.
 - [ ] Hot reload must rebuild source metadata, reset Lightning cache, and report the count of changed files. Do not restart the process.
-- [ ] `--open` uses the local URL after the server is listening.
+- [ ] `--ready-file` writes the bound URL and discovered routes for scripts.
 
 ## Verification
 
@@ -79,7 +77,11 @@ go test ./internal/lwcruntime -count=1
 ```
 
 ```bash
-go run ./cmd/glade dev lwc --project testdata/local-tests/lwc-shell --component c/contextProbe --record-id 001000000000001AAA --object Account --port 18080
+(cd lwcruntime && npm run build && node --test test/visualforce-dev-server.test.mjs)
+```
+
+```bash
+go run ./cmd/glade dev lwc --project testdata/local-tests/lwc-shell --port 18080
 ```
 
 Browser smoke path:
@@ -93,4 +95,5 @@ http://127.0.0.1:18080/lwc/preview/component/c/contextProbe
 - Direct component route renders a custom LWC.
 - Public properties and context are visible to the component.
 - Navigation is still allowed to be unsupported here, but it must fail with `GLADELWC` diagnostics and a visible context panel entry.
-- File changes under `lwc`, `classes`, `labels`, `objects`, and `staticresources` reload the preview.
+- File changes under `lwc`, FlexiPages, tabs, Visualforce, Apex, and static resources reload the preview.
+- Existing Visualforce Lightning Out fixture pages still render LWCs through `/apex/<PageName>`.

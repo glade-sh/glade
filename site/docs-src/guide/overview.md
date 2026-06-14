@@ -52,6 +52,7 @@ glade test changed --project . --since origin/main
 - You want to run supported Apex tests without logging into an org.
 - You want local SOQL, DML, trigger, SObject, and limit feedback.
 - You want to render supported Visualforce pages locally through `/apex/<PageName>`.
+- You want to render LWCs locally through `/lwc/preview/*` routes or Visualforce Lightning Out.
 - You want a Salesforce-shaped local API for development loops.
 - You want local assessment, cruft review, or refactor-proof reports for a large Apex project.
 - You want deterministic local harnesses for supported platform helper rows instead of live hosted service calls.
@@ -60,6 +61,7 @@ glade test changed --project . --since origin/main
 
 - You need live auth, sessions, identity, or org-hosted process engines.
 - You need exact Salesforce-hosted Visualforce chrome, lifecycle timing, or byte-for-byte PDF output.
+- You need exact Salesforce-hosted Lightning Experience chrome, console navigation, permissions, full UI API, or every base component edge.
 - You need Bulk API beyond simple scalar local query whole-result CSV, Streaming, Pub/Sub, GraphQL, metadata deploy/retrieve jobs, or Tooling objects beyond the checked local source/schema metadata baseline.
 - You need exact production governor accounting.
 

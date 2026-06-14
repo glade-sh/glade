@@ -77,6 +77,7 @@ export default defineConfig({
         items: [
           { text: 'Check source', link: '/guide/quickstart#3-check-source' },
           { text: 'Run tests', link: '/guide/local-testing' },
+          { text: 'Local LWC shell', link: '/guide/lwc-local-shell' },
           { text: 'Affected tests', link: '/guide/affected-tests' },
           { text: 'Local API server', link: '/guide/local-api-server' },
           { text: 'CI', link: '/guide/ci-artifacts' },

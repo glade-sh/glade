@@ -1,8 +1,8 @@
 # Phase 8: Browser Tests, Support Ledger, And Docs Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan with parallel subagent squads. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Certify chosen LWC shell features with browser tests, scratch-org captures, generated support ledgers, and user docs.
+**Goal:** Certify chosen LWC features in both Lightning shell and Visualforce Lightning Out hosts with browser tests, the current fixture-manifest oracle input, future scratch-org browser captures, generated support ledgers, and user docs.
 
 **Architecture:** Product tests prove local behavior. `glade-tools` compares local and scratch evidence. Public docs list supported, partial, unsupported, and Salesforce-only behavior without exposing maintenance internals in base `glade --help`.
 
@@ -12,7 +12,7 @@
 
 ## Feature Delivered
 
-Users get a trustworthy support map and command docs. Agents get a phase-by-phase gate before claiming parity.
+Users get a trustworthy support map and command docs. Agents get a phase-by-phase gate before claiming parity, split by host. Today the LWC compat command prepares fixture-manifest targets; browser/org capture and ledger generation are later work in this phase.
 
 ## Files
 
@@ -26,12 +26,15 @@ Users get a trustworthy support map and command docs. Agents get a phase-by-phas
 - Modify in `glade-tools`: `internal/toolcli/compat_command.go`
 - Generated output target: `docs/generated/LWC_SHELL_SUPPORT.md`
 
-## Parallel Squads
+## Parallel Subagent Squads
+
+Use parallel subagent squads where files do not overlap. The coordinator integrates one patch at a time.
 
 - Browser test squad owns end-to-end local rendering cases.
 - Ledger squad owns support status and capture comparison.
 - Docs squad owns product docs.
 - CLI docs squad owns help text and examples.
+- Visualforce host squad owns `/apex/<PageName>` Lightning Out documentation, tests, and support rows.
 - Review squad runs all phase gates selected for certification.
 
 ## Implementation Steps
@@ -42,6 +45,8 @@ Users get a trustworthy support map and command docs. Agents get a phase-by-phas
   - `unsupported`
   - `salesforce-only`
 - [ ] Add feature IDs:
+  - `lwc.host.lightning-shell`
+  - `lwc.host.visualforce-lightning-out`
   - `lwc.shell.direct-component`
   - `lwc.shell.record-page`
   - `lwc.shell.app-page`
@@ -57,29 +62,37 @@ Users get a trustworthy support map and command docs. Agents get a phase-by-phas
   - `lwc.services.message-service`
   - `lwc.services.modal`
   - `lwc.actions.quick-action`
-- [ ] Add product command:
+- [ ] Every support row must include a host coverage field with one of:
+  - `lightning-shell`
+  - `visualforce-lightning-out`
+  - `both`
+  - `salesforce-only`
+- [ ] Add future product command:
 
 ```bash
+# future:
 glade report lwc-shell --project . --json
 ```
 
 It reads local support state and project usage. It does not call scratch orgs.
 
-- [ ] Add `glade-tools` command:
+- [ ] Add future `glade-tools` ledger command:
 
 ```bash
+# future:
 glade compat lwc ledger --captures /tmp/glade-lwc-capture.json --output docs/generated/LWC_SHELL_SUPPORT.md
 ```
 
-- [ ] Add checked-mode command:
+- [ ] Add future checked-mode command:
 
 ```bash
+# future:
 glade compat lwc ledger --captures /tmp/glade-lwc-capture.json --check docs/generated/LWC_SHELL_SUPPORT.md
 ```
 
-- [ ] Add Playwright browser cases for every feature marked `supported`.
+- [ ] Add Playwright browser cases for every feature marked `supported` in each host.
 - [ ] Add console-error gate: supported routes must produce zero unexpected browser console errors.
-- [ ] Add docs with examples for direct component, record page, app page, home page, tab, record data, Apex controllers, hot reload, and scratch comparison.
+- [ ] Add docs with examples for direct component, record page, app page, home page, tab, Visualforce Lightning Out page, record data, Apex controllers, hot reload, and scratch comparison.
 - [ ] Add public docs note that exact Lightning Experience private internals are not the goal; public contracts and local dev behavior are the goal.
 
 ## Verification
@@ -97,12 +110,14 @@ go test ./internal/lwcshell ./internal/gladecli ./internal/server ./internal/lwc
 ```
 
 ```bash
+# future:
 (cd ../glade-tools && go run ./cmd/glade-plugin-compat lwc ledger --captures /tmp/glade-lwc-capture.json --output ../glade/docs/generated/LWC_SHELL_SUPPORT.md)
 ```
 
 ## Done Gate
 
-- Every `supported` feature has a local browser or Go test and, where needed, scratch capture evidence.
+- Every `supported` feature has a local browser or Go test and, where needed, fixture-manifest or later scratch browser-capture evidence.
+- Every `supported` feature names host coverage. Shared runtime features must have evidence for both `lwc.host.lightning-shell` and `lwc.host.visualforce-lightning-out`.
 - Docs name the commands and known boundaries.
 - Checked generated support output passes.
 - Base `glade --help` remains product-focused and does not expose maintenance-only compat commands.

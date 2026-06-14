@@ -105,6 +105,43 @@ Print the next likely loop commands without running tests:
 glade test --project . --wizard
 ```
 
+## LWC dev shell
+
+Install the local LWC toolchain first:
+
+```bash
+glade toolchain install
+```
+
+Serve local LWCs from the project on disk:
+
+```bash
+glade dev lwc --project . --addr 127.0.0.1:8080
+```
+
+The startup banner lists discovered routes:
+
+```text
+/lwc/preview/component/<namespace>/<component>
+/lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>
+/lwc/preview/app/<Page>
+/lwc/preview/home/<Page>
+/lwc/preview/tab/<Tab>
+```
+
+Record, app, home, and tab routes resolve LWC bundle metadata, FlexiPages, and
+custom tabs. Visualforce-backed tabs redirect to `/apex/<Page>`. Lightning Out
+inside Visualforce uses the same local LWC runtime, Apex wire endpoint, LDS/UI
+API shims, labels, resources, and navigation basics.
+
+The shell supports local Apex controller imports, `getRecord`, `getObjectInfo`,
+schema tokens, labels, static resources, content assets,
+`CurrentPageReference`, and basic `NavigationMixin` behavior. Glade loads
+fixture records from `data/*.json` when they use the Glade storage fixture
+format.
+
+See [Local LWC Shell](/guide/lwc-local-shell) for routes, fixtures, and limits.
+
 ## Visualforce dev server
 
 Serve local Visualforce pages from the project on disk:
