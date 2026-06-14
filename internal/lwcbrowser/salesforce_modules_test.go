@@ -44,10 +44,18 @@ func TestSalesforceImportMapIncludesPhase8Shims(t *testing.T) {
 		"lightning/platformShowToastEvent",
 		"lightning/platformResourceLoader",
 		"lightning/messageService",
+		"lightning/",
 	} {
 		if imports[specifier] == "" {
 			t.Fatalf("missing import map entry for %s in %#v", specifier, imports)
 		}
+	}
+}
+
+func TestLightningBaseComponentModuleJSExportsNoopComponent(t *testing.T) {
+	js := LightningBaseComponentModuleJS("combobox")
+	if !containsAll(js, "LightningElement", "registerTemplate", "registerComponent", "lightning-combobox", "export default") {
+		t.Fatalf("js = %q", js)
 	}
 }
 

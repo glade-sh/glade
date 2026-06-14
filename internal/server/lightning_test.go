@@ -512,6 +512,22 @@ func TestLightningNavigationShimServesLocalPageReferenceSupport(t *testing.T) {
 	}
 }
 
+func TestLightningBaseComponentShimServesNoopComponent(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/shims/lightning/combobox", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	for _, want := range []string{"LightningElement", "registerComponent", "lightning-combobox", "export default"} {
+		if !strings.Contains(rec.Body.String(), want) {
+			t.Fatalf("missing %q in body = %q", want, rec.Body.String())
+		}
+	}
+}
+
 func TestLightningWireApexReturnsData(t *testing.T) {
 	root := lightningFixtureRoot(t)
 	fixture := filepath.Join(root, "testdata", "local-tests", "lightning-out-vf")

@@ -377,6 +377,90 @@ export default class ContextProbe extends LightningElement {}`)
 	}
 }
 
+func TestLWCShellKeepsAuraAndPlatformComponentsAsPlaceholders(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "sfdx-project.json", `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"NU","sourceApiVersion":"61.0"}`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <isExposed>true</isExposed>
+	  <targets><target>lightning__AppPage</target></targets>
+	</LightningComponentBundle>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js", `import { LightningElement } from 'lwc';
+export default class ContextProbe extends LightningElement {}`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.html", `<template><p>context</p></template>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/aura/BusinessEventManager/BusinessEventManager.cmp", `<aura:component/>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/flexipages/BusinessEvents.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <type>AppPage</type>
+	  <flexiPageRegions>
+	    <name>main</name>
+	    <itemInstances><componentInstance><componentName>BusinessEventManager</componentName></componentInstance></itemInstances>
+	    <itemInstances><componentInstance><componentName>flexipage:richText</componentName></componentInstance></itemInstances>
+	    <itemInstances><componentInstance><componentName>contextProbe</componentName></componentInstance></itemInstances>
+	  </flexiPageRegions>
+	</FlexiPage>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, source)
+
+	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/app/BusinessEvents", nil), []string{"app", "BusinessEvents"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", diagnostics)
+	}
+	if len(shell.Regions) != 1 || len(shell.Regions[0].Components) != 3 {
+		t.Fatalf("regions = %#v", shell.Regions)
+	}
+	if got := shell.Regions[0].Components[0]; got.Kind != "aura" || !strings.Contains(got.UnsupportedReason, "Aura") {
+		t.Fatalf("aura placeholder = %#v", got)
+	}
+	if got := shell.Regions[0].Components[1]; got.Kind != "platform" || !strings.Contains(got.UnsupportedReason, "Salesforce") {
+		t.Fatalf("platform placeholder = %#v", got)
+	}
+	if got := shell.Regions[0].Components[2]; got.ComponentName != "NU:contextProbe" || got.Kind != "" {
+		t.Fatalf("lwc component = %#v", got)
+	}
+	if mounts := lwcShellMounts(shell); len(mounts) != 1 || mounts[0].Qualified != "NU:contextProbe" {
+		t.Fatalf("mounts = %#v", mounts)
+	}
+	body := renderLWCShellHTML(lwcbrowser.PageConfig{}, shell)
+	for _, want := range []string{"glade-placeholder", "NU:BusinessEventManager", "flexipage:richText", "NU:contextProbe"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("missing %q in:\n%s", want, body)
+		}
+	}
+	if strings.Contains(body, "GLADELWC005") {
+		t.Fatalf("placeholder page leaked missing-component diagnostic:\n%s", body)
+	}
+}
+
+func TestLWCShellPlaceholderOnlyPageRendersEmptyMountList(t *testing.T) {
+	shell := lwcshell.ShellPage{
+		Context: lwcshell.PageContext{Kind: lwcshell.RenderTargetAppPage, PageName: "BusinessEvents"},
+		Regions: []lwcshell.PageRegion{{
+			Name: "main",
+			Components: []lwcshell.PageComponent{{
+				ComponentName:     "NU:BusinessEventManager",
+				Kind:              "aura",
+				UnsupportedReason: "Aura component is shown as a local placeholder in LWC preview.",
+			}},
+		}},
+	}
+	if mounts := lwcShellMounts(shell); len(mounts) != 0 {
+		t.Fatalf("mounts = %#v", mounts)
+	}
+	body := renderLWCShellHTML(lwcbrowser.PageConfig{}, shell)
+	if !strings.Contains(body, `var mounts=[]`) {
+		t.Fatalf("mount script did not render an empty list:\n%s", body)
+	}
+}
+
 func TestLWCShellComponentRouteServesHTML(t *testing.T) {
 	if _, err := os.Stat(filepath.Join("..", "..", "third_party", "lwc", "node_modules")); err != nil {
 		t.Skip("npm install required in third_party/lwc")

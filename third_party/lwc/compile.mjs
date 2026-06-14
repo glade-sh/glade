@@ -50,8 +50,11 @@ function compileBundle(bundleDir, bundleName, namespace, outDir) {
   const jsPath = path.join(bundleDir, `${bundleName}.js`);
   const htmlPath = path.join(bundleDir, `${bundleName}.html`);
   const cssPath = path.join(bundleDir, `${bundleName}.css`);
-  if (!fs.existsSync(jsPath) || !fs.existsSync(htmlPath)) {
+  if (!fs.existsSync(jsPath)) {
     return null;
+  }
+  if (!fs.existsSync(htmlPath)) {
+    return compileUtilityModule(bundleDir, bundleName, namespace, outDir);
   }
 
   const moduleKey = `${namespace}/${bundleName}`;
@@ -96,7 +99,8 @@ function compileBundle(bundleDir, bundleName, namespace, outDir) {
 
   const entryFile = path.join(bundleOut, `${bundleName}.js`);
   writeCompiled(entryFile, jsCode);
-  compileSiblingModules(bundleDir, bundleName, namespace, bundleOut);
+  compileSiblingModules(bundleDir, bundleName, bundleOut);
+  compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut);
 
   return {
     qualified: `${namespace}:${bundleName}`,
@@ -106,28 +110,108 @@ function compileBundle(bundleDir, bundleName, namespace, outDir) {
   };
 }
 
-function compileSiblingModules(bundleDir, bundleName, namespace, bundleOut) {
-  for (const entry of fs.readdirSync(bundleDir)) {
-    if (!entry.endsWith(".js")) {
-      continue;
+function compileUtilityModule(bundleDir, bundleName, namespace, outDir) {
+  const jsPath = path.join(bundleDir, `${bundleName}.js`);
+  const moduleKey = `${namespace}/${bundleName}`;
+  const bundleOut = path.join(outDir, moduleKey);
+  fs.mkdirSync(bundleOut, { recursive: true });
+
+  const entryFile = path.join(bundleOut, `${bundleName}.js`);
+  writeCompiled(entryFile, fs.readFileSync(jsPath, "utf8"));
+  compileSiblingModules(bundleDir, bundleName, bundleOut);
+  compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut);
+
+  return {
+    qualified: `${namespace}:${bundleName}`,
+    moduleKey,
+    file: entryFile,
+    tag: "",
+  };
+}
+
+function compileSiblingModules(bundleDir, bundleName, bundleOut) {
+  walkBundleFiles(bundleDir, (sourcePath) => {
+    const rel = path.relative(bundleDir, sourcePath);
+    if (!rel.endsWith(".js")) {
+      return;
     }
-    if (entry === `${bundleName}.js`) {
-      continue;
+    if (rel === `${bundleName}.js`) {
+      return;
     }
-    const jsPath = path.join(bundleDir, entry);
-    if (!fs.statSync(jsPath).isFile()) {
-      continue;
+    const jsSource = fs.readFileSync(sourcePath, "utf8");
+    writeCompiled(path.join(bundleOut, rel), jsSource);
+  });
+}
+
+function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bundleOut) {
+  walkBundleFiles(bundleDir, (sourcePath) => {
+    const rel = path.relative(bundleDir, sourcePath);
+    if (rel === `${bundleName}.html`) {
+      return;
     }
-    const siblingName = entry.slice(0, -3);
-    const jsSource = fs.readFileSync(jsPath, "utf8");
-    const jsResult = transformSync(jsSource, jsPath, {
+    if (!rel.endsWith(".html")) {
+      return;
+    }
+    const templateName = path.basename(rel, ".html");
+    const htmlSource = fs.readFileSync(sourcePath, "utf8");
+    const htmlResult = transformSync(htmlSource, sourcePath, {
       namespace,
-      name: siblingName,
+      name: templateName,
     });
     writeCompiled(
-      path.join(bundleOut, entry),
-      rewriteStylesheetImports(jsResult.code, siblingName)
+      path.join(bundleOut, `${rel}.js`),
+      rewriteTemplateRelativeImports(htmlResult.code)
     );
+
+    const cssPath = sourcePath.slice(0, -".html".length) + ".css";
+    if (fs.existsSync(cssPath)) {
+      compileCSSModule(cssPath, templateName, namespace, bundleDir, bundleOut);
+    } else {
+      writeCompiled(
+        path.join(bundleOut, `${path.relative(bundleDir, cssPath)}.js`),
+        "export default '';\n"
+      );
+    }
+    const scopedCSSPath = sourcePath.slice(0, -".html".length) + ".scoped.css";
+    writeCompiled(
+      path.join(bundleOut, `${path.relative(bundleDir, scopedCSSPath)}.js`),
+      "export default '';\n"
+    );
+  });
+}
+
+function compileCSSModule(cssPath, name, namespace, bundleDir, bundleOut) {
+  const cssSource = fs.readFileSync(cssPath, "utf8");
+  const cssResult = transformSync(cssSource, cssPath, {
+    namespace,
+    name,
+  });
+  const rel = path.relative(bundleDir, cssPath);
+  writeCompiled(path.join(bundleOut, `${rel}.js`), cssResult.code);
+}
+
+function rewriteTemplateRelativeImports(code) {
+  return code
+    .replace(
+      /from "(\.\/[^"]+\.scoped\.css)\?scoped=true"/g,
+      'from "$1.js"'
+    )
+    .replace(/from "(\.\/[^"]+\.(?:html|css))"/g, 'from "$1.js"');
+}
+
+function walkBundleFiles(dir, visit) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const entryPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === "__tests__") {
+        continue;
+      }
+      walkBundleFiles(entryPath, visit);
+      continue;
+    }
+    if (entry.isFile()) {
+      visit(entryPath);
+    }
   }
 }
 
@@ -139,11 +223,20 @@ async function main() {
   const modules = {};
 
   const lwcRoots = new Set();
-  for (const rel of config.lwcFiles || []) {
-    lwcRoots.add(path.dirname(path.join(projectRoot, rel)));
+  for (const rel of config.lwcMetaFiles || []) {
+    const metaPath = path.join(projectRoot, rel);
+    const base = path.basename(metaPath);
+    if (base.endsWith(".js-meta.xml")) {
+      lwcRoots.add(path.dirname(metaPath));
+    }
   }
-  for (const rel of config.lwcHtmlFiles || []) {
-    lwcRoots.add(path.dirname(path.join(projectRoot, rel)));
+  if (lwcRoots.size === 0) {
+    for (const rel of config.lwcFiles || []) {
+      lwcRoots.add(path.dirname(path.join(projectRoot, rel)));
+    }
+    for (const rel of config.lwcHtmlFiles || []) {
+      lwcRoots.add(path.dirname(path.join(projectRoot, rel)));
+    }
   }
 
   fs.mkdirSync(outDir, { recursive: true });

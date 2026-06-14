@@ -52,9 +52,11 @@ type PageRegion struct {
 }
 
 type PageComponent struct {
-	ComponentName string            `json:"componentName"`
-	Identifier    string            `json:"identifier,omitempty"`
-	Properties    map[string]string `json:"properties,omitempty"`
+	ComponentName     string            `json:"componentName"`
+	Identifier        string            `json:"identifier,omitempty"`
+	Properties        map[string]string `json:"properties,omitempty"`
+	Kind              string            `json:"kind,omitempty"`
+	UnsupportedReason string            `json:"unsupportedReason,omitempty"`
 }
 
 type TabType string

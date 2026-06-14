@@ -65,18 +65,23 @@ func (s *Server) serveLightningAPIShim(w http.ResponseWriter, parts []string) {
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning shim")
 		return
 	}
-	switch parts[0] {
-	case "uiRecordApi.js":
+	token := strings.TrimSuffix(strings.TrimSpace(parts[0]), ".js")
+	switch token {
+	case "uiRecordApi":
 		writeJavaScript(w, []byte(lwcbrowser.UIRecordAPIModuleJS()))
-	case "navigation.js":
+	case "navigation":
 		writeJavaScript(w, []byte(lwcbrowser.NavigationModuleJS()))
-	case "platformShowToastEvent.js":
+	case "platformShowToastEvent":
 		writeJavaScript(w, []byte(lwcbrowser.ShowToastEventModuleJS()))
-	case "platformResourceLoader.js":
+	case "platformResourceLoader":
 		writeJavaScript(w, []byte(lwcbrowser.PlatformResourceLoaderModuleJS()))
-	case "messageService.js":
+	case "messageService":
 		writeJavaScript(w, []byte(lwcbrowser.MessageServiceModuleJS()))
 	default:
+		if lwcbrowser.IsLightningBaseComponentModule(token) {
+			writeJavaScript(w, []byte(lwcbrowser.LightningBaseComponentModuleJS(token)))
+			return
+		}
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning shim")
 	}
 }

@@ -481,6 +481,51 @@ func TestDiscoverLWCBundleFiles(t *testing.T) {
 	}
 }
 
+func TestDiscoverLWCUtilityFilesInNestedPackageDirectory(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{
+  "packageDirectories": [
+    {"path":"sfdx-source/nu","default":true},
+    {"path":"sfdx-source/unpackaged"}
+  ],
+  "namespace": "NU"
+}`)
+	utilityDir := filepath.Join(root, "sfdx-source/nu/main/component-library/lwc/bUtils")
+	writeFile(t, filepath.Join(utilityDir, "bUtils.js"), `export { classSet } from './classSet';`)
+	writeFile(t, filepath.Join(utilityDir, "classSet.js"), `export function classSet(value) { return value; }`)
+	writeFile(t, filepath.Join(utilityDir, "bUtils.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><isExposed>false</isExposed></LightningComponentBundle>`)
+	componentDir := filepath.Join(root, "sfdx-source/unpackaged/lwc/recipePaymentForm")
+	writeFile(t, filepath.Join(componentDir, "recipePaymentForm.js"), `import { LightningElement } from 'lwc'; export default class RecipePaymentForm extends LightningElement {}`)
+	writeFile(t, filepath.Join(componentDir, "recipePaymentForm.html"), `<template></template>`)
+
+	p, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !projectTestHasSuffix(p.LWCFiles, "bUtils/bUtils.js") {
+		t.Fatalf("LWCFiles missing bUtils utility entry: %#v", p.LWCFiles)
+	}
+	if !projectTestHasSuffix(p.LWCFiles, "bUtils/classSet.js") {
+		t.Fatalf("LWCFiles missing bUtils sibling entry: %#v", p.LWCFiles)
+	}
+	if !projectTestHasSuffix(p.LWCMetaFiles, "bUtils/bUtils.js-meta.xml") {
+		t.Fatalf("LWCMetaFiles missing bUtils metadata: %#v", p.LWCMetaFiles)
+	}
+	if !projectTestHasSuffix(p.LWCHTMLFiles, "recipePaymentForm/recipePaymentForm.html") {
+		t.Fatalf("LWCHTMLFiles missing unpackaged component: %#v", p.LWCHTMLFiles)
+	}
+}
+
+func projectTestHasSuffix(paths []string, suffix string) bool {
+	suffix = filepath.ToSlash(suffix)
+	for _, path := range paths {
+		if strings.HasSuffix(filepath.ToSlash(path), suffix) {
+			return true
+		}
+	}
+	return false
+}
+
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

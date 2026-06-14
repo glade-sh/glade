@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/lwc"
@@ -169,6 +170,7 @@ func (s *Server) validateLWCShellPageWithTarget(shell lwcshell.ShellPage, diagno
 	if indexErr != nil {
 		return shell, diagnostics, indexErr
 	}
+	auraComponents := lwcShellAuraComponentNames(s.Source.Project.AuraFiles)
 	if shell.Context.ComponentName != "" && len(shell.Regions) == 0 {
 		component := lwcshell.PageComponent{ComponentName: shell.Context.ComponentName}
 		updated, diag := s.applyLWCMetadataToComponent(idx, component, shell.Context, targetOverride)
@@ -185,9 +187,17 @@ func (s *Server) validateLWCShellPageWithTarget(shell lwcshell.ShellPage, diagno
 	for i := range shell.Regions {
 		var components []lwcshell.PageComponent
 		for _, component := range shell.Regions[i].Components {
+			if placeholder, ok := lwcShellPlatformPlaceholder(component, s.Source.Project.Namespace); ok {
+				components = append(components, placeholder)
+				continue
+			}
 			updated, diag := s.applyLWCMetadataToComponent(idx, component, shell.Context, targetOverride)
 			if diag.Code != "" {
 				if diag.Code == "GLADELWC005" {
+					if placeholder, ok := lwcShellAuraPlaceholder(component, s.Source.Project.Namespace, auraComponents); ok {
+						components = append(components, placeholder)
+						continue
+					}
 					diagnostics = append(diagnostics, diag)
 					continue
 				}
@@ -198,6 +208,53 @@ func (s *Server) validateLWCShellPageWithTarget(shell lwcshell.ShellPage, diagno
 		shell.Regions[i].Components = components
 	}
 	return shell, diagnostics, nil
+}
+
+func lwcShellAuraComponentNames(paths []string) map[string]bool {
+	out := map[string]bool{}
+	for _, path := range paths {
+		if !strings.HasSuffix(strings.ToLower(path), ".cmp") || strings.HasSuffix(strings.ToLower(path), "-meta.xml") {
+			continue
+		}
+		name := strings.TrimSpace(filepath.Base(filepath.Dir(path)))
+		if name != "" {
+			out[strings.ToLower(name)] = true
+		}
+	}
+	return out
+}
+
+func lwcShellPlatformPlaceholder(component lwcshell.PageComponent, projectNamespace string) (lwcshell.PageComponent, bool) {
+	raw := strings.TrimSpace(component.ComponentName)
+	if raw == "" || !strings.Contains(raw, ":") {
+		return lwcshell.PageComponent{}, false
+	}
+	namespace, _ := splitQualifiedLWCName(raw, projectNamespace)
+	if isLocalLWCNamespace(namespace, projectNamespace) {
+		return lwcshell.PageComponent{}, false
+	}
+	component.Kind = "platform"
+	component.UnsupportedReason = "Salesforce platform component is shown as a local placeholder in LWC preview."
+	return component, true
+}
+
+func lwcShellAuraPlaceholder(component lwcshell.PageComponent, projectNamespace string, auraComponents map[string]bool) (lwcshell.PageComponent, bool) {
+	namespace, name := splitQualifiedLWCName(component.ComponentName, projectNamespace)
+	if !isLocalLWCNamespace(namespace, projectNamespace) || !auraComponents[strings.ToLower(name)] {
+		return lwcshell.PageComponent{}, false
+	}
+	component.Kind = "aura"
+	component.UnsupportedReason = "Aura component is shown as a local placeholder in LWC preview."
+	return component, true
+}
+
+func isLocalLWCNamespace(namespace, projectNamespace string) bool {
+	namespace = strings.TrimSpace(namespace)
+	projectNamespace = strings.TrimSpace(projectNamespace)
+	if namespace == "" || strings.EqualFold(namespace, "c") {
+		return true
+	}
+	return projectNamespace != "" && strings.EqualFold(namespace, projectNamespace)
 }
 
 func (s *Server) applyLWCMetadataToComponent(idx lwc.Index, component lwcshell.PageComponent, ctx lwcshell.PageContext, targetOverride string) (lwcshell.PageComponent, lwcshell.Diagnostic) {
@@ -337,11 +394,11 @@ func renderLWCShellHTML(cfg lwcbrowser.PageConfig, shell lwcshell.ShellPage) str
 	mountsJSON := mustScriptJSON(mounts)
 	var b strings.Builder
 	b.WriteString(`<!doctype html><html><head><meta charset="utf-8"><title>Glade LWC Shell</title>`)
-	b.WriteString(`<style>body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f3f3;color:#181818}.glade-shell-bar{height:44px;display:flex;align-items:center;padding:0 16px;background:#fff;border-bottom:1px solid #d8dde6;font-size:14px}.glade-page{max-width:1200px;margin:0 auto;padding:16px}.glade-region{display:grid;gap:16px;margin-bottom:16px}.glade-host{display:block;min-height:48px;background:#fff;border:1px solid #d8dde6;border-radius:4px;padding:12px}</style>`)
+	b.WriteString(`<style>body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f3f3;color:#181818}.glade-shell-bar{height:44px;display:flex;align-items:center;padding:0 16px;background:#fff;border-bottom:1px solid #d8dde6;font-size:14px}.glade-page{max-width:1200px;margin:0 auto;padding:16px}.glade-region{display:grid;gap:16px;margin-bottom:16px}.glade-host{display:block;min-height:48px;background:#fff;border:1px solid #d8dde6;border-radius:4px;padding:12px}.glade-placeholder{border-style:dashed;background:#fafafa;color:#5f6368}.glade-placeholder-title{font-weight:600;color:#2e2e2e}.glade-placeholder-note{margin-top:4px;font-size:12px}</style>`)
 	b.WriteString(lwcbrowser.BootstrapHTML(cfg))
 	b.WriteString(`</head><body><div class="glade-shell-bar">Glade LWC Shell</div><main class="glade-page">`)
 	b.WriteString(lwcShellDiagnosticsHTML(shell.Diagnostics))
-	b.WriteString(lwcShellHostsHTML(mounts))
+	b.WriteString(lwcShellRegionsHTML(shell))
 	b.WriteString(`</main><script type="application/json" id="glade-lwc-context">`)
 	b.WriteString(contextJSON)
 	b.WriteString(`</script><script>`)
@@ -438,7 +495,7 @@ func lwcShellMounts(shell lwcshell.ShellPage) []lwcShellMount {
 			Region:    "main",
 		}}
 	}
-	var mounts []lwcShellMount
+	mounts := []lwcShellMount{}
 	next := 0
 	for _, region := range shell.Regions {
 		regionName := strings.TrimSpace(region.Name)
@@ -446,6 +503,9 @@ func lwcShellMounts(shell lwcshell.ShellPage) []lwcShellMount {
 			regionName = "main"
 		}
 		for _, component := range region.Components {
+			if lwcShellComponentIsPlaceholder(component) {
+				continue
+			}
 			attrs := copyAttrs(base)
 			for key, value := range component.Properties {
 				attrs[key] = value
@@ -460,6 +520,10 @@ func lwcShellMounts(shell lwcshell.ShellPage) []lwcShellMount {
 		}
 	}
 	return mounts
+}
+
+func lwcShellComponentIsPlaceholder(component lwcshell.PageComponent) bool {
+	return strings.TrimSpace(component.Kind) != "" || strings.TrimSpace(component.UnsupportedReason) != ""
 }
 
 func lwcShellContextAttrs(ctx lwcshell.PageContext) map[string]any {
@@ -515,6 +579,61 @@ func lwcShellHostsHTML(mounts []lwcShellMount) string {
 		b.WriteString(`</section>`)
 	}
 	return b.String()
+}
+
+func lwcShellRegionsHTML(shell lwcshell.ShellPage) string {
+	if shell.Context.ComponentName != "" || len(shell.Regions) == 0 {
+		return lwcShellHostsHTML(lwcShellMounts(shell))
+	}
+	var b strings.Builder
+	currentRegion := ""
+	nextMount := 0
+	renderedAny := false
+	for _, region := range shell.Regions {
+		regionName := strings.TrimSpace(region.Name)
+		if regionName == "" {
+			regionName = "main"
+		}
+		for _, component := range region.Components {
+			if regionName != currentRegion {
+				if currentRegion != "" {
+					b.WriteString(`</section>`)
+				}
+				b.WriteString(`<section class="glade-region" data-glade-region="`)
+				b.WriteString(html.EscapeString(regionName))
+				b.WriteString(`">`)
+				currentRegion = regionName
+			}
+			if lwcShellComponentIsPlaceholder(component) {
+				b.WriteString(lwcShellPlaceholderHTML(component))
+			} else {
+				b.WriteString(`<div class="glade-host" id="`)
+				b.WriteString(html.EscapeString(fmt.Sprintf("glade-lwc-%d", nextMount)))
+				b.WriteString(`"></div>`)
+				nextMount++
+			}
+			renderedAny = true
+		}
+	}
+	if currentRegion != "" {
+		b.WriteString(`</section>`)
+	}
+	if !renderedAny {
+		return `<section class="glade-region" data-glade-region="main"><div class="glade-host">No components on this page.</div></section>`
+	}
+	return b.String()
+}
+
+func lwcShellPlaceholderHTML(component lwcshell.PageComponent) string {
+	reason := strings.TrimSpace(component.UnsupportedReason)
+	if reason == "" {
+		reason = "Component is shown as a local placeholder in LWC preview."
+	}
+	return `<div class="glade-host glade-placeholder"><div class="glade-placeholder-title">` +
+		html.EscapeString(component.ComponentName) +
+		`</div><div class="glade-placeholder-note">` +
+		html.EscapeString(reason) +
+		`</div></div>`
 }
 
 func mustScriptJSON(value any) string {

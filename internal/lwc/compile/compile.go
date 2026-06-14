@@ -35,6 +35,7 @@ type compileConfig struct {
 	Namespace    string   `json:"namespace"`
 	LWCFiles     []string `json:"lwcFiles"`
 	LWCHTMLFiles []string `json:"lwcHtmlFiles"`
+	LWCMetaFiles []string `json:"lwcMetaFiles"`
 }
 
 type compileResult struct {
@@ -75,6 +76,7 @@ func Compile(p project.Project, opts Options) (Manifest, error) {
 		Namespace:    namespace,
 		LWCFiles:     relativize(projectRoot, p.LWCFiles),
 		LWCHTMLFiles: relativize(projectRoot, p.LWCHTMLFiles),
+		LWCMetaFiles: relativize(projectRoot, p.LWCMetaFiles),
 	}
 	payload, err := json.Marshal(cfg)
 	if err != nil {

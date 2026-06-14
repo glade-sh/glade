@@ -19,12 +19,150 @@ func SalesforceImportMap() map[string]string {
 		"@salesforce/resourceUrl/":         "/lightning/shims/resourceUrl/",
 		"@salesforce/schema/":              "/lightning/shims/schema/",
 		"@salesforce/user/":                "/lightning/shims/user/",
+		"lightning/":                       "/lightning/shims/lightning/",
 		"lightning/messageService":         "/lightning/shims/lightning/messageService.js",
 		"lightning/navigation":             "/lightning/shims/lightning/navigation.js",
 		"lightning/platformResourceLoader": "/lightning/shims/lightning/platformResourceLoader.js",
 		"lightning/platformShowToastEvent": "/lightning/shims/lightning/platformShowToastEvent.js",
 		"lightning/uiRecordApi":            "/lightning/shims/lightning/uiRecordApi.js",
 	}
+}
+
+var lightningBaseComponentModules = map[string]bool{
+	"accordion":          true,
+	"accordionsection":   true,
+	"avatar":             true,
+	"badge":              true,
+	"button":             true,
+	"buttongroup":        true,
+	"buttonicon":         true,
+	"buttoniconstateful": true,
+	"buttonmenu":         true,
+	"card":               true,
+	"checkboxgroup":      true,
+	"combobox":           true,
+	"datatable":          true,
+	"duallistbox":        true,
+	"formattedaddress":   true,
+	"formatteddatetime":  true,
+	"formattedemail":     true,
+	"formattedlocation":  true,
+	"formattedname":      true,
+	"formattednumber":    true,
+	"formattedphone":     true,
+	"formattedrichtext":  true,
+	"formattedtext":      true,
+	"formattedtime":      true,
+	"formattedurl":       true,
+	"helptext":           true,
+	"icon":               true,
+	"input":              true,
+	"inputaddress":       true,
+	"inputfield":         true,
+	"inputlocation":      true,
+	"layout":             true,
+	"layoutitem":         true,
+	"menuitem":           true,
+	"menusubheader":      true,
+	"outputfield":        true,
+	"pill":               true,
+	"pillcontainer":      true,
+	"progressbar":        true,
+	"progressindicator":  true,
+	"progressring":       true,
+	"radiogroup":         true,
+	"recordeditform":     true,
+	"recordform":         true,
+	"recordviewform":     true,
+	"select":             true,
+	"slider":             true,
+	"spinner":            true,
+	"tab":                true,
+	"tabset":             true,
+	"textarea":           true,
+	"tile":               true,
+	"tree":               true,
+	"treegrid":           true,
+	"verticalnavigation": true,
+}
+
+func IsLightningBaseComponentModule(name string) bool {
+	key := normalizeLightningBaseComponentName(name)
+	return lightningBaseComponentModules[key]
+}
+
+func LightningBaseComponentModuleJS(name string) string {
+	tag := "lightning-" + kebabLightningBaseComponentName(name)
+	className := lightningBaseComponentClassName(name)
+	return fmt.Sprintf(`import { LightningElement, registerTemplate, freezeTemplate, registerComponent } from "lwc";
+function tmpl() { return []; }
+const template = registerTemplate(tmpl);
+tmpl.stylesheets = [];
+freezeTemplate(tmpl);
+class %s extends LightningElement {}
+export default registerComponent(%s, { tmpl: template, sel: %q });
+`, className, className, tag)
+}
+
+func normalizeLightningBaseComponentName(name string) string {
+	name = strings.TrimSpace(name)
+	name = strings.TrimSuffix(name, ".js")
+	name = strings.ReplaceAll(name, "-", "")
+	name = strings.ReplaceAll(name, "_", "")
+	return strings.ToLower(name)
+}
+
+func kebabLightningBaseComponentName(name string) string {
+	name = strings.TrimSpace(strings.TrimSuffix(name, ".js"))
+	if name == "" {
+		return "component"
+	}
+	var out strings.Builder
+	lastDash := false
+	for i, r := range name {
+		if r == '_' || r == '-' || r == ' ' {
+			if !lastDash && out.Len() > 0 {
+				out.WriteByte('-')
+				lastDash = true
+			}
+			continue
+		}
+		if r >= 'A' && r <= 'Z' {
+			if i > 0 && !lastDash {
+				out.WriteByte('-')
+			}
+			r += 'a' - 'A'
+		}
+		out.WriteRune(r)
+		lastDash = false
+	}
+	value := strings.Trim(out.String(), "-")
+	if value == "" {
+		return "component"
+	}
+	return value
+}
+
+func lightningBaseComponentClassName(name string) string {
+	kebab := kebabLightningBaseComponentName(name)
+	var out strings.Builder
+	out.WriteString("Lightning")
+	upperNext := true
+	for _, r := range kebab {
+		if r == '-' {
+			upperNext = true
+			continue
+		}
+		if upperNext && r >= 'a' && r <= 'z' {
+			r -= 'a' - 'A'
+		}
+		out.WriteRune(r)
+		upperNext = false
+	}
+	if out.String() == "Lightning" {
+		return "LightningComponent"
+	}
+	return out.String()
 }
 
 func ApexWireModuleJS(className, methodName string) string {
