@@ -89,5 +89,5 @@ Expected: Glade starts the browser workbench and prints the local URL, example m
 ## 7. Know The Limits
 
 Glade is not a full Salesforce emulator. Check the [Support map](/guide/support-map)
-before relying on platform service APIs, live auth, Visualforce rendering, or
-full REST/Tooling API parity.
+before relying on platform service APIs, live auth, exact hosted Visualforce
+behavior, or full REST/Tooling API parity.

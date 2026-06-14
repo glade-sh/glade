@@ -263,6 +263,16 @@ glade report github latest --runs-dir .glade/runs
 glade report export latest --runs-dir .glade/runs --format html --output glade-report.html
 ```
 
+Serve local Visualforce pages with hot reload:
+
+```bash
+glade dev vf --project . --port 8080
+glade dev vf --project . --addr 127.0.0.1:0 --ready-file /tmp/glade-vf-ready.json
+```
+
+The Visualforce server prints `/apex/<PageName>` routes and watches `.page`,
+`.component`, `.cls`, Aura, LWC, and static resource changes.
+
 ## `glade lsp`
 
 Run the Language Server Protocol server over stdio, or emit one diagnostics pass.

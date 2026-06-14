@@ -216,6 +216,7 @@ test("home page balances a modern product demo with honest proof", () => {
   assert.match(index, /Org-specific metadata[\s\S]*requires config[\s\S]*supply local metadata/);
   assert.match(index, /SOQL query[\s\S]*supported locally[\s\S]*local data model/);
   assert.match(index, /Local API server[\s\S]*supported locally[\s\S]*REST and Tooling baseline/);
+  assert.match(index, /Visualforce pages[\s\S]*supported locally[\s\S]*local \/apex renderer/);
   assert.match(index, /Live org services[\s\S]*requires org[\s\S]*not emulated/);
   assert.match(index, /Unsupported platform APIs[\s\S]*unsupported[\s\S]*surfaced visibly/);
   assert.match(index, /Run this workflow locally\./);
@@ -617,7 +618,10 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(overview, /## First local loop/);
   assert.match(overview, /Glade models the local paths it can prove/);
   assert.match(overview, /local assessment, cruft review, or refactor-proof reports/);
+  assert.match(overview, /serves local Visualforce pages/);
+  assert.match(overview, /render supported Visualforce pages locally/);
   assert.match(overview, /Use Salesforce when/);
+  assert.doesNotMatch(overview, /full Visualforce rendering or PDF generation/);
   assert.match(quickstart, /^# Quickstart: Check and Test an SFDX Project/m);
   assert.match(quickstart, /class="docs-intro"/);
   assert.match(quickstart, /If `glade` is not found/);
@@ -627,6 +631,8 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(quickstart, /glade test --project \. --class AccountServiceTest/);
   assert.doesNotMatch(quickstart, /--filter/);
   assert.match(quickstart, /glade test changed --project \. --since origin\/main/);
+  assert.match(quickstart, /exact hosted Visualforce\s+behavior/);
+  assert.doesNotMatch(quickstart, /live auth, Visualforce rendering/);
   assert.match(supportMap, /^# Support map/m);
   assert.match(supportMap, /class="docs-support-legend"/);
   assert.match(supportMap, /class="docs-status-chip docs-status-supported">Works well/);
@@ -634,6 +640,7 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(supportMap, /UnsupportedFeature/);
   assert.match(supportMap, /## Works Well/);
   assert.match(supportMap, /## Works with limits/);
+  assert.match(supportMap, /Visualforce controller and page rendering/);
   assert.match(supportMap, /## Not supported today/);
   assert.match(supportMap, /Counts come from the checked standard library coverage report/);
   assert.match(supportMap, /\| String, Decimal, Boolean, Math \| Works well \| 32 supported \/ 32 tracked \|/);
@@ -687,6 +694,9 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.match(testerFieldGuide, /AI coding agent/);
   assert.match(testerFieldGuide, /fetch-depth: 0/);
   assert.match(testerFieldGuide, /glade report refactor-proof --project \. --since origin\/main/);
+  assert.match(testerFieldGuide, /glade dev vf --project \. --addr 127\.0\.0\.1:8080/);
+  assert.match(testerFieldGuide, /exact hosted Visualforce\s+behavior/);
+  assert.doesNotMatch(testerFieldGuide, /Visualforce rendering path/);
   assert.match(testerFieldGuide, /default public plugin registry is preview/);
   assert.match(ciArtifacts, /fetch-depth: 0/);
   assert.match(installation, /^## Install VS Code Extension/m);

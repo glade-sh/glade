@@ -5,7 +5,8 @@
 Support status:
 
 - The published `glade` CLI is focused on local Apex parsing, checking,
-  execution, testing, storage, server, editor, profile, and playground flows.
+  execution, testing, Visualforce page rendering, storage, server, editor,
+  profile, and playground flows.
 - Added `glade plugins` with executable plugin install, link, list, doctor,
   lock, restore, and command dispatch.
 - Maintenance scanners, compatibility harnesses, generated support ledgers, and
@@ -41,8 +42,8 @@ Release engineering:
   host architectures, with Windows held until a CGO-capable Windows release
   runner is wired.
 - Added support-map labels for server examples, Apex parity, legacy
-  local tests, declarative automation, and Visualforce/Aura/LWC controller-test
-  support.
+  local tests, declarative automation, local Visualforce page rendering, and
+  Aura/LWC runtime shims.
 - Added a generated SObject stub field overlay for broad standard-object field
   coverage from public Apex stub shape data, plus runtime support for
   `Schema.SObjectField.label`, `UserInfo.getOrganizationName`,

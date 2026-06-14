@@ -197,6 +197,11 @@ head:
             <td data-label="Boundary">REST and Tooling baseline</td>
           </tr>
           <tr>
+            <td data-label="Capability">Visualforce pages</td>
+            <td data-label="Local support"><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
+            <td data-label="Boundary">local /apex renderer</td>
+          </tr>
+          <tr>
             <td data-label="Capability">Debug-log profiling</td>
             <td data-label="Local support"><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
             <td data-label="Boundary">saved logs</td>

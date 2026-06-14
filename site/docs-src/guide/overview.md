@@ -12,8 +12,8 @@
 
 Glade is a local Apex runtime and developer workbench. It loads Salesforce DX
 projects, parses and checks supported Apex, runs local Apex tests, executes
-anonymous Apex, serves a Salesforce-shaped local REST API, and exposes support
-gaps instead of hiding them.
+anonymous Apex, serves local Visualforce pages and a Salesforce-shaped local
+REST API, and exposes support gaps instead of hiding them.
 
 ## Start with
 
@@ -51,6 +51,7 @@ glade test changed --project . --since origin/main
 - You want Apex diagnostics before a deploy.
 - You want to run supported Apex tests without logging into an org.
 - You want local SOQL, DML, trigger, SObject, and limit feedback.
+- You want to render supported Visualforce pages locally through `/apex/<PageName>`.
 - You want a Salesforce-shaped local API for development loops.
 - You want local assessment, cruft review, or refactor-proof reports for a large Apex project.
 - You want deterministic local harnesses for supported platform helper rows instead of live hosted service calls.
@@ -58,7 +59,7 @@ glade test changed --project . --since origin/main
 ## Use Salesforce when
 
 - You need live auth, sessions, identity, or org-hosted process engines.
-- You need full Visualforce rendering or PDF generation.
+- You need exact Salesforce-hosted Visualforce chrome, lifecycle timing, or byte-for-byte PDF output.
 - You need Bulk API beyond simple scalar local query whole-result CSV, Streaming, Pub/Sub, GraphQL, metadata deploy/retrieve jobs, or Tooling objects beyond the checked local source/schema metadata baseline.
 - You need exact production governor accounting.
 

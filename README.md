@@ -57,7 +57,7 @@ repository.
 | SOQL, DML, triggers, SObjects, and storage | Work well for the checked local data runtime contract. |
 | `Database` methods | Supported for the tracked local rows in the stdlib ledger. |
 | `String`, dates, time, math, assertions, labels, URLs, and user info | Wide support, with exact rows in the stdlib ledger. |
-| `Schema`, describe APIs, JSON, regex, HTTP mocks, email, Visualforce controller helpers, and tracked `Test.*` helpers | Supported local rows are complete in the checked ledger. Hosted rendering, delivery, and service behavior have explicit unsupported rows. |
+| `Schema`, describe APIs, JSON, regex, HTTP mocks, email, Visualforce controller/page rendering, and tracked `Test.*` helpers | Supported local rows are complete in the checked ledger. Hosted chrome, exact Visualforce lifecycle timing, byte-for-byte PDF output, delivery, and service behavior have explicit unsupported rows. |
 | Platform services such as approval, quick actions, business hours, sandbox lifecycle, request context, and Trailblazer identity helpers | Deterministic local harness rows are supported where the checked ledger says `supported`. Hosted service execution stays outside the local contract. |
 | Local API server, LSP, DAP, watch, and profile tools | Work well for local development. The local API covers REST discovery, SObject CRUD/query, limits and record counts, Tooling executeAnonymous, local Tooling source/schema metadata queries, Composite sObject insert, Composite Batch and Tree, Bulk API v2 simple query jobs, layout/default metadata, metadata job status, fixture resets, and SQLite persistence. |
 | Enterprise graph and report tools | Work as conservative local evidence for assessment, cruft review, and refactor proof. |
@@ -118,6 +118,12 @@ Run anonymous Apex:
 
 ```bash
 glade exec "System.debug('hello from glade');"
+```
+
+Serve local Visualforce pages:
+
+```bash
+glade dev vf --project . --addr 127.0.0.1:8080
 ```
 
 Serve a Salesforce-shaped local API:

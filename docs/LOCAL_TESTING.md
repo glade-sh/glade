@@ -59,6 +59,20 @@ rows as local JSON:
 curl http://127.0.0.1:8080/services/data/v61.0/glade/visualforce/support
 ```
 
+Use `--port 8080` for the common localhost shortcut. Use an ephemeral address
+and a ready file for scripts:
+
+```bash
+glade dev vf --project . --addr 127.0.0.1:0 --ready-file /tmp/glade-vf-ready.json
+```
+
+The local renderer covers common standard components, custom components,
+controller actions, page messages, expression and form binding, static
+resources, uploads, remoting envelopes, Lightning Out/LWC hosts, AJAX refresh
+paths, and local PDF fallback output. It does not promise Salesforce-hosted
+chrome, every component edge, exact lifecycle timing, Apex
+`PageReference.getContent*` parity, or byte-for-byte PDF output.
+
 ## Run Tests Without An Org
 
 Run every local Apex test:

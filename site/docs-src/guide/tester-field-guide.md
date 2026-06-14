@@ -7,8 +7,8 @@ commands.
 
 Glade does not replace Salesforce. It gives a fast local loop before Salesforce
 enters the path. Check the [Support map](/guide/support-map) before treating
-any platform service, live auth flow, Visualforce rendering path, or broad API
-surface as supported.
+any platform service, live auth flow, exact hosted Visualforce behavior, or
+broad API surface as supported.
 
 ## 10-minute setup
 
@@ -70,6 +70,7 @@ launches, and named SQLite-backed data environments.
 | Keep repeated CLI runs warm | `glade test serve --project .` |
 | Keep one watch loop warm | `glade test --project . --daemon --watch` |
 | Execute a quick Apex probe | `glade exec --project . "System.debug('local');"` |
+| Serve Visualforce pages locally | `glade dev vf --project . --addr 127.0.0.1:8080` |
 | Open the local playground | `glade playground --project . --open` |
 
 Start with one focused class or method when bringing up a large project. Move
@@ -160,6 +161,7 @@ glade report export latest --runs-dir .glade/runs --format html --output reports
 | --- | --- |
 | Explain a saved Salesforce debug log against local source | `glade debug explain --log apex.log --project .` |
 | Generate a starter local repro test from a log | `glade debug repro --log apex.log --project . > ReproTest.cls` |
+| Render local Visualforce pages | `glade dev vf --project . --addr 127.0.0.1:8080` |
 | Run a Salesforce-shaped local API | `glade server --project . --addr 127.0.0.1:8080` |
 | Seed or inspect a local SQLite org state | `glade db seed --db .glade/org.sqlite --project . fixtures/dev.json` |
 | Map a large Apex project | `glade inspect graph --project . --json` |
