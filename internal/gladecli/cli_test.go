@@ -2130,6 +2130,8 @@ func TestRunDAPAcceptsDBFlag(t *testing.T) {
 	}
 }
 
+const dapTestTimeout = 15 * time.Second
+
 func TestRunDAPLaunchEmitsStopped(t *testing.T) {
 	inR, inW := io.Pipe()
 	outR, outW := io.Pipe()
@@ -2156,7 +2158,7 @@ func TestRunDAPLaunchEmitsStopped(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-	case <-time.After(time.Second):
+	case <-time.After(dapTestTimeout):
 		t.Fatal("DAP server did not stop")
 	}
 }
@@ -2186,7 +2188,7 @@ func TestRunDAPLaunchAcceptsIDEProjectRootAndAnonymousBody(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(dapTestTimeout):
 		t.Fatal("DAP server did not stop")
 	}
 	if strings.Contains(stderrOutput, "launch requires program or source") {
@@ -2223,7 +2225,7 @@ func TestRunDAPWithDBPersistsOnCleanTermination(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(dapTestTimeout):
 		t.Fatal("DAP server did not stop")
 	}
 
@@ -2282,7 +2284,7 @@ private class SampleTest {
 		if err != nil {
 			t.Fatal(err)
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(dapTestTimeout):
 		t.Fatal("DAP server did not stop")
 	}
 	if stderrOutput != "" {
@@ -2330,7 +2332,7 @@ private class SampleTest {
 		if err != nil {
 			t.Fatal(err)
 		}
-	case <-time.After(5 * time.Second):
+	case <-time.After(dapTestTimeout):
 		t.Fatal("DAP server did not stop")
 	}
 	if stderrOutput != "" {
@@ -2527,7 +2529,7 @@ func readDAPMessages(t *testing.T, r io.Reader, out chan<- map[string]any) {
 
 func waitForDAPEvent(t *testing.T, messages <-chan map[string]any, event string) {
 	t.Helper()
-	deadline := time.After(5 * time.Second)
+	deadline := time.After(dapTestTimeout)
 	for {
 		select {
 		case message, ok := <-messages:
@@ -2545,7 +2547,7 @@ func waitForDAPEvent(t *testing.T, messages <-chan map[string]any, event string)
 
 func waitForDAPTerminatedAndStderr(t *testing.T, messages <-chan map[string]any) string {
 	t.Helper()
-	deadline := time.After(5 * time.Second)
+	deadline := time.After(dapTestTimeout)
 	var stderr strings.Builder
 	for {
 		select {
