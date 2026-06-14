@@ -12,6 +12,7 @@ const (
 	EventTestsSelected  EventType = "watch.tests_selected"
 	EventRunStarted     EventType = "watch.run_started"
 	EventRunFinished    EventType = "watch.run_finished"
+	EventProfileSummary EventType = "watch.profile_summary"
 	EventWatchError     EventType = "watch.error"
 	EventWatchDebounced EventType = "watch.debounced"
 )
@@ -60,6 +61,25 @@ type RunFinishedEvent struct {
 	Time          time.Time  `json:"time"`
 	RunID         int        `json:"runId"`
 	Summary       RunSummary `json:"summary"`
+}
+
+type ProfileSummaryEvent struct {
+	SchemaVersion int            `json:"schemaVersion"`
+	Event         EventType      `json:"event"`
+	Time          time.Time      `json:"time"`
+	RunID         int            `json:"runId"`
+	Summary       ProfileSummary `json:"summary"`
+}
+
+type ProfileSummary struct {
+	Profiles        int      `json:"profiles"`
+	Events          int      `json:"events"`
+	WallClockMS     int64    `json:"wallClockMs,omitempty"`
+	CPUTimeMS       int      `json:"cpuTimeMs,omitempty"`
+	TopSpan         string   `json:"topSpan,omitempty"`
+	TopSpanMS       int64    `json:"topSpanMs,omitempty"`
+	ProfiledTests   []string `json:"profiledTests,omitempty"`
+	TraceEventCount int      `json:"traceEventCount,omitempty"`
 }
 
 type RunSummary struct {
@@ -134,6 +154,19 @@ func NewRunFinishedEvent(now time.Time, runID int, summary RunSummary) RunFinish
 	return RunFinishedEvent{
 		SchemaVersion: WatchEventSchemaVersion,
 		Event:         EventRunFinished,
+		Time:          now,
+		RunID:         runID,
+		Summary:       summary,
+	}
+}
+
+func NewProfileSummaryEvent(now time.Time, runID int, summary ProfileSummary) ProfileSummaryEvent {
+	tests := make([]string, len(summary.ProfiledTests))
+	copy(tests, summary.ProfiledTests)
+	summary.ProfiledTests = tests
+	return ProfileSummaryEvent{
+		SchemaVersion: WatchEventSchemaVersion,
+		Event:         EventProfileSummary,
 		Time:          now,
 		RunID:         runID,
 		Summary:       summary,

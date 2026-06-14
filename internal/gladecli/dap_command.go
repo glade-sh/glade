@@ -57,7 +57,10 @@ func handleDAPLaunch(ctx context.Context, handler *dap.Handler, launch dap.Launc
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	projectRoot := strings.TrimSpace(launch.Project)
+	projectRoot := strings.TrimSpace(launch.ProjectRoot)
+	if projectRoot == "" {
+		projectRoot = strings.TrimSpace(launch.Project)
+	}
 	if projectRoot == "" {
 		projectRoot = defaultProject
 	}
@@ -155,6 +158,9 @@ func (t *dapStartupTrace) done() {
 }
 
 func launchSource(launch dap.LaunchRequest) (string, error) {
+	if strings.TrimSpace(launch.AnonymousBody) != "" {
+		return launch.AnonymousBody, nil
+	}
 	if strings.TrimSpace(launch.Source) != "" {
 		return launch.Source, nil
 	}

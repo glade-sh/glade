@@ -2,6 +2,11 @@ package profile
 
 import (
 	"bytes"
+	"compress/gzip"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -157,6 +162,44 @@ func TestWriteMarkdown(t *testing.T) {
 	}
 	if !strings.Contains(markdown, "| 1 | `apex.statement.expr` | `apex.statement` | 2 | 0 | 1 | [5] |") {
 		t.Fatalf("markdown = %q", out.String())
+	}
+}
+
+func TestWritePprofEmitsCompatibleDurationSamples(t *testing.T) {
+	report := Analyze(trace.NewDocument([]trace.Event{
+		trace.Duration("apex.method.InvoiceService.run", "apex.method", 1000, 2500, map[string]any{"file": "InvoiceService.cls", "line": 7}),
+		trace.Duration("apex.soql", "apex.soql", 4000, 1500, map[string]any{"query": "SELECT Id FROM Account", "file": "InvoiceService.cls", "line": 9}),
+	}))
+
+	path := filepath.Join(t.TempDir(), "trace.pprof")
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := WritePprof(file, report); err != nil {
+		t.Fatal(err)
+	}
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gz, err := gzip.NewReader(bytes.NewReader(data))
+	if err != nil {
+		t.Fatalf("pprof is not gzip data: %v", err)
+	}
+	raw, err := io.ReadAll(gz)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(raw, []byte("apex.method.InvoiceService.run")) || !bytes.Contains(raw, []byte("SELECT Id FROM Account")) {
+		t.Fatalf("pprof missing stable function labels: %q", string(raw))
+	}
+	if out, err := exec.Command("go", "tool", "pprof", "-top", path).CombinedOutput(); err != nil {
+		t.Fatalf("go tool pprof failed: %v\n%s", err, string(out))
 	}
 }
 

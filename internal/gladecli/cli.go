@@ -1737,8 +1737,10 @@ func runProfile(ctx context.Context, args []string, w io.Writer) error {
 		return profile.WriteText(w, report, tracePath)
 	case "markdown":
 		return profile.WriteMarkdown(w, report)
+	case "pprof":
+		return profile.WritePprof(w, report)
 	default:
-		return fmt.Errorf("--format must be text or markdown")
+		return fmt.Errorf("--format must be text, markdown, or pprof")
 	}
 }
 

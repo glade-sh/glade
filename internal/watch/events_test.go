@@ -108,6 +108,29 @@ func TestRunEventJSONShapesAreStable(t *testing.T) {
 	}
 }
 
+func TestProfileSummaryEventJSONShapeIsStable(t *testing.T) {
+	now := time.Unix(0, 0).UTC()
+	event := NewProfileSummaryEvent(now, 7, ProfileSummary{
+		Profiles:        2,
+		Events:          5,
+		WallClockMS:     12,
+		CPUTimeMS:       9,
+		TopSpan:         "apex.method.InvoiceService.run",
+		TopSpanMS:       8,
+		ProfiledTests:   []string{"InvoiceServiceTest.fails", "InvoiceServiceTest.slow"},
+		TraceEventCount: 5,
+	})
+
+	data, err := json.Marshal(event)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := `{"schemaVersion":1,"event":"watch.profile_summary","time":"1970-01-01T00:00:00Z","runId":7,"summary":{"profiles":2,"events":5,"wallClockMs":12,"cpuTimeMs":9,"topSpan":"apex.method.InvoiceService.run","topSpanMs":8,"profiledTests":["InvoiceServiceTest.fails","InvoiceServiceTest.slow"],"traceEventCount":5}}`
+	if string(data) != want {
+		t.Fatalf("profile summary JSON = %s, want %s", string(data), want)
+	}
+}
+
 func TestChangesAndErrorEventJSONShapesAreStable(t *testing.T) {
 	now := time.Unix(0, 0).UTC()
 	change := Change{

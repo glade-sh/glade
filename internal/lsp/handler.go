@@ -435,9 +435,15 @@ type completionContext int
 const (
 	completionContextDefault completionContext = iota
 	completionContextSOQLSelect
+	completionContextSOQLFieldClause
 )
 
 func (h *Handler) Completion(params CompletionParams) CompletionList {
+	context := h.completionContext(params)
+	if context.items != nil {
+		sortCompletionItems(context.items, completionContextDefault)
+		return CompletionList{Items: context.items}
+	}
 	items := make([]CompletionItem, 0, len(h.index.Types)+len(h.index.Objects))
 	seen := make(map[string]bool)
 	add := func(item CompletionItem) {
@@ -485,29 +491,175 @@ func (h *Handler) Completion(params CompletionParams) CompletionList {
 	for _, keyword := range []string{"class", "trigger", "interface", "enum", "public", "private", "protected", "global", "static", "void", "return", "new", "for", "if", "else"} {
 		add(CompletionItem{Label: keyword, Kind: completionItemKindKeyword, Detail: "Apex keyword"})
 	}
-	sortCompletionItems(items, h.completionContext(params))
+	sortCompletionItems(items, context.kind)
 	return CompletionList{Items: items}
 }
 
-func (h *Handler) completionContext(params CompletionParams) completionContext {
+type completionResultContext struct {
+	kind  completionContext
+	items []CompletionItem
+}
+
+func (h *Handler) completionContext(params CompletionParams) completionResultContext {
 	text, ok := h.documentText(pathFromURI(params.TextDocument.URI))
 	if !ok {
-		return completionContextDefault
+		return completionResultContext{}
 	}
 	offset, err := offsetForPosition(text, params.Position)
 	if err != nil {
-		return completionContextDefault
+		return completionResultContext{}
+	}
+	if items := h.annotationCompletionItems(text, offset); len(items) > 0 {
+		return completionResultContext{items: items}
+	}
+	if items := h.memberCompletionItems(text, offset); len(items) > 0 {
+		return completionResultContext{items: items}
+	}
+	if items := h.testMethodCompletionItems(text, offset); len(items) > 0 {
+		return completionResultContext{items: items}
 	}
 	prefix := strings.ToLower(text[:offset])
 	queryStart := strings.LastIndex(prefix, "[")
 	if queryStart < 0 || strings.LastIndex(prefix, "]") > queryStart {
-		return completionContextDefault
+		return completionResultContext{}
 	}
 	clause := prefix[queryStart+1:]
 	if strings.Contains(clause, "select") && !strings.Contains(clause, " from ") {
-		return completionContextSOQLSelect
+		return completionResultContext{kind: completionContextSOQLSelect}
 	}
-	return completionContextDefault
+	for _, marker := range []string{" where", " order by", " group by"} {
+		if strings.Contains(clause, marker) {
+			return completionResultContext{kind: completionContextSOQLFieldClause}
+		}
+	}
+	return completionResultContext{}
+}
+
+func (h *Handler) annotationCompletionItems(text string, offset int) []CompletionItem {
+	prefix := text[:offset]
+	lineStart := strings.LastIndex(prefix, "\n") + 1
+	if strings.TrimSpace(prefix[lineStart:]) != "@" {
+		return nil
+	}
+	return []CompletionItem{
+		{Label: "isTest", Kind: completionItemKindKeyword, Detail: "Apex annotation"},
+		{Label: "testSetup", Kind: completionItemKindKeyword, Detail: "Apex annotation"},
+		{Label: "future", Kind: completionItemKindKeyword, Detail: "Apex annotation"},
+		{Label: "AuraEnabled", Kind: completionItemKindKeyword, Detail: "Apex annotation"},
+	}
+}
+
+func (h *Handler) testMethodCompletionItems(text string, offset int) []CompletionItem {
+	prefix := text[:offset]
+	lineStart := strings.LastIndex(prefix, "\n") + 1
+	line := strings.ToLower(prefix[lineStart:])
+	if !strings.Contains(line, "@istest") {
+		return nil
+	}
+	return []CompletionItem{
+		{Label: "testSetup", Kind: completionItemKindKeyword, Detail: "Apex test method modifier"},
+		{Label: "static", Kind: completionItemKindKeyword, Detail: "Apex test method modifier"},
+		{Label: "void", Kind: completionItemKindKeyword, Detail: "Apex test method modifier"},
+	}
+}
+
+func (h *Handler) memberCompletionItems(text string, offset int) []CompletionItem {
+	if offset == 0 || text[offset-1] != '.' {
+		return nil
+	}
+	receiverEnd := offset - 1
+	receiverStart := receiverEnd
+	for receiverStart > 0 && (isIdentifierByte(text[receiverStart-1]) || text[receiverStart-1] == '.') {
+		receiverStart--
+	}
+	receiver := strings.TrimSpace(text[receiverStart:receiverEnd])
+	if receiver == "" {
+		return nil
+	}
+	if strings.HasPrefix(strings.ToLower(receiver), "schema.sobjecttype.") {
+		return schemaTokenCompletionItems()
+	}
+	typ := h.localVariableType(text[:receiverStart], receiver)
+	if typ == "" {
+		typ = receiver
+	}
+	if strings.HasPrefix(strings.ToLower(typ), "list<") {
+		return methodCompletionItems("List method", "add", "clear", "get", "isEmpty", "iterator", "remove", "set", "size")
+	}
+	if strings.HasPrefix(strings.ToLower(typ), "map<") {
+		return methodCompletionItems("Map method", "clear", "containsKey", "get", "isEmpty", "keySet", "put", "remove", "size", "values")
+	}
+	if object, ok := h.objectByName(typ); ok {
+		return objectFieldCompletionItems(object)
+	}
+	for _, indexedType := range h.index.Types {
+		if strings.EqualFold(indexedType.Name, typ) {
+			items := make([]CompletionItem, 0, len(indexedType.Members))
+			for _, member := range indexedType.Members {
+				items = append(items, CompletionItem{Label: member.Name, Kind: completionKind(member.Kind), Detail: indexedType.Name + "." + member.Name})
+			}
+			return items
+		}
+	}
+	return nil
+}
+
+func (h *Handler) localVariableType(prefix, name string) string {
+	lines := strings.Split(prefix, "\n")
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		idx := strings.Index(line, " "+name)
+		if idx < 0 {
+			continue
+		}
+		after := idx + 1 + len(name)
+		if after < len(line) && isIdentifierByte(line[after]) {
+			continue
+		}
+		before := strings.TrimSpace(line[:idx])
+		before = strings.TrimPrefix(before, "public ")
+		before = strings.TrimPrefix(before, "private ")
+		before = strings.TrimPrefix(before, "protected ")
+		before = strings.TrimPrefix(before, "global ")
+		before = strings.TrimPrefix(before, "static ")
+		before = strings.TrimPrefix(before, "final ")
+		return strings.TrimSpace(before)
+	}
+	return ""
+}
+
+func (h *Handler) objectByName(name string) (schema.Object, bool) {
+	for _, object := range h.index.Objects {
+		if strings.EqualFold(object.Name, name) {
+			return object, true
+		}
+	}
+	return schema.Object{}, false
+}
+
+func objectFieldCompletionItems(object schema.Object) []CompletionItem {
+	items := make([]CompletionItem, 0, len(object.Fields))
+	for _, field := range object.Fields {
+		items = append(items, CompletionItem{
+			Label:         field.Name,
+			Kind:          completionItemKindField,
+			Detail:        object.Name + "." + field.Name,
+			Documentation: field.Type,
+		})
+	}
+	return items
+}
+
+func methodCompletionItems(detail string, names ...string) []CompletionItem {
+	items := make([]CompletionItem, 0, len(names))
+	for _, name := range names {
+		items = append(items, CompletionItem{Label: name, Kind: completionItemKindMethod, Detail: detail})
+	}
+	return items
+}
+
+func schemaTokenCompletionItems() []CompletionItem {
+	return methodCompletionItems("Schema token method", "getDescribe", "newSObject")
 }
 
 func (h *Handler) Definition(params DefinitionParams) []Location {

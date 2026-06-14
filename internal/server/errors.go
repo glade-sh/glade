@@ -25,6 +25,7 @@ const (
 	errMalformedJSON        serverErrorKind = "malformed_json"
 	errMalformedQuery       serverErrorKind = "malformed_query"
 	errMalformedID          serverErrorKind = "malformed_id"
+	errMalformedRequest     serverErrorKind = "malformed_request"
 	errInvalidField         serverErrorKind = "invalid_field"
 	errInvalidReset         serverErrorKind = "invalid_reset"
 	errInvalidFixture       serverErrorKind = "invalid_fixture"

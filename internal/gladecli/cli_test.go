@@ -2161,6 +2161,39 @@ func TestRunDAPLaunchEmitsStopped(t *testing.T) {
 	}
 }
 
+func TestRunDAPLaunchAcceptsIDEProjectRootAndAnonymousBody(t *testing.T) {
+	inR, inW := io.Pipe()
+	outR, outW := io.Pipe()
+	done := make(chan error, 1)
+	go func() {
+		done <- runDAP(context.Background(), nil, inR, outW)
+	}()
+	messages := make(chan map[string]any, 16)
+	go readDAPMessages(t, outR, messages)
+
+	writeDAPRequest(t, inW, dap.CommandInitialize, 1, nil)
+	writeDAPRequest(t, inW, dap.CommandLaunch, 2, map[string]any{
+		"projectRoot":   filepath.Join("..", "debuglog", "testdata", "project"),
+		"anonymousBody": "System.debug('alias body');",
+	})
+	writeDAPRequest(t, inW, dap.CommandConfigurationDone, 3, nil)
+	stderrOutput := waitForDAPTerminatedAndStderr(t, messages)
+	writeDAPRequest(t, inW, dap.CommandDisconnect, 4, nil)
+	_ = inW.Close()
+	_ = outW.Close()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("DAP server did not stop")
+	}
+	if strings.Contains(stderrOutput, "launch requires program or source") {
+		t.Fatalf("DAP launch did not accept IDE aliases: %q", stderrOutput)
+	}
+}
+
 func TestRunDAPWithDBPersistsOnCleanTermination(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
@@ -2546,6 +2579,30 @@ func TestRunExecJSON(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), `"hello"`) || !strings.Contains(stdout.String(), `"trace"`) {
 		t.Fatalf("stdout did not include JSON debug output: %q", stdout.String())
+	}
+}
+
+func TestRunExecLimitProfileJSONAndExplicitCaps(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"exec",
+		"--json",
+		"--limit-profile", "strict-async",
+		"--limit-queries", "7",
+		"System.assertEquals(7, Limits.getLimitQueries()); System.debug('profile');",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	var got map[string]any
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout is not JSON: %v\n%s", err, stdout.String())
+	}
+	if got["command"] != "exec" || got["status"] != "passed" {
+		t.Fatalf("exec JSON command/status = %#v", got)
+	}
+	if !strings.Contains(stdout.String(), `"profile"`) {
+		t.Fatalf("exec JSON missing debug output: %s", stdout.String())
 	}
 }
 
@@ -2992,6 +3049,33 @@ private class SampleTest {
 	}
 }
 
+func TestRunTestLimitProfileAndExplicitCaps(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/LimitProfileTest.cls"), `
+@isTest
+private class LimitProfileTest {
+  @isTest static void usesExplicitCapOverProfile() {
+    System.assertEquals(7, Limits.getLimitQueries());
+  }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"test",
+		"--project", root,
+		"--limit-profile", "strict-async",
+		"--limit-queries", "7",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "1 passed") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
 func TestRunTestProgressWritesToStderr(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -3202,6 +3286,29 @@ private class SampleTest {
 	}
 	if !strings.Contains(stdout.String(), `"event":"watch.started"`) || !strings.Contains(stdout.String(), `"event":"watch.run_finished"`) {
 		t.Fatalf("watch stdout = %q", stdout.String())
+	}
+}
+
+func TestRunTestWatchOnceEmitsProfileSummaryWhenTracing(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/ProfiledWatchTest.cls"), `
+@isTest
+private class ProfiledWatchTest {
+  @isTest static void fails() {
+    System.assert(false, 'trace this failure');
+  }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--watch-once", "--trace-blockers", "--no-progress"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	got := stdout.String()
+	if !strings.Contains(got, `"event":"watch.profile_summary"`) || !strings.Contains(got, `"profiles":1`) || !strings.Contains(got, "ProfiledWatchTest.fails") {
+		t.Fatalf("watch stdout missing profile summary:\n%s", got)
 	}
 }
 
@@ -3525,6 +3632,41 @@ func TestRunProfileAnalyzeJSON(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), `"events": 1`) || !strings.Contains(stdout.String(), `"apex.statement.expr"`) {
 		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunProfileAnalyzePprofFormat(t *testing.T) {
+	tracePath := filepath.Join(t.TempDir(), "trace.json")
+	writeTestFile(t, tracePath, `{"format":"chrome-trace-event","version":1,"traceEvents":[{"name":"apex.method.InvoiceService.run","cat":"apex.method","ph":"X","ts":1,"dur":2000,"pid":1,"tid":1,"args":{"file":"InvoiceService.cls","line":3}}]}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"profile", "analyze", tracePath, "--format", "pprof"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	data := stdout.Bytes()
+	if len(data) < 2 || data[0] != 0x1f || data[1] != 0x8b {
+		t.Fatalf("stdout is not gzipped pprof data: %q", stdout.String())
+	}
+}
+
+func TestReleaseBuildScriptWritesMachineReadableManifest(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", "scripts", "release-build.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(data)
+	for _, want := range []string{
+		"release-manifest.json",
+		"archive_sha256",
+		"version_output",
+		"doctor_json",
+		"parser_smoke",
+		"vscode_extension_package",
+	} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("release-build.sh missing %q", want)
+		}
 	}
 }
 

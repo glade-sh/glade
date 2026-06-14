@@ -445,7 +445,7 @@ func sortCompletionItems(items []CompletionItem, context completionContext) {
 
 func completionItemContextRank(item CompletionItem, context completionContext) int {
 	switch context {
-	case completionContextSOQLSelect:
+	case completionContextSOQLSelect, completionContextSOQLFieldClause:
 		if item.Kind == completionItemKindField {
 			return 0
 		}
