@@ -21,9 +21,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | ApexPages | `ApexPages.hasMessages()` | `supported` | Checks VM-local page messages. |
 | ApexPages | `ApexPages.hasMessages(ApexPages.Severity)` | `supported` | Checks VM-local page messages by severity. |
 | ApexPages | `Visualforce full rendering lifecycle` | `unsupported` | Full Visualforce rendering lifecycle requires the hosted renderer and is fenced by PageReference rendering diagnostics locally. |
-| Approval | `Approval.process hosted approval engine routing` | `unsupported` | Process definition routing, criteria evaluation, approver assignment, and workitem lifecycle require hosted approval metadata services. |
-| Approval | `Approval.process(Approval.ProcessRequest)` | `supported` | Returns deterministic local ProcessResult DTOs for submit and workitem request shapes. |
-| Approval | `Approval.process(Approval.ProcessRequest, Boolean)` | `supported` | Returns deterministic local ProcessResult DTOs for submit and workitem request shapes with allOrNone error handling. |
+| Approval | `Approval.process hosted approval engine routing` | `unsupported` | Hosted criteria evaluation, queue/group approver routing, and live approval service routing require Salesforce approval services. |
+| Approval | `Approval.process(Approval.ProcessRequest)` | `supported` | Runs a seeded local ProcessDefinition, ProcessNode, ProcessInstance, and ProcessInstanceWorkitem engine for submit, approve, and reject request shapes. |
+| Approval | `Approval.process(Approval.ProcessRequest, Boolean)` | `supported` | Runs the seeded local approval engine with allOrNone error shaping for submit, approve, and reject request shapes. |
 | Assert | `Assert.areEqual` | `supported` | Routes through local assertion failures with optional message text. |
 | Assert | `Assert.areNotEqual` | `supported` | Routes through local assertion failures with optional message text. |
 | Assert | `Assert.fail` | `supported` | Raises local System.AssertException with optional message text. |
@@ -33,12 +33,12 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Assert | `Assert.isTrue` | `supported` | Routes through local assertion failures with optional message text. |
 | Boolean | `Boolean.valueOf(Object)` | `supported` | Converts supported local field/object values into Boolean values. |
 | Boolean | `Boolean.valueOf(String)` | `supported` | Converts strings to Boolean using Apex-shaped true/false parsing. |
-| BusinessHours | `BusinessHours hosted service calendar holiday expansion` | `unsupported` | Partial-day holidays, recurring holiday expansion, and service-calendar associations require hosted calendar metadata beyond seeded local records. |
-| BusinessHours | `BusinessHours.add(String, Datetime, Long)` | `supported` | Runs deterministic local week-schedule math from seeded BusinessHours records with timezone handling and all-day Holiday closures. |
-| BusinessHours | `BusinessHours.addGmt(String, Datetime, Long)` | `supported` | Runs deterministic local week-schedule math from seeded BusinessHours records with GMT Datetime output and all-day Holiday closures. |
-| BusinessHours | `BusinessHours.diff(String, Datetime, Datetime)` | `supported` | Counts deterministic local business milliseconds across seeded week schedules, timezones, and all-day Holiday closures. |
-| BusinessHours | `BusinessHours.isWithin(String, Datetime)` | `supported` | Checks seeded local week schedules, timezones, and all-day Holiday closures. |
-| BusinessHours | `BusinessHours.nextStartDate(String, Datetime)` | `supported` | Finds the next deterministic local start from seeded week schedules, timezones, and all-day Holiday closures. |
+| BusinessHours | `BusinessHours malformed local holiday metadata` | `unsupported` | Malformed seeded holiday metadata raises a stable UnsupportedFeature diagnostic naming the unsupported local field shape. |
+| BusinessHours | `BusinessHours.add(String, Datetime, Long)` | `supported` | Runs deterministic local week-schedule math from seeded BusinessHours, Holiday, OperatingHours, and OperatingHoursHoliday records with timezone handling, all-day closures, partial-day closures, recurring holidays, and linked holidays. |
+| BusinessHours | `BusinessHours.addGmt(String, Datetime, Long)` | `supported` | Runs deterministic local calendar math from seeded BusinessHours, Holiday, OperatingHours, and OperatingHoursHoliday records with GMT Datetime output. |
+| BusinessHours | `BusinessHours.diff(String, Datetime, Datetime)` | `supported` | Counts deterministic local business milliseconds across seeded week schedules, timezones, all-day closures, partial-day closures, recurring holidays, and linked holidays. |
+| BusinessHours | `BusinessHours.isWithin(String, Datetime)` | `supported` | Checks seeded local week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays. |
+| BusinessHours | `BusinessHours.nextStartDate(String, Datetime)` | `supported` | Finds the next deterministic local start from seeded week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays. |
 | Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA-1/SHA1, SHA-256/SHA256, SHA-384/SHA384, SHA-512/SHA512, and SHA3-256/384/512 digests are fixture-pinned, with Salesforce-shaped SecurityException diagnostics for unknown names. |
 | Database | `Database.UnitOfWork` | `supported` | Queues local DML operations and applies them on commitWork; discardWork drops pending local work. |
 | Database | `Database.convertLead` | `supported` | Local lead conversion creates Account, Contact, and optional Opportunity records and updates Lead conversion fields. |
@@ -112,7 +112,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | FeatureManagement | `FeatureManagement.checkPermission` | `supported` | Checks local runAs user permissions, permission sets, and custom-permission assignments. |
 | HTTP | `Http.send(HttpRequest)` | `supported` | Routes local callouts through registered HttpCalloutMock implementations and records local callout limits. |
 | HTTP | `HttpRequest` | `supported` | Endpoint, method, headers, timeout, body, blob body, and local DTO accessors are modeled. |
-| HTTP | `HttpRequest client certificate methods` | `unsupported` | Client certificate lookup depends on Salesforce certificate store state and raises a stable UnsupportedFeature diagnostic locally. |
+| HTTP | `HttpRequest client certificate local mock metadata` | `supported` | Client certificate name and PEM accessors read deterministic local certificate metadata for mock-backed callouts. |
+| HTTP | `HttpRequest client certificate real TLS handshake` | `unsupported` | Real mutual-TLS handshakes and Salesforce certificate-store delivery require hosted callout infrastructure. |
 | HTTP | `HttpResponse` | `supported` | Status, status code, headers, body, blob body, and local DTO accessors are modeled. |
 | JSON | `JSON.deserialize` | `supported` | Oracle-pinned DTO, SObject, primitive, collection, Object, string-key, and scalar-key map paths preserve duplicate-key last-value behavior and field order. |
 | JSON | `JSON.deserializeStrict` | `supported` | Oracle-pinned strict DTO and SObject paths accept known fields, reject unknown fields with Salesforce-shaped diagnostics, and keep the last duplicate SObject field value. |
@@ -123,7 +124,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Label | `Label.get(String,String,String)` | `supported` | Resolves local custom label metadata for an explicit language, then falls back to the local label resolver. |
 | Label | `Label.translationExists(String,String,String)` | `supported` | Returns true when local label metadata has a matching explicit language translation. |
 | Limits | `Exact Salesforce governor accounting profiles` | `unsupported` | Exact hosted governor deltas require Salesforce runtime accounting and remain outside local execution. |
-| Limits | `Limits.get*` | `supported` | Returns deterministic local counters and caps for all tracked getter families, including zero-valued local service counters. |
+| Limits | `Limits.get*` | `supported` | Returns deterministic local counters and configurable caps for all tracked getter families, including zero-valued local service counters. |
 | Limits | `Limits.getAsyncCalls` | `supported` | Returns the local async-call counter. |
 | Limits | `Limits.getLimitAsyncCalls` | `supported` | Returns the local async-call limit. |
 | Math | `Math.abs` | `supported` | Integer and Decimal values. |
@@ -134,13 +135,14 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Math | `Math.pow` | `supported` | Numeric values. |
 | Math | `Math.round` | `supported` | Numeric values. |
 | Math | `Math.sqrt` | `supported` | Numeric values. |
+| Messaging | `Messaging.SendEmailOptions` | `supported` | Stores triggerUserEmail, triggerOtherEmail, and triggerAutoResponseEmail flags for local captured email records. |
 | Messaging | `Messaging.SingleEmailMessage` | `supported` | Common DTO setters/getters, recipient fields, template fields, body fields, flags, and local file attachment values are modeled. |
-| Messaging | `Messaging.renderStoredEmailTemplate Salesforce content attachment service` | `unsupported` | Salesforce content attachment relationship expansion and template usage mutation depend on hosted email services. |
-| Messaging | `Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption)` | `supported` | Renders local stored EmailTemplate subject, HTML, text bodies, merge fields, and static-resource attachments for NONE, METADATA_ONLY, and METADATA_WITH_BODY. |
+| Messaging | `Messaging.renderStoredEmailTemplate hosted usage mutation` | `unsupported` | Hosted EmailTemplate usage counters and send-side usage mutation require Salesforce email services. |
+| Messaging | `Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption)` | `supported` | Renders local stored EmailTemplate subject, HTML, text bodies, merge fields, static-resource attachments, Attachment rows, and ContentDocumentLink attachments for NONE, METADATA_ONLY, BODY, and METADATA_WITH_BODY. |
 | Messaging | `Messaging.renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption,Boolean)` | `supported` | Renders local stored templates like the four-argument overload and accepts updateEmailTemplateUsage without remote usage mutation. |
-| Messaging | `Messaging.sendEmail` | `supported` | Returns ordered local SendEmailResult values, validates supported DTOs, captures sent messages, and increments local email limits. |
-| Messaging | `Messaging.sendEmail delivery transport and send options` | `unsupported` | Outbound delivery and SendEmailOptions depend on Salesforce email services and raise stable UnsupportedFeature diagnostics locally. |
-| Messaging | `Messaging.sendEmail(Messaging.Email[],Boolean)` | `supported` | Returns ordered local SendEmailResult values for supported email message DTOs; no delivery transport. |
+| Messaging | `Messaging.sendEmail` | `supported` | Returns ordered local SendEmailResult values, validates supported DTOs, captures sent messages with SendEmailOptions metadata, and increments local email limits. |
+| Messaging | `Messaging.sendEmail delivery transport` | `unsupported` | Outbound delivery depends on Salesforce email services and remains fenced behind stable UnsupportedFeature diagnostics locally. |
+| Messaging | `Messaging.sendEmail(Messaging.Email[],Boolean)` | `supported` | Returns ordered local SendEmailResult values for supported email message DTOs; outbound delivery remains hosted. |
 | PageReference | `PageReference` | `supported` | Constructor, URL, redirect, mutable parameters, headers, cookies, and current-page state are modeled. |
 | PageReference | `PageReference(partialURL)` | `supported` | Builds a VM-local PageReference from a partial URL with mutable parameters and headers. |
 | PageReference | `PageReference(record)` | `supported` | Builds a Visualforce PageReference from a local ApexPage SObject record. |
@@ -211,8 +213,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | System | `System.assert` | `supported` | Assertion failure returns runtime error. |
 | System | `System.assertEquals` | `supported` | Assertion failure returns runtime error. |
 | System | `System.debug` | `supported` | Collected in result debug output. |
-| System | `System.enqueueJob wall-clock delay and duplicate signature enforcement` | `unsupported` | Wall-clock queue scheduling and hosted duplicate-signature locking require Salesforce async infrastructure. |
-| System | `System.enqueueJob(Object,Object)` | `supported` | Accepts Integer and AsyncOptions queueable delay values plus local AsyncOptions maximumQueueableStackDepth for Test.stopTest drain behavior. |
+| System | `System.enqueueJob hosted wall-clock queue scheduling` | `unsupported` | Wall-clock queue scheduling and cross-transaction async locks require Salesforce async infrastructure. |
+| System | `System.enqueueJob(Object,Object)` | `supported` | Accepts Integer and AsyncOptions queueable delay values, duplicate signatures, and local AsyncOptions maximumQueueableStackDepth for Test.stopTest drain behavior. |
 | System | `System.runAs package install and license validation` | `unsupported` | Package installation and license validation require hosted subscriber org state. |
 | System | `System.runAs(Object,Object)` | `supported` | Tracks local package-version test context during runAs execution. |
 | System | `System.runAs(Package.Version)` | `supported` | Tracks local package-version test context during runAs execution. |
