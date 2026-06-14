@@ -61,6 +61,109 @@ func TestAnalyzeAggregatesDurationEvents(t *testing.T) {
 	}
 }
 
+func TestAnalyzeRetainsStableCorrelationArgs(t *testing.T) {
+	query := "SELECT Id FROM Account"
+	operationID := trace.StableOperationID("Slow.cls", 9, "soql", query)
+	queryHash := trace.StableQueryHash(query)
+	doc := trace.NewDocument([]trace.Event{
+		trace.Instant("apex.soql", "apex.soql", 11000, map[string]any{
+			trace.ArgQuery:         query,
+			trace.ArgRows:          200,
+			trace.ArgOperationID:   operationID,
+			trace.ArgQueryHash:     queryHash,
+			trace.ArgObject:        "Account",
+			trace.ArgFile:          "Slow.cls",
+			trace.ArgLine:          9,
+			trace.ArgColumn:        5,
+			trace.ArgNamespace:     "pkg",
+			trace.ArgTransactionID: "tx-1",
+		}),
+		trace.Duration("apex.soql", "apex.soql", 12000, 1500, map[string]any{
+			trace.ArgQuery:       query,
+			trace.ArgOperationID: operationID,
+			trace.ArgQueryHash:   queryHash,
+			trace.ArgObject:      "Account",
+			trace.ArgFile:        "Slow.cls",
+			trace.ArgLine:        9,
+			trace.ArgColumn:      5,
+			trace.ArgNamespace:   "pkg",
+		}),
+	})
+
+	report := Analyze(doc)
+	if len(report.SOQL) != 1 {
+		t.Fatalf("soql entries = %#v", report.SOQL)
+	}
+	entry := report.SOQL[0]
+	if entry.OperationID != operationID || entry.QueryHash != queryHash || entry.Object != "Account" {
+		t.Fatalf("correlation args = %#v", entry)
+	}
+	if entry.File != "Slow.cls" || len(entry.SourceRanges) != 1 || entry.SourceRanges[0].Line != 9 || entry.SourceRanges[0].Column != 5 {
+		t.Fatalf("source attribution = %#v", entry)
+	}
+	if entry.Namespace != "pkg" || entry.TransactionID != "tx-1" {
+		t.Fatalf("stable context = %#v", entry)
+	}
+}
+
+func TestAnalyzeSplitsEntriesByOperationIDWhenPresent(t *testing.T) {
+	query := "SELECT Id FROM Account"
+	firstID := trace.StableOperationID("Slow.cls", 9, "soql", query)
+	secondID := trace.StableOperationID("Slow.cls", 14, "soql", query)
+	doc := trace.NewDocument([]trace.Event{
+		trace.Instant("apex.soql", "apex.soql", 1, map[string]any{
+			trace.ArgQuery:       query,
+			trace.ArgRows:        2,
+			trace.ArgOperationID: firstID,
+			trace.ArgFile:        "Slow.cls",
+			trace.ArgLine:        9,
+		}),
+		trace.Instant("apex.soql", "apex.soql", 2, map[string]any{
+			trace.ArgQuery:       query,
+			trace.ArgRows:        3,
+			trace.ArgOperationID: secondID,
+			trace.ArgFile:        "Slow.cls",
+			trace.ArgLine:        14,
+		}),
+	})
+
+	report := Analyze(doc)
+	if len(report.SOQL) != 2 {
+		t.Fatalf("soql entries = %#v", report.SOQL)
+	}
+	if report.Limits.SOQLQueries != 2 || report.Limits.SOQLRows != 5 {
+		t.Fatalf("limits = %#v", report.Limits)
+	}
+}
+
+func TestAnalyzeRetainsMethodAndEntryPointArgs(t *testing.T) {
+	doc := trace.NewDocument([]trace.Event{
+		trace.Duration("apex.method.Service.run", "apex.method", 1, 1000, map[string]any{
+			trace.ArgClass:       "Service",
+			trace.ArgMethod:      "Service.run",
+			trace.ArgOperationID: "method-op",
+			trace.ArgNamespace:   "pkg",
+			trace.ArgFile:        "Service.cls",
+			trace.ArgLine:        4,
+		}),
+		trace.Instant("apex.trigger.AccountTrigger", "apex.trigger", 2, map[string]any{
+			trace.ArgEntryPoint:  "AccountTrigger",
+			trace.ArgObject:      "Account",
+			trace.ArgOperation:   "insert",
+			trace.ArgOperationID: "trigger-op",
+			trace.ArgRows:        2,
+		}),
+	})
+
+	report := Analyze(doc)
+	if len(report.Methods) != 1 || report.Methods[0].Class != "Service" || report.Methods[0].Method != "Service.run" || report.Methods[0].Namespace != "pkg" {
+		t.Fatalf("methods = %#v", report.Methods)
+	}
+	if len(report.Triggers) != 1 || report.Triggers[0].EntryPoint != "AccountTrigger" || report.Triggers[0].Operation != "insert" || report.Triggers[0].Object != "Account" {
+		t.Fatalf("triggers = %#v", report.Triggers)
+	}
+}
+
 func TestAnalyzeWallClockTreatsZeroTimestampAsStart(t *testing.T) {
 	report := Analyze(trace.NewDocument([]trace.Event{
 		trace.Instant("apex.statement.first", "apex.statement", 0, nil),

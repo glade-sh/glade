@@ -198,11 +198,7 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 		return Null, recordsErr
 	}
 	results, err := vm.applyDML(op, args[0], allOrNone, externalIDField, dmlOptions, result)
-	appendDurationTrace(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), map[string]any{
-		"operation": op,
-		"rows":      len(records),
-		"objects":   dmlTraceObjectNames(records),
-	})
+	appendDurationTrace(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), vm.traceDMLArgs(op, records, len(records)))
 	if err != nil {
 		return Null, err
 	}
@@ -1087,11 +1083,7 @@ func (vm *VM) applyDatabaseRecordAction(op string, value Value, allOrNone bool, 
 	if err := vm.checkMixedDML(records); err != nil {
 		return nil, err
 	}
-	appendTrace(result, "apex.dml."+op, "apex.dml", map[string]any{
-		"operation": op,
-		"rows":      len(records),
-		"objects":   dmlTraceObjectNames(records),
-	})
+	appendTrace(result, "apex.dml."+op, "apex.dml", vm.traceDMLArgs(op, records, len(records)))
 	var backup storage.OrgState
 	if allOrNone {
 		backup = snapshotRuntimeOrgState(vm.Org)
@@ -1265,10 +1257,7 @@ func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) 
 	if err := vm.checkMixedDML(recordsForChecks); err != nil {
 		return Null, err
 	}
-	appendTrace(result, "apex.dml.merge", "apex.dml", map[string]any{
-		"operation": "merge",
-		"rows":      len(recordsForChecks),
-	})
+	appendTrace(result, "apex.dml.merge", "apex.dml", vm.traceDMLArgs("merge", recordsForChecks, len(recordsForChecks)))
 	var backup storage.OrgState
 	if allOrNone {
 		backup = snapshotRuntimeOrgState(vm.Org)
@@ -1760,11 +1749,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	if op == "upsert" {
 		return vm.applyUpsertDML(records, targets, allOrNone, externalIDField, options, result)
 	}
-	appendTrace(result, "apex.dml."+op, "apex.dml", map[string]any{
-		"operation": op,
-		"rows":      len(records),
-		"objects":   dmlTraceObjectNames(records),
-	})
+	appendTrace(result, "apex.dml."+op, "apex.dml", vm.traceDMLArgs(op, records, len(records)))
 	if op == "insert" {
 		vm.applySObjectFieldDefaults(records)
 		vm.applyBeforeDMLDerivedFields(records)
@@ -2290,11 +2275,7 @@ func successfulDMLInputs(records, before []storage.Record, results []dml.Result)
 }
 
 func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNone bool, externalIDField string, options dml.Options, result *Result) ([]dml.Result, error) {
-	appendTrace(result, "apex.dml.upsert", "apex.dml", map[string]any{
-		"operation": "upsert",
-		"rows":      len(records),
-		"objects":   dmlTraceObjectNames(records),
-	})
+	appendTrace(result, "apex.dml.upsert", "apex.dml", vm.traceDMLArgs("upsert", records, len(records)))
 	var rollback vmDMLRollbackPoint
 	rollbackReady := false
 	ensureRollback := func(forceSnapshot bool) {
@@ -4680,10 +4661,7 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, result
 			args = append(args, value)
 		}
 		value, err := vm.executeDatabaseMerge(args, result)
-		appendDurationTrace(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), map[string]any{
-			"operation": op,
-			"rows":      len(args),
-		})
+		appendDurationTrace(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), vm.traceDMLArgs(op, nil, len(args)))
 		if err != nil {
 			return err
 		}
@@ -4719,11 +4697,7 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, result
 	if err != nil {
 		return err
 	}
-	appendDurationTrace(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), map[string]any{
-		"operation": op,
-		"rows":      len(records),
-		"objects":   dmlTraceObjectNames(records),
-	})
+	appendDurationTrace(result, "apex.dml."+op, "apex.dml", traceStart, traceDurationSince(traceStartedAt), vm.traceDMLArgs(op, records, len(records)))
 	for _, dmlResult := range results {
 		if !dmlResult.Success {
 			vm.addVisualforceDMLPageMessages(results)

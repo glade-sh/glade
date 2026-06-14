@@ -36,6 +36,16 @@ glade check --project .
 glade test --project . --json
 ```
 
+Advisory performance triage stays in the first-party performance plugin:
+
+```bash
+glade performance scan --project . --trace reports/slow.trace.json --format markdown --top 10
+```
+
+`glade` owns the local execution trace and profile facts. The plugin owns
+static risk ranking, trace correlation, metadata blast-radius analysis, and
+optional org-facts snapshots.
+
 Release installation and artifact verification are documented in
 [`docs/INSTALL.md`](INSTALL.md).
 Editor tasks, LSP wiring, and VS Code launch examples are documented in

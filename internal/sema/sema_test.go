@@ -516,6 +516,107 @@ public class UsesSOSL {
 	}
 }
 
+func TestAnalyzeWarnsForSOQLInLoop(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "QueryInLoop.cls")
+	writeSemaFile(t, classPath, `
+public class QueryInLoop {
+  public static void run(List<Account> accounts) {
+    for (Account account : accounts) {
+      List<Contact> contacts = [SELECT Id FROM Contact WHERE AccountId = :account.Id];
+      System.debug(contacts.size());
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{
+		Objects: []schema.Object{{Name: "Account"}, {Name: "Contact"}},
+	})
+
+	result := Analyze(index)
+	if !hasDiagnosticCode(result.Diagnostics, "GLADEPERF001") {
+		t.Fatalf("expected GLADEPERF001 diagnostic, got %#v", result.Diagnostics)
+	}
+	if result.HasErrors() {
+		t.Fatalf("performance warning should not fail check: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeWarnsForDMLInLoop(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "DMLInLoop.cls")
+	writeSemaFile(t, classPath, `
+public class DMLInLoop {
+  public static void run(List<Account> accounts) {
+    for (Account account : accounts) {
+      update account;
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{
+		Objects: []schema.Object{{Name: "Account"}},
+	})
+
+	result := Analyze(index)
+	if !hasDiagnosticCode(result.Diagnostics, "GLADEPERF001") {
+		t.Fatalf("expected GLADEPERF001 diagnostic, got %#v", result.Diagnostics)
+	}
+	if result.HasErrors() {
+		t.Fatalf("performance warning should not fail check: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeWarnsForDatabaseDMLCallInLoop(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "DatabaseDMLInLoop.cls")
+	writeSemaFile(t, classPath, `
+public class DatabaseDMLInLoop {
+  public static void run(List<Account> accounts) {
+    for (Account account : accounts) {
+      Database.update(account, false);
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{
+		Objects: []schema.Object{{Name: "Account"}},
+	})
+
+	result := Analyze(index)
+	if !hasDiagnosticCode(result.Diagnostics, "GLADEPERF001") {
+		t.Fatalf("expected GLADEPERF001 diagnostic, got %#v", result.Diagnostics)
+	}
+	if result.HasErrors() {
+		t.Fatalf("performance warning should not fail check: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeWarnsForStaticFirstTouchMassMetadata(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "HeavyConstants.cls")
+	writeSemaFile(t, classPath, `
+public class HeavyConstants {
+  public static Map<String, Schema.SObjectType> TOKENS = Schema.getGlobalDescribe();
+  static {
+    Map<String, FeatureFlag__mdt> flags = FeatureFlag__mdt.getAll();
+  }
+  public static final String LABEL = 'ok';
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{
+		Objects: []schema.Object{{Name: "FeatureFlag__mdt"}},
+	})
+
+	result := Analyze(index)
+	if !hasDiagnosticCode(result.Diagnostics, "GLADEPERF002") {
+		t.Fatalf("expected GLADEPERF002 diagnostic, got %#v", result.Diagnostics)
+	}
+	if result.HasErrors() {
+		t.Fatalf("performance warning should not fail check: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeShortNestedTypeMatchesAnyCompatibleCandidate(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "One.cls"), `
@@ -6471,4 +6572,13 @@ func slicesEqual(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+func hasDiagnosticCode(diagnostics []diagnostic.Diagnostic, code string) bool {
+	for _, diag := range diagnostics {
+		if diag.Code == code {
+			return true
+		}
+	}
+	return false
 }

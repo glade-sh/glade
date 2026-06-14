@@ -312,13 +312,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		Column: method.Column,
 	})
 	traceStart, traceStartedAt := traceSpanStart(result)
-	appendTrace(result, "apex.method."+method.Name, "apex.method", map[string]any{
-		"method": method.Name,
-		"class":  method.ClassName,
-		"file":   method.File,
-		"line":   method.Line,
-		"column": method.Column,
-	})
+	appendTrace(result, "apex.method."+method.Name, "apex.method", vm.traceMethodArgs(method))
 	defer func() {
 		appendDurationTrace(
 			result,
@@ -326,13 +320,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			"apex.method",
 			traceStart,
 			traceDurationSince(traceStartedAt),
-			map[string]any{
-				"method": method.Name,
-				"class":  method.ClassName,
-				"file":   method.File,
-				"line":   method.Line,
-				"column": method.Column,
-			},
+			vm.traceMethodArgs(method),
 		)
 	}()
 	defer func() {

@@ -120,20 +120,15 @@ func (vm *VM) executeSOQLRowsWithExpanderAndScope(raw string, execResult *Result
 		}
 		values = append(values, value)
 	}
-	appendTrace(execResult, "apex.soql", "apex.soql", map[string]any{
-		"query": queryText,
-		"rows":  result.Rows,
-	})
+	traceArgs := vm.traceSOQLArgs(queryText, query.Object, result.Rows)
+	appendTrace(execResult, "apex.soql", "apex.soql", traceArgs)
 	appendDurationTrace(
 		execResult,
 		"apex.soql",
 		"apex.soql",
 		traceStart,
 		traceDurationSince(traceStartedAt),
-		map[string]any{
-			"query": queryText,
-			"rows":  result.Rows,
-		},
+		vm.traceSOQLArgs(queryText, query.Object, result.Rows),
 	)
 	return values, nil
 }
@@ -361,11 +356,7 @@ func (vm *VM) executeSoqlStub(query soql.Query, queryText string, binds Value, e
 		return nil, true, fmt.Errorf("SoqlStubProvider %s handleSoqlQuery must return List<SObject>", provider.Type)
 	}
 	rows := append([]Value(nil), value.List...)
-	appendTrace(execResult, "apex.soql.stub", "apex.soql", map[string]any{
-		"query":  queryText,
-		"object": objectName,
-		"rows":   len(rows),
-	})
+	appendTrace(execResult, "apex.soql.stub", "apex.soql", vm.traceSOQLArgs(queryText, objectName, len(rows)))
 	return rows, true, nil
 }
 

@@ -1874,7 +1874,7 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Schema.getGlobalDescribe expects 0 arguments")
 		}
-		appendTrace(result, "apex.describe.global", "apex.describe", map[string]any{"operation": "getGlobalDescribe"})
+		appendTrace(result, "apex.describe.global", "apex.describe", vm.traceDescribeArgs("getGlobalDescribe", nil))
 		return vm.schemaGlobalDescribe(), nil
 	case "Schema.describeSObjects":
 		if (len(args) != 1 && len(args) != 2) || args[0].Kind != ValueList {
@@ -1902,28 +1902,25 @@ platformStaticCall:
 			}
 			describes = append(describes, vm.describeSObjectValue(resolved, definition))
 		}
-		appendTrace(result, "apex.describe.sobjects", "apex.describe", map[string]any{
-			"operation": "describeSObjects",
-			"count":     len(describes),
-		})
+		appendTrace(result, "apex.describe.sobjects", "apex.describe", vm.traceDescribeArgs("describeSObjects", map[string]any{
+			"count": len(describes),
+		}))
 		return List(describes...), nil
 	case "Schema.describeTabs":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Schema.describeTabs expects 0 arguments")
 		}
-		appendTrace(result, "apex.describe.tabs", "apex.describe", map[string]any{
-			"operation": "describeTabs",
-			"count":     len(vm.schemaDescribeTabValues()),
-		})
+		appendTrace(result, "apex.describe.tabs", "apex.describe", vm.traceDescribeArgs("describeTabs", map[string]any{
+			"count": len(vm.schemaDescribeTabValues()),
+		}))
 		return vm.schemaDescribeTabs(), nil
 	case "Schema.getAppDescribe":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Schema.getAppDescribe expects app name String")
 		}
-		appendTrace(result, "apex.describe.app", "apex.describe", map[string]any{
-			"operation": "getAppDescribe",
-			"app":       args[0].Text,
-		})
+		appendTrace(result, "apex.describe.app", "apex.describe", vm.traceDescribeArgs("getAppDescribe", map[string]any{
+			"app": args[0].Text,
+		}))
 		return vm.schemaGlobalDescribe(), nil
 	case "Schema.getModuleDescribe":
 		if len(args) > 1 || (len(args) == 1 && args[0].Kind != ValueString) {
@@ -1933,30 +1930,27 @@ platformStaticCall:
 		if len(args) == 1 {
 			module = args[0].Text
 		}
-		appendTrace(result, "apex.describe.module", "apex.describe", map[string]any{
-			"operation": "getModuleDescribe",
-			"module":    module,
-		})
+		appendTrace(result, "apex.describe.module", "apex.describe", vm.traceDescribeArgs("getModuleDescribe", map[string]any{
+			"module": module,
+		}))
 		return vm.schemaGlobalDescribe(), nil
 	case "Schema.describeDataCategoryGroups":
 		if len(args) != 1 || args[0].Kind != ValueList {
 			return Null, fmt.Errorf("Schema.describeDataCategoryGroups expects List<String>")
 		}
 		describes := vm.schemaDescribeDataCategoryGroups(args[0])
-		appendTrace(result, "apex.describe.dataCategoryGroups", "apex.describe", map[string]any{
-			"operation": "describeDataCategoryGroups",
-			"count":     len(describes.List),
-		})
+		appendTrace(result, "apex.describe.dataCategoryGroups", "apex.describe", vm.traceDescribeArgs("describeDataCategoryGroups", map[string]any{
+			"count": len(describes.List),
+		}))
 		return describes, nil
 	case "Schema.describeDataCategoryGroupStructures":
 		if len(args) != 2 || args[0].Kind != ValueList || args[1].Kind != ValueBool {
 			return Null, fmt.Errorf("Schema.describeDataCategoryGroupStructures expects List<Schema.DataCategoryGroupSobjectTypePair> and Boolean")
 		}
 		describes := vm.schemaDescribeDataCategoryGroupStructures(args[0], args[1].Bool)
-		appendTrace(result, "apex.describe.dataCategoryGroupStructures", "apex.describe", map[string]any{
-			"operation": "describeDataCategoryGroupStructures",
-			"count":     len(describes.List),
-		})
+		appendTrace(result, "apex.describe.dataCategoryGroupStructures", "apex.describe", vm.traceDescribeArgs("describeDataCategoryGroupStructures", map[string]any{
+			"count": len(describes.List),
+		}))
 		return describes, nil
 	case "FeatureManagement.checkPermission":
 		if len(args) != 1 || args[0].Kind != ValueString {
