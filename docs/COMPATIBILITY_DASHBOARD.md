@@ -2,6 +2,10 @@
 
 Generated from the first-party compat plugin capability catalog.
 
+## Full Local Support Exit Criteria
+
+No post-MVP lane may stay `partial`. Each lane must be split into a complete local `supported` row plus exact hosted-service `unsupported` rows where needed. Local supported rows must cite deterministic tests, fixture evidence, or generated docs.
+
 ## MVP Gate
 
 - Target: full-featured glade-parity MVP
