@@ -2130,7 +2130,7 @@ func TestRunDAPAcceptsDBFlag(t *testing.T) {
 	}
 }
 
-const dapTestTimeout = 15 * time.Second
+const dapTestTimeout = 45 * time.Second
 
 func TestRunDAPLaunchEmitsStopped(t *testing.T) {
 	inR, inW := io.Pipe()

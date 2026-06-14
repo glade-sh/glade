@@ -447,11 +447,68 @@ type compositeBatchSubresponse struct {
 	StatusCode int `json:"statusCode"`
 }
 
+func (s *Server) compositeChild(org *storage.OrgState) Server {
+	return Server{
+		Org:                    org,
+		Source:                 s.Source,
+		LimitProfile:           s.LimitProfile,
+		LimitMode:              s.LimitMode,
+		LimitCaps:              s.LimitCaps,
+		Index:                  s.Index,
+		runtime:                s.runtime,
+		runtimeErr:             s.runtimeErr,
+		queryLocators:          cloneQueryLocatorStates(s.queryLocators),
+		queryOrder:             append([]string(nil), s.queryOrder...),
+		nextQueryID:            s.nextQueryID,
+		bulkQueryJobs:          cloneBulkQueryJobs(s.bulkQueryJobs),
+		nextBulkJobID:          s.nextBulkJobID,
+		lightning:              s.lightning,
+		metadataJobs:           cloneMetadataJobs(s.metadataJobs),
+		nextMetadataDeployID:   s.nextMetadataDeployID,
+		nextMetadataRetrieveID: s.nextMetadataRetrieveID,
+	}
+}
+
+func cloneQueryLocatorStates(states map[string]queryLocatorState) map[string]queryLocatorState {
+	if states == nil {
+		return nil
+	}
+	cloned := make(map[string]queryLocatorState, len(states))
+	for id, state := range states {
+		state.records = cloneQueryRecords(state.records)
+		cloned[id] = state
+	}
+	return cloned
+}
+
+func cloneBulkQueryJobs(jobs map[string]bulkQueryJob) map[string]bulkQueryJob {
+	if jobs == nil {
+		return nil
+	}
+	cloned := make(map[string]bulkQueryJob, len(jobs))
+	for id, job := range jobs {
+		job.fields = append([]string(nil), job.fields...)
+		job.records = cloneQueryRecords(job.records)
+		cloned[id] = job
+	}
+	return cloned
+}
+
+func cloneMetadataJobs(jobs map[string]metadataLocalJob) map[string]metadataLocalJob {
+	if jobs == nil {
+		return nil
+	}
+	cloned := make(map[string]metadataLocalJob, len(jobs))
+	for id, job := range jobs {
+		job.Components = append([]metadataComponent(nil), job.Components...)
+		cloned[id] = job
+	}
+	return cloned
+}
+
 func (s *Server) handleCompositeBatch(w http.ResponseWriter, r *http.Request, version string, body compositeBatchEnvelope) {
 	next := s.Org.Clone()
-	child := *s
-	child.Org = &next
-	child.Store = nil
+	child := s.compositeChild(&next)
 	responses := make([]compositeBatchSubresponse, 0, len(body.BatchRequests))
 	hasFailure := false
 	hasMutation := false
@@ -490,9 +547,7 @@ func (s *Server) handleCompositeBatch(w http.ResponseWriter, r *http.Request, ve
 
 func (s *Server) handleGenericComposite(w http.ResponseWriter, r *http.Request, version string, body compositeRequestEnvelope) {
 	next := s.Org.Clone()
-	child := *s
-	child.Org = &next
-	child.Store = nil
+	child := s.compositeChild(&next)
 	references := make(map[string]any, len(body.CompositeRequest))
 	responses := make([]compositeSubresponse, 0, len(body.CompositeRequest))
 	hasFailure := false

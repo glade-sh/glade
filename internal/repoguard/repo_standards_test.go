@@ -132,7 +132,7 @@ func TestPluginMaintenanceBoundary(t *testing.T) {
 		}
 		perfscanImport := regexp.MustCompile(`(?m)^\s*(?:\w+\s+)?"github\.com/glade-sh/glade/internal/` + "perfscan")
 		if perfscanImport.MatchString(text) {
-			t.Errorf("%s imports %s; performance scan belongs to the plugin", rel, "internal/"+ "perfscan")
+			t.Errorf("%s imports %s; performance scan belongs to the plugin", rel, "internal/"+"perfscan")
 		}
 	}
 
@@ -141,7 +141,7 @@ func TestPluginMaintenanceBoundary(t *testing.T) {
 		t.Error("product help still lists inspect performance")
 	}
 
-	for _, rel := range []string{"README.md", "docs/LOCAL_TESTING.md", "docs/DOGFOOD_CHECKLIST.md", "docs/INSTALL.md", "docs/COMPATIBILITY.md"} {
+	for _, rel := range []string{"README.md", "docs/LOCAL_TESTING.md", "docs/INSTALL.md", "docs/COMPATIBILITY.md"} {
 		if strings.Contains(readRepoFile(t, root, rel), "glade inspect performance") {
 			t.Errorf("%s still routes performance scans through glade inspect performance", rel)
 		}

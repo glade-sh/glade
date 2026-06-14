@@ -244,9 +244,7 @@ func (s *Server) handleCompositeGraph(w http.ResponseWriter, r *http.Request, ve
 	responses := make([]map[string]any, 0, len(body.Graphs))
 	for _, graph := range body.Graphs {
 		next := s.Org.Clone()
-		child := *s
-		child.Org = &next
-		child.Store = nil
+		child := s.compositeChild(&next)
 		references := make(map[string]any, len(graph.CompositeRequest))
 		subresponses := make([]compositeSubresponse, 0, len(graph.CompositeRequest))
 		hasFailure := false

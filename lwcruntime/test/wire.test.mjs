@@ -48,7 +48,12 @@ test("apex wire adapter renders vm-backed data", async (t) => {
     pages: {},
     wireHandlers: {
       "/lightning/wire/apex": (payload) => ({
-        data: `items:${payload.params?.recordId ?? ""}`,
+        data: [
+          {
+            Id: payload.params?.recordId ?? "",
+            Name: `items:${payload.params?.recordId ?? ""}`,
+          },
+        ],
       }),
     },
   });

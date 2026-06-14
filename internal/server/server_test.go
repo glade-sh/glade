@@ -2312,6 +2312,38 @@ func TestGenericCompositeAllOrNoneRollsBackMutatingSubrequests(t *testing.T) {
 	}
 }
 
+func TestGenericCompositeAllOrNoneDoesNotLeakQueryLocators(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Acme")
+	addAccountForTest(&org, "001000000000002", "Trail")
+	addAccountForTest(&org, "001000000000003", "Local")
+	handler := New(&org)
+
+	initial := httptest.NewRecorder()
+	handler.ServeHTTP(initial, httptest.NewRequest(http.MethodGet, serverTestDataPath+"/query?q=SELECT%20Id,%20Name%20FROM%20Account%20ORDER%20BY%20Name&batchSize=1", nil))
+	if initial.Code != http.StatusOK {
+		t.Fatalf("initial query status = %d body=%s", initial.Code, initial.Body.String())
+	}
+	if got := len(handler.queryLocators); got != 1 {
+		t.Fatalf("initial query locators = %d", got)
+	}
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite", strings.NewReader(`{
+  "allOrNone": true,
+  "compositeRequest": [
+    {"method":"GET","url":"`+serverTestDataPath+`/query?q=SELECT%20Id,%20Name%20FROM%20Account%20ORDER%20BY%20Name&batchSize=1","referenceId":"pagedQuery"},
+    {"method":"POST","url":"`+serverTestDataPath+`/sobjects/Account","referenceId":"bad","body":{"Description":"Missing name"}}
+  ]
+}`)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("composite status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := len(handler.queryLocators); got != 1 {
+		t.Fatalf("rolled back composite leaked query locators = %d", got)
+	}
+}
+
 func TestGenericCompositePartialFailureCommitsWithoutAllOrNone(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
