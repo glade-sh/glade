@@ -18,6 +18,24 @@ func TestManifestRoundTrip(t *testing.T) {
 		},
 		MinimumGladeVersion: "0.1.0",
 		Source:              "github.com/glade-sh/glade/tools",
+		Editor: &EditorManifest{
+			Actions: []EditorActionManifest{
+				{
+					ID:          "surface.refresh",
+					Title:       "Refresh Surface Ledger",
+					Description: "Refresh the support surface.",
+					View:        "plugins",
+					Contexts:    []string{"project", "lastLocalRun"},
+					Command:     []string{"surface", "refresh"},
+					Args:        []string{"--json"},
+					Inputs: []EditorActionInputManifest{
+						{Name: "ceiling", Label: "Ceiling", Type: "number", Required: true, Default: "0"},
+					},
+					Output: "glade.markdownReport.v1",
+					Icon:   "refresh-cw",
+				},
+			},
+		},
 	}
 
 	data, err := json.Marshal(input)
@@ -30,6 +48,94 @@ func TestManifestRoundTrip(t *testing.T) {
 	}
 	if got.Name != "compat" || len(got.Commands) != 2 || got.Commands[1].Path[0] != "surface" {
 		t.Fatalf("manifest round trip lost data: %#v", got)
+	}
+	if got.Editor == nil || len(got.Editor.Actions) != 1 || got.Editor.Actions[0].Inputs[0].Name != "ceiling" {
+		t.Fatalf("manifest round trip lost editor data: %#v", got.Editor)
+	}
+}
+
+func TestManifestValidateAcceptsEditorMetadata(t *testing.T) {
+	manifest := Manifest{
+		APIVersion: APIVersion,
+		Name:       "compat",
+		Version:    "0.1.0",
+		Commands: []CommandManifest{
+			{Path: []string{"surface", "refresh"}},
+		},
+		Editor: &EditorManifest{
+			Actions: []EditorActionManifest{
+				{
+					ID:       "surface.refresh",
+					Title:    "Refresh Surface Ledger",
+					View:     "plugins",
+					Contexts: []string{"project", "activeApexFile", "lwcServerRunning"},
+					Command:  []string{"surface", "refresh"},
+					Inputs: []EditorActionInputManifest{
+						{Name: "packet", Label: "Packet", Type: "string", Required: true, Default: "Data.Runtime"},
+					},
+					Output: "glade.findings.v1",
+					Icon:   "refresh-cw",
+				},
+			},
+		},
+	}
+
+	if err := manifest.Validate(); err != nil {
+		t.Fatalf("Validate() failed: %v", err)
+	}
+}
+
+func TestManifestValidateRejectsInvalidEditorMetadata(t *testing.T) {
+	tests := []struct {
+		name   string
+		action EditorActionManifest
+		want   string
+	}{
+		{
+			name:   "view",
+			action: EditorActionManifest{ID: "bad.view", Title: "Bad View", View: "unknown", Command: []string{"surface"}, Output: "glade.rawText.v1"},
+			want:   "view",
+		},
+		{
+			name:   "context",
+			action: EditorActionManifest{ID: "bad.context", Title: "Bad Context", View: "plugins", Contexts: []string{"notAContext"}, Command: []string{"surface"}, Output: "glade.rawText.v1"},
+			want:   "context",
+		},
+		{
+			name:   "output",
+			action: EditorActionManifest{ID: "bad.output", Title: "Bad Output", View: "plugins", Command: []string{"surface"}, Output: "glade.unknown.v1"},
+			want:   "output",
+		},
+		{
+			name:   "command root",
+			action: EditorActionManifest{ID: "bad.command", Title: "Bad Command", View: "plugins", Command: []string{"other"}, Output: "glade.rawText.v1"},
+			want:   "declared by plugin",
+		},
+		{
+			name:   "input name",
+			action: EditorActionManifest{ID: "bad.input", Title: "Bad Input", View: "plugins", Command: []string{"surface"}, Inputs: []EditorActionInputManifest{{Label: "Packet", Type: "string"}}, Output: "glade.rawText.v1"},
+			want:   "input name",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			manifest := Manifest{
+				APIVersion: APIVersion,
+				Name:       "compat",
+				Version:    "0.1.0",
+				Commands:   []CommandManifest{{Path: []string{"surface"}}},
+				Editor:     &EditorManifest{Actions: []EditorActionManifest{tt.action}},
+			}
+
+			err := manifest.Validate()
+			if err == nil {
+				t.Fatal("expected invalid editor metadata to fail")
+			}
+			if !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("expected error containing %q, got %v", tt.want, err)
+			}
+		})
 	}
 }
 

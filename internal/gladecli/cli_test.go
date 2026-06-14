@@ -123,6 +123,29 @@ func TestRunVersionJSON(t *testing.T) {
 	}
 }
 
+func TestToolchainStatusJSONReportsMissingToolchain(t *testing.T) {
+	root := t.TempDir()
+	t.Chdir(root)
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "xdg"))
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"toolchain", "status", "--json"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1", code)
+	}
+	var got struct {
+		OK     bool   `json:"ok"`
+		Path   string `json:"path"`
+		Detail string `json:"detail"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
+	}
+	if got.OK || got.Path == "" || !strings.Contains(got.Detail, "missing") {
+		t.Fatalf("unexpected status JSON: %#v", got)
+	}
+}
+
 func TestRunDoctorReportsParser(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"doctor"}, &stdout, &stderr)
@@ -495,6 +518,69 @@ func TestPluginsListEmpty(t *testing.T) {
 	}
 }
 
+func TestPluginsListJSONIncludesEditorMetadata(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("GLADE_HOME", home)
+	manifestPath := filepath.Join(home, "plugins", "compat", "0.1.0", "plugin.json")
+	if err := os.MkdirAll(filepath.Dir(manifestPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	manifest := `{"apiVersion":"glade.plugin.v1","name":"compat","version":"0.1.0","commands":[{"path":["surface"],"summary":"Surface commands."}],"editor":{"actions":[{"id":"surface.refresh","title":"Refresh Surface","description":"Refresh support metadata.","view":"plugins","contexts":["project","lastLocalRun"],"command":["surface","refresh"],"args":["--json"],"inputs":[{"name":"packet","label":"Packet","type":"string","required":true,"default":"Data.Runtime"}],"output":"glade.markdownReport.v1","icon":"refresh-cw"}]}}`
+	if err := os.WriteFile(manifestPath, []byte(manifest+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	statePath := filepath.Join(home, "plugins", "installed.json")
+	state := fmt.Sprintf(`{"version":1,"plugins":[{"name":"compat","canonicalName":"@glade/compat","storageName":"glade__compat","version":"0.1.0","linked":true,"commands":["surface"],"executable":"/tmp/glade-plugin-compat","manifest":%q,"source":"link:/tmp/glade-plugin-compat"}]}`+"\n", manifestPath)
+	if err := os.WriteFile(statePath, []byte(state), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "list", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("list exit=%d stderr=%s", code, stderr.String())
+	}
+	var got struct {
+		Plugins []struct {
+			Identity     string   `json:"identity"`
+			Version      string   `json:"version"`
+			Linked       bool     `json:"linked"`
+			CommandRoots []string `json:"commandRoots"`
+			Executable   string   `json:"executable"`
+			ManifestPath string   `json:"manifestPath"`
+			Source       string   `json:"source"`
+			Editor       *struct {
+				Actions []struct {
+					ID      string   `json:"id"`
+					View    string   `json:"view"`
+					Command []string `json:"command"`
+					Output  string   `json:"output"`
+					Inputs  []struct {
+						Name     string `json:"name"`
+						Required bool   `json:"required"`
+					} `json:"inputs"`
+				} `json:"actions"`
+			} `json:"editor"`
+		} `json:"plugins"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
+	}
+	if len(got.Plugins) != 1 {
+		t.Fatalf("plugins length = %d, want 1: %#v", len(got.Plugins), got)
+	}
+	plugin := got.Plugins[0]
+	if plugin.Identity != "@glade/compat" || plugin.Version != "0.1.0" || !plugin.Linked || plugin.CommandRoots[0] != "surface" ||
+		plugin.ManifestPath != manifestPath || plugin.Source == "" || plugin.Editor == nil {
+		t.Fatalf("plugin JSON missing identity fields or editor metadata: %#v", plugin)
+	}
+	action := plugin.Editor.Actions[0]
+	if action.ID != "surface.refresh" || action.View != "plugins" || action.Command[0] != "surface" ||
+		action.Output != "glade.markdownReport.v1" || action.Inputs[0].Name != "packet" || !action.Inputs[0].Required {
+		t.Fatalf("unexpected editor action JSON: %#v", action)
+	}
+}
+
 func TestPluginsListAndWhichUseCanonicalIdentity(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("GLADE_HOME", home)
@@ -523,6 +609,53 @@ func TestPluginsListAndWhichUseCanonicalIdentity(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "compat is provided by @glade/compat 0.1.0") {
 		t.Fatalf("which did not use canonical identity:\n%s", stdout.String())
+	}
+}
+
+func TestPluginsDoctorJSON(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell helper uses sh")
+	}
+	home := t.TempDir()
+	t.Setenv("GLADE_HOME", home)
+	exe := filepath.Join(home, "glade-plugin-compat")
+	script := `#!/bin/sh
+if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
+  printf '{"apiVersion":"glade.plugin.v1","name":"compat","version":"0.1.0","commands":[{"path":["surface"],"summary":"Surface commands."}]}'
+  exit 0
+fi
+`
+	if err := os.WriteFile(exe, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	statePath := filepath.Join(home, "plugins", "installed.json")
+	if err := os.MkdirAll(filepath.Dir(statePath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	state := fmt.Sprintf(`{"version":1,"plugins":[{"name":"compat","version":"0.1.0","commands":["surface"],"executable":%q,"manifest":"/tmp/plugin.json","source":"link:test","linked":true}]}`+"\n", exe)
+	if err := os.WriteFile(statePath, []byte(state), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "doctor", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("doctor exit=%d stderr=%s", code, stderr.String())
+	}
+	var got struct {
+		OK      bool `json:"ok"`
+		Plugins []struct {
+			Identity string `json:"identity"`
+			Version  string `json:"version"`
+			OK       bool   `json:"ok"`
+			Message  string `json:"message"`
+		} `json:"plugins"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
+	}
+	if !got.OK || len(got.Plugins) != 1 || !got.Plugins[0].OK || got.Plugins[0].Identity != "compat" || got.Plugins[0].Message != "ok" {
+		t.Fatalf("unexpected doctor JSON: %#v", got)
 	}
 }
 
@@ -818,6 +951,11 @@ func TestRunCommandHelp(t *testing.T) {
 			name: "help test",
 			args: []string{"help", "test"},
 			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "startup.gob", "--no-cache", "--connect", "--daemon"},
+		},
+		{
+			name: "help dev",
+			args: []string{"help", "dev"},
+			want: []string{"Usage:", "glade dev vf [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]", "glade dev lwc [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]", "Subcommands:", "vf", "lwc"},
 		},
 		{
 			name: "help exit codes",
