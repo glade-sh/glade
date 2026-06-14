@@ -26,6 +26,11 @@ glade dev lwc --project . --addr 127.0.0.1:0 --ready-file /tmp/glade-lwc-ready.j
 The startup banner lists discovered preview routes and watches LWC, FlexiPage,
 custom tab, Visualforce, Apex, and static resource changes.
 
+In VS Code, the Glade Start Here view can show the toolchain state and current
+Local Preview counts. LWC preview reports discovered route count. Visualforce
+preview reports page count. When either server is not running, Start Here shows
+that preview as `stopped`.
+
 ## Preview Routes
 
 Open these routes from the local server:
