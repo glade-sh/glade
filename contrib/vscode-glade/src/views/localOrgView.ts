@@ -2,7 +2,9 @@ import * as vscode from "vscode";
 import { GladeEnvironment } from "../environments";
 import { configuredActiveEnvironment } from "../localOrg";
 import { DBInspectResult, LocalOrgObjectRow, LocalOrgSummary, objectRowsFromInspect, summaryFromInspect } from "../localOrgModel";
+import { PluginActionRow } from "../plugins/controller";
 import { GladeProjectContext } from "../projectModel";
+import { pluginActionTreeRows } from "./pluginsView";
 import { commandItem, GladeTreeItem } from "./tree";
 
 export class LocalOrgView implements vscode.TreeDataProvider<GladeTreeItem> {
@@ -11,6 +13,7 @@ export class LocalOrgView implements vscode.TreeDataProvider<GladeTreeItem> {
   private environment?: GladeEnvironment;
   private summary?: LocalOrgSummary;
   private rows: LocalOrgObjectRow[] = [];
+  private pluginActions: PluginActionRow[] = [];
   readonly onDidChangeTreeData = this.changed.event;
 
   setProject(project: GladeProjectContext | undefined): void {
@@ -26,6 +29,11 @@ export class LocalOrgView implements vscode.TreeDataProvider<GladeTreeItem> {
 
   refresh(): void {
     this.changed.fire();
+  }
+
+  setPluginActions(actions: PluginActionRow[]): void {
+    this.pluginActions = actions;
+    this.refresh();
   }
 
   setInspect(result: DBInspectResult, environment?: GladeEnvironment): void {
@@ -52,7 +60,7 @@ export class LocalOrgView implements vscode.TreeDataProvider<GladeTreeItem> {
         ? [labelItem("Active data", "not inspected", this.project.projectRoot)]
         : [];
     if (!this.summary) {
-      return [...environmentRows, ...commands];
+      return [...environmentRows, ...commands, ...pluginActionTreeRows(this.pluginActions)];
     }
     return [
       ...environmentRows,
@@ -63,6 +71,7 @@ export class LocalOrgView implements vscode.TreeDataProvider<GladeTreeItem> {
       summaryItem("Permissions", this.summary.permissions),
       ...this.rows.map((row) => summaryItem(row.name, row.rows)),
       ...commands,
+      ...pluginActionTreeRows(this.pluginActions),
     ];
   }
 }

@@ -28,12 +28,14 @@ assert.deepStrictEqual(viewIds, [
   "glade.localOrg",
   "glade.preview",
   "glade.debugLogs",
+  "glade.plugins",
 ]);
 assert(!viewIds.includes("glade.apexTests"), "local Apex tests must use native Testing, not a duplicate sidebar view");
 
 const activationEvents = manifest.activationEvents || [];
 assert(!activationEvents.includes("onView:glade.apexTests"), "glade.apexTests activation must be removed");
 assert(activationEvents.includes("onView:glade.preview"), "glade.preview view must activate the extension");
+assert(activationEvents.includes("onView:glade.plugins"), "glade.plugins view must activate the extension");
 
 const localRunsView = manifest.contributes.views.glade.find((view) => view.id === "glade.recommendedRuns");
 assert(localRunsView, "glade.recommendedRuns view must exist");
@@ -46,6 +48,10 @@ assert.strictEqual(previewView.name, "Local Preview");
 const debugView = manifest.contributes.views.glade.find((view) => view.id === "glade.debugLogs");
 assert(debugView, "glade.debugLogs view must exist");
 assert.strictEqual(debugView.name, "Debug");
+
+const pluginsView = manifest.contributes.views.glade.find((view) => view.id === "glade.plugins");
+assert(pluginsView, "glade.plugins view must exist");
+assert.strictEqual(pluginsView.name, "Plugins");
 
 for (const command of [
   "glade.runLocalProof",
@@ -62,6 +68,11 @@ for (const command of [
   "glade.stopVFPreview",
   "glade.openPreviewRoute",
   "glade.installToolchain",
+  "glade.refreshPlugins",
+  "glade.managePlugins",
+  "glade.runPluginAction",
+  "glade.linkLocalPlugin",
+  "glade.installPluginArchive",
 ]) {
   assert(
     manifest.contributes.commands.some((entry) => entry.command === command),

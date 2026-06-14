@@ -22,6 +22,7 @@
     "onView:glade.localOrg",
     "onView:glade.preview",
     "onView:glade.debugLogs",
+    "onView:glade.plugins",
     "onDebugResolve:glade",
     "onCommand:glade.runChangedTests",
     "onCommand:glade.runFailedTests",
@@ -43,7 +44,12 @@
     "onCommand:glade.startVFPreview",
     "onCommand:glade.stopVFPreview",
     "onCommand:glade.openPreviewRoute",
-    "onCommand:glade.installToolchain"
+    "onCommand:glade.installToolchain",
+    "onCommand:glade.refreshPlugins",
+    "onCommand:glade.managePlugins",
+    "onCommand:glade.runPluginAction",
+    "onCommand:glade.linkLocalPlugin",
+    "onCommand:glade.installPluginArchive"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -86,6 +92,11 @@
         {
           "id": "glade.debugLogs",
           "name": "Debug",
+          "when": "config.glade.enableSidebar"
+        },
+        {
+          "id": "glade.plugins",
+          "name": "Plugins",
           "when": "config.glade.enableSidebar"
         }
       ]
@@ -210,6 +221,26 @@
       {
         "command": "glade.installToolchain",
         "title": "Glade: Install LWC Toolchain"
+      },
+      {
+        "command": "glade.refreshPlugins",
+        "title": "Glade: Refresh Plugins"
+      },
+      {
+        "command": "glade.managePlugins",
+        "title": "Glade: Manage Plugins"
+      },
+      {
+        "command": "glade.runPluginAction",
+        "title": "Glade: Run Plugin Action"
+      },
+      {
+        "command": "glade.linkLocalPlugin",
+        "title": "Glade: Link Local Plugin"
+      },
+      {
+        "command": "glade.installPluginArchive",
+        "title": "Glade: Install Plugin Archive"
       }
     ],
     "menus": {
@@ -366,7 +397,7 @@
   "scripts": {
     "compile": "tsc -p ./",
     "package": "mkdir -p dist && npm run compile && vsce package --allow-missing-repository --out dist/vscode-glade-${npm_package_version}.vsix",
-    "test": "npm run compile && node test/commands.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/environmentActions.test.js && node test/localOrg.test.js && node test/watch.test.js && node test/statusModel.test.js && node test/package.test.js && node test/startHereModel.test.js && node test/startHereState.test.js && node test/previewModel.test.js && node test/pluginModules.test.js"
+    "test": "npm run compile && node test/commands.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/environmentActions.test.js && node test/localOrg.test.js && node test/watch.test.js && node test/statusModel.test.js && node test/package.test.js && node test/startHereModel.test.js && node test/startHereState.test.js && node test/previewModel.test.js && node test/pluginModules.test.js && node test/pluginController.test.js"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

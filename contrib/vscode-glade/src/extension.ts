@@ -21,6 +21,8 @@ import {
 import { summaryFromInspect } from "./localOrgModel";
 import { GladeOutput } from "./output";
 import { PreviewController } from "./preview/controller";
+import { PluginController, PluginDiagnosticEntry, pluginArtifactRows } from "./plugins/controller";
+import { PluginAvailableContexts, PluginEditorAction, PluginFindingSeverity } from "./plugins/model";
 import { findProjectContext } from "./projectContext";
 import { GladeProjectContext } from "./projectModel";
 import { StartHereState } from "./startHereState";
@@ -33,6 +35,7 @@ import { DebugView } from "./views/debugView";
 import { EnvironmentsView } from "./views/environmentsView";
 import { LocalOrgView } from "./views/localOrgView";
 import { PreviewView } from "./views/previewView";
+import { PluginsView } from "./views/pluginsView";
 import { RunsView } from "./views/runsView";
 import { StartHereView } from "./views/startHereView";
 
@@ -54,6 +57,33 @@ export function activate(context: vscode.ExtensionContext): void {
   const previewController = new PreviewController(output.logs);
   const previewView = new PreviewView(previewController);
   const debugView = new DebugView();
+  const pluginsView = new PluginsView();
+  const pluginDiagnostics = vscode.languages.createDiagnosticCollection("glade-plugins");
+  context.subscriptions.push(pluginDiagnostics);
+  let currentProject: GladeProjectContext | undefined;
+  const plugins = new PluginController({
+    project: findProjectContext,
+    activeFile: () => vscode.window.activeTextEditor?.document.uri.fsPath,
+    activeDb: () => currentProject ? configuredActiveEnvironment(currentProject).dbPath : undefined,
+    inputBox: (options) => Promise.resolve(vscode.window.showInputBox(options)),
+    quickPick: (items, options) => Promise.resolve(vscode.window.showQuickPick(items, options)),
+    openDialog: async (options) => {
+      const picked = await vscode.window.showOpenDialog(options);
+      return picked?.map((uri) => uri.fsPath);
+    },
+    diagnostics: {
+      set(entries) {
+        publishPluginDiagnostics(pluginDiagnostics, entries);
+      },
+      clear() {
+        pluginDiagnostics.clear();
+      },
+    },
+    log(message) {
+      output.logs.appendLine(message);
+    },
+    executeCommand: (command) => Promise.resolve(vscode.commands.executeCommand(command)).then(() => undefined),
+  });
   const tests = new GladeTestController(context, output.tests, (summary) => {
     startHereState.setLastRun(summary);
     status.setLastRun({ failed: summary.failed, durationMs: summary.durationMs });
@@ -66,9 +96,39 @@ export function activate(context: vscode.ExtensionContext): void {
   const lsp = new GladeLspClient(output.logs);
   context.subscriptions.push(lsp, watch, previewController, previewView);
 
+  function pluginContexts(): PluginAvailableContexts {
+    const activeFile = vscode.window.activeTextEditor?.document.uri.fsPath;
+    return {
+      project: currentProject !== undefined,
+      activeApexFile: activeFile ? /\.(cls|trigger)$/i.test(activeFile) : false,
+      activeDebugLog: activeFile ? /\.log$/i.test(activeFile) : false,
+      activeDataEnvironment: currentProject !== undefined,
+      lastLocalRun: startHereState.snapshot().lastRun !== undefined,
+    };
+  }
+
+  function syncPluginViews(): void {
+    const contexts = pluginContexts();
+    startHereView.setPluginActions(plugins.actionRowsForView("startHere", contexts));
+    runsView.setPluginActions(plugins.actionRowsForView("runs", contexts));
+    localOrgView.setPluginActions(plugins.actionRowsForView("localOrg", contexts));
+    debugView.setPluginActions(plugins.actionRowsForView("debug", contexts));
+    pluginsView.setState(
+      plugins.plugins(),
+      plugins.actionRowsForView("plugins", contexts),
+      pluginArtifactRows(plugins.latestArtifacts()),
+    );
+  }
+
+  async function refreshPlugins(): Promise<void> {
+    await plugins.refresh();
+    syncPluginViews();
+  }
+
   async function refreshProject(): Promise<void> {
     try {
       const project = await findProjectContext();
+      currentProject = project;
       const testExplorerEnabled = vscode.workspace.getConfiguration("glade").get<boolean>("enableTestExplorer", true);
       const environment = project ? configuredActiveEnvironment(project) : undefined;
       const missingDb = environment ? !fs.existsSync(environment.dbPath) : false;
@@ -81,9 +141,11 @@ export function activate(context: vscode.ExtensionContext): void {
       localOrgView.setProject(project);
       previewController.setProject(project);
       debugView.setProject(project);
+      syncPluginViews();
       await lsp.sync(project);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      currentProject = undefined;
       status.setProject(undefined);
       status.setMissingDb(false);
       startHereState.setMissingDb(undefined);
@@ -93,6 +155,7 @@ export function activate(context: vscode.ExtensionContext): void {
       localOrgView.setProject(undefined);
       previewController.setProject(undefined);
       debugView.setProject(undefined);
+      syncPluginViews();
       await lsp.sync(undefined);
       output.logs.appendLine(`project detection failed: ${message}`);
     }
@@ -114,6 +177,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.window.registerTreeDataProvider("glade.localOrg", localOrgView),
     vscode.window.registerTreeDataProvider("glade.preview", previewView),
     vscode.window.registerTreeDataProvider("glade.debugLogs", debugView),
+    vscode.window.registerTreeDataProvider("glade.plugins", pluginsView),
     vscode.commands.registerCommand("glade.refresh", async () => {
       runsView.refresh();
       startHereView.refresh();
@@ -121,7 +185,38 @@ export function activate(context: vscode.ExtensionContext): void {
       localOrgView.refresh();
       previewView.refresh();
       debugView.refresh();
+      pluginsView.refresh();
       await refreshProject();
+      await refreshPlugins();
+    }),
+    vscode.commands.registerCommand("glade.refreshPlugins", () => refreshPlugins()),
+    vscode.commands.registerCommand("glade.managePlugins", async () => {
+      await plugins.managePlugins();
+      syncPluginViews();
+    }),
+    vscode.commands.registerCommand("glade.linkLocalPlugin", async () => {
+      await plugins.linkLocalPlugin();
+      syncPluginViews();
+    }),
+    vscode.commands.registerCommand("glade.installPluginArchive", async () => {
+      await plugins.installPluginArchive();
+      syncPluginViews();
+    }),
+    vscode.commands.registerCommand("glade.runPluginAction", async (action?: PluginEditorAction) => {
+      let target = action;
+      if (!target) {
+        const rows = plugins.actionRowsForView("plugins", pluginContexts());
+        const picked = await vscode.window.showQuickPick(
+          rows.map((row) => ({ label: row.label, description: row.description, action: row.action })),
+          { title: "Run Plugin Action" },
+        );
+        target = picked?.action;
+      }
+      if (!target) {
+        return;
+      }
+      await plugins.runAction(target);
+      syncPluginViews();
     }),
     vscode.commands.registerCommand("glade.refreshPreview", async () => {
       try {
@@ -189,6 +284,7 @@ export function activate(context: vscode.ExtensionContext): void {
         const runSummary = startHereSummary("Changed tests", run);
         startHereState.setLastRun(runSummary);
         status.setLastRun({ failed: runSummary.failed, durationMs: runSummary.durationMs }, command);
+        syncPluginViews();
         const inspect = await inspectLocalOrg(project, environment);
         const localSummary = summaryFromInspect(inspect);
         startHereState.setLocalOrgSummary(localSummary);
@@ -535,10 +631,12 @@ export function activate(context: vscode.ExtensionContext): void {
         void refreshProject();
       }
     }),
+    vscode.window.onDidChangeActiveTextEditor(() => syncPluginViews()),
     vscode.debug.onDidChangeBreakpoints(() => debugView.refresh()),
     vscode.languages.registerCodeLensProvider({ language: "apex", scheme: "file" }, new GladeCodeLensProvider()),
   );
   void refreshProject();
+  void refreshPlugins();
 
   registerGladeCommands(context);
   context.subscriptions.push(
@@ -554,3 +652,42 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): void {}
+
+function publishPluginDiagnostics(
+  collection: vscode.DiagnosticCollection,
+  entries: PluginDiagnosticEntry[],
+): void {
+  collection.clear();
+  const grouped = new Map<string, vscode.Diagnostic[]>();
+  for (const entry of entries) {
+    const line = Math.max((entry.line || 1) - 1, 0);
+    const column = Math.max((entry.column || 1) - 1, 0);
+    const diagnostic = new vscode.Diagnostic(
+      new vscode.Range(line, column, line, column + 1),
+      entry.message,
+      diagnosticSeverity(entry.severity),
+    );
+    diagnostic.source = entry.source || "glade-plugins";
+    diagnostic.code = entry.ruleId;
+    const diagnostics = grouped.get(entry.file) || [];
+    diagnostics.push(diagnostic);
+    grouped.set(entry.file, diagnostics);
+  }
+  for (const [file, diagnostics] of grouped) {
+    collection.set(vscode.Uri.file(file), diagnostics);
+  }
+}
+
+function diagnosticSeverity(severity: PluginFindingSeverity): vscode.DiagnosticSeverity {
+  switch (severity) {
+    case "error":
+      return vscode.DiagnosticSeverity.Error;
+    case "info":
+      return vscode.DiagnosticSeverity.Information;
+    case "hint":
+      return vscode.DiagnosticSeverity.Hint;
+    case "warning":
+    default:
+      return vscode.DiagnosticSeverity.Warning;
+  }
+}
