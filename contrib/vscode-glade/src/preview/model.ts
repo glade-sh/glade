@@ -18,6 +18,13 @@ export interface ToolchainStatus {
   detail: string;
 }
 
+export interface PreviewProcessFailure {
+  code?: number | null;
+  signal?: string | null;
+  stdout?: string;
+  stderr?: string;
+}
+
 interface LWCReadyFile {
   url: string;
   addr: string;
@@ -74,6 +81,16 @@ export function stoppedPreviewServer(server: PreviewServer): PreviewServer {
   return { ...server, running: false };
 }
 
+export function formatPreviewStartFailure(reason: string, detail: PreviewProcessFailure = {}): string {
+  const status = processStatus(detail);
+  const output = firstUsefulOutput(detail.stderr) || firstUsefulOutput(detail.stdout);
+  const prefix = status ? `${reason} (${status})` : reason;
+  if (!output) {
+    return prefix;
+  }
+  return `${prefix}: ${output}`;
+}
+
 function parseLWCRoute(route: string): PreviewRoute {
   const arrow = " -> ";
   const arrowIndex = route.indexOf(arrow);
@@ -108,4 +125,26 @@ function lastPathPart(path: string): string {
     return trimmed;
   }
   return trimmed.slice(slashIndex + 1);
+}
+
+function processStatus(detail: PreviewProcessFailure): string {
+  if (detail.code !== undefined && detail.code !== null) {
+    return `exit code ${detail.code}`;
+  }
+  if (detail.signal) {
+    return `signal ${detail.signal}`;
+  }
+  return "";
+}
+
+function firstUsefulOutput(value: string | undefined): string {
+  const cleaned = (value || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(" ");
+  if (cleaned.length <= 500) {
+    return cleaned;
+  }
+  return `${cleaned.slice(0, 497)}...`;
 }

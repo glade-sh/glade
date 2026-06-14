@@ -80,6 +80,21 @@ assert.deepStrictEqual(
   { ok: false, detail: "node missing" },
 );
 
+assert.strictEqual(
+  model.formatPreviewStartFailure("glade dev exited before writing the ready file", {
+    code: 2,
+    stderr: "glade: load project: sfdx-project.json not found\n",
+  }),
+  "glade dev exited before writing the ready file (exit code 2): glade: load project: sfdx-project.json not found",
+);
+
+assert.strictEqual(
+  model.formatPreviewStartFailure("timed out waiting for glade dev ready file", {
+    stdout: "watch setup failed: too many open files\n",
+  }),
+  "timed out waiting for glade dev ready file: watch setup failed: too many open files",
+);
+
 assert.deepStrictEqual(cli.toolchainStatusArgs(), ["toolchain", "status", "--json"]);
 assert.deepStrictEqual(cli.toolchainStatusAllowedCodes(), [0, 1]);
 assert.deepStrictEqual(cli.toolchainInstallArgs(), ["toolchain", "install"]);

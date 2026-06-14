@@ -251,7 +251,12 @@ export function activate(context: vscode.ExtensionContext): void {
         await previewController.startLWC();
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        void vscode.window.showErrorMessage(`Glade LWC preview failed: ${message}`);
+        void vscode.window.showErrorMessage(`Glade LWC preview failed: ${message}`, "Show Output")
+          .then((picked) => {
+            if (picked === "Show Output") {
+              output.logs.show(true);
+            }
+          });
       }
     }),
     vscode.commands.registerCommand("glade.stopLWCPreview", () => previewController.stopLWC()),
@@ -260,7 +265,12 @@ export function activate(context: vscode.ExtensionContext): void {
         await previewController.startVF();
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        void vscode.window.showErrorMessage(`Glade Visualforce preview failed: ${message}`);
+        void vscode.window.showErrorMessage(`Glade Visualforce preview failed: ${message}`, "Show Output")
+          .then((picked) => {
+            if (picked === "Show Output") {
+              output.logs.show(true);
+            }
+          });
       }
     }),
     vscode.commands.registerCommand("glade.stopVFPreview", () => previewController.stopVF()),

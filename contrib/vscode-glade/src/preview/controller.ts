@@ -6,7 +6,7 @@ import * as vscode from "vscode";
 import { runGlade, runGladeJSONWithCodes } from "../gladeCli";
 import { GladeProjectContext } from "../projectModel";
 import { devLWCArgs, devVFArgs, toolchainInstallArgs, toolchainStatusAllowedCodes, toolchainStatusArgs } from "./cli";
-import { parseLWCReadyFile, parseVFReadyFile, PreviewServer, stoppedPreviewServer, ToolchainStatus } from "./model";
+import { formatPreviewStartFailure, parseLWCReadyFile, parseVFReadyFile, PreviewProcessFailure, PreviewServer, stoppedPreviewServer, ToolchainStatus } from "./model";
 
 type PreviewKind = "lwc" | "visualforce";
 
@@ -114,8 +114,18 @@ export class PreviewController implements vscode.Disposable {
     const child = spawn("glade", args, { cwd: project.projectRoot });
     this.setChild(kind, child);
     this.setRuntime(kind, { ...this.runtime(kind), running: true });
-    child.stdout.on("data", (chunk: Buffer) => this.output?.append(chunk.toString()));
-    child.stderr.on("data", (chunk: Buffer) => this.output?.append(chunk.toString()));
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (chunk: Buffer) => {
+      const text = chunk.toString();
+      stdout += text;
+      this.output?.append(text);
+    });
+    child.stderr.on("data", (chunk: Buffer) => {
+      const text = chunk.toString();
+      stderr += text;
+      this.output?.append(text);
+    });
     child.on("error", (error: Error) => {
       if (this.child(kind) === child) {
         this.setChild(kind, undefined);
@@ -130,7 +140,7 @@ export class PreviewController implements vscode.Disposable {
       }
     });
     try {
-      const raw = await waitForReadyFile(readyFile, child);
+      const raw = await waitForReadyFile(readyFile, child, () => ({ stdout, stderr }));
       const server = kind === "lwc" ? parseLWCReadyFile(raw) : parseVFReadyFile(raw);
       this.setRuntime(kind, { running: true, server });
     } catch (error) {
@@ -202,7 +212,11 @@ async function readyFilePath(kind: PreviewKind): Promise<string> {
   return path.join(dir, "ready.json");
 }
 
-function waitForReadyFile(readyFile: string, child: ChildProcessWithoutNullStreams): Promise<string> {
+function waitForReadyFile(
+  readyFile: string,
+  child: ChildProcessWithoutNullStreams,
+  output: () => PreviewProcessFailure,
+): Promise<string> {
   const deadline = Date.now() + 30000;
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -216,11 +230,13 @@ function waitForReadyFile(readyFile: string, child: ChildProcessWithoutNullStrea
       child.off("error", onError);
       callback();
     };
-    const onClose = (): void => finish(() => reject(new Error("glade dev exited before writing the ready file")));
+    const onClose = (code: number | null, signal: NodeJS.Signals | null): void => finish(() => reject(new Error(
+      formatPreviewStartFailure("glade dev exited before writing the ready file", { ...output(), code, signal }),
+    )));
     const onError = (error: Error): void => finish(() => reject(error));
     const timer = setInterval(() => {
       if (Date.now() > deadline) {
-        finish(() => reject(new Error("timed out waiting for glade dev ready file")));
+        finish(() => reject(new Error(formatPreviewStartFailure("timed out waiting for glade dev ready file", output()))));
         return;
       }
       if (!fs.existsSync(readyFile)) {
