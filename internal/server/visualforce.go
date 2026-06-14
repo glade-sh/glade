@@ -12,6 +12,7 @@ import (
 	"mime"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -311,10 +312,32 @@ func visualforceRemotingDecodedVMValue(decoded any) (vm.Value, error) {
 		}
 		return vm.List(items...), nil
 	case map[string]any:
-		return vm.Null, errors.New("Visualforce remoting object parameters are not supported by the local server")
+		out := vm.Map()
+		out.Type = "Map<String,Object>"
+		out.Static = "Map<String,Object>"
+		keys := make([]string, 0, len(value))
+		for key := range value {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, key := range keys {
+			converted, err := visualforceRemotingDecodedVMValue(value[key])
+			if err != nil {
+				return vm.Null, err
+			}
+			mapKey := visualforceRemotingStringMapKey(key)
+			out.Map[mapKey] = converted
+			out.MapKeys[mapKey] = vm.String(key)
+			out.MapOrder = append(out.MapOrder, mapKey)
+		}
+		return out, nil
 	default:
 		return vm.Null, fmt.Errorf("unsupported Visualforce remoting JSON value %T", decoded)
 	}
+}
+
+func visualforceRemotingStringMapKey(key string) string {
+	return string(vm.ValueString) + ":" + key
 }
 
 func (s *Server) handleVisualforcePageGet(w http.ResponseWriter, r *http.Request, parts []string) {
@@ -429,11 +452,30 @@ func (s *Server) visualforceMultipartPostFormValues(w http.ResponseWriter, r *ht
 func latestFormValues(values map[string][]string) map[string]string {
 	formValues := make(map[string]string, len(values))
 	for key, items := range values {
-		if len(items) > 0 {
-			formValues[key] = items[len(items)-1]
+		value, ok := latestVisualforceFormValue(key, items)
+		if ok {
+			formValues[key] = value
 		}
 	}
 	return formValues
+}
+
+func latestVisualforceFormValue(key string, items []string) (string, bool) {
+	if len(items) == 0 {
+		return "", false
+	}
+	if visualforceFormKeyUsesLastValue(key, items) {
+		return items[len(items)-1], true
+	}
+	return strings.Join(items, ";"), true
+}
+
+func visualforceFormKeyUsesLastValue(key string, items []string) bool {
+	switch key {
+	case visualforce.ViewStateActionFieldName(), visualforce.ViewStateFormFieldName(), "__vf_csrf", "__vf_ajax", "__vf_rerender":
+		return true
+	}
+	return len(items) == 2 && strings.EqualFold(strings.TrimSpace(items[0]), "false") && strings.EqualFold(strings.TrimSpace(items[1]), "true")
 }
 
 func (s *Server) visualforceUploadBindings(parts []string) ([]visualforce.InputFileUploadBinding, error) {
@@ -547,6 +589,9 @@ func (s *Server) renderVisualforceAjaxResponse(w http.ResponseWriter, pageURL st
 		return
 	}
 	response := visualforce.NewPartialResponse(result.HTML, result.ViewState, payload.RerenderTargets)
+	if result.RedirectURL != "" {
+		response.Redirect = result.RedirectURL
+	}
 	var body bytes.Buffer
 	if err := json.NewEncoder(&body).Encode(response); err != nil {
 		writeSalesforceError(w, errUnsupportedFeature, err.Error())
@@ -604,6 +649,7 @@ func (s *Server) renderVisualforceResult(pageURL string, parts []string, viewSta
 	if cfg, ok, err := s.lightningBootstrapConfigLocked(); err != nil {
 		lightningUnavailable = true
 	} else if ok {
+		cfg.PageReference = visualforcePageReference(pageName, req.PageURL)
 		req.LightningBootstrap = cfg
 	}
 	result, err := visualforce.RenderPage(req)
@@ -638,6 +684,18 @@ func injectLocalLightningUnavailableNotice(htmlText string) string {
 		return htmlText[:insertAt] + notice + htmlText[insertAt:]
 	}
 	return notice + htmlText
+}
+
+func visualforcePageReference(pageName, pageURL string) map[string]any {
+	return map[string]any{
+		"type": "standard__webPage",
+		"attributes": map[string]any{
+			"url": pageURL,
+		},
+		"state": map[string]string{
+			"pageName": pageName,
+		},
+	}
 }
 
 func localLightningUnavailableNotice() string {

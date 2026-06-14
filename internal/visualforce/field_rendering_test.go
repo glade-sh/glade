@@ -157,6 +157,78 @@ func TestRenderInputFieldUsesDisplayMetadata(t *testing.T) {
 	}
 }
 
+func TestRenderInputFieldUsesMultiPicklistAndCheckboxMetadata(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Fields.page"), `<apex:page standardController="Account">
+  <apex:form id="f">
+    <apex:inputField id="segments" value="{!Account.Segments__c}"/>
+    <apex:inputField id="active" value="{!Account.Active__c}"/>
+  </apex:form>
+</apex:page>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	idx, err := LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{
+			"Segments__c": {
+				APIName:     "Segments__c",
+				Label:       "Segments",
+				Type:        storage.FieldMultiPicklist,
+				DisplayType: "MULTIPICKLIST",
+				PicklistValues: []storage.PicklistValue{
+					{Value: "Retail", Label: "Retail", Active: true},
+					{Value: "Services", Label: "Services", Active: true},
+					{Value: "Dormant", Label: "Dormant", Active: true},
+				},
+			},
+			"Active__c": {APIName: "Active__c", Label: "Active", Type: storage.FieldBoolean, DisplayType: "BOOLEAN"},
+		}},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {
+				ID:     "001000000000001",
+				Object: "Account",
+				Fields: map[string]storage.Value{
+					"Segments__c": storage.StringValue("Retail;Services"),
+					"Active__c":   storage.BooleanValue(true),
+				},
+			},
+		},
+	}
+	machine := vm.New(nil)
+	machine.SetOrg(&org)
+
+	result, err := RenderPage(PageRenderRequest{
+		Project:  p,
+		VFIndex:  idx,
+		Org:      &org,
+		Machine:  machine,
+		PageName: "Fields",
+		PageURL:  "/apex/Fields?id=001000000000001",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		`<select class="inputField" name="Account.Segments__c" id="segments" multiple="multiple">`,
+		`<option value="Retail" selected="selected">Retail</option>`,
+		`<option value="Services" selected="selected">Services</option>`,
+		`<option value="Dormant">Dormant</option>`,
+		`<input type="hidden" name="Account.Active__c" value="false" />`,
+		`<input type="checkbox" class="inputField" name="Account.Active__c" id="active" value="true" checked="checked" />`,
+	} {
+		if !strings.Contains(result.HTML, want) {
+			t.Fatalf("html missing %q: %s", want, result.HTML)
+		}
+	}
+}
+
 func TestRenderOutputFieldUsesParentRelationshipDisplayName(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

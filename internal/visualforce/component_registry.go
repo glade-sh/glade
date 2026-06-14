@@ -1,6 +1,8 @@
 package visualforce
 
 import (
+	"html"
+	"sort"
 	"strings"
 	"sync"
 )
@@ -23,6 +25,16 @@ type ComponentSpec struct {
 	Render     func(*MarkupNode, *RenderContext) (string, error)
 }
 
+type ComponentSupportRow struct {
+	Name           string
+	Status         ComponentStatus
+	Reason         string
+	DocSource      string
+	Attributes     []string
+	LocalEvidence  string
+	HostedBoundary string
+}
+
 var (
 	standardComponentSpecsOnce sync.Once
 	standardComponentSpecs     map[string]ComponentSpec
@@ -33,6 +45,34 @@ func StandardComponentSpecs() map[string]ComponentSpec {
 		standardComponentSpecs = buildStandardComponentSpecs()
 	})
 	return cloneComponentSpecs(standardComponentSpecs)
+}
+
+func StandardComponentSupport() []ComponentSupportRow {
+	specs := StandardComponentSpecs()
+	keys := make([]string, 0, len(specs))
+	for key := range specs {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	rows := make([]ComponentSupportRow, 0, len(keys))
+	for _, key := range keys {
+		spec := specs[key]
+		attrs := append([]string{}, spec.Attributes...)
+		boundary := ""
+		if spec.Status == ComponentUnsupported {
+			boundary = hostedBoundaryForComponent(key)
+		}
+		rows = append(rows, ComponentSupportRow{
+			Name:           key,
+			Status:         spec.Status,
+			Reason:         supportRowReason(key, spec),
+			DocSource:      supportRowDocSource(key, spec),
+			Attributes:     attrs,
+			LocalEvidence:  supportRowEvidence(spec, boundary),
+			HostedBoundary: boundary,
+		})
+	}
+	return rows
 }
 
 func buildStandardComponentSpecs() map[string]ComponentSpec {
@@ -156,9 +196,21 @@ func currentStandardComponentSpecs() map[string]ComponentSpec {
 		"apex:repeat":        {Status: ComponentPartial, Render: renderApexRepeat},
 		"apex:dataTable":     {Status: ComponentPartial, Render: func(n *MarkupNode, c *RenderContext) (string, error) { return renderApexDataTable(n, c, false) }},
 		"apex:dataList":      {Status: ComponentPartial, Render: renderApexDataList},
-		"apex:panelGrid":     {Status: ComponentPartial, Render: renderApexPanelGrid},
-		"apex:column":        {Status: ComponentPartial, Render: renderChildren},
-		"apex:detail":        {Status: ComponentPartial, Render: renderApexDetail},
+		"apex:panelGrid":     {Status: ComponentSupported, Render: renderApexPanelGrid},
+		"apex:panelGroup":    {Status: ComponentSupported, Render: renderApexPanelGroup},
+		"apex:sectionHeader": {Status: ComponentSupported, Render: renderApexSectionHeader},
+		"apex:toolbar":       {Status: ComponentSupported, Render: renderApexToolbar},
+		"apex:toolbarGroup":  {Status: ComponentSupported, Render: renderApexToolbarGroup},
+		"apex:tabPanel": {Status: ComponentPartial, Render: renderApexTabPanel,
+			Reason: "partial: renders local tab headers and selected content state, but browser switching lifecycle, server event lifecycle, and exact Salesforce tab behavior remain incomplete"},
+		"apex:tab": {Status: ComponentPartial, Render: renderApexTab,
+			Reason: "partial: renders tab content locally, but full tabPanel selection lifecycle and event behavior remain incomplete"},
+		"apex:panelBar": {Status: ComponentPartial, Render: renderApexPanelBar,
+			Reason: "partial: renders panel sections and initial expanded state, but browser expand/collapse lifecycle and exact Salesforce panelBar behavior remain incomplete"},
+		"apex:panelBarItem": {Status: ComponentPartial, Render: renderApexPanelBarItem,
+			Reason: "partial: renders panel item content locally, but full panelBar expand/collapse lifecycle remains incomplete"},
+		"apex:column": {Status: ComponentPartial, Render: renderChildren},
+		"apex:detail": {Status: ComponentPartial, Render: renderApexDetail},
 		"apex:relatedList": {Status: ComponentPartial, Render: func(n *MarkupNode, c *RenderContext) (string, error) {
 			return renderApexContainer(n, "div", "relatedlist", c)
 		}},
@@ -204,6 +256,281 @@ func currentStandardComponentSpecs() map[string]ComponentSpec {
 
 func renderNoopComponent(_ *MarkupNode, _ *RenderContext) (string, error) {
 	return "", nil
+}
+
+func supportRowReason(key string, spec ComponentSpec) string {
+	if strings.TrimSpace(spec.Reason) != "" {
+		return spec.Reason
+	}
+	if spec.Status == ComponentSupported {
+		return "supported: local Visualforce renderer handles the documented standalone UI markup for " + key
+	}
+	if spec.Status == ComponentPartial {
+		return partialComponentReason(key)
+	}
+	return unsupportedComponentReason(ComponentCatalogEntry{Name: spec.Name})
+}
+
+func supportRowDocSource(key string, spec ComponentSpec) string {
+	if strings.TrimSpace(spec.DocSource) != "" {
+		return spec.DocSource
+	}
+	return "internal/visualforce/component_registry.go#" + key
+}
+
+func supportRowEvidence(spec ComponentSpec, boundary string) string {
+	switch spec.Status {
+	case ComponentSupported:
+		if spec.Render != nil {
+			return "local renderer registered and covered by component renderer tests"
+		}
+		return "support status recorded without a local renderer"
+	case ComponentPartial:
+		if spec.Render != nil {
+			return "partial local renderer registered; missing behavior named in reason"
+		}
+		return "catalog-backed partial support; missing behavior named in reason"
+	case ComponentUnsupported:
+		if boundary != "" {
+			return "unsupported locally; boundary classified as " + boundary
+		}
+		return "unsupported locally; no standalone local renderer"
+	default:
+		return "component catalog entry present"
+	}
+}
+
+func hostedBoundaryForComponent(key string) string {
+	switch strings.ToLower(strings.TrimSpace(key)) {
+	case "apex:flash", "apex:scontrol":
+		return "obsolete-runtime"
+	case "apex:remoteobjectmodel", "apex:remoteobjectfield":
+		return "not-a-standalone-component"
+	case "apex:canvasapp", "apex:emailpublisher", "apex:logcallpublisher", "apex:milestonetracker", "apex:vote":
+		return "hosted-service"
+	}
+	namespace, _, ok := strings.Cut(strings.ToLower(strings.TrimSpace(key)), ":")
+	if !ok {
+		return "missing-local-subsystem"
+	}
+	switch namespace {
+	case "analytics", "chatter", "chatteranswers", "ideas", "knowledge", "liveagent", "site", "social", "support", "topics", "wave":
+		return "hosted-service"
+	default:
+		return "missing-local-subsystem"
+	}
+}
+
+func renderApexPanelGroup(node *MarkupNode, ctx *RenderContext) (string, error) {
+	tag := "span"
+	if strings.EqualFold(strings.TrimSpace(node.Attribute("layout")), "block") {
+		tag = "div"
+	}
+	children, err := renderChildren(node, ctx)
+	if err != nil {
+		return "", err
+	}
+	return "<" + tag + componentIDAttr(node) + visualforceClassAttr(node, "") + visualforceStyleAttr(node) + ">" + children + "</" + tag + ">", nil
+}
+
+func renderApexSectionHeader(node *MarkupNode, ctx *RenderContext) (string, error) {
+	title, err := RenderExpressionTemplate(node.Attribute("title"), ctx.Expression)
+	if err != nil {
+		return "", err
+	}
+	subtitle, err := RenderExpressionTemplate(node.Attribute("subtitle"), ctx.Expression)
+	if err != nil {
+		return "", err
+	}
+	description, err := RenderExpressionTemplate(node.Attribute("description"), ctx.Expression)
+	if err != nil {
+		return "", err
+	}
+	escape := !strings.EqualFold(strings.TrimSpace(node.Attribute("escape")), "false")
+	builder := strings.Builder{}
+	builder.WriteString(`<div`)
+	builder.WriteString(componentIDAttr(node))
+	builder.WriteString(` class="sectionHeader">`)
+	if title != "" {
+		builder.WriteString(`<h1>`)
+		builder.WriteString(visualforceMaybeEscaped(title, escape))
+		builder.WriteString(`</h1>`)
+	}
+	if subtitle != "" {
+		builder.WriteString(`<h2>`)
+		builder.WriteString(visualforceMaybeEscaped(subtitle, escape))
+		builder.WriteString(`</h2>`)
+	}
+	if description != "" {
+		builder.WriteString(`<p>`)
+		builder.WriteString(visualforceMaybeEscaped(description, escape))
+		builder.WriteString(`</p>`)
+	}
+	builder.WriteString(`</div>`)
+	return builder.String(), nil
+}
+
+func renderApexToolbar(node *MarkupNode, ctx *RenderContext) (string, error) {
+	children, err := renderChildren(node, ctx)
+	if err != nil {
+		return "", err
+	}
+	return `<div` + componentIDAttr(node) + visualforceClassAttr(node, "toolbar") + visualforceStyleAttr(node) + `>` + children + `</div>`, nil
+}
+
+func renderApexToolbarGroup(node *MarkupNode, ctx *RenderContext) (string, error) {
+	children, err := renderChildren(node, ctx)
+	if err != nil {
+		return "", err
+	}
+	location := strings.TrimSpace(node.Attribute("location"))
+	if location == "" {
+		location = "left"
+	}
+	return `<span` + componentIDAttr(node) + visualforceClassAttr(node, "toolbarGroup") + ` data-location="` + html.EscapeString(location) + `"` + visualforceStyleAttr(node) + `>` + children + `</span>`, nil
+}
+
+func renderApexTabPanel(node *MarkupNode, ctx *RenderContext) (string, error) {
+	tabs := apexChildElements(node, "tab")
+	selected := strings.TrimSpace(node.Attribute("selectedTab"))
+	if selected == "" && len(tabs) > 0 {
+		selected = tabName(tabs[0], 0)
+	}
+	builder := strings.Builder{}
+	builder.WriteString(`<div`)
+	builder.WriteString(componentIDAttr(node))
+	builder.WriteString(visualforceClassAttr(node, "tabPanel"))
+	builder.WriteString(visualforceStyleAttr(node))
+	builder.WriteString(`><div class="tabHeaders">`)
+	for i, tab := range tabs {
+		name := tabName(tab, i)
+		label, err := tabLabel(tab, ctx, name)
+		if err != nil {
+			return "", err
+		}
+		className := "tab"
+		if name == selected {
+			className += " active"
+		}
+		builder.WriteString(`<button type="button" class="`)
+		builder.WriteString(className)
+		builder.WriteString(`" data-tab="`)
+		builder.WriteString(html.EscapeString(name))
+		builder.WriteString(`">`)
+		builder.WriteString(html.EscapeString(label))
+		builder.WriteString(`</button>`)
+	}
+	builder.WriteString(`</div><div class="tabBodies">`)
+	for i, tab := range tabs {
+		body, err := renderTabContent(tab, ctx, tabName(tab, i), tabName(tab, i) == selected)
+		if err != nil {
+			return "", err
+		}
+		builder.WriteString(body)
+	}
+	builder.WriteString(`</div></div>`)
+	return builder.String(), nil
+}
+
+func renderApexTab(node *MarkupNode, ctx *RenderContext) (string, error) {
+	return renderTabContent(node, ctx, tabName(node, 0), false)
+}
+
+func renderApexPanelBar(node *MarkupNode, ctx *RenderContext) (string, error) {
+	children, err := renderChildren(node, ctx)
+	if err != nil {
+		return "", err
+	}
+	return `<div` + componentIDAttr(node) + visualforceClassAttr(node, "panelBar") + visualforceStyleAttr(node) + `>` + children + `</div>`, nil
+}
+
+func renderApexPanelBarItem(node *MarkupNode, ctx *RenderContext) (string, error) {
+	label, err := RenderExpressionTemplate(node.Attribute("label"), ctx.Expression)
+	if err != nil {
+		return "", err
+	}
+	children, err := renderChildren(node, ctx)
+	if err != nil {
+		return "", err
+	}
+	className := "panelBarItem"
+	if isTruthyExpression(node.Attribute("expanded"), ctx) {
+		className += " active"
+	}
+	return `<section` + componentIDAttr(node) + ` class="` + className + `"><h3>` + html.EscapeString(label) + `</h3><div class="panelBarContent">` + children + `</div></section>`, nil
+}
+
+func visualforceClassAttr(node *MarkupNode, base string) string {
+	className := strings.TrimSpace(firstNonEmpty(node.Attribute("styleClass"), node.Attribute("class")))
+	switch {
+	case base != "" && className != "":
+		className = base + " " + className
+	case base != "":
+		className = base
+	}
+	if className == "" {
+		return ""
+	}
+	return ` class="` + html.EscapeString(className) + `"`
+}
+
+func visualforceStyleAttr(node *MarkupNode) string {
+	style := strings.TrimSpace(node.Attribute("style"))
+	if style == "" {
+		return ""
+	}
+	return ` style="` + html.EscapeString(style) + `"`
+}
+
+func visualforceMaybeEscaped(value string, escape bool) string {
+	if !escape {
+		return value
+	}
+	return html.EscapeString(value)
+}
+
+func apexChildElements(node *MarkupNode, name string) []*MarkupNode {
+	children := []*MarkupNode{}
+	for _, child := range node.Children {
+		if child.Type == MarkupNodeElement && strings.EqualFold(child.Namespace, "apex") && strings.EqualFold(child.Name, name) {
+			children = append(children, child)
+		}
+	}
+	return children
+}
+
+func tabName(node *MarkupNode, index int) string {
+	name := strings.TrimSpace(node.Attribute("name"))
+	if name == "" {
+		name = strings.TrimSpace(node.Attribute("label"))
+	}
+	if name == "" {
+		name = "tab-" + html.EscapeString(string(rune('1'+index)))
+	}
+	return name
+}
+
+func tabLabel(node *MarkupNode, ctx *RenderContext, fallback string) (string, error) {
+	label, err := RenderExpressionTemplate(node.Attribute("label"), ctx.Expression)
+	if err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(label) == "" {
+		label = fallback
+	}
+	return label, nil
+}
+
+func renderTabContent(node *MarkupNode, ctx *RenderContext, name string, active bool) (string, error) {
+	children, err := renderChildren(node, ctx)
+	if err != nil {
+		return "", err
+	}
+	className := "tabContent"
+	if active {
+		className += " active"
+	}
+	return `<div class="` + className + `" data-tab="` + html.EscapeString(name) + `">` + children + `</div>`, nil
 }
 
 func componentNamespace(name string) string {

@@ -264,6 +264,13 @@ func readDevVFProjectDataFixture(path string) (storage.Fixture, bool, error) {
 	if err != nil {
 		return storage.Fixture{}, false, err
 	}
+	trimmed := bytes.TrimSpace(data)
+	if len(trimmed) > 0 && trimmed[0] == '[' {
+		fixture, ok, err := readDevVFSFDXTreeDataFixture(trimmed)
+		if err != nil || ok {
+			return fixture, ok, err
+		}
+	}
 	var header struct {
 		Version string `json:"version"`
 	}
@@ -278,6 +285,114 @@ func readDevVFProjectDataFixture(path string) (storage.Fixture, bool, error) {
 		return storage.Fixture{}, false, err
 	}
 	return fixture, true, nil
+}
+
+func readDevVFSFDXTreeDataFixture(data []byte) (storage.Fixture, bool, error) {
+	var rows []map[string]json.RawMessage
+	if err := json.Unmarshal(data, &rows); err != nil {
+		return storage.Fixture{}, false, err
+	}
+	if len(rows) == 0 {
+		return storage.Fixture{}, false, nil
+	}
+	byObject := map[string][]storage.FixtureRecord{}
+	for i, row := range rows {
+		attrs, err := readDevVFSFDXTreeAttributes(row["attributes"])
+		if err != nil {
+			return storage.Fixture{}, false, fmt.Errorf("records[%d].attributes: %w", i, err)
+		}
+		if attrs.Type == "" {
+			return storage.Fixture{}, false, fmt.Errorf("records[%d].attributes.type is required", i)
+		}
+		record := storage.FixtureRecord{
+			Alias:  attrs.ReferenceID,
+			Fields: map[string]storage.Value{},
+		}
+		for name, raw := range row {
+			if strings.EqualFold(name, "attributes") {
+				continue
+			}
+			if strings.EqualFold(name, "Id") {
+				id, ok, err := readDevVFSFDXTreeID(raw)
+				if err != nil {
+					return storage.Fixture{}, false, fmt.Errorf("records[%d].Id: %w", i, err)
+				}
+				if ok {
+					record.ID = id
+					continue
+				}
+			}
+			value, isNull, err := readDevVFSFDXTreeValue(raw)
+			if err != nil {
+				return storage.Fixture{}, false, fmt.Errorf("records[%d].%s: %w", i, name, err)
+			}
+			if isNull {
+				record.ExplicitNulls = append(record.ExplicitNulls, name)
+				continue
+			}
+			record.Fields[name] = value
+		}
+		byObject[attrs.Type] = append(byObject[attrs.Type], record)
+	}
+	fixture := storage.NewFixture()
+	for objectName, records := range byObject {
+		fixture.Objects = append(fixture.Objects, storage.FixtureObject{Name: objectName, Records: records})
+	}
+	sort.Slice(fixture.Objects, func(i, j int) bool {
+		return fixture.Objects[i].Name < fixture.Objects[j].Name
+	})
+	return fixture, true, nil
+}
+
+type devVFSFDXTreeAttributes struct {
+	Type        string `json:"type"`
+	ReferenceID string `json:"referenceId"`
+}
+
+func readDevVFSFDXTreeAttributes(raw json.RawMessage) (devVFSFDXTreeAttributes, error) {
+	if len(raw) == 0 {
+		return devVFSFDXTreeAttributes{}, errors.New("is required")
+	}
+	var attrs devVFSFDXTreeAttributes
+	if err := json.Unmarshal(raw, &attrs); err != nil {
+		return devVFSFDXTreeAttributes{}, err
+	}
+	attrs.Type = strings.TrimSpace(attrs.Type)
+	attrs.ReferenceID = strings.TrimSpace(attrs.ReferenceID)
+	return attrs, nil
+}
+
+func readDevVFSFDXTreeID(raw json.RawMessage) (storage.ID, bool, error) {
+	var value string
+	if err := json.Unmarshal(raw, &value); err != nil {
+		return "", false, err
+	}
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return "", false, nil
+	}
+	return storage.ID(value), true, nil
+}
+
+func readDevVFSFDXTreeValue(raw json.RawMessage) (storage.Value, bool, error) {
+	if bytes.Equal(bytes.TrimSpace(raw), []byte("null")) {
+		return storage.NullValue(), true, nil
+	}
+	var text string
+	if err := json.Unmarshal(raw, &text); err == nil {
+		return storage.StringValue(text), false, nil
+	}
+	var boolean bool
+	if err := json.Unmarshal(raw, &boolean); err == nil {
+		return storage.BooleanValue(boolean), false, nil
+	}
+	var number json.Number
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.UseNumber()
+	if err := decoder.Decode(&number); err == nil {
+		return storage.DecimalValue(number.String()), false, nil
+	}
+	return storage.Value{}, false, errors.New("unsupported SFDX tree value")
 }
 
 func printDevVFHelp(w io.Writer) {

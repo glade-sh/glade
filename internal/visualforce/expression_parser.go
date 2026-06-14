@@ -187,20 +187,47 @@ func (p *exprParser) parsePostfix() (Expression, error) {
 	}
 	for {
 		p.skipSpace()
-		if p.pos >= len(p.source) || p.source[p.pos] != '[' {
+		if p.pos >= len(p.source) {
 			return expr, nil
 		}
-		p.pos++
-		key, err := p.parseExpression()
-		if err != nil {
-			return nil, err
+		switch p.source[p.pos] {
+		case '[':
+			p.pos++
+			key, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			p.skipSpace()
+			if p.pos >= len(p.source) || p.source[p.pos] != ']' {
+				return nil, fmt.Errorf("missing ']' in index expression")
+			}
+			p.pos++
+			expr = indexExpr{target: expr, key: key}
+		case '.':
+			p.pos++
+			field := p.readIdent()
+			if field == "" {
+				return nil, fmt.Errorf("expected identifier after '.'")
+			}
+			p.skipSpace()
+			if p.pos < len(p.source) && p.source[p.pos] == '(' {
+				p.pos++
+				args, err := p.parseArgList()
+				if err != nil {
+					return nil, err
+				}
+				p.skipSpace()
+				if p.pos >= len(p.source) || p.source[p.pos] != ')' {
+					return nil, fmt.Errorf("missing ')' in method expression")
+				}
+				p.pos++
+				expr = methodCallExpr{target: expr, name: field, args: args}
+				continue
+			}
+			expr = memberExpr{target: expr, field: field}
+		default:
+			return expr, nil
 		}
-		p.skipSpace()
-		if p.pos >= len(p.source) || p.source[p.pos] != ']' {
-			return nil, fmt.Errorf("missing ']' in index expression")
-		}
-		p.pos++
-		expr = indexExpr{target: expr, key: key}
 	}
 }
 
@@ -216,6 +243,10 @@ func (p *exprParser) parseVisualforcePrimary() (Expression, error) {
 	p.pos = save
 	if p.matchWord("FALSE") {
 		return literalExpr{value: vm.Bool(false)}, nil
+	}
+	p.pos = save
+	if p.matchWord("NULL") {
+		return literalExpr{value: vm.Null}, nil
 	}
 	p.pos = save
 	ch := p.source[p.pos]
@@ -242,6 +273,13 @@ func (p *exprParser) parseVisualforceIdentifierOrCall() (Expression, error) {
 			return nil, fmt.Errorf("missing ')' in function expression")
 		}
 		p.pos++
+		if len(parts) > 1 {
+			return methodCallExpr{
+				target: visualforceIdentifierExpr{parts: parts[:len(parts)-1]},
+				name:   parts[len(parts)-1],
+				args:   args,
+			}, nil
+		}
 		return visualforceFunctionExpr{name: strings.ToLower(parts[0]), args: args}, nil
 	}
 	return visualforceIdentifierExpr{parts: parts}, nil

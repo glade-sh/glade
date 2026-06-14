@@ -34,16 +34,24 @@ type RemoteObjectCRUDRequest struct {
 	Operation  string
 	ObjectName string
 	Fields     map[string]any
+	Criteria   map[string]any
 	IDs        []string
 	ViewState  string
 	CSRF       string
 }
 
 type RemoteObjectCRUDResult struct {
-	Success bool                    `json:"success"`
-	IDs     []string                `json:"ids,omitempty"`
-	Records []map[string]any        `json:"records,omitempty"`
-	Errors  []RemoteObjectCRUDError `json:"errors,omitempty"`
+	Success  bool                        `json:"success"`
+	IDs      []string                    `json:"ids,omitempty"`
+	Records  []map[string]any            `json:"records,omitempty"`
+	Describe *RemoteObjectDescribeResult `json:"describe,omitempty"`
+	Errors   []RemoteObjectCRUDError     `json:"errors,omitempty"`
+}
+
+type RemoteObjectDescribeResult struct {
+	Name   string                        `json:"name"`
+	JSName string                        `json:"jsName,omitempty"`
+	Fields []RemoteObjectFieldDescriptor `json:"fields"`
 }
 
 type RemoteObjectCRUDError struct {
@@ -78,12 +86,16 @@ func BuildRemoteObjectsDescriptor(root *MarkupNode, schema RemoteObjectSchema) (
 }
 
 func DispatchRemoteObjectCRUD(org *storage.OrgState, descriptor RemoteObjectsDescriptor, req RemoteObjectCRUDRequest) RemoteObjectCRUDResult {
-	if org == nil {
-		return remoteObjectFailure("local org state is required", "UNSUPPORTED_FEATURE", nil)
-	}
+	operation := strings.ToLower(strings.TrimSpace(req.Operation))
 	model, ok := remoteObjectModel(descriptor, req.ObjectName)
 	if !ok {
 		return remoteObjectFailure(fmt.Sprintf("undeclared remote object %s", strings.TrimSpace(req.ObjectName)), "INVALID_TYPE", nil)
+	}
+	if operation == "describe" {
+		return RemoteObjectCRUDResult{Success: true, Describe: remoteObjectDescribe(model)}
+	}
+	if org == nil {
+		return remoteObjectFailure("local org state is required", "UNSUPPORTED_FEATURE", nil)
 	}
 	objectName, ok := storage.ResolveObjectName(*org, model.Name)
 	if !ok {
@@ -95,7 +107,7 @@ func DispatchRemoteObjectCRUD(org *storage.OrgState, descriptor RemoteObjectsDes
 		return remoteObjectFailure(err.Error(), "INVALID_FIELD", nil)
 	}
 
-	switch strings.ToLower(strings.TrimSpace(req.Operation)) {
+	switch operation {
 	case "create":
 		record := storage.Record{Object: objectName, Fields: fields, ExplicitNulls: explicitNulls}
 		engine := dml.NewEngine(org)
@@ -106,6 +118,15 @@ func DispatchRemoteObjectCRUD(org *storage.OrgState, descriptor RemoteObjectsDes
 		return RemoteObjectCRUDResult{Success: true, IDs: []string{string(result.ID)}}
 	case "retrieve":
 		records, err := remoteObjectRetrieve(*org, objectName, model, req.IDs)
+		if err != nil {
+			return remoteObjectFailure(err.Error(), "NOT_FOUND", nil)
+		}
+		return RemoteObjectCRUDResult{Success: true, Records: records}
+	case "query":
+		if unsupported := unsupportedRemoteObjectQueryCriteria(req.Criteria); len(unsupported) > 0 {
+			return remoteObjectFailure(fmt.Sprintf("remote object query criteria only supports Id or ids locally; unsupported criteria: %s", strings.Join(unsupported, ", ")), "UNSUPPORTED_FEATURE", unsupported)
+		}
+		records, err := remoteObjectQuery(*org, objectName, model, remoteObjectQueryIDs(req))
 		if err != nil {
 			return remoteObjectFailure(err.Error(), "NOT_FOUND", nil)
 		}
@@ -144,7 +165,7 @@ func RenderRemoteObjectsScript(descriptor RemoteObjectsDescriptor) string {
 	namespaceID := jsIdentifier(namespace)
 	builder := strings.Builder{}
 	builder.WriteString(`<script>(function(window){`)
-	builder.WriteString(`window.__gladeRemoteObjects=window.__gladeRemoteObjects||function(operation,objectName,fields,callback){fields=fields||{};var ids=[];if(fields.Id){ids=[String(fields.Id)];}else if(fields.id){ids=[String(fields.id)];}var read=function(name){var el=document.querySelector('input[name="'+name+'"]');return el?el.value:"";};return fetch(window.location.pathname.replace(/\/$/,"")+"/remoteObjects",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({operation:operation,objectName:objectName,fields:fields,ids:ids,viewState:read("` + ViewStateFormFieldName() + `"),csrf:read("__vf_csrf")})}).then(function(response){return response.json();}).then(function(result){if(callback){callback(result,{status:!!(result&&result.success),type:"remoteObjects"});}return result;}).catch(function(err){var result={success:false,errors:[{message:String(err)}]};if(callback){callback(result,{status:false,type:"remoteObjects",message:String(err)});}return result;});};`)
+	builder.WriteString(`window.__gladeRemoteObjects=window.__gladeRemoteObjects||function(operation,objectName,fields,callback,criteria){fields=fields||{};criteria=criteria||{};var ids=[];if(fields.Id){ids=[String(fields.Id)];}else if(fields.id){ids=[String(fields.id)];}else if(criteria.Id){ids=[String(criteria.Id)];}else if(criteria.id){ids=[String(criteria.id)];}else if(Array.isArray(criteria.ids)){ids=criteria.ids.map(String);}var read=function(name){var el=document.querySelector('input[name="'+name+'"]');return el?el.value:"";};return fetch(window.location.pathname.replace(/\/$/,"")+"/remoteObjects",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({operation:operation,objectName:objectName,fields:fields,criteria:criteria,ids:ids,viewState:read("` + ViewStateFormFieldName() + `"),csrf:read("__vf_csrf")})}).then(function(response){return response.json();}).then(function(result){if(callback){callback(result,{status:!!(result&&result.success),type:"remoteObjects"});}return result;}).catch(function(err){var result={success:false,errors:[{message:String(err)}]};if(callback){callback(result,{status:false,type:"remoteObjects",message:String(err)});}return result;});};`)
 	builder.WriteString(`var `)
 	builder.WriteString(namespaceID)
 	builder.WriteString(` = window.`)
@@ -177,6 +198,18 @@ func RenderRemoteObjectsScript(descriptor RemoteObjectsDescriptor) string {
 		builder.WriteString(`.fields = `)
 		builder.WriteString(jsStringArray(fieldNames))
 		builder.WriteString(`;`)
+		builder.WriteString(namespaceID)
+		builder.WriteString(`.`)
+		builder.WriteString(jsName)
+		builder.WriteString(`.describe = function(callback){return window.__gladeRemoteObjects("describe",`)
+		builder.WriteString(jsString(model.Name))
+		builder.WriteString(`,{},callback);};`)
+		builder.WriteString(namespaceID)
+		builder.WriteString(`.`)
+		builder.WriteString(jsName)
+		builder.WriteString(`.query = function(criteria,callback){if(typeof criteria=="function"){callback=criteria;criteria={};}return window.__gladeRemoteObjects("query",`)
+		builder.WriteString(jsString(model.Name))
+		builder.WriteString(`,{},callback,criteria||{});};`)
 		for _, method := range []string{"create", "retrieve", "update", "del"} {
 			builder.WriteString(namespaceID)
 			builder.WriteString(`.`)
@@ -359,6 +392,47 @@ func remoteObjectRequestIDs(req RemoteObjectCRUDRequest) []string {
 	return nil
 }
 
+func remoteObjectQueryIDs(req RemoteObjectCRUDRequest) []string {
+	if ids := remoteObjectRequestIDs(req); len(ids) > 0 {
+		return ids
+	}
+	for _, key := range []string{"Id", "id"} {
+		if raw, ok := req.Criteria[key]; ok {
+			return []string{fmt.Sprintf("%v", raw)}
+		}
+	}
+	if raw, ok := req.Criteria["ids"]; ok {
+		switch typed := raw.(type) {
+		case []any:
+			ids := make([]string, 0, len(typed))
+			for _, item := range typed {
+				ids = append(ids, fmt.Sprintf("%v", item))
+			}
+			return ids
+		case []string:
+			return append([]string(nil), typed...)
+		}
+	}
+	return nil
+}
+
+func unsupportedRemoteObjectQueryCriteria(criteria map[string]any) []string {
+	if len(criteria) == 0 {
+		return nil
+	}
+	var unsupported []string
+	for key := range criteria {
+		switch strings.ToLower(strings.TrimSpace(key)) {
+		case "id", "ids":
+			continue
+		default:
+			unsupported = append(unsupported, key)
+		}
+	}
+	sort.Strings(unsupported)
+	return unsupported
+}
+
 func remoteObjectRetrieve(org storage.OrgState, objectName string, model RemoteObjectModelDescriptor, ids []string) ([]map[string]any, error) {
 	object, ok := org.Objects[objectName]
 	if !ok {
@@ -385,6 +459,35 @@ func remoteObjectRetrieve(org storage.OrgState, objectName string, model RemoteO
 		out = append(out, row)
 	}
 	return out, nil
+}
+
+func remoteObjectQuery(org storage.OrgState, objectName string, model RemoteObjectModelDescriptor, ids []string) ([]map[string]any, error) {
+	if len(ids) > 0 {
+		return remoteObjectRetrieve(org, objectName, model, ids)
+	}
+	object, ok := org.Objects[objectName]
+	if !ok {
+		return nil, fmt.Errorf("unknown remote object %s", objectName)
+	}
+	recordIDs := make([]string, 0, len(object.Records))
+	for id, record := range object.Records {
+		if record.System.IsDeleted {
+			continue
+		}
+		recordIDs = append(recordIDs, string(id))
+	}
+	sort.Strings(recordIDs)
+	return remoteObjectRetrieve(org, objectName, model, recordIDs)
+}
+
+func remoteObjectDescribe(model RemoteObjectModelDescriptor) *RemoteObjectDescribeResult {
+	fields := make([]RemoteObjectFieldDescriptor, len(model.Fields))
+	copy(fields, model.Fields)
+	return &RemoteObjectDescribeResult{
+		Name:   model.Name,
+		JSName: model.JSName,
+		Fields: fields,
+	}
 }
 
 func remoteObjectJSONValue(value storage.Value) any {

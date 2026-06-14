@@ -19,9 +19,16 @@ func TestParseSchemaFieldToken(t *testing.T) {
 	}
 }
 
+func TestParseSchemaObjectToken(t *testing.T) {
+	objectName, ok := ParseSchemaObjectToken("Account")
+	if !ok || objectName != "Account" {
+		t.Fatalf("object=%q ok=%v", objectName, ok)
+	}
+}
+
 func TestApexWireModuleJS(t *testing.T) {
 	js := ApexWireModuleJS("ItemCtrl", "getItems")
-	if !containsAll(js, "createApexWireAdapter", "ItemCtrl", "getItems") {
+	if !containsAll(js, "createApexWireAdapter", "ItemCtrl", "getItems", "export default") {
 		t.Fatalf("js = %q", js)
 	}
 }
@@ -34,6 +41,9 @@ func TestSalesforceImportMapIncludesPhase8Shims(t *testing.T) {
 		"@salesforce/resourceUrl/",
 		"@salesforce/contentAssetUrl/",
 		"lightning/navigation",
+		"lightning/platformShowToastEvent",
+		"lightning/platformResourceLoader",
+		"lightning/messageService",
 	} {
 		if imports[specifier] == "" {
 			t.Fatalf("missing import map entry for %s in %#v", specifier, imports)
@@ -66,17 +76,32 @@ func TestI18nModuleJS(t *testing.T) {
 	}
 }
 
-func TestNavigationModuleJSReportsUnsupportedFeature(t *testing.T) {
+func TestNavigationModuleJSSupportsCurrentPageReferenceAndURLs(t *testing.T) {
 	js := NavigationModuleJS()
-	if !containsAll(js, "NavigationMixin", "GenerateUrl", "Navigate", "lightning/navigation is not implemented") {
+	if !containsAll(js, "NavigationMixin", "GenerateUrl", "Navigate", "CurrentPageReference", "standard__recordPage", "window.location.assign") {
 		t.Fatalf("js = %q", js)
+	}
+	if strings.Contains(js, "window.history.pushState") {
+		t.Fatalf("Navigate should load the generated route, not only push browser history: %q", js)
 	}
 }
 
 func TestUIRecordAPIModuleJSExportsRecordAndObjectInfoWires(t *testing.T) {
 	js := UIRecordAPIModuleJS()
-	if !containsAll(js, "createGetRecordWireAdapter", "getRecord", "getObjectInfo") {
+	if !containsAll(js, "createGetRecordWireAdapter", "getRecord", "getObjectInfo", "objectApiName: objectApiName", "createRecord", "updateRecord", "deleteRecord", "getFieldValue", "getFieldDisplayValue") {
 		t.Fatalf("js = %q", js)
+	}
+}
+
+func TestLightningServiceModulesExportUsableStubs(t *testing.T) {
+	if !containsAll(ShowToastEventModuleJS(), "ShowToastEvent", "lightning__showtoast") {
+		t.Fatalf("toast js = %q", ShowToastEventModuleJS())
+	}
+	if !containsAll(PlatformResourceLoaderModuleJS(), "loadScript", "loadStyle", "Promise.resolve") {
+		t.Fatalf("resource loader js = %q", PlatformResourceLoaderModuleJS())
+	}
+	if !containsAll(MessageServiceModuleJS(), "publish", "subscribe", "unsubscribe", "MessageContext") {
+		t.Fatalf("message service js = %q", MessageServiceModuleJS())
 	}
 }
 

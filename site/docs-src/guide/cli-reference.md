@@ -273,6 +273,20 @@ glade dev vf --project . --addr 127.0.0.1:0 --ready-file /tmp/glade-vf-ready.jso
 The Visualforce server prints `/apex/<PageName>` routes and watches `.page`,
 `.component`, `.cls`, Aura, LWC, and static resource changes.
 
+Serve local LWCs in a Salesforce-like shell:
+
+```bash
+glade toolchain install
+glade dev lwc --project . --port 8080
+glade dev lwc --project . --addr 127.0.0.1:0 --ready-file /tmp/glade-lwc-ready.json
+```
+
+The LWC shell prints `/lwc/preview/component/<namespace>/<component>`,
+`/lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>`,
+`/lwc/preview/app/<Page>`, `/lwc/preview/home/<Page>`, and
+`/lwc/preview/tab/<Tab>` routes. Visualforce-backed tabs redirect to
+`/apex/<Page>` and share the same Lightning Out runtime.
+
 ## `glade lsp`
 
 Run the Language Server Protocol server over stdio, or emit one diagnostics pass.

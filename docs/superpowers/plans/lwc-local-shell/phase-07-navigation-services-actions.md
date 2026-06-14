@@ -1,10 +1,10 @@
 # Phase 7: Navigation, Services, And Actions Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan with parallel subagent squads. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Implement local shell services for navigation, current page reference, toasts, Lightning Message Service, modals, and quick actions.
+**Goal:** Implement host-aware local services for current page reference, basic navigation, toast events, Lightning Message Service, and resource loading. Keep modals and quick actions as future shell-service work unless implemented with tests.
 
-**Architecture:** Browser modules communicate with a shell service object installed by the page bootstrap. The service owns route changes, URL generation, toast rendering, message channels, modal lifecycle, and action context.
+**Architecture:** Browser modules communicate with a shell service object installed by the page bootstrap. The current service owns PageReference values, URL generation, basic navigation, toast events, message channels, and resource loading. Later phases can add modal lifecycle and action context.
 
 **Tech Stack:** `lwcruntime` shell service, Go PageReference construction, `@salesforce/messageChannel` shims, server routes, browser tests.
 
@@ -12,7 +12,7 @@
 
 ## Feature Delivered
 
-Components that use standard shell services can be tested locally in record, app, home, and tab contexts.
+Components that use supported shell services can be tested locally in record, app, home, tab, and Visualforce Lightning Out contexts.
 
 ## Files
 
@@ -25,14 +25,18 @@ Components that use standard shell services can be tested locally in record, app
 - Create: `lwcruntime/src/shims/modal.mjs`
 - Create: `lwcruntime/test/navigation.test.mjs`
 - Create: `lwcruntime/test/services.test.mjs`
+- Create: `lwcruntime/test/visualforce-services.test.mjs`
 - Test data: `testdata/local-tests/lwc-shell/force-app/main/default/messageChannels/LwcProbe.messageChannel-meta.xml`
 
-## Parallel Squads
+## Parallel Subagent Squads
+
+Use parallel subagent squads where files do not overlap. The coordinator integrates one patch at a time.
 
 - Navigation squad owns `NavigationMixin`, `CurrentPageReference`, and URL generation.
-- Toast/modal squad owns visible shell overlays.
+- Toast/resource squad owns toast events and resource loading.
 - LMS squad owns message channel metadata and publish/subscribe.
-- Quick action squad owns record and global action contexts.
+- Future action squad owns record and global action contexts.
+- Visualforce host squad owns CurrentPageReference, toast event, LMS, and resource-loading behavior inside `/apex/<PageName>`.
 - Review squad runs browser service tests across direct, record, app, and tab pages.
 
 ## Implementation Steps
@@ -52,15 +56,17 @@ Components that use standard shell services can be tested locally in record, app
   - `standard__webPage`
   - `standard__namedPage`
 - [ ] Generate local URLs that stay under `/lwc/preview/*` when the destination is local. External web pages return their URL.
-- [ ] Dispatch route changes inside the same shell without a full server restart.
-- [ ] Implement `lightning/platformShowToastEvent`. Toasts must render in the shell and expose variant, title, message, mode, and links.
+- [ ] Dispatch route changes through local URL navigation where supported.
+- [ ] Implement `lightning/platformShowToastEvent` as a browser event shim exposing variant, title, message, mode, and links.
 - [ ] Implement `lightning/messageService` with `publish`, `subscribe`, `unsubscribe`, `MessageContext`, `APPLICATION_SCOPE`, and local message channel imports.
-- [ ] Implement a practical `LightningModal` shim with `open()`, close value, backdrop, and focus return.
-- [ ] Implement quick action context:
+- [ ] Implement `lightning/platformResourceLoader` for local scripts and styles.
+- [ ] Leave `LightningModal` as future work unless `open()`, close value, backdrop, and focus-return tests are added.
+- [ ] Leave quick action context as future work unless the branch adds:
   - record action receives `recordId`.
   - global action receives no record unless state supplies one.
   - unsupported action types return `GLADELWC015 action type unsupported`.
-- [ ] Add tests for navigation from a record page to object home, record view, app page, and tab page.
+- [ ] Add tests for navigation from a record page to supported local routes.
+- [ ] Add Visualforce Lightning Out tests for `CurrentPageReference`, toast event, LMS publish/subscribe, resource loading, and navigation diagnostics inside `/apex/<PageName>`.
 
 ## Verification
 
@@ -72,15 +78,21 @@ go test ./internal/lwcbrowser ./internal/server ./internal/lwcshell -run 'Naviga
 (cd lwcruntime && npm test -- --runInBand)
 ```
 
-Scratch comparison:
+```bash
+(cd lwcruntime && npm run build && node --test test/visualforce-services.test.mjs)
+```
+
+Fixture-manifest comparison:
 
 ```bash
-(cd ../glade-tools && go run ./cmd/glade-plugin-compat lwc capture --target-org oaer-probe-max --project ../glade/testdata/local-tests/lwc-shell --targets navigation,quick-action --out /tmp/glade-lwc-navigation-capture.json)
+(cd ../glade-tools && go run ./cmd/glade-plugin-compat lwc capture --target-org oaer-probe-max --project ../glade/testdata/local-tests/lwc-shell --include-hosts lightning-shell,visualforce-lightning-out --targets navigation,quick-action --out /tmp/glade-lwc-navigation-capture.json)
 ```
 
 ## Done Gate
 
 - `CurrentPageReference` emits correct context for direct, record, app, home, and tab pages.
-- Navigation mixin changes local shell routes and generates stable URLs.
-- Toasts, LMS, modals, and quick-action context pass browser tests.
+- Navigation mixin generates stable URLs and navigates supported local targets.
+- Toast events, LMS, and resource loading pass browser tests.
+- Modal and quick-action context stay future work unless this phase adds tests and support rows.
 - Unsupported page-reference types and action types have named diagnostics.
+- Visualforce Lightning Out host exposes host-appropriate CurrentPageReference and service behavior, with diagnostics where Salesforce behavior is shell-only.

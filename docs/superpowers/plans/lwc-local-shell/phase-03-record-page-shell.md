@@ -1,6 +1,6 @@
 # Phase 3: Record Page Shell Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan with parallel subagent squads. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Render local Lightning record pages from FlexiPage metadata with record context, record header, regions, component properties, and object validation.
 
@@ -24,24 +24,26 @@ Developers can open a local record page and test LWCs with the same `recordId` a
 - Modify: `internal/server/lightning_wire.go`
 - Test data: `testdata/local-tests/lwc-shell/force-app/main/default/flexipages/Account_Record_Page.flexipage-meta.xml`
 
-## Parallel Squads
+## Parallel Subagent Squads
+
+Use parallel subagent squads where files do not overlap. The coordinator integrates one patch at a time.
 
 - Page resolver squad owns record page lookup and object matching.
 - Shell UI squad owns record header, region grid, and context injection.
 - Data squad owns record lookup and field display payloads.
-- CLI squad owns `--record-page`.
-- Review squad compares local shell to `oaer-probe-max` capture for the fixture page.
+- CLI squad owns route discovery and help text.
+- Review squad compares local shell to fixture-manifest output for the fixture page.
 
 ## Implementation Steps
 
-- [ ] Add `--record-page <name>` to `glade dev lwc`.
-- [ ] Require `--record-id` for record page preview unless the fixture seed has exactly one record for the page object. If missing and ambiguous, emit `GLADELWC008 record id required`.
+- [ ] Add record-page preview as a route discovered by `glade dev lwc`.
+- [ ] Require a record ID in the route. If missing or malformed, emit `GLADELWC008 record id required`.
 - [ ] Resolve FlexiPage `type=RecordPage`; reject other types for this command with `GLADELWC009 page type mismatch`.
 - [ ] Derive `objectApiName` from FlexiPage `sobjectType`; if a flag also supplies object, require an exact case-insensitive match.
 - [ ] Build local route:
 
 ```text
-/lwc/preview/record/<pageName>/<recordId>
+/lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>
 ```
 
 - [ ] Read the record by ID from `storage.OrgState`. The record header must show object label, record name, record ID, and page label.
@@ -58,10 +60,10 @@ go test ./internal/lwcshell ./internal/server ./internal/gladecli -run 'RecordPa
 ```
 
 ```bash
-go run ./cmd/glade dev lwc --project testdata/local-tests/lwc-shell --record-page Account_Record_Page --record-id 001000000000001AAA --port 18081
+go run ./cmd/glade dev lwc --project testdata/local-tests/lwc-shell --port 18081
 ```
 
-Scratch comparison:
+Fixture-manifest comparison:
 
 ```bash
 (cd ../glade-tools && go run ./cmd/glade-plugin-compat lwc capture --target-org oaer-probe-max --project ../glade/testdata/local-tests/lwc-shell --targets record-page --out /tmp/glade-lwc-record-capture.json)
@@ -73,3 +75,4 @@ Scratch comparison:
 - Components receive `recordId`, `objectApiName`, and configured properties.
 - `getRecord` returns local record data on the page.
 - Unsupported template or visibility behavior reports diagnostics on page and in JSON.
+- Visualforce Lightning Out pages do not inherit record page context by accident; they receive record-like values only from Visualforce standard controller context or explicit `$Lightning.createComponent()` attributes.

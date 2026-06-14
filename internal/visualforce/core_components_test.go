@@ -151,7 +151,7 @@ func TestRenderCoreActionFunctionRegionStatusPoller(t *testing.T) {
 		`data-region="editor"`,
 		`class="actionStatus"`,
 		`data-status="saveStatus"`,
-		`<span class="actionStatusStart">Saving</span>`,
+		`<span class="actionStatusStart" hidden="hidden">Saving</span>`,
 		`<span class="actionStatusStop">Saved</span>`,
 		`class="actionPoller"`,
 		`data-interval="5"`,
@@ -167,7 +167,7 @@ func TestRenderActionStatusUsesStartAndStopTextAttributes(t *testing.T) {
 	</apex:page>`)
 
 	for _, want := range []string{
-		`<span class="actionStatusStart">Working</span>`,
+		`<span class="actionStatusStart" hidden="hidden">Working</span>`,
 		`<span class="actionStatusStop">Done</span>`,
 	} {
 		assertContains(t, rendered, want)

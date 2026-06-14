@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -492,7 +493,7 @@ func TestLightningResourceURLShimFetchesStaticResourceBytes(t *testing.T) {
 	}
 }
 
-func TestLightningNavigationShimReportsUnsupportedFeature(t *testing.T) {
+func TestLightningNavigationShimServesLocalPageReferenceSupport(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
 
@@ -501,7 +502,12 @@ func TestLightningNavigationShimReportsUnsupportedFeature(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
 	}
-	if !strings.Contains(rec.Body.String(), "lightning/navigation is not implemented") {
+	for _, want := range []string{"CurrentPageReference", "NavigationMixin", "window.location.assign", "/lwc/preview/record/"} {
+		if !strings.Contains(rec.Body.String(), want) {
+			t.Fatalf("missing %q in body = %q", want, rec.Body.String())
+		}
+	}
+	if strings.Contains(rec.Body.String(), "lightning/navigation is not implemented") {
 		t.Fatalf("body = %q", rec.Body.String())
 	}
 }
@@ -689,5 +695,68 @@ func TestLightningWireGetObjectInfoReturnsLocalSchema(t *testing.T) {
 	values, ok := rating["picklistValues"].([]any)
 	if !ok || len(values) != 1 {
 		t.Fatalf("Rating picklistValues = %#v", rating["picklistValues"])
+	}
+}
+
+func TestLightningSchemaShimServesObjectToken(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/shims/schema/Account.js", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	for _, want := range []string{`objectApiName: "Account"`, `toString() { return "Account"; }`} {
+		if !strings.Contains(rec.Body.String(), want) {
+			t.Fatalf("missing %q in %s", want, rec.Body.String())
+		}
+	}
+}
+
+func TestLightningWireCreateUpdateDeleteRecordMutatesLocalStorage(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	createBody := `{"apiName":"Account","fields":{"Name":"New Local Account","Description":"First"}}`
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/lightning/wire/createRecord", strings.NewReader(createBody)))
+	if create.Code != http.StatusOK {
+		t.Fatalf("create status = %d body=%s", create.Code, create.Body.String())
+	}
+	var created lwcbrowser.WireResponse
+	if err := json.Unmarshal(create.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if created.Error != nil {
+		t.Fatalf("create error = %#v", created.Error)
+	}
+	payload, ok := created.Data.(map[string]any)
+	if !ok || payload["apiName"] != "Account" || payload["id"] == "" {
+		t.Fatalf("created data = %#v", created.Data)
+	}
+	id := payload["id"].(string)
+
+	updateBody := fmt.Sprintf(`{"fields":{"Id":%q,"Name":"Updated Local Account","Description":null}}`, id)
+	update := httptest.NewRecorder()
+	handler.ServeHTTP(update, httptest.NewRequest(http.MethodPost, "/lightning/wire/updateRecord", strings.NewReader(updateBody)))
+	if update.Code != http.StatusOK {
+		t.Fatalf("update status = %d body=%s", update.Code, update.Body.String())
+	}
+	if got := org.Objects["Account"].Records[storage.ID(id)].Fields["Name"].String; got != "Updated Local Account" {
+		t.Fatalf("updated name = %q", got)
+	}
+	if !org.Objects["Account"].Records[storage.ID(id)].ExplicitNulls["Description"] {
+		t.Fatalf("Description explicit null not recorded: %#v", org.Objects["Account"].Records[storage.ID(id)])
+	}
+
+	deleteBody := fmt.Sprintf(`{"recordId":%q}`, id)
+	del := httptest.NewRecorder()
+	handler.ServeHTTP(del, httptest.NewRequest(http.MethodPost, "/lightning/wire/deleteRecord", strings.NewReader(deleteBody)))
+	if del.Code != http.StatusOK {
+		t.Fatalf("delete status = %d body=%s", del.Code, del.Body.String())
+	}
+	if !org.Objects["Account"].Records[storage.ID(id)].System.IsDeleted {
+		t.Fatalf("record not soft-deleted: %#v", org.Objects["Account"].Records[storage.ID(id)])
 	}
 }

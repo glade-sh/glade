@@ -6,13 +6,14 @@
   <ul>
     <li>Start with the status legend.</li>
     <li>Check the unsupported list before a pilot.</li>
-    <li>Use the generated ledgers for exact method rows.</li>
+    <li>Use the generated Apex/runtime ledgers for exact method rows.</li>
   </ul>
 </div>
 
 Start here when deciding whether Glade can run a project, a test class, or a
 local Salesforce-shaped API flow. This page is the public map. The generated
-ledgers carry the exact ledger rows.
+Apex/runtime ledgers carry the exact ledger rows. LWC support is listed in the
+Local LWC Shell guide until the LWC ledger phase lands.
 
 ## Before you adopt Glade
 
@@ -63,7 +64,8 @@ service parity.
 | JSON, regex, encoding, and crypto | Serialization, parsing, regex, base64, hex, URL encoding, and digest rows are supported for the checked local contract. |
 | HTTP, SOAP, and callout mocks | Request/response-shaped mock paths work for tests. Glade does not perform live outbound service calls. |
 | Messaging | Local message/result shapes, template rendering, attachment retrieval, send options, and invocation counts are covered. Glade does not deliver email, push, or other live messages. |
-| Visualforce controller and page rendering | PageReference, messages, current page, controller helpers, local `/apex/<PageName>` routes, common standard components, page lifecycle paths, static resources, uploads, remoting envelopes, and local PDF fallback output are modeled for local development. Full Salesforce chrome, every component edge, exact lifecycle timing, and byte-for-byte PDF parity remain outside the local contract. |
+| Visualforce controller and page rendering | PageReference, messages, current page, controller helpers, local `/apex/<PageName>` routes, common standard components, page lifecycle paths, signed view state with CSRF checks, transient field omission, static resources, uploads, remoting envelopes, Lightning Out/LWC dependency diagnostics, AJAX refresh paths, and local PDF fallback output are modeled for local development. Full Salesforce chrome, every component edge, exact lifecycle timing, Apex `PageReference.getContent*` parity, and byte-for-byte PDF parity remain outside the local contract. |
+| Local LWC shell and Visualforce Lightning Out | `/lwc/preview/component`, record page, app page, home page, tab routes, Visualforce-backed tab redirects, and `/apex/<PageName>` Lightning Out hosts use the shared local LWC runtime. Apex wire, selected LDS/UI API shims, schema tokens, labels, resources, `CurrentPageReference`, basic `NavigationMixin`, LMS, resource loading, and toast event paths work with local-data limits. |
 | Search and SOSL helpers | Local deterministic Search and SOSL rows are supported. Hosted ranking, analyzers, synonyms, and external indexes are not modeled. |
 | Test helpers | Tracked `Test.*` local helper rows are supported. Hosted service accounting, packaged-resource expansion, and live External Service execution remain explicit gaps. |
 | Local test harness and request context | Request/UIRequest context, install/uninstall hooks, sandbox post-copy helpers, scheduled Apex, QuickAction DTOs, BusinessHours calendars and holidays, seeded approval routing, and TrailblazerIdentity helper calls have deterministic local models. Live hosted engines are not contacted. |
@@ -76,7 +78,8 @@ This is the smaller list a first user should check before betting on Glade.
 | --- | --- |
 | Live Salesforce auth and sessions | The local server exposes local stubs. It does not implement real Salesforce OAuth, session validation, or org identity services. |
 | Fenced live service APIs | Answers zone search, password reset output, live identity/admin mutation, and hosted process/service engines require Salesforce-hosted data or execution. |
-| Exact hosted Visualforce parity | Glade serves local Visualforce pages for development. It does not promise Salesforce-hosted chrome, every component edge, exact lifecycle timing, every remoting/browser behavior, or byte-for-byte PDF output. |
+| Exact hosted Visualforce parity | Glade serves local Visualforce pages for development. It does not promise Salesforce-hosted chrome, every component edge, exact lifecycle timing, Apex `PageReference.getContent*` output parity, every remoting/browser behavior, or byte-for-byte PDF output. |
+| Exact hosted Lightning Experience parity | The local LWC shell does not promise Salesforce-hosted app chrome, permissions, console APIs, full UI API, all `lightning-*` base components, exact SLDS fidelity, or every Lightning Out edge. |
 | Broad REST and Tooling API parity | The local API server covers the checked local baseline, including Composite Batch and Tree, Bulk API v2 simple query jobs, layout/default-value metadata, metadata job status, and local Tooling shapes. Broader Bulk API locator paging, Composite Graph execution, Streaming/PubSub, GraphQL, live metadata deploy/retrieve, live auth, and live org-only Tooling surfaces remain outside the local contract. |
 | Live outbound side effects | Real callouts, delivered email, push notifications, and external service mutations are not performed. Tests should use local mocks and result objects. |
 | Exact Salesforce governor accounting | Glade tracks deterministic local limits. Salesforce's full production accounting and every platform-specific counter are not complete. |
@@ -144,6 +147,7 @@ Every remaining hosted-only behavior is split into an exact unsupported row.
 Use this map first, then cut down to the exact checked row.
 
 - Method-level standard-library rows: [`docs/STDLIB_COVERAGE.md`](https://github.com/glade-sh/glade/blob/main/docs/STDLIB_COVERAGE.md)
+- Local LWC shell guide: [Local LWC Shell](/guide/lwc-local-shell)
 
 One rule keeps the marks honest. Do not call a surface supported until the row
 has implementation and compatibility evidence.

@@ -127,7 +127,25 @@ func TestHandleVisualforceRemotingReturnsEnvelopeForUnsupportedRemoteAction(t *t
 	}
 }
 
-func TestHandleVisualforceRemotingReturnsEnvelopeForUnsupportedArgumentShape(t *testing.T) {
+func TestHandleVisualforceRemotingAcceptsObjectAndArrayParameters(t *testing.T) {
+	srv := newVisualforceFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"></apex:page>`, `public class AjaxController {
+  @RemoteAction
+  public static String inspect(Map<String, Object> payload, List<Object> values) {
+    return String.valueOf(payload.get('name')) + ':' + String.valueOf(values.size());
+  }
+}`)
+
+	responses := postVisualforceRemotingWithViewState(t, srv, `[{"action":"AjaxController","method":"inspect","data":[{"name":"trail"},["one","two"]],"type":"rpc","tid":6}]`)
+	if len(responses) != 1 {
+		t.Fatalf("responses = %#v", responses)
+	}
+	got := responses[0]
+	if !got.Status || got.Action != "AjaxController" || got.Method != "inspect" || got.TID != 6 || got.Result != "trail:2" {
+		t.Fatalf("response = %#v", got)
+	}
+}
+
+func TestHandleVisualforceRemotingFailureEnvelopeKeepsStableShape(t *testing.T) {
 	srv := newVisualforceFixtureServer(t, "Remote.page", `<apex:page controller="AjaxController"></apex:page>`, `public class AjaxController {
   @RemoteAction
   public static String echo(String name) {
@@ -135,13 +153,33 @@ func TestHandleVisualforceRemotingReturnsEnvelopeForUnsupportedArgumentShape(t *
   }
 }`)
 
-	responses := postVisualforceRemotingWithViewState(t, srv, `[{"action":"AjaxController","method":"echo","data":[{"name":"trail"}],"type":"rpc","tid":6}]`)
+	responses := postVisualforceRemotingWithViewState(t, srv, `[{"action":"AjaxController","method":"missing","data":[],"type":"rpc","tid":9}]`)
 	if len(responses) != 1 {
 		t.Fatalf("responses = %#v", responses)
 	}
-	got := responses[0]
-	if got.Status || got.Action != "AjaxController" || got.Method != "echo" || got.TID != 6 || !strings.Contains(got.Message, "object parameters are not supported") {
-		t.Fatalf("response = %#v", got)
+	body, err := json.Marshal(responses[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	var envelope map[string]any
+	if err := json.Unmarshal(body, &envelope); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"action", "method", "type", "tid", "status", "message", "errors"} {
+		if _, ok := envelope[key]; !ok {
+			t.Fatalf("envelope missing %q: %s", key, body)
+		}
+	}
+	errorsValue, ok := envelope["errors"].([]any)
+	if !ok || len(errorsValue) != 1 {
+		t.Fatalf("errors = %#v body=%s", envelope["errors"], body)
+	}
+	errorObject, ok := errorsValue[0].(map[string]any)
+	if !ok || errorObject["message"] != envelope["message"] {
+		t.Fatalf("error object = %#v envelope=%#v", errorsValue[0], envelope)
+	}
+	if envelope["action"] != "AjaxController" || envelope["method"] != "missing" || envelope["type"] != "rpc" || envelope["tid"] != float64(9) || envelope["status"] != false {
+		t.Fatalf("envelope = %#v", envelope)
 	}
 }
 

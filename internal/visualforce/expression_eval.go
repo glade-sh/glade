@@ -26,6 +26,17 @@ type indexExpr struct {
 	key    Expression
 }
 
+type memberExpr struct {
+	target Expression
+	field  string
+}
+
+type methodCallExpr struct {
+	target Expression
+	name   string
+	args   []Expression
+}
+
 type visualforceIdentifierExpr struct {
 	parts []string
 }
@@ -85,11 +96,66 @@ func (expr indexExpr) Eval(ctx *ExpressionContext) *vm.Value {
 	if key.Kind == vm.ValueNull {
 		return &vm.Null
 	}
-	value, ok := readObjectMember(ctx, target, key.String())
+	value, ok := readIndexValue(ctx, target, key)
 	if !ok {
 		return &vm.Null
 	}
 	return &value
+}
+
+func (expr memberExpr) Eval(ctx *ExpressionContext) *vm.Value {
+	target := evalExpressionValue(expr.target, ctx)
+	value, ok := readVisualforceExtraMember(ctx, target, expr.field)
+	if !ok {
+		value, ok = readObjectMember(ctx, target, expr.field)
+	}
+	if !ok {
+		return &vm.Null
+	}
+	return &value
+}
+
+func (expr methodCallExpr) Eval(ctx *ExpressionContext) *vm.Value {
+	target := evalExpressionValue(expr.target, ctx)
+	if target.Kind == vm.ValueNull {
+		return &vm.Null
+	}
+	args := make([]vm.Value, 0, len(expr.args))
+	for _, arg := range expr.args {
+		args = append(args, evalExpressionValue(arg, ctx))
+	}
+	if len(args) == 0 {
+		if value, ok := readObjectMember(ctx, target, expr.name); ok {
+			return &value
+		}
+	}
+	if ctx == nil || ctx.VM == nil || target.Kind != vm.ValueObject || strings.TrimSpace(target.Type) == "" || len(args) != 0 {
+		return &vm.Null
+	}
+	value, updated, result, err := ctx.VM.InvokeVisualforceActionOnController(target, target.Type, expr.name, "", nil)
+	if err != nil || !result.Success {
+		return &vm.Null
+	}
+	writeBackVisualforceReceiver(ctx, target, updated)
+	return &value
+}
+
+func writeBackVisualforceReceiver(ctx *ExpressionContext, target, updated vm.Value) {
+	if ctx == nil {
+		return
+	}
+	if valuesEqual(ctx.Controller, target) {
+		ctx.Controller = updated
+	}
+	for i := range ctx.Extensions {
+		if valuesEqual(ctx.Extensions[i], target) {
+			ctx.Extensions[i] = updated
+			return
+		}
+	}
+	if valuesEqual(ctx.StandardController, target) {
+		ctx.StandardController = updated
+	}
 }
 
 func evalExpressionValue(expr Expression, ctx *ExpressionContext) vm.Value {
@@ -131,6 +197,8 @@ func (expr visualforceFunctionExpr) Eval(ctx *ExpressionContext) *vm.Value {
 		return evalVisualforceNullValue(ctx, expr.args)
 	case "VALUE":
 		return evalVisualforceValue(ctx, expr.args)
+	case "URLFOR":
+		return evalVisualforceURLFor(ctx, expr.args)
 	default:
 		return functionExpr{name: expr.name, args: expr.args}.Eval(ctx)
 	}
@@ -217,8 +285,52 @@ func resolveVisualforceExtraGlobal(ctx *ExpressionContext, name string) (vm.Valu
 		return visualforceSiteValue(ctx), true
 	case "$component":
 		return vm.Object("$Component"), true
+	case "$remoteaction":
+		value := vm.Object("$RemoteAction")
+		value.Fields["value"] = vm.String("{!$RemoteAction}")
+		return value, true
 	default:
 		return vm.Null, false
+	}
+}
+
+func readIndexValue(ctx *ExpressionContext, target, key vm.Value) (vm.Value, bool) {
+	switch target.Kind {
+	case vm.ValueList:
+		index, ok := listIndexFromValue(key)
+		if !ok || index < 0 || index >= len(target.List) {
+			return vm.Null, false
+		}
+		return target.List[index], true
+	case vm.ValueMap:
+		if key.Kind == vm.ValueString {
+			for candidate, value := range vm.StringValueMapEntries(target) {
+				if strings.EqualFold(candidate, key.Text) {
+					return value, true
+				}
+			}
+		}
+	}
+	return readObjectMember(ctx, target, key.String())
+}
+
+func listIndexFromValue(value vm.Value) (int, bool) {
+	switch value.Kind {
+	case vm.ValueInt:
+		return int(value.Int), true
+	case vm.ValueDecimal:
+		if math.Trunc(value.Decimal) != value.Decimal {
+			return 0, false
+		}
+		return int(value.Decimal), true
+	case vm.ValueString:
+		parsed, err := strconv.Atoi(strings.TrimSpace(value.Text))
+		if err != nil {
+			return 0, false
+		}
+		return parsed, true
+	default:
+		return 0, false
 	}
 }
 
@@ -246,11 +358,26 @@ func readVisualforceExtraMember(ctx *ExpressionContext, value vm.Value, field st
 		return visualforceSetupValue(ctx, field)
 	case "$component":
 		return vm.String(field), true
+	case "$remoteaction":
+		path := visualforceRemoteActionPath(value)
+		next := vm.Object("$RemoteAction")
+		next.Fields["value"] = vm.String("{!" + path + "." + field + "}")
+		return next, true
 	}
 	if next, ok := readObjectMember(ctx, value, field); ok {
 		return next, true
 	}
 	return vm.Null, false
+}
+
+func visualforceRemoteActionPath(value vm.Value) string {
+	path := strings.TrimSpace(value.String())
+	path = strings.TrimPrefix(path, "{!")
+	path = strings.TrimSuffix(path, "}")
+	if path == "" || !strings.HasPrefix(strings.ToLower(path), "$remoteaction") {
+		return "$RemoteAction"
+	}
+	return path
 }
 
 func visualforceObjectTypeValue(ctx *ExpressionContext, objectName string) (vm.Value, bool) {

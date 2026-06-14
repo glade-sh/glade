@@ -1,0 +1,11 @@
+{
+  "packageDirectories": [
+    {
+      "path": "force-app",
+      "default": true
+    }
+  ],
+  "name": "lwc-shell",
+  "namespace": "",
+  "sourceApiVersion": "61.0"
+}

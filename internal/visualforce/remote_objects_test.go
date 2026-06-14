@@ -106,6 +106,8 @@ func TestRemoteObjectsDescriptorGeneratesNamespaceAndModels(t *testing.T) {
 	assertContains(t, script, `Remote.Acct.prototype.retrieve`)
 	assertContains(t, script, `Remote.Acct.prototype.update`)
 	assertContains(t, script, `Remote.Acct.prototype.del`)
+	assertContains(t, script, `Remote.Acct.describe = function(callback)`)
+	assertContains(t, script, `Remote.Acct.query = function(criteria,callback)`)
 	assertContains(t, script, `window.__gladeRemoteObjects=window.__gladeRemoteObjects||function`)
 	assertContains(t, script, `+"/remoteObjects"`)
 	assertContains(t, script, `viewState:read("com.salesforce.visualforce.ViewState")`)
@@ -166,6 +168,69 @@ func TestRemoteObjectsCRUDRoundTripUsesDeclaredLocalOrgState(t *testing.T) {
 	})
 	if !afterDelete.Success || len(afterDelete.Records) != 0 {
 		t.Fatalf("afterDelete = %#v", afterDelete)
+	}
+}
+
+func TestRemoteObjectsDescribeAndQueryUseDeclaredLocalOrgState(t *testing.T) {
+	descriptor := RemoteObjectsDescriptor{Models: []RemoteObjectModelDescriptor{{
+		Name:   "Account",
+		JSName: "Acct",
+		Fields: []RemoteObjectFieldDescriptor{
+			{Name: "Name", JSName: "Name"},
+			{Name: "Industry", JSName: "Industry"},
+		},
+	}}}
+	org := remoteObjectsTestOrg()
+	created := DispatchRemoteObjectCRUD(&org, descriptor, RemoteObjectCRUDRequest{
+		Operation:  "create",
+		ObjectName: "Account",
+		Fields:     map[string]any{"Name": "Acme", "Industry": "Energy"},
+	})
+	if !created.Success {
+		t.Fatalf("created = %#v", created)
+	}
+
+	describe := DispatchRemoteObjectCRUD(&org, descriptor, RemoteObjectCRUDRequest{
+		Operation:  "describe",
+		ObjectName: "Acct",
+	})
+	if !describe.Success || describe.Describe == nil || describe.Describe.Name != "Account" || len(describe.Describe.Fields) != 2 {
+		t.Fatalf("describe = %#v", describe)
+	}
+
+	query := DispatchRemoteObjectCRUD(&org, descriptor, RemoteObjectCRUDRequest{
+		Operation:  "query",
+		ObjectName: "Account",
+	})
+	if !query.Success || len(query.Records) != 1 || query.Records[0]["Id"] != created.IDs[0] || query.Records[0]["Name"] != "Acme" {
+		t.Fatalf("query = %#v", query)
+	}
+
+	filtered := DispatchRemoteObjectCRUD(&org, descriptor, RemoteObjectCRUDRequest{
+		Operation:  "query",
+		ObjectName: "Account",
+		Criteria:   map[string]any{"Name": "Acme"},
+	})
+	if filtered.Success || len(filtered.Errors) != 1 || filtered.Errors[0].StatusCode != "UNSUPPORTED_FEATURE" || !strings.Contains(filtered.Errors[0].Message, "only supports Id or ids") {
+		t.Fatalf("filtered = %#v", filtered)
+	}
+}
+
+func TestRemoteObjectsUnsupportedOperationsReturnDiagnostics(t *testing.T) {
+	descriptor := RemoteObjectsDescriptor{Models: []RemoteObjectModelDescriptor{{
+		Name: "Account",
+		Fields: []RemoteObjectFieldDescriptor{
+			{Name: "Name", JSName: "Name"},
+		},
+	}}}
+	org := remoteObjectsTestOrg()
+
+	result := DispatchRemoteObjectCRUD(&org, descriptor, RemoteObjectCRUDRequest{
+		Operation:  "merge",
+		ObjectName: "Account",
+	})
+	if result.Success || len(result.Errors) != 1 || result.Errors[0].StatusCode != "UNSUPPORTED_FEATURE" || !strings.Contains(result.Errors[0].Message, "unsupported remote object operation merge") {
+		t.Fatalf("result = %#v", result)
 	}
 }
 

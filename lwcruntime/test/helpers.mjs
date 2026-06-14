@@ -282,6 +282,7 @@ export async function startVisualforceDevServer(t, { projectRel, pagePath = "/ap
     ["dev", "vf", "--project", projectRoot, "--addr", "127.0.0.1:0", "--ready-file", readyFile],
     {
       cwd: repoRoot,
+      env: { ...process.env, GLADE_HOME: repoRoot },
       stdio: ["ignore", "pipe", "pipe"],
     },
   );
@@ -300,6 +301,55 @@ export async function startVisualforceDevServer(t, { projectRel, pagePath = "/ap
     return {
       baseURL: ready.url,
       pages: ready.pages || [],
+      close: () => stopProcess(child),
+    };
+  } catch (err) {
+    await stopProcess(child);
+    throw err;
+  }
+}
+
+export async function startLWCDevServer(t, {
+  projectRel,
+  pagePath = "/lwc/preview/component/c/contextProbe",
+} = {}) {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "glade-lwc-server-"));
+  const binary = path.join(tmpDir, process.platform === "win32" ? "glade.exe" : "glade");
+  const build = spawnSync("go", ["build", "-o", binary, "./cmd/glade"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+  if (build.status !== 0) {
+    t.skip(`cannot build local glade binary: ${buildFailureSummary(build.stderr || build.stdout)}`);
+    return null;
+  }
+
+  const readyFile = path.join(tmpDir, "ready.json");
+  const projectRoot = path.join(repoRoot, projectRel || ".");
+  const child = spawn(
+    binary,
+    ["dev", "lwc", "--project", projectRoot, "--addr", "127.0.0.1:0", "--ready-file", readyFile],
+    {
+      cwd: repoRoot,
+      env: { ...process.env, GLADE_HOME: repoRoot },
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
+  let stdout = "";
+  let stderr = "";
+  child.stdout.on("data", (chunk) => {
+    stdout += String(chunk);
+  });
+  child.stderr.on("data", (chunk) => {
+    stderr += String(chunk);
+  });
+
+  try {
+    const ready = await waitForReadyFile(readyFile, child, () => stdout + stderr);
+    await waitForHTTP(`${ready.url}${pagePath}`, child, () => stdout + stderr);
+    return {
+      baseURL: ready.url,
+      routes: ready.routes || [],
       close: () => stopProcess(child),
     };
   } catch (err) {

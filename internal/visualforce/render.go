@@ -416,7 +416,7 @@ func renderApexCommandButton(node *MarkupNode, ctx *RenderContext) (string, erro
 	}
 	attrs := ` type="submit" value="` + html.EscapeString(label) + `" data-action="` + html.EscapeString(action) + `"`
 	if rerender := strings.TrimSpace(node.Attribute("rerender")); rerender != "" {
-		hook := VisualforceAjaxSubmitHook(action, rerender)
+		hook := VisualforceAjaxSubmitHookWithStatus(action, rerender, strings.TrimSpace(node.Attribute("status")))
 		return `<input` + attrs + ` onclick="` + html.EscapeString(hook) + `" />`, nil
 	}
 	hook := `if(this.form&&this.form.elements['` + ViewStateActionFieldName() + `']){this.form.elements['` + ViewStateActionFieldName() + `'].value=` + jsStringLiteral(action) + `;}`
@@ -433,7 +433,7 @@ func renderApexCommandLink(node *MarkupNode, ctx *RenderContext) (string, error)
 		label = action
 	}
 	if rerender := strings.TrimSpace(node.Attribute("rerender")); rerender != "" {
-		hook := VisualforceAjaxLinkHook(action, rerender)
+		hook := VisualforceAjaxLinkHookWithStatus(action, rerender, strings.TrimSpace(node.Attribute("status")))
 		return `<a href="#" onclick="` + html.EscapeString(hook) + `">` + html.EscapeString(label) + `</a>`, nil
 	}
 	hook := `var f=this.closest('form')||document.forms[0];if(f&&f.elements['` + ViewStateActionFieldName() + `']){f.elements['` + ViewStateActionFieldName() + `'].value=` + jsStringLiteral(action) + `;f.submit();}return false;`
@@ -778,19 +778,24 @@ func renderApexActionSupport(node *MarkupNode, ctx *RenderContext) (string, erro
 	if event == "" {
 		event = "change"
 	}
-	hook := VisualforceAjaxLinkHook(action, target)
+	hook := VisualforceAjaxLinkHookWithStatus(action, target, strings.TrimSpace(node.Attribute("status")))
 	return `<span class="actionSupport" data-event="` + html.EscapeString(event) + `" data-rerender="` + html.EscapeString(target) + `" on` + html.EscapeString(event) + `="` + html.EscapeString(hook) + `">` + children + `</span>`, nil
 }
 
-func renderApexActionFunction(node *MarkupNode, _ *RenderContext) (string, error) {
+func renderApexActionFunction(node *MarkupNode, ctx *RenderContext) (string, error) {
 	name := strings.TrimSpace(node.Attribute("name"))
 	if name == "" {
 		return "", nil
 	}
 	action := strings.TrimSpace(node.Attribute("action"))
 	rerender := strings.TrimSpace(node.Attribute("rerender"))
-	hook := VisualforceAjaxSubmitHook(action, rerender)
-	return `<script data-action="` + html.EscapeString(action) + `" data-rerender="` + html.EscapeString(rerender) + `">function ` + html.EscapeString(name) + `(){` + hook + `}</script>`, nil
+	status := strings.TrimSpace(node.Attribute("status"))
+	params, err := visualforceAjaxParams(node, ctx)
+	if err != nil {
+		return "", err
+	}
+	hook := VisualforceAjaxFunctionCall(action, rerender, status, params)
+	return `<script data-action="` + html.EscapeString(action) + `" data-rerender="` + html.EscapeString(rerender) + `">function ` + html.EscapeString(name) + `(` + html.EscapeString(VisualforceAjaxFunctionArgs(params)) + `){` + hook + `}</script>`, nil
 }
 
 func renderApexActionRegion(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -799,7 +804,7 @@ func renderApexActionRegion(node *MarkupNode, ctx *RenderContext) (string, error
 		return "", err
 	}
 	region := strings.TrimSpace(node.Attribute("id"))
-	return `<span class="actionRegion" data-region="` + html.EscapeString(region) + `">` + children + `</span>`, nil
+	return `<span class="actionRegion" data-region="` + html.EscapeString(region) + `" data-vf-region="` + html.EscapeString(region) + `">` + children + `</span>`, nil
 }
 
 func renderApexActionStatus(node *MarkupNode, ctx *RenderContext) (string, error) {
@@ -830,7 +835,7 @@ func renderApexActionStatus(node *MarkupNode, ctx *RenderContext) (string, error
 			return "", err
 		}
 	}
-	return `<span class="actionStatus" data-status="` + html.EscapeString(statusID) + `"><span class="actionStatusStart">` + start + `</span><span class="actionStatusStop">` + stop + `</span></span>`, nil
+	return `<span class="actionStatus" data-status="` + html.EscapeString(statusID) + `"><span class="actionStatusStart" hidden="hidden">` + start + `</span><span class="actionStatusStop">` + stop + `</span></span>`, nil
 }
 
 func renderApexActionPoller(node *MarkupNode, _ *RenderContext) (string, error) {

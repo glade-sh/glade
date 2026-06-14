@@ -90,3 +90,33 @@ func TestInstallFromCopiesToolchain(t *testing.T) {
 		t.Fatalf("installed toolchain missing at %s", UserShareDir())
 	}
 }
+
+func TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var repo string
+	for dir := wd; ; dir = filepath.Dir(dir) {
+		if root, ok := validateRoot(dir); ok && hasGoMod(root) {
+			repo = root
+			break
+		}
+		if dir == filepath.Dir(dir) {
+			t.Skip("not inside glade repo with installed LWC toolchain")
+		}
+	}
+	t.Setenv("XDG_DATA_HOME", t.TempDir())
+	if err := InstallFrom(repo); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GLADE_HOME", repo)
+
+	root, err := EnsureRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if root != filepath.Clean(repo) {
+		t.Fatalf("root = %s, want %s", root, repo)
+	}
+}

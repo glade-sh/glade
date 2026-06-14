@@ -70,6 +70,12 @@ func (s *Server) serveLightningAPIShim(w http.ResponseWriter, parts []string) {
 		writeJavaScript(w, []byte(lwcbrowser.UIRecordAPIModuleJS()))
 	case "navigation.js":
 		writeJavaScript(w, []byte(lwcbrowser.NavigationModuleJS()))
+	case "platformShowToastEvent.js":
+		writeJavaScript(w, []byte(lwcbrowser.ShowToastEventModuleJS()))
+	case "platformResourceLoader.js":
+		writeJavaScript(w, []byte(lwcbrowser.PlatformResourceLoaderModuleJS()))
+	case "messageService.js":
+		writeJavaScript(w, []byte(lwcbrowser.MessageServiceModuleJS()))
 	default:
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning shim")
 	}
@@ -114,11 +120,16 @@ func (s *Server) serveSchemaShim(w http.ResponseWriter, parts []string) {
 		return
 	}
 	objectName, fieldName, ok := lwcbrowser.ParseSchemaFieldToken(token)
+	if ok {
+		writeJavaScript(w, []byte(lwcbrowser.SchemaFieldModuleJS(objectName, fieldName)))
+		return
+	}
+	objectName, ok = lwcbrowser.ParseSchemaObjectToken(token)
 	if !ok {
 		writeSalesforceError(w, errUnknownEndpoint, "invalid schema shim")
 		return
 	}
-	writeJavaScript(w, []byte(lwcbrowser.SchemaFieldModuleJS(objectName, fieldName)))
+	writeJavaScript(w, []byte(lwcbrowser.SchemaObjectModuleJS(objectName)))
 }
 
 func (s *Server) serveUserShim(w http.ResponseWriter, r *http.Request, parts []string) {
