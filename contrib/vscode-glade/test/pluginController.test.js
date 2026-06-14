@@ -27,7 +27,7 @@ const plugin = {
         args: ["--project", "${projectRoot}", "--out", "${outputDir}", "--label", "${input.label}"],
         view: "plugins",
         contexts: ["project"],
-        inputs: [{ name: "label", label: "Report label", required: true }],
+        inputs: [{ name: "label", label: "Report label", type: "text", required: true, default: "surface-default" }],
         output: "glade.findings.v1",
       },
       {
@@ -56,8 +56,8 @@ const controller = new PluginController({
     return path.join(projectRoot, ".glade/envs/dev.sqlite");
   },
   async inputBox(options) {
-    calls.push({ type: "input", prompt: options.prompt, title: options.title });
-    return "surface";
+    calls.push({ type: "input", prompt: options.prompt, title: options.title, value: options.value });
+    return options.value;
   },
   async openDialog() {
     return [path.join(tempRoot, "plugin.tgz")];
@@ -120,7 +120,12 @@ const controller = new PluginController({
   assert(actionRun, "plugin action must invoke glade with action argv");
   assert.deepStrictEqual(actionRun.args.slice(0, 2), ["compat", "scan"]);
   assert(actionRun.args.includes(path.join(projectRoot, ".glade/editor/plugins/compat-scan")));
+  assert(actionRun.args.includes("surface-default"));
   assert(fs.existsSync(path.join(projectRoot, ".glade/editor/plugins/compat-scan")), "action output directory must exist");
+  assert.deepStrictEqual(
+    calls.filter((call) => call.type === "input").map((call) => call.value),
+    ["surface-default"],
+  );
 
   assert.strictEqual(diagnostics.length, 1);
   assert.strictEqual(diagnostics[0][0].file, path.join(projectRoot, "force-app/main/default/classes/Foo.cls"));

@@ -631,6 +631,44 @@ fi
 	}
 }
 
+func TestPluginsListJSONTimesOutLinkedExecutableEditorMetadata(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell helper uses sh")
+	}
+	home := t.TempDir()
+	t.Setenv("GLADE_HOME", home)
+	exe := filepath.Join(home, "glade-plugin-compat")
+	script := `#!/bin/sh
+if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
+  sleep 5
+  exit 0
+fi
+`
+	if err := os.WriteFile(exe, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	statePath := filepath.Join(home, "plugins", "installed.json")
+	if err := os.MkdirAll(filepath.Dir(statePath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	state := fmt.Sprintf(`{"version":1,"plugins":[{"name":"compat","version":"0.1.0","commands":["compat"],"executable":%q,"source":"link:test","linked":true}]}`+"\n", exe)
+	if err := os.WriteFile(statePath, []byte(state), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	oldTimeout := pluginListManifestTimeout
+	pluginListManifestTimeout = 25 * time.Millisecond
+	t.Cleanup(func() { pluginListManifestTimeout = oldTimeout })
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "list", "--json"}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("list unexpectedly succeeded:\n%s", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "context deadline exceeded") {
+		t.Fatalf("stderr did not include timeout diagnostic: %q", stderr.String())
+	}
+}
+
 func TestPluginsListAndWhichUseCanonicalIdentity(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("GLADE_HOME", home)

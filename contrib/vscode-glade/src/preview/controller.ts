@@ -3,9 +3,9 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
-import { runGlade, runGladeJSON } from "../gladeCli";
+import { runGlade, runGladeJSONWithCodes } from "../gladeCli";
 import { GladeProjectContext } from "../projectModel";
-import { devLWCArgs, devVFArgs, toolchainInstallArgs, toolchainStatusArgs } from "./cli";
+import { devLWCArgs, devVFArgs, toolchainInstallArgs, toolchainStatusAllowedCodes, toolchainStatusArgs } from "./cli";
 import { parseLWCReadyFile, parseVFReadyFile, PreviewServer, stoppedPreviewServer, ToolchainStatus } from "./model";
 
 type PreviewKind = "lwc" | "visualforce";
@@ -59,10 +59,11 @@ export class PreviewController implements vscode.Disposable {
       this.changed.fire();
       return;
     }
-    this.toolchain = await runGladeJSON<ToolchainStatus>(
+    this.toolchain = await runGladeJSONWithCodes<ToolchainStatus>(
       toolchainStatusArgs(),
       { cwd: this.project.projectRoot },
       "glade toolchain status",
+      toolchainStatusAllowedCodes(),
     );
     this.changed.fire();
   }

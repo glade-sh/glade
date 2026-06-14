@@ -54,7 +54,10 @@ function pluginItem(plugin: InstalledPlugin): GladeTreeItem {
   const label = plugin.identityName || plugin.canonicalName || plugin.name;
   const item = new GladeTreeItem(label);
   item.description = plugin.linked ? `${plugin.version} linked` : plugin.version;
-  item.tooltip = plugin.manifest || plugin.source || label;
+  const commands = plugin.commandRoots || plugin.commands || [];
+  item.tooltip = [plugin.manifest || plugin.source || label, commands.length ? `Commands: ${commands.join(", ")}` : ""]
+    .filter(Boolean)
+    .join("\n");
   item.iconPath = new vscode.ThemeIcon(plugin.linked ? "link" : "extensions");
   return item;
 }

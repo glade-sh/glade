@@ -10,9 +10,12 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/glade-sh/glade/internal/pluginhost"
 )
+
+var pluginListManifestTimeout = 3 * time.Second
 
 func runPlugins(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 	if len(args) == 0 || isHelpArg(args[0]) {
@@ -152,7 +155,9 @@ func loadInstalledPluginManifest(ctx context.Context, plugin pluginhost.Installe
 		return manifest, true, err
 	}
 	if plugin.Linked && plugin.Executable != "" {
-		manifest, err := pluginhost.LoadManifestFromExecutable(ctx, plugin.Executable)
+		manifestCtx, cancel := context.WithTimeout(ctx, pluginListManifestTimeout)
+		defer cancel()
+		manifest, err := pluginhost.LoadManifestFromExecutable(manifestCtx, plugin.Executable)
 		return manifest, true, err
 	}
 	return pluginhost.Manifest{}, false, nil

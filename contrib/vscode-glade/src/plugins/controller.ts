@@ -227,10 +227,11 @@ export class PluginController {
   private async promptInputs(action: PluginEditorAction): Promise<{ ok: true; values: Record<string, string> } | { ok: false }> {
     const values: Record<string, string> = {};
     for (const input of action.inputs || []) {
+      const defaultValue = input.defaultValue ?? input.default;
       const entered = await this.host.inputBox({
         title: input.label || input.name,
         prompt: input.description || input.label || input.name,
-        value: input.defaultValue === undefined ? undefined : String(input.defaultValue),
+        value: defaultValue === undefined ? undefined : String(defaultValue),
         placeHolder: input.options?.join(", ") || input.name,
       });
       if (!entered && input.required) {

@@ -95,11 +95,11 @@ export function buildStartHereRows(snapshot: StartHereSnapshot): StartHereRow[] 
       label: "Plugin actions",
       description:
         snapshot.pluginActionCount && snapshot.pluginActionCount > 0
-          ? `${snapshot.pluginActionCount} ${plural("finding", snapshot.pluginActionCount)}`
+          ? `${snapshot.pluginActionCount} ${plural("action", snapshot.pluginActionCount)}`
           : "absent",
       tooltip:
         snapshot.pluginActionCount && snapshot.pluginActionCount > 0
-          ? `${snapshot.pluginActionCount} plugin ${plural("finding", snapshot.pluginActionCount)} ready.`
+          ? `${snapshot.pluginActionCount} plugin ${plural("action", snapshot.pluginActionCount)} ready.`
           : "No plugin actions are available.",
       contextValue: "gladeStartHereStatus",
     },

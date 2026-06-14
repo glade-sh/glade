@@ -2,6 +2,10 @@ export function toolchainStatusArgs(): string[] {
   return ["toolchain", "status", "--json"];
 }
 
+export function toolchainStatusAllowedCodes(): Array<number | null> {
+  return [0, 1];
+}
+
 export function toolchainInstallArgs(): string[] {
   return ["toolchain", "install"];
 }

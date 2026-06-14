@@ -81,6 +81,7 @@ assert.deepStrictEqual(
 );
 
 assert.deepStrictEqual(cli.toolchainStatusArgs(), ["toolchain", "status", "--json"]);
+assert.deepStrictEqual(cli.toolchainStatusAllowedCodes(), [0, 1]);
 assert.deepStrictEqual(cli.toolchainInstallArgs(), ["toolchain", "install"]);
 assert.deepStrictEqual(
   cli.devLWCArgs("/repo", "127.0.0.1:4173", "/tmp/lwc-ready.json"),

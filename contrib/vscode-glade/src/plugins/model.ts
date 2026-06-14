@@ -33,6 +33,7 @@ export interface InstalledPlugin {
   version: string;
   linked?: boolean;
   commands?: string[];
+  commandRoots?: string[];
   executable?: string;
   manifest?: string;
   source?: string;
@@ -47,8 +48,9 @@ export interface PluginEditorActionInput {
   name: string;
   label?: string;
   description?: string;
-  type?: "string" | "number" | "boolean" | "file" | "directory" | "choice";
+  type?: "string" | "text" | "number" | "boolean" | "file" | "directory" | "choice";
   required?: boolean;
+  default?: string | number | boolean;
   defaultValue?: string | number | boolean;
   options?: string[];
 }
