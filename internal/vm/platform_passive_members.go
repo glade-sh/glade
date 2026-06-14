@@ -1094,8 +1094,23 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			receiver.Fields["minimumQueueableDelayInMinutes"] = args[0]
 			return receiver, receiver, true, true, nil
-		case "getDuplicateSignature", "setDuplicateSignature":
-			return Null, receiver, false, true, unsupportedCallError("AsyncOptions." + method + " local async options surface")
+		case "getDuplicateSignature":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("AsyncOptions.getDuplicateSignature expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["duplicateSignature"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
+		case "setDuplicateSignature":
+			if len(args) != 1 || (args[0].Kind != ValueObject && args[0].Kind != ValueNull) {
+				return Null, receiver, false, true, fmt.Errorf("AsyncOptions.setDuplicateSignature expects QueueableDuplicateSignature")
+			}
+			if args[0].Kind == ValueObject && !strings.EqualFold(args[0].Type, "QueueableDuplicateSignature") {
+				return Null, receiver, false, true, fmt.Errorf("AsyncOptions.setDuplicateSignature expects QueueableDuplicateSignature")
+			}
+			receiver.Fields["duplicateSignature"] = args[0]
+			return receiver, receiver, true, true, nil
 		}
 	case "JSONGenerator":
 		return vm.callJSONGeneratorMember(receiver, method, args)

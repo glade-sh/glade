@@ -3,6 +3,7 @@ package vm
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/storage"
@@ -9833,6 +9834,223 @@ System.assertEquals('SELECT Id FROM Account', AsyncConstants.getQuery());
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestExecQueueableDuplicateSignatureRejectsSecondEnqueue(t *testing.T) {
+	program, err := CompileAnonymous(`
+AsyncOptions opts = new AsyncOptions();
+opts.setDuplicateSignature(QueueableDuplicateSignature.builder().addString('same').build());
+System.enqueueJob(new SignatureWorker(), opts);
+System.enqueueJob(new SignatureWorker(), opts);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	registerQueueableWorkerForMethodTest(t, machine, "SignatureWorker", "")
+
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "Duplicate queueable signature") {
+		t.Fatalf("err = %v, want duplicate signature rejection", err)
+	}
+}
+
+func TestExecQueueableDifferentDuplicateSignaturesEnqueue(t *testing.T) {
+	program, err := CompileAnonymous(`
+AsyncOptions first = new AsyncOptions();
+first.setDuplicateSignature(QueueableDuplicateSignature.builder().addString('first').build());
+AsyncOptions second = new AsyncOptions();
+second.setDuplicateSignature(QueueableDuplicateSignature.builder().addString('second').build());
+System.enqueueJob(new SignatureWorker(), first);
+System.enqueueJob(new SignatureWorker(), second);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	registerQueueableWorkerForMethodTest(t, machine, "SignatureWorker", "")
+
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(machine.testContext.AsyncJobs); got != 2 {
+		t.Fatalf("queued jobs = %d, want 2", got)
+	}
+}
+
+func TestExecQueueableDelayRecordsNotBeforeOnAsyncApexJob(t *testing.T) {
+	program, err := CompileAnonymous(`
+AsyncOptions opts = new AsyncOptions();
+opts.setMinimumQueueableDelayInMinutes(7);
+System.enqueueJob(new DelayWorker(), opts);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	registerQueueableWorkerForMethodTest(t, machine, "DelayWorker", "")
+
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	record := org.Objects["AsyncApexJob"].Records[storage.ID("707000000000001")]
+	notBefore, ok := record.Fields["NotBefore"]
+	if !ok || notBefore.Kind != storage.ValueDateTime {
+		t.Fatalf("NotBefore = %#v, want datetime", notBefore)
+	}
+	want := time.Date(2026, 5, 2, 12, 7, 0, 0, time.UTC).Format(time.RFC3339)
+	if notBefore.String != want {
+		t.Fatalf("NotBefore = %q, want %q", notBefore.String, want)
+	}
+}
+
+func TestExecStopTestDrainsOnlyQueueablesDueOnDeterministicClock(t *testing.T) {
+	program, err := CompileAnonymous(`
+Test.startTest();
+System.enqueueJob(new ImmediateWorker());
+System.enqueueJob(new DelayedWorker(), 5);
+Test.stopTest();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	registerQueueableWorkerForMethodTest(t, machine, "ImmediateWorker", `insert new Account(Name = 'immediate');`)
+	registerQueueableWorkerForMethodTest(t, machine, "DelayedWorker", `insert new Account(Name = 'delayed');`)
+
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	immediate := countRecordsByName(t, org, "Account", "immediate")
+	delayed := countRecordsByName(t, org, "Account", "delayed")
+	if immediate != 1 || delayed != 0 {
+		t.Fatalf("record counts immediate=%d delayed=%d, want 1/0", immediate, delayed)
+	}
+	delayedJob := org.Objects["AsyncApexJob"].Records[storage.ID("707000000000002")]
+	status, _ := delayedJob.GetField("Status")
+	if status.String != "Queued" {
+		t.Fatalf("delayed job status = %#v, want Queued", status)
+	}
+}
+
+func TestExecStopTestDrainsDelayedQueueableAfterDeterministicClockAdvance(t *testing.T) {
+	startProgram, err := CompileAnonymous(`
+Test.startTest();
+System.enqueueJob(new DelayedWorker(), 5);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stopProgram, err := CompileAnonymous(`Test.stopTest();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	registerQueueableWorkerForMethodTest(t, machine, "DelayedWorker", `insert new Account(Name = 'delayed');`)
+
+	if _, err := machine.Execute(startProgram); err != nil {
+		t.Fatal(err)
+	}
+	machine.AdvanceDeterministicTime(5 * time.Minute)
+	if _, err := machine.Execute(stopProgram); err != nil {
+		t.Fatal(err)
+	}
+	if got := countRecordsByName(t, org, "Account", "delayed"); got != 1 {
+		t.Fatalf("delayed records = %d, want 1", got)
+	}
+}
+
+func TestLimitCapsForProfileResolvesNamedProfiles(t *testing.T) {
+	defaultCaps, ok := LimitCapsForProfile("default")
+	if !ok {
+		t.Fatal("default profile not found")
+	}
+	if defaultCaps != defaultLimitCaps() {
+		t.Fatalf("default profile = %#v, want current default caps", defaultCaps)
+	}
+	asyncCaps, ok := LimitCapsForProfile("strict-async")
+	if !ok {
+		t.Fatal("strict-async profile not found")
+	}
+	if asyncCaps.Queries != 200 || asyncCaps.CPUTimeMS != 60000 || asyncCaps.HeapSize != 12*1024*1024 {
+		t.Fatalf("strict-async caps = %#v", asyncCaps)
+	}
+	if _, ok := LimitCapsForProfile("not-a-profile"); ok {
+		t.Fatal("unknown profile resolved")
+	}
+}
+
+func TestExecLimitProfileCapsAreEnforced(t *testing.T) {
+	program, err := CompileAnonymous(`List<Account> rows = [SELECT Id FROM Account];`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	machine := New(nil)
+	machine.SetOrg(&org)
+	caps, ok := LimitCapsForProfile("strict-sync")
+	if !ok {
+		t.Fatal("strict-sync profile not found")
+	}
+	caps.Queries = 0
+	machine.SetLimitCaps(caps)
+	machine.SetLimitMode(LimitModeStrict)
+
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "Too many queries") {
+		t.Fatalf("err = %v, want strict query limit", err)
+	}
+}
+
+func registerQueueableWorkerForMethodTest(t *testing.T, machine *VM, name, body string) {
+	t.Helper()
+	program, err := CompileAnonymous(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       name,
+		Interfaces: []string{"Queueable"},
+		Methods: map[string]Method{
+			"execute": {
+				Name:       name + ".execute",
+				ClassName:  name,
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "QueueableContext"}},
+				Program:    program,
+			},
+		},
+		Constructors: []Method{{Name: name + ".<init>", ClassName: name, ReturnType: "void", IsConstructor: true}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func countRecordsByName(t *testing.T, org storage.OrgState, objectName, name string) int {
+	t.Helper()
+	object, ok := org.Objects[objectName]
+	if !ok {
+		return 0
+	}
+	count := 0
+	for _, record := range object.Records {
+		value, ok := record.GetField("Name")
+		if ok && value.Kind == storage.ValueString && value.String == name {
+			count++
+		}
+	}
+	return count
 }
 
 func TestExecAsyncDrainRestoresStaticCollectionInitializationState(t *testing.T) {

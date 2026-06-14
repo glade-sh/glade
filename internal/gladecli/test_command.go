@@ -106,6 +106,9 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	format := "console"
 	junitPath := ""
 	limitMode := vm.LimitMode("")
+	limitProfile := ""
+	var limitCaps vm.LimitCaps
+	limitCapsSet := false
 	watchMode := false
 	watchOnce := false
 	daemonMode := false
@@ -158,6 +161,26 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		String("services", "").
 		String("junit", "").
 		String("limit-mode", "").
+		String("limit-profile", "").
+		String("limit-queries", "").
+		String("limit-query-rows", "").
+		String("limit-dml-statements", "").
+		String("limit-dml-rows", "").
+		String("limit-heap-size", "").
+		String("limit-cpu-ms", "").
+		String("limit-callouts", "").
+		String("limit-email-invocations", "").
+		String("limit-async-jobs", "").
+		String("limit-future-calls", "").
+		String("limit-queueable-jobs", "").
+		String("limit-batch-jobs", "").
+		String("limit-scheduled-jobs", "").
+		String("limit-sosl-queries", "").
+		String("limit-query-locator-rows", "").
+		String("limit-run-as", "").
+		String("limit-savepoints", "").
+		String("limit-savepoint-rollbacks", "").
+		String("limit-publish-immediate-dml", "").
 		Bool("watch", "").
 		Bool("watch-once", "").
 		Bool("daemon", "").
@@ -277,6 +300,11 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		}
 		limitMode = mode
 	}
+	limitProfile = strings.TrimSpace(parsed.String("limit-profile"))
+	limitCaps, limitCapsSet, err = parseLimitCapsFromFlags(limitProfile, parsed.String)
+	if err != nil {
+		return testreport.Run{}, err
+	}
 	watchMode = parsed.Bool("watch")
 	if parsed.Bool("watch-once") {
 		watchMode = true
@@ -350,6 +378,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		SelectedClasses:     selectedClasses,
 		SelectedMethod:      methodName,
 		LimitMode:           limitMode,
+		LimitCaps:           limitCaps,
+		LimitCapsSet:        limitCapsSet,
 		TraceBlocked:        traceBlocked,
 		TraceAll:            tracePath != "",
 		SlowTestThresholdMS: slowTestThresholdMS,

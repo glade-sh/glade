@@ -39,6 +39,8 @@ type Options struct {
 	SelectedClasses     []string
 	SelectedMethod      string
 	LimitMode           vm.LimitMode
+	LimitCaps           vm.LimitCaps
+	LimitCapsSet        bool
 	TraceBlocked        bool
 	TraceAll            bool
 	SlowTestThresholdMS int64
@@ -995,6 +997,9 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 	if opts.LimitMode != "" {
 		machine.SetLimitMode(opts.LimitMode)
 	}
+	if opts.LimitCapsSet {
+		machine.SetLimitCaps(opts.LimitCaps)
+	}
 	machine.SetOrg(&setupOrg)
 	machine.SetContext(ctx)
 	machine.EnableTestContext()
@@ -1063,6 +1068,9 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 	machine.SetTraceEnabled(opts.TraceAll || opts.TraceBlocked || opts.SlowTestThresholdMS > 0)
 	if opts.LimitMode != "" {
 		machine.SetLimitMode(opts.LimitMode)
+	}
+	if opts.LimitCapsSet {
+		machine.SetLimitCaps(opts.LimitCaps)
 	}
 	machine.SetContext(ctx)
 	if cloneOrg {

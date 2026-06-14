@@ -1,6 +1,9 @@
 package vm
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type LimitMode string
 
@@ -80,6 +83,21 @@ func defaultLimitCaps() LimitCaps {
 		Savepoints:          5,
 		SavepointRollbacks:  100,
 		PublishImmediateDML: 150,
+	}
+}
+
+func LimitCapsForProfile(name string) (LimitCaps, bool) {
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "", "default", "strict-sync", "custom":
+		return defaultLimitCaps(), true
+	case "strict-async":
+		caps := defaultLimitCaps()
+		caps.Queries = 200
+		caps.HeapSize = 12 * 1024 * 1024
+		caps.CPUTimeMS = 60000
+		return caps, true
+	default:
+		return LimitCaps{}, false
 	}
 }
 

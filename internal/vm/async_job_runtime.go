@@ -109,7 +109,7 @@ func (vm *VM) drainTestWork(result *Result) error {
 			return nil
 		}
 		if len(vm.testContext.AsyncJobs) == beforeAsync && len(vm.testContext.PlatformEvents) == beforeEvents && len(vm.testContext.EventPublishes) == beforePublishes &&
-			nextDrainableAsyncJobIndex(vm.testContext.AsyncJobs, startIndex) < 0 {
+			vm.nextDrainableAsyncJobIndex(vm.testContext.AsyncJobs, startIndex) < 0 {
 			return nil
 		}
 	}
@@ -135,6 +135,15 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 			return Null, fmt.Errorf("System.enqueueJob options expects Integer or AsyncOptions")
 		}
 	}
+	duplicateSignature := ""
+	if len(args) == 2 && args[1].Kind == ValueObject && strings.EqualFold(args[1].Type, "AsyncOptions") {
+		duplicateSignature = asyncOptionsQueueableDuplicateSignature(args[1])
+		if duplicateSignature != "" {
+			if existingJobID := vm.queueableDuplicateSignatures[duplicateSignature]; existingJobID != "" {
+				return Null, newExceptionError("System.AsyncException", fmt.Sprintf("Duplicate queueable signature already enqueued by job %s", existingJobID))
+			}
+		}
+	}
 	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
 		return Null, err
 	}
@@ -146,7 +155,10 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 		return Null, fmt.Errorf("Queueable chaining limit exceeded")
 	}
 	vm.markAsyncChainEnqueued()
-	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "Queueable", Object: cloneValue(args[0]), QueueableDelayMinutes: delayMinutes}
+	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "Queueable", Object: cloneValue(args[0]), QueueableDelayMinutes: delayMinutes, QueueableDuplicateSignature: duplicateSignature}
+	if delayMinutes > 0 {
+		job.NotBefore = vm.fakeNow.Add(time.Duration(delayMinutes) * time.Minute)
+	}
 	if vm.currentAsyncKind == "Queueable" {
 		job.QueueableDepth = vm.currentQueueableDepth + 1
 		job.QueueableMaxDepth = vm.currentQueueableMaxDepth
@@ -160,6 +172,9 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 	}
 	if job.QueueableMaxDepth > 0 && job.QueueableDepth > job.QueueableMaxDepth {
 		return Null, fmt.Errorf("MaximumQueueableStackDepth exceeded")
+	}
+	if duplicateSignature != "" {
+		vm.queueableDuplicateSignatures[duplicateSignature] = job.ID
 	}
 	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
@@ -552,11 +567,11 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 	}()
 	maxJobs := -1
 	if vm.testContext != nil {
-		maxJobs = drainableAsyncJobCount(*jobs, startIndex)
+		maxJobs = vm.drainableAsyncJobCount(*jobs, startIndex)
 	}
 	processed := 0
 	for maxJobs < 0 || processed < maxJobs {
-		jobIndex := nextDrainableAsyncJobIndex(*jobs, startIndex)
+		jobIndex := vm.nextDrainableAsyncJobIndex(*jobs, startIndex)
 		if jobIndex < 0 {
 			break
 		}
@@ -604,7 +619,7 @@ func (vm *VM) drainAsyncJobsFrom(result *Result, jobs *[]AsyncJob, startIndex in
 	}
 	return nil
 }
-func drainableAsyncJobCount(jobs []AsyncJob, startIndex int) int {
+func (vm *VM) drainableAsyncJobCount(jobs []AsyncJob, startIndex int) int {
 	if startIndex < 0 {
 		startIndex = 0
 	}
@@ -613,13 +628,13 @@ func drainableAsyncJobCount(jobs []AsyncJob, startIndex int) int {
 	}
 	count := 0
 	for _, job := range jobs[startIndex:] {
-		if !job.Deferred {
+		if !job.Deferred && vm.asyncJobDue(job) {
 			count++
 		}
 	}
 	return count
 }
-func nextDrainableAsyncJobIndex(jobs []AsyncJob, startIndex int) int {
+func (vm *VM) nextDrainableAsyncJobIndex(jobs []AsyncJob, startIndex int) int {
 	if startIndex < 0 {
 		startIndex = 0
 	}
@@ -627,11 +642,14 @@ func nextDrainableAsyncJobIndex(jobs []AsyncJob, startIndex int) int {
 		startIndex = len(jobs)
 	}
 	for i := startIndex; i < len(jobs); i++ {
-		if !jobs[i].Deferred {
+		if !jobs[i].Deferred && vm.asyncJobDue(jobs[i]) {
 			return i
 		}
 	}
 	return -1
+}
+func (vm *VM) asyncJobDue(job AsyncJob) bool {
+	return job.NotBefore.IsZero() || !job.NotBefore.After(vm.fakeNow)
 }
 func (vm *VM) staticFieldSnapshot() map[string]map[string]Value {
 	out := make(map[string]map[string]Value, len(vm.Classes))
@@ -734,6 +752,26 @@ func asyncOptionsInt(options Value, fieldName string) (int, bool) {
 	}
 	return 0, false
 }
+func asyncOptionsQueueableDuplicateSignature(options Value) string {
+	if options.Kind != ValueObject {
+		return ""
+	}
+	for name, value := range options.Fields {
+		if strings.EqualFold(name, "duplicateSignature") {
+			return queueableDuplicateSignatureText(value)
+		}
+	}
+	return ""
+}
+func queueableDuplicateSignatureText(value Value) string {
+	if value.Kind != ValueObject || !strings.EqualFold(value.Type, "QueueableDuplicateSignature") {
+		return ""
+	}
+	if text, ok := value.Fields["value"]; ok {
+		return scalarText(text)
+	}
+	return ""
+}
 func (vm *VM) canDrainQueueableJob(job AsyncJob) bool {
 	if vm.currentAsyncKind == "BatchApex" {
 		return true
@@ -747,6 +785,13 @@ func (vm *VM) canDrainQueueableJob(job AsyncJob) bool {
 	return job.QueueableDepth > 0 && job.QueueableDepth <= job.QueueableMaxDepth
 }
 func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
+	_, err := vm.withQueueableDuplicateSignatureTransaction(func() (Value, error) {
+		return Null, vm.runAsyncJobInTransaction(job, result)
+	})
+	return err
+}
+
+func (vm *VM) runAsyncJobInTransaction(job AsyncJob, result *Result) error {
 	switch job.Kind {
 	case "Future":
 		_, err := vm.withAsyncKind("Future", func() (Value, error) {
@@ -838,6 +883,14 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
 	default:
 		return fmt.Errorf("unsupported async job kind %s", job.Kind)
 	}
+}
+func (vm *VM) withQueueableDuplicateSignatureTransaction(run func() (Value, error)) (Value, error) {
+	previous := vm.queueableDuplicateSignatures
+	vm.queueableDuplicateSignatures = make(map[string]string)
+	defer func() {
+		vm.queueableDuplicateSignatures = previous
+	}()
+	return run()
 }
 func (vm *VM) runQueueableFinalizer(finalizer Value, job AsyncJob, result *Result, parentErr error) error {
 	args := []Value{finalizerContext(job.ID, parentErr)}
@@ -1580,6 +1633,11 @@ func (vm *VM) recordAsyncJob(job AsyncJob, status, detail string) {
 		record.Fields["LastProcessedOffset"] = storage.IntegerValue(int64(job.LastProcessedOffset))
 	} else {
 		delete(record.Fields, "LastProcessedOffset")
+	}
+	if !job.NotBefore.IsZero() {
+		record.Fields["NotBefore"] = storage.DateTimeValue(job.NotBefore.Format(time.RFC3339))
+	} else {
+		delete(record.Fields, "NotBefore")
 	}
 	if existing, ok := record.Fields["TotalJobItems"]; ok && existing.Kind == storage.ValueInteger && existing.Integer > 0 && asyncJobType(job) == "BatchApex" {
 		record.Fields["TotalJobItems"] = existing

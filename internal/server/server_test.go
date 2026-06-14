@@ -5147,6 +5147,39 @@ func TestToolingExecuteAnonymousUsesServerLimitMode(t *testing.T) {
 	}
 }
 
+func TestToolingExecuteAnonymousUsesLimitProfileWithExplicitCaps(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	handler.LimitProfile = "strict-async"
+	handler.LimitCaps = vm.LimitCaps{
+		Queries:             7,
+		QueryRows:           50000,
+		DMLStatements:       150,
+		DMLRows:             10000,
+		HeapSize:            12 * 1024 * 1024,
+		CPUTimeMS:           60000,
+		Callouts:            100,
+		AsyncJobs:           50,
+		FutureCalls:         50,
+		QueueableJobs:       50,
+		BatchJobs:           5,
+		ScheduledJobs:       100,
+		EmailInvokes:        10,
+		SOSLQueries:         20,
+		QueryLocatorRows:    10000,
+		RunAs:               100,
+		Savepoints:          5,
+		SavepointRollbacks:  100,
+		PublishImmediateDML: 150,
+	}
+
+	exec := httptest.NewRecorder()
+	handler.ServeHTTP(exec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"System.assertEquals(7, Limits.getLimitQueries());"}`)))
+	if exec.Code != http.StatusOK || !bytes.Contains(exec.Body.Bytes(), []byte(`"success":true`)) {
+		t.Fatalf("executeAnonymous status = %d body=%s", exec.Code, exec.Body.String())
+	}
+}
+
 func TestToolingExecuteAnonymousAcceptsFormAnonymousBody(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)

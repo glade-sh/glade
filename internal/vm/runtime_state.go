@@ -98,12 +98,13 @@ type VM struct {
 	lastNow         time.Time
 	hasLastNow      bool
 	// --- Async/queueable scheduling ---
-	currentAsyncKind         string
-	currentQueueableDepth    int
-	currentQueueableMaxDepth int
-	currentQueueableDelay    int
-	currentFinalizer         Value
-	activeExceptions         []activeException
+	currentAsyncKind             string
+	currentQueueableDepth        int
+	currentQueueableMaxDepth     int
+	currentQueueableDelay        int
+	queueableDuplicateSignatures map[string]string
+	currentFinalizer             Value
+	activeExceptions             []activeException
 	// --- Exception / statement / trigger-depth tracking ---
 	currentStatement        callFrame
 	hasStatement            bool
@@ -435,22 +436,24 @@ type eventPublishCallback struct {
 }
 
 type AsyncJob struct {
-	ID                    string
-	Kind                  string
-	Object                Value
-	Method                Method
-	Args                  []Value
-	BatchSize             int
-	Name                  string
-	Cron                  string
-	ParentJobID           string
-	LastProcessed         string
-	LastProcessedOffset   int
-	Deferred              bool
-	SuppressWorkerRecords bool
-	QueueableDepth        int
-	QueueableMaxDepth     int
-	QueueableDelayMinutes int
+	ID                          string
+	Kind                        string
+	Object                      Value
+	Method                      Method
+	Args                        []Value
+	BatchSize                   int
+	Name                        string
+	Cron                        string
+	ParentJobID                 string
+	LastProcessed               string
+	LastProcessedOffset         int
+	Deferred                    bool
+	SuppressWorkerRecords       bool
+	QueueableDepth              int
+	QueueableMaxDepth           int
+	QueueableDelayMinutes       int
+	QueueableDuplicateSignature string
+	NotBefore                   time.Time
 }
 
 type cacheEntry struct {
@@ -503,6 +506,7 @@ func New(stdout io.Writer) *VM {
 		limitCaps:                    defaultLimitCaps(),
 		limitMode:                    LimitModePermissive,
 		fakeNow:                      time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC),
+		queueableDuplicateSignatures: make(map[string]string),
 		savepoints:                   make(map[string]storage.OrgState),
 		savepointMarks:               make(map[string]storage.IsolationMark),
 		emailSavepoints:              make(map[string][]CapturedEmail),
@@ -1637,7 +1641,12 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 			return result, err
 		}
 	}
-	out, err := vm.executeProgram(program, &result)
+	var out execOutcome
+	_, err = vm.withQueueableDuplicateSignatureTransaction(func() (Value, error) {
+		var runErr error
+		out, runErr = vm.executeProgram(program, &result)
+		return Null, runErr
+	})
 	if err != nil {
 		var thrown *apexThrowError
 		if errors.As(err, &thrown) {
@@ -1655,6 +1664,10 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 		return result, fmt.Errorf("%s outside loop", out.signal)
 	}
 	return result, nil
+}
+
+func (vm *VM) AdvanceDeterministicTime(delta time.Duration) {
+	vm.fakeNow = vm.fakeNow.Add(delta)
 }
 
 func (vm *VM) DrainAsync(result *Result) error {

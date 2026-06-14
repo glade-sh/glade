@@ -231,6 +231,14 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) 
 	if s.LimitMode != "" {
 		machine.SetLimitMode(s.LimitMode)
 	}
+	if strings.TrimSpace(s.LimitProfile) != "" {
+		caps, ok := vm.LimitCapsForProfile(s.LimitProfile)
+		if !ok {
+			writeJSON(w, http.StatusOK, executeAnonymousFailure(false, "unsupported limit profile "+s.LimitProfile, nil))
+			return
+		}
+		machine.SetLimitCaps(caps)
+	}
 	if s.LimitCaps != (vm.LimitCaps{}) {
 		machine.SetLimitCaps(s.LimitCaps)
 	}

@@ -11299,6 +11299,10 @@ AsyncOptions opts = new AsyncOptions();
 System.assertEquals(null, opts.getMaximumQueueableStackDepth());
 opts.setMaximumQueueableStackDepth(2);
 System.assertEquals(2, opts.getMaximumQueueableStackDepth());
+System.assertEquals(null, opts.getDuplicateSignature());
+QueueableDuplicateSignature sig = QueueableDuplicateSignature.builder().addString('typed').build();
+opts.setDuplicateSignature(sig);
+System.assertEquals(sig.toString(), opts.getDuplicateSignature().toString());
 String jobId = System.enqueueJob(new QueueWorker(), opts);
 System.assert(jobId.startsWith('707'));
 `)
