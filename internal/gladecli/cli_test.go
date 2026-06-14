@@ -581,6 +581,56 @@ func TestPluginsListJSONIncludesEditorMetadata(t *testing.T) {
 	}
 }
 
+func TestPluginsListJSONIncludesLinkedExecutableEditorMetadata(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell helper uses sh")
+	}
+	home := t.TempDir()
+	t.Setenv("GLADE_HOME", home)
+	exe := filepath.Join(home, "glade-plugin-compat")
+	script := `#!/bin/sh
+if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
+  printf '{"apiVersion":"glade.plugin.v1","name":"compat","version":"0.1.0","commands":[{"path":["compat"],"summary":"Compat commands."}],"editor":{"actions":[{"id":"compat.postParity","title":"Scan Unsupported Local Surfaces","view":"runs","contexts":["project"],"command":["compat","post-parity"],"args":["--project","${projectRoot}","--json","--editor-findings"],"output":"glade.findings.v1","icon":"search"}]}}'
+  exit 0
+fi
+`
+	if err := os.WriteFile(exe, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "link", "--exec", exe}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("link exit=%d stderr=%s", code, stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"plugins", "list", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("list exit=%d stderr=%s", code, stderr.String())
+	}
+	var got struct {
+		Plugins []struct {
+			Editor *struct {
+				Actions []struct {
+					ID     string `json:"id"`
+					Output string `json:"output"`
+				} `json:"actions"`
+			} `json:"editor"`
+		} `json:"plugins"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
+	}
+	if len(got.Plugins) != 1 || got.Plugins[0].Editor == nil || len(got.Plugins[0].Editor.Actions) != 1 {
+		t.Fatalf("linked plugin editor metadata missing:\n%#v\n%s", got, stdout.String())
+	}
+	action := got.Plugins[0].Editor.Actions[0]
+	if action.ID != "compat.postParity" || action.Output != "glade.findings.v1" {
+		t.Fatalf("unexpected linked plugin editor action: %#v", action)
+	}
+}
+
 func TestPluginsListAndWhichUseCanonicalIdentity(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("GLADE_HOME", home)

@@ -87,7 +87,7 @@ func runPluginsList(ctx context.Context, args []string, stdout io.Writer) error 
 		return err
 	}
 	if jsonOut {
-		return writePluginsListJSON(stdout, plugins)
+		return writePluginsListJSON(ctx, stdout, plugins)
 	}
 	if len(plugins) == 0 {
 		_, err := fmt.Fprintln(stdout, "No plugins installed.")
@@ -120,7 +120,7 @@ type pluginListEntryJSON struct {
 	Editor       *pluginhost.EditorManifest `json:"editor,omitempty"`
 }
 
-func writePluginsListJSON(w io.Writer, plugins []pluginhost.InstalledPlugin) error {
+func writePluginsListJSON(ctx context.Context, w io.Writer, plugins []pluginhost.InstalledPlugin) error {
 	out := pluginsListJSON{Plugins: make([]pluginListEntryJSON, 0, len(plugins))}
 	for _, plugin := range plugins {
 		entry := pluginListEntryJSON{
@@ -134,11 +134,9 @@ func writePluginsListJSON(w io.Writer, plugins []pluginhost.InstalledPlugin) err
 			ManifestPath: plugin.Manifest,
 			Source:       plugin.Source,
 		}
-		if plugin.Manifest != "" {
-			manifest, err := pluginhost.LoadManifestFromFile(plugin.Manifest)
-			if err != nil {
-				return err
-			}
+		if manifest, ok, err := loadInstalledPluginManifest(ctx, plugin); err != nil {
+			return err
+		} else if ok {
 			entry.Editor = manifest.Editor
 		}
 		out.Plugins = append(out.Plugins, entry)
@@ -146,6 +144,18 @@ func writePluginsListJSON(w io.Writer, plugins []pluginhost.InstalledPlugin) err
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	return enc.Encode(out)
+}
+
+func loadInstalledPluginManifest(ctx context.Context, plugin pluginhost.InstalledPlugin) (pluginhost.Manifest, bool, error) {
+	if plugin.Manifest != "" {
+		manifest, err := pluginhost.LoadManifestFromFile(plugin.Manifest)
+		return manifest, true, err
+	}
+	if plugin.Linked && plugin.Executable != "" {
+		manifest, err := pluginhost.LoadManifestFromExecutable(ctx, plugin.Executable)
+		return manifest, true, err
+	}
+	return pluginhost.Manifest{}, false, nil
 }
 
 func parseJSONOnlyFlag(usage string, args []string) (bool, error) {
