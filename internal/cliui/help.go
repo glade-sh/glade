@@ -270,10 +270,12 @@ var commandReferences = []CommandHelp{
 	{
 		Name:        "dev",
 		Description: "Run the human-focused local development cockpit.",
-		Usage:       []string{"glade dev [--project <root>]", "glade dev test [--project <root>] [--class <name>|--test <Class.method>|--changed|--failed] [--out <runs-dir>]", "glade dev watch [--project <root>] [--out <runs-dir>]"},
+		Usage:       []string{"glade dev [--project <root>]", "glade dev test [--project <root>] [--class <name>|--test <Class.method>|--changed|--failed] [--out <runs-dir>]", "glade dev watch [--project <root>] [--out <runs-dir>]", "glade dev vf [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]", "glade dev lwc [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]"},
 		Subcommands: []SubcommandHelp{
 			{Name: "test", Description: "Run a saved human-friendly test workflow."},
 			{Name: "watch", Description: "Watch and save run artifacts."},
+			{Name: "vf", Description: "Start a local Visualforce development server."},
+			{Name: "lwc", Description: "Start a local LWC development shell."},
 		},
 		Flags: []FlagHelp{
 			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},

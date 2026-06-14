@@ -2,6 +2,7 @@ package gladecli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -21,7 +22,7 @@ func runToolchain(ctx context.Context, args []string, w io.Writer) error {
 	case "install":
 		return runToolchainInstall(ctx, args[1:], w)
 	case "status":
-		return runToolchainStatus(w)
+		return runToolchainStatus(args[1:], w)
 	default:
 		return fmt.Errorf("unknown toolchain command %q", args[0])
 	}
@@ -57,8 +58,34 @@ func runToolchainInstall(ctx context.Context, args []string, w io.Writer) error 
 	return nil
 }
 
-func runToolchainStatus(w io.Writer) error {
+type toolchainStatusJSON struct {
+	OK     bool   `json:"ok"`
+	Path   string `json:"path"`
+	Detail string `json:"detail"`
+}
+
+func runToolchainStatus(args []string, w io.Writer) error {
+	jsonOut := false
+	for _, arg := range args {
+		switch arg {
+		case "--json", "-j":
+			jsonOut = true
+		default:
+			return fmt.Errorf("unknown toolchain status argument %q", arg)
+		}
+	}
 	path, ok, detail := gladehome.ToolchainStatus()
+	if jsonOut {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(toolchainStatusJSON{OK: ok, Path: path, Detail: detail}); err != nil {
+			return err
+		}
+		if !ok {
+			return fmt.Errorf("toolchain not ready")
+		}
+		return nil
+	}
 	if ok {
 		fmt.Fprintf(w, "LWC toolchain: %s (%s)\n", path, detail)
 		return nil

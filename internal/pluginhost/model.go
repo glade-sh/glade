@@ -22,6 +22,7 @@ type Manifest struct {
 	Version             string            `json:"version"`
 	Summary             string            `json:"summary,omitempty"`
 	Commands            []CommandManifest `json:"commands"`
+	Editor              *EditorManifest   `json:"editor,omitempty"`
 	MinimumGladeVersion string            `json:"minimumGladeVersion,omitempty"`
 	Source              string            `json:"source,omitempty"`
 }
@@ -29,6 +30,31 @@ type Manifest struct {
 type CommandManifest struct {
 	Path    []string `json:"path"`
 	Summary string   `json:"summary,omitempty"`
+}
+
+type EditorManifest struct {
+	Actions []EditorActionManifest `json:"actions,omitempty"`
+}
+
+type EditorActionManifest struct {
+	ID          string                      `json:"id"`
+	Title       string                      `json:"title"`
+	Description string                      `json:"description,omitempty"`
+	View        string                      `json:"view"`
+	Contexts    []string                    `json:"contexts,omitempty"`
+	Command     []string                    `json:"command"`
+	Args        []string                    `json:"args,omitempty"`
+	Inputs      []EditorActionInputManifest `json:"inputs,omitempty"`
+	Output      string                      `json:"output"`
+	Icon        string                      `json:"icon,omitempty"`
+}
+
+type EditorActionInputManifest struct {
+	Name     string `json:"name"`
+	Label    string `json:"label"`
+	Type     string `json:"type"`
+	Required bool   `json:"required,omitempty"`
+	Default  any    `json:"default,omitempty"`
 }
 
 type InstalledState struct {
@@ -139,6 +165,9 @@ func (m Manifest) Validate() error {
 		}
 		seen[root] = struct{}{}
 	}
+	if err := m.validateEditor(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -180,4 +209,90 @@ func validatePluginPathToken(field, value string) error {
 		}
 	}
 	return nil
+}
+
+func (m Manifest) validateEditor() error {
+	if m.Editor == nil {
+		return nil
+	}
+	declaredRoots := map[string]struct{}{}
+	for _, root := range m.CommandRoots() {
+		declaredRoots[root] = struct{}{}
+	}
+	for _, action := range m.Editor.Actions {
+		if strings.TrimSpace(action.ID) == "" {
+			return errors.New("editor action id is required")
+		}
+		if err := validatePluginPathToken("editor action id", action.ID); err != nil {
+			return err
+		}
+		if strings.TrimSpace(action.Title) == "" {
+			return errors.New("editor action title is required")
+		}
+		if _, ok := supportedEditorViews[action.View]; !ok {
+			return fmt.Errorf("editor action %q has unsupported view %q", action.ID, action.View)
+		}
+		for _, context := range action.Contexts {
+			if _, ok := supportedEditorContexts[context]; !ok {
+				return fmt.Errorf("editor action %q has unsupported context %q", action.ID, context)
+			}
+		}
+		if _, ok := supportedEditorOutputs[action.Output]; !ok {
+			return fmt.Errorf("editor action %q has unsupported output %q", action.ID, action.Output)
+		}
+		if len(action.Command) == 0 || strings.TrimSpace(action.Command[0]) == "" {
+			return fmt.Errorf("editor action %q command root is required", action.ID)
+		}
+		for _, part := range action.Command {
+			if strings.TrimSpace(part) == "" {
+				return fmt.Errorf("editor action %q command segment is required", action.ID)
+			}
+			if err := validatePluginPathToken("editor action command segment", part); err != nil {
+				return err
+			}
+		}
+		if _, ok := declaredRoots[action.Command[0]]; !ok {
+			return fmt.Errorf("editor action %q command root %q must be declared by plugin", action.ID, action.Command[0])
+		}
+		for _, input := range action.Inputs {
+			if strings.TrimSpace(input.Name) == "" {
+				return fmt.Errorf("editor action %q input name is required", action.ID)
+			}
+			if err := validatePluginPathToken("editor action input name", input.Name); err != nil {
+				return err
+			}
+			if strings.TrimSpace(input.Label) == "" {
+				return fmt.Errorf("editor action %q input label is required", action.ID)
+			}
+			if strings.TrimSpace(input.Type) == "" {
+				return fmt.Errorf("editor action %q input type is required", action.ID)
+			}
+		}
+	}
+	return nil
+}
+
+var supportedEditorViews = map[string]struct{}{
+	"startHere": {},
+	"runs":      {},
+	"localOrg":  {},
+	"debug":     {},
+	"preview":   {},
+	"plugins":   {},
+}
+
+var supportedEditorContexts = map[string]struct{}{
+	"project":               {},
+	"activeApexFile":        {},
+	"activeDebugLog":        {},
+	"activeDataEnvironment": {},
+	"lwcServerRunning":      {},
+	"vfServerRunning":       {},
+	"lastLocalRun":          {},
+}
+
+var supportedEditorOutputs = map[string]struct{}{
+	"glade.findings.v1":       {},
+	"glade.markdownReport.v1": {},
+	"glade.rawText.v1":        {},
 }

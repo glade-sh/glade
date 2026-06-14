@@ -2,6 +2,7 @@ package gladecli
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -20,7 +21,7 @@ func runPlugins(ctx context.Context, args []string, stdout, stderr io.Writer) er
 	}
 	switch args[0] {
 	case "list":
-		return runPluginsList(ctx, stdout)
+		return runPluginsList(ctx, args[1:], stdout)
 	case "available":
 		return runPluginsAvailable(ctx, args[1:], stdout)
 	case "search":
@@ -36,7 +37,7 @@ func runPlugins(ctx context.Context, args []string, stdout, stderr io.Writer) er
 	case "which":
 		return runPluginsWhich(args[1:], stdout)
 	case "doctor":
-		return runPluginsDoctor(ctx, stdout)
+		return runPluginsDoctor(ctx, args[1:], stdout)
 	case "lock":
 		return runPluginsLock(args[1:], stdout)
 	case "restore":
@@ -73,13 +74,20 @@ Examples:
 `)
 }
 
-func runPluginsList(ctx context.Context, stdout io.Writer) error {
+func runPluginsList(ctx context.Context, args []string, stdout io.Writer) error {
 	if err := ctx.Err(); err != nil {
+		return err
+	}
+	jsonOut, err := parseJSONOnlyFlag("glade plugins list", args)
+	if err != nil {
 		return err
 	}
 	plugins, err := pluginhost.NewStore(pluginhost.DefaultRoot()).ListInstalled()
 	if err != nil {
 		return err
+	}
+	if jsonOut {
+		return writePluginsListJSON(stdout, plugins)
 	}
 	if len(plugins) == 0 {
 		_, err := fmt.Fprintln(stdout, "No plugins installed.")
@@ -93,6 +101,64 @@ func runPluginsList(ctx context.Context, stdout io.Writer) error {
 		fmt.Fprintf(stdout, "%s %s%s %s\n", plugin.IdentityName(), plugin.Version, link, strings.Join(plugin.Commands, ","))
 	}
 	return nil
+}
+
+type pluginsListJSON struct {
+	Plugins []pluginListEntryJSON `json:"plugins"`
+}
+
+type pluginListEntryJSON struct {
+	Identity     string                     `json:"identity"`
+	Name         string                     `json:"name"`
+	Canonical    string                     `json:"canonicalName,omitempty"`
+	Version      string                     `json:"version"`
+	Linked       bool                       `json:"linked"`
+	CommandRoots []string                   `json:"commandRoots"`
+	Executable   string                     `json:"executable"`
+	ManifestPath string                     `json:"manifestPath"`
+	Source       string                     `json:"source,omitempty"`
+	Editor       *pluginhost.EditorManifest `json:"editor,omitempty"`
+}
+
+func writePluginsListJSON(w io.Writer, plugins []pluginhost.InstalledPlugin) error {
+	out := pluginsListJSON{Plugins: make([]pluginListEntryJSON, 0, len(plugins))}
+	for _, plugin := range plugins {
+		entry := pluginListEntryJSON{
+			Identity:     plugin.IdentityName(),
+			Name:         plugin.Name,
+			Canonical:    plugin.CanonicalName,
+			Version:      plugin.Version,
+			Linked:       plugin.Linked,
+			CommandRoots: append([]string(nil), plugin.Commands...),
+			Executable:   plugin.Executable,
+			ManifestPath: plugin.Manifest,
+			Source:       plugin.Source,
+		}
+		if plugin.Manifest != "" {
+			manifest, err := pluginhost.LoadManifestFromFile(plugin.Manifest)
+			if err != nil {
+				return err
+			}
+			entry.Editor = manifest.Editor
+		}
+		out.Plugins = append(out.Plugins, entry)
+	}
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	return enc.Encode(out)
+}
+
+func parseJSONOnlyFlag(usage string, args []string) (bool, error) {
+	jsonOut := false
+	for _, arg := range args {
+		switch arg {
+		case "--json", "-j":
+			jsonOut = true
+		default:
+			return false, fmt.Errorf("unknown %s argument %q", usage, arg)
+		}
+	}
+	return jsonOut, nil
 }
 
 func runPluginsLink(ctx context.Context, args []string, stdout io.Writer) error {
@@ -331,10 +397,17 @@ func runPluginsWhich(args []string, stdout io.Writer) error {
 	return nil
 }
 
-func runPluginsDoctor(ctx context.Context, stdout io.Writer) error {
+func runPluginsDoctor(ctx context.Context, args []string, stdout io.Writer) error {
+	jsonOut, err := parseJSONOnlyFlag("glade plugins doctor", args)
+	if err != nil {
+		return err
+	}
 	results, err := pluginhost.NewStore(pluginhost.DefaultRoot()).Doctor(ctx)
 	if err != nil {
 		return err
+	}
+	if jsonOut {
+		return writePluginsDoctorJSON(stdout, results)
 	}
 	for _, result := range results {
 		if result.OK {
@@ -344,6 +417,51 @@ func runPluginsDoctor(ctx context.Context, stdout io.Writer) error {
 		fmt.Fprintf(stdout, "%s %s %s\n", result.Plugin.IdentityName(), result.Plugin.Version, result.Message)
 	}
 	return nil
+}
+
+type pluginsDoctorJSON struct {
+	OK      bool                    `json:"ok"`
+	Plugins []pluginDoctorEntryJSON `json:"plugins"`
+}
+
+type pluginDoctorEntryJSON struct {
+	Identity     string   `json:"identity"`
+	Name         string   `json:"name"`
+	Canonical    string   `json:"canonicalName,omitempty"`
+	Version      string   `json:"version"`
+	Linked       bool     `json:"linked"`
+	CommandRoots []string `json:"commandRoots"`
+	Executable   string   `json:"executable"`
+	ManifestPath string   `json:"manifestPath"`
+	Source       string   `json:"source,omitempty"`
+	OK           bool     `json:"ok"`
+	Message      string   `json:"message"`
+}
+
+func writePluginsDoctorJSON(w io.Writer, results []pluginhost.DoctorResult) error {
+	out := pluginsDoctorJSON{OK: true, Plugins: make([]pluginDoctorEntryJSON, 0, len(results))}
+	for _, result := range results {
+		if !result.OK {
+			out.OK = false
+		}
+		plugin := result.Plugin
+		out.Plugins = append(out.Plugins, pluginDoctorEntryJSON{
+			Identity:     plugin.IdentityName(),
+			Name:         plugin.Name,
+			Canonical:    plugin.CanonicalName,
+			Version:      plugin.Version,
+			Linked:       plugin.Linked,
+			CommandRoots: append([]string(nil), plugin.Commands...),
+			Executable:   plugin.Executable,
+			ManifestPath: plugin.Manifest,
+			Source:       plugin.Source,
+			OK:           result.OK,
+			Message:      result.Message,
+		})
+	}
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	return enc.Encode(out)
 }
 
 func runPluginsLock(args []string, stdout io.Writer) error {
