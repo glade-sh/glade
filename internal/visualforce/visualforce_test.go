@@ -18,7 +18,7 @@ func TestLoadProjectIndexesPagesAndComponents(t *testing.T) {
   <apex:outputText value="{!$ObjectType.Account.fields.Name.label}" />
   <apex:composition template="{!$Site.Template}" />
 </apex:page>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/pages/AccountView.page"), `<apex:page standardController="Account" extensions="AccountExt, AuditExt">
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/AccountView.page"), `<apex:page standardController="Account" recordSetVar="accounts" extensions="AccountExt, AuditExt">
   {!$Resource.Logo}
 </apex:page>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/znu__Order.page"), `<apex:page standardController="znu__Order__c" />`)
@@ -69,7 +69,7 @@ func TestLoadProjectIndexesPagesAndComponents(t *testing.T) {
 	}
 
 	account, ok := idx.Page("AccountView")
-	if !ok || account.StandardController != "Account" || len(account.Extensions) != 2 || account.Extensions[0] != "AccountExt" || account.Extensions[1] != "AuditExt" {
+	if !ok || account.StandardController != "Account" || account.RecordSetVar != "accounts" || len(account.Extensions) != 2 || account.Extensions[0] != "AccountExt" || account.Extensions[1] != "AuditExt" {
 		t.Fatalf("standard controller page = %#v, %v", account, ok)
 	}
 	if !hasMerge(account.MergeReferences, "StaticResource", "$Resource", "Logo") {
@@ -115,6 +115,20 @@ func TestLoadProjectIndexesMetadataOnlyPages(t *testing.T) {
 	page, ok := idx.PageReference("Page.MetadataOnly")
 	if !ok || page.Name != "MetadataOnly" || page.File == "" {
 		t.Fatalf("metadata-only page lookup = %#v, %v", page, ok)
+	}
+}
+
+func TestVisualforceParsesStandardControllerRecordSetVar(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/pages/Accounts.page")
+	writeFile(t, path, `<apex:page standardController="Account" recordSetVar="accounts" />`)
+
+	page, err := ParsePageFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if page.StandardController != "Account" || page.RecordSetVar != "accounts" {
+		t.Fatalf("page = %#v", page)
 	}
 }
 

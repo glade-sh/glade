@@ -44,7 +44,7 @@ func (s *Server) handleStaticResource(w http.ResponseWriter, r *http.Request, pa
 			w.Header().Set("Content-Type", guessed)
 		}
 	}
-	w.Header().Set("Cache-Control", "public, max-age=3600")
+	setDevNoStore(w)
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(content)
 }

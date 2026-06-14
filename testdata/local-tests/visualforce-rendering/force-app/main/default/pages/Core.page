@@ -1,0 +1,19 @@
+<apex:page controller="CoreController" title="Core">
+  <apex:pageMessages/>
+  <apex:form id="form">
+    <apex:pageBlock title="Account">
+      <apex:pageBlockButtons>
+        <apex:commandButton value="Save" action="{!save}" reRender="summary"/>
+      </apex:pageBlockButtons>
+      <apex:pageBlockSection columns="2">
+        <apex:pageBlockSectionItem>
+          <apex:outputLabel value="Name"/>
+          <apex:inputText id="name" value="{!name}"/>
+        </apex:pageBlockSectionItem>
+      </apex:pageBlockSection>
+    </apex:pageBlock>
+    <apex:outputPanel id="summary">
+      <apex:outputText value="{!name}"/>
+    </apex:outputPanel>
+  </apex:form>
+</apex:page>

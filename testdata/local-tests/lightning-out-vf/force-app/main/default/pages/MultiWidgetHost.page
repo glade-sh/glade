@@ -1,0 +1,30 @@
+<apex:page showHeader="false" sidebar="false">
+    <apex:includeLightning />
+    <div id="apexHost">Loading Apex...</div>
+    <div id="recordHost">Loading record...</div>
+    <div id="labelResourceHost">Loading resource...</div>
+    <div id="eventHost">Loading event...</div>
+    <script>
+        window.__callbacks = {};
+        window.__selected = null;
+        $Lightning.use("c:lightningOut", function() {
+            function mount(qualified, attrs, locator) {
+                $Lightning.createComponent(qualified, attrs, locator, function(cmp, status, errorMessage) {
+                    window.__callbacks[qualified] = {
+                        status: status,
+                        errorMessage: errorMessage
+                    };
+                    if (qualified === "c:eventChild" && cmp) {
+                        cmp.addEventListener("select", function(e) {
+                            window.__selected = e.detail.id;
+                        });
+                    }
+                });
+            }
+            mount("c:apexWireHost", { recordId: "001XX0000000001" }, "apexHost");
+            mount("c:recordWireHost", { recordId: "001XX0000000001" }, "recordHost");
+            mount("c:labelResourceHost", {}, "labelResourceHost");
+            mount("c:eventChild", {}, "eventHost");
+        });
+    </script>
+</apex:page>

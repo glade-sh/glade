@@ -63,7 +63,7 @@ service parity.
 | JSON, regex, encoding, and crypto | Serialization, parsing, regex, base64, hex, URL encoding, and digest rows are supported for the checked local contract. |
 | HTTP, SOAP, and callout mocks | Request/response-shaped mock paths work for tests. Glade does not perform live outbound service calls. |
 | Messaging | Local message/result shapes, template rendering, attachment retrieval, send options, and invocation counts are covered. Glade does not deliver email, push, or other live messages. |
-| Visualforce controller helpers | PageReference, messages, current page, and controller test helpers are modeled for controller tests. Glade does not render full Visualforce pages. |
+| Visualforce controller and page rendering | PageReference, messages, current page, controller helpers, local `/apex/<PageName>` routes, common standard components, page lifecycle paths, static resources, uploads, remoting envelopes, and local PDF fallback output are modeled for local development. Full Salesforce chrome, every component edge, exact lifecycle timing, and byte-for-byte PDF parity remain outside the local contract. |
 | Search and SOSL helpers | Local deterministic Search and SOSL rows are supported. Hosted ranking, analyzers, synonyms, and external indexes are not modeled. |
 | Test helpers | Tracked `Test.*` local helper rows are supported. Hosted service accounting, packaged-resource expansion, and live External Service execution remain explicit gaps. |
 | Local test harness and request context | Request/UIRequest context, install/uninstall hooks, sandbox post-copy helpers, scheduled Apex, QuickAction DTOs, BusinessHours calendars and holidays, seeded approval routing, and TrailblazerIdentity helper calls have deterministic local models. Live hosted engines are not contacted. |
@@ -76,7 +76,7 @@ This is the smaller list a first user should check before betting on Glade.
 | --- | --- |
 | Live Salesforce auth and sessions | The local server exposes local stubs. It does not implement real Salesforce OAuth, session validation, or org identity services. |
 | Fenced live service APIs | Answers zone search, password reset output, live identity/admin mutation, and hosted process/service engines require Salesforce-hosted data or execution. |
-| Full Visualforce rendering | Controller logic is the supported path. Component rendering, page lifecycle, `getContent`, and PDF generation remain outside the current runtime. |
+| Exact hosted Visualforce parity | Glade serves local Visualforce pages for development. It does not promise Salesforce-hosted chrome, every component edge, exact lifecycle timing, every remoting/browser behavior, or byte-for-byte PDF output. |
 | Broad REST and Tooling API parity | The local API server covers the checked local baseline, including Composite Batch and Tree, Bulk API v2 simple query jobs, layout/default-value metadata, metadata job status, and local Tooling shapes. Broader Bulk API locator paging, Composite Graph execution, Streaming/PubSub, GraphQL, live metadata deploy/retrieve, live auth, and live org-only Tooling surfaces remain outside the local contract. |
 | Live outbound side effects | Real callouts, delivered email, push notifications, and external service mutations are not performed. Tests should use local mocks and result objects. |
 | Exact Salesforce governor accounting | Glade tracks deterministic local limits. Salesforce's full production accounting and every platform-specific counter are not complete. |

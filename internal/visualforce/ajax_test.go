@@ -1,0 +1,141 @@
+package visualforce
+
+import (
+	"reflect"
+	"strings"
+	"testing"
+)
+
+func TestParseAjaxPayloadIdentifiesActionTargetsAndSubmittedFields(t *testing.T) {
+	payload := ParseAjaxPayload(map[string]string{
+		"__vf_ajax":                  "1",
+		"__vf_rerender":              "count, f:details, count",
+		"__vf_csrf":                  "token",
+		ViewStateActionFieldName():   "{!save}",
+		ViewStateFormFieldName():     "encoded-view-state",
+		"f:name":                     "Ada",
+		"mode":                       "quick",
+		"com.salesforce.extra.field": "kept",
+	})
+	if !payload.IsAjax {
+		t.Fatalf("IsAjax = false, want true")
+	}
+	if payload.Action != "{!save}" {
+		t.Fatalf("Action = %q", payload.Action)
+	}
+	if want := []string{"count", "f:details"}; !reflect.DeepEqual(payload.RerenderTargets, want) {
+		t.Fatalf("RerenderTargets = %#v, want %#v", payload.RerenderTargets, want)
+	}
+	wantFields := map[string]string{
+		"f:name":                     "Ada",
+		"mode":                       "quick",
+		"com.salesforce.extra.field": "kept",
+	}
+	if !reflect.DeepEqual(payload.SubmittedFields, wantFields) {
+		t.Fatalf("SubmittedFields = %#v, want %#v", payload.SubmittedFields, wantFields)
+	}
+}
+
+func TestVisualforceAjaxScriptPostsMarkersAndRefreshesViewState(t *testing.T) {
+	script := VisualforceAjaxScript()
+	for _, want := range []string{
+		"window.GLADEVF.submit",
+		`data.set("__vf_ajax","1")`,
+		`data.set("__vf_rerender",targets||"")`,
+		"p.messages",
+		"console.warn",
+		ViewStateActionFieldName(),
+		ViewStateFormFieldName(),
+	} {
+		if !strings.Contains(script, want) {
+			t.Fatalf("script missing %q: %s", want, script)
+		}
+	}
+}
+
+func TestRenderPartialTargetsFindsScopedRerenderID(t *testing.T) {
+	targets := RenderPartialTargets(`<html><body><form id="f"><div id="count" data-rerender="count"><span>1</span></div></form></body></html>`, []string{"f:count"})
+	if got := targets["f:count"]; !strings.Contains(got, `id="count"`) || !strings.Contains(got, ">1<") {
+		t.Fatalf("target = %q", got)
+	}
+}
+
+func TestNewPartialResponseReportsMissingTargetDiagnostic(t *testing.T) {
+	response := NewPartialResponse(`<html><body><div id="count"><span>1</span></div></body></html>`, "next-view-state", []string{"count", "missing"})
+	if response.ViewState != "next-view-state" {
+		t.Fatalf("ViewState = %q", response.ViewState)
+	}
+	if got := response.Targets["count"]; !strings.Contains(got, `id="count"`) || !strings.Contains(got, ">1<") {
+		t.Fatalf("count target = %q", got)
+	}
+	if got := response.Targets["missing"]; !strings.Contains(got, `unsupported Visualforce partial refresh target`) {
+		t.Fatalf("missing target = %q", got)
+	}
+	if len(response.Messages) != 1 || !strings.Contains(response.Messages[0], `missing`) || !strings.Contains(response.Messages[0], "element id not found") {
+		t.Fatalf("messages = %#v", response.Messages)
+	}
+}
+
+func TestRenderAjaxCommandButtonEmitsSubmitHook(t *testing.T) {
+	rendered := renderAjaxMarkupForTest(t, `<apex:page><apex:form><apex:commandButton value="Inc" action="{!increment}" reRender="count"/></apex:form></apex:page>`)
+	for _, want := range []string{"window.GLADEVF.submit", "__vf_action", "{!increment}", "count"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("rendered missing %q: %s", want, rendered)
+		}
+	}
+}
+
+func TestRenderAjaxCommandButtonKeepsLabelOutOfTextContent(t *testing.T) {
+	rendered := renderAjaxMarkupForTest(t, `<apex:page><apex:form><apex:commandButton value="Step" action="{!step}" reRender="out"/></apex:form></apex:page>`)
+	for _, want := range []string{`<input type="submit"`, `value="Step"`, "window.GLADEVF.submit"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("rendered missing %q: %s", want, rendered)
+		}
+	}
+	if strings.Contains(rendered, `>Step</button>`) {
+		t.Fatalf("commandButton label leaked into text content: %s", rendered)
+	}
+}
+
+func TestRenderAjaxCommandLinkEmitsSubmitHook(t *testing.T) {
+	rendered := renderAjaxMarkupForTest(t, `<apex:page><apex:form><apex:commandLink value="Inc" action="{!increment}" reRender="count"/></apex:form></apex:page>`)
+	for _, want := range []string{"this.closest", "window.GLADEVF.submit", "{!increment}", "count"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("rendered missing %q: %s", want, rendered)
+		}
+	}
+}
+
+func TestRenderAjaxActionSupportEmitsSubmitHook(t *testing.T) {
+	rendered := renderAjaxMarkupForTest(t, `<apex:page><apex:form><apex:actionSupport event="keyup" action="{!increment}" reRender="count"/></apex:form></apex:page>`)
+	for _, want := range []string{`class="actionSupport"`, `data-event="keyup"`, "window.GLADEVF.submit", "{!increment}", "count"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("rendered missing %q: %s", want, rendered)
+		}
+	}
+}
+
+func TestRenderAjaxActionFunctionFindsPageForm(t *testing.T) {
+	rendered := renderAjaxMarkupForTest(t, `<apex:page><apex:form><apex:actionFunction name="refreshCount" action="{!increment}" reRender="count"/></apex:form></apex:page>`)
+	for _, want := range []string{"function refreshCount()", "document.forms[0]", "window.GLADEVF.submit", "{!increment}", "count"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("rendered missing %q: %s", want, rendered)
+		}
+	}
+	if strings.Contains(rendered, "this.form") {
+		t.Fatalf("actionFunction should not depend on this.form: %s", rendered)
+	}
+}
+
+func renderAjaxMarkupForTest(t *testing.T, markup string) string {
+	t.Helper()
+	tree, err := ParseMarkupTree(markup)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rendered, err := RenderMarkupTree(tree, &RenderContext{PageName: "Ajax", Expression: &ExpressionContext{}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return rendered
+}

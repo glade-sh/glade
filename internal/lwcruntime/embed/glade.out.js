@@ -70,7 +70,9 @@ window.$Lightning = {
     const outApp = normalizeQualified(app);
     const allowed = (config.outApps || []).map(normalizeQualified);
     if (allowed.length > 0 && !allowed.includes(outApp)) {
-      console.warn("[glade] Lightning Out app not indexed", app);
+      console.error("[glade] Lightning Out app not found", app);
+      callback(null, "ERROR", "Lightning Out app not found: " + app);
+      return;
     }
     callback();
   },

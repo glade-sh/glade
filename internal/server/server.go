@@ -33,6 +33,8 @@ type Server struct {
 	metadataJobs           map[string]metadataLocalJob
 	nextMetadataDeployID   int
 	nextMetadataRetrieveID int
+
+	visualforceViewStateSecret []byte
 }
 
 type queryLocatorState struct {
@@ -59,6 +61,14 @@ const localOAuthUnsupportedMessage = "Full OAuth flows and token issuance are no
 const apexRestUnsupportedMessage = "Apex @RestResource dispatch is not implemented in the local server"
 
 var apexRestAllowedMethods = []string{http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodPut, http.MethodDelete}
+
+const devNoStoreCacheControl = "no-store, no-cache, must-revalidate, max-age=0"
+
+func setDevNoStore(w http.ResponseWriter) {
+	w.Header().Set("Cache-Control", devNoStoreCacheControl)
+	w.Header().Set("Pragma", "no-cache")
+	w.Header().Set("Expires", "0")
+}
 
 func (s *Server) advertisedRESTAPIVersion() string {
 	if s != nil && s.Org != nil {
@@ -151,6 +161,19 @@ func (s *Server) SetProjectRuntime(index typesys.Index, runtime *vm.VM, runtimeE
 	s.Index = &index
 	s.runtime = runtime
 	s.runtimeErr = runtimeErr
+}
+
+func (s *Server) ReloadProjectState(source SourceMetadata, index typesys.Index, runtime *vm.VM, runtimeErr error) {
+	if s == nil {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.Source = source
+	s.Index = &index
+	s.runtime = runtime
+	s.runtimeErr = runtimeErr
+	s.resetLightningCacheLocked()
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

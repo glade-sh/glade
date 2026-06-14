@@ -1,0 +1,19 @@
+{
+  "version": "glade.storage.v1",
+  "objects": [
+    {
+      "name": "Account",
+      "records": [
+        {
+          "id": "001XX0000000001",
+          "fields": {
+            "Name": {
+              "kind": "string",
+              "string": "Acme"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

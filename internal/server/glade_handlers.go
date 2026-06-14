@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/visualforce"
 )
 
 func (s *Server) handleGLADE(w http.ResponseWriter, r *http.Request, parts []string) {
@@ -45,6 +47,8 @@ func (s *Server) handleGLADE(w http.ResponseWriter, r *http.Request, parts []str
 			return
 		}
 		writeJSON(w, http.StatusOK, storage.FixtureFromOrg(*s.Org))
+	case len(parts) == 2 && parts[0] == "visualforce" && parts[1] == "support" && r.Method == http.MethodGet:
+		writeJSON(w, http.StatusOK, visualforceSupportPayload())
 	case len(parts) == 1 && parts[0] == "fixture" && r.Method == http.MethodPost:
 		mode, err := requestedFixtureLoadMode(r)
 		if err != nil {
@@ -82,9 +86,49 @@ func (s *Server) handleGLADE(w http.ResponseWriter, r *http.Request, parts []str
 		writeMethodNotAllowed(w, http.MethodGet)
 	case len(parts) == 1 && parts[0] == "fixture":
 		writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
+	case len(parts) == 2 && parts[0] == "visualforce" && parts[1] == "support":
+		writeMethodNotAllowed(w, http.MethodGet)
 	default:
 		writeSalesforceError(w, errUnknownGLADE)
 	}
+}
+
+type visualforceSupportComponent struct {
+	Name   string `json:"name"`
+	Status string `json:"status"`
+	Reason string `json:"reason,omitempty"`
+}
+
+type visualforceSupportResponse struct {
+	Components []visualforceSupportComponent `json:"components"`
+}
+
+func visualforceSupportPayload() visualforceSupportResponse {
+	specs := visualforce.StandardComponentSpecs()
+	components := make([]visualforceSupportComponent, 0, len(specs))
+	for _, spec := range specs {
+		name := visualforceSupportName(spec.Name)
+		if name == "" {
+			continue
+		}
+		components = append(components, visualforceSupportComponent{
+			Name:   name,
+			Status: string(spec.Status),
+			Reason: strings.TrimSpace(spec.Reason),
+		})
+	}
+	sort.Slice(components, func(i, j int) bool {
+		return components[i].Name < components[j].Name
+	})
+	return visualforceSupportResponse{Components: components}
+}
+
+func visualforceSupportName(name string) string {
+	name = strings.TrimSpace(name)
+	if strings.HasPrefix(strings.ToLower(name), "apex:") {
+		return strings.TrimSpace(name[len("apex:"):])
+	}
+	return name
 }
 
 func requestedFixtureLoadMode(r *http.Request) (fixtureLoadMode, error) {

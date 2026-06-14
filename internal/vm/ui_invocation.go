@@ -53,16 +53,7 @@ func (vm *VM) InvokeVisualforceAction(className, methodName, pageURL string, par
 	vm.pageMessages = nil
 	vm.currentPage = vm.newPageReference(pageURL)
 	if len(params) > 0 {
-		pageParams := typedMap("Map<String,String>")
-		names := make([]string, 0, len(params))
-		for name := range params {
-			names = append(names, name)
-		}
-		sort.Strings(names)
-		for _, name := range names {
-			pageParams.Map[mapKey(String(name))] = String(params[name])
-		}
-		vm.currentPage.Fields["parameters"] = pageParams
+		mergeCurrentPageStringParams(vm.currentPage, params)
 	}
 	result := &Result{TraceFormat: trace.FormatChromeTraceEvent, traceEnabled: true}
 	appendVisualforceTrace(result, "current_page", map[string]any{
@@ -147,6 +138,138 @@ func (vm *VM) InvokeVisualforceAction(className, methodName, pageURL string, par
 	appendDurationTrace(result, "apex.visualforce.action", "apex.visualforce", actionStart, traceDurationSince(actionStartedAt), completeArgs)
 	out.Trace = result.Trace
 	return out, nil
+}
+
+func (vm *VM) InvokeVisualforceActionOnController(controller Value, className, methodName, pageURL string, params map[string]string) (Value, Value, UIInvocationResult, error) {
+	out := UIInvocationResult{Framework: "visualforce", ClassName: className, MethodName: methodName}
+	if strings.TrimSpace(className) == "" || strings.TrimSpace(methodName) == "" {
+		out.Success = false
+		out.Error = &UIActionError{Type: "UnsupportedFeature", Message: "Visualforce action requires controller class and method"}
+		return Null, controller, out, nil
+	}
+	if strings.TrimSpace(pageURL) == "" {
+		pageURL = "/apex/current"
+	}
+	vm.pageMessages = nil
+	vm.currentPage = vm.newPageReference(pageURL)
+	if len(params) > 0 {
+		mergeCurrentPageStringParams(vm.currentPage, params)
+	}
+	result := &Result{TraceFormat: trace.FormatChromeTraceEvent, traceEnabled: true}
+	if strings.EqualFold(className, "ApexPages.StandardController") || strings.EqualFold(className, "ApexPages.StandardSetController") {
+		appendVisualforceTrace(result, "action.invoke", map[string]any{
+			"className":  className,
+			"methodName": methodName,
+			"page":       tracePageReference(vm.currentPage),
+			"bound":      true,
+		})
+		var value Value
+		var updated Value
+		var handled bool
+		var err error
+		if strings.EqualFold(className, "ApexPages.StandardSetController") {
+			value, updated, _, handled, err = vm.callStandardSetControllerMember(controller, methodName, nil, result)
+		} else {
+			value, updated, _, handled, err = vm.callStandardControllerMember(controller, methodName, nil, result)
+		}
+		out.PageMessages = jsonListFromValues(vm.pageMessages)
+		if err != nil {
+			out.Success = false
+			out.Error = uiInvocationError(err)
+			out.Trace = result.Trace
+			return value, updated, out, nil
+		}
+		if !handled {
+			out.Success = false
+			out.Error = &UIActionError{Type: "UnsupportedFeature", Message: fmt.Sprintf("no standard Visualforce action %s accepts zero arguments", methodName)}
+			out.Trace = result.Trace
+			return Null, controller, out, nil
+		}
+		out.Success = true
+		out.ReturnValue = plainUIJSON(jsonFromValue(value, false))
+		appendVisualforceTrace(result, "action.complete", map[string]any{
+			"className":        className,
+			"methodName":       methodName,
+			"returnValue":      out.ReturnValue,
+			"pageMessageCount": len(out.PageMessages),
+			"pageMessages":     out.PageMessages,
+			"currentPage":      tracePageReference(vm.currentPage),
+			"bound":            true,
+		})
+		out.Trace = result.Trace
+		return value, updated, out, nil
+	}
+	method, ok := vm.resolveInstanceMethod(className, methodName)
+	if !ok || method.IsStatic || len(method.Params) != 0 {
+		out.Success = false
+		out.Error = &UIActionError{Type: "UnsupportedFeature", Message: fmt.Sprintf("no instance Visualforce action %s.%s accepts zero arguments", className, methodName)}
+		return Null, controller, out, nil
+	}
+	if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name, method.Modifiers); err != nil {
+		out.Success = false
+		out.Error = uiInvocationError(err)
+		return Null, controller, out, nil
+	}
+	appendVisualforceTrace(result, "action.invoke", map[string]any{
+		"className":  className,
+		"methodName": methodName,
+		"page":       tracePageReference(vm.currentPage),
+		"bound":      true,
+	})
+	value, err := vm.callMethodWithReceiver(method, controller, nil, result)
+	out.PageMessages = jsonListFromValues(vm.pageMessages)
+	if err != nil {
+		out.Success = false
+		out.Error = uiInvocationError(err)
+		appendVisualforceTrace(result, "action.error", map[string]any{
+			"className":        className,
+			"methodName":       methodName,
+			"error":            out.Error.Message,
+			"errorType":        out.Error.Type,
+			"pageMessageCount": len(out.PageMessages),
+			"pageMessages":     out.PageMessages,
+			"currentPage":      tracePageReference(vm.currentPage),
+			"bound":            true,
+		})
+		out.Trace = result.Trace
+		return value, controller, out, nil
+	}
+	out.Success = true
+	out.ReturnValue = plainUIJSON(jsonFromValue(value, false))
+	appendVisualforceTrace(result, "action.complete", map[string]any{
+		"className":        className,
+		"methodName":       methodName,
+		"returnValue":      out.ReturnValue,
+		"pageMessageCount": len(out.PageMessages),
+		"pageMessages":     out.PageMessages,
+		"currentPage":      tracePageReference(vm.currentPage),
+		"bound":            true,
+	})
+	out.Trace = result.Trace
+	return value, controller, out, nil
+}
+
+func mergeCurrentPageStringParams(page Value, params map[string]string) {
+	if len(params) == 0 || page.Kind != ValueObject {
+		return
+	}
+	pageParams, ok := page.Fields["parameters"]
+	if !ok || pageParams.Kind != ValueMap {
+		pageParams = typedMap("Map<String,String>")
+		page.Fields["parameters"] = pageParams
+	}
+	names := make([]string, 0, len(params))
+	for name := range params {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		pageParams.Map[mapKey(String(name))] = String(params[name])
+		if pageParams.MapKeys != nil {
+			pageParams.MapKeys[mapKey(String(name))] = String(name)
+		}
+	}
+	page.Fields["parameters"] = pageParams
 }
 
 func (vm *VM) invokeUIAction(framework, className, methodName string, params map[string]any) (UIInvocationResult, error) {
