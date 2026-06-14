@@ -66,6 +66,34 @@ func TestRenderVisualforceTextDoesNotReevaluateReplacementText(t *testing.T) {
 	}
 }
 
+func TestRenderScriptTextPreservesJavaScriptEscapedMergeField(t *testing.T) {
+	markup := `<apex:page><script>window.payload = JSON.parse('{!JSENCODE(payload)}');</script><div>{!payload}</div></apex:page>`
+	tree, err := ParseMarkupTree(markup)
+	if err != nil {
+		t.Fatal(err)
+	}
+	controller := vm.Object("SecurityController")
+	controller.Fields["payload"] = vm.String(`{"visitor":{"id":"system@example.invalid-00D000000000001EAA"}}`)
+
+	rendered, err := RenderMarkupTree(tree, &RenderContext{
+		Expression: &ExpressionContext{Controller: controller},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wantScript := `JSON.parse('{\"visitor\":{\"id\":\"system@example.invalid-00D000000000001EAA\"}}')`
+	if !strings.Contains(rendered, wantScript) {
+		t.Fatalf("rendered script = %q, want %q", rendered, wantScript)
+	}
+	if strings.Contains(rendered, `\&#34;`) || strings.Contains(rendered, `&quot;`) {
+		t.Fatalf("rendered script contains HTML entities: %q", rendered)
+	}
+	if !strings.Contains(rendered, `{&#34;visitor&#34;:{&#34;id&#34;:&#34;system@example.invalid-00D000000000001EAA&#34;}}`) {
+		t.Fatalf("rendered HTML text did not stay escaped: %q", rendered)
+	}
+}
+
 func TestRenderOutputTextEscapeFalseKeepsExpressionRawButEscapesLiteralMarkup(t *testing.T) {
 	markup := `<apex:page><apex:outputText escape="false" value="{!payload}"/><apex:outputText escape="false" value="&lt;safe&gt;"/></apex:page>`
 	tree, err := ParseMarkupTree(markup)

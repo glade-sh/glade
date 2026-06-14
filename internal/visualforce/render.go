@@ -908,7 +908,7 @@ func renderHTMLPassthrough(node *MarkupNode, ctx *RenderContext) (string, error)
 		return renderChildren(node, ctx)
 	}
 	attrs := renderHTMLAttributes(node)
-	children, err := renderChildren(node, ctx)
+	children, err := renderHTMLPassthroughChildren(tag, node, ctx)
 	if err != nil {
 		return "", err
 	}
@@ -916,6 +916,33 @@ func renderHTMLPassthrough(node *MarkupNode, ctx *RenderContext) (string, error)
 		return "<" + tag + attrs + " />", nil
 	}
 	return "<" + tag + attrs + ">" + children + "</" + tag + ">", nil
+}
+
+func renderHTMLPassthroughChildren(tag string, node *MarkupNode, ctx *RenderContext) (string, error) {
+	if isRawTextHTMLElement(tag) {
+		return renderRawTextChildren(node, ctx)
+	}
+	return renderChildren(node, ctx)
+}
+
+func renderRawTextChildren(node *MarkupNode, ctx *RenderContext) (string, error) {
+	builder := strings.Builder{}
+	for _, child := range node.Children {
+		if child.Type == MarkupNodeText {
+			rendered, err := RenderVisualforceRawText(child.Text, ctx.Expression)
+			if err != nil {
+				return "", err
+			}
+			builder.WriteString(rendered)
+			continue
+		}
+		rendered, err := renderMarkupNode(child, ctx)
+		if err != nil {
+			return "", err
+		}
+		builder.WriteString(rendered)
+	}
+	return builder.String(), nil
 }
 
 func renderHTMLAttributes(node *MarkupNode) string {
@@ -937,6 +964,15 @@ func renderHTMLAttributes(node *MarkupNode) string {
 		}
 	}
 	return builder.String()
+}
+
+func isRawTextHTMLElement(tag string) bool {
+	switch strings.ToLower(tag) {
+	case "script", "style":
+		return true
+	default:
+		return false
+	}
 }
 
 func isVoidHTMLElement(tag string) bool {

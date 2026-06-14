@@ -17,6 +17,14 @@ func EscapeVisualforceOutput(raw string, escape bool) string {
 }
 
 func RenderVisualforceText(raw string, ctx *ExpressionContext) (string, error) {
+	return renderVisualforceText(raw, ctx, true)
+}
+
+func RenderVisualforceRawText(raw string, ctx *ExpressionContext) (string, error) {
+	return renderVisualforceText(raw, ctx, false)
+}
+
+func renderVisualforceText(raw string, ctx *ExpressionContext, escapeExpressions bool) (string, error) {
 	if !strings.Contains(raw, "{!") {
 		return raw, nil
 	}
@@ -40,7 +48,10 @@ func RenderVisualforceText(raw string, ctx *ExpressionContext) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		out.WriteString(EscapeVisualforceOutput(value, true))
+		if escapeExpressions {
+			value = EscapeVisualforceOutput(value, true)
+		}
+		out.WriteString(value)
 		pos = end + 1
 	}
 	return out.String(), nil
