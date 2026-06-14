@@ -20,6 +20,7 @@ import {
 } from "./localOrg";
 import { summaryFromInspect } from "./localOrgModel";
 import { GladeOutput } from "./output";
+import { PreviewController } from "./preview/controller";
 import { findProjectContext } from "./projectContext";
 import { GladeProjectContext } from "./projectModel";
 import { StartHereState } from "./startHereState";
@@ -31,6 +32,7 @@ import { GladeTestWatch } from "./tests/watch";
 import { DebugView } from "./views/debugView";
 import { EnvironmentsView } from "./views/environmentsView";
 import { LocalOrgView } from "./views/localOrgView";
+import { PreviewView } from "./views/previewView";
 import { RunsView } from "./views/runsView";
 import { StartHereView } from "./views/startHereView";
 
@@ -49,6 +51,8 @@ export function activate(context: vscode.ExtensionContext): void {
   const runsView = new RunsView();
   const environmentsView = new EnvironmentsView();
   const localOrgView = new LocalOrgView();
+  const previewController = new PreviewController(output.logs);
+  const previewView = new PreviewView(previewController);
   const debugView = new DebugView();
   const tests = new GladeTestController(context, output.tests, (summary) => {
     startHereState.setLastRun(summary);
@@ -60,7 +64,7 @@ export function activate(context: vscode.ExtensionContext): void {
     startHereView.refresh();
   });
   const lsp = new GladeLspClient(output.logs);
-  context.subscriptions.push(lsp, watch);
+  context.subscriptions.push(lsp, watch, previewController, previewView);
 
   async function refreshProject(): Promise<void> {
     try {
@@ -75,6 +79,7 @@ export function activate(context: vscode.ExtensionContext): void {
       tests.setProject(testExplorerEnabled ? project : undefined);
       environmentsView.setProject(project);
       localOrgView.setProject(project);
+      previewController.setProject(project);
       debugView.setProject(project);
       await lsp.sync(project);
     } catch (error) {
@@ -86,6 +91,7 @@ export function activate(context: vscode.ExtensionContext): void {
       tests.setProject(undefined);
       environmentsView.setProject(undefined);
       localOrgView.setProject(undefined);
+      previewController.setProject(undefined);
       debugView.setProject(undefined);
       await lsp.sync(undefined);
       output.logs.appendLine(`project detection failed: ${message}`);
@@ -106,14 +112,62 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.window.registerTreeDataProvider("glade.recommendedRuns", runsView),
     vscode.window.registerTreeDataProvider("glade.environments", environmentsView),
     vscode.window.registerTreeDataProvider("glade.localOrg", localOrgView),
+    vscode.window.registerTreeDataProvider("glade.preview", previewView),
     vscode.window.registerTreeDataProvider("glade.debugLogs", debugView),
     vscode.commands.registerCommand("glade.refresh", async () => {
       runsView.refresh();
       startHereView.refresh();
       environmentsView.refresh();
       localOrgView.refresh();
+      previewView.refresh();
       debugView.refresh();
       await refreshProject();
+    }),
+    vscode.commands.registerCommand("glade.refreshPreview", async () => {
+      try {
+        await previewController.refresh();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        void vscode.window.showErrorMessage(`Glade preview refresh failed: ${message}`);
+      }
+    }),
+    vscode.commands.registerCommand("glade.startLWCPreview", async () => {
+      try {
+        await previewController.startLWC();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        void vscode.window.showErrorMessage(`Glade LWC preview failed: ${message}`);
+      }
+    }),
+    vscode.commands.registerCommand("glade.stopLWCPreview", () => previewController.stopLWC()),
+    vscode.commands.registerCommand("glade.startVFPreview", async () => {
+      try {
+        await previewController.startVF();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        void vscode.window.showErrorMessage(`Glade Visualforce preview failed: ${message}`);
+      }
+    }),
+    vscode.commands.registerCommand("glade.stopVFPreview", () => previewController.stopVF()),
+    vscode.commands.registerCommand("glade.openPreviewRoute", async (url?: string) => {
+      if (!url) {
+        void vscode.window.showErrorMessage("Glade preview route is missing a URL.");
+        return;
+      }
+      try {
+        await vscode.env.openExternal(vscode.Uri.parse(url));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        void vscode.window.showErrorMessage(`Glade preview route failed: ${message}`);
+      }
+    }),
+    vscode.commands.registerCommand("glade.installToolchain", async () => {
+      try {
+        await previewController.installToolchain();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        void vscode.window.showErrorMessage(`Glade toolchain install failed: ${message}`);
+      }
     }),
     vscode.commands.registerCommand("glade.runChangedTests", () => tests.runChanged()),
     vscode.commands.registerCommand("glade.runFailedTests", () => tests.runFailed()),

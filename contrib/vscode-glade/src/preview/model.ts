@@ -8,7 +8,7 @@ export interface PreviewServer {
   kind: "lwc" | "visualforce";
   url: string;
   addr: string;
-  running: true;
+  running: boolean;
   routes: PreviewRoute[];
 }
 
@@ -68,6 +68,10 @@ export function parseToolchainStatus(raw: string): ToolchainStatus {
     ...(status.path ? { path: status.path } : {}),
     detail: status.detail || "unknown",
   };
+}
+
+export function stoppedPreviewServer(server: PreviewServer): PreviewServer {
+  return { ...server, running: false };
 }
 
 function parseLWCRoute(route: string): PreviewRoute {

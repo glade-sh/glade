@@ -51,6 +51,26 @@ assert.deepStrictEqual(
 );
 
 assert.deepStrictEqual(
+  model.stoppedPreviewServer(model.parseVFReadyFile(JSON.stringify({
+    url: "http://127.0.0.1:4174",
+    addr: "127.0.0.1:4174",
+    pages: ["/apex/Core"],
+  }))),
+  {
+    kind: "visualforce",
+    url: "http://127.0.0.1:4174",
+    addr: "127.0.0.1:4174",
+    running: false,
+    routes: [
+      {
+        label: "Core",
+        path: "/apex/Core",
+      },
+    ],
+  },
+);
+
+assert.deepStrictEqual(
   model.parseToolchainStatus(JSON.stringify({ ok: true, path: "/usr/local/bin/node" })),
   { ok: true, path: "/usr/local/bin/node", detail: "unknown" },
 );

@@ -20,6 +20,7 @@
     "onView:glade.recommendedRuns",
     "onView:glade.environments",
     "onView:glade.localOrg",
+    "onView:glade.preview",
     "onView:glade.debugLogs",
     "onDebugResolve:glade",
     "onCommand:glade.runChangedTests",
@@ -35,7 +36,14 @@
     "onCommand:glade.revealEnvironmentDb",
     "onCommand:glade.inspectEnvironment",
     "onCommand:glade.statusQuickPick",
-    "onCommand:glade.openOutput"
+    "onCommand:glade.openOutput",
+    "onCommand:glade.refreshPreview",
+    "onCommand:glade.startLWCPreview",
+    "onCommand:glade.stopLWCPreview",
+    "onCommand:glade.startVFPreview",
+    "onCommand:glade.stopVFPreview",
+    "onCommand:glade.openPreviewRoute",
+    "onCommand:glade.installToolchain"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -68,6 +76,11 @@
         {
           "id": "glade.localOrg",
           "name": "Local Org",
+          "when": "config.glade.enableSidebar"
+        },
+        {
+          "id": "glade.preview",
+          "name": "Local Preview",
           "when": "config.glade.enableSidebar"
         },
         {
@@ -169,6 +182,34 @@
       {
         "command": "glade.openOutput",
         "title": "Glade: Open Output"
+      },
+      {
+        "command": "glade.refreshPreview",
+        "title": "Glade: Refresh Local Preview"
+      },
+      {
+        "command": "glade.startLWCPreview",
+        "title": "Glade: Start LWC Preview"
+      },
+      {
+        "command": "glade.stopLWCPreview",
+        "title": "Glade: Stop LWC Preview"
+      },
+      {
+        "command": "glade.startVFPreview",
+        "title": "Glade: Start Visualforce Preview"
+      },
+      {
+        "command": "glade.stopVFPreview",
+        "title": "Glade: Stop Visualforce Preview"
+      },
+      {
+        "command": "glade.openPreviewRoute",
+        "title": "Glade: Open Preview Route"
+      },
+      {
+        "command": "glade.installToolchain",
+        "title": "Glade: Install LWC Toolchain"
       }
     ],
     "menus": {
