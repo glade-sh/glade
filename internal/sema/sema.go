@@ -174,7 +174,7 @@ func enrichIndexWithStandardSymbols(index typesys.Index) typesys.Index {
 	for _, typ := range index.Types {
 		seen[semaTypeKey(typ.Namespace, typ.Name)] = true
 	}
-	for _, typ := range typesys.StandardPlatformSymbols() {
+	for _, typ := range typesys.StandardPlatformSymbolView() {
 		if seen[semaTypeKey(typ.Namespace, typ.Name)] {
 			continue
 		}

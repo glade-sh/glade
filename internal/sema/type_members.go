@@ -14,17 +14,18 @@ import (
 )
 
 type typeMembers struct {
-	name         string
-	shortKey     string
-	namespace    string
-	dependency   bool
-	sobject      bool
-	kind         apexast.DeclarationKind
-	superClass   string
-	interfaces   []string
-	methods      map[string][]typesys.MemberSymbol
-	constructors []typesys.MemberSymbol
-	fields       map[string]typesys.MemberSymbol
+	name                     string
+	shortKey                 string
+	namespace                string
+	dependency               bool
+	sobject                  bool
+	kind                     apexast.DeclarationKind
+	superClass               string
+	interfaces               []string
+	methods                  map[string][]typesys.MemberSymbol
+	constructors             []typesys.MemberSymbol
+	fields                   map[string]typesys.MemberSymbol
+	syntheticStandardSObject bool
 }
 
 const semaCurrentTypeScopeKey = "__glade_current_type"
@@ -296,6 +297,10 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 		if members.shortKey == "" {
 			members.shortKey = semaShortTypeKey(members.name)
 		}
+		if members.syntheticStandardSObject {
+			out[key] = members
+			continue
+		}
 		members.superClass = resolveNestedTypeName(out, members.name, members.superClass)
 		for i, iface := range members.interfaces {
 			members.interfaces[i] = resolveNestedTypeName(out, members.name, iface)
@@ -369,71 +374,108 @@ func semaModelCacheKey(model map[string]typeMembers) uintptr {
 }
 
 func addStandardSObjectMembers(out map[string]typeMembers) {
-	for _, objectName := range append(storage.KnownStandardObjectNames(), semaAdditionalStandardSObjectNames()...) {
+	names, cached := semaStandardSObjectMembers()
+	for _, objectName := range names {
 		key := normalizeName(objectName)
 		if key == "" {
 			continue
 		}
 		members, ok := out[key]
-		synthetic := !ok
 		if ok && !members.sobject {
 			continue
 		}
 		if !ok {
-			members = typeMembers{
-				name:     objectName,
-				shortKey: semaShortTypeKey(objectName),
-				sobject:  true,
-				kind:     apexast.DeclarationClass,
-				fields:   make(map[string]typesys.MemberSymbol),
-				methods:  make(map[string][]typesys.MemberSymbol),
+			if cachedMembers, exists := cached[key]; exists {
+				out[key] = cachedMembers
 			}
+			continue
 		}
 		members.sobject = true
 		if members.fields == nil {
 			members.fields = make(map[string]typesys.MemberSymbol)
 		}
-		semaAddCommonSObjectFields(members.fields)
-		members.fields[normalizeName("SObjectType")] = typesys.MemberSymbol{
-			Kind:      apexast.DeclarationField,
-			Name:      "SObjectType",
-			Type:      "Schema.SObjectType",
-			Modifiers: []string{"public", "static", semaSyntheticStandardSObjectFieldModifier},
-		}
-		if definition, ok := storage.StandardObjectDefinition(objectName); ok {
-			for _, field := range definition.Fields {
-				if field.APIName == "" {
-					continue
-				}
-				members.fields[normalizeName(field.APIName)] = typesys.MemberSymbol{
-					Kind:      apexast.DeclarationField,
-					Name:      field.APIName,
-					Type:      semaApexTypeForStorageField(field),
-					Modifiers: []string{"public", "static", semaSyntheticStandardSObjectFieldModifier},
-				}
-				if field.RelationshipName != "" && len(field.ReferenceTo) != 0 {
-					relationshipType := "SObject"
-					if len(field.ReferenceTo) == 1 {
-						relationshipType = field.ReferenceTo[0]
-					}
-					members.fields[normalizeName(field.RelationshipName)] = typesys.MemberSymbol{
-						Kind:      apexast.DeclarationField,
-						Name:      field.RelationshipName,
-						Type:      relationshipType,
-						Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
-					}
-				}
+		addStandardSObjectFields(&members, objectName, false)
+		out[key] = members
+	}
+}
+
+var semaStandardSObjectMembersCache struct {
+	once    sync.Once
+	names   []string
+	members map[string]typeMembers
+}
+
+func semaStandardSObjectMembers() ([]string, map[string]typeMembers) {
+	semaStandardSObjectMembersCache.once.Do(func() {
+		sourceNames := append(storage.KnownStandardObjectNames(), semaAdditionalStandardSObjectNames()...)
+		names := make([]string, 0, len(sourceNames))
+		membersByKey := make(map[string]typeMembers, len(sourceNames))
+		seen := make(map[string]bool, len(sourceNames))
+		for _, objectName := range sourceNames {
+			key := normalizeName(objectName)
+			if key == "" || seen[key] {
+				continue
 			}
+			seen[key] = true
+			members := typeMembers{
+				name:                     objectName,
+				shortKey:                 semaShortTypeKey(objectName),
+				sobject:                  true,
+				kind:                     apexast.DeclarationClass,
+				fields:                   make(map[string]typesys.MemberSymbol),
+				methods:                  make(map[string][]typesys.MemberSymbol),
+				syntheticStandardSObject: true,
+			}
+			addStandardSObjectFields(&members, objectName, true)
+			names = append(names, objectName)
+			membersByKey[key] = members
 		}
-		for _, field := range semaFallbackStandardSObjectFields(objectName, synthetic) {
-			members.fields[normalizeName(field.Name)] = typesys.MemberSymbol{
+		semaStandardSObjectMembersCache.names = names
+		semaStandardSObjectMembersCache.members = membersByKey
+	})
+	return semaStandardSObjectMembersCache.names, semaStandardSObjectMembersCache.members
+}
+
+func addStandardSObjectFields(members *typeMembers, objectName string, synthetic bool) {
+	semaAddCommonSObjectFields(members.fields)
+	members.fields[normalizeName("SObjectType")] = typesys.MemberSymbol{
+		Kind:      apexast.DeclarationField,
+		Name:      "SObjectType",
+		Type:      "Schema.SObjectType",
+		Modifiers: []string{"public", "static", semaSyntheticStandardSObjectFieldModifier},
+	}
+	if definition, ok := storage.StandardObjectDefinition(objectName); ok {
+		for _, field := range definition.Fields {
+			if field.APIName == "" {
+				continue
+			}
+			members.fields[normalizeName(field.APIName)] = typesys.MemberSymbol{
 				Kind:      apexast.DeclarationField,
-				Name:      field.Name,
-				Type:      semaApexTypeForSchemaField(field),
+				Name:      field.APIName,
+				Type:      semaApexTypeForStorageField(field),
 				Modifiers: []string{"public", "static", semaSyntheticStandardSObjectFieldModifier},
 			}
+			if field.RelationshipName != "" && len(field.ReferenceTo) != 0 {
+				relationshipType := "SObject"
+				if len(field.ReferenceTo) == 1 {
+					relationshipType = field.ReferenceTo[0]
+				}
+				members.fields[normalizeName(field.RelationshipName)] = typesys.MemberSymbol{
+					Kind:      apexast.DeclarationField,
+					Name:      field.RelationshipName,
+					Type:      relationshipType,
+					Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
+				}
+			}
 		}
-		out[key] = members
+	}
+	for _, field := range semaFallbackStandardSObjectFields(objectName, synthetic) {
+		members.fields[normalizeName(field.Name)] = typesys.MemberSymbol{
+			Kind:      apexast.DeclarationField,
+			Name:      field.Name,
+			Type:      semaApexTypeForSchemaField(field),
+			Modifiers: []string{"public", "static", semaSyntheticStandardSObjectFieldModifier},
+		}
 	}
 }
 
