@@ -233,17 +233,61 @@ func parseMarkup(path string) (markupDoc, error) {
 	}
 	doc := markupDoc{}
 	source := string(content)
-	for _, match := range tagRE.FindAllStringSubmatch(source, -1) {
-		rawName := strings.TrimSpace(match[1])
-		if rawName == "" || strings.HasPrefix(rawName, "/") || strings.HasPrefix(rawName, "!") || strings.HasPrefix(rawName, "?") {
+	doc.Tokens = append(doc.Tokens, scanMarkupStartTokens(source)...)
+	if text := strings.TrimSpace(source); text != "" {
+		doc.Tokens = append(doc.Tokens, markupToken{Text: text})
+	}
+	if len(doc.Tokens) == 0 {
+		return markupDoc{}, fmt.Errorf("no Visualforce markup found in %s", path)
+	}
+	return doc, nil
+}
+
+var attrRE = regexp.MustCompile(`(?s)([A-Za-z_][A-Za-z0-9_.:-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')`)
+
+func scanMarkupStartTokens(source string) []markupToken {
+	var tokens []markupToken
+	for offset := 0; offset < len(source); {
+		start := strings.IndexByte(source[offset:], '<')
+		if start < 0 {
+			break
+		}
+		start += offset
+		nameStart := start + 1
+		for nameStart < len(source) && isMarkupWhitespace(source[nameStart]) {
+			nameStart++
+		}
+		if nameStart >= len(source) {
+			break
+		}
+		switch source[nameStart] {
+		case '/', '!', '?':
+			next := findStartTagEnd(source, nameStart+1)
+			if next < 0 {
+				return tokens
+			}
+			offset = next + 1
 			continue
 		}
+		nameEnd := nameStart
+		for nameEnd < len(source) && isTagNameByte(source[nameEnd]) {
+			nameEnd++
+		}
+		if nameEnd == nameStart {
+			offset = start + 1
+			continue
+		}
+		end := findStartTagEnd(source, nameEnd)
+		if end < 0 {
+			return tokens
+		}
+		rawName := strings.TrimSpace(source[nameStart:nameEnd])
 		name := rawName
 		if idx := strings.LastIndex(name, ":"); idx >= 0 {
 			name = name[idx+1:]
 		}
 		attrs := make(map[string]string)
-		for _, attrMatch := range attrRE.FindAllStringSubmatch(match[2], -1) {
+		for _, attrMatch := range attrRE.FindAllStringSubmatch(source[nameEnd:end], -1) {
 			value := attrMatch[2]
 			if value == "" {
 				value = attrMatch[3]
@@ -254,19 +298,15 @@ func parseMarkup(path string) (markupDoc, error) {
 			}
 			attrs[lookupKey(attrName)] = strings.TrimSpace(value)
 		}
-		doc.Tokens = append(doc.Tokens, markupToken{Start: true, Local: name, Attrs: attrs})
+		tokens = append(tokens, markupToken{Start: true, Local: name, Attrs: attrs})
+		offset = end + 1
 	}
-	if text := strings.TrimSpace(source); text != "" {
-		doc.Tokens = append(doc.Tokens, markupToken{Text: text})
-	}
-	if len(doc.Tokens) == 0 {
-		return markupDoc{}, fmt.Errorf("no Visualforce markup found in %s", path)
-	}
-	return doc, nil
+	return tokens
 }
 
-var tagRE = regexp.MustCompile(`(?s)<\s*([A-Za-z_!?/][A-Za-z0-9_.:-]*)\b([^<>]*)>`)
-var attrRE = regexp.MustCompile(`(?s)([A-Za-z_][A-Za-z0-9_.:-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')`)
+func isMarkupWhitespace(ch byte) bool {
+	return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'
+}
 
 func attributeFromToken(token markupToken) Attribute {
 	attribute := Attribute{

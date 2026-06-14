@@ -760,3 +760,67 @@ func TestLightningWireCreateUpdateDeleteRecordMutatesLocalStorage(t *testing.T) 
 		t.Fatalf("record not soft-deleted: %#v", org.Objects["Account"].Records[storage.ID(id)])
 	}
 }
+
+func TestLightningWireCreateRecordUsesDMLSequencesAndValidation(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	createAccount := func(name string) lwcbrowser.WireResponse {
+		t.Helper()
+		body := fmt.Sprintf(`{"apiName":"Account","fields":{"Name":%q}}`, name)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/lightning/wire/createRecord", strings.NewReader(body)))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("create %q status = %d body=%s", name, rec.Code, rec.Body.String())
+		}
+		var out lwcbrowser.WireResponse
+		if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+			t.Fatal(err)
+		}
+		if out.Error != nil {
+			t.Fatalf("create %q error = %#v", name, out.Error)
+		}
+		return out
+	}
+
+	first := createAccount("First Local Account")
+	second := createAccount("Second Local Account")
+	firstPayload, ok := first.Data.(map[string]any)
+	if !ok {
+		t.Fatalf("first data = %#v", first.Data)
+	}
+	secondPayload, ok := second.Data.(map[string]any)
+	if !ok {
+		t.Fatalf("second data = %#v", second.Data)
+	}
+	firstID, _ := firstPayload["id"].(string)
+	secondID, _ := secondPayload["id"].(string)
+	if firstID == "" || secondID == "" || firstID == secondID {
+		t.Fatalf("created ids first=%q second=%q", firstID, secondID)
+	}
+	if len(org.Objects["Account"].Records) != 2 {
+		t.Fatalf("stored records = %#v", org.Objects["Account"].Records)
+	}
+	if got := org.IDSequences["Account"]; got != 2 {
+		t.Fatalf("Account id sequence = %d, want 2", got)
+	}
+	if org.Objects["Account"].Records[storage.ID(firstID)].System.CreatedByID == "" {
+		t.Fatalf("DML audit fields not stamped: %#v", org.Objects["Account"].Records[storage.ID(firstID)])
+	}
+
+	missingName := httptest.NewRecorder()
+	handler.ServeHTTP(missingName, httptest.NewRequest(http.MethodPost, "/lightning/wire/createRecord", strings.NewReader(`{"apiName":"Account","fields":{"Description":"No name"}}`)))
+	if missingName.Code != http.StatusOK {
+		t.Fatalf("missing name status = %d body=%s", missingName.Code, missingName.Body.String())
+	}
+	var missingOut lwcbrowser.WireResponse
+	if err := json.Unmarshal(missingName.Body.Bytes(), &missingOut); err != nil {
+		t.Fatal(err)
+	}
+	if missingOut.Error == nil || !strings.Contains(missingOut.Error.Message, "Name") {
+		t.Fatalf("missing name response = %#v", missingOut)
+	}
+	if len(org.Objects["Account"].Records) != 2 {
+		t.Fatalf("missing-name create mutated records: %#v", org.Objects["Account"].Records)
+	}
+}

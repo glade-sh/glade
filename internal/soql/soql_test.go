@@ -35,6 +35,24 @@ func TestParseRootObjectAlias(t *testing.T) {
 	}
 }
 
+func TestParseBackslashEscapedSOQLStringLiteral(t *testing.T) {
+	query, err := Parse("SELECT Id FROM Account WHERE Name = 'Bob\\'s Shop'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if query.Where == nil || query.Where.Value.String != "Bob's Shop" {
+		t.Fatalf("where = %#v", query.Where)
+	}
+
+	query, err = Parse("SELECT Id FROM Account WHERE Name = 'C:\\Trail'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if query.Where == nil || query.Where.Value.String != `C:\Trail` {
+		t.Fatalf("path where = %#v", query.Where)
+	}
+}
+
 func TestExecuteUsingScopeEverythingReturnsVisibleRows(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{

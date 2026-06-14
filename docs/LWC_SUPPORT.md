@@ -23,7 +23,7 @@ Visualforce Lightning Out host.
 | Apex wire and imperative Apex imports | Supported with VM limits | LWC shell and Visualforce Lightning Out. |
 | `lightning/uiRecordApi` `getRecord` | Supported with local data limits | LWC shell and Visualforce Lightning Out. |
 | `lightning/uiRecordApi` `getObjectInfo` | Supported with local schema limits | LWC shell and Visualforce Lightning Out. |
-| `lightning/uiRecordApi` create, update, and delete helpers | Supported with local data limits | LWC shell and Visualforce Lightning Out. |
+| `lightning/uiRecordApi` create, update, and delete helpers | Supported with local DML limits | LWC shell and Visualforce Lightning Out. Mutations use the local DML engine for supported objects, including ID sequences, required-field checks, audit fields, explicit nulls, and soft deletes. |
 | `lightning/uiRecordApi` field helper functions | Supported for local record shapes | LWC shell and Visualforce Lightning Out. |
 | `@salesforce/schema` object and field tokens | Supported | LWC shell and Visualforce Lightning Out. |
 | `@salesforce/label` | Supported with local metadata limits | LWC shell and Visualforce Lightning Out. |

@@ -132,6 +132,25 @@ func TestVisualforceParsesStandardControllerRecordSetVar(t *testing.T) {
 	}
 }
 
+func TestParsePageToleratesGreaterThanInQuotedAttribute(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/pages/Filtered.page")
+	writeFile(t, path, `<apex:page controller="FilterController" action="{!amount > 0}">
+  <apex:outputText rendered="{!amount > 10}" value="{!$Label.Filtered}" />
+</apex:page>`)
+
+	page, err := ParsePageFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if page.Controller != "FilterController" || page.Action != "{!amount > 0}" {
+		t.Fatalf("page metadata = %#v", page)
+	}
+	if !hasMerge(page.MergeReferences, "Label", "$Label", "Filtered") {
+		t.Fatalf("missing label merge reference: %#v", page.MergeReferences)
+	}
+}
+
 func TestExtractMergeReferences(t *testing.T) {
 	refs := ExtractMergeReferences(`{!URLFOR($Resource.Bundle, 'x.css')} {!$Site.BaseUrl}`)
 	if len(refs) != 2 {

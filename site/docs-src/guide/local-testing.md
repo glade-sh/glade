@@ -135,10 +135,10 @@ inside Visualforce uses the same local LWC runtime, Apex wire endpoint, LDS/UI
 API shims, labels, resources, and navigation basics.
 
 The shell supports local Apex controller imports, `getRecord`, `getObjectInfo`,
-schema tokens, labels, static resources, content assets,
-`CurrentPageReference`, and basic `NavigationMixin` behavior. Glade loads
-fixture records from `data/*.json` when they use the Glade storage fixture
-format.
+local DML-backed create/update/delete record helpers, schema tokens, labels,
+static resources, content assets, `CurrentPageReference`, and basic
+`NavigationMixin` behavior. Glade loads fixture records from `data/*.json` when
+they use the Glade storage fixture format.
 
 See [Local LWC Shell](/guide/lwc-local-shell) for routes, fixtures, and limits.
 

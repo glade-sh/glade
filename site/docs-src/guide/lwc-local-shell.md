@@ -84,6 +84,9 @@ The LWC shell and Visualforce Lightning Out host share:
 - Local Apex controller execution through the Glade VM.
 - `lightning/uiRecordApi` `getRecord` and `getObjectInfo`.
 - `lightning/uiRecordApi` create, update, delete, and field helper functions.
+  Mutations use the local DML engine for supported objects, so ID sequences,
+  required-field checks, audit fields, explicit nulls, and soft deletes match
+  the local Apex DML path.
 - `@salesforce/schema` object and field tokens.
 - `@salesforce/label`, `@salesforce/resourceUrl`, and
   `@salesforce/contentAssetUrl`.
@@ -117,7 +120,8 @@ commands that target that database.
 
 Glade serves a local Lightning shell. It does not replace hosted Lightning
 Experience, live auth, permissions, console APIs, full UI API, every
-`lightning-*` base component, exact SLDS fidelity, or every Lightning Out edge.
+`lightning-*` base component, exact SLDS fidelity, hosted validation parity, or
+every Lightning Out edge.
 
 Unsupported metadata and unsupported Salesforce services return named
 diagnostics instead of calling Salesforce. Keep a Salesforce gate for hosted

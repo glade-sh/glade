@@ -119,6 +119,9 @@ common local development loops:
   state.
 - `lightning/uiRecordApi` `createRecord`, `updateRecord`, `deleteRecord`,
   `getFieldValue`, and `getFieldDisplayValue` against local record shapes.
+  Mutations use the local DML engine for supported objects, so ID sequences,
+  required-field checks, audit fields, explicit nulls, and soft deletes follow
+  the same local rules as Apex DML.
 - `@salesforce/schema/<Object>` and `@salesforce/schema/<Object>.<Field>`
   tokens.
 - `@salesforce/label/<namespace>.<name>` from project custom labels and known
@@ -166,7 +169,7 @@ This is local development support, not a hosted Salesforce replacement.
 | Hosted Lightning Experience | Glade serves a local shell, not Salesforce chrome, app navigation, workspace API, or console behavior. |
 | Metadata | The shell resolves LWC bundle metadata, FlexiPages, and custom tabs needed for preview routes. It does not implement every builder rule or Experience Cloud runtime. |
 | Base components | Common custom LWCs can mount. Full `lightning-*` base component parity and SLDS fidelity depend on the supported runtime modules in this build. |
-| LDS/UI API | `getRecord` and `getObjectInfo` are local shims. Full UI API, layouts, picklists, permissions, record edit flows, and server-side validation are not complete hosted parity. |
+| LDS/UI API | `getRecord`, `getObjectInfo`, and local record mutations are local shims. Mutations use the local DML engine for supported objects and fields. Full UI API, layouts, picklists, permissions, record edit flows, and hosted validation parity are not complete. |
 | Apex controllers | Supported local Apex executes in the Glade VM. Unsupported Apex surfaces return diagnostics instead of calling Salesforce. |
 | Navigation | `CurrentPageReference`, `Navigate`, and `GenerateUrl` cover local page targets. Full router history, console navigation, named app behavior, and hosted URL generation remain limited. |
 | Visualforce Lightning Out | LWC mounting through `$Lightning.use()` and `$Lightning.createComponent()` is supported for local pages. Exact hosted lifecycle timing and every Lightning Out edge remain outside the local contract. |

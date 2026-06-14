@@ -67,6 +67,25 @@ func TestParseMarkupTreePositionsUseOriginalSourceBeforeSelfClosingExpansion(t *
 	}
 }
 
+func TestParseMarkupTreeSelfClosingTagToleratesGreaterThanInAttribute(t *testing.T) {
+	source := `<apex:page><apex:outputText rendered="{!amount > 10}" value="{!Name}"/><apex:outputText value="{!Second}"/></apex:page>`
+	root, err := ParseMarkupTree(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	page := root.Children[0]
+	outputs := collectSourceNodes(page, "apex", "outputtext")
+	if len(outputs) != 2 {
+		t.Fatalf("outputs = %d, want 2", len(outputs))
+	}
+	if outputs[0].RawAttributes["rendered"] != "{!amount > 10}" || outputs[0].RawAttributes["value"] != "{!Name}" {
+		t.Fatalf("first output attributes = %#v", outputs[0].RawAttributes)
+	}
+	if outputs[1].RawAttributes["value"] != "{!Second}" {
+		t.Fatalf("second output attributes = %#v", outputs[1].RawAttributes)
+	}
+}
+
 func TestParseMarkupTreeSourceTagsSkipParserInsertedElements(t *testing.T) {
 	source := `<apex:page><table><tr><td><apex:outputText value="{!Name}"/></td></tr></table></apex:page>`
 	root, err := ParseMarkupTree(source)

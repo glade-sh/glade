@@ -24,7 +24,18 @@ func lex(input string) ([]token, error) {
 		case input[i] == '\'':
 			start := i
 			i++
+			escaped := false
 			for i < len(input) {
+				if escaped {
+					escaped = false
+					i++
+					continue
+				}
+				if input[i] == '\\' {
+					escaped = true
+					i++
+					continue
+				}
 				if input[i] == '\'' {
 					if i+1 < len(input) && input[i+1] == '\'' {
 						i += 2
@@ -1676,7 +1687,7 @@ func literalAtWithFiscalYearStartMonth(text string, now time.Time, fiscalYearSta
 		return storage.BooleanValue(false), storage.Value{}, false, nil
 	case strings.HasPrefix(text, "'") && strings.HasSuffix(text, "'"):
 		inner := strings.TrimSuffix(strings.TrimPrefix(text, "'"), "'")
-		return storage.StringValue(strings.ReplaceAll(inner, "''", "'")), storage.Value{}, false, nil
+		return storage.StringValue(unescapeSOQLStringLiteral(inner)), storage.Value{}, false, nil
 	default:
 		if looksDecimalLiteral(text) {
 			if _, ok := new(big.Rat).SetString(text); ok {
@@ -1695,6 +1706,28 @@ func literalAtWithFiscalYearStartMonth(text string, now time.Time, fiscalYearSta
 		}
 		return storage.IntegerValue(value), storage.Value{}, false, nil
 	}
+}
+
+func unescapeSOQLStringLiteral(inner string) string {
+	if !strings.ContainsAny(inner, `'\`) {
+		return inner
+	}
+	var b strings.Builder
+	for i := 0; i < len(inner); i++ {
+		ch := inner[i]
+		if ch == '\'' && i+1 < len(inner) && inner[i+1] == '\'' {
+			b.WriteByte('\'')
+			i++
+			continue
+		}
+		if ch == '\\' && i+1 < len(inner) && inner[i+1] == '\'' {
+			b.WriteByte(inner[i+1])
+			i++
+			continue
+		}
+		b.WriteByte(ch)
+	}
+	return b.String()
 }
 func looksDecimalLiteral(text string) bool {
 	trimmed := strings.TrimSpace(text)

@@ -79,9 +79,10 @@ shell.
 
 The shell supports `CurrentPageReference`, basic `NavigationMixin` URL and
 navigation behavior for local targets, Apex wire and imperative controller
-imports, `getRecord`, `getObjectInfo`, schema tokens, custom labels, static
-resources, content assets, user values, and checked i18n values. Local org data
-comes from project schema plus Glade storage fixtures in `data/*.json`.
+imports, `getRecord`, `getObjectInfo`, local DML-backed create/update/delete
+record helpers, schema tokens, custom labels, static resources, content assets,
+user values, and checked i18n values. Local org data comes from project schema
+plus Glade storage fixtures in `data/*.json`.
 
 Read [LWC_LOCAL_SHELL.md](LWC_LOCAL_SHELL.md) for route details and current
 limits. Read [LWC_SUPPORT.md](LWC_SUPPORT.md) for the support table.

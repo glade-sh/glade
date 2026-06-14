@@ -17,6 +17,14 @@ Support status:
 
 Release engineering:
 
+- Fixed `lightning/uiRecordApi` local create/update/delete record helpers to use
+  the same DML engine as local Apex, preserving ID sequences, required-field
+  validation, audit fields, explicit nulls, and soft deletes.
+- Fixed SOQL parsing for backslash-escaped string literals produced by
+  `String.escapeSingleQuotes`.
+- Hardened Visualforce page/component metadata indexing for quoted attributes
+  that contain `>` and hardened Lightning Out discovery for nested
+  `$Lightning.createComponent()` attribute objects.
 - Added ConnectApi runtime support for ChatterFeeds (postFeedElement, postFeedElementBatch,
   updateComment, getComment), ChatterUsers (setPhoto, getReputation), CommerceCart
   (getCartSummary, addItemToCart, addItemsToCart, getCartItems, getProduct,

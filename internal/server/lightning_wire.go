@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/lwcbrowser"
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -280,22 +281,11 @@ func getObjectInfoWireData(org *storage.OrgState, objectAPIName string) (map[str
 }
 
 func createRecordWireData(org *storage.OrgState, req lwcbrowser.WireCreateRecordRequest) (map[string]any, *lwcbrowser.WireError) {
-	objectName, object, ok := findOrgObject(org, req.APIName)
+	objectName, _, ok := findOrgObject(org, req.APIName)
 	if !ok {
 		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("object not found: %s", req.APIName)}
 	}
-	generator := storage.NewStandardIDGenerator()
-	for name, state := range org.Objects {
-		if strings.TrimSpace(state.Definition.KeyPrefix) != "" {
-			generator.Prefixes[name] = state.Definition.KeyPrefix
-		}
-	}
-	id, err := generator.Next(objectName)
-	if err != nil {
-		return nil, &lwcbrowser.WireError{Message: err.Error()}
-	}
 	record := storage.Record{
-		ID:     id,
 		Object: objectName,
 		Fields: map[string]storage.Value{},
 	}
@@ -305,12 +295,14 @@ func createRecordWireData(org *storage.OrgState, req lwcbrowser.WireCreateRecord
 		}
 		record.Fields[fieldName] = storageValueFromAny(raw)
 	}
-	if object.Records == nil {
-		object.Records = map[storage.ID]storage.Record{}
+	engine := dml.NewEngine(org)
+	results := engine.Insert([]storage.Record{record})
+	if len(results) != 1 || !results[0].Success {
+		return nil, wireErrorFromDMLResult(firstDMLResult(results, "create failed"))
 	}
-	object.Records[id] = record
-	org.Objects[objectName] = object
-	return recordWireMutationPayload(objectName, record), nil
+	stored := org.Objects[objectName].Records[results[0].ID]
+	stored.ID = results[0].ID
+	return recordWireMutationPayload(objectName, stored), nil
 }
 
 func updateRecordWireData(org *storage.OrgState, req lwcbrowser.WireUpdateRecordRequest) (map[string]any, *lwcbrowser.WireError) {
@@ -323,28 +315,30 @@ func updateRecordWireData(org *storage.OrgState, req lwcbrowser.WireUpdateRecord
 	if !ok {
 		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("record not found: %s", recordID)}
 	}
-	object := org.Objects[objectName]
-	if record.Fields == nil {
-		record.Fields = map[string]storage.Value{}
-	}
-	if record.ExplicitNulls == nil {
-		record.ExplicitNulls = map[string]bool{}
+	updates := storage.Record{
+		ID:            record.ID,
+		Object:        objectName,
+		Fields:        map[string]storage.Value{},
+		ExplicitNulls: map[string]bool{},
 	}
 	for fieldName, raw := range req.Fields {
 		if strings.EqualFold(fieldName, "Id") {
 			continue
 		}
 		if raw == nil {
-			delete(record.Fields, fieldName)
-			record.ExplicitNulls[fieldName] = true
+			updates.ExplicitNulls[fieldName] = true
 			continue
 		}
-		record.Fields[fieldName] = storageValueFromAny(raw)
-		delete(record.ExplicitNulls, fieldName)
+		updates.Fields[fieldName] = storageValueFromAny(raw)
 	}
-	object.Records[record.ID] = record
-	org.Objects[objectName] = object
-	return recordWireMutationPayload(objectName, record), nil
+	engine := dml.NewEngine(org)
+	results := engine.Update([]storage.Record{updates})
+	if len(results) != 1 || !results[0].Success {
+		return nil, wireErrorFromDMLResult(firstDMLResult(results, "update failed"))
+	}
+	stored := org.Objects[objectName].Records[record.ID]
+	stored.ID = record.ID
+	return recordWireMutationPayload(objectName, stored), nil
 }
 
 func deleteRecordWireData(org *storage.OrgState, recordID string) (map[string]any, *lwcbrowser.WireError) {
@@ -353,11 +347,30 @@ func deleteRecordWireData(org *storage.OrgState, recordID string) (map[string]an
 	if !ok {
 		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("record not found: %s", recordID)}
 	}
-	object := org.Objects[objectName]
-	record.System.IsDeleted = true
-	object.Records[record.ID] = record
-	org.Objects[objectName] = object
+	engine := dml.NewEngine(org)
+	results := engine.Delete([]storage.Record{{ID: record.ID, Object: objectName}})
+	if len(results) != 1 || !results[0].Success {
+		return nil, wireErrorFromDMLResult(firstDMLResult(results, "delete failed"))
+	}
 	return map[string]any{"id": string(record.ID), "apiName": objectName, "deleted": true}, nil
+}
+
+func firstDMLResult(results []dml.Result, fallback string) dml.Result {
+	if len(results) > 0 {
+		return results[0]
+	}
+	return dml.Result{Error: fallback, StatusCode: "UNKNOWN_EXCEPTION"}
+}
+
+func wireErrorFromDMLResult(result dml.Result) *lwcbrowser.WireError {
+	if len(result.Errors) > 0 {
+		err := result.Errors[0]
+		return &lwcbrowser.WireError{Type: err.StatusCode, Message: err.Message}
+	}
+	if strings.TrimSpace(result.StatusCode) != "" || strings.TrimSpace(result.Error) != "" {
+		return &lwcbrowser.WireError{Type: result.StatusCode, Message: result.Error}
+	}
+	return &lwcbrowser.WireError{Message: "DML operation failed"}
 }
 
 func recordWireMutationPayload(objectName string, record storage.Record) map[string]any {
