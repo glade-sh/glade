@@ -2825,12 +2825,22 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 1 || args[0].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setClientCertificateName expects String")
 			}
-			return Null, receiver, false, true, unsupportedCallError("HttpRequest.setClientCertificateName local client certificate callout surface")
+			name := strings.TrimSpace(args[0].Text)
+			if !vm.hasLocalClientCertificate(name) {
+				return Null, receiver, false, true, newExceptionError("CalloutException", fmt.Sprintf("HttpRequest client certificate %s was not found in local certificate metadata", name))
+			}
+			receiver.Fields["clientCertificateName"] = String(name)
+			receiver.Fields["clientCertificateSource"] = String("named")
+			receiver.Fields["clientCertificatePasswordPresent"] = Bool(false)
+			return Null, receiver, true, true, nil
 		case "setClientCertificate":
 			if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setClientCertificate expects certificate and password Strings")
 			}
-			return Null, receiver, false, true, unsupportedCallError("HttpRequest.setClientCertificate local client certificate callout surface")
+			receiver.Fields["clientCertificate"] = args[0]
+			receiver.Fields["clientCertificateSource"] = String("inline")
+			receiver.Fields["clientCertificatePasswordPresent"] = Bool(args[1].Text != "")
+			return Null, receiver, true, true, nil
 		case "setHeader":
 			if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setHeader expects name and value Strings")
@@ -3250,7 +3260,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "Messaging.MassEmailMessage":
 		return callMassEmailMessageMember(receiver, method, args)
 	case "Messaging.SendEmailOptions":
-		return Null, receiver, false, true, unsupportedCallError("Messaging.SendEmailOptions." + method + " local messaging send-options surface")
+		return callSendEmailOptionsMember(receiver, method, args)
 	case "Request", "System.Request":
 		return vm.callRequestMember(receiver, method, args)
 	case "formulaeval.FormulaBuilder":
@@ -3643,6 +3653,56 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return value, updated, mutated, handled, err
 	}
 	return Null, receiver, false, false, nil
+}
+
+func callSendEmailOptionsMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method,
+		"setTriggerUserEmail", "getTriggerUserEmail",
+		"setTriggerOtherEmail", "getTriggerOtherEmail",
+		"setTriggerAutoResponseEmail", "getTriggerAutoResponseEmail",
+	)
+	fields := map[string]string{
+		"setTriggerUserEmail":         "triggerUserEmail",
+		"getTriggerUserEmail":         "triggerUserEmail",
+		"setTriggerOtherEmail":        "triggerOtherEmail",
+		"getTriggerOtherEmail":        "triggerOtherEmail",
+		"setTriggerAutoResponseEmail": "triggerAutoResponseEmail",
+		"getTriggerAutoResponseEmail": "triggerAutoResponseEmail",
+	}
+	field, ok := fields[method]
+	if !ok {
+		return Null, receiver, false, false, nil
+	}
+	if strings.HasPrefix(method, "set") {
+		if len(args) != 1 || args[0].Kind != ValueBool {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.SendEmailOptions.%s expects Boolean", method)
+		}
+		receiver.Fields[field] = args[0]
+		return Null, receiver, true, true, nil
+	}
+	if len(args) != 0 {
+		return Null, receiver, false, true, fmt.Errorf("Messaging.SendEmailOptions.%s expects 0 arguments", method)
+	}
+	if value, ok := receiver.Fields[field]; ok {
+		return value, receiver, false, true, nil
+	}
+	return Bool(false), receiver, false, true, nil
+}
+
+func (vm *VM) hasLocalClientCertificate(name string) bool {
+	if vm == nil || vm.Org == nil || strings.TrimSpace(name) == "" {
+		return false
+	}
+	for _, endpoint := range vm.Org.Metadata.Endpoints {
+		if !strings.EqualFold(strings.TrimSpace(endpoint.Name), name) {
+			continue
+		}
+		switch strings.ToLower(strings.TrimSpace(endpoint.Kind)) {
+		case "clientcertificate", "certificate", "certificateandkey":
+			return true
+		}
+	}
+	return false
 }
 
 func httpCalloutEndpointName(endpoint string) (string, bool) {

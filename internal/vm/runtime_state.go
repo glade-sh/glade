@@ -323,22 +323,35 @@ type Result struct {
 }
 
 type CapturedEmail struct {
-	Kind                string   `json:"kind"`
-	ToAddresses         []string `json:"toAddresses,omitempty"`
-	CcAddresses         []string `json:"ccAddresses,omitempty"`
-	BccAddresses        []string `json:"bccAddresses,omitempty"`
-	TargetObjectIDs     []string `json:"targetObjectIds,omitempty"`
-	WhatIDs             []string `json:"whatIds,omitempty"`
-	Subject             string   `json:"subject,omitempty"`
-	PlainTextBody       string   `json:"plainTextBody,omitempty"`
-	HTMLBody            string   `json:"htmlBody,omitempty"`
-	TemplateID          string   `json:"templateId,omitempty"`
-	TargetObjectID      string   `json:"targetObjectId,omitempty"`
-	WhatID              string   `json:"whatId,omitempty"`
-	SaveAsActivity      bool     `json:"saveAsActivity,omitempty"`
-	FileAttachments     []string `json:"fileAttachments,omitempty"`
-	EntityAttachments   []string `json:"entityAttachments,omitempty"`
-	DocumentAttachments []string `json:"documentAttachments,omitempty"`
+	Kind                         string   `json:"kind"`
+	ToAddresses                  []string `json:"toAddresses,omitempty"`
+	CcAddresses                  []string `json:"ccAddresses,omitempty"`
+	BccAddresses                 []string `json:"bccAddresses,omitempty"`
+	TargetObjectIDs              []string `json:"targetObjectIds,omitempty"`
+	WhatIDs                      []string `json:"whatIds,omitempty"`
+	Subject                      string   `json:"subject,omitempty"`
+	PlainTextBody                string   `json:"plainTextBody,omitempty"`
+	HTMLBody                     string   `json:"htmlBody,omitempty"`
+	TemplateID                   string   `json:"templateId,omitempty"`
+	TargetObjectID               string   `json:"targetObjectId,omitempty"`
+	WhatID                       string   `json:"whatId,omitempty"`
+	SaveAsActivity               bool     `json:"saveAsActivity,omitempty"`
+	FileAttachments              []string `json:"fileAttachments,omitempty"`
+	EntityAttachments            []string `json:"entityAttachments,omitempty"`
+	DocumentAttachments          []string `json:"documentAttachments,omitempty"`
+	ReplyTo                      string   `json:"replyTo,omitempty"`
+	SenderDisplayName            string   `json:"senderDisplayName,omitempty"`
+	Charset                      string   `json:"charset,omitempty"`
+	OrgWideEmailAddressID        string   `json:"orgWideEmailAddressId,omitempty"`
+	OptOutPolicy                 string   `json:"optOutPolicy,omitempty"`
+	EmailPriority                string   `json:"emailPriority,omitempty"`
+	BccSender                    bool     `json:"bccSender,omitempty"`
+	UseSignature                 bool     `json:"useSignature,omitempty"`
+	TreatBodiesAsTemplate        bool     `json:"treatBodiesAsTemplate,omitempty"`
+	TreatTargetObjectAsRecipient bool     `json:"treatTargetObjectAsRecipient,omitempty"`
+	TriggerUserEmail             bool     `json:"triggerUserEmail,omitempty"`
+	TriggerOtherEmail            bool     `json:"triggerOtherEmail,omitempty"`
+	TriggerAutoResponseEmail     bool     `json:"triggerAutoResponseEmail,omitempty"`
 }
 
 type sideEffectSnapshot struct {

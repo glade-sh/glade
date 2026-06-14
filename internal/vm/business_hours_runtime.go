@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,7 +18,34 @@ type businessHoursCalendar struct {
 	id       string
 	location *time.Location
 	windows  map[time.Weekday]businessHoursWindow
-	holidays map[string]struct{}
+	holidays []businessHoursHolidayRule
+}
+
+type businessHoursDayClosure struct {
+	allDay  bool
+	windows []businessHoursWindow
+}
+
+type businessHoursHolidayRule struct {
+	id          storage.ID
+	activity    time.Time
+	allDay      bool
+	window      businessHoursWindow
+	recurrence  businessHoursRecurrence
+	calendarIDs map[string]struct{}
+}
+
+type businessHoursRecurrence struct {
+	enabled    bool
+	typ        string
+	interval   int
+	start      time.Time
+	end        time.Time
+	hasEnd     bool
+	dayOfMonth int
+	dayMask    int
+	instance   int
+	month      time.Month
 }
 
 var businessHoursDayFields = []struct {
@@ -117,7 +145,7 @@ func (vm *VM) businessHoursCalendar(id string) (businessHoursCalendar, error) {
 	if err != nil {
 		return businessHoursCalendar{}, unsupportedCallError("BusinessHours timezone " + zoneID)
 	}
-	holidays, err := vm.businessHoursAllDayHolidays()
+	holidays, err := vm.businessHoursHolidayRules(string(record.ID))
 	if err != nil {
 		return businessHoursCalendar{}, err
 	}
@@ -148,73 +176,120 @@ func (vm *VM) businessHoursCalendar(id string) (businessHoursCalendar, error) {
 	return calendar, nil
 }
 
-func (vm *VM) businessHoursAllDayHolidays() (map[string]struct{}, error) {
-	holidays := make(map[string]struct{})
+func (vm *VM) businessHoursHolidayRules(calendarID string) ([]businessHoursHolidayRule, error) {
+	var holidays []businessHoursHolidayRule
 	if vm == nil || vm.Org == nil {
 		return holidays, nil
-	}
-	if vm.businessHoursHasServiceCalendarHolidayLinks() {
-		return nil, unsupportedCallError("BusinessHours service-calendar associations")
 	}
 	object, ok := vm.Org.Objects["Holiday"]
 	if !ok {
 		return holidays, nil
 	}
+	linkedCalendars := vm.businessHoursHolidayCalendarLinks()
 	for _, record := range object.Records {
-		if reason := businessHoursUnsupportedHolidayReason(record); reason != "" {
-			return nil, unsupportedCallError(reason)
+		rule, err := businessHoursParseHolidayRule(record)
+		if err != nil {
+			return nil, err
 		}
-		if !strings.EqualFold(storageStringField(record, "IsAllDay"), "true") {
+		for linked := range linkedCalendars[rule.id] {
+			if rule.calendarIDs == nil {
+				rule.calendarIDs = make(map[string]struct{})
+			}
+			rule.calendarIDs[linked] = struct{}{}
+		}
+		if len(rule.calendarIDs) != 0 {
+			if _, ok := rule.calendarIDs[calendarID]; !ok {
+				continue
+			}
+		}
+		if rule.activity.IsZero() {
 			continue
 		}
-		dateText := strings.TrimSpace(storageStringField(record, "ActivityDate"))
-		if _, err := time.Parse("2006-01-02", dateText); err != nil {
-			continue
-		}
-		holidays[dateText] = struct{}{}
+		holidays = append(holidays, rule)
 	}
 	return holidays, nil
 }
 
-func (vm *VM) businessHoursHasServiceCalendarHolidayLinks() bool {
+func (vm *VM) businessHoursHolidayCalendarLinks() map[storage.ID]map[string]struct{} {
+	links := make(map[storage.ID]map[string]struct{})
+	if vm == nil || vm.Org == nil {
+		return links
+	}
 	for _, objectName := range []string{"OperatingHoursHoliday", "BusinessHoursHoliday"} {
 		object, ok := vm.Org.Objects[objectName]
-		if ok && len(object.Records) > 0 {
-			return true
+		if !ok {
+			continue
+		}
+		for _, record := range object.Records {
+			holidayID := storage.ID(strings.TrimSpace(storageStringField(record, "HolidayId")))
+			calendarID := strings.TrimSpace(storageStringField(record, "OperatingHoursId"))
+			if calendarID == "" {
+				calendarID = strings.TrimSpace(storageStringField(record, "BusinessHoursId"))
+			}
+			if holidayID == "" || calendarID == "" {
+				continue
+			}
+			if links[holidayID] == nil {
+				links[holidayID] = make(map[string]struct{})
+			}
+			links[holidayID][calendarID] = struct{}{}
 		}
 	}
-	return false
+	return links
 }
 
-func businessHoursUnsupportedHolidayReason(record storage.Record) string {
-	if businessHoursHolidayFieldPresent(record, "BusinessHoursId") || businessHoursHolidayFieldPresent(record, "OperatingHoursId") {
-		return "BusinessHours service-calendar associations"
+func businessHoursParseHolidayRule(record storage.Record) (businessHoursHolidayRule, error) {
+	rule := businessHoursHolidayRule{id: record.ID}
+	if rule.id == "" {
+		rule.id = storage.ID(strings.TrimSpace(storageStringField(record, "Id")))
 	}
-	isAllDay := strings.TrimSpace(storageStringField(record, "IsAllDay"))
-	if isAllDay != "" && !strings.EqualFold(isAllDay, "true") {
-		return "BusinessHours partial-day holidays"
+	if directCalendarID := strings.TrimSpace(storageStringField(record, "BusinessHoursId")); directCalendarID != "" {
+		rule.calendarIDs = map[string]struct{}{directCalendarID: {}}
 	}
-	if !strings.EqualFold(isAllDay, "true") && (businessHoursHolidayFieldPresent(record, "StartTimeInMinutes") || businessHoursHolidayFieldPresent(record, "EndTimeInMinutes")) {
-		return "BusinessHours partial-day holidays"
-	}
-	if businessHoursHolidayMeaningfulField(record, "IsRecurrence") {
-		return "BusinessHours recurring holiday expansion"
-	}
-	for _, field := range []string{
-		"RecurrenceDayOfMonth",
-		"RecurrenceDayOfWeekMask",
-		"RecurrenceEndDateOnly",
-		"RecurrenceInstance",
-		"RecurrenceInterval",
-		"RecurrenceMonthOfYear",
-		"RecurrenceStartDate",
-		"RecurrenceType",
-	} {
-		if businessHoursHolidayMeaningfulField(record, field) {
-			return "BusinessHours recurring holiday expansion"
+	if directCalendarID := strings.TrimSpace(storageStringField(record, "OperatingHoursId")); directCalendarID != "" {
+		if rule.calendarIDs == nil {
+			rule.calendarIDs = make(map[string]struct{})
 		}
+		rule.calendarIDs[directCalendarID] = struct{}{}
 	}
-	return ""
+	activity, ok, err := businessHoursHolidayDate(record, "ActivityDate")
+	if err != nil {
+		return rule, err
+	}
+	if ok {
+		rule.activity = activity
+	}
+	allDay, ok, err := businessHoursHolidayBool(record, "IsAllDay")
+	if err != nil {
+		return rule, err
+	}
+	rule.allDay = !ok || allDay
+	if !rule.allDay {
+		start, ok, err := businessHoursHolidayInt(record, "StartTimeInMinutes")
+		if err != nil || !ok {
+			return rule, businessHoursMalformedHoliday("StartTimeInMinutes")
+		}
+		end, ok, err := businessHoursHolidayInt(record, "EndTimeInMinutes")
+		if err != nil || !ok {
+			return rule, businessHoursMalformedHoliday("EndTimeInMinutes")
+		}
+		if start < 0 || end < 0 || start >= end || end > 24*60 {
+			return rule, businessHoursMalformedHoliday("StartTimeInMinutes")
+		}
+		rule.window = businessHoursWindow{start: time.Duration(start) * time.Minute, end: time.Duration(end) * time.Minute}
+	}
+	recurs, ok, err := businessHoursHolidayBool(record, "IsRecurrence")
+	if err != nil {
+		return rule, err
+	}
+	if (ok && recurs) || businessHoursHolidayRecurrenceFieldPresent(record) {
+		recurrence, err := businessHoursParseRecurrence(record, rule.activity)
+		if err != nil {
+			return rule, err
+		}
+		rule.recurrence = recurrence
+	}
+	return rule, nil
 }
 
 func businessHoursHolidayFieldPresent(record storage.Record, field string) bool {
@@ -238,6 +313,193 @@ func businessHoursHolidayMeaningfulField(record storage.Record, field string) bo
 	default:
 		text := strings.TrimSpace(storageStringField(record, field))
 		return text != "" && text != "0" && text != "0.0" && !strings.EqualFold(text, "false")
+	}
+}
+
+func businessHoursHolidayRecurrenceFieldPresent(record storage.Record) bool {
+	for _, field := range []string{
+		"RecurrenceDayOfMonth",
+		"RecurrenceDayOfWeekMask",
+		"RecurrenceEndDateOnly",
+		"RecurrenceInstance",
+		"RecurrenceInterval",
+		"RecurrenceMonthOfYear",
+		"RecurrenceStartDate",
+		"RecurrenceType",
+	} {
+		if businessHoursHolidayMeaningfulField(record, field) {
+			return true
+		}
+	}
+	return false
+}
+
+func businessHoursParseRecurrence(record storage.Record, activity time.Time) (businessHoursRecurrence, error) {
+	recurrence := businessHoursRecurrence{enabled: true, interval: 1}
+	recurrence.typ = strings.TrimSpace(storageStringField(record, "RecurrenceType"))
+	if recurrence.typ == "" {
+		return recurrence, businessHoursMalformedHoliday("RecurrenceType")
+	}
+	switch recurrence.typ {
+	case "RecursDaily", "RecursWeekly", "RecursMonthly", "RecursYearly":
+	default:
+		return recurrence, businessHoursMalformedHoliday("RecurrenceType")
+	}
+	if interval, ok, err := businessHoursHolidayInt(record, "RecurrenceInterval"); err != nil {
+		return recurrence, err
+	} else if ok {
+		if interval <= 0 {
+			return recurrence, businessHoursMalformedHoliday("RecurrenceInterval")
+		}
+		recurrence.interval = interval
+	}
+	start, ok, err := businessHoursHolidayDate(record, "RecurrenceStartDate")
+	if err != nil {
+		return recurrence, err
+	}
+	if !ok {
+		start = activity
+	}
+	if start.IsZero() {
+		return recurrence, businessHoursMalformedHoliday("RecurrenceStartDate")
+	}
+	recurrence.start = start
+	end, ok, err := businessHoursHolidayDate(record, "RecurrenceEndDateOnly")
+	if err != nil {
+		return recurrence, err
+	}
+	if ok {
+		recurrence.end = end
+		recurrence.hasEnd = true
+	}
+	if dayOfMonth, ok, err := businessHoursHolidayInt(record, "RecurrenceDayOfMonth"); err != nil {
+		return recurrence, err
+	} else if ok {
+		if dayOfMonth < 1 || dayOfMonth > 31 {
+			return recurrence, businessHoursMalformedHoliday("RecurrenceDayOfMonth")
+		}
+		recurrence.dayOfMonth = dayOfMonth
+	}
+	if dayMask, ok, err := businessHoursHolidayInt(record, "RecurrenceDayOfWeekMask"); err != nil {
+		return recurrence, err
+	} else if ok {
+		if dayMask < 0 || dayMask > 127 {
+			return recurrence, businessHoursMalformedHoliday("RecurrenceDayOfWeekMask")
+		}
+		recurrence.dayMask = dayMask
+	}
+	instance := strings.TrimSpace(storageStringField(record, "RecurrenceInstance"))
+	if instance != "" {
+		parsed, ok := businessHoursRecurrenceInstance(instance)
+		if !ok {
+			return recurrence, businessHoursMalformedHoliday("RecurrenceInstance")
+		}
+		recurrence.instance = parsed
+	}
+	month := strings.TrimSpace(storageStringField(record, "RecurrenceMonthOfYear"))
+	if month != "" {
+		parsed, ok := businessHoursRecurrenceMonth(month)
+		if !ok {
+			return recurrence, businessHoursMalformedHoliday("RecurrenceMonthOfYear")
+		}
+		recurrence.month = parsed
+	}
+	return recurrence, nil
+}
+
+func businessHoursMalformedHoliday(field string) error {
+	return unsupportedCallError("BusinessHours malformed local holiday metadata " + field)
+}
+
+func businessHoursHolidayDate(record storage.Record, field string) (time.Time, bool, error) {
+	if !businessHoursHolidayFieldPresent(record, field) {
+		return time.Time{}, false, nil
+	}
+	text := strings.TrimSpace(storageStringField(record, field))
+	if text == "" {
+		return time.Time{}, false, businessHoursMalformedHoliday(field)
+	}
+	parsed, err := time.Parse("2006-01-02", text)
+	if err != nil {
+		return time.Time{}, false, businessHoursMalformedHoliday(field)
+	}
+	return parsed, true, nil
+}
+
+func businessHoursHolidayBool(record storage.Record, field string) (bool, bool, error) {
+	if !businessHoursHolidayFieldPresent(record, field) {
+		return false, false, nil
+	}
+	text := strings.TrimSpace(storageStringField(record, field))
+	if strings.EqualFold(text, "true") {
+		return true, true, nil
+	}
+	if strings.EqualFold(text, "false") {
+		return false, true, nil
+	}
+	return false, false, businessHoursMalformedHoliday(field)
+}
+
+func businessHoursHolidayInt(record storage.Record, field string) (int, bool, error) {
+	if !businessHoursHolidayFieldPresent(record, field) {
+		return 0, false, nil
+	}
+	text := strings.TrimSpace(storageStringField(record, field))
+	if text == "" {
+		return 0, false, businessHoursMalformedHoliday(field)
+	}
+	value, err := strconv.Atoi(text)
+	if err != nil {
+		return 0, false, businessHoursMalformedHoliday(field)
+	}
+	return value, true, nil
+}
+
+func businessHoursRecurrenceInstance(text string) (int, bool) {
+	switch strings.ToLower(strings.TrimSpace(text)) {
+	case "first", "1", "1st":
+		return 1, true
+	case "second", "2", "2nd":
+		return 2, true
+	case "third", "3", "3rd":
+		return 3, true
+	case "fourth", "4", "4th":
+		return 4, true
+	case "last":
+		return -1, true
+	default:
+		return 0, false
+	}
+}
+
+func businessHoursRecurrenceMonth(text string) (time.Month, bool) {
+	switch strings.ToLower(strings.TrimSpace(text)) {
+	case "1", "january":
+		return time.January, true
+	case "2", "february":
+		return time.February, true
+	case "3", "march":
+		return time.March, true
+	case "4", "april":
+		return time.April, true
+	case "5", "may":
+		return time.May, true
+	case "6", "june":
+		return time.June, true
+	case "7", "july":
+		return time.July, true
+	case "8", "august":
+		return time.August, true
+	case "9", "september":
+		return time.September, true
+	case "10", "october":
+		return time.October, true
+	case "11", "november":
+		return time.November, true
+	case "12", "december":
+		return time.December, true
+	default:
+		return 0, false
 	}
 }
 
@@ -286,15 +548,13 @@ func businessHoursTimeOfDay(text string) (time.Duration, error) {
 
 func (calendar businessHoursCalendar) isWithin(instant time.Time) bool {
 	local := instant.In(calendar.location)
-	if calendar.isHoliday(local) {
-		return false
-	}
-	window, ok := calendar.windows[local.Weekday()]
-	if !ok {
-		return false
-	}
 	offset := businessHoursLocalOffset(local)
-	return offset >= window.start && offset < window.end
+	for _, segment := range calendar.openSegments(local) {
+		if offset >= segment.start && offset < segment.end {
+			return true
+		}
+	}
+	return false
 }
 
 func (calendar businessHoursCalendar) add(start time.Time, amount time.Duration) time.Time {
@@ -307,9 +567,10 @@ func (calendar businessHoursCalendar) add(start time.Time, amount time.Duration)
 	remaining := amount
 	cursor := start.In(calendar.location)
 	for remaining > 0 {
-		window, ok := calendar.windows[cursor.Weekday()]
+		segments := calendar.openSegments(cursor)
 		offset := businessHoursLocalOffset(cursor)
-		if calendar.isHoliday(cursor) || !ok || offset >= window.end {
+		segment, ok := businessHoursCurrentOrNextSegment(segments, offset)
+		if !ok {
 			next, nextOK := calendar.nextStart(cursor)
 			if !nextOK {
 				return cursor.UTC()
@@ -317,15 +578,15 @@ func (calendar businessHoursCalendar) add(start time.Time, amount time.Duration)
 			cursor = next.In(calendar.location)
 			continue
 		}
-		if offset < window.start {
-			cursor = businessHoursLocalAt(cursor, window.start, calendar.location)
-			offset = window.start
+		if offset < segment.start {
+			cursor = businessHoursLocalAt(cursor, segment.start, calendar.location)
+			offset = segment.start
 		}
-		available := window.end - offset
+		available := segment.end - offset
 		if remaining <= available {
 			return cursor.Add(remaining).UTC()
 		}
-		cursor = businessHoursLocalAt(cursor, window.end, calendar.location)
+		cursor = businessHoursLocalAt(cursor, segment.end, calendar.location)
 		remaining -= available
 	}
 	return cursor.UTC()
@@ -335,9 +596,10 @@ func (calendar businessHoursCalendar) addBackward(start time.Time, amount time.D
 	remaining := amount
 	cursor := start.In(calendar.location)
 	for remaining > 0 {
-		window, ok := calendar.windows[cursor.Weekday()]
+		segments := calendar.openSegments(cursor)
 		offset := businessHoursLocalOffset(cursor)
-		if calendar.isHoliday(cursor) || !ok || offset <= window.start {
+		segment, ok := businessHoursCurrentOrPreviousSegment(segments, offset)
+		if !ok {
 			previous, previousOK := calendar.previousEnd(cursor)
 			if !previousOK {
 				return cursor.UTC()
@@ -345,15 +607,15 @@ func (calendar businessHoursCalendar) addBackward(start time.Time, amount time.D
 			cursor = previous.In(calendar.location)
 			continue
 		}
-		if offset > window.end {
-			cursor = businessHoursLocalAt(cursor, window.end, calendar.location)
-			offset = window.end
+		if offset > segment.end {
+			cursor = businessHoursLocalAt(cursor, segment.end, calendar.location)
+			offset = segment.end
 		}
-		available := offset - window.start
+		available := offset - segment.start
 		if remaining <= available {
 			return cursor.Add(-remaining).UTC()
 		}
-		cursor = businessHoursLocalAt(cursor, window.start, calendar.location)
+		cursor = businessHoursLocalAt(cursor, segment.start, calendar.location)
 		remaining -= available
 	}
 	return cursor.UTC()
@@ -367,9 +629,10 @@ func (calendar businessHoursCalendar) diff(start, end time.Time) time.Duration {
 	cursor := start.In(calendar.location)
 	limit := end.In(calendar.location)
 	for cursor.Before(limit) {
-		window, ok := calendar.windows[cursor.Weekday()]
+		segments := calendar.openSegments(cursor)
 		offset := businessHoursLocalOffset(cursor)
-		if calendar.isHoliday(cursor) || !ok || offset >= window.end {
+		segment, ok := businessHoursCurrentOrNextSegment(segments, offset)
+		if !ok {
 			next, nextOK := calendar.nextStart(cursor)
 			if !nextOK || !next.Before(limit) {
 				break
@@ -377,14 +640,14 @@ func (calendar businessHoursCalendar) diff(start, end time.Time) time.Duration {
 			cursor = next.In(calendar.location)
 			continue
 		}
-		if offset < window.start {
-			cursor = businessHoursLocalAt(cursor, window.start, calendar.location)
+		if offset < segment.start {
+			cursor = businessHoursLocalAt(cursor, segment.start, calendar.location)
 			if !cursor.Before(limit) {
 				break
 			}
-			offset = window.start
+			offset = segment.start
 		}
-		windowEnd := businessHoursLocalAt(cursor, window.end, calendar.location)
+		windowEnd := businessHoursLocalAt(cursor, segment.end, calendar.location)
 		if windowEnd.After(limit) {
 			windowEnd = limit
 		}
@@ -404,16 +667,11 @@ func (calendar businessHoursCalendar) nextStart(instant time.Time) (time.Time, b
 	local := instant.In(calendar.location)
 	for i := 0; i < 8; i++ {
 		day := local.AddDate(0, 0, i)
-		if calendar.isHoliday(day) {
-			continue
-		}
-		window, ok := calendar.windows[day.Weekday()]
-		if !ok {
-			continue
-		}
-		start := businessHoursLocalAt(day, window.start, calendar.location)
-		if !start.Before(local) {
-			return start.UTC(), true
+		for _, segment := range calendar.openSegments(day) {
+			start := businessHoursLocalAt(day, segment.start, calendar.location)
+			if !start.Before(local) {
+				return start.UTC(), true
+			}
 		}
 	}
 	return time.Time{}, false
@@ -423,27 +681,182 @@ func (calendar businessHoursCalendar) previousEnd(instant time.Time) (time.Time,
 	local := instant.In(calendar.location)
 	for i := 0; i < 8; i++ {
 		day := local.AddDate(0, 0, -i)
-		if calendar.isHoliday(day) {
-			continue
-		}
-		window, ok := calendar.windows[day.Weekday()]
-		if !ok {
-			continue
-		}
-		end := businessHoursLocalAt(day, window.end, calendar.location)
-		if !end.After(local) {
-			return end.UTC(), true
+		segments := calendar.openSegments(day)
+		for index := len(segments) - 1; index >= 0; index-- {
+			end := businessHoursLocalAt(day, segments[index].end, calendar.location)
+			if !end.After(local) {
+				return end.UTC(), true
+			}
 		}
 	}
 	return time.Time{}, false
 }
 
-func (calendar businessHoursCalendar) isHoliday(local time.Time) bool {
-	if len(calendar.holidays) == 0 {
+func (calendar businessHoursCalendar) openSegments(local time.Time) []businessHoursWindow {
+	window, ok := calendar.windows[local.Weekday()]
+	if !ok {
+		return nil
+	}
+	closure := calendar.holidayClosure(local)
+	if closure.allDay {
+		return nil
+	}
+	segments := []businessHoursWindow{window}
+	for _, closed := range closure.windows {
+		segments = businessHoursSubtractWindow(segments, closed)
+	}
+	return segments
+}
+
+func (calendar businessHoursCalendar) holidayClosure(local time.Time) businessHoursDayClosure {
+	var closure businessHoursDayClosure
+	for _, holiday := range calendar.holidays {
+		if !holiday.matches(local) {
+			continue
+		}
+		if holiday.allDay {
+			closure.allDay = true
+			closure.windows = nil
+			return closure
+		}
+		closure.windows = append(closure.windows, holiday.window)
+	}
+	return closure
+}
+
+func businessHoursCurrentOrNextSegment(segments []businessHoursWindow, offset time.Duration) (businessHoursWindow, bool) {
+	for _, segment := range segments {
+		if offset < segment.end {
+			return segment, true
+		}
+	}
+	return businessHoursWindow{}, false
+}
+
+func businessHoursCurrentOrPreviousSegment(segments []businessHoursWindow, offset time.Duration) (businessHoursWindow, bool) {
+	for index := len(segments) - 1; index >= 0; index-- {
+		if offset > segments[index].start {
+			return segments[index], true
+		}
+	}
+	return businessHoursWindow{}, false
+}
+
+func businessHoursSubtractWindow(segments []businessHoursWindow, closed businessHoursWindow) []businessHoursWindow {
+	var out []businessHoursWindow
+	for _, segment := range segments {
+		if closed.end <= segment.start || closed.start >= segment.end {
+			out = append(out, segment)
+			continue
+		}
+		if closed.start > segment.start {
+			out = append(out, businessHoursWindow{start: segment.start, end: minDuration(closed.start, segment.end)})
+		}
+		if closed.end < segment.end {
+			out = append(out, businessHoursWindow{start: maxDuration(closed.end, segment.start), end: segment.end})
+		}
+	}
+	return out
+}
+
+func (holiday businessHoursHolidayRule) matches(local time.Time) bool {
+	day := businessHoursDateOnly(local)
+	if !holiday.recurrence.enabled {
+		return businessHoursSameDate(day, holiday.activity)
+	}
+	recurrence := holiday.recurrence
+	if day.Before(recurrence.start) {
 		return false
 	}
-	_, ok := calendar.holidays[local.Format("2006-01-02")]
-	return ok
+	if recurrence.hasEnd && day.After(recurrence.end) {
+		return false
+	}
+	switch recurrence.typ {
+	case "RecursDaily":
+		return int(day.Sub(recurrence.start).Hours()/24)%recurrence.interval == 0
+	case "RecursWeekly":
+		weeks := int(businessHoursWeekStart(day).Sub(businessHoursWeekStart(recurrence.start)).Hours() / 24 / 7)
+		return weeks >= 0 && weeks%recurrence.interval == 0 && businessHoursDayMaskMatches(recurrenceMaskOrWeekday(recurrence.dayMask, recurrence.start.Weekday()), day.Weekday())
+	case "RecursMonthly":
+		months := businessHoursMonthsBetween(recurrence.start, day)
+		return months >= 0 && months%recurrence.interval == 0 && businessHoursMatchesMonthlyDay(recurrence, holiday.activity, day)
+	case "RecursYearly":
+		years := day.Year() - recurrence.start.Year()
+		if years < 0 || years%recurrence.interval != 0 {
+			return false
+		}
+		month := recurrence.month
+		if month == 0 {
+			month = holiday.activity.Month()
+		}
+		return day.Month() == month && businessHoursMatchesMonthlyDay(recurrence, holiday.activity, day)
+	default:
+		return false
+	}
+}
+
+func businessHoursMatchesMonthlyDay(recurrence businessHoursRecurrence, activity time.Time, day time.Time) bool {
+	if recurrence.dayOfMonth != 0 {
+		return day.Day() == recurrence.dayOfMonth
+	}
+	if recurrence.instance != 0 {
+		mask := recurrenceMaskOrWeekday(recurrence.dayMask, activity.Weekday())
+		return businessHoursDayMaskMatches(mask, day.Weekday()) && businessHoursWeekdayInstance(day) == recurrence.instance
+	}
+	if !activity.IsZero() {
+		return day.Day() == activity.Day()
+	}
+	return false
+}
+
+func businessHoursWeekdayInstance(day time.Time) int {
+	nextWeek := day.AddDate(0, 0, 7)
+	if nextWeek.Month() != day.Month() {
+		return -1
+	}
+	return ((day.Day() - 1) / 7) + 1
+}
+
+func recurrenceMaskOrWeekday(mask int, weekday time.Weekday) int {
+	if mask != 0 {
+		return mask
+	}
+	return 1 << int(weekday)
+}
+
+func businessHoursDayMaskMatches(mask int, weekday time.Weekday) bool {
+	return mask&(1<<int(weekday)) != 0
+}
+
+func businessHoursWeekStart(day time.Time) time.Time {
+	date := businessHoursDateOnly(day)
+	return date.AddDate(0, 0, -int(date.Weekday()))
+}
+
+func businessHoursMonthsBetween(start, day time.Time) int {
+	return (day.Year()-start.Year())*12 + int(day.Month()-start.Month())
+}
+
+func businessHoursDateOnly(value time.Time) time.Time {
+	return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+func businessHoursSameDate(left, right time.Time) bool {
+	return left.Year() == right.Year() && left.Month() == right.Month() && left.Day() == right.Day()
+}
+
+func minDuration(left, right time.Duration) time.Duration {
+	if left < right {
+		return left
+	}
+	return right
+}
+
+func maxDuration(left, right time.Duration) time.Duration {
+	if left > right {
+		return left
+	}
+	return right
 }
 
 func businessHoursLocalOffset(value time.Time) time.Duration {

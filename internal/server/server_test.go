@@ -5980,39 +5980,6 @@ func addAccountForTest(org *storage.OrgState, id storage.ID, name string) {
 	org.Objects["Account"] = object
 }
 
-func resetScopeTestOrg() storage.OrgState {
-	org := testOrg()
-	storage.EnsureDeterministicPlatformData(&org)
-	org.Objects["Account"].Records["001000000000001"] = storage.Record{
-		ID:     "001000000000001",
-		Object: "Account",
-		Fields: map[string]storage.Value{
-			"Id":   storage.StringValue("001000000000001"),
-			"Name": storage.StringValue("Acme"),
-		},
-	}
-	userObject := org.Objects["User"]
-	userObject.Records["005000000000999"] = storage.Record{
-		ID:     "005000000000999",
-		Object: "User",
-		Fields: map[string]storage.Value{
-			"Id":       storage.StringValue("005000000000999"),
-			"Username": storage.StringValue("extra@example.test"),
-			"Alias":    storage.StringValue("extra"),
-			"Email":    storage.StringValue("extra@example.test"),
-			"IsActive": storage.BooleanValue(true),
-			"UserType": storage.StringValue("Standard"),
-		},
-	}
-	org.Objects["User"] = userObject
-	return org
-}
-
-func addUser(org *storage.OrgState, id storage.ID, username, email, name string) {
-	storage.EnsureDeterministicPlatformData(org)
-	userObject := org.Objects["User"]
-	userObject.Records[id] = userRecordForTest(id, username, email, name)
-	org.Objects["User"] = userObject
 func addOrderChildForCompositeTreeTest(org *storage.OrgState) {
 	account := org.Objects["Account"]
 	account.Definition.Relations = append(account.Definition.Relations, storage.Relationship{
@@ -6061,6 +6028,39 @@ func addContactChildForCompositeTreeTest(org *storage.OrgState) {
 	}
 }
 
+func resetScopeTestOrg() storage.OrgState {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	org.Objects["Account"].Records["001000000000001"] = storage.Record{
+		ID:     "001000000000001",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Id":   storage.StringValue("001000000000001"),
+			"Name": storage.StringValue("Acme"),
+		},
+	}
+	userObject := org.Objects["User"]
+	userObject.Records["005000000000999"] = storage.Record{
+		ID:     "005000000000999",
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"Id":       storage.StringValue("005000000000999"),
+			"Username": storage.StringValue("extra@example.test"),
+			"Alias":    storage.StringValue("extra"),
+			"Email":    storage.StringValue("extra@example.test"),
+			"IsActive": storage.BooleanValue(true),
+			"UserType": storage.StringValue("Standard"),
+		},
+	}
+	org.Objects["User"] = userObject
+	return org
+}
+
+func addUser(org *storage.OrgState, id storage.ID, username, email, name string) {
+	storage.EnsureDeterministicPlatformData(org)
+	userObject := org.Objects["User"]
+	userObject.Records[id] = userRecordForTest(id, username, email, name)
+	org.Objects["User"] = userObject
 }
 
 func userRecordForTest(id storage.ID, username, email, name string) storage.Record {
