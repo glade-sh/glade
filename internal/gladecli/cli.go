@@ -398,6 +398,12 @@ func printHelpTopic(w io.Writer, args []string) {
 			return
 		}
 		_ = cliui.WriteCommandHelp(w, args)
+	case "dev":
+		if len(args) >= 2 && args[1] == "vf" {
+			printDevVFHelp(w)
+			return
+		}
+		_ = cliui.WriteCommandHelp(w, args)
 	default:
 		_ = cliui.WriteCommandHelp(w, args)
 	}

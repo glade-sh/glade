@@ -28,6 +28,7 @@ type Page struct {
 	File                string           `json:"file,omitempty"`
 	Controller          string           `json:"controller,omitempty"`
 	StandardController  string           `json:"standardController,omitempty"`
+	RecordSetVar        string           `json:"recordSetVar,omitempty"`
 	Extensions          []string         `json:"extensions,omitempty"`
 	Action              string           `json:"action,omitempty"`
 	ComponentAttributes []Attribute      `json:"componentAttributes,omitempty"`
@@ -105,6 +106,7 @@ func ParsePageFile(path string) (Page, error) {
 			if strings.EqualFold(token.Local, "page") && page.Controller == "" && page.StandardController == "" {
 				page.Controller = attr(token.Attrs, "controller")
 				page.StandardController = attr(token.Attrs, "standardController")
+				page.RecordSetVar = attr(token.Attrs, "recordSetVar")
 				page.Extensions = splitCSV(attr(token.Attrs, "extensions"))
 				page.Action = attr(token.Attrs, "action")
 			}

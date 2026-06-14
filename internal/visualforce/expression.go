@@ -2,6 +2,8 @@ package visualforce
 
 import (
 	"fmt"
+	"html"
+	"net/url"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/resource"
@@ -41,25 +43,60 @@ func RenderExpressionTemplate(raw string, ctx *ExpressionContext) (string, error
 	if !strings.Contains(raw, "{!") {
 		return raw, nil
 	}
-	out := raw
-	for {
-		start := strings.Index(out, "{!")
-		if start < 0 {
+	var out strings.Builder
+	pos := 0
+	for pos < len(raw) {
+		next := strings.Index(raw[pos:], "{!")
+		if next < 0 {
+			out.WriteString(raw[pos:])
 			break
 		}
-		end := strings.Index(out[start:], "}")
+		start := pos + next
+		out.WriteString(raw[pos:start])
+		end := findExpressionTemplateEnd(raw, start+2)
 		if end < 0 {
+			out.WriteString(raw[start:])
 			break
 		}
-		end += start
-		exprText := strings.TrimSpace(out[start+2 : end])
+		exprText := strings.TrimSpace(raw[start+2 : end])
 		value, err := EvaluateExpression(exprText, ctx)
 		if err != nil {
 			return "", err
 		}
-		out = out[:start] + value + out[end+1:]
+		out.WriteString(value)
+		pos = end + 1
 	}
-	return out, nil
+	return out.String(), nil
+}
+
+func findExpressionTemplateEnd(raw string, offset int) int {
+	var quote rune
+	escaped := false
+	for i, r := range raw[offset:] {
+		pos := offset + i
+		if quote != 0 {
+			if escaped {
+				escaped = false
+				continue
+			}
+			if r == '\\' {
+				escaped = true
+				continue
+			}
+			if r == quote {
+				quote = 0
+			}
+			continue
+		}
+		if r == '\'' || r == '"' {
+			quote = r
+			continue
+		}
+		if r == '}' {
+			return pos
+		}
+	}
+	return -1
 }
 
 type ExpressionContext struct {
@@ -98,13 +135,17 @@ func (expr identifierExpr) Eval(ctx *ExpressionContext) *vm.Value {
 	if len(expr.parts) == 0 {
 		return &vm.Null
 	}
-	if expr.parts[0] == "$label" {
+	if strings.EqualFold(expr.parts[0], "$label") {
 		label := resolveLabel(expr.parts, ctx)
 		return &label
 	}
-	if expr.parts[0] == "$resource" {
+	if strings.EqualFold(expr.parts[0], "$resource") {
 		resourceValue := resolveResource(expr.parts, ctx)
 		return &resourceValue
+	}
+	if strings.EqualFold(expr.parts[0], "$currentpage") {
+		value := resolveValueByIdentifier(ctx, expr.parts)
+		return &value
 	}
 	value := resolveValueByIdentifier(ctx, expr.parts)
 	return &value
@@ -144,21 +185,84 @@ func (expr functionExpr) Eval(ctx *ExpressionContext) *vm.Value {
 			return &vm.Null
 		}
 		return value
-	case "JSENCODE", "HTMLENCODE":
+	case "UPPER":
+		return evalVisualforceStringFunction(ctx, expr.args, strings.ToUpper)
+	case "LOWER":
+		return evalVisualforceStringFunction(ctx, expr.args, strings.ToLower)
+	case "URLENCODE":
+		return evalVisualforceStringFunction(ctx, expr.args, url.QueryEscape)
+	case "URLDECODE":
+		return evalVisualforceURLDecodeFunction(ctx, expr.args)
+	case "JSENCODE":
+		return evalVisualforceStringFunction(ctx, expr.args, EscapeVisualforceJavaScriptString)
+	case "HTMLENCODE":
+		return evalVisualforceStringFunction(ctx, expr.args, html.EscapeString)
+	case "ISBLANK":
+		if len(expr.args) == 0 {
+			out := vm.Bool(true)
+			return &out
+		}
+		value := expr.args[0].Eval(ctx)
+		out := vm.Bool(value == nil || isValueNullOrBlank(*value))
+		return &out
+	case "NOT":
 		if len(expr.args) == 0 {
 			return &vm.Null
 		}
-		value := expr.args[0].Eval(ctx)
-		if value == nil {
-			return &vm.Null
+		out := vm.Bool(!isTruthy(expr.args[0].Eval(ctx)))
+		return &out
+	case "AND":
+		for _, arg := range expr.args {
+			if !isTruthy(arg.Eval(ctx)) {
+				out := vm.Bool(false)
+				return &out
+			}
 		}
-		return value
+		out := vm.Bool(true)
+		return &out
+	case "OR":
+		for _, arg := range expr.args {
+			if isTruthy(arg.Eval(ctx)) {
+				out := vm.Bool(true)
+				return &out
+			}
+		}
+		out := vm.Bool(false)
+		return &out
 	default:
 		if len(expr.args) == 0 {
 			return &vm.Null
 		}
 		return expr.args[0].Eval(ctx)
 	}
+}
+
+func evalVisualforceStringFunction(ctx *ExpressionContext, args []Expression, transform func(string) string) *vm.Value {
+	if len(args) == 0 {
+		return &vm.Null
+	}
+	value := args[0].Eval(ctx)
+	if value == nil || value.Kind == vm.ValueNull {
+		return &vm.Null
+	}
+	out := vm.String(transform(value.String()))
+	return &out
+}
+
+func evalVisualforceURLDecodeFunction(ctx *ExpressionContext, args []Expression) *vm.Value {
+	if len(args) == 0 {
+		return &vm.Null
+	}
+	value := args[0].Eval(ctx)
+	if value == nil || value.Kind == vm.ValueNull {
+		return &vm.Null
+	}
+	decoded, err := url.QueryUnescape(value.String())
+	if err != nil {
+		return value
+	}
+	out := vm.String(decoded)
+	return &out
 }
 
 func isTruthy(raw *vm.Value) bool {
@@ -203,24 +307,35 @@ func parseExpression(source string) (Expression, error) {
 	return expr, nil
 }
 
-func (p *exprParser) parseExpression() (Expression, error) {
+func (p *exprParser) parsePrimary() (Expression, error) {
 	p.skipSpace()
 	if p.pos >= len(p.source) {
 		return nil, errNoExpression
 	}
 	ch := p.source[p.pos]
+	if p.matchWord("TRUE") {
+		return literalExpr{value: vm.Bool(true)}, nil
+	}
+	if p.matchWord("FALSE") {
+		return literalExpr{value: vm.Bool(false)}, nil
+	}
 	switch {
 	case ch == '\'' || ch == '"':
 		return p.parseString()
-	case ch == 't' || ch == 'f':
-		if strings.HasPrefix(strings.ToLower(p.source[p.pos:]), "true") {
-			p.pos += 4
-			return literalExpr{value: vm.Bool(true)}, nil
+	case ch == '(':
+		p.pos++
+		expr, err := p.parseExpression()
+		if err != nil {
+			return nil, err
 		}
-		if strings.HasPrefix(strings.ToLower(p.source[p.pos:]), "false") {
-			p.pos += 5
-			return literalExpr{value: vm.Bool(false)}, nil
+		p.skipSpace()
+		if p.pos >= len(p.source) || p.source[p.pos] != ')' {
+			return nil, fmt.Errorf("missing ')' in expression")
 		}
+		p.pos++
+		return expr, nil
+	case isDigit(ch):
+		return p.parseNumber()
 	case isAlpha(ch) || ch == '_' || ch == '$':
 		return p.parseIdentifierOrCall()
 	}
@@ -284,7 +399,7 @@ func (p *exprParser) parseIdentifierParts() ([]string, error) {
 	if part == "" {
 		return nil, fmt.Errorf("expected identifier")
 	}
-	parts := []string{strings.ToLower(part)}
+	parts := []string{part}
 	for {
 		p.skipSpace()
 		if p.pos >= len(p.source) || p.source[p.pos] != '.' {
@@ -295,7 +410,7 @@ func (p *exprParser) parseIdentifierParts() ([]string, error) {
 		if next == "" {
 			return nil, fmt.Errorf("expected identifier after '.'")
 		}
-		parts = append(parts, strings.ToLower(next))
+		parts = append(parts, next)
 	}
 	return parts, nil
 }
@@ -376,7 +491,7 @@ func resolveLabel(parts []string, ctx *ExpressionContext) vm.Value {
 }
 
 func resolveResource(parts []string, ctx *ExpressionContext) vm.Value {
-	if len(parts) < 2 || ctx == nil || ctx.VM == nil || ctx.VM.Org == nil {
+	if len(parts) < 2 || ctx == nil || ctx.VM == nil {
 		return vm.String("/resource")
 	}
 	if len(parts) == 2 {
@@ -407,9 +522,6 @@ func resolveValueByIdentifier(ctx *ExpressionContext, parts []string) vm.Value {
 		return vm.Null
 	}
 	for _, field := range chain {
-		if value.Kind != vm.ValueObject {
-			return vm.Null
-		}
 		next, ok := readObjectMember(ctx, value, field)
 		if !ok {
 			return vm.Null
@@ -420,15 +532,32 @@ func resolveValueByIdentifier(ctx *ExpressionContext, parts []string) vm.Value {
 }
 
 func readObjectMember(ctx *ExpressionContext, value vm.Value, field string) (vm.Value, bool) {
+	if ctx != nil && ctx.VM != nil && isControllerValue(ctx, value) {
+		next, ok, err := ctx.VM.ReadInstanceProperty(value, field)
+		if err == nil && ok {
+			return next, true
+		}
+	}
 	if next, ok := objectFieldIgnoreCase(value, field); ok {
 		return next, true
 	}
-	if ctx != nil && ctx.VM != nil && isControllerValue(ctx, value) {
-		next, ok, err := ctx.VM.ReadInstanceProperty(value, field)
-		if err != nil || !ok {
-			return vm.Null, false
-		}
+	if next, ok := mapMemberIgnoreCase(value, field); ok {
 		return next, true
+	}
+	return vm.Null, false
+}
+
+func mapMemberIgnoreCase(value vm.Value, field string) (vm.Value, bool) {
+	if value.Kind != vm.ValueMap {
+		return vm.Null, false
+	}
+	for rawKey, candidate := range value.Map {
+		if key, ok := value.MapKeys[rawKey]; ok && key.Kind == vm.ValueString && strings.EqualFold(key.Text, field) {
+			return candidate, true
+		}
+		if strings.EqualFold(rawKey, "string:"+field) {
+			return candidate, true
+		}
 	}
 	return vm.Null, false
 }
@@ -480,13 +609,16 @@ func resolveRootValue(ctx *ExpressionContext, name string) (vm.Value, bool) {
 	if name == "" {
 		return vm.Null, false
 	}
+	if value, ok := resolveVisualforceGlobal(ctx, name); ok {
+		return value, true
+	}
 	if ctx.VM != nil && strings.EqualFold(name, "this") {
 		if ctx.Controller.Kind == vm.ValueObject {
 			return ctx.Controller, true
 		}
 	}
-	if ctx.VM != nil && strings.EqualFold(name, "currentpage") {
-		if !isValueNullOrBlank(ctx.CurrentPage) {
+	if ctx.VM != nil && (strings.EqualFold(name, "currentpage") || strings.EqualFold(name, "$currentpage")) {
+		if ctx.CurrentPage.Kind != "" && !isValueNullOrBlank(ctx.CurrentPage) {
 			return ctx.CurrentPage, true
 		}
 		page := ctx.VM.CurrentPage()
@@ -495,24 +627,24 @@ func resolveRootValue(ctx *ExpressionContext, name string) (vm.Value, bool) {
 		}
 	}
 	if ctx.Controller.Kind == vm.ValueObject {
-		if value, ok := objectFieldIgnoreCase(ctx.Controller, name); ok {
-			return normalizeNamespaceMergeValue(name, value, ctx), true
-		}
 		if ctx.VM != nil {
 			if value, ok, err := ctx.VM.ReadInstanceProperty(ctx.Controller, name); ok && err == nil {
 				return normalizeNamespaceMergeValue(name, value, ctx), true
 			}
 		}
+		if value, ok := objectFieldIgnoreCase(ctx.Controller, name); ok {
+			return normalizeNamespaceMergeValue(name, value, ctx), true
+		}
 	}
 	for _, ext := range ctx.Extensions {
 		if ext.Kind == vm.ValueObject {
-			if value, ok := objectFieldIgnoreCase(ext, name); ok {
-				return value, true
-			}
 			if ctx.VM != nil {
 				if value, ok, err := ctx.VM.ReadInstanceProperty(ext, name); ok && err == nil {
 					return value, true
 				}
+			}
+			if value, ok := objectFieldIgnoreCase(ext, name); ok {
+				return value, true
 			}
 		}
 	}
@@ -539,6 +671,144 @@ func resolveRootValue(ctx *ExpressionContext, name string) (vm.Value, bool) {
 		}
 	}
 	return vm.Null, false
+}
+
+func resolveVisualforceGlobal(ctx *ExpressionContext, name string) (vm.Value, bool) {
+	if ctx == nil || ctx.VM == nil {
+		return vm.Null, false
+	}
+	switch strings.ToLower(name) {
+	case "$user":
+		user := vm.Object("User")
+		if record, ok := visualforceCurrentUserRecord(ctx); ok {
+			user.Fields["Id"] = storageRecordFieldValue(record, "Id")
+			user.Fields["Username"] = storageRecordFieldValue(record, "Username")
+			user.Fields["Email"] = storageRecordFieldValue(record, "Email")
+		}
+		return user, true
+	case "$profile":
+		profile := vm.Object("Profile")
+		if record, ok := visualforceCurrentUserRecord(ctx); ok {
+			profile.Fields["Id"] = storageRecordFieldValue(record, "ProfileId")
+		}
+		return profile, true
+	case "$organization":
+		org := vm.Object("Organization")
+		if ctx.VM.Org != nil && strings.TrimSpace(ctx.VM.Org.OrgID) != "" {
+			org.Fields["Id"] = vm.String(strings.TrimSpace(ctx.VM.Org.OrgID))
+		}
+		if record, ok := visualforceOrganizationRecord(ctx); ok {
+			if org.Fields["Id"].Kind == "" || org.Fields["Id"].Kind == vm.ValueNull {
+				org.Fields["Id"] = storageRecordFieldValue(record, "Id")
+			}
+			org.Fields["Name"] = storageRecordFieldValue(record, "Name")
+		}
+		return org, true
+	default:
+		return vm.Null, false
+	}
+}
+
+func visualforceCurrentUserRecord(ctx *ExpressionContext) (storage.Record, bool) {
+	users, ok := visualforceObjectState(ctx, "User")
+	if !ok || len(users.Records) == 0 {
+		return storage.Record{}, false
+	}
+	for _, preferredID := range []storage.ID{storage.ID("005-local-user"), storage.ID("005000000000001")} {
+		if record, ok := users.Records[preferredID]; ok && !storageRecordFieldEqual(record, "UserType", "AutomatedProcess") {
+			return record, true
+		}
+	}
+	var first storage.ID
+	var fallback storage.ID
+	for id, record := range users.Records {
+		if storageRecordFieldEqual(record, "UserType", "AutomatedProcess") {
+			if fallback == "" || id < fallback {
+				fallback = id
+			}
+			continue
+		}
+		if first == "" || id < first {
+			first = id
+		}
+	}
+	if first == "" {
+		first = fallback
+	}
+	if first == "" {
+		return storage.Record{}, false
+	}
+	return users.Records[first], true
+}
+
+func visualforceOrganizationRecord(ctx *ExpressionContext) (storage.Record, bool) {
+	orgs, ok := visualforceObjectState(ctx, "Organization")
+	if !ok || len(orgs.Records) == 0 {
+		return storage.Record{}, false
+	}
+	if ctx != nil && ctx.VM != nil && ctx.VM.Org != nil {
+		if orgID := strings.TrimSpace(ctx.VM.Org.OrgID); orgID != "" {
+			if record, ok := orgs.Records[storage.ID(orgID)]; ok {
+				return record, true
+			}
+		}
+	}
+	var first storage.ID
+	for id := range orgs.Records {
+		if first == "" || id < first {
+			first = id
+		}
+	}
+	if first == "" {
+		return storage.Record{}, false
+	}
+	return orgs.Records[first], true
+}
+
+func visualforceObjectState(ctx *ExpressionContext, objectName string) (storage.ObjectState, bool) {
+	if ctx == nil || ctx.VM == nil || ctx.VM.Org == nil {
+		return storage.ObjectState{}, false
+	}
+	if object, ok := ctx.VM.Org.Objects[objectName]; ok {
+		return object, true
+	}
+	for name, object := range ctx.VM.Org.Objects {
+		if strings.EqualFold(name, objectName) {
+			return object, true
+		}
+	}
+	return storage.ObjectState{}, false
+}
+
+func storageRecordFieldValue(record storage.Record, field string) vm.Value {
+	if strings.EqualFold(field, "Id") && record.ID != "" {
+		return vm.String(string(record.ID))
+	}
+	value, ok := record.GetField(field)
+	if !ok {
+		return vm.Null
+	}
+	switch value.Kind {
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
+		return vm.String(value.String)
+	case storage.ValueID:
+		return vm.String(string(value.ID))
+	case storage.ValueInteger:
+		return vm.Int(value.Integer)
+	case storage.ValueBoolean:
+		return vm.Bool(value.Boolean)
+	case storage.ValueDecimal:
+		return vm.String(value.Decimal)
+	case storage.ValueNull:
+		return vm.Null
+	default:
+		return vm.Null
+	}
+}
+
+func storageRecordFieldEqual(record storage.Record, field string, want string) bool {
+	value := storageRecordFieldValue(record, field)
+	return value.Kind == vm.ValueString && strings.EqualFold(strings.TrimSpace(value.Text), want)
 }
 
 func normalizeNamespaceMergeValue(name string, value vm.Value, ctx *ExpressionContext) vm.Value {

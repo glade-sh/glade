@@ -265,6 +265,68 @@ return null;
 	}
 }
 
+func TestInvokeVisualforceActionOnControllerMergesPageQueryAndPostedParams(t *testing.T) {
+	program, err := CompileAnonymous(`
+return ApexPages.currentPage().getParameters().get('id') + ':' + ApexPages.currentPage().getParameters().get('mode');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "EditController",
+		Methods: map[string]Method{
+			"save": {
+				Name:       "EditController.save",
+				ClassName:  "EditController",
+				ReturnType: "String",
+				Program:    program,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	value, _, result, err := machine.InvokeVisualforceActionOnController(Object("EditController"), "EditController", "save", "/apex/Edit?id=001xx000003DGbY", map[string]string{"mode": "quick"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Success || result.Error != nil {
+		t.Fatalf("result = %#v", result)
+	}
+	if value.Kind != ValueString || value.Text != "001xx000003DGbY:quick" {
+		t.Fatalf("value = %#v", value)
+	}
+}
+
+func TestInvokeVisualforceActionOnControllerRejectsPrivateAction(t *testing.T) {
+	program, err := CompileAnonymous(`return null;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "EditController",
+		Methods: map[string]Method{
+			"save": {
+				Name:       "EditController.save",
+				ClassName:  "EditController",
+				ReturnType: "PageReference",
+				Access:     "private",
+				Program:    program,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	_, _, result, err := machine.InvokeVisualforceActionOnController(Object("EditController"), "EditController", "save", "/apex/Edit", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Success || result.Error == nil {
+		t.Fatalf("result = %#v", result)
+	}
+}
+
 func TestInvokeVisualforceActionTracesStandardControllerActions(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'VF Trace');
@@ -326,6 +388,48 @@ return controller.delete();
 	}
 	if findTraceEventWithArg(result.Trace, "apex.visualforce.standard_controller.action.complete", "method", "cancel") == nil {
 		t.Fatalf("cancel completion trace missing: %#v", result.Trace)
+	}
+}
+
+func TestInvokeVisualforceActionOnControllerDispatchesStandardControllerMember(t *testing.T) {
+	machine := New(nil)
+	record := Object("Account")
+	record.Fields["Id"] = String("001000000000001AAA")
+	controller := Object("ApexPages.StandardController")
+	controller.Fields["record"] = record
+
+	value, updated, result, err := machine.InvokeVisualforceActionOnController(controller, "ApexPages.StandardController", "cancel", "/apex/Edit", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.Kind != ValueObject || updated.Type != "ApexPages.StandardController" {
+		t.Fatalf("updated controller = %#v", updated)
+	}
+	if !result.Success || result.Error != nil {
+		t.Fatalf("result = %#v", result)
+	}
+	if value.Kind != ValueObject || value.Type != "PageReference" || value.Fields["url"].Text != "/001000000000001AAA" {
+		t.Fatalf("value = %#v", value)
+	}
+}
+
+func TestInvokeVisualforceActionOnControllerDispatchesStandardSetControllerMember(t *testing.T) {
+	machine := New(nil)
+	controller := Object("ApexPages.StandardSetController")
+	controller.Fields["records"] = List(Object("Account"), Object("Account"), Object("Account"))
+	controller.Fields["selected"] = List()
+	controller.Fields["pageSize"] = Int(1)
+	controller.Fields["pageNumber"] = Int(1)
+
+	_, updated, result, err := machine.InvokeVisualforceActionOnController(controller, "ApexPages.StandardSetController", "next", "/apex/List", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Success || result.Error != nil {
+		t.Fatalf("result = %#v", result)
+	}
+	if updated.Fields["pageNumber"].Kind != ValueInt || updated.Fields["pageNumber"].Int != 2 {
+		t.Fatalf("updated pageNumber = %#v", updated.Fields["pageNumber"])
 	}
 }
 

@@ -3284,7 +3284,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "Apex.Stack":
 		return callApexStackMember(receiver, method, args)
 	case "ApexPages.Action":
-		return callApexPagesActionMember(receiver, method, args)
+		return vm.callApexPagesActionMember(receiver, method, args)
 	case "ApexPages.Component", "ApexPages.ComponentIteration":
 		return callApexPagesComponentMember(receiver, method, args)
 	case "ApexPages.IdeaStandardController":

@@ -117,6 +117,7 @@ type VM struct {
 	// --- Visualforce / page context ---
 	pageMessages     []Value
 	currentPage      Value
+	vfActionInvoker  VisualforceActionInvoker
 	pageReferences   map[string]string
 	siteExperienceID string
 	// --- SOQL / search results and platform cache ---
@@ -177,6 +178,14 @@ type VM struct {
 	collectionMutationSeq     uint64
 	frameworkRecorderRollback *frameworkMethodCountRecorderRollback
 	runtimeArtifactsShared    bool
+}
+
+type VisualforceActionInvoker func(actionExpr string, pageURL string) (Value, error)
+
+type VisualforcePageContext struct {
+	CurrentPage   Value
+	PageMessages  []Value
+	ActionInvoker VisualforceActionInvoker
 }
 
 type staticFieldRef struct {
@@ -866,11 +875,45 @@ func (vm *VM) ResetApexPageState() {
 	vm.siteExperienceID = ""
 }
 
+func (vm *VM) SnapshotVisualforcePageContext() VisualforcePageContext {
+	if vm == nil {
+		return VisualforcePageContext{}
+	}
+	return VisualforcePageContext{
+		CurrentPage:   cloneValue(vm.currentPage),
+		PageMessages:  cloneValueSlice(vm.pageMessages),
+		ActionInvoker: vm.vfActionInvoker,
+	}
+}
+
+func (vm *VM) RestoreVisualforcePageContext(ctx VisualforcePageContext) {
+	if vm == nil {
+		return
+	}
+	vm.currentPage = cloneValue(ctx.CurrentPage)
+	vm.pageMessages = cloneValueSlice(ctx.PageMessages)
+	vm.vfActionInvoker = ctx.ActionInvoker
+}
+
 func (vm *VM) CurrentPage() Value {
 	if vm == nil || vm.currentPage.Kind == "" {
 		return Null
 	}
 	return vm.currentPage
+}
+
+func (vm *VM) SetVisualforceActionInvoker(invoker VisualforceActionInvoker) {
+	if vm == nil {
+		return
+	}
+	vm.vfActionInvoker = invoker
+}
+
+func (vm *VM) ClearVisualforceActionInvoker() {
+	if vm == nil {
+		return
+	}
+	vm.vfActionInvoker = nil
 }
 
 func (vm *VM) PageMessages() []Value {

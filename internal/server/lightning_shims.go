@@ -8,6 +8,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/gladehome"
 	"github.com/glade-sh/glade/internal/lwcbrowser"
+	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -27,6 +28,12 @@ func (s *Server) handleLightningShims(w http.ResponseWriter, r *http.Request, pa
 		s.serveSchemaShim(w, parts[1:])
 	case "resourceUrl":
 		s.serveResourceURLShim(w, parts[1:])
+	case "contentAssetUrl":
+		s.serveContentAssetURLShim(w, parts[1:])
+	case "user":
+		s.serveUserShim(w, r, parts[1:])
+	case "i18n":
+		s.serveI18nShim(w, parts[1:])
 	case "lightning":
 		s.serveLightningAPIShim(w, parts[1:])
 	default:
@@ -54,11 +61,18 @@ func (s *Server) serveLightningStaticShim(w http.ResponseWriter, r *http.Request
 }
 
 func (s *Server) serveLightningAPIShim(w http.ResponseWriter, parts []string) {
-	if len(parts) != 1 || parts[0] != "uiRecordApi.js" {
+	if len(parts) != 1 {
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning shim")
 		return
 	}
-	writeJavaScript(w, []byte(lwcbrowser.UIRecordAPIModuleJS()))
+	switch parts[0] {
+	case "uiRecordApi.js":
+		writeJavaScript(w, []byte(lwcbrowser.UIRecordAPIModuleJS()))
+	case "navigation.js":
+		writeJavaScript(w, []byte(lwcbrowser.NavigationModuleJS()))
+	default:
+		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning shim")
+	}
 }
 
 func (s *Server) serveApexWireShim(w http.ResponseWriter, parts []string) {
@@ -107,13 +121,68 @@ func (s *Server) serveSchemaShim(w http.ResponseWriter, parts []string) {
 	writeJavaScript(w, []byte(lwcbrowser.SchemaFieldModuleJS(objectName, fieldName)))
 }
 
+func (s *Server) serveUserShim(w http.ResponseWriter, r *http.Request, parts []string) {
+	token := shimToken(parts)
+	if token == "" {
+		writeSalesforceError(w, errUnknownEndpoint, "invalid user shim")
+		return
+	}
+	if s.Org == nil {
+		org := storage.NewOrgState()
+		s.Org = &org
+	}
+	writeJavaScript(w, []byte(lwcbrowser.UserModuleJS(token, string(s.currentUser(r, "").ID))))
+}
+
+func (s *Server) serveI18nShim(w http.ResponseWriter, parts []string) {
+	token := shimToken(parts)
+	if token == "" {
+		writeSalesforceError(w, errUnknownEndpoint, "invalid i18n shim")
+		return
+	}
+	writeJavaScript(w, []byte(lwcbrowser.I18nModuleJS(token)))
+}
+
 func (s *Server) serveResourceURLShim(w http.ResponseWriter, parts []string) {
 	token := shimToken(parts)
 	if token == "" {
 		writeSalesforceError(w, errUnknownEndpoint, "invalid resourceUrl shim")
 		return
 	}
-	writeJavaScript(w, []byte(lwcbrowser.ResourceURLModuleJS("/resource/"+token)))
+	url := resource.StaticResourceURL(token)
+	if s.Org != nil {
+		if resolved, ok := resource.URLForStaticResource(s.Org.Metadata, token, ""); ok {
+			url = resolved
+		}
+	}
+	writeJavaScript(w, []byte(lwcbrowser.ResourceURLModuleJS(url)))
+}
+
+func (s *Server) serveContentAssetURLShim(w http.ResponseWriter, parts []string) {
+	token := shimToken(parts)
+	if token == "" {
+		writeSalesforceError(w, errUnknownEndpoint, "invalid contentAssetUrl shim")
+		return
+	}
+	url := resource.ContentAssetURL(token)
+	if s.Org != nil {
+		if resolved, ok := contentAssetURLForName(s.Org.Metadata, token); ok {
+			url = resolved
+		}
+	}
+	writeJavaScript(w, []byte(lwcbrowser.ContentAssetURLModuleJS(url)))
+}
+
+func contentAssetURLForName(registry storage.MetadataRegistry, name string) (string, bool) {
+	for _, asset := range registry.ContentAssets {
+		if strings.EqualFold(asset.Name, name) {
+			if strings.TrimSpace(asset.URL) != "" {
+				return asset.URL, true
+			}
+			return resource.ContentAssetURL(asset.Name), true
+		}
+	}
+	return "", false
 }
 
 func shimToken(parts []string) string {
@@ -130,6 +199,6 @@ func shimToken(parts []string) string {
 
 func writeJavaScript(w http.ResponseWriter, content []byte) {
 	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
-	w.Header().Set("Cache-Control", "public, max-age=60")
+	setDevNoStore(w)
 	_, _ = w.Write(content)
 }

@@ -105,6 +105,24 @@ Print the next likely loop commands without running tests:
 glade test --project . --wizard
 ```
 
+## Visualforce dev server
+
+Serve local Visualforce pages from the project on disk:
+
+```bash
+glade dev vf --project . --addr 127.0.0.1:8080
+```
+
+The startup banner lists `/apex/<PageName>` routes and watches `.page`,
+`.component`, `.cls`, Aura, LWC, and static resource changes. Rendering errors
+show a local overlay with the page file and expression when Glade can identify
+them. Current standard-component support rows are available from the local
+server:
+
+```bash
+curl http://127.0.0.1:8080/services/data/v61.0/glade/visualforce/support
+```
+
 ## Warm startup across CLI runs
 
 Large projects rebuild local org state and helper compilation on cold start.

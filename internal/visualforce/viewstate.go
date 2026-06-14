@@ -10,28 +10,36 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 const viewStateFieldName = "com.salesforce.visualforce.ViewState"
 const viewStateActionField = "__vf_action"
+const CurrentViewStateVersion = 1
 
 var (
-	ErrViewStateInvalid   = errors.New("invalid view state")
-	ErrViewStateTampered  = errors.New("view state signature mismatch")
-	ErrViewStateExpired   = errors.New("view state expired")
-	ErrViewStateCSRF      = errors.New("view state csrf mismatch")
+	ErrViewStateInvalid    = errors.New("invalid view state")
+	ErrViewStateTampered   = errors.New("view state signature mismatch")
+	ErrViewStateExpired    = errors.New("view state expired")
+	ErrViewStateCSRF       = errors.New("view state csrf mismatch")
 	defaultViewStateSecret = []byte("glade-local-vf-viewstate")
 )
 
 type ViewStatePayload struct {
-	PageName         string            `json:"pn"`
-	CSRF             string            `json:"csrf"`
-	Timestamp        int64             `json:"ts"`
-	ControllerType   string            `json:"ct,omitempty"`
-	ControllerFields map[string]string `json:"cf,omitempty"`
-	ExtensionFields  []map[string]string `json:"ef,omitempty"`
-	PageMessages     []string          `json:"pm,omitempty"`
-	ComponentState   map[string]string `json:"cs,omitempty"`
+	Version          int                   `json:"v,omitempty"`
+	PageName         string                `json:"pn"`
+	CSRF             string                `json:"csrf"`
+	Timestamp        int64                 `json:"ts"`
+	ControllerType   string                `json:"ct,omitempty"`
+	ControllerState  json.RawMessage       `json:"cstate,omitempty"`
+	ControllerValues map[string]vm.Value   `json:"cv,omitempty"`
+	ControllerFields map[string]string     `json:"cf,omitempty"`
+	ExtensionValues  []map[string]vm.Value `json:"ev,omitempty"`
+	ExtensionFields  []map[string]string   `json:"ef,omitempty"`
+	ExtensionState   []json.RawMessage     `json:"estate,omitempty"`
+	PageMessages     []string              `json:"pm,omitempty"`
+	ComponentState   map[string]string     `json:"cs,omitempty"`
 }
 
 func ViewStateFormFieldName() string {
@@ -52,6 +60,9 @@ func EncodeViewState(payload ViewStatePayload, secret []byte) (string, error) {
 			return "", err
 		}
 		payload.CSRF = token
+	}
+	if payload.Version == 0 {
+		payload.Version = CurrentViewStateVersion
 	}
 	if payload.Timestamp == 0 {
 		payload.Timestamp = time.Now().Unix()
@@ -105,6 +116,32 @@ func VerifyViewStateCSRF(payload ViewStatePayload, formCSRF string) error {
 	return nil
 }
 
+func ensureViewStateCSRF(payload *ViewStatePayload) error {
+	if payload == nil || strings.TrimSpace(payload.CSRF) != "" {
+		return nil
+	}
+	token, err := randomToken(16)
+	if err != nil {
+		return err
+	}
+	payload.CSRF = token
+	return nil
+}
+
+func InjectCSRF(html string, csrf string) string {
+	if strings.TrimSpace(csrf) == "" || strings.Contains(html, `name="__vf_csrf"`) {
+		return html
+	}
+	field := `<input type="hidden" name="__vf_csrf" value="` + htmlAttrEscape(csrf) + `" />`
+	if strings.Contains(html, "</form>") {
+		return strings.ReplaceAll(html, "</form>", field+"</form>")
+	}
+	if strings.Contains(html, "</body>") {
+		return strings.Replace(html, "</body>", field+"</body>", 1)
+	}
+	return html + field
+}
+
 func randomToken(size int) (string, error) {
 	buf := make([]byte, size)
 	if _, err := rand.Read(buf); err != nil {
@@ -119,7 +156,7 @@ func InjectViewState(html string, viewState string) string {
 	}
 	field := `<input type="hidden" name="` + viewStateFieldName + `" value="` + htmlAttrEscape(viewState) + `" />`
 	if strings.Contains(html, "</form>") {
-		return strings.Replace(html, "</form>", field+"</form>", 1)
+		return strings.ReplaceAll(html, "</form>", field+"</form>")
 	}
 	if strings.Contains(html, "</body>") {
 		return strings.Replace(html, "</body>", field+"</body>", 1)

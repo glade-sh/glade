@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -16,6 +17,7 @@ import (
 	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 func TestVFPageBootstrapsLightningOut(t *testing.T) {
@@ -59,6 +61,52 @@ func TestVFPageBootstrapsLightningOut(t *testing.T) {
 	}
 }
 
+func TestVFPageBootstrapsMultiWidgetLightningOut(t *testing.T) {
+	if _, err := os.Stat(filepath.Join("..", "..", "third_party", "lwc", "node_modules")); err != nil {
+		t.Skip("npm install required in third_party/lwc")
+	}
+	root, err := lightningTestRepoRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture := filepath.Join(root, "testdata", "local-tests", "lightning-out-vf")
+	p, err := project.Load(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	handler := NewWithSource(&org, source)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/apex/MultiWidgetHost", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	for _, want := range []string{
+		`id="apexHost"`,
+		`id="recordHost"`,
+		`id="labelResourceHost"`,
+		`id="eventHost"`,
+		"c:apexWireHost",
+		"c:recordWireHost",
+		"c:labelResourceHost",
+		"c:eventChild",
+		`"c:labelresourcehost"`,
+		"@salesforce/resourceUrl/",
+		"Lightning Out app not found",
+		"Lightning component not found",
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("missing %q in body:\n%s", want, body)
+		}
+	}
+}
+
 func TestLightningModulesServesCompiledJS(t *testing.T) {
 	if _, err := os.Stat(filepath.Join("..", "..", "third_party", "lwc", "node_modules")); err != nil {
 		t.Skip("npm install required in third_party/lwc")
@@ -86,6 +134,134 @@ func TestLightningModulesServesCompiledJS(t *testing.T) {
 	}
 	if !strings.Contains(rec.Header().Get("Content-Type"), "javascript") {
 		t.Fatalf("content-type = %q", rec.Header().Get("Content-Type"))
+	}
+}
+
+func TestLightningDevAssetsUseNoStore(t *testing.T) {
+	org := testOrg()
+	org.Metadata.StaticResources = []storage.StaticResourceMetadata{{Name: "WidgetAssets", Content: "widget-assets", ContentType: "text/plain"}}
+	handler := New(&org)
+
+	for _, path := range []string{
+		"/lightning/glade.out.js",
+		"/lightning/shims/i18n/lang.js",
+		"/resource/WidgetAssets",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s status = %d body=%s", path, rec.Code, rec.Body.String())
+		}
+		if got := rec.Header().Get("Cache-Control"); got != devNoStoreCacheControl {
+			t.Fatalf("%s Cache-Control = %q, want %q", path, got, devNoStoreCacheControl)
+		}
+	}
+}
+
+func TestLightningCacheRootIncludesProjectIdentity(t *testing.T) {
+	parent := t.TempDir()
+	first := filepath.Join(parent, "a", "same")
+	second := filepath.Join(parent, "b", "same")
+
+	firstRoot := lightningCacheRoot(project.Project{Root: first})
+	secondRoot := lightningCacheRoot(project.Project{Root: second})
+
+	if firstRoot == secondRoot {
+		t.Fatalf("cache roots collide for same basename: %s", firstRoot)
+	}
+	if !strings.HasPrefix(firstRoot, filepath.Join(os.TempDir(), "glade-lwc-cache")) {
+		t.Fatalf("cache root = %s", firstRoot)
+	}
+}
+
+func TestResetLightningCacheRemovesCompiledOutput(t *testing.T) {
+	org := storage.NewOrgState()
+	handler := New(&org)
+	cacheRoot := filepath.Join(t.TempDir(), "cache")
+	writeLightningFixtureFile(t, filepath.Join(cacheRoot, "lwc", "c", "widget", "widget.js"), "stale")
+	handler.lightning = lightningState{
+		cacheRoot: cacheRoot,
+		cacheDir:  filepath.Join(cacheRoot, "lwc"),
+		manifest:  lwcbrowser.Manifest{Modules: map[string]lwcbrowser.ModuleEntry{"c:widget": {URL: "/lightning/modules/c/widget/widget.js"}}},
+	}
+
+	handler.ResetLightningCache()
+
+	if _, err := os.Stat(cacheRoot); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("cache root still exists: %v", err)
+	}
+	if handler.lightning.cacheDir != "" || len(handler.lightning.manifest.Modules) != 0 {
+		t.Fatalf("lightning state not cleared: %#v", handler.lightning)
+	}
+}
+
+func TestReloadProjectStateUpdatesRuntimeAndClearsLightningCache(t *testing.T) {
+	org := storage.NewOrgState()
+	oldRoot := filepath.Join(t.TempDir(), "old")
+	newRoot := filepath.Join(t.TempDir(), "new")
+	handler := NewWithSource(&org, SourceMetadata{Project: project.Project{Root: oldRoot}})
+	cacheRoot := filepath.Join(t.TempDir(), "cache")
+	writeLightningFixtureFile(t, filepath.Join(cacheRoot, "lwc", "c", "widget", "widget.js"), "stale")
+	handler.lightning = lightningState{
+		cacheRoot: cacheRoot,
+		cacheDir:  filepath.Join(cacheRoot, "lwc"),
+		manifest:  lwcbrowser.Manifest{Modules: map[string]lwcbrowser.ModuleEntry{"c:widget": {URL: "/lightning/modules/c/widget/widget.js"}}},
+	}
+	runtimeErr := errors.New("compiled runtime failed")
+	index := typesys.Index{Project: typesys.ProjectInfo{Root: newRoot, Namespace: "pkg"}}
+	runtime := vm.New(nil)
+
+	handler.ReloadProjectState(SourceMetadata{Project: project.Project{Root: newRoot, Namespace: "pkg"}}, index, runtime, runtimeErr)
+
+	if handler.Source.Project.Root != newRoot {
+		t.Fatalf("source root = %q, want %q", handler.Source.Project.Root, newRoot)
+	}
+	if handler.Index == nil || handler.Index.Project.Root != newRoot {
+		t.Fatalf("index = %#v", handler.Index)
+	}
+	if handler.runtime != runtime {
+		t.Fatalf("runtime pointer was not installed")
+	}
+	if !errors.Is(handler.runtimeErr, runtimeErr) {
+		t.Fatalf("runtimeErr = %v", handler.runtimeErr)
+	}
+	if _, err := os.Stat(cacheRoot); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("cache root still exists: %v", err)
+	}
+}
+
+func TestVisualforceIncludeLightningWithoutToolchainShowsLocalNotice(t *testing.T) {
+	previous := ensureLightningRoot
+	ensureLightningRoot = func() (string, error) {
+		return "", errors.New("toolchain missing")
+	}
+	t.Cleanup(func() { ensureLightningRoot = previous })
+
+	root := t.TempDir()
+	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/pages/WidgetHost.page"), `<apex:page><apex:includeLightning/><div id="probe">page body</div></apex:page>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	handler := NewWithSource(&org, source)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/apex/WidgetHost", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "Lightning Out is not available in local Visualforce preview") {
+		t.Fatalf("missing Lightning warning in body:\n%s", body)
+	}
+	if !strings.Contains(body, `id="probe"`) {
+		t.Fatalf("missing page body in:\n%s", body)
 	}
 }
 
@@ -217,6 +393,115 @@ func TestLightningLabelShim(t *testing.T) {
 		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
 	}
 	if !strings.Contains(rec.Body.String(), `export default "Hello from Glade"`) {
+		t.Fatalf("body = %q", rec.Body.String())
+	}
+}
+
+func TestLightningUserShimResolvesCurrentUser(t *testing.T) {
+	org := testOrg()
+	addUser(&org, "005000000000123", "ada@example.test", "ada.alias@example.test", "Ada Trail")
+	handler := New(&org)
+
+	req := httptest.NewRequest(http.MethodGet, "/lightning/shims/user/Id.js", nil)
+	req.Header.Set("X-GLADE-User-Id", "005000000000123")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `export default "005000000000123"`) {
+		t.Fatalf("body = %q", rec.Body.String())
+	}
+}
+
+func TestLightningI18nShim(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/shims/i18n/lang.js", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `export default "en-US"`) {
+		t.Fatalf("body = %q", rec.Body.String())
+	}
+}
+
+func TestLightningResourceAndContentAssetShimsResolveMetadataURLs(t *testing.T) {
+	org := testOrg()
+	org.Metadata.StaticResources = []storage.StaticResourceMetadata{{Name: "WidgetAssets", URL: "/resource/WidgetAssets"}}
+	org.Metadata.ContentAssets = []storage.ContentAssetMetadata{{Name: "Logo", URL: "/sfc/servlet.shepherd/version/download/Logo"}}
+	handler := New(&org)
+
+	resourceRec := httptest.NewRecorder()
+	handler.ServeHTTP(resourceRec, httptest.NewRequest(http.MethodGet, "/lightning/shims/resourceUrl/WidgetAssets.js", nil))
+	if resourceRec.Code != http.StatusOK {
+		t.Fatalf("resource status = %d body=%s", resourceRec.Code, resourceRec.Body.String())
+	}
+	if !strings.Contains(resourceRec.Body.String(), `export default "/resource/WidgetAssets"`) {
+		t.Fatalf("resource body = %q", resourceRec.Body.String())
+	}
+
+	assetRec := httptest.NewRecorder()
+	handler.ServeHTTP(assetRec, httptest.NewRequest(http.MethodGet, "/lightning/shims/contentAssetUrl/Logo.js", nil))
+	if assetRec.Code != http.StatusOK {
+		t.Fatalf("asset status = %d body=%s", assetRec.Code, assetRec.Body.String())
+	}
+	if !strings.Contains(assetRec.Body.String(), `export default "/sfc/servlet.shepherd/version/download/Logo"`) {
+		t.Fatalf("asset body = %q", assetRec.Body.String())
+	}
+}
+
+func TestLightningResourceURLShimFetchesStaticResourceBytes(t *testing.T) {
+	root := lightningFixtureRoot(t)
+	fixture := filepath.Join(root, "testdata", "local-tests", "lightning-out-vf")
+	p, err := project.Load(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	if err := resource.ApplyProject(&org, p); err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&org, source)
+
+	shimRec := httptest.NewRecorder()
+	handler.ServeHTTP(shimRec, httptest.NewRequest(http.MethodGet, "/lightning/shims/resourceUrl/WidgetAssets.js", nil))
+	if shimRec.Code != http.StatusOK {
+		t.Fatalf("shim status = %d body=%s", shimRec.Code, shimRec.Body.String())
+	}
+	if !strings.Contains(shimRec.Body.String(), `export default "/resource/WidgetAssets"`) {
+		t.Fatalf("shim body = %q", shimRec.Body.String())
+	}
+
+	resourceRec := httptest.NewRecorder()
+	handler.ServeHTTP(resourceRec, httptest.NewRequest(http.MethodGet, "/resource/WidgetAssets", nil))
+	if resourceRec.Code != http.StatusOK {
+		t.Fatalf("resource status = %d body=%s", resourceRec.Code, resourceRec.Body.String())
+	}
+	if got := strings.TrimSpace(resourceRec.Body.String()); got != "widget-assets" {
+		t.Fatalf("resource body = %q", got)
+	}
+	if contentType := resourceRec.Header().Get("Content-Type"); contentType != "text/plain" {
+		t.Fatalf("content-type = %q", contentType)
+	}
+}
+
+func TestLightningNavigationShimReportsUnsupportedFeature(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/shims/lightning/navigation.js", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "lightning/navigation is not implemented") {
 		t.Fatalf("body = %q", rec.Body.String())
 	}
 }

@@ -53,7 +53,7 @@ Usage:
   glade dev [--project <root>]
   glade dev test [--project <root>] [--class <name>|--test <Class.method>|--changed|--failed] [--out <runs-dir>]
   glade dev watch [--project <root>] [--out <runs-dir>]
-  glade dev vf [--project <root>] [--port <port>|--addr <host:port>]
+  glade dev vf [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]
 `)+"\n")
 }
 

@@ -83,11 +83,17 @@ func importMapJSON(cfg PageConfig) string {
 }
 
 func lightningStubJS() string {
-	return `window.__gladeLightningPending=window.__gladeLightningPending||[];` +
+	return `(function(){` +
+		`function n(v){return String(v||"").trim().toLowerCase();}` +
+		`function c(){var el=document.getElementById("glade-lightning-config");if(!el){return {outApps:[],manifest:{modules:{}}};}try{return JSON.parse(el.textContent||"{}");}catch(_e){return {outApps:[],manifest:{modules:{}}};}}` +
+		`function m(cfg){return cfg&&cfg.manifest&&cfg.manifest.modules||{};}` +
+		`function e(cb,msg){if(typeof cb==="function"){cb(null,"ERROR",msg);}}` +
+		`window.__gladeLightningPending=window.__gladeLightningPending||[];` +
 		`window.$Lightning=window.$Lightning||{` +
-		`use:function(a,c){window.__gladeLightningPending.push(["use",a,c]);},` +
-		`createComponent:function(q,p,l,c){window.__gladeLightningPending.push(["create",q,p,l,c]);}` +
-		`};`
+		`use:function(a,cb){var cfg=c();var apps=(cfg.outApps||[]).map(n);if(apps.indexOf(n(a))===-1){console.error("[glade] Lightning Out app not found",a);e(cb,"Lightning Out app not found: "+a);return;}window.__gladeLightningPending.push(["use",a,cb]);},` +
+		`createComponent:function(q,p,l,cb){var cfg=c();if(!m(cfg)[n(q)]){console.error("[glade] Lightning component not found",q);e(cb,"Lightning component not found: "+q);return;}window.__gladeLightningPending.push(["create",q,p,l,cb]);}` +
+		`};` +
+		`})();`
 }
 
 func OutAppQualifiedNames(apps []aura.OutApp, namespace string) []string {

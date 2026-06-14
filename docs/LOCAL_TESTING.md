@@ -32,6 +32,33 @@ output and `--junit reports/glade-junit.xml` for CI reports.
 `glade doctor` must report `Ready.`. If the parser is unavailable, install a C
 compiler and rebuild or reinstall a parser-capable release artifact.
 
+## Run Visualforce Pages Locally
+
+Start the Visualforce dev server from a Salesforce-shaped project:
+
+```bash
+glade dev vf --project . --addr 127.0.0.1:8080
+```
+
+Startup output lists the local page routes and watched source families:
+
+```text
+Visualforce dev server: http://127.0.0.1:8080
+Pages:
+  /apex/Core
+  /apex/CardHost
+Watching ... for .page, .component, .cls, aura, lwc, and static resource changes.
+```
+
+Open the listed `/apex/<PageName>` route in a browser. Render diagnostics use a
+local HTML overlay with the page file and Visualforce expression when Glade can
+pin the source. The same server exposes the current standard-component support
+rows as local JSON:
+
+```bash
+curl http://127.0.0.1:8080/services/data/v61.0/glade/visualforce/support
+```
+
 ## Run Tests Without An Org
 
 Run every local Apex test:

@@ -174,7 +174,7 @@ func callApexStackMember(receiver Value, method string, args []Value) (Value, Va
 	}
 }
 
-func callApexPagesActionMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+func (vm *VM) callApexPagesActionMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	method = canonicalStdlibMemberName(method, "getExpression", "invoke")
 	switch method {
 	case "getExpression":
@@ -198,6 +198,10 @@ func callApexPagesActionMember(receiver Value, method string, args []Value) (Val
 		}
 		if strings.EqualFold(expression, "list") || strings.EqualFold(expression, "{!list}") {
 			return newPageReference("/list"), receiver, false, true, nil
+		}
+		if vm != nil && vm.vfActionInvoker != nil {
+			value, err := vm.vfActionInvoker(expression, pageReferenceURL(vm.CurrentPage()).Text)
+			return value, receiver, false, true, err
 		}
 		return Null, receiver, false, true, unsupportedCallError("ApexPages.Action.invoke requires bound Visualforce controller lifecycle")
 	default:

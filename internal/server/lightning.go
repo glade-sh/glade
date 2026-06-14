@@ -1,26 +1,42 @@
 package server
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+
 	"github.com/glade-sh/glade/internal/gladehome"
 	"github.com/glade-sh/glade/internal/lwc/compile"
 	"github.com/glade-sh/glade/internal/lwcbrowser"
 	lwcembed "github.com/glade-sh/glade/internal/lwcruntime/embed"
+	"github.com/glade-sh/glade/internal/project"
 )
 
 type lightningState struct {
+	cacheRoot string
 	cacheDir  string
 	compiled  compile.Manifest
 	manifest  lwcbrowser.Manifest
 	pageCfg   lwcbrowser.PageConfig
 }
 
+var ensureLightningRoot = gladehome.EnsureRoot
+
 func (s *Server) ResetLightningCache() {
 	if s == nil {
 		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.resetLightningCacheLocked()
+}
+
+func (s *Server) resetLightningCacheLocked() {
+	if s.lightning.cacheRoot != "" {
+		_ = os.RemoveAll(s.lightning.cacheRoot)
 	}
 	s.lightning = lightningState{}
 }
@@ -32,32 +48,52 @@ func (s *Server) ensureLightningLocked() error {
 	if s.lightning.cacheDir != "" && len(s.lightning.manifest.Modules) > 0 {
 		return nil
 	}
-	if _, err := gladehome.EnsureRoot(); err != nil {
+	if _, err := ensureLightningRoot(); err != nil {
 		return err
 	}
-	cacheDir := filepath.Join(os.TempDir(), "glade-lwc-cache")
-	if s.Source.Project.Root != "" {
-		cacheDir = filepath.Join(cacheDir, filepath.Base(s.Source.Project.Root))
+	cacheRoot := lightningCacheRoot(s.Source.Project)
+	if err := os.RemoveAll(cacheRoot); err != nil {
+		return err
 	}
-	cfg, compiled, err := lwcbrowser.PreparePageConfig(s.Source.Project, cacheDir)
+	cfg, compiled, err := lwcbrowser.PreparePageConfig(s.Source.Project, cacheRoot)
 	if err != nil {
 		return err
 	}
 	s.lightning = lightningState{
-		cacheDir: filepath.Join(cacheDir, "lwc"),
-		compiled: compiled,
-		manifest: cfg.Manifest,
-		pageCfg:  cfg,
+		cacheRoot: cacheRoot,
+		cacheDir:  filepath.Join(cacheRoot, "lwc"),
+		compiled:  compiled,
+		manifest:  cfg.Manifest,
+		pageCfg:   cfg,
 	}
 	return nil
 }
 
-func (s *Server) lightningBootstrapConfigLocked() (*lwcbrowser.PageConfig, bool) {
-	if err := s.ensureLightningLocked(); err != nil || len(s.lightning.manifest.Modules) == 0 {
-		return nil, false
+func lightningCacheRoot(p project.Project) string {
+	root := strings.TrimSpace(p.Root)
+	if abs, err := filepath.Abs(root); err == nil {
+		root = abs
+	}
+	if root == "" {
+		root = "unknown-project"
+	}
+	sum := sha256.Sum256([]byte(filepath.Clean(root)))
+	name := filepath.Base(filepath.Clean(root))
+	if name == "." || name == string(filepath.Separator) || name == "" {
+		name = "project"
+	}
+	return filepath.Join(os.TempDir(), "glade-lwc-cache", fmt.Sprintf("%s-%x", name, sum[:6]))
+}
+
+func (s *Server) lightningBootstrapConfigLocked() (*lwcbrowser.PageConfig, bool, error) {
+	if err := s.ensureLightningLocked(); err != nil {
+		return nil, false, err
+	}
+	if len(s.lightning.manifest.Modules) == 0 {
+		return nil, false, nil
 	}
 	cfg := s.lightning.pageCfg
-	return &cfg, true
+	return &cfg, true, nil
 }
 
 func (s *Server) handleLightning(w http.ResponseWriter, r *http.Request, parts []string) {
@@ -72,7 +108,7 @@ func (s *Server) handleLightning(w http.ResponseWriter, r *http.Request, parts [
 			return
 		}
 		w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
-		w.Header().Set("Cache-Control", "public, max-age=300")
+		setDevNoStore(w)
 		_, _ = w.Write(lwcembed.OutJS)
 	case "vendor":
 		s.handleLightningVendor(w, r, parts[1:])
@@ -114,7 +150,7 @@ func (s *Server) handleLightningVendor(w http.ResponseWriter, r *http.Request, p
 		return
 	}
 	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
-	w.Header().Set("Cache-Control", "public, max-age=3600")
+	setDevNoStore(w)
 	_, _ = w.Write(content)
 }
 
@@ -143,6 +179,6 @@ func (s *Server) handleLightningModules(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
-	w.Header().Set("Cache-Control", "public, max-age=60")
+	setDevNoStore(w)
 	_, _ = w.Write(content)
 }

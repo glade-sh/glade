@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import http from "node:http";
+import os from "node:os";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -127,6 +128,13 @@ function handleShimRequest(url, res, shimConfig) {
     res.end(`export default ${JSON.stringify(value)};\n`);
     return true;
   }
+  if (pathname.startsWith("/lightning/shims/resourceUrl/")) {
+    const token = pathname.slice("/lightning/shims/resourceUrl/".length).replace(/\.js$/, "");
+    const value = shimConfig.resources?.[token] ?? `/resource/${token}`;
+    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
+    res.end(`export default ${JSON.stringify(value)};\n`);
+    return true;
+  }
   return false;
 }
 
@@ -190,6 +198,20 @@ export function startLightningServer({
   });
 }
 
+function lightningStubJS() {
+  return `(function(){` +
+    `function n(v){return String(v||"").trim().toLowerCase();}` +
+    `function c(){var el=document.getElementById("glade-lightning-config");if(!el){return {outApps:[],manifest:{modules:{}}};}try{return JSON.parse(el.textContent||"{}");}catch(_e){return {outApps:[],manifest:{modules:{}}};}}` +
+    `function m(cfg){return cfg&&cfg.manifest&&cfg.manifest.modules||{};}` +
+    `function e(cb,msg){if(typeof cb==="function"){cb(null,"ERROR",msg);}}` +
+    `window.__gladeLightningPending=window.__gladeLightningPending||[];` +
+    `window.$Lightning=window.$Lightning||{` +
+    `use:function(a,cb){var cfg=c();var apps=(cfg.outApps||[]).map(n);if(apps.indexOf(n(a))===-1){console.error("[glade] Lightning Out app not found",a);e(cb,"Lightning Out app not found: "+a);return;}window.__gladeLightningPending.push(["use",a,cb]);},` +
+    `createComponent:function(q,p,l,cb){var cfg=c();if(!m(cfg)[n(q)]){console.error("[glade] Lightning component not found",q);e(cb,"Lightning component not found: "+q);return;}window.__gladeLightningPending.push(["create",q,p,l,cb]);}` +
+    `};` +
+    `})();`;
+}
+
 function localLWCImportMap(config, origin) {
   const imports = {};
   const modules = config?.manifest?.modules || {};
@@ -232,11 +254,129 @@ export function harnessHTML(baseURL, config, moduleScript) {
   <script>window.process = { env: { NODE_ENV: "production" } };</script>
   <script type="importmap">${JSON.stringify({ imports })}</script>
   <script type="application/json" id="glade-lightning-config">${JSON.stringify(config)}</script>
-  <script>window.__gladeLightningPending=window.__gladeLightningPending||[];window.$Lightning=window.$Lightning||{use:function(a,c){window.__gladeLightningPending.push(["use",a,c]);},createComponent:function(q,p,l,c){window.__gladeLightningPending.push(["create",q,p,l,c]);}};</script>
+  <script>${lightningStubJS()}</script>
 </head>
 <body>
   <div id="host"></div>
   <script type="module">${moduleScript}</script>
 </body>
 </html>`;
+}
+
+export async function startVisualforceDevServer(t, { projectRel, pagePath = "/apex/MultiWidgetHost" } = {}) {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "glade-vf-server-"));
+  const binary = path.join(tmpDir, process.platform === "win32" ? "glade.exe" : "glade");
+  const build = spawnSync("go", ["build", "-o", binary, "./cmd/glade"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
+  if (build.status !== 0) {
+    t.skip(`cannot build local glade binary: ${buildFailureSummary(build.stderr || build.stdout)}`);
+    return null;
+  }
+
+  const readyFile = path.join(tmpDir, "ready.json");
+  const projectRoot = path.join(repoRoot, projectRel || ".");
+  const child = spawn(
+    binary,
+    ["dev", "vf", "--project", projectRoot, "--addr", "127.0.0.1:0", "--ready-file", readyFile],
+    {
+      cwd: repoRoot,
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
+  let stdout = "";
+  let stderr = "";
+  child.stdout.on("data", (chunk) => {
+    stdout += String(chunk);
+  });
+  child.stderr.on("data", (chunk) => {
+    stderr += String(chunk);
+  });
+
+  try {
+    const ready = await waitForReadyFile(readyFile, child, () => stdout + stderr);
+    await waitForHTTP(`${ready.url}${pagePath}`, child, () => stdout + stderr);
+    return {
+      baseURL: ready.url,
+      pages: ready.pages || [],
+      close: () => stopProcess(child),
+    };
+  } catch (err) {
+    await stopProcess(child);
+    throw err;
+  }
+}
+
+function buildFailureSummary(text) {
+  const lines = String(text || "no output").trim().split(/\r?\n/).filter(Boolean);
+  const useful = lines.filter((line) => !line.startsWith("# "));
+  return (useful.length ? useful : lines).slice(0, 2).join("; ") || "no output";
+}
+
+function waitForReadyFile(filePath, child, readOutput) {
+  const deadline = Date.now() + 30000;
+  return new Promise((resolve, reject) => {
+    const timer = setInterval(() => {
+      if (child.exitCode !== null) {
+        clearInterval(timer);
+        reject(new Error(`Visualforce dev server exited before ready file\n${readOutput()}`));
+        return;
+      }
+      if (fs.existsSync(filePath)) {
+        try {
+          const ready = JSON.parse(fs.readFileSync(filePath, "utf8"));
+          clearInterval(timer);
+          resolve(ready);
+          return;
+        } catch (_err) {
+          // The writer may still have the file open. Try again on the next tick.
+        }
+      }
+      if (Date.now() > deadline) {
+        clearInterval(timer);
+        reject(new Error(`timed out waiting for Visualforce dev server ready file\n${readOutput()}`));
+      }
+    }, 50);
+  });
+}
+
+async function waitForHTTP(url, child, readOutput) {
+  const deadline = Date.now() + 30000;
+  let lastError = "";
+  while (Date.now() <= deadline) {
+    if (child.exitCode !== null) {
+      throw new Error(`Visualforce dev server exited before HTTP readiness\n${readOutput()}`);
+    }
+    try {
+      const response = await fetch(url);
+      if (response.ok) {
+        await response.arrayBuffer();
+        return;
+      }
+      lastError = `HTTP ${response.status}`;
+    } catch (err) {
+      lastError = err.message;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw new Error(`timed out waiting for ${url}: ${lastError}\n${readOutput()}`);
+}
+
+function stopProcess(child) {
+  if (!child || child.exitCode !== null) {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    const killTimer = setTimeout(() => {
+      if (child.exitCode === null) {
+        child.kill("SIGKILL");
+      }
+    }, 2000);
+    child.once("exit", () => {
+      clearTimeout(killTimer);
+      resolve();
+    });
+    child.kill("SIGTERM");
+  });
 }
