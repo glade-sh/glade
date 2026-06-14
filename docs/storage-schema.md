@@ -265,7 +265,7 @@ glade schema import describe --input reports/org-describe.json --output schema/l
 ```
 
 The base product owns the file-to-local-schema conversion. Live org capture,
-readiness scans, and docs mining belong to plugins.
+compatibility scans, and docs mining belong to plugins.
 
 ## Future Integration Points
 

@@ -5,7 +5,7 @@
 ::: warning Registry preview
 The default public plugin registry is not live yet. Coordinate installs and
 lock restores need a live registry or custom registry. Direct archives and
-local links remain available for maintainer workflows.
+local links remain available for private plugin installs and plugin development.
 :::
 
 ```bash

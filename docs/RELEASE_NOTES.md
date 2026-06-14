@@ -8,11 +8,11 @@ Support status:
   execution, testing, storage, server, editor, profile, and playground flows.
 - Added `glade plugins` with executable plugin install, link, list, doctor,
   lock, restore, and command dispatch.
-- Maintenance scanners, compatibility harnesses, generated support reports, and
+- Maintenance scanners, compatibility harnesses, generated support ledgers, and
   advisory performance scans now ship through first-party plugins. The first
   plugins are `compat` and `performance`.
-- See [`COMPATIBILITY_DASHBOARD.md`](COMPATIBILITY_DASHBOARD.md) and
-  [`KNOWN_GAPS.md`](KNOWN_GAPS.md) for checked support status.
+- See the public support map and [`STDLIB_COVERAGE.md`](STDLIB_COVERAGE.md)
+  for checked support status.
 
 Release engineering:
 
@@ -40,7 +40,7 @@ Release engineering:
 - Added tag-driven parser-capable release artifact builds for macOS and Linux
   host architectures, with Windows held until a CGO-capable Windows release
   runner is wired.
-- Added release-readiness labels for server examples, Apex parity, legacy
+- Added support-map labels for server examples, Apex parity, legacy
   local tests, declarative automation, and Visualforce/Aura/LWC controller-test
   support.
 - Added a generated SObject stub field overlay for broad standard-object field
@@ -48,7 +48,7 @@ Release engineering:
   `Schema.SObjectField.label`, `UserInfo.getOrganizationName`,
   `Date.daysInMonth`, and the `America/Panama` timezone.
 - Added CI release-hardening gates for the checked local-test corpus,
-  post-parity readiness, UI controller discovery, and generated stdlib coverage
+  post-parity inventory, UI controller discovery, and generated stdlib coverage
   drift.
 - Expanded the checked local-test corpus to 13 projects with `metadata-deploy`
   and `named-credential-callouts` fixtures covering local `Metadata.CustomObject`
@@ -108,7 +108,7 @@ Release engineering:
 - Added compat plugin replay support for deterministic directory replay bundles,
   ordered in-process compat steps, JSON/text gate reports, checked expected
   outputs, path-escape validation, and redacted artifact export.
-- Added compat plugin readiness reporting to classify local project
+- Added compat plugin project-scan reporting to classify local project
   blockers by parser, project, schema, sema, stdlib, SOQL, DML, trigger, limit,
   storage, server, and unknown categories without mutating source or database
   state.

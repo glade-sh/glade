@@ -15,7 +15,7 @@ ship as first-party plugins.
 
 | Plugin | Alias | Command roots | Purpose |
 | --- | --- | --- | --- |
-| `@glade/compat` | `compat` | `compat`, `surface`, `local-tests`, `post-parity`, `examples`, `dashboard`, `gaps`, `stdlib` | Compatibility fixtures, local-test readiness reports, surface ledgers, docs inventory, generated support reports, and parity scanners. |
+| `@glade/compat` | `compat` | `compat`, `surface`, `local-tests`, `post-parity`, `examples`, `dashboard`, `gaps`, `stdlib` | Compatibility fixtures, support ledgers, docs inventory, and parity scanners. |
 | `@glade/performance` | `performance` | `performance` | Advisory Salesforce project performance scans. Replaces the old base `glade inspect performance` path. |
 
 The first-party plugin source lives in the sibling `glade-tools` workspace.
@@ -26,7 +26,8 @@ does not depend on `glade-tools` internals.
 
 The public plugin registry is preview. Coordinate installs need a live
 registry or custom registry. Direct archives and local links are the reliable
-fallbacks for maintainer work until the production registry is published.
+fallbacks for private plugin installs and plugin development until the
+production registry is published.
 
 Install first-party plugins with canonical coordinates:
 
@@ -228,7 +229,7 @@ verifies the archive SHA-256, then installs the archive.
       "version": "0.1.0",
       "publisher": "glade",
       "trust": "first-party",
-      "summary": "Compatibility fixtures, surface ledgers, and maintenance scanners.",
+      "summary": "Compatibility fixtures, support ledgers, and maintenance scanners.",
       "commands": ["compat", "surface", "local-tests", "post-parity", "examples", "dashboard", "gaps", "stdlib"],
       "docsURL": "https://glade.sh/guide/plugins/first-party",
       "sourceURL": "https://github.com/glade-sh/glade-tools",

@@ -5,8 +5,8 @@ Glade plugins are standalone executables installed and run through
 marketplace plugins add heavier workflows when a project needs them.
 
 Most users can ignore plugin author docs on first run. Install first-party
-plugins only when you need compatibility fixtures, support reports, or advisory
-performance scans.
+plugins only when you need compatibility fixtures, support ledgers, parity
+scans, or advisory performance scans.
 
 ::: warning Registry preview
 The default public plugin registry is not live yet. Registry commands below
@@ -16,8 +16,8 @@ Base Glade install and local Apex workflows do not require plugins.
 
 ## First-party plugins
 
-- `@glade/compat` - compatibility fixtures, surface ledgers, support reports,
-  and parity scanners.
+- `@glade/compat` - compatibility fixtures, support ledgers, and parity
+  scanners.
 - `@glade/performance` - advisory Salesforce performance scans.
 
 ```bash

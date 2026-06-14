@@ -57,9 +57,9 @@ repository.
 | SOQL, DML, triggers, SObjects, and storage | Work well for the checked local data runtime contract. |
 | `Database` methods | Supported for the tracked local rows in the stdlib ledger. |
 | `String`, dates, time, math, assertions, labels, URLs, and user info | Wide support, with exact rows in the stdlib ledger. |
-| `Schema`, describe APIs, JSON, regex, HTTP mocks, email, Visualforce controller helpers, and many `Test.*` helpers | Works with limits. The local model covers common test paths and records gaps by method. |
-| Platform services such as approval, quick actions, business hours, sandbox lifecycle, request context, and Trailblazer identity helpers | Deterministic local harnesses exist where the checked ledger says `supported` or `partial`. Hosted service execution still stays outside the local contract. |
-| Local API server, LSP, DAP, watch, and profile tools | Work well for local development. The local API now covers REST discovery, SObject CRUD/query, limits and record counts, Tooling executeAnonymous, local Tooling source/schema metadata queries, Composite sObject insert, fixture resets, and SQLite persistence. |
+| `Schema`, describe APIs, JSON, regex, HTTP mocks, email, Visualforce controller helpers, and tracked `Test.*` helpers | Supported local rows are complete in the checked ledger. Hosted rendering, delivery, and service behavior have explicit unsupported rows. |
+| Platform services such as approval, quick actions, business hours, sandbox lifecycle, request context, and Trailblazer identity helpers | Deterministic local harness rows are supported where the checked ledger says `supported`. Hosted service execution stays outside the local contract. |
+| Local API server, LSP, DAP, watch, and profile tools | Work well for local development. The local API covers REST discovery, SObject CRUD/query, limits and record counts, Tooling executeAnonymous, local Tooling source/schema metadata queries, Composite sObject insert, Composite Batch and Tree, Bulk API v2 simple query jobs, layout/default metadata, metadata job status, fixture resets, and SQLite persistence. |
 | Enterprise graph and report tools | Work as conservative local evidence for assessment, cruft review, and refactor proof. |
 
 Drill down from there:
@@ -73,8 +73,6 @@ glade report assess --project . --format html --out reports/glade-assessment.htm
 
 - Public support map: <https://glade.sh/guide/support-map>
 - Method-level standard library coverage: [docs/STDLIB_COVERAGE.md](docs/STDLIB_COVERAGE.md)
-- Known gaps: [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md)
-- Developer compatibility dashboard: [docs/COMPATIBILITY_DASHBOARD.md](docs/COMPATIBILITY_DASHBOARD.md)
 
 The rule is simple. A supported row has code and checked coverage.
 
@@ -108,7 +106,7 @@ plugins use the same executable manifest contract.
 
 The public plugin registry is still preview. Coordinate installs need a live
 registry or custom registry. Direct archives and local links are the fallback
-paths for maintainer work.
+paths for private plugin installs and plugin development.
 
 List installable marketplace plugins when a registry is configured:
 
@@ -157,19 +155,7 @@ glade report refactor-proof --project . --since origin/main --format html --out 
 - [Enterprise workflows](docs/ENTERPRISE_WORKFLOWS.md)
 - [Test startup cache](docs/TEST_STARTUP_CACHE.md)
 - [Plugins](docs/PLUGINS.md)
-- [Dogfood checklist](docs/DOGFOOD_CHECKLIST.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Compatibility policy](docs/COMPATIBILITY.md)
-- [Developer compatibility dashboard](docs/COMPATIBILITY_DASHBOARD.md)
 - [Standard library coverage](docs/STDLIB_COVERAGE.md)
-- [Known gaps](docs/KNOWN_GAPS.md)
 - [Editor and debug setup](docs/EDITOR.md)
-- [Release policy](docs/RELEASE_POLICY.md)
-
-## Release and Distribution
-
-Release notes, gates, archives, and Homebrew flow live in:
-
-- [docs/RELEASE_NOTES.md](docs/RELEASE_NOTES.md)
-- [docs/RELEASE_POLICY.md](docs/RELEASE_POLICY.md)
-- [docs/DISTRIBUTION_WORKFLOW.md](docs/DISTRIBUTION_WORKFLOW.md)

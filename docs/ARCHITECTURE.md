@@ -62,7 +62,7 @@ and composed by the CLI.
   assessment findings, conservative cruft classification, and branch proof
   reports. These packages consume the product parser, type index, semantic
   analyzer, trace model, and test-selection graph. They do not regenerate
-  support ledgers or compatibility dashboards.
+  support ledgers.
 - `internal/server`: Salesforce-shaped HTTP handler for supported SObject CRUD,
   query/queryAll, describe/recent, limits and record counts, identity/userinfo
   stubs, Tooling `executeAnonymous`, local Tooling source/schema metadata reads,
@@ -71,7 +71,7 @@ and composed by the CLI.
 - Maintenance scanners, compatibility fixtures, capability catalogs, advisory
   performance scans, docs inventory, and surface ledgers ship as plugins.
   Salesforce docs inventory extraction lives in the compat plugin because it
-  feeds ledgers and generated support reports, not runtime execution. Plugins
+  feeds support ledgers, not runtime execution. Plugins
   may depend on this framework; this framework does not depend on plugins.
 
 ## Runtime Pipeline
@@ -101,4 +101,4 @@ and composed by the CLI.
 
 When Salesforce ships something new (a class, namespace, method, or surface) or
 a gap is found, keep product runtime changes in this repository and use
-installed plugins for gap discovery, fixtures, and generated support reports.
+installed plugins for gap discovery, fixtures, and support ledger updates.

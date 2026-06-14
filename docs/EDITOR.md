@@ -1,10 +1,9 @@
 # Editor Integration
 
-`glade` exposes editor-facing entry points through normal CLI commands. The
-current baseline is useful for local Apex development, but it is still a
-preview: DAP has live VM pause/step primitives, LSP uses full-project indexing
-at startup with open-buffer overlays, and watch mode uses native file watching
-with polling fallback.
+`glade` exposes editor-facing entry points through normal CLI commands. DAP has
+live VM pause/step primitives, LSP uses full-project indexing at startup with
+open-buffer overlays, and watch mode uses native file watching with polling
+fallback.
 
 ## VS Code Extension
 
@@ -141,11 +140,11 @@ post processing:
 Try these command lines from a project with matching `.cls` files:
 
 ```bash
-glade debug parse --log internal/debuglog/testdata/subscriber.log --json
-glade debug profile --log internal/debuglog/testdata/subscriber.log
-glade debug explain --log internal/debuglog/testdata/subscriber.log --project internal/debuglog/testdata/project
-glade debug explain --log internal/debuglog/testdata/subscriber.log --project internal/debuglog/testdata/project --json
-glade debug repro --log internal/debuglog/testdata/subscriber.log --project internal/debuglog/testdata/project > ReproTest.cls
+glade debug parse --log logs/apex-debug.log --json
+glade debug profile --log logs/apex-debug.log
+glade debug explain --log logs/apex-debug.log --project .
+glade debug explain --log logs/apex-debug.log --project . --json
+glade debug repro --log logs/apex-debug.log --project . > ReproTest.cls
 ```
 
 Matching is conservative. `explain` will rank candidates by confidence and keep

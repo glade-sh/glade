@@ -18,14 +18,6 @@ of the way.
 11. Current support surface:
    - Public Apex and Salesforce support map: <https://glade.sh/guide/support-map>
    - Method-level standard-library rows: [STDLIB_COVERAGE.md](STDLIB_COVERAGE.md)
-   - Current known gaps: [KNOWN_GAPS.md](KNOWN_GAPS.md)
-   - Maintainer gate: [COMPATIBILITY_DASHBOARD.md](COMPATIBILITY_DASHBOARD.md)
-
-## If You Want To Ship Releases
-
-1. Release policy and claims: [RELEASE_POLICY.md](RELEASE_POLICY.md)
-2. Operator checklist: [DISTRIBUTION_WORKFLOW.md](DISTRIBUTION_WORKFLOW.md)
-3. Ongoing notes: [RELEASE_NOTES.md](RELEASE_NOTES.md)
 
 ## If You Want To Contribute
 

@@ -262,7 +262,7 @@
   ].join("\n")
 
   var debugOutput = [
-    "$ glade debug profile --log internal/debuglog/testdata/subscriber.log",
+    "$ glade debug profile --log logs/apex-debug.log",
     "Glade debug profile",
     "",
     "Events: 4",
@@ -281,11 +281,11 @@
     "  3     apex.dml.insert        1      1     0ms",
     "",
     "Next:",
-    "  glade debug explain --log internal/debuglog/testdata/subscriber.log --project ."
+    "  glade debug explain --log logs/apex-debug.log --project ."
   ].join("\n")
 
   var debugJSON = [
-    "$ glade debug profile --log internal/debuglog/testdata/subscriber.log --json",
+    "$ glade debug profile --log logs/apex-debug.log --json",
     "{",
     '  "schemaVersion": "1.0",',
     '  "command": "debug profile",',
@@ -300,7 +300,7 @@
     '      "dmlRows": 1',
     "    }",
     "  },",
-    '  "suggestions": ["glade debug explain --log internal/debuglog/testdata/subscriber.log --project ."],',
+    '  "suggestions": ["glade debug explain --log logs/apex-debug.log --project ."],',
     '  "data": {',
     '    "events": 4,',
     '    "hot": [',
@@ -495,8 +495,8 @@
       preview: "4 events parsed",
       actionLabel: "Profile debug log",
       commandLabel: "glade debug",
-      command: "glade debug profile --log internal/debuglog/testdata/subscriber.log",
-      ciCommand: "glade debug profile --log internal/debuglog/testdata/subscriber.log --json",
+      command: "glade debug profile --log logs/apex-debug.log",
+      ciCommand: "glade debug profile --log logs/apex-debug.log --json",
       sourceTitle: "Debug log input",
       sourceLabel: "subscriber.log:8",
       highlightedLine: 8,
@@ -522,7 +522,7 @@
       resultStatus: "passed",
       resultSummary: "PASSED · 4 events parsed · 1 log profile",
       runningSummary: "RUNNING · reading log · parsing events · profiling hotspots",
-      runningOutput: "$ glade debug profile --log internal/debuglog/testdata/subscriber.log\n\nReading debug log...",
+      runningOutput: "$ glade debug profile --log logs/apex-debug.log\n\nReading debug log...",
       resultMetrics: [
         ["Events", "4"],
         ["SOQL", "1"],

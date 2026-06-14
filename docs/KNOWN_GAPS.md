@@ -2,6 +2,6 @@
 
 Generated from the first-party compat plugin capability catalog.
 
-The MVP target is `full-featured glade-parity MVP`. All required capabilities are currently `supported`.
+All locally supported rows are tracked in `STDLIB_COVERAGE.md` and the public support map. All required local capability rows are currently `supported`.
 
-No required MVP capability gaps are currently tracked.
+No required local support gaps are currently tracked.

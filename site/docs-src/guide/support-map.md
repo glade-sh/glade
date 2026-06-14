@@ -20,7 +20,7 @@ ledgers carry the exact ledger rows.
 - Your test suite can mock callouts and live side effects.
 - Your project can tolerate explicit unsupported diagnostics for Salesforce-hosted services.
 - You will keep a Salesforce org gate for features Glade does not model.
-- You will use first-party plugins for maintainer ledgers and advisory scans instead of expecting those scanners in base `glade --help`.
+- You will use first-party plugins for support ledgers and advisory scans instead of expecting those scanners in base `glade --help`.
 
 ## Status key
 
@@ -59,14 +59,14 @@ service parity.
 | Area | Current limit |
 | --- | --- |
 | Core standard library | Common `System`, `String`, date/time, math, assertions, labels, URLs, user info, and collection paths are covered. Exact method rows live in the standard-library ledger. |
-| Schema and describe APIs | Local describe supports checked object, field, record type, child relationship, and generated standard-object shape. Full org metadata parity remains outside the local model. |
-| JSON, regex, encoding, and crypto | Common serialization, parsing, regex, base64, hex, URL encoding, and digest paths are covered. Edge semantics stay method-level. |
+| Schema and describe APIs | Local describe supports checked object, field, record type, child relationship, data category metadata, and generated standard-object shape. Hosted full-org metadata services remain outside the local model. |
+| JSON, regex, encoding, and crypto | Serialization, parsing, regex, base64, hex, URL encoding, and digest rows are supported for the checked local contract. |
 | HTTP, SOAP, and callout mocks | Request/response-shaped mock paths work for tests. Glade does not perform live outbound service calls. |
-| Messaging | Local message/result shapes and invocation counts are covered. Glade does not deliver email, push, or other live messages. |
+| Messaging | Local message/result shapes, template rendering, attachment retrieval, send options, and invocation counts are covered. Glade does not deliver email, push, or other live messages. |
 | Visualforce controller helpers | PageReference, messages, current page, and controller test helpers are modeled for controller tests. Glade does not render full Visualforce pages. |
-| Search and SOSL helpers | Local deterministic test paths exist. Full Salesforce search ranking and index behavior are not modeled. |
-| Test helpers | Many common `Test.*` paths work. Service-dependent helpers and org-global behavior remain explicit gaps. |
-| Local test harness and request context | Request/UIRequest context, install/uninstall hooks, sandbox post-copy helpers, scheduled Apex, QuickAction DTOs, BusinessHours week schedules, approval result shapes, and TrailblazerIdentity helper calls have deterministic local models. Live hosted engines are not contacted. |
+| Search and SOSL helpers | Local deterministic Search and SOSL rows are supported. Hosted ranking, analyzers, synonyms, and external indexes are not modeled. |
+| Test helpers | Tracked `Test.*` local helper rows are supported. Hosted service accounting, packaged-resource expansion, and live External Service execution remain explicit gaps. |
+| Local test harness and request context | Request/UIRequest context, install/uninstall hooks, sandbox post-copy helpers, scheduled Apex, QuickAction DTOs, BusinessHours calendars and holidays, seeded approval routing, and TrailblazerIdentity helper calls have deterministic local models. Live hosted engines are not contacted. |
 
 ## Not supported today
 
@@ -77,7 +77,7 @@ This is the smaller list a first user should check before betting on Glade.
 | Live Salesforce auth and sessions | The local server exposes local stubs. It does not implement real Salesforce OAuth, session validation, or org identity services. |
 | Fenced live service APIs | Answers zone search, password reset output, live identity/admin mutation, and hosted process/service engines require Salesforce-hosted data or execution. |
 | Full Visualforce rendering | Controller logic is the supported path. Component rendering, page lifecycle, `getContent`, and PDF generation remain outside the current runtime. |
-| Broad REST and Tooling API parity | The local API server covers the checked local baseline, including Composite Batch local subrequests and Bulk API v2 simple scalar query job create/status/whole-result CSV. Broader Bulk API including locator paging, Composite Graph/Tree, Streaming/PubSub, GraphQL, layout/default-value metadata, metadata deploy/retrieve jobs, and live org-only Tooling surfaces remain future work. |
+| Broad REST and Tooling API parity | The local API server covers the checked local baseline, including Composite Batch and Tree, Bulk API v2 simple query jobs, layout/default-value metadata, metadata job status, and local Tooling shapes. Broader Bulk API locator paging, Composite Graph execution, Streaming/PubSub, GraphQL, live metadata deploy/retrieve, live auth, and live org-only Tooling surfaces remain outside the local contract. |
 | Live outbound side effects | Real callouts, delivered email, push notifications, and external service mutations are not performed. Tests should use local mocks and result objects. |
 | Exact Salesforce governor accounting | Glade tracks deterministic local limits. Salesforce's full production accounting and every platform-specific counter are not complete. |
 
@@ -94,8 +94,8 @@ UnsupportedFeature: unsupported call "Answers.findSimilar local Answers zone sea
 | Apex front end | <span class="docs-status-chip docs-status-supported">Works well</span> | Parser, project loader, symbols, semantic checks, LSP, and diagnostics form the front door. |
 | Runtime and tests | <span class="docs-status-chip docs-status-supported">Works well</span> | VM execution, local tests, SObjects, SOQL, DML, triggers, async drain, and local storage are the core contract. |
 | Local Salesforce API | <span class="docs-status-chip docs-status-supported">Works well</span> | Useful for local REST, SObject CRUD/query, record count, Tooling `executeAnonymous`, and local source/schema metadata flows. It is not a hosted-org replacement. |
-| Standard library | <span class="docs-status-chip docs-status-partial">Works with limits</span> | Broad local support, with exact method status in the checked ledger. |
-| Platform service APIs | <span class="docs-status-chip docs-status-partial">Works with limits</span> | Deterministic DTO and harness rows are modeled when the ledger says so. Hosted service execution stays explicit unsupported. |
+| Standard library | <span class="docs-status-chip docs-status-supported">Works well</span> | The checked ledger has 265 supported rows, 19 unsupported hosted-boundary rows, and 0 partial rows. |
+| Platform service APIs | <span class="docs-status-chip docs-status-supported">Works well</span> | Deterministic DTO and harness rows are modeled when the ledger says supported. Hosted service execution stays explicit unsupported. |
 
 ## Standard Library Families
 
@@ -106,50 +106,44 @@ state.
 | --- | --- | ---: |
 | `Database` | Works well | 37 supported / 37 tracked |
 | Date, Datetime, Time, TimeZone | Works well | 26 supported / 26 tracked |
-| String, Decimal, Boolean, Math | Wide local support | 29 supported, 3 partial / 32 tracked |
-| System, Assert, Limits | Mixed | 13 supported, 4 partial / 17 tracked |
-| Schema and SObject | Works with limits | 1 supported, 6 partial / 7 tracked |
-| Test helpers | Works with limits | 18 supported, 10 partial / 28 tracked |
-| JSON, Pattern, EncodingUtil, Crypto | Works with limits | 4 supported, 13 partial / 17 tracked |
-| ApexPages and PageReference | Wide controller support | 13 supported, 2 partial / 15 tracked |
-| HTTP and WebServiceCallout | Works with limits | 1 supported, 4 partial / 5 tracked |
-| Messaging | Works with limits | 1 supported, 4 partial / 5 tracked |
-| Search and SOSL helpers | Works with limits | 11 partial / 11 tracked |
+| String, Decimal, Boolean, Math | Works well | 32 supported / 32 tracked |
+| System, Assert, Limits | Supported local rows, hosted fences | 17 supported, 3 unsupported / 20 tracked |
+| Schema and SObject | Supported local rows, hosted fences | 7 supported, 1 unsupported / 8 tracked |
+| Test helpers | Supported local rows, hosted fences | 28 supported, 3 unsupported / 31 tracked |
+| JSON, Pattern, EncodingUtil, Crypto | Works well | 17 supported / 17 tracked |
+| ApexPages and PageReference | Supported controller rows, hosted rendering fences | 15 supported, 2 unsupported / 17 tracked |
+| HTTP and WebServiceCallout | Supported mock rows, live transport fences | 6 supported, 2 unsupported / 8 tracked |
+| Messaging | Supported local rows, hosted delivery fences | 6 supported, 2 unsupported / 8 tracked |
+| Search and SOSL helpers | Supported local rows, hosted ranking fence | 11 supported, 1 unsupported / 12 tracked |
 | UserInfo, URL, Label, and TrailblazerIdentity | Wide local support | 24 supported / 24 tracked |
-| Type, FeatureManagement, and Exception | Works with limits | 6 supported, 2 partial / 8 tracked |
-| Local test harness and request context | Works with limits | 13 supported, 17 partial / 30 tracked |
-| Fenced live service APIs | Not supported | 2 unsupported / 2 tracked |
+| Type, FeatureManagement, and Exception | Supported local rows, hosted package fence | 8 supported, 1 unsupported / 9 tracked |
+| Local test harness and request context | Supported local rows, hosted/malformed fences | 30 supported, 2 unsupported / 32 tracked |
+| Fenced hosted-service and platform boundary rows | Not supported, plus stable diagnostics | 1 supported diagnostic row, 2 unsupported / 3 tracked |
 
 The local test harness and request-context group includes Approval,
 BusinessHours, QuickAction, Request, UIRequest, Sandbox, Schedulable, and
-AccessLevel edge rows. The fenced live-service group includes Answers and
-ResetPasswordResult rows.
+AccessLevel rows. The fenced hosted-service group includes Answers and
+ResetPasswordResult rows plus the stable UnsupportedFeature diagnostic row.
 
 ## Current Surface Landscape
 
-The maintainer surface refresh separates product support from generated shape,
-passive DTOs, stub/no-op rows, and explicit unsupported fences. In the current
-checked landscape it reports:
+The checked capability status and standard-library ledger now report no partial rows.
+Every remaining hosted-only behavior is split into an exact unsupported row.
 
-| Bucket | Rows |
+| Measure | Rows |
 | --- | ---: |
-| Implemented | 130268 |
-| Partial | 1 |
-| Passive shape | 47493 |
-| Stub/no-op | 262 |
-| Explicit unsupported | 6337 |
-| Missing shape gaps | 0 |
-| Missing behavior gaps | 0 |
-| Missing evidence gaps | 0 |
-| Failure rows | 0 |
+| Capability features marked `supported` | 30 |
+| Capability features marked `partial` | 0 |
+| Capability features marked `unsupported` | 2 |
+| Standard-library rows marked `supported` | 265 |
+| Standard-library rows marked `partial` | 0 |
+| Standard-library rows marked `unsupported` | 19 |
 
 ## Drill Down
 
 Use this map first, then cut down to the exact checked row.
 
-- Ledger standard-library rows: [`docs/STDLIB_COVERAGE.md`](https://github.com/glade-sh/glade/blob/main/docs/STDLIB_COVERAGE.md)
-- Current known gaps: [`docs/KNOWN_GAPS.md`](https://github.com/glade-sh/glade/blob/main/docs/KNOWN_GAPS.md)
-- Maintainer proof reports: [Maintainer Proof Reports](/guide/compatibility-dashboard)
+- Method-level standard-library rows: [`docs/STDLIB_COVERAGE.md`](https://github.com/glade-sh/glade/blob/main/docs/STDLIB_COVERAGE.md)
 
 One rule keeps the marks honest. Do not call a surface supported until the row
 has implementation and compatibility evidence.

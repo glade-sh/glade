@@ -103,9 +103,7 @@ export default defineConfig({
           { text: 'Test startup cache', link: '/guide/test-startup-cache' },
           { text: 'Reports and package artifacts', link: '/guide/rich-local-workflows' },
           { text: 'Built-in examples', link: '/guide/examples' },
-          { text: 'Plugins', link: '/guide/plugins' },
-          { text: 'Compatibility / proof reports', link: '/guide/compatibility-dashboard' },
-          { text: 'Brand guide', link: '/guide/brand-guide' }
+          { text: 'Plugins', link: '/guide/plugins' }
         ]
       }
     ],

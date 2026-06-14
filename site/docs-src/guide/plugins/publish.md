@@ -20,7 +20,7 @@ glade plugins info @acme/quality
 8. Let CI run `manifest --json`.
 9. Fix unsafe names, unsafe versions, missing assets, broken docs links, or
    command roots that collide with built-in Glade commands.
-10. Maintainers merge approved entries.
+10. Approved entries merge into the curated catalog.
 
 The registry contract does not depend on a hosted publisher portal. Custom
 registries can use the same shape before a plugin enters the default

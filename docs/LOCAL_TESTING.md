@@ -244,11 +244,11 @@ glade profile analyze reports/trace.json
 - `repro` writes a best-effort Apex test class from the subscriber log.
 
 ```bash
-glade debug parse --log internal/debuglog/testdata/subscriber.log --json
-glade debug profile --log internal/debuglog/testdata/subscriber.log
-glade debug explain --log internal/debuglog/testdata/subscriber.log --project internal/debuglog/testdata/project
-glade debug explain --log internal/debuglog/testdata/subscriber.log --project internal/debuglog/testdata/project --json
-glade debug repro --log internal/debuglog/testdata/subscriber.log --project internal/debuglog/testdata/project > ReproTest.cls
+glade debug parse --log logs/apex-debug.log --json
+glade debug profile --log logs/apex-debug.log
+glade debug explain --log logs/apex-debug.log --project .
+glade debug explain --log logs/apex-debug.log --project . --json
+glade debug repro --log logs/apex-debug.log --project . > ReproTest.cls
 ```
 
 `repro` infers setup records from SOQL equality filters, entry-point calls from

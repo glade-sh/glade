@@ -265,7 +265,7 @@ head:
     <a class="home-next-card" href="https://github.com/glade-sh/glade">
       <span>SOURCE</span>
       <strong>GitHub</strong>
-      <span>Source, issues, releases, and roadmap.</span>
+      <span>Source, issues, and releases.</span>
     </a>
   </div>
 </section>

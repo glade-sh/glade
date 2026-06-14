@@ -10,9 +10,10 @@ A release can be promoted when:
 - `go test ./...` passes.
 - `scripts/smoke.sh` passes against the built binary.
 - `glade doctor` reports `Ready.` for release archives.
-- Public support docs describe the current command surface and known gaps.
+- Public support docs describe the current command surface and unsupported
+  boundaries.
 
-## Release Readiness Labels
+## Release Gate Labels
 
 Use these labels narrowly. They are claims about checked gates from the current
 source tree, not broad promises that every Salesforce behavior is implemented.
@@ -64,7 +65,7 @@ Use this workflow for an easy, repeatable distribution pass.
 1. Prepare release branch state.
    - Run the required gates from current source.
    - Confirm docs reflect the current command names and setup steps.
-   - Run the installed-binary dogfood checklist on at least one SFDX project.
+   - Run the first project check from `INSTALL.md` on at least one SFDX project.
 
 2. Cut and push a tag.
 
@@ -94,12 +95,12 @@ tar -xzf glade_vX.Y.Z_linux_amd64.tar.gz
    - Validate `brew install` and `glade version`.
 
 6. Publish release notes.
-   - Call out new supported behavior and remaining known gaps.
+   - Call out new supported behavior and remaining unsupported boundaries.
 
-For an operator-oriented command checklist, use
+For a release command checklist, use
 [`docs/DISTRIBUTION_WORKFLOW.md`](DISTRIBUTION_WORKFLOW.md).
-For a real-project dogfood pass, use
-[`docs/DOGFOOD_CHECKLIST.md`](DOGFOOD_CHECKLIST.md).
+For a real-project smoke pass, use the first project run in
+[`docs/INSTALL.md`](INSTALL.md).
 
 ## Benchmark Checks
 

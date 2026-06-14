@@ -168,84 +168,6 @@ cache is created, how it stays fresh, and how to recover from a bad cache, see
 For a compact pilot handoff that covers VS Code, AI, CI, and report workflows,
 see [TESTER_FIELD_GUIDE.md](TESTER_FIELD_GUIDE.md).
 
-For a short release-candidate dogfood pass, use
-[`DOGFOOD_CHECKLIST.md`](DOGFOOD_CHECKLIST.md).
-
-## Distribute to a Few Machines (Pre-Release)
-
-Before publishing public releases you can hand `glade` to a handful of machines.
-The one rule to remember: **the binary is CGO-linked, so a build runs only on
-the same OS and CPU architecture it was built on.** Build per platform, then
-copy.
-
-### 1. Build a working binary
-
-On a machine of the target platform (for example, an Apple Silicon Mac for other
-Apple Silicon Macs):
-
-```bash
-scripts/build-local.sh
-```
-
-This builds a CGO-enabled host binary into `dist/`, verifies the parser is wired
-up (`doctor` must report `Ready.`), and writes a `.tar.gz` (or `.zip` on
-Windows) plus a `.sha256`. Override the version or output directory with
-`VERSION=` and `DIST_DIR=`.
-
-### 2. Copy to the target machines
-
-Same OS and architecture only. For example:
-
-```bash
-scp dist/glade_*_darwin_arm64.tar.gz user@host:/tmp/
-```
-
-For a Linux server, build the archive on Linux (or in the bundled container —
-see below) and copy that.
-
-### 3. Install and verify on each machine
-
-```bash
-shasum -a 256 -c glade_*_darwin_arm64.tar.gz.sha256   # optional integrity check
-tar -xzf glade_*_darwin_arm64.tar.gz
-install -m 0755 glade ~/.local/bin/glade
-
-glade version
-glade doctor          # MUST show "Ready."
-```
-
-`glade doctor` is the acceptance check: if it prints `parser: UNAVAILABLE`, the
-binary was built without CGO and will not parse project Apex. Rebuild with a C
-compiler present.
-
-On macOS, Gatekeeper may quarantine an unsigned binary copied from another
-machine. Clear it with:
-
-```bash
-xattr -d com.apple.quarantine ~/.local/bin/glade
-```
-
-### Building a Linux binary from macOS
-
-CGO cross-compilation needs a target toolchain, so the simplest path is the
-bundled container, which builds on a glibc base:
-
-```bash
-docker build -t glade-local .
-docker create --name glade-extract glade-local
-docker cp glade-extract:/usr/local/bin/glade ./glade-linux
-docker rm glade-extract
-```
-
-Copy `glade-linux` to the Linux machine and verify with `glade doctor`. The
-Linux host's glibc must be compatible with the build base (Debian bookworm).
-
-### Alternative: build from source on each machine
-
-The most robust option when machines already have Go 1.26 and a C compiler is to
-build from source on each one (see "Build And Run From Source" above). No
-cross-compilation, no architecture mismatches.
-
 ## Manual Install
 
 Download the archive for your platform from the release artifacts, verify the
@@ -377,33 +299,5 @@ persist mode.
 
 ## Homebrew
 
-Homebrew distribution is not published yet. The easiest path is a dedicated
-tap repo and a formula update on each tagged release:
-
-1. Build release artifacts and checksums from a tag (`vX.Y.Z`).
-2. Update `glade.rb` in your tap with the matching archive URL and SHA256.
-3. Commit and push the tap update.
-4. Validate with `brew install <tap>/glade` and `glade version`.
-
-For the full release-to-distribution checklist, see
-[`docs/DISTRIBUTION_WORKFLOW.md`](DISTRIBUTION_WORKFLOW.md).
-
-Formula template:
-
-```ruby
-class Glade < Formula
-  desc "Clean-room local Apex runtime"
-  homepage "https://github.com/glade-sh/glade"
-  url "https://github.com/glade-sh/glade/releases/download/VERSION/glade_VERSION_darwin_arm64.tar.gz"
-  sha256 "REPLACE_WITH_RELEASE_SHA256"
-  version "VERSION"
-
-  def install
-    bin.install "glade"
-  end
-
-  test do
-    system "#{bin}/glade", "version"
-  end
-end
-```
+Homebrew distribution is not published yet. Use the one-line installer or a
+manual release archive for now.

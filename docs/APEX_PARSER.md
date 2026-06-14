@@ -28,7 +28,7 @@ stable API:
 - `ParseSource`
 
 It extracts the structural model used by project loading, symbol indexing,
-semantic analysis, LSP, watch, readiness, replay, and test discovery:
+semantic analysis, LSP, watch, replay, and test discovery:
 
 - classes, interfaces, enums, and triggers
 - methods, constructors, fields, properties, initializers, and nested types
