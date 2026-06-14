@@ -16,19 +16,23 @@ type Server struct {
 	Store interface {
 		Save(storage.OrgState) error
 	}
-	Source     SourceMetadata
-	LimitMode  vm.LimitMode
-	LimitCaps  vm.LimitCaps
-	Index      *typesys.Index
-	runtime    *vm.VM
-	runtimeErr error
+	Source       SourceMetadata
+	LimitProfile string
+	LimitMode    vm.LimitMode
+	LimitCaps    vm.LimitCaps
+	Index        *typesys.Index
+	runtime      *vm.VM
+	runtimeErr   error
 
-	queryLocators map[string]queryLocatorState
-	queryOrder    []string
-	nextQueryID   int
-	bulkQueryJobs map[string]bulkQueryJob
-	nextBulkJobID int
-	lightning     lightningState
+	queryLocators          map[string]queryLocatorState
+	queryOrder             []string
+	nextQueryID            int
+	bulkQueryJobs          map[string]bulkQueryJob
+	nextBulkJobID          int
+	lightning              lightningState
+	metadataJobs           map[string]metadataLocalJob
+	nextMetadataDeployID   int
+	nextMetadataRetrieveID int
 }
 
 type queryLocatorState struct {
@@ -215,7 +219,7 @@ func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request) {
 	case len(rest) == 1 && rest[0] == "sobjects":
 		s.handleSObjects(w, r, parts[2])
 	case len(rest) >= 2 && rest[0] == "sobjects":
-		s.handleObject(w, r, parts[2], rest[1:])
+		s.handleObjectBreadth(w, r, parts[2], rest[1:])
 	case len(rest) == 1 && rest[0] == "query":
 		s.handleQuery(w, r, parts[2], "query", false)
 	case len(rest) == 2 && rest[0] == "query":
@@ -237,11 +241,11 @@ func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request) {
 	case len(rest) >= 1 && rest[0] == "tooling":
 		s.handleTooling(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "jobs":
-		s.handleBulkJobs(w, r, parts[2], rest[1:])
+		s.handleBulkJobsWithQueryPaging(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "metadata":
-		s.handleMetadataREST(w, r, parts[2], rest[1:])
+		s.handleMetadataRESTWithJobs(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "composite":
-		s.handleComposite(w, r, parts[2], rest[1:])
+		s.handleCompositeBreadth(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "glade":
 		s.handleGLADE(w, r, rest[1:])
 	case len(rest) >= 1:
