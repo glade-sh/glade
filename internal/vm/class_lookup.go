@@ -300,6 +300,9 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 				return platformScalar("Type", typeForNameClassToken(namespace, class))
 			}
 		}
+		if objectName, ok := vm.localNamespaceSObjectTypeForName(namespace, name); ok {
+			return platformScalar("Type", objectName)
+		}
 		return Null
 	}
 	if resolved, ok := vm.resolveClassName(name); ok {
@@ -323,6 +326,36 @@ func (vm *VM) typeForName(namespace, name string, explicitNamespace bool) Value 
 		return platformScalar("Type", name)
 	}
 	return Null
+}
+func (vm *VM) localNamespaceSObjectTypeForName(namespace, name string) (string, bool) {
+	if vm == nil || vm.Org == nil {
+		return "", false
+	}
+	namespace = strings.TrimSpace(namespace)
+	name = strings.TrimSpace(name)
+	if namespace == "" || name == "" {
+		return "", false
+	}
+	candidates := []string{name}
+	if strings.Contains(name, ".") {
+		_, rest, _ := strings.Cut(name, ".")
+		if rest != "" {
+			candidates = append(candidates, rest)
+		}
+	}
+	for _, candidate := range candidates {
+		prefixed := storage.NamespaceTokenName(namespace, candidate)
+		for _, objectCandidate := range []string{candidate, prefixed} {
+			if objectName, ok := vm.resolveObjectName(objectCandidate); ok && sObjectBelongsToNamespace(objectName, namespace) {
+				return objectName, true
+			}
+		}
+	}
+	return "", false
+}
+func sObjectBelongsToNamespace(objectName, namespace string) bool {
+	prefix := strings.TrimSpace(namespace) + "__"
+	return strings.HasPrefix(strings.ToLower(strings.TrimSpace(objectName)), strings.ToLower(prefix))
 }
 func generatedPlatformTypeForName(namespace, name string) (string, bool) {
 	name = strings.TrimSpace(name)

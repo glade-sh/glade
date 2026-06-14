@@ -51,6 +51,35 @@ func TestVMRecordFieldPathPreservesMissingNestedParentRelationshipNull(t *testin
 	}
 }
 
+func TestExecTypeForNameResolvesLocalNamespaceSObjectAlias(t *testing.T) {
+	program, err := CompileAnonymous(`
+Type local = Type.forName('pkg', 'Widget__c');
+System.assertNotEquals(null, local);
+System.assertEquals('pkg__Widget__c', local.getName());
+
+Type qualified = Type.forName('pkg', 'pkg__Widget__c');
+System.assertNotEquals(null, qualified);
+System.assertEquals('pkg__Widget__c', qualified.getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["pkg__Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "pkg__Widget__c",
+			Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExprReceiverNameIncludesFieldPath(t *testing.T) {
 	expr := ir.Expr{
 		Kind:   ir.ExprCall,

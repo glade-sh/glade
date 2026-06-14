@@ -27,6 +27,7 @@ type Project struct {
 	TranslationFiles           []string                   `json:"translationFiles,omitempty"`
 	StaticResourceFiles        []string                   `json:"staticResourceFiles"`
 	StaticResourceMetas        []string                   `json:"staticResourceMetas"`
+	DataCategoryGroupFiles     []string                   `json:"dataCategoryGroupFiles,omitempty"`
 	DataWeaveFiles             []string                   `json:"dataWeaveFiles,omitempty"`
 	DataWeaveMetas             []string                   `json:"dataWeaveMetas,omitempty"`
 	ContentAssetFiles          []string                   `json:"contentAssetFiles,omitempty"`
@@ -362,6 +363,7 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 	sort.Strings(p.TranslationFiles)
 	sort.Strings(p.StaticResourceFiles)
 	sort.Strings(p.StaticResourceMetas)
+	sort.Strings(p.DataCategoryGroupFiles)
 	sort.Strings(p.DataWeaveFiles)
 	sort.Strings(p.DataWeaveMetas)
 	sort.Strings(p.ContentAssetFiles)
@@ -669,6 +671,8 @@ func collectFiles(root string, p *Project) error {
 			p.TranslationFiles = append(p.TranslationFiles, path)
 		case strings.HasSuffix(lower, ".resource-meta.xml"), strings.HasSuffix(lower, ".staticresource-meta.xml"):
 			p.StaticResourceMetas = append(p.StaticResourceMetas, path)
+		case strings.HasSuffix(lower, ".datacategorygroup-meta.xml"):
+			p.DataCategoryGroupFiles = append(p.DataCategoryGroupFiles, path)
 		case strings.HasSuffix(lower, ".dwl-meta.xml"):
 			p.DataWeaveMetas = append(p.DataWeaveMetas, path)
 		case strings.HasSuffix(lower, ".dwl"):

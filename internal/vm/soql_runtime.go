@@ -477,6 +477,9 @@ func (vm *VM) searchFind(args []Value) (Value, error) {
 	if err := validateSOSLSpellCorrectionOption(queryText); err != nil {
 		return Null, err
 	}
+	if err := validateSOSLHostedSearchOptions(queryText); err != nil {
+		return Null, err
+	}
 	withSnippet := soslHasSearchOption(queryText, "snippet")
 	searchTerms := parseSOSLFindTerms(queryText)
 	results := Object("Search.SearchResults")
@@ -491,7 +494,7 @@ func (vm *VM) searchFind(args []Value) (Value, error) {
 			if canonical, ok := vm.resolveObjectName(spec.ObjectName); ok {
 				objectName = canonical
 			}
-			records, err := vm.soslRecordsForSpec(spec, objectName, parseSOSLSearchPatterns(queryText), "", accessLevel)
+			records, err := vm.soslRecordsForSpec(spec, objectName, parseSOSLSearchPatterns(queryText), parseSOSLSearchScope(queryText), "", accessLevel)
 			if err != nil {
 				return Null, err
 			}
@@ -584,6 +587,9 @@ func (vm *VM) executeSOSLWithAccessLevel(raw string, execResult *Result, accessL
 	if err := validateSOSLSpellCorrectionOption(queryText); err != nil {
 		return Null, err
 	}
+	if err := validateSOSLHostedSearchOptions(queryText); err != nil {
+		return Null, err
+	}
 	pricebookID := soslPricebookID(queryText)
 	objects, err := parseSOSLReturningObjects(queryText)
 	if err != nil {
@@ -601,7 +607,7 @@ func (vm *VM) executeSOSLWithAccessLevel(raw string, execResult *Result, accessL
 		rows := List()
 		rows.Type = "List<" + specObjectName + ">"
 		if vm.Org != nil {
-			records, err := vm.soslRecordsForSpec(spec, specObjectName, parseSOSLSearchPatterns(queryText), pricebookID, accessLevel)
+			records, err := vm.soslRecordsForSpec(spec, specObjectName, parseSOSLSearchPatterns(queryText), parseSOSLSearchScope(queryText), pricebookID, accessLevel)
 			if err != nil {
 				return Null, err
 			}
@@ -663,9 +669,21 @@ type soslSearchPattern struct {
 	Prefix bool
 }
 
-func (vm *VM) soslRecordsForSpec(spec soslReturningObject, objectName string, patterns []soslSearchPattern, pricebookID string, accessLevel Value) ([]storage.Record, error) {
+type soslSearchScope string
+
+const (
+	soslSearchScopeAll   soslSearchScope = "all"
+	soslSearchScopeName  soslSearchScope = "name"
+	soslSearchScopeEmail soslSearchScope = "email"
+	soslSearchScopePhone soslSearchScope = "phone"
+)
+
+func (vm *VM) soslRecordsForSpec(spec soslReturningObject, objectName string, patterns []soslSearchPattern, scope soslSearchScope, pricebookID string, accessLevel Value) ([]storage.Record, error) {
 	if vm == nil || vm.Org == nil {
 		return nil, nil
+	}
+	if strings.HasSuffix(strings.ToLower(strings.TrimSpace(objectName)), "__x") {
+		return nil, unsupportedCallError("Search.query SOSL external indexes")
 	}
 	state, ok := vm.Org.Objects[objectName]
 	if !ok {
@@ -706,7 +724,7 @@ func (vm *VM) soslRecordsForSpec(spec soslReturningObject, objectName string, pa
 		if !soslRecordMatchesWhere(record, spec.Where) || !vm.soslRecordMatchesPricebook(objectName, record, pricebookID) {
 			continue
 		}
-		if !vm.soslRecordMatchesSearch(objectName, record, patterns, accessLevel) {
+		if !vm.soslRecordMatchesSearch(objectName, record, patterns, scope, accessLevel) {
 			continue
 		}
 		records = append(records, record)
@@ -744,23 +762,23 @@ func (vm *VM) enforceSOSLAccess(objectName string, spec soslReturningObject, acc
 	return nil
 }
 
-func (vm *VM) soslRecordMatchesSearch(objectName string, record storage.Record, patterns []soslSearchPattern, accessLevel Value) bool {
+func (vm *VM) soslRecordMatchesSearch(objectName string, record storage.Record, patterns []soslSearchPattern, scope soslSearchScope, accessLevel Value) bool {
 	if len(patterns) == 0 {
 		return true
 	}
 	for _, pattern := range patterns {
-		if vm.soslRecordMatchesSearchPattern(objectName, record, pattern, accessLevel) {
+		if vm.soslRecordMatchesSearchPattern(objectName, record, pattern, scope, accessLevel) {
 			return true
 		}
 	}
 	return false
 }
 
-func (vm *VM) soslRecordMatchesSearchPattern(objectName string, record storage.Record, pattern soslSearchPattern, accessLevel Value) bool {
+func (vm *VM) soslRecordMatchesSearchPattern(objectName string, record storage.Record, pattern soslSearchPattern, scope soslSearchScope, accessLevel Value) bool {
 	if pattern.Term == "" {
 		return true
 	}
-	if soslTextMatchesPattern(string(record.ID), pattern) {
+	if scope == soslSearchScopeAll && soslTextMatchesPattern(string(record.ID), pattern) {
 		return true
 	}
 	object, ok := vm.Org.Objects[objectName]
@@ -780,7 +798,7 @@ func (vm *VM) soslRecordMatchesSearchPattern(objectName string, record storage.R
 			canonical = field
 		}
 		definition, hasDefinition := object.Definition.Fields[canonical]
-		if !hasDefinition || !soslSearchableField(definition) {
+		if !hasDefinition || !soslSearchableField(definition) || !soslFieldMatchesScope(canonical, definition, scope) {
 			continue
 		}
 		if userMode && !vm.currentUserFieldPermissionWithScope(objectName, canonical, "isAccessible", permissionSetID) {
@@ -806,6 +824,38 @@ func soslSearchableField(field storage.Field) bool {
 	}
 }
 
+func soslFieldMatchesScope(fieldName string, field storage.Field, scope soslSearchScope) bool {
+	switch scope {
+	case "", soslSearchScopeAll:
+		return true
+	case soslSearchScopeName:
+		return soslIsNameField(fieldName, field)
+	case soslSearchScopeEmail:
+		return soslIsEmailField(fieldName, field)
+	case soslSearchScopePhone:
+		return soslIsPhoneField(fieldName, field)
+	default:
+		return true
+	}
+}
+
+func soslIsNameField(fieldName string, field storage.Field) bool {
+	name := strings.ToLower(strings.TrimSpace(fieldName))
+	return name == "name" || name == "firstname" || name == "lastname" || name == "subject" || field.NamePointing
+}
+
+func soslIsEmailField(fieldName string, field storage.Field) bool {
+	name := strings.ToLower(strings.TrimSpace(fieldName))
+	label := strings.ToLower(strings.TrimSpace(field.Label))
+	return name == "email" || strings.HasSuffix(name, "email") || strings.Contains(label, "email")
+}
+
+func soslIsPhoneField(fieldName string, field storage.Field) bool {
+	name := strings.ToLower(strings.TrimSpace(fieldName))
+	label := strings.ToLower(strings.TrimSpace(field.Label))
+	return name == "phone" || strings.HasSuffix(name, "phone") || strings.Contains(label, "phone")
+}
+
 func soslTextMatchesPattern(text string, pattern soslSearchPattern) bool {
 	text = strings.TrimSpace(text)
 	if text == "" {
@@ -815,6 +865,20 @@ func soslTextMatchesPattern(text string, pattern soslSearchPattern) bool {
 		return strings.HasPrefix(strings.ToLower(text), strings.ToLower(pattern.Term))
 	}
 	return containsFold(text, pattern.Term)
+}
+
+func parseSOSLSearchScope(query string) soslSearchScope {
+	upper := strings.ToUpper(query)
+	switch {
+	case strings.Contains(upper, " IN NAME FIELDS"):
+		return soslSearchScopeName
+	case strings.Contains(upper, " IN EMAIL FIELDS"):
+		return soslSearchScopeEmail
+	case strings.Contains(upper, " IN PHONE FIELDS"):
+		return soslSearchScopePhone
+	default:
+		return soslSearchScopeAll
+	}
 }
 
 func parseSOSLSearchPatterns(query string) []soslSearchPattern {
@@ -949,6 +1013,26 @@ func validateSOSLSpellCorrectionOption(query string) error {
 			continue
 		}
 		return newExceptionError("QueryException", "SOSL WITH SPELL_CORRECTION expects true or false")
+	}
+	return nil
+}
+
+func validateSOSLHostedSearchOptions(query string) error {
+	unsupported := []struct {
+		pattern string
+		message string
+	}{
+		{`(?i)\bWITH\s+DATA\s+CATEGORY\b`, "Search.query SOSL WITH DATA CATEGORY hosted search service"},
+		{`(?i)\bWITH\s+DIVISIONFILTER\b`, "Search.query SOSL WITH DivisionFilter hosted search service"},
+		{`(?i)\bWITH\s+METADATA\b`, "Search.query SOSL WITH METADATA hosted search service"},
+		{`(?i)\bUSING\s+LISTVIEW\b`, "Search.query SOSL USING ListView hosted search service"},
+		{`(?i)\bUPDATE\s+TRACKING\b`, "Search.query SOSL UPDATE TRACKING hosted search analytics"},
+		{`(?i)\bUPDATE\s+VIEWSTAT\b`, "Search.query SOSL UPDATE VIEWSTAT hosted search analytics"},
+	}
+	for _, candidate := range unsupported {
+		if regexp.MustCompile(candidate.pattern).MatchString(query) {
+			return unsupportedCallError(candidate.message)
+		}
 	}
 	return nil
 }
