@@ -35,18 +35,28 @@ type Report struct {
 }
 
 type Entry struct {
-	Name          string  `json:"name"`
-	Category      string  `json:"category,omitempty"`
-	Count         int     `json:"count"`
-	Rows          int     `json:"rows,omitempty"`
-	DurationCount int     `json:"durationCount,omitempty"`
-	FirstTS       int64   `json:"firstTs"`
-	LastTS        int64   `json:"lastTs"`
-	File          string  `json:"file,omitempty"`
-	DurationUS    int64   `json:"durationUs,omitempty"`
-	DurationMS    int64   `json:"durationMs,omitempty"`
-	SourceOffsets []int   `json:"sourceOffsets,omitempty"`
-	SourceRanges  []Range `json:"sourceRanges,omitempty"`
+	Name          string   `json:"name"`
+	Category      string   `json:"category,omitempty"`
+	EntryPoint    string   `json:"entryPoint,omitempty"`
+	Class         string   `json:"class,omitempty"`
+	Method        string   `json:"method,omitempty"`
+	Operation     string   `json:"operation,omitempty"`
+	OperationID   string   `json:"operationId,omitempty"`
+	Object        string   `json:"object,omitempty"`
+	Objects       []string `json:"objects,omitempty"`
+	QueryHash     string   `json:"queryHash,omitempty"`
+	Namespace     string   `json:"namespace,omitempty"`
+	TransactionID string   `json:"transactionId,omitempty"`
+	Count         int      `json:"count"`
+	Rows          int      `json:"rows,omitempty"`
+	DurationCount int      `json:"durationCount,omitempty"`
+	FirstTS       int64    `json:"firstTs"`
+	LastTS        int64    `json:"lastTs"`
+	File          string   `json:"file,omitempty"`
+	DurationUS    int64    `json:"durationUs,omitempty"`
+	DurationMS    int64    `json:"durationMs,omitempty"`
+	SourceOffsets []int    `json:"sourceOffsets,omitempty"`
+	SourceRanges  []Range  `json:"sourceRanges,omitempty"`
 }
 
 type Range struct {
@@ -106,33 +116,34 @@ func Analyze(doc trace.Document) Report {
 			entry.LastTS = event.Timestamp
 		}
 		if entry.File == "" {
-			if file, ok := event.Args["file"].(string); ok && strings.TrimSpace(file) != "" {
+			if file, ok := stringArg(event.Args, trace.ArgFile); ok {
 				entry.File = file
 			}
 		}
+		captureStableArgs(entry, event.Args)
 		if event.Duration > 0 {
 			entry.DurationCount++
 			entry.DurationUS += event.Duration
 			entry.DurationMS = entry.DurationUS / 1000
 		}
 		if event.Phase == trace.PhaseInstant {
-			if rows, ok := intArg(event.Args["rows"]); ok {
+			if rows, ok := intArg(event.Args[trace.ArgRows]); ok {
 				entry.Rows += rows
 			}
 		}
-		if offset, ok := intArg(event.Args["sourceOffset"]); ok && !containsInt(entry.SourceOffsets, offset) {
+		if offset, ok := intArg(event.Args[trace.ArgSourceOffset]); ok && !containsInt(entry.SourceOffsets, offset) {
 			entry.SourceOffsets = append(entry.SourceOffsets, offset)
 		}
-		if offset, ok := intArg(event.Args["sourceOffset"]); ok {
-			line, hasLine := intArg(event.Args["line"])
-			column, hasColumn := intArg(event.Args["column"])
+		if offset, ok := intArg(event.Args[trace.ArgSourceOffset]); ok {
+			line, hasLine := intArg(event.Args[trace.ArgLine])
+			column, hasColumn := intArg(event.Args[trace.ArgColumn])
 			if hasLine && hasColumn && !containsRange(entry.SourceRanges, offset, line, column) {
 				entry.SourceRanges = append(entry.SourceRanges, Range{Offset: offset, Line: line, Column: column})
 			}
 			continue
 		}
-		line, hasLine := intArg(event.Args["line"])
-		column, hasColumn := intArg(event.Args["column"])
+		line, hasLine := intArg(event.Args[trace.ArgLine])
+		column, hasColumn := intArg(event.Args[trace.ArgColumn])
 		if hasLine {
 			if !hasColumn {
 				column = 0
@@ -161,14 +172,14 @@ func Analyze(doc trace.Document) Report {
 		case "apex.soql":
 			if event.Phase == trace.PhaseInstant {
 				report.Limits.SOQLQueries++
-				if rows, ok := intArg(event.Args["rows"]); ok {
+				if rows, ok := intArg(event.Args[trace.ArgRows]); ok {
 					report.Limits.SOQLRows += rows
 				}
 			}
 		case "apex.dml":
 			if event.Phase == trace.PhaseInstant {
 				report.Limits.DML++
-				if rows, ok := intArg(event.Args["rows"]); ok {
+				if rows, ok := intArg(event.Args[trace.ArgRows]); ok {
 					report.Limits.DMLRows += rows
 				}
 			}
@@ -592,8 +603,11 @@ func writeEntriesSection(w io.Writer, title string, entries []Entry) error {
 
 func profileEntryKey(event trace.Event) string {
 	key := event.Category + "\x00" + event.Name
+	if operationID, ok := stringArg(event.Args, trace.ArgOperationID); ok {
+		return event.Category + "\x00" + operationID
+	}
 	if event.Category == "apex.soql" {
-		if query, ok := event.Args["query"].(string); ok && strings.TrimSpace(query) != "" {
+		if query, ok := stringArg(event.Args, trace.ArgQuery); ok {
 			key += "\x00" + strings.TrimSpace(query)
 		}
 	}
@@ -602,11 +616,34 @@ func profileEntryKey(event trace.Event) string {
 
 func profileEntryName(event trace.Event) string {
 	if event.Category == "apex.soql" {
-		if query, ok := event.Args["query"].(string); ok && strings.TrimSpace(query) != "" {
+		if query, ok := stringArg(event.Args, trace.ArgQuery); ok {
 			return strings.TrimSpace(query)
 		}
 	}
 	return event.Name
+}
+
+func captureStableArgs(entry *Entry, args map[string]any) {
+	if entry == nil || len(args) == 0 {
+		return
+	}
+	setStringField(&entry.EntryPoint, args, trace.ArgEntryPoint)
+	setStringField(&entry.Class, args, trace.ArgClass)
+	setStringField(&entry.Method, args, trace.ArgMethod)
+	setStringField(&entry.Operation, args, trace.ArgOperation)
+	setStringField(&entry.OperationID, args, trace.ArgOperationID)
+	setStringField(&entry.Object, args, trace.ArgObject)
+	setStringField(&entry.QueryHash, args, trace.ArgQueryHash)
+	setStringField(&entry.Namespace, args, trace.ArgNamespace)
+	setStringField(&entry.TransactionID, args, trace.ArgTransactionID)
+	if objects, ok := stringSliceArg(args, trace.ArgObjects); ok {
+		for _, object := range objects {
+			entry.Objects = appendUniqueString(entry.Objects, object)
+		}
+	}
+	if entry.Object == "" && len(entry.Objects) == 1 {
+		entry.Object = entry.Objects[0]
+	}
 }
 
 func entriesForCategory(entries []Entry, category string) []Entry {
@@ -661,6 +698,74 @@ func intArg(value any) (int, bool) {
 	default:
 		return 0, false
 	}
+}
+
+func stringArg(args map[string]any, key string) (string, bool) {
+	if len(args) == 0 {
+		return "", false
+	}
+	value, ok := args[key]
+	if !ok {
+		return "", false
+	}
+	text, ok := value.(string)
+	if !ok {
+		return "", false
+	}
+	text = strings.TrimSpace(text)
+	return text, text != ""
+}
+
+func stringSliceArg(args map[string]any, key string) ([]string, bool) {
+	if len(args) == 0 {
+		return nil, false
+	}
+	switch values := args[key].(type) {
+	case []string:
+		out := make([]string, 0, len(values))
+		for _, value := range values {
+			if text := strings.TrimSpace(value); text != "" {
+				out = append(out, text)
+			}
+		}
+		return out, len(out) > 0
+	case []any:
+		out := make([]string, 0, len(values))
+		for _, value := range values {
+			text, ok := value.(string)
+			if !ok {
+				continue
+			}
+			if text = strings.TrimSpace(text); text != "" {
+				out = append(out, text)
+			}
+		}
+		return out, len(out) > 0
+	default:
+		return nil, false
+	}
+}
+
+func setStringField(field *string, args map[string]any, key string) {
+	if field == nil || *field != "" {
+		return
+	}
+	if value, ok := stringArg(args, key); ok {
+		*field = value
+	}
+}
+
+func appendUniqueString(values []string, value string) []string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return values
+	}
+	for _, existing := range values {
+		if existing == value {
+			return values
+		}
+	}
+	return append(values, value)
 }
 
 func containsInt(values []int, needle int) bool {

@@ -287,6 +287,122 @@ func (vm *VM) appendTrace(result *Result, name, category string, args map[string
 	appendTrace(result, name, category, args)
 }
 
+func (vm *VM) traceSOQLArgs(queryText, objectName string, rows int) map[string]any {
+	args := vm.traceOperationArgs("soql", queryText)
+	args[trace.ArgQuery] = queryText
+	args[trace.ArgQueryHash] = trace.StableQueryHash(queryText)
+	if objectName = strings.TrimSpace(objectName); objectName != "" {
+		args[trace.ArgObject] = objectName
+	}
+	if rows >= 0 {
+		args[trace.ArgRows] = rows
+	}
+	return args
+}
+
+func (vm *VM) traceDMLArgs(operation string, records []storage.Record, rows int) map[string]any {
+	objects := dmlTraceObjectNames(records)
+	detail := strings.TrimSpace(operation + " " + strings.Join(objects, ","))
+	args := vm.traceOperationArgs("dml", detail)
+	args[trace.ArgOperation] = operation
+	if rows < 0 {
+		rows = len(records)
+	}
+	if rows >= 0 {
+		args[trace.ArgRows] = rows
+	}
+	if len(objects) > 0 {
+		args[trace.ArgObjects] = objects
+	}
+	if len(objects) == 1 {
+		args[trace.ArgObject] = objects[0]
+	}
+	return args
+}
+
+func (vm *VM) traceMethodArgs(method Method) map[string]any {
+	args := map[string]any{
+		trace.ArgMethod: method.Name,
+		trace.ArgClass:  method.ClassName,
+	}
+	trace.AddSourceArgs(args, method.File, method.Line, method.Column)
+	if namespace := strings.TrimSpace(vm.methodTraceNamespace(method)); namespace != "" {
+		args[trace.ArgNamespace] = namespace
+	}
+	args[trace.ArgOperationID] = trace.StableOperationID(method.File, method.Line, "method", method.Name)
+	return args
+}
+
+func (vm *VM) traceTriggerArgs(trigger Trigger, rows int) map[string]any {
+	args := map[string]any{
+		trace.ArgEntryPoint: trigger.Name,
+		"trigger":           trigger.Name,
+		trace.ArgObject:     trigger.Object,
+		"timing":            trigger.Timing,
+		trace.ArgOperation:  trigger.Operation,
+		trace.ArgRows:       rows,
+	}
+	trace.AddSourceArgs(args, trigger.File, trigger.Line, trigger.Column)
+	if namespace := strings.TrimSpace(trigger.Namespace); namespace != "" {
+		args[trace.ArgNamespace] = namespace
+	}
+	detail := strings.Join([]string{trigger.Object, trigger.Timing, trigger.Operation}, " ")
+	args[trace.ArgOperationID] = trace.StableOperationID(trigger.File, trigger.Line, "trigger", detail)
+	return args
+}
+
+func (vm *VM) traceDescribeArgs(operation string, extras map[string]any) map[string]any {
+	args := vm.traceOperationArgs("describe", operation)
+	args[trace.ArgOperation] = operation
+	for key, value := range extras {
+		args[key] = value
+	}
+	return args
+}
+
+func (vm *VM) traceOperationArgs(kind, detail string) map[string]any {
+	args := map[string]any{}
+	frame := vm.traceSourceFrame()
+	trace.AddSourceArgs(args, frame.File, frame.Line, frame.Column)
+	if className := strings.TrimSpace(vm.currentClass); className != "" {
+		args[trace.ArgClass] = className
+	} else if className := strings.TrimSpace(vm.currentMethod.ClassName); className != "" {
+		args[trace.ArgClass] = className
+	}
+	if methodName := strings.TrimSpace(vm.currentMethod.Name); methodName != "" {
+		args[trace.ArgMethod] = methodName
+	}
+	if namespace := strings.TrimSpace(vm.currentExecutionNamespace()); namespace != "" {
+		args[trace.ArgNamespace] = namespace
+	}
+	args[trace.ArgOperationID] = trace.StableOperationID(frame.File, frame.Line, kind, detail)
+	return args
+}
+
+func (vm *VM) traceSourceFrame() callFrame {
+	if vm.hasStatement && (vm.currentStatement.File != "" || vm.currentStatement.Line > 0 || vm.currentStatement.Column > 0) {
+		frame := vm.currentStatement
+		if frame.File == "" {
+			frame.File = vm.currentMethod.File
+		}
+		if frame.File == "" && frame.Line > 0 {
+			frame.File = "anonymous.apex"
+		}
+		return frame
+	}
+	if vm.currentMethod.Name != "" {
+		return callFrame{File: vm.currentMethod.File, Line: vm.currentMethod.Line, Column: vm.currentMethod.Column}
+	}
+	return callFrame{}
+}
+
+func (vm *VM) methodTraceNamespace(method Method) string {
+	if class, ok := vm.lookupClass(method.ClassName); ok && strings.TrimSpace(class.Namespace) != "" {
+		return class.Namespace
+	}
+	return vm.currentExecutionNamespace()
+}
+
 func limitTraceArgs(limits Limits) map[string]any {
 	return map[string]any{
 		"queries":            limits.Queries,

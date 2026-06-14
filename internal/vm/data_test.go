@@ -10,6 +10,7 @@ import (
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/storage"
+	tracepkg "github.com/glade-sh/glade/internal/trace"
 )
 
 func TestExecSObjectDMLAndSOQL(t *testing.T) {
@@ -8076,8 +8077,10 @@ Object accountType = Account.SObjectType;
 Object accountDescribe = accountType.getDescribe();
 Object fieldsToken = accountDescribe.fields;
 Map<String,Object> fields = fieldsToken.getMap();
+Map<String,Object> fieldSets = accountDescribe.fieldSets.getMap();
 System.assert(fields.containsKey('Name'));
 System.assert(fields.containsKey('name'));
+System.assertEquals(0, fieldSets.size());
 Object nameField = fields.get('Name');
 Object lowercaseNameField = fields.get('name');
 Object nameDescribe = nameField.getDescribe();
@@ -8204,11 +8207,61 @@ System.assertEquals('AccountContactRelation', contacts.getJunctionReferenceTo().
 	}{
 		{"apex.describe.sobject", "apex.describe"},
 		{"apex.describe.fields", "apex.describe"},
+		{"apex.describe.fieldSets", "apex.describe"},
 		{"apex.describe.field", "apex.describe"},
 		{"apex.describe.sobjects", "apex.describe"},
 	} {
 		if !traceHas(result.Trace, event.name, event.category) {
 			t.Fatalf("trace missing %s/%s: %#v", event.name, event.category, result.Trace)
+		}
+	}
+	findTrace := func(name string, matches func(map[string]any) bool) *tracepkg.Event {
+		for i := range result.Trace {
+			event := &result.Trace[i]
+			if event.Name == name && matches(event.Args) {
+				return event
+			}
+		}
+		return nil
+	}
+	for _, event := range []struct {
+		name      string
+		operation string
+		matches   func(map[string]any) bool
+	}{
+		{
+			name:      "apex.describe.sobject",
+			operation: "SObjectType.getDescribe",
+			matches: func(args map[string]any) bool {
+				return args[tracepkg.ArgObject] == "Account"
+			},
+		},
+		{
+			name:      "apex.describe.fields",
+			operation: "fields.getMap",
+			matches:   func(map[string]any) bool { return true },
+		},
+		{
+			name:      "apex.describe.fieldSets",
+			operation: "fieldSets.getMap",
+			matches:   func(map[string]any) bool { return true },
+		},
+		{
+			name:      "apex.describe.field",
+			operation: "SObjectField.getDescribe",
+			matches: func(args map[string]any) bool {
+				return args[tracepkg.ArgObject] == "Account" && args[tracepkg.ArgField] == "Name"
+			},
+		},
+	} {
+		traceEvent := findTrace(event.name, func(args map[string]any) bool {
+			return args[tracepkg.ArgOperation] == event.operation && event.matches(args)
+		})
+		if traceEvent == nil {
+			t.Fatalf("trace missing stable args for %s/%s: %#v", event.name, event.operation, result.Trace)
+		}
+		if traceEvent.Args[tracepkg.ArgOperationID] == "" || traceEvent.Args[tracepkg.ArgLine] == nil {
+			t.Fatalf("trace missing operation id or line for %s: %#v", event.name, traceEvent.Args)
 		}
 	}
 }

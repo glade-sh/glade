@@ -94,20 +94,30 @@ Generate an advisory performance report from source and metadata first:
 
 ```bash
 # Requires a live plugin registry, custom registry, direct archive, or linked plugin.
+mkdir -p reports
 glade plugins install @glade/performance
-glade performance scan --project . --json > reports/glade-performance.json
+glade performance scan --project . --format json > reports/glade-performance.json
 ```
 
-Add trace data from a representative local run to rank the highest-cost paths first:
+Add trace data from a representative local run to rank measured paths first:
 
 ```bash
-glade performance scan --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
+mkdir -p reports
+glade test --project . --class SlowPathTest --trace reports/slow-path.trace.json
+glade performance scan --project . --trace reports/slow-path.trace.json --format markdown --top 10
 ```
 
-The static scan records entry points and high-confidence code shape. It does
-not treat a Visualforce page, Lightning wire, batch class, trigger, or SOQL
-query without a `WHERE` clause as a bottleneck by itself. Use trace input when
-you need measured elapsed spans and SOQL row counts.
+Static findings are leads. Trace-backed findings are measured local evidence.
+Org facts raise or lower confidence when metadata or data shape changes the
+risk.
+
+For org-shape triage, pass a local snapshot. The plugin never logs in to
+Salesforce for this path:
+
+```bash
+glade performance scan --project . --org-facts reports/org-facts.json --fail-on high
+glade performance scan --project . --format sarif > reports/glade-performance.sarif
+```
 
 Plugin install, archive, and author details are in [PLUGINS.md](PLUGINS.md).
 The short alias `performance` resolves to `@glade/performance`.

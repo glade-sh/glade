@@ -402,7 +402,8 @@ func (a *Analyzer) checkBodyIR(typ typesys.TypeSymbol, member typesys.MemberSymb
 		return nil
 	}
 	scope := newIRSemaScope(base)
-	diagnostics := a.checkIRInstructions(typ, member, program.Instructions, &scope, bodyOffset, source, model, constructability)
+	diagnostics := performanceDiagnosticsForProgram(typ, program, bodyOffset, source)
+	diagnostics = append(diagnostics, a.checkIRInstructions(typ, member, program.Instructions, &scope, bodyOffset, source, model, constructability)...)
 	returnType := strings.TrimSpace(member.Type)
 	if returnType != "" && !strings.EqualFold(returnType, "void") && !irInstructionsTerminate(program.Instructions) {
 		diagnostics = append(diagnostics, returnTypeDiagnostic(typ, member, fmt.Sprintf("method must return %s on all paths", returnType), member.Range.Start.Offset, member.Range.End.Offset, source))

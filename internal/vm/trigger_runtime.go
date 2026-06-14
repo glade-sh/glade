@@ -429,16 +429,7 @@ func (vm *VM) runTriggersByObject(timing, op string, records, oldRecords []stora
 	return nil, updated, nil
 }
 func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, result *Result) ([]dml.Result, error) {
-	appendTrace(result, "apex.trigger."+trigger.Name, "apex.trigger", map[string]any{
-		"trigger":   trigger.Name,
-		"object":    trigger.Object,
-		"timing":    trigger.Timing,
-		"operation": trigger.Operation,
-		"rows":      len(records),
-		"file":      trigger.File,
-		"line":      trigger.Line,
-		"column":    trigger.Column,
-	})
+	appendTrace(result, "apex.trigger."+trigger.Name, "apex.trigger", vm.traceTriggerArgs(trigger, len(records)))
 	caller := vm.Globals
 	callerClass := vm.currentClass
 	callerNamespace := vm.currentNamespace
