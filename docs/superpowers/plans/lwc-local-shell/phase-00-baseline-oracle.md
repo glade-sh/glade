@@ -38,7 +38,7 @@ Use parallel subagent squads where files do not overlap. The coordinator integra
 
 - Fixture squad: sample project and seed data.
 - Visualforce host squad: Lightning Out fixture page and Visualforce capture targets.
-- Capture squad: `glade compat lwc capture` fixture-manifest report.
+- Capture squad: `go run ./cmd/glade-plugin-compat lwc capture` fixture-manifest report from `../glade-tools`.
 - Report squad: JSON schema, text summary, plugin manifest.
 - Review squad: run fixture-manifest generation against `oaer-probe-max`, inspect artifacts, and check no product code depends on `glade-tools`.
 
@@ -68,7 +68,8 @@ type LwcCaptureOptions struct {
 - [ ] Add CLI form:
 
 ```bash
-glade compat lwc capture --target-org oaer-probe-max --project testdata/local-tests/lwc-shell --include-hosts lightning-shell,visualforce-lightning-out --out /tmp/glade-lwc-capture.json
+cd ../glade-tools
+go run ./cmd/glade-plugin-compat lwc capture --target-org oaer-probe-max --project ../glade/testdata/local-tests/lwc-shell --include-hosts lightning-shell,visualforce-lightning-out --out /tmp/glade-lwc-capture.json
 ```
 
 - [ ] Add `--skip-deploy` for local command tests. It must emit a report with `deployed:false` and fixture target URLs.
@@ -83,14 +84,17 @@ prepared 9 LWC fixture-manifest targets: prepared=9 pass=0 fail=0 artifacts=/tmp
 ## Verification
 
 ```bash
+cd ../glade-tools
 go test ./internal/compat ./internal/toolcli -run 'Lwc|Plugin' -count=1
 ```
 
 ```bash
-go run ./cmd/glade-plugin-compat lwc capture --project ../glade/testdata/local-tests/lwc-shell --skip-deploy --json
+cd ../glade-tools
+go run ./cmd/glade-plugin-compat lwc capture --target-org oaer-probe-max --project ../glade/testdata/local-tests/lwc-shell --skip-deploy --json
 ```
 
 ```bash
+cd ../glade-tools
 go run ./cmd/glade-plugin-compat lwc capture --target-org oaer-probe-max --project ../glade/testdata/local-tests/lwc-shell --include-hosts lightning-shell,visualforce-lightning-out --out /tmp/glade-lwc-capture.json
 ```
 

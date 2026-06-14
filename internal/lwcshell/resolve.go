@@ -30,7 +30,9 @@ func ResolvePageTarget(p project.Project, ctx PageContext) (ShellPage, []Diagnos
 				diag := Diagnostic{Code: "GLADELWC004", Message: fmt.Sprintf("record page object %q does not match %q", page.ObjectAPIName, ctx.ObjectAPIName)}
 				return ShellPage{}, []Diagnostic{diag}, errors.New(diag.Message)
 			}
-			ctx.ObjectAPIName = page.ObjectAPIName
+			if page.ObjectAPIName != "" {
+				ctx.ObjectAPIName = page.ObjectAPIName
+			}
 		}
 		regions := qualifyPageRegions(page.Regions, p.Namespace)
 		return ShellPage{Context: ctx, Page: page, Regions: regions}, nil, nil

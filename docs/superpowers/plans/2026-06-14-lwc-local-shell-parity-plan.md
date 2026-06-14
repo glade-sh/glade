@@ -80,37 +80,37 @@ Gaps:
 
 What about that: the pieces are good, but the bench is still missing a vise.
 
-## Target Developer Experience
+## Current Developer Experience
 
-Commands:
+Commands supported by the merged product surface:
 
 ```bash
-glade dev lwc --project . --component c/accountPanel --record-id 001000000000001AAA
-glade dev lwc --project . --record-page Account_Record_Page --record-id 001000000000001AAA
-glade dev lwc --project . --app-page Sales_Dashboard
-glade dev lwc --project . --home-page Custom_Home
-glade dev lwc --project . --tab My_Custom_Tab
-glade dev lwc --project . --url /lightning/r/Account/001000000000001AAA/view
-glade dev lwc --project . --open --watch --seed testdata/local-tests/lwc-shell/seed.json
-glade dev vf --project . --page WidgetHost --open
-glade lwc test --project . --target record-page:Account_Record_Page --record-id 001000000000001AAA
-glade lwc test --project . --target visualforce:WidgetHost
-glade compat lwc capture --target-org oaer-probe-max --project . --targets record-page --out /tmp/glade-lwc-shell-fixture-manifest
+glade dev lwc --project .
+glade dev lwc --project . --port 8080
+glade dev lwc --project . --addr 127.0.0.1:0 --ready-file /tmp/glade-lwc-ready.json
+glade dev vf --project .
+glade dev vf --project . --port 8080
+glade dev vf --project . --addr 127.0.0.1:0 --ready-file /tmp/glade-vf-ready.json
+cd ../glade-tools
+go run ./cmd/glade-plugin-compat lwc capture --target-org oaer-probe-max --project ../glade/testdata/local-tests/lwc-shell --targets record-page --out /tmp/glade-lwc-shell-fixture-manifest.json
 ```
 
 Routes served by the local dev server:
 
 ```text
-/lightning/local/component/c/accountPanel?recordId=001000000000001AAA
-/lightning/r/Account/001000000000001AAA/view
-/lightning/page/Sales_Dashboard
-/lightning/home/Custom_Home
-/lightning/n/My_Custom_Tab
-/lightning/cmp/c__accountPanel?c__mode=compact
+/lwc/preview/component/c/accountPanel?recordId=001000000000001AAA
+/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page
+/lwc/preview/app/Sales_Dashboard
+/lwc/preview/home/Custom_Home
+/lwc/preview/tab/My_Custom_Tab
 /apex/WidgetHost
 ```
 
-Every route must expose a debug JSON endpoint:
+Selector flags, browser-test CLI commands, and scratch-org DOM comparison are
+later phases in this plan. Today, the LWC and Visualforce dev commands start
+servers and developers open the route that matches the target.
+
+Future phases add a debug JSON endpoint:
 
 ```text
 /lightning/local/context.json?url=/lightning/r/Account/001000000000001AAA/view
@@ -248,7 +248,7 @@ stable manifest that the later browser oracle consumes:
 ```bash
 cd ../glade-tools
 go run ./cmd/glade-plugin-compat lwc capture \
-  --project ../glade/.worktrees/full-visualforce-rendering/testdata/local-tests/lwc-shell \
+  --project ../glade/testdata/local-tests/lwc-shell \
   --target-org oaer-probe-max \
   --targets record-page,app-page,home-page,custom-tab \
   --include-hosts lightning-shell,visualforce-lightning-out \
@@ -1448,8 +1448,9 @@ parity evidence.
 Command:
 
 ```bash
+cd ../glade-tools
 go run ./cmd/glade-plugin-compat lwc capture \
-  --project ../glade/.worktrees/full-visualforce-rendering/testdata/local-tests/lwc-shell \
+  --project ../glade/testdata/local-tests/lwc-shell \
   --target-org oaer-probe-max \
   --targets record-page,app-page,home-page,custom-tab \
   --include-hosts lightning-shell,visualforce-lightning-out \
@@ -1470,6 +1471,7 @@ Capture:
 Command:
 
 ```bash
+cd ../glade-tools
 go run ./cmd/glade-plugin-compat lwc compare \
   --local /tmp/glade-lwc-shell-local \
   --oracle /tmp/glade-lwc-shell-oracle \
@@ -1492,8 +1494,9 @@ Base `glade` must not add scratch-org capture code. Product docs may point to th
 - [ ] **Step 12.4: Run probe**
 
 ```bash
+cd ../glade-tools
 go run ./cmd/glade-plugin-compat lwc capture \
-  --project testdata/local-tests/lwc-shell \
+  --project ../glade/testdata/local-tests/lwc-shell \
   --target-org oaer-probe-max \
   --targets record-page \
   --out /tmp/glade-lwc-shell-probe
@@ -1633,8 +1636,9 @@ Expected:
 - [ ] **Step 14.3: Run scratch fixture-manifest suite**
 
 ```bash
-glade compat lwc capture \
-  --project testdata/local-tests/lwc-shell \
+cd ../glade-tools
+go run ./cmd/glade-plugin-compat lwc capture \
+  --project ../glade/testdata/local-tests/lwc-shell \
   --target-org oaer-probe-max \
   --targets record-page,app-page,home-page,custom-tab \
   --include-hosts lightning-shell,visualforce-lightning-out \
@@ -1700,6 +1704,6 @@ This roadmap reaches practical LWC parity when all of these pass:
 - LDS-style record reads, writes, cache invalidation, object info, picklists, related lists, and list views work for local data.
 - Tier 1, Tier 2, and Tier 3 base Lightning components support the fixture suite.
 - Navigation, toasts, modals, and Lightning Message Service work inside one shell window.
-- `glade lwc test` runs browser tests against the real local shell and controllers.
-- `glade compat lwc capture --target-org oaer-probe-max` prepares fixture-manifest targets, and the later browser/oracle command produces checked parity evidence.
+- Future `glade lwc test` runs browser tests against the real local shell and controllers.
+- `go run ./cmd/glade-plugin-compat lwc capture --target-org oaer-probe-max` in `../glade-tools` prepares fixture-manifest targets, and the later browser/oracle command produces checked parity evidence.
 - `docs/LWC_SUPPORT.md` lists every supported, partial, and intentionally unsupported LWC surface with evidence.

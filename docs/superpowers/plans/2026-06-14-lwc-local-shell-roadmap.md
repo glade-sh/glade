@@ -69,19 +69,16 @@ If a feature works in only one host, the support ledger must name the other host
 | Navigation, services, quick actions | [Phase 7](lwc-local-shell/phase-07-navigation-services-actions.md) | Navigation, toasts, LMS, modals, and actions act like host-aware shell services | Phase 3, Phase 4 |
 | Browser tests, support ledger, docs | [Phase 8](lwc-local-shell/phase-08-tests-ledger-docs.md) | CI proof and honest support map split by host | Phases being certified |
 
-## Product UX Target
+## Current Product UX
 
-Commands should feel like this when complete:
+The merged product command starts the local shell. Developers open the route
+that matches the target:
 
 ```bash
-glade dev lwc --project . --component c/accountPanel --record-id 001000000000001AAA --open
-glade dev lwc --project . --record-page Account_Record_Page --record-id 001000000000001AAA --open
-glade dev lwc --project . --app-page Sales_Dashboard --open
-glade dev lwc --project . --home-page Custom_Home --open
-glade dev lwc --project . --tab My_Custom_Tab --open
-glade dev vf --project . --page WidgetHost --open
-glade lwc test --project . --record-page Account_Record_Page --record-id 001000000000001AAA --browser
-glade lwc test --project . --visualforce WidgetHost --browser
+glade dev lwc --project .
+glade dev lwc --project . --port 8080
+glade dev vf --project .
+glade dev vf --project . --port 8080
 ```
 
 Maintenance and oracle commands stay in `glade-tools`. Today the LWC capture
@@ -89,10 +86,15 @@ command prepares fixture-manifest targets; browser/org capture and ledger
 generation are later compat-plugin phases.
 
 ```bash
-glade compat lwc capture --target-org oaer-probe-max --project testdata/local-tests/lwc-shell --include-hosts lightning-shell,visualforce-lightning-out --out /tmp/glade-lwc-capture.json
+cd ../glade-tools
+go run ./cmd/glade-plugin-compat lwc capture --target-org oaer-probe-max --project ../glade/testdata/local-tests/lwc-shell --include-hosts lightning-shell,visualforce-lightning-out --out /tmp/glade-lwc-capture.json
 # future:
 glade compat lwc ledger --captures /tmp/glade-lwc-capture.json --output docs/generated/LWC_SHELL_SUPPORT.md
 ```
+
+Future UX phases can add selector flags such as `--component`, `--record-page`,
+`--app-page`, `--home-page`, `--tab`, and `--open`. They are not part of the
+current `glade dev lwc` help text.
 
 ## Parallel Subagent Squad Rule
 

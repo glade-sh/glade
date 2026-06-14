@@ -45,6 +45,34 @@ func TestResolvePageTargetRecordPage(t *testing.T) {
 	}
 }
 
+func TestResolvePageTargetRecordPageKeepsRouteObjectWhenMetadataOmitsSObject(t *testing.T) {
+	root := t.TempDir()
+	pagePath := writeProjectFile(t, root, "force-app/main/default/flexipages/Account_Record_Page.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
+  <masterLabel>Account Record Page</masterLabel>
+  <type>RecordPage</type>
+  <flexiPageRegions>
+    <name>main</name>
+    <componentInstances>
+      <componentName>c:contextProbe</componentName>
+    </componentInstances>
+  </flexiPageRegions>
+</FlexiPage>`)
+	p := project.Project{Root: root, FlexiPageFiles: []string{pagePath}}
+
+	shell, diagnostics, err := ResolvePageTarget(p, PageContext{
+		Kind:          RenderTargetRecordPage,
+		PageName:      "Account_Record_Page",
+		RecordID:      "001000000000001AAA",
+		ObjectAPIName: "Account",
+	})
+	if err != nil {
+		t.Fatalf("ResolvePageTarget error = %v diagnostics=%#v", err, diagnostics)
+	}
+	if shell.Context.ObjectAPIName != "Account" {
+		t.Fatalf("objectApiName = %q", shell.Context.ObjectAPIName)
+	}
+}
+
 func TestResolvePageTargetQualifiesUnnamespacedFlexiPageComponents(t *testing.T) {
 	root := t.TempDir()
 	pagePath := writeProjectFile(t, root, "force-app/main/default/flexipages/Account_Record_Page.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
