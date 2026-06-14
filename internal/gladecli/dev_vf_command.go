@@ -264,7 +264,7 @@ func readDevVFProjectDataFixture(path string) (storage.Fixture, bool, error) {
 	if err != nil {
 		return storage.Fixture{}, false, err
 	}
-	trimmed := bytes.TrimSpace(data)
+	trimmed := trimDevVFJSONBytes(data)
 	if len(trimmed) > 0 && trimmed[0] == '[' {
 		fixture, ok, err := readDevVFSFDXTreeDataFixture(trimmed)
 		if err != nil || ok {
@@ -274,17 +274,23 @@ func readDevVFProjectDataFixture(path string) (storage.Fixture, bool, error) {
 	var header struct {
 		Version string `json:"version"`
 	}
-	if err := json.Unmarshal(data, &header); err != nil {
+	if err := json.Unmarshal(trimmed, &header); err != nil {
 		return storage.Fixture{}, false, err
 	}
 	if strings.TrimSpace(header.Version) != storage.FixtureVersion {
 		return storage.Fixture{}, false, nil
 	}
-	fixture, err := storage.ReadFixture(bytes.NewReader(data))
+	fixture, err := storage.ReadFixture(bytes.NewReader(trimmed))
 	if err != nil {
 		return storage.Fixture{}, false, err
 	}
 	return fixture, true, nil
+}
+
+func trimDevVFJSONBytes(data []byte) []byte {
+	trimmed := bytes.TrimSpace(data)
+	trimmed = bytes.TrimPrefix(trimmed, []byte{0xef, 0xbb, 0xbf})
+	return bytes.TrimSpace(trimmed)
 }
 
 func readDevVFSFDXTreeDataFixture(data []byte) (storage.Fixture, bool, error) {

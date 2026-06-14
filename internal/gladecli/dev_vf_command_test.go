@@ -162,6 +162,47 @@ func TestApplyDevVFProjectDataFixturesSeedsSFDXTreeData(t *testing.T) {
 	}
 }
 
+func TestApplyDevVFProjectDataFixturesIgnoresUnknownJSONWithBOM(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "data", "export.json"), "\xef\xbb\xbf"+`{
+  "records": {},
+  "cleaners": [],
+  "extId": "External_Id__c",
+  "queries": []
+}`)
+	org := storage.NewOrgState()
+
+	if err := applyDevVFProjectDataFixtures(root, &org); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestApplyDevVFProjectDataFixturesSeedsSFDXTreeDataWithBOM(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "data", "accounts.json"), "\xef\xbb\xbf\n"+`[
+  {
+    "attributes": {"type": "Account", "referenceId": "LocalShellAccount"},
+    "Name": "Local Shell Account"
+  }
+]`)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{
+			"Name": {APIName: "Name", Type: storage.FieldString},
+		}},
+		Records: map[storage.ID]storage.Record{},
+	}
+
+	if err := applyDevVFProjectDataFixtures(root, &org); err != nil {
+		t.Fatal(err)
+	}
+
+	account := org.Objects["Account"]
+	if len(account.Records) != 1 {
+		t.Fatalf("records = %#v", account.Records)
+	}
+}
+
 func TestNormalizeDevVFServeErrorIgnoresNormalServerClose(t *testing.T) {
 	if err := normalizeDevVFServeError(http.ErrServerClosed); err != nil {
 		t.Fatalf("ErrServerClosed normalized to %v", err)
