@@ -83,6 +83,7 @@ export interface PluginArtifactRow {
 export class PluginController {
   private installed: InstalledPlugin[] = [];
   private artifacts: PluginArtifact[] = [];
+  private findingCount = 0;
 
   constructor(private readonly host: PluginControllerHost) {}
 
@@ -103,6 +104,10 @@ export class PluginController {
 
   latestArtifacts(): PluginArtifact[] {
     return [...this.artifacts];
+  }
+
+  latestFindingCount(): number {
+    return this.findingCount;
   }
 
   actionsForView(view: PluginActionView, contexts: PluginAvailableContexts = {}): PluginEditorAction[] {
@@ -196,6 +201,7 @@ export class PluginController {
       try {
         const parsed = parseFindingsOutput(result.stdout);
         this.artifacts = parsed.artifacts;
+        this.findingCount = parsed.findings.length;
         this.publishFindings(root, parsed.findings);
       } catch (error) {
         this.log(`${action.title} findings parse failed: ${errorMessage(error)}`);

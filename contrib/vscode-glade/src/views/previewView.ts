@@ -1,11 +1,14 @@
 import * as vscode from "vscode";
 import { PreviewController, PreviewRuntime } from "../preview/controller";
 import { PreviewRoute } from "../preview/model";
+import { PluginActionRow } from "../plugins/controller";
+import { pluginActionTreeRows } from "./pluginsView";
 import { commandItem, GladeTreeItem } from "./tree";
 
 export class PreviewView implements vscode.TreeDataProvider<GladeTreeItem>, vscode.Disposable {
   private readonly changed = new vscode.EventEmitter<GladeTreeItem | undefined | null | void>();
   private readonly subscription: vscode.Disposable;
+  private pluginActions: PluginActionRow[] = [];
   readonly onDidChangeTreeData = this.changed.event;
 
   constructor(private readonly controller: PreviewController) {
@@ -16,13 +19,18 @@ export class PreviewView implements vscode.TreeDataProvider<GladeTreeItem>, vsco
     this.changed.fire();
   }
 
+  setPluginActions(actions: PluginActionRow[]): void {
+    this.pluginActions = actions;
+    this.refresh();
+  }
+
   getTreeItem(element: GladeTreeItem): vscode.TreeItem {
     return element;
   }
 
   getChildren(): GladeTreeItem[] {
     const snapshot = this.controller.snapshot();
-    return [
+    const items = [
       commandItem("Refresh preview", "glade.refreshPreview", "Refresh Local Preview state.", new vscode.ThemeIcon("refresh")),
       toolchainItem(snapshot.toolchain),
       commandItem("Install toolchain", "glade.installToolchain", "Install the LWC preview toolchain.", new vscode.ThemeIcon("cloud-download")),
@@ -30,11 +38,17 @@ export class PreviewView implements vscode.TreeDataProvider<GladeTreeItem>, vsco
       commandItem("Start Visualforce", "glade.startVFPreview", "Start the local Visualforce preview server.", new vscode.ThemeIcon("play")),
       serverItem("LWC", snapshot.lwc),
       ...routeItems(snapshot.lwc, "LWC"),
-      commandItem("Stop LWC", "glade.stopLWCPreview", "Stop the local LWC preview server.", new vscode.ThemeIcon("debug-stop")),
       serverItem("Visualforce", snapshot.visualforce),
       ...routeItems(snapshot.visualforce, "Visualforce"),
-      commandItem("Stop Visualforce", "glade.stopVFPreview", "Stop the local Visualforce preview server.", new vscode.ThemeIcon("debug-stop")),
+      ...pluginActionTreeRows(this.pluginActions),
     ];
+    if (snapshot.lwc.running) {
+      items.push(commandItem("Stop LWC", "glade.stopLWCPreview", "Stop the local LWC preview server.", new vscode.ThemeIcon("debug-stop")));
+    }
+    if (snapshot.visualforce.running) {
+      items.push(commandItem("Stop Visualforce", "glade.stopVFPreview", "Stop the local Visualforce preview server.", new vscode.ThemeIcon("debug-stop")));
+    }
+    return items;
   }
 
   dispose(): void {

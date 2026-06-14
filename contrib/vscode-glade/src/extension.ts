@@ -98,26 +98,44 @@ export function activate(context: vscode.ExtensionContext): void {
 
   function pluginContexts(): PluginAvailableContexts {
     const activeFile = vscode.window.activeTextEditor?.document.uri.fsPath;
+    const preview = previewController.snapshot();
     return {
       project: currentProject !== undefined,
       activeApexFile: activeFile ? /\.(cls|trigger)$/i.test(activeFile) : false,
       activeDebugLog: activeFile ? /\.log$/i.test(activeFile) : false,
       activeDataEnvironment: currentProject !== undefined,
+      lwcServerRunning: preview.lwc.running,
+      vfServerRunning: preview.visualforce.running,
       lastLocalRun: startHereState.snapshot().lastRun !== undefined,
     };
   }
 
   function syncPluginViews(): void {
     const contexts = pluginContexts();
-    startHereView.setPluginActions(plugins.actionRowsForView("startHere", contexts));
+    const startHereActions = plugins.actionRowsForView("startHere", contexts);
+    startHereState.setPluginActionCount(startHereActions.length === 0 ? undefined : startHereActions.length);
+    status.setPluginActionCount(plugins.latestFindingCount() || undefined);
+    startHereView.setPluginActions(startHereActions);
     runsView.setPluginActions(plugins.actionRowsForView("runs", contexts));
     localOrgView.setPluginActions(plugins.actionRowsForView("localOrg", contexts));
+    previewView.setPluginActions(plugins.actionRowsForView("preview", contexts));
     debugView.setPluginActions(plugins.actionRowsForView("debug", contexts));
     pluginsView.setState(
       plugins.plugins(),
       plugins.actionRowsForView("plugins", contexts),
       pluginArtifactRows(plugins.latestArtifacts()),
     );
+  }
+
+  function syncPreviewState(): void {
+    const preview = previewController.snapshot();
+    const lwcRouteCount = preview.lwc.server?.routes.length;
+    const vfRouteCount = preview.visualforce.server?.routes.length;
+    startHereState.setToolchainStatus(preview.toolchain?.ok, preview.toolchain?.detail);
+    startHereState.setPreviewCounts({ lwcRouteCount, vfRouteCount });
+    status.setToolchainStatus(preview.toolchain?.ok, preview.toolchain?.detail);
+    status.setPreviewCounts({ lwcRouteCount, vfRouteCount });
+    startHereView.refresh();
   }
 
   async function refreshPlugins(): Promise<void> {
@@ -140,6 +158,7 @@ export function activate(context: vscode.ExtensionContext): void {
       environmentsView.setProject(project);
       localOrgView.setProject(project);
       previewController.setProject(project);
+      syncPreviewState();
       debugView.setProject(project);
       syncPluginViews();
       await lsp.sync(project);
@@ -154,6 +173,7 @@ export function activate(context: vscode.ExtensionContext): void {
       environmentsView.setProject(undefined);
       localOrgView.setProject(undefined);
       previewController.setProject(undefined);
+      syncPreviewState();
       debugView.setProject(undefined);
       syncPluginViews();
       await lsp.sync(undefined);
@@ -603,6 +623,10 @@ export function activate(context: vscode.ExtensionContext): void {
           { label: "Switch Local Data Environment", command: "glade.switchEnvironment" },
           { label: "Inspect Active Local Data", command: "glade.inspectLocalOrg" },
           { label: "Run Local Proof", command: "glade.runLocalProof" },
+          { label: "Start LWC Shell", command: "glade.startLWCPreview" },
+          { label: "Start Visualforce Server", command: "glade.startVFPreview" },
+          { label: "Install LWC Toolchain", command: "glade.installToolchain" },
+          { label: "Manage Plugins", command: "glade.managePlugins" },
           { label: "Open Glade Output", command: "glade.openOutput" },
         ],
         { placeHolder: "Glade local workflow" },
@@ -632,6 +656,10 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
     vscode.window.onDidChangeActiveTextEditor(() => syncPluginViews()),
+    previewController.onDidChange(() => {
+      syncPreviewState();
+      syncPluginViews();
+    }),
     vscode.debug.onDidChangeBreakpoints(() => debugView.refresh()),
     vscode.languages.registerCodeLensProvider({ language: "apex", scheme: "file" }, new GladeCodeLensProvider()),
   );

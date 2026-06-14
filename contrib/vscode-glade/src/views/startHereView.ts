@@ -44,6 +44,11 @@ export class StartHereView implements vscode.TreeDataProvider<GladeTreeItem> {
       watchRunning: runtime.watchRunning,
       lastRun: runtime.lastRun,
       changedSince: config.get<string>("changedSince") || "origin/main",
+      toolchainReady: runtime.toolchainReady,
+      toolchainDetail: runtime.toolchainDetail,
+      lwcRouteCount: runtime.lwcRouteCount,
+      vfRouteCount: runtime.vfRouteCount,
+      pluginActionCount: runtime.pluginActionCount,
     });
     return [...rows.map(toTreeItem), ...pluginActionTreeRows(this.pluginActions)];
   }
