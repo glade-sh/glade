@@ -85,7 +85,6 @@ for (const command of [
   "glade.workbench.newAnonymousApex",
   "glade.workbench.newSoql",
   "glade.workbench.runEntry",
-  "glade.workbench.runLastAnonymousApex",
   "glade.workbench.runLastSoql",
   "glade.workbench.describe",
   "glade.workbench.openResult",
@@ -95,6 +94,40 @@ for (const command of [
     `${command} must be contributed`,
   );
 }
+
+assert(
+  !manifest.contributes.commands.some((entry) => entry.command === "glade.workbench.runLastAnonymousApex"),
+  "anonymous Apex must not use saved workbench snippets",
+);
+assert(
+  !activationEvents.includes("onCommand:glade.workbench.runLastAnonymousApex"),
+  "saved anonymous Apex runner must not activate the extension",
+);
+
+const anonymousScratchCommand = manifest.contributes.commands.find((entry) => entry.command === "glade.workbench.newAnonymousApex");
+assert(anonymousScratchCommand, "anonymous Apex scratch command must be contributed");
+assert.strictEqual(anonymousScratchCommand.title, "Glade: Open Anonymous Apex Scratch");
+
+const editorTitle = manifest.contributes.menus["editor/title"] || [];
+for (const command of ["glade.executeAnonymous", "glade.debugAnonymous"]) {
+  const item = editorTitle.find((entry) => entry.command === command);
+  assert(item, `${command} must be available from untitled Apex editors`);
+  assert(
+    item.when.includes("resourceScheme == untitled") && item.when.includes("editorLangId == apex"),
+    `${command} must be scoped to untitled Apex editors`,
+  );
+}
+
+assert(
+  (manifest.contributes.keybindings || []).some((entry) =>
+    entry.command === "glade.executeAnonymous"
+    && entry.key === "ctrl+enter"
+    && entry.mac === "cmd+enter"
+    && entry.when.includes("resourceScheme == untitled")
+    && entry.when.includes("editorLangId == apex")
+  ),
+  "anonymous Apex scratch editors must support Ctrl/Cmd+Enter execution",
+);
 
 for (const command of [
   "glade.refreshPreview",

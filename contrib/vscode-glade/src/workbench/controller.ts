@@ -4,12 +4,10 @@ import * as vscode from "vscode";
 import { configuredActiveEnvironment } from "../localOrg";
 import { GladeProjectContext } from "../projectModel";
 import { runGlade } from "../gladeCli";
-import { describeArgs, execArgs, parseExecOutput, parseQueryOutput, queryArgs } from "./cli";
+import { describeArgs, parseQueryOutput, queryArgs } from "./cli";
 import {
-  ExecSummaryResult,
   SoqlQueryResult,
   WorkbenchEntry,
-  WorkbenchEntryKind,
   entryFromInput,
   sortEntries,
   workbenchTreeRows,
@@ -38,10 +36,7 @@ export class WorkbenchController {
       return;
     }
     try {
-      this.entries = [
-        ...readWorkbenchEntries(this.project.projectRoot, "anonymousApex"),
-        ...readWorkbenchEntries(this.project.projectRoot, "soql"),
-      ];
+      this.entries = readWorkbenchEntries(this.project.projectRoot, "soql");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.output.appendLine(`Glade Workbench store failed: ${message}`);
@@ -50,7 +45,7 @@ export class WorkbenchController {
     this.emitRows();
   }
 
-  async createEntry(kind: WorkbenchEntryKind, name: string, body: string): Promise<WorkbenchEntry | undefined> {
+  async createEntry(kind: "soql", name: string, body: string): Promise<WorkbenchEntry | undefined> {
     const project = this.project;
     if (!project) {
       void vscode.window.showErrorMessage("Glade Workbench requires an SFDX project.");
@@ -69,17 +64,13 @@ export class WorkbenchController {
     if (!entry) {
       return;
     }
-    if (entry.kind === "anonymousApex") {
-      await this.runAnonymous(entry);
-    } else {
-      await this.runSoql(entry);
-    }
+    await this.runSoql(entry);
   }
 
-  async runLast(kind: WorkbenchEntryKind): Promise<void> {
+  async runLast(kind: "soql"): Promise<void> {
     const entry = sortEntries(this.entries.filter((candidate) => candidate.kind === kind))[0];
     if (!entry) {
-      void vscode.window.showInformationMessage(kind === "anonymousApex" ? "No anonymous Apex snippets saved." : "No SOQL queries saved.");
+      void vscode.window.showInformationMessage("No SOQL queries saved.");
       return;
     }
     await this.runEntry(entry.id);
@@ -112,23 +103,6 @@ export class WorkbenchController {
     await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(this.lastResultPath));
   }
 
-  private async runAnonymous(entry: WorkbenchEntry): Promise<void> {
-    const project = this.requireProject();
-    const environment = configuredActiveEnvironment(project);
-    const args = execArgs(project.projectRoot, environment.dbPath, entry.body);
-    this.output.show(true);
-    this.output.appendLine(`$ glade exec --json --project ${project.projectRoot} --db ${environment.dbPath} <anonymous apex>`);
-    const result = await runGlade(args, { cwd: project.projectRoot });
-    if (result.code !== 0) {
-      throw new Error(result.stderr.trim() || result.stdout.trim() || `glade exec exited with code ${result.code}`);
-    }
-    const summary = parseExecOutput(result.stdout);
-    this.output.appendLine(execSummaryText(entry.name, summary));
-    const filePath = this.writeResultFile(entry.id, result.stdout, "json");
-    this.lastResultPath = filePath;
-    this.markRun(entry);
-  }
-
   private async runSoql(entry: WorkbenchEntry): Promise<void> {
     const project = this.requireProject();
     const environment = configuredActiveEnvironment(project);
@@ -151,7 +125,7 @@ export class WorkbenchController {
     const picked = await vscode.window.showQuickPick(
       sortEntries(this.entries).map((entry) => ({
         label: entry.name,
-        description: entry.kind === "anonymousApex" ? "Anonymous Apex" : "SOQL",
+        description: "SOQL",
         entry,
       })),
       { title: "Run Glade Workbench Entry" },
@@ -169,7 +143,7 @@ export class WorkbenchController {
   private markRun(entry: WorkbenchEntry): void {
     const project = this.requireProject();
     const updated = { ...entry, lastRunAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-    const sameKind = this.entries.map((candidate) => candidate.id === entry.id ? updated : candidate).filter((candidate) => candidate.kind === entry.kind);
+    const sameKind = this.entries.map((candidate) => candidate.id === entry.id ? updated : candidate);
     writeWorkbenchEntries(project.projectRoot, entry.kind, sortEntries(sameKind));
     this.reload();
   }
@@ -187,17 +161,6 @@ export class WorkbenchController {
     fs.writeFileSync(filePath, body.endsWith("\n") ? body : `${body}\n`, "utf8");
     return filePath;
   }
-}
-
-function execSummaryText(name: string, summary: ExecSummaryResult): string {
-  return [
-    `Exec ${name}: ${summary.status}`,
-    `  Debug events: ${summary.debugEvents}`,
-    `  SOQL queries: ${summary.soqlQueries}`,
-    `  DML statements: ${summary.dml}`,
-    `  CPU time: ${summary.cpuTimeMs}ms`,
-    summary.log ? `  Log: ${summary.log}` : "",
-  ].filter(Boolean).join("\n");
 }
 
 function soqlResultText(result: SoqlQueryResult): string {

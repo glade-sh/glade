@@ -22,7 +22,7 @@ export class WorkbenchView implements vscode.TreeDataProvider<GladeTreeItem> {
 
   getChildren(): GladeTreeItem[] {
     return [
-      commandItem("New Anonymous Apex", "glade.workbench.newAnonymousApex", "Create and run a saved anonymous Apex snippet.", new vscode.ThemeIcon("add")),
+      commandItem("Open Anonymous Apex Scratch", "glade.workbench.newAnonymousApex", "Open an untitled Apex editor for anonymous Apex.", new vscode.ThemeIcon("new-file")),
       commandItem("New SOQL Query", "glade.workbench.newSoql", "Create and run a saved SOQL query.", new vscode.ThemeIcon("add")),
       commandItem("Describe Local Data", "glade.workbench.describe", "Describe local objects or fields.", new vscode.ThemeIcon("symbol-field")),
       commandItem("Open Last Result", "glade.workbench.openResult", "Open the last Glade Workbench result file.", new vscode.ThemeIcon("file")),
@@ -53,9 +53,9 @@ function iconFor(row: WorkbenchTreeRow): vscode.ThemeIcon | undefined {
     case "environment":
       return new vscode.ThemeIcon("database");
     case "group":
-      return new vscode.ThemeIcon(row.kind === "anonymousApex" ? "symbol-method" : "search");
+      return new vscode.ThemeIcon("search");
     case "entry":
-      return new vscode.ThemeIcon(row.kind === "anonymousApex" ? "run" : "table");
+      return new vscode.ThemeIcon("table");
     default:
       return undefined;
   }

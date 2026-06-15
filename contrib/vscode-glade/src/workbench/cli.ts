@@ -1,8 +1,4 @@
-import { ExecSummaryResult, SoqlQueryResult, parseExecJsonSummary, parseSoqlJsonResult } from "./model";
-
-export function execArgs(projectRoot: string, dbPath: string, body: string): string[] {
-  return ["exec", "--json", "--project", projectRoot, "--db", dbPath, body];
-}
+import { SoqlQueryResult, parseSoqlJsonResult } from "./model";
 
 export function queryArgs(projectRoot: string, dbPath: string, soql: string, limit?: number): string[] {
   const args = ["db", "query", "--json", "--project", projectRoot, "--db", dbPath];
@@ -22,10 +18,6 @@ export function describeArgs(projectRoot: string, dbPath: string, objectName?: s
     args.push(objectName.trim());
   }
   return args;
-}
-
-export function parseExecOutput(stdout: string): ExecSummaryResult {
-  return parseExecJsonSummary(stdout);
 }
 
 export function parseQueryOutput(stdout: string): SoqlQueryResult {

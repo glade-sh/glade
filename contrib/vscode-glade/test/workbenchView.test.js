@@ -35,27 +35,19 @@ const { WorkbenchView, toWorkbenchTreeItem } = require("../out/views/workbenchVi
 
 const rows = [
   { id: "environment", type: "environment", label: "Environment", description: "dev" },
-  { id: "anonymousApex", type: "group", kind: "anonymousApex", label: "Anonymous Apex", count: 1 },
-  { id: "anonymousApex:apex-1", type: "entry", kind: "anonymousApex", entryId: "apex-1", label: "Seed Account", description: "Updated now" },
   { id: "soql", type: "group", kind: "soql", label: "SOQL", count: 1 },
   { id: "soql:soql-1", type: "entry", kind: "soql", entryId: "soql-1", label: "Accounts", description: "Updated now" },
 ];
 
 const view = new WorkbenchView();
 assert.strictEqual(view.getChildren().length, 4);
+assert.strictEqual(view.getChildren()[0].label, "Open Anonymous Apex Scratch");
+assert.strictEqual(view.getChildren()[0].command.command, "glade.workbench.newAnonymousApex");
 
 view.setRows(rows);
 assert.strictEqual(view.getChildren().length, rows.length + 4);
 
-const apexItem = toWorkbenchTreeItem(rows[2]);
-assert.strictEqual(apexItem.label, "Seed Account");
-assert.deepStrictEqual(apexItem.command, {
-  command: "glade.workbench.runEntry",
-  title: "Seed Account",
-  arguments: ["apex-1"],
-});
-
-const soqlItem = toWorkbenchTreeItem(rows[4]);
+const soqlItem = toWorkbenchTreeItem(rows[2]);
 assert.deepStrictEqual(soqlItem.command, {
   command: "glade.workbench.runEntry",
   title: "Accounts",

@@ -173,17 +173,22 @@ export function activate(context: vscode.ExtensionContext): void {
     return project;
   }
 
-  async function createWorkbenchEntry(kind: "anonymousApex" | "soql"): Promise<void> {
+  async function openAnonymousApexScratch(): Promise<void> {
+    const document = await vscode.workspace.openTextDocument({ language: "apex", content: "" });
+    await vscode.window.showTextDocument(document, { preview: false });
+  }
+
+  async function createWorkbenchEntry(kind: "soql"): Promise<void> {
     const name = await vscode.window.showInputBox({
-      title: kind === "anonymousApex" ? "New Anonymous Apex Snippet" : "New SOQL Query",
+      title: "New SOQL Query",
       prompt: "Name",
     });
     if (!name) {
       return;
     }
     const body = await vscode.window.showInputBox({
-      title: kind === "anonymousApex" ? "Anonymous Apex" : "SOQL",
-      prompt: kind === "anonymousApex" ? "Apex statements to run locally" : "SOQL query to run locally",
+      title: "SOQL",
+      prompt: "SOQL query to run locally",
     });
     if (!body) {
       return;
@@ -245,16 +250,13 @@ export function activate(context: vscode.ExtensionContext): void {
       syncPluginViews();
     }),
     vscode.commands.registerCommand("glade.workbench.newAnonymousApex", async () => {
-      await createWorkbenchEntry("anonymousApex");
+      await openAnonymousApexScratch();
     }),
     vscode.commands.registerCommand("glade.workbench.newSoql", async () => {
       await createWorkbenchEntry("soql");
     }),
     vscode.commands.registerCommand("glade.workbench.runEntry", async (entryId?: string) => {
       await runWorkbenchCommand(() => workbench.runEntry(entryId));
-    }),
-    vscode.commands.registerCommand("glade.workbench.runLastAnonymousApex", async () => {
-      await runWorkbenchCommand(() => workbench.runLast("anonymousApex"));
     }),
     vscode.commands.registerCommand("glade.workbench.runLastSoql", async () => {
       await runWorkbenchCommand(() => workbench.runLast("soql"));
@@ -612,7 +614,7 @@ export function activate(context: vscode.ExtensionContext): void {
         [
           { label: "Switch Local Data Environment", command: "glade.switchEnvironment" },
           { label: "Inspect Active Local Data", command: "glade.inspectLocalOrg" },
-          { label: "Run Last Anonymous Apex", command: "glade.workbench.runLastAnonymousApex" },
+          { label: "Open Anonymous Apex Scratch", command: "glade.workbench.newAnonymousApex" },
           { label: "Run Last SOQL", command: "glade.workbench.runLastSoql" },
           { label: "Run Local Proof", command: "glade.runLocalProof" },
           { label: "Manage Plugins", command: "glade.managePlugins" },

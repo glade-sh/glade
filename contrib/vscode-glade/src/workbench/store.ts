@@ -9,7 +9,6 @@ interface WorkbenchStoreFile {
 }
 
 const fileNames: Record<WorkbenchEntryKind, string> = {
-  anonymousApex: "snippets.json",
   soql: "queries.json",
 };
 

@@ -1,4 +1,4 @@
-export type WorkbenchEntryKind = "anonymousApex" | "soql";
+export type WorkbenchEntryKind = "soql";
 
 export interface WorkbenchEntry {
   id: string;
@@ -20,15 +20,6 @@ export interface WorkbenchTreeRow {
   entryId?: string;
 }
 
-export interface ExecSummaryResult {
-  status: string;
-  debugEvents: number;
-  soqlQueries: number;
-  dml: number;
-  cpuTimeMs: number;
-  log?: string;
-}
-
 export interface SoqlQueryResult {
   totalSize: number;
   done: boolean;
@@ -37,12 +28,12 @@ export interface SoqlQueryResult {
 }
 
 const labels: Record<WorkbenchEntryKind, string> = {
-  anonymousApex: "Anonymous Apex",
   soql: "SOQL",
 };
+const savedWorkbenchKinds: WorkbenchEntryKind[] = ["soql"];
 
 export function isWorkbenchEntryKind(kind: string): kind is WorkbenchEntryKind {
-  return kind === "anonymousApex" || kind === "soql";
+  return kind === "soql";
 }
 
 export function assertWorkbenchEntryKind(kind: string): asserts kind is WorkbenchEntryKind {
@@ -97,7 +88,7 @@ export function workbenchTreeRows(entries: WorkbenchEntry[], activeEnvironmentNa
       description: activeEnvironmentName.trim(),
     });
   }
-  for (const kind of ["anonymousApex", "soql"] as WorkbenchEntryKind[]) {
+  for (const kind of savedWorkbenchKinds) {
     const groupEntries = sortEntries(entries.filter((entry) => entry.kind === kind));
     rows.push({
       id: kind,
@@ -118,23 +109,6 @@ export function workbenchTreeRows(entries: WorkbenchEntry[], activeEnvironmentNa
     }
   }
   return rows;
-}
-
-export function parseExecJsonSummary(stdout: string): ExecSummaryResult {
-  const parsed = parseJSONRecord(stdout, "invalid exec JSON");
-  const summary = recordValue(parsed.summary, "exec JSON summary is required");
-  const result: ExecSummaryResult = {
-    status: stringValue(parsed.status, "unknown"),
-    debugEvents: numberValue(summary.debugEvents),
-    soqlQueries: numberValue(summary.soqlQueries),
-    dml: numberValue(summary.dml),
-    cpuTimeMs: numberValue(summary.cpuTimeMs),
-  };
-  const log = stringValue(summary.log);
-  if (log) {
-    result.log = log;
-  }
-  return result;
 }
 
 export function parseSoqlJsonResult(stdout: string): SoqlQueryResult {
@@ -190,10 +164,6 @@ function recordValue(value: unknown, message: string): Record<string, unknown> {
 
 function numberValue(value: unknown, fallback = 0): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
-function stringValue(value: unknown, fallback = ""): string {
-  return typeof value === "string" ? value : fallback;
 }
 
 function booleanValue(value: unknown, fallback: boolean): boolean {

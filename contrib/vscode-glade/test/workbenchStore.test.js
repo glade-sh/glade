@@ -5,16 +5,6 @@ const path = require("path");
 const store = require("../out/workbench/store");
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), "glade-workbench-store-"));
-const snippets = [
-  {
-    id: "apex-1",
-    kind: "anonymousApex",
-    name: "Seed Account",
-    body: "System.debug('seed');",
-    createdAt: "2026-06-14T18:00:00.000Z",
-    updatedAt: "2026-06-14T18:00:00.000Z",
-  },
-];
 const queries = [
   {
     id: "soql-1",
@@ -27,19 +17,12 @@ const queries = [
   },
 ];
 
-assert.deepStrictEqual(store.readWorkbenchEntries(root, "anonymousApex"), []);
 assert.deepStrictEqual(store.readWorkbenchEntries(root, "soql"), []);
 
-store.writeWorkbenchEntries(root, "anonymousApex", snippets);
 store.writeWorkbenchEntries(root, "soql", queries);
 
-assert.deepStrictEqual(store.readWorkbenchEntries(root, "anonymousApex"), snippets);
 assert.deepStrictEqual(store.readWorkbenchEntries(root, "soql"), queries);
 
-assert.deepStrictEqual(
-  JSON.parse(fs.readFileSync(path.join(root, ".glade", "workbench", "snippets.json"), "utf8")),
-  { version: 1, entries: snippets },
-);
 assert.deepStrictEqual(
   JSON.parse(fs.readFileSync(path.join(root, ".glade", "workbench", "queries.json"), "utf8")),
   { version: 1, entries: queries },

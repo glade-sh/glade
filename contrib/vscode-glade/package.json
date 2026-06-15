@@ -41,7 +41,6 @@
     "onCommand:glade.workbench.newAnonymousApex",
     "onCommand:glade.workbench.newSoql",
     "onCommand:glade.workbench.runEntry",
-    "onCommand:glade.workbench.runLastAnonymousApex",
     "onCommand:glade.workbench.runLastSoql",
     "onCommand:glade.workbench.describe",
     "onCommand:glade.workbench.openResult",
@@ -176,11 +175,13 @@
       },
       {
         "command": "glade.executeAnonymous",
-        "title": "Glade: Execute Local Anonymous Apex"
+        "title": "Glade: Execute Local Anonymous Apex",
+        "icon": "$(play)"
       },
       {
         "command": "glade.debugAnonymous",
-        "title": "Glade: Debug Local Anonymous Apex"
+        "title": "Glade: Debug Local Anonymous Apex",
+        "icon": "$(debug-start)"
       },
       {
         "command": "glade.debugCurrentTest",
@@ -196,7 +197,8 @@
       },
       {
         "command": "glade.workbench.newAnonymousApex",
-        "title": "Glade: New Anonymous Apex Snippet"
+        "title": "Glade: Open Anonymous Apex Scratch",
+        "icon": "$(new-file)"
       },
       {
         "command": "glade.workbench.newSoql",
@@ -205,10 +207,6 @@
       {
         "command": "glade.workbench.runEntry",
         "title": "Glade: Run Workbench Entry"
-      },
-      {
-        "command": "glade.workbench.runLastAnonymousApex",
-        "title": "Glade: Run Last Anonymous Apex"
       },
       {
         "command": "glade.workbench.runLastSoql",
@@ -243,7 +241,27 @@
         "title": "Glade: Install Plugin Archive"
       }
     ],
+    "keybindings": [
+      {
+        "command": "glade.executeAnonymous",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "resourceScheme == untitled && editorLangId == apex && editorTextFocus"
+      }
+    ],
     "menus": {
+      "editor/title": [
+        {
+          "command": "glade.executeAnonymous",
+          "when": "resourceScheme == untitled && editorLangId == apex",
+          "group": "navigation@1"
+        },
+        {
+          "command": "glade.debugAnonymous",
+          "when": "resourceScheme == untitled && editorLangId == apex",
+          "group": "navigation@2"
+        }
+      ],
       "view/item/context": [
         {
           "command": "glade.switchEnvironment",
