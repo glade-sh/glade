@@ -298,6 +298,12 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		return 0
+	case "refactor":
+		if err := runRefactor(args[1:], stdout); err != nil {
+			writeCommandError(stderr, args[0], err)
+			return 1
+		}
+		return 0
 	case "lsp":
 		if err := runLSP(ctx, args[1:], stdout); err != nil {
 			writeCommandError(stderr, args[0], err)
