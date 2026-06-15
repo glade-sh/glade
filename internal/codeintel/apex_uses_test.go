@@ -168,6 +168,36 @@ public class Consumer {
 	assertUnresolvedUse(t, graph, codeintel.UseCall, "total")
 }
 
+func TestApexUsesDoNotResolveLocalsDeclaredInAnotherMethod(t *testing.T) {
+	root := t.TempDir()
+	consumer := writeApexUseFile(t, root, "Consumer.cls", `
+public class Consumer {
+  public void first() {
+    InvoiceService svc = new InvoiceService();
+  }
+  public void second() {
+    svc.total();
+  }
+}`)
+	index := apexUseIndex(root, consumer, []typesys.TypeSymbol{
+		{
+			Kind: apexast.DeclarationClass, Name: "InvoiceService", File: filepath.Join(root, "InvoiceService.cls"),
+			Members: []typesys.MemberSymbol{
+				{Kind: apexast.DeclarationConstructor, Name: "InvoiceService"},
+				{Kind: apexast.DeclarationMethod, Name: "total", Type: "Decimal", Range: testRange(2, 3, 2, 19)},
+			},
+		},
+		{Kind: apexast.DeclarationClass, Name: "Consumer", File: consumer},
+	})
+
+	graph := codeintel.Build(index)
+
+	if refs := graph.References(codeintel.ApexMemberID("", "InvoiceService", "method", "total", "Decimal()"), false); len(refs) != 0 {
+		t.Fatalf("method-local receiver leaked across methods: %#v", refs)
+	}
+	assertUnresolvedUse(t, graph, codeintel.UseCall, "total")
+}
+
 func TestApexUsesResolveTriggerObjectReference(t *testing.T) {
 	root := t.TempDir()
 	trigger := writeApexUseFile(t, root, "InvoiceTrigger.trigger", `trigger InvoiceTrigger on Invoice__c (before insert) {}`)

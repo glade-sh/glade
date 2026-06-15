@@ -311,7 +311,8 @@ func chainedMethodAfterConstruct(tokens []token, start int) int {
 
 func localTypesBefore(tokens []token, offsetToken int) map[string]string {
 	locals := make(map[string]string)
-	for i := 0; i+1 < offsetToken; i++ {
+	start := methodBodyStartBefore(tokens, offsetToken)
+	for i := start; i+1 < offsetToken; i++ {
 		typeName, nameIndex, ok := localDeclarationAt(tokens, i)
 		if !ok || nameIndex >= offsetToken {
 			continue
@@ -319,6 +320,61 @@ func localTypesBefore(tokens []token, offsetToken int) map[string]string {
 		locals[strings.ToLower(tokens[nameIndex].Text)] = typeName
 	}
 	return locals
+}
+
+func methodBodyStartBefore(tokens []token, offsetToken int) int {
+	for i := offsetToken - 1; i >= 0; i-- {
+		if tokens[i].Text != "{" || !braceContains(tokens, i, offsetToken) {
+			continue
+		}
+		if braceStartsMethodBody(tokens, i) {
+			return i + 1
+		}
+	}
+	return 0
+}
+
+func braceContains(tokens []token, openIndex, offsetToken int) bool {
+	depth := 1
+	for i := openIndex + 1; i < len(tokens); i++ {
+		switch tokens[i].Text {
+		case "{":
+			depth++
+		case "}":
+			depth--
+			if depth == 0 {
+				return offsetToken < i
+			}
+		}
+	}
+	return true
+}
+
+func braceStartsMethodBody(tokens []token, openIndex int) bool {
+	if openIndex < 1 || tokens[openIndex-1].Text != ")" {
+		return false
+	}
+	depth := 1
+	for i := openIndex - 2; i >= 0; i-- {
+		switch tokens[i].Text {
+		case ")":
+			depth++
+		case "(":
+			depth--
+			if depth != 0 {
+				continue
+			}
+			if i < 1 || !isIdentifierToken(tokens[i-1]) {
+				return false
+			}
+			return !isKeyword(tokens[i-1].Text)
+		case "{", "}", ";":
+			if depth == 1 {
+				return false
+			}
+		}
+	}
+	return false
 }
 
 func localDeclarationAt(tokens []token, i int) (string, int, bool) {
