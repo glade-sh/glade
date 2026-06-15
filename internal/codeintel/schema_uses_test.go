@@ -95,6 +95,70 @@ func TestSchemaUsesResolveChildSubqueryFields(t *testing.T) {
 	}
 }
 
+func TestSchemaUsesCollectTypedSObjectFieldReads(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "force-app/main/default/classes/Probe.cls")
+	writeTestFile(t, classPath, `public class Probe {
+  public String run(Account a) {
+    String n = a.Name;
+    accept(a.Name);
+    if (a.Name != null) {
+      a.Name = 'Other';
+    }
+    return a.Name;
+  }
+  void accept(String value) {}
+}
+`)
+
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{classPath},
+	}, schema.Schema{Objects: testSchemaObjects()})
+	if len(index.Diagnostics) > 0 {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+
+	graph := codeintel.BuildSchemaUses(index)
+
+	assertUseCount(t, graph, codeintel.SObjectFieldID("Account", "Name"), codeintel.UseRead, "Name", 4)
+	assertUseCount(t, graph, codeintel.SObjectFieldID("Account", "Name"), codeintel.UseWrite, "Name", 1)
+}
+
+func TestSchemaUsesIgnoreCommentsAndStrings(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "force-app/main/default/classes/Probe.cls")
+	writeTestFile(t, classPath, `public class Probe {
+  public void run() {
+    // Account a = new Account(Name = 'x');
+    /*
+    Contact c = new Contact(LastName = 'x');
+    insert c;
+    Schema.SObjectType.User.fields.Name;
+    */
+    String text = 'Account a = new Account(Name = \'x\'); insert a; Schema.SObjectType.Account.fields.Name;';
+  }
+}
+`)
+
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{classPath},
+	}, schema.Schema{Objects: testSchemaObjects()})
+	if len(index.Diagnostics) > 0 {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+
+	graph := codeintel.BuildSchemaUses(index)
+
+	assertNoUses(t, graph, codeintel.SObjectID("Account"))
+	assertNoUses(t, graph, codeintel.SObjectFieldID("Account", "Name"))
+	assertNoUses(t, graph, codeintel.SObjectID("Contact"))
+	assertNoUses(t, graph, codeintel.SObjectFieldID("Contact", "LastName"))
+	assertNoUses(t, graph, codeintel.SObjectID("User"))
+	assertNoUses(t, graph, codeintel.SObjectFieldID("User", "Name"))
+}
+
 func assertUse(t *testing.T, graph codeintel.Graph, id codeintel.SymbolID, kind codeintel.UseKind, name string) codeintel.Use {
 	t.Helper()
 	for _, use := range graph.Uses {
@@ -104,6 +168,15 @@ func assertUse(t *testing.T, graph codeintel.Graph, id codeintel.SymbolID, kind 
 	}
 	t.Fatalf("missing use id=%s kind=%s name=%s in %#v", id, kind, name, graph.Uses)
 	return codeintel.Use{}
+}
+
+func assertNoUses(t *testing.T, graph codeintel.Graph, id codeintel.SymbolID) {
+	t.Helper()
+	for _, use := range graph.Uses {
+		if use.SymbolID == id && use.Kind != codeintel.UseDeclaration {
+			t.Fatalf("unexpected use id=%s in %#v", id, graph.Uses)
+		}
+	}
 }
 
 func assertUseWithMetadata(t *testing.T, graph codeintel.Graph, id codeintel.SymbolID, kind codeintel.UseKind, name, key, value string) codeintel.Use {

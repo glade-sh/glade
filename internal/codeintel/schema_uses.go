@@ -75,20 +75,23 @@ func (c *schemaUseCollector) collectFile(path string) {
 	}
 	source := string(data)
 	locator := newSourceLocator(source)
-	varTypes := c.collectLocalSObjectTypes(path, source, locator)
-	c.collectConstructions(path, source, locator, varTypes)
-	c.collectFieldAssignments(path, source, locator, varTypes)
-	c.collectPutWrites(path, source, locator, varTypes)
-	c.collectDML(path, source, locator, varTypes)
-	c.collectSchemaTokens(path, source, locator)
-	c.collectSOQL(path, source, locator)
+	spans := newCodeSpans(source)
+	codeSource := spans.maskNonCode(source)
+	varTypes := c.collectLocalSObjectTypes(path, source, codeSource, locator)
+	c.collectConstructions(path, source, codeSource, locator, varTypes)
+	c.collectFieldAssignments(path, source, codeSource, locator, varTypes)
+	c.collectFieldReads(path, source, codeSource, locator, varTypes)
+	c.collectPutWrites(path, source, locator, spans, varTypes)
+	c.collectDML(path, source, codeSource, locator, varTypes)
+	c.collectSchemaTokens(path, source, codeSource, locator)
+	c.collectSOQL(path, source, locator, spans)
 }
 
-func (c *schemaUseCollector) collectLocalSObjectTypes(path, source string, locator sourceLocator) map[string]string {
+func (c *schemaUseCollector) collectLocalSObjectTypes(path, source, codeSource string, locator sourceLocator) map[string]string {
 	varTypes := make(map[string]string)
 	for _, object := range c.sortedObjects() {
 		re := regexp.MustCompile(`(?i)\b` + regexp.QuoteMeta(object.Name) + `\s+([A-Za-z_][A-Za-z0-9_]*)`)
-		for _, match := range re.FindAllStringSubmatchIndex(source, -1) {
+		for _, match := range re.FindAllStringSubmatchIndex(codeSource, -1) {
 			name := source[match[2]:match[3]]
 			if isApexKeyword(name) {
 				continue
@@ -97,7 +100,7 @@ func (c *schemaUseCollector) collectLocalSObjectTypes(path, source string, locat
 			c.addObjectUse(object.Name, UseRead, object.Name, path, locator.rangeFor(match[0], match[0]+len(object.Name)), nil)
 		}
 		listRe := regexp.MustCompile(`(?i)\bList\s*<\s*` + regexp.QuoteMeta(object.Name) + `\s*>\s+([A-Za-z_][A-Za-z0-9_]*)`)
-		for _, match := range listRe.FindAllStringSubmatchIndex(source, -1) {
+		for _, match := range listRe.FindAllStringSubmatchIndex(codeSource, -1) {
 			name := source[match[2]:match[3]]
 			varTypes[strings.ToLower(name)] = object.Name
 		}
@@ -105,9 +108,9 @@ func (c *schemaUseCollector) collectLocalSObjectTypes(path, source string, locat
 	return varTypes
 }
 
-func (c *schemaUseCollector) collectConstructions(path, source string, locator sourceLocator, varTypes map[string]string) {
+func (c *schemaUseCollector) collectConstructions(path, source, codeSource string, locator sourceLocator, varTypes map[string]string) {
 	re := regexp.MustCompile(`(?is)\bnew\s+([A-Za-z_][A-Za-z0-9_]*)\s*\((.*?)\)`)
-	for _, match := range re.FindAllStringSubmatchIndex(source, -1) {
+	for _, match := range re.FindAllStringSubmatchIndex(codeSource, -1) {
 		objectName := source[match[2]:match[3]]
 		object, ok := c.object(objectName)
 		if !ok {
@@ -115,18 +118,18 @@ func (c *schemaUseCollector) collectConstructions(path, source string, locator s
 		}
 		c.addObjectUse(object.Name, UseConstruct, object.Name, path, locator.rangeFor(match[2], match[3]), nil)
 		argsStart, argsEnd := match[4], match[5]
-		c.collectInitializerFields(object.Name, path, source, locator, argsStart, argsEnd)
+		c.collectInitializerFields(object.Name, path, source, codeSource, locator, argsStart, argsEnd)
 		assignmentRe := regexp.MustCompile(`(?i)\b` + regexp.QuoteMeta(object.Name) + `\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*new\s+` + regexp.QuoteMeta(object.Name) + `\b`)
 		prefixStart := max(0, match[0]-160)
-		if prefix := assignmentRe.FindStringSubmatch(source[prefixStart:match[1]]); len(prefix) == 2 {
+		if prefix := assignmentRe.FindStringSubmatch(codeSource[prefixStart:match[1]]); len(prefix) == 2 {
 			varTypes[strings.ToLower(prefix[1])] = object.Name
 		}
 	}
 }
 
-func (c *schemaUseCollector) collectInitializerFields(objectName, path, source string, locator sourceLocator, start, end int) {
+func (c *schemaUseCollector) collectInitializerFields(objectName, path, source, codeSource string, locator sourceLocator, start, end int) {
 	re := regexp.MustCompile(`(?i)\b([A-Za-z_][A-Za-z0-9_]*)\s*=`)
-	for _, match := range re.FindAllStringSubmatchIndex(source[start:end], -1) {
+	for _, match := range re.FindAllStringSubmatchIndex(codeSource[start:end], -1) {
 		fieldName := source[start+match[2] : start+match[3]]
 		if field, ok := c.field(objectName, fieldName); ok {
 			c.addFieldUse(objectName, field.Name, UseWrite, field.Name, path, locator.rangeFor(start+match[2], start+match[3]), nil)
@@ -134,9 +137,9 @@ func (c *schemaUseCollector) collectInitializerFields(objectName, path, source s
 	}
 }
 
-func (c *schemaUseCollector) collectFieldAssignments(path, source string, locator sourceLocator, varTypes map[string]string) {
+func (c *schemaUseCollector) collectFieldAssignments(path, source, codeSource string, locator sourceLocator, varTypes map[string]string) {
 	re := regexp.MustCompile(`(?i)\b([A-Za-z_][A-Za-z0-9_]*)\s*\.\s*([A-Za-z_][A-Za-z0-9_]*)\s*=`)
-	for _, match := range re.FindAllStringSubmatchIndex(source, -1) {
+	for _, match := range re.FindAllStringSubmatchIndex(codeSource, -1) {
 		varName := source[match[2]:match[3]]
 		objectName, ok := varTypes[strings.ToLower(varName)]
 		if !ok {
@@ -149,9 +152,30 @@ func (c *schemaUseCollector) collectFieldAssignments(path, source string, locato
 	}
 }
 
-func (c *schemaUseCollector) collectPutWrites(path, source string, locator sourceLocator, varTypes map[string]string) {
+func (c *schemaUseCollector) collectFieldReads(path, source, codeSource string, locator sourceLocator, varTypes map[string]string) {
+	re := regexp.MustCompile(`(?i)\b([A-Za-z_][A-Za-z0-9_]*)\s*\.\s*([A-Za-z_][A-Za-z0-9_]*)\b`)
+	for _, match := range re.FindAllStringSubmatchIndex(codeSource, -1) {
+		if isFieldWriteTarget(codeSource, match[5]) {
+			continue
+		}
+		varName := source[match[2]:match[3]]
+		objectName, ok := varTypes[strings.ToLower(varName)]
+		if !ok {
+			continue
+		}
+		fieldName := source[match[4]:match[5]]
+		if field, ok := c.field(objectName, fieldName); ok {
+			c.addFieldUse(objectName, field.Name, UseRead, field.Name, path, locator.rangeFor(match[4], match[5]), nil)
+		}
+	}
+}
+
+func (c *schemaUseCollector) collectPutWrites(path, source string, locator sourceLocator, spans codeSpans, varTypes map[string]string) {
 	re := regexp.MustCompile(`(?i)\b([A-Za-z_][A-Za-z0-9_]*)\s*\.\s*put\s*\(\s*'([^']+)'`)
 	for _, match := range re.FindAllStringSubmatchIndex(source, -1) {
+		if !spans.contains(match[0]) {
+			continue
+		}
 		varName := source[match[2]:match[3]]
 		objectName, ok := varTypes[strings.ToLower(varName)]
 		if !ok {
@@ -164,9 +188,9 @@ func (c *schemaUseCollector) collectPutWrites(path, source string, locator sourc
 	}
 }
 
-func (c *schemaUseCollector) collectDML(path, source string, locator sourceLocator, varTypes map[string]string) {
+func (c *schemaUseCollector) collectDML(path, source, codeSource string, locator sourceLocator, varTypes map[string]string) {
 	re := regexp.MustCompile(`(?i)\b(insert|update|upsert|delete|undelete)\s+([A-Za-z_][A-Za-z0-9_]*)\b`)
-	for _, match := range re.FindAllStringSubmatchIndex(source, -1) {
+	for _, match := range re.FindAllStringSubmatchIndex(codeSource, -1) {
 		varName := source[match[4]:match[5]]
 		objectName, ok := varTypes[strings.ToLower(varName)]
 		if !ok {
@@ -178,9 +202,9 @@ func (c *schemaUseCollector) collectDML(path, source string, locator sourceLocat
 	}
 }
 
-func (c *schemaUseCollector) collectSchemaTokens(path, source string, locator sourceLocator) {
+func (c *schemaUseCollector) collectSchemaTokens(path, source, codeSource string, locator sourceLocator) {
 	re := regexp.MustCompile(`(?i)\bSchema\s*\.\s*SObjectType\s*\.\s*([A-Za-z_][A-Za-z0-9_]*)\s*\.\s*fields\s*\.\s*([A-Za-z_][A-Za-z0-9_]*)`)
-	for _, match := range re.FindAllStringSubmatchIndex(source, -1) {
+	for _, match := range re.FindAllStringSubmatchIndex(codeSource, -1) {
 		objectName := source[match[2]:match[3]]
 		object, ok := c.object(objectName)
 		if !ok {
@@ -194,8 +218,8 @@ func (c *schemaUseCollector) collectSchemaTokens(path, source string, locator so
 	}
 
 	schemaTypeRe := regexp.MustCompile(`(?i)\bSchema\s*\.\s*SObjectType\s*\.\s*([A-Za-z_][A-Za-z0-9_]*)\b`)
-	for _, match := range schemaTypeRe.FindAllStringSubmatchIndex(source, -1) {
-		if followsSchemaFields(source, match[3]) {
+	for _, match := range schemaTypeRe.FindAllStringSubmatchIndex(codeSource, -1) {
+		if followsSchemaFields(codeSource, match[3]) {
 			continue
 		}
 		objectName := source[match[2]:match[3]]
@@ -207,7 +231,7 @@ func (c *schemaUseCollector) collectSchemaTokens(path, source string, locator so
 	}
 
 	sobjectTypeRe := regexp.MustCompile(`(?i)\b([A-Za-z_][A-Za-z0-9_]*)\s*\.\s*SObjectType\b`)
-	for _, match := range sobjectTypeRe.FindAllStringSubmatchIndex(source, -1) {
+	for _, match := range sobjectTypeRe.FindAllStringSubmatchIndex(codeSource, -1) {
 		objectName := source[match[2]:match[3]]
 		object, ok := c.object(objectName)
 		if !ok {
@@ -217,8 +241,8 @@ func (c *schemaUseCollector) collectSchemaTokens(path, source string, locator so
 	}
 }
 
-func (c *schemaUseCollector) collectSOQL(path, source string, locator sourceLocator) {
-	for _, literal := range soqlLiterals(source) {
+func (c *schemaUseCollector) collectSOQL(path, source string, locator sourceLocator, spans codeSpans) {
+	for _, literal := range soqlLiterals(source, spans) {
 		query, err := soql.Parse(literal.text)
 		if err != nil {
 			continue
@@ -461,10 +485,13 @@ type soqlLiteral struct {
 	start, end int
 }
 
-func soqlLiterals(source string) []soqlLiteral {
+func soqlLiterals(source string, spans codeSpans) []soqlLiteral {
 	var out []soqlLiteral
 	for i := 0; i < len(source); i++ {
 		if source[i] != '[' {
+			continue
+		}
+		if !spans.contains(i) {
 			continue
 		}
 		end := matchingBracket(source, i)
@@ -478,6 +505,83 @@ func soqlLiterals(source string) []soqlLiteral {
 		i = end
 	}
 	return out
+}
+
+type codeSpans []bool
+
+func newCodeSpans(source string) codeSpans {
+	spans := make(codeSpans, len(source))
+	for i := range spans {
+		spans[i] = true
+	}
+	for i := 0; i < len(source); i++ {
+		if source[i] == '/' && i+1 < len(source) {
+			switch source[i+1] {
+			case '/':
+				spans[i] = false
+				spans[i+1] = false
+				i += 2
+				for i < len(source) && source[i] != '\n' {
+					spans[i] = false
+					i++
+				}
+				i--
+				continue
+			case '*':
+				spans[i] = false
+				spans[i+1] = false
+				i += 2
+				for i < len(source) {
+					spans[i] = false
+					if source[i] == '*' && i+1 < len(source) && source[i+1] == '/' {
+						spans[i+1] = false
+						i++
+						break
+					}
+					i++
+				}
+				continue
+			}
+		}
+		if source[i] == '\'' || source[i] == '"' {
+			quote := source[i]
+			spans[i] = false
+			i++
+			for i < len(source) {
+				spans[i] = false
+				if source[i] == '\\' {
+					i++
+					if i < len(source) {
+						spans[i] = false
+					}
+					i++
+					continue
+				}
+				if source[i] == quote {
+					break
+				}
+				i++
+			}
+		}
+	}
+	return spans
+}
+
+func (s codeSpans) contains(offset int) bool {
+	return offset >= 0 && offset < len(s) && s[offset]
+}
+
+func (s codeSpans) maskNonCode(source string) string {
+	var b strings.Builder
+	b.Grow(len(source))
+	for i := 0; i < len(source); i++ {
+		if s.contains(i) || source[i] == '\n' || source[i] == '\r' {
+			b.WriteByte(source[i])
+			continue
+		}
+		b.WriteByte(' ')
+	}
+	return b.String()
 }
 
 func matchingBracket(source string, start int) int {
@@ -576,6 +680,20 @@ func isApexKeyword(name string) bool {
 	default:
 		return false
 	}
+}
+
+func isFieldWriteTarget(source string, offset int) bool {
+	rest := strings.TrimLeft(source[offset:], " \t\r\n")
+	for _, op := range []string{"<<=", ">>=", "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "="} {
+		if !strings.HasPrefix(rest, op) {
+			continue
+		}
+		if op == "=" && strings.HasPrefix(rest, "==") {
+			return false
+		}
+		return true
+	}
+	return false
 }
 
 func followsSchemaFields(source string, offset int) bool {
