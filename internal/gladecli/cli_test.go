@@ -884,6 +884,44 @@ func TestPluginsHelpShowsAvailable(t *testing.T) {
 	}
 }
 
+func TestCodeIntelligenceHelpListsProductCommands(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+		want []string
+	}{
+		{
+			name: "inspect",
+			args: []string{"inspect", "--help"},
+			want: []string{"definition", "references"},
+		},
+		{
+			name: "schema",
+			args: []string{"schema", "import", "describe", "--help"},
+			want: []string{"--project-cache"},
+		},
+		{
+			name: "refactor",
+			args: []string{"refactor", "--help"},
+			want: []string{"rename"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			code := Run(context.Background(), tt.args, &stdout, &stderr)
+			if code != 0 {
+				t.Fatalf("help exit=%d stderr=%s", code, stderr.String())
+			}
+			for _, want := range tt.want {
+				if !strings.Contains(stdout.String(), want) {
+					t.Fatalf("help missing %q:\n%s", want, stdout.String())
+				}
+			}
+		})
+	}
+}
+
 func TestPluginsInstallRemoteURLRequiresSHA256(t *testing.T) {
 	t.Setenv("GLADE_HOME", t.TempDir())
 	var stdout, stderr bytes.Buffer
@@ -1157,7 +1195,7 @@ func TestRunCompletionBash(t *testing.T) {
 	for _, want := range []string{
 		"_glade_completion",
 		"complete -F _glade_completion glade",
-		"version doctor toolchain config init parse inspect schema check exec",
+		"version doctor toolchain config init parse inspect schema refactor check exec",
 		"--project",
 		"--class",
 		"--method",

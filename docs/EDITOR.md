@@ -429,6 +429,27 @@ project index.
 }
 ```
 
+## CLI Code Intelligence
+
+`glade inspect definition` and `glade inspect references` expose the same
+project code-intelligence graph for scripts, editor tasks, and quick terminal
+checks.
+
+```bash
+glade inspect definition --project . --symbol InvoiceService
+glade inspect definition --project . --file force-app/main/default/classes/InvoiceService.cls --line 6 --column 13
+glade inspect references --project . --symbol InvoiceService.total --json
+glade inspect references --project . --symbol Account.Name --include-declaration
+glade refactor rename --project . --symbol InvoiceService --to BillingService --dry-run
+glade schema import describe --input reports/org-describe.json --project-cache .
+```
+
+Text output prints a Definition or References block with project-relative files.
+JSON output uses the standard CLI envelope with `command`, `status`, and `data`.
+`glade refactor rename` uses the same graph for conservative dry-run and write
+plans. `schema import describe --project-cache` turns captured describe JSON into
+offline symbol cache data under `.glade/symbols`.
+
 For a one-shot diagnostics check without starting a long-lived language client,
 run:
 

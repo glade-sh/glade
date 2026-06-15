@@ -117,24 +117,44 @@ var commandReferences = []CommandHelp{
 	},
 	{
 		Name:        "inspect",
-		Description: "Inspect indexed project symbols.",
-		Usage:       []string{"glade inspect symbols [--project <root>] [--json]", "glade inspect graph [--project <root>] [--json]"},
+		Description: "Inspect indexed project symbols and code intelligence.",
+		Usage: []string{
+			"glade inspect symbols [--project <root>] [--json]",
+			"glade inspect graph [--project <root>] [--json]",
+			"glade inspect definition --project <root> --symbol <name> [--json]",
+			"glade inspect definition --project <root> --file <path> --line <n> --column <n> [--json]",
+			"glade inspect references --project <root> --symbol <name> [--include-declaration] [--json]",
+		},
 		Subcommands: []SubcommandHelp{
 			{Name: "symbols", Description: "Print indexed Apex, trigger, and metadata symbols."},
 			{Name: "graph", Description: "Print the enterprise project graph."},
+			{Name: "definition", Description: "Resolve a symbol or source location to its definition."},
+			{Name: "references", Description: "Print references for an Apex or schema symbol."},
 		},
 		Flags: []FlagHelp{
 			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
+			{Name: "--symbol", Value: "<name>", Description: "Symbol name, such as InvoiceService, InvoiceService.total, or Account.Name."},
+			{Name: "--file", Value: "<path>", Description: "Project-relative source file for location lookup."},
+			{Name: "--line", Value: "<n>", Description: "One-based source line for location lookup."},
+			{Name: "--column", Value: "<n>", Description: "One-based source column for location lookup."},
+			{Name: "--include-declaration", Description: "Include the declaration in references output."},
 			{Name: "--json", Description: "Write structured output."},
 		},
-		Examples: []string{"glade inspect symbols --project .", "glade inspect graph --project . --json"},
+		Examples: []string{
+			"glade inspect symbols --project .",
+			"glade inspect definition --project . --symbol InvoiceService",
+			"glade inspect definition --project . --file force-app/main/default/classes/InvoiceService.cls --line 6 --column 13",
+			"glade inspect references --project . --symbol InvoiceService.total --json",
+			"glade inspect references --project . --symbol Account.Name --include-declaration",
+			"glade inspect graph --project . --json",
+		},
 	},
 	{
 		Name:        "schema",
 		Description: "Load local Salesforce metadata schema.",
 		Usage: []string{
 			"glade schema load [--project <root>] [--json] [--progress|--progress-json|--no-progress]",
-			"glade schema import describe --input <describe.json> [--output <schema.json>]",
+			"glade schema import describe --input <describe.json> [--output <schema.json>] [--project-cache <root>]",
 		},
 		Subcommands: []SubcommandHelp{
 			{Name: "load", Description: "Load and print local schema information."},
@@ -144,7 +164,33 @@ var commandReferences = []CommandHelp{
 		Examples: []string{
 			"glade schema load --project .",
 			"glade schema load --project . --progress",
-			"glade schema import describe --input reports/org-describe.json --output schema/local.schema.json",
+			"glade schema import describe --input reports/org-describe.json --output schema/local.schema.json --project-cache .",
+		},
+	},
+	{
+		Name:        "refactor",
+		Description: "Plan and apply safe source refactors.",
+		Usage: []string{
+			"glade refactor rename --project <root> --symbol <name> --to <name> [--dry-run|--write] [--json]",
+			"glade refactor rename --project <root> --file <path> --line <n> --column <n> --to <name> [--dry-run|--write] [--json]",
+		},
+		Subcommands: []SubcommandHelp{
+			{Name: "rename", Description: "Rename an Apex or schema symbol with codeintel references."},
+		},
+		Flags: []FlagHelp{
+			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
+			{Name: "--symbol", Value: "<name>", Description: "Symbol name or id, such as InvoiceService, InvoiceService.total, or Account.Name."},
+			{Name: "--file", Value: "<path>", Description: "Project-relative source file for location lookup."},
+			{Name: "--line", Value: "<n>", Description: "One-based source line for location lookup."},
+			{Name: "--column", Value: "<n>", Description: "One-based source column for location lookup."},
+			{Name: "--to", Value: "<name>", Description: "New Apex or schema identifier."},
+			{Name: "--dry-run", Description: "Plan edits without writing files. This is the default."},
+			{Name: "--write", Description: "Apply the planned edits after stale-file checks."},
+			{Name: "--json", Description: "Write structured output."},
+		},
+		Examples: []string{
+			"glade refactor rename --project . --symbol InvoiceService --to BillingService --dry-run --json",
+			"glade refactor rename --project . --file force-app/main/default/classes/InvoiceService.cls --line 5 --column 14 --to totalNet --write",
 		},
 	},
 	{

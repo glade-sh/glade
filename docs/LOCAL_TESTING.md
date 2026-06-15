@@ -87,6 +87,13 @@ plus Glade storage fixtures in `data/*.json`.
 Read [LWC_LOCAL_SHELL.md](LWC_LOCAL_SHELL.md) for route details and current
 limits. Read [LWC_SUPPORT.md](LWC_SUPPORT.md) for the support table.
 
+## Symbol Cache
+
+Code intelligence cache files live under `.glade/symbols`. They are separate
+from the test and DAP startup caches. `glade schema import describe --project-cache .`
+can populate schema symbols from captured describe JSON for offline definition,
+reference, and refactor queries.
+
 ## Run Visualforce Pages Locally
 
 Start the Visualforce dev server from a Salesforce-shaped project:

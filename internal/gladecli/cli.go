@@ -17,6 +17,7 @@ import (
 	"github.com/glade-sh/glade/internal/apexlog"
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/cliui"
+	"github.com/glade-sh/glade/internal/codeintel"
 	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -293,6 +294,12 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		return 0
 	case "report":
 		if err := runReport(ctx, args[1:], stdout); err != nil {
+			writeCommandError(stderr, args[0], err)
+			return 1
+		}
+		return 0
+	case "refactor":
+		if err := runRefactor(args[1:], stdout); err != nil {
 			writeCommandError(stderr, args[0], err)
 			return 1
 		}
@@ -968,17 +975,23 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 		return typesys.Index{}, err
 	}
 	if len(args) == 0 {
-		return typesys.Index{}, errors.New("usage: glade inspect symbols [--project <root>] [--json]")
+		return typesys.Index{}, errors.New(inspectUsage())
 	}
 	if args[0] == "graph" {
 		return typesys.Index{}, runInspectGraph(ctx, args[1:], w)
+	}
+	if args[0] == "definition" {
+		return typesys.Index{}, runInspectDefinition(ctx, args[1:], w)
+	}
+	if args[0] == "references" {
+		return typesys.Index{}, runInspectReferences(ctx, args[1:], w)
 	}
 	if args[0] != "symbols" {
 		if args[0] == "performance" {
 			return typesys.Index{}, errors.New("performance scans are provided by the performance plugin; " +
 				"run `glade plugins install @glade/performance`, then `glade performance scan --project .`")
 		}
-		return typesys.Index{}, errors.New("usage: glade inspect symbols [--project <root>] [--json]")
+		return typesys.Index{}, errors.New(inspectUsage())
 	}
 
 	root, jsonOut, fullPaths, kindFilter, err := parseInspectSymbolsFlags(args[1:])
@@ -1053,6 +1066,446 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 		fmt.Fprintln(w)
 	}
 	return index, nil
+}
+
+func inspectUsage() string {
+	return "usage: glade inspect symbols|graph|definition|references [--project <root>] [--json]"
+}
+
+type inspectDefinitionFlags struct {
+	root    string
+	symbol  string
+	file    string
+	line    int
+	column  int
+	jsonOut bool
+}
+
+type inspectReferencesFlags struct {
+	root               string
+	symbol             string
+	jsonOut            bool
+	includeDeclaration bool
+}
+
+type inspectDefinitionData struct {
+	Symbol     string                    `json:"symbol"`
+	Definition inspectIntelligenceSymbol `json:"definition"`
+}
+
+type inspectReferencesData struct {
+	Symbol     string                    `json:"symbol"`
+	Count      int                       `json:"count"`
+	References []inspectIntelligenceUse  `json:"references"`
+	Definition inspectIntelligenceSymbol `json:"definition,omitempty"`
+}
+
+type inspectIntelligenceSymbol struct {
+	ID        codeintel.SymbolID   `json:"id"`
+	Name      string               `json:"name"`
+	Kind      codeintel.SymbolKind `json:"kind"`
+	File      string               `json:"file,omitempty"`
+	Range     diagnostic.Range     `json:"range"`
+	Signature string               `json:"signature,omitempty"`
+	Container codeintel.SymbolID   `json:"container,omitempty"`
+}
+
+type inspectIntelligenceUse struct {
+	File   string            `json:"file"`
+	Line   int               `json:"line"`
+	Column int               `json:"column"`
+	Kind   codeintel.UseKind `json:"kind"`
+	Name   string            `json:"name"`
+	Range  diagnostic.Range  `json:"range"`
+}
+
+func runInspectDefinition(ctx context.Context, args []string, w io.Writer) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	flags, err := parseInspectDefinitionFlags(args)
+	if err != nil {
+		return err
+	}
+	index, graph, _, err := buildInspectCodeIntel(flags.root)
+	if err != nil {
+		return err
+	}
+	symbol, query, err := resolveInspectDefinition(graph, flags)
+	if err != nil {
+		return err
+	}
+	data := inspectDefinitionData{
+		Symbol:     query,
+		Definition: inspectSymbolJSON(index.Project.Root, symbol),
+	}
+	if flags.jsonOut {
+		return writeCLIJSONEnvelope(w, cliJSONEnvelope{
+			Command:     "inspect definition",
+			Status:      "passed",
+			ExitCode:    0,
+			Project:     index.Project,
+			Diagnostics: diagnosticsJSON(index.Project.Root, index.Diagnostics),
+			Data:        data,
+		})
+	}
+	writeInspectDefinitionText(w, data.Definition)
+	return nil
+}
+
+func runInspectReferences(ctx context.Context, args []string, w io.Writer) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	flags, err := parseInspectReferencesFlags(args)
+	if err != nil {
+		return err
+	}
+	index, graph, loadedProject, err := buildInspectCodeIntel(flags.root)
+	if err != nil {
+		return err
+	}
+	symbol, err := findInspectSymbol(graph, flags.symbol)
+	if err != nil {
+		return err
+	}
+	refs := graph.References(symbol.ID, flags.includeDeclaration)
+	refs = fillInspectDeclarationLocations(loadedProject, symbol, refs)
+	data := inspectReferencesData{
+		Symbol:     flags.symbol,
+		Count:      len(refs),
+		Definition: inspectSymbolJSON(index.Project.Root, symbol),
+		References: inspectUsesJSON(index.Project.Root, refs),
+	}
+	if flags.jsonOut {
+		return writeCLIJSONEnvelope(w, cliJSONEnvelope{
+			Command:     "inspect references",
+			Status:      "passed",
+			ExitCode:    0,
+			Project:     index.Project,
+			Diagnostics: diagnosticsJSON(index.Project.Root, index.Diagnostics),
+			Data:        data,
+		})
+	}
+	writeInspectReferencesText(w, data)
+	return nil
+}
+
+func parseInspectDefinitionFlags(args []string) (inspectDefinitionFlags, error) {
+	parsed, err := flagparse.New("glade inspect definition").
+		String("project", "p").
+		String("symbol", "").
+		String("file", "").
+		String("line", "").
+		String("column", "").
+		Bool("json", "j").
+		Parse(args)
+	if err != nil {
+		return inspectDefinitionFlags{}, err
+	}
+	line, err := parseInspectPositiveInt(parsed.String("line"), "line")
+	if err != nil {
+		return inspectDefinitionFlags{}, err
+	}
+	column, err := parseInspectPositiveInt(parsed.String("column"), "column")
+	if err != nil {
+		return inspectDefinitionFlags{}, err
+	}
+	flags := inspectDefinitionFlags{
+		root:    ".",
+		symbol:  strings.TrimSpace(parsed.String("symbol")),
+		file:    strings.TrimSpace(parsed.String("file")),
+		line:    line,
+		column:  column,
+		jsonOut: parsed.Bool("json"),
+	}
+	if parsed.String("project") != "" {
+		flags.root = parsed.String("project")
+	}
+	hasSymbol := flags.symbol != ""
+	hasLocation := flags.file != "" || flags.line != 0 || flags.column != 0
+	if hasSymbol == hasLocation {
+		return inspectDefinitionFlags{}, errors.New("usage: glade inspect definition --project <root> --symbol <name> [--json] | --file <path> --line <n> --column <n> [--json]")
+	}
+	if hasLocation && (flags.file == "" || flags.line <= 0 || flags.column <= 0) {
+		return inspectDefinitionFlags{}, errors.New("usage: glade inspect definition --file <path> --line <n> --column <n> [--project <root>] [--json]")
+	}
+	return flags, nil
+}
+
+func parseInspectPositiveInt(value, name string) (int, error) {
+	if value == "" {
+		return 0, nil
+	}
+	n, err := strconv.Atoi(value)
+	if err != nil || n <= 0 {
+		return 0, fmt.Errorf("--%s must be a positive integer", name)
+	}
+	return n, nil
+}
+
+func parseInspectReferencesFlags(args []string) (inspectReferencesFlags, error) {
+	parsed, err := flagparse.New("glade inspect references").
+		String("project", "p").
+		String("symbol", "").
+		Bool("include-declaration", "").
+		Bool("json", "j").
+		Parse(args)
+	if err != nil {
+		return inspectReferencesFlags{}, err
+	}
+	flags := inspectReferencesFlags{
+		root:               ".",
+		symbol:             strings.TrimSpace(parsed.String("symbol")),
+		jsonOut:            parsed.Bool("json"),
+		includeDeclaration: parsed.Bool("include-declaration"),
+	}
+	if parsed.String("project") != "" {
+		flags.root = parsed.String("project")
+	}
+	if flags.symbol == "" {
+		return inspectReferencesFlags{}, errors.New("usage: glade inspect references --project <root> --symbol <name> [--include-declaration] [--json]")
+	}
+	return flags, nil
+}
+
+func buildInspectCodeIntel(root string) (typesys.Index, codeintel.Graph, project.Project, error) {
+	p, err := project.Load(root)
+	if err != nil {
+		return typesys.Index{}, codeintel.Graph{}, project.Project{}, err
+	}
+	s, err := gladeschema.LoadProject(p)
+	if err != nil {
+		return typesys.Index{}, codeintel.Graph{}, project.Project{}, err
+	}
+	index := typesys.Build(p, s)
+	graph := codeintel.Build(index, codeintel.Options{UseCache: true})
+	return index, graph, p, nil
+}
+
+func resolveInspectDefinition(graph codeintel.Graph, flags inspectDefinitionFlags) (codeintel.Symbol, string, error) {
+	if flags.symbol != "" {
+		symbol, err := findInspectSymbol(graph, flags.symbol)
+		return symbol, flags.symbol, err
+	}
+	id, ok := findInspectSymbolAtLocation(graph, flags.file, flags.line, flags.column)
+	if !ok {
+		return codeintel.Symbol{}, "", fmt.Errorf("no symbol found at %s:%d:%d", flags.file, flags.line, flags.column)
+	}
+	symbol, ok := graph.Definition(id)
+	if !ok {
+		return codeintel.Symbol{}, "", fmt.Errorf("no definition found for symbol at %s:%d:%d", flags.file, flags.line, flags.column)
+	}
+	return symbol, symbol.Name, nil
+}
+
+func findInspectSymbol(graph codeintel.Graph, query string) (codeintel.Symbol, error) {
+	if symbol, ok := graph.Definition(codeintel.SymbolID(query)); ok {
+		return symbol, nil
+	}
+	var matches []codeintel.Symbol
+	for _, symbol := range graph.SortedSymbols() {
+		if inspectSymbolMatchesQuery(graph, symbol, query) {
+			matches = append(matches, symbol)
+		}
+	}
+	if len(matches) == 0 {
+		return codeintel.Symbol{}, fmt.Errorf("symbol %q not found", query)
+	}
+	if len(matches) > 1 {
+		return codeintel.Symbol{}, fmt.Errorf("symbol %q is ambiguous; use a fully qualified symbol id", query)
+	}
+	return matches[0], nil
+}
+
+func inspectSymbolMatchesQuery(graph codeintel.Graph, symbol codeintel.Symbol, query string) bool {
+	if symbol.Name == query {
+		return true
+	}
+	if symbol.Kind == codeintel.SymbolSObjectField {
+		parts := codeintel.ParseID(symbol.ID)
+		return len(parts) == 4 && query == parts[2]+"."+parts[3]
+	}
+	if symbol.Kind != codeintel.SymbolApexMember || !strings.Contains(query, ".") {
+		return false
+	}
+	parts := strings.Split(query, ".")
+	if len(parts) != 2 || parts[1] != symbol.Name {
+		return false
+	}
+	container, ok := graph.Definition(symbol.Container)
+	return ok && container.Name == parts[0]
+}
+
+func findInspectSymbolAtLocation(graph codeintel.Graph, file string, line, column int) (codeintel.SymbolID, bool) {
+	normalized := normalizeInspectPath(file)
+	var bestID codeintel.SymbolID
+	bestWidth := int(^uint(0) >> 1)
+	for _, use := range graph.Uses {
+		if inspectSameProjectPath(graph.ProjectRoot, use.File, normalized) && inspectRangeContains(use.Range, line, column) && use.SymbolID != "" {
+			if width := inspectRangeWidth(use.Range); width < bestWidth {
+				bestID = use.SymbolID
+				bestWidth = width
+			}
+		}
+	}
+	for _, symbol := range graph.SortedSymbols() {
+		if inspectSameProjectPath(graph.ProjectRoot, symbol.File, normalized) && inspectRangeContains(symbol.Range, line, column) {
+			if width := inspectRangeWidth(symbol.Range); width < bestWidth {
+				bestID = symbol.ID
+				bestWidth = width
+			}
+		}
+	}
+	return bestID, bestID != ""
+}
+
+func inspectSameProjectPath(projectRoot, candidate, normalizedQuery string) bool {
+	normalizedCandidate := normalizeInspectPath(candidate)
+	if normalizedCandidate == normalizedQuery {
+		return true
+	}
+	if projectRoot == "" {
+		return false
+	}
+	return normalizeInspectPath(cliui.ProjectRelativePath(projectRoot, candidate)) == normalizedQuery
+}
+
+func inspectRangeContains(r diagnostic.Range, line, column int) bool {
+	if r.Start.Line == 0 {
+		return false
+	}
+	if line < r.Start.Line || line > r.End.Line {
+		return false
+	}
+	if line == r.Start.Line && column < r.Start.Column {
+		return false
+	}
+	if line == r.End.Line && r.End.Column > 0 && column > r.End.Column {
+		return false
+	}
+	return true
+}
+
+func inspectRangeWidth(r diagnostic.Range) int {
+	if r.Start.Offset != 0 || r.End.Offset != 0 {
+		return r.End.Offset - r.Start.Offset
+	}
+	return (r.End.Line-r.Start.Line)*10000 + (r.End.Column - r.Start.Column)
+}
+
+func normalizeInspectPath(path string) string {
+	return filepath.ToSlash(filepath.Clean(path))
+}
+
+func inspectSymbolJSON(projectRoot string, symbol codeintel.Symbol) inspectIntelligenceSymbol {
+	file := symbol.File
+	if file != "" {
+		file = cliui.ProjectRelativePath(projectRoot, file)
+	}
+	return inspectIntelligenceSymbol{
+		ID:        symbol.ID,
+		Name:      symbol.Name,
+		Kind:      symbol.Kind,
+		File:      file,
+		Range:     symbol.Range,
+		Signature: symbol.Signature,
+		Container: symbol.Container,
+	}
+}
+
+func inspectUsesJSON(projectRoot string, refs []codeintel.Use) []inspectIntelligenceUse {
+	out := make([]inspectIntelligenceUse, 0, len(refs))
+	for _, ref := range refs {
+		file := ref.File
+		if file != "" {
+			file = cliui.ProjectRelativePath(projectRoot, file)
+		}
+		out = append(out, inspectIntelligenceUse{
+			File:   file,
+			Line:   ref.Range.Start.Line,
+			Column: ref.Range.Start.Column,
+			Kind:   ref.Kind,
+			Name:   ref.Name,
+			Range:  ref.Range,
+		})
+	}
+	return out
+}
+
+func fillInspectDeclarationLocations(p project.Project, symbol codeintel.Symbol, refs []codeintel.Use) []codeintel.Use {
+	file := symbol.File
+	if file == "" {
+		file = inspectMetadataDeclarationFile(p, symbol)
+	}
+	if file == "" {
+		return refs
+	}
+	out := make([]codeintel.Use, len(refs))
+	copy(out, refs)
+	for i := range out {
+		if out[i].Kind != codeintel.UseDeclaration || out[i].File != "" {
+			continue
+		}
+		out[i].File = file
+		if out[i].Range.Start.Line == 0 {
+			out[i].Range = diagnostic.Range{
+				Start: diagnostic.Position{Line: 1, Column: 1},
+				End:   diagnostic.Position{Line: 1, Column: 1},
+			}
+		}
+	}
+	return out
+}
+
+func inspectMetadataDeclarationFile(p project.Project, symbol codeintel.Symbol) string {
+	parts := codeintel.ParseID(symbol.ID)
+	switch symbol.Kind {
+	case codeintel.SymbolSObject:
+		if len(parts) != 3 {
+			return ""
+		}
+		suffix := normalizeInspectPath(filepath.Join("objects", parts[2], parts[2]+".object-meta.xml"))
+		for _, file := range p.ObjectFiles {
+			if strings.HasSuffix(normalizeInspectPath(file), suffix) {
+				return file
+			}
+		}
+	case codeintel.SymbolSObjectField:
+		if len(parts) != 4 {
+			return ""
+		}
+		suffix := normalizeInspectPath(filepath.Join("objects", parts[2], "fields", parts[3]+".field-meta.xml"))
+		for _, file := range p.FieldFiles {
+			if strings.HasSuffix(normalizeInspectPath(file), suffix) {
+				return file
+			}
+		}
+	}
+	return ""
+}
+
+func writeInspectDefinitionText(w io.Writer, symbol inspectIntelligenceSymbol) {
+	fmt.Fprintln(w, "Definition")
+	fmt.Fprintf(w, "  symbol: %s\n", symbol.Name)
+	fmt.Fprintf(w, "  kind: %s\n", symbol.Kind)
+	if symbol.File != "" {
+		fmt.Fprintf(w, "  file: %s\n", symbol.File)
+	}
+	fmt.Fprintf(w, "  range: %s\n", inspectRangeString(symbol.Range))
+}
+
+func writeInspectReferencesText(w io.Writer, data inspectReferencesData) {
+	fmt.Fprintln(w, "References")
+	fmt.Fprintf(w, "  symbol: %s\n", data.Symbol)
+	fmt.Fprintf(w, "  count: %d\n", data.Count)
+	for _, ref := range data.References {
+		fmt.Fprintf(w, "  %s:%d:%d %s\n", ref.File, ref.Line, ref.Column, ref.Kind)
+	}
+}
+
+func inspectRangeString(r diagnostic.Range) string {
+	return fmt.Sprintf("%d:%d-%d:%d", r.Start.Line, r.Start.Column, r.End.Line, r.End.Column)
 }
 
 func parseInspectSymbolsFlags(args []string) (root string, jsonOut bool, fullPaths bool, kind string, err error) {
@@ -1202,17 +1655,20 @@ func runSchemaImportDescribe(args []string, w io.Writer) error {
 	}
 	input := ""
 	output := ""
+	projectCache := ""
 	parsed, err := flagparse.New("glade schema import describe").
 		String("input", "").
 		String("output", "").
+		String("project-cache", "").
 		Parse(args)
 	if err != nil {
 		return err
 	}
 	input = parsed.String("input")
 	output = parsed.String("output")
+	projectCache = parsed.String("project-cache")
 	if strings.TrimSpace(input) == "" {
-		return errors.New("usage: glade schema import describe --input <describe.json> [--output <schema.json>]")
+		return errors.New("usage: glade schema import describe --input <describe.json> [--output <schema.json>] [--project-cache <root>]")
 	}
 	data, err := os.ReadFile(input)
 	if err != nil {
@@ -1222,16 +1678,26 @@ func runSchemaImportDescribe(args []string, w io.Writer) error {
 	if err := json.Unmarshal(data, &catalog); err != nil {
 		return err
 	}
-	schemaData, err := json.MarshalIndent(catalog.ToSchema(), "", "  ")
+	importedSchema := catalog.ToSchema()
+	schemaData, err := json.MarshalIndent(importedSchema, "", "  ")
 	if err != nil {
 		return err
 	}
 	schemaData = append(schemaData, '\n')
 	if strings.TrimSpace(output) == "" {
-		_, err := w.Write(schemaData)
+		if _, err := w.Write(schemaData); err != nil {
+			return err
+		}
+	} else if err := os.WriteFile(output, schemaData, 0o644); err != nil {
 		return err
 	}
-	return os.WriteFile(output, schemaData, 0o644)
+	if strings.TrimSpace(projectCache) == "" {
+		return nil
+	}
+	if err := requireGladeProjectRoot(projectCache); err != nil {
+		return err
+	}
+	return codeintel.WriteSchemaCache(projectCache, importedSchema)
 }
 
 func writeSchemaImportDescribeHelp(w io.Writer) error {
@@ -1239,15 +1705,34 @@ func writeSchemaImportDescribeHelp(w io.Writer) error {
 Import captured Salesforce describe JSON into a local Glade schema.
 
 Usage:
-  glade schema import describe --input <describe.json> [--output <schema.json>]
+  glade schema import describe --input <describe.json> [--output <schema.json>] [--project-cache <root>]
 
 Flags:
   --input <describe.json>   Captured org describe catalog JSON.
   --output <schema.json>    Write schema JSON to a file. Defaults to stdout.
+  --project-cache <root>    Write schema symbols into the project codeintel cache.
 
 Live org capture belongs in a plugin.
 `))
 	return err
+}
+
+func requireGladeProjectRoot(root string) error {
+	cleanRoot, err := filepath.Abs(root)
+	if err != nil {
+		return err
+	}
+	cleanRoot = filepath.Clean(cleanRoot)
+	for _, marker := range []string{"sfdx-project.json", "glade.yml"} {
+		_, err := os.Stat(filepath.Join(cleanRoot, marker))
+		if err == nil {
+			return nil
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+	}
+	return fmt.Errorf("%s is not a Glade project root (missing sfdx-project.json or glade.yml)", cleanRoot)
 }
 
 func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writer) (sema.Result, error) {

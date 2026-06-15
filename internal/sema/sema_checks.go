@@ -2,10 +2,14 @@ package sema
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/soql"
+	"github.com/glade-sh/glade/internal/sosl"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -96,6 +100,568 @@ func (a *Analyzer) checkSchemaReferences(index typesys.Index) []diagnostic.Diagn
 		}
 	}
 	return diagnostics
+}
+
+func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnostic {
+	checker := newQuerySemanticsChecker(index)
+	if len(checker.objects) == 0 {
+		return nil
+	}
+	var diagnostics []diagnostic.Diagnostic
+	sourceCache := make(map[string]string)
+	for _, typ := range index.Types {
+		if typ.Artifact || typ.File == "" {
+			continue
+		}
+		source, ok := readSemaSource(typ.File, sourceCache)
+		if !ok {
+			continue
+		}
+		diagnostics = append(diagnostics, checker.checkFile(typ.File, source)...)
+	}
+	return diagnostics
+}
+
+type querySemanticsChecker struct {
+	objects map[string]schema.Object
+	fields  map[string]map[string]schema.Field
+}
+
+func newQuerySemanticsChecker(index typesys.Index) querySemanticsChecker {
+	checker := querySemanticsChecker{
+		objects: make(map[string]schema.Object, len(index.Objects)),
+		fields:  make(map[string]map[string]schema.Field, len(index.Objects)),
+	}
+	for _, object := range index.Objects {
+		checker.objects[strings.ToLower(object.Name)] = object
+		fieldMap := make(map[string]schema.Field, len(object.Fields))
+		for _, field := range object.Fields {
+			fieldMap[strings.ToLower(field.Name)] = field
+		}
+		checker.fields[strings.ToLower(object.Name)] = fieldMap
+	}
+	return checker
+}
+
+func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagnostic {
+	locator := newSemaSourceLocator(source)
+	spans := newSemaCodeSpans(source)
+	var diagnostics []diagnostic.Diagnostic
+	for _, literal := range semaSOQLLiterals(source, spans) {
+		query, err := soql.Parse(literal.text)
+		if err != nil {
+			continue
+		}
+		ctx := queryTextContext{
+			file:        file,
+			queryText:   literal.text,
+			queryOffset: literal.queryOffset,
+			locator:     locator,
+		}
+		diagnostics = append(diagnostics, c.checkSOQLQuery(query, query.Object, ctx, 0, nil)...)
+	}
+	for _, literal := range semaSOSLLiterals(source, spans) {
+		query, err := sosl.Parse(literal.text)
+		if err != nil {
+			continue
+		}
+		ctx := queryTextContext{
+			file:        file,
+			queryText:   literal.text,
+			queryOffset: literal.queryOffset,
+			locator:     locator,
+		}
+		diagnostics = append(diagnostics, c.checkSOSLQuery(query, ctx)...)
+	}
+	return diagnostics
+}
+
+type queryTextContext struct {
+	file        string
+	queryText   string
+	queryOffset int
+	locator     semaSourceLocator
+}
+
+func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName string, ctx queryTextContext, cursor int, aggregateAliases map[string]bool) []diagnostic.Diagnostic {
+	var diagnostics []diagnostic.Diagnostic
+	object, ok := c.object(objectName)
+	objectCursor := findSOQLFromObject(ctx.queryText, objectName, cursor)
+	if !ok {
+		return append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_OBJECT", fmt.Sprintf("SOQL query references unknown SObject %q", objectName), objectName, objectCursor))
+	}
+	if aggregateAliases == nil {
+		aggregateAliases = make(map[string]bool)
+	}
+	for _, aggregate := range query.Aggregates {
+		if aggregate.Alias != "" {
+			aggregateAliases[strings.ToLower(aggregate.Alias)] = true
+		}
+		diagnostics = append(diagnostics, c.checkSOQLField(object.Name, aggregate.Field, ctx, cursor)...)
+	}
+	for _, field := range query.Fields {
+		diagnostics = append(diagnostics, c.checkSOQLField(object.Name, field, ctx, cursor)...)
+	}
+	for _, field := range query.GroupBy {
+		if aggregateAliases[strings.ToLower(field)] {
+			continue
+		}
+		diagnostics = append(diagnostics, c.checkSOQLField(object.Name, field, ctx, cursor)...)
+	}
+	for _, order := range query.Order {
+		if aggregateAliases[strings.ToLower(order.Field)] {
+			continue
+		}
+		diagnostics = append(diagnostics, c.checkSOQLField(object.Name, order.Field, ctx, cursor)...)
+	}
+	if query.Where != nil {
+		diagnostics = append(diagnostics, c.checkSOQLCondition(object.Name, *query.Where, ctx, cursor, aggregateAliases)...)
+	}
+	for _, child := range query.ChildQueries {
+		childCursor := findChildQueryCursor(ctx.queryText, child.Query.Object, cursor)
+		childObject, ok := c.childObjectForRelationship(object.Name, child.Relationship)
+		if !ok {
+			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_RELATIONSHIP", fmt.Sprintf("SOQL query references unknown child relationship %q on %s", child.Relationship, object.Name), child.Relationship, findQueryIdentifier(ctx.queryText, child.Relationship, childCursor)))
+			continue
+		}
+		diagnostics = append(diagnostics, c.checkSOQLQuery(child.Query, childObject.Name, ctx, childCursor, nil)...)
+	}
+	for _, spec := range query.Typeofs {
+		if _, _, ok := c.relationshipField(object.Name, spec.Relationship); !ok {
+			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_RELATIONSHIP", fmt.Sprintf("SOQL query references unknown relationship %q on %s", spec.Relationship, object.Name), spec.Relationship, findQueryIdentifier(ctx.queryText, spec.Relationship, cursor)))
+			continue
+		}
+		for whenObject, fields := range spec.When {
+			branch, ok := c.object(whenObject)
+			whenCursor := findTypeofWhenObject(ctx.queryText, whenObject, cursor)
+			if !ok {
+				diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_OBJECT", fmt.Sprintf("TYPEOF branch references unknown SObject %q", whenObject), whenObject, whenCursor))
+				continue
+			}
+			for _, field := range fields {
+				diagnostics = append(diagnostics, c.checkSOQLField(branch.Name, field, ctx, whenCursor)...)
+			}
+		}
+		for _, field := range spec.Else {
+			diagnostics = append(diagnostics, c.checkSOQLField(object.Name, spec.Relationship+"."+field, ctx, cursor)...)
+		}
+	}
+	return diagnostics
+}
+
+func (c querySemanticsChecker) checkSOQLCondition(objectName string, condition soql.Condition, ctx queryTextContext, cursor int, aggregateAliases map[string]bool) []diagnostic.Diagnostic {
+	var diagnostics []diagnostic.Diagnostic
+	if condition.Field != "" && !aggregateAliases[strings.ToLower(condition.Field)] {
+		diagnostics = append(diagnostics, c.checkSOQLField(objectName, condition.Field, ctx, cursor)...)
+	}
+	if condition.Subquery != nil {
+		diagnostics = append(diagnostics, c.checkSOQLQuery(*condition.Subquery, condition.Subquery.Object, ctx, cursor, nil)...)
+	}
+	for _, child := range condition.And {
+		diagnostics = append(diagnostics, c.checkSOQLCondition(objectName, child, ctx, cursor, aggregateAliases)...)
+	}
+	for _, child := range condition.Or {
+		diagnostics = append(diagnostics, c.checkSOQLCondition(objectName, child, ctx, cursor, aggregateAliases)...)
+	}
+	return diagnostics
+}
+
+func (c querySemanticsChecker) checkSOQLField(objectName, fieldPath string, ctx queryTextContext, cursor int) []diagnostic.Diagnostic {
+	if fieldPath == "" || fieldPath == "COUNT()" || strings.HasPrefix(strings.ToUpper(fieldPath), "FIELDS(") || strings.Contains(fieldPath, "(") {
+		return nil
+	}
+	if !c.hasFieldMetadata(objectName) {
+		return nil
+	}
+	offset := findQueryIdentifier(ctx.queryText, fieldPath, cursor)
+	if !strings.Contains(fieldPath, ".") {
+		if _, ok := c.field(objectName, fieldPath); ok {
+			return nil
+		}
+		return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_FIELD", fmt.Sprintf("SOQL query references unknown field %s.%s", objectName, fieldPath), fieldPath, offset)}
+	}
+	parts := strings.Split(fieldPath, ".")
+	current := objectName
+	for _, relationship := range parts[:len(parts)-1] {
+		if !c.hasFieldMetadata(current) {
+			return nil
+		}
+		_, target, ok := c.relationshipField(current, relationship)
+		if !ok {
+			return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_RELATIONSHIP", fmt.Sprintf("SOQL query references unknown relationship path %q on %s", fieldPath, current), fieldPath, offset)}
+		}
+		current = target
+	}
+	if _, ok := c.field(current, parts[len(parts)-1]); !ok {
+		return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_FIELD", fmt.Sprintf("SOQL query references unknown field %s.%s via %q", current, parts[len(parts)-1], fieldPath), fieldPath, offset)}
+	}
+	return nil
+}
+
+func (c querySemanticsChecker) checkSOSLQuery(query sosl.Query, ctx queryTextContext) []diagnostic.Diagnostic {
+	var diagnostics []diagnostic.Diagnostic
+	cursor := keywordIndexFold(ctx.queryText, "RETURNING")
+	if cursor < 0 {
+		cursor = 0
+	} else {
+		cursor += len("RETURNING")
+	}
+	for _, returning := range query.Returning {
+		objectCursor := findQueryIdentifier(ctx.queryText, returning.Object, cursor)
+		object, ok := c.object(returning.Object)
+		if !ok {
+			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_OBJECT", fmt.Sprintf("SOSL RETURNING references unknown SObject %q", returning.Object), returning.Object, objectCursor))
+			cursor = maxInt(objectCursor+len(returning.Object), cursor)
+			continue
+		}
+		cursor = maxInt(objectCursor+len(returning.Object), cursor)
+		for _, field := range returning.Fields {
+			fieldCursor := findQueryIdentifier(ctx.queryText, field, cursor)
+			if !c.hasFieldMetadata(object.Name) {
+				cursor = maxInt(fieldCursor+len(field), cursor)
+				continue
+			}
+			if _, ok := c.field(object.Name, field); !ok {
+				diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_SOSL_FIELD", fmt.Sprintf("SOSL RETURNING references unknown field %s.%s", object.Name, field), field, fieldCursor))
+			}
+			cursor = maxInt(fieldCursor+len(field), cursor)
+		}
+	}
+	return diagnostics
+}
+
+func (c querySemanticsChecker) object(name string) (schema.Object, bool) {
+	object, ok := c.objects[strings.ToLower(name)]
+	return object, ok
+}
+
+func (c querySemanticsChecker) field(objectName, fieldName string) (schema.Field, bool) {
+	fields, ok := c.fields[strings.ToLower(objectName)]
+	if !ok {
+		return schema.Field{}, false
+	}
+	field, ok := fields[strings.ToLower(fieldName)]
+	return field, ok
+}
+
+func (c querySemanticsChecker) hasFieldMetadata(objectName string) bool {
+	fields, ok := c.fields[strings.ToLower(objectName)]
+	return ok && len(fields) > 0
+}
+
+func (c querySemanticsChecker) relationshipField(objectName, relationshipName string) (schema.Field, string, bool) {
+	fields, ok := c.fields[strings.ToLower(objectName)]
+	if !ok {
+		return schema.Field{}, "", false
+	}
+	for _, field := range fields {
+		if strings.EqualFold(field.RelationshipName, relationshipName) && len(field.ReferenceTo) > 0 {
+			return field, field.ReferenceTo[0], true
+		}
+	}
+	return schema.Field{}, "", false
+}
+
+func (c querySemanticsChecker) childObjectForRelationship(parentObject, relationship string) (schema.Object, bool) {
+	for _, object := range c.objects {
+		for _, field := range object.Fields {
+			if !strings.EqualFold(field.ChildRelationshipName, relationship) {
+				continue
+			}
+			for _, target := range field.ReferenceTo {
+				if strings.EqualFold(target, parentObject) {
+					return object, true
+				}
+			}
+		}
+	}
+	return schema.Object{}, false
+}
+
+func (ctx queryTextContext) diagnostic(code, message, token string, queryOffset int) diagnostic.Diagnostic {
+	if queryOffset < 0 {
+		queryOffset = 0
+	}
+	start := ctx.queryOffset + queryOffset
+	end := start + len(token)
+	rng := ctx.locator.rangeFor(start, end)
+	return diagnostic.Diagnostic{
+		Severity: diagnostic.Error,
+		Code:     code,
+		Message:  message,
+		File:     ctx.file,
+		Range:    &rng,
+	}
+}
+
+type semaQueryLiteral struct {
+	text        string
+	queryOffset int
+}
+
+func semaSOQLLiterals(source string, spans semaCodeSpans) []semaQueryLiteral {
+	var out []semaQueryLiteral
+	for i := 0; i < len(source); i++ {
+		if source[i] != '[' || !spans.contains(i) {
+			continue
+		}
+		end := semaMatchingBracket(source, i)
+		if end < 0 {
+			continue
+		}
+		raw := source[i+1 : end]
+		trimmed := strings.TrimLeft(raw, " \t\r\n")
+		leading := len(raw) - len(trimmed)
+		if startsWithQueryKeyword(trimmed, "SELECT") {
+			out = append(out, semaQueryLiteral{text: strings.TrimSpace(raw), queryOffset: i + 1 + leading})
+		}
+		i = end
+	}
+	return out
+}
+
+func semaSOSLLiterals(source string, spans semaCodeSpans) []semaQueryLiteral {
+	var out []semaQueryLiteral
+	for i := 0; i < len(source); i++ {
+		if source[i] != '[' || !spans.contains(i) {
+			continue
+		}
+		end := semaMatchingBracket(source, i)
+		if end < 0 {
+			continue
+		}
+		raw := source[i+1 : end]
+		trimmed := strings.TrimLeft(raw, " \t\r\n")
+		leading := len(raw) - len(trimmed)
+		if startsWithQueryKeyword(trimmed, "FIND") {
+			out = append(out, semaQueryLiteral{text: strings.TrimSpace(raw), queryOffset: i + 1 + leading})
+		}
+		i = end
+	}
+	return out
+}
+
+type semaCodeSpans []bool
+
+func newSemaCodeSpans(source string) semaCodeSpans {
+	spans := make(semaCodeSpans, len(source))
+	for i := range spans {
+		spans[i] = true
+	}
+	for i := 0; i < len(source); i++ {
+		if source[i] == '/' && i+1 < len(source) {
+			switch source[i+1] {
+			case '/':
+				spans[i], spans[i+1] = false, false
+				i += 2
+				for i < len(source) && source[i] != '\n' {
+					spans[i] = false
+					i++
+				}
+				i--
+				continue
+			case '*':
+				spans[i], spans[i+1] = false, false
+				i += 2
+				for i < len(source) {
+					spans[i] = false
+					if source[i] == '*' && i+1 < len(source) && source[i+1] == '/' {
+						spans[i+1] = false
+						i++
+						break
+					}
+					i++
+				}
+				continue
+			}
+		}
+		if source[i] == '\'' || source[i] == '"' {
+			quote := source[i]
+			spans[i] = false
+			i++
+			for i < len(source) {
+				spans[i] = false
+				if source[i] == '\\' {
+					i++
+					if i < len(source) {
+						spans[i] = false
+					}
+					i++
+					continue
+				}
+				if source[i] == quote {
+					break
+				}
+				i++
+			}
+		}
+	}
+	return spans
+}
+
+func (s semaCodeSpans) contains(offset int) bool {
+	return offset >= 0 && offset < len(s) && s[offset]
+}
+
+func semaMatchingBracket(source string, start int) int {
+	quote := byte(0)
+	for i := start + 1; i < len(source); i++ {
+		if quote != 0 {
+			if source[i] == '\\' {
+				i++
+				continue
+			}
+			if source[i] == quote {
+				quote = 0
+			}
+			continue
+		}
+		switch source[i] {
+		case '\'', '"':
+			quote = source[i]
+		case ']':
+			return i
+		}
+	}
+	return -1
+}
+
+type semaSourceLocator struct {
+	source    string
+	lineStart []int
+}
+
+func newSemaSourceLocator(source string) semaSourceLocator {
+	starts := []int{0}
+	for offset, ch := range source {
+		if ch == '\n' {
+			starts = append(starts, offset+1)
+		}
+	}
+	return semaSourceLocator{source: source, lineStart: starts}
+}
+
+func (l semaSourceLocator) rangeFor(start, end int) diagnostic.Range {
+	return diagnostic.Range{Start: l.position(start), End: l.position(end)}
+}
+
+func (l semaSourceLocator) position(offset int) diagnostic.Position {
+	if offset < 0 {
+		offset = 0
+	}
+	if offset > len(l.source) {
+		offset = len(l.source)
+	}
+	line := sort.Search(len(l.lineStart), func(i int) bool {
+		return l.lineStart[i] > offset
+	})
+	if line == 0 {
+		line = 1
+	}
+	lineStart := l.lineStart[line-1]
+	column := 1
+	for range l.source[lineStart:offset] {
+		column++
+	}
+	return diagnostic.Position{Line: line, Column: column, Offset: offset}
+}
+
+func findQueryIdentifier(source, ident string, start int) int {
+	if start < 0 {
+		start = 0
+	}
+	for i := start; i+len(ident) <= len(source); i++ {
+		if i > 0 && isQueryIdentPart(source[i-1]) {
+			continue
+		}
+		if source[i:i+len(ident)] != ident {
+			continue
+		}
+		if i+len(ident) < len(source) && isQueryIdentPart(source[i+len(ident)]) {
+			continue
+		}
+		return i
+	}
+	return strings.Index(source, ident)
+}
+
+func findSOQLFromObject(source, objectName string, start int) int {
+	for i := start; i+len("FROM") <= len(source); i++ {
+		if !wordAtFold(source, i, "FROM") {
+			continue
+		}
+		offset := findQueryIdentifier(source, objectName, i+len("FROM"))
+		if offset >= 0 {
+			return offset
+		}
+	}
+	return findQueryIdentifier(source, objectName, start)
+}
+
+func findChildQueryCursor(source, objectName string, start int) int {
+	offset := findSOQLFromObject(source, objectName, start)
+	if offset < 0 {
+		return start
+	}
+	for i := offset; i >= 0; i-- {
+		if source[i] == '(' {
+			return i
+		}
+	}
+	return offset
+}
+
+func findTypeofWhenObject(source, objectName string, start int) int {
+	for i := start; i+len("WHEN") <= len(source); i++ {
+		if !wordAtFold(source, i, "WHEN") {
+			continue
+		}
+		offset := findQueryIdentifier(source, objectName, i+len("WHEN"))
+		if offset >= 0 {
+			return offset
+		}
+	}
+	return findQueryIdentifier(source, objectName, start)
+}
+
+func keywordIndexFold(source, keyword string) int {
+	for i := 0; i+len(keyword) <= len(source); i++ {
+		if wordAtFold(source, i, keyword) {
+			return i
+		}
+	}
+	return -1
+}
+
+func startsWithQueryKeyword(source, keyword string) bool {
+	if len(source) < len(keyword) || !strings.EqualFold(source[:len(keyword)], keyword) {
+		return false
+	}
+	return len(source) == len(keyword) || !isQueryIdentPart(source[len(keyword)])
+}
+
+func wordAtFold(source string, offset int, word string) bool {
+	if offset < 0 || offset+len(word) > len(source) || !strings.EqualFold(source[offset:offset+len(word)], word) {
+		return false
+	}
+	if offset > 0 && isQueryIdentPart(source[offset-1]) {
+		return false
+	}
+	if offset+len(word) < len(source) && isQueryIdentPart(source[offset+len(word)]) {
+		return false
+	}
+	return true
+}
+
+func isQueryIdentPart(ch byte) bool {
+	return ch == '_' || ch == '$' || ch == '.' || ('0' <= ch && ch <= '9') || ('A' <= ch && ch <= 'Z') || ('a' <= ch && ch <= 'z')
+}
+
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
 func (a *Analyzer) checkAnnotations(index typesys.Index) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
