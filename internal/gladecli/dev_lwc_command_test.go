@@ -19,8 +19,10 @@ func TestRunDevLWCHelpUsesLWCHelp(t *testing.T) {
 	}
 	got := stdout.String()
 	for _, want := range []string{
-		"Start a local LWC development shell",
+		"Start a local LWC preview development shell",
+		"Preview feature:",
 		"glade dev lwc [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]",
+		"Preview routes:",
 		"/lwc/preview/component/c/contextProbe",
 		"/lwc/preview/tab/Lwc_Probe",
 	} {

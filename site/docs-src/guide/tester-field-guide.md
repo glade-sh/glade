@@ -70,7 +70,7 @@ launches, named SQLite-backed data environments, and plugin actions.
 | Keep repeated CLI runs warm | `glade test serve --project .` |
 | Keep one watch loop warm | `glade test --project . --daemon --watch` |
 | Execute a quick Apex probe | `glade exec --project . "System.debug('local');"` |
-| Serve Visualforce pages locally | `glade dev vf --project . --addr 127.0.0.1:8080` |
+| Serve Visualforce preview pages locally | `glade dev vf --project . --addr 127.0.0.1:8080` |
 | Open the local playground | `glade playground --project . --open` |
 
 Start with one focused class or method when bringing up a large project. Move
@@ -163,7 +163,7 @@ Create `reports/` before running commands that write report files.
 | --- | --- |
 | Explain a saved Salesforce debug log against local source | `glade debug explain --log apex.log --project .` |
 | Generate a starter local repro test from a log | `glade debug repro --log apex.log --project . > ReproTest.cls` |
-| Render local Visualforce pages | `glade dev vf --project . --addr 127.0.0.1:8080` |
+| Render local Visualforce preview pages | `glade dev vf --project . --addr 127.0.0.1:8080` |
 | Run a Salesforce-shaped local API | `glade server --project . --addr 127.0.0.1:8080` |
 | Seed or inspect a local SQLite org state | `glade db seed --db .glade/org.sqlite --project . fixtures/dev.json` |
 | Map a large Apex project | `glade inspect graph --project . --json` |

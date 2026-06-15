@@ -320,8 +320,8 @@ var commandReferences = []CommandHelp{
 		Subcommands: []SubcommandHelp{
 			{Name: "test", Description: "Run a saved human-friendly test workflow."},
 			{Name: "watch", Description: "Watch and save run artifacts."},
-			{Name: "vf", Description: "Start a local Visualforce development server."},
-			{Name: "lwc", Description: "Start a local LWC development shell."},
+			{Name: "vf", Description: "Preview features: Visualforce local rendering server."},
+			{Name: "lwc", Description: "Preview features: LWC local shell."},
 		},
 		Flags: []FlagHelp{
 			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},

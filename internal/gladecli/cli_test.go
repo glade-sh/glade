@@ -21,6 +21,21 @@ import (
 	"github.com/glade-sh/glade/internal/watch"
 )
 
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return fn(req)
+}
+
+func replaceDefaultHTTPClient(t *testing.T, fn roundTripFunc) func() {
+	t.Helper()
+	oldClient := http.DefaultClient
+	http.DefaultClient = &http.Client{Transport: fn}
+	return func() {
+		http.DefaultClient = oldClient
+	}
+}
+
 func TestRunVersion(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"version"}, &stdout, &stderr)
@@ -843,6 +858,96 @@ func TestPluginsAvailableListsRegistry(t *testing.T) {
 	}
 }
 
+func TestPluginsAvailableDefaultRegistryPreviewError(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", "")
+	restoreHTTPClient := replaceDefaultHTTPClient(t, func(req *http.Request) (*http.Response, error) {
+		if got, want := req.URL.String(), "https://plugins.glade.sh/index.json"; got != want {
+			t.Fatalf("registry URL = %q, want %q", got, want)
+		}
+		return nil, fmt.Errorf("dial tcp: lookup plugins.glade.sh: no such host")
+	})
+	defer restoreHTTPClient()
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "available"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("available exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	got := stderr.String()
+	if strings.HasPrefix(got, `glade: Get "https://plugins.glade.sh/index.json"`) {
+		t.Fatalf("default registry error leads with raw transport detail: %q", got)
+	}
+	for _, want := range []string{
+		"default plugin registry is in preview",
+		"GLADE_PLUGIN_REGISTRY_URL",
+		"direct archive",
+		"glade plugins link",
+		`detail: Get "https://plugins.glade.sh/index.json": dial tcp: lookup plugins.glade.sh: no such host`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("stderr missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestPluginsInstallDefaultRegistryPreviewError(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", "")
+	restoreHTTPClient := replaceDefaultHTTPClient(t, func(req *http.Request) (*http.Response, error) {
+		if got, want := req.URL.String(), "https://plugins.glade.sh/index.json"; got != want {
+			t.Fatalf("registry URL = %q, want %q", got, want)
+		}
+		return nil, fmt.Errorf("dial tcp: lookup plugins.glade.sh: no such host")
+	})
+	defer restoreHTTPClient()
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "install", "@glade/compat"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("install exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	got := stderr.String()
+	for _, want := range []string{
+		"default plugin registry is in preview",
+		"GLADE_PLUGIN_REGISTRY_URL",
+		"direct archive",
+		"glade plugins link",
+		`detail: Get "https://plugins.glade.sh/index.json": dial tcp: lookup plugins.glade.sh: no such host`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("stderr missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestPluginsAvailableCustomRegistryKeepsEndpointError(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", "https://registry.example.test/index.json")
+	restoreHTTPClient := replaceDefaultHTTPClient(t, func(req *http.Request) (*http.Response, error) {
+		return nil, fmt.Errorf("dial tcp: lookup registry.example.test: no such host")
+	})
+	defer restoreHTTPClient()
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "available"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("available exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	got := stderr.String()
+	if strings.Contains(got, "default plugin registry is in preview") {
+		t.Fatalf("custom registry error was rewritten as preview message: %q", got)
+	}
+	for _, want := range []string{
+		`Get "https://registry.example.test/index.json"`,
+		"lookup registry.example.test: no such host",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("stderr missing %q:\n%s", want, got)
+		}
+	}
+}
+
 func TestPluginsAvailableRejectsArguments(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"plugins", "available", "quality"}, &stdout, &stderr)
@@ -1081,7 +1186,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "help dev",
 			args: []string{"help", "dev"},
-			want: []string{"Usage:", "glade dev vf [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]", "glade dev lwc [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]", "Subcommands:", "vf", "lwc"},
+			want: []string{"Usage:", "glade dev vf [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]", "glade dev lwc [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]", "Preview features:", "Visualforce local rendering", "LWC local shell", "Subcommands:", "vf", "lwc"},
 		},
 		{
 			name: "help exit codes",

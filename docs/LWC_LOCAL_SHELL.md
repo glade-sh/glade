@@ -1,9 +1,11 @@
 # Local LWC Shell
 
-Glade can serve Lightning Web Components from an SFDX project without deploying
-to Salesforce. The local shell loads the project on disk, compiles LWC bundles,
-reads Lightning page and custom tab metadata, starts the shared Lightning
-runtime, and serves browser routes that look like Salesforce page targets.
+The LWC local shell is a preview feature. Glade can serve Lightning Web
+Components from an SFDX project without deploying to Salesforce, but it does
+not replace hosted Lightning Experience. The local shell loads the project on
+disk, compiles LWC bundles, reads Lightning page and custom tab metadata,
+starts the shared Lightning runtime, and serves browser routes that look like
+Salesforce page targets.
 
 Run the toolchain install before opening LWC routes:
 

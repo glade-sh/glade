@@ -198,12 +198,12 @@ head:
           </tr>
           <tr>
             <td data-label="Capability">Visualforce pages</td>
-            <td data-label="Local support"><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
+            <td data-label="Local support"><span class="home-status home-status-supported"><span class="home-status-dot"></span>preview feature</span></td>
             <td data-label="Boundary">local /apex renderer</td>
           </tr>
           <tr>
             <td data-label="Capability">LWC local shell</td>
-            <td data-label="Local support"><span class="home-status home-status-supported"><span class="home-status-dot"></span>supported locally</span></td>
+            <td data-label="Local support"><span class="home-status home-status-supported"><span class="home-status-dot"></span>preview feature</span></td>
             <td data-label="Boundary">local /lwc preview routes</td>
           </tr>
           <tr>

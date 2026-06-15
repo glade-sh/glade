@@ -51,8 +51,8 @@ glade test changed --project . --since origin/main
 - You want Apex diagnostics before a deploy.
 - You want to run supported Apex tests without logging into an org.
 - You want local SOQL, DML, trigger, SObject, and limit feedback.
-- You want to render supported Visualforce pages locally through `/apex/<PageName>`.
-- You want to render LWCs locally through `/lwc/preview/*` routes or Visualforce Lightning Out.
+- You want a Visualforce preview feature for local `/apex/<PageName>` rendering.
+- You want an LWC preview feature through `/lwc/preview/*` routes or Visualforce Lightning Out.
 - You want a Salesforce-shaped local API for development loops.
 - You want local assessment, cruft review, or refactor-proof reports for a large Apex project.
 - You want deterministic local harnesses for supported platform helper rows instead of live hosted service calls.

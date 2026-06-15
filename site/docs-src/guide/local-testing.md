@@ -108,6 +108,9 @@ glade test --project . --wizard
 
 ## LWC dev shell
 
+The LWC local shell is a preview feature. It gives useful local preview routes,
+not full hosted Lightning Experience parity.
+
 Install the local LWC toolchain first:
 
 ```bash
@@ -144,6 +147,9 @@ they use the Glade storage fixture format.
 See [Local LWC Shell](/guide/lwc-local-shell) for routes, fixtures, and limits.
 
 ## Visualforce dev server
+
+Visualforce local rendering is a preview feature. It serves useful local
+`/apex/<PageName>` previews, not full hosted Visualforce parity.
 
 Serve local Visualforce pages from the project on disk:
 

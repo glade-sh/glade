@@ -122,7 +122,7 @@ Run anonymous Apex:
 glade exec "System.debug('hello from glade');"
 ```
 
-Serve local Visualforce pages:
+Serve the Visualforce preview feature for useful local `/apex` rendering:
 
 ```bash
 glade dev vf --project . --addr 127.0.0.1:8080

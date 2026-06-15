@@ -10,11 +10,25 @@ const ignore = fs.readFileSync(path.join(root, ".vscodeignore"), "utf8")
   .filter((line) => line && !line.startsWith("#"));
 
 if (manifest.dependencies && Object.keys(manifest.dependencies).length > 0) {
+  const packageScript = manifest.scripts.package || "";
+  const bundleScript = manifest.scripts.bundle || "";
+  const bundleStep = packageScript.indexOf("npm run bundle");
+  const packageStep = packageScript.indexOf("vsce package");
   assert(
-    !ignore.includes("node_modules/**"),
-    ".vscodeignore must not exclude all node_modules; runtime dependencies must ship in the VSIX",
+    /\besbuild\b/.test(bundleScript),
+    "runtime dependencies must be bundled before node_modules is excluded from the VSIX",
+  );
+  assert(bundleScript.includes("--minify"), "bundled extension JavaScript must be minified for VSIX packaging");
+  assert(bundleStep >= 0 && packageStep > bundleStep, "VSIX packaging must run after the bundle step");
+  assert(
+    ignore.includes("node_modules/**"),
+    ".vscodeignore must exclude bundled node_modules from the VSIX",
   );
 }
+
+assert(ignore.includes("out/**/*.js"), ".vscodeignore must exclude compiled module JavaScript");
+assert(ignore.includes("!out/extension.js"), ".vscodeignore must keep the bundled extension entrypoint");
+assert(ignore.includes("out/**/*.map"), ".vscodeignore must exclude compiled source maps from the VSIX");
 
 const startHereView = manifest.contributes.views.glade.find((view) => view.id === "glade.project");
 assert(startHereView, "glade.project view must exist");

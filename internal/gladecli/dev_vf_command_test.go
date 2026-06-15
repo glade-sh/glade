@@ -48,7 +48,8 @@ func TestRunDevVFHelpUsesVisualforceHelp(t *testing.T) {
 	}
 	got := stdout.String()
 	for _, want := range []string{
-		"Start a local Visualforce development server",
+		"Start a local Visualforce preview development server",
+		"Preview feature:",
 		"glade dev vf [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]",
 		"--ready-file /tmp/glade-vf-ready.json",
 	} {

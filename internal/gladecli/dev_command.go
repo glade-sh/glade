@@ -57,6 +57,10 @@ Usage:
   glade dev watch [--project <root>] [--out <runs-dir>]
   glade dev vf [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]
   glade dev lwc [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]
+
+Preview features:
+  Visualforce local rendering and the LWC local shell are useful local previews.
+  They do not promise full hosted Salesforce parity.
 `)+"\n")
 }
 

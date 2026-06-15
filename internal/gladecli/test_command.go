@@ -492,39 +492,67 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	var result testreport.Run
 	if strings.TrimSpace(changedSince) != "" {
 		cases := apextest.Discover(index, testOpts)
-		selection, err := changedSinceSelection(root, index, changedSince)
-		if err != nil {
-			return testreport.Run{}, err
+		selectorOpts := testOpts
+		selectorOpts.Filter = ""
+		selectorCases := cases
+		if strings.TrimSpace(testOpts.Filter) != "" {
+			selectorCases = apextest.Discover(index, selectorOpts)
 		}
-		discoverStart := time.Now()
-		cases = filterSelectedTestCases(cases, selection)
-		discoverTimeMS = time.Since(discoverStart).Milliseconds()
-		if strings.TrimSpace(writeClassShardsDir) != "" {
-			return testreport.Run{}, writeCLIClassShards(writeClassShardsDir, cases, durationHistoryPath, shardCount, parallelismOverride)
+		if selectorRun, ok := exactTestSelectorFailureRun(selectorCases, className, methodName, func() []apextest.TestCase {
+			classOpts := selectorOpts
+			classOpts.SelectedMethod = ""
+			return apextest.Discover(index, classOpts)
+		}); ok {
+			result = selectorRun
+		} else {
+			selection, err := changedSinceSelection(root, index, changedSince)
+			if err != nil {
+				return testreport.Run{}, err
+			}
+			discoverStart := time.Now()
+			cases = filterSelectedTestCases(cases, selection)
+			discoverTimeMS = time.Since(discoverStart).Milliseconds()
+			if strings.TrimSpace(writeClassShardsDir) != "" {
+				return testreport.Run{}, writeCLIClassShards(writeClassShardsDir, cases, durationHistoryPath, shardCount, parallelismOverride)
+			}
+			cases, err = applyCLIClassShard(cases, durationHistoryPath, shardCount, shardIndex)
+			if err != nil {
+				return testreport.Run{}, err
+			}
+			if progressReporter != nil {
+				progressReporter.setTotal(len(cases))
+			}
+			result = apextest.RunCasesContext(ctx, index, testOpts, cases)
 		}
-		cases, err = applyCLIClassShard(cases, durationHistoryPath, shardCount, shardIndex)
-		if err != nil {
-			return testreport.Run{}, err
-		}
-		if progressReporter != nil {
-			progressReporter.setTotal(len(cases))
-		}
-		result = apextest.RunCasesContext(ctx, index, testOpts, cases)
 	} else {
 		discoverStart := time.Now()
 		cases := apextest.Discover(index, testOpts)
 		discoverTimeMS = time.Since(discoverStart).Milliseconds()
-		if strings.TrimSpace(writeClassShardsDir) != "" {
-			return testreport.Run{}, writeCLIClassShards(writeClassShardsDir, cases, durationHistoryPath, shardCount, parallelismOverride)
+		selectorOpts := testOpts
+		selectorOpts.Filter = ""
+		selectorCases := cases
+		if strings.TrimSpace(testOpts.Filter) != "" {
+			selectorCases = apextest.Discover(index, selectorOpts)
 		}
-		cases, err = applyCLIClassShard(cases, durationHistoryPath, shardCount, shardIndex)
-		if err != nil {
-			return testreport.Run{}, err
+		if selectorRun, ok := exactTestSelectorFailureRun(selectorCases, className, methodName, func() []apextest.TestCase {
+			classOpts := selectorOpts
+			classOpts.SelectedMethod = ""
+			return apextest.Discover(index, classOpts)
+		}); ok {
+			result = selectorRun
+		} else {
+			if strings.TrimSpace(writeClassShardsDir) != "" {
+				return testreport.Run{}, writeCLIClassShards(writeClassShardsDir, cases, durationHistoryPath, shardCount, parallelismOverride)
+			}
+			cases, err = applyCLIClassShard(cases, durationHistoryPath, shardCount, shardIndex)
+			if err != nil {
+				return testreport.Run{}, err
+			}
+			if progressReporter != nil {
+				progressReporter.setTotal(len(cases))
+			}
+			result = apextest.RunCasesContext(ctx, index, testOpts, cases)
 		}
-		if progressReporter != nil {
-			progressReporter.setTotal(len(cases))
-		}
-		result = apextest.RunCasesContext(ctx, index, testOpts, cases)
 	}
 	if progressReporter != nil {
 		result.DurationMS = time.Since(progressReporter.started).Milliseconds()
@@ -591,6 +619,47 @@ func writeTestJSONEnvelope(w io.Writer, result testreport.Run, junitPath string)
 		},
 		Data: result,
 	})
+}
+
+func exactTestSelectorFailureRun(cases []apextest.TestCase, className, methodName string, discoverClassCases func() []apextest.TestCase) (testreport.Run, bool) {
+	className = strings.TrimSpace(className)
+	methodName = strings.TrimSpace(methodName)
+	if className == "" {
+		return testreport.Run{}, false
+	}
+	if len(cases) > 0 {
+		return testreport.Run{}, false
+	}
+	if methodName != "" && len(discoverClassCases()) > 0 {
+		return selectorFailureRun(
+			"missing test method",
+			fmt.Sprintf("no test method matched --class %q --method %q", className, methodName),
+			fmt.Sprintf("Glade found test class %q, but no exact test method named %q.", className, methodName),
+		), true
+	}
+	return selectorFailureRun(
+		"missing test class",
+		fmt.Sprintf("no test class matched --class %q", className),
+		fmt.Sprintf("Glade did not discover an exact test class named %q.", className),
+	), true
+}
+
+func selectorFailureRun(name, message, detail string) testreport.Run {
+	return testreport.Run{
+		Name: "glade test",
+		Suites: []testreport.Suite{{
+			Name: "test selector",
+			Cases: []testreport.Case{{
+				Name:   name,
+				Status: testreport.StatusRuntimeError,
+				Problem: &testreport.Problem{
+					Type:    "Selector",
+					Message: message,
+					Detail:  detail,
+				},
+			}},
+		}},
+	}
 }
 
 func flattenTestCases(result testreport.Run) []map[string]any {

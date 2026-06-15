@@ -8,7 +8,7 @@ of the way.
 1. Small pilot and day-to-day workflow: [TESTER_FIELD_GUIDE.md](TESTER_FIELD_GUIDE.md)
 2. Install and first run: [INSTALL.md](INSTALL.md)
 3. Project configuration: [CONFIG.md](CONFIG.md)
-4. Run Apex tests, Visualforce pages, and LWC shells without an org: [LOCAL_TESTING.md](LOCAL_TESTING.md)
+4. Run Apex tests and preview Visualforce pages and LWC shells without an org: [LOCAL_TESTING.md](LOCAL_TESTING.md)
 5. CI outputs and saved artifacts: [CI_ARTIFACTS.md](CI_ARTIFACTS.md)
 6. Rich local workflows: [RICH_LOCAL_WORKFLOWS.md](RICH_LOCAL_WORKFLOWS.md)
 7. Local LWC shell: [LWC_LOCAL_SHELL.md](LWC_LOCAL_SHELL.md)
