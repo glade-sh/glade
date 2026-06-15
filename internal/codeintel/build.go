@@ -15,6 +15,7 @@ type Options struct {
 
 func Build(index typesys.Index, opts ...Options) Graph {
 	graph := BuildDeclarations(index)
+	addArtifactContracts(&graph, index.CodeIntelSymbols, index.CodeIntelUses)
 	for _, use := range collectApexUses(index, graph) {
 		graph.AddUse(use)
 	}

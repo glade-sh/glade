@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/xml"
 	"os"
 	"path/filepath"
 	"sort"
@@ -17,18 +18,22 @@ import (
 )
 
 type Artifact struct {
-	Namespace             string                        `json:"namespace"`
-	PackageName           string                        `json:"packageName,omitempty"`
-	Version               string                        `json:"version,omitempty"`
-	SourceRoot            string                        `json:"sourceRoot,omitempty"`
-	SourceHash            string                        `json:"sourceHash,omitempty"`
-	SourceAPIVersion      string                        `json:"sourceApiVersion,omitempty"`
-	BuiltAt               time.Time                     `json:"builtAt"`
-	ApexTypes             []ApexType                    `json:"apexTypes,omitempty"`
-	Objects               []schema.Object               `json:"objects,omitempty"`
-	CustomMetadataRecords []schema.CustomMetadataRecord `json:"customMetadataRecords,omitempty"`
-	Labels                int                           `json:"labels"`
-	StaticResources       int                           `json:"staticResources"`
+	Namespace               string                        `json:"namespace"`
+	PackageName             string                        `json:"packageName,omitempty"`
+	Version                 string                        `json:"version,omitempty"`
+	SourceRoot              string                        `json:"sourceRoot,omitempty"`
+	SourceHash              string                        `json:"sourceHash,omitempty"`
+	SourceAPIVersion        string                        `json:"sourceApiVersion,omitempty"`
+	BuiltAt                 time.Time                     `json:"builtAt"`
+	ApexTypes               []ApexType                    `json:"apexTypes,omitempty"`
+	Objects                 []schema.Object               `json:"objects,omitempty"`
+	CustomMetadataRecords   []schema.CustomMetadataRecord `json:"customMetadataRecords,omitempty"`
+	Labels                  int                           `json:"labels"`
+	StaticResources         int                           `json:"staticResources"`
+	CodeIntelSymbolsVersion int                           `json:"codeIntelSymbolsVersion,omitempty"`
+	CodeIntelSymbols        []CodeIntelSymbol             `json:"codeIntelSymbols,omitempty"`
+	CodeIntelUsesVersion    int                           `json:"codeIntelUsesVersion,omitempty"`
+	CodeIntelUses           []CodeIntelUse                `json:"codeIntelUses,omitempty"`
 }
 
 type ApexType struct {
@@ -56,6 +61,32 @@ type ApexMember struct {
 	Accessors  []apexast.Accessor      `json:"accessors,omitempty"`
 	IsTest     bool                    `json:"isTest,omitempty"`
 	Range      diagnostic.Range        `json:"range"`
+}
+
+type CodeIntelSymbol struct {
+	ID         string            `json:"id"`
+	Kind       string            `json:"kind"`
+	Name       string            `json:"name"`
+	Container  string            `json:"container,omitempty"`
+	Namespace  string            `json:"namespace,omitempty"`
+	Type       string            `json:"type,omitempty"`
+	Signature  string            `json:"signature,omitempty"`
+	File       string            `json:"file,omitempty"`
+	Range      diagnostic.Range  `json:"range"`
+	Dependency bool              `json:"dependency,omitempty"`
+	Artifact   bool              `json:"artifact,omitempty"`
+	Metadata   map[string]string `json:"metadata,omitempty"`
+}
+
+type CodeIntelUse struct {
+	SymbolID string            `json:"symbolId,omitempty"`
+	Kind     string            `json:"kind"`
+	Name     string            `json:"name"`
+	File     string            `json:"file"`
+	Range    diagnostic.Range  `json:"range"`
+	Context  string            `json:"context,omitempty"`
+	Resolved bool              `json:"resolved"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 type Summary struct {
@@ -112,7 +143,7 @@ func Build(namespace, version string, p project.Project, s schema.Schema, apexTy
 	if err != nil {
 		return Artifact{}, err
 	}
-	return Artifact{
+	artifact := Artifact{
 		Namespace:             namespace,
 		Version:               version,
 		SourceRoot:            p.Root,
@@ -124,7 +155,16 @@ func Build(namespace, version string, p project.Project, s schema.Schema, apexTy
 		CustomMetadataRecords: namespaceCustomMetadataRecords(namespace, s.CustomMetadataRecords),
 		Labels:                len(p.LabelFiles),
 		StaticResources:       len(p.StaticResourceFiles) + len(p.StaticResourceMetas),
-	}, nil
+	}
+	artifact.CodeIntelSymbols = codeIntelSymbols(artifact, p)
+	artifact.CodeIntelUses = codeIntelDeclarationUses(artifact.CodeIntelSymbols)
+	if len(artifact.CodeIntelSymbols) > 0 {
+		artifact.CodeIntelSymbolsVersion = 1
+	}
+	if len(artifact.CodeIntelUses) > 0 {
+		artifact.CodeIntelUsesVersion = 1
+	}
+	return artifact, nil
 }
 
 func Inspect(artifact Artifact) Info {
@@ -421,4 +461,283 @@ func hasModifier(modifiers []string, want string) bool {
 		}
 	}
 	return false
+}
+
+func codeIntelSymbols(artifact Artifact, p project.Project) []CodeIntelSymbol {
+	symbols := make([]CodeIntelSymbol, 0)
+	for _, typ := range artifact.ApexTypes {
+		symbols = append(symbols, codeIntelSymbolForType(artifact.Namespace, artifact.Version, typ))
+		for _, member := range typ.Members {
+			symbols = append(symbols, codeIntelSymbolForMember(artifact.Namespace, artifact.Version, typ, member))
+		}
+	}
+	for _, object := range artifact.Objects {
+		symbols = append(symbols, codeIntelSymbolForObject(object))
+		for _, field := range object.Fields {
+			symbols = append(symbols, codeIntelSymbolForField(object, field))
+		}
+	}
+	for _, record := range artifact.CustomMetadataRecords {
+		symbols = append(symbols, codeIntelSymbolForCustomMetadata(record))
+	}
+	for _, label := range packageLabelNames(artifact.Namespace, p.LabelFiles) {
+		symbols = append(symbols, CodeIntelSymbol{
+			ID:         labelID(label),
+			Kind:       "label",
+			Name:       label,
+			Namespace:  artifact.Namespace,
+			Dependency: true,
+			Artifact:   true,
+		})
+	}
+	for _, resource := range packageStaticResourceNames(artifact.Namespace, p.StaticResourceFiles, p.StaticResourceMetas) {
+		symbols = append(symbols, CodeIntelSymbol{
+			ID:         staticResourceID(resource),
+			Kind:       "static_resource",
+			Name:       resource,
+			Namespace:  artifact.Namespace,
+			Dependency: true,
+			Artifact:   true,
+		})
+	}
+	sort.Slice(symbols, func(i, j int) bool {
+		return symbols[i].ID < symbols[j].ID
+	})
+	return symbols
+}
+
+func codeIntelSymbolForType(namespace, version string, typ ApexType) CodeIntelSymbol {
+	if typ.Namespace == "" {
+		typ.Namespace = namespace
+	}
+	if typ.Version == "" {
+		typ.Version = version
+	}
+	metadata := map[string]string{
+		"declarationKind": string(typ.Kind),
+		"sourceRoot":      typ.SourceRoot,
+		"version":         typ.Version,
+	}
+	return CodeIntelSymbol{
+		ID:         apexTypeID(typ.Namespace, typ.Name),
+		Kind:       "apex_type",
+		Name:       typ.Name,
+		Namespace:  typ.Namespace,
+		File:       typ.File,
+		Range:      typ.Range,
+		Dependency: true,
+		Artifact:   true,
+		Metadata:   metadata,
+	}
+}
+
+func codeIntelSymbolForMember(namespace, version string, typ ApexType, member ApexMember) CodeIntelSymbol {
+	if typ.Namespace == "" {
+		typ.Namespace = namespace
+	}
+	if typ.Version == "" {
+		typ.Version = version
+	}
+	signature := codeIntelMemberSignature(member)
+	return CodeIntelSymbol{
+		ID:         apexMemberID(typ.Namespace, typ.Name, string(member.Kind), member.Name, signature),
+		Kind:       "apex_member",
+		Name:       member.Name,
+		Container:  apexTypeID(typ.Namespace, typ.Name),
+		Namespace:  typ.Namespace,
+		Type:       member.Type,
+		Signature:  signature,
+		File:       typ.File,
+		Range:      member.Range,
+		Dependency: true,
+		Artifact:   true,
+		Metadata: map[string]string{
+			"declarationKind": string(member.Kind),
+			"owner":           typ.Name,
+			"version":         typ.Version,
+		},
+	}
+}
+
+func codeIntelSymbolForObject(object schema.Object) CodeIntelSymbol {
+	return CodeIntelSymbol{
+		ID:         sObjectID(object.Name),
+		Kind:       "sobject",
+		Name:       object.Name,
+		Dependency: true,
+		Artifact:   true,
+		Metadata: map[string]string{
+			"label":              object.Label,
+			"pluralLabel":        object.PluralLabel,
+			"sharingModel":       object.SharingModel,
+			"customSettingsType": object.CustomSettingsType,
+		},
+	}
+}
+
+func codeIntelSymbolForField(object schema.Object, field schema.Field) CodeIntelSymbol {
+	return CodeIntelSymbol{
+		ID:         sObjectFieldID(object.Name, field.Name),
+		Kind:       "sobject_field",
+		Name:       field.Name,
+		Container:  sObjectID(object.Name),
+		Type:       field.Type,
+		Dependency: true,
+		Artifact:   true,
+		Metadata: map[string]string{
+			"object":                object.Name,
+			"label":                 field.Label,
+			"relationshipName":      field.RelationshipName,
+			"childRelationshipName": field.ChildRelationshipName,
+			"referenceTo":           strings.Join(field.ReferenceTo, ","),
+		},
+	}
+}
+
+func codeIntelSymbolForCustomMetadata(record schema.CustomMetadataRecord) CodeIntelSymbol {
+	return CodeIntelSymbol{
+		ID:         customMetadataID(record.ObjectName, record.DeveloperName),
+		Kind:       "custom_metadata",
+		Name:       record.FullName,
+		Container:  sObjectID(record.ObjectName),
+		File:       record.File,
+		Dependency: true,
+		Artifact:   true,
+		Metadata: map[string]string{
+			"object":        record.ObjectName,
+			"developerName": record.DeveloperName,
+			"label":         record.Label,
+		},
+	}
+}
+
+func codeIntelDeclarationUses(symbols []CodeIntelSymbol) []CodeIntelUse {
+	uses := make([]CodeIntelUse, 0, len(symbols))
+	for _, symbol := range symbols {
+		uses = append(uses, CodeIntelUse{
+			SymbolID: symbol.ID,
+			Kind:     "declaration",
+			Name:     symbol.Name,
+			File:     symbol.File,
+			Range:    symbol.Range,
+			Context:  symbol.Container,
+			Resolved: true,
+		})
+	}
+	return uses
+}
+
+func codeIntelMemberSignature(member ApexMember) string {
+	params := make([]string, 0, len(member.Parameters))
+	for _, param := range member.Parameters {
+		params = append(params, strings.TrimSpace(param.Type))
+	}
+	return strings.TrimSpace(member.Type) + "(" + strings.Join(params, ",") + ")"
+}
+
+type labelsXML struct {
+	Labels []struct {
+		FullName string `xml:"fullName"`
+	} `xml:"labels"`
+}
+
+func packageLabelNames(namespace string, paths []string) []string {
+	seen := make(map[string]bool)
+	for _, path := range paths {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		var labels labelsXML
+		if err := xml.Unmarshal(data, &labels); err != nil {
+			continue
+		}
+		for _, label := range labels.Labels {
+			name := namespaceMetadataName(namespace, strings.TrimSpace(label.FullName))
+			if name != "" {
+				seen[name] = true
+			}
+		}
+	}
+	return sortedKeys(seen)
+}
+
+func packageStaticResourceNames(namespace string, filePaths, metaPaths []string) []string {
+	seen := make(map[string]bool)
+	for _, path := range append(append([]string{}, filePaths...), metaPaths...) {
+		name := staticResourceNameFromPath(path)
+		name = namespaceMetadataName(namespace, name)
+		if name != "" {
+			seen[name] = true
+		}
+	}
+	return sortedKeys(seen)
+}
+
+func staticResourceNameFromPath(path string) string {
+	base := filepath.Base(path)
+	base = strings.TrimSuffix(base, "-meta.xml")
+	ext := filepath.Ext(base)
+	if ext == "" {
+		return base
+	}
+	return strings.TrimSuffix(base, ext)
+}
+
+func namespaceMetadataName(namespace, name string) string {
+	if namespace == "" || name == "" || strings.Contains(name, "__") {
+		return name
+	}
+	return namespace + "__" + name
+}
+
+func sortedKeys(values map[string]bool) []string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+func apexTypeID(namespace, name string) string {
+	return joinCodeIntelID("apex", "type", namespace, name)
+}
+
+func apexMemberID(namespace, typeName, kind, name, signature string) string {
+	return joinCodeIntelID("apex", "member", namespace, typeName, kind, name, signature)
+}
+
+func sObjectID(name string) string {
+	return joinCodeIntelID("schema", "object", name)
+}
+
+func sObjectFieldID(objectName, fieldName string) string {
+	return joinCodeIntelID("schema", "field", objectName, fieldName)
+}
+
+func customMetadataID(objectName, developerName string) string {
+	return joinCodeIntelID("schema", "custom_metadata", objectName, developerName)
+}
+
+func labelID(name string) string {
+	return joinCodeIntelID("metadata", "label", name)
+}
+
+func staticResourceID(name string) string {
+	return joinCodeIntelID("metadata", "static_resource", name)
+}
+
+func joinCodeIntelID(parts ...string) string {
+	escaped := make([]string, len(parts))
+	for i, part := range parts {
+		escaped[i] = escapeCodeIntelIDPart(part)
+	}
+	return strings.Join(escaped, ":")
+}
+
+func escapeCodeIntelIDPart(part string) string {
+	part = strings.ReplaceAll(part, "%", "%25")
+	part = strings.ReplaceAll(part, ":", "%3A")
+	return part
 }
