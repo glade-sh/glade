@@ -1,4 +1,22 @@
-# Glade
+<p align="center">
+  <img src="site/docs-src/public/logo-mark.svg" alt="Glade boxed contour mark" width="96" height="96">
+</p>
+
+<h1 align="center">Glade</h1>
+
+<p align="center">
+  Local Apex runtime and tooling for Salesforce teams.
+</p>
+
+<p align="center">
+  <a href="https://glade.sh">Site</a>
+  ·
+  <a href="https://glade.sh/guide/quickstart">Quickstart</a>
+  ·
+  <a href="https://glade.sh/guide/support-map">Capability map</a>
+  ·
+  <a href="docs/TESTER_FIELD_GUIDE.md">Tester field guide</a>
+</p>
 
 Glade is a clean-room Apex runtime for local development and testing. It reads
 Salesforce projects from disk, checks Apex, runs supported tests without an org,
