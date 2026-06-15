@@ -111,6 +111,75 @@ func TestRunTestSelectsExactMethod(t *testing.T) {
 	}
 }
 
+func TestRunTestRejectsMissingExactClassSelectorJSON(t *testing.T) {
+	root := selectionFixtureRoot(t)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--class", "NoSuchTest", "--json", "--no-cache", "--no-progress"}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
+	}
+	envelope := decodeSelectorFailureEnvelope(t, stdout.Bytes())
+	if envelope.Status != "failed" || envelope.ExitCode == 0 {
+		t.Fatalf("envelope status=%q exitCode=%d stdout=%s", envelope.Status, envelope.ExitCode, stdout.String())
+	}
+	if envelope.Summary.Total != 1 || envelope.Summary.Errors != 1 {
+		t.Fatalf("summary = %#v stdout=%s", envelope.Summary, stdout.String())
+	}
+	if got := firstSelectorFailureMessage(envelope.Data); !strings.Contains(got, `no test class matched --class "NoSuchTest"`) {
+		t.Fatalf("selector message = %q stdout=%s", got, stdout.String())
+	}
+}
+
+func TestRunTestRejectsMissingExactMethodSelectorJSON(t *testing.T) {
+	root := selectionFixtureRoot(t)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--class", "AccountServiceTest", "--method", "noSuch", "--json", "--no-cache", "--no-progress"}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
+	}
+	envelope := decodeSelectorFailureEnvelope(t, stdout.Bytes())
+	if envelope.Summary.Total != 1 || envelope.Summary.Errors != 1 {
+		t.Fatalf("summary = %#v stdout=%s", envelope.Summary, stdout.String())
+	}
+	if got := firstSelectorFailureMessage(envelope.Data); !strings.Contains(got, `no test method matched --class "AccountServiceTest" --method "noSuch"`) {
+		t.Fatalf("selector message = %q stdout=%s", got, stdout.String())
+	}
+}
+
+func TestRunTestRejectsMissingExactMethodSelectorConsole(t *testing.T) {
+	root := selectionFixtureRoot(t)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--class", "AccountServiceTest", "--method", "noSuch", "--no-cache", "--no-progress"}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
+	}
+	for _, want := range []string{
+		"Glade test",
+		"no test method matched",
+		`--class "AccountServiceTest" --method "noSuch"`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stdout missing %q:\n%s\nstderr=%s", want, stdout.String(), stderr.String())
+		}
+	}
+}
+
+func TestRunTestAllowsBroadFilterToSelectZeroWithExactClass(t *testing.T) {
+	root := selectionFixtureRoot(t)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--class", "AccountServiceTest", "--filter", "noSuch", "--json", "--no-cache", "--no-progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
+	}
+	run, err := decodeTestRunJSON(stdout.Bytes())
+	if err != nil {
+		t.Fatalf("decode run: %v\n%s", err, stdout.String())
+	}
+	if got := run.Summary(); got.Total != 0 || got.Errors != 0 {
+		t.Fatalf("summary = %#v stdout=%s", got, stdout.String())
+	}
+}
+
 func TestRunTestSelectsClassFile(t *testing.T) {
 	root := selectionFixtureRoot(t)
 	classFile := filepath.Join(t.TempDir(), "tests.txt")
@@ -161,6 +230,33 @@ func decodeTestRunJSON(data []byte) (testreport.Run, error) {
 	var run testreport.Run
 	err := json.Unmarshal(data, &run)
 	return run, err
+}
+
+type selectorFailureEnvelope struct {
+	Status   string             `json:"status"`
+	ExitCode int                `json:"exitCode"`
+	Summary  testreport.Summary `json:"summary"`
+	Data     testreport.Run     `json:"data"`
+}
+
+func decodeSelectorFailureEnvelope(t *testing.T, data []byte) selectorFailureEnvelope {
+	t.Helper()
+	var envelope selectorFailureEnvelope
+	if err := json.Unmarshal(data, &envelope); err != nil {
+		t.Fatalf("decode selector failure envelope: %v\n%s", err, string(data))
+	}
+	return envelope
+}
+
+func firstSelectorFailureMessage(run testreport.Run) string {
+	for _, suite := range run.Suites {
+		for _, testCase := range suite.Cases {
+			if testCase.Problem != nil {
+				return testCase.Problem.Message
+			}
+		}
+	}
+	return ""
 }
 
 func selectionFixtureRoot(t *testing.T) string {
