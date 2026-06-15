@@ -144,3 +144,44 @@ func TestRefGraphRefreshPicksUpNewEdge(t *testing.T) {
 		t.Fatalf("post-refresh selection = %#v, want direct [ServiceTest]", sel)
 	}
 }
+
+func TestRefGraphUsesCodeintelMemberReferencesNotCommentWords(t *testing.T) {
+	root := t.TempDir()
+	writeWatchFile(t, filepath.Join(root, "Helper.cls"), "public class Helper { public void go() {} }")
+	writeWatchFile(t, filepath.Join(root, "GhostHelper.cls"), "public class GhostHelper { public static void go() {} }")
+	writeWatchFile(t, filepath.Join(root, "Service.cls"), `
+public class Service {
+  void run() {
+    new Helper().go();
+    // GhostHelper.go();
+  }
+}`)
+	writeWatchFile(t, filepath.Join(root, "ServiceTest.cls"), "@IsTest class ServiceTest { @IsTest static void runs() { Service s = new Service(); } }")
+	writeWatchFile(t, filepath.Join(root, "OtherTest.cls"), "@IsTest class OtherTest { @IsTest static void runs() { System.assert(true); } }")
+
+	index := typesys.Index{
+		Project: typesys.ProjectInfo{Root: root},
+		Types: []typesys.TypeSymbol{
+			{
+				Kind: apexast.DeclarationClass, Name: "Helper", File: filepath.Join(root, "Helper.cls"),
+				Members: []typesys.MemberSymbol{{Kind: apexast.DeclarationMethod, Name: "go", Type: "void"}},
+			},
+			{
+				Kind: apexast.DeclarationClass, Name: "GhostHelper", File: filepath.Join(root, "GhostHelper.cls"),
+				Members: []typesys.MemberSymbol{{Kind: apexast.DeclarationMethod, Name: "go", Type: "void", Modifiers: []string{"static"}}},
+			},
+			classSymbol(root, "Service", false, ""),
+			classSymbol(root, "ServiceTest", true, ""),
+			classSymbol(root, "OtherTest", true, ""),
+		},
+	}
+
+	graph := BuildReferenceGraph(index)
+	sel := SelectAffectedTestsWithRefGraph(index, []Change{classChange(root, "Helper", ChangeModified)}, graph)
+	if sel.Mode != SelectionDirect || len(sel.TestClasses) != 1 || sel.TestClasses[0] != "ServiceTest" {
+		t.Fatalf("Helper selection = %#v, want direct [ServiceTest]", sel)
+	}
+	if sel := SelectAffectedTestsWithRefGraph(index, []Change{classChange(root, "GhostHelper", ChangeModified)}, graph); sel.Mode != SelectionAll {
+		t.Fatalf("GhostHelper selection = %#v, want all", sel)
+	}
+}

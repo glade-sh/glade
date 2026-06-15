@@ -1,20 +1,20 @@
 package watch
 
 import (
-	"os"
 	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/codeintel"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
 // RefGraph is a static dependency graph over Apex type declarations. An edge
-// "A depends on B" means type A references type B (by name, superclass, or
-// implemented interface), so a change to B may affect A and any test that
-// reaches A. The graph is derived purely from source identifiers and declared
-// relationships, so it needs no profiling or runtime instrumentation: it is a
-// byproduct of the type index the watcher/daemon already maintains.
+// "A depends on B" means type A references B through code intelligence,
+// superclass, or implemented-interface facts, so a change to B may affect A and
+// any test that reaches A. The graph needs no profiling or runtime
+// instrumentation: it is a byproduct of the type index the watcher/daemon
+// already maintains.
 //
 // Selection walks the reverse edges (dependents) from each changed type to find
 // every test that transitively reaches it. This catches changes to deep helper
@@ -29,64 +29,43 @@ type RefGraph struct {
 	// that depend on it (the reverse of deps).
 	dependents map[string]map[string]struct{}
 
-	isTest      map[string]struct{} // canonical names that are runnable test classes
-	allTests    []string            // sorted runnable test class names
-	nameByLower map[string]string   // lowercased type name -> canonical name
-	canonByFile map[string]string   // clean file path -> canonical type name
+	isTest       map[string]struct{} // canonical names that are runnable test classes
+	allTests     []string            // sorted runnable test class names
+	nameByLower  map[string]string   // lowercased type name -> canonical name
+	canonByFile  map[string]string   // clean file path -> canonical type name
+	resolvedFile map[string]struct{} // clean Apex file paths represented in codeintel
 }
 
-// BuildReferenceGraph constructs a reference graph from the type index by
-// reading each declared type's source file once and recording which known type
-// names it references. This is the only place that reads every file; callers
-// keep the result and refresh it incrementally via Refresh.
+// BuildReferenceGraph constructs a reference graph from the type index and the
+// codeintel graph. Callers keep the result and refresh it via Refresh.
 func BuildReferenceGraph(index typesys.Index) *RefGraph {
 	g := &RefGraph{
-		deps:        make(map[string]map[string]struct{}),
-		dependents:  make(map[string]map[string]struct{}),
-		isTest:      make(map[string]struct{}),
-		nameByLower: make(map[string]string),
-		canonByFile: make(map[string]string),
+		deps:         make(map[string]map[string]struct{}),
+		dependents:   make(map[string]map[string]struct{}),
+		isTest:       make(map[string]struct{}),
+		nameByLower:  make(map[string]string),
+		canonByFile:  make(map[string]string),
+		resolvedFile: make(map[string]struct{}),
 	}
 	g.refreshLightMaps(index)
 	for _, typ := range index.Types {
 		if typ.Dependency {
 			continue
 		}
-		g.rescanType(typ)
+		g.addStructuralRefs(typ)
 	}
+	g.addCodeintelRefs(index)
 	return g
 }
 
-// Refresh returns a graph reflecting the given changes. Modifications to known
-// Apex files re-scan only those files; additions, deletions, or changes to
-// unknown files trigger a full rebuild so cross-file edges for new symbols are
-// never missed (the conservative direction). A nil receiver builds from scratch.
+// Refresh returns a graph reflecting the given changes. It rebuilds from the
+// current type index so codeintel references and reverse edges stay in step. A
+// nil receiver builds from scratch.
 func (g *RefGraph) Refresh(index typesys.Index, changes []Change) *RefGraph {
 	if g == nil || g.needsFullRebuild(changes) {
 		return BuildReferenceGraph(index)
 	}
-	g.refreshLightMaps(index)
-	for _, change := range changes {
-		if change.Kind != FileKindApexClass {
-			continue
-		}
-		path := cleanPath(change.Path)
-		if change.Op == ChangeDeleted {
-			g.removeFile(path)
-			continue
-		}
-		name, ok := g.canonByFile[path]
-		if !ok {
-			continue
-		}
-		for _, typ := range index.Types {
-			if typ.Name == name {
-				g.rescanType(typ)
-				break
-			}
-		}
-	}
-	return g
+	return BuildReferenceGraph(index)
 }
 
 func (g *RefGraph) needsFullRebuild(changes []Change) bool {
@@ -127,16 +106,11 @@ func (g *RefGraph) refreshLightMaps(index typesys.Index) {
 	g.allTests = sortedSet(g.isTest)
 }
 
-func (g *RefGraph) rescanType(typ typesys.TypeSymbol) {
+func (g *RefGraph) addStructuralRefs(typ typesys.TypeSymbol) {
 	refs := make(map[string]struct{})
 	g.addStructuralRef(typ.Name, typ.SuperClass, refs)
 	for _, iface := range typ.Interfaces {
 		g.addStructuralRef(typ.Name, iface, refs)
-	}
-	if file := cleanPath(typ.File); file != "" {
-		if data, err := os.ReadFile(file); err == nil {
-			g.collectIdentifierRefs(data, typ.Name, refs)
-		}
 	}
 	g.setDeps(typ.Name, refs)
 }
@@ -152,38 +126,6 @@ func (g *RefGraph) addStructuralRef(self, raw string, refs map[string]struct{}) 
 	}
 	if dot := strings.LastIndex(raw, "."); dot >= 0 {
 		if canon, ok := g.nameByLower[strings.ToLower(raw[dot+1:])]; ok && canon != self {
-			refs[canon] = struct{}{}
-		}
-	}
-}
-
-// collectIdentifierRefs tokenizes source into identifier runs and records any
-// that name a known type. Lowercasing into a reused buffer keeps the map probe
-// allocation-free. Matches inside comments or strings only ever over-select,
-// which is safe.
-func (g *RefGraph) collectIdentifierRefs(data []byte, self string, refs map[string]struct{}) {
-	var buf [256]byte
-	n := len(data)
-	for i := 0; i < n; {
-		for i < n && !isIdentRefByte(data[i]) {
-			i++
-		}
-		start := i
-		for i < n && isIdentRefByte(data[i]) {
-			i++
-		}
-		token := data[start:i]
-		if len(token) == 0 || len(token) > len(buf) {
-			continue
-		}
-		for k := 0; k < len(token); k++ {
-			b := token[k]
-			if b >= 'A' && b <= 'Z' {
-				b += 'a' - 'A'
-			}
-			buf[k] = b
-		}
-		if canon, ok := g.nameByLower[string(buf[:len(token)])]; ok && canon != self {
 			refs[canon] = struct{}{}
 		}
 	}
@@ -223,6 +165,77 @@ func (g *RefGraph) removeFile(path string) {
 	g.setDeps(name, nil)
 }
 
+func (g *RefGraph) addCodeintelRefs(index typesys.Index) {
+	cg := codeintel.Build(index, codeintel.Options{})
+	typeByFile := make(map[string]string, len(index.Types))
+	for _, typ := range index.Types {
+		if typ.Dependency || typ.File == "" {
+			continue
+		}
+		typeByFile[cleanPath(typ.File)] = typ.Name
+	}
+	for _, use := range cg.Uses {
+		if !use.Resolved || use.Kind == codeintel.UseDeclaration {
+			continue
+		}
+		from := typeByFile[cleanPath(use.File)]
+		if from == "" {
+			continue
+		}
+		g.resolvedFile[cleanPath(use.File)] = struct{}{}
+		to := g.typeNameForCodeintelUse(cg, use.SymbolID)
+		if to == "" || to == from {
+			continue
+		}
+		refs := cloneDeps(g.deps[from])
+		refs[to] = struct{}{}
+		g.setDeps(from, refs)
+	}
+	for _, symbol := range cg.Symbols {
+		if symbol.Kind == codeintel.SymbolApexType && symbol.File != "" {
+			g.resolvedFile[cleanPath(symbol.File)] = struct{}{}
+		}
+	}
+}
+
+func (g *RefGraph) typeNameForCodeintelUse(cg codeintel.Graph, id codeintel.SymbolID) string {
+	symbol, ok := cg.Definition(id)
+	if !ok {
+		return ""
+	}
+	switch symbol.Kind {
+	case codeintel.SymbolApexType:
+		if canon, ok := g.nameByLower[strings.ToLower(symbol.Name)]; ok {
+			return canon
+		}
+	case codeintel.SymbolApexMember:
+		owner := symbol.Metadata["owner"]
+		if owner == "" && symbol.Container != "" {
+			if container, ok := cg.Definition(symbol.Container); ok {
+				owner = container.Name
+			}
+		}
+		if owner == "" {
+			parts := codeintel.ParseID(symbol.ID)
+			if len(parts) >= 5 {
+				owner = parts[3]
+			}
+		}
+		if canon, ok := g.nameByLower[strings.ToLower(owner)]; ok {
+			return canon
+		}
+	}
+	return ""
+}
+
+func cloneDeps(in map[string]struct{}) map[string]struct{} {
+	out := make(map[string]struct{}, len(in)+1)
+	for key := range in {
+		out[key] = struct{}{}
+	}
+	return out
+}
+
 // affectedTests returns the sorted set of test classes that transitively depend
 // on name (including name itself when it is a test class).
 func (g *RefGraph) affectedTests(name string) []string {
@@ -243,10 +256,6 @@ func (g *RefGraph) affectedTests(name string) []string {
 		}
 	}
 	return sortedKeys(out)
-}
-
-func isIdentRefByte(b byte) bool {
-	return (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9') || b == '_'
 }
 
 func sortedSet(values map[string]struct{}) []string {

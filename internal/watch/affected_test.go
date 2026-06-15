@@ -45,6 +45,27 @@ func TestSelectAffectedTestsProductionClassFallsBackToAllTests(t *testing.T) {
 	}
 }
 
+func TestSelectAffectedTestsFallsBackWhenCodeintelCannotResolveChangedFile(t *testing.T) {
+	root := t.TempDir()
+	index := testIndex(root)
+	graph := BuildReferenceGraph(index)
+	delete(graph.deps, "InvoiceService")
+	delete(graph.dependents, "InvoiceService")
+	delete(graph.nameByLower, "invoiceservice")
+	delete(graph.resolvedFile, cleanPath(filepath.Join(root, "InvoiceService.cls")))
+
+	selection := SelectAffectedTestsWithRefGraph(index, []Change{{
+		Path: filepath.Join(root, "InvoiceService.cls"),
+		Op:   ChangeModified,
+		Kind: FileKindApexClass,
+		Name: "InvoiceService",
+	}}, graph)
+
+	if selection.Mode != SelectionAll {
+		t.Fatalf("selection = %#v, want all", selection)
+	}
+}
+
 func TestSelectAffectedTestsUsesDependencyGraph(t *testing.T) {
 	root := t.TempDir()
 	index := testIndex(root)
