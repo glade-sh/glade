@@ -47,6 +47,25 @@ func TestBuildIncludesSOSLUsesFromIndexedApexFiles(t *testing.T) {
 	assertBuildUseAt(t, graph.Uses, codeintel.SObjectFieldID("Account", "Name"), codeintel.UseQuery, "Name", 3, 81)
 }
 
+func TestBuildMergesCachedSchemaSymbols(t *testing.T) {
+	root := t.TempDir()
+	if err := codeintel.WriteSchemaCache(root, schema.Schema{Objects: []schema.Object{{
+		Name:   "Account",
+		Fields: []schema.Field{{Name: "Name", Type: "String"}},
+	}}}); err != nil {
+		t.Fatalf("WriteSchemaCache: %v", err)
+	}
+
+	graph := codeintel.Build(typesys.Index{Project: typesys.ProjectInfo{Root: root}}, codeintel.Options{UseCache: true})
+
+	if _, ok := graph.Definition(codeintel.SObjectID("Account")); !ok {
+		t.Fatalf("cached Account symbol missing from %#v", graph.Symbols)
+	}
+	if _, ok := graph.Definition(codeintel.SObjectFieldID("Account", "Name")); !ok {
+		t.Fatalf("cached Account.Name symbol missing from %#v", graph.Symbols)
+	}
+}
+
 func writeBuildTestFile(t *testing.T, path, text string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

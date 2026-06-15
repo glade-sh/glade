@@ -1279,7 +1279,7 @@ func buildInspectCodeIntel(root string) (typesys.Index, codeintel.Graph, project
 		return typesys.Index{}, codeintel.Graph{}, project.Project{}, err
 	}
 	index := typesys.Build(p, s)
-	graph := codeintel.Build(index, codeintel.Options{})
+	graph := codeintel.Build(index, codeintel.Options{UseCache: true})
 	return index, graph, p, nil
 }
 

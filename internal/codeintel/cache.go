@@ -54,6 +54,10 @@ func WriteCache(projectRoot string, graph Graph) error {
 	if err != nil {
 		return err
 	}
+	return writeCacheEntry(root, graph, sourceHash)
+}
+
+func writeCacheEntry(root string, graph Graph, sourceHash string) error {
 	entry := cacheEntry{
 		Metadata: CacheMetadata{
 			SchemaVersion: cacheSchemaVersion,
@@ -98,12 +102,17 @@ func WriteSchemaCache(projectRoot string, s schema.Schema) error {
 	if err != nil {
 		return err
 	}
-	graph := BuildDeclarations(typesys.Index{
+	index := typesys.Index{
 		Project:               typesys.ProjectInfo{Root: root},
 		Objects:               s.Objects,
 		CustomMetadataRecords: s.CustomMetadataRecords,
-	})
-	return WriteCache(root, graph)
+	}
+	graph := BuildDeclarations(index)
+	sourceHash, err := sourceHashForIndex(root, index)
+	if err != nil {
+		return err
+	}
+	return writeCacheEntry(root, graph, sourceHash)
 }
 
 func ReadCache(projectRoot string) (Graph, CacheMetadata, error) {
@@ -147,7 +156,14 @@ func CacheFresh(projectRoot string, index typesys.Index) bool {
 	if err != nil {
 		return false
 	}
-	return meta.SourceHash == sourceHash
+	if meta.SourceHash == sourceHash {
+		return true
+	}
+	graphHash, err := sourceHashForGraph(root, Build(index))
+	if err != nil {
+		return false
+	}
+	return meta.SourceHash == graphHash
 }
 
 func ClearCache(projectRoot string) error {
@@ -173,7 +189,46 @@ func sourceHashForGraph(projectRoot string, graph Graph) (string, error) {
 	for _, diag := range graph.Diagnostics {
 		addCachePath(paths, diag.File)
 	}
-	return sourceHashForPaths(projectRoot, sortedCachePaths(paths))
+	hash, err := sourceHashForPaths(projectRoot, sortedCachePaths(paths))
+	if err != nil {
+		return "", err
+	}
+	if !graphHasContractInputs(graph) {
+		return hash, nil
+	}
+	data, err := json.Marshal(struct {
+		Symbols map[SymbolID]Symbol `json:"symbols,omitempty"`
+		Uses    []Use               `json:"uses,omitempty"`
+	}{
+		Symbols: graph.Symbols,
+		Uses:    graph.Uses,
+	})
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.New()
+	io.WriteString(sum, hash)
+	sum.Write(data)
+	return hex.EncodeToString(sum.Sum(nil)), nil
+}
+
+func graphHasContractInputs(graph Graph) bool {
+	for _, symbol := range graph.Symbols {
+		switch symbol.Kind {
+		case SymbolSObject, SymbolSObjectField, SymbolCustomMetadata, SymbolLabel, SymbolStaticResource:
+			return true
+		}
+		if symbol.Dependency || symbol.Artifact {
+			return true
+		}
+	}
+	for _, use := range graph.Uses {
+		switch use.Kind {
+		case UseQuery, UseMutate, UseMetadata:
+			return true
+		}
+	}
+	return false
 }
 
 func sourceHashForIndex(projectRoot string, index typesys.Index) (string, error) {
@@ -187,7 +242,37 @@ func sourceHashForIndex(projectRoot string, index typesys.Index) (string, error)
 	for _, diag := range index.Diagnostics {
 		addCachePath(paths, diag.File)
 	}
-	return sourceHashForPaths(projectRoot, sortedCachePaths(paths))
+	for _, dep := range index.Dependencies {
+		addCachePath(paths, dep.SourceRoot)
+	}
+	hash, err := sourceHashForPaths(projectRoot, sortedCachePaths(paths))
+	if err != nil {
+		return "", err
+	}
+	if len(index.Objects) == 0 && len(index.CustomMetadataRecords) == 0 && len(index.CodeIntelSymbols) == 0 && len(index.CodeIntelUses) == 0 && len(index.Dependencies) == 0 {
+		return hash, nil
+	}
+	shape := struct {
+		Objects               any `json:"objects,omitempty"`
+		CustomMetadataRecords any `json:"customMetadataRecords,omitempty"`
+		CodeIntelSymbols      any `json:"codeIntelSymbols,omitempty"`
+		CodeIntelUses         any `json:"codeIntelUses,omitempty"`
+		Dependencies          any `json:"dependencies,omitempty"`
+	}{
+		Objects:               index.Objects,
+		CustomMetadataRecords: index.CustomMetadataRecords,
+		CodeIntelSymbols:      index.CodeIntelSymbols,
+		CodeIntelUses:         index.CodeIntelUses,
+		Dependencies:          index.Dependencies,
+	}
+	data, err := json.Marshal(shape)
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.New()
+	io.WriteString(sum, hash)
+	sum.Write(data)
+	return hex.EncodeToString(sum.Sum(nil)), nil
 }
 
 func addCachePath(paths map[string]struct{}, path string) {

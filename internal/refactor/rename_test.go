@@ -103,14 +103,41 @@ func TestPlanRenameSchemaFieldUpdatesApexReferencesNotMetadataXML(t *testing.T) 
 			t.Fatalf("metadata XML edit was planned: %#v", edit)
 		}
 	}
-	if err := refactor.Apply(plan); err != nil {
-		t.Fatalf("Apply returned error: %v", err)
+	if err := refactor.Apply(plan); err == nil || !strings.Contains(err.Error(), "metadata declaration location") {
+		t.Fatalf("Apply error = %v, want metadata declaration location error", err)
 	}
-	if got := readRenameFile(t, apexPath); strings.Count(got, "Total__c") != 2 {
-		t.Fatalf("apex references were not renamed exactly:\n%s", got)
+	if got := readRenameFile(t, apexPath); strings.Count(got, "Amount__c") != 2 {
+		t.Fatalf("apex references were changed by refused schema write:\n%s", got)
 	}
 	if got := readRenameFile(t, fieldPath); !strings.Contains(got, "Amount__c") {
 		t.Fatalf("metadata XML was changed:\n%s", got)
+	}
+}
+
+func TestPlanRenameRefusesQueryPrecisionFieldEdit(t *testing.T) {
+	root := t.TempDir()
+	apexPath := writeRenameFile(t, root, "classes/Reader.cls", "public class Reader { List<Account> rows = [SELECT Id, Name FROM Account WHERE Name != null]; }\n")
+	queryStart := strings.Index(readRenameFile(t, apexPath), "SELECT")
+	queryEnd := strings.Index(readRenameFile(t, apexPath), "];")
+	index := typesys.Index{
+		Project: typesys.ProjectInfo{Root: root},
+		Objects: []schema.Object{{
+			Name:   "Account",
+			Fields: []schema.Field{{Name: "Name", Type: "String"}},
+		}},
+		CodeIntelUses: renameArtifactUses([]codeintel.Use{{
+			SymbolID: codeintel.SObjectFieldID("Account", "Name"),
+			Kind:     codeintel.UseQuery,
+			Name:     "Name",
+			File:     apexPath,
+			Range:    rangeAt(1, queryStart+1, 1, queryEnd+1, queryStart, queryEnd),
+			Resolved: true,
+		}}),
+	}
+
+	_, err := refactor.PlanRename(index, refactor.RenameOptions{Symbol: "Account.Name", To: "Label"})
+	if err == nil || !strings.Contains(err.Error(), "query-level range") {
+		t.Fatalf("PlanRename error = %v, want query-level range", err)
 	}
 }
 

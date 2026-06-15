@@ -9,6 +9,7 @@ import (
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/codeintel"
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -100,6 +101,34 @@ func TestCacheFreshReturnsFalseForStaleSourceHash(t *testing.T) {
 
 	if codeintel.CacheFresh(root, index) {
 		t.Fatal("cache should be stale after source changes")
+	}
+}
+
+func TestCacheFreshReturnsFalseForSchemaShapeChange(t *testing.T) {
+	root := t.TempDir()
+	initial := schema.Schema{Objects: []schema.Object{{
+		Name:   "Account",
+		Fields: []schema.Field{{Name: "Name", Type: "String"}},
+	}}}
+	if err := codeintel.WriteSchemaCache(root, initial); err != nil {
+		t.Fatalf("WriteSchemaCache: %v", err)
+	}
+	freshIndex := typesys.Index{
+		Project: typesys.ProjectInfo{Root: root},
+		Objects: initial.Objects,
+	}
+	if !codeintel.CacheFresh(root, freshIndex) {
+		t.Fatal("schema cache should be fresh for matching schema")
+	}
+	staleIndex := typesys.Index{
+		Project: typesys.ProjectInfo{Root: root},
+		Objects: []schema.Object{{
+			Name:   "Account",
+			Fields: []schema.Field{{Name: "Name", Type: "String"}, {Name: "Industry", Type: "String"}},
+		}},
+	}
+	if codeintel.CacheFresh(root, staleIndex) {
+		t.Fatal("schema cache should be stale after schema shape changes")
 	}
 }
 

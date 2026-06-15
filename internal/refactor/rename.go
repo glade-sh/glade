@@ -52,7 +52,7 @@ func PlanRename(index typesys.Index, opts RenameOptions) (RenamePlan, error) {
 	if to == "" {
 		return RenamePlan{}, errors.New("rename target is required")
 	}
-	graph := codeintel.Build(index, codeintel.Options{IncludeUnresolved: true})
+	graph := codeintel.Build(index, codeintel.Options{IncludeUnresolved: true, UseCache: true})
 	symbol, err := resolveRenameSymbol(graph, opts)
 	if err != nil {
 		return RenamePlan{}, err
@@ -88,6 +88,9 @@ func PlanRename(index typesys.Index, opts RenameOptions) (RenamePlan, error) {
 }
 
 func Apply(plan RenamePlan) error {
+	if plan.Symbol.File == "" && (plan.Symbol.Kind == codeintel.SymbolSObject || plan.Symbol.Kind == codeintel.SymbolSObjectField) {
+		return fmt.Errorf("schema rename write requires a metadata declaration location for %s", plan.Symbol.Name)
+	}
 	if err := ensureNoOverlappingEdits(plan.Edits); err != nil {
 		return err
 	}
@@ -296,6 +299,9 @@ func buildRenameEdits(projectRoot string, symbol codeintel.Symbol, refs []codein
 	for _, ref := range refs {
 		if !ref.Resolved || ref.SymbolID != symbol.ID || ref.File == "" {
 			continue
+		}
+		if ref.Kind == codeintel.UseQuery && rangeWidth(ref.Range) != len(ref.Name) {
+			return nil, fmt.Errorf("%s:%d:%d: query reference %q has query-level range; rename is unsafe", ref.File, ref.Range.Start.Line, ref.Range.Start.Column, ref.Name)
 		}
 		file := sourcePath(projectRoot, ref.File)
 		data, ok := contents[file]

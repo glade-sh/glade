@@ -3,6 +3,7 @@ package codeintel
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/glade-sh/glade/internal/typesys"
 )
@@ -14,7 +15,16 @@ type Options struct {
 }
 
 func Build(index typesys.Index, opts ...Options) Graph {
+	var options Options
+	if len(opts) > 0 {
+		options = opts[0]
+	}
 	graph := BuildDeclarations(index)
+	if options.UseCache {
+		if cached, _, err := ReadCache(index.Project.Root); err == nil {
+			mergeCachedGraph(&graph, cached)
+		}
+	}
 	addArtifactContracts(&graph, index.CodeIntelSymbols, index.CodeIntelUses)
 	for _, use := range collectApexUses(index, graph) {
 		graph.AddUse(use)
@@ -34,6 +44,29 @@ func Build(index typesys.Index, opts ...Options) Graph {
 		}
 	}
 	return graph
+}
+
+func mergeCachedGraph(graph *Graph, cached Graph) {
+	for _, symbol := range cached.Symbols {
+		graph.AddSymbol(symbol)
+	}
+	seen := make(map[string]struct{}, len(graph.Uses))
+	for _, use := range graph.Uses {
+		seen[useKey(use)] = struct{}{}
+	}
+	for _, use := range cached.Uses {
+		key := useKey(use)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		graph.AddUse(use)
+		seen[key] = struct{}{}
+	}
+}
+
+func useKey(use Use) string {
+	return string(use.SymbolID) + "\x00" + string(use.Kind) + "\x00" + use.Name + "\x00" + use.File + "\x00" +
+		string(use.Context) + "\x00" + strconv.Itoa(use.Range.Start.Offset) + "\x00" + strconv.Itoa(use.Range.End.Offset)
 }
 
 func sourcePath(root, path string) string {
