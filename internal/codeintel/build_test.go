@@ -66,6 +66,32 @@ func TestBuildMergesCachedSchemaSymbols(t *testing.T) {
 	}
 }
 
+func TestBuildSkipsStaleCachedSchemaSymbols(t *testing.T) {
+	root := t.TempDir()
+	if err := codeintel.WriteSchemaCache(root, schema.Schema{Objects: []schema.Object{{
+		Name:   "Account",
+		Fields: []schema.Field{{Name: "Name", Type: "String"}},
+	}}}); err != nil {
+		t.Fatalf("WriteSchemaCache: %v", err)
+	}
+	index := typesys.Index{
+		Project: typesys.ProjectInfo{Root: root},
+		Objects: []schema.Object{{
+			Name:   "Contact",
+			Fields: []schema.Field{{Name: "LastName", Type: "String"}},
+		}},
+	}
+
+	graph := codeintel.Build(index, codeintel.Options{UseCache: true})
+
+	if _, ok := graph.Definition(codeintel.SObjectID("Account")); ok {
+		t.Fatalf("stale cached Account symbol was merged into %#v", graph.Symbols)
+	}
+	if _, ok := graph.Definition(codeintel.SObjectID("Contact")); !ok {
+		t.Fatalf("live Contact symbol missing from %#v", graph.Symbols)
+	}
+}
+
 func writeBuildTestFile(t *testing.T, path, text string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
