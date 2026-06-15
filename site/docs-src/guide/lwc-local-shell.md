@@ -10,9 +10,10 @@
   </ul>
 </div>
 
-Glade can render LWCs from local source without a deploy. It reads LWC bundle
-metadata, FlexiPages, custom tabs, Apex classes, labels, resources, and local
-fixtures from the project on disk.
+The LWC local shell is a preview feature. Glade can render LWCs from local
+source without a deploy, but it does not replace hosted Lightning Experience.
+It reads LWC bundle metadata, FlexiPages, custom tabs, Apex classes, labels,
+resources, and local fixtures from the project on disk.
 
 ## Setup
 
@@ -68,7 +69,7 @@ properties, and custom tab metadata. Visualforce-backed custom tabs redirect to
 
 ## Visualforce Lightning Out
 
-Visualforce-hosted LWCs use the same runtime. A page served at
+Visualforce-hosted LWCs use the same preview runtime. A page served at
 `/apex/<PageName>` can include Lightning and call `$Lightning.use()` and
 `$Lightning.createComponent()`.
 

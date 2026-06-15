@@ -211,10 +211,15 @@ func dedupeDevLWCRoutes(routes []string) []string {
 
 func printDevLWCHelp(w io.Writer) {
 	fmt.Fprint(w, strings.TrimSpace(`
-Start a local LWC development shell with Salesforce-like context.
+Start a local LWC preview development shell with Salesforce-like context.
 
 Usage:
   glade dev lwc [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]
+
+Preview feature:
+  Useful local Lightning-style preview routes. Not full hosted Lightning
+  Experience, permissions, console API, full UI API, SLDS, or base-component
+  parity.
 
 Preview routes:
   /lwc/preview/component/c/contextProbe

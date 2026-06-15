@@ -1156,7 +1156,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "help dev",
 			args: []string{"help", "dev"},
-			want: []string{"Usage:", "glade dev vf [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]", "glade dev lwc [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]", "Subcommands:", "vf", "lwc"},
+			want: []string{"Usage:", "glade dev vf [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]", "glade dev lwc [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]", "Preview features:", "Visualforce local rendering", "LWC local shell", "Subcommands:", "vf", "lwc"},
 		},
 		{
 			name: "help exit codes",

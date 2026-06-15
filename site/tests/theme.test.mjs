@@ -10,6 +10,9 @@ const docsNavTitleSuffix = await readFile(new URL("../.vitepress/theme/DocsNavTi
 const config = await readFile(new URL("../.vitepress/config.ts", import.meta.url), "utf8");
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 const siteReadme = await readFile(new URL("../README.md", import.meta.url), "utf8");
+const repoReadme = await readFile(new URL("../../README.md", import.meta.url), "utf8");
+const repoCompatibility = await readFile(new URL("../../docs/COMPATIBILITY.md", import.meta.url), "utf8");
+const repoLwcSupport = await readFile(new URL("../../docs/LWC_SUPPORT.md", import.meta.url), "utf8");
 const highlight = await readFile(new URL("../docs-src/public/js/highlight.js", import.meta.url), "utf8");
 const homeScript = await readFile(new URL("../docs-src/public/js/home.js", import.meta.url), "utf8");
 const ciArtifacts = await readFile(new URL("../docs-src/guide/ci-artifacts.md", import.meta.url), "utf8");
@@ -219,7 +222,8 @@ test("home page balances a modern product demo with honest proof", () => {
   assert.match(index, /Org-specific metadata[\s\S]*requires config[\s\S]*supply local metadata/);
   assert.match(index, /SOQL query[\s\S]*supported locally[\s\S]*local data model/);
   assert.match(index, /Local API server[\s\S]*supported locally[\s\S]*REST and Tooling baseline/);
-  assert.match(index, /Visualforce pages[\s\S]*supported locally[\s\S]*local \/apex renderer/);
+  assert.match(index, /Visualforce pages[\s\S]*preview feature[\s\S]*local \/apex renderer/);
+  assert.match(index, /LWC local shell[\s\S]*preview feature[\s\S]*local \/lwc preview routes/);
   assert.match(index, /Live org services[\s\S]*requires org[\s\S]*not emulated/);
   assert.match(index, /Unsupported platform APIs[\s\S]*unsupported[\s\S]*surfaced visibly/);
   assert.match(index, /Run this workflow locally\./);
@@ -622,7 +626,8 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(overview, /Glade models the local paths it can prove/);
   assert.match(overview, /local assessment, cruft review, or refactor-proof reports/);
   assert.match(overview, /serves local Visualforce pages/);
-  assert.match(overview, /render supported Visualforce pages locally/);
+  assert.match(overview, /Visualforce preview feature/);
+  assert.match(overview, /LWC preview feature/);
   assert.match(overview, /Use Salesforce when/);
   assert.doesNotMatch(overview, /full Visualforce rendering or PDF generation/);
   assert.match(quickstart, /^# Quickstart: Check and Test an SFDX Project/m);
@@ -643,7 +648,8 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(supportMap, /UnsupportedFeature/);
   assert.match(supportMap, /## Works Well/);
   assert.match(supportMap, /## Works with limits/);
-  assert.match(supportMap, /Visualforce controller and page rendering/);
+  assert.match(supportMap, /Visualforce controller and page rendering[\s\S]*Preview feature/);
+  assert.match(supportMap, /Local LWC shell and Visualforce Lightning Out[\s\S]*Preview feature/);
   assert.match(supportMap, /## Not supported today/);
   assert.match(supportMap, /Counts come from the checked standard library coverage report/);
   assert.match(supportMap, /\| String, Decimal, Boolean, Math \| Works well \| 32 supported \/ 32 tracked \|/);
@@ -677,6 +683,17 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(localApiServer, /Metadata job status/);
   assert.match(localApiServer, /Bulk API v2 simple scalar query job create\/status\/whole-result CSV/);
   assert.match(localApiServer, /limits\/recordCount\?sObjects=Account/);
+});
+
+test("preview surfaces are labeled in public and repo docs", () => {
+  assert.match(localTesting, /## LWC dev shell[\s\S]*preview feature/i);
+  assert.match(localTesting, /## Visualforce dev server[\s\S]*preview feature/i);
+  assert.match(index, /Visualforce pages[\s\S]*preview feature/);
+  assert.match(index, /LWC local shell[\s\S]*preview feature/);
+  assert.match(repoReadme, /Visualforce preview feature[\s\S]*glade dev vf/);
+  assert.match(repoCompatibility, /Visualforce dev rendering \| preview feature/i);
+  assert.match(repoLwcSupport, /Direct component shell \| Preview feature/i);
+  assert.match(repoLwcSupport, /Visualforce Lightning Out \| Preview feature/i);
 });
 
 test("enterprise workflow docs expose current report commands", () => {

@@ -1,18 +1,18 @@
 # LWC Local Support
 
-This page lists the user-facing LWC support surface for the local shell and
-Visualforce Lightning Out host.
+This page lists the user-facing LWC preview feature surface for the local shell
+and Visualforce Lightning Out host.
 
 ## Hosts
 
 | Host | Status | Notes |
 | --- | --- | --- |
-| Direct component shell | Supported for local development | `/lwc/preview/component/<namespace>/<component>` mounts one exposed component. |
-| Record page shell | Supported for local development | `/lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>` resolves FlexiPage regions and record context. |
-| App page shell | Supported for local development | `/lwc/preview/app/<Page>` resolves app-page FlexiPage metadata. |
-| Home page shell | Supported for local development | `/lwc/preview/home/<Page>` resolves home-page FlexiPage metadata. |
-| Custom tab shell | Supported with limits | LWC tabs and FlexiPage tabs render locally. Visualforce tabs redirect to `/apex/<Page>`. Web and object tabs are reported as unsupported LWC-shell targets. |
-| Visualforce Lightning Out | Supported with limits | `/apex/<PageName>` can host LWCs through `$Lightning.use()` and `$Lightning.createComponent()` using the shared local runtime. |
+| Direct component shell | Preview feature | `/lwc/preview/component/<namespace>/<component>` mounts one exposed component for local development. |
+| Record page shell | Preview feature | `/lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>` resolves FlexiPage regions and record context for local development. |
+| App page shell | Preview feature | `/lwc/preview/app/<Page>` resolves app-page FlexiPage metadata for local development. |
+| Home page shell | Preview feature | `/lwc/preview/home/<Page>` resolves home-page FlexiPage metadata for local development. |
+| Custom tab shell | Preview feature with limits | LWC tabs and FlexiPage tabs render locally. Visualforce tabs redirect to `/apex/<Page>`. Web and object tabs are reported as unsupported LWC-shell targets. |
+| Visualforce Lightning Out | Preview feature with limits | `/apex/<PageName>` can host LWCs through `$Lightning.use()` and `$Lightning.createComponent()` using the shared local runtime. |
 
 ## Runtime Services
 
