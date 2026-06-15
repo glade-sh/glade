@@ -168,6 +168,32 @@ var commandReferences = []CommandHelp{
 		},
 	},
 	{
+		Name:        "refactor",
+		Description: "Plan and apply safe source refactors.",
+		Usage: []string{
+			"glade refactor rename --project <root> --symbol <name> --to <name> [--dry-run|--write] [--json]",
+			"glade refactor rename --project <root> --file <path> --line <n> --column <n> --to <name> [--dry-run|--write] [--json]",
+		},
+		Subcommands: []SubcommandHelp{
+			{Name: "rename", Description: "Rename an Apex or schema symbol with codeintel references."},
+		},
+		Flags: []FlagHelp{
+			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
+			{Name: "--symbol", Value: "<name>", Description: "Symbol name or id, such as InvoiceService, InvoiceService.total, or Account.Name."},
+			{Name: "--file", Value: "<path>", Description: "Project-relative source file for location lookup."},
+			{Name: "--line", Value: "<n>", Description: "One-based source line for location lookup."},
+			{Name: "--column", Value: "<n>", Description: "One-based source column for location lookup."},
+			{Name: "--to", Value: "<name>", Description: "New Apex or schema identifier."},
+			{Name: "--dry-run", Description: "Plan edits without writing files. This is the default."},
+			{Name: "--write", Description: "Apply the planned edits after stale-file checks."},
+			{Name: "--json", Description: "Write structured output."},
+		},
+		Examples: []string{
+			"glade refactor rename --project . --symbol InvoiceService --to BillingService --dry-run --json",
+			"glade refactor rename --project . --file force-app/main/default/classes/InvoiceService.cls --line 5 --column 14 --to totalNet --write",
+		},
+	},
+	{
 		Name:        "check",
 		Description: "Run semantic checks over a project.",
 		Usage:       []string{"glade check [--project <root>] [--format text|json|sarif|github] [--output <path>] [--progress|--progress-json|--no-progress]"},

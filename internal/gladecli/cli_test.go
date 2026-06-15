@@ -1157,7 +1157,7 @@ func TestRunCompletionBash(t *testing.T) {
 	for _, want := range []string{
 		"_glade_completion",
 		"complete -F _glade_completion glade",
-		"version doctor toolchain config init parse inspect schema check exec",
+		"version doctor toolchain config init parse inspect schema refactor check exec",
 		"--project",
 		"--class",
 		"--method",
