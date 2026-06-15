@@ -21,6 +21,47 @@ func TestCollectSOSLUsesFromStaticBracketQuery(t *testing.T) {
 	assertUse(t, uses, codeintel.SObjectFieldID("Contact", "Id"), codeintel.UseQuery, "Id", 3, 96)
 }
 
+func TestCollectSOSLUsesSkipsBracketQueriesInStringsAndComments(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+	}{
+		{
+			name: "single quoted string",
+			source: "public class Searcher {\n" +
+				"  String q = '[FIND {Acme} IN ALL FIELDS RETURNING Account(Id)]';\n" +
+				"}\n",
+		},
+		{
+			name: "double quoted string",
+			source: "public class Searcher {\n" +
+				"  String q = \"[FIND {Acme} IN ALL FIELDS RETURNING Account(Id)]\";\n" +
+				"}\n",
+		},
+		{
+			name: "line comment",
+			source: "public class Searcher {\n" +
+				"  // [FIND {Acme} IN ALL FIELDS RETURNING Account(Id)]\n" +
+				"}\n",
+		},
+		{
+			name: "block comment",
+			source: "public class Searcher {\n" +
+				"  /* [FIND {Acme} IN ALL FIELDS RETURNING Account(Id)] */\n" +
+				"}\n",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			uses := codeintel.CollectSOSLUses("classes/Searcher.cls", tt.source)
+			if len(uses) != 0 {
+				t.Fatalf("CollectSOSLUses() = %#v, want no uses", uses)
+			}
+		})
+	}
+}
+
 func assertUse(t *testing.T, uses []codeintel.Use, id codeintel.SymbolID, kind codeintel.UseKind, name string, line, column int) {
 	t.Helper()
 	for _, use := range uses {

@@ -12,7 +12,24 @@ func CollectSOSLUses(file, source string) []Use {
 	lineMap := apexast.NewLineMap(source)
 	var uses []Use
 	for start := 0; start < len(source); start++ {
-		if source[start] != '[' {
+		switch source[start] {
+		case '\'', '"':
+			start = skipQuoted(source, start)
+			continue
+		case '/':
+			if start+1 >= len(source) {
+				continue
+			}
+			switch source[start+1] {
+			case '/':
+				start = skipLineComment(source, start+2)
+				continue
+			case '*':
+				start = skipBlockComment(source, start+2)
+				continue
+			}
+		case '[':
+		default:
 			continue
 		}
 		end := soslBracketEnd(source, start+1)
@@ -94,6 +111,24 @@ func soslBracketEnd(source string, start int) int {
 		}
 	}
 	return -1
+}
+
+func skipLineComment(source string, start int) int {
+	for i := start; i < len(source); i++ {
+		if source[i] == '\n' {
+			return i
+		}
+	}
+	return len(source) - 1
+}
+
+func skipBlockComment(source string, start int) int {
+	for i := start; i+1 < len(source); i++ {
+		if source[i] == '*' && source[i+1] == '/' {
+			return i + 1
+		}
+	}
+	return len(source) - 1
 }
 
 func skipQuoted(source string, quote int) int {
