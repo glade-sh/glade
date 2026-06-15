@@ -7,7 +7,13 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
-func Build(index typesys.Index) Graph {
+type Options struct {
+	IncludeDependencies bool
+	IncludeUnresolved   bool
+	UseCache            bool
+}
+
+func Build(index typesys.Index, opts ...Options) Graph {
 	graph := BuildDeclarations(index)
 	for _, use := range collectApexUses(index, graph) {
 		graph.AddUse(use)
