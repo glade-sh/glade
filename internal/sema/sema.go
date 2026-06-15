@@ -146,6 +146,7 @@ func (a *Analyzer) AnalyzeWithOptions(index typesys.Index, opts AnalyzeOptions) 
 		result.Diagnostics = append(result.Diagnostics, a.checkManagedPackageAccess(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkInheritanceContracts(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkSchemaReferences(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkQuerySemantics(index)...)
 	}
 
 	result.Summary = Summary{
