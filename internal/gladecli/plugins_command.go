@@ -265,7 +265,7 @@ func runPluginsInstall(ctx context.Context, args []string, stdout, stderr io.Wri
 			registryURL = opts.registry
 		}
 		if os.Getenv("CI") != "" && !opts.yes {
-			index, fetchErr := pluginhost.FetchRegistry(ctx, registryURL)
+			index, fetchErr := fetchPluginRegistryForCLI(ctx, registryURL)
 			if fetchErr != nil {
 				return fetchErr
 			}
@@ -331,7 +331,7 @@ func runPluginsSearch(ctx context.Context, args []string, stdout io.Writer) erro
 	if len(args) == 1 {
 		query = args[0]
 	}
-	index, err := pluginhost.FetchRegistry(ctx, pluginhost.RegistryURL())
+	index, err := fetchPluginRegistryForCLI(ctx, pluginhost.RegistryURL())
 	if err != nil {
 		return err
 	}
@@ -362,7 +362,7 @@ func runPluginsInfo(ctx context.Context, args []string, stdout io.Writer) error 
 	if err != nil {
 		return err
 	}
-	index, err := pluginhost.FetchRegistry(ctx, pluginhost.RegistryURL())
+	index, err := fetchPluginRegistryForCLI(ctx, pluginhost.RegistryURL())
 	if err != nil {
 		return err
 	}
@@ -382,6 +382,21 @@ func runPluginsInfo(ctx context.Context, args []string, stdout io.Writer) error 
 		fmt.Fprintf(stdout, "source: %s\n", plugin.SourceURL)
 	}
 	return nil
+}
+
+func fetchPluginRegistryForCLI(ctx context.Context, registryURL string) (pluginhost.RegistryIndex, error) {
+	index, err := pluginhost.FetchRegistry(ctx, registryURL)
+	if err != nil {
+		return pluginhost.RegistryIndex{}, formatPluginRegistryFetchError(registryURL, err)
+	}
+	return index, nil
+}
+
+func formatPluginRegistryFetchError(registryURL string, err error) error {
+	if registryURL != pluginhost.DefaultRegistryURL {
+		return err
+	}
+	return fmt.Errorf("default plugin registry is in preview and is not reachable at %s; set GLADE_PLUGIN_REGISTRY_URL for a configured registry, install a direct archive, or run `glade plugins link --exec <path>` for a local plugin; detail: %w", registryURL, err)
 }
 
 func runPluginsRemove(args []string, stdout io.Writer) error {
