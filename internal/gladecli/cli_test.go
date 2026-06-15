@@ -3947,6 +3947,255 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	}
 }
 
+func TestRunDBQueryJSONUsesSOQLRuntimeAndLimit(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "glade.db")
+	fixturePath := filepath.Join(dir, "fixture.json")
+	writeTestFile(t, fixturePath, `{
+  "version":"glade.storage.v1",
+  "objects":[{"name":"Account","records":[
+    {"alias":"acme","fields":{"Name":{"kind":"string","string":"Acme"}}},
+    {"alias":"globex","fields":{"Name":{"kind":"string","string":"Globex"}}}
+  ]}]
+}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "seed", "--db", dbPath, fixturePath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("seed exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "query", "--db", dbPath, "--project", ".", "--json", "--limit", "1", "SELECT Id, Name FROM Account ORDER BY Name"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("query exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+
+	var got struct {
+		Query     string           `json:"query"`
+		TotalSize int              `json:"totalSize"`
+		Done      bool             `json:"done"`
+		Columns   []string         `json:"columns"`
+		Records   []map[string]any `json:"records"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("query JSON decode: %v\n%s", err, stdout.String())
+	}
+	if got.Query != "SELECT Id, Name FROM Account ORDER BY Name" {
+		t.Fatalf("query = %q", got.Query)
+	}
+	if got.TotalSize != 1 || !got.Done {
+		t.Fatalf("totalSize/done = %d/%v", got.TotalSize, got.Done)
+	}
+	if fmt.Sprint(got.Columns) != "[Id Name]" {
+		t.Fatalf("columns = %#v", got.Columns)
+	}
+	if len(got.Records) != 1 {
+		t.Fatalf("records = %#v", got.Records)
+	}
+	if got.Records[0]["Name"] != "Acme" {
+		t.Fatalf("first record = %#v", got.Records[0])
+	}
+	if id, ok := got.Records[0]["Id"].(string); !ok || id == "" {
+		t.Fatalf("record Id = %#v", got.Records[0]["Id"])
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "query", "--db", dbPath, "--project", ".", "--json", "SELECT Name, Id FROM Account ORDER BY Name LIMIT 1"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("ordered query exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("ordered query JSON decode: %v\n%s", err, stdout.String())
+	}
+	if fmt.Sprint(got.Columns) != "[Name Id]" {
+		t.Fatalf("ordered query columns = %#v", got.Columns)
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "query", "--db", dbPath, "--project", ".", "--json", "SELECT FIELDS(ALL) FROM Account LIMIT 1"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("FIELDS query exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("FIELDS query JSON decode: %v\n%s", err, stdout.String())
+	}
+	if len(got.Columns) == 1 && got.Columns[0] == "FIELDS(ALL)" {
+		t.Fatalf("FIELDS query columns were not expanded: %#v\n%s", got.Columns, stdout.String())
+	}
+	if !containsString(got.Columns, "Id") || !containsString(got.Columns, "Name") {
+		t.Fatalf("FIELDS query columns missing record fields: %#v\n%s", got.Columns, stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "query", "--db", dbPath, "--project", ".", "--json", "SELECT COUNT() FROM Account"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("COUNT query exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("COUNT query JSON decode: %v\n%s", err, stdout.String())
+	}
+	if fmt.Sprint(got.Columns) != "[expr0]" {
+		t.Fatalf("COUNT query columns should match aggregate record payload: %#v\n%s", got.Columns, stdout.String())
+	}
+}
+
+func TestRunDBQueryAllJSONIncludesDeletedRows(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "glade.db")
+	fixturePath := filepath.Join(dir, "fixture.json")
+	writeTestFile(t, fixturePath, `{
+  "version":"glade.storage.v1",
+  "objects":[{"name":"Account","records":[
+    {"alias":"live","fields":{"Name":{"kind":"string","string":"Live"}}},
+    {"alias":"deleted","fields":{"Name":{"kind":"string","string":"Deleted"}}}
+  ]}]
+}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "seed", "--db", dbPath, fixturePath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("seed exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	store, org, err := openDBStore(dbPath, ".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	account := org.Objects["Account"]
+	for id, record := range account.Records {
+		if record.Fields["Name"].String == "Deleted" {
+			record.System.IsDeleted = true
+			account.Records[id] = record
+		}
+	}
+	org.Objects["Account"] = account
+	if err := store.Save(org); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "query", "--db", dbPath, "--project", ".", "--json", "--query-all", "SELECT Id, Name, IsDeleted FROM Account ORDER BY Name"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("query exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	var got struct {
+		TotalSize int              `json:"totalSize"`
+		Records   []map[string]any `json:"records"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("query JSON decode: %v\n%s", err, stdout.String())
+	}
+	if got.TotalSize != 2 || len(got.Records) != 2 {
+		t.Fatalf("query-all payload = %#v", got)
+	}
+	if got.Records[0]["Name"] != "Deleted" || got.Records[0]["IsDeleted"] != true {
+		t.Fatalf("deleted row = %#v", got.Records[0])
+	}
+}
+
+func containsString(values []string, wanted string) bool {
+	for _, value := range values {
+		if value == wanted {
+			return true
+		}
+	}
+	return false
+}
+
+func TestRunDBDescribeJSONListsObjectsWithRecordCounts(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "glade.db")
+	fixturePath := filepath.Join(dir, "fixture.json")
+	writeTestFile(t, fixturePath, `{
+  "version":"glade.storage.v1",
+  "objects":[{"name":"Account","records":[{"alias":"acme","fields":{"Name":{"kind":"string","string":"Acme"}}}]}]
+}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "seed", "--db", dbPath, fixturePath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("seed exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "describe", "--db", dbPath, "--project", ".", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("describe exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+
+	var got struct {
+		Objects []struct {
+			Name      string `json:"name"`
+			Label     string `json:"label"`
+			KeyPrefix string `json:"keyPrefix"`
+			Records   int    `json:"records"`
+		} `json:"objects"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("describe JSON decode: %v\n%s", err, stdout.String())
+	}
+	for _, object := range got.Objects {
+		if object.Name == "Account" {
+			if object.Label != "Account" || object.KeyPrefix != "001" || object.Records != 1 {
+				t.Fatalf("Account describe = %#v", object)
+			}
+			return
+		}
+	}
+	t.Fatalf("Account missing from objects: %#v", got.Objects)
+}
+
+func TestRunDBDescribeObjectJSONIncludesFields(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "glade.db")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "describe", "--db", dbPath, "--project", ".", "--json", "Account"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("describe object exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+
+	var got struct {
+		Name      string `json:"name"`
+		Label     string `json:"label"`
+		KeyPrefix string `json:"keyPrefix"`
+		Fields    []struct {
+			Name        string   `json:"name"`
+			Label       string   `json:"label"`
+			Type        string   `json:"type"`
+			DisplayType string   `json:"displayType"`
+			ReferenceTo []string `json:"referenceTo"`
+		} `json:"fields"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("describe object JSON decode: %v\n%s", err, stdout.String())
+	}
+	if got.Name != "Account" || got.Label != "Account" || got.KeyPrefix != "001" {
+		t.Fatalf("object describe = %#v", got)
+	}
+	if !strings.Contains(stdout.String(), `"referenceTo": []`) {
+		t.Fatalf("non-reference fields should encode referenceTo as []:\n%s", stdout.String())
+	}
+	for _, field := range got.Fields {
+		if field.Name == "OwnerId" {
+			if field.Type != "REFERENCE" || field.DisplayType != "REFERENCE" || fmt.Sprint(field.ReferenceTo) != "[User]" {
+				t.Fatalf("OwnerId field = %#v", field)
+			}
+			return
+		}
+	}
+	t.Fatalf("OwnerId missing from fields: %#v", got.Fields)
+}
+
 func TestRunDBSeedWizardAndProgress(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "glade.db")

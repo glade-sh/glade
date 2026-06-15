@@ -26,6 +26,7 @@ assert.deepStrictEqual(viewIds, [
   "glade.recommendedRuns",
   "glade.environments",
   "glade.localOrg",
+  "glade.workbench",
   "glade.debugLogs",
   "glade.plugins",
 ]);
@@ -36,6 +37,7 @@ const activationEvents = manifest.activationEvents || [];
 assert(!activationEvents.includes("onView:glade.apexTests"), "glade.apexTests activation must be removed");
 assert(!activationEvents.includes("onView:glade.preview"), "glade.preview must not activate the extension");
 assert(activationEvents.includes("onView:glade.plugins"), "glade.plugins view must activate the extension");
+assert(activationEvents.includes("onView:glade.workbench"), "glade.workbench view must activate the extension");
 
 const localRunsView = manifest.contributes.views.glade.find((view) => view.id === "glade.recommendedRuns");
 assert(localRunsView, "glade.recommendedRuns view must exist");
@@ -48,6 +50,10 @@ assert.strictEqual(debugView.name, "Debug");
 const pluginsView = manifest.contributes.views.glade.find((view) => view.id === "glade.plugins");
 assert(pluginsView, "glade.plugins view must exist");
 assert.strictEqual(pluginsView.name, "Plugins");
+
+const workbenchView = manifest.contributes.views.glade.find((view) => view.id === "glade.workbench");
+assert(workbenchView, "glade.workbench view must exist");
+assert.strictEqual(workbenchView.name, "Exec & SOQL");
 
 for (const command of [
   "glade.runLocalProof",
@@ -62,6 +68,13 @@ for (const command of [
   "glade.runPluginAction",
   "glade.linkLocalPlugin",
   "glade.installPluginArchive",
+  "glade.workbench.newAnonymousApex",
+  "glade.workbench.newSoql",
+  "glade.workbench.runEntry",
+  "glade.workbench.runLastAnonymousApex",
+  "glade.workbench.runLastSoql",
+  "glade.workbench.describe",
+  "glade.workbench.openResult",
 ]) {
   assert(
     manifest.contributes.commands.some((entry) => entry.command === command),

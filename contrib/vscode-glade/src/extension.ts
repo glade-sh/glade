@@ -36,6 +36,8 @@ import { LocalOrgView } from "./views/localOrgView";
 import { PluginsView } from "./views/pluginsView";
 import { RunsView } from "./views/runsView";
 import { StartHereView } from "./views/startHereView";
+import { WorkbenchView } from "./views/workbenchView";
+import { WorkbenchController } from "./workbench/controller";
 
 class GladeDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
   createDebugAdapterDescriptor(session: vscode.DebugSession): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
@@ -52,6 +54,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const runsView = new RunsView();
   const environmentsView = new EnvironmentsView();
   const localOrgView = new LocalOrgView();
+  const workbenchView = new WorkbenchView();
   const debugView = new DebugView();
   const pluginsView = new PluginsView();
   const pluginDiagnostics = vscode.languages.createDiagnosticCollection("glade-plugins");
@@ -91,6 +94,7 @@ export function activate(context: vscode.ExtensionContext): void {
   });
   const lsp = new GladeLspClient(output.logs);
   context.subscriptions.push(lsp, watch);
+  const workbench = new WorkbenchController(output.logs, (rows) => workbenchView.setRows(rows));
 
   function pluginContexts(): PluginAvailableContexts {
     const activeFile = vscode.window.activeTextEditor?.document.uri.fsPath;
@@ -138,6 +142,7 @@ export function activate(context: vscode.ExtensionContext): void {
       tests.setProject(testExplorerEnabled ? project : undefined);
       environmentsView.setProject(project);
       localOrgView.setProject(project);
+      workbench.setProject(project);
       debugView.setProject(project);
       syncPluginViews();
       await lsp.sync(project);
@@ -151,6 +156,7 @@ export function activate(context: vscode.ExtensionContext): void {
       tests.setProject(undefined);
       environmentsView.setProject(undefined);
       localOrgView.setProject(undefined);
+      workbench.setProject(undefined);
       debugView.setProject(undefined);
       syncPluginViews();
       await lsp.sync(undefined);
@@ -167,11 +173,35 @@ export function activate(context: vscode.ExtensionContext): void {
     return project;
   }
 
+  async function createWorkbenchEntry(kind: "anonymousApex" | "soql"): Promise<void> {
+    const name = await vscode.window.showInputBox({
+      title: kind === "anonymousApex" ? "New Anonymous Apex Snippet" : "New SOQL Query",
+      prompt: "Name",
+    });
+    if (!name) {
+      return;
+    }
+    const body = await vscode.window.showInputBox({
+      title: kind === "anonymousApex" ? "Anonymous Apex" : "SOQL",
+      prompt: kind === "anonymousApex" ? "Apex statements to run locally" : "SOQL query to run locally",
+    });
+    if (!body) {
+      return;
+    }
+    await runWorkbenchCommand(async () => {
+      const entry = await workbench.createEntry(kind, name, body);
+      if (entry) {
+        await workbench.runEntry(entry.id);
+      }
+    });
+  }
+
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider("glade.project", startHereView),
     vscode.window.registerTreeDataProvider("glade.recommendedRuns", runsView),
     vscode.window.registerTreeDataProvider("glade.environments", environmentsView),
     vscode.window.registerTreeDataProvider("glade.localOrg", localOrgView),
+    vscode.window.registerTreeDataProvider("glade.workbench", workbenchView),
     vscode.window.registerTreeDataProvider("glade.debugLogs", debugView),
     vscode.window.registerTreeDataProvider("glade.plugins", pluginsView),
     vscode.commands.registerCommand("glade.refresh", async () => {
@@ -179,6 +209,7 @@ export function activate(context: vscode.ExtensionContext): void {
       startHereView.refresh();
       environmentsView.refresh();
       localOrgView.refresh();
+      workbenchView.refresh();
       debugView.refresh();
       pluginsView.refresh();
       await refreshProject();
@@ -213,6 +244,32 @@ export function activate(context: vscode.ExtensionContext): void {
       await plugins.runAction(target);
       syncPluginViews();
     }),
+    vscode.commands.registerCommand("glade.workbench.newAnonymousApex", async () => {
+      await createWorkbenchEntry("anonymousApex");
+    }),
+    vscode.commands.registerCommand("glade.workbench.newSoql", async () => {
+      await createWorkbenchEntry("soql");
+    }),
+    vscode.commands.registerCommand("glade.workbench.runEntry", async (entryId?: string) => {
+      await runWorkbenchCommand(() => workbench.runEntry(entryId));
+    }),
+    vscode.commands.registerCommand("glade.workbench.runLastAnonymousApex", async () => {
+      await runWorkbenchCommand(() => workbench.runLast("anonymousApex"));
+    }),
+    vscode.commands.registerCommand("glade.workbench.runLastSoql", async () => {
+      await runWorkbenchCommand(() => workbench.runLast("soql"));
+    }),
+    vscode.commands.registerCommand("glade.workbench.describe", async () => {
+      const objectName = await vscode.window.showInputBox({
+        title: "Describe Local Object",
+        prompt: "Object API name, or leave blank to list objects",
+      });
+      if (objectName === undefined) {
+        return;
+      }
+      await runWorkbenchCommand(() => workbench.describe(objectName));
+    }),
+    vscode.commands.registerCommand("glade.workbench.openResult", () => workbench.openLastResult()),
     vscode.commands.registerCommand("glade.runChangedTests", () => tests.runChanged()),
     vscode.commands.registerCommand("glade.runFailedTests", () => tests.runFailed()),
     vscode.commands.registerCommand("glade.runLocalProof", async () => {
@@ -356,6 +413,7 @@ export function activate(context: vscode.ExtensionContext): void {
       startHereState.setLocalOrgSummary(undefined);
       environmentsView.refresh();
       localOrgView.refresh();
+      workbench.reload();
       startHereView.refresh();
       debugView.refresh();
     }),
@@ -386,6 +444,7 @@ export function activate(context: vscode.ExtensionContext): void {
       startHereState.setLocalOrgSummary(undefined);
       environmentsView.refresh();
       localOrgView.refresh();
+      workbench.reload();
       startHereView.refresh();
       debugView.refresh();
       status.setProject(project);
@@ -411,6 +470,7 @@ export function activate(context: vscode.ExtensionContext): void {
         startHereState.setMissingDb(!fs.existsSync(clone.dbPath));
         environmentsView.refresh();
         localOrgView.refresh();
+        workbench.reload();
         startHereView.refresh();
         debugView.refresh();
         status.setProject(project);
@@ -449,6 +509,7 @@ export function activate(context: vscode.ExtensionContext): void {
       startHereState.setLocalOrgSummary(undefined);
       environmentsView.refresh();
       localOrgView.refresh();
+      workbench.reload();
       startHereView.refresh();
       debugView.refresh();
       status.setProject(project);
@@ -551,6 +612,8 @@ export function activate(context: vscode.ExtensionContext): void {
         [
           { label: "Switch Local Data Environment", command: "glade.switchEnvironment" },
           { label: "Inspect Active Local Data", command: "glade.inspectLocalOrg" },
+          { label: "Run Last Anonymous Apex", command: "glade.workbench.runLastAnonymousApex" },
+          { label: "Run Last SOQL", command: "glade.workbench.runLastSoql" },
           { label: "Run Local Proof", command: "glade.runLocalProof" },
           { label: "Manage Plugins", command: "glade.managePlugins" },
           { label: "Open Glade Output", command: "glade.openOutput" },
@@ -576,6 +639,7 @@ export function activate(context: vscode.ExtensionContext): void {
         startHereState.setMissingDb(undefined);
         environmentsView.refresh();
         localOrgView.refresh();
+        workbench.reload();
         startHereView.refresh();
         debugView.refresh();
         void refreshProject();
@@ -599,6 +663,20 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.debug.registerDebugAdapterDescriptorFactory("glade", new GladeDebugAdapterFactory()),
   );
+}
+
+async function runWorkbenchCommand(action: () => Promise<void>): Promise<void> {
+  try {
+    await action();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    void vscode.window.showErrorMessage(`Glade Workbench failed: ${message}`, "Show Output")
+      .then((picked) => {
+        if (picked === "Show Output") {
+          void vscode.commands.executeCommand("glade.openOutput");
+        }
+      });
+  }
 }
 
 export function deactivate(): void {}

@@ -20,6 +20,7 @@
     "onView:glade.recommendedRuns",
     "onView:glade.environments",
     "onView:glade.localOrg",
+    "onView:glade.workbench",
     "onView:glade.debugLogs",
     "onView:glade.plugins",
     "onDebugResolve:glade",
@@ -37,6 +38,13 @@
     "onCommand:glade.inspectEnvironment",
     "onCommand:glade.statusQuickPick",
     "onCommand:glade.openOutput",
+    "onCommand:glade.workbench.newAnonymousApex",
+    "onCommand:glade.workbench.newSoql",
+    "onCommand:glade.workbench.runEntry",
+    "onCommand:glade.workbench.runLastAnonymousApex",
+    "onCommand:glade.workbench.runLastSoql",
+    "onCommand:glade.workbench.describe",
+    "onCommand:glade.workbench.openResult",
     "onCommand:glade.refreshPlugins",
     "onCommand:glade.managePlugins",
     "onCommand:glade.runPluginAction",
@@ -74,6 +82,11 @@
         {
           "id": "glade.localOrg",
           "name": "Local Org",
+          "when": "config.glade.enableSidebar"
+        },
+        {
+          "id": "glade.workbench",
+          "name": "Exec & SOQL",
           "when": "config.glade.enableSidebar"
         },
         {
@@ -180,6 +193,34 @@
       {
         "command": "glade.openOutput",
         "title": "Glade: Open Output"
+      },
+      {
+        "command": "glade.workbench.newAnonymousApex",
+        "title": "Glade: New Anonymous Apex Snippet"
+      },
+      {
+        "command": "glade.workbench.newSoql",
+        "title": "Glade: New SOQL Query"
+      },
+      {
+        "command": "glade.workbench.runEntry",
+        "title": "Glade: Run Workbench Entry"
+      },
+      {
+        "command": "glade.workbench.runLastAnonymousApex",
+        "title": "Glade: Run Last Anonymous Apex"
+      },
+      {
+        "command": "glade.workbench.runLastSoql",
+        "title": "Glade: Run Last SOQL"
+      },
+      {
+        "command": "glade.workbench.describe",
+        "title": "Glade: Describe Local Data"
+      },
+      {
+        "command": "glade.workbench.openResult",
+        "title": "Glade: Open Last Workbench Result"
       },
       {
         "command": "glade.refreshPlugins",
@@ -356,7 +397,7 @@
   "scripts": {
     "compile": "tsc -p ./",
     "package": "mkdir -p dist && npm run compile && vsce package --allow-missing-repository --out dist/vscode-glade-${npm_package_version}.vsix",
-    "test": "npm run compile && node test/commands.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/environmentActions.test.js && node test/localOrg.test.js && node test/watch.test.js && node test/statusModel.test.js && node test/package.test.js && node test/startHereModel.test.js && node test/startHereState.test.js && node test/pluginModules.test.js && node test/pluginController.test.js"
+    "test": "npm run compile && node test/commands.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/environmentActions.test.js && node test/localOrg.test.js && node test/watch.test.js && node test/statusModel.test.js && node test/package.test.js && node test/startHereModel.test.js && node test/startHereState.test.js && node test/pluginModules.test.js && node test/pluginController.test.js && node test/workbenchModel.test.js && node test/workbenchStore.test.js && node test/workbenchCli.test.js && node test/workbenchView.test.js"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
