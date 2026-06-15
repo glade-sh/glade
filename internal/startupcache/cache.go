@@ -152,7 +152,7 @@ func Fresh(entry *Entry, projectRoot string, expectedVersion int) bool {
 		return false
 	}
 	for _, fp := range manifest.Files {
-		if !fileFingerprintMatches(root, fp, false) {
+		if !fileFingerprintMatches(root, fp, true) {
 			return false
 		}
 	}

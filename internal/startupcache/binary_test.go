@@ -76,3 +76,32 @@ func TestClearRemovesGob(t *testing.T) {
 		t.Fatalf("gob still present after Clear(): %v", err)
 	}
 }
+
+func TestFreshRejectsMissingManifestProjectFile(t *testing.T) {
+	dir := t.TempDir()
+	classPath := filepath.Join(dir, "classes", "Foo.cls")
+	if err := os.MkdirAll(filepath.Dir(classPath), 0o755); err != nil {
+		t.Fatalf("MkdirAll() error = %v", err)
+	}
+	if err := os.WriteFile(classPath, []byte("public class Foo {}\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+	fp, ok := statFile(dir, classPath)
+	if !ok {
+		t.Fatal("statFile() did not fingerprint class file")
+	}
+	entry := Entry{
+		Version:     Version,
+		ProjectRoot: dir,
+		Manifest: Manifest{
+			ProjectRoot: dir,
+			Files:       []File{fp},
+		},
+	}
+	if err := os.Remove(classPath); err != nil {
+		t.Fatalf("Remove() error = %v", err)
+	}
+	if Fresh(&entry, dir, Version) {
+		t.Fatal("Fresh() = true, want false for missing manifest project file")
+	}
+}
