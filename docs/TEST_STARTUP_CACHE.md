@@ -124,9 +124,9 @@ invalidate an existing cache until something else triggers a cold build (for
 example, a package-root mtime change or an edit to a file already in the
 manifest).
 
-**Deleted tracked files.** Missing project files that were in the manifest are
-treated as still valid. Deleting a file without touching others may not
-invalidate the cache.
+**Deleted tracked files.** Missing project files that were in the manifest
+invalidate the cache. Deleting a tracked Apex class, trigger, or metadata file
+forces a cold harness build before tests run.
 
 **Running test server after `clear-cache`.** `glade test clear-cache` removes
 `startup.gob` only. A `glade test serve` process that is already running keeps
