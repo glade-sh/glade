@@ -17,13 +17,15 @@ import (
 )
 
 type Index struct {
-	Project               ProjectInfo                   `json:"project"`
-	Types                 []TypeSymbol                  `json:"types"`
-	Triggers              []TriggerSymbol               `json:"triggers"`
-	Objects               []schema.Object               `json:"objects"`
-	CustomMetadataRecords []schema.CustomMetadataRecord `json:"customMetadataRecords,omitempty"`
-	Dependencies          []DependencyInfo              `json:"dependencies,omitempty"`
-	Diagnostics           []diagnostic.Diagnostic       `json:"diagnostics,omitempty"`
+	Project               ProjectInfo                       `json:"project"`
+	Types                 []TypeSymbol                      `json:"types"`
+	Triggers              []TriggerSymbol                   `json:"triggers"`
+	Objects               []schema.Object                   `json:"objects"`
+	CustomMetadataRecords []schema.CustomMetadataRecord     `json:"customMetadataRecords,omitempty"`
+	CodeIntelSymbols      []packageartifact.CodeIntelSymbol `json:"codeIntelSymbols,omitempty"`
+	CodeIntelUses         []packageartifact.CodeIntelUse    `json:"codeIntelUses,omitempty"`
+	Dependencies          []DependencyInfo                  `json:"dependencies,omitempty"`
+	Diagnostics           []diagnostic.Diagnostic           `json:"diagnostics,omitempty"`
 }
 
 type ProjectInfo struct {
@@ -210,6 +212,8 @@ func appendArtifactDependency(idx *Index, dep project.ManagedPackageDependency) 
 	}
 	idx.Objects = append(idx.Objects, artifact.Objects...)
 	idx.CustomMetadataRecords = append(idx.CustomMetadataRecords, artifact.CustomMetadataRecords...)
+	idx.CodeIntelSymbols = append(idx.CodeIntelSymbols, artifact.CodeIntelSymbols...)
+	idx.CodeIntelUses = append(idx.CodeIntelUses, artifact.CodeIntelUses...)
 	idx.Dependencies = append(idx.Dependencies, DependencyInfo{
 		Namespace:       namespace,
 		SourceRoot:      dep.ArtifactPath,
