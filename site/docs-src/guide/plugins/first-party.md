@@ -4,7 +4,7 @@ First-party plugins ship heavier Glade workflows without adding them to the
 default install. They use the same executable runtime as third-party plugins.
 
 Install these only when the base local runtime is not enough for the job.
-`@glade/compat` is for compatibility fixture work, support ledgers, and parity
+`@glade/compat` is for compatibility fixture work, support reports, and compatibility
 scans. `@glade/performance` is for advisory project scans.
 
 ::: warning Registry preview
@@ -35,7 +35,7 @@ Commands:
 - `glade gaps ...`
 - `glade stdlib ...`
 
-The compat plugin owns compatibility fixtures, support ledgers, and parity
+The compat plugin owns compatibility fixtures, support reports, and compatibility
 scanners.
 
 ## `@glade/performance`

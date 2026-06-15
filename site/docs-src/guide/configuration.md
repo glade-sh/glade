@@ -40,7 +40,7 @@ glade init --project . --yes \
 
 Use `--force` to replace an existing file.
 
-## File shape
+## Config file
 
 `glade.yml` intentionally supports a small YAML subset. Use inline lists such
 as `[force-app]`; avoid anchors, merges, and complex YAML features.

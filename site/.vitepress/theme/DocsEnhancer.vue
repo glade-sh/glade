@@ -4,6 +4,13 @@ import { nextTick, onMounted, watch } from 'vue'
 
 const route = useRoute()
 
+declare global {
+  interface Window {
+    gladeHighlightAllCodeBlocks?: () => void
+    gladeInitHomeDemos?: () => void
+  }
+}
+
 function updateSidebarCurrent() {
   document
     .querySelectorAll('.VPSidebar a[aria-current="page"]')
@@ -60,6 +67,9 @@ function enhanceDocs() {
   nextTick(() => {
     updateSidebarCurrent()
     setupCommandFilter()
+    window.gladeHighlightAllCodeBlocks?.()
+    window.gladeInitHomeDemos?.()
+    window.dispatchEvent(new CustomEvent('glade:content-updated'))
   })
 }
 

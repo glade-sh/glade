@@ -5,14 +5,14 @@
   <p>Find the command you need, then copy a real example. Most project commands accept <code>--project &lt;root&gt;</code> and default to the current directory when a project is discoverable.</p>
   <ul>
     <li>Use setup commands when starting a workspace.</li>
-    <li>Use check/test commands in the local loop.</li>
+    <li>Use check and test commands in the daily Apex loop.</li>
     <li>Use report, editor, and plugin commands for larger teams.</li>
   </ul>
 </div>
 
 All commands are local unless you point Glade at an external path or start a server. Most project commands accept `--project <root>` and default to the current directory when a project is discoverable.
 
-Human output is a terminal surface. Use `--json` or `--format` for scripts. See [CLI output modes](/guide/cli-output), [Automation and JSON](/guide/automation), and [Exit codes](/guide/exit-codes) for the stable contract.
+Human output is terminal text. Use `--json` or `--format` for scripts. See [CLI output modes](/guide/cli-output), [Automation and JSON](/guide/automation), and [Exit codes](/guide/exit-codes) for the stable contract.
 
 <div class="docs-command-filter">
   <label for="cli-command-filter">Filter commands</label>
@@ -46,7 +46,7 @@ Human output is a terminal surface. Use `--json` or `--format` for scripts. See 
   </a>
   <a class="docs-command-card" href="#glade-playground">
     <strong>Server and playground</strong>
-    <span>Start local Salesforce-shaped APIs and browser playground examples.</span>
+    <span>Start local Salesforce API routes and browser playground examples.</span>
   </a>
   <a class="docs-command-card" href="#glade-db">
     <strong>Database</strong>
@@ -228,7 +228,7 @@ glade report cruft --project . --format html --out reports/glade-cruft.html
 
 ## `glade report refactor-proof`
 
-Collect local proof for changed Apex and metadata.
+Collect local evidence for changed Apex and metadata.
 
 ```bash
 glade report refactor-proof --project . --since origin/main --format json
@@ -303,7 +303,7 @@ glade report export latest --runs-dir .glade/runs --format html --output glade-r
 ```
 
 Serve local Visualforce pages with hot reload. This is a preview feature for
-useful local `/apex` rendering, not full hosted Visualforce parity:
+useful local `/apex` rendering, not exact hosted Visualforce behavior:
 
 ```bash
 glade dev vf --project . --port 8080
@@ -313,8 +313,8 @@ glade dev vf --project . --addr 127.0.0.1:0 --ready-file /tmp/glade-vf-ready.jso
 The Visualforce server prints `/apex/<PageName>` routes and watches `.page`,
 `.component`, `.cls`, Aura, LWC, and static resource changes.
 
-Serve local LWCs in a Salesforce-like shell. This is a preview feature for
-local routes, not full hosted Lightning Experience parity:
+Serve local LWCs in a Lightning-style shell. This is a preview feature for
+local routes, not exact hosted Lightning Experience behavior:
 
 ```bash
 glade toolchain install
@@ -418,7 +418,7 @@ glade package diff old.json pkg.json --json
 
 ## `glade server`
 
-Start the local Salesforce-shaped REST API baseline. Use `--db` for persistence and `--limit-mode` for execute-anonymous limit behavior.
+Start the local Salesforce API baseline. Use `--db` for persistence and `--limit-mode` for execute-anonymous limit behavior.
 
 ```bash
 glade server --addr 127.0.0.1:8080

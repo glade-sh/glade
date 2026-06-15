@@ -68,7 +68,7 @@ glade report refactor-proof --project . --since origin/main --format html --out 
 
 Definition, reference, and rename commands use the same code-intelligence graph
 as editor-facing LSP features. The reports show severity, confidence, evidence,
-recommendations, and known limitations. Public and global package surfaces are
+recommendations, and known limitations. Public and global package APIs are
 review or deprecate candidates, not safe-delete candidates.
 
 See [Enterprise Workflows](/guide/enterprise-workflows) for the report contract,

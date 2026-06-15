@@ -1,8 +1,9 @@
 {
   "scripts": {
+    "generate:editor-support": "node scripts/build-editor-support.mjs",
     "dev": "vitepress dev .",
-    "build": "vitepress build .",
-    "test": "node --test tests/*.test.mjs",
+    "build": "npm run generate:editor-support -- --check && vitepress build .",
+    "test": "npm run generate:editor-support -- --check && node --test tests/*.test.mjs",
     "preview": "vitepress preview ."
   },
   "devDependencies": {
@@ -13,5 +14,14 @@
   "overrides": {
     "esbuild": "^0.28.1"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@codemirror/autocomplete": "^6.20.3",
+    "@codemirror/commands": "^6.10.3",
+    "@codemirror/language": "^6.12.3",
+    "@codemirror/state": "^6.6.0",
+    "@codemirror/view": "^6.43.1",
+    "@lezer/highlight": "^1.2.3",
+    "codemirror": "^6.0.2"
+  }
 }

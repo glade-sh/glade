@@ -5,6 +5,25 @@
   var activeOutputView = "output"
   var runTimers = []
   var copyTimer = 0
+  var copyControlsInitialized = false
+  var homeControlsInitialized = false
+  var homeSearchInitialized = false
+  var workbenchHashListenerInitialized = false
+  var homeLoopAnimationFrame = 0
+  var homeLoopStarted = 0
+  var activeHomeLoopIndex = 0
+  var manualHomeLoopUntil = 0
+  var homeLoopStates = ["check", "test", "exec"]
+  var homeLoopLabels = {
+    check: "AI edit check",
+    test: "Focused test",
+    exec: "Anonymous Apex"
+  }
+  var homeLoopActiveNodes = {
+    test: "runtime",
+    exec: "runtime",
+    check: "proof"
+  }
   var scenarioAliases = {
     "check-source": "check",
     "test-changed": "test",
@@ -353,7 +372,7 @@
         ["Org calls", "0"],
         ["Exit code", "..."]
       ],
-      proofTitle: "What Glade proved",
+      proofTitle: "Local result",
       changedSummary: [
         "Deploy-blocking type reference caught locally.",
         "No Salesforce deploy required.",
@@ -414,7 +433,7 @@
         ["Failures", "..."],
         ["Exit code", "..."]
       ],
-      proofTitle: "What Glade proved",
+      proofTitle: "Local result",
       changedSummary: [
         "PassingTest.passes ran in the local fixture.",
         "The test run reported 1 passed and 0 failed.",
@@ -467,7 +486,7 @@
         ["SOQL", "..."],
         ["DML", "..."]
       ],
-      proofTitle: "What Glade proved",
+      proofTitle: "Local result",
       changedSummary: [
         "The debug log reports USER_DEBUG local.",
         "The limit block reports 0 SOQL and 0 DML.",
@@ -535,7 +554,7 @@
         ["SOQL", "..."],
         ["DML", "..."]
       ],
-      proofTitle: "What Glade proved",
+      proofTitle: "Local result",
       changedSummary: [
         "The saved Salesforce log parsed locally.",
         "The profile found 4 categorized events.",
@@ -568,16 +587,118 @@
   } else {
     init()
   }
+  window.gladeInitHomeDemos = init
+  window.addEventListener("glade:content-updated", init)
 
   function init() {
     initHomeSearchState()
+    initCopyControls()
+    initHomeLoop()
+    initWorkbenchDemo()
+  }
+
+  function initHomeLoop() {
+    var loop = document.querySelector("[data-home-loop]")
+    if (!loop) return
+
+    if (loop.dataset.homeLoopInitialized !== "true") {
+      loop.dataset.homeLoopInitialized = "true"
+      loop.querySelectorAll("[data-home-loop-tab]").forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          setHomeLoopState(loop, tab.getAttribute("data-home-loop-tab"), true)
+        })
+      })
+    }
+
+    setHomeLoopState(loop, homeLoopStates[activeHomeLoopIndex] || "test", false)
+    if (!homeLoopAnimationFrame && window.requestAnimationFrame) {
+      homeLoopAnimationFrame = window.requestAnimationFrame(animateHomeLoop)
+    }
+  }
+
+  function setHomeLoopState(loop, stateName, manual) {
+    if (!loop || homeLoopStates.indexOf(stateName) === -1) return
+    activeHomeLoopIndex = homeLoopStates.indexOf(stateName)
+    if (manual) manualHomeLoopUntil = Date.now() + 8000
+
+    var label = loop.querySelector("[data-home-loop-label]")
+    if (label) label.textContent = homeLoopLabels[stateName] || stateName
+
+    loop.querySelectorAll("[data-home-loop-state]").forEach(function (panel) {
+      panel.classList.toggle("active", panel.getAttribute("data-home-loop-state") === stateName)
+    })
+    loop.querySelectorAll("[data-home-loop-tab]").forEach(function (tab) {
+      tab.setAttribute("aria-pressed", String(tab.getAttribute("data-home-loop-tab") === stateName))
+    })
+    loop.querySelectorAll("[data-home-loop-node]").forEach(function (node) {
+      node.classList.toggle("active", node.getAttribute("data-home-loop-node") === homeLoopActiveNodes[stateName])
+    })
+  }
+
+  function animateHomeLoop(timestamp) {
+    homeLoopAnimationFrame = 0
+    var loop = document.querySelector("[data-home-loop]")
+    if (!loop || !window.requestAnimationFrame) return
+
+    if (!homeLoopStarted) homeLoopStarted = timestamp
+    var stateMs = 5400
+    var elapsed = timestamp - homeLoopStarted
+    if (!prefersReducedMotion() && Date.now() > manualHomeLoopUntil) {
+      var nextIndex = Math.floor(elapsed / stateMs) % homeLoopStates.length
+      if (nextIndex !== activeHomeLoopIndex) setHomeLoopState(loop, homeLoopStates[nextIndex], false)
+    }
+
+    var path = loop.querySelector("[data-home-loop-path]")
+    var runner = loop.querySelector("[data-home-loop-runner]")
+    var shadow = loop.querySelector("[data-home-loop-shadow]")
+    if (path && runner && path.getTotalLength && path.getPointAtLength) {
+      var progress = prefersReducedMotion() ? 1 : (elapsed % stateMs) / stateMs
+      var held = progress > 0.86 ? 1 : easeHomeLoop(progress / 0.86)
+      var length = path.getTotalLength()
+      var point = path.getPointAtLength(length * held)
+      runner.setAttribute("cx", point.x)
+      runner.setAttribute("cy", point.y)
+      if (shadow) {
+        shadow.setAttribute("cx", point.x)
+        shadow.setAttribute("cy", point.y)
+      }
+    }
+
+    homeLoopAnimationFrame = window.requestAnimationFrame(animateHomeLoop)
+  }
+
+  function easeHomeLoop(value) {
+    var t = Math.max(0, Math.min(1, value))
+    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
+  }
+
+  function initWorkbenchDemo() {
+    if (!document.querySelector("[data-scenario-workbench]")) return
     initHomeControls()
-    initCommandPalette()
     setScenarioFromHash()
-    window.addEventListener("hashchange", setScenarioFromHash)
+    if (!workbenchHashListenerInitialized) {
+      window.addEventListener("hashchange", setScenarioFromHash)
+      workbenchHashListenerInitialized = true
+    }
+  }
+
+  function initCopyControls() {
+    if (copyControlsInitialized) return
+    copyControlsInitialized = true
+    document.addEventListener("click", function (e) {
+      var target = e.target
+      if (!target || !target.closest) return
+      var copyButton = target.closest("[data-copy-target]")
+      if (copyButton) copyToClipboard(copyButton)
+    })
   }
 
   function initHomeSearchState() {
+    if (homeSearchInitialized) {
+      hideHomeSearch()
+      return
+    }
+    homeSearchInitialized = true
     hideHomeSearch()
     var app = document.getElementById("app")
     if (!app || !window.MutationObserver) return
@@ -609,13 +730,14 @@
   }
 
   function initHomeControls() {
+    if (homeControlsInitialized) return
+    homeControlsInitialized = true
     document.addEventListener("click", function (e) {
       var target = e.target
       if (!target || !target.closest) return
 
       var copyButton = target.closest("[data-copy-target]")
       if (copyButton) {
-        copyToClipboard(copyButton)
         return
       }
 
@@ -893,7 +1015,7 @@
   function renderOutputView(scenario) {
     var output = document.querySelector("[data-command-output]")
     if (!output) return
-    output.textContent = scenario.outputViews[activeOutputView] || scenario.outputViews.output
+    output.innerHTML = highlightCommandOutput(scenario.outputViews[activeOutputView] || scenario.outputViews.output, activeOutputView)
     output.setAttribute("data-output-view", activeOutputView)
     var panel = document.getElementById("command-output-panel")
     if (panel) panel.setAttribute("aria-labelledby", "output-tab-" + activeOutputView)
@@ -909,7 +1031,7 @@
     setStatus("running")
     setText("[data-result-summary]", scenario.runningSummary)
     setText("[data-proof-title]", "Running locally")
-    setText("[data-command-output]", scenario.runningOutput)
+    setCommandOutput(scenario.runningOutput, "output")
     renderMetrics(scenario.runningMetrics)
     renderChangedSummary(scenario.runningSummaryItems)
     if (runButton) {
@@ -929,11 +1051,11 @@
     ]
 
     runTimers.push(window.setTimeout(function () {
-      setText("[data-command-output]", "$ " + scenario.command + "\n\n" + runSteps[0])
+      setCommandOutput("$ " + scenario.command + "\n\n" + runSteps[0], "output")
     }, 260))
 
     runTimers.push(window.setTimeout(function () {
-      setText("[data-command-output]", "$ " + scenario.command + "\n\n" + runSteps[1])
+      setCommandOutput("$ " + scenario.command + "\n\n" + runSteps[1], "output")
     }, 560))
 
     runTimers.push(window.setTimeout(function () {
@@ -965,6 +1087,104 @@
   function setText(selector, value) {
     var target = document.querySelector(selector)
     if (target) target.textContent = value
+  }
+
+  function setCommandOutput(value, view) {
+    var target = document.querySelector("[data-command-output]")
+    if (!target) return
+    target.innerHTML = highlightCommandOutput(value, view || "output")
+    target.setAttribute("data-output-view", view || "output")
+  }
+
+  function highlightCommandOutput(value, view) {
+    var text = String(value || "")
+    if (view === "json") return highlightJsonOutput(text)
+    if (view === "trace") return highlightTraceOutput(text)
+    return text.split("\n").map(highlightCliLine).join("\n")
+  }
+
+  function highlightCliLine(line) {
+    if (line.indexOf("$ ") === 0) {
+      return '<span class="cli-token cli-prompt">$</span> ' + highlightCliCommand(line.slice(2))
+    }
+    if (/^\s*(glade|curl)\b/.test(line)) return highlightCliCommand(line)
+    if (/^\s*(error|failed|failure)\b/i.test(line) || line.indexOf("✗") >= 0) {
+      return '<span class="cli-token cli-error">' + escapeHTML(line) + "</span>"
+    }
+    if (/^\s*(PASSED|FAILED|RUNNING)\b/.test(line)) {
+      return '<span class="cli-token cli-status">' + escapeHTML(line) + "</span>"
+    }
+    if (/^[A-Za-z0-9_./-]+:\d+:\d+/.test(line)) {
+      return '<span class="cli-token cli-path">' + escapeHTML(line) + "</span>"
+    }
+    if (/^\s*(Try|Summary):/.test(line)) {
+      return '<span class="cli-token cli-section">' + escapeHTML(line) + "</span>"
+    }
+    return escapeHTML(line).replace(/\b\d+(?:ms)?\b/g, '<span class="cli-token cli-number">$&</span>')
+  }
+
+  function highlightCliCommand(command) {
+    return escapeHTML(command)
+      .replace(/\b(glade|curl)\b/g, '<span class="cli-token cli-command">$1</span>')
+      .replace(/\b(check|test|exec|debug|profile|schema|load|doctor)\b/g, '<span class="cli-token cli-subcommand">$1</span>')
+      .replace(/(--[A-Za-z0-9-]+)/g, '<span class="cli-token cli-flag">$1</span>')
+  }
+
+  function highlightJsonOutput(value) {
+    var text = String(value || "")
+    var html = ""
+    var index = 0
+
+    while (index < text.length) {
+      var char = text[index]
+      if (char === '"') {
+        var end = index + 1
+        var escaped = false
+        while (end < text.length) {
+          var next = text[end]
+          if (next === '"' && !escaped) break
+          escaped = next === "\\" && !escaped
+          if (next !== "\\") escaped = false
+          end += 1
+        }
+        var token = text.slice(index, Math.min(end + 1, text.length))
+        var after = Math.min(end + 1, text.length)
+        while (after < text.length && /\s/.test(text[after])) after += 1
+        var className = text[after] === ":" ? "cli-json-key" : "cli-json-string"
+        html += '<span class="cli-token ' + className + '">' + escapeHTML(token) + "</span>"
+        index = Math.min(end + 1, text.length)
+        continue
+      }
+
+      var numberMatch = text.slice(index).match(/^-?\d+(?:\.\d+)?/)
+      if (numberMatch) {
+        html += '<span class="cli-token cli-number">' + escapeHTML(numberMatch[0]) + "</span>"
+        index += numberMatch[0].length
+        continue
+      }
+
+      var literalMatch = text.slice(index).match(/^(true|false|null)\b/)
+      if (literalMatch) {
+        html += '<span class="cli-token cli-json-literal">' + literalMatch[1] + "</span>"
+        index += literalMatch[1].length
+        continue
+      }
+
+      html += escapeHTML(char)
+      index += 1
+    }
+
+    return html
+  }
+
+  function highlightTraceOutput(value) {
+    return String(value || "").split("\n").map(function (line) {
+      if (line.indexOf("$ ") === 0) return highlightCliLine(line)
+      if (/^\s*\{/.test(line)) return highlightJsonOutput(line)
+      return escapeHTML(line)
+        .replace(/\b(USER_DEBUG|DML_BEGIN|DML_END|SOQL_EXECUTE_BEGIN|SOQL_EXECUTE_END|EXECUTION_STARTED|EXECUTION_FINISHED|CODE_UNIT_STARTED|CODE_UNIT_FINISHED)\b/g, '<span class="cli-token cli-trace-event">$1</span>')
+        .replace(/\b\d+(?:ms)?\b/g, '<span class="cli-token cli-number">$&</span>')
+    }).join("\n")
   }
 
   function setStatus(status) {

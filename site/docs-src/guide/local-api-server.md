@@ -1,6 +1,6 @@
-# Run a Local Salesforce-Shaped API
+# Run local Salesforce API routes
 
-`glade server` starts a local Salesforce-shaped HTTP surface backed by the same runtime used by the CLI. It is meant for local integration tests, tools, and development loops that need REST-shaped org behavior without a live Salesforce org.
+`glade server` starts local Salesforce-style HTTP routes backed by the same runtime used by the CLI. Use it for local integration tests, tools, and development loops that need REST-style org behavior without a live Salesforce org.
 
 ## Start the server
 
@@ -33,9 +33,9 @@ glade db seed --db .glade/local-org.sqlite --project . --progress seed.json
 glade db inspect --db .glade/local-org.sqlite --json
 ```
 
-## REST surface
+## REST routes
 
-The server exposes a Salesforce-shaped baseline for local work: API discovery,
+The server exposes a Salesforce-style baseline for local work: API discovery,
 object describe and CRUD-style record operations, SOQL query execution, limits
 and record counts, source-backed Tooling metadata reads, virtual schema metadata
 queries, Composite sObject inserts, Composite Batch and Tree local requests,
@@ -43,12 +43,12 @@ Bulk API v2 simple scalar query job create/status/whole-result CSV routes,
 layout/default-value metadata, metadata job status, and execute-anonymous routes
 where supported by the runtime.
 
-Check the [Support map](/guide/support-map) before relying on full auth,
-Composite Graph execution, broader Bulk API including locator paging,
-Streaming, Pub/Sub, GraphQL, live metadata deploy/retrieve, or Tooling surfaces
+Check the [local support guide](/guide/support-map) before relying on live auth,
+Composite Graph execution, Bulk API locator paging,
+Streaming, Pub/Sub, GraphQL, live metadata deploy/retrieve, or Tooling APIs
 outside the checked local source/schema metadata baseline.
 
-| Area | Endpoint shape | Status |
+| Area | Endpoint | Status |
 | --- | --- | --- |
 | API discovery | `/services/data/` | supported |
 | Describe | `/services/data/vXX.X/sobjects/<Object>/describe` | supported baseline |
@@ -62,7 +62,7 @@ outside the checked local source/schema metadata baseline.
 | Composite Batch | `/services/data/vXX.X/composite/batch` | supported local subrequests |
 | Composite Tree | `/services/data/vXX.X/composite/tree/<Object>` | supported local tree requests |
 | Bulk API v2 query | `/services/data/vXX.X/jobs/query` and `/results` | supported simple scalar local query whole-result CSV |
-| Layout and default metadata | local layout/default-value REST shapes | supported local metadata baseline |
+| Layout and default metadata | local layout/default-value REST routes | supported local metadata baseline |
 | Metadata job status | local metadata job status routes | supported local status baseline |
 | Glade reset endpoints | `/services/data/vXX.X/glade/reset` and scoped reset routes | supported local-only baseline |
 

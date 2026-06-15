@@ -41,7 +41,7 @@ Next:
   glade playground --examples --open
 ```
 
-## 2. Open an SFDX Project
+## 2. Open an SFDX project
 
 ```bash
 cd path/to/sfdx-project
@@ -51,7 +51,7 @@ glade config validate --project .
 
 Expected: `glade.yml` exists, and config validation exits with code `0`.
 
-## 3. Check Source
+## 3. Check source
 
 ```bash
 glade check --project .
@@ -62,7 +62,7 @@ Expected:
 - zero diagnostics and exit code `0`
 - or one or more file/line diagnostics and exit code `1`
 
-## 4. Run One Test
+## 4. Run one test
 
 ```bash
 glade test --project . --class AccountServiceTest
@@ -70,7 +70,7 @@ glade test --project . --class AccountServiceTest
 
 Expected: a selected/passed/failed summary, plus file and method details for any failure.
 
-## 5. Run Only Affected Tests
+## 5. Run affected tests
 
 ```bash
 glade test changed --project . --since origin/main
@@ -78,7 +78,7 @@ glade test changed --project . --since origin/main
 
 Expected: Glade maps changed Apex and metadata to the smallest local test set it can prove.
 
-## 6. Open The Playground
+## 6. Open the playground
 
 ```bash
 glade playground --examples --open
@@ -86,8 +86,8 @@ glade playground --examples --open
 
 Expected: Glade starts the browser workbench and prints the local URL, example mode, database mode, and stop command.
 
-## 7. Know The Limits
+## 7. Know the limits
 
-Glade is not a full Salesforce emulator. Check the [Support map](/guide/support-map)
+Glade is a local runtime, not a Salesforce emulator. Check the [local support guide](/guide/support-map)
 before relying on platform service APIs, live auth, exact hosted Visualforce
-behavior, or full REST/Tooling API parity.
+behavior, or REST and Tooling APIs outside the checked local baseline.

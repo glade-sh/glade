@@ -16,13 +16,35 @@ const APEX_KEYWORDS = new Set([
 ]);
 
 const APEX_CONSTANTS = new Set(["false", "null", "true"]);
+const APEX_ANNOTATIONS = new Set([
+  "auraenabled", "critical", "deprecated", "deserializable", "future",
+  "httpdelete", "httpget", "httppatch", "httppost", "httpput",
+  "invocablemethod", "invocablevariable", "isparallel", "istest",
+  "jsonaccess", "jsonproperty", "namespaceaccessible", "remoteaction",
+  "restresource", "serializable", "suppresswarnings", "testfor",
+  "testsetup", "testvisible"
+]);
+const APEX_ANNOTATION_ATTRIBUTES = new Set([
+  "cacheable", "callout", "configurationeditor", "continuation",
+  "defaultvalue", "description", "iconname", "label",
+  "namespaceaccessible", "oninstall", "placeholdertext", "readonly",
+  "required", "scope", "seealldata", "urlmapping"
+]);
 const SYSTEM_TYPES = new Set([
   "blob", "boolean", "date", "datetime", "decimal", "double",
   "exception", "id", "integer", "list", "long", "map", "string", "time"
 ]);
+const PLATFORM_TYPES = new Set([
+  "Account", "Database", "DescribeSObjectResult", "JSON", "Limits",
+  "SaveResult", "Schema", "SObject", "SObjectField", "SObjectType", "System"
+]);
 const DECLARATION_KEYWORDS = new Set(["class", "enum", "interface", "trigger"]);
 const APEX_FUNCTIONS = new Set([
-  "avg", "count", "count_distinct", "format", "grouping", "max", "min", "sum", "tolabel"
+  "avg", "calendar_month", "calendar_quarter", "calendar_year",
+  "convertcurrency", "converttimezone", "count", "count_distinct",
+  "day_in_month", "day_in_week", "day_in_year", "day_only", "distance",
+  "fiscal_month", "fiscal_quarter", "fiscal_year", "format", "geolocation",
+  "grouping", "hour_in_day", "max", "min", "sum", "tolabel"
 ]);
 
 function escapeHtml(value) {
@@ -108,6 +130,24 @@ function readOperator(source, start) {
   return "+-*/%=!<>?:&|^~".includes(one) ? one : "";
 }
 
+function isAnnotationAttribute(previous, nextNonSpace) {
+  return nextNonSpace === "=" || previous?.kind === "annotation-name" || previous?.text === "(" || previous?.text === ",";
+}
+
+function isMethodDeclaration(previous) {
+  if (!previous) return false;
+  if (["class-name", "system-type", "type-declaration"].includes(previous.kind)) return true;
+  if (previous.kind === "operator" && previous.text === ">") return true;
+  return previous.kind === "keyword" && previous.text.toLowerCase() === "void";
+}
+
+function tokenClass(kind, word) {
+  if (kind === "class-name" && PLATFORM_TYPES.has(word)) {
+    return "class-name platform-type";
+  }
+  return kind;
+}
+
 function highlightApex(source) {
   let index = 0;
   let html = "";
@@ -161,6 +201,12 @@ function highlightApex(source) {
       if (expectTypeDeclaration) {
         kind = "type-declaration";
         expectTypeDeclaration = false;
+      } else if (APEX_ANNOTATIONS.has(lower)) {
+        kind = "annotation-name";
+      } else if (APEX_ANNOTATION_ATTRIBUTES.has(lower) && isAnnotationAttribute(previous, nextNonSpace)) {
+        kind = "annotation-attr";
+      } else if (previous?.kind === "dot" && nextNonSpace === "(") {
+        kind = "method-call";
       } else if (APEX_FUNCTIONS.has(lower) && nextNonSpace === "(") {
         kind = "method-call";
       } else if (APEX_KEYWORDS.has(lower)) {
@@ -177,12 +223,12 @@ function highlightApex(source) {
       } else if (nextNonSpace === "(" && word[0] === word[0]?.toUpperCase()) {
         kind = "class-name";
       } else if (nextNonSpace === "(" && previous?.kind !== "dot") {
-        kind = "method-call";
+        kind = isMethodDeclaration(previous) ? "method-declaration" : "method-call";
       } else if (word[0] === word[0]?.toUpperCase()) {
         kind = "class-name";
       }
 
-      push(kind, word);
+      push(tokenClass(kind, word), word);
       index = end;
       pushSignificant(kind, word);
       continue;
@@ -226,16 +272,33 @@ function highlightApex(source) {
 }
 
 function highlightCodeBlock(codeElement) {
-  const raw = codeElement.textContent;
+  const hasRenderedLines = !!codeElement.querySelector(".line-number");
+  const raw = hasRenderedLines && codeElement.dataset.gladeHighlightSource
+    ? codeElement.dataset.gladeHighlightSource
+    : codeElement.textContent;
   const highlighted = highlightApex(raw);
   const lines = highlighted.split("\n");
   const digits = String(lines.length).length;
+  codeElement.dataset.gladeHighlightSource = raw;
+  codeElement.dataset.gladeHighlighted = "true";
   codeElement.innerHTML = lines.map((line, i) => {
     const num = String(i + 1).padStart(digits, "0");
     return `<span class="line"><span class="line-number">${num}</span> ${line}</span>`;
   }).join("");
 }
 
-window.gladeHighlightCodeBlock = highlightCodeBlock;
+function highlightAllCodeBlocks() {
+  document.querySelectorAll("code.language-apex").forEach(highlightCodeBlock);
+}
 
-document.querySelectorAll("code.language-apex").forEach(highlightCodeBlock);
+window.gladeHighlightCodeBlock = highlightCodeBlock;
+window.gladeHighlightAllCodeBlocks = highlightAllCodeBlocks;
+if (window.addEventListener) {
+  window.addEventListener("glade:content-updated", highlightAllCodeBlocks);
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", highlightAllCodeBlocks);
+} else {
+  highlightAllCodeBlocks();
+}

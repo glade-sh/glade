@@ -6,9 +6,9 @@ login, scratch org, source push, or metadata deploy is required for the core
 commands.
 
 Glade does not replace Salesforce. It gives a fast local loop before Salesforce
-enters the path. Check the [Support map](/guide/support-map) before treating
+enters the path. Check the [local support guide](/guide/support-map) before treating
 any platform service, live auth flow, exact hosted Visualforce behavior, or
-broad API surface as supported.
+API outside the checked local baseline as supported.
 
 ## 10-minute setup
 
@@ -87,7 +87,7 @@ glade test --project . --no-cache --class AccountServiceTest --json
 
 ## AI-assisted work
 
-Glade gives AI tools small, checked work packets instead of broad guesses. The
+Glade gives AI tools small, checked work packets instead of open-ended guesses. The
 useful pattern is: inspect the project, run a local gate, fix the smallest
 thing, then rerun the same gate.
 
@@ -103,7 +103,7 @@ Run:
   glade test changed --project . --since origin/main --json --no-progress > reports/glade-test-changed.json
 If a command fails, quote the exact diagnostic, fix only the relevant source,
 and rerun the same command before claiming success.
-Check the Glade support map before treating unsupported platform services as bugs.
+Check the Glade local support guide before treating unsupported platform services as bugs.
 ```
 
 For a review or refactor prompt, ask the agent to produce a proof artifact:
@@ -116,7 +116,7 @@ glade report refactor-proof --project . --since origin/main --fail-on-api-break 
 
 The proof report records the git diff, parse and semantic status, graph impact,
 affected-test selection, optional trace summary, and public or global API
-surface warnings.
+warnings.
 
 ## CI pattern
 
@@ -164,14 +164,14 @@ Create `reports/` before running commands that write report files.
 | Explain a saved Salesforce debug log against local source | `glade debug explain --log apex.log --project .` |
 | Generate a starter local repro test from a log | `glade debug repro --log apex.log --project . > ReproTest.cls` |
 | Render local Visualforce preview pages | `glade dev vf --project . --addr 127.0.0.1:8080` |
-| Run a Salesforce-shaped local API | `glade server --project . --addr 127.0.0.1:8080` |
+| Run local Salesforce API routes | `glade server --project . --addr 127.0.0.1:8080` |
 | Seed or inspect a local SQLite org state | `glade db seed --db .glade/org.sqlite --project . fixtures/dev.json` |
 | Map a large Apex project | `glade inspect graph --project . --json` |
 | Create an assessment report | `glade report assess --project . --format html --out reports/glade-assessment.html` |
 | Review conservative dead-code candidates | `glade report cruft --project . --format html --out reports/glade-cruft.html` |
 | Compare managed-package artifacts | `glade package diff old.glade.json new.glade.json --json` |
 
-Advisory performance scans and compatibility ledgers are plugin commands. The
+Advisory performance scans and compatibility reports are plugin commands. The
 default public plugin registry is preview. Use them only when you have a live
 registry, a direct archive, or a locally linked first-party plugin:
 
@@ -203,4 +203,4 @@ Useful pilot feedback includes:
 - [Add Glade to CI](/guide/ci-artifacts)
 - [Enterprise Workflows](/guide/enterprise-workflows)
 - [Plugins](/guide/plugins)
-- [Support map](/guide/support-map)
+- [Local support](/guide/support-map)

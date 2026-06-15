@@ -1,7 +1,7 @@
 # Enterprise Workflows
 
 Use these commands when a large Apex project needs a map before it needs edits.
-The reports use local evidence. They do not claim full Salesforce parity.
+The reports use local evidence. They do not claim exact Salesforce behavior.
 
 ## Assessment
 
@@ -25,7 +25,7 @@ mkdir -p reports
 glade report cruft --project . --format html --out reports/glade-cruft.html
 ```
 
-Global and public symbols are protected by default. A global package surface is
+Global and public symbols are protected by default. A global package API is
 not a safe-delete candidate. Dynamic Apex, string dispatch, custom metadata
 routing, Aura, LWC, and invocable exposure lower confidence.
 
@@ -40,9 +40,9 @@ glade report refactor-proof --project . --since origin/main --format html --out 
 
 The proof report records git diff, parse and semantic status, graph impact,
 affected-test selection, optional trace summary, and public or global API
-surface warnings.
+warnings.
 
-Use `--fail-on-api-break` when CI should fail on public or global API surface
+Use `--fail-on-api-break` when CI should fail on public or global API
 changes:
 
 ```bash

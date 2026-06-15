@@ -17,8 +17,8 @@ function isVueUsePureAnnotationWarning(warning: { code?: string; id?: string; me
 }
 
 export default defineConfig({
-  title: 'Glade — Local Apex Workbench',
-  description: 'Run local Apex checks, focused tests, snippets, and debug-log profiling from one binary with visible runtime boundaries.',
+  title: 'Glade — Local Apex Support Showcase',
+  description: 'Run Apex checks, tests, snippets, logs, and local API routes before you deploy.',
   base: '/',
   srcDir: 'docs-src',
   outDir: '.vitepress/dist',
@@ -43,10 +43,12 @@ export default defineConfig({
   },
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo-mark.svg' }],
+    ['script', { defer: true, src: '/js/highlight.js' }],
+    ['script', { defer: true, src: '/js/home.js' }],
     ['meta', { name: 'theme-color', content: '#060a0d' }],
-    ['meta', { name: 'description', content: 'Run local Apex checks, focused tests, snippets, and debug-log profiling from one binary with visible runtime boundaries.' }],
-    ['meta', { property: 'og:title', content: 'Glade — Apex feedback before you deploy' }],
-    ['meta', { property: 'og:description', content: 'Local-first Apex tooling for checks, tests, snippets, debug-log profiling, and copyable CI commands.' }],
+    ['meta', { name: 'description', content: 'Run Apex checks, tests, snippets, logs, and local API routes before you deploy.' }],
+    ['meta', { property: 'og:title', content: 'Glade — Run Apex locally before you deploy' }],
+    ['meta', { property: 'og:description', content: 'Local Apex tooling for checks, tests, snippets, debug-log profiling, and copyable CI commands.' }],
     ['meta', { property: 'og:type', content: 'website' }]
   ],
   themeConfig: {
@@ -54,8 +56,9 @@ export default defineConfig({
     logo: '/logo-mark.svg',
     search: { provider: 'local' },
     nav: [
+      { text: 'Showcase', link: '/guide/workbench' },
       { text: 'Playground', link: '/guide/playground' },
-      { text: 'Support map', link: '/guide/support-map' },
+      { text: 'Support', link: '/guide/support-map' },
       { text: 'Docs', link: '/guide/overview' },
       { text: 'GitHub', link: 'https://github.com/glade-sh/glade' },
       { text: 'Install', link: '/guide/installation' }
@@ -67,7 +70,8 @@ export default defineConfig({
           { text: 'What is Glade?', link: '/guide/overview' },
           { text: 'Install', link: '/guide/installation' },
           { text: 'First local check', link: '/guide/quickstart' },
-          { text: 'Support map', link: '/guide/support-map' },
+          { text: 'Support', link: '/guide/support-map' },
+          { text: 'Showcase', link: '/guide/workbench' },
           { text: 'Playground', link: '/guide/playground' }
         ]
       },
@@ -79,7 +83,7 @@ export default defineConfig({
           { text: 'Run tests', link: '/guide/local-testing' },
           { text: 'Local LWC shell', link: '/guide/lwc-local-shell' },
           { text: 'Affected tests', link: '/guide/affected-tests' },
-          { text: 'Local API server', link: '/guide/local-api-server' },
+          { text: 'Local API routes', link: '/guide/local-api-server' },
           { text: 'CI', link: '/guide/ci-artifacts' },
           { text: 'VS Code', link: '/guide/editor' }
         ]
