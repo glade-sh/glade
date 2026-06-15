@@ -27,7 +27,8 @@ glade test --project .
 
 `glade check` parses and type-checks the project. `glade test` discovers
 `@IsTest` classes and runs them locally. Add `--json` for machine-readable
-output and `--junit reports/glade-junit.xml` for CI reports.
+output and `--junit reports/glade-junit.xml` for CI reports. Create the
+`reports/` directory first on a fresh runner.
 
 `glade doctor` must report `Ready.`. If the parser is unavailable, install a C
 compiler and rebuild or reinstall a parser-capable release artifact.
@@ -93,6 +94,13 @@ Code intelligence cache files live under `.glade/symbols`. They are separate
 from the test and DAP startup caches. `glade schema import describe --project-cache .`
 can populate schema symbols from captured describe JSON for offline definition,
 reference, and refactor queries.
+
+```bash
+glade inspect definition --project . --symbol Account.Name
+glade inspect references --project . --symbol InvoiceService.total --json
+glade refactor rename --project . --symbol InvoiceService --to BillingService --dry-run --json
+glade schema import describe --input reports/org-describe.json --output schema/local.schema.json --project-cache .
+```
 
 ## Run Visualforce Pages Locally
 

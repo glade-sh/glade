@@ -12,6 +12,7 @@ parity.
 Generate a codebase assessment:
 
 ```bash
+mkdir -p reports
 glade report assess --project . --format html --out reports/glade-assessment.html --include-metadata --include-tests
 ```
 
@@ -24,6 +25,7 @@ known limitations.
 Scan for conservative delete, deprecate, review, and do-not-delete candidates:
 
 ```bash
+mkdir -p reports
 glade report cruft --project . --format html --out reports/glade-cruft.html
 ```
 
@@ -36,6 +38,7 @@ routing, Aura, LWC, and invocable exposure lower confidence.
 Collect proof for a branch change:
 
 ```bash
+mkdir -p reports
 glade report refactor-proof --project . --since origin/main --format html --out reports/glade-refactor-proof.html
 ```
 
@@ -50,11 +53,27 @@ changes:
 glade report refactor-proof --project . --since origin/main --fail-on-api-break --format json
 ```
 
+## Graph And References
+
+Build the project graph directly, inspect definitions and references, or plan a
+safe rename:
+
+```bash
+glade inspect graph --project . --json
+glade inspect definition --project . --symbol Account.Name
+glade inspect references --project . --symbol InvoiceService.total --json
+glade refactor rename --project . --symbol InvoiceService --to BillingService --dry-run --json
+```
+
+Definition, reference, and rename commands use the same code-intelligence graph
+as LSP definition, references, rename, hover, and completion.
+
 ## Runtime Traces
 
 Write local test traces:
 
 ```bash
+mkdir -p reports
 glade test --project . --class MyPassingTest --trace reports/glade-trace.json --json
 ```
 
@@ -81,7 +100,8 @@ platformEventsOut: reports/platform-events.jsonl
 ```
 
 This validates the file and fixture paths. Runtime fixture injection is not
-enabled by this first packet.
+enabled by this first packet. Create `reports/` before using
+`platformEventsOut: reports/platform-events.jsonl`.
 
 ## Known Limitations
 

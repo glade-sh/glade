@@ -165,6 +165,24 @@ glade lsp --project . --diagnostics-once
 The VS Code extension keeps the Glade LSP off by default. Set
 `glade.enableLsp=true` when you want local Glade diagnostics in VS Code.
 
+## CLI code intelligence
+
+Use the same project graph from terminal tasks when you need definition,
+reference, or rename proof outside an editor:
+
+```bash
+glade inspect definition --project . --symbol InvoiceService
+glade inspect definition --project . --file force-app/main/default/classes/InvoiceService.cls --line 6 --column 13
+glade inspect references --project . --symbol InvoiceService.total --json
+glade inspect references --project . --symbol Account.Name --include-declaration
+glade refactor rename --project . --symbol InvoiceService --to BillingService --dry-run
+glade schema import describe --input reports/org-describe.json --project-cache .
+```
+
+`glade refactor rename` defaults to a dry-run plan. `schema import describe
+--project-cache` writes captured schema symbols under `.glade/symbols` for
+offline definition, reference, and rename queries.
+
 ## VS Code Task Example
 
 ```json

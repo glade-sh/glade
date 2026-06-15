@@ -39,6 +39,7 @@ glade test --project . --json
 Advisory performance triage stays in the first-party performance plugin:
 
 ```bash
+mkdir -p reports
 glade performance scan --project . --trace reports/slow.trace.json --format markdown --top 10
 ```
 

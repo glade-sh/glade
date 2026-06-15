@@ -25,8 +25,8 @@ Human output is a terminal surface. Use `--json` or `--format` for scripts. See 
     <span><code>glade doctor</code>, <code>glade init</code>, <code>glade config</code>, and shell completion.</span>
   </a>
   <a class="docs-command-card" href="#glade-check">
-    <strong>Check and inspect</strong>
-    <span><code>glade parse</code>, <code>glade inspect</code>, <code>glade schema</code>, and <code>glade check</code>.</span>
+    <strong>Check, inspect, and refactor</strong>
+    <span><code>glade parse</code>, <code>glade inspect</code>, <code>glade schema</code>, <code>glade refactor</code>, and <code>glade check</code>.</span>
   </a>
   <a class="docs-command-card" href="#glade-test">
     <strong>Test</strong>
@@ -134,11 +134,41 @@ glade inspect symbols --project . --json
 
 ## `glade inspect graph`
 
-Build the enterprise graph for Apex, triggers, metadata references, SObjects, and
-conservative source references.
+Build the enterprise graph for Apex, triggers, metadata references, SObjects,
+and code-intelligence references with conservative fallbacks.
 
 ```bash
 glade inspect graph --project . --json
+```
+
+## `glade inspect definition`
+
+Resolve a symbol or source location to its definition.
+
+```bash
+glade inspect definition --project . --symbol InvoiceService
+glade inspect definition --project . --file force-app/main/default/classes/InvoiceService.cls --line 6 --column 13
+```
+
+Use `--json` when an editor task or script needs the structured result.
+
+## `glade inspect references`
+
+Print references for an Apex type, member, SObject, or schema field.
+
+```bash
+glade inspect references --project . --symbol InvoiceService.total --json
+glade inspect references --project . --symbol Account.Name --include-declaration
+```
+
+## `glade refactor rename`
+
+Plan or apply a safe rename from the same code-intelligence graph. Dry run is
+the default. Use `--write` only after reviewing the planned edits.
+
+```bash
+glade refactor rename --project . --symbol InvoiceService --to BillingService --dry-run --json
+glade refactor rename --project . --file force-app/main/default/classes/InvoiceService.cls --line 5 --column 14 --to totalNet --write
 ```
 
 ## `glade schema load`
@@ -159,7 +189,11 @@ catalog.
 ```bash
 glade schema import describe --input reports/org-describe.json
 glade schema import describe --input reports/org-describe.json --output schema/local.schema.json
+glade schema import describe --input reports/org-describe.json --output schema/local.schema.json --project-cache .
 ```
+
+`--project-cache <root>` writes schema symbols under `.glade/symbols` for
+offline definition, reference, and rename queries.
 
 ## `glade check`
 
@@ -178,6 +212,7 @@ Generate an enterprise assessment report.
 
 ```bash
 glade report assess --project . --format json
+mkdir -p reports
 glade report assess --project . --format html --out reports/glade-assessment.html --include-metadata --include-tests
 ```
 
@@ -187,6 +222,7 @@ Classify conservative delete, deprecate, review, and do-not-delete candidates.
 
 ```bash
 glade report cruft --project . --format json
+mkdir -p reports
 glade report cruft --project . --format html --out reports/glade-cruft.html
 ```
 
@@ -196,6 +232,7 @@ Collect local proof for changed Apex and metadata.
 
 ```bash
 glade report refactor-proof --project . --since origin/main --format json
+mkdir -p reports
 glade report refactor-proof --project . --since origin/main --format html --out reports/glade-refactor-proof.html
 ```
 
@@ -206,6 +243,7 @@ Default output summarizes debug lines and limit counters, then writes the raw lo
 
 ```bash
 glade exec --project . "System.debug('hello from glade');"
+mkdir -p reports
 glade exec --project . --trace reports/trace.json "System.debug(1);"
 glade exec --project . --debug-log raw "System.debug('hello from glade');"
 glade exec --project . --log-out reports/exec.log "System.debug('hello from glade');"
@@ -229,6 +267,7 @@ glade test serve --project .
 glade test daemon status --project .
 glade test --project .
 glade test --project . --class AccountServiceTest --json
+mkdir -p reports
 glade test --project . --class AccountServiceTest --method testCreatesAccount --junit reports/glade-junit.xml
 glade test --project . --connect --class AccountServiceTest
 glade test changed --project . --since origin/main --json --no-progress
@@ -301,6 +340,7 @@ glade lsp --project . --diagnostics-once
 Read a Glade native trace and emit terminal, JSON, or Markdown profile output.
 
 ```bash
+mkdir -p reports
 glade exec --project . --trace reports/trace.json "System.debug(1);"
 glade profile analyze reports/trace.json
 glade profile analyze reports/trace.json --json
