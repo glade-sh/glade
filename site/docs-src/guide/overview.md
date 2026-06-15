@@ -2,7 +2,7 @@
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Start</p>
-  <p>Glade is a local Apex runtime and developer workbench for supported checks, tests, snippets, reports, and Salesforce-shaped local APIs.</p>
+  <p>Glade is a local Apex runtime and developer workbench for supported checks, tests, snippets, reports, and local Salesforce API routes.</p>
   <ul>
     <li>See what runs on your machine.</li>
     <li>Know when to keep Salesforce in the loop.</li>
@@ -12,8 +12,8 @@
 
 Glade is a local Apex runtime and developer workbench. It loads Salesforce DX
 projects, parses and checks supported Apex, runs local Apex tests, executes
-anonymous Apex, serves local Visualforce pages and a Salesforce-shaped local
-REST API, and exposes support gaps instead of hiding them.
+anonymous Apex, serves local Visualforce pages and local Salesforce API routes,
+and exposes support gaps instead of hiding them.
 
 ## Start with
 
@@ -23,8 +23,8 @@ REST API, and exposes support gaps instead of hiding them.
     <span>Install Glade and run the first check.</span>
   </a>
   <a class="docs-route-card" href="/guide/support-map">
-    <strong>Support map</strong>
-    <span>See what runs locally and where boundaries start.</span>
+    <strong>Local support</strong>
+    <span>See what runs locally and what still needs Salesforce.</span>
   </a>
   <a class="docs-route-card" href="/guide/cli-reference">
     <strong>CLI Reference</strong>
@@ -53,7 +53,7 @@ glade test changed --project . --since origin/main
 - You want local SOQL, DML, trigger, SObject, and limit feedback.
 - You want a Visualforce preview feature for local `/apex/<PageName>` rendering.
 - You want an LWC preview feature through `/lwc/preview/*` routes or Visualforce Lightning Out.
-- You want a Salesforce-shaped local API for development loops.
+- You want local Salesforce API routes for development loops.
 - You want local assessment, cruft review, or refactor-proof reports for a large Apex project.
 - You want deterministic local harnesses for supported platform helper rows instead of live hosted service calls.
 
@@ -70,4 +70,4 @@ glade test changed --project . --since origin/main
 Glade models the local paths it can prove. Unsupported platform services fail
 with stable diagnostics instead of pretending to work.
 
-Next: [Tester field guide](/guide/tester-field-guide), [Quickstart](/guide/quickstart), [Enterprise workflows](/guide/enterprise-workflows), or [Support map](/guide/support-map).
+Next: [Tester field guide](/guide/tester-field-guide), [Quickstart](/guide/quickstart), [Enterprise workflows](/guide/enterprise-workflows), or [Local support](/guide/support-map).

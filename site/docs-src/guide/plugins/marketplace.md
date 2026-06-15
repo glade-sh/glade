@@ -36,7 +36,7 @@ require a SHA-256 digest.
 glade plugins install @acme/quality --registry https://plugins.acme.com/index.json
 ```
 
-Custom registries use the same JSON catalog shape as the default marketplace.
+Custom registries use the same JSON catalog format as the default marketplace.
 
 ## Direct archives
 

@@ -1,7 +1,7 @@
 # Editor, LSP, and DAP
 
 Glade includes a VS Code extension for local Apex work. It uses the same parser,
-semantic checks, VM, storage layer, test runner, LSP, and DAP surfaces as the
+semantic checks, VM, storage layer, test runner, LSP, and DAP features as the
 CLI.
 
 ## VS Code Extension
@@ -27,7 +27,7 @@ glade editor install vscode --force
 Open an SFDX project. The extension adds one `Glade` Activity Bar with Start
 Here, Local Runs, Data Environments, Local Org, Debug, and Plugins views.
 
-Glade keeps a separate local lane with `glade.*` command ids, a `Glade Apex`
+Glade keeps a separate local workflow with `glade.*` command ids, a `Glade Apex`
 Test Explorer controller, and CodeLens labels that include `Local`. It does not
 take over org-backed commands, scratch-org tests, CodeLens, replay debugging, or
 language-server ownership.
@@ -37,13 +37,13 @@ language-server ownership.
 Open the Glade Activity Bar and start in **Start Here**.
 
 1. Confirm the SFDX root and active local data environment.
-2. Click **Run local proof** before pushing work to a scratch org.
+2. Click **Run local check** before pushing work to a scratch org.
 3. Use **Data Environments** to clone, seed, reset, inspect, and export local state.
 4. Use org-backed tools for deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
 
 Glade actions are local. Salesforce actions stay org-backed.
 
-## Native VS Code Surfaces
+## Native VS Code Features
 
 Glade uses one Activity Bar item and one Status Bar item. The sidebar shows
 Start Here, Local Runs, Data Environments, Local Org, Debug, and Plugins.
@@ -55,7 +55,7 @@ normal editor gutter and debug state stays in VS Code Run and Debug.
 The Status Bar shows short local state, such as `Glade: dev`,
 `Glade: dev 18ms`, `Glade: dev no DB`, or `Glade: plugin 2 findings`.
 Details stay in the tooltip: project root, active DB, plugin finding counts,
-and last command. Click it to switch data, inspect local data, run local proof,
+and last command. Click it to switch data, inspect local data, run a local check,
 manage plugins, or open output.
 
 ## LWC and Visualforce preview
@@ -146,7 +146,7 @@ glade dap --project <root> --db <active-db>
 
 Anonymous debug, CodeLens debug, and Test Explorer debug all use the active
 local data environment. Breakpoints come from the normal VS Code Apex gutter.
-Glade does not draw a second breakpoint surface.
+Glade does not draw a second breakpoint UI.
 
 ## Language Server
 
@@ -168,7 +168,7 @@ The VS Code extension keeps the Glade LSP off by default. Set
 ## CLI code intelligence
 
 Use the same project graph from terminal tasks when you need definition,
-reference, or rename proof outside an editor:
+reference, or rename checks outside an editor:
 
 ```bash
 glade inspect definition --project . --symbol InvoiceService

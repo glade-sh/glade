@@ -6,7 +6,7 @@ Every plugin executable must return a `glade.plugin.v1` manifest.
 ./glade-plugin-quality manifest --json
 ```
 
-## Shape
+## Manifest fields
 
 ```json
 {

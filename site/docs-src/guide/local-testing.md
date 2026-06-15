@@ -54,11 +54,11 @@ Run a single method:
 glade test --project . --class AccountServiceTest --method testCreatesAccount
 ```
 
-Use exact class and method selectors for the short inner loop. Then run the broader suite before shipping.
+Use exact class and method selectors for the short inner loop. Then run the wider suite before shipping.
 
 ## Limit modes
 
-Glade supports limit modes for local execution. `strict` enforces supported governor limits closer to Salesforce behavior. `permissive` keeps the local loop moving when a project depends on areas Glade has not finished yet.
+Glade supports limit modes for local execution. `strict` enforces supported governor limits closer to Salesforce behavior. `permissive` keeps the local loop moving when a project depends on unfinished areas.
 
 ```bash
 glade test --project . --limit-mode strict
@@ -109,7 +109,7 @@ glade test --project . --wizard
 ## LWC dev shell
 
 The LWC local shell is a preview feature. It gives useful local preview routes,
-not full hosted Lightning Experience parity.
+not exact hosted Lightning Experience behavior.
 
 Install the local LWC toolchain first:
 
@@ -149,7 +149,7 @@ See [Local LWC Shell](/guide/lwc-local-shell) for routes, fixtures, and limits.
 ## Visualforce dev server
 
 Visualforce local rendering is a preview feature. It serves useful local
-`/apex/<PageName>` previews, not full hosted Visualforce parity.
+`/apex/<PageName>` previews, not exact hosted Visualforce behavior.
 
 Serve local Visualforce pages from the project on disk:
 
@@ -179,7 +179,7 @@ controller actions, page messages, expression and form binding, static
 resources, uploads, remoting envelopes, Lightning Out/LWC hosts, AJAX refresh
 paths, and local PDF fallback output. It does not promise Salesforce-hosted
 chrome, every component edge, exact lifecycle timing, Apex
-`PageReference.getContent*` parity, or byte-for-byte PDF output.
+`PageReference.getContent*` output, or byte-for-byte PDF output.
 
 Form posts carry signed Visualforce view state and a CSRF token. Controller and
 extension state comes back across posts, while Apex fields marked `transient`
@@ -227,7 +227,7 @@ Saved run artifacts and CI annotations are covered in [Add Glade to CI](/guide/c
 Local test runs separate assertion failures from load errors, compile errors,
 unsupported features, and internal errors. That split matters. A failing
 assertion means the test ran and failed. An unsupported feature means
-the runtime stopped at a known unsupported Salesforce surface.
+the runtime stopped at a known unsupported Salesforce API.
 
 ```text
   ✓  AccountServiceTest.testCreatesAccount  42ms
@@ -239,9 +239,9 @@ the runtime stopped at a known unsupported Salesforce surface.
   force-app/main/default/classes/AccountServiceTest.cls:42
 ```
 
-Check the [Support map](/guide/support-map) before relying on platform
-service APIs, exact hosted Visualforce behavior, live side effects, or broad
-REST parity.
+Check the [local support guide](/guide/support-map) before relying on platform
+service APIs, exact hosted Visualforce behavior, live side effects, or REST
+coverage outside the checked local baseline.
 
 ::: tip Try it
 Exercise the runtime your tests rely on - DML, triggers, and governor limits - in the local playground:

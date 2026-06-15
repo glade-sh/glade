@@ -2,11 +2,11 @@
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Local Lightning</p>
-  <p>Serve Lightning Web Components from an SFDX project with Salesforce-like page context, local data, and the same runtime used by Visualforce Lightning Out.</p>
+  <p>Serve Lightning Web Components from an SFDX project with local page context, local data, and the same runtime used by Visualforce Lightning Out.</p>
   <ul>
     <li>Start <code>glade dev lwc</code>.</li>
     <li>Open component, record, app, home, and tab routes.</li>
-    <li>Keep Salesforce for hosted Lightning Experience parity.</li>
+    <li>Keep Salesforce for hosted Lightning Experience behavior.</li>
   </ul>
 </div>
 
@@ -38,8 +38,7 @@ glade dev lwc --project . --addr 127.0.0.1:0 --ready-file /tmp/glade-lwc-ready.j
 The banner prints the local URL and discovered routes.
 
 The VS Code extension does not manage this server yet. Start, stop, and route
-selection stay in the terminal while this preview feature is still being
-ironed out.
+selection stay in the terminal while this preview workflow matures.
 
 ## Routes
 
@@ -125,7 +124,7 @@ commands that target that database.
 
 Glade serves a local Lightning shell. It does not replace hosted Lightning
 Experience, live auth, permissions, console APIs, full UI API, every
-`lightning-*` base component, exact SLDS fidelity, hosted validation parity, or
+`lightning-*` base component, exact SLDS fidelity, hosted validation behavior, or
 every Lightning Out edge.
 
 Unsupported metadata and unsupported Salesforce services return named

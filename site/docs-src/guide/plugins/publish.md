@@ -23,5 +23,5 @@ glade plugins info @acme/quality
 10. Approved entries merge into the curated catalog.
 
 The registry contract does not depend on a hosted publisher portal. Custom
-registries can use the same shape before a plugin enters the default
+registries can use the same format before a plugin enters the default
 marketplace.
