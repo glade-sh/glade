@@ -85,6 +85,8 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 			return
 		}
 		writeJSON(w, http.StatusOK, toolingDiscoveryPayload(version))
+	case len(parts) >= 2 && parts[0] == "glade":
+		s.handleToolingGladeCodeIntel(w, r, parts[1:])
 	case len(parts) == 1 && parts[0] == "executeAnonymous":
 		s.handleExecuteAnonymous(w, r)
 	case len(parts) == 1 && parts[0] == "query":

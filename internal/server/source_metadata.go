@@ -4,11 +4,13 @@ import (
 	"encoding/xml"
 	"fmt"
 	"hash/crc32"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/codeintel"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -115,6 +117,85 @@ func NewSourceMetadataFromProject(p project.Project) (SourceMetadata, error) {
 
 func (m *SourceMetadata) hasData() bool {
 	return len(m.Components) > 0 || len(m.ListViews) > 0 || len(m.Layouts) > 0 || len(m.Compact) > 0 || len(m.ToolingOrg.Objects) > 0
+}
+
+func (s *Server) handleToolingGladeCodeIntel(w http.ResponseWriter, r *http.Request, parts []string) {
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w, http.MethodGet)
+		return
+	}
+	if len(parts) != 1 {
+		writeSalesforceError(w, errUnknownTooling)
+		return
+	}
+
+	graph := codeintel.Graph{}
+	if s.Index != nil {
+		graph = codeintel.Build(*s.Index, codeintel.Options{})
+	}
+
+	switch parts[0] {
+	case "symbols":
+		records := graph.SortedSymbols()
+		writeJSON(w, http.StatusOK, codeIntelQueryPayload(len(records), records))
+	case "definition":
+		id, ok := codeIntelSymbolID(r.URL.Query().Get("symbol"), graph)
+		if !ok {
+			writeJSON(w, http.StatusOK, codeIntelQueryPayload(0, []codeintel.Symbol{}))
+			return
+		}
+		symbol, ok := graph.Definition(id)
+		if !ok {
+			writeJSON(w, http.StatusOK, codeIntelQueryPayload(0, []codeintel.Symbol{}))
+			return
+		}
+		writeJSON(w, http.StatusOK, codeIntelQueryPayload(1, []codeintel.Symbol{symbol}))
+	case "references":
+		id, ok := codeIntelSymbolID(r.URL.Query().Get("symbol"), graph)
+		if !ok {
+			writeJSON(w, http.StatusOK, codeIntelQueryPayload(0, []codeintel.Use{}))
+			return
+		}
+		records := graph.References(id, true)
+		writeJSON(w, http.StatusOK, codeIntelQueryPayload(len(records), records))
+	default:
+		writeSalesforceError(w, errUnknownTooling)
+	}
+}
+
+func codeIntelQueryPayload(totalSize int, records any) map[string]any {
+	return map[string]any{
+		"totalSize": totalSize,
+		"done":      true,
+		"records":   records,
+	}
+}
+
+func codeIntelSymbolID(raw string, graph codeintel.Graph) (codeintel.SymbolID, bool) {
+	symbolName := strings.TrimSpace(raw)
+	if symbolName == "" {
+		return "", false
+	}
+	if _, ok := graph.Definition(codeintel.SymbolID(symbolName)); ok {
+		return codeintel.SymbolID(symbolName), true
+	}
+	if objectName, fieldName, ok := strings.Cut(symbolName, "."); ok && objectName != "" && fieldName != "" {
+		id := codeintel.SObjectFieldID(objectName, fieldName)
+		if _, ok := graph.Definition(id); ok {
+			return id, true
+		}
+	}
+	if id := codeintel.SObjectID(symbolName); id != "" {
+		if _, ok := graph.Definition(id); ok {
+			return id, true
+		}
+	}
+	for _, symbol := range graph.SortedSymbols() {
+		if symbol.Name == symbolName {
+			return symbol.ID, true
+		}
+	}
+	return "", false
 }
 
 func (m *SourceMetadata) loadToolingObjects() error {
