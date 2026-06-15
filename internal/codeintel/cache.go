@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -90,6 +91,19 @@ func WriteCache(projectRoot string, graph Graph) error {
 		return writeErr
 	}
 	return nil
+}
+
+func WriteSchemaCache(projectRoot string, s schema.Schema) error {
+	root, err := cleanAbsRoot(projectRoot)
+	if err != nil {
+		return err
+	}
+	graph := BuildDeclarations(typesys.Index{
+		Project:               typesys.ProjectInfo{Root: root},
+		Objects:               s.Objects,
+		CustomMetadataRecords: s.CustomMetadataRecords,
+	})
+	return WriteCache(root, graph)
 }
 
 func ReadCache(projectRoot string) (Graph, CacheMetadata, error) {

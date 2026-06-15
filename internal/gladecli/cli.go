@@ -1649,17 +1649,20 @@ func runSchemaImportDescribe(args []string, w io.Writer) error {
 	}
 	input := ""
 	output := ""
+	projectCache := ""
 	parsed, err := flagparse.New("glade schema import describe").
 		String("input", "").
 		String("output", "").
+		String("project-cache", "").
 		Parse(args)
 	if err != nil {
 		return err
 	}
 	input = parsed.String("input")
 	output = parsed.String("output")
+	projectCache = parsed.String("project-cache")
 	if strings.TrimSpace(input) == "" {
-		return errors.New("usage: glade schema import describe --input <describe.json> [--output <schema.json>]")
+		return errors.New("usage: glade schema import describe --input <describe.json> [--output <schema.json>] [--project-cache <root>]")
 	}
 	data, err := os.ReadFile(input)
 	if err != nil {
@@ -1669,16 +1672,26 @@ func runSchemaImportDescribe(args []string, w io.Writer) error {
 	if err := json.Unmarshal(data, &catalog); err != nil {
 		return err
 	}
-	schemaData, err := json.MarshalIndent(catalog.ToSchema(), "", "  ")
+	importedSchema := catalog.ToSchema()
+	schemaData, err := json.MarshalIndent(importedSchema, "", "  ")
 	if err != nil {
 		return err
 	}
 	schemaData = append(schemaData, '\n')
 	if strings.TrimSpace(output) == "" {
-		_, err := w.Write(schemaData)
+		if _, err := w.Write(schemaData); err != nil {
+			return err
+		}
+	} else if err := os.WriteFile(output, schemaData, 0o644); err != nil {
 		return err
 	}
-	return os.WriteFile(output, schemaData, 0o644)
+	if strings.TrimSpace(projectCache) == "" {
+		return nil
+	}
+	if err := requireGladeProjectRoot(projectCache); err != nil {
+		return err
+	}
+	return codeintel.WriteSchemaCache(projectCache, importedSchema)
 }
 
 func writeSchemaImportDescribeHelp(w io.Writer) error {
@@ -1686,15 +1699,34 @@ func writeSchemaImportDescribeHelp(w io.Writer) error {
 Import captured Salesforce describe JSON into a local Glade schema.
 
 Usage:
-  glade schema import describe --input <describe.json> [--output <schema.json>]
+  glade schema import describe --input <describe.json> [--output <schema.json>] [--project-cache <root>]
 
 Flags:
   --input <describe.json>   Captured org describe catalog JSON.
   --output <schema.json>    Write schema JSON to a file. Defaults to stdout.
+  --project-cache <root>    Write schema symbols into the project codeintel cache.
 
 Live org capture belongs in a plugin.
 `))
 	return err
+}
+
+func requireGladeProjectRoot(root string) error {
+	cleanRoot, err := filepath.Abs(root)
+	if err != nil {
+		return err
+	}
+	cleanRoot = filepath.Clean(cleanRoot)
+	for _, marker := range []string{"sfdx-project.json", "glade.yml"} {
+		_, err := os.Stat(filepath.Join(cleanRoot, marker))
+		if err == nil {
+			return nil
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+	}
+	return fmt.Errorf("%s is not a Glade project root (missing sfdx-project.json or glade.yml)", cleanRoot)
 }
 
 func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writer) (sema.Result, error) {

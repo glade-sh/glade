@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/codeintel"
 	"github.com/glade-sh/glade/internal/testreport"
 )
 
@@ -32,6 +33,67 @@ func TestSchemaImportDescribeWritesSchema(t *testing.T) {
 	}
 	if !strings.Contains(string(written), `"name": "Account"`) {
 		t.Fatalf("schema output missing Account:\n%s", string(written))
+	}
+}
+
+func TestSchemaImportDescribeWritesProjectCache(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "sfdx-project.json"), []byte(`{"packageDirectories":[{"path":"force-app","default":true}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	reportsDir := filepath.Join(root, "reports")
+	if err := os.MkdirAll(reportsDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	input := filepath.Join(reportsDir, "org-describe.json")
+	output := filepath.Join(root, "schema", "local.schema.json")
+	data := `{"objects":[{"name":"Account","label":"Account","labelPlural":"Accounts","fields":[{"name":"Id","type":"id","label":"Account ID","nillable":false},{"name":"Name","type":"string","label":"Account Name","nillable":false,"createable":true,"updateable":true}]},{"name":"Widget__c","label":"Widget","labelPlural":"Widgets","fields":[{"name":"Id","type":"id","label":"Widget ID","nillable":false},{"name":"Title__c","type":"string","label":"Title","nillable":true,"createable":true,"updateable":true}]}]}`
+	if err := os.WriteFile(input, []byte(data), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Dir(output), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"schema", "import", "describe", "--input", input, "--output", output, "--project-cache", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit=%d stderr=%s", code, stderr.String())
+	}
+	written, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(written), `"name": "Account"`) || !strings.Contains(string(written), `"name": "Widget__c"`) {
+		t.Fatalf("schema output missing objects:\n%s", string(written))
+	}
+	if _, err := os.Stat(filepath.Join(codeintel.CacheDir(root), "index.json")); err != nil {
+		t.Fatalf("cache file stat: %v", err)
+	}
+	graph, _, err := codeintel.ReadCache(root)
+	if err != nil {
+		t.Fatalf("ReadCache: %v", err)
+	}
+	if got := graph.Symbols[codeintel.SObjectID("Account")]; got.Kind != codeintel.SymbolSObject || got.Name != "Account" {
+		t.Fatalf("Account symbol = %#v", got)
+	}
+	if got := graph.Symbols[codeintel.SObjectFieldID("Widget__c", "Title__c")]; got.Kind != codeintel.SymbolSObjectField || got.Type != "Text" {
+		t.Fatalf("Widget Title symbol = %#v", got)
+	}
+}
+
+func TestSchemaImportDescribeProjectCacheRequiresProjectRoot(t *testing.T) {
+	root := t.TempDir()
+	input := filepath.Join(root, "describe.json")
+	if err := os.WriteFile(input, []byte(`{"objects":[{"name":"Account","fields":[{"name":"Id","type":"id","nillable":false}]}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"schema", "import", "describe", "--input", input, "--project-cache", root}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "not a Glade project root") {
+		t.Fatalf("stderr = %q", stderr.String())
 	}
 }
 
