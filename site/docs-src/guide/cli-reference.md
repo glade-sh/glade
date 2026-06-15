@@ -302,7 +302,8 @@ glade report github latest --runs-dir .glade/runs
 glade report export latest --runs-dir .glade/runs --format html --output glade-report.html
 ```
 
-Serve local Visualforce pages with hot reload:
+Serve local Visualforce pages with hot reload. This is a preview feature for
+useful local `/apex` rendering, not full hosted Visualforce parity:
 
 ```bash
 glade dev vf --project . --port 8080
@@ -312,7 +313,8 @@ glade dev vf --project . --addr 127.0.0.1:0 --ready-file /tmp/glade-vf-ready.jso
 The Visualforce server prints `/apex/<PageName>` routes and watches `.page`,
 `.component`, `.cls`, Aura, LWC, and static resource changes.
 
-Serve local LWCs in a Salesforce-like shell:
+Serve local LWCs in a Salesforce-like shell. This is a preview feature for
+local routes, not full hosted Lightning Experience parity:
 
 ```bash
 glade toolchain install

@@ -403,10 +403,14 @@ func readDevVFSFDXTreeValue(raw json.RawMessage) (storage.Value, bool, error) {
 
 func printDevVFHelp(w io.Writer) {
 	fmt.Fprint(w, strings.TrimSpace(`
-Start a local Visualforce development server with hot reload.
+Start a local Visualforce preview development server with hot reload.
 
 Usage:
   glade dev vf [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]
+
+Preview feature:
+  Useful local /apex rendering for development. Not full hosted Salesforce
+  chrome, lifecycle, component-edge, getContent*, or PDF parity.
 
 Examples:
   glade dev vf --project .

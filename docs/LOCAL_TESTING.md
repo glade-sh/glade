@@ -72,6 +72,9 @@ Route shapes:
 /lwc/preview/tab/<Tab>
 ```
 
+The LWC local shell is a preview feature. It gives useful local preview routes,
+not full hosted Lightning Experience parity.
+
 Visualforce-backed tabs redirect to `/apex/<Page>`. Visualforce pages that use
 `<apex:includeLightning/>`, `$Lightning.use()`, and
 `$Lightning.createComponent()` share the same local LWC runtime, Apex wire
@@ -103,6 +106,9 @@ glade schema import describe --input reports/org-describe.json --output schema/l
 ```
 
 ## Run Visualforce Pages Locally
+
+Visualforce local rendering is a preview feature. It gives useful local
+`/apex/<PageName>` previews, not full hosted Visualforce parity.
 
 Start the Visualforce dev server from a Salesforce-shaped project:
 
