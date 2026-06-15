@@ -96,9 +96,9 @@ onBeforeUnmount(() => {
     <div class="glade-cm-head">
       <div>
         <p class="home-eyebrow">Interactive Editor</p>
-        <h2 class="home-h2">Try support-backed autocomplete.</h2>
+        <h2 class="home-h2">Try coverage-backed autocomplete.</h2>
       </div>
-      <a href="/guide/support-map">Check support</a>
+      <a href="/guide/support-map">View capability map</a>
     </div>
     <div class="glade-cm-support" aria-label="Autocomplete surfaces to try">
       <span>Type a dot after the final describe, Account, Database, BusinessHours, Schema, describe.fields, results[0], or fieldMap.</span>

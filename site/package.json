@@ -2,7 +2,7 @@
   "scripts": {
     "generate:editor-support": "node scripts/build-editor-support.mjs",
     "dev": "vitepress dev .",
-    "build": "npm run generate:editor-support -- --check && vitepress build .",
+    "build": "npm run generate:editor-support -- --check && vitepress build . && cp install.sh .vitepress/dist/install.sh",
     "test": "npm run generate:editor-support -- --check && node --test tests/*.test.mjs",
     "preview": "vitepress preview ."
   },

@@ -32,7 +32,7 @@
   --text-xl: 1.5rem;
   --text-2xl: 2rem;
   --text-3xl: 3rem;
-  --text-hero: clamp(3.05rem, 6.2vw, 4.625rem);
+  --text-hero: clamp(2.85rem, 5.2vw, 4.1rem);
   --glade-page-max: 1280px;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -884,12 +884,12 @@ body:has(.VPHome) .VPNavBarSearch {
 
 .home-hero-shell {
   display: grid;
-  grid-template-columns: minmax(360px, 0.8fr) minmax(640px, 1.2fr);
-  gap: 48px;
+  grid-template-columns: minmax(500px, 0.95fr) minmax(520px, 1.05fr);
+  gap: 36px;
   align-items: center;
   width: var(--glade-shell-width);
   margin: 0 auto;
-  padding: 64px 0 20px;
+  padding: 42px 0 12px;
 }
 
 .home-hero-copy {
@@ -921,7 +921,7 @@ body:has(.VPHome) .VPNavBarSearch {
 }
 
 .home-hero-shell h1 {
-  max-width: 760px;
+  max-width: 680px;
   margin: 0 0 20px;
   color: var(--vp-c-text-1);
   font-family: var(--vp-font-family-base);
@@ -1013,7 +1013,8 @@ body:has(.VPHome) .VPNavBarSearch {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 20px 0 0;
+  width: var(--glade-shell-width);
+  margin: 8px auto 0;
 }
 
 .home-proof-strip span {
@@ -1034,7 +1035,7 @@ body:has(.VPHome) .VPNavBarSearch {
 .home-loop-visual {
   position: relative;
   min-width: 0;
-  min-height: 520px;
+  min-height: 524px;
   border: 1px solid var(--glade-home-border);
   border-radius: 14px;
   background:
@@ -1085,8 +1086,8 @@ body:has(.VPHome) .VPNavBarSearch {
 .home-loop-stage {
   position: relative;
   z-index: 1;
-  height: 214px;
-  margin: 18px 18px 0;
+  height: 172px;
+  margin: 16px 18px 0;
 }
 
 .home-loop-stage svg {
@@ -1122,7 +1123,7 @@ body:has(.VPHome) .VPNavBarSearch {
 
 .home-loop-trace {
   position: absolute;
-  top: 242px;
+  top: 218px;
   right: 18px;
   left: 18px;
   z-index: 2;
@@ -1177,8 +1178,8 @@ body:has(.VPHome) .VPNavBarSearch {
 .home-loop-terminal {
   position: relative;
   z-index: 2;
-  height: 234px;
-  margin: 42px 18px 18px;
+  height: 190px;
+  margin: 30px 18px 14px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: rgba(5, 9, 8, 0.96);
@@ -1210,9 +1211,9 @@ body:has(.VPHome) .VPNavBarSearch {
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-rows: 34px minmax(78px, 1fr) 50px;
+  grid-template-rows: 30px minmax(62px, 1fr) 44px;
   gap: 0;
-  padding: 14px;
+  padding: 12px;
   opacity: 0;
   pointer-events: none;
   transform: translateY(10px);
@@ -1230,7 +1231,7 @@ body:has(.VPHome) .VPNavBarSearch {
   overflow: hidden;
   color: #d5eadb;
   font-family: var(--vp-font-family-mono);
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.45;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1242,7 +1243,7 @@ body:has(.VPHome) .VPNavBarSearch {
   gap: 12px;
   align-self: center;
   align-items: center;
-  min-height: 72px;
+  min-height: 62px;
 }
 
 .home-loop-mark {
@@ -1266,7 +1267,7 @@ body:has(.VPHome) .VPNavBarSearch {
   display: block;
   overflow: hidden;
   color: var(--vp-c-text-1);
-  font-size: clamp(22px, 3vw, 30px);
+  font-size: clamp(20px, 2.4vw, 26px);
   font-weight: 780;
   line-height: 1;
   text-overflow: ellipsis;
@@ -1296,7 +1297,7 @@ body:has(.VPHome) .VPNavBarSearch {
   color: var(--text-muted);
   font-size: 11px;
   line-height: 1.25;
-  padding: 8px 9px;
+  padding: 6px 8px;
 }
 
 .home-loop-metrics strong {
@@ -1500,6 +1501,43 @@ body:has(.VPHome) .VPNavBarSearch {
   color: var(--glade-strong);
 }
 
+.home-coverage-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.home-coverage-grid article {
+  display: grid;
+  align-content: start;
+  min-width: 0;
+  border: 1px solid var(--glade-home-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-inset) 88%, transparent);
+  padding: 14px;
+}
+
+.home-coverage-grid h3 {
+  margin: 0 0 10px;
+  color: var(--vp-c-text-1);
+  font-size: var(--fs-ui);
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.home-coverage-grid ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.home-coverage-grid li {
+  color: var(--vp-c-text-2);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 .home-install-strip {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(240px, 0.58fr);
@@ -1555,25 +1593,25 @@ body:has(.VPHome) .VPNavBarSearch {
   margin-left: 8px;
 }
 
-.support-showcase {
+.coverage-workbench {
   display: grid;
   gap: 18px;
   margin: 24px 0 28px;
 }
 
-.support-showcase-intro {
+.coverage-workbench-intro {
   display: grid;
   gap: 10px;
   max-width: 780px;
 }
 
-.support-showcase-cards {
+.coverage-workbench-cards {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
-.support-showcase-cards article {
+.coverage-workbench-cards article {
   display: grid;
   align-content: start;
   gap: 10px;
@@ -1585,7 +1623,7 @@ body:has(.VPHome) .VPNavBarSearch {
   padding: 14px;
 }
 
-.support-showcase-cards code {
+.coverage-workbench-cards code {
   min-width: 0;
   color: var(--vp-c-text-1);
   font-family: var(--vp-font-family-mono);
@@ -1595,7 +1633,7 @@ body:has(.VPHome) .VPNavBarSearch {
   overflow-wrap: anywhere;
 }
 
-.support-showcase-cards p {
+.coverage-workbench-cards p {
   margin: 0;
   color: var(--vp-c-text-2);
   font-size: 13px;
@@ -1607,7 +1645,7 @@ body:has(.VPHome) .VPNavBarSearch {
     grid-template-columns: 1fr;
   }
 
-  .support-showcase-cards {
+  .coverage-workbench-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1619,6 +1657,7 @@ body:has(.VPHome) .VPNavBarSearch {
 
 @media (max-width: 640px) {
   .home-hero-shell,
+  .home-proof-strip,
   .home-support-preview,
   .home-capability-section,
   .home-install-strip {
@@ -1627,70 +1666,40 @@ body:has(.VPHome) .VPNavBarSearch {
 
   .home-hero-shell {
     gap: 24px;
-    padding-top: 34px;
+    padding-top: 26px;
   }
 
   .home-hero-shell h1 {
     max-width: 340px;
-    font-size: 42px;
+    font-size: 34px;
   }
 
   .home-loop-visual {
-    min-height: 548px;
+    min-height: 118px;
+    height: 118px;
   }
 
   .home-loop-top {
-    gap: 10px;
-    padding: 16px 14px 0;
+    display: none;
   }
 
   .home-loop-stage {
-    height: 198px;
-    margin: 16px 14px 0;
+    height: 118px;
+    margin: 0;
   }
 
-  .home-loop-trace {
-    top: 228px;
-    right: 14px;
-    left: 14px;
-  }
-
-  .home-loop-terminal {
-    height: 260px;
-    margin: 40px 14px 16px;
-  }
-
-  .home-loop-state {
-    grid-template-rows: 34px minmax(78px, 1fr) 50px;
-    padding: 12px;
-  }
-
-  .home-loop-state code {
-    font-size: 12px;
-  }
-
-  .home-loop-result strong {
-    white-space: normal;
-  }
-
-  .home-loop-metrics {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-  }
-
-  .home-loop-metrics span {
-    padding: 7px 6px;
-  }
-
+  .home-loop-trace,
+  .home-loop-terminal,
   .home-loop-tabs {
-    padding: 0 14px 16px;
+    display: none;
   }
 
-  .support-showcase-cards {
+  .home-coverage-grid,
+  .coverage-workbench-cards {
     grid-template-columns: 1fr;
   }
 
-  .support-showcase-cards article {
+  .coverage-workbench-cards article {
     min-height: 0;
   }
 

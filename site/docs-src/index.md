@@ -5,21 +5,14 @@ layout: home
 <section class="home-hero-shell" aria-label="Glade homepage hero">
   <div class="home-hero-copy">
     <p class="home-type-eyebrow">Local Apex runtime for Salesforce teams</p>
-    <h1>Run Apex locally before you deploy.</h1>
-    <p class="home-lead">Local Apex checks, tests, snippets, SOQL, DML, logs, and API routes on your machine.</p>
+    <h1>Run Apex checks and focused tests locally before you deploy.</h1>
+    <p class="home-lead">Glade catches supported Apex, SOQL, DML, trigger, and test failures before the Salesforce org gate.</p>
     <div class="home-cta-row">
-      <a class="home-cta primary" href="/guide/workbench" data-demo-link>Explore support</a>
-      <a class="home-cta" href="/guide/installation">Install Glade</a>
-      <a class="home-cta link" href="/guide/support-map">Check support</a>
+      <a class="home-cta primary" href="/guide/quickstart" data-demo-link>Start a 10-minute pilot</a>
+      <a class="home-cta link" href="/guide/support-map">View capability map</a>
     </div>
     <p class="home-local-line">No org login for supported local work.</p>
-    <p class="home-boundary-line">Salesforce stays in the path for hosted services.</p>
-    <div class="home-proof-strip" aria-label="Main Glade strengths">
-      <span>focused tests</span>
-      <span>anonymous Apex</span>
-      <span>local data</span>
-      <span>no org wait</span>
-    </div>
+    <p class="home-boundary-line">Salesforce CLI runs Apex tests in an org. Glade runs supported checks and tests locally first.</p>
   </div>
 
   <div class="home-loop-visual" data-home-loop aria-label="Animated local Apex development loop">
@@ -133,37 +126,97 @@ layout: home
   </div>
 </section>
 
+<div class="home-proof-strip" aria-label="Main Glade strengths">
+  <span>local checks</span>
+  <span>focused tests</span>
+  <span>SOQL/DML fixtures</span>
+  <span>JSON/SARIF/JUnit</span>
+  <span>VS Code + CI</span>
+  <span>unsupported diagnostics</span>
+</div>
+
 <div class="home-support-preview" data-generated-support-preview aria-label="Apex autocomplete support preview">
-  <p><strong>Autocomplete preview</strong><span>Generated from checked Glade support rows.</span></p>
+  <p><strong>Capability map preview</strong><span>Generated from checked Glade support rows.</span></p>
   <div>
     <code>Database.insert</code><span class="home-completion-status home-completion-status-supported">Works well</span>
     <code>Schema.DescribeSObjectResult</code><span class="home-completion-status home-completion-status-limited">With limits</span>
     <code>Answers.findSimilar</code><span class="home-completion-status home-completion-status-salesforce">Needs Salesforce</span>
   </div>
-  <a href="/guide/workbench">Open the support showcase</a>
+  <a href="/guide/workbench">Open the local coverage workbench</a>
 </div>
 
-<section class="home-capability-section" aria-label="Glade local workflows">
+<section class="home-capability-section" aria-label="Where Glade fits">
   <div>
-    <p class="home-eyebrow">What runs locally</p>
-    <h2 class="home-h2">One local runtime for the daily Apex loop.</h2>
+    <p class="home-eyebrow">Where Glade fits</p>
+    <h2 class="home-h2">Move the first feedback loop onto the developer machine.</h2>
   </div>
   <div>
-    <p class="home-p">Glade uses one Apex parser, semantic checker, VM, storage layer, and reporting format across the CLI, editor, tests, snippets, debug logs, and local API routes.</p>
-    <p class="home-capability-line">check source · run tests · execute snippets · query local data · profile logs · serve local APIs · emit JSON</p>
-    <div class="home-info-list" aria-label="Glade homepage detail">
-      <p><strong>Local work</strong><span>Apex source checks, focused tests, Anonymous Apex snippets, SOQL against local data, DML-backed fixtures, saved debug-log profiling, and JSON output for automation.</span></p>
-      <p><strong>Support boundary</strong><span>You supply org-specific metadata. Live Salesforce services stay visible instead of being silently faked.</span></p>
-      <p><strong>Support showcase</strong><span><a href="/guide/workbench">Use the showcase</a> to try autocomplete, support labels, command outputs, JSON, traces, and workflow examples on one page.</span></p>
+    <p class="home-p">Salesforce CLI runs Apex tests in an org. Glade runs supported Apex checks and tests locally first, so developers get fast feedback before the org gate.</p>
+    <p class="home-capability-line">Edit Apex -&gt; glade check/test locally -&gt; fix fast -&gt; Salesforce org gate -&gt; deploy</p>
+  </div>
+</section>
+
+<section class="home-capability-section" aria-label="What runs locally">
+  <div>
+    <p class="home-eyebrow">What runs locally</p>
+    <h2 class="home-h2">Coverage is explicit before a team depends on it.</h2>
+  </div>
+  <div class="home-coverage-grid">
+    <article>
+      <h3>Runs locally</h3>
+      <ul>
+        <li>Apex parse + semantic checks</li>
+        <li>Focused Apex tests</li>
+        <li>SOQL, DML, triggers, and SObjects</li>
+        <li>Anonymous Apex</li>
+        <li>Local API routes</li>
+        <li>JSON, SARIF, and JUnit output</li>
+      </ul>
+    </article>
+    <article>
+      <h3>Runs locally with limits</h3>
+      <ul>
+        <li>Describe and schema behavior</li>
+        <li>Callout mocks</li>
+        <li>Messaging result objects</li>
+        <li>Visualforce and LWC local shells remain preview features.</li>
+        <li>Deterministic search and SOSL helpers</li>
+      </ul>
+    </article>
+    <article>
+      <h3>Requires Salesforce</h3>
+      <ul>
+        <li>Live auth and sessions</li>
+        <li>Hosted service engines</li>
+        <li>Exact Lightning Experience behavior</li>
+        <li>Metadata deploy and retrieve</li>
+        <li>Streaming, Pub/Sub, and GraphQL</li>
+        <li>Exact production governor accounting</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+<section class="home-capability-section" aria-label="Developer and architect paths">
+  <div>
+    <p class="home-eyebrow">Two paths</p>
+    <h2 class="home-h2">Developers get the short loop. Architects get a conservative gate.</h2>
+  </div>
+  <div>
+    <div class="home-info-list" aria-label="Developer and architect details">
+      <p><strong>Your daily Apex loop, without org wait.</strong><span>Run one class, one method, changed tests, anonymous Apex, SOQL/DML fixtures, and local debug traces from your machine.</span></p>
+      <p><strong>Catch deploy-blockers early.</strong><span><code>glade check --project .</code> checks source before a deploy round trip.</span></p>
+      <p><strong>Run the test you care about.</strong><span><code>glade test --class AccountServiceTest --method testCreatesAccount</code> keeps the loop focused.</span></p>
+      <p><strong>A conservative pre-gate for Salesforce delivery.</strong><span>Add local Apex checks to CI with JSON, SARIF, JUnit, stable exit codes, affected-test selection, and explicit unsupported diagnostics.</span></p>
+      <p><strong>Architect checklist.</strong><span>Check the project against the capability map, run a focused pilot, record unsupported diagnostics, compare with Salesforce org behavior, and keep Salesforce as the release gate.</span></p>
     </div>
-    <p class="home-boundary-line">Visualforce pages and the LWC local shell remain preview features.</p>
   </div>
 </section>
 
 <section class="home-install-strip" aria-label="Install Glade">
   <code id="install-cmd">curl -fsSL https://glade.sh/install.sh | sh<br>glade doctor<br>glade check --project .</code>
   <div>
-    <p>Works locally where Glade has evidence. Hosted Salesforce behavior stays marked.</p>
+    <p>Supported paths run locally. Hosted Salesforce services fail fast with named diagnostics.</p>
     <button type="button" data-copy-target="install-cmd">Copy install</button>
     <span class="home-copy-status" data-copy-status role="status" aria-live="polite"></span>
   </div>

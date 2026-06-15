@@ -19,21 +19,31 @@ npm run build
 npm run preview
 ```
 
-## GitHub Pages
+## Cloudflare Pages
 
-The workflow at `.github/workflows/pages.yml` deploys this folder:
+Connect the private GitHub repository to Cloudflare Pages with Git integration.
+Use these settings:
+
+```
+Project name: glade
+Production branch: main
+Root directory: site
+Build command: npm run build
+Build output directory: .vitepress/dist
+```
+
+The build publishes these files:
 
 ```
 site/.vitepress/dist  -> /
 site/install.sh       -> /install.sh
-site/CNAME            -> custom domain
 ```
 
-GitHub repo settings:
+Cloudflare domain settings:
 
-1. Open **Settings → Pages**.
-2. Set **Build and deployment** to **GitHub Actions**.
-3. Keep custom domain as `glade.sh`.
+1. Open **Workers & Pages → glade → Custom domains**.
+2. Add `glade.sh`.
+3. Let Cloudflare create the DNS record for the apex domain.
 
 ## Install Script
 
@@ -45,8 +55,7 @@ curl -fsSL https://glade.sh/install.sh | sh
 
 ## Launch Smoke Check
 
-After GitHub Pages or Cloudflare Pages points `glade.sh` at this site, verify
-the public routes:
+After Cloudflare Pages points `glade.sh` at this site, verify the public routes:
 
 ```bash
 curl -fsSL https://glade.sh/install.sh | head -n 5

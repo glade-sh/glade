@@ -17,8 +17,8 @@ function isVueUsePureAnnotationWarning(warning: { code?: string; id?: string; me
 }
 
 export default defineConfig({
-  title: 'Glade — Local Apex Support Showcase',
-  description: 'Run Apex checks, tests, snippets, logs, and local API routes before you deploy.',
+  title: 'Glade - Local Apex Runtime for Salesforce Teams',
+  description: 'Run supported Apex checks and focused tests locally before the Salesforce org gate.',
   base: '/',
   srcDir: 'docs-src',
   outDir: '.vitepress/dist',
@@ -46,9 +46,9 @@ export default defineConfig({
     ['script', { defer: true, src: '/js/highlight.js' }],
     ['script', { defer: true, src: '/js/home.js' }],
     ['meta', { name: 'theme-color', content: '#060a0d' }],
-    ['meta', { name: 'description', content: 'Run Apex checks, tests, snippets, logs, and local API routes before you deploy.' }],
+    ['meta', { name: 'description', content: 'Run supported Apex checks and focused tests locally before the Salesforce org gate.' }],
     ['meta', { property: 'og:title', content: 'Glade — Run Apex locally before you deploy' }],
-    ['meta', { property: 'og:description', content: 'Local Apex tooling for checks, tests, snippets, debug-log profiling, and copyable CI commands.' }],
+    ['meta', { property: 'og:description', content: 'Local Apex runtime for checks, focused tests, SOQL/DML fixtures, JSON, SARIF, JUnit, VS Code, and CI.' }],
     ['meta', { property: 'og:type', content: 'website' }]
   ],
   themeConfig: {
@@ -56,9 +56,9 @@ export default defineConfig({
     logo: '/logo-mark.svg',
     search: { provider: 'local' },
     nav: [
-      { text: 'Showcase', link: '/guide/workbench' },
+      { text: 'Coverage', link: '/guide/workbench' },
       { text: 'Playground', link: '/guide/playground' },
-      { text: 'Support', link: '/guide/support-map' },
+      { text: 'Capability map', link: '/guide/support-map' },
       { text: 'Docs', link: '/guide/overview' },
       { text: 'GitHub', link: 'https://github.com/glade-sh/glade' },
       { text: 'Install', link: '/guide/installation' }
@@ -70,8 +70,8 @@ export default defineConfig({
           { text: 'What is Glade?', link: '/guide/overview' },
           { text: 'Install', link: '/guide/installation' },
           { text: 'First local check', link: '/guide/quickstart' },
-          { text: 'Support', link: '/guide/support-map' },
-          { text: 'Showcase', link: '/guide/workbench' },
+          { text: 'Capability map', link: '/guide/support-map' },
+          { text: 'Coverage workbench', link: '/guide/workbench' },
           { text: 'Playground', link: '/guide/playground' }
         ]
       },

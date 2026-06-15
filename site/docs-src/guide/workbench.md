@@ -2,19 +2,19 @@
 aside: false
 ---
 
-# Support showcase
+# Local coverage workbench
 
 See what Glade runs locally, what has limits, and what still belongs to Salesforce.
 
-Use the editor as a live support map: type a dot, read the label, and see the boundary before you depend on an API.
+Use the editor as a live capability map: type a dot, read the label, and see the boundary before you depend on an API.
 
-<section class="support-showcase" data-support-showcase aria-label="Glade support showcase">
-  <div class="support-showcase-intro">
-    <p class="home-eyebrow">Support cards</p>
+<section class="coverage-workbench" data-coverage-workbench aria-label="Glade local coverage workbench">
+  <div class="coverage-workbench-intro">
+    <p class="home-eyebrow">Coverage cards</p>
     <h2 class="home-h2">A few surfaces worth trying first.</h2>
     <p class="home-p">These examples come from checked support rows and the curated editor demo. Green means Glade has local behavior. Yellow means useful local behavior with named limits. Red means Salesforce owns that service.</p>
   </div>
-  <div class="support-showcase-cards">
+  <div class="coverage-workbench-cards">
     <article>
       <span class="home-completion-status home-completion-status-supported">Works well</span>
       <code>Database.insert</code>
@@ -41,7 +41,7 @@ Use the editor as a live support map: type a dot, read the label, and see the bo
 <GladeEditorWorkbench />
 
 <div class="workbench-page">
-  <section class="home-workbench home-panel" id="local-apex-workbench" data-scenario-workbench aria-label="Support showcase workflow demo">
+  <section class="home-workbench home-panel" id="local-apex-workbench" data-scenario-workbench aria-label="Local coverage workflow demo">
     <div class="home-workbench-head">
       <div>
         <p class="home-eyebrow">Workflow gallery</p>
