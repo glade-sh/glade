@@ -151,11 +151,19 @@ func (s Store) InstallFromRegistryURL(ctx context.Context, registryURL string, r
 	return s.installFromRegistryURL(ctx, registryURL, ref, "")
 }
 
+func (s Store) InstallFromRegistryIndex(ctx context.Context, registryURL string, index RegistryIndex, ref PluginRef) (InstalledPlugin, error) {
+	return s.installFromRegistryIndex(ctx, registryURL, index, ref, "")
+}
+
 func (s Store) installFromRegistryURL(ctx context.Context, registryURL string, ref PluginRef, expectedSHA256 string) (InstalledPlugin, error) {
 	index, err := FetchRegistry(ctx, registryURL)
 	if err != nil {
 		return InstalledPlugin{}, err
 	}
+	return s.installFromRegistryIndex(ctx, registryURL, index, ref, expectedSHA256)
+}
+
+func (s Store) installFromRegistryIndex(ctx context.Context, registryURL string, index RegistryIndex, ref PluginRef, expectedSHA256 string) (InstalledPlugin, error) {
 	registryPlugin, asset, ok := index.AssetForRef(ref, runtime.GOOS, runtime.GOARCH)
 	if !ok {
 		return InstalledPlugin{}, index.NotFoundErrorForRef(ref, runtime.GOOS, runtime.GOARCH)

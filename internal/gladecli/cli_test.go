@@ -891,6 +891,36 @@ func TestPluginsAvailableDefaultRegistryPreviewError(t *testing.T) {
 	}
 }
 
+func TestPluginsInstallDefaultRegistryPreviewError(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", "")
+	restoreHTTPClient := replaceDefaultHTTPClient(t, func(req *http.Request) (*http.Response, error) {
+		if got, want := req.URL.String(), "https://plugins.glade.sh/index.json"; got != want {
+			t.Fatalf("registry URL = %q, want %q", got, want)
+		}
+		return nil, fmt.Errorf("dial tcp: lookup plugins.glade.sh: no such host")
+	})
+	defer restoreHTTPClient()
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "install", "@glade/compat"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("install exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	got := stderr.String()
+	for _, want := range []string{
+		"default plugin registry is in preview",
+		"GLADE_PLUGIN_REGISTRY_URL",
+		"direct archive",
+		"glade plugins link",
+		`detail: Get "https://plugins.glade.sh/index.json": dial tcp: lookup plugins.glade.sh: no such host`,
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("stderr missing %q:\n%s", want, got)
+		}
+	}
+}
+
 func TestPluginsAvailableCustomRegistryKeepsEndpointError(t *testing.T) {
 	t.Setenv("GLADE_HOME", t.TempDir())
 	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", "https://registry.example.test/index.json")

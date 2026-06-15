@@ -223,6 +223,9 @@ func failedTestFilters(result testreport.Run) []string {
 			if status == testreport.StatusPass || status == testreport.StatusSkipped {
 				continue
 			}
+			if testCase.Problem != nil && testCase.Problem.Type == "Selector" {
+				continue
+			}
 			name := failedTestName(suite.Name, testCase)
 			if name == "" || seen[name] {
 				continue

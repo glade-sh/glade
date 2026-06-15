@@ -164,6 +164,22 @@ func TestRunTestRejectsMissingExactMethodSelectorConsole(t *testing.T) {
 	}
 }
 
+func TestRunTestSelectorFailureDoesNotPopulateLastFailed(t *testing.T) {
+	root := selectionFixtureRoot(t)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--class", "AccountServiceTest", "--method", "noSuch", "--json", "--no-cache", "--no-progress"}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
+	}
+	failures, err := readLastFailedTests(root)
+	if err != nil {
+		t.Fatalf("read last-failed: %v", err)
+	}
+	if len(failures) != 0 {
+		t.Fatalf("selector failure populated last-failed filters: %#v", failures)
+	}
+}
+
 func TestRunTestAllowsBroadFilterToSelectZeroWithExactClass(t *testing.T) {
 	root := selectionFixtureRoot(t)
 	var stdout, stderr bytes.Buffer

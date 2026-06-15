@@ -264,11 +264,11 @@ func runPluginsInstall(ctx context.Context, args []string, stdout, stderr io.Wri
 		if opts.registry != "" {
 			registryURL = opts.registry
 		}
+		index, fetchErr := fetchPluginRegistryForCLI(ctx, registryURL)
+		if fetchErr != nil {
+			return fetchErr
+		}
 		if os.Getenv("CI") != "" && !opts.yes {
-			index, fetchErr := fetchPluginRegistryForCLI(ctx, registryURL)
-			if fetchErr != nil {
-				return fetchErr
-			}
 			registryPlugin, _, ok := index.AssetForRef(ref, runtime.GOOS, runtime.GOARCH)
 			if !ok {
 				return index.NotFoundErrorForRef(ref, runtime.GOOS, runtime.GOARCH)
@@ -277,7 +277,7 @@ func runPluginsInstall(ctx context.Context, args []string, stdout, stderr io.Wri
 				return err
 			}
 		}
-		plugin, err = store.InstallFromRegistryURL(ctx, registryURL, ref)
+		plugin, err = store.InstallFromRegistryIndex(ctx, registryURL, index, ref)
 	}
 	if err != nil {
 		return err
