@@ -29,12 +29,12 @@ The extension requires a global `glade` command on `PATH`.
 Open a normal SFDX project. The Glade Activity Bar shows:
 
 - Start Here: SFDX root, active local data environment, local DB state, watch
-  state, last run state, local preview state, plugin action count, and top
-  daily actions.
+  state, last run state, plugin action count, and top daily actions.
 - Local Runs: changed tests, failed tests, and warm watch controls.
 - Data Environments: named SQLite local orgs and the active DB path.
 - Local Org: inspect, seed, reset, and export commands for the active DB.
 - Debug: current VS Code Apex breakpoint count and local debug actions.
+- Plugins: installed plugins, plugin actions, and plugin artifacts.
 
 ## Daily Local Apex Loop
 
@@ -50,22 +50,23 @@ Glade actions are local. Salesforce actions stay org-backed.
 ## Native VS Code Surfaces
 
 Glade uses one Activity Bar item and one Status Bar item. The sidebar shows
-Start Here, Local Runs, Data Environments, Local Org, and Debug.
+Start Here, Local Runs, Data Environments, Local Org, Debug, and Plugins.
 
 Local Apex tests appear in the native VS Code Testing view under `Glade Apex`.
 Glade does not add a second Apex Tests sidebar tree. Breakpoints stay in the
 normal editor gutter and debug state stays in VS Code Run and Debug.
 
 The Status Bar shows short local state, such as `Glade: dev`,
-`Glade: preview 5 routes`, `Glade: plugin 2 findings`, or
-`Glade: toolchain needed`. Details stay in the tooltip.
-Click it to switch data, inspect local data, run local proof, or open output.
+`Glade: dev 18ms`, `Glade: dev no DB`, or `Glade: plugin 2 findings`.
+Details stay in the tooltip. Click it to switch data, inspect local data, run
+local proof, manage plugins, or open output.
 
-## Local Preview And Plugins
+## LWC, Visualforce, And Plugins
 
-Start Here can show whether the preview toolchain is ready, needs install, or
-has not been checked. It can show LWC preview route counts, Visualforce preview
-page counts, and `stopped` when a preview server is not running.
+LWC and Visualforce preview are CLI preview features. They remain available
+through `glade dev lwc` and `glade dev vf`, but the VS Code extension does not
+start, stop, list, or monitor those servers until the preview workflow is
+steadier.
 
 Plugin actions come from installed plugin metadata:
 
@@ -79,8 +80,8 @@ Linked local plugins are included after:
 glade plugins link --exec <plugin-executable>
 ```
 
-Plugin actions may target Start Here, Local Runs, Local Org, Debug, Preview,
-or Plugins views. If an action emits `glade.findings.v1`, the extension maps
+Plugin actions may target Start Here, Local Runs, Local Org, Debug, or Plugins
+views. If an action emits `glade.findings.v1`, the extension maps
 those findings into VS Code Problems with severity, file, line, column, rule
 id, source, and message.
 

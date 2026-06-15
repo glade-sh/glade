@@ -36,10 +36,9 @@ glade dev lwc --project . --addr 127.0.0.1:0 --ready-file /tmp/glade-lwc-ready.j
 
 The banner prints the local URL and discovered routes.
 
-In VS Code, Start Here can show Local Preview state beside the local Apex loop.
-It reports the toolchain as ready, install required, or unknown. It reports LWC
-route count and Visualforce page count while preview servers run, and `stopped`
-when they do not.
+The VS Code extension does not manage this server yet. Start, stop, and route
+selection stay in the terminal while this preview feature is still being
+ironed out.
 
 ## Routes
 

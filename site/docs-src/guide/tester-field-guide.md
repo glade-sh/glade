@@ -55,7 +55,7 @@ glade editor install vscode --force
 
 Open the SFDX project root in VS Code. The extension adds the Glade Activity
 Bar, local Apex tests in Test Explorer, local CodeLens actions, DAP debug
-launches, and named SQLite-backed data environments.
+launches, named SQLite-backed data environments, and plugin actions.
 
 ## Daily local loop
 

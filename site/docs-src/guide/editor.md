@@ -25,7 +25,7 @@ glade editor install vscode --force
 ```
 
 Open an SFDX project. The extension adds one `Glade` Activity Bar with Start
-Here, Local Runs, Data Environments, Local Org, and Debug views.
+Here, Local Runs, Data Environments, Local Org, Debug, and Plugins views.
 
 Glade keeps a separate local lane with `glade.*` command ids, a `Glade Apex`
 Test Explorer controller, and CodeLens labels that include `Local`. It does not
@@ -46,24 +46,23 @@ Glade actions are local. Salesforce actions stay org-backed.
 ## Native VS Code Surfaces
 
 Glade uses one Activity Bar item and one Status Bar item. The sidebar shows
-Start Here, Local Runs, Data Environments, Local Org, and Debug.
+Start Here, Local Runs, Data Environments, Local Org, Debug, and Plugins.
 
 Local Apex tests appear in the native VS Code Testing view under `Glade Apex`.
 Glade does not add a second Apex Tests sidebar tree. Breakpoints stay in the
 normal editor gutter and debug state stays in VS Code Run and Debug.
 
 The Status Bar shows short local state, such as `Glade: dev`,
-`Glade: preview 5 routes`, `Glade: plugin 2 findings`, or
-`Glade: toolchain needed`. Details stay in the tooltip: project root, active
-DB, preview counts, plugin finding counts, toolchain detail, and last command.
-Click it to switch data, inspect local data, run local proof, or open output.
+`Glade: dev 18ms`, `Glade: dev no DB`, or `Glade: plugin 2 findings`.
+Details stay in the tooltip: project root, active DB, plugin finding counts,
+and last command. Click it to switch data, inspect local data, run local proof,
+manage plugins, or open output.
 
-## Local Preview
+## LWC and Visualforce preview
 
-Start Here can show whether the preview toolchain is ready, whether install is
-needed, or whether the extension has not checked it yet. It can also show LWC
-preview route count and Visualforce preview page count. A stopped server shows
-as `stopped`.
+LWC and Visualforce preview are CLI preview features. They remain available
+through `glade dev`, but the VS Code extension does not start, stop, list, or
+monitor those servers until the preview workflow is steadier.
 
 ```bash
 glade toolchain install
@@ -84,7 +83,7 @@ glade plugins list --json
 ```
 
 Installed plugins may declare editor actions for Start Here, Local Runs, Local
-Org, Debug, Preview, or Plugins views. Linked local plugins work the same way
+Org, Debug, or Plugins views. Linked local plugins work the same way
 after `glade plugins link --exec <plugin-executable>`.
 
 When a plugin action declares `output: "glade.findings.v1"`, the extension can

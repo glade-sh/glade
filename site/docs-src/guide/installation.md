@@ -96,7 +96,8 @@ glade editor install vscode --force
 
 Open an SFDX project in VS Code. The extension adds a Glade Activity Bar,
 native Test Explorer entries, local CodeLens actions, DAP debug launches, and
-named local data environments. See [Editor, LSP, and DAP](/guide/editor).
+named local data environments, plus a Plugins view for linked and installed
+plugin actions. See [Editor, LSP, and DAP](/guide/editor).
 
 ## Build from source
 

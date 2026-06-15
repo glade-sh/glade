@@ -33,12 +33,12 @@ separate `Glade Apex` Test Explorer controller, and CodeLens labels that include
 The sidebar shows:
 
 - Start Here: SFDX root, active local data environment, local DB state, watch
-  state, last run state, local preview state, plugin action count, and top
-  daily actions.
+  state, last run state, plugin action count, and top daily actions.
 - Local Runs: changed tests, failed tests, and warm watch controls.
 - Data Environments: named SQLite-backed local org states.
 - Local Org: inspect, seed, reset, and export for the active environment.
 - Debug: active Apex breakpoint count and local debug actions.
+- Plugins: installed plugins, plugin actions, and plugin artifacts.
 
 ## Daily Local Apex Loop
 
@@ -54,17 +54,17 @@ Glade actions are local. Salesforce actions stay org-backed.
 ## Native VS Code Surfaces
 
 Glade uses one Activity Bar item and one Status Bar item. The sidebar shows
-Start Here, Local Runs, Data Environments, Local Org, and Debug.
+Start Here, Local Runs, Data Environments, Local Org, Debug, and Plugins.
 
 Local Apex tests appear in the native VS Code Testing view under `Glade Apex`.
 Glade does not add a second Apex Tests sidebar tree. Breakpoints stay in the
 normal editor gutter and debug state stays in VS Code Run and Debug.
 
 The Status Bar shows short local state, such as `Glade: dev`,
-`Glade: preview 5 routes`, `Glade: plugin 2 findings`, or
-`Glade: toolchain needed`. Details stay in the tooltip: project root, active
-DB, preview counts, plugin finding counts, toolchain detail, and last command.
-Click it to switch data, inspect local data, run local proof, or open output.
+`Glade: dev 18ms`, `Glade: dev no DB`, or `Glade: plugin 2 findings`.
+Details stay in the tooltip: project root, active DB, plugin finding counts,
+and last command. Click it to switch data, inspect local data, run local proof,
+manage plugins, or open output.
 
 The default local data environment is `dev` at `.glade/envs/dev.sqlite`.
 `Glade: Execute Local Anonymous Apex`, CodeLens debug, and Test Explorer debug
@@ -87,13 +87,11 @@ Configure more environments in workspace settings:
 }
 ```
 
-## Local Preview
+## LWC And Visualforce Preview
 
-The VS Code extension treats Local Preview as a local Glade surface. Start Here
-can show whether the preview toolchain is ready, whether installation is
-needed, or whether the extension has not checked it yet. It can also show the
-current LWC route count and Visualforce page count when preview servers are
-running, or `stopped` when they are not.
+LWC and Visualforce preview are CLI preview features. They remain available
+through `glade dev`, but the VS Code extension does not start, stop, list, or
+monitor those servers until the preview workflow is steadier.
 
 Install the toolchain once:
 
@@ -101,7 +99,7 @@ Install the toolchain once:
 glade toolchain install
 ```
 
-Use the same preview servers that the CLI exposes:
+Start the preview servers from a terminal:
 
 ```bash
 glade dev lwc --project . --port 8080
@@ -121,7 +119,7 @@ glade plugins list --json
 ```
 
 Installed plugins may declare editor actions for Start Here, Local Runs, Local
-Org, Debug, Preview, or Plugins views. Linked local plugins work the same way
+Org, Debug, or Plugins views. Linked local plugins work the same way
 after `glade plugins link --exec <plugin-executable>` because they appear in
 the same installed plugin state as archive or registry installs.
 
