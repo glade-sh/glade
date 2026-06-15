@@ -13,10 +13,6 @@ export interface GladeStatusSnapshot {
   missingDb?: boolean;
   busyLabel?: string;
   lastCommand?: string;
-  toolchainReady?: boolean;
-  toolchainDetail?: string;
-  lwcRouteCount?: number;
-  vfRouteCount?: number;
   pluginActionCount?: number;
 }
 
@@ -27,17 +23,8 @@ export function buildStatusText(snapshot: GladeStatusSnapshot): string {
   if (snapshot.busyLabel) {
     return `Glade: ${snapshot.busyLabel}`;
   }
-  if (snapshot.toolchainReady === false) {
-    return "Glade: toolchain needed";
-  }
   if (snapshot.pluginActionCount && snapshot.pluginActionCount > 0) {
     return `Glade: plugin ${snapshot.pluginActionCount} ${plural("finding", snapshot.pluginActionCount)}`;
-  }
-  if (snapshot.lwcRouteCount && snapshot.lwcRouteCount > 0) {
-    return `Glade: preview ${snapshot.lwcRouteCount} ${plural("route", snapshot.lwcRouteCount)}`;
-  }
-  if (snapshot.vfRouteCount && snapshot.vfRouteCount > 0) {
-    return `Glade: preview ${snapshot.vfRouteCount} ${plural("page", snapshot.vfRouteCount)}`;
   }
   const environment = snapshot.activeEnvironment || "dev";
   if (snapshot.missingDb) {
@@ -63,26 +50,12 @@ export function buildStatusTooltip(snapshot: GladeStatusSnapshot): string {
     snapshot.projectRoot ? `Project: ${snapshot.projectRoot}` : undefined,
     `Environment: ${snapshot.activeEnvironment || "dev"}`,
     snapshot.dbPath ? `DB: ${snapshot.dbPath}` : undefined,
-    toolchainTooltip(snapshot),
-    snapshot.lwcRouteCount !== undefined ? `LWC preview: ${snapshot.lwcRouteCount} ${plural("route", snapshot.lwcRouteCount)}` : undefined,
-    snapshot.vfRouteCount !== undefined ? `Visualforce preview: ${snapshot.vfRouteCount} ${plural("page", snapshot.vfRouteCount)}` : undefined,
     snapshot.pluginActionCount !== undefined
       ? `Plugin actions: ${snapshot.pluginActionCount} ${plural("finding", snapshot.pluginActionCount)}`
       : undefined,
     snapshot.lastCommand ? `Last command: ${snapshot.lastCommand}` : undefined,
   ].filter((line): line is string => Boolean(line));
   return lines.join("\n");
-}
-
-function toolchainTooltip(snapshot: GladeStatusSnapshot): string | undefined {
-  if (snapshot.toolchainReady === undefined && !snapshot.toolchainDetail) {
-    return undefined;
-  }
-  const status = snapshot.toolchainReady ? "ready" : "install required";
-  if (!snapshot.toolchainDetail) {
-    return `Toolchain: ${status}`;
-  }
-  return `Toolchain: ${status}\nToolchain detail: ${snapshot.toolchainDetail}`;
 }
 
 function plural(word: string, count: number): string {

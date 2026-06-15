@@ -11,10 +11,6 @@ export class GladeStatus {
   private lastCommand?: string;
   private busyLabel?: string;
   private missingDb = false;
-  private toolchainReady?: boolean;
-  private toolchainDetail?: string;
-  private lwcRouteCount?: number;
-  private vfRouteCount?: number;
   private pluginActionCount?: number;
 
   constructor(context: vscode.ExtensionContext) {
@@ -49,18 +45,6 @@ export class GladeStatus {
     this.render();
   }
 
-  setToolchainStatus(ready: boolean | undefined, detail?: string): void {
-    this.toolchainReady = ready;
-    this.toolchainDetail = detail;
-    this.render();
-  }
-
-  setPreviewCounts(counts: { lwcRouteCount?: number; vfRouteCount?: number }): void {
-    this.lwcRouteCount = counts.lwcRouteCount;
-    this.vfRouteCount = counts.vfRouteCount;
-    this.render();
-  }
-
   setPluginActionCount(count: number | undefined): void {
     this.pluginActionCount = count;
     this.render();
@@ -78,10 +62,6 @@ export class GladeStatus {
       missingDb: this.missingDb,
       busyLabel: this.busyLabel,
       lastCommand: this.lastCommand,
-      toolchainReady: this.toolchainReady,
-      toolchainDetail: this.toolchainDetail,
-      lwcRouteCount: this.lwcRouteCount,
-      vfRouteCount: this.vfRouteCount,
       pluginActionCount: this.pluginActionCount,
     };
   }

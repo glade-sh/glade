@@ -3,7 +3,6 @@ export const supportedActionViews = [
   "runs",
   "localOrg",
   "debug",
-  "preview",
   "plugins",
 ] as const;
 
@@ -15,8 +14,6 @@ export const supportedActionContexts = [
   "activeApexFile",
   "activeDebugLog",
   "activeDataEnvironment",
-  "lwcServerRunning",
-  "vfServerRunning",
   "lastLocalRun",
 ] as const;
 

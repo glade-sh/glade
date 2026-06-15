@@ -44,11 +44,13 @@ assert.deepStrictEqual(model.supportedActionViews, [
   "runs",
   "localOrg",
   "debug",
-  "preview",
   "plugins",
 ]);
 assert(model.supportedActionContexts.includes("activeApexFile"));
 assert(model.supportedActionContexts.includes("lastLocalRun"));
+assert(!model.supportedActionViews.includes("preview"));
+assert(!model.supportedActionContexts.includes("lwcServerRunning"));
+assert(!model.supportedActionContexts.includes("vfServerRunning"));
 
 assert.deepStrictEqual(cli.pluginsListArgs(), ["plugins", "list", "--json"]);
 assert.deepStrictEqual(cli.pluginsDoctorArgs(), ["plugins", "doctor", "--json"]);

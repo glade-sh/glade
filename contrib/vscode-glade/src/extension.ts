@@ -20,7 +20,6 @@ import {
 } from "./localOrg";
 import { summaryFromInspect } from "./localOrgModel";
 import { GladeOutput } from "./output";
-import { PreviewController } from "./preview/controller";
 import { PluginController, PluginDiagnosticEntry, pluginArtifactRows } from "./plugins/controller";
 import { PluginAvailableContexts, PluginEditorAction, PluginFindingSeverity } from "./plugins/model";
 import { findProjectContext } from "./projectContext";
@@ -34,7 +33,6 @@ import { GladeTestWatch } from "./tests/watch";
 import { DebugView } from "./views/debugView";
 import { EnvironmentsView } from "./views/environmentsView";
 import { LocalOrgView } from "./views/localOrgView";
-import { PreviewView } from "./views/previewView";
 import { PluginsView } from "./views/pluginsView";
 import { RunsView } from "./views/runsView";
 import { StartHereView } from "./views/startHereView";
@@ -54,8 +52,6 @@ export function activate(context: vscode.ExtensionContext): void {
   const runsView = new RunsView();
   const environmentsView = new EnvironmentsView();
   const localOrgView = new LocalOrgView();
-  const previewController = new PreviewController(output.logs);
-  const previewView = new PreviewView(previewController);
   const debugView = new DebugView();
   const pluginsView = new PluginsView();
   const pluginDiagnostics = vscode.languages.createDiagnosticCollection("glade-plugins");
@@ -94,18 +90,15 @@ export function activate(context: vscode.ExtensionContext): void {
     startHereView.refresh();
   });
   const lsp = new GladeLspClient(output.logs);
-  context.subscriptions.push(lsp, watch, previewController, previewView);
+  context.subscriptions.push(lsp, watch);
 
   function pluginContexts(): PluginAvailableContexts {
     const activeFile = vscode.window.activeTextEditor?.document.uri.fsPath;
-    const preview = previewController.snapshot();
     return {
       project: currentProject !== undefined,
       activeApexFile: activeFile ? /\.(cls|trigger)$/i.test(activeFile) : false,
       activeDebugLog: activeFile ? /\.log$/i.test(activeFile) : false,
       activeDataEnvironment: currentProject !== undefined,
-      lwcServerRunning: preview.lwc.running,
-      vfServerRunning: preview.visualforce.running,
       lastLocalRun: startHereState.snapshot().lastRun !== undefined,
     };
   }
@@ -118,24 +111,12 @@ export function activate(context: vscode.ExtensionContext): void {
     startHereView.setPluginActions(startHereActions);
     runsView.setPluginActions(plugins.actionRowsForView("runs", contexts));
     localOrgView.setPluginActions(plugins.actionRowsForView("localOrg", contexts));
-    previewView.setPluginActions(plugins.actionRowsForView("preview", contexts));
     debugView.setPluginActions(plugins.actionRowsForView("debug", contexts));
     pluginsView.setState(
       plugins.plugins(),
       plugins.actionRowsForView("plugins", contexts),
       pluginArtifactRows(plugins.latestArtifacts()),
     );
-  }
-
-  function syncPreviewState(): void {
-    const preview = previewController.snapshot();
-    const lwcRouteCount = preview.lwc.server?.routes.length;
-    const vfRouteCount = preview.visualforce.server?.routes.length;
-    startHereState.setToolchainStatus(preview.toolchain?.ok, preview.toolchain?.detail);
-    startHereState.setPreviewCounts({ lwcRouteCount, vfRouteCount });
-    status.setToolchainStatus(preview.toolchain?.ok, preview.toolchain?.detail);
-    status.setPreviewCounts({ lwcRouteCount, vfRouteCount });
-    startHereView.refresh();
   }
 
   async function refreshPlugins(): Promise<void> {
@@ -157,8 +138,6 @@ export function activate(context: vscode.ExtensionContext): void {
       tests.setProject(testExplorerEnabled ? project : undefined);
       environmentsView.setProject(project);
       localOrgView.setProject(project);
-      previewController.setProject(project);
-      syncPreviewState();
       debugView.setProject(project);
       syncPluginViews();
       await lsp.sync(project);
@@ -172,8 +151,6 @@ export function activate(context: vscode.ExtensionContext): void {
       tests.setProject(undefined);
       environmentsView.setProject(undefined);
       localOrgView.setProject(undefined);
-      previewController.setProject(undefined);
-      syncPreviewState();
       debugView.setProject(undefined);
       syncPluginViews();
       await lsp.sync(undefined);
@@ -195,7 +172,6 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.window.registerTreeDataProvider("glade.recommendedRuns", runsView),
     vscode.window.registerTreeDataProvider("glade.environments", environmentsView),
     vscode.window.registerTreeDataProvider("glade.localOrg", localOrgView),
-    vscode.window.registerTreeDataProvider("glade.preview", previewView),
     vscode.window.registerTreeDataProvider("glade.debugLogs", debugView),
     vscode.window.registerTreeDataProvider("glade.plugins", pluginsView),
     vscode.commands.registerCommand("glade.refresh", async () => {
@@ -203,7 +179,6 @@ export function activate(context: vscode.ExtensionContext): void {
       startHereView.refresh();
       environmentsView.refresh();
       localOrgView.refresh();
-      previewView.refresh();
       debugView.refresh();
       pluginsView.refresh();
       await refreshProject();
@@ -237,62 +212,6 @@ export function activate(context: vscode.ExtensionContext): void {
       }
       await plugins.runAction(target);
       syncPluginViews();
-    }),
-    vscode.commands.registerCommand("glade.refreshPreview", async () => {
-      try {
-        await previewController.refresh();
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        void vscode.window.showErrorMessage(`Glade preview refresh failed: ${message}`);
-      }
-    }),
-    vscode.commands.registerCommand("glade.startLWCPreview", async () => {
-      try {
-        await previewController.startLWC();
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        void vscode.window.showErrorMessage(`Glade LWC preview failed: ${message}`, "Show Output")
-          .then((picked) => {
-            if (picked === "Show Output") {
-              output.logs.show(true);
-            }
-          });
-      }
-    }),
-    vscode.commands.registerCommand("glade.stopLWCPreview", () => previewController.stopLWC()),
-    vscode.commands.registerCommand("glade.startVFPreview", async () => {
-      try {
-        await previewController.startVF();
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        void vscode.window.showErrorMessage(`Glade Visualforce preview failed: ${message}`, "Show Output")
-          .then((picked) => {
-            if (picked === "Show Output") {
-              output.logs.show(true);
-            }
-          });
-      }
-    }),
-    vscode.commands.registerCommand("glade.stopVFPreview", () => previewController.stopVF()),
-    vscode.commands.registerCommand("glade.openPreviewRoute", async (url?: string) => {
-      if (!url) {
-        void vscode.window.showErrorMessage("Glade preview route is missing a URL.");
-        return;
-      }
-      try {
-        await vscode.env.openExternal(vscode.Uri.parse(url));
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        void vscode.window.showErrorMessage(`Glade preview route failed: ${message}`);
-      }
-    }),
-    vscode.commands.registerCommand("glade.installToolchain", async () => {
-      try {
-        await previewController.installToolchain();
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        void vscode.window.showErrorMessage(`Glade toolchain install failed: ${message}`);
-      }
     }),
     vscode.commands.registerCommand("glade.runChangedTests", () => tests.runChanged()),
     vscode.commands.registerCommand("glade.runFailedTests", () => tests.runFailed()),
@@ -633,9 +552,6 @@ export function activate(context: vscode.ExtensionContext): void {
           { label: "Switch Local Data Environment", command: "glade.switchEnvironment" },
           { label: "Inspect Active Local Data", command: "glade.inspectLocalOrg" },
           { label: "Run Local Proof", command: "glade.runLocalProof" },
-          { label: "Start LWC Shell", command: "glade.startLWCPreview" },
-          { label: "Start Visualforce Server", command: "glade.startVFPreview" },
-          { label: "Install LWC Toolchain", command: "glade.installToolchain" },
           { label: "Manage Plugins", command: "glade.managePlugins" },
           { label: "Open Glade Output", command: "glade.openOutput" },
         ],
@@ -666,10 +582,6 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
     vscode.window.onDidChangeActiveTextEditor(() => syncPluginViews()),
-    previewController.onDidChange(() => {
-      syncPreviewState();
-      syncPluginViews();
-    }),
     vscode.debug.onDidChangeBreakpoints(() => debugView.refresh()),
     vscode.languages.registerCodeLensProvider({ language: "apex", scheme: "file" }, new GladeCodeLensProvider()),
   );
