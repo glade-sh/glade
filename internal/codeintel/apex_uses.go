@@ -22,7 +22,7 @@ func collectApexUses(index typesys.Index, declarations Graph) []Use {
 	files := apexUseFiles(index)
 	var uses []Use
 	for _, file := range files {
-		data, err := os.ReadFile(file)
+		data, err := os.ReadFile(sourcePath(index.Project.Root, file))
 		if err != nil {
 			continue
 		}

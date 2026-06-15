@@ -21,10 +21,10 @@ type schemaUseCollector struct {
 func BuildSchemaUses(index typesys.Index) Graph {
 	collector := newSchemaUseCollector(index)
 	for _, path := range apexUseFiles(index) {
-		collector.collectFile(path)
+		collector.collectFile(index.Project.Root, path)
 	}
 	for _, trigger := range index.Triggers {
-		collector.addTriggerObjectUse(trigger)
+		collector.addTriggerObjectUse(index.Project.Root, trigger)
 	}
 	sortUses(collector.graph.Uses)
 	return collector.graph
@@ -48,28 +48,8 @@ func newSchemaUseCollector(index typesys.Index) *schemaUseCollector {
 	return collector
 }
 
-func apexUseFiles(index typesys.Index) []string {
-	seen := make(map[string]struct{})
-	for _, typ := range index.Types {
-		if typ.File != "" {
-			seen[typ.File] = struct{}{}
-		}
-	}
-	for _, trigger := range index.Triggers {
-		if trigger.File != "" {
-			seen[trigger.File] = struct{}{}
-		}
-	}
-	out := make([]string, 0, len(seen))
-	for path := range seen {
-		out = append(out, path)
-	}
-	sort.Strings(out)
-	return out
-}
-
-func (c *schemaUseCollector) collectFile(path string) {
-	data, err := os.ReadFile(path)
+func (c *schemaUseCollector) collectFile(root, path string) {
+	data, err := os.ReadFile(sourcePath(root, path))
 	if err != nil {
 		return
 	}
@@ -365,11 +345,11 @@ func (c *schemaUseCollector) addRelationshipFieldUse(rootObject, fieldPath, path
 	}
 }
 
-func (c *schemaUseCollector) addTriggerObjectUse(trigger typesys.TriggerSymbol) {
+func (c *schemaUseCollector) addTriggerObjectUse(root string, trigger typesys.TriggerSymbol) {
 	if trigger.ObjectName == "" || trigger.File == "" {
 		return
 	}
-	data, err := os.ReadFile(trigger.File)
+	data, err := os.ReadFile(sourcePath(root, trigger.File))
 	if err != nil {
 		return
 	}
