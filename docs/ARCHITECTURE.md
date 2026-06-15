@@ -20,6 +20,11 @@ and composed by the CLI.
   model.
 - `internal/typesys`: first symbol index for declarations, members, triggers,
   and schema objects.
+- `internal/codeintel`: editor-neutral project intelligence built from the type
+  index, metadata schema, dependency artifacts, cached describe symbols, and
+  source files. It powers symbol inspection, reference queries, conservative
+  refactor planning, enterprise graph edges, changed-test selection, semantic
+  query diagnostics, local server symbol endpoints, and future editor clients.
 - `internal/sema`: semantic analysis for known-type catalogs, declaration and
   member references, method-body checks, overload matching, visibility,
   namespace/schema aliases, and stable diagnostics for the supported subset.
@@ -78,15 +83,16 @@ and composed by the CLI.
 
 1. Load project configuration and Salesforce metadata.
 2. Parse Apex source through `internal/apexast`.
-3. Build symbols and resolve references through `internal/typesys`.
-4. Type-check through `internal/sema`.
-5. Lower checked code into `internal/ir`.
-6. Execute with `internal/vm`, routing SObject, SOQL, DML, trigger, limit, and
+3. Build declarations through `internal/typesys`.
+4. Build cross-source symbol references through `internal/codeintel`.
+5. Type-check through `internal/sema`.
+6. Lower checked code into `internal/ir`.
+7. Execute with `internal/vm`, routing SObject, SOQL, DML, trigger, limit, and
    platform calls into dedicated packages where behavior has a supported
    baseline.
-7. Surface the same runtime through CLI execution, tests, watch mode, LSP/DAP
+8. Surface the same runtime through CLI execution, tests, watch mode, LSP/DAP
    snapshots, profile analysis, plugin dispatch, and the local API server.
-8. Record diagnostics, traces, profiles, test reports, storage fixtures, and
+9. Record diagnostics, traces, profiles, test reports, storage fixtures, and
    server responses in stable machine-readable formats.
 
 ## Design Constraints
