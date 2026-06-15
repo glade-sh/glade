@@ -261,30 +261,59 @@ func (r apexUseResolver) collectFile(tokens []token) []Use {
 			}
 			uses = append(uses, r.constructUse(typeTok)...)
 			if methodIndex := chainedMethodAfterConstruct(tokens, i+2); methodIndex >= 0 {
-				uses = append(uses, r.memberUse(typeTok.Text, tokens[methodIndex])...)
+				uses = append(uses, r.memberUse(typeTok.Text, tokens[methodIndex], UseCall)...)
 			}
 		default:
-			if !isIdentifierToken(tokens[i]) || i+3 >= len(tokens) || tokens[i+1].Text != "." || tokens[i+3].Text != "(" {
+			if tokens[i].Text == "@" {
+				annotationIndex := annotationNameIndex(tokens, i+1)
+				if annotationIndex >= 0 {
+					uses = append(uses, r.typeUse(tokens[annotationIndex], UseRead)...)
+				}
+				continue
+			}
+			if !isIdentifierToken(tokens[i]) || i+2 >= len(tokens) || tokens[i+1].Text != "." {
 				continue
 			}
 			memberTok := tokens[i+2]
 			if !isIdentifierToken(memberTok) {
 				continue
 			}
+			kind := memberAccessKind(tokens, i+2)
 			if _, ok := r.uniqueType(tokens[i].Text); ok {
 				uses = append(uses, r.typeUse(tokens[i], UseRead)...)
-				uses = append(uses, r.memberUse(tokens[i].Text, memberTok)...)
+				uses = append(uses, r.memberUse(tokens[i].Text, memberTok, kind)...)
 				continue
 			}
 			locals := localTypesBefore(tokens, i)
 			if typeName := locals[strings.ToLower(tokens[i].Text)]; typeName != "" {
-				uses = append(uses, r.memberUse(typeName, memberTok)...)
+				uses = append(uses, r.memberUse(typeName, memberTok, kind)...)
 				continue
 			}
-			uses = append(uses, unresolvedUse(memberTok, UseCall))
+			uses = append(uses, unresolvedUse(memberTok, kind))
 		}
 	}
 	return uses
+}
+
+func annotationNameIndex(tokens []token, start int) int {
+	if start >= len(tokens) || !isIdentifierToken(tokens[start]) {
+		return -1
+	}
+	last := start
+	for i := start; i+2 < len(tokens) && tokens[i+1].Text == "." && isIdentifierToken(tokens[i+2]); i += 2 {
+		last = i + 2
+	}
+	return last
+}
+
+func memberAccessKind(tokens []token, memberIndex int) UseKind {
+	if memberIndex+1 < len(tokens) && tokens[memberIndex+1].Text == "(" {
+		return UseCall
+	}
+	if memberIndex+1 < len(tokens) && tokens[memberIndex+1].Text == "=" {
+		return UseWrite
+	}
+	return UseRead
 }
 
 func chainedMethodAfterConstruct(tokens []token, start int) int {
@@ -439,12 +468,29 @@ func (r apexUseResolver) constructUse(tok token) []Use {
 	return []Use{unresolvedUse(tok, UseConstruct)}
 }
 
-func (r apexUseResolver) memberUse(typeName string, tok token) []Use {
-	symbols := r.memberByType[strings.ToLower(typeName)][strings.ToLower(tok.Text)]
-	if len(symbols) != 1 {
-		return []Use{unresolvedUse(tok, UseCall)}
+func (r apexUseResolver) memberUse(typeName string, tok token, kind UseKind) []Use {
+	var symbols []Symbol
+	for _, symbol := range r.memberByType[strings.ToLower(typeName)][strings.ToLower(tok.Text)] {
+		if memberSupportsUse(symbol, kind) {
+			symbols = append(symbols, symbol)
+		}
 	}
-	return []Use{resolvedUse(tok, UseCall, symbols[0].ID)}
+	if len(symbols) != 1 {
+		return []Use{unresolvedUse(tok, kind)}
+	}
+	return []Use{resolvedUse(tok, kind, symbols[0].ID)}
+}
+
+func memberSupportsUse(symbol Symbol, kind UseKind) bool {
+	declarationKind := apexast.DeclarationKind(symbol.Metadata["declarationKind"])
+	switch kind {
+	case UseCall:
+		return declarationKind == apexast.DeclarationMethod
+	case UseRead, UseWrite:
+		return declarationKind == apexast.DeclarationField || declarationKind == apexast.DeclarationProperty
+	default:
+		return false
+	}
 }
 
 func (r apexUseResolver) uniqueType(name string) (Symbol, bool) {

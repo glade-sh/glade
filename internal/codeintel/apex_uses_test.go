@@ -63,6 +63,100 @@ public class Consumer {
 	assertResolvedUse(t, graph, codeintel.ApexMemberID("", "InvoiceService", "method", "staticTotal", "Decimal(Account)"), codeintel.UseCall, "staticTotal")
 }
 
+func TestApexUsesResolveStaticPropertyRead(t *testing.T) {
+	root := t.TempDir()
+	consumer := writeApexUseFile(t, root, "Consumer.cls", `
+public class Consumer {
+  public void run() {
+    String v = InvoiceService.Version;
+  }
+}`)
+	index := apexUseIndex(root, consumer, []typesys.TypeSymbol{
+		{
+			Kind: apexast.DeclarationClass, Name: "InvoiceService", File: filepath.Join(root, "InvoiceService.cls"),
+			Members: []typesys.MemberSymbol{
+				{Kind: apexast.DeclarationProperty, Name: "Version", Type: "String", Modifiers: []string{"static"}, Range: testRange(2, 3, 2, 38)},
+			},
+		},
+		{Kind: apexast.DeclarationClass, Name: "Consumer", File: consumer},
+	})
+
+	graph := codeintel.Build(index)
+
+	assertResolvedUse(t, graph, codeintel.ApexMemberID("", "InvoiceService", "property", "Version", "String()"), codeintel.UseRead, "Version")
+}
+
+func TestApexUsesResolveInstancePropertyRead(t *testing.T) {
+	root := t.TempDir()
+	consumer := writeApexUseFile(t, root, "Consumer.cls", `
+public class Consumer {
+  public void run() {
+    InvoiceService svc = new InvoiceService();
+    Decimal total = svc.total;
+  }
+}`)
+	index := apexUseIndex(root, consumer, []typesys.TypeSymbol{
+		{
+			Kind: apexast.DeclarationClass, Name: "InvoiceService", File: filepath.Join(root, "InvoiceService.cls"),
+			Members: []typesys.MemberSymbol{
+				{Kind: apexast.DeclarationConstructor, Name: "InvoiceService"},
+				{Kind: apexast.DeclarationProperty, Name: "total", Type: "Decimal", Range: testRange(2, 3, 2, 34)},
+			},
+		},
+		{Kind: apexast.DeclarationClass, Name: "Consumer", File: consumer},
+	})
+
+	graph := codeintel.Build(index)
+
+	assertResolvedUse(t, graph, codeintel.ApexMemberID("", "InvoiceService", "property", "total", "Decimal()"), codeintel.UseRead, "total")
+}
+
+func TestApexUsesResolvePropertyWrite(t *testing.T) {
+	root := t.TempDir()
+	consumer := writeApexUseFile(t, root, "Consumer.cls", `
+public class Consumer {
+  public void run() {
+    InvoiceService svc = new InvoiceService();
+    svc.total = 3;
+    InvoiceService.Version = 'x';
+  }
+}`)
+	index := apexUseIndex(root, consumer, []typesys.TypeSymbol{
+		{
+			Kind: apexast.DeclarationClass, Name: "InvoiceService", File: filepath.Join(root, "InvoiceService.cls"),
+			Members: []typesys.MemberSymbol{
+				{Kind: apexast.DeclarationConstructor, Name: "InvoiceService"},
+				{Kind: apexast.DeclarationProperty, Name: "total", Type: "Decimal", Range: testRange(2, 3, 2, 34)},
+				{Kind: apexast.DeclarationProperty, Name: "Version", Type: "String", Modifiers: []string{"static"}, Range: testRange(3, 3, 3, 38)},
+			},
+		},
+		{Kind: apexast.DeclarationClass, Name: "Consumer", File: consumer},
+	})
+
+	graph := codeintel.Build(index)
+
+	assertResolvedUse(t, graph, codeintel.ApexMemberID("", "InvoiceService", "property", "total", "Decimal()"), codeintel.UseWrite, "total")
+	assertResolvedUse(t, graph, codeintel.ApexMemberID("", "InvoiceService", "property", "Version", "String()"), codeintel.UseWrite, "Version")
+}
+
+func TestApexUsesResolveAnnotationUse(t *testing.T) {
+	root := t.TempDir()
+	consumer := writeApexUseFile(t, root, "Consumer.cls", `
+@Annotations.Audited
+@MissingAnnotation
+public class Consumer {
+}`)
+	index := apexUseIndex(root, consumer, []typesys.TypeSymbol{
+		{Kind: apexast.DeclarationClass, Name: "Audited", File: filepath.Join(root, "Audited.cls")},
+		{Kind: apexast.DeclarationClass, Name: "Consumer", File: consumer},
+	})
+
+	graph := codeintel.Build(index)
+
+	assertResolvedUse(t, graph, codeintel.ApexTypeID("", "Audited"), codeintel.UseRead, "Audited")
+	assertUnresolvedUse(t, graph, codeintel.UseRead, "MissingAnnotation")
+}
+
 func TestApexUsesResolveClassReferenceInLocalType(t *testing.T) {
 	root := t.TempDir()
 	consumer := writeApexUseFile(t, root, "Consumer.cls", `
