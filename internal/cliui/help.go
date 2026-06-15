@@ -154,7 +154,7 @@ var commandReferences = []CommandHelp{
 		Description: "Load local Salesforce metadata schema.",
 		Usage: []string{
 			"glade schema load [--project <root>] [--json] [--progress|--progress-json|--no-progress]",
-			"glade schema import describe --input <describe.json> [--output <schema.json>]",
+			"glade schema import describe --input <describe.json> [--output <schema.json>] [--project-cache <root>]",
 		},
 		Subcommands: []SubcommandHelp{
 			{Name: "load", Description: "Load and print local schema information."},
@@ -164,7 +164,7 @@ var commandReferences = []CommandHelp{
 		Examples: []string{
 			"glade schema load --project .",
 			"glade schema load --project . --progress",
-			"glade schema import describe --input reports/org-describe.json --output schema/local.schema.json",
+			"glade schema import describe --input reports/org-describe.json --output schema/local.schema.json --project-cache .",
 		},
 	},
 	{
