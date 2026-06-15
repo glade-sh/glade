@@ -48,6 +48,9 @@ func SelectAffectedTestsWithRefGraph(index typesys.Index, changes []Change, grap
 			if !ok {
 				return allSelection(allTests, "changed Apex class is not present in the type index")
 			}
+			if _, ok := graph.resolvedFile[cleanPath(typ.File)]; !ok {
+				return allSelection(allTests, "changed Apex class is not resolved by code intelligence")
+			}
 			tests := graph.affectedTests(typ.Name)
 			if len(tests) == 0 {
 				return allSelection(allTests, "changed Apex class may affect any test")

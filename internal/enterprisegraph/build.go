@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/codeintel"
 	"github.com/glade-sh/glade/internal/enterprise"
 )
 
@@ -48,6 +49,7 @@ func Build(ctx enterprise.Context) (Graph, error) {
 	for _, object := range ctx.Index.Objects {
 		g.AddNode(Node{ID: object.Name, Kind: sobjectKind(object.Name), Name: object.Name})
 	}
+	addCodeintelEdges(&g, ctx)
 	addSourceScanEdges(&g, ctx)
 	addMetadataReferenceEdges(&g, ctx.Project)
 	return g, nil
@@ -94,9 +96,156 @@ func sobjectKind(name string) NodeKind {
 	return NodeKindSObject
 }
 
+func addCodeintelEdges(g *Graph, ctx enterprise.Context) {
+	cg := codeintel.Build(ctx.Index, codeintel.Options{})
+	for _, symbol := range cg.SortedSymbols() {
+		node := nodeFromCodeintelSymbol(symbol)
+		if node.ID != "" {
+			g.AddNode(node)
+		}
+	}
+	typeByFile := typeNameByFile(ctx)
+	for _, use := range cg.Uses {
+		if !use.Resolved || use.Kind == codeintel.UseDeclaration {
+			continue
+		}
+		from := typeByFile[cleanEnterprisePath(use.File)]
+		if from == "" {
+			continue
+		}
+		symbol, ok := cg.Definition(use.SymbolID)
+		if !ok {
+			continue
+		}
+		to := nodeIDFromCodeintelSymbol(symbol)
+		kind := edgeKindFromCodeintelUse(use.Kind)
+		if to == "" || kind == "" || to == from {
+			continue
+		}
+		g.AddEdge(Edge{From: from, To: to, Kind: kind})
+		if symbol.Kind == codeintel.SymbolApexMember && symbol.Container != "" {
+			if owner := apexTypeNodeID(cg, symbol.Container); owner != "" && owner != from {
+				g.AddEdge(Edge{From: from, To: owner, Kind: EdgeKindReferences})
+			}
+		}
+	}
+}
+
+func nodeFromCodeintelSymbol(symbol codeintel.Symbol) Node {
+	switch symbol.Kind {
+	case codeintel.SymbolApexType:
+		return Node{
+			ID:       symbol.Name,
+			Kind:     nodeKindFromCodeintelType(symbol),
+			Name:     symbol.Name,
+			File:     symbol.File,
+			Metadata: testMetadata(symbol.Metadata["test"] == "true", symbol.Name),
+		}
+	case codeintel.SymbolApexMember:
+		owner := symbol.Metadata["owner"]
+		if owner == "" {
+			owner = apexOwnerFromMemberID(symbol.ID)
+		}
+		if owner == "" {
+			return Node{}
+		}
+		id := owner + "." + symbol.Name
+		return Node{
+			ID:       id,
+			Kind:     nodeKindFromCodeintelMember(symbol),
+			Name:     symbol.Name,
+			File:     symbol.File,
+			Metadata: testMetadata(symbol.Metadata["test"] == "true", id),
+		}
+	case codeintel.SymbolSObject:
+		return Node{ID: symbol.Name, Kind: sobjectKind(symbol.Name), Name: symbol.Name}
+	default:
+		return Node{}
+	}
+}
+
+func nodeIDFromCodeintelSymbol(symbol codeintel.Symbol) string {
+	node := nodeFromCodeintelSymbol(symbol)
+	return node.ID
+}
+
+func nodeKindFromCodeintelType(symbol codeintel.Symbol) NodeKind {
+	switch apexast.DeclarationKind(symbol.Metadata["declarationKind"]) {
+	case apexast.DeclarationInterface:
+		return NodeKindInterface
+	case apexast.DeclarationEnum:
+		return NodeKindEnum
+	default:
+		return NodeKindClass
+	}
+}
+
+func nodeKindFromCodeintelMember(symbol codeintel.Symbol) NodeKind {
+	if symbol.Metadata["test"] == "true" || strings.HasSuffix(strings.ToLower(symbol.Name), "test") {
+		return NodeKindTestMethod
+	}
+	switch apexast.DeclarationKind(symbol.Metadata["declarationKind"]) {
+	case apexast.DeclarationMethod:
+		return NodeKindMethod
+	case apexast.DeclarationField, apexast.DeclarationProperty:
+		return NodeKindField
+	default:
+		return NodeKindMethod
+	}
+}
+
+func edgeKindFromCodeintelUse(kind codeintel.UseKind) EdgeKind {
+	switch kind {
+	case codeintel.UseCall:
+		return EdgeKindCalls
+	case codeintel.UseRead, codeintel.UseWrite, codeintel.UseConstruct:
+		return EdgeKindReferences
+	case codeintel.UseQuery:
+		return EdgeKindQueries
+	case codeintel.UseMutate:
+		return EdgeKindMutates
+	case codeintel.UseMetadata:
+		return EdgeKindMetadataReferences
+	default:
+		return ""
+	}
+}
+
+func apexTypeNodeID(g codeintel.Graph, id codeintel.SymbolID) string {
+	symbol, ok := g.Definition(id)
+	if !ok || symbol.Kind != codeintel.SymbolApexType {
+		return ""
+	}
+	return symbol.Name
+}
+
+func apexOwnerFromMemberID(id codeintel.SymbolID) string {
+	parts := codeintel.ParseID(id)
+	if len(parts) >= 5 && parts[0] == "apex" && parts[1] == "member" {
+		return parts[3]
+	}
+	return ""
+}
+
+func typeNameByFile(ctx enterprise.Context) map[string]string {
+	out := make(map[string]string, len(ctx.Index.Types))
+	for _, typ := range ctx.Index.Types {
+		if typ.Dependency || typ.File == "" {
+			continue
+		}
+		out[cleanEnterprisePath(typ.File)] = typ.Name
+	}
+	return out
+}
+
+func cleanEnterprisePath(path string) string {
+	if path == "" {
+		return ""
+	}
+	return strings.TrimSpace(path)
+}
+
 func addSourceScanEdges(g *Graph, ctx enterprise.Context) {
-	classIDs := nodeIDsByKind(*g, NodeKindClass, NodeKindInterface, NodeKindEnum)
-	objectIDs := nodeIDsByKind(*g, NodeKindSObject, NodeKindPlatformEvent)
 	for _, typ := range ctx.Index.Types {
 		if typ.Dependency || typ.File == "" {
 			continue
@@ -106,28 +255,6 @@ func addSourceScanEdges(g *Graph, ctx enterprise.Context) {
 			continue
 		}
 		source := string(data)
-		for _, id := range classIDs {
-			if id == typ.Name {
-				continue
-			}
-			if wordAppears(source, id) {
-				g.AddEdge(Edge{From: typ.Name, To: id, Kind: EdgeKindReferences})
-			}
-			if strings.Contains(source, id+".") || strings.Contains(source, "new "+id+"(") {
-				g.AddEdge(Edge{From: typ.Name, To: id, Kind: EdgeKindCalls})
-			}
-		}
-		for _, id := range objectIDs {
-			if strings.Contains(source, "FROM "+id) || strings.Contains(source, "from "+id) {
-				g.AddEdge(Edge{From: typ.Name, To: id, Kind: EdgeKindQueries})
-			}
-			if mutatesObject(source, id) {
-				g.AddEdge(Edge{From: typ.Name, To: id, Kind: EdgeKindMutates})
-			}
-			if strings.Contains(source, "EventBus.publish") && wordAppears(source, id) {
-				g.AddEdge(Edge{From: typ.Name, To: id, Kind: EdgeKindPublishes})
-			}
-		}
 		if strings.Contains(source, "System.enqueueJob") {
 			g.AddEdge(Edge{From: typ.Name, To: "ApexQueue", Kind: EdgeKindEnqueues})
 		}
@@ -136,44 +263,7 @@ func addSourceScanEdges(g *Graph, ctx enterprise.Context) {
 			g.AddNode(Node{ID: id, Kind: NodeKindExternalEndpoint, Name: endpoint})
 			g.AddEdge(Edge{From: typ.Name, To: id, Kind: EdgeKindCalloutTo})
 		}
-		if typ.IsTest || strings.HasSuffix(strings.ToLower(typ.Name), "test") {
-			for _, id := range classIDs {
-				if id != typ.Name && wordAppears(source, id) {
-					g.AddEdge(Edge{From: typ.Name, To: id, Kind: EdgeKindTestCovers})
-				}
-			}
-		}
 	}
-}
-
-func nodeIDsByKind(g Graph, kinds ...NodeKind) []string {
-	want := make(map[NodeKind]bool, len(kinds))
-	for _, kind := range kinds {
-		want[kind] = true
-	}
-	seen := make(map[string]bool)
-	for id, node := range g.Nodes {
-		if want[node.Kind] {
-			seen[id] = true
-		}
-	}
-	return sortedIDs(seen)
-}
-
-func wordAppears(source, word string) bool {
-	return regexp.MustCompile(`(?i)\b`+regexp.QuoteMeta(word)+`\b`).FindStringIndex(source) != nil
-}
-
-func mutatesObject(source, object string) bool {
-	lower := strings.ToLower(source)
-	return strings.Contains(lower, "insert ") && wordAppears(source, object) ||
-		strings.Contains(lower, "update ") && wordAppears(source, object) ||
-		strings.Contains(lower, "delete ") && wordAppears(source, object) ||
-		strings.Contains(lower, "upsert ") && wordAppears(source, object) ||
-		strings.Contains(lower, "database.insert") && wordAppears(source, object) ||
-		strings.Contains(lower, "database.update") && wordAppears(source, object) ||
-		strings.Contains(lower, "database.delete") && wordAppears(source, object) ||
-		strings.Contains(lower, "database.upsert") && wordAppears(source, object)
 }
 
 func endpoints(source string) []string {
