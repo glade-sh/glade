@@ -429,6 +429,22 @@ project index.
 }
 ```
 
+## CLI Code Intelligence
+
+`glade inspect definition` and `glade inspect references` expose the same
+project code-intelligence graph for scripts, editor tasks, and quick terminal
+checks.
+
+```bash
+glade inspect definition --project . --symbol InvoiceService
+glade inspect definition --project . --file force-app/main/default/classes/InvoiceService.cls --line 6 --column 13
+glade inspect references --project . --symbol InvoiceService.total --json
+glade inspect references --project . --symbol Account.Name --include-declaration
+```
+
+Text output prints a Definition or References block with project-relative files.
+JSON output uses the standard CLI envelope with `command`, `status`, and `data`.
+
 For a one-shot diagnostics check without starting a long-lived language client,
 run:
 
