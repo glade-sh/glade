@@ -76,6 +76,7 @@ Before opening a pull request:
 ```bash
 glade check --project . --json --no-progress
 glade test changed --project . --since origin/main --json --no-progress
+mkdir -p reports
 glade test --project . --junit reports/glade-junit.xml
 ```
 

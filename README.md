@@ -68,6 +68,7 @@ Drill down from there:
 glade check --project .
 glade test --project . --json
 glade support
+mkdir -p reports
 glade report assess --project . --format html --out reports/glade-assessment.html
 ```
 
@@ -86,6 +87,7 @@ glade test --project . --class AccountServiceTest --method testCreatesAccount --
 glade test changed --project . --since origin/main --json --no-progress
 glade test failed --project .
 glade plugins install @glade/performance
+mkdir -p reports
 glade performance scan --project . --json > reports/glade-performance.json
 glade performance scan --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
 ```
@@ -135,6 +137,7 @@ glade server --project . --addr 127.0.0.1:8080
 Write CI artifacts from the same local run loop:
 
 ```bash
+mkdir -p reports
 glade check --project . --format sarif --output reports/glade-check.sarif
 glade dev test --project . --out .glade/runs
 glade report github latest --runs-dir .glade/runs
@@ -145,6 +148,10 @@ Map a large codebase and collect branch-change proof:
 
 ```bash
 glade inspect graph --project . --json
+glade inspect definition --project . --symbol Account.Name
+glade inspect references --project . --symbol InvoiceService.total --json
+glade refactor rename --project . --symbol InvoiceService --to BillingService --dry-run --json
+mkdir -p reports
 glade report assess --project . --format html --out reports/glade-assessment.html
 glade report cruft --project . --format html --out reports/glade-cruft.html
 glade report refactor-proof --project . --since origin/main --format html --out reports/glade-refactor-proof.html

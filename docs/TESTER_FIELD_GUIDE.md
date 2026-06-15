@@ -157,6 +157,8 @@ glade report export latest --runs-dir .glade/runs --format html --output reports
 
 ## Useful Opportunities
 
+Create `reports/` before running commands that write report files.
+
 | Opportunity | Command |
 | --- | --- |
 | Explain a saved Salesforce debug log against local source | `glade debug explain --log apex.log --project .` |

@@ -57,14 +57,19 @@ Map and prove larger Apex changes with local evidence:
 
 ```bash
 glade inspect graph --project . --json
+glade inspect definition --project . --symbol Account.Name
+glade inspect references --project . --symbol InvoiceService.total --json
+glade refactor rename --project . --symbol InvoiceService --to BillingService --dry-run --json
+mkdir -p reports
 glade report assess --project . --format html --out reports/glade-assessment.html
 glade report cruft --project . --format html --out reports/glade-cruft.html
 glade report refactor-proof --project . --since origin/main --format html --out reports/glade-refactor-proof.html
 ```
 
-The reports show severity, confidence, evidence, recommendations, and known
-limitations. Public and global package surfaces are review or deprecate
-candidates, not safe-delete candidates.
+Definition, reference, and rename commands use the same code-intelligence graph
+as editor-facing LSP features. The reports show severity, confidence, evidence,
+recommendations, and known limitations. Public and global package surfaces are
+review or deprecate candidates, not safe-delete candidates.
 
 See [Enterprise Workflows](/guide/enterprise-workflows) for the report contract,
 known limits, and CI proof commands.

@@ -8,6 +8,7 @@ The reports use local evidence. They do not claim full Salesforce parity.
 Generate a codebase assessment:
 
 ```bash
+mkdir -p reports
 glade report assess --project . --format html --out reports/glade-assessment.html --include-metadata --include-tests
 ```
 
@@ -20,6 +21,7 @@ findings, and known limitations.
 Scan for conservative delete, deprecate, review, and do-not-delete candidates:
 
 ```bash
+mkdir -p reports
 glade report cruft --project . --format html --out reports/glade-cruft.html
 ```
 
@@ -32,6 +34,7 @@ routing, Aura, LWC, and invocable exposure lower confidence.
 Collect proof for a branch change:
 
 ```bash
+mkdir -p reports
 glade report refactor-proof --project . --since origin/main --format html --out reports/glade-refactor-proof.html
 ```
 
@@ -46,17 +49,24 @@ changes:
 glade report refactor-proof --project . --since origin/main --fail-on-api-break --format json
 ```
 
-## Graph And Traces
+## Graph, references, and traces
 
 Build the project graph directly:
 
 ```bash
 glade inspect graph --project . --json
+glade inspect definition --project . --symbol Account.Name
+glade inspect references --project . --symbol InvoiceService.total --json
+glade refactor rename --project . --symbol InvoiceService --to BillingService --dry-run --json
 ```
+
+Definition, reference, and rename commands use the same code-intelligence graph
+as LSP definition, references, rename, hover, and completion.
 
 Write a local test trace, then summarize it in a proof report:
 
 ```bash
+mkdir -p reports
 glade test --project . --class MyPassingTest --trace reports/glade-trace.json --json
 glade report refactor-proof --project . --since origin/main --trace reports/glade-trace.json --format html --out reports/glade-refactor-proof.html
 ```

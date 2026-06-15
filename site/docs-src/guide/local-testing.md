@@ -36,6 +36,7 @@ glade test --project . --json
 JUnit output for CI:
 
 ```bash
+mkdir -p reports
 glade test --project . --junit reports/glade-junit.xml
 ```
 
@@ -209,6 +210,7 @@ A small CI gate can check the project, run affected tests, then write JUnit outp
 ```bash
 glade check --project . --json
 glade test changed --project . --since origin/main --json --no-progress
+mkdir -p reports
 glade test --project . --junit reports/glade-junit.xml
 ```
 

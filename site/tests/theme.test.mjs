@@ -13,10 +13,13 @@ const siteReadme = await readFile(new URL("../README.md", import.meta.url), "utf
 const highlight = await readFile(new URL("../docs-src/public/js/highlight.js", import.meta.url), "utf8");
 const homeScript = await readFile(new URL("../docs-src/public/js/home.js", import.meta.url), "utf8");
 const ciArtifacts = await readFile(new URL("../docs-src/guide/ci-artifacts.md", import.meta.url), "utf8");
+const automation = await readFile(new URL("../docs-src/guide/automation.md", import.meta.url), "utf8");
 const installation = await readFile(new URL("../docs-src/guide/installation.md", import.meta.url), "utf8");
 const overview = await readFile(new URL("../docs-src/guide/overview.md", import.meta.url), "utf8");
 const quickstart = await readFile(new URL("../docs-src/guide/quickstart.md", import.meta.url), "utf8");
 const cliReference = await readFile(new URL("../docs-src/guide/cli-reference.md", import.meta.url), "utf8");
+const localTesting = await readFile(new URL("../docs-src/guide/local-testing.md", import.meta.url), "utf8");
+const affectedTests = await readFile(new URL("../docs-src/guide/affected-tests.md", import.meta.url), "utf8");
 const playground = await readFile(new URL("../docs-src/guide/playground.md", import.meta.url), "utf8");
 const testerFieldGuide = await readFile(new URL("../docs-src/guide/tester-field-guide.md", import.meta.url), "utf8");
 const editor = await readFile(new URL("../docs-src/guide/editor.md", import.meta.url), "utf8");
@@ -684,6 +687,30 @@ test("enterprise workflow docs expose current report commands", () => {
   assert.match(enterpriseWorkflows, /glade report refactor-proof --project \. --since origin\/main/);
   assert.match(enterpriseWorkflows, /--fail-on-api-break/);
   assert.match(enterpriseWorkflows, /Compatibility and support-map generation remain plugin-owned/);
+});
+
+test("cli reference documents current code intelligence commands", () => {
+  assert.match(cliReference, /glade inspect definition --project \. --symbol InvoiceService/);
+  assert.match(cliReference, /glade inspect definition --project \. --file force-app\/main\/default\/classes\/InvoiceService\.cls --line 6 --column 13/);
+  assert.match(cliReference, /glade inspect references --project \. --symbol InvoiceService\.total --json/);
+  assert.match(cliReference, /glade inspect references --project \. --symbol Account\.Name --include-declaration/);
+  assert.match(cliReference, /glade refactor rename --project \. --symbol InvoiceService --to BillingService --dry-run --json/);
+  assert.match(cliReference, /glade refactor rename --project \. --file force-app\/main\/default\/classes\/InvoiceService\.cls --line 5 --column 14 --to totalNet --write/);
+  assert.match(cliReference, /glade schema import describe --input reports\/org-describe\.json --output schema\/local\.schema\.json --project-cache \./);
+  assert.match(cliReference, /writes schema symbols under `\.glade\/symbols`/);
+  assert.match(editor, /glade inspect definition --project \. --symbol InvoiceService/);
+  assert.match(editor, /glade inspect references --project \. --symbol Account\.Name --include-declaration/);
+  assert.match(editor, /glade refactor rename --project \. --symbol InvoiceService --to BillingService --dry-run/);
+});
+
+test("ci docs create reports directory before report outputs", () => {
+  for (const page of [automation, localTesting, affectedTests]) {
+    const mkdirIndex = page.indexOf("mkdir -p reports");
+    const junitIndex = page.indexOf("glade test --project . --junit reports/glade-junit.xml");
+    assert.notEqual(mkdirIndex, -1);
+    assert.notEqual(junitIndex, -1);
+    assert.ok(mkdirIndex < junitIndex);
+  }
 });
 
 test("public launch docs avoid stale public routes and registry promises", () => {

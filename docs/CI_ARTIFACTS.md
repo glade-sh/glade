@@ -75,6 +75,7 @@ glade report export latest --runs-dir .glade/runs --output glade-report.zip
 Use the enterprise proof report when CI needs a branch-change artifact:
 
 ```bash
+mkdir -p reports
 glade report refactor-proof --project . --since origin/main --format html --out reports/glade-refactor-proof.html
 glade report refactor-proof --project . --since origin/main --fail-on-api-break --format json
 ```

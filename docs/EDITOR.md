@@ -71,6 +71,7 @@ The default local data environment is `dev` at `.glade/envs/dev.sqlite`.
 all pass the active DB to Glade:
 
 ```bash
+mkdir -p reports
 glade exec --project <root> --db <active-db> --log-out reports/exec.log "insert new Account(Name='local');"
 glade dap --project <root> --db <active-db>
 ```
@@ -473,6 +474,7 @@ For CI or editor tasks that need a single machine-readable run, use:
 ```bash
 glade test --project . --json --no-progress
 glade test changed --project . --since origin/main --json --no-progress
+mkdir -p reports
 glade test --project . --junit reports/glade-junit.xml
 glade check --project . --json --no-progress
 ```
@@ -480,6 +482,7 @@ glade check --project . --json --no-progress
 Trace analysis stays native to `glade`:
 
 ```bash
+mkdir -p reports
 glade exec --trace reports/trace.json 'System.debug(1);'
 glade profile analyze reports/trace.json
 glade profile analyze reports/trace.json --json
