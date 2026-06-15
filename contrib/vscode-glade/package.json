@@ -396,13 +396,15 @@
   },
   "scripts": {
     "compile": "tsc -p ./",
-    "package": "mkdir -p dist && npm run compile && vsce package --allow-missing-repository --out dist/vscode-glade-${npm_package_version}.vsix",
+    "bundle": "esbuild src/extension.ts --bundle --minify --platform=node --format=cjs --target=node20 --external:vscode --outfile=out/extension.js",
+    "package": "mkdir -p dist && npm run compile && npm run bundle && vsce package --allow-missing-repository --out dist/vscode-glade-${npm_package_version}.vsix",
     "test": "npm run compile && node test/commands.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/environmentActions.test.js && node test/localOrg.test.js && node test/watch.test.js && node test/statusModel.test.js && node test/package.test.js && node test/startHereModel.test.js && node test/startHereState.test.js && node test/pluginModules.test.js && node test/pluginController.test.js && node test/workbenchModel.test.js && node test/workbenchStore.test.js && node test/workbenchCli.test.js && node test/workbenchView.test.js"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@types/vscode": "^1.92.0",
     "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.28.1",
     "typescript": "^5.5.0"
   },
   "dependencies": {
