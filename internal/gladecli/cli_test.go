@@ -1029,6 +1029,7 @@ func TestCodeIntelligenceHelpListsProductCommands(t *testing.T) {
 
 func TestPluginsInstallRemoteURLRequiresSHA256(t *testing.T) {
 	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Setenv("CI", "")
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"plugins", "install", "https://example.test/plugin.tar.gz"}, &stdout, &stderr)
 	if code != 1 {
