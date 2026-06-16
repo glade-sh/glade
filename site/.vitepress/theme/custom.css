@@ -1144,8 +1144,11 @@ body:has(.VPHome) .VPNavBarSearch {
   width: 100%;
   height: 100%;
   border-radius: inherit;
+  opacity: 0;
+  transform: translateX(-110%);
   background: linear-gradient(90deg, rgba(155, 232, 112, 0), rgba(155, 232, 112, 0.96) 50%, rgba(155, 232, 112, 0));
   animation: home-loop-trace 5.4s cubic-bezier(.65, 0, .35, 1) infinite;
+  animation-fill-mode: both;
   will-change: transform, opacity;
 }
 

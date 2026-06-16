@@ -349,6 +349,8 @@ test("home local loop styles stay quiet and responsive", () => {
   assert.match(css, /\.home-loop-stage\s*\{[\s\S]*height: 172px;/);
   assert.match(css, /\.home-loop-trace\s*\{[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/);
   assert.match(css, /\.home-loop-trace i\s*\{[\s\S]*width: 100%;[\s\S]*background: linear-gradient\(90deg, rgba\(155, 232, 112, 0\), rgba\(155, 232, 112, 0\.96\) 50%, rgba\(155, 232, 112, 0\)\);/);
+  assert.match(css, /\.home-loop-trace i\s*\{[\s\S]*opacity: 0;[\s\S]*transform: translateX\(-110%\);/);
+  assert.match(css, /\.home-loop-trace i\s*\{[\s\S]*animation-fill-mode: both;/);
   assert.match(css, /\.home-loop-trace i\s*\{[\s\S]*will-change: transform, opacity;/);
   assert.match(css, /@keyframes home-loop-trace/);
   assert.match(css, /\.home-loop-tabs\s*\{[\s\S]*display: flex;/);
