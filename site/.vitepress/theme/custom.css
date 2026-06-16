@@ -781,35 +781,23 @@ body:has(.VPHome) .VPNavBarSearch {
 }
 
 .docs-support-legend {
-  position: sticky;
-  top: calc(var(--vp-nav-height) + 0.75rem);
-  z-index: 2;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin: 1.25rem 0 1.75rem;
-  padding: 16px;
+  position: static;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin: 0.7rem 0 1.1rem;
+  padding: 4px 6px;
   border: 1px solid var(--glade-border);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--bg-soft) 92%, transparent);
-  backdrop-filter: blur(14px);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-soft) 72%, transparent);
 }
 
 .docs-support-legend-card {
-  display: grid;
-  gap: 8px;
+  display: inline-flex;
+  align-items: center;
   min-width: 0;
-  border: 1px solid var(--glade-border);
-  padding: 14px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--surface) 82%, transparent);
-}
-
-.docs-support-legend-card p {
-  margin: 0;
-  color: var(--vp-c-text-2);
-  font-size: 0.875rem;
-  line-height: 1.55;
+  padding: 0;
 }
 
 @media (min-width: 1280px) {
@@ -827,11 +815,6 @@ body:has(.VPHome) .VPNavBarSearch {
 @media (max-width: 760px) {
   .docs-route-grid,
   .docs-install-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .docs-support-legend {
-    position: static;
     grid-template-columns: 1fr;
   }
 

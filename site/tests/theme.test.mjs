@@ -815,6 +815,12 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(supportMap, /^# What Glade runs locally/m);
   assert.match(supportMap, /class="docs-support-legend"/);
   assert.match(supportMap, /class="docs-support-legend-card docs-support-legend-card-supported"/);
+  const legendStart = supportMap.indexOf('<div class="docs-support-legend"');
+  const legendEnd = supportMap.indexOf("</div>", supportMap.indexOf("</div>", supportMap.indexOf("</div>", supportMap.indexOf("</div>", legendStart) + 1) + 1) + 1);
+  assert.ok(legendStart > -1);
+  assert.ok(legendEnd > legendStart);
+  const legendBlock = supportMap.slice(legendStart, legendEnd);
+  assert.doesNotMatch(legendBlock, /<p>/);
   assert.match(supportMap, /class="docs-status-chip docs-status-supported">Runs locally/);
   assert.match(supportMap, /Before you adopt Glade/);
   assert.match(supportMap, /Salesforce validation gate/);
@@ -841,8 +847,9 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(installation, /Installs the current release to <code>~\/\.local\/bin<\/code>\./);
   assert.match(installation, /Use in CI or when policy requires pinned artifacts\./);
   assert.match(css, /\.docs-install-card\s*\{[\s\S]*padding: 16px;[\s\S]*border-radius: 12px;[\s\S]*min-height: 112px;/);
-  assert.match(css, /\.docs-support-legend\s*\{[\s\S]*display: grid;[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);[\s\S]*gap: 12px;[\s\S]*padding: 16px;/);
-  assert.match(css, /\.docs-support-legend-card\s*\{[\s\S]*padding: 14px;[\s\S]*border-radius: 12px;/);
+  assert.match(css, /\.docs-support-legend\s*\{[\s\S]*position: static;[\s\S]*display: flex;[\s\S]*flex-wrap: wrap;[\s\S]*gap: 4px;[\s\S]*padding: 4px 6px;/);
+  assert.doesNotMatch(css, /\.docs-support-legend\s*\{[\s\S]*position: sticky;/);
+  assert.match(css, /\.docs-support-legend-card\s*\{[\s\S]*display: inline-flex;[\s\S]*align-items: center;[\s\S]*padding: 0;/);
   assert.match(installation, /glade test --project \. --class AccountServiceTest --method testCreatesAccount --json/);
   assert.match(cliReference, /id="cli-command-filter"/);
   assert.match(cliReference, /class="docs-command-card"/);

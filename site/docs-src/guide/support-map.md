@@ -26,21 +26,17 @@ folded into this page.
 ## Status key
 
 <div class="docs-support-legend" aria-label="Capability status legend">
-  <div class="docs-support-legend-card docs-support-legend-card-supported">
+  <div class="docs-support-legend-card docs-support-legend-card-supported" aria-label="Runs locally">
     <span class="docs-status-chip docs-status-supported">Runs locally</span>
-    <p>Implemented, fixture-backed, and fit for normal local use.</p>
   </div>
-  <div class="docs-support-legend-card docs-support-legend-card-partial">
+  <div class="docs-support-legend-card docs-support-legend-card-partial" aria-label="Runs with limits">
     <span class="docs-status-chip docs-status-partial">Runs with limits</span>
-    <p>Common local paths work. The limits are named.</p>
   </div>
-  <div class="docs-support-legend-card docs-support-legend-card-unsupported">
+  <div class="docs-support-legend-card docs-support-legend-card-unsupported" aria-label="Requires Salesforce">
     <span class="docs-status-chip docs-status-unsupported">Requires Salesforce</span>
-    <p>Glade stops with a stable unsupported diagnostic.</p>
   </div>
-  <div class="docs-support-legend-card docs-support-legend-card-unknown">
+  <div class="docs-support-legend-card docs-support-legend-card-unknown" aria-label="Not measured">
     <span class="docs-status-chip docs-status-unknown">Not measured</span>
-    <p>A row exists, but it has not been measured yet.</p>
   </div>
 </div>
 
