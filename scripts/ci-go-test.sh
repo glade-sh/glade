@@ -6,6 +6,8 @@ if [[ ! "${heartbeat_seconds}" =~ ^[0-9]+$ ]] || [[ "${heartbeat_seconds}" -lt 1
 	heartbeat_seconds=60
 fi
 
+export GOMAXPROCS="${GOMAXPROCS:-2}"
+
 heavy_packages=(
 	./internal/apextest
 	./internal/gladecli
@@ -31,11 +33,15 @@ run_with_heartbeat() {
 
 	log="$(mktemp "${TMPDIR:-/tmp}/glade-ci-go-test.XXXXXX")"
 	echo "::group::${label}"
+	printf '[ci] GOMAXPROCS=%s\n' "${GOMAXPROCS}"
 	printf '+'
 	printf ' %q' "$@"
 	printf '\n'
 
-	"$@" >"${log}" 2>&1 &
+	(
+		set -o pipefail
+		"$@" 2>&1 | tee "${log}"
+	) &
 	pid="$!"
 
 	while process_active "${pid}"; do
@@ -50,7 +56,6 @@ run_with_heartbeat() {
 	done
 
 	wait "${pid}" || rc="$?"
-	cat "${log}"
 	rm -f "${log}"
 	echo "::endgroup::"
 	return "${rc}"
@@ -64,7 +69,7 @@ run_normal_tests() {
 	local pkg
 	local remaining
 	for pkg in "${heavy_packages[@]}"; do
-		run_with_heartbeat "go test ${pkg}" go test -timeout=30m "${pkg}"
+		run_with_heartbeat "go test ${pkg}" go test -v -timeout=30m "${pkg}"
 	done
 	remaining="$(remaining_packages)"
 	if [[ -n "${remaining}" ]]; then
@@ -77,7 +82,7 @@ run_race_tests() {
 	local pkg
 	local remaining
 	for pkg in "${heavy_packages[@]}"; do
-		run_with_heartbeat "go test -race ${pkg}" go test -race -timeout=60m "${pkg}"
+		run_with_heartbeat "go test -race ${pkg}" go test -race -v -timeout=60m "${pkg}"
 	done
 	remaining="$(remaining_packages)"
 	if [[ -n "${remaining}" ]]; then

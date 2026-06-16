@@ -7,12 +7,15 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GOMAXPROCS: "2"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: npm
@@ -21,4 +24,20 @@ jobs:
       - run: go vet ./...
       - run: scripts/ci-go-test.sh test
       - run: scripts/smoke.sh
+  race:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      GOMAXPROCS: "2"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: third_party/lwc/package-lock.json
+      - run: npm ci --prefix third_party/lwc
       - run: scripts/ci-go-test.sh race

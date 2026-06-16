@@ -14,11 +14,14 @@ func TestCIGoTestWrapperIsWired(t *testing.T) {
 	}
 	scriptText := string(script)
 	for _, want := range []string{
+		`export GOMAXPROCS="${GOMAXPROCS:-2}"`,
 		"run_with_heartbeat",
+		`set -o pipefail`,
+		"tee",
 		"./internal/apextest",
 		"./internal/gladecli",
 		"./internal/sema",
-		"go test",
+		"go test -v",
 	} {
 		if !strings.Contains(scriptText, want) {
 			t.Fatalf("ci-go-test.sh missing %q", want)
@@ -32,6 +35,12 @@ func TestCIGoTestWrapperIsWired(t *testing.T) {
 	}
 	workflowText := string(workflow)
 	for _, want := range []string{
+		"timeout-minutes: 30",
+		"timeout-minutes: 75",
+		"GOMAXPROCS: \"2\"",
+		"actions/checkout@v6",
+		"actions/setup-go@v6",
+		"actions/setup-node@v6",
 		"scripts/ci-go-test.sh test",
 		"scripts/ci-go-test.sh race",
 	} {
