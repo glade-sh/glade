@@ -298,8 +298,8 @@ Editing a trigger instead falls back to the full suite:
 
 Large projects pay a startup cost to build local org state and compile project
 helpers before the first test runs. `glade test` can persist that harness in
-`.glade/test/startup.gob` and reload it on later runs when fingerprint checks
-pass.
+`.glade/test/startup.meta.json` plus a hashed `startup.payload.<sha256>.gob`
+and reload it on later runs when fingerprint checks pass.
 
 **Read [TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md) for the full rules** —
 what is cached, when it is written, how freshness works, and when a bad cache

@@ -1185,9 +1185,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if !ok {
 				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe unknown object %s", objectValue.Text)
 			}
-			appendTrace(result, "apex.describe.sobject", "apex.describe", vm.traceDescribeArgs("SObjectType.getDescribe", map[string]any{
-				trace.ArgObject: objectName,
-			}))
+			appendTraceLazy(result, "apex.describe.sobject", "apex.describe", func() map[string]any {
+				return vm.traceDescribeArgs("SObjectType.getDescribe", map[string]any{
+					trace.ArgObject: objectName,
+				})
+			})
 			describe := vm.describeSObjectValue(objectName, definition)
 			if len(args) == 1 && args[0].Text != "" {
 				describe = cloneValue(describe)
@@ -1222,7 +1224,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectFieldMap.getMap expects 0 arguments")
 			}
-			appendTrace(result, "apex.describe.fields", "apex.describe", vm.traceDescribeArgs("fields.getMap", nil))
+			appendTraceLazy(result, "apex.describe.fields", "apex.describe", func() map[string]any {
+				return vm.traceDescribeArgs("fields.getMap", nil)
+			})
 			return receiver.Fields["map"], receiver, false, true, nil
 		}
 	case "Schema.FieldSetMap":
@@ -1231,7 +1235,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSetMap.getMap expects 0 arguments")
 			}
-			appendTrace(result, "apex.describe.fieldSets", "apex.describe", vm.traceDescribeArgs("fieldSets.getMap", nil))
+			appendTraceLazy(result, "apex.describe.fieldSets", "apex.describe", func() map[string]any {
+				return vm.traceDescribeArgs("fieldSets.getMap", nil)
+			})
 			return receiver.Fields["map"], receiver, false, true, nil
 		case "get":
 			if len(args) != 1 || args[0].Kind != ValueString {
@@ -1360,10 +1366,12 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					describe.Fields["soapType"] = schemaSOAPTypeValue(displayType)
 				}
 			}
-			appendTrace(result, "apex.describe.field", "apex.describe", vm.traceDescribeArgs("SObjectField.getDescribe", map[string]any{
-				trace.ArgObject: objectValue.Text,
-				trace.ArgField:  fieldValue.Text,
-			}))
+			appendTraceLazy(result, "apex.describe.field", "apex.describe", func() map[string]any {
+				return vm.traceDescribeArgs("SObjectField.getDescribe", map[string]any{
+					trace.ArgObject: objectValue.Text,
+					trace.ArgField:  fieldValue.Text,
+				})
+			})
 			return describe, receiver, false, true, nil
 		}
 		switch method {

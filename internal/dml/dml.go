@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/glade-sh/glade/internal/storage"
@@ -32,7 +33,7 @@ type Engine struct {
 	activeValRules map[string]bool
 	uniqueFields   map[string][]string
 	uniqueIndexes  map[string]map[string]map[storage.ID]bool
-	SummaryByChild SummaryRelationCache
+	SummaryByChild *SummaryRelationCache
 	subflowCache   map[string]cachedSubflow
 }
 
@@ -41,7 +42,33 @@ type cachedSubflow struct {
 	def  storage.ObjectDefinition
 }
 
-type SummaryRelationCache map[string][]summaryRelation
+type SummaryRelationCache struct {
+	mu      sync.RWMutex
+	entries map[string][]summaryRelation
+}
+
+func NewSummaryRelationCache() *SummaryRelationCache {
+	return &SummaryRelationCache{entries: make(map[string][]summaryRelation)}
+}
+
+func (c *SummaryRelationCache) load(childObjectName string) ([]summaryRelation, bool) {
+	if c == nil {
+		return nil, false
+	}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	relations, ok := c.entries[childObjectName]
+	return relations, ok
+}
+
+func (c *SummaryRelationCache) store(childObjectName string, relations []summaryRelation) {
+	if c == nil {
+		return
+	}
+	c.mu.Lock()
+	c.entries[childObjectName] = relations
+	c.mu.Unlock()
+}
 
 type Options struct {
 	AllowFieldTruncation      bool
@@ -123,7 +150,6 @@ func NewEngine(org *storage.OrgState) Engine {
 		activeValRules: make(map[string]bool),
 		uniqueFields:   make(map[string][]string),
 		uniqueIndexes:  make(map[string]map[string]map[storage.ID]bool),
-		SummaryByChild: make(SummaryRelationCache),
 	}
 }
 

@@ -1722,7 +1722,32 @@ func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string
 	if !ok {
 		return cacheResult("", false)
 	}
-	matches := make([]string, 0, 1)
+	parentKey := strings.ToLower(strings.TrimSpace(parentObject))
+	relationshipKey := strings.ToLower(strings.TrimSpace(relationshipName))
+	if index, ok := vm.jsonChildRelTypeCache.loadParent(parentKey); ok {
+		if cached, ok := index[relationshipKey]; ok {
+			return cacheResult(cached.Type, cached.OK)
+		}
+		return cacheResult("", false)
+	}
+	index := vm.buildJSONSObjectChildRelationshipTypeIndex(parentObject)
+	vm.jsonChildRelTypeCache.storeParent(parentKey, index)
+	if cached, ok := index[relationshipKey]; ok {
+		return cacheResult(cached.Type, cached.OK)
+	}
+	return cacheResult("", false)
+}
+
+func (vm *VM) buildJSONSObjectChildRelationshipTypeIndex(parentObject string) map[string]jsonRelationshipTypeLookup {
+	matchesByName := make(map[string][]string)
+	addMatch := func(childRelationshipName, childName string) {
+		if strings.TrimSpace(childRelationshipName) == "" || strings.TrimSpace(childName) == "" {
+			return
+		}
+		for _, alias := range jsonRelationshipNameLookupKeys(vm.Org.Namespace, childRelationshipName) {
+			matchesByName[alias] = appendUniqueStringFold(matchesByName[alias], childName)
+		}
+	}
 	for childName, childState := range vm.Org.Objects {
 		childRelationshipName := ""
 		for _, relation := range childState.Definition.Relations {
@@ -1733,9 +1758,7 @@ func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string
 			if childRelationshipName == "" {
 				childRelationshipName = derivedVMChildRelationshipName(childState.Definition)
 			}
-			if vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, relationshipName) {
-				matches = appendUniqueStringFold(matches, childName)
-			}
+			addMatch(childRelationshipName, childName)
 		}
 	}
 	for childName, childState := range vm.Org.Objects {
@@ -1747,16 +1770,59 @@ func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string
 				continue
 			}
 			for _, childRelationshipName := range vmFieldChildRelationshipNames(childState.Definition, field) {
-				if vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, relationshipName) {
-					matches = appendUniqueStringFold(matches, childName)
-				}
+				addMatch(childRelationshipName, childName)
 			}
 		}
 	}
-	if childName := vm.bestChildRelationshipObject(matches); childName != "" {
-		return cacheResult("List<"+childName+">", true)
+	index := make(map[string]jsonRelationshipTypeLookup, len(matchesByName))
+	for relationshipKey, matches := range matchesByName {
+		if childName := vm.bestChildRelationshipObject(matches); childName != "" {
+			index[relationshipKey] = jsonRelationshipTypeLookup{Type: "List<" + childName + ">", OK: true}
+		}
 	}
-	return cacheResult("", false)
+	return index
+}
+
+func jsonRelationshipNameLookupKeys(namespace, name string) []string {
+	seen := make(map[string]bool, 6)
+	keys := make([]string, 0, 6)
+	add := func(value string) {
+		value = strings.ToLower(strings.TrimSpace(value))
+		if value == "" || seen[value] {
+			return
+		}
+		seen[value] = true
+		keys = append(keys, value)
+	}
+	addVariant := func(value string) {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			return
+		}
+		add(value)
+		if hasSuffixFold(value, "__r") {
+			add(value[:len(value)-3])
+		} else {
+			add(value + "__r")
+		}
+	}
+	addVariant(name)
+	addVariant(stripAnyNamespaceToken(name))
+	if strings.TrimSpace(namespace) != "" {
+		addVariant(storage.StripNamespaceToken(namespace, name))
+		addVariant(storage.NamespaceTokenName(namespace, name))
+		addVariant(jsonNamespacedRelationshipLookupName(namespace, name))
+	}
+	return keys
+}
+
+func jsonNamespacedRelationshipLookupName(namespace, name string) string {
+	namespace = strings.TrimSpace(namespace)
+	name = strings.TrimSpace(name)
+	if namespace == "" || name == "" || strings.Contains(name, "__") {
+		return name
+	}
+	return namespace + "__" + name
 }
 
 func (vm *VM) bestChildRelationshipObject(matches []string) string {
@@ -2054,12 +2120,16 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 // jsonChildRelTypeLookupCache memoizes (typeName, relationshipName) -> child
 // type lookups inside one runtime clone.
 type jsonChildRelTypeLookupCache struct {
-	mu      sync.RWMutex
-	entries map[string]jsonRelationshipTypeLookup
+	mu            sync.RWMutex
+	entries       map[string]jsonRelationshipTypeLookup
+	parentIndexes map[string]map[string]jsonRelationshipTypeLookup
 }
 
 func newJSONChildRelTypeLookupCache() *jsonChildRelTypeLookupCache {
-	return &jsonChildRelTypeLookupCache{entries: make(map[string]jsonRelationshipTypeLookup)}
+	return &jsonChildRelTypeLookupCache{
+		entries:       make(map[string]jsonRelationshipTypeLookup),
+		parentIndexes: make(map[string]map[string]jsonRelationshipTypeLookup),
+	}
 }
 
 func (c *jsonChildRelTypeLookupCache) load(key string) (jsonRelationshipTypeLookup, bool) {
@@ -2078,6 +2148,25 @@ func (c *jsonChildRelTypeLookupCache) store(key string, value jsonRelationshipTy
 	}
 	c.mu.Lock()
 	c.entries[key] = value
+	c.mu.Unlock()
+}
+
+func (c *jsonChildRelTypeLookupCache) loadParent(key string) (map[string]jsonRelationshipTypeLookup, bool) {
+	if c == nil {
+		return nil, false
+	}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	value, ok := c.parentIndexes[key]
+	return value, ok
+}
+
+func (c *jsonChildRelTypeLookupCache) storeParent(key string, value map[string]jsonRelationshipTypeLookup) {
+	if c == nil {
+		return
+	}
+	c.mu.Lock()
+	c.parentIndexes[key] = value
 	c.mu.Unlock()
 }
 

@@ -1518,9 +1518,7 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 			consider(relation)
 		}
 		visitSyntheticStandardSystemChildRelationships(childDefinition, consider)
-		for _, relation := range syntheticSystemChildRelationships(childDefinition) {
-			consider(relation)
-		}
+		visitSyntheticSystemChildRelationships(childDefinition, consider)
 		if relation, ok := syntheticPrefixedCustomChildRelationship(org, parentDefinition, childDefinition, relationship); ok {
 			consider(relation)
 		}
@@ -1688,6 +1686,14 @@ func visitSyntheticStandardSystemChildRelationships(definition storage.ObjectDef
 func syntheticSystemChildRelationships(definition storage.ObjectDefinition) []storage.Relationship {
 	fields := []string{"CreatedById", "LastModifiedById", "OwnerId"}
 	relations := make([]storage.Relationship, 0, len(fields))
+	visitSyntheticSystemChildRelationships(definition, func(relation storage.Relationship) {
+		relations = append(relations, relation)
+	})
+	return relations
+}
+
+func visitSyntheticSystemChildRelationships(definition storage.ObjectDefinition, visit func(storage.Relationship)) {
+	fields := []string{"CreatedById", "LastModifiedById", "OwnerId"}
 	for _, fieldName := range fields {
 		if hasSOQLRelationForField(definition.Relations, fieldName) {
 			continue
@@ -1696,7 +1702,7 @@ func syntheticSystemChildRelationships(definition storage.ObjectDefinition) []st
 		if !ok || field.Type != storage.FieldReference || len(field.ReferenceTo) == 0 {
 			continue
 		}
-		relations = append(relations, storage.Relationship{
+		visit(storage.Relationship{
 			Field:              field.APIName,
 			ParentObjects:      append([]string(nil), field.ReferenceTo...),
 			ParentRelationship: strings.TrimSuffix(field.APIName, "Id"),
@@ -1704,7 +1710,6 @@ func syntheticSystemChildRelationships(definition storage.ObjectDefinition) []st
 			Polymorphic:        len(field.ReferenceTo) > 1,
 		})
 	}
-	return relations
 }
 
 func hasSOQLRelationForField(relations []storage.Relationship, fieldName string) bool {

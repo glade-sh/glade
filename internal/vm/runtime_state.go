@@ -162,15 +162,15 @@ type VM struct {
 	describeDefCache             map[string]storage.ObjectDefinition
 	customDataCache              map[string]Value
 	soqlExecutionCache           *soql.ExecutionCache
-	dmlSummaryByChild            dml.SummaryRelationCache
+	dmlSummaryByChild            *dml.SummaryRelationCache
 	managedFeatureValues         map[string]Value
 	childRelCache                *childRelationshipCache
 	childRelationshipLookupCache *childRelationshipLookupCache
 	jsonChildRelTypeCache        *jsonChildRelTypeLookupCache
 	sObjectFieldAliasCache       *sObjectFieldAliasLookupCache
 	fieldResolveCache            *fieldResolveLookupCache
-	loadedChildRelCache          map[string]loadedChildRelationshipLookup
-	lazyChildRelCache            map[string]lazyChildRelationshipLookup
+	loadedChildRelCache          *loadedChildRelationshipLookupCache
+	lazyChildRelCache            *lazyChildRelationshipLookupCache
 	objectNameCache              map[string]objectNameLookup
 	recentlyViewed               map[string]map[storage.ID]recentlyViewedEntry
 	metadataCacheStamp           string
@@ -548,13 +548,14 @@ func New(stdout io.Writer) *VM {
 		describeDefCache:             make(map[string]storage.ObjectDefinition),
 		customDataCache:              make(map[string]Value),
 		managedFeatureValues:         make(map[string]Value),
+		dmlSummaryByChild:            dml.NewSummaryRelationCache(),
 		childRelCache:                newChildRelationshipCache(),
 		childRelationshipLookupCache: newChildRelationshipLookupCache(),
 		jsonChildRelTypeCache:        newJSONChildRelTypeLookupCache(),
 		sObjectFieldAliasCache:       newSObjectFieldAliasLookupCache(),
 		fieldResolveCache:            newFieldResolveLookupCache(),
-		loadedChildRelCache:          make(map[string]loadedChildRelationshipLookup),
-		lazyChildRelCache:            make(map[string]lazyChildRelationshipLookup),
+		loadedChildRelCache:          newLoadedChildRelationshipLookupCache(),
+		lazyChildRelCache:            newLazyChildRelationshipLookupCache(),
 		objectNameCache:              make(map[string]objectNameLookup),
 		recentlyViewed:               make(map[string]map[storage.ID]recentlyViewedEntry),
 	}
@@ -615,12 +616,18 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 		clone.childRelationshipLookupCache = vm.childRelationshipLookupCache
 		clone.sObjectFieldAliasCache = vm.sObjectFieldAliasCache
 		clone.fieldResolveCache = vm.fieldResolveCache
+		clone.dmlSummaryByChild = vm.dmlSummaryByChild
+		clone.loadedChildRelCache = vm.loadedChildRelCache
+		clone.lazyChildRelCache = vm.lazyChildRelCache
 	} else {
 		clone.jsonChildRelTypeCache = newJSONChildRelTypeLookupCache()
 		clone.childRelCache = newChildRelationshipCache()
 		clone.childRelationshipLookupCache = newChildRelationshipLookupCache()
 		clone.sObjectFieldAliasCache = newSObjectFieldAliasLookupCache()
 		clone.fieldResolveCache = newFieldResolveLookupCache()
+		clone.dmlSummaryByChild = dml.NewSummaryRelationCache()
+		clone.loadedChildRelCache = newLoadedChildRelationshipLookupCache()
+		clone.lazyChildRelCache = newLazyChildRelationshipLookupCache()
 	}
 	clone.traceEnabled = vm.traceEnabled
 	clone.toolingExecuteAnonymous = vm.toolingExecuteAnonymous
@@ -1206,7 +1213,7 @@ func (vm *VM) SetContext(ctx context.Context) {
 func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	engine := dml.NewEngine(vm.Org)
 	if vm.dmlSummaryByChild == nil {
-		vm.dmlSummaryByChild = make(dml.SummaryRelationCache)
+		vm.dmlSummaryByChild = dml.NewSummaryRelationCache()
 	}
 	engine.SummaryByChild = vm.dmlSummaryByChild
 	engine.IsolationJournal = vm.isolationJournal
@@ -1683,7 +1690,9 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 		result.Limits = vm.limits
 		result.LimitMode = vm.limitMode
 		result.LimitViolations = append([]LimitViolation(nil), vm.limitViolations...)
-		vm.appendTrace(&result, "apex.limits", "apex.limits", limitTraceArgs(vm.limits))
+		appendTraceLazy(&result, "apex.limits", "apex.limits", func() map[string]any {
+			return limitTraceArgs(vm.limits)
+		})
 	}()
 	callerClass := vm.currentClass
 	if className != "" {

@@ -120,15 +120,18 @@ func (vm *VM) executeSOQLRowsWithExpanderAndScope(raw string, execResult *Result
 		}
 		values = append(values, value)
 	}
-	traceArgs := vm.traceSOQLArgs(queryText, query.Object, result.Rows)
-	appendTrace(execResult, "apex.soql", "apex.soql", traceArgs)
-	appendDurationTrace(
+	appendTraceLazy(execResult, "apex.soql", "apex.soql", func() map[string]any {
+		return vm.traceSOQLArgs(queryText, query.Object, result.Rows)
+	})
+	appendDurationTraceLazy(
 		execResult,
 		"apex.soql",
 		"apex.soql",
 		traceStart,
 		traceDurationSince(traceStartedAt),
-		vm.traceSOQLArgs(queryText, query.Object, result.Rows),
+		func() map[string]any {
+			return vm.traceSOQLArgs(queryText, query.Object, result.Rows)
+		},
 	)
 	return values, nil
 }
@@ -356,7 +359,9 @@ func (vm *VM) executeSoqlStub(query soql.Query, queryText string, binds Value, e
 		return nil, true, fmt.Errorf("SoqlStubProvider %s handleSoqlQuery must return List<SObject>", provider.Type)
 	}
 	rows := append([]Value(nil), value.List...)
-	appendTrace(execResult, "apex.soql.stub", "apex.soql", vm.traceSOQLArgs(queryText, objectName, len(rows)))
+	appendTraceLazy(execResult, "apex.soql.stub", "apex.soql", func() map[string]any {
+		return vm.traceSOQLArgs(queryText, objectName, len(rows))
+	})
 	return rows, true, nil
 }
 
@@ -618,9 +623,11 @@ func (vm *VM) executeSOSLWithAccessLevel(raw string, execResult *Result, accessL
 		rowCount += len(rows.List)
 		groups = append(groups, rows)
 	}
-	appendTrace(execResult, "apex.sosl", "apex.sosl", map[string]any{
-		"query": queryText,
-		"rows":  rowCount,
+	appendTraceLazy(execResult, "apex.sosl", "apex.sosl", func() map[string]any {
+		return map[string]any{
+			"query": queryText,
+			"rows":  rowCount,
+		}
 	})
 	return List(groups...), nil
 }

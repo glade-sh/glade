@@ -191,8 +191,9 @@ failure.
 ## Warm startup across CLI runs
 
 Large projects rebuild local org state and helper compilation on cold start.
-`glade test` writes that harness to `.glade/test/startup.gob` after the first
-cold build and reloads it when fingerprint checks pass.
+`glade test` writes that harness to `.glade/test/startup.meta.json` plus a
+hashed payload after the first cold build and reloads it when fingerprint checks
+pass.
 
 **[Test Startup Cache](/guide/test-startup-cache)** explains when the cache is
 created, how it stays up to date, when it can be wrong, and how to recover.

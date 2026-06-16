@@ -77,9 +77,9 @@ func (e *Engine) summaryRelationsForChild(childObjectName string) []summaryRelat
 		return nil
 	}
 	if e.SummaryByChild == nil {
-		e.SummaryByChild = make(SummaryRelationCache)
+		e.SummaryByChild = NewSummaryRelationCache()
 	}
-	if relations, ok := e.SummaryByChild[childObjectName]; ok {
+	if relations, ok := e.SummaryByChild.load(childObjectName); ok {
 		return relations
 	}
 	relations := make([]summaryRelation, 0)
@@ -117,7 +117,7 @@ func (e *Engine) summaryRelationsForChild(childObjectName string) []summaryRelat
 			})
 		}
 	}
-	e.SummaryByChild[childObjectName] = relations
+	e.SummaryByChild.store(childObjectName, relations)
 	return relations
 }
 

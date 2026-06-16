@@ -259,8 +259,9 @@ Discover and run local Apex tests. Useful flags include `changed --since <ref>`,
 `glade test serve` keeps the runtime warm across CLI invocations. Later runs
 auto-connect through `.glade/test/serve.sock` unless `--no-serve` is set.
 
-Warmed harness state is cached on disk at `.glade/test/startup.gob` after a cold
-build. See [Test Startup Cache](/guide/test-startup-cache) for freshness rules.
+Warmed harness state is cached on disk at `.glade/test/startup.meta.json` plus a
+hashed payload after a cold build. See
+[Test Startup Cache](/guide/test-startup-cache) for freshness rules.
 
 ```bash
 glade test serve --project .

@@ -3,6 +3,7 @@ package soql
 import (
 	"errors"
 	"math"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -14,6 +15,23 @@ import (
 	"github.com/glade-sh/glade/internal/sobject"
 	"github.com/glade-sh/glade/internal/storage"
 )
+
+func TestSyntheticSystemChildRelationshipVisitorMatchesSliceResult(t *testing.T) {
+	definition := storage.ObjectDefinition{
+		APIName: "Invoice__c",
+		Fields: map[string]storage.Field{
+			"OwnerId": {APIName: "OwnerId", Type: storage.FieldReference, ReferenceTo: []string{"User"}},
+		},
+	}
+	fromSlice := syntheticSystemChildRelationships(definition)
+	var fromVisitor []storage.Relationship
+	visitSyntheticSystemChildRelationships(definition, func(relation storage.Relationship) {
+		fromVisitor = append(fromVisitor, relation)
+	})
+	if !reflect.DeepEqual(fromVisitor, fromSlice) {
+		t.Fatalf("visitor relationships = %#v, want %#v", fromVisitor, fromSlice)
+	}
+}
 
 func TestParseSimpleQuery(t *testing.T) {
 	query, err := Parse("SELECT Id, Name FROM Account WHERE Name = 'Acme' WITH SECURITY_ENFORCED ORDER BY Name DESC NULLS LAST LIMIT 10 OFFSET 1 FOR UPDATE")

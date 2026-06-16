@@ -311,18 +311,20 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		Line:   method.Line,
 		Column: method.Column,
 	})
-	traceStart, traceStartedAt := traceSpanStart(result)
-	appendTrace(result, "apex.method."+method.Name, "apex.method", vm.traceMethodArgs(method))
-	defer func() {
-		appendDurationTrace(
-			result,
-			"apex.method."+method.Name,
-			"apex.method",
-			traceStart,
-			traceDurationSince(traceStartedAt),
-			vm.traceMethodArgs(method),
-		)
-	}()
+	if traceIsEnabled(result) {
+		traceStart, traceStartedAt := traceSpanStart(result)
+		appendTrace(result, "apex.method."+method.Name, "apex.method", vm.traceMethodArgs(method))
+		defer func() {
+			appendDurationTrace(
+				result,
+				"apex.method."+method.Name,
+				"apex.method",
+				traceStart,
+				traceDurationSince(traceStartedAt),
+				vm.traceMethodArgs(method),
+			)
+		}()
+	}
 	defer func() {
 		vm.callStack = vm.callStack[:len(vm.callStack)-1]
 		vm.Globals = caller
