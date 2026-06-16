@@ -462,6 +462,11 @@ test("home local loop styles stay quiet and responsive", () => {
   assert.doesNotMatch(css, /--glade-instrument-bg/);
 });
 
+test("home mobile sections do not let command samples widen the page", () => {
+  assert.match(css, /\.home-capability-section > \*\s*\{[\s\S]*min-width: 0;/);
+  assert.match(css, /@media \(max-width: 640px\)\s*\{[\s\S]*\.home-command-block code\s*\{[\s\S]*white-space: pre-wrap;[\s\S]*overflow-wrap: anywhere;/);
+});
+
 test("apex highlighter calls out platform and qualified types", () => {
   const context = {
     document: { querySelectorAll: () => [] },

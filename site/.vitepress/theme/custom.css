@@ -1383,6 +1383,10 @@ body:has(.VPHome) .VPNavBarSearch {
   border-top: 1px solid rgba(169,184,173,0.16);
 }
 
+.home-capability-section > * {
+  min-width: 0;
+}
+
 .home-h2 {
   margin: 0;
   color: var(--vp-c-text-1);
@@ -1737,6 +1741,11 @@ body:has(.VPHome) .VPNavBarSearch {
 
   .home-loop-metrics strong {
     font-size: 13px;
+  }
+
+  .home-command-block code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   .coverage-workbench-cards article {
