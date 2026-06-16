@@ -906,6 +906,9 @@ test("cli reference documents current code intelligence commands", () => {
   assert.match(editor, /glade inspect references --project \. --symbol Account\.Name --include-declaration/);
   assert.match(editor, /glade refactor rename --project \. --symbol InvoiceService --to BillingService --dry-run/);
   assert.match(cliReference, /\[Use Glade as an sf target\]\(\/guide\/glade-orgs\)/);
+  assert.match(gladeOrgs, /glade org create my-glade-org\n```/);
+  assert(gladeOrgs.indexOf("glade org create my-glade-org") < gladeOrgs.indexOf("--db .glade/orgs/my-glade-org.sqlite"));
+  assert.match(index, /glade org create my-glade-org<\/code><\/pre>/);
   assert.match(gladeOrgs, /sf nimbleams data import -f \.\/data\/insertOrder\.json -u my-glade-org/);
   assert.match(gladeOrgs, /It is not a real scratch\s+org/);
   assert.match(gladeOrgs, /Bulk API v1 CSV insert and upsert baseline/);

@@ -1124,9 +1124,10 @@ func TestRunExecDoubleDashStopsFlagParsing(t *testing.T) {
 
 func TestRunCommandHelp(t *testing.T) {
 	tests := []struct {
-		name string
-		args []string
-		want []string
+		name    string
+		args    []string
+		want    []string
+		notWant []string
 	}{
 		{
 			name: "test flag help",
@@ -1179,9 +1180,10 @@ func TestRunCommandHelp(t *testing.T) {
 			want: []string{"Usage:", "glade playground", "--list-examples", "--example <id>", "--no-db", "--reset-on-start"},
 		},
 		{
-			name: "org help",
-			args: []string{"help", "org"},
-			want: []string{"Usage:", "glade org create", "glade org list", "glade org status", "glade org auth", "glade org create my-glade-org --project . --db .glade/orgs/my-glade-org.sqlite --addr 127.0.0.1:17911"},
+			name:    "org help",
+			args:    []string{"help", "org"},
+			want:    []string{"Usage:", "glade org create", "glade org list", "glade org status", "glade org auth", "glade org create my-glade-org", "--db .glade/orgs/my-glade-org.sqlite", "--addr 127.0.0.1:17911"},
+			notWant: []string{"glade org create my-glade-org --project . --db .glade/orgs/my-glade-org.sqlite --addr 127.0.0.1:17911"},
 		},
 		{
 			name: "help test",
@@ -1213,6 +1215,11 @@ func TestRunCommandHelp(t *testing.T) {
 			for _, want := range tt.want {
 				if !strings.Contains(got, want) {
 					t.Fatalf("stdout missing %q:\n%s", want, got)
+				}
+			}
+			for _, notWant := range tt.notWant {
+				if strings.Contains(got, notWant) {
+					t.Fatalf("stdout unexpectedly contains %q:\n%s", notWant, got)
 				}
 			}
 		})

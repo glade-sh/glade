@@ -488,14 +488,16 @@ var commandReferences = []CommandHelp{
 		},
 		Flags: []FlagHelp{
 			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
-			{Name: "--db", Value: "<path>", Description: "Persistent local database path."},
+			{Name: "--db", Value: "<path>", Description: "Persistent local database path. Defaults to .glade/orgs/<alias>.sqlite."},
 			{Name: "--addr", Value: "<host:port>", Description: "Local server address. Defaults to 127.0.0.1:17911 and scans upward."},
 			{Name: "--sf-config-dir", Value: "<path>", Description: "Salesforce CLI config directory for org auth."},
 			{Name: "--print", Description: "Print the Salesforce CLI auth command without running it."},
 			{Name: "--json", Description: "Write structured JSON output."},
 		},
 		Examples: []string{
-			"glade org create my-glade-org --project . --db .glade/orgs/my-glade-org.sqlite --addr 127.0.0.1:17911",
+			"glade org create my-glade-org",
+			"glade org create my-glade-org --project /path/to/project",
+			"glade org create my-glade-org --db .glade/orgs/my-glade-org.sqlite --addr 127.0.0.1:17911",
 			"glade org start my-glade-org --project .",
 			"glade org auth my-glade-org --project .",
 		},

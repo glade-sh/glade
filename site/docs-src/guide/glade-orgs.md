@@ -6,14 +6,29 @@ org, and Salesforce remains the validation gate.
 
 ## Create a local org
 
-Create a named local target with a project, database, and address:
+Create a named local target from the project root:
 
 ```bash
-glade org create my-glade-org --project . --db .glade/orgs/my-glade-org.sqlite --addr 127.0.0.1:17911
+glade org create my-glade-org
 ```
 
 The database holds local SObject rows. The project supplies Apex, schema, and
-metadata shape.
+metadata shape. By default, Glade writes the database to
+`.glade/orgs/my-glade-org.sqlite` and picks the next loopback address starting
+at `127.0.0.1:17911`.
+
+Pass `--project` when creating the target from outside the project root:
+
+```bash
+glade org create my-glade-org --project /path/to/project
+```
+
+Use `--db` or `--addr` only when you want to pin the database path or local
+server address:
+
+```bash
+glade org create my-glade-org --db .glade/orgs/my-glade-org.sqlite --addr 127.0.0.1:17911
+```
 
 ## Start the local org
 

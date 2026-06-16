@@ -437,7 +437,7 @@ Create, start, and register a local Glade org target for supported `sf`
 commands. This is a Glade-backed local API target, not a Salesforce scratch org.
 
 ```bash
-glade org create my-glade-org --project . --db .glade/orgs/my-glade-org.sqlite --addr 127.0.0.1:17911
+glade org create my-glade-org
 glade org start my-glade-org --project .
 glade org auth my-glade-org --project .
 sf data create record -o my-glade-org -s Account -v "Name='Local'"
