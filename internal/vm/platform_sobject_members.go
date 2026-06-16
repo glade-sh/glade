@@ -885,9 +885,9 @@ func (vm *VM) lazyChildRelationshipValue(receiver Value, field string) (Value, b
 func (vm *VM) lazyChildRelationshipLookup(parentObject, field string) lazyChildRelationshipLookup {
 	key := strings.ToLower(strings.TrimSpace(parentObject)) + "\x00" + strings.ToLower(strings.TrimSpace(field))
 	if vm.lazyChildRelCache == nil {
-		vm.lazyChildRelCache = make(map[string]lazyChildRelationshipLookup)
+		vm.lazyChildRelCache = newLazyChildRelationshipLookupCache()
 	}
-	if cached, ok := vm.lazyChildRelCache[key]; ok {
+	if cached, ok := vm.lazyChildRelCache.load(key); ok {
 		return cached
 	}
 	lookup := lazyChildRelationshipLookup{}
@@ -931,8 +931,7 @@ func (vm *VM) lazyChildRelationshipLookup(parentObject, field string) lazyChildR
 		lookup.Targets = lazyChildRelationshipTargetsForChild(lookup.Targets, childType)
 	}
 	lookup.OK = lookup.ChildType != ""
-	vm.lazyChildRelCache[key] = lookup
-	return lookup
+	return vm.lazyChildRelCache.store(key, lookup)
 }
 
 func lazyChildRelationshipTargetsForChild(targets []lazyChildRelationshipTarget, childType string) []lazyChildRelationshipTarget {
@@ -950,7 +949,7 @@ func lazyChildRelationshipTargetsForChild(targets []lazyChildRelationshipTarget,
 
 func (vm *VM) clearLazyChildRelationshipCache() {
 	if vm.lazyChildRelCache != nil {
-		vm.lazyChildRelCache = make(map[string]lazyChildRelationshipLookup)
+		vm.lazyChildRelCache = newLazyChildRelationshipLookupCache()
 	}
 }
 
@@ -1037,9 +1036,9 @@ func (vm *VM) loadedChildRelationshipValue(receiver Value, field string) (string
 func (vm *VM) loadedChildRelationshipLookup(receiverType, parentObject, field string) loadedChildRelationshipLookup {
 	key := strings.ToLower(strings.TrimSpace(receiverType)) + "\x00" + strings.ToLower(strings.TrimSpace(parentObject)) + "\x00" + strings.ToLower(strings.TrimSpace(field))
 	if vm.loadedChildRelCache == nil {
-		vm.loadedChildRelCache = make(map[string]loadedChildRelationshipLookup)
+		vm.loadedChildRelCache = newLoadedChildRelationshipLookupCache()
 	}
-	if cached, ok := vm.loadedChildRelCache[key]; ok {
+	if cached, ok := vm.loadedChildRelCache.load(key); ok {
 		return cached
 	}
 	lookup := loadedChildRelationshipLookup{
@@ -1066,8 +1065,7 @@ func (vm *VM) loadedChildRelationshipLookup(receiverType, parentObject, field st
 			lookup.CandidateNames = appendUniqueStringFold(lookup.CandidateNames, field)
 		}
 	}
-	vm.loadedChildRelCache[key] = lookup
-	return lookup
+	return vm.loadedChildRelCache.store(key, lookup)
 }
 
 func loadedChildRelationshipRuntimeValue(value Value) bool {

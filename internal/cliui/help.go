@@ -959,10 +959,11 @@ Common flags:
   --gc-aggressive           Run with GOGC=50 for memory-constrained hosts.
   --limit-mode <mode>       Use strict or permissive governor limits.
 
-Startup cache (.glade/test/startup.gob):
-  Written after a cold harness build; loaded when file/config/package fingerprints
-  still match. Does not store test results. A stale cache can hide new code —
-  use clear-cache after git pull or Glade upgrades, and --no-cache to debug.
+Startup cache (.glade/test/startup.meta.json):
+  Written after a cold harness build with a hashed startup.payload.<sha256>.gob.
+  Loaded when file/config/package fingerprints still match. Does not store test
+  results. A stale cache can hide new code — use clear-cache after git pull or
+  Glade upgrades, and --no-cache to debug.
   See docs/TEST_STARTUP_CACHE.md for freshness rules and recovery.
 
 Examples:

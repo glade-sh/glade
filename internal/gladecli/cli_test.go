@@ -1131,12 +1131,12 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "test flag help",
 			args: []string{"test", "--help"},
-			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "startup.gob", "--no-cache", "--connect", "--daemon"},
+			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "--no-cache", "--connect", "--daemon"},
 		},
 		{
 			name: "test serve help",
 			args: []string{"test", "serve", "--help"},
-			want: []string{"Serve flags:", "startup.gob", "--no-warm"},
+			want: []string{"Serve flags:", "--no-warm"},
 		},
 		{
 			name: "parse flag help",
@@ -1181,7 +1181,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "help test",
 			args: []string{"help", "test"},
-			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "startup.gob", "--no-cache", "--connect", "--daemon"},
+			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "--no-cache", "--connect", "--daemon"},
 		},
 		{
 			name: "help dev",

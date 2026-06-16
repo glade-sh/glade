@@ -26,7 +26,8 @@ All test-runtime artifacts live under `.glade/test/` in the project root:
 
 | File | Purpose |
 | ---- | ------- |
-| `startup.gob` | On-disk startup cache (gob-encoded org + compiled runtime) |
+| `startup.meta.json` | Cache header with freshness manifest and payload hash |
+| `startup.payload.<sha256>.gob` | Gob-encoded org and compiled runtime payload |
 | `serve.sock` | Unix socket for `glade test serve` (when a server is running) |
 | `serve.pid` | PID file for the running test server |
 
@@ -39,8 +40,9 @@ changing the test cache does not affect DAP.
 
 Glade can keep state warm at three levels. They are related but independent.
 
-1. **Disk cache (`startup.gob`)** — survives across CLI invocations and terminal
-   restarts. Loaded on the next `glade test` when freshness checks pass.
+1. **Disk cache (`startup.meta.json` plus payload)** — survives across CLI
+   invocations and terminal restarts. Loaded on the next `glade test` when
+   freshness checks pass.
 2. **In-process cache** — lives inside a single `glade test`, `glade test serve`,
    or `glade test --daemon --watch` process. Dropped when the process exits.
 3. **Test server (`glade test serve`)** — keeps layer 2 warm across separate CLI
@@ -51,16 +53,18 @@ slowest path is a cold harness build with no disk hit.
 
 ## When the disk cache is created
 
-`startup.gob` is written **after** a full cold harness build completes:
+`startup.meta.json` and `startup.payload.<sha256>.gob` are written **after** a
+full cold harness build completes:
 
 1. Load project, schema, and type index.
 2. Build local org state (`orgFromIndex`) and compile project helpers.
-3. Atomically write `.glade/test/startup.gob` (temp file + rename).
+3. Write the gob payload under its SHA-256 name.
+4. Atomically write `.glade/test/startup.meta.json` (temp file + rename).
 
 Creation is skipped when:
 
 - `--no-cache` is set on the run.
-- A fresh `startup.gob` was already loaded for this harness build (no rewrite on
+- A fresh split cache was already loaded for this harness build (no rewrite on
   every run).
 
 The first test run on a large project is therefore slow: it pays the cold cost
@@ -71,13 +75,16 @@ and writes the cache for later runs.
 On each `glade test` run (unless `--no-cache` or a running test server handles
 the request), Glade:
 
-1. Reads `startup.gob` if it exists.
-2. Verifies the entry is **fresh** (see below).
-3. If fresh, restores org state and compiled runtime and skips the cold harness.
-4. If missing, corrupt, stale, or wrong version, performs a cold build and may
-   write a new cache.
+1. Reads `startup.meta.json` if it exists.
+2. Verifies the header manifest is **fresh** (see below).
+3. If fresh, checks the payload file name, size, and SHA-256 hash.
+4. If fresh and verified, restores org state and compiled runtime and skips the
+   cold harness.
+5. If missing, corrupt, stale, wrong version, or hash-mismatched, performs a
+   cold build and may write a new cache.
 
-Corrupt gob files are ignored and trigger a cold rebuild.
+Legacy `startup.gob` files are read only when no split header exists. Corrupt
+payloads or legacy gob files are ignored and trigger a cold rebuild.
 
 ## Freshness: how the cache stays up to date
 
@@ -129,8 +136,8 @@ invalidate the cache. Deleting a tracked Apex class, trigger, or metadata file
 forces a cold harness build before tests run.
 
 **Running test server after `clear-cache`.** `glade test clear-cache` removes
-`startup.gob` only. A `glade test serve` process that is already running keeps
-its in-memory warm state until you restart it.
+the header, payload, and legacy gob files. A `glade test serve` process that is
+already running keeps its in-memory warm state until you restart it.
 
 **Glade upgrades.** A new Glade release may change org inference or compilation
 without bumping the cache format version. After upgrading Glade, clear the cache
@@ -149,13 +156,13 @@ treat the cache as suspect.
 # Delete the on-disk startup cache
 glade test clear-cache --project .
 
-# One run without reading or writing startup.gob (also skips test-server auto-connect)
+# One run without reading or writing the startup cache (also skips test-server auto-connect)
 glade test --project . --no-cache --class MyTest
 
 # Force a local harness build even if a test server is running
 glade test --project . --no-serve --class MyTest
 
-# Persistent warm server (separate from startup.gob, but shares .glade/test/)
+# Persistent warm server (separate from the disk cache, but shares .glade/test/)
 glade test serve --project .
 
 # Inspect or stop the warm server
@@ -184,8 +191,8 @@ is reachable.
 
 With `--watch` (the default), the server watches project files. On Apex class or
 trigger changes it reloads the index, drops in-process caches, and rebuilds the
-warm runtime. That rebuild also writes a new `startup.gob` when the harness
-completes.
+warm runtime. That rebuild also writes a new split startup cache when the
+harness completes.
 
 `glade test serve --no-warm` skips the initial warm on startup. The first client
 run pays the cold cost.

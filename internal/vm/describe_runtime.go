@@ -39,12 +39,30 @@ type childRelationshipLookupCache struct {
 	entries map[childRelationshipLookupKey]childRelationshipLookup
 }
 
+type loadedChildRelationshipLookupCache struct {
+	mu      sync.RWMutex
+	entries map[string]loadedChildRelationshipLookup
+}
+
+type lazyChildRelationshipLookupCache struct {
+	mu      sync.RWMutex
+	entries map[string]lazyChildRelationshipLookup
+}
+
 func newChildRelationshipCache() *childRelationshipCache {
 	return &childRelationshipCache{entries: make(map[string][]Value)}
 }
 
 func newChildRelationshipLookupCache() *childRelationshipLookupCache {
 	return &childRelationshipLookupCache{entries: make(map[childRelationshipLookupKey]childRelationshipLookup)}
+}
+
+func newLoadedChildRelationshipLookupCache() *loadedChildRelationshipLookupCache {
+	return &loadedChildRelationshipLookupCache{entries: make(map[string]loadedChildRelationshipLookup)}
+}
+
+func newLazyChildRelationshipLookupCache() *lazyChildRelationshipLookupCache {
+	return &lazyChildRelationshipLookupCache{entries: make(map[string]lazyChildRelationshipLookup)}
 }
 
 func sObjectDescribeOptionsValue(name string) Value {
@@ -91,6 +109,55 @@ func (c *childRelationshipLookupCache) store(key childRelationshipLookupKey, val
 	c.entries[key] = value
 	c.mu.Unlock()
 	return value
+}
+
+func (c *loadedChildRelationshipLookupCache) load(key string) (loadedChildRelationshipLookup, bool) {
+	if c == nil {
+		return loadedChildRelationshipLookup{}, false
+	}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	value, ok := c.entries[key]
+	return value, ok
+}
+
+func (c *loadedChildRelationshipLookupCache) store(key string, value loadedChildRelationshipLookup) loadedChildRelationshipLookup {
+	if c == nil {
+		return value
+	}
+	c.mu.Lock()
+	c.entries[key] = value
+	c.mu.Unlock()
+	return value
+}
+
+func (c *lazyChildRelationshipLookupCache) load(key string) (lazyChildRelationshipLookup, bool) {
+	if c == nil {
+		return lazyChildRelationshipLookup{}, false
+	}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	value, ok := c.entries[key]
+	return value, ok
+}
+
+func (c *lazyChildRelationshipLookupCache) store(key string, value lazyChildRelationshipLookup) lazyChildRelationshipLookup {
+	if c == nil {
+		return value
+	}
+	c.mu.Lock()
+	c.entries[key] = value
+	c.mu.Unlock()
+	return value
+}
+
+func (c *lazyChildRelationshipLookupCache) size() int {
+	if c == nil {
+		return 0
+	}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return len(c.entries)
 }
 
 func cloneChildRelationshipValues(values []Value) []Value {

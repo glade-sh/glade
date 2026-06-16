@@ -142,10 +142,13 @@ func TestReadCacheMissingReturnsErrCacheMiss(t *testing.T) {
 func TestClearCacheRemovesOnlySymbolsDirectory(t *testing.T) {
 	root := t.TempDir()
 	symbolFile := filepath.Join(codeintel.CacheDir(root), "index.json")
-	testCacheFile := filepath.Join(root, ".glade", "test", "startup.gob")
+	testCacheFile := filepath.Join(root, ".glade", "test", "startup.meta.json")
+	testCachePayload := filepath.Join(root, ".glade", "test",
+		"startup.payload.0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef.gob")
 	dapCacheFile := filepath.Join(root, ".glade", "dap", "startup.json")
 	writeCacheTestFile(t, symbolFile, "{}")
 	writeCacheTestFile(t, testCacheFile, "test-cache")
+	writeCacheTestFile(t, testCachePayload, "test-payload")
 	writeCacheTestFile(t, dapCacheFile, "dap-cache")
 
 	if err := codeintel.ClearCache(root); err != nil {
@@ -157,6 +160,9 @@ func TestClearCacheRemovesOnlySymbolsDirectory(t *testing.T) {
 	}
 	if _, err := os.Stat(testCacheFile); err != nil {
 		t.Fatalf("test cache was removed: %v", err)
+	}
+	if _, err := os.Stat(testCachePayload); err != nil {
+		t.Fatalf("test cache payload was removed: %v", err)
 	}
 	if _, err := os.Stat(dapCacheFile); err != nil {
 		t.Fatalf("dap cache was removed: %v", err)

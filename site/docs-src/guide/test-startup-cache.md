@@ -6,7 +6,8 @@ local org or compiled helpers.
 
 ## TL;DR
 
-- Glade caches warmed project state at `.glade/test/startup.gob`.
+- Glade caches warmed project state at `.glade/test/startup.meta.json` plus a
+  hashed payload.
 - Clear it after branch switches, Glade upgrades, or confusing stale behavior.
 - Use `--no-cache` once to confirm whether the cache is involved.
 - Restart `glade test serve` if the warm server still has old state.
@@ -26,7 +27,8 @@ Under `.glade/test/` in the project root:
 
 | File | Purpose |
 | ---- | ------- |
-| `startup.gob` | On-disk startup cache |
+| `startup.meta.json` | Cache header with freshness manifest and payload hash |
+| `startup.payload.<sha256>.gob` | Gob-encoded org and compiled runtime payload |
 | `serve.sock` | Unix socket when `glade test serve` is running |
 | `serve.pid` | PID file for the test server |
 
@@ -35,15 +37,17 @@ Do not commit `.glade/`. `glade dap` uses a separate cache at
 
 ## When it is created
 
-`startup.gob` is written after a **cold harness build** completes: project
-load, org inference, helper compilation, then an atomic write. The first run on
-a large project is slow; later runs can load the gob instead.
+`startup.meta.json` and `startup.payload.<sha256>.gob` are written after a
+**cold harness build** completes: project load, org inference, helper
+compilation, payload write, then an atomic header write. The first run on a
+large project is slow; later runs can read the header first and load the payload
+only when the manifest is fresh.
 
 Skipped when `--no-cache` is set.
 
 ## When it is reused
 
-On each run (unless `--no-cache`), Glade reads `startup.gob` and checks
+On each run (unless `--no-cache`), Glade reads `startup.meta.json` and checks
 **freshness**:
 
 - Cache format version matches (currently **2**)
@@ -53,8 +57,9 @@ On each run (unless `--no-cache`), Glade reads `startup.gob` and checks
   etc.) match
 - Package root directories match recorded modification time
 
-If anything fails, Glade cold-builds and writes a new cache. Corrupt gob files
-are ignored.
+If anything fails, Glade cold-builds and writes a new cache. Corrupt or
+mismatched payloads are ignored. A legacy `startup.gob` is read only when no
+split header exists.
 
 ## Trust: when the cache can lie
 

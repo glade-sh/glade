@@ -159,12 +159,12 @@ func testStartupCacheStatus(root string) string {
 		return "unreadable; run glade test clear-cache --project " + root
 	}
 	if entry == nil {
-		return "missing; next full run will build .glade/test/startup.gob"
+		return "missing; next full run will build .glade/test/startup.meta.json"
 	}
 	if startupcache.Fresh(entry, root, startupcache.Version) {
 		return "fresh"
 	}
-	return "stale; next full run will rebuild .glade/test/startup.gob"
+	return "stale; next full run will rebuild .glade/test/startup.meta.json"
 }
 
 func readLastFailedTests(root string) ([]string, error) {

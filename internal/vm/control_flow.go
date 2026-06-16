@@ -257,11 +257,29 @@ func appendTrace(result *Result, name, category string, args map[string]any) {
 	result.Trace = append(result.Trace, trace.Instant(name, category, int64(len(result.Trace)), args))
 }
 
+func traceIsEnabled(result *Result) bool {
+	return result != nil && result.traceEnabled
+}
+
+func appendTraceLazy(result *Result, name, category string, args func() map[string]any) {
+	if !traceIsEnabled(result) {
+		return
+	}
+	appendTrace(result, name, category, args())
+}
+
 func appendDurationTrace(result *Result, name, category string, startSeq int64, durationUS int64, args map[string]any) {
 	if result == nil || !result.traceEnabled || durationUS <= 0 {
 		return
 	}
 	result.Trace = append(result.Trace, trace.Duration(name, category, startSeq, durationUS, args))
+}
+
+func appendDurationTraceLazy(result *Result, name, category string, startSeq int64, durationUS int64, args func() map[string]any) {
+	if !traceIsEnabled(result) || durationUS <= 0 {
+		return
+	}
+	appendDurationTrace(result, name, category, startSeq, durationUS, args())
 }
 
 func traceSeqLen(result *Result) int {

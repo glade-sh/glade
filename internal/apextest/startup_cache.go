@@ -15,6 +15,14 @@ import (
 
 var disableDiskCache atomic.Bool
 
+func DisableDiskCacheForTesting() func() {
+	wasDisabled := disableDiskCache.Load()
+	disableDiskCache.Store(true)
+	return func() {
+		disableDiskCache.Store(wasDisabled)
+	}
+}
+
 func diskCacheEnabled() bool {
 	return !disableDiskCache.Load()
 }

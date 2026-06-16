@@ -377,8 +377,9 @@ glade test changed --project . --since origin/main --json --no-progress
 ## Test Startup Cache
 
 `glade test` persists warmed org and compiled runtime state in
-`.glade/test/startup.gob`. That cache keeps large projects from rebuilding local
-org inference and helper compilation on every CLI invocation.
+`.glade/test/startup.meta.json` plus a hashed `startup.payload.<sha256>.gob`.
+That cache keeps large projects from rebuilding local org inference and helper
+compilation on every CLI invocation.
 
 See **[TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md)** for when the cache is
 created, how freshness checks work, limitations that can leave a stale cache

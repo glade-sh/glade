@@ -25,7 +25,6 @@ import (
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/storage"
-	"github.com/glade-sh/glade/internal/trace"
 )
 
 func industryMapResult() Value {
@@ -2520,7 +2519,7 @@ var standardDescribeTabObjects = map[string]struct{}{
 const foldClassKeyBuf = 256
 
 func resultForLookup() *Result {
-	return &Result{TraceFormat: trace.FormatChromeTraceEvent, traceEnabled: true}
+	return &Result{}
 }
 
 func newRestRequest() Value {

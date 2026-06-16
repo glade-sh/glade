@@ -945,7 +945,6 @@ Common flags:
   --limit-mode <mode>       Use strict or permissive governor limits.
 
 Serve flags:
-  --startup-cache <path>    Startup cache path. Defaults to .glade/test/startup.gob.
   --no-warm                 Start the server without warming the project.
 
 Examples:

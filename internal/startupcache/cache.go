@@ -20,7 +20,7 @@ const Version = 2
 // DAPCacheVersion matches the historical DAP startup cache version.
 const DAPCacheVersion = 3
 
-// SubdirTest is the on-disk cache directory used by glade test (startup.gob).
+// SubdirTest is the on-disk cache directory used by glade test.
 const SubdirTest = ".glade/test"
 
 // SubdirDAP is the on-disk cache used by the DAP/debug path.
@@ -36,12 +36,12 @@ type CompiledRuntime struct {
 }
 
 type Entry struct {
-	Version     int             `json:"version"`
-	ProjectRoot string          `json:"projectRoot"`
-	BuiltAt     string          `json:"builtAt"`
-	Manifest    Manifest        `json:"manifest"`
+	Version     int              `json:"version"`
+	ProjectRoot string           `json:"projectRoot"`
+	BuiltAt     string           `json:"builtAt"`
+	Manifest    Manifest         `json:"manifest"`
 	Org         storage.OrgState `json:"org"`
-	Runtime     CompiledRuntime `json:"runtime"`
+	Runtime     CompiledRuntime  `json:"runtime"`
 }
 
 type Manifest struct {
@@ -140,15 +140,18 @@ func Fresh(entry *Entry, projectRoot string, expectedVersion int) bool {
 	if entry == nil {
 		return false
 	}
-	if entry.Version != expectedVersion {
+	return freshManifest(entry.Version, entry.ProjectRoot, entry.Manifest, projectRoot, expectedVersion)
+}
+
+func freshManifest(version int, entryProjectRoot string, manifest Manifest, projectRoot string, expectedVersion int) bool {
+	if version != expectedVersion {
 		return false
 	}
 	root := filepath.Clean(projectRoot)
-	if filepath.Clean(entry.ProjectRoot) != root {
+	if filepath.Clean(entryProjectRoot) != root {
 		return false
 	}
-	manifest := entry.Manifest
-	if manifest.ProjectRoot != root {
+	if filepath.Clean(manifest.ProjectRoot) != root {
 		return false
 	}
 	for _, fp := range manifest.Files {

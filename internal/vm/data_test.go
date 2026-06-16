@@ -687,6 +687,72 @@ func TestCloneRuntimeSharesChildRelationshipCachesForSameSchemaStamp(t *testing.
 	}
 }
 
+func TestCloneRuntimeSharesLoadedAndLazyChildRelationshipCachesForSameSchemaStamp(t *testing.T) {
+	base := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Parent__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Parent__c",
+		Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+	}}
+	base.SetOrg(&org)
+	clone := base.CloneRuntime(nil)
+	if clone.loadedChildRelCache != base.loadedChildRelCache {
+		t.Fatal("loaded child relationship lookup cache was not shared")
+	}
+	if clone.lazyChildRelCache != base.lazyChildRelCache {
+		t.Fatal("lazy child relationship lookup cache was not shared")
+	}
+}
+
+func TestJSONSObjectChildRelationshipLookupBuildsParentIndex(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Parent__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Parent__c",
+		Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+	}}
+	org.Objects["Child__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Child__c",
+		Fields: map[string]storage.Field{
+			"Parent__c": {
+				APIName:               "Parent__c",
+				Type:                  storage.FieldReference,
+				ReferenceTo:           []string{"Parent__c"},
+				RelationshipName:      "Parent__r",
+				ChildRelationshipName: "Children__r",
+			},
+		},
+	}}
+	machine.SetOrg(&org)
+
+	got, ok := machine.jsonSObjectChildRelationshipType("Parent__c", "Children")
+	if !ok || got != "List<Child__c>" {
+		t.Fatalf("child relationship type = %q, %v; want List<Child__c>, true", got, ok)
+	}
+	parentKey := strings.ToLower("Parent__c")
+	index, ok := machine.jsonChildRelTypeCache.loadParent(parentKey)
+	if !ok {
+		t.Fatal("json child relationship parent index was not cached")
+	}
+	if lookup, ok := index["children__r"]; !ok || !lookup.OK || lookup.Type != "List<Child__c>" {
+		t.Fatalf("indexed Children__r lookup = %#v, %v", lookup, ok)
+	}
+}
+
+func TestCloneRuntimeSharesDMLSummaryRelationCacheForSameSchemaStamp(t *testing.T) {
+	base := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Parent__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Parent__c",
+		Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+	}}
+	base.SetOrg(&org)
+	clone := base.CloneRuntime(nil)
+	if clone.dmlSummaryByChild != base.dmlSummaryByChild {
+		t.Fatal("DML summary relation cache was not shared")
+	}
+}
+
 func TestCloneRuntimeForksChildRelationshipCachesWhenSchemaStampChanges(t *testing.T) {
 	base := New(nil)
 	first := storage.NewOrgState()
@@ -711,6 +777,7 @@ func TestCloneRuntimeForksChildRelationshipCachesWhenSchemaStampChanges(t *testi
 	sharedChildRelCache := clone.childRelCache
 	sharedJSONChildRelTypeCache := clone.jsonChildRelTypeCache
 	sharedChildRelationshipLookupCache := clone.childRelationshipLookupCache
+	sharedDMLSummaryByChild := clone.dmlSummaryByChild
 	clone.SetOrg(&second)
 
 	if clone.childRelCache == sharedChildRelCache {
@@ -721,6 +788,9 @@ func TestCloneRuntimeForksChildRelationshipCachesWhenSchemaStampChanges(t *testi
 	}
 	if clone.childRelationshipLookupCache == sharedChildRelationshipLookupCache {
 		t.Fatalf("SetOrg kept shared child relationship lookup cache after schema stamp changed")
+	}
+	if clone.dmlSummaryByChild == sharedDMLSummaryByChild {
+		t.Fatalf("SetOrg kept shared DML summary relation cache after schema stamp changed")
 	}
 }
 
@@ -8683,7 +8753,7 @@ System.assertEquals('C', queried.Children__r[0].Name);
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
-	if len(machine.lazyChildRelCache) == 0 {
+	if machine.lazyChildRelCache.size() == 0 {
 		t.Fatalf("lazy child relationship lookup cache was not populated")
 	}
 }

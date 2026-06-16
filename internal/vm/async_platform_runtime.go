@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/storage"
 )
 
@@ -460,8 +461,9 @@ func (vm *VM) clearMetadataCaches() {
 	vm.jsonChildRelTypeCache = newJSONChildRelTypeLookupCache()
 	vm.sObjectFieldAliasCache = newSObjectFieldAliasLookupCache()
 	vm.fieldResolveCache = newFieldResolveLookupCache()
-	vm.loadedChildRelCache = make(map[string]loadedChildRelationshipLookup)
-	vm.lazyChildRelCache = make(map[string]lazyChildRelationshipLookup)
+	vm.dmlSummaryByChild = dml.NewSummaryRelationCache()
+	vm.loadedChildRelCache = newLoadedChildRelationshipLookupCache()
+	vm.lazyChildRelCache = newLazyChildRelationshipLookupCache()
 	vm.objectNameCache = make(map[string]objectNameLookup)
 	vm.metadataCacheStamp = ""
 	vm.clearCustomDataCache()
