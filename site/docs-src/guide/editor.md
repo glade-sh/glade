@@ -74,7 +74,7 @@ LWC routes use `/lwc/preview/...`. Visualforce routes use `/apex/<Page>`.
 Visualforce-backed LWC tab routes resolve through the LWC shell and then open
 the Visualforce page.
 
-## Plugin Actions And Findings
+## Plugin actions and findings
 
 The extension reads installed and linked plugins through:
 
@@ -96,13 +96,13 @@ Run local tests from the Glade Activity Bar, the native VS Code Test Explorer,
 or CodeLens. Focused runs call:
 
 ```bash
-glade test --project <root> --json --class <Class> --method <Method>
+glade test --project PROJECT_ROOT --json --class CLASS_NAME --method METHOD_NAME
 ```
 
 Changed-test runs use:
 
 ```bash
-glade test changed --project <root> --since origin/main --json
+glade test changed --project PROJECT_ROOT --since origin/main --json
 ```
 
 Change the default ref with `glade.changedSince`.
@@ -110,7 +110,7 @@ Change the default ref with `glade.changedSince`.
 The warm watch buttons run:
 
 ```bash
-glade test --project <root> --daemon --watch
+glade test --project PROJECT_ROOT --daemon --watch
 ```
 
 ## Local Data Environments
@@ -131,7 +131,7 @@ environments in workspace settings:
 Execute anonymous Apex persists successful DML to the active environment:
 
 ```bash
-glade exec --project <root> --db <active-db> --log-out reports/exec.log "insert new Account(Name='local');"
+glade exec --project PROJECT_ROOT --db ACTIVE_DB --log-out reports/exec.log "insert new Account(Name='local');"
 ```
 
 The Local Org view can inspect, seed, reset, and export the active DB.
@@ -141,7 +141,7 @@ The Local Org view can inspect, seed, reset, and export the active DB.
 Glade debug sessions use Debug Adapter Protocol over stdio:
 
 ```bash
-glade dap --project <root> --db <active-db>
+glade dap --project PROJECT_ROOT --db ACTIVE_DB
 ```
 
 Anonymous debug, CodeLens debug, and Test Explorer debug all use the active

@@ -1,16 +1,16 @@
 # Tester field guide
 
-Use this guide when you hand Glade to Salesforce engineers for a small pilot.
+Use this guide for a first project evaluation with Salesforce engineers.
 It starts from an existing SFDX project and keeps the first loop local. No org
 login, scratch org, source push, or metadata deploy is required for the core
 commands.
 
 Glade does not replace Salesforce. It gives a fast local loop before Salesforce
-enters the path. Check the [local support guide](/guide/support-map) before treating
+enters the path. Check [what Glade runs locally](/guide/support-map) before treating
 any platform service, live auth flow, exact hosted Visualforce behavior, or
 API outside the checked local baseline as supported.
 
-## 10-minute setup
+## First project setup
 
 Install and prove the parser:
 
@@ -103,7 +103,7 @@ Run:
   glade test changed --project . --since origin/main --json --no-progress > reports/glade-test-changed.json
 If a command fails, quote the exact diagnostic, fix only the relevant source,
 and rerun the same command before claiming success.
-Check the Glade local support guide before treating unsupported platform services as bugs.
+Check what Glade runs locally before treating unsupported platform services as bugs.
 ```
 
 For a review or refactor prompt, ask the agent to produce a proof artifact:
@@ -183,7 +183,7 @@ glade performance scan --project . --json > reports/glade-performance.json
 
 ## What to send back
 
-Useful pilot feedback includes:
+Useful first-run feedback includes:
 
 - `glade version`
 - full `glade doctor` output
@@ -203,4 +203,4 @@ Useful pilot feedback includes:
 - [Add Glade to CI](/guide/ci-artifacts)
 - [Enterprise Workflows](/guide/enterprise-workflows)
 - [Plugins](/guide/plugins)
-- [Local support](/guide/support-map)
+- [What Glade runs locally](/guide/support-map)

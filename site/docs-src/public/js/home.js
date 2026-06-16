@@ -9,21 +9,6 @@
   var homeControlsInitialized = false
   var homeSearchInitialized = false
   var workbenchHashListenerInitialized = false
-  var homeLoopAnimationFrame = 0
-  var homeLoopStarted = 0
-  var activeHomeLoopIndex = 0
-  var manualHomeLoopUntil = 0
-  var homeLoopStates = ["check", "test", "exec"]
-  var homeLoopLabels = {
-    check: "AI edit check",
-    test: "Focused test",
-    exec: "Anonymous Apex"
-  }
-  var homeLoopActiveNodes = {
-    test: "runtime",
-    exec: "runtime",
-    check: "proof"
-  }
   var scenarioAliases = {
     "check-source": "check",
     "test-changed": "test",
@@ -593,83 +578,7 @@
   function init() {
     initHomeSearchState()
     initCopyControls()
-    initHomeLoop()
     initWorkbenchDemo()
-  }
-
-  function initHomeLoop() {
-    var loop = document.querySelector("[data-home-loop]")
-    if (!loop) return
-
-    if (loop.dataset.homeLoopInitialized !== "true") {
-      loop.dataset.homeLoopInitialized = "true"
-      loop.querySelectorAll("[data-home-loop-tab]").forEach(function (tab) {
-        tab.addEventListener("click", function () {
-          setHomeLoopState(loop, tab.getAttribute("data-home-loop-tab"), true)
-        })
-      })
-    }
-
-    setHomeLoopState(loop, homeLoopStates[activeHomeLoopIndex] || "test", false)
-    if (!homeLoopAnimationFrame && window.requestAnimationFrame) {
-      homeLoopAnimationFrame = window.requestAnimationFrame(animateHomeLoop)
-    }
-  }
-
-  function setHomeLoopState(loop, stateName, manual) {
-    if (!loop || homeLoopStates.indexOf(stateName) === -1) return
-    activeHomeLoopIndex = homeLoopStates.indexOf(stateName)
-    if (manual) manualHomeLoopUntil = Date.now() + 8000
-
-    var label = loop.querySelector("[data-home-loop-label]")
-    if (label) label.textContent = homeLoopLabels[stateName] || stateName
-
-    loop.querySelectorAll("[data-home-loop-state]").forEach(function (panel) {
-      panel.classList.toggle("active", panel.getAttribute("data-home-loop-state") === stateName)
-    })
-    loop.querySelectorAll("[data-home-loop-tab]").forEach(function (tab) {
-      tab.setAttribute("aria-pressed", String(tab.getAttribute("data-home-loop-tab") === stateName))
-    })
-    loop.querySelectorAll("[data-home-loop-node]").forEach(function (node) {
-      node.classList.toggle("active", node.getAttribute("data-home-loop-node") === homeLoopActiveNodes[stateName])
-    })
-  }
-
-  function animateHomeLoop(timestamp) {
-    homeLoopAnimationFrame = 0
-    var loop = document.querySelector("[data-home-loop]")
-    if (!loop || !window.requestAnimationFrame) return
-
-    if (!homeLoopStarted) homeLoopStarted = timestamp
-    var stateMs = 5400
-    var elapsed = timestamp - homeLoopStarted
-    if (!prefersReducedMotion() && Date.now() > manualHomeLoopUntil) {
-      var nextIndex = Math.floor(elapsed / stateMs) % homeLoopStates.length
-      if (nextIndex !== activeHomeLoopIndex) setHomeLoopState(loop, homeLoopStates[nextIndex], false)
-    }
-
-    var path = loop.querySelector("[data-home-loop-path]")
-    var runner = loop.querySelector("[data-home-loop-runner]")
-    var shadow = loop.querySelector("[data-home-loop-shadow]")
-    if (path && runner && path.getTotalLength && path.getPointAtLength) {
-      var progress = prefersReducedMotion() ? 1 : (elapsed % stateMs) / stateMs
-      var held = progress > 0.86 ? 1 : easeHomeLoop(progress / 0.86)
-      var length = path.getTotalLength()
-      var point = path.getPointAtLength(length * held)
-      runner.setAttribute("cx", point.x)
-      runner.setAttribute("cy", point.y)
-      if (shadow) {
-        shadow.setAttribute("cx", point.x)
-        shadow.setAttribute("cy", point.y)
-      }
-    }
-
-    homeLoopAnimationFrame = window.requestAnimationFrame(animateHomeLoop)
-  }
-
-  function easeHomeLoop(value) {
-    var t = Math.max(0, Math.min(1, value))
-    return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
   }
 
   function initWorkbenchDemo() {

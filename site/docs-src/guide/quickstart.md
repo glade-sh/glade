@@ -10,8 +10,8 @@
   </ul>
 </div>
 
-This path gets from install to the first local check in a few minutes.
-For a small pilot with VS Code, AI, CI, and report workflows, use the
+This path installs Glade, checks the project, and runs one focused test.
+For VS Code, CI, and report workflows, use the
 [Tester field guide](/guide/tester-field-guide).
 
 ## 1. Install
@@ -88,6 +88,6 @@ Expected: Glade starts the browser workbench and prints the local URL, example m
 
 ## 7. Know the limits
 
-Glade is a local runtime, not a Salesforce emulator. Check the [local support guide](/guide/support-map)
+Glade is a local runtime, not a Salesforce emulator. Check [what Glade runs locally](/guide/support-map)
 before relying on platform service APIs, live auth, exact hosted Visualforce
 behavior, or REST and Tooling APIs outside the checked local baseline.

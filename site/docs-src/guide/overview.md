@@ -23,8 +23,8 @@ and exposes support gaps instead of hiding them.
     <span>Install Glade and run the first check.</span>
   </a>
   <a class="docs-route-card" href="/guide/support-map">
-    <strong>Local support</strong>
-    <span>See what runs locally and what still needs Salesforce.</span>
+    <strong>What runs locally</strong>
+    <span>Check local behavior and what still requires Salesforce.</span>
   </a>
   <a class="docs-route-card" href="/guide/cli-reference">
     <strong>CLI Reference</strong>
@@ -65,9 +65,9 @@ glade test changed --project . --since origin/main
 - You need Bulk API beyond simple scalar local query whole-result CSV, Streaming, Pub/Sub, GraphQL, metadata deploy/retrieve jobs, or Tooling objects beyond the checked local source/schema metadata baseline.
 - You need exact production governor accounting.
 
-## Support claims
+## Capability claims
 
 Glade models the local paths it can prove. Unsupported platform services fail
 with stable diagnostics instead of pretending to work.
 
-Next: [Tester field guide](/guide/tester-field-guide), [Quickstart](/guide/quickstart), [Enterprise workflows](/guide/enterprise-workflows), or [Local support](/guide/support-map).
+Next: [Tester field guide](/guide/tester-field-guide), [Quickstart](/guide/quickstart), [Enterprise workflows](/guide/enterprise-workflows), or [What Glade runs locally](/guide/support-map).

@@ -11,10 +11,10 @@ const jsonOut = resolve(siteRoot, "docs-src/public/data/editor-support.json");
 const check = process.argv.includes("--check");
 
 const statusLabels = {
-  supported: "Works well",
-  partial: "With limits",
-  stub: "With limits",
-  unsupported: "Needs Salesforce",
+  supported: "Runs locally",
+  partial: "Runs with limits",
+  stub: "Runs with limits",
+  unsupported: "Requires Salesforce",
   unknown: "Not measured"
 };
 
@@ -242,7 +242,7 @@ function buildCatalog(markdown) {
       item("Limits", "class", "Governor counters", "supported", "Local counters for SOQL, DML, CPU, heap, and async", "Limits"),
       item("JSON", "class", "Serialization", "supported", "Local JSON helpers", "JSON"),
       item("UserInfo", "class", "User context", "supported", "Local identity helpers", "UserInfo"),
-      item("Answers", "class", "Hosted API", "unsupported", "Needs Salesforce", "Answers")
+      item("Answers", "class", "Hosted API", "unsupported", "Requires Salesforce", "Answers")
     ],
     demoReceivers
   };

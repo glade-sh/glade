@@ -239,9 +239,9 @@ the runtime stopped at a known unsupported Salesforce API.
   force-app/main/default/classes/AccountServiceTest.cls:42
 ```
 
-Check the [local support guide](/guide/support-map) before relying on platform
+Check [what Glade runs locally](/guide/support-map) before relying on platform
 service APIs, exact hosted Visualforce behavior, live side effects, or REST
-coverage outside the checked local baseline.
+behavior outside the checked local baseline.
 
 ::: tip Try it
 Exercise the runtime your tests rely on - DML, triggers, and governor limits - in the local playground:

@@ -20,17 +20,17 @@ SFDX workspace.
   <div class="docs-install-card">
     <p class="docs-card-kicker">Recommended</p>
     <strong>macOS/Linux script</strong>
-    <span>Installs the current release to <code>~/.local/bin</code>, then you run <code>glade doctor</code>.</span>
+    <span>Installs the current release to <code>~/.local/bin</code>.</span>
   </div>
   <div class="docs-install-card">
     <p class="docs-card-kicker">Pinned</p>
     <strong>Manual release archive</strong>
-    <span>Download from GitHub releases, verify checksums, and install the binary yourself.</span>
+    <span>Use in CI or when policy requires pinned artifacts.</span>
   </div>
   <div class="docs-install-card">
     <p class="docs-card-kicker">Source</p>
     <strong>Build from source</strong>
-    <span>Use this for Glade development or testing a repository checkout before release.</span>
+    <span>Use for Glade development or unreleased changes.</span>
   </div>
   <div class="docs-install-card">
     <p class="docs-card-kicker">Editor and CI</p>
@@ -196,8 +196,8 @@ glade doctor
 ```
 
 ::: tip Next step
-For a pilot handoff, use the [Tester field guide](/guide/tester-field-guide).
+For a first project run, use the [Tester field guide](/guide/tester-field-guide).
 For a narrow first run, create project config:
 [Configure a Glade Project](/guide/configuration), then check
-[Local support](/guide/support-map).
+[What Glade runs locally](/guide/support-map).
 :::

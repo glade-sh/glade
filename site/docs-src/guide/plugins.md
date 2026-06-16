@@ -1,22 +1,24 @@
 # Plugins
 
 Glade plugins are standalone executables installed and run through
-`glade plugins`. The default Glade install stays small. First-party and
-marketplace plugins add heavier workflows when a project needs them.
+`glade plugins`. The default Glade install stays small. First-party and linked
+plugins add heavier workflows when a project needs them. Registry-backed
+installs are preview until a registry, archive URL, or local plugin is
+configured.
 
 Most users can ignore plugin author docs on first run. Install first-party
-plugins only when you need compatibility fixtures, support reports, compatibility
-scans, or advisory performance scans.
+plugins only when you need compatibility fixtures, capability reports,
+compatibility dashboards, or project-specific checks.
 
 ::: warning Registry preview
-The default public plugin registry is not live yet. Registry commands below
-need a configured registry, a direct archive URL, or a locally linked plugin.
+Registry commands below need a configured registry, a direct archive URL, or a
+locally linked plugin.
 Base Glade install and local Apex workflows do not require plugins.
 :::
 
 ## First-party plugins
 
-- `@glade/compat` - compatibility fixtures, support reports, and compatibility
+- `@glade/compat` - compatibility fixtures, runtime capability reports, and compatibility
   scanners.
 - `@glade/performance` - advisory Salesforce performance scans.
 
@@ -30,7 +32,7 @@ glade plugins install @glade/performance
 The short aliases `compat` and `performance` resolve to `@glade/compat` and
 `@glade/performance`.
 
-## Marketplace plugins
+## Registry preview plugins
 
 ```bash
 # Requires a live plugin registry or configured custom registry.
@@ -41,9 +43,9 @@ glade plugins info @acme/quality
 glade plugins install @acme/quality
 ```
 
-The default marketplace is curated. Third-party publishers can also use a
-custom registry or a direct archive URL. `available` and bare `search` list
-the installable catalog before you know a plugin name.
+Registry catalogs are configured. Third-party publishers can also use a custom
+registry or a direct archive URL. `available` and bare `search` list the
+installable catalog before you know a plugin name.
 
 For local plugin development, link an executable from disk:
 
@@ -55,7 +57,7 @@ glade plugins link --exec ./glade-plugin-quality
 
 Plugin authors ship an executable that supports `manifest --json` and package
 it as a checksum-verified archive. The runtime manifest stays path-safe. Scoped
-package names live in the marketplace catalog.
+package names live in the configured registry catalog.
 
 ```bash
 glade plugins link --exec ./glade-plugin-quality

@@ -96,9 +96,9 @@ onBeforeUnmount(() => {
     <div class="glade-cm-head">
       <div>
         <p class="home-eyebrow">Interactive Editor</p>
-        <h2 class="home-h2">Try coverage-backed autocomplete.</h2>
+        <h2 class="home-h2">Try capability-backed autocomplete.</h2>
       </div>
-      <a href="/guide/support-map">View capability map</a>
+      <a href="/guide/support-map">What runs locally</a>
     </div>
     <div class="glade-cm-support" aria-label="Autocomplete surfaces to try">
       <span>Type a dot after the final describe, Account, Database, BusinessHours, Schema, describe.fields, results[0], or fieldMap.</span>
@@ -117,7 +117,7 @@ onBeforeUnmount(() => {
     <div class="glade-cm-proof" aria-label="CodeMirror editor capabilities">
       <span><strong>Apex syntax</strong> annotations, SOQL, SObjects, and platform classes</span>
       <span><strong>Autocomplete</strong> describe, Database, Schema fields, DML results, maps, and local context</span>
-      <span><strong>Boundary labels</strong> Works well, With limits, Needs Salesforce</span>
+      <span><strong>Boundary labels</strong> Runs locally, Runs with limits, Requires Salesforce</span>
     </div>
   </section>
 </template>
