@@ -16,47 +16,38 @@ heavy_packages=(
 	./internal/server
 )
 
-process_active() {
-	local pid="$1"
-	local state
-	state="$(ps -p "${pid}" -o stat= 2>/dev/null | awk '{print $1}' || true)"
-	[[ -n "${state}" && "${state:0:1}" != "Z" ]]
-}
-
 run_with_heartbeat() {
 	local label="$1"
 	shift
-	local log
 	local pid
+	local heartbeat_pid
 	local rc=0
-	local elapsed=0
 
-	log="$(mktemp "${TMPDIR:-/tmp}/glade-ci-go-test.XXXXXX")"
 	echo "::group::${label}"
 	printf '[ci] GOMAXPROCS=%s\n' "${GOMAXPROCS}"
 	printf '+'
 	printf ' %q' "$@"
 	printf '\n'
 
-	(
-		set -o pipefail
-		"$@" 2>&1 | tee "${log}"
-	) &
+	"$@" &
 	pid="$!"
 
-	while process_active "${pid}"; do
-		for ((i = 0; i < heartbeat_seconds; i++)); do
-			sleep 1
-			if ! process_active "${pid}"; then
-				break 2
+	(
+		elapsed=0
+		while true; do
+			sleep "${heartbeat_seconds}" || exit 0
+			if ! kill -0 "${pid}" 2>/dev/null; then
+				exit 0
 			fi
+			elapsed=$((elapsed + heartbeat_seconds))
+			printf '[ci] %s still running after %ss\n' "${label}" "${elapsed}"
 		done
-		elapsed=$((elapsed + heartbeat_seconds))
-		printf '[ci] %s still running after %ss\n' "${label}" "${elapsed}"
-	done
+	) &
+	heartbeat_pid="$!"
 
 	wait "${pid}" || rc="$?"
-	rm -f "${log}"
+	kill "${heartbeat_pid}" 2>/dev/null || true
+	wait "${heartbeat_pid}" 2>/dev/null || true
 	echo "::endgroup::"
 	return "${rc}"
 }

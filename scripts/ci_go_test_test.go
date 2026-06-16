@@ -16,8 +16,8 @@ func TestCIGoTestWrapperIsWired(t *testing.T) {
 	for _, want := range []string{
 		`export GOMAXPROCS="${GOMAXPROCS:-2}"`,
 		"run_with_heartbeat",
-		`set -o pipefail`,
-		"tee",
+		"heartbeat_pid",
+		`kill -0 "${pid}"`,
 		"./internal/apextest",
 		"./internal/gladecli",
 		"./internal/sema",
