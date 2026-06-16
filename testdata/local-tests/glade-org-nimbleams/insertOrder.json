@@ -1,0 +1,8 @@
+{
+  "manifest": true,
+  "order": [
+    "accounts.json",
+    "contacts.json",
+    "cleaners.json"
+  ]
+}

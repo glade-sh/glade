@@ -83,6 +83,7 @@ export default defineConfig({
           { text: 'Local LWC shell', link: '/guide/lwc-local-shell' },
           { text: 'Affected tests', link: '/guide/affected-tests' },
           { text: 'Local API routes', link: '/guide/local-api-server' },
+          { text: 'sf target orgs', link: '/guide/glade-orgs' },
           { text: 'CI', link: '/guide/ci-artifacts' },
           { text: 'VS Code', link: '/guide/editor' }
         ]

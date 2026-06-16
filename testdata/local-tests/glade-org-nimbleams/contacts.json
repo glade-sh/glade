@@ -1,0 +1,19 @@
+{
+  "extId": "External_Id__c",
+  "queries": [
+    {
+      "variable": "Account",
+      "query": "SELECT Id, External_Id__c FROM Account WHERE External_Id__c = 'acct-1'"
+    }
+  ],
+  "records": {
+    "Contact": [
+      {
+        "LastName": "Local Contact",
+        "Account.External_Id__c": "acct-1",
+        "External_Id__c": "contact-1"
+      }
+    ]
+  },
+  "cleaners": []
+}

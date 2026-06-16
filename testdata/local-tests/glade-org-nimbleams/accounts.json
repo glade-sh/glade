@@ -1,0 +1,13 @@
+{
+  "extId": "External_Id__c",
+  "queries": [],
+  "records": {
+    "Account": [
+      {
+        "Name": "Glade Local Account",
+        "External_Id__c": "acct-1"
+      }
+    ]
+  },
+  "cleaners": []
+}

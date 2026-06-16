@@ -346,6 +346,12 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		return 0
+	case "org":
+		if err := runOrg(ctx, args[1:], stdout); err != nil {
+			writeCommandError(stderr, args[0], err)
+			return 1
+		}
+		return 0
 	case "playground":
 		if err := runPlayground(ctx, args[1:], stdout); err != nil {
 			writeCommandError(stderr, args[0], err)

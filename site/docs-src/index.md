@@ -130,9 +130,10 @@ layout: home
     <div class="home-command-block">
       <pre><code>glade playground --project . --open
 glade server --project . --db .glade/local-org.sqlite --addr 127.0.0.1:8080
-glade db seed --db .glade/local-org.sqlite --project . seed.json</code></pre>
+glade db seed --db .glade/local-org.sqlite --project . seed.json
+glade org create my-glade-org --project . --db .glade/orgs/my-glade-org.sqlite --addr 127.0.0.1:17911</code></pre>
     </div>
-    <p class="home-boundary-line">Local API routes are for development loops. Live auth, hosted services, deploy and retrieve, and exact production behavior stay with Salesforce.</p>
+    <p class="home-boundary-line">Use <code>glade org</code> when a supported <code>sf</code> command needs a local target. It is not a real scratch org. Live auth, hosted services, deploy and retrieve, and exact production behavior stay with Salesforce.</p>
   </div>
 </section>
 

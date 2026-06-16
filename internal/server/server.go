@@ -29,6 +29,8 @@ type Server struct {
 	nextQueryID            int
 	bulkQueryJobs          map[string]bulkQueryJob
 	nextBulkJobID          int
+	bulkV1Jobs             map[string]bulkV1Job
+	nextBulkV1JobID        int
 	lightning              lightningState
 	metadataJobs           map[string]metadataLocalJob
 	nextMetadataDeployID   int
@@ -219,6 +221,14 @@ func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeJSON(w, http.StatusOK, s.apiVersionDiscoveryPayload())
+		return
+	}
+	if len(parts) >= 3 && parts[0] == "services" && parts[1] == "Soap" {
+		s.handleSOAP(w, r, parts[2:])
+		return
+	}
+	if len(parts) >= 2 && parts[0] == "services" && parts[1] == "async" {
+		s.handleBulkV1(w, r, parts[2:])
 		return
 	}
 	if len(parts) >= 2 && parts[0] == "services" && parts[1] == "apexrest" {
