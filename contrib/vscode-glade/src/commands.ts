@@ -1,6 +1,6 @@
 import { spawn } from "child_process";
 import * as vscode from "vscode";
-import { debugAnonymousConfig, editorAnonymousSource, execAnonymousArgs } from "./commandModel";
+import { debugAnonymousConfig, debugAnonymousSessionOptions, editorAnonymousSource, execAnonymousArgs } from "./commandModel";
 import { configuredActiveEnvironment } from "./localOrg";
 import { findProjectContext } from "./projectContext";
 
@@ -9,8 +9,9 @@ export function registerGladeCommands(context: vscode.ExtensionContext): void {
   context.subscriptions.push(output);
   context.subscriptions.push(
     vscode.commands.registerCommand("glade.executeAnonymous", async () => {
-      const source = await sourceFromEditorOrPrompt();
+      const source = sourceFromEditor();
       if (!source) {
+        void vscode.window.showInformationMessage("Open an anonymous Apex scratch buffer or select Apex to run.");
         return;
       }
       const project = await findProjectContext();
@@ -37,8 +38,9 @@ export function registerGladeCommands(context: vscode.ExtensionContext): void {
   );
   context.subscriptions.push(
     vscode.commands.registerCommand("glade.debugAnonymous", async () => {
-      const source = await sourceFromEditorOrPrompt();
+      const source = sourceFromEditor();
       if (!source) {
+        void vscode.window.showInformationMessage("Open an anonymous Apex scratch buffer or select Apex to debug.");
         return;
       }
       const project = await findProjectContext();
@@ -48,32 +50,25 @@ export function registerGladeCommands(context: vscode.ExtensionContext): void {
       }
       const environment = configuredActiveEnvironment(project);
       const folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(project.projectRoot));
-      await vscode.debug.startDebugging(folder, debugAnonymousConfig(project.projectRoot, source, environment.dbPath));
+      await vscode.debug.startDebugging(folder, debugAnonymousConfig(project.projectRoot, source, environment.dbPath), debugAnonymousSessionOptions());
     }),
   );
 }
 
-async function sourceFromEditorOrPrompt(): Promise<string | undefined> {
-	const editor = vscode.window.activeTextEditor;
-	if (editor) {
-		const document = editor.document;
-		const selection = editor.selection;
-		const text = editorAnonymousSource({
-			text: document.getText(),
-			selection: selection.isEmpty
-				? undefined
-				: {
-						start: document.offsetAt(selection.start),
-						end: document.offsetAt(selection.end),
-					},
-		});
-		if (text) {
-			return text;
-		}
-	}
-  const entered = await vscode.window.showInputBox({
-    title: "Execute Anonymous Apex",
-    prompt: "Enter anonymous Apex to run with glade.",
+function sourceFromEditor(): string | undefined {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    return undefined;
+  }
+  const document = editor.document;
+  const selection = editor.selection;
+  return editorAnonymousSource({
+    text: document.getText(),
+    selection: selection.isEmpty
+      ? undefined
+      : {
+          start: document.offsetAt(selection.start),
+          end: document.offsetAt(selection.end),
+        },
   });
-  return entered?.trim() || undefined;
 }

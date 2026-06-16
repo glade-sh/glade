@@ -23,7 +23,7 @@ export class WorkbenchView implements vscode.TreeDataProvider<GladeTreeItem> {
   getChildren(): GladeTreeItem[] {
     return [
       commandItem("Open Anonymous Apex Scratch", "glade.workbench.newAnonymousApex", "Open an untitled Apex editor for anonymous Apex.", new vscode.ThemeIcon("new-file")),
-      commandItem("New SOQL Query", "glade.workbench.newSoql", "Create and run a saved SOQL query.", new vscode.ThemeIcon("add")),
+      commandItem("Open SOQL Scratch", "glade.workbench.newSoql", "Open an untitled SOQL editor.", new vscode.ThemeIcon("new-file")),
       commandItem("Describe Local Data", "glade.workbench.describe", "Describe local objects or fields.", new vscode.ThemeIcon("symbol-field")),
       commandItem("Open Last Result", "glade.workbench.openResult", "Open the last Glade Workbench result file.", new vscode.ThemeIcon("file")),
       ...this.rows.map(toWorkbenchTreeItem),

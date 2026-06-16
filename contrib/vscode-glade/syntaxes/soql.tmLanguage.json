@@ -1,0 +1,71 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "SOQL",
+  "scopeName": "source.soql",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#functions"
+    },
+    {
+      "include": "#operators"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.soql",
+          "match": "--.*$"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.single.soql",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.soql",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.soql",
+          "match": "\\b(?i:SELECT|FROM|WHERE|WITH|ORDER\\s+BY|GROUP\\s+BY|HAVING|LIMIT|OFFSET|AND|OR|NOT|IN|INCLUDES|EXCLUDES|LIKE|ASC|DESC|NULLS\\s+FIRST|NULLS\\s+LAST)\\b"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "name": "support.function.soql",
+          "match": "\\b(?i:COUNT|COUNT_DISTINCT|SUM|AVG|MIN|MAX|FORMAT|CALENDAR_MONTH|CALENDAR_QUARTER|CALENDAR_YEAR|DAY_IN_MONTH|DAY_IN_WEEK|DAY_IN_YEAR|FISCAL_MONTH|FISCAL_QUARTER|FISCAL_YEAR)\\s*(?=\\()"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.comparison.soql",
+          "match": "!=|<=|>=|=|<|>"
+        }
+      ]
+    }
+  }
+}

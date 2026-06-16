@@ -52,6 +52,7 @@ assert(!activationEvents.includes("onView:glade.apexTests"), "glade.apexTests ac
 assert(!activationEvents.includes("onView:glade.preview"), "glade.preview must not activate the extension");
 assert(activationEvents.includes("onView:glade.plugins"), "glade.plugins view must activate the extension");
 assert(activationEvents.includes("onView:glade.workbench"), "glade.workbench view must activate the extension");
+assert(activationEvents.includes("onLanguage:soql"), "SOQL scratch editors must activate the extension");
 
 const localRunsView = manifest.contributes.views.glade.find((view) => view.id === "glade.recommendedRuns");
 assert(localRunsView, "glade.recommendedRuns view must exist");
@@ -84,6 +85,7 @@ for (const command of [
   "glade.installPluginArchive",
   "glade.workbench.newAnonymousApex",
   "glade.workbench.newSoql",
+  "glade.runSoql",
   "glade.workbench.runEntry",
   "glade.workbench.runLastSoql",
   "glade.workbench.describe",
@@ -108,6 +110,24 @@ const anonymousScratchCommand = manifest.contributes.commands.find((entry) => en
 assert(anonymousScratchCommand, "anonymous Apex scratch command must be contributed");
 assert.strictEqual(anonymousScratchCommand.title, "Glade: Open Anonymous Apex Scratch");
 
+const soqlScratchCommand = manifest.contributes.commands.find((entry) => entry.command === "glade.workbench.newSoql");
+assert(soqlScratchCommand, "SOQL scratch command must be contributed");
+assert.strictEqual(soqlScratchCommand.title, "Glade: Open SOQL Scratch");
+
+const soqlRunCommand = manifest.contributes.commands.find((entry) => entry.command === "glade.runSoql");
+assert(soqlRunCommand, "SOQL run command must be contributed");
+assert.strictEqual(soqlRunCommand.title, "Glade: Run Local SOQL");
+
+const languages = manifest.contributes.languages || [];
+assert(
+  languages.some((entry) => entry.id === "soql" && entry.aliases.includes("SOQL") && entry.extensions.includes(".soql")),
+  "SOQL scratch editors need a contributed language",
+);
+assert(
+  (manifest.contributes.grammars || []).some((entry) => entry.language === "soql" && entry.scopeName === "source.soql"),
+  "SOQL scratch editors need syntax highlighting",
+);
+
 const editorTitle = manifest.contributes.menus["editor/title"] || [];
 for (const command of ["glade.executeAnonymous", "glade.debugAnonymous"]) {
   const item = editorTitle.find((entry) => entry.command === command);
@@ -118,6 +138,13 @@ for (const command of ["glade.executeAnonymous", "glade.debugAnonymous"]) {
   );
 }
 
+const soqlRunTitle = editorTitle.find((entry) => entry.command === "glade.runSoql");
+assert(soqlRunTitle, "SOQL scratch editors must expose a run action");
+assert(
+  soqlRunTitle.when.includes("resourceScheme == untitled") && soqlRunTitle.when.includes("editorLangId == soql"),
+  "SOQL run action must be scoped to untitled SOQL editors",
+);
+
 assert(
   (manifest.contributes.keybindings || []).some((entry) =>
     entry.command === "glade.executeAnonymous"
@@ -127,6 +154,17 @@ assert(
     && entry.when.includes("editorLangId == apex")
   ),
   "anonymous Apex scratch editors must support Ctrl/Cmd+Enter execution",
+);
+
+assert(
+  (manifest.contributes.keybindings || []).some((entry) =>
+    entry.command === "glade.runSoql"
+    && entry.key === "ctrl+enter"
+    && entry.mac === "cmd+enter"
+    && entry.when.includes("resourceScheme == untitled")
+    && entry.when.includes("editorLangId == soql")
+  ),
+  "SOQL scratch editors must support Ctrl/Cmd+Enter execution",
 );
 
 for (const command of [

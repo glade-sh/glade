@@ -16,6 +16,7 @@
   "activationEvents": [
     "workspaceContains:**/sfdx-project.json",
     "onLanguage:apex",
+    "onLanguage:soql",
     "onView:glade.project",
     "onView:glade.recommendedRuns",
     "onView:glade.environments",
@@ -40,6 +41,7 @@
     "onCommand:glade.openOutput",
     "onCommand:glade.workbench.newAnonymousApex",
     "onCommand:glade.workbench.newSoql",
+    "onCommand:glade.runSoql",
     "onCommand:glade.workbench.runEntry",
     "onCommand:glade.workbench.runLastSoql",
     "onCommand:glade.workbench.describe",
@@ -202,7 +204,12 @@
       },
       {
         "command": "glade.workbench.newSoql",
-        "title": "Glade: New SOQL Query"
+        "title": "Glade: Open SOQL Scratch",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "glade.runSoql",
+        "title": "Glade: Run Local SOQL"
       },
       {
         "command": "glade.workbench.runEntry",
@@ -247,6 +254,12 @@
         "key": "ctrl+enter",
         "mac": "cmd+enter",
         "when": "resourceScheme == untitled && editorLangId == apex && editorTextFocus"
+      },
+      {
+        "command": "glade.runSoql",
+        "key": "ctrl+enter",
+        "mac": "cmd+enter",
+        "when": "resourceScheme == untitled && editorLangId == soql && editorTextFocus"
       }
     ],
     "menus": {
@@ -260,6 +273,11 @@
           "command": "glade.debugAnonymous",
           "when": "resourceScheme == untitled && editorLangId == apex",
           "group": "navigation@2"
+        },
+        {
+          "command": "glade.runSoql",
+          "when": "resourceScheme == untitled && editorLangId == soql",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [
@@ -307,6 +325,24 @@
           ".trigger"
         ],
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "soql",
+        "aliases": [
+          "SOQL",
+          "soql"
+        ],
+        "extensions": [
+          ".soql"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "soql",
+        "scopeName": "source.soql",
+        "path": "./syntaxes/soql.tmLanguage.json"
       }
     ],
     "breakpoints": [

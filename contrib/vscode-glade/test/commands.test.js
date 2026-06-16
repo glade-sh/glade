@@ -29,6 +29,11 @@ assert.deepStrictEqual(
 );
 
 assert.deepStrictEqual(
+  commands.debugAnonymousSessionOptions(),
+  { suppressSaveBeforeStart: true },
+);
+
+assert.deepStrictEqual(
   commands.debugTestConfig('/tmp/project', 'InvoiceServiceTest', 'updatesTotals', '/tmp/project/.glade/envs/dev.sqlite'),
   {
     type: 'glade',
@@ -55,4 +60,17 @@ assert.strictEqual(
 assert.strictEqual(
   commands.editorAnonymousSource({ text: 'System.debug(1);', selection: { start: 0, end: 0 } }),
   'System.debug(1);'
+);
+
+assert.strictEqual(
+  commands.editorSoqlSource({ text: '  SELECT Id FROM Account  ', selection: { start: 0, end: 0 } }),
+  'SELECT Id FROM Account'
+);
+
+assert.strictEqual(
+  commands.editorSoqlSource({
+    text: 'SELECT Id FROM Account\nSELECT Id FROM Contact',
+    selection: { start: 23, end: 45 },
+  }),
+  'SELECT Id FROM Contact'
 );

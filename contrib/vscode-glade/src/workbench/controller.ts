@@ -76,6 +76,15 @@ export class WorkbenchController {
     await this.runEntry(entry.id);
   }
 
+  async runSoqlText(queryText: string): Promise<void> {
+    const query = queryText.trim();
+    if (!query) {
+      void vscode.window.showInformationMessage("Open a SOQL scratch buffer or select a SOQL query to run.");
+      return;
+    }
+    await this.runSoqlQuery("Scratch", "scratch-soql", query, false);
+  }
+
   async describe(objectName?: string): Promise<void> {
     const project = this.project;
     if (!project) {
@@ -104,9 +113,13 @@ export class WorkbenchController {
   }
 
   private async runSoql(entry: WorkbenchEntry): Promise<void> {
+    await this.runSoqlQuery(entry.name, entry.id, entry.body, true, entry);
+  }
+
+  private async runSoqlQuery(label: string, resultBaseName: string, queryText: string, markSaved: boolean, entry?: WorkbenchEntry): Promise<void> {
     const project = this.requireProject();
     const environment = configuredActiveEnvironment(project);
-    const args = queryArgs(project.projectRoot, environment.dbPath, entry.body);
+    const args = queryArgs(project.projectRoot, environment.dbPath, queryText);
     this.output.show(true);
     this.output.appendLine(`$ glade ${args.map(shellQuote).join(" ")}`);
     const result = await runGlade(args, { cwd: project.projectRoot });
@@ -114,10 +127,12 @@ export class WorkbenchController {
       throw new Error(result.stderr.trim() || result.stdout.trim() || `glade db query exited with code ${result.code}`);
     }
     const query = parseQueryOutput(result.stdout);
-    this.output.appendLine(`SOQL ${entry.name}: ${query.totalSize} row(s)`);
-    const filePath = this.writeResultFile(entry.id, soqlResultText(query), "csv");
+    this.output.appendLine(`SOQL ${label}: ${query.totalSize} row(s)`);
+    const filePath = this.writeResultFile(resultBaseName, soqlResultText(query), "csv");
     this.lastResultPath = filePath;
-    this.markRun(entry);
+    if (markSaved && entry) {
+      this.markRun(entry);
+    }
     await vscode.commands.executeCommand("vscode.open", vscode.Uri.file(filePath));
   }
 

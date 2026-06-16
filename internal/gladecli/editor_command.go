@@ -89,10 +89,10 @@ func runEditorInstall(ctx context.Context, args []string, w io.Writer) error {
 		installArgs = append(installArgs, "--force")
 	}
 	out, err := editorCommandRun(ctx, editorPath, installArgs...)
-	if len(out) > 0 {
-		fmt.Fprint(w, string(out))
-	}
 	if err != nil {
+		if len(out) > 0 {
+			fmt.Fprint(w, string(out))
+		}
 		return fmt.Errorf("%s --install-extension failed: %w", editorPath, err)
 	}
 	fmt.Fprintf(w, "installed vscode extension: %s\n", vsix)

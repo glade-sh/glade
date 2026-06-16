@@ -1425,6 +1425,34 @@ func TestRunEditorInstallVSCodeUsesVSIX(t *testing.T) {
 	}
 }
 
+func TestRunEditorInstallVSCodeSuppressesSuccessfulEditorOutput(t *testing.T) {
+	vsix := filepath.Join(t.TempDir(), "vscode-glade.vsix")
+	if err := os.WriteFile(vsix, []byte("vsix"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	restore := stubEditorCommandDeps(t,
+		func(name string) (string, error) {
+			if name != "code" {
+				t.Fatalf("looked up %q, want code", name)
+			}
+			return "/usr/local/bin/code", nil
+		},
+		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+			return []byte("Installing extensions...\nExtension 'vscode-glade-0.0.1.vsix' was successfully installed.\n(node:5882) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized.\n"), nil
+		},
+	)
+	defer restore()
+
+	var stdout bytes.Buffer
+	if err := runEditor(context.Background(), []string{"install", "vscode", "--vsix", vsix, "--force"}, &stdout); err != nil {
+		t.Fatal(err)
+	}
+	want := fmt.Sprintf("installed vscode extension: %s\n", vsix)
+	if stdout.String() != want {
+		t.Fatalf("stdout = %q, want %q", stdout.String(), want)
+	}
+}
+
 func TestRunEditorDoctorVSCodeReportsPaths(t *testing.T) {
 	restore := stubEditorCommandDeps(t,
 		func(name string) (string, error) {

@@ -3,7 +3,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 import { adapterExecutable, GladeDebugConfiguration, resolveGladeConfiguration } from "./adapter";
 import { GladeCodeLensProvider, LocalTestTarget } from "./codeLens";
-import { debugTestConfig } from "./commandModel";
+import { debugTestConfig, editorSoqlSource } from "./commandModel";
 import { registerGladeCommands } from "./commands";
 import { addEnvironment, clonedEnvironment, removeEnvironment, settingsValue } from "./environmentActions";
 import { environmentNameFromInput, GladeEnvironment } from "./environments";
@@ -178,27 +178,33 @@ export function activate(context: vscode.ExtensionContext): void {
     await vscode.window.showTextDocument(document, { preview: false });
   }
 
-  async function createWorkbenchEntry(kind: "soql"): Promise<void> {
-    const name = await vscode.window.showInputBox({
-      title: "New SOQL Query",
-      prompt: "Name",
-    });
-    if (!name) {
+  async function openSoqlScratch(): Promise<void> {
+    const document = await vscode.workspace.openTextDocument({ language: "soql", content: "" });
+    await vscode.window.showTextDocument(document, { preview: false });
+  }
+
+  async function runSoqlScratch(): Promise<void> {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      void vscode.window.showInformationMessage("Open a SOQL scratch buffer to run.");
       return;
     }
-    const body = await vscode.window.showInputBox({
-      title: "SOQL",
-      prompt: "SOQL query to run locally",
+    const document = editor.document;
+    const selection = editor.selection;
+    const query = editorSoqlSource({
+      text: document.getText(),
+      selection: selection.isEmpty
+        ? undefined
+        : {
+            start: document.offsetAt(selection.start),
+            end: document.offsetAt(selection.end),
+          },
     });
-    if (!body) {
+    if (!query) {
+      void vscode.window.showInformationMessage("Open a SOQL scratch buffer or select a SOQL query to run.");
       return;
     }
-    await runWorkbenchCommand(async () => {
-      const entry = await workbench.createEntry(kind, name, body);
-      if (entry) {
-        await workbench.runEntry(entry.id);
-      }
-    });
+    await runWorkbenchCommand(() => workbench.runSoqlText(query));
   }
 
   context.subscriptions.push(
@@ -253,7 +259,10 @@ export function activate(context: vscode.ExtensionContext): void {
       await openAnonymousApexScratch();
     }),
     vscode.commands.registerCommand("glade.workbench.newSoql", async () => {
-      await createWorkbenchEntry("soql");
+      await openSoqlScratch();
+    }),
+    vscode.commands.registerCommand("glade.runSoql", async () => {
+      await runSoqlScratch();
     }),
     vscode.commands.registerCommand("glade.workbench.runEntry", async (entryId?: string) => {
       await runWorkbenchCommand(() => workbench.runEntry(entryId));

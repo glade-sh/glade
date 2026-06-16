@@ -17,6 +17,10 @@ export interface GladeDebugConfig {
   source: string;
 }
 
+export interface GladeDebugSessionOptions {
+  suppressSaveBeforeStart: true;
+}
+
 export function apexSourceFromDocument(source: TextSource): string {
 	const start = source.selection?.start ?? 0;
 	const end = source.selection?.end ?? 0;
@@ -27,6 +31,11 @@ export function apexSourceFromDocument(source: TextSource): string {
 }
 
 export function editorAnonymousSource(source: TextSource): string | undefined {
+	const text = apexSourceFromDocument(source).trim();
+	return text || undefined;
+}
+
+export function editorSoqlSource(source: TextSource): string | undefined {
 	const text = apexSourceFromDocument(source).trim();
 	return text || undefined;
 }
@@ -55,6 +64,10 @@ export function debugAnonymousConfig(project: string | undefined, source: string
     config.dbPath = dbPath;
   }
   return config;
+}
+
+export function debugAnonymousSessionOptions(): GladeDebugSessionOptions {
+  return { suppressSaveBeforeStart: true };
 }
 
 export function debugTestConfig(project: string, className: string, methodName: string | undefined, dbPath?: string): GladeDebugConfig {

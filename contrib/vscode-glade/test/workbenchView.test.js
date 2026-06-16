@@ -43,6 +43,8 @@ const view = new WorkbenchView();
 assert.strictEqual(view.getChildren().length, 4);
 assert.strictEqual(view.getChildren()[0].label, "Open Anonymous Apex Scratch");
 assert.strictEqual(view.getChildren()[0].command.command, "glade.workbench.newAnonymousApex");
+assert.strictEqual(view.getChildren()[1].label, "Open SOQL Scratch");
+assert.strictEqual(view.getChildren()[1].command.command, "glade.workbench.newSoql");
 
 view.setRows(rows);
 assert.strictEqual(view.getChildren().length, rows.length + 4);
