@@ -487,6 +487,29 @@ func TestQueryPaginationNoBatchSizePreservesFullResult(t *testing.T) {
 	assertQueryRecordShape(t, payload.Records[0], "Account", "001000000000001", serverTestDataPath+"/sobjects/Account/001000000000001")
 }
 
+func TestQueryColumnsMetadataForSalesforceCLI(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "A")
+	handler := New(&org)
+
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, serverTestDataPath+"/query?q=SELECT%20Id,%20Name%20FROM%20Account&columns=true", nil))
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("query status = %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	var payload struct {
+		ColumnMetadata []struct {
+			ColumnName string `json:"columnName"`
+		} `json:"columnMetadata"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if len(payload.ColumnMetadata) != 2 || payload.ColumnMetadata[0].ColumnName != "Id" || payload.ColumnMetadata[1].ColumnName != "Name" {
+		t.Fatalf("columnMetadata = %#v body=%s", payload.ColumnMetadata, recorder.Body.String())
+	}
+}
+
 func TestQueryPaginationFirstAndNextPage(t *testing.T) {
 	org := testOrg()
 	addAccountForTest(&org, "001000000000001", "A")
@@ -1492,6 +1515,32 @@ func TestDiscoveryIdentityAndUserInfoRejectUnsupportedMethods(t *testing.T) {
 			if got := rec.Header().Get("Allow"); got != http.MethodGet {
 				t.Fatalf("Allow = %q, want %q", got, http.MethodGet)
 			}
+		})
+	}
+}
+
+func TestSOAPAndBulkV1RoutesReachProtocolSeams(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	for _, tc := range []struct {
+		name string
+		path string
+		want string
+	}{
+		{name: "soap", path: "/services/Soap/u/65.0", want: "unknown SOAP method"},
+		{name: "bulk v1", path: "/services/async/65.0/job", want: "Bulk API v1 routes"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, tc.path, strings.NewReader("")))
+			if tc.name == "soap" {
+				if rec.Code != http.StatusInternalServerError || !strings.Contains(rec.Body.String(), tc.want) {
+					t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+				}
+				return
+			}
+			assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", tc.want)
 		})
 	}
 }

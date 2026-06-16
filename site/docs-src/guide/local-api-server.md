@@ -56,11 +56,14 @@ outside the checked local source/schema metadata baseline.
 | SObject CRUD | `/services/data/vXX.X/sobjects/<Object>/<Id>` | supported baseline |
 | Record counts | `/services/data/vXX.X/limits/recordCount?sObjects=Account,Contact` | supported baseline |
 | Execute Anonymous | Tooling executeAnonymous route | supported where runtime supports code |
+| SOAP Apex executeAnonymous | `/services/Soap/s/vXX.X/<OrgId>` | supported for `sf apex run` |
+| Partner SOAP describe/upsert | `/services/Soap/u/vXX.X` | supported baseline for local data import tools |
 | Tooling source metadata | Tooling `ApexClass`, `ApexTrigger`, `ApexPage`, `ApexComponent`, `StaticResource`, `CustomObject`, `CustomField`, `Layout`, `CompactLayout`, `RecordType`, and `ValidationRule` query/read paths | supported local baseline |
 | Tooling schema metadata | Tooling `EntityDefinition`, `EntityParticle`, `FieldDefinition`, and `RelationshipDomain` query paths | supported local baseline |
 | Composite sObject insert | `/services/data/vXX.X/composite/sobjects` | supported baseline |
 | Composite Batch | `/services/data/vXX.X/composite/batch` | supported local subrequests |
 | Composite Tree | `/services/data/vXX.X/composite/tree/<Object>` | supported local tree requests |
+| Bulk API v1 ingest | `/services/async/vXX.X/job...` | supported insert/upsert CSV baseline |
 | Bulk API v2 query | `/services/data/vXX.X/jobs/query` and `/results` | supported simple scalar local query whole-result CSV |
 | Layout and default metadata | local layout/default-value REST routes | supported local metadata baseline |
 | Metadata job status | local metadata job status routes | supported local status baseline |

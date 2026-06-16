@@ -37,6 +37,7 @@ const testerFieldGuide = await readFile(new URL("../docs-src/guide/tester-field-
 const editor = await readFile(new URL("../docs-src/guide/editor.md", import.meta.url), "utf8");
 const supportMap = await readFile(new URL("../docs-src/guide/support-map.md", import.meta.url), "utf8");
 const localApiServer = await readFile(new URL("../docs-src/guide/local-api-server.md", import.meta.url), "utf8");
+const gladeOrgs = await readFile(new URL("../docs-src/guide/glade-orgs.md", import.meta.url), "utf8");
 const lwcLocalShell = await readFile(new URL("../docs-src/guide/lwc-local-shell.md", import.meta.url), "utf8");
 const enterpriseWorkflows = await readFile(new URL("../docs-src/guide/enterprise-workflows.md", import.meta.url), "utf8");
 const plugins = await readFile(new URL("../docs-src/guide/plugins.md", import.meta.url), "utf8");
@@ -234,6 +235,7 @@ test("home page uses a static local proof and final go-live workflow copy", () =
   assert.match(config, /\{ text: 'Playground', link: '\/guide\/playground' \}/);
   assert.match(config, /\{ text: 'Capabilities', link: '\/guide\/support-map' \}/);
   assert.match(config, /\{ text: 'VS Code', link: '\/guide\/editor' \}/);
+  assert.match(config, /\{ text: 'sf target orgs', link: '\/guide\/glade-orgs' \}/);
   assert.match(config, /\{ text: 'Docs', link: '\/guide\/overview' \}/);
   assert.match(config, /\{ text: 'Install', link: '\/guide\/installation' \}/);
   assert.doesNotMatch(config, /\{ text: 'Coverage', link: '\/guide\/workbench' \}/);
@@ -903,6 +905,10 @@ test("cli reference documents current code intelligence commands", () => {
   assert.match(editor, /glade inspect definition --project \. --symbol InvoiceService/);
   assert.match(editor, /glade inspect references --project \. --symbol Account\.Name --include-declaration/);
   assert.match(editor, /glade refactor rename --project \. --symbol InvoiceService --to BillingService --dry-run/);
+  assert.match(cliReference, /\[Use Glade as an sf target\]\(\/guide\/glade-orgs\)/);
+  assert.match(gladeOrgs, /sf nimbleams data import -f \.\/data\/insertOrder\.json -u my-glade-org/);
+  assert.match(gladeOrgs, /It is not a real scratch\s+org/);
+  assert.match(gladeOrgs, /Bulk API v1 CSV insert and upsert baseline/);
 });
 
 test("ci docs create reports directory before report outputs", () => {

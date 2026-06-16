@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/glade-sh/glade/internal/dml"
 	"github.com/glade-sh/glade/internal/soql"
@@ -70,19 +71,15 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version str
 		return
 	}
 	queryText := r.URL.Query().Get("q")
-	var result soql.Result
-	var err error
-	if allRows {
-		query, parseErr := soql.Parse(queryText)
-		if parseErr == nil {
-			query.AllRows = true
-			result, err = soql.Execute(*s.Org, query)
-		} else {
-			err = parseErr
-		}
-	} else {
-		result, err = soql.ParseAndExecute(*s.Org, queryText)
+	query, err := soql.ParseAtWithFiscalYearStartMonth(queryText, time.Now().UTC(), soql.FiscalYearStartMonth(*s.Org))
+	if err != nil {
+		writeSalesforceError(w, errMalformedQuery, err.Error())
+		return
 	}
+	if allRows {
+		query.AllRows = true
+	}
+	result, err := soql.Execute(*s.Org, query)
 	if err != nil {
 		writeSalesforceError(w, errMalformedQuery, err.Error())
 		return
@@ -93,7 +90,9 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version str
 		return
 	}
 	if !paginated || result.Rows <= batchSize {
-		writeJSON(w, http.StatusOK, queryResultPayload(result.Rows, true, result.Records, version, ""))
+		payload := queryResultPayload(result.Rows, true, result.Records, version, "")
+		addQueryColumnMetadata(payload, r, query)
+		writeJSON(w, http.StatusOK, payload)
 		return
 	}
 	locator := s.storeQueryLocator(queryLocatorState{
@@ -103,7 +102,9 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version str
 		version:   version,
 		nextPath:  nextPath,
 	})
-	writeJSON(w, http.StatusOK, queryResultPayload(result.Rows, false, result.Records[:batchSize], version, queryNextURL(version, nextPath, locator, batchSize)))
+	payload := queryResultPayload(result.Rows, false, result.Records[:batchSize], version, queryNextURL(version, nextPath, locator, batchSize))
+	addQueryColumnMetadata(payload, r, query)
+	writeJSON(w, http.StatusOK, payload)
 }
 
 func (s *Server) handleQueryMore(w http.ResponseWriter, r *http.Request, token string) {
@@ -169,6 +170,85 @@ func queryResultPayload(totalSize int, done bool, records []storage.Record, vers
 		payload["nextRecordsUrl"] = nextURL
 	}
 	return payload
+}
+
+func addQueryColumnMetadata(payload map[string]any, r *http.Request, query soql.Query) {
+	if _, ok := r.URL.Query()["columns"]; !ok {
+		return
+	}
+	payload["columnMetadata"] = queryColumnMetadata(query)
+}
+
+func queryColumnMetadata(query soql.Query) []map[string]any {
+	columns := make([]map[string]any, 0, len(query.Fields)+len(query.ChildQueries)+len(query.Typeofs))
+	for _, field := range query.Fields {
+		columns = append(columns, queryFieldColumnMetadata(field))
+	}
+	for _, childQuery := range query.ChildQueries {
+		columns = append(columns, map[string]any{
+			"columnName":  childQuery.Relationship,
+			"aggregate":   true,
+			"joinColumns": queryColumnMetadata(childQuery.Query),
+		})
+	}
+	for _, spec := range query.Typeofs {
+		seen := make(map[string]bool)
+		for _, fields := range spec.When {
+			for _, field := range fields {
+				name := spec.Relationship + "." + queryFieldOutputName(field)
+				if !seen[strings.ToLower(name)] {
+					columns = append(columns, map[string]any{"columnName": name})
+					seen[strings.ToLower(name)] = true
+				}
+			}
+		}
+		for _, field := range spec.Else {
+			name := spec.Relationship + "." + queryFieldOutputName(field)
+			if !seen[strings.ToLower(name)] {
+				columns = append(columns, map[string]any{"columnName": name})
+				seen[strings.ToLower(name)] = true
+			}
+		}
+	}
+	return columns
+}
+
+func queryFieldColumnMetadata(field string) map[string]any {
+	name := queryFieldOutputName(field)
+	if queryFieldIsAggregate(field) {
+		return map[string]any{
+			"columnName":  name,
+			"displayName": name,
+			"aggregate":   true,
+		}
+	}
+	return map[string]any{"columnName": name}
+}
+
+func queryFieldOutputName(field string) string {
+	parts := strings.Fields(field)
+	if len(parts) == 2 && !strings.Contains(parts[0], "(") {
+		return parts[1]
+	}
+	if len(parts) == 2 && strings.Contains(parts[0], "(") {
+		return parts[1]
+	}
+	return field
+}
+
+func queryFieldIsAggregate(field string) bool {
+	field = strings.TrimSpace(field)
+	open := strings.Index(field, "(")
+	if open <= 0 {
+		return false
+	}
+	fn := strings.ToUpper(strings.TrimSpace(field[:open]))
+	switch fn {
+	case "AVG", "COUNT", "COUNT_DISTINCT", "GROUPING", "MAX", "MIN", "SUM":
+		return true
+	default:
+		return false
+	}
 }
 
 func queryRecordsPayload(records []storage.Record, version string) []map[string]any {

@@ -1179,6 +1179,11 @@ func TestRunCommandHelp(t *testing.T) {
 			want: []string{"Usage:", "glade playground", "--list-examples", "--example <id>", "--no-db", "--reset-on-start"},
 		},
 		{
+			name: "org help",
+			args: []string{"help", "org"},
+			want: []string{"Usage:", "glade org create", "glade org list", "glade org status", "glade org auth", "glade org create my-glade-org --project . --db .glade/orgs/my-glade-org.sqlite --addr 127.0.0.1:17911"},
+		},
+		{
 			name: "help test",
 			args: []string{"help", "test"},
 			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "--no-cache", "--connect", "--daemon"},

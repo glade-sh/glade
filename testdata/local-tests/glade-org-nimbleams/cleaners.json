@@ -1,0 +1,13 @@
+{
+  "extId": "External_Id__c",
+  "queries": [],
+  "records": {},
+  "cleaners": [
+    {
+      "type": "ApexScript",
+      "body": [
+        "insert new Account(Name = 'Cleaner Apex', External_Id__c = 'cleaner-1');"
+      ]
+    }
+  ]
+}

@@ -48,6 +48,10 @@ Human output is terminal text. Use `--json` or `--format` for scripts. See [CLI 
     <strong>Server and playground</strong>
     <span>Start local Salesforce API routes and browser playground examples.</span>
   </a>
+  <a class="docs-command-card" href="#glade-org">
+    <strong>sf target</strong>
+    <span>Create, start, and register a local Glade org target for supported <code>sf</code> commands.</span>
+  </a>
   <a class="docs-command-card" href="#glade-db">
     <strong>Database</strong>
     <span>Seed, reset, inspect, and export persistent local org state.</span>
@@ -426,6 +430,22 @@ glade server --addr 127.0.0.1:8080
 glade server --project . --db .glade/local-org.sqlite --addr 127.0.0.1:8080
 glade server --project . --limit-mode strict
 ```
+
+## `glade org`
+
+Create, start, and register a local Glade org target for supported `sf`
+commands. This is a Glade-backed local API target, not a Salesforce scratch org.
+
+```bash
+glade org create my-glade-org --project . --db .glade/orgs/my-glade-org.sqlite --addr 127.0.0.1:17911
+glade org start my-glade-org --project .
+glade org auth my-glade-org --project .
+sf data create record -o my-glade-org -s Account -v "Name='Local'"
+sf apex run -o my-glade-org -f scripts/seed.apex
+```
+
+See [Use Glade as an sf target](/guide/glade-orgs) for the data import path and
+support boundary.
 
 ## `glade db`
 
