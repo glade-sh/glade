@@ -372,7 +372,6 @@ body:not(:has(.VPHome)) .VPNavBar > .wrapper > .container > .title {
 .VPNavBarTitle .logo {
   width: 20px;
   height: 20px;
-  border-radius: 6px;
 }
 
 .VPNavBarTitle {
