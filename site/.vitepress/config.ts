@@ -23,7 +23,7 @@ export default defineConfig({
   srcDir: 'docs-src',
   outDir: '.vitepress/dist',
   cleanUrls: true,
-  appearance: 'dark',
+  appearance: 'force-dark',
   lastUpdated: false,
   vite: {
     server: {

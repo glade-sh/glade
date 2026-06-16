@@ -76,6 +76,12 @@ test("theme defines complete light and dark color tokens", () => {
   assert.match(css, /--glade-nav-bg: var\(--bg\);/);
 });
 
+test("site is dark-only and does not render the appearance switch", () => {
+  assert.match(config, /appearance: 'force-dark'/);
+  assert.doesNotMatch(config, /appearance: 'dark'/);
+  assert.doesNotMatch(css, /VPNavBarAppearance|VPSwitchAppearance/);
+});
+
 test("vite config keeps dev and preview tunnel output clean", () => {
   assert.match(config, /const tunnelAllowedHosts = \[/);
   assert.ok(config.includes("'.ngrok-free.app'"));
@@ -342,6 +348,8 @@ test("home local loop styles stay quiet and responsive", () => {
   assert.match(css, /\.home-loop-result\s*\{[\s\S]*min-height: 62px;/);
   assert.match(css, /\.home-loop-stage\s*\{[\s\S]*height: 172px;/);
   assert.match(css, /\.home-loop-trace\s*\{[\s\S]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/);
+  assert.match(css, /\.home-loop-trace i\s*\{[\s\S]*width: 100%;[\s\S]*background: linear-gradient\(90deg, rgba\(155, 232, 112, 0\), rgba\(155, 232, 112, 0\.96\) 50%, rgba\(155, 232, 112, 0\)\);/);
+  assert.match(css, /\.home-loop-trace i\s*\{[\s\S]*will-change: transform, opacity;/);
   assert.match(css, /@keyframes home-loop-trace/);
   assert.match(css, /\.home-loop-tabs\s*\{[\s\S]*display: flex;/);
   assert.match(css, /\.home-loop-tabs button\[aria-pressed="true"\]\s*\{[\s\S]*border-color: var\(--glade\);/);

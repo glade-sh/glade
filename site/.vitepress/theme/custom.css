@@ -1141,11 +1141,12 @@ body:has(.VPHome) .VPNavBarSearch {
 
 .home-loop-trace i {
   display: block;
-  width: 48%;
+  width: 100%;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, transparent, var(--glade), transparent);
+  background: linear-gradient(90deg, rgba(155, 232, 112, 0), rgba(155, 232, 112, 0.96) 50%, rgba(155, 232, 112, 0));
   animation: home-loop-trace 5.4s cubic-bezier(.65, 0, .35, 1) infinite;
+  will-change: transform, opacity;
 }
 
 .home-loop-trace span:nth-child(2) i {
