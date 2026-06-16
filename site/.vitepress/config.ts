@@ -17,8 +17,8 @@ function isVueUsePureAnnotationWarning(warning: { code?: string; id?: string; me
 }
 
 export default defineConfig({
-  title: 'Glade - Local Apex Runtime for Salesforce Teams',
-  description: 'Run supported Apex checks and focused tests locally before the Salesforce org gate.',
+  title: 'Glade - Local Apex Runtime for SFDX Projects',
+  description: 'Local Apex checks and focused tests before the Salesforce validation gate.',
   base: '/',
   srcDir: 'docs-src',
   outDir: '.vitepress/dist',
@@ -46,9 +46,9 @@ export default defineConfig({
     ['script', { defer: true, src: '/js/highlight.js' }],
     ['script', { defer: true, src: '/js/home.js' }],
     ['meta', { name: 'theme-color', content: '#060a0d' }],
-    ['meta', { name: 'description', content: 'Run supported Apex checks and focused tests locally before the Salesforce org gate.' }],
-    ['meta', { property: 'og:title', content: 'Glade — Run Apex locally before you deploy' }],
-    ['meta', { property: 'og:description', content: 'Local Apex runtime for checks, focused tests, SOQL/DML fixtures, JSON, SARIF, JUnit, VS Code, and CI.' }],
+    ['meta', { name: 'description', content: 'Local Apex checks and focused tests before the Salesforce validation gate.' }],
+    ['meta', { property: 'og:title', content: 'Glade — Local Apex runtime for SFDX projects' }],
+    ['meta', { property: 'og:description', content: 'Run supported Apex checks before the Salesforce round trip.' }],
     ['meta', { property: 'og:type', content: 'website' }]
   ],
   themeConfig: {
@@ -56,12 +56,12 @@ export default defineConfig({
     logo: '/logo-mark.svg',
     search: { provider: 'local' },
     nav: [
-      { text: 'Coverage', link: '/guide/workbench' },
+      { text: 'Capabilities', link: '/guide/support-map' },
+      { text: 'VS Code', link: '/guide/editor' },
       { text: 'Playground', link: '/guide/playground' },
-      { text: 'Capability map', link: '/guide/support-map' },
       { text: 'Docs', link: '/guide/overview' },
-      { text: 'GitHub', link: 'https://github.com/glade-sh/glade' },
-      { text: 'Install', link: '/guide/installation' }
+      { text: 'Install', link: '/guide/installation' },
+      { text: 'GitHub', link: 'https://github.com/glade-sh/glade' }
     ],
     sidebar: [
       {
@@ -70,8 +70,7 @@ export default defineConfig({
           { text: 'What is Glade?', link: '/guide/overview' },
           { text: 'Install', link: '/guide/installation' },
           { text: 'First local check', link: '/guide/quickstart' },
-          { text: 'Capability map', link: '/guide/support-map' },
-          { text: 'Coverage workbench', link: '/guide/workbench' },
+          { text: 'What runs locally', link: '/guide/support-map' },
           { text: 'Playground', link: '/guide/playground' }
         ]
       },

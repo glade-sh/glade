@@ -43,7 +43,7 @@ Bulk API v2 simple scalar query job create/status/whole-result CSV routes,
 layout/default-value metadata, metadata job status, and execute-anonymous routes
 where supported by the runtime.
 
-Check the [local support guide](/guide/support-map) before relying on live auth,
+Check [what Glade runs locally](/guide/support-map) before relying on live auth,
 Composite Graph execution, Bulk API locator paging,
 Streaming, Pub/Sub, GraphQL, live metadata deploy/retrieve, or Tooling APIs
 outside the checked local source/schema metadata baseline.

@@ -10,7 +10,7 @@
   </ul>
 </div>
 
-All commands are local unless you point Glade at an external path or start a server. Most project commands accept `--project <root>` and default to the current directory when a project is discoverable.
+All commands are local unless you point Glade at an external path or start a server. Most project commands accept `--project PROJECT_ROOT` and default to the current directory when a project is discoverable.
 
 Human output is terminal text. Use `--json` or `--format` for scripts. See [CLI output modes](/guide/cli-output), [Automation and JSON](/guide/automation), and [Exit codes](/guide/exit-codes) for the stable contract.
 
@@ -192,7 +192,7 @@ glade schema import describe --input reports/org-describe.json --output schema/l
 glade schema import describe --input reports/org-describe.json --output schema/local.schema.json --project-cache .
 ```
 
-`--project-cache <root>` writes schema symbols under `.glade/symbols` for
+`--project-cache PROJECT_ROOT` writes schema symbols under `.glade/symbols` for
 offline definition, reference, and rename queries.
 
 ## `glade check`
@@ -370,7 +370,7 @@ glade plugins restore
 ```
 
 The short aliases `compat` and `performance` resolve to `@glade/compat` and
-`@glade/performance`. `available` lists marketplace plugins that can be
+`@glade/performance`. `available` lists configured registry plugins that can be
 installed.
 
 Once installed, plugin command roots behave like Glade commands:

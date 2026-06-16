@@ -2,36 +2,36 @@
 aside: false
 ---
 
-# Local coverage workbench
+# Interactive capability map
 
-See what Glade runs locally, what has limits, and what still belongs to Salesforce.
+Type Apex expressions and see whether the API runs locally, runs with limits, or requires Salesforce.
 
 Use the editor as a live capability map: type a dot, read the label, and see the boundary before you depend on an API.
 
-<section class="coverage-workbench" data-coverage-workbench aria-label="Glade local coverage workbench">
+<section class="coverage-workbench" data-coverage-workbench aria-label="Glade interactive capability map">
   <div class="coverage-workbench-intro">
-    <p class="home-eyebrow">Coverage cards</p>
+    <p class="home-eyebrow">Capability cards</p>
     <h2 class="home-h2">A few surfaces worth trying first.</h2>
-    <p class="home-p">These examples come from checked support rows and the curated editor demo. Green means Glade has local behavior. Yellow means useful local behavior with named limits. Red means Salesforce owns that service.</p>
+    <p class="home-p">These examples come from checked capability rows and the curated editor demo. Each label says whether the API runs locally, runs with named limits, or requires Salesforce.</p>
   </div>
   <div class="coverage-workbench-cards">
     <article>
-      <span class="home-completion-status home-completion-status-supported">Works well</span>
+      <span class="home-completion-status home-completion-status-supported">Runs locally</span>
       <code>Database.insert</code>
       <p>Partial-success DML, save results, errors, and local row changes.</p>
     </article>
     <article>
-      <span class="home-completion-status home-completion-status-supported">Works well</span>
+      <span class="home-completion-status home-completion-status-supported">Runs locally</span>
       <code>BusinessHours.nextStartDate</code>
       <p>Seeded schedules, time zones, holidays, and deterministic local calendar math.</p>
     </article>
     <article>
-      <span class="home-completion-status home-completion-status-limited">With limits</span>
+      <span class="home-completion-status home-completion-status-limited">Runs with limits</span>
       <code>Schema.DescribeSObjectResult</code>
       <p>Object labels, fields, record types, and child relationships from local metadata.</p>
     </article>
     <article>
-      <span class="home-completion-status home-completion-status-salesforce">Needs Salesforce</span>
+      <span class="home-completion-status home-completion-status-salesforce">Requires Salesforce</span>
       <code>Answers.findSimilar</code>
       <p>Hosted Answers service data stays marked instead of being silently faked.</p>
     </article>
@@ -41,7 +41,7 @@ Use the editor as a live capability map: type a dot, read the label, and see the
 <GladeEditorWorkbench />
 
 <div class="workbench-page">
-  <section class="home-workbench home-panel" id="local-apex-workbench" data-scenario-workbench aria-label="Local coverage workflow demo">
+  <section class="home-workbench home-panel" id="local-apex-workbench" data-scenario-workbench aria-label="Local capability workflow demo">
     <div class="home-workbench-head">
       <div>
         <p class="home-eyebrow">Workflow gallery</p>
@@ -125,12 +125,12 @@ Use the editor as a live capability map: type a dot, read the label, and see the
       <div class="home-command-row">
         <span>Local run</span>
         <code id="workbench-command" data-command-strip>glade check --project . --no-progress</code>
-        <button type="button" data-copy-target="workbench-command">Copy command</button>
+        <button type="button" data-copy-target="workbench-command" aria-label="Copy workbench command">Copy command</button>
       </div>
       <div class="home-command-row">
         <span>CI / automation</span>
         <code id="workbench-ci-command" data-ci-command-strip>glade check --project . --json --no-progress</code>
-        <button type="button" data-copy-target="workbench-ci-command">Copy JSON command</button>
+        <button type="button" data-copy-target="workbench-ci-command" aria-label="Copy workbench JSON command">Copy JSON command</button>
       </div>
       <div class="home-command-strip-foot">
         <a href="/guide/cli-reference" data-docs-link>View docs</a>

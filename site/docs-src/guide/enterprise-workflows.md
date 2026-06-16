@@ -16,7 +16,7 @@ The report includes inventory, top risk signals, trigger map, SOQL and DML
 counts, async and callout indicators, fflib-style inventory, test health,
 findings, and known limitations.
 
-## Cruft And Dead Code
+## Cruft and dead code
 
 Scan for conservative delete, deprecate, review, and do-not-delete candidates:
 

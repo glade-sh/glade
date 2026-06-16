@@ -5,10 +5,10 @@ export const editorSupportCatalog = {
   "schemaVersion": 1,
   "generatedFrom": "docs/STDLIB_COVERAGE.md",
   "statusLabels": {
-    "supported": "Works well",
-    "partial": "With limits",
-    "stub": "With limits",
-    "unsupported": "Needs Salesforce",
+    "supported": "Runs locally",
+    "partial": "Runs with limits",
+    "stub": "Runs with limits",
+    "unsupported": "Requires Salesforce",
     "unknown": "Not measured"
   },
   "receivers": {
@@ -22,7 +22,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "AccessLevel API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Creates a local permission-set-scoped user-mode token used by supported SOQL and DML permission checks.",
           "signature": "withPermissionSetId(String)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -39,7 +39,7 @@ export const editorSupportCatalog = {
           "type": "property",
           "detail": "Account field",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Schema-backed local field"
         },
         {
@@ -48,7 +48,7 @@ export const editorSupportCatalog = {
           "type": "property",
           "detail": "Standard field",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Schema-backed local field"
         },
         {
@@ -57,7 +57,7 @@ export const editorSupportCatalog = {
           "type": "property",
           "detail": "Standard field",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Schema-backed local field"
         },
         {
@@ -66,7 +66,7 @@ export const editorSupportCatalog = {
           "type": "property",
           "detail": "Lookup field",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Schema-backed local field"
         },
         {
@@ -75,7 +75,7 @@ export const editorSupportCatalog = {
           "type": "property",
           "detail": "Currency field",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Schema-backed local field"
         },
         {
@@ -84,7 +84,7 @@ export const editorSupportCatalog = {
           "type": "property",
           "detail": "Describe token",
           "status": "partial",
-          "statusLabel": "With limits",
+          "statusLabel": "Runs with limits",
           "info": "Local metadata with named limits"
         },
         {
@@ -93,7 +93,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Dynamic field read",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local SObject dynamic field read"
         },
         {
@@ -102,7 +102,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Dynamic field write",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local SObject dynamic field write"
         },
         {
@@ -111,7 +111,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Validation failure",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local validation error"
         }
       ]
@@ -126,7 +126,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Answers API",
           "status": "unsupported",
-          "statusLabel": "Needs Salesforce",
+          "statusLabel": "Requires Salesforce",
           "info": "Zone similar-question search requires Answers service data and returns a stable UnsupportedFeature diagnostic locally.",
           "signature": "findSimilar(Question)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -143,7 +143,7 @@ export const editorSupportCatalog = {
           "type": "class",
           "detail": "ApexPages API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Constructor, getters, add/get/has message state, and Visualforce action reset behavior are modeled.",
           "signature": "Message",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -154,7 +154,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "ApexPages API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Stores page messages on the VM instance.",
           "signature": "addMessage",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -169,7 +169,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "ApexPages API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Converts supported exception values into VM-local page messages.",
           "signature": "addMessages(Exception)",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -184,7 +184,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "ApexPages API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns a deterministic local PageReference.",
           "signature": "currentPage",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -199,7 +199,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "ApexPages API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns VM-local page messages.",
           "signature": "getMessages",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -214,7 +214,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "ApexPages API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Checks VM-local page messages.",
           "signature": "hasMessages",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -236,7 +236,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Approval API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Runs a seeded local ProcessDefinition, ProcessNode, ProcessInstance, and ProcessInstanceWorkitem engine for submit, approve, and reject request shapes.",
           "signature": "process(Approval.ProcessRequest)",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -257,7 +257,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Assert API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Routes through local assertion failures with optional message text.",
           "signature": "areEqual",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -268,7 +268,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Assert API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Routes through local assertion failures with optional message text.",
           "signature": "areNotEqual",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -279,7 +279,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Assert API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Raises local System.AssertException with optional message text.",
           "signature": "fail",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -290,7 +290,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Assert API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Routes through local assertion failures with optional message text.",
           "signature": "isFalse",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -301,7 +301,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Assert API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Routes through local assertion failures with optional message text.",
           "signature": "isNotNull",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -312,7 +312,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Assert API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Routes through local assertion failures with optional message text.",
           "signature": "isNull",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -323,7 +323,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Assert API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Routes through local assertion failures with optional message text.",
           "signature": "isTrue",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -340,7 +340,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Boolean API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Converts supported local field/object values into Boolean values.",
           "signature": "valueOf(Object)",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -361,7 +361,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "BusinessHours API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Runs deterministic local week-schedule math from seeded BusinessHours, Holiday, OperatingHours, and OperatingHoursHoliday records with timezone handling, all-day closures, partial-day closures, recurring holidays, and linked holidays.",
           "signature": "add(String, Datetime, Long)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -372,7 +372,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "BusinessHours API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Runs deterministic local calendar math from seeded BusinessHours, Holiday, OperatingHours, and OperatingHoursHoliday records with GMT Datetime output.",
           "signature": "addGmt(String, Datetime, Long)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -383,7 +383,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "BusinessHours API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Counts deterministic local business milliseconds across seeded week schedules, timezones, all-day closures, partial-day closures, recurring holidays, and linked holidays.",
           "signature": "diff(String, Datetime, Datetime)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -394,7 +394,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "BusinessHours API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Checks seeded local week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays.",
           "signature": "isWithin(String, Datetime)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -405,7 +405,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "BusinessHours API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Finds the next deterministic local start from seeded week schedules, timezones, Holiday closures, OperatingHoursHoliday links, partial-day closures, and recurring holidays.",
           "signature": "nextStartDate(String, Datetime)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -422,7 +422,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Crypto API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "MD5, SHA-1/SHA1, SHA-256/SHA256, SHA-384/SHA384, SHA-512/SHA512, and SHA3-256/384/512 digests are fixture-pinned, with Salesforce-shaped SecurityException diagnostics for unknown names.",
           "signature": "generateDigest",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -439,7 +439,7 @@ export const editorSupportCatalog = {
           "type": "class",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Queues local DML operations and applies them on commitWork; discardWork drops pending local work.",
           "signature": "UnitOfWork",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -450,7 +450,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local lead conversion creates Account, Contact, and optional Opportunity records and updates Lead conversion fields.",
           "signature": "convertLead",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -461,7 +461,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Dynamic SOQL count execution against the local org with local AccessLevel parsing.",
           "signature": "countQuery",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -472,7 +472,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Bind-map dynamic SOQL count execution with local AccessLevel parsing.",
           "signature": "countQueryWithBinds",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -483,7 +483,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "DML pipeline with result/error shapes and local AccessLevel parsing for supported SObjects.",
           "signature": "delete",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -494,7 +494,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local async delete alias runs through the DML pipeline and returns DeleteResult shape.",
           "signature": "deleteAsync",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -505,7 +505,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local immediate delete alias runs through the DML pipeline and returns DeleteResult shape.",
           "signature": "deleteImmediate",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -516,7 +516,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local hard-delete result shape with allOrNone rollback for supported SObjects.",
           "signature": "emptyRecycleBin",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -527,7 +527,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Queues local Batchable jobs and drains start/execute chunks/finish during Test.stopTest.",
           "signature": "executeBatch",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -538,7 +538,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns materialized local DeleteResult values and rejects unknown async locator strings instead of fabricating pending results.",
           "signature": "getAsyncDeleteResult",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -549,7 +549,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns deterministic VM-local locator strings for local result and locator objects.",
           "signature": "getAsyncLocator",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -560,7 +560,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns materialized local SaveResult values and rejects unknown async locator strings instead of fabricating pending results.",
           "signature": "getAsyncSaveResult",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -571,7 +571,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local cursor over supported SOQL results with deterministic fetch windows.",
           "signature": "getCursor",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -582,7 +582,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Bind-map local cursor over supported SOQL results with deterministic fetch windows.",
           "signature": "getCursorWithBinds",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -593,7 +593,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns local soft-deleted record tombstones whose deletion timestamp falls within the requested sync window.",
           "signature": "getDeleted",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -604,7 +604,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local pagination cursor over supported SOQL results with deterministic fetch windows.",
           "signature": "getPaginationCursor",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -615,7 +615,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Bind-map local pagination cursor over supported SOQL results with deterministic fetch windows.",
           "signature": "getPaginationCursorWithBinds",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -626,7 +626,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Supported SOQL executes eagerly for local batch scopes with local AccessLevel parsing.",
           "signature": "getQueryLocator",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -637,7 +637,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Bind-map dynamic SOQL locator execution with iterable local query locators.",
           "signature": "getQueryLocatorWithBinds",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -648,7 +648,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns local record IDs whose system-modified timestamp falls within the requested sync window.",
           "signature": "getUpdated",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -659,7 +659,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "DML pipeline with result/error shapes and local AccessLevel parsing for supported SObjects.",
           "signature": "insert",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -670,7 +670,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local async insert alias runs through the DML pipeline and returns SaveResult shape.",
           "signature": "insertAsync",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -681,7 +681,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local immediate insert alias runs through the DML pipeline and returns SaveResult shape.",
           "signature": "insertImmediate",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -692,7 +692,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local row-lock result shape with allOrNone rollback for supported SObjects.",
           "signature": "lock",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -703,7 +703,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local merge behavior with result shape and AccessLevel parsing for supported schema-backed data.",
           "signature": "merge",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -714,7 +714,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Dynamic SOQL execution against the local org with catchable QueryException parse errors.",
           "signature": "query",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -725,7 +725,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Bind-map dynamic SOQL execution with scalar and collection binds.",
           "signature": "queryWithBinds",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -736,7 +736,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Releases the selected local savepoint and later savepoints without rolling back org state.",
           "signature": "releaseSavepoint",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -747,7 +747,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Restores the local org-state snapshot for the selected savepoint.",
           "signature": "rollback",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -758,7 +758,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local org-state snapshots with later-savepoint invalidation.",
           "signature": "setSavepoint",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -769,7 +769,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local parent insert/update plus first-level child insert/update with NestedSaveResult relationship result shape.",
           "signature": "treeSave",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -780,7 +780,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Soft-delete restoration with local AccessLevel parsing for supported local records.",
           "signature": "undelete",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -791,7 +791,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local row-unlock result shape with allOrNone rollback for supported SObjects.",
           "signature": "unlock",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -802,7 +802,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "DML pipeline with result/error shapes and local AccessLevel parsing for supported SObjects.",
           "signature": "update",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -813,7 +813,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local async update alias runs through the DML pipeline and returns SaveResult shape.",
           "signature": "updateAsync",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -824,7 +824,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local immediate update alias runs through the DML pipeline and returns SaveResult shape.",
           "signature": "updateImmediate",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -835,7 +835,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Schema-backed external-ID matching with local AccessLevel parsing for supported local records.",
           "signature": "upsert",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -852,7 +852,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "DML result",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local DML result"
         },
         {
@@ -861,7 +861,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Inserted record Id",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local DML result"
         },
         {
@@ -870,7 +870,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Database.Error[]",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local DML errors"
         }
       ]
@@ -885,7 +885,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Result count",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Collection support"
         },
         {
@@ -894,7 +894,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Result list state",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Collection support"
         },
         {
@@ -903,7 +903,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Single DML result",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Collection support"
         }
       ]
@@ -918,7 +918,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Date API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local Gregorian day arithmetic.",
           "signature": "addDays",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -929,7 +929,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Date API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local Gregorian month arithmetic with end-of-month clamping.",
           "signature": "addMonths",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -940,7 +940,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Date API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local Gregorian year arithmetic with leap-day clamping.",
           "signature": "addYears",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -951,7 +951,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Date API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Validates date parts.",
           "signature": "newInstance",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -962,7 +962,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Date API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the deterministic local runtime date.",
           "signature": "today",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -973,7 +973,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Date API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Parses supported date strings.",
           "signature": "valueOf",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -990,7 +990,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Datetime API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "UTC-local day arithmetic.",
           "signature": "addDays",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1001,7 +1001,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Datetime API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "UTC-local arithmetic.",
           "signature": "addHours",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1012,7 +1012,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Datetime API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "UTC-local arithmetic.",
           "signature": "addMinutes",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1023,7 +1023,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Datetime API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "UTC-local month arithmetic with end-of-month clamping.",
           "signature": "addMonths",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1034,7 +1034,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Datetime API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "UTC-local arithmetic.",
           "signature": "addSeconds",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1045,7 +1045,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Datetime API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "UTC-local year arithmetic with leap-day clamping.",
           "signature": "addYears",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1056,7 +1056,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Datetime API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Formats using the deterministic local timezone model.",
           "signature": "format",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1067,7 +1067,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Datetime API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Formats using GMT.",
           "signature": "formatGmt",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1078,7 +1078,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Datetime API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Validates date and time parts.",
           "signature": "newInstance",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1089,7 +1089,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Datetime API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the deterministic local runtime datetime.",
           "signature": "now",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1100,7 +1100,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Datetime API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Parses supported datetime strings.",
           "signature": "valueOf",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1117,7 +1117,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Decimal API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Divides local Decimal values with explicit scale and RoundingMode.",
           "signature": "divide(Decimal,Integer,RoundingMode)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1128,7 +1128,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Decimal API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns local Decimal value.",
           "signature": "doubleValue",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1139,7 +1139,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Decimal API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Truncates to integer.",
           "signature": "intValue",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1150,7 +1150,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Decimal API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Oracle-pinned finite Decimal rounding uses Salesforce default HALF_EVEN ties and explicit RoundingMode behavior.",
           "signature": "round",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1161,7 +1161,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Decimal API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Oracle-pinned finite Decimal scaling covers positive and negative scales, RoundingMode ties, UNNECESSARY MathException, and Salesforce scale bounds.",
           "signature": "setScale",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1178,7 +1178,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "EncodingUtil API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Blob-shaped local value.",
           "signature": "base64Decode",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1189,7 +1189,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "EncodingUtil API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Blob-shaped local value.",
           "signature": "base64Encode",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1200,7 +1200,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "EncodingUtil API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Blob-shaped local value.",
           "signature": "convertFromHex",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1211,7 +1211,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "EncodingUtil API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Blob-shaped local value.",
           "signature": "convertToHex",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1222,7 +1222,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "EncodingUtil API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Oracle-pinned URL form decoding covers UTF-8, US-ASCII replacement, ISO-8859-1 aliases, and UTF-16 mixed escaped/plain input.",
           "signature": "urlDecode",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1233,7 +1233,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "EncodingUtil API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Oracle-pinned URL form encoding covers UTF-8, US-ASCII replacement, ISO-8859-1 aliases, and UTF-16 escaped output.",
           "signature": "urlEncode",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1250,7 +1250,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "FeatureManagement API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Checks local runAs user permissions, permission sets, and custom-permission assignments.",
           "signature": "checkPermission",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1267,7 +1267,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "HTTP API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Routes local callouts through registered HttpCalloutMock implementations and records local callout limits.",
           "signature": "send(HttpRequest)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1284,7 +1284,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "JSON API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Oracle-pinned DTO, SObject, primitive, collection, Object, string-key, and scalar-key map paths preserve duplicate-key last-value behavior and field order.",
           "signature": "deserialize",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1295,7 +1295,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "JSON API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Oracle-pinned strict DTO and SObject paths accept known fields, reject unknown fields with Salesforce-shaped diagnostics, and keep the last duplicate SObject field value.",
           "signature": "deserializeStrict",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1306,7 +1306,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "JSON API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Oracle-pinned untyped primitive, list, and map containers preserve order, collapse duplicate keys to the last value, and throw Salesforce-shaped oversized integer errors.",
           "signature": "deserializeUntyped",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1317,7 +1317,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "JSON API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Oracle-pinned serialization covers DTO, SObject, collection, map, primitive, enum, Object, and suppressApexObjectNulls paths with deterministic field order.",
           "signature": "serialize",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1328,7 +1328,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "JSON API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Oracle-pinned pretty serialization covers DTO, SObject, collection, map, primitive, and Object paths with Salesforce-style spacing.",
           "signature": "serializePretty",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1345,7 +1345,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Label API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Resolves local custom label metadata with existing platform and managed-namespace fallbacks.",
           "signature": "get(String,String)",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -1360,7 +1360,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Label API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns true when local label metadata has a matching explicit language translation.",
           "signature": "translationExists(String,String,String)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1377,7 +1377,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Limits API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns deterministic local counters and configurable caps for all tracked getter families, including zero-valued local service counters.",
           "signature": "get*",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1388,7 +1388,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Limits API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the local async-call counter.",
           "signature": "getAsyncCalls",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1399,7 +1399,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Limits API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the local async-call limit.",
           "signature": "getLimitAsyncCalls",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1410,7 +1410,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Governor counter",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local counters"
         },
         {
@@ -1419,7 +1419,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "SOQL counter",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local counters"
         },
         {
@@ -1428,7 +1428,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Governor ceiling",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local counters"
         }
       ]
@@ -1443,7 +1443,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "List method",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Collection support"
         },
         {
@@ -1452,7 +1452,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "List method",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Collection support"
         },
         {
@@ -1461,7 +1461,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Indexed Account",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Collection support"
         },
         {
@@ -1470,7 +1470,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Collection mutation",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Collection support"
         },
         {
@@ -1479,7 +1479,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Collection clone",
           "status": "partial",
-          "statusLabel": "With limits",
+          "statusLabel": "Runs with limits",
           "info": "Collection support with named limits"
         }
       ]
@@ -1494,7 +1494,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Schema.SObjectField",
           "status": "partial",
-          "statusLabel": "With limits",
+          "statusLabel": "Runs with limits",
           "info": "Local metadata with named limits"
         },
         {
@@ -1503,7 +1503,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Field presence",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Map support"
         },
         {
@@ -1512,7 +1512,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Field API names",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Map support"
         },
         {
@@ -1521,7 +1521,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Field tokens",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Map support"
         }
       ]
@@ -1536,7 +1536,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Pattern API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Oracle- and fixture-pinned regexp2-backed Java regex matching covers lookaround, named groups/backrefs, atomic groups, possessive quantifiers, \\G, \\R, \\h/\\v, (?U), Java Unicode aliases, UAX #29 \\X and \\b{g}, nested class algebra, and Apex UTF-16 code-unit match indexes.",
           "signature": "find",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1547,7 +1547,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Pattern API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns fixture-pinned whole-match and capture groups, including unmatched optional groups, over the supported Java regex path with Apex UTF-16 code-unit group bounds.",
           "signature": "group",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1558,7 +1558,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Pattern API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Whole-region matching over the supported regexp2-backed Java regex path.",
           "signature": "matches",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1575,7 +1575,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Math API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Integer and Decimal values.",
           "signature": "abs",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1586,7 +1586,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Math API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Numeric values.",
           "signature": "ceil",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1597,7 +1597,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Math API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Numeric values.",
           "signature": "floor",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1608,7 +1608,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Math API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Integer and Decimal values.",
           "signature": "max",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1619,7 +1619,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Math API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Integer and Decimal values.",
           "signature": "min",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1630,7 +1630,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Math API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Numeric values.",
           "signature": "pow",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1641,7 +1641,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Math API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Numeric values.",
           "signature": "round",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1652,7 +1652,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Math API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Numeric values.",
           "signature": "sqrt",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1669,7 +1669,7 @@ export const editorSupportCatalog = {
           "type": "class",
           "detail": "Messaging API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Stores triggerUserEmail, triggerOtherEmail, and triggerAutoResponseEmail flags for local captured email records.",
           "signature": "SendEmailOptions",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1680,7 +1680,7 @@ export const editorSupportCatalog = {
           "type": "class",
           "detail": "Messaging API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Common DTO setters/getters, recipient fields, template fields, body fields, flags, and local file attachment values are modeled.",
           "signature": "SingleEmailMessage",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1691,7 +1691,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Messaging API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Renders local stored EmailTemplate subject, HTML, text bodies, merge fields, static-resource attachments, Attachment rows, and ContentDocumentLink attachments for NONE, METADATA_ONLY, BODY, and METADATA_WITH_BODY.",
           "signature": "renderStoredEmailTemplate(String,String,String,Messaging.AttachmentRetrievalOption)",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -1706,7 +1706,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Messaging API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns ordered local SendEmailResult values, validates supported DTOs, captures sent messages with SendEmailOptions metadata, and increments local email limits.",
           "signature": "sendEmail",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -1727,7 +1727,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Pattern API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Compiles the supported regexp2-backed Java regex path: common flags, quote escapes, lookaround, named groups/backrefs, atomic groups, possessive quantifiers, \\G, \\R, \\h/\\v, (?U), Java Unicode aliases, UAX #29 \\X and \\b{g}, and nested class algebra.",
           "signature": "compile",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1738,7 +1738,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Pattern API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Whole-string matching over the supported regexp2-backed Java regex path, including UAX #29 grapheme patterns.",
           "signature": "matches",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1755,7 +1755,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "QuickAction API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local QuickAction metadata, predefined default values, and deterministic DTO results are modeled.",
           "signature": "describeAvailableActions",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1766,7 +1766,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "QuickAction API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local QuickAction metadata, predefined default values, and deterministic DTO results are modeled.",
           "signature": "describeAvailableQuickActions(String)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1777,7 +1777,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "QuickAction API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local QuickAction metadata, predefined default values, and deterministic DTO results are modeled.",
           "signature": "describeQuickActions(List<String>)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1788,7 +1788,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "QuickAction API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns deterministic local QuickActionResult DTOs for supported request shapes.",
           "signature": "performQuickAction",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -1804,7 +1804,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "QuickAction API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns deterministic local QuickActionResult DTOs for supported request shapes.",
           "signature": "performQuickActions(List<QuickAction.QuickActionRequest>)",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -1819,7 +1819,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "QuickAction API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local QuickAction metadata, predefined default values, and deterministic template DTOs are modeled.",
           "signature": "retrieveQuickActionTemplate(String,Id)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1830,7 +1830,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "QuickAction API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local QuickAction metadata, predefined default values, and deterministic template DTOs are modeled.",
           "signature": "retrieveQuickActionTemplates(List<String>,Id)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1847,7 +1847,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Request API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns deterministic local request context values for local Apex execution.",
           "signature": "getCurrent()",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1858,7 +1858,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Request API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns deterministic local request context values for local Apex execution.",
           "signature": "getQuiddity()",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1869,7 +1869,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Request API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns deterministic local request context values for local Apex execution.",
           "signature": "getRequestId()",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1886,7 +1886,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Request API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns deterministic local request context values for local Apex execution.",
           "signature": "getCurrent()",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1903,7 +1903,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "ResetPasswordResult API",
           "status": "unsupported",
-          "statusLabel": "Needs Salesforce",
+          "statusLabel": "Requires Salesforce",
           "info": "Password reset output is produced by Salesforce identity services and is not generated locally.",
           "signature": "getPassword()",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1920,7 +1920,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Sandbox API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Invokes the local test harness implementation.",
           "signature": "organizationId()",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1931,7 +1931,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Sandbox API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Invokes the local test harness implementation.",
           "signature": "sandboxId()",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1942,7 +1942,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Sandbox API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Invokes the local test harness implementation.",
           "signature": "sandboxName()",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1959,7 +1959,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Sandbox API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Invokes the local test harness implementation.",
           "signature": "runApexClass(SandboxContext)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1976,7 +1976,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Schedulable API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Queues and drains local Scheduled Apex jobs during Test.stopTest with deterministic CronTrigger IDs.",
           "signature": "execute(SchedulableContext)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -1993,7 +1993,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Schedulable API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Queues and drains local Scheduled Apex jobs during Test.stopTest with deterministic CronTrigger IDs.",
           "signature": "getTriggerId()",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2010,7 +2010,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Schema API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns deterministic local data category structures from loaded org metadata.",
           "signature": "describeDataCategoryGroupStructures(List<Schema.DataCategoryGroupSobjectTypePair>,Boolean)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2021,7 +2021,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Schema API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns deterministic local data category group describes from loaded org metadata and an empty typed list when absent.",
           "signature": "describeDataCategoryGroups(List<String>)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2032,7 +2032,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Schema API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns local metadata object names, labels, key prefixes, access booleans, fields, record types, and SObjectType tokens.",
           "signature": "describeSObjects(List<String>)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2043,7 +2043,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Schema API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns a local describe map for loaded standard, custom, namespaced, and project objects.",
           "signature": "getGlobalDescribe()",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2060,7 +2060,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Field label",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local metadata"
         },
         {
@@ -2069,7 +2069,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Display type",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local metadata"
         },
         {
@@ -2078,7 +2078,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "CRUD metadata",
           "status": "partial",
-          "statusLabel": "With limits",
+          "statusLabel": "Runs with limits",
           "info": "Local metadata with named limits"
         },
         {
@@ -2087,7 +2087,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "CRUD metadata",
           "status": "partial",
-          "statusLabel": "With limits",
+          "statusLabel": "Runs with limits",
           "info": "Local metadata with named limits"
         },
         {
@@ -2096,7 +2096,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Lookup targets",
           "status": "partial",
-          "statusLabel": "With limits",
+          "statusLabel": "Runs with limits",
           "info": "Local metadata with named limits"
         }
       ]
@@ -2111,7 +2111,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Record type metadata",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local metadata"
         },
         {
@@ -2120,7 +2120,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Relationship metadata",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local metadata"
         },
         {
@@ -2129,7 +2129,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Field describe map",
           "status": "partial",
-          "statusLabel": "With limits",
+          "statusLabel": "Runs with limits",
           "info": "Local metadata with named limits"
         },
         {
@@ -2138,7 +2138,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Object label",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local metadata"
         },
         {
@@ -2147,7 +2147,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Object API name",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local metadata"
         }
       ]
@@ -2162,7 +2162,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Map<String, Schema.SObjectField>",
           "status": "partial",
-          "statusLabel": "With limits",
+          "statusLabel": "Runs with limits",
           "info": "Local metadata with named limits"
         }
       ]
@@ -2177,7 +2177,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Field metadata",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local metadata"
         }
       ]
@@ -2192,7 +2192,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Describe object",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local metadata"
         },
         {
@@ -2201,7 +2201,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Construct SObject",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local SObject construction"
         }
       ]
@@ -2216,7 +2216,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Search API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns deterministic SearchResult DTOs from fixed search results or local org records.",
           "signature": "find",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -2232,7 +2232,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Search API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Uses deterministic local org SOSL with AccessLevel permission checks.",
           "signature": "query(String,AccessLevel)",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -2247,7 +2247,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Search API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns deterministic local org suggestion DTOs from name-like fields.",
           "signature": "suggest",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -2271,7 +2271,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "SObject API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Stores a cloned DMLOptions value on the local SObject for later DML option use.",
           "signature": "setOptions(Database.DMLOptions)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2288,7 +2288,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "String API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "UTF-8 string contains.",
           "signature": "contains",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2299,7 +2299,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "String API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "UTF-8 string suffix.",
           "signature": "endsWith",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2310,7 +2310,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "String API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Unicode simple fold.",
           "signature": "equalsIgnoreCase",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2321,7 +2321,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "String API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "UTF-8 byte index behavior from Go strings.",
           "signature": "indexOf",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2332,7 +2332,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "String API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Null and whitespace.",
           "signature": "isBlank",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2343,7 +2343,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "String API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Null and whitespace.",
           "signature": "isNotBlank",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2354,7 +2354,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "String API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "List values and separator.",
           "signature": "join",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2365,7 +2365,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "String API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "UTF-8 byte index behavior from Go strings.",
           "signature": "lastIndexOf",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2376,7 +2376,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "String API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Counts Apex UTF-16 code units.",
           "signature": "length",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2387,7 +2387,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "String API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Literal replacement.",
           "signature": "replace",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2398,7 +2398,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "String API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "regexp2-backed Java Pattern split covers limits, empty-pattern splits, zero-width and nullable delimiters, numeric backreference delimiters, \\Q...\\E quote escapes, UAX #29 graphemes, nested class algebra, and Apex UTF-16 code-unit boundaries.",
           "signature": "split",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2409,7 +2409,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "String API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "UTF-8 string prefix.",
           "signature": "startsWith",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2420,7 +2420,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "String API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Rune-indexed substring.",
           "signature": "substring",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2431,7 +2431,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "String API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Go Unicode lowercasing.",
           "signature": "toLowerCase",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2442,7 +2442,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "String API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Go Unicode uppercasing.",
           "signature": "toUpperCase",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2453,7 +2453,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "String API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Unicode whitespace trim.",
           "signature": "trim",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2464,7 +2464,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "String API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local value string conversion.",
           "signature": "valueOf",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2481,7 +2481,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "System API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Assertion failure returns runtime error.",
           "signature": "assert",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2492,7 +2492,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "System API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Assertion failure returns runtime error.",
           "signature": "assertEquals",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2503,7 +2503,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "System API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Collected in result debug output.",
           "signature": "debug",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2514,7 +2514,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "System API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Accepts Integer and AsyncOptions queueable delay values, duplicate signatures, and local AsyncOptions maximumQueueableStackDepth for Test.stopTest drain behavior.",
           "signature": "enqueueJob(Object,Object)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2525,7 +2525,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "System API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Tracks local package-version test context during runAs execution.",
           "signature": "runAs(Object,Object)",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -2540,7 +2540,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "System API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Queues and drains local Scheduled Apex jobs during Test.stopTest with deterministic CronTrigger IDs.",
           "signature": "schedule(String,String,Object)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2557,7 +2557,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Registers test-local SOQL stubs per SObject type.",
           "signature": "createSoqlStub(Schema.SObjectType,SoqlStubProvider)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2568,7 +2568,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Creates dynamic test stubs backed by StubProvider.",
           "signature": "createStub(Type,StubProvider)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2579,7 +2579,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Builds one local SObject row from a field map for SOQL stub providers.",
           "signature": "createStubQueryRow",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -2594,7 +2594,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Builds local SObject row lists from field maps for SOQL stub providers.",
           "signature": "createStubQueryRows",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -2609,7 +2609,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Invokes the local test harness implementation.",
           "signature": "enableChangeDataCapture()",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2620,7 +2620,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns a local event-bus test broker that delivers queued platform-event triggers.",
           "signature": "getEventBus()",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2631,7 +2631,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns a deterministic local external-service harness.",
           "signature": "getExternalService()",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2642,7 +2642,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the deterministic local standard pricebook ID in test context.",
           "signature": "getStandardPricebookId",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2653,7 +2653,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Invokes the local test harness implementation.",
           "signature": "invokeContinuationMethod(Object,Continuation)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2664,7 +2664,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns a typed Component.apex.page handle in test context without rendering Visualforce.",
           "signature": "invokePage(PageReference)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2675,7 +2675,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Reflects local test context.",
           "signature": "isRunningTest",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2686,7 +2686,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Loads CSV static-resource content with typed field coercion, DML routing, missing-resource errors, and bad-header diagnostics.",
           "signature": "loadData",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2697,7 +2697,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Builds deterministic local send-email QuickAction defaults for test execution.",
           "signature": "newSendEmailQuickActionDefaults(Id,Id)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2708,7 +2708,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Invokes the local test harness implementation.",
           "signature": "setContinuationResponse(String,HttpResponse)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2719,7 +2719,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Sets the VM-local current PageReference in test context.",
           "signature": "setCurrentPage(PageReference)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2730,7 +2730,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Accepts PageReference object values and stores the VM-local current page.",
           "signature": "setCurrentPageReference(Object)",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -2745,7 +2745,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Registers HttpCalloutMock and WebServiceMock routes for local tests.",
           "signature": "setMock",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2756,7 +2756,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Resets the active governor window for deterministic local counters.",
           "signature": "startTest",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2767,7 +2767,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Restores outer governor counters and drains supported local async work.",
           "signature": "stopTest",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2778,7 +2778,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Invokes the local test harness implementation.",
           "signature": "testInstall(InstallHandler,Version)",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -2793,7 +2793,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Invokes the local test harness implementation.",
           "signature": "testNotificationActionHandler(Messaging.NotificationActionHandler,Messaging.ActionableNotification)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2804,7 +2804,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Invokes the local test harness implementation.",
           "signature": "testSandboxPostCopyScript(SandboxPostCopy,Id,Id,String)",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -2819,7 +2819,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Test API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Invokes the local test harness implementation.",
           "signature": "testUninstall(UninstallHandler)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2836,7 +2836,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Time API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local time component.",
           "signature": "hour",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2847,7 +2847,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Time API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local time component.",
           "signature": "minute",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2858,7 +2858,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Time API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Validates time parts.",
           "signature": "newInstance",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2869,7 +2869,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Time API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Local time component.",
           "signature": "second",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2880,7 +2880,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Time API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Parses supported time strings.",
           "signature": "valueOf",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2897,7 +2897,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "TimeZone API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns deterministic display names for local timezone values.",
           "signature": "getDisplayName",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2908,7 +2908,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "TimeZone API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns local timezone IDs.",
           "signature": "getID",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2919,7 +2919,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "TimeZone API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns offsets from the deterministic local timezone model.",
           "signature": "getOffset",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2930,7 +2930,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "TimeZone API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Resolves timezone IDs into local timezone values.",
           "signature": "getTimeZone",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2947,7 +2947,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "TrailblazerIdentity API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns a deterministic local verification token for test execution.",
           "signature": "generateUserEmailVerificationToken(String,String,String)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2958,7 +2958,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "TrailblazerIdentity API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns an empty local UserOrgInfo list for deterministic test execution.",
           "signature": "getUserOrgInfo(List<String>)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2969,7 +2969,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "TrailblazerIdentity API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Accepts local log calls and returns null for deterministic test execution.",
           "signature": "splunkLog(String,String)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2986,7 +2986,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Type API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Resolves local classes, SObjects, built-ins, generic type names, generated platform types, and common platform namespace aliases.",
           "signature": "forName",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -2997,7 +2997,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Type API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns local type token name.",
           "signature": "getName",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3008,7 +3008,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "Type API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Constructs local classes through zero-argument constructor dispatch and rejects uninstantiable built-ins.",
           "signature": "newInstance",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3025,7 +3025,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UIRequest API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns deterministic local request context values for local Apex execution.",
           "signature": "getCurrent()",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3036,7 +3036,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UIRequest API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns deterministic local request context values for local Apex execution.",
           "signature": "getRequestHeader(String)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3053,7 +3053,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "URL API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Deterministic local org URL.",
           "signature": "getOrgDomainUrl",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3064,7 +3064,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "URL API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Deterministic local base URL.",
           "signature": "getSalesforceBaseUrl",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3081,7 +3081,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UserInfo API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the current runAs/default user's local first name.",
           "signature": "getFirstName",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3092,7 +3092,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UserInfo API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the current runAs/default user's local language value.",
           "signature": "getLanguage",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3103,7 +3103,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UserInfo API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the current runAs/default user's local last name.",
           "signature": "getLastName",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3114,7 +3114,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UserInfo API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the current runAs/default user's local locale value.",
           "signature": "getLocale",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3125,7 +3125,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UserInfo API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the current runAs/default user's local display name.",
           "signature": "getName",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3136,7 +3136,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UserInfo API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the deterministic local org identity.",
           "signature": "getOrganizationId",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3147,7 +3147,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UserInfo API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the current runAs/default user's local profile id.",
           "signature": "getProfileId",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3158,7 +3158,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UserInfo API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the deterministic empty local session value.",
           "signature": "getSessionId",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3169,7 +3169,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UserInfo API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the deterministic local user timezone.",
           "signature": "getTimeZone",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3180,7 +3180,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UserInfo API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the current runAs/default user's local email value.",
           "signature": "getUserEmail",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3191,7 +3191,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UserInfo API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the current runAs/default user's local user id.",
           "signature": "getUserId",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3202,7 +3202,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UserInfo API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the current runAs/default user's local username.",
           "signature": "getUserName",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3213,7 +3213,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UserInfo API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the current runAs/default user's local user type.",
           "signature": "getUserType",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3224,7 +3224,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UserInfo API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Checks local PackageLicense and UserPackageLicense records for the current runAs/default user.",
           "signature": "hasPackageLicense(Id)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3235,7 +3235,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UserInfo API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Checks local PackageLicense and UserPackageLicense records for the current runAs/default user.",
           "signature": "isCurrentUserLicensedForPackage(Id)",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3246,7 +3246,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "UserInfo API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Returns the local org multi-currency metadata flag.",
           "signature": "isMultiCurrencyOrganization",
           "source": "docs/STDLIB_COVERAGE.md"
@@ -3263,7 +3263,7 @@ export const editorSupportCatalog = {
           "type": "method",
           "detail": "WebServiceCallout API",
           "status": "supported",
-          "statusLabel": "Works well",
+          "statusLabel": "Runs locally",
           "info": "Validates SOAP options, routes generated SOAP callouts through registered WebServiceMock implementations, and materializes a deterministic local response shell when no mock is registered.",
           "signature": "invoke(Object,Object,Map,List)",
           "source": "docs/STDLIB_COVERAGE.md",
@@ -3282,7 +3282,7 @@ export const editorSupportCatalog = {
       "type": "class",
       "detail": "SObject",
       "status": "supported",
-      "statusLabel": "Works well",
+      "statusLabel": "Runs locally",
       "info": "Schema-backed local SObject"
     },
     {
@@ -3291,7 +3291,7 @@ export const editorSupportCatalog = {
       "type": "class",
       "detail": "DML and SOQL",
       "status": "supported",
-      "statusLabel": "Works well",
+      "statusLabel": "Runs locally",
       "info": "Partial-success DML and dynamic query paths"
     },
     {
@@ -3300,7 +3300,7 @@ export const editorSupportCatalog = {
       "type": "class",
       "detail": "Metadata",
       "status": "partial",
-      "statusLabel": "With limits",
+      "statusLabel": "Runs with limits",
       "info": "Configured metadata with named limits"
     },
     {
@@ -3309,7 +3309,7 @@ export const editorSupportCatalog = {
       "type": "class",
       "detail": "Governor counters",
       "status": "supported",
-      "statusLabel": "Works well",
+      "statusLabel": "Runs locally",
       "info": "Local counters for SOQL, DML, CPU, heap, and async"
     },
     {
@@ -3318,7 +3318,7 @@ export const editorSupportCatalog = {
       "type": "class",
       "detail": "Serialization",
       "status": "supported",
-      "statusLabel": "Works well",
+      "statusLabel": "Runs locally",
       "info": "Local JSON helpers"
     },
     {
@@ -3327,7 +3327,7 @@ export const editorSupportCatalog = {
       "type": "class",
       "detail": "User context",
       "status": "supported",
-      "statusLabel": "Works well",
+      "statusLabel": "Runs locally",
       "info": "Local identity helpers"
     },
     {
@@ -3336,8 +3336,8 @@ export const editorSupportCatalog = {
       "type": "class",
       "detail": "Hosted API",
       "status": "unsupported",
-      "statusLabel": "Needs Salesforce",
-      "info": "Needs Salesforce"
+      "statusLabel": "Requires Salesforce",
+      "info": "Requires Salesforce"
     }
   ],
   "demoReceivers": {

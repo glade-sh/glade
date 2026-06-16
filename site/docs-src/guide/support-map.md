@@ -1,11 +1,11 @@
-# Local support
+# What Glade runs locally
 
 <div class="docs-intro">
-  <p class="docs-intro-eyebrow">Support</p>
-  <p>Use this page to decide what Glade runs locally, what works with named limits, and what still needs Salesforce or a plugin.</p>
+  <p class="docs-intro-eyebrow">Capabilities</p>
+  <p>Use this page to see what Glade runs locally, what runs with named limits, and what still requires Salesforce or a plugin.</p>
   <ul>
     <li>Start with the status legend.</li>
-    <li>Check the unsupported list before a pilot.</li>
+    <li>Check what requires Salesforce before an adoption review.</li>
     <li>Use the checked Apex/runtime reports for method-level detail.</li>
   </ul>
 </div>
@@ -20,26 +20,31 @@ folded into this page.
 - Your local loop uses supported Apex parse, check, test, SOQL, DML, trigger, and SObject paths.
 - Your test suite can mock callouts and live side effects.
 - Your project can tolerate explicit unsupported diagnostics for Salesforce-hosted services.
-- You will keep a Salesforce org gate for features Glade does not model.
-- You will use first-party plugins for support reports and advisory scans instead of expecting those scanners in base `glade --help`.
+- You will keep a Salesforce validation gate for features Glade does not model.
+- You will use first-party plugins for capability reports and advisory scans instead of expecting those scanners in base `glade --help`.
 
 ## Status key
 
-<div class="docs-support-legend" aria-label="Support status legend">
-  <span class="docs-status-chip docs-status-supported">Works well</span>
-  <span class="docs-status-chip docs-status-partial">Works with limits</span>
-  <span class="docs-status-chip docs-status-unsupported">Not supported</span>
-  <span class="docs-status-chip docs-status-unknown">Not measured</span>
+<div class="docs-support-legend" aria-label="Capability status legend">
+  <div class="docs-support-legend-card docs-support-legend-card-supported">
+    <span class="docs-status-chip docs-status-supported">Runs locally</span>
+    <p>Implemented, fixture-backed, and fit for normal local use.</p>
+  </div>
+  <div class="docs-support-legend-card docs-support-legend-card-partial">
+    <span class="docs-status-chip docs-status-partial">Runs with limits</span>
+    <p>Common local paths work. The limits are named.</p>
+  </div>
+  <div class="docs-support-legend-card docs-support-legend-card-unsupported">
+    <span class="docs-status-chip docs-status-unsupported">Requires Salesforce</span>
+    <p>Glade stops with a stable unsupported diagnostic.</p>
+  </div>
+  <div class="docs-support-legend-card docs-support-legend-card-unknown">
+    <span class="docs-status-chip docs-status-unknown">Not measured</span>
+    <p>A row exists, but it has not been measured yet.</p>
+  </div>
 </div>
 
-| Status | Meaning |
-| --- | --- |
-| <span class="docs-status-chip docs-status-supported">Works well</span> | Implemented, fixture-backed, and fit for normal local use. |
-| <span class="docs-status-chip docs-status-partial">Works with limits</span> | Common local paths work. The limits are named. |
-| <span class="docs-status-chip docs-status-unsupported">Not supported</span> | Glade should stop with a stable unsupported diagnostic. |
-| <span class="docs-status-chip docs-status-unknown">Not measured</span> | A row exists, but the team has not measured it yet. |
-
-## Works well
+## Runs locally
 
 These areas are the main local development contract.
 
@@ -52,7 +57,7 @@ These areas are the main local development contract.
 | Local API server | Salesforce-style REST discovery, SObject CRUD, query/queryAll, limits and record counts, userinfo stubs, Tooling `executeAnonymous`, local Tooling source/schema metadata queries, Composite sObject insert, reset endpoints, and optional SQLite persistence. |
 | Editor and debug tools | LSP diagnostics, symbols, hover, completion, rename, semantic tokens, DAP stepping, watch mode, and trace/profile reports. |
 
-## Works with limits
+## Runs with limits
 
 These areas cover useful local test paths. They are not exact Salesforce
 service behavior.
@@ -70,9 +75,9 @@ service behavior.
 | Test helpers | Tracked `Test.*` local helper rows are supported. Hosted service accounting, packaged-resource expansion, and live External Service execution remain explicit gaps. |
 | Local test harness and request context | Request/UIRequest context, install/uninstall hooks, sandbox post-copy helpers, scheduled Apex, QuickAction DTOs, BusinessHours calendars and holidays, seeded approval routing, and TrailblazerIdentity helper calls have deterministic local models. Live hosted engines are not contacted. |
 
-## Not supported today
+## Requires Salesforce
 
-Check this list before using Glade for a project pilot.
+Check this list before relying on Glade for a project.
 
 | Area | Why it is outside the current local contract |
 | --- | --- |
@@ -94,41 +99,41 @@ UnsupportedFeature: unsupported call "Answers.findSimilar local Answers zone sea
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| Apex front end | <span class="docs-status-chip docs-status-supported">Works well</span> | Parser, project loader, symbols, semantic checks, LSP, and diagnostics form the starting point. |
-| Runtime and tests | <span class="docs-status-chip docs-status-supported">Works well</span> | VM execution, local tests, SObjects, SOQL, DML, triggers, async drain, and local storage are the core contract. |
-| Local Salesforce API | <span class="docs-status-chip docs-status-supported">Works well</span> | Useful for local REST, SObject CRUD/query, record count, Tooling `executeAnonymous`, and local source/schema metadata flows. It is not a hosted-org replacement. |
-| Standard library | <span class="docs-status-chip docs-status-supported">Works well</span> | The checked standard-library report has 265 supported rows, 19 unsupported hosted-boundary rows, and 0 partial rows. |
-| Platform service APIs | <span class="docs-status-chip docs-status-supported">Works well</span> | Deterministic DTO and harness rows are modeled when the support report says supported. Hosted service execution stays explicitly unsupported. |
+| Apex front end | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Parser, project loader, symbols, semantic checks, LSP, and diagnostics form the starting point. |
+| Runtime and tests | <span class="docs-status-chip docs-status-supported">Runs locally</span> | VM execution, local tests, SObjects, SOQL, DML, triggers, async drain, and local storage are the core contract. |
+| Local Salesforce API | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Useful for local REST, SObject CRUD/query, record count, Tooling `executeAnonymous`, and local source/schema metadata flows. It is not a hosted-org replacement. |
+| Standard library | <span class="docs-status-chip docs-status-supported">Runs locally</span> | The checked standard-library report has 265 supported rows, 19 unsupported hosted-boundary rows, and 0 partial rows. |
+| Platform service APIs | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Deterministic DTO and harness rows are modeled when the capability report says supported. Hosted service execution stays explicitly unsupported. |
 
 ## Standard library families
 
-Counts come from the checked standard library coverage report in this repository
+Counts come from the checked standard library capability report in this repository
 state.
 
 | Family | Status | Rows |
 | --- | --- | ---: |
-| `Database` | Works well | 37 supported / 37 tracked |
-| Date, Datetime, Time, TimeZone | Works well | 26 supported / 26 tracked |
-| String, Decimal, Boolean, Math | Works well | 32 supported / 32 tracked |
+| `Database` | Runs locally | 37 supported / 37 tracked |
+| Date, Datetime, Time, TimeZone | Runs locally | 26 supported / 26 tracked |
+| String, Decimal, Boolean, Math | Runs locally | 32 supported / 32 tracked |
 | System, Assert, Limits | Supported local rows, hosted gaps | 17 supported, 3 unsupported / 20 tracked |
 | Schema and SObject | Supported local rows, hosted gaps | 7 supported, 1 unsupported / 8 tracked |
 | Test helpers | Supported local rows, hosted gaps | 28 supported, 3 unsupported / 31 tracked |
-| JSON, Pattern, EncodingUtil, Crypto | Works well | 17 supported / 17 tracked |
+| JSON, Pattern, EncodingUtil, Crypto | Runs locally | 17 supported / 17 tracked |
 | ApexPages and PageReference | Supported controller rows, hosted rendering gaps | 15 supported, 2 unsupported / 17 tracked |
 | HTTP and WebServiceCallout | Supported mock rows, live transport gaps | 6 supported, 2 unsupported / 8 tracked |
 | Messaging | Supported local rows, hosted delivery gaps | 6 supported, 2 unsupported / 8 tracked |
 | Search and SOSL helpers | Supported local rows, hosted ranking gap | 11 supported, 1 unsupported / 12 tracked |
-| UserInfo, URL, Label, and TrailblazerIdentity | Wide local support | 24 supported / 24 tracked |
+| UserInfo, URL, Label, and TrailblazerIdentity | Broad local capability | 24 supported / 24 tracked |
 | Type, FeatureManagement, and Exception | Supported local rows, hosted package gap | 8 supported, 1 unsupported / 9 tracked |
 | Local test harness and request context | Supported local rows, hosted and malformed-input gaps | 30 supported, 2 unsupported / 32 tracked |
-| Hosted-service and platform boundary rows | Not supported, plus stable diagnostics | 1 supported diagnostic row, 2 unsupported / 3 tracked |
+| Hosted-service and platform boundary rows | Requires Salesforce, plus stable diagnostics | 1 supported diagnostic row, 2 unsupported / 3 tracked |
 
 The local test harness and request-context group includes Approval,
 BusinessHours, QuickAction, Request, UIRequest, Sandbox, Schedulable, and
 AccessLevel rows. The hosted-service boundary group includes Answers and
 ResetPasswordResult rows plus the stable UnsupportedFeature diagnostic row.
 
-## Current support counts
+## Capability claims
 
 The checked capability status and standard-library report now show no partial rows.
 Every remaining hosted-only behavior is split into an explicit unsupported row.

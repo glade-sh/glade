@@ -80,11 +80,11 @@ Open the Visualforce route when the real host is Visualforce. Open
 `/lwc/preview/tab/<Tab>` when you want Glade to resolve tab metadata first. A
 Visualforce tab redirects to `/apex/<Page>`.
 
-## Data And Services
+## Data and services
 
 The LWC shell and Visualforce Lightning Out host share:
 
-- Apex wire and imperative imports through `@salesforce/apex/<Class>.<method>`.
+- Apex wire and imperative imports through `@salesforce/apex/CLASS_NAME.methodName`.
 - Local Apex controller execution through the Glade VM.
 - `lightning/uiRecordApi` `getRecord` and `getObjectInfo`.
 - `lightning/uiRecordApi` create, update, delete, and field helper functions.
