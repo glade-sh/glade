@@ -15,10 +15,15 @@ func TestCIGoTestWrapperIsWired(t *testing.T) {
 	scriptText := string(script)
 	for _, want := range []string{
 		`export GOMAXPROCS="${GOMAXPROCS:-2}"`,
+		"CI_APEXTEST_SHARD_SIZE",
 		"run_with_heartbeat",
+		"run_apextest_shards",
+		"join_test_pattern",
 		"heartbeat_pid",
 		`kill -0 "${pid}"`,
 		"./internal/apextest",
+		"apextest.test",
+		"go test \"${compile_args[@]}\"",
 		"./internal/gladecli",
 		"./internal/sema",
 		"go test -v",
