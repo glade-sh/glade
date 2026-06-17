@@ -36,17 +36,18 @@ func TestCIGoTestWrapperIsWired(t *testing.T) {
 	workflowText := string(workflow)
 	for _, want := range []string{
 		"timeout-minutes: 30",
-		"timeout-minutes: 75",
 		"GOMAXPROCS: \"2\"",
 		"go-version: \"1.26.3\"",
 		"actions/checkout@v6",
 		"actions/setup-go@v6",
 		"actions/setup-node@v6",
 		"scripts/ci-go-test.sh test",
-		"scripts/ci-go-test.sh race",
 	} {
 		if !strings.Contains(workflowText, want) {
 			t.Fatalf("ci.yml missing %q", want)
 		}
+	}
+	if strings.Contains(workflowText, "scripts/ci-go-test.sh race") {
+		t.Fatalf("ci.yml should not run the full race suite on GitHub-hosted runners")
 	}
 }
