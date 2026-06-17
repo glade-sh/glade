@@ -70,8 +70,12 @@ func (s *Server) handleLWCShell(w http.ResponseWriter, r *http.Request, parts []
 		return
 	}
 	if !ok {
-		writeSalesforceError(w, errUnsupportedFeature, "no LWC modules found in project")
-		return
+		if len(lwcShellMounts(shell)) == 0 && len(shell.Diagnostics) > 0 {
+			cfg = &lwcbrowser.PageConfig{}
+		} else {
+			writeSalesforceError(w, errUnsupportedFeature, "no LWC modules found in project")
+			return
+		}
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	setDevNoStore(w)
@@ -147,9 +151,12 @@ func (s *Server) resolveLWCShellRequest(r *http.Request, parts []string) (lwcshe
 			fallback.PageName = ""
 			fallback.TabName = ""
 			shell, diagnostics, err = lwcshell.ResolvePageTarget(s.Source.Project, fallback)
-			if err == nil && shell.Tab.Type == lwcshell.TabTypeLWC {
-				shell.Context.ComponentName = shell.Tab.Target
-				shell, diagnostics, err = s.validateLWCShellPageWithTarget(shell, diagnostics, err, "lightning__Tab")
+			if err == nil {
+				var redirect string
+				shell, redirect, diagnostics, err = s.resolveLWCShellTabTarget(shell, diagnostics)
+				if redirect != "" {
+					return shell, redirect, diagnostics, err
+				}
 			}
 		}
 		shell, diagnostics, err = s.validateLWCShellPage(shell, diagnostics, err)
@@ -171,21 +178,27 @@ func (s *Server) resolveLWCShellRequest(r *http.Request, parts []string) (lwcshe
 		if err != nil {
 			return shell, "", diagnostics, err
 		}
-		switch shell.Tab.Type {
-		case lwcshell.TabTypeVisualforce:
-			return shell, "/apex/" + shell.Tab.Target, nil, nil
-		case lwcshell.TabTypeLWC:
-			shell.Context.ComponentName = shell.Tab.Target
-			shell, diagnostics, err = s.validateLWCShellPageWithTarget(shell, diagnostics, err, "lightning__Tab")
-			return shell, "", diagnostics, err
-		case lwcshell.TabTypeFlexiPage:
-			shell, diagnostics, err = s.resolveLWCShellFlexiPageTab(ctx, shell.Tab)
-			return shell, "", diagnostics, err
-		default:
-			return shell, "", nil, nil
-		}
+		return s.resolveLWCShellTabTarget(shell, diagnostics)
 	default:
 		return lwcshell.ShellPage{}, "", nil, fmt.Errorf("unknown LWC preview target %q", parts[0])
+	}
+}
+
+func (s *Server) resolveLWCShellTabTarget(shell lwcshell.ShellPage, diagnostics []lwcshell.Diagnostic) (lwcshell.ShellPage, string, []lwcshell.Diagnostic, error) {
+	switch shell.Tab.Type {
+	case lwcshell.TabTypeVisualforce:
+		return shell, "/apex/" + shell.Tab.Target, nil, nil
+	case lwcshell.TabTypeLWC:
+		shell.Context.ComponentName = shell.Tab.Target
+		var err error
+		shell, diagnostics, err = s.validateLWCShellPageWithTarget(shell, diagnostics, nil, "lightning__Tab")
+		return shell, "", diagnostics, err
+	case lwcshell.TabTypeFlexiPage:
+		var err error
+		shell, diagnostics, err = s.resolveLWCShellFlexiPageTab(shell.Context, shell.Tab)
+		return shell, "", diagnostics, err
+	default:
+		return shell, "", diagnostics, nil
 	}
 }
 
@@ -372,7 +385,7 @@ func shellNamespace(namespace string) string {
 
 func lwcShellDiagnosticsBlockEmptyMounts(diagnostics []lwcshell.Diagnostic) bool {
 	for _, diagnostic := range diagnostics {
-		if diagnostic.Code != "GLADELWC072" && diagnostic.Code != "GLADELWC102" {
+		if diagnostic.Code != "GLADELWC007" && diagnostic.Code != "GLADELWC072" && diagnostic.Code != "GLADELWC102" {
 			return true
 		}
 	}
@@ -666,7 +679,7 @@ func lwcShellInvalidURLAddressableStateDiagnostic(r *http.Request) (lwcshell.Dia
 
 func lwcShellReservedQueryKey(key string) bool {
 	switch key {
-	case "recordId", "objectApiName", "formFactor", "site", "basePath", "siteId", "networkId", "guest", "language":
+	case "app", "recordId", "objectApiName", "formFactor", "site", "basePath", "siteId", "networkId", "guest", "language":
 		return true
 	default:
 		return false

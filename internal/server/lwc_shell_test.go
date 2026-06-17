@@ -299,6 +299,31 @@ func TestLWCShellAppRouteFallsBackToApplicationDefaultTab(t *testing.T) {
 	}
 }
 
+func TestLWCShellAppRouteFallsBackToFlexiPageDefaultTab(t *testing.T) {
+	root, err := lightningTestRepoRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture := filepath.Join(root, "testdata", "local-tests", "lwc-shell")
+	p, err := project.Load(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/app/Lwc_Shell", nil), []string{"app", "Lwc_Shell"})
+	if err != nil {
+		t.Fatalf("resolve error = %v diagnostics=%#v", err, diagnostics)
+	}
+	mounts := lwcShellMounts(shell)
+	if len(mounts) == 0 {
+		t.Fatalf("mounts = %#v shell=%#v diagnostics=%#v", mounts, shell, diagnostics)
+	}
+	if shell.Context.TabName != "Lwc_Probe" || shell.Context.PageName != "Sales_Dashboard" {
+		t.Fatalf("context = %#v", shell.Context)
+	}
+}
+
 func TestResolveLWCShellRequestServesCommunityPageRouteFromContextPreset(t *testing.T) {
 	root := t.TempDir()
 	writeCommunityProbeBundle(t, root, "lightningCommunity__Page")
@@ -723,11 +748,11 @@ export default class UrlProbe extends LightningElement {}`)
 	}
 	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
 
-	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/cmp/c/urlProbe?c__name=value", nil), []string{"cmp", "c", "urlProbe"})
+	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/cmp/c/urlProbe?app=Sales&c__name=value", nil), []string{"cmp", "c", "urlProbe"})
 	if err != nil {
 		t.Fatalf("resolve error = %v diagnostics=%#v", err, diagnostics)
 	}
-	if shell.Context.ComponentName != "c:urlProbe" || shell.Context.State["c__name"] != "value" {
+	if shell.Context.ComponentName != "c:urlProbe" || shell.Context.AppName != "Sales" || shell.Context.State["c__name"] != "value" {
 		t.Fatalf("context = %#v", shell.Context)
 	}
 	body := renderLWCShellHTML(lwcbrowser.PageConfig{}, shell)
@@ -1043,8 +1068,11 @@ func TestLWCShellUnsupportedCustomTabReturnsDiagnostic(t *testing.T) {
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lwc/preview/tab/External", nil))
 
-	if rec.Code != http.StatusBadRequest {
+	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Content-Type"); !strings.Contains(got, "text/html") {
+		t.Fatalf("content-type = %q body=%s", got, rec.Body.String())
 	}
 	if !strings.Contains(rec.Body.String(), "GLADELWC007") {
 		t.Fatalf("body = %s", rec.Body.String())

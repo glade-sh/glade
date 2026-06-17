@@ -90,6 +90,9 @@ func LocalLWCImportMap(namespace string, m Manifest) map[string]string {
 		if !strings.EqualFold(moduleNS, "c") {
 			imports["c/"+component] = entry.URL
 		}
+		if namespace != "" && !strings.EqualFold(namespace, moduleNS) {
+			imports[namespace+"/"+component] = entry.URL
+		}
 	}
 	return imports
 }

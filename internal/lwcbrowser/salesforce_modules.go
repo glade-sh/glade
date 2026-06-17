@@ -19,10 +19,13 @@ func SalesforceImportMap() map[string]string {
 		"@glade/slds":                      "/lightning/runtime/slds/slds-loader.js",
 		"@salesforce/apex":                 "/lightning/shims/core/apex.js",
 		"@salesforce/apex/":                "/lightning/shims/apex/",
+		"@salesforce/client/":              "/lightning/shims/client/",
+		"@salesforce/client/formFactor":    "/lightning/shims/client/formFactor.js",
 		"@salesforce/community/":           "/lightning/shims/community/",
 		"@salesforce/community/basePath":   "/lightning/shims/community/basePath.js",
 		"@salesforce/community/Id":         "/lightning/shims/community/Id.js",
 		"@salesforce/contentAssetUrl/":     "/lightning/shims/contentAssetUrl/",
+		"@salesforce/customPermission/":    "/lightning/shims/customPermission/",
 		"@salesforce/i18n/":                "/lightning/shims/i18n/",
 		"@salesforce/label/":               "/lightning/shims/label/",
 		"@salesforce/messageChannel/":      "/lightning/shims/messageChannel/",
@@ -33,10 +36,13 @@ func SalesforceImportMap() map[string]string {
 		"@salesforce/user/":                "/lightning/shims/user/",
 		"lightning/":                       "/lightning/shims/lightning/",
 		"lightning/actions":                "/lightning/shims/lightning/actions.js",
+		"lightning/confirm":                "/lightning/shims/lightning/confirm.js",
+		"lightning/configProvider":         "/lightning/shims/lightning/configProvider.js",
 		"lightning/empApi":                 "/lightning/shims/lightning/empApi.js",
 		"lightning/flowSupport":            "/lightning/shims/lightning/flowSupport.js",
 		"lightning/messageService":         "/lightning/shims/lightning/messageService.js",
 		"lightning/navigation":             "/lightning/shims/lightning/navigation.js",
+		"lightning/pageReferenceUtils":     "/lightning/shims/lightning/pageReferenceUtils.js",
 		"lightning/platformResourceLoader": "/lightning/shims/lightning/platformResourceLoader.js",
 		"lightning/platformShowToastEvent": "/lightning/shims/lightning/platformShowToastEvent.js",
 		"lightning/platformWorkspaceApi":   "/lightning/shims/lightning/platformWorkspaceApi.js",
@@ -51,6 +57,93 @@ func SalesforceImportMap() map[string]string {
 		imports[key] = value
 	}
 	return imports
+}
+
+func ClientModuleJS(property string) string {
+	switch property {
+	case "formFactor":
+		return `function readFormFactor() {
+  const node = document.getElementById("glade-lwc-context");
+  if (!node) {
+    return "Large";
+  }
+  try {
+    const context = JSON.parse(node.textContent || "{}");
+    return context.formFactor || "Large";
+  } catch (_err) {
+    return "Large";
+  }
+}
+export default readFormFactor();
+`
+	default:
+		return unsupportedModuleJS("Unsupported @salesforce/client property: " + property)
+	}
+}
+
+func ConfigProviderModuleJS() string {
+	return `const tokenValues = {
+  "lightning.actionSprite": "/assets/icons/action-sprite/svg/symbols.svg",
+  "lightning.actionSpriteRtl": "/assets/icons/action-sprite/svg/symbols.svg",
+  "lightning.customSprite": "/assets/icons/custom-sprite/svg/symbols.svg",
+  "lightning.customSpriteRtl": "/assets/icons/custom-sprite/svg/symbols.svg",
+  "lightning.doctypeSprite": "/assets/icons/doctype-sprite/svg/symbols.svg",
+  "lightning.doctypeSpriteRtl": "/assets/icons/doctype-sprite/svg/symbols.svg",
+  "lightning.standardSprite": "/assets/icons/standard-sprite/svg/symbols.svg",
+  "lightning.standardSpriteRtl": "/assets/icons/standard-sprite/svg/symbols.svg",
+  "lightning.utilitySprite": "/assets/icons/utility-sprite/svg/symbols.svg",
+  "lightning.utilitySpriteRtl": "/assets/icons/utility-sprite/svg/symbols.svg",
+};
+export function getPathPrefix() {
+  return "";
+}
+export function getToken(name) {
+  return tokenValues[name] || "";
+}
+export function getIconSvgTemplates() {
+  return null;
+}
+export default { getPathPrefix, getToken, getIconSvgTemplates };
+`
+}
+
+func ConfirmModuleJS() string {
+	return `export default class LightningConfirm {
+  static open(options = {}) {
+    window.dispatchEvent(new CustomEvent("gladeconfirm", { detail: options, bubbles: true, composed: true }));
+    return Promise.resolve(true);
+  }
+}
+`
+}
+
+func PageReferenceUtilsModuleJS() string {
+	return `export function encodeDefaultFieldValues(values = {}) {
+  return Object.keys(values)
+    .sort()
+    .map((key) => encodeURIComponent(key) + "=" + encodeURIComponent(values[key] == null ? "" : String(values[key])))
+    .join(",");
+}
+export function decodeDefaultFieldValues(value = "") {
+  const out = {};
+  for (const part of String(value || "").split(",")) {
+    if (!part) {
+      continue;
+    }
+    const index = part.indexOf("=");
+    const key = index === -1 ? part : part.slice(0, index);
+    const raw = index === -1 ? "" : part.slice(index + 1);
+    out[decodeURIComponent(key)] = decodeURIComponent(raw);
+  }
+  return out;
+}
+`
+}
+
+func CustomPermissionModuleJS(name string) string {
+	return fmt.Sprintf(`export const permissionName = %q;
+export default true;
+`, strings.TrimSuffix(strings.TrimSpace(name), ".js"))
 }
 
 func ActionsModuleJS() string {
@@ -355,6 +448,12 @@ export async function getAllTabInfo() {
   return [activeTab()];
 }
 
+export async function getTabInfo(tabId) {
+  const tab = activeTab();
+  tab.tabId = tabId || tab.tabId;
+  return tab;
+}
+
 export async function setTabLabel(tabId, label) {
   const tab = activeTab();
   tab.tabId = tabId || tab.tabId;
@@ -371,10 +470,62 @@ export async function setTabIcon(tabId, icon) {
   return tab;
 }
 
+export async function setTabHighlighted(tabId, highlighted) {
+  const tab = activeTab();
+  tab.tabId = tabId || tab.tabId;
+  tab.highlighted = !!highlighted;
+  return tab;
+}
+
+export async function closeTab(_tabId) {
+  return true;
+}
+
+export async function disableTabClose(_tabId, _disabled) {
+  return true;
+}
+
+export async function focusTab(_tabId) {
+  return true;
+}
+
+export async function openTab(options = {}) {
+  return options.tabId || activeTab().tabId || "local";
+}
+
+export async function openSubtab(_parentTabId, options = {}) {
+  return options.tabId || activeTab().tabId || "local";
+}
+
+export async function refreshTab(_tabId, _options = {}) {
+  return true;
+}
+
 export async function isConsoleNavigation() {
   return (readWorkbench().mode || "") === "console";
 }
 
+function createValueWireAdapter(readValue) {
+  function ValueWireAdapter(dataCallback) {
+    this.dataCallback = dataCallback;
+  }
+  ValueWireAdapter.prototype.connect = function connect() {
+    this.emit();
+  };
+  ValueWireAdapter.prototype.disconnect = function disconnect() {};
+  ValueWireAdapter.prototype.update = function update() {
+    this.emit();
+  };
+  ValueWireAdapter.prototype.emit = function emit() {
+    if (typeof this.dataCallback === "function") {
+      this.dataCallback(readValue());
+    }
+  };
+  return ValueWireAdapter;
+}
+
+export const IsConsoleNavigation = createValueWireAdapter(() => (readWorkbench().mode || "") === "console");
+export const EnclosingTabId = createValueWireAdapter(() => activeTab().tabId);
 export const workspaceDiagnosticCodes = [DIAGNOSTIC_CODE];
 `
 }

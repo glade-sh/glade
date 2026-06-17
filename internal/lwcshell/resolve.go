@@ -70,7 +70,8 @@ func ResolvePageTarget(p project.Project, ctx PageContext) (ShellPage, []Diagnos
 			return ShellPage{}, []Diagnostic{diag}, errors.New(diag.Message)
 		}
 		if diag := tab.UnsupportedDiagnostic(); diag.Code != "" {
-			return ShellPage{}, []Diagnostic{diag}, errors.New(diag.Message)
+			shell := ShellPage{Context: ctx, Tab: tab, Diagnostics: []Diagnostic{diag}}
+			return shell, []Diagnostic{diag}, nil
 		}
 		return ShellPage{Context: ctx, Tab: tab}, nil, nil
 	case RenderTargetQuickAction:

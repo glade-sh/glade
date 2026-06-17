@@ -121,8 +121,10 @@ imports, `getRecord`, `getRecords`, local DML-backed create/update/delete
 record helpers, `getRecordCreateDefaults`, record-input helper functions,
 `lightning/uiObjectInfoApi` object info and picklist wires, schema tokens,
 custom labels, static resources, content assets, user values, checked i18n
-values, local message service, resource loading, toast events, practical common
-and expanded checked base components, and SLDS-shaped local styling. Create
+values, form factor, custom permission defaults, local message service,
+resource loading, toast events, workspace API approximations, confirm/config
+provider/page-reference helper shims, practical common and expanded checked
+base components, and SLDS-shaped local styling. Create
 defaults include project layout field sections when available, with a generated
 full layout from createable fields as the local fallback.
 `lightning/uiLayoutApi` `getLayout` returns the same local Record Layout shape.

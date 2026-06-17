@@ -266,10 +266,7 @@ func readDevVFProjectDataFixture(path string) (storage.Fixture, bool, error) {
 	}
 	trimmed := trimDevVFJSONBytes(data)
 	if len(trimmed) > 0 && trimmed[0] == '[' {
-		fixture, ok, err := readDevVFSFDXTreeDataFixture(trimmed)
-		if err != nil || ok {
-			return fixture, ok, err
-		}
+		return readDevVFSFDXTreeDataFixture(trimmed)
 	}
 	var header struct {
 		Version string `json:"version"`
@@ -299,6 +296,16 @@ func readDevVFSFDXTreeDataFixture(data []byte) (storage.Fixture, bool, error) {
 		return storage.Fixture{}, false, err
 	}
 	if len(rows) == 0 {
+		return storage.Fixture{}, false, nil
+	}
+	hasTreeRecord := false
+	for _, row := range rows {
+		if _, ok := row["attributes"]; ok {
+			hasTreeRecord = true
+			break
+		}
+	}
+	if !hasTreeRecord {
 		return storage.Fixture{}, false, nil
 	}
 	byObject := map[string][]storage.FixtureRecord{}

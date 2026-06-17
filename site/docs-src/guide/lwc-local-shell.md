@@ -243,6 +243,8 @@ The LWC shell supports:
 - `@salesforce/schema` object and field tokens.
 - `@salesforce/label`, `@salesforce/resourceUrl`, and
   `@salesforce/contentAssetUrl`.
+- `@salesforce/client/formFactor` and `@salesforce/customPermission/*` shims
+  for package components that branch on form factor or custom permissions.
 - `@salesforce/user`, checked `@salesforce/i18n` values, and
   `lightning/navigation` basics. `@salesforce/user/isGuest` reads active
   community guest context and remains false on non-community routes.
@@ -254,6 +256,12 @@ The LWC shell supports:
 - `lightning/messageService`, `lightning/platformResourceLoader`, and
   `lightning/platformShowToastEvent` shims in the shell and Visualforce
   Lightning Out where the support table names that host.
+- `lightning/platformWorkspaceApi` console approximation for local tab info,
+  open/close/focus, refresh, highlight, label/icon helpers, and console wire
+  values.
+- `lightning/confirm`, `lightning/configProvider`, and
+  `lightning/pageReferenceUtils` shims for confirm flows, icon token lookup,
+  and default field value encode/decode helpers.
 - `lightning/actions`, `lightning/flowSupport`, `lightning/refresh`, and
   `lightning/empApi` practical local shims for quick-action events, flow-screen
   events, in-page refresh handlers, and local pub/sub.
@@ -297,7 +305,7 @@ sides. The app-page and custom-tab proof deploys the `Lwc_Shell` app, assigns
 pages, quick actions, and Visualforce Lightning Out need their org setup
 completed before they are strict browser-oracle targets. The 2026-06-17
 `oaer-probe-max` proof wrote `/tmp/glade-lwc-oaer-phase8-10-browser.json` with
-3 pass and 0 fail, and `/tmp/glade-lwc-oaer-phase8-10-capture.json` with 34
+3 pass and 0 fail, and `/tmp/glade-lwc-oaer-phase8-10-capture.json` with 35
 prepared targets across `lightning-shell` and `visualforce-lightning-out`. The
 expanded base-component target has local browser proof through
 `test/base-components-expanded.test.mjs`; Salesforce DOM comparison remains a
@@ -313,7 +321,7 @@ cd ../glade-tools
 go run ./cmd/glade-plugin-compat lwc capture \
   --target-org <target-org> \
   --project ../glade/testdata/local-tests/lwc-shell \
-  --targets community-page,phase3-base-components \
+  --targets community-page,package-phase1-base-components,phase3-base-components \
   --skip-deploy \
   --local-browser-capture \
   --glade-bin /tmp/glade-lwc-shell-bin \

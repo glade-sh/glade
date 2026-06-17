@@ -44,9 +44,23 @@ func BootstrapHTML(cfg PageConfig) string {
 		},
 	}
 	for qualified, entry := range cfg.Manifest.Modules {
-		payload.Manifest.Modules[strings.ToLower(qualified)] = moduleJSON{
+		module := moduleJSON{
 			URL: entry.URL,
 			Tag: entry.Tag,
+		}
+		addManifestModuleAlias(payload.Manifest.Modules, qualified, module)
+		if namespace, component, ok := splitQualifiedComponentName(qualified); ok {
+			addManifestModuleAlias(payload.Manifest.Modules, namespace+":"+component, module)
+			addManifestModuleAlias(payload.Manifest.Modules, "c:"+component, module)
+			if cfg.Namespace != "" {
+				addManifestModuleAlias(payload.Manifest.Modules, cfg.Namespace+":"+component, module)
+			}
+		}
+		if _, component, ok := moduleSpecFromURL(entry.URL); ok {
+			addManifestModuleAlias(payload.Manifest.Modules, "c:"+component, module)
+			if cfg.Namespace != "" {
+				addManifestModuleAlias(payload.Manifest.Modules, cfg.Namespace+":"+component, module)
+			}
 		}
 	}
 	raw, err := json.Marshal(payload)
@@ -68,6 +82,28 @@ func BootstrapHTML(cfg PageConfig) string {
 	b.WriteString(lwcembed.ScriptURL())
 	b.WriteString(`"></script>`)
 	return b.String()
+}
+
+func addManifestModuleAlias(modules map[string]moduleJSON, qualified string, module moduleJSON) {
+	qualified = strings.ToLower(strings.TrimSpace(qualified))
+	if qualified == "" {
+		return
+	}
+	modules[qualified] = module
+}
+
+func splitQualifiedComponentName(qualified string) (namespace, component string, ok bool) {
+	qualified = strings.TrimSpace(qualified)
+	before, after, found := strings.Cut(qualified, ":")
+	if !found {
+		return "", "", false
+	}
+	namespace = strings.TrimSpace(before)
+	component = strings.TrimSpace(after)
+	if namespace == "" || component == "" {
+		return "", "", false
+	}
+	return namespace, component, true
 }
 
 func importMapJSON(cfg PageConfig) string {

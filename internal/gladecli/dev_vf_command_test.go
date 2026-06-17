@@ -163,6 +163,40 @@ func TestApplyDevVFProjectDataFixturesSeedsSFDXTreeData(t *testing.T) {
 	}
 }
 
+func TestApplyDevVFProjectDataFixturesIgnoresSFDXDataPlanArrays(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "data", "sample-data-plan.json"), `[
+  {
+    "sobject": "Account",
+    "saveRefs": true,
+    "resolveRefs": false,
+    "files": ["Accounts.json"]
+  }
+]`)
+	writeTestFile(t, filepath.Join(root, "data", "accounts.json"), `[
+  {
+    "attributes": {"type": "Account", "referenceId": "LocalShellAccount"},
+    "Name": "Local Shell Account"
+  }
+]`)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{
+			"Name": {APIName: "Name", Type: storage.FieldString},
+		}},
+		Records: map[storage.ID]storage.Record{},
+	}
+
+	if err := applyDevVFProjectDataFixtures(root, &org); err != nil {
+		t.Fatal(err)
+	}
+
+	account := org.Objects["Account"]
+	if len(account.Records) != 1 {
+		t.Fatalf("records = %#v", account.Records)
+	}
+}
+
 func TestApplyDevVFProjectDataFixturesIgnoresUnknownJSONWithBOM(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "data", "export.json"), "\xef\xbb\xbf"+`{

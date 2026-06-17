@@ -470,6 +470,33 @@ func TestLightningMessageChannelShimServesToken(t *testing.T) {
 	}
 }
 
+func TestLightningPackageCorpusShimsServeLocalContracts(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	cases := []struct {
+		path string
+		want []string
+	}{
+		{"/lightning/shims/client/formFactor.js", []string{"readFormFactor", "export default"}},
+		{"/lightning/shims/customPermission/LocalAuditLogs.js", []string{"LocalAuditLogs", "export default true"}},
+		{"/lightning/shims/lightning/configProvider.js", []string{"getPathPrefix", "getToken", "getIconSvgTemplates"}},
+		{"/lightning/shims/lightning/pageReferenceUtils.js", []string{"encodeDefaultFieldValues", "decodeDefaultFieldValues"}},
+		{"/lightning/shims/lightning/confirm.js", []string{"LightningConfirm", "Promise.resolve(true)"}},
+	}
+	for _, tc := range cases {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, tc.path, nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s status = %d body=%s", tc.path, rec.Code, rec.Body.String())
+		}
+		for _, want := range tc.want {
+			if !strings.Contains(rec.Body.String(), want) {
+				t.Fatalf("%s missing %q in %q", tc.path, want, rec.Body.String())
+			}
+		}
+	}
+}
+
 func TestLightningResourceURLShimFetchesStaticResourceBytes(t *testing.T) {
 	root := lightningFixtureRoot(t)
 	fixture := filepath.Join(root, "testdata", "local-tests", "lightning-out-vf")

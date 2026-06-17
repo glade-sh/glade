@@ -22,6 +22,8 @@ func (s *Server) handleLightningShims(w http.ResponseWriter, r *http.Request, pa
 		s.serveLightningStaticShim(w, r, parts[1:])
 	case "apex":
 		s.serveApexWireShim(w, parts[1:])
+	case "client":
+		s.serveClientShim(w, parts[1:])
 	case "community":
 		s.serveCommunityShim(w, parts[1:])
 	case "label":
@@ -36,6 +38,8 @@ func (s *Server) handleLightningShims(w http.ResponseWriter, r *http.Request, pa
 		s.serveResourceURLShim(w, parts[1:])
 	case "contentAssetUrl":
 		s.serveContentAssetURLShim(w, parts[1:])
+	case "customPermission":
+		s.serveCustomPermissionShim(w, parts[1:])
 	case "user":
 		s.serveUserShim(w, r, parts[1:])
 	case "i18n":
@@ -45,6 +49,15 @@ func (s *Server) handleLightningShims(w http.ResponseWriter, r *http.Request, pa
 	default:
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning shim")
 	}
+}
+
+func (s *Server) serveClientShim(w http.ResponseWriter, parts []string) {
+	token := shimToken(parts)
+	if token == "" {
+		writeSalesforceError(w, errUnknownEndpoint, "invalid client shim")
+		return
+	}
+	writeJavaScript(w, []byte(lwcbrowser.ClientModuleJS(token)))
 }
 
 func (s *Server) serveLightningStaticShim(w http.ResponseWriter, r *http.Request, parts []string) {
@@ -95,6 +108,10 @@ func (s *Server) serveLightningAPIShim(w http.ResponseWriter, parts []string) {
 	switch token {
 	case "actions":
 		writeJavaScript(w, []byte(lwcbrowser.ActionsModuleJS()))
+	case "confirm":
+		writeJavaScript(w, []byte(lwcbrowser.ConfirmModuleJS()))
+	case "configProvider":
+		writeJavaScript(w, []byte(lwcbrowser.ConfigProviderModuleJS()))
 	case "empApi":
 		writeJavaScript(w, []byte(lwcbrowser.EmpAPIModuleJS()))
 	case "flowSupport":
@@ -111,6 +128,8 @@ func (s *Server) serveLightningAPIShim(w http.ResponseWriter, parts []string) {
 		writeJavaScript(w, []byte(lwcbrowser.UIRelatedListAPIModuleJS()))
 	case "navigation":
 		writeJavaScript(w, []byte(lwcbrowser.NavigationModuleJS()))
+	case "pageReferenceUtils":
+		writeJavaScript(w, []byte(lwcbrowser.PageReferenceUtilsModuleJS()))
 	case "platformShowToastEvent":
 		writeJavaScript(w, []byte(lwcbrowser.ShowToastEventModuleJS()))
 	case "platformResourceLoader":
@@ -128,6 +147,15 @@ func (s *Server) serveLightningAPIShim(w http.ResponseWriter, parts []string) {
 		}
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning shim")
 	}
+}
+
+func (s *Server) serveCustomPermissionShim(w http.ResponseWriter, parts []string) {
+	token := shimToken(parts)
+	if token == "" {
+		writeSalesforceError(w, errUnknownEndpoint, "invalid customPermission shim")
+		return
+	}
+	writeJavaScript(w, []byte(lwcbrowser.CustomPermissionModuleJS(token)))
 }
 
 func (s *Server) serveMessageChannelShim(w http.ResponseWriter, parts []string) {

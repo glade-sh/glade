@@ -75,7 +75,7 @@ func runDevLWC(ctx context.Context, args []string, w io.Writer) error {
 	if opts.open {
 		openTarget := selectedURL
 		if openTarget == "" {
-			openTarget = baseURL
+			openTarget = baseURL + "/lwc"
 		}
 		if err := devLWCOpenURL(openTarget); err != nil {
 			_ = listener.Close()

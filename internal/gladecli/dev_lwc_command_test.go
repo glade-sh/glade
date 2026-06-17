@@ -187,9 +187,10 @@ func TestDevLWCSelectedURLUsesURLAddressableAndActionContexts(t *testing.T) {
 			ctx: lwcshell.PageContext{
 				Kind:          lwcshell.RenderTargetURLAddressable,
 				ComponentName: "c:actionProbe",
+				AppName:       "Sales",
 				State:         map[string]string{"c__mode": "demo"},
 			},
-			want: "http://127.0.0.1:39410/lwc/preview/cmp/c/actionProbe?state.c__mode=demo",
+			want: "http://127.0.0.1:39410/lwc/preview/cmp/c/actionProbe?app=Sales&state.c__mode=demo",
 		},
 		{
 			name: "component with record context",
@@ -309,6 +310,32 @@ func TestRunDevLWCOpenUsesStubbedOpener(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !strings.Contains(opened, "/lwc/preview/component/c/contextProbe") {
+		t.Fatalf("opened = %q", opened)
+	}
+}
+
+func TestRunDevLWCOpenDefaultsToWorkbench(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+  <isExposed>true</isExposed>
+</LightningComponentBundle>`)
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	var opened string
+	oldOpen := devLWCOpenURL
+	devLWCOpenURL = func(url string) error {
+		opened = url
+		cancel()
+		return nil
+	}
+	defer func() { devLWCOpenURL = oldOpen }()
+
+	err := runDevLWC(ctx, []string{"--project", root, "--addr", "127.0.0.1:0", "--open"}, &bytes.Buffer{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasSuffix(opened, "/lwc") {
 		t.Fatalf("opened = %q", opened)
 	}
 }

@@ -3,21 +3,33 @@ import { reportDiagnostic } from "../shell/diagnostics.mjs";
 const reportedDiagnostics = new Set();
 
 export function readCommunityContext() {
+  return readCommunityContextInternal({ report: true });
+}
+
+export function readCommunityContextQuiet() {
+  return readCommunityContextInternal({ report: false });
+}
+
+function readCommunityContextInternal({ report } = { report: true }) {
   const node = document.getElementById("glade-lwc-context");
   if (!node) {
-    reportOnce("GLADELWC100", "community context required");
-    return reportMissingIds(defaultCommunityContext());
+    if (report) {
+      reportOnce("GLADELWC100", "community context required");
+    }
+    return reportMissingIds(defaultCommunityContext(), report);
   }
   try {
     const context = JSON.parse(node.textContent || "{}");
     const community = normalizeCommunityContext(context.community || {});
-    if (!community.site) {
+    if (!community.site && report) {
       reportOnce("GLADELWC100", "community context required");
     }
-    return reportMissingIds(community);
+    return reportMissingIds(community, report);
   } catch (_err) {
-    reportOnce("GLADELWC100", "community context required");
-    return reportMissingIds(defaultCommunityContext());
+    if (report) {
+      reportOnce("GLADELWC100", "community context required");
+    }
+    return reportMissingIds(defaultCommunityContext(), report);
   }
 }
 
@@ -45,8 +57,8 @@ function defaultCommunityContext() {
   return normalizeCommunityContext({});
 }
 
-function reportMissingIds(context) {
-  if (!context.siteId || !context.networkId) {
+function reportMissingIds(context, report = true) {
+  if (report && (!context.siteId || !context.networkId)) {
     reportOnce("GLADELWC102", "community siteId or networkId is missing; local shims export empty IDs");
   }
   return context;

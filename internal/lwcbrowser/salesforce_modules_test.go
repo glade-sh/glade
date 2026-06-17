@@ -47,12 +47,16 @@ func TestSalesforceImportMapIncludesPhase8Shims(t *testing.T) {
 		"@salesforce/apex",
 		"@salesforce/resourceUrl/",
 		"@salesforce/contentAssetUrl/",
+		"@salesforce/customPermission/",
 		"@salesforce/messageChannel/",
 		"lightning/navigation",
+		"lightning/pageReferenceUtils",
 		"lightning/platformShowToastEvent",
 		"lightning/platformResourceLoader",
 		"lightning/messageService",
 		"lightning/actions",
+		"lightning/confirm",
+		"lightning/configProvider",
 		"lightning/empApi",
 		"lightning/flowSupport",
 		"lightning/refresh",
@@ -78,10 +82,14 @@ func TestMessageChannelModuleJSExportsChannelToken(t *testing.T) {
 
 func TestPackagePhase1ServiceModulesExportLocalContracts(t *testing.T) {
 	cases := map[string][]string{
-		"actions":     {ActionsModuleJS(), "CloseActionScreenEvent", "closeactionscreen"},
-		"empApi":      {EmpAPIModuleJS(), "subscribe", "unsubscribe", "isEmpEnabled"},
-		"flowSupport": {FlowSupportModuleJS(), "FlowAttributeChangeEvent", "flownavigationnext", "flownavigationfinish"},
-		"refresh":     {RefreshModuleJS(), "RefreshEvent", "registerRefreshHandler", "unregisterRefreshHandler"},
+		"actions":            {ActionsModuleJS(), "CloseActionScreenEvent", "closeactionscreen"},
+		"confirm":            {ConfirmModuleJS(), "LightningConfirm", "Promise.resolve(true)"},
+		"configProvider":     {ConfigProviderModuleJS(), "getPathPrefix", "getToken", "getIconSvgTemplates"},
+		"customPermission":   {CustomPermissionModuleJS("LocalPermission"), "permissionName", "LocalPermission", "export default true"},
+		"empApi":             {EmpAPIModuleJS(), "subscribe", "unsubscribe", "isEmpEnabled"},
+		"flowSupport":        {FlowSupportModuleJS(), "FlowAttributeChangeEvent", "flownavigationnext", "flownavigationfinish"},
+		"pageReferenceUtils": {PageReferenceUtilsModuleJS(), "encodeDefaultFieldValues", "decodeDefaultFieldValues"},
+		"refresh":            {RefreshModuleJS(), "RefreshEvent", "registerRefreshHandler", "unregisterRefreshHandler"},
 	}
 	for name, parts := range cases {
 		js := parts[0]
@@ -199,9 +207,20 @@ func TestNavigationModuleJSSupportsCurrentPageReferenceAndURLs(t *testing.T) {
 func TestPlatformWorkspaceAPIModuleJSExportsLocalApproximation(t *testing.T) {
 	js := PlatformWorkspaceAPIModuleJS()
 	if !containsAll(js,
+		"closeTab",
+		"disableTabClose",
+		"focusTab",
 		"getFocusedTabInfo",
 		"setTabLabel",
+		"setTabIcon",
 		"getAllTabInfo",
+		"getTabInfo",
+		"openSubtab",
+		"openTab",
+		"refreshTab",
+		"setTabHighlighted",
+		"IsConsoleNavigation",
+		"EnclosingTabId",
 		"GLADELWC072",
 		"glade-lwc-workbench",
 		"activeRoute",

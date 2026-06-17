@@ -36,6 +36,29 @@ func TestBootstrapHTMLIncludesLocalLWCImportMap(t *testing.T) {
 	if !strings.Contains(html, `"samplepkg/landing":"/lightning/modules/samplepkg/landing/landing.js"`) {
 		t.Fatalf("missing samplepkg/landing import map entry:\n%s", html)
 	}
+	if !strings.Contains(html, `"c:landing":{"url":"/lightning/modules/samplepkg/landing/landing.js"`) {
+		t.Fatalf("missing c:landing Lightning Out module alias:\n%s", html)
+	}
+}
+
+func TestBootstrapHTMLIncludesProjectNamespaceAliasForCompiledCModules(t *testing.T) {
+	html := BootstrapHTML(PageConfig{
+		Namespace: "samplepkg",
+		Manifest: Manifest{
+			Modules: map[string]ModuleEntry{
+				"c:landing": {
+					URL: "/lightning/modules/c/landing/landing.js",
+					Tag: "c-landing",
+				},
+			},
+		},
+	})
+	if !strings.Contains(html, `"samplepkg/landing":"/lightning/modules/c/landing/landing.js"`) {
+		t.Fatalf("missing samplepkg/landing import map entry:\n%s", html)
+	}
+	if !strings.Contains(html, `"samplepkg:landing":{"url":"/lightning/modules/c/landing/landing.js"`) {
+		t.Fatalf("missing samplepkg:landing Lightning Out module alias:\n%s", html)
+	}
 }
 
 func TestBootstrapHTMLIncludesOutAppDependencies(t *testing.T) {

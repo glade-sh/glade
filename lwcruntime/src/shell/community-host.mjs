@@ -1,6 +1,6 @@
-import { readCommunityContext } from "../shims/community.mjs";
+import { readCommunityContextQuiet } from "../shims/community.mjs";
 
-export function applyCommunityHost(root = document.body, context = readCommunityContext()) {
+export function applyCommunityHost(root = document.body, context = readCommunityContextQuiet()) {
   if (!root || !context?.site) {
     return context || {};
   }

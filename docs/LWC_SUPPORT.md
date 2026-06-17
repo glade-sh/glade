@@ -71,6 +71,8 @@ diagnostics, route list, and service support.
 | `@salesforce/label` | Local support with metadata limits | LWC shell and shared runtime imports. |
 | `@salesforce/resourceUrl` | Local support with metadata limits | LWC shell and shared runtime imports. |
 | `@salesforce/contentAssetUrl` | Local support with metadata limits | LWC shell and shared runtime imports. |
+| `@salesforce/client/formFactor` | Local support from shell context | Exports the active form factor, defaulting to `Large` when no route context sets one. |
+| `@salesforce/customPermission/*` | Local development default | Exports the permission name and a truthy default so permission-gated package LWCs can render locally. Permission assignment parity remains a hosted Salesforce check. |
 | `@salesforce/user` | Local support for `Id` and `isGuest` | LWC shell and shared runtime imports. `isGuest` reads the active community context and stays false outside guest community routes. |
 | `@salesforce/i18n` | Local support for checked values | LWC shell and shared runtime imports. |
 | `@salesforce/community` and `@salesforce/site` | Local support with context limits | LWC shell community routes. Supports `@salesforce/community/basePath`, `@salesforce/community/Id`, and `@salesforce/site/Id`; missing IDs export empty strings and report `GLADELWC102`. |
@@ -79,9 +81,12 @@ diagnostics, route list, and service support.
 | `lightning/messageService` | Local support for in-page publish and subscribe | LWC shell and Visualforce Lightning Out. Message channel metadata imports resolve to local channel tokens. |
 | `lightning/platformResourceLoader` | Local support for local scripts and styles | LWC shell and Visualforce Lightning Out. |
 | `lightning/platformShowToastEvent` | Local support as a browser event shim | LWC shell and Visualforce Lightning Out. |
-| `lightning/platformWorkspaceApi` | Local console approximation | Returns the active local route and lets components set local tab label/icon details. Marked with `GLADELWC072`; full console workspace behavior stays hosted-only. |
+| `lightning/platformWorkspaceApi` | Local console approximation | Returns the active local route, tab info, and console wire values; supports local no-op tab open, close, focus, refresh, highlight, label, and icon helpers. Marked with `GLADELWC072`; full console workspace behavior stays hosted-only. |
 | `lightning/actions` | Local event shim | Exports local `CloseActionScreenEvent` for quick-action flows. |
+| `lightning/confirm` | Local confirm shim | `LightningConfirm.open()` dispatches a browser event and resolves `true` for local flows. |
+| `lightning/configProvider` | Local icon token shim | Exports path-prefix and icon sprite token helpers used by package base-component utilities. |
 | `lightning/flowSupport` | Local event shim | Exports Flow screen attribute and navigation events used by flow-screen LWCs. |
+| `lightning/pageReferenceUtils` | Local helper shim | Exports default field value encode/decode helpers for navigation flows. |
 | `lightning/refresh` | Local in-page refresh registry | Exports `RefreshEvent`, handler/container registration, unregister helpers, and a local dispatch hook for shell tests. |
 | `lightning/empApi` | Local in-page pub/sub shim | Exports subscribe, unsubscribe, onError, debug flag, and enablement helpers without connecting to Salesforce streaming services. Tests can publish locally through the Glade test hook. |
 | Common `lightning-*` base components | Practical local support | LWC shell and Visualforce Lightning Out where modules are served by the shared runtime, including common inputs, cards, layouts, tabs, LDS-backed record forms, datatable row actions, tab active events, messages, icons, spinner, and a local `lightning/modal` approximation. |
@@ -147,7 +152,7 @@ URL:
 go run ./cmd/glade-plugin-compat lwc capture \
   --target-org <target-org> \
   --project ../glade/testdata/local-tests/lwc-shell \
-  --targets community-page,phase3-base-components \
+  --targets community-page,package-phase1-base-components,phase3-base-components \
   --skip-deploy \
   --local-browser-capture \
   --glade-bin /tmp/glade-lwc-shell-bin \

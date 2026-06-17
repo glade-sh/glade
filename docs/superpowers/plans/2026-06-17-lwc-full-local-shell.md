@@ -930,7 +930,7 @@ npm --prefix lwcruntime test -- --test-name-pattern='actions|url-addressable'
 **Wrap-up evidence (2026-06-17):**
 
 - `oaer-probe-max` two-sided browser proof passed `app-page`, `custom-tab`, and `url-addressable-component`: 3 targets, 3 pass, 0 fail in `/tmp/glade-lwc-oaer-phase8-10-browser.json`.
-- Fixture deploy/prepared capture included quick action and app-mode rows in the 34 prepared targets in `/tmp/glade-lwc-oaer-phase8-10-capture.json`.
+- Fixture deploy/prepared capture included quick action, app-mode, and package phase 1 base-component rows in the 35 prepared targets in `/tmp/glade-lwc-oaer-phase8-10-capture.json`.
 - Product tests cover quick action context, URL-addressable state, and console/app shell behavior in Go and `lwcruntime` suites.
 
 ## Phase 9: Visualforce Lightning Out Shared Runtime Parity
@@ -1071,7 +1071,7 @@ jq '.ok,.hosts,.counts' /tmp/glade-lwc-full-shell-capture.json
 **Wrap-up evidence (2026-06-17):**
 
 - `sf org display --target-org oaer-probe-max --json` returned active scratch org `00DQL00000VntW92AJ`, API 67.0, expiring 2026-07-05.
-- `go run ./cmd/glade-plugin-compat lwc capture --target-org oaer-probe-max --project ../glade/testdata/local-tests/lwc-shell --include-hosts lightning-shell,visualforce-lightning-out --out /tmp/glade-lwc-oaer-phase8-10-capture.json --json` returned `ok: true`, `deployed: true`, 34 prepared targets, 0 fail.
+- `go run ./cmd/glade-plugin-compat lwc capture --target-org oaer-probe-max --project ../glade/testdata/local-tests/lwc-shell --include-hosts lightning-shell,visualforce-lightning-out --out /tmp/glade-lwc-oaer-phase8-10-capture.json --json` returned `ok: true`, `deployed: true`, 35 prepared targets, 0 fail.
 - `go run ./cmd/glade-plugin-compat lwc capture --target-org oaer-probe-max --project ../glade/testdata/local-tests/lwc-shell --targets app-page,custom-tab,url-addressable-component --local-browser-capture --glade-bin /tmp/glade-lwc-phase-wrap-bin --browser-capture --out /tmp/glade-lwc-oaer-phase8-10-browser.json --json` returned `ok: true`, 3 pass, 0 fail.
 - Remaining broader live-browser lanes are still named as org-setup-dependent: record pages, quick action modal routing, and Visualforce Lightning Out pages in the deployed org.
 

@@ -42,7 +42,7 @@ Current `oaer-probe-max` wrap-up evidence from 2026-06-17:
   mode: fixture-evidence-stubs
   deployed: true
   hosts: lightning-shell, visualforce-lightning-out
-  counts: 34 targets, 34 prepared, 0 fail
+  counts: 35 targets, 35 prepared, 0 fail
 
 /tmp/glade-lwc-oaer-phase8-10-browser.json
   mode: browser-capture
@@ -57,19 +57,17 @@ Local-only browser proof covers routes with no direct stable Salesforce URL:
 go run ./cmd/glade-plugin-compat lwc capture \
   --target-org <target-org> \
   --project ../glade/testdata/local-tests/lwc-shell \
-  --targets community-page,phase3-base-components \
+  --targets community-page,package-phase1-base-components,phase3-base-components \
   --skip-deploy \
   --local-browser-capture \
   --glade-bin /tmp/glade-lwc-shell-bin \
   --out /path/to/lwc-local-only-browser-check.json
 ```
 
-Latest strict local browser proof from the external capture lane covered the
-pre-community LWC shell targets. Current checked product evidence adds
-Experience Cloud routes and expanded base components through Go and Playwright
-tests. A refreshed compatibility capture should include the community rows and
-the expanded base-component row in the external JSON. The report stores stable
-paths only and does not write transient server URLs.
+Latest strict local browser proof from the external capture lane covers the
+LWC shell target rows, Experience Cloud routes, package phase 1 base
+components, and expanded base components through Go and Playwright tests. The
+report stores stable paths only and does not write transient server URLs.
 Latest two-sided browser proof remains `app-page`, `custom-tab`, and
 `url-addressable-component` against both the local shell and `oaer-probe-max`,
 with no browser console errors or page errors. Each two-sided case includes a
@@ -81,7 +79,7 @@ inside `c-context-probe`, and the URL-addressable target passes inside
 `/lightning/app/c__Lwc_Shell/n/Lwc_Probe` after `Lwc_Shell_Access` is assigned.
 Record pages, quick actions, and Visualforce Lightning Out remain org-setup
 dependent browser-oracle targets. Expanded base-component proof passes through
-the `phase3BaseComponents` local context and the
+the `packagePhase1BaseComponents` and `phase3BaseComponents` local contexts and
 `lwcruntime/test/base-components-expanded.test.mjs` browser test. Visualforce
 Lightning Out service proof covers CurrentPageReference, toast, LMS, resource
 loading, and navigation diagnostics in
@@ -127,4 +125,5 @@ report itself is an external run artifact, not a checked-in JSON file.
 | `lwc.service.resource-loader` | `visualforce-lightning-out` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.resource-loader/visualforce-lightning-out` | Visualforce Lightning Out c:serviceHost proves platformResourceLoader loadScript/loadStyle against local static resources. |
 | `lwc.service.base-components` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.base-components/lightning-shell` | Practical base shims render common lightning/* modules and cover click, change, submit, LDS-backed record form read and success/error submit events, datatable rowaction, tab active, and unsupported-attribute diagnostics. |
 | `lwc.service.base-components` | `visualforce-lightning-out` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.base-components/visualforce-lightning-out` | Visualforce Lightning Out mounts the same practical base component shims through c:baseComponentHost. |
+| `lwc.service.package-phase1-base-components` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.package-phase1-base-components/lightning-shell` | Package phase 1 base shims render the `lightning/*` modules found in the prioritized package lane through `c:baseComponentHost` and `packagePhase1BaseComponents`. |
 | `lwc.service.phase3-base-components` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.phase3-base-components/lightning-shell` | Expanded base-component support renders email, dual listbox, select, slider, rich text input, menu divider, progress bar/ring, tile, breadcrumbs, tree grid, map, carousel, quick action panel, record picker, file upload, and additional display/input/container components through `c:baseComponentHost` and `phase3BaseComponents`. |

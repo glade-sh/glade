@@ -298,6 +298,11 @@ common local development loops:
 - `@salesforce/resourceUrl/<name>` and
   `@salesforce/contentAssetUrl/<name>` for local static resources and content
   assets.
+- `@salesforce/client/formFactor` from the active route context, defaulting to
+  `Large`.
+- `@salesforce/customPermission/*` as a truthy local development default for
+  permission-gated package LWCs. Permission assignment parity remains a hosted
+  Salesforce check.
 - `@salesforce/user/Id`, `@salesforce/user/isGuest`, and checked
   `@salesforce/i18n/*` values. `isGuest` reads the active community context
   and remains `false` outside guest community routes.
@@ -312,8 +317,12 @@ common local development loops:
   `lightning/platformResourceLoader` local script and style loading, and
   `lightning/platformShowToastEvent` browser toast events.
 - `lightning/platformWorkspaceApi` active-route and tab label/icon
-  approximation for console apps. Full console workspace behavior remains a
-  Salesforce check and is marked with `GLADELWC072`.
+  approximation for console apps, including local tab info, open/close/focus,
+  refresh, highlight, and console wire values. Full console workspace behavior
+  remains a Salesforce check and is marked with `GLADELWC072`.
+- `lightning/confirm`, `lightning/configProvider`, and
+  `lightning/pageReferenceUtils` local shims for package flows, icon token
+  lookup, and default field value encode/decode helpers.
 - `lightning/actions`, `lightning/flowSupport`, `lightning/refresh`, and
   `lightning/empApi` practical local shims. They provide browser events,
   refresh handler dispatch, and in-page pub/sub contracts without live
@@ -420,7 +429,7 @@ errors. The app-page and custom-tab oracle deploys the `Lwc_Shell` app, assigns
 The 2026-06-17 `oaer-probe-max` run wrote
 `/tmp/glade-lwc-oaer-phase8-10-browser.json` with 3 pass and 0 fail. A broader
 deploy/prepared capture against the same scratch org wrote
-`/tmp/glade-lwc-oaer-phase8-10-capture.json` with 34 prepared targets across
+`/tmp/glade-lwc-oaer-phase8-10-capture.json` with 35 prepared targets across
 `lightning-shell` and `visualforce-lightning-out`.
 Record pages need a real org record id and page activation. Quick actions need
 modal routing proof. Visualforce Lightning Out needs the Visualforce fixture
@@ -433,7 +442,7 @@ cd ../glade-tools
 go run ./cmd/glade-plugin-compat lwc capture \
   --target-org <target-org> \
   --project ../glade/testdata/local-tests/lwc-shell \
-  --targets community-page,phase3-base-components \
+  --targets community-page,package-phase1-base-components,phase3-base-components \
   --skip-deploy \
   --local-browser-capture \
   --glade-bin /tmp/glade-lwc-shell-bin \
