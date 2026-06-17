@@ -15,11 +15,14 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 	}
 	workflowText := string(workflow)
 	for _, want := range []string{
+		"macos-15-intel",
 		"actions/checkout@v6",
 		"actions/setup-go@v6",
 		`go-version: "1.26.3"`,
 		"actions/setup-node@v6",
 		`node-version: "22"`,
+		"actions/upload-artifact@v7",
+		"actions/download-artifact@v8",
 	} {
 		if !strings.Contains(workflowText, want) {
 			t.Fatalf("release.yml missing %q", want)
