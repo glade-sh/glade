@@ -4,11 +4,14 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { chromium } from "playwright";
-import { harnessHTML, repoRoot, startLightningServer } from "./helpers.mjs";
+import { harnessHTML, requireLWCToolchain, repoRoot, startLightningServer } from "./helpers.mjs";
 
 const gladeOutJS = path.join(repoRoot, "internal/lwcruntime/embed/glade.out.js");
 
-test("Lightning Out runtime reports dependency, module, name, and service diagnostics", async () => {
+test("Lightning Out runtime reports dependency, module, name, and service diagnostics", async (t) => {
+  if (!requireLWCToolchain(t)) {
+    return;
+  }
   const config = {
     namespace: "c",
     outApps: ["c:lightningout"],

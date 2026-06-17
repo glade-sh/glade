@@ -6,6 +6,7 @@ import test from "node:test";
 import { chromium } from "playwright";
 import {
   harnessHTML,
+  requireLWCToolchain,
   repoRoot,
   startLightningServer,
 } from "./helpers.mjs";
@@ -96,7 +97,10 @@ test("bootstrap stub reports ERROR when Lightning component alias is missing", a
   }
 });
 
-test("runtime reports ERROR when Lightning component alias is missing after use", async () => {
+test("runtime reports ERROR when Lightning component alias is missing after use", async (t) => {
+  if (!requireLWCToolchain(t)) {
+    return;
+  }
   const config = {
     namespace: "c",
     outApps: ["c:lightningout"],
@@ -143,7 +147,10 @@ test("runtime reports ERROR when Lightning component alias is missing after use"
   }
 });
 
-test("runtime reports ERROR when Lightning Out app is missing after load", async () => {
+test("runtime reports ERROR when Lightning Out app is missing after load", async (t) => {
+  if (!requireLWCToolchain(t)) {
+    return;
+  }
   const config = {
     namespace: "c",
     outApps: ["c:lightningout"],

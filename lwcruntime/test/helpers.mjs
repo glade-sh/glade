@@ -9,6 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const repoRoot = path.resolve(__dirname, "../..");
 const wireAdapterPath = path.join(repoRoot, "lwcruntime/src/shims/wire-adapter.mjs");
 const ldsCachePath = path.join(repoRoot, "lwcruntime/src/shims/lds-cache.mjs");
+const lwcToolchainNodeModules = path.join(repoRoot, "third_party/lwc/node_modules");
 
 export const salesforceImportMap = {
   "@salesforce/apex": "/lightning/shims/core/apex.js",
@@ -22,6 +23,14 @@ export const salesforceImportMap = {
   "lightning/uiRelatedListApi": "/lightning/shims/lightning/uiRelatedListApi.js",
   "lightning/uiRecordApi": "/lightning/shims/lightning/uiRecordApi.js",
 };
+
+export function requireLWCToolchain(t) {
+  if (fs.existsSync(lwcToolchainNodeModules)) {
+    return true;
+  }
+  t.skip("run npm install in third_party/lwc");
+  return false;
+}
 
 export function compileFixture(fixtureRel, outDir) {
   const fixture = path.join(repoRoot, fixtureRel);

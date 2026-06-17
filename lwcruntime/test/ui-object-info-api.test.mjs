@@ -7,6 +7,7 @@ import { chromium } from "playwright";
 import {
   compileFixture,
   harnessHTML,
+  requireLWCToolchain,
   repoRoot,
   startLightningServer,
 } from "./helpers.mjs";
@@ -15,8 +16,8 @@ const fixture = "testdata/local-tests/lwc-shell";
 const gladeOutJS = path.join(repoRoot, "internal/lwcruntime/embed/glade.out.js");
 
 test("uiObjectInfoApi wires render object info and picklist values", async (t) => {
-  if (!fs.existsSync(path.join(repoRoot, "third_party/lwc/node_modules"))) {
-    t.skip("run npm install in third_party/lwc");
+  if (!requireLWCToolchain(t)) {
+    return;
   }
   const outDir = fs.mkdtempSync(path.join(os.tmpdir(), "glade-lwc-object-info-"));
   compileFixture(fixture, outDir);

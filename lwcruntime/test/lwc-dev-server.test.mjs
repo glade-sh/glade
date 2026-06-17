@@ -1,15 +1,13 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import test from "node:test";
 import { chromium } from "playwright";
-import { repoRoot, startLWCDevServer } from "./helpers.mjs";
+import { requireLWCToolchain, startLWCDevServer } from "./helpers.mjs";
 
 const fixture = "testdata/local-tests/lwc-shell";
 
 test("LWC dev shell renders a record FlexiPage with local data and shims", async (t) => {
-  if (!fs.existsSync(path.join(repoRoot, "third_party/lwc/node_modules"))) {
-    t.skip("run npm install in third_party/lwc");
+  if (!requireLWCToolchain(t)) {
+    return;
   }
 
   const route = "/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page";

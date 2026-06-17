@@ -1,14 +1,12 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import test from "node:test";
-import { repoRoot, startLWCDevServer } from "./helpers.mjs";
+import { requireLWCToolchain, startLWCDevServer } from "./helpers.mjs";
 
 const fixture = "testdata/local-tests/lwc-shell";
 
 test("LWC shell serves URL-addressable and quick action contexts", async (t) => {
-  if (!fs.existsSync(path.join(repoRoot, "third_party/lwc/node_modules"))) {
-    t.skip("run npm install in third_party/lwc");
+  if (!requireLWCToolchain(t)) {
+    return;
   }
 
   const server = await startLWCDevServer(t, {

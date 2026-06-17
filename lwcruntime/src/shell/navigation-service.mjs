@@ -250,7 +250,11 @@ function withState(path, state = {}) {
     params.set(key, String(value));
   }
   const query = params.toString();
-  return query ? `${path}?${query}` : path;
+  if (!query) {
+    return path;
+  }
+  const separator = String(path).includes("?") ? "&" : "?";
+  return `${path}${separator}${query}`;
 }
 
 function enc(value) {

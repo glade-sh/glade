@@ -1,15 +1,13 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import test from "node:test";
 import { chromium } from "playwright";
-import { repoRoot, startVisualforceDevServer } from "./helpers.mjs";
+import { requireLWCToolchain, startVisualforceDevServer } from "./helpers.mjs";
 
 const fixture = "testdata/local-tests/lightning-out-vf";
 
 test("MultiWidgetHost boots Lightning Out components in the rendered Visualforce page", async (t) => {
-  if (!fs.existsSync(path.join(repoRoot, "third_party/lwc/node_modules"))) {
-    t.skip("run npm install in third_party/lwc");
+  if (!requireLWCToolchain(t)) {
+    return;
   }
 
   const server = await startVisualforceDevServer(t, {

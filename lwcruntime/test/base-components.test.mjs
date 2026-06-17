@@ -4,7 +4,7 @@ import http from "node:http";
 import path from "node:path";
 import test from "node:test";
 import { chromium } from "playwright";
-import { repoRoot } from "./helpers.mjs";
+import { repoRoot, requireLWCToolchain } from "./helpers.mjs";
 
 function serveRuntimeFile(urlPath, res) {
   const routes = {
@@ -197,8 +197,8 @@ window.__modalOpen = Modal.open({ label: "Local Modal", result: "done" });
 }
 
 test("base components render practical SLDS-shaped DOM", async (t) => {
-  if (!fs.existsSync(path.join(repoRoot, "third_party/lwc/node_modules"))) {
-    t.skip("run npm install in third_party/lwc");
+  if (!requireLWCToolchain(t)) {
+    return;
   }
   const server = await startBaseComponentServer();
   const browser = await chromium.launch({ headless: true });
@@ -262,8 +262,8 @@ test("base components render practical SLDS-shaped DOM", async (t) => {
 });
 
 test("unsupported base component and missing SLDS asset record diagnostics", async (t) => {
-  if (!fs.existsSync(path.join(repoRoot, "third_party/lwc/node_modules"))) {
-    t.skip("run npm install in third_party/lwc");
+  if (!requireLWCToolchain(t)) {
+    return;
   }
   const server = await startBaseComponentServer();
   const browser = await chromium.launch({ headless: true });
