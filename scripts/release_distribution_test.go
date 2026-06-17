@@ -42,7 +42,10 @@ func TestInstallScriptSupportsPrivateReleaseToken(t *testing.T) {
 		"GH_TOKEN",
 		"GITHUB_TOKEN",
 		"Authorization: Bearer",
+		"api.github.com/repos",
 		"curl_github",
+		"download_asset",
+		"Accept: application/octet-stream",
 		"private repo",
 	} {
 		if !strings.Contains(scriptText, want) {

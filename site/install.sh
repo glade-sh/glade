@@ -18,6 +18,7 @@ need grep
 need install
 need tar
 need uname
+need awk
 
 curl_github() {
   if [ -n "$github_token" ]; then
@@ -32,6 +33,12 @@ curl_github() {
 
 os="$(uname -s)"
 arch="$(uname -m)"
+tmpdir="$(mktemp -d)"
+
+cleanup() {
+  rm -rf "$tmpdir"
+}
+trap cleanup EXIT INT TERM
 
 case "$os" in
   Darwin) os="darwin" ;;
@@ -51,34 +58,74 @@ case "$arch" in
     ;;
 esac
 
-if [ "$version" = "latest" ]; then
-  latest_url="$(curl_github -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$repo/releases/latest")" || {
-    echo "glade install: could not resolve latest release" >&2
+api_base="https://api.github.com/repos/$repo"
+release_json="$tmpdir/release.json"
+
+fetch_release() {
+  release_ref="$1"
+  curl_github -fsSL "$api_base/releases/$release_ref" -o "$release_json" || {
+    echo "glade install: could not resolve release $release_ref" >&2
     echo "glade install: for a private repo, export GLADE_GITHUB_TOKEN with contents:read access" >&2
     exit 1
   }
-  version="${latest_url##*/}"
+}
+
+if [ "$version" = "latest" ]; then
+  fetch_release latest
+  version="$(awk -F '"' '/"tag_name":/ { print $4; exit }' "$release_json")"
+  if [ -z "$version" ]; then
+    echo "glade install: latest release did not include a tag name" >&2
+    exit 1
+  fi
+else
+  fetch_release "tags/$version"
 fi
 
 archive="glade_${version}_${os}_${arch}.tar.gz"
 url="https://github.com/$repo/releases/download/$version/$archive"
-checksums_url="https://github.com/$repo/releases/download/$version/SHA256SUMS.txt"
-tmpdir="$(mktemp -d)"
 
-cleanup() {
-  rm -rf "$tmpdir"
+release_asset_api_url() {
+  wanted="$1"
+  awk -v wanted="$wanted" '
+    /"url":/ && /\/releases\/assets\// {
+      line = $0
+      sub(/^[^"]*"url":[[:space:]]*"/, "", line)
+      sub(/".*/, "", line)
+      url = line
+    }
+    /"name":/ {
+      line = $0
+      sub(/^[^"]*"name":[[:space:]]*"/, "", line)
+      sub(/".*/, "", line)
+      if (line == wanted && url != "") {
+        print url
+        found = 1
+        exit
+      }
+    }
+    END { if (!found) exit 1 }
+  ' "$release_json"
 }
-trap cleanup EXIT INT TERM
+
+download_asset() {
+  asset="$1"
+  output="$2"
+  asset_url="$(release_asset_api_url "$asset")" || {
+    echo "glade install: release asset not found: $asset" >&2
+    exit 1
+  }
+  curl_github -fL -H "Accept: application/octet-stream" "$asset_url" -o "$output"
+}
 
 mkdir -p "$install_dir"
 
 echo "glade install: downloading $url"
-curl_github -fL "$url" -o "$tmpdir/$archive" || {
+download_asset "$archive" "$tmpdir/$archive" || {
   echo "glade install: archive download failed" >&2
   echo "glade install: for a private repo, export GLADE_GITHUB_TOKEN with contents:read access" >&2
   exit 1
 }
-curl_github -fL "$checksums_url" -o "$tmpdir/SHA256SUMS.txt" || {
+download_asset "SHA256SUMS.txt" "$tmpdir/SHA256SUMS.txt" || {
   echo "glade install: checksum download failed" >&2
   echo "glade install: for a private repo, export GLADE_GITHUB_TOKEN with contents:read access" >&2
   exit 1
