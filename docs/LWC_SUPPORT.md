@@ -94,7 +94,7 @@ diagnostics, route list, and service support.
 | --- | --- |
 | Web custom tabs | Unsupported in the LWC shell. |
 | Object custom tabs | Unsupported in the LWC shell. |
-| Unsupported quick action metadata | Reports `GLADELWC070`. |
+| Unsupported quick action metadata | Reports `GLADELWC070`; unsupported action types report `GLADELWC015`. |
 | Invalid URL-addressable state | Reports `GLADELWC071`. |
 | Console workspace API | Approximated locally and marked with `GLADELWC072`. |
 | Missing community context | Reports `GLADELWC100`. |

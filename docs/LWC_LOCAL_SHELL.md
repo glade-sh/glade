@@ -194,7 +194,8 @@ home, and tab routes resolve Salesforce metadata from the project:
   and pass `c__*` state through the local PageReference.
 - Quick action routes mount LWC-backed action metadata and pass `recordId`,
   `objectApiName`, `actionName`, `actionType`, state, and PageReference
-  attributes. Unsupported action metadata returns `GLADELWC070`.
+  attributes. Unsupported action metadata returns `GLADELWC070`; unsupported
+  action types return `GLADELWC015`.
 - Community page routes resolve `communityPage` presets, mount
   `lightningCommunity__Page` components, apply a local
   `lightningCommunity__Theme_Layout` wrapper boundary when one exists, and pass

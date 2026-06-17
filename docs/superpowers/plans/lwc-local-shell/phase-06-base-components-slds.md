@@ -44,8 +44,8 @@ Use parallel subagent squads where files do not overlap. The coordinator integra
 
 ## Implementation Steps
 
-- [ ] Add an import-map prefix for `lightning/` modules served from `/lightning/modules/lightning/<name>.js` or static runtime shims.
-- [ ] Tier 1 components:
+- [x] Add an import-map prefix for `lightning/` modules served from `/lightning/modules/lightning/<name>.js` or static runtime shims.
+- [x] Tier 1 components:
   - `lightning-card`
   - `lightning-button`
   - `lightning-button-icon`

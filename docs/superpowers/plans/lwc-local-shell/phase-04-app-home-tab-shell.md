@@ -1,6 +1,6 @@
 # Phase 4: App, Home, And Tab Shell Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan with parallel subagent squads. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan with parallel subagent squads. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Render app pages, home pages, and custom tabs from Salesforce metadata.
 
@@ -38,7 +38,7 @@ Use parallel subagent squads where files do not overlap. The coordinator integra
 
 ## Implementation Steps
 
-- [ ] Add startup route discovery for:
+- [x] Add startup route discovery for:
 
 ```text
 /lwc/preview/app/<flexipageName>
@@ -46,8 +46,8 @@ Use parallel subagent squads where files do not overlap. The coordinator integra
 /lwc/preview/tab/<tabApiName>
 ```
 
-- [ ] Keep `glade dev lwc` as a server command. Render target selection happens by URL route.
-- [ ] Add routes:
+- [x] Keep `glade dev lwc` as a server command. Render target selection happens by URL route.
+- [x] Add routes:
 
 ```text
 /lwc/preview/app/<pageName>
@@ -55,15 +55,15 @@ Use parallel subagent squads where files do not overlap. The coordinator integra
 /lwc/preview/tab/<tabApiName>
 ```
 
-- [ ] Resolve `AppPage` and `HomePage` FlexiPages. They must not require `recordId`.
-- [ ] Construct `CurrentPageReference`:
+- [x] Resolve `AppPage` and `HomePage` FlexiPages. They must not require `recordId`.
+- [x] Construct `CurrentPageReference`:
   - App page: `standard__app` when `--app` exists, or `standard__component` for URL-addressable component preview.
   - Home page: `standard__namedPage` with `pageName=home`.
   - Tab: `standard__navItemPage` with `apiName=<tabApiName>`.
-- [ ] For custom tab metadata, support Lightning Component tabs that point at an LWC and tabs that point at a FlexiPage. Visualforce tabs must redirect to `/apex/<Page>` so Lightning Out stays in the Visualforce host. Web and object tabs must return `GLADELWC007 tab target unsupported`.
-- [ ] Render app/home page regions with the same region engine from Phase 3.
-- [ ] Render tab shell with app nav bar, selected tab marker, and component content.
-- [ ] Add tests for tab API name normalization: label `My Custom Tab` maps to `My_Custom_Tab`.
+- [x] For custom tab metadata, support Lightning Component tabs that point at an LWC and tabs that point at a FlexiPage. Visualforce tabs must redirect to `/apex/<Page>` so Lightning Out stays in the Visualforce host. Web and object tabs must return `GLADELWC007 tab target unsupported`.
+- [x] Render app/home page regions with the same region engine from Phase 3.
+- [x] Render tab shell with app nav bar, selected tab marker, and component content.
+- [x] Add tests for tab API name normalization: label `My Custom Tab` maps to `My_Custom_Tab`.
 
 ## Verification
 

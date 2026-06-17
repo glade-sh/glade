@@ -1,6 +1,6 @@
 # Phase 5: Wire, LDS, And Apex Controller Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan with parallel subagent squads. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan with parallel subagent squads. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Make local LWC data flows useful in both hosts: Apex wire, imperative Apex, `getRecord`, `getObjectInfo`, selected record mutation helpers, and field helper functions.
 
@@ -42,10 +42,10 @@ Use parallel subagent squads where files do not overlap. The coordinator integra
 
 ## Implementation Steps
 
-- [ ] Preserve existing Apex wire route `/lightning/wire/apex` and add imperative route `/lightning/apex/<class>/<method>`.
-- [ ] Match Salesforce Apex parameter rule: method params are passed as an object with properties matching Apex parameter names; `undefined` suppresses wire invocation; `null` invokes the method with null.
-- [ ] Add overload diagnostic: if multiple `@AuraEnabled` overloads match, return `GLADELWC013 overloaded AuraEnabled method unsupported`.
-- [ ] Extend `lightning/uiRecordApi` exports for the current local contract:
+- [x] Preserve existing Apex wire route `/lightning/wire/apex` and add imperative route `/lightning/apex/<class>/<method>`.
+- [x] Match Salesforce Apex parameter rule: method params are passed as an object with properties matching Apex parameter names; `undefined` suppresses wire invocation; `null` invokes the method with null.
+- [x] Add overload diagnostic: if multiple `@AuraEnabled` overloads match, return `GLADELWC013 overloaded AuraEnabled method unsupported`.
+- [x] Extend `lightning/uiRecordApi` exports for the current local contract:
   - `getRecord`
   - `getFieldValue`
   - `getFieldDisplayValue`
@@ -53,10 +53,10 @@ Use parallel subagent squads where files do not overlap. The coordinator integra
   - `createRecord`
   - `updateRecord`
   - `deleteRecord`
-- [ ] Leave `getRecords`, `getObjectInfos`, picklist wires, `notifyRecordUpdateAvailable`, and `refreshApex` as future LDS expansion unless implemented with tests in both hosts.
-- [ ] Add record mutation routes. Mutations must update `storage.OrgState` and return UI API-shaped records.
-- [ ] Add browser fixture proving Apex wire, imperative Apex, `getRecord`, `getObjectInfo`, and mutation helper behavior in one component.
-- [ ] Add Visualforce Lightning Out browser fixture proving the same Apex wire, imperative Apex, `getRecord`, `getObjectInfo`, and mutation helper behavior inside `/apex/<PageName>`.
+- [x] Leave `getRecords`, `getObjectInfos`, picklist wires, `notifyRecordUpdateAvailable`, and `refreshApex` as future LDS expansion unless implemented with tests in both hosts.
+- [x] Add record mutation routes. Mutations must update `storage.OrgState` and return UI API-shaped records.
+- [x] Add browser fixture proving Apex wire, imperative Apex, `getRecord`, `getObjectInfo`, and mutation helper behavior in one component.
+- [x] Add Visualforce Lightning Out browser fixture proving the same Apex wire, imperative Apex, `getRecord`, `getObjectInfo`, and mutation helper behavior inside `/apex/<PageName>`.
 
 ## Verification
 

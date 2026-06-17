@@ -181,7 +181,8 @@ Visualforce-backed custom tabs redirect to `/apex/<Page>` when the project
 defines one.
 URL-addressable routes pass `c__*` state through the local PageReference.
 Quick action routes mount LWC-backed action metadata and pass action context
-attributes. Unsupported action metadata returns `GLADELWC070`.
+attributes. Unsupported action metadata returns `GLADELWC070`; unsupported
+action types return `GLADELWC015`.
 Community routes resolve `communityPage` presets, mount
 `lightningCommunity__Page` components, mount `lightningCommunity__Default`
 direct components, expose community base path, site ID, network ID, guest mode,

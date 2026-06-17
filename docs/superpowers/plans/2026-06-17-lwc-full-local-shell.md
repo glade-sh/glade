@@ -265,7 +265,7 @@ base component package strategy
 
 **Steps:**
 
-- [ ] Add `WorkbenchModel` in `internal/lwcshell/workbench.go`:
+- [x] Add `WorkbenchModel` in `internal/lwcshell/workbench.go`:
 
 ```go
 type WorkbenchModel struct {
@@ -300,9 +300,9 @@ type ShellRoute struct {
 }
 ```
 
-- [ ] Add `BuildWorkbenchModel(project.Project, ShellPage, []string) WorkbenchModel`.
-- [ ] Refactor `renderLWCShellHTML` so HTML skeleton lives in `internal/server/lwc_shell_assets.go`.
-- [ ] Serve shell assets:
+- [x] Add `BuildWorkbenchModel(project.Project, ShellPage, []string) WorkbenchModel`.
+- [x] Refactor `renderLWCShellHTML` so HTML skeleton lives in `internal/server/lwc_shell_assets.go`.
+- [x] Serve shell assets:
 
 ```text
 /lightning/runtime/shell/app.js
@@ -312,8 +312,8 @@ type ShellRoute struct {
 /lightning/runtime/shell/glade-shell.css
 ```
 
-- [ ] Add `/lwc` and `/lwc/preview` workbench roots. They must render the workbench with discovered routes and no mounted component selected.
-- [ ] Add a Salesforce-like shell frame:
+- [x] Add `/lwc` and `/lwc/preview` workbench roots. They must render the workbench with discovered routes and no mounted component selected.
+- [x] Add a Salesforce-like shell frame:
 
 ```text
 top global header
@@ -326,7 +326,7 @@ right context panel
 diagnostics drawer
 ```
 
-- [ ] Add tests proving `/lwc` renders route picker, `/lwc/preview/record/...` renders the same frame plus mounted components, and diagnostics appear in the context panel.
+- [x] Add tests proving `/lwc` renders route picker, `/lwc/preview/record/...` renders the same frame plus mounted components, and diagnostics appear in the context panel.
 
 **Focused Verification:**
 
@@ -399,9 +399,9 @@ Create project-root `glade.lwc.json`:
 
 **Steps:**
 
-- [ ] Add `LoadContextPresets(root string) (ContextPresetFile, error)`.
-- [ ] Search for `glade.lwc.json` at project root. Do not overload `glade.yml` in this phase.
-- [ ] Add stable diagnostics:
+- [x] Add `LoadContextPresets(root string) (ContextPresetFile, error)`.
+- [x] Search for `glade.lwc.json` at project root. Do not overload `glade.yml` in this phase.
+- [x] Add stable diagnostics:
 
 ```text
 GLADELWC020 context preset file invalid
@@ -411,7 +411,7 @@ GLADELWC023 context record required
 GLADELWC024 context page required
 ```
 
-- [ ] Add `ContextPreset.ToPageContext()` mapping:
+- [x] Add `ContextPreset.ToPageContext()` mapping:
 
 ```text
 recordPage -> RenderTargetRecordPage
@@ -421,7 +421,7 @@ component -> RenderTargetComponent
 tab -> RenderTargetTab
 ```
 
-- [ ] Add `glade dev lwc` flags:
+- [x] Add `glade dev lwc` flags:
 
 ```text
 --open
@@ -438,10 +438,10 @@ tab -> RenderTargetTab
 --state key=value
 ```
 
-- [ ] Make `--context` choose the first browser path in startup output and ready file.
-- [ ] Make explicit flags override preset fields.
-- [ ] Make `--open` launch the browser with the selected URL through the existing platform opener pattern used elsewhere in Glade.
-- [ ] Extend the ready file:
+- [x] Make `--context` choose the first browser path in startup output and ready file.
+- [x] Make explicit flags override preset fields.
+- [x] Make `--open` launch the browser with the selected URL through the existing platform opener pattern used elsewhere in Glade.
+- [x] Extend the ready file:
 
 ```json
 {
@@ -452,7 +452,7 @@ tab -> RenderTargetTab
 }
 ```
 
-- [ ] Add `/lightning/local/context.json` that returns active context, PageReference, apps, routes, mounted components, diagnostics, and supported services.
+- [x] Add `/lightning/local/context.json` that returns active context, PageReference, apps, routes, mounted components, diagnostics, and supported services.
 
 **Focused Verification:**
 
@@ -494,19 +494,19 @@ Expected:
 
 **Steps:**
 
-- [ ] Parse `targetConfigs`.
-- [ ] Parse `targetConfig targets`.
-- [ ] Parse property fields: `name`, `type`, `label`, `description`, `default`, `required`, `placeholder`, `min`, `max`, `datasource`, and `role`.
-- [ ] Parse supported objects.
-- [ ] Parse supported form factors.
-- [ ] Parse quick action `actionType`.
-- [ ] Parse URL-addressable target.
-- [ ] Parse FlexiPage API 48 legacy `componentInstances`.
-- [ ] Parse FlexiPage API 49+ `itemInstances`.
-- [ ] Parse `valueList` properties and preserve string lists.
-- [ ] Parse component visibility rules for simple field equality and boolean expressions.
-- [ ] Parse CustomApplication metadata enough for app label, nav items, default landing tab, and console flag.
-- [ ] Make resolver choose:
+- [x] Parse `targetConfigs`.
+- [x] Parse `targetConfig targets`.
+- [x] Parse property fields: `name`, `type`, `label`, `description`, `default`, `required`, `placeholder`, `min`, `max`, `datasource`, and `role`.
+- [x] Parse supported objects.
+- [x] Parse supported form factors.
+- [x] Parse quick action `actionType`.
+- [x] Parse URL-addressable target.
+- [x] Parse FlexiPage API 48 legacy `componentInstances`.
+- [x] Parse FlexiPage API 49+ `itemInstances`.
+- [x] Parse `valueList` properties and preserve string lists.
+- [x] Parse component visibility rules for simple field equality and boolean expressions.
+- [x] Parse CustomApplication metadata enough for app label, nav items, default landing tab, and console flag.
+- [x] Make resolver choose:
 
 ```text
 direct component route from LWC target metadata
@@ -519,7 +519,7 @@ URL-addressable component route from lightning__UrlAddressable
 quick action route from lightning__RecordAction
 ```
 
-- [ ] Add diagnostics:
+- [x] Add diagnostics:
 
 ```text
 GLADELWC030 target config invalid
@@ -558,11 +558,11 @@ go test ./internal/lwc ./internal/lwcshell -run 'Meta|TargetConfig|FlexiPage|App
 
 **Steps:**
 
-- [ ] Replace direct `window.location.assign` in the navigation shim with a shell navigation service.
-- [ ] Keep `NavigationMixin.Navigate`.
-- [ ] Keep `NavigationMixin.GenerateUrl`.
-- [ ] Keep `CurrentPageReference` as a wire adapter.
-- [ ] Support PageReference types:
+- [x] Replace direct `window.location.assign` in the navigation shim with a shell navigation service.
+- [x] Keep `NavigationMixin.Navigate`.
+- [x] Keep `NavigationMixin.GenerateUrl`.
+- [x] Keep `CurrentPageReference` as a wire adapter.
+- [x] Support PageReference types:
 
 ```text
 standard__recordPage
@@ -576,9 +576,9 @@ standard__quickAction
 standard__webPage
 ```
 
-- [ ] Generate local URLs under `/lwc/preview/*` where possible.
-- [ ] Redirect Visualforce tabs and Visualforce page references to `/apex/<Page>`.
-- [ ] Add unsupported diagnostics for Salesforce-only destinations:
+- [x] Generate local URLs under `/lwc/preview/*` where possible.
+- [x] Redirect Visualforce tabs and Visualforce page references to `/apex/<Page>`.
+- [x] Add unsupported diagnostics for Salesforce-only destinations:
 
 ```text
 GLADELWC040 navigation target unsupported
@@ -586,10 +586,10 @@ GLADELWC041 quick action context missing
 GLADELWC042 object page unsupported
 ```
 
-- [ ] Implement `lightning/platformShowToastEvent` with visible shell toasts and captured test events.
-- [ ] Implement `lightning/messageService` with local in-page channels.
-- [ ] Implement `lightning/platformResourceLoader` for local static resources and scripts.
-- [ ] Add browser tests for GenerateUrl, Navigate, CurrentPageReference re-emit, toast display, LMS publish/subscribe, and resource loading.
+- [x] Implement `lightning/platformShowToastEvent` with visible shell toasts and captured test events.
+- [x] Implement `lightning/messageService` with local in-page channels.
+- [x] Implement `lightning/platformResourceLoader` for local static resources and scripts.
+- [x] Add browser tests for GenerateUrl, Navigate, CurrentPageReference re-emit, toast display, LMS publish/subscribe, and resource loading.
 
 **Focused Verification:**
 
@@ -621,14 +621,14 @@ npm --prefix lwcruntime test -- --test-name-pattern='navigation|services'
 
 **Steps:**
 
-- [ ] Preserve existing Apex wire route.
-- [ ] Add imperative Apex call helper from `@salesforce/apex/Class.method`.
-- [ ] Enforce object-shaped Apex params.
-- [ ] Treat `undefined` wire params as suppressed invocation.
-- [ ] Treat `null` wire params as explicit invocation values.
-- [ ] Preserve array, object, string, number, boolean, date string, and null JSON shapes.
-- [ ] Run Apex through the local VM with current user and local org state.
-- [ ] Return Salesforce-shaped error bodies:
+- [x] Preserve existing Apex wire route.
+- [x] Add imperative Apex call helper from `@salesforce/apex/Class.method`.
+- [x] Enforce object-shaped Apex params.
+- [x] Treat `undefined` wire params as suppressed invocation.
+- [x] Treat `null` wire params as explicit invocation values.
+- [x] Preserve array, object, string, number, boolean, date string, and null JSON shapes.
+- [x] Run Apex through the local VM with current user and local org state.
+- [x] Return Salesforce-shaped error bodies:
 
 ```json
 {
@@ -641,10 +641,10 @@ npm --prefix lwcruntime test -- --test-name-pattern='navigation|services'
 }
 ```
 
-- [ ] Add cacheable wire behavior with deterministic local cache keys.
-- [ ] Add `refreshApex` for Apex wires.
-- [ ] Add tests for success, thrown exception, validation error, missing class, missing method, wrong params, undefined suppression, and null invocation.
-- [ ] Add the same Apex wire and imperative calls inside Visualforce Lightning Out fixture pages.
+- [x] Add cacheable wire behavior with deterministic local cache keys.
+- [x] Add `refreshApex` for Apex wires.
+- [x] Add tests for success, thrown exception, validation error, missing class, missing method, wrong params, undefined suppression, and null invocation.
+- [x] Add the same Apex wire and imperative calls inside Visualforce Lightning Out fixture pages.
 
 **Focused Verification:**
 
@@ -677,29 +677,29 @@ npm --prefix lwcruntime test -- --test-name-pattern='visualforce'
 
 **Steps:**
 
-- [ ] Keep existing `getRecord`.
-- [ ] Keep existing `getObjectInfo`.
-- [ ] Add `getFieldValue`.
-- [ ] Add `getFieldDisplayValue`.
-- [ ] Add `getRecordNotifyChange` compatibility if still used by older LWC code.
-- [ ] Add `notifyRecordUpdateAvailable`.
-- [ ] Add `refreshApex` invalidation for LDS-backed wires.
-- [ ] Add `createRecord`.
-- [ ] Add `updateRecord`.
-- [ ] Add `deleteRecord`.
-- [ ] Add `getPicklistValues`.
-- [ ] Add `getPicklistValuesByRecordType`.
-- [ ] Add `getRelatedListRecords` for deterministic child relationships in local schema.
-- [ ] Add `getListUi` diagnostic:
+- [x] Keep existing `getRecord`.
+- [x] Keep existing `getObjectInfo`.
+- [x] Add `getFieldValue`.
+- [x] Add `getFieldDisplayValue`.
+- [x] Add `getRecordNotifyChange` compatibility if still used by older LWC code.
+- [x] Add `notifyRecordUpdateAvailable`.
+- [x] Add `refreshApex` invalidation for LDS-backed wires.
+- [x] Add `createRecord`.
+- [x] Add `updateRecord`.
+- [x] Add `deleteRecord`.
+- [x] Add `getPicklistValues`.
+- [x] Add `getPicklistValuesByRecordType`.
+- [x] Add `getRelatedListRecords` for deterministic child relationships in local schema.
+- [x] Add `getListUi` diagnostic:
 
 ```text
 GLADELWC050 getListUi unsupported locally; use getRelatedListRecords or local SOQL-backed Apex
 ```
 
-- [ ] Add local LDS cache keyed by record ID, fields, optional fields, layout types, modes, object info, and related list params.
-- [ ] Re-emit wire values after create/update/delete/notify when cache keys overlap.
-- [ ] Use local DML/storage paths for mutations.
-- [ ] Add tests for field helper functions, mutation invalidation, picklists, related lists, missing record, missing field, readonly field, required field, and deleted record.
+- [x] Add local LDS cache keyed by record ID, fields, optional fields, layout types, modes, object info, and related list params.
+- [x] Re-emit wire values after create/update/delete/notify when cache keys overlap.
+- [x] Use local DML/storage paths for mutations.
+- [x] Add tests for field helper functions, mutation invalidation, picklists, related lists, missing record, missing field, readonly field, required field, and deleted record.
 
 **Focused Verification:**
 
@@ -750,11 +750,11 @@ npm --prefix lwcruntime test -- --test-name-pattern='lds|record'
 
 **Steps:**
 
-- [ ] Add SLDS 2 as the default shell theme.
-- [ ] Add SLDS 1 fallback switch.
-- [ ] Serve CSS from local assets. Do not fetch CDN assets.
-- [ ] Generate icon assets or serve stable local icon placeholders for utility, action, standard, and custom icons.
-- [ ] Support Tier 1 base components:
+- [x] Add SLDS 2 as the default shell theme.
+- [x] Add SLDS 1 fallback switch.
+- [x] Serve CSS from local assets. Do not fetch CDN assets.
+- [x] Generate icon assets or serve stable local icon placeholders for utility, action, standard, and custom icons.
+- [x] Support Tier 1 base components:
 
 ```text
 lightning-button
@@ -771,7 +771,7 @@ lightning-spinner
 lightning-icon
 ```
 
-- [ ] Support Tier 2 data components:
+- [x] Support Tier 2 data components:
 
 ```text
 lightning-datatable
@@ -783,7 +783,7 @@ lightning-input-field
 lightning-messages
 ```
 
-- [ ] Dispatch common events:
+- [x] Dispatch common events:
 
 ```text
 click
@@ -796,7 +796,7 @@ rowaction
 active
 ```
 
-- [ ] Add diagnostics:
+- [x] Add diagnostics:
 
 ```text
 GLADELWC060 base component unsupported
@@ -804,8 +804,8 @@ GLADELWC061 base component attribute unsupported
 GLADELWC062 SLDS asset missing
 ```
 
-- [ ] Add screenshot or DOM shape tests for card, inputs, datatable, record form, tabs, modal, and toast.
-- [ ] Run the same base component probes inside Visualforce Lightning Out.
+- [x] Add screenshot or DOM shape tests for card, inputs, datatable, record form, tabs, modal, and toast.
+- [x] Run the same base component probes inside Visualforce Lightning Out.
 
 **Focused Verification:**
 

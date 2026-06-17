@@ -1,6 +1,6 @@
 # Phase 1: Metadata And Target Model Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan with parallel subagent squads. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan with parallel subagent squads. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Parse LWC config, FlexiPage metadata, and custom tab metadata into a typed model that the shell can resolve.
 
@@ -38,8 +38,8 @@ Use parallel subagent squads where files do not overlap. The coordinator integra
 
 ## Implementation Steps
 
-- [ ] Define `RenderTargetKind` constants: `Component`, `RecordPage`, `AppPage`, `HomePage`, `Tab`.
-- [ ] Define `PageContext` in `model.go`:
+- [x] Define `RenderTargetKind` constants: `Component`, `RecordPage`, `AppPage`, `HomePage`, `Tab`.
+- [x] Define `PageContext` in `model.go`:
 
 ```go
 type PageContext struct {
@@ -58,12 +58,12 @@ type PageContext struct {
 }
 ```
 
-- [ ] Define `ComponentConfig` with `IsExposed`, `APIVersion`, `Targets`, `TargetConfigs`, `Properties`, `SupportedObjects`, and `SupportedFormFactors`.
-- [ ] Extend `internal/lwc.ParseComponentMeta` or wrap it from `internal/lwcshell` so current callers keep compiling.
-- [ ] Parse `targetConfigs>targetConfig` attributes, property tags, objects, and supported form factors. Preserve XML type precedence.
-- [ ] Parse FlexiPage fields: `masterLabel`, `type`, `sobjectType`, `template`, `flexiPageRegions`, `itemInstances`, legacy `componentInstances`, `componentInstanceProperties`, `identifier`, `visibilityRule`, and `events`.
-- [ ] Parse custom tabs enough to identify tab full name, label, LWC component target, and FlexiPage target. Record unsupported tab flavors with diagnostics.
-- [ ] Implement `ResolveComponentTarget(project, name, context)` and reject non-exposed or target-mismatched components with stable diagnostic codes:
+- [x] Define `ComponentConfig` with `IsExposed`, `APIVersion`, `Targets`, `TargetConfigs`, `Properties`, `SupportedObjects`, and `SupportedFormFactors`.
+- [x] Extend `internal/lwc.ParseComponentMeta` or wrap it from `internal/lwcshell` so current callers keep compiling.
+- [x] Parse `targetConfigs>targetConfig` attributes, property tags, objects, and supported form factors. Preserve XML type precedence.
+- [x] Parse FlexiPage fields: `masterLabel`, `type`, `sobjectType`, `template`, `flexiPageRegions`, `itemInstances`, legacy `componentInstances`, `componentInstanceProperties`, `identifier`, `visibilityRule`, and `events`.
+- [x] Parse custom tabs enough to identify tab full name, label, LWC component target, and FlexiPage target. Record unsupported tab flavors with diagnostics.
+- [x] Implement `ResolveComponentTarget(project, name, context)` and reject non-exposed or target-mismatched components with stable diagnostic codes:
   - `GLADELWC001` component not found
   - `GLADELWC002` component not exposed
   - `GLADELWC003` target not supported
@@ -71,8 +71,8 @@ type PageContext struct {
   - `GLADELWC005` form factor not supported
   - `GLADELWC006` page metadata not found
   - `GLADELWC007` tab target unsupported
-- [ ] Implement `ResolvePageTarget(project, PageContext)` that returns page regions with ordered component instances and property values.
-- [ ] Add tests for API 48 legacy array values and API 49 `valueList` values in FlexiPage component properties.
+- [x] Implement `ResolvePageTarget(project, PageContext)` that returns page regions with ordered component instances and property values.
+- [x] Add tests for API 48 legacy array values and API 49 `valueList` values in FlexiPage component properties.
 
 ## Verification
 

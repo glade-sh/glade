@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "node esbuild.config.mjs",
-    "test": "npm run build && node --test test/*.test.mjs"
+    "test": "npm run build && node --test --test-concurrency=1 test/*.test.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.28.1",

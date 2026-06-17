@@ -1,6 +1,6 @@
 # Phase 2: Direct Component Shell Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan with parallel subagent squads. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan with parallel subagent squads. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Add `glade dev lwc` for isolated local LWC preview with hot reload, shell context, route-discovered previews, and browser-testable routes.
 
@@ -39,7 +39,7 @@ Use parallel subagent squads where files do not overlap. The coordinator integra
 
 ## Implementation Steps
 
-- [ ] Add `glade dev lwc` under `runDev` with server flags:
+- [x] Add `glade dev lwc` under `runDev` with server flags:
 
 ```text
 --project <root>
@@ -48,8 +48,8 @@ Use parallel subagent squads where files do not overlap. The coordinator integra
 --ready-file <path>
 ```
 
-- [ ] Keep `glade dev vf` untouched except shared helpers that already exist.
-- [ ] Add startup output:
+- [x] Keep `glade dev vf` untouched except shared helpers that already exist.
+- [x] Add startup output:
 
 ```text
 LWC dev shell: http://127.0.0.1:8080
@@ -58,13 +58,13 @@ Routes:
 Watching <root> for lwc, flexipage, tab, Visualforce, Apex, and static resource changes.
 ```
 
-- [ ] Add `Server.HandleLWCShell` with route parsing and method checks. Unknown routes must return Glade JSON error, not a blank page.
-- [ ] Add shell context sent to the browser. It must include namespace, component tag, route-derived public properties, `PageContext`, import map, manifest, and diagnostics.
-- [ ] Update browser bootstrap so it can mount a component by tag without `$Lightning.createComponent`.
-- [ ] Inject `recordId` and `objectApiName` as public properties when query parameters or page context are present.
-- [ ] Add a right-side dev context panel only in local shell pages. It shows target, page type, record id, object, form factor, and diagnostics.
-- [ ] Hot reload must rebuild source metadata, reset Lightning cache, and report the count of changed files. Do not restart the process.
-- [ ] `--ready-file` writes the bound URL and discovered routes for scripts.
+- [x] Add `Server.HandleLWCShell` with route parsing and method checks. Unknown routes must return Glade JSON error, not a blank page.
+- [x] Add shell context sent to the browser. It must include namespace, component tag, route-derived public properties, `PageContext`, import map, manifest, and diagnostics.
+- [x] Update browser bootstrap so it can mount a component by tag without `$Lightning.createComponent`.
+- [x] Inject `recordId` and `objectApiName` as public properties when query parameters or page context are present.
+- [x] Add a right-side dev context panel only in local shell pages. It shows target, page type, record id, object, form factor, and diagnostics.
+- [x] Hot reload must rebuild source metadata, reset Lightning cache, and report the count of changed files. Do not restart the process.
+- [x] `--ready-file` writes the bound URL and discovered routes for scripts.
 
 ## Verification
 

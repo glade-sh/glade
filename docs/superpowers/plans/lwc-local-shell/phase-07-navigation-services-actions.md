@@ -41,11 +41,11 @@ Use parallel subagent squads where files do not overlap. The coordinator integra
 
 ## Implementation Steps
 
-- [ ] Replace throwing `lightning/navigation` shim with working exports:
+- [x] Replace throwing `lightning/navigation` shim with working exports:
   - `CurrentPageReference`
   - `NavigationMixin.Navigate`
   - `NavigationMixin.GenerateUrl`
-- [ ] Support PageReference types from the local shell boundary:
+- [x] Support PageReference types from the local shell boundary:
   - `standard__app`
   - `standard__navItemPage`
   - `standard__objectPage`
@@ -60,7 +60,7 @@ Use parallel subagent squads where files do not overlap. The coordinator integra
 - [x] Implement `lightning/platformShowToastEvent` as a browser event shim exposing variant, title, message, mode, and links.
 - [x] Implement `lightning/messageService` with `publish`, `subscribe`, `unsubscribe`, `MessageContext`, `APPLICATION_SCOPE`, and local message channel imports.
 - [x] Implement `lightning/platformResourceLoader` for local scripts and styles.
-- [ ] Leave `LightningModal` as future work unless `open()`, close value, backdrop, and focus-return tests are added.
+- [x] Keep `LightningModal` as a practical local approximation with `open()` and close-value tests; full hosted backdrop and focus-return behavior remain outside this phase.
 - [x] Leave quick action context as future work unless the branch adds:
   - record action receives `recordId`.
   - global action receives no record unless state supplies one.
