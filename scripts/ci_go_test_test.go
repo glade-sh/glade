@@ -38,6 +38,7 @@ func TestCIGoTestWrapperIsWired(t *testing.T) {
 		"timeout-minutes: 30",
 		"timeout-minutes: 75",
 		"GOMAXPROCS: \"2\"",
+		"go-version: \"1.26.3\"",
 		"actions/checkout@v6",
 		"actions/setup-go@v6",
 		"actions/setup-node@v6",
