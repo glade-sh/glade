@@ -4,6 +4,7 @@ set -eu
 repo="glade-sh/glade"
 install_dir="${GLADE_INSTALL_DIR:-$HOME/.local/bin}"
 version="${GLADE_VERSION:-latest}"
+github_token="${GLADE_GITHUB_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}"
 
 need() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -17,6 +18,17 @@ need grep
 need install
 need tar
 need uname
+
+curl_github() {
+  if [ -n "$github_token" ]; then
+    curl \
+      -H "Authorization: Bearer $github_token" \
+      -H "X-GitHub-Api-Version: 2022-11-28" \
+      "$@"
+  else
+    curl "$@"
+  fi
+}
 
 os="$(uname -s)"
 arch="$(uname -m)"
@@ -40,7 +52,11 @@ case "$arch" in
 esac
 
 if [ "$version" = "latest" ]; then
-  latest_url="$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$repo/releases/latest")"
+  latest_url="$(curl_github -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$repo/releases/latest")" || {
+    echo "glade install: could not resolve latest release" >&2
+    echo "glade install: for a private repo, export GLADE_GITHUB_TOKEN with contents:read access" >&2
+    exit 1
+  }
   version="${latest_url##*/}"
 fi
 
@@ -57,8 +73,16 @@ trap cleanup EXIT INT TERM
 mkdir -p "$install_dir"
 
 echo "glade install: downloading $url"
-curl -fL "$url" -o "$tmpdir/$archive"
-curl -fL "$checksums_url" -o "$tmpdir/SHA256SUMS.txt"
+curl_github -fL "$url" -o "$tmpdir/$archive" || {
+  echo "glade install: archive download failed" >&2
+  echo "glade install: for a private repo, export GLADE_GITHUB_TOKEN with contents:read access" >&2
+  exit 1
+}
+curl_github -fL "$checksums_url" -o "$tmpdir/SHA256SUMS.txt" || {
+  echo "glade install: checksum download failed" >&2
+  echo "glade install: for a private repo, export GLADE_GITHUB_TOKEN with contents:read access" >&2
+  exit 1
+}
 
 checksum_line="$(grep "  \\./$archive\$" "$tmpdir/SHA256SUMS.txt")" || {
   echo "glade install: checksum not found for $archive" >&2

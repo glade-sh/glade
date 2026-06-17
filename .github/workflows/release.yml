@@ -27,15 +27,15 @@ jobs:
             artifact: darwin-arm64
     runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
-          go-version-file: go.mod
-      - uses: actions/setup-node@v4
+          go-version: "1.26.3"
+      - uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "22"
       - name: Build release artifacts
         shell: bash
         env:
