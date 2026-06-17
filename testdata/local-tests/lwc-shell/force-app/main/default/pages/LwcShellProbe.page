@@ -1,0 +1,16 @@
+<apex:page showHeader="false" sidebar="false">
+    <apex:includeLightning />
+    <div id="contextHost">Loading context...</div>
+    <script>
+        $Lightning.use("c:lightningOut", function() {
+            $Lightning.createComponent(
+                "c:contextProbe",
+                { title: "VF Explicit Context", recordId: "001000000000001AAA" },
+                "contextHost",
+                function(cmp, status, errorMessage) {
+                    window.__lwcShellProbeStatus = { status: status, errorMessage: errorMessage };
+                }
+            );
+        });
+    </script>
+</apex:page>

@@ -88,6 +88,21 @@ func ShimsDir() (string, error) {
 	return filepath.Join(root, "lwcruntime", "src", "shims"), nil
 }
 
+// RuntimeAssetDir holds browser runtime modules served at /lightning/runtime/.
+func RuntimeAssetDir(name string) (string, error) {
+	name = strings.TrimSpace(name)
+	switch name {
+	case "lightning", "shell", "slds":
+	default:
+		return "", fmt.Errorf("unknown LWC runtime asset directory %q", name)
+	}
+	root, err := Root()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(root, "lwcruntime", "src", name), nil
+}
+
 // UserShareDir is the default global install location (~/.local/share/glade).
 func UserShareDir() string {
 	if xdg := strings.TrimSpace(os.Getenv("XDG_DATA_HOME")); xdg != "" {
@@ -181,9 +196,16 @@ func validateRoot(root string) (string, bool) {
 	if _, err := os.Stat(vendor); err != nil {
 		return "", false
 	}
-	shim := filepath.Join(root, "lwcruntime", "src", "shims", "wire-adapter.mjs")
-	if _, err := os.Stat(shim); err != nil {
-		return "", false
+	for _, required := range []string{
+		filepath.Join(root, "lwcruntime", "src", "shims", "wire-adapter.mjs"),
+		filepath.Join(root, "lwcruntime", "src", "shims", "lds-cache.mjs"),
+		filepath.Join(root, "lwcruntime", "src", "shell", "app.mjs"),
+		filepath.Join(root, "lwcruntime", "src", "slds", "slds-loader.mjs"),
+		filepath.Join(root, "lwcruntime", "src", "lightning", "button.mjs"),
+	} {
+		if _, err := os.Stat(required); err != nil {
+			return "", false
+		}
 	}
 	return filepath.Clean(root), true
 }

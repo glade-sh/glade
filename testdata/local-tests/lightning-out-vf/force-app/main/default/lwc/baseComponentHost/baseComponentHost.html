@@ -1,0 +1,13 @@
+<template>
+    <section data-probe="vf-base">
+        <lightning-card title="VF Base Card">
+            <lightning-button label="Save VF"></lightning-button>
+            <lightning-input label="VF Name" value="Ada"></lightning-input>
+            <lightning-datatable
+                key-field="id"
+                columns={columns}
+                data={rows}>
+            </lightning-datatable>
+        </lightning-card>
+    </section>
+</template>

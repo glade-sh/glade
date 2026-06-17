@@ -23,6 +23,16 @@ need_text() {
 
 need_file "sfdx-project.json"
 need_text "sfdx-project.json" "\"path\": \"force-app\""
+need_file "glade.lwc.json"
+need_text "glade.lwc.json" "\"defaultContext\": \"accountRecord\""
+
+for context in accountRecord salesDashboard home tab urlAddressableAction recordAction globalAction apexWire ldsRecord uiObjectInfo uiRelatedList uiLayout baseComponents; do
+    need_text "glade.lwc.json" "\"$context\""
+done
+
+for target in recordPage appPage homePage tab urlAddressable recordAction globalAction component; do
+    need_text "glade.lwc.json" "\"target\": \"$target\""
+done
 
 need_file "force-app/main/default/classes/LwcProbeController.cls"
 need_file "force-app/main/default/classes/LwcProbeController.cls-meta.xml"
@@ -30,7 +40,7 @@ need_text "force-app/main/default/classes/LwcProbeController.cls" "@AuraEnabled(
 need_text "force-app/main/default/classes/LwcProbeController.cls" "wireAccounts"
 need_text "force-app/main/default/classes/LwcProbeController.cls" "imperativeAccount"
 
-for bundle in contextProbe recordProbe wireProbe; do
+for bundle in contextProbe recordProbe wireProbe layoutProbe objectInfoProbe relatedListProbe baseComponentHost; do
     need_file "force-app/main/default/lwc/$bundle/$bundle.js"
     need_file "force-app/main/default/lwc/$bundle/$bundle.html"
     need_file "force-app/main/default/lwc/$bundle/$bundle.js-meta.xml"
@@ -41,6 +51,9 @@ need_text "force-app/main/default/lwc/contextProbe/contextProbe.js" "@salesforce
 need_text "force-app/main/default/lwc/recordProbe/recordProbe.js" "lightning/uiRecordApi"
 need_text "force-app/main/default/lwc/wireProbe/wireProbe.js" "@salesforce/apex/LwcProbeController.wireAccounts"
 need_text "force-app/main/default/lwc/wireProbe/wireProbe.js" "imperativeAccount"
+need_text "force-app/main/default/lwc/layoutProbe/layoutProbe.js" "lightning/uiLayoutApi"
+need_text "force-app/main/default/lwc/objectInfoProbe/objectInfoProbe.js" "lightning/uiObjectInfoApi"
+need_text "force-app/main/default/lwc/relatedListProbe/relatedListProbe.js" "lightning/uiRelatedListApi"
 
 for page in Account_Record_Page Sales_Dashboard Custom_Home; do
     need_file "force-app/main/default/flexipages/$page.flexipage-meta.xml"
@@ -58,6 +71,13 @@ need_file "force-app/main/default/aura/lwcHomeTemplate/lwcHomeTemplate.cmp"
 need_file "force-app/main/default/aura/lwcHomeTemplate/lwcHomeTemplate.cmp-meta.xml"
 need_file "force-app/main/default/aura/lwcHomeTemplate/lwcHomeTemplate.design"
 need_text "force-app/main/default/aura/lwcHomeTemplate/lwcHomeTemplate.cmp" "lightning:homeTemplate"
+need_file "force-app/main/default/aura/lightningOut/lightningOut.app"
+need_text "force-app/main/default/aura/lightningOut/lightningOut.app" "c:contextProbe"
+need_text "force-app/main/default/aura/lightningOut/lightningOut.app" "c:baseComponentHost"
+need_file "force-app/main/default/pages/LwcShellProbe.page"
+need_file "force-app/main/default/pages/MultiWidgetHost.page"
+need_text "force-app/main/default/pages/LwcShellProbe.page" 'c:contextProbe'
+need_text "force-app/main/default/pages/MultiWidgetHost.page" 'c:baseComponentHost'
 
 need_file "force-app/main/default/tabs/Lwc_Probe.tab-meta.xml"
 need_text "force-app/main/default/tabs/Lwc_Probe.tab-meta.xml" "<label>LWC Probe</label>"

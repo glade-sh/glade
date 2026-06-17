@@ -11,7 +11,13 @@ import (
 
 // SalesforceImportMap returns import-map entries for @salesforce/* and lightning/* modules.
 func SalesforceImportMap() map[string]string {
-	return map[string]string{
+	imports := map[string]string{
+		"@glade/shell/app":                 "/lightning/runtime/shell/app.js",
+		"@glade/shell/router":              "/lightning/runtime/shell/router.js",
+		"@glade/shell/contextPanel":        "/lightning/runtime/shell/context-panel.js",
+		"@glade/shell/diagnostics":         "/lightning/runtime/shell/diagnostics.js",
+		"@glade/slds":                      "/lightning/runtime/slds/slds-loader.js",
+		"@salesforce/apex":                 "/lightning/shims/core/apex.js",
 		"@salesforce/apex/":                "/lightning/shims/apex/",
 		"@salesforce/contentAssetUrl/":     "/lightning/shims/contentAssetUrl/",
 		"@salesforce/i18n/":                "/lightning/shims/i18n/",
@@ -24,145 +30,17 @@ func SalesforceImportMap() map[string]string {
 		"lightning/navigation":             "/lightning/shims/lightning/navigation.js",
 		"lightning/platformResourceLoader": "/lightning/shims/lightning/platformResourceLoader.js",
 		"lightning/platformShowToastEvent": "/lightning/shims/lightning/platformShowToastEvent.js",
+		"lightning/platformWorkspaceApi":   "/lightning/shims/lightning/platformWorkspaceApi.js",
+		"lightning/uiLayoutApi":            "/lightning/shims/lightning/uiLayoutApi.js",
+		"lightning/uiListApi":              "/lightning/shims/lightning/uiListApi.js",
+		"lightning/uiObjectInfoApi":        "/lightning/shims/lightning/uiObjectInfoApi.js",
+		"lightning/uiRelatedListApi":       "/lightning/shims/lightning/uiRelatedListApi.js",
 		"lightning/uiRecordApi":            "/lightning/shims/lightning/uiRecordApi.js",
 	}
-}
-
-var lightningBaseComponentModules = map[string]bool{
-	"accordion":          true,
-	"accordionsection":   true,
-	"avatar":             true,
-	"badge":              true,
-	"button":             true,
-	"buttongroup":        true,
-	"buttonicon":         true,
-	"buttoniconstateful": true,
-	"buttonmenu":         true,
-	"card":               true,
-	"checkboxgroup":      true,
-	"combobox":           true,
-	"datatable":          true,
-	"duallistbox":        true,
-	"formattedaddress":   true,
-	"formatteddatetime":  true,
-	"formattedemail":     true,
-	"formattedlocation":  true,
-	"formattedname":      true,
-	"formattednumber":    true,
-	"formattedphone":     true,
-	"formattedrichtext":  true,
-	"formattedtext":      true,
-	"formattedtime":      true,
-	"formattedurl":       true,
-	"helptext":           true,
-	"icon":               true,
-	"input":              true,
-	"inputaddress":       true,
-	"inputfield":         true,
-	"inputlocation":      true,
-	"layout":             true,
-	"layoutitem":         true,
-	"menuitem":           true,
-	"menusubheader":      true,
-	"outputfield":        true,
-	"pill":               true,
-	"pillcontainer":      true,
-	"progressbar":        true,
-	"progressindicator":  true,
-	"progressring":       true,
-	"radiogroup":         true,
-	"recordeditform":     true,
-	"recordform":         true,
-	"recordviewform":     true,
-	"select":             true,
-	"slider":             true,
-	"spinner":            true,
-	"tab":                true,
-	"tabset":             true,
-	"textarea":           true,
-	"tile":               true,
-	"tree":               true,
-	"treegrid":           true,
-	"verticalnavigation": true,
-}
-
-func IsLightningBaseComponentModule(name string) bool {
-	key := normalizeLightningBaseComponentName(name)
-	return lightningBaseComponentModules[key]
-}
-
-func LightningBaseComponentModuleJS(name string) string {
-	tag := "lightning-" + kebabLightningBaseComponentName(name)
-	className := lightningBaseComponentClassName(name)
-	return fmt.Sprintf(`import { LightningElement, registerTemplate, freezeTemplate, registerComponent } from "lwc";
-function tmpl() { return []; }
-const template = registerTemplate(tmpl);
-tmpl.stylesheets = [];
-freezeTemplate(tmpl);
-class %s extends LightningElement {}
-export default registerComponent(%s, { tmpl: template, sel: %q });
-`, className, className, tag)
-}
-
-func normalizeLightningBaseComponentName(name string) string {
-	name = strings.TrimSpace(name)
-	name = strings.TrimSuffix(name, ".js")
-	name = strings.ReplaceAll(name, "-", "")
-	name = strings.ReplaceAll(name, "_", "")
-	return strings.ToLower(name)
-}
-
-func kebabLightningBaseComponentName(name string) string {
-	name = strings.TrimSpace(strings.TrimSuffix(name, ".js"))
-	if name == "" {
-		return "component"
+	for key, value := range SupportedLightningBaseComponentSpecifiers() {
+		imports[key] = value
 	}
-	var out strings.Builder
-	lastDash := false
-	for i, r := range name {
-		if r == '_' || r == '-' || r == ' ' {
-			if !lastDash && out.Len() > 0 {
-				out.WriteByte('-')
-				lastDash = true
-			}
-			continue
-		}
-		if r >= 'A' && r <= 'Z' {
-			if i > 0 && !lastDash {
-				out.WriteByte('-')
-			}
-			r += 'a' - 'A'
-		}
-		out.WriteRune(r)
-		lastDash = false
-	}
-	value := strings.Trim(out.String(), "-")
-	if value == "" {
-		return "component"
-	}
-	return value
-}
-
-func lightningBaseComponentClassName(name string) string {
-	kebab := kebabLightningBaseComponentName(name)
-	var out strings.Builder
-	out.WriteString("Lightning")
-	upperNext := true
-	for _, r := range kebab {
-		if r == '-' {
-			upperNext = true
-			continue
-		}
-		if upperNext && r >= 'a' && r <= 'z' {
-			r -= 'a' - 'A'
-		}
-		out.WriteRune(r)
-		upperNext = false
-	}
-	if out.String() == "Lightning" {
-		return "LightningComponent"
-	}
-	return out.String()
+	return imports
 }
 
 func ApexWireModuleJS(className, methodName string) string {
@@ -240,63 +118,32 @@ func ContentAssetURLModuleJS(url string) string {
 }
 
 func NavigationModuleJS() string {
-	return `function readConfig() {
-  const node = document.getElementById("glade-lightning-config");
-  if (!node) {
-    return {};
-  }
-  try {
-    return JSON.parse(node.textContent || "{}");
-  } catch (_err) {
-    return {};
-  }
-}
-function currentPageReference() {
-  return readConfig().pageReference || { type: "standard__namedPage", attributes: { pageName: "home" }, state: {} };
-}
-function urlFor(pageReference) {
-  const ref = pageReference || {};
-  const attrs = ref.attributes || {};
-  if (ref.type === "standard__recordPage" && attrs.recordId) {
-    const objectApiName = attrs.objectApiName || "Record";
-    return "/lwc/preview/record/" + encodeURIComponent(objectApiName) + "/" + encodeURIComponent(attrs.recordId);
-  }
-  if (ref.type === "standard__navItemPage" && attrs.apiName) {
-    return "/lwc/preview/tab/" + encodeURIComponent(attrs.apiName);
-  }
-  if (ref.type === "standard__component" && attrs.componentName) {
-    return "/lwc/preview/component/" + String(attrs.componentName).replace(":", "/");
-  }
-  if (ref.type === "standard__webPage" && attrs.url) {
-    return attrs.url;
-  }
-  if (ref.type === "standard__namedPage" && attrs.pageName === "home") {
-    return "/lwc/preview/home";
-  }
-  return "#";
-}
-export const CurrentPageReference = class CurrentPageReferenceAdapter {
-  constructor(dataCallback) {
-    this.dataCallback = dataCallback;
-  }
-  connect() {
-    this.dataCallback(currentPageReference());
-  }
-  update() {
-    this.dataCallback(currentPageReference());
-  }
-  disconnect() {}
-};
+	return `import {
+  CurrentPageReferenceAdapter,
+  generateUrl,
+  navigate,
+} from "/lightning/runtime/shell/navigation-service.js";
+
+export const supportedPageReferenceTypes = [
+  "standard__recordPage",
+  "standard__objectPage",
+  "standard__recordRelationshipPage",
+  "standard__navItemPage",
+  "standard__app",
+  "standard__namedPage",
+  "standard__component",
+  "standard__quickAction",
+  "standard__webPage",
+];
+export const navigationDiagnosticCodes = ["GLADELWC040", "GLADELWC041", "GLADELWC042"];
+export const CurrentPageReference = CurrentPageReferenceAdapter;
 export function NavigationMixin(Base) {
-	  return class extends Base {
-	    [NavigationMixin.Navigate](pageReference) {
-	      const url = urlFor(pageReference);
-	      if (url && url !== "#") {
-	        window.location.assign(url);
-	      }
-	    }
+  return class extends Base {
+    [NavigationMixin.Navigate](pageReference) {
+      navigate(pageReference).catch(() => undefined);
+    }
     [NavigationMixin.GenerateUrl](pageReference) {
-      return Promise.resolve(urlFor(pageReference));
+      return generateUrl(pageReference);
     }
   };
 }
@@ -306,17 +153,152 @@ export default NavigationMixin;
 `
 }
 
+func PlatformWorkspaceAPIModuleJS() string {
+	return `const DIAGNOSTIC_CODE = "GLADELWC072";
+
+function readWorkbench() {
+  const node = document.getElementById("glade-lwc-workbench");
+  if (!node) {
+    return {};
+  }
+  try {
+    return JSON.parse(node.textContent || "{}");
+  } catch (_err) {
+    return {};
+  }
+}
+
+function activeTab() {
+  const model = readWorkbench();
+  const active = model.active || {};
+  const context = active.context || {};
+  const label = context.tabName || context.pageName || context.componentName || model.activeRoute || "Local";
+  return {
+    tabId: model.activeRoute || "local",
+    url: model.activeRoute || "/lwc",
+    title: label,
+    label,
+    icon: "utility:preview",
+    customTitle: label,
+    highlighted: false,
+    closeable: false,
+    workspaceTab: true,
+    gladeDiagnostic: DIAGNOSTIC_CODE,
+  };
+}
+
+export async function getFocusedTabInfo() {
+  return activeTab();
+}
+
+export async function getAllTabInfo() {
+  return [activeTab()];
+}
+
+export async function setTabLabel(tabId, label) {
+  const tab = activeTab();
+  tab.tabId = tabId || tab.tabId;
+  tab.label = label || tab.label;
+  tab.title = tab.label;
+  tab.customTitle = tab.label;
+  return tab;
+}
+
+export async function setTabIcon(tabId, icon) {
+  const tab = activeTab();
+  tab.tabId = tabId || tab.tabId;
+  tab.icon = icon || tab.icon;
+  return tab;
+}
+
+export async function isConsoleNavigation() {
+  return (readWorkbench().mode || "") === "console";
+}
+
+export const workspaceDiagnosticCodes = [DIAGNOSTIC_CODE];
+`
+}
+
 func UIRecordAPIModuleJS() string {
 	return `import { createFetchWireAdapter, createGetRecordWireAdapter } from "/lightning/shims/core/wire-adapter.js";
+import {
+  getRecordNotifyChange,
+  notifyRecordUpdateAvailable,
+  refreshApex,
+} from "/lightning/shims/core/lds-cache.mjs";
+export { getRecordNotifyChange, notifyRecordUpdateAvailable, refreshApex };
 export const getRecord = createGetRecordWireAdapter();
+export const getRecords = createFetchWireAdapter("/lightning/wire/getRecords", (config) => ({
+  records: (config && config.records || []).map((record) => ({
+    recordIds: record && record.recordIds || [],
+    fields: normalizeFields(record && record.fields),
+    optionalFields: normalizeFields(record && record.optionalFields)
+  }))
+}));
 export const getObjectInfo = createFetchWireAdapter("/lightning/wire/getObjectInfo", (config) => ({
   objectApiName: objectApiName(config && config.objectApiName)
 }));
+export const getObjectInfos = createFetchWireAdapter("/lightning/wire/getObjectInfos", (config) => ({
+  objectApiNames: (config && config.objectApiNames || []).map(objectApiName)
+}));
+export const getRecordCreateDefaults = createFetchWireAdapter("/lightning/wire/getRecordCreateDefaults", (config) => ({
+  objectApiName: objectApiName(config && config.objectApiName),
+  recordTypeId: config && config.recordTypeId,
+  optionalFields: normalizeFields(config && config.optionalFields),
+  formFactor: config && config.formFactor
+}));
+export const getPicklistValues = createFetchWireAdapter("/lightning/wire/getPicklistValues", (config) => ({
+  objectApiName: objectApiName(config && config.objectApiName),
+  fieldApiName: fieldApiName(config && config.fieldApiName),
+  recordTypeId: config && config.recordTypeId
+}));
+export const getPicklistValuesByRecordType = createFetchWireAdapter("/lightning/wire/getPicklistValuesByRecordType", (config) => ({
+  objectApiName: objectApiName(config && config.objectApiName),
+  recordTypeId: config && config.recordTypeId
+}));
+export const getRelatedListRecords = createFetchWireAdapter("/lightning/wire/getRelatedListRecords", (config) => ({
+  parentRecordId: config && config.parentRecordId,
+  relatedListId: config && config.relatedListId,
+  fields: normalizeFields(config && config.fields)
+}));
+export const getListUi = class GetListUiUnsupportedAdapter {
+  constructor(dataCallback) {
+    this.dataCallback = dataCallback;
+  }
+  connect() {}
+  disconnect() {}
+  update() {
+    this.dataCallback({
+      data: undefined,
+      error: {
+        code: "GLADELWC050",
+        message: "GLADELWC050 getListUi unsupported locally; use getRelatedListRecords or local SOQL-backed Apex"
+      }
+    });
+  }
+};
 function objectApiName(value) {
   if (value && typeof value === "object" && value.objectApiName) {
     return value.objectApiName;
   }
   return value;
+}
+function fieldApiName(value) {
+  if (value && typeof value === "object") {
+    if (value.fieldApiName && value.objectApiName) {
+      return value.objectApiName + "." + value.fieldApiName;
+    }
+    return value.fieldApiName || "";
+  }
+  return value || "";
+}
+function normalizeFields(fields) {
+  return (fields || []).map((field) => {
+    if (field && typeof field === "object") {
+      return field.objectApiName && field.fieldApiName ? field.objectApiName + "." + field.fieldApiName : field.fieldApiName;
+    }
+    return String(field);
+  });
 }
 function post(endpoint, body) {
   return fetch(endpoint, {
@@ -336,18 +318,48 @@ export function createRecord(recordInput) {
   return post("/lightning/wire/createRecord", {
     apiName: recordInput && (recordInput.apiName || recordInput.objectApiName),
     fields: recordInput && recordInput.fields || {}
-  });
+  }).then((data) => notifyRecordUpdateAvailable(notificationItems(data)).then(() => data));
 }
 export function updateRecord(recordInput) {
+  const recordId = recordInput && recordInput.fields && recordInput.fields.Id;
   return post("/lightning/wire/updateRecord", {
     fields: recordInput && recordInput.fields || {}
-  });
+  }).then((data) => notifyRecordUpdateAvailable(notificationItems(data, recordId)).then(() => data));
 }
 export function deleteRecord(recordId) {
-  return post("/lightning/wire/deleteRecord", { recordId });
+  return post("/lightning/wire/deleteRecord", { recordId })
+    .then((data) => notifyRecordUpdateAvailable(notificationItems(data, recordId)).then(() => data));
 }
-export function getRecordNotifyChange() {
-  return Promise.resolve();
+export function generateRecordInputForCreate(record, objectInfo) {
+  const fields = recordFields(record, objectInfo, "createable");
+  delete fields.Id;
+  return {
+    apiName: record && (record.apiName || record.objectApiName),
+    fields
+  };
+}
+export function generateRecordInputForUpdate(record, objectInfo) {
+  const fields = recordFields(record, objectInfo, "updateable");
+  const id = record && (record.id || record.recordId || fieldValue(record.fields && record.fields.Id));
+  if (id !== undefined && id !== null) {
+    fields.Id = id;
+  }
+  return { fields };
+}
+export function createRecordInputFilteredByEditedFields(recordInput, originalRecord) {
+  const sourceFields = recordInput && recordInput.fields || {};
+  const out = {};
+  for (const [name, value] of Object.entries(sourceFields)) {
+    if (name === "Id") {
+      out[name] = value;
+      continue;
+    }
+    const original = originalRecord && originalRecord.fields && originalRecord.fields[name];
+    if (!sameValue(value, fieldValue(original))) {
+      out[name] = value;
+    }
+  }
+  return Object.assign({}, recordInput || {}, { fields: out });
 }
 export function getFieldValue(record, field) {
   const name = typeof field === "string" ? field.split(".").pop() : field && field.fieldApiName;
@@ -359,11 +371,160 @@ export function getFieldDisplayValue(record, field) {
   const value = record && record.fields && record.fields[name];
   return value ? value.displayValue : undefined;
 }
+function recordFields(record, objectInfo, accessProperty) {
+  const fields = {};
+  const source = record && record.fields || {};
+  for (const [name, wrapped] of Object.entries(source)) {
+    if (name === "Id" && accessProperty === "createable") {
+      continue;
+    }
+    if (!fieldAllows(objectInfo, name, accessProperty)) {
+      continue;
+    }
+    const value = fieldValue(wrapped);
+    if (!recordInputValueSupported(value)) {
+      continue;
+    }
+    fields[name] = value;
+  }
+  return fields;
+}
+function fieldAllows(objectInfo, name, accessProperty) {
+  const fields = objectInfo && objectInfo.fields || {};
+  const field = fields[name];
+  if (!field) {
+    return true;
+  }
+  return field[accessProperty] !== false;
+}
+function fieldValue(value) {
+  if (value && typeof value === "object" && Object.prototype.hasOwnProperty.call(value, "value")) {
+    return value.value;
+  }
+  return value;
+}
+function sameValue(left, right) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+function recordInputValueSupported(value) {
+  return value === null || value === undefined || typeof value !== "object" || Array.isArray(value);
+}
+function notificationItems(record, fallbackId) {
+  const ids = new Set();
+  collectId(ids, fallbackId);
+  collectId(ids, record && record.id);
+  for (const field of Object.values(record && record.fields || {})) {
+    collectId(ids, field && field.value);
+  }
+  return Array.from(ids).map((recordId) => ({ recordId }));
+}
+function collectId(ids, value) {
+  if (typeof value === "string" && /^[a-zA-Z0-9]{15,18}$/.test(value)) {
+    ids.add(value);
+  }
+}
+	`
+}
+
+func UIListAPIModuleJS() string {
+	return `export const getListUi = class GetListUiUnsupportedAdapter {
+  constructor(dataCallback) {
+    this.dataCallback = dataCallback;
+  }
+  connect() {}
+  disconnect() {}
+  update() {
+    this.dataCallback({
+      data: undefined,
+      error: {
+        code: "GLADELWC050",
+        message: "GLADELWC050 getListUi unsupported locally; use getRelatedListRecords or local SOQL-backed Apex"
+      }
+    });
+  }
+};
+`
+}
+
+func UILayoutAPIModuleJS() string {
+	return `import { createFetchWireAdapter } from "/lightning/shims/core/wire-adapter.js";
+export const getLayout = createFetchWireAdapter("/lightning/wire/getLayout", (config) => ({
+  objectApiName: objectApiName(config && config.objectApiName),
+  recordTypeId: config && config.recordTypeId,
+  layoutType: config && config.layoutType,
+  mode: config && config.mode,
+  formFactor: config && config.formFactor
+}));
+function objectApiName(value) {
+  if (value && typeof value === "object" && value.objectApiName) {
+    return value.objectApiName;
+  }
+  return value;
+}
+	`
+}
+
+func UIObjectInfoAPIModuleJS() string {
+	return `import { createFetchWireAdapter } from "/lightning/shims/core/wire-adapter.js";
+export const getObjectInfo = createFetchWireAdapter("/lightning/wire/getObjectInfo", (config) => ({
+  objectApiName: objectApiName(config && config.objectApiName)
+}));
+export const getObjectInfos = createFetchWireAdapter("/lightning/wire/getObjectInfos", (config) => ({
+  objectApiNames: (config && config.objectApiNames || []).map(objectApiName)
+}));
+export const getPicklistValues = createFetchWireAdapter("/lightning/wire/getPicklistValues", (config) => ({
+  objectApiName: objectApiName(config && config.objectApiName),
+  fieldApiName: fieldApiName(config && config.fieldApiName),
+  recordTypeId: config && config.recordTypeId
+}));
+export const getPicklistValuesByRecordType = createFetchWireAdapter("/lightning/wire/getPicklistValuesByRecordType", (config) => ({
+  objectApiName: objectApiName(config && config.objectApiName),
+  recordTypeId: config && config.recordTypeId
+}));
+function objectApiName(value) {
+  if (value && typeof value === "object" && value.objectApiName) {
+    return value.objectApiName;
+  }
+  return value;
+}
+function fieldApiName(value) {
+  if (value && typeof value === "object") {
+    if (value.fieldApiName && value.objectApiName) {
+      return value.objectApiName + "." + value.fieldApiName;
+    }
+    return value.fieldApiName || "";
+  }
+  return value || "";
+}
+	`
+}
+
+func UIRelatedListAPIModuleJS() string {
+	return `import { createFetchWireAdapter } from "/lightning/shims/core/wire-adapter.js";
+export const getRelatedListRecords = createFetchWireAdapter("/lightning/wire/getRelatedListRecords", (config) => ({
+  parentRecordId: config && config.parentRecordId,
+  relatedListId: config && config.relatedListId,
+  fields: normalizeFields(config && config.fields),
+  optionalFields: normalizeFields(config && config.optionalFields),
+  sortBy: normalizeFields(config && config.sortBy),
+  pageSize: config && config.pageSize,
+  pageToken: config && config.pageToken
+}));
+function normalizeFields(fields) {
+  return (fields || []).map((field) => {
+    if (field && typeof field === "object") {
+      return field.objectApiName && field.fieldApiName ? field.objectApiName + "." + field.fieldApiName : field.fieldApiName;
+    }
+    return String(field);
+  });
+}
 `
 }
 
 func ShowToastEventModuleJS() string {
-	return `export class ShowToastEvent extends CustomEvent {
+	return `import { recordToast } from "/lightning/runtime/shell/toast-service.js";
+export { recordToast };
+export class ShowToastEvent extends CustomEvent {
   constructor(detail = {}) {
     super("lightning__showtoast", { bubbles: true, composed: true, cancelable: true, detail });
   }
@@ -410,39 +571,15 @@ export function loadStyle(_self, url) {
 }
 
 func MessageServiceModuleJS() string {
-	return `const channels = new Map();
-export const APPLICATION_SCOPE = Symbol("APPLICATION_SCOPE");
-export class MessageContext {}
-export function createMessageContext() {
-  return new MessageContext();
-}
-export function releaseMessageContext(_context) {}
-export function subscribe(_context, channel, listener) {
-  const key = String(channel && (channel.name || channel) || "default");
-  const bucket = channels.get(key) || new Set();
-  bucket.add(listener);
-  channels.set(key, bucket);
-  return { key, listener };
-}
-export function unsubscribe(subscription) {
-  if (!subscription) {
-    return;
-  }
-  const bucket = channels.get(subscription.key);
-  if (bucket) {
-    bucket.delete(subscription.listener);
-  }
-}
-export function publish(_context, channel, message) {
-  const key = String(channel && (channel.name || channel) || "default");
-  const bucket = channels.get(key);
-  if (!bucket) {
-    return;
-  }
-  for (const listener of [...bucket]) {
-    listener(message);
-  }
-}
+	return `export {
+  APPLICATION_SCOPE,
+  MessageContext,
+  createMessageContext,
+  releaseMessageContext,
+  subscribe,
+  unsubscribe,
+  publish,
+} from "/lightning/runtime/shell/message-service.js";
 `
 }
 

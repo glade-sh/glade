@@ -25,7 +25,10 @@ func InstallFrom(src string) error {
 		rel string
 	}{
 		{rel: "third_party/lwc"},
+		{rel: "lwcruntime/src/lightning"},
+		{rel: "lwcruntime/src/shell"},
 		{rel: "lwcruntime/src/shims"},
+		{rel: "lwcruntime/src/slds"},
 	}
 	for _, pair := range pairs {
 		from := filepath.Join(src, filepath.FromSlash(pair.rel))

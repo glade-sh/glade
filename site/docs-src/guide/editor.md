@@ -66,7 +66,7 @@ monitor those servers until the preview workflow is steadier.
 
 ```bash
 glade toolchain install
-glade dev lwc --project . --port 8080
+glade dev lwc --project . --open
 glade dev vf --project . --port 8080
 ```
 

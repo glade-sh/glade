@@ -84,6 +84,86 @@ func TestLoadFlexiPageParsesLegacyComponentInstances(t *testing.T) {
 	}
 }
 
+func TestLoadFlexiPageParsesValueListProperties(t *testing.T) {
+	path := writeTempFile(t, "Utility_Bar.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
+  <type>UtilityBar</type>
+  <flexiPageRegions>
+    <name>utilityItems</name>
+    <itemInstances>
+      <componentInstance>
+        <componentName>runtime_sales_activities:activityPanel</componentName>
+        <identifier>activityPanel</identifier>
+        <componentInstanceProperties>
+          <name>entityNames</name>
+          <valueList>
+            <valueListItems><value>Dashboard</value></valueListItems>
+            <valueListItems><value>Account</value></valueListItems>
+          </valueList>
+        </componentInstanceProperties>
+      </componentInstance>
+    </itemInstances>
+  </flexiPageRegions>
+</FlexiPage>`)
+
+	page, err := LoadFlexiPage(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	component := page.Regions[0].Components[0]
+	values, ok := ComponentStringListProperty(component, "entityNames")
+	if !ok {
+		t.Fatalf("entityNames value list missing in %#v", component.Properties)
+	}
+	want := []string{"Dashboard", "Account"}
+	if len(values) != len(want) || values[0] != want[0] || values[1] != want[1] {
+		t.Fatalf("entityNames = %#v, want %#v", values, want)
+	}
+}
+
+func TestLoadFlexiPageParsesSimpleVisibilityRule(t *testing.T) {
+	path := writeTempFile(t, "Account_Record_Page.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
+  <type>RecordPage</type>
+  <flexiPageRegions>
+    <name>main</name>
+    <itemInstances>
+      <componentInstance>
+        <componentName>c:memberPanel</componentName>
+        <identifier>memberPanel</identifier>
+        <visibilityRule>
+          <booleanFilter>1 AND 2</booleanFilter>
+          <criteria>
+            <leftValue>{!Record.Status__c}</leftValue>
+            <operator>EQUAL</operator>
+            <rightValue>Active</rightValue>
+          </criteria>
+          <criteria>
+            <leftValue>{!$Permission.CustomPermission.MemberAccess}</leftValue>
+            <operator>EQUAL</operator>
+            <rightValue>true</rightValue>
+          </criteria>
+        </visibilityRule>
+      </componentInstance>
+    </itemInstances>
+  </flexiPageRegions>
+</FlexiPage>`)
+
+	page, err := LoadFlexiPage(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rule, ok := ComponentVisibilityRule(page.Regions[0].Components[0])
+	if !ok {
+		t.Fatalf("visibility rule missing")
+	}
+	if rule.BooleanFilter != "1 AND 2" || len(rule.Criteria) != 2 {
+		t.Fatalf("rule = %#v", rule)
+	}
+	first := rule.Criteria[0]
+	if first.LeftValue != "{!Record.Status__c}" || first.Operator != "EQUAL" || first.RightValue != "Active" {
+		t.Fatalf("first criterion = %#v", first)
+	}
+}
+
 func writeTempFile(t *testing.T, name string, body string) string {
 	t.Helper()
 	dir := t.TempDir()

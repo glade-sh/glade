@@ -96,10 +96,11 @@ func lightningStubJS() string {
 		`function b(q){return n(q).indexOf(":")===-1;}` +
 		`function u(q){return n(q).indexOf("lightning:")===0;}` +
 		`function e(cb,msg){if(typeof cb==="function"){cb(null,"ERROR",msg);}}` +
+		`function d(code,msg,q){return code+" "+msg+": "+q;}` +
 		`window.__gladeLightningPending=window.__gladeLightningPending||[];` +
 		`window.$Lightning=window.$Lightning||{` +
-		`use:function(a,cb){var cfg=c();var apps=(cfg.outApps||[]).map(n);if(apps.indexOf(n(a))===-1){console.error("[glade] Lightning Out app not found",a);e(cb,"Lightning Out app not found: "+a);return;}window.__gladeLightningPending.push(["use",a,cb]);},` +
-		`createComponent:function(q,p,l,cb){var cfg=c();if(b(q)){e(cb,"Bad Lightning component name: "+q);return;}if(u(q)){e(cb,"Unsupported Lightning service: "+q);return;}if(!m(cfg)[n(q)]){console.error("[glade] Lightning component not found",q);e(cb,"Lightning component not found: "+q);return;}window.__gladeLightningPending.push(["create",q,p,l,cb]);}` +
+		`use:function(a,cb){var cfg=c();var apps=(cfg.outApps||[]).map(n);if(apps.indexOf(n(a))===-1){console.error("[glade] Lightning Out app not found",a);e(cb,d("GLADELWC080","Lightning Out app missing",a));return;}window.__gladeLightningPending.push(["use",a,cb]);},` +
+		`createComponent:function(q,p,l,cb){var cfg=c();if(b(q)){e(cb,"Bad Lightning component name: "+q);return;}if(u(q)){e(cb,d("GLADELWC082","Lightning Out service unsupported in Visualforce host",q));return;}if(!m(cfg)[n(q)]){console.error("[glade] Lightning component not found",q);e(cb,d("GLADELWC081","Lightning Out dependency missing",q));return;}window.__gladeLightningPending.push(["create",q,p,l,cb]);}` +
 		`};` +
 		`})();`
 }

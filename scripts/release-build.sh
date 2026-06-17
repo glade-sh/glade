@@ -55,7 +55,10 @@ fi
 
 mkdir -p "${workdir}/share/glade/lwcruntime/src" "${workdir}/share/glade/third_party"
 cp -R "${ROOT}/third_party/lwc" "${workdir}/share/glade/third_party/lwc"
+cp -R "${ROOT}/lwcruntime/src/lightning" "${workdir}/share/glade/lwcruntime/src/lightning"
+cp -R "${ROOT}/lwcruntime/src/shell" "${workdir}/share/glade/lwcruntime/src/shell"
 cp -R "${ROOT}/lwcruntime/src/shims" "${workdir}/share/glade/lwcruntime/src/shims"
+cp -R "${ROOT}/lwcruntime/src/slds" "${workdir}/share/glade/lwcruntime/src/slds"
 
 doctor_out="$("${workdir}/${binary}" doctor --json 2>&1)"
 if [[ "${doctor_out}" != *'"parserOK": true'* ]]; then

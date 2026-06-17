@@ -18,11 +18,13 @@ type FlexiPage struct {
 type RenderTargetKind string
 
 const (
-	RenderTargetComponent  RenderTargetKind = "component"
-	RenderTargetRecordPage RenderTargetKind = "recordPage"
-	RenderTargetAppPage    RenderTargetKind = "appPage"
-	RenderTargetHomePage   RenderTargetKind = "homePage"
-	RenderTargetTab        RenderTargetKind = "tab"
+	RenderTargetComponent      RenderTargetKind = "component"
+	RenderTargetRecordPage     RenderTargetKind = "recordPage"
+	RenderTargetAppPage        RenderTargetKind = "appPage"
+	RenderTargetHomePage       RenderTargetKind = "homePage"
+	RenderTargetTab            RenderTargetKind = "tab"
+	RenderTargetURLAddressable RenderTargetKind = "urlAddressable"
+	RenderTargetQuickAction    RenderTargetKind = "quickAction"
 )
 
 type PageContext struct {
@@ -33,6 +35,8 @@ type PageContext struct {
 	ObjectAPIName string            `json:"objectApiName,omitempty"`
 	AppName       string            `json:"appName,omitempty"`
 	TabName       string            `json:"tabName,omitempty"`
+	ActionName    string            `json:"actionName,omitempty"`
+	ActionType    string            `json:"actionType,omitempty"`
 	FormFactor    string            `json:"formFactor,omitempty"`
 	State         map[string]string `json:"state,omitempty"`
 }
@@ -76,6 +80,16 @@ type CustomTab struct {
 	Type   TabType `json:"type,omitempty"`
 	Target string  `json:"target,omitempty"`
 	File   string  `json:"file,omitempty"`
+}
+
+type QuickAction struct {
+	Name          string `json:"name"`
+	Label         string `json:"label,omitempty"`
+	Type          string `json:"type,omitempty"`
+	TargetObject  string `json:"targetObject,omitempty"`
+	ComponentName string `json:"componentName,omitempty"`
+	ActionType    string `json:"actionType,omitempty"`
+	File          string `json:"file,omitempty"`
 }
 
 func (t CustomTab) UnsupportedDiagnostic() Diagnostic {

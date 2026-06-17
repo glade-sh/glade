@@ -1,0 +1,62 @@
+package lwcshell
+
+import (
+	"reflect"
+	"testing"
+
+	"github.com/glade-sh/glade/internal/project"
+)
+
+func TestBuildWorkbenchModelUsesCustomApplicationNavigation(t *testing.T) {
+	root := t.TempDir()
+	appPath := writeProjectFile(t, root, "force-app/main/default/applications/Lwc_Shell.app-meta.xml", `<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>LWC Shell</label>
+  <navType>Standard</navType>
+  <defaultLandingTab>Lwc_Probe</defaultLandingTab>
+  <tabs>Lwc_Probe</tabs>
+  <tabs>standard-Account</tabs>
+</CustomApplication>`)
+	tabPath := writeProjectFile(t, root, "force-app/main/default/tabs/Lwc_Probe.tab-meta.xml", `<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>LWC Probe</label>
+  <lwcComponent>c:contextProbe</lwcComponent>
+</CustomTab>`)
+	p := project.Project{Root: root, ApplicationFiles: []string{appPath}, TabFiles: []string{tabPath}}
+
+	model := BuildWorkbenchModel(p, ShellPage{Context: PageContext{Kind: RenderTargetTab, AppName: "Lwc_Shell", TabName: "Lwc_Probe"}}, "/lwc/preview/tab/Lwc_Probe")
+
+	if model.Mode != "standard" || len(model.Apps) != 1 {
+		t.Fatalf("model = %#v", model)
+	}
+	app := model.Apps[0]
+	if app.Name != "Lwc_Shell" || app.Label != "LWC Shell" || app.Mode != "standard" {
+		t.Fatalf("app = %#v", app)
+	}
+	if app.DefaultURL != "/lwc/preview/tab/Lwc_Probe" {
+		t.Fatalf("DefaultURL = %q", app.DefaultURL)
+	}
+	wantNav := []string{"Lwc_Probe", "standard-Account"}
+	if !reflect.DeepEqual(app.NavItems, wantNav) {
+		t.Fatalf("NavItems = %#v, want %#v", app.NavItems, wantNav)
+	}
+}
+
+func TestBuildWorkbenchModelUsesConsoleModeForConsoleApplication(t *testing.T) {
+	root := t.TempDir()
+	appPath := writeProjectFile(t, root, "force-app/main/default/applications/Support_Console.app-meta.xml", `<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Support Console</label>
+  <navType>Console</navType>
+  <tabs>standard-Case</tabs>
+  <tabs>Lwc_Probe</tabs>
+</CustomApplication>`)
+	p := project.Project{Root: root, ApplicationFiles: []string{appPath}}
+
+	model := BuildWorkbenchModel(p, ShellPage{Context: PageContext{Kind: RenderTargetAppPage, AppName: "Support_Console", PageName: "Support_Page"}}, "/lwc/preview/app/Support_Page?app=Support_Console")
+
+	if model.Mode != "console" || len(model.Apps) != 1 {
+		t.Fatalf("model = %#v", model)
+	}
+	app := model.Apps[0]
+	if app.Mode != "console" || !reflect.DeepEqual(app.NavItems, []string{"standard-Case", "Lwc_Probe"}) {
+		t.Fatalf("app = %#v", app)
+	}
+}

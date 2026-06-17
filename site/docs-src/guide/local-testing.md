@@ -120,29 +120,77 @@ glade toolchain install
 Serve local LWCs from the project on disk:
 
 ```bash
-glade dev lwc --project . --addr 127.0.0.1:8080
+glade dev lwc --project . --open
 ```
 
-The startup banner lists discovered routes:
+Open a preset from `glade.lwc.json`:
+
+```bash
+glade dev lwc --project . --context accountRecord --open
+```
+
+The local context endpoint at `/lightning/local/context.json` reports the
+active route, PageReference, mounted components, discovered apps, named
+contexts, selected context, diagnostics, routes, and service support.
+
+Use a separate context file when presets live outside the project-root
+`glade.lwc.json`:
+
+```bash
+glade dev lwc --project . --context-file config/lwc-contexts.json --context accountRecord --open
+```
+
+Or open one explicit route:
+
+```bash
+glade dev lwc --project . --target record-page --object Account --record 001000000000001AAA --page Account_Record_Page --open
+```
+
+Use `--target url-addressable`, `--target record-action`, or `--target
+global-action` with `--component`, `--action`, `--object`, and `--record` when
+you need those shell contexts without a named preset.
+
+Use `--port 8080` for the common localhost shortcut. Use `--addr` when scripts
+need a full bind address.
+
+The `/lwc` workbench lists contexts, routes, mounted components, and
+diagnostics. The startup banner still lists discovered routes:
 
 ```text
+/lwc
 /lwc/preview/component/<namespace>/<component>
+/lwc/preview/cmp/<namespace>/<component>?c__name=value
 /lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>
 /lwc/preview/app/<Page>
 /lwc/preview/home/<Page>
 /lwc/preview/tab/<Tab>
+/lwc/preview/action/<Object>/<recordId>/<ActionName>
+/lwc/preview/action/global/<ActionName>
 ```
 
-Record, app, home, and tab routes resolve LWC bundle metadata, FlexiPages, and
-custom tabs. Visualforce-backed tabs redirect to `/apex/<Page>`. Lightning Out
-inside Visualforce uses the same local LWC runtime, Apex wire endpoint, LDS/UI
-API shims, labels, resources, and navigation basics.
+Record, app, home, tab, URL-addressable component, and quick action routes
+resolve LWC bundle metadata, FlexiPages, custom applications, custom tabs, and
+quick action metadata. Visualforce-backed tabs redirect to `/apex/<Page>`. That
+redirect and the shared Lightning Out runtime are the Visualforce boundary in
+this LWC loop.
 
-The shell supports local Apex controller imports, `getRecord`, `getObjectInfo`,
-local DML-backed create/update/delete record helpers, schema tokens, labels,
-static resources, content assets, `CurrentPageReference`, and basic
-`NavigationMixin` behavior. Glade loads fixture records from `data/*.json` when
-they use the Glade storage fixture format.
+The shell supports local Apex controller imports, `getRecord`, `getRecords`,
+`getRecordCreateDefaults`, local DML-backed create/update/delete record helpers,
+record-input helper functions, `lightning/uiObjectInfoApi` object info and
+picklist wires, `lightning/uiRelatedListApi` child rows, schema tokens, labels,
+static resources, content assets, `CurrentPageReference`, basic
+`NavigationMixin` behavior, local message service, resource loading, toast
+events, practical common base components, and SLDS-shaped local styling. Create
+defaults include project layout field sections when available, with a generated
+full layout from createable fields as the local fallback. `lightning/uiLayoutApi`
+`getLayout` returns the same local Record Layout shape. Glade loads fixture
+records from `data/*.json` when they use the Glade storage fixture format.
+
+Tools can read current local shell state at:
+
+```text
+/lightning/local/context.json
+```
 
 See [Local LWC Shell](/guide/lwc-local-shell) for routes, fixtures, and limits.
 

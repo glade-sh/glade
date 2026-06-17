@@ -76,19 +76,19 @@ test("Lightning Out runtime reports dependency, module, name, and service diagno
       "lightning:navigation": {
         cmpIsNull: true,
         status: "ERROR",
-        errorMessage: "Unsupported Lightning service: lightning:navigation",
+        errorMessage: "GLADELWC082 Lightning Out service unsupported in Visualforce host: lightning:navigation",
         argCount: 3,
       },
       "c:eventChild": {
         cmpIsNull: true,
         status: "ERROR",
-        errorMessage: "Lightning dependency not found: c:eventChild",
+        errorMessage: "GLADELWC081 Lightning Out dependency missing: c:eventChild",
         argCount: 3,
       },
       "c:missingModule": {
         cmpIsNull: true,
         status: "ERROR",
-        errorMessage: "Lightning LWC module not found: c:missingModule",
+        errorMessage: "GLADELWC081 Lightning Out dependency missing: c:missingModule",
         argCount: 3,
       },
     });

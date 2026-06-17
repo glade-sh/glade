@@ -103,13 +103,15 @@ glade toolchain install
 Start the preview servers from a terminal:
 
 ```bash
-glade dev lwc --project . --port 8080
+glade dev lwc --project . --open
+glade dev lwc --project . --context accountRecord --open
 glade dev vf --project . --port 8080
 ```
 
-LWC routes use `/lwc/preview/...`. Visualforce routes use `/apex/<Page>`.
-Visualforce-backed LWC tab routes resolve through the LWC shell and then open
-the Visualforce page.
+LWC opens the `/lwc` workbench and can target context presets from
+`glade.lwc.json`. Raw LWC routes use `/lwc/preview/...`. Visualforce routes use
+`/apex/<Page>`. Visualforce-backed LWC tab routes resolve through the LWC shell
+and then open the Visualforce page.
 
 ## Plugin Actions And Findings
 

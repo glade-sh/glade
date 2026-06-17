@@ -46,6 +46,9 @@ func LoadCustomTab(path string) (CustomTab, error) {
 	case strings.EqualFold(strings.TrimSpace(raw.CustomObject), "true") || strings.TrimSpace(raw.SObjectName) != "":
 		tab.Type = TabTypeObject
 		tab.Target = strings.TrimSpace(raw.SObjectName)
+		if tab.Target == "" {
+			tab.Target = tab.Name
+		}
 	default:
 		tab.Type = TabTypeUnknown
 	}

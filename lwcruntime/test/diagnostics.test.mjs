@@ -45,7 +45,7 @@ test("bootstrap stub reports ERROR when Lightning Out app is missing", async () 
     assert.deepEqual(await page.evaluate(() => window.__useDiagnostic), {
       cmpIsNull: true,
       status: "ERROR",
-      errorMessage: "Lightning Out app not found: c:missingOut",
+      errorMessage: "GLADELWC080 Lightning Out app missing: c:missingOut",
       argCount: 3,
     });
   } finally {
@@ -87,7 +87,7 @@ test("bootstrap stub reports ERROR when Lightning component alias is missing", a
     assert.deepEqual(await page.evaluate(() => window.__componentDiagnostic), {
       cmpIsNull: true,
       status: "ERROR",
-      errorMessage: "Lightning component not found: c:missingWidget",
+      errorMessage: "GLADELWC081 Lightning Out dependency missing: c:missingWidget",
       argCount: 3,
     });
   } finally {
@@ -134,7 +134,7 @@ test("runtime reports ERROR when Lightning component alias is missing after use"
     assert.deepEqual(await page.evaluate(() => window.__runtimeComponentDiagnostic), {
       cmpIsNull: true,
       status: "ERROR",
-      errorMessage: "Failed to create component c:missingWidget",
+      errorMessage: "GLADELWC081 Lightning Out dependency missing: c:missingWidget",
       argCount: 3,
     });
   } finally {
@@ -179,7 +179,7 @@ test("runtime reports ERROR when Lightning Out app is missing after load", async
     assert.deepEqual(await page.evaluate(() => window.__runtimeUseDiagnostic), {
       cmpIsNull: true,
       status: "ERROR",
-      errorMessage: "Lightning Out app not found: c:missingOut",
+      errorMessage: "GLADELWC080 Lightning Out app missing: c:missingOut",
       argCount: 3,
     });
   } finally {

@@ -8,12 +8,18 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const repoRoot = path.resolve(__dirname, "../..");
 const wireAdapterPath = path.join(repoRoot, "lwcruntime/src/shims/wire-adapter.mjs");
+const ldsCachePath = path.join(repoRoot, "lwcruntime/src/shims/lds-cache.mjs");
 
 export const salesforceImportMap = {
+  "@salesforce/apex": "/lightning/shims/core/apex.js",
   "@salesforce/apex/": "/lightning/shims/apex/",
   "@salesforce/label/": "/lightning/shims/label/",
   "@salesforce/schema/": "/lightning/shims/schema/",
   "@salesforce/resourceUrl/": "/lightning/shims/resourceUrl/",
+  "lightning/uiLayoutApi": "/lightning/shims/lightning/uiLayoutApi.js",
+  "lightning/uiListApi": "/lightning/shims/lightning/uiListApi.js",
+  "lightning/uiObjectInfoApi": "/lightning/shims/lightning/uiObjectInfoApi.js",
+  "lightning/uiRelatedListApi": "/lightning/shims/lightning/uiRelatedListApi.js",
   "lightning/uiRecordApi": "/lightning/shims/lightning/uiRecordApi.js",
 };
 
@@ -73,8 +79,199 @@ export default token;`;
 }
 
 function uiRecordApiJS() {
-  return `import { createGetRecordWireAdapter } from "/lightning/shims/core/wire-adapter.js";
-export const getRecord = createGetRecordWireAdapter();`;
+  return `import { createFetchWireAdapter, createGetRecordWireAdapter } from "/lightning/shims/core/wire-adapter.js";
+import {
+  getRecordNotifyChange,
+  notifyRecordUpdateAvailable,
+  refreshApex,
+} from "/lightning/shims/core/lds-cache.mjs";
+export { getRecordNotifyChange, notifyRecordUpdateAvailable, refreshApex };
+export const getRecord = createGetRecordWireAdapter();
+export const getRecordCreateDefaults = createFetchWireAdapter("/lightning/wire/getRecordCreateDefaults", (config) => ({
+  objectApiName: objectApiName(config && config.objectApiName),
+  recordTypeId: config && config.recordTypeId,
+  optionalFields: normalizeFields(config && config.optionalFields),
+  formFactor: config && config.formFactor
+}));
+function objectApiName(value) {
+  if (value && typeof value === "object" && value.objectApiName) {
+    return value.objectApiName;
+  }
+  return value;
+}
+function normalizeFields(fields) {
+  return (fields || []).map((field) => {
+    if (field && typeof field === "object") {
+      return field.objectApiName && field.fieldApiName ? field.objectApiName + "." + field.fieldApiName : field.fieldApiName;
+    }
+    return String(field);
+  });
+}
+export function generateRecordInputForCreate(record, objectInfo) {
+  const fields = recordFields(record, objectInfo, "createable");
+  delete fields.Id;
+  return {
+    apiName: record && (record.apiName || record.objectApiName),
+    fields
+  };
+}
+export function generateRecordInputForUpdate(record, objectInfo) {
+  const fields = recordFields(record, objectInfo, "updateable");
+  const id = record && (record.id || record.recordId || fieldValue(record.fields && record.fields.Id));
+  if (id !== undefined && id !== null) {
+    fields.Id = id;
+  }
+  return { fields };
+}
+export function createRecordInputFilteredByEditedFields(recordInput, originalRecord) {
+  const sourceFields = recordInput && recordInput.fields || {};
+  const out = {};
+  for (const [name, value] of Object.entries(sourceFields)) {
+    if (name === "Id") {
+      out[name] = value;
+      continue;
+    }
+    const original = originalRecord && originalRecord.fields && originalRecord.fields[name];
+    if (!sameValue(value, fieldValue(original))) {
+      out[name] = value;
+    }
+  }
+  return Object.assign({}, recordInput || {}, { fields: out });
+}
+function recordFields(record, objectInfo, accessProperty) {
+  const fields = {};
+  const source = record && record.fields || {};
+  for (const [name, wrapped] of Object.entries(source)) {
+    if (name === "Id" && accessProperty === "createable") {
+      continue;
+    }
+    if (!fieldAllows(objectInfo, name, accessProperty)) {
+      continue;
+    }
+    const value = fieldValue(wrapped);
+    if (!recordInputValueSupported(value)) {
+      continue;
+    }
+    fields[name] = value;
+  }
+  return fields;
+}
+function fieldAllows(objectInfo, name, accessProperty) {
+  const fields = objectInfo && objectInfo.fields || {};
+  const field = fields[name];
+  if (!field) {
+    return true;
+  }
+  return field[accessProperty] !== false;
+}
+function fieldValue(value) {
+  if (value && typeof value === "object" && Object.prototype.hasOwnProperty.call(value, "value")) {
+    return value.value;
+  }
+  return value;
+}
+function sameValue(left, right) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+function recordInputValueSupported(value) {
+  return value === null || value === undefined || typeof value !== "object" || Array.isArray(value);
+}
+`;
+}
+
+function uiLayoutApiJS() {
+  return `import { createFetchWireAdapter } from "/lightning/shims/core/wire-adapter.js";
+export const getLayout = createFetchWireAdapter("/lightning/wire/getLayout", (config) => ({
+  objectApiName: objectApiName(config && config.objectApiName),
+  recordTypeId: config && config.recordTypeId,
+  layoutType: config && config.layoutType,
+  mode: config && config.mode,
+  formFactor: config && config.formFactor
+}));
+function objectApiName(value) {
+  if (value && typeof value === "object" && value.objectApiName) {
+    return value.objectApiName;
+  }
+  return value;
+}
+`;
+}
+
+function uiListApiJS() {
+  return `export const getListUi = class GetListUiUnsupportedAdapter {
+  constructor(dataCallback) {
+    this.dataCallback = dataCallback;
+  }
+  connect() {}
+  disconnect() {}
+  update() {
+    this.dataCallback({
+      data: undefined,
+      error: {
+        code: "GLADELWC050",
+        message: "GLADELWC050 getListUi unsupported locally; use getRelatedListRecords or local SOQL-backed Apex"
+      }
+    });
+  }
+};
+`;
+}
+
+function uiObjectInfoApiJS() {
+  return `import { createFetchWireAdapter } from "/lightning/shims/core/wire-adapter.js";
+export const getObjectInfo = createFetchWireAdapter("/lightning/wire/getObjectInfo", (config) => ({
+  objectApiName: objectApiName(config && config.objectApiName)
+}));
+export const getObjectInfos = createFetchWireAdapter("/lightning/wire/getObjectInfos", (config) => ({
+  objectApiNames: (config && config.objectApiNames || []).map(objectApiName)
+}));
+export const getPicklistValues = createFetchWireAdapter("/lightning/wire/getPicklistValues", (config) => ({
+  objectApiName: objectApiName(config && config.objectApiName),
+  fieldApiName: fieldApiName(config && config.fieldApiName),
+  recordTypeId: config && config.recordTypeId
+}));
+export const getPicklistValuesByRecordType = createFetchWireAdapter("/lightning/wire/getPicklistValuesByRecordType", (config) => ({
+  objectApiName: objectApiName(config && config.objectApiName),
+  recordTypeId: config && config.recordTypeId
+}));
+function objectApiName(value) {
+  if (value && typeof value === "object" && value.objectApiName) {
+    return value.objectApiName;
+  }
+  return value;
+}
+function fieldApiName(value) {
+  if (value && typeof value === "object") {
+    if (value.fieldApiName && value.objectApiName) {
+      return value.objectApiName + "." + value.fieldApiName;
+    }
+    return value.fieldApiName || "";
+  }
+  return value || "";
+}
+`;
+}
+
+function uiRelatedListApiJS() {
+  return `import { createFetchWireAdapter } from "/lightning/shims/core/wire-adapter.js";
+export const getRelatedListRecords = createFetchWireAdapter("/lightning/wire/getRelatedListRecords", (config) => ({
+  parentRecordId: config && config.parentRecordId,
+  relatedListId: config && config.relatedListId,
+  fields: normalizeFields(config && config.fields),
+  optionalFields: normalizeFields(config && config.optionalFields),
+  sortBy: normalizeFields(config && config.sortBy),
+  pageSize: config && config.pageSize,
+  pageToken: config && config.pageToken
+}));
+function normalizeFields(fields) {
+  return (fields || []).map((field) => {
+    if (field && typeof field === "object") {
+      return field.objectApiName && field.fieldApiName ? field.objectApiName + "." + field.fieldApiName : field.fieldApiName;
+    }
+    return String(field);
+  });
+}
+`;
 }
 
 function handleWireRequest(url, req, res, wireHandlers) {
@@ -98,9 +295,39 @@ function handleShimRequest(url, res, shimConfig) {
     res.end(fs.readFileSync(wireAdapterPath));
     return true;
   }
+  if (pathname === "/lightning/shims/core/lds-cache.mjs" || pathname === "/lightning/shims/core/lds-cache.js") {
+    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
+    res.end(fs.readFileSync(ldsCachePath));
+    return true;
+  }
+  if (pathname === "/lightning/shims/core/apex.js") {
+    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
+    res.end('export { refreshApex } from "/lightning/shims/core/lds-cache.mjs";\n');
+    return true;
+  }
   if (pathname === "/lightning/shims/lightning/uiRecordApi.js") {
     res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
     res.end(uiRecordApiJS());
+    return true;
+  }
+  if (pathname === "/lightning/shims/lightning/uiLayoutApi.js") {
+    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
+    res.end(uiLayoutApiJS());
+    return true;
+  }
+  if (pathname === "/lightning/shims/lightning/uiListApi.js") {
+    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
+    res.end(uiListApiJS());
+    return true;
+  }
+  if (pathname === "/lightning/shims/lightning/uiObjectInfoApi.js") {
+    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
+    res.end(uiObjectInfoApiJS());
+    return true;
+  }
+  if (pathname === "/lightning/shims/lightning/uiRelatedListApi.js") {
+    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
+    res.end(uiRelatedListApiJS());
     return true;
   }
   if (pathname.startsWith("/lightning/shims/apex/")) {
@@ -204,10 +431,11 @@ function lightningStubJS() {
     `function c(){var el=document.getElementById("glade-lightning-config");if(!el){return {outApps:[],manifest:{modules:{}}};}try{return JSON.parse(el.textContent||"{}");}catch(_e){return {outApps:[],manifest:{modules:{}}};}}` +
     `function m(cfg){return cfg&&cfg.manifest&&cfg.manifest.modules||{};}` +
     `function e(cb,msg){if(typeof cb==="function"){cb(null,"ERROR",msg);}}` +
+    `function d(code,msg,q){return code+" "+msg+": "+q;}` +
     `window.__gladeLightningPending=window.__gladeLightningPending||[];` +
     `window.$Lightning=window.$Lightning||{` +
-    `use:function(a,cb){var cfg=c();var apps=(cfg.outApps||[]).map(n);if(apps.indexOf(n(a))===-1){console.error("[glade] Lightning Out app not found",a);e(cb,"Lightning Out app not found: "+a);return;}window.__gladeLightningPending.push(["use",a,cb]);},` +
-    `createComponent:function(q,p,l,cb){var cfg=c();if(!m(cfg)[n(q)]){console.error("[glade] Lightning component not found",q);e(cb,"Lightning component not found: "+q);return;}window.__gladeLightningPending.push(["create",q,p,l,cb]);}` +
+    `use:function(a,cb){var cfg=c();var apps=(cfg.outApps||[]).map(n);if(apps.indexOf(n(a))===-1){console.error("[glade] Lightning Out app not found",a);e(cb,d("GLADELWC080","Lightning Out app missing",a));return;}window.__gladeLightningPending.push(["use",a,cb]);},` +
+    `createComponent:function(q,p,l,cb){var cfg=c();if(n(q).indexOf("lightning:")===0){e(cb,d("GLADELWC082","Lightning Out service unsupported in Visualforce host",q));return;}if(!m(cfg)[n(q)]){console.error("[glade] Lightning component not found",q);e(cb,d("GLADELWC081","Lightning Out dependency missing",q));return;}window.__gladeLightningPending.push(["create",q,p,l,cb]);}` +
     `};` +
     `})();`;
 }

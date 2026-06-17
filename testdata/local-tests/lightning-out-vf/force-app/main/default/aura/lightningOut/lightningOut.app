@@ -6,4 +6,5 @@
     <aura:dependency resource="c:recordWireHost"/>
     <aura:dependency resource="c:labelResourceHost"/>
     <aura:dependency resource="c:eventChild"/>
+    <aura:dependency resource="c:baseComponentHost"/>
 </aura:application>

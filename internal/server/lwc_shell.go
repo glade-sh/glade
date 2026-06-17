@@ -11,6 +11,7 @@ import (
 	"github.com/glade-sh/glade/internal/lwc"
 	"github.com/glade-sh/glade/internal/lwcbrowser"
 	"github.com/glade-sh/glade/internal/lwcshell"
+	"github.com/glade-sh/glade/internal/project"
 )
 
 type lwcShellMount struct {
@@ -23,6 +24,20 @@ type lwcShellMount struct {
 func (s *Server) handleLWCShell(w http.ResponseWriter, r *http.Request, parts []string) {
 	if r.Method != http.MethodGet {
 		writeMethodNotAllowed(w, http.MethodGet)
+		return
+	}
+	if len(parts) == 0 || (len(parts) == 1 && parts[0] == "preview") {
+		cfg, ok, err := s.lightningBootstrapConfigLocked()
+		if err != nil {
+			writeSalesforceError(w, errUnsupportedFeature, err.Error())
+			return
+		}
+		if !ok {
+			cfg = &lwcbrowser.PageConfig{}
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		setDevNoStore(w)
+		_, _ = w.Write([]byte(renderLWCShellDocument(s.Source.Project, *cfg, lwcshell.ShellPage{}, "/lwc")))
 		return
 	}
 	if len(parts) < 2 || parts[0] != "preview" {
@@ -43,11 +58,11 @@ func (s *Server) handleLWCShell(w http.ResponseWriter, r *http.Request, parts []
 		return
 	}
 	if len(diagnostics) > 0 {
-		if len(lwcShellMounts(shell)) == 0 {
+		if len(lwcShellMounts(shell)) == 0 && lwcShellDiagnosticsBlockEmptyMounts(diagnostics) {
 			writeJSON(w, http.StatusBadRequest, map[string]any{"error": diagnostics[0].Message, "diagnostics": diagnostics})
 			return
 		}
-		shell.Diagnostics = append(shell.Diagnostics, diagnostics...)
+		shell.Diagnostics = appendLWCShellDiagnosticsUnique(shell.Diagnostics, diagnostics...)
 	}
 	cfg, ok, err := s.lightningBootstrapConfigLocked()
 	if err != nil {
@@ -60,7 +75,7 @@ func (s *Server) handleLWCShell(w http.ResponseWriter, r *http.Request, parts []
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	setDevNoStore(w)
-	_, _ = w.Write([]byte(renderLWCShellHTML(*cfg, shell)))
+	_, _ = w.Write([]byte(renderLWCShellDocument(s.Source.Project, *cfg, shell, r.URL.RequestURI())))
 }
 
 func (s *Server) resolveLWCShellRequest(r *http.Request, parts []string) (lwcshell.ShellPage, string, []lwcshell.Diagnostic, error) {
@@ -77,6 +92,17 @@ func (s *Server) resolveLWCShellRequest(r *http.Request, parts []string) (lwcshe
 		ctx.ComponentName = parts[1] + ":" + parts[2]
 		shell, diagnostics, err := s.validateLWCShellPage(lwcshell.ShellPage{Context: ctx}, nil, nil)
 		return shell, "", diagnostics, err
+	case "cmp":
+		if len(parts) != 3 {
+			return lwcshell.ShellPage{}, "", nil, fmt.Errorf("URL-addressable preview requires namespace and component")
+		}
+		if diag, ok := lwcShellInvalidURLAddressableStateDiagnostic(r); ok {
+			return lwcshell.ShellPage{}, "", []lwcshell.Diagnostic{diag}, fmt.Errorf("%s", diag.Message)
+		}
+		ctx.Kind = lwcshell.RenderTargetComponent
+		ctx.ComponentName = parts[1] + ":" + parts[2]
+		shell, diagnostics, err := s.validateLWCShellPageWithTarget(lwcshell.ShellPage{Context: ctx}, nil, nil, "lightning__UrlAddressable")
+		return shell, "", diagnostics, err
 	case "record":
 		if len(parts) < 3 {
 			return lwcshell.ShellPage{}, "", nil, fmt.Errorf("record preview requires object API name and record ID")
@@ -88,12 +114,43 @@ func (s *Server) resolveLWCShellRequest(r *http.Request, parts []string) (lwcshe
 		shell, diagnostics, err := lwcshell.ResolvePageTarget(s.Source.Project, ctx)
 		shell, diagnostics, err = s.validateLWCShellPage(shell, diagnostics, err)
 		return shell, "", diagnostics, err
+	case "action":
+		switch {
+		case len(parts) == 3 && strings.EqualFold(parts[1], "global"):
+			ctx.Kind = lwcshell.RenderTargetQuickAction
+			ctx.ActionName = parts[2]
+		case len(parts) == 4:
+			ctx.Kind = lwcshell.RenderTargetQuickAction
+			ctx.ObjectAPIName = parts[1]
+			ctx.RecordID = parts[2]
+			ctx.ActionName = parts[3]
+		default:
+			return lwcshell.ShellPage{}, "", nil, fmt.Errorf("quick action preview requires object, record ID, and action name or global action name")
+		}
+		shell, diagnostics, err := lwcshell.ResolvePageTarget(s.Source.Project, ctx)
+		shell, diagnostics, err = s.validateLWCShellPageWithTarget(shell, diagnostics, err, "lightning__RecordAction")
+		return shell, "", diagnostics, err
 	case "app":
 		ctx.Kind = lwcshell.RenderTargetAppPage
 		ctx.PageName = firstPathOrQueryValue(parts[1:], r, "page")
 		ctx.AppName = r.URL.Query().Get("app")
+		if ctx.AppName == "" {
+			ctx.AppName = ctx.PageName
+		}
 		shell, diagnostics, err := lwcshell.ResolvePageTarget(s.Source.Project, ctx)
+		if err != nil && len(diagnostics) > 0 && diagnostics[0].Code == "GLADELWC006" && ctx.AppName != "" && ctx.PageName == ctx.AppName {
+			fallback := ctx
+			fallback.Kind = lwcshell.RenderTargetTab
+			fallback.PageName = ""
+			fallback.TabName = ""
+			shell, diagnostics, err = lwcshell.ResolvePageTarget(s.Source.Project, fallback)
+			if err == nil && shell.Tab.Type == lwcshell.TabTypeLWC {
+				shell.Context.ComponentName = shell.Tab.Target
+				shell, diagnostics, err = s.validateLWCShellPageWithTarget(shell, diagnostics, err, "lightning__Tab")
+			}
+		}
 		shell, diagnostics, err = s.validateLWCShellPage(shell, diagnostics, err)
+		shell, diagnostics = s.addApplicationModeDiagnostics(shell, diagnostics)
 		return shell, "", diagnostics, err
 	case "home":
 		ctx.Kind = lwcshell.RenderTargetHomePage
@@ -127,6 +184,15 @@ func (s *Server) resolveLWCShellRequest(r *http.Request, parts []string) (lwcshe
 	default:
 		return lwcshell.ShellPage{}, "", nil, fmt.Errorf("unknown LWC preview target %q", parts[0])
 	}
+}
+
+func lwcShellDiagnosticsBlockEmptyMounts(diagnostics []lwcshell.Diagnostic) bool {
+	for _, diagnostic := range diagnostics {
+		if diagnostic.Code != "GLADELWC072" {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Server) resolveLWCShellFlexiPageTab(ctx lwcshell.PageContext, tab lwcshell.CustomTab) (lwcshell.ShellPage, []lwcshell.Diagnostic, error) {
@@ -315,7 +381,9 @@ func lwcShellTargetName(kind lwcshell.RenderTargetKind) string {
 		return "lightning__AppPage"
 	case lwcshell.RenderTargetHomePage:
 		return "lightning__HomePage"
-	case lwcshell.RenderTargetTab, lwcshell.RenderTargetComponent:
+	case lwcshell.RenderTargetQuickAction:
+		return "lightning__RecordAction"
+	case lwcshell.RenderTargetTab, lwcshell.RenderTargetComponent, lwcshell.RenderTargetURLAddressable:
 		return ""
 	default:
 		return ""
@@ -362,14 +430,23 @@ func lwcShellContextFromQuery(r *http.Request) lwcshell.PageContext {
 	ctx := lwcshell.PageContext{
 		RecordID:      q.Get("recordId"),
 		ObjectAPIName: q.Get("objectApiName"),
+		AppName:       q.Get("app"),
 		FormFactor:    q.Get("formFactor"),
 		State:         map[string]string{},
 	}
 	for key, values := range q {
-		if !strings.HasPrefix(key, "state.") || len(values) == 0 {
+		if len(values) == 0 {
 			continue
 		}
-		stateKey := strings.TrimPrefix(key, "state.")
+		stateKey := ""
+		switch {
+		case strings.HasPrefix(key, "state."):
+			stateKey = strings.TrimPrefix(key, "state.")
+		case strings.Contains(key, "__"):
+			stateKey = key
+		default:
+			continue
+		}
 		if stateKey != "" {
 			ctx.State[stateKey] = values[len(values)-1]
 		}
@@ -380,6 +457,67 @@ func lwcShellContextFromQuery(r *http.Request) lwcshell.PageContext {
 	return ctx
 }
 
+func lwcShellInvalidURLAddressableStateDiagnostic(r *http.Request) (lwcshell.Diagnostic, bool) {
+	for key := range r.URL.Query() {
+		if strings.HasPrefix(key, "state.") || strings.Contains(key, "__") || lwcShellReservedQueryKey(key) {
+			continue
+		}
+		return lwcshell.Diagnostic{
+			Code:    "GLADELWC071",
+			Message: fmt.Sprintf("URL-addressable state key %q must use a namespace prefix such as c__", key),
+		}, true
+	}
+	return lwcshell.Diagnostic{}, false
+}
+
+func lwcShellReservedQueryKey(key string) bool {
+	switch key {
+	case "recordId", "objectApiName", "formFactor":
+		return true
+	default:
+		return false
+	}
+}
+
+func (s *Server) addApplicationModeDiagnostics(shell lwcshell.ShellPage, diagnostics []lwcshell.Diagnostic) (lwcshell.ShellPage, []lwcshell.Diagnostic) {
+	appName := strings.TrimSpace(shell.Context.AppName)
+	if appName == "" {
+		return shell, diagnostics
+	}
+	for _, path := range s.Source.Project.ApplicationFiles {
+		app, err := lwcshell.LoadCustomApplication(path)
+		if err != nil {
+			continue
+		}
+		if !strings.EqualFold(app.Name, appName) && !strings.EqualFold(app.Label, appName) {
+			continue
+		}
+		if app.Console {
+			diag := lwcshell.Diagnostic{Code: "GLADELWC072", Message: fmt.Sprintf("console application %q uses local workspace tab approximations", app.Name)}
+			diagnostics = append(diagnostics, diag)
+			shell.Diagnostics = append(shell.Diagnostics, diag)
+		}
+		return shell, diagnostics
+	}
+	return shell, diagnostics
+}
+
+func appendLWCShellDiagnosticsUnique(existing []lwcshell.Diagnostic, incoming ...lwcshell.Diagnostic) []lwcshell.Diagnostic {
+	for _, diagnostic := range incoming {
+		duplicate := false
+		for _, current := range existing {
+			if current.Code == diagnostic.Code && current.Message == diagnostic.Message {
+				duplicate = true
+				break
+			}
+		}
+		if !duplicate {
+			existing = append(existing, diagnostic)
+		}
+	}
+	return existing
+}
+
 func firstPathOrQueryValue(parts []string, r *http.Request, key string) string {
 	if len(parts) > 0 && strings.TrimSpace(parts[0]) != "" {
 		return parts[0]
@@ -388,25 +526,7 @@ func firstPathOrQueryValue(parts []string, r *http.Request, key string) string {
 }
 
 func renderLWCShellHTML(cfg lwcbrowser.PageConfig, shell lwcshell.ShellPage) string {
-	mounts := lwcShellMounts(shell)
-	cfg.PageReference = lwcShellPageReference(shell)
-	contextJSON := mustScriptJSON(shell.Context)
-	mountsJSON := mustScriptJSON(mounts)
-	var b strings.Builder
-	b.WriteString(`<!doctype html><html><head><meta charset="utf-8"><title>Glade LWC Shell</title>`)
-	b.WriteString(`<style>body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f3f3;color:#181818}.glade-shell-bar{height:44px;display:flex;align-items:center;padding:0 16px;background:#fff;border-bottom:1px solid #d8dde6;font-size:14px}.glade-page{max-width:1200px;margin:0 auto;padding:16px}.glade-region{display:grid;gap:16px;margin-bottom:16px}.glade-host{display:block;min-height:48px;background:#fff;border:1px solid #d8dde6;border-radius:4px;padding:12px}.glade-placeholder{border-style:dashed;background:#fafafa;color:#5f6368}.glade-placeholder-title{font-weight:600;color:#2e2e2e}.glade-placeholder-note{margin-top:4px;font-size:12px}</style>`)
-	b.WriteString(lwcbrowser.BootstrapHTML(cfg))
-	b.WriteString(`</head><body><div class="glade-shell-bar">Glade LWC Shell</div><main class="glade-page">`)
-	b.WriteString(lwcShellDiagnosticsHTML(shell.Diagnostics))
-	b.WriteString(lwcShellRegionsHTML(shell))
-	b.WriteString(`</main><script type="application/json" id="glade-lwc-context">`)
-	b.WriteString(contextJSON)
-	b.WriteString(`</script><script>`)
-	b.WriteString(`(function(){var mounts=`)
-	b.WriteString(mountsJSON)
-	b.WriteString(`;function go(){for(var i=0;i<mounts.length;i++){var m=mounts[i];window.$Lightning.createComponent(m.qualified,m.attrs,m.hostId,function(){});}}if(window.$Lightning){go();}else{window.addEventListener("load",go);}})();`)
-	b.WriteString(`</script></body></html>`)
-	return b.String()
+	return renderLWCShellDocument(project.Project{}, cfg, shell, "")
 }
 
 func lwcShellDiagnosticsHTML(diagnostics []lwcshell.Diagnostic) string {
@@ -465,6 +585,16 @@ func lwcShellPageReference(shell lwcshell.ShellPage) map[string]any {
 			"type":       "standard__navItemPage",
 			"attributes": map[string]any{"apiName": shell.Context.TabName},
 			"state":      state,
+		}
+	case lwcshell.RenderTargetQuickAction:
+		return map[string]any{
+			"type": "standard__quickAction",
+			"attributes": map[string]any{
+				"apiName":       shell.Context.ActionName,
+				"recordId":      shell.Context.RecordID,
+				"objectApiName": shell.Context.ObjectAPIName,
+			},
+			"state": state,
 		}
 	default:
 		attrs := map[string]any{}
@@ -537,7 +667,14 @@ func lwcShellContextAttrs(ctx lwcshell.PageContext) map[string]any {
 	if ctx.FormFactor != "" {
 		attrs["formFactor"] = ctx.FormFactor
 	}
+	if ctx.ActionName != "" {
+		attrs["actionName"] = ctx.ActionName
+	}
+	if ctx.ActionType != "" {
+		attrs["actionType"] = ctx.ActionType
+	}
 	if len(ctx.State) > 0 {
+		attrs["state"] = ctx.State
 		attrs["pageReference"] = map[string]any{"state": ctx.State}
 	}
 	return attrs

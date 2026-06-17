@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/dml"
@@ -22,8 +23,22 @@ func (s *Server) handleLightningWire(w http.ResponseWriter, r *http.Request, par
 		s.handleLightningWireApex(w, r)
 	case "getRecord":
 		s.handleLightningWireGetRecord(w, r)
+	case "getRecords":
+		s.handleLightningWireGetRecords(w, r)
 	case "getObjectInfo":
 		s.handleLightningWireGetObjectInfo(w, r)
+	case "getObjectInfos":
+		s.handleLightningWireGetObjectInfos(w, r)
+	case "getRecordCreateDefaults":
+		s.handleLightningWireGetRecordCreateDefaults(w, r)
+	case "getLayout":
+		s.handleLightningWireGetLayout(w, r)
+	case "getPicklistValues":
+		s.handleLightningWireGetPicklistValues(w, r)
+	case "getPicklistValuesByRecordType":
+		s.handleLightningWireGetPicklistValuesByRecordType(w, r)
+	case "getRelatedListRecords":
+		s.handleLightningWireGetRelatedListRecords(w, r)
 	case "createRecord":
 		s.handleLightningWireCreateRecord(w, r)
 	case "updateRecord":
@@ -49,32 +64,67 @@ func (s *Server) handleLightningWireApex(w http.ResponseWriter, r *http.Request)
 	machine, err := s.visualforceRuntime()
 	if err != nil {
 		writeWireJSON(w, lwcbrowser.WireResponse{
-			Error: &lwcbrowser.WireError{Type: "UnsupportedFeature", Message: err.Error()},
+			Error: apexWireError("UnsupportedFeature", err.Error(), http.StatusInternalServerError),
 		})
 		return
 	}
-	params := req.Params
-	if params == nil {
-		params = map[string]any{}
+	machine.SetCurrentUser(s.currentUser(r, ""))
+	params, paramErr := apexWireParams(req.Params)
+	if paramErr != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{
+			Error: apexWireError("InvalidParameterValueException", paramErr.Error(), http.StatusBadRequest),
+		})
+		return
 	}
 	result, err := machine.InvokeLWCMethod(strings.TrimSpace(req.ClassName), strings.TrimSpace(req.Method), params)
 	if err != nil {
 		writeWireJSON(w, lwcbrowser.WireResponse{
-			Error: &lwcbrowser.WireError{Type: "RuntimeError", Message: err.Error()},
+			Error: apexWireError("RuntimeError", err.Error(), http.StatusInternalServerError),
 		})
 		return
 	}
 	if !result.Success {
 		out := lwcbrowser.WireResponse{}
 		if result.Error != nil {
-			out.Error = &lwcbrowser.WireError{Type: result.Error.Type, Message: result.Error.Message}
+			out.Error = apexWireError(result.Error.Type, result.Error.Message, http.StatusInternalServerError)
 		} else {
-			out.Error = &lwcbrowser.WireError{Message: "apex wire call failed"}
+			out.Error = apexWireError("ApexException", "apex wire call failed", http.StatusInternalServerError)
 		}
 		writeWireJSON(w, out)
 		return
 	}
 	writeWireJSON(w, lwcbrowser.WireResponse{Data: result.ReturnValue})
+}
+
+func apexWireParams(raw any) (map[string]any, error) {
+	if raw == nil {
+		return map[string]any{}, nil
+	}
+	params, ok := raw.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("Apex params must be an object")
+	}
+	return params, nil
+}
+
+func apexWireError(exceptionType, message string, status int) *lwcbrowser.WireError {
+	exceptionType = strings.TrimSpace(exceptionType)
+	if exceptionType == "" {
+		exceptionType = "ApexException"
+	}
+	if status == 0 {
+		status = http.StatusInternalServerError
+	}
+	return &lwcbrowser.WireError{
+		Type:    exceptionType,
+		Message: message,
+		Status:  status,
+		Body: &lwcbrowser.WireErrorBody{
+			Message:       message,
+			ExceptionType: exceptionType,
+			StackTrace:    "",
+		},
+	}
 }
 
 func (s *Server) handleLightningWireGetRecord(w http.ResponseWriter, r *http.Request) {
@@ -92,12 +142,30 @@ func (s *Server) handleLightningWireGetRecord(w http.ResponseWriter, r *http.Req
 		org := storage.NewOrgState()
 		s.Org = &org
 	}
-	data, wireErr := getRecordWireData(s.Org, req.RecordID, req.Fields)
+	data, wireErr := getRecordWireData(s.Org, req.RecordID, req.Fields, req.OptionalFields)
 	if wireErr != nil {
 		writeWireJSON(w, lwcbrowser.WireResponse{Error: wireErr})
 		return
 	}
 	writeWireJSON(w, lwcbrowser.WireResponse{Data: data})
+}
+
+func (s *Server) handleLightningWireGetRecords(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: err.Error()}})
+		return
+	}
+	var req lwcbrowser.WireGetRecordsRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: "invalid getRecords wire request"}})
+		return
+	}
+	if s.Org == nil {
+		org := storage.NewOrgState()
+		s.Org = &org
+	}
+	writeWireJSON(w, lwcbrowser.WireResponse{Data: getRecordsWireData(s.Org, req)})
 }
 
 func (s *Server) handleLightningWireGetObjectInfo(w http.ResponseWriter, r *http.Request) {
@@ -116,6 +184,139 @@ func (s *Server) handleLightningWireGetObjectInfo(w http.ResponseWriter, r *http
 		s.Org = &org
 	}
 	data, wireErr := getObjectInfoWireData(s.Org, req.ObjectAPIName)
+	if wireErr != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: wireErr})
+		return
+	}
+	writeWireJSON(w, lwcbrowser.WireResponse{Data: data})
+}
+
+func (s *Server) handleLightningWireGetObjectInfos(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: err.Error()}})
+		return
+	}
+	var req lwcbrowser.WireGetObjectInfosRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: "invalid getObjectInfos wire request"}})
+		return
+	}
+	if s.Org == nil {
+		org := storage.NewOrgState()
+		s.Org = &org
+	}
+	writeWireJSON(w, lwcbrowser.WireResponse{Data: getObjectInfosWireData(s.Org, req)})
+}
+
+func (s *Server) handleLightningWireGetRecordCreateDefaults(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: err.Error()}})
+		return
+	}
+	var req lwcbrowser.WireGetRecordCreateDefaultsRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: "invalid getRecordCreateDefaults wire request"}})
+		return
+	}
+	if s.Org == nil {
+		org := storage.NewOrgState()
+		s.Org = &org
+	}
+	data, wireErr := getRecordCreateDefaultsWireData(s.Org, req, s.Source)
+	if wireErr != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: wireErr})
+		return
+	}
+	writeWireJSON(w, lwcbrowser.WireResponse{Data: data})
+}
+
+func (s *Server) handleLightningWireGetLayout(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: err.Error()}})
+		return
+	}
+	var req lwcbrowser.WireGetLayoutRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: "invalid getLayout wire request"}})
+		return
+	}
+	if s.Org == nil {
+		org := storage.NewOrgState()
+		s.Org = &org
+	}
+	data, wireErr := getLayoutWireData(s.Org, req, s.Source)
+	if wireErr != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: wireErr})
+		return
+	}
+	writeWireJSON(w, lwcbrowser.WireResponse{Data: data})
+}
+
+func (s *Server) handleLightningWireGetPicklistValues(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: err.Error()}})
+		return
+	}
+	var req lwcbrowser.WireGetPicklistValuesRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: "invalid getPicklistValues wire request"}})
+		return
+	}
+	if s.Org == nil {
+		org := storage.NewOrgState()
+		s.Org = &org
+	}
+	data, wireErr := getPicklistValuesWireData(s.Org, req)
+	if wireErr != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: wireErr})
+		return
+	}
+	writeWireJSON(w, lwcbrowser.WireResponse{Data: data})
+}
+
+func (s *Server) handleLightningWireGetPicklistValuesByRecordType(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: err.Error()}})
+		return
+	}
+	var req lwcbrowser.WireGetPicklistValuesByRecordTypeRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: "invalid getPicklistValuesByRecordType wire request"}})
+		return
+	}
+	if s.Org == nil {
+		org := storage.NewOrgState()
+		s.Org = &org
+	}
+	data, wireErr := getPicklistValuesByRecordTypeWireData(s.Org, req)
+	if wireErr != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: wireErr})
+		return
+	}
+	writeWireJSON(w, lwcbrowser.WireResponse{Data: data})
+}
+
+func (s *Server) handleLightningWireGetRelatedListRecords(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: err.Error()}})
+		return
+	}
+	var req lwcbrowser.WireGetRelatedListRecordsRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: "invalid getRelatedListRecords wire request"}})
+		return
+	}
+	if s.Org == nil {
+		org := storage.NewOrgState()
+		s.Org = &org
+	}
+	data, wireErr := getRelatedListRecordsWireData(s.Org, req)
 	if wireErr != nil {
 		writeWireJSON(w, lwcbrowser.WireResponse{Error: wireErr})
 		return
@@ -192,7 +393,7 @@ func (s *Server) handleLightningWireDeleteRecord(w http.ResponseWriter, r *http.
 	writeWireJSON(w, lwcbrowser.WireResponse{Data: data})
 }
 
-func getRecordWireData(org *storage.OrgState, recordID string, fields []string) (map[string]any, *lwcbrowser.WireError) {
+func getRecordWireData(org *storage.OrgState, recordID string, fields []string, optionalFields []string) (map[string]any, *lwcbrowser.WireError) {
 	recordID = strings.TrimSpace(recordID)
 	if recordID == "" {
 		return nil, &lwcbrowser.WireError{Message: "recordId is required"}
@@ -201,17 +402,18 @@ func getRecordWireData(org *storage.OrgState, recordID string, fields []string) 
 	if !ok {
 		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("record not found: %s", recordID)}
 	}
-	fieldNames := make([]string, 0, len(fields))
+	fieldNames := make([]string, 0, len(fields)+len(optionalFields))
+	optionalByName := map[string]bool{}
 	for _, ref := range fields {
-		ref = strings.TrimSpace(ref)
-		if ref == "" {
-			continue
+		if name := wireFieldName(ref); name != "" {
+			fieldNames = append(fieldNames, name)
 		}
-		if dot := strings.LastIndex(ref, "."); dot >= 0 && dot < len(ref)-1 {
-			fieldNames = append(fieldNames, ref[dot+1:])
-			continue
+	}
+	for _, ref := range optionalFields {
+		if name := wireFieldName(ref); name != "" {
+			fieldNames = append(fieldNames, name)
+			optionalByName[strings.ToLower(name)] = true
 		}
-		fieldNames = append(fieldNames, ref)
 	}
 	if len(fieldNames) == 0 {
 		for name := range record.Fields {
@@ -235,6 +437,12 @@ func getRecordWireData(org *storage.OrgState, recordID string, fields []string) 
 		if !ok && fieldName != name {
 			value, ok = record.Fields[fieldName]
 		}
+		if !hasField && !ok {
+			if optionalByName[strings.ToLower(name)] {
+				continue
+			}
+			return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("field not found: %s", name)}
+		}
 		label := fieldName
 		if hasField {
 			label = labelOrFallback(field.Label, fieldName)
@@ -255,6 +463,28 @@ func getRecordWireData(org *storage.OrgState, recordID string, fields []string) 
 		"apiName": objectName,
 		"fields":  fieldsOut,
 	}, nil
+}
+
+func wireFieldName(ref string) string {
+	ref = strings.TrimSpace(ref)
+	if ref == "" {
+		return ""
+	}
+	if dot := strings.LastIndex(ref, "."); dot >= 0 && dot < len(ref)-1 {
+		return ref[dot+1:]
+	}
+	return ref
+}
+
+func getRecordsWireData(org *storage.OrgState, req lwcbrowser.WireGetRecordsRequest) map[string]any {
+	results := make([]map[string]any, 0)
+	for _, item := range req.Records {
+		for _, recordID := range item.RecordIDs {
+			data, wireErr := getRecordWireData(org, recordID, item.Fields, item.OptionalFields)
+			results = append(results, batchWireResult(data, wireErr))
+		}
+	}
+	return map[string]any{"results": results}
 }
 
 func getObjectInfoWireData(org *storage.OrgState, objectAPIName string) (map[string]any, *lwcbrowser.WireError) {
@@ -278,6 +508,512 @@ func getObjectInfoWireData(org *storage.OrgState, objectAPIName string) (map[str
 	}
 	payload["fields"] = fields
 	return payload, nil
+}
+
+func getObjectInfosWireData(org *storage.OrgState, req lwcbrowser.WireGetObjectInfosRequest) map[string]any {
+	results := make([]map[string]any, 0, len(req.ObjectAPINames))
+	for _, objectName := range req.ObjectAPINames {
+		data, wireErr := getObjectInfoWireData(org, objectName)
+		results = append(results, batchWireResult(data, wireErr))
+	}
+	return map[string]any{"results": results}
+}
+
+func getRecordCreateDefaultsWireData(org *storage.OrgState, req lwcbrowser.WireGetRecordCreateDefaultsRequest, source SourceMetadata) (map[string]any, *lwcbrowser.WireError) {
+	objectName, object, ok := findOrgObject(org, req.ObjectAPIName)
+	if !ok {
+		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("object not found: %s", req.ObjectAPIName)}
+	}
+	objectInfo, wireErr := getObjectInfoWireData(org, objectName)
+	if wireErr != nil {
+		return nil, wireErr
+	}
+	recordTypeID := createDefaultsRecordTypeID(object.Definition, req.RecordTypeID)
+	record := storage.Record{Object: objectName, Fields: map[string]storage.Value{}}
+	if recordTypeID != "" {
+		record.Fields["RecordTypeId"] = storage.IDValue(storage.ID(recordTypeID))
+	}
+	fieldNames := createDefaultFieldNames(object.Definition, org.Namespace, req.OptionalFields)
+	layout, hasSourceLayout := sourceCreateLayout(source, objectName)
+	if hasSourceLayout {
+		fieldNames = appendUniqueFieldNames(fieldNames, sourceLayoutFieldNames(layout, object.Definition, org.Namespace)...)
+	} else {
+		fieldNames = appendUniqueFieldNames(fieldNames, createableFieldNames(object.Definition)...)
+	}
+	fields := make(map[string]any, len(fieldNames))
+	for _, fieldName := range fieldNames {
+		field := object.Definition.Fields[fieldName]
+		if !fieldCreateable(field) {
+			continue
+		}
+		value, hasValue := storage.DefaultValueForRecordField(object.Definition, record, field)
+		if strings.EqualFold(fieldName, "RecordTypeId") && recordTypeID != "" {
+			value, hasValue = storage.IDValue(storage.ID(recordTypeID)), true
+		}
+		jsonValue := any(nil)
+		displayValue := any(nil)
+		if hasValue {
+			jsonValue = storageValueJSON(value)
+			displayValue = fmt.Sprint(jsonValue)
+		}
+		fields[fieldName] = map[string]any{
+			"value":        jsonValue,
+			"displayValue": displayValue,
+			"label":        labelOrFallback(field.Label, fieldName),
+		}
+	}
+	return map[string]any{
+		"apiName":      objectName,
+		"recordTypeId": recordTypeID,
+		"objectInfos":  map[string]any{objectName: objectInfo},
+		"layout":       recordCreateDefaultsLayout(objectName, object.Definition, org.Namespace, recordTypeID, fieldNames, layout, hasSourceLayout),
+		"record": map[string]any{
+			"id":           nil,
+			"apiName":      objectName,
+			"recordTypeId": recordTypeID,
+			"fields":       fields,
+		},
+	}, nil
+}
+
+func getLayoutWireData(org *storage.OrgState, req lwcbrowser.WireGetLayoutRequest, source SourceMetadata) (map[string]any, *lwcbrowser.WireError) {
+	objectName, object, ok := findOrgObject(org, req.ObjectAPIName)
+	if !ok {
+		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("object not found: %s", req.ObjectAPIName)}
+	}
+	recordTypeID := createDefaultsRecordTypeID(object.Definition, req.RecordTypeID)
+	layout, hasSourceLayout := sourceCreateLayout(source, objectName)
+	fieldNames := createableFieldNames(object.Definition)
+	out := recordCreateDefaultsLayout(objectName, object.Definition, org.Namespace, recordTypeID, fieldNames, layout, hasSourceLayout)
+	out["layoutType"] = layoutTypeOrDefault(req.LayoutType)
+	out["mode"] = layoutModeOrDefault(req.Mode)
+	return out, nil
+}
+
+func layoutTypeOrDefault(value string) string {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "compact":
+		return "Compact"
+	case "full", "":
+		return "Full"
+	default:
+		return strings.TrimSpace(value)
+	}
+}
+
+func layoutModeOrDefault(value string) string {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "create":
+		return "Create"
+	case "edit":
+		return "Edit"
+	case "view", "":
+		return "View"
+	default:
+		return strings.TrimSpace(value)
+	}
+}
+
+func sourceCreateLayout(source SourceMetadata, objectName string) (layoutMetadata, bool) {
+	layouts := source.Layouts[objectName]
+	if len(layouts) == 0 {
+		return layoutMetadata{}, false
+	}
+	for _, layout := range layouts {
+		if len(layout.Sections) > 0 {
+			return layout, true
+		}
+	}
+	return layouts[0], true
+}
+
+func sourceLayoutFieldNames(layout layoutMetadata, def storage.ObjectDefinition, namespace string) []string {
+	names := []string{}
+	for _, section := range layout.Sections {
+		for _, column := range section.Columns {
+			for _, item := range column.Items {
+				canonical, ok := storage.ResolveFieldName(def, namespace, item.Field)
+				if !ok || !fieldCreateable(def.Fields[canonical]) {
+					continue
+				}
+				names = append(names, canonical)
+			}
+		}
+	}
+	return names
+}
+
+func appendUniqueFieldNames(names []string, more ...string) []string {
+	seen := make(map[string]bool, len(names)+len(more))
+	for _, name := range names {
+		seen[name] = true
+	}
+	for _, name := range more {
+		if name == "" || seen[name] {
+			continue
+		}
+		seen[name] = true
+		names = append(names, name)
+	}
+	return names
+}
+
+func createableFieldNames(def storage.ObjectDefinition) []string {
+	names := make([]string, 0, len(def.Fields))
+	for name, field := range def.Fields {
+		if fieldCreateable(field) {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	return names
+}
+
+func recordCreateDefaultsLayout(objectName string, def storage.ObjectDefinition, namespace string, recordTypeID string, fieldNames []string, sourceLayout layoutMetadata, hasSourceLayout bool) map[string]any {
+	if hasSourceLayout && len(sourceLayout.Sections) > 0 {
+		return map[string]any{
+			"id":            sourceLayout.ID,
+			"layoutType":    "Full",
+			"mode":          "Create",
+			"objectApiName": objectName,
+			"recordTypeId":  recordTypeID,
+			"saveOptions":   []map[string]any{},
+			"sections":      sourceLayoutSectionsPayload(sourceLayout, def, namespace),
+		}
+	}
+	return map[string]any{
+		"id":            "local-" + objectName + "-create-layout",
+		"layoutType":    "Full",
+		"mode":          "Create",
+		"objectApiName": objectName,
+		"recordTypeId":  recordTypeID,
+		"saveOptions":   []map[string]any{},
+		"sections":      fallbackLayoutSectionsPayload(objectName, def, fieldNames),
+	}
+}
+
+func sourceLayoutSectionsPayload(layout layoutMetadata, def storage.ObjectDefinition, namespace string) []map[string]any {
+	sections := make([]map[string]any, 0, len(layout.Sections))
+	for index, section := range layout.Sections {
+		columnCount := len(section.Columns)
+		if columnCount == 0 {
+			columnCount = 1
+		}
+		maxRows := 0
+		for _, column := range section.Columns {
+			if len(column.Items) > maxRows {
+				maxRows = len(column.Items)
+			}
+		}
+		rows := make([]map[string]any, 0, maxRows)
+		for rowIndex := 0; rowIndex < maxRows; rowIndex++ {
+			items := make([]map[string]any, 0, columnCount)
+			for _, column := range section.Columns {
+				if rowIndex >= len(column.Items) {
+					continue
+				}
+				item := column.Items[rowIndex]
+				canonical, ok := storage.ResolveFieldName(def, namespace, item.Field)
+				if !ok {
+					continue
+				}
+				field := def.Fields[canonical]
+				if !fieldCreateable(field) {
+					continue
+				}
+				items = append(items, recordLayoutFieldItem(canonical, field, item.Behavior))
+			}
+			if len(items) > 0 {
+				rows = append(rows, map[string]any{"layoutItems": items})
+			}
+		}
+		id := strings.TrimSpace(section.ID)
+		if id == "" {
+			id = fmt.Sprintf("section-%d", index+1)
+		}
+		heading := strings.TrimSpace(section.Label)
+		if heading == "" {
+			heading = labelOrFallback(def.Label, def.APIName)
+		}
+		sections = append(sections, map[string]any{
+			"id":          id,
+			"heading":     heading,
+			"columns":     columnCount,
+			"rows":        len(rows),
+			"layoutRows":  rows,
+			"collapsible": false,
+			"useHeading":  section.UseHeading,
+			"tabOrder":    layoutSectionTabOrder(section.Style),
+		})
+	}
+	return sections
+}
+
+func fallbackLayoutSectionsPayload(objectName string, def storage.ObjectDefinition, fieldNames []string) []map[string]any {
+	columns := 1
+	if len(fieldNames) > 1 {
+		columns = 2
+	}
+	rows := make([]map[string]any, 0, (len(fieldNames)+columns-1)/columns)
+	for i := 0; i < len(fieldNames); i += columns {
+		items := make([]map[string]any, 0, columns)
+		for j := 0; j < columns && i+j < len(fieldNames); j++ {
+			fieldName := fieldNames[i+j]
+			field := def.Fields[fieldName]
+			if !fieldCreateable(field) {
+				continue
+			}
+			items = append(items, recordLayoutFieldItem(fieldName, field, ""))
+		}
+		if len(items) > 0 {
+			rows = append(rows, map[string]any{"layoutItems": items})
+		}
+	}
+	return []map[string]any{{
+		"id":          "main",
+		"heading":     labelOrFallback(def.Label, objectName),
+		"columns":     columns,
+		"rows":        len(rows),
+		"layoutRows":  rows,
+		"collapsible": false,
+		"useHeading":  true,
+		"tabOrder":    "TopDown",
+	}}
+}
+
+func recordLayoutFieldItem(fieldName string, field storage.Field, behavior string) map[string]any {
+	required, editableForNew, editableForUpdate, uiBehavior := recordLayoutItemBehavior(field, behavior)
+	label := labelOrFallback(field.Label, fieldName)
+	return map[string]any{
+		"fieldApiName":      fieldName,
+		"label":             label,
+		"required":          required,
+		"editableForNew":    editableForNew,
+		"editableForUpdate": editableForUpdate,
+		"sortable":          false,
+		"uiBehavior":        uiBehavior,
+		"layoutComponents": []map[string]any{{
+			"apiName":       fieldName,
+			"componentType": "Field",
+			"label":         label,
+		}},
+	}
+}
+
+func recordLayoutItemBehavior(field storage.Field, behavior string) (bool, bool, bool, string) {
+	switch strings.ToLower(strings.TrimSpace(behavior)) {
+	case "required":
+		return true, true, fieldUpdateable(field), "Required"
+	case "readonly", "read only", "read-only":
+		return false, false, false, "Readonly"
+	case "edit":
+		if field.Required {
+			return true, true, fieldUpdateable(field), "Required"
+		}
+		return false, true, fieldUpdateable(field), "Edit"
+	default:
+		if field.Required {
+			return true, true, fieldUpdateable(field), "Required"
+		}
+		return false, true, fieldUpdateable(field), "Edit"
+	}
+}
+
+func layoutSectionTabOrder(style string) string {
+	switch strings.ToLower(strings.TrimSpace(style)) {
+	case "twocolumnslefttoright":
+		return "LeftRight"
+	default:
+		return "TopDown"
+	}
+}
+
+func createDefaultsRecordTypeID(def storage.ObjectDefinition, requested string) string {
+	if trimmed := strings.TrimSpace(requested); trimmed != "" {
+		return trimmed
+	}
+	for _, recordType := range def.RecordTypes {
+		if recordType.Default && recordType.ID != "" {
+			return string(recordType.ID)
+		}
+	}
+	for _, recordType := range def.RecordTypes {
+		if recordType.ID != "" && (recordType.Active || recordType.Available) {
+			return string(recordType.ID)
+		}
+	}
+	return "012000000000000AAA"
+}
+
+func createDefaultFieldNames(def storage.ObjectDefinition, namespace string, optionalFields []string) []string {
+	names := make([]string, 0, len(def.Fields)+len(optionalFields))
+	seen := make(map[string]bool, len(def.Fields)+len(optionalFields))
+	for name := range def.Fields {
+		field := def.Fields[name]
+		if !fieldCreateable(field) {
+			continue
+		}
+		if _, ok := storage.DefaultValueForField(field); ok || field.Required || strings.EqualFold(name, "RecordTypeId") {
+			if !seen[name] {
+				seen[name] = true
+				names = append(names, name)
+			}
+		}
+	}
+	for _, ref := range optionalFields {
+		fieldName := strings.TrimSpace(ref)
+		if objectName, name, ok := splitFieldRef(fieldName); ok {
+			if !strings.EqualFold(objectName, def.APIName) {
+				continue
+			}
+			fieldName = name
+		}
+		canonical, ok := storage.ResolveFieldName(def, namespace, fieldName)
+		if !ok || seen[canonical] {
+			continue
+		}
+		seen[canonical] = true
+		names = append(names, canonical)
+	}
+	return names
+}
+
+func fieldCreateable(field storage.Field) bool {
+	createable := field.Type != storage.FieldID && field.Type != storage.FieldCalculated
+	if field.Createable != nil {
+		createable = *field.Createable
+	}
+	return createable
+}
+
+func fieldUpdateable(field storage.Field) bool {
+	updateable := field.Type != storage.FieldID && field.Type != storage.FieldCalculated
+	if field.Updateable != nil {
+		updateable = *field.Updateable
+	}
+	return updateable
+}
+
+func batchWireResult(data map[string]any, wireErr *lwcbrowser.WireError) map[string]any {
+	if wireErr != nil {
+		status := wireErr.Status
+		if status == 0 {
+			status = http.StatusNotFound
+		}
+		errorCode := strings.TrimSpace(wireErr.Type)
+		if errorCode == "" {
+			errorCode = "NOT_FOUND"
+		}
+		return map[string]any{
+			"statusCode": status,
+			"result": map[string]any{
+				"errorCode": errorCode,
+				"message":   wireErr.Message,
+			},
+		}
+	}
+	return map[string]any{
+		"statusCode": http.StatusOK,
+		"result":     data,
+	}
+}
+
+func getPicklistValuesWireData(org *storage.OrgState, req lwcbrowser.WireGetPicklistValuesRequest) (map[string]any, *lwcbrowser.WireError) {
+	objectName, fieldName, ok := splitFieldRef(req.FieldAPIName)
+	if !ok {
+		objectName = strings.TrimSpace(req.ObjectAPIName)
+		fieldName = strings.TrimSpace(req.FieldAPIName)
+	}
+	objectName, object, ok := findOrgObject(org, objectName)
+	if !ok {
+		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("object not found: %s", req.ObjectAPIName)}
+	}
+	canonical, ok := storage.ResolveFieldName(object.Definition, org.Namespace, fieldName)
+	if !ok {
+		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("field not found: %s", fieldName)}
+	}
+	field := object.Definition.Fields[canonical]
+	return map[string]any{
+		"controllerValues": map[string]any{},
+		"defaultValue":     defaultPicklistValue(field, req.RecordTypeID),
+		"url":              fmt.Sprintf("/lightning/wire/getPicklistValues/%s.%s", objectName, canonical),
+		"values":           picklistValuesPayload(field, req.RecordTypeID),
+	}, nil
+}
+
+func getPicklistValuesByRecordTypeWireData(org *storage.OrgState, req lwcbrowser.WireGetPicklistValuesByRecordTypeRequest) (map[string]any, *lwcbrowser.WireError) {
+	objectName, object, ok := findOrgObject(org, req.ObjectAPIName)
+	if !ok {
+		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("object not found: %s", req.ObjectAPIName)}
+	}
+	out := map[string]any{}
+	for name, field := range object.Definition.Fields {
+		if field.Type != storage.FieldPicklist && field.Type != storage.FieldMultiPicklist {
+			continue
+		}
+		out[name] = map[string]any{
+			"controllerValues": map[string]any{},
+			"defaultValue":     defaultPicklistValue(field, req.RecordTypeID),
+			"values":           picklistValuesPayload(field, req.RecordTypeID),
+		}
+	}
+	return map[string]any{
+		"objectApiName":       objectName,
+		"recordTypeId":        strings.TrimSpace(req.RecordTypeID),
+		"picklistFieldValues": out,
+	}, nil
+}
+
+func getRelatedListRecordsWireData(org *storage.OrgState, req lwcbrowser.WireGetRelatedListRecordsRequest) (map[string]any, *lwcbrowser.WireError) {
+	parentObjectName, _, ok := findOrgRecord(org, req.ParentRecordID)
+	if !ok {
+		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("parent record not found: %s", req.ParentRecordID)}
+	}
+	parentObject, ok := org.Objects[parentObjectName]
+	if !ok {
+		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("parent object not found: %s", parentObjectName)}
+	}
+	relationshipName := strings.TrimSpace(req.RelatedListID)
+	var relation storage.Relationship
+	for _, candidate := range parentObject.Definition.Relations {
+		if strings.EqualFold(candidate.ChildRelationship, relationshipName) {
+			relation = candidate
+			break
+		}
+	}
+	if relation.ChildRelationship == "" || relation.Field == "" {
+		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("related list not found: %s", relationshipName)}
+	}
+	childObjectName, childObject, ok := findChildObjectForRelationship(org, parentObjectName, relation)
+	if !ok {
+		return nil, &lwcbrowser.WireError{Message: fmt.Sprintf("related list child object not found: %s", relationshipName)}
+	}
+	records := make([]map[string]any, 0)
+	for id, record := range childObject.Records {
+		if record.System.IsDeleted {
+			continue
+		}
+		value, ok := record.Fields[relation.Field]
+		if !ok || fmt.Sprint(storageValueJSON(value)) != strings.TrimSpace(req.ParentRecordID) {
+			continue
+		}
+		record.ID = id
+		record.Object = childObjectName
+		row, _ := getRecordWireData(org, string(id), req.Fields, req.OptionalFields)
+		if row != nil {
+			records = append(records, row)
+		}
+	}
+	return map[string]any{
+		"count":              len(records),
+		"currentPageToken":   nil,
+		"nextPageToken":      nil,
+		"previousPageToken":  nil,
+		"records":            records,
+		"relatedListId":      relationshipName,
+		"parentRecordId":     strings.TrimSpace(req.ParentRecordID),
+		"childObjectApiName": childObjectName,
+	}, nil
 }
 
 func createRecordWireData(org *storage.OrgState, req lwcbrowser.WireCreateRecordRequest) (map[string]any, *lwcbrowser.WireError) {
@@ -385,6 +1121,78 @@ func recordWireMutationPayload(objectName string, record storage.Record) map[str
 	}
 }
 
+func splitFieldRef(ref string) (objectName, fieldName string, ok bool) {
+	ref = strings.TrimSpace(ref)
+	if dot := strings.LastIndex(ref, "."); dot > 0 && dot < len(ref)-1 {
+		return ref[:dot], ref[dot+1:], true
+	}
+	return "", "", false
+}
+
+func picklistValuesPayload(field storage.Field, recordTypeID string) []map[string]any {
+	defaultValue := defaultPicklistValueName(field, recordTypeID)
+	values := make([]map[string]any, 0, len(field.PicklistValues))
+	for _, value := range field.PicklistValues {
+		active := value.Active
+		if !active && value.Value == "" && value.Label == "" {
+			continue
+		}
+		values = append(values, map[string]any{
+			"attributes":   nil,
+			"label":        labelOrFallback(value.Label, value.Value),
+			"value":        value.Value,
+			"validFor":     []string{},
+			"defaultValue": value.Default || value.Value == defaultValue,
+			"active":       active || value.Active,
+		})
+	}
+	return values
+}
+
+func defaultPicklistValue(field storage.Field, recordTypeID string) map[string]any {
+	defaultName := defaultPicklistValueName(field, recordTypeID)
+	if defaultName == "" {
+		return nil
+	}
+	for _, value := range field.PicklistValues {
+		if value.Value == defaultName {
+			return map[string]any{
+				"attributes":   nil,
+				"label":        labelOrFallback(value.Label, value.Value),
+				"value":        value.Value,
+				"validFor":     []string{},
+				"defaultValue": true,
+				"active":       value.Active,
+			}
+		}
+	}
+	return nil
+}
+
+func defaultPicklistValueName(field storage.Field, _ string) string {
+	for _, value := range field.PicklistValues {
+		if value.Default {
+			return value.Value
+		}
+	}
+	return ""
+}
+
+func findChildObjectForRelationship(org *storage.OrgState, parentObjectName string, relation storage.Relationship) (string, storage.ObjectState, bool) {
+	for name, object := range org.Objects {
+		field, ok := object.Definition.Fields[relation.Field]
+		if !ok || field.Type != storage.FieldReference {
+			continue
+		}
+		for _, parent := range field.ReferenceTo {
+			if strings.EqualFold(parent, parentObjectName) {
+				return name, object, true
+			}
+		}
+	}
+	return "", storage.ObjectState{}, false
+}
+
 func findOrgRecord(org *storage.OrgState, recordID string) (objectName string, record storage.Record, ok bool) {
 	if org == nil || len(recordID) < 3 {
 		return "", storage.Record{}, false
@@ -396,6 +1204,9 @@ func findOrgRecord(org *storage.OrgState, recordID string) (objectName string, r
 			continue
 		}
 		if rec, found := object.Records[id]; found {
+			if rec.System.IsDeleted {
+				return "", storage.Record{}, false
+			}
 			rec.ID = id
 			return name, rec, true
 		}

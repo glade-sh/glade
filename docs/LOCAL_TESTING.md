@@ -44,49 +44,99 @@ glade toolchain install
 Start the LWC dev shell from a Salesforce-shaped project:
 
 ```bash
-glade dev lwc --project . --addr 127.0.0.1:8080
+glade dev lwc --project . --open
 ```
 
-The startup output lists component, record page, app page, home page, and tab
-routes discovered from LWC bundle metadata, FlexiPages, and custom tabs:
+The command opens the `/lwc` workbench. It lists component, record page, app
+page, home page, and tab routes discovered from LWC bundle metadata,
+FlexiPages, and custom tabs. Use a named context when a page needs record, app,
+tab, form-factor, or state values:
+
+```bash
+glade dev lwc --project . --context accountRecord --open
+```
+
+Use direct flags for one route:
+
+```bash
+glade dev lwc --project . --target record-page --object Account --record 001000000000001AAA --page Account_Record_Page --open
+```
+
+Use `--target url-addressable`, `--target record-action`, or `--target
+global-action` with `--component`, `--action`, `--object`, and `--record` when
+you need those shell contexts without a named preset.
+
+Put reusable contexts in `glade.lwc.json` at the project root, or pass an
+explicit context file:
+
+```bash
+glade dev lwc --project . --context-file config/lwc-contexts.json --context accountRecord --open
+```
+
+Use `--port 8080` for the common localhost shortcut. Use `--addr` when scripts
+need a full bind address. The selected context is written to the ready file as
+`selectedContext` and `selectedUrl` when you use `--ready-file`.
+
+The startup output still prints raw routes for scripts and browser bookmarks:
 
 ```text
 LWC dev shell: http://127.0.0.1:8080
+Selected context accountRecord: http://127.0.0.1:8080/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page
 Routes:
+  /lwc
   /lwc/preview/component/c/contextProbe
+  /lwc/preview/cmp/c/actionProbe?c__name=value
   /lwc/preview/record/Account/<recordId>?page=Account_Record_Page
   /lwc/preview/app/Sales_Dashboard
   /lwc/preview/home/Custom_Home
   /lwc/preview/tab/Lwc_Probe
-  /lwc/preview/tab/Visualforce_Tab -> /apex/WidgetHost
+  /lwc/preview/action/Account/001000000000001AAA/Update_Status
+  /lwc/preview/action/global/Global_Status
 Watching ... for lwc, flexipage, tab, Visualforce, Apex, and static resource changes.
 ```
 
 Route shapes:
 
 ```text
+/lwc
 /lwc/preview/component/<namespace>/<component>
+/lwc/preview/cmp/<namespace>/<component>?c__name=value
 /lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>
 /lwc/preview/app/<Page>
 /lwc/preview/home/<Page>
 /lwc/preview/tab/<Tab>
+/lwc/preview/action/<Object>/<recordId>/<ActionName>
+/lwc/preview/action/global/<ActionName>
 ```
 
-The LWC local shell is a preview feature. It gives useful local preview routes,
-not full hosted Lightning Experience parity.
+The LWC local shell is a preview feature. It gives a useful local Lightning
+workbench and preview routes, not full hosted Lightning Experience parity.
 
-Visualforce-backed tabs redirect to `/apex/<Page>`. Visualforce pages that use
-`<apex:includeLightning/>`, `$Lightning.use()`, and
-`$Lightning.createComponent()` share the same local LWC runtime, Apex wire
-endpoint, LDS/UI API shims, labels, resources, and navigation basics as the LWC
-shell.
+Visualforce-backed tabs redirect to `/apex/<Page>`. That redirect and shared
+Lightning Out runtime are the Visualforce boundary for this LWC loop.
 
 The shell supports `CurrentPageReference`, basic `NavigationMixin` URL and
 navigation behavior for local targets, Apex wire and imperative controller
-imports, `getRecord`, `getObjectInfo`, local DML-backed create/update/delete
-record helpers, schema tokens, custom labels, static resources, content assets,
-user values, and checked i18n values. Local org data comes from project schema
-plus Glade storage fixtures in `data/*.json`.
+imports, `getRecord`, `getRecords`, local DML-backed create/update/delete
+record helpers, `getRecordCreateDefaults`, record-input helper functions,
+`lightning/uiObjectInfoApi` object info and picklist wires, schema tokens,
+custom labels, static resources, content assets, user values, checked i18n
+values, local message service, resource loading, toast events, practical common
+base components, and SLDS-shaped local styling. Create defaults include project
+layout field sections when available, with a generated full layout from
+createable fields as the local fallback. `lightning/uiLayoutApi` `getLayout`
+returns the same local Record Layout shape.
+Local org data comes from project schema plus Glade storage fixtures in
+`data/*.json`.
+
+The shell exposes current local state for tooling:
+
+```text
+/lightning/local/context.json
+```
+
+That JSON includes active route, PageReference, route context, mounted
+components, routes, diagnostics, and supported services.
 
 Read [LWC_LOCAL_SHELL.md](LWC_LOCAL_SHELL.md) for route details and current
 limits. Read [LWC_SUPPORT.md](LWC_SUPPORT.md) for the support table.

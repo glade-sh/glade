@@ -1,0 +1,16 @@
+<apex:page showHeader="false" sidebar="false">
+    <apex:includeLightning />
+    <div id="baseHost">Loading base components...</div>
+    <script>
+        $Lightning.use("c:lightningOut", function() {
+            $Lightning.createComponent(
+                "c:baseComponentHost",
+                {},
+                "baseHost",
+                function(cmp, status, errorMessage) {
+                    window.__baseComponentHostStatus = { status: status, errorMessage: errorMessage };
+                }
+            );
+        });
+    </script>
+</apex:page>

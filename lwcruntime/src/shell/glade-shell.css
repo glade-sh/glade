@@ -1,0 +1,212 @@
+.glade-shell {
+  background: #f3f3f3;
+  color: #181818;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.glade-global-header {
+  align-items: center;
+  background: #0176d3;
+  color: #ffffff;
+  display: flex;
+  gap: 0.75rem;
+  min-height: 3rem;
+  padding: 0 1rem;
+}
+
+.glade-app-launcher {
+  background: #ffffff;
+  border: 1px solid #b0c4df;
+  border-radius: 4px;
+  color: #0176d3;
+  height: 2rem;
+  width: 2rem;
+}
+
+.glade-shell-subtitle {
+  color: #d8e6f7;
+  font-size: 0.8125rem;
+}
+
+.glade-app-tabs {
+  align-items: stretch;
+  background: #ffffff;
+  border-bottom: 1px solid #dddbda;
+  display: flex;
+  gap: 0.25rem;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
+}
+
+.glade-app-tabs a {
+  align-items: center;
+  color: #181818;
+  display: inline-flex;
+  padding: 0 0.75rem;
+  text-decoration: none;
+}
+
+.glade-shell[data-glade-app-mode="console"] {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.glade-workbench {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+  min-height: 0;
+  padding: 1rem;
+}
+
+.glade-shell[data-glade-app-mode="console"] .glade-workbench {
+  grid-template-columns: 4rem minmax(0, 1fr) minmax(18rem, 22rem);
+}
+
+.glade-console-rail {
+  align-content: start;
+  background: #032d60;
+  border-radius: 4px;
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.glade-console-rail a {
+  border-radius: 4px;
+  color: #ffffff;
+  font-size: 0.75rem;
+  min-height: 2.75rem;
+  overflow-wrap: anywhere;
+  padding: 0.5rem 0.25rem;
+  text-align: center;
+  text-decoration: none;
+}
+
+.glade-console-rail a:hover,
+.glade-console-rail a:focus {
+  background: #0b5cab;
+}
+
+.glade-stage,
+.glade-context-panel {
+  background: #ffffff;
+  border: 1px solid #dddbda;
+  border-radius: 4px;
+  min-width: 0;
+  padding: 1rem;
+}
+
+.glade-route-picker {
+  border-bottom: 1px solid #dddbda;
+  margin: 0 0 1rem;
+  padding: 0 0 1rem;
+}
+
+.glade-route-picker h2 {
+  font-size: 0.8125rem;
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+}
+
+.glade-route-picker > div {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.glade-route-picker a {
+  border: 1px solid #dddbda;
+  border-radius: 4px;
+  color: #181818;
+  display: grid;
+  gap: 0.25rem;
+  min-height: 4rem;
+  padding: 0.625rem;
+  text-decoration: none;
+}
+
+.glade-route-picker a:hover,
+.glade-route-picker a:focus {
+  border-color: #0176d3;
+  box-shadow: 0 0 0 1px #0176d3 inset;
+}
+
+.glade-route-picker span {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.glade-route-picker code {
+  color: #706e6b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.glade-region {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.glade-host {
+  background: #ffffff;
+  border: 1px solid #dddbda;
+  border-radius: 4px;
+  display: block;
+  min-height: 3rem;
+  padding: 0.75rem;
+}
+
+.glade-placeholder {
+  background: #fafaf9;
+  border-style: dashed;
+  color: #706e6b;
+}
+
+.glade-placeholder-title {
+  color: #2e2e2e;
+  font-weight: 600;
+}
+
+.glade-placeholder-note {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.glade-context-panel h2 {
+  font-size: 0.8125rem;
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+}
+
+.glade-context-panel dl {
+  display: grid;
+  gap: 0.25rem 0.75rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  margin: 0 0 1rem;
+}
+
+.glade-context-panel dt {
+  color: #706e6b;
+}
+
+.glade-context-panel dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 800px) {
+  .glade-shell[data-glade-app-mode="console"] .glade-workbench,
+  .glade-workbench {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .glade-console-rail {
+    grid-auto-flow: column;
+    overflow-x: auto;
+  }
+}

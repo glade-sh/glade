@@ -1,40 +1,82 @@
 # LWC Local Support
 
-This page lists the user-facing LWC preview feature surface for the local shell
-and Visualforce Lightning Out host.
+This page lists the user-facing LWC preview feature surface for the local shell.
+The feature is centered on `glade dev lwc`, `/lwc`, and `/lwc/preview/*`
+routes. Visualforce appears here only where a Visualforce-backed tab or shared
+Lightning Out runtime affects an LWC.
+
+Generated capture rows live in
+[generated/LWC_SHELL_SUPPORT.md](generated/LWC_SHELL_SUPPORT.md). They are
+prepared from the `glade-tools` LWC capture command and name `oaer-probe-max`
+as the scratch-org target. Two-sided browser capture is available through the
+sibling `glade-tools` command.
 
 ## Hosts
 
-| Host | Status | Notes |
-| --- | --- | --- |
-| Direct component shell | Preview feature | `/lwc/preview/component/<namespace>/<component>` mounts one exposed component for local development. |
-| Record page shell | Preview feature | `/lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>` resolves FlexiPage regions and record context for local development. |
-| App page shell | Preview feature | `/lwc/preview/app/<Page>` resolves app-page FlexiPage metadata for local development. |
-| Home page shell | Preview feature | `/lwc/preview/home/<Page>` resolves home-page FlexiPage metadata for local development. |
-| Custom tab shell | Preview feature with limits | LWC tabs and FlexiPage tabs render locally. Visualforce tabs redirect to `/apex/<Page>`. Web and object tabs are reported as unsupported LWC-shell targets. |
-| Visualforce Lightning Out | Preview feature with limits | `/apex/<PageName>` can host LWCs through `$Lightning.use()` and `$Lightning.createComponent()` using the shared local runtime. |
+| Host | Status | Support key | Notes |
+| --- | --- | --- | --- |
+| LWC workbench | Preview feature | `lwc.host.lightning-shell` | `/lwc` opens the local workbench with discovered routes, active context, and diagnostics. |
+| Direct component shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/component/<namespace>/<component>` mounts one exposed component for local development. |
+| Record page shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>` resolves FlexiPage regions and record context. |
+| App page shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/app/<Page>` resolves app-page FlexiPage metadata. |
+| Home page shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/home/<Page>` resolves home-page FlexiPage metadata. |
+| Custom tab shell | Preview feature with limits | `lwc.host.lightning-shell` | LWC tabs and FlexiPage tabs render locally. Visualforce tabs redirect to `/apex/<Page>`. Web and object tabs are reported as unsupported LWC-shell targets. |
+| URL-addressable component shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/cmp/<namespace>/<component>` mounts `lightning__UrlAddressable` LWCs and passes `c__*` state. |
+| Quick action shell | Preview feature with limits | `lwc.host.lightning-shell` | `/lwc/preview/action/...` mounts LWC-backed record and global actions with local action context. Full workspace APIs are approximated. |
+| Visualforce Lightning Out | Preview feature with limits | `lwc.host.visualforce-lightning-out` | `/apex/<PageName>` can host LWCs through `$Lightning.use()` and `$Lightning.createComponent()` using the shared local runtime. |
+
+## Starting The Shell
+
+```bash
+glade toolchain install
+glade dev lwc --project . --open
+glade dev lwc --project . --context accountRecord --open
+glade dev lwc --project . --context-file config/lwc-contexts.json --context accountRecord --open
+glade dev lwc --project . --target record-page --object Account --record 001000000000001AAA --page Account_Record_Page --open
+glade dev lwc --project . --port 8080 --open
+```
+
+`glade.lwc.json` presets support `component`, `urlAddressable`, `recordPage`,
+`appPage`, `homePage`, `tab`, `recordAction`, and `globalAction` targets.
+Pass `--context-file` to use a different preset file. The ready file records
+`selectedUrl` and `selectedContext` when a preset or direct target selects the
+first browser route.
+
+`/lightning/local/context.json` returns the active route, PageReference, route
+context, mounted components, discovered apps, named context presets,
+diagnostics, route list, and service support.
 
 ## Runtime Services
 
-| Service | Status | Host coverage |
+| Service | Status | Local coverage |
 | --- | --- | --- |
-| LWC module compilation | Supported | LWC shell and Visualforce Lightning Out. |
-| Import maps | Supported | LWC shell and Visualforce Lightning Out. |
-| Apex wire and imperative Apex imports | Supported with VM limits | LWC shell and Visualforce Lightning Out. |
-| `lightning/uiRecordApi` `getRecord` | Supported with local data limits | LWC shell and Visualforce Lightning Out. |
-| `lightning/uiRecordApi` `getObjectInfo` | Supported with local schema limits | LWC shell and Visualforce Lightning Out. |
-| `lightning/uiRecordApi` create, update, and delete helpers | Supported with local DML limits | LWC shell and Visualforce Lightning Out. Mutations use the local DML engine for supported objects, including ID sequences, required-field checks, audit fields, explicit nulls, and soft deletes. |
-| `lightning/uiRecordApi` field helper functions | Supported for local record shapes | LWC shell and Visualforce Lightning Out. |
-| `@salesforce/schema` object and field tokens | Supported | LWC shell and Visualforce Lightning Out. |
-| `@salesforce/label` | Supported with local metadata limits | LWC shell and Visualforce Lightning Out. |
-| `@salesforce/resourceUrl` | Supported with local metadata limits | LWC shell and Visualforce Lightning Out. |
-| `@salesforce/contentAssetUrl` | Supported with local metadata limits | LWC shell and Visualforce Lightning Out. |
-| `@salesforce/user` | Supported for `Id` and `isGuest` | LWC shell and Visualforce Lightning Out. |
-| `@salesforce/i18n` | Supported for checked local values | LWC shell and Visualforce Lightning Out. |
-| `lightning/navigation` | Supported with local route limits | LWC shell and Visualforce Lightning Out. |
-| `lightning/messageService` | Supported for in-page publish and subscribe | LWC shell and Visualforce Lightning Out. |
-| `lightning/platformResourceLoader` | Supported for local scripts and styles | LWC shell and Visualforce Lightning Out. |
-| `lightning/platformShowToastEvent` | Supported as a browser event shim | LWC shell and Visualforce Lightning Out. |
+| LWC module compilation | Local support | LWC shell and shared Lightning Out runtime. |
+| Import maps | Local support | LWC shell and shared Lightning Out runtime. |
+| Context presets in `glade.lwc.json` | Local support | LWC shell startup, ready file, and local context JSON. |
+| Local context JSON | Local support | LWC shell at `/lightning/local/context.json`. |
+| Apex wire and imperative Apex imports | Local support with VM limits | LWC shell. Request user context is passed to the VM. Cacheable wire calls use deterministic local cache keys and `refreshApex` forces a fresh invocation. |
+| `lightning/uiRecordApi` `getRecord` and `getRecords` | Local support with data limits | LWC shell. Batch results preserve request order and return per-record status rows. `optionalFields` are accepted; missing required fields return a wire error while missing optional fields are skipped. Soft-deleted records read as not found. |
+| `lightning/uiObjectInfoApi` `getObjectInfo` and `getObjectInfos` | Local support with schema limits | LWC shell. Batch object info results preserve request order and return per-object status rows. Compatibility exports remain available from `lightning/uiRecordApi`. |
+| `lightning/uiRecordApi` `getRecordCreateDefaults` | Local support with schema/layout limits | LWC shell. Returns a local default record, object info, and create-mode layout. Project `.layout-meta.xml` field sections are used when present; otherwise Glade generates a local full layout from createable fields. Profile/app layout assignment and non-field layout widgets remain Salesforce-only. |
+| `lightning/uiLayoutApi` `getLayout` | Local support with layout limits | LWC shell. Returns the same local Record Layout shape used by create defaults: parsed project field sections when present, otherwise a generated full layout from createable fields. Form factor is accepted but does not choose a distinct local variant yet. |
+| REST SObject layout metadata | Local support with layout limits | `/sobjects/<Object>/describe/layouts` and `/sobjects/<Object>/namedLayouts/<Name>` return parsed project `.layout-meta.xml` field sections when present. Profile/app layout assignment and non-field layout widgets remain Salesforce-only. |
+| `lightning/uiRecordApi` create, update, and delete helpers | Local support with DML limits | LWC shell. Mutations use the local DML engine for supported objects, including ID sequences, required-field checks, audit fields, explicit nulls, and soft deletes. |
+| `lightning/uiObjectInfoApi` picklist adapters | Local support with schema limits | LWC shell. `getPicklistValues` and `getPicklistValuesByRecordType` read local field picklist metadata. Compatibility exports remain available from `lightning/uiRecordApi`. |
+| `lightning/uiRelatedListApi` `getRelatedListRecords` | Local support with relationship limits | LWC shell. Reads deterministic child rows from local relationship metadata and record state. Related-list metadata adapters remain a Salesforce check. Compatibility export remains available from `lightning/uiRecordApi`. |
+| `lightning/uiRecordApi` field and record-input helper functions | Local support for record shapes | LWC shell. Covers `getFieldValue`, `getFieldDisplayValue`, `generateRecordInputForCreate`, `generateRecordInputForUpdate`, and `createRecordInputFilteredByEditedFields`. |
+| `@salesforce/schema` object and field tokens | Local support | LWC shell and shared runtime imports. |
+| `@salesforce/label` | Local support with metadata limits | LWC shell and shared runtime imports. |
+| `@salesforce/resourceUrl` | Local support with metadata limits | LWC shell and shared runtime imports. |
+| `@salesforce/contentAssetUrl` | Local support with metadata limits | LWC shell and shared runtime imports. |
+| `@salesforce/user` | Local support for `Id` and `isGuest` | LWC shell and shared runtime imports. |
+| `@salesforce/i18n` | Local support for checked values | LWC shell and shared runtime imports. |
+| `lightning/navigation` | Local support with route limits | LWC shell. |
+| `lightning/messageService` | Local support for in-page publish and subscribe | LWC shell. |
+| `lightning/platformResourceLoader` | Local support for local scripts and styles | LWC shell. |
+| `lightning/platformShowToastEvent` | Local support as a browser event shim | LWC shell. |
+| `lightning/platformWorkspaceApi` | Local console approximation | Returns the active local route and lets components set local tab label/icon details. Marked with `GLADELWC072`; full console workspace behavior stays hosted-only. |
+| Common `lightning-*` base components | Practical local support | LWC shell and Visualforce Lightning Out where modules are served by the shared runtime, including common inputs, cards, layouts, tabs, LDS-backed record forms, datatable row actions, tab active events, messages, icons, spinner, and a local `lightning/modal` approximation. |
+| SLDS-shaped local styling | Practical local support | LWC shell and shared runtime pages. Exact hosted SLDS remains a Salesforce check. |
 
 ## Unsupported Or Limited
 
@@ -42,17 +84,63 @@ and Visualforce Lightning Out host.
 | --- | --- |
 | Web custom tabs | Unsupported in the LWC shell. |
 | Object custom tabs | Unsupported in the LWC shell. |
-| Missing LWC, FlexiPage, or tab metadata | Returns a named `GLADELWC` diagnostic. |
+| Unsupported quick action metadata | Reports `GLADELWC070`. |
+| Invalid URL-addressable state | Reports `GLADELWC071`. |
+| Console workspace API | Approximated locally and marked with `GLADELWC072`. |
+| Unsupported local base-component attributes | Reports `GLADELWC061`. |
+| Missing LWC, FlexiPage, app, or tab metadata | Returns a named `GLADELWC` diagnostic. |
+| Invalid or missing context preset fields | Returns a named `GLADELWC` diagnostic. |
 | Full Lightning Experience | Not modeled. Use Salesforce for hosted chrome, app state, console APIs, live auth, permissions, and final gates. |
-| Full UI API | The local shell has selected LDS/UI API shims. It is not broad UI API parity. |
+| `lightning/uiListApi` `getListUi` | Unsupported locally. Reports `GLADELWC050`; use `getRelatedListRecords` or local SOQL-backed Apex. |
+| Full UI API | The local shell has selected LDS/UI API shims and local field layout sections. It is not broad UI API parity. |
 | Full base component and SLDS parity | Use the supported modules in this build. Keep a Salesforce browser check for exact styling and hosted base-component behavior. |
 | Exact Visualforce Lightning Out parity | The local host mounts LWCs and shares runtime services. Hosted lifecycle timing and every Lightning Out edge are not promised. |
 
-## First Commands
+## Diagnostics
+
+Unsupported or approximate behavior reports stable `GLADELWC` diagnostics. The
+workbench context panel, browser console, and `/lightning/local/context.json`
+are the user-facing places to inspect them. Notable local-shell diagnostics
+include `GLADELWC034` for approximated FlexiPage visibility rules,
+`GLADELWC061` for unsupported local base-component attributes, and
+`GLADELWC080` through `GLADELWC082` for Lightning Out app, dependency, and
+host-service issues.
+
+## Browser Oracle
+
+Use `glade-tools` from the sibling tools repository when you need an
+authenticated Salesforce browser check and a matching local shell browser check:
 
 ```bash
-glade toolchain install
-glade dev lwc --project . --port 8080
+cd /Users/matt/Dev/lwc-full-shell/glade-tools
+go run ./cmd/glade-plugin-compat lwc capture \
+  --target-org oaer-probe-max \
+  --project /Users/matt/Dev/lwc-full-shell/glade/testdata/local-tests/lwc-shell \
+  --targets app-page,custom-tab,url-addressable-component \
+  --local-browser-capture \
+  --glade-bin /tmp/glade-lwc-shell-bin \
+  --browser-capture \
+  --out /tmp/glade-lwc-two-sided-browser-check.json
 ```
 
-Then open a route from the startup banner.
+`--local-browser-capture` starts or uses a local `glade dev lwc` shell and
+stores `local-browser-dom` evidence. Use `--glade-bin` to let the tool start
+the shell, or `--local-base-url` to point at a shell that is already running.
+`--browser-capture` uses `sf org open --url-only` in memory and stores
+`salesforce-browser-dom` evidence. The report writes stable local and
+Salesforce paths only; frontdoor login URLs and one-time tokens are not written.
+When both sides are captured, each case also includes a `comparison` block with
+the scoped component selector, normalized visible text, project LWC component
+names, project LWC component counts, and any current diffs.
+
+The current `oaer-probe-max` lane has two-sided browser proof for the app page,
+custom tab, and URL-addressable component targets: local DOM captured,
+Salesforce DOM captured, selector-scoped comparison passed, and zero browser
+console or page errors. The app-page and custom-tab proofs deploy
+`Lwc_Shell.app-meta.xml`, assign `Lwc_Shell_Access`, and open
+`/lightning/app/c__Lwc_Shell/n/Lwc_Probe` so Salesforce resolves the same
+FlexiPage-backed tab. Record pages need a real org record id and page
+activation before they can become a
+strict browser oracle. Quick actions need modal routing proof. Visualforce
+Lightning Out browser capture needs the Visualforce fixture pages deployed to
+the same org.

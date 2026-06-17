@@ -6,6 +6,7 @@
     <div id="recordHost">Loading record...</div>
     <div id="labelResourceHost">Loading resource...</div>
     <div id="eventHost">Loading event...</div>
+    <div id="baseHost">Loading base components...</div>
     <script>
         window.__callbacks = {};
         window.__selected = null;
@@ -29,6 +30,7 @@
             mount("c:recordWireHost", { recordId: "001XX0000000001" }, "recordHost");
             mount("c:labelResourceHost", {}, "labelResourceHost");
             mount("c:eventChild", {}, "eventHost");
+            mount("c:baseComponentHost", {}, "baseHost");
         });
     </script>
 </apex:page>

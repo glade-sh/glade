@@ -48,6 +48,24 @@ type layoutMetadata struct {
 	ObjectName string
 	Name       string
 	FileName   string
+	Sections   []layoutSectionMetadata
+}
+
+type layoutSectionMetadata struct {
+	ID         string
+	Label      string
+	Style      string
+	UseHeading bool
+	Columns    []layoutColumnMetadata
+}
+
+type layoutColumnMetadata struct {
+	Items []layoutItemMetadata
+}
+
+type layoutItemMetadata struct {
+	Field    string
+	Behavior string
 }
 
 type compactLayoutMetadata struct {
@@ -68,6 +86,25 @@ type listViewXML struct {
 type compactLayoutXML struct {
 	Label  string   `xml:"label"`
 	Fields []string `xml:"fields"`
+}
+
+type layoutXML struct {
+	Sections []layoutSectionXML `xml:"layoutSections"`
+}
+
+type layoutSectionXML struct {
+	Label   string            `xml:"label"`
+	Style   string            `xml:"style"`
+	Columns []layoutColumnXML `xml:"layoutColumns"`
+}
+
+type layoutColumnXML struct {
+	Items []layoutItemXML `xml:"layoutItems"`
+}
+
+type layoutItemXML struct {
+	Field    string `xml:"field"`
+	Behavior string `xml:"behavior"`
 }
 
 type customObjectXML struct {
@@ -298,7 +335,10 @@ func (m *SourceMetadata) loadObjectMetadata() error {
 		m.Components = append(m.Components, metadataComponent{Type: "ListView", FullName: view.ObjectName + "." + view.DeveloperName, FileName: path, ID: storage.ID(view.ID)})
 	}
 	for i, path := range m.Project.LayoutFiles {
-		layout := loadLayout(path, i+1)
+		layout, err := loadLayout(path, i+1)
+		if err != nil {
+			return err
+		}
 		m.Layouts[layout.ObjectName] = append(m.Layouts[layout.ObjectName], layout)
 		m.Components = append(m.Components, metadataComponent{Type: "Layout", FullName: layout.Name, FileName: path, ID: storage.ID(layout.ID)})
 	}
@@ -370,13 +410,50 @@ func loadCompactLayout(path string, ordinal int) (compactLayoutMetadata, error) 
 	}, nil
 }
 
-func loadLayout(path string, ordinal int) layoutMetadata {
+func loadLayout(path string, ordinal int) (layoutMetadata, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return layoutMetadata{}, err
+	}
+	var raw layoutXML
+	if err := xml.Unmarshal(data, &raw); err != nil {
+		return layoutMetadata{}, err
+	}
 	name := trimKnownSuffix(filepath.Base(path), ".layout-meta.xml")
 	objectName := name
 	if idx := strings.Index(name, "-"); idx > 0 {
 		objectName = name[:idx]
 	}
-	return layoutMetadata{ID: string(sequenceID("00h", ordinal)), ObjectName: objectName, Name: name, FileName: path}
+	sections := make([]layoutSectionMetadata, 0, len(raw.Sections))
+	for i, section := range raw.Sections {
+		label := strings.TrimSpace(section.Label)
+		if label == "" {
+			label = fmt.Sprintf("Section %d", i+1)
+		}
+		columns := make([]layoutColumnMetadata, 0, len(section.Columns))
+		for _, column := range section.Columns {
+			items := make([]layoutItemMetadata, 0, len(column.Items))
+			for _, item := range column.Items {
+				field := strings.TrimSpace(item.Field)
+				if field == "" {
+					continue
+				}
+				items = append(items, layoutItemMetadata{
+					Field:    field,
+					Behavior: strings.TrimSpace(item.Behavior),
+				})
+			}
+			columns = append(columns, layoutColumnMetadata{Items: items})
+		}
+		sections = append(sections, layoutSectionMetadata{
+			ID:         fmt.Sprintf("section-%d", i+1),
+			Label:      label,
+			Style:      strings.TrimSpace(section.Style),
+			UseHeading: label != "",
+			Columns:    columns,
+		})
+	}
+	return layoutMetadata{ID: string(sequenceID("00h", ordinal)), ObjectName: objectName, Name: name, FileName: path, Sections: sections}, nil
 }
 
 func (m *SourceMetadata) addToolingSchemaMetadataRecords() error {

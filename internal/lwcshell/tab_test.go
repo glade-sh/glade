@@ -39,3 +39,18 @@ func TestLoadCustomTabParsesVisualforceTabTarget(t *testing.T) {
 		t.Fatalf("diagnostic = %#v", diag)
 	}
 }
+
+func TestLoadCustomTabParsesObjectTabTargetFromFileName(t *testing.T) {
+	path := writeTempFile(t, "Widget__c.tab-meta.xml", `<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Widgets</label>
+  <customObject>true</customObject>
+</CustomTab>`)
+
+	tab, err := LoadCustomTab(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tab.Type != TabTypeObject || tab.Target != "Widget__c" {
+		t.Fatalf("tab = %#v", tab)
+	}
+}

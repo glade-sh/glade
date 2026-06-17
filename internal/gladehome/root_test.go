@@ -89,6 +89,17 @@ func TestInstallFromCopiesToolchain(t *testing.T) {
 	if _, ok := validateRoot(UserShareDir()); !ok {
 		t.Fatalf("installed toolchain missing at %s", UserShareDir())
 	}
+	for _, rel := range []string{
+		"lwcruntime/src/lightning/button.mjs",
+		"lwcruntime/src/shell/app.mjs",
+		"lwcruntime/src/shims/lds-cache.mjs",
+		"lwcruntime/src/shims/wire-adapter.mjs",
+		"lwcruntime/src/slds/slds-loader.mjs",
+	} {
+		if _, err := os.Stat(filepath.Join(UserShareDir(), filepath.FromSlash(rel))); err != nil {
+			t.Fatalf("installed toolchain missing %s: %v", rel, err)
+		}
+	}
 }
 
 func TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare(t *testing.T) {

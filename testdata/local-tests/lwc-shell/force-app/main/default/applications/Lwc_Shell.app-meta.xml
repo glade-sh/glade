@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+  <defaultLandingTab>Lwc_Probe</defaultLandingTab>
+  <description>Local LWC shell oracle app</description>
+  <formFactors>Large</formFactors>
+  <label>LWC Shell</label>
+  <navType>Standard</navType>
+  <tabs>Lwc_Probe</tabs>
+  <tabs>standard-Account</tabs>
+  <uiType>Lightning</uiType>
+</CustomApplication>

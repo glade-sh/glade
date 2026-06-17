@@ -1,0 +1,151 @@
+:root {
+  --slds-g-color-brand-base-50: #0176d3;
+  --slds-g-color-neutral-base-100: #ffffff;
+  --slds-g-color-neutral-base-95: #f3f3f3;
+  --slds-g-color-neutral-base-90: #e5e5e5;
+  --slds-g-color-neutral-base-20: #2e2e2e;
+  --slds-g-radius-border-2: 4px;
+  --slds-g-shadow-outset-focus-1: 0 0 0 2px #0176d3;
+}
+
+.slds-button {
+  align-items: center;
+  border: 1px solid #c9c9c9;
+  border-radius: var(--slds-g-radius-border-2);
+  background: var(--slds-g-color-neutral-base-100);
+  color: #0176d3;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0 0.75rem;
+}
+
+.slds-button_neutral:hover,
+.slds-button_icon:hover {
+  background: var(--slds-g-color-neutral-base-95);
+}
+
+.slds-button_icon {
+  justify-content: center;
+  min-width: 2rem;
+  padding: 0 0.45rem;
+}
+
+.slds-card {
+  background: var(--slds-g-color-neutral-base-100);
+  border: 1px solid #c9c9c9;
+  border-radius: var(--slds-g-radius-border-2);
+  display: block;
+}
+
+.slds-card__header,
+.slds-card__body {
+  padding: 0.75rem;
+}
+
+.slds-card__header {
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.slds-card__header-title {
+  color: var(--slds-g-color-neutral-base-20);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.slds-form-element {
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.slds-form-element__label {
+  color: #444444;
+  display: block;
+  font-size: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.slds-input,
+.slds-textarea,
+.slds-select {
+  border: 1px solid #747474;
+  border-radius: var(--slds-g-radius-border-2);
+  box-sizing: border-box;
+  color: #181818;
+  font: inherit;
+  min-height: 2rem;
+  padding: 0.35rem 0.5rem;
+  width: 100%;
+}
+
+.slds-input:focus,
+.slds-textarea:focus,
+.slds-select:focus {
+  box-shadow: var(--slds-g-shadow-outset-focus-1);
+  outline: 0;
+}
+
+.slds-grid {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.slds-wrap {
+  flex-wrap: wrap;
+}
+
+.slds-col {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.slds-tabs_default__content {
+  display: block;
+  padding: 0.5rem 0;
+}
+
+.slds-tabs_default__item {
+  border-bottom: 2px solid var(--slds-g-color-brand-base-50);
+  display: inline-block;
+  margin: 0 0 0.5rem;
+  padding: 0 0 0.25rem;
+}
+
+.slds-spinner {
+  color: #0176d3;
+  display: inline-block;
+  min-height: 1.5rem;
+}
+
+.slds-icon {
+  align-items: center;
+  background: #0176d3;
+  border-radius: 50%;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 0.75rem;
+  height: 1.5rem;
+  justify-content: center;
+  min-width: 1.5rem;
+  padding: 0 0.25rem;
+}
+
+.slds-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.slds-table th,
+.slds-table td {
+  border-bottom: 1px solid #e5e5e5;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.slds-notify {
+  border: 1px solid #c9c9c9;
+  border-radius: var(--slds-g-radius-border-2);
+  padding: 0.5rem;
+}

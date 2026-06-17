@@ -42,7 +42,21 @@ func (s *Server) handleLightningShims(w http.ResponseWriter, r *http.Request, pa
 }
 
 func (s *Server) serveLightningStaticShim(w http.ResponseWriter, r *http.Request, parts []string) {
-	if len(parts) != 1 || parts[0] != "wire-adapter.js" {
+	if len(parts) != 1 {
+		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning shim")
+		return
+	}
+	var fileName string
+	switch parts[0] {
+	case "apex.js":
+		writeJavaScript(w, []byte(`export { refreshApex } from "/lightning/shims/core/lds-cache.mjs";
+`))
+		return
+	case "wire-adapter.js":
+		fileName = "wire-adapter.mjs"
+	case "lds-cache.mjs", "lds-cache.js":
+		fileName = "lds-cache.mjs"
+	default:
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning shim")
 		return
 	}
@@ -51,11 +65,17 @@ func (s *Server) serveLightningStaticShim(w http.ResponseWriter, r *http.Request
 		writeSalesforceError(w, errUnsupportedFeature, err.Error())
 		return
 	}
-	path := filepath.Join(shims, "wire-adapter.mjs")
+	path := filepath.Join(shims, fileName)
 	content, err := os.ReadFile(path)
 	if err != nil {
-		writeSalesforceError(w, errUnknownEndpoint, "wire adapter shim missing")
-		return
+		if repoRoot, repoErr := gladehome.RepoRoot(); repoErr == nil {
+			path = filepath.Join(repoRoot, "lwcruntime", "src", "shims", fileName)
+			content, err = os.ReadFile(path)
+		}
+		if err != nil {
+			writeSalesforceError(w, errUnknownEndpoint, "lightning shim missing")
+			return
+		}
 	}
 	writeJavaScript(w, content)
 }
@@ -69,12 +89,22 @@ func (s *Server) serveLightningAPIShim(w http.ResponseWriter, parts []string) {
 	switch token {
 	case "uiRecordApi":
 		writeJavaScript(w, []byte(lwcbrowser.UIRecordAPIModuleJS()))
+	case "uiLayoutApi":
+		writeJavaScript(w, []byte(lwcbrowser.UILayoutAPIModuleJS()))
+	case "uiListApi":
+		writeJavaScript(w, []byte(lwcbrowser.UIListAPIModuleJS()))
+	case "uiObjectInfoApi":
+		writeJavaScript(w, []byte(lwcbrowser.UIObjectInfoAPIModuleJS()))
+	case "uiRelatedListApi":
+		writeJavaScript(w, []byte(lwcbrowser.UIRelatedListAPIModuleJS()))
 	case "navigation":
 		writeJavaScript(w, []byte(lwcbrowser.NavigationModuleJS()))
 	case "platformShowToastEvent":
 		writeJavaScript(w, []byte(lwcbrowser.ShowToastEventModuleJS()))
 	case "platformResourceLoader":
 		writeJavaScript(w, []byte(lwcbrowser.PlatformResourceLoaderModuleJS()))
+	case "platformWorkspaceApi":
+		writeJavaScript(w, []byte(lwcbrowser.PlatformWorkspaceAPIModuleJS()))
 	case "messageService":
 		writeJavaScript(w, []byte(lwcbrowser.MessageServiceModuleJS()))
 	default:

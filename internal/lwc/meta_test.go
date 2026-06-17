@@ -102,6 +102,41 @@ func TestParseComponentMetaSplitsCommaSeparatedTargetConfigTargets(t *testing.T)
 	}
 }
 
+func TestParseComponentMetaParsesQuickActionUrlAddressableAndPlaceholders(t *testing.T) {
+	path := writeComponentMeta(t, `<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <isExposed>true</isExposed>
+    <targets>
+        <target>lightning__RecordAction</target>
+        <target>lightning__UrlAddressable</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightning__RecordAction">
+            <actionType>ScreenAction</actionType>
+            <property name="comment" type="String" placeholder="Reason for update" required="true"/>
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>`)
+
+	meta, err := ParseComponentMeta(path)
+	if err != nil {
+		t.Fatalf("ParseComponentMeta() error = %v", err)
+	}
+	if !meta.SupportsTarget("lightning__UrlAddressable") {
+		t.Fatalf("SupportsTarget(lightning__UrlAddressable) = false")
+	}
+	if len(meta.TargetConfigs) != 1 {
+		t.Fatalf("TargetConfigs length = %d, want 1", len(meta.TargetConfigs))
+	}
+	config := meta.TargetConfigs[0]
+	if config.ActionType != "ScreenAction" {
+		t.Fatalf("ActionType = %q, want ScreenAction", config.ActionType)
+	}
+	if len(config.Properties) != 1 || config.Properties[0].Placeholder != "Reason for update" {
+		t.Fatalf("properties = %#v", config.Properties)
+	}
+}
+
 func writeComponentMeta(t *testing.T, contents string) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "recordInspector.js-meta.xml")

@@ -1,0 +1,100 @@
+{
+  "defaultContext": "accountRecord",
+  "contexts": {
+    "accountRecord": {
+      "target": "recordPage",
+      "objectApiName": "Account",
+      "recordId": "001000000000001AAA",
+      "page": "Account_Record_Page",
+      "app": "Sales",
+      "tab": "Accounts",
+      "formFactor": "Large",
+      "state": {
+        "c__mode": "demo"
+      }
+    },
+    "salesDashboard": {
+      "target": "appPage",
+      "page": "Sales_Dashboard",
+      "app": "Sales",
+      "formFactor": "Large"
+    },
+    "home": {
+      "target": "homePage",
+      "page": "Custom_Home",
+      "app": "Sales",
+      "formFactor": "Large"
+    },
+    "tab": {
+      "target": "tab",
+      "tab": "Lwc_Probe",
+      "app": "Sales",
+      "formFactor": "Large"
+    },
+    "urlAddressableAction": {
+      "target": "urlAddressable",
+      "component": "c:actionProbe",
+      "app": "Sales",
+      "formFactor": "Large",
+      "state": {
+        "c__mode": "demo"
+      }
+    },
+    "recordAction": {
+      "target": "recordAction",
+      "objectApiName": "Account",
+      "recordId": "001000000000001AAA",
+      "action": "Update_Status",
+      "app": "Sales",
+      "formFactor": "Large"
+    },
+    "globalAction": {
+      "target": "globalAction",
+      "action": "Global_Status",
+      "app": "Sales",
+      "formFactor": "Large"
+    },
+    "apexWire": {
+      "target": "component",
+      "component": "c:wireProbe",
+      "app": "Sales",
+      "formFactor": "Large"
+    },
+    "ldsRecord": {
+      "target": "component",
+      "component": "c:recordProbe",
+      "objectApiName": "Account",
+      "recordId": "001000000000001AAA",
+      "app": "Sales",
+      "formFactor": "Large"
+    },
+    "uiObjectInfo": {
+      "target": "component",
+      "component": "c:objectInfoProbe",
+      "objectApiName": "Account",
+      "app": "Sales",
+      "formFactor": "Large"
+    },
+    "uiRelatedList": {
+      "target": "component",
+      "component": "c:relatedListProbe",
+      "objectApiName": "Account",
+      "recordId": "001000000000001AAA",
+      "app": "Sales",
+      "formFactor": "Large"
+    },
+    "uiLayout": {
+      "target": "component",
+      "component": "c:layoutProbe",
+      "objectApiName": "Account",
+      "app": "Sales",
+      "formFactor": "Large"
+    },
+    "baseComponents": {
+      "target": "component",
+      "component": "c:baseComponentHost",
+      "app": "Sales",
+      "formFactor": "Large"
+    }
+  }
+}

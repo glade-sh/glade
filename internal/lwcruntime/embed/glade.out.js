@@ -23,6 +23,9 @@ function hasNamespace(name) {
 function isLightningService(name) {
   return normalizeQualified(name).startsWith("lightning:");
 }
+function lightningOutDiagnostic(code, message, value) {
+  return `${code} ${message}: ${value}`;
+}
 function outAppDependencies(app) {
   const deps = config.outAppDependencies || {};
   const values = deps[normalizeQualified(app)];
@@ -36,11 +39,11 @@ function validateComponentRequest(qualified) {
     return "Bad Lightning component name: " + qualified;
   }
   if (isLightningService(qualified)) {
-    return "Unsupported Lightning service: " + qualified;
+    return lightningOutDiagnostic("GLADELWC082", "Lightning Out service unsupported in Visualforce host", qualified);
   }
   const deps = outAppDependencies(activeOutApp);
   if (deps && !deps.includes(normalizeQualified(qualified))) {
-    return "Lightning dependency not found: " + qualified;
+    return lightningOutDiagnostic("GLADELWC081", "Lightning Out dependency missing", qualified);
   }
   return "";
 }
@@ -81,7 +84,7 @@ async function mountComponent(qualified, attrs, locator) {
   try {
     mod = await import(entry.url);
   } catch (err) {
-    throw new Error("Lightning LWC module not found: " + qualified, { cause: err });
+    throw new Error(lightningOutDiagnostic("GLADELWC081", "Lightning Out dependency missing", qualified), { cause: err });
   }
   const Ctor = mod.default;
   if (typeof Ctor !== "function") {
@@ -108,7 +111,7 @@ window.$Lightning = {
     const allowed = (config.outApps || []).map(normalizeQualified);
     if (allowed.length > 0 && !allowed.includes(outApp)) {
       console.error("[glade] Lightning Out app not found", app);
-      callback(null, "ERROR", "Lightning Out app not found: " + app);
+      callback(null, "ERROR", lightningOutDiagnostic("GLADELWC080", "Lightning Out app missing", app));
       return;
     }
     activeOutApp = outApp;
@@ -123,7 +126,7 @@ window.$Lightning = {
         callback(el, "SUCCESS");
         return;
       }
-      callback(null, "ERROR", "Failed to create component " + qualified);
+      callback(null, "ERROR", lightningOutDiagnostic("GLADELWC081", "Lightning Out dependency missing", qualified));
     }).catch((err) => {
       console.error("[glade] createComponent failed", err);
       if (typeof callback === "function") {

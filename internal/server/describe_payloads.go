@@ -71,19 +71,21 @@ func describePayload(def storage.ObjectDefinition, org *storage.OrgState) map[st
 		fields = append(fields, describeFieldPayload(field))
 	}
 	return map[string]any{
-		"name":               def.APIName,
-		"label":              labelOrFallback(def.Label, def.APIName),
-		"labelPlural":        labelOrFallback(def.PluralLabel, labelOrFallback(def.Label, def.APIName)),
-		"custom":             strings.HasSuffix(def.APIName, "__c") || strings.HasSuffix(def.APIName, "__mdt"),
-		"keyPrefix":          def.KeyPrefix,
-		"fields":             fields,
-		"searchable":         true,
-		"queryable":          true,
-		"createable":         true,
-		"updateable":         true,
-		"deletable":          true,
-		"recordTypeInfos":    describeRecordTypeInfos(def.RecordTypes),
-		"childRelationships": describeChildRelationships(def.APIName, org),
+		"name":                def.APIName,
+		"apiName":             def.APIName,
+		"label":               labelOrFallback(def.Label, def.APIName),
+		"labelPlural":         labelOrFallback(def.PluralLabel, labelOrFallback(def.Label, def.APIName)),
+		"custom":              strings.HasSuffix(def.APIName, "__c") || strings.HasSuffix(def.APIName, "__mdt"),
+		"keyPrefix":           def.KeyPrefix,
+		"fields":              fields,
+		"searchable":          true,
+		"queryable":           true,
+		"createable":          true,
+		"updateable":          true,
+		"deletable":           true,
+		"recordTypeInfos":     describeRecordTypeInfos(def.RecordTypes),
+		"defaultRecordTypeId": defaultRecordTypeID(def.RecordTypes),
+		"childRelationships":  describeChildRelationships(def.APIName, org),
 	}
 }
 
@@ -101,10 +103,13 @@ func describeFieldPayload(field storage.Field) map[string]any {
 	nillable := !field.Required && field.Type != storage.FieldID && !strings.EqualFold(field.APIName, "Id")
 	return map[string]any{
 		"name":             field.APIName,
+		"apiName":          field.APIName,
 		"label":            labelOrFallback(field.Label, field.APIName),
 		"type":             string(field.Type),
+		"dataType":         lightningFieldDataType(field),
 		"length":           describeFieldLength(field),
 		"nillable":         nillable,
+		"required":         !nillable,
 		"createable":       createable,
 		"updateable":       updateable,
 		"filterable":       true,
@@ -115,7 +120,52 @@ func describeFieldPayload(field storage.Field) map[string]any {
 		"referenceTo":      referenceTo,
 		"relationshipName": field.RelationshipName,
 		"picklistValues":   describePicklistValues(field.PicklistValues),
+		"nameField":        strings.EqualFold(field.APIName, "Name"),
 	}
+}
+
+func lightningFieldDataType(field storage.Field) string {
+	switch field.Type {
+	case storage.FieldString:
+		return "String"
+	case storage.FieldPicklist:
+		return "Picklist"
+	case storage.FieldMultiPicklist:
+		return "Multipicklist"
+	case storage.FieldBoolean:
+		return "Boolean"
+	case storage.FieldInteger:
+		return "Int"
+	case storage.FieldDecimal:
+		return "Double"
+	case storage.FieldDate:
+		return "Date"
+	case storage.FieldDateTime:
+		return "DateTime"
+	case storage.FieldReference, storage.FieldID:
+		return "Reference"
+	case storage.FieldCalculated:
+		return "Calculated"
+	default:
+		if field.DisplayType != "" {
+			return strings.Title(strings.ToLower(field.DisplayType))
+		}
+		return string(field.Type)
+	}
+}
+
+func defaultRecordTypeID(recordTypes []storage.RecordTypeInfo) string {
+	for _, recordType := range recordTypes {
+		if recordType.Default && recordType.ID != "" {
+			return string(recordType.ID)
+		}
+	}
+	for _, recordType := range recordTypes {
+		if recordType.ID != "" && (recordType.Active || recordType.Available) {
+			return string(recordType.ID)
+		}
+	}
+	return "012000000000000AAA"
 }
 
 func describeFieldLength(field storage.Field) int {
@@ -400,13 +450,7 @@ func (s *Server) layoutMetadataPayload(def storage.ObjectDefinition, version str
 	layouts := s.Source.Layouts[def.APIName]
 	items := make([]map[string]any, 0, len(layouts))
 	for _, layout := range layouts {
-		base := "/services/data/" + version + "/sobjects/" + def.APIName + "/namedLayouts/" + url.PathEscape(layout.Name)
-		items = append(items, map[string]any{
-			"id":         layout.ID,
-			"name":       layout.Name,
-			"objectType": def.APIName,
-			"url":        base,
-		})
+		items = append(items, s.layoutMetadataItemPayload(def, version, layout))
 	}
 	if len(parts) == 3 && parts[1] == "namedLayouts" {
 		for _, item := range items {
@@ -420,6 +464,28 @@ func (s *Server) layoutMetadataPayload(def storage.ObjectDefinition, version str
 		"objectType": def.APIName,
 		"url":        "/services/data/" + version + "/sobjects/" + def.APIName + "/describe/layouts",
 	}
+}
+
+func (s *Server) layoutMetadataItemPayload(def storage.ObjectDefinition, version string, layout layoutMetadata) map[string]any {
+	base := "/services/data/" + version + "/sobjects/" + def.APIName + "/namedLayouts/" + url.PathEscape(layout.Name)
+	namespace := ""
+	if s.Org != nil {
+		namespace = s.Org.Namespace
+	}
+	item := map[string]any{
+		"id":           layout.ID,
+		"name":         layout.Name,
+		"objectType":   def.APIName,
+		"url":          base,
+		"layoutType":   "Full",
+		"mode":         "View",
+		"recordTypeId": defaultRecordTypeID(def.RecordTypes),
+		"sections":     []map[string]any{},
+	}
+	if len(layout.Sections) > 0 {
+		item["sections"] = sourceLayoutSectionsPayload(layout, def, namespace)
+	}
+	return item
 }
 
 func objectResourcePayload(def storage.ObjectDefinition, version string) map[string]any {

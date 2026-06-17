@@ -5,4 +5,9 @@ public class ItemCtrl {
             new Account(Id = recordId, Name = 'Local Widget')
         };
     }
+
+    @AuraEnabled(cacheable=true)
+    public static String currentUserId() {
+        return UserInfo.getUserId();
+    }
 }

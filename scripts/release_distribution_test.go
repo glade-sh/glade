@@ -53,3 +53,22 @@ func TestInstallScriptSupportsPrivateReleaseToken(t *testing.T) {
 		}
 	}
 }
+
+func TestReleaseBuildPackagesLWCRuntimeAssets(t *testing.T) {
+	releasePath := filepath.Join("..", "scripts", "release-build.sh")
+	releaseScript, err := os.ReadFile(releasePath)
+	if err != nil {
+		t.Fatalf("read %s: %v", releasePath, err)
+	}
+	scriptText := string(releaseScript)
+	for _, want := range []string{
+		"lwcruntime/src/lightning",
+		"lwcruntime/src/shell",
+		"lwcruntime/src/shims",
+		"lwcruntime/src/slds",
+	} {
+		if !strings.Contains(scriptText, want) {
+			t.Fatalf("release-build.sh missing %q", want)
+		}
+	}
+}

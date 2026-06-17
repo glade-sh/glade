@@ -1,8 +1,10 @@
 package server
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,6 +15,318 @@ import (
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
 )
+
+func TestLWCShellRootRendersWorkbenchRoutePicker(t *testing.T) {
+	root, err := lightningTestRepoRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture := filepath.Join(root, "testdata", "local-tests", "lwc-shell")
+	p, err := project.Load(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lwc", nil))
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	for _, want := range []string{
+		"Glade LWC Shell",
+		"data-glade-shell=\"workbench\"",
+		"/lwc/preview/record/Account/",
+		"/lwc/preview/app/Sales_Dashboard",
+		"/lwc/preview/home/Custom_Home",
+		"/lwc/preview/tab/Lwc_Probe",
+		"data-glade-context-panel",
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("missing %q in:\n%s", want, body)
+		}
+	}
+}
+
+func TestLWCShellRendersApplicationNavAndConsoleMode(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/applications/Support_Console.app-meta.xml", `<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <label>Support Console</label>
+	  <navType>Console</navType>
+	  <tabs>standard-Case</tabs>
+	  <tabs>Lwc_Probe</tabs>
+	</CustomApplication>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/flexipages/Support_Page.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <masterLabel>Support Page</masterLabel>
+	  <type>AppPage</type>
+	  <flexiPageRegions><name>main</name></flexiPageRegions>
+	</FlexiPage>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/tabs/Lwc_Probe.tab-meta.xml", `<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <label>LWC Probe</label>
+	  <lwcComponent>c:contextProbe</lwcComponent>
+	</CustomTab>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js", `import { LightningElement } from "lwc"; export default class ContextProbe extends LightningElement {}`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.html", `<template><p>Context</p></template>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <apiVersion>64.0</apiVersion>
+	  <isExposed>true</isExposed>
+	  <targets>
+	    <target>lightning__Tab</target>
+	  </targets>
+	</LightningComponentBundle>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lwc/preview/app/Support_Page?app=Support_Console", nil))
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	for _, want := range []string{
+		`data-glade-app-mode="console"`,
+		`class="glade-console-rail"`,
+		`Support Console`,
+		`standard-Case`,
+		`Lwc_Probe`,
+		`GLADELWC072`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("missing %q in:\n%s", want, body)
+		}
+	}
+	if count := strings.Count(body, "GLADELWC072:"); count != 1 {
+		t.Fatalf("visible GLADELWC072 count = %d in:\n%s", count, body)
+	}
+}
+
+func TestLightningRuntimeServesShellAndSLDSAssets(t *testing.T) {
+	handler := New(&storage.OrgState{})
+	cases := []struct {
+		path string
+		want string
+	}{
+		{path: "/lightning/runtime/shell/app.js", want: "bootGladeShell"},
+		{path: "/lightning/runtime/shell/glade-shell.css", want: ".glade-shell"},
+		{path: "/lightning/runtime/slds/slds-loader.js", want: "loadSLDS"},
+		{path: "/lightning/runtime/slds/glade-slds.css", want: ".slds-button"},
+		{path: "/lightning/shims/core/apex.js", want: "refreshApex"},
+		{path: "/lightning/shims/lightning/uiListApi.js", want: "GLADELWC050"},
+		{path: "/lightning/shims/lightning/platformWorkspaceApi.js", want: "getFocusedTabInfo"},
+	}
+	for _, tc := range cases {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, tc.path, nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s status = %d body=%s", tc.path, rec.Code, rec.Body.String())
+		}
+		if !strings.Contains(rec.Body.String(), tc.want) {
+			t.Fatalf("%s missing %q in %s", tc.path, tc.want, rec.Body.String())
+		}
+	}
+}
+
+func TestLightningLocalContextJSONReportsActiveShellState(t *testing.T) {
+	root, err := lightningTestRepoRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture := filepath.Join(root, "testdata", "local-tests", "lwc-shell")
+	p, err := project.Load(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	activeRoute := "/lwc/preview/record/Account/001000000000001AAA?app=Sales&formFactor=Large&page=Account_Record_Page&state.c__mode=demo"
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/lightning/local/context.json?url="+url.QueryEscape(activeRoute), nil)
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var got struct {
+		ActiveRoute     string               `json:"activeRoute"`
+		PageReference   map[string]any       `json:"pageReference"`
+		Context         lwcshell.PageContext `json:"context"`
+		Mounts          []lwcShellMount      `json:"mounts"`
+		Apps            []map[string]any     `json:"apps"`
+		Routes          []map[string]any     `json:"routes"`
+		DefaultContext  string               `json:"defaultContext"`
+		SelectedContext string               `json:"selectedContext"`
+		Contexts        []struct {
+			Name        string               `json:"name"`
+			SelectedURL string               `json:"selectedUrl"`
+			Context     lwcshell.PageContext `json:"context"`
+		} `json:"contexts"`
+		Services    map[string]string     `json:"services"`
+		Diagnostics []lwcshell.Diagnostic `json:"diagnostics"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatalf("invalid JSON: %v\n%s", err, rec.Body.String())
+	}
+	if got.ActiveRoute != activeRoute {
+		t.Fatalf("active route = %q", got.ActiveRoute)
+	}
+	if got.Context.Kind != lwcshell.RenderTargetRecordPage || got.Context.RecordID != "001000000000001AAA" || got.Context.ObjectAPIName != "Account" {
+		t.Fatalf("context = %#v", got.Context)
+	}
+	if got.PageReference["type"] != "standard__recordPage" {
+		t.Fatalf("page reference = %#v", got.PageReference)
+	}
+	if len(got.Mounts) == 0 {
+		t.Fatalf("mounts = %#v", got.Mounts)
+	}
+	if len(got.Routes) == 0 {
+		t.Fatalf("routes = %#v", got.Routes)
+	}
+	if len(got.Apps) == 0 {
+		t.Fatalf("apps = %#v", got.Apps)
+	}
+	if got.DefaultContext != "accountRecord" {
+		t.Fatalf("default context = %q", got.DefaultContext)
+	}
+	if got.SelectedContext != "accountRecord" {
+		t.Fatalf("selected context = %q", got.SelectedContext)
+	}
+	foundRecordPreset := false
+	for _, preset := range got.Contexts {
+		if preset.Name != "accountRecord" {
+			continue
+		}
+		foundRecordPreset = true
+		if preset.SelectedURL != "/lwc/preview/record/Account/001000000000001AAA?app=Sales&formFactor=Large&page=Account_Record_Page&state.c__mode=demo" {
+			t.Fatalf("accountRecord selected URL = %q", preset.SelectedURL)
+		}
+		if preset.Context.Kind != lwcshell.RenderTargetRecordPage || preset.Context.RecordID != "001000000000001AAA" {
+			t.Fatalf("accountRecord context = %#v", preset.Context)
+		}
+	}
+	if !foundRecordPreset {
+		t.Fatalf("accountRecord preset not found in %#v", got.Contexts)
+	}
+	for service, want := range map[string]string{
+		"apex":                   "supported",
+		"apexWire":               "supported",
+		"imperativeApex":         "supported",
+		"lds":                    "supported",
+		"uiRecordApi":            "supported",
+		"uiObjectInfoApi":        "supported",
+		"uiLayoutApi":            "supported",
+		"uiRelatedListApi":       "supported",
+		"navigation":             "supported",
+		"labels":                 "supported",
+		"resources":              "supported",
+		"schema":                 "supported",
+		"user":                   "supported",
+		"i18n":                   "supported",
+		"toast":                  "supported",
+		"lms":                    "supported",
+		"platformResourceLoader": "supported",
+		"urlAddressable":         "supported-local",
+		"quickActions":           "supported-local",
+		"platformWorkspaceApi":   "partial",
+		"baseComponents":         "supported-local",
+		"slds":                   "partial",
+		"visualforceHost":        "supported-local",
+	} {
+		if got.Services[service] != want {
+			t.Fatalf("service %s = %q, want %q in %#v", service, got.Services[service], want, got.Services)
+		}
+	}
+}
+
+func TestLWCShellAppRouteFallsBackToApplicationDefaultTab(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/applications/Support_Console.app-meta.xml", `<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <label>Support Console</label>
+	  <navType>Console</navType>
+	  <tabs>Lwc_Probe</tabs>
+	</CustomApplication>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/tabs/Lwc_Probe.tab-meta.xml", `<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <label>LWC Probe</label>
+	  <lwcComponent>c:contextProbe</lwcComponent>
+	</CustomTab>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js", `import { LightningElement } from "lwc"; export default class ContextProbe extends LightningElement {}`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.html", `<template><p>Context</p></template>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <apiVersion>64.0</apiVersion>
+	  <isExposed>true</isExposed>
+	  <targets>
+	    <target>lightning__Tab</target>
+	  </targets>
+	</LightningComponentBundle>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lwc/preview/app/Support_Console", nil))
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	for _, want := range []string{
+		`data-glade-app-mode="console"`,
+		`Support Console`,
+		`Lwc_Probe`,
+		`c:contextProbe`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("missing %q in:\n%s", want, body)
+		}
+	}
+}
+
+func TestLightningLocalContextJSONReportsDirectComponentContext(t *testing.T) {
+	root, err := lightningTestRepoRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture := filepath.Join(root, "testdata", "local-tests", "lwc-shell")
+	p, err := project.Load(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	activeRoute := "/lwc/preview/component/c/recordProbe?app=Sales&formFactor=Large&objectApiName=Account&recordId=001000000000001AAA"
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/lightning/local/context.json?url="+url.QueryEscape(activeRoute), nil)
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var got struct {
+		Context lwcshell.PageContext `json:"context"`
+		Mounts  []lwcShellMount      `json:"mounts"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatalf("invalid JSON: %v\n%s", err, rec.Body.String())
+	}
+	if got.Context.Kind != lwcshell.RenderTargetComponent ||
+		got.Context.ComponentName != "c:recordProbe" ||
+		got.Context.AppName != "Sales" ||
+		got.Context.FormFactor != "Large" ||
+		got.Context.ObjectAPIName != "Account" ||
+		got.Context.RecordID != "001000000000001AAA" {
+		t.Fatalf("context = %#v", got.Context)
+	}
+	if len(got.Mounts) != 1 || got.Mounts[0].Attrs["recordId"] != "001000000000001AAA" || got.Mounts[0].Attrs["objectApiName"] != "Account" {
+		t.Fatalf("mounts = %#v", got.Mounts)
+	}
+}
 
 func TestRenderLWCShellHTMLMountsDirectComponentWithContext(t *testing.T) {
 	html := renderLWCShellHTML(lwcbrowser.PageConfig{}, lwcshell.ShellPage{
@@ -196,6 +510,186 @@ func TestResolveLWCShellRequestAppliesDirectComponentMetadataDefaults(t *testing
 	}
 	if got := mounts[0].Attrs["title"]; got != "Metadata Title" {
 		t.Fatalf("metadata title = %#v", got)
+	}
+}
+
+func TestResolveLWCShellRequestServesUrlAddressableRoute(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/urlProbe/urlProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <isExposed>true</isExposed>
+	  <targets><target>lightning__UrlAddressable</target></targets>
+	</LightningComponentBundle>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/urlProbe/urlProbe.js", `import { LightningElement } from 'lwc';
+export default class UrlProbe extends LightningElement {}`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/urlProbe/urlProbe.html", `<template><p>url</p></template>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/cmp/c/urlProbe?c__name=value", nil), []string{"cmp", "c", "urlProbe"})
+	if err != nil {
+		t.Fatalf("resolve error = %v diagnostics=%#v", err, diagnostics)
+	}
+	if shell.Context.ComponentName != "c:urlProbe" || shell.Context.State["c__name"] != "value" {
+		t.Fatalf("context = %#v", shell.Context)
+	}
+	body := renderLWCShellHTML(lwcbrowser.PageConfig{}, shell)
+	for _, want := range []string{
+		`"componentName":"c:urlProbe"`,
+		`"c__name":"value"`,
+		`"standard__component"`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("missing %q in:\n%s", want, body)
+		}
+	}
+}
+
+func TestResolveLWCShellRequestRejectsInvalidUrlAddressableState(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/urlProbe/urlProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <isExposed>true</isExposed>
+	  <targets><target>lightning__UrlAddressable</target></targets>
+	</LightningComponentBundle>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	_, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/cmp/c/urlProbe?name=value", nil), []string{"cmp", "c", "urlProbe"})
+	if err == nil {
+		t.Fatalf("resolve error = nil, want invalid URL-addressable state")
+	}
+	if len(diagnostics) != 1 || diagnostics[0].Code != "GLADELWC071" {
+		t.Fatalf("diagnostics = %#v", diagnostics)
+	}
+}
+
+func TestResolveLWCShellRequestServesRecordQuickAction(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/quickActions/Account.Update_Status.quickAction-meta.xml", `<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <label>Update Status</label>
+	  <type>LightningComponent</type>
+	  <targetObject>Account</targetObject>
+	  <lightningComponent>c:actionProbe</lightningComponent>
+	</QuickAction>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/actionProbe/actionProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <isExposed>true</isExposed>
+	  <targets><target>lightning__RecordAction</target></targets>
+	  <targetConfigs>
+	    <targetConfig targets="lightning__RecordAction">
+	      <actionType>ScreenAction</actionType>
+	    </targetConfig>
+	  </targetConfigs>
+	</LightningComponentBundle>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/actionProbe/actionProbe.js", `import { LightningElement } from 'lwc';
+export default class ActionProbe extends LightningElement {}`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/actionProbe/actionProbe.html", `<template><p>action</p></template>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/action/Account/001000000000001AAA/Update_Status", nil), []string{"action", "Account", "001000000000001AAA", "Update_Status"})
+	if err != nil {
+		t.Fatalf("resolve error = %v diagnostics=%#v", err, diagnostics)
+	}
+	mounts := lwcShellMounts(shell)
+	if len(mounts) != 1 {
+		t.Fatalf("mounts = %#v", mounts)
+	}
+	attrs := mounts[0].Attrs
+	for key, want := range map[string]any{
+		"recordId":      "001000000000001AAA",
+		"objectApiName": "Account",
+		"actionName":    "Account.Update_Status",
+		"actionType":    "ScreenAction",
+	} {
+		if attrs[key] != want {
+			t.Fatalf("attr %s = %#v, want %#v in %#v", key, attrs[key], want, attrs)
+		}
+	}
+	body := renderLWCShellHTML(lwcbrowser.PageConfig{}, shell)
+	if !strings.Contains(body, `"standard__quickAction"`) || !strings.Contains(body, `"actionName":"Account.Update_Status"`) {
+		t.Fatalf("quick action context missing in:\n%s", body)
+	}
+}
+
+func TestResolveLWCShellRequestServesGlobalQuickAction(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/quickActions/Global_Status.quickAction-meta.xml", `<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <label>Global Status</label>
+	  <type>LightningComponent</type>
+	  <lightningComponent>c:actionProbe</lightningComponent>
+	</QuickAction>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/actionProbe/actionProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <isExposed>true</isExposed>
+	  <targets><target>lightning__RecordAction</target></targets>
+	  <targetConfigs>
+	    <targetConfig targets="lightning__RecordAction">
+	      <actionType>Action</actionType>
+	    </targetConfig>
+	  </targetConfigs>
+	</LightningComponentBundle>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/action/global/Global_Status", nil), []string{"action", "global", "Global_Status"})
+	if err != nil {
+		t.Fatalf("resolve error = %v diagnostics=%#v", err, diagnostics)
+	}
+	mounts := lwcShellMounts(shell)
+	if len(mounts) != 1 {
+		t.Fatalf("mounts = %#v", mounts)
+	}
+	if mounts[0].Attrs["actionName"] != "Global_Status" || mounts[0].Attrs["actionType"] != "Action" {
+		t.Fatalf("attrs = %#v", mounts[0].Attrs)
+	}
+}
+
+func TestResolveLWCShellRequestAddsConsoleApproximationDiagnostic(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/applications/Support_Console.app-meta.xml", `<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <label>Support Console</label>
+	  <navType>Console</navType>
+	  <tabs>Support_Page</tabs>
+	</CustomApplication>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/flexipages/Support_Page.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <type>AppPage</type>
+	  <flexiPageRegions><name>main</name></flexiPageRegions>
+	</FlexiPage>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/app/Support_Page?app=Support_Console", nil), []string{"app", "Support_Page"})
+	if err != nil {
+		t.Fatalf("resolve error = %v diagnostics=%#v", err, diagnostics)
+	}
+	if len(diagnostics) != 1 || diagnostics[0].Code != "GLADELWC072" {
+		t.Fatalf("diagnostics = %#v", diagnostics)
+	}
+	body := renderLWCShellHTML(lwcbrowser.PageConfig{}, shell)
+	if !strings.Contains(body, "GLADELWC072") {
+		t.Fatalf("console diagnostic missing in:\n%s", body)
+	}
+}
+
+func TestLWCShellDiagnosticsTreatConsoleApproximationAsNonFatal(t *testing.T) {
+	if lwcShellDiagnosticsBlockEmptyMounts([]lwcshell.Diagnostic{{Code: "GLADELWC072"}}) {
+		t.Fatalf("GLADELWC072 blocked an empty-mount console approximation")
+	}
+	if !lwcShellDiagnosticsBlockEmptyMounts([]lwcshell.Diagnostic{{Code: "GLADELWC005"}}) {
+		t.Fatalf("missing component diagnostic did not block empty mounts")
 	}
 }
 

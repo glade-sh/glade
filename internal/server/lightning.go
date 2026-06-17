@@ -118,6 +118,10 @@ func (s *Server) handleLightning(w http.ResponseWriter, r *http.Request, parts [
 		s.handleLightningShims(w, r, parts[1:])
 	case "wire":
 		s.handleLightningWire(w, r, parts[1:])
+	case "runtime":
+		s.serveLightningShellRuntime(w, r, parts[1:])
+	case "local":
+		s.handleLightningLocal(w, r, parts[1:])
 	default:
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning endpoint")
 	}

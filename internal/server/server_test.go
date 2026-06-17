@@ -82,7 +82,18 @@ func testSourceMetadata(t *testing.T) SourceMetadata {
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/triggers/AccountTrigger.trigger"), "trigger AccountTrigger on Account (before insert) {}")
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/pages/Edit.page"), `<apex:page controller="LocalOne"/>`)
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/objects/Account/listViews/AllAccounts.listView-meta.xml"), `<ListView><label>All Accounts</label><columns>Id</columns><columns>Name</columns><filterScope>Everything</filterScope></ListView>`)
-	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/layouts/Account-Account Layout.layout-meta.xml"), `<Layout/>`)
+	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/layouts/Account-Account Layout.layout-meta.xml"), `<Layout>
+		<layoutSections>
+			<label>Account Information</label>
+			<style>TwoColumnsTopToBottom</style>
+			<layoutColumns>
+				<layoutItems><field>Name</field><behavior>Required</behavior></layoutItems>
+			</layoutColumns>
+			<layoutColumns>
+				<layoutItems><field>Description</field><behavior>Edit</behavior></layoutItems>
+			</layoutColumns>
+		</layoutSections>
+	</Layout>`)
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/objects/Account/compactLayouts/Card.compactLayout-meta.xml"), `<CompactLayout><label>Card</label><fields>Name</fields></CompactLayout>`)
 	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/objects/Widget__c/Widget__c.object-meta.xml"), `<CustomObject><label>Widget</label></CustomObject>`)
 	p, err := project.Load(root)
@@ -1471,8 +1482,13 @@ func TestSObjectListViewsLayoutsAndCompactLayoutsFromSource(t *testing.T) {
 
 	layouts := httptest.NewRecorder()
 	handler.ServeHTTP(layouts, httptest.NewRequest(http.MethodGet, serverTestDataPath+"/sobjects/Account/describe/layouts", nil))
-	if layouts.Code != http.StatusOK || !bytes.Contains(layouts.Body.Bytes(), []byte(`Account-Account Layout`)) {
+	if layouts.Code != http.StatusOK || !bytes.Contains(layouts.Body.Bytes(), []byte(`Account-Account Layout`)) || !bytes.Contains(layouts.Body.Bytes(), []byte(`"heading":"Account Information"`)) || !bytes.Contains(layouts.Body.Bytes(), []byte(`"componentType":"Field"`)) {
 		t.Fatalf("layouts status=%d body=%s", layouts.Code, layouts.Body.String())
+	}
+	named := httptest.NewRecorder()
+	handler.ServeHTTP(named, httptest.NewRequest(http.MethodGet, serverTestDataPath+"/sobjects/Account/namedLayouts/Account-Account%20Layout", nil))
+	if named.Code != http.StatusOK || !bytes.Contains(named.Body.Bytes(), []byte(`"name":"Account-Account Layout"`)) || !bytes.Contains(named.Body.Bytes(), []byte(`"fieldApiName":"Name"`)) || !bytes.Contains(named.Body.Bytes(), []byte(`"uiBehavior":"Required"`)) {
+		t.Fatalf("named layout status=%d body=%s", named.Code, named.Body.String())
 	}
 }
 
