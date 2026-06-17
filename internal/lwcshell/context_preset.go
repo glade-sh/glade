@@ -27,6 +27,8 @@ type ContextPreset struct {
 	App           string            `json:"app,omitempty"`
 	FormFactor    string            `json:"formFactor,omitempty"`
 	State         map[string]string `json:"state,omitempty"`
+	Community     CommunityContext  `json:"community,omitempty"`
+	PageReference map[string]any    `json:"pageReference,omitempty"`
 }
 
 type ContextPresetError struct {
@@ -122,6 +124,8 @@ func (p ContextPreset) ToPageContext() (PageContext, error) {
 		ActionName:    strings.TrimSpace(p.Action),
 		FormFactor:    strings.TrimSpace(p.FormFactor),
 		State:         copyContextState(p.State),
+		Community:     normalizeCommunityContext(p.Community),
+		PageReference: copyPageReference(p.PageReference),
 	}
 	switch normalizePresetTarget(p.Target) {
 	case "recordpage":
@@ -153,6 +157,17 @@ func (p ContextPreset) ToPageContext() (PageContext, error) {
 		if ctx.ActionName == "" {
 			return PageContext{}, contextPresetError("GLADELWC070", "quick action required", nil)
 		}
+	case "communitypage":
+		ctx.Kind = RenderTargetCommunityPage
+		if ctx.Community.Site == "" {
+			return PageContext{}, contextPresetError("GLADELWC100", "community context required", nil)
+		}
+		if ctx.PageName == "" {
+			return PageContext{}, contextPresetError("GLADELWC024", "context page required", nil)
+		}
+		if ctx.ComponentName == "" {
+			return PageContext{}, contextPresetError("GLADELWC012", "component render target requires a component name", nil)
+		}
 	default:
 		return PageContext{}, contextPresetError("GLADELWC022", "context target unsupported", nil)
 	}
@@ -181,6 +196,54 @@ func copyContextState(in map[string]string) map[string]string {
 		return nil
 	}
 	return out
+}
+
+func normalizeCommunityContext(in CommunityContext) CommunityContext {
+	out := CommunityContext{
+		Site:      strings.TrimSpace(in.Site),
+		BasePath:  strings.TrimSpace(in.BasePath),
+		SiteID:    strings.TrimSpace(in.SiteID),
+		NetworkID: strings.TrimSpace(in.NetworkID),
+		Guest:     in.Guest,
+		Language:  strings.TrimSpace(in.Language),
+	}
+	return out
+}
+
+func copyPageReference(in map[string]any) map[string]any {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make(map[string]any, len(in))
+	for key, value := range in {
+		if strings.TrimSpace(key) == "" {
+			continue
+		}
+		out[key] = copyPageReferenceValue(value)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func copyPageReferenceValue(value any) any {
+	switch v := value.(type) {
+	case map[string]any:
+		out := make(map[string]any, len(v))
+		for key, inner := range v {
+			out[key] = copyPageReferenceValue(inner)
+		}
+		return out
+	case []any:
+		out := make([]any, len(v))
+		for i, inner := range v {
+			out[i] = copyPageReferenceValue(inner)
+		}
+		return out
+	default:
+		return value
+	}
 }
 
 func contextPresetError(code, message string, err error) *ContextPresetError {

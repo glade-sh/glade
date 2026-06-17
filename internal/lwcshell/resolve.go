@@ -164,7 +164,19 @@ func quickActionComponentActionType(p project.Project, component PageComponent, 
 	if actionType == "" {
 		actionType = "ScreenAction"
 	}
+	if !quickActionTypeSupported(actionType) {
+		return "", Diagnostic{Code: "GLADELWC015", Message: fmt.Sprintf("quick action action type %q is not supported locally", actionType)}, false
+	}
 	return actionType, Diagnostic{}, true
+}
+
+func quickActionTypeSupported(actionType string) bool {
+	switch strings.ToLower(strings.TrimSpace(actionType)) {
+	case "screenaction", "action":
+		return true
+	default:
+		return false
+	}
 }
 
 func qualifyPageRegions(regions []PageRegion, namespace string) []PageRegion {

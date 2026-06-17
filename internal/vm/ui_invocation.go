@@ -22,6 +22,7 @@ type UIInvocationResult struct {
 }
 
 type UIActionError struct {
+	Code    string `json:"code,omitempty"`
 	Type    string `json:"type,omitempty"`
 	Message string `json:"message"`
 }
@@ -276,6 +277,12 @@ func (vm *VM) invokeUIAction(framework, className, methodName string, params map
 	out := UIInvocationResult{Framework: framework, ClassName: className, MethodName: methodName}
 	method, args, err := vm.resolveUIAction(className, methodName, params)
 	if err != nil {
+		var diagnostic *UIActionDiagnosticError
+		if errors.As(err, &diagnostic) {
+			out.Success = false
+			out.Error = &UIActionError{Code: diagnostic.Code, Type: diagnostic.Type, Message: diagnostic.Message}
+			return out, nil
+		}
 		out.Success = false
 		out.Error = &UIActionError{Type: "UnsupportedFeature", Message: err.Error()}
 		return out, nil
@@ -307,6 +314,10 @@ func (vm *VM) resolveUIAction(className, methodName string, params map[string]an
 		candidates = append(candidates, vm.MethodFolded[strings.ToLower(className+"."+methodName)]...)
 	}
 	sort.SliceStable(candidates, func(i, j int) bool { return uiMethodSignature(candidates[i]) < uiMethodSignature(candidates[j]) })
+	var matchedMethod Method
+	var matchedArgs []Value
+	matched := 0
+	matchedSignatures := map[string]bool{}
 	for _, method := range candidates {
 		if !method.IsStatic || !methodHasAuraEnabled(method.Modifiers) || len(method.Params) != len(params) {
 			continue
@@ -327,10 +338,43 @@ func (vm *VM) resolveUIAction(className, methodName string, params map[string]an
 			args = append(args, value)
 		}
 		if ok {
-			return method, args, nil
+			signature := uiMethodSignature(method)
+			if matchedSignatures[signature] {
+				continue
+			}
+			matchedSignatures[signature] = true
+			matched++
+			if matched > 1 {
+				return Method{}, nil, &UIActionDiagnosticError{
+					Code:    "GLADELWC013",
+					Type:    "UnsupportedFeature",
+					Message: "overloaded AuraEnabled method unsupported",
+				}
+			}
+			matchedMethod = method
+			matchedArgs = args
 		}
 	}
+	if matched == 1 {
+		return matchedMethod, matchedArgs, nil
+	}
 	return Method{}, nil, fmt.Errorf("no static @AuraEnabled method %s.%s accepts parameters %s", className, methodName, sortedParamNames(params))
+}
+
+type UIActionDiagnosticError struct {
+	Code    string
+	Type    string
+	Message string
+}
+
+func (err *UIActionDiagnosticError) Error() string {
+	if err == nil {
+		return ""
+	}
+	if err.Code == "" {
+		return err.Message
+	}
+	return err.Code + " " + err.Message
 }
 
 func methodHasAuraEnabled(modifiers []string) bool {

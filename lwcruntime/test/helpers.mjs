@@ -9,9 +9,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const repoRoot = path.resolve(__dirname, "../..");
 const wireAdapterPath = path.join(repoRoot, "lwcruntime/src/shims/wire-adapter.mjs");
 const ldsCachePath = path.join(repoRoot, "lwcruntime/src/shims/lds-cache.mjs");
+const sldsLoaderPath = path.join(repoRoot, "lwcruntime/src/slds/slds-loader.mjs");
+const sldsCSSPath = path.join(repoRoot, "lwcruntime/src/slds/glade-slds.css");
+const diagnosticsPath = path.join(repoRoot, "lwcruntime/src/shell/diagnostics.mjs");
 const lwcToolchainNodeModules = path.join(repoRoot, "third_party/lwc/node_modules");
 
 export const salesforceImportMap = {
+  "@glade/shell/diagnostics": "/lightning/runtime/shell/diagnostics.js",
+  "@glade/slds": "/lightning/runtime/slds/slds-loader.js",
   "@salesforce/apex": "/lightning/shims/core/apex.js",
   "@salesforce/apex/": "/lightning/shims/apex/",
   "@salesforce/label/": "/lightning/shims/label/",
@@ -312,6 +317,21 @@ function handleShimRequest(url, res, shimConfig) {
   if (pathname === "/lightning/shims/core/apex.js") {
     res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
     res.end('export { refreshApex } from "/lightning/shims/core/lds-cache.mjs";\n');
+    return true;
+  }
+  if (pathname === "/lightning/runtime/slds/slds-loader.js" || pathname === "/lightning/runtime/slds/slds-loader.mjs") {
+    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
+    res.end(fs.readFileSync(sldsLoaderPath));
+    return true;
+  }
+  if (pathname === "/lightning/runtime/shell/diagnostics.js" || pathname === "/lightning/runtime/shell/diagnostics.mjs") {
+    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
+    res.end(fs.readFileSync(diagnosticsPath));
+    return true;
+  }
+  if (pathname === "/lightning/runtime/slds/glade-slds.css") {
+    res.writeHead(200, { "Content-Type": "text/css; charset=utf-8" });
+    res.end(fs.readFileSync(sldsCSSPath));
     return true;
   }
   if (pathname === "/lightning/shims/lightning/uiRecordApi.js") {

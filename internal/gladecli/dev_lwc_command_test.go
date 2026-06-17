@@ -81,6 +81,7 @@ func TestDevLWCRoutesListComponentsPagesTabsAndVisualforce(t *testing.T) {
   <label>Global Status</label>
   <lightningComponent>c:actionProbe</lightningComponent>
 </QuickAction>`)
+	writeTestFile(t, filepath.Join(root, "glade.lwc.json"), `{"contexts":{"communityAccount":{"target":"communityPage","component":"c:contextProbe","page":"Account","community":{"site":"Partner_Portal","basePath":"/partners"}}}}`)
 	p, err := project.Load(root)
 	if err != nil {
 		t.Fatal(err)
@@ -94,6 +95,7 @@ func TestDevLWCRoutesListComponentsPagesTabsAndVisualforce(t *testing.T) {
 		"/lwc/preview/record/Account/<recordId>?page=Account_Record_Page",
 		"/lwc/preview/action/Account/<recordId>/Update_Status",
 		"/lwc/preview/action/global/Global_Status",
+		"/lwc/preview/community/Partner_Portal/Account",
 		"/lwc/preview/tab/Lwc_Probe",
 		"/lwc/preview/tab/VF_Probe -> /apex/WidgetHost",
 	} {

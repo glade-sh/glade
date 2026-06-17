@@ -1,3 +1,3 @@
-import { unsupportedBaseComponent } from "./base.mjs";
+import { createBaseComponent, renderSlotContainer } from "./base.mjs";
 
-unsupportedBaseComponent("lightning-accordion");
+export default createBaseComponent("lightning-accordion", renderSlotContainer("section", "slds-accordion"));

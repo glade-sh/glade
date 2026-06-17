@@ -501,6 +501,11 @@ func devLWCPreviewRoutes(p project.Project) []string {
 		}
 		routes = append(routes, "/lwc/preview/action/global/"+actionName)
 	}
+	for _, route := range lwcshell.DiscoverShellRoutes(p) {
+		if route.Kind == lwcshell.RenderTargetCommunityPage && strings.TrimSpace(route.URL) != "" {
+			routes = append(routes, route.URL)
+		}
+	}
 	sort.Strings(routes)
 	return dedupeDevLWCRoutes(routes)
 }

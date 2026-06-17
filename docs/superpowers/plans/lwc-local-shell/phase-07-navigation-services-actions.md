@@ -55,18 +55,18 @@ Use parallel subagent squads where files do not overlap. The coordinator integra
   - `standard__quickAction`
   - `standard__webPage`
   - `standard__namedPage`
-- [ ] Generate local URLs that stay under `/lwc/preview/*` when the destination is local. External web pages return their URL.
-- [ ] Dispatch route changes through local URL navigation where supported.
-- [ ] Implement `lightning/platformShowToastEvent` as a browser event shim exposing variant, title, message, mode, and links.
-- [ ] Implement `lightning/messageService` with `publish`, `subscribe`, `unsubscribe`, `MessageContext`, `APPLICATION_SCOPE`, and local message channel imports.
-- [ ] Implement `lightning/platformResourceLoader` for local scripts and styles.
+- [x] Generate local URLs that stay under `/lwc/preview/*` when the destination is local. External web pages return their URL.
+- [x] Dispatch route changes through local URL navigation where supported.
+- [x] Implement `lightning/platformShowToastEvent` as a browser event shim exposing variant, title, message, mode, and links.
+- [x] Implement `lightning/messageService` with `publish`, `subscribe`, `unsubscribe`, `MessageContext`, `APPLICATION_SCOPE`, and local message channel imports.
+- [x] Implement `lightning/platformResourceLoader` for local scripts and styles.
 - [ ] Leave `LightningModal` as future work unless `open()`, close value, backdrop, and focus-return tests are added.
-- [ ] Leave quick action context as future work unless the branch adds:
+- [x] Leave quick action context as future work unless the branch adds:
   - record action receives `recordId`.
   - global action receives no record unless state supplies one.
   - unsupported action types return `GLADELWC015 action type unsupported`.
-- [ ] Add tests for navigation from a record page to supported local routes.
-- [ ] Add Visualforce Lightning Out tests for `CurrentPageReference`, toast event, LMS publish/subscribe, resource loading, and navigation diagnostics inside `/apex/<PageName>`.
+- [x] Add tests for navigation from a record page to supported local routes.
+- [x] Add Visualforce Lightning Out tests for `CurrentPageReference`, toast event, LMS publish/subscribe, resource loading, and navigation diagnostics inside `/apex/<PageName>`.
 
 ## Verification
 

@@ -122,10 +122,10 @@ record helpers, `getRecordCreateDefaults`, record-input helper functions,
 `lightning/uiObjectInfoApi` object info and picklist wires, schema tokens,
 custom labels, static resources, content assets, user values, checked i18n
 values, local message service, resource loading, toast events, practical common
-base components, and SLDS-shaped local styling. Create defaults include project
-layout field sections when available, with a generated full layout from
-createable fields as the local fallback. `lightning/uiLayoutApi` `getLayout`
-returns the same local Record Layout shape.
+and expanded checked base components, and SLDS-shaped local styling. Create
+defaults include project layout field sections when available, with a generated
+full layout from createable fields as the local fallback.
+`lightning/uiLayoutApi` `getLayout` returns the same local Record Layout shape.
 Local org data comes from project schema plus Glade storage fixtures in
 `data/*.json`.
 

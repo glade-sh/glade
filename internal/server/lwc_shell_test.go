@@ -113,12 +113,23 @@ func TestLightningRuntimeServesShellAndSLDSAssets(t *testing.T) {
 		want string
 	}{
 		{path: "/lightning/runtime/shell/app.js", want: "bootGladeShell"},
+		{path: "/lightning/runtime/shell/community-host.js", want: "applyCommunityHost"},
+		{path: "/lightning/runtime/shims/community.js", want: "readCommunityValue"},
+		{path: "/lightning/runtime/shims/site.js", want: "readSiteId"},
 		{path: "/lightning/runtime/shell/glade-shell.css", want: ".glade-shell"},
 		{path: "/lightning/runtime/slds/slds-loader.js", want: "loadSLDS"},
 		{path: "/lightning/runtime/slds/glade-slds.css", want: ".slds-button"},
 		{path: "/lightning/shims/core/apex.js", want: "refreshApex"},
+		{path: "/lightning/shims/lightning/actions.js", want: "CloseActionScreenEvent"},
+		{path: "/lightning/shims/lightning/empApi.js", want: "subscribe"},
+		{path: "/lightning/shims/lightning/flowSupport.js", want: "FlowAttributeChangeEvent"},
+		{path: "/lightning/shims/lightning/refresh.js", want: "registerRefreshHandler"},
 		{path: "/lightning/shims/lightning/uiListApi.js", want: "GLADELWC050"},
 		{path: "/lightning/shims/lightning/platformWorkspaceApi.js", want: "getFocusedTabInfo"},
+		{path: "/lightning/shims/lightning/treeGrid.js", want: "lightning-tree-grid"},
+		{path: "/lightning/shims/community/basePath.js", want: `readCommunityValue("basePath", "/s")`},
+		{path: "/lightning/shims/community/Id.js", want: `readCommunityValue("networkId", "")`},
+		{path: "/lightning/shims/site/Id.js", want: `readSiteId`},
 	}
 	for _, tc := range cases {
 		rec := httptest.NewRecorder()
@@ -285,6 +296,190 @@ func TestLWCShellAppRouteFallsBackToApplicationDefaultTab(t *testing.T) {
 		if !strings.Contains(body, want) {
 			t.Fatalf("missing %q in:\n%s", want, body)
 		}
+	}
+}
+
+func TestResolveLWCShellRequestServesCommunityPageRouteFromContextPreset(t *testing.T) {
+	root := t.TempDir()
+	writeCommunityProbeBundle(t, root, "lightningCommunity__Page")
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/themeLayout/themeLayout.js", `import { LightningElement } from 'lwc';
+export default class ThemeLayout extends LightningElement {}`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/themeLayout/themeLayout.html", `<template><slot></slot></template>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/themeLayout/themeLayout.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <isExposed>true</isExposed>
+	  <targets><target>lightningCommunity__Theme_Layout</target></targets>
+	</LightningComponentBundle>`)
+	writeLWCShellServerTestFile(t, root, "glade.lwc.json", `{
+	  "contexts": {
+	    "communityAccount": {
+	      "target": "communityPage",
+	      "component": "c:communityProbe",
+	      "page": "Account",
+	      "community": {
+	        "site": "Partner_Portal",
+	        "basePath": "/partners",
+	        "siteId": "0DM000000000001",
+	        "networkId": "0DB000000000001",
+	        "guest": true,
+	        "language": "en-US"
+	      },
+	      "pageReference": {
+	        "type": "comm__namedPage",
+	        "attributes": {"name": "Account"},
+	        "state": {"c__view": "summary"}
+	      }
+	    }
+	  }
+	}`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/community/Partner_Portal/Account", nil), []string{"community", "Partner_Portal", "Account"})
+	if err != nil {
+		t.Fatalf("resolve error = %v diagnostics=%#v", err, diagnostics)
+	}
+	if len(diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", diagnostics)
+	}
+	if shell.Context.Kind != lwcshell.RenderTargetCommunityPage ||
+		shell.Context.ComponentName != "c:communityProbe" ||
+		shell.Context.PageName != "Account" ||
+		shell.Context.Community.Site != "Partner_Portal" ||
+		shell.Context.Community.BasePath != "/partners" ||
+		!shell.Context.Community.Guest {
+		t.Fatalf("context = %#v", shell.Context)
+	}
+	if shell.ThemeLayout == nil || shell.ThemeLayout.ComponentName != "c:themeLayout" {
+		t.Fatalf("theme layout = %#v", shell.ThemeLayout)
+	}
+	ref := lwcShellPageReference(shell)
+	if ref["type"] != "comm__namedPage" {
+		t.Fatalf("page reference = %#v", ref)
+	}
+	mounts := lwcShellMounts(shell)
+	if len(mounts) != 2 || mounts[0].Qualified != "c:themeLayout" || mounts[1].Qualified != "c:communityProbe" {
+		t.Fatalf("mounts = %#v", mounts)
+	}
+	body := renderLWCShellHTML(lwcbrowser.PageConfig{}, shell)
+	for _, want := range []string{
+		`data-glade-community-shell`,
+		`data-glade-community-site="Partner_Portal"`,
+		`data-glade-community-guest="true"`,
+		`c:themeLayout`,
+		`c:communityProbe`,
+		`"basePath":"/partners"`,
+		`"type":"comm__namedPage"`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("missing %q in:\n%s", want, body)
+		}
+	}
+}
+
+func TestLightningLocalContextJSONReportsCommunityContextAndDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeCommunityProbeBundle(t, root, "lightningCommunity__Page")
+	writeLWCShellServerTestFile(t, root, "glade.lwc.json", `{
+	  "contexts": {
+	    "communityAccount": {
+	      "target": "communityPage",
+	      "component": "c:communityProbe",
+	      "page": "Account",
+	      "community": {"site": "Partner_Portal", "guest": true}
+	    }
+	  }
+	}`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	activeRoute := "/lwc/preview/community/Partner_Portal/Account"
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/lightning/local/context.json?url="+url.QueryEscape(activeRoute), nil)
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var got struct {
+		PageReference map[string]any        `json:"pageReference"`
+		Context       lwcshell.PageContext  `json:"context"`
+		Mounts        []lwcShellMount       `json:"mounts"`
+		Services      map[string]string     `json:"services"`
+		Diagnostics   []lwcshell.Diagnostic `json:"diagnostics"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatalf("invalid JSON: %v\n%s", err, rec.Body.String())
+	}
+	if got.Context.Kind != lwcshell.RenderTargetCommunityPage ||
+		got.Context.Community.Site != "Partner_Portal" ||
+		got.Context.Community.BasePath != "/s" ||
+		!got.Context.Community.Guest {
+		t.Fatalf("context = %#v", got.Context)
+	}
+	if got.PageReference["type"] != "comm__namedPage" {
+		t.Fatalf("page reference = %#v", got.PageReference)
+	}
+	if len(got.Mounts) != 1 || got.Mounts[0].Attrs["community"] == nil {
+		t.Fatalf("mounts = %#v", got.Mounts)
+	}
+	if got.Services["community"] != "supported-local" {
+		t.Fatalf("services = %#v", got.Services)
+	}
+	foundMissingIDs := false
+	for _, diag := range got.Diagnostics {
+		if diag.Code == "GLADELWC102" {
+			foundMissingIDs = true
+		}
+	}
+	if !foundMissingIDs {
+		t.Fatalf("diagnostics = %#v", got.Diagnostics)
+	}
+}
+
+func TestResolveLWCShellRequestServesDirectCommunityComponentRoute(t *testing.T) {
+	root := t.TempDir()
+	writeCommunityProbeBundle(t, root, "lightningCommunity__Default")
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/community/Partner_Portal/cmp/c/communityProbe", nil), []string{"community", "Partner_Portal", "cmp", "c", "communityProbe"})
+	if err != nil {
+		t.Fatalf("resolve error = %v diagnostics=%#v", err, diagnostics)
+	}
+	if shell.Context.Kind != lwcshell.RenderTargetCommunityPage ||
+		shell.Context.ComponentName != "c:communityProbe" ||
+		shell.Context.Community.Site != "Partner_Portal" ||
+		shell.Context.Community.BasePath != "/s" {
+		t.Fatalf("context = %#v", shell.Context)
+	}
+	if len(diagnostics) != 1 || diagnostics[0].Code != "GLADELWC102" {
+		t.Fatalf("diagnostics = %#v", diagnostics)
+	}
+}
+
+func TestResolveLWCShellRequestReportsUnsupportedExperienceBuilderFeature(t *testing.T) {
+	root := t.TempDir()
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	_, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/community/Partner_Portal/managed-content/welcome", nil), []string{"community", "Partner_Portal", "managed-content", "welcome"})
+	if err == nil {
+		t.Fatal("expected unsupported Experience Builder feature error")
+	}
+	if len(diagnostics) != 1 || diagnostics[0].Code != "GLADELWC101" {
+		t.Fatalf("diagnostics = %#v", diagnostics)
 	}
 }
 
@@ -795,6 +990,67 @@ func TestResolveLWCShellRequestRendersFlexiPageTabUsingTargetPageType(t *testing
 	}
 }
 
+func TestResolveLWCShellRequestUsesHomePageReference(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <isExposed>true</isExposed>
+	  <targets><target>lightning__HomePage</target></targets>
+	</LightningComponentBundle>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/flexipages/Custom_Home.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <type>HomePage</type>
+	  <flexiPageRegions>
+	    <name>main</name>
+	    <componentInstances>
+	      <componentName>contextProbe</componentName>
+	    </componentInstances>
+	  </flexiPageRegions>
+	</FlexiPage>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/home/Custom_Home", nil), []string{"home", "Custom_Home"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", diagnostics)
+	}
+	ref := lwcShellPageReference(shell)
+	if ref["type"] != "standard__namedPage" {
+		t.Fatalf("page reference = %#v", ref)
+	}
+	attrs, ok := ref["attributes"].(map[string]any)
+	if !ok || attrs["pageName"] != "home" {
+		t.Fatalf("page reference attrs = %#v", ref["attributes"])
+	}
+}
+
+func TestLWCShellUnsupportedCustomTabReturnsDiagnostic(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/tabs/External.tab-meta.xml", `<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <label>External</label>
+	  <url>https://example.com</url>
+	</CustomTab>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lwc/preview/tab/External", nil))
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "GLADELWC007") {
+		t.Fatalf("body = %s", rec.Body.String())
+	}
+}
+
 func TestLWCShellUnsupportedComponentReturnsDiagnostics(t *testing.T) {
 	root := t.TempDir()
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/flexipages/Account_Record_Page.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -1025,4 +1281,15 @@ func writeLWCShellServerTestFile(t *testing.T, root string, rel string, body str
 		t.Fatal(err)
 	}
 	return path
+}
+
+func writeCommunityProbeBundle(t *testing.T, root, target string) {
+	t.Helper()
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/communityProbe/communityProbe.js", `import { LightningElement } from 'lwc';
+export default class CommunityProbe extends LightningElement {}`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/communityProbe/communityProbe.html", `<template><p>community</p></template>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/communityProbe/communityProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <isExposed>true</isExposed>
+	  <targets><target>`+target+`</target></targets>
+	</LightningComponentBundle>`)
 }

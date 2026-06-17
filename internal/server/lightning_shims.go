@@ -22,10 +22,16 @@ func (s *Server) handleLightningShims(w http.ResponseWriter, r *http.Request, pa
 		s.serveLightningStaticShim(w, r, parts[1:])
 	case "apex":
 		s.serveApexWireShim(w, parts[1:])
+	case "community":
+		s.serveCommunityShim(w, parts[1:])
 	case "label":
 		s.serveLabelShim(w, parts[1:])
+	case "messageChannel":
+		s.serveMessageChannelShim(w, parts[1:])
 	case "schema":
 		s.serveSchemaShim(w, parts[1:])
+	case "site":
+		s.serveSiteShim(w, parts[1:])
 	case "resourceUrl":
 		s.serveResourceURLShim(w, parts[1:])
 	case "contentAssetUrl":
@@ -87,6 +93,12 @@ func (s *Server) serveLightningAPIShim(w http.ResponseWriter, parts []string) {
 	}
 	token := strings.TrimSuffix(strings.TrimSpace(parts[0]), ".js")
 	switch token {
+	case "actions":
+		writeJavaScript(w, []byte(lwcbrowser.ActionsModuleJS()))
+	case "empApi":
+		writeJavaScript(w, []byte(lwcbrowser.EmpAPIModuleJS()))
+	case "flowSupport":
+		writeJavaScript(w, []byte(lwcbrowser.FlowSupportModuleJS()))
 	case "uiRecordApi":
 		writeJavaScript(w, []byte(lwcbrowser.UIRecordAPIModuleJS()))
 	case "uiLayoutApi":
@@ -105,6 +117,8 @@ func (s *Server) serveLightningAPIShim(w http.ResponseWriter, parts []string) {
 		writeJavaScript(w, []byte(lwcbrowser.PlatformResourceLoaderModuleJS()))
 	case "platformWorkspaceApi":
 		writeJavaScript(w, []byte(lwcbrowser.PlatformWorkspaceAPIModuleJS()))
+	case "refresh":
+		writeJavaScript(w, []byte(lwcbrowser.RefreshModuleJS()))
 	case "messageService":
 		writeJavaScript(w, []byte(lwcbrowser.MessageServiceModuleJS()))
 	default:
@@ -114,6 +128,33 @@ func (s *Server) serveLightningAPIShim(w http.ResponseWriter, parts []string) {
 		}
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning shim")
 	}
+}
+
+func (s *Server) serveMessageChannelShim(w http.ResponseWriter, parts []string) {
+	token := shimToken(parts)
+	if token == "" {
+		writeSalesforceError(w, errUnknownEndpoint, "invalid message channel shim")
+		return
+	}
+	writeJavaScript(w, []byte(lwcbrowser.MessageChannelModuleJS(token)))
+}
+
+func (s *Server) serveCommunityShim(w http.ResponseWriter, parts []string) {
+	token := shimToken(parts)
+	if token == "" {
+		writeSalesforceError(w, errUnknownEndpoint, "invalid community shim")
+		return
+	}
+	writeJavaScript(w, []byte(lwcbrowser.CommunityModuleJS(token)))
+}
+
+func (s *Server) serveSiteShim(w http.ResponseWriter, parts []string) {
+	token := shimToken(parts)
+	if token == "" {
+		writeSalesforceError(w, errUnknownEndpoint, "invalid site shim")
+		return
+	}
+	writeJavaScript(w, []byte(lwcbrowser.SiteModuleJS(token)))
 }
 
 func (s *Server) serveApexWireShim(w http.ResponseWriter, parts []string) {

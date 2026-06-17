@@ -1,0 +1,7 @@
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+  <apiVersion>64.0</apiVersion>
+  <isExposed>true</isExposed>
+  <targets>
+    <target>lightningCommunity__Theme_Layout</target>
+  </targets>
+</LightningComponentBundle>

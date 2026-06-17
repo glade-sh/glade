@@ -90,7 +90,24 @@ function startBaseComponentServer() {
     "lightning/tab": "/lightning/shims/lightning/tab.js",
     "lightning/icon": "/lightning/shims/lightning/icon.js",
     "lightning/modal": "/lightning/shims/lightning/modal.js",
-    "lightning/accordion": "/lightning/shims/lightning/accordion.js"
+    "lightning/accordion": "/lightning/shims/lightning/accordion.js",
+    "lightning/accordionSection": "/lightning/shims/lightning/accordionSection.js",
+    "lightning/avatar": "/lightning/shims/lightning/avatar.js",
+    "lightning/badge": "/lightning/shims/lightning/badge.js",
+    "lightning/buttonMenu": "/lightning/shims/lightning/buttonMenu.js",
+    "lightning/checkboxGroup": "/lightning/shims/lightning/checkboxGroup.js",
+    "lightning/fileUpload": "/lightning/shims/lightning/fileUpload.js",
+    "lightning/flow": "/lightning/shims/lightning/flow.js",
+    "lightning/formattedDateTime": "/lightning/shims/lightning/formattedDateTime.js",
+    "lightning/formattedRichText": "/lightning/shims/lightning/formattedRichText.js",
+    "lightning/helptext": "/lightning/shims/lightning/helptext.js",
+    "lightning/menuItem": "/lightning/shims/lightning/menuItem.js",
+    "lightning/pill": "/lightning/shims/lightning/pill.js",
+    "lightning/quickActionPanel": "/lightning/shims/lightning/quickActionPanel.js",
+    "lightning/radioGroup": "/lightning/shims/lightning/radioGroup.js",
+    "lightning/recordPicker": "/lightning/shims/lightning/recordPicker.js",
+    "lightning/verticalNavigation": "/lightning/shims/lightning/verticalNavigation.js",
+    "lightning/verticalNavigationItem": "/lightning/shims/lightning/verticalNavigationItem.js"
   } })}</script>
 </head>
 <body><div id="host"></div><script type="module" src="/test-entry.js"></script></body>
@@ -116,6 +133,24 @@ import Tabset from "lightning/tabset";
 import Tab from "lightning/tab";
 import Icon from "lightning/icon";
 import Modal from "lightning/modal";
+import Accordion from "lightning/accordion";
+import AccordionSection from "lightning/accordionSection";
+import Avatar from "lightning/avatar";
+import Badge from "lightning/badge";
+import ButtonMenu from "lightning/buttonMenu";
+import CheckboxGroup from "lightning/checkboxGroup";
+import FileUpload from "lightning/fileUpload";
+import Flow from "lightning/flow";
+import FormattedDateTime from "lightning/formattedDateTime";
+import FormattedRichText from "lightning/formattedRichText";
+import Helptext from "lightning/helptext";
+import MenuItem from "lightning/menuItem";
+import Pill from "lightning/pill";
+import QuickActionPanel from "lightning/quickActionPanel";
+import RadioGroup from "lightning/radioGroup";
+import RecordPicker from "lightning/recordPicker";
+import VerticalNavigation from "lightning/verticalNavigation";
+import VerticalNavigationItem from "lightning/verticalNavigationItem";
 const host = document.getElementById("host");
 function append(tag, Ctor, props = {}) {
   const el = createElement(tag, { is: Ctor });
@@ -178,6 +213,39 @@ tab.addEventListener("active", (event) => {
 tabset.appendChild(tab);
 append("lightning-icon", Icon, { iconName: "utility:check", alternativeText: "checked" });
 append("lightning-modal", Modal, { label: "Local Modal" });
+const accordion = append("lightning-accordion", Accordion);
+const accordionSection = createElement("lightning-accordion-section", { is: AccordionSection });
+accordionSection.label = "Package Section";
+accordion.appendChild(accordionSection);
+append("lightning-avatar", Avatar, { initials: "LV", alternativeText: "Local Avatar" });
+append("lightning-badge", Badge, { label: "Verified" });
+const menu = append("lightning-button-menu", ButtonMenu, { label: "Package Actions" });
+const menuItem = createElement("lightning-menu-item", { is: MenuItem });
+menuItem.label = "Open";
+menuItem.addEventListener("active", (event) => {
+  window.__baseMenuActive = event.detail;
+});
+menu.appendChild(menuItem);
+append("lightning-checkbox-group", CheckboxGroup, { label: "Checks", value: ["a"], options: [{ label: "A", value: "a" }] });
+const upload = append("lightning-file-upload", FileUpload, { label: "Upload Evidence" });
+upload.addEventListener("uploadfinished", (event) => {
+  window.__baseUploadFinished = event.detail;
+});
+append("lightning-flow", Flow, { flowApiName: "Package_Flow" });
+append("lightning-formatted-date-time", FormattedDateTime, { value: "2026-06-17T12:00:00Z" });
+append("lightning-formatted-rich-text", FormattedRichText, { value: "<b>Rich Text</b>" });
+append("lightning-helptext", Helptext, { content: "Package help" });
+append("lightning-pill", Pill, { label: "Package Pill" });
+append("lightning-quick-action-panel", QuickActionPanel, { header: "Quick Action" });
+append("lightning-radio-group", RadioGroup, { label: "Choice", value: "yes", options: [{ label: "Yes", value: "yes" }] });
+const recordPicker = append("lightning-record-picker", RecordPicker, { label: "Provider", value: "001000000000001AAA" });
+recordPicker.addEventListener("change", (event) => {
+  window.__baseRecordPicker = event.detail;
+});
+const nav = append("lightning-vertical-navigation", VerticalNavigation);
+const navItem = createElement("lightning-vertical-navigation-item", { is: VerticalNavigationItem });
+navItem.label = "Credentials";
+nav.appendChild(navItem);
 window.__baseDiagnostics = diagnostics;
 window.__modalOpen = Modal.open({ label: "Local Modal", result: "done" });
 `);
@@ -251,6 +319,29 @@ test("base components render practical SLDS-shaped DOM", async (t) => {
     assert.deepEqual(await page.evaluate(() => window.__baseActiveTab), { value: "details", label: "Details" });
     assert.match(await page.locator("lightning-icon").innerText(), /check/);
     assert.match(await page.locator("lightning-modal").innerText(), /Local Modal/);
+    assert.match(await page.locator("lightning-accordion").innerText(), /Package Section/);
+    assert.match(await page.locator("lightning-avatar").innerText(), /LV/);
+    assert.match(await page.locator("lightning-badge").innerText(), /Verified/);
+    assert.match(await page.locator("lightning-button-menu").innerText(), /Package Actions/);
+    await page.locator("lightning-menu-item button", { hasText: "Open" }).click();
+    assert.deepEqual(await page.evaluate(() => window.__baseMenuActive), { value: "Open", label: "Open" });
+    assert.match(await page.locator("lightning-checkbox-group").innerText(), /Checks/);
+    assert.match(await page.locator("lightning-flow").innerText(), /Package_Flow/);
+    assert.match(await page.locator("lightning-formatted-date-time").innerText(), /2026-06-17/);
+    assert.match(await page.locator("lightning-formatted-rich-text").innerText(), /Rich Text/);
+    assert.match(await page.locator("lightning-helptext").innerText(), /Package help/);
+    assert.match(await page.locator("lightning-pill").innerText(), /Package Pill/);
+    assert.match(await page.locator("lightning-quick-action-panel").innerText(), /Quick Action/);
+    assert.match(await page.locator("lightning-radio-group").innerText(), /Choice/);
+    await page.locator("lightning-record-picker input").evaluate((input) => {
+      input.value = "001000000000002AAA";
+      input.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+    });
+    assert.deepEqual(await page.evaluate(() => window.__baseRecordPicker), {
+      recordId: "001000000000002AAA",
+      value: "001000000000002AAA",
+    });
+    assert.match(await page.locator("lightning-vertical-navigation").innerText(), /Credentials/);
     assert.equal(await page.evaluate(() => window.__modalOpen), "done");
     assert.equal(await page.locator('link[href="/lightning/runtime/slds/glade-slds.css"]').count(), 1);
     assert.deepEqual(pageErrors, []);
@@ -274,7 +365,7 @@ test("unsupported base component and missing SLDS asset record diagnostics", asy
       const { loadSLDS } = await import("@glade/slds");
       await loadSLDS({ theme: "missing" });
       try {
-        await import("lightning/accordion");
+        await import("/lightning/shims/lightning/formattedLocation.js");
       } catch (_err) {
         // The module throws after recording the diagnostic.
       }

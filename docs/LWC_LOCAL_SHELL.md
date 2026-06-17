@@ -3,9 +3,10 @@
 The LWC local shell is a preview feature. Glade can serve Lightning Web
 Components from an SFDX project without deploying to Salesforce, but it does
 not replace hosted Lightning Experience. The shell reads the project on disk,
-compiles LWC bundles, resolves Lightning page and custom tab metadata, starts a
-Glade-owned Lightning runtime, and opens local routes for component, record,
-app, home, and tab contexts.
+compiles LWC bundles, resolves Lightning page, custom tab, quick action, and
+community context metadata, starts a Glade-owned Lightning runtime, and opens
+local routes for component, record, app, home, tab, action, and Experience
+Cloud contexts.
 
 Run the toolchain install before opening LWC routes:
 
@@ -84,6 +85,38 @@ Salesforce-like page context:
       "action": "Update_Status",
       "app": "Sales",
       "formFactor": "Large"
+    },
+    "phase3BaseComponents": {
+      "target": "component",
+      "component": "c:baseComponentHost",
+      "app": "Sales",
+      "formFactor": "Large",
+      "state": {
+        "c__lane": "phase3"
+      }
+    },
+    "communityAccount": {
+      "target": "communityPage",
+      "component": "c:communityProbe",
+      "page": "Account",
+      "formFactor": "Large",
+      "community": {
+        "site": "Partner_Portal",
+        "basePath": "/partners",
+        "siteId": "0DM000000000001",
+        "networkId": "0DB000000000001",
+        "guest": true,
+        "language": "en-US"
+      },
+      "pageReference": {
+        "type": "comm__namedPage",
+        "attributes": {
+          "name": "Account"
+        },
+        "state": {
+          "c__view": "summary"
+        }
+      }
     }
   }
 }
@@ -109,10 +142,12 @@ glade dev lwc --project . --target record-page --object Account --record 0010000
 ```
 
 Supported context targets are `component`, `urlAddressable`, `recordPage`,
-`appPage`, `homePage`, `tab`, `recordAction`, and `globalAction`. Direct flags
-include `--component`, `--object`, `--record`, `--page`, `--tab`, `--action`,
-`--app`, `--form-factor`, and repeated `--state key=value`. Explicit flags
-override preset fields.
+`appPage`, `homePage`, `tab`, `recordAction`, `globalAction`, and
+`communityPage`. Community presets use `community.site`, `basePath`, `siteId`,
+`networkId`, `guest`, `language`, and an optional configured `pageReference`.
+Direct flags include `--component`, `--object`, `--record`, `--page`, `--tab`,
+`--action`, `--app`, `--form-factor`, and repeated `--state key=value`.
+Explicit flags override preset fields for non-community routes.
 
 ## Preview Routes
 
@@ -128,6 +163,8 @@ Open these routes from the local server:
 /lwc/preview/tab/<Tab>
 /lwc/preview/action/<Object>/<recordId>/<ActionName>
 /lwc/preview/action/global/<ActionName>
+/lwc/preview/community/<site>/<page>
+/lwc/preview/community/<site>/cmp/<namespace>/<component>
 ```
 
 Examples:
@@ -141,6 +178,8 @@ http://127.0.0.1:8080/lwc/preview/app/Sales_Dashboard
 http://127.0.0.1:8080/lwc/preview/tab/Lwc_Probe
 http://127.0.0.1:8080/lwc/preview/action/Account/001000000000001AAA/Update_Status
 http://127.0.0.1:8080/lwc/preview/action/global/Global_Status
+http://127.0.0.1:8080/lwc/preview/community/Partner_Portal/Account
+http://127.0.0.1:8080/lwc/preview/community/Partner_Portal/cmp/c/communityProbe
 ```
 
 Direct component preview mounts one component with URL context. Record, app,
@@ -156,6 +195,13 @@ home, and tab routes resolve Salesforce metadata from the project:
 - Quick action routes mount LWC-backed action metadata and pass `recordId`,
   `objectApiName`, `actionName`, `actionType`, state, and PageReference
   attributes. Unsupported action metadata returns `GLADELWC070`.
+- Community page routes resolve `communityPage` presets, mount
+  `lightningCommunity__Page` components, apply a local
+  `lightningCommunity__Theme_Layout` wrapper boundary when one exists, and pass
+  community base path, IDs, guest mode, language, state, and configured
+  `comm__*` PageReference data.
+- Direct community component routes mount `lightningCommunity__Default`
+  components with the site from the route and a `/s` base-path fallback.
 
 Visualforce-backed custom tabs redirect to the Visualforce page route when the
 project defines one. That redirect is the main Visualforce mention in the LWC
@@ -173,7 +219,7 @@ The shell exposes local state for tools and browser tests:
 The response includes the active route, PageReference, route context, mounted
 components, route list, diagnostics when present, and service support such as
 Apex, LDS, UI API shims, navigation, labels, resources, LMS, quick actions,
-base components, Visualforce host support, and toast.
+Experience Cloud context, base components, Visualforce host support, and toast.
 
 `CurrentPageReference` uses the same local PageReference shapes:
 
@@ -187,6 +233,8 @@ base components, Visualforce host support, and toast.
 | `/lwc/preview/tab/<Tab>` | `standard__navItemPage` when the tab route is the active target |
 | `/lwc/preview/action/<Object>/<recordId>/<ActionName>` | `standard__quickAction` |
 | `/lwc/preview/action/global/<ActionName>` | `standard__quickAction` |
+| `/lwc/preview/community/<site>/<page>` | configured `comm__*`, defaulting to `comm__namedPage` |
+| `/lwc/preview/community/<site>/cmp/<ns>/<component>` | `standard__component` with community context |
 
 Query parameters named `state.<key>` become PageReference state values:
 
@@ -204,7 +252,8 @@ FlexiPage component properties are passed as component attributes.
 The local LWC runtime supports the first-mile Salesforce module paths used by
 common local development loops:
 
-- Apex wire and imperative imports through `@salesforce/apex/<Class>.<method>`.
+- Apex wire and imperative imports through `@salesforce/apex/<Class>.<method>`
+  in the LWC shell and Visualforce Lightning Out.
 - Local Apex controller execution for project methods that the local VM can
   invoke. Request user context is passed through the local server, cacheable
   Apex wires use deterministic local cache keys, and `refreshApex` forces a
@@ -218,7 +267,8 @@ common local development loops:
   generated full layout from createable fields as the local fallback.
 - `lightning/uiObjectInfoApi` `getObjectInfo`, `getObjectInfos`,
   `getPicklistValues`, and `getPicklistValuesByRecordType` against local
-  schema metadata. Compatibility exports remain available from
+  schema metadata. `getObjectInfo` is browser-checked in the LWC shell and
+  Visualforce Lightning Out. Compatibility exports remain available from
   `lightning/uiRecordApi`.
 - `lightning/uiLayoutApi` `getLayout` for the same local Record Layout shape.
   `formFactor` is accepted, but distinct mobile/tablet layout variants remain a
@@ -227,6 +277,8 @@ common local development loops:
   `getFieldValue`, `getFieldDisplayValue`, `generateRecordInputForCreate`,
   `generateRecordInputForUpdate`, and
   `createRecordInputFilteredByEditedFields` against local record shapes.
+  Create, update, and delete are browser-checked in the LWC shell and
+  Visualforce Lightning Out.
   Mutations use the local DML engine for supported objects, so ID sequences,
   required-field checks, audit fields, explicit nulls, and soft deletes follow
   the same local rules as Apex DML.
@@ -246,15 +298,25 @@ common local development loops:
   `@salesforce/contentAssetUrl/<name>` for local static resources and content
   assets.
 - `@salesforce/user/Id`, `@salesforce/user/isGuest`, and checked
-  `@salesforce/i18n/*` values.
+  `@salesforce/i18n/*` values. `isGuest` reads the active community context
+  and remains `false` outside guest community routes.
+- `@salesforce/community/basePath`, `@salesforce/community/Id`, and
+  `@salesforce/site/Id` from the active local community context. Missing IDs
+  export empty strings and report `GLADELWC102`.
 - `lightning/navigation` basics for `CurrentPageReference`,
-  `NavigationMixin.Navigate`, and `NavigationMixin.GenerateUrl`.
+  `NavigationMixin.Navigate`, and `NavigationMixin.GenerateUrl`, including
+  local `comm__namedPage`, `comm__loginPage`, `comm__managedContentPage`,
+  `comm__recordPage`, and `comm__recordRelationshipPage` URL generation.
 - `lightning/messageService` in-page publish and subscribe,
   `lightning/platformResourceLoader` local script and style loading, and
   `lightning/platformShowToastEvent` browser toast events.
 - `lightning/platformWorkspaceApi` active-route and tab label/icon
   approximation for console apps. Full console workspace behavior remains a
   Salesforce check and is marked with `GLADELWC072`.
+- `lightning/actions`, `lightning/flowSupport`, `lightning/refresh`, and
+  `lightning/empApi` practical local shims. They provide browser events,
+  refresh handler dispatch, and in-page pub/sub contracts without live
+  Salesforce action, flow runtime, or streaming service execution.
 
 These services work in LWC shell routes. Shared runtime services also support
 Lightning Out pages where the support table names that host.
@@ -273,6 +335,15 @@ events when a rendered tab label is selected. `lightning-record-form`,
 `lightning-record-view-form`, and `lightning-record-edit-form` read field
 values through the local `getRecord` endpoint and submit edits through the
 local `updateRecord` endpoint.
+
+The checked `lwc-shell` fixture also exposes an expanded base-component
+direct component context through `c:baseComponentHost` and
+`phase3BaseComponents`. It covers email links, dual listbox, select, slider,
+rich text input, menu divider, progress bar/ring, tile, breadcrumbs, tree grid,
+map, carousel, quick action panel, record picker, file upload, and the
+additional display/input/container set. The local browser capture for that
+fixture passes with no browser console errors or page errors. Live Salesforce
+parity evidence still belongs to a hosted capture report.
 
 Unsupported base component imports, unsupported local base-component
 attributes, and missing SLDS assets report named `GLADELWC` diagnostics. Keep a
@@ -307,8 +378,11 @@ instead of falling through to Salesforce. Examples include missing components,
 unsupported targets, invalid context presets, unsupported navigation
 destinations, approximated FlexiPage visibility rules (`GLADELWC034`),
 unsupported base components, unsupported local base-component attributes
-(`GLADELWC061`), missing SLDS assets, and Lightning Out host issues
-(`GLADELWC080` through `GLADELWC082`). The workbench context panel and
+(`GLADELWC061`), missing community context (`GLADELWC100`), unsupported
+Experience Builder features (`GLADELWC101`), missing community site or network
+IDs (`GLADELWC102`), unsupported community PageReferences (`GLADELWC103`),
+missing SLDS assets, and Lightning Out host issues (`GLADELWC080` through
+`GLADELWC082`). The workbench context panel and
 `/lightning/local/context.json` are the first places to look.
 
 ## Browser Oracle
@@ -317,10 +391,10 @@ Use the sibling `glade-tools` compatibility command when local behavior needs a
 live Salesforce browser check beside the local shell:
 
 ```bash
-cd /Users/matt/Dev/lwc-full-shell/glade-tools
+cd ../glade-tools
 go run ./cmd/glade-plugin-compat lwc capture \
-  --target-org oaer-probe-max \
-  --project /Users/matt/Dev/lwc-full-shell/glade/testdata/local-tests/lwc-shell \
+  --target-org <target-org> \
+  --project ../glade/testdata/local-tests/lwc-shell \
   --targets app-page,custom-tab,url-addressable-component \
   --local-browser-capture \
   --glade-bin /tmp/glade-lwc-shell-bin \
@@ -337,14 +411,32 @@ not write one-time login URLs. When both sides are present, each case includes a
 `comparison` block with the scoped component selector, normalized visible text,
 project LWC component names, project LWC component counts, and diffs.
 
-The current `oaer-probe-max` browser lane proves the app page, custom tab, and
+The current browser oracle lane proves the app page, custom tab, and
 URL-addressable component targets on both sides: local shell DOM and Salesforce
 DOM, selector-scoped comparison, zero browser console errors, and zero page
 errors. The app-page and custom-tab oracle deploys the `Lwc_Shell` app, assigns
 `Lwc_Shell_Access`, and opens `/lightning/app/c__Lwc_Shell/n/Lwc_Probe`.
 Record pages need a real org record id and page activation. Quick actions need
 modal routing proof. Visualforce Lightning Out needs the Visualforce fixture
-pages deployed to the same org.
+pages deployed to the same org. Expanded base-component and community captures
+use local-only browser evidence because those fixture routes have no direct
+stable Salesforce URL:
+
+```bash
+cd ../glade-tools
+go run ./cmd/glade-plugin-compat lwc capture \
+  --target-org <target-org> \
+  --project ../glade/testdata/local-tests/lwc-shell \
+  --targets community-page,phase3-base-components \
+  --skip-deploy \
+  --local-browser-capture \
+  --glade-bin /tmp/glade-lwc-shell-bin \
+  --out /tmp/glade-lwc-local-only-browser-check.json
+```
+
+The project corpus scanner lives in the sibling compat plugin as
+`glade-tools compat lwc corpus`; it writes repo, target, import,
+base-component tag, and property-type counts for selected Salesforce projects.
 
 ## Current Limits
 
@@ -353,12 +445,13 @@ This is local development support, not a hosted Salesforce replacement.
 | Area | Current limit |
 | --- | --- |
 | Hosted Lightning Experience | Glade serves a local shell, not Salesforce chrome, live auth, permissions, workspace API, or exact console behavior. |
-| Metadata | The shell resolves LWC bundle metadata, FlexiPages, custom applications, and custom tabs needed for preview routes. It does not implement every builder rule or Experience Cloud runtime. |
-| Base components | Common `lightning-*` modules have practical local implementations, including datatable row actions, LDS-backed record form reads and submits, and tab active events. Full base component and SLDS parity remain outside the local contract. Unsupported local attributes report `GLADELWC061`. |
+| Metadata | The shell resolves LWC bundle metadata, FlexiPages, custom applications, custom tabs, quick actions, and configured community contexts needed for preview routes. It does not implement every builder rule or full Experience Builder runtime. |
+| Base components | Common and expanded checked `lightning-*` modules have practical local implementations, including datatable row actions, LDS-backed record form reads and submits, tab active events, dual listbox/select/slider changes, rich text input changes, record picker changes, and file upload events. Full base component and SLDS parity remain outside the local contract. Unsupported local attributes report `GLADELWC061`. |
 | Apex params and errors | Params must be object-shaped. `undefined` wire params suppress invocation; `null` is passed as an explicit value. Errors use a Salesforce-shaped `body.message`, `body.exceptionType`, `body.stackTrace`, and `status` envelope. |
 | LDS/UI API | Selected LDS/UI API shims use local schema and local records, including batch records, optional fields, batch object info, create-default field layouts, REST layout field sections, picklists, related-list rows, mutation refresh, and matching record-wire re-emits. Full UI API, profile layout assignment, non-field layout widgets, permissions, record edit flows, broad cross-adapter coalescing, and hosted validation parity are not complete. |
 | Apex controllers | Supported local Apex executes in the Glade VM. Unsupported Apex surfaces return diagnostics instead of calling Salesforce. |
-| Navigation | `CurrentPageReference`, `Navigate`, and `GenerateUrl` cover supported local page targets, including quick action and URL-addressable component routes. Full router history, full console navigation, named app behavior, and hosted URL generation remain limited. Console workspace APIs are approximated and marked with `GLADELWC072`. |
+| Navigation | `CurrentPageReference`, `Navigate`, and `GenerateUrl` cover supported local page targets, including quick action, URL-addressable component, and configured community routes. Full router history, full console navigation, named app behavior, full Experience Cloud routing, and hosted URL generation remain limited. Console workspace APIs are approximated and marked with `GLADELWC072`. |
+| Experience Cloud | Community routes provide local site context, base path, IDs, guest flag, language, supported `comm__*` PageReferences, and a theme-layout boundary. Menus, managed content delivery, personalization, builder data sources, auth flows, and exact hosted Experience Cloud chrome remain Salesforce checks. |
 | Visualforce Lightning Out | Shared runtime services can mount LWCs through Lightning Out pages. Exact hosted lifecycle timing and every Lightning Out edge remain outside the local contract. |
 
 Use Salesforce for live auth, hosted permissions, org-only services, exact

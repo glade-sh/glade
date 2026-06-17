@@ -51,6 +51,13 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 	b.WriteString(`</head><body class="glade-shell" data-glade-shell="workbench" data-glade-app-mode="`)
 	b.WriteString(html.EscapeString(model.Mode))
 	b.WriteString(`">`)
+	if strings.TrimSpace(shell.Context.Community.Site) != "" {
+		b.WriteString(`<div hidden data-glade-community-shell data-glade-community-site="`)
+		b.WriteString(html.EscapeString(shell.Context.Community.Site))
+		b.WriteString(`" data-glade-community-guest="`)
+		b.WriteString(html.EscapeString(fmt.Sprintf("%t", shell.Context.Community.Guest)))
+		b.WriteString(`"></div>`)
+	}
 	b.WriteString(`<header class="glade-global-header"><button class="glade-app-launcher" type="button" aria-label="App launcher">`)
 	b.WriteString(`&#9638;</button><strong>`)
 	b.WriteString(html.EscapeString(workbenchAppLabel(model)))
@@ -66,6 +73,10 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 	b.WriteString(lwcShellRegionsHTML(shell))
 	b.WriteString(`</main><aside class="glade-context-panel" data-glade-context-panel>`)
 	b.WriteString(`<h2>Context</h2><dl>`)
+	communityGuest := ""
+	if strings.TrimSpace(shell.Context.Community.Site) != "" {
+		communityGuest = fmt.Sprintf("%t", shell.Context.Community.Guest)
+	}
 	contextRows := []struct{ name, value string }{
 		{"Target", string(shell.Context.Kind)},
 		{"Page", shell.Context.PageName},
@@ -75,6 +86,12 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 		{"App", shell.Context.AppName},
 		{"Tab", shell.Context.TabName},
 		{"Form factor", shell.Context.FormFactor},
+		{"Community", shell.Context.Community.Site},
+		{"Community base path", shell.Context.Community.BasePath},
+		{"Community site ID", shell.Context.Community.SiteID},
+		{"Community network ID", shell.Context.Community.NetworkID},
+		{"Community guest", communityGuest},
+		{"Community language", shell.Context.Community.Language},
 	}
 	for _, row := range contextRows {
 		if strings.TrimSpace(row.value) == "" {
@@ -94,7 +111,7 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 	b.WriteString(`</script><script>`)
 	b.WriteString(`(function(){var mounts=`)
 	b.WriteString(mountsJSON)
-	b.WriteString(`;function go(){for(var i=0;i<mounts.length;i++){var m=mounts[i];window.$Lightning.createComponent(m.qualified,m.attrs,m.hostId,function(){});}}if(window.$Lightning){go();}else{window.addEventListener("load",go);}})();`)
+	b.WriteString(`;function create(m,done){window.$Lightning.createComponent(m.qualified,m.attrs,m.hostId,function(cmp,status,msg){if(done){done(cmp,status,msg);}});}function go(){var theme=null;var rest=[];for(var i=0;i<mounts.length;i++){if(!theme&&mounts[i].region==="theme"){theme=mounts[i];}else{rest.push(mounts[i]);}}if(!theme){for(var j=0;j<mounts.length;j++){create(mounts[j]);}return;}create(theme,function(cmp,status){if(status!=="SUCCESS"||!cmp){for(var j=0;j<rest.length;j++){create(rest[j]);}return;}cmp.setAttribute("data-glade-theme-wrapper","true");for(var k=0;k<rest.length;k++){var host=document.getElementById(rest[k].hostId);if(host){cmp.appendChild(host);}create(rest[k]);}});}if(window.$Lightning){go();}else{window.addEventListener("load",go);}})();`)
 	b.WriteString(`</script><script type="module" src="/lightning/runtime/shell/app.js"></script></body></html>`)
 	return b.String()
 }
@@ -209,22 +226,41 @@ func lightningRuntimeAsset(kind, name string) (string, []byte, bool) {
 	if kind == "" || name == "" || strings.Contains(name, "/") || strings.Contains(name, "..") {
 		return "", nil, false
 	}
-	dir, err := gladehome.RuntimeAssetDir(kind)
-	if err != nil {
-		return "", nil, false
-	}
 	candidates := []string{name}
 	if strings.HasSuffix(name, ".js") {
 		candidates = append(candidates, strings.TrimSuffix(name, ".js")+".mjs")
 	}
-	for _, candidate := range candidates {
-		content, err := os.ReadFile(filepath.Join(dir, candidate))
-		if err != nil {
-			continue
+	for _, dir := range lightningRuntimeAssetDirs(kind) {
+		for _, candidate := range candidates {
+			content, err := os.ReadFile(filepath.Join(dir, candidate))
+			if err != nil {
+				continue
+			}
+			return lightningRuntimeContentType(candidate), content, true
 		}
-		return lightningRuntimeContentType(candidate), content, true
 	}
 	return "", nil, false
+}
+
+func lightningRuntimeAssetDirs(kind string) []string {
+	var dirs []string
+	if dir, err := gladehome.RuntimeAssetDir(kind); err == nil {
+		dirs = append(dirs, dir)
+	}
+	if repoRoot, err := gladehome.RepoRoot(); err == nil {
+		dir := filepath.Join(repoRoot, "lwcruntime", "src", kind)
+		duplicate := false
+		for _, existing := range dirs {
+			if existing == dir {
+				duplicate = true
+				break
+			}
+		}
+		if !duplicate {
+			dirs = append(dirs, dir)
+		}
+	}
+	return dirs
 }
 
 func lightningRuntimeContentType(name string) string {
@@ -379,6 +415,7 @@ func lwcShellServiceStatus() map[string]string {
 		"urlAddressable":         "supported-local",
 		"quickActions":           "supported-local",
 		"baseComponents":         "supported-local",
+		"community":              "supported-local",
 		"visualforceHost":        "supported-local",
 		"platformWorkspaceApi":   "partial",
 		"slds":                   "partial",

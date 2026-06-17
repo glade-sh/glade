@@ -454,6 +454,22 @@ func TestLightningResourceAndContentAssetShimsResolveMetadataURLs(t *testing.T) 
 	}
 }
 
+func TestLightningMessageChannelShimServesToken(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/shims/messageChannel/LwcProbe__c.js", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	for _, want := range []string{`name: "LwcProbe__c"`, `messageChannelName: "LwcProbe__c"`, "export default channel"} {
+		if !strings.Contains(rec.Body.String(), want) {
+			t.Fatalf("missing %q in %q", want, rec.Body.String())
+		}
+	}
+}
+
 func TestLightningResourceURLShimFetchesStaticResourceBytes(t *testing.T) {
 	root := lightningFixtureRoot(t)
 	fixture := filepath.Join(root, "testdata", "local-tests", "lightning-out-vf")
@@ -591,6 +607,50 @@ func TestLightningWireApexReturnsData(t *testing.T) {
 	}
 }
 
+func TestLightningApexRouteInvokesImperativeController(t *testing.T) {
+	root := lightningFixtureRoot(t)
+	fixture := filepath.Join(root, "testdata", "local-tests", "lightning-out-vf")
+	p, err := project.Load(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema, err := gladeschema.LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	handler := NewWithSource(&org, source)
+	handler.SetProjectIndex(typesys.Build(p, schema))
+
+	body := `{"recordId":"001XX0000000001"}`
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/lightning/apex/ItemCtrl/getItems", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var out lwcbrowser.WireResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Error != nil {
+		t.Fatalf("error = %#v", out.Error)
+	}
+	rows, ok := out.Data.([]any)
+	if !ok || len(rows) != 1 {
+		t.Fatalf("data = %#v", out.Data)
+	}
+	row, ok := rows[0].(map[string]any)
+	if !ok || row["Id"] != "001XX0000000001" || row["Name"] != "Local Widget" {
+		t.Fatalf("row = %#v", rows[0])
+	}
+}
+
 func TestLightningWireApexUsesRequestCurrentUser(t *testing.T) {
 	root := lightningFixtureRoot(t)
 	fixture := filepath.Join(root, "testdata", "local-tests", "lightning-out-vf")
@@ -667,6 +727,67 @@ func TestLightningWireApexRejectsNonObjectParamsWithSalesforceError(t *testing.T
 		t.Fatalf("error = %#v", out.Error)
 	}
 	if out.Error.Body == nil || out.Error.Body.ExceptionType != "InvalidParameterValueException" || !strings.Contains(out.Error.Body.Message, "Apex params must be an object") {
+		t.Fatalf("error body = %#v", out.Error.Body)
+	}
+}
+
+func TestLightningWireApexReturnsOverloadDiagnosticCode(t *testing.T) {
+	firstProgram, err := vm.CompileAnonymous(`return 'first';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondProgram, err := vm.CompileAnonymous(`return 'second';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := vm.New(nil)
+	for _, method := range []vm.Method{
+		{
+			Name:       "WidgetController.load",
+			ClassName:  "WidgetController",
+			ReturnType: "String",
+			IsStatic:   true,
+			Modifiers:  []string{"AuraEnabled"},
+			Params:     []vm.Param{{Name: "value", Type: "String"}},
+			Program:    firstProgram,
+		},
+		{
+			Name:       "WidgetController.load",
+			ClassName:  "WidgetController",
+			ReturnType: "String",
+			IsStatic:   true,
+			Modifiers:  []string{"AuraEnabled"},
+			Params:     []vm.Param{{Name: "value", Type: "Object"}},
+			Program:    secondProgram,
+		},
+	} {
+		if err := machine.RegisterMethod(method); err != nil {
+			t.Fatal(err)
+		}
+	}
+	org := storage.NewOrgState()
+	handler := New(&org)
+	handler.SetProjectRuntime(typesys.Index{}, machine, nil)
+
+	body := `{"className":"WidgetController","method":"load","params":{"value":"Acme"}}`
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/lightning/wire/apex", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var out lwcbrowser.WireResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Error == nil {
+		t.Fatalf("error missing: %#v", out)
+	}
+	if out.Error.Code != "GLADELWC013" || out.Error.Body == nil || out.Error.Body.Code != "GLADELWC013" {
+		t.Fatalf("error = %#v body=%#v", out.Error, out.Error.Body)
+	}
+	if out.Error.Body.ExceptionType != "UnsupportedFeature" || out.Error.Body.Message != "overloaded AuraEnabled method unsupported" {
 		t.Fatalf("error body = %#v", out.Error.Body)
 	}
 }

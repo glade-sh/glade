@@ -333,8 +333,10 @@ The LWC shell prints `/lwc/preview/component/<namespace>/<component>`,
 `/lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>`,
 `/lwc/preview/app/<Page>`, `/lwc/preview/home/<Page>`,
 `/lwc/preview/tab/<Tab>`, `/lwc/preview/action/<Object>/<recordId>/<Action>`,
-and `/lwc/preview/action/global/<Action>` routes. Visualforce-backed tabs
-redirect to `/apex/<Page>` and share the same Lightning Out runtime.
+and `/lwc/preview/action/global/<Action>` routes. Named contexts such as
+`phase3BaseComponents` can open fixture-specific service probes.
+Visualforce-backed tabs redirect to `/apex/<Page>` and share the same Lightning
+Out runtime.
 
 ## `glade lsp`
 

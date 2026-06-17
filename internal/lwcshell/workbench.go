@@ -3,6 +3,7 @@ package lwcshell
 import (
 	"fmt"
 	"net/url"
+	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/lwc"
@@ -193,7 +194,66 @@ func DiscoverShellRoutes(p project.Project) []ShellRoute {
 		}
 		routes = append(routes, route)
 	}
+	routes = appendCommunityPresetRoutes(p, routes)
 	return routes
+}
+
+func appendCommunityPresetRoutes(p project.Project, routes []ShellRoute) []ShellRoute {
+	file, err := LoadContextPresets(p.Root)
+	if err != nil || len(file.Contexts) == 0 {
+		return routes
+	}
+	names := make([]string, 0, len(file.Contexts))
+	for name := range file.Contexts {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		ctx, err := file.Contexts[name].ToPageContext()
+		if err != nil || ctx.Kind != RenderTargetCommunityPage {
+			continue
+		}
+		routeURL := communityPresetRouteURL(ctx)
+		if routeURL == "" {
+			continue
+		}
+		routes = append(routes, ShellRoute{
+			Label:     communityPresetRouteLabel(ctx),
+			URL:       routeURL,
+			Kind:      RenderTargetCommunityPage,
+			PageName:  ctx.PageName,
+			Component: ctx.ComponentName,
+			State:     ctx.State,
+		})
+	}
+	return routes
+}
+
+func communityPresetRouteURL(ctx PageContext) string {
+	if strings.TrimSpace(ctx.Community.Site) == "" || strings.TrimSpace(ctx.PageName) == "" {
+		return ""
+	}
+	values := url.Values{}
+	for key, value := range ctx.State {
+		if strings.TrimSpace(key) != "" && strings.TrimSpace(value) != "" {
+			values.Set("state."+key, value)
+		}
+	}
+	path := "/lwc/preview/community/" + url.PathEscape(ctx.Community.Site) + "/" + url.PathEscape(ctx.PageName)
+	if encoded := values.Encode(); encoded != "" {
+		return path + "?" + encoded
+	}
+	return path
+}
+
+func communityPresetRouteLabel(ctx PageContext) string {
+	if strings.TrimSpace(ctx.Community.Site) == "" {
+		return ctx.PageName
+	}
+	if strings.TrimSpace(ctx.PageName) == "" {
+		return ctx.Community.Site
+	}
+	return ctx.Community.Site + " / " + ctx.PageName
 }
 
 func pageLabel(page FlexiPage) string {

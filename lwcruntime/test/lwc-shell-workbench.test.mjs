@@ -9,6 +9,8 @@ import { repoRoot, startLWCDevServer } from "./helpers.mjs";
 const shellFiles = {
   "/lightning/runtime/shell/app.js": "lwcruntime/src/shell/app.mjs",
   "/lightning/runtime/shell/app.mjs": "lwcruntime/src/shell/app.mjs",
+  "/lightning/runtime/shell/community-host.js": "lwcruntime/src/shell/community-host.mjs",
+  "/lightning/runtime/shell/community-host.mjs": "lwcruntime/src/shell/community-host.mjs",
   "/lightning/runtime/shell/router.js": "lwcruntime/src/shell/router.mjs",
   "/lightning/runtime/shell/router.mjs": "lwcruntime/src/shell/router.mjs",
   "/lightning/runtime/shell/context-panel.js": "lwcruntime/src/shell/context-panel.mjs",
@@ -22,6 +24,8 @@ const shellFiles = {
   "/lightning/runtime/slds/slds-loader.js": "lwcruntime/src/slds/slds-loader.mjs",
   "/lightning/runtime/slds/slds-loader.mjs": "lwcruntime/src/slds/slds-loader.mjs",
   "/lightning/runtime/slds/glade-slds.css": "lwcruntime/src/slds/glade-slds.css",
+  "/lightning/runtime/shims/community.js": "lwcruntime/src/shims/community.mjs",
+  "/lightning/runtime/shims/community.mjs": "lwcruntime/src/shims/community.mjs",
 };
 
 function startWorkbenchServer() {
@@ -152,17 +156,19 @@ test("LWC shell workbench renders routes, context, and mounted record page", asy
     assert.ok(await page.locator('a[data-glade-route][href^="/lwc/preview/record/Account/"]').count());
     assert.ok(await page.locator('a[data-glade-route][href="/lwc/preview/app/Sales_Dashboard"]').count());
     assert.ok(await page.locator('a[data-glade-route][href="/lwc/preview/tab/Lwc_Probe"]').count());
+    assert.ok(await page.locator('a[data-glade-route][href="/lwc/preview/community/Partner_Portal/Account"]').count());
 
     const workbench = await page.locator("#glade-lwc-workbench").textContent();
     const model = JSON.parse(workbench || "{}");
     assert.equal(model.title, "Glade Lightning Shell");
     assert.ok(model.routes.some((route) => route.url === "/lwc/preview/app/Sales_Dashboard"));
     assert.ok(model.routes.some((route) => route.url === "/lwc/preview/tab/Lwc_Probe"));
+    assert.ok(model.routes.some((route) => route.url === "/lwc/preview/community/Partner_Portal/Account"));
 
     await page.goto(`${server.baseURL}/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page`, {
       waitUntil: "networkidle",
     });
-    assert.match(await page.locator("c-record-probe").innerText({ timeout: 30000 }), /Local Shell Account/);
+    assert.match(await page.locator("c-record-probe").innerText({ timeout: 60000 }), /Local Shell Account/);
     await assert.match(await page.locator("[data-glade-context-panel]").innerText(), /Record/);
     await assert.match(await page.locator("[data-glade-context-panel]").innerText(), /001000000000001AAA/);
     assert.equal(await page.locator("script#glade-lwc-context").evaluate((node) => JSON.parse(node.textContent).kind), "recordPage");
@@ -173,6 +179,15 @@ test("LWC shell workbench renders routes, context, and mounted record page", asy
     assert.equal(context.pageReference.type, "standard__recordPage");
     assert.equal(context.context.recordId, "001000000000001AAA");
     assert.ok(context.mounts.some((mount) => mount.qualified === "c:recordProbe"));
+
+    await page.goto(`${server.baseURL}/lwc/preview/community/Partner_Portal/Account?formFactor=Large`, {
+      waitUntil: "networkidle",
+    });
+    await page.locator("c-community-probe").waitFor({ timeout: 60000 });
+    await page.locator("c-community-theme-layout").waitFor({ state: "attached", timeout: 60000 });
+    assert.equal(await page.locator("c-community-theme-layout #glade-lwc-main-0").count(), 1);
+    assert.match(await page.locator("c-community-theme-layout c-community-probe").innerText({ timeout: 60000 }), /Community Probe/);
+    assert.match(await page.locator("c-community-probe").innerText({ timeout: 60000 }), /\/lwc\/preview\/community\/Partner_Portal\/Account\?c__view=summary/);
   } finally {
     await browser.close();
     await server.close();

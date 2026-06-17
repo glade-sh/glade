@@ -91,6 +91,52 @@ return page.getUrl() + ':' + page.getParameters().get('mode') + ':' + page.getPa
 	}
 }
 
+func TestInvokeLWCMethodRejectsOverloadedAuraEnabledMethods(t *testing.T) {
+	firstProgram, err := CompileAnonymous(`return 'first';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondProgram, err := CompileAnonymous(`return 'second';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, method := range []Method{
+		{
+			Name:       "WidgetController.load",
+			ClassName:  "WidgetController",
+			ReturnType: "String",
+			IsStatic:   true,
+			Modifiers:  []string{"AuraEnabled"},
+			Params:     []Param{{Name: "value", Type: "String"}},
+			Program:    firstProgram,
+		},
+		{
+			Name:       "WidgetController.load",
+			ClassName:  "WidgetController",
+			ReturnType: "String",
+			IsStatic:   true,
+			Modifiers:  []string{"AuraEnabled"},
+			Params:     []Param{{Name: "value", Type: "Object"}},
+			Program:    secondProgram,
+		},
+	} {
+		if err := machine.RegisterMethod(method); err != nil {
+			t.Fatal(err)
+		}
+	}
+	result, err := machine.InvokeLWCMethod("WidgetController", "load", map[string]any{"value": "Acme"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Success || result.Error == nil {
+		t.Fatalf("result = %#v", result)
+	}
+	if result.Error.Code != "GLADELWC013" || result.Error.Type != "UnsupportedFeature" || result.Error.Message != "overloaded AuraEnabled method unsupported" {
+		t.Fatalf("error = %#v", result.Error)
+	}
+}
+
 func TestInvokeAuraActionReturnsAuraHandledExceptionShape(t *testing.T) {
 	program, err := CompileAnonymous(`throw new AuraHandledException('blocked');`)
 	if err != nil {

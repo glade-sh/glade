@@ -39,6 +39,18 @@ function startShellServiceServer() {
       state: {},
     },
   })}</script>
+  <script type="application/json" id="glade-lwc-context">${JSON.stringify({
+    kind: "communityPage",
+    pageName: "Account",
+    community: {
+      site: "Partner_Portal",
+      basePath: "/partners",
+      siteId: "0DM000000000001",
+      networkId: "0DB000000000001",
+      guest: true,
+      language: "en-US",
+    },
+  })}</script>
 </head>
 <body><div id="host"></div><script type="module" src="/test-entry.js"></script></body>
 </html>`);
@@ -76,6 +88,11 @@ window.__serviceResults.urls = {
   component: await generateUrl({ type: "standard__component", attributes: { componentName: "c__helloWorld" } }),
   quickAction: await generateUrl({ type: "standard__quickAction", attributes: { apiName: "Account.NewTask", objectApiName: "Account", recordId: "001000000000001AAA" } }),
   webPage: await generateUrl({ type: "standard__webPage", attributes: { url: "/apex/AccountHost" } }),
+  communityNamed: await generateUrl({ type: "comm__namedPage", attributes: { name: "Account" }, state: { c__view: "summary" } }),
+  communityLogin: await generateUrl({ type: "comm__loginPage", attributes: { actionName: "login" } }),
+  communityManagedContent: await generateUrl({ type: "comm__managedContentPage", attributes: { contentKey: "welcome" } }),
+  communityRecord: await generateUrl({ type: "comm__recordPage", attributes: { objectApiName: "Account", recordId: "001000000000001AAA", actionName: "view" } }),
+  communityRelationship: await generateUrl({ type: "comm__recordRelationshipPage", attributes: { objectApiName: "Account", recordId: "001000000000001AAA", relationshipApiName: "Contacts" } }),
 };
 try {
   await generateUrl({ type: "standard__objectPage", attributes: { objectApiName: "Account", actionName: "new" } });
@@ -86,6 +103,11 @@ try {
   await generateUrl({ type: "standard__quickAction", attributes: { apiName: "Account.NewTask" } });
 } catch (err) {
   window.__serviceResults.quickActionError = { code: err.code, message: err.message };
+}
+try {
+  await generateUrl({ type: "comm__unsupportedPage", attributes: { name: "Other" } });
+} catch (err) {
+  window.__serviceResults.communityError = { code: err.code, message: err.message };
 }
 const pageRefs = [];
 const adapter = new CurrentPageReferenceAdapter((pageRef) => pageRefs.push(pageRef));
@@ -147,9 +169,15 @@ test("navigation services generate URLs and stable unsupported errors", async ()
       component: "/lwc/preview/cmp/c/helloWorld",
       quickAction: "/lwc/preview/action/Account/001000000000001AAA/NewTask",
       webPage: "/apex/AccountHost",
+      communityNamed: "/lwc/preview/community/Partner_Portal/Account?c__view=summary",
+      communityLogin: "/lwc/preview/community/Partner_Portal/login",
+      communityManagedContent: "/lwc/preview/community/Partner_Portal/Account?contentKey=welcome&contentType=managedContent",
+      communityRecord: "/lwc/preview/community/Partner_Portal/Account?recordId=001000000000001AAA&objectApiName=Account&actionName=view",
+      communityRelationship: "/lwc/preview/community/Partner_Portal/Account?recordId=001000000000001AAA&objectApiName=Account&relationship=Contacts",
     });
     assert.equal(results.objectError.code, "GLADELWC042");
     assert.equal(results.quickActionError.code, "GLADELWC041");
+    assert.equal(results.communityError.code, "GLADELWC103");
     assert.equal(results.pageRefs[0].type, "standard__recordPage");
     assert.equal(results.assignedUrl, "/lwc/preview/tab/Reports");
   } finally {

@@ -2,6 +2,7 @@ package lwcshell
 
 import (
 	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -58,5 +59,38 @@ func TestBuildWorkbenchModelUsesConsoleModeForConsoleApplication(t *testing.T) {
 	app := model.Apps[0]
 	if app.Mode != "console" || !reflect.DeepEqual(app.NavItems, []string{"standard-Case", "Lwc_Probe"}) {
 		t.Fatalf("app = %#v", app)
+	}
+}
+
+func TestDiscoverShellRoutesIncludesCommunityContextPresets(t *testing.T) {
+	root := t.TempDir()
+	writeProjectFile(t, root, "glade.lwc.json", `{
+  "contexts": {
+    "communityAccount": {
+      "target": "communityPage",
+      "component": "c:communityProbe",
+      "page": "Account",
+      "community": {
+        "site": "Partner_Portal",
+        "basePath": "/partners",
+        "siteId": "0DM000000000001",
+        "networkId": "0DB000000000001"
+      },
+      "state": {"c__view": "summary"}
+    }
+  }
+}`)
+	p := project.Project{Root: root}
+
+	routes := DiscoverShellRoutes(p)
+
+	if !slices.ContainsFunc(routes, func(route ShellRoute) bool {
+		return route.Kind == RenderTargetCommunityPage &&
+			route.Label == "Partner_Portal / Account" &&
+			route.URL == "/lwc/preview/community/Partner_Portal/Account?state.c__view=summary" &&
+			route.Component == "c:communityProbe" &&
+			route.PageName == "Account"
+	}) {
+		t.Fatalf("routes = %#v", routes)
 	}
 }

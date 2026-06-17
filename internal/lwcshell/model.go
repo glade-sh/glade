@@ -25,7 +25,17 @@ const (
 	RenderTargetTab            RenderTargetKind = "tab"
 	RenderTargetURLAddressable RenderTargetKind = "urlAddressable"
 	RenderTargetQuickAction    RenderTargetKind = "quickAction"
+	RenderTargetCommunityPage  RenderTargetKind = "communityPage"
 )
+
+type CommunityContext struct {
+	Site      string `json:"site,omitempty"`
+	BasePath  string `json:"basePath,omitempty"`
+	SiteID    string `json:"siteId,omitempty"`
+	NetworkID string `json:"networkId,omitempty"`
+	Guest     bool   `json:"guest,omitempty"`
+	Language  string `json:"language,omitempty"`
+}
 
 type PageContext struct {
 	Kind          RenderTargetKind  `json:"kind"`
@@ -39,14 +49,17 @@ type PageContext struct {
 	ActionType    string            `json:"actionType,omitempty"`
 	FormFactor    string            `json:"formFactor,omitempty"`
 	State         map[string]string `json:"state,omitempty"`
+	Community     CommunityContext  `json:"community,omitempty"`
+	PageReference map[string]any    `json:"pageReference,omitempty"`
 }
 
 type ShellPage struct {
-	Context     PageContext  `json:"context"`
-	Page        FlexiPage    `json:"page,omitempty"`
-	Tab         CustomTab    `json:"tab,omitempty"`
-	Regions     []PageRegion `json:"regions,omitempty"`
-	Diagnostics []Diagnostic `json:"diagnostics,omitempty"`
+	Context     PageContext    `json:"context"`
+	Page        FlexiPage      `json:"page,omitempty"`
+	Tab         CustomTab      `json:"tab,omitempty"`
+	ThemeLayout *PageComponent `json:"themeLayout,omitempty"`
+	Regions     []PageRegion   `json:"regions,omitempty"`
+	Diagnostics []Diagnostic   `json:"diagnostics,omitempty"`
 }
 
 type PageRegion struct {

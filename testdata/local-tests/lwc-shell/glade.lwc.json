@@ -95,6 +95,47 @@
       "component": "c:baseComponentHost",
       "app": "Sales",
       "formFactor": "Large"
+    },
+    "packagePhase1BaseComponents": {
+      "target": "component",
+      "component": "c:baseComponentHost",
+      "app": "Sales",
+      "formFactor": "Large",
+      "state": {
+        "c__lane": "package-phase1"
+      }
+    },
+    "phase3BaseComponents": {
+      "target": "component",
+      "component": "c:baseComponentHost",
+      "app": "Sales",
+      "formFactor": "Large",
+      "state": {
+        "c__lane": "phase3"
+      }
+    },
+    "communityAccount": {
+      "target": "communityPage",
+      "component": "c:communityProbe",
+      "page": "Account",
+      "formFactor": "Large",
+      "community": {
+        "site": "Partner_Portal",
+        "basePath": "/partners",
+        "siteId": "0DM000000000001",
+        "networkId": "0DB000000000001",
+        "guest": true,
+        "language": "en-US"
+      },
+      "pageReference": {
+        "type": "comm__namedPage",
+        "attributes": {
+          "name": "Account"
+        },
+        "state": {
+          "c__view": "summary"
+        }
+      }
     }
   }
 }

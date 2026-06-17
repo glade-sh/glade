@@ -103,6 +103,9 @@ func (s *Server) resolveLWCShellRequest(r *http.Request, parts []string) (lwcshe
 		ctx.ComponentName = parts[1] + ":" + parts[2]
 		shell, diagnostics, err := s.validateLWCShellPageWithTarget(lwcshell.ShellPage{Context: ctx}, nil, nil, "lightning__UrlAddressable")
 		return shell, "", diagnostics, err
+	case "community":
+		shell, diagnostics, err := s.resolveLWCShellCommunityRequest(r, parts[1:])
+		return shell, "", diagnostics, err
 	case "record":
 		if len(parts) < 3 {
 			return lwcshell.ShellPage{}, "", nil, fmt.Errorf("record preview requires object API name and record ID")
@@ -186,9 +189,190 @@ func (s *Server) resolveLWCShellRequest(r *http.Request, parts []string) (lwcshe
 	}
 }
 
+func (s *Server) resolveLWCShellCommunityRequest(r *http.Request, parts []string) (lwcshell.ShellPage, []lwcshell.Diagnostic, error) {
+	if len(parts) < 2 {
+		return lwcshell.ShellPage{}, nil, fmt.Errorf("community preview requires site and page or component")
+	}
+	site := strings.TrimSpace(parts[0])
+	if site == "" {
+		diag := lwcshell.Diagnostic{Code: "GLADELWC100", Message: "community context required"}
+		return lwcshell.ShellPage{}, []lwcshell.Diagnostic{diag}, fmt.Errorf("%s", diag.Message)
+	}
+	ctx := lwcShellContextFromQuery(r)
+	ctx.Kind = lwcshell.RenderTargetCommunityPage
+	ctx.Community.Site = site
+	if strings.EqualFold(parts[1], "cmp") {
+		if len(parts) != 4 {
+			return lwcshell.ShellPage{}, nil, fmt.Errorf("community component preview requires site, namespace, and component")
+		}
+		ctx.ComponentName = parts[2] + ":" + parts[3]
+		shell, diagnostics, err := s.validateLWCShellPageWithTarget(lwcshell.ShellPage{Context: ctx}, nil, nil, "lightningCommunity__Default")
+		return s.finalizeCommunityShell(shell, diagnostics, err)
+	}
+	if len(parts) != 2 {
+		diag := lwcshell.Diagnostic{Code: "GLADELWC101", Message: fmt.Sprintf("unsupported Experience Builder route %q", strings.Join(parts[1:], "/"))}
+		return lwcshell.ShellPage{}, []lwcshell.Diagnostic{diag}, fmt.Errorf("%s", diag.Message)
+	}
+	ctx.PageName = strings.TrimSpace(parts[1])
+	presetCtx, presetDiagnostics, ok := s.communityContextPreset(site, ctx.PageName)
+	if !ok {
+		diag := lwcshell.Diagnostic{Code: "GLADELWC100", Message: fmt.Sprintf("community context for site %q page %q not found", site, ctx.PageName)}
+		return lwcshell.ShellPage{}, append(presetDiagnostics, diag), fmt.Errorf("%s", diag.Message)
+	}
+	ctx = mergeCommunityRouteContext(presetCtx, ctx)
+	shell, diagnostics, err := s.validateLWCShellPageWithTarget(lwcshell.ShellPage{Context: ctx}, presetDiagnostics, nil, "lightningCommunity__Page")
+	return s.finalizeCommunityShell(shell, diagnostics, err)
+}
+
+func (s *Server) communityContextPreset(site, page string) (lwcshell.PageContext, []lwcshell.Diagnostic, bool) {
+	file, err := lwcshell.LoadContextPresets(s.Source.Project.Root)
+	if err != nil {
+		if presetErr, ok := err.(*lwcshell.ContextPresetError); ok && presetErr.Diagnostic.Code != "" {
+			return lwcshell.PageContext{}, []lwcshell.Diagnostic{presetErr.Diagnostic}, false
+		}
+		return lwcshell.PageContext{}, []lwcshell.Diagnostic{{Code: "GLADELWC020", Message: err.Error()}}, false
+	}
+	var diagnostics []lwcshell.Diagnostic
+	for _, preset := range file.Contexts {
+		ctx, err := preset.ToPageContext()
+		if err != nil {
+			if presetErr, ok := err.(*lwcshell.ContextPresetError); ok && presetErr.Diagnostic.Code != "" {
+				diagnostics = append(diagnostics, presetErr.Diagnostic)
+			}
+			continue
+		}
+		if ctx.Kind != lwcshell.RenderTargetCommunityPage {
+			continue
+		}
+		if strings.EqualFold(ctx.Community.Site, site) && strings.EqualFold(ctx.PageName, page) {
+			return ctx, diagnostics, true
+		}
+	}
+	return lwcshell.PageContext{}, diagnostics, false
+}
+
+func mergeCommunityRouteContext(preset, route lwcshell.PageContext) lwcshell.PageContext {
+	out := preset
+	out.Kind = lwcshell.RenderTargetCommunityPage
+	if route.PageName != "" {
+		out.PageName = route.PageName
+	}
+	if route.Community.Site != "" {
+		out.Community.Site = route.Community.Site
+	}
+	if route.Community.BasePath != "" {
+		out.Community.BasePath = route.Community.BasePath
+	}
+	if route.Community.SiteID != "" {
+		out.Community.SiteID = route.Community.SiteID
+	}
+	if route.Community.NetworkID != "" {
+		out.Community.NetworkID = route.Community.NetworkID
+	}
+	if route.Community.Language != "" {
+		out.Community.Language = route.Community.Language
+	}
+	if route.Community.Guest {
+		out.Community.Guest = true
+	}
+	if route.AppName != "" {
+		out.AppName = route.AppName
+	}
+	if route.FormFactor != "" {
+		out.FormFactor = route.FormFactor
+	}
+	if len(route.State) > 0 {
+		if out.State == nil {
+			out.State = map[string]string{}
+		}
+		for key, value := range route.State {
+			out.State[key] = value
+		}
+	}
+	return out
+}
+
+func (s *Server) finalizeCommunityShell(shell lwcshell.ShellPage, diagnostics []lwcshell.Diagnostic, err error) (lwcshell.ShellPage, []lwcshell.Diagnostic, error) {
+	if err != nil {
+		return shell, diagnostics, err
+	}
+	shell.Context = normalizeCommunityPageContext(shell.Context)
+	diagnostics = appendLWCShellDiagnosticsUnique(diagnostics, communityContextDiagnostics(shell.Context)...)
+	shell.Diagnostics = appendLWCShellDiagnosticsUnique(shell.Diagnostics, diagnostics...)
+	shell = s.attachCommunityThemeLayout(shell)
+	return shell, diagnostics, nil
+}
+
+func normalizeCommunityPageContext(ctx lwcshell.PageContext) lwcshell.PageContext {
+	ctx.Community.Site = strings.TrimSpace(ctx.Community.Site)
+	ctx.Community.BasePath = strings.TrimSpace(ctx.Community.BasePath)
+	if ctx.Community.BasePath == "" {
+		ctx.Community.BasePath = "/s"
+	}
+	ctx.Community.SiteID = strings.TrimSpace(ctx.Community.SiteID)
+	ctx.Community.NetworkID = strings.TrimSpace(ctx.Community.NetworkID)
+	ctx.Community.Language = strings.TrimSpace(ctx.Community.Language)
+	if ctx.PageReference == nil && ctx.PageName != "" {
+		ctx.PageReference = map[string]any{
+			"type":       "comm__namedPage",
+			"attributes": map[string]any{"name": ctx.PageName},
+		}
+	}
+	return ctx
+}
+
+func communityContextDiagnostics(ctx lwcshell.PageContext) []lwcshell.Diagnostic {
+	if ctx.Kind != lwcshell.RenderTargetCommunityPage {
+		return nil
+	}
+	var diagnostics []lwcshell.Diagnostic
+	if strings.TrimSpace(ctx.Community.Site) == "" {
+		diagnostics = append(diagnostics, lwcshell.Diagnostic{Code: "GLADELWC100", Message: "community context required"})
+	}
+	if strings.TrimSpace(ctx.Community.SiteID) == "" || strings.TrimSpace(ctx.Community.NetworkID) == "" {
+		diagnostics = append(diagnostics, lwcshell.Diagnostic{Code: "GLADELWC102", Message: "community siteId or networkId is missing; local shims export empty IDs"})
+	}
+	return diagnostics
+}
+
+func (s *Server) attachCommunityThemeLayout(shell lwcshell.ShellPage) lwcshell.ShellPage {
+	if shell.Context.Kind != lwcshell.RenderTargetCommunityPage || shell.ThemeLayout != nil {
+		return shell
+	}
+	idx, err := lwc.BuildIndex(s.Source.Project)
+	if err != nil {
+		return shell
+	}
+	for _, name := range idx.Names() {
+		bundle, ok := idx.Bundle(name)
+		if !ok || bundle.MetaFile == "" {
+			continue
+		}
+		meta, err := lwc.ParseComponentMeta(bundle.MetaFile)
+		if err != nil || !lwcMetaSupportsTarget(meta, "lightningCommunity__Theme_Layout") {
+			continue
+		}
+		component := lwcshell.PageComponent{ComponentName: shellNamespace(s.Source.Project.Namespace) + ":" + bundle.Name}
+		updated, diag := s.applyLWCMetadataToComponent(idx, component, shell.Context, "lightningCommunity__Theme_Layout")
+		if diag.Code == "" {
+			shell.ThemeLayout = &updated
+		}
+		return shell
+	}
+	return shell
+}
+
+func shellNamespace(namespace string) string {
+	namespace = strings.TrimSpace(namespace)
+	if namespace == "" {
+		return "c"
+	}
+	return namespace
+}
+
 func lwcShellDiagnosticsBlockEmptyMounts(diagnostics []lwcshell.Diagnostic) bool {
 	for _, diagnostic := range diagnostics {
-		if diagnostic.Code != "GLADELWC072" {
+		if diagnostic.Code != "GLADELWC072" && diagnostic.Code != "GLADELWC102" {
 			return true
 		}
 	}
@@ -383,6 +567,8 @@ func lwcShellTargetName(kind lwcshell.RenderTargetKind) string {
 		return "lightning__HomePage"
 	case lwcshell.RenderTargetQuickAction:
 		return "lightning__RecordAction"
+	case lwcshell.RenderTargetCommunityPage:
+		return "lightningCommunity__Page"
 	case lwcshell.RenderTargetTab, lwcshell.RenderTargetComponent, lwcshell.RenderTargetURLAddressable:
 		return ""
 	default:
@@ -433,6 +619,14 @@ func lwcShellContextFromQuery(r *http.Request) lwcshell.PageContext {
 		AppName:       q.Get("app"),
 		FormFactor:    q.Get("formFactor"),
 		State:         map[string]string{},
+		Community: lwcshell.CommunityContext{
+			Site:      q.Get("site"),
+			BasePath:  q.Get("basePath"),
+			SiteID:    q.Get("siteId"),
+			NetworkID: q.Get("networkId"),
+			Guest:     queryBool(q.Get("guest")),
+			Language:  q.Get("language"),
+		},
 	}
 	for key, values := range q {
 		if len(values) == 0 {
@@ -472,7 +666,16 @@ func lwcShellInvalidURLAddressableStateDiagnostic(r *http.Request) (lwcshell.Dia
 
 func lwcShellReservedQueryKey(key string) bool {
 	switch key {
-	case "recordId", "objectApiName", "formFactor":
+	case "recordId", "objectApiName", "formFactor", "site", "basePath", "siteId", "networkId", "guest", "language":
+		return true
+	default:
+		return false
+	}
+}
+
+func queryBool(value string) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "1", "true", "yes":
 		return true
 	default:
 		return false
@@ -554,6 +757,9 @@ func lwcShellPageReference(shell lwcshell.ShellPage) map[string]any {
 	for key, value := range shell.Context.State {
 		state[key] = value
 	}
+	if shell.Context.PageReference != nil {
+		return lwcShellPageReferenceWithState(shell.Context.PageReference, state)
+	}
 	switch shell.Context.Kind {
 	case lwcshell.RenderTargetRecordPage:
 		return map[string]any{
@@ -596,6 +802,23 @@ func lwcShellPageReference(shell lwcshell.ShellPage) map[string]any {
 			},
 			"state": state,
 		}
+	case lwcshell.RenderTargetCommunityPage:
+		if shell.Context.PageName != "" {
+			return map[string]any{
+				"type":       "comm__namedPage",
+				"attributes": map[string]any{"name": shell.Context.PageName},
+				"state":      state,
+			}
+		}
+		attrs := map[string]any{}
+		if shell.Context.ComponentName != "" {
+			attrs["componentName"] = shell.Context.ComponentName
+		}
+		return map[string]any{
+			"type":       "standard__component",
+			"attributes": attrs,
+			"state":      state,
+		}
 	default:
 		attrs := map[string]any{}
 		if shell.Context.ComponentName != "" {
@@ -609,8 +832,50 @@ func lwcShellPageReference(shell lwcshell.ShellPage) map[string]any {
 	}
 }
 
+func lwcShellPageReferenceWithState(in map[string]any, state map[string]string) map[string]any {
+	out := make(map[string]any, len(in)+1)
+	for key, value := range in {
+		out[key] = value
+	}
+	if len(state) == 0 {
+		if _, ok := out["state"]; !ok {
+			out["state"] = map[string]string{}
+		}
+		return out
+	}
+	merged := map[string]any{}
+	if existing, ok := out["state"].(map[string]any); ok {
+		for key, value := range existing {
+			merged[key] = value
+		}
+	}
+	if existing, ok := out["state"].(map[string]string); ok {
+		for key, value := range existing {
+			merged[key] = value
+		}
+	}
+	for key, value := range state {
+		merged[key] = value
+	}
+	out["state"] = merged
+	return out
+}
+
 func lwcShellMounts(shell lwcshell.ShellPage) []lwcShellMount {
 	base := lwcShellContextAttrs(shell.Context)
+	mounts := []lwcShellMount{}
+	if shell.ThemeLayout != nil && shell.ThemeLayout.ComponentName != "" {
+		attrs := copyAttrs(base)
+		for key, value := range shell.ThemeLayout.Properties {
+			attrs[key] = value
+		}
+		mounts = append(mounts, lwcShellMount{
+			Qualified: shell.ThemeLayout.ComponentName,
+			HostID:    "glade-lwc-theme-layout",
+			Attrs:     attrs,
+			Region:    "theme",
+		})
+	}
 	if shell.Context.ComponentName != "" {
 		attrs := copyAttrs(base)
 		if len(shell.Regions) > 0 && len(shell.Regions[0].Components) > 0 {
@@ -618,14 +883,14 @@ func lwcShellMounts(shell lwcshell.ShellPage) []lwcShellMount {
 				attrs[key] = value
 			}
 		}
-		return []lwcShellMount{{
+		mounts = append(mounts, lwcShellMount{
 			Qualified: shell.Context.ComponentName,
 			HostID:    "glade-lwc-main-0",
 			Attrs:     attrs,
 			Region:    "main",
-		}}
+		})
+		return mounts
 	}
-	mounts := []lwcShellMount{}
 	next := 0
 	for _, region := range shell.Regions {
 		regionName := strings.TrimSpace(region.Name)
@@ -676,6 +941,9 @@ func lwcShellContextAttrs(ctx lwcshell.PageContext) map[string]any {
 	if len(ctx.State) > 0 {
 		attrs["state"] = ctx.State
 		attrs["pageReference"] = map[string]any{"state": ctx.State}
+	}
+	if strings.TrimSpace(ctx.Community.Site) != "" {
+		attrs["community"] = ctx.Community
 	}
 	return attrs
 }

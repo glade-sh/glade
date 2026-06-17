@@ -180,11 +180,12 @@ record-input helper functions, `lightning/uiObjectInfoApi` object info and
 picklist wires, `lightning/uiRelatedListApi` child rows, schema tokens, labels,
 static resources, content assets, `CurrentPageReference`, basic
 `NavigationMixin` behavior, local message service, resource loading, toast
-events, practical common base components, and SLDS-shaped local styling. Create
-defaults include project layout field sections when available, with a generated
-full layout from createable fields as the local fallback. `lightning/uiLayoutApi`
-`getLayout` returns the same local Record Layout shape. Glade loads fixture
-records from `data/*.json` when they use the Glade storage fixture format.
+events, practical common and expanded checked base components, and SLDS-shaped
+local styling. Create defaults include project layout field sections when
+available, with a generated full layout from createable fields as the local
+fallback. `lightning/uiLayoutApi` `getLayout` returns the same local Record
+Layout shape. Glade loads fixture records from `data/*.json` when they use the
+Glade storage fixture format.
 
 Tools can read current local shell state at:
 

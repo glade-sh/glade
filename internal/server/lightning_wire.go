@@ -61,6 +61,35 @@ func (s *Server) handleLightningWireApex(w http.ResponseWriter, r *http.Request)
 		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: "invalid wire apex request"}})
 		return
 	}
+	s.invokeLightningApex(w, r, req.ClassName, req.Method, req.Params)
+}
+
+func (s *Server) handleLightningApex(w http.ResponseWriter, r *http.Request, parts []string) {
+	if r.Method != http.MethodPost || len(parts) != 2 {
+		writeMethodNotAllowed(w, http.MethodPost)
+		return
+	}
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: err.Error()}})
+		return
+	}
+	var raw any
+	if len(strings.TrimSpace(string(body))) > 0 {
+		if err := json.Unmarshal(body, &raw); err != nil {
+			writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: "invalid apex invocation request"}})
+			return
+		}
+	}
+	if envelope, ok := raw.(map[string]any); ok {
+		if params, exists := envelope["params"]; exists && len(envelope) == 1 {
+			raw = params
+		}
+	}
+	s.invokeLightningApex(w, r, parts[0], parts[1], raw)
+}
+
+func (s *Server) invokeLightningApex(w http.ResponseWriter, r *http.Request, className, methodName string, rawParams any) {
 	machine, err := s.visualforceRuntime()
 	if err != nil {
 		writeWireJSON(w, lwcbrowser.WireResponse{
@@ -69,14 +98,14 @@ func (s *Server) handleLightningWireApex(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	machine.SetCurrentUser(s.currentUser(r, ""))
-	params, paramErr := apexWireParams(req.Params)
+	params, paramErr := apexWireParams(rawParams)
 	if paramErr != nil {
 		writeWireJSON(w, lwcbrowser.WireResponse{
 			Error: apexWireError("InvalidParameterValueException", paramErr.Error(), http.StatusBadRequest),
 		})
 		return
 	}
-	result, err := machine.InvokeLWCMethod(strings.TrimSpace(req.ClassName), strings.TrimSpace(req.Method), params)
+	result, err := machine.InvokeLWCMethod(strings.TrimSpace(className), strings.TrimSpace(methodName), params)
 	if err != nil {
 		writeWireJSON(w, lwcbrowser.WireResponse{
 			Error: apexWireError("RuntimeError", err.Error(), http.StatusInternalServerError),
@@ -86,7 +115,7 @@ func (s *Server) handleLightningWireApex(w http.ResponseWriter, r *http.Request)
 	if !result.Success {
 		out := lwcbrowser.WireResponse{}
 		if result.Error != nil {
-			out.Error = apexWireError(result.Error.Type, result.Error.Message, http.StatusInternalServerError)
+			out.Error = apexWireErrorWithCode(result.Error.Code, result.Error.Type, result.Error.Message, http.StatusInternalServerError)
 		} else {
 			out.Error = apexWireError("ApexException", "apex wire call failed", http.StatusInternalServerError)
 		}
@@ -108,6 +137,10 @@ func apexWireParams(raw any) (map[string]any, error) {
 }
 
 func apexWireError(exceptionType, message string, status int) *lwcbrowser.WireError {
+	return apexWireErrorWithCode("", exceptionType, message, status)
+}
+
+func apexWireErrorWithCode(code, exceptionType, message string, status int) *lwcbrowser.WireError {
 	exceptionType = strings.TrimSpace(exceptionType)
 	if exceptionType == "" {
 		exceptionType = "ApexException"
@@ -116,10 +149,12 @@ func apexWireError(exceptionType, message string, status int) *lwcbrowser.WireEr
 		status = http.StatusInternalServerError
 	}
 	return &lwcbrowser.WireError{
+		Code:    strings.TrimSpace(code),
 		Type:    exceptionType,
 		Message: message,
 		Status:  status,
 		Body: &lwcbrowser.WireErrorBody{
+			Code:          strings.TrimSpace(code),
 			Message:       message,
 			ExceptionType: exceptionType,
 			StackTrace:    "",

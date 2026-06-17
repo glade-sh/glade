@@ -80,6 +80,7 @@ type WireDeleteRecordRequest struct {
 }
 
 type WireError struct {
+	Code    string         `json:"code,omitempty"`
 	Type    string         `json:"type,omitempty"`
 	Message string         `json:"message"`
 	Body    *WireErrorBody `json:"body,omitempty"`
@@ -87,6 +88,7 @@ type WireError struct {
 }
 
 type WireErrorBody struct {
+	Code          string `json:"code,omitempty"`
 	Message       string `json:"message"`
 	ExceptionType string `json:"exceptionType,omitempty"`
 	StackTrace    string `json:"stackTrace,omitempty"`

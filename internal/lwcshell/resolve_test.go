@@ -171,6 +171,26 @@ func TestResolvePageTargetAllowsVisualforceCustomTab(t *testing.T) {
 	}
 }
 
+func TestResolvePageTargetNormalizesCustomTabLabelToAPIName(t *testing.T) {
+	root := t.TempDir()
+	tabPath := writeProjectFile(t, root, "force-app/main/default/tabs/My_Custom_Tab.tab-meta.xml", `<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>My Custom Tab</label>
+  <flexiPage>Sales_Dashboard</flexiPage>
+</CustomTab>`)
+	p := project.Project{Root: root, TabFiles: []string{tabPath}}
+
+	shell, diagnostics, err := ResolvePageTarget(p, PageContext{
+		Kind:    RenderTargetTab,
+		TabName: "My Custom Tab",
+	})
+	if err != nil {
+		t.Fatalf("ResolvePageTarget error = %v diagnostics=%#v", err, diagnostics)
+	}
+	if shell.Tab.Name != "My_Custom_Tab" || shell.Tab.Target != "Sales_Dashboard" {
+		t.Fatalf("tab = %#v", shell.Tab)
+	}
+}
+
 func TestResolvePageTargetComponentUsesUrlAddressableMetadata(t *testing.T) {
 	root := t.TempDir()
 	metaPath := writeProjectFile(t, root, "force-app/main/default/lwc/urlProbe/urlProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -309,6 +329,39 @@ func TestResolvePageTargetReportsUnsupportedQuickAction(t *testing.T) {
 		t.Fatalf("ResolvePageTarget error = nil, want unsupported quick action")
 	}
 	if len(diagnostics) != 1 || diagnostics[0].Code != "GLADELWC070" {
+		t.Fatalf("diagnostics = %#v", diagnostics)
+	}
+}
+
+func TestResolvePageTargetReportsUnsupportedQuickActionActionType(t *testing.T) {
+	root := t.TempDir()
+	actionPath := writeProjectFile(t, root, "force-app/main/default/quickActions/Account.Update_Status.quickAction-meta.xml", `<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Update Status</label>
+  <type>LightningComponent</type>
+  <targetObject>Account</targetObject>
+  <lightningComponent>c:actionProbe</lightningComponent>
+</QuickAction>`)
+	metaPath := writeProjectFile(t, root, "force-app/main/default/lwc/actionProbe/actionProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+  <isExposed>true</isExposed>
+  <targets><target>lightning__RecordAction</target></targets>
+  <targetConfigs>
+    <targetConfig targets="lightning__RecordAction">
+      <actionType>FlowAction</actionType>
+    </targetConfig>
+  </targetConfigs>
+</LightningComponentBundle>`)
+	p := project.Project{Root: root, QuickActionFiles: []string{actionPath}, LWCMetaFiles: []string{metaPath}}
+
+	_, diagnostics, err := ResolvePageTarget(p, PageContext{
+		Kind:          RenderTargetQuickAction,
+		ObjectAPIName: "Account",
+		RecordID:      "001000000000001AAA",
+		ActionName:    "Update_Status",
+	})
+	if err == nil {
+		t.Fatalf("ResolvePageTarget error = nil, want unsupported quick action action type")
+	}
+	if len(diagnostics) != 1 || diagnostics[0].Code != "GLADELWC015" {
 		t.Fatalf("diagnostics = %#v", diagnostics)
 	}
 }

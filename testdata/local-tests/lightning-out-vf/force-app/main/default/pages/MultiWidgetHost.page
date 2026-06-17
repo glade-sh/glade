@@ -4,7 +4,10 @@
     <div id="contextHost">Loading context...</div>
     <div id="wireHost">Loading wire...</div>
     <div id="recordHost">Loading record...</div>
+    <div id="objectInfoHost">Loading object info...</div>
+    <div id="mutationHost">Loading mutation...</div>
     <div id="labelResourceHost">Loading resource...</div>
+    <div id="serviceHost">Loading services...</div>
     <div id="eventHost">Loading event...</div>
     <div id="baseHost">Loading base components...</div>
     <script>
@@ -28,7 +31,10 @@
             mount("c:wireProbe", { recordId: "001XX0000000001" }, "wireHost");
             mount("c:apexWireHost", { recordId: "001XX0000000001" }, "apexHost");
             mount("c:recordWireHost", { recordId: "001XX0000000001" }, "recordHost");
+            mount("c:objectInfoHost", {}, "objectInfoHost");
+            mount("c:recordMutationHost", {}, "mutationHost");
             mount("c:labelResourceHost", {}, "labelResourceHost");
+            mount("c:serviceHost", {}, "serviceHost");
             mount("c:eventChild", {}, "eventHost");
             mount("c:baseComponentHost", {}, "baseHost");
         });

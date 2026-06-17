@@ -1,5 +1,6 @@
 import "@lwc/synthetic-shadow";
 import { createElement } from "lwc";
+import { loadSLDS } from "@glade/slds";
 function readConfig() {
   const node = document.getElementById("glade-lightning-config");
   if (!node) {
@@ -14,6 +15,7 @@ function readConfig() {
 const config = readConfig();
 const modules = config.manifest && config.manifest.modules || {};
 let activeOutApp = "";
+const sldsReady = loadSLDS().catch(() => void 0);
 function normalizeQualified(name) {
   return String(name || "").trim().toLowerCase();
 }
@@ -70,6 +72,7 @@ function applyPublicProperties(el, attrs) {
   }
 }
 async function mountComponent(qualified, attrs, locator) {
+  await sldsReady;
   const diagnostic = validateComponentRequest(qualified);
   if (diagnostic) {
     throw new Error(diagnostic);

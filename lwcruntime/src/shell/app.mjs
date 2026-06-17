@@ -3,10 +3,12 @@ import { bindRouteLinks, routeKind } from "./router.mjs";
 import { diagnostics } from "./diagnostics.mjs";
 import { renderContextPanel } from "./context-panel.mjs";
 import { installToastService } from "./toast-service.mjs";
+import { applyCommunityHost } from "./community-host.mjs";
 
 export async function bootGladeShell({ root = document.body, config = readConfig() } = {}) {
   await loadSLDS();
   document.documentElement.dataset.gladeShell = routeKind();
+  applyCommunityHost(root);
   bindRouteLinks(root);
   const disposeToastService = installToastService(root);
   const panel = root.querySelector("[data-glade-context-panel]");

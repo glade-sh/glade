@@ -39,15 +39,23 @@ func TestApexWireModuleJS(t *testing.T) {
 func TestSalesforceImportMapIncludesPhase8Shims(t *testing.T) {
 	imports := SalesforceImportMap()
 	for _, specifier := range []string{
+		"@salesforce/community/basePath",
+		"@salesforce/community/Id",
+		"@salesforce/site/Id",
 		"@salesforce/user/",
 		"@salesforce/i18n/",
 		"@salesforce/apex",
 		"@salesforce/resourceUrl/",
 		"@salesforce/contentAssetUrl/",
+		"@salesforce/messageChannel/",
 		"lightning/navigation",
 		"lightning/platformShowToastEvent",
 		"lightning/platformResourceLoader",
 		"lightning/messageService",
+		"lightning/actions",
+		"lightning/empApi",
+		"lightning/flowSupport",
+		"lightning/refresh",
 		"lightning/platformWorkspaceApi",
 		"lightning/uiLayoutApi",
 		"lightning/uiListApi",
@@ -57,6 +65,28 @@ func TestSalesforceImportMapIncludesPhase8Shims(t *testing.T) {
 	} {
 		if imports[specifier] == "" {
 			t.Fatalf("missing import map entry for %s in %#v", specifier, imports)
+		}
+	}
+}
+
+func TestMessageChannelModuleJSExportsChannelToken(t *testing.T) {
+	js := MessageChannelModuleJS("LwcProbe__c")
+	if !containsAll(js, `name: "LwcProbe__c"`, `messageChannelName: "LwcProbe__c"`, "export default channel") {
+		t.Fatalf("message channel js = %q", js)
+	}
+}
+
+func TestPackagePhase1ServiceModulesExportLocalContracts(t *testing.T) {
+	cases := map[string][]string{
+		"actions":     {ActionsModuleJS(), "CloseActionScreenEvent", "closeactionscreen"},
+		"empApi":      {EmpAPIModuleJS(), "subscribe", "unsubscribe", "isEmpEnabled"},
+		"flowSupport": {FlowSupportModuleJS(), "FlowAttributeChangeEvent", "flownavigationnext", "flownavigationfinish"},
+		"refresh":     {RefreshModuleJS(), "RefreshEvent", "registerRefreshHandler", "unregisterRefreshHandler"},
+	}
+	for name, parts := range cases {
+		js := parts[0]
+		if !containsAll(js, parts[1:]...) {
+			t.Fatalf("%s module js = %q", name, js)
 		}
 	}
 }
@@ -73,6 +103,8 @@ func TestSalesforceImportMapIncludesShellSLDSAndBaseModules(t *testing.T) {
 		"lightning/buttonIcon":      "/lightning/shims/lightning/buttonIcon.js",
 		"lightning/recordEditForm":  "/lightning/shims/lightning/recordEditForm.js",
 		"lightning/messages":        "/lightning/shims/lightning/messages.js",
+		"lightning/dualListbox":     "/lightning/shims/lightning/dualListbox.js",
+		"lightning/treeGrid":        "/lightning/shims/lightning/treeGrid.js",
 	}
 	for specifier, path := range want {
 		if imports[specifier] != path {
@@ -92,11 +124,26 @@ func TestUserModuleJS(t *testing.T) {
 	if got := UserModuleJS("Id", "005000000000123"); !strings.Contains(got, `export default "005000000000123"`) {
 		t.Fatalf("Id js = %q", got)
 	}
-	if got := UserModuleJS("isGuest", ""); !strings.Contains(got, `export default false`) {
+	if got := UserModuleJS("isGuest", ""); !containsAll(got, `export default readGuest()`, "readCommunityContext") {
 		t.Fatalf("isGuest js = %q", got)
 	}
 	if got := UserModuleJS("LocaleSidKey", ""); !strings.Contains(got, "Unsupported @salesforce/user property") {
 		t.Fatalf("unsupported user js = %q", got)
+	}
+}
+
+func TestCommunityAndSiteModuleJS(t *testing.T) {
+	if got := CommunityModuleJS("basePath"); !containsAll(got, `export default readCommunityValue("basePath", "/s")`, "readCommunityValue") {
+		t.Fatalf("community basePath js = %q", got)
+	}
+	if got := CommunityModuleJS("Id"); !containsAll(got, `export default readCommunityValue("networkId", "")`, "readCommunityValue") {
+		t.Fatalf("community Id js = %q", got)
+	}
+	if got := SiteModuleJS("Id"); !containsAll(got, `export default readSiteId()`, "readSiteId") {
+		t.Fatalf("site Id js = %q", got)
+	}
+	if got := CommunityModuleJS("Theme"); !strings.Contains(got, "Unsupported @salesforce/community property") {
+		t.Fatalf("unsupported community js = %q", got)
 	}
 }
 
@@ -132,9 +179,15 @@ func TestNavigationModuleJSSupportsCurrentPageReferenceAndURLs(t *testing.T) {
 		"standard__component",
 		"standard__quickAction",
 		"standard__webPage",
+		"comm__namedPage",
+		"comm__loginPage",
+		"comm__managedContentPage",
+		"comm__recordPage",
+		"comm__recordRelationshipPage",
 		"GLADELWC040",
 		"GLADELWC041",
 		"GLADELWC042",
+		"GLADELWC103",
 	) {
 		t.Fatalf("js = %q", js)
 	}

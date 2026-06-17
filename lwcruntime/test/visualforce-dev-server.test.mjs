@@ -45,12 +45,27 @@ test("MultiWidgetHost boots Lightning Out components in the rendered Visualforce
       "Local Widget",
     );
     assert.equal(await page.locator("c-record-wire-host .name").innerText(), "Acme");
+    assert.equal(await page.locator("c-object-info-host .label").innerText({ timeout: 10000 }), "Account");
+    assert.equal(
+      await page.locator("c-record-mutation-host .status").innerText({ timeout: 10000 }),
+      "mutation complete",
+    );
     assert.equal(await page.locator("c-label-resource-host .label").innerText(), "Hello from Glade");
     assert.equal(await page.locator("c-label-resource-host .resource").innerText(), "/resource/WidgetAssets");
+    assert.equal(await page.locator("c-service-host .page-type").innerText({ timeout: 10000 }), "standard__webPage");
+    assert.equal(await page.locator("c-service-host .toast-title").innerText(), "VF Toast");
+    assert.equal(await page.locator("c-service-host .message-record").innerText(), "001XX0000000001");
+    assert.equal(await page.locator("c-service-host .resource-status").innerText(), "loaded");
+    assert.equal(await page.locator("c-service-host .nav-error").innerText(), "GLADELWC042");
     assert.match(await page.locator('c-base-component-host [data-probe="vf-base"] lightning-card').innerText(), /VF Base Card/);
     assert.match(await page.locator('c-base-component-host [data-probe="vf-base"] lightning-button').innerText(), /Save VF/);
     assert.equal(await page.locator('c-base-component-host [data-probe="vf-base"] lightning-input input').inputValue(), "Ada");
     assert.match(await page.locator('c-base-component-host [data-probe="vf-base"] lightning-datatable').innerText(), /VF Local Account/);
+    assert.match(await page.locator('c-base-component-host [data-probe="vf-base"] lightning-record-form').innerText({ timeout: 10000 }), /Acme/);
+    assert.match(await page.locator('c-base-component-host [data-probe="vf-base"] lightning-tabset').innerText(), /Details/);
+    await page.locator('c-base-component-host [data-probe="vf-base"] lightning-tab h3', { hasText: "Details" }).click();
+    assert.equal(await page.locator('c-base-component-host [data-probe="vf-base"] .tab-status').innerText(), "details");
+    assert.equal(await page.locator('link[href="/lightning/runtime/slds/glade-slds.css"]').count(), 1);
 
     const callbacks = await page.evaluate(() => window.__callbacks);
     for (const qualified of [
@@ -58,7 +73,10 @@ test("MultiWidgetHost boots Lightning Out components in the rendered Visualforce
       "c:wireProbe",
       "c:apexWireHost",
       "c:recordWireHost",
+      "c:objectInfoHost",
+      "c:recordMutationHost",
       "c:labelResourceHost",
+      "c:serviceHost",
       "c:eventChild",
       "c:baseComponentHost",
     ]) {

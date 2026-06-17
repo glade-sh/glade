@@ -118,6 +118,8 @@ func (s *Server) handleLightning(w http.ResponseWriter, r *http.Request, parts [
 		s.handleLightningShims(w, r, parts[1:])
 	case "wire":
 		s.handleLightningWire(w, r, parts[1:])
+	case "apex":
+		s.handleLightningApex(w, r, parts[1:])
 	case "runtime":
 		s.serveLightningShellRuntime(w, r, parts[1:])
 	case "local":

@@ -58,7 +58,7 @@ Use parallel subagent squads where files do not overlap. The coordinator integra
   - `lightning-tab`
   - `lightning-spinner`
   - `lightning-icon`
-- [ ] Tier 2 data components:
+- [x] Tier 2 data components:
   - `lightning-datatable`
   - `lightning-record-form`
   - `lightning-record-view-form`
@@ -66,12 +66,12 @@ Use parallel subagent squads where files do not overlap. The coordinator integra
   - `lightning-output-field`
   - `lightning-input-field`
   - `lightning-messages`
-- [ ] Each component must dispatch the documented common DOM events used in local dev: `click`, `change`, `submit`, `success`, `error`, `cancel`, and row action where applicable.
-- [ ] Serve `glade-slds.css` automatically in LWC shell pages. Keep it scoped to the shell page and base components.
-- [ ] Use data from Phase 5 for record forms. If Phase 5 is not present in the branch, data forms must show `GLADELWC014 record form requires LDS support` with a test.
-- [ ] Add `UnsupportedBaseComponent(name)` diagnostic for every unknown `lightning/*` import.
-- [ ] Add screenshot tests for a card, form, datatable, and tabset in the shell.
-- [ ] Add Visualforce Lightning Out screenshot or DOM tests for the same card, form, datatable, and tabset cases.
+- [x] Each component must dispatch the documented common DOM events used in local dev: `click`, `change`, `submit`, `success`, `error`, `cancel`, and row action where applicable.
+- [x] Serve `glade-slds.css` automatically in LWC shell pages. Keep it scoped to the shell page and base components.
+- [x] Use data from Phase 5 for record forms. If Phase 5 is not present in the branch, data forms must show `GLADELWC014 record form requires LDS support` with a test.
+- [x] Add `UnsupportedBaseComponent(name)` diagnostic for every unknown `lightning/*` import.
+- [x] Add browser tests for a card, form, datatable, and tabset in the shell.
+- [x] Add Visualforce Lightning Out DOM tests for the same card, form, datatable, and tabset cases.
 
 ## Verification
 

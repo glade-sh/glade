@@ -137,6 +137,43 @@ func TestContextPresetToPageContextMapsTargets(t *testing.T) {
 			preset: ContextPreset{Target: "tab", Tab: "Lwc_Probe"},
 			want:   PageContext{Kind: RenderTargetTab, TabName: "Lwc_Probe"},
 		},
+		{
+			name: "community page",
+			preset: ContextPreset{
+				Target:    "community-page",
+				Component: "c:communityProbe",
+				Page:      "Account",
+				Community: CommunityContext{
+					Site:      "Partner_Portal",
+					BasePath:  "/partners",
+					SiteID:    "0DM000000000001",
+					NetworkID: "0DB000000000001",
+					Guest:     true,
+					Language:  "en-US",
+				},
+				PageReference: map[string]any{
+					"type":       "comm__namedPage",
+					"attributes": map[string]any{"name": "Account"},
+				},
+			},
+			want: PageContext{
+				Kind:          RenderTargetCommunityPage,
+				ComponentName: "c:communityProbe",
+				PageName:      "Account",
+				Community: CommunityContext{
+					Site:      "Partner_Portal",
+					BasePath:  "/partners",
+					SiteID:    "0DM000000000001",
+					NetworkID: "0DB000000000001",
+					Guest:     true,
+					Language:  "en-US",
+				},
+				PageReference: map[string]any{
+					"type":       "comm__namedPage",
+					"attributes": map[string]any{"name": "Account"},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -152,7 +189,14 @@ func TestContextPresetToPageContextMapsTargets(t *testing.T) {
 				got.AppName != tt.want.AppName ||
 				got.TabName != tt.want.TabName ||
 				got.FormFactor != tt.want.FormFactor ||
-				got.State["c__mode"] != tt.want.State["c__mode"] {
+				got.State["c__mode"] != tt.want.State["c__mode"] ||
+				got.Community.Site != tt.want.Community.Site ||
+				got.Community.BasePath != tt.want.Community.BasePath ||
+				got.Community.SiteID != tt.want.Community.SiteID ||
+				got.Community.NetworkID != tt.want.Community.NetworkID ||
+				got.Community.Guest != tt.want.Community.Guest ||
+				got.Community.Language != tt.want.Community.Language ||
+				(tt.want.PageReference != nil && got.PageReference["type"] != tt.want.PageReference["type"]) {
 				t.Fatalf("context = %#v, want %#v", got, tt.want)
 			}
 		})
@@ -170,6 +214,7 @@ func TestContextPresetToPageContextValidatesDiagnostics(t *testing.T) {
 		{name: "record page required", preset: ContextPreset{Target: "recordPage", ObjectAPIName: "Account", RecordID: "001000000000001AAA"}, code: "GLADELWC024"},
 		{name: "app page required", preset: ContextPreset{Target: "appPage"}, code: "GLADELWC024"},
 		{name: "home page required", preset: ContextPreset{Target: "homePage"}, code: "GLADELWC024"},
+		{name: "community context required", preset: ContextPreset{Target: "communityPage", Component: "c:communityProbe", Page: "Account"}, code: "GLADELWC100"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

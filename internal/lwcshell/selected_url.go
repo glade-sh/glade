@@ -74,6 +74,22 @@ func SelectedURL(baseURL string, ctx PageContext) string {
 		} else {
 			selectedPath = "/lwc/preview/action/global/" + selectedURLPathEscape(actionName)
 		}
+	case RenderTargetCommunityPage:
+		if ctx.Community.Site == "" {
+			return ""
+		}
+		if ctx.ComponentName != "" && ctx.PageName == "" {
+			namespace, component := splitSelectedURLComponentName(ctx.ComponentName)
+			if component == "" {
+				return ""
+			}
+			selectedPath = "/lwc/preview/community/" + selectedURLPathEscape(ctx.Community.Site) + "/cmp/" + selectedURLPathEscape(namespace) + "/" + selectedURLPathEscape(component)
+			break
+		}
+		if ctx.PageName == "" {
+			return ""
+		}
+		selectedPath = "/lwc/preview/community/" + selectedURLPathEscape(ctx.Community.Site) + "/" + selectedURLPathEscape(ctx.PageName)
 	default:
 		return ""
 	}

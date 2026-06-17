@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningMessageChannel xmlns="http://soap.sforce.com/2006/04/metadata">
+    <masterLabel>LWC Probe</masterLabel>
+    <isExposed>true</isExposed>
+    <description>Local LWC shell probe channel.</description>
+    <lightningMessageFields>
+        <fieldName>recordId</fieldName>
+        <description>Record identifier used by local service probes.</description>
+    </lightningMessageFields>
+</LightningMessageChannel>

@@ -9,5 +9,93 @@
                 data={rows}>
             </lightning-datatable>
         </lightning-card>
+        <section data-probe="package-phase1-base-components">
+            <lightning-accordion active-section-name="one">
+                <lightning-accordion-section name="one" label="Package Phase 1">
+                    <lightning-badge label="Ready"></lightning-badge>
+                    <lightning-avatar initials="GP" fallback-icon-name="standard:account"></lightning-avatar>
+                    <lightning-helptext content="Package phase 1 capture probe"></lightning-helptext>
+                </lightning-accordion-section>
+            </lightning-accordion>
+            <lightning-button-group>
+                <lightning-button label="Left"></lightning-button>
+                <lightning-button-icon icon-name="utility:add" alternative-text="Add"></lightning-button-icon>
+                <lightning-button-stateful label-when-off="Off" label-when-on="On"></lightning-button-stateful>
+                <lightning-button-icon-stateful icon-name="utility:favorite" alternative-text="Favorite"></lightning-button-icon-stateful>
+            </lightning-button-group>
+            <lightning-button-menu alternative-text="Package menu">
+                <lightning-menu-subheader label="Phase"></lightning-menu-subheader>
+                <lightning-menu-item value="one" label="One"></lightning-menu-item>
+            </lightning-button-menu>
+            <lightning-checkbox-group label="Checkboxes" options={options} value={selectedOptions}></lightning-checkbox-group>
+            <lightning-radio-group label="Radios" options={options} value="alpha"></lightning-radio-group>
+            <lightning-file-upload label="Upload" name="packageUpload" record-id="001000000000001AAA"></lightning-file-upload>
+            <lightning-flow flow-api-name="Package_Phase_1"></lightning-flow>
+            <lightning-formatted-address street="Main" city="Twin Lakes" province="AK" postal-code="99685"></lightning-formatted-address>
+            <lightning-formatted-date-time value="2026-06-17T12:00:00Z"></lightning-formatted-date-time>
+            <lightning-formatted-number value="17"></lightning-formatted-number>
+            <lightning-formatted-phone value="5551212"></lightning-formatted-phone>
+            <lightning-formatted-rich-text value="Package phase 1"></lightning-formatted-rich-text>
+            <lightning-formatted-text value="Package phase 1 text"></lightning-formatted-text>
+            <lightning-formatted-time value="12:34:00"></lightning-formatted-time>
+            <lightning-formatted-url value="https://example.com" label="Example"></lightning-formatted-url>
+            <lightning-input-address address-label="Address" street-label="Street" city-label="City" province-label="State" postal-code-label="Postal Code" country-label="Country"></lightning-input-address>
+            <lightning-pill label="Package"></lightning-pill>
+            <lightning-pill-container items={pills}></lightning-pill-container>
+            <lightning-progress-indicator current-step="step1" type="base">
+                <lightning-progress-step label="Step 1" value="step1"></lightning-progress-step>
+                <lightning-progress-step label="Step 2" value="step2"></lightning-progress-step>
+            </lightning-progress-indicator>
+            <lightning-quick-action-panel header="Package Phase 1">
+                <p>Quick action panel body</p>
+            </lightning-quick-action-panel>
+            <lightning-record-picker label="Record Picker" object-api-name="Account" placeholder="Search Accounts"></lightning-record-picker>
+            <lightning-tree items={treeItems} header="Package Tree"></lightning-tree>
+            <lightning-vertical-navigation selected-item="phase1">
+                <lightning-vertical-navigation-section label="Package">
+                    <lightning-vertical-navigation-item label="Phase 1" name="phase1"></lightning-vertical-navigation-item>
+                </lightning-vertical-navigation-section>
+            </lightning-vertical-navigation>
+        </section>
+        <section data-probe="phase3-base-components">
+            <lightning-formatted-email value="trail@example.com" label="Trail Email"></lightning-formatted-email>
+            <lightning-dual-listbox
+                label="Providers"
+                source-label="Available"
+                selected-label="Selected"
+                options={phase3Options}
+                value={phase3Values}>
+            </lightning-dual-listbox>
+            <lightning-select label="Status" options={phase3Options} value="alpha"></lightning-select>
+            <lightning-slider label="Confidence" value="65" min="0" max="100" step="5"></lightning-slider>
+            <lightning-input-rich-text label="Summary" value={richText}></lightning-input-rich-text>
+            <lightning-button-menu alternative-text="Phase 3 menu">
+                <lightning-menu-item value="open" label="Open"></lightning-menu-item>
+                <lightning-menu-divider></lightning-menu-divider>
+                <lightning-menu-item value="close" label="Close"></lightning-menu-item>
+            </lightning-button-menu>
+            <lightning-progress-bar value="65"></lightning-progress-bar>
+            <lightning-progress-ring value="80"></lightning-progress-ring>
+            <lightning-tile label="Provider Tile" href="/lightning/r/Account/001000000000001AAA/view">
+                <p>Phase 3 detail</p>
+            </lightning-tile>
+            <lightning-breadcrumbs>
+                <lightning-breadcrumb label="Accounts" href="/lightning/o/Account/home"></lightning-breadcrumb>
+                <lightning-breadcrumb label="Provider" href="/lightning/r/Account/001000000000001AAA/view"></lightning-breadcrumb>
+            </lightning-breadcrumbs>
+            <lightning-tree-grid
+                key-field="id"
+                columns={treeGridColumns}
+                data={treeGridRows}>
+            </lightning-tree-grid>
+            <lightning-map markers-title="Twin Lakes" map-markers={mapMarkers}></lightning-map>
+            <lightning-carousel>
+                <lightning-carousel-image
+                    src={carouselImage}
+                    header="Trail Image"
+                    description="Phase 3 carousel">
+                </lightning-carousel-image>
+            </lightning-carousel>
+        </section>
     </section>
 </template>

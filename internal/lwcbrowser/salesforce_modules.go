@@ -19,18 +19,28 @@ func SalesforceImportMap() map[string]string {
 		"@glade/slds":                      "/lightning/runtime/slds/slds-loader.js",
 		"@salesforce/apex":                 "/lightning/shims/core/apex.js",
 		"@salesforce/apex/":                "/lightning/shims/apex/",
+		"@salesforce/community/":           "/lightning/shims/community/",
+		"@salesforce/community/basePath":   "/lightning/shims/community/basePath.js",
+		"@salesforce/community/Id":         "/lightning/shims/community/Id.js",
 		"@salesforce/contentAssetUrl/":     "/lightning/shims/contentAssetUrl/",
 		"@salesforce/i18n/":                "/lightning/shims/i18n/",
 		"@salesforce/label/":               "/lightning/shims/label/",
+		"@salesforce/messageChannel/":      "/lightning/shims/messageChannel/",
 		"@salesforce/resourceUrl/":         "/lightning/shims/resourceUrl/",
 		"@salesforce/schema/":              "/lightning/shims/schema/",
+		"@salesforce/site/":                "/lightning/shims/site/",
+		"@salesforce/site/Id":              "/lightning/shims/site/Id.js",
 		"@salesforce/user/":                "/lightning/shims/user/",
 		"lightning/":                       "/lightning/shims/lightning/",
+		"lightning/actions":                "/lightning/shims/lightning/actions.js",
+		"lightning/empApi":                 "/lightning/shims/lightning/empApi.js",
+		"lightning/flowSupport":            "/lightning/shims/lightning/flowSupport.js",
 		"lightning/messageService":         "/lightning/shims/lightning/messageService.js",
 		"lightning/navigation":             "/lightning/shims/lightning/navigation.js",
 		"lightning/platformResourceLoader": "/lightning/shims/lightning/platformResourceLoader.js",
 		"lightning/platformShowToastEvent": "/lightning/shims/lightning/platformShowToastEvent.js",
 		"lightning/platformWorkspaceApi":   "/lightning/shims/lightning/platformWorkspaceApi.js",
+		"lightning/refresh":                "/lightning/shims/lightning/refresh.js",
 		"lightning/uiLayoutApi":            "/lightning/shims/lightning/uiLayoutApi.js",
 		"lightning/uiListApi":              "/lightning/shims/lightning/uiListApi.js",
 		"lightning/uiObjectInfoApi":        "/lightning/shims/lightning/uiObjectInfoApi.js",
@@ -41,6 +51,109 @@ func SalesforceImportMap() map[string]string {
 		imports[key] = value
 	}
 	return imports
+}
+
+func ActionsModuleJS() string {
+	return `export class CloseActionScreenEvent extends CustomEvent {
+  constructor() {
+    super("closeactionscreen", { bubbles: true, composed: true });
+  }
+}
+`
+}
+
+func FlowSupportModuleJS() string {
+	return `export class FlowAttributeChangeEvent extends CustomEvent {
+  constructor(attributeName, value) {
+    super("flowattributechange", { bubbles: true, composed: true, detail: { attributeName, value } });
+  }
+}
+function flowNavigationEvent(type) {
+  return class extends CustomEvent {
+    constructor() {
+      super(type, { bubbles: true, composed: true });
+    }
+  };
+}
+export const FlowNavigationNextEvent = flowNavigationEvent("flownavigationnext");
+export const FlowNavigationBackEvent = flowNavigationEvent("flownavigationback");
+export const FlowNavigationPauseEvent = flowNavigationEvent("flownavigationpause");
+export const FlowNavigationFinishEvent = flowNavigationEvent("flownavigationfinish");
+`
+}
+
+func RefreshModuleJS() string {
+	return `const handlers = new Map();
+const containers = new Map();
+export class RefreshEvent extends CustomEvent {
+  constructor() {
+    super("lightning__refresh", { bubbles: true, composed: true });
+  }
+}
+export function registerRefreshHandler(element, handler) {
+  handlers.set(element, handler);
+  return { element, handler };
+}
+export function unregisterRefreshHandler(element) {
+  handlers.delete(element && element.element || element);
+}
+export function registerRefreshContainer(element, callback) {
+  containers.set(element, callback);
+  return { element, callback };
+}
+export function unregisterRefreshContainer(element) {
+  containers.delete(element && element.element || element);
+}
+export async function __gladeDispatchRefresh(root) {
+  const results = [];
+  for (const [element, handler] of handlers) {
+    if (!root || root === element || (root.contains && root.contains(element))) {
+      results.push(await handler());
+    }
+  }
+  return results;
+}
+`
+}
+
+func EmpAPIModuleJS() string {
+	return `const subscriptions = new Map();
+const errorHandlers = new Set();
+let debug = false;
+export function subscribe(channel, replayId, callback) {
+  const subscription = { channel, replayId, callback };
+  if (!subscriptions.has(channel)) {
+    subscriptions.set(channel, new Set());
+  }
+  subscriptions.get(channel).add(subscription);
+  return Promise.resolve(subscription);
+}
+export function unsubscribe(subscription, callback) {
+  const set = subscriptions.get(subscription && subscription.channel);
+  if (set) {
+    set.delete(subscription);
+  }
+  if (callback) {
+    callback({ successful: true, subscription });
+  }
+  return Promise.resolve({ successful: true, subscription });
+}
+export function onError(callback) {
+  errorHandlers.add(callback);
+}
+export function setDebugFlag(flag) {
+  debug = Boolean(flag);
+}
+export function isEmpEnabled() {
+  return Promise.resolve(true);
+}
+export function __gladePublish(channel, payload) {
+  for (const subscription of subscriptions.get(channel) || []) {
+    subscription.callback(payload);
+  }
+}
+export const __gladeEmpState = { subscriptions, errorHandlers, get debug() { return debug; } };
+`
 }
 
 func ApexWireModuleJS(className, methodName string) string {
@@ -63,9 +176,40 @@ func UserModuleJS(property, userID string) string {
 		}
 		return defaultExportJS(userID)
 	case "isGuest":
-		return "export default false;\n"
+		return `import { readCommunityContext } from "/lightning/runtime/shims/community.js";
+function readGuest() {
+  return Boolean(readCommunityContext().guest);
+}
+export default readGuest();
+`
 	default:
 		return unsupportedModuleJS("Unsupported @salesforce/user property: " + property)
+	}
+}
+
+func CommunityModuleJS(property string) string {
+	switch property {
+	case "basePath":
+		return `import { readCommunityValue } from "/lightning/runtime/shims/community.js";
+export default readCommunityValue("basePath", "/s");
+`
+	case "Id":
+		return `import { readCommunityValue } from "/lightning/runtime/shims/community.js";
+export default readCommunityValue("networkId", "");
+`
+	default:
+		return unsupportedModuleJS("Unsupported @salesforce/community property: " + property)
+	}
+}
+
+func SiteModuleJS(property string) string {
+	switch property {
+	case "Id":
+		return `import { readSiteId } from "/lightning/runtime/shims/site.js";
+export default readSiteId();
+`
+	default:
+		return unsupportedModuleJS("Unsupported @salesforce/site property: " + property)
 	}
 }
 
@@ -117,6 +261,17 @@ func ContentAssetURLModuleJS(url string) string {
 	return fmt.Sprintf("export default %q;\n", url)
 }
 
+func MessageChannelModuleJS(name string) string {
+	name = strings.TrimSuffix(strings.TrimSpace(name), ".js")
+	return fmt.Sprintf(`const channel = {
+  name: %q,
+  messageChannelName: %q,
+  toString() { return %q; },
+};
+export default channel;
+`, name, name, name)
+}
+
 func NavigationModuleJS() string {
 	return `import {
   CurrentPageReferenceAdapter,
@@ -134,8 +289,13 @@ export const supportedPageReferenceTypes = [
   "standard__component",
   "standard__quickAction",
   "standard__webPage",
+  "comm__namedPage",
+  "comm__loginPage",
+  "comm__managedContentPage",
+  "comm__recordPage",
+  "comm__recordRelationshipPage",
 ];
-export const navigationDiagnosticCodes = ["GLADELWC040", "GLADELWC041", "GLADELWC042"];
+export const navigationDiagnosticCodes = ["GLADELWC040", "GLADELWC041", "GLADELWC042", "GLADELWC103"];
 export const CurrentPageReference = CurrentPageReferenceAdapter;
 export function NavigationMixin(Base) {
   return class extends Base {
