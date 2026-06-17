@@ -21,7 +21,7 @@ func TestLoadProjectIndexesPagesAndComponents(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/AccountView.page"), `<apex:page standardController="Account" recordSetVar="accounts" extensions="AccountExt, AuditExt">
   {!$Resource.Logo}
 </apex:page>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/pages/znu__Order.page"), `<apex:page standardController="znu__Order__c" />`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/zpkg__Order.page"), `<apex:page standardController="zpkg__Order__c" />`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/components/Picker.component"), `<apex:component controller="PickerController">
   <apex:attribute name="value" type="String" assignTo="{!selectedValue}" required="true" description="Selected value"/>
   {!$Label.PickerHelp}
@@ -76,8 +76,8 @@ func TestLoadProjectIndexesPagesAndComponents(t *testing.T) {
 		t.Fatalf("missing direct resource ref: %#v", account.MergeReferences)
 	}
 
-	namespaced, ok := idx.PageReference("Page.znu__Order")
-	if !ok || namespaced.Name != "znu__Order" {
+	namespaced, ok := idx.PageReference("Page.zpkg__Order")
+	if !ok || namespaced.Name != "zpkg__Order" {
 		t.Fatalf("managed page lookup = %#v, %v", namespaced, ok)
 	}
 

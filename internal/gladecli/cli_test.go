@@ -1970,7 +1970,7 @@ for (String fieldName : fields.keySet()) {
 
 func TestRunPackageBuildUsesRequestedNamespace(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"NU","sourceApiVersion":"61.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"PKG","sourceApiVersion":"61.0","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Address.cls"), `
 global class Address {
   global String street;
@@ -2035,7 +2035,7 @@ public class Hidden {
 
 func TestRunPackageRichArtifactWorkflow(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"NU","sourceApiVersion":"61.0","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"PKG","sourceApiVersion":"61.0","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Address.cls"), `
 global class Address {
   global String street;

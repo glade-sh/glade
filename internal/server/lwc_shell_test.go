@@ -873,7 +873,7 @@ export default class ContextProbe extends LightningElement {}`)
 
 func TestLWCShellKeepsAuraAndPlatformComponentsAsPlaceholders(t *testing.T) {
 	root := t.TempDir()
-	writeLWCShellServerTestFile(t, root, "sfdx-project.json", `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"NU","sourceApiVersion":"61.0"}`)
+	writeLWCShellServerTestFile(t, root, "sfdx-project.json", `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"PKG","sourceApiVersion":"61.0"}`)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
 	  <isExposed>true</isExposed>
 	  <targets><target>lightning__AppPage</target></targets>
@@ -917,14 +917,14 @@ export default class ContextProbe extends LightningElement {}`)
 	if got := shell.Regions[0].Components[1]; got.Kind != "platform" || !strings.Contains(got.UnsupportedReason, "Salesforce") {
 		t.Fatalf("platform placeholder = %#v", got)
 	}
-	if got := shell.Regions[0].Components[2]; got.ComponentName != "NU:contextProbe" || got.Kind != "" {
+	if got := shell.Regions[0].Components[2]; got.ComponentName != "PKG:contextProbe" || got.Kind != "" {
 		t.Fatalf("lwc component = %#v", got)
 	}
-	if mounts := lwcShellMounts(shell); len(mounts) != 1 || mounts[0].Qualified != "NU:contextProbe" {
+	if mounts := lwcShellMounts(shell); len(mounts) != 1 || mounts[0].Qualified != "PKG:contextProbe" {
 		t.Fatalf("mounts = %#v", mounts)
 	}
 	body := renderLWCShellHTML(lwcbrowser.PageConfig{}, shell)
-	for _, want := range []string{"glade-placeholder", "NU:BusinessEventManager", "flexipage:richText", "NU:contextProbe"} {
+	for _, want := range []string{"glade-placeholder", "PKG:BusinessEventManager", "flexipage:richText", "PKG:contextProbe"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("missing %q in:\n%s", want, body)
 		}
@@ -940,7 +940,7 @@ func TestLWCShellPlaceholderOnlyPageRendersEmptyMountList(t *testing.T) {
 		Regions: []lwcshell.PageRegion{{
 			Name: "main",
 			Components: []lwcshell.PageComponent{{
-				ComponentName:     "NU:BusinessEventManager",
+				ComponentName:     "PKG:BusinessEventManager",
 				Kind:              "aura",
 				UnsupportedReason: "Aura component is shown as a local placeholder in LWC preview.",
 			}},

@@ -447,14 +447,14 @@ try {
 
 func TestCoerceAssignableAcceptsNamespaceAliasWhenNamespaceMatchesCurrentClass(t *testing.T) {
 	machine := New(nil)
-	if err := machine.RegisterClass(Class{Name: "verifiable", Namespace: "verifiable"}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "samplepkg", Namespace: "samplepkg"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := machine.RegisterClass(Class{Name: "responseData", Namespace: "verifiable"}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "responseData", Namespace: "samplepkg"}); err != nil {
 		t.Fatal(err)
 	}
-	machine.currentClass = "verifiable"
-	value := Object("verifiable.responseData")
+	machine.currentClass = "samplepkg"
+	value := Object("samplepkg.responseData")
 	if _, err := machine.coerceAssignable("responseData", value); err != nil {
 		t.Fatal(err)
 	}
@@ -462,11 +462,11 @@ func TestCoerceAssignableAcceptsNamespaceAliasWhenNamespaceMatchesCurrentClass(t
 
 func TestCoerceAssignableAcceptsCurrentNamespaceQualifiedShortAlias(t *testing.T) {
 	machine := New(nil)
-	if err := machine.RegisterClass(Class{Name: "Mock", Namespace: "verifiable"}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "Mock", Namespace: "samplepkg"}); err != nil {
 		t.Fatal(err)
 	}
-	machine.currentClass = "verifiable.Mock"
-	value := Object("verifiable.Mock")
+	machine.currentClass = "samplepkg.Mock"
+	value := Object("samplepkg.Mock")
 	if _, err := machine.coerceAssignable("Mock", value); err != nil {
 		t.Fatal(err)
 	}
@@ -474,11 +474,11 @@ func TestCoerceAssignableAcceptsCurrentNamespaceQualifiedShortAlias(t *testing.T
 
 func TestCoerceAssignableAcceptsCurrentNamespaceQualifiedNestedShortAlias(t *testing.T) {
 	machine := New(nil)
-	if err := machine.RegisterClass(Class{Name: "SetupDataMapping.License", Namespace: "verifiable"}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "SampleDataMapping.License", Namespace: "samplepkg"}); err != nil {
 		t.Fatal(err)
 	}
-	machine.currentClass = "verifiable.SetupDataMapping"
-	value := Object("verifiable.SetupDataMapping.License")
+	machine.currentClass = "samplepkg.SampleDataMapping"
+	value := Object("samplepkg.SampleDataMapping.License")
 	if _, err := machine.coerceAssignable("License", value); err != nil {
 		t.Fatal(err)
 	}
@@ -487,12 +487,12 @@ func TestCoerceAssignableAcceptsCurrentNamespaceQualifiedNestedShortAlias(t *tes
 func TestCoerceAssignableAcceptsOrgNamespaceQualifiedNestedShortAlias(t *testing.T) {
 	machine := New(nil)
 	org := testDataOrg()
-	org.Namespace = "verifiable"
+	org.Namespace = "samplepkg"
 	machine.SetOrg(&org)
-	if err := machine.RegisterClass(Class{Name: "SetupDataMapping.License", Namespace: "verifiable"}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "SampleDataMapping.License", Namespace: "samplepkg"}); err != nil {
 		t.Fatal(err)
 	}
-	value := Object("verifiable.SetupDataMapping.License")
+	value := Object("samplepkg.SampleDataMapping.License")
 	if _, err := machine.coerceAssignable("License", value); err != nil {
 		t.Fatal(err)
 	}
@@ -646,20 +646,20 @@ System.assertEquals(null, holder.Cart.Batch__c);
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	org.Namespace = "NU"
-	org.Objects["NU__Cart__c"] = storage.ObjectState{
+	org.Namespace = "PKG"
+	org.Objects["PKG__Cart__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "NU__Cart__c",
+			APIName:   "PKG__Cart__c",
 			KeyPrefix: "a01",
 			Fields: map[string]storage.Field{
-				"NU__Batch__c": {APIName: "NU__Batch__c", Type: storage.FieldReference, ReferenceTo: []string{"NU__Batch__c"}},
+				"PKG__Batch__c": {APIName: "PKG__Batch__c", Type: storage.FieldReference, ReferenceTo: []string{"PKG__Batch__c"}},
 			},
 		},
 		Records: map[storage.ID]storage.Record{},
 	}
-	org.Objects["NU__Batch__c"] = storage.ObjectState{
+	org.Objects["PKG__Batch__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "NU__Batch__c",
+			APIName:   "PKG__Batch__c",
 			KeyPrefix: "a00",
 			Fields: map[string]storage.Field{
 				"Id": {APIName: "Id", Type: storage.FieldID},
@@ -1790,7 +1790,7 @@ func TestNamespacedNestedPrivateMemberAllowsShortCurrentClass(t *testing.T) {
 
 func TestNamespacedNestedPrivateMemberAllowsShortCurrentClassWithDependencyDuplicate(t *testing.T) {
 	machine := New(nil)
-	if err := machine.RegisterClass(Class{Name: "Outer.Inner", Namespace: "namz"}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "Outer.Inner", Namespace: "otherpkg"}); err != nil {
 		t.Fatal(err)
 	}
 	if err := machine.RegisterClass(Class{Name: "Outer.Inner", Namespace: "pkg", Dependency: true}); err != nil {
@@ -1799,7 +1799,7 @@ func TestNamespacedNestedPrivateMemberAllowsShortCurrentClassWithDependencyDupli
 	machine.currentClass = "Outer.Inner"
 	machine.currentMethod = Method{Name: "Outer.Inner.secret", ClassName: "Outer.Inner"}
 
-	if err := machine.checkMemberAccess("namz.Outer.Inner", "private", "namz.Outer.Inner.secret"); err != nil {
+	if err := machine.checkMemberAccess("otherpkg.Outer.Inner", "private", "otherpkg.Outer.Inner.secret"); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -1850,11 +1850,11 @@ func TestNamespacedConcreteOverrideUsesAccessibleInheritedSurface(t *testing.T) 
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := machine.RegisterClass(Class{Name: "Consumer", Namespace: "namz"}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "Consumer", Namespace: "otherpkg"}); err != nil {
 		t.Fatal(err)
 	}
-	machine.currentClass = "namz.Consumer"
-	machine.currentMethod = Method{Name: "Consumer.run", ClassName: "namz.Consumer"}
+	machine.currentClass = "otherpkg.Consumer"
+	machine.currentMethod = Method{Name: "Consumer.run", ClassName: "otherpkg.Consumer"}
 
 	if err := machine.checkMemberAccess("pkg.Product2", "public", "pkg.Product2.getId"); err != nil {
 		t.Fatal(err)
@@ -1877,11 +1877,11 @@ func TestNamespaceAccessiblePublicMemberAllowsCrossNamespaceAccess(t *testing.T)
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := machine.RegisterClass(Class{Name: "Consumer", Namespace: "namz"}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "Consumer", Namespace: "otherpkg"}); err != nil {
 		t.Fatal(err)
 	}
-	machine.currentClass = "namz.Consumer"
-	machine.currentMethod = Method{Name: "Consumer.run", ClassName: "namz.Consumer"}
+	machine.currentClass = "otherpkg.Consumer"
+	machine.currentMethod = Method{Name: "Consumer.run", ClassName: "otherpkg.Consumer"}
 
 	if err := machine.checkMemberAccess("pkg.PackageHelper", "public", "pkg.PackageHelper.value", []string{"@NamespaceAccessible"}); err != nil {
 		t.Fatal(err)
@@ -3534,10 +3534,10 @@ func TestFrameworkQualifiedMethodMapKeyNormalizesFflibTypes(t *testing.T) {
 
 func TestMapKeysEqualMatchesNamespacedEnumAlias(t *testing.T) {
 	machine := New(nil)
-	if err := machine.RegisterClass(Class{Name: "ExprTokenType", Namespace: "NU", EnumValues: []string{"Equals"}}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "ExprTokenType", Namespace: "PKG", EnumValues: []string{"Equals"}}); err != nil {
 		t.Fatal(err)
 	}
-	stored := Value{Kind: ValueObject, Type: "NU.ExprTokenType", Text: "Equals"}
+	stored := Value{Kind: ValueObject, Type: "PKG.ExprTokenType", Text: "Equals"}
 	lookup := Value{Kind: ValueObject, Type: "ExprTokenType", Text: "Equals"}
 	equal, err := machine.mapKeysEqual(stored, lookup)
 	if err != nil {
@@ -3659,9 +3659,9 @@ func TestFrameworkMatcherFastPathMatchesCommonMatchers(t *testing.T) {
 		t.Fatalf("matched=%v handled=%v for SObject Eq, want true true", matched, handled)
 	}
 
-	expectedDTO := Object("CredentialingObjectMapping.CredentialingItemType")
+	expectedDTO := Object("ReviewObjectMapping.ReviewItemType")
 	expectedDTO.Fields["internalName"] = String("Custom")
-	actualDTO := Object("CredentialingObjectMapping.CredentialingItemType")
+	actualDTO := Object("ReviewObjectMapping.ReviewItemType")
 	actualDTO.Fields["internalName"] = String("Custom")
 	eqDTO := Object("framework_MatcherDefinitions.Eq")
 	eqDTO.Fields["toMatch"] = expectedDTO
@@ -3739,25 +3739,25 @@ mocks.check();
 	}
 	machine := New(nil)
 	org := testDataOrg()
-	org.Namespace = "NU"
+	org.Namespace = "PKG"
 	machine.SetOrg(&org)
 	if err := machine.RegisterClass(Class{
 		Name:       "fflib_MethodVerifier",
-		Namespace:  "NU",
+		Namespace:  "PKG",
 		IsAbstract: true,
 	}); err != nil {
 		t.Fatal(err)
 	}
 	if err := machine.RegisterClass(Class{
 		Name:       "fflib_AnyOrder",
-		Namespace:  "NU",
+		Namespace:  "PKG",
 		SuperClass: "fflib_MethodVerifier",
 	}); err != nil {
 		t.Fatal(err)
 	}
 	if err := machine.RegisterClass(Class{
 		Name:      "fflib_ApexMocks",
-		Namespace: "NU",
+		Namespace: "PKG",
 		Access:    "global",
 		Fields: map[string]Field{
 			"methodVerifier": {Name: "methodVerifier", Type: "fflib_MethodVerifier"},
@@ -3776,7 +3776,7 @@ mocks.check();
 
 func TestFrameworkArgumentCaptorMatcherStoresMatchedArgument(t *testing.T) {
 	machine := New(nil)
-	record := Object("Credentialing_Item__c")
+	record := Object("Review_Item__c")
 	record.Fields["Id"] = platformScalar("Id", "a5B000000000001")
 	records := List(record)
 	records.Type = "List<SObject>"
@@ -5232,16 +5232,16 @@ System.assertEquals('describe', DescribeChooser.pick(Account.SObjectType.getDesc
 func TestOverloadResolutionCollapsesNamespaceAliasForSameSourceMethod(t *testing.T) {
 	machine := New(nil)
 	for _, class := range []Class{
-		{Name: "fflib_MethodVerifier", Namespace: "verifiable"},
-		{Name: "fflib_QualifiedMethod", Namespace: "verifiable"},
-		{Name: "fflib_MethodArgValues", Namespace: "verifiable"},
-		{Name: "fflib_IMatcher", Namespace: "verifiable", IsInterface: true},
+		{Name: "fflib_MethodVerifier", Namespace: "samplepkg"},
+		{Name: "fflib_QualifiedMethod", Namespace: "samplepkg"},
+		{Name: "fflib_MethodArgValues", Namespace: "samplepkg"},
+		{Name: "fflib_IMatcher", Namespace: "samplepkg", IsInterface: true},
 	} {
 		if err := machine.RegisterClass(class); err != nil {
 			t.Fatal(err)
 		}
 	}
-	machine.currentNamespace = "verifiable"
+	machine.currentNamespace = "samplepkg"
 	candidates := []Method{
 		{
 			Name:      "fflib_MethodVerifier.throwException",
@@ -5262,7 +5262,7 @@ func TestOverloadResolutionCollapsesNamespaceAliasForSameSourceMethod(t *testing
 		},
 		{
 			Name:      "fflib_MethodVerifier.throwException",
-			ClassName: "verifiable.fflib_MethodVerifier",
+			ClassName: "samplepkg.fflib_MethodVerifier",
 			Params: []Param{
 				{Name: "qm", Type: "fflib_QualifiedMethod"},
 				{Name: "inOrder", Type: "String"},
@@ -5278,11 +5278,11 @@ func TestOverloadResolutionCollapsesNamespaceAliasForSameSourceMethod(t *testing
 			Line: 55,
 		},
 	}
-	qm := Object("verifiable.fflib_QualifiedMethod")
-	qm.Static = "verifiable.fflib_QualifiedMethod"
-	expected := Object("verifiable.fflib_MethodArgValues")
-	expected.Static = "verifiable.fflib_MethodArgValues"
-	actual := List(Object("verifiable.fflib_MethodArgValues"))
+	qm := Object("samplepkg.fflib_QualifiedMethod")
+	qm.Static = "samplepkg.fflib_QualifiedMethod"
+	expected := Object("samplepkg.fflib_MethodArgValues")
+	expected.Static = "samplepkg.fflib_MethodArgValues"
+	actual := List(Object("samplepkg.fflib_MethodArgValues"))
 	actual.Type = "List<fflib_MethodArgValues>"
 	actual.Static = "List<fflib_MethodArgValues>"
 	args := []Value{qm, String("message"), Int(1), String(""), Int(0), Null, expected, Null, actual}
@@ -5716,14 +5716,14 @@ System.assertEquals('set', Logger.setMockLogger('dev', mockLogger));
 	machine := New(nil)
 	machine.EnableTestContext()
 	for _, class := range []Class{
-		{Name: "ILogger", Namespace: "namz", IsInterface: true},
+		{Name: "ILogger", Namespace: "otherpkg", IsInterface: true},
 		{Name: "fflib_ApexMocks", Interfaces: []string{"StubProvider"}, Methods: map[string]Method{
 			"mock": {Name: "fflib_ApexMocks.mock", ClassName: "fflib_ApexMocks", ReturnType: "Object", Params: []Param{{Name: "classToMock", Type: "Type"}}, Program: mockProgram},
 		}},
-		{Name: "Logger", Namespace: "namz", Methods: map[string]Method{
+		{Name: "Logger", Namespace: "otherpkg", Methods: map[string]Method{
 			"setMockLogger#String#ILogger": {Name: "Logger.setMockLogger", ClassName: "Logger", IsStatic: true, Access: "public", ReturnType: "String", Params: []Param{{Name: "purpose", Type: "String"}, {Name: "mockLogger", Type: "ILogger"}}, Program: setProgram},
 		}},
-		{Name: "LoggerTest", Namespace: "namz", IsTest: true, Methods: map[string]Method{
+		{Name: "LoggerTest", Namespace: "otherpkg", IsTest: true, Methods: map[string]Method{
 			"run": {Name: "LoggerTest.run", ClassName: "LoggerTest", IsStatic: true, Access: "private", Program: testProgram},
 		}},
 	} {
@@ -5731,7 +5731,7 @@ System.assertEquals('set', Logger.setMockLogger('dev', mockLogger));
 			t.Fatal(err)
 		}
 	}
-	method := machine.Methods["namz.LoggerTest.run"]
+	method := machine.Methods["otherpkg.LoggerTest.run"]
 	if _, err := machine.callMethod(method, nil, &Result{}); err != nil {
 		t.Fatal(err)
 	}
@@ -5740,21 +5740,21 @@ System.assertEquals('set', Logger.setMockLogger('dev', mockLogger));
 func TestResolveTypeNameInClassDoesNotInventNestedNameForNamespacedTopLevel(t *testing.T) {
 	machine := New(nil)
 	for _, class := range []Class{
-		{Name: "Logger", Namespace: "namz"},
-		{Name: "ILogger", Namespace: "namz", IsInterface: true},
+		{Name: "Logger", Namespace: "otherpkg"},
+		{Name: "ILogger", Namespace: "otherpkg", IsInterface: true},
 	} {
 		if err := machine.RegisterClass(class); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if got := machine.resolveTypeNameInClass("Logger", "ILogger"); got != "namz.ILogger" {
-		t.Fatalf("resolved type = %q; want namz.ILogger", got)
+	if got := machine.resolveTypeNameInClass("Logger", "ILogger"); got != "otherpkg.ILogger" {
+		t.Fatalf("resolved type = %q; want otherpkg.ILogger", got)
 	}
-	if got := machine.resolveTypeNameInClass("Logger", "Logger.ILogger"); got != "namz.ILogger" {
-		t.Fatalf("resolved dotted type = %q; want namz.ILogger", got)
+	if got := machine.resolveTypeNameInClass("Logger", "Logger.ILogger"); got != "otherpkg.ILogger" {
+		t.Fatalf("resolved dotted type = %q; want otherpkg.ILogger", got)
 	}
-	if !machine.typeAssignableTo("namz.ILogger", "Logger.ILogger") {
-		t.Fatalf("namz.ILogger should be assignable to owner-qualified top-level alias")
+	if !machine.typeAssignableTo("otherpkg.ILogger", "Logger.ILogger") {
+		t.Fatalf("otherpkg.ILogger should be assignable to owner-qualified top-level alias")
 	}
 }
 
@@ -5781,30 +5781,30 @@ func TestRuntimeNamespacedSubclassAssignableToUnqualifiedSuperclass(t *testing.T
 
 func TestTypeMatchesNamespacedGenericElementToUnqualifiedElement(t *testing.T) {
 	machine := New(nil)
-	if err := machine.RegisterClass(Class{Name: "SelectListOption", Namespace: "namz"}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "SelectListOption", Namespace: "otherpkg"}); err != nil {
 		t.Fatal(err)
 	}
-	if !machine.typeMatches("List<namz.SelectListOption>", "List<SelectListOption>", make(map[string]bool)) {
-		t.Fatal("List<namz.SelectListOption> should match List<SelectListOption>")
+	if !machine.typeMatches("List<otherpkg.SelectListOption>", "List<SelectListOption>", make(map[string]bool)) {
+		t.Fatal("List<otherpkg.SelectListOption> should match List<SelectListOption>")
 	}
 }
 
 func TestResolveTypeNameInClassKeepsCommonSObjectOutsideLexicalNestedOwner(t *testing.T) {
 	machine := New(nil)
 	for _, class := range []Class{
-		{Name: "constants", Namespace: "verifiable"},
-		{Name: "SetupDataMapping", Namespace: "verifiable"},
-		{Name: "SetupDataMapping.Organization", Namespace: "verifiable"},
+		{Name: "constants", Namespace: "samplepkg"},
+		{Name: "SampleDataMapping", Namespace: "samplepkg"},
+		{Name: "SampleDataMapping.Organization", Namespace: "samplepkg"},
 	} {
 		if err := machine.RegisterClass(class); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if got := machine.resolveTypeNameInClass("verifiable.constants", "Organization"); got != "Organization" {
+	if got := machine.resolveTypeNameInClass("samplepkg.constants", "Organization"); got != "Organization" {
 		t.Fatalf("resolved constants Organization = %q; want Organization", got)
 	}
-	if got := machine.resolveTypeNameInClass("verifiable.SetupDataMapping", "Organization"); got != "verifiable.SetupDataMapping.Organization" {
-		t.Fatalf("resolved nested Organization = %q; want verifiable.SetupDataMapping.Organization", got)
+	if got := machine.resolveTypeNameInClass("samplepkg.SampleDataMapping", "Organization"); got != "samplepkg.SampleDataMapping.Organization" {
+		t.Fatalf("resolved nested Organization = %q; want samplepkg.SampleDataMapping.Organization", got)
 	}
 }
 
@@ -6088,7 +6088,7 @@ System.assertEquals('mocked', proxy.Name);
 }
 
 func TestStubProxyDoesNotInterceptNamespacedShortPropertyAccessor(t *testing.T) {
-	if !propertyAccessorMethod(Method{Name: "OrderItem.EntityId.get", ClassName: "NU.OrderItem"}) {
+	if !propertyAccessorMethod(Method{Name: "OrderItem.EntityId.get", ClassName: "PKG.OrderItem"}) {
 		t.Fatal("namespaced class with short accessor name should be recognized as a property accessor")
 	}
 }
@@ -8918,12 +8918,12 @@ func TestExecSummaryFieldStoredStringPassesToDecimalParameter(t *testing.T) {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	org.Namespace = "NU"
-	org.Objects["NU__Order__c"] = storage.ObjectState{
+	org.Namespace = "PKG"
+	org.Objects["PKG__Order__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "NU__Order__c",
+			APIName: "PKG__Order__c",
 			Fields: map[string]storage.Field{
-				"NU__GrandTotal__c": {APIName: "NU__GrandTotal__c", Type: storage.FieldSummary, DisplayType: "SUMMARY"},
+				"PKG__GrandTotal__c": {APIName: "PKG__GrandTotal__c", Type: storage.FieldSummary, DisplayType: "SUMMARY"},
 			},
 		},
 	}
@@ -10954,9 +10954,9 @@ System.assertEquals(3, plugins.size() + (related == null ? 0 : 1));
 		{Name: "QPlugin.Fields", Namespace: "pkg", Access: "global", SuperClass: "QPlugin"},
 		{Name: "QPlugin.RelatedFields", Namespace: "pkg", Access: "global", SuperClass: "QPlugin"},
 		{Name: "ProductsWithDefaultFieldsPlugin", Namespace: "pkg", Access: "global", SuperClass: "QPlugin.Fields"},
-		{Name: "Pluggable", Namespace: "namz", Access: "global", IsAbstract: true},
-		{Name: "QPlugin", Namespace: "namz", Access: "global", IsAbstract: true},
-		{Name: "QPlugin.Fields", Namespace: "namz", Access: "global", SuperClass: "QPlugin"},
+		{Name: "Pluggable", Namespace: "otherpkg", Access: "global", IsAbstract: true},
+		{Name: "QPlugin", Namespace: "otherpkg", Access: "global", IsAbstract: true},
+		{Name: "QPlugin.Fields", Namespace: "otherpkg", Access: "global", SuperClass: "QPlugin"},
 	} {
 		if err := machine.RegisterClass(class); err != nil {
 			t.Fatal(err)
@@ -11004,7 +11004,7 @@ System.assertEquals('USD', pkg.CurrencyService.getOrgDefaultCurrency().getIsoCod
 				"getOrgDefaultCurrency": {Name: "CurrencyService.getOrgDefaultCurrency", ClassName: "CurrencyService", ReturnType: "CurrencyBase", Access: "global", IsStatic: true, Program: getProgram},
 			},
 		},
-		{Name: "ConsumerTest", Namespace: "namz", Access: "public", IsTest: true},
+		{Name: "ConsumerTest", Namespace: "otherpkg", Access: "public", IsTest: true},
 	} {
 		if err := machine.RegisterClass(class); err != nil {
 			t.Fatal(err)
@@ -11881,7 +11881,7 @@ System.assertEquals(1, pkg.ProductQuery.run());
 	}
 	machine := New(nil)
 	machine.SetOrg(&org)
-	machine.activeTriggerNamespaces = []string{"namz"}
+	machine.activeTriggerNamespaces = []string{"otherpkg"}
 	if err := machine.RegisterClass(Class{
 		Name:       "ProductQuery",
 		Namespace:  "pkg",
@@ -12297,22 +12297,22 @@ System.assertEquals(3, value.score());
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	if err := machine.RegisterClass(Class{Name: "Base", Namespace: "namz", Methods: map[string]Method{
-		"score": {Name: "Base.score", ClassName: "namz.Base", ReturnType: "Integer", Program: parentProgram},
+	if err := machine.RegisterClass(Class{Name: "Base", Namespace: "otherpkg", Methods: map[string]Method{
+		"score": {Name: "Base.score", ClassName: "otherpkg.Base", ReturnType: "Integer", Program: parentProgram},
 	}}); err != nil {
 		t.Fatal(err)
 	}
-	if err := machine.RegisterClass(Class{Name: "Child", Namespace: "namz", SuperClass: "Base", Methods: map[string]Method{
-		"score": {Name: "Child.score", ClassName: "namz.Child", ReturnType: "Integer", Program: childProgram},
+	if err := machine.RegisterClass(Class{Name: "Child", Namespace: "otherpkg", SuperClass: "Base", Methods: map[string]Method{
+		"score": {Name: "Child.score", ClassName: "otherpkg.Child", ReturnType: "Integer", Program: childProgram},
 	}}); err != nil {
 		t.Fatal(err)
 	}
-	if err := machine.RegisterClass(Class{Name: "Harness", Namespace: "namz", IsTest: true, Methods: map[string]Method{
-		"run": {Name: "Harness.run", ClassName: "namz.Harness", IsStatic: true, Program: testProgram},
+	if err := machine.RegisterClass(Class{Name: "Harness", Namespace: "otherpkg", IsTest: true, Methods: map[string]Method{
+		"run": {Name: "Harness.run", ClassName: "otherpkg.Harness", IsStatic: true, Program: testProgram},
 	}}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := machine.callMethod(machine.Methods["namz.Harness.run"], nil, &Result{}); err != nil {
+	if _, err := machine.callMethod(machine.Methods["otherpkg.Harness.run"], nil, &Result{}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -12348,21 +12348,21 @@ System.assertEquals('A', dataRows.get(1).getLabel());
 	}
 	machine := New(nil)
 	for _, class := range []Class{
-		{Name: "ParentPickList", Namespace: "namz", SuperClass: "VisualEditor.DynamicPickList", Methods: map[string]Method{
-			"getValues": {Name: "ParentPickList.getValues", ClassName: "namz.ParentPickList", ReturnType: "VisualEditor.DynamicPickListRows", Program: parentProgram},
+		{Name: "ParentPickList", Namespace: "otherpkg", SuperClass: "VisualEditor.DynamicPickList", Methods: map[string]Method{
+			"getValues": {Name: "ParentPickList.getValues", ClassName: "otherpkg.ParentPickList", ReturnType: "VisualEditor.DynamicPickListRows", Program: parentProgram},
 		}},
-		{Name: "ChildPickList", Namespace: "namz", SuperClass: "ParentPickList", Methods: map[string]Method{
-			"getValues": {Name: "ChildPickList.getValues", ClassName: "namz.ChildPickList", ReturnType: "VisualEditor.DynamicPickListRows", Program: childProgram},
+		{Name: "ChildPickList", Namespace: "otherpkg", SuperClass: "ParentPickList", Methods: map[string]Method{
+			"getValues": {Name: "ChildPickList.getValues", ClassName: "otherpkg.ChildPickList", ReturnType: "VisualEditor.DynamicPickListRows", Program: childProgram},
 		}},
-		{Name: "PickListHarness", Namespace: "namz", IsTest: true, Methods: map[string]Method{
-			"run": {Name: "PickListHarness.run", ClassName: "namz.PickListHarness", IsStatic: true, Program: testProgram},
+		{Name: "PickListHarness", Namespace: "otherpkg", IsTest: true, Methods: map[string]Method{
+			"run": {Name: "PickListHarness.run", ClassName: "otherpkg.PickListHarness", IsStatic: true, Program: testProgram},
 		}},
 	} {
 		if err := machine.RegisterClass(class); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if _, err := machine.callMethod(machine.Methods["namz.PickListHarness.run"], nil, &Result{}); err != nil {
+	if _, err := machine.callMethod(machine.Methods["otherpkg.PickListHarness.run"], nil, &Result{}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -12726,20 +12726,20 @@ func TestDisplayStringPreservesExternalPackageFromFFLibVerifierQualifiedMethod(t
 func TestDisplayStringStripsCurrentNamespaceFromFFLibVerifierQualifiedMethod(t *testing.T) {
 	machine := New(nil)
 	org := storage.NewOrgState()
-	org.Namespace = "verifiable"
+	org.Namespace = "samplepkg"
 	machine.SetOrg(&org)
 	if err := machine.RegisterClass(Class{
 		Name:      "fflib_QualifiedMethod",
-		Namespace: "verifiable",
+		Namespace: "samplepkg",
 		Fields: map[string]Field{
 			"typeName": {Name: "typeName", Type: "String", Modifiers: []string{"public", "final"}},
 		},
 	}); err != nil {
 		t.Fatal(err)
 	}
-	machine.currentMethod = Method{Name: "verifiable.fflib_MethodVerifier.throwException", ClassName: "verifiable.fflib_MethodVerifier"}
-	qm := Object("verifiable.fflib_QualifiedMethod")
-	qm.Fields["typeName"] = String("verifiable.fflib_MyList__sfdc_ApexStub")
+	machine.currentMethod = Method{Name: "samplepkg.fflib_MethodVerifier.throwException", ClassName: "samplepkg.fflib_MethodVerifier"}
+	qm := Object("samplepkg.fflib_QualifiedMethod")
+	qm.Fields["typeName"] = String("samplepkg.fflib_MyList__sfdc_ApexStub")
 	qm.Fields["methodName"] = String("add")
 	qm.Fields["methodArgTypes"] = List(platformScalar("Type", "String"))
 	got, err := machine.displayString(qm, &Result{})
@@ -12754,20 +12754,20 @@ func TestDisplayStringStripsCurrentNamespaceFromFFLibVerifierQualifiedMethod(t *
 func TestDisplayStringStripsCurrentNamespaceForPrivateFFLibVerifierQualifiedMethod(t *testing.T) {
 	machine := New(nil)
 	org := storage.NewOrgState()
-	org.Namespace = "NU"
+	org.Namespace = "PKG"
 	machine.SetOrg(&org)
 	if err := machine.RegisterClass(Class{
 		Name:      "fflib_QualifiedMethod",
-		Namespace: "NU",
+		Namespace: "PKG",
 		Fields: map[string]Field{
 			"typeName": {Name: "typeName", Type: "String", Modifiers: []string{"private"}},
 		},
 	}); err != nil {
 		t.Fatal(err)
 	}
-	machine.currentMethod = Method{Name: "NU.fflib_MethodVerifier.throwException", ClassName: "NU.fflib_MethodVerifier"}
-	qm := Object("NU.fflib_QualifiedMethod")
-	qm.Fields["typeName"] = String("NU.fflib_MyList__sfdc_ApexStub")
+	machine.currentMethod = Method{Name: "PKG.fflib_MethodVerifier.throwException", ClassName: "PKG.fflib_MethodVerifier"}
+	qm := Object("PKG.fflib_QualifiedMethod")
+	qm.Fields["typeName"] = String("PKG.fflib_MyList__sfdc_ApexStub")
 	qm.Fields["methodName"] = String("add")
 	qm.Fields["methodArgTypes"] = List(platformScalar("Type", "String"))
 	got, err := machine.displayString(qm, &Result{})

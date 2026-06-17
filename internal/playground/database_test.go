@@ -39,9 +39,9 @@ func TestDatabaseSnapshotClassifiesObjectKinds(t *testing.T) {
 	org.Objects["Account"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Account"}}
 	org.Objects["Invoice__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Invoice__c"}}
 	org.Objects["Feature__mdt"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Feature__mdt"}}
-	org.Objects["VerifiableProtectedListSetting__c"] = storage.ObjectState{
+	org.Objects["SampleProtectedListSetting__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:  "VerifiableProtectedListSetting__c",
+			APIName:  "SampleProtectedListSetting__c",
 			Metadata: map[string]string{"kind": "customSetting", "customSettingsType": "List"},
 		},
 	}
@@ -51,12 +51,12 @@ func TestDatabaseSnapshotClassifiesObjectKinds(t *testing.T) {
 	snapshot := databaseSnapshot(org)
 
 	want := map[string]string{
-		"Account":                           "standard",
-		"Invoice__c":                        "custom",
-		"Feature__mdt":                      "custom_metadata",
-		"VerifiableProtectedListSetting__c": "custom_setting",
-		"FieldPermissions":                  "system",
-		"ApexClass":                         "system",
+		"Account":                       "standard",
+		"Invoice__c":                    "custom",
+		"Feature__mdt":                  "custom_metadata",
+		"SampleProtectedListSetting__c": "custom_setting",
+		"FieldPermissions":              "system",
+		"ApexClass":                     "system",
 	}
 	for objectName, kind := range want {
 		object := databaseObjectByName(snapshot, objectName)

@@ -20,17 +20,17 @@ func TestRenderSetupLikePagePreservesHTMLAndEvaluatesNamespace(t *testing.T) {
 			"namespace": {
 				Name:  "namespace",
 				Type:  "String",
-				Value: vm.String("verifiable"),
+				Value: vm.String("samplepkg"),
 			},
 		},
 	})
 	controller := vm.Object("Demo")
 	controller.Type = "Demo"
-	controller.Fields["namespace"] = vm.String("verifiable")
+	controller.Fields["namespace"] = vm.String("samplepkg")
 	ctx := RenderContext{
 		VM:         runner,
 		PageName:   "setup",
-		Expression: &ExpressionContext{VM: runner, Controller: controller, ProjectNamespace: "verifiable"},
+		Expression: &ExpressionContext{VM: runner, Controller: controller, ProjectNamespace: "samplepkg"},
 	}
 	rendered, err := RenderMarkupTree(tree, &ctx)
 	if err != nil {
@@ -42,7 +42,7 @@ func TestRenderSetupLikePagePreservesHTMLAndEvaluatesNamespace(t *testing.T) {
 	if !strings.Contains(rendered, `<div id="lightning">`) {
 		t.Fatalf("expected div wrapper, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "verifiable:lightningOut") {
+	if !strings.Contains(rendered, "samplepkg:lightningOut") {
 		t.Fatalf("expected namespace in script, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "glade-vf-lightning-notice") {

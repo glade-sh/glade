@@ -1298,7 +1298,7 @@ func TestEnsureStandardObjectFieldsAddsCustomObjectNameAndRecordTypeId(t *testin
 }
 
 func TestEnsureStandardObjectFieldsAddsCoreSystemFields(t *testing.T) {
-	definition := ObjectDefinition{APIName: "Credentialing_Workflow__c"}
+	definition := ObjectDefinition{APIName: "Review_Workflow__c"}
 
 	EnsureStandardObjectFields(&definition)
 

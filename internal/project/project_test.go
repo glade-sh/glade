@@ -488,7 +488,7 @@ func TestDiscoverLWCUtilityFilesInNestedPackageDirectory(t *testing.T) {
     {"path":"sfdx-source/nu","default":true},
     {"path":"sfdx-source/unpackaged"}
   ],
-  "namespace": "NU"
+  "namespace": "PKG"
 }`)
 	utilityDir := filepath.Join(root, "sfdx-source/nu/main/component-library/lwc/bUtils")
 	writeFile(t, filepath.Join(utilityDir, "bUtils.js"), `export { classSet } from './classSet';`)

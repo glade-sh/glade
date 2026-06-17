@@ -914,7 +914,7 @@ test("cli reference documents current code intelligence commands", () => {
   assert.match(gladeOrgs, /glade org create my-glade-org\n```/);
   assert(gladeOrgs.indexOf("glade org create my-glade-org") < gladeOrgs.indexOf("--db .glade/orgs/my-glade-org.sqlite"));
   assert.match(index, /glade org create my-glade-org<\/code><\/pre>/);
-  assert.match(gladeOrgs, /sf nimbleams data import -f \.\/data\/insertOrder\.json -u my-glade-org/);
+  assert.match(gladeOrgs, /sf data import tree -p \.\/data\/insertOrder\.json -o my-glade-org/);
   assert.match(gladeOrgs, /It is not a real scratch\s+org/);
   assert.match(gladeOrgs, /Bulk API v1 CSV insert and upsert baseline/);
 });

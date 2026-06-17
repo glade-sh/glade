@@ -13,11 +13,11 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-const nimbleAMSCompatSOAPPath = "/services/Soap/u/" + storage.DefaultRESTAPIVersion + "/00DLOCAL000000001"
+const thirdPartyImportCompatSOAPPath = "/services/Soap/u/" + storage.DefaultRESTAPIVersion + "/00DLOCAL000000001"
 
-func TestNimbleAMSRouteSetSupportsImportShape(t *testing.T) {
-	org := nimbleAMSCompatOrg()
-	addNimbleAMSAccount(t, &org, "acct-1", "Nimble Account")
+func TestThirdPartyImportRouteSetSupportsImportShape(t *testing.T) {
+	org := thirdPartyImportCompatOrg()
+	addThirdPartyImportAccount(t, &org, "acct-1", "Sample Account")
 	handler := New(&org)
 
 	t.Run("REST query", func(t *testing.T) {
@@ -30,13 +30,13 @@ func TestNimbleAMSRouteSetSupportsImportShape(t *testing.T) {
 	})
 
 	t.Run("Partner SOAP describeSObjects", func(t *testing.T) {
-		body := nimbleAMSSOAPEnvelope(`
+		body := thirdPartyImportSOAPEnvelope(`
 			<urn:describeSObjects>
 				<urn:sObjectType>Account</urn:sObjectType>
 				<urn:sObjectType>Contact</urn:sObjectType>
 			</urn:describeSObjects>`)
 		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, nimbleAMSCompatSOAPPath, strings.NewReader(body)))
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, thirdPartyImportCompatSOAPPath, strings.NewReader(body)))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Partner SOAP describeSObjects status = %d body=%s", rec.Code, rec.Body.String())
 		}
@@ -46,7 +46,7 @@ func TestNimbleAMSRouteSetSupportsImportShape(t *testing.T) {
 	})
 
 	t.Run("Partner SOAP upsert", func(t *testing.T) {
-		body := nimbleAMSSOAPEnvelope(`
+		body := thirdPartyImportSOAPEnvelope(`
 			<urn:upsert>
 				<urn:externalIDFieldName>External_Id__c</urn:externalIDFieldName>
 				<urn:sObjects xsi:type="sf:Account">
@@ -55,7 +55,7 @@ func TestNimbleAMSRouteSetSupportsImportShape(t *testing.T) {
 				</urn:sObjects>
 			</urn:upsert>`)
 		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, nimbleAMSCompatSOAPPath, strings.NewReader(body)))
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, thirdPartyImportCompatSOAPPath, strings.NewReader(body)))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Partner SOAP upsert status = %d body=%s", rec.Code, rec.Body.String())
 		}
@@ -74,18 +74,18 @@ func TestNimbleAMSRouteSetSupportsImportShape(t *testing.T) {
 	})
 
 	t.Run("Bulk v1 insert and upsert", func(t *testing.T) {
-		if !nimbleAMSCompatBulkV1Available(t, handler) {
+		if !thirdPartyImportCompatBulkV1Available(t, handler) {
 			t.Skip("Bulk API v1 ingest is not available in this route set yet")
 		}
-		nimbleAMSCompatBulkV1CSV(t, handler, "insert", "Account", "Name,External_Id__c\nBulk Account,bulk-acct-1\n")
-		nimbleAMSCompatBulkV1CSV(t, handler, "upsert", "Contact", "LastName,External_Id__c,Account.External_Id__c\nBulk Contact,bulk-contact-1,acct-1\n")
+		thirdPartyImportCompatBulkV1CSV(t, handler, "insert", "Account", "Name,External_Id__c\nBulk Account,bulk-acct-1\n")
+		thirdPartyImportCompatBulkV1CSV(t, handler, "upsert", "Contact", "LastName,External_Id__c,Account.External_Id__c\nBulk Contact,bulk-contact-1,acct-1\n")
 	})
 
-	assertNimbleAMSAccountByExternalID(t, org, "acct-1")
-	assertNimbleAMSAccountByExternalID(t, org, "cleaner-1")
+	assertThirdPartyImportAccountByExternalID(t, org, "acct-1")
+	assertThirdPartyImportAccountByExternalID(t, org, "cleaner-1")
 }
 
-func nimbleAMSCompatOrg() storage.OrgState {
+func thirdPartyImportCompatOrg() storage.OrgState {
 	org := testOrg()
 	org.Objects["Contact"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
@@ -105,7 +105,7 @@ func nimbleAMSCompatOrg() storage.OrgState {
 	return org
 }
 
-func addNimbleAMSAccount(t *testing.T, org *storage.OrgState, externalID, name string) {
+func addThirdPartyImportAccount(t *testing.T, org *storage.OrgState, externalID, name string) {
 	t.Helper()
 	object := org.Objects["Account"]
 	id := storage.ID(fmt.Sprintf("001%012d", len(object.Records)+1))
@@ -120,7 +120,7 @@ func addNimbleAMSAccount(t *testing.T, org *storage.OrgState, externalID, name s
 	org.Objects["Account"] = object
 }
 
-func assertNimbleAMSAccountByExternalID(t *testing.T, org storage.OrgState, externalID string) {
+func assertThirdPartyImportAccountByExternalID(t *testing.T, org storage.OrgState, externalID string) {
 	t.Helper()
 	for _, record := range org.Objects["Account"].Records {
 		if record.Fields["External_Id__c"].String == externalID {
@@ -130,14 +130,14 @@ func assertNimbleAMSAccountByExternalID(t *testing.T, org storage.OrgState, exte
 	t.Fatalf("Account External_Id__c %q not found in %#v", externalID, org.Objects["Account"].Records)
 }
 
-func nimbleAMSSOAPEnvelope(body string) string {
+func thirdPartyImportSOAPEnvelope(body string) string {
 	return `<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:partner.soap.sforce.com" xmlns:sf="urn:sobject.partner.soap.sforce.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<soapenv:Body>` + body + `</soapenv:Body>
 </soapenv:Envelope>`
 }
 
-func nimbleAMSCompatBulkV1Available(t *testing.T, handler http.Handler) bool {
+func thirdPartyImportCompatBulkV1Available(t *testing.T, handler http.Handler) bool {
 	t.Helper()
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/services/async/"+storage.DefaultRESTAPIVersion+"/job", strings.NewReader(`<?xml version="1.0" encoding="UTF-8"?>
@@ -157,7 +157,7 @@ func nimbleAMSCompatBulkV1Available(t *testing.T, handler http.Handler) bool {
 	return true
 }
 
-func nimbleAMSCompatBulkV1CSV(t *testing.T, handler http.Handler, operation, objectName, csvBody string) {
+func thirdPartyImportCompatBulkV1CSV(t *testing.T, handler http.Handler, operation, objectName, csvBody string) {
 	t.Helper()
 	job := httptest.NewRecorder()
 	jobReq := httptest.NewRequest(http.MethodPost, "/services/async/"+storage.DefaultRESTAPIVersion+"/job", strings.NewReader(fmt.Sprintf(`<?xml version="1.0" encoding="UTF-8"?>
@@ -171,7 +171,7 @@ func nimbleAMSCompatBulkV1CSV(t *testing.T, handler http.Handler, operation, obj
 	if job.Code != http.StatusOK && job.Code != http.StatusCreated {
 		t.Fatalf("Bulk API v1 %s %s job status = %d body=%s", operation, objectName, job.Code, job.Body.String())
 	}
-	jobID := nimbleAMSCompatXMLText(t, job.Body.Bytes(), "id")
+	jobID := thirdPartyImportCompatXMLText(t, job.Body.Bytes(), "id")
 	if jobID == "" {
 		t.Fatalf("Bulk API v1 %s %s job id missing: %s", operation, objectName, job.Body.String())
 	}
@@ -185,7 +185,7 @@ func nimbleAMSCompatBulkV1CSV(t *testing.T, handler http.Handler, operation, obj
 	}
 }
 
-func nimbleAMSCompatXMLText(t *testing.T, data []byte, local string) string {
+func thirdPartyImportCompatXMLText(t *testing.T, data []byte, local string) string {
 	t.Helper()
 	decoder := xml.NewDecoder(bytes.NewReader(data))
 	for {

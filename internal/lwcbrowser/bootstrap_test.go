@@ -20,21 +20,21 @@ func TestBootstrapHTMLDefinesLightningStub(t *testing.T) {
 
 func TestBootstrapHTMLIncludesLocalLWCImportMap(t *testing.T) {
 	html := BootstrapHTML(PageConfig{
-		Namespace: "verifiable",
+		Namespace: "samplepkg",
 		Manifest: Manifest{
 			Modules: map[string]ModuleEntry{
-				"verifiable:landing": {
-					URL: "/lightning/modules/verifiable/landing/landing.js",
-					Tag: "verifiable-landing",
+				"samplepkg:landing": {
+					URL: "/lightning/modules/samplepkg/landing/landing.js",
+					Tag: "samplepkg-landing",
 				},
 			},
 		},
 	})
-	if !strings.Contains(html, `"c/landing":"/lightning/modules/verifiable/landing/landing.js"`) {
+	if !strings.Contains(html, `"c/landing":"/lightning/modules/samplepkg/landing/landing.js"`) {
 		t.Fatalf("missing c/landing import map entry:\n%s", html)
 	}
-	if !strings.Contains(html, `"verifiable/landing":"/lightning/modules/verifiable/landing/landing.js"`) {
-		t.Fatalf("missing verifiable/landing import map entry:\n%s", html)
+	if !strings.Contains(html, `"samplepkg/landing":"/lightning/modules/samplepkg/landing/landing.js"`) {
+		t.Fatalf("missing samplepkg/landing import map entry:\n%s", html)
 	}
 }
 

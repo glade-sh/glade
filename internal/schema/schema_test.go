@@ -222,16 +222,16 @@ func TestLoadProjectUsesProjectNamespaceForExtensionFieldOnForeignNamespacedObje
 	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>State__c</fullName><type>Picklist</type></CustomField>`)
 	writeFile(t, validationRulePath, `<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Block</fullName><active>true</active><errorConditionFormula>State__c = "Blocked"</errorConditionFormula><errorMessage>blocked</errorMessage></ValidationRule>`)
 
-	s, err := LoadProject(project.Project{Namespace: "namz", ObjectFiles: []string{objectPath}, FieldFiles: []string{fieldPath}, ValidationRuleFiles: []string{validationRulePath}})
+	s, err := LoadProject(project.Project{Namespace: "otherpkg", ObjectFiles: []string{objectPath}, FieldFiles: []string{fieldPath}, ValidationRuleFiles: []string{validationRulePath}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	object := objectsByName(s.Objects)["pkg__Order__c"]
 	field := object.Fields[0]
-	if field.Name != "namz__State__c" {
+	if field.Name != "otherpkg__State__c" {
 		t.Fatalf("field = %#v", field)
 	}
-	if len(object.ValidationRules) != 1 || object.ValidationRules[0].Namespace != "namz" {
+	if len(object.ValidationRules) != 1 || object.ValidationRules[0].Namespace != "otherpkg" {
 		t.Fatalf("validation rules = %#v", object.ValidationRules)
 	}
 }
@@ -247,7 +247,7 @@ func TestLoadProjectUsesProjectNamespaceForOwnedUnqualifiedObjects(t *testing.T)
 	writeFile(t, recordTypePath, `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Default</fullName><active>true</active></RecordType>`)
 	writeFile(t, validationRulePath, `<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Block</fullName><active>true</active><errorConditionFormula>PriceExpression__c = ""</errorConditionFormula><errorMessage>blocked</errorMessage></ValidationRule>`)
 
-	s, err := LoadProject(project.Project{Namespace: "namz", ObjectFiles: []string{objectPath}, FieldFiles: []string{fieldPath}, RecordTypeFiles: []string{recordTypePath}, ValidationRuleFiles: []string{validationRulePath}})
+	s, err := LoadProject(project.Project{Namespace: "otherpkg", ObjectFiles: []string{objectPath}, FieldFiles: []string{fieldPath}, RecordTypeFiles: []string{recordTypePath}, ValidationRuleFiles: []string{validationRulePath}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -255,15 +255,15 @@ func TestLoadProjectUsesProjectNamespaceForOwnedUnqualifiedObjects(t *testing.T)
 	if _, ok := objects["PriceComponent__c"]; ok {
 		t.Fatalf("unqualified object should not be emitted: %#v", s.Objects)
 	}
-	object := objects["namz__PriceComponent__c"]
+	object := objects["otherpkg__PriceComponent__c"]
 	fields := fieldsByName(object.Fields)
-	if _, ok := fields["namz__PriceExpression__c"]; !ok {
+	if _, ok := fields["otherpkg__PriceExpression__c"]; !ok {
 		t.Fatalf("namespaced field missing: %#v", object.Fields)
 	}
 	if len(object.RecordTypes) != 1 || object.RecordTypes[0].DeveloperName != "Default" {
 		t.Fatalf("record types = %#v", object.RecordTypes)
 	}
-	if len(object.ValidationRules) != 1 || object.ValidationRules[0].Namespace != "namz" {
+	if len(object.ValidationRules) != 1 || object.ValidationRules[0].Namespace != "otherpkg" {
 		t.Fatalf("validation rules = %#v", object.ValidationRules)
 	}
 }

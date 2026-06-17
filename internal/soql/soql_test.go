@@ -390,9 +390,9 @@ func TestExecuteProjectsOrganizationTimeZoneDefault(t *testing.T) {
 
 func TestExecuteAggregateAliasWithSystemReferenceGroupBy(t *testing.T) {
 	org := storage.NewOrgState()
-	org.Objects["VfiProviderSpecialty__c"] = storage.ObjectState{
+	org.Objects["SampleSpecialty__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "VfiProviderSpecialty__c",
+			APIName: "SampleSpecialty__c",
 			Fields: map[string]storage.Field{
 				"Type__c": {APIName: "Type__c", Type: storage.FieldString},
 			},
@@ -400,7 +400,7 @@ func TestExecuteAggregateAliasWithSystemReferenceGroupBy(t *testing.T) {
 		Records: map[storage.ID]storage.Record{
 			"a01000000000001": {
 				ID:     "a01000000000001",
-				Object: "VfiProviderSpecialty__c",
+				Object: "SampleSpecialty__c",
 				Fields: map[string]storage.Value{
 					"Type__c": storage.StringValue("Primary"),
 				},
@@ -410,7 +410,7 @@ func TestExecuteAggregateAliasWithSystemReferenceGroupBy(t *testing.T) {
 			},
 			"a01000000000002": {
 				ID:     "a01000000000002",
-				Object: "VfiProviderSpecialty__c",
+				Object: "SampleSpecialty__c",
 				Fields: map[string]storage.Value{
 					"Type__c": storage.StringValue("Secondary"),
 				},
@@ -421,7 +421,7 @@ func TestExecuteAggregateAliasWithSystemReferenceGroupBy(t *testing.T) {
 		},
 	}
 
-	query, err := Parse("SELECT LastModifiedById provider, Type__c type, COUNT(Id) total FROM VfiProviderSpecialty__c WHERE LastModifiedById IN ('005000000000001') AND Id NOT IN ('a01000000000001') AND Type__c != 'Additional' GROUP BY LastModifiedById, Type__c")
+	query, err := Parse("SELECT LastModifiedById provider, Type__c type, COUNT(Id) total FROM SampleSpecialty__c WHERE LastModifiedById IN ('005000000000001') AND Id NOT IN ('a01000000000001') AND Type__c != 'Additional' GROUP BY LastModifiedById, Type__c")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -443,7 +443,7 @@ func TestExecuteAggregateAliasWithSystemReferenceGroupBy(t *testing.T) {
 		t.Fatalf("total=%#v", got)
 	}
 
-	query, err = Parse("SELECT LastModifiedBy.Id provider, Type__c type, COUNT(Id) total FROM VfiProviderSpecialty__c WHERE LastModifiedBy.Id IN ('005000000000001') AND Id NOT IN ('a01000000000001') AND Type__c != 'Additional' GROUP BY LastModifiedBy.Id, Type__c")
+	query, err = Parse("SELECT LastModifiedBy.Id provider, Type__c type, COUNT(Id) total FROM SampleSpecialty__c WHERE LastModifiedBy.Id IN ('005000000000001') AND Id NOT IN ('a01000000000001') AND Type__c != 'Additional' GROUP BY LastModifiedBy.Id, Type__c")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2869,7 +2869,7 @@ func TestExecuteEvaluatesDateDifferenceFormulaFields(t *testing.T) {
 
 func TestExecuteEvaluatesDateFormulaOverrideFieldsInWhere(t *testing.T) {
 	org := storage.NewOrgState()
-	org.Namespace = "NU"
+	org.Namespace = "PKG"
 	org.Objects["Account"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName: "Account",
@@ -2900,7 +2900,7 @@ func TestExecuteEvaluatesDateFormulaOverrideFieldsInWhere(t *testing.T) {
 				ID:     "001000000000001",
 				Object: "Account",
 				Fields: map[string]storage.Value{
-					"NU__LapsedOnOverride__c": storage.DateValue("2026-05-02"),
+					"PKG__LapsedOnOverride__c": storage.DateValue("2026-05-02"),
 				},
 			},
 		},
@@ -2914,7 +2914,7 @@ func TestExecuteEvaluatesDateFormulaOverrideFieldsInWhere(t *testing.T) {
 		t.Fatalf("date formula override result = %#v", result)
 	}
 
-	result, err = ParseAndExecute(org, "SELECT Id, LapsedOn__c FROM Account WHERE NU__LapsedOn__c = 2026-05-02")
+	result, err = ParseAndExecute(org, "SELECT Id, LapsedOn__c FROM Account WHERE PKG__LapsedOn__c = 2026-05-02")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2922,7 +2922,7 @@ func TestExecuteEvaluatesDateFormulaOverrideFieldsInWhere(t *testing.T) {
 		t.Fatalf("namespaced date formula override result = %#v", result)
 	}
 
-	result, err = ParseAndExecute(org, "SELECT Id FROM Account WHERE NU__LapsedOn__c = 2026-05-02")
+	result, err = ParseAndExecute(org, "SELECT Id FROM Account WHERE PKG__LapsedOn__c = 2026-05-02")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3316,51 +3316,51 @@ func TestExecuteProjectsNestedChildRelationshipSubquery(t *testing.T) {
 
 func TestExecuteChildRelationshipSubqueryPrefersCurrentPackageObject(t *testing.T) {
 	org := storage.NewOrgState()
-	org.Namespace = "NU"
-	org.Objects["NU__RecurringPayment__c"] = storage.ObjectState{
+	org.Namespace = "PKG"
+	org.Objects["PKG__RecurringPayment__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "NU__RecurringPayment__c",
+			APIName:   "PKG__RecurringPayment__c",
 			KeyPrefix: "a10",
 			Fields: map[string]storage.Field{
 				"Name": {APIName: "Name", Type: storage.FieldString},
 			},
 		},
 		Records: map[storage.ID]storage.Record{
-			"a10000000000001": {ID: "a10000000000001", Object: "NU__RecurringPayment__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Recurring")}},
+			"a10000000000001": {ID: "a10000000000001", Object: "PKG__RecurringPayment__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Recurring")}},
 		},
 	}
 	org.Objects["Membership__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName: "Membership__c",
 			Fields: map[string]storage.Field{
-				"RecurringPayment__c": {APIName: "RecurringPayment__c", Type: storage.FieldReference, ReferenceTo: []string{"NU__RecurringPayment__c"}, RelationshipName: "RecurringPayment__r", ChildRelationshipName: "Memberships__r"},
+				"RecurringPayment__c": {APIName: "RecurringPayment__c", Type: storage.FieldReference, ReferenceTo: []string{"PKG__RecurringPayment__c"}, RelationshipName: "RecurringPayment__r", ChildRelationshipName: "Memberships__r"},
 			},
 			Relations: []storage.Relationship{{
 				Field:              "RecurringPayment__c",
-				ParentObjects:      []string{"NU__RecurringPayment__c"},
+				ParentObjects:      []string{"PKG__RecurringPayment__c"},
 				ParentRelationship: "RecurringPayment__r",
 				ChildRelationship:  "Memberships__r",
 			}},
 		},
 		Records: map[storage.ID]storage.Record{},
 	}
-	org.Objects["NU__Membership__c"] = storage.ObjectState{
+	org.Objects["PKG__Membership__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "NU__Membership__c",
+			APIName:   "PKG__Membership__c",
 			KeyPrefix: "a11",
 			Fields: map[string]storage.Field{
-				"NU__Balance__c":          {APIName: "NU__Balance__c", Type: storage.FieldDecimal},
-				"NU__RecurringPayment__c": {APIName: "NU__RecurringPayment__c", Type: storage.FieldReference, ReferenceTo: []string{"NU__RecurringPayment__c"}, RelationshipName: "NU__RecurringPayment__r", ChildRelationshipName: "NU__Memberships__r"},
+				"PKG__Balance__c":          {APIName: "PKG__Balance__c", Type: storage.FieldDecimal},
+				"PKG__RecurringPayment__c": {APIName: "PKG__RecurringPayment__c", Type: storage.FieldReference, ReferenceTo: []string{"PKG__RecurringPayment__c"}, RelationshipName: "PKG__RecurringPayment__r", ChildRelationshipName: "PKG__Memberships__r"},
 			},
 			Relations: []storage.Relationship{{
-				Field:              "NU__RecurringPayment__c",
-				ParentObjects:      []string{"NU__RecurringPayment__c"},
-				ParentRelationship: "NU__RecurringPayment__r",
-				ChildRelationship:  "NU__Memberships__r",
+				Field:              "PKG__RecurringPayment__c",
+				ParentObjects:      []string{"PKG__RecurringPayment__c"},
+				ParentRelationship: "PKG__RecurringPayment__r",
+				ChildRelationship:  "PKG__Memberships__r",
 			}},
 		},
 		Records: map[storage.ID]storage.Record{
-			"a11000000000001": {ID: "a11000000000001", Object: "NU__Membership__c", Fields: map[string]storage.Value{"NU__Balance__c": storage.DecimalValue("25"), "NU__RecurringPayment__c": storage.IDValue("a10000000000001")}},
+			"a11000000000001": {ID: "a11000000000001", Object: "PKG__Membership__c", Fields: map[string]storage.Value{"PKG__Balance__c": storage.DecimalValue("25"), "PKG__RecurringPayment__c": storage.IDValue("a10000000000001")}},
 		},
 	}
 
@@ -3369,7 +3369,7 @@ func TestExecuteChildRelationshipSubqueryPrefersCurrentPackageObject(t *testing.
 		t.Fatal(err)
 	}
 	children := result.Records[0].Children["Memberships__r"]
-	if len(children) != 1 || children[0].Object != "NU__Membership__c" || children[0].Fields["NU__Balance__c"].Decimal != "25" {
+	if len(children) != 1 || children[0].Object != "PKG__Membership__c" || children[0].Fields["PKG__Balance__c"].Decimal != "25" {
 		t.Fatalf("current package children = %#v", children)
 	}
 }
@@ -3760,7 +3760,7 @@ func TestExecuteCustomParentRelationshipFilterUsesDerivedName(t *testing.T) {
 
 func TestExecuteNamespacedCustomParentRelationshipFilterUsesUnqualifiedName(t *testing.T) {
 	org := storage.NewOrgState()
-	org.Namespace = "nu"
+	org.Namespace = "pkg"
 	assertNamespacedCustomParentRelationshipFilterUsesUnqualifiedName(t, org)
 }
 
@@ -3816,45 +3816,45 @@ func TestExecuteMetadataCustomParentRelationshipFilterUsesLookupField(t *testing
 
 func assertNamespacedCustomParentRelationshipFilterUsesUnqualifiedName(t *testing.T, org storage.OrgState) {
 	t.Helper()
-	org.Objects["nu__Cart__c"] = storage.ObjectState{
+	org.Objects["pkg__Cart__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "nu__Cart__c",
+			APIName: "pkg__Cart__c",
 			Fields:  map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
 		},
 		Records: map[storage.ID]storage.Record{
 			"a0S000000000001": {ID: "a0S000000000001", Object: "Cart__c"},
 		},
 	}
-	org.Objects["nu__CartItem__c"] = storage.ObjectState{
+	org.Objects["pkg__CartItem__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "nu__CartItem__c",
+			APIName: "pkg__CartItem__c",
 			Fields: map[string]storage.Field{
-				"Id":          {APIName: "Id", Type: storage.FieldID},
-				"nu__Cart__c": {APIName: "nu__Cart__c", Type: storage.FieldReference, ReferenceTo: []string{"nu__Cart__c"}, RelationshipName: "nu__Cart__r"},
+				"Id":           {APIName: "Id", Type: storage.FieldID},
+				"pkg__Cart__c": {APIName: "pkg__Cart__c", Type: storage.FieldReference, ReferenceTo: []string{"pkg__Cart__c"}, RelationshipName: "pkg__Cart__r"},
 			},
 			Relations: []storage.Relationship{{
-				Field:              "nu__Cart__c",
-				ParentObjects:      []string{"nu__Cart__c"},
-				ParentRelationship: "nu__Cart__r",
-				ChildRelationship:  "nu__CartItems__r",
+				Field:              "pkg__Cart__c",
+				ParentObjects:      []string{"pkg__Cart__c"},
+				ParentRelationship: "pkg__Cart__r",
+				ChildRelationship:  "pkg__CartItems__r",
 			}},
 		},
 		Records: map[storage.ID]storage.Record{
 			"a0I000000000001": {ID: "a0I000000000001", Object: "CartItem__c", Fields: map[string]storage.Value{"Cart__c": storage.IDValue("a0S000000000001")}},
 		},
 	}
-	org.Objects["nu__CartItemLine__c"] = storage.ObjectState{
+	org.Objects["pkg__CartItemLine__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "nu__CartItemLine__c",
+			APIName: "pkg__CartItemLine__c",
 			Fields: map[string]storage.Field{
-				"Id":              {APIName: "Id", Type: storage.FieldID},
-				"nu__CartItem__c": {APIName: "nu__CartItem__c", Type: storage.FieldReference, ReferenceTo: []string{"nu__CartItem__c"}, RelationshipName: "nu__CartItem__r"},
+				"Id":               {APIName: "Id", Type: storage.FieldID},
+				"pkg__CartItem__c": {APIName: "pkg__CartItem__c", Type: storage.FieldReference, ReferenceTo: []string{"pkg__CartItem__c"}, RelationshipName: "pkg__CartItem__r"},
 			},
 			Relations: []storage.Relationship{{
-				Field:              "nu__CartItem__c",
-				ParentObjects:      []string{"nu__CartItem__c"},
-				ParentRelationship: "nu__CartItem__r",
-				ChildRelationship:  "nu__CartItemLines__r",
+				Field:              "pkg__CartItem__c",
+				ParentObjects:      []string{"pkg__CartItem__c"},
+				ParentRelationship: "pkg__CartItem__r",
+				ChildRelationship:  "pkg__CartItemLines__r",
 			}},
 		},
 		Records: map[storage.ID]storage.Record{
@@ -3911,7 +3911,7 @@ func TestExecuteCustomChildRelationshipSubqueryAcceptsNamespacedRelationship(t *
 
 func TestExecuteChildRelationshipSubqueryMatchesDependencyNamespacedParentAlias(t *testing.T) {
 	org := storage.NewOrgState()
-	org.Namespace = "namz"
+	org.Namespace = "otherpkg"
 	org.Objects["Product__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName: "Product__c",
@@ -3952,7 +3952,7 @@ func TestExecuteChildRelationshipSubqueryMatchesDependencyNamespacedParentAlias(
 
 func TestExecuteChildRelationshipSubqueryPrefersLocalRelationshipOverDependencyNamespaceCollision(t *testing.T) {
 	org := storage.NewOrgState()
-	org.Namespace = "namz"
+	org.Namespace = "otherpkg"
 	org.Objects["StateConfiguration__mdt"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName: "StateConfiguration__mdt",

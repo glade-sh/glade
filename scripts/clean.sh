@@ -18,8 +18,8 @@ remove() {
 remove glade
 remove ./*.test
 
-# Ad-hoc compat run result dumps.
-remove nu.json nutpl.json nams.json sf-cred.json
+# Ad-hoc JSON run result dumps.
+remove ./*.localtest.json ./*.compat.json
 
 # Build/output directories and caches.
 remove bin dist coverage.out .gocache

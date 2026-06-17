@@ -36,7 +36,7 @@ func TestRegisteredMethodSourceAliasKeyCollapsesNamespaceAlias(t *testing.T) {
 		Line:      55,
 	}
 	right := left
-	right.ClassName = "verifiable.fflib_MethodVerifier"
+	right.ClassName = "samplepkg.fflib_MethodVerifier"
 	if gotLeft, gotRight := registeredMethodSourceAliasKey(left), registeredMethodSourceAliasKey(right); gotLeft != gotRight {
 		t.Fatalf("source alias keys differ: %q != %q", gotLeft, gotRight)
 	}

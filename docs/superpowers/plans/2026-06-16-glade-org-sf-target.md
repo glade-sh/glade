@@ -4,7 +4,7 @@
 
 **Goal:** Let Salesforce CLI commands target a named Glade org alias so data and Apex requests mutate and read a selected local Glade SQLite org database.
 
-**Architecture:** `glade org` is a product CLI wrapper around the existing local server, SQLite org store, and Apex VM. It creates a stable local instance URL, registers that URL as an `sf` target org alias through `sf org login access-token`, and adds the missing Salesforce-shaped protocol adapters that common `sf` and NimbleAMS data commands use. The server stays local-only and does not implement live Salesforce org lifecycle.
+**Architecture:** `glade org` is a product CLI wrapper around the existing local server, SQLite org store, and Apex VM. It creates a stable local instance URL, registers that URL as an `sf` target org alias through `sf org login access-token`, and adds the missing Salesforce-shaped protocol adapters that common `sf` and manifest import data commands use. The server stays local-only and does not implement live Salesforce org lifecycle.
 
 **Tech Stack:** Go 1.26, existing `internal/gladecli`, existing `internal/server`, existing `internal/storage` DML engine, existing Apex VM execute-anonymous path, Salesforce CLI `sf`, jsforce route compatibility, XML SOAP parsing with Go `encoding/xml`, CSV parsing with Go `encoding/csv`.
 
@@ -27,9 +27,9 @@ The missing pieces for the target behavior:
 - `glade org` lifecycle and `sf` auth registration.
 - Stable instance URL handling for `sf -u <alias>`.
 - SOAP Apex `/services/Soap/s/<version>/<orgId>` for `sf apex run`.
-- Partner SOAP `/services/Soap/u/<version>` for NimbleForce/NimbleAMS `describeSObjects` and `upsert`.
+- Partner SOAP `/services/Soap/u/<version>` for manifest import tools that call `describeSObjects` and `upsert`.
 - Bulk API v1 ingest `/services/async/<version>/job...` for old jsforce bulk import mode.
-- End-to-end proof with a real `sf` target alias and a NimbleAMS-shaped manifest.
+- End-to-end proof with a real `sf` target alias and a manifest-based manifest.
 
 ## Supported Scope
 
@@ -41,8 +41,8 @@ Supported when this plan is complete:
 - `sf data create record -o <alias> ...` inserts into the Glade DB.
 - `sf data query -o <alias> ...` queries the Glade DB.
 - `sf apex run -o <alias> -f file.apex` executes through the Glade VM against the Glade DB.
-- NimbleAMS/NimbleForce non-bulk data imports that use query variables, ordered records, external-id upsert, relationship external-id references, and ApexScript cleaners.
-- NimbleAMS/NimbleForce bulk import mode for CSV insert and upsert jobs used by jsforce 1.x Bulk API v1.
+- manifest import tool non-bulk data imports that use query variables, ordered records, external-id upsert, relationship external-id references, and ApexScript cleaners.
+- manifest import tool bulk import mode for CSV insert and upsert jobs used by jsforce 1.x Bulk API v1.
 - Persistence across server restart when the same `--db` path is used.
 
 Not supported:
@@ -56,7 +56,7 @@ Not supported:
 - Full Partner SOAP, Enterprise SOAP, Metadata SOAP, Chatter, Streaming, Pub/Sub, GraphQL, ConnectApi, or hosted Salesforce services.
 - Full Bulk API v1 query/export, delete, hardDelete, PK chunking, parallel execution, retry behavior, or server-side batch scheduling.
 - Exact Salesforce sharing, CRUD/FLS, mixed-DML, duplicate rules, assignment rules, validation-rule parity beyond what Glade already models, or exact governor accounting beyond selected Glade limit modes.
-- Arbitrary NimbleAMS manifest `.js` files that call unmodeled Salesforce APIs.
+- Arbitrary manifest-based `.js` files that call unmodeled Salesforce APIs.
 - Exact managed-package internals unless represented in project metadata, schema, fixtures, or Glade runtime support.
 
 ## Execution Model
@@ -67,7 +67,7 @@ Task 0 is a lead task. It prepares the branch and assigns non-overlapping work. 
 - Agent B: SOAP Apex executeAnonymous.
 - Agent C: Partner SOAP describe/upsert.
 - Agent D: Bulk API v1 ingest.
-- Agent E: NimbleAMS compatibility fixtures, smoke script, and docs.
+- Agent E: manifest import compatibility fixtures, smoke script, and docs.
 
 Agents B, C, and D will all touch `internal/server/server.go` unless the lead creates route seams first. Task 0 includes that seam. Each agent should keep new protocol code in its own file and leave final route conflict resolution to the lead integrator.
 
@@ -85,10 +85,10 @@ Create:
 - `internal/server/soap_apex_test.go`: SOAP Apex focused tests.
 - `internal/server/soap_partner_test.go`: Partner SOAP focused tests.
 - `scripts/smoke_glade_org_sf.sh`: Optional local smoke proof. Skips with a clear message when `sf` is missing.
-- `testdata/local-tests/glade-org-nimbleams/insertOrder.json`: NimbleAMS-shaped manifest fixture.
-- `testdata/local-tests/glade-org-nimbleams/accounts.json`: Data file using external-id upsert.
-- `testdata/local-tests/glade-org-nimbleams/contacts.json`: Data file using relationship external-id references.
-- `testdata/local-tests/glade-org-nimbleams/cleaners.json`: Data file with an ApexScript cleaner.
+- `testdata/local-tests/glade-org-data-import/insertOrder.json`: manifest-based manifest fixture.
+- `testdata/local-tests/glade-org-data-import/accounts.json`: Data file using external-id upsert.
+- `testdata/local-tests/glade-org-data-import/contacts.json`: Data file using relationship external-id references.
+- `testdata/local-tests/glade-org-data-import/cleaners.json`: Data file with an ApexScript cleaner.
 - `site/docs-src/guide/glade-orgs.md`: Product docs for local `sf` target orgs.
 
 Modify:
@@ -342,7 +342,7 @@ go test ./internal/server -run 'TestSOAPApex'
 
 Expected: PASS.
 
-## Task 3: Agent C - Partner SOAP for NimbleAMS Upsert
+## Task 3: Agent C - Partner SOAP for manifest import Upsert
 
 **Files:**
 
@@ -354,7 +354,7 @@ Expected: PASS.
 
 Create tests:
 
-- `TestPartnerSOAPDescribeSObjectsReturnsNimbleForceFields`
+- `TestPartnerSOAPDescribeSObjectsReturnsImportToolFields`
 - `TestPartnerSOAPUpsertCreatesAndUpdatesByExternalID`
 - `TestPartnerSOAPUpsertResolvesRelationshipExternalID`
 - `TestPartnerSOAPUpsertXsiNilClearsField`
@@ -386,7 +386,7 @@ Support only:
 </describeSObjects>
 ```
 
-Return field data needed by NimbleForce:
+Return field data needed by a manifest import tool:
 
 - `name`
 - `label`
@@ -399,7 +399,7 @@ Return field data needed by NimbleForce:
 - `relationshipName`
 - `referenceTo`
 
-Return object data needed by NimbleForce mapping:
+Return object data needed by a manifest import tool mapping:
 
 - `name`
 - `label`
@@ -533,18 +533,18 @@ go test ./internal/server -run 'TestBulkV1'
 
 Expected: PASS.
 
-## Task 5: Agent E - NimbleAMS Compatibility Fixtures and Smoke Proof
+## Task 5: Agent E - Manifest Import Compatibility Fixtures and Smoke Proof
 
 **Files:**
 
-- Create: `testdata/local-tests/glade-org-nimbleams/insertOrder.json`
-- Create: `testdata/local-tests/glade-org-nimbleams/accounts.json`
-- Create: `testdata/local-tests/glade-org-nimbleams/contacts.json`
-- Create: `testdata/local-tests/glade-org-nimbleams/cleaners.json`
+- Create: `testdata/local-tests/glade-org-data-import/insertOrder.json`
+- Create: `testdata/local-tests/glade-org-data-import/accounts.json`
+- Create: `testdata/local-tests/glade-org-data-import/contacts.json`
+- Create: `testdata/local-tests/glade-org-data-import/cleaners.json`
 - Create: `scripts/smoke_glade_org_sf.sh`
-- Create or modify: `internal/server/nimbleams_compat_test.go`
+- Create or modify: `internal/server/third_party_import_compat_test.go`
 
-- [ ] **Step 1: Add NimbleAMS-shaped data files**
+- [ ] **Step 1: Add manifest-based data files**
 
 Create `insertOrder.json`:
 
@@ -621,7 +621,7 @@ Create `cleaners.json`:
 
 - [ ] **Step 2: Add server compatibility test**
 
-Write `TestNimbleAMSRouteSetSupportsImportShape` in `internal/server/nimbleams_compat_test.go`. It should not shell out to npm. It should exercise the exact server routes the package uses:
+Write `TestThirdPartyImportRouteSetSupportsImportShape` in `internal/server/third_party_import_compat_test.go`. It should not shell out to npm. It should exercise the exact server routes the package uses:
 
 - REST `GET /query?q=...`
 - Partner SOAP `describeSObjects`
@@ -682,7 +682,7 @@ go run ./cmd/glade db query --db "$db" --project . --json "SELECT Id, Name FROM 
 Run:
 
 ```bash
-go test ./internal/server -run 'TestNimbleAMS|TestPartnerSOAP|TestSOAPApex|TestBulkV1'
+go test ./internal/server -run 'TestThirdPartyImport|TestPartnerSOAP|TestSOAPApex|TestBulkV1'
 ```
 
 Expected: PASS.
@@ -705,7 +705,7 @@ Create `site/docs-src/guide/glade-orgs.md` with these sections:
 - `Register it with sf`
 - `Run sf data commands`
 - `Run sf apex`
-- `Run NimbleAMS data import`
+- `Run manifest-based data import`
 - `Supported locally`
 - `Not supported locally`
 
@@ -717,7 +717,7 @@ glade org start my-glade-org
 glade org auth my-glade-org
 sf data create record -o my-glade-org -s Account -v "Name='Local'"
 sf apex run -o my-glade-org -f scripts/seed.apex
-sf nimbleams data import -f ./data/insertOrder.json -u my-glade-org
+sf data import tree -p ./data/insertOrder.json -o my-glade-org
 ```
 
 State that `-u` and `-o` both depend on how the installed `sf` command defines its target-org flag.
@@ -795,9 +795,9 @@ Expected when `sf` is installed: it creates a local org, registers an `sf` alias
 
 Expected when `sf` is missing: script prints `sf is not installed; skipping smoke` and exits 0.
 
-- [ ] **Step 5: Manual NimbleAMS proof**
+- [ ] **Step 5: Manual manifest import proof**
 
-If the `sf nimbleams` command is installed in the developer environment, run:
+Run the local import smoke when the installed `sf` CLI supports tree import:
 
 ```bash
 tmp="$(mktemp -d)"
@@ -808,18 +808,18 @@ server_pid="$!"
 trap 'kill "$server_pid" >/dev/null 2>&1 || true; rm -rf "$tmp"' EXIT
 sleep 1
 go run ./cmd/glade org auth my-glade-org --sf-config-dir "$SF_CONFIG_DIR"
-sf nimbleams data import -f ./testdata/local-tests/glade-org-nimbleams/insertOrder.json -u my-glade-org
+sf data import tree -p ./testdata/local-tests/glade-org-data-import/insertOrder.json -o my-glade-org
 go run ./cmd/glade db query --db "$tmp/my-glade-org.sqlite" --project . --json "SELECT Id, Name FROM Account"
 ```
 
-Expected: the imported Account rows appear in the query output. If `sf nimbleams` is not installed, record that the route-level NimbleAMS compatibility test passed and the real plugin smoke was not available.
+Expected: the imported Account rows appear in the query output. If the installed `sf` CLI lacks tree import, record that the route-level manifest import compatibility test passed and the CLI smoke was not available.
 
 - [ ] **Step 6: Commit**
 
 After all required verification passes:
 
 ```bash
-git add internal/gladecli internal/server scripts testdata/local-tests/glade-org-nimbleams site/docs-src docs/superpowers/plans/2026-06-16-glade-org-sf-target.md
+git add internal/gladecli internal/server scripts testdata/local-tests/glade-org-data-import site/docs-src docs/superpowers/plans/2026-06-16-glade-org-sf-target.md
 git commit -m "feat: add local glade org sf targets"
 ```
 
@@ -860,10 +860,10 @@ npm --prefix site test
 bash scripts/smoke_glade_org_sf.sh
 ```
 
-And this user path works when `sf nimbleams` is installed:
+And this user path works when tree import is available:
 
 ```bash
-sf nimbleams data import -f ./testdata/local-tests/glade-org-nimbleams/insertOrder.json -u my-glade-org
+sf data import tree -p ./testdata/local-tests/glade-org-data-import/insertOrder.json -o my-glade-org
 ```
 
 The rows must land in the SQLite database named by `glade org create`.

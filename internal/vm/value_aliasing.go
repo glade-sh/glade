@@ -1767,7 +1767,7 @@ func sameCollectionType(left, right Value) bool {
 
 // staticFieldValueByRef consults the per-VM reverse index built by
 // collectStaticValueRefs. It avoids scanning every class for every lookup;
-// nams profiles showed findValueByRef at 184 s cum / 15 % CPU when this
+// large profiles showed findValueByRef at 184 s cum / 15 % CPU when this
 // walked all classes × all static fields per ref.
 func (vm *VM) staticFieldValueByRef(ref uint64) (Value, bool) {
 	if ref == 0 {
