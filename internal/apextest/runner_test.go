@@ -32,7 +32,7 @@ func firstRunProblem(run testreport.Run) string {
 
 func TestRunExecutesAnonymousSubsetTestMethods(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"verifiable","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"samplepkg","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/MathTest.cls"), `
 @isTest
 private class MathTest {
@@ -83,7 +83,7 @@ private class CacheToggleTest {
 
 func TestRunStaticTestClassCallWinsOverSameNameField(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"verifiable","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"samplepkg","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/TestCustomizationSettings.cls"), `
 @isTest
 private class TestCustomizationSettings {
@@ -1615,7 +1615,7 @@ func TestCompileProjectClassesKeepsDuplicateDependencyMethodsSeparate(t *testing
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
 	consumerRoot := filepath.Join(root, "consumer")
-	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"NU","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"PKG","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/Shared.cls"), `
 public class Shared {
   private String DepMarker;
@@ -1657,7 +1657,7 @@ func TestCompileProjectMethodsKeepsDuplicateSameSignatureMethodsSeparate(t *test
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
 	consumerRoot := filepath.Join(root, "consumer")
-	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"NU","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"PKG","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/SObjectTestData.cls"), `
 public abstract class SObjectTestData {
   public abstract String getSObjectType();
@@ -1761,7 +1761,7 @@ public class SharedHelper {
   }
 }
 `)
-	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"otherpkg","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
   managedPackageDependencies: ["pkg:../dep:1.0"]
 `)
@@ -1815,7 +1815,7 @@ global class Injector {
   }
 }
 `)
-	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"otherpkg","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
   managedPackageDependencies: ["pkg:../dep:1.0"]
 `)
@@ -2062,7 +2062,7 @@ global class Injector {
   }
 }
 `)
-	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"otherpkg","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
   managedPackageDependencies: ["pkg:../dep:1.0"]
 `)
@@ -4180,15 +4180,15 @@ private class TextIdFieldTest {
 
 func TestProjectRuntimeResolvesCustomObjectFieldTokensFromMetadata(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"verifiable"}`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/VfiHospitalAffiliation__c/VfiHospitalAffiliation__c.object-meta.xml"), `
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"samplepkg"}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/SampleAffiliation__c/SampleAffiliation__c.object-meta.xml"), `
 <CustomObject>
   <label>Hospital Affiliation</label>
   <pluralLabel>Hospital Affiliations</pluralLabel>
   <sharingModel>ReadWrite</sharingModel>
 </CustomObject>
 `)
-	writeFile(t, filepath.Join(root, "force-app/main/default/objects/VfiHospitalAffiliation__c/fields/Type__c.field-meta.xml"), `
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/SampleAffiliation__c/fields/Type__c.field-meta.xml"), `
 <CustomField>
   <fullName>Type__c</fullName>
   <label>Type</label>
@@ -4207,10 +4207,10 @@ func TestProjectRuntimeResolvesCustomObjectFieldTokensFromMetadata(t *testing.T)
 @isTest
 private class SchemaTokenTest {
   @isTest static void resolvesFieldToken() {
-    System.assertNotEquals(null, VfiHospitalAffiliation__c.Type__c);
-    System.assertEquals('verifiable__VfiHospitalAffiliation__c', VfiHospitalAffiliation__c.SObjectType.getDescribe().getName());
-    System.assertEquals('VfiHospitalAffiliation__c', VfiHospitalAffiliation__c.SObjectType.getDescribe().getLocalName());
-    System.assertEquals('verifiable__Type__c', VfiHospitalAffiliation__c.Type__c.getDescribe().getName());
+    System.assertNotEquals(null, SampleAffiliation__c.Type__c);
+    System.assertEquals('samplepkg__SampleAffiliation__c', SampleAffiliation__c.SObjectType.getDescribe().getName());
+    System.assertEquals('SampleAffiliation__c', SampleAffiliation__c.SObjectType.getDescribe().getLocalName());
+    System.assertEquals('samplepkg__Type__c', SampleAffiliation__c.Type__c.getDescribe().getName());
   }
 }
 `)
@@ -5322,7 +5322,7 @@ private class DataRuntimeTest {
 
 func TestRunNamespacedFieldMapDoesNotExposeSiblingDeprecatedField(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"NU","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"PKG","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Application2__c/fields/Account2__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Account2__c</fullName><type>Lookup</type><referenceTo>Account</referenceTo><relationshipName>Account2__r</relationshipName></CustomField>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Application__c/fields/Account__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Account__c</fullName><type>Lookup</type><referenceTo>Account</referenceTo><relationshipName>Account__r</relationshipName></CustomField>`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/NamespacedFieldMapTest.cls"), `
@@ -5568,7 +5568,7 @@ func TestRunResolvesNamespacedDependencyVisualforcePageReferences(t *testing.T) 
 	consumerRoot := filepath.Join(root, "consumer")
 	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(depRoot, "force-app/main/default/pages/Order.page"), `<apex:page/>`)
-	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"otherpkg","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
   managedPackageDependencies: ["pkg:../dep:1.0"]
 `)
@@ -5698,8 +5698,8 @@ public class StaticEndpointService {
 func TestProjectRuntimeStaticFieldKeepsCommonSObjectWhenNestedTypeSharesName(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "force-app/main/classes/SetupDataMapping.cls"), `
-public class SetupDataMapping {
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SampleDataMapping.cls"), `
+public class SampleDataMapping {
   public Organization organization;
 
   public class Organization {
@@ -6952,7 +6952,7 @@ func TestRecordProjectReferencedStandardFieldKeepsInferredShapeUnknown(t *testin
 
 func TestOrgFromIndexIncludesProjectReferencedCustomLookupFields(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"otherpkg","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/objects/pkg__Order__c/pkg__Order__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Order</label></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/objects/pkg__Entity__c/pkg__Entity__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Entity</label></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/OrderProbe.cls"), `
@@ -7060,7 +7060,7 @@ public class PaymentProbe {
 
 func TestOrgFromIndexIncludesProjectReferencedManagedFieldTokens(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"otherpkg","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/PasscodeProbe.cls"), `
 public class PasscodeProbe {
 	public static void touch() {
@@ -7356,7 +7356,7 @@ func TestOrgFromIndexHidesManagedDependencyApexClassSource(t *testing.T) {
 public class DependencyTestData {
 }
 `)
-	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"namespace":"otherpkg","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
   managedPackageDependencies: ["pkg:../dep:1.0"]
 `)

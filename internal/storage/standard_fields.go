@@ -1090,7 +1090,7 @@ func ensureReferenceTarget(definition *ObjectDefinition, fieldName string, targe
 
 func appendUniqueStringsFold(values []string, additions ...string) []string {
 	// For small slices the linear scan dominates the work and avoids a map
-	// allocation. The crossover from benchmarks against the nams workspace
+	// allocation. The crossover from benchmarks against the large workspace
 	// is in the high single digits; pick 8 conservatively.
 	if len(values)+len(additions) <= 8 {
 		for _, addition := range additions {

@@ -11,7 +11,7 @@ func TestParseYAMLSubset(t *testing.T) {
 project:
   root: .
   packageDirs: ["force-app", "packages/core"]
-  defaultNamespace: verifiable
+  defaultNamespace: samplepkg
   managedPackageDependencies: ["pkg:../pkg:1.2", "pkg2:/tmp/pkg"]
 `)
 	if err != nil {
@@ -23,7 +23,7 @@ project:
 	if got := len(cfg.Project.PackageDirs); got != 2 {
 		t.Fatalf("package dir count = %d", got)
 	}
-	if cfg.Project.DefaultNamespace != "verifiable" {
+	if cfg.Project.DefaultNamespace != "samplepkg" {
 		t.Fatalf("default namespace = %q", cfg.Project.DefaultNamespace)
 	}
 	if got := len(cfg.Project.ManagedPackageDependencies); got != 2 {

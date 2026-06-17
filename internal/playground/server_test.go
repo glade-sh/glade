@@ -618,7 +618,7 @@ func TestServerListsLoadsAndRunsLocalProjectReference(t *testing.T) {
 
 func TestServerLoadsProjectReferenceAsLocalSource(t *testing.T) {
 	projectRoot := t.TempDir()
-	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"name":"local-ref","namespace":"verifiable","sourceApiVersion":"65.0"}`)
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"name":"local-ref","namespace":"samplepkg","sourceApiVersion":"65.0"}`)
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/NextGenSettingService.cls"), `public class NextGenSettingService {
   public static String activateNextGenSetting() {
     return 'activated';

@@ -64,7 +64,7 @@ func TestSObjectValueEqualityTreatsUnqualifiedAndNamespacedCustomObjectAsEquival
 	setExplicitSObjectField(&local, "Id", String("a010000000000001"))
 	local.Fields["Id"] = String("a010000000000001")
 
-	namespaced := Object("NU__Schedule__c")
+	namespaced := Object("PKG__Schedule__c")
 	setExplicitSObjectField(&namespaced, "Id", String("a010000000000001"))
 	namespaced.Fields["Id"] = String("a010000000000001")
 

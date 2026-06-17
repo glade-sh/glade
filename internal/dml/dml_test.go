@@ -224,7 +224,7 @@ func TestDMLRejectsInvalidSystemOwnerIDPrefix(t *testing.T) {
 
 func TestValidationFormulaResolvesForeignNamespacedRelationshipFields(t *testing.T) {
 	org := storage.NewOrgState()
-	org.Namespace = "namz"
+	org.Namespace = "otherpkg"
 	org.Objects["pkg__Entity__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{APIName: "pkg__Entity__c", KeyPrefix: "a01", Fields: map[string]storage.Field{
 			"Name": {APIName: "Name", Type: storage.FieldString},
@@ -282,14 +282,14 @@ func TestValidationFormulaResolvesForeignNamespacedRelationshipFields(t *testing
 
 func TestValidationFormulaUsesObjectNamespaceBeforeOrgNamespace(t *testing.T) {
 	org := storage.NewOrgState()
-	org.Namespace = "namz"
+	org.Namespace = "otherpkg"
 	org.Objects["pkg__Line__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName:   "pkg__Line__c",
 			KeyPrefix: "a04",
 			Fields: map[string]storage.Field{
-				"pkg__Entity__c":  {APIName: "pkg__Entity__c", Type: storage.FieldString},
-				"namz__Entity__c": {APIName: "namz__Entity__c", Type: storage.FieldString},
+				"pkg__Entity__c":      {APIName: "pkg__Entity__c", Type: storage.FieldString},
+				"otherpkg__Entity__c": {APIName: "otherpkg__Entity__c", Type: storage.FieldString},
 			},
 			ValidationRules: []storage.ValidationRule{{
 				Name:                  "EntityMustMatch",
@@ -305,8 +305,8 @@ func TestValidationFormulaUsesObjectNamespaceBeforeOrgNamespace(t *testing.T) {
 	result := engine.Insert([]storage.Record{{
 		Object: "pkg__Line__c",
 		Fields: map[string]storage.Value{
-			"pkg__Entity__c":  storage.StringValue("right"),
-			"namz__Entity__c": storage.StringValue("wrong"),
+			"pkg__Entity__c":      storage.StringValue("right"),
+			"otherpkg__Entity__c": storage.StringValue("wrong"),
 		},
 	}})
 	if !result[0].Success {
@@ -578,7 +578,7 @@ func TestUpdateRequiredFieldCaseVariantCanonicalizesAlias(t *testing.T) {
 
 func TestUpdateCanonicalAliasReplacesStoredNamespacedField(t *testing.T) {
 	org := storage.NewOrgState()
-	org.Namespace = "NU"
+	org.Namespace = "PKG"
 	org.Objects["ExternalPaymentProfile__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName:   "ExternalPaymentProfile__c",
@@ -592,7 +592,7 @@ func TestUpdateCanonicalAliasReplacesStoredNamespacedField(t *testing.T) {
 				Object: "ExternalPaymentProfile__c",
 				ID:     "a10000000000001AAA",
 				Fields: map[string]storage.Value{
-					"NU__FirstName__c": storage.StringValue("Eric"),
+					"PKG__FirstName__c": storage.StringValue("Eric"),
 				},
 			},
 		},
@@ -608,7 +608,7 @@ func TestUpdateCanonicalAliasReplacesStoredNamespacedField(t *testing.T) {
 		t.Fatalf("update = %#v", update[0])
 	}
 	stored := org.Objects["ExternalPaymentProfile__c"].Records["a10000000000001AAA"]
-	if _, ok := stored.Fields["NU__FirstName__c"]; ok {
+	if _, ok := stored.Fields["PKG__FirstName__c"]; ok {
 		t.Fatalf("stored namespaced alias remained: %#v", stored.Fields)
 	}
 	if got := stored.Fields["FirstName__c"].String; got != "Eddy" {
@@ -1072,9 +1072,9 @@ func TestInsertAppliesRecordTypeFormulaDefaults(t *testing.T) {
 
 func TestInsertDefaultsRecordTypeIDAndRecordTypePicklistDefaults(t *testing.T) {
 	org := testOrg()
-	org.Objects["FacilityCredentialingEvent__c"] = storage.ObjectState{
+	org.Objects["FacilityEvent__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "FacilityCredentialingEvent__c",
+			APIName:   "FacilityEvent__c",
 			KeyPrefix: "a01",
 			Fields: map[string]storage.Field{
 				"Name":         {APIName: "Name", Type: storage.FieldString, Required: true},
@@ -1093,8 +1093,8 @@ func TestInsertDefaultsRecordTypeIDAndRecordTypePicklistDefaults(t *testing.T) {
 				},
 				{
 					ID:            "012000000000012AAA",
-					DeveloperName: "CVO",
-					Name:          "CVO",
+					DeveloperName: "Secondary",
+					Name:          "Secondary",
 					Active:        true,
 					Available:     true,
 				},
@@ -1120,7 +1120,7 @@ func TestInsertDefaultsRecordTypeIDAndRecordTypePicklistDefaults(t *testing.T) {
 	engine := NewEngine(&org)
 
 	insert := engine.Insert([]storage.Record{{
-		Object: "FacilityCredentialingEvent__c",
+		Object: "FacilityEvent__c",
 		Fields: map[string]storage.Value{
 			"Name": storage.StringValue("Internal"),
 		},
@@ -1128,7 +1128,7 @@ func TestInsertDefaultsRecordTypeIDAndRecordTypePicklistDefaults(t *testing.T) {
 	if !insert[0].Success {
 		t.Fatalf("insert = %#v", insert[0])
 	}
-	stored := org.Objects["FacilityCredentialingEvent__c"].Records[insert[0].ID]
+	stored := org.Objects["FacilityEvent__c"].Records[insert[0].ID]
 	if got := stored.Fields["RecordTypeId"]; got.Kind != storage.ValueID || got.ID != "012000000000011AAA" {
 		t.Fatalf("RecordTypeId = %#v", got)
 	}
@@ -4378,14 +4378,14 @@ TEXT(ParentBundleSubtype__c) != 'Assembled')`, &orgWithSetup, childDefinition, s
 	}
 	namespacedProductDefinition := productDefinition
 	namespacedProductDefinition.Fields = map[string]storage.Field{
-		"NU__Inventory__c":       {APIName: "NU__Inventory__c", Type: storage.FieldDecimal},
-		"NU__InventoryUsed__c":   {APIName: "NU__InventoryUsed__c", Type: storage.FieldDecimal},
-		"NU__InventoryOnHand__c": {APIName: "NU__InventoryOnHand__c", Type: storage.FieldDecimal, Formula: "Inventory__c - InventoryUsed__c"},
-		"NU__RecordTypeName__c":  {APIName: "NU__RecordTypeName__c", Type: storage.FieldString, DefaultValue: "$RecordType.Name"},
-		"NU__TrackInventory__c":  {APIName: "NU__TrackInventory__c", Type: storage.FieldBoolean, DefaultValue: "false"},
+		"PKG__Inventory__c":       {APIName: "PKG__Inventory__c", Type: storage.FieldDecimal},
+		"PKG__InventoryUsed__c":   {APIName: "PKG__InventoryUsed__c", Type: storage.FieldDecimal},
+		"PKG__InventoryOnHand__c": {APIName: "PKG__InventoryOnHand__c", Type: storage.FieldDecimal, Formula: "Inventory__c - InventoryUsed__c"},
+		"PKG__RecordTypeName__c":  {APIName: "PKG__RecordTypeName__c", Type: storage.FieldString, DefaultValue: "$RecordType.Name"},
+		"PKG__TrackInventory__c":  {APIName: "PKG__TrackInventory__c", Type: storage.FieldBoolean, DefaultValue: "false"},
 	}
 	namespacedOrg := org
-	namespacedOrg.Namespace = "NU"
+	namespacedOrg.Namespace = "PKG"
 	namespacedProduct := namespacedOrg.Objects["Product__c"]
 	namespacedProduct.Definition = namespacedProductDefinition
 	namespacedOrg.Objects["Product__c"] = namespacedProduct
@@ -4400,7 +4400,7 @@ TEXT(ParentBundleSubtype__c) != 'Assembled')`, &orgWithSetup, childDefinition, s
 	}
 	namespacedChildDefinition := childDefinition
 	namespacedChildDefinition.Fields = map[string]storage.Field{
-		"NU__Product2__c": {APIName: "NU__Product2__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}},
+		"PKG__Product2__c": {APIName: "PKG__Product2__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}},
 	}
 	matches, ok = evaluateValidationFormulaInOrg("Product2__r.TrackInventory__c", &namespacedOrg, namespacedChildDefinition, storage.Record{
 		Object: "Line__c",

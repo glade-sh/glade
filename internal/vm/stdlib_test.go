@@ -3442,10 +3442,10 @@ func TestTypeForNameAcceptsPlatformStringObjects(t *testing.T) {
 
 func TestExecTypeForNameNamespacedMissingClassReturnsNull(t *testing.T) {
 	program, err := CompileAnonymous(`
-Type missing = Type.forName('verifiable', 'ThisClassDoesnotExistInYourOrg');
+Type missing = Type.forName('samplepkg', 'ThisClassDoesnotExistInYourOrg');
 System.assertEquals(null, missing);
-Type existing = Type.forName('verifiable', 'Present');
-System.assertEquals('verifiable.Present', existing.getName());
+Type existing = Type.forName('samplepkg', 'Present');
+System.assertEquals('samplepkg.Present', existing.getName());
 Object built = existing.newInstance();
 System.assertNotEquals(null, built);
 `)
@@ -3453,7 +3453,7 @@ System.assertNotEquals(null, built);
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	if err := machine.RegisterClass(Class{Name: "Present", Namespace: "verifiable", Access: "global"}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "Present", Namespace: "samplepkg", Access: "global"}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {

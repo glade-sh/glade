@@ -1480,7 +1480,7 @@ System.assertEquals('P-1', decoded.ProviderInfo.ProviderId);
 func TestTypedValueFromJSONResolvesNestedFieldTypes(t *testing.T) {
 	machine := New(nil)
 	if err := machine.RegisterClass(Class{
-		Name: "SetupDataMapping.Rows",
+		Name: "SampleDataMapping.Rows",
 		Fields: map[string]Field{
 			"sfField": {Name: "sfField", Type: "String"},
 			"tpField": {Name: "tpField", Type: "String"},
@@ -1489,14 +1489,14 @@ func TestTypedValueFromJSONResolvesNestedFieldTypes(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := machine.RegisterClass(Class{
-		Name: "SetupDataMapping.License",
+		Name: "SampleDataMapping.License",
 		Fields: map[string]Field{
 			"rows": {Name: "rows", Type: "List<Rows>"},
 		},
 	}); err != nil {
 		t.Fatal(err)
 	}
-	value, err := machine.typedValueFromJSON("SetupDataMapping.License", map[string]any{
+	value, err := machine.typedValueFromJSON("SampleDataMapping.License", map[string]any{
 		"rows": []any{
 			map[string]any{"sfField": "Name", "tpField": "name"},
 		},
@@ -1508,7 +1508,7 @@ func TestTypedValueFromJSONResolvesNestedFieldTypes(t *testing.T) {
 	if rows.Kind != ValueList || len(rows.List) != 1 {
 		t.Fatalf("rows = %#v", rows)
 	}
-	if got := rows.List[0].Type; got != "SetupDataMapping.Rows" {
+	if got := rows.List[0].Type; got != "SampleDataMapping.Rows" {
 		t.Fatalf("row type = %q", got)
 	}
 	if got := rows.List[0].Fields["sfField"].Text; got != "Name" {
@@ -1520,7 +1520,7 @@ func TestTypedValueFromJSONResolvesNamespacedInnerSObjectWrapperFields(t *testin
 	machine := New(nil)
 	if err := machine.RegisterClass(Class{
 		Name:      "Outer.Response",
-		Namespace: "NU",
+		Namespace: "PKG",
 		Fields: map[string]Field{
 			"CartItems": {Name: "CartItems", Type: "List<CartItemWrapper>", Access: "public"},
 		},
@@ -1529,7 +1529,7 @@ func TestTypedValueFromJSONResolvesNamespacedInnerSObjectWrapperFields(t *testin
 	}
 	if err := machine.RegisterClass(Class{
 		Name:      "Outer.CartItemWrapper",
-		Namespace: "NU",
+		Namespace: "PKG",
 		Fields: map[string]Field{
 			"CartItem": {Name: "CartItem", Type: "CartItem__c", Access: "public"},
 		},
@@ -1549,7 +1549,7 @@ func TestTypedValueFromJSONResolvesNamespacedInnerSObjectWrapperFields(t *testin
 		Records: map[storage.ID]storage.Record{},
 	}
 	machine.SetOrg(&org)
-	value, err := machine.typedValueFromJSON("NU.Outer.Response", map[string]any{
+	value, err := machine.typedValueFromJSON("PKG.Outer.Response", map[string]any{
 		"CartItems": []any{
 			map[string]any{
 				"CartItem": map[string]any{"OrderItem__c": "a01000000000001", "Total__c": int64(5)},
@@ -1986,10 +1986,10 @@ System.assertEquals('Item', items[0].Name);
 	if err != nil {
 		t.Fatal(err)
 	}
-	org := storage.OrgState{Namespace: "NU", Objects: map[string]storage.ObjectState{
-		"NU__Cart__c": {
+	org := storage.OrgState{Namespace: "PKG", Objects: map[string]storage.ObjectState{
+		"PKG__Cart__c": {
 			Definition: storage.ObjectDefinition{
-				APIName:   "NU__Cart__c",
+				APIName:   "PKG__Cart__c",
 				KeyPrefix: "a01",
 				Fields:    map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
 			},
@@ -2011,20 +2011,20 @@ System.assertEquals('Item', items[0].Name);
 			},
 			Records: map[storage.ID]storage.Record{},
 		},
-		"NU__CartItem__c": {
+		"PKG__CartItem__c": {
 			Definition: storage.ObjectDefinition{
-				APIName:   "NU__CartItem__c",
+				APIName:   "PKG__CartItem__c",
 				KeyPrefix: "a03",
 				Fields: map[string]storage.Field{
-					"Id":          {APIName: "Id", Type: storage.FieldID},
-					"Name":        {APIName: "Name", Type: storage.FieldString},
-					"NU__Cart__c": {APIName: "NU__Cart__c", Type: storage.FieldReference, ReferenceTo: []string{"NU__Cart__c"}, RelationshipName: "NU__Cart__r", ChildRelationshipName: "NU__CartItems__r"},
+					"Id":           {APIName: "Id", Type: storage.FieldID},
+					"Name":         {APIName: "Name", Type: storage.FieldString},
+					"PKG__Cart__c": {APIName: "PKG__Cart__c", Type: storage.FieldReference, ReferenceTo: []string{"PKG__Cart__c"}, RelationshipName: "PKG__Cart__r", ChildRelationshipName: "PKG__CartItems__r"},
 				},
 				Relations: []storage.Relationship{{
-					Field:              "NU__Cart__c",
-					ParentObjects:      []string{"NU__Cart__c"},
-					ParentRelationship: "NU__Cart__r",
-					ChildRelationship:  "NU__CartItems__r",
+					Field:              "PKG__Cart__c",
+					ParentObjects:      []string{"PKG__Cart__c"},
+					ParentRelationship: "PKG__Cart__r",
+					ChildRelationship:  "PKG__CartItems__r",
 				}},
 			},
 			Records: map[storage.ID]storage.Record{},
@@ -2039,45 +2039,45 @@ System.assertEquals('Item', items[0].Name);
 
 func TestExecJSONDeserializeManagedParentRelationshipWithNamespace(t *testing.T) {
 	program, err := CompileAnonymous(`
-znu__OrderItemLine__c line = (znu__OrderItemLine__c)JSON.deserialize('{"znu__OrderItem__r":{"znu__Entity__c":null}}', znu__OrderItemLine__c.class);
-System.assertNotEquals(null, line.znu__OrderItem__r);
-System.assertEquals(null, line.znu__OrderItem__r.znu__Entity__c);
+zpkg__OrderItemLine__c line = (zpkg__OrderItemLine__c)JSON.deserialize('{"zpkg__OrderItem__r":{"zpkg__Entity__c":null}}', zpkg__OrderItemLine__c.class);
+System.assertNotEquals(null, line.zpkg__OrderItem__r);
+System.assertEquals(null, line.zpkg__OrderItem__r.zpkg__Entity__c);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	org := storage.OrgState{Namespace: "namz", Objects: map[string]storage.ObjectState{
-		"znu__OrderItem__c": {
+	org := storage.OrgState{Namespace: "otherpkg", Objects: map[string]storage.ObjectState{
+		"zpkg__OrderItem__c": {
 			Definition: storage.ObjectDefinition{
-				APIName:   "znu__OrderItem__c",
+				APIName:   "zpkg__OrderItem__c",
 				KeyPrefix: "a01",
 				Fields: map[string]storage.Field{
-					"Id":             {APIName: "Id", Type: storage.FieldID},
-					"znu__Entity__c": {APIName: "znu__Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__Entity__c"}, RelationshipName: "znu__Entity__r"},
+					"Id":              {APIName: "Id", Type: storage.FieldID},
+					"zpkg__Entity__c": {APIName: "zpkg__Entity__c", Type: storage.FieldReference, ReferenceTo: []string{"zpkg__Entity__c"}, RelationshipName: "zpkg__Entity__r"},
 				},
 			},
 			Records: map[storage.ID]storage.Record{},
 		},
-		"znu__OrderItemLine__c": {
+		"zpkg__OrderItemLine__c": {
 			Definition: storage.ObjectDefinition{
-				APIName:   "znu__OrderItemLine__c",
+				APIName:   "zpkg__OrderItemLine__c",
 				KeyPrefix: "a02",
 				Fields: map[string]storage.Field{
-					"Id":                {APIName: "Id", Type: storage.FieldID},
-					"znu__OrderItem__c": {APIName: "znu__OrderItem__c", Type: storage.FieldReference, ReferenceTo: []string{"znu__OrderItem__c"}, RelationshipName: "znu__OrderItem__r"},
+					"Id":                 {APIName: "Id", Type: storage.FieldID},
+					"zpkg__OrderItem__c": {APIName: "zpkg__OrderItem__c", Type: storage.FieldReference, ReferenceTo: []string{"zpkg__OrderItem__c"}, RelationshipName: "zpkg__OrderItem__r"},
 				},
 				Relations: []storage.Relationship{{
-					Field:              "znu__OrderItem__c",
-					ParentObjects:      []string{"znu__OrderItem__c"},
-					ParentRelationship: "znu__OrderItem__r",
+					Field:              "zpkg__OrderItem__c",
+					ParentObjects:      []string{"zpkg__OrderItem__c"},
+					ParentRelationship: "zpkg__OrderItem__r",
 				}},
 			},
 			Records: map[storage.ID]storage.Record{},
 		},
-		"znu__Entity__c": {
+		"zpkg__Entity__c": {
 			Definition: storage.ObjectDefinition{
-				APIName:   "znu__Entity__c",
+				APIName:   "zpkg__Entity__c",
 				KeyPrefix: "a03",
 				Fields:    map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
 			},
@@ -2098,7 +2098,7 @@ System.assertEquals(null, decoded.Children__r[0].Product2__r.Event2__c);
 	if err != nil {
 		t.Fatal(err)
 	}
-	org := storage.OrgState{Namespace: "NU", Objects: map[string]storage.ObjectState{
+	org := storage.OrgState{Namespace: "PKG", Objects: map[string]storage.ObjectState{
 		"Parent__c": {
 			Definition: storage.ObjectDefinition{
 				APIName:   "Parent__c",
@@ -2123,18 +2123,18 @@ System.assertEquals(null, decoded.Children__r[0].Product2__r.Event2__c);
 				APIName:   "Child__c",
 				KeyPrefix: "a00",
 				Fields: map[string]storage.Field{
-					"NU__Container__c": {APIName: "NU__Container__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Children"},
-					"NU__Product2__c":  {APIName: "NU__Product2__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}, RelationshipName: "Product2__r"},
+					"PKG__Container__c": {APIName: "PKG__Container__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Children"},
+					"PKG__Product2__c":  {APIName: "PKG__Product2__c", Type: storage.FieldReference, ReferenceTo: []string{"Product__c"}, RelationshipName: "Product2__r"},
 				},
 				Relations: []storage.Relationship{
 					{
-						Field:              "NU__Container__c",
+						Field:              "PKG__Container__c",
 						ParentObjects:      []string{"Parent__c"},
 						ParentRelationship: "Children",
 						ChildRelationship:  "Children__r",
 					},
 					{
-						Field:              "NU__Product2__c",
+						Field:              "PKG__Product2__c",
 						ParentObjects:      []string{"Product__c"},
 						ParentRelationship: "Product2__r",
 					},
@@ -2154,7 +2154,7 @@ func TestExecJSONDeserializeSObjectChildRelationshipFromSerializedMapSupportsGet
 	program, err := CompileAnonymous(`
 Map<String, Object> payload = new Map<String, Object>();
 payload.put('Id', 'a00000000000001AAA');
-payload.put('verifiable__EducationLast__r', new Map<String, Object>{
+payload.put('samplepkg__LatestTraining__r', new Map<String, Object>{
 	'records' => new List<SObject>{
 		new Education__c(Id = 'a01000000000001AAA', SchoolName__c = 'Test School')
 	},
@@ -2162,7 +2162,7 @@ payload.put('verifiable__EducationLast__r', new Map<String, Object>{
 	'done' => true
 });
 Sanction_Exclusion_Scan__c decoded = (Sanction_Exclusion_Scan__c)JSON.deserialize(JSON.serialize(payload), Sanction_Exclusion_Scan__c.class);
-List<Education__c> records = (List<Education__c>)decoded.getSObjects('verifiable__EducationLast__r');
+List<Education__c> records = (List<Education__c>)decoded.getSObjects('samplepkg__LatestTraining__r');
 System.assertEquals(1, records.size());
 System.assertEquals('Test School', records[0].SchoolName__c);
 `)
@@ -2170,7 +2170,7 @@ System.assertEquals('Test School', records[0].SchoolName__c);
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	org := storage.OrgState{Namespace: "verifiable", Objects: map[string]storage.ObjectState{
+	org := storage.OrgState{Namespace: "samplepkg", Objects: map[string]storage.ObjectState{
 		"Sanction_Exclusion_Scan__c": {
 			Definition: storage.ObjectDefinition{
 				APIName:   "Sanction_Exclusion_Scan__c",
@@ -2194,7 +2194,7 @@ System.assertEquals('Test School', records[0].SchoolName__c);
 					Field:              "LastVerification__c",
 					ParentObjects:      []string{"Sanction_Exclusion_Scan__c"},
 					ParentRelationship: "LastVerification__r",
-					ChildRelationship:  "EducationLast",
+					ChildRelationship:  "LatestTraining",
 				}},
 			},
 			Records: map[storage.ID]storage.Record{},

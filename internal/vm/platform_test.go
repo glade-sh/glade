@@ -3671,7 +3671,7 @@ func TestAssertEqualsTreatsCurrentNamespaceApexStubMessagesAsEquivalent(t *testi
 	program, err := CompileAnonymous(`
 System.assertEquals(
     'Wanted but not invoked: fflib_MyList__sfdc_ApexStub.add(String).',
-    'Wanted but not invoked: NU.fflib_MyList__sfdc_ApexStub.add(String).'
+    'Wanted but not invoked: PKG.fflib_MyList__sfdc_ApexStub.add(String).'
 );
 	`)
 	if err != nil {
@@ -3679,7 +3679,7 @@ System.assertEquals(
 	}
 	machine := New(nil)
 	org := storage.NewOrgState()
-	org.Namespace = "NU"
+	org.Namespace = "PKG"
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -8036,7 +8036,7 @@ System.assertEquals('Setup_Data__c', cache.get(Setup_Data__c.SObjectType).getNam
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	org.Namespace = "verifiable"
+	org.Namespace = "samplepkg"
 	org.Objects["Setup_Data__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName: "Setup_Data__c",
@@ -8044,12 +8044,12 @@ System.assertEquals('Setup_Data__c', cache.get(Setup_Data__c.SObjectType).getNam
 		},
 		Records: map[storage.ID]storage.Record{},
 	}
-	org.Objects["verifiable__Setup_Data__c"] = storage.ObjectState{
+	org.Objects["samplepkg__Setup_Data__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "verifiable__Setup_Data__c",
+			APIName: "samplepkg__Setup_Data__c",
 			Fields: map[string]storage.Field{
-				"Name":                       {APIName: "Name", Type: storage.FieldString},
-				"verifiable__Webhook_Url__c": {APIName: "verifiable__Webhook_Url__c", Type: storage.FieldString},
+				"Name":                      {APIName: "Name", Type: storage.FieldString},
+				"samplepkg__Webhook_Url__c": {APIName: "samplepkg__Webhook_Url__c", Type: storage.FieldString},
 			},
 		},
 		Records: map[storage.ID]storage.Record{},
@@ -8217,36 +8217,36 @@ System.assertNotEquals(String.valueOf(alpha.Id).left(3), String.valueOf(beta.Id)
 func TestChildRelationshipListTypePrefersCurrentPackageObjectOverAliasRecordType(t *testing.T) {
 	machine := New(nil)
 	org := storage.NewOrgState()
-	org.Namespace = "NU"
-	org.Objects["NU__Cart__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "NU__Cart__c"}}
+	org.Namespace = "PKG"
+	org.Objects["PKG__Cart__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "PKG__Cart__c"}}
 	org.Objects["CartItem"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName: "CartItem",
 			Relations: []storage.Relationship{{
 				Field:             "Cart__c",
-				ParentObjects:     []string{"NU__Cart__c"},
+				ParentObjects:     []string{"PKG__Cart__c"},
 				ChildRelationship: "CartItems__r",
 			}},
 		},
 	}
-	org.Objects["NU__CartItem__c"] = storage.ObjectState{
+	org.Objects["PKG__CartItem__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "NU__CartItem__c",
+			APIName: "PKG__CartItem__c",
 			Fields: map[string]storage.Field{
-				"NU__Cart__c": {APIName: "NU__Cart__c", Type: storage.FieldReference, ReferenceTo: []string{"NU__Cart__c"}, ChildRelationshipName: "NU__CartItems__r"},
+				"PKG__Cart__c": {APIName: "PKG__Cart__c", Type: storage.FieldReference, ReferenceTo: []string{"PKG__Cart__c"}, ChildRelationshipName: "PKG__CartItems__r"},
 			},
 			Relations: []storage.Relationship{{
-				Field:             "NU__Cart__c",
-				ParentObjects:     []string{"NU__Cart__c"},
-				ChildRelationship: "NU__CartItems__r",
+				Field:             "PKG__Cart__c",
+				ParentObjects:     []string{"PKG__Cart__c"},
+				ChildRelationship: "PKG__CartItems__r",
 			}},
 		},
 	}
 	machine.SetOrg(&org)
 
-	got := machine.childRelationshipListType("NU__Cart__c", "CartItems__r", []storage.Record{{Object: "CartItem"}})
-	if got != "NU__CartItem__c" {
-		t.Fatalf("childRelationshipListType = %q, want NU__CartItem__c", got)
+	got := machine.childRelationshipListType("PKG__Cart__c", "CartItems__r", []storage.Record{{Object: "CartItem"}})
+	if got != "PKG__CartItem__c" {
+		t.Fatalf("childRelationshipListType = %q, want PKG__CartItem__c", got)
 	}
 }
 
@@ -8326,14 +8326,14 @@ System.Assert.isInstanceOfType(value, qualified);
 
 func TestExecTypeForNameNamespacedNestedClassPreservesNamespace(t *testing.T) {
 	program, err := CompileAnonymous(`
-Type inner = Type.forName('NU', 'SystemUtilTest.TestInnerClass');
-System.assertEquals('NU.SystemUtilTest.TestInnerClass', inner.getName());
+Type inner = Type.forName('PKG', 'SystemUtilTest.TestInnerClass');
+System.assertEquals('PKG.SystemUtilTest.TestInnerClass', inner.getName());
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	if err := machine.RegisterClass(Class{Name: "SystemUtilTest.TestInnerClass", Namespace: "NU"}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "SystemUtilTest.TestInnerClass", Namespace: "PKG"}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {
@@ -8343,14 +8343,14 @@ System.assertEquals('NU.SystemUtilTest.TestInnerClass', inner.getName());
 
 func TestExecClassLiteralGetNameUsesOrgNamespace(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.assertEquals('NU.LocalThing', LocalThing.class.getName());
+System.assertEquals('PKG.LocalThing', LocalThing.class.getName());
 	`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := storage.NewOrgState()
-	org.Namespace = "NU"
+	org.Namespace = "PKG"
 	machine.SetOrg(&org)
 	if err := machine.RegisterClass(Class{Name: "LocalThing"}); err != nil {
 		t.Fatal(err)
@@ -8361,7 +8361,7 @@ System.assertEquals('NU.LocalThing', LocalThing.class.getName());
 }
 
 func TestExecNamespacedNestedTypeNewInstanceMatchesInheritedInterface(t *testing.T) {
-	makeProgram, err := CompileAnonymous(`return Type.forName('NU', 'PaymentGatewayServiceTest.MockPaymentGatewayWithTwoPhase').newInstance();`)
+	makeProgram, err := CompileAnonymous(`return Type.forName('PKG', 'PaymentGatewayServiceTest.MockPaymentGatewayWithTwoPhase').newInstance();`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -8374,10 +8374,10 @@ System.assert(gateway instanceof IPaymentGateway2);
 	}
 	machine := New(nil)
 	for _, class := range []Class{
-		{Name: "IPaymentGateway2", Namespace: "NU", IsInterface: true},
-		{Name: "PaymentGatewayServiceTest.MockPaymentGateway", Namespace: "NU", Interfaces: []string{"IPaymentGateway2"}},
-		{Name: "PaymentGatewayServiceTest.MockPaymentGatewayWithTwoPhase", Namespace: "NU", SuperClass: "MockPaymentGateway"},
-		{Name: "PaymentGatewayFactory", Namespace: "NU", Access: "global", Methods: map[string]Method{
+		{Name: "IPaymentGateway2", Namespace: "PKG", IsInterface: true},
+		{Name: "PaymentGatewayServiceTest.MockPaymentGateway", Namespace: "PKG", Interfaces: []string{"IPaymentGateway2"}},
+		{Name: "PaymentGatewayServiceTest.MockPaymentGatewayWithTwoPhase", Namespace: "PKG", SuperClass: "MockPaymentGateway"},
+		{Name: "PaymentGatewayFactory", Namespace: "PKG", Access: "global", Methods: map[string]Method{
 			"make": {Name: "PaymentGatewayFactory.make", ClassName: "PaymentGatewayFactory", Access: "global", IsStatic: true, ReturnType: "Object", Program: makeProgram},
 		}},
 	} {
@@ -8399,7 +8399,7 @@ System.assertNotEquals(null, value);
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	machine.currentNamespace = "namz"
+	machine.currentNamespace = "otherpkg"
 	if err := machine.RegisterClass(Class{Name: "PublicWorker", Namespace: "pkg", Access: "public"}); err != nil {
 		t.Fatal(err)
 	}
@@ -8452,10 +8452,10 @@ System.assert(gateway instanceof IPaymentGateway2);
 	}
 	machine := New(nil)
 	for _, class := range []Class{
-		{Name: "IPaymentGateway2", Namespace: "NU", IsInterface: true},
-		{Name: "PaymentGatewayServiceTest.MockPaymentGateway", Namespace: "NU", Interfaces: []string{"IPaymentGateway2"}},
-		{Name: "PaymentGatewayServiceTest.MockPaymentGatewayWithTwoPhase", Namespace: "NU", SuperClass: "PaymentGatewayServiceTest.MockPaymentGateway"},
-		{Name: "PaymentGatewayFactory", Namespace: "NU", Access: "global", Methods: map[string]Method{
+		{Name: "IPaymentGateway2", Namespace: "PKG", IsInterface: true},
+		{Name: "PaymentGatewayServiceTest.MockPaymentGateway", Namespace: "PKG", Interfaces: []string{"IPaymentGateway2"}},
+		{Name: "PaymentGatewayServiceTest.MockPaymentGatewayWithTwoPhase", Namespace: "PKG", SuperClass: "PaymentGatewayServiceTest.MockPaymentGateway"},
+		{Name: "PaymentGatewayFactory", Namespace: "PKG", Access: "global", Methods: map[string]Method{
 			"make": {Name: "PaymentGatewayFactory.make", ClassName: "PaymentGatewayFactory", Access: "global", IsStatic: true, ReturnType: "Object", Program: makeProgram},
 		}},
 	} {
@@ -8482,12 +8482,12 @@ System.assert(gateway instanceof IPaymentGateway2);
 	}
 	machine := New(nil)
 	for _, class := range []Class{
-		{Name: "IPaymentGateway", Namespace: "NU", IsInterface: true},
-		{Name: "IPaymentGateway2", Namespace: "NU", IsInterface: true},
-		{Name: "MockPaymentGateway", Namespace: "NU", Interfaces: []string{"IPaymentGateway"}},
-		{Name: "PaymentGatewayServiceTest.MockPaymentGateway", Namespace: "NU", Interfaces: []string{"IPaymentGateway2"}},
-		{Name: "PaymentGatewayServiceTest.MockPaymentGatewayWithTwoPhase", Namespace: "NU", SuperClass: "MockPaymentGateway"},
-		{Name: "PaymentGatewayFactory", Namespace: "NU", Access: "global", Methods: map[string]Method{
+		{Name: "IPaymentGateway", Namespace: "PKG", IsInterface: true},
+		{Name: "IPaymentGateway2", Namespace: "PKG", IsInterface: true},
+		{Name: "MockPaymentGateway", Namespace: "PKG", Interfaces: []string{"IPaymentGateway"}},
+		{Name: "PaymentGatewayServiceTest.MockPaymentGateway", Namespace: "PKG", Interfaces: []string{"IPaymentGateway2"}},
+		{Name: "PaymentGatewayServiceTest.MockPaymentGatewayWithTwoPhase", Namespace: "PKG", SuperClass: "MockPaymentGateway"},
+		{Name: "PaymentGatewayFactory", Namespace: "PKG", Access: "global", Methods: map[string]Method{
 			"make": {Name: "PaymentGatewayFactory.make", ClassName: "PaymentGatewayFactory", Access: "global", IsStatic: true, ReturnType: "Object", Program: makeProgram},
 		}},
 	} {
@@ -8511,8 +8511,8 @@ System.assertEquals(0, orders.size());
 	}
 	machine := New(nil)
 	for _, class := range []Class{
-		{Name: "Order", Namespace: "NU"},
-		{Name: "AdjustmentOrder", Namespace: "NU", SuperClass: "Order"},
+		{Name: "Order", Namespace: "PKG"},
+		{Name: "AdjustmentOrder", Namespace: "PKG", SuperClass: "Order"},
 	} {
 		if err := machine.RegisterClass(class); err != nil {
 			t.Fatal(err)
@@ -8534,7 +8534,7 @@ System.assertEquals(3, precedences.get(ExprTokenType.Equals));
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	if err := machine.RegisterClass(Class{Name: "ExprTokenType", Namespace: "NU", EnumValues: []string{"Equals"}}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "ExprTokenType", Namespace: "PKG", EnumValues: []string{"Equals"}}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {
@@ -8544,7 +8544,7 @@ System.assertEquals(3, precedences.get(ExprTokenType.Equals));
 
 func TestExecTypeNewInstanceAllowsNamespacedGenericCollection(t *testing.T) {
 	program, err := CompileAnonymous(`
-Type itemType = Type.forName('namz', 'PriceAdjustment');
+Type itemType = Type.forName('otherpkg', 'PriceAdjustment');
 List<IPersistenceSupport> items = (List<IPersistenceSupport>) Type.forName('List<' + itemType.getName() + '>').newInstance();
 System.assertEquals(0, items.size());
 `)
@@ -8553,8 +8553,8 @@ System.assertEquals(0, items.size());
 	}
 	machine := New(nil)
 	for _, class := range []Class{
-		{Name: "IPersistenceSupport", Namespace: "namz", IsInterface: true},
-		{Name: "PriceAdjustment", Namespace: "namz", Interfaces: []string{"IPersistenceSupport"}},
+		{Name: "IPersistenceSupport", Namespace: "otherpkg", IsInterface: true},
+		{Name: "PriceAdjustment", Namespace: "otherpkg", Interfaces: []string{"IPersistenceSupport"}},
 	} {
 		if err := machine.RegisterClass(class); err != nil {
 			t.Fatal(err)
@@ -11019,17 +11019,17 @@ Test.getEventBus().deliver();
 func TestRecordAsyncJobSplitsNamespacedApexClassRows(t *testing.T) {
 	machine := New(nil)
 	org := testDataOrg()
-	org.Namespace = "verifiable"
+	org.Namespace = "samplepkg"
 	machine.SetOrg(&org)
-	job := AsyncJob{ID: "707000000000001", Kind: "Queueable", Object: Object("verifiable.ActionProcessorQueueable")}
+	job := AsyncJob{ID: "707000000000001", Kind: "Queueable", Object: Object("samplepkg.SampleProcessorQueueable")}
 
 	machine.recordAsyncJob(job, "Queued", "")
 
-	apexClass := machine.Org.Objects["ApexClass"].Records[storage.ID(asyncApexClassID("verifiable.ActionProcessorQueueable"))]
-	if apexClass.Fields["Name"].String != "ActionProcessorQueueable" {
+	apexClass := machine.Org.Objects["ApexClass"].Records[storage.ID(asyncApexClassID("samplepkg.SampleProcessorQueueable"))]
+	if apexClass.Fields["Name"].String != "SampleProcessorQueueable" {
 		t.Fatalf("ApexClass.Name = %#v", apexClass.Fields["Name"])
 	}
-	if apexClass.Fields["NamespacePrefix"].String != "verifiable" {
+	if apexClass.Fields["NamespacePrefix"].String != "samplepkg" {
 		t.Fatalf("ApexClass.NamespacePrefix = %#v", apexClass.Fields["NamespacePrefix"])
 	}
 	asyncJob := machine.Org.Objects["AsyncApexJob"].Records[storage.ID(job.ID)]
@@ -11041,20 +11041,20 @@ func TestRecordAsyncJobSplitsNamespacedApexClassRows(t *testing.T) {
 func TestRecordAsyncJobUsesRegisteredClassNamespace(t *testing.T) {
 	machine := New(nil)
 	org := testDataOrg()
-	org.Namespace = "verifiable"
+	org.Namespace = "samplepkg"
 	machine.SetOrg(&org)
-	if err := machine.RegisterClass(Class{Name: "ActionProcessorQueueable", Namespace: "verifiable"}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "SampleProcessorQueueable", Namespace: "samplepkg"}); err != nil {
 		t.Fatal(err)
 	}
-	job := AsyncJob{ID: "707000000000001", Kind: "Queueable", Object: Object("ActionProcessorQueueable")}
+	job := AsyncJob{ID: "707000000000001", Kind: "Queueable", Object: Object("SampleProcessorQueueable")}
 
 	machine.recordAsyncJob(job, "Queued", "")
 
-	apexClass := machine.Org.Objects["ApexClass"].Records[storage.ID(asyncApexClassID("ActionProcessorQueueable"))]
-	if apexClass.Fields["Name"].String != "ActionProcessorQueueable" {
+	apexClass := machine.Org.Objects["ApexClass"].Records[storage.ID(asyncApexClassID("SampleProcessorQueueable"))]
+	if apexClass.Fields["Name"].String != "SampleProcessorQueueable" {
 		t.Fatalf("ApexClass.Name = %#v", apexClass.Fields["Name"])
 	}
-	if apexClass.Fields["NamespacePrefix"].String != "verifiable" {
+	if apexClass.Fields["NamespacePrefix"].String != "samplepkg" {
 		t.Fatalf("ApexClass.NamespacePrefix = %#v", apexClass.Fields["NamespacePrefix"])
 	}
 }
@@ -11062,7 +11062,7 @@ func TestRecordAsyncJobUsesRegisteredClassNamespace(t *testing.T) {
 func TestRecordAsyncJobReusesExistingApexClassRow(t *testing.T) {
 	machine := New(nil)
 	org := testDataOrg()
-	org.Namespace = "verifiable"
+	org.Namespace = "samplepkg"
 	org.Objects["ApexClass"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{APIName: "ApexClass"},
 		Records: map[storage.ID]storage.Record{
@@ -11070,14 +11070,14 @@ func TestRecordAsyncJobReusesExistingApexClassRow(t *testing.T) {
 				ID:     "01pExistingAAA",
 				Object: "ApexClass",
 				Fields: map[string]storage.Value{
-					"Name":            storage.StringValue("ActionProcessorQueueable"),
-					"NamespacePrefix": storage.StringValue("verifiable"),
+					"Name":            storage.StringValue("SampleProcessorQueueable"),
+					"NamespacePrefix": storage.StringValue("samplepkg"),
 				},
 			},
 		},
 	}
 	machine.SetOrg(&org)
-	job := AsyncJob{ID: "707000000000001", Kind: "Queueable", Object: Object("ActionProcessorQueueable")}
+	job := AsyncJob{ID: "707000000000001", Kind: "Queueable", Object: Object("SampleProcessorQueueable")}
 
 	machine.recordAsyncJob(job, "Queued", "")
 

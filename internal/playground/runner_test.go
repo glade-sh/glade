@@ -67,7 +67,7 @@ System.debug(queried.BillingAddress.street + ' / ' + queried.BillingAddress.city
 
 func TestRunnerTreatsNamespacedProjectAsLocalSource(t *testing.T) {
 	projectRoot := t.TempDir()
-	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"name":"local-project","namespace":"verifiable","sourceApiVersion":"65.0"}`)
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"name":"local-project","namespace":"samplepkg","sourceApiVersion":"65.0"}`)
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/NextGenSettingService.cls"), `public class NextGenSettingService {
   public static String activateNextGenSetting() {
     return 'activated';
@@ -99,19 +99,19 @@ func TestRunnerTreatsNamespacedProjectAsLocalSource(t *testing.T) {
 
 func TestRunnerLoadsProjectReferenceCustomObjectSchema(t *testing.T) {
 	projectRoot := t.TempDir()
-	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"name":"local-project","namespace":"verifiable","sourceApiVersion":"65.0"}`)
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"name":"local-project","namespace":"samplepkg","sourceApiVersion":"65.0"}`)
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/NextGenSettingService.cls"), `public class NextGenSettingService {
   public static void activateNextGenSetting() {
-    VerifiableProtectedListSetting__c setting = new VerifiableProtectedListSetting__c();
+    SampleProtectedListSetting__c setting = new SampleProtectedListSetting__c();
     setting.Name = 'Default';
     upsert setting;
     System.debug('activated');
   }
 }
 `)
-	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/objects/VerifiableProtectedListSetting__c/VerifiableProtectedListSetting__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
-  <label>Verifiable Protected List Setting</label>
-  <pluralLabel>Verifiable Protected List Settings</pluralLabel>
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/objects/SampleProtectedListSetting__c/SampleProtectedListSetting__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Sample Protected List Setting</label>
+  <pluralLabel>Sample Protected List Settings</pluralLabel>
   <customSettingsType>List</customSettingsType>
   <visibility>Protected</visibility>
 </CustomObject>`)
@@ -139,7 +139,7 @@ func TestRunnerLoadsProjectReferenceCustomObjectSchema(t *testing.T) {
 	if len(result.Logs) != 1 || result.Logs[0] != "activated" {
 		t.Fatalf("logs = %#v", result.Logs)
 	}
-	if len(result.OrgDiff) == 0 || result.OrgDiff[0].Object != "VerifiableProtectedListSetting__c" || result.OrgDiff[0].Inserted != 1 {
+	if len(result.OrgDiff) == 0 || result.OrgDiff[0].Object != "SampleProtectedListSetting__c" || result.OrgDiff[0].Inserted != 1 {
 		t.Fatalf("org diff = %#v", result.OrgDiff)
 	}
 }

@@ -26,6 +26,30 @@ func TestNoCorpusSpecificReferencesInRuntimeCode(t *testing.T) {
 	}
 }
 
+func TestNoPrivateExamplePackageReferences(t *testing.T) {
+	root := repoRoot(t)
+	for _, rel := range repoTrackedFiles(t, root) {
+		path := filepath.ToSlash(rel)
+		fullPath := filepath.Join(root, filepath.FromSlash(rel))
+		if _, err := os.Stat(fullPath); err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			t.Fatal(err)
+		}
+		checkPrivateExamplePackageText(t, path, path)
+
+		fileData, err := os.ReadFile(fullPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if bytes.IndexByte(fileData, 0) >= 0 {
+			continue
+		}
+		checkPrivateExamplePackageText(t, path, string(fileData))
+	}
+}
+
 func TestCaseInsensitiveEqualityAvoidsToLower(t *testing.T) {
 	root := repoRoot(t)
 	pattern := regexp.MustCompile(`strings\.ToLower\([^\n]+\)\s*(?:==|!=)|(?:==|!=)\s*strings\.ToLower\(`)
@@ -183,6 +207,24 @@ func repoGoFiles(t *testing.T, root string) []string {
 	return files
 }
 
+func repoTrackedFiles(t *testing.T, root string) []string {
+	t.Helper()
+	cmd := exec.Command("git", "ls-files", "--cached", "--others", "--exclude-standard")
+	cmd.Dir = root
+	out, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("git ls-files: %v", err)
+	}
+	var files []string
+	for _, line := range strings.Split(string(out), "\n") {
+		if line == "" {
+			continue
+		}
+		files = append(files, filepath.ToSlash(line))
+	}
+	return files
+}
+
 func readRepoFile(t *testing.T, root, rel string) string {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(rel)))
@@ -221,4 +263,54 @@ func hyphen(parts ...string) string {
 
 func dot(parts ...string) string {
 	return strings.Join(parts, ".")
+}
+
+func checkPrivateExamplePackageText(t *testing.T, rel, text string) {
+	t.Helper()
+	for _, pattern := range privateExamplePackagePatterns() {
+		if pattern.re.MatchString(text) {
+			t.Errorf("%s contains private example package marker %q", rel, pattern.label)
+		}
+	}
+}
+
+type privatePackagePattern struct {
+	label string
+	re    *regexp.Regexp
+}
+
+func privateExamplePackagePatterns() []privatePackagePattern {
+	ci := func(parts ...string) *regexp.Regexp {
+		return regexp.MustCompile(`(?i)` + strings.Join(parts, ""))
+	}
+	cs := func(parts ...string) *regexp.Regexp {
+		return regexp.MustCompile(strings.Join(parts, ""))
+	}
+	exact := func(parts ...string) *regexp.Regexp {
+		return ci(`\b`, strings.Join(parts, ""), `\b`)
+	}
+	return []privatePackagePattern{
+		{hyphen("src", "nbm", "solhub", "develop"), ci(hyphen("src", "nbm", "solhub", "develop"))},
+		{hyphen("src", "nmb", strings.Join([]string{"nam", "z"}, ""), "prog", "develop"), ci(hyphen("src", "nmb", strings.Join([]string{"nam", "z"}, ""), "prog", "develop"))},
+		{hyphen("src", "nmb", "nc", "develop"), ci(hyphen("src", "nmb", "nc", "develop"))},
+		{hyphen("src", "nmb", "nu", "develop"), ci(hyphen("src", "nmb", "nu", "develop"))},
+		{hyphen("src", "nmb", strings.Join([]string{"nu", "dev"}, ""), "develop"), ci(hyphen("src", "nmb", strings.Join([]string{"nu", "dev"}, ""), "develop"))},
+		{hyphen("src", "nmb", strings.Join([]string{"nu", "q"}, ""), "develop"), ci(hyphen("src", "nmb", strings.Join([]string{"nu", "q"}, ""), "develop"))},
+		{hyphen("src", "nmb", strings.Join([]string{"nu", "tpl"}, ""), "develop"), ci(hyphen("src", "nmb", strings.Join([]string{"nu", "tpl"}, ""), "develop"))},
+		{hyphen("src", "nmb", strings.Join([]string{"nu", "tplx"}, ""), "master"), ci(hyphen("src", "nmb", strings.Join([]string{"nu", "tplx"}, ""), "master"))},
+		{hyphen("sf", "cred", "pkg", "develop"), ci(hyphen("sf", "cred", "pkg", "develop"))},
+		{strings.Join([]string{"nam", "z"}, ""), ci(`\bnam`, "z", `(?:__|\b|\.)`)},
+		{strings.Join([]string{"N", "U namespace"}, ""), cs(`(?i:\bN`, "U", `__|\bn`, "u", `__|\bz`, "n", "u", `__|namespace"\s*:\s*"N`, "U", `"|Namespace:\s*"N`, "U", `"|Namespace\s*=\s*"N`, "U", `"|SetCurrentNamespace\("N`, "U", `"\)|Type\.forName\('N`, "U", `')|\bN`, "U", `\.[A-Za-z]`)},
+		{strings.Join([]string{"veri", "fiable"}, ""), ci(`\b`, "veri", "fiable", `\b|`, "veri", "fiable", `__|`, "veri", "fiable", `[:/-]|\b`, "Veri", "fiable", `[A-Z_]`)},
+		{strings.Join([]string{"nim", "ble"}, ""), ci(`\bnim`, "ble", `[[:alnum:]_]*\b`)},
+		{strings.Join([]string{"mo", "mentive"}, ""), exact("mo", "mentive")},
+		{hyphen("sf", "cred"), ci(hyphen("sf", "cred"))},
+		{strings.Join([]string{"creden", "tialing"}, ""), ci(`\bcreden`, "tialing", `[[:alnum:]_]*\b`)},
+		{strings.Join([]string{"V", "fiHospitalAffiliation"}, ""), ci(`\bV`, "fiHospitalAffiliation", `[[:alnum:]_]*\b`)},
+		{strings.Join([]string{"V", "fiProvider"}, ""), ci(`\bV`, "fiProvider", `[[:alnum:]_]*\b`)},
+		{strings.Join([]string{"V", "fiLicense"}, ""), ci(`\bV`, "fiLicense", `[[:alnum:]_]*\b`)},
+		{strings.Join([]string{"Education", "Last"}, ""), ci(`\bEducation`, "Last", `[[:alnum:]_]*\b`)},
+		{strings.Join([]string{"Setup", "DataMapping"}, ""), ci(`\bSetup`, "DataMapping", `[[:alnum:]_]*\b`)},
+		{strings.Join([]string{"Action", "ProcessorQueueable"}, ""), ci(`\bAction`, "ProcessorQueueable", `[[:alnum:]_]*\b`)},
+	}
 }

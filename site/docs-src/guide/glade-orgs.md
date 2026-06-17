@@ -80,17 +80,17 @@ printf "insert new Account(Name = 'Apex Local', External_Id__c = 'apex-1');\n" >
 sf apex run -o my-glade-org -f scripts/seed.apex
 ```
 
-## Run NimbleAMS data import
+## Run manifest-based data imports
 
-NimbleAMS-shaped imports can target the same alias when their route needs stay
+Manifest-based imports can target the same alias when their route needs stay
 inside Glade's supported local API set:
 
 ```bash
-sf nimbleams data import -f ./data/insertOrder.json -u my-glade-org
+sf data import tree -p ./data/insertOrder.json -o my-glade-org
 ```
 
 The sample fixture in
-`testdata/local-tests/glade-org-nimbleams/insertOrder.json` covers ordered
+`testdata/local-tests/glade-org-data-import/insertOrder.json` covers ordered
 Account and Contact records, external-id references, and an ApexScript cleaner.
 
 ## Supported locally

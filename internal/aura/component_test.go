@@ -8,11 +8,11 @@ func TestParseLWCPassthroughSetupAssistant(t *testing.T) {
     <aura:attribute name="isClassic" type="Boolean" />
     <c:setup isClassic="{!v.isClassic}" />
 </aura:component>`
-	target, ok := ParseLWCPassthrough(source, "verifiable")
+	target, ok := ParseLWCPassthrough(source, "samplepkg")
 	if !ok {
 		t.Fatal("expected passthrough")
 	}
-	if target != "verifiable:setup" {
+	if target != "samplepkg:setup" {
 		t.Fatalf("target = %q", target)
 	}
 }

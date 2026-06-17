@@ -1197,13 +1197,13 @@ func TestAnalyzeChainedSObjectTypeToken(t *testing.T) {
 public class UsesChainedSObjectType {
   public static void run() {
     Schema.SObjectType accountType = Account.SObjectType.SObjectType;
-    Schema.SObjectType customMetadataType = Credentialing_Object_Setup__mdt.SObjectType.SObjectType;
+    Schema.SObjectType customMetadataType = Review_Object_Setup__mdt.SObjectType.SObjectType;
   }
 }
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
 		filepath.Join(root, "UsesChainedSObjectType.cls"),
-	}}, schema.Schema{Objects: []schema.Object{{Name: "Credentialing_Object_Setup__mdt"}}})
+	}}, schema.Schema{Objects: []schema.Object{{Name: "Review_Object_Setup__mdt"}}})
 
 	result := Analyze(index)
 	if result.HasErrors() {
@@ -1825,16 +1825,16 @@ func TestAnalyzeChildRelationshipAddAllToSObjectList(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesChildRelationships.cls"), `
 public class UsesChildRelationships {
-  public void run(List<Account> accounts, List<VfiProvider__c> providers) {
+  public void run(List<Account> accounts, List<SampleParent__c> providers) {
     List<SObject> records = new List<SObject>();
     for (Account account : accounts) {
       if (account.Affiliates__r?.isEmpty() == false) {
         records.addAll(account.Affiliates__r);
       }
     }
-    for (VfiProvider__c provider : providers) {
-      if (provider.VfiLicense__r?.isEmpty() == false) {
-        records.addAll(provider.VfiLicense__r);
+    for (SampleParent__c provider : providers) {
+      if (provider.SampleChild__r?.isEmpty() == false) {
+        records.addAll(provider.SampleChild__r);
       }
     }
   }
@@ -1846,12 +1846,12 @@ public class UsesChildRelationships {
 	}, schema.Schema{Objects: []schema.Object{
 		{Name: "Account"},
 		{Name: "Affiliation__c"},
-		{Name: "VfiProvider__c"},
-		{Name: "VfiLicense__c", Fields: []schema.Field{{
-			Name:             "VfiProvider__c",
+		{Name: "SampleParent__c"},
+		{Name: "SampleChild__c", Fields: []schema.Field{{
+			Name:             "SampleParent__c",
 			Type:             "Lookup",
-			ReferenceTo:      []string{"VfiProvider__c"},
-			RelationshipName: "VfiLicense",
+			ReferenceTo:      []string{"SampleParent__c"},
+			RelationshipName: "SampleChild",
 		}}},
 	}})
 	result := Analyze(index)

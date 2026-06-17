@@ -10,7 +10,7 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-func TestPartnerSOAPDescribeSObjectsReturnsNimbleForceFields(t *testing.T) {
+func TestPartnerSOAPDescribeSObjectsReturnsImportToolFields(t *testing.T) {
 	org := partnerSOAPTestOrg()
 	handler := New(&org)
 

@@ -87,10 +87,10 @@ func TestDescribeFieldNameUsesCallerNamespaceWithoutOrgNamespace(t *testing.T) {
 	machine := New(nil)
 	org := storage.NewOrgState()
 	machine.SetOrg(&org)
-	machine.currentNamespace = "NU"
+	machine.currentNamespace = "PKG"
 
-	if got := machine.describeFieldName("IsActive__c"); got != "NU__IsActive__c" {
-		t.Fatalf("describeFieldName() = %q, want NU__IsActive__c", got)
+	if got := machine.describeFieldName("IsActive__c"); got != "PKG__IsActive__c" {
+		t.Fatalf("describeFieldName() = %q, want PKG__IsActive__c", got)
 	}
 }
 
@@ -98,7 +98,7 @@ func TestDescribeTabSObjectNameUsesCallerNamespaceWithoutOrgNamespace(t *testing
 	machine := New(nil)
 	org := storage.NewOrgState()
 	machine.SetOrg(&org)
-	machine.currentNamespace = "NU"
+	machine.currentNamespace = "PKG"
 
 	tab := machine.describeTabValue(storage.TabMetadata{
 		Name:        "Order__c",
@@ -108,8 +108,8 @@ func TestDescribeTabSObjectNameUsesCallerNamespaceWithoutOrgNamespace(t *testing
 	})
 
 	got := tab.Fields["sObjectName"]
-	if got.Kind != ValueString || got.Text != "NU__Order__c" {
-		t.Fatalf("DescribeTabResult.getSObjectName backing value = %#v, want NU__Order__c", got)
+	if got.Kind != ValueString || got.Text != "PKG__Order__c" {
+		t.Fatalf("DescribeTabResult.getSObjectName backing value = %#v, want PKG__Order__c", got)
 	}
 }
 
@@ -471,7 +471,7 @@ System.assertEquals(null, names.get(accountId.getSObjectType()));
 
 func TestExecEnumSwitchNullFallsThroughToElse(t *testing.T) {
 	program, err := CompileAnonymous(`
-VerifiableDataset.Dataset datasetType = null;
+SampleDataset.Dataset datasetType = null;
 Boolean caught = false;
 try {
 	switch on datasetType {
@@ -490,7 +490,7 @@ System.assert(caught);
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	if err := machine.RegisterClass(Class{Name: "VerifiableDataset.Dataset", EnumValues: []string{"Npi"}}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "SampleDataset.Dataset", EnumValues: []string{"Npi"}}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {
@@ -3464,7 +3464,7 @@ System.assert(fields.keySet().contains(tokenName.toLowerCase()), tokenName);
 	}
 	machine := New(nil)
 	org := testDataOrg()
-	org.Namespace = "NU"
+	org.Namespace = "PKG"
 	storage.EnsureStandardObject(&org, "Account")
 	account := org.Objects["Account"]
 	account.Definition.Fields["PrimaryAffiliation__c"] = storage.Field{
@@ -3828,7 +3828,7 @@ func TestExecForeignNamespacedSObjectDescribeNameKeepsNamespace(t *testing.T) {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	org.Namespace = "namz"
+	org.Namespace = "otherpkg"
 	org.Objects["pkg__OrderItem__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName: "pkg__OrderItem__c",
@@ -4913,18 +4913,18 @@ System.assertEquals(null, fields.get('Widget__c.Missing__c'));
 
 func TestExecSObjectFieldMapAcceptsNamespaceAlias(t *testing.T) {
 	program, err := CompileAnonymous(`
-Map<String, Schema.SObjectField> fields = Credentialing_Workflow__c.SObjectType.getDescribe().fields.getMap();
-System.assertEquals(Credentialing_Workflow__c.ChecklistNotes__c, fields.get('verifiable__ChecklistNotes__c'));
-System.assertEquals(Credentialing_Workflow__c.ChecklistNotes__c, fields.get('VERIFIABLE__CHECKLISTNOTES__C'));
+Map<String, Schema.SObjectField> fields = Review_Workflow__c.SObjectType.getDescribe().fields.getMap();
+System.assertEquals(Review_Workflow__c.ChecklistNotes__c, fields.get('samplepkg__ChecklistNotes__c'));
+System.assertEquals(Review_Workflow__c.ChecklistNotes__c, fields.get('SAMPLEPKG__CHECKLISTNOTES__C'));
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	org.Namespace = "verifiable"
-	org.Objects["Credentialing_Workflow__c"] = storage.ObjectState{
+	org.Namespace = "samplepkg"
+	org.Objects["Review_Workflow__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName: "Credentialing_Workflow__c",
+			APIName: "Review_Workflow__c",
 			Fields: map[string]storage.Field{
 				"ChecklistNotes__c": {APIName: "ChecklistNotes__c", Type: storage.FieldString},
 			},
@@ -4944,16 +4944,16 @@ func TestExecSObjectFieldMapKeySetOrderUsesCanonicalFieldsBeforeAliases(t *testi
 	program, err := CompileAnonymous(`
 Map<String, Schema.SObjectField> fields = Account.SObjectType.getDescribe().fields.getMap();
 List<String> names = new List<String>(fields.keySet());
-System.assertNotEquals(null, fields.get('nu__primaryaffiliation__c'));
-System.assertEquals('NU__PrimaryAffiliation__c', fields.get('nu__primaryaffiliation__c').getDescribe().getName());
-System.assert(names.indexOf('ownerid') < names.indexOf('nu__primaryaffiliation__c'), String.valueOf(names));
-System.assert(names.indexOf('parentid') < names.indexOf('nu__primaryaffiliation__c'), String.valueOf(names));
+System.assertNotEquals(null, fields.get('pkg__primaryaffiliation__c'));
+System.assertEquals('PKG__PrimaryAffiliation__c', fields.get('pkg__primaryaffiliation__c').getDescribe().getName());
+System.assert(names.indexOf('ownerid') < names.indexOf('pkg__primaryaffiliation__c'), String.valueOf(names));
+System.assert(names.indexOf('parentid') < names.indexOf('pkg__primaryaffiliation__c'), String.valueOf(names));
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	org.Namespace = "NU"
+	org.Namespace = "PKG"
 	org.Objects["Account"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName: "Account",
@@ -4981,19 +4981,19 @@ System.assertEquals('CreatedById', createdBy.getName());
 System.assertEquals(Schema.SOAPType.ID, createdBy.getSoapType());
 System.assertEquals('CreatedBy', createdBy.getRelationshipName());
 Schema.DescribeFieldResult provider = fields.get('Provider__c').getDescribe();
-System.assertEquals('NU__Provider__c', provider.getName());
-System.assertEquals('NU__Provider__r', provider.getRelationshipName());
-Schema.DescribeFieldResult providerRelationship = fields.get('NU__Provider__r').getDescribe();
-System.assertEquals('NU__Provider__c', providerRelationship.getName());
-System.assertEquals('NU__Provider__r', providerRelationship.getRelationshipName());
+System.assertEquals('PKG__Provider__c', provider.getName());
+System.assertEquals('PKG__Provider__r', provider.getRelationshipName());
+Schema.DescribeFieldResult providerRelationship = fields.get('PKG__Provider__r').getDescribe();
+System.assertEquals('PKG__Provider__c', providerRelationship.getName());
+System.assertEquals('PKG__Provider__r', providerRelationship.getRelationshipName());
 Schema.DescribeFieldResult billTo = fields.get('BillTo__c').getDescribe();
-System.assertEquals('NU__BillTo__r', billTo.getRelationshipName());
+System.assertEquals('PKG__BillTo__r', billTo.getRelationshipName());
 	`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
-	org.Namespace = "NU"
+	org.Namespace = "PKG"
 	org.Objects["License_Verification__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName: "License_Verification__c",
@@ -7329,7 +7329,7 @@ try {
 } catch (DmlException e) {
 	stack = e.getStackTraceString();
 }
-	System.assert(stack.startsWith('Class.NU.Thrower.fail: line '), stack);
+	System.assert(stack.startsWith('Class.PKG.Thrower.fail: line '), stack);
 	System.assert(!stack.contains('.cls:'), stack);
 		`)
 	if err != nil {
@@ -7337,11 +7337,11 @@ try {
 	}
 	machine := New(nil)
 	org := testDataOrg()
-	org.Namespace = "NU"
+	org.Namespace = "PKG"
 	machine.SetOrg(&org)
 	if err := machine.RegisterClass(Class{
 		Name:      "Thrower",
-		Namespace: "NU",
+		Namespace: "PKG",
 		Access:    "global",
 		Methods: map[string]Method{
 			"fail": {ReturnType: "void", Program: throwProgram, IsStatic: true, Access: "global"},
