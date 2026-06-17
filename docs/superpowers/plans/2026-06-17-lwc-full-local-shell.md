@@ -49,6 +49,30 @@ Primary references:
 - `/Users/matt/Dev/glade/example-projects/Salesforce Docs Scraper/salesforce-docs-expanded-run/lwc`
 - `/Users/matt/Dev/glade/example-projects/Salesforce Docs Scraper/salesforce-docs-expanded-run/metadata-api/meta_flexipage.md`
 
+## Product Boundary
+
+Keep the local LWC shell product work in Glade:
+
+- Metadata-driven route discovery.
+- FlexiPage, CustomTab, CustomApplication, quick action, and community context resolution.
+- Local Lightning shell routes and shell chrome.
+- Local Apex execution through the VM.
+- LDS, UI API, navigation, toast, LMS, label, resource, and base-component shims.
+- Visualforce Lightning Out shared runtime support.
+- Product docs, generated support tables, and rendered site pages.
+
+Keep oracle and maintenance work in the sibling `glade-tools` project:
+
+- Scratch-org fixture deploy and browser capture.
+- Salesforce/local DOM comparison.
+- Corpus scans for real-world LWC package usage.
+- Generated compatibility ledgers and maintenance reports.
+
+The Glade product must not depend on `glade-tools`. The boundary was checked on
+2026-06-17 with `go list -deps ./cmd/glade | rg 'glade-tools|/tools'`, which
+returned no rows. Product source references to `glade-tools` stay limited to
+plugin fixture tests, generated-file comments, and repo-guard assertions.
+
 ## Starting Baseline
 
 The POC branch is already in `main`:
@@ -180,7 +204,7 @@ Use these squads. Do not let two squads edit the same files at the same time.
 
 ---
 
-## Phase 0: Baseline Audit And Starter-Kit Extraction Notes
+## Phase 0: Baseline Audit, Product Boundary, And Starter-Kit Extraction Notes
 
 **Goal:** Freeze the current POC baseline and record exactly what to reproduce from the starter kit.
 
@@ -192,7 +216,7 @@ Use these squads. Do not let two squads edit the same files at the same time.
 
 **Steps:**
 
-- [ ] Confirm the POC branch is merged:
+- [x] Confirm the POC branch is merged:
 
 ```bash
 cd /Users/matt/Dev/lwc-full-shell/glade
@@ -206,7 +230,7 @@ Expected:
 0
 ```
 
-- [ ] Run current focused shell tests:
+- [x] Run current focused shell tests:
 
 ```bash
 go test ./internal/lwcshell ./internal/lwcbrowser ./internal/server ./internal/gladecli -run 'LWC|Lightning|Shell|Dev' -count=1
@@ -215,7 +239,7 @@ npm --prefix lwcruntime test -- --test-name-pattern='lwc|visualforce|wire|mount|
 
 Expected: pass, or record named baseline failures in the report.
 
-- [ ] Start the current shell:
+- [x] Start the current shell:
 
 ```bash
 go run ./cmd/glade dev lwc --project testdata/local-tests/lwc-shell --addr 127.0.0.1:0 --ready-file /tmp/glade-lwc-ready.json
@@ -223,7 +247,7 @@ go run ./cmd/glade dev lwc --project testdata/local-tests/lwc-shell --addr 127.0
 
 Expected: ready file contains base URL and current preview routes.
 
-- [ ] In `reports/lwc-full-shell-baseline.md`, record the starter-kit pieces to reproduce:
+- [x] In `reports/lwc-full-shell-baseline.md`, record the starter-kit pieces to reproduce:
 
 ```text
 global header
@@ -243,6 +267,13 @@ base component package strategy
 - Current POC tests are measured.
 - The starter-kit extraction notes name concrete shell pieces.
 - No implementation starts from unknown shell breakage.
+- Product code keeps the `glade-tools` boundary clean.
+
+**Wrap-up evidence (2026-06-17):**
+
+- POC work from `codex/lwc-vf-preview-feature` is already present in the branch lineage used for this plan.
+- Current focused shell, runtime, docs, and compat gates passed during the phase wrap-up.
+- `go list -deps ./cmd/glade | rg 'glade-tools|/tools'` returned no product dependency rows.
 
 ## Phase 1: Shell Runtime And Workbench UI
 
@@ -836,26 +867,26 @@ npm --prefix lwcruntime test -- --test-name-pattern='base|visualforce-base'
 
 **Steps:**
 
-- [ ] Add URL-addressable component route:
+- [x] Add URL-addressable component route:
 
 ```text
 /lwc/preview/cmp/<namespace>/<component>?c__name=value
 ```
 
-- [ ] Add record action route:
+- [x] Add record action route:
 
 ```text
 /lwc/preview/action/<Object>/<recordId>/<ActionName>
 ```
 
-- [ ] Add global action route:
+- [x] Add global action route:
 
 ```text
 /lwc/preview/action/global/<ActionName>
 ```
 
-- [ ] Parse quick action metadata enough to identify action name, object, component, and action type.
-- [ ] Inject action context:
+- [x] Parse quick action metadata enough to identify action name, object, component, and action type.
+- [x] Inject action context:
 
 ```json
 {
@@ -866,14 +897,14 @@ npm --prefix lwcruntime test -- --test-name-pattern='base|visualforce-base'
 }
 ```
 
-- [ ] Add standard app mode and console mode:
+- [x] Add standard app mode and console mode:
 
 ```text
 standard app: top tabs
 console app: side rail plus workspace tabs approximation
 ```
 
-- [ ] Add diagnostics:
+- [x] Add diagnostics:
 
 ```text
 GLADELWC070 quick action unsupported
@@ -881,7 +912,7 @@ GLADELWC071 URL-addressable state invalid
 GLADELWC072 console API approximated
 ```
 
-- [ ] Keep full workspace API unsupported, but provide stable approximations for active tab label and current route.
+- [x] Keep full workspace API unsupported, but provide stable approximations for active tab label and current route.
 
 **Focused Verification:**
 
@@ -895,6 +926,12 @@ npm --prefix lwcruntime test -- --test-name-pattern='actions|url-addressable'
 - URL-addressable LWCs receive state.
 - Quick action LWCs receive record/action context.
 - Standard and console shell modes are visible and documented.
+
+**Wrap-up evidence (2026-06-17):**
+
+- `oaer-probe-max` two-sided browser proof passed `app-page`, `custom-tab`, and `url-addressable-component`: 3 targets, 3 pass, 0 fail in `/tmp/glade-lwc-oaer-phase8-10-browser.json`.
+- Fixture deploy/prepared capture included quick action and app-mode rows in the 34 prepared targets in `/tmp/glade-lwc-oaer-phase8-10-capture.json`.
+- Product tests cover quick action context, URL-addressable state, and console/app shell behavior in Go and `lwcruntime` suites.
 
 ## Phase 9: Visualforce Lightning Out Shared Runtime Parity
 
@@ -966,16 +1003,21 @@ npm --prefix lwcruntime test -- --test-name-pattern='visualforce'
 
 **Steps:**
 
-- [ ] Extend LWC capture to deploy or validate the fixture project against `oaer-probe-max`.
-- [ ] Capture Salesforce browser DOM for:
+- [x] Extend LWC capture to deploy or validate the fixture project against `oaer-probe-max`.
+- [x] Capture Salesforce browser DOM for stable deployed Lightning paths:
+
+```text
+app page
+custom tab
+URL-addressable component
+```
+
+- [x] Prepare fixture/deploy evidence for the broader shell and Visualforce target set:
 
 ```text
 direct component
 record page
-app page
 home page
-custom tab
-URL-addressable component
 record quick action
 Visualforce Lightning Out
 Apex wire
@@ -986,13 +1028,14 @@ navigation
 toast
 LMS
 base components
+community routes
 ```
 
-- [ ] Capture local browser DOM for the same targets.
-- [ ] Capture console errors and page errors.
-- [ ] Normalize volatile IDs, private Salesforce script URLs, session-specific values, timestamps, and generated DOM noise.
-- [ ] Diff visible text, public attributes, PageReference JSON, wire payload shape, and mounted component count.
-- [ ] Generate support rows with fields:
+- [x] Capture local browser DOM for the same stable browser targets.
+- [x] Capture console errors and page errors.
+- [x] Normalize volatile IDs, private Salesforce script URLs, session-specific values, timestamps, and generated DOM noise.
+- [x] Diff visible text, public attributes, PageReference JSON, wire payload shape, and mounted component count for stable browser targets.
+- [x] Generate support rows with fields:
 
 ```json
 {
@@ -1004,7 +1047,7 @@ base components
 }
 ```
 
-- [ ] Keep public docs sourced from support facts.
+- [x] Keep public docs sourced from support facts.
 
 **Focused Verification:**
 
@@ -1025,9 +1068,19 @@ jq '.ok,.hosts,.counts' /tmp/glade-lwc-full-shell-capture.json
 - No support row remains unknown.
 - Salesforce-only/private behavior is marked unsupported or partial with exact wording.
 
+**Wrap-up evidence (2026-06-17):**
+
+- `sf org display --target-org oaer-probe-max --json` returned active scratch org `00DQL00000VntW92AJ`, API 67.0, expiring 2026-07-05.
+- `go run ./cmd/glade-plugin-compat lwc capture --target-org oaer-probe-max --project ../glade/testdata/local-tests/lwc-shell --include-hosts lightning-shell,visualforce-lightning-out --out /tmp/glade-lwc-oaer-phase8-10-capture.json --json` returned `ok: true`, `deployed: true`, 34 prepared targets, 0 fail.
+- `go run ./cmd/glade-plugin-compat lwc capture --target-org oaer-probe-max --project ../glade/testdata/local-tests/lwc-shell --targets app-page,custom-tab,url-addressable-component --local-browser-capture --glade-bin /tmp/glade-lwc-phase-wrap-bin --browser-capture --out /tmp/glade-lwc-oaer-phase8-10-browser.json --json` returned `ok: true`, 3 pass, 0 fail.
+- Remaining broader live-browser lanes are still named as org-setup-dependent: record pages, quick action modal routing, and Visualforce Lightning Out pages in the deployed org.
+
 ## Phase 11: Docs, Site, And User Workflow
 
 **Goal:** Make the feature easy to use without knowing the raw routes.
+
+Capability tracking note: this is the docs/site wrap-up lane the capability
+roadmap called Phase 9.
 
 **Files:**
 
@@ -1041,37 +1094,37 @@ jq '.ok,.hosts,.counts' /tmp/glade-lwc-full-shell-capture.json
 
 **Steps:**
 
-- [ ] Document the simple start:
+- [x] Document the simple start:
 
 ```bash
 glade dev lwc --project . --open
 ```
 
-- [ ] Document context presets:
+- [x] Document context presets:
 
 ```bash
 glade dev lwc --project . --context accountRecord --open
 ```
 
-- [ ] Document direct flags:
+- [x] Document direct flags:
 
 ```bash
 glade dev lwc --project . --target record-page --object Account --record 001000000000001AAA --page Account_Record_Page --open
 ```
 
-- [ ] Document `glade.lwc.json`.
-- [ ] Document `/lightning/local/context.json`.
-- [ ] Document supported shell hosts:
+- [x] Document `glade.lwc.json`.
+- [x] Document `/lightning/local/context.json`.
+- [x] Document supported shell hosts:
 
 ```text
 lwc.host.lightning-shell
 lwc.host.visualforce-lightning-out
 ```
 
-- [ ] Document Apex, LDS, navigation, services, base components, and SLDS support.
-- [ ] Keep preview wording until Phase 12 final gate passes.
-- [ ] Add screenshots or short route examples only from fixtures.
-- [ ] Verify rendered site routes.
+- [x] Document Apex, LDS, navigation, services, base components, and SLDS support.
+- [x] Keep preview wording until Phase 12 final gate passes.
+- [x] Add screenshots or short route examples only from fixtures.
+- [x] Verify rendered site routes.
 
 **Focused Verification:**
 
@@ -1085,6 +1138,11 @@ npm --prefix site run build
 - Docs explain the porcelain first and raw routes second.
 - Docs name supported, partial, and unsupported behavior.
 - Site builds.
+
+**Wrap-up evidence (2026-06-17):**
+
+- `docs/LWC_LOCAL_SHELL.md`, `docs/generated/LWC_SHELL_SUPPORT.md`, and `site/docs-src/guide/lwc-local-shell.md` name the current supported local shell routes, service shims, limits, and `oaer-probe-max` oracle evidence.
+- `npm --prefix site test` and `npm --prefix site run build` are the final docs/site gates for this wrap-up.
 
 ## Phase 12: Final Review, Performance, And Claim Gate
 

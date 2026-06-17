@@ -417,6 +417,11 @@ URL-addressable component targets on both sides: local shell DOM and Salesforce
 DOM, selector-scoped comparison, zero browser console errors, and zero page
 errors. The app-page and custom-tab oracle deploys the `Lwc_Shell` app, assigns
 `Lwc_Shell_Access`, and opens `/lightning/app/c__Lwc_Shell/n/Lwc_Probe`.
+The 2026-06-17 `oaer-probe-max` run wrote
+`/tmp/glade-lwc-oaer-phase8-10-browser.json` with 3 pass and 0 fail. A broader
+deploy/prepared capture against the same scratch org wrote
+`/tmp/glade-lwc-oaer-phase8-10-capture.json` with 34 prepared targets across
+`lightning-shell` and `visualforce-lightning-out`.
 Record pages need a real org record id and page activation. Quick actions need
 modal routing proof. Visualforce Lightning Out needs the Visualforce fixture
 pages deployed to the same org. Expanded base-component and community captures

@@ -35,6 +35,22 @@ go run ./cmd/glade-plugin-compat lwc capture \
   --out /path/to/lwc-two-sided-browser-check.json
 ```
 
+Current `oaer-probe-max` wrap-up evidence from 2026-06-17:
+
+```text
+/tmp/glade-lwc-oaer-phase8-10-capture.json
+  mode: fixture-evidence-stubs
+  deployed: true
+  hosts: lightning-shell, visualforce-lightning-out
+  counts: 34 targets, 34 prepared, 0 fail
+
+/tmp/glade-lwc-oaer-phase8-10-browser.json
+  mode: browser-capture
+  deployed: true
+  counts: 3 targets, 3 pass, 0 fail
+  supported browser rows: app-page, custom-tab, url-addressable-component
+```
+
 Local-only browser proof covers routes with no direct stable Salesforce URL:
 
 ```bash
@@ -55,10 +71,10 @@ tests. A refreshed compatibility capture should include the community rows and
 the expanded base-component row in the external JSON. The report stores stable
 paths only and does not write transient server URLs.
 Latest two-sided browser proof remains `app-page`, `custom-tab`, and
-`url-addressable-component`
-against both the local shell and a configured Salesforce org, with no browser console
-errors or page errors. Each two-sided case includes a selector-scoped
-`comparison` block for normalized visible text and project LWC component counts.
+`url-addressable-component` against both the local shell and `oaer-probe-max`,
+with no browser console errors or page errors. Each two-sided case includes a
+selector-scoped `comparison` block for normalized visible text and project LWC
+component counts.
 The app-page target passes inside `c-wire-probe`, the custom-tab target passes
 inside `c-context-probe`, and the URL-addressable target passes inside
 `c-action-probe`. The app-page and custom-tab checks use

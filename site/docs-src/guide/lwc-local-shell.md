@@ -295,8 +295,11 @@ proves the app page, custom tab, and URL-addressable component targets on both
 sides. The app-page and custom-tab proof deploys the `Lwc_Shell` app, assigns
 `Lwc_Shell_Access`, and opens `/lightning/app/c__Lwc_Shell/n/Lwc_Probe`. Record
 pages, quick actions, and Visualforce Lightning Out need their org setup
-completed before they are strict browser-oracle targets. The expanded
-base-component target has local browser proof through
+completed before they are strict browser-oracle targets. The 2026-06-17
+`oaer-probe-max` proof wrote `/tmp/glade-lwc-oaer-phase8-10-browser.json` with
+3 pass and 0 fail, and `/tmp/glade-lwc-oaer-phase8-10-capture.json` with 34
+prepared targets across `lightning-shell` and `visualforce-lightning-out`. The
+expanded base-component target has local browser proof through
 `test/base-components-expanded.test.mjs`; Salesforce DOM comparison remains a
 hosted follow-up. Community routes have local Go and Playwright runtime
 coverage in this build; a refreshed compatibility capture should add the
