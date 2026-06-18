@@ -481,7 +481,11 @@ func TestLightningPackageCorpusShimsServeLocalContracts(t *testing.T) {
 		{"/lightning/shims/customPermission/LocalAuditLogs.js", []string{"LocalAuditLogs", "export default true"}},
 		{"/lightning/shims/lightning/configProvider.js", []string{"getPathPrefix", "getToken", "getIconSvgTemplates", "getLocalizationService", "getOneConfig"}},
 		{"/lightning/shims/lightning/pageReferenceUtils.js", []string{"encodeDefaultFieldValues", "decodeDefaultFieldValues"}},
+		{"/lightning/shims/lightning/alert.js", []string{"LightningAlert", "static open", "gladealert"}},
 		{"/lightning/shims/lightning/confirm.js", []string{"LightningConfirm", "Promise.resolve(true)"}},
+		{"/lightning/shims/lightning/prompt.js", []string{"LightningPrompt", "static open", "gladeprompt"}},
+		{"/lightning/shims/lightning/showToastEvent.js", []string{"SHOW_TOAST_EVENT_NAME", "ShowToastEvent", "lightning__showtoast"}},
+		{"/lightning/shims/lightning/toast.js", []string{"LightningToast", "static show", "lightning__showtoast"}},
 	}
 	for _, tc := range cases {
 		rec := httptest.NewRecorder()
@@ -584,6 +588,25 @@ func TestLightningBaseComponentShimServesNoopComponent(t *testing.T) {
 		if !strings.Contains(rec.Body.String(), want) {
 			t.Fatalf("missing %q in body = %q", want, rec.Body.String())
 		}
+	}
+}
+
+func TestLightningBaseComponentShimPrefersSourceBackedRuntimeWrapper(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/shims/lightning/badge.js", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	for _, want := range []string{`export { default }`, `/lightning/runtime/lightning/source/badge/badge.js`} {
+		if !strings.Contains(rec.Body.String(), want) {
+			t.Fatalf("missing %q in body = %q", want, rec.Body.String())
+		}
+	}
+	if strings.Contains(rec.Body.String(), "createBaseComponent") {
+		t.Fatalf("badge should use source-backed wrapper, got body = %q", rec.Body.String())
 	}
 }
 

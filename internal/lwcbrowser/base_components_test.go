@@ -124,13 +124,49 @@ func TestPhase3BaseComponentsAreSupported(t *testing.T) {
 	}
 }
 
-func TestUnsupportedLightningBaseComponentEmitsDiagnostic(t *testing.T) {
-	if !IsLightningBaseComponentModule("formattedLocation") {
-		t.Fatalf("formattedLocation should be recognized so the browser receives a diagnostic module")
-	}
-	js := LightningBaseComponentModuleJS("formattedLocation")
-	if !containsAll(js, "GLADELWC060", "base component unsupported", "lightning-formatted-location") {
-		t.Fatalf("unsupported component js = %q", js)
+func TestNPMPackageExposedBaseComponentsAreSupportedLocally(t *testing.T) {
+	for _, name := range []string{
+		"alert",
+		"barcodeScanner",
+		"baseFormattedText",
+		"dialog",
+		"dynamicIcon",
+		"focusTrap",
+		"formattedLocation",
+		"formattedLookup",
+		"formattedName",
+		"groupedCombobox",
+		"inputLocation",
+		"inputName",
+		"lookupAddress",
+		"modalBody",
+		"modalFooter",
+		"modalHeader",
+		"multiColumnSortingModal",
+		"overlay",
+		"picklist",
+		"popup",
+		"primitiveFigure",
+		"prompt",
+		"relativeDateTime",
+		"stackedTab",
+		"stackedTabset",
+		"toast",
+		"toastContainer",
+		"verticalNavigationItemBadge",
+		"verticalNavigationItemIcon",
+		"verticalNavigationOverflow",
+	} {
+		if !IsLightningBaseComponentModule(name) {
+			t.Fatalf("expected %s to be recognized as a lightning base component", name)
+		}
+		js := LightningBaseComponentModuleJS(name)
+		if !containsAll(js, "registerComponent", "export default", "createBaseComponent") {
+			t.Fatalf("%s module js = %q", name, js)
+		}
+		if strings.Contains(js, "GLADELWC060") {
+			t.Fatalf("%s should be supported from the lightning-base-components expose list, got diagnostic js = %q", name, js)
+		}
 	}
 }
 
@@ -145,6 +181,8 @@ func TestBaseComponentModuleJSUsesCanonicalKebabTags(t *testing.T) {
 		"modal":          "lightning-modal",
 		"dualListbox":    "lightning-dual-listbox",
 		"inputRichText":  "lightning-input-rich-text",
+		"inputLocation":  "lightning-input-location",
+		"inputName":      "lightning-input-name",
 		"progressRing":   "lightning-progress-ring",
 		"treeGrid":       "lightning-tree-grid",
 	}
@@ -234,6 +272,55 @@ func TestBaseComponentBooleanDisabledUsesProperty(t *testing.T) {
 	}
 	if strings.Contains(js, "attrs: { type: $cmp.type || \"button\", disabled: $cmp.disabled }") {
 		t.Fatalf("button module should not set disabled as a string attribute:\n%s", js)
+	}
+}
+
+func TestBaseComponentSourceReferenceContracts(t *testing.T) {
+	cases := map[string][]string{
+		"button": {
+			"buttonClassMap($cmp.variant)",
+			"normalizedButtonType($cmp.type)",
+			"slds-button_brand",
+			"name: $cmp.name || undefined",
+			"value: $cmp.value == null ? undefined : String($cmp.value)",
+		},
+		"buttonIcon": {
+			"buttonIconClassMap($cmp.variant, $cmp.size)",
+			"slds-button_icon-border-filled",
+			`slds-button_icon-small`,
+			`"aria-label": $cmp.alternativeText || undefined`,
+			"value: $cmp.value == null ? undefined : String($cmp.value)",
+		},
+		"card": {
+			"cardClassMap($cmp.variant)",
+			"slds-card_narrow",
+			`api_slot("actions"`,
+			`api_slot("footer"`,
+			"slds-no-flex",
+		},
+		"formattedNumber": {
+			"formatNumberValue($cmp)",
+			"percent-fixed",
+			"currencyDisplayAs",
+			"maximumSignificantDigits",
+		},
+		"layout": {
+			"layoutClassMap($cmp)",
+			"slds-grid_align-spread",
+			"slds-grid_vertical-align-center",
+		},
+		"layoutItem": {
+			"layoutItemClassMap($cmp)",
+			"slds-size_",
+			"slds-small-size_",
+			"slds-p-around_",
+		},
+	}
+	for name, parts := range cases {
+		js := LightningBaseComponentModuleJS(name)
+		if !containsAll(js, parts...) {
+			t.Fatalf("%s module missing source-reference contract parts %v:\n%s", name, parts, js)
+		}
 	}
 }
 

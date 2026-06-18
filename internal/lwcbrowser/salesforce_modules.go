@@ -12,46 +12,65 @@ import (
 // SalesforceImportMap returns import-map entries for @salesforce/* and lightning/* modules.
 func SalesforceImportMap() map[string]string {
 	imports := map[string]string{
-		"@glade/shell/app":                 "/lightning/runtime/shell/app.js",
-		"@glade/shell/router":              "/lightning/runtime/shell/router.js",
-		"@glade/shell/contextPanel":        "/lightning/runtime/shell/context-panel.js",
-		"@glade/shell/diagnostics":         "/lightning/runtime/shell/diagnostics.js",
-		"@glade/slds":                      "/lightning/runtime/slds/slds-loader.js",
-		"@salesforce/apex":                 "/lightning/shims/core/apex.js",
-		"@salesforce/apex/":                "/lightning/shims/apex/",
-		"@salesforce/client/":              "/lightning/shims/client/",
-		"@salesforce/client/formFactor":    "/lightning/shims/client/formFactor.js",
-		"@salesforce/community/":           "/lightning/shims/community/",
-		"@salesforce/community/basePath":   "/lightning/shims/community/basePath.js",
-		"@salesforce/community/Id":         "/lightning/shims/community/Id.js",
-		"@salesforce/contentAssetUrl/":     "/lightning/shims/contentAssetUrl/",
-		"@salesforce/customPermission/":    "/lightning/shims/customPermission/",
-		"@salesforce/i18n/":                "/lightning/shims/i18n/",
-		"@salesforce/label/":               "/lightning/shims/label/",
-		"@salesforce/messageChannel/":      "/lightning/shims/messageChannel/",
-		"@salesforce/resourceUrl/":         "/lightning/shims/resourceUrl/",
-		"@salesforce/schema/":              "/lightning/shims/schema/",
-		"@salesforce/site/":                "/lightning/shims/site/",
-		"@salesforce/site/Id":              "/lightning/shims/site/Id.js",
-		"@salesforce/user/":                "/lightning/shims/user/",
-		"lightning/":                       "/lightning/shims/lightning/",
-		"lightning/actions":                "/lightning/shims/lightning/actions.js",
-		"lightning/confirm":                "/lightning/shims/lightning/confirm.js",
-		"lightning/configProvider":         "/lightning/shims/lightning/configProvider.js",
-		"lightning/empApi":                 "/lightning/shims/lightning/empApi.js",
-		"lightning/flowSupport":            "/lightning/shims/lightning/flowSupport.js",
-		"lightning/messageService":         "/lightning/shims/lightning/messageService.js",
-		"lightning/navigation":             "/lightning/shims/lightning/navigation.js",
-		"lightning/pageReferenceUtils":     "/lightning/shims/lightning/pageReferenceUtils.js",
-		"lightning/platformResourceLoader": "/lightning/shims/lightning/platformResourceLoader.js",
-		"lightning/platformShowToastEvent": "/lightning/shims/lightning/platformShowToastEvent.js",
-		"lightning/platformWorkspaceApi":   "/lightning/shims/lightning/platformWorkspaceApi.js",
-		"lightning/refresh":                "/lightning/shims/lightning/refresh.js",
-		"lightning/uiLayoutApi":            "/lightning/shims/lightning/uiLayoutApi.js",
-		"lightning/uiListApi":              "/lightning/shims/lightning/uiListApi.js",
-		"lightning/uiObjectInfoApi":        "/lightning/shims/lightning/uiObjectInfoApi.js",
-		"lightning/uiRelatedListApi":       "/lightning/shims/lightning/uiRelatedListApi.js",
-		"lightning/uiRecordApi":            "/lightning/shims/lightning/uiRecordApi.js",
+		"@glade/shell/app":                      "/lightning/runtime/shell/app.js",
+		"@glade/shell/router":                   "/lightning/runtime/shell/router.js",
+		"@glade/shell/contextPanel":             "/lightning/runtime/shell/context-panel.js",
+		"@glade/shell/diagnostics":              "/lightning/runtime/shell/diagnostics.js",
+		"@glade/slds":                           "/lightning/runtime/slds/slds-loader.js",
+		"@salesforce/apex":                      "/lightning/shims/core/apex.js",
+		"@salesforce/apex/":                     "/lightning/shims/apex/",
+		"@salesforce/client/":                   "/lightning/shims/client/",
+		"@salesforce/client/formFactor":         "/lightning/shims/client/formFactor.js",
+		"@salesforce/community/":                "/lightning/shims/community/",
+		"@salesforce/community/basePath":        "/lightning/shims/community/basePath.js",
+		"@salesforce/community/Id":              "/lightning/shims/community/Id.js",
+		"@salesforce/contentAssetUrl/":          "/lightning/shims/contentAssetUrl/",
+		"@salesforce/customPermission/":         "/lightning/shims/customPermission/",
+		"@salesforce/i18n/":                     "/lightning/shims/i18n/",
+		"@salesforce/label/":                    "/lightning/shims/label/",
+		"@salesforce/messageChannel/":           "/lightning/shims/messageChannel/",
+		"@salesforce/resourceUrl/":              "/lightning/shims/resourceUrl/",
+		"@salesforce/schema/":                   "/lightning/shims/schema/",
+		"@salesforce/site/":                     "/lightning/shims/site/",
+		"@salesforce/site/Id":                   "/lightning/shims/site/Id.js",
+		"@salesforce/user/":                     "/lightning/shims/user/",
+		"lightning/":                            "/lightning/shims/lightning/",
+		"lightning/actions":                     "/lightning/shims/lightning/actions.js",
+		"lightning/alert":                       "/lightning/shims/lightning/alert.js",
+		"lightning/ariaObserver":                "/lightning/shims/lightning/ariaObserver.js",
+		"lightning/confirm":                     "/lightning/shims/lightning/confirm.js",
+		"lightning/configProvider":              "/lightning/shims/lightning/configProvider.js",
+		"lightning/context":                     "/lightning/shims/lightning/context.js",
+		"lightning/datatableKeyboardMixins":     "/lightning/shims/lightning/datatableKeyboardMixins.js",
+		"lightning/empApi":                      "/lightning/shims/lightning/empApi.js",
+		"lightning/f6Controller":                "/lightning/shims/lightning/f6Controller.js",
+		"lightning/fileDownload":                "/lightning/shims/lightning/fileDownload.js",
+		"lightning/flowSupport":                 "/lightning/shims/lightning/flowSupport.js",
+		"lightning/i18nCldrOptions":             "/lightning/shims/lightning/i18nCldrOptions.js",
+		"lightning/i18nService":                 "/lightning/shims/lightning/i18nService.js",
+		"lightning/iconUtils":                   "/lightning/shims/lightning/iconUtils.js",
+		"lightning/internalLocalizationService": "/lightning/shims/lightning/internalLocalizationService.js",
+		"lightning/mediaUtils":                  "/lightning/shims/lightning/mediaUtils.js",
+		"lightning/messageDispatcher":           "/lightning/shims/lightning/messageDispatcher.js",
+		"lightning/messageService":              "/lightning/shims/lightning/messageService.js",
+		"lightning/navigation":                  "/lightning/shims/lightning/navigation.js",
+		"lightning/overlayManager":              "/lightning/shims/lightning/overlayManager.js",
+		"lightning/pageReferenceUtils":          "/lightning/shims/lightning/pageReferenceUtils.js",
+		"lightning/platformResourceLoader":      "/lightning/shims/lightning/platformResourceLoader.js",
+		"lightning/platformShowToastEvent":      "/lightning/shims/lightning/platformShowToastEvent.js",
+		"lightning/platformWorkspaceApi":        "/lightning/shims/lightning/platformWorkspaceApi.js",
+		"lightning/prompt":                      "/lightning/shims/lightning/prompt.js",
+		"lightning/purifyLib":                   "/lightning/shims/lightning/purifyLib.js",
+		"lightning/refresh":                     "/lightning/shims/lightning/refresh.js",
+		"lightning/routingService":              "/lightning/shims/lightning/routingService.js",
+		"lightning/showToastEvent":              "/lightning/shims/lightning/showToastEvent.js",
+		"lightning/toast":                       "/lightning/shims/lightning/toast.js",
+		"lightning/uiLayoutApi":                 "/lightning/shims/lightning/uiLayoutApi.js",
+		"lightning/uiListApi":                   "/lightning/shims/lightning/uiListApi.js",
+		"lightning/uiObjectInfoApi":             "/lightning/shims/lightning/uiObjectInfoApi.js",
+		"lightning/uiRelatedListApi":            "/lightning/shims/lightning/uiRelatedListApi.js",
+		"lightning/uiRecordApi":                 "/lightning/shims/lightning/uiRecordApi.js",
+		"lightning/utils":                       "/lightning/shims/lightning/utils.js",
 	}
 	for key, value := range SupportedLightningBaseComponentSpecifiers() {
 		imports[key] = value
@@ -466,6 +485,258 @@ func ConfirmModuleJS() string {
   }
 }
 `
+}
+
+func AlertModuleJS() string {
+	return LightningBaseComponentModuleJS("alert")
+}
+
+func PromptModuleJS() string {
+	return LightningBaseComponentModuleJS("prompt")
+}
+
+func ToastModuleJS() string {
+	return LightningBaseComponentModuleJS("toast")
+}
+
+func LightningUtilityModuleJS(name string) (string, bool) {
+	switch normalizeLightningBaseComponentName(name) {
+	case "ariaobserver":
+		return `export default class AriaObserver {
+  constructor(_target = null, _options = {}) {}
+  connect() {}
+  disconnect() {}
+  observe() {}
+  sync() {}
+}
+`, true
+	case "context":
+		return `export default class LightningContext {
+  constructor() {
+    this.value = null;
+  }
+  provide(value) {
+    this.value = value;
+  }
+  consume() {
+    return this.value;
+  }
+}
+export function createContextProvider() {
+  return () => {};
+}
+`, true
+	case "datatablekeyboardmixins":
+		return `export const baseNavigation = {};
+`, true
+	case "f6controller":
+		return `export const DEFAULT_CONFIG = { navKey: "F6", f6RegionAttribute: "data-f6-region", f6RegionHighlightClass: "f6-highlight" };
+export const getActiveElement = (element) => element && element.getRootNode && element.getRootNode().activeElement || document.activeElement;
+export class F6Controller {
+  constructor(config = DEFAULT_CONFIG) {
+    this.config = config;
+  }
+  initialize() {}
+  disable() {}
+  enable() {}
+  disconnect() {}
+}
+export const createF6Controller = () => new F6Controller();
+export const getCurrentRegionAttributeName = () => DEFAULT_CONFIG.f6RegionAttribute;
+export default F6Controller;
+`, true
+	case "filedownload":
+		return `export function generateUrl(recordId) {
+  return recordId ? "/lightning/r/ContentDocument/" + encodeURIComponent(recordId) + "/view" : undefined;
+}
+`, true
+	case "i18ncldroptions":
+		return `export default function intlDatetimeformatPattern(_pattern = "") {
+  return {};
+}
+`, true
+	case "i18nservice":
+		return `function asDate(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? new Date("") : date;
+}
+export function clearCache() {}
+export function getDateTimeCLDRParser() {
+  return { parse: (value) => asDate(value) };
+}
+export function getDateTimeFormat(options = {}) {
+  return new Intl.DateTimeFormat(undefined, options);
+}
+export function getDateTimeISO8601Parser() {
+  return { parse: (value) => asDate(value) };
+}
+export function getNumberFormat(options = {}) {
+  return new Intl.NumberFormat(undefined, options);
+}
+export function getNumberParser() {
+  return { parse: (value) => Number(String(value).replace(/,/g, "")) };
+}
+export function getRelativeTimeFormat(options = {}) {
+  return new Intl.RelativeTimeFormat(undefined, options);
+}
+`, true
+	case "iconsvgtemplates", "iconsvgtemplatesaction", "iconsvgtemplatesactionrtl", "iconsvgtemplatescustom", "iconsvgtemplatescustomrtl", "iconsvgtemplatesdoctype", "iconsvgtemplatesdoctypertl", "iconsvgtemplatesrtl", "iconsvgtemplatesstandard", "iconsvgtemplatesstandardrtl", "iconsvgtemplatesutility", "iconsvgtemplatesutilityrtl":
+		return `export default {};
+`, true
+	case "iconutils":
+		return `const spriteMap = {
+  action: "/assets/icons/action-sprite/svg/symbols.svg",
+  custom: "/assets/icons/custom-sprite/svg/symbols.svg",
+  doctype: "/assets/icons/doctype-sprite/svg/symbols.svg",
+  standard: "/assets/icons/standard-sprite/svg/symbols.svg",
+  utility: "/assets/icons/utility-sprite/svg/symbols.svg",
+};
+export const isValidName = (iconName) => /^[A-Za-z]+:[A-Za-z]\w*$/.test(iconName || "");
+export const getCategory = (iconName) => String(iconName || "").split(":")[0] || "";
+export const getName = (iconName) => String(iconName || "").split(":")[1] || "";
+export const getIconPath = (iconName) => {
+  const category = getCategory(iconName);
+  const name = getName(iconName);
+  return (spriteMap[category] || spriteMap.utility) + "#" + name;
+};
+export const computeSldsClass = (iconName) => "slds-icon-" + (getCategory(iconName) || "utility") + "-" + (getName(iconName) || "placeholder").replace(/_/g, "-");
+export const getIconColor = () => null;
+export const polyfill = () => {};
+`, true
+	case "internallocalizationservice":
+		return `export function formatDateTimeUTC(value) {
+  return new Date(value).toISOString();
+}
+export function formatDateUTC(value) {
+  return new Date(value).toISOString().slice(0, 10);
+}
+export function parseDateTimeUTC(value) {
+  return new Date(value);
+}
+export function syncUTCToWallTime(value) {
+  return new Date(value);
+}
+export function syncWallTimeToUTC(value) {
+  return new Date(value);
+}
+export function addressFormat(parts = {}) {
+  return [parts.street, parts.city, parts.province, parts.postalCode, parts.country].filter(Boolean).join(", ");
+}
+export function nameFormat(parts = {}) {
+  return [parts.salutation, parts.firstName, parts.middleName, parts.lastName, parts.suffix, parts.informalName].filter(Boolean).join(" ");
+}
+`, true
+	case "mediautils":
+		return `export function processImage(input, _options = null) {
+  if (!input) {
+    return Promise.reject(new Error("Unable to read the input data."));
+  }
+  return Promise.resolve(input);
+}
+`, true
+	case "messagedispatcher":
+		return `let nextId = 1;
+const handlers = new Map();
+const domains = [];
+export function clearDomains() { domains.splice(0, domains.length); }
+export function getDomains() { return domains.slice(); }
+export function registerDomain(domain) { if (domain && !domains.includes(domain)) domains.push(domain); }
+export function unregisterDomain(domain) { const index = domains.indexOf(domain); if (index >= 0) domains.splice(index, 1); }
+export function setMessageEventHandled() {}
+export function registerMessageHandler(handler) {
+  const id = "glade-message-" + nextId++;
+  handlers.set(id, handler);
+  return id;
+}
+export function unregisterMessageHandler(id) { handlers.delete(id); }
+export function dispatchEvent(event) { window.dispatchEvent(event); }
+export function createMessage(dispatcherId, event, params = {}) { return { dispatcherId, event, params }; }
+export function postMessage(handler, message, domain, useObject) {
+  void domain; void useObject;
+  if (typeof handler === "function") handler(message);
+}
+`, true
+	case "overlaymanager":
+		return `export const TYPE_TOAST_CONTAINER = "lightning-toast-container";
+export const LWC_OVERLAY_ENGINE = "lwc";
+export const LWC_OVERLAY_STARTING_ZINDEX = 9000;
+export const LWC_TOAST_CONTAINER_STARTING_ZINDEX = 10000;
+export const LWC_ZINDEX_INCREMENT = 2;
+export const LWC_ZINDEX_OFFSET = 1;
+export const LWC_OVERLAY_TYPES = Object.freeze({});
+export const AURA_OVERLAY_ENGINE = "aura";
+export const AURA_STARTING_ZINDEX = 9001;
+export const AURA_ZINDEX_INCREMENT = 2;
+export const AURA_OVERLAY_TYPES = {};
+const overlays = [];
+export function normalizeOverlayDetails(_engine, type, details = {}) { return { type, ...details }; }
+export function addOverlayToSharedState(overlayObject) { overlays.push(overlayObject); return overlayObject; }
+export function removeOverlayFromSharedState(overlayObject) { const index = overlays.indexOf(overlayObject); if (index >= 0) overlays.splice(index, 1); }
+export function subscribeOverlay(_shouldCall, callback) { if (callback) callback(overlays.slice()); return () => {}; }
+export function getStatCount() { return overlays.length; }
+export function isLwcModalActive() { return overlays.length > 0; }
+`, true
+	case "purifylib":
+		return `export default function sanitizeHTML(dirty, _config = undefined) {
+  const template = document.createElement("template");
+  template.innerHTML = String(dirty || "");
+  for (const node of template.content.querySelectorAll("script")) {
+    node.remove();
+  }
+  return template.innerHTML;
+}
+`, true
+	case "routingservice":
+		return `export const urlTypes = { standard: "standard_webPage" };
+export class LinkInfo {
+  constructor(url, dispatcher = null) {
+    this.url = url;
+    this.dispatcher = dispatcher;
+    Object.freeze(this);
+  }
+}
+const providers = new WeakMap();
+export function hasLinkProvider(element) { return providers.has(element); }
+export function isLinkProvider(element) { return providers.has(element); }
+export function registerLinkProvider(element, providerFn) { providers.set(element, providerFn); }
+export function unregisterLinkProvider(element) { providers.delete(element); }
+export function getLinkInfo(_element, stateRef = {}) {
+  const url = stateRef && (stateRef.url || stateRef.href) || "#";
+  return Promise.resolve(new LinkInfo(url, null));
+}
+export function updateRawLinkInfo(element, info = {}) {
+  if (element && info.url) element.href = info.url;
+}
+`, true
+	case "utils":
+		return `export function classSet(initial = "") {
+  const values = new Set(String(initial || "").split(/\s+/).filter(Boolean));
+  return {
+    add(value) {
+      if (typeof value === "string") values.add(value);
+      if (value && typeof value === "object") {
+        for (const [key, enabled] of Object.entries(value)) {
+          if (enabled) values.add(key);
+        }
+      }
+      return this;
+    },
+    invert() { return this; },
+    toString() { return Array.from(values).join(" "); },
+  };
+}
+export function queryFocusable(root) {
+  return Array.from(root && root.querySelectorAll ? root.querySelectorAll("a,button,input,select,textarea,[tabindex]") : []);
+}
+export function formatLabel(label, ...args) {
+  return String(label || "").replace(/\{(\d+)\}/g, (_match, index) => String(args[Number(index)] ?? ""));
+}
+export function linkTextNodes(value) { return value; }
+export function formatUrl(value) { return String(value || ""); }
+`, true
+	default:
+		return "", false
+	}
 }
 
 func PageReferenceUtilsModuleJS() string {
@@ -1300,6 +1571,7 @@ function compactBody(body) {
 func ShowToastEventModuleJS() string {
 	return `import { recordToast } from "/lightning/runtime/shell/toast-service.js";
 export { recordToast };
+export const SHOW_TOAST_EVENT_NAME = "lightning__showtoast";
 export class ShowToastEvent extends CustomEvent {
   constructor(detail = {}) {
     super("lightning__showtoast", { bubbles: true, composed: true, cancelable: true, detail });

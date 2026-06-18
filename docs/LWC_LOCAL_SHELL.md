@@ -319,15 +319,17 @@ common local development loops:
   local `comm__namedPage`, `comm__loginPage`, `comm__managedContentPage`,
   `comm__recordPage`, and `comm__recordRelationshipPage` URL generation.
 - `lightning/messageService` in-page publish and subscribe,
-  `lightning/platformResourceLoader` local script and style loading, and
-  `lightning/platformShowToastEvent` browser toast events.
+  `lightning/platformResourceLoader` local script and style loading,
+  `lightning/platformShowToastEvent`, `lightning/showToastEvent`, and
+  `lightning/toast` browser toast paths.
 - `lightning/platformWorkspaceApi` active-route and tab label/icon
   approximation for console apps, including local tab info, open/close/focus,
   refresh, highlight, and console wire values. Full console workspace behavior
   remains a Salesforce check and is marked with `GLADELWC072`.
-- `lightning/confirm`, `lightning/configProvider`, and
-  `lightning/pageReferenceUtils` local shims for package flows, icon token
-  lookup, and default field value encode/decode helpers.
+- `lightning/alert`, `lightning/confirm`, `lightning/prompt`,
+  `lightning/configProvider`, and `lightning/pageReferenceUtils` local shims
+  for package flows, icon token lookup, localization helpers, and default
+  field value encode/decode helpers.
 - `lightning/actions`, `lightning/flowSupport`, `lightning/refresh`, and
   `lightning/empApi` practical local shims. They provide browser events,
   refresh handler dispatch, and in-page pub/sub contracts without live
@@ -338,10 +340,13 @@ Lightning Out pages where the support table names that host.
 
 ## Base Components And SLDS
 
-The shell provides practical local support for common `lightning-*` base
-components and packaged local SLDS assets. New shell pages load SLDS 2 Cosmos
-from `/lightning/runtime/slds/design-system-2/dist/css/bundled/slds2.cosmos.css`
-by default. The local runtime also serves the SLDS 2 Lightning Blue bundle,
+The shell resolves every public `lightning/*` name exposed by
+`lightning-base-components@1.28.19-alpha`: 118 module names checked from the
+npm package. Renderable `lightning-*` components use practical local
+implementations. Service and helper modules use stable local shims. New shell
+pages load SLDS 2 Cosmos from
+`/lightning/runtime/slds/design-system-2/dist/css/bundled/slds2.cosmos.css` by
+default. The local runtime also serves the SLDS 2 Lightning Blue bundle,
 classic SLDS 1 styles, icon sprites, fonts, and referenced image assets from
 the same `/lightning/runtime/slds/` tree. The legacy
 `/lightning/runtime/slds/glade-slds.css` path remains as a compatibility import
@@ -359,14 +364,33 @@ events when a rendered tab label is selected. `lightning-record-form`,
 values through the local `getRecord` endpoint and submit edits through the
 local `updateRecord` endpoint.
 
-The checked `lwc-shell` fixture also exposes an expanded base-component
-direct component context through `c:baseComponentHost` and
-`phase3BaseComponents`. It covers email links, dual listbox, select, slider,
-rich text input, menu divider, progress bar/ring, tile, breadcrumbs, tree grid,
-map, carousel, quick action panel, record picker, file upload, and the
-additional display/input/container set. The local browser capture for that
-fixture passes with no browser console errors or page errors. Live Salesforce
-parity evidence still belongs to a hosted capture report.
+The broader base-component set includes modal body/header/footer,
+alert/prompt/toast surfaces, display and formatted value helpers,
+name/location/address inputs, picklist and grouped combobox, barcode scanner,
+progress, tree and tree grid, map, carousel, vertical navigation variants,
+stacked tabs, overlay/popover containers, and the package helper modules such
+as `lightning/iconUtils`, `lightning/i18nService`, `lightning/routingService`,
+`lightning/messageDispatcher`, and icon template modules. The practical
+renderers cover common button/icon-button variants, `lightning-card`
+title/actions/footer slots, `lightning-layout` alignment and sizing classes,
+and `lightning-formatted-number` decimal, currency, percent, and percent-fixed
+formatting. These local modules are meant to keep real project LWCs rendering
+and testable. Exact hosted keyboard behavior, overlay stacking, accessibility
+edge cases, and full Salesforce chrome still belong to a Salesforce browser
+check.
+
+A small allowlist uses compiled open-source base component implementations
+instead of generated shims: `lightning-badge`, `lightning-breadcrumb`,
+`lightning-breadcrumbs`, `lightning-button-group`,
+`lightning-menu-subheader`, and `lightning-vertical-navigation-item`.
+Additional source-backed components should be added one slice at a time after
+their compiled imports are checked for local-only browser-safe dependencies.
+
+The checked `lwc-shell` fixture exposes an expanded base-component direct
+component context through `c:baseComponentHost` and `phase3BaseComponents`.
+The local browser capture for that fixture passes with no browser console
+errors or page errors. Live Salesforce parity evidence still belongs to a
+hosted capture report.
 
 Unsupported base component imports, unsupported local base-component
 attributes, and missing SLDS assets report named `GLADELWC` diagnostics. Keep a
@@ -474,7 +498,7 @@ This is local development support, not a hosted Salesforce replacement.
 | --- | --- |
 | Hosted Lightning Experience | Glade serves a local shell, not Salesforce chrome, live auth, permissions, workspace API, or exact console behavior. |
 | Metadata | The shell resolves LWC bundle metadata, FlexiPages, custom applications, custom tabs, quick actions, and configured community contexts needed for preview routes. It does not implement every builder rule or full Experience Builder runtime. |
-| Base components | Common and expanded checked `lightning-*` modules have practical local implementations, including datatable row actions, LDS-backed record form reads and submits, tab active events, dual listbox/select/slider changes, rich text input changes, record picker changes, and file upload events. Packaged SLDS 2 and classic SLDS assets are served locally, but exact hosted base-component behavior remains outside the local contract. Unsupported local attributes report `GLADELWC061`. |
+| Base components | All public `lightning/*` names exposed by `lightning-base-components@1.28.19-alpha` resolve locally. Renderable `lightning-*` modules have practical local implementations, including datatable row actions, LDS-backed record form reads and submits, tab active events, dual listbox/select/slider changes, rich text input changes, record picker changes, file upload events, overlay/toast/modal surfaces, and display/input/container helpers. Packaged SLDS 2 and classic SLDS assets are served locally, but exact hosted base-component behavior remains outside the local contract. Unsupported local attributes report `GLADELWC061`. |
 | Apex params and errors | Params must be object-shaped. `undefined` wire params suppress invocation; `null` is passed as an explicit value. Errors use a Salesforce-shaped `body.message`, `body.exceptionType`, `body.stackTrace`, and `status` envelope. |
 | LDS/UI API | Selected LDS/UI API shims use local schema and local records, including batch records, optional fields, batch object info, create-default field layouts, REST layout field sections, picklists, related-list rows, mutation refresh, and matching record-wire re-emits. Full UI API, profile layout assignment, non-field layout widgets, permissions, record edit flows, broad cross-adapter coalescing, and hosted validation parity are not complete. |
 | Apex controllers | Supported local Apex executes in the Glade VM. Unsupported Apex surfaces return diagnostics instead of calling Salesforce. |

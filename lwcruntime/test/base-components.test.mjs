@@ -81,11 +81,14 @@ function startBaseComponentServer() {
     "@glade/slds": "/lightning/runtime/slds/slds-loader.js",
     "@glade/shell/diagnostics": "/lightning/runtime/shell/diagnostics.js",
     "lightning/button": "/lightning/shims/lightning/button.js",
+    "lightning/buttonIcon": "/lightning/shims/lightning/buttonIcon.js",
     "lightning/input": "/lightning/shims/lightning/input.js",
     "lightning/inputField": "/lightning/shims/lightning/inputField.js",
     "lightning/textarea": "/lightning/shims/lightning/textarea.js",
     "lightning/combobox": "/lightning/shims/lightning/combobox.js",
     "lightning/card": "/lightning/shims/lightning/card.js",
+    "lightning/layout": "/lightning/shims/lightning/layout.js",
+    "lightning/layoutItem": "/lightning/shims/lightning/layoutItem.js",
     "lightning/datatable": "/lightning/shims/lightning/datatable.js",
     "lightning/recordForm": "/lightning/shims/lightning/recordForm.js",
     "lightning/recordEditForm": "/lightning/shims/lightning/recordEditForm.js",
@@ -102,6 +105,7 @@ function startBaseComponentServer() {
     "lightning/fileUpload": "/lightning/shims/lightning/fileUpload.js",
     "lightning/flow": "/lightning/shims/lightning/flow.js",
     "lightning/formattedDateTime": "/lightning/shims/lightning/formattedDateTime.js",
+    "lightning/formattedNumber": "/lightning/shims/lightning/formattedNumber.js",
     "lightning/formattedRichText": "/lightning/shims/lightning/formattedRichText.js",
     "lightning/helptext": "/lightning/shims/lightning/helptext.js",
     "lightning/menuItem": "/lightning/shims/lightning/menuItem.js",
@@ -125,11 +129,14 @@ import { createElement } from "lwc";
 import { loadSLDS } from "@glade/slds";
 import { diagnostics } from "@glade/shell/diagnostics";
 import Button from "lightning/button";
+import ButtonIcon from "lightning/buttonIcon";
 import Input from "lightning/input";
 import InputField from "lightning/inputField";
 import Textarea from "lightning/textarea";
 import Combobox from "lightning/combobox";
 import Card from "lightning/card";
+import Layout from "lightning/layout";
+import LayoutItem from "lightning/layoutItem";
 import Datatable from "lightning/datatable";
 import RecordForm from "lightning/recordForm";
 import RecordEditForm from "lightning/recordEditForm";
@@ -146,6 +153,7 @@ import CheckboxGroup from "lightning/checkboxGroup";
 import FileUpload from "lightning/fileUpload";
 import Flow from "lightning/flow";
 import FormattedDateTime from "lightning/formattedDateTime";
+import FormattedNumber from "lightning/formattedNumber";
 import FormattedRichText from "lightning/formattedRichText";
 import Helptext from "lightning/helptext";
 import MenuItem from "lightning/menuItem";
@@ -163,10 +171,11 @@ function append(tag, Ctor, props = {}) {
   return el;
 }
 await loadSLDS();
-const button = append("lightning-button", Button, { label: "Save", disabled: false });
+const button = append("lightning-button", Button, { label: "Save", disabled: false, variant: "brand", name: "saveButton", value: "save" });
 button.addEventListener("click", () => {
   window.__baseClickCount = (window.__baseClickCount || 0) + 1;
 });
+append("lightning-button-icon", ButtonIcon, { iconName: "utility:add", alternativeText: "Add Account", variant: "border-filled", size: "small", name: "addAccount", value: "add" });
 append("lightning-input", Input, { label: "Name", value: "Ada", disabled: false });
 const inputField = append("lightning-input-field", InputField, { fieldName: "Name", value: "Ada" });
 inputField.setErrors({ message: "Required" });
@@ -205,7 +214,24 @@ append("lightning-combobox", Combobox, {
   value: "open",
   options: [{ label: "Open", value: "open" }, { label: "Closed", value: "closed" }]
 });
-append("lightning-card", Card, { title: "Account Card" });
+const card = append("lightning-card", Card, { title: "Account Card", iconName: "standard:account", variant: "narrow" });
+const cardAction = document.createElement("button");
+cardAction.slot = "actions";
+cardAction.textContent = "Refresh";
+card.appendChild(cardAction);
+const cardBody = document.createElement("p");
+cardBody.textContent = "Card body";
+card.appendChild(cardBody);
+const cardFooter = document.createElement("a");
+cardFooter.slot = "footer";
+cardFooter.href = "#";
+cardFooter.textContent = "View All";
+card.appendChild(cardFooter);
+const layout = append("lightning-layout", Layout, { multipleRows: true, horizontalAlign: "spread", verticalAlign: "center", pullToBoundary: "small" });
+const layoutItem = createElement("lightning-layout-item", { is: LayoutItem });
+Object.assign(layoutItem, { size: 6, smallDeviceSize: 12, mediumDeviceSize: 6, largeDeviceSize: 4, padding: "around-small", flexibility: "auto" });
+layoutItem.textContent = "Layout Body";
+layout.appendChild(layoutItem);
 const datatable = createElement("lightning-datatable", { is: Datatable });
 Object.assign(datatable, {
   keyField: "id",
@@ -268,6 +294,7 @@ upload.addEventListener("uploadfinished", (event) => {
 });
 append("lightning-flow", Flow, { flowApiName: "Package_Flow" });
 append("lightning-formatted-date-time", FormattedDateTime, { value: "2026-06-17T12:00:00Z" });
+append("lightning-formatted-number", FormattedNumber, { value: 0.42, formatStyle: "percent", minimumFractionDigits: 0, maximumFractionDigits: 0 });
 append("lightning-formatted-rich-text", FormattedRichText, { value: "<b>Rich Text</b>" });
 append("lightning-helptext", Helptext, { content: "Package help" });
 append("lightning-pill", Pill, { label: "Package Pill" });
@@ -321,8 +348,17 @@ test("base components render practical SLDS 2 DOM", async (t) => {
 
     assert.match(await page.locator("lightning-button").innerText(), /Save/);
     assert.equal(await page.locator("lightning-button button").isEnabled(), true);
+    const buttonClass = await page.locator("lightning-button button").getAttribute("class");
+    assert.match(buttonClass, /slds-button_brand/);
+    assert.equal(await page.locator("lightning-button button").getAttribute("name"), "saveButton");
+    assert.equal(await page.locator("lightning-button button").getAttribute("value"), "save");
     await page.locator("lightning-button button", { hasText: "Save" }).click();
     assert.equal(await page.evaluate(() => window.__baseClickCount), 1);
+    const iconButtonClass = await page.locator("lightning-button-icon button").getAttribute("class");
+    assert.match(iconButtonClass, /slds-button_icon-border-filled/);
+    assert.match(iconButtonClass, /slds-button_icon-small/);
+    assert.equal(await page.locator("lightning-button-icon button").getAttribute("aria-label"), "Add Account");
+    assert.equal(await page.locator("lightning-button-icon button").getAttribute("name"), "addAccount");
     const nameInput = page.locator("lightning-input").filter({ hasText: "Name" });
     assert.match(await nameInput.innerText(), /Name/);
     assert.equal(await nameInput.locator("input").isEnabled(), true);
@@ -344,6 +380,21 @@ test("base components render practical SLDS 2 DOM", async (t) => {
     });
     assert.equal(await page.locator("lightning-combobox select").inputValue(), "open");
     assert.match(await page.locator("lightning-card").innerText(), /Account Card/);
+    assert.match(await page.locator("lightning-card").innerText(), /Refresh/);
+    assert.match(await page.locator("lightning-card").innerText(), /View All/);
+    assert.match(await page.locator("lightning-card article").getAttribute("class"), /slds-card_narrow/);
+    assert.equal(await page.locator("lightning-card .slds-no-flex").count(), 1);
+    assert.equal(await page.locator("lightning-card .slds-card__footer").count(), 1);
+    const layoutClass = await page.locator("lightning-layout div.slds-grid").getAttribute("class");
+    assert.match(layoutClass, /slds-grid_align-spread/);
+    assert.match(layoutClass, /slds-grid_vertical-align-center/);
+    assert.match(layoutClass, /slds-wrap/);
+    const layoutItemClass = await page.locator("lightning-layout-item div.slds-col").getAttribute("class");
+    assert.match(layoutItemClass, /slds-size_6-of-12/);
+    assert.match(layoutItemClass, /slds-small-size_12-of-12/);
+    assert.match(layoutItemClass, /slds-medium-size_6-of-12/);
+    assert.match(layoutItemClass, /slds-large-size_4-of-12/);
+    assert.match(layoutItemClass, /slds-p-around_small/);
     assert.match(await page.locator("lightning-datatable").innerText(), /Local Shell Account/);
     await page.locator("lightning-datatable button", { hasText: "View" }).click();
     assert.deepEqual(await page.evaluate(() => window.__baseRowAction), {
@@ -379,6 +430,7 @@ test("base components render practical SLDS 2 DOM", async (t) => {
     assert.match(await page.locator("lightning-checkbox-group").innerText(), /Checks/);
     assert.match(await page.locator("lightning-flow").innerText(), /Package_Flow/);
     assert.match(await page.locator("lightning-formatted-date-time").innerText(), /2026-06-17/);
+    assert.match(await page.locator("lightning-formatted-number").innerText(), /^42%$/);
     assert.match(await page.locator("lightning-formatted-rich-text").innerText(), /Rich Text/);
     assert.match(await page.locator("lightning-helptext").innerText(), /Package help/);
     assert.match(await page.locator("lightning-pill").innerText(), /Package Pill/);
@@ -403,7 +455,7 @@ test("base components render practical SLDS 2 DOM", async (t) => {
   }
 });
 
-test("unsupported base component and missing SLDS asset record diagnostics", async (t) => {
+test("package base component and missing SLDS asset record diagnostics", async (t) => {
   if (!requireLWCToolchain(t)) {
     return;
   }
@@ -415,14 +467,24 @@ test("unsupported base component and missing SLDS asset record diagnostics", asy
     await page.evaluate(async () => {
       const { loadSLDS } = await import("@glade/slds");
       await loadSLDS({ theme: "missing" });
-      try {
-        await import("/lightning/shims/lightning/formattedLocation.js");
-      } catch (_err) {
-        // The module throws after recording the diagnostic.
-      }
+      const { createElement } = await import("lwc");
+      const { default: FormattedLocation } = await import("/lightning/shims/lightning/formattedLocation.js");
+      const { default: LightningToast } = await import("/lightning/shims/lightning/toast.js");
+      const toastDetails = [];
+      document.addEventListener("lightning__showtoast", (event) => toastDetails.push(event.detail));
+      await LightningToast.show({ label: "Local Toast", message: "Ready" });
+      const el = createElement("lightning-formatted-location", { is: FormattedLocation });
+      el.latitude = "61.22";
+      el.longitude = "-149.90";
+      document.getElementById("host").appendChild(el);
+      window.__baseToastDetails = toastDetails;
     });
     const diagnostics = await page.evaluate(() => window.__baseDiagnostics.map((d) => d.code));
-    assert.ok(diagnostics.includes("GLADELWC060"), JSON.stringify(diagnostics));
+    assert.equal(await page.locator("lightning-formatted-location").innerText(), "61.22, -149.90");
+    assert.deepEqual(await page.evaluate(() => window.__baseToastDetails), [
+      { label: "Local Toast", message: "Ready", source: undefined },
+    ]);
+    assert.equal(diagnostics.includes("GLADELWC060"), false, JSON.stringify(diagnostics));
     assert.ok(diagnostics.includes("GLADELWC061"), JSON.stringify(diagnostics));
     assert.ok(diagnostics.includes("GLADELWC062"), JSON.stringify(diagnostics));
   } finally {

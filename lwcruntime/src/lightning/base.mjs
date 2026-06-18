@@ -17,6 +17,8 @@ const PUBLIC_PROPS = [
   "type",
   "variant",
   "iconName",
+  "iconPosition",
+  "iconClass",
   "alternativeText",
   "size",
   "columns",
@@ -62,6 +64,45 @@ const PUBLIC_PROPS = [
   "description",
   "dirty",
   "required",
+  "message",
+  "theme",
+  "defaultValue",
+  "latitude",
+  "longitude",
+  "salutation",
+  "firstName",
+  "middleName",
+  "lastName",
+  "suffix",
+  "informalName",
+  "format",
+  "formatStyle",
+  "displayValue",
+  "tabIndex",
+  "badgeCount",
+  "assistiveText",
+  "readOnly",
+  "maxToasts",
+  "toastPosition",
+  "containerPosition",
+  "expanded",
+  "horizontalAlign",
+  "verticalAlign",
+  "pullToBoundary",
+  "multipleRows",
+  "smallDeviceSize",
+  "mediumDeviceSize",
+  "largeDeviceSize",
+  "padding",
+  "flexibility",
+  "alignmentBump",
+  "currencyCode",
+  "currencyDisplayAs",
+  "minimumIntegerDigits",
+  "minimumFractionDigits",
+  "maximumFractionDigits",
+  "minimumSignificantDigits",
+  "maximumSignificantDigits",
 ];
 
 const PUBLIC_METHODS = [
@@ -104,6 +145,37 @@ function publicMethods() {
 
 export function createBaseComponent(selector, render, options = {}) {
   class GladeBaseComponent extends LightningElement {
+    static open(options = {}) {
+      if (selector === "lightning-alert") {
+        window.dispatchEvent(new CustomEvent("gladealert", { detail: options, bubbles: true, composed: true }));
+        return Promise.resolve(options.result);
+      }
+      if (selector === "lightning-prompt") {
+        window.dispatchEvent(new CustomEvent("gladeprompt", { detail: options, bubbles: true, composed: true }));
+        return Promise.resolve(options.value ?? options.defaultValue ?? "");
+      }
+      if (selector === "lightning-modal") {
+        window.dispatchEvent(new CustomEvent("lightning__modalopen", { detail: { ...options } }));
+        return Promise.resolve(options.result);
+      }
+      return Promise.resolve(options.result);
+    }
+
+    static show(config = {}, source) {
+      const detail = { ...config, source };
+      document.dispatchEvent(new CustomEvent("lightning__showtoast", {
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+        detail,
+      }));
+      return Promise.resolve(detail);
+    }
+
+    static instance() {
+      return { maxToasts: 5, toastPosition: "top-center", containerPosition: "fixed" };
+    }
+
     reportUnsupportedAttributes() {
       const unsupportedAttrs = unsupportedBaseAttributes(this);
       if (!unsupportedAttrs.length) {
@@ -561,14 +633,186 @@ function markerText(marker) {
   ].filter(Boolean).join(", ");
 }
 
+function normalizeChoice(value, validValues, fallbackValue) {
+  const text = String(value ?? "").toLowerCase();
+  return validValues.includes(text) ? text : fallbackValue;
+}
+
+function normalizedButtonType(type) {
+  return normalizeChoice(type, ["button", "reset", "submit"], "button");
+}
+
+function buttonClassMap(variant) {
+  const normalized = normalizeChoice(variant, ["base", "neutral", "brand", "destructive", "inverse", "success"], "neutral");
+  return {
+    "slds-button": true,
+    "slds-button_neutral": normalized === "neutral",
+    "slds-button_brand": normalized === "brand",
+    "slds-button_destructive": normalized === "destructive",
+    "slds-button_inverse": normalized === "inverse",
+    "slds-button_success": normalized === "success",
+  };
+}
+
+function buttonIconClassMap(variant, size) {
+  const normalizedVariant = normalizeChoice(variant, ["bare", "brand", "container", "border", "border-filled", "bare-inverse", "border-inverse"], "border");
+  const normalizedSize = normalizeChoice(size, ["xx-small", "x-small", "small", "medium", "large"], "medium");
+  const isBare = normalizedVariant.startsWith("bare");
+  return {
+    "slds-button": true,
+    "slds-button_icon": true,
+    "slds-button_icon-bare": isBare,
+    "slds-button_icon-container": normalizedVariant === "container",
+    "slds-button_icon-border": normalizedVariant === "border",
+    "slds-button_icon-border-filled": normalizedVariant === "border-filled",
+    "slds-button_icon-border-inverse": normalizedVariant === "border-inverse",
+    "slds-button_icon-inverse": normalizedVariant === "bare-inverse",
+    "slds-button_icon-brand": normalizedVariant === "brand",
+    "slds-button_icon-small": !isBare && normalizedSize === "small",
+    "slds-button_icon-x-small": !isBare && normalizedSize === "x-small",
+    "slds-button_icon-xx-small": !isBare && normalizedSize === "xx-small",
+  };
+}
+
+function cardClassMap(variant) {
+  return {
+    "slds-card": true,
+    "slds-card_narrow": normalizeChoice(variant, ["base", "narrow"], "base") === "narrow",
+  };
+}
+
+function layoutClassMap(component) {
+  const horizontal = {
+    center: "slds-grid_align-center",
+    space: "slds-grid_align-space",
+    spread: "slds-grid_align-spread",
+    end: "slds-grid_align-end",
+  };
+  const vertical = {
+    start: "slds-grid_vertical-align-start",
+    center: "slds-grid_vertical-align-center",
+    end: "slds-grid_vertical-align-end",
+    stretch: "slds-grid_vertical-stretch",
+  };
+  const boundary = {
+    small: "slds-grid_pull-padded",
+    medium: "slds-grid_pull-padded-medium",
+    large: "slds-grid_pull-padded-large",
+  };
+  const classes = { "slds-grid": true };
+  const hClass = horizontal[normalizeChoice(component?.horizontalAlign, Object.keys(horizontal), "")];
+  const vClass = vertical[normalizeChoice(component?.verticalAlign, Object.keys(vertical), "")];
+  const bClass = boundary[normalizeChoice(component?.pullToBoundary, Object.keys(boundary), "")];
+  if (hClass) classes[hClass] = true;
+  if (vClass) classes[vClass] = true;
+  if (bClass) classes[bClass] = true;
+  if (Boolean(component?.multipleRows)) classes["slds-wrap"] = true;
+  return classes;
+}
+
+function normalizedLayoutSize(value) {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+  const size = Math.round(Number(value));
+  return Number.isFinite(size) && size >= 1 && size <= 12 ? size : null;
+}
+
+function layoutItemClassMap(component) {
+  const classes = { "slds-col": true };
+  const padding = String(component?.padding || "").toLowerCase();
+  const paddingClasses = {
+    "horizontal-small": ["slds-p-right_small", "slds-p-left_small"],
+    "horizontal-medium": ["slds-p-right_medium", "slds-p-left_medium"],
+    "horizontal-large": ["slds-p-right_large", "slds-p-left_large"],
+    "around-small": ["slds-p-around_small"],
+    "around-medium": ["slds-p-around_medium"],
+    "around-large": ["slds-p-around_large"],
+  };
+  for (const className of paddingClasses[padding] || []) classes[className] = true;
+  const flexValues = Array.isArray(component?.flexibility)
+    ? component.flexibility
+    : String(component?.flexibility || "").split(",").map((item) => item.trim()).filter(Boolean);
+  const flexClasses = {
+    auto: "slds-col",
+    grow: "slds-grow",
+    shrink: "slds-shrink",
+    "no-grow": "slds-grow-none",
+    "no-shrink": "slds-shrink-none",
+    "no-flex": "slds-no-flex",
+  };
+  for (const value of flexValues) {
+    if (flexClasses[value]) classes[flexClasses[value]] = true;
+  }
+  for (const [prop, prefix] of [["size", "slds-size_"], ["smallDeviceSize", "slds-small-size_"], ["mediumDeviceSize", "slds-medium-size_"], ["largeDeviceSize", "slds-large-size_"]]) {
+    const size = normalizedLayoutSize(component?.[prop]);
+    if (size) classes[`${prefix}${size}-of-12`] = true;
+  }
+  const bump = normalizeChoice(component?.alignmentBump, ["left", "top", "right", "bottom"], "");
+  if (bump) classes[`slds-col_bump-${bump}`] = true;
+  return classes;
+}
+
+function numericOption(value) {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
+
+function formatNumberValue(component) {
+  const raw = component?.value;
+  if (raw === undefined || raw === null || raw === "" || !Number.isFinite(Number(raw))) {
+    return "";
+  }
+  let style = normalizeChoice(component?.formatStyle, ["decimal", "currency", "percent", "percent-fixed"], "decimal");
+  let value = Number(raw);
+  if (style === "percent-fixed") {
+    style = "percent";
+    value /= 100;
+  }
+  const options = { style };
+  if (style === "currency") {
+    options.currency = component?.currencyCode || "USD";
+    options.currencyDisplay = normalizeChoice(component?.currencyDisplayAs, ["symbol", "code", "name"], "symbol");
+  }
+  for (const [prop, option] of [
+    ["minimumIntegerDigits", "minimumIntegerDigits"],
+    ["minimumFractionDigits", "minimumFractionDigits"],
+    ["maximumFractionDigits", "maximumFractionDigits"],
+    ["minimumSignificantDigits", "minimumSignificantDigits"],
+    ["maximumSignificantDigits", "maximumSignificantDigits"],
+  ]) {
+    const parsed = numericOption(component?.[prop]);
+    if (parsed !== undefined) options[option] = parsed;
+  }
+  try {
+    return new Intl.NumberFormat(undefined, options).format(value);
+  } catch {
+    return String(raw);
+  }
+}
+
 export function renderButton($api, $cmp) {
   const { h, t } = $api;
+  const iconText = iconLabel($cmp.iconName);
   return [h("button", {
-    classMap: { "slds-button": true, "slds-button_neutral": true },
-    attrs: { type: $cmp.type || "button" },
+    classMap: buttonClassMap($cmp.variant),
+    attrs: {
+      type: normalizedButtonType($cmp.type),
+      name: $cmp.name || undefined,
+      value: $cmp.value == null ? undefined : String($cmp.value),
+      title: $cmp.title || undefined,
+      "aria-label": $cmp.alternativeText || undefined,
+    },
     props: { disabled: Boolean($cmp.disabled) },
     key: 0,
-  }, [t($cmp.label || "")])];
+  }, [
+    t($cmp.iconName && $cmp.iconPosition !== "right" ? `${iconText} ` : ""),
+    t($cmp.label || ""),
+    t($cmp.iconName && $cmp.iconPosition === "right" ? ` ${iconText}` : ""),
+  ])];
 }
 
 export function renderButtonStateful($api, $cmp) {
@@ -576,7 +820,7 @@ export function renderButtonStateful($api, $cmp) {
   const selected = Boolean($cmp.selected || $cmp.checked);
   const label = $cmp.label || (selected ? $cmp.labelWhenOn : $cmp.labelWhenOff) || $cmp.labelWhenHover || "";
   return [h("button", {
-    classMap: { "slds-button": true, "slds-button_neutral": true },
+    classMap: { ...buttonClassMap($cmp.variant), "slds-button_stateful": true, "slds-is-selected": selected, "slds-not-selected": !selected },
     attrs: { type: "button", "aria-pressed": String(selected) },
     props: { disabled: Boolean($cmp.disabled) },
     key: 0,
@@ -585,21 +829,47 @@ export function renderButtonStateful($api, $cmp) {
 
 export function renderButtonIcon($api, $cmp) {
   const { h, t } = $api;
+  const children = [t(iconLabel($cmp.iconName))];
+  if ($cmp.alternativeText) {
+    children.push(h("span", { classMap: { "slds-assistive-text": true }, key: 1 }, [t($cmp.alternativeText)]));
+  }
   return [h("button", {
-    classMap: { "slds-button": true, "slds-button_icon": true },
-    attrs: { type: "button", title: $cmp.alternativeText || $cmp.iconName || "" },
+    classMap: buttonIconClassMap($cmp.variant, $cmp.size),
+    attrs: {
+      type: normalizedButtonType($cmp.type),
+      name: $cmp.name || undefined,
+      value: $cmp.value == null ? undefined : String($cmp.value),
+      title: $cmp.alternativeText || $cmp.iconName || "",
+      "aria-label": $cmp.alternativeText || undefined,
+    },
     props: { disabled: Boolean($cmp.disabled) },
     key: 0,
-  }, [t(iconLabel($cmp.iconName))])];
+  }, children)];
 }
 
 export function renderCard($api, $cmp, $slotset) {
   const { h, t, s } = $api;
-  return [h("article", { classMap: { "slds-card": true }, key: 0 }, [
-    h("header", { classMap: { "slds-card__header": true }, key: 1 }, [
-      h("h2", { classMap: { "slds-card__header-title": true }, key: 2 }, [t($cmp.title || "")]),
+  const titleChildren = $cmp.title ? [t($cmp.title)] : [s("title", { key: 8 }, [], $slotset)];
+  const mediaChildren = [];
+  if ($cmp.iconName) {
+    mediaChildren.push(h("span", {
+      classMap: { "slds-media__figure": true, "slds-icon_container": true },
+      attrs: { title: $cmp.iconName },
+      key: 4,
+    }, [t(iconLabel($cmp.iconName))]));
+  }
+  mediaChildren.push(h("div", { classMap: { "slds-media__body": true, "slds-truncate": true }, key: 5 }, [
+    h("h2", { classMap: { "slds-card__header-title": true }, key: 6 }, [
+      h("span", { classMap: { "slds-text-heading_small": true }, key: 7 }, titleChildren),
     ]),
-    h("div", { classMap: { "slds-card__body": true }, key: 3 }, [s("", { key: 4 }, [], $slotset)]),
+  ]));
+  return [h("article", { classMap: cardClassMap($cmp.variant), key: 0 }, [
+    h("header", { classMap: { "slds-card__header": true, "slds-grid": true }, key: 1 }, [
+      h("div", { classMap: { "slds-media": true, "slds-media_center": true, "slds-has-flexi-truncate": true }, key: 2 }, mediaChildren),
+      h("div", { classMap: { "slds-no-flex": true }, key: 9 }, [s("actions", { key: 10 }, [], $slotset)]),
+    ]),
+    h("div", { classMap: { "slds-card__body": true }, key: 11 }, [s("", { key: 12 }, [], $slotset)]),
+    h("div", { classMap: { "slds-card__footer": true }, key: 13 }, [s("footer", { key: 14 }, [], $slotset)]),
   ])];
 }
 
@@ -651,14 +921,14 @@ export function renderCombobox($api, $cmp) {
   ])];
 }
 
-export function renderLayout($api, _cmp, $slotset) {
-  return [$api.h("div", { classMap: { "slds-grid": true, "slds-wrap": true }, key: 0 }, [
+export function renderLayout($api, $cmp, $slotset) {
+  return [$api.h("div", { classMap: layoutClassMap($cmp), key: 0 }, [
     $api.s("", { key: 1 }, [], $slotset),
   ])];
 }
 
-export function renderLayoutItem($api, _cmp, $slotset) {
-  return [$api.h("div", { classMap: { "slds-col": true }, key: 0 }, [
+export function renderLayoutItem($api, $cmp, $slotset) {
+  return [$api.h("div", { classMap: layoutItemClassMap($cmp), key: 0 }, [
     $api.s("", { key: 1 }, [], $slotset),
   ])];
 }
@@ -808,6 +1078,15 @@ export function renderTextContainer(tagName, className) {
     attrs: { title: String($cmp.value ?? $cmp.label ?? "") },
     key: 0,
   }, [$api.t($cmp.value ?? $cmp.label ?? "")])];
+}
+
+export function renderFormattedNumber($api, $cmp) {
+  const text = formatNumberValue($cmp);
+  return [$api.h("span", {
+    classMap: { "slds-truncate": true },
+    attrs: { title: text },
+    key: 0,
+  }, [$api.t(text)])];
 }
 
 export function renderFormattedEmail($api, $cmp) {
@@ -1010,6 +1289,150 @@ export function renderFormattedAddress($api, $cmp) {
   ])];
 }
 
+export function renderFormattedLocation($api, $cmp) {
+  return [$api.h("span", { classMap: { "slds-truncate": true }, key: 0 }, [
+    $api.t([$cmp.latitude, $cmp.longitude].filter((value) => value !== undefined && value !== null && value !== "").join(", ")),
+  ])];
+}
+
+export function renderFormattedName($api, $cmp) {
+  return [$api.h("span", { classMap: { "slds-truncate": true }, key: 0 }, [
+    $api.t([$cmp.salutation, $cmp.firstName, $cmp.middleName, $cmp.lastName, $cmp.suffix, $cmp.informalName, $cmp.value].filter(Boolean).join(" ")),
+  ])];
+}
+
+export function renderFormattedLookup($api, $cmp) {
+  const href = $cmp.href || ($cmp.recordId ? `/lightning/r/${$cmp.objectApiName || "Record"}/${$cmp.recordId}/view` : "#");
+  return [$api.h("a", {
+    attrs: { href, tabindex: $cmp.tabIndex == null ? undefined : String($cmp.tabIndex) },
+    key: 0,
+    on: { click: $api.b($cmp.handleActive) },
+  }, [$api.t($cmp.displayValue || $cmp.label || $cmp.recordId || "")])];
+}
+
+export function renderInputLocation($api, $cmp) {
+  const { h, t, b } = $api;
+  return [h("fieldset", { classMap: { "slds-form-element": true }, key: 0 }, [
+    h("legend", { classMap: { "slds-form-element__legend": true }, key: 1 }, [t($cmp.label || "Location")]),
+    h("input", {
+      classMap: { "slds-input": true },
+      attrs: { type: "number", step: "any", placeholder: "Latitude" },
+      props: { value: $cmp.latitude ?? "", disabled: Boolean($cmp.disabled), required: Boolean($cmp.required) },
+      key: 2,
+      on: { change: b($cmp.handleChange), input: b($cmp.handleChange) },
+    }),
+    h("input", {
+      classMap: { "slds-input": true },
+      attrs: { type: "number", step: "any", placeholder: "Longitude" },
+      props: { value: $cmp.longitude ?? "", disabled: Boolean($cmp.disabled), required: Boolean($cmp.required) },
+      key: 3,
+      on: { change: b($cmp.handleChange), input: b($cmp.handleChange) },
+    }),
+  ])];
+}
+
+export function renderInputName($api, $cmp) {
+  const { h, t, b } = $api;
+  return [h("fieldset", { classMap: { "slds-form-element": true }, key: 0 }, [
+    h("legend", { classMap: { "slds-form-element__legend": true }, key: 1 }, [t($cmp.label || "Name")]),
+    h("input", {
+      classMap: { "slds-input": true },
+      attrs: { placeholder: "First Name" },
+      props: { value: $cmp.firstName || "", disabled: Boolean($cmp.disabled), required: Boolean($cmp.required) },
+      key: 2,
+      on: { change: b($cmp.handleChange), input: b($cmp.handleChange) },
+    }),
+    h("input", {
+      classMap: { "slds-input": true },
+      attrs: { placeholder: "Last Name" },
+      props: { value: $cmp.lastName || "", disabled: Boolean($cmp.disabled), required: Boolean($cmp.required) },
+      key: 3,
+      on: { change: b($cmp.handleChange), input: b($cmp.handleChange) },
+    }),
+  ])];
+}
+
+export function renderDialogNotice(kind) {
+  return ($api, $cmp, $slotset) => {
+    const { h, t, s } = $api;
+    return [h("section", { classMap: { "slds-modal": true, "slds-fade-in-open": true }, attrs: { role: kind }, key: 0 }, [
+      h("div", { classMap: { "slds-modal__container": true }, key: 1 }, [
+        h("header", { classMap: { "slds-modal__header": true }, key: 2 }, [t($cmp.label || $cmp.title || kind)]),
+        h("div", { classMap: { "slds-modal__content": true }, key: 3 }, [
+          t($cmp.message || $cmp.value || ""),
+          s("", { key: 4 }, [], $slotset),
+        ]),
+      ]),
+    ])];
+  };
+}
+
+export function renderModalHeader($api, $cmp, $slotset) {
+  const { h, t, s } = $api;
+  return [h("header", { classMap: { "slds-modal__header": true }, key: 0 }, [
+    h("h2", { classMap: { "slds-modal__title": true }, key: 1 }, [t($cmp.label || $cmp.title || "")]),
+    s("", { key: 2 }, [], $slotset),
+  ])];
+}
+
+export function renderDynamicIcon($api, $cmp) {
+  return [$api.h("span", {
+    classMap: { "slds-icon_container": true },
+    attrs: { title: $cmp.alternativeText || $cmp.type || $cmp.iconName || "" },
+    key: 0,
+  }, [$api.t($cmp.alternativeText || $cmp.type || $cmp.iconName || "")])];
+}
+
+export function renderBarcodeScanner($api, $cmp) {
+  return [$api.h("button", {
+    classMap: { "slds-button": true, "slds-button_neutral": true },
+    attrs: { type: "button" },
+    props: { disabled: Boolean($cmp.disabled) },
+    key: 0,
+  }, [$api.t($cmp.label || "Scan Barcode")])];
+}
+
+export function renderPrimitiveFigure($api, $cmp, $slotset) {
+  const { h, t, s } = $api;
+  return [h("figure", { classMap: { "slds-figure": true }, key: 0 }, [
+    s("", { key: 1 }, [], $slotset),
+    h("figcaption", { key: 2 }, [t($cmp.label || $cmp.title || "")]),
+  ])];
+}
+
+export function renderRelativeDateTime($api, $cmp) {
+  return [$api.h("time", {
+    classMap: { "slds-truncate": true },
+    attrs: { datetime: String($cmp.value || "") },
+    key: 0,
+  }, [$api.t($cmp.value || "")])];
+}
+
+export function renderStackedTab($api, $cmp) {
+  return [$api.h("button", {
+    classMap: { "slds-button": true, "slds-button_neutral": true },
+    attrs: { type: "button" },
+    props: { disabled: Boolean($cmp.disabled) },
+    key: 0,
+    on: { click: $api.b($cmp.handleActive) },
+  }, [$api.t($cmp.label || $cmp.name || "")])];
+}
+
+export function renderToast($api, $cmp, $slotset) {
+  const { h, t, s } = $api;
+  return [h("section", {
+    classMap: { "slds-notify": true, "slds-notify_toast": true },
+    attrs: { role: $cmp.variant === "error" ? "alert" : "status" },
+    key: 0,
+  }, [
+    h("h2", { classMap: { "slds-text-heading_small": true }, key: 1 }, [t($cmp.label || $cmp.title || "")]),
+    h("div", { classMap: { "slds-notify__content": true }, key: 2 }, [
+      t($cmp.message || $cmp.value || ""),
+      s("", { key: 3 }, [], $slotset),
+    ]),
+  ])];
+}
+
 export function renderAvatar($api, $cmp) {
   return [$api.h("span", {
     classMap: { "slds-avatar": true },
@@ -1189,4 +1612,43 @@ export function renderVerticalNavigationItem($api, $cmp) {
     key: 0,
     on: { click: $api.b($cmp.handleActive) },
   }, [$api.t($cmp.label || $cmp.name || "")])];
+}
+
+export function renderVerticalNavigationItemBadge($api, $cmp) {
+  return [$api.h("a", {
+    classMap: { "slds-nav-vertical__action": true },
+    attrs: { href: $cmp.href || "#", role: "link" },
+    key: 0,
+    on: { click: $api.b($cmp.handleActive) },
+  }, [
+    $api.t($cmp.label || $cmp.name || ""),
+    $api.h("span", {
+      classMap: { "slds-badge": true },
+      attrs: { title: $cmp.assistiveText || "" },
+      key: 1,
+    }, [$api.t(String($cmp.badgeCount ?? ""))]),
+  ])];
+}
+
+export function renderVerticalNavigationItemIcon($api, $cmp) {
+  return [$api.h("a", {
+    classMap: { "slds-nav-vertical__action": true },
+    attrs: { href: $cmp.href || "#", role: "link" },
+    key: 0,
+    on: { click: $api.b($cmp.handleActive) },
+  }, [
+    $api.h("span", { classMap: { "slds-icon_container": true }, key: 1 }, [
+      $api.t(iconLabel($cmp.iconName)),
+    ]),
+    $api.t($cmp.label || $cmp.name || ""),
+  ])];
+}
+
+export function renderVerticalNavigationOverflow($api, $cmp) {
+  return [$api.h("button", {
+    classMap: { "slds-button": true, "slds-button_reset": true },
+    attrs: { type: "button" },
+    key: 0,
+    on: { click: $api.b($cmp.handleActive) },
+  }, [$api.t($cmp.label || ($cmp.expanded ? "Show Less" : "Show More"))])];
 }

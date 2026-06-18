@@ -257,26 +257,41 @@ The LWC shell supports:
   strings and report `GLADELWC102`.
 - `comm__namedPage`, `comm__loginPage`, `comm__managedContentPage`,
   `comm__recordPage`, and `comm__recordRelationshipPage` local URL generation.
-- `lightning/messageService`, `lightning/platformResourceLoader`, and
-  `lightning/platformShowToastEvent` shims in the shell and Visualforce
-  Lightning Out where the support table names that host.
+- `lightning/messageService`, `lightning/platformResourceLoader`,
+  `lightning/platformShowToastEvent`, `lightning/showToastEvent`, and
+  `lightning/toast` shims in the shell and Visualforce Lightning Out where the
+  support table names that host.
 - `lightning/platformWorkspaceApi` console approximation for local tab info,
   open/close/focus, refresh, highlight, label/icon helpers, and console wire
   values.
-- `lightning/confirm`, `lightning/configProvider`, and
-  `lightning/pageReferenceUtils` shims for confirm flows, icon token lookup,
-  and default field value encode/decode helpers.
+- `lightning/alert`, `lightning/confirm`, `lightning/prompt`,
+  `lightning/configProvider`, and `lightning/pageReferenceUtils` shims for
+  overlay flows, icon token lookup, localization helpers, and default field
+  value encode/decode helpers.
 - `lightning/actions`, `lightning/flowSupport`, `lightning/refresh`, and
   `lightning/empApi` practical local shims for quick-action events, flow-screen
   events, in-page refresh handlers, and local pub/sub.
-- Practical local implementations for common `lightning-*` base components,
-  including datatable row actions, LDS-backed record form reads and submits,
-  record-form `success` and `error` events, and tab active events.
+- Practical local implementations for every public `lightning/*` name exposed
+  by `lightning-base-components@1.28.19-alpha`: 118 module names checked from
+  the npm package. Renderable components get local renderers; service and
+  helper modules get local shims.
+- Source-backed local implementations for an allowlist of simple base
+  components: `lightning-badge`, `lightning-breadcrumb`,
+  `lightning-breadcrumbs`, `lightning-button-group`,
+  `lightning-menu-subheader`, and
+  `lightning-vertical-navigation-item`.
 - Expanded checked `lightning-*` modules used by the checked LWC fixture,
   mounted through `c:baseComponentHost` and the `phase3BaseComponents`
-  context. The set covers email, dual listbox, select, slider, rich text input,
-  menu divider, progress, breadcrumbs, tree grid, map, carousel, record picker,
-  file upload, and additional display/input/container components.
+  context. The set includes modal body/header/footer, alert/prompt/toast
+  surfaces, display and formatted value helpers, name/location/address inputs,
+  picklist and grouped combobox, barcode scanner, progress, tree and tree
+  grid, map, carousel, vertical navigation variants, stacked tabs, and local
+  overlay/popover containers.
+- Deeper practical base-component contracts for common local development:
+  button and icon-button variants, `lightning-card` title/actions/footer slots,
+  `lightning-layout` alignment and sizing classes, and
+  `lightning-formatted-number` decimal, currency, percent, and percent-fixed
+  output.
 - Packaged local SLDS 2 styling for shell and base-component previews, with
   classic SLDS assets available from the same runtime asset tree.
 

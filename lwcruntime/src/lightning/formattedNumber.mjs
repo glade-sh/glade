@@ -1,3 +1,3 @@
-import { createBaseComponent, renderTextContainer } from "./base.mjs";
+import { createBaseComponent, renderFormattedNumber } from "./base.mjs";
 
-export default createBaseComponent("lightning-formatted-number", renderTextContainer("span", "slds-truncate"));
+export default createBaseComponent("lightning-formatted-number", renderFormattedNumber);

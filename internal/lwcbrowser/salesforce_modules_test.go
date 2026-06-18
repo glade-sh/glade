@@ -55,11 +55,15 @@ func TestSalesforceImportMapIncludesPhase8Shims(t *testing.T) {
 		"lightning/platformResourceLoader",
 		"lightning/messageService",
 		"lightning/actions",
+		"lightning/alert",
 		"lightning/confirm",
 		"lightning/configProvider",
 		"lightning/empApi",
 		"lightning/flowSupport",
+		"lightning/prompt",
 		"lightning/refresh",
+		"lightning/showToastEvent",
+		"lightning/toast",
 		"lightning/platformWorkspaceApi",
 		"lightning/uiLayoutApi",
 		"lightning/uiListApi",
@@ -83,18 +87,62 @@ func TestMessageChannelModuleJSExportsChannelToken(t *testing.T) {
 func TestPackagePhase1ServiceModulesExportLocalContracts(t *testing.T) {
 	cases := map[string][]string{
 		"actions":            {ActionsModuleJS(), "CloseActionScreenEvent", "closeactionscreen"},
+		"alert":              {AlertModuleJS(), "LightningAlert", "static open", "gladealert"},
 		"confirm":            {ConfirmModuleJS(), "LightningConfirm", "Promise.resolve(true)"},
 		"configProvider":     {ConfigProviderModuleJS(), "getPathPrefix", "getToken", "getIconSvgTemplates", "getLocalizationService", "getOneConfig"},
 		"customPermission":   {CustomPermissionModuleJS("LocalPermission"), "permissionName", "LocalPermission", "export default true"},
 		"empApi":             {EmpAPIModuleJS(), "subscribe", "unsubscribe", "isEmpEnabled"},
 		"flowSupport":        {FlowSupportModuleJS(), "FlowAttributeChangeEvent", "flownavigationnext", "flownavigationfinish"},
 		"pageReferenceUtils": {PageReferenceUtilsModuleJS(), "encodeDefaultFieldValues", "decodeDefaultFieldValues"},
+		"prompt":             {PromptModuleJS(), "LightningPrompt", "static open", "gladeprompt"},
 		"refresh":            {RefreshModuleJS(), "RefreshEvent", "registerRefreshHandler", "unregisterRefreshHandler"},
+		"showToastEvent":     {ShowToastEventModuleJS(), "SHOW_TOAST_EVENT_NAME", "ShowToastEvent", "lightning__showtoast"},
+		"toast":              {ToastModuleJS(), "LightningToast", "static show", "lightning__showtoast"},
 	}
 	for name, parts := range cases {
 		js := parts[0]
 		if !containsAll(js, parts[1:]...) {
 			t.Fatalf("%s module js = %q", name, js)
+		}
+	}
+}
+
+func TestNPMPackageExposedUtilityModulesResolveLocally(t *testing.T) {
+	for _, name := range []string{
+		"ariaObserver",
+		"context",
+		"datatableKeyboardMixins",
+		"f6Controller",
+		"fileDownload",
+		"i18nCldrOptions",
+		"i18nService",
+		"iconSvgTemplates",
+		"iconSvgTemplatesAction",
+		"iconSvgTemplatesActionRtl",
+		"iconSvgTemplatesCustom",
+		"iconSvgTemplatesCustomRtl",
+		"iconSvgTemplatesDoctype",
+		"iconSvgTemplatesDoctypeRtl",
+		"iconSvgTemplatesRtl",
+		"iconSvgTemplatesStandard",
+		"iconSvgTemplatesStandardRtl",
+		"iconSvgTemplatesUtility",
+		"iconSvgTemplatesUtilityRtl",
+		"iconUtils",
+		"internalLocalizationService",
+		"mediaUtils",
+		"messageDispatcher",
+		"overlayManager",
+		"purifyLib",
+		"routingService",
+		"utils",
+	} {
+		js, ok := LightningUtilityModuleJS(name)
+		if !ok {
+			t.Fatalf("%s should resolve as a local lightning utility shim", name)
+		}
+		if !strings.Contains(js, "export") {
+			t.Fatalf("%s utility shim has no exports: %q", name, js)
 		}
 	}
 }
@@ -153,6 +201,19 @@ func TestLightningBaseComponentModuleJSExportsPracticalComponent(t *testing.T) {
 	js := LightningBaseComponentModuleJS("combobox")
 	if !containsAll(js, "LightningElement", "registerTemplate", "registerComponent", "lightning-combobox", "slds-combobox", "change", "export default") {
 		t.Fatalf("js = %q", js)
+	}
+}
+
+func TestLightningSourceBackedComponentModuleJSWrapsCompiledRuntimeAsset(t *testing.T) {
+	js, ok := LightningSourceBackedComponentModuleJS("badge")
+	if !ok {
+		t.Fatalf("badge should be source backed")
+	}
+	if !containsAll(js, `export { default }`, `/lightning/runtime/lightning/source/badge/badge.js`) {
+		t.Fatalf("source backed badge js = %q", js)
+	}
+	if _, ok := LightningSourceBackedComponentModuleJS("combobox"); ok {
+		t.Fatalf("combobox should still use generated shim until its source graph is allowlisted")
 	}
 }
 

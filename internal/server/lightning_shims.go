@@ -105,9 +105,15 @@ func (s *Server) serveLightningAPIShim(w http.ResponseWriter, parts []string) {
 		return
 	}
 	token := strings.TrimSuffix(strings.TrimSpace(parts[0]), ".js")
+	if js, ok := lwcbrowser.LightningSourceBackedComponentModuleJS(token); ok {
+		writeJavaScript(w, []byte(js))
+		return
+	}
 	switch token {
 	case "actions":
 		writeJavaScript(w, []byte(lwcbrowser.ActionsModuleJS()))
+	case "alert":
+		writeJavaScript(w, []byte(lwcbrowser.AlertModuleJS()))
 	case "confirm":
 		writeJavaScript(w, []byte(lwcbrowser.ConfirmModuleJS()))
 	case "configProvider":
@@ -132,6 +138,12 @@ func (s *Server) serveLightningAPIShim(w http.ResponseWriter, parts []string) {
 		writeJavaScript(w, []byte(lwcbrowser.PageReferenceUtilsModuleJS()))
 	case "platformShowToastEvent":
 		writeJavaScript(w, []byte(lwcbrowser.ShowToastEventModuleJS()))
+	case "prompt":
+		writeJavaScript(w, []byte(lwcbrowser.PromptModuleJS()))
+	case "showToastEvent":
+		writeJavaScript(w, []byte(lwcbrowser.ShowToastEventModuleJS()))
+	case "toast":
+		writeJavaScript(w, []byte(lwcbrowser.ToastModuleJS()))
 	case "platformResourceLoader":
 		writeJavaScript(w, []byte(lwcbrowser.PlatformResourceLoaderModuleJS()))
 	case "platformWorkspaceApi":
@@ -141,6 +153,10 @@ func (s *Server) serveLightningAPIShim(w http.ResponseWriter, parts []string) {
 	case "messageService":
 		writeJavaScript(w, []byte(lwcbrowser.MessageServiceModuleJS()))
 	default:
+		if js, ok := lwcbrowser.LightningUtilityModuleJS(token); ok {
+			writeJavaScript(w, []byte(js))
+			return
+		}
 		if lwcbrowser.IsLightningBaseComponentModule(token) {
 			writeJavaScript(w, []byte(lwcbrowser.LightningBaseComponentModuleJS(token)))
 			return
