@@ -94,3 +94,49 @@ func TestDiscoverShellRoutesIncludesCommunityContextPresets(t *testing.T) {
 		t.Fatalf("routes = %#v", routes)
 	}
 }
+
+func TestDiscoverShellRoutesIncludesUrlAddressableAndQuickActions(t *testing.T) {
+	root := t.TempDir()
+	metaPath := writeProjectFile(t, root, "force-app/main/default/lwc/actionProbe/actionProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+  <apiVersion>61.0</apiVersion>
+  <isExposed>true</isExposed>
+  <targets>
+    <target>lightning__RecordAction</target>
+    <target>lightning__UrlAddressable</target>
+  </targets>
+  <targetConfigs>
+    <targetConfig targets="lightning__RecordAction">
+      <actionType>ScreenAction</actionType>
+    </targetConfig>
+  </targetConfigs>
+</LightningComponentBundle>`)
+	writeProjectFile(t, root, "force-app/main/default/lwc/actionProbe/actionProbe.js", "export default class ActionProbe {}")
+	actionPath := writeProjectFile(t, root, "force-app/main/default/quickActions/Account.Update_Status.quickAction-meta.xml", `<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
+  <actionSubtype>ScreenAction</actionSubtype>
+  <label>Update Status</label>
+  <lightningWebComponent>actionProbe</lightningWebComponent>
+  <type>LightningWebComponent</type>
+</QuickAction>`)
+	p := project.Project{Root: root, LWCMetaFiles: []string{metaPath}, QuickActionFiles: []string{actionPath}}
+
+	routes := DiscoverShellRoutes(p)
+
+	if !slices.ContainsFunc(routes, func(route ShellRoute) bool {
+		return route.Kind == RenderTargetURLAddressable &&
+			route.Label == "c:actionProbe URL" &&
+			route.URL == "/lwc/preview/cmp/c/actionProbe" &&
+			route.Component == "c:actionProbe"
+	}) {
+		t.Fatalf("routes missing URL-addressable actionProbe: %#v", routes)
+	}
+	if !slices.ContainsFunc(routes, func(route ShellRoute) bool {
+		return route.Kind == RenderTargetQuickAction &&
+			route.Label == "Update Status" &&
+			route.URL == "/lwc/preview/action/Account/001000000000001AAA/Update_Status" &&
+			route.Component == "c:actionProbe" &&
+			route.ObjectName == "Account" &&
+			route.RecordID == "001000000000001AAA"
+	}) {
+		t.Fatalf("routes missing quick action: %#v", routes)
+	}
+}

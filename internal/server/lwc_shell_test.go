@@ -48,6 +48,7 @@ func TestLWCShellRootRendersWorkbenchRoutePicker(t *testing.T) {
 		"/lwc/preview/app/Sales_Dashboard",
 		"/lwc/preview/home/Custom_Home",
 		"/lwc/preview/tab/Lwc_Probe",
+		"data-glade-route-link",
 		"data-glade-context-panel",
 	} {
 		if !strings.Contains(body, want) {

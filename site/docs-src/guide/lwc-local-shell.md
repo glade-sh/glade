@@ -141,11 +141,12 @@ Direct flags override preset fields.
 
 ## Routes
 
-The printed base URL opens the workbench. `/lwc` opens the same workbench for
-stable links. It lists available LWCs, filters by search text and selected page
-target, lets you place components into a draft app, home, record, or tab page,
-and keeps active context and diagnostics visible. Raw preview routes remain
-stable for scripts and bookmarks:
+The printed base URL opens the workbench at `/`. `/lwc` opens the same
+workbench for stable links. It lists available LWCs, filters by search text and
+selected target, lets you place components into draft app, home, record, tab,
+URL-addressable, action, and community contexts, and keeps active context and
+diagnostics visible. Raw preview routes remain stable for scripts and
+bookmarks:
 
 ```text
 /
@@ -192,6 +193,9 @@ Community routes resolve `communityPage` presets, mount
 direct components, expose community base path, site ID, network ID, guest mode,
 language, and use a local `lightningCommunity__Theme_Layout` wrapper boundary
 when one is present.
+The generated route list includes direct components, app pages, record pages
+with a sample record ID, home pages, tabs, URL-addressable components,
+LWC-backed actions, and configured community pages.
 
 ## Local context JSON
 
@@ -247,6 +251,7 @@ The LWC shell supports:
 - `@salesforce/schema` object and field tokens.
 - `@salesforce/label`, `@salesforce/resourceUrl`, and
   `@salesforce/contentAssetUrl`.
+- Static resource subpaths for local scripts, styles, and images.
 - `@salesforce/client/formFactor` and `@salesforce/customPermission/*` shims
   for package components that branch on form factor or custom permissions.
 - `@salesforce/user`, checked `@salesforce/i18n` values, and
@@ -270,7 +275,11 @@ The LWC shell supports:
   value encode/decode helpers.
 - `lightning/actions`, `lightning/flowSupport`, `lightning/refresh`, and
   `lightning/empApi` practical local shims for quick-action events, flow-screen
-  events, in-page refresh handlers, and local pub/sub.
+  events, in-page refresh handlers, and deterministic in-page EMP pub/sub.
+- `lightning/flow` and `lightning/flowSupport` for local Flow screen hosts and
+  navigation events. This is not Flow Builder.
+- Datatable, record forms, input fields, output fields, and local LDS/UI API
+  form messages.
 - Practical local implementations for every public `lightning/*` name exposed
   by `lightning-base-components@1.28.19-alpha`: 118 module names checked from
   the npm package. Renderable components get local renderers; service and
@@ -384,10 +393,13 @@ Look in the workbench context panel, browser console, and
 ## Current Limits
 
 Glade serves a local Lightning shell. It does not replace hosted Lightning
-Experience, live auth, permissions, console APIs, full UI API, broad LDS
-cross-adapter coalescing, every `lightning-*` base component edge, exact SLDS
-fidelity, full Experience Cloud menus and managed content, hosted validation
-behavior, or every Lightning Out edge. Record forms use local `getRecord` and
+Experience, live auth, permissions, full UI API, broad LDS cross-adapter
+coalescing, every `lightning-*` base component edge, exact SLDS fidelity, full
+Experience Cloud menus and managed content, hosted validation behavior, or
+every Lightning Out edge. The workspace API models console state for
+development; exact hosted console behavior remains a Salesforce check. The
+Flow shell is not Flow Builder, and local EMP API is deterministic in-page event
+simulation, not live streaming. Record forms use local `getRecord` and
 `updateRecord` support, not full hosted edit-flow behavior. Apex params must be
 object-shaped; `undefined` wire params suppress invocation and `null` is passed
 as an explicit value.

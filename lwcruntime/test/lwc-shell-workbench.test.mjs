@@ -270,3 +270,56 @@ test("LWC shell workbench lets developers compose a local page from available co
   assert.deepEqual(consoleErrors, []);
   assert.deepEqual(pageErrors, []);
 });
+
+test("LWC shell workbench builder exposes context controls", async (t) => {
+  const server = await startLWCDevServer(t, {
+    projectRel: "testdata/local-tests/lwc-shell",
+    pagePath: "/",
+  });
+  if (!server) {
+    return;
+  }
+
+  const browser = await chromium.launch({ headless: true });
+  const consoleErrors = [];
+  const pageErrors = [];
+  try {
+    const page = await browser.newPage();
+    page.on("console", (msg) => {
+      if (msg.type() === "error") {
+        consoleErrors.push(msg.text());
+      }
+    });
+    page.on("pageerror", (err) => {
+      pageErrors.push(err.message);
+    });
+
+    await page.goto(`${server.baseURL}/`, { waitUntil: "networkidle" });
+
+    await page.locator("[data-glade-workbench-builder]").waitFor({ timeout: 60000 });
+    await page.locator("[data-glade-target-picker]").selectOption("recordPage");
+    await page.locator("[data-glade-sample-record]").click();
+    await page.locator("[data-glade-state-key]").fill("c__view");
+    await page.locator("[data-glade-state-value]").fill("detail");
+    await page.locator("[data-glade-community-selector]").fill("Partner_Portal");
+    await page.locator("[data-glade-console-mode]").check();
+    await page.locator('[data-glade-form-factor-option="Small"]').click();
+
+    const context = await page.locator("script#glade-lwc-context").evaluate((node) => JSON.parse(node.textContent));
+    assert.equal(context.kind, "recordPage");
+    assert.equal(context.recordId, "001000000000001AAA");
+    assert.equal(context.formFactor, "Small");
+    assert.equal(context.community.site, "Partner_Portal");
+    assert.equal(context.state.c__view, "detail");
+    assert.equal(await page.locator("[data-glade-component-picker]").count(), 1);
+    assert.equal(await page.locator("[data-glade-flow-inputs]").count(), 1);
+    assert.equal(await page.locator("[data-glade-app-selector]").count(), 1);
+    assert.equal(await page.locator("[data-glade-object-selector]").count(), 1);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+
+  assert.deepEqual(consoleErrors, []);
+  assert.deepEqual(pageErrors, []);
+});

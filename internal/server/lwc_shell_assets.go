@@ -125,7 +125,7 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 
 func lwcShellWorkbenchBuilderActive(activeRoute string) bool {
 	activeRoute = strings.TrimSpace(activeRoute)
-	return activeRoute == "/lwc"
+	return activeRoute == "/" || activeRoute == "/lwc"
 }
 
 func lwcShellWorkbenchBuilderHTML(model lwcshell.WorkbenchModel) string {
@@ -135,12 +135,15 @@ func lwcShellWorkbenchBuilderHTML(model lwcshell.WorkbenchModel) string {
 	var b strings.Builder
 	b.WriteString(`<section class="glade-workbench-builder" data-glade-workbench-builder aria-label="Local page builder">`)
 	b.WriteString(`<div class="glade-builder-toolbar">`)
-	b.WriteString(`<label>Page type<select data-glade-page-kind>`)
+	b.WriteString(`<label>Target<select data-glade-page-kind data-glade-target-picker>`)
 	for _, option := range []struct{ value, label string }{
 		{string(lwcshell.RenderTargetAppPage), "App page"},
 		{string(lwcshell.RenderTargetRecordPage), "Record page"},
 		{string(lwcshell.RenderTargetHomePage), "Home page"},
 		{string(lwcshell.RenderTargetTab), "Tab"},
+		{string(lwcshell.RenderTargetURLAddressable), "URL addressable"},
+		{string(lwcshell.RenderTargetQuickAction), "Record action"},
+		{string(lwcshell.RenderTargetCommunityPage), "Community page"},
 	} {
 		b.WriteString(`<option value="`)
 		b.WriteString(html.EscapeString(option.value))
@@ -149,10 +152,33 @@ func lwcShellWorkbenchBuilderHTML(model lwcshell.WorkbenchModel) string {
 		b.WriteString(`</option>`)
 	}
 	b.WriteString(`</select></label>`)
-	b.WriteString(`<label>Object<input data-glade-object-input value="Account" autocomplete="off"></label>`)
-	b.WriteString(`<label>Record<input data-glade-record-input value="001000000000001AAA" autocomplete="off"></label>`)
-	b.WriteString(`<label>App<input data-glade-app-input value="Local" autocomplete="off"></label>`)
+	b.WriteString(`<label>Component<select data-glade-component-picker><option value="">Choose component</option>`)
+	for _, component := range model.Components {
+		b.WriteString(`<option value="`)
+		b.WriteString(html.EscapeString(component.QualifiedName))
+		b.WriteString(`">`)
+		b.WriteString(html.EscapeString(component.Label))
+		b.WriteString(`</option>`)
+	}
+	b.WriteString(`</select></label>`)
+	b.WriteString(`<label>Object<input data-glade-object-input data-glade-object-selector value="Account" autocomplete="off"></label>`)
+	b.WriteString(`<label>Record<span class="glade-inline-control"><input data-glade-record-input value="001000000000001AAA" autocomplete="off"><button class="glade-icon-button" type="button" data-glade-sample-record title="Use sample record ID" aria-label="Use sample record ID">#</button></span></label>`)
+	b.WriteString(`<label>App<input data-glade-app-input data-glade-app-selector value="Local" autocomplete="off"></label>`)
+	b.WriteString(`<label>Community<input data-glade-community-selector value="" autocomplete="off" placeholder="Site name"></label>`)
 	b.WriteString(`<label>Form factor<select data-glade-form-factor><option value="Large">Large</option><option value="Medium">Medium</option><option value="Small">Small</option></select></label>`)
+	b.WriteString(`<div class="glade-segmented-control" role="group" aria-label="Form factor">`)
+	for _, option := range []string{"Large", "Medium", "Small"} {
+		b.WriteString(`<button class="glade-shell-button" type="button" data-glade-form-factor-option="`)
+		b.WriteString(html.EscapeString(option))
+		b.WriteString(`">`)
+		b.WriteString(html.EscapeString(option))
+		b.WriteString(`</button>`)
+	}
+	b.WriteString(`</div>`)
+	b.WriteString(`<label class="glade-checkbox-control"><input type="checkbox" data-glade-console-mode> Console mode</label>`)
+	b.WriteString(`<label>State key<input data-glade-state-key value="" autocomplete="off" placeholder="c__name"></label>`)
+	b.WriteString(`<label>State value<input data-glade-state-value value="" autocomplete="off"></label>`)
+	b.WriteString(`<label class="glade-flow-inputs">Flow inputs<textarea data-glade-flow-inputs rows="2" placeholder="name=value"></textarea></label>`)
 	b.WriteString(`<button class="glade-shell-button" type="button" data-glade-clear-draft>Clear</button>`)
 	b.WriteString(`</div>`)
 	b.WriteString(`<div class="glade-builder-layout">`)
@@ -220,7 +246,7 @@ func lwcShellRoutePickerHTML(model lwcshell.WorkbenchModel, collapsed bool) stri
 		b.WriteString(`<section class="glade-route-picker" aria-label="Preview routes"><h2>Preview routes</h2><div>`)
 	}
 	for _, route := range model.Routes {
-		b.WriteString(`<a data-glade-route data-glade-route-kind="`)
+		b.WriteString(`<a data-glade-route data-glade-route-link data-glade-route-kind="`)
 		b.WriteString(html.EscapeString(string(route.Kind)))
 		b.WriteString(`" href="`)
 		b.WriteString(html.EscapeString(route.URL))
