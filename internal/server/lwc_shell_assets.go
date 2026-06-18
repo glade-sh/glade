@@ -68,8 +68,10 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 	if model.Mode == "console" {
 		b.WriteString(lwcShellConsoleRailHTML(model))
 	}
+	b.WriteString(lwcShellCommunityChromeHTML(shell.Context.Community))
 	b.WriteString(`<main class="glade-stage">`)
 	b.WriteString(lwcShellDiagnosticsHTML(shell.Diagnostics))
+	b.WriteString(lwcShellFlowEventsHTML(shell.Context.Flow))
 	builderActive := lwcShellWorkbenchBuilderActive(activeRoute)
 	if builderActive {
 		b.WriteString(lwcShellWorkbenchBuilderHTML(model))
@@ -78,6 +80,7 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 	if !builderActive {
 		b.WriteString(lwcShellRegionsHTML(shell))
 	}
+	b.WriteString(lwcShellUtilityBarHTML(shell.Context.Workspace.Utilities))
 	b.WriteString(`</main><aside class="glade-context-panel" data-glade-context-panel>`)
 	b.WriteString(`<h2>Context</h2><dl>`)
 	communityGuest := ""
@@ -99,6 +102,7 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 		{"Community network ID", shell.Context.Community.NetworkID},
 		{"Community guest", communityGuest},
 		{"Community language", shell.Context.Community.Language},
+		{"Flow", shell.Context.Flow.APIName},
 	}
 	for _, row := range contextRows {
 		if strings.TrimSpace(row.value) == "" {
@@ -274,6 +278,98 @@ func lwcShellConsoleRailHTML(model lwcshell.WorkbenchModel) string {
 	}
 	b.WriteString(`</nav>`)
 	return b.String()
+}
+
+func lwcShellUtilityBarHTML(items []lwcshell.UtilityItem) string {
+	if len(items) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString(`<nav class="glade-utility-bar" data-glade-utility-bar aria-label="Utility bar">`)
+	for _, item := range items {
+		label := strings.TrimSpace(item.Label)
+		if label == "" {
+			label = item.ID
+		}
+		b.WriteString(`<a data-glade-utility-item="`)
+		b.WriteString(html.EscapeString(item.ID))
+		b.WriteString(`" href="`)
+		b.WriteString(html.EscapeString(item.URL))
+		b.WriteString(`">`)
+		b.WriteString(html.EscapeString(label))
+		b.WriteString(`</a>`)
+	}
+	b.WriteString(`</nav>`)
+	return b.String()
+}
+
+func lwcShellCommunityChromeHTML(ctx lwcshell.CommunityContext) string {
+	if strings.TrimSpace(ctx.Site) == "" {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString(`<section class="glade-community-chrome" data-glade-community-chrome><strong>`)
+	b.WriteString(html.EscapeString(ctx.Site))
+	b.WriteString(`</strong>`)
+	if len(ctx.Menus) > 0 {
+		keys := make([]string, 0, len(ctx.Menus))
+		for key := range ctx.Menus {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, key := range keys {
+			b.WriteString(`<nav data-glade-community-menu="`)
+			b.WriteString(html.EscapeString(key))
+			b.WriteString(`">`)
+			for _, item := range ctx.Menus[key] {
+				b.WriteString(`<a href="`)
+				b.WriteString(html.EscapeString(communityMenuItemURL(ctx, item)))
+				b.WriteString(`">`)
+				b.WriteString(html.EscapeString(item.Label))
+				b.WriteString(`</a>`)
+			}
+			b.WriteString(`</nav>`)
+		}
+	}
+	if len(ctx.ManagedContent) > 0 {
+		keys := make([]string, 0, len(ctx.ManagedContent))
+		for key := range ctx.ManagedContent {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, key := range keys {
+			item := ctx.ManagedContent[key]
+			b.WriteString(`<article data-glade-managed-content="`)
+			b.WriteString(html.EscapeString(key))
+			b.WriteString(`"><h2>`)
+			b.WriteString(html.EscapeString(item.Title))
+			b.WriteString(`</h2><p>`)
+			b.WriteString(html.EscapeString(item.Body))
+			b.WriteString(`</p></article>`)
+		}
+	}
+	b.WriteString(`</section>`)
+	return b.String()
+}
+
+func communityMenuItemURL(ctx lwcshell.CommunityContext, item lwcshell.CommunityMenuItem) string {
+	switch item.Type {
+	case "comm__managedContentPage":
+		if item.ContentKey != "" {
+			return "/lwc/preview/community/" + url.PathEscape(ctx.Site) + "/" + url.PathEscape(item.Target) + "?contentKey=" + url.QueryEscape(item.ContentKey)
+		}
+	}
+	if item.Target != "" {
+		return "/lwc/preview/community/" + url.PathEscape(ctx.Site) + "/" + url.PathEscape(item.Target)
+	}
+	return "#"
+}
+
+func lwcShellFlowEventsHTML(ctx lwcshell.FlowContext) string {
+	if strings.TrimSpace(ctx.APIName) == "" {
+		return ""
+	}
+	return `<section class="glade-flow-events" data-glade-flow-events aria-label="Flow events"></section>`
 }
 
 type lwcShellNavLink struct {
@@ -620,11 +716,13 @@ func lwcShellServiceStatus() map[string]string {
 		"i18n":                   "supported",
 		"toast":                  "supported",
 		"lms":                    "supported",
+		"empApi":                 "supported-local",
 		"platformResourceLoader": "supported",
 		"urlAddressable":         "supported-local",
 		"quickActions":           "supported-local",
 		"baseComponents":         "supported-local",
 		"community":              "supported-local",
+		"flow":                   "supported-local",
 		"visualforceHost":        "supported-local",
 		"platformWorkspaceApi":   "partial",
 		"slds":                   "supported-local",

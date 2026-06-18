@@ -19,8 +19,7 @@ function readCommunityContextInternal({ report } = { report: true }) {
     return reportMissingIds(defaultCommunityContext(), report);
   }
   try {
-    const context = JSON.parse(node.textContent || "{}");
-    const community = normalizeCommunityContext(context.community || {});
+    const community = normalizeCommunityContext(readCommunityShell());
     if (!community.site && report) {
       reportOnce("GLADELWC100", "community context required");
     }
@@ -50,11 +49,26 @@ export function normalizeCommunityContext(community = {}) {
     networkId: stringValue(community.networkId, ""),
     guest: Boolean(community.guest),
     language: stringValue(community.language, ""),
+    routeParams: { ...(community.routeParams || {}) },
+    menus: { ...(community.menus || {}) },
+    managedContent: { ...(community.managedContent || {}) },
   };
 }
 
 function defaultCommunityContext() {
   return normalizeCommunityContext({});
+}
+
+function readCommunityShell() {
+  const node = document.getElementById("glade-lwc-context");
+  if (!node) {
+    return {};
+  }
+  try {
+    return JSON.parse(node.textContent || "{}").community || {};
+  } catch (_err) {
+    return {};
+  }
 }
 
 function reportMissingIds(context, report = true) {

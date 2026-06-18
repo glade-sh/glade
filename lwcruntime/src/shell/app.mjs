@@ -22,8 +22,21 @@ export async function bootGladeShell({ root = document.body, config = readConfig
   document.addEventListener("glade:diagnostic", renderPanel);
   document.addEventListener("glade:page-reference", renderPanel);
   document.addEventListener("glade:context-changed", renderPanel);
+  bindFlowDiagnostics(root);
   bootWorkbenchBuilder(root, config);
   return { config, diagnostics, disposeToastService };
+}
+
+function bindFlowDiagnostics(root) {
+  for (const eventName of ["flowattributechange", "flownavigationnext", "flownavigationback", "flownavigationpause", "flownavigationfinish"]) {
+    root.addEventListener(eventName, captureFlowEvent);
+  }
+}
+
+function captureFlowEvent(event) {
+  document.dispatchEvent(new CustomEvent("glade:flow-event", {
+    detail: { type: event.type, detail: event.detail || {} },
+  }));
 }
 
 export function readConfig() {

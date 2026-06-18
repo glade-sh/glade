@@ -59,6 +59,11 @@ func SelectedURL(baseURL string, ctx PageContext) string {
 			return ""
 		}
 		selectedPath = "/lwc/preview/tab/" + selectedURLPathEscape(ctx.TabName)
+	case RenderTargetUtilityBar:
+		if ctx.PageName == "" {
+			return ""
+		}
+		selectedPath = "/lwc/preview/utility/" + selectedURLPathEscape(ctx.PageName)
 	case RenderTargetQuickAction:
 		if ctx.ActionName == "" {
 			return ""
@@ -90,6 +95,11 @@ func SelectedURL(baseURL string, ctx PageContext) string {
 			return ""
 		}
 		selectedPath = "/lwc/preview/community/" + selectedURLPathEscape(ctx.Community.Site) + "/" + selectedURLPathEscape(ctx.PageName)
+	case RenderTargetFlowScreen:
+		if ctx.Flow.APIName == "" {
+			return ""
+		}
+		selectedPath = "/lwc/preview/flow/" + selectedURLPathEscape(ctx.Flow.APIName)
 	default:
 		return ""
 	}

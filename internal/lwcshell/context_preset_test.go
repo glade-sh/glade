@@ -133,6 +133,25 @@ func TestContextPresetToPageContextMapsTargets(t *testing.T) {
 			want:   PageContext{Kind: RenderTargetQuickAction, ActionName: "Global_Status"},
 		},
 		{
+			name: "flow screen",
+			preset: ContextPreset{
+				Target:    "flowScreen",
+				Component: "c:communityFlow2",
+				Flow: FlowContext{
+					APIName:        "Membership_Flow",
+					InputVariables: map[string]any{"recordId": "001000000000001AAA"},
+				},
+			},
+			want: PageContext{
+				Kind:          RenderTargetFlowScreen,
+				ComponentName: "c:communityFlow2",
+				Flow: FlowContext{
+					APIName:        "Membership_Flow",
+					InputVariables: map[string]any{"recordId": "001000000000001AAA"},
+				},
+			},
+		},
+		{
 			name:   "tab",
 			preset: ContextPreset{Target: "tab", Tab: "Lwc_Probe"},
 			want:   PageContext{Kind: RenderTargetTab, TabName: "Lwc_Probe"},
@@ -150,6 +169,15 @@ func TestContextPresetToPageContextMapsTargets(t *testing.T) {
 					NetworkID: "0DB000000000001",
 					Guest:     true,
 					Language:  "en-US",
+					RouteParams: map[string]string{
+						"recordId": "001000000000001AAA",
+					},
+					Menus: map[string][]CommunityMenuItem{
+						"main": {{Label: "Accounts", Target: "Account", Type: "comm__namedPage"}},
+					},
+					ManagedContent: map[string]CommunityContentItem{
+						"welcome": {ContentKey: "welcome", Title: "Welcome", Body: "Local content"},
+					},
 				},
 				PageReference: map[string]any{
 					"type":       "comm__namedPage",
@@ -167,6 +195,15 @@ func TestContextPresetToPageContextMapsTargets(t *testing.T) {
 					NetworkID: "0DB000000000001",
 					Guest:     true,
 					Language:  "en-US",
+					RouteParams: map[string]string{
+						"recordId": "001000000000001AAA",
+					},
+					Menus: map[string][]CommunityMenuItem{
+						"main": {{Label: "Accounts", Target: "Account", Type: "comm__namedPage"}},
+					},
+					ManagedContent: map[string]CommunityContentItem{
+						"welcome": {ContentKey: "welcome", Title: "Welcome", Body: "Local content"},
+					},
 				},
 				PageReference: map[string]any{
 					"type":       "comm__namedPage",
@@ -196,6 +233,11 @@ func TestContextPresetToPageContextMapsTargets(t *testing.T) {
 				got.Community.NetworkID != tt.want.Community.NetworkID ||
 				got.Community.Guest != tt.want.Community.Guest ||
 				got.Community.Language != tt.want.Community.Language ||
+				got.Community.RouteParams["recordId"] != tt.want.Community.RouteParams["recordId"] ||
+				(tt.want.Community.Menus != nil && len(got.Community.Menus["main"]) != 1) ||
+				(tt.want.Community.ManagedContent != nil && got.Community.ManagedContent["welcome"].Title != "Welcome") ||
+				got.Flow.APIName != tt.want.Flow.APIName ||
+				(tt.want.Flow.InputVariables != nil && got.Flow.InputVariables["recordId"] != tt.want.Flow.InputVariables["recordId"]) ||
 				(tt.want.PageReference != nil && got.PageReference["type"] != tt.want.PageReference["type"]) {
 				t.Fatalf("context = %#v, want %#v", got, tt.want)
 			}

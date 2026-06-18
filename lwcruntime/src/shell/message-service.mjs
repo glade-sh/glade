@@ -2,6 +2,7 @@ const channels = window.__gladeMessageChannels || new Map();
 window.__gladeMessageChannels = channels;
 const capturedMessages = window.__gladeMessages || [];
 window.__gladeMessages = capturedMessages;
+let nextContextId = window.__gladeMessageContextId || 1;
 
 export const APPLICATION_SCOPE = Symbol("APPLICATION_SCOPE");
 
@@ -27,7 +28,9 @@ export class MessageContext {
 }
 
 export function createMessageContext() {
-  return { id: `glade-message-context-${Math.random().toString(36).slice(2)}` };
+  const context = { id: `glade-message-context-${nextContextId++}` };
+  window.__gladeMessageContextId = nextContextId;
+  return context;
 }
 
 export function releaseMessageContext(context) {
@@ -43,7 +46,7 @@ export function releaseMessageContext(context) {
 export function subscribe(context, channel, listener, options = {}) {
   const key = channelKey(channel);
   const bucket = channels.get(key) || new Set();
-  const subscription = { key, context, listener, options };
+  const subscription = { key, context, listener, options: { ...options } };
   bucket.add(subscription);
   channels.set(key, bucket);
   return subscription;
@@ -81,6 +84,8 @@ export function getCapturedMessages() {
 export function clearMessages() {
   capturedMessages.splice(0, capturedMessages.length);
   channels.clear();
+  nextContextId = 1;
+  window.__gladeMessageContextId = nextContextId;
 }
 
 function channelKey(channel) {

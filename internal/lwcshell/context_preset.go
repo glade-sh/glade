@@ -28,6 +28,7 @@ type ContextPreset struct {
 	FormFactor    string            `json:"formFactor,omitempty"`
 	State         map[string]string `json:"state,omitempty"`
 	Community     CommunityContext  `json:"community,omitempty"`
+	Flow          FlowContext       `json:"flow,omitempty"`
 	PageReference map[string]any    `json:"pageReference,omitempty"`
 }
 
@@ -125,6 +126,7 @@ func (p ContextPreset) ToPageContext() (PageContext, error) {
 		FormFactor:    strings.TrimSpace(p.FormFactor),
 		State:         copyContextState(p.State),
 		Community:     normalizeCommunityContext(p.Community),
+		Flow:          normalizeFlowContext(p.Flow),
 		PageReference: copyPageReference(p.PageReference),
 	}
 	switch normalizePresetTarget(p.Target) {
@@ -168,6 +170,16 @@ func (p ContextPreset) ToPageContext() (PageContext, error) {
 		if ctx.ComponentName == "" {
 			return PageContext{}, contextPresetError("GLADELWC012", "component render target requires a component name", nil)
 		}
+	case "utilitybar":
+		ctx.Kind = RenderTargetUtilityBar
+		if ctx.PageName == "" {
+			return PageContext{}, contextPresetError("GLADELWC024", "context page required", nil)
+		}
+	case "flowscreen":
+		ctx.Kind = RenderTargetFlowScreen
+		if ctx.ComponentName == "" {
+			return PageContext{}, contextPresetError("GLADELWC012", "component render target requires a component name", nil)
+		}
 	default:
 		return PageContext{}, contextPresetError("GLADELWC022", "context target unsupported", nil)
 	}
@@ -200,12 +212,87 @@ func copyContextState(in map[string]string) map[string]string {
 
 func normalizeCommunityContext(in CommunityContext) CommunityContext {
 	out := CommunityContext{
-		Site:      strings.TrimSpace(in.Site),
-		BasePath:  strings.TrimSpace(in.BasePath),
-		SiteID:    strings.TrimSpace(in.SiteID),
-		NetworkID: strings.TrimSpace(in.NetworkID),
-		Guest:     in.Guest,
-		Language:  strings.TrimSpace(in.Language),
+		Site:           strings.TrimSpace(in.Site),
+		BasePath:       strings.TrimSpace(in.BasePath),
+		SiteID:         strings.TrimSpace(in.SiteID),
+		NetworkID:      strings.TrimSpace(in.NetworkID),
+		Guest:          in.Guest,
+		Language:       strings.TrimSpace(in.Language),
+		RouteParams:    copyContextState(in.RouteParams),
+		Menus:          copyCommunityMenus(in.Menus),
+		ManagedContent: copyCommunityContent(in.ManagedContent),
+	}
+	return out
+}
+
+func normalizeFlowContext(in FlowContext) FlowContext {
+	out := FlowContext{
+		APIName:          strings.TrimSpace(in.APIName),
+		InputVariables:   copyAnyMap(in.InputVariables),
+		AvailableActions: trimStringList(in.AvailableActions),
+	}
+	return out
+}
+
+func copyCommunityMenus(in map[string][]CommunityMenuItem) map[string][]CommunityMenuItem {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make(map[string][]CommunityMenuItem, len(in))
+	for key, items := range in {
+		key = strings.TrimSpace(key)
+		if key == "" {
+			continue
+		}
+		for _, item := range items {
+			item.Label = strings.TrimSpace(item.Label)
+			item.Target = strings.TrimSpace(item.Target)
+			item.Type = strings.TrimSpace(item.Type)
+			item.ContentKey = strings.TrimSpace(item.ContentKey)
+			out[key] = append(out[key], item)
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func copyCommunityContent(in map[string]CommunityContentItem) map[string]CommunityContentItem {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make(map[string]CommunityContentItem, len(in))
+	for key, item := range in {
+		key = strings.TrimSpace(key)
+		if key == "" {
+			continue
+		}
+		item.ContentKey = strings.TrimSpace(item.ContentKey)
+		item.Title = strings.TrimSpace(item.Title)
+		item.Body = strings.TrimSpace(item.Body)
+		item.ImageURL = strings.TrimSpace(item.ImageURL)
+		out[key] = item
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func copyAnyMap(in map[string]any) map[string]any {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make(map[string]any, len(in))
+	for key, value := range in {
+		if strings.TrimSpace(key) == "" {
+			continue
+		}
+		out[key] = copyPageReferenceValue(value)
+	}
+	if len(out) == 0 {
+		return nil
 	}
 	return out
 }

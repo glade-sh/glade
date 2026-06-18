@@ -66,6 +66,7 @@ func BuildWorkbenchModel(p project.Project, active ShellPage, activeRoute string
 		appName = "Local"
 	}
 	app := buildWorkbenchApp(p, appName, routes)
+	active.Context.Workspace = buildWorkspaceContext(active, app, routes, activeRoute)
 	return WorkbenchModel{
 		Title:       "Glade Lightning Shell",
 		Mode:        app.Mode,
@@ -195,6 +196,13 @@ func DiscoverShellRoutes(p project.Project) []ShellRoute {
 				Kind:     RenderTargetHomePage,
 				PageName: page.Name,
 			})
+		case "utilitybar":
+			routes = append(routes, ShellRoute{
+				Label:    pageLabel(page),
+				URL:      "/lwc/preview/utility/" + url.PathEscape(page.Name),
+				Kind:     RenderTargetUtilityBar,
+				PageName: page.Name,
+			})
 		}
 	}
 	for _, path := range p.TabFiles {
@@ -214,7 +222,42 @@ func DiscoverShellRoutes(p project.Project) []ShellRoute {
 		routes = append(routes, route)
 	}
 	routes = appendCommunityPresetRoutes(p, routes)
+	routes = appendFlowPresetRoutes(p, routes)
 	return routes
+}
+
+func buildWorkspaceContext(active ShellPage, app ShellApp, routes []ShellRoute, activeRoute string) WorkspaceContext {
+	label := strings.TrimSpace(active.Context.TabName)
+	if label == "" {
+		label = strings.TrimSpace(active.Context.PageName)
+	}
+	if label == "" {
+		label = strings.TrimSpace(active.Context.ComponentName)
+	}
+	if label == "" {
+		label = "Local"
+	}
+	workspace := WorkspaceContext{
+		Console:      app.Mode == "console",
+		FocusedTabID: "workspace-tab-1",
+		Tabs: []WorkspaceTab{{
+			TabID:        "workspace-tab-1",
+			Label:        label,
+			URL:          activeRoute,
+			WorkspaceTab: true,
+		}},
+	}
+	for _, route := range routes {
+		if route.Kind != RenderTargetUtilityBar {
+			continue
+		}
+		workspace.Utilities = append(workspace.Utilities, UtilityItem{
+			ID:    route.PageName,
+			Label: route.Label,
+			URL:   route.URL,
+		})
+	}
+	return workspace
 }
 
 func DiscoverWorkbenchComponents(p project.Project) []ShellComponent {
@@ -358,6 +401,31 @@ func appendCommunityPresetRoutes(p project.Project, routes []ShellRoute) []Shell
 			PageName:  ctx.PageName,
 			Component: ctx.ComponentName,
 			State:     ctx.State,
+		})
+	}
+	return routes
+}
+
+func appendFlowPresetRoutes(p project.Project, routes []ShellRoute) []ShellRoute {
+	file, err := LoadContextPresets(p.Root)
+	if err != nil || len(file.Contexts) == 0 {
+		return routes
+	}
+	names := make([]string, 0, len(file.Contexts))
+	for name := range file.Contexts {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		ctx, err := file.Contexts[name].ToPageContext()
+		if err != nil || ctx.Kind != RenderTargetFlowScreen || strings.TrimSpace(ctx.Flow.APIName) == "" {
+			continue
+		}
+		routes = append(routes, ShellRoute{
+			Label:     ctx.Flow.APIName,
+			URL:       "/lwc/preview/flow/" + url.PathEscape(ctx.Flow.APIName),
+			Kind:      RenderTargetFlowScreen,
+			Component: ctx.ComponentName,
 		})
 	}
 	return routes
