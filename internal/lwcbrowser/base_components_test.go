@@ -230,6 +230,27 @@ func TestDatatableModuleDispatchesRowAction(t *testing.T) {
 	}
 }
 
+func TestPriorityBaseComponentsUseSourceBackedRuntimeModules(t *testing.T) {
+	cases := map[string]string{
+		"datatable":      "/lightning/runtime/lightning/source/datatable/datatable.js",
+		"inputField":     "/lightning/runtime/lightning/source/inputField/inputField.js",
+		"outputField":    "/lightning/runtime/lightning/source/outputField/outputField.js",
+		"messages":       "/lightning/runtime/lightning/source/messages/messages.js",
+		"recordForm":     "/lightning/runtime/lightning/source/recordForm/recordForm.js",
+		"recordEditForm": "/lightning/runtime/lightning/source/recordEditForm/recordEditForm.js",
+		"recordViewForm": "/lightning/runtime/lightning/source/recordViewForm/recordViewForm.js",
+	}
+	for name, want := range cases {
+		js, ok := LightningSourceBackedComponentModuleJS(name)
+		if !ok {
+			t.Fatalf("%s should be source backed", name)
+		}
+		if !strings.Contains(js, want) {
+			t.Fatalf("%s source module = %q, want %q", name, js, want)
+		}
+	}
+}
+
 func TestRecordFormModuleUsesLocalLDSEndpoints(t *testing.T) {
 	js := LightningBaseComponentModuleJS("recordEditForm")
 	if !containsAll(js,

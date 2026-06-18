@@ -10,7 +10,14 @@ var lightningSourceBackedComponents = map[string]string{
 	"breadcrumb":             "breadcrumb",
 	"breadcrumbs":            "breadcrumbs",
 	"buttongroup":            "buttonGroup",
+	"datatable":              "datatable",
+	"inputfield":             "inputField",
 	"menusubheader":          "menuSubheader",
+	"messages":               "messages",
+	"outputfield":            "outputField",
+	"recordeditform":         "recordEditForm",
+	"recordform":             "recordForm",
+	"recordviewform":         "recordViewForm",
 	"verticalnavigationitem": "verticalNavigationItem",
 }
 

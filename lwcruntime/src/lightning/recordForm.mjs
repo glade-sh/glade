@@ -1,3 +1,3 @@
-import { createBaseComponent, renderRecordForm } from "./base.mjs";
+import { createRecordForm } from "./lds-form.mjs";
 
-export default createBaseComponent("lightning-record-form", renderRecordForm);
+export default createRecordForm("lightning-record-form");

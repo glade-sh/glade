@@ -69,6 +69,57 @@ function startBaseComponentServer() {
       });
       return;
     }
+    if (url.pathname === "/lightning/wire/createRecord" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk) => {
+        body += String(chunk);
+      });
+      req.on("end", () => {
+        const payload = JSON.parse(body || "{}");
+        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({
+          data: {
+            id: "001000000000002AAA",
+            apiName: payload.apiName || payload.objectApiName || "Account",
+            fields: Object.fromEntries(Object.entries(payload.fields || {}).map(([name, value]) => [name, { value, displayValue: String(value) }])),
+          },
+        }));
+      });
+      return;
+    }
+    if (url.pathname === "/lightning/wire/getRecordCreateDefaults" && req.method === "POST") {
+      req.resume();
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({
+        data: {
+          objectInfos: {
+            Account: {
+              apiName: "Account",
+              fields: {
+                Name: { apiName: "Name", dataType: "String", label: "Account Name", required: true },
+                Type: {
+                  apiName: "Type",
+                  dataType: "Picklist",
+                  label: "Type",
+                  picklistValues: [
+                    { label: "Customer", value: "Customer" },
+                    { label: "Partner", value: "Partner" },
+                  ],
+                },
+              },
+            },
+          },
+          record: {
+            apiName: "Account",
+            fields: {
+              Name: { value: "", displayValue: "" },
+              Type: { value: "Customer", displayValue: "Customer" },
+            },
+          },
+        },
+      }));
+      return;
+    }
     if (url.pathname === "/base.html") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       res.end(`<!DOCTYPE html>
@@ -487,6 +538,229 @@ test("package base component and missing SLDS asset record diagnostics", async (
     assert.equal(diagnostics.includes("GLADELWC060"), false, JSON.stringify(diagnostics));
     assert.ok(diagnostics.includes("GLADELWC061"), JSON.stringify(diagnostics));
     assert.ok(diagnostics.includes("GLADELWC062"), JSON.stringify(diagnostics));
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test("datatable supports local row actions, selection, sorting, drafts, and value types", async (t) => {
+  if (!requireLWCToolchain(t)) {
+    return;
+  }
+  const server = await startBaseComponentServer();
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.goto(`${server.baseURL}/base.html`, { waitUntil: "networkidle" });
+    await page.evaluate(async () => {
+      const { createElement } = await import("lwc");
+      const { default: Datatable } = await import("/lightning/shims/lightning/datatable.js");
+      const host = document.getElementById("host");
+      host.innerHTML = "";
+      const events = [];
+      const datatable = createElement("lightning-datatable", { is: Datatable });
+      datatable.keyField = "Id";
+      datatable.columns = [
+        { label: "Name", fieldName: "Name", type: "text", editable: true, sortable: true },
+        { label: "Amount", fieldName: "Amount__c", type: "currency" },
+        { label: "Ready", fieldName: "Ready__c", type: "boolean" },
+        { label: "Website", fieldName: "Website__c", type: "url", typeAttributes: { label: { fieldName: "WebsiteLabel__c" } } },
+        { label: "Email", fieldName: "Email__c", type: "email" },
+        { label: "Phone", fieldName: "Phone__c", type: "phone" },
+        { label: "Status", fieldName: "Status__c", type: "badge" },
+        { type: "button", typeAttributes: { label: "Open", name: "open" } },
+        { type: "action", typeAttributes: { rowActions: [{ label: "View", name: "view" }] } },
+      ];
+      datatable.data = [{
+        Id: "001",
+        Name: "Acme",
+        Amount__c: 42.5,
+        Ready__c: true,
+        Website__c: "https://example.com",
+        WebsiteLabel__c: "Example",
+        Email__c: "hello@example.com",
+        Phone__c: "415-555-0100",
+        Status__c: "Ready",
+      }];
+      datatable.selectedRows = ["001"];
+      datatable.addEventListener("rowaction", (event) => events.push(["rowaction", event.detail]));
+      datatable.addEventListener("sort", (event) => events.push(["sort", event.detail]));
+      datatable.addEventListener("rowselection", (event) => events.push(["rowselection", event.detail]));
+      datatable.addEventListener("cellchange", (event) => events.push(["cellchange", event.detail]));
+      datatable.addEventListener("save", (event) => events.push(["save", event.detail]));
+      datatable.addEventListener("cancel", (event) => events.push(["cancel", event.detail]));
+      datatable.addEventListener("loadmore", (event) => events.push(["loadmore", event.detail]));
+      host.appendChild(datatable);
+      window.__datatableEvents = events;
+      window.__datatableSelected = datatable.getSelectedRows();
+    });
+
+    const table = page.locator("lightning-datatable");
+    assert.match(await table.innerText(), /Acme/);
+    assert.match(await table.innerText(), /\$42\.50/);
+    assert.match(await table.innerText(), /Ready/);
+    assert.equal(await table.locator('a[href="https://example.com"]').innerText(), "Example");
+    assert.equal(await table.locator('a[href="mailto:hello@example.com"]').innerText(), "hello@example.com");
+    assert.equal(await table.locator('a[href="tel:415-555-0100"]').innerText(), "415-555-0100");
+    assert.deepEqual(await page.evaluate(() => window.__datatableSelected), [{
+      Id: "001",
+      Name: "Acme",
+      Amount__c: 42.5,
+      Ready__c: true,
+      Website__c: "https://example.com",
+      WebsiteLabel__c: "Example",
+      Email__c: "hello@example.com",
+      Phone__c: "415-555-0100",
+      Status__c: "Ready",
+    }]);
+
+    await table.locator("button", { hasText: "Name" }).click();
+    await table.locator("input[type=\"checkbox\"]").first().setChecked(false);
+    await table.locator("input[data-field-name=\"Name\"]").fill("Acme West");
+    await table.locator("input[data-field-name=\"Name\"]").dispatchEvent("change");
+    await table.locator("button", { hasText: "Save" }).click();
+    await table.locator("button", { hasText: "Cancel" }).click();
+    await table.locator("button", { hasText: "View" }).click();
+    await table.locator("button", { hasText: "Open" }).click();
+    await table.locator("button", { hasText: "Load More" }).click();
+
+    const events = await page.evaluate(() => window.__datatableEvents);
+    assert.deepEqual(events.find(([name]) => name === "sort"), ["sort", {
+      fieldName: "Name",
+      sortedBy: "Name",
+      sortDirection: "asc",
+    }]);
+    assert.deepEqual(events.find(([name]) => name === "rowselection"), ["rowselection", {
+      selectedRows: [],
+      selectedRowKeys: [],
+    }]);
+    assert.deepEqual(events.find(([name]) => name === "cellchange"), ["cellchange", {
+      draftValues: [{ Id: "001", Name: "Acme West" }],
+    }]);
+    assert.deepEqual(events.find(([name]) => name === "save"), ["save", {
+      draftValues: [{ Id: "001", Name: "Acme West" }],
+    }]);
+    assert.deepEqual(events.find(([name]) => name === "cancel"), ["cancel", {
+      draftValues: [],
+    }]);
+    assert.deepEqual(events.filter(([name]) => name === "rowaction").map(([, detail]) => detail), [
+      { action: { label: "View", name: "view" }, row: { Id: "001", Name: "Acme", Amount__c: 42.5, Ready__c: true, Website__c: "https://example.com", WebsiteLabel__c: "Example", Email__c: "hello@example.com", Phone__c: "415-555-0100", Status__c: "Ready" } },
+      { action: { label: "Open", name: "open" }, row: { Id: "001", Name: "Acme", Amount__c: 42.5, Ready__c: true, Website__c: "https://example.com", WebsiteLabel__c: "Example", Email__c: "hello@example.com", Phone__c: "415-555-0100", Status__c: "Ready" } },
+    ]);
+    assert.deepEqual(events.find(([name]) => name === "loadmore"), ["loadmore", {}]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test("record forms and fields support LDS endpoints, validity, reset, and picklists", async (t) => {
+  if (!requireLWCToolchain(t)) {
+    return;
+  }
+  const server = await startBaseComponentServer();
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.goto(`${server.baseURL}/base.html`, { waitUntil: "networkidle" });
+    await page.evaluate(async () => {
+      const { createElement } = await import("lwc");
+      const { default: InputField } = await import("/lightning/shims/lightning/inputField.js");
+      const { default: OutputField } = await import("/lightning/shims/lightning/outputField.js");
+      const { default: RecordForm } = await import("/lightning/shims/lightning/recordForm.js");
+      const { default: RecordEditForm } = await import("/lightning/shims/lightning/recordEditForm.js");
+      const { default: RecordViewForm } = await import("/lightning/shims/lightning/recordViewForm.js");
+      const { default: Messages } = await import("/lightning/shims/lightning/messages.js");
+      const host = document.getElementById("host");
+      host.innerHTML = "";
+      const events = [];
+
+      const input = createElement("lightning-input-field", { is: InputField });
+      Object.assign(input, {
+        fieldName: "Type",
+        label: "Type",
+        value: "Customer",
+        required: true,
+        options: [{ label: "Customer", value: "Customer" }, { label: "Partner", value: "Partner" }],
+      });
+      host.appendChild(input);
+      const emptyRequired = createElement("lightning-input-field", { is: InputField });
+      Object.assign(emptyRequired, { fieldName: "Name", label: "Account Name", value: "", required: true });
+      host.appendChild(emptyRequired);
+
+      const output = createElement("lightning-output-field", { is: OutputField });
+      Object.assign(output, { fieldName: "Name", value: "Local Shell Account" });
+      host.appendChild(output);
+
+      const recordForm = createElement("lightning-record-form", { is: RecordForm });
+      Object.assign(recordForm, { objectApiName: "Account", recordId: "001000000000001AAA", fields: ["Name", "Phone"] });
+      recordForm.addEventListener("load", (event) => events.push(["recordformload", event.detail.record.id]));
+      host.appendChild(recordForm);
+
+      const viewForm = createElement("lightning-record-view-form", { is: RecordViewForm });
+      Object.assign(viewForm, { objectApiName: "Account", recordId: "001000000000001AAA" });
+      viewForm.appendChild(output.cloneNode(true));
+      host.appendChild(viewForm);
+
+      const editForm = createElement("lightning-record-edit-form", { is: RecordEditForm });
+      Object.assign(editForm, { objectApiName: "Account", recordId: "001000000000001AAA" });
+      const nameField = createElement("lightning-input-field", { is: InputField });
+      Object.assign(nameField, { fieldName: "Name", value: "Local Shell Account", required: true });
+      editForm.appendChild(nameField);
+      const formMessages = createElement("lightning-messages", { is: Messages });
+      editForm.appendChild(formMessages);
+      editForm.addEventListener("load", (event) => events.push(["load", event.detail.record.id]));
+      editForm.addEventListener("submit", (event) => events.push(["submit", event.detail.fields]));
+      editForm.addEventListener("success", (event) => events.push(["success", event.detail.id]));
+      editForm.addEventListener("error", (event) => events.push(["error", event.detail.message]));
+      editForm.addEventListener("cancel", (event) => events.push(["cancel", event.detail.fields]));
+      host.appendChild(editForm);
+
+      input.setCustomValidity("Pick a better type");
+      const customInvalid = input.checkValidity();
+      const customReported = input.reportValidity();
+      input.setCustomValidity("");
+      input.value = "Partner";
+      input.reset();
+      input.focus();
+      input.blur();
+
+      window.__recordFormEvents = events;
+      window.__fieldContracts = {
+        customInvalid,
+        customReported,
+        validAfterClear: input.checkValidity(),
+        emptyRequired: emptyRequired.reportValidity(),
+        resetValue: input.value,
+        picklistOptions: input.options,
+      };
+    });
+
+    await page.waitForFunction(() => window.__recordFormEvents.some(([name]) => name === "load"));
+    assert.match(await page.locator("lightning-output-field").first().innerText(), /Local Shell Account/);
+    assert.equal(await page.locator("lightning-input-field").first().locator("select").inputValue(), "Customer");
+    assert.deepEqual(await page.evaluate(() => window.__fieldContracts), {
+      customInvalid: false,
+      customReported: false,
+      validAfterClear: true,
+      emptyRequired: false,
+      resetValue: "Customer",
+      picklistOptions: [{ label: "Customer", value: "Customer" }, { label: "Partner", value: "Partner" }],
+    });
+
+    await page.locator("lightning-record-edit-form lightning-input-field input").fill("Edited Local Account");
+    await page.locator("lightning-record-edit-form button", { hasText: "Save" }).click();
+    await page.waitForFunction(() => window.__recordFormEvents.some(([name]) => name === "success"));
+    await page.locator("lightning-record-edit-form button", { hasText: "Cancel" }).click();
+
+    const events = await page.evaluate(() => window.__recordFormEvents);
+    assert.ok(events.some(([name, value]) => name === "recordformload" && value === "001000000000001AAA"), JSON.stringify(events));
+    assert.ok(events.some(([name, value]) => name === "load" && value === "001000000000001AAA"), JSON.stringify(events));
+    assert.deepEqual(events.find(([name]) => name === "submit"), ["submit", { Name: "Edited Local Account" }]);
+    assert.deepEqual(events.find(([name]) => name === "success"), ["success", "001000000000001AAA"]);
+    assert.deepEqual(events.find(([name]) => name === "cancel"), ["cancel", { Name: "Edited Local Account" }]);
+    assert.equal(events.some(([name]) => name === "error"), false, JSON.stringify(events));
   } finally {
     await browser.close();
     await server.close();
