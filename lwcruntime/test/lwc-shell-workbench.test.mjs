@@ -280,6 +280,89 @@ test("LWC shell workbench lets developers compose a local page from available co
   assert.deepEqual(pageErrors, []);
 });
 
+test("LWC shell workbench keeps the root builder dense on desktop", async (t) => {
+  const server = await startLWCDevServer(t, {
+    projectRel: "testdata/local-tests/lwc-shell",
+    pagePath: "/lwc",
+  });
+  if (!server) {
+    return;
+  }
+
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(`${server.baseURL}/lwc`, { waitUntil: "networkidle" });
+    await page.locator("[data-glade-workbench-builder]").waitFor({ timeout: 60000 });
+
+    const metrics = await page.evaluate(() => {
+      const box = (selector) => document.querySelector(selector).getBoundingClientRect();
+      return {
+        toolbarHeight: box(".glade-builder-toolbar").height,
+        contextWidth: box(".glade-context-panel").width,
+        catalogWidth: box(".glade-component-catalog").width,
+        canvasWidth: box(".glade-page-canvas").width,
+        canvasColumns: getComputedStyle(document.querySelector(".glade-page-canvas")).gridTemplateColumns.split(" ").length,
+        consoleControlDisplay: getComputedStyle(document.querySelector(".glade-checkbox-control")).display,
+        consoleInputWidth: box(".glade-checkbox-control input").width,
+        mediumButtonWidth: box('[data-glade-form-factor-option="Medium"]').width,
+        routePickerOpen: document.querySelector("details.glade-route-picker")?.open ?? true,
+        horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      };
+    });
+
+    assert.equal(metrics.horizontalOverflow, false);
+    assert.equal(metrics.routePickerOpen, false);
+    assert.ok(metrics.toolbarHeight <= 145, `toolbar height = ${metrics.toolbarHeight}`);
+    assert.ok(metrics.contextWidth <= 320, `context width = ${metrics.contextWidth}`);
+    assert.ok(metrics.canvasWidth > metrics.catalogWidth, `canvas ${metrics.canvasWidth} catalog ${metrics.catalogWidth}`);
+    assert.equal(metrics.canvasColumns, 2);
+    assert.equal(metrics.consoleControlDisplay, "flex");
+    assert.ok(metrics.consoleInputWidth <= 20, `console input width = ${metrics.consoleInputWidth}`);
+    assert.ok(metrics.mediumButtonWidth >= 64, `medium button width = ${metrics.mediumButtonWidth}`);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test("LWC shell workbench keeps the root builder compact on mobile", async (t) => {
+  const server = await startLWCDevServer(t, {
+    projectRel: "testdata/local-tests/lwc-shell",
+    pagePath: "/lwc",
+  });
+  if (!server) {
+    return;
+  }
+
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await page.goto(`${server.baseURL}/lwc`, { waitUntil: "networkidle" });
+    await page.locator("[data-glade-workbench-builder]").waitFor({ timeout: 60000 });
+
+    const metrics = await page.evaluate(() => {
+      const box = (selector) => document.querySelector(selector).getBoundingClientRect();
+      return {
+        toolbarHeight: box(".glade-builder-toolbar").height,
+        toolbarColumns: getComputedStyle(document.querySelector(".glade-builder-toolbar")).gridTemplateColumns.split(" ").length,
+        canvasColumns: getComputedStyle(document.querySelector(".glade-page-canvas")).gridTemplateColumns.split(" ").length,
+        routePickerOpen: document.querySelector("details.glade-route-picker")?.open ?? true,
+        horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      };
+    });
+
+    assert.equal(metrics.horizontalOverflow, false);
+    assert.equal(metrics.routePickerOpen, false);
+    assert.equal(metrics.toolbarColumns, 2);
+    assert.equal(metrics.canvasColumns, 1);
+    assert.ok(metrics.toolbarHeight <= 430, `toolbar height = ${metrics.toolbarHeight}`);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
 test("LWC shell workbench builder exposes context controls", async (t) => {
   const server = await startLWCDevServer(t, {
     projectRel: "testdata/local-tests/lwc-shell",

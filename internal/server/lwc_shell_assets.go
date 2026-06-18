@@ -173,7 +173,7 @@ func lwcShellWorkbenchBuilderHTML(model lwcshell.WorkbenchModel) string {
 	b.WriteString(`<label>Record<span class="glade-inline-control"><input data-glade-record-input value="001000000000001AAA" autocomplete="off"><button class="glade-icon-button" type="button" data-glade-sample-record title="Use sample record ID" aria-label="Use sample record ID">#</button></span></label>`)
 	b.WriteString(`<label>App<input data-glade-app-input data-glade-app-selector value="Local" autocomplete="off"></label>`)
 	b.WriteString(`<label>Community<input data-glade-community-selector value="" autocomplete="off" placeholder="Site name"></label>`)
-	b.WriteString(`<label>Form factor<select data-glade-form-factor><option value="Large">Large</option><option value="Medium">Medium</option><option value="Small">Small</option></select></label>`)
+	b.WriteString(`<label class="glade-form-factor-select">Form factor<select data-glade-form-factor><option value="Large">Large</option><option value="Medium">Medium</option><option value="Small">Small</option></select></label>`)
 	b.WriteString(`<div class="glade-segmented-control" role="group" aria-label="Form factor">`)
 	for _, option := range []string{"Large", "Medium", "Small"} {
 		b.WriteString(`<button class="glade-shell-button" type="button" data-glade-form-factor-option="`)
