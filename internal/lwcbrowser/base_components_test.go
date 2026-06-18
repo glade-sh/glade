@@ -400,7 +400,7 @@ func TestBaseComponentSourceReferenceContracts(t *testing.T) {
 }
 
 func TestDatatableModuleKeepsActionColumnIndex(t *testing.T) {
-	js := LightningBaseComponentModuleJS("datatable")
+	js := baseComponentContractJS(t, "datatable")
 	if !containsAll(js, "columnIndex", "dataset.columnIndex", `"data-column-index"`) {
 		t.Fatalf("datatable module should preserve action column index:\n%s", js)
 	}
