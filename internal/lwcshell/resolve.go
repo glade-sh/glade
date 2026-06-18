@@ -153,8 +153,11 @@ func resolveQuickActionTarget(p project.Project, ctx PageContext) (ShellPage, []
 		return ShellPage{}, []Diagnostic{diag}, errors.New(diag.Message)
 	}
 	ctx.ActionType = actionType
-	if requestedKind == RenderTargetFlowAction || strings.EqualFold(actionType, "FlowAction") {
+	if strings.EqualFold(actionType, "FlowAction") {
 		ctx.Kind = RenderTargetFlowAction
+	} else if requestedKind == RenderTargetFlowAction {
+		diag := Diagnostic{Code: "GLADELWC015", Message: fmt.Sprintf("quick action %q resolved to action type %q, not FlowAction", action.Name, actionType)}
+		return ShellPage{}, []Diagnostic{diag}, errors.New(diag.Message)
 	}
 	return ShellPage{
 		Context: ctx,

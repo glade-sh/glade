@@ -1054,40 +1054,14 @@ git commit -m "feat: deepen local community shell"
 - Modify: `internal/server/lightning_wire.go`
 - Modify: `internal/server/lightning_test.go`
 - Modify: `internal/vm` package files as failures identify real Apex runtime gaps.
-- Create: `scripts/dev/lwc-apex-import-inventory.mjs`
+- Use sibling `glade-tools` or compat-plugin corpus inventory output. Do not add
+  corpus scanners to base Glade.
 
-- [ ] **Step 1: Add Apex import inventory**
+- [ ] **Step 1: Gather Apex import inventory outside base Glade**
 
-Create `scripts/dev/lwc-apex-import-inventory.mjs`:
-
-```js
-#!/usr/bin/env node
-import fs from "node:fs";
-import path from "node:path";
-
-const root = process.argv[2];
-if (!root) throw new Error("usage: node scripts/dev/lwc-apex-import-inventory.mjs <project>");
-
-function walk(dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if ([".git", ".sf", ".sfdx", "node_modules"].includes(entry.name)) continue;
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, out);
-    else out.push(full);
-  }
-  return out;
-}
-
-const imports = new Map();
-for (const file of walk(root).filter((file) => /\/lwc\/.*\.js$/.test(file))) {
-  const text = fs.readFileSync(file, "utf8");
-  for (const match of text.matchAll(/@salesforce\/apex\/([A-Za-z0-9_]+)\.([A-Za-z0-9_]+)/g)) {
-    const key = `${match[1]}.${match[2]}`;
-    imports.set(key, (imports.get(key) || 0) + 1);
-  }
-}
-console.log([...imports.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count })));
-```
+Use the sibling maintenance tooling to inventory Apex imports across the local
+priority corpus. The output should list controller methods and counts for each
+selected project. Keep that script and its corpus paths outside this repo.
 
 - [ ] **Step 2: Inventory all five LWC projects**
 
@@ -1095,7 +1069,7 @@ Run:
 
 ```bash
 for repo in priority-project-a priority-project-c priority-project-d priority-project-e priority-project-i; do
-  node scripts/dev/lwc-apex-import-inventory.mjs "<local-corpus-root>/$repo" > "/tmp/$repo.apex-imports.json"
+  glade-tools compat lwc apex-imports --project "<local-corpus-root>/$repo" > "/tmp/$repo.apex-imports.json"
 done
 ```
 
@@ -1145,7 +1119,7 @@ For each controller failure:
 Run:
 
 ```bash
-git add scripts/dev/lwc-apex-import-inventory.mjs internal/server/lightning_wire.go internal/server/lightning_test.go internal/vm
+git add internal/server/lightning_wire.go internal/server/lightning_test.go internal/vm
 git commit -m "fix: harden apex-backed lwc controller calls"
 ```
 

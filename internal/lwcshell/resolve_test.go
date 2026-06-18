@@ -369,6 +369,39 @@ func TestResolvePageTargetSupportsFlowActionActionType(t *testing.T) {
 	}
 }
 
+func TestResolvePageTargetRejectsFlowActionRequestForScreenAction(t *testing.T) {
+	root := t.TempDir()
+	actionPath := writeProjectFile(t, root, "force-app/main/default/quickActions/Account.Update_Status.quickAction-meta.xml", `<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Update Status</label>
+  <type>LightningComponent</type>
+  <targetObject>Account</targetObject>
+  <lightningComponent>c:actionProbe</lightningComponent>
+</QuickAction>`)
+	metaPath := writeProjectFile(t, root, "force-app/main/default/lwc/actionProbe/actionProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+  <isExposed>true</isExposed>
+  <targets><target>lightning__RecordAction</target></targets>
+  <targetConfigs>
+    <targetConfig targets="lightning__RecordAction">
+      <actionType>ScreenAction</actionType>
+    </targetConfig>
+  </targetConfigs>
+</LightningComponentBundle>`)
+	p := project.Project{Root: root, QuickActionFiles: []string{actionPath}, LWCMetaFiles: []string{metaPath}}
+
+	_, diagnostics, err := ResolvePageTarget(p, PageContext{
+		Kind:          RenderTargetFlowAction,
+		ObjectAPIName: "Account",
+		RecordID:      "001000000000001AAA",
+		ActionName:    "Update_Status",
+	})
+	if err == nil {
+		t.Fatalf("ResolvePageTarget error = nil, want flow action mismatch")
+	}
+	if len(diagnostics) != 1 || diagnostics[0].Code != "GLADELWC015" {
+		t.Fatalf("diagnostics = %#v", diagnostics)
+	}
+}
+
 func TestResolvePageTargetReportsUnsupportedFormFactor(t *testing.T) {
 	root := t.TempDir()
 	pagePath := writeProjectFile(t, root, "force-app/main/default/flexipages/Account_Record_Page.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
