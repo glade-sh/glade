@@ -181,7 +181,14 @@ const inputFieldBeforeClean = {
   dirty: inputField.dirty,
 };
 inputField.clean();
-window.__baseInputFieldContracts = { ...inputFieldBeforeClean, dirtyAfterClean: inputField.dirty };
+inputField.setValue("Reset Candidate");
+inputField.reset();
+window.__baseInputFieldContracts = {
+  ...inputFieldBeforeClean,
+  dirtyAfterClean: inputField.dirty,
+  resetValue: inputField.value,
+  dirtyAfterReset: inputField.dirty,
+};
 const validityInput = append("lightning-input", Input, { label: "Validity", value: "Ada", disabled: false });
 validityInput.setCustomValidity("Bad value");
 window.__baseInputValidityContracts = {
@@ -327,6 +334,8 @@ test("base components render practical SLDS 2 DOM", async (t) => {
       value: "Grace",
       dirty: true,
       dirtyAfterClean: false,
+      resetValue: "Ada",
+      dirtyAfterReset: false,
     });
     assert.deepEqual(await page.evaluate(() => window.__baseInputValidityContracts), {
       before: false,

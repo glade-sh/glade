@@ -158,6 +158,9 @@ freezeTemplate(tmpl);
 class %[2]s extends LightningElement {
 %[4]s
   connectedCallback() {
+    if (this.__initialValue === undefined) {
+      this.__initialValue = this.value;
+    }
     this.reportUnsupportedAttributes();
     if (isRecordFormSelector(%[3]q)) {
       this.loadRecordFormRecord();
@@ -332,6 +335,21 @@ class %[2]s extends LightningElement {
   clean() {
     this.dirty = false;
   }
+  reset() {
+    this.value = this.__initialValue ?? "";
+    this.dirty = false;
+    this.__errors = null;
+    this.__customValidityMessage = "";
+    const control = baseFormControl(this);
+    if (control) {
+      if ("value" in control) {
+        control.value = this.value ?? "";
+      }
+      if (control.setCustomValidity) {
+        control.setCustomValidity("");
+      }
+    }
+  }
   setCustomValidity(message) {
     this.__customValidityMessage = String(message || "");
     const control = baseFormControl(this);
@@ -427,7 +445,7 @@ function basePublicProps() {
   return props;
 }
 function basePublicMethods() {
-  return ["setErrors","getErrors","wireRecordUi","getWiredData","wirePicklistValues","getWiredPicklistValues","setValue","clean","setCustomValidity","checkValidity","reportValidity","focus","blur"];
+  return ["setErrors","getErrors","wireRecordUi","getWiredData","wirePicklistValues","getWiredPicklistValues","setValue","clean","reset","setCustomValidity","checkValidity","reportValidity","focus","blur"];
 }
 function unsupportedBaseAttributes(component) {
   const host = component && component.hostElement || component;

@@ -174,6 +174,7 @@ func TestBaseComponentPublicMethodsExposeFormAndValidityContracts(t *testing.T) 
 		`"getWiredPicklistValues"`,
 		`"setValue"`,
 		`"clean"`,
+		`"reset"`,
 		`"setCustomValidity"`,
 		`"checkValidity"`,
 		`"reportValidity"`,

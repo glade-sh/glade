@@ -73,6 +73,7 @@ const PUBLIC_METHODS = [
   "getWiredPicklistValues",
   "setValue",
   "clean",
+  "reset",
   "setCustomValidity",
   "checkValidity",
   "reportValidity",
@@ -317,6 +318,22 @@ export function createBaseComponent(selector, render, options = {}) {
       this.dirty = false;
     }
 
+    reset() {
+      this.value = this.__initialValue ?? "";
+      this.dirty = false;
+      this.__errors = null;
+      this.__customValidityMessage = "";
+      const control = baseFormControl(this);
+      if (control) {
+        if ("value" in control) {
+          control.value = this.value ?? "";
+        }
+        if (control.setCustomValidity) {
+          control.setCustomValidity("");
+        }
+      }
+    }
+
     setCustomValidity(message) {
       this.__customValidityMessage = String(message || "");
       const control = baseFormControl(this);
@@ -382,6 +399,9 @@ export function createBaseComponent(selector, render, options = {}) {
     }
 
     connectedCallback() {
+      if (this.__initialValue === undefined) {
+        this.__initialValue = this.value;
+      }
       this.reportUnsupportedAttributes();
       if (options.unsupported) {
         const message = `GLADELWC060 base component unsupported: ${selector}`;
