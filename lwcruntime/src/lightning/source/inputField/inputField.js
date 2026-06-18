@@ -1,1 +1,3 @@
-export { default } from "../../inputField.mjs";
+import { createInputField } from "../../lds-form.mjs";
+
+export default createInputField();

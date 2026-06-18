@@ -1,1 +1,3 @@
-export { default } from "../../messages.mjs";
+import { createMessages } from "../../lds-form.mjs";
+
+export default createMessages();

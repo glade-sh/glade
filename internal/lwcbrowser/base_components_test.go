@@ -251,6 +251,30 @@ func TestPriorityBaseComponentsUseSourceBackedRuntimeModules(t *testing.T) {
 	}
 }
 
+func TestPriorityBaseComponentSourceFilesAreNotShimReexports(t *testing.T) {
+	for _, component := range []string{
+		"datatable",
+		"inputField",
+		"messages",
+		"recordForm",
+		"recordEditForm",
+		"recordViewForm",
+	} {
+		path := filepath.Join("..", "..", "lwcruntime", "src", "lightning", "source", component, component+".js")
+		source, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatalf("%s source file: %v", component, err)
+		}
+		js := string(source)
+		if strings.Contains(js, "export { default } from \"../../") || strings.Contains(js, "export { default } from '../../") {
+			t.Fatalf("%s source file should not re-export a local generated shim:\n%s", component, js)
+		}
+		if !containsAll(js, "create", "export default") {
+			t.Fatalf("%s source file should define a source-backed component:\n%s", component, js)
+		}
+	}
+}
+
 func TestRecordFormModuleUsesLocalLDSEndpoints(t *testing.T) {
 	js := LightningBaseComponentModuleJS("recordEditForm")
 	if !containsAll(js,

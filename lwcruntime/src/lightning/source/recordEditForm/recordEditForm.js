@@ -1,1 +1,3 @@
-export { default } from "../../recordEditForm.mjs";
+import { createRecordForm } from "../../lds-form.mjs";
+
+export default createRecordForm("lightning-record-edit-form");
