@@ -7,6 +7,11 @@ import { chromium } from "playwright";
 import { defaultSLDSHref, repoRoot, requireLWCToolchain } from "./helpers.mjs";
 
 function serveRuntimeFile(urlPath, res) {
+  if (urlPath === "/lightning/shims/lightning/uiRecordApi.js") {
+    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
+    res.end("export async function __gladeRecordPickerSearch() { return { records: [] }; }\n");
+    return;
+  }
   const routes = {
     "/lightning/vendor/lwc.js": path.join(repoRoot, "third_party/lwc/node_modules/@lwc/engine-dom/dist/index.js"),
     "/lightning/vendor/synthetic-shadow.js": path.join(repoRoot, "third_party/lwc/node_modules/@lwc/synthetic-shadow/dist/index.js"),
@@ -113,6 +118,7 @@ function startBaseComponentServer() {
     "lightning/quickActionPanel": "/lightning/shims/lightning/quickActionPanel.js",
     "lightning/radioGroup": "/lightning/shims/lightning/radioGroup.js",
     "lightning/recordPicker": "/lightning/shims/lightning/recordPicker.js",
+    "lightning/uiRecordApi": "/lightning/shims/lightning/uiRecordApi.js",
     "lightning/verticalNavigation": "/lightning/shims/lightning/verticalNavigation.js",
     "lightning/verticalNavigationItem": "/lightning/shims/lightning/verticalNavigationItem.js"
   } })}</script>

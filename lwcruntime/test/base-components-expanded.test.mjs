@@ -26,6 +26,7 @@ const expandedImports = {
   "lightning/progressRing": "/lightning/shims/lightning/progressRing.js",
   "lightning/quickActionPanel": "/lightning/shims/lightning/quickActionPanel.js",
   "lightning/recordPicker": "/lightning/shims/lightning/recordPicker.js",
+  "lightning/uiRecordApi": "/lightning/shims/lightning/uiRecordApi.js",
   "lightning/select": "/lightning/shims/lightning/select.js",
   "lightning/slider": "/lightning/shims/lightning/slider.js",
   "lightning/tile": "/lightning/shims/lightning/tile.js",
@@ -33,6 +34,11 @@ const expandedImports = {
 };
 
 function serveRuntimeFile(urlPath, res) {
+  if (urlPath === "/lightning/shims/lightning/uiRecordApi.js") {
+    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
+    res.end("export async function __gladeRecordPickerSearch() { return { records: [] }; }\n");
+    return;
+  }
   const routes = {
     "/lightning/vendor/lwc.js": path.join(repoRoot, "third_party/lwc/node_modules/@lwc/engine-dom/dist/index.js"),
     "/lightning/vendor/synthetic-shadow.js": path.join(repoRoot, "third_party/lwc/node_modules/@lwc/synthetic-shadow/dist/index.js"),

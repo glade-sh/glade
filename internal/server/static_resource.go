@@ -53,6 +53,11 @@ func (s *Server) lookupStaticResource(name, subpath string) (path string, conten
 	if s.Org != nil {
 		for _, resource := range s.Org.Metadata.StaticResources {
 			if strings.EqualFold(resource.Name, name) {
+				if subpath != "" {
+					if resolved, ok := staticResourceSubpath(resource, subpath); ok {
+						return resolved, resource.ContentType, true
+					}
+				}
 				if subpath == "" && resource.ContentPath != "" {
 					return resource.ContentPath, resource.ContentType, true
 				}
@@ -64,8 +69,24 @@ func (s *Server) lookupStaticResource(name, subpath string) (path string, conten
 	}
 	for _, resource := range s.Source.ToolingOrg.Metadata.StaticResources {
 		if strings.EqualFold(resource.Name, name) {
+			if subpath != "" {
+				if resolved, ok := staticResourceSubpath(resource, subpath); ok {
+					return resolved, resource.ContentType, true
+				}
+			}
 			if subpath == "" && resource.ContentPath != "" {
 				return resource.ContentPath, resource.ContentType, true
+			}
+		}
+	}
+	for _, path := range s.Source.Project.StaticResourceFiles {
+		resourceName, resourceSubpath, ok := projectStaticResourceNameAndSubpath(path)
+		if ok && strings.EqualFold(resourceName, name) && subpath != "" && cleanResourceSubpath(resourceSubpath) == cleanResourceSubpath(subpath) {
+			return path, "", true
+		}
+		if ok && strings.EqualFold(resourceName, name) && resourceSubpath == "" && subpath != "" {
+			if resolved, err := visualforce.ResolveStaticResourceContentPath(path, resourceName, subpath); err == nil {
+				return resolved, "", true
 			}
 		}
 	}
@@ -81,6 +102,52 @@ func (s *Server) lookupStaticResource(name, subpath string) (path string, conten
 		}
 	}
 	return "", "", false
+}
+
+func projectStaticResourceNameAndSubpath(file string) (name string, subpath string, ok bool) {
+	parts := strings.Split(filepath.ToSlash(file), "/")
+	for i, part := range parts {
+		if part == "staticresources" && i+1 < len(parts) {
+			name = strings.TrimSuffix(parts[i+1], ".resource")
+			if i+2 < len(parts) {
+				subpath = strings.Join(parts[i+2:], "/")
+			}
+			return name, subpath, name != ""
+		}
+	}
+	return "", "", false
+}
+
+func cleanResourceSubpath(subpath string) string {
+	return strings.Trim(strings.ReplaceAll(filepath.ToSlash(subpath), "\\", "/"), "/")
+}
+
+func staticResourceSubpath(resource storage.StaticResourceMetadata, subpath string) (string, bool) {
+	subpath = strings.Trim(strings.TrimSpace(subpath), "/")
+	if subpath == "" {
+		return "", false
+	}
+	if resource.Files != nil {
+		if path := resource.Files[subpath]; path != "" {
+			return path, true
+		}
+	}
+	if resource.ContentPath == "" {
+		return "", false
+	}
+	if resolved, err := visualforce.ResolveStaticResourceContentPath(resource.ContentPath, resource.Name, subpath); err == nil {
+		return resolved, true
+	}
+	root := filepath.Clean(resource.ContentPath)
+	info, err := os.Stat(root)
+	if err != nil || !info.IsDir() {
+		return "", false
+	}
+	candidate := filepath.Clean(filepath.Join(root, filepath.FromSlash(subpath)))
+	if candidate != root && strings.HasPrefix(candidate, root+string(filepath.Separator)) {
+		return candidate, true
+	}
+	return "", false
 }
 
 func writeInlineStaticResource(name, content string) (string, string, bool) {

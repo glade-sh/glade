@@ -165,6 +165,9 @@ func LightningBaseComponentModuleJS(name string) string {
 	if !def.Supported {
 		return unsupportedBaseComponentModuleJS(def)
 	}
+	if js, ok := LightningSourceBackedComponentModuleJS(def.Name); ok {
+		return js
+	}
 	classExtraJS := ""
 	switch normalizeLightningBaseComponentName(def.Name) {
 	case "alert":

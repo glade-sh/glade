@@ -3,6 +3,7 @@ package project
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -280,6 +281,27 @@ func TestLoadSkipsStaticResourceVendorTrees(t *testing.T) {
 	}
 	if len(p.ApexFiles) != 1 || len(p.StaticResourceMetas) != 1 {
 		t.Fatalf("unexpected static resource filtering: %#v", p)
+	}
+}
+
+func TestDiscoverProjectIncludesDirectoryStaticResourceContent(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/verifiable-app/main/staticresources/Bundle.resource-meta.xml"), "<StaticResource/>")
+	writeFile(t, filepath.Join(root, "force-app/verifiable-app/main/staticresources/Bundle/css/main.css"), "body{}")
+	writeFile(t, filepath.Join(root, "force-app/verifiable-app/main/staticresources/Bundle/scripts/NotAClass.cls"), "public class NotAClass {}")
+
+	p, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.ContainsFunc(p.StaticResourceFiles, func(file string) bool {
+		return strings.HasSuffix(filepath.ToSlash(file), "staticresources/Bundle/css/main.css")
+	}) {
+		t.Fatalf("StaticResourceFiles = %#v, want nested directory content", p.StaticResourceFiles)
+	}
+	if len(p.ApexFiles) != 0 {
+		t.Fatalf("ApexFiles = %#v, want static resource content ignored as Apex", p.ApexFiles)
 	}
 }
 

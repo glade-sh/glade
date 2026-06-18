@@ -13,6 +13,17 @@ import (
 	"github.com/glade-sh/glade/internal/gladehome"
 )
 
+func assertSupportedBaseComponentJS(t *testing.T, name, js string) {
+	t.Helper()
+	if containsAll(js, "registerComponent", "export default", "createBaseComponent") {
+		return
+	}
+	if containsAll(js, `export { default }`, `/lightning/runtime/lightning/`) {
+		return
+	}
+	t.Fatalf("%s module js = %q", name, js)
+}
+
 func TestLightningBaseComponentSupportTiers(t *testing.T) {
 	for _, name := range []string{
 		"button",
@@ -40,9 +51,7 @@ func TestLightningBaseComponentSupportTiers(t *testing.T) {
 			t.Fatalf("expected %s to be recognized as a lightning base component", name)
 		}
 		js := LightningBaseComponentModuleJS(name)
-		if !containsAll(js, "registerComponent", "export default", "createBaseComponent") {
-			t.Fatalf("%s module js = %q", name, js)
-		}
+		assertSupportedBaseComponentJS(t, name, js)
 		if strings.Contains(js, "GLADELWC060") {
 			t.Fatalf("%s should be supported, got diagnostic js = %q", name, js)
 		}
@@ -87,9 +96,7 @@ func TestPackagePhase1BaseComponentsAreSupported(t *testing.T) {
 		"verticalNavigationSection",
 	} {
 		js := LightningBaseComponentModuleJS(name)
-		if !containsAll(js, "registerComponent", "export default", "createBaseComponent") {
-			t.Fatalf("%s module js = %q", name, js)
-		}
+		assertSupportedBaseComponentJS(t, name, js)
 		if strings.Contains(js, "GLADELWC060") {
 			t.Fatalf("%s should be supported for package phase 1, got diagnostic js = %q", name, js)
 		}
@@ -115,9 +122,7 @@ func TestPhase3BaseComponentsAreSupported(t *testing.T) {
 		"treeGrid",
 	} {
 		js := LightningBaseComponentModuleJS(name)
-		if !containsAll(js, "registerComponent", "export default", "createBaseComponent") {
-			t.Fatalf("%s module js = %q", name, js)
-		}
+		assertSupportedBaseComponentJS(t, name, js)
 		if strings.Contains(js, "GLADELWC060") {
 			t.Fatalf("%s should be supported for phase 3, got diagnostic js = %q", name, js)
 		}
@@ -161,9 +166,7 @@ func TestNPMPackageExposedBaseComponentsAreSupportedLocally(t *testing.T) {
 			t.Fatalf("expected %s to be recognized as a lightning base component", name)
 		}
 		js := LightningBaseComponentModuleJS(name)
-		if !containsAll(js, "registerComponent", "export default", "createBaseComponent") {
-			t.Fatalf("%s module js = %q", name, js)
-		}
+		assertSupportedBaseComponentJS(t, name, js)
 		if strings.Contains(js, "GLADELWC060") {
 			t.Fatalf("%s should be supported from the lightning-base-components expose list, got diagnostic js = %q", name, js)
 		}

@@ -645,14 +645,13 @@ func collectFiles(root string, p *Project) error {
 			if shouldSkipDir(d.Name()) && path != root {
 				return filepath.SkipDir
 			}
-			if isStaticResourceVendorDir(path) {
-				return filepath.SkipDir
-			}
 			return nil
 		}
 
 		lower := strings.ToLower(path)
 		switch {
+		case isStaticResourceContentFile(path):
+			p.StaticResourceFiles = append(p.StaticResourceFiles, path)
 		case strings.HasSuffix(lower, ".cls"), strings.HasSuffix(lower, ".trigger"):
 			p.ApexFiles = append(p.ApexFiles, path)
 		case strings.HasSuffix(lower, ".object-meta.xml"), strings.HasSuffix(lower, ".object") && isLegacyObjectPath(lower):
@@ -677,7 +676,7 @@ func collectFiles(root string, p *Project) error {
 			p.DataWeaveMetas = append(p.DataWeaveMetas, path)
 		case strings.HasSuffix(lower, ".dwl"):
 			p.DataWeaveFiles = append(p.DataWeaveFiles, path)
-		case strings.HasSuffix(lower, ".resource"), isStaticResourceContentFile(path):
+		case strings.HasSuffix(lower, ".resource"):
 			p.StaticResourceFiles = append(p.StaticResourceFiles, path)
 		case strings.HasSuffix(lower, ".asset-meta.xml"):
 			p.ContentAssetMetas = append(p.ContentAssetMetas, path)
@@ -759,24 +758,17 @@ func shouldSkipDir(name string) bool {
 	}
 }
 
-func isStaticResourceVendorDir(path string) bool {
-	parts := strings.Split(filepath.ToSlash(path), "/")
-	for i, part := range parts {
-		if part == "staticresources" && i < len(parts)-1 {
-			return true
-		}
-	}
-	return false
-}
-
 func isStaticResourceContentFile(path string) bool {
 	parts := strings.Split(filepath.ToSlash(path), "/")
 	for i, part := range parts {
-		if part != "staticresources" || i != len(parts)-2 {
+		if part != "staticresources" || i >= len(parts)-1 {
 			continue
 		}
 		name := strings.ToLower(parts[len(parts)-1])
-		return !strings.HasSuffix(name, "-meta.xml") && !strings.HasSuffix(name, ".xml")
+		if strings.HasSuffix(name, "-meta.xml") || strings.HasSuffix(name, ".xml") {
+			return false
+		}
+		return true
 	}
 	return false
 }

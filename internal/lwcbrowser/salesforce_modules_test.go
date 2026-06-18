@@ -212,6 +212,13 @@ func TestLightningSourceBackedComponentModuleJSWrapsCompiledRuntimeAsset(t *test
 	if !containsAll(js, `export { default }`, `/lightning/runtime/lightning/source/badge/badge.js`) {
 		t.Fatalf("source backed badge js = %q", js)
 	}
+	js, ok = LightningSourceBackedComponentModuleJS("recordPicker")
+	if !ok {
+		t.Fatalf("recordPicker should be source backed")
+	}
+	if !containsAll(js, `export { default }`, `/lightning/runtime/lightning/recordPicker.js`) {
+		t.Fatalf("source backed recordPicker js = %q", js)
+	}
 	if _, ok := LightningSourceBackedComponentModuleJS("combobox"); ok {
 		t.Fatalf("combobox should still use generated shim until its source graph is allowlisted")
 	}
@@ -346,6 +353,8 @@ func TestUIRecordAPIModuleJSExportsRecordAndObjectInfoWires(t *testing.T) {
 		"createRecord",
 		"updateRecord",
 		"deleteRecord",
+		"__gladeRecordPickerSearch",
+		"/lightning/wire/recordPickerSearch",
 		"generateRecordInputForCreate",
 		"generateRecordInputForUpdate",
 		"createRecordInputFilteredByEditedFields",
