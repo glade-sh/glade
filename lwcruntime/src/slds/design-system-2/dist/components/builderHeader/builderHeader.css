@@ -1,0 +1,166 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * @summary Container that fixes the builder header to the top of the viewport, contains builder header element
+ */
+.slds-builder-header_container {
+  position: fixed;
+  width: 100%;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: 100;
+}
+
+/**
+ * @summary Creates builder specific global header
+ */
+.slds-builder-header {
+  position: relative;
+  display: flex;
+  height: var(--slds-s-header-sizing-height, 3.125rem);
+  background: var(--slds-g-color-surface-inverse-1, var(--slds-g-color-brand-base-20));
+  color: var(--slds-g-color-on-surface-inverse-1, var(--slds-g-color-neutral-base-100));
+}
+
+/**
+ * @summary Direct child descendant item of the builder header
+ */
+.slds-builder-header__item {
+  display: flex;
+  align-content: center;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.slds-builder-header__item + .slds-builder-header__item {
+  border-inline-start: var(--slds-g-sizing-border-1) solid
+    var(--slds-g-color-surface-inverse-2, var(--slds-g-color-brand-base-10));
+}
+
+/**
+ * @summary Label inside of a header item
+ */
+.slds-builder-header__item-action,
+.slds-builder-header__item-label {
+  color: currentColor;
+  padding: 0 var(--slds-g-spacing-4);
+  display: flex;
+  align-content: center;
+  align-items: center;
+  flex-grow: 1;
+  min-width: 0%;
+  height: 100%;
+  font-weight: var(--slds-g-font-weight-4);
+  line-height: inherit;
+}
+
+.slds-builder-header__item-action .slds-media__body,
+.slds-builder-header__item-label .slds-media__body {
+  flex-basis: auto;
+}
+
+/**
+ * @summary Action or label inside of a header item
+ */
+.slds-builder-header__item-action {
+  transition: all 150ms linear;
+  border-radius: 0;
+
+  &:hover,
+  &:focus {
+    background-color: var(--slds-g-color-surface-inverse-2, var(--slds-g-color-brand-base-10));
+    color: var(--slds-g-color-on-surface-inverse-1, var(--slds-g-color-neutral-base-100));
+    text-decoration: none;
+    --slds-c-button-radius-border: 0;
+  }
+
+  &:focus {
+    text-decoration: underline;
+    /* $shadow-buton-focus */
+    outline: none;
+    border-radius: 0;
+  }
+
+  &:focus-visible {
+    box-shadow: var(--slds-g-shadow-insetinverse-focus-1);
+    outline: 0;
+    text-decoration: none;
+  }
+}
+
+/**
+ * @summary Container around builder header's nav region
+ */
+.slds-builder-header__nav,
+.slds-builder-header__utilities {
+  align-items: stretch;
+}
+
+/**
+ * @summary List containing navigation items of a builder header
+ */
+.slds-builder-header__nav-list {
+  display: flex;
+}
+
+/**
+ * @summary Container around builder header's utiltity region containing the back and help links
+ */
+.slds-builder-header__utilities {
+  margin-inline-start: auto;
+}
+
+/**
+ * @summary Items of the builder headers nav
+ */
+.slds-builder-header__nav-item,
+.slds-builder-header__utilities-item {
+  display: flex;
+  align-content: center;
+  align-items: stretch;
+}
+
+.slds-builder-header__nav-item + .slds-builder-header__nav-item,
+.slds-builder-header__nav-item + .slds-builder-header__utilities-item,
+.slds-builder-header__utilities-item + .slds-builder-header__nav-item,
+.slds-builder-header__utilities-item + .slds-builder-header__utilities-item {
+  border-inline-start: var(--slds-g-sizing-border-1) solid
+    var(--slds-g-color-surface-inverse-2, var(--slds-g-color-brand-base-10));
+}
+
+/**
+ * @name toolbar
+ */
+.slds-builder-toolbar {
+  display: flex;
+  padding-block: var(--slds-g-sizing-3);
+  padding-inline: var(--slds-g-sizing-4);
+  background: var(--slds-g-color-surface-container-1, var(--slds-g-color-neutral-base-100));
+  border-block-end: var(--slds-g-sizing-border-1) solid
+    var(--slds-g-color-border-1, var(--slds-g-color-border-base-1));
+}
+
+/**
+ * @summary Region of Builder header toolbar that contains the document actions
+ */
+.slds-builder-toolbar__actions {
+  display: flex;
+  align-items: center;
+  margin-inline-start: auto;
+}
+
+/**
+ * @summary Region containing button icon groups of Builder header toolbar
+ */
+.slds-builder-toolbar__item-group {
+  display: flex;
+  align-items: center;
+}
+
+.slds-builder-toolbar__item-group + .slds-builder-toolbar__item-group {
+  margin-inline-start: var(--slds-g-sizing-2);
+}

@@ -1,0 +1,111 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Badge",
+  "description": "Badges are labels which hold small amounts of information.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "span"
+    ],
+    "description": "Badge container",
+    "children": [
+      {
+        "name": "icon",
+        "restrict": [
+          "span"
+        ],
+        "description": "Wrapper for icon within badge",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "icon",
+          "restrict": [
+            "Icon"
+          ]
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-badge__icon"
+          }
+        },
+        "modifiers": [
+          {
+            "name": "position",
+            "attribute": "class",
+            "options": [
+              {
+                "value": "left",
+                "class": "slds-badge__icon_left"
+              },
+              {
+                "value": "right",
+                "class": "slds-badge__icon_right"
+              }
+            ],
+            "description": "icon position relative to text"
+          },
+          {
+            "name": "inverse",
+            "attribute": "class",
+            "value": "slds-badge__icon_inverse",
+            "description": "inverse icon styling"
+          }
+        ]
+      },
+      {
+        "name": "content",
+        "description": "Badge text content",
+        "restrict": [
+          "span"
+        ],
+        "slot": {
+          "name": "default",
+          "required": true
+        }
+      }
+    ],
+    "attributes": {
+      "static": {
+        "class": "slds-badge"
+      }
+    },
+    "modifiers": [
+      {
+        "name": "colorScheme",
+        "attribute": "class",
+        "description": "Badge color scheme",
+        "default": "default",
+        "options": [
+          {
+            "propValue": "default",
+            "value": ""
+          },
+          {
+            "propValue": "inverse",
+            "value": "slds-badge_inverse"
+          },
+          {
+            "propValue": "lightest",
+            "value": "slds-badge_lightest"
+          }
+        ]
+      }
+    ]
+  },
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "color-meaning",
+        "description": "Color alone should not convey meaning. Ensure badges have text content or accessible labels."
+      }
+    ]
+  },
+  "cssSource": "./badge.css",
+  "styleApi": {
+    "status": "in-development",
+    "ready": false
+  }
+}

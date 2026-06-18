@@ -1,0 +1,168 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Spinner",
+  "description": "Spinners are CSS loading indicators that should be shown when retrieving data or performing slow computations.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Spinner element",
+    "attributes": {
+      "static": {
+        "role": "status",
+        "class": "slds-spinner"
+      }
+    },
+    "children": [
+      {
+        "name": "assistiveText",
+        "restrict": [
+          "span"
+        ],
+        "description": "Screen reader loading text",
+        "slot": {
+          "name": "assistiveText"
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-assistive-text"
+          }
+        }
+      },
+      {
+        "name": "dotA",
+        "restrict": [
+          "div"
+        ],
+        "description": "First animated dot",
+        "attributes": {
+          "static": {
+            "class": "slds-spinner__dot-a"
+          }
+        }
+      },
+      {
+        "name": "dotB",
+        "restrict": [
+          "div"
+        ],
+        "description": "Second animated dot",
+        "attributes": {
+          "static": {
+            "class": "slds-spinner__dot-b"
+          }
+        }
+      },
+      {
+        "name": "container",
+        "restrict": [
+          "div"
+        ],
+        "description": "optional overlay container for spinner",
+        "attributes": {
+          "static": {
+            "class": "slds-spinner_container"
+          }
+        }
+      }
+    ],
+    "modifiers": [
+      {
+        "name": "colorScheme",
+        "attribute": "class",
+        "description": "Color scheme for the spinner",
+        "default": "default",
+        "options": [
+          {
+            "propValue": "default",
+            "value": ""
+          },
+          {
+            "propValue": "brand",
+            "value": "slds-spinner_brand"
+          },
+          {
+            "propValue": "inverse",
+            "value": "slds-spinner_inverse"
+          }
+        ]
+      },
+      {
+        "name": "size",
+        "attribute": "class",
+        "description": "Spinner size",
+        "default": "medium",
+        "options": [
+          {
+            "propValue": "xx-small",
+            "value": "slds-spinner_xx-small"
+          },
+          {
+            "propValue": "x-small",
+            "value": "slds-spinner_x-small"
+          },
+          {
+            "propValue": "small",
+            "value": "slds-spinner_small"
+          },
+          {
+            "propValue": "medium",
+            "value": "slds-spinner_medium"
+          },
+          {
+            "propValue": "large",
+            "value": "slds-spinner_large"
+          }
+        ]
+      },
+      {
+        "name": "delayed",
+        "attribute": "class",
+        "value": "slds-spinner_delayed",
+        "description": "Adds a 300ms delay before animation starts"
+      },
+      {
+        "name": "inline",
+        "attribute": "class",
+        "value": "slds-spinner_inline",
+        "description": "Inline flow spinner for use within text"
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "fixed",
+      "type": "boolean",
+      "description": "whether the spinner container uses fixed positioning"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "status-role",
+        "description": "Spinner must have role='status' to announce loading state"
+      },
+      {
+        "id": "loading-text",
+        "description": "Include assistive text like 'Loading' for screen readers"
+      }
+    ]
+  },
+  "cssSource": "./spinner.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "fixed",
+      "class": "slds-is-fixed",
+      "target": "container"
+    }
+  ]
+}

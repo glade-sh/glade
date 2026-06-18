@@ -1,0 +1,167 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Trees",
+  "description": "A tree is used to display hierarchical data.",
+  "dateAdded": "2016-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Tree container",
+    "children": [
+      {
+        "name": "heading",
+        "restrict": [
+          "h4"
+        ],
+        "description": "Tree heading",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "heading"
+        }
+      },
+      {
+        "name": "list",
+        "restrict": [
+          "ul"
+        ],
+        "description": "Tree list",
+        "attributes": {
+          "static": {
+            "role": "tree"
+          },
+          "bound": {
+            "aria-labelledby": {
+              "prop": "headingId"
+            }
+          }
+        },
+        "children": [
+          {
+            "name": "item",
+            "restrict": [
+              "li"
+            ],
+            "description": "Tree item",
+            "repeats": true,
+            "attributes": {
+              "static": {
+                "role": "treeitem"
+              },
+              "bound": {
+                "aria-level": {
+                  "prop": "level"
+                },
+                "aria-expanded": {
+                  "prop": "isExpanded"
+                },
+                "aria-selected": {
+                  "prop": "isSelected"
+                }
+              }
+            },
+            "children": [
+              {
+                "name": "itemContent",
+                "restrict": [
+                  "div"
+                ],
+                "description": "Tree item content",
+                "children": [
+                  {
+                    "name": "expandButton",
+                    "restrict": [
+                      "button"
+                    ],
+                    "description": "Expand/collapse button",
+                    "renderWhen": "slotFilled"
+                  },
+                  {
+                    "name": "label",
+                    "restrict": [
+                      "span"
+                    ],
+                    "description": "Item label",
+                    "slot": {
+                      "name": "itemLabel"
+                    }
+                  },
+                  {
+                    "name": "metaText",
+                    "restrict": [
+                      "span"
+                    ],
+                    "description": "item metadata text"
+                  }
+                ]
+              },
+              {
+                "name": "children",
+                "restrict": [
+                  "ul"
+                ],
+                "description": "Child items",
+                "attributes": {
+                  "static": {
+                    "role": "group"
+                  }
+                },
+                "slot": {
+                  "name": "children"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "expanded",
+      "type": "boolean",
+      "aria": "aria-expanded",
+      "description": "Whether a branch is expanded"
+    },
+    {
+      "name": "selected",
+      "type": "boolean",
+      "aria": "aria-selected",
+      "description": "Whether an item is selected"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "description": "whether a tree item is disabled"
+    },
+    {
+      "name": "hovered",
+      "type": "boolean",
+      "description": "whether a tree item is being hovered"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "tree-role",
+        "description": "Tree must have role='tree' with treeitem children"
+      },
+      {
+        "id": "aria-expanded",
+        "description": "Expandable items must have aria-expanded"
+      },
+      {
+        "id": "keyboard-navigation",
+        "description": "Arrow keys should navigate between items and expand/collapse branches"
+      },
+      {
+        "id": "aria-level",
+        "description": "Items should have aria-level indicating depth"
+      }
+    ]
+  }
+}

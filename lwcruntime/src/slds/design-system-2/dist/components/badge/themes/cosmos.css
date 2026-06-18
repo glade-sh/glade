@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  .slds-badge {
+    --slds-c-badge-gap: var(--slds-g-spacing-1);
+    --slds-c-badge-spacing-block: var(--slds-g-spacing-1);
+    --slds-c-badge-spacing-inline: var(--slds-g-spacing-2);
+    --slds-c-badge-font-size: var(--slds-g-font-scale-neg-1);
+    --slds-c-badge-font-weight: var(--slds-g-font-weight-4);
+    --slds-c-badge-font-line-height: var(--slds-g-font-line-height-1);
+    --slds-c-badge-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-badge-radius-border: var(--slds-g-radius-border-1);
+    --slds-c-badge-color-foreground: var(--slds-g-color-on-surface-1);
+    --slds-c-badge-color-background: var(--slds-g-color-surface-container-3);
+    --slds-c-badge-icon-color-foreground: currentcolor;
+    --slds-c-badge-margin-inline-start-adjacent: var(--slds-g-spacing-2);
+  }
+
+  /**
+   * @summary Change badge color to a dark with light text
+   */
+  .slds-badge_inverse {
+    --slds-c-badge-color-background: var(--slds-g-color-neutral-base-50);
+    --slds-c-badge-color-foreground: var(--slds-g-color-on-surface-inverse-1);
+  }
+
+  /**
+   * @summary Change badge color to white with normal text
+   */
+  .slds-badge_lightest {
+    --slds-c-badge-color-background: var(--slds-g-color-surface-container-1);
+    --slds-c-badge-color-border: var(--slds-g-color-border-1);
+  }
+}

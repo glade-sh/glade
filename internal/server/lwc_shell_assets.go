@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -306,11 +307,11 @@ func lwcShellWorkbenchNavLinks(model lwcshell.WorkbenchModel) []lwcShellNavLink 
 }
 
 func (s *Server) serveLightningShellRuntime(w http.ResponseWriter, r *http.Request, parts []string) {
-	if r.Method != http.MethodGet || len(parts) != 2 {
+	if r.Method != http.MethodGet || len(parts) < 2 {
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning runtime asset")
 		return
 	}
-	contentType, content, ok := lightningRuntimeAsset(parts[0], parts[1])
+	contentType, content, ok := lightningRuntimeAsset(parts[0], strings.Join(parts[1:], "/"))
 	if !ok {
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning runtime asset")
 		return
@@ -321,9 +322,9 @@ func (s *Server) serveLightningShellRuntime(w http.ResponseWriter, r *http.Reque
 }
 
 func lightningRuntimeAsset(kind, name string) (string, []byte, bool) {
-	kind = strings.TrimSpace(kind)
-	name = strings.TrimSpace(name)
-	if kind == "" || name == "" || strings.Contains(name, "/") || strings.Contains(name, "..") {
+	kind, kindOK := cleanLightningRuntimeAssetKind(kind)
+	name, nameOK := cleanLightningRuntimeAssetName(name)
+	if !kindOK || !nameOK {
 		return "", nil, false
 	}
 	candidates := []string{name}
@@ -340,6 +341,26 @@ func lightningRuntimeAsset(kind, name string) (string, []byte, bool) {
 		}
 	}
 	return "", nil, false
+}
+
+func cleanLightningRuntimeAssetKind(kind string) (string, bool) {
+	kind = strings.TrimSpace(strings.ReplaceAll(kind, "\\", "/"))
+	if kind == "" || strings.Contains(kind, "\x00") || strings.Contains(kind, "/") || strings.Contains(kind, "..") {
+		return "", false
+	}
+	return kind, true
+}
+
+func cleanLightningRuntimeAssetName(name string) (string, bool) {
+	name = strings.TrimSpace(strings.ReplaceAll(name, "\\", "/"))
+	if name == "" || strings.Contains(name, "\x00") || strings.Contains(name, "..") {
+		return "", false
+	}
+	cleaned := strings.TrimPrefix(path.Clean("/"+name), "/")
+	if cleaned == "" || cleaned == "." || strings.HasPrefix(cleaned, "../") {
+		return "", false
+	}
+	return cleaned, true
 }
 
 func lightningRuntimeAssetDirs(kind string) []string {
@@ -368,14 +389,21 @@ func (s *Server) handleLightningAssets(w http.ResponseWriter, r *http.Request, p
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning asset")
 		return
 	}
-	content, ok := localSLDSSprite(parts[1])
+	contentType, content, ok := lightningRuntimeAsset("slds", "design-system/assets/"+strings.Join(parts, "/"))
+	if ok {
+		w.Header().Set("Content-Type", contentType)
+		setDevNoStore(w)
+		_, _ = w.Write(content)
+		return
+	}
+	spriteContent, ok := localSLDSSprite(parts[1])
 	if !ok {
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning asset")
 		return
 	}
 	w.Header().Set("Content-Type", "image/svg+xml; charset=utf-8")
 	setDevNoStore(w)
-	_, _ = w.Write([]byte(content))
+	_, _ = w.Write([]byte(spriteContent))
 }
 
 func localSLDSSprite(sprite string) (string, bool) {
@@ -434,6 +462,20 @@ func lightningRuntimeContentType(name string) string {
 	switch {
 	case strings.HasSuffix(name, ".css"):
 		return "text/css; charset=utf-8"
+	case strings.HasSuffix(name, ".svg"):
+		return "image/svg+xml; charset=utf-8"
+	case strings.HasSuffix(name, ".png"):
+		return "image/png"
+	case strings.HasSuffix(name, ".jpg"), strings.HasSuffix(name, ".jpeg"):
+		return "image/jpeg"
+	case strings.HasSuffix(name, ".gif"):
+		return "image/gif"
+	case strings.HasSuffix(name, ".json"):
+		return "application/json; charset=utf-8"
+	case strings.HasSuffix(name, ".woff"):
+		return "font/woff"
+	case strings.HasSuffix(name, ".woff2"):
+		return "font/woff2"
 	default:
 		return "application/javascript; charset=utf-8"
 	}
@@ -585,6 +627,6 @@ func lwcShellServiceStatus() map[string]string {
 		"community":              "supported-local",
 		"visualforceHost":        "supported-local",
 		"platformWorkspaceApi":   "partial",
-		"slds":                   "partial",
+		"slds":                   "supported-local",
 	}
 }

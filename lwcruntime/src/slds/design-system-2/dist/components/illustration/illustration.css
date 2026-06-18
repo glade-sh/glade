@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * Initiates an illustration component
+ */
+.slds-illustration {
+  text-align: center;
+
+  /**
+   * Applies width and height values for small illustrations
+   */
+  &.slds-illustration_small {
+    .slds-illustration__svg {
+      width: 100%;
+      max-width: 300px;
+      max-height: 200px;
+      margin-block-end: var(--slds-g-spacing-4);
+    }
+  }
+
+  /**
+   * Applies width and height values for large illustrations
+   */
+  &.slds-illustration_large {
+    .slds-illustration__svg {
+      width: 100%;
+      max-width: 600px;
+      max-height: 400px;
+      margin-block-end: var(--slds-g-spacing-8);
+    }
+
+    .slds-illustration__header {
+      margin-block-end: var(--slds-g-spacing-5);
+    }
+
+    p {
+      margin-block-end: var(--slds-g-spacing-8);
+    }
+  }
+
+  .slds-illustration__stroke-primary {
+    stroke: var(--slds-g-color-palette-cloud-blue-80);
+  }
+
+  .slds-illustration__stroke-secondary {
+    stroke: var(--slds-g-color-palette-cloud-blue-90);
+  }
+
+  .slds-illustration__fill-primary {
+    fill: var(--slds-g-color-palette-cloud-blue-80);
+  }
+
+  .slds-illustration__fill-secondary {
+    fill: var(--slds-g-color-palette-cloud-blue-90);
+  }
+}

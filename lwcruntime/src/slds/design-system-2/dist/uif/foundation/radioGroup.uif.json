@@ -1,0 +1,110 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "RadioGroup",
+  "description": "A radio group allows users to select one option from a set of mutually exclusive options.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "fieldset",
+      "div"
+    ],
+    "description": "Radio group container",
+    "attributes": {
+      "static": {
+        "role": "radiogroup"
+      }
+    },
+    "children": [
+      {
+        "name": "legend",
+        "restrict": [
+          "legend",
+          "span"
+        ],
+        "description": "Group label/legend",
+        "slot": {
+          "name": "legend",
+          "required": true
+        }
+      },
+      {
+        "name": "options",
+        "restrict": [
+          "div"
+        ],
+        "description": "Container for radio options",
+        "slot": {
+          "name": "default",
+          "restrict": [
+            "Radio"
+          ]
+        }
+      },
+      {
+        "name": "requiredIndicator",
+        "restrict": [
+          "abbr"
+        ],
+        "description": "required field indicator"
+      },
+      {
+        "name": "helpIcon",
+        "restrict": [
+          "div"
+        ],
+        "description": "help icon with tooltip",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "helpText"
+        }
+      },
+      {
+        "name": "errorMessage",
+        "restrict": [
+          "div"
+        ],
+        "description": "validation error message",
+        "renderWhen": "hasError"
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "required",
+      "type": "boolean",
+      "aria": "aria-required",
+      "description": "Whether a selection is required"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the entire group is disabled"
+    },
+    {
+      "name": "hasError",
+      "type": "boolean",
+      "description": "whether the radio group has a validation error"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "radiogroup-role",
+        "description": "Container should have role='radiogroup'"
+      },
+      {
+        "id": "group-label",
+        "description": "Group must have a label via legend or aria-labelledby"
+      },
+      {
+        "id": "arrow-navigation",
+        "description": "Arrow keys should navigate between radio options"
+      }
+    ]
+  }
+}

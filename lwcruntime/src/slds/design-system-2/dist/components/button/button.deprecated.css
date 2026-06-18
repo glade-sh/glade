@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/*
+ Use spacing utilities instead
+*/
+.slds-button-space-left {
+  margin-left: var(--slds-g-spacing-1);
+}
+
+/*
+  Small modifier doesnt do anything anymore since its value are the same as the default size
+*/
+.slds-button_small {
+  line-height: var(--slds-g-sizing-8);
+  min-height: var(--slds-g-sizing-9);
+}

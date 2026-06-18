@@ -1,0 +1,208 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+  * @summary Initializes card
+  */
+.slds-card {
+  position: relative;
+  padding-block-start: var(--slds-c-card-spacing-block-start, var(--slds-c-card-spacing-block));
+  padding-inline-end: var(--slds-c-card-spacing-inline-end, var(--slds-c-card-spacing-inline));
+  padding-block-end: var(--slds-c-card-spacing-block-end, var(--slds-c-card-spacing-block));
+  padding-inline-start: var(--slds-c-card-spacing-inline-start, var(--slds-c-card-spacing-inline));
+  color: var(--slds-c-card-color-foreground);
+  background-color: var(--slds-c-card-color-background);
+  border-width: var(--slds-c-card-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-card-color-border, transparent);
+  border-radius: var(--slds-c-card-radius-border);
+  background-clip: padding-box;
+  box-shadow: var(--slds-c-card-shadow);
+
+  /* Legacy: adjacent sibling spacing for non-flex layouts — see implementation guide */
+  + .slds-card {
+    margin-block-start: var(--slds-c-card-margin-block-start-adjacent);
+  }
+
+  /* Makes LWC shadow host transparent to layout */
+  [part='card'] {
+    display: contents;
+  }
+
+  /**
+   * @summary Card header
+   */
+  .slds-card__header {
+    padding-block-start: var(
+      --slds-c-card-header-spacing-block-start,
+      var(--slds-c-card-header-spacing-block)
+    );
+    padding-inline-end: var(
+      --slds-c-card-header-spacing-inline-end,
+      var(--slds-c-card-header-spacing-inline)
+    );
+    padding-block-end: var(--slds-c-card-header-spacing-block-end, var(--slds-c-card-header-spacing-block));
+    padding-inline-start: var(
+      --slds-c-card-header-spacing-inline-start,
+      var(--slds-c-card-header-spacing-inline)
+    );
+    background-color: var(--slds-c-card-header-color-background);
+    margin-block-start: 0;
+    margin-block-end: var(--slds-c-card-header-margin-block-end);
+    margin-inline-start: 0;
+    margin-inline-end: 0;
+  }
+
+  /**
+   * @summary Title element within card header
+   */
+  .slds-card__header-title {
+    display: flex;
+    font-size: var(--slds-c-card-header-font-size);
+    font-weight: var(--slds-c-card-header-font-weight);
+    line-height: var(--slds-c-card-header-line-height);
+    color: var(--slds-c-card-header-color-foreground);
+  }
+
+  /**
+   * @summary Actionable element within the card header title
+   */
+  .slds-card__header-link {
+    color: inherit;
+    font-weight: var(--slds-c-card-header-link-font-weight);
+  }
+
+  /**
+   * @summary Initializes card body
+   * Note: block-direction spacing uses margin (SLDS1 precedent) — the hooks are still
+   * named "spacing" because the hook name encodes visual intent, not CSS property.
+   * "margin" hook naming is reserved for external/adjacent-component patterns only.
+   */
+  .slds-card__body {
+    margin-block-start: var(--slds-c-card-body-spacing-block-start, var(--slds-c-card-body-spacing-block));
+    margin-block-end: var(--slds-c-card-body-spacing-block-end, var(--slds-c-card-body-spacing-block));
+    padding-inline-end: var(--slds-c-card-body-spacing-inline-end, var(--slds-c-card-body-spacing-inline));
+    padding-inline-start: var(
+      --slds-c-card-body-spacing-inline-start,
+      var(--slds-c-card-body-spacing-inline)
+    );
+  }
+
+  /**
+   * @summary Applies header-matching inline padding to card body
+   */
+  .slds-card__body_inner {
+    padding-block-start: 0;
+    padding-block-end: 0;
+  }
+
+  .slds-card__body:empty,
+  .slds-card__footer:empty {
+    display: none;
+  }
+
+  /**
+   * @summary Initializes card footer
+   */
+  .slds-card__footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-block-start: var(
+      --slds-c-card-footer-spacing-block-start,
+      var(--slds-c-card-footer-spacing-block)
+    );
+    padding-inline-end: var(
+      --slds-c-card-footer-spacing-inline-end,
+      var(--slds-c-card-footer-spacing-inline)
+    );
+    padding-block-end: var(--slds-c-card-footer-spacing-block-end, var(--slds-c-card-footer-spacing-block));
+    padding-inline-start: var(
+      --slds-c-card-footer-spacing-inline-start,
+      var(--slds-c-card-footer-spacing-inline)
+    );
+    margin-block-start: var(--slds-c-card-footer-margin-block-start);
+    font-size: var(--slds-c-card-footer-font-size);
+    border-top-width: var(--slds-c-card-footer-sizing-border, 0);
+    border-top-style: solid;
+    border-top-color: var(--slds-c-card-footer-color-border, transparent);
+  }
+
+  /**
+   * @summary Actionable element within card footer
+   */
+  .slds-card__footer-action {
+    display: block;
+  }
+
+  /**
+   * @summary Tile child inside a card
+   */
+  .slds-card__tile {
+    margin-block-start: var(--slds-c-card-tile-margin-block-start);
+  }
+}
+
+/**
+ * @summary Outer container that groups related cards. Renders with card-like chrome.
+ */
+.slds-card-wrapper {
+  padding-block-start: var(
+    --slds-c-card-wrapper-spacing-block-start,
+    var(--slds-c-card-wrapper-spacing-block)
+  );
+  padding-inline-end: var(
+    --slds-c-card-wrapper-spacing-inline-end,
+    var(--slds-c-card-wrapper-spacing-inline)
+  );
+  padding-block-end: var(--slds-c-card-wrapper-spacing-block-end, var(--slds-c-card-wrapper-spacing-block));
+  padding-inline-start: var(
+    --slds-c-card-wrapper-spacing-inline-start,
+    var(--slds-c-card-wrapper-spacing-inline)
+  );
+  background-color: var(--slds-c-card-wrapper-color-background);
+  border-width: var(--slds-c-card-wrapper-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-card-wrapper-color-border, transparent);
+  border-radius: var(--slds-c-card-wrapper-radius-border);
+  background-clip: padding-box;
+  box-shadow: var(--slds-c-card-wrapper-shadow);
+}
+
+/**
+ * @summary Strip chrome when cards/wrappers are nested inside another card or card-wrapper.
+ * Scoped descendant selectors in @layer theme handle this — see card/themes/cosmos.css
+ * and card/themes/lightning-blue.css.
+ *
+ * Base only defines structure; the strip/restore values are design decisions owned by themes.
+ */
+
+/**
+  * @summary Related list stop-gap fix for Starter edition layout regression
+  * VIOLATION: This block uses --slds-g-* in base (forbidden) and contains selectors owned by
+  * other components (.slds-page-header, .slds-button_icon-border-filled, .slds-file-selector__dropzone).
+  * When pageHeader, buttonIcon, and fileSelector are migrated, move their rules to those
+  * components' base/theme files and replace --slds-g-* with component hooks.
+  */
+.slds-card_related-list-fix {
+  border-radius: var(--slds-c-card-radius-border);
+
+  .slds-page-header {
+    background: var(--slds-c-card-color-background);
+    border-radius: var(--slds-c-card-radius-border);
+
+    .slds-button-group-list .slds-button_icon-border-filled {
+      width: var(--slds-g-sizing-7);
+      height: var(--slds-g-sizing-7);
+    }
+  }
+
+  .slds-file-selector__dropzone {
+    margin-block-start: 0;
+    margin-block-end: var(--slds-g-spacing-4);
+    margin-inline: var(--slds-g-spacing-4);
+  }
+}

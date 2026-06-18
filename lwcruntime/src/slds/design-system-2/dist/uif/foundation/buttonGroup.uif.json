@@ -1,0 +1,65 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "ButtonGroup",
+  "description": "A button group is a set of related buttons displayed together.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Button group container",
+    "attributes": {
+      "static": {
+        "role": "group"
+      }
+    },
+    "children": [
+      {
+        "name": "buttons",
+        "description": "Collection of grouped buttons",
+        "repeats": true,
+        "slot": {
+          "name": "default",
+          "restrict": [
+            "Button"
+          ],
+          "required": true
+        }
+      },
+      {
+        "name": "overflow",
+        "restrict": [
+          "div"
+        ],
+        "description": "overflow menu trigger for additional actions",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "overflow"
+        }
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "open",
+      "type": "boolean",
+      "description": "whether the overflow menu is open"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "group-role",
+        "description": "Container should have role='group'"
+      },
+      {
+        "id": "group-label",
+        "description": "Button group should have an accessible label via aria-label"
+      }
+    ]
+  }
+}

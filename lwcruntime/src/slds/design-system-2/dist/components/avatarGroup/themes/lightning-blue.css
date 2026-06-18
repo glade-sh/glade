@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  .slds-avatar-group {
+    --slds-c-avatargroup-sizing: var(--slds-g-sizing-9);
+    --slds-c-avatargroup-primary-sizing: var(--slds-g-sizing-7);
+    --slds-c-avatargroup-secondary-sizing: var(--slds-g-sizing-6);
+    --slds-c-avatargroup-primary-initials-transform: scale(0.5);
+    --slds-c-avatargroup-secondary-initials-transform: scale(0.4);
+  }
+
+  .slds-avatar-grouped {
+    --slds-c-avatargroup-grouped-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-avatargroup-grouped-color-border: var(--slds-g-color-on-accent-1);
+    --slds-c-avatargroup-grouped-radius-border: var(
+      --slds-s-avatar-radius-border,
+      var(--slds-g-radius-border-2)
+    );
+    --slds-c-avatargroup-grouped-color-background: var(--slds-g-color-accent-container-1);
+  }
+
+  .slds-avatar-grouped_inverse {
+    --slds-c-avatargroup-grouped-color-background: var(--slds-g-color-surface-container-2);
+  }
+
+  .slds-avatar-group_x-small {
+    --slds-c-avatargroup-sizing: var(--slds-g-sizing-6);
+    --slds-c-avatargroup-primary-sizing: var(--slds-g-sizing-5);
+    --slds-c-avatargroup-secondary-sizing: var(--slds-g-sizing-4);
+    --slds-c-avatargroup-primary-initials-transform: scale(0.3);
+    --slds-c-avatargroup-secondary-initials-transform: scale(0.18);
+  }
+
+  .slds-avatar-group_small {
+    --slds-c-avatargroup-sizing: var(--slds-g-sizing-7);
+    --slds-c-avatargroup-primary-sizing: var(--slds-g-sizing-6);
+    --slds-c-avatargroup-secondary-sizing: var(--slds-g-sizing-5);
+    --slds-c-avatargroup-primary-initials-transform: scale(0.4);
+    --slds-c-avatargroup-secondary-initials-transform: scale(0.3);
+  }
+
+  .slds-avatar-group_large {
+    --slds-c-avatargroup-sizing: var(--slds-g-sizing-10);
+    --slds-c-avatargroup-primary-sizing: calc(var(--slds-g-sizing-9) + var(--slds-g-sizing-3));
+    --slds-c-avatargroup-secondary-sizing: var(--slds-g-sizing-7);
+    --slds-c-avatargroup-primary-initials-transform: scale(0.8);
+    --slds-c-avatargroup-secondary-initials-transform: scale(0.5);
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Pill",
+  "description": "A pill displays a label that can optionally be removed.",
+  "dateAdded": "2016-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "span"
+    ],
+    "description": "Pill container",
+    "children": [
+      {
+        "name": "icon",
+        "restrict": [
+          "span"
+        ],
+        "description": "Icon container",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "icon",
+          "restrict": [
+            "Icon",
+            "Avatar"
+          ]
+        }
+      },
+      {
+        "name": "label",
+        "restrict": [
+          "span",
+          "a"
+        ],
+        "description": "Pill label",
+        "slot": {
+          "name": "default",
+          "required": true
+        }
+      },
+      {
+        "name": "remove",
+        "restrict": [
+          "button",
+          "span"
+        ],
+        "description": "Remove button",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "remove",
+          "restrict": [
+            "Button"
+          ]
+        }
+      },
+      {
+        "name": "action",
+        "restrict": [
+          "a"
+        ],
+        "description": "linked pill action wrapper"
+      },
+      {
+        "name": "container",
+        "restrict": [
+          "div"
+        ],
+        "description": "container for multiple pills"
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "hasError",
+      "type": "boolean",
+      "aria": "aria-invalid",
+      "description": "Whether the pill is in an error state"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the pill is disabled"
+    },
+    {
+      "name": "selected",
+      "type": "boolean",
+      "aria": "aria-selected",
+      "description": "whether the pill is selected"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "remove-accessible",
+        "description": "Remove button must have accessible label indicating what will be removed"
+      }
+    ]
+  }
+}

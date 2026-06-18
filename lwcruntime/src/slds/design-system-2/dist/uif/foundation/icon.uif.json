@@ -1,0 +1,72 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Icon",
+  "description": "Icons provide visual context and enhance usability.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "span"
+    ],
+    "description": "Icon container",
+    "attributes": {
+      "bound": {
+        "title": {
+          "prop": "title"
+        }
+      }
+    },
+    "children": [
+      {
+        "name": "svg",
+        "restrict": [
+          "svg"
+        ],
+        "description": "SVG icon element",
+        "attributes": {
+          "static": {
+            "aria-hidden": "true"
+          },
+          "bound": {
+            "aria-label": {
+              "prop": "assistiveText"
+            }
+          }
+        }
+      },
+      {
+        "name": "assistiveText",
+        "restrict": [
+          "span"
+        ],
+        "description": "Assistive text for screen readers",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "assistiveText"
+        }
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "decorative",
+      "type": "boolean",
+      "description": "Whether the icon is purely decorative and should be hidden from assistive technology"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "decorative-hidden",
+        "description": "Decorative icons should be hidden from assistive technology with aria-hidden='true'"
+      },
+      {
+        "id": "meaningful-label",
+        "description": "Meaningful icons should have assistive text that describes the icon's purpose"
+      }
+    ]
+  }
+}

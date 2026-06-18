@@ -1,0 +1,195 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+.slds-brand-band {
+  /* stylelint-disable */
+  --_slds-c-brandband-color-background-dark: var(--slds-g-color-surface-2);
+  --_slds-c-brandband-color-background-light: var(--slds-g-color-surface-2);
+  --_slds-c-brandband-asset-default-image: none;
+  --_slds-c-brandband-asset-group-image: var(--lwc-bannerGroupDefaultImage);
+  --_slds-c-brandband-asset-user-image: var(--lwc-bannerUserDefaultImage);
+  /* stylelint-enable */
+
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: 100%;
+  width: 100%;
+
+  &::before {
+    content: '';
+    display: block;
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    /* stylelint-disable */
+    background-image:
+      var(--_slds-c-brandband-asset-default-image),
+      linear-gradient(
+        to top,
+        color-mix(in srgb, var(--_slds-c-brandband-color-background-dark) 0%, transparent) 0,
+        var(--_slds-c-brandband-color-background-dark)
+      );
+    /* stylelint-enable */
+    background-repeat: repeat-x;
+    background-position: top left;
+  }
+
+  &::after {
+    content: none;
+    display: block;
+    position: absolute;
+    z-index: -1;
+    left: 0;
+    right: 0;
+    top: 0;
+    width: 100%;
+    height: var(--_slds-c-brandband-scrim-sizing-height, 3.125rem);
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--_slds-c-brandband-color-background-light) 0%, transparent) 60%,
+      var(--_slds-c-brandband-color-background-light)
+    );
+  }
+
+  /**
+   * @name cover
+   * @summary Changes background image to be set to cover rather than contain
+   * @selector .slds-brand-band_cover
+   * @restrict .slds-brand-band
+   * @modifier
+   * @group position
+   */
+  &.slds-brand-band_cover::before {
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
+  /**
+   * @name small
+   * @summary Sets height of brand band to
+   * @selector .slds-brand-band_small
+   * @restrict .slds-brand-band
+   * @modifier
+   * @group sizing
+   */
+  &.slds-brand-band_small {
+    &::before {
+      height: var(--_slds-c-brandband-sizing-height-small, 6rem);
+    }
+
+    &::after {
+      content: '';
+      top: calc(
+        var(--_slds-c-brandband-sizing-height-small, 6rem) -
+          var(--_slds-c-brandband-scrim-sizing-height, 3.125rem)
+      );
+    }
+  }
+
+  /**
+   * @name medium
+   * @summary Sets height of brand band to
+   * @selector .slds-brand-band_medium
+   * @restrict .slds-brand-band
+   * @modifier
+   * @group sizing
+   */
+  &.slds-brand-band_medium {
+    &::before {
+      height: var(--_slds-c-brandband-sizing-height-medium, 12.5rem);
+    }
+
+    &::after {
+      content: '';
+      top: calc(
+        var(--_slds-c-brandband-sizing-height-medium, 12.5rem) -
+          var(--_slds-c-brandband-scrim-sizing-height, 3.125rem)
+      );
+    }
+  }
+
+  /**
+   * @name large
+   * @summary Sets height of brand band to
+   * @selector .slds-brand-band_large
+   * @restrict .slds-brand-band
+   * @modifier
+   * @group sizing
+   */
+  &.slds-brand-band_large {
+    &::before {
+      height: var(--_slds-c-brandband-sizing-height-large, 18.75rem);
+    }
+
+    &::after {
+      content: '';
+      top: calc(
+        var(--_slds-c-brandband-sizing-height-large, 18.75rem) -
+          var(--_slds-c-brandband-scrim-sizing-height, 3.125rem)
+      );
+    }
+  }
+
+  &.slds-brand-band_full {
+    &::before {
+      height: 100%;
+    }
+  }
+
+  &.slds-brand-band_bottom::before {
+    background-position: bottom;
+    top: initial;
+  }
+
+  /**
+   * @name no background
+   * @summary Removes image but keeps page background
+   * @selector .slds-brand-band_none
+   * @restrict .slds-brand-band
+   * @modifier
+   * @group visibility
+   */
+  &.slds-brand-band_none::before {
+    height: 0;
+  }
+
+  /**
+   * @name Group background
+   * @summary Uses the group banner image as the page background image
+   * @selector .slds-brand-band_group
+   * @restrict .slds-brand-band
+   * @modifier
+   * @group image
+   */
+  &.slds-brand-band_group::before {
+    background-image: var(--_slds-c-brandband-asset-group-image); /* stylelint-disable-line */
+  }
+
+  /**
+   * @name User profile background
+   * @summary Uses the user profile banner image as the page background image
+   * @selector .slds-brand-band_user
+   * @restrict .slds-brand-band
+   * @modifier
+   * @group image
+   */
+  &.slds-brand-band_user::before {
+    background-image: var(--_slds-c-brandband-asset-user-image); /* stylelint-disable-line */
+  }
+
+  .slds-brand-band_blank {
+    background: var(--slds-g-color-surface-2);
+
+    &::before,
+    &::after {
+      background: none;
+    }
+  }
+}

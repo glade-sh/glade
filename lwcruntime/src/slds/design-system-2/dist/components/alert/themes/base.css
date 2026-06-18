@@ -1,0 +1,95 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * @summary Initializes alert notification
+ */
+.slds-notify_alert {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  /* Spacing cascade: Direction → Axis (direction-specific falls back to axis-level) */
+  padding-block-start: var(--slds-c-alert-spacing-block-start, var(--slds-c-alert-spacing-block));
+  padding-inline-end: var(--slds-c-alert-spacing-inline-end, var(--slds-c-alert-spacing-inline));
+  padding-block-end: var(--slds-c-alert-spacing-block-end, var(--slds-c-alert-spacing-block));
+  padding-inline-start: var(--slds-c-alert-spacing-inline-start, var(--slds-c-alert-spacing-inline));
+  color: var(--slds-c-alert-color-foreground);
+  font-weight: var(--slds-c-alert-font-weight);
+  text-align: center;
+  background-color: var(--slds-c-alert-color-background);
+
+  .slds-icon,
+  .slds-button__icon {
+    fill: currentColor;
+  }
+
+  /*
+    * Standalone alerts don't use theme classes to style button icons to align the
+    * button-icon with the theme's styles. E.g., toast uses .slds-theme_warning,
+    * a standalone warning alert does not. Alerts rely on the button-icon variants
+    * in the blueprint markup depending on the feedback state, there is no relationship
+    * in the CSS. Since there's no CSS relationship, enabling the button-icon to be
+    * "themed" in SLDS2 is tricky since the design pattern is dictated by the
+    * button-icon's variant class in the markup.
+    *
+    * We try to work around this below 👇
+    */
+
+  /**
+    * Make the button take on the color of the alert's current state
+    *
+    * ⚠️ Small specificity risk with style overrides
+    */
+  .slds-button_icon {
+    color: currentColor;
+  }
+
+  .slds-button_icon:hover,
+  .slds-button_icon:focus-visible {
+    color: var(--slds-c-alert-color-close-button-hover);
+  }
+}
+
+.slds-notify_alert a {
+  color: currentColor;
+  border-width: var(--slds-c-alert-link-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-alert-link-color-border, transparent);
+  border-radius: var(--slds-c-alert-link-radius-border);
+  text-decoration: underline;
+}
+
+.slds-notify_alert a:hover,
+.slds-notify_alert a:focus:not(:focus-visible) {
+  text-decoration: none;
+  outline: 0;
+}
+
+.slds-notify_alert a:focus-visible {
+  outline-offset: 2px;
+}
+
+.slds-notify_alert a:active {
+  color: var(--slds-c-alert-color-foreground-active);
+}
+
+.slds-notify_alert a[disabled] {
+  color: var(--slds-c-alert-link-color-foreground-disabled);
+}
+
+/**
+  * @summary Alert close button
+  */
+.slds-notify__close {
+  position: absolute;
+  inset-inline-end: var(--slds-c-alert-close-spacing-inline-end);
+  margin-inline-start: var(--slds-c-alert-close-margin-inline-start);
+  /* transform only accepts physical values and is tied to 'top', leaving be for now */
+  top: 50%;
+  transform: translateY(-50%);
+}

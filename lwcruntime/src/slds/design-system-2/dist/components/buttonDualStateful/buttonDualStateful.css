@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * @summary Initiates a dual stateful button
+ */
+.slds-button_dual-stateful {
+  /**
+   * @summary Shown text when button is not pressed - default state
+   */
+  .slds-text-not-pressed {
+    display: block;
+  }
+
+  /**
+   * @summary Shown text when button is pressed
+   */
+  .slds-text-pressed {
+    display: none;
+  }
+}
+
+/**
+ * @summary When button is in pressed state
+ */
+.slds-button_dual-stateful.slds-is-pressed {
+  /**
+   * Styling Hooks uses button-brand identifier instead of button_dual-stateful
+   * because dual stateful is a brand variant underneath the hood and therefore
+   * should pick up any styling customizations made to the brand variant.
+   */
+  padding-inline-start: var(--slds-c-button-brand-spacing-inline-start, var(--slds-g-spacing-4));
+  padding-inline-end: var(--slds-c-button-brand-spacing-inline-end, var(--slds-g-spacing-4));
+
+  --slds-c-button-color-background: var(
+    --slds-c-button-brand-color-background,
+    var(--slds-g-color-accent-container-1)
+  );
+
+  --slds-c-button-color-border: var(--slds-c-button-brand-color-border, var(--slds-g-color-border-accent-1));
+  --slds-c-button-text-color: var(--slds-c-button-brand-text-color, var(--slds-g-color-on-accent-1));
+
+  --slds-c-button-text-color-hover: var(
+    --slds-c-button-brand-text-color-hover,
+    var(--slds-g-color-on-accent-1)
+  );
+
+  --slds-c-button-text-color-active: var(
+    --slds-c-button-brand-text-color-active,
+    var(--slds-g-color-on-accent-2)
+  );
+
+  &:hover {
+    --slds-c-button-color-background: var(
+      --slds-c-button-brand-color-background-hover,
+      var(--slds-g-color-accent-container-2)
+    );
+
+    --slds-c-button-color-border: var(
+      --slds-c-button-brand-color-border-hover,
+      var(--slds-g-color-border-accent-2)
+    );
+
+    --slds-c-button-text-color-hover: var(
+      --slds-c-button-brand-text-color-hover,
+      var(--slds-g-color-on-accent-2)
+    );
+  }
+
+  &:focus-visible {
+    --slds-c-button-color-border: transparent;
+  }
+
+  .slds-text-not-pressed {
+    display: none;
+  }
+
+  .slds-text-pressed {
+    display: block;
+  }
+}

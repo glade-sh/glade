@@ -1,0 +1,797 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * The default rich text editor contains a minimal amount of text formatting capabilities.
+ */
+.slds-rich-text-editor {
+  border: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-2);
+  border-radius: var(--slds-g-radius-border-2);
+
+  &[aria-label='disabled'] {
+    border: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-1);
+  }
+}
+
+/**
+ * Rich text editor container for when toolbar is detached from Textarea.
+ */
+.slds-rich-text-editor_toolbar-only {
+  border: 0;
+  border-radius: 0;
+}
+
+/**
+ * Container for Rich Text Editor Toolbar
+ */
+.slds-rich-text-editor__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  white-space: nowrap;
+  position: relative;
+  padding-block: var(--slds-g-spacing-2) var(--slds-g-spacing-1);
+  padding-inline: var(--slds-g-spacing-2);
+  border-start-start-radius: var(--slds-g-radius-border-2);
+  border-start-end-radius: var(--slds-g-radius-border-2);
+  border-block-end: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-2);
+  background-color: var(--slds-g-color-surface-container-2);
+
+  .slds-icon {
+    --slds-c-icon-color-foreground: currentColor;
+  }
+
+  &[aria-label='disabled'] {
+    border-block-end: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-1);
+  }
+
+  &[aria-label='disabled'] .slds-icon {
+    --slds-c-icon-color-foreground: var(--slds-g-color-on-disabled-2);
+  }
+}
+
+/**
+ * Container for Rich Text Editor Toolbar
+ */
+.slds-rich-text-editor__col {
+  align-self: center;
+
+  + .slds-rich-text-editor__col {
+    margin-inline-start: var(--slds-g-spacing-2);
+  }
+}
+
+/**
+ * Container for Rich Text Editor Toolbar
+ */
+.slds-rich-text-editor__col_grow {
+  flex-grow: 1;
+}
+
+/**
+ * Container for Rich Text Editor Bottom Toolbar
+ */
+.slds-rich-text-editor__toolbar_bottom {
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+  border-end-end-radius: var(--slds-g-radius-border-2);
+  border-end-start-radius: var(--slds-g-radius-border-2);
+  border-block-start: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-2);
+  border-block-end: 0;
+}
+
+/**
+ * Container for Rich Text Editor Toolbar when detached from Textarea
+ */
+.slds-rich-text-editor__toolbar_detached {
+  border-radius: 0;
+  border-block-start: 0;
+  border-block-end: 0;
+}
+
+/* Overrides for button-group-lists so that wrapping doesn't leave an unsightly margin on the left */
+.slds-rich-text-editor .slds-button-group-list {
+  margin-inline-end: var(--slds-g-spacing-1);
+  margin-block-end: var(--slds-g-spacing-1);
+  margin-inline-start: 0;
+
+  &:last-child {
+    margin-inline-end: 0;
+  }
+}
+
+/**
+ * Container for Rich Text Editor Combobox
+ */
+.slds-rich-text-editor__select {
+  margin-inline-end: var(--slds-g-spacing-1);
+  margin-block-end: var(--slds-g-spacing-1);
+}
+
+/**
+ * Container X-Small Size for Rich Text Editor Combobox
+ */
+.slds-rich-text-editor__select_x-small {
+  max-width: calc(var(--slds-g-sizing-13) + var(--slds-g-sizing-9));
+  width: auto;
+}
+
+/**
+ * Container XX-Small Size for Rich Text Editor Combobox
+ */
+.slds-rich-text-editor__select_xx-small {
+  max-width: calc(var(--slds-g-sizing-10) + var(--slds-g-sizing-9));
+  width: auto;
+}
+
+/* This class should be placed on a containing div when RTE toolbar is in a small space */
+.slds-region_narrow {
+  .slds-combobox {
+    max-width: 11rem;
+  }
+}
+
+/**
+ * Focus state for rich text editor
+ */
+.slds-rich-text-editor.slds-has-focus {
+  border-color: transparent;
+  box-shadow: var(--slds-g-shadow-outline-focus-1);
+}
+
+/**
+ * Error state for rich text editor
+ */
+.slds-rich-text-editor.slds-has-error {
+  border: var(--slds-g-sizing-border-2) solid var(--slds-g-color-border-error-1);
+
+  .slds-input {
+    border-color: var(--slds-g-color-border-2);
+    box-shadow: none;
+  }
+
+  .slds-form-element__help {
+    background: var(--slds-g-color-surface-container-1);
+    margin-block-start: 0;
+    border-start-start-radius: 0;
+    border-start-end-radius: 0;
+    border-end-end-radius: var(--slds-g-radius-border-1);
+    border-end-start-radius: var(--slds-g-radius-border-1);
+  }
+
+  .slds-button_icon {
+    color: var(--slds-s-button-color, var(--slds-g-color-on-surface-1));
+  }
+}
+
+/**
+ * Textarea for Rich Text Editor which is an editable div
+ */
+.slds-rich-text-area__content {
+  /* stylelint-disable */
+  --_slds-c-richtexteditor-sizing-height-min: var(--slds-c-textarea-sizing-min-height);
+  --_slds-c-richtexteditor-sizing-height-max: var(--slds-c-textarea-sizing-max-height);
+  /* stylelint-enable */
+
+  overflow-y: auto;
+  min-height: var(
+    --_slds-c-richtexteditor-sizing-height-min,
+    calc(var(--slds-g-sizing-10) + var(--slds-g-sizing-9))
+  );
+  max-height: var(--_slds-c-richtexteditor-sizing-height-max, var(--slds-g-sizing-14));
+  padding: var(--slds-g-spacing-4);
+  background-color: var(--slds-s-input-color-background, var(--slds-g-color-surface-container-1));
+}
+
+.slds-rich-text-editor__output .slds-rich-text-area__content {
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+  border-end-end-radius: var(--slds-g-radius-border-2);
+  border-end-start-radius: var(--slds-g-radius-border-2);
+}
+
+.slds-picklist__label[disabled] .slds-icon {
+  fill: var(--slds-g-color-on-disabled-1);
+}
+
+[contenteditable]:focus {
+  outline: none;
+}
+
+/**
+ * These are the overrides for both input and output from the RTE.
+ * We may need to add or adjust these later based on further input.
+ */
+.slds-rich-text-editor__textarea {
+  &:last-child {
+    .slds-rich-text-area__content {
+      border-start-start-radius: 0;
+      border-start-end-radius: 0;
+      border-end-end-radius: var(--slds-g-radius-border-2);
+      border-end-start-radius: var(--slds-g-radius-border-2);
+    }
+  }
+
+  &:first-child {
+    .slds-rich-text-area__content {
+      border-start-start-radius: var(--slds-g-radius-border-2);
+      border-start-end-radius: var(--slds-g-radius-border-2);
+      border-end-end-radius: 0;
+      border-end-start-radius: 0;
+    }
+  }
+
+  /* stylelint-disable selector-class-pattern */
+  .ql-editor {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    user-select: text;
+
+    &.ql-blank::before {
+      color: var(--slds-g-color-on-surface-1, #54698d);
+      content: attr(data-placeholder);
+      pointer-events: none;
+      position: absolute;
+    }
+
+    a {
+      text-decoration: underline;
+    }
+  }
+
+  .overflow-menu {
+    z-index: 2;
+  }
+
+  .ql-active {
+    background-color: var(--slds-g-color-surface-container-2);
+  }
+
+  /* stylelint-disable declaration-no-important */
+  .ql-clipboard {
+    position: absolute !important;
+    margin: -1px !important;
+    border: 0 !important;
+    padding: 0 !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+  }
+
+  p,
+  ol,
+  ul,
+  pre,
+  blockquote,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    counter-reset: list-1 list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9;
+  }
+
+  ol,
+  ul {
+    margin: 0;
+    padding: 0;
+    padding-inline-start: 1.5em;
+  }
+
+  ol > li {
+    list-style-type: none;
+  }
+
+  ul {
+    > li {
+      list-style-type: none;
+
+      &::before {
+        content: '\2022';
+        vertical-align: middle;
+        display: inline-block;
+        line-height: normal;
+      }
+    }
+
+    &[data-checked='true'],
+    &[data-checked='false'] {
+      pointer-events: none;
+    }
+
+    &[data-checked='true'] {
+      > li {
+        &::before {
+          color: var(--slds-g-color-on-surface-1);
+          cursor: pointer;
+          pointer-events: all;
+        }
+      }
+    }
+
+    &[data-checked='false'] {
+      > li {
+        &::before {
+          color: var(--slds-g-color-on-surface-1);
+          cursor: pointer;
+          pointer-events: all;
+        }
+      }
+    }
+
+    /* stylelint-disable */
+    &[data-checked='true'] {
+      > li {
+        &::before {
+          content: '\2611';
+        }
+      }
+    }
+
+    &[data-checked='false'] {
+      > li {
+        &::before {
+          content: '\2610';
+        }
+      }
+    }
+    /* stylelint-enable */
+  }
+
+  li {
+    &::before {
+      display: inline-block;
+      margin-inline-end: 0.3em;
+      text-align: right;
+      white-space: nowrap;
+      width: 1.2em;
+    }
+
+    &:not(.ql-direction-rtl) {
+      &::before {
+        margin-inline-start: -1.5em;
+      }
+    }
+  }
+
+  ol li,
+  ul li {
+    padding-inline-start: 1.5em;
+  }
+
+  ol li {
+    counter-reset: list-1 list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9;
+    counter-increment: list-num;
+
+    &::before {
+      content: counter(list-num, decimal) '. ';
+    }
+
+    &.ql-indent-1 {
+      counter-increment: list-1;
+
+      &::before {
+        content: counter(list-1, lower-alpha) '. ';
+      }
+
+      counter-reset: list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9;
+    }
+
+    &.ql-indent-2 {
+      counter-increment: list-2;
+
+      &::before {
+        content: counter(list-2, lower-roman) '. ';
+      }
+
+      counter-reset: list-3 list-4 list-5 list-6 list-7 list-8 list-9;
+    }
+
+    &.ql-indent-3 {
+      counter-increment: list-3;
+
+      &::before {
+        content: counter(list-3, decimal) '. ';
+      }
+
+      counter-reset: list-4 list-5 list-6 list-7 list-8 list-9;
+    }
+
+    &.ql-indent-4 {
+      counter-increment: list-4;
+
+      &::before {
+        content: counter(list-4, lower-alpha) '. ';
+      }
+
+      counter-reset: list-5 list-6 list-7 list-8 list-9;
+    }
+
+    &.ql-indent-5 {
+      counter-increment: list-5;
+
+      &::before {
+        content: counter(list-5, lower-roman) '. ';
+      }
+
+      counter-reset: list-6 list-7 list-8 list-9;
+    }
+
+    &.ql-indent-6 {
+      counter-increment: list-6;
+
+      &::before {
+        content: counter(list-6, decimal) '. ';
+      }
+
+      counter-reset: list-7 list-8 list-9;
+    }
+
+    &.ql-indent-7 {
+      counter-increment: list-7;
+
+      &::before {
+        content: counter(list-7, lower-alpha) '. ';
+      }
+
+      counter-reset: list-8 list-9;
+    }
+
+    &.ql-indent-8 {
+      counter-increment: list-8;
+
+      &::before {
+        content: counter(list-8, lower-roman) '. ';
+      }
+
+      counter-reset: list-9;
+    }
+
+    &.ql-indent-9 {
+      counter-increment: list-9;
+
+      &::before {
+        content: counter(list-9, decimal) '. ';
+      }
+    }
+  }
+
+  ul li {
+    &.ql-indent-1 {
+      &::before {
+        content: '\25e6';
+      }
+    }
+
+    &.ql-indent-2,
+    &.ql-indent-3,
+    &.ql-indent-4,
+    &.ql-indent-5,
+    &.ql-indent-6,
+    &.ql-indent-7,
+    &.ql-indent-8 {
+      &::before {
+        content: '\25aa';
+      }
+    }
+  }
+
+  li.ql-indent-1:not(.ql-direction-rtl) {
+    padding-inline-start: 4.5em;
+  }
+
+  li.ql-indent-1.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 4.5em;
+  }
+
+  li.ql-indent-2:not(.ql-direction-rtl) {
+    padding-inline-start: 7.5em;
+  }
+
+  li.ql-indent-2.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 7.5em;
+  }
+
+  li.ql-indent-3:not(.ql-direction-rtl) {
+    padding-inline-start: 10.5em;
+  }
+
+  li.ql-indent-3.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 10.5em;
+  }
+
+  li.ql-indent-4:not(.ql-direction-rtl) {
+    padding-inline-start: 13.5em;
+  }
+
+  li.ql-indent-4.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 13.5em;
+  }
+
+  li.ql-indent-5:not(.ql-direction-rtl) {
+    padding-inline-start: 16.5em;
+  }
+
+  li.ql-indent-5.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 16.5em;
+  }
+
+  li.ql-indent-6:not(.ql-direction-rtl) {
+    padding-inline-start: 19.5em;
+  }
+
+  li.ql-indent-6.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 19.5em;
+  }
+
+  li.ql-indent-7:not(.ql-direction-rtl) {
+    padding-inline-start: 22.5em;
+  }
+
+  li.ql-indent-7.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 22.5em;
+  }
+
+  li.ql-indent-8:not(.ql-direction-rtl) {
+    padding-inline-start: 25.5em;
+  }
+
+  li.ql-indent-8.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 25.5em;
+  }
+
+  li.ql-indent-9:not(.ql-direction-rtl) {
+    padding-inline-start: 28.5em;
+  }
+
+  li.ql-indent-9.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 28.5em;
+  }
+}
+
+.slds-rich-text-editor__textarea,
+.slds-rich-text-editor__output {
+  line-height: var(--slds-g-font-lineheight-base);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: manual;
+
+  h1 {
+    font-size: var(--slds-g-font-scale-4);
+  }
+
+  h2 {
+    font-size: var(--slds-g-font-scale-3);
+  }
+
+  h3 {
+    font-size: var(--slds-g-font-scale-2);
+    font-weight: var(--slds-g-font-weight-6);
+  }
+
+  h4 {
+    font-size: var(--slds-g-font-scale-1);
+    font-weight: var(--slds-g-font-weight-6);
+  }
+
+  h5 {
+    font-size: var(--slds-g-font-scale-base);
+    font-weight: var(--slds-g-font-weight-6);
+  }
+
+  h6 {
+    font-size: var(--slds-g-font-scale-neg-1);
+    font-weight: var(--slds-g-font-weight-6);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  ul,
+  ol,
+  dl,
+  img {
+    margin-block-end: var(--slds-g-spacing-3);
+  }
+
+  blockquote {
+    margin-block: var(--slds-g-spacing-6);
+    margin-inline: var(--slds-g-spacing-5);
+  }
+
+  ins {
+    color: var(--slds-g-color-success-1);
+    text-decoration: underline;
+  }
+
+  del {
+    color: var(--slds-g-color-error-1);
+    text-decoration: line-through;
+  }
+
+  ul {
+    margin-inline-start: var(--slds-g-spacing-5);
+    list-style: disc;
+
+    ul {
+      list-style: circle;
+      margin-block-end: 0;
+
+      ul {
+        list-style: square;
+
+        ul {
+          list-style: disc;
+
+          ul {
+            list-style: circle;
+          }
+        }
+      }
+    }
+
+    ol {
+      margin-inline-start: var(--slds-g-spacing-5);
+      list-style: decimal;
+      margin-block-end: 0;
+    }
+  }
+
+  ol {
+    margin-inline-start: var(--slds-g-spacing-5);
+    list-style: decimal;
+
+    ol {
+      list-style: lower-alpha;
+      margin-block-end: 0;
+
+      ol {
+        list-style: lower-roman;
+
+        ol {
+          list-style: decimal;
+
+          ol {
+            list-style: lower-alpha;
+          }
+        }
+      }
+    }
+
+    ul {
+      margin-inline-start: var(--slds-g-spacing-5);
+      list-style: disc;
+      margin-block-end: 0;
+    }
+  }
+
+  dd {
+    margin-inline-start: 2.5rem;
+  }
+
+  abbr[title],
+  acronym[title] {
+    border-block-end: 1px dotted;
+    cursor: help;
+  }
+
+  table {
+    overflow-wrap: normal;
+    word-wrap: normal;
+    word-break: normal;
+    width: auto;
+
+    caption {
+      text-align: center;
+    }
+  }
+
+  th,
+  td {
+    padding: var(--slds-g-spacing-2);
+  }
+
+  .sans-serif {
+    font-family: sans-serif;
+  }
+
+  .courier {
+    font-family: courier;
+  }
+
+  .verdana {
+    font-family: verdana;
+  }
+
+  .tahoma {
+    font-family: tahoma;
+  }
+
+  .garamond {
+    font-family: garamond;
+  }
+
+  .serif {
+    font-family: serif;
+  }
+
+  .ql-indent-1:not(.ql-direction-rtl) {
+    padding-inline-start: 3em;
+  }
+
+  .ql-indent-1.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 3em;
+  }
+
+  .ql-indent-2:not(.ql-direction-rtl) {
+    padding-inline-start: 6em;
+  }
+
+  .ql-indent-2.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 6em;
+  }
+
+  .ql-indent-3:not(.ql-direction-rtl) {
+    padding-inline-start: 9em;
+  }
+
+  .ql-indent-3.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 9em;
+  }
+
+  .ql-indent-4:not(.ql-direction-rtl) {
+    padding-inline-start: 12em;
+  }
+
+  .ql-indent-4.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 12em;
+  }
+
+  .ql-indent-5:not(.ql-direction-rtl) {
+    padding-inline-start: 15em;
+  }
+
+  .ql-indent-5.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 15em;
+  }
+
+  .ql-indent-6:not(.ql-direction-rtl) {
+    padding-inline-start: 18em;
+  }
+
+  .ql-indent-6.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 18em;
+  }
+
+  .ql-indent-7:not(.ql-direction-rtl) {
+    padding-inline-start: 21em;
+  }
+
+  .ql-indent-7.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 21em;
+  }
+
+  .ql-indent-8:not(.ql-direction-rtl) {
+    padding-inline-start: 24em;
+  }
+
+  .ql-indent-8.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 24em;
+  }
+
+  .ql-indent-9:not(.ql-direction-rtl) {
+    padding-inline-start: 27em;
+  }
+
+  .ql-indent-9.ql-direction-rtl.ql-align-right {
+    padding-inline-end: 27em;
+  }
+}

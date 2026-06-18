@@ -1,0 +1,146 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Alert",
+  "description": "An alert is a banner that communicates a state or action to the user.",
+  "dateAdded": "2017-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Alert container",
+    "attributes": {
+      "static": {
+        "role": "alert",
+        "class": "slds-notify slds-notify_alert"
+      }
+    },
+    "children": [
+      {
+        "name": "assistiveText",
+        "restrict": [
+          "span"
+        ],
+        "description": "Assistive text for screen readers",
+        "slot": {
+          "name": "assistiveText"
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-assistive-text"
+          }
+        }
+      },
+      {
+        "name": "icon",
+        "restrict": [
+          "span"
+        ],
+        "description": "Icon container",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "icon",
+          "restrict": [
+            "Icon"
+          ]
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-icon_container slds-m-right_x-small"
+          }
+        }
+      },
+      {
+        "name": "content",
+        "restrict": [
+          "h2"
+        ],
+        "description": "Alert message content",
+        "slot": {
+          "name": "default",
+          "required": true
+        },
+        "attributes": {
+          "static": {
+            "class": ""
+          }
+        }
+      },
+      {
+        "name": "close",
+        "restrict": [
+          "div"
+        ],
+        "description": "Close button container",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "close",
+          "restrict": [
+            "Button"
+          ]
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-notify__close"
+          }
+        }
+      }
+    ],
+    "variants": [
+      {
+        "name": "variant",
+        "description": "Alert type/severity",
+        "default": "info",
+        "options": [
+          {
+            "value": "info",
+            "class": "",
+            "description": "Informational alert"
+          },
+          {
+            "value": "warning",
+            "class": "slds-alert_warning",
+            "description": "Warning alert"
+          },
+          {
+            "value": "error",
+            "class": "slds-alert_error",
+            "description": "Error alert"
+          },
+          {
+            "value": "offline",
+            "class": "slds-alert_offline",
+            "description": "Offline alert"
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "dismissed",
+      "type": "boolean",
+      "description": "Whether the alert has been dismissed"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "role-alert",
+        "description": "Alert must have role='alert' to announce to screen readers"
+      },
+      {
+        "id": "close-accessible",
+        "description": "Close button must have accessible label"
+      }
+    ]
+  },
+  "cssSource": "./alert.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  }
+}

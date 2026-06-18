@@ -1,0 +1,118 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/* Copyright (c) 2015-present, salesforce.com, inc. All rights reserved
+  Licensed under BSD 3-Clause - see LICENSE.txt or git.io/sfdc-license */
+
+/* Base — unlayered structural CSS. Participates in normal cascade; wins over any layered CSS. */
+
+.slds-icon_container {
+  padding-block-start: var(--slds-c-icon-spacing-block-start, var(--slds-c-icon-spacing-block));
+  padding-block-end: var(--slds-c-icon-spacing-block-end, var(--slds-c-icon-spacing-block));
+  padding-inline-start: var(--slds-c-icon-spacing-inline-start, var(--slds-c-icon-spacing-inline));
+  padding-inline-end: var(--slds-c-icon-spacing-inline-end, var(--slds-c-icon-spacing-inline));
+  border-radius: var(--slds-c-icon-radius-border);
+  border-width: var(--slds-c-icon-sizing-border, 0);
+  border-color: var(--slds-c-icon-color-border, transparent);
+  border-style: solid;
+  background-color: var(--slds-c-icon-context-color-background, var(--slds-c-icon-color-background));
+  display: inline-block;
+  line-height: 1;
+}
+
+/**
+ * Horizontally flip icons
+ */
+[dir='rtl'] .slds-icon_flip {
+  transform: scaleX(-1);
+}
+
+.slds-icon {
+  height: var(--slds-c-icon-context-sizing, var(--slds-c-icon-sizing));
+  width: var(--slds-c-icon-context-sizing, var(--slds-c-icon-sizing));
+  fill: var(--slds-c-icon-color-foreground);
+  display: inline-flex;
+}
+
+/**
+ * Size variants
+ *
+ * Note: width & height must be used instead of reassigning --slds-c-icon-sizing
+ * because LBC use lightning-primitive-icon which does not use .slds-icon
+ */
+.slds-icon_xxx-small {
+  width: var(--slds-c-icon-sizing);
+  height: var(--slds-c-icon-sizing);
+}
+
+.slds-icon_xx-small {
+  width: var(--slds-c-icon-sizing);
+  height: var(--slds-c-icon-sizing);
+}
+
+.slds-icon_x-small {
+  width: var(--slds-c-icon-sizing);
+  height: var(--slds-c-icon-sizing);
+}
+
+.slds-icon_small {
+  width: var(--slds-c-icon-sizing);
+  height: var(--slds-c-icon-sizing);
+}
+
+/**
+ * "Medium" is the default size, no class is generated. This is pulled from
+ * mixed-mode, leaving it here for future folks looking for this class and
+ * size combination.
+ *
+ * Note: 'size' attribute is used in mixed-mode because LBC icon is broken
+ * down into two components, lightning-icon and lightning-primitive-icon,
+ * and the size classes weren't available to primitive icon which can be
+ * used on its own.
+
+ [size="medium"] .slds-icon {
+   --slds-c-icon-sizing: var(--slds-c-icon-sizing-medium);
+ } */
+
+.slds-icon_large {
+  width: var(--slds-c-icon-sizing);
+  height: var(--slds-c-icon-sizing);
+}
+
+/**
+ * Current color
+ */
+.slds-current-color .slds-icon {
+  --slds-c-icon-color-foreground: currentColor;
+}
+
+/**
+ * For the initial alpha version, we're hardcoding in the various unique icon styles.
+ *
+ * Next version, we want to dynamically generate these from legacy SLDS with the
+ * following design pattern:
+ *
+ * [type="action"][icon-name="approval"] {
+ *   --sds-c-icon-color-background: var(--slds-c-icon-color-background, #111);
+ * }
+ */
+.slds-icon_disabled {
+  background-color: currentcolor;
+}
+
+.slds-input__icon {
+  width: var(--slds-c-icon-input-sizing);
+  height: var(--slds-c-icon-input-sizing);
+  position: absolute;
+  top: 50%;
+  margin-block-start: var(--slds-c-icon-input-margin-block-start);
+  line-height: var(--slds-c-icon-input-font-line-height);
+  border-width: var(--slds-c-icon-input-sizing-border, 0);
+  border-color: var(--slds-c-icon-input-color-border, transparent);
+  border-style: solid;
+  z-index: var(--slds-c-icon-input-position-z-index, 2);
+  fill: var(--slds-c-icon-color-foreground);
+}

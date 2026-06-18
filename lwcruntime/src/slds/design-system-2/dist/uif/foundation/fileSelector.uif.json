@@ -1,0 +1,106 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "FileSelector",
+  "description": "A file selector allows users to upload files through drag-and-drop or browsing.",
+  "dateAdded": "2017-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "File selector container",
+    "children": [
+      {
+        "name": "dropzone",
+        "restrict": [
+          "div"
+        ],
+        "description": "Drag and drop zone",
+        "children": [
+          {
+            "name": "input",
+            "restrict": [
+              "input"
+            ],
+            "description": "Hidden file input",
+            "attributes": {
+              "static": {
+                "type": "file"
+              },
+              "bound": {
+                "id": {
+                  "prop": "inputId"
+                },
+                "accept": {
+                  "prop": "accept"
+                },
+                "multiple": {
+                  "prop": "multiple"
+                },
+                "disabled": {
+                  "prop": "disabled"
+                }
+              }
+            }
+          },
+          {
+            "name": "label",
+            "restrict": [
+              "label"
+            ],
+            "description": "Upload label/button",
+            "slot": {
+              "name": "default",
+              "required": true
+            },
+            "children": [
+              {
+                "name": "button",
+                "restrict": [
+                  "button"
+                ],
+                "description": "upload button"
+              },
+              {
+                "name": "text",
+                "restrict": [
+                  "span"
+                ],
+                "description": "help text for the dropzone"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "dragover",
+      "type": "boolean",
+      "description": "Whether file is being dragged over"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the file selector is disabled"
+    },
+    {
+      "name": "hasDrag",
+      "type": "boolean",
+      "description": "whether a drag operation has been initiated"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "label-association",
+        "description": "Label must be associated with file input"
+      }
+    ]
+  }
+}

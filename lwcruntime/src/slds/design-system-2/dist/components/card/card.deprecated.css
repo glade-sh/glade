@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+.slds-card_empty .slds-card__body,
+.slds-card--empty .slds-card__body {
+  text-align: center;
+}
+
+/* Einstein Header */
+.slds-einstein-header {
+  position: relative;
+  background-color: var(--slds-g-color-palette-cloud-blue-80);
+  background-image: url('../../public/einstein-header-background.svg');
+  background-repeat: no-repeat;
+  background-position: left top;
+  background-size: cover;
+  border-top-left-radius: var(
+    --slds-c-card-radius-border,
+    var(--slds-s-container-radius-border, var(--slds-g-radius-border-2))
+  );
+  border-top-right-radius: var(
+    --slds-c-card-radius-border,
+    var(--slds-s-container-radius-border, var(--slds-g-radius-border-2))
+  );
+  border-bottom: var(--slds-g-sizing-border-1) solid var(--slds-g-color-neutral-base-90);
+  padding-inline-start: var(--slds-g-spacing-3);
+  padding-inline-end: var(--slds-g-spacing-3);
+  text-shadow: 0 0 4px var(--slds-g-color-palette-cloud-blue-90);
+}
+
+.slds-einstein-header .slds-einstein-header__figure,
+.slds-einstein-header .slds-einstein-header__figure:last-child {
+  margin-block-end: calc((var(--slds-g-spacing-3) + 5px) * -1);
+  height: calc(var(--slds-g-sizing-11) + var(--slds-g-sizing-4));
+  background-image: url('../../public/einstein-figure.svg');
+  background-position: right bottom;
+  background-repeat: no-repeat;
+}
+
+.slds-einstein-header .slds-einstein-header__actions {
+  padding-inline-start: var(--slds-g-spacing-4);
+  display: flex;
+  align-items: center;
+}
+
+.slds-einstein-header .slds-popover__close {
+  color: currentColor;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+}
+
+.slds-popover_einstein.slds-nubbin_top::before,
+.slds-popover_einstein.slds-nubbin--top::before,
+.slds-popover_einstein.slds-nubbin_top-left::before,
+.slds-popover_einstein.slds-nubbin--top-left::before,
+.slds-popover_einstein.slds-nubbin_top-right::before,
+.slds-popover_einstein.slds-nubbin--top-right::before,
+.slds-popover_einstein.slds-nubbin_left-top::before,
+.slds-popover_einstein.slds-nubbin--left-top::before,
+.slds-popover_einstein.slds-nubbin_right-top::before,
+.slds-popover_einstein.slds-nubbin--right-top::before {
+  background-color: var(--slds-g-color-palette-cloud-blue-80);
+}

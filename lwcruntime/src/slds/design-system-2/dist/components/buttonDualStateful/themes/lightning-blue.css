@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  /*
+   * Hook organization: dual-stateful variant uses --slds-c-button-dual-stateful-gap (spacing).
+   * Pressed state reuses base button hooks (--slds-c-button-*) so it themes like brand variant.
+   */
+
+  /**
+   * @summary Dual stateful button in pressed state — uses brand variant styling
+   */
+  .slds-button_dual-stateful {
+    /* spacing (gap between label and icon in both states) */
+    --slds-c-button-dual-stateful-gap: var(--slds-g-spacing-2);
+
+    &.slds-is-pressed {
+      /* Base button hooks — sizing, color, spacing */
+      --slds-c-button-sizing-border: var(--slds-g-sizing-border-1);
+      --slds-c-button-color-background: var(--slds-g-color-accent-container-1);
+      --slds-c-button-color-border: var(--slds-g-color-border-accent-1);
+      --slds-c-button-color-foreground: var(--slds-g-color-on-accent-1);
+      --slds-c-button-spacing-inline: var(--slds-s-button-spacing-inline, var(--slds-g-spacing-4));
+
+      &:hover,
+      &:focus-visible {
+        --slds-c-button-color-background-hover: var(--slds-g-color-accent-container-2);
+        --slds-c-button-color-border-hover: var(--slds-g-color-accent-container-2);
+        --slds-c-button-color-foreground-hover: var(--slds-g-color-on-accent-2);
+      }
+
+      &:active {
+        --slds-c-button-color-background-active: var(--slds-g-color-accent-container-2);
+        --slds-c-button-color-border-active: transparent;
+        --slds-c-button-color-foreground-active: var(--slds-g-color-on-accent-2);
+      }
+    }
+  }
+}

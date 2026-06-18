@@ -1,0 +1,109 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Button",
+  "description": "Buttons allow users to perform actions with a single tap.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "button",
+      "a"
+    ],
+    "description": "Button element",
+    "attributes": {
+      "static": {
+        "type": "button"
+      },
+      "bound": {
+        "disabled": {
+          "prop": "disabled"
+        },
+        "aria-disabled": {
+          "prop": "disabled"
+        },
+        "title": {
+          "prop": "title"
+        },
+        "name": {
+          "prop": "name"
+        },
+        "value": {
+          "prop": "value"
+        },
+        "accesskey": {
+          "prop": "accessKey"
+        }
+      }
+    },
+    "children": [
+      {
+        "name": "iconLeft",
+        "restrict": [
+          "span"
+        ],
+        "description": "Icon displayed before the label",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "iconLeft",
+          "restrict": [
+            "Icon"
+          ]
+        }
+      },
+      {
+        "name": "label",
+        "description": "Button text label",
+        "restrict": [
+          "span"
+        ],
+        "slot": {
+          "name": "default"
+        }
+      },
+      {
+        "name": "iconRight",
+        "restrict": [
+          "span"
+        ],
+        "description": "Icon displayed after the label",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "iconRight",
+          "restrict": [
+            "Icon"
+          ]
+        }
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the button is disabled"
+    },
+    {
+      "name": "pressed",
+      "type": "boolean",
+      "aria": "aria-pressed",
+      "description": "whether button is pressed (stateful)"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "focus-visible",
+        "description": "Button must have a visible focus indicator"
+      },
+      {
+        "id": "accessible-label",
+        "description": "Icon-only buttons must have an accessible label via aria-label or title"
+      }
+    ]
+  },
+  "behavior": "./button.behavior.ts"
+}

@@ -1,0 +1,496 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * Initializes a trigger element around the dropdown
+ */
+.slds-dropdown-trigger {
+  position: relative;
+  display: inline-block;
+
+  .slds-dropdown {
+    inset-block-start: 100%;
+  }
+
+  .slds-dropdown_bottom {
+    inset-block-start: auto;
+  }
+
+  /* Deal with positioning when target is just an icon */
+  > [class*='slds-button_icon'] {
+    ~ .slds-dropdown_left[class*='slds-nubbin'] {
+      inset-inline-start: calc(var(--slds-g-spacing-2) * -1);
+    }
+
+    ~ .slds-dropdown_right[class*='slds-nubbin'] {
+      inset-inline-end: calc(var(--slds-g-spacing-2) * -1);
+    }
+  }
+}
+
+/**
+ * If someone is using javascript for click to toggle - this modifier will help
+ */
+
+.slds-dropdown-trigger_hover {
+  .slds-dropdown {
+    visibility: hidden;
+    opacity: 0;
+    transition:
+      opacity 0.1s linear,
+      visibility 0.1s linear;
+  }
+
+  &:hover,
+  &:focus {
+    outline: 0;
+
+    .slds-dropdown {
+      visibility: visible;
+      opacity: 1;
+      transition:
+        opacity 0.1s linear,
+        visibility 0.1s linear;
+    }
+  }
+}
+
+/**
+ * If someone is using javascript for click to toggle - this modifier will help
+ */
+.slds-dropdown-trigger_click {
+  .slds-dropdown,
+  &:hover .slds-dropdown {
+    display: none;
+  }
+
+  /**
+   * Opens dropdown menu when invoked on click
+   */
+  &.slds-is-open .slds-dropdown {
+    display: block;
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
+/**
+ * Initializes dropdown
+ */
+.slds-dropdown {
+  position: absolute;
+  z-index: 7000;
+  left: 50%;
+  transform: translateX(-50%);
+  float: inline-start;
+  min-width: calc(var(--slds-g-sizing-5) * 6);
+  max-width: var(--slds-g-sizing-15);
+  width: max-content; /* This is needed as replacement for legacy `white-space: nowrap;` from the inner menu-item */
+  margin-block-start: calc(var(--slds-g-spacing-1) / 2);
+  margin-block-end: calc(var(--slds-g-spacing-1)) / 2;
+  border-radius: var(--slds-g-radius-border-2);
+  padding-block: var(--slds-g-spacing-1);
+  padding-inline: 0;
+  font-size: var(--slds-g-font-scale-neg-1);
+  background-color: var(--slds-g-color-surface-container-1);
+  box-shadow: var(--slds-g-shadow-2);
+  color: var(--slds-g-color-on-surface-2);
+
+  /* Typeahead stuff */
+  mark {
+    font-weight: var(--slds-g-font-weight-7);
+    background-color: transparent;
+    color: inherit;
+  }
+
+  /* Adjust position of dropdown with top nubbin */
+  &[class*='slds-nubbin_top'] {
+    margin-block-start: var(--slds-g-spacing-2);
+  }
+
+  /* Adjust position of dropdown with bottom nubbin */
+  &[class*='slds-nubbin_bottom'] {
+    margin-block-end: var(--slds-g-spacing-2);
+  }
+
+  &:focus-visible {
+    outline: 0;
+    box-shadow: var(--slds-g-shadow-outline-focus-1);
+  }
+}
+
+/**
+ * Theme
+ */
+.slds-dropdown_inverse {
+  background: var(--slds-g-color-surface-inverse-2);
+  border-color: var(--slds-g-color-brand-base-10);
+  color: var(--slds-g-color-surface-container-1);
+
+  .slds-dropdown__item > a {
+    color: var(--slds-g-color-surface-container-1);
+
+    &:hover,
+    &:focus {
+      color: var(--slds-g-color-on-surface-inverse-2);
+      background-color: transparent;
+    }
+
+    &:active {
+      color: var(--slds-g-color-neutral-base-80);
+      background-color: transparent;
+    }
+
+    &[aria-disabled='true'] {
+      color: var(--slds-g-color-palette-blue-20);
+      cursor: default;
+
+      &:hover {
+        background-color: transparent;
+      }
+    }
+  }
+}
+
+/**
+ * Adds padding to area above dropdown menu list
+ */
+.slds-dropdown__header {
+  font-size: var(--slds-g-font-scale-neg-1);
+  font-weight: var(--slds-g-font-weight-6);
+  padding-block: var(--slds-g-spacing-2);
+  padding-inline: var(--slds-g-spacing-3);
+
+  &:focus-visible {
+    box-shadow: var(--slds-g-shadow-inset-focus-1);
+    outline: 0;
+    border-radius: 6px;
+  }
+}
+
+/**
+ * Initializes dropdown item
+ */
+.slds-dropdown__item {
+  line-height: var(--slds-g-font-lineheight-base);
+  font-weight: var(--slds-g-font-weight-4);
+
+  > a {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-block: var(--slds-g-spacing-2);
+    padding-inline: var(--slds-g-spacing-3);
+    color: var(--slds-g-color-on-surface-2);
+    text-decoration: none;
+    cursor: pointer;
+
+    &:hover,
+    &:focus {
+      outline: 0;
+      text-decoration: none;
+      background-color: var(
+        --slds-s-menu-item-color-background-active,
+        var(--slds-g-color-surface-container-2)
+      );
+      box-shadow: none;
+    }
+
+    &:not([aria-disabled='true']):focus-visible {
+      box-shadow: var(--slds-g-shadow-inset-focus-1);
+      outline: 0;
+      border-radius: 6px;
+    }
+
+    &:active {
+      text-decoration: none;
+      background-color: var(
+        --slds-s-menu-item-color-background-active,
+        var(--slds-g-color-surface-container-2)
+      );
+    }
+
+    &[aria-disabled='true'] {
+      color: var(--slds-g-color-disabled-1);
+      cursor: default;
+
+      &:hover {
+        background-color: transparent;
+      }
+
+      .slds-icon {
+        fill: var(--slds-g-color-disabled-1);
+      }
+    }
+
+    /**
+     * Places a menu item into an errored state
+     */
+    &.slds-has-error {
+      --slds-c-icon-color-foreground: var(--slds-g-color-on-error-1);
+
+      color: var(--slds-g-color-on-error-1);
+      background: var(--slds-g-color-error-container-1);
+    }
+
+    /**
+     * Places a menu item into a success state
+     */
+    &.slds-has-success {
+      --slds-c-icon-color-foreground: var(--slds-g-color-on-success-1);
+
+      color: var(--slds-g-color-on-success-1);
+      background: var(--slds-g-color-success-container-1);
+    }
+
+    /**
+     * Places a menu item into a warning state
+     */
+    &.slds-has-warning {
+      color: var(--slds-g-color-on-warning-1);
+      background: var(--slds-g-color-warning-container-1);
+
+      .slds-indicator_unread {
+        background-color: currentColor;
+      }
+
+      .slds-indicator_unsaved {
+        color: currentColor;
+      }
+    }
+
+    &.slds-has-error,
+    &.slds-has-success,
+    &.slds-has-warning {
+      &:hover,
+      &:focus {
+        text-decoration: underline;
+      }
+
+      &:focus-visible {
+        box-shadow: var(--slds-g-shadow-insetinverse-focus-1);
+      }
+    }
+  }
+
+  /**
+   * If menu contains menuitemcheckbox then this toggles the selected icon when it is selected
+   */
+  .slds-icon_selected {
+    --slds-c-icon-color-foreground: var(--slds-g-color-accent-2);
+
+    opacity: 0;
+    transition: opacity 0.05s ease;
+  }
+
+  /**
+   * If menu contains menuitemcheckbox then this handles the selected states
+   */
+  &.slds-is-selected .slds-icon_selected,
+  &.slds-is-selected .slds-icon--selected {
+    opacity: 1;
+  }
+
+  &.slds-has-notification .slds-indicator_unsaved {
+    inset-block-start: -0.375rem;
+  }
+}
+
+/**
+ * Positions dropdown to left side of target
+ */
+.slds-dropdown_left {
+  inset-inline-start: 0;
+  inset-inline-end: auto;
+  transform: translateX(0);
+}
+
+/**
+ * Positions dropdown to right side of target
+ */
+.slds-dropdown_right {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
+  transform: translateX(0);
+}
+
+/**
+ * Positions dropdown to above target
+ */
+.slds-dropdown_bottom {
+  inset-block-end: 100%;
+}
+
+/**
+ * Sets min-width of 6rem/96px
+ */
+.slds-dropdown_xx-small {
+  min-width: calc(var(--slds-g-sizing-5) * 6);
+}
+
+/**
+ * Sets min-width of 12rem/192px
+ */
+.slds-dropdown_x-small {
+  min-width: calc(var(--slds-g-sizing-9) * 6);
+}
+
+/**
+ * Sets min-width of 15rem/240px
+ */
+.slds-dropdown_small {
+  min-width: var(--slds-g-sizing-14);
+}
+
+/**
+ * Sets min-width of 20rem/320px
+ */
+.slds-dropdown_medium {
+  min-width: var(--slds-g-sizing-15);
+}
+
+/**
+ * Sets min-width of 25rem/400px
+ */
+.slds-dropdown_large {
+  min-width: calc(var(--slds-g-sizing-12) * 5);
+}
+
+/**
+ * Sets width equal to input
+ */
+.slds-dropdown_fluid {
+  /* Prevents menu from being illegible when input's width is small */
+  min-width: calc(var(--slds-g-sizing-5) * 12);
+  max-width: 100%;
+  width: 100%;
+}
+
+/**
+ * Forces overflow scrolling after 5 list items
+ */
+.slds-dropdown_length-5 {
+  max-height: calc(
+    (var(--slds-g-sizing-5) * var(--slds-g-font-lineheight-base) + var(--slds-g-spacing-4)) * 5
+  );
+  overflow-y: auto;
+}
+
+/**
+ * Forces overflow scrolling after 7 list items
+ */
+.slds-dropdown_length-7 {
+  max-height: calc(
+    (var(--slds-g-sizing-5) * var(--slds-g-font-lineheight-base) + var(--slds-g-spacing-4)) * 7
+  );
+  overflow-y: auto;
+}
+
+/**
+ * Forces overflow scrolling after 10 list items
+ */
+.slds-dropdown_length-10 {
+  max-height: calc(
+    (var(--slds-g-sizing-5) * var(--slds-g-font-lineheight-base) + var(--slds-g-spacing-4)) * 10
+  );
+  overflow-y: auto;
+}
+
+/**
+ * Forces overflow scrolling after 5 list items with an icon
+ */
+.slds-dropdown_length-with-icon-5 {
+  max-height: calc((var(--slds-g-sizing-7) + var(--slds-g-spacing-4)) * 5);
+  overflow-y: auto;
+}
+
+/**
+ * Forces overflow scrolling after 7 list items with an icon
+ */
+.slds-dropdown_length-with-icon-7 {
+  max-height: calc((var(--slds-g-sizing-7) + var(--slds-g-spacing-4)) * 7);
+  overflow-y: auto;
+}
+
+/**
+ * Forces overflow scrolling after 10 list items with an icon
+ */
+.slds-dropdown_length-with-icon-10 {
+  max-height: calc((var(--slds-g-sizing-7) + var(--slds-g-spacing-4)) * 10);
+  overflow-y: auto;
+}
+
+[dir='rtl'] .slds-dropdown_center {
+  inset-inline-start: auto;
+  inset-inline-end: auto;
+  transform: translateX(calc(50% - (0.875rem / 2)));
+}
+
+/**
+ * Submenus
+ *
+ * Note: most of this CSS in this file existed in ../menu in design-system-internal.
+ *       Lumping it in this file for now, opportunity for organizing it better later.
+ */
+
+/**
+ * Submenu initialization
+ */
+.slds-has-submenu {
+  position: relative;
+
+  /**
+   * Dropdown base positioning
+   */
+  .slds-dropdown_submenu {
+    inset-block-start: 0;
+    transform: none;
+  }
+
+  /**
+   * Open submenu to the left of the parent menu item
+   */
+  .slds-dropdown_submenu-left {
+    inset-inline-start: auto;
+    inset-inline-end: 100%;
+    margin-inline-end: var(--slds-g-spacing-1);
+  }
+
+  /**
+   * Open submenu to the right of the parent menu item
+   */
+  .slds-dropdown_submenu-right {
+    inset-inline-start: 100%;
+    margin-inline-start: var(--slds-g-spacing-1);
+  }
+
+  /**
+   * Open submenu along the bottom of the parent menu item
+   */
+  .slds-dropdown_submenu-bottom {
+    inset-block-start: auto;
+    inset-block-end: 0;
+    margin-block-end: calc(var(--slds-g-spacing-1) * -1);
+  }
+
+  &.slds-dropdown__item {
+    .slds-dropdown_submenu {
+      display: none;
+    }
+  }
+
+  [role='menuitem'][aria-expanded='true'] + .slds-dropdown_submenu {
+    display: block;
+  }
+}
+
+/**
+ * Styles links in overflow menu with actions
+ */
+.slds-dropdown_actions a {
+  color: var(--slds-g-color-neutral-base-10);
+}

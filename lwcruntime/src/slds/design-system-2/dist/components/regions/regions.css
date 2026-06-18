@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * Note: Regions are not surfaced publicly in SLDS1 (nor its Storybook). We've
+ * ported them over to SLDS2 but they'll remain hidden; we're only covering
+ * existing implementations for the sake of migration.
+ */
+
+/**
+ * A region that can be inside of a layout
+ */
+.slds-region {
+  background-color: var(--slds-g-color-surface-container-1);
+}
+
+/**
+ * A region that can be pinned on the top of a layout
+ */
+.slds-region__pinned-top {
+  background-color: var(--slds-g-color-surface-container-1);
+  border-block-end: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-1);
+}
+
+/**
+ * A region that can be pinned on the left side of a layout
+ */
+.slds-region__pinned-left {
+  background-color: var(--slds-g-color-surface-container-1);
+  border-inline-end: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-1);
+}
+
+/**
+ * A region that can be pinned on the right side of a layout
+ */
+.slds-region__pinned-right {
+  background-color: var(--slds-g-color-surface-container-1);
+  border-inline-start: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-1);
+}

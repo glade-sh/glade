@@ -1,0 +1,217 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "AccordionSection",
+  "description": "Defines the content of a section inside a lightning-accordion component.",
+  "dateAdded": "2017-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "section",
+      "li"
+    ],
+    "description": "Accordion section container",
+    "attributes": {
+      "static": {
+        "role": "listitem",
+        "class": "slds-accordion__list-item"
+      }
+    },
+    "children": [
+      {
+        "name": "summary",
+        "restrict": [
+          "div"
+        ],
+        "description": "Section summary header",
+        "children": [
+          {
+            "name": "heading",
+            "restrict": [
+              "h2",
+              "h3"
+            ],
+            "description": "Section heading",
+            "children": [
+              {
+                "name": "toggle",
+                "restrict": [
+                  "button"
+                ],
+                "description": "Expand/collapse toggle button",
+                "attributes": {
+                  "bound": {
+                    "aria-controls": {
+                      "prop": "contentId"
+                    },
+                    "aria-expanded": {
+                      "prop": "isOpen"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "label",
+                    "restrict": [
+                      "span"
+                    ],
+                    "description": "Section label text",
+                    "slot": {
+                      "name": "label"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "actions",
+            "restrict": [
+              "div"
+            ],
+            "description": "Optional action menu in the section header",
+            "renderWhen": "slotFilled",
+            "slot": {
+              "name": "actions"
+            }
+          }
+        ]
+      },
+      {
+        "name": "content",
+        "restrict": [
+          "div"
+        ],
+        "description": "Expandable section content area",
+        "attributes": {
+          "bound": {
+            "aria-hidden": {
+              "prop": "isContentHidden"
+            }
+          }
+        },
+        "slot": {
+          "name": "default"
+        }
+      },
+      {
+        "name": "section",
+        "attributes": {
+          "static": {
+            "class": "slds-accordion__section"
+          }
+        },
+        "children": [
+          {
+            "name": "summary",
+            "attributes": {
+              "static": {
+                "class": "slds-accordion__summary"
+              }
+            },
+            "children": [
+              {
+                "name": "heading",
+                "attributes": {
+                  "static": {
+                    "class": "slds-accordion__summary-heading"
+                  }
+                },
+                "children": [
+                  {
+                    "name": "toggle",
+                    "attributes": {
+                      "static": {
+                        "class": "slds-accordion__summary-action"
+                      }
+                    },
+                    "children": [
+                      {
+                        "name": "toggleIcon",
+                        "attributes": {
+                          "static": {
+                            "class": "slds-accordion__summary-action-icon"
+                          }
+                        }
+                      },
+                      {
+                        "name": "label",
+                        "attributes": {
+                          "static": {
+                            "class": "slds-accordion__summary-content"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "actions",
+                "attributes": {
+                  "static": {
+                    "class": "slds-no-flex"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "content",
+            "attributes": {
+              "static": {
+                "class": "slds-accordion__content"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "isOpen",
+      "type": "boolean",
+      "aria": "aria-expanded",
+      "description": "Whether the section is expanded"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "listitem-role",
+        "description": "Section must have role listitem"
+      },
+      {
+        "id": "aria-expanded",
+        "description": "Toggle button must reflect expanded state via aria-expanded"
+      },
+      {
+        "id": "aria-controls",
+        "description": "Toggle button must reference the content element via aria-controls"
+      },
+      {
+        "id": "keyboard-toggle",
+        "description": "Section must be expandable/collapsible via Enter key on the toggle button"
+      },
+      {
+        "id": "heading-level",
+        "description": "Section heading level must be configurable via heading-level (1-6)"
+      }
+    ]
+  },
+  "cssSource": "../accordion/accordion.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "isOpen",
+      "class": "slds-is-open",
+      "target": "section"
+    }
+  ]
+}

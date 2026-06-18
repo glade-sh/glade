@@ -1,0 +1,106 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Timepicker",
+  "description": "A timepicker allows users to select a time from a dropdown.",
+  "dateAdded": "2017-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Timepicker container",
+    "children": [
+      {
+        "name": "label",
+        "restrict": [
+          "label"
+        ],
+        "description": "Time input label",
+        "slot": {
+          "name": "label",
+          "required": true
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__label"
+          }
+        }
+      },
+      {
+        "name": "combobox",
+        "restrict": [
+          "div"
+        ],
+        "description": "Combobox for time selection",
+        "attributes": {
+          "static": {
+            "role": "combobox",
+            "class": "slds-form-element__control"
+          }
+        },
+        "slot": {
+          "name": "default",
+          "restrict": [
+            "Combobox"
+          ]
+        }
+      }
+    ],
+    "attributes": {
+      "static": {
+        "class": "slds-form-element"
+      }
+    }
+  },
+  "states": [
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the timepicker is disabled"
+    },
+    {
+      "name": "required",
+      "type": "boolean",
+      "aria": "aria-required",
+      "description": "Whether the timepicker is required"
+    },
+    {
+      "name": "open",
+      "type": "boolean",
+      "aria": "aria-expanded",
+      "description": "Whether the timepicker dropdown is open"
+    },
+    {
+      "name": "focused",
+      "type": "boolean",
+      "description": "whether the timepicker input has focus"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "combobox-pattern",
+        "description": "Should follow combobox accessibility pattern"
+      }
+    ]
+  },
+  "cssSource": "./timepicker.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "open",
+      "class": "slds-is-open"
+    },
+    {
+      "state": "focused",
+      "class": "slds-has-focus"
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/* Use .slds-popover_dark instead. */
+.slds-popover_walkthrough {
+  border-color: var(--slds-g-color-border-inverse-2);
+  color: var(--slds-g-color-on-surface-inverse-1);
+  background: var(--slds-g-color-surface-inverse-2);
+}
+
+.slds-popover_walkthrough .slds-text-title,
+.slds-popover_walkthrough .slds-text-title_caps {
+  color: var(--slds-g-color-on-surface-inverse-2);
+}
+
+.slds-popover_walkthrough .slds-icon {
+  fill: currentColor;
+}
+
+.slds-popover_walkthrough a {
+  color: currentColor;
+  border: var(--slds-g-sizing-border-1) solid transparent;
+  border-radius: var(--slds-g-radius-border-2);
+  text-decoration: underline;
+}
+
+.slds-popover_walkthrough a:hover,
+.slds-popover_walkthrough a:focus {
+  text-decoration: none;
+  outline: 0;
+}
+
+.slds-popover_walkthrough a:focus {
+  box-shadow: var(--slds-s-button-shadow-focus);
+}
+
+.slds-popover_walkthrough a:active {
+  color: var(--slds-g-color-on-surface-inverse-2);
+}
+
+.slds-popover_walkthrough a[disabled] {
+  color: color-mix(in oklab, currentColor, transparent 90%);
+}
+
+.slds-popover_walkthrough .slds-popover__header {
+  background-color: var(--slds-g-color-surface-inverse-2);
+  border-color: inherit;
+  padding: var(--slds-g-spacing-3) var(--slds-g-spacing-4);
+  color: var(--slds-g-color-on-surface-inverse-1);
+  border-start-start-radius: var(--slds-g-radius-border-2);
+  border-start-end-radius: var(--slds-g-radius-border-2);
+}
+
+.slds-popover_walkthrough .slds-popover__body,
+.slds-popover_walkthrough .slds-popover__footer {
+  padding: var(--slds-g-spacing-4);
+  color: var(--slds-g-color-on-surface-inverse-1);
+}
+
+.slds-popover_walkthrough .slds-popover__footer {
+  background-color: var(--slds-g-color-surface-inverse-1);
+  border: 0;
+}
+
+.slds-popover_walkthrough .slds-text-title {
+  color: var(--slds-g-color-on-surface-inverse-1);
+}
+
+.slds-popover_walkthrough .slds-input,
+.slds-popover_walkthrough .slds-select,
+.slds-popover_walkthrough .slds-textarea {
+  color: var(--slds-g-color-on-surface-3);
+}
+
+.slds-popover_walkthrough.slds-nubbin_top::before,
+.slds-popover_walkthrough.slds-nubbin_top-left::before,
+.slds-popover_walkthrough.slds-nubbin_top-right::before,
+.slds-popover_walkthrough.slds-nubbin_left-top::before,
+.slds-popover_walkthrough.slds-nubbin_right-top::before {
+  background-color: var(--slds-g-color-surface-container-inverse-1);
+}
+
+/* Use .slds-popover_dark instead. */
+.slds-popover_walkthrough-alt,
+.slds-popover_feature {
+  border-color: var(--_slds-c-popover-feature-color-border);
+  background-color: var(--_slds-c-popover-feature-color-background);
+  color: var(--slds-g-color-on-surface-inverse-1);
+}
+
+.slds-popover_walkthrough-alt .slds-text-heading_small,
+.slds-popover_feature .slds-text-heading_small {
+  margin-bottom: var(--slds-g-spacing-2);
+}
+
+.slds-popover_walkthrough-alt.slds-nubbin_bottom::before,
+.slds-popover_walkthrough-alt.slds-nubbin_bottom-left::before,
+.slds-popover_walkthrough-alt.slds-nubbin_bottom-right::before,
+.slds-popover_feature.slds-nubbin_bottom::before,
+.slds-popover_feature.slds-nubbin_bottom-left::before,
+.slds-popover_feature.slds-nubbin_bottom-right::before {
+  background-color: var(--slds-g-color-accent-2);
+}
+
+.slds-popover_walkthrough-alt .slds-text-title,
+.slds-popover_feature .slds-text-title {
+  color: var(--slds-g-color-on-surface-inverse-1);
+}
+
+.slds-popover_walkthrough-alt .slds-popover__body,
+.slds-popover_feature .slds-popover__body {
+  color: var(--slds-g-color-on-surface-inverse-1);
+}

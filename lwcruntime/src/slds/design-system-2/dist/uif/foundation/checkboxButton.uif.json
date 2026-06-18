@@ -1,0 +1,95 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "CheckboxButton",
+  "description": "A checkbox styled as a button for grouped selections.",
+  "dateAdded": "2017-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "span"
+    ],
+    "description": "Checkbox button container",
+    "children": [
+      {
+        "name": "input",
+        "restrict": [
+          "input"
+        ],
+        "description": "Hidden checkbox input element",
+        "attributes": {
+          "static": {
+            "type": "checkbox"
+          },
+          "bound": {
+            "id": {
+              "prop": "inputId",
+              "required": true
+            },
+            "name": {
+              "prop": "name"
+            },
+            "value": {
+              "prop": "value"
+            },
+            "checked": {
+              "prop": "checked"
+            },
+            "disabled": {
+              "prop": "disabled"
+            }
+          }
+        }
+      },
+      {
+        "name": "label",
+        "restrict": [
+          "label"
+        ],
+        "attributes": {
+          "bound": {
+            "for": {
+              "prop": "inputId"
+            }
+          }
+        },
+        "slot": {
+          "name": "default",
+          "required": true
+        }
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "checked",
+      "type": "boolean",
+      "description": "Whether the checkbox is checked"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the checkbox button is disabled"
+    },
+    {
+      "name": "required",
+      "type": "boolean",
+      "aria": "aria-required",
+      "description": "Whether selection is required"
+    }
+  ],
+  "composition": {
+    "requiredComponentParent": "CheckboxButtonGroup"
+  },
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "label-association",
+        "description": "Label must be associated with input"
+      }
+    ]
+  }
+}

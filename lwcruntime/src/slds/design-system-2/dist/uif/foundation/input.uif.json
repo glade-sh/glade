@@ -1,0 +1,202 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Input",
+  "description": "Text inputs are used for freeform data entry.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Input container",
+    "children": [
+      {
+        "name": "label",
+        "restrict": [
+          "label"
+        ],
+        "description": "Input label",
+        "attributes": {
+          "bound": {
+            "for": {
+              "prop": "inputId"
+            }
+          }
+        },
+        "slot": {
+          "name": "label",
+          "required": true
+        }
+      },
+      {
+        "name": "inputContainer",
+        "restrict": [
+          "div"
+        ],
+        "description": "Container for input and icons",
+        "children": [
+          {
+            "name": "iconLeft",
+            "restrict": [
+              "span"
+            ],
+            "description": "Icon before input",
+            "renderWhen": "slotFilled",
+            "slot": {
+              "name": "iconLeft",
+              "restrict": [
+                "Icon"
+              ]
+            }
+          },
+          {
+            "name": "input",
+            "restrict": [
+              "input"
+            ],
+            "description": "Native input element",
+            "attributes": {
+              "bound": {
+                "id": {
+                  "prop": "inputId",
+                  "required": true
+                },
+                "type": {
+                  "prop": "type"
+                },
+                "name": {
+                  "prop": "name"
+                },
+                "value": {
+                  "prop": "value"
+                },
+                "placeholder": {
+                  "prop": "placeholder"
+                },
+                "disabled": {
+                  "prop": "disabled"
+                },
+                "readonly": {
+                  "prop": "readonly"
+                },
+                "required": {
+                  "prop": "required"
+                },
+                "maxlength": {
+                  "prop": "maxLength"
+                },
+                "minlength": {
+                  "prop": "minLength"
+                },
+                "pattern": {
+                  "prop": "pattern"
+                },
+                "aria-describedby": {
+                  "prop": "ariaDescribedBy"
+                }
+              }
+            }
+          },
+          {
+            "name": "iconRight",
+            "restrict": [
+              "span"
+            ],
+            "description": "Icon after input",
+            "renderWhen": "slotFilled",
+            "slot": {
+              "name": "iconRight",
+              "restrict": [
+                "Icon"
+              ]
+            }
+          },
+          {
+            "name": "spinner",
+            "restrict": [
+              "div"
+            ],
+            "description": "loading spinner inside input",
+            "renderWhen": "loading"
+          }
+        ]
+      },
+      {
+        "name": "helpText",
+        "restrict": [
+          "div"
+        ],
+        "description": "Help text below input",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "helpText"
+        }
+      },
+      {
+        "name": "requiredIndicator",
+        "restrict": [
+          "abbr"
+        ],
+        "description": "required field indicator"
+      },
+      {
+        "name": "helpIcon",
+        "restrict": [
+          "div"
+        ],
+        "description": "field-level help icon",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "helpText"
+        }
+      },
+      {
+        "name": "addon",
+        "restrict": [
+          "span"
+        ],
+        "description": "fixed text addon before or after input"
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the input is disabled"
+    },
+    {
+      "name": "readonly",
+      "type": "boolean",
+      "aria": "aria-readonly",
+      "description": "Whether the input is read-only"
+    },
+    {
+      "name": "required",
+      "type": "boolean",
+      "aria": "aria-required",
+      "description": "Whether the input is required"
+    },
+    {
+      "name": "hasError",
+      "type": "boolean",
+      "description": "Whether the input has a validation error"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "label-association",
+        "description": "Input must have an associated label via for/id"
+      },
+      {
+        "id": "error-association",
+        "description": "Error messages must be associated via aria-describedby"
+      }
+    ]
+  }
+}

@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  .slds-notify_toast {
+    /* Color — default (info) */
+    --slds-c-toast-color-background: var(--slds-g-color-info-container-1);
+    --slds-c-toast-color-foreground: var(--slds-g-color-on-info-1);
+    /* Radius */
+    --slds-c-toast-radius-border: var(--slds-g-radius-border-2);
+    /* Shadow */
+    --slds-c-toast-shadow: var(--slds-g-shadow-3);
+    /* Spacing */
+    --slds-c-toast-spacing-margin: var(--slds-g-spacing-2);
+    --slds-c-toast-spacing-block: var(--slds-g-spacing-3);
+    --slds-c-toast-spacing-inline-start: var(--slds-g-spacing-5);
+    --slds-c-toast-spacing-inline-end: var(--slds-g-spacing-8);
+    /* Sizing */
+    --slds-c-toast-sizing-min-width: var(--slds-g-sizing-16);
+    --slds-c-toast-sizing-max-width: 50%;
+    /* Content */
+    --slds-c-toast-content-font-weight: var(--slds-g-font-weight-6);
+    --slds-c-toast-link-radius-border: var(--slds-g-radius-border-1);
+    /* Close button */
+    --slds-c-toast-close-spacing-block-start: var(--slds-g-spacing-3);
+    --slds-c-toast-close-spacing-inline-end: var(--slds-g-spacing-3);
+    --slds-c-toast-close-spacing-inline-start: var(--slds-g-spacing-1);
+    --slds-c-toast-close-color-foreground-hover: color-mix(in oklab, currentColor, transparent 25%);
+  }
+
+  /* VARIANTS */
+  .slds-notify_toast.slds-theme_info {
+    --slds-c-toast-color-background: var(--slds-g-color-info-container-1);
+    --slds-c-toast-color-foreground: var(--slds-g-color-on-info-1);
+  }
+
+  .slds-notify_toast.slds-theme_success {
+    --slds-c-toast-color-background: var(--slds-g-color-success-container-1);
+    --slds-c-toast-color-foreground: var(--slds-g-color-on-success-2);
+  }
+
+  .slds-notify_toast.slds-theme_error {
+    --slds-c-toast-color-background: var(--slds-g-color-error-container-2);
+    --slds-c-toast-color-foreground: var(--slds-g-color-on-error-1);
+  }
+
+  .slds-notify_toast.slds-theme_warning {
+    --slds-c-toast-color-background: var(--slds-g-color-warning-container-1);
+    --slds-c-toast-color-foreground: var(--slds-g-color-on-warning-1);
+  }
+}

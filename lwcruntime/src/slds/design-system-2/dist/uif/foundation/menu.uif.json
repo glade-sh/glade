@@ -1,0 +1,145 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Menu",
+  "description": "A menu offers a list of actions or functions that a user can access.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Menu trigger container",
+    "children": [
+      {
+        "name": "trigger",
+        "restrict": [
+          "button"
+        ],
+        "description": "Menu trigger button",
+        "attributes": {
+          "static": {
+            "aria-haspopup": "menu"
+          },
+          "bound": {
+            "aria-expanded": {
+              "prop": "isOpen"
+            }
+          }
+        },
+        "slot": {
+          "name": "trigger",
+          "restrict": [
+            "Button",
+            "ButtonIcon"
+          ]
+        }
+      },
+      {
+        "name": "dropdown",
+        "restrict": [
+          "div"
+        ],
+        "description": "Dropdown menu container",
+        "renderWhen": "slotFilled",
+        "attributes": {
+          "static": {
+            "role": "menu"
+          }
+        },
+        "children": [
+          {
+            "name": "header",
+            "restrict": [
+              "div"
+            ],
+            "description": "Optional menu header",
+            "renderWhen": "slotFilled",
+            "slot": {
+              "name": "header"
+            }
+          },
+          {
+            "name": "items",
+            "restrict": [
+              "ul"
+            ],
+            "description": "Menu items list",
+            "children": [
+              {
+                "name": "menuItem",
+                "restrict": [
+                  "li"
+                ],
+                "description": "individual menu item",
+                "repeats": true,
+                "attributes": {
+                  "static": {
+                    "role": "presentation"
+                  }
+                }
+              },
+              {
+                "name": "separator",
+                "restrict": [
+                  "li"
+                ],
+                "description": "visual separator between menu items",
+                "attributes": {
+                  "static": {
+                    "role": "separator"
+                  }
+                }
+              }
+            ],
+            "slot": {
+              "name": "default",
+              "required": true
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "open",
+      "type": "boolean",
+      "aria": "aria-expanded",
+      "description": "Whether the menu is open"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the menu trigger is disabled"
+    },
+    {
+      "name": "selected",
+      "type": "boolean",
+      "description": "whether a menu item is selected"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "menu-role",
+        "description": "Dropdown must have role='menu'"
+      },
+      {
+        "id": "menuitem-role",
+        "description": "Menu items must have role='menuitem'"
+      },
+      {
+        "id": "keyboard-navigation",
+        "description": "Arrow keys should navigate between items, Enter/Space selects"
+      },
+      {
+        "id": "escape-close",
+        "description": "Pressing Escape should close the menu"
+      }
+    ]
+  }
+}

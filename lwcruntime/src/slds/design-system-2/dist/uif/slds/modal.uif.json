@@ -1,0 +1,227 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Modal",
+  "description": "Modals are used to display content in a layer above the app.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "section",
+      "div"
+    ],
+    "description": "Modal container",
+    "attributes": {
+      "static": {
+        "role": "dialog",
+        "aria-modal": "true",
+        "class": "slds-modal"
+      },
+      "bound": {
+        "aria-labelledby": {
+          "prop": "headingId"
+        },
+        "aria-describedby": {
+          "prop": "contentId"
+        }
+      }
+    },
+    "children": [
+      {
+        "name": "backdrop",
+        "restrict": [
+          "div"
+        ],
+        "description": "background overlay behind modal",
+        "attributes": {
+          "static": {
+            "role": "presentation",
+            "class": "slds-backdrop slds-backdrop_open"
+          }
+        }
+      },
+      {
+        "name": "container",
+        "restrict": [
+          "div"
+        ],
+        "description": "Modal dialog container",
+        "children": [
+          {
+            "name": "header",
+            "restrict": [
+              "header",
+              "div"
+            ],
+            "description": "Modal header",
+            "children": [
+              {
+                "name": "close",
+                "restrict": [
+                  "button"
+                ],
+                "description": "Close button",
+                "attributes": {
+                  "bound": {
+                    "aria-label": {
+                      "prop": "closeLabel"
+                    }
+                  },
+                  "static": {
+                    "class": "slds-modal__close"
+                  }
+                },
+                "slot": {
+                  "name": "close",
+                  "restrict": [
+                    "Button"
+                  ]
+                }
+              },
+              {
+                "name": "heading",
+                "restrict": [
+                  "h1",
+                  "h2"
+                ],
+                "description": "Modal heading",
+                "slot": {
+                  "name": "heading",
+                  "required": true
+                },
+                "attributes": {
+                  "static": {
+                    "class": "slds-modal__title slds-hyphenate"
+                  }
+                }
+              }
+            ],
+            "attributes": {
+              "static": {
+                "class": "slds-modal__header"
+              }
+            }
+          },
+          {
+            "name": "content",
+            "restrict": [
+              "div"
+            ],
+            "description": "Modal content/body",
+            "slot": {
+              "name": "default",
+              "required": true
+            },
+            "attributes": {
+              "static": {
+                "class": "slds-modal__content slds-p-around_medium"
+              }
+            }
+          },
+          {
+            "name": "footer",
+            "restrict": [
+              "footer",
+              "div"
+            ],
+            "description": "Modal footer with actions",
+            "renderWhen": "slotFilled",
+            "slot": {
+              "name": "footer"
+            },
+            "attributes": {
+              "static": {
+                "class": "slds-modal__footer"
+              }
+            }
+          }
+        ],
+        "attributes": {
+          "static": {
+            "class": "slds-modal__container"
+          }
+        }
+      }
+    ],
+    "modifiers": [
+      {
+        "name": "size",
+        "attribute": "class",
+        "description": "Modal size",
+        "default": "medium",
+        "options": [
+          {
+            "propValue": "small",
+            "value": "slds-modal_small"
+          },
+          {
+            "propValue": "medium",
+            "value": "slds-modal_medium"
+          },
+          {
+            "propValue": "large",
+            "value": "slds-modal_large"
+          },
+          {
+            "propValue": "full",
+            "value": "slds-modal_full"
+          }
+        ]
+      },
+      {
+        "name": "directionalFooter",
+        "attribute": "class",
+        "value": "slds-modal__footer_directional",
+        "description": "directional footer layout",
+        "target": "footer"
+      },
+      {
+        "name": "headlessContent",
+        "attribute": "class",
+        "value": "slds-modal__content_headless",
+        "description": "content without header styling",
+        "target": "content"
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "open",
+      "type": "boolean",
+      "description": "Whether the modal is visible"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "focus-trap",
+        "description": "Focus must be trapped within the modal when open"
+      },
+      {
+        "id": "escape-close",
+        "description": "Pressing Escape should close the modal"
+      },
+      {
+        "id": "focus-restore",
+        "description": "Focus should return to the triggering element when modal closes"
+      },
+      {
+        "id": "aria-modal",
+        "description": "Modal must have aria-modal='true' and appropriate role"
+      }
+    ]
+  },
+  "cssSource": "./modal.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "open",
+      "class": "slds-fade-in-open"
+    }
+  ]
+}

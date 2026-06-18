@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/* Use slds-dueling-list instead of slds-picklist_draggable */
+.slds-picklist_draggable {
+  display: flex;
+}
+
+.slds-picklist_draggable .slds-button,
+.slds-picklist--draggable .slds-button {
+  margin: var(--slds-g-spacing-1);
+}
+
+.slds-picklist_draggable .slds-button:first-of-type,
+.slds-picklist--draggable .slds-button:first-of-type {
+  margin-block-start: var(--slds-g-spacing-5);
+}
+
+/* 'Use slds-listbox__item instead of slds-picklist__item' */
+.slds-picklist__item {
+  position: relative;
+  line-height: var(--slds-g-font-lineheight-4);
+}
+
+.slds-picklist__item > a,
+.slds-picklist__item > span {
+  display: block;
+  padding: var(--slds-g-spacing-2) var(--slds-g-spacing-3);
+}
+
+.slds-picklist__item > a:hover,
+.slds-picklist__item > span:hover {
+  background-color: var(--slds-s-menu-item-color-background-active, var(--slds-g-color-surface-container-2));
+  cursor: pointer;
+}
+
+.slds-picklist__item > a:active,
+.slds-picklist__item > span:active {
+  background-color: var(--slds-s-menu-item-color-background-active, var(--slds-g-color-surface-container-2));
+}
+
+.slds-picklist__item[aria-selected='true'] {
+  background-color: var(--slds-s-menu-item-color-background-active, var(--slds-g-color-surface-container-2));
+}

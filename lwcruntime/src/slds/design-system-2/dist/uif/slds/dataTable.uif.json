@@ -1,0 +1,179 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "DataTable",
+  "description": "Data tables display tabular data with sorting, selection, and actions.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Data table container",
+    "children": [
+      {
+        "name": "table",
+        "restrict": [
+          "table"
+        ],
+        "description": "Table element",
+        "attributes": {
+          "static": {
+            "role": "grid",
+            "class": "slds-table slds-table_cell-buffer slds-table_bordered"
+          }
+        },
+        "children": [
+          {
+            "name": "thead",
+            "restrict": [
+              "thead"
+            ],
+            "description": "Table header",
+            "slot": {
+              "name": "header",
+              "required": true
+            }
+          },
+          {
+            "name": "tbody",
+            "restrict": [
+              "tbody"
+            ],
+            "description": "Table body",
+            "slot": {
+              "name": "default"
+            }
+          }
+        ]
+      }
+    ],
+    "attributes": {
+      "static": {
+        "class": "slds-table_header-fixed_container"
+      }
+    },
+    "modifiers": [
+      {
+        "name": "bordered",
+        "attribute": "class",
+        "value": "slds-table_bordered",
+        "description": "Add borders to table"
+      },
+      {
+        "name": "striped",
+        "attribute": "class",
+        "value": "slds-table_striped",
+        "description": "Alternate row colors"
+      },
+      {
+        "name": "resizable",
+        "attribute": "class",
+        "value": "slds-table_resizable-cols",
+        "description": "Enable column resizing"
+      },
+      {
+        "name": "fixedLayout",
+        "attribute": "class",
+        "value": "slds-table_fixed-layout",
+        "description": "fixed column width layout"
+      },
+      {
+        "name": "edit",
+        "attribute": "class",
+        "value": "slds-table_edit",
+        "description": "inline edit table"
+      },
+      {
+        "name": "headerHidden",
+        "attribute": "class",
+        "value": "slds-table_header-hidden",
+        "description": "hidden table header"
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "sortedBy",
+      "type": "string",
+      "description": "Column key currently sorted by"
+    },
+    {
+      "name": "sortDirection",
+      "type": "enum",
+      "aria": "aria-sort",
+      "options": [
+        "ascending",
+        "descending",
+        "none"
+      ],
+      "description": "Sort direction (asc/desc)"
+    },
+    {
+      "name": "selectedRows",
+      "type": "array",
+      "aria": "aria-selected",
+      "description": "Array of selected row keys"
+    },
+    {
+      "name": "hasError",
+      "type": "boolean",
+      "description": "whether a row or cell has an error"
+    },
+    {
+      "name": "edited",
+      "type": "boolean",
+      "description": "whether a cell has been edited"
+    },
+    {
+      "name": "focused",
+      "type": "boolean",
+      "description": "whether a cell has keyboard focus"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "grid-role",
+        "description": "Table should have role='grid' for interactive tables"
+      },
+      {
+        "id": "aria-sort",
+        "description": "Sorted columns should have aria-sort"
+      },
+      {
+        "id": "row-selection",
+        "description": "Selected rows should have aria-selected='true'"
+      }
+    ]
+  },
+  "cssSource": "./dataTable.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "sortedBy",
+      "class": "slds-is-sorted"
+    },
+    {
+      "state": "selectedRows",
+      "class": "slds-is-selected"
+    },
+    {
+      "state": "hasError",
+      "class": "slds-has-error"
+    },
+    {
+      "state": "edited",
+      "class": "slds-is-edited"
+    },
+    {
+      "state": "focused",
+      "class": "slds-has-focus"
+    }
+  ]
+}

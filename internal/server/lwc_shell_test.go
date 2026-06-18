@@ -160,8 +160,11 @@ func TestLightningRuntimeServesShellAndSLDSAssets(t *testing.T) {
 		{path: "/lightning/runtime/shims/site.js", want: "readSiteId"},
 		{path: "/lightning/runtime/shell/glade-shell.css", want: ".glade-shell"},
 		{path: "/lightning/runtime/slds/slds-loader.js", want: "loadSLDS"},
-		{path: "/lightning/runtime/slds/glade-slds.css", want: ".slds-button"},
-		{path: "/assets/icons/utility-sprite/svg/symbols.svg", want: "<symbol"},
+		{path: "/lightning/runtime/slds/glade-slds.css", want: "slds2.cosmos.css"},
+		{path: "/lightning/runtime/slds/design-system-2/dist/css/bundled/slds2.cosmos.css", want: "@layer"},
+		{path: "/lightning/runtime/slds/design-system/assets/styles/salesforce-lightning-design-system.min.css", want: ".slds-button"},
+		{path: "/lightning/runtime/slds/design-system-2/dist/public/profile_avatar_96.png", want: ""},
+		{path: "/assets/icons/utility-sprite/svg/symbols.svg", want: `id="animal_and_nature"`},
 		{path: "/lightning/shims/core/apex.js", want: "refreshApex"},
 		{path: "/lightning/shims/lightning/actions.js", want: "CloseActionScreenEvent"},
 		{path: "/lightning/shims/lightning/empApi.js", want: "subscribe"},
@@ -186,6 +189,15 @@ func TestLightningRuntimeServesShellAndSLDSAssets(t *testing.T) {
 	}
 }
 
+func TestLightningRuntimeAssetRejectsTraversal(t *testing.T) {
+	if _, _, ok := lightningRuntimeAsset("../src/slds", "slds-loader.js"); ok {
+		t.Fatalf("runtime asset lookup should reject traversal in asset kind")
+	}
+	if _, _, ok := lightningRuntimeAsset("slds", "../slds-loader.js"); ok {
+		t.Fatalf("runtime asset lookup should reject traversal in asset name")
+	}
+}
+
 func TestLightningRuntimeCSSKeepsShellControlsOutOfSLDS(t *testing.T) {
 	handler := New(&storage.OrgState{})
 
@@ -207,16 +219,21 @@ func TestLightningRuntimeCSSKeepsShellControlsOutOfSLDS(t *testing.T) {
 		t.Fatalf("shell builder JS missing dedicated shell button class:\n%s", builderJS)
 	}
 
-	sldsCSS := lightningRuntimeTestAsset(t, handler, "/lightning/runtime/slds/glade-slds.css")
+	sldsCSS := lightningRuntimeTestAsset(t, handler, "/lightning/runtime/slds/design-system-2/dist/css/bundled/slds2.cosmos.css")
 	for _, want := range []string{
+		"@layer",
+		".slds-button",
 		".slds-badge",
-		".slds-badge_lightest",
 		".slds-theme_success",
 		".slds-theme_error",
 	} {
 		if !strings.Contains(sldsCSS, want) {
-			t.Fatalf("SLDS CSS missing %q:\n%s", want, sldsCSS)
+			t.Fatalf("SLDS 2 CSS missing %q:\n%s", want, sldsCSS)
 		}
+	}
+	slds1CSS := lightningRuntimeTestAsset(t, handler, "/lightning/runtime/slds/design-system/assets/styles/salesforce-lightning-design-system.min.css")
+	if !strings.Contains(slds1CSS, ".slds-badge") || !strings.Contains(slds1CSS, ".slds-button") {
+		t.Fatalf("SLDS 1 CSS missing expected selectors")
 	}
 }
 
@@ -347,7 +364,7 @@ func TestLightningLocalContextJSONReportsActiveShellState(t *testing.T) {
 		"quickActions":           "supported-local",
 		"platformWorkspaceApi":   "partial",
 		"baseComponents":         "supported-local",
-		"slds":                   "partial",
+		"slds":                   "supported-local",
 		"visualforceHost":        "supported-local",
 	} {
 		if got.Services[service] != want {

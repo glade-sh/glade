@@ -1,0 +1,131 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  /**
+   * Root-level hooks — structural defaults and pseudo-class state values.
+   *
+   * Class-based state values (.slds-is-active, .slds-is-completed, .slds-has-error)
+   * are NOT defined here as intermediate hooks. They are assigned directly to the
+   * base hooks in class-scoped rules below — consumers override the same way.
+   *
+   * --slds-c-progress-surface-color-background is the surface relay hook. All
+   * surface-matched values (active marker bg, active ring shadow) read from it.
+   * The shade variant only needs to override this one hook.
+   */
+  .slds-progress {
+    --slds-c-progress-sizing-inline-max: 70%;
+    --slds-c-progress-surface-color-background: var(--slds-g-color-surface-container-1);
+
+    /* Horizontal connector (progress-bar track) */
+    --slds-c-progress-bar-margin-block-start: -0.0625rem;
+    --slds-c-progress-connector-color-background: var(--slds-g-color-neutral-base-50);
+
+    /* Marker base */
+    --slds-c-progress-marker-sizing: var(--slds-g-sizing-5);
+    --slds-c-progress-marker-sizing-border: var(--slds-g-sizing-2);
+    --slds-c-progress-marker-color-border: var(--slds-g-color-on-accent-1);
+    --slds-c-progress-marker-radius-border: var(--slds-g-radius-border-circle);
+    --slds-c-progress-marker-color-background: var(--slds-g-color-neutral-base-50);
+
+    /* :focus-visible pseudo-class state — intermediate hook is appropriate */
+    --slds-c-progress-marker-shadow-focus: var(--slds-g-shadow-outset-focus-1);
+
+    /* Vertical connector */
+    --slds-c-progress-connector-sizing-inline: var(--slds-g-sizing-1);
+
+    /* Vertical marker spacing (drives connector centering calc in base) */
+    --slds-c-progress-marker-spacing-inline-end: var(--slds-g-spacing-4);
+
+    /* Vertical item content spacing */
+    --slds-c-progress-item-content-spacing-block-start: var(--slds-g-spacing-3);
+    --slds-c-progress-item-content-spacing-block-end: var(--slds-g-spacing-3);
+
+    /* Vertical bordered items */
+    --slds-c-progress-item-content-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-progress-item-content-color-border: var(--slds-g-color-border-1);
+
+    /* Success variant opacity */
+    --slds-c-progress-connector-opacity-success: 0.3;
+  }
+
+  /* ── Class-state rules ───────────────────────────────────────────────────
+     These directly assign the base hooks for each class state. No intermediate
+     hooks — consumers override by scoping to the same class selector. */
+
+  /* Completed + active: accent border */
+  .slds-progress__item.slds-is-completed .slds-progress__marker,
+  .slds-progress__item.slds-is-active .slds-progress__marker {
+    --slds-c-progress-marker-color-border: var(--slds-g-color-accent-container-1);
+  }
+
+  /* Completed icon: transparent border, accent-colored icon */
+  .slds-progress__item.slds-is-completed .slds-progress__marker_icon {
+    --slds-c-progress-marker-color-border: transparent;
+    --slds-c-progress-marker-color-foreground: var(--slds-g-color-accent-container-1);
+  }
+
+  /* Completed success icon (vertical) — success foreground overrides completed accent */
+  .slds-progress__item.slds-is-completed .slds-progress__marker_icon-success {
+    --slds-c-progress-marker-color-foreground: var(--slds-g-color-success-1);
+  }
+
+  /* Active: surface-matched ring shadow (embeds relay so shade adapts automatically) */
+  .slds-progress__item.slds-is-active .slds-progress__marker {
+    --slds-c-progress-marker-shadow: var(--slds-c-progress-surface-color-background) 0 0 0
+      var(--slds-g-sizing-2);
+  }
+
+  /* Active hover/focus: darker accent border */
+  .slds-progress__item.slds-is-active .slds-progress__marker:hover,
+  .slds-progress__item.slds-is-active .slds-progress__marker:focus {
+    --slds-c-progress-marker-color-border: var(--slds-g-color-border-accent-2);
+  }
+
+  /* Error: error foreground, transparent border, no ring */
+  .slds-progress__item.slds-has-error .slds-progress__marker,
+  .slds-progress__item.slds-has-error .slds-progress__marker:hover,
+  .slds-progress__item.slds-has-error .slds-progress__marker:focus {
+    --slds-c-progress-marker-color-foreground: var(--slds-g-color-error-1);
+    --slds-c-progress-marker-color-border: transparent;
+    --slds-c-progress-marker-shadow: none;
+  }
+
+  /* Vertical connector: accent color for active/completed/error preceding segments */
+  .slds-progress__item.slds-is-completed::before,
+  .slds-progress__item.slds-is-completed::after,
+  .slds-progress__item.slds-is-active::before,
+  .slds-progress__item.slds-has-error::before {
+    --slds-c-progress-connector-color-background: var(--slds-g-color-accent-container-1);
+  }
+
+  /* Success variant — muted success connector with opacity fade */
+  .slds-progress_success {
+    .slds-progress__item.slds-is-completed::before,
+    .slds-progress__item.slds-is-completed::after,
+    .slds-progress__item.slds-is-active::before,
+    .slds-progress__item.slds-has-error::before {
+      --slds-c-progress-connector-color-background: var(--slds-g-color-success-1);
+
+      opacity: var(--slds-c-progress-connector-opacity-success);
+    }
+  }
+
+  /**
+   * Shade variant — component is placed on a darker surface (e.g. modal footer).
+   * Overriding the surface relay hook adapts the active marker background and ring
+   * shadow automatically. The base dot border and the completed icon border don't
+   * auto-adapt, so they are re-pointed explicitly.
+   */
+  .slds-progress_shade {
+    --slds-c-progress-surface-color-background: var(--slds-g-color-surface-container-2);
+    --slds-c-progress-marker-color-border: var(--slds-c-progress-surface-color-background);
+  }
+
+  .slds-progress_shade .slds-progress__item.slds-is-completed .slds-progress__marker_icon {
+    --slds-c-progress-marker-color-border: var(--slds-c-progress-surface-color-background);
+  }
+}

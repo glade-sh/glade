@@ -1,0 +1,1304 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * A dialog popover, `.slds-popover`, can be applied to all variants of a dialog
+ * popover. It initiates the styles of the popover and enables `.slds-nubbin` to be applied.
+ *
+ * A dialog popover requires at least one focusable element.
+ *
+ * .slds-popover
+ */
+.slds-popover {
+  position: relative;
+  border-radius: var(--slds-g-radius-border-2);
+  width: var(--slds-g-sizing-15);
+  min-height: calc(1rem * 2); /* 1rem => $nubbin-size-default */
+  z-index: var(--slds-c-popover-position-zindex, 6000);
+  background-color: var(--slds-g-color-surface-container-1);
+  display: inline-block;
+  box-shadow: var(--_slds-c-popover-box-shadow);
+  /* TODO: Need to fix nubbin box-shadow along with adding shared hook */
+  /* border: 1px solid var(--slds-s-container-color-border, var(--slds-g-color-border-1)); */
+  border: var(--slds-s-container-sizing-border, var(--slds-g-sizing-border-1)) solid
+    var(--slds-g-color-border-1);
+}
+
+/**
+ * Applies styles for meta content of popover
+ */
+.slds-popover__meta {
+  margin-block-end: var(--slds-g-spacing-3);
+}
+
+/**
+ * Applies styles for primary content area of popover
+ */
+.slds-popover__body {
+  padding-block: var(--slds-g-spacing-3) var(--slds-g-spacing-2);
+  padding-inline: var(--slds-g-spacing-3);
+  color: var(--slds-s-container-color);
+  position: relative;
+  word-wrap: break-word;
+
+  .slds-popover__header {
+    padding-block: 0 var(--slds-g-spacing-2);
+    padding-inline: 0;
+  }
+
+  &:focus-visible {
+    box-shadow: var(--slds-g-shadow-outline-focus-1);
+    outline: 0;
+    z-index: 1;
+  }
+}
+
+.slds-popover__header,
+.slds-popover__footer {
+  position: relative;
+  padding-block: var(--slds-g-spacing-2);
+  padding-inline: var(--slds-g-spacing-3);
+  word-wrap: break-word;
+}
+
+/**
+ * Applies styles for top area of popover
+ */
+.slds-popover__header {
+  border-block-end: 0;
+  color: var(--slds-s-container-heading-font-color);
+  font-weight: var(--slds-s-container-heading-font-weight);
+
+  .slds-text-heading_small {
+    font-size: var(--slds-g-font-scale-3);
+  }
+  .slds-text-heading_medium {
+    font-size: var(--slds-g-font-scale-3);
+  }
+}
+
+/**
+ * Applies styles for footer area of popover
+ */
+.slds-popover__footer {
+  border-block-start: var(--slds-g-sizing-border-1) solid var(--slds-g-color-neutral-base-90);
+  background-color: var(--slds-s-container-footer-color-background, var(--slds-g-color-surface-container-2));
+  border-end-start-radius: inherit;
+  border-end-end-radius: inherit;
+  padding-block: var(--slds-g-spacing-2);
+  padding-inline: var(--slds-g-spacing-3);
+  color: var(--slds-s-container-footer-font-color);
+}
+
+/**
+ * Applies styles to center align content for footer area of a form popover
+ */
+.slds-popover__footer_form {
+  text-align: center;
+  background: var(--slds-g-color-surface-container-2);
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+  border-end-end-radius: var(--slds-g-radius-border-2);
+  border-end-start-radius: var(--slds-g-radius-border-2);
+}
+
+/**
+ * Applies a max-height and vertical scrolling to a popover body
+ */
+.slds-popover__body_small {
+  max-height: var(--slds-g-sizing-14);
+  overflow-y: auto;
+}
+
+/**
+ * Close button within a popover
+ */
+.slds-popover__close {
+  position: relative;
+  margin: var(--slds-g-spacing-1);
+  z-index: 6001;
+
+  .slds-icon-text-default {
+    --slds-c-icon-color-foreground: var(
+      --_slds-c-popover-close-btn-color,
+      var(--slds-s-icon-color-foreground)
+    );
+  }
+
+  &.slds-button_icon-inverse:focus-visible {
+    box-shadow: var(--slds-g-shadow-outset-focus-1);
+  }
+}
+
+/**
+ * Width modifier for popover - small
+ */
+.slds-popover_small {
+  max-width: var(--slds-g-sizing-14);
+}
+
+/**
+ * Width modifier for popover - medium
+ */
+.slds-popover_medium {
+  min-width: var(--slds-g-sizing-15);
+}
+
+/**
+ * Width modifier for popover - large
+ */
+.slds-popover_large {
+  min-width: calc(var(--slds-g-sizing-15) + var(--slds-g-sizing-12));
+  max-width: 512px;
+}
+
+.slds-popover[class*='theme_'] {
+  border: 0;
+}
+
+.slds-popover *:last-child {
+  margin-block-end: 0;
+}
+
+/**
+ * Modifier for popover to take 100% width
+ */
+.slds-popover_full-width {
+  width: 100%;
+}
+
+/**
+ * Modifier to hide a popover
+ */
+.slds-popover_hide {
+  display: none;
+}
+
+/**
+* Applies styles for dark variant of popover
+*/
+.slds-popover_dark {
+  background-color: var(--slds-g-color-surface-inverse-2);
+  color: var(--slds-g-color-on-surface-inverse-1);
+}
+
+.slds-popover_dark .slds-badge {
+  background-color: var(--slds-g-color-surface-container-1);
+}
+
+.slds-popover_dark .slds-popover__close {
+  color: var(--slds-g-color-on-surface-inverse-1);
+}
+
+.slds-popover_dark .slds-text-title {
+  color: var(--slds-g-color-on-surface-inverse-1); /* SLDS2 */
+}
+
+/* SLDS2 */
+.slds-popover_dark a {
+  color: var(--slds-g-color-on-surface-inverse-1);
+  text-decoration: underline;
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.slds-popover_dark .slds-icon-text-default {
+  fill: var(--slds-g-color-on-surface-inverse-1);
+}
+
+.slds-popover_dark .slds-popover__header {
+  color: var(--slds-g-color-on-surface-inverse-1);
+  padding-block-start: var(--slds-g-spacing-3);
+  padding-block-end: 0;
+}
+
+/* SLDS2 */
+.slds-popover_dark .slds-popover__body {
+  color: var(--slds-g-color-on-surface-inverse-1);
+}
+
+.slds-popover_dark .slds-popover__footer {
+  border-block-start-color: var(--slds-g-color-brand-base-10);
+  background-color: var(--slds-g-color-surface-inverse-2);
+
+  .slds-button_neutral:focus-visible {
+    box-shadow: var(--slds-g-shadow-outset-focus-1);
+    outline: 0;
+  }
+}
+
+/**
+ * Prompt components are used to provide an interactive custom message.
+ *
+ * Initializes a brand popover
+ */
+.slds-popover_brand .slds-popover__footer {
+  background-color: transparent;
+  border-color: transparent;
+}
+.slds-popover_brand .slds-popover__icon {
+  fill: var(--slds-g-color-accent-2);
+}
+
+/* Same as .slds-popover_brand .slds-popover__icon, needed for Lightning Components */
+.slds-popover_brand .slds-popover__body .slds-icon-text-default {
+  --slds-c-icon-color-foreground: var(--slds-g-color-accent-2);
+}
+
+.slds-popover_brand.slds-popover_brand-dark .slds-popover__icon {
+  fill: var(--slds-g-color-brand-base-10);
+}
+
+/**
+  * Applies popover brand styles to top
+  */
+.slds-popover_brand-top {
+  border-block-start-width: 0.25rem; /* 0.25rem => $popover-brand-border-width */
+  border-block-start-color: var(--slds-g-color-border-accent-1);
+}
+
+.slds-popover_brand-top.slds-nubbin_top::before,
+.slds-popover_brand-top.slds-nubbin_top-left::before,
+.slds-popover_brand-top.slds-nubbin_top-left-corner::before,
+.slds-popover_brand-top.slds-nubbin_top-right::before,
+.slds-popover_brand-top.slds-nubbin_top-right-corner::before {
+  margin-block-start: -0.1875rem; /* -0.1875rem => $nubbin-triangle-offset */
+  background: linear-gradient(
+    -45deg,
+    transparent 50%,
+    var(--slds-g-color-accent-container-1) 50%,
+    var(--slds-g-color-accent-container-1)
+  );
+}
+
+.slds-popover_brand-top.slds-nubbin_top::after,
+.slds-popover_brand-top.slds-nubbin_top-left::after,
+.slds-popover_brand-top.slds-nubbin_top-left-corner::after,
+.slds-popover_brand-top.slds-nubbin_top-right::after,
+.slds-popover_brand-top.slds-nubbin_top-right-corner::after {
+  margin-block-start: -0.1875rem; /* -0.1875rem => $nubbin-triangle-offset */
+  background: linear-gradient(-45deg, transparent 50%, transparent 50%, transparent);
+}
+
+.slds-popover_brand-top.slds-popover_brand-dark {
+  border-block-start-color: var(--slds-g-color-brand-base-10);
+}
+
+.slds-popover_brand-top.slds-popover_brand-dark.slds-nubbin_top::before,
+.slds-popover_brand-top.slds-popover_brand-dark.slds-nubbin_top-left::before,
+.slds-popover_brand-top.slds-popover_brand-dark.slds-nubbin_top-left-corner::before,
+.slds-popover_brand-top.slds-popover_brand-dark.slds-nubbin_top-right::before,
+.slds-popover_brand-top.slds-popover_brand-dark.slds-nubbin_top-right-corner::before {
+  margin-block-start: -0.1875rem; /* -0.1875rem => $nubbin-triangle-offset */
+  background: linear-gradient(
+    -45deg,
+    transparent 50%,
+    var(--slds-g-color-brand-base-10) 50%,
+    var(--slds-g-color-brand-base-10)
+  );
+}
+
+/**
+  * Applies popover brand styles to left
+  */
+.slds-popover_brand-left {
+  border-inline-start-width: 0.25rem; /* 0.25rem => $popover-brand-border-width */
+  border-inline-start-color: var(--slds-g-color-border-accent-1);
+}
+
+.slds-popover_brand-left.slds-nubbin_left::before,
+.slds-popover_brand-left.slds-nubbin_left-top::before,
+.slds-popover_brand-left.slds-nubbin_left-top-corner::before,
+.slds-popover_brand-left.slds-nubbin_left-bottom::before,
+.slds-popover_brand-left.slds-nubbin_left-bottom-corner::before {
+  margin-inline-start: -0.1875rem; /* -0.1875rem => $nubbin-triangle-offset */
+  background: linear-gradient(
+    -135deg,
+    transparent 50%,
+    var(--slds-g-color-accent-container-1) 50%,
+    var(--slds-g-color-accent-container-1)
+  );
+}
+
+.slds-popover_brand-left.slds-nubbin_left::after,
+.slds-popover_brand-left.slds-nubbin_left-top::after,
+.slds-popover_brand-left.slds-nubbin_left-top-corner::after,
+.slds-popover_brand-left.slds-nubbin_left-bottom::after,
+.slds-popover_brand-left.slds-nubbin_left-bottom-corner::after {
+  margin-inline-start: -0.1875rem; /* -0.1875rem => $nubbin-triangle-offset */
+  background: linear-gradient(-135deg, transparent 50%, transparent 50%, transparent);
+}
+
+.slds-popover_brand-left.slds-popover_brand-dark {
+  border-inline-start-color: var(--slds-g-color-brand-base-10);
+}
+
+.slds-popover_brand-left.slds-popover_brand-dark.slds-nubbin_left::before,
+.slds-popover_brand-left.slds-popover_brand-dark.slds-nubbin_left-top::before,
+.slds-popover_brand-left.slds-popover_brand-dark.slds-nubbin_left-top-corner::before,
+.slds-popover_brand-left.slds-popover_brand-dark.slds-nubbin_left-bottom::before,
+.slds-popover_brand-left.slds-popover_brand-dark.slds-nubbin_left-bottom-corner::before {
+  margin-inline-start: -0.1875rem; /* -0.1875rem => $nubbin-triangle-offset */
+  background: linear-gradient(
+    -135deg,
+    transparent 50%,
+    var(--slds-g-color-brand-base-10) 50%,
+    var(--slds-g-color-brand-base-10)
+  );
+}
+
+/**
+  * Applies popover brand styles to bottom
+  */
+.slds-popover_brand-bottom {
+  border-block-end-width: 0.25rem; /* 0.25rem => $popover-brand-border-width */
+  border-block-end-color: var(--slds-g-color-border-accent-1);
+}
+
+.slds-popover_brand-bottom.slds-nubbin_bottom::before,
+.slds-popover_brand-bottom.slds-nubbin_bottom-left::before,
+.slds-popover_brand-bottom.slds-nubbin_bottom-left-corner::before,
+.slds-popover_brand-bottom.slds-nubbin_bottom-right::before,
+.slds-popover_brand-bottom.slds-nubbin_bottom-right-corner::before {
+  margin-block-end: -0.1875rem; /* -0.1875rem => $nubbin-triangle-offset */
+  background: linear-gradient(
+    135deg,
+    transparent 50%,
+    var(--slds-g-color-accent-container-1) 50%,
+    var(--slds-g-color-accent-container-1)
+  );
+}
+
+.slds-popover_brand-bottom.slds-nubbin_bottom::after,
+.slds-popover_brand-bottom.slds-nubbin_bottom-left::after,
+.slds-popover_brand-bottom.slds-nubbin_bottom-left-corner::after,
+.slds-popover_brand-bottom.slds-nubbin_bottom-right::after,
+.slds-popover_brand-bottom.slds-nubbin_bottom-right-corner::after {
+  margin-block-end: -0.1875rem; /* -0.1875rem => $nubbin-triangle-offset */
+  background: linear-gradient(135deg, transparent 50%, transparent 50%, transparent);
+}
+
+.slds-popover_brand-bottom.slds-popover_brand-dark {
+  border-block-end-color: var(--slds-g-color-brand-base-10);
+}
+
+.slds-popover_brand-bottom.slds-popover_brand-dark.slds-nubbin_bottom::before,
+.slds-popover_brand-bottom.slds-popover_brand-dark.slds-nubbin_bottom-left::before,
+.slds-popover_brand-bottom.slds-popover_brand-dark.slds-nubbin_bottom-left-corner::before,
+.slds-popover_brand-bottom.slds-popover_brand-dark.slds-nubbin_bottom-right::before,
+.slds-popover_brand-bottom.slds-popover_brand-dark.slds-nubbin_bottom-right-corner::before {
+  margin-block-end: -0.1875rem; /* -0.1875rem => $nubbin-triangle-offset */
+  background: linear-gradient(
+    135deg,
+    transparent 50%,
+    var(--slds-g-color-brand-base-10) 50%,
+    var(--slds-g-color-brand-base-10)
+  );
+}
+
+/**
+  * Applies popover brand styles to right
+  */
+.slds-popover_brand-right {
+  border-inline-end-width: 0.25rem; /* 0.25rem => $popover-brand-border-width */
+  border-inline-end-color: var(--slds-g-color-border-accent-1);
+}
+
+.slds-popover_brand-right.slds-nubbin_right::before,
+.slds-popover_brand-right.slds-nubbin_right-top::before,
+.slds-popover_brand-right.slds-nubbin_right-top-corner::before,
+.slds-popover_brand-right.slds-nubbin_right-bottom::before,
+.slds-popover_brand-right.slds-nubbin_right-bottom-corner::before {
+  margin-inline-end: -0.1875rem; /* -0.1875rem => $nubbin-triangle-offset */
+  background: linear-gradient(
+    45deg,
+    transparent 50%,
+    var(--slds-g-color-accent-container-1) 50%,
+    var(--slds-g-color-accent-container-1)
+  );
+}
+
+.slds-popover_brand-right.slds-nubbin_right::after,
+.slds-popover_brand-right.slds-nubbin_right-top::after,
+.slds-popover_brand-right.slds-nubbin_right-top-corner::after,
+.slds-popover_brand-right.slds-nubbin_right-bottom::after,
+.slds-popover_brand-right.slds-nubbin_right-bottom-corner::after {
+  margin-inline-end: -0.1875rem; /* -0.1875rem => $nubbin-triangle-offset */
+  background: linear-gradient(45deg, transparent 50%, transparent 50%, transparent);
+}
+
+.slds-popover_brand-right.slds-popover_brand-dark {
+  border-inline-end-color: var(--slds-g-color-brand-base-10);
+}
+.slds-popover_brand-right.slds-popover_brand-dark.slds-nubbin_right::before,
+.slds-popover_brand-right.slds-popover_brand-dark.slds-nubbin_right-top::before,
+.slds-popover_brand-right.slds-popover_brand-dark.slds-nubbin_right-top-corner::before,
+.slds-popover_brand-right.slds-popover_brand-dark.slds-nubbin_right-bottom::before,
+.slds-popover_brand-right.slds-popover_brand-dark.slds-nubbin_right-bottom-corner::before {
+  margin-inline-end: -0.1875rem; /* -0.1875rem => $nubbin-triangle-offset */
+  background: linear-gradient(
+    45deg,
+    transparent 50%,
+    var(--slds-g-color-brand-base-10) 50%,
+    var(--slds-g-color-brand-base-10)
+  );
+}
+
+/**
+ * Panels
+ */
+
+.slds-popover_panel .slds-popover__header {
+  background: var(--slds-g-color-surface-container-2);
+  padding-block: var(--slds-g-spacing-3) var(--slds-g-spacing-2);
+  padding-inline: var(--slds-g-spacing-3);
+  border-start-start-radius: calc(var(--slds-g-radius-border-2) - 1px);
+  border-start-end-radius: calc(var(--slds-g-radius-border-2) - 1px);
+  border-block-end: 0;
+}
+
+.slds-popover_panel .slds-popover__body {
+  padding: 0;
+}
+
+.slds-popover_panel .slds-popover__body-list {
+  padding-block: var(--slds-g-spacing-3) var(--slds-g-spacing-2);
+  padding-inline: var(--slds-g-spacing-3);
+  border-block-start: 1px solid var(--slds-g-color-neutral-base-90);
+}
+
+.slds-popover_panel.slds-nubbin_left-top::before,
+.slds-popover_panel.slds-nubbin_left-top::after,
+.slds-popover_panel.slds-nubbin--left-top::before,
+.slds-popover_panel.slds-nubbin--left-top::after,
+.slds-popover_panel.slds-nubbin_right-top::before,
+.slds-popover_panel.slds-nubbin_right-top::after,
+.slds-popover_panel.slds-nubbin--right-top::before,
+.slds-popover_panel.slds-nubbin--right-top::after,
+.slds-popover_panel.slds-nubbin_top-left::before,
+.slds-popover_panel.slds-nubbin_top-left::after,
+.slds-popover_panel.slds-nubbin--top-left::before,
+.slds-popover_panel.slds-nubbin--top-left::after,
+.slds-popover_panel.slds-nubbin_top-right::before,
+.slds-popover_panel.slds-nubbin_top-right::after,
+.slds-popover_panel.slds-nubbin--top-right::before,
+.slds-popover_panel.slds-nubbin--top-right::after {
+  background: var(--slds-g-color-surface-container-2);
+}
+
+.slds-popover_panel.slds-nubbin_left-top::before,
+.slds-popover_panel.slds-nubbin_left-top::after,
+.slds-popover_panel.slds-nubbin--left-top::before,
+.slds-popover_panel.slds-nubbin--left-top::after,
+.slds-popover_panel.slds-nubbin_right-top::before,
+.slds-popover_panel.slds-nubbin_right-top::after,
+.slds-popover_panel.slds-nubbin--right-top::before,
+.slds-popover_panel.slds-nubbin--right-top::after {
+  inset-block-start: var(--slds-g-spacing-7);
+}
+
+.slds-popover_panel__label {
+  font-size: var(--slds-g-font-scale-1);
+  font-weight: var(--slds-g-font-weight-7);
+}
+
+/**
+  * .slds-nubbin_top
+  */
+.slds-nubbin_top::before {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-inline-start: 50%;
+  inset-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+}
+
+.slds-nubbin_top::after {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-inline-start: 50%;
+  inset-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  box-shadow: var(--_slds-c-popover-top-nubbin-shadow);
+  z-index: -1;
+}
+
+/**
+  * .slds-nubbin_top-left
+  */
+.slds-nubbin_top-left::before,
+.slds-nubbin_top-left-corner::before {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-inline-start: 50%;
+  inset-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+}
+
+.slds-nubbin_top-left::after,
+.slds-nubbin_top-left-corner::after {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-inline-start: 50%;
+  inset-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  box-shadow: var(--_slds-c-popover-top-nubbin-shadow);
+  z-index: -1;
+}
+
+.slds-nubbin_top-left::before,
+.slds-nubbin_top-left::after,
+.slds-nubbin_top-left-corner::before,
+.slds-nubbin_top-left-corner::after {
+  inset-inline-start: var(--slds-g-spacing-5);
+  inset-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+}
+
+/**
+  * .slds-nubbin_top-right
+  */
+.slds-nubbin_top-right::before,
+.slds-nubbin_top-right-corner::before {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-inline-start: 50%;
+  inset-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+}
+
+.slds-nubbin_top-right::after,
+.slds-nubbin_top-right-corner::after {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-inline-start: 50%;
+  inset-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  box-shadow: var(--_slds-c-popover-top-nubbin-shadow);
+  z-index: -1;
+}
+
+.slds-nubbin_top-right::before,
+.slds-nubbin_top-right::after,
+.slds-nubbin_top-right-corner::before,
+.slds-nubbin_top-right-corner::after {
+  inset-inline-start: auto;
+  inset-inline-end: var(--slds-g-spacing-5);
+  inset-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-inline-end: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+}
+
+/**
+  * .slds-nubbin_bottom
+  */
+.slds-nubbin_bottom::before {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-inline-start: 50%;
+  inset-block-end: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+}
+
+.slds-nubbin_bottom::after {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-inline-start: 50%;
+  inset-block-end: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  box-shadow: var(--_slds-c-popover-bottom-nubbin-shadow);
+  z-index: -1;
+}
+
+/**
+  * .slds-nubbin_bottom-left
+  */
+.slds-nubbin_bottom-left::before,
+.slds-nubbin_bottom-left-corner::before {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-inline-start: 50%;
+  inset-block-end: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+}
+
+.slds-nubbin_bottom-left::after,
+.slds-nubbin_bottom-left-corner::after {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-inline-start: 50%;
+  inset-block-end: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  box-shadow: var(--_slds-c-popover-bottom-nubbin-shadow);
+  z-index: -1;
+}
+
+.slds-nubbin_bottom-left::before,
+.slds-nubbin_bottom-left::after,
+.slds-nubbin_bottom-left-corner::before,
+.slds-nubbin_bottom-left-corner::after {
+  inset-inline-start: var(--slds-g-spacing-5);
+  inset-block-start: 100%;
+  margin-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+}
+
+/**
+  * .slds-nubbin_bottom-right
+  */
+.slds-nubbin_bottom-right::before,
+.slds-nubbin_bottom-right-corner::before {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-inline-start: 50%;
+  inset-block-end: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+}
+
+.slds-nubbin_bottom-right::after,
+.slds-nubbin_bottom-right-corner::after {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-inline-start: 50%;
+  inset-block-end: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  box-shadow: var(--_slds-c-popover-bottom-nubbin-shadow);
+  z-index: -1;
+}
+
+.slds-nubbin_bottom-right::before,
+.slds-nubbin_bottom-right::after,
+.slds-nubbin_bottom-right-corner::before,
+.slds-nubbin_bottom-right-corner::after {
+  inset-inline-start: auto;
+  inset-inline-end: var(--slds-g-spacing-5);
+  inset-block-start: 100%;
+  margin-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-inline-end: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+}
+
+/**
+  * .slds-nubbin_left
+  */
+.slds-nubbin_left::before {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-block-start: 50%;
+  inset-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+}
+
+.slds-nubbin_left::after {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-block-start: 50%;
+  inset-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  box-shadow: var(--_slds-c-popover-left-nubbin-shadow);
+  z-index: -1;
+}
+
+/**
+  * .slds-nubbin_left-top
+  */
+.slds-nubbin_left-top::before,
+.slds-nubbin_left-top-corner::before {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-block-start: 50%;
+  inset-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+}
+
+.slds-nubbin_left-top::after,
+.slds-nubbin_left-top-corner::after {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-block-start: 50%;
+  inset-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  box-shadow: var(--_slds-c-popover-left-nubbin-shadow);
+  z-index: -1;
+}
+
+.slds-nubbin_left-top::before,
+.slds-nubbin_left-top::after,
+.slds-nubbin_left-top-corner::before,
+.slds-nubbin_left-top-corner::after {
+  inset-block-start: var(--slds-g-spacing-5);
+}
+
+/**
+  * .slds-nubbin_left-bottom
+  */
+.slds-nubbin_left-bottom::before,
+.slds-nubbin_left-bottom-corner::before {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-block-start: 50%;
+  inset-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-block-end: -1px;
+}
+
+.slds-nubbin_left-bottom::after,
+.slds-nubbin_left-bottom-corner::after {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-block-start: 50%;
+  inset-inline-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  box-shadow: var(--_slds-c-popover-left-nubbin-shadow);
+  z-index: -1;
+}
+
+.slds-nubbin_left-bottom::before,
+.slds-nubbin_left-bottom::after,
+.slds-nubbin_left-bottom-corner::before,
+.slds-nubbin_left-bottom-corner::after {
+  inset-block-start: auto;
+  inset-block-end: var(--slds-g-spacing-4);
+}
+
+/**
+  * .slds-nubbin_right
+  */
+.slds-nubbin_right::before {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-block-start: 50%;
+  inset-inline-end: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+}
+
+.slds-nubbin_right::after {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-block-start: 50%;
+  inset-inline-end: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  box-shadow: var(--_slds-c-popover-right-nubbin-shadow);
+  z-index: -1;
+}
+
+/**
+  * .slds-nubbin_right-top
+  */
+.slds-nubbin_right-top::before,
+.slds-nubbin_right-top-corner::before {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-block-start: 50%;
+  inset-inline-end: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+}
+
+.slds-nubbin_right-top::after,
+.slds-nubbin_right-top-corner::after {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-block-start: 50%;
+  inset-inline-end: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  box-shadow: var(--_slds-c-popover-right-nubbin-shadow);
+  z-index: -1;
+}
+
+.slds-nubbin_right-top::before,
+.slds-nubbin_right-top::after,
+.slds-nubbin_right-top-corner::before,
+.slds-nubbin_right-top-corner::after {
+  inset-block-start: var(--slds-g-spacing-5);
+}
+
+/**
+  * .slds-nubbin_right-bottom
+  */
+.slds-nubbin_right-bottom::before,
+.slds-nubbin_right-bottom-corner::before {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-block-start: 50%;
+  inset-inline-end: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-bottom: -1px;
+}
+
+.slds-nubbin_right-bottom::after,
+.slds-nubbin_right-bottom-corner::after {
+  width: 1rem;
+  height: 1rem;
+  position: absolute;
+  transform: rotate(45deg);
+  content: '';
+  background-color: inherit;
+  inset-block-start: 50%;
+  inset-inline-end: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  margin-block-start: calc((1rem * 0.5) * -1); /* 1rem => $nubbin-size-default */
+  box-shadow: var(--_slds-c-popover-right-nubbin-shadow);
+  z-index: -1;
+}
+
+.slds-nubbin_right-bottom::before,
+.slds-nubbin_right-bottom::after,
+.slds-nubbin_right-bottom-corner::before,
+.slds-nubbin_right-bottom-corner::after {
+  inset-block-start: auto;
+  inset-block-end: 1rem;
+}
+
+/**
+  * .slds-nubbin_top-left-corner
+  */
+.slds-nubbin_top-left-corner {
+  border-radius: var(--slds-g-radius-border-1) var(--slds-g-radius-border-2) var(--slds-g-radius-border-2);
+}
+
+.slds-nubbin_top-left-corner::before,
+.slds-nubbin_top-left-corner::after {
+  inset-inline-start: var(--slds-g-spacing-3);
+}
+
+/**
+  * .slds-nubbin_bottom-left-corner
+  */
+.slds-nubbin_bottom-left-corner {
+  border-start-start-radius: var(--slds-g-radius-border-2);
+  border-start-end-radius: var(--slds-g-radius-border-2);
+  border-end-start-radius: var(--slds-g-radius-border-1);
+  border-end-end-radius: var(--slds-g-radius-border-2);
+}
+
+.slds-nubbin_bottom-left-corner::before,
+.slds-nubbin_bottom-left-corner::after {
+  inset-inline-start: var(--slds-g-spacing-3);
+}
+
+/**
+  * .slds-nubbin_top-right-corner
+  */
+.slds-nubbin_top-right-corner {
+  border-start-start-radius: var(--slds-g-radius-border-2);
+  border-start-end-radius: var(--slds-g-radius-border-1);
+  border-end-start-radius: var(--slds-g-radius-border-2);
+  border-end-end-radius: var(--slds-g-radius-border-2);
+}
+
+.slds-nubbin_top-right-corner::before,
+.slds-nubbin_top-right-corner::after {
+  inset-inline-end: var(--slds-g-spacing-3);
+}
+
+/**
+  * .slds-nubbin_bottom-right-corner
+  */
+.slds-nubbin_bottom-right-corner {
+  border-start-start-radius: var(--slds-g-radius-border-2);
+  border-start-end-radius: var(--slds-g-radius-border-2);
+  border-end-start-radius: var(--slds-g-radius-border-2);
+  border-end-end-radius: var(--slds-g-radius-border-1);
+}
+
+.slds-nubbin_bottom-right-corner::before,
+.slds-nubbin_bottom-right-corner::after {
+  inset-inline-end: var(--slds-g-spacing-3);
+}
+
+/**
+  * .slds-nubbin_left-top-corner
+  */
+.slds-nubbin_left-top-corner {
+  border-start-start-radius: var(--slds-g-radius-border-1);
+  border-start-end-radius: var(--slds-g-radius-border-2);
+  border-end-start-radius: var(--slds-g-radius-border-2);
+  border-end-end-radius: var(--slds-g-radius-border-2);
+}
+.slds-nubbin_left-top-corner::before,
+.slds-nubbin_left-top-corner::after {
+  inset-block-start: var(--slds-g-spacing-3);
+}
+
+/**
+  * .slds-nubbin_right-top-corner
+  */
+.slds-nubbin_right-top-corner {
+  border-start-start-radius: var(--slds-g-radius-border-2);
+  border-start-end-radius: var(--slds-g-radius-border-1);
+  border-end-start-radius: var(--slds-g-radius-border-2);
+  border-end-end-radius: var(--slds-g-radius-border-2);
+}
+
+.slds-nubbin_right-top-corner::before,
+.slds-nubbin_right-top-corner::after {
+  inset-block-start: var(--slds-g-spacing-3);
+}
+
+/**
+  * .slds-nubbin_left-bottom-corner
+  */
+.slds-nubbin_left-bottom-corner {
+  border-start-start-radius: var(--slds-g-radius-border-2);
+  border-start-end-radius: var(--slds-g-radius-border-2);
+  border-end-start-radius: var(--slds-g-radius-border-1);
+  border-end-end-radius: var(--slds-g-radius-border-2);
+}
+
+.slds-nubbin_left-bottom-corner::before,
+.slds-nubbin_left-bottom-corner::after {
+  inset-block-end: var(--slds-g-spacing-1);
+}
+
+/**
+  * .slds-nubbin_right-bottom-corner
+  */
+.slds-nubbin_right-bottom-corner {
+  border-start-start-radius: var(--slds-g-radius-border-2);
+  border-start-end-radius: var(--slds-g-radius-border-2);
+  border-end-start-radius: var(--slds-g-radius-border-2);
+  border-end-end-radius: var(--slds-g-radius-border-1);
+}
+
+.slds-nubbin_right-bottom-corner::before,
+.slds-nubbin_right-bottom-corner::after {
+  inset-block-end: var(--slds-g-spacing-1);
+}
+
+/**
+ * Walkthrough components are used to provide an interactive and educational prospect experience for setup.
+ *
+ * Initializes a walkthrough non-modal dialog
+ *
+ * deprecate('4.0.0', 'Use .slds-popover_dark instead.')
+*/
+
+/* .slds-popover_walkthrough { ... } */
+
+/**
+ * Error popovers are used to notify the user of errors on the page
+ *
+ * If the elements within the error popover exceed 150px, use the `.slds-popover__body_scrollable`  modifier on the body element.
+ *
+ * In some cases, such as displaying a list of menu items, padding may not be necessary in the popover body. To remove the padding, add the `slds-p-around_none" utility class to the body element.
+ *
+ * Initializes an error non-modal dialog
+ */
+.slds-popover_error .slds-popover__header {
+  background-color: var(--slds-g-color-error-container-1);
+  color: var(--slds-g-color-on-error-1);
+  padding-inline-start: var(--slds-g-spacing-3);
+}
+
+/* SLDS2 */
+.slds-popover_error .slds-popover__header .slds-icon {
+  fill: currentColor;
+}
+
+/* SLDS2 */
+.slds-popover_error .slds-popover__close {
+  --slds-c-icon-color-foreground: var(--slds-g-color-on-error-1);
+
+  color: var(--slds-g-color-on-error-1);
+}
+
+/* SLDS2 | Uses a similar approach as per Alert and Toast */
+.slds-popover_error .slds-button_icon:hover,
+.slds-popover_error .slds-button_icon:focus-visible {
+  color: var(--slds-s-alert-close-button-hover, color-mix(in oklab, currentColor, transparent 25%));
+}
+
+.slds-popover_error .slds-popover__footer {
+  background-color: transparent;
+}
+
+.slds-popover_error .slds-popover__footer .slds-button {
+  text-decoration: none;
+}
+
+.slds-popover_error .slds-popover__footer .slds-button.slds-button_neutral {
+  color: var(--slds-g-color-accent-2);
+}
+
+.slds-popover_error.slds-nubbin_top::before,
+.slds-popover_error.slds-nubbin_top-left::before,
+.slds-popover_error.slds-nubbin_top-right::before,
+.slds-popover_error.slds-nubbin_left-top::before,
+.slds-popover_error.slds-nubbin_right-top::before {
+  background-color: var(--slds-g-color-error-container-1);
+}
+.slds-popover_error .slds-popover__body {
+  padding-inline-start: var(--slds-g-spacing-7);
+}
+
+.slds-popover_error .slds-popover__header,
+.slds-popover_warning .slds-popover__header {
+  border-start-start-radius: calc(var(--slds-g-radius-border-2) - 1px);
+  border-start-end-radius: calc(var(--slds-g-radius-border-2) - 1px);
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.slds-popover_error .slds-popover__body_scrollable,
+.slds-popover_warning .slds-popover__body_scrollable {
+  max-height: 150px;
+  overflow-y: auto;
+  border-block-end: var(--slds-g-sizing-border-1) solid var(--slds-g-color-neutral-base-90);
+}
+
+.slds-popover_error .slds-popover__body_scrollable + .slds-popover__footer,
+.slds-popover_warning .slds-popover__body_scrollable + .slds-popover__footer {
+  border-block-start: 0;
+}
+
+/**
+ * Warning popovers are used to warn the user about information on the page that deserves caution
+ *
+ * If the elements within the error popover exceed 150px, use the `.slds-popover__body_scrollable` modifier on the body element.
+ *
+ * In some cases, such as displaying a list of menu items, padding may not be necessary in the popover body. To remove the padding, add the `slds-p-around_none" utility class to the body element.
+ *
+ * Initializes an warning non-modal dialog
+ */
+.slds-popover_warning button {
+  color: var(--slds-g-color-neutral-base-30);
+  text-decoration: underline;
+}
+
+.slds-popover_warning button:hover {
+  color: var(--slds-g-color-neutral-base-50);
+}
+
+.slds-popover_warning button:focus {
+  color: var(--slds-g-color-neutral-base-30);
+}
+
+.slds-popover_warning button:active {
+  color: var(--slds-g-color-neutral-base-50);
+}
+
+.slds-popover_warning .slds-popover__header {
+  background-color: var(--slds-g-color-warning-container-1);
+  color: var(--slds-g-color-on-warning-1);
+}
+
+/* SLDS2 */
+.slds-popover_warning .slds-popover__header .slds-icon {
+  fill: currentColor;
+}
+
+/* SLDS2 */
+.slds-popover_warning .slds-button_icon {
+  --slds-c-icon-color-foreground: var(--slds-g-color-on-warning-1);
+
+  color: var(--slds-g-color-on-warning-1);
+}
+
+/* SLDS2 | Uses a similar approach as per Alert and Toast */
+.slds-popover_warning .slds-button_icon:hover,
+.slds-popover_warning .slds-button_icon:focus-visible {
+  color: var(--slds-s-alert-close-button-hover, color-mix(in oklab, currentColor, transparent 25%));
+}
+
+.slds-popover_warning.slds-nubbin_top::before,
+.slds-popover_warning.slds-nubbin_top-left::before,
+.slds-popover_warning.slds-nubbin_top-right::before,
+.slds-popover_warning.slds-nubbin_left-top::before,
+.slds-popover_warning.slds-nubbin_right-top::before {
+  background-color: var(--slds-g-color-warning-container-1);
+}
+
+.slds-popover_warning .slds-popover__body {
+  padding-inline-start: var(--slds-g-spacing-7);
+}
+
+.slds-popover_warning .slds-popover__footer {
+  background-color: transparent;
+}
+
+.slds-popover_warning .slds-popover__footer .slds-button {
+  text-decoration: none;
+}
+
+.slds-popover_warning .slds-popover__footer .slds-button.slds-button_neutral {
+  color: var(--slds-g-color-accent-2);
+}
+
+/**
+ * Prompt components are used to provide an interactive custom message.
+ *
+ * Initializes a prompt non-modal dialog
+ */
+
+.slds-popover_prompt {
+  width: calc(var(--slds-g-sizing-15) + var(--slds-g-sizing-12));
+
+  .slds-popover__body {
+    padding-block: var(--slds-g-spacing-3) var(--slds-g-spacing-2);
+    padding-inline: var(--slds-g-spacing-3);
+  }
+
+  .slds-popover__footer {
+    border-block-start: inherit;
+  }
+}
+
+/**
+  * Applies styles for heading text of prompt
+  */
+.slds-popover_prompt__heading {
+  font-size: var(--slds-s-container-heading-font-size, var(--slds-g-font-scale-2));
+  line-height: var(--slds-g-font-lineheight-2);
+  font-weight: var(--slds-g-font-weight-4);
+}
+
+/**
+  * Applies styles for the optional action link in the footer of prompt
+  */
+.slds-popover_prompt__action-link {
+  margin-inline-end: var(--slds-g-spacing-4);
+}
+
+/**
+ * Position
+ */
+.slds-popover_prompt_top,
+.slds-popover_prompt_top-right,
+.slds-popover_prompt_top-left,
+.slds-popover_prompt_bottom,
+.slds-popover_prompt_bottom-right,
+.slds-popover_prompt_bottom-left {
+  position: absolute;
+}
+
+.slds-popover_prompt_top,
+.slds-popover_prompt_top-right,
+.slds-popover_prompt_top-left {
+  inset-block-start: var(--slds-g-spacing-2);
+}
+
+.slds-popover_prompt_bottom,
+.slds-popover_prompt_bottom-right,
+.slds-popover_prompt_bottom-left {
+  inset-block-end: var(--slds-g-spacing-2);
+}
+
+.slds-popover_prompt_top,
+.slds-popover_prompt_bottom {
+  inset-inline-start: 50%;
+  margin-inline-start: calc(((var(--slds-g-sizing-15) + var(--slds-g-sizing-12)) * 0.5) * -1);
+}
+
+.slds-popover_prompt_top-right,
+.slds-popover_prompt_bottom-right {
+  inset-inline-end: var(--slds-g-spacing-2);
+}
+
+.slds-popover_prompt_top-left,
+.slds-popover_prompt_bottom-left {
+  inset-inline-start: var(--slds-g-spacing-2);
+}
+
+/* Deprecated */
+
+/*
+.slds-tooltip { ... }
+
+.slds-tooltip__body { ...}
+
+.slds-popover_tooltip { ... }
+
+.slds-popover_tooltip .slds-popover__body { ... }
+*/

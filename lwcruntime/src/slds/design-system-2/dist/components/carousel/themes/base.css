@@ -1,0 +1,131 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+.slds-carousel {
+  position: relative;
+  background-color: var(--slds-c-carousel-color-background);
+  color: var(--slds-c-carousel-color-foreground);
+}
+
+.slds-carousel__stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.slds-carousel__panels {
+  display: flex;
+  transition: transform 250ms ease-in;
+  min-height: 0%;
+}
+
+.slds-carousel__panel {
+  flex: 0 0 100%;
+  max-width: 100%;
+}
+
+.slds-carousel__panel-action {
+  display: block;
+  border-width: var(--slds-c-carousel-panel-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-carousel-panel-color-border, transparent);
+  border-radius: var(--slds-c-carousel-panel-radius-border);
+  margin-block: var(--slds-c-carousel-panel-spacing-block);
+  margin-inline: var(--slds-c-carousel-panel-spacing-inline);
+  box-shadow: var(--slds-c-carousel-panel-shadow);
+
+  &:focus-visible {
+    outline: 0;
+    --slds-c-carousel-panel-shadow: var(--slds-c-carousel-panel-shadow-focus);
+  }
+}
+
+.slds-carousel__image {
+  border-start-start-radius: inherit;
+  border-start-end-radius: inherit;
+  overflow: hidden;
+
+  > img {
+    width: 100%;
+  }
+}
+
+.slds-carousel__content {
+  background-color: var(--slds-c-carousel-content-color-background);
+  color: var(--slds-c-carousel-content-color-foreground);
+  padding-block: var(--slds-c-carousel-content-spacing-block);
+  padding-inline: var(--slds-c-carousel-content-spacing-inline);
+  border-end-start-radius: inherit;
+  border-end-end-radius: inherit;
+  text-align: center;
+  height: var(--slds-c-carousel-content-sizing-block);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.slds-carousel__content-title {
+  font-size: var(--slds-c-carousel-content-title-font-size);
+  font-weight: var(--slds-c-carousel-content-title-font-weight);
+}
+
+.slds-carousel__indicators {
+  align-self: center;
+  margin-block: var(--slds-c-carousel-indicators-spacing-block);
+  margin-inline: 0;
+}
+
+.slds-carousel__indicator {
+  display: inline-flex;
+  margin-block: 0;
+  margin-inline: var(--slds-c-carousel-indicator-spacing-inline);
+}
+
+.slds-carousel__indicator-action {
+  width: var(--slds-c-carousel-indicator-sizing);
+  height: var(--slds-c-carousel-indicator-sizing);
+  background-color: var(--slds-c-carousel-indicator-color-background);
+  border-width: var(--slds-c-carousel-indicator-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-carousel-indicator-color-border, transparent);
+  border-radius: 50%;
+  box-shadow: var(--slds-c-carousel-indicator-shadow);
+
+  &.slds-is-active,
+  &.slds-is-active:hover {
+    --slds-c-carousel-indicator-color-background: var(--slds-c-carousel-indicator-color-background-active);
+    --slds-c-carousel-indicator-color-border: var(--slds-c-carousel-indicator-color-border-active);
+  }
+
+  &.slds-is-active {
+    --slds-c-carousel-indicator-shadow: var(--slds-c-carousel-indicator-shadow-active);
+  }
+
+  &:hover {
+    --slds-c-carousel-indicator-color-background: var(--slds-c-carousel-indicator-color-background-hover);
+  }
+
+  &:focus-visible {
+    outline: 0;
+    --slds-c-carousel-indicator-shadow: var(--slds-c-carousel-indicator-shadow-focus);
+    --slds-c-carousel-indicator-color-background: var(--slds-c-carousel-indicator-color-background-focus);
+    --slds-c-carousel-indicator-color-border: var(--slds-c-carousel-indicator-color-border-focus);
+  }
+}
+
+.slds-carousel__autoplay {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-end: var(--slds-c-carousel-autoplay-inset-block-end);
+  margin-block: var(--slds-c-carousel-autoplay-spacing-block);
+  margin-inline: var(--slds-c-carousel-autoplay-spacing-inline);
+
+  .slds-button__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

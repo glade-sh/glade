@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * Setup Assistant component
+ */
+.slds-setup-assistant {
+  padding: var(--slds-g-spacing-4);
+}
+
+/**
+ * Creates a Setup Assistant list item
+ */
+.slds-setup-assistant__item {
+  border-block-end: 1px var(--slds-g-color-disabled-1) solid;
+  padding-block: var(--slds-g-spacing-6);
+  padding-inline: 0;
+
+  &:first-child {
+    padding-block-start: 0;
+  }
+
+  &:last-child {
+    padding-block-end: 0;
+    border-bottom: 0;
+  }
+}
+
+/**
+ * Creates a Setup Assistant step
+ */
+
+/* .slds-setup-assistant__step { } */
+
+/**
+ * Setup Assistant step's summary portion
+ */
+.slds-setup-assistant__step-summary {
+  .slds-progress-ring_large {
+    top: 1px;
+  }
+}
+
+[dir='rtl'] .slds-setup-assistant__step-summary .slds-media__figure {
+  margin-inline-start: var(--slds-g-spacing-3);
+}
+
+/**
+ * Add a right margin to Setup Assistant step's summary content
+ */
+.slds-setup-assistant__step-summary-content {
+  margin-inline-end: var(--slds-g-spacing-8);
+}
+
+[dir='rtl'] .slds-setup-assistant__step-summary-content {
+  margin-inline-end: 0;
+}
+
+/**
+ * Add bottom padding to Setup Assistant step's summary title
+ */
+.slds-setup-assistant__step-summary-title {
+  padding-block-end: var(--slds-g-spacing-2);
+  font-weight: var(--slds-g-font-weight-7);
+}
+
+/**
+ * Add left padding before Setup Assistant step's detail portion
+ */
+.slds-setup-assistant__step-detail {
+  padding-inline-start: 2.75rem;
+}
+
+[dir='rtl'] .slds-setup-assistant__step-detail {
+  padding-inline-end: var(--slds-g-spacing-5);
+  padding-inline-start: var(--slds-g-spacing-4);
+}
+[dir='rtl'] .slds-setup-assistant__step-detail .slds-media_center {
+  margin-inline-end: var(--slds-g-spacing-4);
+}
+[dir='rtl'] .slds-setup-assistant__step-detail .slds-media__figure {
+  margin-inline-start: var(--slds-g-spacing-3);
+}

@@ -1,0 +1,259 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * Initializes a visual picker component
+ */
+.slds-visual-picker {
+  display: inline-flex;
+  position: relative;
+  flex-direction: column;
+  border: 0;
+  border-radius: 0;
+  text-align: center;
+  cursor: pointer;
+
+  + .slds-visual-picker {
+    margin-inline-start: var(--slds-g-spacing-4);
+  }
+
+  &:active .slds-visual-picker__figure {
+    border: var(--slds-g-sizing-border-1) solid var(--slds-g-color-accent-1);
+    box-shadow: 0 0 0 1px var(--slds-g-color-accent-1) inset;
+  }
+
+  &:hover .slds-visual-picker__figure {
+    cursor: pointer;
+  }
+
+  input:not(:disabled) ~ label:hover .slds-visual-picker__figure {
+    cursor: pointer;
+    outline: 0;
+    border: var(--slds-g-sizing-border-1) solid var(--slds-g-color-accent-1);
+    box-shadow: 0 0 0 1px var(--slds-g-color-accent-1) inset;
+  }
+}
+
+/* Hide input */
+.slds-visual-picker input {
+  width: 1px;
+  height: 1px;
+  border: 0;
+  clip: rect(0 0 0 0);
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+
+  &:focus-visible ~ label .slds-visual-picker__figure {
+    border: var(--slds-g-sizing-border-1) solid var(--slds-g-color-accent-1);
+    box-shadow: var(--slds-g-shadow-outset-focus-1);
+    outline: 0;
+  }
+
+  &:checked ~ label .slds-visual-picker__figure {
+    box-shadow: var(--slds-s-container-shadow);
+  }
+
+  &:checked:focus-visible ~ label .slds-visual-picker__figure {
+    box-shadow: var(--slds-g-shadow-outset-focus-1);
+  }
+
+  &:checked ~ label .slds-is-not-selected {
+    display: none;
+  }
+
+  &:checked ~ label .slds-is-selected {
+    display: block;
+  }
+
+  /**
+    * Icon within visual picker
+    */
+  &:checked ~ label .slds-visual-picker__icon {
+    background-color: var(--slds-g-color-accent-1);
+    border: var(--slds-g-sizing-border-1) solid var(--slds-g-color-accent-1);
+  }
+}
+
+/**
+  * Tile (non-coverable) + checked outline
+  */
+.slds-visual-picker input:checked ~ label .slds-visual-picker__text {
+  border: var(--slds-g-sizing-border-1) solid var(--slds-g-color-accent-1);
+  box-shadow: 0 0 0 1px var(--slds-g-color-accent-1) inset;
+
+  /**
+  * Check indicator background
+  */
+  &::after {
+    content: '';
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    border-color: transparent;
+    border-style: solid;
+    border-radius: 0 var(--slds-g-radius-border-2) 0 0;
+    border-width: 1rem;
+    border-inline-end-color: var(--slds-g-color-accent-1);
+    border-block-start-color: var(--slds-g-color-accent-1);
+  }
+}
+
+.slds-visual-picker input:disabled {
+  cursor: not-allowed;
+  user-select: none;
+
+  ~ label .slds-visual-picker__body,
+  ~ label .slds-visual-picker__text,
+  ~ label .slds-visual-picker__text .slds-text-title {
+    color: var(--slds-g-color-on-disabled-2);
+  }
+
+  ~ label .slds-visual-picker__figure .slds-icon {
+    fill: var(--slds-g-color-on-disabled-2);
+  }
+  &:checked ~ label .slds-visual-picker__text::after {
+    border-inline-end-color: var(--slds-g-color-disabled-1);
+    border-block-start-color: var(--slds-g-color-disabled-1);
+  }
+}
+
+.slds-visual-picker input:disabled ~ label .slds-visual-picker__figure {
+  border-color: var(--slds-g-color-disabled-1);
+  background-color: var(--slds-g-color-disabled-container-2);
+  box-shadow: none;
+
+  &:hover {
+    cursor: not-allowed;
+    user-select: none;
+    box-shadow: none;
+  }
+}
+
+/**
+ * Visual container for icon and text
+ */
+.slds-visual-picker__figure {
+  display: block;
+  background: var(--slds-g-color-surface-container-1);
+  box-shadow: var(--slds-s-container-shadow, var(--slds-g-shadow-2));
+  border: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-1);
+  border-radius: var(--slds-g-radius-border-2);
+  text-align: center;
+  font-weight: var(--slds-s-container-heading-font-weight);
+
+  .slds-icon-action-check {
+    fill: var(--slds-g-color-on-accent-1);
+  }
+
+  span {
+    display: block;
+  }
+
+  .slds-is-selected {
+    display: none;
+  }
+}
+
+/**
+ * Size modifier to adjust to the default size of medium
+ */
+.slds-visual-picker_medium {
+  .slds-visual-picker__figure,
+  .slds-visual-picker__body {
+    width: calc(var(--slds-g-sizing-13) + var(--slds-g-sizing-9));
+  }
+
+  .slds-visual-picker__figure {
+    height: calc(var(--slds-g-sizing-13) + var(--slds-g-sizing-9));
+  }
+}
+
+/**
+ * Size modifier to adjust to the size of large
+ */
+.slds-visual-picker_large {
+  .slds-visual-picker__figure,
+  .slds-visual-picker__body {
+    width: var(--slds-g-sizing-14);
+  }
+
+  .slds-visual-picker__figure {
+    height: var(--slds-g-sizing-14);
+  }
+}
+
+/**
+ * Size modifier to adjust to the size of small
+ */
+.slds-visual-picker_small {
+  .slds-visual-picker__figure,
+  .slds-visual-picker__body {
+    width: calc(var(--slds-g-sizing-13) - var(--slds-g-sizing-7));
+  }
+
+  .slds-visual-picker__figure {
+    height: calc(var(--slds-g-sizing-13) - var(--slds-g-sizing-7));
+  }
+}
+
+/**
+ * Text area that sits outside the visual picker
+ */
+.slds-visual-picker__body {
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  padding-block: var(--slds-g-spacing-4);
+  padding-inline: var(--slds-g-spacing-2);
+  border: 0;
+  border-radius: 0;
+}
+
+/**
+ * Checked indicator default state.
+ */
+.slds-visual-picker__text-check {
+  position: absolute;
+  inset-block-start: 0.1rem;
+  inset-inline-end: 0.625rem;
+  width: var(--slds-g-sizing-3);
+  height: var(--slds-g-sizing-3);
+  display: none;
+
+  .slds-icon {
+    fill: var(--slds-g-color-on-accent-1);
+  }
+}
+
+.slds-visual-picker input:checked ~ label .slds-visual-picker__text-check {
+  display: block;
+}
+
+/**
+ * Initializes a vertical visual picker component
+ */
+.slds-visual-picker_vertical {
+  width: calc(var(--slds-g-sizing-13) + var(--slds-g-sizing-14));
+  display: flex;
+
+  .slds-visual-picker__figure {
+    text-align: left;
+    padding: var(--slds-g-spacing-4);
+    height: calc(var(--slds-g-sizing-9) + var(--slds-g-sizing-11));
+  }
+
+  + .slds-visual-picker_vertical {
+    margin-inline-start: 0;
+    margin-block-start: var(--slds-g-spacing-4);
+  }
+
+  .slds-visual-picker__figure,
+  .slds-visual-picker__body {
+    width: calc(var(--slds-g-sizing-13) + var(--slds-g-sizing-14));
+  }
+}

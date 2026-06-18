@@ -1,0 +1,217 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/* Base — unlayered structural CSS. Participates in normal cascade; wins over any layered CSS. */
+
+.slds-accordion {
+  position: relative;
+  border-width: var(--slds-c-accordion-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-accordion-color-border, transparent);
+}
+
+/**
+ * List item for each accordion section
+ */
+.slds-accordion__list-item {
+  border-block-start-width: var(--slds-c-accordion-list-item-sizing-border, 0);
+  border-block-start-style: solid;
+  border-block-start-color: var(--slds-c-accordion-list-item-color-border, transparent);
+
+  &:first-child {
+    border-block-start-width: 0;
+  }
+}
+
+/**
+ * Summary title for each expandable panel inside of an accordion
+ */
+.slds-accordion__summary {
+  display: flex;
+  margin-block-start: calc(
+    var(--slds-c-accordion-summary-spacing-block-start, var(--slds-c-accordion-summary-spacing-block)) * -1
+  );
+  margin-inline-end: calc(
+    var(--slds-c-accordion-summary-spacing-inline-end, var(--slds-c-accordion-summary-spacing-inline)) * -1
+  );
+  margin-block-end: calc(
+    var(--slds-c-accordion-summary-spacing-block-end, var(--slds-c-accordion-summary-spacing-block)) * -1
+  );
+  margin-inline-start: calc(
+    var(--slds-c-accordion-summary-spacing-inline-start, var(--slds-c-accordion-summary-spacing-inline)) * -1
+  );
+  padding-block-start: var(
+    --slds-c-accordion-summary-spacing-block-start,
+    var(--slds-c-accordion-summary-spacing-block)
+  );
+  padding-inline-end: var(
+    --slds-c-accordion-summary-spacing-inline-end,
+    var(--slds-c-accordion-summary-spacing-inline)
+  );
+  padding-block-end: var(
+    --slds-c-accordion-summary-spacing-block-end,
+    var(--slds-c-accordion-summary-spacing-block)
+  );
+  padding-inline-start: var(
+    --slds-c-accordion-summary-spacing-inline-start,
+    var(--slds-c-accordion-summary-spacing-inline)
+  );
+  background-color: var(--slds-c-accordion-summary-color-background);
+  color: var(--slds-c-accordion-summary-color-foreground);
+}
+
+/**
+ * Summary title for each expandable panel inside of an accordion
+ */
+.slds-accordion__summary-heading {
+  display: flex;
+  flex-grow: 1;
+  min-width: 0;
+  background-color: var(--slds-c-accordion-heading-color-background);
+  color: var(--slds-c-accordion-heading-color-foreground);
+  font-size: var(--slds-c-accordion-heading-font-size);
+  font-weight: var(--slds-c-accordion-heading-font-weight);
+  line-height: var(--slds-c-accordion-heading-line-height);
+
+  .slds-button:focus-visible {
+    box-shadow: var(--slds-c-accordion-action-shadow-focus);
+    border-radius: var(--slds-c-accordion-action-radius-border-focus);
+    margin-inline-end: var(
+      --slds-c-accordion-summary-spacing-inline-end,
+      var(--slds-c-accordion-summary-spacing-inline)
+    );
+  }
+}
+
+/**
+ * Actionable button inside of accordion summary that would toggle the visibility of each section
+ */
+.slds-accordion__summary-action {
+  display: inline-flex;
+  flex-grow: 1;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  margin-block-start: calc(
+    var(--slds-c-accordion-summary-spacing-block-start, var(--slds-c-accordion-summary-spacing-block)) * -1
+  );
+  margin-inline-end: calc(
+    var(--slds-c-accordion-summary-spacing-inline-end, var(--slds-c-accordion-summary-spacing-inline)) * -1
+  );
+  margin-block-end: calc(
+    var(--slds-c-accordion-summary-spacing-block-end, var(--slds-c-accordion-summary-spacing-block)) * -1
+  );
+  margin-inline-start: calc(
+    var(--slds-c-accordion-summary-spacing-inline-start, var(--slds-c-accordion-summary-spacing-inline)) * -1
+  );
+  padding-block-start: var(
+    --slds-c-accordion-summary-spacing-block-start,
+    var(--slds-c-accordion-summary-spacing-block)
+  );
+  padding-block-end: var(
+    --slds-c-accordion-summary-spacing-block-end,
+    var(--slds-c-accordion-summary-spacing-block)
+  );
+  padding-inline-start: var(
+    --slds-c-accordion-summary-spacing-inline-start,
+    var(--slds-c-accordion-summary-spacing-inline)
+  );
+  padding-inline-end: var(
+    --slds-c-accordion-summary-spacing-inline-end,
+    var(--slds-c-accordion-summary-spacing-inline)
+  );
+  background-color: var(--slds-c-accordion-action-color-background);
+  color: var(--slds-c-accordion-action-color-foreground);
+  font-weight: inherit;
+
+  &:hover,
+  &:focus {
+    --slds-c-accordion-action-color-foreground: var(--slds-c-accordion-action-color-foreground-hover);
+    --slds-c-accordion-action-color-background: var(--slds-c-accordion-action-color-background-hover);
+  }
+
+  &:active {
+    box-shadow: none;
+  }
+}
+
+/**
+ * Icon inside of actionable button within an accordion section
+ */
+.slds-accordion__summary-action-icon {
+  flex-shrink: 0;
+  transform: rotate(-90deg);
+
+  &:dir(rtl) {
+    transform: rotate(90deg);
+  }
+}
+
+/**
+ * Text of summary title for each expandable panel inside of an accordion
+ */
+.slds-accordion__summary-content {
+  @media (min-width: 64em) {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/**
+ * Each expandable panel inside of an accordion
+ */
+.slds-accordion__section {
+  padding-block-start: var(
+    --slds-c-accordion-section-spacing-block-start,
+    var(--slds-c-accordion-section-spacing-block)
+  );
+  padding-inline-end: var(
+    --slds-c-accordion-section-spacing-inline-end,
+    var(--slds-c-accordion-section-spacing-inline)
+  );
+  padding-block-end: var(
+    --slds-c-accordion-section-spacing-block-end,
+    var(--slds-c-accordion-section-spacing-block)
+  );
+  padding-inline-start: var(
+    --slds-c-accordion-section-spacing-inline-start,
+    var(--slds-c-accordion-section-spacing-inline)
+  );
+}
+
+/**
+ * Each expandable panel inside of an accordion
+ */
+.slds-accordion__content {
+  overflow: hidden;
+  visibility: hidden;
+  opacity: 0;
+  height: 0;
+  background-color: var(--slds-c-accordion-content-color-background);
+  color: var(--slds-c-accordion-content-color-foreground);
+}
+
+/**
+ * Toggle visibility of accordion section
+ */
+.slds-is-open {
+  > .slds-accordion__summary {
+    margin-block-end: 0;
+
+    .slds-accordion__summary-action-icon {
+      transform: rotate(0deg);
+    }
+  }
+
+  > .slds-accordion__content {
+    overflow: visible;
+    visibility: visible;
+    opacity: 1;
+    height: auto;
+  }
+}

@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  .slds-carousel {
+    --slds-c-carousel-color-foreground: var(--slds-g-color-on-surface-2);
+  }
+
+  .slds-carousel__panel-action {
+    --slds-c-carousel-panel-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-carousel-panel-color-border: var(--slds-g-color-border-1);
+    --slds-c-carousel-panel-radius-border: var(
+      --slds-s-container-radius-border,
+      var(--slds-g-radius-border-2)
+    );
+    --slds-c-carousel-panel-spacing-block: var(--slds-g-spacing-1);
+    --slds-c-carousel-panel-spacing-inline: var(--slds-g-spacing-1);
+    --slds-c-carousel-panel-shadow-focus: var(--slds-g-shadow-outset-focus-1);
+  }
+
+  .slds-carousel__content {
+    --slds-c-carousel-content-color-background: var(--slds-g-color-surface-1);
+    --slds-c-carousel-content-color-foreground: var(--slds-g-color-on-surface-2);
+    --slds-c-carousel-content-spacing-block: var(--slds-g-spacing-4);
+    --slds-c-carousel-content-spacing-inline: var(--slds-g-spacing-4);
+    --slds-c-carousel-content-sizing-block: 6.625rem;
+  }
+
+  .slds-carousel__content-title {
+    --slds-c-carousel-content-title-font-size: var(--slds-g-font-scale-2);
+    --slds-c-carousel-content-title-font-weight: var(--slds-g-font-weight-6);
+  }
+
+  .slds-carousel__indicators {
+    --slds-c-carousel-indicators-spacing-block: var(--slds-g-spacing-2);
+  }
+
+  .slds-carousel__indicator {
+    --slds-c-carousel-indicator-spacing-inline: var(--slds-g-spacing-1);
+  }
+
+  .slds-carousel__indicator-action {
+    --slds-c-carousel-indicator-sizing: var(--slds-g-sizing-5);
+    --slds-c-carousel-indicator-color-background: var(--slds-g-color-surface-1);
+    --slds-c-carousel-indicator-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-carousel-indicator-color-border: var(--slds-g-color-border-2);
+    --slds-c-carousel-indicator-color-background-active: var(--slds-g-color-brand-base-45);
+    --slds-c-carousel-indicator-color-border-active: var(--slds-g-color-brand-base-45);
+    --slds-c-carousel-indicator-shadow-active: var(--slds-s-mark-shadow-checked);
+    --slds-c-carousel-indicator-color-background-hover: var(--slds-g-color-surface-2);
+    --slds-c-carousel-indicator-shadow-focus: var(--slds-g-shadow-outset-focus-1);
+    --slds-c-carousel-indicator-color-background-focus: var(--slds-g-color-accent-container-3);
+    --slds-c-carousel-indicator-color-border-focus: var(--slds-g-color-border-accent-3);
+  }
+
+  .slds-carousel__autoplay {
+    --slds-c-carousel-autoplay-inset-block-end: var(--slds-g-spacing-1);
+    --slds-c-carousel-autoplay-spacing-block: var(--slds-g-spacing-1);
+    --slds-c-carousel-autoplay-spacing-inline: var(--slds-g-spacing-1);
+  }
+}

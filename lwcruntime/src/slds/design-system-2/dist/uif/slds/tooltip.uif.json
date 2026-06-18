@@ -1,0 +1,188 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Tooltip",
+  "description": "A tooltip is a small piece of contextual information about an element.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div",
+      "span"
+    ],
+    "description": "Tooltip container",
+    "attributes": {
+      "static": {
+        "role": "tooltip",
+        "class": "slds-popover slds-popover_tooltip"
+      },
+      "bound": {
+        "id": {
+          "prop": "tooltipId",
+          "required": true
+        }
+      }
+    },
+    "children": [
+      {
+        "name": "content",
+        "restrict": [
+          "div"
+        ],
+        "description": "Tooltip content",
+        "slot": {
+          "name": "default",
+          "required": true
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-popover__body"
+          }
+        }
+      },
+      {
+        "name": "trigger",
+        "restrict": [
+          "button",
+          "a",
+          "span"
+        ],
+        "description": "element that triggers tooltip display",
+        "attributes": {
+          "bound": {
+            "aria-describedby": {
+              "prop": "tooltipId"
+            }
+          }
+        }
+      }
+    ],
+    "variants": [
+      {
+        "name": "placement",
+        "description": "Tooltip placement relative to trigger",
+        "default": "bottom",
+        "options": [
+          {
+            "value": "top",
+            "class": "slds-nubbin_bottom"
+          },
+          {
+            "value": "bottom",
+            "class": "slds-nubbin_top"
+          },
+          {
+            "value": "left",
+            "class": "slds-nubbin_right"
+          },
+          {
+            "value": "right",
+            "class": "slds-nubbin_left"
+          },
+          {
+            "value": "top-left",
+            "class": "slds-nubbin_bottom-left"
+          },
+          {
+            "value": "top-right",
+            "class": "slds-nubbin_bottom-right"
+          },
+          {
+            "value": "bottom-left",
+            "class": "slds-nubbin_top-left"
+          },
+          {
+            "value": "bottom-right",
+            "class": "slds-nubbin_top-right"
+          },
+          {
+            "value": "left-top",
+            "class": "slds-nubbin_right-top"
+          },
+          {
+            "value": "left-bottom",
+            "class": "slds-nubbin_right-bottom"
+          },
+          {
+            "value": "right-top",
+            "class": "slds-nubbin_left-top"
+          },
+          {
+            "value": "right-bottom",
+            "class": "slds-nubbin_left-bottom"
+          }
+        ]
+      }
+    ],
+    "modifiers": [
+      {
+        "name": "animation",
+        "attribute": "class",
+        "options": [
+          {
+            "value": "bottomToTop",
+            "class": "slds-slide-from-bottom-to-top"
+          },
+          {
+            "value": "topToBottom",
+            "class": "slds-slide-from-top-to-bottom"
+          },
+          {
+            "value": "rightToLeft",
+            "class": "slds-slide-from-right-to-left"
+          },
+          {
+            "value": "leftToRight",
+            "class": "slds-slide-from-left-to-right"
+          },
+          {
+            "value": "riseFromGround",
+            "class": "slds-rise-from-ground"
+          },
+          {
+            "value": "fallIntoGround",
+            "class": "slds-fall-into-ground"
+          }
+        ],
+        "description": "tooltip entrance animation"
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "open",
+      "type": "boolean",
+      "aria": "aria-expanded",
+      "description": "Whether the tooltip is visible"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "tooltip-role",
+        "description": "Tooltip must have role='tooltip'"
+      },
+      {
+        "id": "aria-describedby",
+        "description": "Triggering element must have aria-describedby pointing to tooltip id"
+      },
+      {
+        "id": "keyboard-accessible",
+        "description": "Tooltip must be accessible via keyboard focus, not just hover"
+      }
+    ]
+  },
+  "cssSource": "./tooltip.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "open",
+      "class": "slds-is-open"
+    }
+  ]
+}

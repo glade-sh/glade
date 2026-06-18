@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+.slds-notify_container {
+  position: fixed;
+  width: 100%;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  z-index: 1000;
+  text-align: center;
+}
+
+.slds-notify_toast {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  justify-content: flex-start;
+  border-radius: var(--slds-c-toast-radius-border);
+  padding-block-start: var(--slds-c-toast-spacing-block-start, var(--slds-c-toast-spacing-block));
+  padding-block-end: var(--slds-c-toast-spacing-block-end, var(--slds-c-toast-spacing-block));
+  padding-inline-start: var(--slds-c-toast-spacing-inline-start, var(--slds-c-toast-spacing-inline));
+  padding-inline-end: var(--slds-c-toast-spacing-inline-end, var(--slds-c-toast-spacing-inline));
+  background-color: var(--slds-c-toast-color-background);
+  color: var(--slds-c-toast-color-foreground);
+  margin: var(--slds-c-toast-spacing-margin);
+  min-width: var(--slds-c-toast-sizing-min-width);
+  max-width: var(--slds-c-toast-sizing-max-width);
+  text-align: left;
+  box-shadow: var(--slds-c-toast-shadow);
+  word-break: break-word;
+
+  .slds-notify__content .slds-text-heading_small {
+    font-weight: var(--slds-c-toast-content-font-weight);
+  }
+
+  .slds-notify__content a:focus-visible {
+    border-radius: var(--slds-c-toast-link-radius-border);
+    outline-offset: 2px;
+  }
+
+  /* close icon button */
+  .slds-notify__close {
+    float: inline-end;
+    position: absolute;
+    top: var(--slds-c-toast-close-spacing-block-start);
+    inset-inline-end: var(--slds-c-toast-close-spacing-inline-end);
+    margin-inline-start: var(--slds-c-toast-close-spacing-inline-start);
+    transform: none;
+  }
+
+  .slds-button_icon {
+    color: currentColor;
+  }
+
+  .slds-button_icon:hover,
+  .slds-button_icon:focus-visible {
+    color: var(--slds-c-toast-close-color-foreground-hover);
+  }
+}
+
+.slds-region_narrow {
+  .slds-notify_toast {
+    min-width: auto;
+    width: 100%;
+    margin-inline-start: 0;
+    max-width: max-content;
+  }
+}

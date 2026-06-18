@@ -1,0 +1,91 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Alert",
+  "description": "An alert is a banner that communicates a state or action to the user.",
+  "dateAdded": "2017-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Alert container",
+    "attributes": {
+      "static": {
+        "role": "alert"
+      }
+    },
+    "children": [
+      {
+        "name": "assistiveText",
+        "restrict": [
+          "span"
+        ],
+        "description": "Assistive text for screen readers",
+        "slot": {
+          "name": "assistiveText"
+        }
+      },
+      {
+        "name": "icon",
+        "restrict": [
+          "span"
+        ],
+        "description": "Icon container",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "icon",
+          "restrict": [
+            "Icon"
+          ]
+        }
+      },
+      {
+        "name": "content",
+        "restrict": [
+          "h2"
+        ],
+        "description": "Alert message content",
+        "slot": {
+          "name": "default",
+          "required": true
+        }
+      },
+      {
+        "name": "close",
+        "restrict": [
+          "div"
+        ],
+        "description": "Close button container",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "close",
+          "restrict": [
+            "Button"
+          ]
+        }
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "dismissed",
+      "type": "boolean",
+      "description": "Whether the alert has been dismissed"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "role-alert",
+        "description": "Alert must have role='alert' to announce to screen readers"
+      },
+      {
+        "id": "close-accessible",
+        "description": "Close button must have accessible label"
+      }
+    ]
+  }
+}

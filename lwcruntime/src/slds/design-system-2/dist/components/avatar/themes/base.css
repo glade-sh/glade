@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/* Copyright (c) 2015-present, salesforce.com, inc. All rights reserved
+  Licensed under BSD 3-Clause - see LICENSE.txt or git.io/sfdc-license */
+
+.slds-avatar {
+  /* relay avatar sizing and background to nested icon */
+  --slds-c-icon-context-color-background: var(--slds-c-avatar-color-background);
+  --slds-c-icon-context-sizing: var(--slds-c-avatar-sizing);
+
+  width: var(--slds-c-avatar-context-sizing, var(--slds-c-avatar-sizing-width, var(--slds-c-avatar-sizing)));
+  height: var(
+    --slds-c-avatar-context-sizing,
+    var(--slds-c-avatar-sizing-height, var(--slds-c-avatar-sizing))
+  );
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+  border-radius: var(--slds-c-avatar-radius-border);
+  border-width: var(--slds-c-avatar-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-avatar-color-border, transparent);
+  font-size: var(--slds-c-avatar-font-size);
+  line-height: var(--slds-c-avatar-font-line-height);
+  box-shadow: var(--slds-c-avatar-shadow);
+
+  &:focus-visible {
+    --slds-c-avatar-shadow: var(--slds-c-avatar-shadow-focus);
+
+    outline: 0;
+  }
+}
+
+.slds-avatar_group-image-small,
+.slds-avatar_group-image-medium,
+.slds-avatar_group-image-large {
+  background: var(--slds-c-avatar-group-image) top left / cover no-repeat;
+}
+
+.slds-avatar_profile-image-small,
+.slds-avatar_profile-image-medium,
+.slds-avatar_profile-image-large {
+  background: var(--slds-c-avatar-profile-image) top left / cover no-repeat;
+}
+
+.slds-avatar__initials {
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+  margin: auto;
+  height: 100%;
+  color: var(--slds-c-avatar-initials-color-foreground);
+  background-color: var(--slds-c-avatar-initials-color-background);
+}
+
+.slds-avatar__initials[title] {
+  cursor: default;
+  text-decoration: none;
+}

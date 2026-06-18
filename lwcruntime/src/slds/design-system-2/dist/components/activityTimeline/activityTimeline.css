@@ -1,0 +1,174 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * Create each expandable activity timeline item in a list
+ */
+.slds-timeline__item_expandable {
+  position: relative;
+  padding-block-end: var(--slds-g-spacing-4);
+
+  .slds-media__figure {
+    margin-inline-end: var(--slds-g-spacing-1);
+    z-index: 1;
+
+    .slds-button_icon {
+      margin-inline-end: var(--slds-g-spacing-2);
+    }
+  }
+
+  .slds-media__body {
+    padding-block: 0;
+    padding-inline: var(--slds-g-spacing-1);
+    color: var(--slds-g-color-on-surface-1);
+  }
+
+  .slds-checkbox {
+    margin-inline-end: var(--slds-g-spacing-1);
+  }
+
+  /**
+   * Changes the layout of actions to become inlined with the title of a timeline item.
+   */
+  .slds-timeline__actions_inline {
+    flex-flow: row nowrap;
+    align-items: center;
+    flex-shrink: 0;
+    margin-inline-start: var(--slds-g-spacing-2);
+
+    .slds-timeline__date {
+      padding-inline-end: var(--slds-g-spacing-2);
+      margin-block-end: 0;
+    }
+  }
+
+  /**
+   * Class to show and hide details
+   */
+  .slds-timeline__item_details {
+    visibility: hidden;
+    opacity: 0;
+    height: 0;
+    padding: 0;
+    color: var(--slds-g-color-on-surface-3);
+    border: 0;
+  }
+
+  /**
+   * Toggles the visibility of the timeline item
+   */
+  &.slds-is-open {
+    .slds-timeline__item_details {
+      visibility: visible;
+      opacity: 1;
+      height: auto;
+      padding: var(--slds-g-spacing-4);
+    }
+
+    .slds-timeline__details-action-icon {
+      transform: rotate(0);
+      transform-origin: 45%;
+    }
+  }
+}
+
+/* Explictly set instead of using '&' to avoid PostCSS/LBC and specificity issues */
+.slds-timeline__item_expandable::before {
+  content: '';
+  background: var(--slds-g-color-border-1);
+  height: 100%;
+  width: var(--slds-g-sizing-border-2);
+  position: absolute;
+  /**
+   * Previously set to $square-icon-medium-boundary-alt which relied on the size of
+   * the activity timeline never changing, otherwise it'd regress; magic number-like.
+   * Because of that, hardcoding as a tradeoff for less chances of side-effects.
+   */
+  inset-inline-start: 2.235rem;
+  inset-block-start: 0;
+  inset-block-end: 0;
+  margin-inline-start: var(--slds-g-sizing-border-2);
+}
+
+/**
+ * Applies line connector for a call timeline item
+ */
+.slds-timeline__item_call::before {
+  background: rgb(72, 195, 204);
+}
+
+/**
+ * Applies line connector for an email timeline item
+ */
+.slds-timeline__item_email::before {
+  background: rgb(147, 147, 147);
+}
+
+/**
+ * Applies line connector for an event timeline item
+ */
+.slds-timeline__item_event::before {
+  background: rgb(203, 101, 255);
+}
+
+/**
+ * Applies line connector for a task timeline item
+ */
+.slds-timeline__item_task::before {
+  background: rgb(75, 192, 118);
+}
+
+/*
+ * Provides hover feedback on each timeline item
+ */
+.slds-timeline__trigger {
+  padding: var(--slds-g-spacing-1);
+
+  &:hover {
+    background-color: var(--slds-g-color-surface-container-2);
+  }
+}
+
+/**
+ * Title link typography
+ */
+.slds-timeline__trigger h3 a strong {
+  font-weight: var(--slds-g-font-weight-6);
+  font-size: var(--slds-g-font-scale-1);
+}
+
+/**
+ * Icon associated with timeline item; fake border that matches the surface color
+ * to create the gap between the icon background and the vertical connecting line
+ */
+.slds-timeline__icon {
+  border: var(--slds-g-sizing-border-2) solid var(--slds-g-color-surface-1);
+}
+
+/**
+ * Container for date and action overflow on the right of a timeline item
+ */
+.slds-timeline__actions {
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: flex-end;
+}
+
+/**
+ * Styles the date inside `.slds-timeline__actions`
+ */
+.slds-timeline__date {
+  margin-block-end: var(--slds-g-spacing-1);
+  font-size: var(--slds-g-font-scale-neg-1);
+  color: var(--slds-g-color-on-surface-1);
+}
+
+/**
+ * Icon inside of actionable button within an expandable timeline item
+ */
+.slds-timeline__details-action-icon {
+  transform: rotate(-90deg);
+}

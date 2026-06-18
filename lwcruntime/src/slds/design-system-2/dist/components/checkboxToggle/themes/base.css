@@ -1,0 +1,241 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+.slds-checkbox_toggle {
+  width: 100%;
+
+  /* Toggle Track: Toggled=Off, State=Default */
+  .slds-checkbox_faux {
+    display: block;
+    position: relative;
+    width: var(--slds-g-sizing-10);
+    height: var(--slds-g-sizing-7);
+    border-width: var(--slds-g-sizing-border-1);
+    border-style: solid;
+    border-color: var(--slds-c-checkbox-toggle-color-border, var(--slds-g-color-neutral-base-60));
+    padding: var(--slds-g-spacing-1);
+    background-color: var(--slds-c-checkbox-toggle-color-background, var(--slds-g-color-neutral-base-60));
+    border-radius: var(--slds-c-checkbox-toggle-radius-border, var(--slds-g-radius-border-pill));
+    box-shadow: var(--slds-c-checkbox-toggle-shadow, var(--slds-s-mark-shadow-checked));
+    transition: background-color 0.2s cubic-bezier(0.75, 0, 0.08, 1);
+
+    /* Toggle Track: Toggled=Off, State=Hover, Focus */
+    &:hover,
+    &:focus {
+      --slds-c-checkbox-toggle-color-background: var(
+        --slds-c-checkbox-toggle-color-background-hover,
+        var(--slds-g-color-neutral-base-50)
+      );
+      --slds-c-checkbox-toggle-color-border: var(
+        --slds-c-checkbox-toggle-color-border-hover,
+        var(--slds-g-color-neutral-base-50)
+      );
+
+      cursor: pointer;
+    }
+
+    /* Toggle Switch: Toggled=Off, State=Default */
+    &::after {
+      content: '';
+      position: absolute;
+      top: 1px;
+      left: 1px;
+      width: var(--slds-g-sizing-6);
+      height: var(--slds-g-sizing-6);
+      background-color: var(
+        --slds-c-checkbox-toggle-switch-color-background,
+        var(--slds-g-color-on-accent-1)
+      );
+      border-radius: var(--slds-c-checkbox-toggle-radius-border, var(--slds-g-radius-border-pill));
+    }
+  }
+
+  .slds-form-element__label {
+    font-weight: normal;
+    color: var(--slds-g-color-on-surface-1);
+  }
+
+  /* Hidden checkbox */
+  [type='checkbox'] {
+    width: 1px;
+    height: 1px;
+    border: 0;
+    clip: rect(0 0 0 0);
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+
+    /* Container for faux checkbox element */
+    + .slds-checkbox_faux_container {
+      font-size: var(--slds-g-font-scale-neg-2);
+      color: var(--slds-g-color-on-surface-1);
+
+      /* Toggle Label: Toggled=Off */
+      .slds-checkbox_off {
+        display: block;
+      }
+
+      /* Toggle Label: Toggled=On */
+      .slds-checkbox_on {
+        display: none;
+      }
+    }
+
+    /* Toggle Label: Toggled=On */
+    &:checked + .slds-checkbox_faux_container .slds-checkbox_off {
+      display: none;
+    }
+
+    /* Toggle Label: Toggled=On */
+    &:checked + .slds-checkbox_faux_container .slds-checkbox_on {
+      display: block;
+    }
+
+    /* Toggle Track: Toggled=Off/On, State=Focus */
+    &:focus-visible + .slds-checkbox_faux,
+    &:focus-visible ~ .slds-checkbox_faux,
+    &:focus-visible + .slds-checkbox_faux_container .slds-checkbox_faux {
+      --slds-c-checkbox-toggle-shadow: var(--slds-g-shadow-outset-focus-1);
+    }
+
+    /* Toggle Track: Toggled=On, State=Default */
+    &:checked + .slds-checkbox_faux,
+    &:checked ~ .slds-checkbox_faux,
+    &:checked + .slds-checkbox_faux_container .slds-checkbox_faux {
+      --slds-c-checkbox-toggle-color-border: var(--slds-g-color-border-accent-1);
+      --slds-c-checkbox-toggle-color-background: var(--slds-g-color-accent-container-1);
+    }
+
+    /* Toggle Track: Toggled=On, Hover, Focus */
+    &:checked + .slds-checkbox_faux:hover,
+    &:checked ~ .slds-checkbox_faux:hover,
+    &:checked + .slds-checkbox_faux_container .slds-checkbox_faux:hover,
+    &:checked + .slds-checkbox_faux:focus,
+    &:checked ~ .slds-checkbox_faux:focus,
+    &:checked + .slds-checkbox_faux_container .slds-checkbox_faux:focus {
+      --slds-c-checkbox-toggle-color-border: var(--slds-g-color-border-accent-2);
+      --slds-c-checkbox-toggle-color-background: var(--slds-g-color-accent-container-2);
+    }
+
+    /* Toggle Switch: Toggled=On, State=Default */
+    &:checked + .slds-checkbox_faux::before,
+    &:checked ~ .slds-checkbox_faux::before,
+    &:checked + .slds-checkbox_faux_container .slds-checkbox_faux::before {
+      content: '';
+      position: absolute;
+      top: 1px;
+      right: 1px;
+      width: var(--slds-g-sizing-6);
+      height: var(--slds-g-sizing-6);
+      background-color: var(
+        --slds-c-checkbox-toggle-switch-color-background-checked,
+        var(--slds-c-checkbox-toggle-switch-color-background, var(--slds-g-color-on-accent-1))
+      );
+      border-radius: var(--slds-c-checkbox-toggle-radius-border, var(--slds-g-radius-border-pill));
+      transition: transform 0.2s cubic-bezier(0.75, 0, 0.08, 1);
+    }
+
+    /* Toggle Switch: Toggled=On, State=Hover */
+    &:checked + .slds-checkbox_faux:hover::before,
+    &:checked ~ .slds-checkbox_faux:hover::before,
+    &:checked + .slds-checkbox_faux_container .slds-checkbox_faux:hover::before {
+      --slds-c-checkbox-toggle-switch-color-background: var(--slds-g-color-on-accent-2);
+    }
+
+    /* Toggle Switch: Toggled=On, State=Focus */
+    &:checked:focus + .slds-checkbox_faux::before,
+    &:checked:focus ~ .slds-checkbox_faux::before,
+    &:checked:focus + .slds-checkbox_faux_container .slds-checkbox_faux::before,
+    &:checked + .slds-checkbox_faux:focus::before,
+    &:checked ~ .slds-checkbox_faux:focus::before,
+    &:checked + .slds-checkbox_faux_container .slds-checkbox_faux:focus::before {
+      --slds-c-checkbox-toggle-switch-color-background: var(--slds-g-color-on-accent-2);
+    }
+
+    /* Checkmark: Toggled=On, State=Default */
+    &:checked + .slds-checkbox_faux::after,
+    &:checked ~ .slds-checkbox_faux::after,
+    &:checked + .slds-checkbox_faux_container .slds-checkbox_faux::after {
+      --slds-c-checkbox-toggle-switch-color-background: transparent;
+      --slds-c-checkbox-toggle-radius-border: 0;
+
+      content: ' ';
+      position: absolute;
+      /* These are arbitrary to create the checkbox */
+      top: 0.25rem;
+      /* like the right positioning above */
+      left: 0.6rem;
+      /* Seems silly to tokenize? */
+      height: 0.7rem;
+      width: 0.45rem;
+      border-bottom-width: var(--slds-g-sizing-border-2);
+      border-bottom-style: solid;
+      border-bottom-color: var(
+        --slds-c-checkbox-toggle-mark-color-foreground,
+        var(--slds-g-color-on-accent-1)
+      );
+      /* stylelint-disable comment-empty-line-before */
+      /*! @noflip */
+      border-right-width: var(--slds-g-sizing-border-2);
+      border-right-style: solid;
+      border-right-color: var(
+        --slds-c-checkbox-toggle-mark-color-foreground,
+        var(--slds-g-color-on-accent-1)
+      );
+      transform: rotate(45deg);
+    }
+
+    /* Checkmark: Toggled=On, State=Hover */
+    &:checked + .slds-checkbox_faux:hover::after,
+    &:checked ~ .slds-checkbox_faux:hover::after,
+    &:checked + .slds-checkbox_faux_container .slds-checkbox_faux:hover::after,
+    
+    /* Checkmark: Toggled=On, State= Focus */
+    &:checked + .slds-checkbox_faux:focus::after,
+    &:checked ~ .slds-checkbox_faux:focus::after,
+    &:checked + .slds-checkbox_faux_container .slds-checkbox_faux:focus::after,
+    &:checked:focus + .slds-checkbox_faux::after,
+    &:checked:focus ~ .slds-checkbox_faux::after,
+    &:checked:focus + .slds-checkbox_faux_container .slds-checkbox_faux::after {
+      --slds-c-checkbox-toggle-mark-color-foreground: var(--slds-g-color-on-accent-2);
+    }
+
+    /* Toggle Track: Toggled=On, State=Focus */
+    &:checked:focus + .slds-checkbox_faux,
+    &:checked:focus ~ .slds-checkbox_faux,
+    &:checked:focus + .slds-checkbox_faux_container .slds-checkbox_faux {
+      --slds-c-checkbox-toggle-color-background: var(
+        --slds-c-checkbox-toggle-color-background-checked-focus,
+        var(--slds-g-color-accent-container-2)
+      );
+    }
+
+    /* Toggle Track: Toggled=Off, State=Disabled */
+    &[disabled] + .slds-checkbox_faux,
+    &[disabled] ~ .slds-checkbox_faux,
+    &[disabled] + .slds-checkbox_faux_container .slds-checkbox_faux {
+      --slds-c-checkbox-toggle-color-background: var(--slds-g-color-disabled-container-2);
+      --slds-c-checkbox-toggle-color-border: var(--slds-g-color-border-disabled-1);
+
+      pointer-events: none;
+    }
+
+    /* Toggle Switch: Toggled=Off, State=Disabled */
+    /* Checkmark: Toggled=Off, State=Disabled */
+    &[disabled] + .slds-checkbox_faux_container .slds-checkbox_faux::before,
+    &[disabled] + .slds-checkbox_faux_container .slds-checkbox_faux::after {
+      --slds-c-checkbox-toggle-switch-color-background: var(--slds-g-color-on-disabled-2);
+      --slds-c-checkbox-toggle-mark-color-foreground: var(--slds-g-color-on-disabled-2);
+    }
+
+    /* Checkmark: Toggled=On, State=Disabled */
+    &:checked[disabled] + .slds-checkbox_faux_container .slds-checkbox_faux::after {
+      background-color: transparent;
+      --slds-c-checkbox-toggle-mark-color-foreground: var(--slds-g-color-on-disabled-2);
+    }
+  }
+}

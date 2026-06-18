@@ -1,0 +1,233 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "ButtonIcon",
+  "description": "An icon-only button for compact actions.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "button"
+    ],
+    "description": "Icon button element",
+    "attributes": {
+      "static": {
+        "type": "button",
+        "class": "slds-button slds-button_icon"
+      },
+      "bound": {
+        "disabled": {
+          "prop": "disabled"
+        },
+        "title": {
+          "prop": "title"
+        },
+        "aria-label": {
+          "prop": "alternativeText",
+          "required": true
+        },
+        "accesskey": {
+          "prop": "accessKey"
+        },
+        "name": {
+          "prop": "name"
+        },
+        "value": {
+          "prop": "value"
+        }
+      }
+    },
+    "slot": {
+      "name": "default",
+      "restrict": [
+        "Icon"
+      ]
+    },
+    "children": [
+      {
+        "name": "assistiveText",
+        "restrict": [
+          "span"
+        ],
+        "description": "Screen reader text",
+        "slot": {
+          "name": "assistiveText"
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-assistive-text"
+          }
+        }
+      },
+      {
+        "name": "icon",
+        "attributes": {
+          "static": {
+            "class": "slds-button__icon"
+          }
+        },
+        "modifiers": [
+          {
+            "name": "size",
+            "attribute": "class",
+            "options": [
+              {
+                "value": "large",
+                "class": "slds-button__icon_large"
+              },
+              {
+                "value": "small",
+                "class": "slds-button__icon_small"
+              },
+              {
+                "value": "x-small",
+                "class": "slds-button__icon_x-small"
+              }
+            ],
+            "description": "icon size within button"
+          },
+          {
+            "name": "hint",
+            "attribute": "class",
+            "value": "slds-button__icon_hint",
+            "description": "hint styling for parent hover reveal"
+          }
+        ]
+      }
+    ],
+    "modifiers": [
+      {
+        "name": "size",
+        "attribute": "class",
+        "description": "Button icon size",
+        "default": "medium",
+        "options": [
+          {
+            "propValue": "xx-small",
+            "value": "slds-button_icon-xx-small"
+          },
+          {
+            "propValue": "x-small",
+            "value": "slds-button_icon-x-small"
+          },
+          {
+            "propValue": "small",
+            "value": "slds-button_icon-small"
+          },
+          {
+            "propValue": "medium",
+            "value": ""
+          },
+          {
+            "propValue": "large",
+            "value": "slds-button_icon-large"
+          }
+        ]
+      }
+    ],
+    "variants": [
+      {
+        "name": "variant",
+        "description": "Visual style of the icon button",
+        "default": "base",
+        "options": [
+          {
+            "value": "base",
+            "class": "",
+            "description": "Base icon button with no container"
+          },
+          {
+            "value": "border",
+            "class": "slds-button_icon-border",
+            "description": "Icon button with visible border"
+          },
+          {
+            "value": "border-filled",
+            "class": "slds-button_icon-border-filled",
+            "description": "Icon button with border and filled background"
+          },
+          {
+            "value": "brand",
+            "class": "slds-button_icon-brand",
+            "description": "Brand colored icon button"
+          },
+          {
+            "value": "inverse",
+            "class": "slds-button_icon-inverse",
+            "description": "Icon button for dark backgrounds"
+          },
+          {
+            "value": "container",
+            "class": "slds-button_icon-container",
+            "description": "Icon button with container styling"
+          },
+          {
+            "value": "border-inverse",
+            "class": "slds-button_icon-border-inverse",
+            "description": "Icon button with border for dark backgrounds"
+          },
+          {
+            "value": "error",
+            "class": "slds-button_icon-error",
+            "description": "Icon button with error styling"
+          },
+          {
+            "value": "warning",
+            "class": "slds-button_icon-warning",
+            "description": "Icon button with warning styling"
+          },
+          {
+            "value": "more",
+            "class": "slds-button_icon-more",
+            "description": "Icon button for more actions menu"
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the button is disabled"
+    },
+    {
+      "name": "selected",
+      "type": "boolean",
+      "aria": "aria-pressed",
+      "description": "whether the icon button is selected/pressed"
+    },
+    {
+      "name": "hasPopup",
+      "type": "boolean",
+      "aria": "aria-haspopup",
+      "description": "whether the button triggers a popup"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "accessible-label",
+        "description": "Icon buttons must have aria-label or title for screen readers"
+      }
+    ]
+  },
+  "cssSource": "./buttonIcon.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "disabled",
+      "class": "slds-button_disabled"
+    },
+    {
+      "state": "selected",
+      "class": "slds-is-selected"
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Breadcrumbs",
+  "description": "Breadcrumbs show a user's location in a site hierarchy.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "nav"
+    ],
+    "description": "Breadcrumb navigation container",
+    "attributes": {
+      "bound": {
+        "aria-label": {
+          "prop": "label",
+          "required": true
+        }
+      }
+    },
+    "children": [
+      {
+        "name": "list",
+        "restrict": [
+          "ol"
+        ],
+        "description": "Ordered list of breadcrumb items",
+        "children": [
+          {
+            "name": "item",
+            "restrict": [
+              "li"
+            ],
+            "description": "Breadcrumb item",
+            "repeats": true,
+            "children": [
+              {
+                "name": "link",
+                "restrict": [
+                  "a"
+                ],
+                "description": "Breadcrumb link",
+                "attributes": {
+                  "bound": {
+                    "href": {
+                      "prop": "href",
+                      "required": true
+                    }
+                  },
+                  "conditional": {
+                    "aria-current": {
+                      "when": "isCurrent",
+                      "value": "page"
+                    }
+                  }
+                },
+                "slot": {
+                  "name": "label",
+                  "required": true
+                }
+              }
+            ],
+            "attributes": {
+              "static": {
+                "class": "slds-breadcrumb__item"
+              }
+            }
+          }
+        ],
+        "attributes": {
+          "static": {
+            "class": "slds-breadcrumb slds-list_horizontal slds-wrap"
+          }
+        }
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "isCurrent",
+      "type": "boolean",
+      "description": "Whether the breadcrumb item represents the current page"
+    },
+    {
+      "name": "hasOverflow",
+      "type": "boolean",
+      "description": "whether overflow menu is shown for truncated breadcrumbs"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "nav-label",
+        "description": "Navigation should have an aria-label like 'Breadcrumb'"
+      },
+      {
+        "id": "current-page",
+        "description": "Current page should have aria-current='page'"
+      }
+    ]
+  },
+  "cssSource": "./breadcrumbs.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  }
+}

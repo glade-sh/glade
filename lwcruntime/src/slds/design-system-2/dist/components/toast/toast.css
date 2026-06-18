@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/* Copyright (c) 2015-present, salesforce.com, inc. All rights reserved
+Licensed under BSD 3-Clause - see LICENSE.txt or git.io/sfdc-license */
+
+.slds-notify_container {
+  position: fixed;
+  width: 100%;
+  inset-inline-start: 0;
+  inset-block-start: 0;
+  z-index: 1000;
+  text-align: center;
+}
+
+.slds-notify_toast {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  background: none;
+  background-color: var(--slds-c-toast-color-background, var(--slds-g-color-on-surface-1));
+  color: var(--slds-c-toast-text-color);
+  border-radius: var(--slds-c-toast-radius-border, var(--slds-g-radius-border-2));
+  margin: var(--slds-g-spacing-2);
+  padding-block-start: var(--slds-c-toast-spacing-block-start, var(--slds-g-spacing-3));
+  padding-inline-end: var(--slds-c-toast-spacing-inline-end, var(--slds-g-spacing-8));
+  padding-block-end: var(--slds-c-toast-spacing-block-end, var(--slds-g-spacing-3));
+  padding-inline-start: var(--slds-c-toast-spacing-inline-start, var(--slds-g-spacing-5));
+  min-width: var(--slds-c-toast-sizing-min-width, var(--slds-g-sizing-16));
+  text-align: left;
+  justify-content: flex-start;
+  box-shadow: var(--slds-g-shadow-3);
+  max-width: 50%;
+  word-break: break-word;
+
+  /*
+  * content heading font weight
+  */
+  .slds-notify__content .slds-text-heading_small {
+    font-weight: var(--slds-s-alert-font-weight);
+  }
+
+  .slds-notify__content a:focus-visible {
+    border-radius: var(--slds-g-radius-border-1);
+    outline-offset: 2px;
+  }
+
+  /**
+   * close icon button
+   */
+  .slds-notify__close {
+    float: inline-end;
+    position: absolute;
+    top: var(--slds-g-spacing-3);
+    inset-inline-end: var(--slds-g-spacing-3);
+    margin-inline-start: var(--slds-g-spacing-1);
+    transform: none;
+  }
+
+  .slds-button_icon {
+    color: currentColor;
+  }
+
+  .slds-button_icon:hover,
+  .slds-button_icon:focus-visible {
+    color: var(--slds-s-alert-close-button-hover, color-mix(in oklab, currentColor, transparent 25%));
+  }
+}
+
+.slds-region_narrow {
+  .slds-notify_toast {
+    min-width: auto;
+    width: 100%;
+    margin-inline-start: 0;
+    max-width: max-content;
+  }
+}

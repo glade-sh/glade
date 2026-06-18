@@ -1,0 +1,146 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "ProgressBar",
+  "description": "A progress bar component communicates to the user the progress of a process.",
+  "dateAdded": "2016-06-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Progress bar container",
+    "attributes": {
+      "static": {
+        "role": "progressbar",
+        "class": "slds-progress-bar"
+      },
+      "bound": {
+        "aria-valuemin": {
+          "prop": "min"
+        },
+        "aria-valuemax": {
+          "prop": "max"
+        },
+        "aria-valuenow": {
+          "prop": "value"
+        },
+        "aria-label": {
+          "prop": "label"
+        },
+        "aria-labelledby": {
+          "prop": "labelledBy"
+        }
+      }
+    },
+    "children": [
+      {
+        "name": "value",
+        "restrict": [
+          "span"
+        ],
+        "description": "Progress bar fill",
+        "attributes": {
+          "bound": {
+            "style": {
+              "prop": "widthStyle"
+            }
+          },
+          "static": {
+            "class": "slds-progress-bar__value"
+          }
+        },
+        "children": [
+          {
+            "name": "assistiveText",
+            "restrict": [
+              "span"
+            ],
+            "description": "Screen reader progress text",
+            "slot": {
+              "name": "assistiveText"
+            },
+            "attributes": {
+              "static": {
+                "class": "slds-assistive-text"
+              }
+            }
+          }
+        ],
+        "modifiers": [
+          {
+            "name": "success",
+            "attribute": "class",
+            "value": "slds-progress-bar__value_success",
+            "description": "Applies green success color to the filled portion"
+          }
+        ]
+      }
+    ],
+    "modifiers": [
+      {
+        "name": "circular",
+        "attribute": "class",
+        "value": "slds-progress-bar_circular",
+        "description": "Gives the progress bar rounded ends"
+      },
+      {
+        "name": "vertical",
+        "attribute": "class",
+        "value": "slds-progress-bar_vertical",
+        "description": "Renders the progress bar vertically"
+      },
+      {
+        "name": "size",
+        "attribute": "class",
+        "description": "Progress bar thickness",
+        "default": "medium",
+        "options": [
+          {
+            "propValue": "x-small",
+            "value": "slds-progress-bar_x-small"
+          },
+          {
+            "propValue": "small",
+            "value": "slds-progress-bar_small"
+          },
+          {
+            "propValue": "medium",
+            "value": "slds-progress-bar_medium"
+          },
+          {
+            "propValue": "large",
+            "value": "slds-progress-bar_large"
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "complete",
+      "type": "boolean",
+      "description": "Whether the progress bar has reached 100%"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "progressbar-role",
+        "description": "Container must have role='progressbar'"
+      },
+      {
+        "id": "aria-values",
+        "description": "Must have aria-valuemin, aria-valuemax, and aria-valuenow"
+      }
+    ]
+  },
+  "behaviors": "./progressBar.behavior.ts",
+  "cssSource": "./progressBar.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  }
+}

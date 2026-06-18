@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * Creates a docked form footer
+ */
+
+.slds-docked-form-footer {
+  display: flex;
+  justify-content: center;
+  padding: var(--slds-g-spacing-2) 0;
+  position: fixed;
+  inset-block-end: 0;
+  inset-inline-start: 0;
+  width: 100%;
+  background-color: var(--slds-s-container-footer-color-background, var(--slds-g-color-surface-container-2));
+  box-shadow: var(--slds-g-shadow-blockstart-2);
+  z-index: 8000;
+
+  &:focus-within {
+    align-items: center;
+  }
+}

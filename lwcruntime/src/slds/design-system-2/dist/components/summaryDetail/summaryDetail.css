@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * Initializes a summary detail
+ */
+.slds-summary-detail {
+  display: flex;
+  align-items: flex-start;
+
+  /**
+   * Styles the position of the toggle icon
+   */
+  .slds-summary-detail__action-icon {
+    transform: rotate(-90deg);
+
+    /* @include rtl() { ... } moved below outside of this block for compatibility with Core in SLDS2 */
+  }
+
+  /**
+   * Styles the visibility of the detail content
+   */
+  .slds-summary-detail__content {
+    overflow: hidden;
+    visibility: hidden;
+    opacity: 0;
+    height: 0;
+  }
+}
+
+/**
+ * Styles the position of the toggle icon
+ */
+[dir='rtl'] .slds-summary-detail .slds-summary-detail__action-icon {
+  transform: rotate(90deg);
+}
+
+/**
+ * Toggle visibility of the detail section + rotate icon
+ */
+.slds-summary-detail.slds-is-open {
+  .slds-summary-detail__action-icon {
+    transform: rotate(0deg);
+    transform-origin: 45%;
+  }
+
+  .slds-summary-detail__content {
+    padding-block-start: var(--slds-g-spacing-3);
+    overflow: visible;
+    visibility: visible;
+    opacity: 1;
+    height: auto;
+  }
+}

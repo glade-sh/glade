@@ -1,0 +1,88 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * @summary Create badge component
+ */
+.slds-badge {
+  display: inline-flex;
+  align-items: center;
+  padding-block: var(--slds-g-spacing-1);
+  padding-inline: var(--slds-g-spacing-2);
+  color: var(--slds-c-badge-text-color, var(--slds-g-color-on-surface-1));
+  font-size: var(--slds-c-badge-font-size, var(--slds-g-font-scale-neg-1));
+  font-weight: var(--slds-g-font-weight-4);
+  line-height: normal;
+  white-space: nowrap;
+  border-width: var(--slds-c-badge-sizing-border, var(--slds-g-sizing-border-1));
+  border-style: solid;
+  border-color: var(--slds-c-badge-color-border, transparent);
+  border-radius: var(--slds-c-badge-radius-border, var(--slds-g-radius-border-1));
+  background-color: var(--slds-c-badge-color-background, var(--slds-g-color-surface-container-3));
+
+  + .slds-badge {
+    margin-inline-start: var(--slds-g-spacing-2);
+  }
+
+  &:empty {
+    padding: 0;
+  }
+}
+
+/**
+ * @summary Change badge color to a dark with light text
+ */
+.slds-badge_inverse {
+  --slds-c-badge-color-background: var(
+    --slds-c-badge-inverse-color-background,
+    var(--slds-g-color-neutral-base-50)
+  );
+  --slds-c-badge-text-color: var(--slds-c-badge-inverse-text-color, var(--slds-g-color-on-surface-inverse-1));
+}
+
+/**
+ * @summary Change badge color to white with normal text
+ */
+.slds-badge_lightest {
+  /*! @css-var-fallback background-color */
+  --slds-c-badge-color-background: var(
+    --slds-c-badge-lightest-color-background,
+    var(--slds-g-color-surface-container-1)
+  );
+  --slds-c-badge-color-border: var(--slds-c-badge-lightest-color-border, var(--slds-g-color-border-1));
+}
+
+/**
+ * @summary Adds an icon to badge
+ */
+.slds-badge__icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--slds-c-badge-icon-color-foreground, var(--slds-g-color-on-surface-1));
+  line-height: 1;
+  vertical-align: middle;
+
+  /**
+   * @summary Change badge icon fill color to inverse
+   */
+  &.slds-badge__icon_inverse {
+    --slds-c-badge-icon-color-foreground: var(--slds-c-badge-icon-inverse-color-foreground, currentColor);
+  }
+}
+
+/**
+ * @summary Adds an icon to the left of the badge text
+ */
+.slds-badge__icon_left {
+  margin-inline-end: var(--slds-g-spacing-1);
+}
+
+/**
+ * @summary Adds an icon to the right of the badge text
+ */
+.slds-badge__icon_right {
+  margin-inline-start: var(--slds-g-spacing-1);
+}

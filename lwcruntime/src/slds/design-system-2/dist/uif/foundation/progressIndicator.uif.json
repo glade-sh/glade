@@ -1,0 +1,84 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "ProgressIndicator",
+  "description": "A progress indicator communicates to the user the progress of a particular process as a series of steps.",
+  "dateAdded": "2016-06-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Progress indicator container",
+    "children": [
+      {
+        "name": "progress",
+        "restrict": [
+          "ol",
+          "ul"
+        ],
+        "description": "Progress steps list",
+        "attributes": {
+          "static": {
+            "role": "list"
+          }
+        },
+        "slot": {
+          "name": "default"
+        },
+        "children": [
+          {
+            "name": "item",
+            "restrict": [
+              "li"
+            ],
+            "description": "progress step item",
+            "repeats": true,
+            "children": [
+              {
+                "name": "marker",
+                "restrict": [
+                  "button",
+                  "span"
+                ],
+                "description": "step marker indicator"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "currentStep",
+      "type": "number",
+      "description": "Index of current step"
+    },
+    {
+      "name": "hasError",
+      "type": "boolean",
+      "aria": "aria-invalid",
+      "description": "Whether current step has error"
+    },
+    {
+      "name": "completed",
+      "type": "boolean",
+      "description": "whether a step is completed"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "step-labels",
+        "description": "Each step should have an accessible label"
+      },
+      {
+        "id": "current-step",
+        "description": "Current step should be indicated to screen readers"
+      }
+    ]
+  }
+}

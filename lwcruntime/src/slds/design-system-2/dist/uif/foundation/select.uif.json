@@ -1,0 +1,127 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Select",
+  "description": "A select allows users to choose a single option from a dropdown list.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Select container",
+    "children": [
+      {
+        "name": "label",
+        "restrict": [
+          "label"
+        ],
+        "description": "Select label",
+        "attributes": {
+          "bound": {
+            "for": {
+              "prop": "selectId"
+            }
+          }
+        },
+        "slot": {
+          "name": "label",
+          "required": true
+        }
+      },
+      {
+        "name": "selectContainer",
+        "restrict": [
+          "div"
+        ],
+        "description": "Container for select element",
+        "children": [
+          {
+            "name": "select",
+            "restrict": [
+              "select"
+            ],
+            "description": "Native select element",
+            "attributes": {
+              "bound": {
+                "id": {
+                  "prop": "selectId",
+                  "required": true
+                },
+                "name": {
+                  "prop": "name"
+                },
+                "disabled": {
+                  "prop": "disabled"
+                },
+                "required": {
+                  "prop": "required"
+                },
+                "aria-describedby": {
+                  "prop": "ariaDescribedBy"
+                }
+              }
+            },
+            "slot": {
+              "name": "default"
+            }
+          }
+        ]
+      },
+      {
+        "name": "helpText",
+        "restrict": [
+          "div"
+        ],
+        "description": "Help text below select",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "helpText"
+        }
+      },
+      {
+        "name": "requiredIndicator",
+        "restrict": [
+          "abbr"
+        ],
+        "description": "required field indicator"
+      },
+      {
+        "name": "selectWrapper",
+        "restrict": [
+          "div"
+        ],
+        "description": "wrapper div around the select element"
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the select is disabled"
+    },
+    {
+      "name": "required",
+      "type": "boolean",
+      "aria": "aria-required",
+      "description": "Whether the select is required"
+    },
+    {
+      "name": "hasError",
+      "type": "boolean",
+      "description": "Whether the select has a validation error"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "label-association",
+        "description": "Select must have an associated label via for/id"
+      }
+    ]
+  }
+}

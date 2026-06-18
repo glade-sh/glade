@@ -1,0 +1,134 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Slider",
+  "description": "A slider allows users to select a value within a range.",
+  "dateAdded": "2017-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Slider container",
+    "children": [
+      {
+        "name": "label",
+        "restrict": [
+          "label",
+          "span"
+        ],
+        "description": "Slider label",
+        "slot": {
+          "name": "label",
+          "required": true
+        }
+      },
+      {
+        "name": "sliderContainer",
+        "restrict": [
+          "div"
+        ],
+        "description": "Container for slider input",
+        "children": [
+          {
+            "name": "input",
+            "restrict": [
+              "input"
+            ],
+            "description": "Native range input",
+            "attributes": {
+              "static": {
+                "type": "range"
+              },
+              "bound": {
+                "id": {
+                  "prop": "inputId",
+                  "required": true
+                },
+                "name": {
+                  "prop": "name"
+                },
+                "value": {
+                  "prop": "value"
+                },
+                "min": {
+                  "prop": "min"
+                },
+                "max": {
+                  "prop": "max"
+                },
+                "step": {
+                  "prop": "step"
+                },
+                "disabled": {
+                  "prop": "disabled"
+                },
+                "aria-describedby": {
+                  "prop": "ariaDescribedBy"
+                }
+              }
+            }
+          },
+          {
+            "name": "value",
+            "restrict": [
+              "span"
+            ],
+            "description": "Value display",
+            "slot": {
+              "name": "value"
+            }
+          }
+        ]
+      },
+      {
+        "name": "sliderLabel",
+        "restrict": [
+          "span"
+        ],
+        "description": "slider label container"
+      },
+      {
+        "name": "errorMessage",
+        "restrict": [
+          "div"
+        ],
+        "description": "validation error message",
+        "renderWhen": "hasError"
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the slider is disabled"
+    },
+    {
+      "name": "hasError",
+      "type": "boolean",
+      "description": "Whether the slider has a validation error"
+    },
+    {
+      "name": "required",
+      "type": "boolean",
+      "aria": "aria-required",
+      "description": "Whether the slider value is required"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "label-association",
+        "description": "Slider must have an associated label"
+      },
+      {
+        "id": "value-announcement",
+        "description": "Current value should be announced when changed"
+      }
+    ]
+  }
+}

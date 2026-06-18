@@ -1,0 +1,184 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Carousel",
+  "description": "A carousel allows multiple pieces of featured content to occupy an area of the page.",
+  "dateAdded": "2017-09-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Carousel container",
+    "children": [
+      {
+        "name": "stage",
+        "restrict": [
+          "div"
+        ],
+        "description": "Carousel stage/viewport",
+        "children": [
+          {
+            "name": "panels",
+            "restrict": [
+              "div"
+            ],
+            "description": "Carousel panels container",
+            "attributes": {
+              "static": {
+                "role": "tablist"
+              }
+            },
+            "slot": {
+              "name": "default",
+              "required": true
+            },
+            "children": [
+              {
+                "name": "panel",
+                "restrict": [
+                  "div"
+                ],
+                "description": "carousel slide panel",
+                "repeats": true,
+                "attributes": {
+                  "static": {
+                    "role": "tabpanel"
+                  },
+                  "bound": {
+                    "aria-labelledby": {
+                      "prop": "indicatorId"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "panelAction",
+                    "restrict": [
+                      "a"
+                    ],
+                    "description": "panel link wrapper"
+                  },
+                  {
+                    "name": "image",
+                    "restrict": [
+                      "div"
+                    ],
+                    "description": "panel image container"
+                  },
+                  {
+                    "name": "panelContent",
+                    "restrict": [
+                      "div"
+                    ],
+                    "description": "panel text content",
+                    "children": [
+                      {
+                        "name": "panelTitle",
+                        "restrict": [
+                          "h2"
+                        ],
+                        "description": "panel heading"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "indicators",
+        "restrict": [
+          "ul"
+        ],
+        "description": "Navigation indicators",
+        "attributes": {
+          "static": {
+            "role": "tablist"
+          }
+        },
+        "slot": {
+          "name": "indicators",
+          "required": true
+        },
+        "children": [
+          {
+            "name": "indicator",
+            "restrict": [
+              "li"
+            ],
+            "description": "carousel indicator dot",
+            "repeats": true,
+            "attributes": {
+              "static": {
+                "role": "presentation"
+              }
+            },
+            "children": [
+              {
+                "name": "indicatorAction",
+                "restrict": [
+                  "a"
+                ],
+                "description": "indicator tab link",
+                "attributes": {
+                  "static": {
+                    "role": "tab"
+                  },
+                  "bound": {
+                    "aria-selected": {
+                      "prop": "isActive"
+                    },
+                    "aria-controls": {
+                      "prop": "panelId"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "autoplayButton",
+        "restrict": [
+          "button"
+        ],
+        "description": "Autoplay toggle button",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "autoplayButton"
+        }
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "activeIndex",
+      "type": "number",
+      "description": "Index of active panel"
+    },
+    {
+      "name": "autoplay",
+      "type": "boolean",
+      "aria": "aria-pressed",
+      "description": "Whether autoplay is active"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "pause-autoplay",
+        "description": "Autoplay must be pausable"
+      },
+      {
+        "id": "keyboard-navigation",
+        "description": "Arrow keys should navigate between panels"
+      }
+    ]
+  }
+}

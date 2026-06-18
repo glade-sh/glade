@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/* Deprecate for slds-align_absolute-center */
+.slds-align-content-center {
+  flex: 1;
+  align-self: center;
+  justify-content: center;
+}
+
+/* Deprecate for slds-border--around */
+.slds-box_border {
+  padding: 0;
+  border-radius: var(--slds-g-radius-border-2);
+  border: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-1);
+}
+
+/* Deprecate for slds-is-collapsed */
+.slds-collapsed {
+  height: 0;
+  overflow: hidden;
+}
+
+/* Deprecate for slds-is-expanded */
+.slds-expanded {
+  height: auto;
+  overflow: visible;
+}
+
+/* Deprecated for accessibility reasons */
+.slds-media_reverse > .slds-media__figure {
+  order: 1;
+}
+
+/* Deprecated for accessibility reasons */
+.slds-media_reverse.slds-media_small .slds-media__figure {
+  margin-inline-start: var(--slds-g-spacing-1);
+}
+
+/* Deprecated for accessibility reasons */
+.slds-media_double > .slds-media__figure {
+  order: 1;
+}
+
+/* Deprecated for accessibility reasons */
+.slds-media_double .slds-media__figure_reverse {
+  order: 3;
+  margin: 0 0 0 var(--slds-g-spacing-4);
+}
+
+/* Deprecated for accessibility reasons */
+.slds-media_double .slds-media__body {
+  order: 2;
+}

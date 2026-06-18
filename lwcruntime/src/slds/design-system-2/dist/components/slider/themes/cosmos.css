@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  .slds-slider {
+    /* Border */
+    --slds-c-slider-radius-border: var(--slds-g-radius-border-1);
+    /* Thumb */
+    --slds-c-slider-thumb-size: var(--slds-g-sizing-5);
+    --slds-c-slider-thumb-radius-border: var(--slds-g-radius-border-circle);
+    --slds-c-slider-thumb-color-foreground: var(--slds-g-color-accent-container-1);
+    --slds-c-slider-thumb-shadow: 0 2px 3px rgb(0 0 0 / 16%);
+    /* Track */
+    --slds-c-slider-track-size: var(--slds-g-sizing-2);
+    --slds-c-slider-track-color-background: var(--slds-g-color-border-1);
+    --slds-c-slider-track-radius-border: var(--slds-g-radius-border-1);
+    /* Spacing */
+    --slds-c-slider-value-spacing-inline: var(--slds-g-spacing-2);
+    /* STATE MODIFIERS */
+    /* ↳ Hover */
+    --slds-c-slider-thumb-color-background-hover: var(--slds-g-color-accent-container-2);
+    /* ↳ Focus */
+    --slds-c-slider-thumb-shadow-focus: var(--slds-g-shadow-outset-focus-1);
+    --slds-c-slider-thumb-color-background-focus: var(--slds-g-color-accent-container-2);
+    /* ↳ Active */
+    --slds-c-slider-thumb-color-background-active: var(--slds-g-color-accent-container-2);
+    /* ↳ Disabled */
+    --slds-c-slider-thumb-color-foreground-disabled: var(--slds-g-color-on-disabled-1);
+    --slds-c-slider-track-color-background-disabled: var(--slds-g-color-border-disabled-1);
+    /* VARIANTS */
+    /* ↳ Vertical */
+    --slds-c-slider-vertical-sizing-height: var(--slds-g-sizing-14);
+  }
+}

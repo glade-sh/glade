@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+.slds-dynamic-menu {
+  .slds-popover__body {
+    color: var(--slds-g-color-on-surface-2);
+  }
+  .slds-popover__footer {
+    background-color: transparent;
+  }
+
+  .slds-dropdown_fluid:focus-visible {
+    box-shadow: var(--slds-g-shadow-inset-focus-1);
+    outline: 0;
+  }
+}
+
+/**
+   * @summary Headers styles for dynamic menu
+   */
+.slds-dynamic-menu__header {
+  font-size: var(--slds-g-font-scale-1);
+  font-weight: var(--slds-g-font-weight-7);
+}

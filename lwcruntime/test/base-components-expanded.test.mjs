@@ -37,10 +37,12 @@ function serveRuntimeFile(urlPath, res) {
     "/lightning/vendor/lwc.js": path.join(repoRoot, "third_party/lwc/node_modules/@lwc/engine-dom/dist/index.js"),
     "/lightning/vendor/synthetic-shadow.js": path.join(repoRoot, "third_party/lwc/node_modules/@lwc/synthetic-shadow/dist/index.js"),
     "/lightning/runtime/slds/slds-loader.js": path.join(repoRoot, "lwcruntime/src/slds/slds-loader.mjs"),
-    "/lightning/runtime/slds/glade-slds.css": path.join(repoRoot, "lwcruntime/src/slds/glade-slds.css"),
     "/lightning/runtime/shell/diagnostics.js": path.join(repoRoot, "lwcruntime/src/shell/diagnostics.mjs"),
   };
   let filePath = routes[urlPath];
+  if (!filePath && urlPath.startsWith("/lightning/runtime/slds/")) {
+    filePath = path.normalize(path.join(repoRoot, "lwcruntime/src/slds", urlPath.slice("/lightning/runtime/slds/".length)));
+  }
   if (!filePath && urlPath.startsWith("/lightning/shims/lightning/")) {
     const name = urlPath.slice("/lightning/shims/lightning/".length).replace(/\.(js|mjs)$/, "");
     filePath = path.join(repoRoot, "lwcruntime/src/lightning", `${name}.mjs`);
@@ -192,7 +194,7 @@ test("expanded phase 3 base components render and dispatch local events", async 
     });
     await page.goto(`${server.baseURL}/expanded.html`, { waitUntil: "networkidle" });
     assert.equal(await page.locator("lightning-formatted-email a").getAttribute("href"), "mailto:trail@example.com");
-    await page.locator('lightning-checkbox-group input[value="beta"]').check();
+    await page.locator("lightning-checkbox-group label", { hasText: "Beta" }).click();
     assert.deepEqual(await page.evaluate(() => window.__checkboxGroup), { value: ["alpha", "beta"] });
     assert.deepEqual(await page.locator('lightning-dual-listbox select[data-list="source"] option').allTextContents(), ["Beta"]);
     assert.deepEqual(await page.locator('lightning-dual-listbox select[data-list="selected"] option').allTextContents(), ["Alpha"]);

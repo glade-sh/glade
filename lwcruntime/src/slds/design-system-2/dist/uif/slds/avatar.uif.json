@@ -1,0 +1,165 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Avatar",
+  "description": "An avatar represents an object or entity.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "span",
+      "a"
+    ],
+    "description": "Avatar container",
+    "attributes": {
+      "bound": {
+        "title": {
+          "prop": "title"
+        }
+      },
+      "static": {
+        "class": "slds-avatar"
+      }
+    },
+    "children": [
+      {
+        "name": "image",
+        "restrict": [
+          "img"
+        ],
+        "description": "Avatar image",
+        "renderWhen": "slotFilled",
+        "attributes": {
+          "bound": {
+            "src": {
+              "prop": "src",
+              "required": true
+            },
+            "alt": {
+              "prop": "alternativeText"
+            }
+          }
+        }
+      },
+      {
+        "name": "initials",
+        "restrict": [
+          "abbr",
+          "span"
+        ],
+        "description": "Initials fallback when no image",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "initials"
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-avatar__initials"
+          }
+        }
+      },
+      {
+        "name": "fallbackIcon",
+        "restrict": [
+          "span"
+        ],
+        "description": "Fallback icon when no image or initials",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "fallbackIcon",
+          "restrict": [
+            "Icon"
+          ]
+        }
+      },
+      {
+        "name": "assistiveText",
+        "restrict": [
+          "span"
+        ],
+        "description": "screen reader text for avatar",
+        "attributes": {
+          "static": {
+            "class": "slds-assistive-text"
+          }
+        }
+      }
+    ],
+    "modifiers": [
+      {
+        "name": "circle",
+        "attribute": "class",
+        "value": "slds-avatar_circle",
+        "description": "Renders the avatar as a circle instead of a square"
+      },
+      {
+        "name": "empty",
+        "attribute": "class",
+        "value": "slds-avatar_empty",
+        "description": "Displays an empty avatar placeholder"
+      },
+      {
+        "name": "size",
+        "attribute": "class",
+        "description": "Avatar size",
+        "default": "medium",
+        "options": [
+          {
+            "propValue": "x-small",
+            "value": "slds-avatar_x-small"
+          },
+          {
+            "propValue": "small",
+            "value": "slds-avatar_small"
+          },
+          {
+            "propValue": "medium",
+            "value": "slds-avatar_medium"
+          },
+          {
+            "propValue": "large",
+            "value": "slds-avatar_large"
+          }
+        ]
+      },
+      {
+        "name": "profileImageLarge",
+        "attribute": "class",
+        "value": "slds-avatar_profile-image-large",
+        "description": "large profile image size"
+      },
+      {
+        "name": "groupImageLarge",
+        "attribute": "class",
+        "value": "slds-avatar_group-image-large",
+        "description": "large group image size"
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "linked",
+      "type": "boolean",
+      "description": "whether the avatar is wrapped in a link"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "alt-text",
+        "description": "Image avatars must have alternative text describing the entity"
+      },
+      {
+        "id": "decorative-hidden",
+        "description": "Decorative avatars should be hidden from screen readers"
+      }
+    ]
+  },
+  "cssSource": "./avatar.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  }
+}

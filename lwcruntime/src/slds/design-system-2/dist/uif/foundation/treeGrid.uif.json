@@ -1,0 +1,88 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "TreeGrid",
+  "description": "A tree grid displays hierarchical tabular data with expandable rows.",
+  "dateAdded": "2018-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Tree grid container",
+    "children": [
+      {
+        "name": "table",
+        "restrict": [
+          "table"
+        ],
+        "description": "Table element",
+        "attributes": {
+          "static": {
+            "role": "treegrid"
+          }
+        },
+        "children": [
+          {
+            "name": "thead",
+            "restrict": [
+              "thead"
+            ],
+            "description": "Table header",
+            "slot": {
+              "name": "header"
+            }
+          },
+          {
+            "name": "tbody",
+            "restrict": [
+              "tbody"
+            ],
+            "description": "Table body with tree rows",
+            "slot": {
+              "name": "default"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "expandedRows",
+      "type": "array",
+      "aria": "aria-expanded",
+      "description": "Array of expanded row keys"
+    },
+    {
+      "name": "selected",
+      "type": "boolean",
+      "aria": "aria-selected",
+      "description": "Whether a row is selected"
+    },
+    {
+      "name": "rowSelected",
+      "type": "boolean",
+      "aria": "aria-selected",
+      "description": "whether a row is selected"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "treegrid-role",
+        "description": "Table must have role='treegrid'"
+      },
+      {
+        "id": "aria-level",
+        "description": "Rows must have aria-level indicating depth"
+      },
+      {
+        "id": "aria-expanded",
+        "description": "Expandable rows must have aria-expanded"
+      }
+    ]
+  }
+}

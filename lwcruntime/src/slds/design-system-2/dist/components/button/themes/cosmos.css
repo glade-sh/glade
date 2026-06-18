@@ -1,0 +1,452 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  /*
+   * Hook organization: --slds-c-button-[{element}-]{category}-{property}
+   * Base (no element): sizing, color, radius, spacing, font, shadow, transform.
+   * Element "icon" (.slds-button__icon): sizing, spacing.
+   */
+
+  /**
+   * Base button — defaults for unclassed .slds-button (text/link style)
+   */
+  .slds-button {
+    /* radius */
+    --slds-c-button-radius-border: var(--slds-s-button-radius-border, var(--slds-g-radius-border-pill));
+    /* color */
+    --slds-c-button-color-foreground: var(--slds-g-color-accent-2);
+    /* font */
+    --slds-c-button-font-weight: var(--slds-g-font-weight-6);
+    --slds-c-button-font-line-height: 1.875rem;
+    /* spacing */
+    --slds-c-button-spacing-gap: var(--slds-g-spacing-2);
+
+    box-shadow: var(--slds-c-button-shadow);
+
+    &:not([disabled]) {
+      transition:
+        transform 150ms ease-in-out,
+        box-shadow 150ms ease-in-out;
+    }
+
+    &:hover {
+      --slds-c-button-color-foreground-hover: var(--slds-g-color-accent-3);
+
+      box-shadow: var(--slds-c-button-shadow-hover);
+      transform: var(--slds-c-button-transform-hover);
+    }
+
+    &:focus-visible {
+      --slds-c-button-shadow-focus: var(--slds-g-shadow-outline-focus-1);
+      --slds-c-button-color-foreground-hover: var(--slds-g-color-accent-3);
+
+      box-shadow: var(--slds-c-button-shadow-focus);
+      outline: 0;
+      background-clip: padding-box;
+    }
+
+    &:active {
+      --slds-c-button-color-foreground-active: var(--slds-g-color-accent-3);
+
+      box-shadow: var(--slds-c-button-shadow-active);
+    }
+
+    &[disabled],
+    &:disabled {
+      --slds-c-button-color-foreground-disabled: var(--slds-g-color-disabled-1);
+    }
+  }
+
+  /* Icon element: sizing, spacing */
+  .slds-button__icon,
+  .slds-button__icon_stateful {
+    --slds-c-button-icon-size: 0.875rem;
+    --slds-c-button-icon-spacing: var(--slds-g-spacing-2);
+  }
+
+  .slds-button__icon_large {
+    --slds-c-button-icon-size-large: var(--slds-g-sizing-7);
+  }
+
+  .slds-button__icon_small {
+    --slds-c-button-icon-size-small: var(--slds-g-sizing-4);
+  }
+
+  .slds-button__icon_x-small {
+    --slds-c-button-icon-size-x-small: var(--slds-g-sizing-3);
+  }
+
+  .slds-button_reset:focus-visible {
+    box-shadow: var(--slds-c-button-shadow-focus);
+
+    --slds-c-button-shadow-focus: var(--slds-g-shadow-outset-focus-1);
+  }
+
+  .slds-button_full-width {
+    &:hover {
+      box-shadow: none;
+      transform: none;
+    }
+
+    &:focus-visible {
+      --slds-c-button-shadow: none;
+      --slds-c-button-shadow-focus: var(--slds-g-shadow-outset-focus-1);
+
+      box-shadow: var(--slds-c-button-shadow-focus);
+    }
+  }
+
+  /**
+   * @summary Creates the gray border with white background default style
+   */
+  .slds-button_neutral {
+    /* sizing */
+    --slds-c-button-sizing-border: var(--slds-g-sizing-border-1);
+    /* color */
+    --slds-c-button-color-background: var(--slds-g-color-surface-container-1);
+    --slds-c-button-color-border: var(--slds-g-color-border-2);
+    /* spacing */
+    --slds-c-button-spacing-inline: var(--slds-s-button-spacing-inline, var(--slds-g-spacing-4));
+
+    &:hover,
+    &:focus-visible {
+      --slds-c-button-color-background-hover: var(--slds-g-color-surface-container-2);
+      --slds-c-button-color-border-hover: var(--slds-g-color-border-2);
+    }
+
+    &:hover {
+      --slds-c-button-shadow-hover: var(--slds-s-button-bordered-shadow-hover);
+      --slds-c-button-transform-hover: var(--slds-s-button-bordered-transform-hover);
+    }
+
+    &:focus-visible {
+      --slds-c-button-shadow-focus: var(--slds-g-shadow-insetinverse-focus-1);
+    }
+
+    &:active {
+      --slds-c-button-color-background-active: var(--slds-g-color-surface-container-2);
+      --slds-c-button-color-border-active: var(--slds-g-color-border-2);
+      --slds-c-button-shadow-active: var(--slds-s-button-shadow-active);
+      --slds-c-button-transform-hover: none;
+    }
+
+    &[disabled],
+    &:disabled {
+      --slds-c-button-color-background-disabled: var(--slds-g-color-disabled-container-1);
+      --slds-c-button-color-border-disabled: var(--slds-g-color-border-disabled-1);
+      --slds-c-button-color-foreground-disabled: var(--slds-g-color-on-disabled-1);
+    }
+  }
+
+  /**
+   * @summary Creates the brand blue Salesforce style
+   */
+  .slds-button_brand {
+    /* sizing */
+    --slds-c-button-sizing-border: var(--slds-g-sizing-border-1);
+    /* color */
+    --slds-c-button-color-background: var(--slds-g-color-accent-container-1);
+    --slds-c-button-color-border: var(--slds-g-color-border-accent-1);
+    --slds-c-button-color-foreground: var(--slds-g-color-on-accent-1);
+    /* spacing */
+    --slds-c-button-spacing-inline: var(--slds-s-button-spacing-inline, var(--slds-g-spacing-4));
+
+    &:hover,
+    &:focus-visible {
+      --slds-c-button-color-background-hover: var(--slds-g-color-accent-container-2);
+      --slds-c-button-color-border-hover: var(--slds-g-color-accent-container-2);
+      --slds-c-button-color-foreground-hover: var(--slds-g-color-on-accent-2);
+    }
+
+    &:hover {
+      --slds-c-button-shadow-hover: var(--slds-s-button-brand-shadow-hover);
+      --slds-c-button-transform-hover: var(--slds-s-button-brand-transform-hover);
+    }
+
+    &:focus-visible {
+      --slds-c-button-shadow-focus: var(--slds-g-shadow-insetinverse-focus-1);
+    }
+
+    &:active {
+      --slds-c-button-color-background-active: var(--slds-g-color-accent-container-2);
+      --slds-c-button-color-border-active: transparent;
+      --slds-c-button-color-foreground-active: var(--slds-g-color-on-accent-2);
+      --slds-c-button-shadow-active: var(--slds-s-button-shadow-active);
+      --slds-c-button-transform-hover: none;
+    }
+
+    &[disabled],
+    &:disabled {
+      --slds-c-button-color-background-disabled: var(--slds-g-color-disabled-container-2);
+      --slds-c-button-color-border-disabled: var(--slds-g-color-disabled-container-2);
+      --slds-c-button-color-foreground-disabled: var(--slds-g-color-on-disabled-2);
+    }
+  }
+
+  /**
+   * @summary Creates the outlined button with the brand color
+   */
+  .slds-button_outline-brand {
+    /* sizing */
+    --slds-c-button-sizing-border: var(--slds-g-sizing-border-1);
+    /* color */
+    --slds-c-button-color-background: var(--slds-g-color-surface-container-1);
+    --slds-c-button-color-border: var(--slds-g-color-border-accent-1);
+    /* spacing */
+    --slds-c-button-spacing-inline: var(--slds-s-button-spacing-inline, var(--slds-g-spacing-4));
+
+    &:hover,
+    &:focus-visible {
+      --slds-c-button-color-background-hover: var(--slds-g-color-surface-container-2);
+      --slds-c-button-color-border-hover: var(--slds-g-color-border-accent-1);
+    }
+
+    &:hover {
+      --slds-c-button-shadow-hover: var(--slds-s-button-brand-shadow-hover);
+      --slds-c-button-transform-hover: var(--slds-s-button-bordered-transform-hover);
+    }
+
+    &:focus-visible {
+      --slds-c-button-shadow-focus: var(--slds-g-shadow-insetinverse-focus-1);
+    }
+
+    &:active {
+      --slds-c-button-color-background-active: var(--slds-g-color-surface-container-2);
+      --slds-c-button-color-border-active: var(--slds-g-color-border-accent-1);
+      --slds-c-button-shadow-active: var(--slds-s-button-shadow-active);
+      --slds-c-button-transform-hover: none;
+    }
+
+    &[disabled],
+    &:disabled {
+      --slds-c-button-color-background-disabled: var(--slds-g-color-disabled-container-1);
+      --slds-c-button-color-border-disabled: var(--slds-g-color-border-disabled-1);
+    }
+  }
+
+  /**
+   * @summary Creates the inverse style for dark backgrounds
+   */
+  .slds-button_inverse {
+    /* sizing */
+    --slds-c-button-sizing-border: var(--slds-g-sizing-border-1);
+    /* color */
+    --slds-c-button-color-background: transparent;
+    --slds-c-button-color-border: var(--slds-g-color-border-inverse-1);
+    --slds-c-button-color-foreground: var(--slds-g-color-on-surface-inverse-1);
+    /* spacing */
+    --slds-c-button-spacing-inline: var(--slds-s-button-spacing-inline, var(--slds-g-spacing-4));
+
+    &:hover {
+      --slds-c-button-color-background-hover: var(--slds-g-color-surface-container-2);
+      --slds-c-button-color-border-hover: var(--slds-g-color-border-inverse-1);
+      --slds-c-button-shadow-hover: 0 2px 0 0
+        light-dark(var(--slds-g-color-neutral-base-20), var(--slds-g-color-neutral-base-40));
+      --slds-c-button-transform-hover: var(--slds-s-button-brand-transform-hover);
+    }
+
+    &:focus-visible {
+      --slds-c-button-color-border: var(--slds-g-color-surface-container-2);
+      --slds-c-button-shadow-focus: var(--slds-g-shadow-inset-inverse-focus-1);
+    }
+
+    &:not(:hover):focus-visible {
+      --slds-c-button-shadow-focus: 0px 0px 0px 2px var(--slds-g-color-neutral-base-95) inset;
+    }
+
+    &:active {
+      --slds-c-button-color-background-active: var(--slds-g-color-surface-container-2);
+      --slds-c-button-color-border-active: transparent;
+      --slds-c-button-shadow-active: var(--slds-s-button-shadow-active);
+      --slds-c-button-transform-hover: none;
+    }
+
+    &[disabled],
+    &:disabled {
+      --slds-c-button-color-border-disabled: color-mix(
+        in oklab,
+        var(--slds-g-color-neutral-base-100),
+        transparent 50%
+      );
+    }
+  }
+
+  .slds-button_inverse,
+  .slds-button_icon-inverse {
+    /* NOTE: .slds-button_icon-border-inverse intentionally excluded — owned by buttonIcon.css */
+    &:hover {
+      --slds-c-button-color-foreground-hover: var(--slds-g-color-accent-3);
+    }
+
+    &:focus-visible {
+      --slds-c-button-color-foreground-hover: var(--slds-g-color-on-surface-3);
+    }
+
+    &:not(:hover):focus-visible {
+      --slds-c-button-shadow-focus: 0px 0px 0px 2px var(--slds-g-color-neutral-base-95) inset;
+      --slds-c-button-color-foreground-hover: var(--slds-g-color-on-surface-inverse-1);
+    }
+
+    &:active {
+      --slds-c-button-color-foreground-active: var(--slds-g-color-accent-3);
+      --slds-c-button-shadow-active: var(--slds-s-button-shadow-active);
+    }
+
+    &[disabled],
+    &:disabled {
+      --slds-c-button-color-foreground-disabled: color-mix(
+        in oklab,
+        var(--slds-g-color-neutral-base-100),
+        transparent 50%
+      );
+    }
+  }
+
+  /**
+   * @summary Creates a red button style
+   */
+  .slds-button_destructive {
+    /* color */
+    --slds-c-button-color-foreground: #fff;
+    --slds-c-button-color-background: var(--slds-g-color-error-base-50);
+    /* spacing */
+    --slds-c-button-spacing-inline: var(--slds-s-button-spacing-inline, var(--slds-g-spacing-4));
+
+    &:hover,
+    &:focus-visible {
+      --slds-c-button-color-foreground-hover: light-dark(#fff, var(--slds-g-color-error-base-40));
+      --slds-c-button-color-background-hover: light-dark(
+        var(--slds-g-color-error-base-40),
+        var(--slds-g-color-error-base-90)
+      );
+      --slds-c-button-color-border-hover: currentcolor;
+    }
+
+    &:hover {
+      --slds-c-button-shadow-hover: 0 2px 0 0
+        light-dark(var(--slds-g-color-error-base-20), var(--slds-g-color-error-base-40));
+      --slds-c-button-transform-hover: var(--slds-s-button-brand-transform-hover);
+    }
+
+    &:focus-visible {
+      --slds-c-button-shadow-focus: var(--slds-g-shadow-insetinverse-focus-1);
+    }
+
+    &:active {
+      --slds-c-button-color-foreground-active: light-dark(#fff, var(--slds-g-color-error-base-40));
+      --slds-c-button-color-background-active: light-dark(
+        var(--slds-g-color-error-base-40),
+        var(--slds-g-color-error-base-90)
+      );
+      --slds-c-button-color-border-active: currentcolor;
+      --slds-c-button-shadow-active: var(--slds-s-button-shadow-active);
+      --slds-c-button-transform-hover: none;
+    }
+
+    &[disabled],
+    &:disabled {
+      --slds-c-button-color-background-disabled: var(--slds-g-color-disabled-container-2);
+      --slds-c-button-color-border-disabled: var(--slds-g-color-disabled-container-2);
+      --slds-c-button-color-foreground-disabled: var(--slds-g-color-on-disabled-2);
+    }
+  }
+
+  /**
+   * @summary Creates a neutral button with red text
+   */
+  .slds-button_text-destructive {
+    /* sizing */
+    --slds-c-button-sizing-border: var(--slds-g-sizing-border-1);
+    /* color */
+    --slds-c-button-color-foreground: var(--slds-g-color-error-1);
+    --slds-c-button-color-background: var(--slds-g-color-surface-container-1);
+    --slds-c-button-color-border: var(--slds-g-color-border-error-1);
+    /* spacing */
+    --slds-c-button-spacing-inline: var(--slds-s-button-spacing-inline, var(--slds-g-spacing-4));
+
+    &:hover,
+    &:focus-visible {
+      --slds-c-button-color-background-hover: var(--slds-g-color-surface-container-2);
+      --slds-c-button-color-border-hover: var(--slds-g-color-border-error-2);
+      --slds-c-button-color-foreground-hover: var(--slds-g-color-error-1);
+    }
+
+    &:hover {
+      --slds-c-button-shadow-hover: 0 2px 0 0
+        light-dark(var(--slds-g-color-error-base-20), var(--slds-g-color-error-base-40));
+      --slds-c-button-transform-hover: var(--slds-s-button-bordered-transform-hover);
+    }
+
+    &:focus-visible {
+      --slds-c-button-shadow-focus: var(--slds-g-shadow-insetinverse-focus-1);
+    }
+
+    &:active {
+      --slds-c-button-color-background-active: var(--slds-g-color-surface-container-2);
+      --slds-c-button-color-border-active: var(--slds-g-color-border-error-2);
+      --slds-c-button-color-foreground-active: var(--slds-g-color-error-1);
+      --slds-c-button-shadow-active: var(--slds-s-button-shadow-active);
+      --slds-c-button-transform-hover: none;
+    }
+
+    &[disabled],
+    &:disabled {
+      --slds-c-button-color-background-disabled: var(--slds-g-color-disabled-container-1);
+      --slds-c-button-color-border-disabled: var(--slds-g-color-border-disabled-1);
+      --slds-c-button-color-foreground-disabled: var(--slds-g-color-on-disabled-1);
+    }
+  }
+
+  /**
+   * @summary Creates a green button style
+   */
+  .slds-button_success {
+    /* color */
+    --slds-c-button-color-foreground: #fff;
+    --slds-c-button-color-background: var(--slds-g-color-success-base-50);
+    /* spacing */
+    --slds-c-button-spacing-inline: var(--slds-s-button-spacing-inline, var(--slds-g-spacing-4));
+
+    &:hover,
+    &:focus-visible {
+      --slds-c-button-color-foreground-hover: light-dark(#fff, var(--slds-g-color-success-base-40));
+      --slds-c-button-color-background-hover: light-dark(
+        var(--slds-g-color-success-base-40),
+        var(--slds-g-color-success-base-90)
+      );
+      --slds-c-button-color-border-hover: currentcolor;
+    }
+
+    &:hover {
+      --slds-c-button-shadow-hover: 0 2px 0 0
+        light-dark(var(--slds-g-color-success-base-20), var(--slds-g-color-success-base-40));
+      --slds-c-button-transform-hover: var(--slds-s-button-brand-transform-hover);
+    }
+
+    &:focus-visible {
+      --slds-c-button-shadow-focus: var(--slds-g-shadow-insetinverse-focus-1);
+    }
+
+    &:active {
+      --slds-c-button-color-foreground-active: light-dark(#fff, var(--slds-g-color-success-base-40));
+      --slds-c-button-color-background-active: light-dark(
+        var(--slds-g-color-success-base-40),
+        var(--slds-g-color-success-base-90)
+      );
+      --slds-c-button-color-border-active: currentcolor;
+      --slds-c-button-shadow-active: var(--slds-s-button-shadow-active);
+      --slds-c-button-transform-hover: none;
+    }
+
+    &[disabled],
+    &:disabled {
+      --slds-c-button-color-background-disabled: var(--slds-g-color-disabled-container-2);
+      --slds-c-button-color-border-disabled: var(--slds-g-color-disabled-container-2);
+      --slds-c-button-color-foreground-disabled: var(--slds-g-color-on-disabled-2);
+    }
+  }
+}

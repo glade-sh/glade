@@ -1,0 +1,161 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  /* Form error */
+  .slds-color-picker .slds-form-error {
+    --slds-c-colorpicker-form-error-spacing-block-start: var(--slds-g-spacing-2);
+    --slds-c-colorpicker-form-error-color-foreground: var(
+      --slds-g-color-error-base-40,
+      var(--slds-g-color-error-1)
+    );
+    --slds-c-colorpicker-form-error-font-size: var(--slds-g-font-scale-neg-1);
+  }
+
+  /* Summary button */
+  .slds-color-picker__summary-button {
+    --slds-c-colorpicker-summary-button-spacing-block: 0.3rem;
+    --slds-c-colorpicker-summary-button-spacing-inline: var(--slds-g-spacing-2);
+    --slds-c-colorpicker-summary-button-color-background: var(
+      --slds-g-color-neutral-base-100,
+      var(--slds-g-color-surface-container-1)
+    );
+    --slds-c-colorpicker-summary-button-spacing-inline-end: var(--slds-g-spacing-1);
+    --slds-c-colorpicker-summary-button-radius-border: var(
+      --slds-s-input-radius-border,
+      var(--slds-g-radius-border-4)
+    );
+  }
+
+  /* Summary input */
+  .slds-color-picker__summary-input .slds-input {
+    --slds-c-colorpicker-summary-input-sizing-inline: 6rem;
+  }
+
+  /* Selector */
+  .slds-color-picker__selector {
+    --slds-c-colorpicker-selector-spacing-block-start: var(--slds-g-spacing-2);
+  }
+
+  .slds-color-picker__selector .slds-popover__footer {
+    --slds-c-colorpicker-selector-footer-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-colorpicker-selector-footer-color-border: var(
+      --slds-s-container-color-border,
+      var(--slds-g-color-neutral-base-90)
+    );
+  }
+
+  .slds-color-picker__selector.slds-popover {
+    --slds-c-colorpicker-selector-sizing-inline: 14rem;
+    --slds-c-colorpicker-selector-shadow: var(--slds-g-shadow-2);
+  }
+
+  .slds-color-picker__selector .slds-tabs_default__content {
+    --slds-c-colorpicker-selector-tabs-spacing-block: var(--slds-g-spacing-2);
+  }
+
+  /* Swatch items */
+  .slds-color-picker__swatch {
+    --slds-c-colorpicker-swatch-item-spacing-block: var(--slds-g-spacing-1);
+    --slds-c-colorpicker-swatch-item-spacing-inline: var(--slds-g-spacing-1);
+  }
+
+  .slds-color-picker__swatch-trigger {
+    --slds-c-colorpicker-swatch-trigger-shadow-focus: var(--slds-g-shadow-outset-focus-1);
+    --slds-c-colorpicker-swatch-trigger-radius-border-focus: var(--slds-g-radius-border-2);
+  }
+
+  /* Custom picker */
+  .slds-color-picker__custom {
+    --slds-c-colorpicker-custom-spacing-block: var(--slds-g-spacing-1);
+  }
+
+  .slds-color-picker__custom-range {
+    --slds-c-colorpicker-custom-range-spacing-block-end: var(--slds-g-spacing-1);
+    --slds-c-colorpicker-custom-range-sizing-block: var(--slds-g-sizing-12);
+    --slds-c-colorpicker-custom-range-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-colorpicker-custom-range-color-border: var(--slds-g-color-border-1);
+    --slds-c-colorpicker-custom-range-radius-border: var(--slds-g-radius-border-2);
+  }
+
+  /* Range indicator */
+  .slds-color-picker__range-indicator {
+    --slds-c-colorpicker-range-indicator-sizing: var(--slds-g-sizing-4);
+    --slds-c-colorpicker-range-indicator-sizing-border: var(--slds-g-sizing-border-2);
+    --slds-c-colorpicker-range-indicator-color-border: var(--slds-g-color-surface-container-1);
+    --slds-c-colorpicker-range-indicator-radius-border: var(--slds-g-radius-border-circle);
+    --slds-c-colorpicker-range-indicator-shadow:
+      0 2px 4px 4px rgb(0, 0, 0, 0.16), inset 0 2px 4px 4px rgb(0, 0, 0, 0.16);
+    --slds-c-colorpicker-range-indicator-shadow-focus: var(--slds-g-shadow-outset-focus-1);
+  }
+
+  /* Hue and preview swatch */
+  .slds-color-picker__hue-and-preview .slds-swatch {
+    --slds-c-colorpicker-preview-swatch-spacing-inline-start: var(--slds-g-spacing-1);
+    --slds-c-colorpicker-preview-swatch-sizing: var(--slds-g-spacing-5);
+    --slds-c-colorpicker-preview-swatch-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-colorpicker-preview-swatch-color-border: var(--slds-g-color-border-1);
+    --slds-c-colorpicker-preview-swatch-radius-border: var(--slds-g-radius-border-1);
+  }
+
+  /* Hue slider */
+  .slds-color-picker__hue-slider {
+    --slds-c-colorpicker-hue-slider-sizing-block: var(--slds-g-sizing-7);
+    --slds-c-colorpicker-hue-slider-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-colorpicker-hue-slider-color-border: var(--slds-g-color-border-1);
+    --slds-c-colorpicker-hue-slider-radius-border: var(--slds-g-radius-border-1);
+    /* Thumb sizing: slider height minus 2× border so the thumb fits flush */
+    --slds-c-colorpicker-hue-thumb-sizing-block: calc(
+      var(--slds-c-colorpicker-hue-slider-sizing-block) - var(--slds-c-colorpicker-hue-slider-sizing-border) *
+        2
+    );
+    --slds-c-colorpicker-hue-thumb-sizing-inline: 0.375rem;
+    --slds-c-colorpicker-hue-thumb-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-colorpicker-hue-thumb-color-border: var(--slds-g-color-neutral-base-30);
+    --slds-c-colorpicker-hue-thumb-radius-border: var(--slds-g-radius-border-1);
+    --slds-c-colorpicker-hue-thumb-color-background: var(
+      --slds-g-color-surface-container-1,
+      var(--slds-g-color-neutral-base-95)
+    );
+    --slds-c-colorpicker-hue-thumb-color-border-focus: var(
+      --slds-g-color-brand-base-60,
+      var(--slds-g-color-accent-1)
+    );
+    --slds-c-colorpicker-hue-thumb-shadow-focus: var(--slds-g-shadow-outset-focus-1);
+  }
+
+  /* Custom inputs */
+  .slds-color-picker__custom-inputs {
+    --slds-c-colorpicker-custom-inputs-spacing-block-start: var(--slds-g-spacing-2);
+  }
+
+  .slds-color-picker__custom-inputs .slds-form-element:not(:first-child) {
+    --slds-c-colorpicker-custom-inputs-item-spacing-inline-start: var(--slds-g-spacing-1);
+  }
+
+  .slds-color-picker__custom-inputs input {
+    --slds-c-colorpicker-custom-inputs-input-spacing-inline: var(--slds-g-spacing-1);
+  }
+
+  .slds-color-picker__custom-inputs .slds-form-element.slds-color-picker__input-custom-hex {
+    --slds-c-colorpicker-hex-input-sizing-inline: 4.2rem;
+    --slds-c-colorpicker-hex-input-font-size: var(--slds-g-spacing-3);
+  }
+
+  /* Generic swatch */
+  .slds-swatch {
+    --slds-c-colorpicker-swatch-sizing: var(--slds-g-sizing-6);
+    --slds-c-colorpicker-swatch-radius-border: var(--slds-g-radius-border-1);
+    --slds-c-colorpicker-swatch-shadow: inset 0 0 1px rgb(0, 0, 0, 0.4);
+  }
+
+  /* Swatches-only variant */
+  .slds-color-picker.slds-color-picker_swatches-only {
+    --slds-c-colorpicker-swatches-only-sizing-inline: 13.3rem;
+    --slds-c-colorpicker-swatches-only-spacing-block: var(--slds-g-spacing-2);
+    --slds-c-colorpicker-swatches-only-spacing-inline: var(--slds-g-spacing-2);
+  }
+}

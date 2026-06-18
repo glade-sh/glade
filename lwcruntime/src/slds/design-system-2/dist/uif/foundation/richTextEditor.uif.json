@@ -1,0 +1,133 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "RichTextEditor",
+  "description": "A rich text editor for formatting text content.",
+  "dateAdded": "2017-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Rich text editor container",
+    "children": [
+      {
+        "name": "label",
+        "restrict": [
+          "label",
+          "span"
+        ],
+        "description": "Editor label",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "label"
+        }
+      },
+      {
+        "name": "toolbar",
+        "restrict": [
+          "div"
+        ],
+        "description": "Formatting toolbar",
+        "attributes": {
+          "static": {
+            "role": "toolbar"
+          },
+          "bound": {
+            "aria-label": {
+              "prop": "toolbarLabel"
+            }
+          }
+        },
+        "slot": {
+          "name": "toolbar"
+        }
+      },
+      {
+        "name": "output",
+        "restrict": [
+          "div"
+        ],
+        "description": "rich text output display container"
+      },
+      {
+        "name": "editorContainer",
+        "restrict": [
+          "div"
+        ],
+        "description": "Editor content container",
+        "children": [
+          {
+            "name": "editor",
+            "restrict": [
+              "div"
+            ],
+            "description": "Editable content area",
+            "attributes": {
+              "static": {
+                "role": "textbox",
+                "contenteditable": "true"
+              },
+              "bound": {
+                "aria-multiline": {
+                  "prop": "multiline"
+                },
+                "aria-labelledby": {
+                  "prop": "labelId"
+                },
+                "aria-describedby": {
+                  "prop": "ariaDescribedBy"
+                }
+              }
+            },
+            "slot": {
+              "name": "default"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the editor is disabled"
+    },
+    {
+      "name": "readonly",
+      "type": "boolean",
+      "aria": "aria-readonly",
+      "description": "Whether the editor is read-only"
+    },
+    {
+      "name": "hasError",
+      "type": "boolean",
+      "description": "Whether the editor has a validation error"
+    },
+    {
+      "name": "focused",
+      "type": "boolean",
+      "description": "whether the editor has keyboard focus"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "textbox-role",
+        "description": "Editor area must have role='textbox' with aria-multiline='true'"
+      },
+      {
+        "id": "toolbar-label",
+        "description": "Toolbar must have an accessible label"
+      },
+      {
+        "id": "keyboard-formatting",
+        "description": "Common formatting shortcuts (Ctrl+B, Ctrl+I) should work"
+      }
+    ]
+  }
+}

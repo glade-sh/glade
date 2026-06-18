@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { chromium } from "playwright";
-import { requireLWCToolchain, startVisualforceDevServer } from "./helpers.mjs";
+import { defaultSLDSHref, requireLWCToolchain, startVisualforceDevServer } from "./helpers.mjs";
 
 const fixture = "testdata/local-tests/lightning-out-vf";
 
@@ -65,7 +65,7 @@ test("MultiWidgetHost boots Lightning Out components in the rendered Visualforce
     assert.match(await page.locator('c-base-component-host [data-probe="vf-base"] lightning-tabset').innerText(), /Details/);
     await page.locator('c-base-component-host [data-probe="vf-base"] lightning-tab h3', { hasText: "Details" }).click();
     assert.equal(await page.locator('c-base-component-host [data-probe="vf-base"] .tab-status').innerText(), "details");
-    assert.equal(await page.locator('link[href="/lightning/runtime/slds/glade-slds.css"]').count(), 1);
+    assert.equal(await page.locator(`link[href="${defaultSLDSHref}"]`).count(), 1);
 
     const callbacks = await page.evaluate(() => window.__callbacks);
     for (const qualified of [

@@ -1,0 +1,202 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Datepicker",
+  "description": "A datepicker allows users to select a single date from a calendar interface.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Datepicker container",
+    "children": [
+      {
+        "name": "header",
+        "restrict": [
+          "div"
+        ],
+        "description": "Month/year navigation header",
+        "children": [
+          {
+            "name": "prevButton",
+            "restrict": [
+              "button"
+            ],
+            "description": "Previous month button",
+            "attributes": {
+              "bound": {
+                "aria-label": {
+                  "prop": "prevMonthLabel"
+                }
+              }
+            }
+          },
+          {
+            "name": "monthYear",
+            "restrict": [
+              "h2"
+            ],
+            "description": "Current month/year display",
+            "attributes": {
+              "static": {
+                "class": "slds-align-middle"
+              }
+            }
+          },
+          {
+            "name": "nextButton",
+            "restrict": [
+              "button"
+            ],
+            "description": "Next month button",
+            "attributes": {
+              "bound": {
+                "aria-label": {
+                  "prop": "nextMonthLabel"
+                }
+              }
+            }
+          }
+        ],
+        "attributes": {
+          "static": {
+            "class": "slds-datepicker__filter slds-grid"
+          }
+        }
+      },
+      {
+        "name": "calendar",
+        "restrict": [
+          "table"
+        ],
+        "description": "Calendar grid",
+        "attributes": {
+          "static": {
+            "role": "grid",
+            "class": "slds-datepicker__month"
+          }
+        },
+        "children": [
+          {
+            "name": "weekdayHeaders",
+            "restrict": [
+              "thead"
+            ],
+            "description": "Weekday column headers"
+          },
+          {
+            "name": "days",
+            "restrict": [
+              "tbody"
+            ],
+            "description": "Calendar days",
+            "slot": {
+              "name": "default"
+            }
+          }
+        ]
+      },
+      {
+        "name": "footer",
+        "restrict": [
+          "div"
+        ],
+        "description": "Today link",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "footer"
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-datepicker__filter_today"
+          }
+        }
+      }
+    ],
+    "attributes": {
+      "static": {
+        "class": "slds-datepicker"
+      }
+    }
+  },
+  "states": [
+    {
+      "name": "selectedDate",
+      "type": "date",
+      "aria": "aria-selected",
+      "description": "Currently selected date"
+    },
+    {
+      "name": "focusedDate",
+      "type": "date",
+      "description": "Currently focused date in grid"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the datepicker is disabled"
+    },
+    {
+      "name": "today",
+      "type": "boolean",
+      "description": "whether a date cell represents today"
+    },
+    {
+      "name": "adjacentMonth",
+      "type": "boolean",
+      "description": "whether a date belongs to an adjacent month"
+    },
+    {
+      "name": "hasError",
+      "type": "boolean",
+      "description": "whether the datepicker has a validation error"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "grid-role",
+        "description": "Calendar must have role='grid'"
+      },
+      {
+        "id": "keyboard-navigation",
+        "description": "Arrow keys navigate dates, Enter selects"
+      },
+      {
+        "id": "aria-selected",
+        "description": "Selected date must have aria-selected='true'"
+      }
+    ]
+  },
+  "cssSource": "./datepicker.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "selectedDate",
+      "class": "slds-is-selected"
+    },
+    {
+      "state": "focusedDate",
+      "class": "slds-has-focus"
+    },
+    {
+      "state": "today",
+      "class": "slds-is-today"
+    },
+    {
+      "state": "adjacentMonth",
+      "class": "slds-day_adjacent-month"
+    },
+    {
+      "state": "hasError",
+      "class": "slds-has-error"
+    }
+  ]
+}

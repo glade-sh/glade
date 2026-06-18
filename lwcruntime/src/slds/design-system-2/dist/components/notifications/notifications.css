@@ -1,0 +1,115 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * @summary The container element
+ */
+.slds-notification-container {
+  position: fixed;
+  display: block;
+  width: var(--slds-g-sizing-15);
+  inset-inline-end: var(--slds-g-spacing-1);
+  inset-block-start: var(--slds-g-spacing-1);
+  padding-inline: var(--slds-g-spacing-1);
+  padding-block-start: var(--slds-g-spacing-1);
+  padding-block-end: var(--slds-g-spacing-2);
+  z-index: 8500;
+}
+
+/**
+ * @summary The container section
+ */
+.slds-notification {
+  position: relative;
+  width: var(--slds-g-sizing-15);
+  border: var(--slds-s-container-sizing-border, 1px) solid var(--slds-s-container-color-border);
+  border-radius: var(--slds-g-radius-border-2);
+  box-shadow: var(--slds-g-shadow-2);
+  transition-duration: 0.4s;
+  transition-timing-function: ease-in-out;
+  transition-property: margin, max-height, opacity, top;
+
+  .slds-media__body {
+    opacity: 1;
+    transition-property: opacity;
+    transition-duration: 0.4s;
+    transition-timing-function: ease-in-out;
+    padding-inline-end: var(--slds-g-spacing-5);
+  }
+
+  + .slds-notification {
+    margin-block-start: var(--slds-g-spacing-3);
+  }
+
+  /* stylelint-disable at-rule-no-unknown */
+  @for $i from 1 to 4 {
+    &:nth-of-type($i) {
+      z-index: calc(5 - $(i));
+    }
+  }
+
+  &:nth-of-type(n + 3) {
+    overflow: hidden;
+  }
+
+  &:nth-of-type(n + 4) {
+    margin-block-start: 0;
+    transform: scaleX(0.95) translateY(-90%);
+  }
+
+  &:nth-of-type(n + 4) .slds-media__body,
+  &:nth-of-type(n + 5) {
+    opacity: 0;
+  }
+
+  &:nth-of-type(n + 6) {
+    display: none;
+  }
+}
+
+/**
+ * @summary Main reminder component
+ */
+.slds-notification__target {
+  padding: var(--slds-g-spacing-3);
+  border-radius: var(--slds-g-radius-border-2);
+  background-color: var(--slds-g-color-surface-container-2);
+  color: var(--slds-g-color-on-surface-2);
+
+  &:hover,
+  &:focus {
+    background-color: var(--slds-g-color-surface-container-1);
+    text-decoration: none;
+    color: var(--slds-g-color-on-surface-2);
+  }
+
+  &:focus-visible {
+    box-shadow: var(--slds-g-shadow-inset-focus-1);
+    outline: 0;
+  }
+}
+
+/**
+ * @summary Optional notification footer
+ */
+.slds-notification__footer {
+  padding-inline: var(--slds-g-spacing-3);
+  padding-block-start: var(--slds-g-spacing-3);
+  padding-block-end: var(--slds-g-spacing-4);
+}
+
+/**
+ * @summary Notification close button
+ */
+.slds-notification__close {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-end: 2px;
+
+  .slds-button_icon {
+    color: var(--slds-g-color-on-surface-3);
+  }
+}

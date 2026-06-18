@@ -91,7 +91,7 @@ diagnostics, route list, and service support.
 | `lightning/empApi` | Local in-page pub/sub shim | Exports subscribe, unsubscribe, onError, debug flag, and enablement helpers without connecting to Salesforce streaming services. Tests can publish locally through the Glade test hook. |
 | Common `lightning-*` base components | Practical local support | LWC shell and Visualforce Lightning Out where modules are served by the shared runtime, including common inputs, cards, layouts, tabs, LDS-backed record forms, datatable row actions, tab active events, messages, icons, spinner, and a local `lightning/modal` approximation. |
 | Expanded `lightning-*` base components | Supported local | The `lwc-shell` fixture exposes expanded base-component coverage through `c:baseComponentHost` and the `phase3BaseComponents` context. Covered modules include email links, dual listbox, select, slider, rich text input, menu divider, progress bar/ring, tile, breadcrumbs, tree grid, map, carousel, quick action panel, record picker, file upload, and additional display/input/container components. Salesforce parity remains a hosted capture target. |
-| SLDS-shaped local styling | Practical local support | LWC shell and shared runtime pages. Exact hosted SLDS remains a Salesforce check. |
+| Packaged SLDS styling | Supported local | LWC shell and shared runtime pages load packaged SLDS 2 Cosmos by default. The runtime also serves SLDS 2 Lightning Blue, classic SLDS 1 CSS, local icon sprites, fonts, and referenced images from `/lightning/runtime/slds/`. |
 
 ## Unsupported Or Limited
 
@@ -113,7 +113,7 @@ diagnostics, route list, and service support.
 | Full Experience Cloud runtime | Not modeled. Menus, managed content delivery, personalization, builder data sources, auth flows, and exact hosted chrome stay Salesforce checks. |
 | `lightning/uiListApi` `getListUi` | Unsupported locally. Reports `GLADELWC050`; use `getRelatedListRecords` or local SOQL-backed Apex. |
 | Full UI API | The local shell has selected LDS/UI API shims and local field layout sections. It is not broad UI API parity. |
-| Full base component and SLDS parity | Use the supported modules in this build. Keep a Salesforce browser check for exact styling and hosted base-component behavior. |
+| Full base component parity | Use the supported modules in this build. Keep a Salesforce browser check for exact hosted base-component behavior. |
 | Exact Visualforce Lightning Out parity | The local host mounts LWCs and shares runtime services. Hosted lifecycle timing and every Lightning Out edge are not promised. |
 
 ## Diagnostics

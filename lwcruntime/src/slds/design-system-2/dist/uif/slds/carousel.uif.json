@@ -1,0 +1,236 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Carousel",
+  "description": "A carousel allows multiple pieces of featured content to occupy an area of the page.",
+  "dateAdded": "2017-09-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Carousel container",
+    "children": [
+      {
+        "name": "stage",
+        "restrict": [
+          "div"
+        ],
+        "description": "Carousel stage/viewport",
+        "children": [
+          {
+            "name": "panels",
+            "restrict": [
+              "div"
+            ],
+            "description": "Carousel panels container",
+            "attributes": {
+              "static": {
+                "role": "tablist",
+                "class": "slds-carousel__panels"
+              }
+            },
+            "slot": {
+              "name": "default",
+              "required": true
+            },
+            "children": [
+              {
+                "name": "panel",
+                "restrict": [
+                  "div"
+                ],
+                "description": "carousel slide panel",
+                "repeats": true,
+                "attributes": {
+                  "static": {
+                    "role": "tabpanel",
+                    "class": "slds-carousel__panel"
+                  },
+                  "bound": {
+                    "aria-labelledby": {
+                      "prop": "indicatorId"
+                    }
+                  }
+                },
+                "children": [
+                  {
+                    "name": "panelAction",
+                    "restrict": [
+                      "a"
+                    ],
+                    "description": "panel link wrapper",
+                    "attributes": {
+                      "static": {
+                        "class": "slds-carousel__panel-action"
+                      }
+                    }
+                  },
+                  {
+                    "name": "image",
+                    "restrict": [
+                      "div"
+                    ],
+                    "description": "panel image container",
+                    "attributes": {
+                      "static": {
+                        "class": "slds-carousel__image"
+                      }
+                    }
+                  },
+                  {
+                    "name": "panelContent",
+                    "restrict": [
+                      "div"
+                    ],
+                    "description": "panel text content",
+                    "children": [
+                      {
+                        "name": "panelTitle",
+                        "restrict": [
+                          "h2"
+                        ],
+                        "description": "panel heading",
+                        "attributes": {
+                          "static": {
+                            "class": "slds-carousel__content-title"
+                          }
+                        }
+                      }
+                    ],
+                    "attributes": {
+                      "static": {
+                        "class": "slds-carousel__content"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "attributes": {
+          "static": {
+            "class": "slds-carousel__stage"
+          }
+        }
+      },
+      {
+        "name": "indicators",
+        "restrict": [
+          "ul"
+        ],
+        "description": "Navigation indicators",
+        "attributes": {
+          "static": {
+            "role": "tablist",
+            "class": "slds-carousel__indicators"
+          }
+        },
+        "slot": {
+          "name": "indicators",
+          "required": true
+        },
+        "children": [
+          {
+            "name": "indicator",
+            "restrict": [
+              "li"
+            ],
+            "description": "carousel indicator dot",
+            "repeats": true,
+            "attributes": {
+              "static": {
+                "role": "presentation",
+                "class": "slds-carousel__indicator"
+              }
+            },
+            "children": [
+              {
+                "name": "indicatorAction",
+                "restrict": [
+                  "a"
+                ],
+                "description": "indicator tab link",
+                "attributes": {
+                  "static": {
+                    "role": "tab",
+                    "class": "slds-carousel__indicator-action"
+                  },
+                  "bound": {
+                    "aria-selected": {
+                      "prop": "isActive"
+                    },
+                    "aria-controls": {
+                      "prop": "panelId"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "autoplayButton",
+        "restrict": [
+          "button"
+        ],
+        "description": "Autoplay toggle button",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "autoplayButton"
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-carousel__autoplay"
+          }
+        }
+      }
+    ],
+    "attributes": {
+      "static": {
+        "class": "slds-carousel"
+      }
+    }
+  },
+  "states": [
+    {
+      "name": "activeIndex",
+      "type": "number",
+      "description": "Index of active panel"
+    },
+    {
+      "name": "autoplay",
+      "type": "boolean",
+      "aria": "aria-pressed",
+      "description": "Whether autoplay is active"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "pause-autoplay",
+        "description": "Autoplay must be pausable"
+      },
+      {
+        "id": "keyboard-navigation",
+        "description": "Arrow keys should navigate between panels"
+      }
+    ]
+  },
+  "cssSource": "./carousel.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "activeIndex",
+      "class": "slds-is-active",
+      "target": "indicatorAction"
+    }
+  ]
+}

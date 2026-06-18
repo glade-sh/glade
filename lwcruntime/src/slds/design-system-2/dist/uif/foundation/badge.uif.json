@@ -1,0 +1,51 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Badge",
+  "description": "Badges are labels which hold small amounts of information.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "span"
+    ],
+    "description": "Badge container",
+    "children": [
+      {
+        "name": "icon",
+        "restrict": [
+          "span"
+        ],
+        "description": "Wrapper for icon within badge",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "icon",
+          "restrict": [
+            "Icon"
+          ]
+        }
+      },
+      {
+        "name": "content",
+        "description": "Badge text content",
+        "restrict": [
+          "span"
+        ],
+        "slot": {
+          "name": "default",
+          "required": true
+        }
+      }
+    ]
+  },
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "color-meaning",
+        "description": "Color alone should not convey meaning. Ensure badges have text content or accessible labels."
+      }
+    ]
+  }
+}

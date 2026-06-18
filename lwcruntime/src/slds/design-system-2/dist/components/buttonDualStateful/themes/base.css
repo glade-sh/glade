@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * @summary Initiates a dual stateful button
+ */
+.slds-button_dual-stateful {
+  /**
+   * @summary Shown text when button is not pressed - default state
+   */
+  .slds-text-not-pressed {
+    display: flex;
+    align-items: center;
+    gap: var(--slds-c-button-dual-stateful-gap);
+  }
+
+  /**
+   * @summary Shown text when button is pressed
+   */
+  .slds-text-pressed {
+    display: none;
+  }
+}
+
+/**
+ * @summary When button is in pressed state
+ */
+.slds-button_dual-stateful.slds-is-pressed {
+  .slds-text-not-pressed {
+    display: none;
+  }
+
+  .slds-text-pressed {
+    display: flex;
+    align-items: center;
+    gap: var(--slds-c-button-dual-stateful-gap);
+  }
+}

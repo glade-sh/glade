@@ -1,0 +1,340 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * @summary Fully featured color picker, with swatches and a custom color config
+ */
+
+.slds-color-picker {
+  position: relative;
+}
+
+.slds-color-picker .slds-form-error {
+  padding-block-start: var(--slds-c-colorpicker-form-error-spacing-block-start);
+  color: var(--slds-c-colorpicker-form-error-color-foreground);
+  font-size: var(--slds-c-colorpicker-form-error-font-size);
+}
+
+/**
+ * @summary Label for summary input
+ */
+.slds-color-picker__summary-label {
+  display: block;
+}
+
+/**
+ * @summary Button that toggles the Color Picker Selector
+ */
+.slds-color-picker__summary-button {
+  vertical-align: top;
+  line-height: 1;
+  padding-block: var(--slds-c-colorpicker-summary-button-spacing-block);
+  padding-inline: var(--slds-c-colorpicker-summary-button-spacing-inline);
+  background-color: var(--slds-c-colorpicker-summary-button-color-background);
+  margin-inline-end: var(--slds-c-colorpicker-summary-button-spacing-inline-end);
+  border-width: var(--slds-c-colorpicker-summary-button-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-colorpicker-summary-button-color-border, transparent);
+  border-radius: var(--slds-c-colorpicker-summary-button-radius-border);
+
+  &:focus-visible {
+    /* Focus is indicated by the button shadow; suppress the border ring */
+    border-color: transparent;
+  }
+}
+
+/**
+ * @summary Input field for summary UI
+ */
+.slds-color-picker__summary-input {
+  display: inline-block;
+}
+
+.slds-color-picker__summary-input .slds-input {
+  width: var(--slds-c-colorpicker-summary-input-sizing-inline);
+}
+
+/**
+ * @summary The selector subcomponent. Extends upon a .slds-popover
+ */
+.slds-color-picker__selector {
+  margin-block-start: var(--slds-c-colorpicker-selector-spacing-block-start);
+}
+
+/* Scoped override — popover footer when inside the color picker selector */
+.slds-color-picker__selector .slds-popover__footer {
+  border-block-start-width: var(--slds-c-colorpicker-selector-footer-sizing-border, 0);
+  border-block-start-style: solid;
+  border-block-start-color: var(--slds-c-colorpicker-selector-footer-color-border, transparent);
+}
+
+.slds-color-picker__selector.slds-popover {
+  width: var(--slds-c-colorpicker-selector-sizing-inline);
+  box-shadow: var(--slds-c-colorpicker-selector-shadow);
+}
+
+.slds-color-picker__selector .slds-tabs_default__content {
+  padding-block: var(--slds-c-colorpicker-selector-tabs-spacing-block);
+  padding-inline: 0;
+}
+
+/**
+ * @summary Swatch container
+ */
+.slds-color-picker__swatches {
+  font-size: 0;
+}
+
+.slds-color-picker__swatches.slds-swatch {
+  cursor: pointer;
+}
+
+/**
+ * @summary Color Picker swatch
+ */
+.slds-color-picker__swatch {
+  display: inline-block;
+  margin-block: var(--slds-c-colorpicker-swatch-item-spacing-block);
+  margin-inline: var(--slds-c-colorpicker-swatch-item-spacing-inline);
+}
+
+.slds-color-picker__swatch-trigger {
+  display: inline-block;
+  box-shadow: var(--slds-c-colorpicker-swatch-trigger-shadow);
+  border-radius: var(--slds-c-colorpicker-swatch-trigger-radius-border);
+}
+
+.slds-color-picker__swatch-trigger:focus-visible,
+.slds-color-picker__swatch-trigger:active {
+  outline: none;
+  --slds-c-colorpicker-swatch-trigger-shadow: var(--slds-c-colorpicker-swatch-trigger-shadow-focus);
+  --slds-c-colorpicker-swatch-trigger-radius-border: var(
+    --slds-c-colorpicker-swatch-trigger-radius-border-focus
+  );
+}
+
+/**
+ * @summary Custom picker selection container
+ */
+.slds-color-picker__custom {
+  padding-block: var(--slds-c-colorpicker-custom-spacing-block);
+  padding-inline: 0;
+}
+
+/**
+ * @summary Custom picker range element
+ */
+.slds-color-picker__custom-range {
+  position: relative;
+  margin-block-end: var(--slds-c-colorpicker-custom-range-spacing-block-end);
+  height: var(--slds-c-colorpicker-custom-range-sizing-block);
+  border-width: var(--slds-c-colorpicker-custom-range-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-colorpicker-custom-range-color-border, transparent);
+  border-radius: var(--slds-c-colorpicker-custom-range-radius-border);
+  overflow: hidden;
+}
+
+/* Intrinsic color-space gradient — not a theme concern */
+.slds-color-picker__custom-range::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to top, rgb(0, 0, 0, 1), rgb(0, 0, 0, 0.9) 1%, transparent 99%),
+    linear-gradient(to right, rgb(255, 255, 255, 1) 1%, transparent);
+}
+
+/**
+ * @summary Draggable handle within the color range
+ */
+.slds-color-picker__range-indicator {
+  /* Offset derived from indicator diameter so it centers on the selected point */
+  --slds-c-colorpicker-range-indicator-half-spacing: calc(
+    var(--slds-c-colorpicker-range-indicator-sizing) / 2
+  );
+
+  transform: translate3d(
+    var(--slds-c-colorpicker-range-indicator-half-spacing),
+    var(--slds-c-colorpicker-range-indicator-half-spacing),
+    0
+  );
+  cursor: pointer;
+  position: absolute;
+  height: var(--slds-c-colorpicker-range-indicator-sizing);
+  width: var(--slds-c-colorpicker-range-indicator-sizing);
+  border-width: var(--slds-c-colorpicker-range-indicator-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-colorpicker-range-indicator-color-border, transparent);
+  border-radius: var(--slds-c-colorpicker-range-indicator-radius-border);
+  box-shadow: var(--slds-c-colorpicker-range-indicator-shadow);
+  background-color: transparent;
+
+  &:focus-visible {
+    outline: none;
+    --slds-c-colorpicker-range-indicator-shadow: var(--slds-c-colorpicker-range-indicator-shadow-focus);
+  }
+}
+
+/**
+ * @summary Container element for the hue slider and preview swatch
+ */
+.slds-color-picker__hue-and-preview {
+  display: flex;
+}
+
+.slds-color-picker__hue-and-preview .slds-swatch {
+  margin-inline-start: var(--slds-c-colorpicker-preview-swatch-spacing-inline-start);
+  height: var(--slds-c-colorpicker-preview-swatch-sizing);
+  width: var(--slds-c-colorpicker-preview-swatch-sizing);
+  border-width: var(--slds-c-colorpicker-preview-swatch-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-colorpicker-preview-swatch-color-border, transparent);
+  border-radius: var(--slds-c-colorpicker-preview-swatch-radius-border);
+}
+
+/**
+ * @summary The slide input that controls the hue
+ */
+.slds-color-picker__hue-slider {
+  appearance: none;
+  flex: 1;
+  padding: 0;
+  margin: 0;
+  height: var(--slds-c-colorpicker-hue-slider-sizing-block);
+  width: 100%;
+  border-width: var(--slds-c-colorpicker-hue-slider-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-colorpicker-hue-slider-color-border, transparent);
+  border-radius: var(--slds-c-colorpicker-hue-slider-radius-border);
+  /* Intrinsic hue gradient — not a theme concern.
+     `in hsl` interpolation traverses hue natively; 7 stops × 60° = full wheel. */
+  background: linear-gradient(to right in hsl, red, yellow, lime, cyan, blue, magenta, red);
+
+  &:focus {
+    outline: none;
+  }
+
+  /* Reassign thumb hooks — pseudo-elements inherit via custom property inheritance */
+  &:focus-visible {
+    --slds-c-colorpicker-hue-thumb-color-border: var(--slds-c-colorpicker-hue-thumb-color-border-focus);
+    --slds-c-colorpicker-hue-thumb-shadow: var(--slds-c-colorpicker-hue-thumb-shadow-focus);
+  }
+}
+
+.slds-color-picker__hue-slider::-webkit-slider-thumb {
+  appearance: none;
+  cursor: pointer;
+  height: var(--slds-c-colorpicker-hue-thumb-sizing-block);
+  width: var(--slds-c-colorpicker-hue-thumb-sizing-inline);
+  border-width: var(--slds-c-colorpicker-hue-thumb-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-colorpicker-hue-thumb-color-border, transparent);
+  border-radius: var(--slds-c-colorpicker-hue-thumb-radius-border);
+  background-color: var(--slds-c-colorpicker-hue-thumb-color-background);
+  box-shadow: var(--slds-c-colorpicker-hue-thumb-shadow);
+}
+
+.slds-color-picker__hue-slider::-moz-range-thumb {
+  appearance: none;
+  cursor: pointer;
+  height: var(--slds-c-colorpicker-hue-thumb-sizing-block);
+  width: var(--slds-c-colorpicker-hue-thumb-sizing-inline);
+  border-width: var(--slds-c-colorpicker-hue-thumb-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-colorpicker-hue-thumb-color-border, transparent);
+  border-radius: var(--slds-c-colorpicker-hue-thumb-radius-border);
+  background-color: var(--slds-c-colorpicker-hue-thumb-color-background);
+  box-shadow: var(--slds-c-colorpicker-hue-thumb-shadow);
+}
+
+.slds-color-picker__hue-slider::-ms-thumb {
+  cursor: pointer;
+  height: var(--slds-c-colorpicker-hue-thumb-sizing-block);
+  width: var(--slds-c-colorpicker-hue-thumb-sizing-inline);
+  border-width: var(--slds-c-colorpicker-hue-thumb-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-colorpicker-hue-thumb-color-border, transparent);
+  border-radius: var(--slds-c-colorpicker-hue-thumb-radius-border);
+  background-color: var(--slds-c-colorpicker-hue-thumb-color-background);
+  box-shadow: var(--slds-c-colorpicker-hue-thumb-shadow);
+}
+
+/* Browser track normalization */
+.slds-color-picker__hue-slider::-moz-range-track {
+  height: 0;
+}
+
+.slds-color-picker__hue-slider::-ms-track {
+  height: 0;
+  border: 0;
+  background: transparent;
+  color: transparent;
+}
+
+/**
+ * @summary The group of direct input elements
+ */
+.slds-color-picker__custom-inputs {
+  display: flex;
+  padding-block-start: var(--slds-c-colorpicker-custom-inputs-spacing-block-start);
+}
+
+.slds-color-picker__custom-inputs .slds-form-element:not(:first-child) {
+  margin-inline-start: var(--slds-c-colorpicker-custom-inputs-item-spacing-inline-start);
+}
+
+.slds-color-picker__custom-inputs input {
+  padding-block: 0;
+  padding-inline: var(--slds-c-colorpicker-custom-inputs-input-spacing-inline);
+}
+
+.slds-color-picker__custom-inputs abbr {
+  cursor: text;
+  text-decoration: none;
+}
+
+.slds-color-picker__custom-inputs .slds-form-element.slds-color-picker__input-custom-hex {
+  flex: none;
+  width: var(--slds-c-colorpicker-hex-input-sizing-inline);
+
+  input {
+    font-size: var(--slds-c-colorpicker-hex-input-font-size);
+  }
+}
+
+/**
+ * @summary Footer for the Color Selector Picker
+ */
+.slds-color-picker__selector-footer {
+  display: flex;
+}
+
+.slds-color-picker__selector-footer .slds-button {
+  flex: 1;
+}
+
+/**
+ * @summary A swatch
+ */
+.slds-swatch {
+  display: inline-block;
+  vertical-align: middle;
+  height: var(--slds-c-colorpicker-swatch-sizing);
+  width: var(--slds-c-colorpicker-swatch-sizing);
+  border-radius: var(--slds-c-colorpicker-swatch-radius-border);
+  box-shadow: var(--slds-c-colorpicker-swatch-shadow);
+}
+
+.slds-color-picker.slds-color-picker_swatches-only {
+  width: var(--slds-c-colorpicker-swatches-only-sizing-inline);
+  padding-block: var(--slds-c-colorpicker-swatches-only-spacing-block);
+  padding-inline: var(--slds-c-colorpicker-swatches-only-spacing-inline);
+}
+
+.slds-color-picker.slds-color-picker_swatches-only .slds-color-picker__selector {
+  margin: 0;
+}

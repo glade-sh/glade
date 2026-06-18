@@ -1,0 +1,92 @@
+{
+  "name": "@salesforce-ux/design-system-2",
+  "version": "2.0.2",
+  "description": "Salesforce Lightning Design System 2 (SLDS 2), is a complete design framework that helps you create consistent, accessible, and scalable user interfaces across its applications and platform.",
+  "type": "module",
+  "publishConfig": {
+    "provenance": false
+  },
+  "scripts": {
+    "dev": "yarn build:dev && run-p watch watch:css watch:uif storybook",
+    "dev:debug": "run-p build:assets build:js build:component-assets && yarn build:registry:debug && yarn build:css:dev && run-p watch watch:css storybook",
+    "build:dev": "run-p build:assets build:js build:component-assets build:registry build:uif && yarn build:css:dev",
+    "build": "yarn build:dev && yarn build:production",
+    "build:production": "yarn run -T turbo build --filter=^... && run-p build:css:production build:uif build:component-assets && cp README.consumer.md dist/README.md",
+    "watch": "rollup -c rollup.config.js -w",
+    "watch:css": "node ./scripts/buildCss/index.js --system=slds2 --watch",
+    "watch:uif": "node ./scripts/buildUif.js --watch",
+    "storybook": "storybook dev -p 6006",
+    "build:js": "rollup -c rollup.config.js",
+    "build:assets": "node ./scripts/copyStorybookAssets.js",
+    "build:component-assets": "node ./scripts/copyComponentAssets.js",
+    "build:css": "yarn run -T turbo build --filter=^... && run-p build:css:dev-standard build:css:dev-theme-layer build:css:production",
+    "build:css:dev": "yarn run -T turbo build --filter=^... && run-p build:css:dev-standard build:css:dev-theme-layer",
+    "build:css:dev-standard": "node ./scripts/buildCss/index.js --system=slds2 --dev-standard",
+    "build:css:dev-theme-layer": "node ./scripts/buildCss/index.js --system=slds2 --dev-theme-layer",
+    "build:css:production": "node ./scripts/buildCss/index.js --system=slds2 --production",
+    "build:uif": "yarn run -T turbo build --filter=^... && node ./scripts/buildUif.js",
+    "build:uif:verbose": "yarn run -T turbo build --filter=^... && node ./scripts/buildUif.js --verbose",
+    "build:registry": "node ./scripts/buildSldsLwcRegistry.js",
+    "build:registry:debug": "node --inspect-brk ./scripts/buildSldsLwcRegistry.js",
+    "build:component-specs": "node ./scripts/buildComponentSpecs.js",
+    "build-storybook": "yarn build && storybook build -c ${STORYBOOK_CONFIG_DIR:-.storybook} -o ${STORYBOOK_OUTPUT_DIR:-../../storybook-static} --stats-json",
+    "publish:internal": "yarn build:production && cd dist && npm publish --registry=https://nexus.soma.salesforce.com/nexus/content/repositories/npmjs-internal/",
+    "test": "npx vitest --coverage",
+    "test:scripts": "npx vitest scripts",
+    "analyze:tokens": "node ./scripts/analyzeTokens.js",
+    "prepack": "cp ../../LICENSE.txt . && cp README.md README.dev.bak && cp README.consumer.md README.md",
+    "postpack": "mv README.dev.bak README.md",
+    "storybook:sitedocs": "yarn build:dev && run-p watch watch:css watch:uif storybook:sitedocs:server",
+    "storybook:sitedocs:server": "storybook dev -p 6007 --config-dir .storybook-site-docs",
+    "build-storybook:sitedocs": "STORYBOOK_CONFIG_DIR=.storybook-site-docs STORYBOOK_OUTPUT_DIR=../../storybook-site-docs-static yarn build-storybook"
+  },
+  "license": "SEE LICENSE IN LICENSE.txt",
+  "bugs": {
+    "url": "https://github.com/salesforce-ux/design-system-2/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "volta": {
+    "extends": "../../package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "devDependencies": {
+    "@babel/plugin-proposal-decorators": "^7.29.0",
+    "@babel/preset-env": "^7.29.0",
+    "@fds-uif/core": "workspace:*",
+    "@salesforce-ux/design-tokens": "workspace:*",
+    "@storybook/addon-a11y": "^10.3.3",
+    "@storybook/addon-docs": "^10.3.3",
+    "@storybook/addon-links": "^10.3.3",
+    "@storybook/web-components": "^10.3.3",
+    "@storybook/web-components-vite": "^10.3.3",
+    "chokidar": "^5.0.0",
+    "chroma-js": "^3.2.0",
+    "classnames": "^2.5.1",
+    "figlet": "^1.11.0",
+    "lightning-base-components": "1.28.17-alpha",
+    "lit": "^3.3.0",
+    "npm-run-all2": "^8.0.4",
+    "postcss": "^8.5.8",
+    "postcss-discard-comments": "^7.0.4",
+    "postcss-each": "^1.1.0",
+    "postcss-for": "^2.1.1",
+    "postcss-import": "^16.1.1",
+    "postcss-nested": "^7.0.2",
+    "postcss-nesting": "^14.0.0",
+    "postcss-selector-parser": "^7.1.0",
+    "postcss-value-parser": "^4.2.0",
+    "prismjs": "^1.30.0",
+    "prop-types": "^15.8.1",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "remark-gfm": "^4.0.1",
+    "rollup": "^4.60.1",
+    "storybook": "^10.3.3",
+    "storybook-addon-rtl": "^3.0.1",
+    "vite": "^8.0.0"
+  }
+}

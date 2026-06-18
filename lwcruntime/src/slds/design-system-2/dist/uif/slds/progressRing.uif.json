@@ -1,0 +1,174 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "ProgressRing",
+  "description": "A progress ring shows progress in a circular format.",
+  "dateAdded": "2018-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Progress ring container",
+    "attributes": {
+      "static": {
+        "role": "progressbar",
+        "class": "slds-progress-ring"
+      },
+      "bound": {
+        "aria-valuemin": {
+          "prop": "min"
+        },
+        "aria-valuemax": {
+          "prop": "max"
+        },
+        "aria-valuenow": {
+          "prop": "value"
+        }
+      }
+    },
+    "children": [
+      {
+        "name": "progress",
+        "restrict": [
+          "div"
+        ],
+        "description": "Ring progress visual",
+        "children": [
+          {
+            "name": "fillA",
+            "restrict": [
+              "div"
+            ],
+            "description": "First fill half",
+            "attributes": {
+              "static": {
+                "class": "slds-progress-ring__path"
+              }
+            }
+          },
+          {
+            "name": "fillB",
+            "restrict": [
+              "div"
+            ],
+            "description": "Second fill half"
+          },
+          {
+            "name": "progressHead",
+            "restrict": [
+              "circle"
+            ],
+            "description": "animated dot at the leading edge of the ring",
+            "attributes": {
+              "static": {
+                "class": "slds-progress-ring__progress-head"
+              }
+            }
+          }
+        ],
+        "attributes": {
+          "static": {
+            "class": "slds-progress-ring__progress"
+          }
+        }
+      },
+      {
+        "name": "content",
+        "restrict": [
+          "div"
+        ],
+        "description": "Center content",
+        "slot": {
+          "name": "default"
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-progress-ring__content"
+          }
+        }
+      }
+    ],
+    "modifiers": [
+      {
+        "name": "size",
+        "attribute": "class",
+        "description": "Ring size",
+        "default": "medium",
+        "options": [
+          {
+            "propValue": "medium",
+            "value": ""
+          },
+          {
+            "propValue": "large",
+            "value": "slds-progress-ring_large"
+          }
+        ]
+      }
+    ],
+    "variants": [
+      {
+        "name": "status",
+        "description": "Progress status indicating semantic meaning",
+        "default": "active",
+        "options": [
+          {
+            "value": "active",
+            "class": "",
+            "description": "Active progress state"
+          },
+          {
+            "value": "active-step",
+            "class": "slds-progress-ring_active-step",
+            "description": "Indicates current active step"
+          },
+          {
+            "value": "warning",
+            "class": "slds-progress-ring_warning",
+            "description": "Warning state"
+          },
+          {
+            "value": "expired",
+            "class": "slds-progress-ring_expired",
+            "description": "Expired/overdue state"
+          },
+          {
+            "value": "complete",
+            "class": "slds-progress-ring_complete",
+            "description": "Completed state"
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "status",
+      "type": "enum",
+      "options": [
+        "active",
+        "complete",
+        "warning",
+        "expired",
+        "error"
+      ],
+      "description": "Current status of the progress ring"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "progressbar-role",
+        "description": "Container must have role='progressbar'"
+      }
+    ]
+  },
+  "cssSource": "./progressRing.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  }
+}

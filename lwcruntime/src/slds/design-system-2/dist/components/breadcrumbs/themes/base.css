@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+.slds-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--slds-c-breadcrumbs-gap);
+  font-size: var(--slds-c-breadcrumbs-font-size);
+  font-weight: var(--slds-c-breadcrumbs-font-weight);
+
+  slot {
+    display: contents;
+  }
+
+  .slds-list__item,
+  .slds-breadcrumb__item {
+    display: flex;
+    align-items: center;
+    gap: var(--slds-c-breadcrumbs-gap);
+
+    a {
+      display: inline-block;
+      color: var(--slds-c-breadcrumbs-color-foreground);
+    }
+  }
+}
+
+.slds-breadcrumb .slds-list__item:not(:first-child)::before,
+.slds-breadcrumb .slds-breadcrumb__item:not(:first-child)::before {
+  content: var(--slds-c-breadcrumbs-separator-content);
+  display: inline-flex;
+  color: var(--slds-c-breadcrumbs-separator-color-foreground);
+}

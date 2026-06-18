@@ -1,0 +1,113 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * A dueling picklist inherits styles from the listbox component
+ * @summary Initializes a dueling picklist 
+ */
+.slds-dueling-list {
+  display: flex;
+  clear: left;
+}
+
+/**
+ * @summary Handles the layout of the dueling picklist
+ */
+.slds-dueling-list__column {
+  display: inline-flex;
+  flex-direction: column;
+}
+
+.slds-dueling-list__column .slds-button {
+  margin: var(--slds-g-spacing-1);
+}
+
+.slds-dueling-list__column .slds-button:first-of-type {
+  margin-top: var(--slds-g-spacing-5);
+}
+
+/**
+ * @summary Changes the layout of the dueling picklist to be responsive
+ */
+.slds-dueling-list__column_responsive {
+  flex: 1 1 var(--slds-g-sizing-14);
+  flex-wrap: wrap;
+  overflow: hidden;
+  min-width: 6rem;
+}
+.slds-dueling-list__column_responsive .slds-dueling-list__options {
+  width: auto;
+  max-width: 100%;
+}
+
+/**
+ * @summary Bounding visual container for listbox of options
+ */
+.slds-dueling-list__options,
+.slds-picklist__options {
+  border: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-2);
+  border-radius: var(--slds-g-radius-border-2);
+  padding: var(--slds-g-spacing-1) 0;
+  width: var(--slds-g-sizing-14);
+  height: var(--slds-g-sizing-14);
+  background-color: var(--slds-g-color-surface-container-1);
+  overflow: auto;
+}
+
+/**
+* @summary grabbed state of a listbox option
+*/
+.slds-dueling-list__options .slds-is-grabbed,
+.slds-picklist__options .slds-is-grabbed {
+  transform: rotate(3deg);
+}
+
+/**
+* @summary Selected/dragging state of a listbox option
+*/
+.slds-dueling-list__options [aria-selected='true'],
+.slds-picklist__options [aria-selected='true'] {
+  background-color: var(--slds-g-color-accent-container-1);
+  color: var(--slds-g-color-on-accent-1);
+
+  &:focus-visible {
+    box-shadow: var(--slds-g-shadow-insetinverse-focus-1);
+  }
+}
+
+.slds-dueling-list__options [aria-selected='true']:hover,
+.slds-picklist__options [aria-selected='true']:hover,
+.slds-dueling-list__options [aria-selected='true']:focus,
+.slds-picklist__options [aria-selected='true']:focus {
+  background: var(--slds-g-color-accent-container-3);
+  color: var(--slds-g-color-on-surface-inverse-1);
+}
+
+/**
+* @summary Disabled state of a picklist option
+*/
+.slds-dueling-list__options.slds-is-disabled,
+.slds-picklist__options.slds-is-disabled {
+  background-color: var(--slds-g-color-disabled-container-1, var(--slds-g-color-neutral-base-95));
+  border-color: var(--slds-g-color-border-disabled-1);
+  color: var(--slds-g-color-disabled-1);
+}
+
+.slds-dueling-list__options.slds-is-disabled:hover,
+.slds-picklist__options.slds-is-disabled:hover {
+  cursor: not-allowed;
+}
+
+.slds-dueling-list__options.slds-is-disabled .slds-listbox__option:hover,
+.slds-picklist__options.slds-is-disabled .slds-listbox__option:hover {
+  cursor: not-allowed;
+  background-color: transparent;
+}
+
+.slds-dueling-list__options.slds-is-disabled .slds-listbox__option:focus,
+.slds-picklist__options.slds-is-disabled .slds-listbox__option:focus {
+  background-color: transparent;
+}

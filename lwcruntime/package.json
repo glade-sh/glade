@@ -7,6 +7,8 @@
     "test": "npm run build && node --test --test-concurrency=1 test/*.test.mjs"
   },
   "devDependencies": {
+    "@salesforce-ux/design-system": "^2.30.4",
+    "@salesforce-ux/design-system-2": "^2.0.2",
     "esbuild": "^0.28.1",
     "playwright": "^1.60.0"
   }

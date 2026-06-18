@@ -10,9 +10,10 @@ export const repoRoot = path.resolve(__dirname, "../..");
 const wireAdapterPath = path.join(repoRoot, "lwcruntime/src/shims/wire-adapter.mjs");
 const ldsCachePath = path.join(repoRoot, "lwcruntime/src/shims/lds-cache.mjs");
 const sldsLoaderPath = path.join(repoRoot, "lwcruntime/src/slds/slds-loader.mjs");
-const sldsCSSPath = path.join(repoRoot, "lwcruntime/src/slds/glade-slds.css");
+const sldsRootPath = path.join(repoRoot, "lwcruntime/src/slds");
 const diagnosticsPath = path.join(repoRoot, "lwcruntime/src/shell/diagnostics.mjs");
 const lwcToolchainNodeModules = path.join(repoRoot, "third_party/lwc/node_modules");
+export const defaultSLDSHref = "/lightning/runtime/slds/design-system-2/dist/css/bundled/slds2.cosmos.css";
 
 export const salesforceImportMap = {
   "@glade/shell/diagnostics": "/lightning/runtime/shell/diagnostics.js",
@@ -329,9 +330,14 @@ function handleShimRequest(url, res, shimConfig) {
     res.end(fs.readFileSync(diagnosticsPath));
     return true;
   }
-  if (pathname === "/lightning/runtime/slds/glade-slds.css") {
-    res.writeHead(200, { "Content-Type": "text/css; charset=utf-8" });
-    res.end(fs.readFileSync(sldsCSSPath));
+  if (pathname.startsWith("/lightning/runtime/slds/")) {
+    const rel = pathname.slice("/lightning/runtime/slds/".length);
+    const filePath = path.normalize(path.join(sldsRootPath, rel));
+    if (!filePath.startsWith(sldsRootPath + path.sep) || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+      return false;
+    }
+    res.writeHead(200, { "Content-Type": contentTypeForPath(filePath) });
+    res.end(fs.readFileSync(filePath));
     return true;
   }
   if (pathname === "/lightning/shims/lightning/uiRecordApi.js") {
@@ -392,6 +398,25 @@ function handleShimRequest(url, res, shimConfig) {
     return true;
   }
   return false;
+}
+
+function contentTypeForPath(filePath) {
+  if (filePath.endsWith(".css")) {
+    return "text/css; charset=utf-8";
+  }
+  if (filePath.endsWith(".svg")) {
+    return "image/svg+xml; charset=utf-8";
+  }
+  if (filePath.endsWith(".png")) {
+    return "image/png";
+  }
+  if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg")) {
+    return "image/jpeg";
+  }
+  if (filePath.endsWith(".json")) {
+    return "application/json; charset=utf-8";
+  }
+  return "application/octet-stream";
 }
 
 export function startLightningServer({

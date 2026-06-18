@@ -1,0 +1,97 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  /* All card hooks on .slds-card; custom props inherit to header, body, footer, tile */
+  .slds-card {
+    /* card — color */
+    --slds-c-card-color-background: var(--slds-g-color-surface-container-1);
+    --slds-c-card-color-foreground: var(--slds-s-container-color);
+    --slds-c-card-color-border: var(--slds-s-container-color-border);
+    /* card — sizing / radius / shadow */
+    --slds-c-card-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-card-radius-border: var(--slds-s-container-radius-border);
+    --slds-c-card-shadow: var(--slds-s-container-shadow);
+    /* card — spacing */
+    --slds-c-card-margin-block-start-adjacent: var(--slds-g-spacing-4);
+    /* header — color */
+    --slds-c-card-header-color-background: var(--slds-g-color-surface-container-1);
+    --slds-c-card-header-color-foreground: var(--slds-g-color-on-surface-3);
+    /* header — spacing */
+    --slds-c-card-header-spacing-block-start: var(--slds-g-spacing-3);
+    --slds-c-card-header-spacing-inline: var(--slds-g-spacing-4);
+    --slds-c-card-header-margin-block-end: var(--slds-g-spacing-3);
+    /* header-title — font */
+    --slds-c-card-header-font-size: var(--slds-g-font-scale-2);
+    --slds-c-card-header-font-weight: var(--slds-g-font-weight-4);
+    --slds-c-card-header-line-height: var(--slds-g-font-lineheight-2);
+    /* body — spacing */
+    --slds-c-card-body-spacing-block: var(--slds-g-spacing-3);
+    --slds-c-card-body-spacing-inline: var(--slds-g-spacing-4);
+    /* footer — color */
+    --slds-c-card-footer-color-border: var(--slds-g-color-border-1);
+    /* footer — font */
+    --slds-c-card-footer-font-size: var(--slds-g-font-size-base);
+    /* footer — sizing */
+    --slds-c-card-footer-sizing-border: var(--slds-g-sizing-border-1);
+    /* footer — spacing */
+    --slds-c-card-footer-spacing-block: var(--slds-g-spacing-3);
+    --slds-c-card-footer-spacing-inline: var(--slds-g-spacing-4);
+    --slds-c-card-footer-margin-block-start: var(--slds-g-spacing-3);
+    /* tile — spacing */
+    --slds-c-card-tile-margin-block-start: var(--slds-g-spacing-3);
+  }
+
+  .slds-card-wrapper {
+    /* wrapper — color */
+    --slds-c-card-wrapper-color-background: var(--slds-g-color-surface-container-1);
+    --slds-c-card-wrapper-color-border: var(--slds-g-color-border-1);
+    /* wrapper — sizing / radius / shadow */
+    --slds-c-card-wrapper-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-card-wrapper-radius-border: var(--slds-s-container-radius-border);
+    --slds-c-card-wrapper-shadow: var(--slds-s-container-shadow);
+    /* wrapper — spacing */
+    --slds-c-card-wrapper-spacing-block: var(--slds-g-spacing-4);
+    --slds-c-card-wrapper-spacing-inline: var(--slds-g-spacing-4);
+  }
+
+  /**
+   * @summary Strip chrome when cards/wrappers are nested inside another card or card-wrapper.
+   * Specificity: .slds-card .slds-card (2 classes) so _boundary can override below.
+   */
+  .slds-card .slds-card,
+  .slds-card-wrapper .slds-card {
+    --slds-c-card-sizing-border: 0;
+    --slds-c-card-color-border: transparent;
+    --slds-c-card-shadow: none;
+  }
+
+  .slds-card .slds-card-wrapper,
+  .slds-card-wrapper .slds-card-wrapper {
+    --slds-c-card-wrapper-sizing-border: 0;
+    --slds-c-card-wrapper-color-border: transparent;
+    --slds-c-card-wrapper-shadow: none;
+  }
+
+  /**
+   * @summary Restore chrome on a specific nested card.
+   * Specificity: .slds-card .slds-card_boundary (2 classes) beats the stripping rule.
+   */
+  .slds-card .slds-card_boundary,
+  .slds-card-wrapper .slds-card_boundary {
+    --slds-c-card-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-card-color-border: var(--slds-g-color-border-1);
+    --slds-c-card-shadow: var(--slds-s-container-shadow);
+  }
+
+  .slds-tabs_card {
+    --slds-c-card-color-background: var(--slds-g-color-surface-container-1);
+    --slds-c-card-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-card-color-border: var(--slds-g-color-border-1);
+    --slds-c-card-spacing-block: var(--slds-g-spacing-4);
+    --slds-c-card-spacing-inline: var(--slds-g-spacing-4);
+  }
+}

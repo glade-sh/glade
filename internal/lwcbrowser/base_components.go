@@ -631,7 +631,7 @@ func messagesTemplateJS() string {
 }
 
 func modalTemplateJS() string {
-	return `[api_element("section", { classMap: { "slds-modal": true, "slds-fade-in-open": true }, attrs: { role: "dialog", "aria-modal": "true" }, key: 0 }, [api_element("div", { classMap: { "slds-modal__container": true }, key: 1 }, [api_element("header", { classMap: { "slds-modal__header": true }, key: 2 }, [api_text($cmp.label || $cmp.title || "")]), api_element("div", { classMap: { "slds-modal__content": true }, key: 3 }, [api_slot("", { key: 4 }, [], $slotset)])])])]`
+	return `[api_element("section", { classMap: { "slds-box": true, "slds-theme_default": true }, attrs: { role: "region" }, key: 0 }, [api_element("header", { classMap: { "slds-modal__header": true }, key: 1 }, [api_text($cmp.label || $cmp.title || "")]), api_element("div", { classMap: { "slds-modal__content": true }, key: 2 }, [api_slot("", { key: 3 }, [], $slotset)])])]`
 }
 
 func textContainerTemplateJS(tag, className string) string {
@@ -770,7 +770,7 @@ func tileTemplateJS() string {
 }
 
 func quickActionPanelTemplateJS() string {
-	return `[api_element("section", { classMap: { "slds-modal": true, "slds-fade-in-open": true }, attrs: { role: "dialog" }, key: 0 }, [api_element("div", { classMap: { "slds-modal__container": true }, key: 1 }, [api_element("header", { classMap: { "slds-modal__header": true }, key: 2 }, [api_text($cmp.header || $cmp.title || "")]), api_element("div", { classMap: { "slds-modal__content": true }, key: 3 }, [api_slot("", { key: 4 }, [], $slotset)]), api_element("footer", { classMap: { "slds-modal__footer": true }, key: 5 }, [api_slot("footer", { key: 6 }, [], $slotset)])])])]`
+	return `[api_element("section", { classMap: { "slds-box": true, "slds-theme_default": true }, attrs: { role: "region" }, key: 0 }, [api_element("header", { classMap: { "slds-modal__header": true }, key: 1 }, [api_text($cmp.header || $cmp.title || "")]), api_element("div", { classMap: { "slds-modal__content": true }, key: 2 }, [api_slot("", { key: 3 }, [], $slotset)]), api_element("footer", { classMap: { "slds-modal__footer": true }, key: 4 }, [api_slot("footer", { key: 5 }, [], $slotset)])])]`
 }
 
 func recordPickerTemplateJS() string {

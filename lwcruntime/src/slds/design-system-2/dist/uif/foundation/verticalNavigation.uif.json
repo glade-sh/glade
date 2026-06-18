@@ -1,0 +1,98 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "VerticalNavigation",
+  "description": "Vertical navigation provides hierarchical navigation links within a sidebar.",
+  "dateAdded": "2017-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "nav"
+    ],
+    "description": "Navigation container",
+    "attributes": {
+      "bound": {
+        "aria-label": {
+          "prop": "label",
+          "required": true
+        }
+      }
+    },
+    "children": [
+      {
+        "name": "sections",
+        "restrict": [
+          "div"
+        ],
+        "description": "Navigation sections",
+        "slot": {
+          "name": "default"
+        }
+      },
+      {
+        "name": "sectionTitle",
+        "restrict": [
+          "h2"
+        ],
+        "description": "navigation section heading"
+      },
+      {
+        "name": "item",
+        "restrict": [
+          "li"
+        ],
+        "description": "navigation list item",
+        "repeats": true
+      },
+      {
+        "name": "action",
+        "restrict": [
+          "a"
+        ],
+        "description": "navigation action link"
+      },
+      {
+        "name": "overflow",
+        "restrict": [
+          "div"
+        ],
+        "description": "overflow section with toggle",
+        "attributes": {
+          "bound": {
+            "aria-expanded": {
+              "prop": "overflowExpanded"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "selectedItem",
+      "type": "string",
+      "aria": "aria-current",
+      "description": "ID of selected navigation item"
+    },
+    {
+      "name": "overflowExpanded",
+      "type": "boolean",
+      "aria": "aria-expanded",
+      "description": "whether the overflow section is expanded"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "nav-label",
+        "description": "Navigation must have aria-label"
+      },
+      {
+        "id": "current-page",
+        "description": "Active item should have aria-current='page'"
+      }
+    ]
+  }
+}

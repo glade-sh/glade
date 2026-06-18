@@ -1,0 +1,81 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Accordion",
+  "description": "An accordion allows users to toggle the display of sections of content.",
+  "dateAdded": "2017-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div",
+      "ul"
+    ],
+    "description": "Accordion container",
+    "children": [
+      {
+        "name": "sections",
+        "description": "Collection of accordion sections",
+        "repeats": true,
+        "slot": {
+          "name": "default",
+          "restrict": [
+            "AccordionSection"
+          ],
+          "required": true
+        }
+      },
+      {
+        "name": "section",
+        "attributes": {
+          "static": {
+            "class": "slds-accordion__section"
+          }
+        }
+      }
+    ],
+    "attributes": {
+      "static": {
+        "class": "slds-accordion"
+      }
+    }
+  },
+  "states": [
+    {
+      "name": "allowMultiple",
+      "type": "boolean",
+      "description": "Whether multiple sections can be open at once"
+    },
+    {
+      "name": "isOpen",
+      "type": "boolean",
+      "aria": "aria-expanded",
+      "description": "whether an accordion section is expanded"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "keyboard-navigation",
+        "description": "Arrow keys should navigate between accordion headers"
+      },
+      {
+        "id": "focus-management",
+        "description": "Focus should move to accordion header when section is activated"
+      }
+    ]
+  },
+  "cssSource": "./accordion.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "isOpen",
+      "class": "slds-is-open",
+      "target": "section"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/*
+  Use .slds-button--icon instead
+*/
+.slds-button_icon-bare {
+  line-height: var(--slds-g-font-lineheight-1);
+  vertical-align: middle;
+  color: var(--slds-s-button-color, var(--slds-g-color-on-surface-1));
+}

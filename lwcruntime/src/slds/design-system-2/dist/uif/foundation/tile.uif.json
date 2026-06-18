@@ -1,0 +1,90 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Tile",
+  "description": "A tile is a small content area containing a title and related information.",
+  "dateAdded": "2017-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "article",
+      "div"
+    ],
+    "description": "Tile container",
+    "children": [
+      {
+        "name": "media",
+        "restrict": [
+          "div"
+        ],
+        "description": "Media/icon area",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "media",
+          "restrict": [
+            "Icon",
+            "Avatar"
+          ]
+        }
+      },
+      {
+        "name": "body",
+        "restrict": [
+          "div"
+        ],
+        "description": "Tile body content",
+        "children": [
+          {
+            "name": "title",
+            "restrict": [
+              "h3"
+            ],
+            "description": "Tile title",
+            "slot": {
+              "name": "title",
+              "required": true
+            }
+          },
+          {
+            "name": "detail",
+            "restrict": [
+              "div"
+            ],
+            "description": "Tile detail content",
+            "slot": {
+              "name": "default"
+            }
+          }
+        ]
+      },
+      {
+        "name": "actions",
+        "restrict": [
+          "div"
+        ],
+        "description": "tile action button area",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "actions"
+        }
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "hasAlert",
+      "type": "boolean",
+      "description": "whether the board tile has a warning alert"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "semantic-heading",
+        "description": "Title should use appropriate heading level"
+      }
+    ]
+  }
+}

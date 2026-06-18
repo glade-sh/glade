@@ -1,0 +1,406 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  /**
+   * All icon button variants: suppress inherited hover background; set default foreground.
+   */
+  .slds-button_icon,
+  .slds-button_icon-inverse,
+  .slds-button_icon-container,
+  .slds-button_icon-border,
+  .slds-button_icon-border-filled,
+  .slds-button_icon-border-inverse,
+  .slds-button_icon-more,
+  .slds-button_icon-error,
+  .slds-button_icon-warning {
+    --slds-c-button-color-background-hover: transparent;
+    --slds-c-button-color-foreground: var(--slds-g-color-on-surface-1);
+  }
+
+  /**
+   * Focus shadow: bare and standalone icon variant
+   */
+  .slds-button_icon {
+    &:focus-visible {
+      --slds-c-button-shadow-focus: var(--slds-g-shadow-outline-focus-1);
+    }
+  }
+
+  /**
+   * Focus shadow: bordered and container variants
+   */
+  .slds-button_icon-inverse,
+  .slds-button_icon-container,
+  .slds-button_icon-border,
+  .slds-button_icon-border-filled,
+  .slds-button_icon-border-inverse,
+  .slds-button_icon-more,
+  .slds-button_icon-error,
+  .slds-button_icon-warning {
+    &:focus-visible {
+      --slds-c-button-shadow-focus: var(--slds-g-shadow-insetinverse-focus-1);
+    }
+  }
+
+  /**
+   * Container sizing defaults
+   */
+  .slds-button_icon-container,
+  .slds-button_icon-border,
+  .slds-button_icon-border-filled,
+  .slds-button_icon-border-inverse,
+  .slds-button_icon-brand,
+  .slds-button_icon-more,
+  .slds-button_icon-container-more {
+    --slds-c-buttonicon-size: var(--slds-g-sizing-9);
+  }
+
+  /**
+   * @summary Transparent themed button icon - Button icon has a border with a transparent background
+   */
+  .slds-button_icon-border-filled,
+  .slds-button_icon-border {
+    --slds-c-button-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-button-color-border: var(--slds-g-color-border-2);
+
+    &:hover {
+      --slds-c-button-color-background-hover: transparent;
+      --slds-c-button-color-border-hover: var(--slds-g-color-border-2);
+    }
+
+    &:focus-visible {
+      --slds-c-button-color-border-focus: var(--slds-g-color-border-2);
+    }
+
+    &:active {
+      --slds-c-button-color-border-active: var(--slds-g-color-border-2);
+    }
+
+    &[disabled],
+    &:disabled {
+      --slds-c-button-color-border-disabled: var(--slds-g-color-border-disabled-1);
+      --slds-c-button-color-foreground-disabled: var(--slds-g-color-on-disabled-2);
+    }
+  }
+
+  /**
+   * @summary Button icon with border and transparent background, to be used on an inversed background
+   */
+  .slds-button_icon-border-inverse {
+    --slds-c-button-color-background: transparent;
+    --slds-c-button-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-button-color-border: var(--slds-g-color-border-inverse-1);
+    --slds-c-button-color-foreground: var(--slds-g-color-on-surface-inverse-1);
+
+    &:hover {
+      --slds-c-button-color-foreground-hover: var(
+        --slds-c-button-inverse-color-foreground-hover,
+        var(--slds-g-color-accent-3)
+      );
+      --slds-c-button-color-background-hover: var(
+        --slds-c-button-inverse-color-background-hover,
+        var(--slds-g-color-surface-container-2)
+      );
+    }
+
+    &:active {
+      --slds-c-button-color-foreground-active: var(
+        --slds-c-button-inverse-color-foreground-hover,
+        var(--slds-g-color-accent-3)
+      );
+    }
+
+    &[disabled],
+    &:disabled {
+      --slds-c-button-color-background-disabled: transparent;
+      --slds-c-button-color-border-disabled: color-mix(
+        in oklab,
+        var(--slds-g-color-neutral-base-100),
+        transparent 75%
+      );
+      --slds-c-button-color-foreground-disabled: color-mix(
+        in oklab,
+        var(--slds-g-color-on-surface-inverse-1),
+        transparent 75%
+      );
+    }
+  }
+
+  /**
+   * @summary Branded button icon - Button icon has a filled background with the brand color
+   */
+  .slds-button_icon-brand {
+    --slds-c-button-color-background: var(--slds-g-color-accent-container-1);
+    --slds-c-button-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-button-color-border: var(--slds-g-color-border-accent-1);
+    --slds-c-button-color-foreground: var(--slds-g-color-on-accent-1);
+
+    &:visited,
+    &:active {
+      --slds-c-button-color-foreground-active: var(--slds-g-color-on-accent-1);
+    }
+
+    &:hover {
+      --slds-c-button-color-background-hover: var(--slds-g-color-accent-container-2);
+      --slds-c-button-color-border-hover: var(--slds-g-color-accent-container-2);
+      --slds-c-button-color-foreground-hover: var(--slds-g-color-on-accent-2);
+    }
+
+    &:focus-visible {
+      --slds-c-button-shadow-focus: var(--slds-g-shadow-insetinverse-focus-1);
+    }
+
+    &:active {
+      --slds-c-button-color-background-active: var(--slds-g-color-accent-container-3);
+      --slds-c-button-color-border-active: var(--slds-g-color-accent-container-3);
+    }
+
+    &[disabled],
+    &:disabled {
+      --slds-c-button-color-background-disabled: var(--slds-g-color-disabled-container-2);
+      --slds-c-button-color-border-disabled: var(--slds-g-color-border-disabled-1);
+      --slds-c-button-color-foreground-disabled: var(--slds-g-color-on-disabled-2);
+    }
+  }
+
+  /**
+   * @summary Neutral themed button icon - Button icon has a border with a filled background
+   */
+  .slds-button_icon-border-filled {
+    --slds-c-button-color-background: var(--slds-g-color-surface-container-1);
+
+    &:hover,
+    &:focus-visible {
+      --slds-c-button-color-background-hover: var(--slds-g-color-surface-container-2);
+    }
+
+    &[disabled],
+    &:disabled {
+      --slds-c-button-color-background-disabled: var(--slds-g-color-disabled-container-1);
+    }
+  }
+
+  /**
+   * @summary Bare button icon with no border or background, to be used on an inversed background
+   * Note: hover/focus/active/disabled foreground states for icon-inverse are handled in button.css lightning-blue.
+   */
+  .slds-button_icon-inverse {
+    --slds-c-button-color-foreground: var(--slds-g-color-on-surface-inverse-1);
+
+    &:hover {
+      --slds-c-button-color-background-hover: transparent;
+    }
+
+    &:focus-visible {
+      --slds-c-button-sizing-border: var(--slds-g-sizing-border-1);
+    }
+  }
+
+  /**
+   * @summary Error state - Typically used in conjunction with an error tooltip
+   */
+  .slds-button_icon-error {
+    --slds-c-button-color-foreground: var(--slds-g-color-error-1);
+    --slds-c-button-icon-color-foreground: var(--slds-g-color-error-1);
+
+    &:hover {
+      --slds-c-button-color-foreground-hover: var(--slds-g-color-error-1);
+      --slds-c-button-icon-color-foreground-hover: var(--slds-g-color-error-2);
+    }
+
+    &:active {
+      --slds-c-button-color-foreground-active: var(--slds-g-color-error-1);
+      --slds-c-button-icon-color-foreground-active: var(--slds-g-color-error-2);
+    }
+
+    &:focus-visible {
+      --slds-c-button-shadow-focus: var(--slds-g-shadow-outline-focus-1);
+      --slds-c-button-color-foreground-hover: var(--slds-g-color-error-1);
+      --slds-c-button-icon-color-foreground-hover: var(--slds-g-color-error-2);
+    }
+  }
+
+  /**
+   * @summary Warning state - Typically used in conjunction with a warning tooltip
+   */
+  .slds-button_icon-warning {
+    --slds-c-button-color-foreground: var(--slds-g-color-warning-1);
+    --slds-c-button-icon-color-foreground: var(--slds-g-color-warning-1);
+
+    &:hover {
+      --slds-c-button-color-foreground-hover: var(--slds-g-color-warning-1);
+      --slds-c-button-icon-color-foreground-hover: var(--slds-g-color-warning-2);
+    }
+
+    &:active {
+      --slds-c-button-color-foreground-active: var(--slds-g-color-warning-1);
+      --slds-c-button-icon-color-foreground-active: var(--slds-g-color-warning-2);
+    }
+
+    &:focus-visible {
+      --slds-c-button-shadow-focus: var(--slds-g-shadow-outline-focus-1);
+      --slds-c-button-color-foreground-hover: var(--slds-g-color-warning-1);
+      --slds-c-button-icon-color-foreground-hover: var(--slds-g-color-warning-2);
+    }
+  }
+
+  /**
+   * @summary Creates a button menu icon container that has borders and a filled background
+   */
+  .slds-button_icon-more {
+    --slds-c-button-color-background: var(--slds-g-color-surface-container-1);
+    --slds-c-button-color-border: var(--slds-g-color-border-2);
+    --slds-c-buttonicon-more-font-line-height: 1.875rem;
+    --slds-c-buttonicon-more-spacing-inline: var(--slds-g-spacing-2);
+
+    &:hover {
+      --slds-c-button-color-foreground-hover: var(--slds-g-color-accent-2);
+    }
+
+    &:active {
+      --slds-c-button-color-foreground-active: var(--slds-g-color-accent-3);
+    }
+
+    &[disabled],
+    &:disabled {
+      --slds-c-button-color-foreground-disabled: var(--slds-g-color-disabled-1);
+    }
+  }
+
+  /**
+   * @summary Creates a button menu icon container that has no borders
+   */
+  .slds-button_icon-container-more {
+    --slds-c-buttonicon-more-font-line-height: 1.875rem;
+    --slds-c-buttonicon-more-spacing-inline: var(--slds-g-spacing-2);
+  }
+
+  /**
+   * @summary Bare button icon — focus and active adjustments
+   */
+  .slds-button_icon-bare {
+    &:focus-visible,
+    &:active {
+      --slds-c-button-radius-border: var(--slds-g-radius-border-2);
+      --slds-c-button-shadow-focus: var(--slds-g-shadow-outline-focus-1);
+      --slds-c-button-sizing-border: var(--slds-g-sizing-border-1);
+    }
+
+    &.slds-button_icon-inverse:focus-visible {
+      --slds-c-button-shadow-focus: var(--slds-g-shadow-outset-focus-1);
+    }
+  }
+
+  /**
+   * Hint selectors: default fill values
+   */
+  .slds-button__icon_hint {
+    --slds-c-buttonicon-hint-color-foreground: var(--slds-g-color-on-surface-1);
+  }
+
+  .slds-button__icon_inverse-hint {
+    --slds-c-buttonicon-inverse-hint-color-foreground: color-mix(
+      in oklab,
+      var(--slds-g-color-on-surface-inverse-1),
+      transparent 50%
+    );
+  }
+
+  /* Hint-parent context: border and fill overrides for interactive states */
+  .slds-hint-parent {
+    .slds-button_icon-border-inverse {
+      --slds-c-button-color-border: color-mix(
+        in oklab,
+        var(--slds-g-color-border-inverse-1),
+        transparent 50%
+      );
+
+      &:focus {
+        --slds-c-button-color-border: color-mix(
+          in oklab,
+          var(--slds-g-color-border-inverse-1),
+          transparent 25%
+        );
+      }
+    }
+
+    &:hover,
+    &:focus {
+      .slds-button_icon-border-inverse {
+        --slds-c-button-color-border: color-mix(
+          in oklab,
+          var(--slds-g-color-border-inverse-1),
+          transparent 25%
+        );
+      }
+
+      .slds-button__icon_hint {
+        --slds-c-buttonicon-hint-color-foreground: var(--slds-g-color-on-surface-2);
+      }
+
+      .slds-button__icon_inverse-hint {
+        --slds-c-buttonicon-inverse-hint-color-foreground: color-mix(
+          in oklab,
+          var(--slds-g-color-on-surface-inverse-1),
+          transparent 25%
+        );
+      }
+    }
+  }
+
+  /* Selected states */
+  .slds-button_icon-container.slds-is-selected,
+  .slds-button_icon-border.slds-is-selected,
+  .slds-button_icon-border-filled.slds-is-selected,
+  .slds-button_icon-border-inverse.slds-is-selected {
+    --slds-c-button-color-background: var(--slds-g-color-accent-container-1);
+    --slds-c-button-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-button-color-border: var(--slds-g-color-border-accent-1);
+    --slds-c-button-color-foreground: var(--slds-g-color-on-accent-1);
+
+    &:hover,
+    &:focus {
+      --slds-c-button-color-background-hover: var(--slds-g-color-accent-container-2);
+      --slds-c-button-color-border-hover: var(--slds-g-color-accent-container-2);
+      --slds-c-button-color-foreground-hover: var(--slds-g-color-on-accent-2);
+    }
+
+    &[disabled],
+    &:disabled {
+      --slds-c-button-color-background-disabled: var(--slds-g-color-disabled-container-2);
+      --slds-c-button-color-border-disabled: var(--slds-g-color-border-disabled-1);
+      --slds-c-button-color-foreground-disabled: var(--slds-g-color-on-disabled-2);
+    }
+  }
+
+  /**
+   * Size modifiers — assigned after container defaults; source order ensures modifier wins at equal specificity.
+   */
+  .slds-button_icon-large {
+    --slds-c-buttonicon-size: var(--slds-g-sizing-10);
+    --slds-c-buttonicon-icon-size: var(--slds-g-sizing-7);
+  }
+
+  .slds-button_icon-small {
+    --slds-c-buttonicon-size: var(--slds-g-sizing-7);
+  }
+
+  .slds-button_icon-x-small {
+    --slds-c-buttonicon-size: var(--slds-g-sizing-6);
+    --slds-c-buttonicon-icon-size: var(--slds-g-sizing-4);
+  }
+
+  .slds-button_icon-xx-small {
+    --slds-c-buttonicon-size: var(--slds-g-sizing-5);
+    --slds-c-buttonicon-icon-size: var(--slds-g-sizing-3);
+  }
+
+  /* Error state icon */
+  .slds-has-error .slds-button__icon {
+    --slds-c-buttonicon-error-color-foreground: var(--slds-g-color-error-1);
+  }
+}

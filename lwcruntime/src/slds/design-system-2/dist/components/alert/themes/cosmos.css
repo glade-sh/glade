@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  /**
+   * @summary Default (info) alert styling
+   */
+  .slds-notify_alert {
+    --slds-c-alert-spacing-block: var(--slds-g-spacing-2);
+    --slds-c-alert-spacing-inline: var(--slds-g-spacing-2);
+    --slds-c-alert-spacing-inline-end: var(--slds-g-spacing-6);
+    --slds-c-alert-color-foreground: var(--slds-g-color-on-info-1);
+    --slds-c-alert-color-background: var(--slds-g-color-info-container-1);
+
+    /* States */
+    --slds-c-alert-color-foreground-active: color-mix(in oklab, currentColor, transparent 50%);
+    --slds-c-alert-color-close-button-hover: var(--slds-s-alert-close-button-hover);
+
+    /* Link  */
+    --slds-c-alert-link-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-alert-link-color-border: transparent;
+    --slds-c-alert-link-radius-border: var(--slds-g-radius-border-2);
+    --slds-c-alert-link-color-foreground-disabled: color-mix(in oklab, currentColor, transparent 90%);
+
+    /* Close Icon */
+    --slds-c-alert-close-spacing-inline-end: var(--slds-g-spacing-3);
+    --slds-c-alert-close-margin-inline-start: var(--slds-g-spacing-1);
+  }
+
+  /**
+   * @summary Warning alert styling
+   */
+  .slds-alert_warning {
+    --slds-c-alert-color-background: var(--slds-g-color-warning-container-1);
+    --slds-c-alert-color-foreground: var(--slds-g-color-on-warning-1);
+  }
+
+  /**
+   * @summary Error alert styling
+   */
+  .slds-alert_error {
+    --slds-c-alert-color-background: var(--slds-g-color-error-container-1);
+    --slds-c-alert-color-foreground: var(--slds-g-color-on-error-1);
+  }
+
+  /**
+   * @summary Offline alert styling
+   */
+  .slds-alert_offline {
+    --slds-c-alert-color-background: var(--slds-g-color-neutral-base-50);
+    --slds-c-alert-color-foreground: var(--slds-g-color-neutral-base-100);
+  }
+}

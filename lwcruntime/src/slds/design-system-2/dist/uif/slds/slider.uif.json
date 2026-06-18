@@ -1,0 +1,188 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Slider",
+  "description": "A slider allows users to select a value within a range.",
+  "dateAdded": "2017-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Slider container",
+    "children": [
+      {
+        "name": "label",
+        "restrict": [
+          "label",
+          "span"
+        ],
+        "description": "Slider label",
+        "slot": {
+          "name": "label",
+          "required": true
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__label"
+          }
+        }
+      },
+      {
+        "name": "sliderContainer",
+        "restrict": [
+          "div"
+        ],
+        "description": "Container for slider input",
+        "children": [
+          {
+            "name": "input",
+            "restrict": [
+              "input"
+            ],
+            "description": "Native range input",
+            "attributes": {
+              "static": {
+                "type": "range",
+                "class": "slds-slider"
+              },
+              "bound": {
+                "id": {
+                  "prop": "inputId",
+                  "required": true
+                },
+                "name": {
+                  "prop": "name"
+                },
+                "value": {
+                  "prop": "value"
+                },
+                "min": {
+                  "prop": "min"
+                },
+                "max": {
+                  "prop": "max"
+                },
+                "step": {
+                  "prop": "step"
+                },
+                "disabled": {
+                  "prop": "disabled"
+                },
+                "aria-describedby": {
+                  "prop": "ariaDescribedBy"
+                }
+              }
+            }
+          },
+          {
+            "name": "value",
+            "restrict": [
+              "span"
+            ],
+            "description": "Value display",
+            "slot": {
+              "name": "value"
+            },
+            "attributes": {
+              "static": {
+                "class": "slds-slider__value"
+              }
+            }
+          }
+        ],
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__control"
+          }
+        }
+      },
+      {
+        "name": "sliderLabel",
+        "restrict": [
+          "span"
+        ],
+        "description": "slider label container",
+        "attributes": {
+          "static": {
+            "class": "slds-slider-label"
+          }
+        }
+      },
+      {
+        "name": "errorMessage",
+        "restrict": [
+          "div"
+        ],
+        "description": "validation error message",
+        "renderWhen": "hasError",
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__help"
+          }
+        }
+      }
+    ],
+    "attributes": {
+      "static": {
+        "class": "slds-form-element"
+      }
+    },
+    "modifiers": [
+      {
+        "name": "vertical",
+        "attribute": "class",
+        "value": "slds-slider_vertical",
+        "description": "Render slider vertically"
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the slider is disabled"
+    },
+    {
+      "name": "hasError",
+      "type": "boolean",
+      "description": "Whether the slider has a validation error"
+    },
+    {
+      "name": "required",
+      "type": "boolean",
+      "aria": "aria-required",
+      "description": "Whether the slider value is required"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "label-association",
+        "description": "Slider must have an associated label"
+      },
+      {
+        "id": "value-announcement",
+        "description": "Current value should be announced when changed"
+      }
+    ]
+  },
+  "cssSource": "./slider.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "disabled",
+      "class": "slds-is-disabled"
+    },
+    {
+      "state": "hasError",
+      "class": "slds-has-error"
+    }
+  ]
+}

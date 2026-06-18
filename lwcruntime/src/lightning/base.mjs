@@ -675,14 +675,12 @@ export function renderMessages($api, _cmp, $slotset) {
 export function renderModal($api, $cmp, $slotset) {
   const { h, t, s } = $api;
   return [h("section", {
-    classMap: { "slds-modal": true, "slds-fade-in-open": true },
-    attrs: { role: "dialog", "aria-modal": "true" },
+    classMap: { "slds-box": true, "slds-theme_default": true },
+    attrs: { role: "region" },
     key: 0,
   }, [
-    h("div", { classMap: { "slds-modal__container": true }, key: 1 }, [
-      h("header", { classMap: { "slds-modal__header": true }, key: 2 }, [t($cmp.label || $cmp.title || "")]),
-      h("div", { classMap: { "slds-modal__content": true }, key: 3 }, [s("", { key: 4 }, [], $slotset)]),
-    ]),
+    h("header", { classMap: { "slds-modal__header": true }, key: 1 }, [t($cmp.label || $cmp.title || "")]),
+    h("div", { classMap: { "slds-modal__content": true }, key: 2 }, [s("", { key: 3 }, [], $slotset)]),
   ])];
 }
 
@@ -994,12 +992,10 @@ export function renderPillContainer($api, $cmp, $slotset) {
 
 export function renderQuickActionPanel($api, $cmp, $slotset) {
   const { h, t, s } = $api;
-  return [h("section", { classMap: { "slds-modal": true, "slds-fade-in-open": true }, attrs: { role: "dialog" }, key: 0 }, [
-    h("div", { classMap: { "slds-modal__container": true }, key: 1 }, [
-      h("header", { classMap: { "slds-modal__header": true }, key: 2 }, [t($cmp.header || $cmp.title || "")]),
-      h("div", { classMap: { "slds-modal__content": true }, key: 3 }, [s("", { key: 4 }, [], $slotset)]),
-      h("footer", { classMap: { "slds-modal__footer": true }, key: 5 }, [s("footer", { key: 6 }, [], $slotset)]),
-    ]),
+  return [h("section", { classMap: { "slds-box": true, "slds-theme_default": true }, attrs: { role: "region" }, key: 0 }, [
+    h("header", { classMap: { "slds-modal__header": true }, key: 1 }, [t($cmp.header || $cmp.title || "")]),
+    h("div", { classMap: { "slds-modal__content": true }, key: 2 }, [s("", { key: 3 }, [], $slotset)]),
+    h("footer", { classMap: { "slds-modal__footer": true }, key: 4 }, [s("footer", { key: 5 }, [], $slotset)]),
   ])];
 }
 

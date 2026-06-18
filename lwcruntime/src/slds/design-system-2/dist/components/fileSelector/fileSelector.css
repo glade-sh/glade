@@ -1,0 +1,184 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * file input container
+ */
+.slds-file-selector {
+  display: inline-flex;
+}
+
+/**
+ * Region that a file can be dropped within
+ */
+.slds-file-selector__dropzone {
+  padding: var(--slds-g-spacing-1);
+  border: var(--slds-g-sizing-border-1) dashed var(--slds-g-color-border-2);
+  border-radius: var(--slds-g-radius-border-2);
+
+  /**
+   * drag over region
+   */
+  &.slds-has-drag-over {
+    outline: 0;
+    border: var(--slds-g-sizing-border-2) solid var(--slds-g-color-border-accent-2);
+  }
+}
+
+/**
+ * Hidden input element
+*/
+
+/* revisit */
+
+.slds-file-selector__input {
+  &:focus-visible ~ .slds-file-selector__body > .slds-file-selector__button {
+    box-shadow: var(--slds-g-shadow-outline-focus-1);
+    border-color: transparent;
+  }
+
+  &[disabled] ~ .slds-file-selector__body {
+    color: var(--slds-g-color-on-surface-1);
+
+    > .slds-file-selector__button {
+      background: var(--slds-g-color-surface-2); /* confirm design */
+      border-color: var(--slds-g-color-border-disabled-1);
+      color: var(--slds-g-color-on-disabled-1);
+    }
+
+    > .slds-file-selector__body-icon {
+      fill: currentColor;
+    }
+  }
+}
+
+/**
+ * Faux button
+*/
+.slds-file-selector__button {
+  display: inline-flex;
+  align-items: center;
+
+  /* override icon color */
+  .slds-icon-text-default {
+    --slds-c-icon-color-foreground: currentColor;
+  }
+}
+
+/**
+ * Modifications based on context
+ */
+.slds-file-selector_files {
+  /**
+   * Container for file selector content, specifically within the dropzone
+  */
+  .slds-file-selector__body {
+    display: flex;
+    align-items: center;
+  }
+
+  /**
+   * Descriptive call back text
+   */
+  .slds-file-selector__text {
+    margin-inline-start: var(--slds-g-spacing-2);
+    margin-inline-end: var(--slds-g-spacing-3);
+  }
+}
+
+/**
+ * Multi Line / Image
+ */
+.slds-file-selector_images {
+  display: block;
+
+  .slds-file-selector__dropzone {
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    padding: var(--slds-g-spacing-4);
+  }
+
+  .slds-file-selector__body {
+    text-align: center;
+  }
+
+  .slds-file-selector__text {
+    margin-block-start: var(--slds-g-spacing-var-block-3);
+  }
+}
+
+/**
+ * Invisible Dropzone (Container)
+ */
+.slds-file-selector_integrated {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: block;
+}
+
+/**
+ * Specific to integrated file selector — region that a file can be dropped within
+ */
+.slds-file-selector__dropzone_integrated {
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 0;
+  opacity: 0;
+  z-index: -1;
+
+  /**
+   * Informs dropzone that file has been dragged into the viewport
+   */
+  &.slds-has-drag {
+    opacity: 1;
+    z-index: 8000;
+  }
+
+  &.slds-has-drag ~ p {
+    color: var(--slds-g-color-disabled-1);
+  }
+
+  /**
+   * Informs dropzone that file has been dragged into its region
+   */
+  &.slds-has-drag-over {
+    background: var(--slds-g-color-brand-base-90, var(--slds-g-color-palette-neutral-95));
+    border: var(--slds-g-sizing-border-2) solid var(--slds-g-color-border-accent-2);
+  }
+}
+
+/**
+ * Specific to integrated file selector — container for file selector
+ */
+.slds-file-selector__body_integrated {
+  width: calc(var(--slds-g-sizing-13) + var(--slds-g-sizing-9));
+  height: calc(var(--slds-g-sizing-13) + var(--slds-g-sizing-9));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
+  margin: auto;
+  background: var(--slds-g-color-neutral-base-100);
+  box-shadow: var(--slds-g-shadow-4);
+  border: var(--slds-g-sizing-border-1) solid var(--slds-s-container-color-border);
+  border-radius: var(--slds-g-radius-border-2);
+}
+
+/**
+ * Specific to integrated file selector — Descriptive call back text
+ */
+.slds-file-selector__text_integrated {
+  margin-block-start: var(--slds-g-spacing-3);
+}

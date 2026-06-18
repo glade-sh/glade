@@ -1,0 +1,196 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "FormElement",
+  "description": "A form element is the container for form field labels, inputs, and help text.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Form element container",
+    "children": [
+      {
+        "name": "label",
+        "restrict": [
+          "label"
+        ],
+        "description": "Field label",
+        "slot": {
+          "name": "label",
+          "required": true
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__label"
+          }
+        }
+      },
+      {
+        "name": "control",
+        "restrict": [
+          "div"
+        ],
+        "description": "Input control container",
+        "slot": {
+          "name": "default",
+          "required": true
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__control"
+          }
+        }
+      },
+      {
+        "name": "help",
+        "restrict": [
+          "div"
+        ],
+        "description": "Help text or error message",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "help"
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__help"
+          }
+        }
+      },
+      {
+        "name": "helpIcon",
+        "restrict": [
+          "div"
+        ],
+        "description": "help icon with tooltip",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "helpText"
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__icon"
+          }
+        }
+      },
+      {
+        "name": "legend",
+        "restrict": [
+          "legend"
+        ],
+        "description": "form element legend for fieldsets",
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__legend"
+          }
+        }
+      },
+      {
+        "name": "staticContent",
+        "restrict": [
+          "div"
+        ],
+        "description": "read-only static content display",
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__static"
+          }
+        }
+      }
+    ],
+    "attributes": {
+      "static": {
+        "class": "slds-form-element"
+      }
+    },
+    "modifiers": [
+      {
+        "name": "stacked",
+        "attribute": "class",
+        "value": "slds-form-element_stacked",
+        "description": "stacked layout"
+      },
+      {
+        "name": "horizontal",
+        "attribute": "class",
+        "value": "slds-form-element_horizontal",
+        "description": "horizontal layout"
+      },
+      {
+        "name": "edit",
+        "attribute": "class",
+        "value": "slds-form-element_edit",
+        "description": "inline edit mode"
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "required",
+      "type": "boolean",
+      "aria": "aria-required",
+      "description": "Whether the field is required"
+    },
+    {
+      "name": "hasError",
+      "type": "boolean",
+      "description": "Whether the field has an error"
+    },
+    {
+      "name": "readonly",
+      "type": "boolean",
+      "aria": "aria-readonly",
+      "description": "Whether the field is read-only"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the form element is disabled"
+    },
+    {
+      "name": "editing",
+      "type": "boolean",
+      "description": "whether the form element is in inline edit mode"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "label-association",
+        "description": "Label must be associated with input"
+      },
+      {
+        "id": "error-association",
+        "description": "Error messages must be linked via aria-describedby"
+      }
+    ]
+  },
+  "cssSource": "./form-element.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "required",
+      "class": "slds-is-required"
+    },
+    {
+      "state": "hasError",
+      "class": "slds-has-error"
+    },
+    {
+      "state": "readonly",
+      "class": "slds-form-element_readonly"
+    },
+    {
+      "state": "editing",
+      "class": "slds-is-editing"
+    }
+  ]
+}

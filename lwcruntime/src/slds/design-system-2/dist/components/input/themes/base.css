@@ -1,0 +1,298 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * Initializes text input
+ */
+.slds-input {
+  display: inline-block;
+  padding-block-start: 0;
+  padding-inline-end: var(--slds-c-input-spacing-inline-end, var(--slds-s-input-spacing));
+  padding-block-end: 0;
+  padding-inline-start: var(--slds-c-input-spacing-inline-start, var(--slds-s-input-spacing));
+  width: 100%;
+  line-height: 1.875rem;
+  border: 1px solid var(--slds-c-input-color-border, var(--slds-s-input-color-border));
+  border-radius: var(--slds-c-input-radius-border, var(--slds-s-input-radius-border));
+  background-color: var(--slds-c-input-color-background, var(--slds-g-color-surface-container-1));
+  color: var(--slds-c-input-text-color, var(--slds-s-input-color, var(--slds-g-color-on-surface-3)));
+  box-shadow: var(--slds-c-input-shadow);
+
+  @media (pointer: coarse) and (hover: none) {
+    font-size: var(--slds-g-font-scale-2);
+  }
+
+  &:focus {
+    --slds-c-input-color-border: var(
+      --slds-c-input-color-border-focus,
+      var(--slds-s-input-color-border-focus)
+    );
+    --slds-c-input-background-color: var(--slds-c-input-color-background-focus, revert);
+    --slds-c-input-text-color: var(--slds-c-input-text-color-focus, revert);
+
+    outline: 0;
+  }
+
+  &:focus-visible {
+    --slds-c-input-shadow: var(--slds-c-input-shadow-focus, var(--slds-g-shadow-outline-focus-1));
+
+    border-color: transparent;
+    outline: 0;
+  }
+
+  &[disabled],
+  &.slds-is-disabled {
+    background-color: var(--slds-s-input-color-background-disabled, var(--slds-g-color-disabled-container-1));
+    border-color: var(--slds-s-input-color-border-disabled, var(--slds-g-color-border-disabled-1));
+    color: var(--slds-s-input-color-disabled, var(--slds-g-color-on-disabled-2));
+    cursor: not-allowed;
+    user-select: none;
+
+    &:focus,
+    &:active {
+      box-shadow: none;
+    }
+    &::placeholder {
+      color: var(--slds-s-input-color-disabled, var(--slds-g-color-on-surface-1));
+    }
+  }
+
+  &[readonly] {
+    --slds-c-input-spacing-inline-start: 0;
+    --slds-c-input-color-border: transparent;
+    --slds-c-input-color-background: transparent;
+
+    outline: 0;
+  }
+
+  &[type='search']::-ms-clear {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  /* Hide extra UI added by the browser—specifically the close icon—for Search inputs */
+  &[type='search']::-webkit-search-decoration,
+  &[type='search']::-webkit-search-cancel-button,
+  &[type='search']::-webkit-search-results-button,
+  &[type='search']::-webkit-search-results-decoration {
+    display: none;
+  }
+
+  /* Prevents certain input types from switching to RTL layout. */
+  &[type='url'],
+  &[type='tel'],
+  &[type='email'] {
+    direction: ltr;
+    text-align: left;
+  }
+}
+
+/**
+  * Removes aesthetic nature from an input
+  */
+.slds-input_bare {
+  --slds-c-input-color-background: transparent;
+  --slds-c-input-spacing-inline-end: 0;
+  --slds-c-input-spacing-inline-start: var(--slds-s-input-spacing);
+
+  border: 0;
+
+  &:focus,
+  &:active {
+    --slds-c-input-shadow-focus: none;
+  }
+
+  &:focus-visible {
+    box-shadow: var(--slds-g-shadow-inset-focus-1);
+    outline: 0;
+  }
+}
+
+/**
+  * Used to apply an input size to another element thats a non input
+  * Because sometimes I need elements the same height as inputs
+  */
+.slds-input_height {
+  min-height: calc(1.875rem + 2px);
+}
+
+/**
+ * Adds aesthetic nature of input to non-form element, such as within a select-only combobox
+ */
+.slds-input_faux {
+  padding-block-start: 0;
+  padding-inline-end: var(--slds-c-input-spacing-inline-end, var(--slds-s-input-spacing));
+  padding-block-end: 0;
+  padding-inline-start: var(--slds-c-input-spacing-inline-start, var(--slds-s-input-spacing));
+  width: 100%;
+  line-height: 1.875rem;
+  border: 1px solid var(--slds-c-input-color-border, var(--slds-s-input-color-border));
+  border-radius: var(--slds-c-input-radius-border, var(--slds-s-input-radius-border));
+  background-color: var(--slds-c-input-color-background, var(--slds-g-color-surface-container-1));
+  color: var(--slds-c-input-text-color, var(--slds-s-input-color, var(--slds-g-color-on-surface-3)));
+  box-shadow: var(--slds-c-input-shadow);
+  display: inline-flex;
+  flex: 1 1 auto;
+  text-align: left;
+
+  &.slds-is-disabled {
+    background-color: var(--slds-s-input-color-background-disabled, var(--slds-g-color-disabled-container-1));
+    border-color: var(--slds-s-input-color-border-disabled, var(--slds-g-color-border-disabled-1));
+    color: var(--slds-s-input-color-disabled, var(--slds-g-color-on-disabled-2));
+    cursor: not-allowed;
+    user-select: none;
+
+    &:focus,
+    &:active {
+      box-shadow: none;
+    }
+  }
+
+  > span::before {
+    content: '';
+    display: inline-block;
+  }
+}
+
+/**
+ * Modifier to allow a [readonly] input to have borders
+ */
+.slds-input_borders[readonly] {
+  --slds-c-input-spacing-inline-start: var(--slds-s-input-spacing);
+  --slds-c-input-color-border: var(--slds-s-input-color-border);
+}
+
+/**
+ * Modifier if text input has svg icon adjacent to input
+ */
+.slds-input-has-icon {
+  position: relative;
+
+  .slds-input__icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    position: absolute;
+    top: 50%;
+    margin-top: calc((0.875rem * 0.5) * -1);
+    line-height: 1;
+    border: 0;
+    z-index: 2;
+  }
+
+  /* Disabled state */
+  &:has(.slds-input[disabled]) .slds-input__icon,
+  &:has(.slds-input.slds-is-disabled) .slds-input__icon {
+    fill: var(--slds-g-color-disabled-1);
+  }
+}
+
+/**
+  * Positions .slds-input__icon to the left of the text input
+  */
+.slds-input-has-icon_left {
+  .slds-input__icon {
+    left: var(--slds-g-spacing-2);
+  }
+
+  .slds-input,
+  .slds-input_faux,
+  .slds-input_bare {
+    --slds-c-input-spacing-inline-start: var(--slds-g-spacing-6);
+  }
+}
+
+/**
+  * Positions .slds-input__icon to the right of the text input
+  */
+.slds-input-has-icon_right {
+  .slds-input__icon {
+    inset-inline-end: var(--slds-g-spacing-2);
+  }
+
+  .slds-input,
+  .slds-input_faux,
+  .slds-input_bare {
+    --slds-c-input-spacing-inline-end: var(--slds-g-spacing-6);
+  }
+}
+
+/**
+  * Positions .slds-input__icon_left to the left of the text input and .slds-input__icon_right to the right of the text input
+  */
+.slds-input-has-icon_left-right {
+  .slds-input__icon_left {
+    left: var(--slds-g-spacing-2);
+  }
+
+  .slds-input__icon_right {
+    inset-inline-end: var(--slds-g-spacing-2);
+  }
+
+  .slds-input,
+  .slds-input_faux,
+  .slds-input_bare {
+    --slds-c-input-spacing-inline-start: var(--slds-g-spacing-6);
+    --slds-c-input-spacing-inline-end: var(--slds-g-spacing-6);
+  }
+}
+
+.slds-input-has-icon_group-right {
+  .slds-input,
+  .slds-input_faux,
+  .slds-input_bare {
+    --slds-c-input-spacing-inline-end: calc(var(--slds-g-spacing-6) + var(--slds-g-spacing-2));
+  }
+}
+
+/**
+ * Positions two items (icons and/or spinners) on one side or the other of the input
+ */
+.slds-input__icon-group {
+  position: absolute;
+  height: var(--slds-g-sizing-5);
+  margin-top: calc(var(--slds-g-spacing-2) * -1);
+}
+
+/**
+ * Positions the close icon and spinner on the right side of the input while searching
+ */
+.slds-input__icon-group_right {
+  inset-inline-end: 0;
+  inset-block-start: 50%;
+
+  .slds-input__icon_right {
+    inset-inline-end: var(--slds-g-spacing-2);
+  }
+
+  .slds-input__spinner {
+    inset-inline-end: var(--slds-g-spacing-5);
+    inset-inline-start: auto;
+  }
+}
+
+/**
+ * Use on input container to let it know there is fixed text to the left or right of the input
+ */
+.slds-input-has-fixed-addon {
+  display: flex;
+}
+
+/**
+ * Error state
+ */
+.slds-has-error .slds-input {
+  --slds-c-input-color-background: var(--slds-s-input-color-background-invalid);
+  --slds-c-input-color-border: var(--slds-g-color-border-error-1);
+  --slds-c-input-text-color: var(--slds-s-input-color-invalid);
+
+  background-clip: padding-box;
+}
+
+.slds-has-error .slds-input__icon {
+  fill: var(--slds-g-color-error-1);
+  color: var(--slds-g-color-error-1);
+}

@@ -1,0 +1,199 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/* Base — unlayered structural CSS. Participates in normal cascade; wins over any layered CSS. */
+
+/* All icon button variants: structural overrides from .slds-button base */
+.slds-button_icon,
+.slds-button_icon-inverse,
+.slds-button_icon-container,
+.slds-button_icon-border,
+.slds-button_icon-border-filled,
+.slds-button_icon-border-inverse,
+.slds-button_icon-more,
+.slds-button_icon-error,
+.slds-button_icon-warning {
+  line-height: 1;
+  vertical-align: middle;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+/**
+ * @summary Default width + height for button icon with containers
+ */
+.slds-button_icon-container,
+.slds-button_icon-border,
+.slds-button_icon-border-filled,
+.slds-button_icon-border-inverse,
+.slds-button_icon-brand,
+.slds-button_icon-more,
+.slds-button_icon-container-more {
+  /* Sizing cascade: Dimension → Unified (dimension-specific falls back to square size) */
+  width: var(--slds-c-buttonicon-width, var(--slds-c-buttonicon-size));
+  height: var(--slds-c-buttonicon-height, var(--slds-c-buttonicon-size));
+}
+
+/**
+ * @summary Apply the current color to the icon contained within
+ */
+.slds-button_icon-current-color {
+  color: currentColor;
+}
+
+/**
+ * @summary Changes a button icon container to be 48x48px
+ * Size modifiers appear after container classes; source order ensures modifier wins at equal specificity.
+ */
+.slds-button_icon-large {
+  width: var(--slds-c-buttonicon-width, var(--slds-c-buttonicon-size));
+  height: var(--slds-c-buttonicon-height, var(--slds-c-buttonicon-size));
+
+  .slds-button__icon {
+    width: var(--slds-c-buttonicon-width, var(--slds-c-buttonicon-icon-size));
+    height: var(--slds-c-buttonicon-height, var(--slds-c-buttonicon-icon-size));
+  }
+}
+
+/**
+ * @summary Changes a button icon container to be 24x24px
+ */
+.slds-button_icon-small {
+  width: var(--slds-c-buttonicon-width, var(--slds-c-buttonicon-size));
+  height: var(--slds-c-buttonicon-height, var(--slds-c-buttonicon-size));
+}
+
+/**
+ * @summary Changes a button icon container to be 20x20px
+ */
+.slds-button_icon-x-small {
+  width: var(--slds-c-buttonicon-width, var(--slds-c-buttonicon-size));
+  height: var(--slds-c-buttonicon-height, var(--slds-c-buttonicon-size));
+  line-height: 1;
+
+  .slds-button__icon {
+    width: var(--slds-c-buttonicon-width, var(--slds-c-buttonicon-icon-size));
+    height: var(--slds-c-buttonicon-height, var(--slds-c-buttonicon-icon-size));
+  }
+}
+
+/**
+ * @summary Changes a button icon container to be 16x16px
+ */
+.slds-button_icon-xx-small {
+  width: var(--slds-c-buttonicon-width, var(--slds-c-buttonicon-size));
+  height: var(--slds-c-buttonicon-height, var(--slds-c-buttonicon-size));
+  line-height: 1;
+
+  .slds-button__icon {
+    width: var(--slds-c-buttonicon-icon-size);
+    height: var(--slds-c-buttonicon-icon-size);
+  }
+}
+
+/**
+ * @summary Creates a button menu icon container that has borders and a filled background
+ */
+.slds-button_icon-more {
+  width: auto;
+  line-height: var(--slds-c-buttonicon-more-font-line-height);
+  padding-block-start: 0;
+  padding-block-end: 0;
+  padding-inline-start: var(
+    --slds-c-buttonicon-more-spacing-inline-start,
+    var(--slds-c-buttonicon-more-spacing-inline)
+  );
+  padding-inline-end: var(
+    --slds-c-buttonicon-more-spacing-inline-end,
+    var(--slds-c-buttonicon-more-spacing-inline)
+  );
+}
+
+/**
+ * @summary Creates a button menu icon container that has no borders
+ */
+.slds-button_icon-container-more {
+  width: auto;
+  line-height: var(--slds-c-buttonicon-more-font-line-height);
+  padding-block-start: 0;
+  padding-block-end: 0;
+  padding-inline-start: var(
+    --slds-c-buttonicon-more-spacing-inline-start,
+    var(--slds-c-buttonicon-more-spacing-inline)
+  );
+  padding-inline-end: var(
+    --slds-c-buttonicon-more-spacing-inline-end,
+    var(--slds-c-buttonicon-more-spacing-inline)
+  );
+  vertical-align: middle;
+}
+
+/**
+ * @summary A parent class must be put on anything that contains a .slds-button__icon_hint so that the child reacts when the parent is hovered.
+ */
+.slds-button__icon_hint {
+  fill: var(--slds-c-buttonicon-hint-color-foreground);
+}
+
+/**
+ * @summary A parent class must be put on anything that contains a .slds-button__icon_inverse-hint so that the child reacts when the parent is hovered. This is for a dark background.
+ */
+.slds-button__icon_inverse-hint {
+  fill: var(--slds-c-buttonicon-inverse-hint-color-foreground);
+}
+
+/* Hint-parent: composition context changes fill on hover. Border-color for nested border-inverse
+   is handled by button.css base reading --slds-c-button-color-border, set by theme in this context. */
+.slds-hint-parent {
+  &:hover,
+  &:focus {
+    .slds-button__icon_hint {
+      fill: var(--slds-c-buttonicon-hint-color-foreground);
+    }
+
+    .slds-button__icon_inverse-hint {
+      fill: var(--slds-c-buttonicon-inverse-hint-color-foreground);
+    }
+
+    .slds-button:disabled {
+      .slds-button__icon_hint {
+        fill: currentColor;
+      }
+    }
+  }
+}
+
+/**
+ * Error/warning color prop: fill + state rules applied via class on the host ancestor.
+ */
+.slds-button_icon-error .slds-button__icon,
+.slds-button_icon-warning .slds-button__icon {
+  fill: var(--slds-c-button-icon-color-foreground);
+}
+
+.slds-button_icon-error:hover .slds-button__icon,
+.slds-button_icon-warning:hover .slds-button__icon {
+  fill: var(--slds-c-button-icon-color-foreground-hover, var(--slds-c-button-icon-color-foreground));
+}
+
+.slds-button_icon-error:focus-visible .slds-button__icon,
+.slds-button_icon-warning:focus-visible .slds-button__icon {
+  fill: var(--slds-c-button-icon-color-foreground-hover, var(--slds-c-button-icon-color-foreground));
+}
+
+.slds-button_icon-error:active .slds-button__icon,
+.slds-button_icon-warning:active .slds-button__icon {
+  fill: var(--slds-c-button-icon-color-foreground-active, var(--slds-c-button-icon-color-foreground));
+}
+
+/**
+ * Error state
+ */
+.slds-has-error .slds-button__icon {
+  fill: var(--slds-c-buttonicon-error-color-foreground);
+  color: var(--slds-c-buttonicon-error-color-foreground);
+}

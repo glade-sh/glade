@@ -1,0 +1,116 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Toast",
+  "description": "Toast serves as a feedback & confirmation mechanism after the user takes an action.",
+  "dateAdded": "2016-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Toast container",
+    "attributes": {
+      "static": {
+        "role": "status"
+      }
+    },
+    "children": [
+      {
+        "name": "container",
+        "restrict": [
+          "div"
+        ],
+        "description": "notification container wrapper"
+      },
+      {
+        "name": "assistiveText",
+        "restrict": [
+          "span"
+        ],
+        "description": "Assistive text for screen readers",
+        "slot": {
+          "name": "assistiveText"
+        }
+      },
+      {
+        "name": "icon",
+        "restrict": [
+          "span"
+        ],
+        "description": "Icon container",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "icon",
+          "restrict": [
+            "Icon"
+          ]
+        }
+      },
+      {
+        "name": "content",
+        "restrict": [
+          "div"
+        ],
+        "description": "Toast content",
+        "children": [
+          {
+            "name": "heading",
+            "restrict": [
+              "h2"
+            ],
+            "description": "Toast heading",
+            "slot": {
+              "name": "heading"
+            }
+          },
+          {
+            "name": "message",
+            "restrict": [
+              "p"
+            ],
+            "description": "Toast message",
+            "slot": {
+              "name": "default"
+            }
+          }
+        ]
+      },
+      {
+        "name": "close",
+        "restrict": [
+          "div"
+        ],
+        "description": "Close button container",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "close",
+          "restrict": [
+            "Button"
+          ]
+        }
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "visible",
+      "type": "boolean",
+      "description": "Whether the toast is visible"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "role-status",
+        "description": "Toast should have role='status' or role='alert' for important messages"
+      },
+      {
+        "id": "auto-dismiss",
+        "description": "If toast auto-dismisses, provide enough time for users to read (at least 5 seconds)"
+      }
+    ]
+  }
+}

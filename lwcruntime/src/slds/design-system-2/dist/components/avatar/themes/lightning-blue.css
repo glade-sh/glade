@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  .slds-avatar {
+    --slds-c-avatar-sizing: var(--slds-g-sizing-9);
+    --slds-c-avatar-radius-border: var(--slds-s-avatar-radius-border, var(--slds-g-radius-border-2));
+    --slds-c-avatar-font-size: var(--slds-g-font-scale-1);
+    --slds-c-avatar-font-line-height: var(--slds-g-font-lineheight-1);
+    --slds-c-avatar-color-foreground: var(--slds-g-color-on-accent-1);
+    --slds-c-avatar-color-background: var(--slds-g-color-accent-container-1);
+    --slds-c-avatar-initials-color-foreground: var(--slds-g-color-on-accent-1);
+    --slds-c-avatar-initials-color-background: var(--slds-g-color-accent-container-1);
+    --slds-c-avatar-shadow-focus: var(--slds-g-shadow-outset-focus-1);
+  }
+
+  .slds-avatar_group-image-small {
+    --slds-c-avatar-group-image: url('../../../public/group_avatar_96.png');
+  }
+
+  .slds-avatar_group-image-medium {
+    --slds-c-avatar-group-image: url('../../../public/group_avatar_160.png');
+  }
+
+  .slds-avatar_group-image-large {
+    --slds-c-avatar-group-image: url('../../../public/group_avatar_200.png');
+  }
+
+  .slds-avatar_profile-image-small {
+    --slds-c-avatar-profile-image: url('../../../public/profile_avatar_96.png');
+  }
+
+  .slds-avatar_profile-image-medium {
+    --slds-c-avatar-profile-image: url('../../../public/profile_avatar_160.png');
+  }
+
+  .slds-avatar_profile-image-large {
+    --slds-c-avatar-profile-image: url('../../../public/profile_avatar_200.png');
+  }
+
+  .slds-avatar_x-small {
+    --slds-c-avatar-sizing: var(--slds-g-sizing-6);
+    --slds-c-avatar-font-size: var(--slds-g-font-scale-neg-2);
+    --slds-c-avatar-radius-border: var(--slds-s-avatar-radius-border, var(--slds-g-radius-border-1));
+  }
+
+  .slds-avatar_small {
+    --slds-c-avatar-sizing: var(--slds-g-sizing-7);
+    --slds-c-avatar-font-size: var(--slds-g-font-scale-neg-2);
+    --slds-c-avatar-radius-border: var(--slds-s-avatar-radius-border, var(--slds-g-radius-border-1));
+  }
+
+  .slds-avatar_large {
+    --slds-c-avatar-sizing: var(--slds-g-sizing-10);
+    --slds-c-avatar-font-size: var(--slds-g-font-scale-3);
+    --slds-c-avatar-font-line-height: var(--slds-g-font-lineheight-2);
+  }
+
+  .slds-avatar_circle {
+    --slds-c-avatar-radius-border: var(--slds-g-radius-border-circle);
+  }
+
+  .slds-avatar_empty {
+    --slds-c-avatar-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-avatar-color-border: var(--slds-g-color-border-1);
+
+    border-style: dashed;
+  }
+
+  .slds-avatar__initials {
+    text-shadow: 0 0 1px rgb(0 0 0 / 80%);
+  }
+
+  .slds-avatar__initials_inverse {
+    --slds-c-avatar-initials-color-foreground: var(--slds-g-color-on-surface-1);
+    --slds-c-avatar-initials-color-background: var(--slds-g-color-surface-container-2);
+
+    text-shadow: none;
+  }
+}

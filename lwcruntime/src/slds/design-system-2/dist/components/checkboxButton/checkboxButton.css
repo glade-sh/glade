@@ -1,0 +1,201 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+.slds-checkbox_add-button {
+  /**
+    * Creates a custom styled checkbox
+    */
+  .slds-checkbox_faux {
+    width: var(--slds-g-spacing-6);
+    height: var(--slds-g-spacing-6);
+    position: relative;
+    display: inline-block;
+    border: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-2);
+    border-radius: var(--slds-s-button-radius-border, var(--slds-g-radius-border-2));
+    background-color: var(--slds-g-color-surface-container-1);
+    cursor: pointer;
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 14px;
+      width: 2px;
+      margin: auto;
+      background-color: var(--slds-s-button-color, var(--slds-g-color-accent-3));
+    }
+
+    &::after {
+      width: 14px;
+      height: 2px;
+    }
+
+    &:hover:not([disabled]),
+    &:focus:not([disabled]),
+    &:active:not([disabled]) {
+      background-color: var(--slds-g-color-surface-container-2);
+    }
+
+    &:active:not([disabled]) {
+      box-shadow: var(--slds-s-button-shadow-active);
+    }
+  }
+
+  [type='checkbox'] {
+    &:not([disabled]) ~ .slds-checkbox_faux:hover,
+    &:not([disabled]) + .slds-checkbox_faux:hover {
+      transition:
+        transform 150ms ease-in-out,
+        box-shadow 150ms ease-in-out;
+      transform: var(--slds-s-button-bordered-transform-hover);
+      box-shadow: var(--slds-s-button-bordered-shadow-hover);
+    }
+
+    &:not([disabled]) ~ .slds-checkbox_faux:active,
+    &:not([disabled]) + .slds-checkbox_faux:active {
+      transform: none;
+      box-shadow:
+        0 0 0 0 transparent,
+        var(--slds-s-button-shadow-active);
+    }
+  }
+
+  [type='checkbox']:checked {
+    &:not([disabled]) ~ .slds-checkbox_faux:hover,
+    &:not([disabled]) + .slds-checkbox_faux:hover {
+      transform: var(--slds-s-button-brand-transform-hover);
+      box-shadow: var(--slds-s-button-brand-shadow-hover);
+    }
+
+    &:not([disabled]) ~ .slds-checkbox_faux:active,
+    &:not([disabled]) + .slds-checkbox_faux:active {
+      transform: none;
+      box-shadow:
+        0 0 0 0 transparent,
+        var(--slds-s-button-shadow-active);
+    }
+
+    ~ .slds-checkbox_faux,
+    + .slds-checkbox_faux {
+      border-color: transparent;
+      background-color: var(--slds-g-color-accent-container-1);
+      box-shadow: var(--slds-s-mark-shadow-checked);
+
+      &::before,
+      &::after {
+        background-color: var(--slds-g-color-on-accent-1);
+      }
+
+      &::before {
+        left: 5px;
+        width: 2px;
+        height: 16px;
+        transform: rotate(40deg);
+      }
+
+      &::after {
+        top: 5px;
+        left: -10px;
+        width: 9px;
+        height: 2px;
+        transform: rotate(40deg);
+      }
+    }
+  }
+
+  [type='checkbox']:checked:not([disabled]) ~ .slds-checkbox_faux:hover,
+  [type='checkbox']:checked:not([disabled]) + .slds-checkbox_faux:hover,
+  [type='checkbox']:checked:not([disabled]):focus-visible ~ .slds-checkbox_faux,
+  [type='checkbox']:checked:not([disabled]):focus-visible + .slds-checkbox_faux {
+    background-color: var(--slds-g-color-accent-container-2);
+  }
+  [type='checkbox']:checked:not([disabled]) + .slds-checkbox_faux:hover::before,
+  [type='checkbox']:checked:not([disabled]) + .slds-checkbox_faux:hover::after {
+    background-color: var(--slds-g-color-on-accent-2);
+  }
+
+  [type='checkbox']:focus-visible ~ .slds-checkbox_faux,
+  [type='checkbox']:focus-visible + .slds-checkbox_faux {
+    box-shadow: var(--slds-g-shadow-insetinverse-focus-1);
+    background-color: var(--slds-g-color-surface-container-2);
+    border-width: 0;
+  }
+
+  [type='checkbox'][disabled] ~ .slds-checkbox_faux,
+  [type='checkbox'][disabled] + .slds-checkbox_faux {
+    background-color: var(--slds-g-color-disabled-container-1);
+    border-color: var(--slds-g-color-border-disabled-1);
+    color: var(--slds-g-color-on-disabled-1);
+    cursor: default;
+  }
+
+  [type='checkbox'][disabled] ~ .slds-checkbox_faux::before,
+  [type='checkbox'][disabled] + .slds-checkbox_faux::before,
+  [type='checkbox'][disabled] ~ .slds-checkbox_faux::after,
+  [type='checkbox'][disabled] + .slds-checkbox_faux::after {
+    background-color: var(--slds-g-color-on-disabled-1);
+  }
+
+  [type='checkbox'][disabled]:checked ~ .slds-checkbox_faux,
+  [type='checkbox'][disabled]:checked + .slds-checkbox_faux {
+    background-color: var(--slds-g-color-disabled-container-2);
+  }
+  [type='checkbox'][disabled]:checked ~ .slds-checkbox_faux::before,
+  [type='checkbox'][disabled]:checked + .slds-checkbox_faux::before,
+  [type='checkbox'][disabled]:checked ~ .slds-checkbox_faux::after,
+  [type='checkbox'][disabled]:checked + .slds-checkbox_faux::after {
+    background-color: var(--slds-g-color-on-disabled-2);
+  }
+}
+
+/**
+ * Initializes checkbox button
+ */
+.slds-checkbox-button {
+  width: var(--slds-g-sizing-9);
+  height: var(--slds-g-sizing-9);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-2);
+  border-radius: var(--slds-s-button-radius-border);
+  color: var(--slds-s-button-color);
+  cursor: pointer;
+
+  .slds-icon {
+    --slds-c-icon-color-foreground: currentColor;
+  }
+}
+
+.slds-checkbox-button_is-checked {
+  background-color: var(--slds-g-color-accent-container-1);
+  border-color: transparent;
+  color: var(--slds-g-color-on-accent-1);
+  box-shadow: var(--slds-s-mark-shadow-checked);
+}
+
+.slds-checkbox-button_is-disabled {
+  background-color: var(--slds-g-color-disabled-container-1);
+  border-color: var(--slds-g-color-border-disabled-1);
+  color: var(--slds-g-color-on-disabled-2);
+  cursor: default;
+
+  &.slds-checkbox-button_is-checked {
+    background-color: var(--slds-g-color-disabled-container-2);
+    border-color: var(--slds-g-color-border-disabled-1);
+    color: var(--slds-g-color-on-disabled-2);
+    box-shadow: var(--slds-s-mark-shadow-checked);
+  }
+}
+
+.slds-checkbox-button_is-focused {
+  outline: 0;
+  box-shadow: var(--slds-g-shadow-insetinverse-focus-1);
+}

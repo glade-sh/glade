@@ -1,0 +1,995 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * @summary Initializes data table
+ */
+.slds-table {
+  background-color: var(--slds-g-color-surface-container-1);
+  font-size: inherit;
+  color: var(--slds-s-table-color);
+
+  /* Cells */
+  th,
+  td {
+    padding: var(--slds-g-spacing-2);
+    white-space: nowrap;
+    position: relative;
+  }
+
+  /* Table Heading Cells */
+  th {
+    font-weight: var(--slds-g-font-weight-5);
+
+    &:focus {
+      outline: 0;
+    }
+  }
+
+  thead th {
+    background-color: var(--slds-s-table-header-color-background);
+    color: var(--slds-s-table-header-color);
+    padding: var(--slds-g-spacing-2);
+    font-weight: var(--slds-s-table-header-font-weight);
+    line-height: normal;
+  }
+
+  /**
+   * Default Table Row Hover
+   */
+  &:not(.slds-no-row-hover) tbody tr:hover,
+  &:not(.slds-no-row-hover) tbody tr:focus {
+    outline: 0;
+
+    > td,
+    > th {
+      background-color: var(--slds-g-color-surface-container-2);
+    }
+  }
+
+  /**
+   * Selected Table Row + Hover
+   */
+  tbody tr.slds-is-selected {
+    > td,
+    > th {
+      background-color: var(--slds-s-table-row-color-background-selected);
+      border-color: var(--slds-s-table-row-color-border-selected-hover);
+    }
+    a {
+      color: var(--slds-g-color-accent-2);
+    }
+  }
+
+  tbody tr:first-child.slds-is-selected {
+    > td,
+    > th {
+      box-shadow: var(--slds-s-table-row-color-border-selected-hover) 0 var(--slds-g-sizing-border-1) 0 inset;
+    }
+  }
+
+  tbody tr.slds-is-selected + tr {
+    > td,
+    > th {
+      border-color: var(--slds-s-table-row-color-border-selected-hover);
+    }
+  }
+
+  /**
+   * By default, nowrap is applied
+   */
+  .slds-cell-wrap {
+    white-space: pre-line;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+
+  /* Reduce cell to the width of its content, if space is available */
+  .slds-cell-shrink {
+    width: 1%;
+  }
+
+  /**
+   * Use to add a left padding buffer to cells
+   */
+  .slds-cell-buffer_left {
+    padding-inline-start: var(--slds-g-spacing-5);
+  }
+
+  /**
+   * Use to add a right padding buffer to cells
+   */
+  .slds-cell-buffer_right {
+    padding-inline-end: var(--slds-g-spacing-5);
+  }
+
+  tbody {
+    /* Start the counter */
+    tr {
+      counter-increment: row-number;
+    }
+  }
+
+  .slds-row-number {
+    /* Add the counter number */
+    &::after {
+      content: counter(row-number);
+    }
+  }
+
+  /**
+   * Focus state on a cell
+   */
+  th:focus,
+  [role='gridcell']:focus {
+    outline: 0;
+  }
+
+  th:focus-visible,
+  th.slds-has-focus,
+  [role='gridcell']:focus-visible,
+  [role='gridcell'].slds-has-focus {
+    box-shadow: var(--slds-g-shadow-insetinverse-focus-1);
+
+    &:has(:focus-visible) {
+      box-shadow: none;
+    }
+
+    /**
+    * Use when cells are in action mode
+    */
+    &.slds-cell_action-mode {
+      border-block-end: 3px solid var(--slds-g-color-border-accent-1);
+    }
+  }
+
+  th:active,
+  [role='gridcell']:active {
+    box-shadow: none;
+  }
+
+  .slds-radio [type='radio'] + .slds-radio__label .slds-radio_faux {
+    margin-inline-end: 0;
+  }
+}
+
+/**
+ * Add left and right padding to the first and last cells of a table
+ */
+.slds-table_cell-buffer {
+  /* First cells in a row */
+  tr > th:first-child,
+  tr > td:first-child {
+    padding-inline-start: var(--slds-g-spacing-5);
+  }
+
+  /* Last cells in a row */
+  tr > th:last-child,
+  tr > td:last-child {
+    padding-inline-end: var(--slds-g-spacing-5);
+  }
+}
+
+/**
+ * Add vertical borders to a table
+ */
+.slds-table_bordered {
+  border-radius: var(--_slds-c-datatable-radius-border, 0);
+  border-collapse: inherit;
+  border-block-start: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-1);
+  border-block-end: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-1);
+  border-inline-start: var(--slds-g-sizing-border-1) solid var(--_slds-c-datatable-color-border, transparent);
+  border-inline-end: var(--slds-g-sizing-border-1) solid var(--_slds-c-datatable-color-border, transparent);
+
+  /* More than one row in thead */
+  thead > tr + tr > th {
+    border-block-start: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-1);
+  }
+
+  /* Cells */
+  tbody td,
+  tbody th {
+    border-block-start: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-1);
+  }
+
+  &:not(.slds-no-row-hover) tbody tr:hover > td:not(.slds-has-focus),
+  &:not(.slds-no-row-hover) tbody tr:hover > th:not(.slds-has-focus),
+  &:not(.slds-no-row-hover) tbody tr:focus > td:not(.slds-has-focus),
+  &:not(.slds-no-row-hover) tbody tr:focus > th:not(.slds-has-focus) {
+    box-shadow: var(--_slds-c-datatable-row-shadow-hover);
+  }
+
+  /* On hover update border for the next row */
+  &:not(.slds-no-row-hover) tbody tr:not(.slds-is-selected:hover):hover + tr > td:not(.slds-has-focus),
+  &:not(.slds-no-row-hover) tbody tr:not(.slds-is-selected:hover):hover + tr > th:not(.slds-has-focus),
+  &:not(.slds-no-row-hover) tbody tr:not(.slds-is-selected:hover):focus + tr > td:not(.slds-has-focus),
+  &:not(.slds-no-row-hover) tbody tr:not(.slds-is-selected:hover):focus + tr > th:not(.slds-has-focus) {
+    border-color: var(--_slds-c-datatable-row-color-border-hover, var(--slds-g-color-border-1));
+  }
+
+  &:not(.slds-no-row-hover) tr.slds-is-selected:hover {
+    > td:not(.slds-has-focus),
+    > th:not(.slds-has-focus) {
+      background-color: var(--slds-s-table-row-color-background-selected);
+      box-shadow:
+        var(--slds-s-table-row-color-border-selected-hover) 0 calc(var(--slds-g-sizing-border-1) * -1) 0 inset,
+        var(--slds-s-table-row-color-border-selected-hover) 0 var(--slds-g-sizing-border-1) 0 inset;
+    }
+  }
+
+  /* As first row do not have top border, need different box shadow to have the same */
+  &:not(.slds-no-row-hover) tr:first-child.slds-is-selected:hover {
+    > td:not(.slds-has-focus),
+    > th:not(.slds-has-focus) {
+      box-shadow:
+        var(--slds-s-table-row-color-border-selected-hover) 0 calc(var(--slds-g-sizing-border-1) * -1) 0 inset,
+        var(--slds-s-table-row-color-border-selected-hover) 0 var(--slds-g-sizing-border-2) 0 inset;
+    }
+  }
+
+  tr:first-child th,
+  tr:first-child td {
+    border-block-start: 0;
+  }
+}
+
+/**
+ * Add column borders
+ */
+.slds-table_col-bordered {
+  td + td,
+  th + th,
+  th + td,
+  td + th {
+    border-inline-start: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-1);
+  }
+}
+
+/**
+ * Add alternating strips to rows
+ */
+.slds-table_striped {
+  tbody tr:nth-of-type(even) > td,
+  tbody tr:nth-of-type(even) > th {
+    background-color: var(--slds-g-color-surface-container-2);
+  }
+}
+
+/**
+ * @summary Set table to use fixed layout for width and truncation purposes
+ */
+.slds-table_fixed-layout {
+  table-layout: fixed;
+  width: 100%;
+  white-space: nowrap;
+
+  thead {
+    background-color: var(--slds-g-color-surface-container-1);
+  }
+
+  /* Tap into hardware acceleration for performance of large amounts of rows */
+  tbody {
+    transform: translateZ(0);
+  }
+
+  .slds-cell-shrink {
+    width: var(--slds-g-sizing-3);
+
+    &:nth-child(n) {
+      padding-inline-start: 0;
+      padding-inline-end: 0;
+    }
+
+    &:first-child {
+      text-align: right;
+      padding-inline-end: var(--slds-g-spacing-2);
+    }
+
+    &:last-child {
+      text-align: left;
+      padding-inline-start: var(--slds-g-spacing-2);
+    }
+  }
+}
+
+/**
+ * If the column is sortable, then let's handle the actionable
+ * region of the `<th>` cell
+ */
+.slds-is-sortable {
+  .slds-th__action:hover,
+  .slds-th__action:focus,
+  &.slds-has-focus .slds-th__action,
+  &.slds-has-focus .slds-th__action:hover,
+  &.slds-has-focus .slds-th__action:focus {
+    background-color: var(--slds-s-table-header-color-background-hover);
+    color: currentColor;
+
+    .slds-is-sortable__icon {
+      display: inline-block;
+      fill: var(--slds-g-color-accent-2);
+    }
+  }
+}
+
+/**
+ * Actionable area inside th
+ */
+.slds-th__action {
+  display: flex;
+  padding: var(--slds-g-spacing-2);
+  height: 2rem;
+  align-items: center;
+  color: currentColor;
+
+  &:focus,
+  &:hover {
+    outline: 0;
+    background-color: var(--slds-s-table-header-color-background-hover);
+  }
+}
+
+/**
+  * Allows for alignment of form element, such as a checkbox
+  */
+.slds-th__action_form {
+  display: inline-flex;
+}
+
+/**
+  * Allows for alignment of button, such as a menu
+  */
+.slds-th__action-button {
+  position: absolute;
+  transform: translateY(-50%);
+  top: 50%;
+  inset-inline-end: var(--slds-g-spacing-1);
+  min-width: var(--slds-g-sizing-7);
+  min-height: var(--slds-g-sizing-7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  > .slds-button:hover {
+    background-color: transparent;
+  }
+}
+
+/**
+ * If the column header has a menu button, then let's add right padding to the
+ * header to preserve truncation
+ */
+.slds-has-button-menu {
+  .slds-th__action {
+    padding-inline-end: var(--slds-g-spacing-6);
+  }
+
+  .slds-th__action-button {
+    inset-inline-end: var(--slds-g-spacing-3);
+  }
+}
+
+/**
+ * Icon inside sortable th
+ */
+.slds-is-sortable__icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-inline-start: var(--slds-g-spacing-1);
+  display: none;
+}
+
+/**
+ * Active state of sorted column
+ */
+.slds-is-sorted {
+  .slds-is-sortable__icon {
+    display: inline-block;
+  }
+}
+
+/**
+  * Change direction of arrow
+  */
+.slds-is-sorted_asc .slds-is-sortable__icon {
+  transform: rotate(180deg);
+}
+
+/* stylelint-disable at-rule-no-unknown */
+@for $i from 1 to 15 {
+  .slds-table_column-$(i)-wrap tbody tr > *:nth-child($(i)) .slds-truncate {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    hyphens: none;
+    white-space: normal;
+  }
+}
+
+[class*='slds-table_column-'] tr td .slds-truncate {
+  overflow: hidden;
+  position: relative;
+  max-height: 3.25rem;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2.25rem;
+    bottom: 0;
+    right: 0;
+    width: 50%;
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      var(--slds-g-color-neutral-base-100, rgb(255, 255, 255, 1)) 69%
+    );
+  }
+}
+
+[class*='slds-table_column-'] tr:hover td .slds-truncate::after {
+  background: linear-gradient(to right, rgb(250, 250, 249, 0) 0%, rgb(250, 250, 249, 1) 69%);
+}
+
+/**
+ * Resizable data table columns
+ */
+
+.slds-table_resizable-cols thead th {
+  padding: 0;
+
+  &:last-of-type .slds-resizable__handle {
+    width: var(--slds-g-sizing-2);
+    inset-inline-end: 0;
+
+    .slds-resizable__divider {
+      &::before,
+      &::after {
+        inset-inline-end: 0;
+        width: 0;
+      }
+    }
+  }
+}
+
+/**
+ * Resizable handle
+ */
+.slds-resizable {
+  max-width: 100%;
+}
+
+/**
+  * Grab handle to resize column
+  */
+.slds-resizable__handle {
+  width: var(--slds-g-sizing-7);
+  height: 100%;
+  position: absolute;
+  top: 0;
+  inset-inline-end: calc(var(--slds-g-spacing-3) * -1);
+  z-index: 1;
+}
+
+/**
+  * Grab handle divider indicator when resizing column
+  */
+.slds-resizable__divider {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: col-resize;
+  z-index: 5000;
+
+  &::before,
+  &::after {
+    height: 100%;
+    content: ' ';
+    display: block;
+    position: absolute;
+    top: 0;
+    inset-inline-end: var(--slds-g-spacing-3);
+  }
+
+  &::before {
+    background-color: var(--slds-s-table-resize-color);
+    height: 100%;
+    width: 1px;
+  }
+
+  &::after {
+    background-color: var(--slds-s-table-resize-color-active);
+    width: 1px;
+    height: 100vh;
+    opacity: 0;
+  }
+
+  &:hover,
+  &:focus,
+  &:active {
+    &::before {
+      background-color: var(--slds-s-table-resize-color-active);
+      width: var(--slds-g-sizing-2);
+    }
+
+    &::after {
+      opacity: 1;
+    }
+  }
+}
+
+/* Handles making the handle + divider visible during keyboard navigation */
+.slds-resizable__input:focus ~ .slds-resizable__handle .slds-resizable__divider {
+  &::before {
+    background-color: var(--slds-s-table-resize-color-active);
+    width: var(--slds-g-sizing-2);
+  }
+
+  &::after {
+    opacity: 1;
+  }
+}
+
+/** -----------
+ * this stuff is from blame, dont know what to do with it yet
+ * --------- */
+
+/* .slds-table_joined,
+.slds-table.slds-has-top-magnet {
+
+  table {
+    border-radius: $table-border-radius;
+    box-shadow: $card-shadow;
+  }
+} */
+
+/* For wrapping header/listView for Object home lists which goes all the way to the bottom of the page */
+/* .slds-table_joined-wrapper {
+  padding: $card-wrapper-spacing $card-wrapper-spacing 0 $card-wrapper-spacing;
+  border-radius: $border-radius-medium;
+  background-clip: padding-box;
+
+  .slds-table {
+    border-radius: $table-border-radius;
+    box-shadow: $card-shadow;
+  }
+} */
+
+/** -----------
+ *  /end blame.css
+ * --------- */
+
+/**
+ * @summary Creates fixed header for inline-edit data-table
+ */
+.slds-table_header-fixed_container {
+  /* This code creates the fixed header (faux header) used in the inline-edit data-table. I don't think we'll surface this for customers as it's very complex when scrolling horizontally and requires some other code for containers, etc */
+  position: relative;
+  padding-block-start: 2rem;
+  background-color: var(--slds-s-table-header-color-background);
+  overflow: hidden;
+  border: var(--slds-g-sizing-border-1) solid var(--_slds-c-datatable-color-border);
+  border-radius: var(--_slds-c-datatable-radius-border);
+
+  &::before {
+    border-block-end: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-1);
+    content: '';
+    display: block;
+    position: relative;
+    width: 100%;
+  }
+}
+
+.slds-cell-fixed {
+  background-color: var(--slds-s-table-header-color-background);
+  position: absolute;
+  inset-block-start: 0;
+  height: 2rem;
+}
+
+.slds-table_header-fixed {
+  border-block-start: 0;
+  border-inline: 0;
+  border-radius: 0;
+
+  thead th {
+    position: static;
+    padding: 0;
+    border-block-start: 0;
+    text-align: start;
+  }
+
+  tbody tr:first-child {
+    td,
+    th {
+      border-block-start: 0;
+    }
+  }
+
+  /*
+    - We have removed below code as it was adding border on top and bottom of fixed header
+    - Due to this we found scenarios of having double border on the header as implementation teams have added border as part of their code
+    - We can rollback on this and see how can be implement this update in next releases
+  */
+
+  /* .slds-cell-fixed {
+    border-block-start: 1px solid var(--slds-g-color-border-1);
+    border-block-end: 1px solid var(--slds-g-color-border-1);
+  } */
+}
+
+/* ------------
+ Inline Edit CSS
+ -------------- */
+.slds-table_edit_container {
+  &:focus {
+    outline: none;
+
+    &::before {
+      content: ' ';
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 1;
+      background-color: var(--slds-g-color-surface-container-2);
+      box-shadow: 0 0 0 4px var(--slds-g-color-accent-2) inset;
+    }
+
+    .slds-table_edit_container-message {
+      display: block;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: var(--slds-g-sizing-15);
+      margin-top: -2.25rem;
+      margin-inline-start: calc((var(--slds-g-sizing-15) * 0.5) * -1);
+      background-color: var(--slds-g-color-surface-container-1);
+      text-align: center;
+      z-index: 1;
+    }
+  }
+}
+
+.slds-table_edit_container-message {
+  display: none;
+}
+
+/**
+ * Inline edit plugin for advanced tables
+ *
+ * #### Accessibility
+ * The Advanced Data Table and Inline Edit Data Table are based on the semantics,
+ * roles and interaction model of the [ARIA Grid](http://w3c.github.io/aria/practices/aria-practices.html#grid).
+ * In SLDS we overlay the ARIA Grid on top of native HTML table semantics.
+ *
+ * The role of Grid comes with 2 distinct modes, Navigation mode and Actionable
+ * mode. Both come with very specific keyboard interaction modals. Navigation
+ * mode is the default mode of the Grid.
+ *
+ * **Navigation Mode**
+ * - Tabbing into the grid focuses the first data cell in the table.
+ * - The second tab key press takes the user focus out of the grid onto the next focusable element on the page.
+ * - Once the user has tabbed out of the grid, tabbing back into the grid will return focus to the last cell the user was focused on.
+ * - Navigation in the grid is accomplished via the arrow keys.
+ * - No actionable items in cell contents are focusable.
+ * - Pressing the Enter key on a chosen grid cell, places the entire Grid into Actionable mode.
+ *
+ * **Actionable Mode**
+ * - Once in Actionable mode, all focusable items in the entire grid can be tabbed to.
+ * - Arrow navigation still takes the user cell to cell in any direction, but focuses on the first actionable item in the cell, if there is one.
+ * - Pressing the Escape key exits Actionable mode, placing the user back into Navigation mode, keeping the users cursor on the same cell they were focused in.
+ * - When interacting with a component in a cell, such as a Menu, that also uses the Escape key as an exit action, pressing Escape will take the user back to the triggering element in the current cell. A subsequent press of Escape will return the user to Navigation mode.
+ *
+ * For the purposes of these docs, the Default state of Inline Edit is
+ * representative of Navigation mode, all other states are assumed to be in Actionable Mode.
+ */
+.slds-table_edit {
+  thead th {
+    padding: 0;
+  }
+
+  /**
+   * Cell that has error icon appear within
+   */
+  .slds-cell-error {
+    padding-inline-start: 0;
+  }
+
+  &:not(.slds-no-cell-focus) tbody tr:hover > .slds-cell-edit {
+    &.slds-has-focus {
+      background-color: var(--slds-g-color-surface-container-1);
+      box-shadow: var(--slds-g-color-accent-2) 0 0 0 1px inset;
+    }
+  }
+
+  &.slds-table tbody tr:hover > .slds-cell-edit {
+    &:hover {
+      background-color: var(--slds-g-color-surface-container-1);
+    }
+
+    &.slds-is-edited {
+      background-color: var(--_slds-c-datatable-color-background-edit);
+    }
+
+    &.slds-has-error {
+      background-color: var(--_slds-c-datatable-color-background-error);
+      box-shadow: var(--slds-g-color-error-1) 0 0 0 var(--slds-g-sizing-border-2) inset;
+    }
+  }
+
+  .slds-button__icon_edit:focus {
+    fill: var(--slds-g-color-accent-2);
+  }
+}
+
+/* Table Heading cell focus styles
+  Requires .slds-th__action inside the <th> */
+.slds-has-focus .slds-th__action {
+  background-color: var(--slds-g-color-surface-container-1);
+  box-shadow: var(--slds-g-shadow-insetinverse-focus-1);
+}
+
+/* Handles focus for resizable columns */
+.slds-has-focus.slds-is-resizable .slds-th__action,
+.slds-has-focus.slds-is-resizable .slds-th__action:focus,
+.slds-has-focus.slds-is-resizable .slds-th__action:hover,
+.slds-has-focus.slds-is-resizable .slds-th__action:focus:hover,
+.slds-is-resizable .slds-th__action:focus,
+.slds-is-resizable .slds-th__action:focus:hover {
+  background-color: var(--slds-g-color-surface-container-1);
+  box-shadow:
+    var(--slds-g-shadow-insetinverse-focus-1),
+    var(--slds-g-color-accent-2) -0.25rem 0 0 inset;
+
+  &:has(.slds-button_icon-bare:focus-visible) {
+    box-shadow: none;
+  }
+}
+
+.slds-has-focus.slds-is-resizable .slds-th__action:hover,
+.slds-has-focus.slds-is-resizable .slds-th__action:focus:hover,
+.slds-is-resizable .slds-th__action:focus:hover {
+  box-shadow: none;
+}
+
+/**
+ * Informs a table cell that it has editing capabilities
+ */
+.slds-table .slds-cell-edit {
+  outline: 0;
+
+  &.slds-has-focus {
+    background-color: var(--slds-g-color-surface-container-1);
+    box-shadow: var(--slds-g-shadow-inset-focus-1);
+
+    .slds-button__icon_edit,
+    .slds-button__icon_lock {
+      opacity: 1;
+    }
+
+    &:hover {
+      box-shadow: var(--slds-g-color-accent-2) 0 0 0 1px inset;
+    }
+
+    a:focus {
+      text-decoration: underline;
+      outline: none;
+    }
+  }
+
+  /**
+   * Informs a cell that it has been edited but not saved
+   */
+  &.slds-is-edited {
+    &,
+    &:hover {
+      font-weight: 600;
+      background-color: var(--_slds-c-datatable-color-background-edit);
+    }
+  }
+
+  /**
+   * Informs a cell that it has an error inside of it
+   */
+  &.slds-has-error {
+    &,
+    &:hover {
+      font-weight: 600;
+      background-color: var(--_slds-c-datatable-color-background-error);
+      box-shadow: var(--slds-g-color-error-1) 0 0 0 var(--slds-g-sizing-border-2) inset;
+    }
+    a {
+      color: currentColor;
+    }
+  }
+}
+
+/**
+ * Edit icon
+ */
+.slds-cell-edit__button {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+
+  &:focus .slds-button__icon_edit {
+    opacity: 1;
+  }
+
+  &[disabled],
+  &:disabled {
+    color: var(--slds-g-color-disabled-1);
+  }
+}
+
+/**
+ * Handles children of the table where we don't want any focusable cells
+ *
+ * @selector .slds-no-cell-focus
+ * @restrict .slds-table_edit
+ * @modifier
+ */
+.slds-no-cell-focus {
+  /* If no cell focus is applied but were dynamically adding slds-has-focus, handle
+    it here */
+  .slds-has-focus {
+    background: var(--slds-g-color-surface-container-2);
+    box-shadow: none;
+
+    .slds-th__action,
+    .slds-th__action:hover,
+    .slds-th__action:focus,
+    .slds-th__action:focus:hover {
+      color: inherit;
+      background-color: var(--slds-g-color-surface-container-1);
+      box-shadow: none;
+    }
+
+    .slds-button__icon_edit {
+      opacity: 1;
+    }
+
+    /* Handle the difference on resizeable columns */
+    &.slds-is-resizable:hover .slds-th__action {
+      background-color: var(--slds-g-color-surface-container-1);
+      box-shadow: var(--slds-g-color-border-1) -0.25rem 0 0 inset;
+    }
+  }
+
+  /* Lets make sure icon doesnt appear on sortable cells */
+  .slds-is-sortable.slds-has-focus {
+    .slds-is-sortable__icon {
+      display: none;
+    }
+  }
+
+  /* Lets make sure were not altering the color of the icon when a column has been
+  sorted already, since thats what we do by default */
+  .slds-is-sorted.slds-has-focus {
+    .slds-is-sortable__icon {
+      display: inline-block;
+      fill: var(--slds-g-color-on-surface-1);
+    }
+  }
+
+  /* Lets make sure our cell keeps its edited style */
+  .slds-is-edited {
+    &,
+    &:hover {
+      background-color: var(--_slds-c-datatable-color-background-edit);
+      color: var(--slds-g-color-on-warning-1);
+    }
+  }
+
+  /* Lets make sure our cell keeps its error style */
+  .slds-has-error {
+    &,
+    &:hover {
+      background-color: var(--slds-g-color-palette-yellow-90);
+      box-shadow: var(--slds-g-color-error-1) 0 0 0 var(--slds-g-sizing-border-2) inset;
+    }
+  }
+
+  /* Lets make sure hover behavior acts as the default when in a no focus state */
+  thead .slds-has-focus:hover {
+    color: var(--slds-s-link-color);
+
+    .slds-is-sortable__icon {
+      display: inline-block;
+      fill: var(--slds-s-link-color);
+    }
+  }
+}
+
+.slds-hint-parent .slds-cell-edit {
+  .slds-button__icon_edit,
+  .slds-button__icon_lock {
+    opacity: 0;
+  }
+
+  &:hover,
+  &:focus {
+    .slds-button__icon_edit {
+      opacity: 1;
+      fill: var(--slds-g-color-accent-2);
+
+      &:hover,
+      &:focus {
+        fill: var(--slds-g-color-accent-2);
+        opacity: 1;
+      }
+    }
+
+    .slds-button__icon_lock {
+      opacity: 1;
+    }
+
+    .slds-button_icon {
+      &:hover,
+      &:focus {
+        .slds-button__icon_edit {
+          fill: var(--slds-g-color-on-surface-3);
+        }
+      }
+    }
+  }
+
+  &.slds-has-focus .slds-button__icon_edit {
+    fill: var(--slds-g-color-on-surface-3);
+    opacity: 1;
+  }
+}
+
+/**
+ * @selector .slds-form-element__label_edit
+ */
+.slds-form-element__label_edit {
+  margin-block: 0;
+  margin-inline: 0.125rem;
+}
+
+/**
+ * Dialog specific for inline-edit popover
+ */
+.slds-popover_edit {
+  border-block-start: 0;
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+  box-shadow: var(--slds-g-shadow-2);
+
+  .slds-popover__body {
+    padding: var(--slds-g-spacing-1);
+    padding-inline-start: 0;
+  }
+
+  .slds-form-element__help {
+    width: 100%;
+    padding-inline-start: var(--slds-g-spacing-2);
+  }
+}
+
+/**
+ * Use this class to join a table to a page-header
+ */
+.slds-table_joined table,
+.slds-table.slds-has-top-magnet table {
+  border-radius: 0 0 var(--slds-g-radius-border-2) var(--slds-g-radius-border-2);
+  box-shadow: var(--slds-s-container-shadow, var(--slds-g-shadow-1));
+}
+
+.slds-table_joined-wrapper {
+  padding: var(--slds-g-spacing-4) var(--slds-g-spacing-4) 0 var(--slds-g-spacing-4);
+  border-radius: var(--slds-g-radius-border-2);
+  background-clip: padding-box;
+}
+
+.slds-table_joined-wrapper .slds-table {
+  border-radius: 0 0 var(--slds-g-radius-border-2) var(--slds-g-radius-border-2);
+  box-shadow: var(--slds-s-container-shadow, var(--slds-g-shadow-1));
+}

@@ -1,0 +1,97 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Avatar",
+  "description": "An avatar represents an object or entity.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "span",
+      "a"
+    ],
+    "description": "Avatar container",
+    "attributes": {
+      "bound": {
+        "title": {
+          "prop": "title"
+        }
+      }
+    },
+    "children": [
+      {
+        "name": "image",
+        "restrict": [
+          "img"
+        ],
+        "description": "Avatar image",
+        "renderWhen": "slotFilled",
+        "attributes": {
+          "bound": {
+            "src": {
+              "prop": "src",
+              "required": true
+            },
+            "alt": {
+              "prop": "alternativeText"
+            }
+          }
+        }
+      },
+      {
+        "name": "initials",
+        "restrict": [
+          "abbr",
+          "span"
+        ],
+        "description": "Initials fallback when no image",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "initials"
+        }
+      },
+      {
+        "name": "fallbackIcon",
+        "restrict": [
+          "span"
+        ],
+        "description": "Fallback icon when no image or initials",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "fallbackIcon",
+          "restrict": [
+            "Icon"
+          ]
+        }
+      },
+      {
+        "name": "assistiveText",
+        "restrict": [
+          "span"
+        ],
+        "description": "screen reader text for avatar"
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "linked",
+      "type": "boolean",
+      "description": "whether the avatar is wrapped in a link"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "alt-text",
+        "description": "Image avatars must have alternative text describing the entity"
+      },
+      {
+        "id": "decorative-hidden",
+        "description": "Decorative avatars should be hidden from screen readers"
+      }
+    ]
+  }
+}

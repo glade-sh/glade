@@ -1,0 +1,68 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "DatetimePicker",
+  "description": "A datetime picker allows users to select both a date and time.",
+  "dateAdded": "2017-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Datetime picker container",
+    "children": [
+      {
+        "name": "dateField",
+        "restrict": [
+          "div"
+        ],
+        "description": "Date input section",
+        "slot": {
+          "name": "date",
+          "restrict": [
+            "Datepicker"
+          ],
+          "required": true
+        }
+      },
+      {
+        "name": "timeField",
+        "restrict": [
+          "div"
+        ],
+        "description": "Time input section",
+        "slot": {
+          "name": "time",
+          "restrict": [
+            "Timepicker"
+          ],
+          "required": true
+        }
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the datetime picker is disabled"
+    },
+    {
+      "name": "required",
+      "type": "boolean",
+      "aria": "aria-required",
+      "description": "Whether the datetime picker is required"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "fieldset-grouping",
+        "description": "Date and time fields should be grouped with a common label"
+      }
+    ]
+  }
+}

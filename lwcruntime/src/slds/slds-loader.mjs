@@ -1,8 +1,14 @@
 import { reportDiagnostic } from "@glade/shell/diagnostics";
 
 const THEMES = {
-  slds1: "glade-slds.css",
-  slds2: "glade-slds.css",
+  slds1: "design-system/assets/styles/salesforce-lightning-design-system.min.css",
+  slds1Offline: "design-system/assets/styles/salesforce-lightning-design-system-offline.min.css",
+  "slds1-offline": "design-system/assets/styles/salesforce-lightning-design-system-offline.min.css",
+  slds2: "design-system-2/dist/css/bundled/slds2.cosmos.css",
+  slds2Cosmos: "design-system-2/dist/css/bundled/slds2.cosmos.css",
+  "slds2-cosmos": "design-system-2/dist/css/bundled/slds2.cosmos.css",
+  slds2LightningBlue: "design-system-2/dist/css/bundled/slds2.lightning-blue.css",
+  "slds2-lightning-blue": "design-system-2/dist/css/bundled/slds2.lightning-blue.css",
 };
 
 export function sldsHref({ theme = "slds2", basePath = "/lightning/runtime/slds" } = {}) {

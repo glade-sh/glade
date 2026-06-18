@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * SLDS 2 only
+ *
+ * There are discrepancies between SLDS 1 and SLDS 2 with the datatable.
+ * The overrides below are meant to address tree grid specific issues while avoid datatable regressions.
+*/
+.slds-table_tree[role='treegrid'] {
+  /**
+   * Restore original SLDS 1 behavior to avoid borders misalignment.
+   *
+   * Note: In SLDS 1 the border-collapse for the datatable was set to "separate",
+   * but in SLDS 2 it was converted to "collapse".
+   */
+  border-collapse: separate;
+
+  /**
+   * Increase specificity to override datatable padding after SDLS 2 upgrade
+   *
+   * Note: In SLDS 1, the datatable was using `$table-cell-spacing: 0.5rem !default;`
+   * However, in our docs the default token was overwritten with a dual value `.25rem .5rem`.
+   */
+  .slds-tree__item,
+  tbody [role='gridcell'] {
+    padding: var(--slds-g-spacing-1) var(--slds-g-spacing-2);
+  }
+}
+
+.slds-table_tree .slds-tree__item {
+  line-height: var(--slds-g-font-lineheight-5);
+}
+
+.slds-table_tree .slds-tree__item a {
+  color: var(--slds-s-link-color);
+}
+
+.slds-table_tree .slds-tree__item a:hover {
+  text-decoration: underline;
+}
+
+/**
+ * Bugfix for W-15643934
+ * Notes:
+ * - This changes will only be effective in the context of any row cell content wraps
+ * - The LBC counterpart differs from the blueprint and this fix won't have any effect,
+ *   because LBC adds an additional div around the cell content.
+ */
+.slds-table_tree tr:has(.slds-cell-wrap) .slds-tree__item {
+  display: table-cell;
+  vertical-align: top;
+
+  & > .slds-button {
+    float: left;
+    height: 1.5rem;
+  }
+}
+
+.slds-table_tree .slds-button,
+.slds-table--tree .slds-button {
+  align-self: center;
+}
+
+.slds-table_tree .slds-button:not(.slds-th__action-button) {
+  margin-block-start: 0;
+}
+
+.slds-table_tree {
+  /* stylelint-disable */
+  @for $current-level from 1 to 20 {
+    [aria-level='$current-level'] > .slds-tree__item {
+      padding-inline-start: calc(var(--slds-g-spacing-4) * $current-level);
+    }
+  }
+  /* stylelint-enable */
+}

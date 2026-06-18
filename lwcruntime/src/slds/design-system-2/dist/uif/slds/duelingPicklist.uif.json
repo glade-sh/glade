@@ -1,0 +1,183 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "DuelingPicklist",
+  "description": "A dueling picklist allows users to move options between two lists.",
+  "dateAdded": "2017-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Dueling picklist container",
+    "attributes": {
+      "static": {
+        "role": "group",
+        "class": "slds-dueling-list"
+      },
+      "bound": {
+        "aria-label": {
+          "prop": "label",
+          "required": true
+        }
+      }
+    },
+    "children": [
+      {
+        "name": "sourceList",
+        "restrict": [
+          "div"
+        ],
+        "description": "Source list container",
+        "children": [
+          {
+            "name": "sourceLabel",
+            "restrict": [
+              "span"
+            ],
+            "description": "Source list label",
+            "slot": {
+              "name": "sourceLabel"
+            },
+            "attributes": {
+              "static": {
+                "class": "slds-form-element__label"
+              }
+            }
+          },
+          {
+            "name": "sourceListbox",
+            "restrict": [
+              "ul"
+            ],
+            "description": "Source options",
+            "attributes": {
+              "static": {
+                "role": "listbox",
+                "class": "slds-dueling-list__options"
+              }
+            },
+            "slot": {
+              "name": "sourceOptions",
+              "required": true
+            }
+          }
+        ],
+        "attributes": {
+          "static": {
+            "class": "slds-dueling-list__column"
+          }
+        }
+      },
+      {
+        "name": "buttons",
+        "restrict": [
+          "div"
+        ],
+        "description": "Move buttons",
+        "slot": {
+          "name": "buttons"
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-dueling-list__column_responsive"
+          }
+        }
+      },
+      {
+        "name": "selectedList",
+        "restrict": [
+          "div"
+        ],
+        "description": "Selected list container",
+        "children": [
+          {
+            "name": "selectedLabel",
+            "restrict": [
+              "span"
+            ],
+            "description": "Selected list label",
+            "slot": {
+              "name": "selectedLabel"
+            },
+            "attributes": {
+              "static": {
+                "class": "slds-form-element__label"
+              }
+            }
+          },
+          {
+            "name": "selectedListbox",
+            "restrict": [
+              "ul"
+            ],
+            "description": "Selected options",
+            "attributes": {
+              "static": {
+                "role": "listbox",
+                "class": "slds-dueling-list__options"
+              }
+            },
+            "slot": {
+              "name": "selectedOptions",
+              "required": true
+            }
+          }
+        ],
+        "attributes": {
+          "static": {
+            "class": "slds-dueling-list__column"
+          }
+        }
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the dueling picklist is disabled"
+    },
+    {
+      "name": "grabbed",
+      "type": "boolean",
+      "description": "whether an item is being dragged"
+    },
+    {
+      "name": "itemSelected",
+      "type": "boolean",
+      "aria": "aria-selected",
+      "description": "whether a list item is selected"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "listbox-role",
+        "description": "Both lists must have role='listbox'"
+      },
+      {
+        "id": "multi-select",
+        "description": "Lists should support multi-select with Shift+click"
+      }
+    ]
+  },
+  "cssSource": "./duelingPicklist.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "grabbed",
+      "class": "slds-is-grabbed"
+    },
+    {
+      "state": "itemSelected",
+      "class": "slds-is-selected"
+    }
+  ]
+}

@@ -1,0 +1,254 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+.slds-page-header {
+  padding-block: var(--slds-g-spacing-var-block-4);
+  padding-inline: var(--slds-g-spacing-var-inline-4);
+  border-radius: var(--slds-s-pageheader-radius-border, var(--slds-g-radius-border-2));
+  background: var(--slds-s-pageheader-color-background, var(--slds-g-color-surface-container-2));
+  background-clip: padding-box;
+  box-shadow: var(--slds-s-pageheader-shadow, var(--slds-g-shadow-1));
+  border: var(--slds-s-pageheader-sizing-border, var(--slds-g-sizing-border-1)) solid
+    var(--slds-s-pageheader-color-border, var(--slds-g-color-border-1));
+
+  .slds-media {
+    align-items: center;
+  }
+}
+
+/**
+ * Used for creating rows in a page header
+ */
+.slds-page-header__row {
+  display: flex;
+  .slds-media {
+    align-items: center;
+  }
+}
+
+/**
+ * Used to create rows with gutters in the page header
+ */
+.slds-page-header__row_gutters {
+  margin-inline-start: calc(var(--slds-g-spacing-4) * -1);
+  margin-inline-end: calc(var(--slds-g-spacing-4) * -1);
+}
+
+/**
+ * Used to create a column containing the page title
+ */
+.slds-page-header__col-title {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
+.slds-page-header__icon {
+  width: var(--slds-g-sizing-9);
+  height: var(--slds-g-sizing-9);
+}
+
+/**
+ * Used to create a column containing the page actions
+ */
+.slds-page-header__col-actions {
+  align-self: center;
+  flex: none;
+  vertical-align: top;
+}
+
+/**
+ * Used to create a column containing the page meta data
+ */
+.slds-page-header__col-meta {
+  align-self: center;
+  flex: 1 1 auto;
+  vertical-align: middle;
+}
+
+/**
+ * Used to create a column containing the page controls
+ */
+.slds-page-header__col-controls {
+  flex: none;
+  vertical-align: bottom;
+}
+
+/**
+ * Used to create a column containing the page record details
+ */
+.slds-page-header__col-details {
+  flex: 1 1 auto;
+  padding-inline-start: var(--slds-g-spacing-4);
+  padding-inline-end: var(--slds-g-spacing-4);
+  max-width: 100%;
+}
+
+/**
+ * Holds all the elements that make up the overall page name
+ */
+
+.slds-page-header__name {
+  display: inline-flex;
+  padding-inline-end: var(--slds-g-spacing-3);
+  max-width: 100%;
+
+  h1 {
+    line-height: 1;
+  }
+}
+
+/**
+ * Used to contain the page name title
+ */
+
+.slds-page-header__name-title {
+  min-width: 0;
+  color: var(--slds-g-color-on-surface-1);
+}
+
+/**
+ * Used to position the list view switcher
+ */
+
+.slds-page-header__name-switcher {
+  align-self: flex-end;
+  margin-inline-start: var(--slds-g-spacing-2);
+  margin-block-end: var(--slds-s-pageheader-action-bottom-spacing);
+
+  .slds-button__icon {
+    fill: var(--slds-g-color-on-surface-3);
+  }
+}
+
+/**
+ * Used to display the meta-text related to the page name
+ */
+
+.slds-page-header__name-meta {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-inline-end: var(--slds-g-spacing-3);
+  color: var(--slds-g-color-on-surface-1);
+}
+
+/**
+ * Contains the page header meta text
+ */
+
+.slds-page-header__meta-text {
+  font-size: var(--slds-g-font-size-base);
+  color: var(--slds-g-color-on-surface-1);
+}
+
+/**
+ * @sumamry Used to display the main page heading title
+ */
+
+.slds-page-header__title {
+  font-size: var(--slds-s-pageheader-title-font-size, var(--slds-g-font-scale-1));
+  font-weight: var(--slds-s-pageheader-title-font-weight, var(--slds-g-font-weight-7));
+  color: var(--slds-g-color-on-surface-3);
+  line-height: var(--slds-g-font-lineheight-2);
+  display: block;
+
+  .slds-icon {
+    fill: currentColor;
+  }
+}
+
+/**
+ * Used to create a row of page header controls
+ */
+
+.slds-page-header__controls {
+  display: flex;
+}
+
+/**
+ * Used to create spacing between each page header control
+ */
+
+.slds-page-header__control {
+  margin-inline-start: var(--slds-g-spacing-2);
+}
+
+/**
+ * Creates margins around the detail section of record home
+ */
+.slds-page-header__detail-row {
+  display: flex;
+  margin-block: var(--slds-g-spacing-var-block-4) calc(var(--slds-g-spacing-var-block-4) * -1);
+  margin-inline: calc(var(--slds-g-spacing-var-inline-4) * -1);
+  padding: var(--slds-g-spacing-var-inline-4);
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+  border-end-end-radius: var(--slds-s-pageheader-radius-border);
+  border-end-start-radius: var(--slds-s-pageheader-radius-border);
+  background-color: var(--slds-s-pageheader-row-color-background);
+  position: relative;
+  z-index: 2;
+}
+
+/**
+* Creates margins around the detail section of record home
+*/
+
+.slds-page-header__detail-block {
+  padding-inline-end: var(--slds-g-spacing-6);
+  padding-inline-start: var(--slds-g-spacing-6);
+  max-width: 25%;
+
+  &:first-child {
+    padding-inline-start: 0;
+  }
+
+  &:last-child {
+    padding-inline-end: 0;
+  }
+}
+
+/**
+ * Initializes vertical page header
+ */
+
+.slds-page-header_vertical {
+  padding: var(--slds-g-spacing-3);
+  background: var(--slds-g-color-surface-container-1);
+  border-radius: var(--slds-s-container-radius-border, var(--slds-g-radius-border-2));
+  border-block-end: 0;
+
+  .slds-page-header__controls {
+    display: flex;
+    gap: var(--slds-g-spacing-2);
+    padding-block-start: var(--slds-g-spacing-2);
+    margin-block-start: var(--slds-g-spacing-2);
+    border-block-start: var(--slds-s-pageheader-sizing-border, var(--slds-g-sizing-border-1)) solid
+      var(--slds-s-pageheader-color-border, var(--slds-g-color-border-1));
+  }
+}
+
+/**
+ * Vertical list of detail items
+ */
+.slds-page-header__detail-list {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+/**
+ * List items of vertical detail list
+ */
+.slds-page-header__detail-item {
+  margin-block-start: var(--slds-g-spacing-var-2);
+  width: 50%;
+}
+
+.slds-page-header_joined,
+.slds-page-header.slds-has-bottom-magnet {
+  border-radius: var(--slds-s-pageheader-radius-border) var(--slds-s-pageheader-radius-border) 0 0;
+}

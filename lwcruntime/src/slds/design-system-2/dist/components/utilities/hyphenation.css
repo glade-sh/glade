@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * The truncation class can be used on an element, or the truncation include can be added to an existing class.
+ */
+.slds-hyphenate {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
+}

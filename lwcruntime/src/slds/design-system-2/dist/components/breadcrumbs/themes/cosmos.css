@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  .slds-breadcrumb {
+    --slds-c-breadcrumbs-gap: var(--slds-g-spacing-1);
+    --slds-c-breadcrumbs-separator-content: '>';
+    --slds-c-breadcrumbs-font-size: var(--slds-g-font-size-base);
+    --slds-c-breadcrumbs-font-weight: var(--slds-g-font-weight-4);
+    --slds-c-breadcrumbs-color-foreground: var(--slds-s-link-color);
+  }
+}

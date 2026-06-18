@@ -1,0 +1,81 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Tooltip",
+  "description": "A tooltip is a small piece of contextual information about an element.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div",
+      "span"
+    ],
+    "description": "Tooltip container",
+    "attributes": {
+      "static": {
+        "role": "tooltip"
+      },
+      "bound": {
+        "id": {
+          "prop": "tooltipId",
+          "required": true
+        }
+      }
+    },
+    "children": [
+      {
+        "name": "content",
+        "restrict": [
+          "div"
+        ],
+        "description": "Tooltip content",
+        "slot": {
+          "name": "default",
+          "required": true
+        }
+      },
+      {
+        "name": "trigger",
+        "restrict": [
+          "button",
+          "a",
+          "span"
+        ],
+        "description": "element that triggers tooltip display",
+        "attributes": {
+          "bound": {
+            "aria-describedby": {
+              "prop": "tooltipId"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "open",
+      "type": "boolean",
+      "aria": "aria-expanded",
+      "description": "Whether the tooltip is visible"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "tooltip-role",
+        "description": "Tooltip must have role='tooltip'"
+      },
+      {
+        "id": "aria-describedby",
+        "description": "Triggering element must have aria-describedby pointing to tooltip id"
+      },
+      {
+        "id": "keyboard-accessible",
+        "description": "Tooltip must be accessible via keyboard focus, not just hover"
+      }
+    ]
+  }
+}

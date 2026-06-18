@@ -1,0 +1,73 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Spinner",
+  "description": "Spinners are CSS loading indicators that should be shown when retrieving data or performing slow computations.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Spinner element",
+    "attributes": {
+      "static": {
+        "role": "status"
+      }
+    },
+    "children": [
+      {
+        "name": "assistiveText",
+        "restrict": [
+          "span"
+        ],
+        "description": "Screen reader loading text",
+        "slot": {
+          "name": "assistiveText"
+        }
+      },
+      {
+        "name": "dotA",
+        "restrict": [
+          "div"
+        ],
+        "description": "First animated dot"
+      },
+      {
+        "name": "dotB",
+        "restrict": [
+          "div"
+        ],
+        "description": "Second animated dot"
+      },
+      {
+        "name": "container",
+        "restrict": [
+          "div"
+        ],
+        "description": "optional overlay container for spinner"
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "fixed",
+      "type": "boolean",
+      "description": "whether the spinner container uses fixed positioning"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "status-role",
+        "description": "Spinner must have role='status' to announce loading state"
+      },
+      {
+        "id": "loading-text",
+        "description": "Include assistive text like 'Loading' for screen readers"
+      }
+    ]
+  }
+}

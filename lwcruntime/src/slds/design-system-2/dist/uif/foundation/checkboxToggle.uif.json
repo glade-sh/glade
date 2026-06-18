@@ -1,0 +1,125 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "CheckboxToggle",
+  "description": "A toggle switch that represents an on/off state.",
+  "dateAdded": "2016-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div",
+      "label"
+    ],
+    "description": "Toggle container",
+    "children": [
+      {
+        "name": "label",
+        "restrict": [
+          "span"
+        ],
+        "description": "Toggle label",
+        "slot": {
+          "name": "label",
+          "required": true
+        }
+      },
+      {
+        "name": "container",
+        "restrict": [
+          "div"
+        ],
+        "description": "Toggle input container",
+        "children": [
+          {
+            "name": "input",
+            "restrict": [
+              "input"
+            ],
+            "description": "Native checkbox input",
+            "attributes": {
+              "static": {
+                "type": "checkbox",
+                "role": "switch"
+              },
+              "bound": {
+                "id": {
+                  "prop": "inputId",
+                  "required": true
+                },
+                "name": {
+                  "prop": "name"
+                },
+                "checked": {
+                  "prop": "checked"
+                },
+                "disabled": {
+                  "prop": "disabled"
+                },
+                "aria-describedby": {
+                  "prop": "ariaDescribedBy"
+                }
+              }
+            }
+          },
+          {
+            "name": "faux",
+            "restrict": [
+              "span"
+            ],
+            "description": "Visual toggle representation",
+            "children": [
+              {
+                "name": "activeLabel",
+                "restrict": [
+                  "span"
+                ],
+                "description": "Label shown when on"
+              },
+              {
+                "name": "inactiveLabel",
+                "restrict": [
+                  "span"
+                ],
+                "description": "Label shown when off"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "checked",
+      "type": "boolean",
+      "aria": "aria-checked",
+      "description": "Whether the toggle is on"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the toggle is disabled"
+    },
+    {
+      "name": "required",
+      "type": "boolean",
+      "aria": "aria-required",
+      "description": "Whether the toggle is required"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "switch-role",
+        "description": "Toggle must have role='switch'"
+      },
+      {
+        "id": "label-association",
+        "description": "Toggle must have an associated label"
+      }
+    ]
+  }
+}

@@ -1,0 +1,159 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * @summary Initiates a carousel component
+ */
+.slds-carousel {
+  position: relative;
+  color: var(--slds-g-color-on-surface-2);
+}
+
+/**
+ * @summary Main stage for carousel's tab-panels and tab-list inidicators
+ */
+.slds-carousel__stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/**
+ * @summary Tabpanel region that contains all carousel panels
+ */
+.slds-carousel__panels {
+  display: flex;
+  transition: transform 250ms ease-in;
+  min-height: 0%;
+}
+
+/**
+ * @summary Tabpanel region that contains all carousel panels
+ */
+.slds-carousel__panel {
+  flex: 0 0 100%;
+  max-width: 100%;
+}
+
+/**
+ * @summary Actionable element that contains the carousel's tab-panel content
+ */
+.slds-carousel__panel-action {
+  display: block;
+  border: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-1);
+  border-radius: var(--slds-s-container-radius-border);
+  margin: var(--slds-g-spacing-1);
+
+  &:focus-visible {
+    outline: 0;
+    box-shadow: var(--slds-g-shadow-outset-focus-1);
+  }
+}
+
+/**
+ * @summary Element that contains the image inside the carousel's tab-panel
+ */
+.slds-carousel__image {
+  border-start-start-radius: inherit;
+  border-start-end-radius: inherit;
+  overflow: hidden;
+
+  > img {
+    width: 100%;
+  }
+}
+
+/**
+ * @summary Element that contains the content inside the carousel's tab-panel
+ */
+.slds-carousel__content {
+  background: var(--slds-g-color-surface-1);
+  padding: var(--slds-g-spacing-4);
+  border-end-start-radius: inherit;
+  border-end-end-radius: inherit;
+  text-align: center;
+  height: 6.625rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/**
+ * @summary Heading element that contains the title of the carousel's tab-panel
+ */
+.slds-carousel__content-title {
+  font-size: var(--slds-g-font-scale-2);
+  font-weight: var(--slds-g-font-weight-6);
+}
+
+/**
+ * @summary List element that contains the carousel's tab-list inidicators
+ */
+.slds-carousel__indicators {
+  align-self: center;
+  margin: var(--slds-g-spacing-2) 0;
+}
+
+/**
+ * @summary Carousel's tab-list inidicator items
+ * @selector .slds-carousel__indicator
+ * @restrict .slds-carousel__indicators li
+ */
+.slds-carousel__indicator {
+  display: inline-flex;
+  margin-block: 0;
+  margin-inline: var(--slds-g-spacing-1);
+}
+
+/**
+ * @summary Actionable element inside of each tab-list indicator
+ */
+.slds-carousel__indicator-action {
+  width: var(--slds-g-sizing-5);
+  height: var(--slds-g-sizing-5);
+  background: var(--slds-g-color-surface-1);
+  border: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-2);
+  border-radius: 50%;
+
+  /**
+   * @summary Active state notifying the tab that its current panel is active
+   */
+  &.slds-is-active,
+  &.slds-is-active:hover {
+    background: var(--slds-g-color-brand-base-45);
+    border-color: var(--slds-g-color-brand-base-45);
+  }
+  &.slds-is-active {
+    box-shadow: var(--slds-s-mark-shadow-checked);
+  }
+
+  &:hover {
+    background-color: var(--slds-g-color-surface-2);
+  }
+
+  &:focus-visible {
+    outline: 0;
+    box-shadow: var(--slds-g-shadow-outset-focus-1);
+    background-color: var(--slds-g-color-accent-container-3);
+    border-color: var(--slds-g-color-border-accent-3);
+  }
+}
+
+/**
+ * @summary Element that contains the auto-play button icon to toggle on/off
+ */
+.slds-carousel__autoplay {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-end: var(--slds-g-spacing-1);
+  margin: var(--slds-g-spacing-1);
+
+  .slds-button__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

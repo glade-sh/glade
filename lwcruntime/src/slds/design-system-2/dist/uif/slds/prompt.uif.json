@@ -1,0 +1,186 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Prompt",
+  "description": "A prompt is a modal dialog that requires user acknowledgment.",
+  "dateAdded": "2017-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "section",
+      "div"
+    ],
+    "description": "Prompt container",
+    "attributes": {
+      "static": {
+        "role": "alertdialog",
+        "aria-modal": "true",
+        "class": "slds-modal slds-fade-in-open slds-modal_prompt"
+      },
+      "bound": {
+        "aria-labelledby": {
+          "prop": "headingId"
+        },
+        "aria-describedby": {
+          "prop": "contentId"
+        }
+      }
+    },
+    "children": [
+      {
+        "name": "backdrop",
+        "restrict": [
+          "div"
+        ],
+        "description": "background overlay behind prompt",
+        "attributes": {
+          "static": {
+            "role": "presentation",
+            "class": "slds-backdrop slds-backdrop_open"
+          }
+        }
+      },
+      {
+        "name": "container",
+        "restrict": [
+          "div"
+        ],
+        "description": "Prompt dialog container",
+        "children": [
+          {
+            "name": "header",
+            "restrict": [
+              "header"
+            ],
+            "description": "Prompt header",
+            "children": [
+              {
+                "name": "icon",
+                "restrict": [
+                  "span"
+                ],
+                "description": "Header icon",
+                "slot": {
+                  "name": "icon"
+                }
+              },
+              {
+                "name": "heading",
+                "restrict": [
+                  "h1",
+                  "h2"
+                ],
+                "description": "Prompt heading",
+                "slot": {
+                  "name": "heading",
+                  "required": true
+                }
+              }
+            ],
+            "attributes": {
+              "static": {
+                "class": "slds-modal__header"
+              }
+            }
+          },
+          {
+            "name": "content",
+            "restrict": [
+              "div"
+            ],
+            "description": "Prompt message content",
+            "slot": {
+              "name": "default"
+            },
+            "attributes": {
+              "static": {
+                "class": "slds-modal__content slds-p-around_medium"
+              }
+            }
+          },
+          {
+            "name": "footer",
+            "restrict": [
+              "footer"
+            ],
+            "description": "Prompt actions",
+            "slot": {
+              "name": "footer",
+              "required": true
+            },
+            "attributes": {
+              "static": {
+                "class": "slds-modal__footer"
+              }
+            }
+          }
+        ],
+        "attributes": {
+          "static": {
+            "class": "slds-modal__container"
+          }
+        }
+      }
+    ],
+    "variants": [
+      {
+        "name": "variant",
+        "description": "Prompt theme",
+        "default": "info",
+        "options": [
+          {
+            "value": "info",
+            "class": "slds-theme_info",
+            "description": "Informational prompt"
+          },
+          {
+            "value": "success",
+            "class": "slds-theme_success",
+            "description": "Success prompt"
+          },
+          {
+            "value": "warning",
+            "class": "slds-theme_warning",
+            "description": "Warning prompt"
+          },
+          {
+            "value": "error",
+            "class": "slds-theme_error",
+            "description": "Error prompt"
+          },
+          {
+            "value": "offline",
+            "class": "slds-theme_offline",
+            "description": "Offline prompt"
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "open",
+      "type": "boolean",
+      "description": "Whether the prompt dialog is visible"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "alertdialog-role",
+        "description": "Must have role='alertdialog'"
+      },
+      {
+        "id": "focus-trap",
+        "description": "Focus must be trapped within prompt"
+      }
+    ]
+  },
+  "cssSource": "./prompt.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  }
+}

@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * Initializes Prompt style notification
+ */
+.slds-modal_prompt .slds-modal__header {
+  border-block-end: 0;
+  text-align: var(--slds-s-container-heading-font-align, center);
+  font-size: var(--slds-s-container-heading-font-size);
+  font-weight: var(--slds-s-container-heading-font-weight);
+}
+.slds-modal_prompt .slds-modal__content {
+  padding-inline-start: var(--slds-g-spacing-6);
+  padding-inline-end: var(--slds-g-spacing-6);
+}
+.slds-modal_prompt .slds-modal__footer {
+  border-block-start-width: var(--slds-s-container-footer-sizing-border, 0);
+  text-align: var(--slds-s-container-footer-font-align, center);
+}

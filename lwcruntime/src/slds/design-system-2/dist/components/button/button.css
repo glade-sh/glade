@@ -1,0 +1,632 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/* This neutralizes all the base styles making it look like a text link */
+.slds-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 1lh;
+  padding-block-start: var(--slds-c-button-spacing-block-start);
+  padding-inline-end: var(--slds-c-button-spacing-inline-end);
+  padding-block-end: var(--slds-c-button-spacing-block-end);
+  padding-inline-start: var(--slds-c-button-spacing-inline-start);
+  background: none;
+  background-color: var(--slds-c-button-color-background);
+  background-clip: border-box;
+  border-color: var(--slds-c-button-color-border, transparent);
+  border-style: solid;
+  border-width: var(--slds-c-button-sizing-border, var(--slds-g-sizing-border-1));
+  border-radius: var(
+    --slds-c-button-radius-border,
+    var(--slds-s-button-radius-border, var(--slds-g-radius-border-2))
+  );
+  box-shadow: var(--slds-c-button-shadow, var(--slds-s-button-shadow));
+  line-height: 1.875rem;
+  text-decoration: none;
+  color: var(--slds-c-button-text-color, var(--slds-s-button-color, var(--slds-g-color-accent-2)));
+  appearance: none;
+  white-space: normal;
+  user-select: none;
+  font-family: inherit;
+  font-weight: var(--slds-c-button-font-weight, var(--slds-g-font-weight-4));
+  vertical-align: middle;
+  /* Do not justify-content: center; the base button */
+
+  &:hover,
+  &:focus-visible,
+  &:active,
+  &:visited {
+    text-decoration: none;
+  }
+
+  &:hover {
+    --slds-c-button-color-border: var(
+      --slds-c-button-color-border-hover,
+      var(--slds-s-button-color-border-hover)
+    );
+
+    --slds-c-button-color-background: var(--slds-c-button-color-background-hover, revert);
+
+    color: var(
+      --slds-c-button-text-color-hover,
+      var(--slds-s-button-color-hover, var(--slds-g-color-accent-3))
+    );
+    box-shadow: var(--slds-s-button-shadow-hover, revert);
+  }
+
+  /**
+   * @TODO: this breaks legacy SLDS's persistent focus styling behavior. I.e.,
+   * when a button is focused through something like a click, it should show
+   * its focus styles. This differs from Cosmos where focus styles are only
+   * triggered through focus-visible behaviors. We need to keep an eye on this
+   * since keeping SLDS's behavior deviates and we need to decide what is the
+   * "theming" behavior.
+   */
+  &:focus-visible {
+    box-shadow: var(--slds-c-button-shadow-focus, var(--slds-g-shadow-outline-focus-1));
+    outline: 0;
+    background-clip: padding-box;
+    color: var(
+      --slds-c-button-text-color-hover,
+      var(--slds-s-button-color-hover, var(--slds-g-color-accent-3))
+    );
+
+    --slds-c-button-color-border: transparent;
+  }
+
+  &:active {
+    color: var(--slds-c-button-text-color-active, var(--slds-g-color-accent-3));
+
+    --slds-c-button-color-background: var(--slds-c-button-color-background-active, revert);
+    --slds-c-button-color-border: var(--slds-c-button-color-border-active, revert);
+  }
+
+  &[disabled],
+  &:disabled {
+    background-color: transparent;
+    border-color: transparent;
+    color: var(--slds-g-color-disabled-1);
+    cursor: default;
+    pointer-events: none;
+
+    * {
+      pointer-events: none;
+    }
+  }
+
+  a {
+    --slds-c-button-text-color: currentColor;
+  }
+
+  &:hover,
+  &:focus-visible,
+  &:active,
+  &[disabled],
+  &:disabled {
+    .slds-button__icon {
+      fill: currentColor;
+      pointer-events: none;
+    }
+  }
+
+  & + .slds-button-group,
+  & + .slds-button-group-list {
+    margin-inline-start: var(--slds-g-spacing-1);
+  }
+
+  & + .slds-button {
+    margin-inline-start: var(--slds-g-spacing-1);
+  }
+
+  &:not([disabled]) {
+    transition:
+      transform 150ms ease-in-out,
+      box-shadow 150ms ease-in-out;
+  }
+}
+
+/* Creates the gray border with white background default style */
+.slds-button_neutral {
+  justify-content: center;
+  --slds-c-button-color-background: var(
+    --slds-c-button-neutral-color-background,
+    var(--slds-g-color-surface-container-1)
+  );
+  --slds-c-button-color-border: var(--slds-c-button-neutral-color-border, var(--slds-g-color-border-2));
+  --slds-c-button-spacing-block-start: var(--slds-s-button-spacing-block);
+  --slds-c-button-spacing-block-end: var(--slds-s-button-spacing-block);
+  --slds-c-button-spacing-inline-start: var(--slds-s-button-spacing-inline);
+  --slds-c-button-spacing-inline-end: var(--slds-s-button-spacing-inline);
+
+  &:hover {
+    box-shadow: var(--slds-s-button-bordered-shadow-hover);
+  }
+
+  &:hover,
+  &:focus-visible {
+    --slds-c-button-color-background-hover: var(
+      --slds-c-button-neutral-color-background-hover,
+      var(--slds-g-color-surface-container-2, revert)
+    );
+    --slds-c-button-color-border-hover: var(
+      --slds-c-button-neutral-color-border-hover,
+      var(--slds-g-color-border-2, revert)
+    );
+  }
+
+  &:active {
+    --slds-c-button-color-background-active: var(
+      --slds-c-button-neutral-color-background-active,
+      var(--slds-g-color-surface-container-2, revert)
+    );
+    --slds-c-button-color-border-active: var(
+      --slds-c-button-neutral-color-border-active,
+      var(--slds-g-color-border-2, revert)
+    );
+  }
+
+  &[disabled],
+  &:disabled {
+    background-color: var(--slds-g-color-disabled-container-1);
+    border-color: var(--slds-g-color-border-disabled-1);
+    color: var(--slds-g-color-on-disabled-1);
+  }
+}
+
+/**
+ * Creates the brand blue Salesforce style
+ */
+.slds-button_brand {
+  justify-content: center;
+  --slds-c-button-color-background: var(
+    --slds-c-button-color-background-hover,
+    var(--slds-c-button-brand-color-background, var(--slds-g-color-accent-container-1))
+  );
+  --slds-c-button-color-border: var(--slds-c-button-brand-color-border, var(--slds-g-color-border-accent-1));
+  --slds-c-button-text-color: var(--slds-c-button-brand-text-color, var(--slds-g-color-on-accent-1));
+  --slds-c-button-spacing-block-start: var(--slds-s-button-spacing-block);
+  --slds-c-button-spacing-block-end: var(--slds-s-button-spacing-block);
+  --slds-c-button-spacing-inline-start: var(--slds-s-button-spacing-inline);
+  --slds-c-button-spacing-inline-end: var(--slds-s-button-spacing-inline);
+
+  &:hover {
+    box-shadow: var(--slds-s-button-brand-shadow-hover);
+  }
+
+  &:hover,
+  &:focus-visible {
+    --slds-c-button-color-background-hover: var(
+      --slds-c-button-brand-color-background-hover,
+      var(--slds-g-color-accent-container-2)
+    );
+    --slds-c-button-color-border-hover: var(
+      --slds-c-button-brand-color-border-hover,
+      var(--slds-g-color-accent-container-2)
+    );
+    --slds-c-button-text-color-hover: var(
+      --slds-c-button-brand-text-color-hover,
+      var(--slds-g-color-on-accent-2)
+    );
+  }
+
+  &:active {
+    --slds-c-button-color-background-active: var(
+      --slds-c-button-brand-color-background-active,
+      var(--slds-g-color-accent-container-2)
+    );
+    --slds-c-button-color-border-active: transparent;
+    --slds-c-button-text-color-active: var(
+      --slds-c-button-brand-text-color-active,
+      var(--slds-g-color-on-accent-2)
+    );
+  }
+
+  &[disabled],
+  &:disabled {
+    background-color: var(--slds-g-color-disabled-container-2);
+    border-color: var(--slds-g-color-disabled-container-2);
+    color: var(--slds-g-color-on-disabled-2);
+  }
+}
+
+/* Creates the outlined button with the brand color */
+.slds-button_outline-brand {
+  justify-content: center;
+  --slds-c-button-color-background: var(--slds-g-color-surface-container-1);
+  --slds-c-button-color-border: var(--slds-g-color-border-accent-1);
+  --slds-c-button-spacing-block-start: var(--slds-s-button-spacing-block);
+  --slds-c-button-spacing-block-end: var(--slds-s-button-spacing-block);
+  --slds-c-button-spacing-inline-start: var(--slds-s-button-spacing-inline);
+  --slds-c-button-spacing-inline-end: var(--slds-s-button-spacing-inline);
+
+  &:hover {
+    box-shadow: var(--slds-s-button-brand-shadow-hover);
+  }
+
+  &:hover,
+  &:focus-visible {
+    --slds-c-button-color-background-hover: var(--slds-g-color-surface-container-2);
+    --slds-c-button-color-border-hover: var(--slds-g-color-border-accent-1);
+  }
+
+  &:active {
+    --slds-c-button-color-background-active: var(--slds-g-color-surface-container-2);
+    --slds-c-button-color-border-active: var(--slds-g-color-border-accent-1);
+  }
+
+  &[disabled],
+  &:disabled {
+    background-color: var(--slds-g-color-disabled-container-1);
+    border-color: var(--slds-g-color-border-disabled-1);
+  }
+}
+
+/* Creates the inverse style for dark backgrounds */
+.slds-button_inverse {
+  justify-content: center;
+  --slds-c-button-color-background: var(--slds-c-button-inverse-color-background, transparent);
+  --slds-c-button-color-border: var(
+    --slds-c-button-inverse-color-border,
+    var(--slds-g-color-border-inverse-1)
+  );
+  --slds-c-button-text-color: var(
+    --slds-c-button-inverse-text-color,
+    var(--slds-g-color-on-surface-inverse-1)
+  );
+  --slds-c-button-spacing-block-start: var(--slds-s-button-spacing-block);
+  --slds-c-button-spacing-block-end: var(--slds-s-button-spacing-block);
+  --slds-c-button-spacing-inline-start: var(--slds-s-button-spacing-inline);
+  --slds-c-button-spacing-inline-end: var(--slds-s-button-spacing-inline);
+
+  &:hover {
+    --slds-c-button-color-background-hover: var(
+      --slds-c-button-inverse-color-background-hover,
+      var(--slds-g-color-surface-container-2)
+    );
+    --slds-c-button-color-border-hover: var(
+      --slds-c-button-inverse-color-border-hover,
+      var(--slds-g-color-border-inverse-1)
+    );
+
+    box-shadow: var(--slds-c-button-inverse-shadow-hover);
+  }
+
+  &:focus-visible {
+    --slds-c-button-inverse-shadow-hover: var(--slds-g-shadow-inset-inverse-focus-1);
+    --slds-c-button-color-border: var(
+      --slds-c-button-inverse-color-background-hover,
+      var(--slds-g-color-surface-container-2)
+    );
+  }
+
+  &:not(:hover):focus-visible {
+    --slds-c-button-shadow-focus: 0px 0px 0px 2px var(--slds-g-color-neutral-base-95) inset;
+  }
+
+  &:active {
+    --slds-c-button-color-background-active: var(
+      --slds-c-button-inverse-color-background-active,
+      var(--slds-g-color-surface-container-2)
+    );
+    --slds-c-button-color-border-active: transparent;
+  }
+
+  &[disabled],
+  &:disabled {
+    background-color: transparent;
+    border-color: color-mix(in oklab, var(--slds-g-color-neutral-base-100), transparent 50%);
+  }
+}
+
+.slds-button_inverse,
+.slds-button_icon-inverse,
+.slds-button_icon-border-inverse {
+  &:link,
+  &:visited {
+    --slds-c-button-text-color: var(
+      --slds-c-button-inverse-text-color,
+      var(--slds-g-color-on-surface-inverse-1)
+    );
+  }
+
+  &:hover {
+    --slds-c-button-text-color-hover: var(
+      --slds-c-button-inverse-text-color-hover,
+      var(--slds-g-color-accent-3)
+    );
+  }
+  &:focus-visible {
+    --slds-c-button-text-color-hover: var(
+      --slds-c-button-inverse-text-color-hover,
+      var(--slds-g-color-on-surface-3)
+    );
+  }
+
+  &:not(:hover):focus-visible {
+    --slds-c-button-shadow-focus: 0px 0px 0px 2px
+      var(--slds-c-button-inverse-text-color-hover, var(--slds-g-color-neutral-base-95)) inset;
+    --slds-c-button-text-color-hover: var(
+      --slds-c-button-inverse-text-color-hover,
+      var(--slds-g-color-on-surface-inverse-1)
+    );
+
+    outline: none;
+  }
+
+  &:active {
+    --slds-c-button-text-color-active: var(
+      --slds-c-button-inverse-text-color-active,
+      var(--slds-g-color-accent-3)
+    );
+  }
+
+  &[disabled],
+  &:disabled {
+    color: color-mix(in oklab, var(--slds-g-color-neutral-base-100), transparent 50%);
+  }
+}
+
+/* Creates a red button style */
+.slds-button_destructive {
+  justify-content: center;
+  --slds-c-button-color-background: var(
+    --slds-c-button-color-background-hover,
+    var(--slds-c-button-destructive-color-background)
+  );
+  --slds-c-button-color-border: var(--slds-c-button-destructive-color-border);
+  --slds-c-button-text-color: var(--slds-c-button-destructive-color);
+  --slds-c-button-spacing-block-start: var(--slds-s-button-spacing-block);
+  --slds-c-button-spacing-block-end: var(--slds-s-button-spacing-block);
+  --slds-c-button-spacing-inline-start: var(--slds-s-button-spacing-inline);
+  --slds-c-button-spacing-inline-end: var(--slds-s-button-spacing-inline);
+
+  &:hover {
+    box-shadow: var(--slds-c-button-destructive-shadow-hover);
+  }
+
+  &:hover,
+  &:focus-visible {
+    --slds-c-button-color-background-hover: var(--slds-c-button-destructive-color-background-hover);
+    --slds-c-button-color-border-hover: var(--slds-c-button-destructive-color-border-hover);
+    --slds-c-button-text-color-hover: var(--slds-c-button-destructive-color-hover);
+  }
+
+  &:active {
+    --slds-c-button-color-background-active: var(--slds-c-button-destructive-color-background-hover);
+    --slds-c-button-color-border-active: var(--slds-c-button-destructive-color-border-hover);
+    --slds-c-button-text-color-active: var(--slds-c-button-destructive-color-hover);
+  }
+
+  &[disabled],
+  &:disabled {
+    background-color: var(--slds-g-color-disabled-container-2);
+    border-color: var(--slds-g-color-disabled-container-2);
+    color: var(--slds-g-color-on-disabled-2);
+  }
+}
+
+/* Creates a neutral button with red text */
+.slds-button_text-destructive {
+  justify-content: center;
+  --slds-c-button-color-background: var(--slds-g-color-surface-container-1);
+  --slds-c-button-color-border: var(--slds-g-color-border-error-1);
+  --slds-c-button-text-color: var(--slds-g-color-error-1);
+  --slds-c-button-spacing-block-start: var(--slds-s-button-spacing-block);
+  --slds-c-button-spacing-block-end: var(--slds-s-button-spacing-block);
+  --slds-c-button-spacing-inline-start: var(--slds-s-button-spacing-inline);
+  --slds-c-button-spacing-inline-end: var(--slds-s-button-spacing-inline);
+
+  &:hover {
+    box-shadow: var(--slds-c-button-destructive-shadow-hover);
+  }
+
+  &:hover,
+  &:focus-visible {
+    --slds-c-button-color-background-hover: var(--slds-g-color-surface-container-2);
+    --slds-c-button-color-border-hover: var(--slds-g-color-border-error-2);
+    --slds-c-button-text-color-hover: var(--slds-g-color-error-1);
+  }
+
+  &:active {
+    --slds-c-button-color-background-active: var(--slds-g-color-surface-container-2);
+    --slds-c-button-color-border-active: var(--slds-g-color-border-error-2);
+    --slds-c-button-text-color-active: var(--slds-g-color-error-1);
+  }
+
+  &[disabled],
+  &:disabled {
+    background-color: var(--slds-g-color-disabled-container-1);
+    border-color: var(--slds-g-color-border-disabled-1);
+    color: var(--slds-g-color-on-disabled-1);
+  }
+}
+
+/* Creates a green button style */
+.slds-button_success {
+  justify-content: center;
+  --slds-c-button-color-background: var(
+    --slds-c-button-color-background-hover,
+    var(--slds-c-button-success-color-background)
+  );
+  --slds-c-button-color-border: var(--slds-c-button-success-color-border);
+  --slds-c-button-text-color: var(--slds-c-button-success-color);
+  --slds-c-button-spacing-block-start: var(--slds-s-button-spacing-block);
+  --slds-c-button-spacing-block-end: var(--slds-s-button-spacing-block);
+  --slds-c-button-spacing-inline-start: var(--slds-s-button-spacing-inline);
+  --slds-c-button-spacing-inline-end: var(--slds-s-button-spacing-inline);
+
+  &:hover {
+    box-shadow: var(--slds-c-button-success-shadow-hover);
+  }
+
+  &:hover,
+  &:focus-visible {
+    --slds-c-button-color-background-hover: var(--slds-c-button-success-color-background-hover);
+    --slds-c-button-color-border-hover: var(--slds-c-button-success-color-border-hover);
+    --slds-c-button-text-color-hover: var(--slds-c-button-success-color-hover);
+  }
+
+  &:active {
+    --slds-c-button-color-background-active: var(--slds-c-button-success-color-background-hover);
+    --slds-c-button-color-border-active: var(--slds-c-button-success-color-border-hover);
+    --slds-c-button-text-color-active: var(--slds-c-button-success-color-hover);
+  }
+
+  &[disabled],
+  &:disabled {
+    background-color: var(--slds-g-color-disabled-container-2);
+    border-color: var(--slds-g-color-disabled-container-2);
+    color: var(--slds-g-color-on-disabled-2);
+  }
+}
+
+.slds-button_neutral,
+.slds-button_outline-brand,
+.slds-button_text-destructive {
+  &:hover {
+    transform: var(--slds-s-button-bordered-transform-hover);
+    transition:
+      transform 150ms ease-in-out,
+      box-shadow 150ms ease-in-out;
+  }
+
+  &:active {
+    transform: none;
+    transition:
+      transform 150ms ease-in-out,
+      box-shadow 150ms ease-in-out;
+  }
+}
+
+.slds-button_brand,
+.slds-button_destructive,
+.slds-button_success,
+.slds-button_inverse {
+  &:not(:focus-visible):hover {
+    transform: var(--slds-s-button-brand-transform-hover);
+    transition:
+      transform 150ms ease-in-out,
+      box-shadow 150ms ease-in-out;
+  }
+
+  &:not(:focus-visible):active {
+    transform: none;
+    transition:
+      transform 150ms ease-in-out,
+      box-shadow 150ms ease-in-out;
+  }
+}
+
+.slds-button_neutral,
+.slds-button_brand,
+.slds-button_outline-brand,
+.slds-button_destructive,
+.slds-button_text-destructive,
+.slds-button_success {
+  &:focus-visible {
+    --slds-c-button-shadow-focus: var(--slds-g-shadow-insetinverse-focus-1);
+  }
+}
+
+.slds-button_neutral,
+.slds-button_brand,
+.slds-button_outline-brand,
+.slds-button_inverse,
+.slds-button_icon-border-inverse,
+.slds-button_destructive,
+.slds-button_text-destructive,
+.slds-button_success {
+  &:active {
+    box-shadow:
+      0 0 0 0 transparent,
+      var(--slds-s-button-shadow-active, revert);
+  }
+}
+
+.slds-button__icon,
+.slds-button__icon_stateful {
+  width: 0.875rem;
+  height: 0.875rem;
+  /* stylelint-disable */
+  fill: var(--slds-c-icon-color-foreground, currentColor);
+  /* stylelint-enable */
+  flex-shrink: 0;
+}
+
+/* Large size button icon svg */
+.slds-button__icon_large {
+  width: var(--slds-g-sizing-7);
+  height: var(--slds-g-sizing-7);
+}
+
+/* Small size button icon svg */
+.slds-button__icon_small {
+  width: var(--slds-g-sizing-4);
+  height: var(--slds-g-sizing-4);
+}
+
+/* X-Small size button icon svg */
+.slds-button__icon_x-small {
+  width: var(--slds-g-sizing-3);
+  height: var(--slds-g-sizing-3);
+}
+
+/* Position of icon when sitting to the left side of the text when inside a button */
+.slds-button__icon_left {
+  margin-inline-end: var(--slds-g-spacing-2);
+}
+
+/* Position of icon when sitting to the right side of the text when inside a button */
+.slds-button__icon_right {
+  margin-inline-start: var(--slds-g-spacing-2);
+}
+
+/* Resets attributes of .slds-button back to the browser default */
+.slds-button_reset {
+  font-size: inherit;
+  color: inherit;
+  line-height: inherit;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  text-align: inherit;
+
+  &:focus-visible {
+    --slds-c-button-shadow-focus: var(--slds-g-shadow-outset-focus-1);
+  }
+}
+
+/* Creates a button style for 100% width with centered text that maintains current styling */
+.slds-button_stretch {
+  justify-content: center;
+  width: 100%;
+}
+
+/* Creates a button style for full width that resets styling */
+.slds-button_full-width {
+  color: inherit;
+  line-height: inherit;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  text-align: inherit;
+  width: 100%;
+  display: inline-flex;
+  flex-grow: 1;
+  align-items: center;
+  justify-content: space-between;
+
+  &:hover {
+    box-shadow: none;
+    transform: none;
+  }
+
+  &:focus-visible {
+    --slds-c-button-shadow: none;
+    --slds-c-button-shadow-focus: var(--slds-g-shadow-outset-focus-1);
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "RadioButtonGroup",
+  "description": "A group of radio buttons styled as a button bar.",
+  "dateAdded": "2017-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "fieldset",
+      "div"
+    ],
+    "description": "Radio button group container",
+    "attributes": {
+      "static": {
+        "role": "radiogroup",
+        "class": "slds-form-element"
+      }
+    },
+    "children": [
+      {
+        "name": "legend",
+        "restrict": [
+          "legend"
+        ],
+        "description": "Group label",
+        "slot": {
+          "name": "legend",
+          "required": true
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__legend slds-form-element__label"
+          }
+        }
+      },
+      {
+        "name": "options",
+        "restrict": [
+          "div"
+        ],
+        "description": "Radio button options container",
+        "slot": {
+          "name": "default"
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__control slds-radio_button-group"
+          }
+        }
+      },
+      {
+        "name": "requiredIndicator",
+        "restrict": [
+          "abbr"
+        ],
+        "description": "required field indicator",
+        "attributes": {
+          "static": {
+            "class": "slds-required"
+          }
+        }
+      },
+      {
+        "name": "errorMessage",
+        "restrict": [
+          "div"
+        ],
+        "description": "validation error message",
+        "renderWhen": "hasError",
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__help"
+          }
+        }
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the radio button group is disabled"
+    },
+    {
+      "name": "required",
+      "type": "boolean",
+      "aria": "aria-required",
+      "description": "Whether a selection is required"
+    },
+    {
+      "name": "hasError",
+      "type": "boolean",
+      "description": "whether the radio button group has a validation error"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "radiogroup-role",
+        "description": "Container must have role='radiogroup'"
+      },
+      {
+        "id": "arrow-navigation",
+        "description": "Arrow keys should navigate between options"
+      }
+    ]
+  },
+  "cssSource": "./radioButtonGroup.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "hasError",
+      "class": "slds-has-error"
+    }
+  ]
+}

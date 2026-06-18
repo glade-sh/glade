@@ -1,0 +1,88 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "ButtonIcon",
+  "description": "An icon-only button for compact actions.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "button"
+    ],
+    "description": "Icon button element",
+    "attributes": {
+      "static": {
+        "type": "button"
+      },
+      "bound": {
+        "disabled": {
+          "prop": "disabled"
+        },
+        "title": {
+          "prop": "title"
+        },
+        "aria-label": {
+          "prop": "alternativeText",
+          "required": true
+        },
+        "accesskey": {
+          "prop": "accessKey"
+        },
+        "name": {
+          "prop": "name"
+        },
+        "value": {
+          "prop": "value"
+        }
+      }
+    },
+    "slot": {
+      "name": "default",
+      "restrict": [
+        "Icon"
+      ]
+    },
+    "children": [
+      {
+        "name": "assistiveText",
+        "restrict": [
+          "span"
+        ],
+        "description": "Screen reader text",
+        "slot": {
+          "name": "assistiveText"
+        }
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the button is disabled"
+    },
+    {
+      "name": "selected",
+      "type": "boolean",
+      "aria": "aria-pressed",
+      "description": "whether the icon button is selected/pressed"
+    },
+    {
+      "name": "hasPopup",
+      "type": "boolean",
+      "aria": "aria-haspopup",
+      "description": "whether the button triggers a popup"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "accessible-label",
+        "description": "Icon buttons must have aria-label or title for screen readers"
+      }
+    ]
+  }
+}

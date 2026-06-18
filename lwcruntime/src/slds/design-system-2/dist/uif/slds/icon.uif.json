@@ -1,0 +1,161 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Icon",
+  "description": "Icons provide visual context and enhance usability.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "span"
+    ],
+    "description": "Icon container",
+    "attributes": {
+      "bound": {
+        "title": {
+          "prop": "title"
+        }
+      },
+      "static": {
+        "class": "slds-icon_container"
+      }
+    },
+    "children": [
+      {
+        "name": "svg",
+        "restrict": [
+          "svg"
+        ],
+        "description": "SVG icon element",
+        "attributes": {
+          "static": {
+            "aria-hidden": "true",
+            "class": "slds-icon"
+          },
+          "bound": {
+            "aria-label": {
+              "prop": "assistiveText"
+            }
+          }
+        }
+      },
+      {
+        "name": "assistiveText",
+        "restrict": [
+          "span"
+        ],
+        "description": "Assistive text for screen readers",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "assistiveText"
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-assistive-text"
+          }
+        }
+      }
+    ],
+    "modifiers": [
+      {
+        "name": "circle",
+        "attribute": "class",
+        "value": "slds-icon_container_circle",
+        "description": "Adds circular container around the icon"
+      },
+      {
+        "name": "size",
+        "attribute": "class",
+        "description": "Icon size",
+        "default": "medium",
+        "options": [
+          {
+            "propValue": "xxx-small",
+            "value": "slds-icon_xxx-small"
+          },
+          {
+            "propValue": "xx-small",
+            "value": "slds-icon_xx-small"
+          },
+          {
+            "propValue": "x-small",
+            "value": "slds-icon_x-small"
+          },
+          {
+            "propValue": "small",
+            "value": "slds-icon_small"
+          },
+          {
+            "propValue": "medium",
+            "value": ""
+          },
+          {
+            "propValue": "large",
+            "value": "slds-icon_large"
+          }
+        ]
+      },
+      {
+        "name": "currentColor",
+        "attribute": "class",
+        "value": "slds-current-color",
+        "description": "inherit parent text color"
+      }
+    ],
+    "variants": [
+      {
+        "name": "variant",
+        "description": "Semantic color variant indicating meaning or status",
+        "default": "default",
+        "options": [
+          {
+            "value": "default",
+            "class": "slds-icon-text-default"
+          },
+          {
+            "value": "warning",
+            "class": "slds-icon-text-warning"
+          },
+          {
+            "value": "error",
+            "class": "slds-icon-text-error"
+          },
+          {
+            "value": "success",
+            "class": "slds-icon-text-success"
+          },
+          {
+            "value": "light",
+            "class": "slds-icon-text-light"
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "decorative",
+      "type": "boolean",
+      "description": "Whether the icon is purely decorative and should be hidden from assistive technology"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "decorative-hidden",
+        "description": "Decorative icons should be hidden from assistive technology with aria-hidden='true'"
+      },
+      {
+        "id": "meaningful-label",
+        "description": "Meaningful icons should have assistive text that describes the icon's purpose"
+      }
+    ]
+  },
+  "cssSource": "./icon.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  }
+}

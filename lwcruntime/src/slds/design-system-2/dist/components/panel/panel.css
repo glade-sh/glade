@@ -1,0 +1,193 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+.slds-panel {
+  background: var(--slds-g-color-surface-1);
+  border-radius: var(--slds-g-radius-border-1);
+  overflow-y: auto;
+
+  &.slds-is-editing {
+    box-shadow: 0 2px 3px 0 rgb(0, 0, 0, 0.16);
+  }
+
+  .slds-panel__header-title {
+    text-align: start;
+    width: 100%;
+    font-size: var(--slds-s-container-heading-font-size, var(--slds-g-font-scale-2));
+  }
+}
+
+/* @summary sub sections of a panel */
+.slds-panel__section {
+  padding: var(--slds-g-spacing-4);
+}
+
+.slds-panel__actions {
+  padding: var(--slds-g-spacing-3);
+}
+
+/* @summary Header element of a panel */
+.slds-panel__header {
+  display: flex;
+  position: relative;
+  align-items: center;
+  padding: var(--slds-g-spacing-3);
+  border-block-end: var(--slds-g-sizing-border-1) solid var(--slds-g-color-surface-3);
+}
+
+/**
+ * @summary notifies panel header that something other than a title and close button exist
+ */
+
+.slds-panel__header_custom {
+  padding-block: var(--slds-g-spacing-3);
+  padding-inline: var(--slds-g-spacing-4);
+}
+
+/**
+ * @summary Close button of a panel
+ */
+.slds-panel__close {
+  &:first-child {
+    margin-inline-end: var(--slds-g-spacing-2);
+  }
+
+  &:last-child {
+    margin-inline-start: var(--slds-g-spacing-2);
+  }
+}
+
+/**
+ * @summary Back button of a panel drilled in
+ */
+.slds-panel__back {
+  &:first-child {
+    margin-inline-end: var(--slds-g-spacing-2);
+  }
+
+  &:last-child {
+    margin-inline-start: var(--slds-g-spacing-2);
+  }
+}
+
+.slds-panel__close,
+.slds-panel__back {
+  flex-shrink: 0;
+}
+
+/**
+ * @summary Adjusts styling when the title of the header is centered
+ */
+.slds-panel__header_align-center {
+  padding-block: var(--slds-g-spacing-2);
+  padding-inline: var(--slds-g-spacing-8);
+
+  .slds-panel__header-title {
+    text-align: center;
+  }
+
+  .slds-panel__close {
+    position: absolute;
+    inset-inline-end: var(--slds-g-spacing-3);
+    inset-inline-start: auto;
+    inset-block-start: 50%;
+    margin-block-start: calc(var(--slds-g-spacing-3) * -1);
+  }
+
+  .slds-panel__back {
+    position: absolute;
+    inset-inline-start: var(--slds-g-spacing-3);
+    inset-inline-end: auto;
+    inset-block-start: 50%;
+    margin-block-start: calc(var(--slds-g-spacing-3) * -1);
+  }
+}
+
+/**
+ * @summary Container for secondary actions that affect the entire panel
+ */
+.slds-panel__header-actions {
+  display: flex;
+  align-items: flex-end;
+  margin-inline-start: var(--slds-g-spacing-2);
+
+  .slds-panel__close {
+    margin-inline-start: 0;
+    margin-inline-end: 0;
+  }
+}
+
+/**
+ * @summary Body element of a panel
+ */
+.slds-panel__body {
+  padding: var(--slds-g-spacing-3);
+  color: var(--slds-s-container-color);
+}
+
+.slds-panel_docked {
+  position: relative;
+  min-width: var(--slds-g-sizing-14);
+  height: 100%;
+  border-radius: 0;
+  display: none;
+
+  /**
+   * @summary Toggles visibility of panel
+   */
+  &.slds-is-open {
+    display: block;
+  }
+}
+
+/**
+ * @summary Modifier that changes the position of a panel to the left
+ */
+.slds-panel_docked-left {
+  box-shadow: var(--slds-g-shadow-inlineend-3, 1px 0 3px rgb(0, 0, 0, 0.25));
+}
+
+/**
+ * @summary Modifier that changes the position of a panel to the right
+ */
+.slds-panel_docked-right {
+  margin-inline-start: auto;
+  box-shadow: var(--slds-g-shadow-inlinestart-3, -1px 0 3px 0 rgb(0, 0, 0, 0.25));
+}
+
+/**
+ * @summary Modifier that changes the display of a panel to hide out of view and animate in when opened
+ */
+.slds-panel_animated {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  transform: translate3d(120%, 0, 0);
+  transition: transform 300ms ease;
+  z-index: 9000;
+}
+
+.slds-tabs-mobile__container {
+  .slds-panel_animated {
+    position: fixed;
+  }
+}
+
+.slds-panel_animated.slds-is-open {
+  transform: translate3d(0, 0, 0);
+}
+
+/**
+ * Filtering
+ */
+.slds-panel_filters {
+  margin-inline-start: var(--slds-g-spacing-4);
+  box-shadow: var(--slds-g-shadow-1);
+  border-radius: 0;
+}

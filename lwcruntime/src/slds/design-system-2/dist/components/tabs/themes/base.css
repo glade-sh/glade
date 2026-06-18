@@ -1,0 +1,989 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/* ============================================================
+ * DEFAULT TABS
+ * ============================================================ */
+
+/**
+ * @summary Initializes a default tablist
+ */
+.slds-tabs_default {
+  display: block;
+  width: 100%;
+
+  .slds-tabs__item_overflow {
+    overflow: visible;
+  }
+}
+
+/**
+ * @summary Tab navigation bar
+ */
+.slds-tabs_default__nav {
+  display: flex;
+  align-items: flex-start;
+  border-block-end-width: var(--slds-c-tabs-list-sizing-border, 0);
+  border-block-end-style: solid;
+  border-block-end-color: var(--slds-c-tabs-list-color-border, transparent);
+}
+
+/**
+ * @summary Individual tab item
+ *
+ * --slds-c-tabs-item-* hooks are the shared vocabulary for default, scoped,
+ * and vertical tabs. Variant-specific hooks only exist where structure differs.
+ */
+.slds-tabs_default__item {
+  color: var(--slds-c-tabs-item-color-foreground);
+  position: relative;
+  padding-block-start: var(--slds-c-tabs-item-spacing-block-start, var(--slds-c-tabs-item-spacing-block));
+  padding-inline-end: var(--slds-c-tabs-item-spacing-inline-end, var(--slds-c-tabs-item-spacing-inline));
+  padding-block-end: var(--slds-c-tabs-item-spacing-block-end, var(--slds-c-tabs-item-spacing-block));
+  padding-inline-start: var(--slds-c-tabs-item-spacing-inline-start, var(--slds-c-tabs-item-spacing-inline));
+  /* Pull item down to overlap the nav's bottom border; active ::after then "replaces" it */
+  margin-block-end: calc(var(--slds-c-tabs-list-sizing-border, 0) * -1);
+  font-weight: var(--slds-c-tabs-item-font-weight);
+  font-size: var(--slds-c-tabs-item-font-size);
+
+  /**
+   * Active indicator bar — height=0 by default (invisible); state rules grow it
+   */
+  &::after {
+    display: block;
+    content: '';
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
+    height: var(--slds-c-tabs-item-indicator-sizing-height, 0);
+    background-color: var(--slds-c-tabs-item-indicator-color-background);
+  }
+
+  /**
+   * @summary Active state
+   */
+  &.slds-is-active {
+    --slds-c-tabs-item-color-foreground: var(--slds-c-tabs-item-color-foreground-active);
+    --slds-c-tabs-item-font-weight: var(--slds-c-tabs-item-font-weight-active);
+
+    &::after {
+      --slds-c-tabs-item-indicator-sizing-height: var(--slds-c-tabs-item-indicator-sizing-height-active);
+      --slds-c-tabs-item-indicator-color-background: var(--slds-c-tabs-item-color-border-active);
+    }
+
+    /* Prevent hover color from overriding active text color on the link */
+    .slds-tabs_default__link:hover {
+      color: currentColor;
+    }
+  }
+
+  &:hover {
+    --slds-c-tabs-item-color-foreground: var(--slds-c-tabs-item-color-foreground-hover);
+
+    &::after {
+      --slds-c-tabs-item-indicator-sizing-height: var(--slds-c-tabs-item-indicator-sizing-height-hover);
+      --slds-c-tabs-item-indicator-color-background: var(--slds-c-tabs-item-color-border-hover);
+    }
+  }
+
+  /**
+   * @summary Focus state — show active indicator on keyboard focus
+   */
+  &:focus-visible {
+    outline: 0;
+
+    &::after {
+      --slds-c-tabs-item-indicator-sizing-height: var(--slds-c-tabs-item-indicator-sizing-height-active);
+      --slds-c-tabs-item-indicator-color-background: var(--slds-c-tabs-item-color-border-active);
+    }
+  }
+
+  /* Suppress button-default focus ring on the link itself; the item provides it */
+  .slds-tabs_default__link:focus-visible {
+    box-shadow: none;
+  }
+
+  &:has(.slds-tabs_default__link:focus-visible) {
+    outline-width: var(--slds-c-tabs-item-sizing-outline);
+    outline-style: solid;
+    outline-color: var(--slds-c-tabs-item-color-outline);
+    outline-offset: var(--slds-c-tabs-item-outline-offset);
+  }
+
+  /**
+   * @summary Notification state — tab has new activity
+   */
+  &.slds-has-notification {
+    background-color: var(--slds-c-tabs-item-color-background-notification);
+
+    /* Notification indicator (visible regardless of active/hover) */
+    &::after {
+      --slds-c-tabs-item-indicator-color-background: var(--slds-c-tabs-item-color-border-notification);
+    }
+
+    /* Hover within notification restores normal hover indicator color */
+    &:hover::after {
+      --slds-c-tabs-item-indicator-color-background: var(--slds-c-tabs-item-color-border-hover);
+    }
+
+    .slds-indicator_unread {
+      display: inline-block;
+      height: var(--slds-c-tabs-indicator-unread-sizing);
+      width: var(--slds-c-tabs-indicator-unread-sizing);
+      position: relative;
+      inset-block-start: auto;
+      inset-inline-start: auto;
+    }
+
+    .slds-indicator_unsaved {
+      inset-block-start: var(--slds-c-tabs-indicator-unsaved-offset-block-start);
+    }
+  }
+
+  /**
+   * @summary Unsaved / dirty state
+   */
+  &.slds-is-unsaved {
+    /* Negative margin prevents overlap when both unsaved and unread indicators are present */
+    .slds-indicator_unread {
+      margin-inline-start: -0.35rem;
+    }
+
+    .slds-indicator_unsaved {
+      color: var(--slds-c-tabs-indicator-unsaved-color-foreground);
+    }
+  }
+}
+
+/**
+ * @summary Actionable link/button inside each tab item
+ */
+.slds-tabs_default__link {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  cursor: pointer;
+  height: var(--slds-c-tabs-item-sizing-height);
+  line-height: var(--slds-c-tabs-item-font-lineheight);
+  color: currentColor;
+  border: 0;
+  text-transform: inherit;
+  z-index: 1;
+
+  &:focus-visible {
+    outline: 0;
+  }
+
+  &:hover,
+  &:focus {
+    text-decoration: none;
+    box-shadow: none;
+    color: currentColor;
+  }
+
+  &[tabindex='0']:focus-visible {
+    text-decoration: none;
+  }
+}
+
+/**
+ * @summary Overflow button menu item
+ */
+.slds-tabs_default__overflow-button {
+  display: inline-flex;
+  height: var(--slds-c-tabs-item-sizing-height);
+  line-height: var(--slds-c-tabs-item-font-lineheight);
+
+  .slds-button {
+    line-height: inherit;
+    color: var(--slds-c-tabs-item-color-foreground);
+    box-shadow: none;
+    /* Suppress button's active border ring in tab context */
+    --slds-c-button-color-border-active: transparent;
+
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
+
+  /* Error/success overflow button uses an on-color text */
+  &.slds-has-error,
+  &.slds-has-success {
+    .slds-button {
+      color: var(--slds-c-tabs-overflow-color-foreground-status);
+    }
+  }
+}
+
+/**
+ * @summary Tab panel content wrapper
+ */
+.slds-tabs_default__content {
+  position: relative;
+  padding-block-start: var(--slds-c-tabs-panel-spacing-block-start, var(--slds-c-tabs-panel-spacing-block));
+  padding-inline-end: var(--slds-c-tabs-panel-spacing-inline-end, var(--slds-c-tabs-panel-spacing-inline));
+  padding-block-end: var(--slds-c-tabs-panel-spacing-block-end, var(--slds-c-tabs-panel-spacing-block));
+  padding-inline-start: var(
+    --slds-c-tabs-panel-spacing-inline-start,
+    var(--slds-c-tabs-panel-spacing-inline)
+  );
+}
+
+/* ============================================================
+ * SIZE MODIFIERS
+ * Theme overrides --slds-c-tabs-item-font-size and spacing hooks.
+ * No structural rule changes needed here.
+ * ============================================================ */
+
+/* ============================================================
+ * TAB ICON HELPERS
+ * ============================================================ */
+
+.slds-tabs__left-icon {
+  margin-inline-end: var(--slds-c-tabs-icon-left-spacing-inline-end);
+
+  &:empty {
+    margin-inline-end: 0;
+  }
+}
+
+.slds-tabs__right-icon {
+  margin-inline-start: var(--slds-c-tabs-icon-right-spacing-inline-start);
+}
+
+/* ============================================================
+ * SCOPED TABS
+ *
+ * Uses --slds-c-tabs-item-* shared vocabulary for color and font.
+ * Variant-specific hooks cover structural differences: background,
+ * container border, content panel, and link-level padding.
+ * ============================================================ */
+
+/**
+ * @summary Scoped tabset — closed container with defined border
+ */
+.slds-tabs_scoped {
+  display: block;
+  width: 100%;
+}
+
+/**
+ * @summary Scoped tab navigation bar
+ */
+.slds-tabs_scoped__nav {
+  display: flex;
+  align-items: flex-start;
+  background-color: var(--slds-c-tabs-scoped-nav-color-background);
+  border-width: var(--slds-c-tabs-scoped-nav-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-tabs-scoped-nav-color-border, transparent);
+  border-start-start-radius: var(--slds-c-tabs-scoped-nav-radius-border);
+  border-start-end-radius: var(--slds-c-tabs-scoped-nav-radius-border);
+  /* Bottom corners always square — nav and content form one visual container */
+  border-end-end-radius: 0;
+  border-end-start-radius: 0;
+}
+
+/**
+ * @summary Individual scoped tab item
+ */
+.slds-tabs_scoped__item {
+  position: relative;
+  /* Overlap the nav's bottom border so the active tab can visually merge with content */
+  margin-block-end: calc(var(--slds-c-tabs-scoped-nav-sizing-border, 0) * -1);
+
+  & + .slds-tabs_scoped__item {
+    /* Overlap adjacent item borders */
+    margin-inline-start: calc(var(--slds-c-tabs-scoped-nav-sizing-border, 0) * -1);
+  }
+
+  /* First tab gets the nav's start radius and no inline-start border */
+  &:first-child .slds-tabs_scoped__link {
+    border-inline-start: 0;
+    border-start-start-radius: var(--slds-c-tabs-scoped-nav-radius-border);
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+    border-end-start-radius: 0;
+  }
+
+  .slds-tabs_scoped__link:focus-visible {
+    outline-width: var(--slds-c-tabs-item-sizing-outline);
+    outline-style: solid;
+    outline-color: var(--slds-c-tabs-item-color-outline);
+    outline-offset: var(--slds-c-tabs-scoped-item-outline-offset);
+  }
+}
+
+/**
+ * @summary Scoped tab content panel
+ */
+.slds-tabs_scoped__content {
+  background-color: var(--slds-c-tabs-scoped-content-color-background);
+  border-width: var(--slds-c-tabs-scoped-nav-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-tabs-scoped-content-color-border, transparent);
+  border-block-start: 0; /* structural: top edge is the nav's bottom border */
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+  border-end-end-radius: var(--slds-c-tabs-scoped-nav-radius-border);
+  border-end-start-radius: var(--slds-c-tabs-scoped-nav-radius-border);
+  padding-block-start: var(
+    --slds-c-tabs-scoped-content-spacing-block-start,
+    var(--slds-c-tabs-scoped-content-spacing-block)
+  );
+  padding-block-end: var(
+    --slds-c-tabs-scoped-content-spacing-block-end,
+    var(--slds-c-tabs-scoped-content-spacing-block)
+  );
+  padding-inline-start: var(
+    --slds-c-tabs-scoped-content-spacing-inline-start,
+    var(--slds-c-tabs-scoped-content-spacing-inline)
+  );
+  padding-inline-end: var(
+    --slds-c-tabs-scoped-content-spacing-inline-end,
+    var(--slds-c-tabs-scoped-content-spacing-inline)
+  );
+}
+
+/**
+ * @summary Scoped tab actionable link
+ *
+ * Color and font-weight use shared --slds-c-tabs-item-* hooks.
+ * Link-level padding and border are scoped-specific (structural difference).
+ */
+.slds-tabs_scoped__link {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  text-decoration: none;
+  cursor: pointer;
+  height: var(--slds-c-tabs-item-sizing-height);
+  line-height: var(--slds-c-tabs-item-font-lineheight);
+  padding-block: 0;
+  padding-inline: var(--slds-c-tabs-scoped-link-spacing-inline);
+  color: var(--slds-c-tabs-item-color-foreground);
+  font-weight: var(--slds-c-tabs-item-font-weight);
+  font-size: var(--slds-c-tabs-item-font-size);
+  background-clip: padding-box;
+  background-color: var(--slds-c-tabs-scoped-link-color-background);
+  /* Block-start border comes from the nav container, never from the link */
+  border-block-start: 0;
+  border-inline-start-width: var(--slds-c-tabs-scoped-nav-sizing-border, 0);
+  border-inline-start-style: solid;
+  border-inline-start-color: var(--slds-c-tabs-scoped-link-color-border, transparent);
+  border-inline-end-width: var(--slds-c-tabs-scoped-nav-sizing-border, 0);
+  border-inline-end-style: solid;
+  border-inline-end-color: var(--slds-c-tabs-scoped-link-color-border, transparent);
+  border-block-end-width: var(--slds-c-tabs-scoped-nav-sizing-border, 0);
+  border-block-end-style: solid;
+  border-block-end-color: var(--slds-c-tabs-scoped-link-color-border, transparent);
+  border-radius: 0;
+
+  &:hover,
+  &:focus {
+    outline: 0;
+    text-decoration: none;
+    --slds-c-tabs-item-color-foreground: var(--slds-c-tabs-item-color-foreground-hover);
+    --slds-c-tabs-scoped-link-color-border: var(--slds-c-tabs-scoped-link-color-border-hover);
+    --slds-c-tabs-scoped-link-color-background: var(--slds-c-tabs-scoped-link-color-background-hover);
+  }
+}
+
+/**
+ * @summary Scoped tab overflow button
+ */
+.slds-tabs_scoped__overflow-button {
+  display: inline-flex;
+  height: var(--slds-c-tabs-item-sizing-height);
+  line-height: var(--slds-c-tabs-item-font-lineheight);
+
+  .slds-button {
+    line-height: inherit;
+    color: var(--slds-c-tabs-item-color-foreground);
+    padding-block: 0;
+    padding-inline: var(--slds-c-tabs-scoped-link-spacing-inline);
+    font-weight: var(--slds-c-tabs-item-font-weight);
+    /* Suppress button-specific behavior in scoped tab context */
+    --slds-c-button-color-background-hover: transparent;
+    --slds-c-button-shadow-focus: none;
+    --slds-c-button-radius-border: 0;
+
+    &:focus-visible {
+      outline-width: var(--slds-c-tabs-item-sizing-outline);
+      outline-style: solid;
+      outline-color: var(--slds-c-tabs-item-color-outline);
+      outline-offset: var(--slds-c-tabs-scoped-item-outline-offset);
+    }
+
+    &:active {
+      box-shadow: none;
+    }
+  }
+}
+
+/**
+ * @summary Active scoped tab — removes bottom border so it visually merges with content
+ */
+.slds-is-active .slds-tabs_scoped__link {
+  --slds-c-tabs-item-color-foreground: var(--slds-c-tabs-item-color-foreground-active);
+  --slds-c-tabs-item-font-weight: var(--slds-c-tabs-item-font-weight-active);
+  --slds-c-tabs-scoped-link-color-background: var(--slds-c-tabs-scoped-link-color-background-active);
+  --slds-c-tabs-scoped-link-color-border: var(--slds-c-tabs-scoped-link-color-border-active);
+  /* Structural: open bottom so active tab merges with content panel */
+  border-block-end: 0;
+}
+
+/* ============================================================
+ * VERTICAL TABS
+ *
+ * Uses --slds-c-tabs-item-* shared vocabulary for color and font.
+ * Variant-specific hooks cover nav sidebar width, item background,
+ * and content panel.
+ * ============================================================ */
+
+/**
+ * @summary Vertical tab container
+ */
+.slds-vertical-tabs {
+  display: flex;
+  overflow: hidden;
+  border-width: var(--slds-c-tabs-vertical-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-tabs-vertical-color-border, transparent);
+  border-radius: var(--slds-c-tabs-vertical-radius-border);
+}
+
+/**
+ * @summary Vertical tab navigation sidebar
+ */
+.slds-vertical-tabs__nav {
+  width: var(--slds-c-tabs-vertical-nav-sizing-inline);
+  border-inline-end-width: var(--slds-c-tabs-vertical-sizing-border, 0);
+  border-inline-end-style: solid;
+  border-inline-end-color: var(--slds-c-tabs-vertical-color-border, transparent);
+  background-color: var(--slds-c-tabs-vertical-nav-color-background);
+}
+
+/**
+ * @summary Individual vertical tab item
+ */
+.slds-vertical-tabs__nav-item {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border-block-end-width: var(--slds-c-tabs-vertical-sizing-border, 0);
+  border-block-end-style: solid;
+  border-block-end-color: var(--slds-c-tabs-vertical-color-border, transparent);
+  color: var(--slds-c-tabs-item-color-foreground);
+  background-color: var(--slds-c-tabs-vertical-item-color-background);
+
+  &:last-child {
+    /* Structural: prevent double-border with the container's bottom edge */
+    margin-block-end: -1px;
+  }
+}
+
+/**
+ * @summary Vertical tab link
+ */
+.slds-vertical-tabs__link {
+  display: flex;
+  flex: 1 1 0%;
+  align-items: center;
+  min-width: 0;
+  padding-block-start: var(
+    --slds-c-tabs-vertical-link-spacing-block-start,
+    var(--slds-c-tabs-vertical-link-spacing-block)
+  );
+  padding-block-end: var(
+    --slds-c-tabs-vertical-link-spacing-block-end,
+    var(--slds-c-tabs-vertical-link-spacing-block)
+  );
+  padding-inline-start: var(
+    --slds-c-tabs-vertical-link-spacing-inline-start,
+    var(--slds-c-tabs-vertical-link-spacing-inline)
+  );
+  padding-inline-end: var(
+    --slds-c-tabs-vertical-link-spacing-inline-end,
+    var(--slds-c-tabs-vertical-link-spacing-inline)
+  );
+  /* currentColor terminal fallback: inherits the nav-item's color by default */
+  color: var(--slds-c-tabs-item-color-foreground, currentColor);
+  font-weight: var(--slds-c-tabs-item-font-weight);
+  background-color: var(--slds-c-tabs-vertical-link-color-background);
+
+  &:hover {
+    --slds-c-tabs-item-color-foreground: var(--slds-c-tabs-item-color-foreground-hover);
+    --slds-c-tabs-vertical-link-color-background: var(--slds-c-tabs-vertical-link-color-background-hover);
+
+    text-decoration: none;
+  }
+
+  &:focus {
+    outline: 0;
+  }
+
+  &:focus-visible {
+    outline-width: var(--slds-c-tabs-item-sizing-outline);
+    outline-style: solid;
+    outline-color: var(--slds-c-tabs-item-color-outline);
+    outline-offset: var(--slds-c-tabs-item-outline-offset);
+    text-decoration: none;
+  }
+}
+
+/**
+ * @summary Left icon inside vertical tab link
+ */
+.slds-vertical-tabs__left-icon {
+  margin-inline-end: var(--slds-c-tabs-icon-left-spacing-inline-end);
+
+  &:empty {
+    margin-inline-end: 0;
+  }
+}
+
+/**
+ * @summary Right icon inside vertical tab link — pushed to trailing edge
+ */
+.slds-vertical-tabs__right-icon {
+  margin-inline-start: auto;
+}
+
+/**
+ * @summary Vertical tab content panel
+ */
+.slds-vertical-tabs__content {
+  flex: 1;
+  padding-block-start: var(
+    --slds-c-tabs-vertical-content-spacing-block-start,
+    var(--slds-c-tabs-vertical-content-spacing-block)
+  );
+  padding-block-end: var(
+    --slds-c-tabs-vertical-content-spacing-block-end,
+    var(--slds-c-tabs-vertical-content-spacing-block)
+  );
+  padding-inline-start: var(
+    --slds-c-tabs-vertical-content-spacing-inline-start,
+    var(--slds-c-tabs-vertical-content-spacing-inline)
+  );
+  padding-inline-end: var(
+    --slds-c-tabs-vertical-content-spacing-inline-end,
+    var(--slds-c-tabs-vertical-content-spacing-inline)
+  );
+  background-color: var(--slds-c-tabs-vertical-content-color-background);
+}
+
+/**
+ * @summary Active vertical tab item
+ */
+.slds-vertical-tabs__nav-item.slds-is-active {
+  /* Structural: cover the nav's inline-end border so active item merges with content */
+  margin-inline-end: -1px;
+  border-inline-end: 0;
+  --slds-c-tabs-vertical-item-color-background: var(--slds-c-tabs-vertical-item-color-background-active);
+  --slds-c-tabs-item-color-foreground: var(--slds-c-tabs-item-color-foreground-active);
+  --slds-c-tabs-item-font-weight: var(--slds-c-tabs-item-font-weight-active);
+
+  .slds-vertical-tabs__link:hover {
+    /* Prevent hover background from overriding the active state's background */
+    --slds-c-tabs-vertical-link-color-background: var(--slds-c-tabs-vertical-item-color-background-active);
+    /* Structural: active+hover keeps the active text color via inheritance */
+    color: currentColor;
+  }
+}
+
+.slds-vertical-tabs__nav-item:has(:focus-visible) {
+  text-decoration: none;
+}
+
+/* ============================================================
+ * SUBTABS
+ * ============================================================ */
+
+.slds-sub-tabs .slds-tabs_default__nav {
+  background-color: var(--slds-c-tabs-subtab-nav-color-background);
+  border-block-end-width: var(--slds-c-tabs-list-sizing-border, 0);
+}
+
+/**
+ * @summary Subtab item
+ */
+.slds-sub-tabs__item {
+  text-transform: none;
+  letter-spacing: 0;
+  margin-block-end: 0;
+  font-weight: normal;
+
+  &.slds-active,
+  &.slds-is-open {
+    background-color: var(--slds-c-tabs-subtab-color-background-active);
+    color: var(--slds-c-tabs-subtab-color-foreground-active);
+
+    .slds-button__icon,
+    .slds-icon {
+      fill: var(--slds-c-tabs-subtab-color-foreground-active);
+    }
+
+    &:hover {
+      background-color: var(--slds-c-tabs-subtab-color-background-active);
+    }
+  }
+
+  &::after {
+    content: none;
+  }
+
+  &:hover {
+    background-color: var(--slds-c-tabs-subtab-color-background-hover);
+  }
+
+  .slds-tabs_default__link:focus-visible {
+    text-decoration: none;
+  }
+
+  & + .slds-sub-tabs__item {
+    margin-inline-start: 0;
+  }
+
+  .slds-icon_container {
+    /* Structural: no icon background in tab context */
+    --slds-c-icon-color-background: transparent;
+    --slds-c-icon-color-foreground: var(--slds-c-tabs-subtab-icon-color-foreground);
+  }
+
+  .slds-button__icon,
+  .slds-icon {
+    fill: var(--slds-c-tabs-subtab-icon-color-foreground);
+  }
+
+  /**
+   * Notification status states — all three share one pulse-color-background relay hook.
+   * The parent element sets the relay; ::before reads it. Animations live in theme.
+   * Feedback colors source global tokens directly — these are semantic system values,
+   * not per-component customization surfaces.
+   */
+  &.slds-has-success::before,
+  &.slds-has-error::before,
+  &.slds-has-warning::before {
+    content: ' ';
+    position: absolute;
+    inset: 0;
+    background-color: var(--slds-c-tabs-subtab-pulse-color-background);
+  }
+
+  &.slds-has-success {
+    color: var(--slds-g-color-on-success-1);
+    --slds-c-tabs-subtab-pulse-color-background: var(--slds-g-color-success-container-1);
+
+    .slds-button__icon,
+    .slds-icon {
+      fill: var(--slds-g-color-on-success-1);
+    }
+
+    &:hover {
+      --slds-c-tabs-subtab-pulse-color-background: var(--slds-g-color-success-container-2);
+    }
+
+    .slds-indicator_unread {
+      background-color: currentColor;
+    }
+
+    .slds-indicator_unsaved {
+      color: currentColor;
+    }
+  }
+
+  /**
+   * @summary Error notification
+   */
+  &.slds-has-error {
+    color: var(--slds-g-color-on-error-1);
+    --slds-c-tabs-subtab-pulse-color-background: var(--slds-g-color-error-container-1);
+
+    .slds-button__icon,
+    .slds-icon {
+      fill: var(--slds-g-color-on-error-1);
+    }
+
+    &:hover {
+      --slds-c-tabs-subtab-pulse-color-background: var(--slds-g-color-error-container-2);
+    }
+
+    .slds-indicator_unread {
+      background-color: currentColor;
+    }
+
+    .slds-indicator_unsaved {
+      color: currentColor;
+    }
+  }
+
+  /**
+   * @summary Warning notification
+   */
+  &.slds-has-warning {
+    color: var(--slds-g-color-on-warning-1);
+    --slds-c-tabs-subtab-pulse-color-background: var(--slds-g-color-warning-container-1);
+
+    .slds-button__icon,
+    .slds-icon {
+      fill: var(--slds-g-color-on-warning-1);
+    }
+
+    &:hover {
+      --slds-c-tabs-subtab-pulse-color-background: var(--slds-g-color-warning-base-80);
+    }
+
+    .slds-indicator_unread {
+      background-color: currentColor;
+    }
+
+    .slds-indicator_unsaved {
+      color: currentColor;
+    }
+  }
+
+  &.slds-has-warning,
+  &.slds-has-error,
+  &.slds-has-success {
+    &:has(.slds-tabs_default__link:focus-visible)::before {
+      box-shadow: var(--slds-c-tabs-subtab-shadow-focus-notification);
+    }
+  }
+
+  &:has(.slds-tabs_default__link:focus-visible) {
+    outline-width: var(--slds-c-tabs-item-sizing-outline);
+    outline-style: solid;
+    outline-color: var(--slds-c-tabs-item-color-outline);
+    outline-offset: var(--slds-c-tabs-item-outline-offset);
+  }
+}
+
+/**
+ * @summary Pinned regions — active subtab gets a colored top bar
+ */
+.slds-has-pinned-regions {
+  .slds-sub-tabs__item {
+    &.slds-active,
+    &.slds-is-open {
+      &::before {
+        content: '';
+        height: var(--slds-c-tabs-subtab-sizing-pinned-indicator);
+        display: block;
+        background-color: var(--slds-c-tabs-subtab-color-background-pinned-indicator);
+        position: absolute;
+        inset-block-start: 0;
+        /* Structural: bleed -1px to cover adjacent item borders */
+        inset-inline-start: -1px;
+        inset-inline-end: -1px;
+      }
+    }
+  }
+}
+
+/* ============================================================
+ * SCROLL CONTROLS
+ * ============================================================ */
+
+.slds-tab__scroll-controls {
+  display: none;
+}
+
+/* ============================================================
+ * MOBILE TABS
+ *
+ * Out of scope for primary SLDS2 support; ported to prevent
+ * visual breakage when app.css / SLDS1 is absent.
+ * No component hooks — unsupported variant does not get a
+ * public customization surface until it is formally supported.
+ * ============================================================ */
+
+.slds-tabs-mobile__container {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Negative margins compensate for the panel body's padding */
+.slds-panel__body .slds-tabs-mobile:first-child {
+  margin-block-start: calc(var(--slds-c-tabs-mobile-panel-offset-block-start) * -1);
+}
+
+.slds-panel__body .slds-tabs-mobile:first-child .slds-tabs-mobile__item:first-child {
+  border-block-start: 0;
+}
+
+.slds-panel__body .slds-tabs-mobile {
+  margin-inline-start: calc(var(--slds-c-tabs-mobile-panel-offset-inline) * -1);
+  margin-inline-end: calc(var(--slds-c-tabs-mobile-panel-offset-inline) * -1);
+}
+
+.slds-tabs-mobile {
+  display: flex;
+  flex-direction: column;
+}
+
+.slds-tabs-mobile__item {
+  display: flex;
+  border-block-start-width: 1px;
+  border-block-start-style: solid;
+  border-block-start-color: var(--slds-g-color-border-1);
+  height: var(--slds-g-sizing-13);
+  align-items: stretch;
+  font-size: var(--slds-g-font-scale-2);
+  padding-block: 0;
+  padding-inline: var(--slds-g-spacing-3);
+
+  &:active {
+    background-color: var(--slds-g-color-surface-container-2);
+  }
+
+  &:last-child {
+    border-block-end-width: 1px;
+    border-block-end-style: solid;
+    border-block-end-color: var(--slds-g-color-border-1);
+  }
+}
+
+.slds-tabs-mobile__group
+  .slds-tabs-mobile__container
+  + .slds-tabs-mobile__container
+  .slds-tabs-mobile__item:first-child {
+  border-block-start: 0;
+}
+
+/* ============================================================
+ * CARD CONTEXT (tabs as parent of cards)
+ * Strip card chrome when cards live inside tabs; restore for _boundary.
+ * ============================================================ */
+
+/**
+ * @summary Tabs styled as a card — uses card hooks for chrome and spacing
+ */
+.slds-tabs_card,
+.slds-tabs_card.slds-tabs_card {
+  padding-block-start: var(--slds-c-card-spacing-block-start, var(--slds-c-card-spacing-block));
+  padding-inline-end: var(--slds-c-card-spacing-inline-end, var(--slds-c-card-spacing-inline));
+  padding-block-end: var(--slds-c-card-spacing-block-end, var(--slds-c-card-spacing-block));
+  padding-inline-start: var(--slds-c-card-spacing-inline-start, var(--slds-c-card-spacing-inline));
+  background: var(--slds-c-card-color-background);
+  border-width: var(--slds-c-card-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-card-color-border, transparent);
+  border-radius: var(--slds-c-card-radius-border);
+  box-shadow: var(--slds-c-card-shadow);
+
+  .slds-card,
+  .slds-card-wrapper {
+    padding-inline-start: 0;
+    padding-inline-end: 0;
+    --slds-c-card-context-sizing-border: 0;
+    --slds-c-card-context-shadow: none;
+  }
+
+  .slds-card__header,
+  .slds-card__body,
+  .slds-card__footer {
+    padding-inline-start: 0;
+    padding-inline-end: 0;
+    margin-inline-start: 0;
+    margin-inline-end: 0;
+  }
+
+  .slds-card__header {
+    padding-block-start: 0;
+  }
+}
+
+/**
+ * @summary Strip card chrome when cards are inside default tabs
+ */
+/* TODO: fix stylelint error */
+/* stylelint-disable-next-line no-duplicate-selectors -- card-context overrides kept separate from main .slds-tabs_default block */
+.slds-tabs_default {
+  .slds-card,
+  .slds-card-wrapper {
+    --slds-c-card-context-sizing-border: 0;
+    --slds-c-card-context-color-border: transparent;
+    --slds-c-card-context-shadow: none;
+  }
+}
+
+/**
+ * @summary Restore card chrome for .slds-card_boundary inside default tabs
+ */
+/* TODO: fix stylelint error */
+/* stylelint-disable-next-line no-duplicate-selectors */
+.slds-tabs_default {
+  .slds-card_boundary {
+    --slds-c-card-context-sizing-border: initial;
+    --slds-c-card-context-color-border: initial;
+    --slds-c-card-context-radius-border: initial;
+    --slds-c-card-context-shadow: initial;
+  }
+}
+
+/**
+ * @summary Restore card chrome and sub-element spacing for .slds-card_boundary inside tabs_card
+ */
+/* TODO: fix stylelint error */
+/* stylelint-disable-next-line no-duplicate-selectors */
+.slds-tabs_card,
+.slds-tabs_card.slds-tabs_card {
+  .slds-card_boundary {
+    --slds-c-card-context-sizing-border: initial;
+    --slds-c-card-context-color-border: initial;
+    --slds-c-card-context-radius-border: initial;
+    --slds-c-card-context-shadow: initial;
+
+    .slds-card__header {
+      padding-block-start: var(
+        --slds-c-card-header-spacing-block-start,
+        var(--slds-c-card-header-spacing-block)
+      );
+      padding-inline-end: var(
+        --slds-c-card-header-spacing-inline-end,
+        var(--slds-c-card-header-spacing-inline)
+      );
+      padding-block-end: var(--slds-c-card-header-spacing-block-end, var(--slds-c-card-header-spacing-block));
+      padding-inline-start: var(
+        --slds-c-card-header-spacing-inline-start,
+        var(--slds-c-card-header-spacing-inline)
+      );
+    }
+
+    .slds-card__body_inner {
+      padding-inline-end: var(--slds-c-card-body-spacing-inline-end, var(--slds-c-card-body-spacing-inline));
+      padding-inline-start: var(
+        --slds-c-card-body-spacing-inline-start,
+        var(--slds-c-card-body-spacing-inline)
+      );
+    }
+
+    .slds-card__footer {
+      padding-block-start: var(
+        --slds-c-card-footer-spacing-block-start,
+        var(--slds-c-card-footer-spacing-block)
+      );
+      padding-inline-end: var(
+        --slds-c-card-footer-spacing-inline-end,
+        var(--slds-c-card-footer-spacing-inline)
+      );
+      padding-block-end: var(--slds-c-card-footer-spacing-block-end, var(--slds-c-card-footer-spacing-block));
+      padding-inline-start: var(
+        --slds-c-card-footer-spacing-inline-start,
+        var(--slds-c-card-footer-spacing-inline)
+      );
+    }
+  }
+}

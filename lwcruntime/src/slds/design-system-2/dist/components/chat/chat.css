@@ -1,0 +1,429 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * This component is used to display a current or past chat session between a
+ * customer and a service agent. It appears in the form of a "Log". Root
+ * container of a chat session.
+ */
+.slds-chat {
+  margin-block-end: var(--slds-g-spacing-3);
+}
+
+/**
+ * The chat payload should be displayed in the form of a list. Each item in the
+ * list has a number of vertical and horizontal spacing rules based on its type.
+ * Handles the display of chat items within a list
+ */
+.slds-chat-list {
+  padding-block: 0;
+  padding-inline: var(--slds-g-spacing-3);
+}
+
+/**
+ * Handles spacing and direction of items in the list
+ */
+.slds-chat-listitem {
+  display: flex;
+  margin-block-start: var(--slds-g-spacing-3);
+}
+
+/**
+ * Modifier used to style outbound message list items
+ */
+.slds-chat-listitem_outbound {
+  justify-content: flex-end;
+}
+
+/**
+ * Selector to style sibling, same type message list items
+ */
+.slds-chat-listitem_inbound + .slds-chat-listitem_inbound,
+.slds-chat-listitem_outbound + .slds-chat-listitem_outbound {
+  margin-block-start: var(--slds-g-spacing-1);
+}
+
+/**
+ * Modifier used for spacing bookend items
+ */
+.slds-chat-listitem_bookend {
+  margin-block: var(--slds-g-spacing-4);
+  margin-inline-start: calc(var(--slds-g-spacing-3) * -1);
+  margin-inline-end: calc(var(--slds-g-spacing-3) * -1);
+}
+
+.slds-chat-listitem_bookend + .slds-chat-listitem_bookend {
+  margin-block-start: var(--slds-g-spacing-8);
+}
+
+/**
+ * Modifier used for spacing event items
+ */
+.slds-chat-listitem_event {
+  margin-block: var(--slds-g-spacing-5);
+  margin-inline: 0;
+}
+
+/**
+ * Used to style icons with a chat log
+ */
+.slds-chat-icon {
+  margin-inline-end: var(--slds-g-spacing-2);
+}
+
+/**
+ * Chat logs are mainly made up of chat messages between an agent and a customer
+ */
+.slds-chat-message {
+  display: flex;
+}
+
+/**
+ * Used for when customer avatars are used in consequtive inbound messages to align the message body with the previous message
+ */
+.slds-chat-message_faux-avatar {
+  padding-inline-start: calc(var(--slds-g-spacing-6) + var(--slds-g-spacing-2));
+}
+
+/**
+ * Used to style avatars in chat logs
+ */
+.slds-chat-avatar {
+  margin-inline-end: var(--slds-g-spacing-2);
+  min-width: 2rem;
+}
+
+/**
+ * Used to contain and align chat messages with their avatars
+ */
+
+.slds-chat-message__body {
+  display: flex;
+  flex-direction: column;
+}
+
+/**
+ * Loading state
+ */
+.slds-chat-message__image_loading {
+  width: var(--slds-g-sizing-14);
+  height: calc((180 / 16) * 1rem);
+}
+
+/**
+ * Used to style the chat text from agent or customer
+ */
+.slds-chat-message__text {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  display: inline-block;
+  font-size: var(--slds-g-font-size-base);
+  max-width: calc((420 / 16) * 1rem);
+  white-space: pre-line;
+
+  /* workaround postcss-deprecated-selector */
+  :where(a) {
+    color: var(--slds-s-link-color-focus);
+    text-decoration: underline;
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
+}
+
+/**
+ * Message with file
+ */
+.slds-chat-message__file {
+  width: var(--slds-g-sizing-14);
+}
+
+.slds-chat-message__file,
+.slds-chat-message__image {
+  overflow: hidden;
+
+  .slds-file:hover {
+    box-shadow: none;
+    transition: none;
+  }
+
+  &:focus-within {
+    box-shadow: var(--slds-g-shadow-outset-focus-1);
+  }
+}
+
+.slds-chat-message__text_inbound,
+.slds-chat-message__file_inbound,
+.slds-chat-message__image_inbound,
+.slds-chat-message__text_outbound,
+.slds-chat-message__file_outbound,
+.slds-chat-message__image_outbound,
+.slds-chat-message__text_outbound-agent,
+.slds-chat-message__text_unsupported-type,
+.slds-chat-message__text_delivery-failure {
+  border-start-start-radius: var(--slds-g-radius-border-3);
+  border-start-end-radius: var(--slds-g-radius-border-3);
+  border-end-start-radius: var(--slds-g-radius-border-3);
+  border-end-end-radius: 0;
+  color: var(--slds-g-color-on-surface-inverse-1);
+  min-height: 2rem;
+}
+
+.slds-chat-message__text_inbound,
+.slds-chat-message__text_outbound,
+.slds-chat-message__text_outbound-agent,
+.slds-chat-message__text_unsupported-type,
+.slds-chat-message__text_delivery-failure {
+  padding: var(--slds-g-spacing-2);
+}
+
+.slds-chat-message__file_inbound,
+.slds-chat-message__image_inbound,
+.slds-chat-message__file_outbound,
+.slds-chat-message__image_outbound {
+  padding: 0;
+  border: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-1);
+}
+
+/* stylelint-disable */
+.slds-chat-message__file_inbound,
+.slds-chat-message__image_inbound,
+.slds-chat-message__file_outbound,
+.slds-chat-message__image_outbound {
+  color: var(--slds-g-color-on-surface-2);
+}
+/* stylelint-enable */
+
+/**
+ * Used for any specific inbound text styling
+ */
+.slds-chat-message__text_inbound {
+  margin-right: auto;
+  background-color: var(--slds-g-color-surface-container-2);
+  border-start-start-radius: var(--slds-g-radius-border-3);
+  border-start-end-radius: var(--slds-g-radius-border-3);
+  border-end-start-radius: 0;
+  border-end-end-radius: var(--slds-g-radius-border-3);
+  color: var(--slds-g-color-on-surface-2);
+}
+
+/**
+ * Used for any specific inbound image styling
+ */
+.slds-chat-message__image_inbound {
+  background-color: var(--slds-g-color-surface-container-2);
+  border-start-start-radius: var(--slds-g-radius-border-3);
+  border-start-end-radius: var(--slds-g-radius-border-3);
+  border-end-start-radius: 0;
+  border-end-end-radius: var(--slds-g-radius-border-3);
+}
+
+/**
+ * Used for any specific inbound file styling
+ */
+.slds-chat-message__file_inbound {
+  /* @TODO: fit & finish candidate - file component rounds its corners, chat
+     expects bottom left corner to be 0 */
+  border-radius: var(--slds-g-radius-border-3);
+  background-color: var(--slds-g-color-surface-container-1);
+}
+
+/**
+ * Used for any specific outbound text styling
+ */
+.slds-chat-message__text_outbound {
+  margin-inline-start: auto;
+  background-color: var(--slds-g-color-surface-container-inverse-1);
+}
+
+/**
+ * Used for any specific outbound (from another agent) text styling
+ */
+.slds-chat-message__text_outbound-agent {
+  background-color: var(--slds-g-color-neutral-base-50);
+  margin-inline-start: auto;
+}
+
+.slds-chat-message__text_outbound,
+.slds-chat-message__text_outbound-agent {
+  :where(a) {
+    color: var(--slds-g-color-neutral-base-100);
+    text-decoration: underline;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--slds-g-color-neutral-base-100);
+    }
+  }
+}
+
+/**
+ * Used for an inbound message that is not a supported message type
+ */
+.slds-chat-message__text_unsupported-type {
+  background-color: var(--slds-g-color-surface-container-1);
+  border-start-start-radius: var(--slds-g-radius-border-3);
+  border-start-end-radius: var(--slds-g-radius-border-3);
+  border-end-start-radius: 0;
+  border-end-end-radius: var(--slds-g-radius-border-3);
+  border: var(--slds-g-color-warning-base-60) var(--slds-g-sizing-border-1) solid;
+  color: var(--slds-g-color-on-surface-2);
+  margin-inline-end: auto;
+}
+
+/**
+ * Used for an inbound message that fails to deliver
+ */
+.slds-chat-message__text_delivery-failure {
+  background-color: var(--slds-g-color-surface-container-1);
+  border: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-error-1);
+  color: var(--slds-g-color-on-surface-2);
+  margin-inline-start: auto;
+
+  /**
+   * Element that contains feedback for why inbound message failed
+   */
+  .slds-chat-message__text_delivery-failure-reason {
+    display: flex;
+    padding-block: var(--slds-g-spacing-2) 0;
+    padding-inline: var(--slds-g-spacing-2);
+    margin-block: var(--slds-g-spacing-2) 0;
+    margin-inline: calc(var(--slds-g-spacing-2) * -1);
+    color: var(--slds-g-color-error-1);
+    border-block-start: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-error-1);
+  }
+}
+
+/**
+ * Used when sneak peek is enabled for customer messages
+ */
+.slds-chat-message__text_sneak-peak,
+.slds-chat-message__text_sneak-peek {
+  font-style: italic;
+
+  .slds-icon-typing {
+    margin-inline-end: var(--slds-g-spacing-2);
+  }
+}
+
+/**
+ * Used to style chat message meta data
+ */
+.slds-chat-message__meta {
+  color: var(--slds-g-color-on-surface-2);
+  font-size: var(--slds-g-font-scale-neg-2);
+  margin-block: 0.125rem 0;
+  margin-inline: var(--slds-g-spacing-2) 0;
+}
+
+/**
+ * Used to style chat message resend action
+ */
+.slds-chat-message__action {
+  font-size: var(--slds-g-font-scale-neg-1);
+  margin-inline-start: var(--slds-g-spacing-2);
+  line-height: var(--slds-g-font-lineheight-2);
+
+  .slds-chat-icon.slds-icon-utility-redo {
+    .slds-icon {
+      width: var(--slds-g-sizing-4);
+      height: var(--slds-g-sizing-4);
+      fill: var(--slds-s-link-color);
+    }
+  }
+}
+
+/**
+ * During any chat, certain events can occur which need to be displayed to the user
+ */
+.slds-chat-event {
+  align-items: center;
+  color: var(--slds-g-color-on-surface-2);
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: var(--slds-g-font-size-base);
+  text-align: center;
+  width: 100%;
+
+  /**
+   * Modifier to indicate the event was an error
+   */
+  &.slds-has-error {
+    color: var(--slds-g-color-error-1);
+
+    svg {
+      fill: var(--slds-g-color-error-1);
+    }
+  }
+}
+
+/**
+ * Used for styling the event body text
+ */
+.slds-chat-event__body {
+  align-items: center;
+  display: flex;
+  margin-block: 0;
+  margin-inline: var(--slds-g-spacing-2);
+}
+
+/**
+ * Used to style any messages from an agent in the event
+ */
+.slds-chat-event__agent-message {
+  flex-grow: 3;
+  font-size: var(--slds-g-font-scale-neg-1);
+  font-style: italic;
+  margin-block-start: var(--slds-g-spacing-2);
+  width: 100%;
+}
+
+/**
+ * Chat sessions are started and stopped with bookends to the conversation.
+ * Used to style a chat bookend
+ */
+.slds-chat-bookend {
+  align-items: center;
+  border: var(--slds-g-color-border-1) 0 solid;
+  border-block-end-width: var(--slds-g-sizing-border-1);
+  color: var(--slds-g-color-on-surface-2);
+  display: flex;
+  font-size: var(--slds-g-font-size-base);
+  justify-content: center;
+  padding-block: var(--slds-g-spacing-2);
+  padding-inline: var(--slds-g-spacing-3);
+  width: 100%;
+}
+
+/**
+ * Modifier for bookends which stop a chat session
+ */
+.slds-chat-bookend_stop {
+  border-width: var(--slds-g-sizing-border-1) 0 0;
+}
+
+/**
+ * Past chat logs are displayed differently for ease of scanning. Apply when
+ * displaying chat logs that appeared in the past
+ */
+.slds-chat_past {
+  .slds-chat-listitem_event {
+    margin-block: var(--slds-g-spacing-4);
+    margin-inline: 0;
+  }
+
+  .slds-chat-message__meta {
+    margin-block: var(--slds-g-spacing-1) 0;
+    margin-inline: 0;
+
+    b {
+      color: var(--slds-g-color-on-surface-3);
+    }
+  }
+}

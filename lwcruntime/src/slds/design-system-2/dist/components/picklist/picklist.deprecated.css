@@ -1,0 +1,88 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/* .slds-picklist has been replaced with .slds-combobox */
+
+/* A picklist should use the readonly version of a combobox */
+.slds-picklist {
+  position: relative;
+}
+
+/* Actionable element inside of a picklist item. Force width on picklist. */
+.slds-picklist .slds-dropdown {
+  width: var(--slds-g-sizing-14);
+}
+
+/* Set default state of icon for when a listbox option is selected */
+.slds-picklist li .slds-icon_selected {
+  opacity: 0;
+  transition: opacity 0.05s ease;
+}
+
+/* Toggles state of icon for when a listbox option is selected */
+.slds-picklist li.slds-is-selected .slds-icon_selected {
+  fill: var(--slds-g-color-accent-2);
+  opacity: 1;
+}
+
+.slds-picklist input[readonly] {
+  padding-left: var(--slds-g-spacing-3);
+  border-color: var(--slds-s-input-color-border, var(--slds-g-color-border-2));
+  background-color: var(--slds-s-input-color-background, var(--slds-g-color-surface-container-1));
+  font-size: inherit;
+  font-weight: var(--slds-g-font-weight-4);
+}
+
+.slds-picklist input[readonly]:focus-visible,
+.slds-picklist input[readonly].slds-has-focus {
+  box-shadow: var(--slds-g-shadow-outline-focus-1);
+}
+
+.slds-picklist input[readonly][disabled] {
+  background-color: var(--slds-s-input-color-background-disabled, var(--slds-g-color-disabled-container-1));
+  border-color: var(--slds-s-input-color-border-disabled, var(--slds-g-color-border-disabled-1));
+}
+
+/* Resets explicit width on picklist to be fluid to its parent element */
+.slds-picklist_fluid .slds-picklist__input,
+.slds-picklist_fluid .slds-picklist__label,
+.slds-picklist_fluid .slds-dropdown,
+.slds-picklist_fluid .slds-lookup {
+  width: auto;
+  min-width: 0;
+  max-width: var(--slds-g-sizing-14);
+}
+
+/* Read-only input element for picklist */
+.slds-picklist__input {
+  width: var(--slds-g-sizing-14);
+}
+
+.slds-picklist__input .slds-button {
+  line-height: 0;
+}
+
+/* Use lookup classes instead */
+.slds-picklist__label {
+  padding-right: var(--slds-g-spacing-6);
+  width: var(--slds-g-sizing-14);
+  color: var(--slds-g-color-on-surface-3);
+  text-align: left;
+}
+
+.slds-picklist__label .slds-icon {
+  width: var(--slds-g-sizing-4);
+  height: var(--slds-g-sizing-4);
+  position: absolute;
+  right: var(--slds-g-spacing-4);
+  top: 50%;
+  margin-top: -0.375rem;
+  fill: var(--slds-g-color-on-surface-1);
+}
+
+.slds-picklist__label .slds-truncate {
+  display: block;
+}

@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/* Do not use slds-navigation-list--vertical anymore, please use newer version slds-nav-vertical */
+.slds-navigation-list-vertical,
+.slds-navigation-list--vertical,
+.slds-navigation-list_vertical {
+  .slds-is-active {
+    color: var(--slds-s-navigation-color, var(--slds-g-color-on-surface-3));
+  }
+}
+
+.slds-navigation-list-vertical__action,
+.slds-navigation-list--vertical__action,
+.slds-navigation-list_vertical__action {
+  display: block;
+  border-inline-start: var(--slds-g-sizing-border-4) solid transparent;
+  border-top: var(--slds-g-sizing-border-1) solid transparent;
+  border-bottom: var(--slds-g-sizing-border-1) solid transparent;
+  padding: var(--slds-g-spacing-2) var(--slds-g-spacing-5);
+}
+
+.slds-navigation-list-vertical__action:active,
+.slds-navigation-list--vertical__action:active,
+.slds-navigation-list_vertical__action:active {
+  background-color: var(--slds-g-color-surface-container-2);
+}
+
+.slds-navigation-list-vertical__action:hover,
+.slds-navigation-list--vertical__action:hover,
+.slds-navigation-list_vertical__action:hover {
+  outline: 0;
+  background-color: color-mix(in srgb, var(--slds-g-color-accent-1) 10%, transparent);
+  border-inline-start: var(--slds-g-sizing-border-2) solid var(--slds-g-color-accent-1);
+}
+
+.slds-navigation-list-vertical .slds-is-active .slds-navigation-list-vertical__action,
+.slds-navigation-list--vertical .slds-is-active .slds-navigation-list-vertical__action,
+.slds-navigation-list_vertical .slds-is-active .slds-navigation-list-vertical__action,
+.slds-navigation-list-vertical .slds-is-active .slds-navigation-list--vertical__action,
+.slds-navigation-list--vertical .slds-is-active .slds-navigation-list--vertical__action,
+.slds-navigation-list_vertical .slds-is-active .slds-navigation-list--vertical__action {
+  background-color: rgb(21, 137, 238, 0.1);
+  border-inline-start-color: var(--slds-g-color-accent-1);
+  font-weight: var(--slds-s-navigation-font-weight);
+  color: var(--slds-s-navigation-color-active);
+}
+
+.slds-navigation-list-vertical_shade .slds-is-active .slds-navigation-list-vertical__action,
+.slds-navigation-list-vertical--shade .slds-is-active .slds-navigation-list-vertical__action,
+.slds-navigation-list_vertical-inverse .slds-is-active .slds-navigation-list-vertical__action,
+.slds-navigation-list--vertical-inverse .slds-is-active .slds-navigation-list-vertical__action,
+.slds-navigation-list-vertical_shade .slds-is-active .slds-navigation-list--vertical__action,
+.slds-navigation-list-vertical--shade .slds-is-active .slds-navigation-list--vertical__action,
+.slds-navigation-list_vertical-inverse .slds-is-active .slds-navigation-list--vertical__action,
+.slds-navigation-list--vertical-inverse .slds-is-active .slds-navigation-list--vertical__action {
+  background-color: var(--slds-g-color-surface-container-1);
+  font-weight: var(--slds-s-navigation-font-weight);
+  color: var(--slds-s-navigation-color-active);
+}
+
+.slds-navigation-list-vertical_shade .slds-navigation-list-vertical__action:hover,
+.slds-navigation-list-vertical--shade .slds-navigation-list-vertical__action:hover,
+.slds-navigation-list_vertical-inverse .slds-navigation-list-vertical__action:hover,
+.slds-navigation-list--vertical-inverse .slds-navigation-list-vertical__action:hover,
+.slds-navigation-list-vertical_shade .slds-navigation-list--vertical__action:hover,
+.slds-navigation-list-vertical--shade .slds-navigation-list--vertical__action:hover,
+.slds-navigation-list_vertical-inverse .slds-navigation-list--vertical__action:hover,
+.slds-navigation-list--vertical-inverse .slds-navigation-list--vertical__action:hover {
+  background-color: var(--slds-g-color-surface-container-1);
+}

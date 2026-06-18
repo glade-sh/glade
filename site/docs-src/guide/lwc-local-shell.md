@@ -277,7 +277,8 @@ The LWC shell supports:
   context. The set covers email, dual listbox, select, slider, rich text input,
   menu divider, progress, breadcrumbs, tree grid, map, carousel, record picker,
   file upload, and additional display/input/container components.
-- SLDS-shaped local styling for shell and base-component previews.
+- Packaged local SLDS 2 styling for shell and base-component previews, with
+  classic SLDS assets available from the same runtime asset tree.
 
 `CurrentPageReference` reports the local route context. `NavigationMixin`
 supports local URL generation and navigation for supported page targets.

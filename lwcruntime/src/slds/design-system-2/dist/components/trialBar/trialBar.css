@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+.slds-trial-header {
+  color: var(--slds-g-color-surface-1);
+  height: var(--slds-s-header-sizing-height, 3.125rem);
+  background: var(--slds-g-color-surface-inverse-2);
+  padding-block: 0;
+  padding-inline: var(--slds-g-spacing-4);
+  align-items: center;
+
+  .slds-dropdown__item .slds-icon {
+    fill: currentColor;
+  }
+  .slds-button_inverse {
+    border: 0;
+  }
+  .slds-dropdown {
+    margin-block-start: var(--slds-g-spacing-4);
+  }
+
+  .slds-dropdown_inverse .slds-dropdown__item > a {
+    &:hover,
+    &:focus {
+      color: var(--slds-g-color-accent-3);
+      background-color: var(--slds-g-color-surface-container-2);
+      border-color: var(--slds-g-color-border-inverse-1);
+    }
+  }
+
+  .slds-button_success:focus-visible {
+    color: var(--slds-g-color-on-success-1);
+  }
+}

@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+.slds-disabled-text,
+.slds-datepicker tbody > tr > td.slds-disabled-text > .slds-day {
+  color: var(--slds-g-color-disabled-1);
+}
+
+.slds-datepicker td:hover:not(.slds-disabled-text) > .slds-day,
+.slds-datepicker td:focus:not(.slds-disabled-text) > .slds-day,
+.slds-datepicker td.slds-is-today > .slds-day {
+  cursor: pointer;
+}

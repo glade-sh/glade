@@ -1,0 +1,188 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Textarea",
+  "description": "A textarea allows users to enter multi-line text.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Textarea container",
+    "children": [
+      {
+        "name": "label",
+        "restrict": [
+          "label"
+        ],
+        "description": "Textarea label",
+        "attributes": {
+          "bound": {
+            "for": {
+              "prop": "textareaId"
+            }
+          },
+          "static": {
+            "class": "slds-form-element__label"
+          }
+        },
+        "slot": {
+          "name": "label",
+          "required": true
+        }
+      },
+      {
+        "name": "textareaContainer",
+        "restrict": [
+          "div"
+        ],
+        "description": "Container for textarea",
+        "children": [
+          {
+            "name": "textarea",
+            "restrict": [
+              "textarea"
+            ],
+            "description": "Native textarea element",
+            "attributes": {
+              "bound": {
+                "id": {
+                  "prop": "textareaId",
+                  "required": true
+                },
+                "name": {
+                  "prop": "name"
+                },
+                "placeholder": {
+                  "prop": "placeholder"
+                },
+                "disabled": {
+                  "prop": "disabled"
+                },
+                "readonly": {
+                  "prop": "readonly"
+                },
+                "required": {
+                  "prop": "required"
+                },
+                "maxlength": {
+                  "prop": "maxLength"
+                },
+                "minlength": {
+                  "prop": "minLength"
+                },
+                "rows": {
+                  "prop": "rows"
+                },
+                "aria-describedby": {
+                  "prop": "ariaDescribedBy"
+                }
+              },
+              "static": {
+                "class": "slds-textarea"
+              }
+            }
+          }
+        ],
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__control"
+          }
+        }
+      },
+      {
+        "name": "helpText",
+        "restrict": [
+          "div"
+        ],
+        "description": "Help text below textarea",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "helpText"
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__help"
+          }
+        }
+      },
+      {
+        "name": "requiredIndicator",
+        "restrict": [
+          "abbr"
+        ],
+        "description": "required field indicator",
+        "attributes": {
+          "static": {
+            "class": "slds-required"
+          }
+        }
+      },
+      {
+        "name": "readOnlyContent",
+        "restrict": [
+          "div"
+        ],
+        "description": "read-only display element",
+        "renderWhen": "readOnly",
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__static"
+          }
+        }
+      }
+    ],
+    "attributes": {
+      "static": {
+        "class": "slds-form-element"
+      }
+    }
+  },
+  "states": [
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the textarea is disabled"
+    },
+    {
+      "name": "readonly",
+      "type": "boolean",
+      "aria": "aria-readonly",
+      "description": "Whether the textarea is read-only"
+    },
+    {
+      "name": "required",
+      "type": "boolean",
+      "aria": "aria-required",
+      "description": "Whether the textarea is required"
+    },
+    {
+      "name": "hasError",
+      "type": "boolean",
+      "description": "Whether the textarea has a validation error"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "label-association",
+        "description": "Textarea must have an associated label via for/id"
+      }
+    ]
+  },
+  "cssSource": "./textarea.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "hasError",
+      "class": "slds-has-error"
+    }
+  ]
+}

@@ -1,0 +1,157 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/* Base — unlayered structural CSS. Participates in normal cascade; wins over any layered CSS. */
+
+/* This neutralizes all the base styles making it look like a text link */
+.slds-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--slds-c-button-spacing-gap);
+  /* Spacing cascade: Direction → Axis (direction-specific falls back to axis-level) */
+  padding-block-start: var(--slds-c-button-spacing-block-start, var(--slds-c-button-spacing-block));
+  padding-inline-end: var(--slds-c-button-spacing-inline-end, var(--slds-c-button-spacing-inline));
+  padding-block-end: var(--slds-c-button-spacing-block-end, var(--slds-c-button-spacing-block));
+  padding-inline-start: var(--slds-c-button-spacing-inline-start, var(--slds-c-button-spacing-inline));
+  background-color: var(--slds-c-button-color-background);
+  border-radius: var(--slds-c-button-radius-border);
+  border-color: var(--slds-c-button-color-border, transparent);
+  border-width: var(--slds-c-button-sizing-border, 0);
+  border-style: solid;
+  color: var(--slds-c-button-color-foreground);
+  line-height: var(--slds-c-button-font-line-height);
+  font-weight: var(--slds-c-button-font-weight);
+  text-decoration: none;
+  white-space: normal;
+  font-family: inherit;
+  user-select: none;
+  appearance: none;
+
+  &:hover,
+  &:focus-visible,
+  &:active,
+  &:visited {
+    text-decoration: none;
+  }
+
+  &:hover {
+    --slds-c-button-color-background: var(--slds-c-button-color-background-hover);
+    --slds-c-button-color-foreground: var(--slds-c-button-color-foreground-hover);
+    --slds-c-button-color-border: var(--slds-c-button-color-border-hover);
+    --slds-c-button-icon-color-foreground: var(--slds-c-button-icon-color-foreground-hover);
+  }
+
+  &:focus-visible {
+    --slds-c-button-color-foreground: var(--slds-c-button-color-foreground-hover);
+    --slds-c-button-color-border: var(--slds-c-button-color-border-focus, transparent);
+    --slds-c-button-icon-color-foreground: var(--slds-c-button-icon-color-foreground-hover);
+  }
+
+  &:active {
+    --slds-c-button-color-foreground: var(--slds-c-button-color-foreground-active);
+    --slds-c-button-color-background: var(--slds-c-button-color-background-active);
+    --slds-c-button-color-border: var(--slds-c-button-color-border-active);
+    --slds-c-button-icon-color-foreground: var(--slds-c-button-icon-color-foreground-active);
+  }
+
+  &[disabled],
+  &:disabled {
+    cursor: default;
+    pointer-events: none;
+    --slds-c-button-color-background: var(--slds-c-button-color-background-disabled, transparent);
+    --slds-c-button-color-border: var(--slds-c-button-color-border-disabled, transparent);
+    --slds-c-button-color-foreground: var(--slds-c-button-color-foreground-disabled);
+
+    * {
+      pointer-events: none;
+    }
+  }
+
+  a {
+    --slds-c-button-color-foreground: currentColor;
+  }
+
+  &:hover,
+  &:focus-visible,
+  &:active,
+  &[disabled],
+  &:disabled {
+    .slds-button__icon {
+      pointer-events: none;
+    }
+  }
+
+  & + .slds-button-group,
+  & + .slds-button-group-list,
+  & + .slds-button {
+    margin-inline-start: var(--slds-c-button-margin-inline-start-adjacent);
+  }
+
+  lightning-primitive-icon {
+    display: contents;
+  }
+}
+
+.slds-button_inverse,
+.slds-button_icon-inverse {
+  &:link,
+  &:visited {
+    color: var(--slds-c-button-color-foreground);
+  }
+}
+
+.slds-button__icon,
+.slds-button__icon_stateful {
+  width: var(--slds-c-button-icon-size);
+  height: var(--slds-c-button-icon-size);
+  fill: var(--slds-c-button-icon-color-foreground, currentColor);
+}
+
+.slds-button__icon_large {
+  --slds-c-button-icon-size: var(--slds-c-button-icon-size-large);
+}
+
+.slds-button__icon_small {
+  --slds-c-button-icon-size: var(--slds-c-button-icon-size-small);
+}
+
+.slds-button__icon_x-small {
+  --slds-c-button-icon-size: var(--slds-c-button-icon-size-x-small);
+}
+
+/* Resets attributes of .slds-button to look like & conform to surrounding text */
+.slds-button_reset {
+  font-size: inherit;
+  color: inherit;
+  line-height: inherit;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  text-align: inherit;
+}
+
+/* Creates a button style for 100% width with centered text that maintains current styling */
+.slds-button_stretch {
+  justify-content: center;
+  width: 100%;
+}
+
+/* Creates a button style for full width that resets styling */
+.slds-button_full-width {
+  color: inherit;
+  line-height: inherit;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  text-align: inherit;
+  width: 100%;
+  display: inline-flex;
+  flex-grow: 1;
+  align-items: center;
+  justify-content: space-between;
+}

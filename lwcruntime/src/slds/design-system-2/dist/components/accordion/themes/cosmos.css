@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  .slds-accordion {
+    --slds-c-accordion-list-item-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-accordion-list-item-color-border: var(--slds-g-color-border-1);
+
+    --slds-c-accordion-summary-spacing-block: var(--slds-g-spacing-4);
+    --slds-c-accordion-summary-spacing-inline: var(--slds-g-spacing-4);
+    --slds-c-accordion-summary-color-background: transparent;
+    --slds-c-accordion-summary-color-foreground: var(--slds-g-color-on-surface-1);
+
+    --slds-c-accordion-heading-color-background: transparent;
+    --slds-c-accordion-heading-color-foreground: var(--slds-g-color-on-surface-3);
+    --slds-c-accordion-heading-font-size: var(
+      --slds-s-container-heading-var-font-size,
+      var(--slds-g-font-scale-2)
+    );
+    --slds-c-accordion-heading-font-weight: var(
+      --slds-s-container-heading-font-weight,
+      var(--slds-g-font-weight-4)
+    );
+    --slds-c-accordion-heading-line-height: var(--slds-g-font-lineheight-2);
+
+    --slds-c-accordion-action-shadow-focus: var(--slds-g-shadow-inset-focus-1);
+    --slds-c-accordion-action-radius-border-focus: var(--slds-g-radius-border-3);
+    --slds-c-accordion-action-color-background: transparent;
+    --slds-c-accordion-action-color-foreground: var(--slds-c-accordion-heading-color-foreground);
+    --slds-c-accordion-action-color-background-hover: transparent;
+    --slds-c-accordion-action-color-foreground-hover: var(--slds-g-color-accent-container-3);
+
+    --slds-c-accordion-section-spacing-block: var(--slds-g-spacing-4);
+    --slds-c-accordion-section-spacing-inline: var(--slds-g-spacing-4);
+
+    --slds-c-accordion-content-color-background: transparent;
+    --slds-c-accordion-content-color-foreground: var(--slds-g-color-on-surface-1);
+
+    /* Wire icon fill to heading color — icons inside accordion headings match text */
+    --slds-c-icon-context-color-foreground: var(--slds-c-accordion-heading-color-foreground);
+  }
+}

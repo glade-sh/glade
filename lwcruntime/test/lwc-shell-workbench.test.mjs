@@ -4,7 +4,7 @@ import http from "node:http";
 import path from "node:path";
 import test from "node:test";
 import { chromium } from "playwright";
-import { repoRoot, startLWCDevServer } from "./helpers.mjs";
+import { defaultSLDSHref, repoRoot, startLWCDevServer } from "./helpers.mjs";
 
 const shellFiles = {
   "/lightning/runtime/shell/app.js": "lwcruntime/src/shell/app.mjs",
@@ -25,7 +25,6 @@ const shellFiles = {
   "/lightning/runtime/shell/toast-service.mjs": "lwcruntime/src/shell/toast-service.mjs",
   "/lightning/runtime/slds/slds-loader.js": "lwcruntime/src/slds/slds-loader.mjs",
   "/lightning/runtime/slds/slds-loader.mjs": "lwcruntime/src/slds/slds-loader.mjs",
-  "/lightning/runtime/slds/glade-slds.css": "lwcruntime/src/slds/glade-slds.css",
   "/lightning/runtime/shims/community.js": "lwcruntime/src/shims/community.mjs",
   "/lightning/runtime/shims/community.mjs": "lwcruntime/src/shims/community.mjs",
 };
@@ -76,7 +75,7 @@ function startWorkbenchServer() {
       return;
     }
     const normalizedPath = url.pathname.replace(/\.mjs$/, ".js");
-    const file = shellFiles[normalizedPath];
+    const file = shellFiles[normalizedPath] || runtimeSLDSFile(url.pathname);
     if (!file) {
       res.writeHead(404);
       res.end("missing " + url.pathname);
@@ -100,6 +99,13 @@ function startWorkbenchServer() {
   });
 }
 
+function runtimeSLDSFile(pathname) {
+  if (!pathname.startsWith("/lightning/runtime/slds/")) {
+    return "";
+  }
+  return path.join("lwcruntime/src/slds", pathname.slice("/lightning/runtime/slds/".length));
+}
+
 test("lwc shell workbench boots context panel diagnostics toasts and route kind", async () => {
   const server = await startWorkbenchServer();
   const browser = await chromium.launch({ headless: true });
@@ -119,7 +125,7 @@ test("lwc shell workbench boots context panel diagnostics toasts and route kind"
     assert.match(result.contextText, /Account/);
     assert.match(result.contextText, /001000000000001AAA/);
     assert.match(result.contextText, /GLADELWC999: probe diagnostic/);
-    assert.equal(result.sldsHref, "/lightning/runtime/slds/glade-slds.css");
+    assert.equal(result.sldsHref, defaultSLDSHref);
     assert.equal(result.toastRegion, true);
     assert.equal(result.diagnostics.at(-1).code, "GLADELWC999");
   } finally {

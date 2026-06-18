@@ -1,0 +1,97 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+  * Initialize Progress Bar
+ */
+.slds-progress-bar {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: var(--slds-g-sizing-3);
+  background-color: var(--slds-g-color-surface-container-3);
+  border: 0;
+  position: relative;
+}
+
+/**
+  * Creates a progress bar height at the smaller .125rem (2px) size
+*/
+.slds-progress-bar_x-small {
+  height: var(--slds-g-sizing-1);
+}
+
+/**
+  * Creates a progress bar height at the smaller .25rem (4px) size
+*/
+.slds-progress-bar_small {
+  height: var(--slds-g-sizing-2);
+}
+
+/**
+  * Creates a progress bar height at the smaller .5rem (8px) size
+*/
+.slds-progress-bar_medium {
+  height: var(--slds-g-sizing-3);
+}
+
+/**
+  * Creates a progress bar height at the smaller .75rem (12px) size
+*/
+.slds-progress-bar_large {
+  height: var(--slds-g-sizing-4);
+}
+
+/**
+  * Adds a border radius to the progress bar to give it a circular look
+*/
+.slds-progress-bar_circular {
+  border-radius: var(--slds-g-radius-border-pill);
+
+  .slds-progress-bar__value {
+    border-radius: var(--slds-g-radius-border-pill);
+  }
+}
+
+/**
+  * Fill up blue bar inside of the progress bar
+*/
+.slds-progress-bar__value {
+  display: block;
+  background-color: var(--slds-g-color-accent-container-1);
+  height: 100%;
+}
+
+/**
+  * Create a green progress bar
+*/
+.slds-progress-bar__value_success {
+  background-color: var(--slds-g-color-success-1);
+}
+
+/**
+ * Create a vertical progress bar
+ */
+.slds-progress-bar_vertical {
+  height: 100%;
+  width: var(--slds-g-sizing-3);
+
+  &.slds-progress-bar_x-small {
+    width: var(--slds-g-sizing-1);
+  }
+
+  &.slds-progress-bar_small {
+    width: var(--slds-g-sizing-2);
+  }
+
+  &.slds-progress-bar_medium {
+    width: var(--slds-g-sizing-3);
+  }
+
+  &.slds-progress-bar_large {
+    width: var(--slds-g-sizing-4);
+  }
+}

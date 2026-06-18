@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * @summary Create badge component
+ */
+.slds-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--slds-c-badge-gap);
+  padding-block-start: var(--slds-c-badge-spacing-block-start, var(--slds-c-badge-spacing-block));
+  padding-block-end: var(--slds-c-badge-spacing-block-end, var(--slds-c-badge-spacing-block));
+  padding-inline-start: var(--slds-c-badge-spacing-inline-start, var(--slds-c-badge-spacing-inline));
+  padding-inline-end: var(--slds-c-badge-spacing-inline-end, var(--slds-c-badge-spacing-inline));
+  white-space: nowrap;
+  border-style: solid;
+  border-width: var(--slds-c-badge-sizing-border, 0);
+  border-color: var(--slds-c-badge-color-border, transparent);
+  border-radius: var(--slds-c-badge-radius-border);
+  color: var(--slds-c-badge-color-foreground);
+  font-size: var(--slds-c-badge-font-size);
+  font-weight: var(--slds-c-badge-font-weight);
+  line-height: var(--slds-c-badge-font-line-height);
+  background-color: var(--slds-c-badge-color-background);
+
+  + .slds-badge {
+    margin-inline-start: var(--slds-c-badge-margin-inline-start-adjacent);
+  }
+
+  [part='badge'] {
+    display: contents;
+  }
+
+  &:empty {
+    padding: 0;
+  }
+}
+
+/**
+   * @summary Adds an icon to badge
+   */
+.slds-badge__icon {
+  display: inline-flex;
+  align-items: center;
+  --slds-c-icon-context-color-foreground: var(--slds-c-badge-icon-color-foreground, currentColor);
+}

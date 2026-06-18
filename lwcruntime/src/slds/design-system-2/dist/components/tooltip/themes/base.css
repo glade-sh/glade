@@ -1,0 +1,102 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * The tooltip should be positioned with JavaScript.
+ *
+ * You can include inline help tooltips for form elements and any focusable items, such as anchor links, buttons, etc. If your tooltips are available on hover, also make sure that they’re available on keyboard focus. To allow screen readers to access the tooltip, the HTML form field element must  have an `aria-describedby` attribute that points to the tooltip `ID` of the tooltip.
+ *
+ * Initializes a tooltip
+ */
+.slds-popover_tooltip {
+  width: auto;
+  max-width: var(--slds-c-tooltip-sizing-max-width, var(--slds-g-sizing-15));
+  background-color: var(--slds-c-tooltip-color-background, var(--slds-g-color-surface-inverse-1));
+  border: 0;
+  box-shadow: var(--slds-g-shadow-3);
+
+  .slds-popover__body {
+    font-size: var(--slds-c-tooltip-font-size, var(--slds-g-font-scale-neg-1));
+    color: var(--slds-c-tooltip-text-color, var(--slds-g-color-on-surface-inverse-1));
+  }
+
+  .slds-icon-text-default {
+    --slds-c-icon-color-foreground: var(--slds-g-color-on-surface-inverse-1);
+  }
+}
+
+/**
+ * Toggles on tooltip
+ */
+.slds-rise-from-ground {
+  visibility: visible;
+  opacity: 1;
+  transform: translate(0%, 0%);
+  transition:
+    opacity 0.1s linear,
+    visibility 0.1s linear,
+    transform 0.1s linear;
+  will-change: transform;
+}
+
+/**
+ * Toggles off tooltip
+ */
+.slds-fall-into-ground {
+  visibility: hidden;
+  opacity: 0;
+  transform: translate(0%, 0%);
+  transition:
+    opacity 0.1s linear,
+    visibility 0.1s linear,
+    transform 0.1s linear;
+  will-change: transform;
+}
+
+/**
+ * Slides tooltip from bottom to top
+ */
+.slds-slide-from-bottom-to-top {
+  transform: translateY(10%);
+  will-change: transform;
+}
+
+/**
+ * Slides tooltip from top to bottom
+ */
+.slds-slide-from-top-to-bottom {
+  transform: translateY(-10%);
+  will-change: transform;
+}
+
+/**
+ * Slides tooltip from right to left
+ */
+.slds-slide-from-right-to-left {
+  transform: translateX(5%);
+  will-change: transform;
+}
+
+/**
+ * Slides tooltip from left to right
+ */
+.slds-slide-from-left-to-right {
+  transform: translateX(-5%);
+  will-change: transform;
+}
+
+a {
+  [icon-name='utility:info'] .slds-icon-text-default {
+    --slds-c-icon-color-foreground-default: var(--slds-s-button-color, var(--slds-g-color-on-surface-1));
+  }
+
+  &:hover,
+  &:focus {
+    [icon-name='utility:info'] .slds-icon-text-default {
+      --slds-c-icon-color-foreground-default: var(--slds-s-button-color-hover, var(--slds-g-color-accent-3));
+    }
+  }
+}

@@ -4,17 +4,19 @@ import http from "node:http";
 import path from "node:path";
 import test from "node:test";
 import { chromium } from "playwright";
-import { repoRoot, requireLWCToolchain } from "./helpers.mjs";
+import { defaultSLDSHref, repoRoot, requireLWCToolchain } from "./helpers.mjs";
 
 function serveRuntimeFile(urlPath, res) {
   const routes = {
     "/lightning/vendor/lwc.js": path.join(repoRoot, "third_party/lwc/node_modules/@lwc/engine-dom/dist/index.js"),
     "/lightning/vendor/synthetic-shadow.js": path.join(repoRoot, "third_party/lwc/node_modules/@lwc/synthetic-shadow/dist/index.js"),
     "/lightning/runtime/slds/slds-loader.js": path.join(repoRoot, "lwcruntime/src/slds/slds-loader.mjs"),
-    "/lightning/runtime/slds/glade-slds.css": path.join(repoRoot, "lwcruntime/src/slds/glade-slds.css"),
     "/lightning/runtime/shell/diagnostics.js": path.join(repoRoot, "lwcruntime/src/shell/diagnostics.mjs"),
   };
   let filePath = routes[urlPath];
+  if (!filePath && urlPath.startsWith("/lightning/runtime/slds/")) {
+    filePath = path.normalize(path.join(repoRoot, "lwcruntime/src/slds", urlPath.slice("/lightning/runtime/slds/".length)));
+  }
   if (!filePath && urlPath.startsWith("/lightning/shims/lightning/")) {
     const name = urlPath.slice("/lightning/shims/lightning/".length).replace(/\.(js|mjs)$/, "");
     filePath = path.join(repoRoot, "lwcruntime/src/lightning", `${name}.mjs`);
@@ -264,7 +266,7 @@ window.__modalOpen = Modal.open({ label: "Local Modal", result: "done" });
   });
 }
 
-test("base components render practical SLDS-shaped DOM", async (t) => {
+test("base components render practical SLDS 2 DOM", async (t) => {
   if (!requireLWCToolchain(t)) {
     return;
   }
@@ -343,7 +345,7 @@ test("base components render practical SLDS-shaped DOM", async (t) => {
     });
     assert.match(await page.locator("lightning-vertical-navigation").innerText(), /Credentials/);
     assert.equal(await page.evaluate(() => window.__modalOpen), "done");
-    assert.equal(await page.locator('link[href="/lightning/runtime/slds/glade-slds.css"]').count(), 1);
+    assert.equal(await page.locator(`link[href="${defaultSLDSHref}"]`).count(), 1);
     assert.deepEqual(pageErrors, []);
     assert.deepEqual(consoleErrors, []);
   } finally {

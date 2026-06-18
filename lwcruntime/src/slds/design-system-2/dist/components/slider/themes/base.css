@@ -1,0 +1,133 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+.slds-slider {
+  display: flex;
+  position: relative;
+  height: 1lh; /* Size height in accordance with text content */
+}
+
+.slds-slider__range {
+  appearance: none;
+  width: 100%;
+  background-color: transparent;
+  border-radius: var(--slds-c-slider-radius-border);
+  cursor: pointer;
+
+  &:focus {
+    outline: 0;
+  }
+
+  &:hover {
+    --slds-c-slider-thumb-color-background: var(--slds-c-slider-thumb-color-background-hover);
+  }
+
+  &:focus-visible {
+    --slds-c-slider-thumb-color-background: var(--slds-c-slider-thumb-color-background-focus);
+    --slds-c-slider-thumb-shadow: var(--slds-c-slider-thumb-shadow-focus);
+  }
+
+  &:active {
+    --slds-c-slider-thumb-color-background: var(--slds-c-slider-thumb-color-background-active);
+  }
+
+  &[disabled] {
+    cursor: default;
+    pointer-events: none;
+    --slds-c-slider-thumb-color-foreground: var(--slds-c-slider-thumb-color-foreground-disabled);
+    --slds-c-slider-track-color-background: var(--slds-c-slider-track-color-background-disabled);
+  }
+}
+
+/* Thumb */
+/* Note: you can't combine thumb / track pseudo selectors, they must be declared separately */
+.slds-slider__range::-webkit-slider-thumb {
+  appearance: none;
+  width: var(--slds-c-slider-thumb-size);
+  height: var(--slds-c-slider-thumb-size);
+  border-radius: var(--slds-c-slider-thumb-radius-border);
+  background-color: var(--slds-c-slider-thumb-color-foreground);
+  border: 0;
+  box-shadow: var(--slds-c-slider-thumb-shadow);
+  transition: background-color 0.15s ease-in-out;
+  /* Centers thumb on track: offset by half the size difference */
+  margin-top: calc((var(--slds-c-slider-thumb-size) / 2 - var(--slds-c-slider-track-size) / 2) * -1);
+}
+
+.slds-slider__range::-moz-range-thumb {
+  appearance: none;
+  width: var(--slds-c-slider-thumb-size);
+  height: var(--slds-c-slider-thumb-size);
+  border-radius: var(--slds-c-slider-thumb-radius-border);
+  background-color: var(--slds-c-slider-thumb-color-foreground);
+  border: 0;
+  box-shadow: var(--slds-c-slider-thumb-shadow);
+  transition: background-color 0.15s ease-in-out;
+}
+
+/* Track */
+.slds-slider__range::-webkit-slider-runnable-track {
+  width: 100%;
+  height: var(--slds-c-slider-track-size);
+  background-color: var(--slds-c-slider-track-color-background);
+  border-radius: var(--slds-c-slider-track-radius-border);
+}
+
+.slds-slider__range::-moz-range-track {
+  width: 100%;
+  height: var(--slds-c-slider-track-size);
+  background-color: var(--slds-c-slider-track-color-background);
+  border-radius: var(--slds-c-slider-track-radius-border);
+}
+
+/* Value display */
+.slds-slider__value {
+  padding-inline-start: var(
+    --slds-c-slider-value-spacing-inline-start,
+    var(--slds-c-slider-value-spacing-inline)
+  );
+  padding-inline-end: var(
+    --slds-c-slider-value-spacing-inline-end,
+    var(--slds-c-slider-value-spacing-inline)
+  );
+}
+
+.slds-slider-label__label {
+  display: block;
+}
+
+/* Vertical modifier */
+.slds-slider_vertical {
+  flex-direction: column;
+  align-items: center;
+  height: var(--slds-c-slider-vertical-sizing-height);
+  width: max(var(--slds-c-slider-track-size), var(--slds-c-slider-thumb-size));
+
+  .slds-slider__range {
+    writing-mode: vertical-lr;
+    direction: rtl;
+    flex: 1;
+    height: 100%;
+    width: var(--slds-c-slider-track-size);
+  }
+
+  .slds-slider__value {
+    padding-inline: 0;
+    padding-block-start: var(--slds-c-slider-value-spacing-inline);
+  }
+
+  .slds-slider__range::-webkit-slider-thumb {
+    /* Centers thumb on track: offset by half the size difference */
+    margin-top: 0;
+    margin-left: calc((var(--slds-c-slider-thumb-size) / 2 - var(--slds-c-slider-track-size) / 2) * -1);
+  }
+
+  .slds-slider__range::-moz-range-thumb {
+    /* Centers thumb on track: offset by half the size difference */
+    margin-top: 0;
+    margin-left: calc((var(--slds-c-slider-thumb-size) / 2 - var(--slds-c-slider-track-size) / 2) * -1);
+  }
+}

@@ -1,0 +1,210 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Button",
+  "description": "Buttons allow users to perform actions with a single tap.",
+  "dateAdded": "2015-09-04",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "button",
+      "a"
+    ],
+    "description": "Button element",
+    "attributes": {
+      "static": {
+        "type": "button",
+        "class": "slds-button"
+      },
+      "bound": {
+        "disabled": {
+          "prop": "disabled"
+        },
+        "aria-disabled": {
+          "prop": "disabled"
+        },
+        "title": {
+          "prop": "title"
+        },
+        "name": {
+          "prop": "name"
+        },
+        "value": {
+          "prop": "value"
+        },
+        "accesskey": {
+          "prop": "accessKey"
+        }
+      }
+    },
+    "children": [
+      {
+        "name": "iconLeft",
+        "restrict": [
+          "span"
+        ],
+        "description": "Icon displayed before the label",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "iconLeft",
+          "restrict": [
+            "Icon"
+          ]
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-button__icon slds-button__icon_left"
+          }
+        }
+      },
+      {
+        "name": "label",
+        "description": "Button text label",
+        "restrict": [
+          "span"
+        ],
+        "slot": {
+          "name": "default"
+        }
+      },
+      {
+        "name": "iconRight",
+        "restrict": [
+          "span"
+        ],
+        "description": "Icon displayed after the label",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "iconRight",
+          "restrict": [
+            "Icon"
+          ]
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-button__icon slds-button__icon_right"
+          }
+        }
+      }
+    ],
+    "modifiers": [
+      {
+        "name": "stretch",
+        "attribute": "class",
+        "value": "slds-button_stretch",
+        "description": "Makes the button full-width with centered text"
+      },
+      {
+        "name": "fullWidth",
+        "attribute": "class",
+        "value": "slds-button_full-width",
+        "description": "full width button"
+      },
+      {
+        "name": "stateful",
+        "attribute": "class",
+        "value": "slds-button_stateful",
+        "description": "stateful toggle button"
+      },
+      {
+        "name": "dualStateful",
+        "attribute": "class",
+        "value": "slds-button_dual-stateful",
+        "description": "dual-stateful toggle button"
+      }
+    ],
+    "variants": [
+      {
+        "name": "variant",
+        "description": "The visual and semantic style of the button",
+        "default": "neutral",
+        "options": [
+          {
+            "value": "base",
+            "class": "",
+            "description": "Base button with no additional styling"
+          },
+          {
+            "value": "neutral",
+            "class": "slds-button_neutral",
+            "description": "Gray border with white background"
+          },
+          {
+            "value": "brand",
+            "class": "slds-button_brand",
+            "description": "Brand blue Salesforce style for primary actions"
+          },
+          {
+            "value": "outline-brand",
+            "class": "slds-button_outline-brand",
+            "description": "Outlined button with brand color"
+          },
+          {
+            "value": "destructive",
+            "class": "slds-button_destructive",
+            "description": "Red button for destructive/dangerous actions"
+          },
+          {
+            "value": "text-destructive",
+            "class": "slds-button_text-destructive",
+            "description": "Neutral button with red text for secondary destructive actions"
+          },
+          {
+            "value": "success",
+            "class": "slds-button_success",
+            "description": "Green button for success/confirmation actions"
+          },
+          {
+            "value": "inverse",
+            "class": "slds-button_inverse",
+            "description": "Inverse style for use on dark backgrounds"
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the button is disabled"
+    },
+    {
+      "name": "pressed",
+      "type": "boolean",
+      "aria": "aria-pressed",
+      "description": "whether button is pressed (stateful)"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "focus-visible",
+        "description": "Button must have a visible focus indicator"
+      },
+      {
+        "id": "accessible-label",
+        "description": "Icon-only buttons must have an accessible label via aria-label or title"
+      }
+    ]
+  },
+  "behavior": "./button.behavior.ts",
+  "cssSource": "./button.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "disabled",
+      "class": "slds-button_disabled"
+    },
+    {
+      "state": "pressed",
+      "class": "slds-is-selected"
+    }
+  ]
+}

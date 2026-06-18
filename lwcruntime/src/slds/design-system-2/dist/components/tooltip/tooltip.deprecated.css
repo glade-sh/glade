@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * Deprecated
+ * Please use slds-popover_tooltip instead
+ */
+.slds-tooltip {
+  position: relative;
+  border-radius: var(--slds-g-radius-border-2);
+  width: var(--slds-g-sizing-15);
+  min-height: calc(1rem * 2);
+  /* stylelint-disable */
+  z-index: var(--slds-c-popover-position-zindex, 6000);
+  /* stylelint-enable */
+  background-color: var(--slds-g-color-surface-inverse-1);
+  display: inline-block;
+}
+
+.slds-tooltip__body {
+  padding-block: var(--slds-g-spacing-2);
+  padding-inline: var(--slds-g-spacing-3);
+  font-size: var(--slds-g-font-scale-neg-1);
+  color: var(--slds-g-color-on-surface-inverse-1);
+}

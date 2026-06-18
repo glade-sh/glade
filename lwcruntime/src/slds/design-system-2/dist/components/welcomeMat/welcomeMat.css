@@ -1,0 +1,283 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+.slds-welcome-mat {
+  /* stylelint-disable */
+  --_slds-c-welcomemat-image-background: var(
+    --lwc-welcomeMatBackgroundImageInfo,
+    url('../../public/bg-info@2x.png')
+  );
+  /* stylelint-enable */
+  position: relative;
+}
+
+/**
+ * Content container for the whole Welcome Mat
+ */
+.slds-welcome-mat__content {
+  min-height: 25rem;
+  max-height: 37.5rem;
+
+  /**
+   * Progress bar inside Welcome Mat
+   */
+  .slds-progress-bar {
+    display: inline-block;
+    width: 12.5rem;
+    background: var(--slds-g-color-surface-1);
+  }
+
+  /**
+   * Progress bar value inside Welcome Mat
+   */
+  .slds-progress-bar__value {
+    background: var(--slds-g-color-success-1);
+  }
+}
+
+/**
+ * Container element for the informational side of the Welcome Mat
+ */
+.slds-welcome-mat__info {
+  display: flex;
+  overflow: auto;
+  padding-block: var(--slds-g-spacing-4) 7.75rem;
+  padding-inline: var(--slds-g-spacing-8);
+  color: var(--slds-g-color-brand-base-20);
+  background-image: var(--_slds-c-welcomemat-image-background);
+  background-position: bottom center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-color: var(--slds-g-color-palette-cloud-blue-90);
+  align-items: center;
+  border-start-start-radius: var(--slds-s-container-radius-border, var(--slds-g-radius-border-2));
+  border-end-start-radius: var(--slds-s-container-radius-border, var(--slds-g-radius-border-2));
+
+  &:focus-visible {
+    outline: 0;
+    box-shadow: var(--slds-g-shadow-inset-focus-1);
+  }
+}
+
+/**
+ * Content container for the informational side of the Welcome Mat. Centers in container space.
+ */
+.slds-welcome-mat__info-content {
+  margin: auto;
+  text-align: center;
+}
+
+/**
+ * Title element for the informational side of the Welcome Mat
+ */
+.slds-welcome-mat__info-title {
+  margin-block-end: var(--slds-g-spacing-5);
+  font-size: var(--slds-g-font-scale-7);
+  font-weight: var(--slds-g-font-weight-7);
+  line-height: var(--slds-g-font-lineheight-2);
+}
+
+/**
+ * Description container for the informational side of the Welcome Mat
+ */
+.slds-welcome-mat__info-description {
+  margin-block-end: var(--slds-g-spacing-5);
+}
+
+/**
+ * Text description of walkthrough progress
+ */
+.slds-welcome-mat__info-progress {
+  margin-block-end: var(--slds-g-spacing-4);
+}
+
+/**
+ * Container element for the Actions side of the Welcome Mat.
+ */
+.slds-welcome-mat__tiles {
+  background: var(--slds-g-color-surface-container-2);
+  overflow: auto;
+  padding: var(--slds-g-spacing-4);
+}
+
+/**
+ * Welcome Mat Tile item. Shows an actionable step a user can take to complete a greater objective. Based on a SLDS Visual Picker.
+ */
+.slds-welcome-mat__tile {
+  margin-block: var(--slds-g-spacing-4);
+  margin-inline: 0;
+  box-shadow: var(--slds-g-shadow-2);
+  border-radius: var(--slds-g-radius-border-2);
+  background: var(--slds-g-color-neutral-base-100);
+
+  &:hover {
+    box-shadow:
+      0 0 0 1px var(--slds-g-color-border-accent-1) inset,
+      var(--slds-g-shadow-2);
+  }
+
+  .slds-media {
+    padding: var(--slds-g-spacing-3);
+  }
+
+  .slds-icon-action-check {
+    display: none;
+  }
+
+  &:first-child {
+    margin-block-start: 0;
+  }
+
+  &:last-child {
+    margin-block-end: 0;
+  }
+
+  &.slds-welcome-mat__tile_complete,
+  &.slds-welcome-mat__tile_info-only {
+    box-shadow: none;
+  }
+
+  .slds-box_link:focus-visible {
+    box-shadow: var(--slds-g-shadow-outline-focus-1);
+    outline: 0;
+    border-color: transparent;
+  }
+}
+
+/**
+* Figure element for Welcome Mat Tile item, based on SLDS Media Object figure.
+*/
+.slds-welcome-mat__tile-figure {
+  margin-inline-start: var(--slds-g-spacing-1);
+}
+
+/**
+ * Title element for Welcome Mat Tile item.
+ */
+.slds-welcome-mat__tile-title {
+  font-weight: var(--slds-g-font-weight-7);
+}
+
+/**
+ * Body element for Welcome Mat Tile item, based on SLDS Media Object body.
+ */
+.slds-welcome-mat__tile-body {
+  padding: var(--slds-g-spacing-3);
+  border-inline-start: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-1);
+}
+
+/**
+ * Description element for Welcome Mat Tile item.
+ */
+.slds-welcome-mat__tile-description {
+  color: var(--slds-g-color-on-surface-3);
+  font-size: var(--slds-g-font-scale-neg-1);
+  line-height: var(--slds-g-font-lineheight-3);
+}
+
+/**
+ * Icon Container for Welcome Mat Tile item.
+ */
+.slds-welcome-mat__tile-icon-container {
+  position: relative;
+}
+
+/**
+ * Complete modifier class for Welcome Mat Tile item.
+ */
+.slds-welcome-mat__tile_complete {
+  background: transparent;
+
+  .slds-icon {
+    fill: var(--slds-g-color-neutral-base-80);
+  }
+}
+
+.slds-welcome-mat__tile_complete .slds-icon-action-check {
+  position: absolute;
+  inset-block-end: calc(var(--slds-g-sizing-6) * 0.5 * -1);
+  inset-inline-end: calc(var(--slds-g-sizing-6) * 0.5 * -1);
+  height: var(--slds-g-sizing-6);
+  width: var(--slds-g-sizing-6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border: var(--slds-g-sizing-border-2) solid var(--slds-g-color-border-1);
+  border-radius: var(--slds-g-sizing-6);
+  line-height: 0;
+  background: var(--slds-g-color-success-1);
+
+  .slds-icon {
+    fill: var(--slds-g-color-neutral-base-100);
+  }
+}
+
+.slds-welcome-mat_info-only {
+  .slds-welcome-mat__content {
+    height: 37.5rem;
+  }
+
+  .slds-welcome-mat__info-title {
+    font-size: var(--slds-g-font-scale-7);
+  }
+}
+
+.slds-welcome-mat__tiles_info-only {
+  background-color: var(--slds-g-color-surface-container-1);
+}
+
+.slds-welcome-mat__tile_info-only {
+  .slds-welcome-mat__tile-body {
+    border-inline-start: 0;
+  }
+}
+
+.slds-welcome-mat_splash {
+  .slds-welcome-mat__content {
+    height: 37.5rem;
+  }
+
+  .slds-welcome-mat__info-content {
+    max-width: 37.5rem;
+  }
+
+  .slds-welcome-mat__info-title {
+    font-size: var(--slds-g-font-scale-7);
+  }
+}
+
+/**
+ * Badge container for Welcome Mat Trailhead Progress Info. Overrides properties for the check icon, specific for this variant.
+ */
+.slds-welcome-mat__info-badge-container {
+  display: inline-block;
+  position: relative;
+
+  .slds-icon-action-check {
+    border-width: 0;
+    top: 50%;
+    right: 0%;
+    transform: translate3d(50%, -50%, 0);
+    display: none;
+  }
+}
+
+/**
+ * Badge for the Trailhead Progress Info.
+ */
+.slds-welcome-mat__info-badge {
+  margin-block-end: var(--slds-g-spacing-3);
+}
+
+/**
+ * Modifier for Completed progress. Shows completed checkmark.
+ */
+.slds-welcome-mat__info-progress_complete {
+  .slds-icon-action-check {
+    display: flex;
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "ColorPicker",
+  "description": "A color picker allows users to select a color from a palette or custom input.",
+  "dateAdded": "2018-06-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Color picker container",
+    "children": [
+      {
+        "name": "summary",
+        "restrict": [
+          "div"
+        ],
+        "description": "Color summary/trigger",
+        "children": [
+          {
+            "name": "trigger",
+            "restrict": [
+              "button"
+            ],
+            "description": "Trigger button",
+            "slot": {
+              "name": "trigger",
+              "required": true
+            }
+          },
+          {
+            "name": "swatch",
+            "restrict": [
+              "span"
+            ],
+            "description": "Color swatch preview"
+          },
+          {
+            "name": "summaryInput",
+            "restrict": [
+              "input"
+            ],
+            "description": "hex color value text input"
+          },
+          {
+            "name": "summaryButton",
+            "restrict": [
+              "button"
+            ],
+            "description": "color swatch trigger button"
+          }
+        ]
+      },
+      {
+        "name": "dropdown",
+        "restrict": [
+          "div"
+        ],
+        "description": "Color picker dropdown",
+        "renderWhen": "slotFilled",
+        "children": [
+          {
+            "name": "tabs",
+            "restrict": [
+              "div"
+            ],
+            "description": "Swatches/Custom tabs",
+            "slot": {
+              "name": "tabs"
+            }
+          },
+          {
+            "name": "footer",
+            "restrict": [
+              "div"
+            ],
+            "description": "Footer with actions",
+            "slot": {
+              "name": "footer"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "open",
+      "type": "boolean",
+      "aria": "aria-expanded",
+      "description": "Whether picker is open"
+    },
+    {
+      "name": "value",
+      "type": "string",
+      "description": "Selected color value"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether the color picker is disabled"
+    },
+    {
+      "name": "hasError",
+      "type": "boolean",
+      "description": "whether the color picker has a validation error"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "color-name",
+        "description": "Selected color should be announced by name when possible"
+      }
+    ]
+  }
+}

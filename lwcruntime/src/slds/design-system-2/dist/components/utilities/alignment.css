@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+.slds-align_absolute-center {
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+  margin: auto;
+}

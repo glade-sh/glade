@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * @summary The container element
+ */
+.slds-scoped-notification {
+  padding: var(--slds-g-spacing-3);
+  border-radius: var(--slds-g-radius-border-2);
+  font-weight: var(--slds-s-alert-font-weight);
+
+  .slds-icon_container {
+    display: flex;
+  }
+
+  a {
+    &:focus-visible {
+      border-radius: var(--slds-g-radius-border-1);
+    }
+  }
+
+  &.slds-theme_warning {
+    a:focus {
+      border: 0;
+    }
+  }
+}
+
+/**
+ * @summary This renders a light notification
+ */
+.slds-scoped-notification_light {
+  background-color: var(--slds-g-color-surface-container-3);
+  color: var(--slds-g-color-on-surface-1);
+
+  a {
+    color: var(--slds-g-color-on-surface-1);
+    text-decoration: underline;
+  }
+  a:link,
+  a:visited {
+    color: var(--slds-g-color-on-surface-1);
+  }
+  a:hover,
+  a:focus {
+    text-decoration: none;
+  }
+}
+
+/**
+ * @summary This renders the dark notification
+ * This variant is not available in Cosmos
+ */
+.slds-scoped-notification_dark {
+  background-color: var(--slds-g-color-neutral-base-50);
+  color: var(--slds-g-color-neutral-base-100);
+
+  a {
+    color: var(--slds-g-color-neutral-base-100);
+    text-decoration: underline;
+
+    &:hover,
+    &:active {
+      text-decoration: none;
+    }
+  }
+}

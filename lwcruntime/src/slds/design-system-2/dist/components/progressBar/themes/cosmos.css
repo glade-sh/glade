@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  .slds-progress-bar {
+    --slds-c-progressbar-sizing-block: var(--slds-g-sizing-3);
+    --slds-c-progressbar-color-foreground: var(--slds-g-color-accent-1);
+    --slds-c-progressbar-color-background: var(--slds-g-color-surface-container-3);
+  }
+
+  /**
+    * Creates a progress bar height at the smaller .125rem (2px) size
+  */
+  .slds-progress-bar_x-small {
+    --slds-c-progressbar-sizing-block: var(--slds-g-sizing-1);
+  }
+
+  /**
+    * Creates a progress bar height at the smaller .25rem (4px) size
+  */
+  .slds-progress-bar_small {
+    --slds-c-progressbar-sizing-block: var(--slds-g-sizing-2);
+  }
+
+  /**
+    * Creates a progress bar height at the smaller .5rem (8px) size
+  */
+  .slds-progress-bar_medium {
+    --slds-c-progressbar-sizing-block: var(--slds-g-sizing-3);
+  }
+
+  /**
+    * Creates a progress bar height at the smaller .75rem (12px) size
+  */
+  .slds-progress-bar_large {
+    --slds-c-progressbar-sizing-block: var(--slds-g-sizing-4);
+  }
+
+  .slds-progress-bar_circular {
+    --slds-c-progressbar-radius-border: var(--slds-g-radius-border-pill);
+  }
+
+  /**
+    * Create a green progress bar
+  */
+  .slds-progress-bar__value_success {
+    --slds-c-progressbar-color-foreground: var(--slds-g-color-success-1);
+  }
+}

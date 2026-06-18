@@ -1,0 +1,203 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * @summary Progress Indicator container
+ */
+.slds-progress {
+  position: relative;
+  max-width: var(--slds-c-progress-sizing-inline-max);
+  width: 100%;
+  flex: 1 1 auto;
+  margin-inline: auto;
+  margin-block: auto;
+
+  /* Relay connector color to the horizontal progress-bar track via its context hook */
+  .slds-progress-bar {
+    position: absolute;
+    inset-block-start: 50%;
+    margin-block-start: var(--slds-c-progress-bar-margin-block-start);
+    --slds-c-progress-bar-context-color-background: var(--slds-c-progress-connector-color-background);
+  }
+}
+
+/**
+ * @summary Ordered list of steps
+ */
+.slds-progress__list {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  margin-inline: auto;
+  margin-block: auto;
+  position: relative;
+  z-index: 1;
+}
+
+/**
+ * @summary Individual step
+ */
+.slds-progress__item {
+  display: inline-flex;
+  align-self: center;
+
+  /* Surface relay: background matches the containing surface for shade-variant adaptation.
+     Border, foreground, and shadow for each class state are design decisions — set by theme. */
+  &.slds-is-completed .slds-progress__marker,
+  &.slds-is-active .slds-progress__marker {
+    --slds-c-progress-marker-color-background: var(--slds-c-progress-surface-color-background);
+  }
+
+  /* :focus-visible is a CSS pseudo-class — intermediate hook is appropriate here */
+  &.slds-is-active .slds-progress__marker:focus-visible {
+    --slds-c-progress-marker-shadow: var(--slds-c-progress-marker-shadow-focus);
+  }
+
+  /* Error: surface-matched background; foreground/border/shadow set by theme */
+  &.slds-has-error .slds-progress__marker,
+  &.slds-has-error .slds-progress__marker:hover,
+  &.slds-has-error .slds-progress__marker:focus {
+    --slds-c-progress-marker-color-background: var(--slds-c-progress-surface-color-background);
+  }
+
+  &.slds-has-error .slds-progress__marker:focus-visible {
+    --slds-c-progress-marker-shadow: var(--slds-c-progress-marker-shadow-focus);
+  }
+}
+
+/**
+ * @summary Dot indicator for each step
+ */
+.slds-progress__marker {
+  width: var(--slds-c-progress-marker-sizing);
+  height: var(--slds-c-progress-marker-sizing);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: var(--slds-c-progress-marker-radius-border);
+  background-color: var(--slds-c-progress-marker-color-background);
+  color: var(--slds-c-progress-marker-color-foreground);
+  border-width: var(--slds-c-progress-marker-sizing-border, 0);
+  border-style: solid;
+  border-color: var(--slds-c-progress-marker-color-border, transparent);
+  box-shadow: var(--slds-c-progress-marker-shadow);
+  vertical-align: middle;
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    --slds-c-progress-marker-shadow: var(--slds-c-progress-marker-shadow-focus);
+  }
+}
+
+/**
+ * @summary Modifier for a step that displays a completion icon
+ */
+.slds-progress__marker_icon {
+  width: auto;
+  height: auto;
+  line-height: 0;
+
+  .slds-icon_container {
+    line-height: 0;
+  }
+
+  .slds-icon {
+    fill: currentColor;
+  }
+}
+
+/**
+ * @summary Vertical layout variant
+ */
+.slds-progress_vertical {
+  max-width: none;
+
+  .slds-progress__list {
+    display: block;
+  }
+
+  .slds-progress__item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding-block: 0;
+    padding-inline: 0;
+  }
+
+  /* Connector lines drawn with pseudo-elements on each item */
+  .slds-progress__item::before,
+  .slds-progress__item::after {
+    content: '';
+    position: absolute;
+    /* Center the line under the marker: half marker width minus half line width */
+    inset-inline-start: calc(var(--slds-c-progress-marker-spacing-inline-end) / 2 - 1px);
+    width: var(--slds-c-progress-connector-sizing-inline);
+    background-color: var(--slds-c-progress-connector-color-background);
+  }
+
+  .slds-progress__item::before {
+    inset-block-start: 0;
+    inset-block-end: 50%;
+  }
+
+  .slds-progress__item::after {
+    inset-block-start: 50%;
+    inset-block-end: 0;
+  }
+
+  .slds-progress__item:first-child::before,
+  .slds-progress__item:last-child::after {
+    display: none;
+  }
+
+  /* Active connector color is a class-state design decision — set by theme */
+
+  /**
+   * @summary Content aligned alongside the progress marker
+   */
+  .slds-progress__item_content {
+    flex: 1;
+    align-items: center;
+    margin-block-start: var(--slds-c-progress-item-content-spacing-block-start);
+    padding-block-end: var(--slds-c-progress-item-content-spacing-block-end);
+  }
+
+  /**
+   * @summary Bordered items variant
+   */
+  .slds-progress__list-bordered .slds-progress__item:not(:last-child) .slds-progress__item_content {
+    border-block-end-width: var(--slds-c-progress-item-content-sizing-border, 0);
+    border-block-end-style: solid;
+    border-block-end-color: var(--slds-c-progress-item-content-color-border, transparent);
+  }
+
+  .slds-progress__marker {
+    display: flex;
+    justify-content: center;
+    margin-inline-end: var(--slds-c-progress-marker-spacing-inline-end);
+    min-width: var(--slds-c-progress-marker-sizing);
+    z-index: 5;
+  }
+
+  /* Remove inline borders on the icon marker in vertical layout */
+  .slds-progress__marker_icon {
+    border-inline-end: 0;
+    border-inline-start: 0;
+  }
+
+  /* Vertical icon fills cascade from the hook reassignments in .slds-progress__item
+     state rules above. .slds-icon already has fill: currentColor, so the color
+     property (read from --slds-c-progress-marker-color-foreground) propagates
+     automatically — no direct fill declarations needed here. */
+}
+
+/* .slds-progress_success connector color and opacity are entirely theme concerns — no base rules needed */

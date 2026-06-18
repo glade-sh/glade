@@ -1,0 +1,374 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+/**
+ * Initializes card
+ */
+.slds-card {
+  position: relative;
+  padding-block-start: var(--slds-c-card-spacing-block-start, 0);
+  padding-inline-end: var(--slds-c-card-spacing-inline-end, 0);
+  padding-block-end: var(--slds-c-card-spacing-block-end, 0);
+  padding-inline-start: var(--slds-c-card-spacing-inline-start, 0);
+  background: var(--slds-c-card-color-background, var(--slds-g-color-surface-container-1));
+  border-width: var(--slds-c-card-sizing-border, var(--slds-g-sizing-border-1));
+  border-style: solid;
+  border-color: var(
+    --slds-c-card-color-border,
+    var(--slds-s-container-color-border, var(--slds-g-color-border-1))
+  );
+  border-radius: var(
+    --slds-c-card-radius-border,
+    var(--slds-s-container-radius-border, var(--slds-g-radius-border-2))
+  );
+  background-clip: padding-box;
+  box-shadow: var(--slds-c-card-shadow, var(--slds-s-container-shadow, var(--slds-g-shadow-2)));
+  color: var(--slds-c-card-text-color, var(--slds-s-container-color));
+
+  + .slds-card {
+    margin-block-start: var(--slds-g-spacing-var-block-4);
+  }
+}
+
+/**
+ * Initializes card header
+ */
+.slds-card__header {
+  padding-block-start: var(
+    --slds-c-card-header-spacing-block-start,
+    var(--slds-c-card-header-spacing-block, var(--slds-g-spacing-var-block-3))
+  );
+  padding-inline-end: var(
+    --slds-c-card-header-spacing-inline-end,
+    var(--slds-c-card-header-spacing-inline, var(--slds-g-spacing-var-inline-4))
+  );
+  padding-block-end: var(--slds-c-card-header-spacing-block-end, var(--slds-c-card-header-spacing-block, 0));
+  padding-inline-start: var(
+    --slds-c-card-header-spacing-inline-start,
+    var(--slds-c-card-header-spacing-inline, var(--slds-g-spacing-var-inline-4))
+  );
+  margin: 0;
+  margin-block-end: var(
+    --slds-c-card-header-spacing-block-end,
+    var(--slds-c-card-header-spacing-block, var(--slds-g-spacing-var-block-3))
+  );
+}
+
+/**
+ * Title element within card header
+ */
+.slds-card__header-title {
+  display: flex;
+  font-size: var(
+    --slds-c-card-heading-font-size,
+    var(--slds-s-container-heading-var-font-size, var(--slds-g-font-scale-2))
+  );
+  font-weight: var(
+    --slds-c-card-heading-font-weight,
+    var(--slds-s-container-heading-font-weight, var(--slds-g-font-weight-4))
+  );
+  line-height: var(--slds-g-font-lineheight-2);
+  color: var(--slds-g-color-on-surface-3);
+}
+
+/**
+ * Actionable element within the card header title
+ */
+.slds-card__header-link {
+  color: inherit;
+  font-weight: var(
+    --slds-c-card-heading-font-weight,
+    var(--slds-s-container-heading-font-weight, var(--slds-g-font-weight-7))
+  );
+}
+
+/**
+ * Initializes card body
+ */
+.slds-card__body {
+  margin-block-start: var(
+    --slds-c-card-body-spacing-block-start,
+    var(--slds-c-card-body-spacing-block, var(--slds-g-spacing-var-block-3))
+  );
+  margin-block-end: var(
+    --slds-c-card-body-spacing-block-end,
+    var(--slds-c-card-body-spacing-block, var(--slds-g-spacing-var-block-3))
+  );
+  padding-inline-end: var(--slds-c-card-body-spacing-inline-end, var(--slds-c-card-body-spacing-inline));
+  padding-inline-start: var(--slds-c-card-body-spacing-inline-start, var(--slds-c-card-body-spacing-inline));
+}
+
+/**
+ * Apply the same spacing found on the card header to the card body
+ */
+.slds-card__body_inner {
+  --slds-c-card-body-spacing-inline-end: var(--slds-g-spacing-var-inline-3);
+  --slds-c-card-body-spacing-inline-start: var(--slds-g-spacing-var-inline-3);
+
+  padding-block-start: 0;
+  padding-block-end: 0;
+}
+
+.slds-card__body:empty,
+.slds-card__footer:empty {
+  display: none;
+}
+
+/**
+ * Initializes card footer
+ */
+.slds-card__footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-block-start: var(
+    --slds-c-card-footer-spacing-block-start,
+    var(--slds-c-card-footer-spacing-block, var(--slds-g-spacing-var-block-3))
+  );
+  padding-inline-end: var(
+    --slds-c-card-footer-spacing-inline-end,
+    var(--slds-c-card-footer-spacing-inline, var(--slds-g-spacing-var-inline-4))
+  );
+  padding-block-end: var(
+    --slds-c-card-footer-spacing-block-end,
+    var(--slds-c-card-footer-spacing-block, var(--slds-g-spacing-var-block-3))
+  );
+  padding-inline-start: var(
+    --slds-c-card-footer-spacing-inline-start,
+    var(--slds-c-card-footer-spacing-inline, var(--slds-g-spacing-var-inline-4))
+  );
+  margin-block-start: var(--slds-c-card-footer-spacing-blockstart, var(--slds-g-spacing-var-block-3));
+  font-size: var(--slds-c-card-footer-font-size, var(--slds-g-font-size-base));
+  border-top-width: var(--slds-c-card-footer-sizing-border, var(--slds-g-sizing-border-1));
+  border-top-style: solid;
+  border-top-color: var(--slds-c-card-footer-color-border, var(--slds-g-color-border-1));
+}
+
+/**
+ * Actionable element within card footer
+ */
+.slds-card__footer-action {
+  display: block;
+}
+
+/**
+ * Use class if card consumes any form of a tile
+ */
+.slds-card__tile {
+  margin-block-start: var(--slds-g-spacing-var-block-3);
+}
+
+.slds-region__pinned-left,
+.slds-region__pinned-right {
+  .slds-card,
+  .slds-card-wrapper,
+  .slds-card_boundary,
+  .slds-tabs_card {
+    border-radius: 0;
+    border: 0;
+    border-block-end: var(--slds-g-sizing-border-1) solid var(--slds-g-color-border-1);
+    box-shadow: none;
+
+    &:last-child {
+      border-block-end: 0;
+    }
+  }
+}
+
+.slds-card-wrapper {
+  padding: var(--slds-g-spacing-var-4);
+  background: var(--slds-c-card-color-background, var(--slds-g-color-surface-container-1));
+  border-width: var(--slds-c-card-sizing-border, var(--slds-g-sizing-border-1));
+  border-style: solid;
+  border-color: var(
+    --slds-c-card-color-border,
+    var(--slds-s-container-color-border, var(--slds-g-color-border-1))
+  );
+  border-radius: var(
+    --slds-c-card-radius-border,
+    var(--slds-s-container-radius-border, var(--slds-g-radius-border-2))
+  );
+  background-clip: padding-box;
+  box-shadow: var(--slds-c-card-shadow, var(--slds-s-container-shadow, var(--slds-g-shadow-2)));
+
+  .slds-card__header,
+  .slds-card__body,
+  .slds-card__footer {
+    padding-inline-start: 0;
+    padding-inline-end: 0;
+  }
+}
+
+.slds-card,
+.slds-card-wrapper,
+.slds-modal {
+  .slds-card,
+  .slds-card-wrapper {
+    border: 0;
+    box-shadow: none;
+  }
+}
+
+.slds-tabs_default,
+.slds-tabs_card,
+.slds-tabs_card.slds-tabs_card {
+  .slds-card,
+  .slds-card-wrapper {
+    border: 0;
+    box-shadow: none;
+  }
+}
+
+/* Used to bring back the border on a card when needed */
+.slds-card,
+.slds-modal,
+.slds-tabs_default {
+  .slds-card_boundary {
+    border-width: var(--slds-c-card-sizing-border, var(--slds-g-sizing-border-1));
+    border-style: solid;
+    border-color: var(--slds-c-card-color-border, var(--slds-g-color-border-1));
+    border-radius: var(
+      --slds-c-card-radius-border,
+      var(--_slds-c-card-radius-border, var(--slds-g-radius-border-2))
+    );
+  }
+}
+
+/**
+ * This class allows default tabs to appear to be in a card
+ */
+.slds-tabs_card,
+.slds-tabs_card.slds-tabs_card {
+  /* Use card tokens to keep this tab style looking like a card */
+  padding-block: var(--slds-g-spacing-var-block-3);
+  padding-inline: var(--slds-g-spacing-var-inline-4);
+  background: var(--slds-c-card-color-background, var(--slds-g-color-surface-container-1));
+  border-width: var(--slds-c-card-sizing-border, var(--slds-g-sizing-border-1));
+  border-style: solid;
+  border-color: var(
+    --slds-c-card-color-border,
+    var(--slds-s-container-color-border, var(--slds-g-color-border-1))
+  );
+  border-radius: var(
+    --slds-c-card-radius-border,
+    var(--slds-s-container-radius-border, var(--slds-g-radius-border-2))
+  );
+  box-shadow: var(--slds-c-card-shadow, var(--slds-s-container-shadow, var(--slds-g-shadow-2)));
+
+  /* This removes the padding for the plain cards when inside a padded tabset */
+  .slds-card,
+  .slds-card-wrapper {
+    padding-inline-start: 0;
+    padding-inline-end: 0;
+  }
+
+  /* Pull cards to edge of already padded tab content area */
+  .slds-card__header,
+  .slds-card__body,
+  .slds-card__footer {
+    padding-inline-start: 0;
+    padding-inline-end: 0;
+    margin-inline-start: 0;
+    margin-inline-end: 0;
+  }
+
+  .slds-card__header {
+    padding-block-start: 0;
+  }
+}
+
+/* Restore cards inside .slds-tabs_card as needed */
+.slds-tabs_card,
+.slds-tabs_card.slds-tabs_card,
+.slds-card-wrapper {
+  .slds-card_boundary {
+    border-width: var(--slds-c-card-sizing-border, var(--slds-g-sizing-border-1));
+    border-style: solid;
+    border-color: var(--slds-c-card-color-border, var(--slds-g-color-border-1));
+    border-radius: var(
+      --slds-c-card-radius-border,
+      var(--_slds-c-card-radius-border, var(--slds-g-radius-border-2))
+    );
+
+    .slds-card__header {
+      padding-block-start: var(
+        --slds-c-card-header-spacing-block-start,
+        var(--slds-c-card-header-spacing-block, var(--slds-g-spacing-var-block-3))
+      );
+      padding-inline-end: var(
+        --slds-c-card-header-spacing-inline-end,
+        var(--slds-c-card-header-spacing-inline, var(--slds-g-spacing-var-inline-4))
+      );
+      padding-block-end: var(
+        --slds-c-card-header-spacing-block-end,
+        var(--slds-c-card-header-spacing-block, 0)
+      );
+      padding-inline-start: var(
+        --slds-c-card-header-spacing-inline-start,
+        var(--slds-c-card-header-spacing-inline, var(--slds-g-spacing-var-inline-4))
+      );
+    }
+
+    .slds-card__body_inner {
+      padding: 0;
+      padding-inline-end: var(
+        --slds-c-card-body-spacing-inline-end,
+        var(--slds-c-card-body-spacing-inline, var(--slds-g-spacing-var-inline-4))
+      );
+      padding-inline-start: var(
+        --slds-c-card-body-spacing-inline-start,
+        var(--slds-c-card-body-spacing-inline, var(--slds-g-spacing-var-inline-4))
+      );
+    }
+
+    .slds-card__footer {
+      padding-block-start: var(
+        --slds-c-card-footer-spacing-block-start,
+        var(--slds-c-card-footer-spacing-block, var(--slds-g-spacing-var-block-3))
+      );
+      padding-inline-end: var(
+        --slds-c-card-footer-spacing-inline-end,
+        var(--slds-c-card-footer-spacing-inline, var(--slds-g-spacing-var-inline-4))
+      );
+      padding-block-end: var(
+        --slds-c-card-footer-spacing-block-end,
+        var(--slds-c-card-footer-spacing-block, var(--slds-g-spacing-var-block-3))
+      );
+      padding-inline-start: var(
+        --slds-c-card-footer-spacing-inline-start,
+        var(--slds-c-card-footer-spacing-inline, var(--slds-g-spacing-var-inline-4))
+      );
+    }
+  }
+}
+
+/*
+ * This is a stop gap solution for Starter
+ * We cannot change the related list cards because it will cause regressions in other editions
+ * This is a temporary solution until we can refactor the related list cards
+ * The owning team added .slds-card_related-list-fix to the parent element of the related list card
+ * We are using this to fix the UI for Starter since its like really really bad
+ */
+.slds-card_related-list-fix {
+  border-radius: var(--slds-s-container-radius-border, var(--slds-g-radius-border-2));
+}
+
+.slds-card_related-list-fix .slds-page-header {
+  background: var(--slds-g-color-surface-container-1);
+  border-radius: var(--slds-s-container-radius-border);
+}
+
+.slds-accordion .slds-card_related-list-fix,
+.slds-tabs_card.slds-tabs_card .slds-card_related-list-fix {
+  border-color: var(--slds-g-color-border-1);
+}
+
+.slds-card_related-list-fix .slds-file-selector__dropzone {
+  margin-block-start: 0;
+  margin-block-end: var(--slds-g-spacing-4);
+  margin-inline-start: var(--slds-g-spacing-4);
+  margin-inline-end: var(--slds-g-spacing-4);
+}

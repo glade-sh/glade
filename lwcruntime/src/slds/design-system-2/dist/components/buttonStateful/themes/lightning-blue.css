@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  .slds-button_stateful {
+    --slds-c-button-stateful-gap: var(--slds-g-spacing-2);
+
+    &.slds-button_reset {
+      --slds-c-button-color-foreground: var(--slds-s-link-color);
+    }
+  }
+}

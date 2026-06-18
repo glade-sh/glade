@@ -1,0 +1,217 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Combobox",
+  "description": "A combobox is an input with an associated dropdown that helps users select a value.",
+  "dateAdded": "2017-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Combobox container",
+    "children": [
+      {
+        "name": "label",
+        "restrict": [
+          "label"
+        ],
+        "description": "Combobox label",
+        "slot": {
+          "name": "label",
+          "required": true
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__label"
+          }
+        }
+      },
+      {
+        "name": "formElement",
+        "restrict": [
+          "div"
+        ],
+        "description": "Form element wrapper",
+        "children": [
+          {
+            "name": "combobox",
+            "restrict": [
+              "div"
+            ],
+            "description": "Combobox input wrapper",
+            "attributes": {
+              "static": {
+                "role": "combobox",
+                "class": "slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click"
+              },
+              "bound": {
+                "aria-expanded": {
+                  "prop": "isOpen"
+                },
+                "aria-haspopup": {
+                  "value": "listbox"
+                }
+              }
+            },
+            "children": [
+              {
+                "name": "input",
+                "restrict": [
+                  "input"
+                ],
+                "description": "Text input",
+                "attributes": {
+                  "static": {
+                    "type": "text",
+                    "autocomplete": "off",
+                    "class": "slds-input slds-combobox__input"
+                  },
+                  "bound": {
+                    "aria-controls": {
+                      "prop": "listboxId"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "name": "listbox",
+            "restrict": [
+              "div"
+            ],
+            "description": "Listbox dropdown",
+            "attributes": {
+              "static": {
+                "role": "listbox",
+                "class": "slds-dropdown slds-dropdown_fluid slds-listbox slds-listbox_vertical"
+              }
+            },
+            "children": [
+              {
+                "name": "listboxOption",
+                "restrict": [
+                  "div"
+                ],
+                "description": "individual listbox option item",
+                "repeats": true,
+                "attributes": {
+                  "static": {
+                    "role": "option",
+                    "class": "slds-listbox__option"
+                  },
+                  "bound": {
+                    "aria-selected": {
+                      "prop": "isSelected"
+                    }
+                  }
+                }
+              },
+              {
+                "name": "optionGroup",
+                "restrict": [
+                  "div"
+                ],
+                "description": "grouped options with header",
+                "attributes": {
+                  "static": {
+                    "role": "group",
+                    "class": ""
+                  }
+                }
+              }
+            ],
+            "slot": {
+              "name": "options",
+              "required": true
+            }
+          }
+        ],
+        "attributes": {
+          "static": {
+            "class": "slds-form-element__control"
+          }
+        }
+      }
+    ],
+    "attributes": {
+      "static": {
+        "class": "slds-form-element"
+      }
+    }
+  },
+  "states": [
+    {
+      "name": "open",
+      "type": "boolean",
+      "aria": "aria-expanded",
+      "description": "Whether dropdown is open"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "aria": "aria-disabled",
+      "description": "Whether combobox is disabled"
+    },
+    {
+      "name": "required",
+      "type": "boolean",
+      "aria": "aria-required",
+      "description": "Whether selection is required"
+    },
+    {
+      "name": "hasError",
+      "type": "boolean",
+      "description": "Whether the combobox has a validation error"
+    },
+    {
+      "name": "loading",
+      "type": "boolean",
+      "aria": "aria-busy",
+      "description": "whether the combobox is loading results"
+    },
+    {
+      "name": "focused",
+      "type": "boolean",
+      "description": "whether the combobox input has focus"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "combobox-role",
+        "description": "Input wrapper must have role='combobox'"
+      },
+      {
+        "id": "listbox-role",
+        "description": "Dropdown must have role='listbox'"
+      },
+      {
+        "id": "keyboard-navigation",
+        "description": "Arrow keys navigate options, Enter selects"
+      }
+    ]
+  },
+  "cssSource": "./combobox.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "open",
+      "class": "slds-is-open"
+    },
+    {
+      "state": "focused",
+      "class": "slds-has-focus"
+    },
+    {
+      "state": "hasError",
+      "class": "slds-has-error"
+    }
+  ]
+}

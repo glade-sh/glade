@@ -1,0 +1,174 @@
+/*
+ * Copyright (c) 2026, Salesforce, Inc.,
+ * All rights reserved.
+ * For full license text, see the LICENSE.txt file
+ */
+
+@layer theme {
+  .slds-tabs_default,
+  .slds-tabs_scoped,
+  .slds-vertical-tabs {
+    --slds-c-tabs-item-sizing-height: var(--slds-s-navigation-sizing-height, 2.5rem);
+    --slds-c-tabs-item-font-lineheight: var(--slds-s-navigation-font-lineheight, 2.5rem);
+    --slds-c-tabs-item-font-size: var(--slds-g-font-scale-var-1);
+    --slds-c-tabs-item-sizing-outline: var(--slds-g-sizing-border-2);
+    --slds-c-tabs-item-color-outline: var(--slds-s-link-outline-color);
+    --slds-c-tabs-item-outline-offset: -6px;
+  }
+
+  .slds-tabs_default {
+    --slds-c-tabs-list-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-tabs-list-color-border: var(--slds-s-navigation-color-border, var(--slds-g-color-border-1));
+    --slds-c-tabs-item-color-foreground: var(--slds-s-navigation-color, var(--slds-g-color-on-surface-2));
+    --slds-c-tabs-item-color-foreground-active: var(
+      --slds-s-navigation-color-active,
+      var(--slds-g-color-on-surface-3)
+    );
+    --slds-c-tabs-item-color-foreground-hover: var(--slds-s-navigation-color-hover);
+    --slds-c-tabs-item-font-weight: var(--slds-s-navigation-font-weight);
+    --slds-c-tabs-item-font-weight-active: var(--slds-s-navigation-font-weight-active);
+    --slds-c-tabs-item-spacing-inline: var(--slds-g-spacing-3);
+    --slds-c-tabs-item-indicator-sizing-height-active: var(--slds-c-tabs-list-sizing-border);
+    --slds-c-tabs-item-indicator-sizing-height-hover: var(--slds-c-tabs-list-sizing-border);
+    --slds-c-tabs-item-color-border-active: var(--slds-g-color-accent-2);
+    --slds-c-tabs-item-color-border-hover: var(
+      --slds-s-navigation-color-border-hover,
+      var(--slds-g-color-accent-3)
+    );
+    --slds-c-tabs-item-color-background-notification: var(--slds-g-color-surface-container-2);
+    --slds-c-tabs-item-color-border-notification: var(--slds-g-color-border-1);
+    --slds-c-tabs-indicator-unread-sizing: 0.375rem;
+    --slds-c-tabs-indicator-unsaved-offset-block-start: calc(var(--slds-g-spacing-1) * -1);
+    --slds-c-tabs-indicator-unsaved-color-foreground: var(--slds-g-color-accent-3);
+    --slds-c-tabs-panel-spacing-block: var(--slds-g-spacing-3);
+    --slds-c-tabs-icon-left-spacing-inline-end: var(--slds-g-spacing-2);
+    --slds-c-tabs-icon-right-spacing-inline-start: var(--slds-g-spacing-2);
+    --slds-c-tabs-overflow-color-foreground-status: var(--slds-g-color-neutral-base-100);
+  }
+
+  .slds-tabs_scoped {
+    --slds-c-tabs-scoped-nav-color-background: var(--slds-s-navigation-color-background);
+    --slds-c-tabs-scoped-nav-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-tabs-scoped-nav-color-border: var(
+      --slds-s-navigation-color-border,
+      var(--slds-g-color-border-1)
+    );
+    --slds-c-tabs-scoped-nav-radius-border: var(--slds-s-navigation-radius-border);
+    --slds-c-tabs-scoped-content-color-background: var(--slds-s-navigation-color-background-active);
+    --slds-c-tabs-scoped-content-color-border: var(
+      --slds-s-navigation-color-border,
+      var(--slds-g-color-border-1)
+    );
+    --slds-c-tabs-scoped-content-spacing-block: var(--slds-g-spacing-4);
+    --slds-c-tabs-scoped-content-spacing-inline: var(--slds-g-spacing-4);
+    --slds-c-tabs-scoped-link-color-foreground: var(
+      --slds-s-navigation-color,
+      var(--slds-g-color-on-surface-1)
+    );
+    --slds-c-tabs-scoped-link-font-weight: var(--slds-s-navigation-font-weight);
+    --slds-c-tabs-scoped-link-font-weight-active: var(--slds-s-navigation-font-weight-active);
+    --slds-c-tabs-scoped-link-spacing-inline: var(--slds-g-spacing-4);
+    --slds-c-tabs-scoped-link-color-background-hover: var(--slds-s-navigation-color-background-hover);
+    --slds-c-tabs-scoped-link-color-border-hover: var(
+      --slds-s-navigation-color-border,
+      var(--slds-g-color-border-1)
+    );
+    --slds-c-tabs-scoped-link-color-background-active: var(--slds-s-navigation-color-background-active);
+    --slds-c-tabs-scoped-link-color-foreground-active: var(
+      --slds-s-navigation-color-active,
+      var(--slds-g-color-on-surface-3)
+    );
+    --slds-c-tabs-scoped-link-color-border-active: var(
+      --slds-s-navigation-color-border,
+      var(--slds-g-color-border-1)
+    );
+    --slds-c-tabs-scoped-item-outline-offset: -4px;
+  }
+
+  .slds-vertical-tabs {
+    --slds-c-tabs-vertical-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-tabs-vertical-color-border: var(--slds-s-navigation-color-border);
+    --slds-c-tabs-vertical-radius-border: var(--slds-g-radius-border-2);
+    --slds-c-tabs-vertical-nav-sizing-inline: var(--slds-g-sizing-14);
+    --slds-c-tabs-vertical-nav-color-background: var(--slds-s-navigation-color-background);
+    --slds-c-tabs-vertical-item-color-foreground: var(--slds-s-navigation-color);
+    --slds-c-tabs-vertical-link-font-weight: var(--slds-s-navigation-font-weight);
+    --slds-c-tabs-vertical-link-font-weight-active: var(--slds-s-navigation-font-weight-active);
+    --slds-c-tabs-vertical-link-spacing-block: var(--slds-g-spacing-3);
+    --slds-c-tabs-vertical-link-spacing-inline: var(--slds-g-spacing-3);
+    --slds-c-tabs-vertical-link-color-background-hover: var(--slds-s-navigation-color-background-hover);
+    --slds-c-tabs-vertical-link-color-foreground-hover: var(--slds-g-color-on-surface-3);
+    --slds-c-tabs-vertical-item-color-background-active: var(--slds-s-navigation-color-background-active);
+    --slds-c-tabs-vertical-item-color-foreground-active: var(--slds-s-navigation-color-active);
+    --slds-c-tabs-vertical-content-color-background: var(--slds-s-navigation-color-background-active);
+    --slds-c-tabs-vertical-content-spacing-block: var(--slds-g-spacing-3);
+    --slds-c-tabs-vertical-content-spacing-inline: var(--slds-g-spacing-3);
+  }
+
+  .slds-sub-tabs {
+    --slds-c-tabs-subtab-nav-color-background: var(--slds-g-color-surface-container-1);
+    --slds-c-tabs-subtab-color-background-active: var(--slds-g-color-accent-light-1);
+    --slds-c-tabs-subtab-color-foreground-active: var(--slds-g-color-on-surface-1);
+    --slds-c-tabs-subtab-color-background-hover: var(--slds-g-color-accent-light-1);
+    --slds-c-tabs-subtab-icon-color-foreground: var(--slds-g-color-on-surface-1);
+    --slds-c-tabs-subtab-color-foreground-success: var(--slds-g-color-on-success-1);
+    --slds-c-tabs-subtab-color-background-success: var(--slds-g-color-success-container-1);
+    --slds-c-tabs-subtab-color-background-success-hover: var(--slds-g-color-success-container-2);
+    --slds-c-tabs-subtab-color-foreground-error: var(--slds-g-color-on-error-1);
+    --slds-c-tabs-subtab-color-background-error: var(--slds-g-color-error-container-1);
+    --slds-c-tabs-subtab-color-background-error-hover: var(--slds-g-color-error-container-2);
+    --slds-c-tabs-subtab-color-foreground-warning: var(--slds-g-color-on-warning-1);
+    --slds-c-tabs-subtab-color-background-warning: var(--slds-g-color-warning-container-1);
+    --slds-c-tabs-subtab-color-background-warning-hover: var(--slds-g-color-warning-base-80);
+    --slds-c-tabs-subtab-shadow-focus-notification: var(--slds-g-shadow-insetinverse-focus-1);
+    --slds-c-tabs-subtab-color-background-pinned-indicator: var(--slds-g-color-accent-2);
+    --slds-c-tabs-subtab-sizing-pinned-indicator: 3px;
+  }
+
+  .slds-sub-tabs__item.slds-has-success::before {
+    animation-duration: 1s;
+    animation-iteration-count: 3;
+    animation-timing-function: linear;
+    animation-name: success-pulse;
+    transition: background-color 0.25s cubic-bezier(0.39, 0.575, 0.565, 1);
+  }
+
+  .slds-sub-tabs__item.slds-has-error::before {
+    animation-duration: 1s;
+    animation-iteration-count: 3;
+    animation-timing-function: linear;
+    animation-name: error-pulse;
+    transition: background-color 0.25s cubic-bezier(0.39, 0.575, 0.565, 1);
+  }
+
+  .slds-sub-tabs__item.slds-has-warning::before {
+    animation-duration: 1s;
+    animation-iteration-count: 3;
+    animation-timing-function: linear;
+    animation-name: warning-pulse;
+    transition: background-color 0.25s cubic-bezier(0.39, 0.575, 0.565, 1);
+  }
+
+  .slds-tabs_medium {
+    --slds-c-tabs-item-font-size: var(--slds-g-font-scale-var-2);
+    --slds-c-tabs-scoped-link-spacing-inline: var(--slds-g-spacing-var-inline-6);
+  }
+
+  .slds-tabs_large {
+    --slds-c-tabs-item-font-size: var(--slds-g-font-scale-var-3);
+    --slds-c-tabs-scoped-link-spacing-inline: var(--slds-g-spacing-var-inline-6);
+  }
+
+  .slds-tabs-mobile {
+    --slds-c-tabs-mobile-color-background: var(--slds-g-color-surface-container-1);
+    --slds-c-tabs-mobile-item-sizing-border: var(--slds-g-sizing-border-1);
+    --slds-c-tabs-mobile-item-color-border: var(--slds-g-color-border-1);
+    --slds-c-tabs-mobile-item-sizing-height: calc(var(--slds-g-sizing-9) + var(--slds-g-sizing-4));
+    --slds-c-tabs-mobile-item-color-foreground: var(--slds-g-color-on-surface-3);
+    --slds-c-tabs-mobile-item-font-size: var(--slds-g-font-scale-2);
+    --slds-c-tabs-mobile-item-spacing-inline: var(--slds-g-spacing-3);
+    --slds-c-tabs-mobile-item-color-background-active: var(--slds-g-color-surface-container-2);
+    --slds-c-tabs-mobile-panel-offset-block-start: var(--slds-g-spacing-3);
+    --slds-c-tabs-mobile-panel-offset-inline: var(--slds-g-spacing-3);
+  }
+}

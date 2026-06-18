@@ -1,0 +1,134 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "ProgressIndicator",
+  "description": "A progress indicator communicates to the user the progress of a particular process as a series of steps.",
+  "dateAdded": "2016-06-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Progress indicator container",
+    "children": [
+      {
+        "name": "progress",
+        "restrict": [
+          "ol",
+          "ul"
+        ],
+        "description": "Progress steps list",
+        "attributes": {
+          "static": {
+            "role": "list",
+            "class": "slds-progress__list"
+          }
+        },
+        "slot": {
+          "name": "default"
+        },
+        "children": [
+          {
+            "name": "item",
+            "restrict": [
+              "li"
+            ],
+            "description": "progress step item",
+            "repeats": true,
+            "children": [
+              {
+                "name": "marker",
+                "restrict": [
+                  "button",
+                  "span"
+                ],
+                "description": "step marker indicator",
+                "attributes": {
+                  "static": {
+                    "class": "slds-progress__marker"
+                  }
+                }
+              }
+            ],
+            "attributes": {
+              "static": {
+                "class": "slds-progress__item"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "attributes": {
+      "static": {
+        "class": "slds-progress"
+      }
+    },
+    "modifiers": [
+      {
+        "name": "shade",
+        "attribute": "class",
+        "value": "slds-progress_shade",
+        "description": "Shaded background variant"
+      },
+      {
+        "name": "vertical",
+        "attribute": "class",
+        "value": "slds-progress_vertical",
+        "description": "Vertical layout"
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "currentStep",
+      "type": "number",
+      "description": "Index of current step"
+    },
+    {
+      "name": "hasError",
+      "type": "boolean",
+      "aria": "aria-invalid",
+      "description": "Whether current step has error"
+    },
+    {
+      "name": "completed",
+      "type": "boolean",
+      "description": "whether a step is completed"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "step-labels",
+        "description": "Each step should have an accessible label"
+      },
+      {
+        "id": "current-step",
+        "description": "Current step should be indicated to screen readers"
+      }
+    ]
+  },
+  "cssSource": "./progressIndicator.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  },
+  "stateClasses": [
+    {
+      "state": "hasError",
+      "class": "slds-has-error"
+    },
+    {
+      "state": "currentStep",
+      "class": "slds-is-active"
+    },
+    {
+      "state": "completed",
+      "class": "slds-is-completed",
+      "target": "item"
+    }
+  ]
+}

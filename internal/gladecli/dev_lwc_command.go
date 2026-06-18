@@ -534,7 +534,7 @@ Usage:
 Preview feature:
   Useful local Lightning-style preview routes. Not full hosted Lightning
   Experience, permissions, full console API, full UI API, or exact hosted
-  base-component styling parity.
+  base-component behavior.
 
 Preview routes:
   /lwc/preview/component/c/contextProbe

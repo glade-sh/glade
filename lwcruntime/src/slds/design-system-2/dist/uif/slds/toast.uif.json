@@ -1,0 +1,189 @@
+{
+  "_copyright": "Copyright (c) 2026, Salesforce, Inc., All rights reserved. For full license text, see the LICENSE.txt file",
+  "$schema": "https://slds.lightningdesignsystem.com/schemas/uif-foundation.v1.json",
+  "apiVersion": "1.0.0",
+  "name": "Toast",
+  "description": "Toast serves as a feedback & confirmation mechanism after the user takes an action.",
+  "dateAdded": "2016-03-01",
+  "genReady": false,
+  "structure": {
+    "name": "root",
+    "restrict": [
+      "div"
+    ],
+    "description": "Toast container",
+    "attributes": {
+      "static": {
+        "role": "status",
+        "class": "slds-notify slds-notify_toast"
+      }
+    },
+    "children": [
+      {
+        "name": "container",
+        "restrict": [
+          "div"
+        ],
+        "description": "notification container wrapper",
+        "attributes": {
+          "static": {
+            "class": "slds-notify_container"
+          }
+        }
+      },
+      {
+        "name": "assistiveText",
+        "restrict": [
+          "span"
+        ],
+        "description": "Assistive text for screen readers",
+        "slot": {
+          "name": "assistiveText"
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-assistive-text"
+          }
+        }
+      },
+      {
+        "name": "icon",
+        "restrict": [
+          "span"
+        ],
+        "description": "Icon container",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "icon",
+          "restrict": [
+            "Icon"
+          ]
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-icon_container slds-m-right_small"
+          }
+        }
+      },
+      {
+        "name": "content",
+        "restrict": [
+          "div"
+        ],
+        "description": "Toast content",
+        "children": [
+          {
+            "name": "heading",
+            "restrict": [
+              "h2"
+            ],
+            "description": "Toast heading",
+            "slot": {
+              "name": "heading"
+            },
+            "attributes": {
+              "static": {
+                "class": "slds-text-heading_small"
+              }
+            }
+          },
+          {
+            "name": "message",
+            "restrict": [
+              "p"
+            ],
+            "description": "Toast message",
+            "slot": {
+              "name": "default"
+            }
+          }
+        ],
+        "attributes": {
+          "static": {
+            "class": "slds-notify__content"
+          }
+        }
+      },
+      {
+        "name": "close",
+        "restrict": [
+          "div"
+        ],
+        "description": "Close button container",
+        "renderWhen": "slotFilled",
+        "slot": {
+          "name": "close",
+          "restrict": [
+            "Button"
+          ]
+        },
+        "attributes": {
+          "static": {
+            "class": "slds-notify__close"
+          }
+        }
+      },
+      {
+        "name": "message",
+        "attributes": {
+          "static": {
+            "class": ""
+          }
+        }
+      }
+    ],
+    "variants": [
+      {
+        "name": "variant",
+        "description": "Toast variant/severity",
+        "default": "info",
+        "options": [
+          {
+            "value": "info",
+            "class": "slds-theme_info",
+            "description": "Informational toast"
+          },
+          {
+            "value": "success",
+            "class": "slds-theme_success",
+            "description": "Success toast"
+          },
+          {
+            "value": "warning",
+            "class": "slds-theme_warning",
+            "description": "Warning toast"
+          },
+          {
+            "value": "error",
+            "class": "slds-theme_error",
+            "description": "Error toast"
+          }
+        ]
+      }
+    ]
+  },
+  "states": [
+    {
+      "name": "visible",
+      "type": "boolean",
+      "description": "Whether the toast is visible"
+    }
+  ],
+  "accessibility": {
+    "requirements": [
+      {
+        "id": "role-status",
+        "description": "Toast should have role='status' or role='alert' for important messages"
+      },
+      {
+        "id": "auto-dismiss",
+        "description": "If toast auto-dismisses, provide enough time for users to read (at least 5 seconds)"
+      }
+    ]
+  },
+  "cssSource": "./toast.css",
+  "styleApi": {
+    "status": "stable",
+    "ready": true
+  }
+}
