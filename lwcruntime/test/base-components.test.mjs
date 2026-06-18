@@ -22,6 +22,12 @@ function serveRuntimeFile(urlPath, res) {
   if (!filePath && urlPath.startsWith("/lightning/runtime/slds/")) {
     filePath = path.normalize(path.join(repoRoot, "lwcruntime/src/slds", urlPath.slice("/lightning/runtime/slds/".length)));
   }
+  if (!filePath && urlPath.startsWith("/lightning/runtime/lightning/")) {
+    filePath = path.normalize(path.join(repoRoot, "lwcruntime/src/lightning", urlPath.slice("/lightning/runtime/lightning/".length)));
+  }
+  if (!filePath && urlPath.startsWith("/lightning/shims/shell/")) {
+    filePath = path.normalize(path.join(repoRoot, "lwcruntime/src/shell", urlPath.slice("/lightning/shims/shell/".length)));
+  }
   if (!filePath && urlPath.startsWith("/lightning/shims/lightning/")) {
     const name = urlPath.slice("/lightning/shims/lightning/".length).replace(/\.(js|mjs)$/, "");
     filePath = path.join(repoRoot, "lwcruntime/src/lightning", `${name}.mjs`);
@@ -37,6 +43,7 @@ function serveRuntimeFile(urlPath, res) {
 }
 
 function startBaseComponentServer() {
+  const wireRequests = [];
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, "http://localhost");
     if (url.pathname === "/lightning/wire/getRecord" && req.method === "POST") {
@@ -68,6 +75,85 @@ function startBaseComponentServer() {
             apiName: "Account",
             fields: {
               Name: { value: payload.fields?.Name || "Updated Local Account", displayValue: payload.fields?.Name || "Updated Local Account" },
+            },
+          },
+        }));
+      });
+      return;
+    }
+    if (url.pathname === "/lightning/wire/createRecord" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk) => {
+        body += String(chunk);
+      });
+      req.on("end", () => {
+        const payload = JSON.parse(body || "{}");
+        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({
+          data: {
+            id: "001000000000002AAA",
+            apiName: payload.apiName || payload.objectApiName || "Account",
+            fields: Object.fromEntries(Object.entries(payload.fields || {}).map(([name, value]) => [name, { value, displayValue: String(value) }])),
+          },
+        }));
+      });
+      return;
+    }
+    if (url.pathname === "/lightning/wire/getRecordCreateDefaults" && req.method === "POST") {
+      let body = "";
+      req.on("data", (chunk) => {
+        body += String(chunk);
+      });
+      req.on("end", () => {
+        wireRequests.push({ path: url.pathname, body: JSON.parse(body || "{}") });
+        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({
+          data: {
+            objectInfos: {
+              Account: {
+                apiName: "Account",
+                fields: {
+                  Name: { apiName: "Name", dataType: "String", label: "Account Name", required: true },
+                  Type: {
+                    apiName: "Type",
+                    dataType: "Picklist",
+                    label: "Type",
+                    picklistValues: [
+                      { label: "Customer", value: "Customer" },
+                      { label: "Partner", value: "Partner" },
+                    ],
+                  },
+                  Active__c: { apiName: "Active__c", dataType: "Boolean", label: "Active" },
+                  Amount__c: { apiName: "Amount__c", dataType: "Double", label: "Amount" },
+                  CloseDate__c: { apiName: "CloseDate__c", dataType: "Date", label: "Close Date" },
+                },
+              },
+            },
+            layout: {
+              id: "local-Account-create-layout",
+              objectApiName: "Account",
+              mode: "Create",
+              sections: [{
+                layoutRows: [{
+                  layoutItems: [
+                    { fieldApiName: "Name", label: "Account Name", required: true },
+                    { fieldApiName: "Type", label: "Type" },
+                    { fieldApiName: "Active__c", label: "Active" },
+                    { fieldApiName: "Amount__c", label: "Amount" },
+                    { fieldApiName: "CloseDate__c", label: "Close Date" },
+                  ],
+                }],
+              }],
+            },
+            record: {
+              apiName: "Account",
+              fields: {
+                Name: { value: "", displayValue: "" },
+                Type: { value: "Customer", displayValue: "Customer" },
+                Active__c: { value: true, displayValue: "true" },
+                Amount__c: { value: 42.5, displayValue: "42.5" },
+                CloseDate__c: { value: "2026-06-18", displayValue: "2026-06-18" },
+              },
             },
           },
         }));
@@ -326,6 +412,7 @@ window.__modalOpen = Modal.open({ label: "Local Modal", result: "done" });
       const { port } = server.address();
       resolve({
         baseURL: `http://127.0.0.1:${port}`,
+        wireRequests,
         close: () => new Promise((r) => server.close(r)),
       });
     });
@@ -493,6 +580,336 @@ test("package base component and missing SLDS asset record diagnostics", async (
     assert.equal(diagnostics.includes("GLADELWC060"), false, JSON.stringify(diagnostics));
     assert.ok(diagnostics.includes("GLADELWC061"), JSON.stringify(diagnostics));
     assert.ok(diagnostics.includes("GLADELWC062"), JSON.stringify(diagnostics));
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test("datatable supports local row actions, selection, sorting, drafts, and value types", async (t) => {
+  if (!requireLWCToolchain(t)) {
+    return;
+  }
+  const server = await startBaseComponentServer();
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.goto(`${server.baseURL}/base.html`, { waitUntil: "networkidle" });
+    await page.evaluate(async () => {
+      const { createElement } = await import("lwc");
+      const { default: Datatable } = await import("/lightning/shims/lightning/datatable.js");
+      const host = document.getElementById("host");
+      host.innerHTML = "";
+      const events = [];
+      const datatable = createElement("lightning-datatable", { is: Datatable });
+      datatable.keyField = "Id";
+      datatable.columns = [
+        { label: "Name", fieldName: "Name", type: "text", editable: true, sortable: true },
+        { label: "Amount", fieldName: "Amount__c", type: "currency" },
+        { label: "Ready", fieldName: "Ready__c", type: "boolean" },
+        { label: "Website", fieldName: "Website__c", type: "url", typeAttributes: { label: { fieldName: "WebsiteLabel__c" } } },
+        { label: "Email", fieldName: "Email__c", type: "email" },
+        { label: "Phone", fieldName: "Phone__c", type: "phone" },
+        { label: "Status", fieldName: "Status__c", type: "badge" },
+        { type: "button", typeAttributes: { label: "Open", name: "open" } },
+        { type: "action", typeAttributes: { rowActions: [{ label: "View", name: "view" }] } },
+      ];
+      datatable.data = [{
+        Id: "001",
+        Name: "Acme",
+        Amount__c: 42.5,
+        Ready__c: true,
+        Website__c: "https://example.com",
+        WebsiteLabel__c: "Example",
+        Email__c: "hello@example.com",
+        Phone__c: "415-555-0100",
+        Status__c: "Ready",
+      }];
+      datatable.selectedRows = ["001"];
+      datatable.addEventListener("rowaction", (event) => events.push(["rowaction", event.detail]));
+      datatable.addEventListener("sort", (event) => events.push(["sort", event.detail]));
+      datatable.addEventListener("rowselection", (event) => events.push(["rowselection", event.detail]));
+      datatable.addEventListener("cellchange", (event) => events.push(["cellchange", event.detail]));
+      datatable.addEventListener("save", (event) => events.push(["save", event.detail]));
+      datatable.addEventListener("cancel", (event) => events.push(["cancel", event.detail]));
+      datatable.addEventListener("loadmore", (event) => events.push(["loadmore", event.detail]));
+      host.appendChild(datatable);
+      window.__datatableEvents = events;
+      window.__datatableSelected = datatable.getSelectedRows();
+    });
+
+    const table = page.locator("lightning-datatable");
+    assert.match(await table.innerText(), /Acme/);
+    assert.match(await table.innerText(), /\$42\.50/);
+    assert.match(await table.innerText(), /Ready/);
+    assert.equal(await table.locator('a[href="https://example.com"]').innerText(), "Example");
+    assert.equal(await table.locator('a[href="mailto:hello@example.com"]').innerText(), "hello@example.com");
+    assert.equal(await table.locator('a[href="tel:415-555-0100"]').innerText(), "415-555-0100");
+    assert.deepEqual(await page.evaluate(() => window.__datatableSelected), [{
+      Id: "001",
+      Name: "Acme",
+      Amount__c: 42.5,
+      Ready__c: true,
+      Website__c: "https://example.com",
+      WebsiteLabel__c: "Example",
+      Email__c: "hello@example.com",
+      Phone__c: "415-555-0100",
+      Status__c: "Ready",
+    }]);
+
+    await table.locator("button", { hasText: "Name" }).click();
+    await table.locator("input[type=\"checkbox\"]").first().setChecked(false);
+    await table.locator("input[data-field-name=\"Name\"]").fill("Acme West");
+    await table.locator("input[data-field-name=\"Name\"]").dispatchEvent("change");
+    await table.locator("button", { hasText: "Save" }).click();
+    await table.locator("button", { hasText: "Cancel" }).click();
+    await table.locator("button", { hasText: "View" }).click();
+    await table.locator("button", { hasText: "Open" }).click();
+    await table.locator("button", { hasText: "Load More" }).click();
+
+    const events = await page.evaluate(() => window.__datatableEvents);
+    assert.deepEqual(events.find(([name]) => name === "sort"), ["sort", {
+      fieldName: "Name",
+      sortedBy: "Name",
+      sortDirection: "asc",
+    }]);
+    assert.deepEqual(events.find(([name]) => name === "rowselection"), ["rowselection", {
+      selectedRows: [],
+      selectedRowKeys: [],
+    }]);
+    assert.deepEqual(events.find(([name]) => name === "cellchange"), ["cellchange", {
+      draftValues: [{ Id: "001", Name: "Acme West" }],
+    }]);
+    assert.deepEqual(events.find(([name]) => name === "save"), ["save", {
+      draftValues: [{ Id: "001", Name: "Acme West" }],
+    }]);
+    assert.deepEqual(events.find(([name]) => name === "cancel"), ["cancel", {
+      draftValues: [],
+    }]);
+    assert.deepEqual(events.filter(([name]) => name === "rowaction").map(([, detail]) => detail), [
+      { action: { label: "View", name: "view" }, row: { Id: "001", Name: "Acme", Amount__c: 42.5, Ready__c: true, Website__c: "https://example.com", WebsiteLabel__c: "Example", Email__c: "hello@example.com", Phone__c: "415-555-0100", Status__c: "Ready" } },
+      { action: { label: "Open", name: "open" }, row: { Id: "001", Name: "Acme", Amount__c: 42.5, Ready__c: true, Website__c: "https://example.com", WebsiteLabel__c: "Example", Email__c: "hello@example.com", Phone__c: "415-555-0100", Status__c: "Ready" } },
+    ]);
+    assert.deepEqual(events.find(([name]) => name === "loadmore"), ["loadmore", {}]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test("record forms and fields support LDS endpoints, validity, reset, and picklists", async (t) => {
+  if (!requireLWCToolchain(t)) {
+    return;
+  }
+  const server = await startBaseComponentServer();
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.goto(`${server.baseURL}/base.html`, { waitUntil: "networkidle" });
+    await page.evaluate(async () => {
+      const { createElement } = await import("lwc");
+      const { default: InputField } = await import("/lightning/shims/lightning/inputField.js");
+      const { default: OutputField } = await import("/lightning/shims/lightning/outputField.js");
+      const { default: RecordForm } = await import("/lightning/shims/lightning/recordForm.js");
+      const { default: RecordEditForm } = await import("/lightning/shims/lightning/recordEditForm.js");
+      const { default: RecordViewForm } = await import("/lightning/shims/lightning/recordViewForm.js");
+      const { default: Messages } = await import("/lightning/shims/lightning/messages.js");
+      const host = document.getElementById("host");
+      host.innerHTML = "";
+      const events = [];
+
+      const input = createElement("lightning-input-field", { is: InputField });
+      Object.assign(input, {
+        fieldName: "Type",
+        label: "Type",
+        value: "Customer",
+        required: true,
+        options: [{ label: "Customer", value: "Customer" }, { label: "Partner", value: "Partner" }],
+      });
+      host.appendChild(input);
+      const emptyRequired = createElement("lightning-input-field", { is: InputField });
+      Object.assign(emptyRequired, { fieldName: "Name", label: "Account Name", value: "", required: true });
+      host.appendChild(emptyRequired);
+
+      const output = createElement("lightning-output-field", { is: OutputField });
+      Object.assign(output, { fieldName: "Name", value: "Local Shell Account" });
+      host.appendChild(output);
+
+      const recordForm = createElement("lightning-record-form", { is: RecordForm });
+      Object.assign(recordForm, { objectApiName: "Account", recordId: "001000000000001AAA", fields: ["Name", "Phone"] });
+      recordForm.addEventListener("load", (event) => events.push(["recordformload", event.detail.record.id]));
+      host.appendChild(recordForm);
+
+      const viewForm = createElement("lightning-record-view-form", { is: RecordViewForm });
+      Object.assign(viewForm, { objectApiName: "Account", recordId: "001000000000001AAA" });
+      viewForm.appendChild(output.cloneNode(true));
+      host.appendChild(viewForm);
+
+      const editForm = createElement("lightning-record-edit-form", { is: RecordEditForm });
+      Object.assign(editForm, { objectApiName: "Account", recordId: "001000000000001AAA" });
+      const nameField = createElement("lightning-input-field", { is: InputField });
+      Object.assign(nameField, { fieldName: "Name", value: "Local Shell Account", required: true });
+      editForm.appendChild(nameField);
+      const formMessages = createElement("lightning-messages", { is: Messages });
+      editForm.appendChild(formMessages);
+      editForm.addEventListener("load", (event) => events.push(["load", event.detail.record.id]));
+      editForm.addEventListener("submit", (event) => events.push(["submit", event.detail.fields]));
+      editForm.addEventListener("success", (event) => events.push(["success", event.detail.id]));
+      editForm.addEventListener("error", (event) => events.push(["error", event.detail.message]));
+      editForm.addEventListener("cancel", (event) => events.push(["cancel", event.detail.fields]));
+      host.appendChild(editForm);
+
+      const createForm = createElement("lightning-record-edit-form", { is: RecordEditForm });
+      Object.assign(createForm, { objectApiName: "Account" });
+      const createName = createElement("lightning-input-field", { is: InputField });
+      Object.assign(createName, { fieldName: "Name", required: true });
+      const createType = createElement("lightning-input-field", { is: InputField });
+      Object.assign(createType, { fieldName: "Type" });
+      const createActive = createElement("lightning-input-field", { is: InputField });
+      Object.assign(createActive, { fieldName: "Active__c" });
+      const createAmount = createElement("lightning-input-field", { is: InputField });
+      Object.assign(createAmount, { fieldName: "Amount__c" });
+      const createDate = createElement("lightning-input-field", { is: InputField });
+      Object.assign(createDate, { fieldName: "CloseDate__c" });
+      createForm.append(createName, createType, createActive, createAmount, createDate);
+      createForm.addEventListener("load", (event) => events.push(["createload", {
+        apiName: event.detail.record.apiName,
+        type: createType.value,
+        active: createActive.value,
+        amount: createAmount.value,
+        closeDate: createDate.value,
+        typeOptions: createType.options,
+        activeType: createActive.type,
+        amountType: createAmount.type,
+        dateType: createDate.type,
+      }]));
+      host.appendChild(createForm);
+
+      input.setCustomValidity("Pick a better type");
+      const customInvalid = input.checkValidity();
+      const customReported = input.reportValidity();
+      input.setCustomValidity("");
+      input.value = "Partner";
+      input.reset();
+      input.focus();
+      input.blur();
+
+      window.__recordFormEvents = events;
+      const checkboxField = createElement("lightning-input-field", { is: InputField });
+      Object.assign(checkboxField, { fieldName: "Active__c", type: "checkbox", value: true, required: true });
+      host.appendChild(checkboxField);
+      checkboxField.value = false;
+      const checkboxValidWhenUncheckedRequired = checkboxField.reportValidity();
+      checkboxField.reset();
+
+      const numberField = createElement("lightning-input-field", { is: InputField });
+      Object.assign(numberField, { fieldName: "Amount__c", type: "number", value: 42.5, required: true });
+      host.appendChild(numberField);
+      numberField.value = "";
+      const numberValidWhenEmpty = numberField.checkValidity();
+      numberField.value = "17.25";
+      const numberSetValue = numberField.value;
+      const numberValidAfterSet = numberField.reportValidity();
+      numberField.reset();
+
+      const dateField = createElement("lightning-input-field", { is: InputField });
+      Object.assign(dateField, { fieldName: "CloseDate__c", type: "date", value: "2026-06-18", required: true });
+      host.appendChild(dateField);
+      dateField.value = "";
+      const dateValidWhenEmpty = dateField.checkValidity();
+      dateField.value = "2026-07-04";
+      const dateSetValue = dateField.value;
+      const dateValidAfterSet = dateField.reportValidity();
+      dateField.reset();
+
+      window.__fieldContracts = {
+        customInvalid,
+        customReported,
+        validAfterClear: input.checkValidity(),
+        emptyRequired: emptyRequired.reportValidity(),
+        resetValue: input.value,
+        picklistOptions: input.options,
+        checkbox: {
+          validWhenUncheckedRequired: checkboxValidWhenUncheckedRequired,
+          resetValue: checkboxField.value,
+          resetChecked: checkboxField.shadowRoot.querySelector("input").checked,
+        },
+        number: {
+          validWhenEmpty: numberValidWhenEmpty,
+          validAfterSet: numberValidAfterSet,
+          setValue: numberSetValue,
+          resetValue: numberField.value,
+          domValue: numberField.shadowRoot.querySelector("input").value,
+        },
+        date: {
+          validWhenEmpty: dateValidWhenEmpty,
+          validAfterSet: dateValidAfterSet,
+          setValue: dateSetValue,
+          resetValue: dateField.value,
+          domValue: dateField.shadowRoot.querySelector("input").value,
+        },
+      };
+    });
+
+    await page.waitForFunction(() => window.__recordFormEvents.some(([name]) => name === "load"));
+    await page.waitForFunction(() => window.__recordFormEvents.some(([name]) => name === "createload"));
+    assert.match(await page.locator("lightning-output-field").first().innerText(), /Local Shell Account/);
+    assert.equal(await page.locator("lightning-input-field").first().locator("select").inputValue(), "Customer");
+    assert.deepEqual(await page.evaluate(() => window.__fieldContracts), {
+      customInvalid: false,
+      customReported: false,
+      validAfterClear: true,
+      emptyRequired: false,
+      resetValue: "Customer",
+      picklistOptions: [{ label: "Customer", value: "Customer" }, { label: "Partner", value: "Partner" }],
+      checkbox: {
+        validWhenUncheckedRequired: false,
+        resetValue: true,
+        resetChecked: true,
+      },
+      number: {
+        validWhenEmpty: false,
+        validAfterSet: true,
+        setValue: "17.25",
+        resetValue: 42.5,
+        domValue: "42.5",
+      },
+      date: {
+        validWhenEmpty: false,
+        validAfterSet: true,
+        setValue: "2026-07-04",
+        resetValue: "2026-06-18",
+        domValue: "2026-06-18",
+      },
+    });
+
+    const existingEditForm = page.locator("lightning-record-edit-form").first();
+    await existingEditForm.locator("lightning-input-field input").fill("Edited Local Account");
+    await existingEditForm.locator("button", { hasText: "Save" }).click();
+    await page.waitForFunction(() => window.__recordFormEvents.some(([name]) => name === "success"));
+    await existingEditForm.locator("button", { hasText: "Cancel" }).click();
+
+    const events = await page.evaluate(() => window.__recordFormEvents);
+    assert.ok(events.some(([name, value]) => name === "recordformload" && value === "001000000000001AAA"), JSON.stringify(events));
+    assert.ok(events.some(([name, value]) => name === "load" && value === "001000000000001AAA"), JSON.stringify(events));
+    assert.deepEqual(events.find(([name]) => name === "createload"), ["createload", {
+      apiName: "Account",
+      type: "Customer",
+      active: true,
+      amount: 42.5,
+      closeDate: "2026-06-18",
+      typeOptions: [{ label: "Customer", value: "Customer" }, { label: "Partner", value: "Partner" }],
+      activeType: "checkbox",
+      amountType: "number",
+      dateType: "date",
+    }]);
+    assert.deepEqual(server.wireRequests.filter((request) => request.path === "/lightning/wire/getRecordCreateDefaults").map((request) => request.body), [
+      { objectApiName: "Account", fields: [] },
+    ]);
+    assert.deepEqual(events.find(([name]) => name === "submit"), ["submit", { Name: "Edited Local Account" }]);
+    assert.deepEqual(events.find(([name]) => name === "success"), ["success", "001000000000001AAA"]);
+    assert.deepEqual(events.find(([name]) => name === "cancel"), ["cancel", { Name: "Edited Local Account" }]);
+    assert.equal(events.some(([name]) => name === "error"), false, JSON.stringify(events));
   } finally {
     await browser.close();
     await server.close();

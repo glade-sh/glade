@@ -49,6 +49,12 @@ function serveRuntimeFile(urlPath, res) {
   if (!filePath && urlPath.startsWith("/lightning/runtime/slds/")) {
     filePath = path.normalize(path.join(repoRoot, "lwcruntime/src/slds", urlPath.slice("/lightning/runtime/slds/".length)));
   }
+  if (!filePath && urlPath.startsWith("/lightning/runtime/lightning/")) {
+    filePath = path.normalize(path.join(repoRoot, "lwcruntime/src/lightning", urlPath.slice("/lightning/runtime/lightning/".length)));
+  }
+  if (!filePath && urlPath.startsWith("/lightning/shims/shell/")) {
+    filePath = path.normalize(path.join(repoRoot, "lwcruntime/src/shell", urlPath.slice("/lightning/shims/shell/".length)));
+  }
   if (!filePath && urlPath.startsWith("/lightning/shims/lightning/")) {
     const name = urlPath.slice("/lightning/shims/lightning/".length).replace(/\.(js|mjs)$/, "");
     filePath = path.join(repoRoot, "lwcruntime/src/lightning", `${name}.mjs`);

@@ -1,3 +1,3 @@
-import { createBaseComponent, renderDatatable } from "./base.mjs";
+import { createDatatable } from "./lds-form.mjs";
 
-export default createBaseComponent("lightning-datatable", renderDatatable);
+export default createDatatable();

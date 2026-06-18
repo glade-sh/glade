@@ -1,3 +1,3 @@
-import { createBaseComponent, renderMessages } from "./base.mjs";
+import { createMessages } from "./lds-form.mjs";
 
-export default createBaseComponent("lightning-messages", renderMessages);
+export default createMessages();
