@@ -460,17 +460,7 @@ func printDevLWCStartupSummary(w io.Writer, addr string, p project.Project, sele
 		}
 	}
 	routes := devLWCPreviewRoutes(p)
-	if len(routes) > 0 {
-		fmt.Fprintln(w, "Routes:")
-		budget := cliui.OutputBudget{}
-		visible := budget.VisibleCount(len(routes))
-		for _, route := range routes[:visible] {
-			fmt.Fprintf(w, "  %s\n", route)
-		}
-		if omitted := budget.OmittedCount(len(routes)); omitted > 0 {
-			fmt.Fprintf(w, "  ... %d more routes omitted. See the ready file or /lightning/local/context.json for complete output.\n", omitted)
-		}
-	}
+	printDevStartupList(w, "Routes", "route", routes, "Open /lwc for the route picker; use --ready-file or /lightning/local/context.json for the complete list.")
 	fmt.Fprintf(w, "Watching %s for lwc, flexipage, tab, Visualforce, Apex, and static resource changes.\n", p.Root)
 }
 

@@ -40,6 +40,32 @@ func TestPrintDevVFStartupSummaryListsPagesAndWatchedFiles(t *testing.T) {
 	}
 }
 
+func TestPrintDevVFStartupSummaryBoundsPages(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	for i := 0; i < 12; i++ {
+		name := "Page" + string(rune('A'+i))
+		writeTestFile(t, filepath.Join(root, "force-app/main/default/pages", name+".page"), `<apex:page/>`)
+	}
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var out bytes.Buffer
+	printDevVFStartupSummary(&out, "127.0.0.1:8080", p)
+
+	if !strings.Contains(out.String(), "Pages: 12 available") {
+		t.Fatalf("summary did not show page count:\n%s", out.String())
+	}
+	if !strings.Contains(out.String(), "... 4 pages omitted.") {
+		t.Fatalf("summary did not cap pages:\n%s", out.String())
+	}
+	if strings.Contains(out.String(), "/apex/PageI") {
+		t.Fatalf("summary included pages beyond compact startup cap:\n%s", out.String())
+	}
+}
+
 func TestRunDevVFHelpUsesVisualforceHelp(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(t.Context(), []string{"dev", "vf", "--help"}, &stdout, &stderr)
