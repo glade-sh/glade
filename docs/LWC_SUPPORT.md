@@ -23,6 +23,9 @@ Salesforce target org.
 | Custom tab shell | Preview feature with limits | `lwc.host.lightning-shell` | LWC tabs and FlexiPage tabs render locally. Visualforce tabs redirect to `/apex/<Page>`. Web and object tabs are reported as unsupported LWC-shell targets. |
 | URL-addressable component shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/cmp/<namespace>/<component>` mounts `lightning__UrlAddressable` LWCs and passes `c__*` state. |
 | Quick action shell | Preview feature with limits | `lwc.host.lightning-shell` | `/lwc/preview/action/...` mounts LWC-backed record and global actions with local action context. Full workspace APIs are approximated. |
+| Utility bar shell | Preview feature with limits | `lwc.host.lightning-shell` | `/lwc/preview/utility/<UtilityBar>` resolves `UtilityBar` FlexiPage metadata and passes a local workspace utility list. |
+| Flow screen shell | Preview feature with limits | `lwc.host.lightning-shell` | `/lwc/preview/flow/<FlowApiName>` resolves `flowScreen` presets, mounts `lightning__FlowScreen` components, and passes local Flow context. |
+| Flow action shell | Preview feature with limits | `lwc.host.lightning-shell` | Flow actions use `/lwc/preview/action/...` and require `lightning__FlowAction` metadata. Hosted Flow runtime behavior remains a Salesforce check. |
 | Experience Cloud page shell | Preview feature with limits | `lwc.host.lightning-shell` | `/lwc/preview/community/<site>/<page>` resolves `communityPage` presets, mounts `lightningCommunity__Page` components, and applies a local theme-layout boundary when a `lightningCommunity__Theme_Layout` component exists. |
 | Experience Cloud component shell | Preview feature with limits | `lwc.host.lightning-shell` | `/lwc/preview/community/<site>/cmp/<namespace>/<component>` mounts `lightningCommunity__Default` components with community context and a `/s` base-path fallback. |
 | Visualforce Lightning Out | Preview feature with limits | `lwc.host.visualforce-lightning-out` | `/apex/<PageName>` can host LWCs through `$Lightning.use()` and `$Lightning.createComponent()` using the shared local runtime. |
@@ -39,8 +42,8 @@ glade dev lwc --project . --port 8080 --open
 ```
 
 `glade.lwc.json` presets support `component`, `urlAddressable`, `recordPage`,
-`appPage`, `homePage`, `tab`, `recordAction`, `globalAction`, and
-`communityPage` targets.
+`appPage`, `homePage`, `tab`, `recordAction`, `globalAction`, `utilityBar`,
+`flowScreen`, `flowAction`, and `communityPage` targets.
 Pass `--context-file` to use a different preset file. The ready file records
 `selectedUrl` and `selectedContext` when a preset or direct target selects the
 first browser route.

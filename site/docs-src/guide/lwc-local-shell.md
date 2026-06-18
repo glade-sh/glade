@@ -101,6 +101,24 @@ Put reusable contexts in `glade.lwc.json` at the project root:
       "app": "Sales",
       "formFactor": "Large"
     },
+    "utilityBar": {
+      "target": "utilityBar",
+      "page": "Support_Utility",
+      "app": "Support",
+      "formFactor": "Large"
+    },
+    "membershipFlow": {
+      "target": "flowScreen",
+      "component": "c:communityFlow2",
+      "app": "Support",
+      "formFactor": "Large",
+      "flow": {
+        "apiName": "Membership_Flow",
+        "inputVariables": {
+          "recordId": "001000000000001AAA"
+        }
+      }
+    },
     "communityAccount": {
       "target": "communityPage",
       "component": "c:communityProbe",
@@ -125,13 +143,14 @@ Put reusable contexts in `glade.lwc.json` at the project root:
 ```
 
 Supported targets are `component`, `urlAddressable`, `recordPage`, `appPage`,
-`homePage`, `tab`, `recordAction`, `globalAction`, and `communityPage`.
-Community presets carry site, base path, site ID, network ID, guest mode,
-language, and optional `comm__*` PageReference data. Direct flags include
-`--component`, `--object`, `--record`, `--page`, `--tab`, `--action`, `--app`,
-`--form-factor`, and repeated `--state key=value` for non-community routes. Use
-`--context-file` when the presets live somewhere other than the project-root
-`glade.lwc.json`:
+`homePage`, `tab`, `recordAction`, `globalAction`, `utilityBar`, `flowScreen`,
+`flowAction`, and `communityPage`. Community presets carry site, base path,
+site ID, network ID, guest mode, language, and optional `comm__*` PageReference
+data. Flow presets carry `flow.apiName` and optional `flow.inputVariables`.
+Direct flags include `--component`, `--object`, `--record`, `--page`, `--tab`,
+`--action`, `--app`, `--flow`, `--flow-input key=value`, `--form-factor`, and
+repeated `--state key=value` for non-community routes. Use `--context-file`
+when the presets live somewhere other than the project-root `glade.lwc.json`:
 
 ```bash
 glade dev lwc --project . --context-file config/lwc-contexts.json --context accountRecord --open
@@ -157,6 +176,8 @@ bookmarks:
 /lwc/preview/app/<Page>
 /lwc/preview/home/<Page>
 /lwc/preview/tab/<Tab>
+/lwc/preview/utility/<UtilityBar>
+/lwc/preview/flow/<FlowApiName>
 /lwc/preview/action/<Object>/<recordId>/<ActionName>
 /lwc/preview/action/global/<ActionName>
 /lwc/preview/community/<site>/<page>
@@ -174,6 +195,8 @@ http://127.0.0.1:8080/lwc/preview/record/Account/001000000000001AAA?page=Account
 http://127.0.0.1:8080/lwc/preview/app/Sales_Dashboard
 http://127.0.0.1:8080/lwc/preview/home/Custom_Home
 http://127.0.0.1:8080/lwc/preview/tab/Lwc_Probe
+http://127.0.0.1:8080/lwc/preview/utility/Support_Utility
+http://127.0.0.1:8080/lwc/preview/flow/Membership_Flow
 http://127.0.0.1:8080/lwc/preview/action/Account/001000000000001AAA/Update_Status
 http://127.0.0.1:8080/lwc/preview/action/global/Global_Status
 http://127.0.0.1:8080/lwc/preview/community/Partner_Portal/Account
@@ -188,6 +211,12 @@ URL-addressable routes pass `c__*` state through the local PageReference.
 Quick action routes mount LWC-backed action metadata and pass action context
 attributes. Unsupported action metadata returns `GLADELWC070`; unsupported
 action types return `GLADELWC015`.
+Utility-bar routes resolve `UtilityBar` FlexiPages, mount utility items, and
+pass local workspace utility context.
+Flow-screen routes resolve `flowScreen` presets, mount `lightning__FlowScreen`
+components, and pass Flow input variables and local navigation events.
+Flow-action routes use the quick-action route shape and require
+`lightning__FlowAction` metadata.
 Community routes resolve `communityPage` presets, mount
 `lightningCommunity__Page` components, mount `lightningCommunity__Default`
 direct components, expose community base path, site ID, network ID, guest mode,
@@ -195,7 +224,7 @@ language, and use a local `lightningCommunity__Theme_Layout` wrapper boundary
 when one is present.
 The generated route list includes direct components, app pages, record pages
 with a sample record ID, home pages, tabs, URL-addressable components,
-LWC-backed actions, and configured community pages.
+utility bars, Flow screens, LWC-backed actions, and configured community pages.
 
 ## Local context JSON
 

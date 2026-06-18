@@ -89,6 +89,24 @@ Salesforce-like page context:
       "app": "Sales",
       "formFactor": "Large"
     },
+    "utilityBar": {
+      "target": "utilityBar",
+      "page": "Support_Utility",
+      "app": "Support",
+      "formFactor": "Large"
+    },
+    "membershipFlow": {
+      "target": "flowScreen",
+      "component": "c:communityFlow2",
+      "app": "Support",
+      "formFactor": "Large",
+      "flow": {
+        "apiName": "Membership_Flow",
+        "inputVariables": {
+          "recordId": "001000000000001AAA"
+        }
+      }
+    },
     "phase3BaseComponents": {
       "target": "component",
       "component": "c:baseComponentHost",
@@ -145,11 +163,13 @@ glade dev lwc --project . --target record-page --object Account --record 0010000
 ```
 
 Supported context targets are `component`, `urlAddressable`, `recordPage`,
-`appPage`, `homePage`, `tab`, `recordAction`, `globalAction`, and
-`communityPage`. Community presets use `community.site`, `basePath`, `siteId`,
-`networkId`, `guest`, `language`, and an optional configured `pageReference`.
-Direct flags include `--component`, `--object`, `--record`, `--page`, `--tab`,
-`--action`, `--app`, `--form-factor`, and repeated `--state key=value`.
+`appPage`, `homePage`, `tab`, `recordAction`, `globalAction`, `utilityBar`,
+`flowScreen`, `flowAction`, and `communityPage`. Community presets use
+`community.site`, `basePath`, `siteId`, `networkId`, `guest`, `language`, and an
+optional configured `pageReference`. Flow presets use `flow.apiName` and
+optional `flow.inputVariables`. Direct flags include `--component`, `--object`,
+`--record`, `--page`, `--tab`, `--action`, `--app`, `--flow`,
+`--flow-input key=value`, `--form-factor`, and repeated `--state key=value`.
 Explicit flags override preset fields for non-community routes.
 
 ## Preview Routes
@@ -165,6 +185,8 @@ Open these routes from the local server:
 /lwc/preview/app/<Page>
 /lwc/preview/home/<Page>
 /lwc/preview/tab/<Tab>
+/lwc/preview/utility/<UtilityBar>
+/lwc/preview/flow/<FlowApiName>
 /lwc/preview/action/<Object>/<recordId>/<ActionName>
 /lwc/preview/action/global/<ActionName>
 /lwc/preview/community/<site>/<page>
@@ -181,6 +203,8 @@ http://127.0.0.1:8080/lwc/preview/cmp/c/actionProbe?c__name=value
 http://127.0.0.1:8080/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page
 http://127.0.0.1:8080/lwc/preview/app/Sales_Dashboard
 http://127.0.0.1:8080/lwc/preview/tab/Lwc_Probe
+http://127.0.0.1:8080/lwc/preview/utility/Support_Utility
+http://127.0.0.1:8080/lwc/preview/flow/Membership_Flow
 http://127.0.0.1:8080/lwc/preview/action/Account/001000000000001AAA/Update_Status
 http://127.0.0.1:8080/lwc/preview/action/global/Global_Status
 http://127.0.0.1:8080/lwc/preview/community/Partner_Portal/Account
@@ -201,6 +225,13 @@ home, and tab routes resolve Salesforce metadata from the project:
   `objectApiName`, `actionName`, `actionType`, state, and PageReference
   attributes. Unsupported action metadata returns `GLADELWC070`; unsupported
   action types return `GLADELWC015`.
+- Utility-bar routes resolve `UtilityBar` FlexiPage metadata, mount utility
+  items, and pass a local workspace utility list.
+- Flow-screen routes resolve `flowScreen` presets, mount
+  `lightning__FlowScreen` components, and pass local Flow input variables and
+  navigation events.
+- Flow-action routes use the quick-action route shape and require
+  `lightning__FlowAction` metadata.
 - Community page routes resolve `communityPage` presets, mount
   `lightningCommunity__Page` components, apply a local
   `lightningCommunity__Theme_Layout` wrapper boundary when one exists, and pass
@@ -210,7 +241,8 @@ home, and tab routes resolve Salesforce metadata from the project:
   components with the site from the route and a `/s` base-path fallback.
 - Generated workbench routes include direct components, app pages, record
   pages with a sample record ID, home pages, tabs, URL-addressable components,
-  LWC-backed actions, and configured community pages.
+  utility bars, Flow screens, LWC-backed actions, and configured community
+  pages.
 
 Visualforce-backed custom tabs redirect to the Visualforce page route when the
 project defines one. That redirect is the main Visualforce mention in the LWC
@@ -240,6 +272,8 @@ Experience Cloud context, base components, Visualforce host support, and toast.
 | `/lwc/preview/app/<Page>` | `standard__app` |
 | `/lwc/preview/home/<Page>` | `standard__namedPage` with `home` |
 | `/lwc/preview/tab/<Tab>` | `standard__navItemPage` when the tab route is the active target |
+| `/lwc/preview/utility/<UtilityBar>` | `standard__component` with local workspace utility context |
+| `/lwc/preview/flow/<FlowApiName>` | `standard__component` with local Flow context |
 | `/lwc/preview/action/<Object>/<recordId>/<ActionName>` | `standard__quickAction` |
 | `/lwc/preview/action/global/<ActionName>` | `standard__quickAction` |
 | `/lwc/preview/community/<site>/<page>` | configured `comm__*`, defaulting to `comm__namedPage` |
