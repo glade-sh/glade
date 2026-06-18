@@ -26,6 +26,7 @@ const expandedImports = {
   "lightning/progressRing": "/lightning/shims/lightning/progressRing.js",
   "lightning/quickActionPanel": "/lightning/shims/lightning/quickActionPanel.js",
   "lightning/recordPicker": "/lightning/shims/lightning/recordPicker.js",
+  "lightning/uiRecordApi": "/lightning/shims/lightning/uiRecordApi.js",
   "lightning/select": "/lightning/shims/lightning/select.js",
   "lightning/slider": "/lightning/shims/lightning/slider.js",
   "lightning/tile": "/lightning/shims/lightning/tile.js",
@@ -33,6 +34,11 @@ const expandedImports = {
 };
 
 function serveRuntimeFile(urlPath, res) {
+  if (urlPath === "/lightning/shims/lightning/uiRecordApi.js") {
+    res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
+    res.end("export async function __gladeRecordPickerSearch() { return { records: [] }; }\n");
+    return;
+  }
   const routes = {
     "/lightning/vendor/lwc.js": path.join(repoRoot, "third_party/lwc/node_modules/@lwc/engine-dom/dist/index.js"),
     "/lightning/vendor/synthetic-shadow.js": path.join(repoRoot, "third_party/lwc/node_modules/@lwc/synthetic-shadow/dist/index.js"),
@@ -42,6 +48,12 @@ function serveRuntimeFile(urlPath, res) {
   let filePath = routes[urlPath];
   if (!filePath && urlPath.startsWith("/lightning/runtime/slds/")) {
     filePath = path.normalize(path.join(repoRoot, "lwcruntime/src/slds", urlPath.slice("/lightning/runtime/slds/".length)));
+  }
+  if (!filePath && urlPath.startsWith("/lightning/runtime/lightning/")) {
+    filePath = path.normalize(path.join(repoRoot, "lwcruntime/src/lightning", urlPath.slice("/lightning/runtime/lightning/".length)));
+  }
+  if (!filePath && urlPath.startsWith("/lightning/shims/shell/")) {
+    filePath = path.normalize(path.join(repoRoot, "lwcruntime/src/shell", urlPath.slice("/lightning/shims/shell/".length)));
   }
   if (!filePath && urlPath.startsWith("/lightning/shims/lightning/")) {
     const name = urlPath.slice("/lightning/shims/lightning/".length).replace(/\.(js|mjs)$/, "");

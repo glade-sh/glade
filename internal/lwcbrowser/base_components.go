@@ -41,8 +41,11 @@ func init() {
 		baseComponent("modal", 2, true, modalTemplateJS()),
 		baseComponent("accordion", 3, true, slotContainerTemplateJS("section", "slds-accordion")),
 		baseComponent("accordionSection", 3, true, titledSlotTemplateJS("section", "slds-accordion__section")),
+		baseComponent("alert", 3, true, dialogNoticeTemplateJS("alert")),
 		baseComponent("avatar", 3, true, avatarTemplateJS()),
 		baseComponent("badge", 3, true, textContainerTemplateJS("span", "slds-badge")),
+		baseComponent("barcodeScanner", 3, true, barcodeScannerTemplateJS()),
+		baseComponent("baseFormattedText", 3, true, textContainerTemplateJS("span", "slds-truncate")),
 		baseComponent("breadcrumb", 3, true, breadcrumbTemplateJS()),
 		baseComponent("breadcrumbs", 3, true, breadcrumbsTemplateJS()),
 		baseComponent("buttonGroup", 3, true, slotContainerTemplateJS("div", "slds-button-group")),
@@ -52,41 +55,68 @@ func init() {
 		baseComponent("carousel", 3, true, slotContainerTemplateJS("section", "slds-carousel")),
 		baseComponent("carouselImage", 3, true, carouselImageTemplateJS()),
 		baseComponent("checkboxGroup", 3, true, optionGroupTemplateJS("checkbox")),
+		baseComponent("dialog", 3, true, dialogNoticeTemplateJS("dialog")),
 		baseComponent("dualListbox", 3, true, dualListboxTemplateJS()),
+		baseComponent("dynamicIcon", 3, true, dynamicIconTemplateJS()),
 		baseComponent("fileUpload", 3, true, fileUploadTemplateJS()),
 		baseComponent("flow", 3, true, flowTemplateJS()),
+		baseComponent("focusTrap", 3, true, slotContainerTemplateJS("div", "slds-is-relative")),
 		baseComponent("formattedAddress", 3, true, formattedAddressTemplateJS()),
 		baseComponent("formattedDateTime", 3, true, textContainerTemplateJS("time", "slds-truncate")),
 		baseComponent("formattedEmail", 3, true, formattedEmailTemplateJS()),
-		baseComponent("formattedNumber", 3, true, textContainerTemplateJS("span", "slds-truncate")),
+		baseComponent("formattedLocation", 3, true, formattedLocationTemplateJS()),
+		baseComponent("formattedLookup", 3, true, formattedLookupTemplateJS()),
+		baseComponent("formattedName", 3, true, formattedNameTemplateJS()),
+		baseComponent("formattedNumber", 3, true, formattedNumberTemplateJS()),
 		baseComponent("formattedPhone", 3, true, formattedLinkTemplateJS("tel")),
 		baseComponent("formattedRichText", 3, true, textContainerTemplateJS("span", "slds-rich-text-editor__output")),
 		baseComponent("formattedText", 3, true, textContainerTemplateJS("span", "slds-truncate")),
 		baseComponent("formattedTime", 3, true, textContainerTemplateJS("time", "slds-truncate")),
 		baseComponent("formattedUrl", 3, true, formattedLinkTemplateJS("url")),
+		baseComponent("groupedCombobox", 3, true, comboboxTemplateJS()),
 		baseComponent("helptext", 3, true, helptextTemplateJS()),
 		baseComponent("inputAddress", 3, true, inputAddressTemplateJS()),
+		baseComponent("inputLocation", 3, true, inputLocationTemplateJS()),
+		baseComponent("inputName", 3, true, inputNameTemplateJS()),
 		baseComponent("inputRichText", 3, true, inputRichTextTemplateJS()),
+		baseComponent("lookupAddress", 3, true, inputAddressTemplateJS()),
 		baseComponent("map", 3, true, mapTemplateJS()),
 		baseComponent("menuDivider", 3, true, menuDividerTemplateJS()),
 		baseComponent("menuItem", 3, true, menuItemTemplateJS()),
 		baseComponent("menuSubheader", 3, true, textContainerTemplateJS("h3", "slds-dropdown__header")),
+		baseComponent("modalBody", 3, true, slotContainerTemplateJS("div", "slds-modal__content")),
+		baseComponent("modalFooter", 3, true, slotContainerTemplateJS("footer", "slds-modal__footer")),
+		baseComponent("modalHeader", 3, true, modalHeaderTemplateJS()),
+		baseComponent("multiColumnSortingModal", 3, true, titledSlotTemplateJS("section", "slds-modal")),
+		baseComponent("overlay", 3, true, slotContainerTemplateJS("section", "slds-popover")),
+		baseComponent("picklist", 3, true, selectTemplateJS()),
 		baseComponent("pill", 3, true, pillTemplateJS()),
 		baseComponent("pillContainer", 3, true, pillContainerTemplateJS()),
+		baseComponent("popup", 3, true, slotContainerTemplateJS("section", "slds-popover")),
+		baseComponent("primitiveFigure", 3, true, primitiveFigureTemplateJS()),
 		baseComponent("progressBar", 3, true, progressBarTemplateJS()),
 		baseComponent("progressIndicator", 3, true, slotContainerTemplateJS("ol", "slds-progress__list")),
 		baseComponent("progressRing", 3, true, progressRingTemplateJS()),
 		baseComponent("progressStep", 3, true, textContainerTemplateJS("li", "slds-progress__item")),
+		baseComponent("prompt", 3, true, dialogNoticeTemplateJS("prompt")),
 		baseComponent("quickActionPanel", 3, true, quickActionPanelTemplateJS()),
 		baseComponent("radioGroup", 3, true, optionGroupTemplateJS("radio")),
 		baseComponent("recordPicker", 3, true, recordPickerTemplateJS()),
+		baseComponent("relativeDateTime", 3, true, relativeDateTimeTemplateJS()),
 		baseComponent("select", 3, true, selectTemplateJS()),
 		baseComponent("slider", 3, true, sliderTemplateJS()),
 		baseComponent("tile", 3, true, tileTemplateJS()),
+		baseComponent("stackedTab", 3, true, stackedTabTemplateJS()),
+		baseComponent("stackedTabset", 3, true, slotContainerTemplateJS("div", "slds-tabs_mobile")),
+		baseComponent("toast", 3, true, toastTemplateJS()),
+		baseComponent("toastContainer", 3, true, slotContainerTemplateJS("section", "slds-notify_container")),
 		baseComponent("tree", 3, true, treeTemplateJS()),
 		baseComponent("treeGrid", 3, true, treeGridTemplateJS()),
 		baseComponent("verticalNavigation", 3, true, slotContainerTemplateJS("nav", "slds-nav-vertical")),
 		baseComponent("verticalNavigationItem", 3, true, verticalNavigationItemTemplateJS()),
+		baseComponent("verticalNavigationItemBadge", 3, true, verticalNavigationItemBadgeTemplateJS()),
+		baseComponent("verticalNavigationItemIcon", 3, true, verticalNavigationItemIconTemplateJS()),
+		baseComponent("verticalNavigationOverflow", 3, true, verticalNavigationOverflowTemplateJS()),
 		baseComponent("verticalNavigationSection", 3, true, titledSlotTemplateJS("section", "slds-nav-vertical__section")),
 	} {
 		lightningBaseComponentDefinitions[normalizeLightningBaseComponentName(def.Name)] = def
@@ -135,12 +165,40 @@ func LightningBaseComponentModuleJS(name string) string {
 	if !def.Supported {
 		return unsupportedBaseComponentModuleJS(def)
 	}
+	if js, ok := LightningSourceBackedComponentModuleJS(def.Name); ok {
+		return js
+	}
 	classExtraJS := ""
-	if normalizeLightningBaseComponentName(def.Name) == "modal" {
+	switch normalizeLightningBaseComponentName(def.Name) {
+	case "alert":
+		classExtraJS = `  static open(options = {}) {
+    window.dispatchEvent(new CustomEvent("gladealert", { detail: options, bubbles: true, composed: true }));
+    return Promise.resolve(options.result);
+  }
+`
+	case "modal":
 		classExtraJS = `  static async open(options = {}) {
     const detail = { ...options };
     window.dispatchEvent(new CustomEvent("lightning__modalopen", { detail }));
     return options.result;
+  }
+`
+	case "prompt":
+		classExtraJS = `  static open(options = {}) {
+    window.dispatchEvent(new CustomEvent("gladeprompt", { detail: options, bubbles: true, composed: true }));
+    return Promise.resolve(options.value ?? options.defaultValue ?? "");
+  }
+`
+	case "toast":
+		classExtraJS = `  static show(config = {}, source) {
+    const detail = { ...config, source };
+    document.dispatchEvent(new CustomEvent("lightning__showtoast", { bubbles: true, composed: true, cancelable: true, detail }));
+    return Promise.resolve(detail);
+  }
+`
+	case "toastcontainer":
+		classExtraJS = `  static instance() {
+    return { maxToasts: 5, toastPosition: "top-center", containerPosition: "fixed" };
   }
 `
 	}
@@ -439,7 +497,7 @@ class %[2]s extends LightningElement {
 registerDecorators(%[2]s, { publicProps: basePublicProps(), publicMethods: basePublicMethods() });
 function basePublicProps() {
   const props = {};
-  for (const name of ["label","title","value","options","checked","disabled","type","variant","iconName","alternativeText","size","columns","data","keyField","objectApiName","recordId","fields","mode","name","fieldName","error","content","href","target","street","city","province","postalCode","country","items","header","placeholder","accept","multiple","flowApiName","flowInputVariables","initials","fallbackIconName","labelWhenOff","labelWhenOn","labelWhenHover","selected","sourceLabel","selectedLabel","min","max","step","mapMarkers","zoomLevel","markersTitle","src","description","dirty","required"]) {
+	for (const name of ["label","title","value","options","checked","disabled","type","variant","iconName","iconPosition","iconClass","alternativeText","size","columns","data","keyField","objectApiName","recordId","fields","mode","name","fieldName","error","content","href","target","street","city","province","postalCode","country","items","header","placeholder","accept","multiple","flowApiName","flowInputVariables","initials","fallbackIconName","labelWhenOff","labelWhenOn","labelWhenHover","selected","sourceLabel","selectedLabel","min","max","step","mapMarkers","zoomLevel","markersTitle","src","description","dirty","required","message","theme","defaultValue","latitude","longitude","salutation","firstName","middleName","lastName","suffix","informalName","format","formatStyle","displayValue","tabIndex","badgeCount","assistiveText","readOnly","maxToasts","toastPosition","containerPosition","expanded","horizontalAlign","verticalAlign","pullToBoundary","multipleRows","smallDeviceSize","mediumDeviceSize","largeDeviceSize","padding","flexibility","alignmentBump","currencyCode","currencyDisplayAs","minimumIntegerDigits","minimumFractionDigits","maximumFractionDigits","minimumSignificantDigits","maximumSignificantDigits"]) {
     props[name] = { config: 0 };
   }
   return props;
@@ -537,6 +595,155 @@ function markerText(marker) {
     location.Street
   ].filter(Boolean).join(", ");
 }
+function normalizeChoice(value, validValues, fallbackValue) {
+  const text = String(value ?? "").toLowerCase();
+  return validValues.includes(text) ? text : fallbackValue;
+}
+function normalizedButtonType(type) {
+  return normalizeChoice(type, ["button", "reset", "submit"], "button");
+}
+function buttonClassMap(variant) {
+  const normalized = normalizeChoice(variant, ["base", "neutral", "brand", "destructive", "inverse", "success"], "neutral");
+  return {
+    "slds-button": true,
+    "slds-button_neutral": normalized === "neutral",
+    "slds-button_brand": normalized === "brand",
+    "slds-button_destructive": normalized === "destructive",
+    "slds-button_inverse": normalized === "inverse",
+    "slds-button_success": normalized === "success"
+  };
+}
+function buttonIconClassMap(variant, size) {
+  const normalizedVariant = normalizeChoice(variant, ["bare", "brand", "container", "border", "border-filled", "bare-inverse", "border-inverse"], "border");
+  const normalizedSize = normalizeChoice(size, ["xx-small", "x-small", "small", "medium", "large"], "medium");
+  const isBare = normalizedVariant.startsWith("bare");
+  return {
+    "slds-button": true,
+    "slds-button_icon": true,
+    "slds-button_icon-bare": isBare,
+    "slds-button_icon-container": normalizedVariant === "container",
+    "slds-button_icon-border": normalizedVariant === "border",
+    "slds-button_icon-border-filled": normalizedVariant === "border-filled",
+    "slds-button_icon-border-inverse": normalizedVariant === "border-inverse",
+    "slds-button_icon-inverse": normalizedVariant === "bare-inverse",
+    "slds-button_icon-brand": normalizedVariant === "brand",
+    "slds-button_icon-small": !isBare && normalizedSize === "small",
+    "slds-button_icon-x-small": !isBare && normalizedSize === "x-small",
+    "slds-button_icon-xx-small": !isBare && normalizedSize === "xx-small"
+  };
+}
+function cardClassMap(variant) {
+  return {
+    "slds-card": true,
+    "slds-card_narrow": normalizeChoice(variant, ["base", "narrow"], "base") === "narrow"
+  };
+}
+function layoutClassMap(component) {
+  const horizontal = {
+    center: "slds-grid_align-center",
+    space: "slds-grid_align-space",
+    spread: "slds-grid_align-spread",
+    end: "slds-grid_align-end"
+  };
+  const vertical = {
+    start: "slds-grid_vertical-align-start",
+    center: "slds-grid_vertical-align-center",
+    end: "slds-grid_vertical-align-end",
+    stretch: "slds-grid_vertical-stretch"
+  };
+  const boundary = {
+    small: "slds-grid_pull-padded",
+    medium: "slds-grid_pull-padded-medium",
+    large: "slds-grid_pull-padded-large"
+  };
+  const classes = { "slds-grid": true };
+  const hClass = horizontal[normalizeChoice(component && component.horizontalAlign, Object.keys(horizontal), "")];
+  const vClass = vertical[normalizeChoice(component && component.verticalAlign, Object.keys(vertical), "")];
+  const bClass = boundary[normalizeChoice(component && component.pullToBoundary, Object.keys(boundary), "")];
+  if (hClass) classes[hClass] = true;
+  if (vClass) classes[vClass] = true;
+  if (bClass) classes[bClass] = true;
+  if (Boolean(component && component.multipleRows)) classes["slds-wrap"] = true;
+  return classes;
+}
+function normalizedLayoutSize(value) {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+  const size = Math.round(Number(value));
+  return Number.isFinite(size) && size >= 1 && size <= 12 ? size : null;
+}
+function layoutItemClassMap(component) {
+  const classes = { "slds-col": true };
+  const padding = String(component && component.padding || "").toLowerCase();
+  const paddingClasses = {
+    "horizontal-small": ["slds-p-right_small", "slds-p-left_small"],
+    "horizontal-medium": ["slds-p-right_medium", "slds-p-left_medium"],
+    "horizontal-large": ["slds-p-right_large", "slds-p-left_large"],
+    "around-small": ["slds-p-around_small"],
+    "around-medium": ["slds-p-around_medium"],
+    "around-large": ["slds-p-around_large"]
+  };
+  for (const className of paddingClasses[padding] || []) classes[className] = true;
+  const flexValues = Array.isArray(component && component.flexibility) ? component.flexibility : String(component && component.flexibility || "").split(",").map((item) => item.trim()).filter(Boolean);
+  const flexClasses = {
+    auto: "slds-col",
+    grow: "slds-grow",
+    shrink: "slds-shrink",
+    "no-grow": "slds-grow-none",
+    "no-shrink": "slds-shrink-none",
+    "no-flex": "slds-no-flex"
+  };
+  for (const value of flexValues) {
+    if (flexClasses[value]) classes[flexClasses[value]] = true;
+  }
+  for (const [prop, prefix] of [["size", "slds-size_"], ["smallDeviceSize", "slds-small-size_"], ["mediumDeviceSize", "slds-medium-size_"], ["largeDeviceSize", "slds-large-size_"]]) {
+    const size = normalizedLayoutSize(component && component[prop]);
+    if (size) classes[prefix + size + "-of-12"] = true;
+  }
+  const bump = normalizeChoice(component && component.alignmentBump, ["left", "top", "right", "bottom"], "");
+  if (bump) classes["slds-col_bump-" + bump] = true;
+  return classes;
+}
+function numericOption(value) {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
+function formatNumberValue(component) {
+  const raw = component && component.value;
+  if (raw === undefined || raw === null || raw === "" || !Number.isFinite(Number(raw))) {
+    return "";
+  }
+  let style = normalizeChoice(component && component.formatStyle, ["decimal", "currency", "percent", "percent-fixed"], "decimal");
+  let value = Number(raw);
+  if (style === "percent-fixed") {
+    style = "percent";
+    value = value / 100;
+  }
+  const options = { style };
+  if (style === "currency") {
+    options.currency = component && component.currencyCode || "USD";
+    options.currencyDisplay = normalizeChoice(component && component.currencyDisplayAs, ["symbol", "code", "name"], "symbol");
+  }
+  for (const [prop, option] of [
+    ["minimumIntegerDigits", "minimumIntegerDigits"],
+    ["minimumFractionDigits", "minimumFractionDigits"],
+    ["maximumFractionDigits", "maximumFractionDigits"],
+    ["minimumSignificantDigits", "minimumSignificantDigits"],
+    ["maximumSignificantDigits", "maximumSignificantDigits"]
+  ]) {
+    const parsed = numericOption(component && component[prop]);
+    if (parsed !== undefined) options[option] = parsed;
+  }
+  try {
+    return new Intl.NumberFormat(undefined, options).format(value);
+  } catch (_err) {
+    return String(raw);
+  }
+}
 export default registerComponent(%[2]s, { tmpl: template, sel: %[3]q });
 `, def.TemplateJS, def.ClassName, def.Tag, classExtraJS)
 }
@@ -617,25 +824,38 @@ export default undefined;
 }
 
 func unsupportedLightningBaseComponentNames() []string {
-	return []string{
-		"formattedLocation", "formattedName", "inputLocation",
-	}
+	return nil
 }
 
 func buttonTemplateJS() string {
-	return `[api_element("button", { classMap: { "slds-button": true, "slds-button_neutral": true }, attrs: { type: $cmp.type || "button" }, props: { disabled: Boolean($cmp.disabled) }, key: 0 }, [api_text($cmp.label || "")])]`
+	return `[api_element("button", { classMap: buttonClassMap($cmp.variant), attrs: { type: normalizedButtonType($cmp.type), name: $cmp.name || undefined, value: $cmp.value == null ? undefined : String($cmp.value), title: $cmp.title || undefined, "aria-label": $cmp.alternativeText || undefined }, props: { disabled: Boolean($cmp.disabled) }, key: 0 }, [api_text($cmp.iconName && $cmp.iconPosition !== "right" ? ($cmp.iconName || "").split(":").pop() + " " : ""), api_text($cmp.label || ""), api_text($cmp.iconName && $cmp.iconPosition === "right" ? " " + ($cmp.iconName || "").split(":").pop() : "")])]`
 }
 
 func buttonStatefulTemplateJS() string {
-	return `[api_element("button", { classMap: { "slds-button": true, "slds-button_neutral": true }, attrs: { type: "button", "aria-pressed": String(Boolean($cmp.selected || $cmp.checked)) }, props: { disabled: Boolean($cmp.disabled) }, key: 0 }, [api_text($cmp.label || ((($cmp.selected || $cmp.checked) ? $cmp.labelWhenOn : $cmp.labelWhenOff) || $cmp.labelWhenHover || ""))])]`
+	return `[api_element("button", { classMap: { ...buttonClassMap($cmp.variant), "slds-button_stateful": true, "slds-is-selected": Boolean($cmp.selected || $cmp.checked), "slds-not-selected": !Boolean($cmp.selected || $cmp.checked) }, attrs: { type: "button", "aria-pressed": String(Boolean($cmp.selected || $cmp.checked)) }, props: { disabled: Boolean($cmp.disabled) }, key: 0 }, [api_text($cmp.label || ((($cmp.selected || $cmp.checked) ? $cmp.labelWhenOn : $cmp.labelWhenOff) || $cmp.labelWhenHover || ""))])]`
 }
 
 func iconButtonTemplateJS() string {
-	return `[api_element("button", { classMap: { "slds-button": true, "slds-button_icon": true }, attrs: { type: "button", title: $cmp.alternativeText || $cmp.iconName || "" }, props: { disabled: Boolean($cmp.disabled) }, key: 0 }, [api_text(($cmp.iconName || "utility:button").split(":").pop())])]`
+	return `[api_element("button", { classMap: buttonIconClassMap($cmp.variant, $cmp.size), attrs: { type: normalizedButtonType($cmp.type), name: $cmp.name || undefined, value: $cmp.value == null ? undefined : String($cmp.value), title: $cmp.alternativeText || $cmp.iconName || "", "aria-label": $cmp.alternativeText || undefined }, props: { disabled: Boolean($cmp.disabled) }, key: 0 }, [api_text(($cmp.iconName || "utility:button").split(":").pop()), $cmp.alternativeText ? api_element("span", { classMap: { "slds-assistive-text": true }, key: 1 }, [api_text($cmp.alternativeText)]) : null].filter(Boolean))]`
 }
 
 func cardTemplateJS() string {
-	return `[api_element("article", { classMap: { "slds-card": true }, key: 0 }, [api_element("header", { classMap: { "slds-card__header": true }, key: 1 }, [api_element("h2", { classMap: { "slds-card__header-title": true }, key: 2 }, [api_text($cmp.title || "")])]), api_element("div", { classMap: { "slds-card__body": true }, key: 3 }, [api_slot("", { key: 4 }, [], $slotset)])])]`
+	return `(() => {
+  const titleChildren = $cmp.title ? [api_text($cmp.title)] : [api_slot("title", { key: 8 }, [], $slotset)];
+  const mediaChildren = [];
+  if ($cmp.iconName) {
+    mediaChildren.push(api_element("span", { classMap: { "slds-media__figure": true, "slds-icon_container": true }, attrs: { title: $cmp.iconName }, key: 4 }, [api_text(($cmp.iconName || "").split(":").pop())]));
+  }
+  mediaChildren.push(api_element("div", { classMap: { "slds-media__body": true, "slds-truncate": true }, key: 5 }, [api_element("h2", { classMap: { "slds-card__header-title": true }, key: 6 }, [api_element("span", { classMap: { "slds-text-heading_small": true }, key: 7 }, titleChildren)])]));
+  return [api_element("article", { classMap: cardClassMap($cmp.variant), key: 0 }, [
+    api_element("header", { classMap: { "slds-card__header": true, "slds-grid": true }, key: 1 }, [
+      api_element("div", { classMap: { "slds-media": true, "slds-media_center": true, "slds-has-flexi-truncate": true }, key: 2 }, mediaChildren),
+      api_element("div", { classMap: { "slds-no-flex": true }, key: 9 }, [api_slot("actions", { key: 10 }, [], $slotset)])
+    ]),
+    api_element("div", { classMap: { "slds-card__body": true }, key: 11 }, [api_slot("", { key: 12 }, [], $slotset)]),
+    api_element("div", { classMap: { "slds-card__footer": true }, key: 13 }, [api_slot("footer", { key: 14 }, [], $slotset)])
+  ])];
+})()`
 }
 
 func inputTemplateJS() string {
@@ -651,11 +871,11 @@ func comboboxTemplateJS() string {
 }
 
 func layoutTemplateJS() string {
-	return `[api_element("div", { classMap: { "slds-grid": true, "slds-wrap": true }, key: 0 }, [api_slot("", { key: 1 }, [], $slotset)])]`
+	return `[api_element("div", { classMap: layoutClassMap($cmp), key: 0 }, [api_slot("", { key: 1 }, [], $slotset)])]`
 }
 
 func layoutItemTemplateJS() string {
-	return `[api_element("div", { classMap: { "slds-col": true }, key: 0 }, [api_slot("", { key: 1 }, [], $slotset)])]`
+	return `[api_element("div", { classMap: layoutItemClassMap($cmp), key: 0 }, [api_slot("", { key: 1 }, [], $slotset)])]`
 }
 
 func tabsetTemplateJS() string {
@@ -737,6 +957,10 @@ func formattedEmailTemplateJS() string {
 	return `[api_element("a", { attrs: { href: ($cmp.value || $cmp.href) ? "mailto:" + String($cmp.value || $cmp.href) : "#" }, key: 0 }, [api_text($cmp.label || $cmp.value || $cmp.href || "")])]`
 }
 
+func formattedNumberTemplateJS() string {
+	return `(() => { const text = formatNumberValue($cmp); return [api_element("span", { classMap: { "slds-truncate": true }, attrs: { title: text }, key: 0 }, [api_text(text)])]; })()`
+}
+
 func slotContainerTemplateJS(tag, className string) string {
 	return fmt.Sprintf(`[api_element(%q, { classMap: { %q: true }, key: 0 }, [api_slot("", { key: 1 }, [], $slotset)])]`, tag, className)
 }
@@ -762,6 +986,58 @@ func formattedLinkTemplateJS(kind string) string {
 
 func formattedAddressTemplateJS() string {
 	return `[api_element("address", { classMap: { "slds-truncate": true }, key: 0 }, [api_text([$cmp.street, $cmp.city, $cmp.province, $cmp.postalCode, $cmp.country, $cmp.value].filter(Boolean).join(", "))])]`
+}
+
+func formattedLocationTemplateJS() string {
+	return `[api_element("span", { classMap: { "slds-truncate": true }, key: 0 }, [api_text([$cmp.latitude, $cmp.longitude].filter((value) => value !== undefined && value !== null && value !== "").join(", "))])]`
+}
+
+func formattedNameTemplateJS() string {
+	return `[api_element("span", { classMap: { "slds-truncate": true }, key: 0 }, [api_text([$cmp.salutation, $cmp.firstName, $cmp.middleName, $cmp.lastName, $cmp.suffix, $cmp.informalName, $cmp.value].filter(Boolean).join(" "))])]`
+}
+
+func formattedLookupTemplateJS() string {
+	return `[api_element("a", { attrs: { href: $cmp.href || ($cmp.recordId ? "/lightning/r/" + ($cmp.objectApiName || "Record") + "/" + $cmp.recordId + "/view" : "#"), tabindex: $cmp.tabIndex == null ? undefined : String($cmp.tabIndex) }, key: 0, on: { click: api_bind($cmp.handleActive) } }, [api_text($cmp.displayValue || $cmp.label || $cmp.recordId || "")])]`
+}
+
+func inputLocationTemplateJS() string {
+	return `[api_element("fieldset", { classMap: { "slds-form-element": true }, key: 0 }, [api_element("legend", { classMap: { "slds-form-element__legend": true }, key: 1 }, [api_text($cmp.label || "Location")]), api_element("input", { classMap: { "slds-input": true }, attrs: { type: "number", step: "any", placeholder: "Latitude" }, props: { value: $cmp.latitude ?? "", disabled: Boolean($cmp.disabled), required: Boolean($cmp.required) }, key: 2, on: { change: api_bind($cmp.handleChange), input: api_bind($cmp.handleChange) } }), api_element("input", { classMap: { "slds-input": true }, attrs: { type: "number", step: "any", placeholder: "Longitude" }, props: { value: $cmp.longitude ?? "", disabled: Boolean($cmp.disabled), required: Boolean($cmp.required) }, key: 3, on: { change: api_bind($cmp.handleChange), input: api_bind($cmp.handleChange) } })])]`
+}
+
+func inputNameTemplateJS() string {
+	return `[api_element("fieldset", { classMap: { "slds-form-element": true }, key: 0 }, [api_element("legend", { classMap: { "slds-form-element__legend": true }, key: 1 }, [api_text($cmp.label || "Name")]), api_element("input", { classMap: { "slds-input": true }, attrs: { placeholder: "First Name" }, props: { value: $cmp.firstName || "", disabled: Boolean($cmp.disabled), required: Boolean($cmp.required) }, key: 2, on: { change: api_bind($cmp.handleChange), input: api_bind($cmp.handleChange) } }), api_element("input", { classMap: { "slds-input": true }, attrs: { placeholder: "Last Name" }, props: { value: $cmp.lastName || "", disabled: Boolean($cmp.disabled), required: Boolean($cmp.required) }, key: 3, on: { change: api_bind($cmp.handleChange), input: api_bind($cmp.handleChange) } })])]`
+}
+
+func dialogNoticeTemplateJS(kind string) string {
+	return fmt.Sprintf(`[api_element("section", { classMap: { "slds-modal": true, "slds-fade-in-open": true }, attrs: { role: %[1]q }, key: 0 }, [api_element("div", { classMap: { "slds-modal__container": true }, key: 1 }, [api_element("header", { classMap: { "slds-modal__header": true }, key: 2 }, [api_text($cmp.label || $cmp.title || %[1]q)]), api_element("div", { classMap: { "slds-modal__content": true }, key: 3 }, [api_text($cmp.message || $cmp.value || ""), api_slot("", { key: 4 }, [], $slotset)])])])]`, kind)
+}
+
+func modalHeaderTemplateJS() string {
+	return `[api_element("header", { classMap: { "slds-modal__header": true }, key: 0 }, [api_element("h2", { classMap: { "slds-modal__title": true }, key: 1 }, [api_text($cmp.label || $cmp.title || "")]), api_slot("", { key: 2 }, [], $slotset)])]`
+}
+
+func dynamicIconTemplateJS() string {
+	return `[api_element("span", { classMap: { "slds-icon_container": true }, attrs: { title: $cmp.alternativeText || $cmp.type || $cmp.iconName || "" }, key: 0 }, [api_text($cmp.alternativeText || $cmp.type || $cmp.iconName || "")])]`
+}
+
+func barcodeScannerTemplateJS() string {
+	return `[api_element("button", { classMap: { "slds-button": true, "slds-button_neutral": true }, attrs: { type: "button" }, props: { disabled: Boolean($cmp.disabled) }, key: 0 }, [api_text($cmp.label || "Scan Barcode")])]`
+}
+
+func primitiveFigureTemplateJS() string {
+	return `[api_element("figure", { classMap: { "slds-figure": true }, key: 0 }, [api_slot("", { key: 1 }, [], $slotset), api_element("figcaption", { key: 2 }, [api_text($cmp.label || $cmp.title || "")])])]`
+}
+
+func relativeDateTimeTemplateJS() string {
+	return `[api_element("time", { classMap: { "slds-truncate": true }, attrs: { datetime: String($cmp.value || "") }, key: 0 }, [api_text($cmp.value || "")])]`
+}
+
+func stackedTabTemplateJS() string {
+	return `[api_element("button", { classMap: { "slds-button": true, "slds-button_neutral": true }, attrs: { type: "button" }, props: { disabled: Boolean($cmp.disabled) }, key: 0, on: { click: api_bind($cmp.handleActive) } }, [api_text($cmp.label || $cmp.name || "")])]`
+}
+
+func toastTemplateJS() string {
+	return `[api_element("section", { classMap: { "slds-notify": true, "slds-notify_toast": true }, attrs: { role: ($cmp.variant === "error" ? "alert" : "status") }, key: 0 }, [api_element("h2", { classMap: { "slds-text-heading_small": true }, key: 1 }, [api_text($cmp.label || $cmp.title || "")]), api_element("div", { classMap: { "slds-notify__content": true }, key: 2 }, [api_text($cmp.message || $cmp.value || ""), api_slot("", { key: 3 }, [], $slotset)])])]`
 }
 
 func avatarTemplateJS() string {
@@ -890,4 +1166,16 @@ func carouselImageTemplateJS() string {
 
 func verticalNavigationItemTemplateJS() string {
 	return `[api_element("a", { classMap: { "slds-nav-vertical__action": true }, attrs: { href: $cmp.href || "#", role: "link" }, key: 0, on: { click: api_bind($cmp.handleActive) } }, [api_text($cmp.label || $cmp.name || "")])]`
+}
+
+func verticalNavigationItemBadgeTemplateJS() string {
+	return `[api_element("a", { classMap: { "slds-nav-vertical__action": true }, attrs: { href: $cmp.href || "#", role: "link" }, key: 0, on: { click: api_bind($cmp.handleActive) } }, [api_text($cmp.label || $cmp.name || ""), api_element("span", { classMap: { "slds-badge": true }, attrs: { title: $cmp.assistiveText || "" }, key: 1 }, [api_text(String($cmp.badgeCount ?? ""))])])]`
+}
+
+func verticalNavigationItemIconTemplateJS() string {
+	return `[api_element("a", { classMap: { "slds-nav-vertical__action": true }, attrs: { href: $cmp.href || "#", role: "link" }, key: 0, on: { click: api_bind($cmp.handleActive) } }, [api_element("span", { classMap: { "slds-icon_container": true }, key: 1 }, [api_text(($cmp.iconName || "").split(":").pop())]), api_text($cmp.label || $cmp.name || "")])]`
+}
+
+func verticalNavigationOverflowTemplateJS() string {
+	return `[api_element("button", { classMap: { "slds-button": true, "slds-button_reset": true }, attrs: { type: "button" }, key: 0, on: { click: api_bind($cmp.handleActive) } }, [api_text($cmp.label || ($cmp.expanded ? "Show Less" : "Show More"))])]`
 }

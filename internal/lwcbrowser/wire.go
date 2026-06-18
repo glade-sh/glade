@@ -76,6 +76,14 @@ type WireGetRelatedListRecordsRequest struct {
 	PageToken      string   `json:"pageToken"`
 }
 
+type WireRecordPickerSearchRequest struct {
+	ObjectAPIName  string   `json:"objectApiName"`
+	SearchTerm     string   `json:"searchTerm"`
+	Fields         []string `json:"fields"`
+	MatchingFields []string `json:"matchingFields"`
+	PageSize       int      `json:"pageSize"`
+}
+
 type WireCreateRecordRequest struct {
 	APIName string         `json:"apiName"`
 	Fields  map[string]any `json:"fields"`

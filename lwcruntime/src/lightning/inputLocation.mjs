@@ -1,3 +1,3 @@
-import { unsupportedBaseComponent } from "./base.mjs";
+import { createBaseComponent, renderInputLocation } from "./base.mjs";
 
-unsupportedBaseComponent("lightning-input-location");
+export default createBaseComponent("lightning-input-location", renderInputLocation);

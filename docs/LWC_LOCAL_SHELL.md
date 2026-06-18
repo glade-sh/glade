@@ -20,11 +20,11 @@ Then start the local workbench from the project root:
 glade dev lwc --project . --open
 ```
 
-The printed base URL opens the local workbench. The same workbench is also
-available at `/lwc` for stable links. It lists and filters available LWCs, lets
-you place target-compatible components into a draft app, home, record, or tab
-page, and shows discovered preview routes, active context, and local
-diagnostics.
+The printed base URL opens the local workbench at `/`. The same workbench is
+also available at `/lwc` for stable links. It lists and filters available LWCs,
+lets you place target-compatible components into a draft app, home, record,
+tab, URL-addressable, quick-action, or community page context, and shows
+discovered preview routes, active context, and local diagnostics.
 
 Use an ephemeral port and ready file for scripts:
 
@@ -89,6 +89,24 @@ Salesforce-like page context:
       "app": "Sales",
       "formFactor": "Large"
     },
+    "utilityBar": {
+      "target": "utilityBar",
+      "page": "Support_Utility",
+      "app": "Support",
+      "formFactor": "Large"
+    },
+    "membershipFlow": {
+      "target": "flowScreen",
+      "component": "c:communityFlow2",
+      "app": "Support",
+      "formFactor": "Large",
+      "flow": {
+        "apiName": "Membership_Flow",
+        "inputVariables": {
+          "recordId": "001000000000001AAA"
+        }
+      }
+    },
     "phase3BaseComponents": {
       "target": "component",
       "component": "c:baseComponentHost",
@@ -145,11 +163,13 @@ glade dev lwc --project . --target record-page --object Account --record 0010000
 ```
 
 Supported context targets are `component`, `urlAddressable`, `recordPage`,
-`appPage`, `homePage`, `tab`, `recordAction`, `globalAction`, and
-`communityPage`. Community presets use `community.site`, `basePath`, `siteId`,
-`networkId`, `guest`, `language`, and an optional configured `pageReference`.
-Direct flags include `--component`, `--object`, `--record`, `--page`, `--tab`,
-`--action`, `--app`, `--form-factor`, and repeated `--state key=value`.
+`appPage`, `homePage`, `tab`, `recordAction`, `globalAction`, `utilityBar`,
+`flowScreen`, `flowAction`, and `communityPage`. Community presets use
+`community.site`, `basePath`, `siteId`, `networkId`, `guest`, `language`, and an
+optional configured `pageReference`. Flow presets use `flow.apiName` and
+optional `flow.inputVariables`. Direct flags include `--component`, `--object`,
+`--record`, `--page`, `--tab`, `--action`, `--app`, `--flow`,
+`--flow-input key=value`, `--form-factor`, and repeated `--state key=value`.
 Explicit flags override preset fields for non-community routes.
 
 ## Preview Routes
@@ -165,6 +185,8 @@ Open these routes from the local server:
 /lwc/preview/app/<Page>
 /lwc/preview/home/<Page>
 /lwc/preview/tab/<Tab>
+/lwc/preview/utility/<UtilityBar>
+/lwc/preview/flow/<FlowApiName>
 /lwc/preview/action/<Object>/<recordId>/<ActionName>
 /lwc/preview/action/global/<ActionName>
 /lwc/preview/community/<site>/<page>
@@ -181,6 +203,8 @@ http://127.0.0.1:8080/lwc/preview/cmp/c/actionProbe?c__name=value
 http://127.0.0.1:8080/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page
 http://127.0.0.1:8080/lwc/preview/app/Sales_Dashboard
 http://127.0.0.1:8080/lwc/preview/tab/Lwc_Probe
+http://127.0.0.1:8080/lwc/preview/utility/Support_Utility
+http://127.0.0.1:8080/lwc/preview/flow/Membership_Flow
 http://127.0.0.1:8080/lwc/preview/action/Account/001000000000001AAA/Update_Status
 http://127.0.0.1:8080/lwc/preview/action/global/Global_Status
 http://127.0.0.1:8080/lwc/preview/community/Partner_Portal/Account
@@ -201,6 +225,13 @@ home, and tab routes resolve Salesforce metadata from the project:
   `objectApiName`, `actionName`, `actionType`, state, and PageReference
   attributes. Unsupported action metadata returns `GLADELWC070`; unsupported
   action types return `GLADELWC015`.
+- Utility-bar routes resolve `UtilityBar` FlexiPage metadata, mount utility
+  items, and pass a local workspace utility list.
+- Flow-screen routes resolve `flowScreen` presets, mount
+  `lightning__FlowScreen` components, and pass local Flow input variables and
+  navigation events.
+- Flow-action routes use the quick-action route shape and require
+  `lightning__FlowAction` metadata.
 - Community page routes resolve `communityPage` presets, mount
   `lightningCommunity__Page` components, apply a local
   `lightningCommunity__Theme_Layout` wrapper boundary when one exists, and pass
@@ -208,6 +239,10 @@ home, and tab routes resolve Salesforce metadata from the project:
   `comm__*` PageReference data.
 - Direct community component routes mount `lightningCommunity__Default`
   components with the site from the route and a `/s` base-path fallback.
+- Generated workbench routes include direct components, app pages, record
+  pages with a sample record ID, home pages, tabs, URL-addressable components,
+  utility bars, Flow screens, LWC-backed actions, and configured community
+  pages.
 
 Visualforce-backed custom tabs redirect to the Visualforce page route when the
 project defines one. That redirect is the main Visualforce mention in the LWC
@@ -237,6 +272,8 @@ Experience Cloud context, base components, Visualforce host support, and toast.
 | `/lwc/preview/app/<Page>` | `standard__app` |
 | `/lwc/preview/home/<Page>` | `standard__namedPage` with `home` |
 | `/lwc/preview/tab/<Tab>` | `standard__navItemPage` when the tab route is the active target |
+| `/lwc/preview/utility/<UtilityBar>` | `standard__component` with local workspace utility context |
+| `/lwc/preview/flow/<FlowApiName>` | `standard__component` with local Flow context |
 | `/lwc/preview/action/<Object>/<recordId>/<ActionName>` | `standard__quickAction` |
 | `/lwc/preview/action/global/<ActionName>` | `standard__quickAction` |
 | `/lwc/preview/community/<site>/<page>` | configured `comm__*`, defaulting to `comm__namedPage` |
@@ -257,6 +294,18 @@ FlexiPage component properties are passed as component attributes.
 
 The local LWC runtime supports the first-mile Salesforce module paths used by
 common local development loops:
+
+- Local static resources resolve root files and nested subpaths used by
+  `@salesforce/resourceUrl/*` and `lightning/platformResourceLoader`.
+- Datatable, record form, record edit/view form, input field, output field,
+  and message surfaces use practical local renderers backed by LDS/UI API
+  shims.
+- `lightning/flow` and `lightning/flowSupport` provide a local Flow screen
+  host and navigation events. This is not Salesforce Flow Builder.
+- `lightning/empApi` provides a deterministic in-page event bus. It does not
+  connect to Salesforce streaming services.
+- `lightning/platformWorkspaceApi` models local console tab state for
+  development. It is not the hosted console workspace engine.
 
 - Apex wire and imperative imports through `@salesforce/apex/<Class>.<method>`
   in the LWC shell and Visualforce Lightning Out.
@@ -319,15 +368,17 @@ common local development loops:
   local `comm__namedPage`, `comm__loginPage`, `comm__managedContentPage`,
   `comm__recordPage`, and `comm__recordRelationshipPage` URL generation.
 - `lightning/messageService` in-page publish and subscribe,
-  `lightning/platformResourceLoader` local script and style loading, and
-  `lightning/platformShowToastEvent` browser toast events.
+  `lightning/platformResourceLoader` local script and style loading,
+  `lightning/platformShowToastEvent`, `lightning/showToastEvent`, and
+  `lightning/toast` browser toast paths.
 - `lightning/platformWorkspaceApi` active-route and tab label/icon
   approximation for console apps, including local tab info, open/close/focus,
   refresh, highlight, and console wire values. Full console workspace behavior
   remains a Salesforce check and is marked with `GLADELWC072`.
-- `lightning/confirm`, `lightning/configProvider`, and
-  `lightning/pageReferenceUtils` local shims for package flows, icon token
-  lookup, and default field value encode/decode helpers.
+- `lightning/alert`, `lightning/confirm`, `lightning/prompt`,
+  `lightning/configProvider`, and `lightning/pageReferenceUtils` local shims
+  for package flows, icon token lookup, localization helpers, and default
+  field value encode/decode helpers.
 - `lightning/actions`, `lightning/flowSupport`, `lightning/refresh`, and
   `lightning/empApi` practical local shims. They provide browser events,
   refresh handler dispatch, and in-page pub/sub contracts without live
@@ -338,10 +389,13 @@ Lightning Out pages where the support table names that host.
 
 ## Base Components And SLDS
 
-The shell provides practical local support for common `lightning-*` base
-components and packaged local SLDS assets. New shell pages load SLDS 2 Cosmos
-from `/lightning/runtime/slds/design-system-2/dist/css/bundled/slds2.cosmos.css`
-by default. The local runtime also serves the SLDS 2 Lightning Blue bundle,
+The shell resolves every public `lightning/*` name exposed by
+`lightning-base-components@1.28.19-alpha`: 118 module names checked from the
+npm package. Renderable `lightning-*` components use practical local
+implementations. Service and helper modules use stable local shims. New shell
+pages load SLDS 2 Cosmos from
+`/lightning/runtime/slds/design-system-2/dist/css/bundled/slds2.cosmos.css` by
+default. The local runtime also serves the SLDS 2 Lightning Blue bundle,
 classic SLDS 1 styles, icon sprites, fonts, and referenced image assets from
 the same `/lightning/runtime/slds/` tree. The legacy
 `/lightning/runtime/slds/glade-slds.css` path remains as a compatibility import
@@ -359,14 +413,37 @@ events when a rendered tab label is selected. `lightning-record-form`,
 values through the local `getRecord` endpoint and submit edits through the
 local `updateRecord` endpoint.
 
-The checked `lwc-shell` fixture also exposes an expanded base-component
-direct component context through `c:baseComponentHost` and
-`phase3BaseComponents`. It covers email links, dual listbox, select, slider,
-rich text input, menu divider, progress bar/ring, tile, breadcrumbs, tree grid,
-map, carousel, quick action panel, record picker, file upload, and the
-additional display/input/container set. The local browser capture for that
-fixture passes with no browser console errors or page errors. Live Salesforce
-parity evidence still belongs to a hosted capture report.
+The broader base-component set includes modal body/header/footer,
+alert/prompt/toast surfaces, display and formatted value helpers,
+name/location/address inputs, picklist and grouped combobox, barcode scanner,
+progress, tree and tree grid, map, carousel, vertical navigation variants,
+stacked tabs, overlay/popover containers, and the package helper modules such
+as `lightning/iconUtils`, `lightning/i18nService`, `lightning/routingService`,
+`lightning/messageDispatcher`, and icon template modules. The practical
+renderers cover common button/icon-button variants, `lightning-card`
+title/actions/footer slots, `lightning-layout` alignment and sizing classes,
+and `lightning-formatted-number` decimal, currency, percent, and percent-fixed
+formatting. These local modules are meant to keep real project LWCs rendering
+and testable. Exact hosted keyboard behavior, overlay stacking, accessibility
+edge cases, and full Salesforce chrome still belong to a Salesforce browser
+check.
+
+A small allowlist uses compiled or source-backed base component
+implementations instead of generated shims: `lightning-badge`,
+`lightning-breadcrumb`, `lightning-breadcrumbs`, `lightning-button-group`,
+`lightning-datatable`, `lightning-input-field`, `lightning-messages`,
+`lightning-output-field`, `lightning-record-edit-form`,
+`lightning-record-form`, `lightning-record-picker`,
+`lightning-record-view-form`, `lightning-menu-subheader`, and
+`lightning-vertical-navigation-item`. Additional source-backed components
+should be added one slice at a time after their compiled imports are checked
+for local-only browser-safe dependencies.
+
+The checked `lwc-shell` fixture exposes an expanded base-component direct
+component context through `c:baseComponentHost` and `phase3BaseComponents`.
+The local browser capture for that fixture passes with no browser console
+errors or page errors. Live Salesforce parity evidence still belongs to a
+hosted capture report.
 
 Unsupported base component imports, unsupported local base-component
 attributes, and missing SLDS assets report named `GLADELWC` diagnostics. Keep a
@@ -437,13 +514,11 @@ project LWC component names, project LWC component counts, and diffs.
 The current browser oracle lane proves the app page, custom tab, and
 URL-addressable component targets on both sides: local shell DOM and Salesforce
 DOM, selector-scoped comparison, zero browser console errors, and zero page
-errors. The app-page and custom-tab oracle deploys the `Lwc_Shell` app, assigns
-`Lwc_Shell_Access`, and opens `/lightning/app/c__Lwc_Shell/n/Lwc_Probe`.
-The 2026-06-17 `oaer-probe-max` run wrote
-`/tmp/glade-lwc-oaer-phase8-10-browser.json` with 3 pass and 0 fail. A broader
-deploy/prepared capture against the same scratch org wrote
-`/tmp/glade-lwc-oaer-phase8-10-capture.json` with 35 prepared targets across
-`lightning-shell` and `visualforce-lightning-out`.
+errors. The app-page and custom-tab oracle deploys the fixture app, assigns the
+fixture permission set, and opens the fixture Lightning app route. The latest
+external capture lane recorded 3 browser pass rows and 0 fail rows for the
+two-sided target set. A broader deploy/prepared capture recorded 35 prepared
+targets across `lightning-shell` and `visualforce-lightning-out`.
 Record pages need a real org record id and page activation. Quick actions need
 modal routing proof. Visualforce Lightning Out needs the Visualforce fixture
 pages deployed to the same org. Expanded base-component and community captures
@@ -474,7 +549,7 @@ This is local development support, not a hosted Salesforce replacement.
 | --- | --- |
 | Hosted Lightning Experience | Glade serves a local shell, not Salesforce chrome, live auth, permissions, workspace API, or exact console behavior. |
 | Metadata | The shell resolves LWC bundle metadata, FlexiPages, custom applications, custom tabs, quick actions, and configured community contexts needed for preview routes. It does not implement every builder rule or full Experience Builder runtime. |
-| Base components | Common and expanded checked `lightning-*` modules have practical local implementations, including datatable row actions, LDS-backed record form reads and submits, tab active events, dual listbox/select/slider changes, rich text input changes, record picker changes, and file upload events. Packaged SLDS 2 and classic SLDS assets are served locally, but exact hosted base-component behavior remains outside the local contract. Unsupported local attributes report `GLADELWC061`. |
+| Base components | All public `lightning/*` names exposed by `lightning-base-components@1.28.19-alpha` resolve locally. Renderable `lightning-*` modules have practical local implementations, including datatable row actions, LDS-backed record form reads and submits, tab active events, dual listbox/select/slider changes, rich text input changes, record picker changes, file upload events, overlay/toast/modal surfaces, and display/input/container helpers. Packaged SLDS 2 and classic SLDS assets are served locally, but exact hosted base-component behavior remains outside the local contract. Unsupported local attributes report `GLADELWC061`. |
 | Apex params and errors | Params must be object-shaped. `undefined` wire params suppress invocation; `null` is passed as an explicit value. Errors use a Salesforce-shaped `body.message`, `body.exceptionType`, `body.stackTrace`, and `status` envelope. |
 | LDS/UI API | Selected LDS/UI API shims use local schema and local records, including batch records, optional fields, batch object info, create-default field layouts, REST layout field sections, picklists, related-list rows, mutation refresh, and matching record-wire re-emits. Full UI API, profile layout assignment, non-field layout widgets, permissions, record edit flows, broad cross-adapter coalescing, and hosted validation parity are not complete. |
 | Apex controllers | Supported local Apex executes in the Glade VM. Unsupported Apex surfaces return diagnostics instead of calling Salesforce. |

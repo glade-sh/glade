@@ -13,6 +13,43 @@ import (
 	"github.com/glade-sh/glade/internal/gladehome"
 )
 
+func assertSupportedBaseComponentJS(t *testing.T, name, js string) {
+	t.Helper()
+	if containsAll(js, "registerComponent", "export default", "createBaseComponent") {
+		return
+	}
+	if containsAll(js, `export { default }`, `/lightning/runtime/lightning/`) {
+		return
+	}
+	t.Fatalf("%s module js = %q", name, js)
+}
+
+func baseComponentContractJS(t *testing.T, name string) string {
+	t.Helper()
+	js := LightningBaseComponentModuleJS(name)
+	component, ok := sourceBackedLightningComponentName(name)
+	if !ok {
+		return js
+	}
+	var parts []string
+	if component == "recordPicker" {
+		parts = append(parts, readRuntimeLightningFile(t, "recordPicker.mjs"))
+	} else {
+		parts = append(parts, readRuntimeLightningFile(t, filepath.Join("source", component, component+".js")))
+		parts = append(parts, readRuntimeLightningFile(t, "lds-form.mjs"))
+	}
+	return js + "\n" + strings.Join(parts, "\n")
+}
+
+func readRuntimeLightningFile(t *testing.T, rel string) string {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join("..", "..", "lwcruntime", "src", "lightning", rel))
+	if err != nil {
+		t.Fatalf("read runtime lightning file %s: %v", rel, err)
+	}
+	return string(data)
+}
+
 func TestLightningBaseComponentSupportTiers(t *testing.T) {
 	for _, name := range []string{
 		"button",
@@ -40,9 +77,7 @@ func TestLightningBaseComponentSupportTiers(t *testing.T) {
 			t.Fatalf("expected %s to be recognized as a lightning base component", name)
 		}
 		js := LightningBaseComponentModuleJS(name)
-		if !containsAll(js, "registerComponent", "export default", "createBaseComponent") {
-			t.Fatalf("%s module js = %q", name, js)
-		}
+		assertSupportedBaseComponentJS(t, name, js)
 		if strings.Contains(js, "GLADELWC060") {
 			t.Fatalf("%s should be supported, got diagnostic js = %q", name, js)
 		}
@@ -87,9 +122,7 @@ func TestPackagePhase1BaseComponentsAreSupported(t *testing.T) {
 		"verticalNavigationSection",
 	} {
 		js := LightningBaseComponentModuleJS(name)
-		if !containsAll(js, "registerComponent", "export default", "createBaseComponent") {
-			t.Fatalf("%s module js = %q", name, js)
-		}
+		assertSupportedBaseComponentJS(t, name, js)
 		if strings.Contains(js, "GLADELWC060") {
 			t.Fatalf("%s should be supported for package phase 1, got diagnostic js = %q", name, js)
 		}
@@ -115,22 +148,54 @@ func TestPhase3BaseComponentsAreSupported(t *testing.T) {
 		"treeGrid",
 	} {
 		js := LightningBaseComponentModuleJS(name)
-		if !containsAll(js, "registerComponent", "export default", "createBaseComponent") {
-			t.Fatalf("%s module js = %q", name, js)
-		}
+		assertSupportedBaseComponentJS(t, name, js)
 		if strings.Contains(js, "GLADELWC060") {
 			t.Fatalf("%s should be supported for phase 3, got diagnostic js = %q", name, js)
 		}
 	}
 }
 
-func TestUnsupportedLightningBaseComponentEmitsDiagnostic(t *testing.T) {
-	if !IsLightningBaseComponentModule("formattedLocation") {
-		t.Fatalf("formattedLocation should be recognized so the browser receives a diagnostic module")
-	}
-	js := LightningBaseComponentModuleJS("formattedLocation")
-	if !containsAll(js, "GLADELWC060", "base component unsupported", "lightning-formatted-location") {
-		t.Fatalf("unsupported component js = %q", js)
+func TestNPMPackageExposedBaseComponentsAreSupportedLocally(t *testing.T) {
+	for _, name := range []string{
+		"alert",
+		"barcodeScanner",
+		"baseFormattedText",
+		"dialog",
+		"dynamicIcon",
+		"focusTrap",
+		"formattedLocation",
+		"formattedLookup",
+		"formattedName",
+		"groupedCombobox",
+		"inputLocation",
+		"inputName",
+		"lookupAddress",
+		"modalBody",
+		"modalFooter",
+		"modalHeader",
+		"multiColumnSortingModal",
+		"overlay",
+		"picklist",
+		"popup",
+		"primitiveFigure",
+		"prompt",
+		"relativeDateTime",
+		"stackedTab",
+		"stackedTabset",
+		"toast",
+		"toastContainer",
+		"verticalNavigationItemBadge",
+		"verticalNavigationItemIcon",
+		"verticalNavigationOverflow",
+	} {
+		if !IsLightningBaseComponentModule(name) {
+			t.Fatalf("expected %s to be recognized as a lightning base component", name)
+		}
+		js := LightningBaseComponentModuleJS(name)
+		assertSupportedBaseComponentJS(t, name, js)
+		if strings.Contains(js, "GLADELWC060") {
+			t.Fatalf("%s should be supported from the lightning-base-components expose list, got diagnostic js = %q", name, js)
+		}
 	}
 }
 
@@ -145,27 +210,29 @@ func TestBaseComponentModuleJSUsesCanonicalKebabTags(t *testing.T) {
 		"modal":          "lightning-modal",
 		"dualListbox":    "lightning-dual-listbox",
 		"inputRichText":  "lightning-input-rich-text",
+		"inputLocation":  "lightning-input-location",
+		"inputName":      "lightning-input-name",
 		"progressRing":   "lightning-progress-ring",
 		"treeGrid":       "lightning-tree-grid",
 	}
 	for name, want := range cases {
-		if got := LightningBaseComponentModuleJS(name); !strings.Contains(got, want) {
+		if got := baseComponentContractJS(t, name); !strings.Contains(got, want) {
 			t.Fatalf("%s module missing %s:\n%s", name, want, got)
 		}
 	}
 }
 
 func TestBaseComponentPublicPropsIncludeFieldName(t *testing.T) {
-	js := LightningBaseComponentModuleJS("outputField")
+	js := baseComponentContractJS(t, "outputField")
 	if !containsAll(js, `"fieldName"`, "$cmp.fieldName") {
 		t.Fatalf("outputField module missing fieldName support:\n%s", js)
 	}
 }
 
 func TestBaseComponentPublicMethodsExposeFormAndValidityContracts(t *testing.T) {
-	js := LightningBaseComponentModuleJS("inputField")
+	js := baseComponentContractJS(t, "inputField")
 	if !containsAll(js,
-		"publicMethods: basePublicMethods()",
+		"publicMethods: COMMON_METHODS",
 		`"setErrors"`,
 		`"getErrors"`,
 		`"wireRecordUi"`,
@@ -186,21 +253,67 @@ func TestBaseComponentPublicMethodsExposeFormAndValidityContracts(t *testing.T) 
 }
 
 func TestDatatableModuleDispatchesRowAction(t *testing.T) {
-	js := LightningBaseComponentModuleJS("datatable")
+	js := baseComponentContractJS(t, "datatable")
 	if !containsAll(js, "handleRowAction", `"rowaction"`, "typeAttributes", "rowActions") {
 		t.Fatalf("datatable module missing row action support:\n%s", js)
 	}
 }
 
+func TestPriorityBaseComponentsUseSourceBackedRuntimeModules(t *testing.T) {
+	cases := map[string]string{
+		"datatable":      "/lightning/runtime/lightning/source/datatable/datatable.js",
+		"inputField":     "/lightning/runtime/lightning/source/inputField/inputField.js",
+		"outputField":    "/lightning/runtime/lightning/source/outputField/outputField.js",
+		"messages":       "/lightning/runtime/lightning/source/messages/messages.js",
+		"recordForm":     "/lightning/runtime/lightning/source/recordForm/recordForm.js",
+		"recordEditForm": "/lightning/runtime/lightning/source/recordEditForm/recordEditForm.js",
+		"recordViewForm": "/lightning/runtime/lightning/source/recordViewForm/recordViewForm.js",
+	}
+	for name, want := range cases {
+		js, ok := LightningSourceBackedComponentModuleJS(name)
+		if !ok {
+			t.Fatalf("%s should be source backed", name)
+		}
+		if !strings.Contains(js, want) {
+			t.Fatalf("%s source module = %q, want %q", name, js, want)
+		}
+	}
+}
+
+func TestPriorityBaseComponentSourceFilesAreNotShimReexports(t *testing.T) {
+	for _, component := range []string{
+		"datatable",
+		"inputField",
+		"messages",
+		"outputField",
+		"recordForm",
+		"recordEditForm",
+		"recordViewForm",
+	} {
+		path := filepath.Join("..", "..", "lwcruntime", "src", "lightning", "source", component, component+".js")
+		source, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatalf("%s source file: %v", component, err)
+		}
+		js := string(source)
+		if strings.Contains(js, "export { default } from \"../../") || strings.Contains(js, "export { default } from '../../") {
+			t.Fatalf("%s source file should not re-export a local generated shim:\n%s", component, js)
+		}
+		if !containsAll(js, "create", "export default") {
+			t.Fatalf("%s source file should define a source-backed component:\n%s", component, js)
+		}
+	}
+}
+
 func TestRecordFormModuleUsesLocalLDSEndpoints(t *testing.T) {
-	js := LightningBaseComponentModuleJS("recordEditForm")
+	js := baseComponentContractJS(t, "recordEditForm")
 	if !containsAll(js,
-		"loadRecordFormRecord",
+		"loadRecord",
 		`"/lightning/wire/getRecord"`,
 		`"/lightning/wire/updateRecord"`,
 		`"success"`,
 		`"data-field-name"`,
-		"recordFieldDisplayValue",
+		"readRecordDisplayValue",
 	) {
 		t.Fatalf("record form module missing LDS-backed rendering and submit support:\n%s", js)
 	}
@@ -214,7 +327,7 @@ func TestTabModuleDispatchesActiveEvent(t *testing.T) {
 }
 
 func TestBaseComponentModuleReportsUnsupportedAttributes(t *testing.T) {
-	js := LightningBaseComponentModuleJS("datatable")
+	js := baseComponentContractJS(t, "datatable")
 	if !containsAll(js, "GLADELWC061", "unsupportedAttrs", "getAttributeNames") {
 		t.Fatalf("base component module missing unsupported attribute diagnostics:\n%s", js)
 	}
@@ -237,8 +350,57 @@ func TestBaseComponentBooleanDisabledUsesProperty(t *testing.T) {
 	}
 }
 
+func TestBaseComponentSourceReferenceContracts(t *testing.T) {
+	cases := map[string][]string{
+		"button": {
+			"buttonClassMap($cmp.variant)",
+			"normalizedButtonType($cmp.type)",
+			"slds-button_brand",
+			"name: $cmp.name || undefined",
+			"value: $cmp.value == null ? undefined : String($cmp.value)",
+		},
+		"buttonIcon": {
+			"buttonIconClassMap($cmp.variant, $cmp.size)",
+			"slds-button_icon-border-filled",
+			`slds-button_icon-small`,
+			`"aria-label": $cmp.alternativeText || undefined`,
+			"value: $cmp.value == null ? undefined : String($cmp.value)",
+		},
+		"card": {
+			"cardClassMap($cmp.variant)",
+			"slds-card_narrow",
+			`api_slot("actions"`,
+			`api_slot("footer"`,
+			"slds-no-flex",
+		},
+		"formattedNumber": {
+			"formatNumberValue($cmp)",
+			"percent-fixed",
+			"currencyDisplayAs",
+			"maximumSignificantDigits",
+		},
+		"layout": {
+			"layoutClassMap($cmp)",
+			"slds-grid_align-spread",
+			"slds-grid_vertical-align-center",
+		},
+		"layoutItem": {
+			"layoutItemClassMap($cmp)",
+			"slds-size_",
+			"slds-small-size_",
+			"slds-p-around_",
+		},
+	}
+	for name, parts := range cases {
+		js := LightningBaseComponentModuleJS(name)
+		if !containsAll(js, parts...) {
+			t.Fatalf("%s module missing source-reference contract parts %v:\n%s", name, parts, js)
+		}
+	}
+}
+
 func TestDatatableModuleKeepsActionColumnIndex(t *testing.T) {
-	js := LightningBaseComponentModuleJS("datatable")
+	js := baseComponentContractJS(t, "datatable")
 	if !containsAll(js, "columnIndex", "dataset.columnIndex", `"data-column-index"`) {
 		t.Fatalf("datatable module should preserve action column index:\n%s", js)
 	}

@@ -119,6 +119,8 @@ type devLWCContextPresetFlags struct {
 	appSet        bool
 	formFactorSet bool
 	stateSet      bool
+	flowSet       bool
+	flowInputSet  bool
 }
 
 type devLWCSelection struct {
@@ -231,6 +233,27 @@ func parseDevLWCOptions(args []string) (devLWCOptions, error) {
 			}
 			opts.explicit.preset.FormFactor = value
 			opts.explicit.formFactorSet = true
+		case "--flow":
+			value, err := takeFlagValue(args, &i, "--flow requires a value")
+			if err != nil {
+				return opts, err
+			}
+			opts.explicit.preset.Flow.APIName = value
+			opts.explicit.flowSet = true
+		case "--flow-input":
+			value, err := takeFlagValue(args, &i, "--flow-input requires key=value")
+			if err != nil {
+				return opts, err
+			}
+			key, inputValue, ok := strings.Cut(value, "=")
+			if !ok || strings.TrimSpace(key) == "" {
+				return opts, errors.New("--flow-input requires key=value")
+			}
+			if opts.explicit.preset.Flow.InputVariables == nil {
+				opts.explicit.preset.Flow.InputVariables = map[string]any{}
+			}
+			opts.explicit.preset.Flow.InputVariables[strings.TrimSpace(key)] = inputValue
+			opts.explicit.flowInputSet = true
 		case "--state":
 			value, err := takeFlagValue(args, &i, "--state requires key=value")
 			if err != nil {
@@ -314,7 +337,7 @@ func (opts devLWCOptions) selection() (devLWCSelection, error) {
 }
 
 func (f devLWCContextPresetFlags) any() bool {
-	return f.targetSet || f.componentSet || f.objectSet || f.recordSet || f.pageSet || f.tabSet || f.actionSet || f.appSet || f.formFactorSet || f.stateSet
+	return f.targetSet || f.componentSet || f.objectSet || f.recordSet || f.pageSet || f.tabSet || f.actionSet || f.appSet || f.formFactorSet || f.stateSet || f.flowSet || f.flowInputSet
 }
 
 func applyDevLWCExplicitContext(preset *lwcshell.ContextPreset, flags devLWCContextPresetFlags) {
@@ -345,6 +368,17 @@ func applyDevLWCExplicitContext(preset *lwcshell.ContextPreset, flags devLWCCont
 	if flags.formFactorSet {
 		preset.FormFactor = flags.preset.FormFactor
 	}
+	if flags.flowSet {
+		preset.Flow.APIName = flags.preset.Flow.APIName
+	}
+	if flags.flowInputSet {
+		if preset.Flow.InputVariables == nil {
+			preset.Flow.InputVariables = map[string]any{}
+		}
+		for key, value := range flags.preset.Flow.InputVariables {
+			preset.Flow.InputVariables[key] = value
+		}
+	}
 	if flags.stateSet {
 		if preset.State == nil {
 			preset.State = map[string]string{}
@@ -360,6 +394,8 @@ func inferDevLWCTarget(preset *lwcshell.ContextPreset) {
 		return
 	}
 	switch {
+	case strings.TrimSpace(preset.Flow.APIName) != "" && strings.TrimSpace(preset.Component) != "":
+		preset.Target = "flowScreen"
 	case strings.TrimSpace(preset.Component) != "":
 		preset.Target = "component"
 	case strings.TrimSpace(preset.Action) != "":
@@ -470,6 +506,8 @@ func devLWCPreviewRoutes(p project.Project) []string {
 			routes = append(routes, "/lwc/preview/app/"+page.Name)
 		case "homepage":
 			routes = append(routes, "/lwc/preview/home/"+page.Name)
+		case "utilitybar":
+			routes = append(routes, "/lwc/preview/utility/"+page.Name)
 		}
 	}
 	for _, path := range p.TabFiles {
@@ -502,7 +540,11 @@ func devLWCPreviewRoutes(p project.Project) []string {
 		routes = append(routes, "/lwc/preview/action/global/"+actionName)
 	}
 	for _, route := range lwcshell.DiscoverShellRoutes(p) {
-		if route.Kind == lwcshell.RenderTargetCommunityPage && strings.TrimSpace(route.URL) != "" {
+		switch route.Kind {
+		case lwcshell.RenderTargetCommunityPage, lwcshell.RenderTargetFlowScreen, lwcshell.RenderTargetUtilityBar:
+			if strings.TrimSpace(route.URL) == "" {
+				continue
+			}
 			routes = append(routes, route.URL)
 		}
 	}
@@ -529,7 +571,7 @@ Start a local LWC preview development shell with Salesforce-like context.
 
 Usage:
   glade dev lwc [--project <root>] [--context <name>] [--open]
-  glade dev lwc [--project <root>] [--target component|record-page|app-page|home-page|tab|url-addressable|record-action|global-action] [flags]
+  glade dev lwc [--project <root>] [--target component|record-page|app-page|home-page|tab|url-addressable|record-action|global-action|utility-bar|flow-screen|flow-action] [flags]
 
 Preview feature:
   Useful local Lightning-style preview routes. Not full hosted Lightning
@@ -542,6 +584,8 @@ Preview routes:
   /lwc/preview/app/App_Page
   /lwc/preview/home/Home_Page
   /lwc/preview/tab/Lwc_Probe
+  /lwc/preview/utility/Support_Utility
+  /lwc/preview/flow/Membership_Flow
   /lwc/preview/cmp/c/actionProbe?c__mode=demo
   /lwc/preview/action/Account/<recordId>/Update_Status
   /lwc/preview/action/global/Global_Status
@@ -549,7 +593,7 @@ Preview routes:
 Context flags:
   --context <name>
   --context-file <path>
-  --target component|record-page|app-page|home-page|tab|url-addressable|record-action|global-action
+  --target component|record-page|app-page|home-page|tab|url-addressable|record-action|global-action|utility-bar|flow-screen|flow-action
   --component c:contextProbe
   --object Account
   --record 001000000000001AAA
@@ -557,6 +601,8 @@ Context flags:
   --tab Lwc_Probe
   --action Update_Status
   --app Sales
+  --flow Membership_Flow
+  --flow-input name=value
   --form-factor Large|Medium|Small
   --state key=value
   --open

@@ -762,12 +762,32 @@ func loadStaticResources(contentFiles, metaFiles []string, namespace string) ([]
 	byName := make(map[string]*storage.StaticResourceMetadata)
 	namespace = strings.TrimSpace(namespace)
 	for _, path := range contentFiles {
-		name := resourceNameFromContentPath(path)
+		name, subpath, ok := staticResourceNameAndSubpath(path)
+		if !ok {
+			name = resourceNameFromContentPath(path)
+		}
+		key := lookupKey(name)
+		resource := byName[key]
+		if resource == nil {
+			resource = &storage.StaticResourceMetadata{Name: name, NamespacePrefix: namespace, URL: StaticResourceURL(name)}
+			byName[key] = resource
+		}
+		if subpath != "" {
+			if resource.Files == nil {
+				resource.Files = make(map[string]string)
+			}
+			resource.Files[subpath] = path
+			if root := staticResourceContentRoot(path, subpath); root != "" && resource.ContentPath == "" {
+				resource.ContentPath = root
+			}
+			continue
+		}
 		content, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}
-		byName[lookupKey(name)] = &storage.StaticResourceMetadata{Name: name, NamespacePrefix: namespace, ContentPath: path, Content: string(content), URL: StaticResourceURL(name)}
+		resource.ContentPath = path
+		resource.Content = string(content)
 	}
 	for _, path := range metaFiles {
 		meta, err := loadResourceMeta(path)
@@ -791,6 +811,35 @@ func loadStaticResources(contentFiles, metaFiles []string, namespace string) ([]
 		out = append(out, *resource)
 	}
 	return out, nil
+}
+
+func staticResourceNameAndSubpath(file string) (name string, subpath string, ok bool) {
+	parts := strings.Split(filepath.ToSlash(file), "/")
+	for i, part := range parts {
+		if part == "staticresources" && i+1 < len(parts) {
+			name = strings.TrimSuffix(parts[i+1], ".resource")
+			if i+2 < len(parts) {
+				subpath = strings.Join(parts[i+2:], "/")
+			}
+			return name, subpath, name != ""
+		}
+	}
+	return "", "", false
+}
+
+func staticResourceContentRoot(file, subpath string) string {
+	subpath = filepath.FromSlash(strings.Trim(subpath, "/"))
+	if subpath == "" {
+		return ""
+	}
+	root := filepath.Clean(file)
+	for _, part := range strings.Split(subpath, string(filepath.Separator)) {
+		if part == "" {
+			continue
+		}
+		root = filepath.Dir(root)
+	}
+	return root
 }
 
 func loadContentAssets(contentFiles, metaFiles []string) ([]storage.ContentAssetMetadata, error) {

@@ -35,16 +35,16 @@ go run ./cmd/glade-plugin-compat lwc capture \
   --out /path/to/lwc-two-sided-browser-check.json
 ```
 
-Current `oaer-probe-max` wrap-up evidence from 2026-06-17:
+Current external wrap-up evidence from 2026-06-17:
 
 ```text
-/tmp/glade-lwc-oaer-phase8-10-capture.json
+fixture evidence capture
   mode: fixture-evidence-stubs
   deployed: true
   hosts: lightning-shell, visualforce-lightning-out
   counts: 35 targets, 35 prepared, 0 fail
 
-/tmp/glade-lwc-oaer-phase8-10-browser.json
+browser capture
   mode: browser-capture
   deployed: true
   counts: 3 targets, 3 pass, 0 fail
@@ -69,8 +69,8 @@ LWC shell target rows, Experience Cloud routes, package phase 1 base
 components, and expanded base components through Go and Playwright tests. The
 report stores stable paths only and does not write transient server URLs.
 Latest two-sided browser proof remains `app-page`, `custom-tab`, and
-`url-addressable-component` against both the local shell and `oaer-probe-max`,
-with no browser console errors or page errors. Each two-sided case includes a
+`url-addressable-component` against both the local shell and a Salesforce
+scratch org, with no browser console errors or page errors. Each two-sided case includes a
 selector-scoped `comparison` block for normalized visible text and project LWC
 component counts.
 The app-page target passes inside `c-wire-probe`, the custom-tab target passes
@@ -90,7 +90,7 @@ report itself is an external run artifact, not a checked-in JSON file.
 
 | Feature | Host | Status | Evidence | Notes |
 | --- | --- | --- | --- | --- |
-| `lwc.host.lightning-shell` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.host.lightning-shell/lightning-shell` | Host lane has passing local browser evidence, including the base-URL workbench, filterable available-LWC catalog, draft page composer, and local preview routes; live Salesforce parity remains target-specific. |
+| `lwc.host.lightning-shell` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.host.lightning-shell/lightning-shell` | Host lane has passing local browser evidence, including the `/` workbench, `/lwc` stable workbench route, filterable available-LWC catalog, draft page composer, generated route list, and local preview routes; live Salesforce parity remains target-specific. |
 | `lwc.host.visualforce-lightning-out` | `visualforce-lightning-out` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.host.visualforce-lightning-out/visualforce-lightning-out` | Host lane has passing local browser evidence; live Salesforce parity remains target-specific. |
 | `lwc.target.direct-component` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.target.direct-component/lightning-shell` | Direct component route mounts the context probe bundle. |
 | `lwc.target.record-page` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.target.record-page/lightning-shell` | Record page route resolves Account_Record_Page and passes record context. |
@@ -99,6 +99,9 @@ report itself is an external run artifact, not a checked-in JSON file.
 | `lwc.target.custom-tab` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.target.custom-tab/lightning-shell` | Custom tab route resolves Lwc_Probe to its flexipage. |
 | `lwc.target.url-addressable-component` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.target.url-addressable-component/lightning-shell` | URL state is preserved in the target metadata for later PageReference comparison. |
 | `lwc.target.record-quick-action` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.target.record-quick-action/lightning-shell` | Quick action metadata points at c:actionProbe. |
+| `lwc.target.utility-bar` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.target.utility-bar/lightning-shell` | Utility bar FlexiPage routes resolve local utility items and expose a local workspace utility context. |
+| `lwc.target.flow-screen` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.target.flow-screen/lightning-shell` | Flow screen routes resolve `flowScreen` presets, mount `lightning__FlowScreen` components, and expose local Flow input and navigation context. |
+| `lwc.target.flow-action` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.target.flow-action/lightning-shell` | Flow action routes use quick-action metadata and require `lightning__FlowAction` action metadata. Hosted Flow interviews remain a Salesforce check. |
 | `lwc.target.community-page` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.target.community-page/lightning-shell` | Community page routes resolve `communityPage` presets, mount `lightningCommunity__Page`, expose community context, and mount a local `lightningCommunity__Theme_Layout` boundary when present. |
 | `lwc.target.community-component` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.target.community-component/lightning-shell` | Direct community component routes mount `lightningCommunity__Default` with site context and `/s` base-path fallback. |
 | `lwc.target.visualforce-lightning-out` | `visualforce-lightning-out` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.target.visualforce-lightning-out/visualforce-lightning-out` | Visualforce host target records the shared Lightning Out runtime lane. |
@@ -115,6 +118,8 @@ report itself is an external run artifact, not a checked-in JSON file.
 | `lwc.service.ui-layout` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.ui-layout/lightning-shell` | Local `lightning/uiLayoutApi` getLayout returns the same Record Layout shape as create defaults. layoutProbe verifies the browser wire path. |
 | `lwc.service.lds-mutation` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.lds-mutation/lightning-shell` | Local server and runtime tests cover createRecord, updateRecord, deleteRecord, optional fields, soft-delete read misses, refreshApex, and notifyRecordUpdateAvailable. Salesforce browser DOM diff remains pending. |
 | `lwc.service.lds-mutation` | `visualforce-lightning-out` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.lds-mutation/visualforce-lightning-out` | Visualforce Lightning Out c:recordMutationHost proves createRecord, updateRecord, and deleteRecord against local org state. |
+| `lwc.service.record-forms` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.record-forms/lightning-shell` | Record form, record edit/view form, input field, output field, and message renderers use LDS/UI API shims for local development. |
+| `lwc.service.datatable` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.datatable/lightning-shell` | Datatable renders local rows, columns, row actions, and selection events for practical local workflows. |
 | `lwc.service.navigation` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.navigation/lightning-shell` | Runtime browser tests cover GenerateUrl, Navigate, CurrentPageReference, and local route diagnostics; strict capture proves the shell route loads without browser errors. |
 | `lwc.service.navigation` | `visualforce-lightning-out` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.navigation/visualforce-lightning-out` | Visualforce Lightning Out c:serviceHost proves CurrentPageReference and local navigation diagnostics. |
 | `lwc.service.community-context` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.community-context/lightning-shell` | Runtime tests cover `@salesforce/community/basePath`, `@salesforce/community/Id`, `@salesforce/site/Id`, guest user context, and `comm__*` navigation URL generation. |
@@ -122,8 +127,12 @@ report itself is an external run artifact, not a checked-in JSON file.
 | `lwc.service.toast` | `visualforce-lightning-out` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.toast/visualforce-lightning-out` | Visualforce Lightning Out c:serviceHost dispatches ShowToastEvent through the shared local runtime. |
 | `lwc.service.lms` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.lms/lightning-shell` | Runtime browser tests cover local Lightning Message Service publish, subscribe, and unsubscribe; strict capture proves the shell route loads without browser errors. |
 | `lwc.service.lms` | `visualforce-lightning-out` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.lms/visualforce-lightning-out` | Visualforce Lightning Out c:serviceHost imports @salesforce/messageChannel metadata and proves local publish and subscribe. |
+| `lwc.service.flow-shell` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.flow-shell/lightning-shell` | Local Flow screen host and Flow navigation events are supported for LWC development. Flow Builder and hosted Flow interview execution remain Salesforce checks. |
+| `lwc.service.emp-api` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.emp-api/lightning-shell` | EMP API is a deterministic in-page event bus for local tests and development, not a streaming connection to Salesforce. |
+| `lwc.service.console-workspace` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.console-workspace/lightning-shell` | Workspace API exposes a local console tab model and no-op tab helpers for development; hosted console behavior remains a Salesforce check. |
+| `lwc.service.static-resource-subpaths` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.static-resource-subpaths/lightning-shell` | Static resource root files, directories, and nested subpaths resolve locally for resource URL imports and platformResourceLoader calls. |
 | `lwc.service.resource-loader` | `visualforce-lightning-out` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.resource-loader/visualforce-lightning-out` | Visualforce Lightning Out c:serviceHost proves platformResourceLoader loadScript/loadStyle against local static resources. |
-| `lwc.service.base-components` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.base-components/lightning-shell` | Practical base shims render common lightning/* modules and cover click, change, submit, LDS-backed record form read and success/error submit events, datatable rowaction, tab active, and unsupported-attribute diagnostics. |
+| `lwc.service.base-components` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.base-components/lightning-shell` | Practical base shims render common lightning/* modules and cover button/icon-button variants, card action/footer slots, layout sizing classes, formatted number styles, click, change, submit, LDS-backed record form read and success/error submit events, datatable rowaction, tab active, and unsupported-attribute diagnostics. |
 | `lwc.service.base-components` | `visualforce-lightning-out` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.base-components/visualforce-lightning-out` | Visualforce Lightning Out mounts the same practical base component shims through c:baseComponentHost. |
 | `lwc.service.package-phase1-base-components` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.package-phase1-base-components/lightning-shell` | Package phase 1 base shims render the `lightning/*` modules found in the prioritized package lane through `c:baseComponentHost` and `packagePhase1BaseComponents`. |
-| `lwc.service.phase3-base-components` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.phase3-base-components/lightning-shell` | Expanded base-component support renders email, dual listbox, select, slider, rich text input, menu divider, progress bar/ring, tile, breadcrumbs, tree grid, map, carousel, quick action panel, record picker, file upload, and additional display/input/container components through `c:baseComponentHost` and `phase3BaseComponents`. |
+| `lwc.service.phase3-base-components` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.service.phase3-base-components/lightning-shell` | Expanded base-component support renders email, dual listbox, select, slider, rich text input, menu divider, progress bar/ring, tile, breadcrumbs, tree grid, map, carousel, quick action panel, record picker, file upload, button/card/layout/formatted-number contracts, and additional display/input/container components through `c:baseComponentHost` and `phase3BaseComponents`. |

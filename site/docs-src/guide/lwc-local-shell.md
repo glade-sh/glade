@@ -101,6 +101,24 @@ Put reusable contexts in `glade.lwc.json` at the project root:
       "app": "Sales",
       "formFactor": "Large"
     },
+    "utilityBar": {
+      "target": "utilityBar",
+      "page": "Support_Utility",
+      "app": "Support",
+      "formFactor": "Large"
+    },
+    "membershipFlow": {
+      "target": "flowScreen",
+      "component": "c:communityFlow2",
+      "app": "Support",
+      "formFactor": "Large",
+      "flow": {
+        "apiName": "Membership_Flow",
+        "inputVariables": {
+          "recordId": "001000000000001AAA"
+        }
+      }
+    },
     "communityAccount": {
       "target": "communityPage",
       "component": "c:communityProbe",
@@ -125,13 +143,14 @@ Put reusable contexts in `glade.lwc.json` at the project root:
 ```
 
 Supported targets are `component`, `urlAddressable`, `recordPage`, `appPage`,
-`homePage`, `tab`, `recordAction`, `globalAction`, and `communityPage`.
-Community presets carry site, base path, site ID, network ID, guest mode,
-language, and optional `comm__*` PageReference data. Direct flags include
-`--component`, `--object`, `--record`, `--page`, `--tab`, `--action`, `--app`,
-`--form-factor`, and repeated `--state key=value` for non-community routes. Use
-`--context-file` when the presets live somewhere other than the project-root
-`glade.lwc.json`:
+`homePage`, `tab`, `recordAction`, `globalAction`, `utilityBar`, `flowScreen`,
+`flowAction`, and `communityPage`. Community presets carry site, base path,
+site ID, network ID, guest mode, language, and optional `comm__*` PageReference
+data. Flow presets carry `flow.apiName` and optional `flow.inputVariables`.
+Direct flags include `--component`, `--object`, `--record`, `--page`, `--tab`,
+`--action`, `--app`, `--flow`, `--flow-input key=value`, `--form-factor`, and
+repeated `--state key=value` for non-community routes. Use `--context-file`
+when the presets live somewhere other than the project-root `glade.lwc.json`:
 
 ```bash
 glade dev lwc --project . --context-file config/lwc-contexts.json --context accountRecord --open
@@ -141,11 +160,12 @@ Direct flags override preset fields.
 
 ## Routes
 
-The printed base URL opens the workbench. `/lwc` opens the same workbench for
-stable links. It lists available LWCs, filters by search text and selected page
-target, lets you place components into a draft app, home, record, or tab page,
-and keeps active context and diagnostics visible. Raw preview routes remain
-stable for scripts and bookmarks:
+The printed base URL opens the workbench at `/`. `/lwc` opens the same
+workbench for stable links. It lists available LWCs, filters by search text and
+selected target, lets you place components into draft app, home, record, tab,
+URL-addressable, action, and community contexts, and keeps active context and
+diagnostics visible. Raw preview routes remain stable for scripts and
+bookmarks:
 
 ```text
 /
@@ -156,6 +176,8 @@ stable for scripts and bookmarks:
 /lwc/preview/app/<Page>
 /lwc/preview/home/<Page>
 /lwc/preview/tab/<Tab>
+/lwc/preview/utility/<UtilityBar>
+/lwc/preview/flow/<FlowApiName>
 /lwc/preview/action/<Object>/<recordId>/<ActionName>
 /lwc/preview/action/global/<ActionName>
 /lwc/preview/community/<site>/<page>
@@ -173,6 +195,8 @@ http://127.0.0.1:8080/lwc/preview/record/Account/001000000000001AAA?page=Account
 http://127.0.0.1:8080/lwc/preview/app/Sales_Dashboard
 http://127.0.0.1:8080/lwc/preview/home/Custom_Home
 http://127.0.0.1:8080/lwc/preview/tab/Lwc_Probe
+http://127.0.0.1:8080/lwc/preview/utility/Support_Utility
+http://127.0.0.1:8080/lwc/preview/flow/Membership_Flow
 http://127.0.0.1:8080/lwc/preview/action/Account/001000000000001AAA/Update_Status
 http://127.0.0.1:8080/lwc/preview/action/global/Global_Status
 http://127.0.0.1:8080/lwc/preview/community/Partner_Portal/Account
@@ -187,11 +211,20 @@ URL-addressable routes pass `c__*` state through the local PageReference.
 Quick action routes mount LWC-backed action metadata and pass action context
 attributes. Unsupported action metadata returns `GLADELWC070`; unsupported
 action types return `GLADELWC015`.
+Utility-bar routes resolve `UtilityBar` FlexiPages, mount utility items, and
+pass local workspace utility context.
+Flow-screen routes resolve `flowScreen` presets, mount `lightning__FlowScreen`
+components, and pass Flow input variables and local navigation events.
+Flow-action routes use the quick-action route shape and require
+`lightning__FlowAction` metadata.
 Community routes resolve `communityPage` presets, mount
 `lightningCommunity__Page` components, mount `lightningCommunity__Default`
 direct components, expose community base path, site ID, network ID, guest mode,
 language, and use a local `lightningCommunity__Theme_Layout` wrapper boundary
 when one is present.
+The generated route list includes direct components, app pages, record pages
+with a sample record ID, home pages, tabs, URL-addressable components,
+utility bars, Flow screens, LWC-backed actions, and configured community pages.
 
 ## Local context JSON
 
@@ -247,6 +280,7 @@ The LWC shell supports:
 - `@salesforce/schema` object and field tokens.
 - `@salesforce/label`, `@salesforce/resourceUrl`, and
   `@salesforce/contentAssetUrl`.
+- Static resource subpaths for local scripts, styles, and images.
 - `@salesforce/client/formFactor` and `@salesforce/customPermission/*` shims
   for package components that branch on form factor or custom permissions.
 - `@salesforce/user`, checked `@salesforce/i18n` values, and
@@ -257,26 +291,47 @@ The LWC shell supports:
   strings and report `GLADELWC102`.
 - `comm__namedPage`, `comm__loginPage`, `comm__managedContentPage`,
   `comm__recordPage`, and `comm__recordRelationshipPage` local URL generation.
-- `lightning/messageService`, `lightning/platformResourceLoader`, and
-  `lightning/platformShowToastEvent` shims in the shell and Visualforce
-  Lightning Out where the support table names that host.
+- `lightning/messageService`, `lightning/platformResourceLoader`,
+  `lightning/platformShowToastEvent`, `lightning/showToastEvent`, and
+  `lightning/toast` shims in the shell and Visualforce Lightning Out where the
+  support table names that host.
 - `lightning/platformWorkspaceApi` console approximation for local tab info,
   open/close/focus, refresh, highlight, label/icon helpers, and console wire
   values.
-- `lightning/confirm`, `lightning/configProvider`, and
-  `lightning/pageReferenceUtils` shims for confirm flows, icon token lookup,
-  and default field value encode/decode helpers.
+- `lightning/alert`, `lightning/confirm`, `lightning/prompt`,
+  `lightning/configProvider`, and `lightning/pageReferenceUtils` shims for
+  overlay flows, icon token lookup, localization helpers, and default field
+  value encode/decode helpers.
 - `lightning/actions`, `lightning/flowSupport`, `lightning/refresh`, and
   `lightning/empApi` practical local shims for quick-action events, flow-screen
-  events, in-page refresh handlers, and local pub/sub.
-- Practical local implementations for common `lightning-*` base components,
-  including datatable row actions, LDS-backed record form reads and submits,
-  record-form `success` and `error` events, and tab active events.
+  events, in-page refresh handlers, and deterministic in-page EMP pub/sub.
+- `lightning/flow` and `lightning/flowSupport` for local Flow screen hosts and
+  navigation events. This is not Flow Builder.
+- Datatable, record forms, input fields, output fields, and local LDS/UI API
+  form messages.
+- Practical local implementations for every public `lightning/*` name exposed
+  by `lightning-base-components@1.28.19-alpha`: 118 module names checked from
+  the npm package. Renderable components get local renderers; service and
+  helper modules get local shims.
+- Source-backed local implementations for an allowlist of base components:
+  `lightning-badge`, `lightning-breadcrumb`, `lightning-breadcrumbs`,
+  `lightning-button-group`, `lightning-datatable`, `lightning-input-field`,
+  `lightning-messages`, `lightning-output-field`,
+  `lightning-record-edit-form`, `lightning-record-form`,
+  `lightning-record-picker`, `lightning-record-view-form`,
+  `lightning-menu-subheader`, and `lightning-vertical-navigation-item`.
 - Expanded checked `lightning-*` modules used by the checked LWC fixture,
   mounted through `c:baseComponentHost` and the `phase3BaseComponents`
-  context. The set covers email, dual listbox, select, slider, rich text input,
-  menu divider, progress, breadcrumbs, tree grid, map, carousel, record picker,
-  file upload, and additional display/input/container components.
+  context. The set includes modal body/header/footer, alert/prompt/toast
+  surfaces, display and formatted value helpers, name/location/address inputs,
+  picklist and grouped combobox, barcode scanner, progress, tree and tree
+  grid, map, carousel, vertical navigation variants, stacked tabs, and local
+  overlay/popover containers.
+- Deeper practical base-component contracts for common local development:
+  button and icon-button variants, `lightning-card` title/actions/footer slots,
+  `lightning-layout` alignment and sizing classes, and
+  `lightning-formatted-number` decimal, currency, percent, and percent-fixed
+  output.
 - Packaged local SLDS 2 styling for shell and base-component previews, with
   classic SLDS assets available from the same runtime asset tree.
 
@@ -305,13 +360,12 @@ only. It does not write frontdoor login URLs or one-time tokens. When both
 sides are captured, each case includes a selector-scoped comparison block for
 normalized visible text and project LWC component counts. The current oracle lane
 proves the app page, custom tab, and URL-addressable component targets on both
-sides. The app-page and custom-tab proof deploys the `Lwc_Shell` app, assigns
-`Lwc_Shell_Access`, and opens `/lightning/app/c__Lwc_Shell/n/Lwc_Probe`. Record
-pages, quick actions, and Visualforce Lightning Out need their org setup
-completed before they are strict browser-oracle targets. The 2026-06-17
-`oaer-probe-max` proof wrote `/tmp/glade-lwc-oaer-phase8-10-browser.json` with
-3 pass and 0 fail, and `/tmp/glade-lwc-oaer-phase8-10-capture.json` with 35
-prepared targets across `lightning-shell` and `visualforce-lightning-out`. The
+sides. The app-page and custom-tab proof deploys the fixture app, assigns the
+fixture permission set, and opens the fixture Lightning app route. Record pages,
+quick actions, and Visualforce Lightning Out need their org setup completed
+before they are strict browser-oracle targets. The latest external capture lane
+recorded 3 browser pass rows and 0 fail rows for the two-sided target set, plus
+35 prepared targets across `lightning-shell` and `visualforce-lightning-out`. The
 expanded base-component target has local browser proof through
 `test/base-components-expanded.test.mjs`; Salesforce DOM comparison remains a
 hosted follow-up. Community routes have local Go and Playwright runtime
@@ -369,10 +423,13 @@ Look in the workbench context panel, browser console, and
 ## Current Limits
 
 Glade serves a local Lightning shell. It does not replace hosted Lightning
-Experience, live auth, permissions, console APIs, full UI API, broad LDS
-cross-adapter coalescing, every `lightning-*` base component edge, exact SLDS
-fidelity, full Experience Cloud menus and managed content, hosted validation
-behavior, or every Lightning Out edge. Record forms use local `getRecord` and
+Experience, live auth, permissions, full UI API, broad LDS cross-adapter
+coalescing, every `lightning-*` base component edge, exact SLDS fidelity, full
+Experience Cloud menus and managed content, hosted validation behavior, or
+every Lightning Out edge. The workspace API models console state for
+development; exact hosted console behavior remains a Salesforce check. The
+Flow shell is not Flow Builder, and local EMP API is deterministic in-page event
+simulation, not live streaming. Record forms use local `getRecord` and
 `updateRecord` support, not full hosted edit-flow behavior. Apex params must be
 object-shaped; `undefined` wire params suppress invocation and `null` is passed
 as an explicit value.

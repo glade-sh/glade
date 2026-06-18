@@ -183,8 +183,11 @@ record-input helper functions, `lightning/uiObjectInfoApi` object info and
 picklist wires, `lightning/uiRelatedListApi` child rows, schema tokens, labels,
 static resources, content assets, `CurrentPageReference`, basic
 `NavigationMixin` behavior, local message service, resource loading, toast
-events, practical common and expanded checked base components, and packaged
-local SLDS 2 styling with classic SLDS assets available. Create defaults include
+events, all public module names exposed by
+`lightning-base-components@1.28.19-alpha`, practical local base-component
+rendering, and packaged local SLDS 2 styling with classic SLDS assets
+available. A small allowlist of simple base components uses compiled
+open-source implementations instead of generated shims. Create defaults include
 project layout field sections when available, with a generated full layout from
 createable fields as the local fallback. `lightning/uiLayoutApi` `getLayout`
 returns the same local Record Layout shape. Glade loads fixture records from

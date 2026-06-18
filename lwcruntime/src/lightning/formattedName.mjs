@@ -1,3 +1,3 @@
-import { unsupportedBaseComponent } from "./base.mjs";
+import { createBaseComponent, renderFormattedName } from "./base.mjs";
 
-unsupportedBaseComponent("lightning-formatted-name");
+export default createBaseComponent("lightning-formatted-name", renderFormattedName);

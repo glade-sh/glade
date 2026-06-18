@@ -24,12 +24,15 @@ func TestRunDevLWCHelpUsesLWCHelp(t *testing.T) {
 		"Start a local LWC preview development shell",
 		"Preview feature:",
 		"glade dev lwc [--project <root>] [--context <name>] [--open]",
-		"--target component|record-page|app-page|home-page|tab|url-addressable|record-action|global-action",
+		"--target component|record-page|app-page|home-page|tab|url-addressable|record-action|global-action|utility-bar|flow-screen|flow-action",
 		"--action Update_Status",
+		"--flow Membership_Flow",
 		"--state key=value",
 		"Preview routes:",
 		"/lwc/preview/component/c/contextProbe",
 		"/lwc/preview/tab/Lwc_Probe",
+		"/lwc/preview/utility/Support_Utility",
+		"/lwc/preview/flow/Membership_Flow",
 		"/lwc/preview/cmp/c/actionProbe?c__mode=demo",
 		"/lwc/preview/action/Account/<recordId>/Update_Status",
 		"/lwc/preview/action/global/Global_Status",
@@ -64,6 +67,9 @@ func TestDevLWCRoutesListComponentsPagesTabsAndVisualforce(t *testing.T) {
   <sobjectType>Account</sobjectType>
   <type>RecordPage</type>
 </FlexiPage>`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/flexipages/Support_Utility.flexipage-meta.xml"), `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
+  <type>UtilityBar</type>
+</FlexiPage>`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/tabs/Lwc_Probe.tab-meta.xml"), `<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
   <label>LWC Probe</label>
   <lwcComponent>c:contextProbe</lwcComponent>
@@ -81,7 +87,7 @@ func TestDevLWCRoutesListComponentsPagesTabsAndVisualforce(t *testing.T) {
   <label>Global Status</label>
   <lightningComponent>c:actionProbe</lightningComponent>
 </QuickAction>`)
-	writeTestFile(t, filepath.Join(root, "glade.lwc.json"), `{"contexts":{"communityAccount":{"target":"communityPage","component":"c:contextProbe","page":"Account","community":{"site":"Partner_Portal","basePath":"/partners"}}}}`)
+	writeTestFile(t, filepath.Join(root, "glade.lwc.json"), `{"contexts":{"communityAccount":{"target":"communityPage","component":"c:contextProbe","page":"Account","community":{"site":"Partner_Portal","basePath":"/partners"}},"membershipFlow":{"target":"flowScreen","component":"c:contextProbe","flow":{"apiName":"Membership_Flow"}}}}`)
 	p, err := project.Load(root)
 	if err != nil {
 		t.Fatal(err)
@@ -96,6 +102,8 @@ func TestDevLWCRoutesListComponentsPagesTabsAndVisualforce(t *testing.T) {
 		"/lwc/preview/action/Account/<recordId>/Update_Status",
 		"/lwc/preview/action/global/Global_Status",
 		"/lwc/preview/community/Partner_Portal/Account",
+		"/lwc/preview/flow/Membership_Flow",
+		"/lwc/preview/utility/Support_Utility",
 		"/lwc/preview/tab/Lwc_Probe",
 		"/lwc/preview/tab/VF_Probe -> /apex/WidgetHost",
 	} {
@@ -229,6 +237,50 @@ func TestDevLWCSelectedURLUsesURLAddressableAndActionContexts(t *testing.T) {
 				t.Fatalf("url = %q, want %q", got, tc.want)
 			}
 		})
+	}
+}
+
+func TestDevLWCOptionsSupportUtilityAndFlowTargets(t *testing.T) {
+	opts, err := parseDevLWCOptions([]string{
+		"--target", "flow-screen",
+		"--component", "c:flowProbe",
+		"--flow", "Membership_Flow",
+		"--flow-input", "recordId=001000000000001AAA",
+		"--form-factor", "Small",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	selection, err := opts.selection()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if selection.Context.Kind != lwcshell.RenderTargetFlowScreen {
+		t.Fatalf("kind = %q", selection.Context.Kind)
+	}
+	if selection.Context.ComponentName != "c:flowProbe" || selection.Context.Flow.APIName != "Membership_Flow" {
+		t.Fatalf("flow context = %#v", selection.Context)
+	}
+	if got := selection.Context.Flow.InputVariables["recordId"]; got != "001000000000001AAA" {
+		t.Fatalf("flow inputs = %#v", selection.Context.Flow.InputVariables)
+	}
+	if selection.Context.FormFactor != "Small" {
+		t.Fatalf("formFactor = %q", selection.Context.FormFactor)
+	}
+	if got := devLWCSelectedURL("http://127.0.0.1:39410", selection.Context); got != "http://127.0.0.1:39410/lwc/preview/flow/Membership_Flow?formFactor=Small" {
+		t.Fatalf("selected URL = %q", got)
+	}
+
+	opts, err = parseDevLWCOptions([]string{"--target", "utility-bar", "--page", "Support_Utility"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	selection, err = opts.selection()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if selection.Context.Kind != lwcshell.RenderTargetUtilityBar || selection.Context.PageName != "Support_Utility" {
+		t.Fatalf("utility context = %#v", selection.Context)
 	}
 }
 

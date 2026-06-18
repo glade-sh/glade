@@ -30,7 +30,7 @@ func ResolvePageTarget(p project.Project, ctx PageContext) (ShellPage, []Diagnos
 	switch ctx.Kind {
 	case RenderTargetComponent, RenderTargetURLAddressable:
 		return resolveComponentTarget(p, ctx)
-	case RenderTargetRecordPage, RenderTargetAppPage, RenderTargetHomePage:
+	case RenderTargetRecordPage, RenderTargetAppPage, RenderTargetHomePage, RenderTargetUtilityBar:
 		page, ok, err := findFlexiPageForContext(p, ctx)
 		if err != nil {
 			return ShellPage{}, nil, err
@@ -74,12 +74,31 @@ func ResolvePageTarget(p project.Project, ctx PageContext) (ShellPage, []Diagnos
 			return shell, []Diagnostic{diag}, nil
 		}
 		return ShellPage{Context: ctx, Tab: tab}, nil, nil
-	case RenderTargetQuickAction:
+	case RenderTargetQuickAction, RenderTargetFlowAction:
 		return resolveQuickActionTarget(p, ctx)
+	case RenderTargetFlowScreen:
+		return resolveFlowScreenTarget(p, ctx)
 	default:
 		diag := Diagnostic{Code: "GLADELWC012", Message: "choose one render target"}
 		return ShellPage{}, []Diagnostic{diag}, errors.New(diag.Message)
 	}
+}
+
+func resolveFlowScreenTarget(p project.Project, ctx PageContext) (ShellPage, []Diagnostic, error) {
+	if strings.TrimSpace(ctx.ComponentName) == "" {
+		diag := Diagnostic{Code: "GLADELWC012", Message: "component render target requires a component name"}
+		return ShellPage{}, []Diagnostic{diag}, errors.New(diag.Message)
+	}
+	ctx.Kind = RenderTargetFlowScreen
+	component := PageComponent{ComponentName: qualifyComponentName(ctx.ComponentName, p.Namespace)}
+	ctx.ComponentName = component.ComponentName
+	return ShellPage{
+		Context: ctx,
+		Regions: []PageRegion{{
+			Name:       "main",
+			Components: []PageComponent{component},
+		}},
+	}, nil, nil
 }
 
 func resolveComponentTarget(p project.Project, ctx PageContext) (ShellPage, []Diagnostic, error) {
@@ -121,6 +140,7 @@ func resolveQuickActionTarget(p project.Project, ctx PageContext) (ShellPage, []
 		diag := Diagnostic{Code: "GLADELWC070", Message: fmt.Sprintf("quick action %q targets %q, not %q", action.Name, action.TargetObject, ctx.ObjectAPIName)}
 		return ShellPage{}, []Diagnostic{diag}, errors.New(diag.Message)
 	}
+	requestedKind := ctx.Kind
 	ctx.Kind = RenderTargetQuickAction
 	ctx.ComponentName = qualifyComponentName(componentName, p.Namespace)
 	ctx.ActionName = action.Name
@@ -133,6 +153,12 @@ func resolveQuickActionTarget(p project.Project, ctx PageContext) (ShellPage, []
 		return ShellPage{}, []Diagnostic{diag}, errors.New(diag.Message)
 	}
 	ctx.ActionType = actionType
+	if strings.EqualFold(actionType, "FlowAction") {
+		ctx.Kind = RenderTargetFlowAction
+	} else if requestedKind == RenderTargetFlowAction {
+		diag := Diagnostic{Code: "GLADELWC015", Message: fmt.Sprintf("quick action %q resolved to action type %q, not FlowAction", action.Name, actionType)}
+		return ShellPage{}, []Diagnostic{diag}, errors.New(diag.Message)
+	}
 	return ShellPage{
 		Context: ctx,
 		Regions: []PageRegion{{
@@ -155,12 +181,20 @@ func quickActionComponentActionType(p project.Project, component PageComponent, 
 	if err != nil {
 		return "", Diagnostic{Code: "GLADELWC070", Message: fmt.Sprintf("read LWC metadata for quick action component %q: %v", component.ComponentName, err)}, false
 	}
-	if !meta.SupportsTarget("lightning__RecordAction") {
-		return "", Diagnostic{Code: "GLADELWC070", Message: fmt.Sprintf("LWC component %q does not support lightning__RecordAction", component.ComponentName)}, false
+	flowTarget := meta.SupportsTarget("lightning__FlowAction")
+	recordTarget := meta.SupportsTarget("lightning__RecordAction")
+	if !recordTarget && !flowTarget {
+		return "", Diagnostic{Code: "GLADELWC070", Message: fmt.Sprintf("LWC component %q does not support lightning__RecordAction or lightning__FlowAction", component.ComponentName)}, false
 	}
 	actionType := strings.TrimSpace(meta.TargetConfigFor("lightning__RecordAction").ActionType)
+	if actionType == "" && flowTarget {
+		actionType = strings.TrimSpace(meta.TargetConfigFor("lightning__FlowAction").ActionType)
+	}
 	if actionType == "" {
 		actionType = strings.TrimSpace(fallback)
+	}
+	if actionType == "" && flowTarget {
+		actionType = "FlowAction"
 	}
 	if actionType == "" {
 		actionType = "ScreenAction"
@@ -173,7 +207,7 @@ func quickActionComponentActionType(p project.Project, component PageComponent, 
 
 func quickActionTypeSupported(actionType string) bool {
 	switch strings.ToLower(strings.TrimSpace(actionType)) {
-	case "screenaction", "action":
+	case "screenaction", "action", "flowaction":
 		return true
 	default:
 		return false
@@ -204,6 +238,7 @@ func validatePageKind(page FlexiPage, kind RenderTargetKind) (Diagnostic, bool) 
 		RenderTargetRecordPage: "RecordPage",
 		RenderTargetAppPage:    "AppPage",
 		RenderTargetHomePage:   "HomePage",
+		RenderTargetUtilityBar: "UtilityBar",
 	}[kind]
 	if want == "" || strings.EqualFold(page.Type, want) {
 		return Diagnostic{}, true

@@ -1666,14 +1666,7 @@ func ResolveStaticResourceFile(projectRoot, resourceName, subpath string) (strin
 	}
 	var missingZipEntry bool
 	for _, candidate := range singleCandidates {
-		info, err := os.Stat(candidate)
-		if err != nil || info.IsDir() {
-			continue
-		}
-		if normalizedSubpath == "" {
-			return candidate, nil
-		}
-		resolved, err := resolveZippedStaticResourceFile(candidate, resourceName, normalizedSubpath)
+		resolved, err := ResolveStaticResourceContentPath(candidate, resourceName, normalizedSubpath)
 		if err == nil {
 			return resolved, nil
 		}
@@ -1685,6 +1678,31 @@ func ResolveStaticResourceFile(projectRoot, resourceName, subpath string) (strin
 		return "", fmt.Errorf("static resource entry %q not found in %s.resource", normalizedSubpath, resourceName)
 	}
 	return "", fmt.Errorf("static resource not found")
+}
+
+func ResolveStaticResourceContentPath(contentPath, resourceName, subpath string) (string, error) {
+	normalizedSubpath, err := normalizeStaticResourceSubpath(subpath)
+	if err != nil {
+		return "", err
+	}
+	info, err := os.Stat(contentPath)
+	if err != nil {
+		return "", err
+	}
+	if info.IsDir() {
+		if normalizedSubpath == "" {
+			return "", fmt.Errorf("static resource bundle requires subpath")
+		}
+		full := filepath.Join(contentPath, filepath.FromSlash(normalizedSubpath))
+		if info, err := os.Stat(full); err == nil && !info.IsDir() {
+			return full, nil
+		}
+		return "", fmt.Errorf("static resource not found")
+	}
+	if normalizedSubpath == "" {
+		return contentPath, nil
+	}
+	return resolveZippedStaticResourceFile(contentPath, resourceName, normalizedSubpath)
 }
 
 var errStaticResourceZipEntryMissing = errors.New("static resource zip entry missing")

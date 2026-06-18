@@ -1,3 +1,3 @@
-import { createBaseComponent, renderInput } from "./base.mjs";
+import { createInputField } from "./lds-form.mjs";
 
-export default createBaseComponent("lightning-input-field", renderInput);
+export default createInputField();

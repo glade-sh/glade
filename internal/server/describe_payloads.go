@@ -110,6 +110,7 @@ func describeFieldPayload(field storage.Field) map[string]any {
 		"length":           describeFieldLength(field),
 		"nillable":         nillable,
 		"required":         !nillable,
+		"accessible":       storage.FieldFlagValue(field.Accessible, true),
 		"createable":       createable,
 		"updateable":       updateable,
 		"filterable":       true,
@@ -118,10 +119,26 @@ func describeFieldPayload(field storage.Field) map[string]any {
 		"unique":           field.Unique,
 		"idLookup":         field.Type == storage.FieldID || strings.EqualFold(field.APIName, "Id") || field.ExternalID,
 		"referenceTo":      referenceTo,
+		"referenceToInfos": describeReferenceToInfos(referenceTo),
 		"relationshipName": field.RelationshipName,
 		"picklistValues":   describePicklistValues(field.PicklistValues),
 		"nameField":        strings.EqualFold(field.APIName, "Name"),
 	}
+}
+
+func describeReferenceToInfos(referenceTo []string) []map[string]any {
+	out := make([]map[string]any, 0, len(referenceTo))
+	for _, apiName := range referenceTo {
+		apiName = strings.TrimSpace(apiName)
+		if apiName == "" {
+			continue
+		}
+		out = append(out, map[string]any{
+			"apiName": apiName,
+			"name":    apiName,
+		})
+	}
+	return out
 }
 
 func lightningFieldDataType(field storage.Field) string {

@@ -333,7 +333,7 @@ func TestResolvePageTargetReportsUnsupportedQuickAction(t *testing.T) {
 	}
 }
 
-func TestResolvePageTargetReportsUnsupportedQuickActionActionType(t *testing.T) {
+func TestResolvePageTargetSupportsFlowActionActionType(t *testing.T) {
 	root := t.TempDir()
 	actionPath := writeProjectFile(t, root, "force-app/main/default/quickActions/Account.Update_Status.quickAction-meta.xml", `<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
   <label>Update Status</label>
@@ -352,14 +352,50 @@ func TestResolvePageTargetReportsUnsupportedQuickActionActionType(t *testing.T) 
 </LightningComponentBundle>`)
 	p := project.Project{Root: root, QuickActionFiles: []string{actionPath}, LWCMetaFiles: []string{metaPath}}
 
-	_, diagnostics, err := ResolvePageTarget(p, PageContext{
+	shell, diagnostics, err := ResolvePageTarget(p, PageContext{
 		Kind:          RenderTargetQuickAction,
 		ObjectAPIName: "Account",
 		RecordID:      "001000000000001AAA",
 		ActionName:    "Update_Status",
 	})
+	if err != nil {
+		t.Fatalf("ResolvePageTarget error = %v", err)
+	}
+	if len(diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", diagnostics)
+	}
+	if shell.Context.Kind != RenderTargetFlowAction || shell.Context.ActionType != "FlowAction" {
+		t.Fatalf("context = %#v", shell.Context)
+	}
+}
+
+func TestResolvePageTargetRejectsFlowActionRequestForScreenAction(t *testing.T) {
+	root := t.TempDir()
+	actionPath := writeProjectFile(t, root, "force-app/main/default/quickActions/Account.Update_Status.quickAction-meta.xml", `<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Update Status</label>
+  <type>LightningComponent</type>
+  <targetObject>Account</targetObject>
+  <lightningComponent>c:actionProbe</lightningComponent>
+</QuickAction>`)
+	metaPath := writeProjectFile(t, root, "force-app/main/default/lwc/actionProbe/actionProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+  <isExposed>true</isExposed>
+  <targets><target>lightning__RecordAction</target></targets>
+  <targetConfigs>
+    <targetConfig targets="lightning__RecordAction">
+      <actionType>ScreenAction</actionType>
+    </targetConfig>
+  </targetConfigs>
+</LightningComponentBundle>`)
+	p := project.Project{Root: root, QuickActionFiles: []string{actionPath}, LWCMetaFiles: []string{metaPath}}
+
+	_, diagnostics, err := ResolvePageTarget(p, PageContext{
+		Kind:          RenderTargetFlowAction,
+		ObjectAPIName: "Account",
+		RecordID:      "001000000000001AAA",
+		ActionName:    "Update_Status",
+	})
 	if err == nil {
-		t.Fatalf("ResolvePageTarget error = nil, want unsupported quick action action type")
+		t.Fatalf("ResolvePageTarget error = nil, want flow action mismatch")
 	}
 	if len(diagnostics) != 1 || diagnostics[0].Code != "GLADELWC015" {
 		t.Fatalf("diagnostics = %#v", diagnostics)
