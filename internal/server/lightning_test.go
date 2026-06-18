@@ -313,6 +313,29 @@ func writeLightningFixtureFile(t *testing.T, path, content string) {
 	}
 }
 
+func TestStaticResourceServesDirectorySubpathFromPackageRoot(t *testing.T) {
+	root := t.TempDir()
+	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/verifiable-app/main/staticresources/Verifiable_Assets.resource-meta.xml"), "<StaticResource/>")
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/verifiable-app/main/staticresources/Verifiable_Assets/css/main.css"), ".verifiable{}")
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	handler := NewWithSource(&org, source)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/resource/Verifiable_Assets/css/main.css", nil))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), ".verifiable") {
+		t.Fatalf("status/body = %d %q", rec.Code, rec.Body.String())
+	}
+}
+
 func lightningFixtureRoot(t *testing.T) string {
 	t.Helper()
 	if cwd, err := os.Getwd(); err == nil {
@@ -837,8 +860,39 @@ func TestLightningWireApexReturnsOverloadDiagnosticCode(t *testing.T) {
 	if out.Error.Code != "GLADELWC013" || out.Error.Body == nil || out.Error.Body.Code != "GLADELWC013" {
 		t.Fatalf("error = %#v body=%#v", out.Error, out.Error.Body)
 	}
-	if out.Error.Body.ExceptionType != "UnsupportedFeature" || out.Error.Body.Message != "overloaded AuraEnabled method unsupported" {
+	if out.Error.Body.ExceptionType != "UnsupportedFeature" || !strings.Contains(out.Error.Body.Message, "WidgetController.load") || !strings.Contains(out.Error.Body.Message, "overloaded AuraEnabled method unsupported") {
 		t.Fatalf("error body = %#v", out.Error.Body)
+	}
+}
+
+func TestLightningApexIncludesInvocationDetailsInErrorBody(t *testing.T) {
+	org := storage.NewOrgState()
+	handler := New(&org)
+	handler.SetProjectRuntime(typesys.Index{}, vm.New(nil), nil)
+
+	body := `{"className":"MissingController","method":"load","params":{"recordId":"001XX0000000001"}}`
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/lightning/wire/apex", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var out lwcbrowser.WireResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Error == nil || out.Error.Body == nil {
+		t.Fatalf("error missing: %#v", out)
+	}
+	bodyErr := out.Error.Body
+	for _, want := range []string{"MissingController.load", "recordId", "001XX0000000001"} {
+		if !strings.Contains(bodyErr.Message, want) {
+			t.Fatalf("message %q missing %q", bodyErr.Message, want)
+		}
+	}
+	if bodyErr.ExceptionType == "" || bodyErr.StackTrace == "" {
+		t.Fatalf("error body = %#v", bodyErr)
 	}
 }
 
@@ -908,6 +962,80 @@ func TestLightningWireGetRecordReturnsStoredName(t *testing.T) {
 	}
 	if nameField["label"] != "Account Name" {
 		t.Fatalf("Name label = %#v", nameField)
+	}
+}
+
+func TestLightningWireGetRecordIncludesOptionalRelationshipAndDisplayValues(t *testing.T) {
+	org := testOrg()
+	org.Objects["User"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "User",
+			Label:     "User",
+			KeyPrefix: "005",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Label: "Full Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"005XX0000000001": {
+				ID:     "005XX0000000001",
+				Object: "User",
+				Fields: map[string]storage.Value{
+					"Name": storage.StringValue("Owner Person"),
+				},
+			},
+		},
+	}
+	account := org.Objects["Account"]
+	account.Definition.RecordTypes = []storage.RecordTypeInfo{{ID: "012XX0000000001", DeveloperName: "Business", Name: "Business", Active: true, Available: true, Default: true}}
+	account.Definition.Fields["OwnerId"] = storage.Field{APIName: "OwnerId", Label: "Owner ID", Type: storage.FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "Owner"}
+	account.Definition.Fields["RecordTypeId"] = storage.Field{APIName: "RecordTypeId", Label: "Record Type ID", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"}
+	account.Definition.Relations = append(account.Definition.Relations, storage.Relationship{Field: "AccountId", ParentObjects: []string{"Account"}, ChildRelationship: "Contacts"})
+	account.Records["001XX0000000001"] = storage.Record{
+		ID:     "001XX0000000001",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":         storage.StringValue("Acme"),
+			"OwnerId":      storage.IDValue("005XX0000000001"),
+			"RecordTypeId": storage.IDValue("012XX0000000001"),
+		},
+	}
+	org.Objects["Account"] = account
+	handler := New(&org)
+
+	body := `{"recordId":"001XX0000000001","fields":["Account.Name"],"optionalFields":["Account.OwnerId"]}`
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/lightning/wire/getRecord", strings.NewReader(body)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var out lwcbrowser.WireResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Error != nil {
+		t.Fatalf("error = %#v", out.Error)
+	}
+	payload := out.Data.(map[string]any)
+	if payload["lastModifiedById"] == "" || payload["lastModifiedDate"] == "" || payload["recordTypeId"] != "012XX0000000001" {
+		t.Fatalf("record header = %#v", payload)
+	}
+	childRelationships, ok := payload["childRelationships"].([]any)
+	if !ok || len(childRelationships) == 0 {
+		t.Fatalf("childRelationships = %#v", payload["childRelationships"])
+	}
+	fields := payload["fields"].(map[string]any)
+	name := fields["Name"].(map[string]any)
+	if name["displayValue"] != "Acme" || name["dataType"] != "String" {
+		t.Fatalf("Name field = %#v", name)
+	}
+	owner := fields["OwnerId"].(map[string]any)
+	if owner["relationshipName"] != "Owner" || owner["dataType"] != "Reference" {
+		t.Fatalf("OwnerId field = %#v", owner)
+	}
+	refs, ok := owner["referenceToInfos"].([]any)
+	if !ok || len(refs) != 1 || refs[0].(map[string]any)["apiName"] != "User" {
+		t.Fatalf("referenceToInfos = %#v", owner["referenceToInfos"])
 	}
 }
 
@@ -1122,6 +1250,64 @@ func TestLightningWireGetObjectInfoReturnsLocalSchema(t *testing.T) {
 	}
 	values, ok := rating["picklistValues"].([]any)
 	if !ok || len(values) != 1 {
+		t.Fatalf("Rating picklistValues = %#v", rating["picklistValues"])
+	}
+}
+
+func TestLightningWireGetObjectInfoIncludesRecordTypesPicklistsAndFieldPermissions(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Label = "Account"
+	account.Definition.PluralLabel = "Accounts"
+	account.Definition.KeyPrefix = "001"
+	account.Definition.RecordTypes = []storage.RecordTypeInfo{{ID: "012XX0000000001", DeveloperName: "Business", Name: "Business", Active: true, Available: true, Default: true}}
+	account.Definition.Fields["OwnerId"] = storage.Field{APIName: "OwnerId", Label: "Owner ID", Type: storage.FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "Owner", Createable: storage.BoolFlag(true), Updateable: storage.BoolFlag(false), Accessible: storage.BoolFlag(true)}
+	account.Definition.Fields["Rating"] = storage.Field{
+		APIName:    "Rating",
+		Label:      "Rating",
+		Type:       storage.FieldPicklist,
+		Createable: storage.BoolFlag(true),
+		Updateable: storage.BoolFlag(true),
+		Accessible: storage.BoolFlag(true),
+		PicklistValues: []storage.PicklistValue{
+			{Value: "Hot", Label: "Hot", Active: true, Default: true},
+		},
+	}
+	org.Objects["Account"] = account
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/lightning/wire/getObjectInfo", strings.NewReader(`{"objectApiName":"Account"}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var out lwcbrowser.WireResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Error != nil {
+		t.Fatalf("error = %#v", out.Error)
+	}
+	payload := out.Data.(map[string]any)
+	if payload["defaultRecordTypeId"] != "012XX0000000001" || payload["themeInfo"] == nil {
+		t.Fatalf("object info header = %#v", payload)
+	}
+	recordTypes, ok := payload["recordTypeInfos"].(map[string]any)
+	if !ok || recordTypes["012XX0000000001"] == nil {
+		t.Fatalf("recordTypeInfos = %#v", payload["recordTypeInfos"])
+	}
+	fields := payload["fields"].(map[string]any)
+	owner := fields["OwnerId"].(map[string]any)
+	if owner["dataType"] != "Reference" || owner["relationshipName"] != "Owner" || owner["createable"] != true || owner["updateable"] != false || owner["accessible"] != true {
+		t.Fatalf("OwnerId field = %#v", owner)
+	}
+	refs, ok := owner["referenceToInfos"].([]any)
+	if !ok || len(refs) != 1 || refs[0].(map[string]any)["apiName"] != "User" {
+		t.Fatalf("referenceToInfos = %#v", owner["referenceToInfos"])
+	}
+	rating := fields["Rating"].(map[string]any)
+	values, ok := rating["picklistValues"].([]any)
+	if !ok || len(values) != 1 || values[0].(map[string]any)["value"] != "Hot" {
 		t.Fatalf("Rating picklistValues = %#v", rating["picklistValues"])
 	}
 }
@@ -1596,6 +1782,57 @@ func TestLightningWireGetRelatedListRecordsReturnsChildRows(t *testing.T) {
 	row, ok := records[0].(map[string]any)
 	if !ok || row["apiName"] != "Contact" {
 		t.Fatalf("row = %#v", records[0])
+	}
+}
+
+func TestLightningWireRecordPickerSearchFiltersByObjectAndFields(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["BillingCity"] = storage.Field{APIName: "BillingCity", Label: "Billing City", Type: storage.FieldString}
+	account.Records["001XX0000000001"] = storage.Record{
+		ID:     "001XX0000000001",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":        storage.StringValue("Acme"),
+			"BillingCity": storage.StringValue("Duluth"),
+		},
+	}
+	account.Records["001XX0000000002"] = storage.Record{
+		ID:     "001XX0000000002",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":        storage.StringValue("Other"),
+			"BillingCity": storage.StringValue("Juneau"),
+		},
+	}
+	org.Objects["Account"] = account
+	handler := New(&org)
+
+	body := `{"objectApiName":"Account","searchTerm":"dul","fields":["Name","BillingCity"],"matchingFields":["BillingCity"]}`
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/lightning/wire/recordPickerSearch", strings.NewReader(body)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var out lwcbrowser.WireResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Error != nil {
+		t.Fatalf("error = %#v", out.Error)
+	}
+	payload := out.Data.(map[string]any)
+	records, ok := payload["records"].([]any)
+	if !ok || len(records) != 1 {
+		t.Fatalf("records = %#v", payload["records"])
+	}
+	row := records[0].(map[string]any)
+	if row["id"] != "001XX0000000001" || row["apiName"] != "Account" || row["title"] != "Acme" {
+		t.Fatalf("row = %#v", row)
+	}
+	fields := row["fields"].(map[string]any)
+	if fields["BillingCity"].(map[string]any)["value"] != "Duluth" {
+		t.Fatalf("fields = %#v", fields)
 	}
 }
 

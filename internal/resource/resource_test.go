@@ -3,6 +3,7 @@ package resource
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -238,6 +239,30 @@ func TestLoadProjectDiscoversUnpackagedStaticResourceFiles(t *testing.T) {
 		}
 	}
 	t.Fatalf("resetcss StaticResource record was not created; records=%#v", object.Records)
+}
+
+func TestLoadStaticResourcesKeepsDirectoryContentPath(t *testing.T) {
+	root := t.TempDir()
+	content := filepath.Join(root, "force-app/verifiable-app/main/staticresources/Bundle/css/main.css")
+	meta := filepath.Join(root, "force-app/verifiable-app/main/staticresources/Bundle.resource-meta.xml")
+	writeFile(t, content, "body{}")
+	writeFile(t, meta, `<StaticResource xmlns="http://soap.sforce.com/2006/04/metadata"><contentType>text/css</contentType></StaticResource>`)
+
+	p := project.Project{Root: root, StaticResourceFiles: []string{content}, StaticResourceMetas: []string{meta}}
+	registry, err := LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, ok := URLForStaticResource(registry, "Bundle", "css/main.css")
+	if !ok || got != "/resource/Bundle/css/main.css" {
+		t.Fatalf("URLForStaticResource = %q, %t", got, ok)
+	}
+	if len(registry.StaticResources) != 1 || registry.StaticResources[0].Name != "Bundle" {
+		t.Fatalf("static resources = %#v", registry.StaticResources)
+	}
+	if got := filepath.ToSlash(registry.StaticResources[0].ContentPath); !strings.HasSuffix(got, "staticresources/Bundle") {
+		t.Fatalf("ContentPath = %q, want directory resource root", registry.StaticResources[0].ContentPath)
+	}
 }
 
 func TestApplyProjectIncludesLoadedDependencyFieldSets(t *testing.T) {

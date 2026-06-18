@@ -1324,6 +1324,9 @@ export function deleteRecord(recordId) {
   return post("/lightning/wire/deleteRecord", { recordId })
     .then((data) => notifyRecordUpdateAvailable(notificationItems(data, recordId)).then(() => data));
 }
+export async function __gladeRecordPickerSearch(config = {}) {
+  return post("/lightning/wire/recordPickerSearch", config);
+}
 export function generateRecordInputForCreate(record, objectInfo) {
   const fields = recordFields(record, objectInfo, "createable");
   delete fields.Id;

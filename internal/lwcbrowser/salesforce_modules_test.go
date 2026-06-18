@@ -346,6 +346,8 @@ func TestUIRecordAPIModuleJSExportsRecordAndObjectInfoWires(t *testing.T) {
 		"createRecord",
 		"updateRecord",
 		"deleteRecord",
+		"__gladeRecordPickerSearch",
+		"/lightning/wire/recordPickerSearch",
 		"generateRecordInputForCreate",
 		"generateRecordInputForUpdate",
 		"createRecordInputFilteredByEditedFields",
