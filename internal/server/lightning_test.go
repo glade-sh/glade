@@ -682,6 +682,20 @@ func TestLightningBaseComponentShimPrefersSourceBackedRuntimeWrapper(t *testing.
 	if strings.Contains(rec.Body.String(), "createBaseComponent") {
 		t.Fatalf("badge should use source-backed wrapper, got body = %q", rec.Body.String())
 	}
+
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/shims/lightning/recordPicker.js", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	for _, want := range []string{`export { default }`, `/lightning/runtime/lightning/recordPicker.js`} {
+		if !strings.Contains(rec.Body.String(), want) {
+			t.Fatalf("missing %q in body = %q", want, rec.Body.String())
+		}
+	}
+	if strings.Contains(rec.Body.String(), "createBaseComponent") {
+		t.Fatalf("recordPicker should use source-backed wrapper, got body = %q", rec.Body.String())
+	}
 }
 
 func TestLightningWireApexReturnsData(t *testing.T) {

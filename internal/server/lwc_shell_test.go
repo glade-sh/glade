@@ -167,6 +167,7 @@ func TestLightningRuntimeServesShellAndSLDSAssets(t *testing.T) {
 		{path: "/assets/icons/utility-sprite/svg/symbols.svg", want: `id="animal_and_nature"`},
 		{path: "/lightning/runtime/lightning/source/badge/badge.js", want: "class LightningBadge"},
 		{path: "/lightning/runtime/lightning/source/badge/badge.html.js", want: "api_dynamic_text"},
+		{path: "/lightning/runtime/lightning/recordPicker.js", want: "__gladeRecordPickerSearch"},
 		{path: "/lightning/shims/core/apex.js", want: "refreshApex"},
 		{path: "/lightning/shims/lightning/actions.js", want: "CloseActionScreenEvent"},
 		{path: "/lightning/shims/lightning/empApi.js", want: "subscribe"},
