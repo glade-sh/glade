@@ -22,6 +22,16 @@ type WireGetRecordsItemRequest struct {
 	OptionalFields []string `json:"optionalFields"`
 }
 
+type WireGetRecordUIRequest struct {
+	RecordIDs      []string `json:"recordIds"`
+	Fields         []string `json:"fields"`
+	OptionalFields []string `json:"optionalFields"`
+	LayoutTypes    []string `json:"layoutTypes"`
+	Modes          []string `json:"modes"`
+	RecordTypeID   string   `json:"recordTypeId"`
+	FormFactor     string   `json:"formFactor"`
+}
+
 type WireGetObjectInfoRequest struct {
 	ObjectAPIName string `json:"objectApiName"`
 }

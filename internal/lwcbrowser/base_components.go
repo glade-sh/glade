@@ -307,6 +307,73 @@ class %[2]s extends LightningElement {
     }
     return fields;
   }
+  getErrors() {
+    return this.__errors || null;
+  }
+  setErrors(errors) {
+    this.__errors = errors || null;
+  }
+  getWiredData() {
+    return this.__wiredData;
+  }
+  wireRecordUi(data) {
+    this.__wiredData = data;
+  }
+  getWiredPicklistValues() {
+    return this.__wiredPicklistValues;
+  }
+  wirePicklistValues(data) {
+    this.__wiredPicklistValues = data;
+  }
+  setValue(value) {
+    this.value = value;
+    this.dirty = true;
+  }
+  clean() {
+    this.dirty = false;
+  }
+  setCustomValidity(message) {
+    this.__customValidityMessage = String(message || "");
+    const control = baseFormControl(this);
+    if (control && control.setCustomValidity) {
+      control.setCustomValidity(this.__customValidityMessage);
+    }
+  }
+  checkValidity() {
+    const control = baseFormControl(this);
+    if (control && control.setCustomValidity) {
+      control.setCustomValidity(this.__customValidityMessage || "");
+    }
+    if (this.__customValidityMessage) {
+      return false;
+    }
+    return control && control.checkValidity ? control.checkValidity() : true;
+  }
+  reportValidity() {
+    const control = baseFormControl(this);
+    if (control && control.setCustomValidity) {
+      control.setCustomValidity(this.__customValidityMessage || "");
+    }
+    if (this.__customValidityMessage) {
+      if (control && control.reportValidity) {
+        control.reportValidity();
+      }
+      return false;
+    }
+    return control && control.reportValidity ? control.reportValidity() : true;
+  }
+  focus() {
+    const control = baseFormControl(this);
+    if (control && control.focus) {
+      control.focus();
+    }
+  }
+  blur() {
+    const control = baseFormControl(this);
+    if (control && control.blur) {
+      control.blur();
+    }
+  }
   loadRecordFormRecord() {
     if (!this.objectApiName || !this.recordId || this.__recordFormLoaded) {
       return;
@@ -351,13 +418,16 @@ class %[2]s extends LightningElement {
     this.dispatchEvent(new CustomEvent("active", { bubbles: true, composed: true, detail: { value: this.value || this.name || this.label || "", label: this.label || "" } }));
   }
 }
-registerDecorators(%[2]s, { publicProps: basePublicProps() });
+registerDecorators(%[2]s, { publicProps: basePublicProps(), publicMethods: basePublicMethods() });
 function basePublicProps() {
   const props = {};
-  for (const name of ["label","title","value","options","checked","disabled","type","variant","iconName","alternativeText","size","columns","data","keyField","objectApiName","recordId","fields","mode","name","fieldName","error","content","href","target","street","city","province","postalCode","country","items","header","placeholder","accept","multiple","flowApiName","flowInputVariables","initials","fallbackIconName","labelWhenOff","labelWhenOn","labelWhenHover","selected","sourceLabel","selectedLabel","min","max","step","mapMarkers","zoomLevel","markersTitle","src","description"]) {
+  for (const name of ["label","title","value","options","checked","disabled","type","variant","iconName","alternativeText","size","columns","data","keyField","objectApiName","recordId","fields","mode","name","fieldName","error","content","href","target","street","city","province","postalCode","country","items","header","placeholder","accept","multiple","flowApiName","flowInputVariables","initials","fallbackIconName","labelWhenOff","labelWhenOn","labelWhenHover","selected","sourceLabel","selectedLabel","min","max","step","mapMarkers","zoomLevel","markersTitle","src","description","dirty","required"]) {
     props[name] = { config: 0 };
   }
   return props;
+}
+function basePublicMethods() {
+  return ["setErrors","getErrors","wireRecordUi","getWiredData","wirePicklistValues","getWiredPicklistValues","setValue","clean","setCustomValidity","checkValidity","reportValidity","focus","blur"];
 }
 function unsupportedBaseAttributes(component) {
   const host = component && component.hostElement || component;
@@ -372,6 +442,13 @@ function unsupportedBaseAttributes(component) {
     }
   }
   return unsupportedAttrs;
+}
+function baseFormControl(component) {
+  const template = component && component.template;
+  if (!template || !template.querySelector) {
+    return null;
+  }
+  return template.querySelector("input, textarea, select, button, [tabindex]");
 }
 function fieldList(fields) {
   if (Array.isArray(fields)) {
@@ -544,15 +621,15 @@ func cardTemplateJS() string {
 }
 
 func inputTemplateJS() string {
-	return `[api_element("label", { classMap: { "slds-form-element": true }, key: 0 }, [api_element("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [api_text($cmp.label || "")]), api_element("input", { classMap: { "slds-input": true }, attrs: { type: $cmp.type || "text" }, props: { value: $cmp.value || "", disabled: Boolean($cmp.disabled) }, key: 2, on: { change: api_bind($cmp.handleChange), input: api_bind($cmp.handleChange) } })])]`
+	return `[api_element("label", { classMap: { "slds-form-element": true }, key: 0 }, [api_element("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [api_text($cmp.label || "")]), api_element("input", { classMap: { "slds-input": true }, attrs: { type: $cmp.type || "text" }, props: { value: $cmp.value || "", disabled: Boolean($cmp.disabled), required: Boolean($cmp.required) }, key: 2, on: { change: api_bind($cmp.handleChange), input: api_bind($cmp.handleChange) } })])]`
 }
 
 func textareaTemplateJS() string {
-	return `[api_element("label", { classMap: { "slds-form-element": true }, key: 0 }, [api_element("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [api_text($cmp.label || "")]), api_element("textarea", { classMap: { "slds-textarea": true }, props: { value: $cmp.value || "" }, key: 2, on: { change: api_bind($cmp.handleChange), input: api_bind($cmp.handleChange) } })])]`
+	return `[api_element("label", { classMap: { "slds-form-element": true }, key: 0 }, [api_element("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [api_text($cmp.label || "")]), api_element("textarea", { classMap: { "slds-textarea": true }, props: { value: $cmp.value || "", required: Boolean($cmp.required) }, key: 2, on: { change: api_bind($cmp.handleChange), input: api_bind($cmp.handleChange) } })])]`
 }
 
 func comboboxTemplateJS() string {
-	return `[api_element("label", { classMap: { "slds-form-element": true, "slds-combobox": true }, key: 0 }, [api_element("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [api_text($cmp.label || "")]), api_element("select", { classMap: { "slds-select": true }, props: { value: $cmp.value || "" }, key: 2, on: { change: api_bind($cmp.handleChange) } }, ($cmp.options || []).map((option, index) => api_element("option", { attrs: { value: String(option.value ?? option.label ?? "") }, props: { selected: String(option.value ?? option.label ?? "") === String($cmp.value ?? "") }, key: 20 + index }, [api_text(option.label || option.value || "")])))])]`
+	return `[api_element("label", { classMap: { "slds-form-element": true, "slds-combobox": true }, key: 0 }, [api_element("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [api_text($cmp.label || "")]), api_element("select", { classMap: { "slds-select": true }, props: { value: $cmp.value || "", required: Boolean($cmp.required) }, key: 2, on: { change: api_bind($cmp.handleChange) } }, ($cmp.options || []).map((option, index) => api_element("option", { attrs: { value: String(option.value ?? option.label ?? "") }, props: { selected: String(option.value ?? option.label ?? "") === String($cmp.value ?? "") }, key: 20 + index }, [api_text(option.label || option.value || "")])))])]`
 }
 
 func layoutTemplateJS() string {

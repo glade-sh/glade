@@ -220,6 +220,71 @@ export default helper;`)
 	}
 }
 
+func TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate(t *testing.T) {
+	if os.Getenv("GLADE_LWC_COMPILE") == "" {
+		if _, err := os.Stat(filepath.Join("..", "..", "..", "third_party", "lwc", "node_modules")); err != nil {
+			t.Skip("run npm install in third_party/lwc or set GLADE_LWC_COMPILE=1")
+		}
+	}
+	root, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	root = filepath.Clean(filepath.Join(root, "..", "..", ".."))
+	fixtureDir := filepath.Join(t.TempDir(), "custom-render-fixture")
+	componentDir := filepath.Join(fixtureDir, "force-app", "main", "default", "lwc", "tileLike")
+	writeCompileFixtureFile(t, filepath.Join(componentDir, "tileLike.js"), `import { LightningElement, api } from 'lwc';
+import standardTile from './standardTile.html';
+export default class TileLike extends LightningElement {
+  @api label = 'Local';
+  render() { return standardTile; }
+}`)
+	writeCompileFixtureFile(t, filepath.Join(componentDir, "standardTile.html"), `<template><section>{label}</section></template>`)
+	writeCompileFixtureFile(t, filepath.Join(componentDir, "standardTile.css"), `section { display: block; }`)
+	writeCompileFixtureFile(t, filepath.Join(componentDir, "tileLike.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><isExposed>true</isExposed></LightningComponentBundle>`)
+
+	p, err := project.Load(fixtureDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	outDir := filepath.Join(t.TempDir(), "dist")
+	manifest, err := Compile(p, Options{OutDir: outDir, Namespace: "c", RepoRoot: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	entry, ok := manifest.Modules["c:tileLike"]
+	if !ok {
+		t.Fatalf("manifest modules = %#v", manifest.Modules)
+	}
+	if entry.Tag != "c-tile-like" {
+		t.Fatalf("tag = %q, want c-tile-like", entry.Tag)
+	}
+	for _, rel := range []string{
+		"c/tileLike/tileLike.js",
+		"c/tileLike/standardTile.html.js",
+		"c/tileLike/standardTile.css.js",
+		"c/tileLike/standardTile.scoped.css.js",
+	} {
+		if _, err := os.Stat(filepath.Join(outDir, filepath.FromSlash(rel))); err != nil {
+			t.Fatalf("missing compiled custom-render file %s: %v", rel, err)
+		}
+	}
+	entryBytes, err := os.ReadFile(filepath.Join(outDir, "c", "tileLike", "tileLike.js"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	entryJS := string(entryBytes)
+	if strings.Contains(entryJS, "@api") {
+		t.Fatalf("custom-render entry was not transformed:\n%s", entryJS)
+	}
+	if !strings.Contains(entryJS, `from "./standardTile.html.js"`) {
+		t.Fatalf("custom-render template import was not rewritten:\n%s", entryJS)
+	}
+	if !strings.Contains(entryJS, "registerDecorators") {
+		t.Fatalf("custom-render entry missing LWC decorator registration:\n%s", entryJS)
+	}
+}
+
 func TestCompileEnablesLwcOnDirective(t *testing.T) {
 	fixtureDir := filepath.Join(t.TempDir(), "lwc-on-fixture")
 	componentDir := filepath.Join(fixtureDir, "force-app", "main", "default", "lwc", "dynamicOn")

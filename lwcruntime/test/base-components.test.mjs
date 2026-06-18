@@ -82,6 +82,7 @@ function startBaseComponentServer() {
     "@glade/shell/diagnostics": "/lightning/runtime/shell/diagnostics.js",
     "lightning/button": "/lightning/shims/lightning/button.js",
     "lightning/input": "/lightning/shims/lightning/input.js",
+    "lightning/inputField": "/lightning/shims/lightning/inputField.js",
     "lightning/textarea": "/lightning/shims/lightning/textarea.js",
     "lightning/combobox": "/lightning/shims/lightning/combobox.js",
     "lightning/card": "/lightning/shims/lightning/card.js",
@@ -125,6 +126,7 @@ import { loadSLDS } from "@glade/slds";
 import { diagnostics } from "@glade/shell/diagnostics";
 import Button from "lightning/button";
 import Input from "lightning/input";
+import InputField from "lightning/inputField";
 import Textarea from "lightning/textarea";
 import Combobox from "lightning/combobox";
 import Card from "lightning/card";
@@ -166,6 +168,30 @@ button.addEventListener("click", () => {
   window.__baseClickCount = (window.__baseClickCount || 0) + 1;
 });
 append("lightning-input", Input, { label: "Name", value: "Ada", disabled: false });
+const inputField = append("lightning-input-field", InputField, { fieldName: "Name", value: "Ada" });
+inputField.setErrors({ message: "Required" });
+inputField.wireRecordUi({ record: { id: "001000000000001AAA" } });
+inputField.wirePicklistValues({ Name: { values: [{ label: "Warm", value: "Warm" }] } });
+inputField.setValue("Grace");
+const inputFieldBeforeClean = {
+  errors: inputField.getErrors(),
+  wiredData: inputField.getWiredData(),
+  wiredPicklistValues: inputField.getWiredPicklistValues(),
+  value: inputField.value,
+  dirty: inputField.dirty,
+};
+inputField.clean();
+window.__baseInputFieldContracts = { ...inputFieldBeforeClean, dirtyAfterClean: inputField.dirty };
+const validityInput = append("lightning-input", Input, { label: "Validity", value: "Ada", disabled: false });
+validityInput.setCustomValidity("Bad value");
+window.__baseInputValidityContracts = {
+  before: validityInput.checkValidity(),
+  reported: validityInput.reportValidity(),
+};
+validityInput.setCustomValidity("");
+window.__baseInputValidityContracts.after = validityInput.checkValidity();
+validityInput.focus();
+validityInput.blur();
 append("lightning-textarea", Textarea, { label: "Notes", value: "Ready" });
 append("lightning-combobox", Combobox, {
   label: "Stage",
@@ -290,9 +316,23 @@ test("base components render practical SLDS 2 DOM", async (t) => {
     assert.equal(await page.locator("lightning-button button").isEnabled(), true);
     await page.locator("lightning-button button", { hasText: "Save" }).click();
     assert.equal(await page.evaluate(() => window.__baseClickCount), 1);
-    assert.match(await page.locator("lightning-input").innerText(), /Name/);
-    assert.equal(await page.locator("lightning-input input").isEnabled(), true);
-    assert.equal(await page.locator("lightning-input input").inputValue(), "Ada");
+    const nameInput = page.locator("lightning-input").filter({ hasText: "Name" });
+    assert.match(await nameInput.innerText(), /Name/);
+    assert.equal(await nameInput.locator("input").isEnabled(), true);
+    assert.equal(await nameInput.locator("input").inputValue(), "Ada");
+    assert.deepEqual(await page.evaluate(() => window.__baseInputFieldContracts), {
+      errors: { message: "Required" },
+      wiredData: { record: { id: "001000000000001AAA" } },
+      wiredPicklistValues: { Name: { values: [{ label: "Warm", value: "Warm" }] } },
+      value: "Grace",
+      dirty: true,
+      dirtyAfterClean: false,
+    });
+    assert.deepEqual(await page.evaluate(() => window.__baseInputValidityContracts), {
+      before: false,
+      reported: false,
+      after: true,
+    });
     assert.equal(await page.locator("lightning-combobox select").inputValue(), "open");
     assert.match(await page.locator("lightning-card").innerText(), /Account Card/);
     assert.match(await page.locator("lightning-datatable").innerText(), /Local Shell Account/);

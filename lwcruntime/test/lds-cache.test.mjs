@@ -82,6 +82,29 @@ test("getRecord wire sends optionalFields and keeps cache keys distinct", async 
   }
 });
 
+test("fetch wire suppresses null mapped bodies", async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    throw new Error("fetch should not run");
+  };
+
+  try {
+    const values = [];
+    const Adapter = createFetchWireAdapter("/lightning/wire/skip", () => null);
+    const adapter = new Adapter((value) => values.push(value));
+
+    await adapter.update({ objectApiName: "" });
+
+    assert.equal(calls, 0);
+    assert.deepEqual(values, []);
+    adapter.disconnect();
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("LDS notify refreshes batch getRecords wires by recordIds", async () => {
   const originalFetch = globalThis.fetch;
   const calls = [];

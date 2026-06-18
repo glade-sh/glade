@@ -84,7 +84,7 @@ func TestPackagePhase1ServiceModulesExportLocalContracts(t *testing.T) {
 	cases := map[string][]string{
 		"actions":            {ActionsModuleJS(), "CloseActionScreenEvent", "closeactionscreen"},
 		"confirm":            {ConfirmModuleJS(), "LightningConfirm", "Promise.resolve(true)"},
-		"configProvider":     {ConfigProviderModuleJS(), "getPathPrefix", "getToken", "getIconSvgTemplates"},
+		"configProvider":     {ConfigProviderModuleJS(), "getPathPrefix", "getToken", "getIconSvgTemplates", "getLocalizationService", "getOneConfig"},
 		"customPermission":   {CustomPermissionModuleJS("LocalPermission"), "permissionName", "LocalPermission", "export default true"},
 		"empApi":             {EmpAPIModuleJS(), "subscribe", "unsubscribe", "isEmpEnabled"},
 		"flowSupport":        {FlowSupportModuleJS(), "FlowAttributeChangeEvent", "flownavigationnext", "flownavigationfinish"},
@@ -96,6 +96,34 @@ func TestPackagePhase1ServiceModulesExportLocalContracts(t *testing.T) {
 		if !containsAll(js, parts[1:]...) {
 			t.Fatalf("%s module js = %q", name, js)
 		}
+	}
+}
+
+func TestConfigProviderModuleSupportsBaseComponentRecipesContracts(t *testing.T) {
+	js := ConfigProviderModuleJS()
+	if !containsAll(js,
+		"export default configProviderService",
+		"export function getLocalizationService",
+		"export function getOneConfig",
+		"isBefore(date1, date2, unit)",
+		"isAfter(date1, date2, unit)",
+		"formatDateTimeUTC(date)",
+		"formatDate(dateString, format, locale)",
+		"formatDateUTC(dateString, format, locale)",
+		"formatTime(timeString, format)",
+		"parseDateTimeUTC(dateTimeString)",
+		"parseDateTimeISO8601(dateTimeString)",
+		"parseDateTime(dateTimeString, format, strictMode)",
+		"UTCToWallTime(date, timezone, callback)",
+		"WallTimeToUTC(date, timezone, callback)",
+		"translateToLocalizedDigits(input)",
+		"translateFromLocalizedDigits(input)",
+		"getNumberFormat(format)",
+		"duration(value, unit)",
+		"displayDuration(value, withSuffix)",
+		"densitySetting",
+	) {
+		t.Fatalf("config provider js = %q", js)
 	}
 }
 
@@ -157,9 +185,15 @@ func TestCommunityAndSiteModuleJS(t *testing.T) {
 
 func TestI18nModuleJS(t *testing.T) {
 	cases := map[string]string{
-		"lang":     `export default "en-US"`,
-		"locale":   `export default "en_US"`,
-		"timeZone": `export default "UTC"`,
+		"dateTime.mediumDateFormat": `export default "MMM d, yyyy"`,
+		"dateTime.mediumTimeFormat": `export default "h:mm:ss a"`,
+		"dir":                       `export default "ltr"`,
+		"lang":                      `export default "en-US"`,
+		"locale":                    `export default "en-US"`,
+		"number.currencyFormat":     `export default "¤#,##0.00;(¤#,##0.00)"`,
+		"number.numberFormat":       `export default "#,##0.###"`,
+		"number.percentFormat":      `export default "#,##0%"`,
+		"timeZone":                  `export default "UTC"`,
 	}
 	for property, want := range cases {
 		if got := I18nModuleJS(property); !strings.Contains(got, want) {
@@ -235,6 +269,7 @@ func TestUIRecordAPIModuleJSExportsRecordAndObjectInfoWires(t *testing.T) {
 		"createGetRecordWireAdapter",
 		"lds-cache.mjs",
 		"getRecord",
+		"getRecordUi",
 		"getRecords",
 		"getRecordCreateDefaults",
 		"getObjectInfo",
@@ -246,7 +281,7 @@ func TestUIRecordAPIModuleJSExportsRecordAndObjectInfoWires(t *testing.T) {
 		"GLADELWC050",
 		"notifyRecordUpdateAvailable",
 		"refreshApex",
-		"objectApiName: objectApiName",
+		"objectApiName: apiName",
 		"createRecord",
 		"updateRecord",
 		"deleteRecord",
@@ -255,6 +290,7 @@ func TestUIRecordAPIModuleJSExportsRecordAndObjectInfoWires(t *testing.T) {
 		"createRecordInputFilteredByEditedFields",
 		"getFieldValue",
 		"getFieldDisplayValue",
+		"/lightning/wire/getRecordUi",
 	) {
 		t.Fatalf("js = %q", js)
 	}
@@ -380,6 +416,7 @@ import { getLayout } from "./uiLayoutApi.mjs";
 assert.equal(typeof getLayout, "function");
 assert.equal(adapters.length, 1);
 assert.equal(adapters[0].url, "/lightning/wire/getLayout");
+assert.equal(adapters[0].mapper({}), null);
 assert.deepEqual(adapters[0].mapper({
   objectApiName: { objectApiName: "Account" },
   recordTypeId: "012000000000123",
@@ -450,16 +487,19 @@ assert.deepEqual(adapters.map((adapter) => adapter.url), [
   "/lightning/wire/getPicklistValuesByRecordType",
 ]);
 assert.deepEqual(adapters[0].mapper({ objectApiName: { objectApiName: "Account" } }), { objectApiName: "Account" });
+assert.equal(adapters[0].mapper({}), null);
 assert.deepEqual(adapters[1].mapper({ objectApiNames: [{ objectApiName: "Account" }, "Contact"] }), { objectApiNames: ["Account", "Contact"] });
+assert.equal(adapters[1].mapper({ objectApiNames: [] }), null);
 assert.deepEqual(adapters[2].mapper({ fieldApiName: { objectApiName: "Account", fieldApiName: "Rating" }, recordTypeId: "012000000000123" }), {
-  objectApiName: undefined,
   fieldApiName: "Account.Rating",
   recordTypeId: "012000000000123",
 });
+assert.equal(adapters[2].mapper({ fieldApiName: "Rating", recordTypeId: "012000000000123" }), null);
 assert.deepEqual(adapters[3].mapper({ objectApiName: { objectApiName: "Account" }, recordTypeId: "012000000000123" }), {
   objectApiName: "Account",
   recordTypeId: "012000000000123",
 });
+assert.equal(adapters[3].mapper({ objectApiName: "Account" }), null);
 `
 	if err := os.WriteFile(filepath.Join(dir, "test.mjs"), []byte(script), 0o644); err != nil {
 		t.Fatal(err)
@@ -504,6 +544,7 @@ import { getRelatedListRecords } from "./uiRelatedListApi.mjs";
 assert.equal(typeof getRelatedListRecords, "function");
 assert.equal(adapters.length, 1);
 assert.equal(adapters[0].url, "/lightning/wire/getRelatedListRecords");
+assert.equal(adapters[0].mapper({ relatedListId: "Contacts" }), null);
 assert.deepEqual(adapters[0].mapper({
   parentRecordId: "001000000000001AAA",
   relatedListId: "Contacts",

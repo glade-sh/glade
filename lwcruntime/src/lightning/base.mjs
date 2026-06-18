@@ -60,6 +60,24 @@ const PUBLIC_PROPS = [
   "markersTitle",
   "src",
   "description",
+  "dirty",
+  "required",
+];
+
+const PUBLIC_METHODS = [
+  "setErrors",
+  "getErrors",
+  "wireRecordUi",
+  "getWiredData",
+  "wirePicklistValues",
+  "getWiredPicklistValues",
+  "setValue",
+  "clean",
+  "setCustomValidity",
+  "checkValidity",
+  "reportValidity",
+  "focus",
+  "blur",
 ];
 
 const UNSUPPORTED_ATTRIBUTE_NAMES = new Set([
@@ -77,6 +95,10 @@ function publicProps() {
     props[name] = { config: 0 };
   }
   return props;
+}
+
+function publicMethods() {
+  return PUBLIC_METHODS;
 }
 
 export function createBaseComponent(selector, render, options = {}) {
@@ -262,6 +284,78 @@ export function createBaseComponent(selector, render, options = {}) {
       return fields;
     }
 
+    getErrors() {
+      return this.__errors || null;
+    }
+
+    setErrors(errors) {
+      this.__errors = errors || null;
+    }
+
+    getWiredData() {
+      return this.__wiredData;
+    }
+
+    wireRecordUi(data) {
+      this.__wiredData = data;
+    }
+
+    getWiredPicklistValues() {
+      return this.__wiredPicklistValues;
+    }
+
+    wirePicklistValues(data) {
+      this.__wiredPicklistValues = data;
+    }
+
+    setValue(value) {
+      this.value = value;
+      this.dirty = true;
+    }
+
+    clean() {
+      this.dirty = false;
+    }
+
+    setCustomValidity(message) {
+      this.__customValidityMessage = String(message || "");
+      const control = baseFormControl(this);
+      if (control?.setCustomValidity) {
+        control.setCustomValidity(this.__customValidityMessage);
+      }
+    }
+
+    checkValidity() {
+      const control = baseFormControl(this);
+      if (control?.setCustomValidity) {
+        control.setCustomValidity(this.__customValidityMessage || "");
+      }
+      if (this.__customValidityMessage) {
+        return false;
+      }
+      return control?.checkValidity ? control.checkValidity() : true;
+    }
+
+    reportValidity() {
+      const control = baseFormControl(this);
+      if (control?.setCustomValidity) {
+        control.setCustomValidity(this.__customValidityMessage || "");
+      }
+      if (this.__customValidityMessage) {
+        control?.reportValidity?.();
+        return false;
+      }
+      return control?.reportValidity ? control.reportValidity() : true;
+    }
+
+    focus() {
+      baseFormControl(this)?.focus?.();
+    }
+
+    blur() {
+      baseFormControl(this)?.blur?.();
+    }
+
     handleRowAction(event) {
       const dataset = event?.currentTarget?.dataset || {};
       const rowIndex = Number(dataset.rowIndex);
@@ -326,7 +420,7 @@ export function createBaseComponent(selector, render, options = {}) {
     }
   }
 
-  registerDecorators(GladeBaseComponent, { publicProps: publicProps() });
+  registerDecorators(GladeBaseComponent, { publicProps: publicProps(), publicMethods: publicMethods() });
   render.stylesheets = [];
   render.slots = [""];
   const template = registerTemplate(render);
@@ -352,6 +446,10 @@ export function unsupportedBaseAttributes(component) {
     }
   }
   return unsupportedAttrs;
+}
+
+function baseFormControl(component) {
+  return component?.template?.querySelector?.("input, textarea, select, button, [tabindex]") || null;
 }
 
 export function text(api, value) {
@@ -492,7 +590,7 @@ export function renderInput($api, $cmp) {
     h("input", {
       classMap: { "slds-input": true },
       attrs: { type: $cmp.type || "text" },
-      props: { value: $cmp.value || "", disabled: Boolean($cmp.disabled) },
+      props: { value: $cmp.value || "", disabled: Boolean($cmp.disabled), required: Boolean($cmp.required) },
       key: 2,
       on: { change: b($cmp.handleChange), input: b($cmp.handleChange) },
     }),
@@ -505,7 +603,7 @@ export function renderTextarea($api, $cmp) {
     h("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [t($cmp.label || "")]),
     h("textarea", {
       classMap: { "slds-textarea": true },
-      props: { value: $cmp.value || "" },
+      props: { value: $cmp.value || "", required: Boolean($cmp.required) },
       key: 2,
       on: { change: b($cmp.handleChange), input: b($cmp.handleChange) },
     }),
@@ -519,7 +617,7 @@ export function renderCombobox($api, $cmp) {
     h("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [t($cmp.label || "")]),
     h("select", {
       classMap: { "slds-select": true },
-      props: { value },
+      props: { value, required: Boolean($cmp.required) },
       key: 2,
       on: { change: b($cmp.handleChange) },
     }, ($cmp.options || []).map((option, index) => {

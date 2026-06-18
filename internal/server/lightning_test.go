@@ -479,7 +479,7 @@ func TestLightningPackageCorpusShimsServeLocalContracts(t *testing.T) {
 	}{
 		{"/lightning/shims/client/formFactor.js", []string{"readFormFactor", "export default"}},
 		{"/lightning/shims/customPermission/LocalAuditLogs.js", []string{"LocalAuditLogs", "export default true"}},
-		{"/lightning/shims/lightning/configProvider.js", []string{"getPathPrefix", "getToken", "getIconSvgTemplates"}},
+		{"/lightning/shims/lightning/configProvider.js", []string{"getPathPrefix", "getToken", "getIconSvgTemplates", "getLocalizationService", "getOneConfig"}},
 		{"/lightning/shims/lightning/pageReferenceUtils.js", []string{"encodeDefaultFieldValues", "decodeDefaultFieldValues"}},
 		{"/lightning/shims/lightning/confirm.js", []string{"LightningConfirm", "Promise.resolve(true)"}},
 	}
@@ -955,6 +955,81 @@ func TestLightningWireGetRecordsReturnsBatchResults(t *testing.T) {
 	errPayload, ok := second["result"].(map[string]any)
 	if !ok || errPayload["errorCode"] != "NOT_FOUND" {
 		t.Fatalf("second error = %#v", second["result"])
+	}
+}
+
+func TestLightningWireGetRecordUIReturnsRecordObjectInfoAndLayouts(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Label = "Account"
+	account.Definition.PluralLabel = "Accounts"
+	account.Definition.Fields["Name"] = storage.Field{APIName: "Name", Label: "Account Name", Type: storage.FieldString, Required: true, Createable: storage.BoolFlag(true), Updateable: storage.BoolFlag(true)}
+	account.Definition.Fields["Description"] = storage.Field{APIName: "Description", Label: "Description", Type: storage.FieldString, Createable: storage.BoolFlag(true), Updateable: storage.BoolFlag(true)}
+	account.Records["001XX0000000001"] = storage.Record{
+		ID:     "001XX0000000001",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":        storage.StringValue("Acme"),
+			"Description": storage.StringValue("Local account"),
+		},
+	}
+	org.Objects["Account"] = account
+	handler := New(&org)
+
+	body := `{"recordIds":["001XX0000000001"],"fields":["Account.Name"],"optionalFields":["Account.Description"],"layoutTypes":["Full"],"modes":["View"]}`
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/lightning/wire/getRecordUi", strings.NewReader(body)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var out lwcbrowser.WireResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Error != nil {
+		t.Fatalf("error = %#v", out.Error)
+	}
+	payload, ok := out.Data.(map[string]any)
+	if !ok {
+		t.Fatalf("data = %#v", out.Data)
+	}
+	records, ok := payload["records"].(map[string]any)
+	if !ok {
+		t.Fatalf("records = %#v", payload["records"])
+	}
+	record, ok := records["001XX0000000001"].(map[string]any)
+	if !ok || record["apiName"] != "Account" {
+		t.Fatalf("record = %#v", records["001XX0000000001"])
+	}
+	fields, ok := record["fields"].(map[string]any)
+	if !ok || fields["Name"].(map[string]any)["value"] != "Acme" || fields["Description"].(map[string]any)["value"] != "Local account" {
+		t.Fatalf("record fields = %#v", record["fields"])
+	}
+	objectInfos, ok := payload["objectInfos"].(map[string]any)
+	if !ok || objectInfos["Account"] == nil {
+		t.Fatalf("objectInfos = %#v", payload["objectInfos"])
+	}
+	layouts, ok := payload["layouts"].(map[string]any)
+	if !ok {
+		t.Fatalf("layouts = %#v", payload["layouts"])
+	}
+	accountLayouts, ok := layouts["Account"].(map[string]any)
+	if !ok {
+		t.Fatalf("Account layouts = %#v", layouts["Account"])
+	}
+	var typeLayouts map[string]any
+	for _, raw := range accountLayouts {
+		typeLayouts, ok = raw.(map[string]any)
+		if ok {
+			break
+		}
+	}
+	if !ok || typeLayouts["Full"] == nil {
+		t.Fatalf("type layouts = %#v", accountLayouts)
+	}
+	full, ok := typeLayouts["Full"].(map[string]any)
+	if !ok || full["View"] == nil {
+		t.Fatalf("Full layout = %#v", typeLayouts["Full"])
 	}
 }
 

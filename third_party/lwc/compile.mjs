@@ -45,7 +45,7 @@ function transformOptions(namespace, name) {
 }
 
 function rewriteStylesheetImports(code, bundleName) {
-  return code
+  return rewriteTemplateRelativeImports(code)
     .replace(
       `from "./${bundleName}.html"`,
       `from "./${bundleName}.html.js"`
@@ -67,7 +67,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir) {
   if (!fs.existsSync(jsPath)) {
     return null;
   }
-  if (!fs.existsSync(htmlPath)) {
+  if (!fs.existsSync(htmlPath) && !isCustomRenderComponent(jsPath)) {
     return compileUtilityModule(bundleDir, bundleName, namespace, outDir);
   }
 
@@ -75,12 +75,14 @@ function compileBundle(bundleDir, bundleName, namespace, outDir) {
   const bundleOut = path.join(outDir, moduleKey);
   fs.mkdirSync(bundleOut, { recursive: true });
 
-  const htmlSource = fs.readFileSync(htmlPath, "utf8");
-  const htmlResult = transformSync(htmlSource, htmlPath, transformOptions(namespace, bundleName));
-  writeCompiled(
-    path.join(bundleOut, `${bundleName}.html.js`),
-    rewriteStylesheetImports(htmlResult.code, bundleName)
-  );
+  {
+    const htmlSource = fs.existsSync(htmlPath) ? fs.readFileSync(htmlPath, "utf8") : "<template></template>";
+    const htmlResult = transformSync(htmlSource, htmlPath, transformOptions(namespace, bundleName));
+    writeCompiled(
+      path.join(bundleOut, `${bundleName}.html.js`),
+      rewriteStylesheetImports(htmlResult.code, bundleName)
+    );
+  }
 
   if (fs.existsSync(cssPath)) {
     const cssSource = fs.readFileSync(cssPath, "utf8");
@@ -132,6 +134,11 @@ function compileUtilityModule(bundleDir, bundleName, namespace, outDir) {
     file: entryFile,
     tag: "",
   };
+}
+
+function isCustomRenderComponent(jsPath) {
+  const source = fs.readFileSync(jsPath, "utf8");
+  return /from\s+["']\.\/[^"']+\.html["']/.test(source);
 }
 
 function compileSiblingModules(bundleDir, bundleName, bundleOut) {
@@ -192,10 +199,10 @@ function compileCSSModule(cssPath, name, namespace, bundleDir, bundleOut) {
 function rewriteTemplateRelativeImports(code) {
   return code
     .replace(
-      /from "(\.\/[^"]+\.scoped\.css)\?scoped=true"/g,
-      'from "$1.js"'
+      /from (["'])(\.\/[^"']+\.scoped\.css)\?scoped=true\1/g,
+      'from "$2.js"'
     )
-    .replace(/from "(\.\/[^"]+\.(?:html|css))"/g, 'from "$1.js"');
+    .replace(/from (["'])(\.\/[^"']+\.(?:html|css))\1/g, 'from "$2.js"');
 }
 
 function walkBundleFiles(dir, visit) {

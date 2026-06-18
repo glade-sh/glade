@@ -162,6 +162,28 @@ func TestBaseComponentPublicPropsIncludeFieldName(t *testing.T) {
 	}
 }
 
+func TestBaseComponentPublicMethodsExposeFormAndValidityContracts(t *testing.T) {
+	js := LightningBaseComponentModuleJS("inputField")
+	if !containsAll(js,
+		"publicMethods: basePublicMethods()",
+		`"setErrors"`,
+		`"getErrors"`,
+		`"wireRecordUi"`,
+		`"getWiredData"`,
+		`"wirePicklistValues"`,
+		`"getWiredPicklistValues"`,
+		`"setValue"`,
+		`"clean"`,
+		`"setCustomValidity"`,
+		`"checkValidity"`,
+		`"reportValidity"`,
+		`"focus"`,
+		`"blur"`,
+	) {
+		t.Fatalf("inputField module missing public method contracts:\n%s", js)
+	}
+}
+
 func TestDatatableModuleDispatchesRowAction(t *testing.T) {
 	js := LightningBaseComponentModuleJS("datatable")
 	if !containsAll(js, "handleRowAction", `"rowaction"`, "typeAttributes", "rowActions") {

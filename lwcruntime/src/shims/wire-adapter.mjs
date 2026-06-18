@@ -61,6 +61,11 @@ export function createFetchWireAdapter(endpoint, mapBody) {
   FetchWireAdapter.prototype.update = function update(config) {
     this.config = config;
     this.body = mapBody(config);
+    if (!this.body || hasUndefined(this.body)) {
+      this.cacheKey = "";
+      this.recordIdSet = new Set();
+      return Promise.resolve();
+    }
     this.cacheKey = ldsCacheKey(endpoint, this.body);
     this.recordIdSet = recordIdsFromBody(this.body);
     return this.refresh();

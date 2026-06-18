@@ -234,21 +234,36 @@ function uiListApiJS() {
 
 function uiObjectInfoApiJS() {
   return `import { createFetchWireAdapter } from "/lightning/shims/core/wire-adapter.js";
-export const getObjectInfo = createFetchWireAdapter("/lightning/wire/getObjectInfo", (config) => ({
-  objectApiName: objectApiName(config && config.objectApiName)
-}));
-export const getObjectInfos = createFetchWireAdapter("/lightning/wire/getObjectInfos", (config) => ({
-  objectApiNames: (config && config.objectApiNames || []).map(objectApiName)
-}));
-export const getPicklistValues = createFetchWireAdapter("/lightning/wire/getPicklistValues", (config) => ({
-  objectApiName: objectApiName(config && config.objectApiName),
-  fieldApiName: fieldApiName(config && config.fieldApiName),
-  recordTypeId: config && config.recordTypeId
-}));
-export const getPicklistValuesByRecordType = createFetchWireAdapter("/lightning/wire/getPicklistValuesByRecordType", (config) => ({
-  objectApiName: objectApiName(config && config.objectApiName),
-  recordTypeId: config && config.recordTypeId
-}));
+export const getObjectInfo = createFetchWireAdapter("/lightning/wire/getObjectInfo", (config) => {
+  const apiName = objectApiName(config && config.objectApiName);
+  return apiName ? { objectApiName: apiName } : null;
+});
+export const getObjectInfos = createFetchWireAdapter("/lightning/wire/getObjectInfos", (config) => {
+  const objectApiNames = (config && config.objectApiNames || []).map(objectApiName).filter(Boolean);
+  return objectApiNames.length ? { objectApiNames } : null;
+});
+export const getPicklistValues = createFetchWireAdapter("/lightning/wire/getPicklistValues", (config) => {
+  const apiName = objectApiName(config && config.objectApiName);
+  const fieldName = fieldApiName(config && config.fieldApiName);
+  if (!fieldName || !(config && config.recordTypeId) || (!apiName && !fieldName.includes("."))) {
+    return null;
+  }
+  return compactBody({
+    objectApiName: apiName,
+    fieldApiName: fieldName,
+    recordTypeId: config && config.recordTypeId
+  });
+});
+export const getPicklistValuesByRecordType = createFetchWireAdapter("/lightning/wire/getPicklistValuesByRecordType", (config) => {
+  const apiName = objectApiName(config && config.objectApiName);
+  if (!apiName || !(config && config.recordTypeId)) {
+    return null;
+  }
+  return {
+    objectApiName: apiName,
+    recordTypeId: config && config.recordTypeId
+  };
+});
 function objectApiName(value) {
   if (value && typeof value === "object" && value.objectApiName) {
     return value.objectApiName;
@@ -264,20 +279,34 @@ function fieldApiName(value) {
   }
   return value || "";
 }
+function compactBody(body) {
+  const out = {};
+  for (const [key, value] of Object.entries(body)) {
+    if (value !== undefined) {
+      out[key] = value;
+    }
+  }
+  return out;
+}
 `;
 }
 
 function uiRelatedListApiJS() {
   return `import { createFetchWireAdapter } from "/lightning/shims/core/wire-adapter.js";
-export const getRelatedListRecords = createFetchWireAdapter("/lightning/wire/getRelatedListRecords", (config) => ({
-  parentRecordId: config && config.parentRecordId,
-  relatedListId: config && config.relatedListId,
-  fields: normalizeFields(config && config.fields),
-  optionalFields: normalizeFields(config && config.optionalFields),
-  sortBy: normalizeFields(config && config.sortBy),
-  pageSize: config && config.pageSize,
-  pageToken: config && config.pageToken
-}));
+export const getRelatedListRecords = createFetchWireAdapter("/lightning/wire/getRelatedListRecords", (config) => {
+  if (!(config && config.parentRecordId) || !config.relatedListId) {
+    return null;
+  }
+  return compactBody({
+    parentRecordId: config && config.parentRecordId,
+    relatedListId: config && config.relatedListId,
+    fields: normalizeFields(config && config.fields),
+    optionalFields: normalizeFields(config && config.optionalFields),
+    sortBy: normalizeFields(config && config.sortBy),
+    pageSize: config && config.pageSize,
+    pageToken: config && config.pageToken
+  });
+});
 function normalizeFields(fields) {
   return (fields || []).map((field) => {
     if (field && typeof field === "object") {
@@ -285,6 +314,15 @@ function normalizeFields(fields) {
     }
     return String(field);
   });
+}
+function compactBody(body) {
+  const out = {};
+  for (const [key, value] of Object.entries(body)) {
+    if (value !== undefined) {
+      out[key] = value;
+    }
+  }
+  return out;
 }
 `;
 }

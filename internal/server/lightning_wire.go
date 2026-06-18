@@ -25,6 +25,8 @@ func (s *Server) handleLightningWire(w http.ResponseWriter, r *http.Request, par
 		s.handleLightningWireGetRecord(w, r)
 	case "getRecords":
 		s.handleLightningWireGetRecords(w, r)
+	case "getRecordUi":
+		s.handleLightningWireGetRecordUI(w, r)
 	case "getObjectInfo":
 		s.handleLightningWireGetObjectInfo(w, r)
 	case "getObjectInfos":
@@ -201,6 +203,29 @@ func (s *Server) handleLightningWireGetRecords(w http.ResponseWriter, r *http.Re
 		s.Org = &org
 	}
 	writeWireJSON(w, lwcbrowser.WireResponse{Data: getRecordsWireData(s.Org, req)})
+}
+
+func (s *Server) handleLightningWireGetRecordUI(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	if err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: err.Error()}})
+		return
+	}
+	var req lwcbrowser.WireGetRecordUIRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: &lwcbrowser.WireError{Message: "invalid getRecordUi wire request"}})
+		return
+	}
+	if s.Org == nil {
+		org := storage.NewOrgState()
+		s.Org = &org
+	}
+	data, wireErr := getRecordUIWireData(s.Org, req, s.Source)
+	if wireErr != nil {
+		writeWireJSON(w, lwcbrowser.WireResponse{Error: wireErr})
+		return
+	}
+	writeWireJSON(w, lwcbrowser.WireResponse{Data: data})
 }
 
 func (s *Server) handleLightningWireGetObjectInfo(w http.ResponseWriter, r *http.Request) {
@@ -520,6 +545,96 @@ func getRecordsWireData(org *storage.OrgState, req lwcbrowser.WireGetRecordsRequ
 		}
 	}
 	return map[string]any{"results": results}
+}
+
+func getRecordUIWireData(org *storage.OrgState, req lwcbrowser.WireGetRecordUIRequest, source SourceMetadata) (map[string]any, *lwcbrowser.WireError) {
+	records := map[string]any{}
+	objectInfos := map[string]any{}
+	layouts := map[string]any{}
+	objectNames := map[string]bool{}
+	recordTypeIDs := map[string]string{}
+	for _, recordID := range req.RecordIDs {
+		recordID = strings.TrimSpace(recordID)
+		if recordID == "" {
+			continue
+		}
+		record, wireErr := getRecordWireData(org, recordID, req.Fields, req.OptionalFields)
+		if wireErr != nil {
+			return nil, wireErr
+		}
+		records[recordID] = record
+		objectName, _ := record["apiName"].(string)
+		if objectName == "" {
+			continue
+		}
+		objectNames[objectName] = true
+		recordTypeIDs[objectName] = recordTypeIDForRecordUI(org, objectName, recordID, req.RecordTypeID)
+	}
+	for objectName := range objectNames {
+		objectInfo, wireErr := getObjectInfoWireData(org, objectName)
+		if wireErr != nil {
+			return nil, wireErr
+		}
+		objectInfos[objectName] = objectInfo
+		recordTypeID := recordTypeIDs[objectName]
+		layouts[objectName] = recordUILayoutsForObject(org, objectName, recordTypeID, req, source)
+	}
+	return map[string]any{
+		"records":     records,
+		"objectInfos": objectInfos,
+		"layouts":     layouts,
+	}, nil
+}
+
+func recordTypeIDForRecordUI(org *storage.OrgState, objectName string, recordID string, explicit string) string {
+	if strings.TrimSpace(explicit) != "" {
+		return strings.TrimSpace(explicit)
+	}
+	object, ok := org.Objects[objectName]
+	if !ok {
+		return ""
+	}
+	record, ok := object.Records[storage.ID(recordID)]
+	if ok {
+		if value, hasValue := record.Fields["RecordTypeId"]; hasValue && value.ID != "" {
+			return string(value.ID)
+		}
+	}
+	return createDefaultsRecordTypeID(object.Definition, "")
+}
+
+func recordUILayoutsForObject(org *storage.OrgState, objectName string, recordTypeID string, req lwcbrowser.WireGetRecordUIRequest, source SourceMetadata) map[string]any {
+	byType := map[string]any{}
+	layoutTypes := req.LayoutTypes
+	if len(layoutTypes) == 0 {
+		layoutTypes = []string{"Full"}
+	}
+	modes := req.Modes
+	if len(modes) == 0 {
+		modes = []string{"View"}
+	}
+	for _, layoutType := range layoutTypes {
+		normalizedType := layoutTypeOrDefault(layoutType)
+		if byType[normalizedType] == nil {
+			byType[normalizedType] = map[string]any{}
+		}
+		modeMap := byType[normalizedType].(map[string]any)
+		for _, mode := range modes {
+			normalizedMode := layoutModeOrDefault(mode)
+			layout, wireErr := getLayoutWireData(org, lwcbrowser.WireGetLayoutRequest{
+				ObjectAPIName: objectName,
+				RecordTypeID:  recordTypeID,
+				LayoutType:    normalizedType,
+				Mode:          normalizedMode,
+				FormFactor:    req.FormFactor,
+			}, source)
+			if wireErr != nil {
+				continue
+			}
+			modeMap[normalizedMode] = layout
+		}
+	}
+	return map[string]any{recordTypeID: byType}
 }
 
 func getObjectInfoWireData(org *storage.OrgState, objectAPIName string) (map[string]any, *lwcbrowser.WireError) {

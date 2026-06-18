@@ -94,16 +94,367 @@ func ConfigProviderModuleJS() string {
   "lightning.utilitySprite": "/assets/icons/utility-sprite/svg/symbols.svg",
   "lightning.utilitySpriteRtl": "/assets/icons/utility-sprite/svg/symbols.svg",
 };
+let providedConfig = null;
+const defaultOneConfig = {
+  densitySetting: "",
+};
+const monthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+function configProviderService(serviceAPI = null) {
+  providedConfig = serviceAPI || null;
+  return { name: "lightning-config-provider" };
+}
+function callProvider(name, fallback, args = []) {
+  const implementation = providedConfig && providedConfig[name];
+  if (typeof implementation !== "function") {
+    return fallback;
+  }
+  try {
+    return implementation(...args);
+  } catch (_err) {
+    return fallback;
+  }
+}
 export function getPathPrefix() {
-  return "";
+  return callProvider("getPathPrefix", "", []);
 }
 export function getToken(name) {
-  return tokenValues[name] || "";
+  return callProvider("getToken", tokenValues[name] || "", [name]) || tokenValues[name] || "";
 }
 export function getIconSvgTemplates() {
-  return null;
+  return providedConfig && providedConfig.iconSvgTemplates || null;
 }
-export default { getPathPrefix, getToken, getIconSvgTemplates };
+export function getOneConfig() {
+  const configured = providedConfig && providedConfig.getOneConfig;
+  if (typeof configured === "function") {
+    return configured() || defaultOneConfig;
+  }
+  if (configured && typeof configured === "object") {
+    return configured;
+  }
+  return defaultOneConfig;
+}
+function isDate(value) {
+  return Object.prototype.toString.call(value) === "[object Date]" && !Number.isNaN(value.getTime());
+}
+function toDate(value) {
+  if (!value) {
+    return null;
+  }
+  if (isDate(value)) {
+    return new Date(value.getTime());
+  }
+  if (typeof value === "number") {
+    const parsedNumber = new Date(value);
+    return isDate(parsedNumber) ? parsedNumber : null;
+  }
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (/^\d{2}:\d{2}(:\d{2})?(\.\d+)?(([+-]\d\d:\d\d)|Z)?$/i.test(trimmed)) {
+    const time = trimmed.endsWith("Z") || /[+-]\d\d:\d\d$/i.test(trimmed) ? trimmed : trimmed + "Z";
+    const parsedTime = new Date("1970-01-01T" + time);
+    return isDate(parsedTime) ? parsedTime : null;
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const parsedDate = new Date(trimmed + "T00:00:00.000Z");
+    return isDate(parsedDate) ? parsedDate : null;
+  }
+  const parsed = new Date(trimmed);
+  return isDate(parsed) ? parsed : null;
+}
+function pad(value, width = 2) {
+  return String(value).padStart(width, "0");
+}
+function dateParts(date, utc = false) {
+  return {
+    year: utc ? date.getUTCFullYear() : date.getFullYear(),
+    month: (utc ? date.getUTCMonth() : date.getMonth()) + 1,
+    day: utc ? date.getUTCDate() : date.getDate(),
+    hours: utc ? date.getUTCHours() : date.getHours(),
+    minutes: utc ? date.getUTCMinutes() : date.getMinutes(),
+    seconds: utc ? date.getUTCSeconds() : date.getSeconds(),
+    milliseconds: utc ? date.getUTCMilliseconds() : date.getMilliseconds(),
+  };
+}
+function formatDateValue(value, format = "MMM d, yyyy", utc = false) {
+  const date = toDate(value);
+  if (!date) {
+    return new Date("");
+  }
+  const parts = dateParts(date, utc);
+  switch (format) {
+    case "YYYY-MM-DD":
+    case "yyyy-MM-dd":
+      return parts.year + "-" + pad(parts.month) + "-" + pad(parts.day);
+    case "M/d/yyyy":
+      return parts.month + "/" + parts.day + "/" + parts.year;
+    case "MMMM d, yyyy":
+      return monthNames[parts.month - 1] + " " + parts.day + ", " + parts.year;
+    case "MMM d, yyyy":
+    default:
+      return monthNames[parts.month - 1].slice(0, 3) + " " + parts.day + ", " + parts.year;
+  }
+}
+function formatTimeValue(value, format = "h:mm:ss a", utc = false) {
+  const date = toDate(value);
+  if (!date) {
+    return new Date("");
+  }
+  const parts = dateParts(date, utc);
+  if (format === "HH:mm:ss.SSS") {
+    return pad(parts.hours) + ":" + pad(parts.minutes) + ":" + pad(parts.seconds) + "." + pad(parts.milliseconds, 3);
+  }
+  const twelveHour = ((parts.hours + 11) % 12) + 1;
+  const suffix = parts.hours >= 12 ? "PM" : "AM";
+  if (format === "h:mm a") {
+    return twelveHour + ":" + pad(parts.minutes) + " " + suffix;
+  }
+  return twelveHour + ":" + pad(parts.minutes) + ":" + pad(parts.seconds) + " " + suffix;
+}
+function parseFormattedDate(value, format) {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (format === "YYYY-MM-DD" || format === "yyyy-MM-dd") {
+    return toDate(trimmed);
+  }
+  const shortMatch = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(trimmed);
+  if (shortMatch) {
+    return toDate(shortMatch[3] + "-" + pad(shortMatch[1]) + "-" + pad(shortMatch[2]));
+  }
+  const textMatch = /^([A-Za-z]+)\s+(\d{1,2}),\s*(\d{4})$/.exec(trimmed);
+  if (textMatch) {
+    const month = monthNames.findIndex((name) => name.toLowerCase().startsWith(textMatch[1].toLowerCase()));
+    if (month >= 0) {
+      return toDate(textMatch[3] + "-" + pad(month + 1) + "-" + pad(textMatch[2]));
+    }
+  }
+  return toDate(trimmed);
+}
+function parseFormattedTime(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const match = /^(\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?\s*([AaPp][Mm])?$/.exec(value.trim());
+  if (!match) {
+    return toDate(value);
+  }
+  let hours = Number(match[1]);
+  const minutes = Number(match[2] || 0);
+  const seconds = Number(match[3] || 0);
+  const milliseconds = Number((match[4] || "0").padEnd(3, "0"));
+  const suffix = match[5] && match[5].toLowerCase();
+  if (suffix === "pm" && hours < 12) {
+    hours += 12;
+  } else if (suffix === "am" && hours === 12) {
+    hours = 0;
+  }
+  const date = new Date();
+  date.setHours(hours, minutes, seconds, milliseconds);
+  return isDate(date) ? date : null;
+}
+function startOf(date, unit) {
+  const out = toDate(date);
+  if (!out) {
+    return null;
+  }
+  switch (unit) {
+    case "day":
+      out.setHours(0, 0, 0, 0);
+      break;
+    case "hour":
+      out.setMinutes(0, 0, 0);
+      break;
+    case "minute":
+      out.setSeconds(0, 0);
+      break;
+    case "second":
+      out.setMilliseconds(0);
+      break;
+    default:
+      break;
+  }
+  return out;
+}
+function unitToMilliseconds(unit) {
+  switch (unit) {
+    case "milliseconds":
+    case "millisecond":
+      return 1;
+    case "seconds":
+    case "second":
+      return 1000;
+    case "hours":
+    case "hour":
+      return 60 * 60 * 1000;
+    case "days":
+    case "day":
+      return 24 * 60 * 60 * 1000;
+    case "weeks":
+    case "week":
+      return 7 * 24 * 60 * 60 * 1000;
+    case "months":
+    case "month":
+      return 30 * 24 * 60 * 60 * 1000;
+    case "years":
+    case "year":
+      return 365 * 24 * 60 * 60 * 1000;
+    case "minutes":
+    case "minute":
+    default:
+      return 60 * 1000;
+  }
+}
+function humanizeDuration(milliseconds, withSuffix = false) {
+  const abs = Math.abs(milliseconds);
+  const units = [
+    ["year", 365 * 24 * 60 * 60 * 1000],
+    ["month", 30 * 24 * 60 * 60 * 1000],
+    ["day", 24 * 60 * 60 * 1000],
+    ["hour", 60 * 60 * 1000],
+    ["minute", 60 * 1000],
+    ["second", 1000],
+  ];
+  let amount = 0;
+  let unit = "second";
+  for (const candidate of units) {
+    if (abs >= candidate[1] || candidate[0] === "second") {
+      unit = candidate[0];
+      amount = Math.round(abs / candidate[1]);
+      break;
+    }
+  }
+  const text = amount + " " + unit + (amount === 1 ? "" : "s");
+  if (!withSuffix) {
+    return text;
+  }
+  return milliseconds > 0 ? "in " + text : text + " ago";
+}
+const localizationService = {
+  isBefore(date1, date2, unit) {
+    const left = startOf(date1, unit);
+    const right = startOf(date2, unit);
+    return Boolean(left && right && left.getTime() < right.getTime());
+  },
+  isAfter(date1, date2, unit) {
+    const left = startOf(date1, unit);
+    const right = startOf(date2, unit);
+    return Boolean(left && right && left.getTime() > right.getTime());
+  },
+  formatDateTimeUTC(date) {
+    const parsed = toDate(date);
+    if (!parsed) {
+      return new Date("");
+    }
+    return formatDateValue(parsed, "MMM d, yyyy", true) + ", " + formatTimeValue(parsed, "h:mm:ss a", true);
+  },
+  formatDate(dateString, format, locale) {
+    void locale;
+    return formatDateValue(dateString, format, false);
+  },
+  formatDateUTC(dateString, format, locale) {
+    void locale;
+    return formatDateValue(dateString, format, true);
+  },
+  formatTime(timeString, format) {
+    return formatTimeValue(timeString, format, false);
+  },
+  parseDateTimeUTC(dateTimeString) {
+    return toDate(dateTimeString && /Z|[+-]\d\d:\d\d$/i.test(dateTimeString) ? dateTimeString : String(dateTimeString || "") + "Z");
+  },
+  parseDateTimeISO8601(dateTimeString) {
+    return toDate(dateTimeString);
+  },
+  parseDateTime(dateTimeString, format, strictMode) {
+    void strictMode;
+    if (format && /[hH]:?m/.test(format)) {
+      return parseFormattedTime(dateTimeString);
+    }
+    return parseFormattedDate(dateTimeString, format);
+  },
+  UTCToWallTime(date, timezone, callback) {
+    void timezone;
+    if (typeof callback === "function") {
+      callback(toDate(date) || date);
+    }
+  },
+  WallTimeToUTC(date, timezone, callback) {
+    void timezone;
+    if (typeof callback === "function") {
+      callback(toDate(date) || date);
+    }
+  },
+  translateToOtherCalendar(date) {
+    return date;
+  },
+  translateFromOtherCalendar(date) {
+    return date;
+  },
+  translateToLocalizedDigits(input) {
+    return input;
+  },
+  translateFromLocalizedDigits(input) {
+    return input;
+  },
+  getNumberFormat(format) {
+    try {
+      return new Intl.NumberFormat(undefined, format && typeof format === "object" ? format : undefined);
+    } catch (_err) {
+      return { format: (value) => String(value) };
+    }
+  },
+  duration(value, unit) {
+    const milliseconds = Number(value || 0) * unitToMilliseconds(unit);
+    return {
+      milliseconds,
+      asIn(targetUnit) {
+        return milliseconds / unitToMilliseconds(targetUnit && targetUnit.name || targetUnit);
+      },
+      humanize(locale) {
+        void locale;
+        return humanizeDuration(milliseconds, true);
+      },
+    };
+  },
+  displayDuration(value, withSuffix) {
+    if (value && typeof value.humanize === "function") {
+      return value.humanize("en");
+    }
+    const milliseconds = value && typeof value.milliseconds === "number" ? value.milliseconds : Number(value || 0);
+    return humanizeDuration(milliseconds, Boolean(withSuffix));
+  },
+};
+export function getLocalizationService() {
+  const configured = providedConfig && providedConfig.getLocalizationService;
+  if (typeof configured === "function") {
+    return configured() || localizationService;
+  }
+  return localizationService;
+}
+configProviderService.getPathPrefix = getPathPrefix;
+configProviderService.getToken = getToken;
+configProviderService.getIconSvgTemplates = getIconSvgTemplates;
+configProviderService.getLocalizationService = getLocalizationService;
+configProviderService.getOneConfig = getOneConfig;
+export default configProviderService;
 `
 }
 
@@ -308,17 +659,22 @@ export default readSiteId();
 
 func I18nModuleJS(property string) string {
 	values := map[string]any{
-		"currency":                 "USD",
-		"dateTime.shortDateFormat": "M/d/yyyy",
-		"dir":                      "ltr",
-		"firstDayOfWeek":           1,
-		"isEasternNameStyle":       false,
-		"lang":                     "en-US",
-		"locale":                   "en_US",
-		"number.currencySymbol":    "$",
-		"number.decimalSeparator":  ".",
-		"number.groupingSeparator": ",",
-		"timeZone":                 "UTC",
+		"currency":                  "USD",
+		"dateTime.mediumDateFormat": "MMM d, yyyy",
+		"dateTime.mediumTimeFormat": "h:mm:ss a",
+		"dateTime.shortDateFormat":  "M/d/yyyy",
+		"dir":                       "ltr",
+		"firstDayOfWeek":            1,
+		"isEasternNameStyle":        false,
+		"lang":                      "en-US",
+		"locale":                    "en-US",
+		"number.currencyFormat":     "¤#,##0.00;(¤#,##0.00)",
+		"number.currencySymbol":     "$",
+		"number.decimalSeparator":   ".",
+		"number.groupingSeparator":  ",",
+		"number.numberFormat":       "#,##0.###",
+		"number.percentFormat":      "#,##0%",
+		"timeZone":                  "UTC",
 	}
 	value, ok := values[property]
 	if !ok {
@@ -539,39 +895,86 @@ import {
 } from "/lightning/shims/core/lds-cache.mjs";
 export { getRecordNotifyChange, notifyRecordUpdateAvailable, refreshApex };
 export const getRecord = createGetRecordWireAdapter();
-export const getRecords = createFetchWireAdapter("/lightning/wire/getRecords", (config) => ({
-  records: (config && config.records || []).map((record) => ({
+export const getRecordUi = createFetchWireAdapter("/lightning/wire/getRecordUi", (config) => {
+  const recordIds = config && config.recordIds || [];
+  if (!recordIds.length) {
+    return null;
+  }
+  return compactBody({
+    recordIds,
+    fields: normalizeFields(config && config.fields),
+    optionalFields: normalizeFields(config && config.optionalFields),
+    layoutTypes: config && config.layoutTypes || [],
+    modes: config && config.modes || [],
+    recordTypeId: config && config.recordTypeId,
+    formFactor: config && config.formFactor
+  });
+});
+export const getRecords = createFetchWireAdapter("/lightning/wire/getRecords", (config) => {
+  const records = config && config.records || [];
+  if (!records.length) {
+    return null;
+  }
+  return {
+    records: records.map((record) => ({
     recordIds: record && record.recordIds || [],
     fields: normalizeFields(record && record.fields),
     optionalFields: normalizeFields(record && record.optionalFields)
   }))
-}));
-export const getObjectInfo = createFetchWireAdapter("/lightning/wire/getObjectInfo", (config) => ({
-  objectApiName: objectApiName(config && config.objectApiName)
-}));
-export const getObjectInfos = createFetchWireAdapter("/lightning/wire/getObjectInfos", (config) => ({
-  objectApiNames: (config && config.objectApiNames || []).map(objectApiName)
-}));
-export const getRecordCreateDefaults = createFetchWireAdapter("/lightning/wire/getRecordCreateDefaults", (config) => ({
-  objectApiName: objectApiName(config && config.objectApiName),
-  recordTypeId: config && config.recordTypeId,
-  optionalFields: normalizeFields(config && config.optionalFields),
-  formFactor: config && config.formFactor
-}));
-export const getPicklistValues = createFetchWireAdapter("/lightning/wire/getPicklistValues", (config) => ({
-  objectApiName: objectApiName(config && config.objectApiName),
-  fieldApiName: fieldApiName(config && config.fieldApiName),
-  recordTypeId: config && config.recordTypeId
-}));
-export const getPicklistValuesByRecordType = createFetchWireAdapter("/lightning/wire/getPicklistValuesByRecordType", (config) => ({
-  objectApiName: objectApiName(config && config.objectApiName),
-  recordTypeId: config && config.recordTypeId
-}));
-export const getRelatedListRecords = createFetchWireAdapter("/lightning/wire/getRelatedListRecords", (config) => ({
-  parentRecordId: config && config.parentRecordId,
-  relatedListId: config && config.relatedListId,
-  fields: normalizeFields(config && config.fields)
-}));
+  };
+});
+export const getObjectInfo = createFetchWireAdapter("/lightning/wire/getObjectInfo", (config) => {
+  const apiName = objectApiName(config && config.objectApiName);
+  return apiName ? { objectApiName: apiName } : null;
+});
+export const getObjectInfos = createFetchWireAdapter("/lightning/wire/getObjectInfos", (config) => {
+  const objectApiNames = (config && config.objectApiNames || []).map(objectApiName).filter(Boolean);
+  return objectApiNames.length ? { objectApiNames } : null;
+});
+export const getRecordCreateDefaults = createFetchWireAdapter("/lightning/wire/getRecordCreateDefaults", (config) => {
+  const apiName = objectApiName(config && config.objectApiName);
+  if (!apiName) {
+    return null;
+  }
+  return compactBody({
+    objectApiName: apiName,
+    recordTypeId: config && config.recordTypeId,
+    optionalFields: normalizeFields(config && config.optionalFields),
+    formFactor: config && config.formFactor
+  });
+});
+export const getPicklistValues = createFetchWireAdapter("/lightning/wire/getPicklistValues", (config) => {
+  const apiName = objectApiName(config && config.objectApiName);
+  const fieldName = fieldApiName(config && config.fieldApiName);
+  if (!fieldName || !(config && config.recordTypeId) || (!apiName && !fieldName.includes("."))) {
+    return null;
+  }
+  return compactBody({
+    objectApiName: apiName,
+    fieldApiName: fieldName,
+    recordTypeId: config && config.recordTypeId
+  });
+});
+export const getPicklistValuesByRecordType = createFetchWireAdapter("/lightning/wire/getPicklistValuesByRecordType", (config) => {
+  const apiName = objectApiName(config && config.objectApiName);
+  if (!apiName || !(config && config.recordTypeId)) {
+    return null;
+  }
+  return {
+    objectApiName: apiName,
+    recordTypeId: config && config.recordTypeId
+  };
+});
+export const getRelatedListRecords = createFetchWireAdapter("/lightning/wire/getRelatedListRecords", (config) => {
+  if (!(config && config.parentRecordId) || !config.relatedListId) {
+    return null;
+  }
+  return {
+    parentRecordId: config && config.parentRecordId,
+    relatedListId: config && config.relatedListId,
+    fields: normalizeFields(config && config.fields)
+  };
+});
 export const getListUi = class GetListUiUnsupportedAdapter {
   constructor(dataCallback) {
     this.dataCallback = dataCallback;
@@ -610,6 +1013,15 @@ function normalizeFields(fields) {
     }
     return String(field);
   });
+}
+function compactBody(body) {
+  const out = {};
+  for (const [key, value] of Object.entries(body)) {
+    if (value !== undefined) {
+      out[key] = value;
+    }
+  }
+  return out;
 }
 function post(endpoint, body) {
   return fetch(endpoint, {
@@ -759,39 +1171,69 @@ func UIListAPIModuleJS() string {
 
 func UILayoutAPIModuleJS() string {
 	return `import { createFetchWireAdapter } from "/lightning/shims/core/wire-adapter.js";
-export const getLayout = createFetchWireAdapter("/lightning/wire/getLayout", (config) => ({
-  objectApiName: objectApiName(config && config.objectApiName),
-  recordTypeId: config && config.recordTypeId,
-  layoutType: config && config.layoutType,
-  mode: config && config.mode,
-  formFactor: config && config.formFactor
-}));
+export const getLayout = createFetchWireAdapter("/lightning/wire/getLayout", (config) => {
+  const apiName = objectApiName(config && config.objectApiName);
+  if (!apiName) {
+    return null;
+  }
+  return compactBody({
+    objectApiName: apiName,
+    recordTypeId: config && config.recordTypeId,
+    layoutType: config && config.layoutType,
+    mode: config && config.mode,
+    formFactor: config && config.formFactor
+  });
+});
 function objectApiName(value) {
   if (value && typeof value === "object" && value.objectApiName) {
     return value.objectApiName;
   }
   return value;
 }
+function compactBody(body) {
+  const out = {};
+  for (const [key, value] of Object.entries(body)) {
+    if (value !== undefined) {
+      out[key] = value;
+    }
+  }
+  return out;
+}
 	`
 }
 
 func UIObjectInfoAPIModuleJS() string {
 	return `import { createFetchWireAdapter } from "/lightning/shims/core/wire-adapter.js";
-export const getObjectInfo = createFetchWireAdapter("/lightning/wire/getObjectInfo", (config) => ({
-  objectApiName: objectApiName(config && config.objectApiName)
-}));
-export const getObjectInfos = createFetchWireAdapter("/lightning/wire/getObjectInfos", (config) => ({
-  objectApiNames: (config && config.objectApiNames || []).map(objectApiName)
-}));
-export const getPicklistValues = createFetchWireAdapter("/lightning/wire/getPicklistValues", (config) => ({
-  objectApiName: objectApiName(config && config.objectApiName),
-  fieldApiName: fieldApiName(config && config.fieldApiName),
-  recordTypeId: config && config.recordTypeId
-}));
-export const getPicklistValuesByRecordType = createFetchWireAdapter("/lightning/wire/getPicklistValuesByRecordType", (config) => ({
-  objectApiName: objectApiName(config && config.objectApiName),
-  recordTypeId: config && config.recordTypeId
-}));
+export const getObjectInfo = createFetchWireAdapter("/lightning/wire/getObjectInfo", (config) => {
+  const apiName = objectApiName(config && config.objectApiName);
+  return apiName ? { objectApiName: apiName } : null;
+});
+export const getObjectInfos = createFetchWireAdapter("/lightning/wire/getObjectInfos", (config) => {
+  const objectApiNames = (config && config.objectApiNames || []).map(objectApiName).filter(Boolean);
+  return objectApiNames.length ? { objectApiNames } : null;
+});
+export const getPicklistValues = createFetchWireAdapter("/lightning/wire/getPicklistValues", (config) => {
+  const apiName = objectApiName(config && config.objectApiName);
+  const fieldName = fieldApiName(config && config.fieldApiName);
+  if (!fieldName || !(config && config.recordTypeId) || (!apiName && !fieldName.includes("."))) {
+    return null;
+  }
+  return compactBody({
+    objectApiName: apiName,
+    fieldApiName: fieldName,
+    recordTypeId: config && config.recordTypeId
+  });
+});
+export const getPicklistValuesByRecordType = createFetchWireAdapter("/lightning/wire/getPicklistValuesByRecordType", (config) => {
+  const apiName = objectApiName(config && config.objectApiName);
+  if (!apiName || !(config && config.recordTypeId)) {
+    return null;
+  }
+  return {
+    objectApiName: apiName,
+    recordTypeId: config && config.recordTypeId
+  };
+});
 function objectApiName(value) {
   if (value && typeof value === "object" && value.objectApiName) {
     return value.objectApiName;
@@ -807,20 +1249,34 @@ function fieldApiName(value) {
   }
   return value || "";
 }
+function compactBody(body) {
+  const out = {};
+  for (const [key, value] of Object.entries(body)) {
+    if (value !== undefined) {
+      out[key] = value;
+    }
+  }
+  return out;
+}
 	`
 }
 
 func UIRelatedListAPIModuleJS() string {
 	return `import { createFetchWireAdapter } from "/lightning/shims/core/wire-adapter.js";
-export const getRelatedListRecords = createFetchWireAdapter("/lightning/wire/getRelatedListRecords", (config) => ({
-  parentRecordId: config && config.parentRecordId,
-  relatedListId: config && config.relatedListId,
-  fields: normalizeFields(config && config.fields),
-  optionalFields: normalizeFields(config && config.optionalFields),
-  sortBy: normalizeFields(config && config.sortBy),
-  pageSize: config && config.pageSize,
-  pageToken: config && config.pageToken
-}));
+export const getRelatedListRecords = createFetchWireAdapter("/lightning/wire/getRelatedListRecords", (config) => {
+  if (!(config && config.parentRecordId) || !config.relatedListId) {
+    return null;
+  }
+  return compactBody({
+    parentRecordId: config && config.parentRecordId,
+    relatedListId: config && config.relatedListId,
+    fields: normalizeFields(config && config.fields),
+    optionalFields: normalizeFields(config && config.optionalFields),
+    sortBy: normalizeFields(config && config.sortBy),
+    pageSize: config && config.pageSize,
+    pageToken: config && config.pageToken
+  });
+});
 function normalizeFields(fields) {
   return (fields || []).map((field) => {
     if (field && typeof field === "object") {
@@ -828,6 +1284,15 @@ function normalizeFields(fields) {
     }
     return String(field);
   });
+}
+function compactBody(body) {
+  const out = {};
+  for (const [key, value] of Object.entries(body)) {
+    if (value !== undefined) {
+      out[key] = value;
+    }
+  }
+  return out;
 }
 `
 }
