@@ -152,7 +152,7 @@ func lwcShellWorkbenchBuilderHTML(model lwcshell.WorkbenchModel) string {
 	b.WriteString(`<label>Record<input data-glade-record-input value="001000000000001AAA" autocomplete="off"></label>`)
 	b.WriteString(`<label>App<input data-glade-app-input value="Local" autocomplete="off"></label>`)
 	b.WriteString(`<label>Form factor<select data-glade-form-factor><option value="Large">Large</option><option value="Medium">Medium</option><option value="Small">Small</option></select></label>`)
-	b.WriteString(`<button type="button" data-glade-clear-draft>Clear</button>`)
+	b.WriteString(`<button class="glade-shell-button" type="button" data-glade-clear-draft>Clear</button>`)
 	b.WriteString(`</div>`)
 	b.WriteString(`<div class="glade-builder-layout">`)
 	b.WriteString(`<section class="glade-component-catalog" data-glade-component-catalog aria-label="Available Lightning Web Components">`)
@@ -177,7 +177,7 @@ func lwcShellWorkbenchBuilderHTML(model lwcshell.WorkbenchModel) string {
 			{"main", "Main"},
 			{"sidebar", "Sidebar"},
 		} {
-			b.WriteString(`<button type="button" data-glade-add-component="`)
+			b.WriteString(`<button class="glade-shell-button" type="button" data-glade-add-component="`)
 			b.WriteString(html.EscapeString(component.QualifiedName))
 			b.WriteString(`" data-glade-region="`)
 			b.WriteString(html.EscapeString(region.name))

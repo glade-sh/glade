@@ -43,6 +43,7 @@ func TestLWCShellRootRendersWorkbenchRoutePicker(t *testing.T) {
 		"data-glade-page-canvas",
 		"data-glade-region-drop=\"main\"",
 		"data-glade-add-component=\"c:contextProbe\"",
+		"class=\"glade-shell-button\"",
 		"/lwc/preview/record/Account/",
 		"/lwc/preview/app/Sales_Dashboard",
 		"/lwc/preview/home/Custom_Home",
@@ -183,6 +184,50 @@ func TestLightningRuntimeServesShellAndSLDSAssets(t *testing.T) {
 			t.Fatalf("%s missing %q in %s", tc.path, tc.want, rec.Body.String())
 		}
 	}
+}
+
+func TestLightningRuntimeCSSKeepsShellControlsOutOfSLDS(t *testing.T) {
+	handler := New(&storage.OrgState{})
+
+	shellCSS := lightningRuntimeTestAsset(t, handler, "/lightning/runtime/shell/glade-shell.css")
+	for _, selector := range []string{
+		".glade-builder-toolbar button",
+		".glade-component-actions button",
+		".glade-draft-component button",
+	} {
+		if strings.Contains(shellCSS, selector) {
+			t.Fatalf("shell CSS should not target all buttons with %q:\n%s", selector, shellCSS)
+		}
+	}
+	if !strings.Contains(shellCSS, ".glade-shell-button") {
+		t.Fatalf("shell CSS missing dedicated shell button class:\n%s", shellCSS)
+	}
+	builderJS := lightningRuntimeTestAsset(t, handler, "/lightning/runtime/shell/workbench-builder.js")
+	if !strings.Contains(builderJS, "glade-shell-button") {
+		t.Fatalf("shell builder JS missing dedicated shell button class:\n%s", builderJS)
+	}
+
+	sldsCSS := lightningRuntimeTestAsset(t, handler, "/lightning/runtime/slds/glade-slds.css")
+	for _, want := range []string{
+		".slds-badge",
+		".slds-badge_lightest",
+		".slds-theme_success",
+		".slds-theme_error",
+	} {
+		if !strings.Contains(sldsCSS, want) {
+			t.Fatalf("SLDS CSS missing %q:\n%s", want, sldsCSS)
+		}
+	}
+}
+
+func lightningRuntimeTestAsset(t *testing.T, handler http.Handler, path string) string {
+	t.Helper()
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("%s status = %d body=%s", path, rec.Code, rec.Body.String())
+	}
+	return rec.Body.String()
 }
 
 func TestLightningRuntimePrefersRepoAssetsForSourceCheckout(t *testing.T) {

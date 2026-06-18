@@ -4,6 +4,10 @@
   --slds-g-color-neutral-base-95: #f3f3f3;
   --slds-g-color-neutral-base-90: #e5e5e5;
   --slds-g-color-neutral-base-20: #2e2e2e;
+  --slds-g-color-success-base-50: #2e844a;
+  --slds-g-color-error-base-50: #ba0517;
+  --slds-g-color-warning-base-70: #fe9339;
+  --slds-g-color-info-base-50: #0176d3;
   --slds-g-radius-border-2: 4px;
   --slds-g-shadow-outset-focus-1: 0 0 0 2px #0176d3;
 }
@@ -25,6 +29,31 @@
 .slds-button_neutral:hover,
 .slds-button_icon:hover {
   background: var(--slds-g-color-neutral-base-95);
+}
+
+.slds-button_brand {
+  background: var(--slds-g-color-brand-base-50);
+  border-color: var(--slds-g-color-brand-base-50);
+  color: #ffffff;
+}
+
+.slds-button_brand:hover {
+  background: #0b5cab;
+  border-color: #0b5cab;
+}
+
+.slds-button_destructive {
+  background: var(--slds-g-color-error-base-50);
+  border-color: var(--slds-g-color-error-base-50);
+  color: #ffffff;
+}
+
+.slds-button:disabled,
+.slds-button[disabled] {
+  background: var(--slds-g-color-neutral-base-95);
+  border-color: #c9c9c9;
+  color: #747474;
+  cursor: not-allowed;
 }
 
 .slds-button_icon {
@@ -148,4 +177,75 @@
   border: 1px solid #c9c9c9;
   border-radius: var(--slds-g-radius-border-2);
   padding: 0.5rem;
+}
+
+.slds-badge {
+  align-items: center;
+  background: #ecebea;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: #181818;
+  display: inline-flex;
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.25;
+  min-height: 1.25rem;
+  padding: 0.125rem 0.5rem;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.slds-badge + .slds-badge {
+  margin-left: 0.25rem;
+}
+
+.slds-badge:empty {
+  display: none;
+}
+
+.slds-badge_inverse {
+  background: #181818;
+  color: #ffffff;
+}
+
+.slds-badge_lightest {
+  background: #ffffff;
+  border-color: #dddbda;
+}
+
+.slds-badge__icon {
+  align-items: center;
+  display: inline-flex;
+}
+
+.slds-badge__icon_left {
+  margin-right: 0.25rem;
+}
+
+.slds-badge__icon_right {
+  margin-left: 0.25rem;
+}
+
+.slds-theme_success {
+  background: var(--slds-g-color-success-base-50);
+  border-color: var(--slds-g-color-success-base-50);
+  color: #ffffff;
+}
+
+.slds-theme_error {
+  background: var(--slds-g-color-error-base-50);
+  border-color: var(--slds-g-color-error-base-50);
+  color: #ffffff;
+}
+
+.slds-theme_warning {
+  background: var(--slds-g-color-warning-base-70);
+  border-color: var(--slds-g-color-warning-base-70);
+  color: #181818;
+}
+
+.slds-theme_info {
+  background: var(--slds-g-color-info-base-50);
+  border-color: var(--slds-g-color-info-base-50);
+  color: #ffffff;
 }

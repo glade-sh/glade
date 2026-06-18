@@ -156,7 +156,7 @@ function renderPlacement(builder, model, placement, index, state, controls, targ
   const frame = document.createElement("article");
   frame.className = "glade-draft-component";
   frame.dataset.gladeDraftComponent = component.qualifiedName;
-  frame.innerHTML = `<header><strong></strong><code></code><button type="button">Remove</button></header><div class="glade-host"></div>`;
+  frame.innerHTML = `<header><strong></strong><code></code><button class="glade-shell-button" type="button">Remove</button></header><div class="glade-host"></div>`;
   frame.querySelector("strong").textContent = component.label || component.name || component.qualifiedName;
   frame.querySelector("code").textContent = component.qualifiedName;
   const remove = frame.querySelector("button");

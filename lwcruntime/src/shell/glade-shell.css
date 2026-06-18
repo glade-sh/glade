@@ -148,9 +148,7 @@
   width: 100%;
 }
 
-.glade-builder-toolbar button,
-.glade-component-actions button,
-.glade-draft-component button {
+.glade-shell-button {
   background: #ffffff;
   border: 1px solid #0176d3;
   border-radius: 4px;
@@ -161,16 +159,13 @@
   padding: 0.25rem 0.625rem;
 }
 
-.glade-builder-toolbar button:hover,
-.glade-builder-toolbar button:focus,
-.glade-component-actions button:hover,
-.glade-component-actions button:focus,
-.glade-draft-component button:hover,
-.glade-draft-component button:focus {
+.glade-shell-button:hover,
+.glade-shell-button:focus {
   background: #eef4ff;
 }
 
-.glade-component-actions button:disabled {
+.glade-shell-button:disabled,
+.glade-shell-button[aria-disabled="true"] {
   border-color: #c9c9c9;
   color: #747474;
   cursor: not-allowed;
@@ -503,7 +498,7 @@ details.glade-route-picker > div {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .glade-builder-toolbar button {
+  .glade-builder-toolbar .glade-shell-button {
     width: 100%;
   }
 }
