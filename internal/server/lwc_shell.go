@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"strings"
 
@@ -110,6 +111,19 @@ func (s *Server) resolveLWCShellRequest(r *http.Request, parts []string) (lwcshe
 	case "community":
 		shell, diagnostics, err := s.resolveLWCShellCommunityRequest(r, parts[1:])
 		return shell, "", diagnostics, err
+	case "flow":
+		if len(parts) != 2 {
+			return lwcshell.ShellPage{}, "", nil, fmt.Errorf("flow preview requires flow API name")
+		}
+		presetCtx, presetDiagnostics, ok := s.flowContextPreset(parts[1])
+		if !ok {
+			diag := lwcshell.Diagnostic{Code: "GLADELWC080", Message: fmt.Sprintf("flow context %q not found", parts[1])}
+			return lwcshell.ShellPage{}, "", append(presetDiagnostics, diag), fmt.Errorf("%s", diag.Message)
+		}
+		ctx = mergeFlowRouteContext(presetCtx, ctx)
+		shell, diagnostics, err := lwcshell.ResolvePageTarget(s.Source.Project, ctx)
+		shell, diagnostics, err = s.validateLWCShellPageWithTarget(shell, append(presetDiagnostics, diagnostics...), err, "lightning__FlowScreen")
+		return shell, "", diagnostics, err
 	case "record":
 		if len(parts) < 3 {
 			return lwcshell.ShellPage{}, "", nil, fmt.Errorf("record preview requires object API name and record ID")
@@ -168,6 +182,16 @@ func (s *Server) resolveLWCShellRequest(r *http.Request, parts []string) (lwcshe
 		shell, diagnostics, err := lwcshell.ResolvePageTarget(s.Source.Project, ctx)
 		shell, diagnostics, err = s.validateLWCShellPage(shell, diagnostics, err)
 		return shell, "", diagnostics, err
+	case "utility":
+		if len(parts) != 2 {
+			return lwcshell.ShellPage{}, "", nil, fmt.Errorf("utility preview requires utility bar name")
+		}
+		ctx.Kind = lwcshell.RenderTargetUtilityBar
+		ctx.PageName = parts[1]
+		shell, diagnostics, err := lwcshell.ResolvePageTarget(s.Source.Project, ctx)
+		shell, diagnostics, err = s.validateLWCShellPageWithTarget(shell, diagnostics, err, "lightning__UtilityBar")
+		shell.Context.Workspace.Utilities = utilityItemsFromShell(shell)
+		return shell, "", diagnostics, err
 	case "tab":
 		if len(parts) != 2 {
 			return lwcshell.ShellPage{}, "", nil, fmt.Errorf("tab preview requires tab name")
@@ -200,6 +224,67 @@ func (s *Server) resolveLWCShellTabTarget(shell lwcshell.ShellPage, diagnostics 
 	default:
 		return shell, "", diagnostics, nil
 	}
+}
+
+func (s *Server) flowContextPreset(apiName string) (lwcshell.PageContext, []lwcshell.Diagnostic, bool) {
+	file, err := lwcshell.LoadContextPresets(s.Source.Project.Root)
+	if err != nil {
+		if presetErr, ok := err.(*lwcshell.ContextPresetError); ok && presetErr.Diagnostic.Code != "" {
+			return lwcshell.PageContext{}, []lwcshell.Diagnostic{presetErr.Diagnostic}, false
+		}
+		return lwcshell.PageContext{}, []lwcshell.Diagnostic{{Code: "GLADELWC020", Message: err.Error()}}, false
+	}
+	var diagnostics []lwcshell.Diagnostic
+	for _, preset := range file.Contexts {
+		ctx, err := preset.ToPageContext()
+		if err != nil {
+			if presetErr, ok := err.(*lwcshell.ContextPresetError); ok && presetErr.Diagnostic.Code != "" {
+				diagnostics = append(diagnostics, presetErr.Diagnostic)
+			}
+			continue
+		}
+		if ctx.Kind == lwcshell.RenderTargetFlowScreen && strings.EqualFold(ctx.Flow.APIName, apiName) {
+			return ctx, diagnostics, true
+		}
+	}
+	return lwcshell.PageContext{}, diagnostics, false
+}
+
+func mergeFlowRouteContext(preset, route lwcshell.PageContext) lwcshell.PageContext {
+	out := preset
+	out.Kind = lwcshell.RenderTargetFlowScreen
+	if route.RecordID != "" {
+		out.RecordID = route.RecordID
+	}
+	if route.ObjectAPIName != "" {
+		out.ObjectAPIName = route.ObjectAPIName
+	}
+	if route.FormFactor != "" {
+		out.FormFactor = route.FormFactor
+	}
+	if len(route.State) > 0 {
+		out.State = route.State
+	}
+	return out
+}
+
+func utilityItemsFromShell(shell lwcshell.ShellPage) []lwcshell.UtilityItem {
+	var items []lwcshell.UtilityItem
+	for _, region := range shell.Regions {
+		for _, component := range region.Components {
+			id := strings.TrimSpace(component.Identifier)
+			if id == "" {
+				id = strings.TrimSpace(component.ComponentName)
+			}
+			items = append(items, lwcshell.UtilityItem{
+				ID:            id,
+				Label:         id,
+				ComponentName: component.ComponentName,
+				URL:           "/lwc/preview/utility/" + url.PathEscape(shell.Context.PageName),
+			})
+		}
+	}
+	return items
 }
 
 func (s *Server) resolveLWCShellCommunityRequest(r *http.Request, parts []string) (lwcshell.ShellPage, []lwcshell.Diagnostic, error) {
@@ -285,6 +370,14 @@ func mergeCommunityRouteContext(preset, route lwcshell.PageContext) lwcshell.Pag
 	if route.Community.Language != "" {
 		out.Community.Language = route.Community.Language
 	}
+	if len(route.Community.RouteParams) > 0 {
+		if out.Community.RouteParams == nil {
+			out.Community.RouteParams = map[string]string{}
+		}
+		for key, value := range route.Community.RouteParams {
+			out.Community.RouteParams[key] = value
+		}
+	}
 	if route.Community.Guest {
 		out.Community.Guest = true
 	}
@@ -325,6 +418,15 @@ func normalizeCommunityPageContext(ctx lwcshell.PageContext) lwcshell.PageContex
 	ctx.Community.SiteID = strings.TrimSpace(ctx.Community.SiteID)
 	ctx.Community.NetworkID = strings.TrimSpace(ctx.Community.NetworkID)
 	ctx.Community.Language = strings.TrimSpace(ctx.Community.Language)
+	if ctx.Community.RouteParams == nil {
+		ctx.Community.RouteParams = map[string]string{}
+	}
+	if ctx.RecordID != "" {
+		ctx.Community.RouteParams["recordId"] = ctx.RecordID
+	}
+	if ctx.ObjectAPIName != "" {
+		ctx.Community.RouteParams["objectApiName"] = ctx.ObjectAPIName
+	}
 	if ctx.PageReference == nil && ctx.PageName != "" {
 		ctx.PageReference = map[string]any{
 			"type":       "comm__namedPage",
@@ -582,6 +684,10 @@ func lwcShellTargetName(kind lwcshell.RenderTargetKind) string {
 		return "lightning__RecordAction"
 	case lwcshell.RenderTargetCommunityPage:
 		return "lightningCommunity__Page"
+	case lwcshell.RenderTargetUtilityBar:
+		return "lightning__UtilityBar"
+	case lwcshell.RenderTargetFlowScreen:
+		return "lightning__FlowScreen"
 	case lwcshell.RenderTargetTab, lwcshell.RenderTargetComponent, lwcshell.RenderTargetURLAddressable:
 		return ""
 	default:
@@ -633,12 +739,13 @@ func lwcShellContextFromQuery(r *http.Request) lwcshell.PageContext {
 		FormFactor:    q.Get("formFactor"),
 		State:         map[string]string{},
 		Community: lwcshell.CommunityContext{
-			Site:      q.Get("site"),
-			BasePath:  q.Get("basePath"),
-			SiteID:    q.Get("siteId"),
-			NetworkID: q.Get("networkId"),
-			Guest:     queryBool(q.Get("guest")),
-			Language:  q.Get("language"),
+			Site:        q.Get("site"),
+			BasePath:    q.Get("basePath"),
+			SiteID:      q.Get("siteId"),
+			NetworkID:   q.Get("networkId"),
+			Guest:       queryBool(q.Get("guest")),
+			Language:    q.Get("language"),
+			RouteParams: map[string]string{},
 		},
 	}
 	for key, values := range q {
@@ -658,8 +765,16 @@ func lwcShellContextFromQuery(r *http.Request) lwcshell.PageContext {
 			ctx.State[stateKey] = values[len(values)-1]
 		}
 	}
+	for _, key := range []string{"recordId", "objectApiName", "contentKey", "contentType", "relationship", "actionName"} {
+		if value := q.Get(key); value != "" {
+			ctx.Community.RouteParams[key] = value
+		}
+	}
 	if len(ctx.State) == 0 {
 		ctx.State = nil
+	}
+	if len(ctx.Community.RouteParams) == 0 {
+		ctx.Community.RouteParams = nil
 	}
 	return ctx
 }
@@ -679,7 +794,7 @@ func lwcShellInvalidURLAddressableStateDiagnostic(r *http.Request) (lwcshell.Dia
 
 func lwcShellReservedQueryKey(key string) bool {
 	switch key {
-	case "app", "recordId", "objectApiName", "formFactor", "site", "basePath", "siteId", "networkId", "guest", "language":
+	case "app", "recordId", "objectApiName", "formFactor", "site", "basePath", "siteId", "networkId", "guest", "language", "contentKey", "contentType", "relationship", "actionName":
 		return true
 	default:
 		return false
@@ -812,6 +927,21 @@ func lwcShellPageReference(shell lwcshell.ShellPage) map[string]any {
 				"apiName":       shell.Context.ActionName,
 				"recordId":      shell.Context.RecordID,
 				"objectApiName": shell.Context.ObjectAPIName,
+			},
+			"state": state,
+		}
+	case lwcshell.RenderTargetUtilityBar:
+		return map[string]any{
+			"type":       "standard__component",
+			"attributes": map[string]any{"pageName": shell.Context.PageName},
+			"state":      state,
+		}
+	case lwcshell.RenderTargetFlowScreen:
+		return map[string]any{
+			"type": "standard__component",
+			"attributes": map[string]any{
+				"componentName": shell.Context.ComponentName,
+				"flowApiName":   shell.Context.Flow.APIName,
 			},
 			"state": state,
 		}
@@ -957,6 +1087,12 @@ func lwcShellContextAttrs(ctx lwcshell.PageContext) map[string]any {
 	}
 	if strings.TrimSpace(ctx.Community.Site) != "" {
 		attrs["community"] = ctx.Community
+	}
+	if strings.TrimSpace(ctx.Flow.APIName) != "" {
+		attrs["flow"] = ctx.Flow
+	}
+	if len(ctx.Workspace.Tabs) > 0 || len(ctx.Workspace.Utilities) > 0 {
+		attrs["workspace"] = ctx.Workspace
 	}
 	return attrs
 }

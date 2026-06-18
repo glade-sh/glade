@@ -832,42 +832,16 @@ export async function __gladeDispatchRefresh(root) {
 }
 
 func EmpAPIModuleJS() string {
-	return `const subscriptions = new Map();
-const errorHandlers = new Set();
-let debug = false;
-export function subscribe(channel, replayId, callback) {
-  const subscription = { channel, replayId, callback };
-  if (!subscriptions.has(channel)) {
-    subscriptions.set(channel, new Set());
-  }
-  subscriptions.get(channel).add(subscription);
-  return Promise.resolve(subscription);
-}
-export function unsubscribe(subscription, callback) {
-  const set = subscriptions.get(subscription && subscription.channel);
-  if (set) {
-    set.delete(subscription);
-  }
-  if (callback) {
-    callback({ successful: true, subscription });
-  }
-  return Promise.resolve({ successful: true, subscription });
-}
-export function onError(callback) {
-  errorHandlers.add(callback);
-}
-export function setDebugFlag(flag) {
-  debug = Boolean(flag);
-}
-export function isEmpEnabled() {
-  return Promise.resolve(true);
-}
-export function __gladePublish(channel, payload) {
-  for (const subscription of subscriptions.get(channel) || []) {
-    subscription.callback(payload);
-  }
-}
-export const __gladeEmpState = { subscriptions, errorHandlers, get debug() { return debug; } };
+	return `export {
+  __gladeEmpState,
+  __gladePublish,
+  clearEmpSubscriptions,
+  isEmpEnabled,
+  onError,
+  setDebugFlag,
+  subscribe,
+  unsubscribe,
+} from "/lightning/runtime/shell/emp-service.js";
 `
 }
 
@@ -1034,126 +1008,26 @@ export default NavigationMixin;
 }
 
 func PlatformWorkspaceAPIModuleJS() string {
-	return `const DIAGNOSTIC_CODE = "GLADELWC072";
-
-function readWorkbench() {
-  const node = document.getElementById("glade-lwc-workbench");
-  if (!node) {
-    return {};
-  }
-  try {
-    return JSON.parse(node.textContent || "{}");
-  } catch (_err) {
-    return {};
-  }
-}
-
-function activeTab() {
-  const model = readWorkbench();
-  const active = model.active || {};
-  const context = active.context || {};
-  const label = context.tabName || context.pageName || context.componentName || model.activeRoute || "Local";
-  return {
-    tabId: model.activeRoute || "local",
-    url: model.activeRoute || "/lwc",
-    title: label,
-    label,
-    icon: "utility:preview",
-    customTitle: label,
-    highlighted: false,
-    closeable: false,
-    workspaceTab: true,
-    gladeDiagnostic: DIAGNOSTIC_CODE,
-  };
-}
-
-export async function getFocusedTabInfo() {
-  return activeTab();
-}
-
-export async function getAllTabInfo() {
-  return [activeTab()];
-}
-
-export async function getTabInfo(tabId) {
-  const tab = activeTab();
-  tab.tabId = tabId || tab.tabId;
-  return tab;
-}
-
-export async function setTabLabel(tabId, label) {
-  const tab = activeTab();
-  tab.tabId = tabId || tab.tabId;
-  tab.label = label || tab.label;
-  tab.title = tab.label;
-  tab.customTitle = tab.label;
-  return tab;
-}
-
-export async function setTabIcon(tabId, icon) {
-  const tab = activeTab();
-  tab.tabId = tabId || tab.tabId;
-  tab.icon = icon || tab.icon;
-  return tab;
-}
-
-export async function setTabHighlighted(tabId, highlighted) {
-  const tab = activeTab();
-  tab.tabId = tabId || tab.tabId;
-  tab.highlighted = !!highlighted;
-  return tab;
-}
-
-export async function closeTab(_tabId) {
-  return true;
-}
-
-export async function disableTabClose(_tabId, _disabled) {
-  return true;
-}
-
-export async function focusTab(_tabId) {
-  return true;
-}
-
-export async function openTab(options = {}) {
-  return options.tabId || activeTab().tabId || "local";
-}
-
-export async function openSubtab(_parentTabId, options = {}) {
-  return options.tabId || activeTab().tabId || "local";
-}
-
-export async function refreshTab(_tabId, _options = {}) {
-  return true;
-}
-
-export async function isConsoleNavigation() {
-  return (readWorkbench().mode || "") === "console";
-}
-
-function createValueWireAdapter(readValue) {
-  function ValueWireAdapter(dataCallback) {
-    this.dataCallback = dataCallback;
-  }
-  ValueWireAdapter.prototype.connect = function connect() {
-    this.emit();
-  };
-  ValueWireAdapter.prototype.disconnect = function disconnect() {};
-  ValueWireAdapter.prototype.update = function update() {
-    this.emit();
-  };
-  ValueWireAdapter.prototype.emit = function emit() {
-    if (typeof this.dataCallback === "function") {
-      this.dataCallback(readValue());
-    }
-  };
-  return ValueWireAdapter;
-}
-
-export const IsConsoleNavigation = createValueWireAdapter(() => (readWorkbench().mode || "") === "console");
-export const EnclosingTabId = createValueWireAdapter(() => activeTab().tabId);
-export const workspaceDiagnosticCodes = [DIAGNOSTIC_CODE];
+	return `// GLADELWC072 glade-lwc-workbench activeRoute
+export {
+  EnclosingTabId,
+  IsConsoleNavigation,
+  closeTab,
+  configureWorkspace,
+  disableTabClose,
+  focusTab,
+  getAllTabInfo,
+  getFocusedTabInfo,
+  getTabInfo,
+  isConsoleNavigation,
+  openSubtab,
+  openTab,
+  refreshTab,
+  setTabHighlighted,
+  setTabIcon,
+  setTabLabel,
+  workspaceDiagnosticCodes,
+} from "/lightning/runtime/shell/workspace-service.js";
 `
 }
 

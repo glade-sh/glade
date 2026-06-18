@@ -94,6 +94,7 @@ func TestServerRootRendersLWCWorkbenchWhenProjectHasLWCs(t *testing.T) {
 
 func TestLWCShellRendersApplicationNavAndConsoleMode(t *testing.T) {
 	root := t.TempDir()
+	writeUtilityProbeBundle(t, root)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/applications/Support_Console.app-meta.xml", `<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
 	  <label>Support Console</label>
 	  <navType>Console</navType>
@@ -104,6 +105,20 @@ func TestLWCShellRendersApplicationNavAndConsoleMode(t *testing.T) {
 	  <masterLabel>Support Page</masterLabel>
 	  <type>AppPage</type>
 	  <flexiPageRegions><name>main</name></flexiPageRegions>
+	</FlexiPage>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/flexipages/Support_Utility.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <masterLabel>Support Utility</masterLabel>
+	  <type>UtilityBar</type>
+	  <flexiPageRegions>
+	    <name>utilityItems</name>
+	    <type>Region</type>
+	    <itemInstances>
+	      <componentInstance>
+	        <componentName>c:utilityProbe</componentName>
+	        <identifier>utilityProbe</identifier>
+	      </componentInstance>
+	    </itemInstances>
+	  </flexiPageRegions>
 	</FlexiPage>`)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/tabs/Lwc_Probe.tab-meta.xml", `<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
 	  <label>LWC Probe</label>
@@ -137,6 +152,9 @@ func TestLWCShellRendersApplicationNavAndConsoleMode(t *testing.T) {
 		`Support Console`,
 		`standard-Case`,
 		`Lwc_Probe`,
+		`data-glade-utility-bar`,
+		`data-glade-utility-item="Support_Utility"`,
+		`"utilities":[`,
 		`GLADELWC072`,
 	} {
 		if !strings.Contains(body, want) {
@@ -148,6 +166,49 @@ func TestLWCShellRendersApplicationNavAndConsoleMode(t *testing.T) {
 	}
 }
 
+func TestLWCShellResolvesUtilityBarRouteAndRendersChrome(t *testing.T) {
+	root := t.TempDir()
+	writeUtilityProbeBundle(t, root)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/flexipages/Support_Utility.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <masterLabel>Support Utility</masterLabel>
+	  <type>UtilityBar</type>
+	  <flexiPageRegions>
+	    <name>utilityItems</name>
+	    <type>Region</type>
+	    <itemInstances>
+	      <componentInstance>
+	        <componentName>c:utilityProbe</componentName>
+	        <identifier>utilityProbe</identifier>
+	      </componentInstance>
+	    </itemInstances>
+	  </flexiPageRegions>
+	</FlexiPage>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/utility/Support_Utility", nil), []string{"utility", "Support_Utility"})
+	if err != nil {
+		t.Fatalf("resolve error = %v diagnostics=%#v", err, diagnostics)
+	}
+	if shell.Context.Kind != lwcshell.RenderTargetUtilityBar || len(shell.Context.Workspace.Utilities) != 1 {
+		t.Fatalf("context = %#v", shell.Context)
+	}
+	body := renderLWCShellHTML(lwcbrowser.PageConfig{}, shell)
+	for _, want := range []string{
+		`data-glade-utility-bar`,
+		`data-glade-utility-item="utilityProbe"`,
+		`"utilities":[`,
+		`c:utilityProbe`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("missing %q in:\n%s", want, body)
+		}
+	}
+}
+
 func TestLightningRuntimeServesShellAndSLDSAssets(t *testing.T) {
 	handler := New(&storage.OrgState{})
 	cases := []struct {
@@ -156,6 +217,10 @@ func TestLightningRuntimeServesShellAndSLDSAssets(t *testing.T) {
 	}{
 		{path: "/lightning/runtime/shell/app.js", want: "bootGladeShell"},
 		{path: "/lightning/runtime/shell/community-host.js", want: "applyCommunityHost"},
+		{path: "/lightning/runtime/shell/workspace-service.js", want: "configureWorkspace"},
+		{path: "/lightning/runtime/shell/emp-service.js", want: "__gladePublish"},
+		{path: "/lightning/runtime/shell/flow-service.js", want: "readFlowContext"},
+		{path: "/lightning/runtime/shell/community-service.js", want: "readManagedContent"},
 		{path: "/lightning/runtime/shims/community.js", want: "readCommunityValue"},
 		{path: "/lightning/runtime/shims/site.js", want: "readSiteId"},
 		{path: "/lightning/runtime/shell/glade-shell.css", want: ".glade-shell"},
@@ -606,7 +671,14 @@ export default class ThemeLayout extends LightningElement {}`)
 	        "siteId": "0DM000000000001",
 	        "networkId": "0DB000000000001",
 	        "guest": true,
-	        "language": "en-US"
+	        "language": "en-US",
+	        "routeParams": {"recordId": "001000000000001AAA"},
+	        "menus": {
+	          "main": [{"label": "Accounts", "target": "Account", "type": "comm__namedPage"}]
+	        },
+	        "managedContent": {
+	          "welcome": {"contentKey": "welcome", "title": "Welcome", "body": "Local content"}
+	        }
 	      },
 	      "pageReference": {
 	        "type": "comm__namedPage",
@@ -634,7 +706,9 @@ export default class ThemeLayout extends LightningElement {}`)
 		shell.Context.PageName != "Account" ||
 		shell.Context.Community.Site != "Partner_Portal" ||
 		shell.Context.Community.BasePath != "/partners" ||
-		!shell.Context.Community.Guest {
+		!shell.Context.Community.Guest ||
+		shell.Context.Community.RouteParams["recordId"] != "001000000000001AAA" ||
+		shell.Context.Community.ManagedContent["welcome"].Title != "Welcome" {
 		t.Fatalf("context = %#v", shell.Context)
 	}
 	if shell.ThemeLayout == nil || shell.ThemeLayout.ComponentName != "c:themeLayout" {
@@ -656,7 +730,53 @@ export default class ThemeLayout extends LightningElement {}`)
 		`c:themeLayout`,
 		`c:communityProbe`,
 		`"basePath":"/partners"`,
+		`"routeParams":{"recordId":"001000000000001AAA"}`,
+		`data-glade-community-menu`,
+		`Welcome`,
 		`"type":"comm__namedPage"`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("missing %q in:\n%s", want, body)
+		}
+	}
+}
+
+func TestResolveLWCShellRequestServesFlowScreenContext(t *testing.T) {
+	root := t.TempDir()
+	writeFlowProbeBundle(t, root)
+	writeLWCShellServerTestFile(t, root, "glade.lwc.json", `{
+	  "contexts": {
+	    "membershipFlow": {
+	      "target": "flowScreen",
+	      "component": "c:flowProbe",
+	      "flow": {
+	        "apiName": "Membership_Flow",
+	        "inputVariables": {"recordId": "001000000000001AAA"},
+	        "availableActions": ["NEXT", "FINISH"]
+	      }
+	    }
+	  }
+	}`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	shell, diagnostics, err := handler.resolveLWCShellRoute("/lwc/preview/flow/Membership_Flow")
+	if err != nil {
+		t.Fatalf("resolve error = %v diagnostics=%#v", err, diagnostics)
+	}
+	if shell.Context.Kind != lwcshell.RenderTargetFlowScreen ||
+		shell.Context.Flow.APIName != "Membership_Flow" ||
+		shell.Context.Flow.InputVariables["recordId"] != "001000000000001AAA" {
+		t.Fatalf("context = %#v", shell.Context)
+	}
+	body := renderLWCShellHTML(lwcbrowser.PageConfig{}, shell)
+	for _, want := range []string{
+		`"apiName":"Membership_Flow"`,
+		`data-glade-flow-events`,
+		`c:flowProbe`,
 	} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("missing %q in:\n%s", want, body)
@@ -1579,5 +1699,27 @@ export default class CommunityProbe extends LightningElement {}`)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/communityProbe/communityProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
 	  <isExposed>true</isExposed>
 	  <targets><target>`+target+`</target></targets>
+	</LightningComponentBundle>`)
+}
+
+func writeUtilityProbeBundle(t *testing.T, root string) {
+	t.Helper()
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/utilityProbe/utilityProbe.js", `import { LightningElement } from 'lwc';
+export default class UtilityProbe extends LightningElement {}`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/utilityProbe/utilityProbe.html", `<template><p>utility</p></template>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/utilityProbe/utilityProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <isExposed>true</isExposed>
+	  <targets><target>lightning__UtilityBar</target></targets>
+	</LightningComponentBundle>`)
+}
+
+func writeFlowProbeBundle(t *testing.T, root string) {
+	t.Helper()
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/flowProbe/flowProbe.js", `import { LightningElement } from 'lwc';
+export default class FlowProbe extends LightningElement {}`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/flowProbe/flowProbe.html", `<template><lightning-flow flow-api-name="Membership_Flow"></lightning-flow></template>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/flowProbe/flowProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <isExposed>true</isExposed>
+	  <targets><target>lightning__FlowScreen</target></targets>
 	</LightningComponentBundle>`)
 }

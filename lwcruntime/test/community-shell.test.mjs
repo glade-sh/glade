@@ -12,6 +12,8 @@ function serveRuntimeFile(urlPath, res) {
     "/lightning/runtime/shims/community.mjs": path.join(repoRoot, "lwcruntime/src/shims/community.mjs"),
     "/lightning/runtime/shims/site.js": path.join(repoRoot, "lwcruntime/src/shims/site.mjs"),
     "/lightning/runtime/shims/site.mjs": path.join(repoRoot, "lwcruntime/src/shims/site.mjs"),
+    "/lightning/runtime/shell/community-service.js": path.join(repoRoot, "lwcruntime/src/shell/community-service.mjs"),
+    "/lightning/runtime/shell/community-service.mjs": path.join(repoRoot, "lwcruntime/src/shell/community-service.mjs"),
     "/lightning/runtime/shell/community-host.js": path.join(repoRoot, "lwcruntime/src/shell/community-host.mjs"),
     "/lightning/runtime/shell/community-host.mjs": path.join(repoRoot, "lwcruntime/src/shell/community-host.mjs"),
     "/lightning/runtime/shell/diagnostics.js": path.join(repoRoot, "lwcruntime/src/shell/diagnostics.mjs"),
@@ -59,6 +61,10 @@ import {
   applyCommunityHost,
 } from "/lightning/runtime/shell/community-host.js";
 import {
+  readManagedContent,
+  readRouteParam,
+} from "/lightning/runtime/shell/community-service.js";
+import {
   diagnostics,
 } from "/lightning/runtime/shell/diagnostics.js";
 
@@ -68,6 +74,8 @@ window.__communityResults = {
   basePath: readCommunityValue("basePath", "/s"),
   networkId: readCommunityValue("networkId", ""),
   siteId: readSiteId(),
+  routeRecordId: readRouteParam("recordId"),
+  managedContent: readManagedContent("welcome"),
 	  host,
 	  bodyDataset: { ...document.body.dataset },
 	  diagnostics,
@@ -98,6 +106,10 @@ test("community runtime shims read local shell context and host dataset", async 
       networkId: "0DB000000000001",
       guest: true,
       language: "en-US",
+      routeParams: { recordId: "001000000000001AAA" },
+      managedContent: {
+        welcome: { contentKey: "welcome", title: "Welcome", body: "Local content" },
+      },
     },
   });
   const browser = await chromium.launch({ headless: true });
@@ -109,6 +121,8 @@ test("community runtime shims read local shell context and host dataset", async 
     assert.equal(results.networkId, "0DB000000000001");
     assert.equal(results.siteId, "0DM000000000001");
     assert.equal(results.context.guest, true);
+    assert.equal(results.routeRecordId, "001000000000001AAA");
+    assert.equal(results.managedContent.title, "Welcome");
     assert.equal(results.host.site, "Partner_Portal");
     assert.equal(results.bodyDataset.gladeCommunityGuest, "true");
   } finally {

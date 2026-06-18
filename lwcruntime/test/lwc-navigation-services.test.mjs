@@ -12,6 +12,10 @@ function serveShellServiceFile(urlPath, res) {
     "/lightning/runtime/shell/navigation-service.js": path.join(repoRoot, "lwcruntime/src/shell/navigation-service.mjs"),
     "/lightning/runtime/shell/toast-service.js": path.join(repoRoot, "lwcruntime/src/shell/toast-service.mjs"),
     "/lightning/runtime/shell/message-service.js": path.join(repoRoot, "lwcruntime/src/shell/message-service.mjs"),
+    "/lightning/runtime/shell/emp-service.js": path.join(repoRoot, "lwcruntime/src/shell/emp-service.mjs"),
+    "/lightning/runtime/shell/workspace-service.js": path.join(repoRoot, "lwcruntime/src/shell/workspace-service.mjs"),
+    "/lightning/runtime/shell/flow-service.js": path.join(repoRoot, "lwcruntime/src/shell/flow-service.mjs"),
+    "/lightning/runtime/shell/community-service.js": path.join(repoRoot, "lwcruntime/src/shell/community-service.mjs"),
     "/lightning/runtime/shell/diagnostics.js": path.join(repoRoot, "lwcruntime/src/shell/diagnostics.mjs"),
   };
   const filePath = routes[normalizedPath];
@@ -49,6 +53,21 @@ function startShellServiceServer() {
       networkId: "0DB000000000001",
       guest: true,
       language: "en-US",
+      routeParams: { recordId: "001000000000001AAA" },
+      managedContent: {
+        welcome: { contentKey: "welcome", title: "Welcome", body: "Local content" },
+      },
+    },
+    flow: {
+      apiName: "Membership_Flow",
+      inputVariables: { recordId: "001000000000001AAA" },
+      availableActions: ["NEXT", "FINISH"],
+    },
+    workspace: {
+      console: true,
+      focusedTabId: "workspace-tab-1",
+      tabs: [{ tabId: "workspace-tab-1", label: "Account", url: "/lwc/preview/record/Account/001000000000001AAA", workspaceTab: true }],
+      utilities: [{ id: "utilityProbe", label: "Utility", componentName: "c:utilityProbe", url: "/lwc/preview/utility/Support_Utility" }],
     },
   })}</script>
 </head>
@@ -72,10 +91,33 @@ import {
 } from "/lightning/runtime/shell/toast-service.js";
 import {
   MessageContext,
+  APPLICATION_SCOPE,
+  clearMessages,
+  createMessageContext,
   publish,
   subscribe,
   unsubscribe,
 } from "/lightning/runtime/shell/message-service.js";
+import {
+  __gladePublish as publishEmp,
+  clearEmpSubscriptions,
+  subscribe as subscribeEmp,
+  unsubscribe as unsubscribeEmp,
+} from "/lightning/runtime/shell/emp-service.js";
+import {
+  configureWorkspace,
+  getAllTabInfo,
+  getFocusedTabInfo,
+  openTab,
+} from "/lightning/runtime/shell/workspace-service.js";
+import {
+  dispatchStatusChange,
+  readFlowContext,
+} from "/lightning/runtime/shell/flow-service.js";
+import {
+  readManagedContent,
+  readRouteParam,
+} from "/lightning/runtime/shell/community-service.js";
 
 window.__serviceResults = {};
 window.__serviceResults.urls = {
@@ -136,6 +178,61 @@ publish(ctx, { name: "AccountChannel" }, { recordId: "001000000000001AAA" });
 unsubscribe(sub);
 publish(ctx, { name: "AccountChannel" }, { recordId: "ignored" });
 window.__serviceResults.messages = messages;
+
+const scopedMessages = [];
+const appContext = createMessageContext();
+const scopedSub = subscribe(appContext, { messageChannelName: "ScopedChannel" }, (message) => scopedMessages.push(message), { scope: APPLICATION_SCOPE });
+publish(appContext, { messageChannelName: "ScopedChannel" }, { id: "one" });
+unsubscribe(scopedSub);
+publish(appContext, { messageChannelName: "ScopedChannel" }, { id: "ignored" });
+window.__serviceResults.scopedMessages = scopedMessages;
+
+clearMessages();
+const componentScope = {
+  first: [],
+  second: [],
+  application: [],
+};
+const firstContext = createMessageContext();
+const secondContext = createMessageContext();
+subscribe(firstContext, { messageChannelName: "ComponentScopedChannel" }, (message) => componentScope.first.push(message));
+subscribe(secondContext, { messageChannelName: "ComponentScopedChannel" }, (message) => componentScope.second.push(message));
+subscribe(secondContext, { messageChannelName: "ComponentScopedChannel" }, (message) => componentScope.application.push(message), { scope: APPLICATION_SCOPE });
+publish(firstContext, { messageChannelName: "ComponentScopedChannel" }, { id: "first" });
+publish(secondContext, { messageChannelName: "ComponentScopedChannel" }, { id: "second" });
+window.__serviceResults.componentScope = componentScope;
+
+clearEmpSubscriptions();
+const empMessages = [];
+const empSub = await subscribeEmp("/event/Local__e", -1, (event) => empMessages.push(event));
+publishEmp("/event/Local__e", { payload: { Name__c: "Probe" }, replayId: 1 });
+await unsubscribeEmp(empSub);
+publishEmp("/event/Local__e", { payload: { Name__c: "Ignored" }, replayId: 2 });
+window.__serviceResults.empMessages = empMessages;
+
+configureWorkspace({
+  console: true,
+  tabs: [{ tabId: "workspace-tab-1", label: "Account", url: "/lwc/preview/record/Account/001000000000001AAA", workspaceTab: true }],
+  focusedTabId: "workspace-tab-1",
+  utilities: [{ id: "utilityProbe", label: "Utility", componentName: "c:utilityProbe", url: "/lwc/preview/utility/Support_Utility" }],
+});
+const newTabId = await openTab({ label: "Reports", url: "/lwc/preview/tab/Reports" });
+window.__serviceResults.workspace = {
+  focused: await getFocusedTabInfo(),
+  all: await getAllTabInfo(),
+  newTabId,
+};
+
+const flowEvents = [];
+const flowHost = document.getElementById("host");
+flowHost.addEventListener("statuschange", (event) => flowEvents.push(event.detail));
+dispatchStatusChange(flowHost, { status: "FINISHED_SCREEN", outputVariables: [{ name: "recordId", value: "001000000000001AAA" }] });
+window.__serviceResults.flow = { context: readFlowContext(), events: flowEvents };
+
+window.__serviceResults.community = {
+  routeRecordId: readRouteParam("recordId"),
+  managedContent: readManagedContent("welcome"),
+};
 `);
       return;
     }
@@ -197,6 +294,18 @@ test("services capture toasts and deliver in-page messages", async () => {
     assert.equal(results.toasts[0].title, "Saved");
     assert.match(results.toastText, /Account updated/);
     assert.deepEqual(results.messages, [{ recordId: "001000000000001AAA" }]);
+    assert.deepEqual(results.scopedMessages, [{ id: "one" }]);
+    assert.deepEqual(results.componentScope.first, [{ id: "first" }]);
+    assert.deepEqual(results.componentScope.second, [{ id: "second" }]);
+    assert.deepEqual(results.componentScope.application, [{ id: "first" }, { id: "second" }]);
+    assert.deepEqual(results.empMessages, [{ payload: { Name__c: "Probe" }, replayId: 1 }]);
+    assert.equal(results.workspace.focused.label, "Reports");
+    assert.equal(results.workspace.all.length, 2);
+    assert.equal(results.workspace.newTabId, "workspace-tab-2");
+    assert.equal(results.flow.context.apiName, "Membership_Flow");
+    assert.equal(results.flow.events[0].status, "FINISHED_SCREEN");
+    assert.equal(results.community.routeRecordId, "001000000000001AAA");
+    assert.equal(results.community.managedContent.title, "Welcome");
   } finally {
     await browser.close();
     await server.close();

@@ -6,6 +6,7 @@ import {
   registerTemplate,
 } from "lwc";
 import { reportDiagnostic } from "@glade/shell/diagnostics";
+import { dispatchStatusChange, readFlowContext } from "../shell/flow-service.mjs";
 
 const PUBLIC_PROPS = [
   "label",
@@ -120,6 +121,7 @@ const PUBLIC_METHODS = [
   "reportValidity",
   "focus",
   "blur",
+  "startFlow",
 ];
 
 const UNSUPPORTED_ATTRIBUTE_NAMES = new Set([
@@ -443,6 +445,19 @@ export function createBaseComponent(selector, render, options = {}) {
 
     blur() {
       baseFormControl(this)?.blur?.();
+    }
+
+    startFlow(flowApiName, inputVariables = []) {
+      if (selector !== "lightning-flow") {
+        return;
+      }
+      this.flowApiName = flowApiName || this.flowApiName;
+      this.flowInputVariables = inputVariables || this.flowInputVariables;
+      dispatchStatusChange(this, {
+        status: "FINISHED_SCREEN",
+        flowApiName: this.flowApiName,
+        outputVariables: Array.isArray(this.flowInputVariables) ? this.flowInputVariables : [],
+      });
     }
 
     handleRowAction(event) {
@@ -1512,11 +1527,27 @@ export function renderFileUpload($api, $cmp) {
 }
 
 export function renderFlow($api, $cmp) {
+  const context = readFlowContext();
+  const apiName = $cmp.flowApiName || context.apiName || $cmp.label || "Flow";
+  const inputVariables = Array.isArray($cmp.flowInputVariables) ? $cmp.flowInputVariables : flowVariablesFromObject(context.inputVariables);
+  const rows = inputVariables.map((item, index) => $api.h("tr", { key: 10 + index }, [
+    $api.h("th", { attrs: { scope: "row" }, key: 1 }, [$api.t(item.name || "")]),
+    $api.h("td", { key: 2 }, [$api.t(String(item.value ?? ""))]),
+  ]));
   return [$api.h("section", {
     classMap: { "slds-box": true },
-    attrs: { "data-flow-api-name": $cmp.flowApiName || "" },
+    attrs: { "data-flow-api-name": apiName },
     key: 0,
-  }, [$api.t($cmp.flowApiName || $cmp.label || "Flow")])];
+  }, [
+    $api.h("h2", { key: 1 }, [$api.t(apiName)]),
+    $api.h("table", { classMap: { "slds-table": true }, key: 2 }, [
+      $api.h("tbody", { key: 3 }, rows),
+    ]),
+  ])];
+}
+
+function flowVariablesFromObject(values = {}) {
+  return Object.entries(values || {}).map(([name, value]) => ({ name, value }));
 }
 
 export function renderPill($api, $cmp) {

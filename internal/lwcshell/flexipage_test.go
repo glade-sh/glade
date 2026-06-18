@@ -109,6 +109,9 @@ func TestLoadFlexiPageParsesValueListProperties(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if page.Type != "UtilityBar" || len(page.Regions) != 1 || page.Regions[0].Name != "utilityItems" {
+		t.Fatalf("utility page = %#v", page)
+	}
 	component := page.Regions[0].Components[0]
 	values, ok := ComponentStringListProperty(component, "entityNames")
 	if !ok {

@@ -1,6 +1,7 @@
 package lwcshell
 
 import (
+	"path/filepath"
 	"reflect"
 	"slices"
 	"testing"
@@ -59,6 +60,39 @@ func TestBuildWorkbenchModelUsesConsoleModeForConsoleApplication(t *testing.T) {
 	app := model.Apps[0]
 	if app.Mode != "console" || !reflect.DeepEqual(app.NavItems, []string{"standard-Case", "Lwc_Probe"}) {
 		t.Fatalf("app = %#v", app)
+	}
+	if !model.Active.Context.Workspace.Console || len(model.Active.Context.Workspace.Tabs) != 1 {
+		t.Fatalf("workspace = %#v", model.Active.Context.Workspace)
+	}
+}
+
+func TestDiscoverShellRoutesIncludesUtilityBarFlexiPages(t *testing.T) {
+	root := t.TempDir()
+	writeProjectFile(t, root, "force-app/main/default/flexipages/Support_Utility.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
+  <masterLabel>Support Utility</masterLabel>
+  <type>UtilityBar</type>
+  <flexiPageRegions>
+    <name>utilityItems</name>
+    <type>Region</type>
+    <itemInstances>
+      <componentInstance>
+        <componentName>c:utilityProbe</componentName>
+        <identifier>utilityProbe</identifier>
+      </componentInstance>
+    </itemInstances>
+  </flexiPageRegions>
+</FlexiPage>`)
+	p := project.Project{Root: root, FlexiPageFiles: []string{filepath.Join(root, "force-app/main/default/flexipages/Support_Utility.flexipage-meta.xml")}}
+
+	routes := DiscoverShellRoutes(p)
+
+	if !slices.ContainsFunc(routes, func(route ShellRoute) bool {
+		return route.Kind == RenderTargetUtilityBar &&
+			route.Label == "Support Utility" &&
+			route.URL == "/lwc/preview/utility/Support_Utility" &&
+			route.PageName == "Support_Utility"
+	}) {
+		t.Fatalf("routes = %#v", routes)
 	}
 }
 

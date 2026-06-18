@@ -30,7 +30,7 @@ func ResolvePageTarget(p project.Project, ctx PageContext) (ShellPage, []Diagnos
 	switch ctx.Kind {
 	case RenderTargetComponent, RenderTargetURLAddressable:
 		return resolveComponentTarget(p, ctx)
-	case RenderTargetRecordPage, RenderTargetAppPage, RenderTargetHomePage:
+	case RenderTargetRecordPage, RenderTargetAppPage, RenderTargetHomePage, RenderTargetUtilityBar:
 		page, ok, err := findFlexiPageForContext(p, ctx)
 		if err != nil {
 			return ShellPage{}, nil, err
@@ -76,10 +76,29 @@ func ResolvePageTarget(p project.Project, ctx PageContext) (ShellPage, []Diagnos
 		return ShellPage{Context: ctx, Tab: tab}, nil, nil
 	case RenderTargetQuickAction:
 		return resolveQuickActionTarget(p, ctx)
+	case RenderTargetFlowScreen:
+		return resolveFlowScreenTarget(p, ctx)
 	default:
 		diag := Diagnostic{Code: "GLADELWC012", Message: "choose one render target"}
 		return ShellPage{}, []Diagnostic{diag}, errors.New(diag.Message)
 	}
+}
+
+func resolveFlowScreenTarget(p project.Project, ctx PageContext) (ShellPage, []Diagnostic, error) {
+	if strings.TrimSpace(ctx.ComponentName) == "" {
+		diag := Diagnostic{Code: "GLADELWC012", Message: "component render target requires a component name"}
+		return ShellPage{}, []Diagnostic{diag}, errors.New(diag.Message)
+	}
+	ctx.Kind = RenderTargetFlowScreen
+	component := PageComponent{ComponentName: qualifyComponentName(ctx.ComponentName, p.Namespace)}
+	ctx.ComponentName = component.ComponentName
+	return ShellPage{
+		Context: ctx,
+		Regions: []PageRegion{{
+			Name:       "main",
+			Components: []PageComponent{component},
+		}},
+	}, nil, nil
 }
 
 func resolveComponentTarget(p project.Project, ctx PageContext) (ShellPage, []Diagnostic, error) {
@@ -204,6 +223,7 @@ func validatePageKind(page FlexiPage, kind RenderTargetKind) (Diagnostic, bool) 
 		RenderTargetRecordPage: "RecordPage",
 		RenderTargetAppPage:    "AppPage",
 		RenderTargetHomePage:   "HomePage",
+		RenderTargetUtilityBar: "UtilityBar",
 	}[kind]
 	if want == "" || strings.EqualFold(page.Type, want) {
 		return Diagnostic{}, true
