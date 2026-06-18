@@ -94,6 +94,7 @@ func TestServerRootRendersLWCWorkbenchWhenProjectHasLWCs(t *testing.T) {
 
 func TestLWCShellRendersApplicationNavAndConsoleMode(t *testing.T) {
 	root := t.TempDir()
+	writeUtilityProbeBundle(t, root)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/applications/Support_Console.app-meta.xml", `<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
 	  <label>Support Console</label>
 	  <navType>Console</navType>
@@ -104,6 +105,20 @@ func TestLWCShellRendersApplicationNavAndConsoleMode(t *testing.T) {
 	  <masterLabel>Support Page</masterLabel>
 	  <type>AppPage</type>
 	  <flexiPageRegions><name>main</name></flexiPageRegions>
+	</FlexiPage>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/flexipages/Support_Utility.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <masterLabel>Support Utility</masterLabel>
+	  <type>UtilityBar</type>
+	  <flexiPageRegions>
+	    <name>utilityItems</name>
+	    <type>Region</type>
+	    <itemInstances>
+	      <componentInstance>
+	        <componentName>c:utilityProbe</componentName>
+	        <identifier>utilityProbe</identifier>
+	      </componentInstance>
+	    </itemInstances>
+	  </flexiPageRegions>
 	</FlexiPage>`)
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/tabs/Lwc_Probe.tab-meta.xml", `<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
 	  <label>LWC Probe</label>
@@ -137,6 +152,9 @@ func TestLWCShellRendersApplicationNavAndConsoleMode(t *testing.T) {
 		`Support Console`,
 		`standard-Case`,
 		`Lwc_Probe`,
+		`data-glade-utility-bar`,
+		`data-glade-utility-item="Support_Utility"`,
+		`"utilities":[`,
 		`GLADELWC072`,
 	} {
 		if !strings.Contains(body, want) {

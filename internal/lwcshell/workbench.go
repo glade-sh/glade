@@ -247,8 +247,12 @@ func buildWorkspaceContext(active ShellPage, app ShellApp, routes []ShellRoute, 
 			WorkspaceTab: true,
 		}},
 	}
+	workspace.Utilities = append(workspace.Utilities, active.Context.Workspace.Utilities...)
 	for _, route := range routes {
 		if route.Kind != RenderTargetUtilityBar {
+			continue
+		}
+		if workspaceHasUtility(workspace.Utilities, route.PageName) {
 			continue
 		}
 		workspace.Utilities = append(workspace.Utilities, UtilityItem{
@@ -258,6 +262,16 @@ func buildWorkspaceContext(active ShellPage, app ShellApp, routes []ShellRoute, 
 		})
 	}
 	return workspace
+}
+
+func workspaceHasUtility(items []UtilityItem, id string) bool {
+	id = strings.TrimSpace(id)
+	for _, item := range items {
+		if strings.EqualFold(strings.TrimSpace(item.ID), id) {
+			return true
+		}
+	}
+	return false
 }
 
 func DiscoverWorkbenchComponents(p project.Project) []ShellComponent {

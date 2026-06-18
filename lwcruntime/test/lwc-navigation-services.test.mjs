@@ -92,6 +92,7 @@ import {
 import {
   MessageContext,
   APPLICATION_SCOPE,
+  clearMessages,
   createMessageContext,
   publish,
   subscribe,
@@ -186,6 +187,21 @@ unsubscribe(scopedSub);
 publish(appContext, { messageChannelName: "ScopedChannel" }, { id: "ignored" });
 window.__serviceResults.scopedMessages = scopedMessages;
 
+clearMessages();
+const componentScope = {
+  first: [],
+  second: [],
+  application: [],
+};
+const firstContext = createMessageContext();
+const secondContext = createMessageContext();
+subscribe(firstContext, { messageChannelName: "ComponentScopedChannel" }, (message) => componentScope.first.push(message));
+subscribe(secondContext, { messageChannelName: "ComponentScopedChannel" }, (message) => componentScope.second.push(message));
+subscribe(secondContext, { messageChannelName: "ComponentScopedChannel" }, (message) => componentScope.application.push(message), { scope: APPLICATION_SCOPE });
+publish(firstContext, { messageChannelName: "ComponentScopedChannel" }, { id: "first" });
+publish(secondContext, { messageChannelName: "ComponentScopedChannel" }, { id: "second" });
+window.__serviceResults.componentScope = componentScope;
+
 clearEmpSubscriptions();
 const empMessages = [];
 const empSub = await subscribeEmp("/event/Local__e", -1, (event) => empMessages.push(event));
@@ -279,6 +295,9 @@ test("services capture toasts and deliver in-page messages", async () => {
     assert.match(results.toastText, /Account updated/);
     assert.deepEqual(results.messages, [{ recordId: "001000000000001AAA" }]);
     assert.deepEqual(results.scopedMessages, [{ id: "one" }]);
+    assert.deepEqual(results.componentScope.first, [{ id: "first" }]);
+    assert.deepEqual(results.componentScope.second, [{ id: "second" }]);
+    assert.deepEqual(results.componentScope.application, [{ id: "first" }, { id: "second" }]);
     assert.deepEqual(results.empMessages, [{ payload: { Name__c: "Probe" }, replayId: 1 }]);
     assert.equal(results.workspace.focused.label, "Reports");
     assert.equal(results.workspace.all.length, 2);

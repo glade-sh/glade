@@ -40,10 +40,11 @@ type lwcLocalContextPreset struct {
 
 func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell lwcshell.ShellPage, activeRoute string) string {
 	model := lwcshell.BuildWorkbenchModel(p, shell, activeRoute)
+	activeContext := model.Active.Context
 	mounts := lwcShellMounts(shell)
 	cfg.PageReference = lwcShellPageReference(shell)
 	modelJSON := mustScriptJSON(model)
-	contextJSON := mustScriptJSON(shell.Context)
+	contextJSON := mustScriptJSON(activeContext)
 	mountsJSON := mustScriptJSON(mounts)
 	var b strings.Builder
 	b.WriteString(`<!doctype html><html><head><meta charset="utf-8"><title>Glade LWC Shell</title>`)
@@ -52,11 +53,11 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 	b.WriteString(`</head><body class="glade-shell" data-glade-shell="workbench" data-glade-app-mode="`)
 	b.WriteString(html.EscapeString(model.Mode))
 	b.WriteString(`">`)
-	if strings.TrimSpace(shell.Context.Community.Site) != "" {
+	if strings.TrimSpace(activeContext.Community.Site) != "" {
 		b.WriteString(`<div hidden data-glade-community-shell data-glade-community-site="`)
-		b.WriteString(html.EscapeString(shell.Context.Community.Site))
+		b.WriteString(html.EscapeString(activeContext.Community.Site))
 		b.WriteString(`" data-glade-community-guest="`)
-		b.WriteString(html.EscapeString(fmt.Sprintf("%t", shell.Context.Community.Guest)))
+		b.WriteString(html.EscapeString(fmt.Sprintf("%t", activeContext.Community.Guest)))
 		b.WriteString(`"></div>`)
 	}
 	b.WriteString(`<header class="glade-global-header"><button class="glade-app-launcher" type="button" aria-label="App launcher">`)
@@ -68,10 +69,10 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 	if model.Mode == "console" {
 		b.WriteString(lwcShellConsoleRailHTML(model))
 	}
-	b.WriteString(lwcShellCommunityChromeHTML(shell.Context.Community))
+	b.WriteString(lwcShellCommunityChromeHTML(activeContext.Community))
 	b.WriteString(`<main class="glade-stage">`)
 	b.WriteString(lwcShellDiagnosticsHTML(shell.Diagnostics))
-	b.WriteString(lwcShellFlowEventsHTML(shell.Context.Flow))
+	b.WriteString(lwcShellFlowEventsHTML(activeContext.Flow))
 	builderActive := lwcShellWorkbenchBuilderActive(activeRoute)
 	if builderActive {
 		b.WriteString(lwcShellWorkbenchBuilderHTML(model))
@@ -80,29 +81,29 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 	if !builderActive {
 		b.WriteString(lwcShellRegionsHTML(shell))
 	}
-	b.WriteString(lwcShellUtilityBarHTML(shell.Context.Workspace.Utilities))
+	b.WriteString(lwcShellUtilityBarHTML(activeContext.Workspace.Utilities))
 	b.WriteString(`</main><aside class="glade-context-panel" data-glade-context-panel>`)
 	b.WriteString(`<h2>Context</h2><dl>`)
 	communityGuest := ""
-	if strings.TrimSpace(shell.Context.Community.Site) != "" {
-		communityGuest = fmt.Sprintf("%t", shell.Context.Community.Guest)
+	if strings.TrimSpace(activeContext.Community.Site) != "" {
+		communityGuest = fmt.Sprintf("%t", activeContext.Community.Guest)
 	}
 	contextRows := []struct{ name, value string }{
-		{"Target", string(shell.Context.Kind)},
-		{"Page", shell.Context.PageName},
-		{"Component", shell.Context.ComponentName},
-		{"Record", shell.Context.RecordID},
-		{"Object", shell.Context.ObjectAPIName},
-		{"App", shell.Context.AppName},
-		{"Tab", shell.Context.TabName},
-		{"Form factor", shell.Context.FormFactor},
-		{"Community", shell.Context.Community.Site},
-		{"Community base path", shell.Context.Community.BasePath},
-		{"Community site ID", shell.Context.Community.SiteID},
-		{"Community network ID", shell.Context.Community.NetworkID},
+		{"Target", string(activeContext.Kind)},
+		{"Page", activeContext.PageName},
+		{"Component", activeContext.ComponentName},
+		{"Record", activeContext.RecordID},
+		{"Object", activeContext.ObjectAPIName},
+		{"App", activeContext.AppName},
+		{"Tab", activeContext.TabName},
+		{"Form factor", activeContext.FormFactor},
+		{"Community", activeContext.Community.Site},
+		{"Community base path", activeContext.Community.BasePath},
+		{"Community site ID", activeContext.Community.SiteID},
+		{"Community network ID", activeContext.Community.NetworkID},
 		{"Community guest", communityGuest},
-		{"Community language", shell.Context.Community.Language},
-		{"Flow", shell.Context.Flow.APIName},
+		{"Community language", activeContext.Community.Language},
+		{"Flow", activeContext.Flow.APIName},
 	}
 	for _, row := range contextRows {
 		if strings.TrimSpace(row.value) == "" {
@@ -592,11 +593,12 @@ func (s *Server) handleLightningLocal(w http.ResponseWriter, r *http.Request, pa
 		return
 	}
 	model := lwcshell.BuildWorkbenchModel(s.Source.Project, shell, activeRoute)
+	activeContext := model.Active.Context
 	defaultContext, selectedContext, contexts, presetDiagnostics := lwcLocalContextPresets(s.Source.Project, activeRoute)
 	payload := lwcLocalContextPayload{
 		ActiveRoute:     activeRoute,
 		PageReference:   lwcShellPageReference(shell),
-		Context:         shell.Context,
+		Context:         activeContext,
 		Mounts:          lwcShellMounts(shell),
 		Apps:            model.Apps,
 		Routes:          model.Routes,

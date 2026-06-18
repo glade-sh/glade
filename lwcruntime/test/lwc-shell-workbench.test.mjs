@@ -63,12 +63,18 @@ function startWorkbenchServer() {
 <body>
   <header><a data-glade-route href="/lwc">Workbench</a></header>
   <main data-glade-main>Mounted component region</main>
+  <section data-glade-flow-events></section>
   <aside data-glade-context-panel></aside>
   <script type="module">
     import { bootGladeShell } from "/lightning/runtime/shell/app.js";
     import { reportDiagnostic } from "/lightning/runtime/shell/diagnostics.js";
     window.__boot = await bootGladeShell();
     reportDiagnostic({ code: "GLADELWC999", message: "probe diagnostic" });
+    document.querySelector("[data-glade-main]").dispatchEvent(new CustomEvent("flownavigationnext", {
+      bubbles: true,
+      composed: true,
+      detail: { action: "NEXT" },
+    }));
   </script>
 </body>
 </html>`);
@@ -117,6 +123,7 @@ test("lwc shell workbench boots context panel diagnostics toasts and route kind"
       contextText: document.querySelector("[data-glade-context-panel]")?.textContent || "",
       sldsHref: document.querySelector("link[data-glade-slds]")?.getAttribute("href") || "",
       toastRegion: Boolean(document.querySelector("[data-glade-toast-region]")),
+      flowEventsText: document.querySelector("[data-glade-flow-events]")?.textContent || "",
       diagnostics: window.__gladeDiagnostics,
     }));
 
@@ -127,6 +134,8 @@ test("lwc shell workbench boots context panel diagnostics toasts and route kind"
     assert.match(result.contextText, /GLADELWC999: probe diagnostic/);
     assert.equal(result.sldsHref, defaultSLDSHref);
     assert.equal(result.toastRegion, true);
+    assert.match(result.flowEventsText, /flownavigationnext/);
+    assert.match(result.flowEventsText, /NEXT/);
     assert.equal(result.diagnostics.at(-1).code, "GLADELWC999");
   } finally {
     await browser.close();
