@@ -84,7 +84,7 @@ func TestCLIOutputContractNoProgressSuppressesStderr(t *testing.T) {
 func TestCLIOutputContractDevLWCBoundsRoutesAndKeepsReadyFileComplete(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
-	for i := 0; i < 82; i++ {
+	for i := 0; i < 20; i++ {
 		name := strings.ToLower("routeProbe"+string(rune('A'+(i%26)))) + strings.Repeat("x", i/26)
 		writeTestFile(t, filepath.Join(root, "force-app/main/default/lwc", name, name+".js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><isExposed>true</isExposed></LightningComponentBundle>`)
 	}
@@ -95,8 +95,14 @@ func TestCLIOutputContractDevLWCBoundsRoutesAndKeepsReadyFileComplete(t *testing
 
 	var out bytes.Buffer
 	printDevLWCStartupSummary(&out, "127.0.0.1:7357", p, devLWCSelection{})
-	if !strings.Contains(out.String(), "... 2 more routes omitted.") {
+	if !strings.Contains(out.String(), "Routes: 20 available") {
+		t.Fatalf("summary did not show route count:\n%s", out.String())
+	}
+	if !strings.Contains(out.String(), "... 12 routes omitted.") {
 		t.Fatalf("summary did not cap routes:\n%s", out.String())
+	}
+	if strings.Contains(out.String(), "/lwc/preview/component/c/routeprobei") {
+		t.Fatalf("summary included routes beyond compact startup cap:\n%s", out.String())
 	}
 	readyPath := filepath.Join(t.TempDir(), "ready.json")
 	if err := writeDevLWCReadyFile(readyPath, "127.0.0.1:7357", p, devLWCSelection{}); err != nil {
@@ -112,8 +118,8 @@ func TestCLIOutputContractDevLWCBoundsRoutesAndKeepsReadyFileComplete(t *testing
 	if err := json.Unmarshal(data, &ready); err != nil {
 		t.Fatal(err)
 	}
-	if len(ready.Routes) != 82 {
-		t.Fatalf("ready routes = %d, want 82", len(ready.Routes))
+	if len(ready.Routes) != 20 {
+		t.Fatalf("ready routes = %d, want 20", len(ready.Routes))
 	}
 }
 

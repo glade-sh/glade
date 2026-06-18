@@ -206,12 +206,7 @@ func runDevVFReload(ctx context.Context, root string, srv *server.Server, w io.W
 func printDevVFStartupSummary(w io.Writer, addr string, p project.Project) {
 	fmt.Fprintf(w, "Visualforce dev server: http://%s\n", addr)
 	pages := devVFPageRoutes(p)
-	if len(pages) > 0 {
-		fmt.Fprintln(w, "Pages:")
-		for _, page := range pages {
-			fmt.Fprintf(w, "  %s\n", page)
-		}
-	}
+	printDevStartupList(w, "Pages", "page", pages, "Use --ready-file for the complete list.")
 	fmt.Fprintf(w, "Watching %s for .page, .component, .cls, aura, lwc, and static resource changes.\n", p.Root)
 }
 
