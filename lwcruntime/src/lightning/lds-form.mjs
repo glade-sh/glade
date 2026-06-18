@@ -176,7 +176,12 @@ function createComponent(selector, render) {
     }
 
     loadRecord() {
-      if (!this.objectApiName || !this.recordId || this.__recordLoaded) return;
+      if (!this.objectApiName || this.__recordLoaded) return;
+      if (!this.recordId && this.__selector === "lightning-record-edit-form") {
+        this.loadCreateDefaults();
+        return;
+      }
+      if (!this.recordId) return;
       this.__recordLoaded = true;
       fetch("/lightning/wire/getRecord", {
         method: "POST",
@@ -199,6 +204,42 @@ function createComponent(selector, render) {
             record: this.value,
             records: this.value?.id ? { [this.value.id]: this.value } : {},
             objectInfos: result?.data?.objectInfos || {},
+          },
+        }));
+      }).catch((err) => {
+        const detail = { message: err?.message || String(err) };
+        this.error = detail;
+        this.dispatchEvent(new CustomEvent("error", { bubbles: true, composed: true, detail }));
+      });
+    }
+
+    loadCreateDefaults() {
+      if (this.__recordLoaded) return;
+      this.__recordLoaded = true;
+      fetch("/lightning/wire/getRecordCreateDefaults", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          objectApiName: this.objectApiName,
+          fields: recordFieldRefs(this.objectApiName, this.fields),
+        }),
+      }).then((response) => response.json()).then((result) => {
+        if (result?.error) {
+          this.error = result.error;
+          this.dispatchEvent(new CustomEvent("error", { bubbles: true, composed: true, detail: result.error }));
+          return;
+        }
+        const data = result?.data || result;
+        this.value = data?.record || data;
+        applyCreateDefaultsToFields(this, data);
+        this.dispatchEvent(new CustomEvent("load", {
+          bubbles: true,
+          composed: true,
+          detail: {
+            record: this.value,
+            records: this.value?.id ? { [this.value.id]: this.value } : {},
+            objectInfos: data?.objectInfos || {},
+            layout: data?.layout,
           },
         }));
       }).catch((err) => {
@@ -276,6 +317,7 @@ function createComponent(selector, render) {
       this.__customValidityMessage = "";
       const control = formControl(this);
       if (control && "value" in control) control.value = this.value ?? "";
+      if (control && "checked" in control) control.checked = Boolean(this.value || this.checked);
       control?.setCustomValidity?.("");
     }
 
@@ -285,16 +327,18 @@ function createComponent(selector, render) {
     }
 
     checkValidity() {
-      const message = validityMessage({ required: this.required, value: this.value, customError: this.__customValidityMessage });
       const control = formControl(this);
+      syncControlValue(control, this);
+      const message = validityMessage({ required: this.required, value: this.value, customError: this.__customValidityMessage, type: inputTypeForField(this) });
       control?.setCustomValidity?.(message || "");
       if (message) return false;
       return control?.checkValidity ? control.checkValidity() : true;
     }
 
     reportValidity() {
-      const message = validityMessage({ required: this.required, value: this.value, customError: this.__customValidityMessage });
       const control = formControl(this);
+      syncControlValue(control, this);
+      const message = validityMessage({ required: this.required, value: this.value, customError: this.__customValidityMessage, type: inputTypeForField(this) });
       control?.setCustomValidity?.(message || "");
       if (message) {
         control?.reportValidity?.();
@@ -421,7 +465,7 @@ function renderInputField($api, $cmp) {
     h("span", { classMap: { "slds-form-element__label": true }, key: 1 }, [t($cmp.label || normalizeFieldName($cmp.fieldName) || "")]),
     h("input", {
       classMap: { "slds-input": true },
-      attrs: { type, "data-field-name": normalizeFieldName($cmp.fieldName) || undefined },
+      attrs: { type, step: type === "number" ? "any" : undefined, "data-field-name": normalizeFieldName($cmp.fieldName) || undefined },
       props: {
         value: type === "checkbox" ? undefined : ($cmp.value ?? ""),
         checked: type === "checkbox" ? Boolean($cmp.value || $cmp.checked) : undefined,
@@ -585,8 +629,16 @@ export function collectFormFields(root) {
   return fields;
 }
 
-export function validityMessage({ required, value, customError }) {
+function syncControlValue(control, component) {
+  if (!control) return;
+  const type = inputTypeForField(component);
+  if (type === "checkbox" && "checked" in control) control.checked = Boolean(component.value || component.checked);
+  else if ("value" in control) control.value = component.value ?? "";
+}
+
+export function validityMessage({ required, value, customError, type }) {
   if (customError) return customError;
+  if (required && type === "checkbox" && !value) return "Complete this field.";
   if (required && (value === "" || value === null || value === undefined)) return "Complete this field.";
   return "";
 }
@@ -624,6 +676,35 @@ function registerInputFieldWithNearestForm(component) {
     }
     const root = node.getRootNode?.();
     node = node.parentElement || root?.host?.parentElement || null;
+  }
+}
+
+function applyCreateDefaultsToFields(form, data) {
+  const objectInfo = data?.objectInfos?.[form.objectApiName] || {};
+  const metadataFields = objectInfo.fields || {};
+  const defaultFields = data?.record?.fields || {};
+  for (const field of inputFieldsForForm(form)) {
+    const name = normalizeFieldName(field.fieldName || field.name);
+    if (!name) continue;
+    const metadata = metadataFields[name] || {};
+    const defaultField = defaultFields[name];
+    const defaultValue = defaultField && typeof defaultField === "object" ? defaultField.value : defaultField;
+    if (defaultValue !== undefined && field.value === undefined) {
+      field.value = defaultValue;
+      field.__initialValue = defaultValue;
+    }
+    if (!field.label && metadata.label) field.label = metadata.label;
+    if (field.required === undefined && metadata.required !== undefined) field.required = Boolean(metadata.required);
+    if (!field.type) {
+      const inputType = inputTypeForMetadata(metadata);
+      if (inputType) field.type = inputType;
+    }
+    if (!field.options && Array.isArray(metadata.picklistValues)) {
+      field.options = metadata.picklistValues.map((option) => ({
+        label: option.label ?? option.value ?? "",
+        value: option.value ?? option.label ?? "",
+      }));
+    }
   }
 }
 
@@ -668,6 +749,18 @@ function inputTypeForField(component) {
   if (type === "email") return "email";
   if (["phone", "tel"].includes(type)) return "tel";
   return "text";
+}
+
+function inputTypeForMetadata(metadata) {
+  const type = String(metadata?.dataType || metadata?.type || "").toLowerCase();
+  if (["picklist", "multipicklist"].includes(type)) return "";
+  if (["boolean", "checkbox"].includes(type)) return "checkbox";
+  if (["double", "integer", "currency", "percent", "number"].includes(type)) return "number";
+  if (type === "date") return "date";
+  if (["datetime", "datetime-local"].includes(type)) return "datetime-local";
+  if (type === "email") return "email";
+  if (["phone", "tel"].includes(type)) return "tel";
+  return "";
 }
 
 function picklistValuesForField(component, fieldName) {
