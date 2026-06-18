@@ -682,6 +682,8 @@ func lwcShellTargetName(kind lwcshell.RenderTargetKind) string {
 		return "lightning__HomePage"
 	case lwcshell.RenderTargetQuickAction:
 		return "lightning__RecordAction"
+	case lwcshell.RenderTargetFlowAction:
+		return "lightning__FlowAction"
 	case lwcshell.RenderTargetCommunityPage:
 		return "lightningCommunity__Page"
 	case lwcshell.RenderTargetUtilityBar:
@@ -920,7 +922,7 @@ func lwcShellPageReference(shell lwcshell.ShellPage) map[string]any {
 			"attributes": map[string]any{"apiName": shell.Context.TabName},
 			"state":      state,
 		}
-	case lwcshell.RenderTargetQuickAction:
+	case lwcshell.RenderTargetQuickAction, lwcshell.RenderTargetFlowAction:
 		return map[string]any{
 			"type": "standard__quickAction",
 			"attributes": map[string]any{

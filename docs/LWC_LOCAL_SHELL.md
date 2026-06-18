@@ -20,11 +20,11 @@ Then start the local workbench from the project root:
 glade dev lwc --project . --open
 ```
 
-The printed base URL opens the local workbench. The same workbench is also
-available at `/lwc` for stable links. It lists and filters available LWCs, lets
-you place target-compatible components into a draft app, home, record, or tab
-page, and shows discovered preview routes, active context, and local
-diagnostics.
+The printed base URL opens the local workbench at `/`. The same workbench is
+also available at `/lwc` for stable links. It lists and filters available LWCs,
+lets you place target-compatible components into a draft app, home, record,
+tab, URL-addressable, quick-action, or community page context, and shows
+discovered preview routes, active context, and local diagnostics.
 
 Use an ephemeral port and ready file for scripts:
 
@@ -208,6 +208,9 @@ home, and tab routes resolve Salesforce metadata from the project:
   `comm__*` PageReference data.
 - Direct community component routes mount `lightningCommunity__Default`
   components with the site from the route and a `/s` base-path fallback.
+- Generated workbench routes include direct components, app pages, record
+  pages with a sample record ID, home pages, tabs, URL-addressable components,
+  LWC-backed actions, and configured community pages.
 
 Visualforce-backed custom tabs redirect to the Visualforce page route when the
 project defines one. That redirect is the main Visualforce mention in the LWC
@@ -257,6 +260,18 @@ FlexiPage component properties are passed as component attributes.
 
 The local LWC runtime supports the first-mile Salesforce module paths used by
 common local development loops:
+
+- Local static resources resolve root files and nested subpaths used by
+  `@salesforce/resourceUrl/*` and `lightning/platformResourceLoader`.
+- Datatable, record form, record edit/view form, input field, output field,
+  and message surfaces use practical local renderers backed by LDS/UI API
+  shims.
+- `lightning/flow` and `lightning/flowSupport` provide a local Flow screen
+  host and navigation events. This is not Salesforce Flow Builder.
+- `lightning/empApi` provides a deterministic in-page event bus. It does not
+  connect to Salesforce streaming services.
+- `lightning/platformWorkspaceApi` models local console tab state for
+  development. It is not the hosted console workspace engine.
 
 - Apex wire and imperative imports through `@salesforce/apex/<Class>.<method>`
   in the LWC shell and Visualforce Lightning Out.

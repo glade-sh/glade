@@ -159,6 +159,11 @@ func (p ContextPreset) ToPageContext() (PageContext, error) {
 		if ctx.ActionName == "" {
 			return PageContext{}, contextPresetError("GLADELWC070", "quick action required", nil)
 		}
+	case "flowaction":
+		ctx.Kind = RenderTargetFlowAction
+		if ctx.ActionName == "" {
+			return PageContext{}, contextPresetError("GLADELWC070", "quick action required", nil)
+		}
 	case "communitypage":
 		ctx.Kind = RenderTargetCommunityPage
 		if ctx.Community.Site == "" {

@@ -28,6 +28,7 @@ const (
 	RenderTargetCommunityPage  RenderTargetKind = "communityPage"
 	RenderTargetUtilityBar     RenderTargetKind = "utilityBar"
 	RenderTargetFlowScreen     RenderTargetKind = "flowScreen"
+	RenderTargetFlowAction     RenderTargetKind = "flowAction"
 )
 
 type CommunityContext struct {

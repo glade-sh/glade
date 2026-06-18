@@ -64,7 +64,7 @@ func SelectedURL(baseURL string, ctx PageContext) string {
 			return ""
 		}
 		selectedPath = "/lwc/preview/utility/" + selectedURLPathEscape(ctx.PageName)
-	case RenderTargetQuickAction:
+	case RenderTargetQuickAction, RenderTargetFlowAction:
 		if ctx.ActionName == "" {
 			return ""
 		}

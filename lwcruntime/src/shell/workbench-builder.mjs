@@ -5,6 +5,12 @@ const TARGET_BY_KIND = {
   homePage: "lightning__HomePage",
   recordPage: "lightning__RecordPage",
   tab: "lightning__Tab",
+  urlAddressable: "lightning__UrlAddressable",
+  quickAction: "lightning__RecordAction",
+  communityPage: "lightningCommunity__Page",
+  utilityBar: "lightning__UtilityBar",
+  flowScreen: "lightning__FlowScreen",
+  flowAction: "lightning__FlowAction",
 };
 
 const PAGE_LABEL_BY_KIND = {
@@ -12,6 +18,12 @@ const PAGE_LABEL_BY_KIND = {
   homePage: "Draft Home Page",
   recordPage: "Draft Record Page",
   tab: "Draft Tab",
+  urlAddressable: "Draft URL Page",
+  quickAction: "Draft Action",
+  communityPage: "Draft Community Page",
+  utilityBar: "Draft Utility Bar",
+  flowScreen: "Draft Flow Screen",
+  flowAction: "Draft Flow Action",
 };
 
 let nextHostId = 0;
@@ -28,10 +40,19 @@ export function bootWorkbenchBuilder(root = document.body, config = {}) {
   };
   const controls = {
     kind: builder.querySelector("[data-glade-page-kind]"),
+    targetPicker: builder.querySelector("[data-glade-target-picker]"),
+    componentPicker: builder.querySelector("[data-glade-component-picker]"),
     object: builder.querySelector("[data-glade-object-input]"),
     record: builder.querySelector("[data-glade-record-input]"),
+    sampleRecord: builder.querySelector("[data-glade-sample-record]"),
     app: builder.querySelector("[data-glade-app-input]"),
+    community: builder.querySelector("[data-glade-community-selector]"),
     formFactor: builder.querySelector("[data-glade-form-factor]"),
+    formFactorOptions: Array.from(builder.querySelectorAll("[data-glade-form-factor-option]")),
+    consoleMode: builder.querySelector("[data-glade-console-mode]"),
+    stateKey: builder.querySelector("[data-glade-state-key]"),
+    stateValue: builder.querySelector("[data-glade-state-value]"),
+    flowInputs: builder.querySelector("[data-glade-flow-inputs]"),
     search: builder.querySelector("[data-glade-component-search]"),
     title: builder.querySelector("[data-glade-draft-title]"),
     status: builder.querySelector("[data-glade-draft-status]"),
@@ -67,9 +88,39 @@ export function bootWorkbenchBuilder(root = document.body, config = {}) {
       event.preventDefault();
       state.components = [];
       render();
+      return;
+    }
+    if (event.target.closest("[data-glade-sample-record]")) {
+      event.preventDefault();
+      if (controls.record) {
+        controls.record.value = "001000000000001AAA";
+      }
+      render();
+      return;
+    }
+    const formFactor = event.target.closest("[data-glade-form-factor-option]");
+    if (formFactor) {
+      event.preventDefault();
+      if (controls.formFactor) {
+        controls.formFactor.value = formFactor.dataset.gladeFormFactorOption || "Large";
+      }
+      render();
     }
   });
-  for (const control of [controls.kind, controls.object, controls.record, controls.app, controls.formFactor, controls.search]) {
+  for (const control of [
+    controls.kind,
+    controls.componentPicker,
+    controls.object,
+    controls.record,
+    controls.app,
+    controls.community,
+    controls.formFactor,
+    controls.consoleMode,
+    controls.stateKey,
+    controls.stateValue,
+    controls.flowInputs,
+    controls.search,
+  ]) {
     if (control) {
       control.addEventListener("input", render);
       control.addEventListener("change", render);
@@ -94,6 +145,9 @@ function readWorkbenchModel() {
 function renderDraft(builder, model, state, controls, config) {
   state.kind = controls.kind?.value || state.kind || "appPage";
   const target = TARGET_BY_KIND[state.kind] || TARGET_BY_KIND.appPage;
+  if (controls.componentPicker?.value && controls.search && controls.search.value !== controls.componentPicker.value) {
+    controls.search.value = controls.componentPicker.value;
+  }
   updateCatalog(builder, model, target, controls.search?.value);
   state.components = state.components.filter((placement) => componentSupportsTarget(findComponent(model, placement.qualifiedName), target));
   updateContextScripts(state, controls, config);
@@ -110,6 +164,8 @@ function renderDraft(builder, model, state, controls, config) {
   if (controls.status) {
     controls.status.textContent = `${state.components.length} placed / ${enabledCount} available`;
   }
+  updateFormFactorButtons(controls);
+  document.body.dataset.gladeBuilderConsole = String(Boolean(controls.consoleMode?.checked));
   state.components.forEach((placement, index) => renderPlacement(builder, model, placement, index, state, controls, target));
 }
 
@@ -177,13 +233,24 @@ function renderPlacement(builder, model, placement, index, state, controls, targ
 }
 
 function currentDraftContext(state, controls) {
+  const statePairs = {};
+  const stateKey = controls.stateKey?.value?.trim();
+  if (stateKey) {
+    statePairs[stateKey] = controls.stateValue?.value || "";
+  }
   return {
     kind: state.kind,
     recordId: controls.record?.value || "",
     objectApiName: controls.object?.value || "",
     appName: controls.app?.value || "",
     formFactor: controls.formFactor?.value || "Large",
-    community: {},
+    state: statePairs,
+    community: {
+      site: controls.community?.value || "",
+    },
+    flow: {
+      apiName: state.kind === "flowScreen" || state.kind === "flowAction" ? controls.app?.value || "" : "",
+    },
   };
 }
 
@@ -201,11 +268,21 @@ function currentDraftAttrs(state, controls) {
   if (ctx.appName) {
     attrs.appName = ctx.appName;
   }
+  if (ctx.community?.site) {
+    attrs.communitySite = ctx.community.site;
+  }
+  if (controls.flowInputs?.value) {
+    attrs.flowInputs = controls.flowInputs.value;
+  }
   return attrs;
 }
 
 function currentDraftPageReference(state, controls) {
   const baseState = {};
+  const stateKey = controls.stateKey?.value?.trim();
+  if (stateKey) {
+    baseState[stateKey] = controls.stateValue?.value || "";
+  }
   switch (state.kind) {
     case "recordPage":
       return {
@@ -227,6 +304,52 @@ function currentDraftPageReference(state, controls) {
       return {
         type: "standard__namedPage",
         attributes: { pageName: "home" },
+        state: baseState,
+      };
+    case "urlAddressable":
+      return {
+        type: "standard__component",
+        attributes: { componentName: controls.componentPicker?.value || "" },
+        state: baseState,
+      };
+    case "quickAction":
+      return {
+        type: "standard__quickAction",
+        attributes: {
+          apiName: controls.app?.value || "",
+          objectApiName: controls.object?.value || "",
+          recordId: controls.record?.value || "",
+        },
+        state: baseState,
+      };
+    case "communityPage":
+      return {
+        type: "comm__namedPage",
+        attributes: { name: controls.app?.value || "Home" },
+        state: baseState,
+      };
+    case "utilityBar":
+      return {
+        type: "standard__component",
+        attributes: { componentName: controls.componentPicker?.value || "" },
+        state: baseState,
+      };
+    case "flowScreen":
+      return {
+        type: "standard__component",
+        attributes: {
+          componentName: controls.componentPicker?.value || "",
+          flowApiName: controls.app?.value || "",
+        },
+        state: baseState,
+      };
+    case "flowAction":
+      return {
+        type: "standard__component",
+        attributes: {
+          componentName: controls.componentPicker?.value || "",
+          actionName: controls.app?.value || "",
+        },
         state: baseState,
       };
     default:
@@ -266,6 +389,15 @@ function componentMatchesSearch(component, search) {
 function defaultTargetProperties(component, target) {
   const support = (component.targetSupport || []).find((candidate) => normalize(candidate.target) === normalize(target));
   return { ...(support?.properties || {}) };
+}
+
+function updateFormFactorButtons(controls) {
+  const selected = controls.formFactor?.value || "Large";
+  for (const button of controls.formFactorOptions || []) {
+    const active = button.dataset.gladeFormFactorOption === selected;
+    button.dataset.gladeSelected = String(active);
+    button.setAttribute("aria-pressed", String(active));
+  }
 }
 
 function normalize(value) {

@@ -38,6 +38,8 @@ type ShellRoute struct {
 	ObjectName  string            `json:"objectApiName,omitempty"`
 	RecordID    string            `json:"recordId,omitempty"`
 	TabName     string            `json:"tabName,omitempty"`
+	ActionName  string            `json:"actionName,omitempty"`
+	ActionType  string            `json:"actionType,omitempty"`
 	Diagnostics []Diagnostic      `json:"diagnostics,omitempty"`
 	State       map[string]string `json:"state,omitempty"`
 }
@@ -160,6 +162,14 @@ func DiscoverShellRoutes(p project.Project) []ShellRoute {
 				Kind:      RenderTargetComponent,
 				Component: component,
 			})
+			if meta.SupportsTarget("lightning__UrlAddressable") {
+				routes = append(routes, ShellRoute{
+					Label:     component + " URL",
+					URL:       "/lwc/preview/cmp/" + namespace + "/" + bundle.Name,
+					Kind:      RenderTargetURLAddressable,
+					Component: component,
+				})
+			}
 		}
 	}
 	for _, path := range p.FlexiPageFiles {
@@ -221,9 +231,58 @@ func DiscoverShellRoutes(p project.Project) []ShellRoute {
 		}
 		routes = append(routes, route)
 	}
+	routes = appendQuickActionRoutes(p, namespace, routes)
 	routes = appendCommunityPresetRoutes(p, routes)
 	routes = appendFlowPresetRoutes(p, routes)
 	return routes
+}
+
+const workbenchSampleRecordID = "001000000000001AAA"
+
+func appendQuickActionRoutes(p project.Project, namespace string, routes []ShellRoute) []ShellRoute {
+	for _, path := range p.QuickActionFiles {
+		action, err := LoadQuickAction(path)
+		if err != nil || strings.TrimSpace(action.ComponentName) == "" {
+			continue
+		}
+		actionName := action.Name
+		pathActionName := actionName
+		if action.TargetObject != "" {
+			if _, after, ok := strings.Cut(actionName, "."); ok {
+				pathActionName = after
+			}
+		}
+		route := ShellRoute{
+			Label:      quickActionRouteLabel(action),
+			Kind:       quickActionRouteKind(action),
+			Component:  qualifyComponentName(action.ComponentName, namespace),
+			ObjectName: action.TargetObject,
+			ActionName: actionName,
+			ActionType: action.ActionType,
+		}
+		if action.TargetObject != "" {
+			route.RecordID = workbenchSampleRecordID
+			route.URL = "/lwc/preview/action/" + url.PathEscape(action.TargetObject) + "/" + workbenchSampleRecordID + "/" + url.PathEscape(pathActionName)
+		} else {
+			route.URL = "/lwc/preview/action/global/" + url.PathEscape(pathActionName)
+		}
+		routes = append(routes, route)
+	}
+	return routes
+}
+
+func quickActionRouteKind(action QuickAction) RenderTargetKind {
+	if strings.EqualFold(strings.TrimSpace(action.ActionType), "FlowAction") {
+		return RenderTargetFlowAction
+	}
+	return RenderTargetQuickAction
+}
+
+func quickActionRouteLabel(action QuickAction) string {
+	if strings.TrimSpace(action.Label) != "" {
+		return action.Label
+	}
+	return action.Name
 }
 
 func buildWorkspaceContext(active ShellPage, app ShellApp, routes []ShellRoute, activeRoute string) WorkspaceContext {

@@ -15,7 +15,7 @@ Salesforce target org.
 
 | Host | Status | Support key | Notes |
 | --- | --- | --- | --- |
-| LWC workbench | Preview feature | `lwc.host.lightning-shell` | The printed base URL and `/lwc` open the local workbench with a filterable available-LWC catalog, draft page composer, discovered routes, active context, and diagnostics. |
+| LWC workbench | Preview feature | `lwc.host.lightning-shell` | The printed base URL at `/` and `/lwc` open the local workbench with a filterable available-LWC catalog, draft page composer, generated route list, active context, and diagnostics. |
 | Direct component shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/component/<namespace>/<component>` mounts one exposed component for local development. |
 | Record page shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>` resolves FlexiPage regions and record context. |
 | App page shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/app/<Page>` resolves app-page FlexiPage metadata. |
@@ -79,11 +79,12 @@ diagnostics, route list, and service support.
 | Experience Cloud context | Local support with builder limits | LWC shell community routes. Supports site, base path, site ID, network ID, guest mode, language, `lightningCommunity__Page`, `lightningCommunity__Default`, and `lightningCommunity__Theme_Layout` wrapper boundaries from local metadata and `glade.lwc.json`. |
 | `lightning/navigation` | Local support with route limits | LWC shell and Visualforce Lightning Out. Includes standard local route generation plus `comm__namedPage`, `comm__loginPage`, `comm__managedContentPage`, `comm__recordPage`, and `comm__recordRelationshipPage`; unsupported PageReferences report named diagnostics such as `GLADELWC042` or `GLADELWC103`. |
 | `lightning/messageService` | Local support for in-page publish and subscribe | LWC shell and Visualforce Lightning Out. Message channel metadata imports resolve to local channel tokens. |
+| `lightning/flow` and `lightning/flowSupport` | Local Flow screen support with limits | The shell can host local Flow screen components and dispatch Flow navigation/attribute events. It is not Flow Builder and does not execute hosted Flow interviews. |
 | `lightning/platformResourceLoader` | Local support for local scripts and styles | LWC shell and Visualforce Lightning Out. |
 | `lightning/platformShowToastEvent` | Local support as a browser event shim | LWC shell and Visualforce Lightning Out. |
 | `lightning/showToastEvent` | Local support as a browser event shim | Alias for the package-exposed toast event contract. Exports `SHOW_TOAST_EVENT_NAME`, `ShowToastEvent`, and the local toast recorder hook. |
 | `lightning/toast` | Local support as a browser event shim | `LightningToast.show()` dispatches the local toast event so shell toast UI and tests observe the same path. |
-| `lightning/platformWorkspaceApi` | Local console approximation | Returns the active local route, tab info, and console wire values; supports local no-op tab open, close, focus, refresh, highlight, label, and icon helpers. Marked with `GLADELWC072`; full console workspace behavior stays hosted-only. |
+| `lightning/platformWorkspaceApi` | Local console tab model | Returns the active local route, tab info, and console wire values; supports local no-op tab open, close, focus, refresh, highlight, label, and icon helpers. Marked with `GLADELWC072`; full console workspace behavior stays hosted-only. |
 | `lightning/actions` | Local event shim | Exports local `CloseActionScreenEvent` for quick-action flows. |
 | `lightning/alert` | Local overlay shim | `LightningAlert.open()` dispatches a browser event and resolves locally for package flows. |
 | `lightning/confirm` | Local confirm shim | `LightningConfirm.open()` dispatches a browser event and resolves `true` for local flows. |
@@ -92,10 +93,11 @@ diagnostics, route list, and service support.
 | `lightning/flowSupport` | Local event shim | Exports Flow screen attribute and navigation events used by flow-screen LWCs. |
 | `lightning/pageReferenceUtils` | Local helper shim | Exports default field value encode/decode helpers for navigation flows. |
 | `lightning/refresh` | Local in-page refresh registry | Exports `RefreshEvent`, handler/container registration, unregister helpers, and a local dispatch hook for shell tests. |
-| `lightning/empApi` | Local in-page pub/sub shim | Exports subscribe, unsubscribe, onError, debug flag, and enablement helpers without connecting to Salesforce streaming services. Tests can publish locally through the Glade test hook. |
+| `lightning/empApi` | Local in-page event bus | Exports subscribe, unsubscribe, onError, debug flag, and enablement helpers without connecting to Salesforce streaming services. Tests can publish locally through the Glade test hook. |
 | `lightning-base-components` package expose list | Local module support | All 118 public `lightning/*` names exposed by `lightning-base-components@1.28.19-alpha` resolve through `/lightning/shims/lightning/<name>.js` in the local server. Renderable base components use practical local implementations; service and helper modules use stable local shims. |
-| Common and expanded `lightning-*` base components | Practical local rendering | LWC shell and Visualforce Lightning Out where modules are served by the shared runtime. Coverage includes common inputs, button and icon-button variants, card title/actions/footer slots, layout alignment/sizing classes, formatted number styles, tabs, LDS-backed record forms, datatable row actions, tab active events, messages, icons, spinner, modal/body/header/footer, alert/prompt/toast surfaces, display/input/container components, barcode scanner, picklist, grouped combobox, lookup/address/name/location helpers, progress, tree/tree grid, map, carousel, vertical navigation variants, stacked tabs, and local overlay/popover containers. A small allowlist uses compiled open-source base component implementations instead of generated shims: `lightning-badge`, `lightning-breadcrumb`, `lightning-breadcrumbs`, `lightning-button-group`, `lightning-menu-subheader`, and `lightning-vertical-navigation-item`. |
+| Common and expanded `lightning-*` base components | Practical local rendering | LWC shell and Visualforce Lightning Out where modules are served by the shared runtime. Coverage includes common inputs, button and icon-button variants, card title/actions/footer slots, layout alignment/sizing classes, formatted number styles, tabs, LDS-backed record forms, input/output fields, datatable row actions, tab active events, messages, icons, spinner, modal/body/header/footer, alert/prompt/toast surfaces, display/input/container components, barcode scanner, picklist, grouped combobox, lookup/address/name/location helpers, progress, tree/tree grid, map, carousel, vertical navigation variants, stacked tabs, and local overlay/popover containers. A small allowlist uses compiled open-source base component implementations instead of generated shims: `lightning-badge`, `lightning-breadcrumb`, `lightning-breadcrumbs`, `lightning-button-group`, `lightning-menu-subheader`, and `lightning-vertical-navigation-item`. |
 | Packaged SLDS styling | Supported local | LWC shell and shared runtime pages load packaged SLDS 2 Cosmos by default. The runtime also serves SLDS 2 Lightning Blue, classic SLDS 1 CSS, local icon sprites, fonts, and referenced images from `/lightning/runtime/slds/`. |
+| Static resource subpaths | Local support with metadata limits | Root files, directories, and nested subpaths can be served from local static resources and loaded through resource URL imports or the platform resource loader. |
 
 ## Unsupported Or Limited
 
@@ -106,6 +108,8 @@ diagnostics, route list, and service support.
 | Unsupported quick action metadata | Reports `GLADELWC070`; unsupported action types report `GLADELWC015`. |
 | Invalid URL-addressable state | Reports `GLADELWC071`. |
 | Console workspace API | Approximated locally and marked with `GLADELWC072`. |
+| Local Flow shell | Hosts Flow screen LWCs and events. It is not Flow Builder and does not execute hosted Flow runtime behavior. |
+| Local EMP API | Deterministic in-page event simulation. It does not connect to Salesforce streaming services. |
 | Missing community context | Reports `GLADELWC100`. |
 | Unsupported local Experience Builder feature | Reports `GLADELWC101`. |
 | Missing community site or network ID | Reports `GLADELWC102`; related shims export empty strings. |
