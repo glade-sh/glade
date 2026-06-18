@@ -287,9 +287,9 @@ func TestLoadSkipsStaticResourceVendorTrees(t *testing.T) {
 func TestDiscoverProjectIncludesDirectoryStaticResourceContent(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "force-app/verifiable-app/main/staticresources/Bundle.resource-meta.xml"), "<StaticResource/>")
-	writeFile(t, filepath.Join(root, "force-app/verifiable-app/main/staticresources/Bundle/css/main.css"), "body{}")
-	writeFile(t, filepath.Join(root, "force-app/verifiable-app/main/staticresources/Bundle/scripts/NotAClass.cls"), "public class NotAClass {}")
+	writeFile(t, filepath.Join(root, "force-app/fixture-app/main/staticresources/Bundle.resource-meta.xml"), "<StaticResource/>")
+	writeFile(t, filepath.Join(root, "force-app/fixture-app/main/staticresources/Bundle/css/main.css"), "body{}")
+	writeFile(t, filepath.Join(root, "force-app/fixture-app/main/staticresources/Bundle/scripts/NotAClass.cls"), "public class NotAClass {}")
 
 	p, err := Load(root)
 	if err != nil {

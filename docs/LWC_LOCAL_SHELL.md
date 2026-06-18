@@ -394,12 +394,16 @@ and testable. Exact hosted keyboard behavior, overlay stacking, accessibility
 edge cases, and full Salesforce chrome still belong to a Salesforce browser
 check.
 
-A small allowlist uses compiled open-source base component implementations
-instead of generated shims: `lightning-badge`, `lightning-breadcrumb`,
-`lightning-breadcrumbs`, `lightning-button-group`,
-`lightning-menu-subheader`, and `lightning-vertical-navigation-item`.
-Additional source-backed components should be added one slice at a time after
-their compiled imports are checked for local-only browser-safe dependencies.
+A small allowlist uses compiled or source-backed base component
+implementations instead of generated shims: `lightning-badge`,
+`lightning-breadcrumb`, `lightning-breadcrumbs`, `lightning-button-group`,
+`lightning-datatable`, `lightning-input-field`, `lightning-messages`,
+`lightning-output-field`, `lightning-record-edit-form`,
+`lightning-record-form`, `lightning-record-picker`,
+`lightning-record-view-form`, `lightning-menu-subheader`, and
+`lightning-vertical-navigation-item`. Additional source-backed components
+should be added one slice at a time after their compiled imports are checked
+for local-only browser-safe dependencies.
 
 The checked `lwc-shell` fixture exposes an expanded base-component direct
 component context through `c:baseComponentHost` and `phase3BaseComponents`.
@@ -476,13 +480,11 @@ project LWC component names, project LWC component counts, and diffs.
 The current browser oracle lane proves the app page, custom tab, and
 URL-addressable component targets on both sides: local shell DOM and Salesforce
 DOM, selector-scoped comparison, zero browser console errors, and zero page
-errors. The app-page and custom-tab oracle deploys the `Lwc_Shell` app, assigns
-`Lwc_Shell_Access`, and opens `/lightning/app/c__Lwc_Shell/n/Lwc_Probe`.
-The 2026-06-17 `oaer-probe-max` run wrote
-`/tmp/glade-lwc-oaer-phase8-10-browser.json` with 3 pass and 0 fail. A broader
-deploy/prepared capture against the same scratch org wrote
-`/tmp/glade-lwc-oaer-phase8-10-capture.json` with 35 prepared targets across
-`lightning-shell` and `visualforce-lightning-out`.
+errors. The app-page and custom-tab oracle deploys the fixture app, assigns the
+fixture permission set, and opens the fixture Lightning app route. The latest
+external capture lane recorded 3 browser pass rows and 0 fail rows for the
+two-sided target set. A broader deploy/prepared capture recorded 35 prepared
+targets across `lightning-shell` and `visualforce-lightning-out`.
 Record pages need a real org record id and page activation. Quick actions need
 modal routing proof. Visualforce Lightning Out needs the Visualforce fixture
 pages deployed to the same org. Expanded base-component and community captures

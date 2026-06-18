@@ -10,7 +10,7 @@ This gate uses the private priority corpus only as verification material. Do not
 Default root:
 
 ```bash
-/Users/matt/.sf-repo-analysis/repos
+<local-corpus-root>
 ```
 
 Override root:
@@ -21,15 +21,15 @@ GLADE_LWC_CORPUS=/path/to/repos node scripts/dev/lwc-priority-corpus-audit.mjs
 
 ## Projects
 
-- `src-nbm-solhub-develop`
-- `src-nmb-namz-prog-develop`
-- `src-nmb-nc-develop`
-- `src-nmb-nu-develop`
-- `src-nmb-nudev-develop`
-- `src-nmb-nuq-develop`
-- `src-nmb-nutpl-develop`
-- `src-nmb-nutplx-master`
-- `sf-cred-pkg-develop`
+- `priority-project-a`
+- `priority-project-b`
+- `priority-project-c`
+- `priority-project-d`
+- `priority-project-e`
+- `priority-project-f`
+- `priority-project-g`
+- `priority-project-h`
+- `priority-project-i`
 
 ## Static Audit
 

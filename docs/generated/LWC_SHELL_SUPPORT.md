@@ -35,16 +35,16 @@ go run ./cmd/glade-plugin-compat lwc capture \
   --out /path/to/lwc-two-sided-browser-check.json
 ```
 
-Current `oaer-probe-max` wrap-up evidence from 2026-06-17:
+Current external wrap-up evidence from 2026-06-17:
 
 ```text
-/tmp/glade-lwc-oaer-phase8-10-capture.json
+fixture evidence capture
   mode: fixture-evidence-stubs
   deployed: true
   hosts: lightning-shell, visualforce-lightning-out
   counts: 35 targets, 35 prepared, 0 fail
 
-/tmp/glade-lwc-oaer-phase8-10-browser.json
+browser capture
   mode: browser-capture
   deployed: true
   counts: 3 targets, 3 pass, 0 fail
@@ -69,8 +69,8 @@ LWC shell target rows, Experience Cloud routes, package phase 1 base
 components, and expanded base components through Go and Playwright tests. The
 report stores stable paths only and does not write transient server URLs.
 Latest two-sided browser proof remains `app-page`, `custom-tab`, and
-`url-addressable-component` against both the local shell and `oaer-probe-max`,
-with no browser console errors or page errors. Each two-sided case includes a
+`url-addressable-component` against both the local shell and a Salesforce
+scratch org, with no browser console errors or page errors. Each two-sided case includes a
 selector-scoped `comparison` block for normalized visible text and project LWC
 component counts.
 The app-page target passes inside `c-wire-probe`, the custom-tab target passes

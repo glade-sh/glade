@@ -284,11 +284,13 @@ The LWC shell supports:
   by `lightning-base-components@1.28.19-alpha`: 118 module names checked from
   the npm package. Renderable components get local renderers; service and
   helper modules get local shims.
-- Source-backed local implementations for an allowlist of simple base
-  components: `lightning-badge`, `lightning-breadcrumb`,
-  `lightning-breadcrumbs`, `lightning-button-group`,
-  `lightning-menu-subheader`, and
-  `lightning-vertical-navigation-item`.
+- Source-backed local implementations for an allowlist of base components:
+  `lightning-badge`, `lightning-breadcrumb`, `lightning-breadcrumbs`,
+  `lightning-button-group`, `lightning-datatable`, `lightning-input-field`,
+  `lightning-messages`, `lightning-output-field`,
+  `lightning-record-edit-form`, `lightning-record-form`,
+  `lightning-record-picker`, `lightning-record-view-form`,
+  `lightning-menu-subheader`, and `lightning-vertical-navigation-item`.
 - Expanded checked `lightning-*` modules used by the checked LWC fixture,
   mounted through `c:baseComponentHost` and the `phase3BaseComponents`
   context. The set includes modal body/header/footer, alert/prompt/toast
@@ -329,13 +331,12 @@ only. It does not write frontdoor login URLs or one-time tokens. When both
 sides are captured, each case includes a selector-scoped comparison block for
 normalized visible text and project LWC component counts. The current oracle lane
 proves the app page, custom tab, and URL-addressable component targets on both
-sides. The app-page and custom-tab proof deploys the `Lwc_Shell` app, assigns
-`Lwc_Shell_Access`, and opens `/lightning/app/c__Lwc_Shell/n/Lwc_Probe`. Record
-pages, quick actions, and Visualforce Lightning Out need their org setup
-completed before they are strict browser-oracle targets. The 2026-06-17
-`oaer-probe-max` proof wrote `/tmp/glade-lwc-oaer-phase8-10-browser.json` with
-3 pass and 0 fail, and `/tmp/glade-lwc-oaer-phase8-10-capture.json` with 35
-prepared targets across `lightning-shell` and `visualforce-lightning-out`. The
+sides. The app-page and custom-tab proof deploys the fixture app, assigns the
+fixture permission set, and opens the fixture Lightning app route. Record pages,
+quick actions, and Visualforce Lightning Out need their org setup completed
+before they are strict browser-oracle targets. The latest external capture lane
+recorded 3 browser pass rows and 0 fail rows for the two-sided target set, plus
+35 prepared targets across `lightning-shell` and `visualforce-lightning-out`. The
 expanded base-component target has local browser proof through
 `test/base-components-expanded.test.mjs`; Salesforce DOM comparison remains a
 hosted follow-up. Community routes have local Go and Playwright runtime

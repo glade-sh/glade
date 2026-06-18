@@ -243,8 +243,8 @@ func TestLoadProjectDiscoversUnpackagedStaticResourceFiles(t *testing.T) {
 
 func TestLoadStaticResourcesKeepsDirectoryContentPath(t *testing.T) {
 	root := t.TempDir()
-	content := filepath.Join(root, "force-app/verifiable-app/main/staticresources/Bundle/css/main.css")
-	meta := filepath.Join(root, "force-app/verifiable-app/main/staticresources/Bundle.resource-meta.xml")
+	content := filepath.Join(root, "force-app/fixture-app/main/staticresources/Bundle/css/main.css")
+	meta := filepath.Join(root, "force-app/fixture-app/main/staticresources/Bundle.resource-meta.xml")
 	writeFile(t, content, "body{}")
 	writeFile(t, meta, `<StaticResource xmlns="http://soap.sforce.com/2006/04/metadata"><contentType>text/css</contentType></StaticResource>`)
 

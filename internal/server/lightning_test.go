@@ -317,8 +317,8 @@ func writeLightningFixtureFile(t *testing.T, path, content string) {
 func TestStaticResourceServesDirectorySubpathFromPackageRoot(t *testing.T) {
 	root := t.TempDir()
 	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeLightningFixtureFile(t, filepath.Join(root, "force-app/verifiable-app/main/staticresources/Verifiable_Assets.resource-meta.xml"), "<StaticResource/>")
-	writeLightningFixtureFile(t, filepath.Join(root, "force-app/verifiable-app/main/staticresources/Verifiable_Assets/css/main.css"), ".verifiable{}")
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/fixture-app/main/staticresources/Fixture_Assets.resource-meta.xml"), "<StaticResource/>")
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/fixture-app/main/staticresources/Fixture_Assets/css/main.css"), ".fixture{}")
 
 	p, err := project.Load(root)
 	if err != nil {
@@ -331,8 +331,8 @@ func TestStaticResourceServesDirectorySubpathFromPackageRoot(t *testing.T) {
 	org := storage.NewOrgState()
 	handler := NewWithSource(&org, source)
 	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/resource/Verifiable_Assets/css/main.css", nil))
-	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), ".verifiable") {
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/resource/Fixture_Assets/css/main.css", nil))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), ".fixture") {
 		t.Fatalf("status/body = %d %q", rec.Code, rec.Body.String())
 	}
 }

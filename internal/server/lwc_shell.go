@@ -149,7 +149,7 @@ func (s *Server) resolveLWCShellRequest(r *http.Request, parts []string) (lwcshe
 			return lwcshell.ShellPage{}, "", nil, fmt.Errorf("quick action preview requires object, record ID, and action name or global action name")
 		}
 		shell, diagnostics, err := lwcshell.ResolvePageTarget(s.Source.Project, ctx)
-		shell, diagnostics, err = s.validateLWCShellPageWithTarget(shell, diagnostics, err, "lightning__RecordAction")
+		shell, diagnostics, err = s.validateLWCShellPageWithTarget(shell, diagnostics, err, lwcShellTargetName(shell.Context.Kind))
 		return shell, "", diagnostics, err
 	case "app":
 		ctx.Kind = lwcshell.RenderTargetAppPage

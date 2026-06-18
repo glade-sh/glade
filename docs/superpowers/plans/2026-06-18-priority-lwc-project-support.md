@@ -14,20 +14,20 @@
 
 Priority project set:
 
-- `src-nbm-solhub-develop`
-- `src-nmb-namz-prog-develop`
-- `src-nmb-nc-develop`
-- `src-nmb-nu-develop`
-- `src-nmb-nudev-develop`
-- `src-nmb-nuq-develop`
-- `src-nmb-nutpl-develop`
-- `src-nmb-nutplx-master`
-- `sf-cred-pkg-develop`
+- `priority-project-a`
+- `priority-project-b`
+- `priority-project-c`
+- `priority-project-d`
+- `priority-project-e`
+- `priority-project-f`
+- `priority-project-g`
+- `priority-project-h`
+- `priority-project-i`
 
 Current static audit:
 
-- Four projects have no LWC files in the local corpus: `src-nmb-namz-prog-develop`, `src-nmb-nuq-develop`, `src-nmb-nutpl-develop`, `src-nmb-nutplx-master`.
-- Five projects contain LWC bundles: `src-nbm-solhub-develop`, `src-nmb-nc-develop`, `src-nmb-nu-develop`, `src-nmb-nudev-develop`, `sf-cred-pkg-develop`.
+- Four projects have no LWC files in the local corpus: `priority-project-b`, `priority-project-f`, `priority-project-g`, `priority-project-h`.
+- Five projects contain LWC bundles: `priority-project-a`, `priority-project-c`, `priority-project-d`, `priority-project-e`, `priority-project-i`.
 - No missing `lightning-*` tags or missing `lightning/*` imports appear in this project set.
 - The real gaps are behavior: static resource subpaths, datatable fidelity, record forms, UI API, Flow shell, Community shell, console workspace API, utility bar, message service, EMP API, Apex controller execution, and easy local context setup.
 
@@ -38,11 +38,11 @@ Current static audit:
 - Every supported target type in the five LWC projects has a generated context route: app page, record page, home page, tab, record action, utility bar, Community page, Flow screen, Flow action, and URL addressable.
 - The browser console has no uncaught import errors, missing static-resource 404s, or shell service crashes on generated routes.
 - Project-owned Apex controller imports call the local Apex runtime. Unsupported Apex language/runtime gaps surface as Apex diagnostics with class and method names, not browser module failures.
-- `sf-cred-pkg-develop` loads `Verifiable_Assets/css/main.css`, `Verifiable_Assets/js/chart.min.js`, and image subpaths from local static resources.
-- `src-nmb-nc-develop` Community pages and `lightning-flow` usage render in a Community shell with usable base path, guest/user state, route params, and Flow navigation events.
-- `src-nmb-nu-develop` UI API, datatable, Flow support, and platform resource loader usage render without shell-level failures.
-- `src-nbm-solhub-develop` app/tab pages and Apex-backed components render through generated app/tab contexts.
-- `src-nmb-nudev-develop` app pages and navigation usage render through generated app contexts.
+- `priority-project-i` loads `Fixture_Assets/css/main.css`, `Fixture_Assets/js/chart.min.js`, and image subpaths from local static resources.
+- `priority-project-c` Community pages and `lightning-flow` usage render in a Community shell with usable base path, guest/user state, route params, and Flow navigation events.
+- `priority-project-d` UI API, datatable, Flow support, and platform resource loader usage render without shell-level failures.
+- `priority-project-a` app/tab pages and Apex-backed components render through generated app/tab contexts.
+- `priority-project-e` app pages and navigation usage render through generated app contexts.
 - Public docs and site describe product capabilities without naming private corpus repos.
 
 ## Parallel Squad Layout
@@ -111,17 +111,17 @@ Create `scripts/dev/lwc-priority-corpus-audit.mjs` with this shape:
 import fs from "node:fs";
 import path from "node:path";
 
-const corpusRoot = process.env.GLADE_LWC_CORPUS || "/Users/matt/.sf-repo-analysis/repos";
+const corpusRoot = process.env.GLADE_LWC_CORPUS || "<local-corpus-root>";
 const repos = [
-  "src-nbm-solhub-develop",
-  "src-nmb-namz-prog-develop",
-  "src-nmb-nc-develop",
-  "src-nmb-nu-develop",
-  "src-nmb-nudev-develop",
-  "src-nmb-nuq-develop",
-  "src-nmb-nutpl-develop",
-  "src-nmb-nutplx-master",
-  "sf-cred-pkg-develop",
+  "priority-project-a",
+  "priority-project-b",
+  "priority-project-c",
+  "priority-project-d",
+  "priority-project-e",
+  "priority-project-f",
+  "priority-project-g",
+  "priority-project-h",
+  "priority-project-i",
 ];
 
 function walk(dir, out = []) {
@@ -171,8 +171,8 @@ Create `scripts/dev/lwc-priority-corpus-smoke.mjs`:
 import { spawn } from "node:child_process";
 import path from "node:path";
 
-const corpusRoot = process.env.GLADE_LWC_CORPUS || "/Users/matt/.sf-repo-analysis/repos";
-const projects = ["src-nbm-solhub-develop", "src-nmb-nc-develop", "src-nmb-nu-develop", "src-nmb-nudev-develop", "sf-cred-pkg-develop"];
+const corpusRoot = process.env.GLADE_LWC_CORPUS || "<local-corpus-root>";
+const projects = ["priority-project-a", "priority-project-c", "priority-project-d", "priority-project-e", "priority-project-i"];
 const basePort = Number(process.env.GLADE_LWC_SMOKE_PORT || 18080);
 
 function run(project, port) {
@@ -217,8 +217,8 @@ Add a test in `internal/project/project_test.go`:
 ```go
 func TestDiscoverProjectIncludesDirectoryStaticResourceContent(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "force-app/verifiable-app/main/staticresources/Bundle.resource-meta.xml"), "<StaticResource/>")
-	writeFile(t, filepath.Join(root, "force-app/verifiable-app/main/staticresources/Bundle/css/main.css"), "body{}")
+	writeFile(t, filepath.Join(root, "force-app/fixture-app/main/staticresources/Bundle.resource-meta.xml"), "<StaticResource/>")
+	writeFile(t, filepath.Join(root, "force-app/fixture-app/main/staticresources/Bundle/css/main.css"), "body{}")
 
 	p, err := Discover(root)
 	if err != nil {
@@ -272,8 +272,8 @@ Add a test in `internal/resource/resource_test.go`:
 ```go
 func TestLoadStaticResourcesKeepsDirectoryContentPath(t *testing.T) {
 	root := t.TempDir()
-	content := filepath.Join(root, "force-app/verifiable-app/main/staticresources/Bundle/css/main.css")
-	meta := filepath.Join(root, "force-app/verifiable-app/main/staticresources/Bundle.resource-meta.xml")
+	content := filepath.Join(root, "force-app/fixture-app/main/staticresources/Bundle/css/main.css")
+	meta := filepath.Join(root, "force-app/fixture-app/main/staticresources/Bundle.resource-meta.xml")
 	writeFile(t, content, "body{}")
 	writeFile(t, meta, `<StaticResource xmlns="http://soap.sforce.com/2006/04/metadata"><contentType>text/css</contentType></StaticResource>`)
 
@@ -318,13 +318,13 @@ Add a test in `internal/server/lightning_test.go`:
 ```go
 func TestStaticResourceServesDirectorySubpathFromPackageRoot(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "force-app/verifiable-app/main/staticresources/Verifiable_Assets.resource-meta.xml"), "<StaticResource/>")
-	writeFile(t, filepath.Join(root, "force-app/verifiable-app/main/staticresources/Verifiable_Assets/css/main.css"), ".verifiable{}")
+	writeFile(t, filepath.Join(root, "force-app/fixture-app/main/staticresources/Fixture_Assets.resource-meta.xml"), "<StaticResource/>")
+	writeFile(t, filepath.Join(root, "force-app/fixture-app/main/staticresources/Fixture_Assets/css/main.css"), ".fixture{}")
 
 	srv := newTestServerWithProject(t, root)
 	rec := httptest.NewRecorder()
-	srv.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/resource/Verifiable_Assets/css/main.css", nil))
-	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), ".verifiable") {
+	srv.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/resource/Fixture_Assets/css/main.css", nil))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), ".fixture") {
 		t.Fatalf("status/body = %d %q", rec.Code, rec.Body.String())
 	}
 }
@@ -1094,12 +1094,12 @@ console.log([...imports.entries()].sort((a, b) => b[1] - a[1]).map(([name, count
 Run:
 
 ```bash
-for repo in src-nbm-solhub-develop src-nmb-nc-develop src-nmb-nu-develop src-nmb-nudev-develop sf-cred-pkg-develop; do
-  node scripts/dev/lwc-apex-import-inventory.mjs "/Users/matt/.sf-repo-analysis/repos/$repo" > "/tmp/$repo.apex-imports.json"
+for repo in priority-project-a priority-project-c priority-project-d priority-project-e priority-project-i; do
+  node scripts/dev/lwc-apex-import-inventory.mjs "<local-corpus-root>/$repo" > "/tmp/$repo.apex-imports.json"
 done
 ```
 
-Expected: JSON files listing Apex controller methods. `sf-cred-pkg-develop` should be the largest.
+Expected: JSON files listing Apex controller methods. `priority-project-i` should be the largest.
 
 - [ ] **Step 3: Harden Apex invocation diagnostics**
 
@@ -1365,7 +1365,7 @@ Document limits in product terms:
 Run:
 
 ```bash
-rg -n 'src-nbm|src-nmb|sf-cred|/Users/matt/.sf-repo-analysis' docs site/docs-src
+rg -n 'private-corpus-markers' docs site/docs-src
 ```
 
 Expected: no matches outside internal superpowers plan files.
@@ -1428,26 +1428,26 @@ node scripts/dev/lwc-priority-browser-smoke.mjs \
 
 ```bash
 git diff --check
-rg -n 'src-nbm|src-nmb|sf-cred|/Users/matt/.sf-repo-analysis' docs site/docs-src --glob '!docs/superpowers/plans/**'
+rg -n 'private-corpus-markers' docs site/docs-src --glob '!docs/superpowers/plans/**'
 ```
 
 Expected: no output from `git diff --check`; no public docs/site matches for private corpus names.
 
 ## Project-by-Project Exit Criteria
 
-### `src-nbm-solhub-develop`
+### `priority-project-a`
 
 - App page route loads.
 - Tab route loads.
 - Navigation calls produce local URLs.
 - All 8 unique Apex methods either return data or show Apex-runtime diagnostics with class/method names.
 
-### `src-nmb-namz-prog-develop`
+### `priority-project-b`
 
 - Static audit reports zero LWC bundles.
 - No LWC support work remains for this project.
 
-### `src-nmb-nc-develop`
+### `priority-project-c`
 
 - Community pages load under `/lwc/preview/community/<site>/<page>`.
 - `@salesforce/community/basePath`, `@salesforce/user/Id`, and resource URLs resolve.
@@ -1455,39 +1455,39 @@ Expected: no output from `git diff --check`; no public docs/site matches for pri
 - Flow navigation events appear in diagnostics.
 - Product grid/product detail Apex calls reach local Apex runtime.
 
-### `src-nmb-nu-develop`
+### `priority-project-d`
 
 - Record pages, app pages, home pages, Flow screens, Flow action, and Community pages have generated routes.
 - `lightning/uiRecordApi` and `lightning/uiObjectInfoApi` calls return LDS-shaped data.
-- `NimbleAmsAnimations.css` and `NPSTodayPopupBundle.zip` subpaths serve where referenced.
+- `PackageAmsAnimations.css` and `NPSTodayPopupBundle.zip` subpaths serve where referenced.
 - Datatables render row actions and editable cells.
 
-### `src-nmb-nudev-develop`
+### `priority-project-e`
 
 - App page routes load.
 - Navigation calls produce local URLs.
 - All Apex imports reach local Apex runtime.
 
-### `src-nmb-nuq-develop`
+### `priority-project-f`
 
 - Static audit reports zero LWC bundles.
 - No LWC support work remains for this project.
 
-### `src-nmb-nutpl-develop`
+### `priority-project-g`
 
 - Static audit reports zero LWC bundles.
 - No LWC support work remains for this project.
 
-### `src-nmb-nutplx-master`
+### `priority-project-h`
 
 - Static audit reports zero LWC bundles.
 - No LWC support work remains for this project.
 
-### `sf-cred-pkg-develop`
+### `priority-project-i`
 
 - Landing page lists all 253 LWC bundles.
 - Record pages, record actions, tabs, app pages, home pages, URL addressable routes, and utility-bar routes load.
-- `Verifiable_Assets/css/main.css`, `Verifiable_Assets/js/chart.min.js`, SVG images, `verifiableLogo`, and `verifiableIcon` serve without 404.
+- `Fixture_Assets/css/main.css`, `Fixture_Assets/js/chart.min.js`, SVG images, `fixtureLogo`, and `fixtureIcon` serve without 404.
 - Record forms and input fields render with LDS data, validation, reset, and save behavior.
 - Datatables render custom columns, row actions, selection, inline draft values, and sorted events.
 - `messageService`, `empApi`, `platformWorkspaceApi`, and `platformResourceLoader` calls run without shell-level crashes.

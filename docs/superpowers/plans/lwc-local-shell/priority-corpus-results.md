@@ -18,15 +18,15 @@ Current expectation:
 
 | Project | LWC files | Apex classes | Static resource files | Route smoke status | Failures |
 | --- | ---: | ---: | ---: | --- | --- |
-| `src-nbm-solhub-develop` | 28 | 16 | 0 | root page passed | none on root page |
-| `src-nmb-namz-prog-develop` | 0 | 66 | 0 | not applicable | none expected |
-| `src-nmb-nc-develop` | 138 | 2419 | 87 | root page passed | none on root page |
-| `src-nmb-nu-develop` | 239 | 2899 | 157 | root page passed | none on root page |
-| `src-nmb-nudev-develop` | 14 | 38 | 6 | root page passed | none on root page |
-| `src-nmb-nuq-develop` | 0 | 126 | 11 | not applicable | none expected |
-| `src-nmb-nutpl-develop` | 0 | 134 | 463 | not applicable | none expected |
-| `src-nmb-nutplx-master` | 0 | 17 | 2 | not applicable | none expected |
-| `sf-cred-pkg-develop` | 1005 | 2164 | 36 | root page passed | none on root page |
+| `priority-project-a` | 28 | 16 | 0 | root page passed | none on root page |
+| `priority-project-b` | 0 | 66 | 0 | not applicable | none expected |
+| `priority-project-c` | 138 | 2419 | 87 | root page passed | none on root page |
+| `priority-project-d` | 239 | 2899 | 157 | root page passed | none on root page |
+| `priority-project-e` | 14 | 38 | 6 | root page passed | none on root page |
+| `priority-project-f` | 0 | 126 | 11 | not applicable | none expected |
+| `priority-project-g` | 0 | 134 | 463 | not applicable | none expected |
+| `priority-project-h` | 0 | 17 | 2 | not applicable | none expected |
+| `priority-project-i` | 1005 | 2164 | 36 | root page passed | none on root page |
 
 ## Browser Smoke Commands
 

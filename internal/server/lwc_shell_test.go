@@ -1220,6 +1220,44 @@ export default class ActionProbe extends LightningElement {}`)
 	}
 }
 
+func TestResolveLWCShellRequestServesFlowAction(t *testing.T) {
+	root := t.TempDir()
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/quickActions/Account.Start_Flow.quickAction-meta.xml", `<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <label>Start Flow</label>
+	  <type>LightningComponent</type>
+	  <targetObject>Account</targetObject>
+	  <actionSubtype>FlowAction</actionSubtype>
+	  <lightningComponent>c:flowActionProbe</lightningComponent>
+	</QuickAction>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/flowActionProbe/flowActionProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+	  <isExposed>true</isExposed>
+	  <targets><target>lightning__FlowAction</target></targets>
+	</LightningComponentBundle>`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/flowActionProbe/flowActionProbe.js", `import { LightningElement } from 'lwc';
+export default class FlowActionProbe extends LightningElement {}`)
+	writeLWCShellServerTestFile(t, root, "force-app/main/default/lwc/flowActionProbe/flowActionProbe.html", `<template><p>flow action</p></template>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	shell, _, diagnostics, err := handler.resolveLWCShellRequest(httptest.NewRequest(http.MethodGet, "/lwc/preview/action/Account/001000000000001AAA/Start_Flow", nil), []string{"action", "Account", "001000000000001AAA", "Start_Flow"})
+	if err != nil {
+		t.Fatalf("resolve error = %v diagnostics=%#v", err, diagnostics)
+	}
+	if shell.Context.Kind != lwcshell.RenderTargetFlowAction || shell.Context.ActionType != "FlowAction" {
+		t.Fatalf("context = %#v", shell.Context)
+	}
+	mounts := lwcShellMounts(shell)
+	if len(mounts) != 1 || mounts[0].Qualified != "c:flowActionProbe" {
+		t.Fatalf("mounts = %#v", mounts)
+	}
+	if mounts[0].Attrs["actionType"] != "FlowAction" {
+		t.Fatalf("attrs = %#v", mounts[0].Attrs)
+	}
+}
+
 func TestResolveLWCShellRequestServesGlobalQuickAction(t *testing.T) {
 	root := t.TempDir()
 	writeLWCShellServerTestFile(t, root, "force-app/main/default/quickActions/Global_Status.quickAction-meta.xml", `<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
