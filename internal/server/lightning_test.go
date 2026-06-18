@@ -1,6 +1,7 @@
 package server
 
 import (
+	"archive/zip"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -333,6 +334,56 @@ func TestStaticResourceServesDirectorySubpathFromPackageRoot(t *testing.T) {
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/resource/Verifiable_Assets/css/main.css", nil))
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), ".verifiable") {
 		t.Fatalf("status/body = %d %q", rec.Code, rec.Body.String())
+	}
+}
+
+func TestStaticResourceServesZipSubpathFromPackageRoot(t *testing.T) {
+	root := t.TempDir()
+	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "src/staticresources/Bundle.resource-meta.xml"), "<StaticResource/>")
+	writeLightningStaticResourceZip(t, filepath.Join(root, "src/staticresources/Bundle.resource"), map[string]string{
+		"css/site.css": "body { color: steelblue; }",
+	})
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	handler := NewWithSource(&org, source)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/resource/Bundle/css/site.css", nil))
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "steelblue") {
+		t.Fatalf("status/body = %d %q", rec.Code, rec.Body.String())
+	}
+}
+
+func writeLightningStaticResourceZip(t *testing.T, path string, entries map[string]string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	writer := zip.NewWriter(file)
+	for name, content := range entries {
+		entry, err := writer.Create(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := entry.Write([]byte(content)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
 	}
 }
 

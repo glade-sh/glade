@@ -84,6 +84,11 @@ func (s *Server) lookupStaticResource(name, subpath string) (path string, conten
 		if ok && strings.EqualFold(resourceName, name) && subpath != "" && cleanResourceSubpath(resourceSubpath) == cleanResourceSubpath(subpath) {
 			return path, "", true
 		}
+		if ok && strings.EqualFold(resourceName, name) && resourceSubpath == "" && subpath != "" {
+			if resolved, err := visualforce.ResolveStaticResourceContentPath(path, resourceName, subpath); err == nil {
+				return resolved, "", true
+			}
+		}
 	}
 	if s.Source.Project.Root != "" {
 		if resolved, err := visualforce.ResolveStaticResourceFile(s.Source.Project.Root, name, subpath); err == nil {
@@ -129,6 +134,9 @@ func staticResourceSubpath(resource storage.StaticResourceMetadata, subpath stri
 	}
 	if resource.ContentPath == "" {
 		return "", false
+	}
+	if resolved, err := visualforce.ResolveStaticResourceContentPath(resource.ContentPath, resource.Name, subpath); err == nil {
+		return resolved, true
 	}
 	root := filepath.Clean(resource.ContentPath)
 	info, err := os.Stat(root)
