@@ -13,15 +13,17 @@ import (
 )
 
 type refactorRenameFlags struct {
-	root    string
-	symbol  string
-	file    string
-	line    int
-	column  int
-	to      string
-	write   bool
-	dryRun  bool
-	jsonOut bool
+	root         string
+	symbol       string
+	file         string
+	line         int
+	column       int
+	to           string
+	write        bool
+	dryRun       bool
+	jsonOut      bool
+	full         bool
+	progressMode cliui.ProgressMode
 }
 
 type refactorRenameData struct {
@@ -41,24 +43,25 @@ type refactorRenameEditSummary struct {
 	Replacement string `json:"replacement"`
 }
 
-func runRefactor(args []string, w io.Writer) error {
+func runRefactor(args []string, w io.Writer, progressW io.Writer) error {
 	if len(args) == 0 {
 		return errors.New("usage: glade refactor rename --project <root> --symbol <name> --to <name> [--dry-run|--write] [--json]")
 	}
 	switch args[0] {
 	case "rename":
-		return runRefactorRename(args[1:], w)
+		return runRefactorRename(args[1:], w, progressW)
 	default:
 		return fmt.Errorf("unknown refactor command %q", args[0])
 	}
 }
 
-func runRefactorRename(args []string, w io.Writer) error {
+func runRefactorRename(args []string, w io.Writer, progressW io.Writer) error {
 	flags, err := parseRefactorRenameFlags(args)
 	if err != nil {
 		return err
 	}
-	index, err := loadIndex(flags.root)
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: flags.progressMode})
+	_, index, err := loadProjectIndexWithProgress(flags.root, "refactor rename", renderer)
 	if err != nil {
 		return err
 	}
@@ -76,11 +79,13 @@ func runRefactorRename(args []string, w io.Writer) error {
 	plan.DryRun = flags.dryRun
 	if flags.write {
 		if err := refactor.Apply(plan); err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "refactor failed"})
 			return err
 		}
 	}
 	data := refactorRenamePlanData(plan)
 	if flags.jsonOut {
+		renderer.Finish(cliui.Result{OK: true, Label: "refactor complete"})
 		return writeCLIJSONEnvelope(w, cliJSONEnvelope{
 			Command:  "refactor rename",
 			Status:   "passed",
@@ -89,7 +94,8 @@ func runRefactorRename(args []string, w io.Writer) error {
 			Data:     data,
 		})
 	}
-	writeRefactorRenameText(w, data)
+	writeRefactorRenameText(w, data, flags.full)
+	renderer.Finish(cliui.Result{OK: true, Label: "refactor complete"})
 	return nil
 }
 
@@ -103,7 +109,12 @@ func parseRefactorRenameFlags(args []string) (refactorRenameFlags, error) {
 		String("to", "").
 		Bool("dry-run", "").
 		Bool("write", "").
+		Bool("full", "").
 		Bool("json", "j").
+		Bool("progress", "").
+		Bool("progress-json", "").
+		Bool("no-progress", "").
+		Bool("quiet", "q").
 		Parse(args)
 	if err != nil {
 		return refactorRenameFlags{}, err
@@ -126,7 +137,9 @@ func parseRefactorRenameFlags(args []string) (refactorRenameFlags, error) {
 		write:   parsed.Bool("write"),
 		dryRun:  !parsed.Bool("write"),
 		jsonOut: parsed.Bool("json"),
+		full:    parsed.Bool("full"),
 	}
+	flags.progressMode = progressModeForFlags(flags.jsonOut, parsed.Bool("progress"), parsed.Bool("progress-json"), parsed.Bool("no-progress") || parsed.Bool("quiet"))
 	if parsed.String("project") != "" {
 		flags.root = parsed.String("project")
 	}
@@ -182,7 +195,7 @@ func refactorRenamePlanData(plan refactor.RenamePlan) refactorRenameData {
 	}
 }
 
-func writeRefactorRenameText(w io.Writer, data refactorRenameData) {
+func writeRefactorRenameText(w io.Writer, data refactorRenameData, full bool) {
 	fmt.Fprintln(w, "Rename")
 	fmt.Fprintf(w, "  symbol: %s\n", data.Symbol)
 	fmt.Fprintf(w, "  from: %s\n", data.From)
@@ -193,7 +206,15 @@ func writeRefactorRenameText(w io.Writer, data refactorRenameData) {
 		fmt.Fprintln(w, "  mode: write")
 	}
 	fmt.Fprintf(w, "  edits: %d\n", data.Count)
-	for _, edit := range data.Edits {
+	budget := cliui.OutputBudget{}
+	visible := budget.VisibleCount(len(data.Edits))
+	if full {
+		visible = len(data.Edits)
+	}
+	for _, edit := range data.Edits[:visible] {
 		fmt.Fprintf(w, "  %s:%d:%d %s -> %s\n", edit.File, edit.Line, edit.Column, edit.Original, edit.Replacement)
+	}
+	if omitted := len(data.Edits) - visible; omitted > 0 {
+		fmt.Fprintf(w, "  ... %d more edits omitted. Use --full for complete output.\n", omitted)
 	}
 }

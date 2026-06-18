@@ -9,11 +9,12 @@ import (
 type ProgressMode string
 
 const (
-	ProgressAuto ProgressMode = "auto"
-	ProgressTTY  ProgressMode = "tty"
-	ProgressLine ProgressMode = "line"
-	ProgressJSON ProgressMode = "json"
-	ProgressOff  ProgressMode = "off"
+	ProgressAuto    ProgressMode = "auto"
+	ProgressTTY     ProgressMode = "tty"
+	ProgressVisible ProgressMode = "visible"
+	ProgressLine    ProgressMode = "line"
+	ProgressJSON    ProgressMode = "json"
+	ProgressOff     ProgressMode = "off"
 )
 
 type Clock interface {
@@ -49,6 +50,11 @@ func NewRenderer(opts RendererOptions) Renderer {
 		return NewNDJSONRenderer(opts.Stderr)
 	case ProgressTTY:
 		return NewTTYRenderer(opts.Stderr, opts.Clock)
+	case ProgressVisible:
+		if IsTerminalWriter(opts.Stderr) {
+			return NewTTYRenderer(opts.Stderr, opts.Clock)
+		}
+		return NewLineRenderer(opts.Stderr, opts.Clock)
 	case ProgressLine:
 		return NewLineRenderer(opts.Stderr, opts.Clock)
 	case ProgressAuto, "":

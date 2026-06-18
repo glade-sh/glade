@@ -26,19 +26,19 @@ import (
 	"github.com/glade-sh/glade/internal/watch"
 )
 
-func runDev(ctx context.Context, args []string, w io.Writer) (testreport.Run, bool, error) {
+func runDev(ctx context.Context, args []string, w io.Writer, progressW io.Writer) (testreport.Run, bool, error) {
 	if len(args) > 0 {
 		switch args[0] {
 		case "test":
-			result, err := runDevTest(ctx, args[1:], w)
+			result, err := runDevTest(ctx, args[1:], w, progressW)
 			return result, true, err
 		case "watch":
-			result, err := runDevTest(ctx, append(args[1:], "--watch"), w)
+			result, err := runDevTest(ctx, append(args[1:], "--watch"), w, progressW)
 			return result, true, err
 		case "vf":
-			return testreport.Run{}, false, runDevVF(ctx, args[1:], w)
+			return testreport.Run{}, false, runDevVF(ctx, args[1:], w, progressW)
 		case "lwc":
-			return testreport.Run{}, false, runDevLWC(ctx, args[1:], w)
+			return testreport.Run{}, false, runDevLWC(ctx, args[1:], w, progressW)
 		case "help", "-h", "--help":
 			printDevHelp(w)
 			return testreport.Run{}, false, nil
@@ -154,7 +154,7 @@ func countDevApexTypes(index typesys.Index) (classes int, tests int) {
 	return classes, tests
 }
 
-func runDevTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, error) {
+func runDevTest(ctx context.Context, args []string, w io.Writer, progressW io.Writer) (testreport.Run, error) {
 	root := "."
 	outRoot := filepath.Join(".glade", "runs")
 	filter := ""
@@ -162,6 +162,7 @@ func runDevTest(ctx context.Context, args []string, w io.Writer) (testreport.Run
 	failed := false
 	watchMode := false
 	watchOnce := false
+	progressArgs := []string{}
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--project":
@@ -198,6 +199,8 @@ func runDevTest(ctx context.Context, args []string, w io.Writer) (testreport.Run
 		case "--watch-once":
 			watchMode = true
 			watchOnce = true
+		case "--progress", "--progress-json", "--no-progress", "--quiet":
+			progressArgs = append(progressArgs, args[i])
 		default:
 			return testreport.Run{}, fmt.Errorf("unknown flag %q", args[i])
 		}
@@ -223,7 +226,8 @@ func runDevTest(ctx context.Context, args []string, w io.Writer) (testreport.Run
 	if changed {
 		testArgs = append(testArgs, "--changed-since", "HEAD")
 	}
-	result, err := runTest(ctx, testArgs, io.Discard, nil)
+	testArgs = append(testArgs, progressArgs...)
+	result, err := runTest(ctx, testArgs, io.Discard, progressW)
 	if err != nil {
 		return result, err
 	}
@@ -350,13 +354,13 @@ func watchDisplayRoot(root string) string {
 	return filepath.Base(filepath.Clean(root))
 }
 
-func runReport(ctx context.Context, args []string, w io.Writer) error {
+func runReport(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	if len(args) == 0 || isHelpArg(args[0]) {
 		return errors.New("usage: glade report assess|cruft|refactor-proof|list|show latest|export latest|clean")
 	}
 	switch args[0] {
 	case "assess", "cruft", "refactor-proof":
-		return runEnterpriseReport(ctx, args[0], args[1:], w)
+		return runEnterpriseReport(ctx, args[0], args[1:], w, progressW)
 	case "list":
 		runsDir, err := parseReportRunsDirArgs(args[1:])
 		if err != nil {

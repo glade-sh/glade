@@ -85,7 +85,7 @@ func progressModeForFlags(jsonOut, progress, progressJSON, noProgress bool) cliu
 	case progressJSON:
 		return cliui.ProgressJSON
 	case progress:
-		return cliui.ProgressLine
+		return cliui.ProgressVisible
 	case noProgress || jsonOut:
 		return cliui.ProgressOff
 	default:
@@ -237,7 +237,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		}
 		return 0
 	case "inspect":
-		index, err := runInspect(ctx, args[1:], stdout)
+		index, err := runInspect(ctx, args[1:], stdout, stderr)
 		if err != nil {
 			writeCommandError(stderr, args[0], err)
 			return 1
@@ -280,7 +280,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		}
 		return 0
 	case "dev":
-		result, ranTests, err := runDev(ctx, args[1:], stdout)
+		result, ranTests, err := runDev(ctx, args[1:], stdout, stderr)
 		if err != nil {
 			writeCommandError(stderr, args[0], err)
 			return 1
@@ -293,13 +293,13 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		}
 		return 0
 	case "report":
-		if err := runReport(ctx, args[1:], stdout); err != nil {
+		if err := runReport(ctx, args[1:], stdout, stderr); err != nil {
 			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		return 0
 	case "refactor":
-		if err := runRefactor(args[1:], stdout); err != nil {
+		if err := runRefactor(args[1:], stdout, stderr); err != nil {
 			writeCommandError(stderr, args[0], err)
 			return 1
 		}
@@ -317,7 +317,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		}
 		return 0
 	case "debug":
-		if err := runDebug(ctx, args[1:], stdout); err != nil {
+		if err := runDebug(ctx, args[1:], stdout, stderr); err != nil {
 			writeCommandError(stderr, args[0], err)
 			return 1
 		}
@@ -341,19 +341,19 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 		}
 		return 0
 	case "server":
-		if err := runServer(ctx, args[1:], stdout); err != nil {
+		if err := runServer(ctx, args[1:], stdout, stderr); err != nil {
 			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		return 0
 	case "org":
-		if err := runOrg(ctx, args[1:], stdout); err != nil {
+		if err := runOrg(ctx, args[1:], stdout, stderr); err != nil {
 			writeCommandError(stderr, args[0], err)
 			return 1
 		}
 		return 0
 	case "playground":
-		if err := runPlayground(ctx, args[1:], stdout); err != nil {
+		if err := runPlayground(ctx, args[1:], stdout, stderr); err != nil {
 			writeCommandError(stderr, args[0], err)
 			return 1
 		}
@@ -976,7 +976,7 @@ func runParse(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 	return result, nil
 }
 
-func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index, error) {
+func runInspect(ctx context.Context, args []string, w io.Writer, progressW io.Writer) (typesys.Index, error) {
 	if err := ctx.Err(); err != nil {
 		return typesys.Index{}, err
 	}
@@ -984,13 +984,13 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 		return typesys.Index{}, errors.New(inspectUsage())
 	}
 	if args[0] == "graph" {
-		return typesys.Index{}, runInspectGraph(ctx, args[1:], w)
+		return typesys.Index{}, runInspectGraph(ctx, args[1:], w, progressW)
 	}
 	if args[0] == "definition" {
-		return typesys.Index{}, runInspectDefinition(ctx, args[1:], w)
+		return typesys.Index{}, runInspectDefinition(ctx, args[1:], w, progressW)
 	}
 	if args[0] == "references" {
-		return typesys.Index{}, runInspectReferences(ctx, args[1:], w)
+		return typesys.Index{}, runInspectReferences(ctx, args[1:], w, progressW)
 	}
 	if args[0] != "symbols" {
 		if args[0] == "performance" {
@@ -1000,21 +1000,18 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 		return typesys.Index{}, errors.New(inspectUsage())
 	}
 
-	root, jsonOut, fullPaths, kindFilter, err := parseInspectSymbolsFlags(args[1:])
+	root, jsonOut, fullPaths, kindFilter, progressMode, err := parseInspectSymbolsFlags(args[1:])
 	if err != nil {
 		return typesys.Index{}, err
 	}
-	p, err := project.Load(root)
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: progressMode})
+	_, index, err := loadProjectIndexWithProgress(root, "inspect symbols", renderer)
 	if err != nil {
 		return typesys.Index{}, err
 	}
-	s, err := gladeschema.LoadProject(p)
-	if err != nil {
-		return typesys.Index{}, err
-	}
-	index := typesys.Build(p, s)
 
 	if jsonOut {
+		renderer.Finish(cliui.Result{OK: !index.HasErrors(), Label: "inspect complete", ExitCode: exitCodeForOK(!index.HasErrors())})
 		return index, writeCLIJSONEnvelope(w, cliJSONEnvelope{
 			Command:     "inspect symbols",
 			Status:      statusForOK(!index.HasErrors()),
@@ -1040,6 +1037,7 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Symbols:")
 	fmt.Fprintln(w, "  Kind     Name             File")
+	symbolRows := []string{}
 	for _, typ := range index.Types {
 		if kindFilter != "" && kindFilter != string(typ.Kind) {
 			continue
@@ -1048,7 +1046,7 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 		if !fullPaths {
 			file = cliui.ProjectRelativePath(index.Project.Root, file)
 		}
-		fmt.Fprintf(w, "  %-8s %-16s %s\n", typ.Kind, typ.Name, file)
+		symbolRows = append(symbolRows, fmt.Sprintf("  %-8s %-16s %s", typ.Kind, typ.Name, file))
 	}
 	for _, trigger := range index.Triggers {
 		if kindFilter != "" && kindFilter != "trigger" {
@@ -1058,19 +1056,28 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 		if !fullPaths {
 			file = cliui.ProjectRelativePath(index.Project.Root, file)
 		}
-		fmt.Fprintf(w, "  %-8s %-16s %s\n", "trigger", trigger.Name, file)
+		symbolRows = append(symbolRows, fmt.Sprintf("  %-8s %-16s %s", "trigger", trigger.Name, file))
 	}
 	for _, object := range index.Objects {
 		if kindFilter != "" && kindFilter != "object" && kindFilter != "sobject" {
 			continue
 		}
-		fmt.Fprintf(w, "  %-8s %-16s %s\n", "object", object.Name, "local schema")
+		symbolRows = append(symbolRows, fmt.Sprintf("  %-8s %-16s %s", "object", object.Name, "local schema"))
+	}
+	budget := cliui.OutputBudget{}
+	visible := budget.VisibleCount(len(symbolRows))
+	for _, row := range symbolRows[:visible] {
+		fmt.Fprintln(w, row)
+	}
+	if omitted := budget.OmittedCount(len(symbolRows)); omitted > 0 {
+		fmt.Fprintf(w, "  ... %d more symbols omitted. Use `glade inspect symbols --project . --json` for complete output.\n", omitted)
 	}
 	if len(index.Diagnostics) > 0 {
 		fmt.Fprintln(w)
 		_ = diagnostic.Report{Diagnostics: index.Diagnostics}.WriteText(w)
 		fmt.Fprintln(w)
 	}
+	renderer.Finish(cliui.Result{OK: !index.HasErrors(), Label: "inspect complete", ExitCode: exitCodeForOK(!index.HasErrors())})
 	return index, nil
 }
 
@@ -1079,12 +1086,13 @@ func inspectUsage() string {
 }
 
 type inspectDefinitionFlags struct {
-	root    string
-	symbol  string
-	file    string
-	line    int
-	column  int
-	jsonOut bool
+	root         string
+	symbol       string
+	file         string
+	line         int
+	column       int
+	jsonOut      bool
+	progressMode cliui.ProgressMode
 }
 
 type inspectReferencesFlags struct {
@@ -1092,6 +1100,7 @@ type inspectReferencesFlags struct {
 	symbol             string
 	jsonOut            bool
 	includeDeclaration bool
+	progressMode       cliui.ProgressMode
 }
 
 type inspectDefinitionData struct {
@@ -1125,7 +1134,7 @@ type inspectIntelligenceUse struct {
 	Range  diagnostic.Range  `json:"range"`
 }
 
-func runInspectDefinition(ctx context.Context, args []string, w io.Writer) error {
+func runInspectDefinition(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -1133,7 +1142,8 @@ func runInspectDefinition(ctx context.Context, args []string, w io.Writer) error
 	if err != nil {
 		return err
 	}
-	index, graph, _, err := buildInspectCodeIntel(flags.root)
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: flags.progressMode})
+	index, graph, _, err := buildInspectCodeIntelWithProgress(flags.root, "inspect definition", renderer)
 	if err != nil {
 		return err
 	}
@@ -1146,6 +1156,7 @@ func runInspectDefinition(ctx context.Context, args []string, w io.Writer) error
 		Definition: inspectSymbolJSON(index.Project.Root, symbol),
 	}
 	if flags.jsonOut {
+		renderer.Finish(cliui.Result{OK: true, Label: "inspect complete"})
 		return writeCLIJSONEnvelope(w, cliJSONEnvelope{
 			Command:     "inspect definition",
 			Status:      "passed",
@@ -1156,10 +1167,11 @@ func runInspectDefinition(ctx context.Context, args []string, w io.Writer) error
 		})
 	}
 	writeInspectDefinitionText(w, data.Definition)
+	renderer.Finish(cliui.Result{OK: true, Label: "inspect complete"})
 	return nil
 }
 
-func runInspectReferences(ctx context.Context, args []string, w io.Writer) error {
+func runInspectReferences(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -1167,7 +1179,8 @@ func runInspectReferences(ctx context.Context, args []string, w io.Writer) error
 	if err != nil {
 		return err
 	}
-	index, graph, loadedProject, err := buildInspectCodeIntel(flags.root)
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: flags.progressMode})
+	index, graph, loadedProject, err := buildInspectCodeIntelWithProgress(flags.root, "inspect references", renderer)
 	if err != nil {
 		return err
 	}
@@ -1184,6 +1197,7 @@ func runInspectReferences(ctx context.Context, args []string, w io.Writer) error
 		References: inspectUsesJSON(index.Project.Root, refs),
 	}
 	if flags.jsonOut {
+		renderer.Finish(cliui.Result{OK: true, Label: "inspect complete"})
 		return writeCLIJSONEnvelope(w, cliJSONEnvelope{
 			Command:     "inspect references",
 			Status:      "passed",
@@ -1194,6 +1208,7 @@ func runInspectReferences(ctx context.Context, args []string, w io.Writer) error
 		})
 	}
 	writeInspectReferencesText(w, data)
+	renderer.Finish(cliui.Result{OK: true, Label: "inspect complete"})
 	return nil
 }
 
@@ -1205,6 +1220,10 @@ func parseInspectDefinitionFlags(args []string) (inspectDefinitionFlags, error) 
 		String("line", "").
 		String("column", "").
 		Bool("json", "j").
+		Bool("progress", "").
+		Bool("progress-json", "").
+		Bool("no-progress", "").
+		Bool("quiet", "q").
 		Parse(args)
 	if err != nil {
 		return inspectDefinitionFlags{}, err
@@ -1225,6 +1244,7 @@ func parseInspectDefinitionFlags(args []string) (inspectDefinitionFlags, error) 
 		column:  column,
 		jsonOut: parsed.Bool("json"),
 	}
+	flags.progressMode = progressModeForFlags(flags.jsonOut, parsed.Bool("progress"), parsed.Bool("progress-json"), parsed.Bool("no-progress") || parsed.Bool("quiet"))
 	if parsed.String("project") != "" {
 		flags.root = parsed.String("project")
 	}
@@ -1256,6 +1276,10 @@ func parseInspectReferencesFlags(args []string) (inspectReferencesFlags, error) 
 		String("symbol", "").
 		Bool("include-declaration", "").
 		Bool("json", "j").
+		Bool("progress", "").
+		Bool("progress-json", "").
+		Bool("no-progress", "").
+		Bool("quiet", "q").
 		Parse(args)
 	if err != nil {
 		return inspectReferencesFlags{}, err
@@ -1266,6 +1290,7 @@ func parseInspectReferencesFlags(args []string) (inspectReferencesFlags, error) 
 		jsonOut:            parsed.Bool("json"),
 		includeDeclaration: parsed.Bool("include-declaration"),
 	}
+	flags.progressMode = progressModeForFlags(flags.jsonOut, parsed.Bool("progress"), parsed.Bool("progress-json"), parsed.Bool("no-progress") || parsed.Bool("quiet"))
 	if parsed.String("project") != "" {
 		flags.root = parsed.String("project")
 	}
@@ -1286,6 +1311,17 @@ func buildInspectCodeIntel(root string) (typesys.Index, codeintel.Graph, project
 	}
 	index := typesys.Build(p, s)
 	graph := codeintel.Build(index, codeintel.Options{UseCache: true})
+	return index, graph, p, nil
+}
+
+func buildInspectCodeIntelWithProgress(root, phase string, renderer cliui.Renderer) (typesys.Index, codeintel.Graph, project.Project, error) {
+	p, index, err := loadProjectIndexWithProgress(root, phase, renderer)
+	if err != nil {
+		return typesys.Index{}, codeintel.Graph{}, project.Project{}, err
+	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: phase, Label: "Building code intelligence graph", Current: 3, Total: 4})
+	graph := codeintel.Build(index, codeintel.Options{UseCache: true})
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: phase, Label: "Code intelligence ready", Current: 4, Total: 4})
 	return index, graph, p, nil
 }
 
@@ -1514,22 +1550,28 @@ func inspectRangeString(r diagnostic.Range) string {
 	return fmt.Sprintf("%d:%d-%d:%d", r.Start.Line, r.Start.Column, r.End.Line, r.End.Column)
 }
 
-func parseInspectSymbolsFlags(args []string) (root string, jsonOut bool, fullPaths bool, kind string, err error) {
+func parseInspectSymbolsFlags(args []string) (root string, jsonOut bool, fullPaths bool, kind string, progressMode cliui.ProgressMode, err error) {
 	root = "."
 	parsed, err := flagparse.New("glade inspect symbols").
 		String("project", "p").
 		Bool("json", "j").
 		Bool("full-paths", "").
 		String("kind", "").
+		Bool("progress", "").
+		Bool("progress-json", "").
+		Bool("no-progress", "").
+		Bool("quiet", "q").
 		Parse(args)
 	if err != nil {
-		return "", false, false, "", err
+		return "", false, false, "", cliui.ProgressOff, err
 	}
 	if parsed.String("project") != "" {
 		root = parsed.String("project")
 	}
 	kind = strings.ToLower(strings.TrimSpace(parsed.String("kind")))
-	return root, parsed.Bool("json"), parsed.Bool("full-paths"), kind, nil
+	jsonOut = parsed.Bool("json")
+	progressMode = progressModeForFlags(jsonOut, parsed.Bool("progress"), parsed.Bool("progress-json"), parsed.Bool("no-progress") || parsed.Bool("quiet"))
+	return root, jsonOut, parsed.Bool("full-paths"), kind, progressMode, nil
 }
 
 func inspectSymbolsSummary(index typesys.Index) map[string]int {
@@ -1627,8 +1669,13 @@ func runSchema(ctx context.Context, args []string, w io.Writer, progressW io.Wri
 	if len(s.Objects) > 0 {
 		fmt.Fprintln(w)
 		fmt.Fprintln(w, "Objects:")
-		for _, object := range s.Objects {
+		budget := cliui.OutputBudget{}
+		visible := budget.VisibleCount(len(s.Objects))
+		for _, object := range s.Objects[:visible] {
 			fmt.Fprintf(w, "  %s\n", object.Name)
+		}
+		if omitted := budget.OmittedCount(len(s.Objects)); omitted > 0 {
+			fmt.Fprintf(w, "  ... %d more objects omitted. Use `glade schema load --project . --json` for complete output.\n", omitted)
 		}
 	}
 	fmt.Fprintln(w)
@@ -1914,6 +1961,31 @@ func loadProjectIndex(root string) (project.Project, typesys.Index, error) {
 	return p, typesys.Build(p, s), nil
 }
 
+func loadProjectIndexWithProgress(root, phase string, renderer cliui.Renderer) (project.Project, typesys.Index, error) {
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: phase, Label: "Loading project"})
+	p, err := project.Load(root)
+	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: phase + " failed"})
+		return project.Project{}, typesys.Index{}, err
+	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: phase, Label: "Loading metadata", Current: 1, Total: 3})
+	s, err := gladeschema.LoadProject(p)
+	if err != nil {
+		index := typesys.Build(p, gladeschema.Schema{})
+		index.Diagnostics = append(index.Diagnostics, diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "GLADESCHEMA001",
+			Message:  fmt.Sprintf("metadata schema load failed: %v", err),
+		})
+		renderer.Render(cliui.Event{Kind: cliui.EventWarn, Phase: phase, Label: "metadata load failed", Detail: err.Error(), Current: 1, Total: 3})
+		return p, index, nil
+	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: phase, Label: "Indexing Apex symbols", Current: 2, Total: 3})
+	index := typesys.Build(p, s)
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: phase, Label: "Index ready", Current: 3, Total: 3})
+	return p, index, nil
+}
+
 func runExec(ctx context.Context, args []string, w io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -2148,8 +2220,13 @@ func writeExecSummary(w io.Writer, result vm.Result, logPath string) error {
 	if len(result.Debug) > 0 {
 		fmt.Fprintln(w)
 		fmt.Fprintln(w, "Debug:")
-		for _, line := range result.Debug {
+		budget := cliui.OutputBudget{}
+		visible := budget.VisibleCount(len(result.Debug))
+		for _, line := range result.Debug[:visible] {
 			fmt.Fprintln(w, "  USER_DEBUG "+line)
+		}
+		if omitted := budget.OmittedCount(len(result.Debug)); omitted > 0 {
+			fmt.Fprintf(w, "  ... %d more debug lines omitted. See the debug log path below for complete output.\n", omitted)
 		}
 	}
 	fmt.Fprintln(w)

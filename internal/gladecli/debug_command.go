@@ -11,11 +11,12 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexlog"
+	"github.com/glade-sh/glade/internal/cliui"
 	"github.com/glade-sh/glade/internal/debuglog"
 	"github.com/glade-sh/glade/internal/profile"
 )
 
-func runDebug(ctx context.Context, args []string, w io.Writer) error {
+func runDebug(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -24,22 +25,47 @@ func runDebug(ctx context.Context, args []string, w io.Writer) error {
 	}
 
 	subcommand := args[0]
-	subcommandArgs := args[1:]
+	subcommandArgs, progressMode := splitDebugProgressArgs(args[1:])
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: progressMode})
 	switch subcommand {
 	case "parse":
-		return runDebugParse(ctx, subcommandArgs, w)
+		return runDebugParse(ctx, subcommandArgs, w, renderer)
 	case "profile":
-		return runDebugProfile(ctx, subcommandArgs, w)
+		return runDebugProfile(ctx, subcommandArgs, w, renderer)
 	case "explain":
-		return runDebugExplain(ctx, subcommandArgs, w)
+		return runDebugExplain(ctx, subcommandArgs, w, renderer)
 	case "repro":
-		return runDebugRepro(ctx, subcommandArgs, w)
+		return runDebugRepro(ctx, subcommandArgs, w, renderer)
 	default:
 		return errors.New("usage: glade debug parse|profile|explain|repro --log <path> [--json]")
 	}
 }
 
-func runDebugParse(ctx context.Context, args []string, w io.Writer) error {
+func splitDebugProgressArgs(args []string) ([]string, cliui.ProgressMode) {
+	progress := false
+	progressJSON := false
+	noProgress := false
+	jsonOut := false
+	filtered := make([]string, 0, len(args))
+	for _, arg := range args {
+		switch arg {
+		case "--progress":
+			progress = true
+		case "--progress-json":
+			progressJSON = true
+		case "--no-progress", "--quiet":
+			noProgress = true
+		case "--json":
+			jsonOut = true
+			filtered = append(filtered, arg)
+		default:
+			filtered = append(filtered, arg)
+		}
+	}
+	return filtered, progressModeForFlags(jsonOut, progress, progressJSON, noProgress)
+}
+
+func runDebugParse(ctx context.Context, args []string, w io.Writer, renderer cliui.Renderer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -48,14 +74,17 @@ func runDebugParse(ctx context.Context, args []string, w io.Writer) error {
 	if err != nil {
 		return err
 	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "debug parse", Label: "Reading log"})
 	log, err := parseDebugLogFile(logPath)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "debug failed"})
 		return err
 	}
+	renderer.Finish(cliui.Result{OK: true, Label: "debug complete"})
 	return writeIndentedJSON(w, log)
 }
 
-func runDebugProfile(ctx context.Context, args []string, w io.Writer) error {
+func runDebugProfile(ctx context.Context, args []string, w io.Writer, renderer cliui.Renderer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -64,12 +93,16 @@ func runDebugProfile(ctx context.Context, args []string, w io.Writer) error {
 	if err != nil {
 		return err
 	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "debug profile", Label: "Reading log"})
 	log, err := parseDebugLogFile(logPath)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "debug failed"})
 		return err
 	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "debug profile", Label: "Analyzing trace", Current: 1, Total: 2})
 	doc := apexlog.TraceDocument(log)
 	report := profile.Analyze(doc)
+	renderer.Finish(cliui.Result{OK: true, Label: "debug complete"})
 	if jsonOut {
 		return writeCLIJSONEnvelope(w, cliJSONEnvelope{
 			Command:  "debug profile",
@@ -88,7 +121,7 @@ func runDebugProfile(ctx context.Context, args []string, w io.Writer) error {
 	return profile.WriteText(w, report, logPath)
 }
 
-func runDebugExplain(ctx context.Context, args []string, w io.Writer) error {
+func runDebugExplain(ctx context.Context, args []string, w io.Writer, renderer cliui.Renderer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -98,27 +131,33 @@ func runDebugExplain(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "debug explain", Label: "Reading log"})
 	log, err := parseDebugLogFile(logPath)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "debug failed"})
 		return err
 	}
 
-	index, err := loadIndex(projectRoot)
+	_, index, err := loadProjectIndexWithProgress(projectRoot, "debug explain", renderer)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "debug failed"})
 		return err
 	}
 
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "debug explain", Label: "Annotating log", Current: 2, Total: 3})
 	annotated, err := debuglog.Annotate(log, index, 5)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "debug failed"})
 		return err
 	}
+	renderer.Finish(cliui.Result{OK: true, Label: "debug complete"})
 	if jsonOut {
 		return debuglog.WriteJSON(w, annotated)
 	}
 	return debuglog.WriteText(w, annotated, minConfidence)
 }
 
-func runDebugRepro(ctx context.Context, args []string, w io.Writer) error {
+func runDebugRepro(ctx context.Context, args []string, w io.Writer, renderer cliui.Renderer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -127,22 +166,29 @@ func runDebugRepro(ctx context.Context, args []string, w io.Writer) error {
 	if err != nil {
 		return err
 	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "debug repro", Label: "Reading log"})
 	log, err := parseDebugLogFile(logPath)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "debug failed"})
 		return err
 	}
-	index, err := loadIndex(projectRoot)
+	_, index, err := loadProjectIndexWithProgress(projectRoot, "debug repro", renderer)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "debug failed"})
 		return err
 	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "debug repro", Label: "Annotating log", Current: 2, Total: 3})
 	annotated, err := debuglog.Annotate(log, index, 5)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "debug failed"})
 		return err
 	}
 	source, err := debuglog.SynthesizeTest(annotated, minConfidence)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "debug failed"})
 		return err
 	}
+	renderer.Finish(cliui.Result{OK: true, Label: "debug complete"})
 	_, err = io.WriteString(w, source)
 	return err
 }

@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/cliui"
 	"github.com/glade-sh/glade/internal/gladehome"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/server"
@@ -25,10 +26,13 @@ import (
 	"github.com/glade-sh/glade/internal/watch"
 )
 
-func runDevVF(ctx context.Context, args []string, w io.Writer) error {
+func runDevVF(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	addr := "127.0.0.1:8080"
 	root := "."
 	readyFile := ""
+	progress := false
+	progressJSON := false
+	noProgress := false
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--port":
@@ -55,6 +59,12 @@ func runDevVF(ctx context.Context, args []string, w io.Writer) error {
 			}
 			readyFile = args[i+1]
 			i++
+		case "--progress":
+			progress = true
+		case "--progress-json":
+			progressJSON = true
+		case "--no-progress", "--quiet":
+			noProgress = true
 		case "help", "-h", "--help":
 			printDevVFHelp(w)
 			return nil
@@ -62,42 +72,54 @@ func runDevVF(ctx context.Context, args []string, w io.Writer) error {
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: progressModeForFlags(false, progress, progressJSON, noProgress)})
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "dev vf", Label: "Loading project"})
 	p, err := project.Load(root)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "dev vf failed"})
 		return err
 	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "dev vf", Label: "Indexing symbols", Current: 1, Total: 4})
 	index, err := loadIndex(root)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "dev vf failed"})
 		return err
 	}
 	org := apextest.OrgFromIndex(index)
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "dev vf", Label: "Applying data fixtures", Current: 2, Total: 4})
 	if err := applyDevVFProjectDataFixtures(p.Root, &org); err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "dev vf failed"})
 		return err
 	}
 	source, err := server.NewSourceMetadataFromProject(p)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "dev vf failed"})
 		return err
 	}
 	handler := server.NewWithSource(&org, source)
 	installDevVFRuntime(handler, index)
 	if root, err := gladehome.EnsureRoot(); err != nil {
-		fmt.Fprintf(w, "warning: LWC toolchain unavailable: %v\n", err)
-		fmt.Fprintf(w, "warning: Lightning Out pages will show a placeholder until you run `glade toolchain install`\n")
+		renderer.Render(cliui.Event{Kind: cliui.EventWarn, Phase: "dev vf", Label: "LWC toolchain unavailable", Detail: err.Error()})
 	} else {
-		fmt.Fprintf(w, "LWC toolchain: %s\n", root)
+		renderer.Render(cliui.Event{Kind: cliui.EventInfo, Phase: "dev vf", Label: "LWC toolchain ready", Detail: root})
 	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "dev vf", Label: "Starting server", Current: 3, Total: 4})
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "dev vf failed"})
 		return err
 	}
 	actualAddr := listener.Addr().String()
 	if readyFile != "" {
 		if err := writeDevVFReadyFile(readyFile, actualAddr, p); err != nil {
 			_ = listener.Close()
+			renderer.Finish(cliui.Result{OK: false, Label: "dev vf failed"})
 			return err
 		}
 	}
 	httpServer := &http.Server{Addr: addr, Handler: handler}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "dev vf", Label: "Server ready", Current: 4, Total: 4})
+	renderer.Finish(cliui.Result{OK: true, Label: "dev vf ready"})
 	printDevVFStartupSummary(w, actualAddr, p)
 	go func() {
 		<-ctx.Done()
@@ -105,7 +127,7 @@ func runDevVF(ctx context.Context, args []string, w io.Writer) error {
 		defer cancel()
 		_ = httpServer.Shutdown(shutdownCtx)
 	}()
-	go runDevVFReload(ctx, root, handler, w)
+	go runDevVFReload(ctx, root, handler, progressW)
 	return normalizeDevVFServeError(httpServer.Serve(listener))
 }
 
@@ -117,6 +139,9 @@ func normalizeDevVFServeError(err error) error {
 }
 
 func runDevVFReload(ctx context.Context, root string, srv *server.Server, w io.Writer) {
+	if w == nil {
+		w = io.Discard
+	}
 	cfg := watch.Config{Root: root}
 	previous, err := watch.CaptureSnapshot(root)
 	if err != nil {

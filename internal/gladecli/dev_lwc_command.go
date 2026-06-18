@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/cliui"
 	"github.com/glade-sh/glade/internal/gladehome"
 	"github.com/glade-sh/glade/internal/lwc"
 	"github.com/glade-sh/glade/internal/lwcshell"
@@ -22,7 +23,7 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-func runDevLWC(ctx context.Context, args []string, w io.Writer) error {
+func runDevLWC(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	opts, err := parseDevLWCOptions(args)
 	if err != nil {
 		if errors.Is(err, errDevLWCHelp) {
@@ -31,36 +32,49 @@ func runDevLWC(ctx context.Context, args []string, w io.Writer) error {
 		}
 		return err
 	}
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: opts.progressMode})
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "dev lwc", Label: "Loading project"})
 	p, err := project.Load(opts.root)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "dev lwc failed"})
 		return err
 	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "dev lwc", Label: "Resolving selected context", Current: 1, Total: 6})
 	selection, err := opts.selection()
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "dev lwc failed"})
 		return err
 	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "dev lwc", Label: "Indexing symbols", Current: 2, Total: 6})
 	index, err := loadIndex(opts.root)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "dev lwc failed"})
 		return err
 	}
 	org := apextest.OrgFromIndex(index)
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "dev lwc", Label: "Applying data fixtures", Current: 3, Total: 6})
 	if err := applyDevLWCProjectDataFixtures(p.Root, &org); err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "dev lwc failed"})
 		return err
 	}
 	source, err := server.NewSourceMetadataFromProject(p)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "dev lwc failed"})
 		return err
 	}
 	handler := server.NewWithSource(&org, source)
 	installDevVFRuntime(handler, index)
 	if root, err := gladehome.EnsureRoot(); err != nil {
-		fmt.Fprintf(w, "warning: LWC toolchain unavailable: %v\n", err)
-		fmt.Fprintf(w, "warning: run `glade toolchain install` before opening LWC preview routes\n")
+		renderer.Render(cliui.Event{Kind: cliui.EventWarn, Phase: "dev lwc", Label: "LWC toolchain unavailable", Detail: err.Error()})
 	} else {
-		fmt.Fprintf(w, "LWC toolchain: %s\n", root)
+		renderer.Render(cliui.Event{Kind: cliui.EventInfo, Phase: "dev lwc", Label: "LWC toolchain ready", Detail: root})
 	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "dev lwc", Label: "Building route metadata", Current: 4, Total: 6})
+	_ = devLWCPreviewRoutes(p)
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "dev lwc", Label: "Starting shell", Current: 5, Total: 6})
 	listener, err := net.Listen("tcp", opts.addr)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "dev lwc failed"})
 		return err
 	}
 	actualAddr := listener.Addr().String()
@@ -69,6 +83,7 @@ func runDevLWC(ctx context.Context, args []string, w io.Writer) error {
 	if opts.readyFile != "" {
 		if err := writeDevLWCReadyFile(opts.readyFile, actualAddr, p, selection); err != nil {
 			_ = listener.Close()
+			renderer.Finish(cliui.Result{OK: false, Label: "dev lwc failed"})
 			return err
 		}
 	}
@@ -79,10 +94,13 @@ func runDevLWC(ctx context.Context, args []string, w io.Writer) error {
 		}
 		if err := devLWCOpenURL(openTarget); err != nil {
 			_ = listener.Close()
+			renderer.Finish(cliui.Result{OK: false, Label: "dev lwc failed"})
 			return err
 		}
 	}
 	httpServer := &http.Server{Addr: opts.addr, Handler: handler}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "dev lwc", Label: "Shell ready", Current: 6, Total: 6})
+	renderer.Finish(cliui.Result{OK: true, Label: "dev lwc ready"})
 	printDevLWCStartupSummary(w, actualAddr, p, selection)
 	go func() {
 		<-ctx.Done()
@@ -90,7 +108,7 @@ func runDevLWC(ctx context.Context, args []string, w io.Writer) error {
 		defer cancel()
 		_ = httpServer.Shutdown(shutdownCtx)
 	}()
-	go runDevLWCReload(ctx, opts.root, handler, w)
+	go runDevLWCReload(ctx, opts.root, handler, progressW)
 	return normalizeDevVFServeError(httpServer.Serve(listener))
 }
 
@@ -98,13 +116,14 @@ var errDevLWCHelp = errors.New("dev lwc help requested")
 var devLWCOpenURL = openURL
 
 type devLWCOptions struct {
-	addr        string
-	root        string
-	readyFile   string
-	open        bool
-	contextName string
-	contextFile string
-	explicit    devLWCContextPresetFlags
+	addr         string
+	root         string
+	readyFile    string
+	open         bool
+	contextName  string
+	contextFile  string
+	explicit     devLWCContextPresetFlags
+	progressMode cliui.ProgressMode
 }
 
 type devLWCContextPresetFlags struct {
@@ -129,7 +148,10 @@ type devLWCSelection struct {
 }
 
 func parseDevLWCOptions(args []string) (devLWCOptions, error) {
-	opts := devLWCOptions{addr: "127.0.0.1:8080", root: "."}
+	opts := devLWCOptions{addr: "127.0.0.1:8080", root: ".", progressMode: cliui.ProgressAuto}
+	progress := false
+	progressJSON := false
+	noProgress := false
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--port":
@@ -268,12 +290,19 @@ func parseDevLWCOptions(args []string) (devLWCOptions, error) {
 			}
 			opts.explicit.preset.State[strings.TrimSpace(key)] = stateValue
 			opts.explicit.stateSet = true
+		case "--progress":
+			progress = true
+		case "--progress-json":
+			progressJSON = true
+		case "--no-progress", "--quiet":
+			noProgress = true
 		case "help", "-h", "--help":
 			return opts, errDevLWCHelp
 		default:
 			return opts, fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
+	opts.progressMode = progressModeForFlags(false, progress, progressJSON, noProgress)
 	return opts, nil
 }
 
@@ -433,8 +462,13 @@ func printDevLWCStartupSummary(w io.Writer, addr string, p project.Project, sele
 	routes := devLWCPreviewRoutes(p)
 	if len(routes) > 0 {
 		fmt.Fprintln(w, "Routes:")
-		for _, route := range routes {
+		budget := cliui.OutputBudget{}
+		visible := budget.VisibleCount(len(routes))
+		for _, route := range routes[:visible] {
 			fmt.Fprintf(w, "  %s\n", route)
+		}
+		if omitted := budget.OmittedCount(len(routes)); omitted > 0 {
+			fmt.Fprintf(w, "  ... %d more routes omitted. See the ready file or /lightning/local/context.json for complete output.\n", omitted)
 		}
 	}
 	fmt.Fprintf(w, "Watching %s for lwc, flexipage, tab, Visualforce, Apex, and static resource changes.\n", p.Root)

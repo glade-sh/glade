@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/cliui"
 	"github.com/glade-sh/glade/internal/pluginhost"
 )
 
@@ -26,11 +27,11 @@ func runPlugins(ctx context.Context, args []string, stdout, stderr io.Writer) er
 	case "list":
 		return runPluginsList(ctx, args[1:], stdout)
 	case "available":
-		return runPluginsAvailable(ctx, args[1:], stdout)
+		return runPluginsAvailable(ctx, args[1:], stdout, stderr)
 	case "search":
-		return runPluginsSearch(ctx, args[1:], stdout)
+		return runPluginsSearch(ctx, args[1:], stdout, stderr)
 	case "info":
-		return runPluginsInfo(ctx, args[1:], stdout)
+		return runPluginsInfo(ctx, args[1:], stdout, stderr)
 	case "link":
 		return runPluginsLink(ctx, args[1:], stdout)
 	case "install":
@@ -40,11 +41,11 @@ func runPlugins(ctx context.Context, args []string, stdout, stderr io.Writer) er
 	case "which":
 		return runPluginsWhich(args[1:], stdout)
 	case "doctor":
-		return runPluginsDoctor(ctx, args[1:], stdout)
+		return runPluginsDoctor(ctx, args[1:], stdout, stderr)
 	case "lock":
 		return runPluginsLock(args[1:], stdout)
 	case "restore":
-		return runPluginsRestore(ctx, stdout)
+		return runPluginsRestore(ctx, args[1:], stdout, stderr)
 	default:
 		return fmt.Errorf("unknown plugins command %q", args[0])
 	}
@@ -176,6 +177,48 @@ func parseJSONOnlyFlag(usage string, args []string) (bool, error) {
 	return jsonOut, nil
 }
 
+func parseJSONProgressFlags(usage string, args []string) (bool, cliui.ProgressMode, error) {
+	jsonOut := false
+	progress := false
+	progressJSON := false
+	noProgress := false
+	for _, arg := range args {
+		switch arg {
+		case "--json", "-j":
+			jsonOut = true
+		case "--progress":
+			progress = true
+		case "--progress-json":
+			progressJSON = true
+		case "--no-progress", "--quiet":
+			noProgress = true
+		default:
+			return false, cliui.ProgressOff, fmt.Errorf("unknown %s argument %q", usage, arg)
+		}
+	}
+	return jsonOut, progressModeForFlags(jsonOut, progress, progressJSON, noProgress), nil
+}
+
+func parsePluginProgressFlags(jsonOut bool, args []string) ([]string, cliui.ProgressMode, error) {
+	progress := false
+	progressJSON := false
+	noProgress := false
+	filtered := make([]string, 0, len(args))
+	for _, arg := range args {
+		switch arg {
+		case "--progress":
+			progress = true
+		case "--progress-json":
+			progressJSON = true
+		case "--no-progress", "--quiet":
+			noProgress = true
+		default:
+			filtered = append(filtered, arg)
+		}
+	}
+	return filtered, progressModeForFlags(jsonOut, progress, progressJSON, noProgress), nil
+}
+
 func runPluginsLink(ctx context.Context, args []string, stdout io.Writer) error {
 	executable := ""
 	for i := 0; i < len(args); i++ {
@@ -202,14 +245,18 @@ func runPluginsLink(ctx context.Context, args []string, stdout io.Writer) error 
 }
 
 type pluginsInstallOptions struct {
-	target   string
-	registry string
-	sha256   string
-	yes      bool
+	target       string
+	registry     string
+	sha256       string
+	yes          bool
+	progressMode cliui.ProgressMode
 }
 
 func parsePluginsInstallArgs(args []string) (pluginsInstallOptions, error) {
 	var opts pluginsInstallOptions
+	progress := false
+	progressJSON := false
+	noProgress := false
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--registry":
@@ -226,6 +273,12 @@ func parsePluginsInstallArgs(args []string) (pluginsInstallOptions, error) {
 			i++
 		case "--yes":
 			opts.yes = true
+		case "--progress":
+			progress = true
+		case "--progress-json":
+			progressJSON = true
+		case "--no-progress", "--quiet":
+			noProgress = true
 		default:
 			if opts.target != "" {
 				return opts, fmt.Errorf("unexpected plugins install argument %q", args[i])
@@ -236,6 +289,7 @@ func parsePluginsInstallArgs(args []string) (pluginsInstallOptions, error) {
 	if opts.target == "" {
 		return opts, errors.New("usage: glade plugins install <plugin-name-or-archive> [--registry <url>] [--sha256 <hash>] [--yes]")
 	}
+	opts.progressMode = progressModeForFlags(false, progress, progressJSON, noProgress)
 	return opts, nil
 }
 
@@ -245,28 +299,37 @@ func runPluginsInstall(ctx context.Context, args []string, stdout, stderr io.Wri
 		return err
 	}
 	store := pluginhost.NewStore(pluginhost.DefaultRoot())
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: stderr, Mode: opts.progressMode})
+	failInstall := func(err error) error {
+		renderer.Finish(cliui.Result{OK: false, Label: "plugins install failed"})
+		return err
+	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "plugins install", Label: "Resolving plugin target"})
 	var (
 		plugin pluginhost.InstalledPlugin
 	)
 	if isRemoteArchiveInstallArg(opts.target) {
 		if err := enforcePluginTrustBeforeInstall(opts.target, "unlisted", opts.yes); err != nil {
-			return err
+			return failInstall(err)
 		}
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "plugins install", Label: "Downloading archive", Current: 1, Total: 3})
 		plugin, err = store.InstallRemoteArchive(ctx, opts.target, opts.sha256, pluginhost.InstallOptions{})
 	} else if isArchiveInstallArg(opts.target) {
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "plugins install", Label: "Installing archive", Current: 1, Total: 3})
 		plugin, err = store.InstallArchive(ctx, opts.target)
 	} else {
 		ref, parseErr := pluginhost.ParsePluginRef(opts.target)
 		if parseErr != nil {
-			return parseErr
+			return failInstall(parseErr)
 		}
 		registryURL := pluginhost.RegistryURL()
 		if opts.registry != "" {
 			registryURL = opts.registry
 		}
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "plugins install", Label: "Fetching registry", Current: 1, Total: 4})
 		index, fetchErr := fetchPluginRegistryForCLI(ctx, registryURL)
 		if fetchErr != nil {
-			return fetchErr
+			return failInstall(fetchErr)
 		}
 		if os.Getenv("CI") != "" && !opts.yes {
 			registryPlugin, _, ok := index.AssetForRef(ref, runtime.GOOS, runtime.GOARCH)
@@ -274,20 +337,22 @@ func runPluginsInstall(ctx context.Context, args []string, stdout, stderr io.Wri
 				return index.NotFoundErrorForRef(ref, runtime.GOOS, runtime.GOARCH)
 			}
 			if err := enforcePluginTrustBeforeInstall(registryPlugin.Name, registryPlugin.Trust, opts.yes); err != nil {
-				return err
+				return failInstall(err)
 			}
 		}
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "plugins install", Label: "Installing plugin", Current: 3, Total: 4})
 		plugin, err = store.InstallFromRegistryIndex(ctx, registryURL, index, ref)
 	}
 	if err != nil {
-		return err
+		return failInstall(err)
 	}
 	if plugin.Trust == "community" || plugin.Trust == "unlisted" {
 		if os.Getenv("CI") != "" && !opts.yes {
-			return fmt.Errorf("plugin %s is %s; rerun with --yes or restore from a lock file in CI", plugin.IdentityName(), plugin.Trust)
+			return failInstall(fmt.Errorf("plugin %s is %s; rerun with --yes or restore from a lock file in CI", plugin.IdentityName(), plugin.Trust))
 		}
 		fmt.Fprintf(stderr, "warning: plugin %s is %s; review its source before use\n", plugin.IdentityName(), plugin.Trust)
 	}
+	renderer.Finish(cliui.Result{OK: true, Label: "plugins install complete"})
 	fmt.Fprintf(stdout, "Installed plugin %s %s with commands %v.\n", plugin.IdentityName(), plugin.Version, plugin.Commands)
 	return nil
 }
@@ -316,14 +381,26 @@ func isArchiveInstallArg(arg string) bool {
 	return strings.ContainsAny(arg, `/\`)
 }
 
-func runPluginsAvailable(ctx context.Context, args []string, stdout io.Writer) error {
-	if len(args) != 0 {
+func runPluginsAvailable(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+	filtered, progressMode, err := parsePluginProgressFlags(false, args)
+	if err != nil {
+		return err
+	}
+	if len(filtered) != 0 {
 		return errors.New("usage: glade plugins available")
 	}
-	return runPluginsSearch(ctx, nil, stdout)
+	return runPluginsSearchWithMode(ctx, nil, stdout, stderr, progressMode)
 }
 
-func runPluginsSearch(ctx context.Context, args []string, stdout io.Writer) error {
+func runPluginsSearch(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+	filtered, progressMode, err := parsePluginProgressFlags(false, args)
+	if err != nil {
+		return err
+	}
+	return runPluginsSearchWithMode(ctx, filtered, stdout, stderr, progressMode)
+}
+
+func runPluginsSearchWithMode(ctx context.Context, args []string, stdout, stderr io.Writer, progressMode cliui.ProgressMode) error {
 	if len(args) > 1 {
 		return errors.New("usage: glade plugins search [query]")
 	}
@@ -331,10 +408,14 @@ func runPluginsSearch(ctx context.Context, args []string, stdout io.Writer) erro
 	if len(args) == 1 {
 		query = args[0]
 	}
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: stderr, Mode: progressMode})
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "plugins search", Label: "Fetching registry"})
 	index, err := fetchPluginRegistryForCLI(ctx, pluginhost.RegistryURL())
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "plugins search failed"})
 		return err
 	}
+	renderer.Finish(cliui.Result{OK: true, Label: "plugins search complete"})
 	results := index.Search(query)
 	if len(results) == 0 {
 		if query == "" {
@@ -354,7 +435,11 @@ func runPluginsSearch(ctx context.Context, args []string, stdout io.Writer) erro
 	return nil
 }
 
-func runPluginsInfo(ctx context.Context, args []string, stdout io.Writer) error {
+func runPluginsInfo(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+	args, progressMode, err := parsePluginProgressFlags(false, args)
+	if err != nil {
+		return err
+	}
 	if len(args) != 1 {
 		return errors.New("usage: glade plugins info <name>")
 	}
@@ -362,10 +447,14 @@ func runPluginsInfo(ctx context.Context, args []string, stdout io.Writer) error 
 	if err != nil {
 		return err
 	}
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: stderr, Mode: progressMode})
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "plugins info", Label: "Fetching registry"})
 	index, err := fetchPluginRegistryForCLI(ctx, pluginhost.RegistryURL())
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "plugins info failed"})
 		return err
 	}
+	renderer.Finish(cliui.Result{OK: true, Label: "plugins info complete"})
 	plugin, _, ok := index.AssetForRef(ref, runtime.GOOS, runtime.GOARCH)
 	if !ok {
 		return index.NotFoundErrorForRef(ref, runtime.GOOS, runtime.GOARCH)
@@ -427,15 +516,19 @@ func runPluginsWhich(args []string, stdout io.Writer) error {
 	return nil
 }
 
-func runPluginsDoctor(ctx context.Context, args []string, stdout io.Writer) error {
-	jsonOut, err := parseJSONOnlyFlag("glade plugins doctor", args)
+func runPluginsDoctor(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+	jsonOut, progressMode, err := parseJSONProgressFlags("glade plugins doctor", args)
 	if err != nil {
 		return err
 	}
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: stderr, Mode: progressMode})
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "plugins doctor", Label: "Checking plugins"})
 	results, err := pluginhost.NewStore(pluginhost.DefaultRoot()).Doctor(ctx)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "plugins doctor failed"})
 		return err
 	}
+	renderer.Finish(cliui.Result{OK: true, Label: "plugins doctor complete"})
 	if jsonOut {
 		return writePluginsDoctorJSON(stdout, results)
 	}
@@ -516,15 +609,28 @@ func runPluginsLock(args []string, stdout io.Writer) error {
 	return nil
 }
 
-func runPluginsRestore(ctx context.Context, stdout io.Writer) error {
-	lock, err := pluginhost.ReadLockFile(filepath.Join(".", "glade.plugins.lock.json"))
+func runPluginsRestore(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+	args, progressMode, err := parsePluginProgressFlags(false, args)
 	if err != nil {
 		return err
 	}
-	store := pluginhost.NewStore(pluginhost.DefaultRoot())
-	if err := store.RestoreLock(ctx, lock, nil); err != nil {
+	if len(args) != 0 {
+		return fmt.Errorf("unknown plugins restore argument %q", args[0])
+	}
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: stderr, Mode: progressMode})
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "plugins restore", Label: "Reading lock file"})
+	lock, err := pluginhost.ReadLockFile(filepath.Join(".", "glade.plugins.lock.json"))
+	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "plugins restore failed"})
 		return err
 	}
+	store := pluginhost.NewStore(pluginhost.DefaultRoot())
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "plugins restore", Label: "Installing locked plugins", Current: 1, Total: 2})
+	if err := store.RestoreLock(ctx, lock, nil); err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "plugins restore failed"})
+		return err
+	}
+	renderer.Finish(cliui.Result{OK: true, Label: "plugins restore complete"})
 	for _, plugin := range lock.Plugins {
 		fmt.Fprintf(stdout, "Restored plugin %s %s.\n", plugin.Name, plugin.Version)
 	}

@@ -40,7 +40,9 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 	limit := 0
 	limitSet := false
 	queryAll := false
-	progressMode := cliui.ProgressAuto
+	progress := false
+	progressJSON := false
+	noProgress := false
 	positionals := make([]string, 0)
 	for i := 1; i < len(args); i++ {
 		switch args[i] {
@@ -74,11 +76,11 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 		case "--query-all":
 			queryAll = true
 		case "--progress":
-			progressMode = cliui.ProgressLine
+			progress = true
 		case "--progress-json":
-			progressMode = cliui.ProgressJSON
+			progressJSON = true
 		case "--no-progress", "--quiet":
-			progressMode = cliui.ProgressOff
+			noProgress = true
 		case "--":
 			positionals = append(positionals, args[i+1:]...)
 			i = len(args)
@@ -95,9 +97,7 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 	if wizard {
 		return writeDBWizard(w, command, dbPath, root, jsonOut, positionals)
 	}
-	if jsonOut && progressMode == cliui.ProgressAuto {
-		progressMode = cliui.ProgressOff
-	}
+	progressMode := progressModeForFlags(jsonOut, progress, progressJSON, noProgress)
 	if dbPath == "" {
 		return errors.New("glade db requires --db <path>")
 	}
@@ -304,9 +304,14 @@ func writeDBInspect(w io.Writer, path string, org storage.OrgState, jsonOut bool
 		fmt.Fprintln(w)
 		fmt.Fprintln(w, "Objects:")
 	}
-	for _, object := range objects {
+	budget := cliui.OutputBudget{}
+	visible := budget.VisibleCount(len(objects))
+	for _, object := range objects[:visible] {
 		count := summary.ByObject[object]
 		fmt.Fprintf(w, "%s: %d\n", object, count)
+	}
+	if omitted := budget.OmittedCount(len(objects)); omitted > 0 {
+		fmt.Fprintf(w, "... %d more objects omitted. Use `glade db inspect --db %s --project . --json` for complete output.\n", omitted, filepath.ToSlash(path))
 	}
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Next:")

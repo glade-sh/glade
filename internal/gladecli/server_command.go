@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/cliui"
 	"github.com/glade-sh/glade/internal/playground"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/server"
@@ -23,7 +24,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-func runServer(ctx context.Context, args []string, w io.Writer) error {
+func runServer(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -34,6 +35,9 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 	limitMode := vm.LimitMode("")
 	limitProfile := ""
 	limitCapValues := make(map[string]string)
+	progress := false
+	progressJSON := false
+	noProgress := false
 	for i := 0; i < len(args); i++ {
 		if name, ok := strings.CutPrefix(args[i], "--"); ok && isLimitCapFlag(name) {
 			value, err := takeFlagValue(args, &i, "--"+name+" requires a value")
@@ -79,14 +83,23 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 				return err
 			}
 			limitProfile = value
+		case "--progress":
+			progress = true
+		case "--progress-json":
+			progressJSON = true
+		case "--no-progress", "--quiet":
+			noProgress = true
 		default:
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: progressModeForFlags(false, progress, progressJSON, noProgress)})
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "server", Label: "Opening database"})
 	limitCaps, limitCapsSet, err := parseLimitCapsFromFlags(limitProfile, func(name string) string {
 		return limitCapValues[name]
 	})
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "server failed"})
 		return err
 	}
 	var org storage.OrgState
@@ -94,6 +107,7 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 	if dbPath != "" {
 		store, loaded, err := openDBStore(dbPath, root)
 		if err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "server failed"})
 			return err
 		}
 		defer store.Close()
@@ -105,6 +119,7 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 		org, err = orgForProject(root)
 		if err != nil {
 			if projectProvided {
+				renderer.Finish(cliui.Result{OK: false, Label: "server failed"})
 				return err
 			}
 			org = storageBaseline()
@@ -124,12 +139,16 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 		}
 	}
 	if srv, ok := handler.(*server.Server); ok {
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "server", Label: "Indexing symbols", Current: 2, Total: 3})
 		if index, err := loadIndex(root); err == nil {
 			srv.SetProjectIndex(index)
 		} else if projectProvided {
+			renderer.Finish(cliui.Result{OK: false, Label: "server failed"})
 			return err
 		}
 	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "server", Label: "Starting listener", Current: 3, Total: 3})
+	renderer.Finish(cliui.Result{OK: true, Label: "server ready"})
 	url := server.URL(addr)
 	fmt.Fprintln(w, "Glade server")
 	fmt.Fprintln(w)
@@ -149,11 +168,10 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Stop:")
 	fmt.Fprintln(w, "  Ctrl-C")
-	fmt.Fprintf(w, "glade server: %s\n", url)
 	return http.ListenAndServe(addr, handler)
 }
 
-func runPlayground(ctx context.Context, args []string, w io.Writer) error {
+func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -177,6 +195,9 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 	public := false
 	runTimeout := time.Duration(0)
 	ratePerMinute := 0
+	progress := false
+	progressJSON := false
+	noProgress := false
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--addr":
@@ -278,10 +299,17 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 			once = true
 		case "--wizard":
 			wizard = true
+		case "--progress":
+			progress = true
+		case "--progress-json":
+			progressJSON = true
+		case "--no-progress", "--quiet":
+			noProgress = true
 		default:
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: progressModeForFlags(false, progress, progressJSON, noProgress)})
 	if exampleID != "" && !playgroundExampleExists(exampleID) {
 		return fmt.Errorf("unknown playground example %q", exampleID)
 	}
@@ -334,18 +362,23 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 		})
 	}
 	if resetOnStart {
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "playground", Label: "Preparing database"})
 		if err := resetPlaygroundState(dataRoot, workspaceID, dbPath); err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "playground failed"})
 			return err
 		}
 	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "playground", Label: "Opening workspace"})
 	ws, err := playground.OpenWorkspace(playground.WorkspaceOptions{
 		DataRoot:    dataRoot,
 		ID:          workspaceID,
 		ProjectRoot: projectRoot,
 	})
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "playground failed"})
 		return err
 	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "playground", Label: "Starting workbench", Current: 2, Total: 2})
 	handler := playground.NewServer(ws, playground.ServerOptions{
 		Version:           Version,
 		DBPath:            dbPath,
@@ -369,14 +402,13 @@ func runPlayground(ctx context.Context, args []string, w io.Writer) error {
 	}
 	if noDB {
 		fmt.Fprintln(w, "Database  memory-only")
-		fmt.Fprintln(w, "state: memory-only")
 	} else {
 		fmt.Fprintf(w, "Database  %s\n", filepath.ToSlash(dbPath))
 	}
 	if resetOnStart {
 		fmt.Fprintln(w, "Reset     completed")
 	}
-	fmt.Fprintf(w, "glade playground: %s\n", url)
+	renderer.Finish(cliui.Result{OK: true, Label: "playground ready"})
 	if once {
 		_ = handler
 		return nil

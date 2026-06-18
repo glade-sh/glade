@@ -42,7 +42,7 @@ type orgStatus struct {
 	Error  string `json:"error,omitempty"`
 }
 
-func runOrg(ctx context.Context, args []string, w io.Writer) error {
+func runOrg(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func runOrg(ctx context.Context, args []string, w io.Writer) error {
 	case "status":
 		return runOrgStatus(ctx, args[1:], w)
 	case "start":
-		return runOrgStart(ctx, args[1:], w)
+		return runOrgStart(ctx, args[1:], w, progressW)
 	case "auth":
 		return runOrgAuth(ctx, args[1:], w)
 	default:
@@ -199,7 +199,7 @@ func runOrgStatus(ctx context.Context, args []string, w io.Writer) error {
 	return nil
 }
 
-func runOrgStart(ctx context.Context, args []string, w io.Writer) error {
+func runOrgStart(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	alias, projectRoot, err := parseOrgAliasProject("start", args)
 	if err != nil {
 		return err
@@ -208,7 +208,14 @@ func runOrgStart(ctx context.Context, args []string, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	return runServer(ctx, []string{"--project", cfg.Project, "--db", orgDBPath(cfg.Project, cfg.DB), "--addr", cfg.Addr}, w)
+	serverArgs := []string{"--project", cfg.Project, "--db", orgDBPath(cfg.Project, cfg.DB), "--addr", cfg.Addr}
+	for _, arg := range args {
+		switch arg {
+		case "--progress", "--progress-json", "--no-progress", "--quiet":
+			serverArgs = append(serverArgs, arg)
+		}
+	}
+	return runServer(ctx, serverArgs, w, progressW)
 }
 
 func runOrgAuth(ctx context.Context, args []string, w io.Writer) error {
@@ -287,6 +294,7 @@ func parseOrgAliasProject(command string, args []string) (string, string, error)
 				return "", "", err
 			}
 			projectRoot = value
+		case "--progress", "--progress-json", "--no-progress", "--quiet":
 		default:
 			return "", "", fmt.Errorf("unknown flag %q", args[i])
 		}

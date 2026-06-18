@@ -287,11 +287,17 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	tracePath = strings.TrimSpace(parsed.String("trace"))
 	servicesPath = strings.TrimSpace(parsed.String("services"))
 	junitPath = parsed.String("junit")
+	progressMode = progressModeFromArgs(args, progressMode)
 	if servicesPath != "" {
 		if err := enterprise.ValidateServiceConfig(servicesPath); err != nil {
 			return testreport.Run{}, err
 		}
-		fmt.Fprintln(progressW, "services: config validated; runtime virtualization hooks are not enabled yet")
+		cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: progressMode}).Render(cliui.Event{
+			Kind:   cliui.EventInfo,
+			Phase:  "test",
+			Label:  "services config validated",
+			Detail: "runtime virtualization hooks are not enabled yet",
+		})
 	}
 	if parsed.String("limit-mode") != "" {
 		mode, err := parseLimitMode(parsed.String("limit-mode"))
@@ -320,7 +326,6 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	lastFailed = parsed.Bool("last-failed")
 	wizard = parsed.Bool("wizard")
 	debug = parsed.Bool("debug")
-	progressMode = progressModeFromArgs(args, progressMode)
 	if parsed.String("debounce") != "" {
 		parsedDebounce, err := time.ParseDuration(parsed.String("debounce"))
 		if err != nil {
@@ -930,9 +935,9 @@ Common flags:
   --junit <path>            Write JUnit XML results.
   --trace <path>            Write a Chrome trace JSON document for this run.
   --services <path>         Validate a services.yml virtualization config.
-  --progress                Print line progress to stderr, even when not attached to a terminal.
+  --progress                Show progress on stderr; uses a progress bar on TTY and line output when redirected.
   --progress-json           Print NDJSON progress events to stderr.
-  --no-progress, --quiet    Disable terminal progress.
+  --no-progress, --quiet    Disable progress.
   --debug                   Run one DAP snapshot session after tests.
   --watch                   Watch source files and emit NDJSON events.
   --watch-once              Run one watch cycle and exit.
@@ -995,7 +1000,9 @@ func newCLITestProgressReporter(renderer cliui.Renderer) *cliTestProgressReporte
 }
 
 func progressModeFromArgs(args []string, fallback cliui.ProgressMode) cliui.ProgressMode {
-	mode := fallback
+	progress := false
+	progressJSON := false
+	noProgress := false
 	for _, arg := range args {
 		name := arg
 		if before, _, ok := strings.Cut(arg, "="); ok {
@@ -1003,14 +1010,17 @@ func progressModeFromArgs(args []string, fallback cliui.ProgressMode) cliui.Prog
 		}
 		switch name {
 		case "--progress":
-			mode = cliui.ProgressLine
+			progress = true
 		case "--progress-json":
-			mode = cliui.ProgressJSON
+			progressJSON = true
 		case "--no-progress", "--quiet", "-q":
-			mode = cliui.ProgressOff
+			noProgress = true
 		}
 	}
-	return mode
+	if !progress && !progressJSON && !noProgress {
+		return fallback
+	}
+	return progressModeForFlags(false, progress, progressJSON, noProgress)
 }
 
 func (r *cliTestProgressReporter) enqueue(progress apextest.TestProgress) {

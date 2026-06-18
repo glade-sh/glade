@@ -37,6 +37,14 @@ func TestNewRendererUsesLineRendererForNonTTY(t *testing.T) {
 	}
 }
 
+func TestNewRendererVisibleUsesLineRendererWhenNotTTY(t *testing.T) {
+	var out bytes.Buffer
+	r := NewRenderer(RendererOptions{Stderr: &out, Mode: ProgressVisible})
+	if _, ok := r.(*LineRenderer); !ok {
+		t.Fatalf("renderer = %T, want *LineRenderer", r)
+	}
+}
+
 func TestLineRendererWritesReadableProgress(t *testing.T) {
 	var out bytes.Buffer
 	r := NewLineRenderer(&out, fixedClock(time.Unix(10, 0).UTC()))
