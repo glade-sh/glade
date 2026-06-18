@@ -20,8 +20,11 @@ Then start the local workbench from the project root:
 glade dev lwc --project . --open
 ```
 
-The `/lwc` workbench shows discovered routes, the mounted context, and local
-diagnostics. It uses the same runtime pieces as the preview routes.
+The printed base URL opens the local workbench. The same workbench is also
+available at `/lwc` for stable links. It lists and filters available LWCs, lets
+you place target-compatible components into a draft app, home, record, or tab
+page, and shows discovered preview routes, active context, and local
+diagnostics.
 
 Use an ephemeral port and ready file for scripts:
 
@@ -154,6 +157,7 @@ Explicit flags override preset fields for non-community routes.
 Open these routes from the local server:
 
 ```text
+/
 /lwc
 /lwc/preview/component/<namespace>/<component>
 /lwc/preview/cmp/<namespace>/<component>?c__name=value
@@ -170,6 +174,7 @@ Open these routes from the local server:
 Examples:
 
 ```text
+http://127.0.0.1:8080/
 http://127.0.0.1:8080/lwc
 http://127.0.0.1:8080/lwc/preview/component/c/contextProbe
 http://127.0.0.1:8080/lwc/preview/cmp/c/actionProbe?c__name=value

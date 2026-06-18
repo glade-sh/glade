@@ -15,7 +15,7 @@ Salesforce target org.
 
 | Host | Status | Support key | Notes |
 | --- | --- | --- | --- |
-| LWC workbench | Preview feature | `lwc.host.lightning-shell` | `/lwc` opens the local workbench with discovered routes, active context, and diagnostics. |
+| LWC workbench | Preview feature | `lwc.host.lightning-shell` | The printed base URL and `/lwc` open the local workbench with a filterable available-LWC catalog, draft page composer, discovered routes, active context, and diagnostics. |
 | Direct component shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/component/<namespace>/<component>` mounts one exposed component for local development. |
 | Record page shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>` resolves FlexiPage regions and record context. |
 | App page shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/app/<Page>` resolves app-page FlexiPage metadata. |

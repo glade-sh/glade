@@ -153,10 +153,13 @@ you need those shell contexts without a named preset.
 Use `--port 8080` for the common localhost shortcut. Use `--addr` when scripts
 need a full bind address.
 
-The `/lwc` workbench lists contexts, routes, mounted components, and
-diagnostics. The startup banner still lists discovered routes:
+The printed base URL opens the workbench. `/lwc` opens the same workbench for
+stable links. The workbench lists and filters available LWCs, lets you place
+components onto a draft page, and keeps contexts, routes, mounted components,
+and diagnostics visible. The startup banner still lists discovered routes:
 
 ```text
+/
 /lwc
 /lwc/preview/component/<namespace>/<component>
 /lwc/preview/cmp/<namespace>/<component>?c__name=value

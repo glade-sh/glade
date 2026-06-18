@@ -187,6 +187,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	parts := splitPath(r.URL.EscapedPath())
+	if len(parts) == 0 && s.hasLWCWorkbenchProject() {
+		s.handleLWCShell(w, r, nil)
+		return
+	}
 	if len(parts) >= 2 && parts[0] == "apex" {
 		s.handleVisualforcePage(w, r, parts[1:])
 		return
@@ -298,4 +302,12 @@ func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request) {
 	default:
 		writeSalesforceError(w, errUnknownEndpoint)
 	}
+}
+
+func (s *Server) hasLWCWorkbenchProject() bool {
+	if s == nil {
+		return false
+	}
+	p := s.Source.Project
+	return len(p.LWCFiles) > 0 || len(p.LWCHTMLFiles) > 0 || len(p.LWCMetaFiles) > 0 || len(p.FlexiPageFiles) > 0 || len(p.TabFiles) > 0
 }

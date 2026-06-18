@@ -19,6 +19,8 @@ const shellFiles = {
   "/lightning/runtime/shell/diagnostics.mjs": "lwcruntime/src/shell/diagnostics.mjs",
   "/lightning/runtime/shell/navigation-service.js": "lwcruntime/src/shell/navigation-service.mjs",
   "/lightning/runtime/shell/navigation-service.mjs": "lwcruntime/src/shell/navigation-service.mjs",
+  "/lightning/runtime/shell/workbench-builder.js": "lwcruntime/src/shell/workbench-builder.mjs",
+  "/lightning/runtime/shell/workbench-builder.mjs": "lwcruntime/src/shell/workbench-builder.mjs",
   "/lightning/runtime/shell/toast-service.js": "lwcruntime/src/shell/toast-service.mjs",
   "/lightning/runtime/shell/toast-service.mjs": "lwcruntime/src/shell/toast-service.mjs",
   "/lightning/runtime/slds/slds-loader.js": "lwcruntime/src/slds/slds-loader.mjs",
@@ -188,6 +190,72 @@ test("LWC shell workbench renders routes, context, and mounted record page", asy
     assert.equal(await page.locator("c-community-theme-layout #glade-lwc-main-0").count(), 1);
     assert.match(await page.locator("c-community-theme-layout c-community-probe").innerText({ timeout: 60000 }), /Community Probe/);
     assert.match(await page.locator("c-community-probe").innerText({ timeout: 60000 }), /\/lwc\/preview\/community\/Partner_Portal\/Account\?c__view=summary/);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+
+  assert.deepEqual(consoleErrors, []);
+  assert.deepEqual(pageErrors, []);
+});
+
+test("LWC shell workbench lets developers compose a local page from available components", async (t) => {
+  const server = await startLWCDevServer(t, {
+    projectRel: "testdata/local-tests/lwc-shell",
+    pagePath: "/lwc",
+  });
+  if (!server) {
+    return;
+  }
+
+  const browser = await chromium.launch({ headless: true });
+  const consoleErrors = [];
+  const pageErrors = [];
+  try {
+    const page = await browser.newPage();
+    page.on("console", (msg) => {
+      if (msg.type() === "error") {
+        consoleErrors.push(msg.text());
+      }
+    });
+    page.on("pageerror", (err) => {
+      pageErrors.push(err.message);
+    });
+
+    await page.goto(`${server.baseURL}/lwc`, { waitUntil: "networkidle" });
+
+    await page.locator("[data-glade-workbench-builder]").waitFor({ timeout: 60000 });
+    await page.locator("[data-glade-component-search]").fill("context");
+    assert.equal(await page.locator('[data-glade-component-card][data-glade-component="c:contextProbe"]').isVisible(), true);
+    assert.equal(await page.locator('[data-glade-component-card][data-glade-component="c:recordProbe"]').isVisible(), false);
+    await page.locator("[data-glade-page-kind]").selectOption("recordPage");
+    await page.locator("[data-glade-object-input]").fill("Account");
+    await page.locator("[data-glade-record-input]").fill("001000000000001AAA");
+    await page.locator("[data-glade-component-search]").fill("recordProbe");
+    await page.locator('[data-glade-add-component="c:recordProbe"][data-glade-region="main"]').click();
+    await page.locator('[data-glade-draft-component="c:recordProbe"]').waitFor({ timeout: 60000 });
+    await page.locator("[data-glade-page-kind]").selectOption("appPage");
+    assert.equal(await page.locator('[data-glade-draft-component="c:recordProbe"]').count(), 0);
+    assert.match(await page.locator("[data-glade-draft-status]").innerText(), /^0 placed/);
+    await page.locator("[data-glade-page-kind]").selectOption("recordPage");
+    await page.locator("[data-glade-component-search]").fill("context");
+    await page.locator('[data-glade-add-component="c:contextProbe"][data-glade-region="main"]').click();
+
+    await page.locator('[data-glade-draft-component="c:contextProbe"]').waitFor({ timeout: 60000 });
+    await page.locator("c-context-probe").waitFor({ timeout: 60000 });
+    const text = await page.locator("c-context-probe").innerText({ timeout: 60000 });
+    assert.match(text, /LOCAL SHELL CONTEXT/);
+    assert.match(text, /001000000000001AAA/);
+    const contextPanel = await page.locator("[data-glade-context-panel]").innerText({ timeout: 60000 });
+    assert.match(contextPanel, /standard__recordPage/);
+    assert.match(contextPanel, /Account/);
+    assert.match(contextPanel, /001000000000001AAA/);
+    assert.equal(await page.locator(".glade-route-picker[open]").count(), 0);
+    assert.equal(await page.locator(".glade-stage > .glade-region").count(), 0);
+
+    const model = JSON.parse(await page.locator("#glade-lwc-workbench").textContent());
+    assert.ok(model.components.some((component) => component.qualifiedName === "c:contextProbe"));
+    assert.equal(await page.locator('[data-glade-page-canvas] [data-glade-region-drop="main"]').count(), 1);
   } finally {
     await browser.close();
     await server.close();

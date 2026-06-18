@@ -4,6 +4,7 @@ import { diagnostics } from "./diagnostics.mjs";
 import { renderContextPanel } from "./context-panel.mjs";
 import { installToastService } from "./toast-service.mjs";
 import { applyCommunityHost } from "./community-host.mjs";
+import { bootWorkbenchBuilder } from "./workbench-builder.mjs";
 
 export async function bootGladeShell({ root = document.body, config = readConfig() } = {}) {
   await loadSLDS();
@@ -12,14 +13,16 @@ export async function bootGladeShell({ root = document.body, config = readConfig
   bindRouteLinks(root);
   const disposeToastService = installToastService(root);
   const panel = root.querySelector("[data-glade-context-panel]");
-  if (panel) {
-    renderContextPanel(panel, config);
-  }
-  document.addEventListener("glade:diagnostic", () => {
+  const renderPanel = () => {
     if (panel) {
-      renderContextPanel(panel, config);
+      renderContextPanel(panel, readConfig());
     }
-  });
+  };
+  renderPanel();
+  document.addEventListener("glade:diagnostic", renderPanel);
+  document.addEventListener("glade:page-reference", renderPanel);
+  document.addEventListener("glade:context-changed", renderPanel);
+  bootWorkbenchBuilder(root, config);
   return { config, diagnostics, disposeToastService };
 }
 

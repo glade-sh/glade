@@ -43,14 +43,22 @@ type compileResult struct {
 	ManifestPath string                 `json:"manifestPath"`
 }
 
+type compileRoots struct {
+	ScriptRoot     string
+	DependencyRoot string
+}
+
 func Compile(p project.Project, opts Options) (Manifest, error) {
 	if strings.TrimSpace(opts.OutDir) == "" {
 		return Manifest{}, fmt.Errorf("compile: OutDir is required")
 	}
-	repoRoot := strings.TrimSpace(opts.RepoRoot)
-	if repoRoot == "" {
+	roots := compileRoots{
+		ScriptRoot:     strings.TrimSpace(opts.RepoRoot),
+		DependencyRoot: strings.TrimSpace(opts.RepoRoot),
+	}
+	if roots.ScriptRoot == "" {
 		var err error
-		repoRoot, err = compileRepoRoot()
+		roots, err = compileToolchainRoots()
 		if err != nil {
 			return Manifest{}, err
 		}
@@ -82,9 +90,11 @@ func Compile(p project.Project, opts Options) (Manifest, error) {
 	if err != nil {
 		return Manifest{}, err
 	}
-	script := filepath.Join(repoRoot, "third_party", "lwc", "compile.mjs")
+	script := filepath.Join(roots.ScriptRoot, "third_party", "lwc", "compile.mjs")
 	cmd := exec.Command("node", script)
-	cmd.Dir = filepath.Join(repoRoot, "third_party", "lwc")
+	toolchainDir := filepath.Join(roots.DependencyRoot, "third_party", "lwc")
+	cmd.Dir = toolchainDir
+	cmd.Env = append(os.Environ(), "GLADE_LWC_TOOLCHAIN_DIR="+toolchainDir)
 	cmd.Stdin = strings.NewReader(string(payload))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -105,13 +115,21 @@ func FindRepoRoot() (string, error) {
 	return gladehome.RepoRoot()
 }
 
-func compileRepoRoot() (string, error) {
-	if root, err := gladehome.RepoRoot(); err == nil {
-		if _, err := os.Stat(filepath.Join(root, "third_party", "lwc", "compile.mjs")); err == nil {
-			return root, nil
+func compileToolchainRoots() (compileRoots, error) {
+	dependencyRoot, err := gladehome.EnsureRoot()
+	if err != nil {
+		return compileRoots{}, err
+	}
+	roots := compileRoots{
+		ScriptRoot:     dependencyRoot,
+		DependencyRoot: dependencyRoot,
+	}
+	if sourceRoot, err := gladehome.SourceRoot(); err == nil {
+		if _, err := os.Stat(filepath.Join(sourceRoot, "third_party", "lwc", "compile.mjs")); err == nil {
+			roots.ScriptRoot = sourceRoot
 		}
 	}
-	return gladehome.EnsureRoot()
+	return roots, nil
 }
 
 func relativize(root string, paths []string) []string {

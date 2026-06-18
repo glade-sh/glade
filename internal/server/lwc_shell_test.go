@@ -38,11 +38,52 @@ func TestLWCShellRootRendersWorkbenchRoutePicker(t *testing.T) {
 	for _, want := range []string{
 		"Glade LWC Shell",
 		"data-glade-shell=\"workbench\"",
+		"data-glade-workbench-builder",
+		"data-glade-component-catalog",
+		"data-glade-page-canvas",
+		"data-glade-region-drop=\"main\"",
+		"data-glade-add-component=\"c:contextProbe\"",
 		"/lwc/preview/record/Account/",
 		"/lwc/preview/app/Sales_Dashboard",
 		"/lwc/preview/home/Custom_Home",
 		"/lwc/preview/tab/Lwc_Probe",
 		"data-glade-context-panel",
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("missing %q in:\n%s", want, body)
+		}
+	}
+	if !strings.Contains(body, `"components":[`) || !strings.Contains(body, `"qualifiedName":"c:contextProbe"`) {
+		t.Fatalf("workbench model missing component catalog in:\n%s", body)
+	}
+	if !strings.Contains(body, `"target":"lightning__AppPage"`) || !strings.Contains(body, `"target":"lightning__RecordPage"`) {
+		t.Fatalf("workbench model missing target support in:\n%s", body)
+	}
+}
+
+func TestServerRootRendersLWCWorkbenchWhenProjectHasLWCs(t *testing.T) {
+	root, err := lightningTestRepoRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture := filepath.Join(root, "testdata", "local-tests", "lwc-shell")
+	p, err := project.Load(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	for _, want := range []string{
+		"Glade LWC Shell",
+		"data-glade-workbench-builder",
+		"data-glade-add-component=\"c:contextProbe\"",
 	} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("missing %q in:\n%s", want, body)
@@ -140,6 +181,21 @@ func TestLightningRuntimeServesShellAndSLDSAssets(t *testing.T) {
 		if !strings.Contains(rec.Body.String(), tc.want) {
 			t.Fatalf("%s missing %q in %s", tc.path, tc.want, rec.Body.String())
 		}
+	}
+}
+
+func TestLightningRuntimePrefersRepoAssetsForSourceCheckout(t *testing.T) {
+	root, err := lightningTestRepoRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	dirs := lightningRuntimeAssetDirs("shell")
+	if len(dirs) == 0 {
+		t.Fatal("no shell runtime asset dirs")
+	}
+	want := filepath.Join(root, "lwcruntime", "src", "shell")
+	if dirs[0] != want {
+		t.Fatalf("first shell runtime asset dir = %q, want %q; dirs=%#v", dirs[0], want, dirs)
 	}
 }
 

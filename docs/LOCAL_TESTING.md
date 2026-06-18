@@ -47,10 +47,13 @@ Start the LWC dev shell from a Salesforce-shaped project:
 glade dev lwc --project . --open
 ```
 
-The command opens the `/lwc` workbench. It lists component, record page, app
-page, home page, and tab routes discovered from LWC bundle metadata,
-FlexiPages, and custom tabs. Use a named context when a page needs record, app,
-tab, form-factor, or state values:
+The command opens the workbench at the printed base URL. `/lwc` opens the same
+workbench for stable links. It lists and filters available LWCs, lets you place
+components onto a draft page, and lists component, record page, app page, home
+page, and tab routes discovered from LWC bundle metadata, FlexiPages, and
+custom tabs.
+Use a named context when a page needs record, app, tab, form-factor, or state
+values:
 
 ```bash
 glade dev lwc --project . --context accountRecord --open

@@ -220,6 +220,29 @@ export default helper;`)
 	}
 }
 
+func TestCompileEnablesLwcOnDirective(t *testing.T) {
+	fixtureDir := filepath.Join(t.TempDir(), "lwc-on-fixture")
+	componentDir := filepath.Join(fixtureDir, "force-app", "main", "default", "lwc", "dynamicOn")
+	writeCompileFixtureFile(t, filepath.Join(componentDir, "dynamicOn.js"), `import { LightningElement } from 'lwc';
+export default class DynamicOn extends LightningElement {
+  handlers = { click: () => {} };
+}`)
+	writeCompileFixtureFile(t, filepath.Join(componentDir, "dynamicOn.html"), `<template><button lwc:on={handlers}>Dynamic</button></template>`)
+	writeCompileFixtureFile(t, filepath.Join(componentDir, "dynamicOn.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><isExposed>true</isExposed></LightningComponentBundle>`)
+
+	p, err := project.Load(fixtureDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	outDir := filepath.Join(t.TempDir(), "dist")
+	if _, err := Compile(p, Options{OutDir: outDir, Namespace: "c"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(outDir, "c", "dynamicOn", "dynamicOn.html.js")); err != nil {
+		t.Fatalf("missing compiled lwc:on template: %v", err)
+	}
+}
+
 func writeCompileFixtureFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

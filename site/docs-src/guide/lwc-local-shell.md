@@ -141,11 +141,14 @@ Direct flags override preset fields.
 
 ## Routes
 
-The `/lwc` workbench lists discovered routes, mounted components, active
-context, and diagnostics. Raw preview routes remain stable for scripts and
-bookmarks:
+The printed base URL opens the workbench. `/lwc` opens the same workbench for
+stable links. It lists available LWCs, filters by search text and selected page
+target, lets you place components into a draft app, home, record, or tab page,
+and keeps active context and diagnostics visible. Raw preview routes remain
+stable for scripts and bookmarks:
 
 ```text
+/
 /lwc
 /lwc/preview/component/<namespace>/<component>
 /lwc/preview/cmp/<namespace>/<component>?c__name=value
@@ -162,6 +165,7 @@ bookmarks:
 Examples:
 
 ```text
+http://127.0.0.1:8080/
 http://127.0.0.1:8080/lwc
 http://127.0.0.1:8080/lwc/preview/component/c/contextProbe
 http://127.0.0.1:8080/lwc/preview/cmp/c/actionProbe?c__name=value

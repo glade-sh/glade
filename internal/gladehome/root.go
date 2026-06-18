@@ -18,6 +18,24 @@ func RepoRoot() (string, error) {
 	return "", fmt.Errorf("could not find glade source checkout")
 }
 
+// SourceRoot locates a glade source checkout without requiring the local LWC
+// compiler dependencies. Use this for checked-in source assets.
+func SourceRoot() (string, error) {
+	candidates := candidateRoots(false)
+	seen := make(map[string]bool, len(candidates))
+	for _, candidate := range candidates {
+		candidate = filepath.Clean(candidate)
+		if candidate == "" || seen[candidate] {
+			continue
+		}
+		seen[candidate] = true
+		if hasGoMod(candidate) && hasRuntimeSource(candidate) {
+			return candidate, nil
+		}
+	}
+	return "", fmt.Errorf("could not find glade source checkout")
+}
+
 // Root returns the active LWC toolchain root (typically ~/.local/share/glade).
 func Root() (string, error) {
 	if root, ok := explicitToolchainRoot(); ok {
@@ -167,6 +185,19 @@ func candidateRoots(includeUserShare bool) []string {
 func hasGoMod(root string) bool {
 	_, err := os.Stat(filepath.Join(root, "go.mod"))
 	return err == nil
+}
+
+func hasRuntimeSource(root string) bool {
+	for _, required := range []string{
+		filepath.Join(root, "lwcruntime", "src", "shell", "app.mjs"),
+		filepath.Join(root, "lwcruntime", "src", "shims", "wire-adapter.mjs"),
+		filepath.Join(root, "lwcruntime", "src", "slds", "slds-loader.mjs"),
+	} {
+		if _, err := os.Stat(required); err != nil {
+			return false
+		}
+	}
+	return true
 }
 
 func walkAncestors(start string) []string {

@@ -11,13 +11,14 @@ import (
 )
 
 type WorkbenchModel struct {
-	Title       string       `json:"title"`
-	Mode        string       `json:"mode"`
-	Apps        []ShellApp   `json:"apps"`
-	Routes      []ShellRoute `json:"routes"`
-	ActiveRoute string       `json:"activeRoute"`
-	Active      ShellPage    `json:"active"`
-	Diagnostics []Diagnostic `json:"diagnostics,omitempty"`
+	Title       string           `json:"title"`
+	Mode        string           `json:"mode"`
+	Apps        []ShellApp       `json:"apps"`
+	Routes      []ShellRoute     `json:"routes"`
+	Components  []ShellComponent `json:"components"`
+	ActiveRoute string           `json:"activeRoute"`
+	Active      ShellPage        `json:"active"`
+	Diagnostics []Diagnostic     `json:"diagnostics,omitempty"`
 }
 
 type ShellApp struct {
@@ -41,6 +42,23 @@ type ShellRoute struct {
 	State       map[string]string `json:"state,omitempty"`
 }
 
+type ShellComponent struct {
+	Name          string                 `json:"name"`
+	Namespace     string                 `json:"namespace"`
+	QualifiedName string                 `json:"qualifiedName"`
+	Label         string                 `json:"label"`
+	Exposed       bool                   `json:"exposed"`
+	Targets       []string               `json:"targets,omitempty"`
+	TargetSupport []ShellComponentTarget `json:"targetSupport,omitempty"`
+}
+
+type ShellComponentTarget struct {
+	Target               string            `json:"target"`
+	Properties           map[string]string `json:"properties,omitempty"`
+	SupportedObjects     []string          `json:"supportedObjects,omitempty"`
+	SupportedFormFactors []string          `json:"supportedFormFactors,omitempty"`
+}
+
 func BuildWorkbenchModel(p project.Project, active ShellPage, activeRoute string) WorkbenchModel {
 	routes := DiscoverShellRoutes(p)
 	appName := strings.TrimSpace(active.Context.AppName)
@@ -53,6 +71,7 @@ func BuildWorkbenchModel(p project.Project, active ShellPage, activeRoute string
 		Mode:        app.Mode,
 		Apps:        []ShellApp{app},
 		Routes:      routes,
+		Components:  DiscoverWorkbenchComponents(p),
 		ActiveRoute: activeRoute,
 		Active:      active,
 		Diagnostics: append([]Diagnostic(nil), active.Diagnostics...),
@@ -196,6 +215,121 @@ func DiscoverShellRoutes(p project.Project) []ShellRoute {
 	}
 	routes = appendCommunityPresetRoutes(p, routes)
 	return routes
+}
+
+func DiscoverWorkbenchComponents(p project.Project) []ShellComponent {
+	namespace := strings.TrimSpace(p.Namespace)
+	if namespace == "" {
+		namespace = "c"
+	}
+	idx, err := lwc.BuildIndex(p)
+	if err != nil {
+		return nil
+	}
+	names := idx.Names()
+	out := make([]ShellComponent, 0, len(names))
+	for _, name := range names {
+		bundle, ok := idx.Bundle(name)
+		if !ok || strings.TrimSpace(bundle.MetaFile) == "" {
+			continue
+		}
+		meta, err := lwc.ParseComponentMeta(bundle.MetaFile)
+		if err != nil {
+			continue
+		}
+		label := strings.TrimSpace(meta.MasterLabel)
+		if label == "" {
+			label = bundle.Name
+		}
+		out = append(out, ShellComponent{
+			Name:          bundle.Name,
+			Namespace:     namespace,
+			QualifiedName: namespace + ":" + bundle.Name,
+			Label:         label,
+			Exposed:       meta.IsExposed,
+			Targets:       workbenchComponentTargets(meta),
+			TargetSupport: workbenchComponentTargetSupport(meta),
+		})
+	}
+	return out
+}
+
+func workbenchComponentTargets(meta lwc.ComponentMeta) []string {
+	seen := map[string]bool{}
+	var targets []string
+	for _, target := range meta.Targets {
+		target = strings.TrimSpace(target)
+		if target == "" || seen[strings.ToLower(target)] {
+			continue
+		}
+		seen[strings.ToLower(target)] = true
+		targets = append(targets, target)
+	}
+	for _, cfg := range meta.TargetConfigs {
+		for _, target := range cfg.Targets {
+			target = strings.TrimSpace(target)
+			if target == "" || seen[strings.ToLower(target)] {
+				continue
+			}
+			seen[strings.ToLower(target)] = true
+			targets = append(targets, target)
+		}
+	}
+	sort.Strings(targets)
+	return targets
+}
+
+func workbenchComponentTargetSupport(meta lwc.ComponentMeta) []ShellComponentTarget {
+	byTarget := map[string]*ShellComponentTarget{}
+	for _, target := range workbenchComponentTargets(meta) {
+		copyTarget := target
+		byTarget[strings.ToLower(target)] = &ShellComponentTarget{Target: copyTarget}
+	}
+	for _, cfg := range meta.TargetConfigs {
+		properties := workbenchComponentDefaultProperties(cfg)
+		for _, target := range cfg.Targets {
+			target = strings.TrimSpace(target)
+			if target == "" {
+				continue
+			}
+			key := strings.ToLower(target)
+			row := byTarget[key]
+			if row == nil {
+				row = &ShellComponentTarget{Target: target}
+				byTarget[key] = row
+			}
+			if len(properties) > 0 {
+				row.Properties = properties
+			}
+			row.SupportedObjects = append([]string(nil), cfg.SupportedObjects...)
+			row.SupportedFormFactors = append([]string(nil), cfg.SupportedFormFactors...)
+		}
+	}
+	keys := make([]string, 0, len(byTarget))
+	for key := range byTarget {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	out := make([]ShellComponentTarget, 0, len(keys))
+	for _, key := range keys {
+		out = append(out, *byTarget[key])
+	}
+	return out
+}
+
+func workbenchComponentDefaultProperties(cfg lwc.TargetConfig) map[string]string {
+	properties := map[string]string{}
+	for _, prop := range cfg.Properties {
+		name := strings.TrimSpace(prop.Name)
+		if name == "" || strings.TrimSpace(prop.Default) == "" {
+			continue
+		}
+		properties[name] = strings.TrimSpace(prop.Default)
+	}
+	if len(properties) == 0 {
+		return nil
+	}
+	return properties
 }
 
 func appendCommunityPresetRoutes(p project.Project, routes []ShellRoute) []ShellRoute {

@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/gladehome"
 )
 
 func TestLightningBaseComponentSupportTiers(t *testing.T) {
@@ -253,6 +255,14 @@ func TestGeneratedPhase3BaseComponentsRunInBrowser(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(repoRoot, "lwcruntime", "node_modules", "playwright")); err != nil {
 		t.Skip("playwright node module not installed")
 	}
+	toolchainRoot := repoRoot
+	if _, err := os.Stat(filepath.Join(toolchainRoot, "third_party", "lwc", "node_modules", "@lwc", "engine-dom")); err != nil {
+		root, err := gladehome.EnsureRoot()
+		if err != nil {
+			t.Skipf("LWC toolchain node modules not installed: %v", err)
+		}
+		toolchainRoot = root
+	}
 	shims := map[string]string{
 		"checkboxGroup": LightningBaseComponentModuleJS("checkboxGroup"),
 		"dualListbox":   LightningBaseComponentModuleJS("dualListbox"),
@@ -295,9 +305,9 @@ const dual = append("lightning-dual-listbox", DualListbox, {
 dual.addEventListener("change", (event) => { window.__dualListbox = event.detail; });
 `)
 		case "/lightning/vendor/lwc.js":
-			serveTestFile(t, w, filepath.Join(repoRoot, "third_party", "lwc", "node_modules", "@lwc", "engine-dom", "dist", "index.js"))
+			serveTestFile(t, w, filepath.Join(toolchainRoot, "third_party", "lwc", "node_modules", "@lwc", "engine-dom", "dist", "index.js"))
 		case "/lightning/vendor/synthetic-shadow.js":
-			serveTestFile(t, w, filepath.Join(repoRoot, "third_party", "lwc", "node_modules", "@lwc", "synthetic-shadow", "dist", "index.js"))
+			serveTestFile(t, w, filepath.Join(toolchainRoot, "third_party", "lwc", "node_modules", "@lwc", "synthetic-shadow", "dist", "index.js"))
 		case "/lightning/runtime/shell/diagnostics.js":
 			w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 			fmt.Fprint(w, `export const diagnostics = []; export function reportDiagnostic(diagnostic) { diagnostics.push(diagnostic); }`)

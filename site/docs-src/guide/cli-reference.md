@@ -328,7 +328,9 @@ glade dev lwc --project . --context accountRecord --open
 glade dev lwc --project . --addr 127.0.0.1:0 --ready-file /tmp/glade-lwc-ready.json
 ```
 
-The LWC shell prints `/lwc/preview/component/<namespace>/<component>`,
+The printed base URL opens the local workbench, with `/lwc` available as a
+stable link. The workbench includes a filterable LWC catalog and draft page
+composer. The shell also prints `/lwc/preview/component/<namespace>/<component>`,
 `/lwc/preview/cmp/<namespace>/<component>?c__name=value`,
 `/lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>`,
 `/lwc/preview/app/<Page>`, `/lwc/preview/home/<Page>`,

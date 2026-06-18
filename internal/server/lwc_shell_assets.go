@@ -69,8 +69,14 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 	}
 	b.WriteString(`<main class="glade-stage">`)
 	b.WriteString(lwcShellDiagnosticsHTML(shell.Diagnostics))
-	b.WriteString(lwcShellRoutePickerHTML(model))
-	b.WriteString(lwcShellRegionsHTML(shell))
+	builderActive := lwcShellWorkbenchBuilderActive(activeRoute)
+	if builderActive {
+		b.WriteString(lwcShellWorkbenchBuilderHTML(model))
+	}
+	b.WriteString(lwcShellRoutePickerHTML(model, builderActive))
+	if !builderActive {
+		b.WriteString(lwcShellRegionsHTML(shell))
+	}
 	b.WriteString(`</main><aside class="glade-context-panel" data-glade-context-panel>`)
 	b.WriteString(`<h2>Context</h2><dl>`)
 	communityGuest := ""
@@ -116,12 +122,102 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 	return b.String()
 }
 
-func lwcShellRoutePickerHTML(model lwcshell.WorkbenchModel) string {
+func lwcShellWorkbenchBuilderActive(activeRoute string) bool {
+	activeRoute = strings.TrimSpace(activeRoute)
+	return activeRoute == "/lwc"
+}
+
+func lwcShellWorkbenchBuilderHTML(model lwcshell.WorkbenchModel) string {
+	if len(model.Components) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString(`<section class="glade-workbench-builder" data-glade-workbench-builder aria-label="Local page builder">`)
+	b.WriteString(`<div class="glade-builder-toolbar">`)
+	b.WriteString(`<label>Page type<select data-glade-page-kind>`)
+	for _, option := range []struct{ value, label string }{
+		{string(lwcshell.RenderTargetAppPage), "App page"},
+		{string(lwcshell.RenderTargetRecordPage), "Record page"},
+		{string(lwcshell.RenderTargetHomePage), "Home page"},
+		{string(lwcshell.RenderTargetTab), "Tab"},
+	} {
+		b.WriteString(`<option value="`)
+		b.WriteString(html.EscapeString(option.value))
+		b.WriteString(`">`)
+		b.WriteString(html.EscapeString(option.label))
+		b.WriteString(`</option>`)
+	}
+	b.WriteString(`</select></label>`)
+	b.WriteString(`<label>Object<input data-glade-object-input value="Account" autocomplete="off"></label>`)
+	b.WriteString(`<label>Record<input data-glade-record-input value="001000000000001AAA" autocomplete="off"></label>`)
+	b.WriteString(`<label>App<input data-glade-app-input value="Local" autocomplete="off"></label>`)
+	b.WriteString(`<label>Form factor<select data-glade-form-factor><option value="Large">Large</option><option value="Medium">Medium</option><option value="Small">Small</option></select></label>`)
+	b.WriteString(`<button type="button" data-glade-clear-draft>Clear</button>`)
+	b.WriteString(`</div>`)
+	b.WriteString(`<div class="glade-builder-layout">`)
+	b.WriteString(`<section class="glade-component-catalog" data-glade-component-catalog aria-label="Available Lightning Web Components">`)
+	b.WriteString(`<div class="glade-catalog-header"><h2>Available LWCs</h2><label>Filter<input type="search" data-glade-component-search placeholder="Search components" autocomplete="off"></label></div><div class="glade-component-list">`)
+	for _, component := range model.Components {
+		b.WriteString(`<article class="glade-component-card" data-glade-component-card data-glade-component="`)
+		b.WriteString(html.EscapeString(component.QualifiedName))
+		b.WriteString(`" data-glade-component-exposed="`)
+		b.WriteString(html.EscapeString(fmt.Sprintf("%t", component.Exposed)))
+		b.WriteString(`"><div><strong>`)
+		b.WriteString(html.EscapeString(component.Label))
+		b.WriteString(`</strong><code>`)
+		b.WriteString(html.EscapeString(component.QualifiedName))
+		b.WriteString(`</code></div>`)
+		if len(component.Targets) > 0 {
+			b.WriteString(`<p>`)
+			b.WriteString(html.EscapeString(strings.Join(component.Targets, ", ")))
+			b.WriteString(`</p>`)
+		}
+		b.WriteString(`<div class="glade-component-actions">`)
+		for _, region := range []struct{ name, label string }{
+			{"main", "Main"},
+			{"sidebar", "Sidebar"},
+		} {
+			b.WriteString(`<button type="button" data-glade-add-component="`)
+			b.WriteString(html.EscapeString(component.QualifiedName))
+			b.WriteString(`" data-glade-region="`)
+			b.WriteString(html.EscapeString(region.name))
+			b.WriteString(`">`)
+			b.WriteString(html.EscapeString("+ " + region.label))
+			b.WriteString(`</button>`)
+		}
+		b.WriteString(`</div></article>`)
+	}
+	b.WriteString(`</div></section>`)
+	b.WriteString(`<section class="glade-page-canvas" data-glade-page-canvas aria-label="Draft Lightning page">`)
+	b.WriteString(`<div class="glade-draft-header"><h2 data-glade-draft-title>Draft App Page</h2><span data-glade-draft-status></span></div>`)
+	for _, region := range []struct{ name, label string }{
+		{"main", "Main"},
+		{"sidebar", "Sidebar"},
+	} {
+		b.WriteString(`<section class="glade-draft-region" data-glade-region-drop="`)
+		b.WriteString(html.EscapeString(region.name))
+		b.WriteString(`"><h3>`)
+		b.WriteString(html.EscapeString(region.label))
+		b.WriteString(`</h3><div data-glade-region-items="`)
+		b.WriteString(html.EscapeString(region.name))
+		b.WriteString(`"></div></section>`)
+	}
+	b.WriteString(`</section></div></section>`)
+	return b.String()
+}
+
+func lwcShellRoutePickerHTML(model lwcshell.WorkbenchModel, collapsed bool) string {
 	if len(model.Routes) == 0 {
 		return ""
 	}
 	var b strings.Builder
-	b.WriteString(`<section class="glade-route-picker" aria-label="Preview routes"><h2>Preview routes</h2><div>`)
+	if collapsed {
+		b.WriteString(`<details class="glade-route-picker" aria-label="Preview routes"><summary>Preview routes <span>`)
+		b.WriteString(html.EscapeString(fmt.Sprintf("%d", len(model.Routes))))
+		b.WriteString(`</span></summary><div>`)
+	} else {
+		b.WriteString(`<section class="glade-route-picker" aria-label="Preview routes"><h2>Preview routes</h2><div>`)
+	}
 	for _, route := range model.Routes {
 		b.WriteString(`<a data-glade-route data-glade-route-kind="`)
 		b.WriteString(html.EscapeString(string(route.Kind)))
@@ -133,7 +229,11 @@ func lwcShellRoutePickerHTML(model lwcshell.WorkbenchModel) string {
 		b.WriteString(html.EscapeString(route.URL))
 		b.WriteString(`</code></a>`)
 	}
-	b.WriteString(`</div></section>`)
+	if collapsed {
+		b.WriteString(`</div></details>`)
+	} else {
+		b.WriteString(`</div></section>`)
+	}
 	return b.String()
 }
 
@@ -244,23 +344,22 @@ func lightningRuntimeAsset(kind, name string) (string, []byte, bool) {
 
 func lightningRuntimeAssetDirs(kind string) []string {
 	var dirs []string
-	if dir, err := gladehome.RuntimeAssetDir(kind); err == nil {
-		dirs = append(dirs, dir)
+	if sourceRoot, err := gladehome.SourceRoot(); err == nil {
+		dirs = append(dirs, filepath.Join(sourceRoot, "lwcruntime", "src", kind))
 	}
-	if repoRoot, err := gladehome.RepoRoot(); err == nil {
-		dir := filepath.Join(repoRoot, "lwcruntime", "src", kind)
-		duplicate := false
-		for _, existing := range dirs {
-			if existing == dir {
-				duplicate = true
-				break
-			}
-		}
-		if !duplicate {
-			dirs = append(dirs, dir)
-		}
+	if dir, err := gladehome.RuntimeAssetDir(kind); err == nil {
+		dirs = appendRuntimeAssetDir(dirs, dir)
 	}
 	return dirs
+}
+
+func appendRuntimeAssetDir(dirs []string, dir string) []string {
+	for _, existing := range dirs {
+		if existing == dir {
+			return dirs
+		}
+	}
+	return append(dirs, dir)
 }
 
 func lightningRuntimeContentType(name string) string {

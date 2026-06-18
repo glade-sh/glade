@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
-import { transformSync } from "@lwc/compiler";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
+
+const defaultToolchainDir = path.dirname(fileURLToPath(import.meta.url));
+const toolchainDir = process.env.GLADE_LWC_TOOLCHAIN_DIR || defaultToolchainDir;
+const requireFromToolchain = createRequire(path.join(toolchainDir, "compile.mjs"));
+const { transformSync } = requireFromToolchain("@lwc/compiler");
 
 function readStdin() {
   return new Promise((resolve, reject) => {
@@ -28,6 +34,14 @@ function kebabCase(name) {
 function writeCompiled(outFile, code) {
   fs.mkdirSync(path.dirname(outFile), { recursive: true });
   fs.writeFileSync(outFile, code, "utf8");
+}
+
+function transformOptions(namespace, name) {
+  return {
+    namespace,
+    name,
+    enableLwcOn: true,
+  };
 }
 
 function rewriteStylesheetImports(code, bundleName) {
@@ -62,10 +76,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir) {
   fs.mkdirSync(bundleOut, { recursive: true });
 
   const htmlSource = fs.readFileSync(htmlPath, "utf8");
-  const htmlResult = transformSync(htmlSource, htmlPath, {
-    namespace,
-    name: bundleName,
-  });
+  const htmlResult = transformSync(htmlSource, htmlPath, transformOptions(namespace, bundleName));
   writeCompiled(
     path.join(bundleOut, `${bundleName}.html.js`),
     rewriteStylesheetImports(htmlResult.code, bundleName)
@@ -73,10 +84,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir) {
 
   if (fs.existsSync(cssPath)) {
     const cssSource = fs.readFileSync(cssPath, "utf8");
-    const cssResult = transformSync(cssSource, cssPath, {
-      namespace,
-      name: bundleName,
-    });
+    const cssResult = transformSync(cssSource, cssPath, transformOptions(namespace, bundleName));
     writeCompiled(path.join(bundleOut, `${bundleName}.css.js`), cssResult.code);
     writeCompiled(
       path.join(bundleOut, `${bundleName}.scoped.css.js`),
@@ -91,10 +99,7 @@ function compileBundle(bundleDir, bundleName, namespace, outDir) {
   }
 
   const jsSource = fs.readFileSync(jsPath, "utf8");
-  const jsResult = transformSync(jsSource, jsPath, {
-    namespace,
-    name: bundleName,
-  });
+  const jsResult = transformSync(jsSource, jsPath, transformOptions(namespace, bundleName));
   const jsCode = rewriteStylesheetImports(jsResult.code, bundleName);
 
   const entryFile = path.join(bundleOut, `${bundleName}.js`);
@@ -154,10 +159,7 @@ function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bund
     }
     const templateName = path.basename(rel, ".html");
     const htmlSource = fs.readFileSync(sourcePath, "utf8");
-    const htmlResult = transformSync(htmlSource, sourcePath, {
-      namespace,
-      name: templateName,
-    });
+    const htmlResult = transformSync(htmlSource, sourcePath, transformOptions(namespace, templateName));
     writeCompiled(
       path.join(bundleOut, `${rel}.js`),
       rewriteTemplateRelativeImports(htmlResult.code)
@@ -182,10 +184,7 @@ function compileAdditionalTemplateModules(bundleDir, bundleName, namespace, bund
 
 function compileCSSModule(cssPath, name, namespace, bundleDir, bundleOut) {
   const cssSource = fs.readFileSync(cssPath, "utf8");
-  const cssResult = transformSync(cssSource, cssPath, {
-    namespace,
-    name,
-  });
+  const cssResult = transformSync(cssSource, cssPath, transformOptions(namespace, name));
   const rel = path.relative(bundleDir, cssPath);
   writeCompiled(path.join(bundleOut, `${rel}.js`), cssResult.code);
 }

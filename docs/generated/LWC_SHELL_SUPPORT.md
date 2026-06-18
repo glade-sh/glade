@@ -90,7 +90,7 @@ report itself is an external run artifact, not a checked-in JSON file.
 
 | Feature | Host | Status | Evidence | Notes |
 | --- | --- | --- | --- | --- |
-| `lwc.host.lightning-shell` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.host.lightning-shell/lightning-shell` | Host lane has passing local browser evidence; live Salesforce parity remains target-specific. |
+| `lwc.host.lightning-shell` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.host.lightning-shell/lightning-shell` | Host lane has passing local browser evidence, including the base-URL workbench, filterable available-LWC catalog, draft page composer, and local preview routes; live Salesforce parity remains target-specific. |
 | `lwc.host.visualforce-lightning-out` | `visualforce-lightning-out` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.host.visualforce-lightning-out/visualforce-lightning-out` | Host lane has passing local browser evidence; live Salesforce parity remains target-specific. |
 | `lwc.target.direct-component` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.target.direct-component/lightning-shell` | Direct component route mounts the context probe bundle. |
 | `lwc.target.record-page` | `lightning-shell` | supported-local | `/path/to/lwc-shell-local-browser.json#/support/lwc.target.record-page/lightning-shell` | Record page route resolves Account_Record_Page and passes record context. |
