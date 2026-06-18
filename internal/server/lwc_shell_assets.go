@@ -362,6 +362,74 @@ func appendRuntimeAssetDir(dirs []string, dir string) []string {
 	return append(dirs, dir)
 }
 
+func (s *Server) handleLightningAssets(w http.ResponseWriter, r *http.Request, parts []string) {
+	if r.Method != http.MethodGet || len(parts) != 4 ||
+		parts[0] != "icons" || parts[2] != "svg" || parts[3] != "symbols.svg" {
+		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning asset")
+		return
+	}
+	content, ok := localSLDSSprite(parts[1])
+	if !ok {
+		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning asset")
+		return
+	}
+	w.Header().Set("Content-Type", "image/svg+xml; charset=utf-8")
+	setDevNoStore(w)
+	_, _ = w.Write([]byte(content))
+}
+
+func localSLDSSprite(sprite string) (string, bool) {
+	switch strings.TrimSpace(sprite) {
+	case "utility-sprite", "action-sprite", "standard-sprite", "doctype-sprite", "custom-sprite":
+	default:
+		return "", false
+	}
+	var b strings.Builder
+	b.WriteString(`<svg xmlns="http://www.w3.org/2000/svg" style="display:none">`)
+	for _, id := range localSLDSIconIDs() {
+		b.WriteString(`<symbol id="`)
+		b.WriteString(html.EscapeString(id))
+		b.WriteString(`" viewBox="0 0 52 52"><path d="M26 4 48 26 26 48 4 26z"/></symbol>`)
+	}
+	b.WriteString(`</svg>`)
+	return b.String(), true
+}
+
+func localSLDSIconIDs() []string {
+	return []string{
+		"add",
+		"apps",
+		"arrowdown",
+		"back",
+		"check",
+		"chevrondown",
+		"chevronleft",
+		"chevronright",
+		"chevronup",
+		"close",
+		"delete",
+		"down",
+		"edit",
+		"error",
+		"event",
+		"fallback",
+		"filter",
+		"help",
+		"info",
+		"new",
+		"preview",
+		"record",
+		"refresh",
+		"right",
+		"search",
+		"settings",
+		"success",
+		"up",
+		"user",
+		"warning",
+	}
+}
+
 func lightningRuntimeContentType(name string) string {
 	switch {
 	case strings.HasSuffix(name, ".css"):

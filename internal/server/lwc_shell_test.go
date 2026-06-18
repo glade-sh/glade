@@ -160,6 +160,7 @@ func TestLightningRuntimeServesShellAndSLDSAssets(t *testing.T) {
 		{path: "/lightning/runtime/shell/glade-shell.css", want: ".glade-shell"},
 		{path: "/lightning/runtime/slds/slds-loader.js", want: "loadSLDS"},
 		{path: "/lightning/runtime/slds/glade-slds.css", want: ".slds-button"},
+		{path: "/assets/icons/utility-sprite/svg/symbols.svg", want: "<symbol"},
 		{path: "/lightning/shims/core/apex.js", want: "refreshApex"},
 		{path: "/lightning/shims/lightning/actions.js", want: "CloseActionScreenEvent"},
 		{path: "/lightning/shims/lightning/empApi.js", want: "subscribe"},
