@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/cliui"
 	"github.com/glade-sh/glade/internal/enterprise"
 	"github.com/glade-sh/glade/internal/enterpriseassess"
 	"github.com/glade-sh/glade/internal/enterprisecruft"
@@ -18,7 +19,7 @@ import (
 	"github.com/glade-sh/glade/internal/refactorproof"
 )
 
-func runInspectGraph(ctx context.Context, args []string, w io.Writer) error {
+func runInspectGraph(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -29,6 +30,10 @@ func runInspectGraph(ctx context.Context, args []string, w io.Writer) error {
 	parsed, err := flagparse.New("glade inspect graph").
 		String("project", "p").
 		Bool("json", "j").
+		Bool("progress", "").
+		Bool("progress-json", "").
+		Bool("no-progress", "").
+		Bool("quiet", "q").
 		Parse(args)
 	if err != nil {
 		return err
@@ -37,14 +42,21 @@ func runInspectGraph(ctx context.Context, args []string, w io.Writer) error {
 	if parsed.String("project") != "" {
 		root = parsed.String("project")
 	}
+	progressMode := progressModeForFlags(parsed.Bool("json"), parsed.Bool("progress"), parsed.Bool("progress-json"), parsed.Bool("no-progress") || parsed.Bool("quiet"))
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: progressMode})
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "inspect graph", Label: "Loading context"})
 	ctxData, err := enterprise.LoadContext(root)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "inspect graph failed"})
 		return err
 	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "inspect graph", Label: "Building graph", Current: 1, Total: 2})
 	graph, err := enterprisegraph.Build(ctxData)
 	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "inspect graph failed"})
 		return err
 	}
+	renderer.Finish(cliui.Result{OK: true, Label: "inspect graph complete"})
 	if !parsed.Bool("json") {
 		fmt.Fprintf(w, "nodes: %d\n", len(graph.Nodes))
 		fmt.Fprintf(w, "edges: %d\n", len(graph.Edges))
@@ -65,23 +77,30 @@ type enterpriseReportOptions struct {
 	Since           string
 	TracePath       string
 	FailOnAPIBreak  bool
+	ProgressMode    cliui.ProgressMode
 }
 
-func runEnterpriseReport(ctx context.Context, command string, args []string, w io.Writer) error {
+func runEnterpriseReport(ctx context.Context, command string, args []string, w io.Writer, progressW io.Writer) error {
 	opts, err := parseEnterpriseReportOptions(command, args)
 	if err != nil {
 		return err
 	}
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: opts.ProgressMode})
 	switch command {
 	case "assess":
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "report " + command, Label: "Loading context"})
 		ctxData, err := enterprise.LoadContext(opts.Root)
 		if err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "report failed"})
 			return err
 		}
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "report " + command, Label: "Building graph", Current: 1, Total: 3})
 		graph, err := enterprisegraph.Build(ctxData)
 		if err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "report failed"})
 			return err
 		}
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "report " + command, Label: "Analyzing report", Current: 2, Total: 3})
 		report := enterpriseassess.Assess(ctxData, graph, enterpriseassess.Options{
 			IncludeMetadata: opts.IncludeMetadata,
 			IncludeTests:    opts.IncludeTests,
@@ -89,25 +108,35 @@ func runEnterpriseReport(ctx context.Context, command string, args []string, w i
 		})
 		report.Command = enterpriseCommandLine("report", command, args)
 		if err := writeEnterpriseReport(w, report, opts.Format, opts.Out); err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "report failed"})
 			return err
 		}
+		renderer.Finish(cliui.Result{OK: report.Status != enterprise.StatusFail, Label: "report complete"})
 		return enterpriseReportStatusError(report, "enterprise assessment failed")
 	case "cruft":
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "report " + command, Label: "Loading context"})
 		ctxData, err := enterprise.LoadContext(opts.Root)
 		if err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "report failed"})
 			return err
 		}
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "report " + command, Label: "Building graph", Current: 1, Total: 3})
 		graph, err := enterprisegraph.Build(ctxData)
 		if err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "report failed"})
 			return err
 		}
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "report " + command, Label: "Analyzing report", Current: 2, Total: 3})
 		report := enterprisecruft.Scan(ctxData, graph)
 		report.Command = enterpriseCommandLine("report", command, args)
 		if err := writeEnterpriseReport(w, report, opts.Format, opts.Out); err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "report failed"})
 			return err
 		}
+		renderer.Finish(cliui.Result{OK: report.Status != enterprise.StatusFail, Label: "report complete"})
 		return enterpriseReportStatusError(report, "enterprise cruft report failed")
 	case "refactor-proof":
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "report " + command, Label: "Running proof"})
 		result, err := refactorproof.Prove(ctx, refactorproof.Options{
 			Root:           opts.Root,
 			Since:          opts.Since,
@@ -115,12 +144,15 @@ func runEnterpriseReport(ctx context.Context, command string, args []string, w i
 			FailOnAPIBreak: opts.FailOnAPIBreak,
 		})
 		if err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "report failed"})
 			return err
 		}
 		result.Report.Command = enterpriseCommandLine("report", command, args)
 		if err := writeEnterpriseReport(w, result.Report, opts.Format, opts.Out); err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "report failed"})
 			return err
 		}
+		renderer.Finish(cliui.Result{OK: result.Report.Status != enterprise.StatusFail, Label: "report complete"})
 		return enterpriseReportStatusError(result.Report, "refactor proof failed")
 	default:
 		return fmt.Errorf("unknown enterprise report command %q", command)
@@ -148,6 +180,10 @@ func parseEnterpriseReportOptions(command string, args []string) (enterpriseRepo
 		String("since", "").
 		String("trace", "").
 		Bool("fail-on-api-break", "").
+		Bool("progress", "").
+		Bool("progress-json", "").
+		Bool("no-progress", "").
+		Bool("quiet", "q").
 		Parse(args)
 	if err != nil {
 		return enterpriseReportOptions{}, err
@@ -168,6 +204,7 @@ func parseEnterpriseReportOptions(command string, args []string) (enterpriseRepo
 	}
 	opts.TracePath = strings.TrimSpace(parsed.String("trace"))
 	opts.FailOnAPIBreak = parsed.Bool("fail-on-api-break")
+	opts.ProgressMode = progressModeForFlags(opts.Format == "json", parsed.Bool("progress"), parsed.Bool("progress-json"), parsed.Bool("no-progress") || parsed.Bool("quiet"))
 	if err := validateEnterpriseReportOptions(command, opts, parsed.String("since") != ""); err != nil {
 		return enterpriseReportOptions{}, err
 	}

@@ -357,7 +357,7 @@ func TestRunDevLWCOpenUsesStubbedOpener(t *testing.T) {
 	}
 	defer func() { devLWCOpenURL = oldOpen }()
 
-	err := runDevLWC(ctx, []string{"--project", root, "--addr", "127.0.0.1:0", "--context", "componentProbe", "--open"}, &bytes.Buffer{})
+	err := runDevLWC(ctx, []string{"--project", root, "--addr", "127.0.0.1:0", "--context", "componentProbe", "--open"}, &bytes.Buffer{}, &bytes.Buffer{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -383,7 +383,7 @@ func TestRunDevLWCOpenDefaultsToWorkbench(t *testing.T) {
 	}
 	defer func() { devLWCOpenURL = oldOpen }()
 
-	err := runDevLWC(ctx, []string{"--project", root, "--addr", "127.0.0.1:0", "--open"}, &bytes.Buffer{})
+	err := runDevLWC(ctx, []string{"--project", root, "--addr", "127.0.0.1:0", "--open"}, &bytes.Buffer{}, &bytes.Buffer{})
 	if err != nil {
 		t.Fatal(err)
 	}

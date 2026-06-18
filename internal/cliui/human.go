@@ -7,6 +7,35 @@ import (
 	"strings"
 )
 
+const DefaultDetailLimit = 80
+
+type OutputBudget struct {
+	Limit int
+}
+
+func (b OutputBudget) EffectiveLimit() int {
+	if b.Limit <= 0 {
+		return DefaultDetailLimit
+	}
+	return b.Limit
+}
+
+func (b OutputBudget) VisibleCount(total int) int {
+	limit := b.EffectiveLimit()
+	if total < limit {
+		return total
+	}
+	return limit
+}
+
+func (b OutputBudget) OmittedCount(total int) int {
+	visible := b.VisibleCount(total)
+	if total <= visible {
+		return 0
+	}
+	return total - visible
+}
+
 func ProjectRelativePath(root, path string) string {
 	path = strings.TrimSpace(path)
 	if path == "" {
@@ -47,6 +76,18 @@ func FprintlnKV(w io.Writer, label, value string, width int) error {
 	}
 	_, err := fmt.Fprintf(w, "  %-*s  %s\n", width, label, value)
 	return err
+}
+
+func WriteSection(w io.Writer, title string) error {
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+	_, err := fmt.Fprintln(w, title+":")
+	return err
+}
+
+func WriteKeyValue(w io.Writer, key string, value any) error {
+	return FprintlnKV(w, key, fmt.Sprint(value), len(key))
 }
 
 func StatusText(ok bool, okText, failText string) string {

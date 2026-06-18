@@ -63,6 +63,24 @@ func TestRunRefactorRenameWriteByLocation(t *testing.T) {
 	}
 }
 
+func TestRunRefactorRenameProgressWritesToStderr(t *testing.T) {
+	root := writeRefactorRenameProject(t)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"refactor", "rename", "--project", root, "--symbol", "InvoiceService", "--to", "BillingService", "--dry-run", "--progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "Rename") {
+		t.Fatalf("stdout missing rename result:\n%s", stdout.String())
+	}
+	for _, want := range []string{"refactor rename · Loading project", "refactor rename · 2/3 Indexing Apex symbols", "done · refactor complete"} {
+		if !strings.Contains(stderr.String(), want) {
+			t.Fatalf("stderr missing %q:\n%s", want, stderr.String())
+		}
+	}
+}
+
 func TestRunRefactorRenameRejectsInvalidSchemaSuffix(t *testing.T) {
 	root := writeRefactorRenameProject(t)
 
@@ -73,6 +91,34 @@ func TestRunRefactorRenameRejectsInvalidSchemaSuffix(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), "schema suffix") {
 		t.Fatalf("stderr = %q, want schema suffix", stderr.String())
+	}
+}
+
+func TestWriteRefactorRenameTextCapsEditsUnlessFull(t *testing.T) {
+	data := refactorRenameData{Count: 82}
+	for i := 0; i < 82; i++ {
+		data.Edits = append(data.Edits, refactorRenameEditSummary{
+			File:        "force-app/main/default/classes/Consumer.cls",
+			Line:        i + 1,
+			Column:      3,
+			Original:    "oldName",
+			Replacement: "newName",
+		})
+	}
+	var out bytes.Buffer
+	writeRefactorRenameText(&out, data, false)
+	got := out.String()
+	if strings.Contains(got, "Consumer.cls:82:3") {
+		t.Fatalf("capped output included edit 82:\n%s", got)
+	}
+	if !strings.Contains(got, "... 2 more edits omitted. Use --full for complete output.") {
+		t.Fatalf("missing omitted-count line:\n%s", got)
+	}
+
+	out.Reset()
+	writeRefactorRenameText(&out, data, true)
+	if !strings.Contains(out.String(), "Consumer.cls:82:3") {
+		t.Fatalf("full output omitted edit 82:\n%s", out.String())
 	}
 }
 

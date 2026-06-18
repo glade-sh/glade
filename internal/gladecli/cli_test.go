@@ -101,8 +101,8 @@ asyncMaxDepth: 5
 	if code != 0 {
 		t.Fatalf("exit = %d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stderr.String(), "services: config validated") {
-		t.Fatalf("stderr = %q", stderr.String())
+	if stderr.Len() != 0 {
+		t.Fatalf("stderr = %q, want empty with --no-progress", stderr.String())
 	}
 }
 
@@ -110,8 +110,8 @@ func TestProgressModeForJSONDefaultsOff(t *testing.T) {
 	if got := progressModeForFlags(true, false, false, false); string(got) != "off" {
 		t.Fatalf("json progress mode = %q, want off", got)
 	}
-	if got := progressModeForFlags(true, true, false, false); string(got) != "line" {
-		t.Fatalf("explicit line progress mode = %q, want line", got)
+	if got := progressModeForFlags(true, true, false, false); string(got) != "visible" {
+		t.Fatalf("explicit visible progress mode = %q, want visible", got)
 	}
 	if got := progressModeForFlags(true, false, true, false); string(got) != "json" {
 		t.Fatalf("explicit json progress mode = %q, want json", got)
@@ -1037,6 +1037,21 @@ func TestPluginsInstallRemoteURLRequiresSHA256(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), "remote plugin archive installs require --sha256") {
 		t.Fatalf("stderr missing sha256 message: %q", stderr.String())
+	}
+}
+
+func TestPluginsInstallRemoteURLProgressFinishesOnTrustError(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Setenv("CI", "1")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"plugins", "install", "https://example.test/plugin.tar.gz", "--progress"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit=%d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	for _, want := range []string{"plugins install · Resolving plugin target", "done · plugins install failed"} {
+		if !strings.Contains(stderr.String(), want) {
+			t.Fatalf("stderr missing %q:\n%s", want, stderr.String())
+		}
 	}
 }
 
@@ -2242,6 +2257,26 @@ func TestInspectPerformanceMovedToPlugin(t *testing.T) {
 	}
 }
 
+func TestRunInspectSymbolsProgressWritesToStderr(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/Hello.cls"), "public class Hello { public void run() {} }")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"inspect", "symbols", "--project", root, "--progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "Project symbols") {
+		t.Fatalf("stdout missing inspect result:\n%s", stdout.String())
+	}
+	for _, want := range []string{"inspect symbols · Loading project", "inspect symbols · 2/3 Indexing Apex symbols", "done · inspect complete"} {
+		if !strings.Contains(stderr.String(), want) {
+			t.Fatalf("stderr missing %q:\n%s", want, stderr.String())
+		}
+	}
+}
+
 func TestRunSchemaLoad(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -2257,6 +2292,28 @@ func TestRunSchemaLoad(t *testing.T) {
 		if !strings.Contains(got, want) {
 			t.Fatalf("schema load output missing %q:\n%s", want, got)
 		}
+	}
+}
+
+func TestRunSchemaLoadCapsObjectList(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	for i := 0; i < 82; i++ {
+		name := fmt.Sprintf("Thing%02d__c", i)
+		writeTestFile(t, filepath.Join(root, "force-app/main/objects", name, name+".object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Thing</label></CustomObject>`)
+	}
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"schema", "load", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	got := stdout.String()
+	if strings.Contains(got, "Thing81__c") {
+		t.Fatalf("schema output included object past budget:\n%s", got)
+	}
+	if !strings.Contains(got, "... 2 more objects omitted. Use `glade schema load --project . --json` for complete output.") {
+		t.Fatalf("schema output missing omitted-count line:\n%s", got)
 	}
 }
 
@@ -2784,6 +2841,24 @@ func TestRunExec(t *testing.T) {
 	}
 }
 
+func TestRunExecSummaryCapsDebugLines(t *testing.T) {
+	var result vm.Result
+	for i := 0; i < 82; i++ {
+		result.Debug = append(result.Debug, fmt.Sprintf("line %d", i))
+	}
+	var out bytes.Buffer
+	if err := writeExecSummary(&out, result, filepath.Join(".glade", "logs", "exec-test.log")); err != nil {
+		t.Fatal(err)
+	}
+	got := out.String()
+	if strings.Contains(got, "USER_DEBUG line 81") {
+		t.Fatalf("exec summary included debug line past budget:\n%s", got)
+	}
+	if !strings.Contains(got, "... 2 more debug lines omitted. See the debug log path below for complete output.") {
+		t.Fatalf("exec summary missing omitted-count line:\n%s", got)
+	}
+}
+
 func TestRunExecWithDBPersistsAnonymousDML(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
@@ -3131,7 +3206,7 @@ func TestRunPlaygroundOnce(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), "glade playground:") || !strings.Contains(stdout.String(), "/playground/") {
+	if !strings.Contains(stdout.String(), "URL") || !strings.Contains(stdout.String(), "/playground/") || strings.Contains(stdout.String(), "glade playground:") {
 		t.Fatalf("stdout = %q", stdout.String())
 	}
 }
@@ -3513,6 +3588,27 @@ private class SampleTest {
 		if !strings.Contains(got, want) {
 			t.Fatalf("stderr missing %q:\n%s", want, got)
 		}
+	}
+}
+
+func TestRunDevTestProgressWritesToStderr(t *testing.T) {
+	_ = os.RemoveAll(".glade")
+	t.Cleanup(func() { _ = os.RemoveAll(".glade") })
+	root := filepath.Join("..", "..", "testdata", "local-tests", "basic")
+	outRoot := t.TempDir()
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"dev", "test", "--project", root, "--class", "PassingTest", "--out", outRoot, "--progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "Glade test") {
+		t.Fatalf("stdout missing test summary:\n%s", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "test ·") {
+		t.Fatalf("stderr missing test progress:\n%s", stderr.String())
+	}
+	if _, err := os.Stat(".glade"); !os.IsNotExist(err) {
+		t.Fatalf("dev test wrote package-local .glade artifact: %v", err)
 	}
 }
 

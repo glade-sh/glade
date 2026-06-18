@@ -109,9 +109,9 @@ var commandReferences = []CommandHelp{
 		Usage:       []string{"glade parse <paths...> [--json] [--progress|--progress-json|--no-progress]"},
 		Flags: []FlagHelp{
 			{Name: "--json", Description: "Write parsed files and diagnostics as JSON."},
-			{Name: "--progress", Description: "Print line progress to stderr."},
+			{Name: "--progress", Description: "Show progress on stderr; uses a progress bar on TTY and line output when redirected."},
 			{Name: "--progress-json", Description: "Print NDJSON progress events to stderr."},
-			{Name: "--no-progress", Description: "Disable terminal progress."},
+			{Name: "--no-progress", Description: "Disable progress."},
 		},
 		Examples: []string{"glade parse force-app/main/default/classes/AccountService.cls", "glade parse force-app --progress", "glade parse force-app --json"},
 	},
@@ -293,9 +293,9 @@ var commandReferences = []CommandHelp{
 			{Name: "--junit", Value: "<path>", Description: "Write JUnit XML results."},
 			{Name: "--trace", Value: "<path>", Description: "Write a Chrome trace JSON document for this run."},
 			{Name: "--services", Value: "<path>", Description: "Validate a services.yml virtualization config."},
-			{Name: "--progress", Description: "Print line progress to stderr."},
+			{Name: "--progress", Description: "Show progress on stderr; uses a progress bar on TTY and line output when redirected."},
 			{Name: "--progress-json", Description: "Print NDJSON progress events to stderr."},
-			{Name: "--no-progress", Description: "Disable terminal progress."},
+			{Name: "--no-progress", Description: "Disable progress."},
 			{Name: "--quiet", Description: "Alias for --no-progress."},
 			{Name: "--debug", Description: "Run one DAP snapshot session after tests."},
 			{Name: "--watch", Description: "Watch source files and emit NDJSON events."},
@@ -447,9 +447,9 @@ var commandReferences = []CommandHelp{
 			{Name: "--output", Value: "<artifact>", Description: "Artifact JSON path."},
 			{Name: "--version", Value: "<version>", Description: "Optional package version."},
 			{Name: "--json", Description: "Write structured JSON output."},
-			{Name: "--progress", Description: "Print line progress to stderr for package build."},
+			{Name: "--progress", Description: "Show progress on stderr; uses a progress bar on TTY and line output when redirected."},
 			{Name: "--progress-json", Description: "Print NDJSON progress events to stderr."},
-			{Name: "--no-progress", Description: "Disable terminal progress."},
+			{Name: "--no-progress", Description: "Disable progress."},
 		},
 		Examples: []string{
 			"glade package build --project . --namespace pkg --output pkg.json --progress",
@@ -554,9 +554,9 @@ var commandReferences = []CommandHelp{
 			{Name: "--project", Value: "<root>", Description: "Project root for schema bootstrap."},
 			{Name: "--json", Description: "Write inspect output as JSON."},
 			{Name: "--wizard", Description: "Print a seed and inspect command pair."},
-			{Name: "--progress", Description: "Print line progress to stderr for seed."},
+			{Name: "--progress", Description: "Show progress on stderr; uses a progress bar on TTY and line output when redirected."},
 			{Name: "--progress-json", Description: "Print NDJSON progress events to stderr."},
-			{Name: "--no-progress", Description: "Disable terminal progress."},
+			{Name: "--no-progress", Description: "Disable progress."},
 		},
 		Examples: []string{"glade db inspect --db .glade/org.sqlite", "glade db seed --wizard --db .glade/org.sqlite fixture.json", "glade db seed --db .glade/org.sqlite --progress fixture.json"},
 	},
@@ -583,9 +583,9 @@ func projectProgressFlags(jsonDescription string) []FlagHelp {
 	return []FlagHelp{
 		{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
 		{Name: "--json", Description: jsonDescription},
-		{Name: "--progress", Description: "Print line progress to stderr."},
+		{Name: "--progress", Description: "Show progress on stderr; uses a progress bar on TTY and line output when redirected."},
 		{Name: "--progress-json", Description: "Print NDJSON progress events to stderr."},
-		{Name: "--no-progress", Description: "Disable terminal progress."},
+		{Name: "--no-progress", Description: "Disable progress."},
 		{Name: "--quiet", Description: "Alias for --no-progress."},
 	}
 }
@@ -975,9 +975,9 @@ Common flags:
   --daemon                  Keep index warm in-process for --watch loops.
   --json                    Write JSON test results.
   --junit <path>            Write JUnit XML results.
-  --progress                Print line progress to stderr, even when not attached to a terminal.
+  --progress                Show progress on stderr; uses a progress bar on TTY and line output when redirected.
   --progress-json           Print NDJSON progress events to stderr.
-  --no-progress, --quiet    Disable terminal progress.
+  --no-progress, --quiet    Disable progress.
   --debug                   Run one DAP snapshot session after tests.
   --watch                   Watch source files and emit NDJSON events.
   --watch-once              Run one watch cycle and exit.
