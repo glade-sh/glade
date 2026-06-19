@@ -31,6 +31,16 @@ const renderedCommands = new Set([
     changedSince: "origin/main",
     projectOrg: { alias: "my-glade-org", state: "running" },
   }),
+  ...collectHomeCommands({
+    project,
+    changedSince: "origin/main",
+    projectOrg: { alias: "my-glade-org", state: "missing" },
+  }),
+  ...collectHomeCommands({
+    project,
+    changedSince: "origin/main",
+    missingDb: true,
+  }),
 ]);
 
 assert.deepStrictEqual(
@@ -40,8 +50,12 @@ assert.deepStrictEqual(
 );
 
 assert.strictEqual(actions.isHubCommand("glade.runLocalProof"), true);
-assert.strictEqual(actions.isHubCommand("glade.schemaImportDescribe"), true);
 assert.strictEqual(actions.isHubCommand("glade.salesforceTargetStatus"), true);
+assert.strictEqual(actions.isHubCommand("glade.schemaImportDescribe"), false);
+assert.strictEqual(actions.isHubCommand("glade.runPluginAction"), false);
+assert.strictEqual(actions.isHubCommand("glade.seedLocalOrg"), false);
+assert.strictEqual(actions.isHubCommand("glade.resetLocalOrg"), false);
+assert.strictEqual(actions.isHubCommand("glade.exportLocalOrg"), false);
 assert.strictEqual(actions.isHubCommand("workbench.action.files.delete"), false);
 assert.strictEqual(actions.isHubCommand("glade.preview.start"), false);
 

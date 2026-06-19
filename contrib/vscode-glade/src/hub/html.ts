@@ -180,10 +180,44 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
       display: none;
     }
 
-    .grid {
+    .grid,
+    .card-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
       gap: 12px;
+    }
+
+    .home-stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .home-section {
+      min-width: 0;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 8px;
+    }
+
+    .section-title {
+      margin: 0;
+      color: var(--glade-strong);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.3;
+      text-transform: uppercase;
+    }
+
+    .section-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      text-align: right;
     }
 
     .card {
@@ -247,11 +281,45 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
       color: var(--brand-subtle);
     }
 
-    .actions {
+    .primary-action {
+      margin-top: 12px;
+    }
+
+    .primary-action button {
+      width: 100%;
+      min-height: 34px;
+    }
+
+    .more-actions {
+      margin-top: 8px;
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+    }
+
+    .more-actions summary {
+      width: max-content;
+      border-radius: 5px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1.5;
+      list-style: none;
+    }
+
+    .more-actions summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .more-actions summary:focus {
+      outline: 1px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .more-list {
       display: flex;
       flex-wrap: wrap;
       gap: 7px;
-      margin-top: 12px;
+      margin-top: 8px;
     }
 
     .rows {
@@ -298,9 +366,7 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
     </nav>
     <main>
       <section class="panel" data-panel="home"${initialTab === "home" ? "" : " hidden"}>
-        <div class="grid">
-          ${home.map(renderTaskGroup).join("")}
-        </div>
+        ${renderHomePanel(home)}
       </section>
       <section class="panel" data-panel="state"${initialTab === "state" ? "" : " hidden"}>
         <div class="grid">
@@ -353,7 +419,6 @@ function renderTab(tab: "home" | "state", label: string, initialTab: "home" | "s
 }
 
 function renderTaskGroup(group: HubTaskGroup): string {
-  const actions = [group.primary, ...group.actions.filter((action) => action.id !== group.primary.id)];
   return `<article class="card" data-task="${escapeAttr(group.id)}">
     <div class="card-head">
       <div>
@@ -362,10 +427,44 @@ function renderTaskGroup(group: HubTaskGroup): string {
       </div>
       ${renderStatus(group.status.label, group.status.tone, group.status.detail)}
     </div>
-    <div class="actions">
-      ${actions.map((action) => renderAction(action, action.primary || action.id === group.primary.id)).join("")}
+    <div class="primary-action">
+      ${renderAction(group.primary, true)}
     </div>
+    ${renderMoreActions(group)}
   </article>`;
+}
+
+function renderHomePanel(groups: HubTaskGroup[]): string {
+  return `<div class="home-stack">
+    ${phaseOrder.map((phase) => {
+      const phaseGroups = groups.filter((group) => group.phase === phase);
+      if (phaseGroups.length === 0) {
+        return "";
+      }
+      return `<section class="home-section" data-phase="${phase}">
+        <div class="section-head">
+          <h2 class="section-title">${escapeHtml(phaseTitle(phase))}</h2>
+          <div class="section-note">${escapeHtml(phaseNote(phase))}</div>
+        </div>
+        <div class="card-grid">
+          ${phaseGroups.map(renderTaskGroup).join("")}
+        </div>
+      </section>`;
+    }).join("")}
+  </div>`;
+}
+
+function renderMoreActions(group: HubTaskGroup): string {
+  const actions = group.actions.filter((action) => action.id !== group.primary.id);
+  if (actions.length === 0) {
+    return "";
+  }
+  return `<details class="more-actions">
+    <summary>More</summary>
+    <div class="more-list">
+      ${actions.map((action) => renderAction(action, false)).join("")}
+    </div>
+  </details>`;
 }
 
 function renderAction(action: HubAction, primary: boolean): string {
@@ -415,3 +514,27 @@ const htmlEscapes: Record<string, string> = {
   '"': "&quot;",
   "'": "&#39;",
 };
+
+const phaseOrder = ["setup", "daily", "data"] as const;
+
+function phaseTitle(phase: typeof phaseOrder[number]): string {
+  switch (phase) {
+    case "setup":
+      return "Set up";
+    case "daily":
+      return "Day to day";
+    case "data":
+      return "Database";
+  }
+}
+
+function phaseNote(phase: typeof phaseOrder[number]): string {
+  switch (phase) {
+    case "setup":
+      return "connect the project";
+    case "daily":
+      return "tests and scratch";
+    case "data":
+      return "inspect and switch";
+  }
+}

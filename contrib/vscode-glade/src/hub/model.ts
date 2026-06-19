@@ -4,7 +4,8 @@ import type { GladeProjectContext } from "../projectModel";
 import type { StartHereRunSummary } from "../startHereModel";
 
 export type HubTone = "ok" | "warn" | "error" | "muted";
-export type HubTaskId = "run" | "org" | "data" | "debug" | "salesforce" | "ship";
+export type HubTaskId = "run" | "org" | "data";
+export type HubTaskPhase = "setup" | "daily" | "data";
 export type HubStateId = "project" | "local-org" | "data" | "salesforce" | "tests" | "plugins";
 
 export interface SalesforceTargetState {
@@ -51,6 +52,7 @@ export interface HubAction {
 
 export interface HubTaskGroup {
   id: HubTaskId;
+  phase: HubTaskPhase;
   title: string;
   summary: string;
   status: HubStatus;
@@ -76,6 +78,7 @@ export function buildHubHome(snapshot: HubSnapshot): HubTaskGroup[] {
     return [
       {
         id: "run",
+        phase: "setup",
         title: "Open project",
         summary: "Open a Salesforce DX project before using Glade.",
         status: { label: "No Salesforce DX project", tone: "warn" },
@@ -92,102 +95,52 @@ export function buildHubHome(snapshot: HubSnapshot): HubTaskGroup[] {
 
   const lastRun = snapshot.lastRun;
   const failed = lastRun?.failed || 0;
-  const target = salesforceTarget(snapshot);
   const org = projectOrg(snapshot);
 
   return [
     {
+      id: "org",
+      phase: "setup",
+      title: "First project setup",
+      summary: "Confirm this project can run with Glade's local org and Salesforce metadata.",
+      status: { label: `${org.alias} ${org.state}`, detail: org.detail, tone: projectOrgTone(org) },
+      primary:
+        org.state === "missing"
+          ? { id: "create-org", label: "Create org", command: "glade.createProjectOrg", primary: true }
+          : org.state === "running"
+          ? { id: "stop-org", label: "Stop org", command: "glade.stopProjectOrg", primary: true }
+          : { id: "start-org", label: "Start org", command: "glade.startProjectOrg", primary: true },
+      actions: [
+        { id: "org-state", label: "Check state", command: "glade.projectOrgStatus" },
+        { id: "sf-target", label: "Check Salesforce org", command: "glade.salesforceTargetStatus" },
+      ],
+    },
+    {
       id: "run",
-      title: "Run",
-      summary: "Run local Apex tests for this branch.",
+      phase: "daily",
+      title: "Daily work",
+      summary: "Run changed Apex tests and open scratch editors without leaving VS Code.",
       status: {
         label: lastRun ? `${lastRun.passed} pass, ${lastRun.failed} fail` : "No local run",
-        detail: `changed since ${snapshot.changedSince}`,
+        detail: `${snapshot.watchRunning ? "watch running" : "watch stopped"}; changed since ${snapshot.changedSince}`,
         tone: failed > 0 ? "error" : lastRun ? "ok" : "muted",
       },
       primary: { id: "run-proof", label: "Run changed tests", command: "glade.runLocalProof", primary: true },
       actions: [
-        { id: "changed", label: "Changed tests", command: "glade.runChangedTests" },
-        { id: "failed", label: "Failed tests", command: "glade.runFailedTests" },
-        {
-          id: "watch",
-          label: snapshot.watchRunning ? "Stop watch" : "Start watch",
-          command: snapshot.watchRunning ? "glade.stopWatch" : "glade.startWatch",
-        },
-      ],
-    },
-    {
-      id: "org",
-      title: "Glade org",
-      summary: "Start the local Salesforce API for this project.",
-      status: { label: `${org.alias} ${org.state}`, detail: org.detail, tone: projectOrgTone(org) },
-      primary:
-        org.state === "running"
-          ? { id: "stop-org", label: "Stop org", command: "glade.stopProjectOrg", primary: true }
-          : { id: "start-org", label: "Start org", command: "glade.startProjectOrg", primary: true },
-      actions: [
-        { id: "create-org", label: "Create org", command: "glade.createProjectOrg" },
-        { id: "org-state", label: "Check state", command: "glade.projectOrgStatus" },
+        { id: "apex", label: "Apex scratch", command: "glade.workbench.newAnonymousApex" },
+        { id: "soql", label: "SOQL scratch", command: "glade.workbench.newSoql" },
       ],
     },
     {
       id: "data",
-      title: "Local data",
-      summary: "Inspect, seed, reset, and export the active SQLite data environment.",
+      phase: "data",
+      title: "Database inspection",
+      summary: "Inspect the active SQLite data environment and switch when needed.",
       status: dataStatusFor(snapshot),
       primary: { id: "inspect-db", label: "Inspect data", command: "glade.inspectLocalOrg", primary: true },
       actions: [
         { id: "switch-env", label: "Switch data", command: "glade.switchEnvironment" },
-        { id: "create-env", label: "Create data env", command: "glade.createEnvironment" },
-        { id: "clone-env", label: "Clone data env", command: "glade.cloneEnvironment" },
-        { id: "seed", label: "Seed data", command: "glade.seedLocalOrg" },
-        { id: "reset", label: "Reset data", command: "glade.resetLocalOrg" },
-        { id: "export", label: "Export data", command: "glade.exportLocalOrg" },
-        { id: "soql", label: "SOQL scratch", command: "glade.workbench.newSoql" },
-        { id: "apex", label: "Apex scratch", command: "glade.workbench.newAnonymousApex" },
-      ],
-    },
-    {
-      id: "debug",
-      title: "Debug",
-      summary: "Start local debug work from the current editor.",
-      status: { label: "Editor scoped", detail: "uses active Apex context", tone: "muted" },
-      primary: { id: "debug-current", label: "Debug current test", command: "glade.debugCurrentTest", primary: true },
-      actions: [
-        { id: "output", label: "Open output", command: "glade.openOutput" },
-      ],
-    },
-    {
-      id: "salesforce",
-      title: "Salesforce",
-      summary: "Check your default Salesforce org and import describe data.",
-      status: { label: target.label, detail: target.detail, tone: salesforceTone(target) },
-      primary: { id: "sf-target", label: "Check Salesforce org", command: "glade.salesforceTargetStatus", primary: true },
-      actions: [
-        { id: "schema", label: "Import schema", command: "glade.schemaImportDescribe" },
-        {
-          id: "capture",
-          label: "Run plugin action",
-          command: "glade.runPluginAction",
-          description: "Runs a plugin action when installed.",
-        },
-        { id: "plugins", label: "Manage plugins", command: "glade.managePlugins" },
-      ],
-    },
-    {
-      id: "ship",
-      title: "Review",
-      summary: "Check local test results and plugin reports before pushing.",
-      status: {
-        label: shipLabel(snapshot),
-        detail: lastRun ? lastRun.label : "run changed tests first",
-        tone: failed > 0 ? "warn" : lastRun ? "ok" : "muted",
-      },
-      primary: { id: "ship-proof", label: "Run changed tests", command: "glade.runLocalProof", primary: true },
-      actions: [
-        { id: "output", label: "Open output", command: "glade.openOutput" },
-        { id: "plugins", label: "Manage plugins", command: "glade.managePlugins" },
-        { id: "refresh", label: "Refresh", command: "glade.refresh" },
+        ...(snapshot.missingDb ? [{ id: "create-env", label: "Create data env", command: "glade.createEnvironment" }] : []),
       ],
     },
   ];
@@ -313,12 +266,4 @@ function salesforceTone(target: SalesforceTargetState): HubTone {
     return "warn";
   }
   return "muted";
-}
-
-function shipLabel(snapshot: HubSnapshot): string {
-  const findings = snapshot.pluginFindingCount || 0;
-  if (findings > 0) {
-    return `${findings} plugin reports`;
-  }
-  return "No plugin reports";
 }

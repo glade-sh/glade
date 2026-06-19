@@ -42,9 +42,28 @@ assert(rendered.includes('data-tab="home"'));
 assert(rendered.includes('data-tab="state"'));
 assert(rendered.includes('data-command="glade.runLocalProof"'));
 assert(rendered.includes('data-command="glade.inspectLocalOrg"'));
-assert(rendered.includes("Run"));
-assert(rendered.includes("Data"));
-assert(rendered.includes("Salesforce"));
+assert(rendered.includes('class="home-section" data-phase="setup"'));
+assert(rendered.includes('class="home-section" data-phase="daily"'));
+assert(rendered.includes('class="home-section" data-phase="data"'));
+assert(!rendered.includes('class="home-section" data-phase="review"'));
+assert(rendered.includes('class="primary-action"'));
+assert(rendered.includes('class="more-actions"'));
+assert(rendered.includes("<summary>More</summary>"));
+assert(!rendered.includes('class="actions"'));
+assert(rendered.includes("First project setup"));
+assert(rendered.includes("Daily work"));
+assert(rendered.includes("Database inspection"));
+for (const command of [
+  "glade.seedLocalOrg",
+  "glade.resetLocalOrg",
+  "glade.exportLocalOrg",
+  "glade.cloneEnvironment",
+  "glade.schemaImportDescribe",
+  "glade.runPluginAction",
+  "glade.managePlugins",
+]) {
+  assert(!rendered.includes(`data-command="${command}"`));
+}
 assert(rendered.includes("&lt;script&gt;alert(1)&lt;/script&gt;"));
 assert(!rendered.includes("/repo/<script>alert(1)</script>"));
 assert(rendered.includes("script-src 'nonce-abc123'"));

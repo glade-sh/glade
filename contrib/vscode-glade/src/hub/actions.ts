@@ -16,31 +16,17 @@ export type HubClientMessage = HubReadyMessage | HubRunCommandMessage | HubSelec
 
 export const allowedHubCommands = new Set<string>([
   "vscode.openFolder",
-  "glade.refresh",
-  "glade.runChangedTests",
-  "glade.runFailedTests",
   "glade.runLocalProof",
   "glade.createProjectOrg",
   "glade.startProjectOrg",
   "glade.stopProjectOrg",
   "glade.projectOrgStatus",
-  "glade.startWatch",
-  "glade.stopWatch",
+  "glade.salesforceTargetStatus",
   "glade.createEnvironment",
   "glade.switchEnvironment",
-  "glade.cloneEnvironment",
-  "glade.seedLocalOrg",
-  "glade.resetLocalOrg",
-  "glade.exportLocalOrg",
   "glade.inspectLocalOrg",
-  "glade.debugCurrentTest",
-  "glade.openOutput",
   "glade.workbench.newAnonymousApex",
   "glade.workbench.newSoql",
-  "glade.managePlugins",
-  "glade.runPluginAction",
-  "glade.schemaImportDescribe",
-  "glade.salesforceTargetStatus",
 ]);
 
 export function isHubCommand(command: string): boolean {
