@@ -21,10 +21,16 @@ glade version
 glade doctor
 ```
 
-`glade doctor` must print:
+`glade doctor` must print status rows and end with `Ready.`:
 
 ```text
 Glade doctor
+
+Project      ✓ SFDX project found
+Parser       ✓ ok (tree-sitter)
+Toolchain    ✓ <glade data dir> (ok (global))
+Config       ✓ glade.yml
+Runtime      ✓ glade <version> · go<version> · <os>/<arch>
 
 Ready.
 ```

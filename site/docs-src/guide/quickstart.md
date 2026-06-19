@@ -29,9 +29,11 @@ Expected:
 ```text
 Glade doctor
 
-Project     ✓ SFDX project found
-Parser      ✓ tree-sitter parser ready
-Toolchain   ✓ local runtime ready
+Project      ✓ SFDX project found
+Parser       ✓ ok (tree-sitter)
+Toolchain    ✓ <glade data dir> (ok (global))
+Config       ✓ glade.yml
+Runtime      ✓ glade <version> · go<version> · <os>/<arch>
 
 Ready.
 

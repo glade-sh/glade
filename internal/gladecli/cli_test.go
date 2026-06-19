@@ -983,9 +983,28 @@ func TestPluginsHelpShowsAvailable(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("help exit=%d stderr=%s", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "available") ||
-		!strings.Contains(stdout.String(), "List plugins available to install.") {
-		t.Fatalf("plugins help missing available command:\n%s", stdout.String())
+	for _, want := range []string{
+		"available",
+		"List plugins available to install.",
+		"glade plugins install <plugin-name-or-archive> [--registry <url>] [--sha256 <hash>] [--yes]",
+		"glade plugins list [--json]",
+		"glade plugins link --exec <plugin-executable>",
+		"glade plugins lock [--include-linked]",
+		"--progress-json",
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("plugins help missing %q:\n%s", want, stdout.String())
+		}
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"help", "plugins"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("help plugins exit=%d stderr=%s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "glade plugins install <plugin-name-or-archive> [--registry <url>] [--sha256 <hash>] [--yes]") {
+		t.Fatalf("help plugins does not match detailed plugin help:\n%s", stdout.String())
 	}
 }
 
@@ -998,7 +1017,7 @@ func TestCodeIntelligenceHelpListsProductCommands(t *testing.T) {
 		{
 			name: "inspect",
 			args: []string{"inspect", "--help"},
-			want: []string{"definition", "references"},
+			want: []string{"definition", "references", "--kind <kind>", "--full-paths"},
 		},
 		{
 			name: "schema",
@@ -1186,6 +1205,11 @@ func TestRunCommandHelp(t *testing.T) {
 			want: []string{"Usage:", "glade config show", "validate", "init", "--package-dir <path>", "--feature <name>"},
 		},
 		{
+			name: "toolchain help",
+			args: []string{"help", "toolchain"},
+			want: []string{"Usage:", "glade toolchain status [--json]", "--json", "Notes:", "GLADE_HOME", "XDG_DATA_HOME", "glade toolchain install --from ."},
+		},
+		{
 			name: "init help",
 			args: []string{"init", "--help"},
 			want: []string{"Usage:", "glade init", "--force", "--namespace <name>", "--package-dir <path>"},
@@ -1212,6 +1236,16 @@ func TestRunCommandHelp(t *testing.T) {
 			want: []string{"Usage:", "glade dev vf [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]", "glade dev lwc [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]", "Preview features:", "Visualforce local rendering", "LWC local shell", "Subcommands:", "vf", "lwc"},
 		},
 		{
+			name: "help db",
+			args: []string{"help", "db"},
+			want: []string{"Usage:", "glade db query --db <path> --project <root> --json [--limit <n>] [--query-all] <soql>", "glade db describe --db <path> --project <root> --json [ObjectName]", "--limit <n>", "--query-all", "glade db query --db .glade/local-org.sqlite --project . --json \"SELECT Id, Name FROM Account\""},
+		},
+		{
+			name: "help profile",
+			args: []string{"help", "profile"},
+			want: []string{"Usage:", "glade profile analyze <trace.json> [--json] [--format text|markdown|pprof]", "--format <mode>", "pprof"},
+		},
+		{
 			name: "help exit codes",
 			args: []string{"help", "exit-codes"},
 			want: []string{"Exit codes", "0  Command completed", "1  Command failed", "2  Command was not understood"},
@@ -1236,6 +1270,55 @@ func TestRunCommandHelp(t *testing.T) {
 			for _, notWant := range tt.notWant {
 				if strings.Contains(got, notWant) {
 					t.Fatalf("stdout unexpectedly contains %q:\n%s", notWant, got)
+				}
+			}
+		})
+	}
+}
+
+func TestUsageErrorsMatchHelpSurface(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+		want []string
+	}{
+		{
+			name: "parse",
+			args: []string{"parse"},
+			want: []string{"usage: glade parse <paths...> [--json] [--progress|--progress-json|--no-progress]"},
+		},
+		{
+			name: "inspect",
+			args: []string{"inspect"},
+			want: []string{"usage: glade inspect symbols [--project <root>] [--kind <kind>] [--full-paths] [--json]"},
+		},
+		{
+			name: "schema",
+			args: []string{"schema"},
+			want: []string{"glade schema load [--project <root>] [--json] [--progress|--progress-json|--no-progress]", "--project-cache <root>"},
+		},
+		{
+			name: "exec",
+			args: []string{"exec"},
+			want: []string{"usage: glade exec [--project <root>] [--db <path>] [--dry-run] [--json] [--trace <path>] [--debug-log <path>] [--limit-mode <mode>]"},
+		},
+		{
+			name: "profile",
+			args: []string{"profile", "analyze"},
+			want: []string{"usage: glade profile analyze <trace.json> [--json] [--format text|markdown|pprof]"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			code := Run(context.Background(), tt.args, &stdout, &stderr)
+			if code == 0 {
+				t.Fatalf("exit code = 0, want usage failure; stdout=%q", stdout.String())
+			}
+			got := stderr.String()
+			for _, want := range tt.want {
+				if !strings.Contains(got, want) {
+					t.Fatalf("stderr missing %q:\n%s", want, got)
 				}
 			}
 		})
@@ -1398,7 +1481,7 @@ func TestRunTopLevelHelpAlignment(t *testing.T) {
 		"playground",
 		"Start the local Apex playground web UI.",
 		"db",
-		"Seed, reset, export, and inspect a persistent local database.",
+		"Seed, reset, export, inspect, query, and describe a persistent local database.",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("stdout missing aligned line %q:\n%s", want, got)

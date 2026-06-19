@@ -430,8 +430,10 @@ glade exec --project . "System.debug('hello from glade');"
 Capture a trace when you need to inspect runtime behavior:
 
 ```bash
+mkdir -p reports
 glade exec --project . --trace reports/trace.json "System.debug(1);"
 glade profile analyze reports/trace.json
+glade profile analyze reports/trace.json --format pprof > reports/trace.pb.gz
 ```
 
 ## Offline Debug Log Analysis

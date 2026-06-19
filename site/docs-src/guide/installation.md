@@ -77,11 +77,18 @@ glade version
 glade doctor
 ```
 
-Expected:
+Expected: `glade doctor` prints status rows for the parser, toolchain, config,
+and runtime, then ends with `Ready.`.
 
 ```text
 glade doctor
 Glade doctor
+
+Project      ✓ SFDX project found
+Parser       ✓ ok (tree-sitter)
+Toolchain    ✓ <glade data dir> (ok (global))
+Config       ✓ glade.yml
+Runtime      ✓ glade <version> · go<version> · <os>/<arch>
 
 Ready.
 ```

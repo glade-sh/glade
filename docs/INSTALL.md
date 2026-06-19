@@ -236,6 +236,8 @@ Seed and inspect the same file with the DB commands:
 ```bash
 glade db seed --db .glade/local-org.sqlite seed.json --json
 glade db inspect --db .glade/local-org.sqlite --json
+glade db query --db .glade/local-org.sqlite --project . --json "SELECT Id, Name FROM Account"
+glade db describe --db .glade/local-org.sqlite --project . --json Account
 glade db export --db .glade/local-org.sqlite > exported-fixture.json
 ```
 
