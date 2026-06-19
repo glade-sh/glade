@@ -38,6 +38,16 @@ function assertObjectParams(params) {
   return params;
 }
 
+function emitEmptyFetchWireValue(adapter) {
+  if (adapter.__lastEmptyValue) {
+    return adapter.__lastEmptyValue;
+  }
+  const value = attachRefresh({ data: undefined, error: undefined }, adapter);
+  adapter.__lastEmptyValue = value;
+  adapter.dataCallback(value);
+  return value;
+}
+
 export function createFetchWireAdapter(endpoint, mapBody) {
   function FetchWireAdapter(dataCallback) {
     this.dataCallback = dataCallback;
@@ -47,6 +57,8 @@ export function createFetchWireAdapter(endpoint, mapBody) {
     this.cacheKey = "";
     this.recordIdSet = new Set();
     this.unregisterLDS = registerLDSAdapter(this);
+    this.__lastEmptyValue = null;
+    emitEmptyFetchWireValue(this);
   }
   FetchWireAdapter.prototype.connect = function connect() {
     if (this.config) {
@@ -66,8 +78,10 @@ export function createFetchWireAdapter(endpoint, mapBody) {
     if (!this.body || hasUndefined(this.body)) {
       this.cacheKey = "";
       this.recordIdSet = new Set();
-      return Promise.resolve();
+      const value = emitEmptyFetchWireValue(this);
+      return Promise.resolve(value);
     }
+    this.__lastEmptyValue = null;
     this.cacheKey = ldsCacheKey(endpoint, this.body);
     this.recordIdSet = recordIdsFromBody(this.body);
     return this.refresh();
@@ -82,6 +96,7 @@ export function createFetchWireAdapter(endpoint, mapBody) {
     if (!options.force) {
       const cached = readLDSCache(this.cacheKey);
       if (cached) {
+        this.__lastEmptyValue = null;
         this.dataCallback(cached);
         return Promise.resolve(cached);
       }
@@ -98,6 +113,7 @@ export function createFetchWireAdapter(endpoint, mapBody) {
           return;
         }
         const value = attachRefresh(wireValue(result), this);
+        this.__lastEmptyValue = null;
         writeLDSCache(this.cacheKey, value);
         this.dataCallback(value);
         return value;
@@ -107,6 +123,7 @@ export function createFetchWireAdapter(endpoint, mapBody) {
           return;
         }
         const value = attachRefresh({ error: { message: String(err) } }, this);
+        this.__lastEmptyValue = null;
         this.dataCallback(value);
         return value;
       });

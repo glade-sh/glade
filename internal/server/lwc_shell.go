@@ -7,12 +7,14 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/lwc"
 	"github.com/glade-sh/glade/internal/lwcbrowser"
 	"github.com/glade-sh/glade/internal/lwcshell"
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 type lwcShellMount struct {
@@ -27,7 +29,7 @@ func (s *Server) handleLWCShell(w http.ResponseWriter, r *http.Request, parts []
 		writeMethodNotAllowed(w, http.MethodGet)
 		return
 	}
-	if len(parts) == 0 || (len(parts) == 1 && parts[0] == "preview") {
+	if len(parts) == 0 || (len(parts) == 1 && parts[0] == "preview") || (len(parts) == 1 && parts[0] == "builder") {
 		cfg, ok, err := s.lightningBootstrapConfigLocked()
 		if err != nil {
 			writeSalesforceError(w, errUnsupportedFeature, err.Error())
@@ -36,9 +38,13 @@ func (s *Server) handleLWCShell(w http.ResponseWriter, r *http.Request, parts []
 		if !ok {
 			cfg = &lwcbrowser.PageConfig{}
 		}
+		activeRoute := "/lwc"
+		if len(parts) == 1 && parts[0] == "builder" {
+			activeRoute = "/lwc/builder"
+		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		setDevNoStore(w)
-		_, _ = w.Write([]byte(renderLWCShellDocument(s.Source.Project, *cfg, lwcshell.ShellPage{}, "/lwc")))
+		_, _ = w.Write([]byte(renderLWCShellDocument(s.Source.Project, *cfg, lwcshell.ShellPage{}, activeRoute, s.lwcShellSampleRecordID("Account"))))
 		return
 	}
 	if len(parts) < 2 || parts[0] != "preview" {
@@ -80,7 +86,7 @@ func (s *Server) handleLWCShell(w http.ResponseWriter, r *http.Request, parts []
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	setDevNoStore(w)
-	_, _ = w.Write([]byte(renderLWCShellDocument(s.Source.Project, *cfg, shell, r.URL.RequestURI())))
+	_, _ = w.Write([]byte(renderLWCShellDocument(s.Source.Project, *cfg, shell, r.URL.RequestURI(), s.lwcShellSampleRecordID("Account"))))
 }
 
 func (s *Server) resolveLWCShellRequest(r *http.Request, parts []string) (lwcshell.ShellPage, string, []lwcshell.Diagnostic, error) {
@@ -859,7 +865,32 @@ func firstPathOrQueryValue(parts []string, r *http.Request, key string) string {
 }
 
 func renderLWCShellHTML(cfg lwcbrowser.PageConfig, shell lwcshell.ShellPage) string {
-	return renderLWCShellDocument(project.Project{}, cfg, shell, "")
+	return renderLWCShellDocument(project.Project{}, cfg, shell, "", "")
+}
+
+const lwcShellDefaultSampleRecordID = "001000000000001AAA"
+
+func (s *Server) lwcShellSampleRecordID(objectName string) string {
+	if s == nil || s.Org == nil {
+		return lwcShellDefaultSampleRecordID
+	}
+	resolved := strings.TrimSpace(objectName)
+	if name, ok := storage.ResolveObjectName(*s.Org, resolved); ok {
+		resolved = name
+	}
+	object, ok := s.Org.Objects[resolved]
+	if !ok || len(object.Records) == 0 {
+		return lwcShellDefaultSampleRecordID
+	}
+	ids := make([]string, 0, len(object.Records))
+	for id := range object.Records {
+		ids = append(ids, string(id))
+	}
+	sort.Strings(ids)
+	if ids[0] == "" {
+		return lwcShellDefaultSampleRecordID
+	}
+	return ids[0]
 }
 
 func lwcShellDiagnosticsHTML(diagnostics []lwcshell.Diagnostic) string {
@@ -1014,6 +1045,7 @@ func lwcShellMounts(shell lwcshell.ShellPage) []lwcShellMount {
 		for key, value := range shell.ThemeLayout.Properties {
 			attrs[key] = value
 		}
+		applyLwcShellContextAttrs(attrs, base)
 		mounts = append(mounts, lwcShellMount{
 			Qualified: shell.ThemeLayout.ComponentName,
 			HostID:    "glade-lwc-theme-layout",
@@ -1028,6 +1060,7 @@ func lwcShellMounts(shell lwcshell.ShellPage) []lwcShellMount {
 				attrs[key] = value
 			}
 		}
+		applyLwcShellContextAttrs(attrs, base)
 		mounts = append(mounts, lwcShellMount{
 			Qualified: shell.Context.ComponentName,
 			HostID:    "glade-lwc-main-0",
@@ -1050,6 +1083,7 @@ func lwcShellMounts(shell lwcshell.ShellPage) []lwcShellMount {
 			for key, value := range component.Properties {
 				attrs[key] = value
 			}
+			applyLwcShellContextAttrs(attrs, base)
 			mounts = append(mounts, lwcShellMount{
 				Qualified: component.ComponentName,
 				HostID:    fmt.Sprintf("glade-lwc-%d", next),
@@ -1060,6 +1094,12 @@ func lwcShellMounts(shell lwcshell.ShellPage) []lwcShellMount {
 		}
 	}
 	return mounts
+}
+
+func applyLwcShellContextAttrs(attrs, context map[string]any) {
+	for key, value := range context {
+		attrs[key] = value
+	}
 }
 
 func lwcShellComponentIsPlaceholder(component lwcshell.PageComponent) bool {

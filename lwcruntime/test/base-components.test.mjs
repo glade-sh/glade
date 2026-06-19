@@ -742,7 +742,9 @@ test("record forms and fields support LDS endpoints, validity, reset, and pickli
 
       const viewForm = createElement("lightning-record-view-form", { is: RecordViewForm });
       Object.assign(viewForm, { objectApiName: "Account", recordId: "001000000000001AAA" });
-      viewForm.appendChild(output.cloneNode(true));
+      const viewOutput = createElement("lightning-output-field", { is: OutputField });
+      Object.assign(viewOutput, { fieldName: "Name" });
+      viewForm.appendChild(viewOutput);
       host.appendChild(viewForm);
 
       const editForm = createElement("lightning-record-edit-form", { is: RecordEditForm });
@@ -880,6 +882,7 @@ test("record forms and fields support LDS endpoints, validity, reset, and pickli
     await page.waitForFunction(() => window.__recordFormEvents.some(([name]) => name === "load"));
     await page.waitForFunction(() => window.__recordFormEvents.some(([name]) => name === "createload"));
     assert.match(await page.locator("lightning-output-field").first().innerText(), /Local Shell Account/);
+    assert.match(await page.locator("lightning-record-view-form lightning-output-field").innerText(), /Local Shell Account/);
     assert.equal(await page.locator("lightning-input-field").first().locator("select").inputValue(), "Customer");
     assert.deepEqual(await page.evaluate(() => window.__fieldContracts), {
       customInvalid: false,

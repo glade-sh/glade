@@ -94,7 +94,8 @@ function createComponent(selector, render) {
       this.__selector = selector;
       if (this.__initialValue === undefined) this.__initialValue = this.value;
       this.reportUnsupportedAttributes();
-      if (selector === "lightning-input-field") registerInputFieldWithNearestForm(this);
+      if (selector === "lightning-input-field") registerFormFieldWithNearestForm(this, "__gladeInputFields");
+      if (selector === "lightning-output-field") registerFormFieldWithNearestForm(this, "__gladeOutputFields");
       if (isRecordFormSelector(selector)) this.loadRecord();
     }
 
@@ -665,7 +666,11 @@ function inputFieldsForForm(root) {
 }
 
 function fieldComponentsForForm(root) {
-  const fields = [...inputFieldsForForm(root)];
+  const fields = [
+    ...inputFieldsForForm(root),
+    ...(root?.hostElement?.__gladeOutputFields || []),
+    ...(root?.template?.host?.__gladeOutputFields || []),
+  ];
   for (const selector of ["lightning-output-field"]) {
     fields.push(...(root?.querySelectorAll?.(selector) || []));
     for (const container of [root, root?.hostElement, root?.template?.host]) {
@@ -721,14 +726,14 @@ function collectAssignedFields(element, fields, selector) {
   for (const child of element.querySelectorAll?.(selector) || []) fields.push(child);
 }
 
-function registerInputFieldWithNearestForm(component) {
+function registerFormFieldWithNearestForm(component, propertyName) {
   const host = component?.hostElement || component?.template?.host;
   let node = host?.parentElement || null;
   while (node) {
     const tag = node.tagName?.toLowerCase();
     if (tag === "lightning-record-edit-form" || tag === "lightning-record-form" || tag === "lightning-record-view-form") {
-      node.__gladeInputFields = node.__gladeInputFields || [];
-      if (!node.__gladeInputFields.includes(component)) node.__gladeInputFields.push(component);
+      node[propertyName] = node[propertyName] || [];
+      if (!node[propertyName].includes(component)) node[propertyName].push(component);
       return;
     }
     const root = node.getRootNode?.();

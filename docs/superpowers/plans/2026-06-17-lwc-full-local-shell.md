@@ -357,7 +357,7 @@ right context panel
 diagnostics drawer
 ```
 
-- [x] Add tests proving `/lwc` renders route picker, `/lwc/preview/record/...` renders the same frame plus mounted components, and diagnostics appear in the context panel.
+- [x] Add tests proving `/lwc` renders the local home route catalog, `/lwc/preview/record/...` renders the same frame plus mounted components, and diagnostics appear in the context panel.
 
 **Focused Verification:**
 

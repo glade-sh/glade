@@ -38,8 +38,13 @@ type lwcLocalContextPreset struct {
 	Diagnostics []lwcshell.Diagnostic `json:"diagnostics,omitempty"`
 }
 
-func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell lwcshell.ShellPage, activeRoute string) string {
+func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell lwcshell.ShellPage, activeRoute string, sampleRecordID string) string {
 	model := lwcshell.BuildWorkbenchModel(p, shell, activeRoute)
+	if strings.TrimSpace(sampleRecordID) == "" {
+		sampleRecordID = lwcShellDefaultSampleRecordID
+	}
+	model.SampleRecordID = sampleRecordID
+	lwcShellApplySampleRecordID(&model, "Account", sampleRecordID)
 	activeContext := model.Active.Context
 	mounts := lwcShellMounts(shell)
 	cfg.PageReference = lwcShellPageReference(shell)
@@ -47,6 +52,7 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 	contextJSON := mustScriptJSON(activeContext)
 	mountsJSON := mustScriptJSON(mounts)
 	builderActive := lwcShellWorkbenchBuilderActive(activeRoute)
+	homeActive := lwcShellWorkbenchHomeActive(activeRoute)
 	var b strings.Builder
 	b.WriteString(`<!doctype html><html><head><meta charset="utf-8"><title>Glade LWC Shell</title>`)
 	b.WriteString(`<link rel="stylesheet" href="/lightning/runtime/shell/glade-shell.css">`)
@@ -81,13 +87,16 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 	b.WriteString(`<main class="glade-stage">`)
 	b.WriteString(lwcShellDiagnosticsHTML(shell.Diagnostics))
 	b.WriteString(lwcShellFlowEventsHTML(activeContext.Flow))
-	if !builderActive {
+	if !builderActive && !homeActive {
 		b.WriteString(lwcShellUtilityBarHTML(activeContext.Workspace.Utilities))
 	}
 	if builderActive {
 		b.WriteString(lwcShellWorkbenchBuilderHTML(model))
 	}
-	if !builderActive {
+	if homeActive {
+		b.WriteString(lwcShellWorkbenchHomeHTML(model))
+	}
+	if !builderActive && !homeActive {
 		b.WriteString(lwcShellRegionsHTML(shell))
 	}
 	b.WriteString(`</main><aside class="glade-context-panel" data-glade-context-panel>`)
@@ -137,8 +146,48 @@ func renderLWCShellDocument(p project.Project, cfg lwcbrowser.PageConfig, shell 
 }
 
 func lwcShellWorkbenchBuilderActive(activeRoute string) bool {
-	activeRoute = strings.TrimSpace(activeRoute)
+	activeRoute = lwcShellRoutePath(activeRoute)
+	return activeRoute == "/lwc/builder"
+}
+
+func lwcShellWorkbenchHomeActive(activeRoute string) bool {
+	activeRoute = lwcShellRoutePath(activeRoute)
 	return activeRoute == "/" || activeRoute == "/lwc"
+}
+
+func lwcShellRoutePath(activeRoute string) string {
+	activeRoute = strings.TrimSpace(activeRoute)
+	if activeRoute == "" {
+		return ""
+	}
+	if parsed, err := url.Parse(activeRoute); err == nil && parsed.Path != "" {
+		return parsed.Path
+	}
+	if before, _, ok := strings.Cut(activeRoute, "?"); ok {
+		activeRoute = before
+	}
+	return activeRoute
+}
+
+func lwcShellApplySampleRecordID(model *lwcshell.WorkbenchModel, objectName, recordID string) {
+	if model == nil || strings.TrimSpace(recordID) == "" {
+		return
+	}
+	for i := range model.Routes {
+		route := &model.Routes[i]
+		if route.Kind != lwcshell.RenderTargetRecordPage || !strings.EqualFold(route.ObjectName, objectName) {
+			continue
+		}
+		if route.RecordID != "" && !strings.Contains(route.RecordID, "<") && route.RecordID != lwcShellDefaultSampleRecordID {
+			continue
+		}
+		route.RecordID = recordID
+		path := "/lwc/preview/record/" + url.PathEscape(route.ObjectName) + "/" + url.PathEscape(recordID)
+		if route.PageName != "" {
+			path += "?page=" + url.QueryEscape(route.PageName)
+		}
+		route.URL = path
+	}
 }
 
 func lwcShellWorkbenchBuilderHTML(model lwcshell.WorkbenchModel) string {
@@ -148,6 +197,7 @@ func lwcShellWorkbenchBuilderHTML(model lwcshell.WorkbenchModel) string {
 	var b strings.Builder
 	b.WriteString(`<section class="glade-workbench-builder glade-app-builder-shell" data-glade-workbench-builder aria-label="Local page builder">`)
 	b.WriteString(`<header class="glade-builder-app-header">`)
+	b.WriteString(`<a class="glade-builder-home" data-glade-home-link href="/lwc">Home</a>`)
 	b.WriteString(`<div class="glade-builder-brand"><span class="glade-builder-tile" aria-hidden="true">&#9638;</span><strong>Glade LWC Workbench</strong><span>Local shell</span></div>`)
 	b.WriteString(lwcShellRouteMenuHTML(model))
 	b.WriteString(`<div class="glade-builder-page-name" data-glade-draft-title>Draft App Page</div>`)
@@ -164,6 +214,7 @@ func lwcShellWorkbenchBuilderHTML(model lwcshell.WorkbenchModel) string {
 		b.WriteString(`</button>`)
 	}
 	b.WriteString(`</div></div>`)
+	b.WriteString(`<label class="glade-layout-select"><span>Layout</span><select data-glade-layout-picker><option value="mainSidebar">Main + sidebar</option><option value="single">Single column</option><option value="twoColumn">Two columns</option></select></label>`)
 	b.WriteString(`<div class="glade-builder-status" data-glade-builder-status><span data-glade-draft-status></span></div>`)
 	b.WriteString(`</div>`)
 	b.WriteString(`<div class="glade-builder-layout">`)
@@ -175,9 +226,11 @@ func lwcShellWorkbenchBuilderHTML(model lwcshell.WorkbenchModel) string {
 	for _, component := range model.Components {
 		b.WriteString(`<article class="glade-component-card" data-glade-component-card data-glade-component="`)
 		b.WriteString(html.EscapeString(component.QualifiedName))
+		b.WriteString(`" data-glade-drag-component="`)
+		b.WriteString(html.EscapeString(component.QualifiedName))
 		b.WriteString(`" data-glade-component-exposed="`)
 		b.WriteString(html.EscapeString(fmt.Sprintf("%t", component.Exposed)))
-		b.WriteString(`"><div><strong>`)
+		b.WriteString(`" draggable="true"><div><strong>`)
 		b.WriteString(html.EscapeString(component.Label))
 		b.WriteString(`</strong><code>`)
 		b.WriteString(html.EscapeString(component.QualifiedName))
@@ -200,7 +253,7 @@ func lwcShellWorkbenchBuilderHTML(model lwcshell.WorkbenchModel) string {
 	b.WriteString(`</div></section>`)
 	b.WriteString(`<section class="glade-builder-canvas-shell" aria-label="Page canvas">`)
 	b.WriteString(`<div class="glade-canvas-toolbar"><span>Canvas</span><span>Desktop</span></div>`)
-	b.WriteString(`<section class="glade-page-canvas" data-glade-page-canvas aria-label="Draft Lightning page">`)
+	b.WriteString(`<section class="glade-page-canvas" data-glade-page-canvas data-glade-page-layout data-glade-layout="mainSidebar" aria-label="Draft Lightning page">`)
 	for _, region := range []struct{ name, label string }{
 		{"main", "Main"},
 		{"sidebar", "Sidebar"},
@@ -247,7 +300,9 @@ func lwcShellWorkbenchBuilderHTML(model lwcshell.WorkbenchModel) string {
 	b.WriteString(`</select></label>`)
 	b.WriteString(`<details class="glade-property-group" open><summary>Record context</summary>`)
 	b.WriteString(`<label>Object<input data-glade-object-input data-glade-object-selector value="Account" autocomplete="off"></label>`)
-	b.WriteString(`<label>Record<span class="glade-inline-control"><input data-glade-record-input value="001000000000001AAA" autocomplete="off"><button class="glade-icon-button" type="button" data-glade-sample-record title="Use sample record ID" aria-label="Use sample record ID">#</button></span></label>`)
+	b.WriteString(`<label>Record<span class="glade-inline-control"><input data-glade-record-input value="`)
+	b.WriteString(html.EscapeString(model.SampleRecordID))
+	b.WriteString(`" autocomplete="off"><button class="glade-icon-button" type="button" data-glade-sample-record title="Use sample record ID" aria-label="Use sample record ID">#</button></span></label>`)
 	b.WriteString(`<label>App<input data-glade-app-input data-glade-app-selector value="Local" autocomplete="off"></label>`)
 	b.WriteString(`<label>Community<input data-glade-community-selector value="" autocomplete="off" placeholder="Site name"></label>`)
 	b.WriteString(`<label class="glade-checkbox-control"><input type="checkbox" data-glade-console-mode> Console mode</label>`)
@@ -260,6 +315,71 @@ func lwcShellWorkbenchBuilderHTML(model lwcshell.WorkbenchModel) string {
 	b.WriteString(`<label class="glade-flow-inputs">Flow inputs<textarea data-glade-flow-inputs rows="2" placeholder="name=value"></textarea></label>`)
 	b.WriteString(`</details>`)
 	b.WriteString(`</aside></div></section>`)
+	return b.String()
+}
+
+func lwcShellWorkbenchHomeHTML(model lwcshell.WorkbenchModel) string {
+	var b strings.Builder
+	b.WriteString(`<section class="glade-workbench-home" data-glade-workbench-home aria-label="LWC preview home">`)
+	b.WriteString(`<header class="glade-home-header"><div><h1>LWC Preview</h1><p>`)
+	b.WriteString(html.EscapeString(workbenchAppLabel(model)))
+	b.WriteString(`</p></div><a class="glade-shell-button glade-home-builder" data-glade-builder-link href="/lwc/builder">Open builder</a></header>`)
+	b.WriteString(lwcShellHomeRouteGroupHTML("Tabs", model.Routes, func(route lwcshell.ShellRoute) bool {
+		return route.Kind == lwcshell.RenderTargetTab
+	}, true))
+	b.WriteString(`<div class="glade-home-grid">`)
+	b.WriteString(lwcShellHomeRouteGroupHTML("App pages", model.Routes, func(route lwcshell.ShellRoute) bool {
+		return route.Kind == lwcshell.RenderTargetAppPage || route.Kind == lwcshell.RenderTargetHomePage
+	}, false))
+	b.WriteString(lwcShellHomeRouteGroupHTML("Record pages", model.Routes, func(route lwcshell.ShellRoute) bool {
+		return route.Kind == lwcshell.RenderTargetRecordPage
+	}, false))
+	b.WriteString(lwcShellHomeRouteGroupHTML("Components", model.Routes, func(route lwcshell.ShellRoute) bool {
+		return route.Kind == lwcshell.RenderTargetComponent || route.Kind == lwcshell.RenderTargetURLAddressable
+	}, false))
+	b.WriteString(lwcShellHomeRouteGroupHTML("Utilities and flows", model.Routes, func(route lwcshell.ShellRoute) bool {
+		return route.Kind == lwcshell.RenderTargetUtilityBar || route.Kind == lwcshell.RenderTargetFlowScreen || route.Kind == lwcshell.RenderTargetFlowAction || route.Kind == lwcshell.RenderTargetQuickAction || route.Kind == lwcshell.RenderTargetCommunityPage
+	}, false))
+	b.WriteString(`</div></section>`)
+	return b.String()
+}
+
+func lwcShellHomeRouteGroupHTML(title string, routes []lwcshell.ShellRoute, include func(lwcshell.ShellRoute) bool, tabGroup bool) string {
+	var matches []lwcshell.ShellRoute
+	for _, route := range routes {
+		if include(route) {
+			matches = append(matches, route)
+		}
+	}
+	if len(matches) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString(`<section class="glade-home-section`)
+	if tabGroup {
+		b.WriteString(` glade-home-tabs`)
+	}
+	b.WriteString(`"><header><h2>`)
+	b.WriteString(html.EscapeString(title))
+	b.WriteString(`</h2><span>`)
+	b.WriteString(html.EscapeString(fmt.Sprintf("%d", len(matches))))
+	b.WriteString(`</span></header><div>`)
+	for _, route := range matches {
+		b.WriteString(`<a data-glade-home-route`)
+		if tabGroup {
+			b.WriteString(` data-glade-home-tab`)
+		}
+		b.WriteString(` data-glade-route-kind="`)
+		b.WriteString(html.EscapeString(string(route.Kind)))
+		b.WriteString(`" href="`)
+		b.WriteString(html.EscapeString(route.URL))
+		b.WriteString(`"><strong>`)
+		b.WriteString(html.EscapeString(route.Label))
+		b.WriteString(`</strong><code>`)
+		b.WriteString(html.EscapeString(route.URL))
+		b.WriteString(`</code></a>`)
+	}
+	b.WriteString(`</div></section>`)
 	return b.String()
 }
 
@@ -301,7 +421,10 @@ func lwcShellWorkbenchNavHTML(model lwcshell.WorkbenchModel) string {
 	b.WriteString(`<nav class="glade-app-tabs" aria-label="Local routes">`)
 	for _, link := range lwcShellWorkbenchNavLinks(model) {
 		b.WriteString(`<a data-glade-route`)
-		if link.URL == "/lwc" && link.Label == "Builder" {
+		if link.URL == "/lwc" && link.Label == "Home" {
+			b.WriteString(` data-glade-home-link`)
+		}
+		if link.URL == "/lwc/builder" && link.Label == "Builder" {
 			b.WriteString(` data-glade-builder-link`)
 		}
 		b.WriteString(` href="`)
@@ -319,7 +442,10 @@ func lwcShellConsoleRailHTML(model lwcshell.WorkbenchModel) string {
 	b.WriteString(`<nav class="glade-console-rail" aria-label="Console navigation">`)
 	for _, link := range lwcShellWorkbenchNavLinks(model) {
 		b.WriteString(`<a data-glade-route`)
-		if link.URL == "/lwc" && link.Label == "Builder" {
+		if link.URL == "/lwc" && link.Label == "Home" {
+			b.WriteString(` data-glade-home-link`)
+		}
+		if link.URL == "/lwc/builder" && link.Label == "Builder" {
 			b.WriteString(` data-glade-builder-link`)
 		}
 		b.WriteString(` href="`)
@@ -432,10 +558,11 @@ type lwcShellNavLink struct {
 }
 
 func lwcShellWorkbenchNavLinks(model lwcshell.WorkbenchModel) []lwcShellNavLink {
-	builder := lwcShellNavLink{Label: "Builder", URL: "/lwc"}
+	home := lwcShellNavLink{Label: "Home", URL: "/lwc"}
+	builder := lwcShellNavLink{Label: "Builder", URL: "/lwc/builder"}
 	if len(model.Apps) == 0 || len(model.Apps[0].NavItems) == 0 {
-		links := make([]lwcShellNavLink, 0, len(model.Routes)+1)
-		links = append(links, builder)
+		links := make([]lwcShellNavLink, 0, len(model.Routes)+2)
+		links = append(links, home, builder)
 		for _, route := range model.Routes {
 			links = append(links, lwcShellNavLink{Label: route.Label, URL: route.URL})
 		}
@@ -447,8 +574,8 @@ func lwcShellWorkbenchNavLinks(model lwcshell.WorkbenchModel) []lwcShellNavLink 
 			routeByTab[strings.ToLower(route.TabName)] = route
 		}
 	}
-	links := make([]lwcShellNavLink, 0, len(model.Apps[0].NavItems)+1)
-	links = append(links, builder)
+	links := make([]lwcShellNavLink, 0, len(model.Apps[0].NavItems)+2)
+	links = append(links, home, builder)
 	for _, item := range model.Apps[0].NavItems {
 		if route, ok := routeByTab[strings.ToLower(item)]; ok {
 			links = append(links, lwcShellNavLink{Label: route.Label, URL: route.URL})

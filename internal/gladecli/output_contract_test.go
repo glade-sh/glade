@@ -101,6 +101,12 @@ func TestCLIOutputContractDevLWCBoundsRoutesAndKeepsReadyFileComplete(t *testing
 	if !strings.Contains(out.String(), "... 12 routes omitted.") {
 		t.Fatalf("summary did not cap routes:\n%s", out.String())
 	}
+	if !strings.Contains(out.String(), "Open /lwc for home or /lwc/builder for the page builder") {
+		t.Fatalf("summary did not point at home and builder:\n%s", out.String())
+	}
+	if strings.Contains(out.String(), "route picker") {
+		t.Fatalf("summary still mentions the old route picker:\n%s", out.String())
+	}
 	if strings.Contains(out.String(), "/lwc/preview/component/c/routeprobei") {
 		t.Fatalf("summary included routes beyond compact startup cap:\n%s", out.String())
 	}

@@ -79,24 +79,33 @@ func (s *Server) serveLightningStaticShim(w http.ResponseWriter, r *http.Request
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning shim")
 		return
 	}
-	shims, err := gladehome.ShimsDir()
+	content, err := readLightningStaticShim(fileName)
 	if err != nil {
-		writeSalesforceError(w, errUnsupportedFeature, err.Error())
+		writeSalesforceError(w, errUnknownEndpoint, "lightning shim missing")
 		return
 	}
-	path := filepath.Join(shims, fileName)
-	content, err := os.ReadFile(path)
-	if err != nil {
-		if repoRoot, repoErr := gladehome.RepoRoot(); repoErr == nil {
-			path = filepath.Join(repoRoot, "lwcruntime", "src", "shims", fileName)
-			content, err = os.ReadFile(path)
-		}
-		if err != nil {
-			writeSalesforceError(w, errUnknownEndpoint, "lightning shim missing")
-			return
+	writeJavaScript(w, content)
+}
+
+func readLightningStaticShim(fileName string) ([]byte, error) {
+	for _, dir := range lightningStaticShimDirs() {
+		content, err := os.ReadFile(filepath.Join(dir, fileName))
+		if err == nil {
+			return content, nil
 		}
 	}
-	writeJavaScript(w, content)
+	return nil, os.ErrNotExist
+}
+
+func lightningStaticShimDirs() []string {
+	var dirs []string
+	if sourceRoot, err := gladehome.SourceRoot(); err == nil {
+		dirs = appendRuntimeAssetDir(dirs, filepath.Join(sourceRoot, "lwcruntime", "src", "shims"))
+	}
+	if dir, err := gladehome.ShimsDir(); err == nil {
+		dirs = appendRuntimeAssetDir(dirs, dir)
+	}
+	return dirs
 }
 
 func (s *Server) serveLightningAPIShim(w http.ResponseWriter, parts []string) {

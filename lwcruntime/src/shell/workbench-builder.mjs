@@ -36,6 +36,7 @@ export function bootWorkbenchBuilder(root = document.body, config = {}) {
   const model = readWorkbenchModel();
   const state = {
     kind: "appPage",
+    layout: "mainSidebar",
     components: [],
   };
   const controls = {
@@ -49,6 +50,8 @@ export function bootWorkbenchBuilder(root = document.body, config = {}) {
     community: builder.querySelector("[data-glade-community-selector]"),
     formFactor: builder.querySelector("[data-glade-form-factor]"),
     formFactorOptions: Array.from(builder.querySelectorAll("[data-glade-form-factor-option]")),
+    layout: builder.querySelector("[data-glade-layout-picker]"),
+    canvas: builder.querySelector("[data-glade-page-layout]"),
     consoleMode: builder.querySelector("[data-glade-console-mode]"),
     stateKey: builder.querySelector("[data-glade-state-key]"),
     stateValue: builder.querySelector("[data-glade-state-value]"),
@@ -94,7 +97,7 @@ export function bootWorkbenchBuilder(root = document.body, config = {}) {
     if (event.target.closest("[data-glade-sample-record]")) {
       event.preventDefault();
       if (controls.record) {
-        controls.record.value = "001000000000001AAA";
+        controls.record.value = model.sampleRecordId || "001000000000001AAA";
       }
       render();
       return;
@@ -108,6 +111,41 @@ export function bootWorkbenchBuilder(root = document.body, config = {}) {
       render();
     }
   });
+  builder.addEventListener("dragstart", (event) => {
+    const card = event.target.closest("[data-glade-drag-component]");
+    if (!card || !event.dataTransfer) {
+      return;
+    }
+    event.dataTransfer.effectAllowed = "copy";
+    event.dataTransfer.setData("text/plain", card.dataset.gladeDragComponent || "");
+    event.dataTransfer.setData("application/x-glade-lwc", card.dataset.gladeDragComponent || "");
+  });
+  builder.addEventListener("dragover", (event) => {
+    const region = event.target.closest("[data-glade-region-drop]");
+    if (!region || region.hidden) {
+      return;
+    }
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = "copy";
+    }
+  });
+  builder.addEventListener("drop", (event) => {
+    const region = event.target.closest("[data-glade-region-drop]");
+    if (!region || region.hidden || !event.dataTransfer) {
+      return;
+    }
+    const qualifiedName = event.dataTransfer.getData("application/x-glade-lwc") || event.dataTransfer.getData("text/plain");
+    if (!qualifiedName) {
+      return;
+    }
+    event.preventDefault();
+    state.components.push({
+      qualifiedName,
+      region: region.dataset.gladeRegionDrop || "main",
+    });
+    render();
+  });
   for (const control of [
     controls.kind,
     controls.componentPicker,
@@ -116,6 +154,7 @@ export function bootWorkbenchBuilder(root = document.body, config = {}) {
     controls.app,
     controls.community,
     controls.formFactor,
+    controls.layout,
     controls.consoleMode,
     controls.stateKey,
     controls.stateValue,
@@ -145,12 +184,17 @@ function readWorkbenchModel() {
 
 function renderDraft(builder, model, state, controls, config) {
   state.kind = controls.kind?.value || state.kind || "appPage";
+  state.layout = controls.layout?.value || state.layout || "mainSidebar";
   const target = TARGET_BY_KIND[state.kind] || TARGET_BY_KIND.appPage;
   if (controls.componentPicker?.value && controls.search && controls.search.value !== controls.componentPicker.value) {
     controls.search.value = controls.componentPicker.value;
   }
+  updateLayout(builder, state, controls);
   updateCatalog(builder, model, target, controls.search?.value);
   state.components = state.components.filter((placement) => componentSupportsTarget(findComponent(model, placement.qualifiedName), target));
+  if (state.layout === "single") {
+    state.components = state.components.map((placement) => placement.region === "sidebar" ? { ...placement, region: "main" } : placement);
+  }
   updateContextScripts(state, controls, config);
   for (const region of builder.querySelectorAll("[data-glade-region-items]")) {
     region.replaceChildren();
@@ -175,6 +219,7 @@ function renderDraft(builder, model, state, controls, config) {
 
 function updateCatalog(builder, model, target, query) {
   const search = normalize(query);
+  const layout = builder.dataset.gladeLayout || "mainSidebar";
   for (const card of builder.querySelectorAll("[data-glade-component-card]")) {
     const component = findComponent(model, card.dataset.gladeComponent);
     const supported = componentSupportsTarget(component, target);
@@ -183,9 +228,20 @@ function updateCatalog(builder, model, target, query) {
     card.dataset.gladeComponentMatches = String(matched);
     card.hidden = !matched;
     for (const button of card.querySelectorAll("[data-glade-add-component]")) {
-      button.disabled = !supported;
-      button.setAttribute("aria-disabled", String(!supported));
+      const regionAvailable = layout !== "single" || button.dataset.gladeRegion !== "sidebar";
+      button.disabled = !supported || !regionAvailable;
+      button.setAttribute("aria-disabled", String(button.disabled));
     }
+  }
+}
+
+function updateLayout(builder, state, controls) {
+  builder.dataset.gladeLayout = state.layout;
+  if (controls.canvas) {
+    controls.canvas.dataset.gladeLayout = state.layout;
+  }
+  for (const region of builder.querySelectorAll("[data-glade-region-drop]")) {
+    region.hidden = state.layout === "single" && region.dataset.gladeRegionDrop === "sidebar";
   }
 }
 

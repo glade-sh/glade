@@ -460,7 +460,7 @@ func printDevLWCStartupSummary(w io.Writer, addr string, p project.Project, sele
 		}
 	}
 	routes := devLWCPreviewRoutes(p)
-	printDevStartupList(w, "Routes", "route", routes, "Open /lwc for the route picker; use --ready-file or /lightning/local/context.json for the complete list.")
+	printDevStartupList(w, "Routes", "route", routes, "Open /lwc for home or /lwc/builder for the page builder; use --ready-file or /lightning/local/context.json for the complete list.")
 	fmt.Fprintf(w, "Watching %s for lwc, flexipage, tab, Visualforce, Apex, and static resource changes.\n", p.Root)
 }
 

@@ -220,6 +220,12 @@ class %[2]s extends LightningElement {
       this.__initialValue = this.value;
     }
     this.reportUnsupportedAttributes();
+    if (%[3]q === "lightning-input-field") {
+      registerBaseFormFieldWithNearestForm(this, "__gladeInputFields");
+    }
+    if (%[3]q === "lightning-output-field") {
+      registerBaseFormFieldWithNearestForm(this, "__gladeOutputFields");
+    }
     if (isRecordFormSelector(%[3]q)) {
       this.loadRecordFormRecord();
     }
@@ -608,7 +614,12 @@ function applyBaseRecordUiToField(field, data) {
   }
 }
 function baseFormFieldComponents(root) {
-  const fields = [];
+  const fields = [
+    ...(root && root.hostElement && root.hostElement.__gladeInputFields || []),
+    ...(root && root.template && root.template.host && root.template.host.__gladeInputFields || []),
+    ...(root && root.hostElement && root.hostElement.__gladeOutputFields || []),
+    ...(root && root.template && root.template.host && root.template.host.__gladeOutputFields || [])
+  ];
   for (const selector of ["lightning-input-field", "lightning-output-field"]) {
     fields.push(...(root && root.querySelectorAll ? root.querySelectorAll(selector) : []));
     for (const container of [root, root && root.hostElement, root && root.template && root.template.host]) {
@@ -619,6 +630,20 @@ function baseFormFieldComponents(root) {
     }
   }
   return [...new Set(fields)];
+}
+function registerBaseFormFieldWithNearestForm(component, propertyName) {
+  const host = component && (component.hostElement || component.template && component.template.host);
+  let node = host && host.parentElement || null;
+  while (node) {
+    const tag = node.tagName && node.tagName.toLowerCase();
+    if (tag === "lightning-record-edit-form" || tag === "lightning-record-form" || tag === "lightning-record-view-form") {
+      node[propertyName] = node[propertyName] || [];
+      if (!node[propertyName].includes(component)) node[propertyName].push(component);
+      return;
+    }
+    const root = node.getRootNode && node.getRootNode();
+    node = node.parentElement || root && root.host && root.host.parentElement || null;
+  }
 }
 function collectBaseAssignedFields(element, fields, selector) {
   if (!element) {

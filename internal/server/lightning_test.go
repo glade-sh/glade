@@ -698,6 +698,22 @@ func TestLightningCoreShimServesLDSCache(t *testing.T) {
 	}
 }
 
+func TestLightningCoreShimPrefersSourceWireAdapter(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/shims/core/wire-adapter.js", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	for _, want := range []string{"registerLDSAdapter", "emitEmptyFetchWireValue", "createFetchWireAdapter"} {
+		if !strings.Contains(rec.Body.String(), want) {
+			t.Fatalf("missing %q in body = %q", want, rec.Body.String())
+		}
+	}
+}
+
 func TestLightningBaseComponentShimServesNoopComponent(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -1352,6 +1368,15 @@ func TestLightningWireGetRecordUIReturnsRecordObjectInfoAndLayouts(t *testing.T)
 	if !ok || objectInfos["Account"] == nil {
 		t.Fatalf("objectInfos = %#v", payload["objectInfos"])
 	}
+	accountInfo, ok := objectInfos["Account"].(map[string]any)
+	if !ok {
+		t.Fatalf("Account object info = %#v", objectInfos["Account"])
+	}
+	infoFields, ok := accountInfo["fields"].(map[string]any)
+	if !ok {
+		t.Fatalf("Account fields = %#v", accountInfo["fields"])
+	}
+	assertUIAPIFieldDataTypeWithoutRESTType(t, infoFields, "Name", "String")
 	layouts, ok := payload["layouts"].(map[string]any)
 	if !ok {
 		t.Fatalf("layouts = %#v", payload["layouts"])
@@ -1432,8 +1457,8 @@ func TestLightningWireGetObjectInfoReturnsLocalSchema(t *testing.T) {
 	if !ok {
 		t.Fatalf("fields = %#v", payload["fields"])
 	}
-	name, ok := fields["Name"].(map[string]any)
-	if !ok || name["label"] != "Account Name" || name["createable"] != true || name["updateable"] != true {
+	name := assertUIAPIFieldDataTypeWithoutRESTType(t, fields, "Name", "String")
+	if name["label"] != "Account Name" || name["createable"] != true || name["updateable"] != true {
 		t.Fatalf("Name field = %#v", fields["Name"])
 	}
 	rating, ok := fields["Rating"].(map[string]any)
@@ -1525,13 +1550,17 @@ func TestLightningWireGetObjectInfoIncludesRecordTypesPicklistsAndFieldPermissio
 		t.Fatalf("recordTypeInfos = %#v", payload["recordTypeInfos"])
 	}
 	fields := payload["fields"].(map[string]any)
-	owner := fields["OwnerId"].(map[string]any)
-	if owner["dataType"] != "Reference" || owner["relationshipName"] != "Owner" || owner["createable"] != true || owner["updateable"] != false || owner["accessible"] != true {
+	owner := assertUIAPIFieldDataTypeWithoutRESTType(t, fields, "OwnerId", "Reference")
+	if owner["dataType"] != "Reference" || owner["relationshipName"] != "Owner" || owner["reference"] != true || owner["createable"] != true || owner["updateable"] != false || owner["accessible"] != true {
 		t.Fatalf("OwnerId field = %#v", owner)
 	}
 	refs, ok := owner["referenceToInfos"].([]any)
 	if !ok || len(refs) != 1 || refs[0].(map[string]any)["apiName"] != "User" {
 		t.Fatalf("referenceToInfos = %#v", owner["referenceToInfos"])
+	}
+	nameFields, ok := refs[0].(map[string]any)["nameFields"].([]any)
+	if !ok || len(nameFields) == 0 || nameFields[0] != "Name" {
+		t.Fatalf("referenceToInfos.nameFields = %#v", refs[0].(map[string]any)["nameFields"])
 	}
 	rating := fields["Rating"].(map[string]any)
 	values, ok := rating["picklistValues"].([]any)
@@ -1583,6 +1612,11 @@ func TestLightningWireGetObjectInfosReturnsOrderedResults(t *testing.T) {
 	if !ok || firstInfo["apiName"] != "Account" {
 		t.Fatalf("first info = %#v", first["result"])
 	}
+	firstFields, ok := firstInfo["fields"].(map[string]any)
+	if !ok {
+		t.Fatalf("first fields = %#v", firstInfo["fields"])
+	}
+	assertUIAPIFieldDataTypeWithoutRESTType(t, firstFields, "Name", "String")
 	second, ok := results[1].(map[string]any)
 	if !ok || second["statusCode"] != float64(http.StatusNotFound) {
 		t.Fatalf("second = %#v", results[1])
@@ -1658,8 +1692,8 @@ func TestLightningWireGetRecordCreateDefaultsReturnsDefaultRecord(t *testing.T) 
 	if !ok {
 		t.Fatalf("object info fields = %#v", accountInfo["fields"])
 	}
-	nameInfo, ok := infoFields["Name"].(map[string]any)
-	if !ok || nameInfo["apiName"] != "Name" || nameInfo["dataType"] != "String" || nameInfo["required"] != true || nameInfo["nameField"] != true {
+	nameInfo := assertUIAPIFieldDataTypeWithoutRESTType(t, infoFields, "Name", "String")
+	if nameInfo["apiName"] != "Name" || nameInfo["required"] != true || nameInfo["nameField"] != true {
 		t.Fatalf("Name object info = %#v", infoFields["Name"])
 	}
 	record, ok := payload["record"].(map[string]any)
@@ -1821,6 +1855,21 @@ func TestLightningWireGetRecordCreateDefaultsUsesSourceLayoutFields(t *testing.T
 	if _, ok := layoutFields["Internal__c"]; ok {
 		t.Fatalf("non-createable source layout field included = %#v", layoutFields["Internal__c"])
 	}
+}
+
+func assertUIAPIFieldDataTypeWithoutRESTType(t *testing.T, fields map[string]any, fieldName, dataType string) map[string]any {
+	t.Helper()
+	field, ok := fields[fieldName].(map[string]any)
+	if !ok {
+		t.Fatalf("%s field = %#v", fieldName, fields[fieldName])
+	}
+	if field["dataType"] != dataType {
+		t.Fatalf("%s dataType = %#v in %#v", fieldName, field["dataType"], field)
+	}
+	if _, hasRESTType := field["type"]; hasRESTType {
+		t.Fatalf("UI API object info should not expose REST describe type on %s: %#v", fieldName, field)
+	}
+	return field
 }
 
 func TestLightningWireGetLayoutReturnsSourceLayout(t *testing.T) {

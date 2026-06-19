@@ -2,11 +2,11 @@
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Local Lightning</p>
-  <p>Serve Lightning Web Components from an SFDX project with local page context, local data, diagnostics, and a Glade-owned Lightning workbench.</p>
+  <p>Serve Lightning Web Components from an SFDX project with a local home page, builder, page context, local data, diagnostics, and a Glade-owned Lightning workbench.</p>
   <ul>
     <li>Start <code>glade dev lwc --open</code>.</li>
     <li>Select contexts from <code>glade.lwc.json</code>.</li>
-    <li>Open component, record, app, home, tab, action, and community routes.</li>
+    <li>Open tabs from home or compose test pages at <code>/lwc/builder</code>.</li>
     <li>Keep Salesforce for hosted Lightning Experience behavior.</li>
   </ul>
 </div>
@@ -30,6 +30,11 @@ Start the workbench:
 ```bash
 glade dev lwc --project . --open
 ```
+
+The printed base URL opens home at `/`; `/lwc` is the stable home link. Use the
+**Open builder** link or `/lwc/builder` to compose a local page, drag LWCs into
+canvas regions, switch layouts, and tune record, app, community, Flow, and
+PageReference context.
 
 Open a named context:
 

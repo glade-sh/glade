@@ -72,10 +72,11 @@ test("getRecord wire sends optionalFields and keeps cache keys distinct", async 
     await adapter.update({ recordId: "001000000000777AAA", fields: ["Account.Name"], optionalFields: ["Account.Website"] });
 
     assert.deepEqual(calls.map((call) => call.optionalFields), [["Account.Phone"], ["Account.Website"]]);
-    assert.equal(values.length, 3);
-    assert.equal(values[0].data.fields.Name.value, "1");
-    assert.equal(values[1].data.fields.Name.value, "1");
-    assert.equal(values[2].data.fields.Name.value, "2");
+    const dataValues = values.filter((value) => value.data);
+    assert.equal(dataValues.length, 3);
+    assert.equal(dataValues[0].data.fields.Name.value, "1");
+    assert.equal(dataValues[1].data.fields.Name.value, "1");
+    assert.equal(dataValues[2].data.fields.Name.value, "2");
     adapter.disconnect();
   } finally {
     globalThis.fetch = originalFetch;
@@ -98,7 +99,9 @@ test("fetch wire suppresses null mapped bodies", async () => {
     await adapter.update({ objectApiName: "" });
 
     assert.equal(calls, 0);
-    assert.deepEqual(values, []);
+    assert.equal(values.length, 1);
+    assert.deepEqual(values[0], { data: undefined, error: undefined });
+    assert.equal(typeof values[0].refresh, "function");
     adapter.disconnect();
   } finally {
     globalThis.fetch = originalFetch;
@@ -127,7 +130,7 @@ test("LDS notify refreshes batch getRecords wires by recordIds", async () => {
     });
     await notifyRecordUpdateAvailable([{ recordId: "001000000000001AAA" }]);
 
-    assert.equal(values.length, 2);
+    assert.equal(values.filter((value) => value.data).length, 2);
     assert.equal(calls.length, 2);
     adapter.disconnect();
   } finally {
@@ -159,7 +162,7 @@ test("LDS notify refreshes related list wires by parentRecordId", async () => {
     });
     await notifyRecordUpdateAvailable([{ recordId: "001000000000001AAA" }]);
 
-    assert.equal(values.length, 2);
+    assert.equal(values.filter((value) => value.data).length, 2);
     assert.equal(calls.length, 2);
     adapter.disconnect();
   } finally {

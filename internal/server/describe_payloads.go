@@ -101,28 +101,46 @@ func describeFieldPayload(field storage.Field) map[string]any {
 	referenceTo := append([]string(nil), field.ReferenceTo...)
 	sort.Strings(referenceTo)
 	nillable := !field.Required && field.Type != storage.FieldID && !strings.EqualFold(field.APIName, "Id")
+	compoundFieldName := strings.TrimSpace(field.CompoundFieldName)
 	return map[string]any{
-		"name":             field.APIName,
-		"apiName":          field.APIName,
-		"label":            labelOrFallback(field.Label, field.APIName),
-		"type":             string(field.Type),
-		"dataType":         lightningFieldDataType(field),
-		"length":           describeFieldLength(field),
-		"nillable":         nillable,
-		"required":         !nillable,
-		"accessible":       storage.FieldFlagValue(field.Accessible, true),
-		"createable":       createable,
-		"updateable":       updateable,
-		"filterable":       true,
-		"sortable":         field.Type != storage.FieldAddress && field.Type != storage.FieldLocation,
-		"externalId":       field.ExternalID,
-		"unique":           field.Unique,
-		"idLookup":         field.Type == storage.FieldID || strings.EqualFold(field.APIName, "Id") || field.ExternalID,
-		"referenceTo":      referenceTo,
-		"referenceToInfos": describeReferenceToInfos(referenceTo),
-		"relationshipName": field.RelationshipName,
-		"picklistValues":   describePicklistValues(field.PicklistValues),
-		"nameField":        strings.EqualFold(field.APIName, "Name"),
+		"name":                  field.APIName,
+		"apiName":               field.APIName,
+		"label":                 labelOrFallback(field.Label, field.APIName),
+		"type":                  string(field.Type),
+		"dataType":              lightningFieldDataType(field),
+		"length":                describeFieldLength(field),
+		"nillable":              nillable,
+		"required":              !nillable,
+		"accessible":            storage.FieldFlagValue(field.Accessible, true),
+		"calculated":            field.Type == storage.FieldCalculated || strings.TrimSpace(field.Formula) != "",
+		"compound":              describeFieldCompound(field),
+		"compoundComponentName": describeCompoundComponentName(field, compoundFieldName),
+		"compoundFieldName":     nullableString(compoundFieldName),
+		"controllerName":        nullableString(field.PicklistController),
+		"controllingFields":     append([]string(nil), field.FilteredLookupInfo.ControllingFields...),
+		"createable":            createable,
+		"custom":                strings.Contains(field.APIName, "__"),
+		"extraTypeInfo":         describeFieldExtraTypeInfo(field),
+		"filterable":            true,
+		"filteredLookupInfo":    describeFilteredLookupInfo(field.FilteredLookupInfo),
+		"htmlFormatted":         describeFieldHTMLFormatted(field),
+		"inlineHelpText":        nullableString(field.InlineHelpText),
+		"polymorphicForeignKey": len(referenceTo) > 1,
+		"precision":             field.Precision,
+		"reference":             field.Type == storage.FieldReference,
+		"referenceTargetField":  nil,
+		"scale":                 field.Scale,
+		"searchPrefilterable":   false,
+		"sortable":              field.Type != storage.FieldAddress && field.Type != storage.FieldLocation,
+		"externalId":            field.ExternalID,
+		"unique":                field.Unique,
+		"idLookup":              field.Type == storage.FieldID || strings.EqualFold(field.APIName, "Id") || field.ExternalID,
+		"referenceTo":           referenceTo,
+		"referenceToInfos":      describeReferenceToInfos(referenceTo),
+		"relationshipName":      nullableString(field.RelationshipName),
+		"picklistValues":        describePicklistValues(field.PicklistValues),
+		"nameField":             strings.EqualFold(field.APIName, "Name"),
+		"updateable":            updateable,
 	}
 }
 
@@ -134,11 +152,63 @@ func describeReferenceToInfos(referenceTo []string) []map[string]any {
 			continue
 		}
 		out = append(out, map[string]any{
-			"apiName": apiName,
-			"name":    apiName,
+			"apiName":    apiName,
+			"name":       apiName,
+			"nameFields": []string{"Name"},
 		})
 	}
 	return out
+}
+
+func nullableString(value string) any {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil
+	}
+	return value
+}
+
+func describeFieldCompound(_ storage.Field) bool {
+	return false
+}
+
+func describeCompoundComponentName(field storage.Field, compoundFieldName string) any {
+	if compoundFieldName == "" {
+		return nil
+	}
+	componentName := strings.TrimPrefix(field.APIName, compoundFieldName)
+	componentName = strings.TrimPrefix(componentName, "_")
+	if componentName == "" {
+		return nil
+	}
+	return componentName
+}
+
+func describeFieldExtraTypeInfo(field storage.Field) any {
+	displayType := strings.ToUpper(strings.TrimSpace(field.DisplayType))
+	switch {
+	case strings.Contains(displayType, "RICHTEXT"):
+		return "RichTextArea"
+	case strings.Contains(displayType, "TEXTAREA") || strings.Contains(displayType, "LONGTEXT"):
+		return "PlainTextArea"
+	default:
+		return nil
+	}
+}
+
+func describeFieldHTMLFormatted(field storage.Field) bool {
+	return strings.Contains(strings.ToUpper(strings.TrimSpace(field.DisplayType)), "RICHTEXT")
+}
+
+func describeFilteredLookupInfo(info storage.FilteredLookupInfo) any {
+	if len(info.ControllingFields) == 0 && !info.Dependent && !info.OptionalFilter {
+		return nil
+	}
+	return map[string]any{
+		"controllingFields": append([]string(nil), info.ControllingFields...),
+		"dependent":         info.Dependent,
+		"optionalFilter":    info.OptionalFilter,
+	}
 }
 
 func lightningFieldDataType(field storage.Field) string {

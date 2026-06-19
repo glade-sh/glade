@@ -11,14 +11,15 @@ import (
 )
 
 type WorkbenchModel struct {
-	Title       string           `json:"title"`
-	Mode        string           `json:"mode"`
-	Apps        []ShellApp       `json:"apps"`
-	Routes      []ShellRoute     `json:"routes"`
-	Components  []ShellComponent `json:"components"`
-	ActiveRoute string           `json:"activeRoute"`
-	Active      ShellPage        `json:"active"`
-	Diagnostics []Diagnostic     `json:"diagnostics,omitempty"`
+	Title          string           `json:"title"`
+	Mode           string           `json:"mode"`
+	Apps           []ShellApp       `json:"apps"`
+	Routes         []ShellRoute     `json:"routes"`
+	Components     []ShellComponent `json:"components"`
+	SampleRecordID string           `json:"sampleRecordId,omitempty"`
+	ActiveRoute    string           `json:"activeRoute"`
+	Active         ShellPage        `json:"active"`
+	Diagnostics    []Diagnostic     `json:"diagnostics,omitempty"`
 }
 
 type ShellApp struct {

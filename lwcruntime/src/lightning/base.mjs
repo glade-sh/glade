@@ -496,6 +496,12 @@ export function createBaseComponent(selector, render, options = {}) {
         reportDiagnostic({ code: "GLADELWC060", severity: "warning", message, tagName: selector });
         throw new Error(message);
       }
+      if (selector === "lightning-input-field") {
+        registerBaseFormFieldWithNearestForm(this, "__gladeInputFields");
+      }
+      if (selector === "lightning-output-field") {
+        registerBaseFormFieldWithNearestForm(this, "__gladeOutputFields");
+      }
       if (isRecordFormSelector(selector)) {
         this.loadRecordFormRecord();
       }
@@ -653,7 +659,12 @@ function applyRecordUiToField(field, data) {
 }
 
 function formFieldComponents(root) {
-  const fields = [];
+  const fields = [
+    ...(root?.hostElement?.__gladeInputFields || []),
+    ...(root?.template?.host?.__gladeInputFields || []),
+    ...(root?.hostElement?.__gladeOutputFields || []),
+    ...(root?.template?.host?.__gladeOutputFields || []),
+  ];
   for (const selector of ["lightning-input-field", "lightning-output-field"]) {
     fields.push(...(root?.querySelectorAll?.(selector) || []));
     for (const container of [root, root?.hostElement, root?.template?.host]) {
@@ -664,6 +675,21 @@ function formFieldComponents(root) {
     }
   }
   return [...new Set(fields)];
+}
+
+function registerBaseFormFieldWithNearestForm(component, propertyName) {
+  const host = component?.hostElement || component?.template?.host;
+  let node = host?.parentElement || null;
+  while (node) {
+    const tag = node.tagName?.toLowerCase();
+    if (tag === "lightning-record-edit-form" || tag === "lightning-record-form" || tag === "lightning-record-view-form") {
+      node[propertyName] = node[propertyName] || [];
+      if (!node[propertyName].includes(component)) node[propertyName].push(component);
+      return;
+    }
+    const root = node.getRootNode?.();
+    node = node.parentElement || root?.host?.parentElement || null;
+  }
 }
 
 function collectAssignedFields(element, fields, selector) {

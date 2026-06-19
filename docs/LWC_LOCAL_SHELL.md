@@ -20,11 +20,14 @@ Then start the local workbench from the project root:
 glade dev lwc --project . --open
 ```
 
-The printed base URL opens the local workbench at `/`. The same workbench is
-also available at `/lwc` for stable links. It lists and filters available LWCs,
-lets you place target-compatible components into a draft app, home, record,
-tab, URL-addressable, quick-action, or community page context, and shows
-discovered preview routes, active context, and local diagnostics.
+The printed base URL opens the LWC home page at `/`. The same home page is
+also available at `/lwc` for stable links. It groups formal tabs, app pages,
+record pages, direct components, utilities, flows, and community routes. Use
+`/lwc/builder` or the **Open builder** link when you want to compose a draft
+app, home, record, tab, URL-addressable, quick-action, or community page
+context. The builder lists and filters available LWCs, lets you drag or add
+target-compatible components into canvas regions, switches page layouts, and
+shows active context and local diagnostics.
 
 Use an ephemeral port and ready file for scripts:
 

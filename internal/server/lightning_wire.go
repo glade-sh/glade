@@ -822,7 +822,12 @@ func getObjectInfoWireData(org *storage.OrgState, objectAPIName string) (map[str
 	for _, field := range fieldList {
 		name, _ := field["name"].(string)
 		if name != "" {
-			fields[name] = field
+			uiField := make(map[string]any, len(field))
+			for key, value := range field {
+				uiField[key] = value
+			}
+			delete(uiField, "type")
+			fields[name] = uiField
 		}
 	}
 	payload["fields"] = fields

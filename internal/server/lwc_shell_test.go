@@ -16,7 +16,7 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-func TestLWCShellRootRendersWorkbenchRouteMenu(t *testing.T) {
+func TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink(t *testing.T) {
 	root, err := lightningTestRepoRoot()
 	if err != nil {
 		t.Fatal(err)
@@ -38,12 +38,75 @@ func TestLWCShellRootRendersWorkbenchRouteMenu(t *testing.T) {
 	for _, want := range []string{
 		"Glade LWC Shell",
 		"data-glade-shell=\"workbench\"",
+		"data-glade-workbench-home",
+		"data-glade-home-tab",
+		"data-glade-builder-link",
+		"href=\"/lwc/builder\"",
+		"Tabs",
+		"LWC Probe",
+		"/lwc/preview/tab/Lwc_Probe",
+		"/lwc/preview/app/Sales_Dashboard",
+		"/lwc/preview/component/c/contextProbe",
+		"data-glade-context-panel",
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("missing %q in:\n%s", want, body)
+		}
+	}
+	for _, unwanted := range []string{
 		"data-glade-builder-active=\"true\"",
+		"data-glade-workbench-builder",
+	} {
+		if strings.Contains(body, unwanted) {
+			t.Fatalf("home should not render builder chrome %q in:\n%s", unwanted, body)
+		}
+	}
+	if !strings.Contains(body, `"routes":[`) || !strings.Contains(body, `"url":"/lwc/preview/tab/Lwc_Probe"`) {
+		t.Fatalf("workbench model missing route catalog in:\n%s", body)
+	}
+}
+
+func TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord(t *testing.T) {
+	root, err := lightningTestRepoRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture := filepath.Join(root, "testdata", "local-tests", "lwc-shell")
+	p, err := project.Load(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.OrgState{}
+	storage.EnsureStandardObject(&org, "Account")
+	account := org.Objects["Account"]
+	account.Records = map[storage.ID]storage.Record{
+		"001LOCALACCT001": {ID: "001LOCALACCT001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Seeded Account")}},
+	}
+	org.Objects["Account"] = account
+	handler := NewWithSource(&org, SourceMetadata{Project: p})
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lwc/builder", nil))
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	for _, want := range []string{
+		"Glade LWC Shell",
+		"data-glade-shell=\"workbench\"",
+		"data-glade-builder-active=\"true\"",
+		"data-glade-home-link",
+		"href=\"/lwc\"",
 		"data-glade-builder-link",
 		"data-glade-workbench-builder",
 		"glade-app-builder-shell",
 		"class=\"glade-builder-app-header\"",
 		"class=\"glade-builder-commandbar\"",
+		"data-glade-layout-picker",
+		"data-glade-page-layout",
+		"data-glade-drag-component=\"c:contextProbe\"",
+		"draggable=\"true\"",
 		"glade-builder-palette",
 		"class=\"glade-builder-canvas-shell\"",
 		"class=\"glade-builder-properties\"",
@@ -53,6 +116,7 @@ func TestLWCShellRootRendersWorkbenchRouteMenu(t *testing.T) {
 		"data-glade-page-canvas",
 		"data-glade-region-drop=\"main\"",
 		"data-glade-add-component=\"c:contextProbe\"",
+		"value=\"001LOCALACCT001\"",
 		"class=\"glade-shell-button\"",
 		"/lwc/preview/record/Account/",
 		"/lwc/preview/app/Sales_Dashboard",
@@ -81,6 +145,9 @@ func TestLWCShellRootRendersWorkbenchRouteMenu(t *testing.T) {
 	}
 	if !strings.Contains(body, `"components":[`) || !strings.Contains(body, `"qualifiedName":"c:contextProbe"`) {
 		t.Fatalf("workbench model missing component catalog in:\n%s", body)
+	}
+	if !strings.Contains(body, `"sampleRecordId":"001LOCALACCT001"`) {
+		t.Fatalf("workbench model missing seeded sample record in:\n%s", body)
 	}
 	if !strings.Contains(body, `"target":"lightning__AppPage"`) || !strings.Contains(body, `"target":"lightning__RecordPage"`) {
 		t.Fatalf("workbench model missing target support in:\n%s", body)
@@ -131,7 +198,7 @@ func TestLWCShellTabRouteIncludesPreviewRouteCatalog(t *testing.T) {
 	}
 }
 
-func TestServerRootRendersLWCWorkbenchWhenProjectHasLWCs(t *testing.T) {
+func TestServerRootRendersLWCHomeWhenProjectHasLWCs(t *testing.T) {
 	root, err := lightningTestRepoRoot()
 	if err != nil {
 		t.Fatal(err)
@@ -152,13 +219,23 @@ func TestServerRootRendersLWCWorkbenchWhenProjectHasLWCs(t *testing.T) {
 	body := rec.Body.String()
 	for _, want := range []string{
 		"Glade LWC Shell",
-		"data-glade-builder-active=\"true\"",
-		"glade-app-builder-shell",
-		"data-glade-workbench-builder",
-		"data-glade-add-component=\"c:contextProbe\"",
+		"data-glade-workbench-home",
+		"data-glade-home-tab",
+		"data-glade-builder-link",
+		"href=\"/lwc/builder\"",
+		"/lwc/preview/tab/Lwc_Probe",
 	} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("missing %q in:\n%s", want, body)
+		}
+	}
+	for _, unwanted := range []string{
+		"data-glade-builder-active=\"true\"",
+		"glade-app-builder-shell",
+		"data-glade-workbench-builder",
+	} {
+		if strings.Contains(body, unwanted) {
+			t.Fatalf("root home should not render builder chrome %q in:\n%s", unwanted, body)
 		}
 	}
 }
@@ -1032,7 +1109,7 @@ func TestRenderLWCShellHTMLMountsDirectComponentWithContext(t *testing.T) {
 }
 
 func TestRenderLWCShellHTMLMountsFlexiPageRegions(t *testing.T) {
-	html := renderLWCShellHTML(lwcbrowser.PageConfig{}, lwcshell.ShellPage{
+	shell := lwcshell.ShellPage{
 		Context: lwcshell.PageContext{
 			Kind:          lwcshell.RenderTargetRecordPage,
 			PageName:      "Account_Record_Page",
@@ -1043,10 +1120,11 @@ func TestRenderLWCShellHTMLMountsFlexiPageRegions(t *testing.T) {
 			Name: "main",
 			Components: []lwcshell.PageComponent{{
 				ComponentName: "c:recordProbe",
-				Properties:    map[string]string{"title": "From metadata"},
+				Properties:    map[string]string{"title": "From metadata", "recordId": "001000000000999AAA"},
 			}},
 		}},
-	})
+	}
+	html := renderLWCShellHTML(lwcbrowser.PageConfig{}, shell)
 
 	for _, want := range []string{
 		`data-glade-region="main"`,
@@ -1058,6 +1136,13 @@ func TestRenderLWCShellHTMLMountsFlexiPageRegions(t *testing.T) {
 		if !strings.Contains(html, want) {
 			t.Fatalf("missing %q in:\n%s", want, html)
 		}
+	}
+	mounts := lwcShellMounts(shell)
+	if len(mounts) != 1 || mounts[0].Attrs["recordId"] != "001000000000001AAA" {
+		t.Fatalf("mounts = %#v", mounts)
+	}
+	if mounts[0].Attrs["title"] != "From metadata" {
+		t.Fatalf("metadata title missing from mounts = %#v", mounts)
 	}
 }
 

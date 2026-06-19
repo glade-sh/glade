@@ -170,10 +170,13 @@ test("LWC shell workbench renders routes, context, and mounted record page", asy
 
     assert.equal(await page.locator("body").getAttribute("data-glade-shell"), "workbench");
     assert.equal(await page.locator("[data-glade-context-panel]").count(), 1);
-    assert.ok(await page.locator('a[data-glade-route][href^="/lwc/preview/record/Account/"]').count());
-    assert.ok(await page.locator('a[data-glade-route][href="/lwc/preview/app/Sales_Dashboard"]').count());
-    assert.ok(await page.locator('a[data-glade-route][href="/lwc/preview/tab/Lwc_Probe"]').count());
-    assert.ok(await page.locator('a[data-glade-route][href="/lwc/preview/community/Partner_Portal/Account"]').count());
+    assert.equal(await page.locator("[data-glade-workbench-home]").count(), 1);
+    assert.equal(await page.locator("[data-glade-workbench-builder]").count(), 0);
+    assert.ok(await page.locator('[data-glade-builder-link][href="/lwc/builder"]').count());
+    assert.ok(await page.locator('[data-glade-home-tab][href="/lwc/preview/tab/Lwc_Probe"]').count());
+    assert.ok(await page.locator('[data-glade-home-route][href^="/lwc/preview/record/Account/"]').count());
+    assert.ok(await page.locator('[data-glade-home-route][href="/lwc/preview/app/Sales_Dashboard"]').count());
+    assert.ok(await page.locator('[data-glade-home-route][href="/lwc/preview/community/Partner_Portal/Account"]').count());
 
     const workbench = await page.locator("#glade-lwc-workbench").textContent();
     const model = JSON.parse(workbench || "{}");
@@ -221,7 +224,7 @@ test("LWC shell workbench renders routes, context, and mounted record page", asy
 test("LWC shell workbench lets developers compose a local page from available components", async (t) => {
   const server = await startLWCDevServer(t, {
     projectRel: "testdata/local-tests/lwc-shell",
-    pagePath: "/lwc",
+    pagePath: "/lwc/builder",
   });
   if (!server) {
     return;
@@ -241,9 +244,10 @@ test("LWC shell workbench lets developers compose a local page from available co
       pageErrors.push(err.message);
     });
 
-    await page.goto(`${server.baseURL}/lwc`, { waitUntil: "networkidle" });
+    await page.goto(`${server.baseURL}/lwc/builder`, { waitUntil: "networkidle" });
 
     await page.locator("[data-glade-workbench-builder]").waitFor({ timeout: 60000 });
+    assert.ok(await page.locator('[data-glade-home-link][href="/lwc"]').count());
     await page.locator("[data-glade-component-search]").fill("context");
     assert.equal(await page.locator('[data-glade-component-card][data-glade-component="c:contextProbe"]').isVisible(), true);
     assert.equal(await page.locator('[data-glade-component-card][data-glade-component="c:recordProbe"]').isVisible(), false);
@@ -276,6 +280,22 @@ test("LWC shell workbench lets developers compose a local page from available co
     const model = JSON.parse(await page.locator("#glade-lwc-workbench").textContent());
     assert.ok(model.components.some((component) => component.qualifiedName === "c:contextProbe"));
     assert.equal(await page.locator('[data-glade-page-canvas] [data-glade-region-drop="main"]').count(), 1);
+
+    await page.locator("[data-glade-layout-picker]").selectOption("single");
+    assert.equal(await page.locator("[data-glade-page-layout]").getAttribute("data-glade-layout"), "single");
+    assert.equal(await page.locator('[data-glade-region-drop="sidebar"]').isVisible(), false);
+
+    await page.locator("[data-glade-layout-picker]").selectOption("mainSidebar");
+    await page.locator("[data-glade-component-search]").fill("context");
+    await page.evaluate(() => {
+      const card = document.querySelector('[data-glade-component-card][data-glade-component="c:contextProbe"]');
+      const drop = document.querySelector('[data-glade-region-drop="sidebar"]');
+      const data = new DataTransfer();
+      card.dispatchEvent(new DragEvent("dragstart", { bubbles: true, dataTransfer: data }));
+      drop.dispatchEvent(new DragEvent("dragover", { bubbles: true, dataTransfer: data }));
+      drop.dispatchEvent(new DragEvent("drop", { bubbles: true, dataTransfer: data }));
+    });
+    await page.locator('[data-glade-region-items="sidebar"] [data-glade-draft-component="c:contextProbe"]').waitFor({ timeout: 60000 });
   } finally {
     await browser.close();
     await server.close();
@@ -288,7 +308,7 @@ test("LWC shell workbench lets developers compose a local page from available co
 test("LWC shell workbench keeps the root builder dense on desktop", async (t) => {
   const server = await startLWCDevServer(t, {
     projectRel: "testdata/local-tests/lwc-shell",
-    pagePath: "/lwc",
+    pagePath: "/lwc/builder",
   });
   if (!server) {
     return;
@@ -297,7 +317,7 @@ test("LWC shell workbench keeps the root builder dense on desktop", async (t) =>
   const browser = await chromium.launch({ headless: true });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    await page.goto(`${server.baseURL}/lwc`, { waitUntil: "networkidle" });
+    await page.goto(`${server.baseURL}/lwc/builder`, { waitUntil: "networkidle" });
     await page.locator("[data-glade-workbench-builder]").waitFor({ timeout: 60000 });
 
     const metrics = await page.evaluate(() => {
@@ -351,7 +371,7 @@ test("LWC shell workbench keeps the root builder dense on desktop", async (t) =>
 test("LWC shell workbench keeps the root builder compact on mobile", async (t) => {
   const server = await startLWCDevServer(t, {
     projectRel: "testdata/local-tests/lwc-shell",
-    pagePath: "/lwc",
+    pagePath: "/lwc/builder",
   });
   if (!server) {
     return;
@@ -360,7 +380,7 @@ test("LWC shell workbench keeps the root builder compact on mobile", async (t) =
   const browser = await chromium.launch({ headless: true });
   try {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
-    await page.goto(`${server.baseURL}/lwc`, { waitUntil: "networkidle" });
+    await page.goto(`${server.baseURL}/lwc/builder`, { waitUntil: "networkidle" });
     await page.locator("[data-glade-workbench-builder]").waitFor({ timeout: 60000 });
 
     const metrics = await page.evaluate(() => {
@@ -390,7 +410,7 @@ test("LWC shell workbench keeps the root builder compact on mobile", async (t) =
 test("LWC shell workbench builder exposes context controls", async (t) => {
   const server = await startLWCDevServer(t, {
     projectRel: "testdata/local-tests/lwc-shell",
-    pagePath: "/",
+    pagePath: "/lwc/builder",
   });
   if (!server) {
     return;
@@ -410,7 +430,7 @@ test("LWC shell workbench builder exposes context controls", async (t) => {
       pageErrors.push(err.message);
     });
 
-    await page.goto(`${server.baseURL}/`, { waitUntil: "networkidle" });
+    await page.goto(`${server.baseURL}/lwc/builder`, { waitUntil: "networkidle" });
 
     await page.locator("[data-glade-workbench-builder]").waitFor({ timeout: 60000 });
     const targetOptions = await page.locator("[data-glade-target-picker] option").evaluateAll((options) =>

@@ -1,9 +1,10 @@
 # LWC Local Support
 
 This page lists the user-facing LWC preview feature surface for the local shell.
-The feature is centered on `glade dev lwc`, `/lwc`, and `/lwc/preview/*`
-routes. Visualforce appears here only where a Visualforce-backed tab or shared
-Lightning Out runtime affects an LWC.
+The feature is centered on `glade dev lwc`, the home routes `/` and `/lwc`, the
+builder route `/lwc/builder`, and `/lwc/preview/*` routes. Visualforce appears
+here only where a Visualforce-backed tab or shared Lightning Out runtime
+affects an LWC.
 
 Generated capture rows live in
 [generated/LWC_SHELL_SUPPORT.md](generated/LWC_SHELL_SUPPORT.md). They are
@@ -15,7 +16,7 @@ Salesforce target org.
 
 | Host | Status | Support key | Notes |
 | --- | --- | --- | --- |
-| LWC workbench | Preview feature | `lwc.host.lightning-shell` | The printed base URL at `/` and `/lwc` open the local workbench with a filterable available-LWC catalog, draft page composer, generated route list, active context, and diagnostics. |
+| LWC workbench | Preview feature | `lwc.host.lightning-shell` | The printed base URL at `/` and `/lwc` opens a local home page with tabs and discovered routes. `/lwc/builder` opens the draft page composer with a filterable available-LWC catalog, drag-and-drop placement, layout switching, seeded record context, active context, and diagnostics. |
 | Direct component shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/component/<namespace>/<component>` mounts one exposed component for local development. |
 | Record page shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>` resolves FlexiPage regions and record context. |
 | App page shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/app/<Page>` resolves app-page FlexiPage metadata. |
