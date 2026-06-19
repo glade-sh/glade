@@ -48,7 +48,7 @@ export class WorkbenchController {
   async createEntry(kind: "soql", name: string, body: string): Promise<WorkbenchEntry | undefined> {
     const project = this.project;
     if (!project) {
-      void vscode.window.showErrorMessage("Glade Workbench requires an SFDX project.");
+      void vscode.window.showErrorMessage("Glade Workbench requires a Salesforce DX project.");
       return undefined;
     }
     const now = new Date().toISOString();
@@ -88,7 +88,7 @@ export class WorkbenchController {
   async describe(objectName?: string): Promise<void> {
     const project = this.project;
     if (!project) {
-      void vscode.window.showErrorMessage("Glade Workbench requires an SFDX project.");
+      void vscode.window.showErrorMessage("Glade Workbench requires a Salesforce DX project.");
       return;
     }
     const environment = configuredActiveEnvironment(project);
@@ -150,7 +150,7 @@ export class WorkbenchController {
 
   private requireProject(): GladeProjectContext {
     if (!this.project) {
-      throw new Error("Glade Workbench requires an SFDX project.");
+      throw new Error("Glade Workbench requires a Salesforce DX project.");
     }
     return this.project;
   }

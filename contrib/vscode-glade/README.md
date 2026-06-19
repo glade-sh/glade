@@ -29,18 +29,18 @@ The extension requires a global `glade` command on `PATH`.
 The Activity Bar uses the Glade contour mark. Glade Home uses the same dark
 shell, green action color, and status palette as the public site.
 
-Open a normal SFDX project. The Glade Activity Bar shows:
+Open a normal Salesforce DX project. The Glade Activity Bar shows:
 
-Use **Glade: Open Home** for the daily hub. Home is task-first: run, data,
-debug, Salesforce, and ship actions sit on the first tab. State is the second
-tab: project root, active Glade org, active data environment, Salesforce target,
-tests, watch state, and plugin findings.
+Use **Glade: Open Home** for the daily hub. Home is task-first: run, Glade org,
+local data, debug, Salesforce, and review actions sit on the first tab. State
+is the second tab: project root, active Glade org, active data environment,
+Salesforce target, tests, watch state, and plugin reports.
 
-- Start Here: SFDX root, active local data environment, local DB state, watch
+- Start Here: Salesforce DX root, active local data environment, local DB state, watch
   state, last run state, plugin action count, and a shortcut into Glade Home.
 - Local Runs: changed tests, failed tests, and warm watch controls.
 - Data Environments: named SQLite local orgs and the active DB path.
-- Local Org: inspect, seed, reset, and export commands for the active DB.
+- Local Org: start, stop, inspect, seed, reset, and export commands for local work.
 - Exec & SOQL: SOQL scratch buffers, saved SOQL entries, describes, and last results.
 - Debug: current VS Code Apex breakpoint count and local debug actions.
 - Plugins: installed plugins, plugin actions, and plugin artifacts.
@@ -49,10 +49,12 @@ tests, watch state, and plugin findings.
 
 Open the Glade Activity Bar and start in **Start Here**.
 
-1. Confirm the SFDX root and active local data environment.
-2. Click **Run local proof** before pushing work to a scratch org.
-3. Use **Data Environments** to clone, seed, reset, inspect, and export local state.
-4. Use org-backed tools for deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
+1. Confirm the Salesforce DX root and active local data environment.
+2. Start the local Glade org when you need the Salesforce-shaped API:
+   `glade org start my-glade-org --project .`.
+3. Click **Run changed tests** before pushing work to a scratch org.
+4. Use **Data Environments** to clone, seed, reset, inspect, and export local state.
+5. Use org-backed tools for deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
 
 Glade actions are local. Salesforce actions stay org-backed.
 
@@ -67,9 +69,9 @@ Glade does not add a second Apex Tests sidebar tree. Breakpoints stay in the
 normal editor gutter and debug state stays in VS Code Run and Debug.
 
 The Status Bar shows short local state, such as `Glade: dev`,
-`Glade: dev 18ms`, `Glade: dev no DB`, or `Glade: plugin 2 findings`.
+`Glade: dev 18ms`, `Glade: dev no DB`, or `Glade: plugin 2 reports`.
 Details stay in the tooltip. Click it to switch data, inspect local data, run
-local proof, manage plugins, or open output.
+changed tests, manage plugins, or open output.
 
 ## LWC, Visualforce, And Plugins
 
@@ -169,4 +171,4 @@ npm run package
 ```
 
 Open this repo in VS Code and run **Launch Glade VS Code Extension**. In the
-Extension Development Host, open an SFDX project.
+Extension Development Host, open a Salesforce DX project.

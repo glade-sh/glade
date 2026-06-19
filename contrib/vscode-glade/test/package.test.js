@@ -64,6 +64,9 @@ assert(activationEvents.includes("onView:glade.workbench"), "glade.workbench vie
 assert(activationEvents.includes("onLanguage:soql"), "SOQL scratch editors must activate the extension");
 for (const command of [
   "glade.openHome",
+  "glade.startProjectOrg",
+  "glade.stopProjectOrg",
+  "glade.projectOrgStatus",
   "glade.schemaImportDescribe",
   "glade.salesforceTargetStatus",
 ]) {
@@ -90,6 +93,10 @@ assert(readme.includes("Exec & SOQL"), "README must document the Exec & SOQL sid
 for (const command of [
   "glade.runLocalProof",
   "glade.openHome",
+  "glade.createProjectOrg",
+  "glade.startProjectOrg",
+  "glade.stopProjectOrg",
+  "glade.projectOrgStatus",
   "glade.cloneEnvironment",
   "glade.deleteEnvironment",
   "glade.revealEnvironmentDb",

@@ -20,3 +20,32 @@ assert.deepStrictEqual(
   localOrg.salesforceTargetStatusArgs(),
   ["org", "display", "--json"],
 );
+
+assert.deepStrictEqual(
+  localOrg.orgCreateArgs({ projectRoot: "/repo" }, "my-glade-org"),
+  ["org", "create", "my-glade-org", "--project", "/repo"],
+);
+
+assert.deepStrictEqual(
+  localOrg.orgStartArgs({ projectRoot: "/repo" }, "my-glade-org"),
+  ["org", "start", "my-glade-org", "--project", "/repo"],
+);
+
+assert.deepStrictEqual(
+  localOrg.orgStatusArgs({ projectRoot: "/repo" }, "my-glade-org"),
+  ["org", "status", "my-glade-org", "--project", "/repo", "--json"],
+);
+
+assert.deepStrictEqual(
+  localOrg.projectOrgStateFromStatus({
+    alias: "my-glade-org",
+    status: "running",
+    instanceUrl: "http://127.0.0.1:17911",
+    db: ".glade/orgs/my-glade-org.sqlite",
+  }),
+  {
+    alias: "my-glade-org",
+    state: "running",
+    detail: "http://127.0.0.1:17911",
+  },
+);

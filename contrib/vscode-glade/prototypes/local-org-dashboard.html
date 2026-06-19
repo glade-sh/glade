@@ -744,7 +744,7 @@
         <span class="badge ok">Local DB ready</span>
         <span class="badge warn">Scratch org stale</span>
         <button type="button" data-command="glade.refresh">Refresh</button>
-        <button type="button" class="primary" data-command="glade.runLocalProof">Run proof</button>
+        <button type="button" class="primary" data-command="glade.runLocalProof">Run changed tests</button>
       </div>
     </header>
 
@@ -752,7 +752,7 @@
       <aside class="setup">
         <div class="setup-head">
           <strong>Landing rail</strong>
-          <span>One pass from project root to proof.</span>
+          <span>Project, org, data, and changed tests in one place.</span>
         </div>
         <div class="steps" aria-label="Local org setup steps">
           <button type="button" class="step done active" data-step="project">
@@ -771,13 +771,14 @@
             <span class="marker">4</span>
             <span class="step-label"><strong>Data</strong><span>fixtures and imports</span></span>
           </button>
-          <button type="button" class="step done" data-step="proof">
+          <button type="button" class="step done" data-step="tests">
             <span class="marker">5</span>
-            <span class="step-label"><strong>Proof</strong><span>changed tests pass</span></span>
+            <span class="step-label"><strong>Tests</strong><span>changed tests pass</span></span>
           </button>
         </div>
         <div class="setup-foot">
-          <button type="button" class="primary" data-command="glade.createEnvironment">Create local org</button>
+          <button type="button" class="primary" data-command="glade.startProjectOrg">Start Glade org</button>
+          <button type="button" data-command="glade.stopProjectOrg">Stop org</button>
           <button type="button" data-command="glade.switchEnvironment">Switch data env</button>
         </div>
       </aside>
@@ -800,7 +801,7 @@
             <small>describe cache fresh</small>
           </div>
           <div class="metric">
-            <span>Last proof</span>
+            <span>Last changed run</span>
             <strong class="ok-text">31 pass</strong>
             <small>18 ms</small>
           </div>
@@ -882,7 +883,7 @@
                 <div class="field">
                   <label>Import source</label>
                   <select aria-label="Import source">
-                    <option>SF CLI target org</option>
+                    <option>Salesforce CLI default org</option>
                     <option>Describe JSON</option>
                     <option>Fixture JSON</option>
                     <option>CSV folder</option>
@@ -891,9 +892,9 @@
               </div>
 
               <div class="button-row">
-                <button type="button" class="primary" data-command="glade.salesforceTargetStatus">Check target</button>
+                <button type="button" class="primary" data-command="glade.salesforceTargetStatus">Check Salesforce org</button>
                 <button type="button" data-command="glade.schemaImportDescribe">Import schema</button>
-                <button type="button" data-command="glade.runPluginAction">Capture</button>
+                <button type="button" data-command="glade.runPluginAction">Run plugin action</button>
                 <span class="badge cyan">Capture as plugin action</span>
               </div>
 
@@ -1042,14 +1043,18 @@ LIMIT 25</textarea>
     const stepText = {
       project: "Project root and local DB are ready.",
       org: "Local org service is mapped to the active data environment.",
-      salesforce: "Refresh the target org before importing schema or capture data.",
+      salesforce: "Check the Salesforce org before importing schema or capturing data.",
       data: "Seed fixtures load straight into the active local DB.",
-      proof: "Changed tests, DB inspect, and evidence sit in one pass."
+      tests: "Changed tests, DB inspect, and evidence sit in one pass."
     };
 
     const commandText = {
       "glade.refresh": "$ glade refresh",
-      "glade.runLocalProof": "$ glade test --project . --json --changed-since origin/main",
+      "glade.runLocalProof": "$ glade test changed --project . --since origin/main --json",
+      "glade.createProjectOrg": "$ glade org create my-glade-org --project .",
+      "glade.startProjectOrg": "$ glade org start my-glade-org --project .",
+      "glade.stopProjectOrg": "Stop the Glade org terminal started by VS Code",
+      "glade.projectOrgStatus": "$ glade org status my-glade-org --project . --json",
       "glade.createEnvironment": "Create local data environment",
       "glade.switchEnvironment": "$ glade env switch dev",
       "glade.inspectLocalOrg": "$ glade db inspect --db .glade/envs/dev.sqlite --project . --json",
@@ -1060,7 +1065,7 @@ LIMIT 25</textarea>
       "glade.workbench.newAnonymousApex": "Open untitled Apex scratch",
       "glade.salesforceTargetStatus": "$ sf org display --json",
       "glade.schemaImportDescribe": "$ glade schema import describe --project-cache .",
-      "glade.runPluginAction": "Run plugin action: capture fixture from target org",
+      "glade.runPluginAction": "Run plugin action: capture fixture from Salesforce org",
       "glade.runSoql": "$ glade db query --db .glade/envs/dev.sqlite --soql query.soql --json",
       "glade.workbench.openResult": "Open last Glade Workbench result",
       "glade.workbench.describe": "$ glade db describe --db .glade/envs/dev.sqlite Account"

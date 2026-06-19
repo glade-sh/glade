@@ -16,7 +16,7 @@ export function registerGladeCommands(context: vscode.ExtensionContext): void {
       }
       const project = await findProjectContext();
       if (!project) {
-        void vscode.window.showErrorMessage("Glade execute requires an SFDX project.");
+        void vscode.window.showErrorMessage("Glade execute requires a Salesforce DX project.");
         return;
       }
       const environment = configuredActiveEnvironment(project);
@@ -45,7 +45,7 @@ export function registerGladeCommands(context: vscode.ExtensionContext): void {
       }
       const project = await findProjectContext();
       if (!project) {
-        void vscode.window.showErrorMessage("Glade debug requires an SFDX project.");
+        void vscode.window.showErrorMessage("Glade debug requires a Salesforce DX project.");
         return;
       }
       const environment = configuredActiveEnvironment(project);

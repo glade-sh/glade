@@ -1,7 +1,8 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import { activeEnvironment, GladeEnvironment, normalizeEnvironments } from "./environments";
-import { runGladeJSON } from "./gladeCli";
+import { parseJSONRunResult, runGlade, runGladeJSON } from "./gladeCli";
+import type { ProjectOrgState } from "./hub/model";
 import { DBInspectResult, LocalOrgObjectRow, objectRowsFromInspect } from "./localOrgModel";
 import { GladeProjectContext } from "./projectModel";
 
@@ -60,21 +61,80 @@ export function schemaImportDescribeArgs(project: Pick<GladeProjectContext, "pro
   return ["schema", "import", "describe", "--input", input, "--project-cache", project.projectRoot];
 }
 
+export interface ProjectOrgStatus {
+  alias?: string;
+  status?: string;
+  error?: string;
+  instanceUrl?: string;
+  db?: string;
+}
+
+export function orgCreateArgs(project: Pick<GladeProjectContext, "projectRoot">, alias: string): string[] {
+  return ["org", "create", alias, "--project", project.projectRoot];
+}
+
+export function orgStartArgs(project: Pick<GladeProjectContext, "projectRoot">, alias: string): string[] {
+  return ["org", "start", alias, "--project", project.projectRoot];
+}
+
+export function orgStatusArgs(project: Pick<GladeProjectContext, "projectRoot">, alias: string): string[] {
+  return ["org", "status", alias, "--project", project.projectRoot, "--json"];
+}
+
+export async function checkProjectOrg(
+  project: Pick<GladeProjectContext, "projectRoot">,
+  alias: string,
+): Promise<ProjectOrgState> {
+  const result = await runGlade(orgStatusArgs(project, alias), { cwd: project.projectRoot });
+  if (result.code !== 0) {
+    return { alias, state: "missing", detail: conciseOrgError(result.stderr || result.stdout || `exit code ${result.code}`) };
+  }
+  return projectOrgStateFromStatus(
+    parseJSONRunResult<ProjectOrgStatus>(result, "glade org status"),
+    alias,
+  );
+}
+
+export async function createProjectOrg(
+  project: Pick<GladeProjectContext, "projectRoot">,
+  alias: string,
+): Promise<void> {
+  const result = await runGlade(orgCreateArgs(project, alias), { cwd: project.projectRoot });
+  if (result.code !== 0) {
+    throw new Error(conciseOrgError(result.stderr || result.stdout || `exit code ${result.code}`));
+  }
+}
+
+export function projectOrgStateFromStatus(status: ProjectOrgStatus, fallbackAlias = "my-glade-org"): ProjectOrgState {
+  const alias = status.alias || fallbackAlias;
+  if (status.status === "running") {
+    return { alias, state: "running", detail: status.instanceUrl || status.db };
+  }
+  if (status.status === "stopped") {
+    return { alias, state: "stopped", detail: status.error || status.db || "not running" };
+  }
+  return { alias, state: "unknown", detail: status.error || status.status || "not checked" };
+}
+
 export function terminalCommand(args: string[], redirectPath?: string): string {
   const command = args.map(shellQuote).join(" ");
   return redirectPath ? `${command} > ${shellQuote(redirectPath)}` : command;
 }
 
-export function sendGladeTerminal(command: string): void {
-  const terminal = vscode.window.createTerminal("Glade");
+export function sendGladeTerminal(command: string, cwd?: string): vscode.Terminal {
+  const terminal = cwd
+    ? vscode.window.createTerminal({ name: "Glade", cwd })
+    : vscode.window.createTerminal("Glade");
   terminal.show();
   terminal.sendText(command);
+  return terminal;
 }
 
-export function sendLocalOrgTerminal(command: string): void {
+export function sendLocalOrgTerminal(command: string): vscode.Terminal {
   const terminal = vscode.window.createTerminal("Glade Local Data");
   terminal.show();
   terminal.sendText(command);
+  return terminal;
 }
 
 function shellQuote(value: string): string {
@@ -82,4 +142,12 @@ function shellQuote(value: string): string {
     return value;
   }
   return `'${value.replace(/'/g, "'\\''")}'`;
+}
+
+function conciseOrgError(value: string): string {
+  const first = value.trim().split(/\r?\n/, 1)[0] || value;
+  if (/no such file|cannot find|not exist|open .*org\.json/i.test(first)) {
+    return "Create the local org first.";
+  }
+  return first;
 }

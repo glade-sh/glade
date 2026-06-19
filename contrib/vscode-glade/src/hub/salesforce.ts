@@ -11,6 +11,12 @@ interface SalesforceOrgDisplay {
   };
 }
 
+interface SalesforceErrorDisplay {
+  name?: string;
+  code?: string;
+  message?: string;
+}
+
 export function salesforceTargetStatusArgs(): string[] {
   return ["org", "display", "--json"];
 }
@@ -21,10 +27,14 @@ export async function checkSalesforceTarget(cwd?: string): Promise<SalesforceTar
 
 export function salesforceTargetStateFromRun(result: GladeRunResult): SalesforceTargetState {
   if (result.code !== 0) {
+    const error = parseSalesforceError(result.stdout) || parseSalesforceError(result.stderr);
+    if (error) {
+      return salesforceTargetStateFromError(error);
+    }
     return {
       label: "no default target",
       state: "missing",
-      detail: result.stderr.trim() || result.stdout.trim() || `exit code ${result.code}`,
+      detail: firstLine(result.stderr.trim() || result.stdout.trim() || `exit code ${result.code}`),
     };
   }
   try {
@@ -46,4 +56,40 @@ export function salesforceTargetStateFromDisplay(display: SalesforceOrgDisplay):
     return { label, state: "stale", detail: status };
   }
   return { label, state: "unknown", detail: result.username || "not checked" };
+}
+
+function parseSalesforceError(text: string): SalesforceErrorDisplay | undefined {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith("{")) {
+    return undefined;
+  }
+  try {
+    const parsed = JSON.parse(trimmed) as SalesforceErrorDisplay;
+    if (parsed && (parsed.message || parsed.name || parsed.code)) {
+      return parsed;
+    }
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
+function salesforceTargetStateFromError(error: SalesforceErrorDisplay): SalesforceTargetState {
+  const marker = `${error.name || ""} ${error.code || ""} ${error.message || ""}`;
+  if (/NoDefaultEnvError|No default environment|No default org/i.test(marker)) {
+    return {
+      label: "no default org",
+      state: "missing",
+      detail: "Set a default Salesforce org, then check again.",
+    };
+  }
+  return {
+    label: error.name || error.code || "target check failed",
+    state: "missing",
+    detail: firstLine(error.message || "sf org display failed"),
+  };
+}
+
+function firstLine(value: string): string {
+  return value.split(/\r?\n/, 1)[0] || value;
 }
