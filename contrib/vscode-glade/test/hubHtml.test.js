@@ -21,6 +21,8 @@ const rendered = html.renderHubHtml(snapshot, {
   cspSource: "vscode-resource:",
   nonce: "abc123",
   initialTab: "home",
+  initialHomeLane: "scratch",
+  initialStateLane: "plugins",
   logoUri: "vscode-resource:/media/glade-brand.svg",
 });
 const csp = rendered.match(/Content-Security-Policy" content="([^"]+)"/)?.[1] || "";
@@ -42,28 +44,43 @@ assert(rendered.includes('data-tab="home"'));
 assert(rendered.includes('data-tab="state"'));
 assert(rendered.includes('data-command="glade.runLocalProof"'));
 assert(rendered.includes('data-command="glade.inspectLocalOrg"'));
-assert(rendered.includes('class="home-section" data-phase="setup"'));
-assert(rendered.includes('class="home-section" data-phase="daily"'));
-assert(rendered.includes('class="home-section" data-phase="data"'));
-assert(!rendered.includes('class="home-section" data-phase="review"'));
-assert(rendered.includes('class="primary-action"'));
-assert(rendered.includes('class="more-actions"'));
-assert(rendered.includes("<summary>More</summary>"));
-assert(!rendered.includes('class="actions"'));
-assert(rendered.includes("First project setup"));
-assert(rendered.includes("Daily work"));
-assert(rendered.includes("Database inspection"));
-for (const command of [
-  "glade.seedLocalOrg",
-  "glade.resetLocalOrg",
-  "glade.exportLocalOrg",
-  "glade.cloneEnvironment",
-  "glade.schemaImportDescribe",
-  "glade.runPluginAction",
-  "glade.managePlugins",
-]) {
-  assert(!rendered.includes(`data-command="${command}"`));
-}
+assert(rendered.includes('class="rail-layout"'));
+assert(rendered.includes('class="hub-rail" role="tablist"'));
+assert(rendered.includes('data-lane="data"'));
+assert(rendered.includes('data-lane="run"'));
+assert(rendered.includes('data-lane="org"'));
+assert(rendered.includes('data-lane="scratch"'));
+assert(rendered.includes('data-lane="scratch" aria-selected="true"'));
+assert(rendered.includes('role="tab" id="home-tab-scratch"'));
+assert(rendered.includes('aria-controls="home-panel-scratch"'));
+assert(rendered.includes('role="tabpanel" id="home-panel-scratch"'));
+assert(rendered.includes('data-lane="salesforce"'));
+assert(rendered.includes('data-lane-detail="data"'));
+assert(rendered.includes('data-state-lane="data"'));
+assert(rendered.includes('data-state-lane="plugins" aria-selected="true"'));
+assert(rendered.includes('role="tab" id="state-tab-plugins"'));
+assert(rendered.includes('aria-controls="state-panel-plugins"'));
+assert(rendered.includes('role="tabpanel" id="state-panel-plugins"'));
+assert(rendered.includes('data-state-detail="data"'));
+assert(rendered.includes("Data browser"));
+assert(rendered.includes("Local tests"));
+assert(rendered.includes("Glade org"));
+assert(rendered.includes("Scratch editors"));
+assert(rendered.includes("Salesforce"));
+assert(rendered.includes("Data environment"));
+assert(!rendered.includes("Daily work"));
+assert(!rendered.includes("Day to day"));
+assert(!rendered.includes("First project setup"));
+assert(!rendered.includes('class="home-section"'));
+assert(!rendered.includes('class="primary-action"'));
+assert(!rendered.includes("<summary>More</summary>"));
+assert(rendered.includes('data-command="glade.seedLocalOrg"'));
+assert(rendered.includes('data-command="glade.resetLocalOrg"'));
+assert(rendered.includes('data-command="glade.exportLocalOrg"'));
+assert(rendered.includes('data-command="glade.schemaImportDescribe"'));
+assert(!rendered.includes('data-command="glade.runPluginAction"'));
+assert(!rendered.includes('data-command="glade.managePlugins"'));
+assert(!rendered.includes("width: 100%"));
 assert(rendered.includes("&lt;script&gt;alert(1)&lt;/script&gt;"));
 assert(!rendered.includes("/repo/<script>alert(1)</script>"));
 assert(rendered.includes("script-src 'nonce-abc123'"));

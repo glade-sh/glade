@@ -4,8 +4,7 @@ import type { GladeProjectContext } from "../projectModel";
 import type { StartHereRunSummary } from "../startHereModel";
 
 export type HubTone = "ok" | "warn" | "error" | "muted";
-export type HubTaskId = "run" | "org" | "data";
-export type HubTaskPhase = "setup" | "daily" | "data";
+export type HubTaskId = "data" | "run" | "org" | "scratch" | "salesforce";
 export type HubStateId = "project" | "local-org" | "data" | "salesforce" | "tests" | "plugins";
 
 export interface SalesforceTargetState {
@@ -52,7 +51,6 @@ export interface HubAction {
 
 export interface HubTaskGroup {
   id: HubTaskId;
-  phase: HubTaskPhase;
   title: string;
   summary: string;
   status: HubStatus;
@@ -77,8 +75,7 @@ export function buildHubHome(snapshot: HubSnapshot): HubTaskGroup[] {
   if (!snapshot.project) {
     return [
       {
-        id: "run",
-        phase: "setup",
+        id: "org",
         title: "Open project",
         summary: "Open a Salesforce DX project before using Glade.",
         status: { label: "No Salesforce DX project", tone: "warn" },
@@ -96,13 +93,46 @@ export function buildHubHome(snapshot: HubSnapshot): HubTaskGroup[] {
   const lastRun = snapshot.lastRun;
   const failed = lastRun?.failed || 0;
   const org = projectOrg(snapshot);
+  const target = salesforceTarget(snapshot);
 
   return [
     {
+      id: "data",
+      title: "Data browser",
+      summary: "Inspect the active SQLite data environment and manage local data.",
+      status: dataStatusFor(snapshot),
+      primary: { id: "inspect-db", label: "Inspect data", command: "glade.inspectLocalOrg", primary: true },
+      actions: [
+        { id: "switch-env", label: "Switch environment", command: "glade.switchEnvironment" },
+        { id: "seed", label: "Seed data", command: "glade.seedLocalOrg" },
+        { id: "reset", label: "Reset data", command: "glade.resetLocalOrg" },
+        { id: "export", label: "Export data", command: "glade.exportLocalOrg" },
+        ...(snapshot.missingDb ? [{ id: "create-env", label: "Create environment", command: "glade.createEnvironment" }] : []),
+      ],
+    },
+    {
+      id: "run",
+      title: "Local tests",
+      summary: "Run changed Apex tests and control the local watch loop.",
+      status: {
+        label: lastRun ? `${lastRun.passed} pass, ${lastRun.failed} fail` : "No local run",
+        detail: `${snapshot.watchRunning ? "watch running" : "watch stopped"}; changed since ${snapshot.changedSince}`,
+        tone: failed > 0 ? "error" : lastRun ? "ok" : "muted",
+      },
+      primary: { id: "run-proof", label: "Run changed tests", command: "glade.runLocalProof", primary: true },
+      actions: [
+        ...(failed > 0 ? [{ id: "failed", label: "Failed tests", command: "glade.runFailedTests" }] : []),
+        {
+          id: "watch",
+          label: snapshot.watchRunning ? "Stop watch" : "Start watch",
+          command: snapshot.watchRunning ? "glade.stopWatch" : "glade.startWatch",
+        },
+      ],
+    },
+    {
       id: "org",
-      phase: "setup",
-      title: "First project setup",
-      summary: "Confirm this project can run with Glade's local org and Salesforce metadata.",
+      title: "Glade org",
+      summary: "Start or check the local Salesforce-shaped API.",
       status: { label: `${org.alias} ${org.state}`, detail: org.detail, tone: projectOrgTone(org) },
       primary:
         org.state === "missing"
@@ -111,36 +141,27 @@ export function buildHubHome(snapshot: HubSnapshot): HubTaskGroup[] {
           ? { id: "stop-org", label: "Stop org", command: "glade.stopProjectOrg", primary: true }
           : { id: "start-org", label: "Start org", command: "glade.startProjectOrg", primary: true },
       actions: [
-        { id: "org-state", label: "Check state", command: "glade.projectOrgStatus" },
-        { id: "sf-target", label: "Check Salesforce org", command: "glade.salesforceTargetStatus" },
+        { id: "org-state", label: "Check org state", command: "glade.projectOrgStatus" },
       ],
     },
     {
-      id: "run",
-      phase: "daily",
-      title: "Daily work",
-      summary: "Run changed Apex tests and open scratch editors without leaving VS Code.",
-      status: {
-        label: lastRun ? `${lastRun.passed} pass, ${lastRun.failed} fail` : "No local run",
-        detail: `${snapshot.watchRunning ? "watch running" : "watch stopped"}; changed since ${snapshot.changedSince}`,
-        tone: failed > 0 ? "error" : lastRun ? "ok" : "muted",
-      },
-      primary: { id: "run-proof", label: "Run changed tests", command: "glade.runLocalProof", primary: true },
+      id: "scratch",
+      title: "Scratch editors",
+      summary: "Open untitled Apex and SOQL editors for quick local work.",
+      status: { label: "Editor scoped", detail: "uses the active project", tone: "muted" },
+      primary: { id: "apex", label: "Anonymous Apex", command: "glade.workbench.newAnonymousApex", primary: true },
       actions: [
-        { id: "apex", label: "Apex scratch", command: "glade.workbench.newAnonymousApex" },
-        { id: "soql", label: "SOQL scratch", command: "glade.workbench.newSoql" },
+        { id: "soql", label: "SOQL", command: "glade.workbench.newSoql" },
       ],
     },
     {
-      id: "data",
-      phase: "data",
-      title: "Database inspection",
-      summary: "Inspect the active SQLite data environment and switch when needed.",
-      status: dataStatusFor(snapshot),
-      primary: { id: "inspect-db", label: "Inspect data", command: "glade.inspectLocalOrg", primary: true },
+      id: "salesforce",
+      title: "Salesforce",
+      summary: "Check the default org and import describe data.",
+      status: { label: target.label, detail: target.detail, tone: salesforceTone(target) },
+      primary: { id: "sf-target", label: "Check Salesforce org", command: "glade.salesforceTargetStatus", primary: true },
       actions: [
-        { id: "switch-env", label: "Switch data", command: "glade.switchEnvironment" },
-        ...(snapshot.missingDb ? [{ id: "create-env", label: "Create data env", command: "glade.createEnvironment" }] : []),
+        { id: "schema", label: "Import schema", command: "glade.schemaImportDescribe" },
       ],
     },
   ];
@@ -155,13 +176,14 @@ export function buildHubState(snapshot: HubSnapshot): HubStateSection[] {
 
   return [
     {
-      id: "project",
-      title: "Project",
-      tone: project ? "ok" : "warn",
+      id: "data",
+      title: "Data environment",
+      tone: snapshot.missingDb ? "warn" : env ? "ok" : "muted",
       rows: [
-        { label: "Root", value: project?.projectRoot || "none" },
-        { label: "API", value: project?.sourceApiVersion || "unknown" },
-        { label: "Package dirs", value: project?.packageDirs?.join(", ") || "none" },
+        { label: "Active", value: env?.name || "dev" },
+        { label: "DB", value: env?.dbPath || "not configured" },
+        { label: "Records", value: snapshot.missingDb ? "no DB" : String(summary?.records || 0) },
+        { label: "Objects", value: snapshot.missingDb ? "no DB" : String(summary?.objects || 0) },
       ],
     },
     {
@@ -175,26 +197,6 @@ export function buildHubState(snapshot: HubSnapshot): HubStateSection[] {
       ],
     },
     {
-      id: "data",
-      title: "Data environment",
-      tone: snapshot.missingDb ? "warn" : env ? "ok" : "muted",
-      rows: [
-        { label: "Active", value: env?.name || "dev" },
-        { label: "DB", value: env?.dbPath || "not configured" },
-        { label: "Records", value: snapshot.missingDb ? "no DB" : String(summary?.records || 0) },
-        { label: "Objects", value: snapshot.missingDb ? "no DB" : String(summary?.objects || 0) },
-      ],
-    },
-    {
-      id: "salesforce",
-      title: "Salesforce target",
-      tone: salesforceTone(target),
-      rows: [
-        { label: "Target", value: target.label },
-        { label: "State", value: target.state, detail: target.detail },
-      ],
-    },
-    {
       id: "tests",
       title: "Tests",
       tone: snapshot.lastRun?.failed ? "error" : snapshot.lastRun ? "ok" : "muted",
@@ -205,6 +207,25 @@ export function buildHubState(snapshot: HubSnapshot): HubStateSection[] {
           label: "Last run",
           value: snapshot.lastRun ? `${snapshot.lastRun.passed} pass, ${snapshot.lastRun.failed} fail` : "none",
         },
+      ],
+    },
+    {
+      id: "salesforce",
+      title: "Salesforce",
+      tone: salesforceTone(target),
+      rows: [
+        { label: "Target", value: target.label },
+        { label: "State", value: target.state, detail: target.detail },
+      ],
+    },
+    {
+      id: "project",
+      title: "Project",
+      tone: project ? "ok" : "warn",
+      rows: [
+        { label: "Root", value: project?.projectRoot || "none" },
+        { label: "API", value: project?.sourceApiVersion || "unknown" },
+        { label: "Package dirs", value: project?.packageDirs?.join(", ") || "none" },
       ],
     },
     {

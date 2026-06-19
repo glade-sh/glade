@@ -4,6 +4,8 @@ export interface HubHtmlOptions {
   cspSource: string;
   nonce: string;
   initialTab?: "home" | "state";
+  initialHomeLane?: string;
+  initialStateLane?: string;
   logoUri?: string;
 }
 
@@ -180,55 +182,111 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
       display: none;
     }
 
-    .grid,
-    .card-grid {
+    .rail-layout {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      grid-template-columns: minmax(210px, 260px) minmax(0, 1fr);
       gap: 12px;
+      align-items: stretch;
+      min-height: 420px;
     }
 
-    .home-stack {
-      display: grid;
-      gap: 18px;
-    }
-
-    .home-section {
-      min-width: 0;
-    }
-
-    .section-head {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 12px;
-      margin: 0 0 8px;
-    }
-
-    .section-title {
-      margin: 0;
-      color: var(--glade-strong);
-      font-size: 11px;
-      font-weight: 700;
-      line-height: 1.3;
-      text-transform: uppercase;
-    }
-
-    .section-note {
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.35;
-      text-align: right;
-    }
-
-    .card {
+    .hub-rail {
       min-width: 0;
       border: 1px solid var(--border);
       border-radius: 7px;
-      background: rgba(16, 25, 30, 0.92);
-      padding: 12px;
+      background: rgba(11, 18, 21, 0.70);
+      padding: 6px;
     }
 
-    .card-head {
+    .rail-row {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr) auto;
+      gap: 9px;
+      align-items: center;
+      inline-size: 100%;
+      min-height: 58px;
+      margin: 0;
+      border-color: transparent;
+      padding: 7px 8px;
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+      white-space: normal;
+    }
+
+    .rail-row + .rail-row {
+      margin-top: 3px;
+    }
+
+    .rail-row[aria-selected="true"] {
+      border-color: var(--glade-line);
+      background: rgba(155, 232, 112, 0.10);
+      box-shadow: inset 2px 0 0 var(--glade);
+    }
+
+    .rail-icon {
+      display: grid;
+      width: 28px;
+      height: 28px;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--glade-strong);
+      background: rgba(255, 255, 255, 0.035);
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .rail-copy {
+      min-width: 0;
+    }
+
+    .rail-title {
+      display: block;
+      overflow: hidden;
+      color: var(--text);
+      font-weight: 650;
+      line-height: 1.25;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .rail-sub {
+      display: block;
+      overflow: hidden;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.25;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .rail-state {
+      justify-self: end;
+      color: var(--brand-subtle);
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .detail-stack {
+      min-width: 0;
+    }
+
+    .detail-panel {
+      min-width: 0;
+      min-height: 420px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: rgba(16, 25, 30, 0.92);
+      padding: 16px;
+    }
+
+    .detail-panel[hidden] {
+      display: none;
+    }
+
+    .detail-head {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 10px;
@@ -281,45 +339,25 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
       color: var(--brand-subtle);
     }
 
-    .primary-action {
-      margin-top: 12px;
-    }
-
-    .primary-action button {
-      width: 100%;
-      min-height: 34px;
-    }
-
-    .more-actions {
-      margin-top: 8px;
-      border-top: 1px solid var(--border);
-      padding-top: 8px;
-    }
-
-    .more-actions summary {
-      width: max-content;
-      border-radius: 5px;
-      color: var(--muted);
-      cursor: pointer;
-      font-size: 12px;
-      line-height: 1.5;
-      list-style: none;
-    }
-
-    .more-actions summary::-webkit-details-marker {
-      display: none;
-    }
-
-    .more-actions summary:focus {
-      outline: 1px solid var(--focus);
-      outline-offset: 2px;
-    }
-
-    .more-list {
+    .action-strip {
       display: flex;
       flex-wrap: wrap;
-      gap: 7px;
-      margin-top: 8px;
+      gap: 8px;
+      margin-top: 16px;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+
+    .action-strip button {
+      min-height: 30px;
+    }
+
+    .detail-note {
+      margin-top: 16px;
+      border-left: 2px solid var(--glade-line);
+      padding-left: 10px;
+      color: var(--muted);
+      line-height: 1.35;
     }
 
     .rows {
@@ -348,6 +386,27 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 12px;
     }
+
+    @media (max-width: 740px) {
+      .rail-layout {
+        grid-template-columns: 1fr;
+        min-height: 0;
+      }
+
+      .hub-rail {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 4px;
+      }
+
+      .rail-row + .rail-row {
+        margin-top: 0;
+      }
+
+      .detail-panel {
+        min-height: 0;
+      }
+    }
   </style>
 </head>
 <body>
@@ -366,12 +425,10 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
     </nav>
     <main>
       <section class="panel" data-panel="home"${initialTab === "home" ? "" : " hidden"}>
-        ${renderHomePanel(home)}
+        ${renderHomePanel(home, options.initialHomeLane)}
       </section>
       <section class="panel" data-panel="state"${initialTab === "state" ? "" : " hidden"}>
-        <div class="grid">
-          ${state.map(renderStateSection).join("")}
-        </div>
+        ${renderStatePanel(state, options.initialStateLane)}
       </section>
     </main>
   </div>
@@ -390,6 +447,18 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
         vscode.postMessage({ type: "selectTab", tab });
       }
 
+      function selectRail(scope, buttonSelector, detailSelector, lane) {
+        document.querySelectorAll(buttonSelector).forEach((button) => {
+          const selected = button.getAttribute(scope === "home" ? "data-lane" : "data-state-lane") === lane;
+          button.setAttribute("aria-selected", String(selected));
+          button.setAttribute("tabindex", selected ? "0" : "-1");
+        });
+        document.querySelectorAll(detailSelector).forEach((panel) => {
+          panel.hidden = panel.getAttribute(scope === "home" ? "data-lane-detail" : "data-state-detail") !== lane;
+        });
+        vscode.postMessage({ type: "selectLane", scope, lane });
+      }
+
       document.addEventListener("click", (event) => {
         const target = event.target;
         if (!(target instanceof Element)) {
@@ -398,6 +467,16 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
         const tabButton = target.closest("[data-tab]");
         if (tabButton) {
           selectTab(tabButton.dataset.tab);
+          return;
+        }
+        const homeLaneButton = target.closest("[data-lane]");
+        if (homeLaneButton) {
+          selectRail("home", "[data-lane]", "[data-lane-detail]", homeLaneButton.getAttribute("data-lane"));
+          return;
+        }
+        const stateLaneButton = target.closest("[data-state-lane]");
+        if (stateLaneButton) {
+          selectRail("state", "[data-state-lane]", "[data-state-detail]", stateLaneButton.getAttribute("data-state-lane"));
           return;
         }
         const commandButton = target.closest("[data-command]");
@@ -418,53 +497,46 @@ function renderTab(tab: "home" | "state", label: string, initialTab: "home" | "s
   return `<button class="tab" type="button" data-tab="${tab}" aria-selected="${selected}">${escapeHtml(label)}</button>`;
 }
 
-function renderTaskGroup(group: HubTaskGroup): string {
-  return `<article class="card" data-task="${escapeAttr(group.id)}">
-    <div class="card-head">
+function renderHomePanel(groups: HubTaskGroup[], initialLane?: string): string {
+  const active = activeId(groups, initialLane);
+  return `<div class="rail-layout" data-rail-scope="home">
+    <nav class="hub-rail" role="tablist" aria-label="Glade Home sections">
+      ${groups.map((group) => renderHomeLane(group, group.id === active)).join("")}
+    </nav>
+    <div class="detail-stack">
+      ${groups.map((group) => renderTaskDetail(group, group.id === active)).join("")}
+    </div>
+  </div>`;
+}
+
+function renderHomeLane(group: HubTaskGroup, selected: boolean): string {
+  const panelId = `home-panel-${group.id}`;
+  return `<button class="rail-row" type="button" role="tab" id="home-tab-${escapeAttr(group.id)}" data-lane="${escapeAttr(group.id)}" aria-selected="${selected}" aria-controls="${escapeAttr(panelId)}" tabindex="${selected ? "0" : "-1"}">
+    <span class="rail-icon" aria-hidden="true">${escapeHtml(homeLaneGlyph(group.id))}</span>
+    <span class="rail-copy">
+      <span class="rail-title">${escapeHtml(group.title)}</span>
+      <span class="rail-sub">${escapeHtml(group.status.label)}</span>
+    </span>
+    <span class="rail-state tone-${escapeAttr(group.status.tone)}" aria-hidden="true">●</span>
+  </button>`;
+}
+
+function renderTaskDetail(group: HubTaskGroup, selected: boolean): string {
+  const actions = group.actions.filter((action) => action.id !== group.primary.id);
+  return `<article class="detail-panel" role="tabpanel" id="home-panel-${escapeAttr(group.id)}" aria-labelledby="home-tab-${escapeAttr(group.id)}" data-lane-detail="${escapeAttr(group.id)}"${selected ? "" : " hidden"}>
+    <div class="detail-head">
       <div>
         <h2>${escapeHtml(group.title)}</h2>
         <p class="summary">${escapeHtml(group.summary)}</p>
       </div>
       ${renderStatus(group.status.label, group.status.tone, group.status.detail)}
     </div>
-    <div class="primary-action">
+    <div class="action-strip">
       ${renderAction(group.primary, true)}
-    </div>
-    ${renderMoreActions(group)}
-  </article>`;
-}
-
-function renderHomePanel(groups: HubTaskGroup[]): string {
-  return `<div class="home-stack">
-    ${phaseOrder.map((phase) => {
-      const phaseGroups = groups.filter((group) => group.phase === phase);
-      if (phaseGroups.length === 0) {
-        return "";
-      }
-      return `<section class="home-section" data-phase="${phase}">
-        <div class="section-head">
-          <h2 class="section-title">${escapeHtml(phaseTitle(phase))}</h2>
-          <div class="section-note">${escapeHtml(phaseNote(phase))}</div>
-        </div>
-        <div class="card-grid">
-          ${phaseGroups.map(renderTaskGroup).join("")}
-        </div>
-      </section>`;
-    }).join("")}
-  </div>`;
-}
-
-function renderMoreActions(group: HubTaskGroup): string {
-  const actions = group.actions.filter((action) => action.id !== group.primary.id);
-  if (actions.length === 0) {
-    return "";
-  }
-  return `<details class="more-actions">
-    <summary>More</summary>
-    <div class="more-list">
       ${actions.map((action) => renderAction(action, false)).join("")}
     </div>
-  </details>`;
+    ${group.status.detail ? `<div class="detail-note">${escapeHtml(group.status.detail)}</div>` : ""}
+  </article>`;
 }
 
 function renderAction(action: HubAction, primary: boolean): string {
@@ -472,9 +544,34 @@ function renderAction(action: HubAction, primary: boolean): string {
   return `<button type="button" class="${primary ? "primary" : "secondary"}" data-command="${escapeAttr(action.command)}" title="${escapeAttr(title)}"${action.disabledReason ? " disabled" : ""}>${escapeHtml(action.label)}</button>`;
 }
 
-function renderStateSection(section: HubStateSection): string {
-  return `<article class="card" data-state="${escapeAttr(section.id)}">
-    <div class="card-head">
+function renderStatePanel(sections: HubStateSection[], initialLane?: string): string {
+  const active = activeId(sections, initialLane);
+  return `<div class="rail-layout" data-rail-scope="state">
+    <nav class="hub-rail" role="tablist" aria-label="Glade State sections">
+      ${sections.map((section) => renderStateLane(section, section.id === active)).join("")}
+    </nav>
+    <div class="detail-stack">
+      ${sections.map((section) => renderStateDetail(section, section.id === active)).join("")}
+    </div>
+  </div>`;
+}
+
+function renderStateLane(section: HubStateSection, selected: boolean): string {
+  const primary = section.rows[0]?.value || "";
+  const panelId = `state-panel-${section.id}`;
+  return `<button class="rail-row" type="button" role="tab" id="state-tab-${escapeAttr(section.id)}" data-state-lane="${escapeAttr(section.id)}" aria-selected="${selected}" aria-controls="${escapeAttr(panelId)}" tabindex="${selected ? "0" : "-1"}">
+    <span class="rail-icon" aria-hidden="true">${escapeHtml(stateLaneGlyph(section.id))}</span>
+    <span class="rail-copy">
+      <span class="rail-title">${escapeHtml(section.title)}</span>
+      <span class="rail-sub">${escapeHtml(primary)}</span>
+    </span>
+    <span class="rail-state tone-${escapeAttr(section.tone)}" aria-hidden="true">●</span>
+  </button>`;
+}
+
+function renderStateDetail(section: HubStateSection, selected: boolean): string {
+  return `<article class="detail-panel" role="tabpanel" id="state-panel-${escapeAttr(section.id)}" aria-labelledby="state-tab-${escapeAttr(section.id)}" data-state-detail="${escapeAttr(section.id)}"${selected ? "" : " hidden"}>
+    <div class="detail-head">
       <h2>${escapeHtml(section.title)}</h2>
       <span class="status tone-${escapeAttr(section.tone)}">${escapeHtml(section.tone)}</span>
     </div>
@@ -515,26 +612,41 @@ const htmlEscapes: Record<string, string> = {
   "'": "&#39;",
 };
 
-const phaseOrder = ["setup", "daily", "data"] as const;
+function activeId<T extends { id: string }>(items: T[], requested?: string): string {
+  if (requested && items.some((item) => item.id === requested)) {
+    return requested;
+  }
+  return items[0]?.id || "";
+}
 
-function phaseTitle(phase: typeof phaseOrder[number]): string {
-  switch (phase) {
-    case "setup":
-      return "Set up";
-    case "daily":
-      return "Day to day";
+function homeLaneGlyph(id: HubTaskGroup["id"]): string {
+  switch (id) {
     case "data":
-      return "Database";
+      return "DB";
+    case "run":
+      return "T";
+    case "org":
+      return "G";
+    case "scratch":
+      return "A";
+    case "salesforce":
+      return "SF";
   }
 }
 
-function phaseNote(phase: typeof phaseOrder[number]): string {
-  switch (phase) {
-    case "setup":
-      return "connect the project";
-    case "daily":
-      return "tests and scratch";
+function stateLaneGlyph(id: HubStateSection["id"]): string {
+  switch (id) {
     case "data":
-      return "inspect and switch";
+      return "DB";
+    case "local-org":
+      return "G";
+    case "tests":
+      return "T";
+    case "salesforce":
+      return "SF";
+    case "project":
+      return "P";
+    case "plugins":
+      return "PL";
   }
 }

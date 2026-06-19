@@ -32,11 +32,11 @@ shell, green action color, and status palette as the public site.
 Open a normal Salesforce DX project. The Glade Activity Bar opens with a short
 Start Here panel. The other sections stay collapsed until you need them.
 
-Use **Glade: Open Home** for the daily hub. Home has three focused lanes:
-first project setup, daily local Apex work, and database inspection. Each lane
-shows one main action and keeps secondary tools tucked under More. State is the
-second tab: project root, active Glade org, active data environment, Salesforce
-target, tests, watch state, and plugin reports.
+Use **Glade: Open Home** for the main developer hub. Home uses a rail and
+detail panel for Data browser, Local tests, Glade org, Scratch editors, and
+Salesforce. Each section keeps its main command and related commands in one
+compact row. State uses the same rail shape for project, org, data,
+Salesforce, test, and plugin status.
 
 - Start Here: project state, active local data environment, changed tests, and
   a shortcut into Glade Home.
@@ -47,7 +47,7 @@ target, tests, watch state, and plugin reports.
 - Debug: local debug actions, hidden by default until needed.
 - Plugins: installed plugins, plugin actions, and plugin artifacts, hidden by default.
 
-## Daily Local Apex Loop
+## Local Apex Loop
 
 Open the Glade Activity Bar and start in **Start Here**.
 

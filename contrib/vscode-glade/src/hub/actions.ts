@@ -12,19 +12,32 @@ export interface HubSelectTabMessage {
   tab: "home" | "state";
 }
 
-export type HubClientMessage = HubReadyMessage | HubRunCommandMessage | HubSelectTabMessage;
+export interface HubSelectLaneMessage {
+  type: "selectLane";
+  scope: "home" | "state";
+  lane: string;
+}
+
+export type HubClientMessage = HubReadyMessage | HubRunCommandMessage | HubSelectTabMessage | HubSelectLaneMessage;
 
 export const allowedHubCommands = new Set<string>([
   "vscode.openFolder",
   "glade.runLocalProof",
+  "glade.runFailedTests",
+  "glade.startWatch",
+  "glade.stopWatch",
   "glade.createProjectOrg",
   "glade.startProjectOrg",
   "glade.stopProjectOrg",
   "glade.projectOrgStatus",
   "glade.salesforceTargetStatus",
+  "glade.schemaImportDescribe",
   "glade.createEnvironment",
   "glade.switchEnvironment",
   "glade.inspectLocalOrg",
+  "glade.seedLocalOrg",
+  "glade.resetLocalOrg",
+  "glade.exportLocalOrg",
   "glade.workbench.newAnonymousApex",
   "glade.workbench.newSoql",
 ]);
@@ -45,6 +58,15 @@ export function parseHubMessage(value: unknown): HubClientMessage {
 
   if (record.type === "selectTab" && (record.tab === "home" || record.tab === "state")) {
     return { type: "selectTab", tab: record.tab };
+  }
+
+  if (
+    record.type === "selectLane" &&
+    (record.scope === "home" || record.scope === "state") &&
+    typeof record.lane === "string" &&
+    /^[a-z][a-z0-9-]*$/.test(record.lane)
+  ) {
+    return { type: "selectLane", scope: record.scope, lane: record.lane };
   }
 
   if (record.type === "runCommand" && typeof record.command === "string") {

@@ -14,6 +14,8 @@ export class GladeHomeController implements vscode.Disposable {
   private panelDisposables: vscode.Disposable[] = [];
   private readonly disposables: vscode.Disposable[] = [];
   private activeTab: "home" | "state" = "home";
+  private activeHomeLane = "data";
+  private activeStateLane = "data";
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -42,6 +44,8 @@ export class GladeHomeController implements vscode.Disposable {
       panel.onDidDispose(() => {
         this.panel = undefined;
         this.activeTab = "home";
+        this.activeHomeLane = "data";
+        this.activeStateLane = "data";
         for (const disposable of this.panelDisposables.splice(0)) {
           disposable.dispose();
         }
@@ -67,6 +71,8 @@ export class GladeHomeController implements vscode.Disposable {
     this.panel?.dispose();
     this.panel = undefined;
     this.activeTab = "home";
+    this.activeHomeLane = "data";
+    this.activeStateLane = "data";
   }
 
   private render(): void {
@@ -78,6 +84,8 @@ export class GladeHomeController implements vscode.Disposable {
       cspSource: panel.webview.cspSource,
       nonce: nonce(),
       initialTab: this.activeTab,
+      initialHomeLane: this.activeHomeLane,
+      initialStateLane: this.activeStateLane,
       logoUri: panel.webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "media", "glade-brand.svg")).toString(),
     });
   }
@@ -90,6 +98,14 @@ export class GladeHomeController implements vscode.Disposable {
       }
       if (parsed.type === "selectTab") {
         this.activeTab = parsed.tab;
+        return;
+      }
+      if (parsed.type === "selectLane") {
+        if (parsed.scope === "home") {
+          this.activeHomeLane = parsed.lane;
+        } else {
+          this.activeStateLane = parsed.lane;
+        }
         return;
       }
       await this.options.executeCommand(parsed.command);

@@ -63,7 +63,17 @@ const { GladeHomeController } = require("../out/hub/controller");
 
 const executed = [];
 const controller = new GladeHomeController({ subscriptions: [], extensionUri: { path: "/extension" } }, {
-  snapshot: () => ({ changedSince: "origin/main" }),
+  snapshot: () => ({
+    project: {
+      workspaceFolder: "/repo",
+      projectRoot: "/repo",
+      configFound: true,
+      namespace: "",
+      sourceApiVersion: "63.0",
+      packageDirs: ["force-app"],
+    },
+    changedSince: "origin/main",
+  }),
   executeCommand(command) {
     executed.push(command);
     return Promise.resolve();
@@ -82,9 +92,14 @@ const controller = new GladeHomeController({ subscriptions: [], extensionUri: { 
 
   await messageHandler({ type: "selectTab", tab: "state" });
   assert.strictEqual(panel.htmlWrites, 1);
+  await messageHandler({ type: "selectLane", scope: "home", lane: "scratch" });
+  await messageHandler({ type: "selectLane", scope: "state", lane: "plugins" });
+  assert.strictEqual(panel.htmlWrites, 1);
   controller.update();
   assert(panel.webview.latestHtml.includes('data-tab="state" aria-selected="true"'));
   assert(panel.webview.latestHtml.includes('data-panel="state">'));
+  assert(panel.webview.latestHtml.includes('data-lane="scratch" aria-selected="true"'));
+  assert(panel.webview.latestHtml.includes('data-state-lane="plugins" aria-selected="true"'));
 
   await messageHandler({ type: "runCommand", command: "glade.runLocalProof" });
   assert.deepStrictEqual(executed, ["glade.runLocalProof"]);
