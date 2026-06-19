@@ -50,6 +50,14 @@ export function buildStartHereRows(snapshot: StartHereSnapshot): StartHereRow[] 
   const lastRun = snapshot.lastRun;
   return [
     {
+      id: "home",
+      label: "Open Glade Home",
+      description: "daily developer hub",
+      tooltip: "Open the task-first Glade Home webview.",
+      command: "glade.openHome",
+      contextValue: "gladeStartHereAction",
+    },
+    {
       id: "ready",
       label: "Ready for local Apex",
       description: project.configFound ? "project config loaded" : "using SFDX defaults",

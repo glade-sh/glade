@@ -20,6 +20,7 @@ const snapshot = {
 
 const rows = model.buildStartHereRows(snapshot);
 assert.deepStrictEqual(rows.map((row) => row.id), [
+  "home",
   "ready",
   "project",
   "plugin-actions",
@@ -28,15 +29,17 @@ assert.deepStrictEqual(rows.map((row) => row.id), [
   "last-run",
   "watch",
 ]);
-assert.strictEqual(rows[0].label, "Ready for local Apex");
-assert.strictEqual(rows[2].label, "Plugin actions");
-assert.strictEqual(rows[2].description, "3 actions");
-assert.strictEqual(rows[2].tooltip, "3 plugin actions ready.");
-assert.strictEqual(rows[3].label, "Data env: dev");
-assert.strictEqual(rows[3].description, "48 records");
-assert.strictEqual(rows[4].label, "Run local proof");
-assert.strictEqual(rows[4].command, "glade.runLocalProof");
-assert.strictEqual(rows[5].description, "8 passed, 1 failed");
+assert.strictEqual(rows[0].label, "Open Glade Home");
+assert.strictEqual(rows[0].command, "glade.openHome");
+assert.strictEqual(rows[1].label, "Ready for local Apex");
+assert.strictEqual(rows[3].label, "Plugin actions");
+assert.strictEqual(rows[3].description, "3 actions");
+assert.strictEqual(rows[3].tooltip, "3 plugin actions ready.");
+assert.strictEqual(rows[4].label, "Data env: dev");
+assert.strictEqual(rows[4].description, "48 records");
+assert.strictEqual(rows[5].label, "Run local proof");
+assert.strictEqual(rows[5].command, "glade.runLocalProof");
+assert.strictEqual(rows[6].description, "8 passed, 1 failed");
 assert(
   !rows.some((row) => /salesforce/i.test(`${row.id} ${row.label} ${row.description || ""} ${row.tooltip || ""}`)),
   "Start Here must only surface Glade local workflow state"

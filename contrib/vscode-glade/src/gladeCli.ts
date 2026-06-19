@@ -15,9 +15,9 @@ export function buildGladeArgs(command: string, args: string[]): string[] {
   return [command, ...args];
 }
 
-export function runGlade(args: string[], options: GladeRunOptions = {}): Promise<GladeRunResult> {
+export function runCommand(command: string, args: string[], options: GladeRunOptions = {}): Promise<GladeRunResult> {
   return new Promise((resolve, reject) => {
-    const child = spawn("glade", args, {
+    const child = spawn(command, args, {
       cwd: options.cwd,
       env: { ...process.env, ...options.env },
     });
@@ -32,6 +32,10 @@ export function runGlade(args: string[], options: GladeRunOptions = {}): Promise
     child.on("error", reject);
     child.on("close", (code) => resolve({ code, stdout, stderr }));
   });
+}
+
+export function runGlade(args: string[], options: GladeRunOptions = {}): Promise<GladeRunResult> {
+  return runCommand("glade", args, options);
 }
 
 export function parseJSONOutput<T>(stdout: string, label: string): T {

@@ -28,11 +28,17 @@ The extension requires a global `glade` command on `PATH`.
 
 Open a normal SFDX project. The Glade Activity Bar shows:
 
+Use **Glade: Open Home** for the daily hub. Home is task-first: run, data,
+debug, Salesforce, and ship actions sit on the first tab. State is the second
+tab: project root, active Glade org, active data environment, Salesforce target,
+tests, watch state, and plugin findings.
+
 - Start Here: SFDX root, active local data environment, local DB state, watch
-  state, last run state, plugin action count, and top daily actions.
+  state, last run state, plugin action count, and a shortcut into Glade Home.
 - Local Runs: changed tests, failed tests, and warm watch controls.
 - Data Environments: named SQLite local orgs and the active DB path.
 - Local Org: inspect, seed, reset, and export commands for the active DB.
+- Exec & SOQL: SOQL scratch buffers, saved SOQL entries, describes, and last results.
 - Debug: current VS Code Apex breakpoint count and local debug actions.
 - Plugins: installed plugins, plugin actions, and plugin artifacts.
 
@@ -50,7 +56,8 @@ Glade actions are local. Salesforce actions stay org-backed.
 ## Native VS Code Surfaces
 
 Glade uses one Activity Bar item and one Status Bar item. The sidebar shows
-Start Here, Local Runs, Data Environments, Local Org, Debug, and Plugins.
+Start Here, Local Runs, Data Environments, Local Org, Exec & SOQL, Debug, and
+Plugins.
 
 Local Apex tests appear in the native VS Code Testing view under `Glade Apex`.
 Glade does not add a second Apex Tests sidebar tree. Breakpoints stay in the

@@ -25,6 +25,7 @@
     "onView:glade.debugLogs",
     "onView:glade.plugins",
     "onDebugResolve:glade",
+    "onCommand:glade.openHome",
     "onCommand:glade.runChangedTests",
     "onCommand:glade.runFailedTests",
     "onCommand:glade.runLocalTestFromCodeLens",
@@ -46,6 +47,8 @@
     "onCommand:glade.workbench.runLastSoql",
     "onCommand:glade.workbench.describe",
     "onCommand:glade.workbench.openResult",
+    "onCommand:glade.schemaImportDescribe",
+    "onCommand:glade.salesforceTargetStatus",
     "onCommand:glade.refreshPlugins",
     "onCommand:glade.managePlugins",
     "onCommand:glade.runPluginAction",
@@ -106,6 +109,11 @@
       {
         "command": "glade.refresh",
         "title": "Glade: Refresh"
+      },
+      {
+        "command": "glade.openHome",
+        "title": "Glade: Open Home",
+        "icon": "$(home)"
       },
       {
         "command": "glade.runChangedTests",
@@ -226,6 +234,14 @@
       {
         "command": "glade.workbench.openResult",
         "title": "Glade: Open Last Workbench Result"
+      },
+      {
+        "command": "glade.schemaImportDescribe",
+        "title": "Glade: Import Describe Schema"
+      },
+      {
+        "command": "glade.salesforceTargetStatus",
+        "title": "Glade: Check Salesforce Target"
       },
       {
         "command": "glade.refreshPlugins",
@@ -452,7 +468,7 @@
     "compile": "tsc -p ./",
     "bundle": "esbuild src/extension.ts --bundle --minify --platform=node --format=cjs --target=node20 --external:vscode --outfile=out/extension.js",
     "package": "mkdir -p dist && npm run compile && npm run bundle && vsce package --allow-missing-repository --out dist/vscode-glade-${npm_package_version}.vsix",
-    "test": "npm run compile && node test/commands.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/environmentActions.test.js && node test/localOrg.test.js && node test/watch.test.js && node test/statusModel.test.js && node test/package.test.js && node test/startHereModel.test.js && node test/startHereState.test.js && node test/pluginModules.test.js && node test/pluginController.test.js && node test/workbenchModel.test.js && node test/workbenchStore.test.js && node test/workbenchCli.test.js && node test/workbenchView.test.js"
+    "test": "npm run compile && node test/commands.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/environmentActions.test.js && node test/localOrg.test.js && node test/localOrgArgs.test.js && node test/watch.test.js && node test/statusModel.test.js && node test/package.test.js && node test/prototype.test.js && node test/extensionHubRefresh.test.js && node test/startHereModel.test.js && node test/startHereState.test.js && node test/hubModel.test.js && node test/hubActions.test.js && node test/hubHtml.test.js && node test/hubController.test.js && node test/hubSalesforce.test.js && node test/pluginModules.test.js && node test/pluginController.test.js && node test/workbenchModel.test.js && node test/workbenchStore.test.js && node test/workbenchCli.test.js && node test/workbenchView.test.js"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

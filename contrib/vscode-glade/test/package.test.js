@@ -4,6 +4,7 @@ const path = require("path");
 
 const root = path.resolve(__dirname, "..");
 const manifest = require(path.join(root, "package.json"));
+const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
 const ignore = fs.readFileSync(path.join(root, ".vscodeignore"), "utf8")
   .split(/\r?\n/)
   .map((line) => line.trim())
@@ -29,6 +30,7 @@ if (manifest.dependencies && Object.keys(manifest.dependencies).length > 0) {
 assert(ignore.includes("out/**/*.js"), ".vscodeignore must exclude compiled module JavaScript");
 assert(ignore.includes("!out/extension.js"), ".vscodeignore must keep the bundled extension entrypoint");
 assert(ignore.includes("out/**/*.map"), ".vscodeignore must exclude compiled source maps from the VSIX");
+assert(ignore.includes("prototypes/**"), ".vscodeignore must exclude standalone prototypes from the VSIX");
 
 const startHereView = manifest.contributes.views.glade.find((view) => view.id === "glade.project");
 assert(startHereView, "glade.project view must exist");
@@ -53,6 +55,13 @@ assert(!activationEvents.includes("onView:glade.preview"), "glade.preview must n
 assert(activationEvents.includes("onView:glade.plugins"), "glade.plugins view must activate the extension");
 assert(activationEvents.includes("onView:glade.workbench"), "glade.workbench view must activate the extension");
 assert(activationEvents.includes("onLanguage:soql"), "SOQL scratch editors must activate the extension");
+for (const command of [
+  "glade.openHome",
+  "glade.schemaImportDescribe",
+  "glade.salesforceTargetStatus",
+]) {
+  assert(activationEvents.includes(`onCommand:${command}`), `${command} must activate the extension`);
+}
 
 const localRunsView = manifest.contributes.views.glade.find((view) => view.id === "glade.recommendedRuns");
 assert(localRunsView, "glade.recommendedRuns view must exist");
@@ -69,9 +78,11 @@ assert.strictEqual(pluginsView.name, "Plugins");
 const workbenchView = manifest.contributes.views.glade.find((view) => view.id === "glade.workbench");
 assert(workbenchView, "glade.workbench view must exist");
 assert.strictEqual(workbenchView.name, "Exec & SOQL");
+assert(readme.includes("Exec & SOQL"), "README must document the Exec & SOQL sidebar view");
 
 for (const command of [
   "glade.runLocalProof",
+  "glade.openHome",
   "glade.cloneEnvironment",
   "glade.deleteEnvironment",
   "glade.revealEnvironmentDb",
@@ -90,6 +101,8 @@ for (const command of [
   "glade.workbench.runLastSoql",
   "glade.workbench.describe",
   "glade.workbench.openResult",
+  "glade.schemaImportDescribe",
+  "glade.salesforceTargetStatus",
 ]) {
   assert(
     manifest.contributes.commands.some((entry) => entry.command === command),
