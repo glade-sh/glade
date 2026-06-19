@@ -42,7 +42,11 @@ func TestSalesforceImportMapIncludesPhase8Shims(t *testing.T) {
 		"@salesforce/community/basePath",
 		"@salesforce/community/Id",
 		"@salesforce/site/Id",
+		"@salesforce/site/activeLanguages",
 		"@salesforce/user/",
+		"@salesforce/userPermission/",
+		"@salesforce/apexContinuation",
+		"@salesforce/apexContinuation/",
 		"@salesforce/i18n/",
 		"@salesforce/apex",
 		"@salesforce/resourceUrl/",
@@ -197,6 +201,26 @@ func TestSalesforceImportMapIncludesShellSLDSAndBaseModules(t *testing.T) {
 	}
 }
 
+func TestSalesforceImportMapIncludesPhase2NativeAPIShims(t *testing.T) {
+	imports := SalesforceImportMap()
+	want := map[string]string{
+		"lightning/uiAppsApi":             "/lightning/runtime/lightning/uiAppsApi.js",
+		"lightning/uiListsApi":            "/lightning/runtime/lightning/uiListsApi.js",
+		"lightning/graphql":               "/lightning/runtime/lightning/graphql.js",
+		"lightning/uiGraphQLApi":          "/lightning/runtime/lightning/uiGraphQLApi.js",
+		"lightning/platformUtilityBarApi": "/lightning/runtime/lightning/platformUtilityBarApi.js",
+		"lightning/uiLearningPlatformApi": "/lightning/runtime/lightning/uiLearningPlatformApi.js",
+		"experience/blockBuilderApi":      "/lightning/runtime/experience/blockBuilderApi.js",
+		"experience/cmsDeliveryApi":       "/lightning/runtime/experience/cmsDeliveryApi.js",
+		"experience/cmsEditorApi":         "/lightning/runtime/experience/cmsEditorApi.js",
+	}
+	for specifier, path := range want {
+		if imports[specifier] != path {
+			t.Fatalf("import map %s = %q, want %q in %#v", specifier, imports[specifier], path, imports)
+		}
+	}
+}
+
 func TestLightningBaseComponentModuleJSExportsPracticalComponent(t *testing.T) {
 	js := LightningBaseComponentModuleJS("combobox")
 	if !containsAll(js, "LightningElement", "registerTemplate", "registerComponent", "lightning-combobox", "slds-combobox", "change", "export default") {
@@ -246,8 +270,42 @@ func TestCommunityAndSiteModuleJS(t *testing.T) {
 	if got := SiteModuleJS("Id"); !containsAll(got, `export default readSiteId()`, "readSiteId") {
 		t.Fatalf("site Id js = %q", got)
 	}
+	if got := SiteModuleJS("activeLanguages"); !containsAll(got, `export default readActiveLanguages()`, "readActiveLanguages") {
+		t.Fatalf("site activeLanguages js = %q", got)
+	}
 	if got := CommunityModuleJS("Theme"); !strings.Contains(got, "Unsupported @salesforce/community property") {
 		t.Fatalf("unsupported community js = %q", got)
+	}
+}
+
+func TestUserPermissionModuleJS(t *testing.T) {
+	js := UserPermissionModuleJS("ViewSetup")
+	if !containsAll(js, `permissionName = "ViewSetup"`, `export default readUserPermission(permissionName)`, "readUserPermission") {
+		t.Fatalf("user permission js = %q", js)
+	}
+}
+
+func TestApexContinuationModuleJS(t *testing.T) {
+	js := ApexContinuationModuleJS()
+	if !containsAll(js, "createContinuation", "invokeContinuation", "Promise.resolve", "supported-local-simulated") {
+		t.Fatalf("apex continuation js = %q", js)
+	}
+	methodJS := ApexContinuationMethodModuleJS("GladeLwcOracleController.ping")
+	if !containsAll(methodJS, `methodName = "GladeLwcOracleController.ping"`, "invokeContinuation", "export default function") {
+		t.Fatalf("apex continuation method js = %q", methodJS)
+	}
+}
+
+func TestSimulatedNativeAPIModuleJS(t *testing.T) {
+	js, ok := SimulatedNativeAPIModuleJS("analyticsWaveApi")
+	if !ok {
+		t.Fatalf("analyticsWaveApi should be a simulated native API module")
+	}
+	if !containsAll(js, `moduleName = "analyticsWaveApi"`, "partial-local-simulated", "export default") {
+		t.Fatalf("analyticsWaveApi js = %q", js)
+	}
+	if _, ok := SimulatedNativeAPIModuleJS("notARealApi"); ok {
+		t.Fatalf("unknown native API module should not be simulated")
 	}
 }
 

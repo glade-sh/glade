@@ -25,6 +25,7 @@ func InstallFrom(src string) error {
 		rel string
 	}{
 		{rel: "third_party/lwc"},
+		{rel: "lwcruntime/src/experience"},
 		{rel: "lwcruntime/src/lightning"},
 		{rel: "lwcruntime/src/shell"},
 		{rel: "lwcruntime/src/shims"},

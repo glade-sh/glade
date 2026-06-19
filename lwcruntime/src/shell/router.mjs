@@ -5,10 +5,12 @@ export function currentPath() {
 }
 
 export function routeKind(path = currentPath()) {
+  if (path.includes("glade__unavailablePageReference=")) return "unavailable";
   if (path.includes("/lwc/preview/record/")) return "record";
   if (path.includes("/lwc/preview/action/")) return "action";
   if (path.includes("/lwc/preview/cmp/")) return "component";
   if (path.includes("/lwc/preview/component/")) return "component";
+  if (path.includes("/lwc/preview/flow/")) return "flow";
   if (path.includes("/lwc/preview/app/")) return "app";
   if (path.includes("/lwc/preview/home")) return "home";
   if (path.includes("/lwc/preview/tab/")) return "tab";

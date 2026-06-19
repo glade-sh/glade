@@ -145,6 +145,18 @@ the local fallback.
 Local org data comes from project schema plus Glade storage fixtures in
 `data/*.json`.
 
+When an LWC needs real records or Apex controller data, put the rows the
+component needs into a Glade storage fixture under `data/` and run the shell
+from the project:
+
+```bash
+glade dev lwc --project . --port 8080
+```
+
+The active builder context flows into `recordId`, `objectApiName`, LDS wire
+adapters, record forms, output fields, navigation state, and controller
+arguments that the component passes through.
+
 The shell exposes current local state for tooling:
 
 ```text

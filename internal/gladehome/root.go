@@ -110,7 +110,7 @@ func ShimsDir() (string, error) {
 func RuntimeAssetDir(name string) (string, error) {
 	name = strings.TrimSpace(name)
 	switch name {
-	case "lightning", "shell", "shims", "slds":
+	case "experience", "lightning", "shell", "shims", "slds":
 	default:
 		return "", fmt.Errorf("unknown LWC runtime asset directory %q", name)
 	}

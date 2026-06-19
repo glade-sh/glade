@@ -123,6 +123,10 @@ window.__serviceResults = {};
 window.__serviceResults.urls = {
   record: await generateUrl({ type: "standard__recordPage", attributes: { objectApiName: "Account", recordId: "001000000000001AAA" } }),
   relationship: await generateUrl({ type: "standard__recordRelationshipPage", attributes: { objectApiName: "Account", recordId: "001000000000001AAA", relationshipApiName: "Contacts" } }),
+  flow: await generateUrl({ type: "standard__flow", attributes: { flowApiName: "Membership_Flow" }, state: { c__recordId: "001000000000001AAA" } }),
+  externalRecord: await generateUrl({ type: "standard__externalRecordPage", attributes: { objectType: "cms", recordId: "cms-001", actionName: "view" }, state: { c__source: "nav" } }),
+  externalRelationship: await generateUrl({ type: "standard__externalRecordRelationshipPage", attributes: { objectType: "cms", recordId: "cms-001", relationshipApiName: "Assets", actionName: "view" }, state: { c__source: "nav" } }),
+  knowledgeArticle: await generateUrl({ type: "standard__knowledgeArticlePage", attributes: { articleType: "FAQ__kav", urlName: "reset-password", language: "en_US" }, state: { c__source: "nav" } }),
   navItem: await generateUrl({ type: "standard__navItemPage", attributes: { apiName: "Accounts" } }),
   app: await generateUrl({ type: "standard__app", attributes: { appTarget: "standard__Sales" } }),
   nestedApp: await generateUrl({ type: "standard__app", attributes: { appTarget: "standard__Sales", pageRef: { type: "standard__recordPage", attributes: { objectApiName: "Account", recordId: "001000000000001AAA" }, state: { c__mode: "demo" } } } }),
@@ -158,6 +162,9 @@ window.__serviceResults.pageRefs = pageRefs;
 window.__assignedUrl = null;
 await navigate({ type: "standard__navItemPage", attributes: { apiName: "Reports" } }, { assign: (nextUrl) => { window.__assignedUrl = nextUrl; } });
 window.__serviceResults.assignedUrl = window.__assignedUrl;
+window.__externalAssignedUrl = null;
+await navigate({ type: "standard__externalRecordPage", attributes: { objectType: "cms", recordId: "cms-404" }, state: { c__source: "button" } }, { assign: (nextUrl) => { window.__externalAssignedUrl = nextUrl; } });
+window.__serviceResults.externalAssignedUrl = window.__externalAssignedUrl;
 
 clearToasts();
 const disposeToasts = installToastService(document.body);
@@ -259,6 +266,10 @@ test("navigation services generate URLs and stable unsupported errors", async ()
     assert.deepEqual(results.urls, {
       record: "/lwc/preview/record/Account/001000000000001AAA",
       relationship: "/lwc/preview/record/Account/001000000000001AAA?relationship=Contacts",
+      flow: "/lwc/preview/flow/Membership_Flow?c__recordId=001000000000001AAA",
+      externalRecord: "/lwc/preview/home?glade__unavailablePageReference=standard__externalRecordPage&glade__recordId=cms-001&glade__objectType=cms&glade__actionName=view&c__source=nav",
+      externalRelationship: "/lwc/preview/home?glade__unavailablePageReference=standard__externalRecordRelationshipPage&glade__recordId=cms-001&glade__objectType=cms&glade__relationshipApiName=Assets&glade__actionName=view&c__source=nav",
+      knowledgeArticle: "/lwc/preview/home?glade__unavailablePageReference=standard__knowledgeArticlePage&glade__articleType=FAQ__kav&glade__urlName=reset-password&glade__language=en_US&c__source=nav",
       navItem: "/lwc/preview/tab/Accounts",
       app: "/lwc/preview/app/standard__Sales",
       nestedApp: "/lwc/preview/record/Account/001000000000001AAA?c__mode=demo&app=standard__Sales",
@@ -277,6 +288,7 @@ test("navigation services generate URLs and stable unsupported errors", async ()
     assert.equal(results.communityError.code, "GLADELWC103");
     assert.equal(results.pageRefs[0].type, "standard__recordPage");
     assert.equal(results.assignedUrl, "/lwc/preview/tab/Reports");
+    assert.equal(results.externalAssignedUrl, "/lwc/preview/home?glade__unavailablePageReference=standard__externalRecordPage&glade__recordId=cms-404&glade__objectType=cms&c__source=button");
   } finally {
     await browser.close();
     await server.close();

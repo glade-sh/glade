@@ -291,6 +291,11 @@ The LWC shell supports:
   child-relationship data. Compatibility export remains available from
   `lightning/uiRecordApi`; related-list metadata adapters remain a Salesforce
   check.
+- `lightning/uiAppsApi` for local app, tab, and route metadata.
+- `lightning/uiListsApi` for deterministic local list info, list rows, and list
+  preferences. Local list metadata writes return a named unsupported error.
+- `lightning/graphql` and `lightning/uiGraphQLApi` for the local UI API GraphQL
+  response envelope. Deep GraphQL query semantics remain oracle-gated.
 - `notifyRecordUpdateAvailable`, `getRecordNotifyChange`, and `refreshApex`
   refresh matching local record wires through the browser LDS cache.
 - Deprecated `lightning/uiListApi` `getListUi` reports `GLADELWC050`; use
@@ -299,14 +304,18 @@ The LWC shell supports:
 - `@salesforce/label`, `@salesforce/resourceUrl`, and
   `@salesforce/contentAssetUrl`.
 - Static resource subpaths for local scripts, styles, and images.
-- `@salesforce/client/formFactor` and `@salesforce/customPermission/*` shims
-  for package components that branch on form factor or custom permissions.
+- `@salesforce/client/formFactor`, `@salesforce/customPermission/*`, and
+  `@salesforce/userPermission/*` shims for package components that branch on
+  form factor or permissions.
 - `@salesforce/user`, checked `@salesforce/i18n` values, and
   `lightning/navigation` basics. `@salesforce/user/isGuest` reads active
   community guest context and remains false on non-community routes.
-- `@salesforce/community/basePath`, `@salesforce/community/Id`, and
-  `@salesforce/site/Id` for active community routes. Missing IDs export empty
-  strings and report `GLADELWC102`.
+- `@salesforce/community/basePath`, `@salesforce/community/Id`,
+  `@salesforce/site/Id`, and `@salesforce/site/activeLanguages` for active
+  community routes. Missing IDs export empty strings and report `GLADELWC102`.
+- `@salesforce/apexContinuation` as a simulated local continuation helper for
+  Promise-shaped controller flows. Hosted servlet continuation scheduling stays
+  Salesforce-only.
 - `comm__namedPage`, `comm__loginPage`, `comm__managedContentPage`,
   `comm__recordPage`, and `comm__recordRelationshipPage` local URL generation.
 - `lightning/messageService`, `lightning/platformResourceLoader`,
@@ -316,6 +325,9 @@ The LWC shell supports:
 - `lightning/platformWorkspaceApi` console approximation for local tab info,
   open/close/focus, refresh, highlight, label/icon helpers, and console wire
   values.
+- `lightning/platformUtilityBarApi` utility item discovery and local
+  open/close/minimize/focus, label, icon, highlighted-state, and callback
+  helpers for utility-bar route tests.
 - `lightning/alert`, `lightning/confirm`, `lightning/prompt`,
   `lightning/configProvider`, and `lightning/pageReferenceUtils` shims for
   overlay flows, icon token lookup, localization helpers, and default field

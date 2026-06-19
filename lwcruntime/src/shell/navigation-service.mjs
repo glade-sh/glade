@@ -10,6 +10,10 @@ const SUPPORTED_PAGE_REFERENCE_TYPES = new Set([
   "standard__recordPage",
   "standard__objectPage",
   "standard__recordRelationshipPage",
+  "standard__flow",
+  "standard__externalRecordPage",
+  "standard__externalRecordRelationshipPage",
+  "standard__knowledgeArticlePage",
   "standard__navItemPage",
   "standard__app",
   "standard__namedPage",
@@ -131,6 +135,14 @@ export function buildLocalUrl(pageReference) {
       return objectPageUrl(attrs, state, ref);
     case "standard__recordRelationshipPage":
       return recordRelationshipUrl(attrs, state);
+    case "standard__flow":
+      return flowUrl(attrs, state, ref);
+    case "standard__externalRecordPage":
+      return externalRecordUrl(attrs, state);
+    case "standard__externalRecordRelationshipPage":
+      return externalRecordRelationshipUrl(attrs, state);
+    case "standard__knowledgeArticlePage":
+      return knowledgeArticleUrl(attrs, state);
     case "standard__navItemPage":
       return requiredUrl(attrs.apiName, "GLADELWC040", ref, () => `/lwc/preview/tab/${enc(attrs.apiName)}`);
     case "standard__app":
@@ -174,6 +186,41 @@ function recordRelationshipUrl(attrs, state) {
   return withState(`/lwc/preview/record/${enc(objectApiName)}/${enc(attrs.recordId)}`, {
     ...state,
     relationship: attrs.relationshipApiName,
+  });
+}
+
+function flowUrl(attrs, state) {
+  const flowApiName = attrs.flowApiName || attrs.apiName || attrs.flowName;
+  if (!flowApiName) {
+    return unavailablePageReferenceUrl("standard__flow", attrs, state, {
+      reason: "flowApiNameRequired",
+    });
+  }
+  return withState(`/lwc/preview/flow/${enc(flowApiName)}`, state);
+}
+
+function externalRecordUrl(attrs, state) {
+  return unavailablePageReferenceUrl("standard__externalRecordPage", attrs, state, {
+    recordId: attrs.recordId,
+    objectType: externalObjectType(attrs),
+    actionName: attrs.actionName,
+  });
+}
+
+function externalRecordRelationshipUrl(attrs, state) {
+  return unavailablePageReferenceUrl("standard__externalRecordRelationshipPage", attrs, state, {
+    recordId: attrs.recordId,
+    objectType: externalObjectType(attrs),
+    relationshipApiName: attrs.relationshipApiName,
+    actionName: attrs.actionName,
+  });
+}
+
+function knowledgeArticleUrl(attrs, state) {
+  return unavailablePageReferenceUrl("standard__knowledgeArticlePage", attrs, state, {
+    articleType: attrs.articleType,
+    urlName: attrs.urlName,
+    language: attrs.language,
   });
 }
 
@@ -301,6 +348,30 @@ function requiredUrl(value, code, ref, builder) {
     throw navigationError(code, `${code} navigation target unsupported`, ref);
   }
   return builder();
+}
+
+function unavailablePageReferenceUrl(type, attrs, state, details = {}) {
+  const unavailableState = {
+    glade__unavailablePageReference: type,
+  };
+  for (const [key, value] of Object.entries(details)) {
+    addStateDetail(unavailableState, `glade__${key}`, value);
+  }
+  return withState("/lwc/preview/home", {
+    ...unavailableState,
+    ...state,
+  });
+}
+
+function addStateDetail(target, key, value) {
+  if (value === undefined || value === null || value === "") {
+    return;
+  }
+  target[key] = String(value);
+}
+
+function externalObjectType(attrs) {
+  return attrs.objectType || attrs.objectApiName || attrs.externalObjectApiName || attrs.entityName;
 }
 
 function navigationError(code, message, pageReference) {

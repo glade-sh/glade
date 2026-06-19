@@ -146,6 +146,18 @@ Or open one explicit route:
 glade dev lwc --project . --target record-page --object Account --record 001000000000001AAA --page Account_Record_Page --open
 ```
 
+When a component needs real LDS records or Apex controller data, put the rows
+it needs into a Glade storage fixture under `data/` and run the shell from the
+project:
+
+```bash
+glade dev lwc --project . --port 8080
+```
+
+The builder's object and record fields flow into `recordId`, `objectApiName`,
+LDS adapters, record forms, output fields, navigation state, and controller
+arguments that the component passes through.
+
 Use `--target url-addressable`, `--target record-action`, or `--target
 global-action` with `--component`, `--action`, `--object`, and `--record` when
 you need those shell contexts without a named preset.

@@ -346,6 +346,12 @@ common local development loops:
   child-relationship data. Compatibility export remains available from
   `lightning/uiRecordApi`; related-list metadata adapters remain a Salesforce
   check.
+- `lightning/uiAppsApi` for local app, tab, and route metadata through
+  `getNavItems`, `getAppMenuItems`, and `getAppMenuItem`.
+- `lightning/uiListsApi` for deterministic local list info, list rows, and list
+  preferences. Local list metadata writes return a named unsupported error.
+- `lightning/graphql` and `lightning/uiGraphQLApi` for the local UI API GraphQL
+  response envelope. Deep GraphQL query semantics remain oracle-gated.
 - Deprecated `lightning/uiListApi` `getListUi` reports `GLADELWC050`; use
   `getRelatedListRecords` or a local Apex controller.
 - `@salesforce/schema/<Object>` and `@salesforce/schema/<Object>.<Field>`
@@ -357,15 +363,19 @@ common local development loops:
   assets.
 - `@salesforce/client/formFactor` from the active route context, defaulting to
   `Large`.
-- `@salesforce/customPermission/*` as a truthy local development default for
-  permission-gated package LWCs. Permission assignment parity remains a hosted
-  Salesforce check.
+- `@salesforce/customPermission/*` and `@salesforce/userPermission/*` as
+  deterministic local development values for permission-gated package LWCs.
+  Permission assignment parity remains a hosted Salesforce check.
 - `@salesforce/user/Id`, `@salesforce/user/isGuest`, and checked
   `@salesforce/i18n/*` values. `isGuest` reads the active community context
   and remains `false` outside guest community routes.
-- `@salesforce/community/basePath`, `@salesforce/community/Id`, and
-  `@salesforce/site/Id` from the active local community context. Missing IDs
-  export empty strings and report `GLADELWC102`.
+- `@salesforce/community/basePath`, `@salesforce/community/Id`,
+  `@salesforce/site/Id`, and `@salesforce/site/activeLanguages` from the active
+  local community context. Missing IDs export empty strings and report
+  `GLADELWC102`.
+- `@salesforce/apexContinuation` as a simulated local continuation helper for
+  Promise-shaped controller flows. Hosted servlet continuation scheduling stays
+  Salesforce-only.
 - `lightning/navigation` basics for `CurrentPageReference`,
   `NavigationMixin.Navigate`, and `NavigationMixin.GenerateUrl`, including
   local `comm__namedPage`, `comm__loginPage`, `comm__managedContentPage`,
@@ -378,6 +388,9 @@ common local development loops:
   approximation for console apps, including local tab info, open/close/focus,
   refresh, highlight, and console wire values. Full console workspace behavior
   remains a Salesforce check and is marked with `GLADELWC072`.
+- `lightning/platformUtilityBarApi` utility item discovery and local
+  open/close/minimize/focus, label, icon, highlighted-state, and callback
+  helpers for utility-bar route tests.
 - `lightning/alert`, `lightning/confirm`, `lightning/prompt`,
   `lightning/configProvider`, and `lightning/pageReferenceUtils` local shims
   for package flows, icon token lookup, localization helpers, and default
@@ -470,6 +483,10 @@ my-project/
   force-app/main/default/tabs/
   sfdx-project.json
 ```
+
+The builder's object and record fields feed `@api recordId`,
+`@api objectApiName`, LDS adapters, record forms, output fields, navigation
+state, and any Apex controller arguments the component passes through.
 
 For persistent local data loops, seed a database separately with `glade db seed`
 and use the local API or test commands that target that database.

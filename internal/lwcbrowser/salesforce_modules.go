@@ -19,6 +19,8 @@ func SalesforceImportMap() map[string]string {
 		"@glade/slds":                           "/lightning/runtime/slds/slds-loader.js",
 		"@salesforce/apex":                      "/lightning/shims/core/apex.js",
 		"@salesforce/apex/":                     "/lightning/shims/apex/",
+		"@salesforce/apexContinuation":          "/lightning/shims/apexContinuation.js",
+		"@salesforce/apexContinuation/":         "/lightning/shims/apexContinuation/",
 		"@salesforce/client/":                   "/lightning/shims/client/",
 		"@salesforce/client/formFactor":         "/lightning/shims/client/formFactor.js",
 		"@salesforce/community/":                "/lightning/shims/community/",
@@ -32,8 +34,13 @@ func SalesforceImportMap() map[string]string {
 		"@salesforce/resourceUrl/":              "/lightning/shims/resourceUrl/",
 		"@salesforce/schema/":                   "/lightning/shims/schema/",
 		"@salesforce/site/":                     "/lightning/shims/site/",
+		"@salesforce/site/activeLanguages":      "/lightning/shims/site/activeLanguages.js",
 		"@salesforce/site/Id":                   "/lightning/shims/site/Id.js",
 		"@salesforce/user/":                     "/lightning/shims/user/",
+		"@salesforce/userPermission/":           "/lightning/shims/userPermission/",
+		"experience/blockBuilderApi":            "/lightning/runtime/experience/blockBuilderApi.js",
+		"experience/cmsDeliveryApi":             "/lightning/runtime/experience/cmsDeliveryApi.js",
+		"experience/cmsEditorApi":               "/lightning/runtime/experience/cmsEditorApi.js",
 		"lightning/":                            "/lightning/shims/lightning/",
 		"lightning/actions":                     "/lightning/shims/lightning/actions.js",
 		"lightning/alert":                       "/lightning/shims/lightning/alert.js",
@@ -58,6 +65,7 @@ func SalesforceImportMap() map[string]string {
 		"lightning/pageReferenceUtils":          "/lightning/shims/lightning/pageReferenceUtils.js",
 		"lightning/platformResourceLoader":      "/lightning/shims/lightning/platformResourceLoader.js",
 		"lightning/platformShowToastEvent":      "/lightning/shims/lightning/platformShowToastEvent.js",
+		"lightning/platformUtilityBarApi":       "/lightning/runtime/lightning/platformUtilityBarApi.js",
 		"lightning/platformWorkspaceApi":        "/lightning/shims/lightning/platformWorkspaceApi.js",
 		"lightning/prompt":                      "/lightning/shims/lightning/prompt.js",
 		"lightning/purifyLib":                   "/lightning/shims/lightning/purifyLib.js",
@@ -65,8 +73,13 @@ func SalesforceImportMap() map[string]string {
 		"lightning/routingService":              "/lightning/shims/lightning/routingService.js",
 		"lightning/showToastEvent":              "/lightning/shims/lightning/showToastEvent.js",
 		"lightning/toast":                       "/lightning/shims/lightning/toast.js",
+		"lightning/graphql":                     "/lightning/runtime/lightning/graphql.js",
+		"lightning/uiAppsApi":                   "/lightning/runtime/lightning/uiAppsApi.js",
+		"lightning/uiGraphQLApi":                "/lightning/runtime/lightning/uiGraphQLApi.js",
+		"lightning/uiLearningPlatformApi":       "/lightning/runtime/lightning/uiLearningPlatformApi.js",
 		"lightning/uiLayoutApi":                 "/lightning/shims/lightning/uiLayoutApi.js",
 		"lightning/uiListApi":                   "/lightning/shims/lightning/uiListApi.js",
+		"lightning/uiListsApi":                  "/lightning/runtime/lightning/uiListsApi.js",
 		"lightning/uiObjectInfoApi":             "/lightning/shims/lightning/uiObjectInfoApi.js",
 		"lightning/uiRelatedListApi":            "/lightning/shims/lightning/uiRelatedListApi.js",
 		"lightning/uiRecordApi":                 "/lightning/shims/lightning/uiRecordApi.js",
@@ -768,6 +781,66 @@ export default true;
 `, strings.TrimSuffix(strings.TrimSpace(name), ".js"))
 }
 
+func UserPermissionModuleJS(name string) string {
+	return fmt.Sprintf(`import { readUserPermission } from "/lightning/runtime/shims/user-permission.js";
+export const permissionName = %q;
+export default readUserPermission(permissionName);
+`, strings.TrimSuffix(strings.TrimSpace(name), ".js"))
+}
+
+func ApexContinuationModuleJS() string {
+	return `import {
+  createContinuation,
+  invokeContinuation as invokeLocalContinuation,
+  resumeContinuation,
+  simulatedContinuationError,
+} from "/lightning/runtime/shims/apex-continuation.js";
+export const supportTier = "supported-local-simulated";
+export { createContinuation, resumeContinuation, simulatedContinuationError };
+export function invokeContinuation(method, params = {}) {
+  return Promise.resolve(invokeLocalContinuation(method, params));
+}
+export default invokeContinuation;
+`
+}
+
+func ApexContinuationMethodModuleJS(name string) string {
+	method := strings.TrimSuffix(strings.TrimSpace(name), ".js")
+	return fmt.Sprintf(`import { invokeContinuation } from "/lightning/shims/apexContinuation.js";
+export const methodName = %q;
+export default function invoke(params = {}) {
+  return invokeContinuation(methodName, params);
+}
+`, method)
+}
+
+var simulatedNativeAPIModules = map[string]struct{}{
+	"analyticsWaveApi":             {},
+	"cmsDeliveryApi":               {},
+	"conversationToolkitApi":       {},
+	"industriesEducationPublicApi": {},
+	"mobileCapabilities":           {},
+	"serviceCloudVoiceToolkitApi":  {},
+	"serviceKnowledgeApi":          {},
+}
+
+func SimulatedNativeAPIModuleJS(name string) (string, bool) {
+	token := strings.TrimSuffix(strings.TrimSpace(name), ".js")
+	if _, ok := simulatedNativeAPIModules[token]; !ok {
+		return "", false
+	}
+	return fmt.Sprintf(`export const moduleName = %q;
+export const supportTier = "partial-local-simulated";
+export function isAvailable() {
+  return true;
+}
+export function invoke(methodName, params = {}) {
+  return Promise.resolve({ moduleName, methodName, params, supportTier });
+}
+export default { moduleName, supportTier, isAvailable, invoke };
+`, token), true
+}
+
 func ActionsModuleJS() string {
 	return `export class CloseActionScreenEvent extends CustomEvent {
   constructor() {
@@ -886,6 +959,14 @@ export default readCommunityValue("basePath", "/s");
 		return `import { readCommunityValue } from "/lightning/runtime/shims/community.js";
 export default readCommunityValue("networkId", "");
 `
+	case "Name":
+		return `import { readCommunityValue } from "/lightning/runtime/shims/community.js";
+export default readCommunityValue("name", "");
+`
+	case "Url":
+		return `import { readCommunityValue } from "/lightning/runtime/shims/community.js";
+export default readCommunityValue("url", "");
+`
 	default:
 		return unsupportedModuleJS("Unsupported @salesforce/community property: " + property)
 	}
@@ -896,6 +977,10 @@ func SiteModuleJS(property string) string {
 	case "Id":
 		return `import { readSiteId } from "/lightning/runtime/shims/site.js";
 export default readSiteId();
+`
+	case "activeLanguages":
+		return `import { readActiveLanguages } from "/lightning/runtime/shims/site.js";
+export default readActiveLanguages();
 `
 	default:
 		return unsupportedModuleJS("Unsupported @salesforce/site property: " + property)

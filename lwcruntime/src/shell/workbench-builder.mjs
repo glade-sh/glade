@@ -396,19 +396,17 @@ function currentDraftPageReference(state, controls) {
       };
     case "flowScreen":
       return {
-        type: "standard__component",
+        type: "standard__flow",
         attributes: {
-          componentName: controls.componentPicker?.value || "",
           flowApiName: controls.app?.value || "",
         },
         state: baseState,
       };
     case "flowAction":
       return {
-        type: "standard__component",
+        type: "standard__flow",
         attributes: {
-          componentName: controls.componentPicker?.value || "",
-          actionName: controls.app?.value || "",
+          flowApiName: controls.app?.value || "",
         },
         state: baseState,
       };

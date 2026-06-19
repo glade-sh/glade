@@ -11,6 +11,9 @@ export function readCommunityContextQuiet() {
 }
 
 function readCommunityContextInternal({ report } = { report: true }) {
+  if (typeof document === "undefined") {
+    return defaultCommunityContext();
+  }
   const node = document.getElementById("glade-lwc-context");
   if (!node) {
     if (report) {
@@ -44,11 +47,16 @@ export function readCommunityValue(name, fallback = "") {
 export function normalizeCommunityContext(community = {}) {
   return {
     site: stringValue(community.site, ""),
+    name: stringValue(community.name || community.communityName, ""),
+    url: stringValue(community.url || community.communityUrl, ""),
     basePath: stringValue(community.basePath, "/s"),
     siteId: stringValue(community.siteId, ""),
     networkId: stringValue(community.networkId, ""),
     guest: Boolean(community.guest),
     language: stringValue(community.language, ""),
+    activeLanguages: normalizeActiveLanguages(community.activeLanguages || community.languages),
+    lwr: Boolean(community.lwr || community.isLwr),
+    aura: Boolean(community.aura || community.isAura),
     routeParams: { ...(community.routeParams || {}) },
     menus: { ...(community.menus || {}) },
     managedContent: { ...(community.managedContent || {}) },
@@ -91,4 +99,21 @@ function stringValue(value, fallback) {
     return fallback;
   }
   return String(value);
+}
+
+function normalizeActiveLanguages(value) {
+  if (!Array.isArray(value) || value.length === 0) {
+    return [];
+  }
+  return value.map((language) => {
+    if (typeof language === "string") {
+      return { code: language, label: language, active: true };
+    }
+    const code = stringValue(language?.code || language?.language || language?.locale, "en-US");
+    return {
+      code,
+      label: stringValue(language?.label || language?.name || code, code),
+      active: language?.active === undefined ? true : Boolean(language.active),
+    };
+  });
 }

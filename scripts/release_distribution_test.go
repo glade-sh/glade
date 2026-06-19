@@ -62,6 +62,7 @@ func TestReleaseBuildPackagesLWCRuntimeAssets(t *testing.T) {
 	}
 	scriptText := string(releaseScript)
 	for _, want := range []string{
+		"lwcruntime/src/experience",
 		"lwcruntime/src/lightning",
 		"lwcruntime/src/shell",
 		"lwcruntime/src/shims",

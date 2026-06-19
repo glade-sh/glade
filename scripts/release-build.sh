@@ -55,6 +55,7 @@ fi
 
 mkdir -p "${workdir}/share/glade/lwcruntime/src" "${workdir}/share/glade/third_party"
 cp -R "${ROOT}/third_party/lwc" "${workdir}/share/glade/third_party/lwc"
+cp -R "${ROOT}/lwcruntime/src/experience" "${workdir}/share/glade/lwcruntime/src/experience"
 cp -R "${ROOT}/lwcruntime/src/lightning" "${workdir}/share/glade/lwcruntime/src/lightning"
 cp -R "${ROOT}/lwcruntime/src/shell" "${workdir}/share/glade/lwcruntime/src/shell"
 cp -R "${ROOT}/lwcruntime/src/shims" "${workdir}/share/glade/lwcruntime/src/shims"

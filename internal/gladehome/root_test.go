@@ -90,6 +90,7 @@ func TestInstallFromCopiesToolchain(t *testing.T) {
 		t.Fatalf("installed toolchain missing at %s", UserShareDir())
 	}
 	for _, rel := range []string{
+		"lwcruntime/src/experience/cmsDeliveryApi.mjs",
 		"lwcruntime/src/lightning/button.mjs",
 		"lwcruntime/src/shell/app.mjs",
 		"lwcruntime/src/shims/lds-cache.mjs",

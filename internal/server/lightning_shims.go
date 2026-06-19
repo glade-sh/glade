@@ -18,6 +18,8 @@ func (s *Server) handleLightningShims(w http.ResponseWriter, r *http.Request, pa
 		return
 	}
 	switch parts[0] {
+	case "apexContinuation.js", "apexContinuation":
+		s.serveApexContinuationShim(w, parts[1:])
 	case "core":
 		s.serveLightningStaticShim(w, r, parts[1:])
 	case "apex":
@@ -40,6 +42,8 @@ func (s *Server) handleLightningShims(w http.ResponseWriter, r *http.Request, pa
 		s.serveContentAssetURLShim(w, parts[1:])
 	case "customPermission":
 		s.serveCustomPermissionShim(w, parts[1:])
+	case "userPermission":
+		s.serveUserPermissionShim(w, parts[1:])
 	case "user":
 		s.serveUserShim(w, r, parts[1:])
 	case "i18n":
@@ -170,6 +174,10 @@ func (s *Server) serveLightningAPIShim(w http.ResponseWriter, parts []string) {
 			writeJavaScript(w, []byte(lwcbrowser.LightningBaseComponentModuleJS(token)))
 			return
 		}
+		if js, ok := lwcbrowser.SimulatedNativeAPIModuleJS(token); ok {
+			writeJavaScript(w, []byte(js))
+			return
+		}
 		writeSalesforceError(w, errUnknownEndpoint, "unknown lightning shim")
 	}
 }
@@ -181,6 +189,28 @@ func (s *Server) serveCustomPermissionShim(w http.ResponseWriter, parts []string
 		return
 	}
 	writeJavaScript(w, []byte(lwcbrowser.CustomPermissionModuleJS(token)))
+}
+
+func (s *Server) serveUserPermissionShim(w http.ResponseWriter, parts []string) {
+	token := shimToken(parts)
+	if token == "" {
+		writeSalesforceError(w, errUnknownEndpoint, "invalid userPermission shim")
+		return
+	}
+	writeJavaScript(w, []byte(lwcbrowser.UserPermissionModuleJS(token)))
+}
+
+func (s *Server) serveApexContinuationShim(w http.ResponseWriter, parts []string) {
+	if len(parts) == 0 {
+		writeJavaScript(w, []byte(lwcbrowser.ApexContinuationModuleJS()))
+		return
+	}
+	token := shimToken(parts)
+	if token == "" {
+		writeSalesforceError(w, errUnknownEndpoint, "invalid apexContinuation shim")
+		return
+	}
+	writeJavaScript(w, []byte(lwcbrowser.ApexContinuationMethodModuleJS(token)))
 }
 
 func (s *Server) serveMessageChannelShim(w http.ResponseWriter, parts []string) {
