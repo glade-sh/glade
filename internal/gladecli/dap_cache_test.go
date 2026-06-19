@@ -37,6 +37,9 @@ func TestLoadDAPStartupStateCachesAndReusesState(t *testing.T) {
 	if parsedOne.BuiltAt == "" {
 		t.Fatal("cache did not record builtAt")
 	}
+	if len(parsedOne.Runtime.Methods) == 0 {
+		t.Fatal("expected compiled runtime methods persisted in DAP cache")
+	}
 
 	time.Sleep(2 * time.Millisecond)
 	_, _, err = loadDAPStartupState(root)
@@ -106,33 +109,5 @@ func TestLoadDAPStartupStateInvalidatesCacheOnProjectChange(t *testing.T) {
 	}
 	if parsedBefore.BuiltAt == parsedAfter.BuiltAt {
 		t.Fatalf("cache was not rebuilt after source change")
-	}
-}
-
-func TestLoadDAPStartupStateCachesCompiledRuntime(t *testing.T) {
-	t.Parallel()
-
-	root := t.TempDir()
-	writeTestProject(t, root)
-
-	_, runtime, err := loadDAPStartupState(root)
-	if err != nil {
-		t.Fatalf("load startup state: %v", err)
-	}
-	if len(runtime.Methods) == 0 {
-		t.Fatal("expected compiled runtime methods in DAP startup state")
-	}
-
-	cachePath := filepath.Join(root, ".glade", "dap", "startup.json")
-	data, err := os.ReadFile(cachePath)
-	if err != nil {
-		t.Fatalf("cache file missing: %v", err)
-	}
-	var parsed startupcache.Entry
-	if err := json.Unmarshal(data, &parsed); err != nil {
-		t.Fatalf("parse cache: %v", err)
-	}
-	if len(parsed.Runtime.Methods) == 0 {
-		t.Fatal("expected compiled runtime methods persisted in DAP cache")
 	}
 }

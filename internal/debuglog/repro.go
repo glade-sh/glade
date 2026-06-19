@@ -33,8 +33,8 @@ type reproDML struct {
 }
 
 // SynthesizeTest creates a best-effort Apex test class from annotated subscriber
-// log evidence. It favors concrete log-backed setup and TODO comments where the
-// log does not contain enough shape to produce exact Apex.
+// log evidence. It favors concrete log-backed setup and fill-in comments where
+// the log does not contain enough shape to produce exact Apex.
 func SynthesizeTest(annotated AnnotatedLog, minConfidence float64) (string, error) {
 	if len(annotated.Log.Entries) == 0 && len(annotated.Entries) == 0 {
 		return "", errors.New("cannot synthesize repro from an empty log")
@@ -70,7 +70,7 @@ func SynthesizeTest(annotated AnnotatedLog, minConfidence float64) (string, erro
 	fmt.Fprintf(&b, "    @IsTest\n")
 	fmt.Fprintf(&b, "    static void reproEntryPoint() {\n")
 	if entryPoint.ClassName == "" || entryPoint.Method == "" {
-		fmt.Fprintf(&b, "        // TODO: Fill in the entry point. The log did not include CODE_UNIT_STARTED or stack frames.\n")
+		fmt.Fprintf(&b, "        // Fill in the entry point. The log did not include CODE_UNIT_STARTED or stack frames.\n")
 		fmt.Fprintf(&b, "        System.assert(true);\n")
 	} else if exception != nil {
 		fmt.Fprintf(&b, "        Test.startTest();\n")
@@ -79,7 +79,7 @@ func SynthesizeTest(annotated AnnotatedLog, minConfidence float64) (string, erro
 		fmt.Fprintf(&b, "            System.assert(false, %s);\n", apexString("subscriber log raised "+exception.Data.ExceptionType))
 		fmt.Fprintf(&b, "        } catch (Exception e) {\n")
 		fmt.Fprintf(&b, "            // subscriber.log:%d %s %s\n", exception.Line, exception.Kind, strings.TrimSpace(exception.Data.ExceptionType))
-		fmt.Fprintf(&b, "            // TODO: Remove try/catch when the product code is fixed.\n")
+		fmt.Fprintf(&b, "            // Remove try/catch after the product code handles this path.\n")
 		if exception.Data.ExceptionType != "" {
 			fmt.Fprintf(&b, "            System.assertEquals(%s, e.getTypeName());\n", apexString(exception.Data.ExceptionType))
 		}

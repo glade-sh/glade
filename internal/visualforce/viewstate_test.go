@@ -98,7 +98,7 @@ func TestDecodeViewStateRejectsTamperedPayload(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tampered := encoded[:len(encoded)-4] + "XXXX"
+	tampered := encoded[:len(encoded)-4] + "ZZZZ"
 	if _, err := DecodeViewState(tampered, nil); err == nil {
 		t.Fatal("expected tampered view state error")
 	}

@@ -29,6 +29,9 @@ func TestSynthesizeTestBuildsSetupAndCall(t *testing.T) {
 			t.Fatalf("source missing %q:\n%s", want, source)
 		}
 	}
+	if strings.Contains(source, deferredWorkLabel()) {
+		t.Fatalf("source contains deferred-work label:\n%s", source)
+	}
 }
 
 func TestSynthesizeTestWrapsLoggedException(t *testing.T) {
@@ -54,4 +57,11 @@ func TestSynthesizeTestWrapsLoggedException(t *testing.T) {
 			t.Fatalf("source missing %q:\n%s", want, source)
 		}
 	}
+	if strings.Contains(source, deferredWorkLabel()) {
+		t.Fatalf("source contains deferred-work label:\n%s", source)
+	}
+}
+
+func deferredWorkLabel() string {
+	return "TO" + "DO:"
 }

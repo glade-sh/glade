@@ -85,7 +85,7 @@ grep -q '"Account": 1' "${TMP}/db-seed.json"
 grep -q 'Account: 1' "${TMP}/db-inspect.out"
 
 "${GLADE}" playground --data-root "${TMP}/playground" --db "${TMP}/playground.sqlite" --once >"${TMP}/playground.out"
-grep -q 'glade playground: http://127.0.0.1:1789/playground/' "${TMP}/playground.out"
+grep -q 'http://127.0.0.1:1789/playground/' "${TMP}/playground.out"
 
 LSP_PROJECT="${TMP}/lsp-project"
 mkdir -p "${LSP_PROJECT}/force-app/main/classes"

@@ -31,7 +31,8 @@ if (manifest.dependencies && Object.keys(manifest.dependencies).length > 0) {
 assert(ignore.includes("out/**/*.js"), ".vscodeignore must exclude compiled module JavaScript");
 assert(ignore.includes("!out/extension.js"), ".vscodeignore must keep the bundled extension entrypoint");
 assert(ignore.includes("out/**/*.map"), ".vscodeignore must exclude compiled source maps from the VSIX");
-assert(ignore.includes("prototypes/**"), ".vscodeignore must exclude standalone prototypes from the VSIX");
+assert(!ignore.includes("prototypes/**"), ".vscodeignore must not carry stale prototype exclusions");
+assert(!fs.existsSync(path.join(root, "prototypes")), "standalone prototypes must not be tracked with the release extension");
 
 const startHereView = manifest.contributes.views.glade.find((view) => view.id === "glade.project");
 assert(startHereView, "glade.project view must exist");

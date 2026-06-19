@@ -2,7 +2,6 @@
 .vscode-test/**
 src/**
 test/**
-prototypes/**
 dist/**
 *.vsix
 tsconfig.json
