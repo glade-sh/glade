@@ -24,8 +24,9 @@ npm --prefix contrib/vscode-glade run package
 glade editor install vscode --force
 ```
 
-Open an SFDX project. The extension adds one `Glade` Activity Bar with Start
-Here, Local Runs, Data Environments, Local Org, Debug, and Plugins views.
+Open an SFDX project. The extension adds one `Glade` Activity Bar and a
+`Glade: Open Home` command. The sidebar includes Start Here, Local Runs, Data
+Environments, Local Org, Exec & SOQL, Debug, and Plugins views.
 
 Glade keeps a separate local workflow with `glade.*` command ids, a `Glade Apex`
 Test Explorer controller, and CodeLens labels that include `Local`. It does not
@@ -35,9 +36,13 @@ language-server ownership.
 ## Daily Local Apex Loop
 
 Open the Glade Activity Bar and start in **Start Here**.
+Use **Glade: Open Home** when you want the daily hub. The first tab groups run,
+data, debug, Salesforce, and ship actions. The state tab shows project root,
+active Glade org, active data environment, Salesforce target, tests, watch
+state, and plugin findings.
 
 1. Confirm the SFDX root and active local data environment.
-2. Click **Run local check** before pushing work to a scratch org.
+2. Click **Run local proof** before pushing work to a scratch org.
 3. Use **Data Environments** to clone, seed, reset, inspect, and export local state.
 4. Use org-backed tools for deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
 
@@ -46,7 +51,8 @@ Glade actions are local. Salesforce actions stay org-backed.
 ## Native VS Code Features
 
 Glade uses one Activity Bar item and one Status Bar item. The sidebar shows
-Start Here, Local Runs, Data Environments, Local Org, Debug, and Plugins.
+Start Here, Local Runs, Data Environments, Local Org, Exec & SOQL, Debug, and
+Plugins.
 
 Local Apex tests appear in the native VS Code Testing view under `Glade Apex`.
 Glade does not add a second Apex Tests sidebar tree. Breakpoints stay in the
@@ -55,7 +61,7 @@ normal editor gutter and debug state stays in VS Code Run and Debug.
 The Status Bar shows short local state, such as `Glade: dev`,
 `Glade: dev 18ms`, `Glade: dev no DB`, or `Glade: plugin 2 findings`.
 Details stay in the tooltip: project root, active DB, plugin finding counts,
-and last command. Click it to switch data, inspect local data, run a local check,
+and last command. Click it to switch data, inspect local data, run local proof,
 manage plugins, or open output.
 
 ## LWC and Visualforce preview

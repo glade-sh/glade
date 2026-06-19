@@ -53,9 +53,10 @@ glade editor doctor vscode
 glade editor install vscode --force
 ```
 
-Open the SFDX project root in VS Code. The extension adds the Glade Activity
-Bar, local Apex tests in Test Explorer, local CodeLens actions, DAP debug
-launches, named SQLite-backed data environments, and plugin actions.
+Open the SFDX project root in VS Code. The extension adds Glade Home, the Glade
+Activity Bar, local Apex tests in Test Explorer, local CodeLens actions, DAP
+debug launches, named SQLite-backed data environments, Exec & SOQL scratch
+buffers, and plugin actions.
 
 ## Daily local loop
 
@@ -71,6 +72,7 @@ launches, named SQLite-backed data environments, and plugin actions.
 | Keep one watch loop warm | `glade test --project . --daemon --watch` |
 | Execute a quick Apex probe | `glade exec --project . "System.debug('local');"` |
 | Serve Visualforce preview pages locally | `glade dev vf --project . --addr 127.0.0.1:8080` |
+| Serve the LWC preview shell locally | `glade dev lwc --project . --open` |
 | Open the local playground | `glade playground --project . --open` |
 
 Start with one focused class or method when bringing up a large project. Move
@@ -164,6 +166,7 @@ Create `reports/` before running commands that write report files.
 | Explain a saved Salesforce debug log against local source | `glade debug explain --log apex.log --project .` |
 | Generate a starter local repro test from a log | `glade debug repro --log apex.log --project . > ReproTest.cls` |
 | Render local Visualforce preview pages | `glade dev vf --project . --addr 127.0.0.1:8080` |
+| Render local LWC preview routes | `glade dev lwc --project . --context accountRecord --open` |
 | Run local Salesforce API routes | `glade server --project . --addr 127.0.0.1:8080` |
 | Seed or inspect a local SQLite org state | `glade db seed --db .glade/org.sqlite --project . fixtures/dev.json` |
 | Map a large Apex project | `glade inspect graph --project . --json` |

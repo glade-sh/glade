@@ -147,7 +147,7 @@ test("home page uses a static local proof and final go-live workflow copy", () =
   assert.match(index, /<p class="home-eyebrow">Daily local workflow<\/p>/);
   assert.match(index, /<h2 class="home-h2">One local loop for CLI, VS Code, AI, and CI\.<\/h2>/);
   assert.match(index, /class="home-command-grid"[\s\S]*<h3>CLI<\/h3>[\s\S]*Check source, run focused tests, execute anonymous Apex, and inspect SOQL\/DML behavior from your terminal\./);
-  assert.match(index, /class="home-command-grid"[\s\S]*<h3>VS Code<\/h3>[\s\S]*Run local tests from Test Explorer and CodeLens\. Debug supported Apex paths with normal breakpoints and DAP sessions\./);
+  assert.match(index, /class="home-command-grid"[\s\S]*<h3>VS Code<\/h3>[\s\S]*Open Glade Home for local proof, data, debug, and ship actions\. Run local tests from Test Explorer and CodeLens\./);
   assert.match(index, /class="home-command-grid"[\s\S]*<h3>AI-assisted changes<\/h3>[\s\S]*Give agents a small local contract: run a check, quote the diagnostic, fix the smallest source change, and rerun the same command\./);
   assert.match(index, /class="home-command-grid"[\s\S]*<h3>CI<\/h3>[\s\S]*Use JSON, SARIF, JUnit, stable exit codes, affected-test selection, and saved run artifacts in pull request workflows\./);
   assert.doesNotMatch(index, /<h3>Check<\/h3>[\s\S]*glade check --project \. --no-progress/);
@@ -880,6 +880,12 @@ test("support docs summarize the checked compatibility artifacts", () => {
 
 test("preview surfaces are labeled in public and repo docs", () => {
   assert.match(localTesting, /## LWC dev shell[\s\S]*preview feature/i);
+  assert.match(localTesting, /\/lwc\/preview\/utility\/<UtilityBar>/);
+  assert.match(localTesting, /\/lwc\/preview\/flow\/<FlowApiName>/);
+  assert.match(localTesting, /\/lwc\/preview\/community\/<site>\/<page>/);
+  assert.match(lwcLocalShell, /"phase3BaseComponents"/);
+  assert.match(supportMap, /`lightning\/refresh`/);
+  assert.match(supportMap, /packaged SLDS 2 and classic SLDS assets/);
   assert.match(localTesting, /## Visualforce dev server[\s\S]*preview feature/i);
   assert.match(index, /Visualforce and LWC local shells remain preview features\./);
   assert.match(repoReadme, /Visualforce preview feature[\s\S]*glade dev vf/);
@@ -940,6 +946,9 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.match(testerFieldGuide, /fetch-depth: 0/);
   assert.match(testerFieldGuide, /glade report refactor-proof --project \. --since origin\/main/);
   assert.match(testerFieldGuide, /glade dev vf --project \. --addr 127\.0\.0\.1:8080/);
+  assert.match(testerFieldGuide, /glade dev lwc --project \. --open/);
+  assert.match(testerFieldGuide, /Glade Home/);
+  assert.match(testerFieldGuide, /Exec & SOQL scratch\s+buffers/);
   assert.match(testerFieldGuide, /exact hosted Visualforce\s+behavior/);
   assert.doesNotMatch(testerFieldGuide, /Visualforce rendering path/);
   assert.match(testerFieldGuide, /Useful first-run feedback includes:/);
@@ -949,9 +958,14 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.match(installation, /glade editor doctor vscode/);
   assert.match(installation, /glade editor install vscode --force/);
   assert.match(installation, /share\/glade\/editor\/vscode-glade\.vsix/);
+  assert.match(installation, /Glade Home/);
+  assert.match(installation, /Exec & SOQL scratch buffers/);
   assert.match(installation, /\[Editor, LSP, and DAP\]\(\/guide\/editor\)/);
   assert.match(installation, /For a first project run, use the \[Tester field guide\]\(\/guide\/tester-field-guide\)\./);
   assert.match(editor, /^## VS Code Extension/m);
+  assert.match(editor, /`Glade: Open Home` command/);
+  assert.match(editor, /Exec & SOQL/);
+  assert.match(editor, /Click \*\*Run local proof\*\*/);
   assert.match(editor, /^## Plugin actions and findings/m);
   assert.match(editor, /glade test --project PROJECT_ROOT --json --class CLASS_NAME --method METHOD_NAME/);
   assert.match(editor, /glade test changed --project PROJECT_ROOT --since origin\/main --json/);
@@ -960,6 +974,7 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.match(editor, /glade dap --project PROJECT_ROOT --db ACTIVE_DB/);
   assert.doesNotMatch(editor, new RegExp("<" + "root>|<" + "Class>|<" + "Method>|<" + "active-db>"));
   assert.match(editor, /Glade Activity Bar/);
+  assert.doesNotMatch(editor, /Click \*\*Run local check\*\*/);
   assert.match(ciArtifacts, /mkdir -p reports/);
   assert.match(plugins, /Registry-backed[\s\S]*installs are preview until a registry, archive URL, or local plugin is[\s\S]*configured\./);
   assert.match(plugins, /plugins only when you need compatibility fixtures, capability reports,[\s\S]*compatibility dashboards, or project-specific checks\./);

@@ -52,7 +52,7 @@ layout: home
     </article>
     <article class="home-command-card">
       <h3>VS Code</h3>
-      <p>Run local tests from Test Explorer and CodeLens. Debug supported Apex paths with normal breakpoints and DAP sessions.</p>
+      <p>Open Glade Home for local proof, data, debug, and ship actions. Run local tests from Test Explorer and CodeLens.</p>
     </article>
     <article class="home-command-card">
       <h3>AI-assisted changes</h3>

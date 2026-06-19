@@ -76,6 +76,7 @@ repository.
 | `Database` methods | Supported for the tracked local rows in the stdlib ledger. |
 | `String`, dates, time, math, assertions, labels, URLs, and user info | Wide support, with exact rows in the stdlib ledger. |
 | `Schema`, describe APIs, JSON, regex, HTTP mocks, email, Visualforce controller/page rendering, and tracked `Test.*` helpers | Supported local rows are complete in the checked ledger. Hosted chrome, exact Visualforce lifecycle timing, byte-for-byte PDF output, delivery, and service behavior have explicit unsupported rows. |
+| Visualforce and LWC local preview | Preview features. `glade dev vf` serves useful local `/apex` routes. `glade dev lwc` serves a local Lightning workbench at `/` and `/lwc`, context presets, route previews, selected LDS/UI API and Apex wire paths, base-component shims, packaged SLDS assets, and Visualforce Lightning Out through the shared local runtime. Hosted Lightning Experience, full UI API parity, Flow Builder behavior, live EMP streaming, exact console APIs, and exact base-component behavior stay with Salesforce. |
 | Platform services such as approval, quick actions, business hours, sandbox lifecycle, request context, and Trailblazer identity helpers | Deterministic local harness rows are supported where the checked ledger says `supported`. Hosted service execution stays outside the local contract. |
 | Local API server, LSP, DAP, watch, and profile tools | Work well for local development. The local API covers REST discovery, SObject CRUD/query, limits and record counts, Tooling executeAnonymous, local Tooling source/schema metadata queries, Composite sObject insert, Composite Batch and Tree, Bulk API v2 simple query jobs, layout/default metadata, metadata job status, fixture resets, and SQLite persistence. |
 | Enterprise graph and report tools | Work as conservative local evidence for assessment, cruft review, and refactor proof. |
@@ -140,10 +141,29 @@ Run anonymous Apex:
 glade exec "System.debug('hello from glade');"
 ```
 
+Install the bundled VS Code extension and open the local Glade hub:
+
+```bash
+glade editor doctor vscode
+glade editor install vscode --force
+```
+
+The extension adds Glade Home, Start Here, Local Runs, Data Environments, Local
+Org, Exec & SOQL, Debug, and Plugins views without taking over org-backed
+Salesforce commands.
+
 Serve the Visualforce preview feature for useful local `/apex` rendering:
 
 ```bash
 glade dev vf --project . --addr 127.0.0.1:8080
+```
+
+Serve the LWC preview shell and open a context preset:
+
+```bash
+glade toolchain install
+glade dev lwc --project . --open
+glade dev lwc --project . --context accountRecord --open
 ```
 
 Serve a Salesforce-shaped local API:
@@ -189,4 +209,5 @@ glade report refactor-proof --project . --since origin/main --format html --out 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Compatibility policy](docs/COMPATIBILITY.md)
 - [Standard library coverage](docs/STDLIB_COVERAGE.md)
+- [Local LWC support](docs/LWC_SUPPORT.md)
 - [Editor and debug setup](docs/EDITOR.md)

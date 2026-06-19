@@ -15,7 +15,7 @@ of the way.
 8. Enterprise workflows: [ENTERPRISE_WORKFLOWS.md](ENTERPRISE_WORKFLOWS.md)
 9. Test startup cache (when it is safe to trust): [TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md)
 10. Install and author plugins: [PLUGINS.md](PLUGINS.md)
-11. Day-to-day editor commands: [EDITOR.md](EDITOR.md)
+11. Day-to-day editor commands, Glade Home, and debug setup: [EDITOR.md](EDITOR.md)
 12. Current support surface:
    - Public Apex and Salesforce support map: <https://glade.sh/guide/support-map>
    - Method-level standard-library rows: [STDLIB_COVERAGE.md](STDLIB_COVERAGE.md)

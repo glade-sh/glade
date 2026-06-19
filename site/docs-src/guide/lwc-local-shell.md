@@ -119,10 +119,20 @@ Put reusable contexts in `glade.lwc.json` at the project root:
         }
       }
     },
+    "phase3BaseComponents": {
+      "target": "component",
+      "component": "c:baseComponentHost",
+      "app": "Sales",
+      "formFactor": "Large",
+      "state": {
+        "c__lane": "phase3"
+      }
+    },
     "communityAccount": {
       "target": "communityPage",
       "component": "c:communityProbe",
       "page": "Account",
+      "formFactor": "Large",
       "community": {
         "site": "Partner_Portal",
         "basePath": "/partners",
@@ -135,6 +145,9 @@ Put reusable contexts in `glade.lwc.json` at the project root:
         "type": "comm__namedPage",
         "attributes": {
           "name": "Account"
+        },
+        "state": {
+          "c__view": "summary"
         }
       }
     }
@@ -258,9 +271,9 @@ The LWC shell supports:
   are browser-checked in the LWC shell and Visualforce Lightning Out.
   `optionalFields` are accepted; unknown required fields return a wire error and
   unknown optional fields are skipped. Soft-deleted records read as not found.
-  Create defaults include a create-mode layout from project field sections when
-  `.layout-meta.xml` is available, with a generated full layout from createable
-  fields as the local fallback.
+  Create defaults include object info, record defaults, and a create-mode
+  layout from project field sections when `.layout-meta.xml` is available, with
+  a generated full layout from createable fields as the local fallback.
 - `lightning/uiObjectInfoApi` `getObjectInfo`, `getObjectInfos`,
   `getPicklistValues`, and `getPicklistValuesByRecordType` against local schema
   metadata. `getObjectInfo` is browser-checked in the LWC shell and Visualforce

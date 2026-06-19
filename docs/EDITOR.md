@@ -24,25 +24,31 @@ npm --prefix contrib/vscode-glade run package
 glade editor install vscode --force
 ```
 
-The extension adds a `Glade` Activity Bar for the local Apex loop. It does not
-replace org-backed commands, CodeLens, language features, or scratch-org test
-runs. Glade surfaces use `Glade: ...` command titles, `glade.*` command ids, a
-separate `Glade Apex` Test Explorer controller, and CodeLens labels that include
-`Local`.
+The extension adds a `Glade` Activity Bar and a `Glade: Open Home` command for
+the local Apex loop. It does not replace org-backed commands, CodeLens,
+language features, or scratch-org test runs. Glade surfaces use `Glade: ...`
+command titles, `glade.*` command ids, a separate `Glade Apex` Test Explorer
+controller, and CodeLens labels that include `Local`.
 
 The sidebar shows:
 
 - Start Here: SFDX root, active local data environment, local DB state, watch
-  state, last run state, plugin action count, and top daily actions.
+  state, last run state, plugin action count, and a shortcut into Glade Home.
 - Local Runs: changed tests, failed tests, and warm watch controls.
 - Data Environments: named SQLite-backed local org states.
 - Local Org: inspect, seed, reset, and export for the active environment.
+- Exec & SOQL: SOQL scratch buffers, saved SOQL entries, describes, and last
+  results.
 - Debug: active Apex breakpoint count and local debug actions.
 - Plugins: installed plugins, plugin actions, and plugin artifacts.
 
 ## Daily Local Apex Loop
 
 Open the Glade Activity Bar and start in **Start Here**.
+Use **Glade: Open Home** when you want the task-first hub. Its first tab keeps
+run, data, debug, Salesforce, and ship actions together. Its state tab shows
+project root, active Glade org, active data environment, Salesforce target,
+tests, watch state, and plugin findings.
 
 1. Confirm the SFDX root and active local data environment.
 2. Click **Run local proof** before pushing work to a scratch org.
@@ -54,7 +60,8 @@ Glade actions are local. Salesforce actions stay org-backed.
 ## Native VS Code Surfaces
 
 Glade uses one Activity Bar item and one Status Bar item. The sidebar shows
-Start Here, Local Runs, Data Environments, Local Org, Debug, and Plugins.
+Start Here, Local Runs, Data Environments, Local Org, Exec & SOQL, Debug, and
+Plugins.
 
 Local Apex tests appear in the native VS Code Testing view under `Glade Apex`.
 Glade does not add a second Apex Tests sidebar tree. Breakpoints stay in the

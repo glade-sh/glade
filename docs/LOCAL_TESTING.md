@@ -50,8 +50,9 @@ glade dev lwc --project . --open
 The command opens the workbench at the printed base URL. `/lwc` opens the same
 workbench for stable links. It lists and filters available LWCs, lets you place
 components onto a draft page, and lists component, record page, app page, home
-page, and tab routes discovered from LWC bundle metadata, FlexiPages, and
-custom tabs.
+page, tab, action, utility, Flow, and configured community routes discovered
+from LWC bundle metadata, FlexiPages, custom tabs, quick actions, and context
+presets.
 Use a named context when a page needs record, app, tab, form-factor, or state
 values:
 
@@ -93,8 +94,11 @@ Routes:
   /lwc/preview/app/Sales_Dashboard
   /lwc/preview/home/Custom_Home
   /lwc/preview/tab/Lwc_Probe
+  /lwc/preview/utility/Support_Utility
+  /lwc/preview/flow/Membership_Flow
   /lwc/preview/action/Account/001000000000001AAA/Update_Status
   /lwc/preview/action/global/Global_Status
+  /lwc/preview/community/Partner_Portal/Account
 Watching ... for lwc, flexipage, tab, Visualforce, Apex, and static resource changes.
 ```
 
@@ -108,8 +112,12 @@ Route shapes:
 /lwc/preview/app/<Page>
 /lwc/preview/home/<Page>
 /lwc/preview/tab/<Tab>
+/lwc/preview/utility/<UtilityBar>
+/lwc/preview/flow/<FlowApiName>
 /lwc/preview/action/<Object>/<recordId>/<ActionName>
 /lwc/preview/action/global/<ActionName>
+/lwc/preview/community/<site>/<page>
+/lwc/preview/community/<site>/cmp/<namespace>/<component>
 ```
 
 The LWC local shell is a preview feature. It gives a useful local Lightning
@@ -122,15 +130,17 @@ The shell supports `CurrentPageReference`, basic `NavigationMixin` URL and
 navigation behavior for local targets, Apex wire and imperative controller
 imports, `getRecord`, `getRecords`, local DML-backed create/update/delete
 record helpers, `getRecordCreateDefaults`, record-input helper functions,
-`lightning/uiObjectInfoApi` object info and picklist wires, schema tokens,
-custom labels, static resources, content assets, user values, checked i18n
-values, form factor, custom permission defaults, local message service,
-resource loading, toast events, workspace API approximations, confirm/config
-provider/page-reference helper shims, practical common and expanded checked
-base components, and packaged local SLDS 2 styling with classic SLDS assets
-available. Create
-defaults include project layout field sections when available, with a generated
-full layout from createable fields as the local fallback.
+`lightning/uiObjectInfoApi` object info and picklist wires,
+`lightning/uiRelatedListApi` child rows, schema tokens, custom labels, static
+resources and subpaths, content assets, user values, checked i18n values, form
+factor, custom permission defaults, Experience Cloud context, local message
+service, resource loading, toast events, workspace API approximations,
+alert/confirm/prompt/config/page-reference helper shims, Flow screen and
+refresh events, practical common and expanded checked base components, and
+packaged local SLDS 2 styling with classic SLDS assets available. Create
+defaults include object info, record defaults, and project layout field
+sections when available, with a generated full layout from createable fields as
+the local fallback.
 `lightning/uiLayoutApi` `getLayout` returns the same local Record Layout shape.
 Local org data comes from project schema plus Glade storage fixtures in
 `data/*.json`.

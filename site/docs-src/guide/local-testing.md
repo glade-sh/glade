@@ -167,15 +167,19 @@ and diagnostics visible. The startup banner still lists discovered routes:
 /lwc/preview/app/<Page>
 /lwc/preview/home/<Page>
 /lwc/preview/tab/<Tab>
+/lwc/preview/utility/<UtilityBar>
+/lwc/preview/flow/<FlowApiName>
 /lwc/preview/action/<Object>/<recordId>/<ActionName>
 /lwc/preview/action/global/<ActionName>
+/lwc/preview/community/<site>/<page>
+/lwc/preview/community/<site>/cmp/<namespace>/<component>
 ```
 
-Record, app, home, tab, URL-addressable component, and quick action routes
-resolve LWC bundle metadata, FlexiPages, custom applications, custom tabs, and
-quick action metadata. Visualforce-backed tabs redirect to `/apex/<Page>`. That
-redirect and the shared Lightning Out runtime are the Visualforce boundary in
-this LWC loop.
+Record, app, home, tab, URL-addressable component, quick action, utility, Flow,
+and configured community routes resolve LWC bundle metadata, FlexiPages, custom
+applications, custom tabs, quick action metadata, and context presets.
+Visualforce-backed tabs redirect to `/apex/<Page>`. That redirect and the
+shared Lightning Out runtime are the Visualforce boundary in this LWC loop.
 
 The shell supports local Apex controller imports, `getRecord`, `getRecords`,
 `getRecordCreateDefaults`, local DML-backed create/update/delete record helpers,
@@ -183,16 +187,17 @@ record-input helper functions, `lightning/uiObjectInfoApi` object info and
 picklist wires, `lightning/uiRelatedListApi` child rows, schema tokens, labels,
 static resources, content assets, `CurrentPageReference`, basic
 `NavigationMixin` behavior, local message service, resource loading, toast
+events, Experience Cloud context, Flow screen and refresh events, EMP in-page
 events, all public module names exposed by
 `lightning-base-components@1.28.19-alpha`, practical local base-component
 rendering, and packaged local SLDS 2 styling with classic SLDS assets
 available. A small allowlist of simple base components uses compiled
 open-source implementations instead of generated shims. Create defaults include
-project layout field sections when available, with a generated full layout from
-createable fields as the local fallback. `lightning/uiLayoutApi` `getLayout`
-returns the same local Record Layout shape. Glade loads fixture records from
-`data/*.json` when they use the
-Glade storage fixture format.
+object info, record defaults, and project layout field sections when available,
+with a generated full layout from createable fields as the local fallback.
+`lightning/uiLayoutApi` `getLayout` returns the same local Record Layout shape.
+Glade loads fixture records from `data/*.json` when they use the Glade storage
+fixture format.
 
 Tools can read current local shell state at:
 
