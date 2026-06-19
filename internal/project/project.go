@@ -61,6 +61,7 @@ type Project struct {
 	LWCCSSFiles                []string                   `json:"lwcCssFiles"`
 	LWCMetaFiles               []string                   `json:"lwcMetaFiles"`
 	ManagedPackageDependencies []ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
+	PackageShims               []PackageShim              `json:"packageShims,omitempty"`
 	DependencyDiagnostics      []DependencyDiagnostic     `json:"dependencyDiagnostics,omitempty"`
 }
 
@@ -71,6 +72,13 @@ type ManagedPackageDependency struct {
 	Version      string   `json:"version,omitempty"`
 	Project      *Project `json:"project,omitempty"`
 	Status       string   `json:"status"`
+}
+
+type PackageShim struct {
+	Namespace  string   `json:"namespace"`
+	SourceRoot string   `json:"sourceRoot"`
+	Project    *Project `json:"project,omitempty"`
+	Status     string   `json:"status"`
 }
 
 type DependencyDiagnostic struct {
@@ -339,6 +347,7 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 	}
 	if cfgErr == nil {
 		p.ManagedPackageDependencies, p.DependencyDiagnostics = loadManagedPackageDependencies(gladeCfg.Project.ManagedPackageDependencies, stack)
+		p.PackageShims, p.DependencyDiagnostics = loadPackageShims(gladeCfg.Project.PackageShims, stack, p.DependencyDiagnostics)
 	}
 
 	for _, pkgRoot := range packageRoots(absRoot, p.PackageDirectories, !dependency) {
@@ -507,10 +516,81 @@ func loadManagedPackageDependencies(configured []config.ManagedPackageDependency
 	return deps, diagnostics
 }
 
+func loadPackageShims(configured []config.PackageShim, stack map[string]bool, diagnostics []DependencyDiagnostic) ([]PackageShim, []DependencyDiagnostic) {
+	shims := make([]PackageShim, 0, len(configured))
+	for _, shim := range configured {
+		projectShim := PackageShim{
+			Namespace:  shim.Namespace,
+			SourceRoot: shim.SourceRoot,
+		}
+		if shim.Namespace == "" || shim.SourceRoot == "" {
+			projectShim.Status = "invalid"
+			diagnostics = append(diagnostics, DependencyDiagnostic{
+				Namespace:  shim.Namespace,
+				SourceRoot: shim.SourceRoot,
+				Status:     "invalid",
+				Code:       "package_shim_invalid",
+				Message:    "package shim requires namespace and sourceRoot",
+			})
+			shims = append(shims, projectShim)
+			continue
+		}
+		info, err := os.Stat(shim.SourceRoot)
+		if err != nil || !info.IsDir() {
+			projectShim.Status = "missing"
+			message := "package shim source root not found"
+			if err != nil && !errors.Is(err, os.ErrNotExist) {
+				message = err.Error()
+			}
+			diagnostics = append(diagnostics, DependencyDiagnostic{
+				Namespace:  shim.Namespace,
+				SourceRoot: shim.SourceRoot,
+				Status:     "missing",
+				Code:       "package_shim_missing",
+				Message:    message,
+			})
+			shims = append(shims, projectShim)
+			continue
+		}
+		loaded, err := load(shim.SourceRoot, stack, true)
+		if err != nil {
+			projectShim.Status = "load_error"
+			diagnostics = append(diagnostics, DependencyDiagnostic{
+				Namespace:  shim.Namespace,
+				SourceRoot: shim.SourceRoot,
+				Status:     "load_error",
+				Code:       "package_shim_load_error",
+				Message:    err.Error(),
+			})
+			shims = append(shims, projectShim)
+			continue
+		}
+		loaded.Namespace = shim.Namespace
+		projectShim.Project = &loaded
+		projectShim.Status = "loaded"
+		shims = append(shims, projectShim)
+	}
+	return shims, diagnostics
+}
+
 type managedPackageArtifactError struct {
 	status  string
 	code    string
 	message string
+}
+
+type managedPackageArtifactMetadata struct {
+	SchemaVersion int    `json:"schemaVersion"`
+	Namespace     string `json:"namespace"`
+	Version       string `json:"version"`
+	SourceHash    string `json:"sourceHash"`
+	ApexTypes     []struct {
+		Name      string `json:"name"`
+		Namespace string `json:"namespace"`
+	} `json:"apexTypes"`
+	Objects []struct {
+		Name string `json:"name"`
+	} `json:"objects"`
 }
 
 func (e managedPackageArtifactError) Error() string {
@@ -547,12 +627,12 @@ func loadManagedPackageArtifactMetadata(path string, dep *ManagedPackageDependen
 	if err != nil {
 		return newManagedPackageArtifactError("load_error", "dependency_load_error", err.Error())
 	}
-	var metadata struct {
-		Namespace string `json:"namespace"`
-		Version   string `json:"version"`
-	}
+	var metadata managedPackageArtifactMetadata
 	if err := json.Unmarshal(data, &metadata); err != nil {
 		return newManagedPackageArtifactError("load_error", "dependency_load_error", err.Error())
+	}
+	if issues := validateManagedPackageArtifactMetadata(metadata); len(issues) > 0 {
+		return newManagedPackageArtifactError("load_error", "dependency_load_error", "managed package dependency artifact invalid: "+strings.Join(issues, "; "))
 	}
 	if strings.TrimSpace(metadata.Namespace) == "" {
 		return newManagedPackageArtifactError("load_error", "dependency_load_error", "managed package dependency artifact namespace is required")
@@ -570,6 +650,33 @@ func loadManagedPackageArtifactMetadata(path string, dep *ManagedPackageDependen
 		dep.Version = metadata.Version
 	}
 	return nil
+}
+
+func validateManagedPackageArtifactMetadata(metadata managedPackageArtifactMetadata) []string {
+	issues := make([]string, 0)
+	if metadata.SchemaVersion > 2 {
+		issues = append(issues, fmt.Sprintf("unsupported artifact schemaVersion %d", metadata.SchemaVersion))
+	}
+	if strings.TrimSpace(metadata.Namespace) == "" {
+		issues = append(issues, "namespace is required")
+	}
+	if strings.TrimSpace(metadata.SourceHash) == "" {
+		issues = append(issues, "sourceHash is required")
+	}
+	for _, typ := range metadata.ApexTypes {
+		if strings.TrimSpace(typ.Name) == "" {
+			issues = append(issues, "apex type name is required")
+		}
+		if strings.TrimSpace(typ.Namespace) == "" {
+			issues = append(issues, "apex type "+typ.Name+" is missing namespace")
+		}
+	}
+	for _, object := range metadata.Objects {
+		if strings.TrimSpace(object.Name) == "" {
+			issues = append(issues, "object name is required")
+		}
+	}
+	return issues
 }
 
 func loadSFDXProject(root string) (sfdxProject, error) {

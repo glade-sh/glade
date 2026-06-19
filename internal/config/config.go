@@ -20,6 +20,7 @@ type ProjectConfig struct {
 	PackageDirs                []string                   `json:"packageDirs"`
 	DefaultNamespace           string                     `json:"defaultNamespace"`
 	ManagedPackageDependencies []ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
+	PackageShims               []PackageShim              `json:"packageShims,omitempty"`
 }
 
 type ManagedPackageDependency struct {
@@ -27,6 +28,11 @@ type ManagedPackageDependency struct {
 	SourceRoot   string `json:"sourceRoot,omitempty"`
 	ArtifactPath string `json:"artifactPath,omitempty"`
 	Version      string `json:"version,omitempty"`
+}
+
+type PackageShim struct {
+	Namespace  string `json:"namespace"`
+	SourceRoot string `json:"sourceRoot"`
 }
 
 type OrgConfig struct {
@@ -111,6 +117,16 @@ func parseYAMLSubset(src string) (Config, error) {
 				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
 			}
 			cfg.Project.ManagedPackageDependencies = deps
+		case "project.packageShims":
+			values, err := parseInlineList(value)
+			if err != nil {
+				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
+			}
+			shims, err := parsePackageShims(values)
+			if err != nil {
+				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
+			}
+			cfg.Project.PackageShims = shims
 		case "org.features":
 			values, err := parseInlineList(value)
 			if err != nil {
@@ -123,6 +139,26 @@ func parseYAMLSubset(src string) (Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func parsePackageShims(values []string) ([]PackageShim, error) {
+	seen := make(map[string]bool)
+	shims := make([]PackageShim, 0, len(values))
+	for _, value := range values {
+		namespace, sourceRoot, ok := strings.Cut(strings.TrimSpace(value), ":")
+		namespace = strings.TrimSpace(namespace)
+		sourceRoot = strings.TrimSpace(sourceRoot)
+		if !ok || namespace == "" || sourceRoot == "" {
+			return nil, fmt.Errorf("invalid package shim %q: expected namespace:path", value)
+		}
+		key := strings.ToLower(namespace)
+		if seen[key] {
+			return nil, fmt.Errorf("duplicate package shim namespace %q", namespace)
+		}
+		seen[key] = true
+		shims = append(shims, PackageShim{Namespace: namespace, SourceRoot: sourceRoot})
+	}
+	return shims, nil
 }
 
 func stripComment(s string) string {
@@ -219,6 +255,12 @@ func resolveManagedPackageDependencyPaths(cfg *Config, baseDir string) {
 		artifactPath := cfg.Project.ManagedPackageDependencies[i].ArtifactPath
 		if artifactPath != "" && !filepath.IsAbs(artifactPath) {
 			cfg.Project.ManagedPackageDependencies[i].ArtifactPath = filepath.Clean(filepath.Join(baseDir, filepath.FromSlash(artifactPath)))
+		}
+	}
+	for i := range cfg.Project.PackageShims {
+		path := cfg.Project.PackageShims[i].SourceRoot
+		if path != "" && !filepath.IsAbs(path) {
+			cfg.Project.PackageShims[i].SourceRoot = filepath.Clean(filepath.Join(baseDir, filepath.FromSlash(path)))
 		}
 	}
 }

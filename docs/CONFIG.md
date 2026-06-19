@@ -44,6 +44,7 @@ project:
   packageDirs: [force-app]
   defaultNamespace: pkg
   managedPackageDependencies: []
+  packageShims: []
 org:
   features: [PersonAccounts]
 ```
@@ -56,7 +57,30 @@ Supported keys:
 | `project.packageDirs` | Source package directories. Overrides `sfdx-project.json`. |
 | `project.defaultNamespace` | Default namespace for package-local code. |
 | `project.managedPackageDependencies` | Managed package source or artifact references. |
+| `project.packageShims` | Local source roots that provide test/runtime bodies for captured package artifacts. |
 | `org.features` | Scratch-org style features for local runtime behavior. |
 
 `glade config validate` reports unsupported keys and parse errors before heavier
 commands run.
+
+## Package Artifacts
+
+Use an artifact dependency when a local project needs package contracts but not
+the package source:
+
+```yaml
+project:
+  managedPackageDependencies: ["pkg:artifact:.glade/packages/pkg.glade-package.json:1.2.3.4"]
+```
+
+The artifact supplies global Apex signatures, schema, labels, static resources,
+and code-intelligence symbols. Captured package methods have no local body. Add
+a shim root when tests need local behavior:
+
+```yaml
+project:
+  packageShims: ["pkg:test-support/package-shims/pkg"]
+```
+
+Shim classes compile under the package namespace and override no-body captured
+methods.

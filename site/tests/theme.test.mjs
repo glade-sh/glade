@@ -294,6 +294,9 @@ test("site copy is task-first and names local capabilities plainly", () => {
   assert.doesNotMatch(siteCopy, /Inspect what Glade proved/i);
   assert.doesNotMatch(siteCopy, /Runtime shape/i);
   assert.doesNotMatch(siteCopy, /First-layer status/i);
+  assert.match(siteCopy, /packageShims/);
+  assert.match(siteCopy, /glade plugins install @glade\/orgpackage/);
+  assert.match(cliReference, /glade orgpackage capture --target-org packaging --namespace pkg/);
   assert.equal((cliReference.match(/auto-connect through `\.glade\/test\/serve\.sock` unless `--no-serve` is set\./g) || []).length, 1);
 });
 

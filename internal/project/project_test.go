@@ -378,7 +378,7 @@ func TestLoadReportsMissingManagedPackageDependency(t *testing.T) {
 func TestLoadManagedPackageArtifactDependency(t *testing.T) {
 	root := t.TempDir()
 	artifactPath := filepath.Join(root, "packages", "pkg.glade-package.json")
-	writeFile(t, artifactPath, `{"namespace":"pkg","version":"1.0","apexTypes":[{"kind":"class","name":"Address","namespace":"pkg","dependency":true}]}`)
+	writeFile(t, artifactPath, `{"namespace":"pkg","version":"1.0","sourceHash":"abc","apexTypes":[{"kind":"class","name":"Address","namespace":"pkg","dependency":true}]}`)
 	writeFile(t, filepath.Join(root, "consumer", "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "consumer", "glade.yml"), `project:
   managedPackageDependencies: ["pkg:artifact:../packages/pkg.glade-package.json"]
@@ -399,7 +399,7 @@ func TestLoadManagedPackageArtifactDependency(t *testing.T) {
 
 func TestLoadReportsManagedPackageArtifactVersionMismatch(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "packages", "pkg.glade-package.json"), `{"namespace":"pkg","version":"1.0"}`)
+	writeFile(t, filepath.Join(root, "packages", "pkg.glade-package.json"), `{"namespace":"pkg","version":"1.0","sourceHash":"abc"}`)
 	writeFile(t, filepath.Join(root, "consumer", "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "consumer", "glade.yml"), `project:
   managedPackageDependencies: ["pkg:artifact:../packages/pkg.glade-package.json:2.0"]
@@ -417,9 +417,38 @@ func TestLoadReportsManagedPackageArtifactVersionMismatch(t *testing.T) {
 	}
 }
 
+func TestLoadReportsManagedPackageArtifactSchemaVersionAsLoadError(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "packages", "pkg.glade-package.json"), `{
+  "schemaVersion": 99,
+  "namespace": "pkg",
+  "version": "1.2.3",
+  "sourceHash": "abc",
+  "builtAt": "2026-06-19T12:00:00Z"
+}`)
+	writeFile(t, filepath.Join(root, "consumer", "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "consumer", "glade.yml"), `project:
+  managedPackageDependencies: ["pkg:artifact:../packages/pkg.glade-package.json:1.2.3"]
+`)
+
+	p, err := Load(filepath.Join(root, "consumer"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 1 || p.ManagedPackageDependencies[0].Status != "load_error" {
+		t.Fatalf("dependencies = %#v", p.ManagedPackageDependencies)
+	}
+	if len(p.DependencyDiagnostics) != 1 || p.DependencyDiagnostics[0].Code != "dependency_load_error" {
+		t.Fatalf("diagnostics = %#v", p.DependencyDiagnostics)
+	}
+	if !strings.Contains(p.DependencyDiagnostics[0].Message, "unsupported artifact schemaVersion 99") {
+		t.Fatalf("diagnostic message = %q", p.DependencyDiagnostics[0].Message)
+	}
+}
+
 func TestLoadReportsManagedPackageArtifactMissingVersionAsLoadError(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "packages", "pkg.glade-package.json"), `{"namespace":"pkg"}`)
+	writeFile(t, filepath.Join(root, "packages", "pkg.glade-package.json"), `{"namespace":"pkg","sourceHash":"abc"}`)
 	writeFile(t, filepath.Join(root, "consumer", "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "consumer", "glade.yml"), `project:
   managedPackageDependencies: ["pkg:artifact:../packages/pkg.glade-package.json:2.0"]

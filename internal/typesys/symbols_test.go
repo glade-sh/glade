@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/packageartifact"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
 )
@@ -111,6 +113,105 @@ func TestBuildLoadsManagedPackageArtifactSymbols(t *testing.T) {
 	}
 	if len(idx.Objects) != 1 || idx.Objects[0].Name != "pkg__CartItemLine__c" {
 		t.Fatalf("objects = %#v", idx.Objects)
+	}
+}
+
+func TestBuildLoadsCapturedManagedPackageArtifactMetadata(t *testing.T) {
+	root := t.TempDir()
+	packagesDir := filepath.Join(root, "packages")
+	artifactPath := filepath.Join(packagesDir, "pkg.glade-package.json")
+	if err := os.MkdirAll(packagesDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	artifact, err := packageartifact.BuildCaptured(packageartifact.BuildCapturedOptions{
+		Namespace:           "pkg",
+		PackageName:         "Billing Core",
+		Version:             "1.2.3",
+		LabelNames:          []string{"pkg__Billing_Error"},
+		StaticResourceNames: []string{"pkg__BillingAssets"},
+		LightningBundles: []packageartifact.LightningBundle{{
+			Namespace: "pkg",
+			Name:      "billingConsole",
+			Type:      "lwc",
+			Exposed:   true,
+		}},
+		Capture: packageartifact.CaptureProvenance{
+			Source: "org",
+			OrgID:  "00Dxx0000000001",
+		},
+		ApexTypes: []packageartifact.ApexType{{
+			Kind:      apexast.DeclarationClass,
+			Name:      "BillingGateway",
+			Namespace: "pkg",
+			Modifiers: []string{"global"},
+		}},
+		Objects: []schema.Object{{
+			Name: "pkg__Billing_Profile__c",
+			Fields: []schema.Field{{
+				Name: "pkg__External_Key__c",
+				Type: "Text",
+			}},
+		}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := packageartifact.WriteJSON(artifactPath, artifact); err != nil {
+		t.Fatal(err)
+	}
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
+  managedPackageDependencies: ["pkg:artifact:../packages/pkg.glade-package.json:1.2.3"]
+`)
+
+	loaded, err := project.Load(consumerRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	idx := Build(loaded, schema.Schema{})
+
+	if len(idx.Dependencies) != 1 || idx.Dependencies[0].Status != "loaded" {
+		t.Fatalf("dependencies = %#v", idx.Dependencies)
+	}
+	if idx.Dependencies[0].ApexTypes != 1 || idx.Dependencies[0].Objects != 1 || idx.Dependencies[0].Labels != 1 || idx.Dependencies[0].StaticResources != 1 {
+		t.Fatalf("dependency summary = %#v", idx.Dependencies[0])
+	}
+	if idx.Dependencies[0].CaptureSource != "org" || idx.Dependencies[0].CaptureOrgID != "00Dxx0000000001" {
+		t.Fatalf("dependency capture = %#v", idx.Dependencies[0])
+	}
+	if len(idx.Types) != 1 || idx.Types[0].Name != "BillingGateway" || !idx.Types[0].Artifact {
+		t.Fatalf("types = %#v", idx.Types)
+	}
+	if !codeIntelIDPresent(idx.CodeIntelSymbols, "metadata:label:pkg__Billing_Error") {
+		t.Fatalf("missing label symbol: %#v", idx.CodeIntelSymbols)
+	}
+	if !codeIntelIDPresent(idx.CodeIntelSymbols, "metadata:static_resource:pkg__BillingAssets") {
+		t.Fatalf("missing static resource symbol: %#v", idx.CodeIntelSymbols)
+	}
+}
+
+func TestBuildDoesNotDuplicateMissingPackageShimDependency(t *testing.T) {
+	idx := Build(project.Project{
+		PackageShims: []project.PackageShim{{
+			Namespace:  "pkg",
+			SourceRoot: "/missing/package-shim",
+			Status:     "missing",
+		}},
+		DependencyDiagnostics: []project.DependencyDiagnostic{{
+			Namespace:  "pkg",
+			SourceRoot: "/missing/package-shim",
+			Status:     "missing",
+			Code:       "package_shim_missing",
+			Message:    "package shim source root not found",
+		}},
+	}, schema.Schema{})
+
+	if len(idx.Dependencies) != 1 {
+		t.Fatalf("dependencies = %#v", idx.Dependencies)
+	}
+	if idx.Dependencies[0].Status != "missing" || len(idx.Dependencies[0].Diagnostics) != 1 {
+		t.Fatalf("dependency = %#v", idx.Dependencies[0])
 	}
 }
 
@@ -294,4 +395,13 @@ func writeFile(t *testing.T, path, content string) {
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func codeIntelIDPresent(symbols []packageartifact.CodeIntelSymbol, id string) bool {
+	for _, symbol := range symbols {
+		if symbol.ID == id {
+			return true
+		}
+	}
+	return false
 }

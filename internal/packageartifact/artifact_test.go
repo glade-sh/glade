@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/project"
@@ -184,6 +185,260 @@ func TestBuildEmitsCodeIntelContractSymbols(t *testing.T) {
 	if len(artifact.CodeIntelUses) == 0 {
 		t.Fatal("missing codeintel declaration uses")
 	}
+	if artifact.SchemaVersion != CurrentSchemaVersion {
+		t.Fatalf("schema version = %d, want %d", artifact.SchemaVersion, CurrentSchemaVersion)
+	}
+	if artifact.Labels != 1 || len(artifact.LabelNames) != 1 || artifact.LabelNames[0] != "pkg__Greeting" {
+		t.Fatalf("labels = %d %#v", artifact.Labels, artifact.LabelNames)
+	}
+	if artifact.StaticResources != 1 || len(artifact.StaticResourceNames) != 1 || artifact.StaticResourceNames[0] != "pkg__Site" {
+		t.Fatalf("static resources = %d %#v", artifact.StaticResources, artifact.StaticResourceNames)
+	}
+}
+
+func TestBuildCapturedArtifactPreservesOrgProvenanceAndMetadataNames(t *testing.T) {
+	artifact, err := BuildCaptured(BuildCapturedOptions{
+		Namespace:        "pkg",
+		PackageName:      "Billing Core",
+		Version:          "1.2.3.4",
+		SourceAPIVersion: "65.0",
+		Capture: CaptureProvenance{
+			Source:      "org",
+			OrgID:       "00Dxx0000000001",
+			Username:    "builder@example.com",
+			TargetOrg:   "packaging",
+			APIVersion:  "65.0",
+			CapturedAt:  mustParsePackageArtifactTime(t, "2026-06-19T12:00:00Z"),
+			PackageID:   "033xx0000000001",
+			InstalledID: "0A3xx0000000001",
+		},
+		ApexTypes: []ApexType{{
+			Kind:      apexast.DeclarationClass,
+			Name:      "BillingGateway",
+			Namespace: "pkg",
+			Modifiers: []string{"global"},
+			Members: []ApexMember{{
+				Kind:      apexast.DeclarationMethod,
+				Name:      "authorize",
+				Type:      "Boolean",
+				Modifiers: []string{"global", "static"},
+				Parameters: []apexast.Parameter{{
+					Name: "amount",
+					Type: "Decimal",
+				}},
+			}},
+		}},
+		Objects: []schema.Object{{
+			Name: "pkg__Billing_Profile__c",
+			Fields: []schema.Field{{
+				Name: "pkg__External_Key__c",
+				Type: "Text",
+			}},
+		}},
+		LabelNames:          []string{"pkg__Billing_Error"},
+		StaticResourceNames: []string{"pkg__BillingAssets"},
+		LightningBundles: []LightningBundle{{
+			Namespace: "pkg",
+			Name:      "billingConsole",
+			Type:      "lwc",
+			Exposed:   true,
+		}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if artifact.SchemaVersion != 2 {
+		t.Fatalf("schema version = %d, want 2", artifact.SchemaVersion)
+	}
+	if artifact.Capture.OrgID != "00Dxx0000000001" || artifact.Capture.PackageID != "033xx0000000001" {
+		t.Fatalf("capture provenance = %#v", artifact.Capture)
+	}
+	if artifact.Labels != 1 || len(artifact.LabelNames) != 1 || artifact.LabelNames[0] != "pkg__Billing_Error" {
+		t.Fatalf("labels = %d %#v", artifact.Labels, artifact.LabelNames)
+	}
+	if artifact.StaticResources != 1 || len(artifact.StaticResourceNames) != 1 || artifact.StaticResourceNames[0] != "pkg__BillingAssets" {
+		t.Fatalf("static resources = %d %#v", artifact.StaticResources, artifact.StaticResourceNames)
+	}
+	if len(artifact.LightningBundles) != 1 || artifact.LightningBundles[0].QualifiedName() != "pkg/billingConsole" {
+		t.Fatalf("lightning bundles = %#v", artifact.LightningBundles)
+	}
+	if artifact.SourceHash == "" {
+		t.Fatal("sourceHash is empty")
+	}
+	if !artifactHasCodeIntelSymbol(artifact, "metadata:label:pkg__Billing_Error") {
+		t.Fatalf("missing label symbol in %#v", artifact.CodeIntelSymbols)
+	}
+	if !artifactHasCodeIntelSymbol(artifact, "metadata:static_resource:pkg__BillingAssets") {
+		t.Fatalf("missing static resource symbol in %#v", artifact.CodeIntelSymbols)
+	}
+}
+
+func TestValidateRejectsUnsupportedArtifactSchemaVersion(t *testing.T) {
+	issues := Validate(Artifact{
+		SchemaVersion: 99,
+		Namespace:     "pkg",
+		SourceHash:    "abc",
+		BuiltAt:       mustParsePackageArtifactTime(t, "2026-06-19T12:00:00Z"),
+	})
+	if len(issues) != 1 || issues[0] != "unsupported artifact schemaVersion 99" {
+		t.Fatalf("issues = %#v", issues)
+	}
+}
+
+func TestBuildCapturedArtifactHashIgnoresInputOrder(t *testing.T) {
+	first, err := BuildCaptured(BuildCapturedOptions{
+		Namespace:        "pkg",
+		Version:          "1.0",
+		SourceAPIVersion: "65.0",
+		Capture: CaptureProvenance{
+			Source:     "org",
+			CapturedAt: mustParsePackageArtifactTime(t, "2026-06-19T12:00:00Z"),
+		},
+		ApexTypes: []ApexType{
+			capturedArtifactApexType("Zeta"),
+			capturedArtifactApexTypeWithMembers("Alpha",
+				capturedArtifactMethod("run", "String"),
+				capturedArtifactMethod("run", "Decimal"),
+			),
+		},
+		Objects: []schema.Object{
+			capturedArtifactObject("pkg__Zeta__c", "Name", "pkg__Code__c"),
+			capturedArtifactObject("pkg__Alpha__c", "pkg__Code__c", "Name"),
+		},
+		LabelNames:          []string{"pkg__Zeta", "pkg__Alpha"},
+		StaticResourceNames: []string{"pkg__ZetaAssets", "pkg__AlphaAssets"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := BuildCaptured(BuildCapturedOptions{
+		Namespace:        "pkg",
+		Version:          "1.0",
+		SourceAPIVersion: "65.0",
+		Capture: CaptureProvenance{
+			Source:     "org",
+			CapturedAt: mustParsePackageArtifactTime(t, "2026-06-19T12:00:00Z"),
+		},
+		ApexTypes: []ApexType{
+			capturedArtifactApexTypeWithMembers("Alpha",
+				capturedArtifactMethod("run", "Decimal"),
+				capturedArtifactMethod("run", "String"),
+			),
+			capturedArtifactApexType("Zeta"),
+		},
+		Objects: []schema.Object{
+			capturedArtifactObject("pkg__Alpha__c", "Name", "pkg__Code__c"),
+			capturedArtifactObject("pkg__Zeta__c", "pkg__Code__c", "Name"),
+		},
+		LabelNames:          []string{"pkg__Alpha", "pkg__Zeta"},
+		StaticResourceNames: []string{"pkg__AlphaAssets", "pkg__ZetaAssets"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.SourceHash != second.SourceHash {
+		t.Fatalf("source hashes differ: %s != %s", first.SourceHash, second.SourceHash)
+	}
+}
+
+func TestBuildCapturedArtifactHashIgnoresCaptureProvenance(t *testing.T) {
+	first, err := BuildCaptured(BuildCapturedOptions{
+		Namespace:        "pkg",
+		Version:          "1.0",
+		SourceAPIVersion: "65.0",
+		Capture: CaptureProvenance{
+			Source:     "org",
+			TargetOrg:  "packaging",
+			OrgID:      "00D000000000001",
+			CapturedAt: mustParsePackageArtifactTime(t, "2026-06-19T12:00:00Z"),
+		},
+		ApexTypes: []ApexType{capturedArtifactApexType("Alpha")},
+		Objects:   []schema.Object{capturedArtifactObject("pkg__Alpha__c", "Name")},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := BuildCaptured(BuildCapturedOptions{
+		Namespace:        "pkg",
+		Version:          "1.0",
+		SourceAPIVersion: "65.0",
+		Capture: CaptureProvenance{
+			Source:     "org",
+			TargetOrg:  "subscriber",
+			OrgID:      "00D000000000002",
+			CapturedAt: mustParsePackageArtifactTime(t, "2026-06-19T12:05:00Z"),
+		},
+		ApexTypes: []ApexType{capturedArtifactApexType("Alpha")},
+		Objects:   []schema.Object{capturedArtifactObject("pkg__Alpha__c", "Name")},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.SourceHash != second.SourceHash {
+		t.Fatalf("source hashes differ: %s != %s", first.SourceHash, second.SourceHash)
+	}
+}
+
+func TestValidateTreatsOmittedArtifactSchemaVersionAsVersionOne(t *testing.T) {
+	issues := Validate(Artifact{
+		Namespace:  "pkg",
+		SourceHash: "abc",
+		BuiltAt:    mustParsePackageArtifactTime(t, "2026-06-19T12:00:00Z"),
+	})
+	if len(issues) != 0 {
+		t.Fatalf("issues = %#v", issues)
+	}
+}
+
+func artifactHasCodeIntelSymbol(artifact Artifact, id string) bool {
+	for _, symbol := range artifact.CodeIntelSymbols {
+		if symbol.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func capturedArtifactApexType(name string) ApexType {
+	return capturedArtifactApexTypeWithMembers(name,
+		capturedArtifactMethod("zeta", "String"),
+		capturedArtifactMethod("alpha", "String"),
+	)
+}
+
+func capturedArtifactApexTypeWithMembers(name string, members ...ApexMember) ApexType {
+	return ApexType{
+		Kind:      apexast.DeclarationClass,
+		Name:      name,
+		Namespace: "pkg",
+		Modifiers: []string{"global"},
+		Members:   members,
+	}
+}
+
+func capturedArtifactMethod(name string, paramType string) ApexMember {
+	method := ApexMember{Kind: apexast.DeclarationMethod, Name: name, Type: "String", Modifiers: []string{"global"}}
+	if paramType != "" {
+		method.Parameters = []apexast.Parameter{{Name: "value", Type: paramType}}
+	}
+	return method
+}
+
+func capturedArtifactObject(name string, fields ...string) schema.Object {
+	object := schema.Object{Name: name}
+	for _, field := range fields {
+		object.Fields = append(object.Fields, schema.Field{Name: field, Type: "Text"})
+	}
+	return object
+}
+
+func mustParsePackageArtifactTime(t *testing.T, value string) time.Time {
+	t.Helper()
+	parsed, err := time.Parse(time.RFC3339, value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return parsed
 }
 
 func writePackageArtifactTestFile(t *testing.T, path, text string) {

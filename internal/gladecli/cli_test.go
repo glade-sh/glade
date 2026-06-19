@@ -298,6 +298,8 @@ func TestRunConfigShowJSON(t *testing.T) {
 	writeTestFile(t, filepath.Join(root, "glade.yml"), `project:
   packageDirs: [force-app, packages/core]
   defaultNamespace: glns
+  managedPackageDependencies: ["pkg:artifact:.glade/packages/pkg.glade-package.json:1.0"]
+  packageShims: ["pkg:test-support/package-shims/pkg"]
 org:
   features: [PersonAccounts]
 `)
@@ -307,13 +309,19 @@ org:
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
 	var got struct {
-		ConfigPath       string   `json:"configPath"`
-		ConfigFound      bool     `json:"configFound"`
-		ProjectRoot      string   `json:"projectRoot"`
-		Namespace        string   `json:"namespace"`
-		SourceAPIVersion string   `json:"sourceApiVersion"`
-		PackageDirs      []string `json:"packageDirs"`
-		OrgFeatures      []string `json:"orgFeatures"`
+		ConfigPath                 string   `json:"configPath"`
+		ConfigFound                bool     `json:"configFound"`
+		ProjectRoot                string   `json:"projectRoot"`
+		Namespace                  string   `json:"namespace"`
+		SourceAPIVersion           string   `json:"sourceApiVersion"`
+		PackageDirs                []string `json:"packageDirs"`
+		OrgFeatures                []string `json:"orgFeatures"`
+		ManagedPackageDependencies []struct {
+			Namespace string `json:"namespace"`
+		} `json:"managedPackageDependencies"`
+		PackageShims []struct {
+			Namespace string `json:"namespace"`
+		} `json:"packageShims"`
 	}
 	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
 		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
@@ -329,6 +337,12 @@ org:
 	}
 	if strings.Join(got.OrgFeatures, ",") != "PersonAccounts" {
 		t.Fatalf("orgFeatures = %#v", got.OrgFeatures)
+	}
+	if len(got.ManagedPackageDependencies) != 1 || got.ManagedPackageDependencies[0].Namespace != "pkg" {
+		t.Fatalf("managed package dependencies = %#v", got.ManagedPackageDependencies)
+	}
+	if len(got.PackageShims) != 1 || got.PackageShims[0].Namespace != "pkg" {
+		t.Fatalf("package shims = %#v", got.PackageShims)
 	}
 }
 
@@ -2192,6 +2206,47 @@ global class Zed {
 	}
 	if !strings.Contains(stdout.String(), `"addedTypes": 1`) || !strings.Contains(stdout.String(), `"changed": true`) {
 		t.Fatalf("diff stdout = %q", stdout.String())
+	}
+}
+
+func TestRunPackageInfoPrintsCaptureProvenance(t *testing.T) {
+	root := t.TempDir()
+	artifact := filepath.Join(root, "pkg.glade-package.json")
+	writeTestFile(t, artifact, `{
+  "schemaVersion": 2,
+  "namespace": "pkg",
+  "version": "1.2.3.4",
+  "sourceHash": "abc",
+  "builtAt": "2026-06-19T12:00:00Z",
+  "capture": {
+    "source": "org",
+    "orgId": "00Dxx0000000001",
+    "targetOrg": "packaging",
+    "packageId": "033xx0000000001"
+  }
+}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"package", "info", artifact}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("info exit code = %d, stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{"captureSource: org", "captureTargetOrg: packaging", "captureOrgId: 00Dxx0000000001", "capturePackageId: 033xx0000000001"} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("info missing %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
+func TestRunPackageCaptureBridgeGuidesWhenPluginMissing(t *testing.T) {
+	t.Setenv("GLADE_HOME", t.TempDir())
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"package", "capture", "--target-org", "packaging", "--namespace", "pkg", "--output", "pkg.glade-package.json"}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("expected missing plugin failure stdout=%q stderr=%q", stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "glade plugins install @glade/orgpackage") || !strings.Contains(stderr.String(), "glade orgpackage capture") {
+		t.Fatalf("stderr = %q", stderr.String())
 	}
 }
 

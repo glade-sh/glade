@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -17,7 +19,49 @@ import (
 	"github.com/glade-sh/glade/internal/schema"
 )
 
+const CurrentSchemaVersion = 2
+
+type CaptureProvenance struct {
+	Source      string    `json:"source,omitempty"`
+	OrgID       string    `json:"orgId,omitempty"`
+	Username    string    `json:"username,omitempty"`
+	TargetOrg   string    `json:"targetOrg,omitempty"`
+	APIVersion  string    `json:"apiVersion,omitempty"`
+	CapturedAt  time.Time `json:"capturedAt,omitempty"`
+	PackageID   string    `json:"packageId,omitempty"`
+	InstalledID string    `json:"installedId,omitempty"`
+}
+
+type LightningBundle struct {
+	Namespace string `json:"namespace,omitempty"`
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+	Exposed   bool   `json:"exposed,omitempty"`
+}
+
+func (b LightningBundle) QualifiedName() string {
+	if strings.TrimSpace(b.Namespace) == "" {
+		return strings.TrimSpace(b.Name)
+	}
+	return strings.TrimSpace(b.Namespace) + "/" + strings.TrimSpace(b.Name)
+}
+
+type BuildCapturedOptions struct {
+	Namespace             string
+	PackageName           string
+	Version               string
+	SourceAPIVersion      string
+	Capture               CaptureProvenance
+	ApexTypes             []ApexType
+	Objects               []schema.Object
+	CustomMetadataRecords []schema.CustomMetadataRecord
+	LabelNames            []string
+	StaticResourceNames   []string
+	LightningBundles      []LightningBundle
+}
+
 type Artifact struct {
+	SchemaVersion           int                           `json:"schemaVersion,omitempty"`
 	Namespace               string                        `json:"namespace"`
 	PackageName             string                        `json:"packageName,omitempty"`
 	Version                 string                        `json:"version,omitempty"`
@@ -25,9 +69,13 @@ type Artifact struct {
 	SourceHash              string                        `json:"sourceHash,omitempty"`
 	SourceAPIVersion        string                        `json:"sourceApiVersion,omitempty"`
 	BuiltAt                 time.Time                     `json:"builtAt"`
+	Capture                 CaptureProvenance             `json:"capture,omitempty"`
 	ApexTypes               []ApexType                    `json:"apexTypes,omitempty"`
 	Objects                 []schema.Object               `json:"objects,omitempty"`
 	CustomMetadataRecords   []schema.CustomMetadataRecord `json:"customMetadataRecords,omitempty"`
+	LabelNames              []string                      `json:"labelNames,omitempty"`
+	StaticResourceNames     []string                      `json:"staticResourceNames,omitempty"`
+	LightningBundles        []LightningBundle             `json:"lightningBundles,omitempty"`
 	Labels                  int                           `json:"labels"`
 	StaticResources         int                           `json:"staticResources"`
 	CodeIntelSymbolsVersion int                           `json:"codeIntelSymbolsVersion,omitempty"`
@@ -101,18 +149,20 @@ type Summary struct {
 }
 
 type Info struct {
-	Namespace             string    `json:"namespace"`
-	PackageName           string    `json:"packageName,omitempty"`
-	Version               string    `json:"version,omitempty"`
-	SourceRoot            string    `json:"sourceRoot,omitempty"`
-	SourceHash            string    `json:"sourceHash,omitempty"`
-	SourceAPIVersion      string    `json:"sourceApiVersion,omitempty"`
-	BuiltAt               time.Time `json:"builtAt"`
-	ApexTypes             int       `json:"apexTypes"`
-	Objects               int       `json:"objects"`
-	CustomMetadataRecords int       `json:"customMetadataRecords"`
-	Labels                int       `json:"labels"`
-	StaticResources       int       `json:"staticResources"`
+	SchemaVersion         int               `json:"schemaVersion,omitempty"`
+	Namespace             string            `json:"namespace"`
+	PackageName           string            `json:"packageName,omitempty"`
+	Version               string            `json:"version,omitempty"`
+	SourceRoot            string            `json:"sourceRoot,omitempty"`
+	SourceHash            string            `json:"sourceHash,omitempty"`
+	SourceAPIVersion      string            `json:"sourceApiVersion,omitempty"`
+	BuiltAt               time.Time         `json:"builtAt"`
+	Capture               CaptureProvenance `json:"capture,omitempty"`
+	ApexTypes             int               `json:"apexTypes"`
+	Objects               int               `json:"objects"`
+	CustomMetadataRecords int               `json:"customMetadataRecords"`
+	Labels                int               `json:"labels"`
+	StaticResources       int               `json:"staticResources"`
 }
 
 type Diff struct {
@@ -143,7 +193,10 @@ func Build(namespace, version string, p project.Project, s schema.Schema, apexTy
 	if err != nil {
 		return Artifact{}, err
 	}
+	labels := packageLabelNames(namespace, p.LabelFiles)
+	resources := packageStaticResourceNames(namespace, p.StaticResourceFiles, p.StaticResourceMetas)
 	artifact := Artifact{
+		SchemaVersion:         CurrentSchemaVersion,
 		Namespace:             namespace,
 		Version:               version,
 		SourceRoot:            p.Root,
@@ -153,8 +206,10 @@ func Build(namespace, version string, p project.Project, s schema.Schema, apexTy
 		ApexTypes:             globalContractTypes(apexTypes),
 		Objects:               namespaceObjects(namespace, s.Objects),
 		CustomMetadataRecords: namespaceCustomMetadataRecords(namespace, s.CustomMetadataRecords),
-		Labels:                len(p.LabelFiles),
-		StaticResources:       len(p.StaticResourceFiles) + len(p.StaticResourceMetas),
+		LabelNames:            labels,
+		StaticResourceNames:   resources,
+		Labels:                len(labels),
+		StaticResources:       len(resources),
 	}
 	artifact.CodeIntelSymbols = codeIntelSymbols(artifact, p)
 	artifact.CodeIntelUses = codeIntelDeclarationUses(artifact.CodeIntelSymbols)
@@ -167,8 +222,47 @@ func Build(namespace, version string, p project.Project, s schema.Schema, apexTy
 	return artifact, nil
 }
 
+func BuildCaptured(opts BuildCapturedOptions) (Artifact, error) {
+	namespace := strings.TrimSpace(opts.Namespace)
+	if namespace == "" {
+		return Artifact{}, errors.New("namespace is required")
+	}
+	builtAt := time.Now().UTC()
+	if !opts.Capture.CapturedAt.IsZero() {
+		builtAt = opts.Capture.CapturedAt.UTC()
+	}
+	artifact := Artifact{
+		SchemaVersion:         CurrentSchemaVersion,
+		Namespace:             namespace,
+		PackageName:           strings.TrimSpace(opts.PackageName),
+		Version:               strings.TrimSpace(opts.Version),
+		SourceAPIVersion:      strings.TrimSpace(opts.SourceAPIVersion),
+		BuiltAt:               builtAt,
+		Capture:               opts.Capture,
+		ApexTypes:             sortedApexTypes(globalContractTypes(cloneApexTypes(opts.ApexTypes))),
+		Objects:               sortedSchemaObjects(cloneSchemaObjects(opts.Objects)),
+		CustomMetadataRecords: sortedCustomMetadataRecords(cloneCustomMetadataRecords(opts.CustomMetadataRecords)),
+		LabelNames:            sortedUniqueStrings(opts.LabelNames),
+		StaticResourceNames:   sortedUniqueStrings(opts.StaticResourceNames),
+		LightningBundles:      sortedLightningBundles(opts.LightningBundles),
+	}
+	artifact.Labels = len(artifact.LabelNames)
+	artifact.StaticResources = len(artifact.StaticResourceNames)
+	artifact.SourceHash = capturedSourceHash(artifact)
+	artifact.CodeIntelSymbols = codeIntelSymbols(artifact, project.Project{})
+	artifact.CodeIntelUses = codeIntelDeclarationUses(artifact.CodeIntelSymbols)
+	if len(artifact.CodeIntelSymbols) > 0 {
+		artifact.CodeIntelSymbolsVersion = 1
+	}
+	if len(artifact.CodeIntelUses) > 0 {
+		artifact.CodeIntelUsesVersion = 1
+	}
+	return artifact, nil
+}
+
 func Inspect(artifact Artifact) Info {
 	return Info{
+		SchemaVersion:         artifact.SchemaVersion,
 		Namespace:             artifact.Namespace,
 		PackageName:           artifact.PackageName,
 		Version:               artifact.Version,
@@ -176,6 +270,7 @@ func Inspect(artifact Artifact) Info {
 		SourceHash:            artifact.SourceHash,
 		SourceAPIVersion:      artifact.SourceAPIVersion,
 		BuiltAt:               artifact.BuiltAt,
+		Capture:               artifact.Capture,
 		ApexTypes:             len(artifact.ApexTypes),
 		Objects:               len(artifact.Objects),
 		CustomMetadataRecords: len(artifact.CustomMetadataRecords),
@@ -186,6 +281,13 @@ func Inspect(artifact Artifact) Info {
 
 func Validate(artifact Artifact) []string {
 	issues := make([]string, 0)
+	schemaVersion := artifact.SchemaVersion
+	if schemaVersion == 0 {
+		schemaVersion = 1
+	}
+	if schemaVersion > CurrentSchemaVersion {
+		issues = append(issues, fmt.Sprintf("unsupported artifact schemaVersion %d", artifact.SchemaVersion))
+	}
 	if strings.TrimSpace(artifact.Namespace) == "" {
 		issues = append(issues, "namespace is required")
 	}
@@ -480,7 +582,7 @@ func codeIntelSymbols(artifact Artifact, p project.Project) []CodeIntelSymbol {
 	for _, record := range artifact.CustomMetadataRecords {
 		symbols = append(symbols, codeIntelSymbolForCustomMetadata(record))
 	}
-	for _, label := range packageLabelNames(artifact.Namespace, p.LabelFiles) {
+	for _, label := range artifactMetadataNames(artifact.LabelNames, packageLabelNames(artifact.Namespace, p.LabelFiles)) {
 		symbols = append(symbols, CodeIntelSymbol{
 			ID:         labelID(label),
 			Kind:       "label",
@@ -490,7 +592,7 @@ func codeIntelSymbols(artifact Artifact, p project.Project) []CodeIntelSymbol {
 			Artifact:   true,
 		})
 	}
-	for _, resource := range packageStaticResourceNames(artifact.Namespace, p.StaticResourceFiles, p.StaticResourceMetas) {
+	for _, resource := range artifactMetadataNames(artifact.StaticResourceNames, packageStaticResourceNames(artifact.Namespace, p.StaticResourceFiles, p.StaticResourceMetas)) {
 		symbols = append(symbols, CodeIntelSymbol{
 			ID:         staticResourceID(resource),
 			Kind:       "static_resource",
@@ -633,6 +735,148 @@ func codeIntelMemberSignature(member ApexMember) string {
 		params = append(params, strings.TrimSpace(param.Type))
 	}
 	return strings.TrimSpace(member.Type) + "(" + strings.Join(params, ",") + ")"
+}
+
+func cloneApexTypes(types []ApexType) []ApexType {
+	return cloneJSON(types)
+}
+
+func cloneSchemaObjects(objects []schema.Object) []schema.Object {
+	return cloneJSON(objects)
+}
+
+func cloneCustomMetadataRecords(records []schema.CustomMetadataRecord) []schema.CustomMetadataRecord {
+	return cloneJSON(records)
+}
+
+func cloneJSON[T any](value T) T {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return value
+	}
+	var out T
+	if err := json.Unmarshal(data, &out); err != nil {
+		return value
+	}
+	return out
+}
+
+func capturedSourceHash(artifact Artifact) string {
+	artifact.SourceHash = ""
+	artifact.BuiltAt = time.Time{}
+	artifact.Capture = CaptureProvenance{}
+	artifact.CodeIntelSymbolsVersion = 0
+	artifact.CodeIntelSymbols = nil
+	artifact.CodeIntelUsesVersion = 0
+	artifact.CodeIntelUses = nil
+	data, _ := json.Marshal(artifact)
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
+}
+
+func sortedUniqueStrings(values []string) []string {
+	seen := make(map[string]bool, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value != "" {
+			seen[value] = true
+		}
+	}
+	return sortedKeys(seen)
+}
+
+func sortedLightningBundles(bundles []LightningBundle) []LightningBundle {
+	out := make([]LightningBundle, 0, len(bundles))
+	for _, bundle := range bundles {
+		bundle.Namespace = strings.TrimSpace(bundle.Namespace)
+		bundle.Name = strings.TrimSpace(bundle.Name)
+		bundle.Type = strings.TrimSpace(bundle.Type)
+		if bundle.Name == "" {
+			continue
+		}
+		out = append(out, bundle)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].QualifiedName() == out[j].QualifiedName() {
+			return out[i].Type < out[j].Type
+		}
+		return out[i].QualifiedName() < out[j].QualifiedName()
+	})
+	return out
+}
+
+func sortedApexTypes(types []ApexType) []ApexType {
+	out := append([]ApexType(nil), types...)
+	for i := range out {
+		sort.Slice(out[i].Members, func(j, k int) bool {
+			if out[i].Members[j].Name == out[i].Members[k].Name {
+				if out[i].Members[j].Kind == out[i].Members[k].Kind {
+					return apexMemberSortKey(out[i].Members[j]) < apexMemberSortKey(out[i].Members[k])
+				}
+				return out[i].Members[j].Kind < out[i].Members[k].Kind
+			}
+			return out[i].Members[j].Name < out[i].Members[k].Name
+		})
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Namespace == out[j].Namespace {
+			if out[i].Name == out[j].Name {
+				return out[i].Kind < out[j].Kind
+			}
+			return out[i].Name < out[j].Name
+		}
+		return out[i].Namespace < out[j].Namespace
+	})
+	return out
+}
+
+func apexMemberSortKey(member ApexMember) string {
+	return strings.TrimSpace(member.Type) + "|" + codeIntelMemberSignature(member)
+}
+
+func sortedSchemaObjects(objects []schema.Object) []schema.Object {
+	out := append([]schema.Object(nil), objects...)
+	for i := range out {
+		sort.Slice(out[i].Fields, func(j, k int) bool {
+			return out[i].Fields[j].Name < out[i].Fields[k].Name
+		})
+	}
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].Name < out[j].Name
+	})
+	return out
+}
+
+func sortedCustomMetadataRecords(records []schema.CustomMetadataRecord) []schema.CustomMetadataRecord {
+	out := append([]schema.CustomMetadataRecord(nil), records...)
+	for i := range out {
+		sort.Slice(out[i].Values, func(j, k int) bool {
+			return out[i].Values[j].Field < out[i].Values[k].Field
+		})
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].ObjectName == out[j].ObjectName {
+			if out[i].FullName == out[j].FullName {
+				return out[i].DeveloperName < out[j].DeveloperName
+			}
+			return out[i].FullName < out[j].FullName
+		}
+		return out[i].ObjectName < out[j].ObjectName
+	})
+	return out
+}
+
+func artifactMetadataNames(values ...[]string) []string {
+	seen := make(map[string]bool)
+	for _, list := range values {
+		for _, value := range list {
+			value = strings.TrimSpace(value)
+			if value != "" {
+				seen[value] = true
+			}
+		}
+	}
+	return sortedKeys(seen)
 }
 
 type labelsXML struct {

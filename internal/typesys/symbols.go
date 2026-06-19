@@ -81,6 +81,8 @@ type DependencyInfo struct {
 	Objects         int                     `json:"objects,omitempty"`
 	Labels          int                     `json:"labels,omitempty"`
 	StaticResources int                     `json:"staticResources,omitempty"`
+	CaptureSource   string                  `json:"captureSource,omitempty"`
+	CaptureOrgID    string                  `json:"captureOrgId,omitempty"`
 	Diagnostics     []diagnostic.Diagnostic `json:"diagnostics,omitempty"`
 }
 
@@ -163,6 +165,9 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 			StaticResources: len(dep.Project.StaticResourceFiles) + len(dep.Project.StaticResourceMetas),
 		})
 	}
+	for _, shim := range p.PackageShims {
+		appendPackageShimSymbols(&idx, parser, shim, seenTypes)
+	}
 	appendDataWeaveScriptResourceSymbols(&idx, p)
 	appendProjectSymbols(&idx, parser, p, false, p.Namespace, "", seenTypes)
 
@@ -179,6 +184,20 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 		return idx.Triggers[i].Namespace < idx.Triggers[j].Namespace
 	})
 	return idx
+}
+
+func appendPackageShimSymbols(idx *Index, parser *apexast.Parser, shim project.PackageShim, seenTypes map[string][]seenTypeSymbol) {
+	if shim.Status != "loaded" || shim.Project == nil {
+		return
+	}
+	beforeTypes := len(idx.Types)
+	appendProjectSymbols(idx, parser, *shim.Project, true, shim.Namespace, "", seenTypes)
+	idx.Dependencies = append(idx.Dependencies, DependencyInfo{
+		Namespace:  shim.Namespace,
+		SourceRoot: shim.SourceRoot,
+		Status:     "shim",
+		ApexTypes:  len(idx.Types) - beforeTypes,
+	})
 }
 
 func appendArtifactDependency(idx *Index, dep project.ManagedPackageDependency) {
@@ -223,6 +242,8 @@ func appendArtifactDependency(idx *Index, dep project.ManagedPackageDependency) 
 		Objects:         len(artifact.Objects),
 		Labels:          artifact.Labels,
 		StaticResources: artifact.StaticResources,
+		CaptureSource:   artifact.Capture.Source,
+		CaptureOrgID:    artifact.Capture.OrgID,
 	})
 }
 

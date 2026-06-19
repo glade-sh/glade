@@ -80,6 +80,32 @@ project:
 	}
 }
 
+func TestParseYAMLSubsetPackageShimRoots(t *testing.T) {
+	cfg, err := parseYAMLSubset(`
+project:
+  packageShims: ["pkg:test-support/package-shims/pkg"]
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.Project.PackageShims) != 1 {
+		t.Fatalf("package shims = %#v", cfg.Project.PackageShims)
+	}
+	shim := cfg.Project.PackageShims[0]
+	if shim.Namespace != "pkg" || shim.SourceRoot != "test-support/package-shims/pkg" {
+		t.Fatalf("shim = %#v", shim)
+	}
+}
+
+func TestParseYAMLSubsetRejectsDuplicatePackageShimNamespace(t *testing.T) {
+	if _, err := parseYAMLSubset(`
+project:
+  packageShims: ["pkg:one", "PKG:two"]
+`); err == nil {
+		t.Fatal("expected duplicate package shim namespace error")
+	}
+}
+
 func TestLoadFileResolvesManagedPackageDependencyPaths(t *testing.T) {
 	root := t.TempDir()
 	cfgPath := filepath.Join(root, "nested", "glade.yml")
@@ -99,6 +125,28 @@ project:
 	want := filepath.Clean(filepath.Join(root, "deps", "pkg"))
 	if got := cfg.Project.ManagedPackageDependencies[0].SourceRoot; got != want {
 		t.Fatalf("source root = %q, want %q", got, want)
+	}
+}
+
+func TestLoadFileResolvesPackageShimPaths(t *testing.T) {
+	root := t.TempDir()
+	cfgPath := filepath.Join(root, "nested", "glade.yml")
+	if err := os.MkdirAll(filepath.Dir(cfgPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(cfgPath, []byte(`
+project:
+  packageShims: ["pkg:../test-support/package-shims/pkg"]
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadFile(cfgPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := filepath.Clean(filepath.Join(root, "test-support", "package-shims", "pkg"))
+	if got := cfg.Project.PackageShims[0].SourceRoot; got != want {
+		t.Fatalf("shim source root = %q, want %q", got, want)
 	}
 }
 

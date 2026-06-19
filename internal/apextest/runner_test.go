@@ -11,6 +11,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/packageartifact"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/storage"
@@ -52,6 +53,81 @@ private class MathTest {
 	summary := run.Summary()
 	if summary.Total != 1 || summary.Passed != 1 {
 		t.Fatalf("summary = %#v", summary)
+	}
+}
+
+func TestCapturedPackageMethodFailsWithNamedBoundaryWithoutShim(t *testing.T) {
+	root := t.TempDir()
+	writeCapturedBillingArtifact(t, filepath.Join(root, "packages/pkg.glade-package.json"))
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "glade.yml"), `project:
+  managedPackageDependencies: ["pkg:artifact:packages/pkg.glade-package.json:1.0"]
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BillingTest.cls"), `
+@isTest
+private class BillingTest {
+  @isTest static void runs() {
+    System.assertEquals(true, pkg.BillingGateway.authorize(1.00));
+  }
+}
+`)
+	run := Run(loadTestIndex(t, root), Options{})
+	problem := firstRunProblem(run)
+	if got := run.Summary(); got.Total != 1 || got.Failed != 1 || !strings.Contains(problem, "captured package member has no local body") {
+		t.Fatalf("summary = %#v problem=%q run=%#v", got, problem, run)
+	}
+}
+
+func TestCapturedPackageConstructorFailsWithNamedBoundaryWithoutShim(t *testing.T) {
+	root := t.TempDir()
+	writeCapturedBillingArtifact(t, filepath.Join(root, "packages/pkg.glade-package.json"))
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "glade.yml"), `project:
+  managedPackageDependencies: ["pkg:artifact:packages/pkg.glade-package.json:1.0"]
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BillingTest.cls"), `
+@isTest
+private class BillingTest {
+  @isTest static void runs() {
+    Object gateway = new pkg.BillingGateway(1.00);
+    System.assertNotEquals(null, gateway);
+  }
+}
+`)
+	run := Run(loadTestIndex(t, root), Options{})
+	problem := firstRunProblem(run)
+	if got := run.Summary(); got.Total != 1 || got.Failed != 1 || !strings.Contains(problem, "captured package member has no local body") {
+		t.Fatalf("summary = %#v problem=%q run=%#v", got, problem, run)
+	}
+}
+
+func TestCapturedPackageMethodUsesConfiguredShim(t *testing.T) {
+	root := t.TempDir()
+	writeCapturedBillingArtifact(t, filepath.Join(root, "packages/pkg.glade-package.json"))
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "glade.yml"), `project:
+  managedPackageDependencies: ["pkg:artifact:packages/pkg.glade-package.json:1.0"]
+  packageShims: ["pkg:test-support/package-shims/pkg"]
+`)
+	writeFile(t, filepath.Join(root, "test-support/package-shims/pkg/sfdx-project.json"), `{"packageDirectories":[{"path":"classes","default":true}]}`)
+	writeFile(t, filepath.Join(root, "test-support/package-shims/pkg/classes/BillingGateway.cls"), `
+global class BillingGateway {
+  global static Boolean authorize(Decimal amount) {
+    return amount > 0;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BillingTest.cls"), `
+@isTest
+private class BillingTest {
+  @isTest static void runs() {
+    System.assertEquals(true, pkg.BillingGateway.authorize(1.00));
+  }
+}
+`)
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v problem=%q run=%#v", got, firstRunProblem(run), run)
 	}
 }
 
@@ -8972,6 +9048,48 @@ func writeFile(t *testing.T, path, content string) {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func writeCapturedBillingArtifact(t *testing.T, path string) {
+	t.Helper()
+	artifact, err := packageartifact.BuildCaptured(packageartifact.BuildCapturedOptions{
+		Namespace: "pkg",
+		Version:   "1.0",
+		Capture:   packageartifact.CaptureProvenance{Source: "org"},
+		ApexTypes: []packageartifact.ApexType{{
+			Kind:      apexast.DeclarationClass,
+			Name:      "BillingGateway",
+			Namespace: "pkg",
+			Modifiers: []string{"global"},
+			Members: []packageartifact.ApexMember{{
+				Kind:      apexast.DeclarationMethod,
+				Name:      "authorize",
+				Type:      "Boolean",
+				Modifiers: []string{"global", "static"},
+				Parameters: []apexast.Parameter{{
+					Name: "amount",
+					Type: "Decimal",
+				}},
+			}, {
+				Kind:      apexast.DeclarationConstructor,
+				Name:      "BillingGateway",
+				Modifiers: []string{"global"},
+				Parameters: []apexast.Parameter{{
+					Name: "amount",
+					Type: "Decimal",
+				}},
+			}},
+		}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := packageartifact.WriteJSON(path, artifact); err != nil {
 		t.Fatal(err)
 	}
 }

@@ -51,6 +51,7 @@ project:
   packageDirs: [force-app]
   defaultNamespace: pkg
   managedPackageDependencies: []
+  packageShims: []
 org:
   features: [PersonAccounts]
 ```
@@ -61,7 +62,33 @@ org:
 | `project.packageDirs` | Source package directories. Overrides `sfdx-project.json`. |
 | `project.defaultNamespace` | Default namespace for package-local code. |
 | `project.managedPackageDependencies` | Managed package source or artifact references. |
+| `project.packageShims` | Local source roots that provide test/runtime bodies for captured package artifacts. |
 | `org.features` | Scratch-org style features for local runtime behavior. |
+
+## Package artifacts
+
+Use an artifact dependency when a project needs installed package contracts
+without package source:
+
+```yaml
+project:
+  managedPackageDependencies: ["pkg:artifact:.glade/packages/pkg.glade-package.json:1.2.3.4"]
+```
+
+Capture the artifact with the first-party org package plugin:
+
+```bash
+glade plugins install @glade/orgpackage
+glade orgpackage capture --target-org packaging --namespace pkg --output .glade/packages/pkg.glade-package.json --config-snippet
+```
+
+Captured methods compile from signatures. They do not run local behavior unless
+a shim root supplies source:
+
+```yaml
+project:
+  packageShims: ["pkg:test-support/package-shims/pkg"]
+```
 
 ## Common Validation Errors
 

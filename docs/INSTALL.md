@@ -155,6 +155,14 @@ glade plugins install @glade/performance
 glade performance scan --project . --json
 ```
 
+Capture installed package contracts from an org when a local project depends on
+a package but should not carry its source:
+
+```bash
+glade plugins install @glade/orgpackage
+glade orgpackage capture --target-org packaging --namespace pkg --output .glade/packages/pkg.glade-package.json --config-snippet
+```
+
 The short aliases `compat` and `performance` resolve to `@glade/compat` and
 `@glade/performance`. The public plugin registry is preview. Direct archives
 and local links are the fallback paths until a registry is configured. The

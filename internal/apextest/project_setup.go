@@ -20,9 +20,34 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, ca
 	var out []vm.Class
 	sources := sourceCacheFor(caches)
 	knownTypes := knownTypeNames(index.Types)
+	sourceBackedTypes := sourceBackedTypeNames(index.Types)
 	methodsByClass := projectMethodsByClass(methods)
 	for _, typ := range index.Types {
 		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface && typ.Kind != apexast.DeclarationEnum {
+			continue
+		}
+		if typ.Artifact && strings.TrimSpace(typ.File) == "" && !sourceBackedTypes[typeNamespaceNameKey(typ.Namespace, typ.Name)] {
+			class := vm.Class{
+				Name:         typ.Name,
+				Namespace:    typ.Namespace,
+				Access:       accessModifier(typ.Modifiers),
+				Modifiers:    append([]string(nil), typ.Modifiers...),
+				IsAbstract:   hasModifier(typ.Modifiers, "abstract"),
+				IsInterface:  typ.Kind == apexast.DeclarationInterface,
+				Dependency:   true,
+				Fields:       make(map[string]vm.Field),
+				StaticFields: make(map[string]vm.Field),
+				Methods:      make(map[string]vm.Method),
+			}
+			for _, method := range methodsByClass[projectMethodOwnerKey(typ.Name, typ.File)] {
+				class.Methods[methodShortName(method.Name)+methodParamKey(method.Params)] = method
+			}
+			for _, member := range typ.Members {
+				if member.Kind == apexast.DeclarationConstructor {
+					class.Constructors = append(class.Constructors, artifactUnsupportedConstructor(typ, member))
+				}
+			}
+			out = append(out, class)
 			continue
 		}
 		source, err := sources.read(typ.File)
@@ -128,9 +153,31 @@ func compileProjectMethods(index typesys.Index, caches ...*sourceCache) map[stri
 		Method vm.Method
 	}
 	sources := sourceCacheFor(caches)
+	sourceBackedTypes := sourceBackedTypeNames(index.Types)
 	var jobs []methodCompileJob
+	var syntheticResults []methodCompileResult
 	for _, typ := range index.Types {
 		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface {
+			continue
+		}
+		if typ.Artifact && strings.TrimSpace(typ.File) == "" && !sourceBackedTypes[typeNamespaceNameKey(typ.Namespace, typ.Name)] {
+			for _, member := range typ.Members {
+				if member.Kind != apexast.DeclarationMethod {
+					continue
+				}
+				method := vm.Method{
+					Name:        typ.Name + "." + member.Name,
+					ReturnType:  member.Type,
+					Params:      artifactMethodParams(member.Parameters),
+					ClassName:   typ.Name,
+					IsStatic:    hasModifier(member.Modifiers, "static"),
+					Access:      accessModifier(member.Modifiers),
+					Modifiers:   append([]string(nil), member.Modifiers...),
+					Dependency:  true,
+					Unsupported: capturedPackageNoLocalBody,
+				}
+				syntheticResults = append(syntheticResults, methodCompileResult{Key: projectMethodMapKey(method), Method: method})
+			}
 			continue
 		}
 		source := ""
@@ -208,13 +255,56 @@ func compileProjectMethods(index typesys.Index, caches ...*sourceCache) map[stri
 		wg.Wait()
 	}
 
-	out := make(map[string]vm.Method, len(results))
+	out := make(map[string]vm.Method, len(results)+len(syntheticResults))
+	for _, result := range syntheticResults {
+		if result.Key != "" {
+			out[result.Key] = result.Method
+		}
+	}
 	for _, result := range results {
 		if result.Key != "" {
 			out[result.Key] = result.Method
 		}
 	}
 	return out
+}
+
+const capturedPackageNoLocalBody = "captured package member has no local body; add a project.packageShims entry or run this behavior in Salesforce"
+
+func artifactMethodParams(params []apexast.Parameter) []vm.Param {
+	out := make([]vm.Param, 0, len(params))
+	for _, param := range params {
+		out = append(out, vm.Param{Name: param.Name, Type: param.Type})
+	}
+	return out
+}
+
+func artifactUnsupportedConstructor(typ typesys.TypeSymbol, member typesys.MemberSymbol) vm.Method {
+	return vm.Method{
+		Name:          typ.Name + ".<init>",
+		ReturnType:    "void",
+		Params:        artifactMethodParams(member.Parameters),
+		ClassName:     typ.Name,
+		IsConstructor: true,
+		Access:        accessModifier(member.Modifiers),
+		Modifiers:     append([]string(nil), member.Modifiers...),
+		Dependency:    true,
+		Unsupported:   capturedPackageNoLocalBody,
+	}
+}
+
+func sourceBackedTypeNames(types []typesys.TypeSymbol) map[string]bool {
+	out := make(map[string]bool)
+	for _, typ := range types {
+		if strings.TrimSpace(typ.File) != "" {
+			out[typeNamespaceNameKey(typ.Namespace, typ.Name)] = true
+		}
+	}
+	return out
+}
+
+func typeNamespaceNameKey(namespace, name string) string {
+	return strings.ToLower(strings.TrimSpace(namespace)) + "." + strings.ToLower(strings.TrimSpace(name))
 }
 
 var apexMetaAPIVersionPattern = regexp.MustCompile(`(?is)<apiVersion>\s*([0-9]+(?:\.[0-9]+)?)\s*</apiVersion>`)

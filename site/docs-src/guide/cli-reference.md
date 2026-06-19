@@ -432,14 +432,20 @@ glade dap --project .
 
 ## `glade package`
 
-Build, inspect, validate, and diff managed package artifacts.
+Build, inspect, validate, diff, and capture managed package artifacts.
 
 ```bash
 glade package build --project . --namespace pkg --output pkg.json --progress
 glade package info pkg.json --json
 glade package validate pkg.json
 glade package diff old.json pkg.json --json
+glade plugins install @glade/orgpackage
+glade orgpackage capture --target-org packaging --namespace pkg --output .glade/packages/pkg.glade-package.json --config-snippet
 ```
+
+`glade package capture` is a bridge to the `orgpackage` plugin. Base Glade keeps
+artifact loading, type checking, and local runtime behavior; the plugin owns
+live Salesforce org capture.
 
 ## `glade server`
 

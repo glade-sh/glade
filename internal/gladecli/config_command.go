@@ -24,6 +24,7 @@ type configShowInfo struct {
 	PackageDirs                []string                          `json:"packageDirs"`
 	OrgFeatures                []string                          `json:"orgFeatures,omitempty"`
 	ManagedPackageDependencies []config.ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
+	PackageShims               []config.PackageShim              `json:"packageShims,omitempty"`
 }
 
 type configInitOptions struct {
@@ -88,6 +89,9 @@ func runConfigShow(args []string, w io.Writer) error {
 	}
 	if len(info.ManagedPackageDependencies) > 0 {
 		fmt.Fprintf(w, "managedPackageDependencies: %d\n", len(info.ManagedPackageDependencies))
+	}
+	if len(info.PackageShims) > 0 {
+		fmt.Fprintf(w, "packageShims: %d\n", len(info.PackageShims))
 	}
 	return nil
 }
@@ -197,6 +201,7 @@ func loadConfigShowInfo(root string) (configShowInfo, error) {
 		info.ConfigPath = cfgPath
 		info.OrgFeatures = cfg.Org.Features
 		info.ManagedPackageDependencies = cfg.Project.ManagedPackageDependencies
+		info.PackageShims = cfg.Project.PackageShims
 	} else if !errors.Is(err, config.ErrNotFound) {
 		return configShowInfo{}, err
 	}

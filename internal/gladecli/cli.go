@@ -26,6 +26,7 @@ import (
 	"github.com/glade-sh/glade/internal/lsp"
 	"github.com/glade-sh/glade/internal/orgdescribe"
 	"github.com/glade-sh/glade/internal/packageartifact"
+	"github.com/glade-sh/glade/internal/pluginhost"
 	"github.com/glade-sh/glade/internal/profile"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
@@ -563,9 +564,30 @@ func runPackage(ctx context.Context, args []string, w io.Writer, progressW io.Wr
 		return runPackageValidate(args[1:], w)
 	case "diff":
 		return runPackageDiff(args[1:], w)
+	case "capture":
+		return runPackageCaptureBridge(ctx, args[1:], w, progressW)
 	default:
-		return errors.New("usage: glade package build|info|validate|diff ...")
+		return errors.New("usage: glade package build|info|validate|diff|capture ...")
 	}
+}
+
+func runPackageCaptureBridge(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+	state, err := pluginhost.NewStore(pluginhost.DefaultRoot()).ReadInstalled()
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	plugin, ok := pluginhost.FindByCommandRoot(state, "orgpackage")
+	if !ok {
+		return errors.New("glade package capture requires the @glade/orgpackage plugin; run `glade plugins install @glade/orgpackage`, then `glade orgpackage capture --target-org <alias> --namespace <ns> --output <path>`")
+	}
+	code, err := pluginhost.RunPlugin(ctx, plugin, append([]string{"orgpackage", "capture"}, args...), stdout, stderr)
+	if err != nil {
+		return err
+	}
+	if code != 0 {
+		return fmt.Errorf("orgpackage capture exited with code %d", code)
+	}
+	return nil
 }
 
 func runPackageBuild(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
@@ -683,6 +705,18 @@ func runPackageInfo(args []string, w io.Writer) error {
 	}
 	fmt.Fprintf(w, "sourceRoot: %s\n", info.SourceRoot)
 	fmt.Fprintf(w, "sourceApiVersion: %s\n", info.SourceAPIVersion)
+	if info.Capture.Source != "" {
+		fmt.Fprintf(w, "captureSource: %s\n", info.Capture.Source)
+	}
+	if info.Capture.TargetOrg != "" {
+		fmt.Fprintf(w, "captureTargetOrg: %s\n", info.Capture.TargetOrg)
+	}
+	if info.Capture.OrgID != "" {
+		fmt.Fprintf(w, "captureOrgId: %s\n", info.Capture.OrgID)
+	}
+	if info.Capture.PackageID != "" {
+		fmt.Fprintf(w, "capturePackageId: %s\n", info.Capture.PackageID)
+	}
 	fmt.Fprintf(w, "apexTypes: %d\n", info.ApexTypes)
 	fmt.Fprintf(w, "objects: %d\n", info.Objects)
 	fmt.Fprintf(w, "customMetadataRecords: %d\n", info.CustomMetadataRecords)
