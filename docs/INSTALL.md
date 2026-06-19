@@ -22,14 +22,6 @@ GLADE_INSTALL_DIR=/usr/local/bin curl -fsSL https://glade.sh/install.sh | sh
 GLADE_VERSION=vX.Y.Z curl -fsSL https://glade.sh/install.sh | sh
 ```
 
-For a private repository release, invited users need a GitHub token with
-`contents:read` access. Export it before running the installer:
-
-```bash
-export GLADE_GITHUB_TOKEN=github_pat_...
-curl -fsSL https://glade.sh/install.sh | sh
-```
-
 Then check the binary:
 
 ```bash
@@ -160,14 +152,16 @@ a package but should not carry its source:
 
 ```bash
 glade plugins install @glade/orgpackage
-glade orgpackage capture --target-org packaging --namespace pkg --output .glade/packages/pkg.glade-package.json --config-snippet
+glade package capture --target-org packaging --namespace pkg --output .glade/packages/pkg.glade-package.json --config-snippet
 ```
 
-The short aliases `compat` and `performance` resolve to `@glade/compat` and
-`@glade/performance`. The public plugin registry is preview. Direct archives
-and local links are the fallback paths until a registry is configured. The
-first-party plugin catalog, local archive install path, and author contract are
-documented in [PLUGINS.md](PLUGINS.md).
+`glade package capture` dispatches to `glade orgpackage capture` when the
+`@glade/orgpackage` plugin is installed or linked. The short aliases `compat`,
+`performance`, and `orgpackage` resolve to `@glade/compat`,
+`@glade/performance`, and `@glade/orgpackage`. The public plugin registry is
+preview. Direct archives and local links are the fallback paths until a
+registry is configured. The first-party plugin catalog, local archive install
+path, and author contract are documented in [PLUGINS.md](PLUGINS.md).
 
 Run a focused class or only tests affected by changes since a git ref:
 

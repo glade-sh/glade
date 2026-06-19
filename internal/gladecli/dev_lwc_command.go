@@ -613,6 +613,8 @@ Preview routes:
   /lwc/preview/cmp/c/actionProbe?c__mode=demo
   /lwc/preview/action/Account/<recordId>/Update_Status
   /lwc/preview/action/global/Global_Status
+  /lwc/preview/community/Partner_Portal/Account
+  /lwc/preview/community/Partner_Portal/cmp/c/communityProbe
 
 Context flags:
   --context <name>
@@ -630,6 +632,9 @@ Context flags:
   --form-factor Large|Medium|Small
   --state key=value
   --open
+
+Community routes open from named contexts in glade.lwc.json. Direct flags cover
+component, page, tab, action, utility, and Flow route shapes.
 
 Visualforce-backed tabs redirect to /apex/<page>, where <apex:includeLightning/>
 and Lightning Out render through the same local Lightning runtime.

@@ -46,10 +46,37 @@ glade package build --project . --namespace pkg --version 1.2.3 --output .glade/
 glade package info .glade/pkg-1.2.3.json --json
 glade package validate .glade/pkg-1.2.3.json
 glade package diff .glade/pkg-1.2.2.json .glade/pkg-1.2.3.json --json
+glade plugins install @glade/orgpackage
+glade package capture --target-org packaging --namespace pkg --output .glade/packages/pkg.glade-package.json --config-snippet
 ```
 
 The diff reports added, removed, and changed global Apex types, custom objects,
 and source hash changes.
+
+Use `glade package build` when the package source is on disk. Use
+`glade package capture` when a local project depends on an installed package
+but should not carry the package source. It dispatches to
+`glade orgpackage capture` when `@glade/orgpackage` is installed or linked.
+The captured artifact supplies global Apex signatures, schema, labels, static
+resources, and code-intelligence symbols.
+
+Consume a captured artifact from `glade.yml`:
+
+```yaml
+project:
+  managedPackageDependencies: ["pkg:artifact:.glade/packages/pkg.glade-package.json:1.2.3.4"]
+```
+
+Captured package methods compile from signatures. They do not run local behavior
+unless a shim root supplies source:
+
+```yaml
+project:
+  packageShims: ["pkg:test-support/package-shims/pkg"]
+```
+
+The artifact remains the contract. `packageShims` supplies local source bodies
+under the package namespace.
 
 ## Enterprise workflows
 

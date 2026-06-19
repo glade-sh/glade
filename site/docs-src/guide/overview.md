@@ -18,13 +18,25 @@ and exposes support gaps instead of hiding them.
 ## Start with
 
 <div class="docs-route-grid">
+  <a class="docs-route-card" href="/guide/installation">
+    <strong>Install</strong>
+    <span>Install Glade and check the binary.</span>
+  </a>
+  <a class="docs-route-card" href="/guide/tester-field-guide">
+    <strong>Tester field guide</strong>
+    <span>Run a first project evaluation with CLI, VS Code, CI, and handoff proof.</span>
+  </a>
   <a class="docs-route-card" href="/guide/quickstart">
-    <strong>Quickstart</strong>
-    <span>Install Glade and run the first check.</span>
+    <strong>First local check</strong>
+    <span>Run the shortest check and test loop.</span>
   </a>
   <a class="docs-route-card" href="/guide/support-map">
     <strong>What runs locally</strong>
     <span>Check local behavior and what still requires Salesforce.</span>
+  </a>
+  <a class="docs-route-card" href="/guide/workbench">
+    <strong>Interactive capability map</strong>
+    <span>Try checked Apex support labels in the browser workbench.</span>
   </a>
   <a class="docs-route-card" href="/guide/cli-reference">
     <strong>CLI Reference</strong>

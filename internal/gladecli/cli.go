@@ -552,7 +552,7 @@ func runPackage(ctx context.Context, args []string, w io.Writer, progressW io.Wr
 		return err
 	}
 	if len(args) == 0 {
-		return errors.New("usage: glade package build|info|validate|diff ...")
+		return errors.New("usage: glade package build|info|validate|diff|capture ...")
 	}
 
 	switch args[0] {

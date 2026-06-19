@@ -1260,6 +1260,11 @@ func TestRunCommandHelp(t *testing.T) {
 			want: []string{"Usage:", "glade profile analyze <trace.json> [--json] [--format text|markdown|pprof]", "--format <mode>", "pprof"},
 		},
 		{
+			name: "help package",
+			args: []string{"help", "package"},
+			want: []string{"Usage:", "glade package capture --target-org <alias>", "capture", "@glade/orgpackage", "glade package capture --target-org packaging"},
+		},
+		{
 			name: "help exit codes",
 			args: []string{"help", "exit-codes"},
 			want: []string{"Exit codes", "0  Command completed", "1  Command failed", "2  Command was not understood"},
@@ -1320,6 +1325,11 @@ func TestUsageErrorsMatchHelpSurface(t *testing.T) {
 			name: "profile",
 			args: []string{"profile", "analyze"},
 			want: []string{"usage: glade profile analyze <trace.json> [--json] [--format text|markdown|pprof]"},
+		},
+		{
+			name: "package",
+			args: []string{"package"},
+			want: []string{"usage: glade package build|info|validate|diff|capture ..."},
 		},
 	}
 	for _, tt := range tests {
@@ -1487,7 +1497,7 @@ func TestRunTopLevelHelpAlignment(t *testing.T) {
 	got := stdout.String()
 	for _, want := range []string{
 		"package",
-		"Build, inspect, validate, and diff managed package artifacts.",
+		"Build, inspect, validate, diff, and capture managed package artifacts.",
 		"dap",
 		"Run the Debug Adapter Protocol server over stdio.",
 		"server",

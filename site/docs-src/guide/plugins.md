@@ -21,16 +21,21 @@ Base Glade install and local Apex workflows do not require plugins.
 - `@glade/compat` - compatibility fixtures, runtime capability reports, and compatibility
   scanners.
 - `@glade/performance` - advisory Salesforce performance scans.
+- `@glade/orgpackage` - captures installed package contracts from a Salesforce org
+  into a Glade package artifact.
 
 ```bash
 # Requires a live plugin registry or configured custom registry.
 glade plugins available
 glade plugins install @glade/compat
 glade plugins install @glade/performance
+glade plugins install @glade/orgpackage
 ```
 
-The short aliases `compat` and `performance` resolve to `@glade/compat` and
-`@glade/performance`.
+The short aliases `compat`, `performance`, and `orgpackage` resolve to
+`@glade/compat`, `@glade/performance`, and `@glade/orgpackage`. After
+`@glade/orgpackage` is installed or linked, `glade package capture ...`
+dispatches to `glade orgpackage capture ...`.
 
 ## Registry preview plugins
 
@@ -73,4 +78,35 @@ package names live in the configured registry catalog.
 glade plugins link --exec ./glade-plugin-quality
 ```
 
-See the build, manifest, publish, and lock-file guides for the full contract.
+## Plugin docs
+
+<div class="docs-route-grid">
+  <a class="docs-route-card" href="/guide/plugins/first-party">
+    <strong>First-party plugins</strong>
+    <span>Choose first-party workflows when the base runtime is not enough.</span>
+  </a>
+  <a class="docs-route-card" href="/guide/plugins/install-manage">
+    <strong>Install and manage</strong>
+    <span>Install registry, archive, and linked plugins.</span>
+  </a>
+  <a class="docs-route-card" href="/guide/plugins/lock-ci">
+    <strong>Lock files and CI</strong>
+    <span>Restore the same plugin set on another machine.</span>
+  </a>
+  <a class="docs-route-card" href="/guide/plugins/build">
+    <strong>Build a plugin</strong>
+    <span>Package an executable plugin archive.</span>
+  </a>
+  <a class="docs-route-card" href="/guide/plugins/manifest">
+    <strong>Manifest reference</strong>
+    <span>Write the command manifest Glade validates.</span>
+  </a>
+  <a class="docs-route-card" href="/guide/plugins/marketplace">
+    <strong>Marketplace</strong>
+    <span>Understand registry, trust, and archive installs.</span>
+  </a>
+  <a class="docs-route-card" href="/guide/plugins/publish">
+    <strong>Publish a plugin</strong>
+    <span>Prepare archives for a curated catalog entry.</span>
+  </a>
+</div>

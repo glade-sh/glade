@@ -17,6 +17,7 @@ ship as first-party plugins.
 | --- | --- | --- | --- |
 | `@glade/compat` | `compat` | `compat`, `surface`, `local-tests`, `post-parity`, `examples`, `dashboard`, `gaps`, `stdlib` | Compatibility fixtures, support ledgers, docs inventory, and parity scanners. |
 | `@glade/performance` | `performance` | `performance` | Advisory Salesforce project performance scans. Replaces the old base `glade inspect performance` path. |
+| `@glade/orgpackage` | `orgpackage` | `orgpackage` | Captures installed package contracts from Salesforce orgs into Glade package artifacts. |
 
 The first-party plugin source lives in the sibling `glade-tools` workspace.
 Users install and run plugins through `glade plugins`. The product repository
@@ -35,11 +36,12 @@ Install first-party plugins with canonical coordinates:
 glade plugins available
 glade plugins install @glade/compat
 glade plugins install @glade/performance
+glade plugins install @glade/orgpackage
 glade plugins list
 ```
 
-The short aliases `compat` and `performance` resolve to `@glade/compat` and
-`@glade/performance`.
+The short aliases `compat`, `performance`, and `orgpackage` resolve to
+`@glade/compat`, `@glade/performance`, and `@glade/orgpackage`.
 Registry installs appear by canonical coordinate in `plugins list`,
 `plugins which`, and `plugins doctor`. Linked development plugins without a
 catalog coordinate use their manifest name.
@@ -94,16 +96,23 @@ Once installed or linked, the plugin command root behaves like a Glade command:
 glade compat local-tests --project . --parallel auto --json
 glade surface refresh --docs "$GLADE_SALESFORCE_DOCS_SOURCE" --out tmp/surface
 glade performance scan --project . --json
+glade orgpackage capture --target-org packaging --namespace pkg --output .glade/packages/pkg.glade-package.json --config-snippet
 ```
 
 Glade does not parse plugin-specific flags. It streams stdout and stderr from
 the executable.
+
+After `@glade/orgpackage` is installed or linked, the product bridge
+`glade package capture ...` dispatches to `glade orgpackage capture ...`.
+Base Glade owns artifact loading, validation, diffing, and local runtime use;
+the plugin owns live Salesforce org capture.
 
 Ask which plugin owns a command:
 
 ```bash
 glade plugins which compat
 glade plugins which performance
+glade plugins which orgpackage
 ```
 
 Check installed plugin executables and manifests:

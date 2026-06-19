@@ -13,11 +13,12 @@ fallback paths until the registry is published.
 glade plugins available
 glade plugins install @glade/compat
 glade plugins install @glade/performance
+glade plugins install @glade/orgpackage
 glade plugins install @acme/quality@1.2.0
 ```
 
-The short aliases `compat` and `performance` resolve to `@glade/compat` and
-`@glade/performance`.
+The short aliases `compat`, `performance`, and `orgpackage` resolve to
+`@glade/compat`, `@glade/performance`, and `@glade/orgpackage`.
 Registry installs appear by canonical coordinate in `plugins list`,
 `plugins which`, and `plugins doctor`. Linked development plugins without a
 catalog coordinate use their manifest name.
@@ -31,6 +32,7 @@ glade plugins search quality
 glade plugins info @acme/quality
 glade plugins list
 glade plugins which compat
+glade plugins which orgpackage
 glade plugins doctor
 ```
 

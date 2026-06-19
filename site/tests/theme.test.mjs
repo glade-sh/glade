@@ -116,8 +116,8 @@ test("home page uses a static local proof and final go-live workflow copy", () =
   assert.match(index, /class="home-type-eyebrow"[\s\S]*Run, test, and debug Apex locally/);
   assert.doesNotMatch(index, /class="home-lead"/);
   assert.match(index, /class="home-deck"[\s\S]*Run supported Apex checks, focused tests, SOQL\/DML, triggers, and anonymous Apex against local project state\. Debug supported paths from VS Code\. Check human and AI-generated changes before the org round trip\. Salesforce remains the validation gate\./);
-  assert.match(index, /href="\/guide\/quickstart"[^>]*data-demo-link[^>]*>Run your first local check<\/a>/);
-  assert.match(index, /href="\/guide\/support-map"[\s\S]*>What runs locally<\/a>/);
+  assert.match(index, /href="\/guide\/installation"[^>]*data-demo-link[^>]*>Install Glade<\/a>/);
+  assert.match(index, /href="\/guide\/quickstart"[\s\S]*>Run your first local check<\/a>/);
   assert.match(index, /No Salesforce org login required for supported local checks\./);
   assert.doesNotMatch(index, /release gate|pre-gate|deploy gate|org gate/);
   const homeLoopStart = index.indexOf('<div class="home-loop-visual"');
@@ -197,6 +197,7 @@ test("home page uses a static local proof and final go-live workflow copy", () =
   assert.match(index, /glade plugins list/);
   assert.match(index, /glade plugins link --exec \.\/glade-plugin-quality/);
   assert.match(index, /glade plugins install @glade\/compat/);
+  assert.match(index, /See plugin install, lock-file, authoring, and marketplace docs\./);
   assert.match(index, /aria-label="Salesforce validation boundary"/);
   assert.match(index, /<h2 class="home-h2">Salesforce remains the validation gate\.<\/h2>/);
   assert.match(index, /Use Salesforce for live auth, hosted service engines, deploy and retrieve, exact Lightning Experience behavior, Streaming, Pub\/Sub, GraphQL, and exact production governor accounting\./);
@@ -233,11 +234,13 @@ test("home page uses a static local proof and final go-live workflow copy", () =
   assert.match(config, /message: 'Glade is local-first Apex tooling\.'/);
   assert.match(config, /copyright: 'Released by the Glade project\.'/);
   assert.match(config, /\{ text: 'Playground', link: '\/guide\/playground' \}/);
-  assert.match(config, /\{ text: 'Capabilities', link: '\/guide\/support-map' \}/);
+  assert.match(config, /\{ text: 'What runs locally', link: '\/guide\/support-map' \}/);
   assert.match(config, /\{ text: 'VS Code', link: '\/guide\/editor' \}/);
   assert.match(config, /\{ text: 'sf target orgs', link: '\/guide\/glade-orgs' \}/);
   assert.match(config, /\{ text: 'Docs', link: '\/guide\/overview' \}/);
   assert.match(config, /\{ text: 'Install', link: '\/guide\/installation' \}/);
+  assert.match(config, /\{ text: 'Tester field guide', link: '\/guide\/tester-field-guide' \}/);
+  assert.match(config, /\{ text: 'Workbench', link: '\/guide\/workbench' \}/);
   assert.doesNotMatch(config, /\{ text: 'Coverage', link: '\/guide\/workbench' \}/);
   assert.doesNotMatch(config, /\{ text: 'Capability map', link: '\/guide\/support-map' \}/);
 });
@@ -279,7 +282,7 @@ test("site copy is task-first and names local capabilities plainly", () => {
   assert.match(codeMirrorWorkbench, /Try capability-backed autocomplete\./);
   assert.match(codeMirrorWorkbench, /Type a dot after/);
   assert.match(config, /description: 'Local Apex checks and focused tests before the Salesforce validation gate\.'/);
-  assert.match(config, /\{ text: 'Capabilities', link: '\/guide\/support-map' \}/);
+  assert.match(config, /\{ text: 'What runs locally', link: '\/guide\/support-map' \}/);
   assert.match(supportMap, /## Area details/);
   assert.match(supportMap, /## Capability claims/);
   assert.doesNotMatch(index, /View capability map/);
@@ -296,7 +299,7 @@ test("site copy is task-first and names local capabilities plainly", () => {
   assert.doesNotMatch(siteCopy, /First-layer status/i);
   assert.match(siteCopy, /packageShims/);
   assert.match(siteCopy, /glade plugins install @glade\/orgpackage/);
-  assert.match(cliReference, /glade orgpackage capture --target-org packaging --namespace pkg/);
+  assert.match(cliReference, /glade package capture --target-org packaging --namespace pkg/);
   assert.equal((cliReference.match(/auto-connect through `\.glade\/test\/serve\.sock` unless `--no-serve` is set\./g) || []).length, 1);
 });
 
@@ -728,6 +731,7 @@ test("theme uses the Host Signal design direction", () => {
   assert.match(config, /\{ text: 'Docs', link: '\/guide\/overview' \}/);
   assert.match(config, /text: 'What is Glade\?'/);
   assert.match(config, /text: 'First local check'/);
+  assert.match(config, /text: 'Tester field guide'/);
   assert.match(config, /text: 'What runs locally'/);
   assert.doesNotMatch(config, /text: 'Capability map'/);
   assert.doesNotMatch(config, /text: 'Coverage workbench'/);
@@ -737,10 +741,18 @@ test("theme uses the Host Signal design direction", () => {
   assert.match(config, /text: 'Affected tests'/);
   assert.match(config, /text: 'Local API routes'/);
   assert.match(config, /text: 'VS Code'/);
+  assert.match(config, /text: 'Workbench'/);
   assert.match(config, /text: 'Automation and JSON'/);
   assert.match(config, /text: 'Error codes and `glade explain`'/);
   assert.match(config, /text: 'Reports and package artifacts'/);
   assert.match(config, /text: 'Plugins'/);
+  assert.match(config, /text: 'First-party plugins'/);
+  assert.match(config, /text: 'Install and manage'/);
+  assert.match(config, /text: 'Lock files and CI'/);
+  assert.match(config, /text: 'Build a plugin'/);
+  assert.match(config, /text: 'Manifest reference'/);
+  assert.match(config, /text: 'Marketplace'/);
+  assert.match(config, /text: 'Publish'/);
   assert.doesNotMatch(config, /text: 'Compatibility \/ proof reports'/);
   assert.doesNotMatch(config, /Automation And|Error Codes And|Marketplace And|Install And|Built-In|First-Party|Build A Plugin|Plugin Lock Files And CI/);
   assert.ok(config.indexOf("text: 'What is Glade?'") < config.indexOf("text: 'Plugins'"));
@@ -798,6 +810,9 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(overview, /^# What is Glade\?/m);
   assert.match(overview, /class="docs-intro"/);
   assert.match(overview, /class="docs-route-grid"/);
+  assert.match(overview, /href="\/guide\/installation"[\s\S]*<strong>Install<\/strong>/);
+  assert.match(overview, /href="\/guide\/tester-field-guide"[\s\S]*<strong>Tester field guide<\/strong>/);
+  assert.match(overview, /href="\/guide\/workbench"[\s\S]*<strong>Interactive capability map<\/strong>/);
   assert.match(overview, /## First local loop/);
   assert.match(overview, /Glade models the local paths it can prove/);
   assert.match(overview, /local assessment, cruft review, or refactor-proof reports/);
@@ -839,7 +854,12 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(supportMap, /## Runs locally/);
   assert.match(supportMap, /## Runs with limits/);
   assert.match(supportMap, /Visualforce controller and page rendering[\s\S]*Preview feature/);
-  assert.match(supportMap, /Local LWC shell and Visualforce Lightning Out[\s\S]*Preview feature/);
+  assert.match(supportMap, /Local LWC workbench and routes[\s\S]*Preview feature/);
+  assert.match(supportMap, /Local LWC data and services[\s\S]*Preview feature with local-data limits/);
+  assert.match(supportMap, /Visualforce Lightning Out for LWCs[\s\S]*Preview feature with limits/);
+  assert.match(supportMap, /Local LWC Shell/);
+  assert.match(supportMap, /docs\/LWC_SUPPORT\.md/);
+  assert.doesNotMatch(supportMap, /folded into this page/);
   assert.match(supportMap, /## Requires Salesforce/);
   assert.match(supportMap, /Counts come from the checked standard library capability report/);
   assert.match(supportMap, /\| String, Decimal, Boolean, Math \| Runs locally \| 32 supported \/ 32 tracked \|/);
@@ -855,6 +875,7 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(installation, /Recommended path: use the one-line installer/);
   assert.match(installation, /class="docs-install-grid"/);
   assert.match(installation, /Installs the current release to <code>~\/\.local\/bin<\/code>\./);
+  assert.doesNotMatch(installation, /private repository release|GLADE_GITHUB_TOKEN/);
   assert.match(installation, /Use in CI or when policy requires pinned artifacts\./);
   assert.match(css, /\.docs-install-card\s*\{[\s\S]*padding: 16px;[\s\S]*border-radius: 12px;[\s\S]*min-height: 112px;/);
   assert.match(css, /\.docs-support-legend\s*\{[\s\S]*position: static;[\s\S]*display: flex;[\s\S]*flex-wrap: wrap;[\s\S]*gap: 4px;[\s\S]*padding: 4px 6px;/);
@@ -981,13 +1002,31 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.match(ciArtifacts, /mkdir -p reports/);
   assert.match(plugins, /Registry-backed[\s\S]*installs are preview until a registry, archive URL, or local plugin is[\s\S]*configured\./);
   assert.match(plugins, /plugins only when you need compatibility fixtures, capability reports,[\s\S]*compatibility dashboards, or project-specific checks\./);
+  assert.match(plugins, /@glade\/orgpackage/);
+  assert.match(plugins, /glade package capture \.\.\.[\s\S]*dispatches to `glade orgpackage capture \.\.\.`/);
+  for (const pluginRoute of [
+    "/guide/plugins/first-party",
+    "/guide/plugins/install-manage",
+    "/guide/plugins/lock-ci",
+    "/guide/plugins/build",
+    "/guide/plugins/manifest",
+    "/guide/plugins/marketplace",
+    "/guide/plugins/publish"
+  ]) {
+    assert.match(plugins, new RegExp(`href="${pluginRoute}"`));
+    assert.match(config, new RegExp(`link: '${pluginRoute}'`));
+  }
   assert.match(plugins, /glade plugins link --exec \.\/glade-plugin-quality/);
   assert.match(firstPartyPlugins, /install commands below[\s\S]*canonical coordinates once the registry/);
   assert.match(firstPartyPlugins, /runtime capability reports/);
+  assert.match(firstPartyPlugins, /@glade\/orgpackage/);
+  assert.match(firstPartyPlugins, /glade package capture --target-org packaging/);
   assert.match(pluginMarketplace, /The marketplace model is preview until the production registry is live/);
   assert.match(pluginInstallManage, /Direct archives and local links are the[\s\S]*fallback paths/);
+  assert.match(pluginInstallManage, /glade plugins install @glade\/orgpackage/);
   assert.match(pluginLockCi, /^# Plugin lock files and CI/m);
   assert.match(pluginLockCi, /The default public plugin registry is not live yet/);
+  assert.match(pluginLockCi, /glade plugins install @glade\/orgpackage/);
   assert.match(lwcLocalShell, /^## Data and services/m);
   assert.match(enterpriseWorkflows, /^## Cruft and dead code/m);
   for (const staleHeading of [

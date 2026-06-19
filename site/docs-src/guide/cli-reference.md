@@ -346,9 +346,14 @@ composer. The shell also prints `/lwc/preview/component/<namespace>/<component>`
 `/lwc/preview/cmp/<namespace>/<component>?c__name=value`,
 `/lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>`,
 `/lwc/preview/app/<Page>`, `/lwc/preview/home/<Page>`,
-`/lwc/preview/tab/<Tab>`, `/lwc/preview/action/<Object>/<recordId>/<Action>`,
-and `/lwc/preview/action/global/<Action>` routes. Named contexts such as
-`phase3BaseComponents` can open fixture-specific service probes.
+`/lwc/preview/tab/<Tab>`, `/lwc/preview/utility/<UtilityBar>`,
+`/lwc/preview/flow/<FlowApiName>`,
+`/lwc/preview/action/<Object>/<recordId>/<Action>`,
+`/lwc/preview/action/global/<Action>`,
+`/lwc/preview/community/<site>/<page>`, and
+`/lwc/preview/community/<site>/cmp/<namespace>/<component>` routes. Community
+routes come from named contexts such as `communityAccount`; named contexts such
+as `phase3BaseComponents` can also open fixture-specific service probes.
 Visualforce-backed tabs redirect to `/apex/<Page>` and share the same Lightning
 Out runtime.
 
@@ -440,7 +445,7 @@ glade package info pkg.json --json
 glade package validate pkg.json
 glade package diff old.json pkg.json --json
 glade plugins install @glade/orgpackage
-glade orgpackage capture --target-org packaging --namespace pkg --output .glade/packages/pkg.glade-package.json --config-snippet
+glade package capture --target-org packaging --namespace pkg --output .glade/packages/pkg.glade-package.json --config-snippet
 ```
 
 `glade package capture` is a bridge to the `orgpackage` plugin. Base Glade keeps

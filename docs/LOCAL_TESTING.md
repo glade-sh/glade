@@ -66,9 +66,13 @@ Use direct flags for one route:
 glade dev lwc --project . --target record-page --object Account --record 001000000000001AAA --page Account_Record_Page --open
 ```
 
-Use `--target url-addressable`, `--target record-action`, or `--target
-global-action` with `--component`, `--action`, `--object`, and `--record` when
-you need those shell contexts without a named preset.
+Use `--target url-addressable`, `--target record-action`, `--target
+global-action`, `--target utility-bar`, `--target flow-screen`, or
+`--target flow-action` with the matching `--component`, `--action`, `--object`,
+`--record`, `--page`, `--flow`, and `--flow-input` flags when you need those
+shell contexts without a named preset. Community routes use named contexts in
+`glade.lwc.json` so the site, base path, IDs, guest mode, and PageReference
+travel together.
 
 Put reusable contexts in `glade.lwc.json` at the project root, or pass an
 explicit context file:

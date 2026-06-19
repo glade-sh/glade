@@ -45,9 +45,10 @@ glade dev lwc --project . --port 8080 --open
 `glade.lwc.json` presets support `component`, `urlAddressable`, `recordPage`,
 `appPage`, `homePage`, `tab`, `recordAction`, `globalAction`, `utilityBar`,
 `flowScreen`, `flowAction`, and `communityPage` targets.
-Pass `--context-file` to use a different preset file. The ready file records
-`selectedUrl` and `selectedContext` when a preset or direct target selects the
-first browser route.
+Community routes are preset-backed; select them with `--context` or
+`--context-file`. Pass `--context-file` to use a different preset file. The
+ready file records `selectedUrl` and `selectedContext` when a preset or direct
+target selects the first browser route.
 
 `/lightning/local/context.json` returns the active route, PageReference, route
 context, mounted components, discovered apps, named context presets,

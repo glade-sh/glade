@@ -20,6 +20,24 @@ func TestRunDevLWCHelpUsesLWCHelp(t *testing.T) {
 		t.Fatalf("exit code = %d, stderr=%s", code, stderr.String())
 	}
 	got := stdout.String()
+	wantRoutes := strings.Join([]string{
+		"Preview routes:",
+		"  /lwc/preview/component/c/contextProbe",
+		"  /lwc/preview/record/Account/<recordId>?page=Account_Record_Page",
+		"  /lwc/preview/app/App_Page",
+		"  /lwc/preview/home/Home_Page",
+		"  /lwc/preview/tab/Lwc_Probe",
+		"  /lwc/preview/utility/Support_Utility",
+		"  /lwc/preview/flow/Membership_Flow",
+		"  /lwc/preview/cmp/c/actionProbe?c__mode=demo",
+		"  /lwc/preview/action/Account/<recordId>/Update_Status",
+		"  /lwc/preview/action/global/Global_Status",
+		"  /lwc/preview/community/Partner_Portal/Account",
+		"  /lwc/preview/community/Partner_Portal/cmp/c/communityProbe",
+	}, "\n")
+	if !strings.Contains(got, wantRoutes) {
+		t.Fatalf("missing clean preview route block:\n%s\nin help:\n%s", wantRoutes, got)
+	}
 	for _, want := range []string{
 		"Start a local LWC preview development shell",
 		"Preview feature:",
@@ -36,10 +54,16 @@ func TestRunDevLWCHelpUsesLWCHelp(t *testing.T) {
 		"/lwc/preview/cmp/c/actionProbe?c__mode=demo",
 		"/lwc/preview/action/Account/<recordId>/Update_Status",
 		"/lwc/preview/action/global/Global_Status",
+		"/lwc/preview/community/Partner_Portal/Account",
+		"/lwc/preview/community/Partner_Portal/cmp/c/communityProbe",
+		"Community routes open from named contexts in glade.lwc.json.",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("missing %q in %s", want, got)
 		}
+	}
+	if strings.Contains(got, "community-page") {
+		t.Fatalf("help advertises community as a direct target flag: %s", got)
 	}
 	if strings.Contains(got, "Visualforce_Tab") {
 		t.Fatalf("help contains stale Visualforce_Tab route: %s", got)

@@ -158,9 +158,13 @@ The builder's object and record fields flow into `recordId`, `objectApiName`,
 LDS adapters, record forms, output fields, navigation state, and controller
 arguments that the component passes through.
 
-Use `--target url-addressable`, `--target record-action`, or `--target
-global-action` with `--component`, `--action`, `--object`, and `--record` when
-you need those shell contexts without a named preset.
+Use `--target url-addressable`, `--target record-action`, `--target
+global-action`, `--target utility-bar`, `--target flow-screen`, or
+`--target flow-action` with the matching `--component`, `--action`, `--object`,
+`--record`, `--page`, `--flow`, and `--flow-input` flags when you need those
+shell contexts without a named preset. Community routes use named contexts in
+`glade.lwc.json` so the site, base path, IDs, guest mode, and PageReference
+travel together.
 
 Use `--port 8080` for the common localhost shortcut. Use `--addr` when scripts
 need a full bind address.

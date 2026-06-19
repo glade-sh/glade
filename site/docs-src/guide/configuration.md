@@ -75,20 +75,27 @@ project:
   managedPackageDependencies: ["pkg:artifact:.glade/packages/pkg.glade-package.json:1.2.3.4"]
 ```
 
-Capture the artifact with the first-party org package plugin:
+Capture the artifact from a packaging or subscriber org with the first-party
+org package plugin:
 
 ```bash
 glade plugins install @glade/orgpackage
-glade orgpackage capture --target-org packaging --namespace pkg --output .glade/packages/pkg.glade-package.json --config-snippet
+glade package capture --target-org packaging --namespace pkg --output .glade/packages/pkg.glade-package.json --config-snippet
 ```
 
-Captured methods compile from signatures. They do not run local behavior unless
-a shim root supplies source:
+`glade package capture` dispatches to `glade orgpackage capture` when
+`@glade/orgpackage` is installed or linked. Captured methods compile from
+signatures. They do not run local behavior unless a shim root supplies source:
 
 ```yaml
 project:
   packageShims: ["pkg:test-support/package-shims/pkg"]
 ```
+
+Shim classes compile under the package namespace and supply bodies for captured
+methods that would otherwise have signatures only. They do not replace the
+artifact contract; keep the artifact as the dependency and use shims only for
+local test or runtime behavior.
 
 ## Common Validation Errors
 

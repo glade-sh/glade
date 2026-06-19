@@ -121,9 +121,10 @@ generated ledgers ship as plugins and do not live in the product runtime
 packages.
 
 First-party plugins are documented in [docs/PLUGINS.md](docs/PLUGINS.md).
-Install them as `@glade/compat` and `@glade/performance`. The short aliases
-`compat` and `performance` resolve to those canonical names. Third-party
-plugins use the same executable manifest contract.
+Install them as `@glade/compat`, `@glade/performance`, and
+`@glade/orgpackage`. The short aliases `compat`, `performance`, and
+`orgpackage` resolve to those canonical names. Third-party plugins use the same
+executable manifest contract.
 
 The public plugin registry is still preview. Coordinate installs need a live
 registry or custom registry. Direct archives and local links are the fallback
@@ -164,6 +165,14 @@ Serve the LWC preview shell and open a context preset:
 glade toolchain install
 glade dev lwc --project . --open
 glade dev lwc --project . --context accountRecord --open
+```
+
+Capture installed package contracts when a local project depends on package
+APIs without carrying package source:
+
+```bash
+glade plugins install @glade/orgpackage
+glade package capture --target-org packaging --namespace pkg --output .glade/packages/pkg.glade-package.json --config-snippet
 ```
 
 Serve a Salesforce-shaped local API:

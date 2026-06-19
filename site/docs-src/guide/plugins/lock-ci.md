@@ -11,6 +11,7 @@ local links remain available for private plugin installs and plugin development.
 ```bash
 # Requires a live plugin registry or configured custom registry.
 glade plugins install @glade/compat
+glade plugins install @glade/orgpackage
 glade plugins lock
 glade plugins restore
 ```

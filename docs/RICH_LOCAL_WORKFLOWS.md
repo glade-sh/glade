@@ -45,7 +45,7 @@ flags you provided.
 
 ## Package Artifacts
 
-Build an artifact with progress:
+Build an artifact with progress when the package source is in the checkout:
 
 ```bash
 glade package build \
@@ -79,6 +79,35 @@ glade package diff .glade/pkg-1.2.2.json .glade/pkg-1.2.3.json --json
 
 The diff reports added, removed, and changed global Apex types, custom objects,
 and source hash changes.
+
+Capture installed package contracts from an org when the local project depends
+on package APIs but should not carry package source:
+
+```bash
+glade plugins install @glade/orgpackage
+glade package capture --target-org packaging --namespace pkg --output .glade/packages/pkg.glade-package.json --config-snippet
+```
+
+`glade package capture` dispatches to `glade orgpackage capture` when
+`@glade/orgpackage` is installed or linked.
+
+Use the captured artifact from `glade.yml`:
+
+```yaml
+project:
+  managedPackageDependencies: ["pkg:artifact:.glade/packages/pkg.glade-package.json:1.2.3.4"]
+```
+
+Captured package methods compile from signatures. They do not run local behavior
+unless a shim root supplies source:
+
+```yaml
+project:
+  packageShims: ["pkg:test-support/package-shims/pkg"]
+```
+
+The artifact remains the contract. `packageShims` supplies local source bodies
+under the package namespace.
 
 ## Enterprise Workflows
 

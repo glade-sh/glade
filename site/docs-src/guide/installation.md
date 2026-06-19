@@ -62,14 +62,6 @@ GLADE_INSTALL_DIR=/usr/local/bin curl -fsSL https://glade.sh/install.sh | sh
 GLADE_VERSION=vX.Y.Z curl -fsSL https://glade.sh/install.sh | sh
 ```
 
-For a private repository release, invited users need a GitHub token with
-`contents:read` access. Export it before running the installer:
-
-```bash
-export GLADE_GITHUB_TOKEN=github_pat_...
-curl -fsSL https://glade.sh/install.sh | sh
-```
-
 Check the binary after it is on your path:
 
 ```bash

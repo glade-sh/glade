@@ -8,8 +8,8 @@ layout: home
     <h1>Local Apex runtime for SFDX projects</h1>
     <p class="home-deck">Run supported Apex checks, focused tests, SOQL/DML, triggers, and anonymous Apex against local project state. Debug supported paths from VS Code. Check human and AI-generated changes before the org round trip. Salesforce remains the validation gate.</p>
     <div class="home-cta-row">
-      <a class="home-cta primary" href="/guide/quickstart" data-demo-link>Run your first local check</a>
-      <a class="home-cta link" href="/guide/support-map">What runs locally</a>
+      <a class="home-cta primary" href="/guide/installation" data-demo-link>Install Glade</a>
+      <a class="home-cta link" href="/guide/quickstart">Run your first local check</a>
     </div>
     <p class="home-local-line">No Salesforce org login required for supported local checks.</p>
   </div>
@@ -150,6 +150,7 @@ glade org create my-glade-org</code></pre>
 glade plugins link --exec ./glade-plugin-quality
 glade plugins install @glade/compat</code></pre>
     </div>
+    <p class="home-p"><a href="/guide/plugins">See plugin install, lock-file, authoring, and marketplace docs.</a></p>
   </div>
 </section>
 

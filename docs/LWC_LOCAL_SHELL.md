@@ -167,13 +167,15 @@ glade dev lwc --project . --target record-page --object Account --record 0010000
 
 Supported context targets are `component`, `urlAddressable`, `recordPage`,
 `appPage`, `homePage`, `tab`, `recordAction`, `globalAction`, `utilityBar`,
-`flowScreen`, `flowAction`, and `communityPage`. Community presets use
-`community.site`, `basePath`, `siteId`, `networkId`, `guest`, `language`, and an
-optional configured `pageReference`. Flow presets use `flow.apiName` and
-optional `flow.inputVariables`. Direct flags include `--component`, `--object`,
-`--record`, `--page`, `--tab`, `--action`, `--app`, `--flow`,
-`--flow-input key=value`, `--form-factor`, and repeated `--state key=value`.
-Explicit flags override preset fields for non-community routes.
+`flowScreen`, `flowAction`, and `communityPage`. Community routes are
+preset-backed; use `--context` or `--context-file` to select them. Community
+presets use `community.site`, `basePath`, `siteId`, `networkId`, `guest`,
+`language`, and an optional configured `pageReference`. Flow presets use
+`flow.apiName` and optional `flow.inputVariables`. Direct flags include
+`--component`, `--object`, `--record`, `--page`, `--tab`, `--action`, `--app`,
+`--flow`, `--flow-input key=value`, `--form-factor`, and repeated
+`--state key=value`. Explicit flags override preset fields for non-community
+routes.
 
 ## Preview Routes
 

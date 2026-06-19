@@ -162,13 +162,15 @@ Put reusable contexts in `glade.lwc.json` at the project root:
 
 Supported targets are `component`, `urlAddressable`, `recordPage`, `appPage`,
 `homePage`, `tab`, `recordAction`, `globalAction`, `utilityBar`, `flowScreen`,
-`flowAction`, and `communityPage`. Community presets carry site, base path,
-site ID, network ID, guest mode, language, and optional `comm__*` PageReference
-data. Flow presets carry `flow.apiName` and optional `flow.inputVariables`.
-Direct flags include `--component`, `--object`, `--record`, `--page`, `--tab`,
-`--action`, `--app`, `--flow`, `--flow-input key=value`, `--form-factor`, and
-repeated `--state key=value` for non-community routes. Use `--context-file`
-when the presets live somewhere other than the project-root `glade.lwc.json`:
+`flowAction`, and `communityPage`. Community routes are preset-backed; use
+`--context` or `--context-file` to select them. Community presets carry site,
+base path, site ID, network ID, guest mode, language, and optional `comm__*`
+PageReference data. Flow presets carry `flow.apiName` and optional
+`flow.inputVariables`. Direct flags include `--component`, `--object`,
+`--record`, `--page`, `--tab`, `--action`, `--app`, `--flow`,
+`--flow-input key=value`, `--form-factor`, and repeated `--state key=value` for
+non-community routes. Use `--context-file` when the presets live somewhere
+other than the project-root `glade.lwc.json`:
 
 ```bash
 glade dev lwc --project . --context-file config/lwc-contexts.json --context accountRecord --open
