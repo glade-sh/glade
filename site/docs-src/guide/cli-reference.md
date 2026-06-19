@@ -75,6 +75,18 @@ glade doctor
 glade doctor --project .
 ```
 
+## `glade toolchain`
+
+Install or inspect the global LWC toolchain used by local Lightning Out routes.
+Release installs populate it for normal use; source checkouts can refresh it
+from the current tree.
+
+```bash
+glade toolchain status
+glade toolchain status --json
+glade toolchain install --from .
+```
+
 ## `glade completion`
 
 Generate shell completion scripts.
@@ -351,7 +363,7 @@ glade lsp --project . --diagnostics-once
 
 ## `glade profile analyze`
 
-Read a Glade native trace and emit terminal, JSON, or Markdown profile output.
+Read a Glade native trace and emit terminal, JSON, Markdown, or pprof-compatible profile output.
 
 ```bash
 mkdir -p reports
@@ -359,6 +371,7 @@ glade exec --project . --trace reports/trace.json "System.debug(1);"
 glade profile analyze reports/trace.json
 glade profile analyze reports/trace.json --json
 glade profile analyze reports/trace.json --format markdown
+glade profile analyze reports/trace.json --format pprof > reports/trace.pb.gz
 ```
 
 ## `glade plugins`
@@ -456,13 +469,15 @@ support boundary.
 
 ## `glade db`
 
-Seed, reset, export, and inspect local org storage fixtures.
+Seed, reset, export, inspect, query, and describe local org storage fixtures.
 
 ```bash
 glade db reset --db .glade/local-org.sqlite --json
 glade db seed --wizard --db .glade/local-org.sqlite --project . seed.json
 glade db seed --db .glade/local-org.sqlite --project . --progress seed.json
 glade db inspect --db .glade/local-org.sqlite --json
+glade db query --db .glade/local-org.sqlite --project . --json "SELECT Id, Name FROM Account"
+glade db describe --db .glade/local-org.sqlite --project . --json Account
 glade db export --db .glade/local-org.sqlite > exported-fixture.json
 ```
 

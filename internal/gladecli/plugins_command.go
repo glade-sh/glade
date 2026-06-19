@@ -20,7 +20,7 @@ var pluginListManifestTimeout = 3 * time.Second
 
 func runPlugins(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 	if len(args) == 0 || isHelpArg(args[0]) {
-		printPluginsHelp(stdout)
+		_ = cliui.WriteCommandHelp(stdout, []string{"plugins"})
 		return nil
 	}
 	switch args[0] {
@@ -49,33 +49,6 @@ func runPlugins(ctx context.Context, args []string, stdout, stderr io.Writer) er
 	default:
 		return fmt.Errorf("unknown plugins command %q", args[0])
 	}
-}
-
-func printPluginsHelp(w io.Writer) {
-	fmt.Fprint(w, `Manage Glade plugins.
-
-Usage:
-  glade plugins <command> [flags]
-
-Commands:
-  list              List installed plugins.
-  available         List plugins available to install.
-  search            Search the plugin marketplace.
-  info              Show marketplace plugin metadata.
-  link              Link a local plugin executable.
-  install           Install a plugin from the marketplace, registry, URL, or archive.
-  remove            Remove an installed plugin.
-  doctor            Check installed plugins.
-  which             Show the plugin that owns a command.
-  lock              Write glade.plugins.lock.json.
-  restore           Restore plugins from glade.plugins.lock.json.
-
-Examples:
-  glade plugins available
-  glade plugins install @glade/compat
-  glade plugins install @glade/performance
-  glade plugins search quality
-`)
 }
 
 func runPluginsList(ctx context.Context, args []string, stdout io.Writer) error {

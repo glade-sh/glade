@@ -496,10 +496,11 @@ mkdir -p reports
 glade exec --trace reports/trace.json 'System.debug(1);'
 glade profile analyze reports/trace.json
 glade profile analyze reports/trace.json --json
+glade profile analyze reports/trace.json --format pprof > reports/trace.pb.gz
 ```
 
-The Markdown and JSON reports include hot events, category counts, runtime
-sections, and governor/resource summaries.
+The Markdown, JSON, and pprof-compatible reports include hot events, category
+counts, runtime sections, and governor/resource summaries.
 
 ## Salesforce-style debug log
 

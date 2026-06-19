@@ -47,11 +47,21 @@ Registry catalogs are configured. Third-party publishers can also use a custom
 registry or a direct archive URL. `available` and bare `search` list the
 installable catalog before you know a plugin name.
 
+Install a remote archive only with a pinned digest:
+
+```bash
+glade plugins install https://github.com/acme/glade-plugin-quality/releases/download/v1.2.0/glade-plugin-quality_1.2.0_darwin_arm64.tar.gz --sha256 <hash>
+```
+
 For local plugin development, link an executable from disk:
 
 ```bash
 glade plugins link --exec ./glade-plugin-quality
+glade plugins lock --include-linked
 ```
+
+Use `--include-linked` only for local development lock files. Team and CI lock
+files should restore registry or archive installs.
 
 ## Build and publish
 

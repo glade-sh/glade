@@ -35,6 +35,7 @@ type CommandHelp struct {
 	Usage       []string
 	Subcommands []SubcommandHelp
 	Flags       []FlagHelp
+	Notes       []string
 	Examples    []string
 }
 
@@ -59,13 +60,19 @@ var commandReferences = []CommandHelp{
 	{
 		Name:        "toolchain",
 		Description: "Install or inspect the global LWC toolchain for Lightning Out.",
-		Usage:       []string{"glade toolchain install [--from <glade-checkout>]", "glade toolchain status"},
+		Usage:       []string{"glade toolchain install [--from <glade-checkout>]", "glade toolchain status [--json]"},
 		Subcommands: []SubcommandHelp{
 			{Name: "install", Description: "Install the LWC runtime toolchain."},
 			{Name: "status", Description: "Print the current LWC toolchain status."},
 		},
 		Flags: []FlagHelp{
 			{Name: "--from", Value: "<glade-checkout>", Description: "Install from another glade checkout. Defaults to the current checkout."},
+			{Name: "--json", Description: "Write toolchain status as JSON."},
+		},
+		Notes: []string{
+			"The toolchain installs to the Glade data directory, normally ~/.local/share/glade.",
+			"GLADE_HOME overrides the Glade installation root.",
+			"XDG_DATA_HOME overrides the base directory for the global toolchain.",
 		},
 		Examples: []string{"glade toolchain status", "glade toolchain install --from ."},
 	},
@@ -119,7 +126,7 @@ var commandReferences = []CommandHelp{
 		Name:        "inspect",
 		Description: "Inspect indexed project symbols and code intelligence.",
 		Usage: []string{
-			"glade inspect symbols [--project <root>] [--json]",
+			"glade inspect symbols [--project <root>] [--kind <kind>] [--full-paths] [--json]",
 			"glade inspect graph [--project <root>] [--json]",
 			"glade inspect definition --project <root> --symbol <name> [--json]",
 			"glade inspect definition --project <root> --file <path> --line <n> --column <n> [--json]",
@@ -137,11 +144,14 @@ var commandReferences = []CommandHelp{
 			{Name: "--file", Value: "<path>", Description: "Project-relative source file for location lookup."},
 			{Name: "--line", Value: "<n>", Description: "One-based source line for location lookup."},
 			{Name: "--column", Value: "<n>", Description: "One-based source column for location lookup."},
+			{Name: "--kind", Value: "<kind>", Description: "Filter inspect symbols output: class, interface, enum, trigger, object, or sobject."},
+			{Name: "--full-paths", Description: "Print absolute file paths in inspect symbols output."},
 			{Name: "--include-declaration", Description: "Include the declaration in references output."},
 			{Name: "--json", Description: "Write structured output."},
 		},
 		Examples: []string{
 			"glade inspect symbols --project .",
+			"glade inspect symbols --project . --kind class",
 			"glade inspect definition --project . --symbol InvoiceService",
 			"glade inspect definition --project . --file force-app/main/default/classes/InvoiceService.cls --line 6 --column 13",
 			"glade inspect references --project . --symbol InvoiceService.total --json",
@@ -380,11 +390,11 @@ var commandReferences = []CommandHelp{
 	{
 		Name:        "profile",
 		Description: "Analyze Glade native trace output.",
-		Usage:       []string{"glade profile analyze <trace.json> [--json]"},
+		Usage:       []string{"glade profile analyze <trace.json> [--json] [--format text|markdown|pprof]"},
 		Subcommands: []SubcommandHelp{{Name: "analyze", Description: "Analyze a Glade native trace JSON file."}},
 		Flags: []FlagHelp{
 			{Name: "--json", Description: "Write profile report as JSON."},
-			{Name: "--format", Value: "<mode>", Description: "Profile output format: text or markdown."},
+			{Name: "--format", Value: "<mode>", Description: "Profile output format: text, markdown, or pprof."},
 		},
 		Examples: []string{"glade profile analyze trace.json", "glade profile analyze trace.json --json", "glade profile analyze trace.json --format markdown"},
 	},
@@ -410,7 +420,19 @@ var commandReferences = []CommandHelp{
 	{
 		Name:        "plugins",
 		Description: "Find, install, and manage Glade plugins.",
-		Usage:       []string{"glade plugins <command> [flags]"},
+		Usage: []string{
+			"glade plugins list [--json]",
+			"glade plugins available [--progress|--progress-json|--no-progress]",
+			"glade plugins search [query] [--progress|--progress-json|--no-progress]",
+			"glade plugins info <name> [--progress|--progress-json|--no-progress]",
+			"glade plugins install <plugin-name-or-archive> [--registry <url>] [--sha256 <hash>] [--yes] [--progress|--progress-json|--no-progress]",
+			"glade plugins link --exec <plugin-executable>",
+			"glade plugins remove <plugin-name>",
+			"glade plugins which <command>",
+			"glade plugins doctor [--json] [--progress|--progress-json|--no-progress]",
+			"glade plugins lock [--include-linked]",
+			"glade plugins restore [--progress|--progress-json|--no-progress]",
+		},
 		Subcommands: []SubcommandHelp{
 			{Name: "list", Description: "List installed plugins."},
 			{Name: "available", Description: "List plugins available to install."},
@@ -424,7 +446,26 @@ var commandReferences = []CommandHelp{
 			{Name: "lock", Description: "Write glade.plugins.lock.json."},
 			{Name: "restore", Description: "Restore plugins from glade.plugins.lock.json."},
 		},
-		Examples: []string{"glade plugins available", "glade plugins install @glade/compat", "glade plugins install @glade/performance", "glade plugins search quality"},
+		Flags: []FlagHelp{
+			{Name: "--json", Description: "Write JSON for list and doctor."},
+			{Name: "--registry", Value: "<url>", Description: "Use a plugin registry URL for install."},
+			{Name: "--sha256", Value: "<hash>", Description: "Required for remote archive installs."},
+			{Name: "--yes", Description: "Accept community or unlisted plugin trust prompts in CI."},
+			{Name: "--exec", Value: "<plugin-executable>", Description: "Link a local plugin executable."},
+			{Name: "--include-linked", Description: "Include locally linked plugins in the lock file."},
+			{Name: "--progress", Description: "Show progress on stderr; uses a progress bar on TTY and line output when redirected."},
+			{Name: "--progress-json", Description: "Print NDJSON progress events to stderr."},
+			{Name: "--no-progress", Description: "Disable progress."},
+		},
+		Examples: []string{
+			"glade plugins available",
+			"glade plugins install @glade/compat",
+			"glade plugins install @glade/performance",
+			"glade plugins list --json",
+			"glade plugins link --exec ./glade-plugin-quality",
+			"glade plugins lock",
+			"glade plugins restore",
+		},
 	},
 	{
 		Name:        "package",
@@ -541,24 +582,42 @@ var commandReferences = []CommandHelp{
 	},
 	{
 		Name:        "db",
-		Description: "Seed, reset, export, and inspect a persistent local database.",
-		Usage:       []string{"glade db seed --db <path> [--project <root>] [--json] [--progress|--progress-json|--no-progress] <fixture.json>", "glade db seed --wizard --db <path> [--project <root>] <fixture.json>", "glade db reset --db <path> [--project <root>] [--json]", "glade db export --db <path> [--project <root>]", "glade db inspect --db <path> [--project <root>] [--json]"},
+		Description: "Seed, reset, export, inspect, query, and describe a persistent local database.",
+		Usage: []string{
+			"glade db seed --db <path> [--project <root>] [--json] [--progress|--progress-json|--no-progress] <fixture.json>",
+			"glade db seed --wizard --db <path> [--project <root>] <fixture.json>",
+			"glade db reset --db <path> [--project <root>] [--json]",
+			"glade db export --db <path> [--project <root>]",
+			"glade db inspect --db <path> [--project <root>] [--json]",
+			"glade db query --db <path> --project <root> --json [--limit <n>] [--query-all] <soql>",
+			"glade db describe --db <path> --project <root> --json [ObjectName]",
+		},
 		Subcommands: []SubcommandHelp{
 			{Name: "seed", Description: "Apply a fixture to a persistent database."},
 			{Name: "reset", Description: "Clear data from a persistent database."},
 			{Name: "export", Description: "Write a fixture from a database."},
 			{Name: "inspect", Description: "Print database counts."},
+			{Name: "query", Description: "Run a SOQL query against local database state and write JSON."},
+			{Name: "describe", Description: "Print local object describe metadata as JSON."},
 		},
 		Flags: []FlagHelp{
 			{Name: "--db", Value: "<path>", Description: "Persistent local database path."},
 			{Name: "--project", Value: "<root>", Description: "Project root for schema bootstrap."},
-			{Name: "--json", Description: "Write inspect output as JSON."},
+			{Name: "--json", Description: "Write structured JSON output."},
 			{Name: "--wizard", Description: "Print a seed and inspect command pair."},
+			{Name: "--limit", Value: "<n>", Description: "Limit glade db query rows."},
+			{Name: "--query-all", Description: "Include soft-deleted rows when the query supports them."},
 			{Name: "--progress", Description: "Show progress on stderr; uses a progress bar on TTY and line output when redirected."},
 			{Name: "--progress-json", Description: "Print NDJSON progress events to stderr."},
 			{Name: "--no-progress", Description: "Disable progress."},
 		},
-		Examples: []string{"glade db inspect --db .glade/org.sqlite", "glade db seed --wizard --db .glade/org.sqlite fixture.json", "glade db seed --db .glade/org.sqlite --progress fixture.json"},
+		Examples: []string{
+			"glade db inspect --db .glade/org.sqlite",
+			"glade db seed --wizard --db .glade/org.sqlite fixture.json",
+			"glade db seed --db .glade/org.sqlite --progress fixture.json",
+			`glade db query --db .glade/local-org.sqlite --project . --json "SELECT Id, Name FROM Account"`,
+			"glade db describe --db .glade/local-org.sqlite --project . --json Account",
+		},
 	},
 	{
 		Name:        "completion",
@@ -886,6 +945,19 @@ func WriteCommandHelp(w io.Writer, args []string) error {
 			"fish: glade completion fish > ~/.config/fish/completions/glade.fish",
 		} {
 			if _, err := fmt.Fprintln(w, "  "+line); err != nil {
+				return err
+			}
+		}
+	}
+	if len(ref.Notes) > 0 {
+		if _, err := fmt.Fprintln(w); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "Notes:"); err != nil {
+			return err
+		}
+		for _, note := range ref.Notes {
+			if _, err := fmt.Fprintln(w, "  "+note); err != nil {
 				return err
 			}
 		}

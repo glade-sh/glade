@@ -920,7 +920,7 @@ func runParse(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 	jsonOut := parsed.Bool("json")
 	paths := parsed.Positionals
 	if len(paths) == 0 {
-		return apexast.Result{}, errors.New("usage: glade parse <paths...> [--json]")
+		return apexast.Result{}, errors.New("usage: glade parse <paths...> [--json] [--progress|--progress-json|--no-progress]")
 	}
 	progressMode := progressModeForFlags(jsonOut, parsed.Bool("progress"), parsed.Bool("progress-json"), parsed.Bool("no-progress") || parsed.Bool("quiet"))
 	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: progressMode})
@@ -1082,7 +1082,7 @@ func runInspect(ctx context.Context, args []string, w io.Writer, progressW io.Wr
 }
 
 func inspectUsage() string {
-	return "usage: glade inspect symbols|graph|definition|references [--project <root>] [--json]"
+	return "usage: glade inspect symbols [--project <root>] [--kind <kind>] [--full-paths] [--json] | glade inspect graph [--project <root>] [--json] | glade inspect definition --project <root> --symbol <name> [--json] | glade inspect references --project <root> --symbol <name> [--include-declaration] [--json]"
 }
 
 type inspectDefinitionFlags struct {
@@ -1599,7 +1599,7 @@ func runSchema(ctx context.Context, args []string, w io.Writer, progressW io.Wri
 		return runSchemaImportDescribe(args[2:], w)
 	}
 	if len(args) == 0 || args[0] != "load" {
-		return errors.New("usage: glade schema load [--project <root>] [--json] | glade schema import describe --input <describe.json> [--output <schema.json>]")
+		return errors.New("usage: glade schema load [--project <root>] [--json] [--progress|--progress-json|--no-progress] | glade schema import describe --input <describe.json> [--output <schema.json>] [--project-cache <root>]")
 	}
 
 	root, jsonOut, progressMode, err := parseProjectProgressFlags(args[1:])
@@ -2074,7 +2074,7 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	}
 	sourceParts := parsed.Positionals
 	if len(sourceParts) == 0 {
-		return errors.New("usage: glade exec [--project <root>] [--db <path>] [--dry-run] [--json] [--trace <path>] [--debug-log <path>] '<anonymous apex>'")
+		return errors.New("usage: glade exec [--project <root>] [--db <path>] [--dry-run] [--json] [--trace <path>] [--debug-log <path>] [--limit-mode <mode>] '<anonymous apex>'")
 	}
 
 	program, err := vm.CompileAnonymous(strings.Join(sourceParts, " "))
@@ -2358,7 +2358,7 @@ func runProfile(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	if len(args) == 0 || args[0] != "analyze" {
-		return errors.New("usage: glade profile analyze <trace.json> [--json]")
+		return errors.New("usage: glade profile analyze <trace.json> [--json] [--format text|markdown|pprof]")
 	}
 	tracePath := ""
 	parsed, err := flagparse.New("glade profile analyze").
@@ -2376,7 +2376,7 @@ func runProfile(ctx context.Context, args []string, w io.Writer) error {
 		tracePath = parsed.Positionals[0]
 	}
 	if tracePath == "" {
-		return errors.New("usage: glade profile analyze <trace.json> [--json]")
+		return errors.New("usage: glade profile analyze <trace.json> [--json] [--format text|markdown|pprof]")
 	}
 	file, err := os.Open(tracePath)
 	if err != nil {

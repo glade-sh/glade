@@ -56,4 +56,4 @@ Use `if: always()` only for artifact upload steps that must run after a failing 
 | `glade test` | JSON, JUnit |
 | `glade report` | JSON, HTML, Markdown, GitHub annotations, zip |
 | `glade debug profile` | JSON, text, Markdown |
-| `glade profile analyze` | JSON, text, Markdown |
+| `glade profile analyze` | JSON, text, Markdown, pprof |
