@@ -26,6 +26,9 @@ The extension requires a global `glade` command on `PATH`.
 
 ## Sidebar
 
+The Activity Bar uses the Glade contour mark. Glade Home uses the same dark
+shell, green action color, and status palette as the public site.
+
 Open a normal SFDX project. The Glade Activity Bar shows:
 
 Use **Glade: Open Home** for the daily hub. Home is task-first: run, data,

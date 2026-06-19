@@ -33,6 +33,7 @@ export class GladeHomeController implements vscode.Disposable {
       vscode.ViewColumn.One,
       {
         enableScripts: true,
+        localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, "media")],
         retainContextWhenHidden: true,
       },
     );
@@ -77,6 +78,7 @@ export class GladeHomeController implements vscode.Disposable {
       cspSource: panel.webview.cspSource,
       nonce: nonce(),
       initialTab: this.activeTab,
+      logoUri: panel.webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "media", "glade-brand.svg")).toString(),
     });
   }
 

@@ -4,6 +4,7 @@ export interface HubHtmlOptions {
   cspSource: string;
   nonce: string;
   initialTab?: "home" | "state";
+  logoUri?: string;
 }
 
 export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): string {
@@ -12,30 +13,47 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
   const initialTab = options.initialTab === "state" ? "state" : "home";
   const cspSource = escapeAttr(options.cspSource);
   const nonce = escapeAttr(options.nonce);
+  const logoUri = options.logoUri ? escapeAttr(options.logoUri) : undefined;
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${cspSource} https: data:; style-src ${cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${cspSource}; style-src ${cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}';">
   <title>Glade Home</title>
   <style nonce="${nonce}">
     :root {
       color-scheme: light dark;
-      --surface: var(--vscode-editor-background);
-      --panel: var(--vscode-sideBar-background);
-      --panel-strong: var(--vscode-panel-background);
-      --text: var(--vscode-editor-foreground);
-      --muted: var(--vscode-descriptionForeground);
-      --border: var(--vscode-panel-border);
-      --focus: var(--vscode-focusBorder);
-      --button: var(--vscode-button-background);
-      --buttonText: var(--vscode-button-foreground);
-      --buttonAlt: var(--vscode-button-secondaryBackground);
-      --ok: var(--vscode-testing-iconPassed, #3fb950);
-      --warn: var(--vscode-testing-iconQueued, #d29922);
-      --error: var(--vscode-testing-iconFailed, #f85149);
+      --brand-shell: #070b0d;
+      --brand-shell-soft: #0b1215;
+      --brand-surface: #10191e;
+      --brand-panel: #14232a;
+      --brand-panel-active: #1b2f38;
+      --brand-line: #26363d;
+      --brand-line-strong: #38505a;
+      --brand-text: #f3f7f5;
+      --brand-muted: #a9b8ad;
+      --brand-subtle: #7f9187;
+      --brand-inverse: #061009;
+      --glade: #9be870;
+      --glade-strong: #b7ff8a;
+      --glade-muted: rgba(155, 232, 112, 0.14);
+      --glade-line: rgba(155, 232, 112, 0.42);
+      --surface: var(--brand-shell);
+      --panel: var(--brand-shell-soft);
+      --panel-strong: var(--brand-surface);
+      --text: var(--brand-text);
+      --muted: var(--brand-muted);
+      --border: var(--brand-line);
+      --focus: var(--glade-strong);
+      --button: var(--glade);
+      --buttonText: var(--brand-inverse);
+      --buttonAlt: rgba(255, 255, 255, 0.055);
+      --ok: #9be870;
+      --warn: #f5c95f;
+      --error: #ff6b61;
+      --info: #7db7ff;
     }
 
     * {
@@ -45,7 +63,9 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
 
     body {
       margin: 0;
-      background: var(--surface);
+      background:
+        linear-gradient(180deg, rgba(20, 35, 42, 0.88) 0%, rgba(7, 11, 13, 0) 320px),
+        var(--surface);
       color: var(--text);
       font-family: var(--vscode-font-family);
       font-size: var(--vscode-font-size);
@@ -66,6 +86,7 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
     button.primary {
       background: var(--button);
       color: var(--buttonText);
+      border-color: var(--glade-strong);
     }
 
     button:focus {
@@ -80,9 +101,33 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
     }
 
     header {
-      padding: 14px 18px 10px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 18px 12px;
       border-bottom: 1px solid var(--border);
-      background: var(--panel-strong);
+      background: rgba(16, 25, 30, 0.88);
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+      border-radius: 9px;
+      box-shadow: 0 0 0 1px rgba(155, 232, 112, 0.20);
+    }
+
+    .brand-copy {
+      min-width: 0;
+    }
+
+    .eyebrow {
+      margin-bottom: 2px;
+      color: var(--glade-strong);
+      font-size: 11px;
+      font-weight: 650;
+      line-height: 1.2;
+      text-transform: uppercase;
     }
 
     h1 {
@@ -107,7 +152,7 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
       gap: 4px;
       padding: 8px 12px 0;
       border-bottom: 1px solid var(--border);
-      background: var(--panel);
+      background: rgba(11, 18, 21, 0.92);
     }
 
     .tab {
@@ -121,7 +166,7 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
     .tab[aria-selected="true"] {
       background: var(--surface);
       color: var(--text);
-      border-color: var(--border);
+      border-color: var(--glade-line);
       border-bottom-color: var(--surface);
     }
 
@@ -145,7 +190,7 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
       min-width: 0;
       border: 1px solid var(--border);
       border-radius: 7px;
-      background: var(--panel-strong);
+      background: rgba(16, 25, 30, 0.92);
       padding: 12px;
     }
 
@@ -199,7 +244,7 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
     }
 
     .tone-muted {
-      color: var(--muted);
+      color: var(--brand-subtle);
     }
 
     .actions {
@@ -240,8 +285,12 @@ export function renderHubHtml(snapshot: HubSnapshot, options: HubHtmlOptions): s
 <body>
   <div class="hub">
     <header>
-      <h1>Glade Home</h1>
-      <div class="subtitle">${escapeHtml(snapshot.project?.projectRoot || snapshot.project?.workspaceFolder || "No project open")}</div>
+      ${logoUri ? `<img class="brand-mark" src="${logoUri}" alt="Glade">` : ""}
+      <div class="brand-copy">
+        <div class="eyebrow">Local Apex workbench</div>
+        <h1>Glade Home</h1>
+        <div class="subtitle">${escapeHtml(snapshot.project?.projectRoot || snapshot.project?.workspaceFolder || "No project open")}</div>
+      </div>
     </header>
     <nav class="tabs" aria-label="Glade Home tabs">
       ${renderTab("home", "Home", initialTab)}
