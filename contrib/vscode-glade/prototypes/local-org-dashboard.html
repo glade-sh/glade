@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glade Home Prototype</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --vscode-font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --vscode-font-size: 13px;
+      --vscode-editor-background: #1e1f22;
+      --vscode-sideBar-background: #25262a;
+      --vscode-panel-background: #202124;
+      --vscode-input-background: #18191c;
+      --vscode-editor-foreground: #e6e7ea;
+      --vscode-descriptionForeground: #9da3ad;
+      --vscode-border: #363941;
+      --vscode-focusBorder: #4d9fff;
+      --vscode-button-background: #2f6fed;
+      --vscode-button-foreground: #ffffff;
+      --vscode-button-secondaryBackground: #30333b;
+      --ok: #53c27f;
+      --warn: #d7a84a;
+      --bad: #f26d6d;
+      --blue: #67b7ff;
+      --cyan: #57d1c9;
+      --purple: #b996ff;
+      --shadow: rgba(0, 0, 0, .24);
+    }
+
+    * {
+      box-sizing: border-box;
+      letter-spacing: 0;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--vscode-editor-background);
+      color: var(--vscode-editor-foreground);
+      font-family: var(--vscode-font-family);
+      font-size: var(--vscode-font-size);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      min-height: 30px;
+      border: 1px solid transparent;
+      border-radius: 5px;
+      padding: 0 10px;
+      background: var(--vscode-button-secondaryBackground);
+      color: var(--vscode-editor-foreground);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    button:hover,
+    .object-row:hover,
+    .seed-row:hover,
+    .step:hover {
+      filter: brightness(1.08);
+    }
+
+    button.primary {
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+    }
+
+    button.icon {
+      width: 30px;
+      padding: 0;
+      display: inline-grid;
+      place-items: center;
+    }
+
+    button:focus,
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: 1px solid var(--vscode-focusBorder);
+      outline-offset: 1px;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto;
+      gap: 16px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--vscode-border);
+      background: #191a1d;
+      align-items: center;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 650;
+      line-height: 1.2;
+    }
+
+    .title .path {
+      margin-top: 3px;
+      color: var(--vscode-descriptionForeground);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 72vw;
+    }
+
+    .top-actions,
+    .button-row,
+    .chips,
+    .inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .shell {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 230px minmax(520px, 1fr) minmax(330px, 400px);
+      gap: 0;
+    }
+
+    .setup {
+      border-right: 1px solid var(--vscode-border);
+      background: var(--vscode-sideBar-background);
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    .setup-head {
+      padding: 14px 14px 10px;
+      border-bottom: 1px solid var(--vscode-border);
+    }
+
+    .setup-head strong,
+    .section-title strong,
+    .panel-title strong {
+      display: block;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .setup-head span,
+    .section-title span,
+    .panel-title span {
+      display: block;
+      margin-top: 4px;
+      color: var(--vscode-descriptionForeground);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .steps {
+      padding: 8px;
+      overflow: auto;
+    }
+
+    .step {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 9px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 10px 8px;
+      background: transparent;
+      text-align: left;
+      color: var(--vscode-editor-foreground);
+    }
+
+    .step.active {
+      border-color: rgba(103, 183, 255, .42);
+      background: rgba(103, 183, 255, .09);
+    }
+
+    .step.done .marker {
+      background: rgba(83, 194, 127, .16);
+      border-color: rgba(83, 194, 127, .55);
+      color: var(--ok);
+    }
+
+    .step.warn .marker {
+      background: rgba(215, 168, 74, .14);
+      border-color: rgba(215, 168, 74, .55);
+      color: var(--warn);
+    }
+
+    .marker {
+      width: 24px;
+      height: 24px;
+      border: 1px solid var(--vscode-border);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--vscode-descriptionForeground);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .step-label {
+      min-width: 0;
+    }
+
+    .step-label strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 620;
+    }
+
+    .step-label span {
+      display: block;
+      margin-top: 3px;
+      color: var(--vscode-descriptionForeground);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+    }
+
+    .setup-foot {
+      border-top: 1px solid var(--vscode-border);
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .main {
+      min-width: 0;
+      overflow: auto;
+      padding: 14px;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      gap: 14px;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      min-width: 0;
+      border: 1px solid var(--vscode-border);
+      border-radius: 8px;
+      background: var(--vscode-panel-background);
+      box-shadow: 0 10px 26px var(--shadow);
+      padding: 12px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--vscode-descriptionForeground);
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 18px;
+      font-weight: 680;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .metric small {
+      display: block;
+      margin-top: 6px;
+      color: var(--vscode-descriptionForeground);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .command-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      border: 1px solid var(--vscode-border);
+      border-radius: 8px;
+      background: var(--vscode-panel-background);
+      padding: 10px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(300px, .9fr) minmax(380px, 1.1fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--vscode-border);
+      border-radius: 8px;
+      background: var(--vscode-panel-background);
+      overflow: hidden;
+      box-shadow: 0 10px 26px var(--shadow);
+    }
+
+    .panel-title {
+      min-height: 54px;
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--vscode-border);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .panel-body {
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .field {
+      min-width: 0;
+      border: 1px solid var(--vscode-border);
+      border-radius: 6px;
+      padding: 9px;
+      background: var(--vscode-input-background);
+    }
+
+    .field label {
+      display: block;
+      color: var(--vscode-descriptionForeground);
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .field strong,
+    .field code {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 600;
+      color: var(--vscode-editor-foreground);
+    }
+
+    .field code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 8px;
+    }
+
+    .run-line {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr) auto;
+      gap: 9px;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .05);
+    }
+
+    .run-line:last-child {
+      border-bottom: 0;
+    }
+
+    .run-line .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-left: 8px;
+      background: var(--vscode-descriptionForeground);
+    }
+
+    .run-line.ok .status-dot {
+      background: var(--ok);
+    }
+
+    .run-line.warn .status-dot {
+      background: var(--warn);
+    }
+
+    .run-line.bad .status-dot {
+      background: var(--bad);
+    }
+
+    .run-line strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 620;
+    }
+
+    .run-line span,
+    .run-line time {
+      color: var(--vscode-descriptionForeground);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .segmented {
+      display: inline-flex;
+      border: 1px solid var(--vscode-border);
+      border-radius: 6px;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .top-actions .segmented {
+      margin-right: 4px;
+    }
+
+    .segmented button {
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      min-height: 28px;
+    }
+
+    .segmented button.active {
+      background: rgba(103, 183, 255, .18);
+      color: var(--blue);
+    }
+
+    .seed-list,
+    .object-list {
+      display: grid;
+      gap: 6px;
+      max-height: 230px;
+      overflow: auto;
+    }
+
+    .seed-row,
+    .object-row {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--vscode-border);
+      border-radius: 6px;
+      background: var(--vscode-input-background);
+      padding: 8px 9px;
+      cursor: pointer;
+    }
+
+    .seed-row.active,
+    .object-row.active {
+      border-color: rgba(103, 183, 255, .56);
+      background: rgba(103, 183, 255, .09);
+    }
+
+    .seed-row strong,
+    .object-row strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 620;
+    }
+
+    .seed-row span,
+    .object-row span {
+      display: block;
+      margin-top: 3px;
+      color: var(--vscode-descriptionForeground);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+    }
+
+    .badge {
+      display: inline-grid;
+      place-items: center;
+      min-height: 22px;
+      border: 1px solid var(--vscode-border);
+      border-radius: 999px;
+      padding: 0 8px;
+      color: var(--vscode-descriptionForeground);
+      background: rgba(255, 255, 255, .02);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .badge.ok {
+      color: var(--ok);
+      border-color: rgba(83, 194, 127, .4);
+    }
+
+    .badge.warn {
+      color: var(--warn);
+      border-color: rgba(215, 168, 74, .4);
+    }
+
+    .badge.blue {
+      color: var(--blue);
+      border-color: rgba(103, 183, 255, .4);
+    }
+
+    .badge.cyan {
+      color: var(--cyan);
+      border-color: rgba(87, 209, 201, .4);
+    }
+
+    .ok-text {
+      color: var(--ok);
+    }
+
+    .right {
+      min-width: 0;
+      border-left: 1px solid var(--vscode-border);
+      background: #1a1b1f;
+      display: grid;
+      grid-template-rows: auto minmax(220px, .9fr) minmax(260px, 1.1fr);
+      overflow: hidden;
+    }
+
+    .section-title {
+      padding: 12px;
+      border-bottom: 1px solid var(--vscode-border);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .browser-grid {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 142px minmax(0, 1fr);
+      border-bottom: 1px solid var(--vscode-border);
+    }
+
+    .objects {
+      min-height: 0;
+      border-right: 1px solid var(--vscode-border);
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .search {
+      padding: 9px;
+      border-bottom: 1px solid var(--vscode-border);
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--vscode-border);
+      border-radius: 5px;
+      background: var(--vscode-input-background);
+      color: var(--vscode-editor-foreground);
+      padding: 7px 8px;
+    }
+
+    .objects .object-list {
+      padding: 8px;
+      max-height: none;
+    }
+
+    .object-row {
+      display: block;
+    }
+
+    .table-wrap {
+      min-width: 0;
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th,
+    td {
+      padding: 8px 9px;
+      border-bottom: 1px solid rgba(255, 255, 255, .07);
+      text-align: left;
+      white-space: nowrap;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--vscode-descriptionForeground);
+      font-weight: 600;
+      background: rgba(255, 255, 255, .02);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    td {
+      color: var(--vscode-editor-foreground);
+    }
+
+    td.muted {
+      color: var(--vscode-descriptionForeground);
+    }
+
+    .query {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto 96px auto 1fr;
+    }
+
+    .query-tools {
+      padding: 10px;
+      border-bottom: 1px solid var(--vscode-border);
+      display: grid;
+      gap: 8px;
+    }
+
+    textarea {
+      min-height: 96px;
+      resize: none;
+      border: 0;
+      border-bottom: 1px solid var(--vscode-border);
+      border-radius: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      line-height: 1.45;
+    }
+
+    .log {
+      border-top: 1px solid var(--vscode-border);
+      background: #151619;
+      padding: 9px 12px;
+      min-height: 64px;
+      max-height: 120px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      color: var(--vscode-descriptionForeground);
+      white-space: pre-wrap;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 1400px) {
+      .status-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 1180px) {
+      .shell {
+        grid-template-columns: 210px minmax(480px, 1fr);
+      }
+
+      .right {
+        grid-column: 1 / -1;
+        border-left: 0;
+        border-top: 1px solid var(--vscode-border);
+        grid-template-rows: auto minmax(260px, auto) minmax(280px, auto);
+      }
+    }
+
+    @media (max-width: 820px) {
+      .topbar,
+      .shell,
+      .workspace,
+      .status-grid,
+      .field-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .setup {
+        border-right: 0;
+        border-bottom: 1px solid var(--vscode-border);
+      }
+
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .browser-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .objects {
+        border-right: 0;
+        border-bottom: 1px solid var(--vscode-border);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="title">
+        <h1>Glade Home</h1>
+        <div class="path">/Users/matt/Dev/acme-force-app - API 61.0 - active env dev</div>
+      </div>
+      <div class="top-actions">
+        <div class="segmented" aria-label="Prototype tabs">
+          <button type="button" class="active" data-prototype-tab="home">Home</button>
+          <button type="button" data-prototype-tab="state">State</button>
+        </div>
+        <span class="badge ok">Local DB ready</span>
+        <span class="badge warn">Scratch org stale</span>
+        <button type="button" data-command="glade.refresh">Refresh</button>
+        <button type="button" class="primary" data-command="glade.runLocalProof">Run proof</button>
+      </div>
+    </header>
+
+    <div class="shell">
+      <aside class="setup">
+        <div class="setup-head">
+          <strong>Landing rail</strong>
+          <span>One pass from project root to proof.</span>
+        </div>
+        <div class="steps" aria-label="Local org setup steps">
+          <button type="button" class="step done active" data-step="project">
+            <span class="marker">1</span>
+            <span class="step-label"><strong>Project</strong><span>sfdx-project.json found</span></span>
+          </button>
+          <button type="button" class="step done" data-step="org">
+            <span class="marker">2</span>
+            <span class="step-label"><strong>Glade org</strong><span>dev at 127.0.0.1:17911</span></span>
+          </button>
+          <button type="button" class="step warn" data-step="salesforce">
+            <span class="marker">3</span>
+            <span class="step-label"><strong>Salesforce target</strong><span>core-scratch, 3 days old</span></span>
+          </button>
+          <button type="button" class="step done" data-step="data">
+            <span class="marker">4</span>
+            <span class="step-label"><strong>Data</strong><span>fixtures and imports</span></span>
+          </button>
+          <button type="button" class="step done" data-step="proof">
+            <span class="marker">5</span>
+            <span class="step-label"><strong>Proof</strong><span>changed tests pass</span></span>
+          </button>
+        </div>
+        <div class="setup-foot">
+          <button type="button" class="primary" data-command="glade.createEnvironment">Create local org</button>
+          <button type="button" data-command="glade.switchEnvironment">Switch data env</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <section class="status-grid" aria-label="Current Glade state">
+          <div class="metric">
+            <span>Glade org</span>
+            <strong>dev</strong>
+            <small>127.0.0.1:17911</small>
+          </div>
+          <div class="metric">
+            <span>Local data</span>
+            <strong>1,284 records</strong>
+            <small>.glade/envs/dev.sqlite</small>
+          </div>
+          <div class="metric">
+            <span>Schema</span>
+            <strong>61 objects</strong>
+            <small>describe cache fresh</small>
+          </div>
+          <div class="metric">
+            <span>Last proof</span>
+            <strong class="ok-text">31 pass</strong>
+            <small>18 ms</small>
+          </div>
+        </section>
+
+        <section class="command-strip" aria-label="Common Glade commands">
+          <button type="button" class="primary" data-command="glade.inspectLocalOrg">Inspect DB</button>
+          <button type="button" data-command="glade.seedLocalOrg">Seed fixture</button>
+          <button type="button" data-command="glade.resetLocalOrg">Reset DB</button>
+          <button type="button" data-command="glade.exportLocalOrg">Export JSON</button>
+          <button type="button" data-command="glade.workbench.newSoql">SOQL scratch</button>
+          <button type="button" data-command="glade.workbench.newAnonymousApex">Apex scratch</button>
+          <span class="badge blue">Cmd+Enter runs scratch buffers</span>
+        </section>
+
+        <div class="workspace">
+          <section class="panel" aria-label="Local org setup">
+            <div class="panel-title">
+              <div>
+                <strong>Org setup</strong>
+                <span id="step-summary">Project root and local DB are ready.</span>
+              </div>
+              <span class="badge ok">Ready</span>
+            </div>
+            <div class="panel-body">
+              <div class="field-grid">
+                <div class="field">
+                  <label>Project root</label>
+                  <code>/Users/matt/Dev/acme-force-app</code>
+                </div>
+                <div class="field">
+                  <label>Local endpoint</label>
+                  <code>http://127.0.0.1:17911</code>
+                </div>
+                <div class="field">
+                  <label>Data environment</label>
+                  <strong>dev</strong>
+                </div>
+                <div class="field">
+                  <label>Database path</label>
+                  <code>.glade/envs/dev.sqlite</code>
+                </div>
+              </div>
+
+              <div class="timeline">
+                <div class="run-line ok">
+                  <span class="status-dot"></span>
+                  <div><strong>Local org created</strong><span>glade org create dev</span></div>
+                  <time>09:14</time>
+                </div>
+                <div class="run-line ok">
+                  <span class="status-dot"></span>
+                  <div><strong>DB inspected</strong><span>61 objects, 1,284 records</span></div>
+                  <time>09:15</time>
+                </div>
+                <div class="run-line warn">
+                  <span class="status-dot"></span>
+                  <div><strong>Salesforce target</strong><span>refresh recommended before capture</span></div>
+                  <time>3 days</time>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" aria-label="Salesforce connection and data movement">
+            <div class="panel-title">
+              <div>
+                <strong>Connect, import, seed</strong>
+                <span>Target org context feeds schema and fixture work.</span>
+              </div>
+              <span class="badge warn">Stale</span>
+            </div>
+            <div class="panel-body">
+              <div class="field-grid">
+                <div class="field">
+                  <label>Salesforce target</label>
+                  <strong>core-scratch</strong>
+                </div>
+                <div class="field">
+                  <label>Import source</label>
+                  <select aria-label="Import source">
+                    <option>SF CLI target org</option>
+                    <option>Describe JSON</option>
+                    <option>Fixture JSON</option>
+                    <option>CSV folder</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="button-row">
+                <button type="button" class="primary" data-command="glade.salesforceTargetStatus">Check target</button>
+                <button type="button" data-command="glade.schemaImportDescribe">Import schema</button>
+                <button type="button" data-command="glade.runPluginAction">Capture</button>
+                <span class="badge cyan">Capture as plugin action</span>
+              </div>
+
+              <div class="seed-list" aria-label="Seed fixtures">
+                <button type="button" class="seed-row active" data-fixture="dev.seed.json" data-records="1284">
+                  <span><strong>dev.seed.json</strong><span>Accounts, Contacts, Opportunities, Users</span></span>
+                  <span class="badge ok">loaded</span>
+                </button>
+                <button type="button" class="seed-row" data-fixture="edge-cases.json" data-records="167">
+                  <span><strong>edge-cases.json</strong><span>Validation rules and sharing corners</span></span>
+                  <span class="badge">ready</span>
+                </button>
+                <button type="button" class="seed-row" data-fixture="package-install.json" data-records="412">
+                  <span><strong>package-install.json</strong><span>Subscriber-like setup records</span></span>
+                  <span class="badge">ready</span>
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section class="log" id="log" aria-label="Command log">$ glade db inspect --db .glade/envs/dev.sqlite --project . --json
+61 objects, 1,284 records, 31 tests passed</section>
+      </main>
+
+      <aside class="right" aria-label="Database and SOQL workbench">
+        <div class="section-title">
+          <div>
+            <strong>Database browser</strong>
+            <span>Active DB: .glade/envs/dev.sqlite</span>
+          </div>
+          <div class="segmented" aria-label="Data mode">
+            <button type="button" class="active" data-mode="records">Rows</button>
+            <button type="button" data-mode="schema">Schema</button>
+            <button type="button" data-mode="diff">Diff</button>
+          </div>
+        </div>
+
+        <section class="browser-grid">
+          <div class="objects">
+            <div class="search">
+              <input id="object-search" type="search" aria-label="Filter objects" placeholder="Filter objects">
+            </div>
+            <div class="object-list" id="object-list" aria-label="Objects"></div>
+          </div>
+          <div class="table-wrap">
+            <table aria-label="Object records">
+              <thead>
+                <tr id="data-head"></tr>
+              </thead>
+              <tbody id="data-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="query" aria-label="SOQL scratch">
+          <div class="query-tools">
+            <div class="inline">
+              <strong>SOQL scratch</strong>
+              <span class="badge blue" id="query-object">Account</span>
+            </div>
+            <div class="button-row">
+              <button type="button" class="primary" data-command="glade.runSoql">Run SOQL</button>
+              <button type="button" data-command="glade.workbench.openResult">Open result</button>
+              <button type="button" data-command="glade.workbench.describe">Describe</button>
+            </div>
+          </div>
+          <textarea id="query-text" spellcheck="false">SELECT Id, Name, Industry, Owner.Name
+FROM Account
+ORDER BY Name
+LIMIT 25</textarea>
+          <div class="section-title">
+            <div>
+              <strong>Result preview</strong>
+              <span id="result-summary">Account: 128 local rows</span>
+            </div>
+            <span class="badge ok">local</span>
+          </div>
+          <div class="table-wrap">
+            <table aria-label="SOQL result">
+              <thead>
+                <tr id="result-head"></tr>
+              </thead>
+              <tbody id="result-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const objects = [
+      {
+        name: "Account",
+        rows: 128,
+        columns: ["Id", "Name", "Industry", "Owner"],
+        data: [
+          ["001xx000003DGb2", "Acme Field Service", "Manufacturing", "A. Rivera"],
+          ["001xx000003DGb3", "Canyon Supply", "Distribution", "M. Chen"],
+          ["001xx000003DGb4", "Northline Systems", "Technology", "S. Patel"],
+          ["001xx000003DGb5", "Summit Parts", "Industrial", "A. Rivera"]
+        ]
+      },
+      {
+        name: "Contact",
+        rows: 376,
+        columns: ["Id", "Name", "Email", "Account"],
+        data: [
+          ["003xx000004T7a1", "June Clark", "june@example.test", "Acme Field Service"],
+          ["003xx000004T7a2", "Matt Boyd", "matt@example.test", "Canyon Supply"],
+          ["003xx000004T7a3", "Priya Nair", "priya@example.test", "Northline Systems"]
+        ]
+      },
+      {
+        name: "Opportunity",
+        rows: 221,
+        columns: ["Id", "Name", "StageName", "Amount"],
+        data: [
+          ["006xx0000019PAA", "Acme Renewal", "Proposal", "$42,000"],
+          ["006xx0000019PAB", "Canyon Expansion", "Negotiation", "$68,500"],
+          ["006xx0000019PAC", "Northline Pilot", "Qualification", "$18,000"]
+        ]
+      },
+      {
+        name: "User",
+        rows: 18,
+        columns: ["Id", "Name", "Profile", "Active"],
+        data: [
+          ["005xx000001Svc1", "A. Rivera", "System Administrator", "true"],
+          ["005xx000001Svc2", "M. Chen", "Standard User", "true"],
+          ["005xx000001Svc3", "S. Patel", "Minimum Access", "false"]
+        ]
+      },
+      {
+        name: "Pricebook2",
+        rows: 3,
+        columns: ["Id", "Name", "IsActive", "IsStandard"],
+        data: [
+          ["01sxx0000008PBA", "Standard Price Book", "true", "true"],
+          ["01sxx0000008PBB", "Channel", "true", "false"]
+        ]
+      }
+    ];
+
+    const stepText = {
+      project: "Project root and local DB are ready.",
+      org: "Local org service is mapped to the active data environment.",
+      salesforce: "Refresh the target org before importing schema or capture data.",
+      data: "Seed fixtures load straight into the active local DB.",
+      proof: "Changed tests, DB inspect, and evidence sit in one pass."
+    };
+
+    const commandText = {
+      "glade.refresh": "$ glade refresh",
+      "glade.runLocalProof": "$ glade test --project . --json --changed-since origin/main",
+      "glade.createEnvironment": "Create local data environment",
+      "glade.switchEnvironment": "$ glade env switch dev",
+      "glade.inspectLocalOrg": "$ glade db inspect --db .glade/envs/dev.sqlite --project . --json",
+      "glade.seedLocalOrg": "$ glade db seed --db .glade/envs/dev.sqlite --project . dev.seed.json",
+      "glade.resetLocalOrg": "$ glade db reset --db .glade/envs/dev.sqlite --project . --json",
+      "glade.exportLocalOrg": "$ glade db export --db .glade/envs/dev.sqlite --project . > reports/dev.seed.json",
+      "glade.workbench.newSoql": "Open untitled SOQL scratch",
+      "glade.workbench.newAnonymousApex": "Open untitled Apex scratch",
+      "glade.salesforceTargetStatus": "$ sf org display --json",
+      "glade.schemaImportDescribe": "$ glade schema import describe --project-cache .",
+      "glade.runPluginAction": "Run plugin action: capture fixture from target org",
+      "glade.runSoql": "$ glade db query --db .glade/envs/dev.sqlite --soql query.soql --json",
+      "glade.workbench.openResult": "Open last Glade Workbench result",
+      "glade.workbench.describe": "$ glade db describe --db .glade/envs/dev.sqlite Account"
+    };
+
+    const objectList = document.getElementById("object-list");
+    const dataHead = document.getElementById("data-head");
+    const dataBody = document.getElementById("data-body");
+    const resultHead = document.getElementById("result-head");
+    const resultBody = document.getElementById("result-body");
+    const resultSummary = document.getElementById("result-summary");
+    const queryObject = document.getElementById("query-object");
+    const queryText = document.getElementById("query-text");
+    const log = document.getElementById("log");
+    const search = document.getElementById("object-search");
+
+    let activeObject = objects[0];
+
+    function appendLog(line) {
+      log.textContent = `${line}\n${new Date().toLocaleTimeString()}  prototype action`;
+    }
+
+    function renderObjects(filter = "") {
+      const needle = filter.trim().toLowerCase();
+      objectList.innerHTML = "";
+      objects
+        .filter((item) => item.name.toLowerCase().includes(needle))
+        .forEach((item) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = `object-row${item.name === activeObject.name ? " active" : ""}`;
+          button.innerHTML = `<strong>${item.name}</strong><span>${item.rows} rows</span>`;
+          button.addEventListener("click", () => {
+            activeObject = item;
+            renderObjects(search.value);
+            renderTable(item, dataHead, dataBody);
+            renderTable(item, resultHead, resultBody);
+            resultSummary.textContent = `${item.name}: ${item.rows} local rows`;
+            queryObject.textContent = item.name;
+            queryText.value = `SELECT ${item.columns.slice(0, 4).join(", ")}\nFROM ${item.name}\nORDER BY Name\nLIMIT 25`;
+            appendLog(`Selected ${item.name} (${item.rows} rows)`);
+          });
+          objectList.appendChild(button);
+        });
+    }
+
+    function renderTable(item, head, body) {
+      head.innerHTML = "";
+      body.innerHTML = "";
+      item.columns.forEach((column) => {
+        const cell = document.createElement("th");
+        cell.textContent = column;
+        head.appendChild(cell);
+      });
+      item.data.forEach((row) => {
+        const tr = document.createElement("tr");
+        row.forEach((value, index) => {
+          const cell = document.createElement("td");
+          cell.textContent = value;
+          if (index === 0) {
+            cell.className = "muted";
+          }
+          tr.appendChild(cell);
+        });
+        body.appendChild(tr);
+      });
+    }
+
+    document.querySelectorAll(".step").forEach((step) => {
+      step.addEventListener("click", () => {
+        document.querySelectorAll(".step").forEach((item) => item.classList.remove("active"));
+        step.classList.add("active");
+        document.getElementById("step-summary").textContent = stepText[step.dataset.step] || stepText.project;
+      });
+    });
+
+    document.querySelectorAll("[data-command]").forEach((button) => {
+      button.addEventListener("click", () => {
+        appendLog(commandText[button.dataset.command] || button.dataset.command);
+      });
+    });
+
+    document.querySelectorAll(".seed-row").forEach((row) => {
+      row.addEventListener("click", () => {
+        document.querySelectorAll(".seed-row").forEach((item) => item.classList.remove("active"));
+        row.classList.add("active");
+        appendLog(`Fixture selected: ${row.dataset.fixture} (${row.dataset.records} rows)`);
+      });
+    });
+
+    document.querySelectorAll("[data-mode]").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll("[data-mode]").forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+        appendLog(`Browser mode: ${button.dataset.mode}`);
+      });
+    });
+
+    document.querySelectorAll("[data-prototype-tab]").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll("[data-prototype-tab]").forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+        appendLog(`Prototype tab: ${button.dataset.prototypeTab}`);
+      });
+    });
+
+    search.addEventListener("input", () => renderObjects(search.value));
+
+    renderObjects();
+    renderTable(activeObject, dataHead, dataBody);
+    renderTable(activeObject, resultHead, resultBody);
+  </script>
+</body>
+</html>

@@ -5,6 +5,8 @@ import { runGladeJSON } from "./gladeCli";
 import { DBInspectResult, LocalOrgObjectRow, objectRowsFromInspect } from "./localOrgModel";
 import { GladeProjectContext } from "./projectModel";
 
+export { salesforceTargetStatusArgs } from "./hub/salesforce";
+
 export function configuredEnvironments(project: GladeProjectContext): GladeEnvironment[] {
   const config = vscode.workspace.getConfiguration("glade");
   const raw = config.get<GladeEnvironment[]>("environments") || [];
@@ -54,9 +56,19 @@ export function dbInspectArgs(project: GladeProjectContext, environment: GladeEn
   return ["db", "inspect", "--db", environment.dbPath, "--project", project.projectRoot, "--json"];
 }
 
+export function schemaImportDescribeArgs(project: Pick<GladeProjectContext, "projectRoot">, input: string): string[] {
+  return ["schema", "import", "describe", "--input", input, "--project-cache", project.projectRoot];
+}
+
 export function terminalCommand(args: string[], redirectPath?: string): string {
   const command = args.map(shellQuote).join(" ");
   return redirectPath ? `${command} > ${shellQuote(redirectPath)}` : command;
+}
+
+export function sendGladeTerminal(command: string): void {
+  const terminal = vscode.window.createTerminal("Glade");
+  terminal.show();
+  terminal.sendText(command);
 }
 
 export function sendLocalOrgTerminal(command: string): void {

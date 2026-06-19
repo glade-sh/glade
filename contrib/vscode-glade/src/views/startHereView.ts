@@ -65,6 +65,8 @@ function toTreeItem(row: StartHereRow): GladeTreeItem {
 
 function iconFor(row: StartHereRow): vscode.ThemeIcon | undefined {
   switch (row.id) {
+    case "home":
+      return new vscode.ThemeIcon("home");
     case "ready":
       return new vscode.ThemeIcon("check");
     case "environment":

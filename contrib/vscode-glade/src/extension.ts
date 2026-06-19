@@ -7,6 +7,9 @@ import { debugTestConfig, editorSoqlSource } from "./commandModel";
 import { registerGladeCommands } from "./commands";
 import { addEnvironment, clonedEnvironment, removeEnvironment, settingsValue } from "./environmentActions";
 import { environmentNameFromInput, GladeEnvironment } from "./environments";
+import { GladeHomeController } from "./hub/controller";
+import { HubSnapshot, SalesforceTargetState } from "./hub/model";
+import { checkSalesforceTarget } from "./hub/salesforce";
 import { GladeLspClient } from "./lsp";
 import {
   configuredActiveEnvironment,
@@ -15,6 +18,8 @@ import {
   dbResetArgs,
   dbSeedArgs,
   inspectLocalOrg,
+  schemaImportDescribeArgs,
+  sendGladeTerminal,
   sendLocalOrgTerminal,
   terminalCommand,
 } from "./localOrg";
@@ -60,6 +65,11 @@ export function activate(context: vscode.ExtensionContext): void {
   const pluginDiagnostics = vscode.languages.createDiagnosticCollection("glade-plugins");
   context.subscriptions.push(pluginDiagnostics);
   let currentProject: GladeProjectContext | undefined;
+  let salesforceTarget: SalesforceTargetState | undefined;
+  let homeController: GladeHomeController | undefined;
+  function updateHome(): void {
+    homeController?.update();
+  }
   const plugins = new PluginController({
     project: findProjectContext,
     activeFile: () => vscode.window.activeTextEditor?.document.uri.fsPath,
@@ -87,14 +97,42 @@ export function activate(context: vscode.ExtensionContext): void {
     startHereState.setLastRun(summary);
     status.setLastRun({ failed: summary.failed, durationMs: summary.durationMs });
     startHereView.refresh();
+    updateHome();
   });
   const watch = new GladeTestWatch(output.tests, (running) => {
     startHereState.setWatchRunning(running);
     startHereView.refresh();
+    updateHome();
   });
   const lsp = new GladeLspClient(output.logs);
   context.subscriptions.push(lsp, watch);
   const workbench = new WorkbenchController(output.logs, (rows) => workbenchView.setRows(rows));
+
+  function hubSnapshot(): HubSnapshot {
+    const runtime = startHereState.snapshot();
+    const config = vscode.workspace.getConfiguration("glade");
+    const project = currentProject;
+    return {
+      project,
+      activeEnvironment: project ? configuredActiveEnvironment(project) : undefined,
+      localOrgSummary: runtime.localOrgSummary,
+      missingDb: runtime.missingDb,
+      watchRunning: runtime.watchRunning,
+      lastRun: runtime.lastRun,
+      changedSince: config.get<string>("changedSince") || "origin/main",
+      pluginActionCount: runtime.pluginActionCount,
+      pluginFindingCount: plugins.latestFindingCount() || undefined,
+      salesforceTarget,
+    };
+  }
+
+  const home = new GladeHomeController(context, {
+    snapshot: hubSnapshot,
+    executeCommand: (command) => Promise.resolve(vscode.commands.executeCommand(command)),
+    onError: (message) => output.logs.appendLine(message),
+  });
+  homeController = home;
+  context.subscriptions.push(home);
 
   function pluginContexts(): PluginAvailableContexts {
     const activeFile = vscode.window.activeTextEditor?.document.uri.fsPath;
@@ -121,6 +159,7 @@ export function activate(context: vscode.ExtensionContext): void {
       plugins.actionRowsForView("plugins", contexts),
       pluginArtifactRows(plugins.latestArtifacts()),
     );
+    updateHome();
   }
 
   async function refreshPlugins(): Promise<void> {
@@ -130,8 +169,12 @@ export function activate(context: vscode.ExtensionContext): void {
 
   async function refreshProject(): Promise<void> {
     try {
+      const previousProjectRoot = currentProject?.projectRoot;
       const project = await findProjectContext();
       currentProject = project;
+      if (previousProjectRoot !== project?.projectRoot) {
+        salesforceTarget = undefined;
+      }
       const testExplorerEnabled = vscode.workspace.getConfiguration("glade").get<boolean>("enableTestExplorer", true);
       const environment = project ? configuredActiveEnvironment(project) : undefined;
       const missingDb = environment ? !fs.existsSync(environment.dbPath) : false;
@@ -149,6 +192,7 @@ export function activate(context: vscode.ExtensionContext): void {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       currentProject = undefined;
+      salesforceTarget = undefined;
       status.setProject(undefined);
       status.setMissingDb(false);
       startHereState.setMissingDb(undefined);
@@ -215,6 +259,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.window.registerTreeDataProvider("glade.workbench", workbenchView),
     vscode.window.registerTreeDataProvider("glade.debugLogs", debugView),
     vscode.window.registerTreeDataProvider("glade.plugins", pluginsView),
+    vscode.commands.registerCommand("glade.openHome", () => home.open()),
     vscode.commands.registerCommand("glade.refresh", async () => {
       runsView.refresh();
       startHereView.refresh();
@@ -315,10 +360,13 @@ export function activate(context: vscode.ExtensionContext): void {
         startHereView.refresh();
         localOrgView.refresh();
         debugView.refresh();
+        updateHome();
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
+        startHereState.setLastRun({ label: "Local proof failed", passed: 0, failed: 1 });
         status.setLastRun({ failed: 1 }, command);
         output.tests.appendLine(message);
+        updateHome();
         void vscode.window.showErrorMessage(`Glade local proof failed: ${message}`, "Show Output")
           .then((picked) => {
             if (picked === "Show Output") {
@@ -427,6 +475,7 @@ export function activate(context: vscode.ExtensionContext): void {
       workbench.reload();
       startHereView.refresh();
       debugView.refresh();
+      updateHome();
     }),
     vscode.commands.registerCommand("glade.switchEnvironment", async (environment?: GladeEnvironment) => {
       const project = await projectOrWarn();
@@ -459,6 +508,7 @@ export function activate(context: vscode.ExtensionContext): void {
       startHereView.refresh();
       debugView.refresh();
       status.setProject(project);
+      updateHome();
     }),
     vscode.commands.registerCommand("glade.cloneEnvironment", async (environment?: GladeEnvironment) => {
       const project = await projectOrWarn();
@@ -486,6 +536,7 @@ export function activate(context: vscode.ExtensionContext): void {
         debugView.refresh();
         status.setProject(project);
         status.setMissingDb(!fs.existsSync(clone.dbPath));
+        updateHome();
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         void vscode.window.showErrorMessage(`Glade clone environment failed: ${message}`);
@@ -524,6 +575,7 @@ export function activate(context: vscode.ExtensionContext): void {
       startHereView.refresh();
       debugView.refresh();
       status.setProject(project);
+      updateHome();
     }),
     vscode.commands.registerCommand("glade.revealEnvironmentDb", async (environment?: GladeEnvironment) => {
       const project = await projectOrWarn();
@@ -548,6 +600,7 @@ export function activate(context: vscode.ExtensionContext): void {
       localOrgView.setInspect(result, target);
       startHereView.refresh();
       localOrgView.refresh();
+      updateHome();
       output.logs.appendLine("glade db inspect:");
       output.logs.appendLine(JSON.stringify(result, null, 2));
     }),
@@ -566,6 +619,11 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
       const environment = configuredActiveEnvironment(project);
+      startHereState.setLocalOrgSummary(undefined);
+      startHereState.setMissingDb(undefined);
+      localOrgView.refresh();
+      startHereView.refresh();
+      updateHome();
       sendLocalOrgTerminal(terminalCommand(["glade", ...dbSeedArgs(project, environment, fixture)]));
     }),
     vscode.commands.registerCommand("glade.resetLocalOrg", async () => {
@@ -582,6 +640,12 @@ export function activate(context: vscode.ExtensionContext): void {
       if (confirmed !== "Reset") {
         return;
       }
+      startHereState.setLocalOrgSummary(undefined);
+      startHereState.setMissingDb(undefined);
+      status.setChangedRecords(undefined);
+      localOrgView.refresh();
+      startHereView.refresh();
+      updateHome();
       sendLocalOrgTerminal(terminalCommand(["glade", ...dbResetArgs(project, environment)]));
     }),
     vscode.commands.registerCommand("glade.exportLocalOrg", async () => {
@@ -601,6 +665,36 @@ export function activate(context: vscode.ExtensionContext): void {
         terminalCommand(["glade", ...dbExportArgs(project, environment)], target.fsPath),
       );
     }),
+    vscode.commands.registerCommand("glade.schemaImportDescribe", async () => {
+      const project = await projectOrWarn();
+      if (!project) {
+        return;
+      }
+      const picked = await vscode.window.showOpenDialog({
+        title: "Import Salesforce Describe JSON",
+        filters: { JSON: ["json"] },
+        canSelectMany: false,
+      });
+      const input = picked?.[0]?.fsPath;
+      if (!input) {
+        return;
+      }
+      sendGladeTerminal(terminalCommand(["glade", ...schemaImportDescribeArgs(project, input)]));
+    }),
+    vscode.commands.registerCommand("glade.salesforceTargetStatus", async () => {
+      salesforceTarget = { label: "checking target", state: "unknown", detail: "sf org display --json" };
+      updateHome();
+      try {
+        salesforceTarget = await checkSalesforceTarget(currentProject?.projectRoot);
+        output.logs.appendLine(`Salesforce target: ${salesforceTarget.label} (${salesforceTarget.state})`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        salesforceTarget = { label: "target check failed", state: "missing", detail: message };
+        output.logs.appendLine(`Salesforce target check failed: ${message}`);
+        void vscode.window.showErrorMessage(`Glade Salesforce target check failed: ${message}`);
+      }
+      updateHome();
+    }),
     vscode.commands.registerCommand("glade.inspectLocalOrg", async () => {
       const project = await projectOrWarn();
       if (!project) {
@@ -615,12 +709,14 @@ export function activate(context: vscode.ExtensionContext): void {
       status.setChangedRecords(undefined);
       localOrgView.setInspect(result, environment);
       startHereView.refresh();
+      updateHome();
       output.logs.appendLine("glade db inspect:");
       output.logs.appendLine(JSON.stringify(result, null, 2));
     }),
     vscode.commands.registerCommand("glade.statusQuickPick", async () => {
       const picked = await vscode.window.showQuickPick(
         [
+          { label: "Open Glade Home", command: "glade.openHome" },
           { label: "Switch Local Data Environment", command: "glade.switchEnvironment" },
           { label: "Inspect Active Local Data", command: "glade.inspectLocalOrg" },
           { label: "Open Anonymous Apex Scratch", command: "glade.workbench.newAnonymousApex" },
@@ -653,6 +749,7 @@ export function activate(context: vscode.ExtensionContext): void {
         workbench.reload();
         startHereView.refresh();
         debugView.refresh();
+        updateHome();
         void refreshProject();
       }
     }),
