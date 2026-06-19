@@ -17,7 +17,6 @@ export interface StartHereSnapshot {
   watchRunning?: boolean;
   lastRun?: StartHereRunSummary;
   changedSince: string;
-  pluginActionCount?: number;
 }
 
 export interface StartHereRow {
@@ -48,47 +47,24 @@ export function buildStartHereRows(snapshot: StartHereSnapshot): StartHereRow[] 
   const summary = snapshot.localOrgSummary;
   const records = snapshot.missingDb ? "no DB" : summary ? `${summary.records} records` : "not inspected";
   const lastRun = snapshot.lastRun;
-  return [
+  const rows: StartHereRow[] = [
     {
       id: "home",
-      label: "Open Glade Home",
+      label: "Glade Home",
       description: "daily developer hub",
       tooltip: "Open the task-first Glade Home webview.",
       command: "glade.openHome",
       contextValue: "gladeStartHereAction",
     },
     {
-      id: "ready",
-      label: "Ready for local Apex",
-      description: project.configFound ? "project config loaded" : "using project defaults",
-      tooltip: project.projectRoot,
-      contextValue: "gladeStartHereStatus",
-    },
-    {
-      id: "project",
-      label: shortPath(project.projectRoot),
-      description: `API ${project.sourceApiVersion || "unknown"}`,
-      tooltip: project.projectRoot,
-      contextValue: "gladeStartHereStatus",
-    },
-    {
-      id: "plugin-actions",
-      label: "Plugin actions",
-      description:
-        snapshot.pluginActionCount && snapshot.pluginActionCount > 0
-          ? `${snapshot.pluginActionCount} ${plural("action", snapshot.pluginActionCount)}`
-          : "absent",
-      tooltip:
-        snapshot.pluginActionCount && snapshot.pluginActionCount > 0
-          ? `${snapshot.pluginActionCount} plugin ${plural("action", snapshot.pluginActionCount)} ready.`
-          : "No plugin actions are available.",
-      contextValue: "gladeStartHereStatus",
-    },
-    {
       id: "environment",
-      label: `Data env: ${environment?.name || "dev"}`,
-      description: records,
-      tooltip: environment?.dbPath || "No active local DB path.",
+      label: "Data environment",
+      description: `${environment?.name || "dev"} - ${records}`,
+      tooltip: [
+        `${project.configFound ? "Project config loaded" : "Using project defaults"} at ${project.projectRoot}.`,
+        `API ${project.sourceApiVersion || "unknown"}.`,
+        environment?.dbPath ? `DB ${environment.dbPath}.` : "No active local DB path.",
+      ].join("\n"),
       command: "glade.inspectLocalOrg",
       contextValue: "gladeStartHereAction",
     },
@@ -100,31 +76,25 @@ export function buildStartHereRows(snapshot: StartHereSnapshot): StartHereRow[] 
       command: "glade.runLocalProof",
       contextValue: "gladeStartHereAction",
     },
-    {
-      id: "last-run",
-      label: lastRun ? lastRun.label : "No local run yet",
-      description: lastRun ? `${lastRun.passed} passed, ${lastRun.failed} failed` : "run changed tests",
-      tooltip: lastRun
-        ? `Last local run: ${lastRun.passed} passed, ${lastRun.failed} failed.`
-        : "No local test run has been recorded in this window.",
-      contextValue: "gladeStartHereStatus",
-    },
-    {
-      id: "watch",
-      label: snapshot.watchRunning ? "Watch running" : "Watch stopped",
-      description: snapshot.watchRunning ? "local daemon active" : "click to start",
-      tooltip: "Start or stop the local Apex watch loop.",
-      command: snapshot.watchRunning ? "glade.stopWatch" : "glade.startWatch",
-      contextValue: "gladeStartHereAction",
-    },
   ];
-}
-
-function shortPath(file: string): string {
-  const parts = file.split(/[\\/]+/).filter(Boolean);
-  return parts[parts.length - 1] || file;
-}
-
-function plural(word: string, count: number): string {
-  return count === 1 ? word : `${word}s`;
+  if (lastRun) {
+    rows.push({
+      id: "last-run",
+      label: lastRun.label,
+      description: `${lastRun.passed} passed, ${lastRun.failed} failed`,
+      tooltip: `Last local run: ${lastRun.passed} passed, ${lastRun.failed} failed.`,
+      contextValue: "gladeStartHereStatus",
+    });
+  }
+  if (snapshot.watchRunning) {
+    rows.push({
+      id: "watch",
+      label: "Watch running",
+      description: "click to stop",
+      tooltip: "Stop the local Apex watch loop.",
+      command: "glade.stopWatch",
+      contextValue: "gladeStartHereAction",
+    });
+  }
+  return rows;
 }

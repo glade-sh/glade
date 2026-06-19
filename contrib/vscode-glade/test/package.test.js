@@ -53,6 +53,15 @@ assert.deepStrictEqual(viewIds, [
   "glade.debugLogs",
   "glade.plugins",
 ]);
+for (const view of manifest.contributes.views.glade) {
+  if (view.id === "glade.project") {
+    assert.strictEqual(view.visibility, "visible", "Start Here should stay open as the calm entry point");
+  } else if (view.id === "glade.debugLogs" || view.id === "glade.plugins") {
+    assert.strictEqual(view.visibility, "hidden", `${view.id} should stay out of the first-open sidebar`);
+  } else {
+    assert.strictEqual(view.visibility, "collapsed", `${view.id} should be collapsed on first open`);
+  }
+}
 assert(!viewIds.includes("glade.apexTests"), "local Apex tests must use native Testing, not a duplicate sidebar view");
 assert(!viewIds.includes("glade.preview"), "LWC and Visualforce preview must stay out of the VS Code sidebar");
 
@@ -75,7 +84,7 @@ for (const command of [
 
 const localRunsView = manifest.contributes.views.glade.find((view) => view.id === "glade.recommendedRuns");
 assert(localRunsView, "glade.recommendedRuns view must exist");
-assert.strictEqual(localRunsView.name, "Local Runs");
+assert.strictEqual(localRunsView.name, "Tests");
 
 const debugView = manifest.contributes.views.glade.find((view) => view.id === "glade.debugLogs");
 assert(debugView, "glade.debugLogs view must exist");
@@ -87,8 +96,35 @@ assert.strictEqual(pluginsView.name, "Plugins");
 
 const workbenchView = manifest.contributes.views.glade.find((view) => view.id === "glade.workbench");
 assert(workbenchView, "glade.workbench view must exist");
-assert.strictEqual(workbenchView.name, "Exec & SOQL");
-assert(readme.includes("Exec & SOQL"), "README must document the Exec & SOQL sidebar view");
+assert.strictEqual(workbenchView.name, "Apex & SOQL");
+assert(readme.includes("Apex & SOQL"), "README must document the Apex & SOQL sidebar view");
+
+const commandPalette = manifest.contributes.menus.commandPalette || [];
+const hiddenCommands = new Set(commandPalette.filter((entry) => entry.when === "false").map((entry) => entry.command));
+const visibleCommandAllowlist = [
+  "glade.openHome",
+  "glade.runLocalProof",
+  "glade.startProjectOrg",
+  "glade.stopProjectOrg",
+  "glade.inspectLocalOrg",
+  "glade.statusQuickPick",
+  "glade.workbench.newAnonymousApex",
+  "glade.workbench.newSoql",
+  "glade.managePlugins",
+];
+assert.strictEqual(hiddenCommands.size, commandPalette.length, "command palette hidden entries must not repeat commands");
+for (const entry of commandPalette) {
+  assert(
+    manifest.contributes.commands.some((command) => command.command === entry.command),
+    `${entry.command} must be a contributed command`,
+  );
+}
+assert.deepStrictEqual(
+  manifest.contributes.commands
+    .filter((entry) => !hiddenCommands.has(entry.command))
+    .map((entry) => entry.command),
+  visibleCommandAllowlist,
+);
 
 for (const command of [
   "glade.runLocalProof",

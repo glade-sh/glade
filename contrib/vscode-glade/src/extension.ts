@@ -102,12 +102,16 @@ export function activate(context: vscode.ExtensionContext): void {
   });
   const tests = new GladeTestController(context, output.tests, (summary) => {
     startHereState.setLastRun(summary);
+    runsView.setState({ lastRun: summary, watchRunning: startHereState.snapshot().watchRunning });
     status.setLastRun({ failed: summary.failed, durationMs: summary.durationMs });
     startHereView.refresh();
     updateHome();
+  }, (failedTestCount) => {
+    runsView.setState({ failedTestCount });
   });
   const watch = new GladeTestWatch(output.tests, (running) => {
     startHereState.setWatchRunning(running);
+    runsView.setState({ lastRun: startHereState.snapshot().lastRun, watchRunning: running });
     startHereView.refresh();
     updateHome();
   });
@@ -192,6 +196,7 @@ export function activate(context: vscode.ExtensionContext): void {
       status.setMissingDb(missingDb);
       startHereState.setMissingDb(missingDb);
       startHereView.setProject(project);
+      runsView.setState({ projectReady: project !== undefined });
       tests.setProject(testExplorerEnabled ? project : undefined);
       environmentsView.setProject(project);
       localOrgView.setProject(project);
@@ -208,6 +213,7 @@ export function activate(context: vscode.ExtensionContext): void {
       status.setMissingDb(false);
       startHereState.setMissingDb(undefined);
       startHereView.setProject(undefined);
+      runsView.setState({ projectReady: false });
       tests.setProject(undefined);
       environmentsView.setProject(undefined);
       localOrgView.setProject(undefined);
@@ -391,6 +397,7 @@ export function activate(context: vscode.ExtensionContext): void {
         const run = await runChangedTests(project, changedSince);
         const runSummary = startHereSummary("Changed tests", run);
         startHereState.setLastRun(runSummary);
+        runsView.setState({ lastRun: runSummary, watchRunning: startHereState.snapshot().watchRunning });
         status.setLastRun({ failed: runSummary.failed, durationMs: runSummary.durationMs }, command);
         syncPluginViews();
         const inspect = await inspectLocalOrg(project, environment);
@@ -409,7 +416,9 @@ export function activate(context: vscode.ExtensionContext): void {
         updateHome();
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        startHereState.setLastRun({ label: "Changed tests failed", passed: 0, failed: 1 });
+        const runSummary = { label: "Changed tests failed", passed: 0, failed: 1 };
+        startHereState.setLastRun(runSummary);
+        runsView.setState({ lastRun: runSummary, watchRunning: startHereState.snapshot().watchRunning });
         status.setLastRun({ failed: 1 }, command);
         output.tests.appendLine(message);
         updateHome();

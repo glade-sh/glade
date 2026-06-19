@@ -75,36 +75,43 @@
         {
           "id": "glade.project",
           "name": "Start Here",
+          "visibility": "visible",
           "when": "config.glade.enableSidebar"
         },
         {
           "id": "glade.recommendedRuns",
-          "name": "Local Runs",
+          "name": "Tests",
+          "visibility": "collapsed",
           "when": "config.glade.enableSidebar"
         },
         {
           "id": "glade.environments",
           "name": "Data Environments",
+          "visibility": "collapsed",
           "when": "config.glade.enableSidebar"
         },
         {
           "id": "glade.localOrg",
-          "name": "Local Org",
+          "name": "Data Browser",
+          "visibility": "collapsed",
           "when": "config.glade.enableSidebar"
         },
         {
           "id": "glade.workbench",
-          "name": "Exec & SOQL",
+          "name": "Apex & SOQL",
+          "visibility": "collapsed",
           "when": "config.glade.enableSidebar"
         },
         {
           "id": "glade.debugLogs",
           "name": "Debug",
+          "visibility": "hidden",
           "when": "config.glade.enableSidebar"
         },
         {
           "id": "glade.plugins",
           "name": "Plugins",
+          "visibility": "hidden",
           "when": "config.glade.enableSidebar"
         }
       ]
@@ -299,6 +306,140 @@
       }
     ],
     "menus": {
+      "commandPalette": [
+        {
+          "command": "glade.refresh",
+          "when": "false"
+        },
+        {
+          "command": "glade.runChangedTests",
+          "when": "false"
+        },
+        {
+          "command": "glade.runFailedTests",
+          "when": "false"
+        },
+        {
+          "command": "glade.createProjectOrg",
+          "when": "false"
+        },
+        {
+          "command": "glade.projectOrgStatus",
+          "when": "false"
+        },
+        {
+          "command": "glade.runLocalTestFromCodeLens",
+          "when": "false"
+        },
+        {
+          "command": "glade.debugLocalTestFromCodeLens",
+          "when": "false"
+        },
+        {
+          "command": "glade.startWatch",
+          "when": "false"
+        },
+        {
+          "command": "glade.stopWatch",
+          "when": "false"
+        },
+        {
+          "command": "glade.createEnvironment",
+          "when": "false"
+        },
+        {
+          "command": "glade.switchEnvironment",
+          "when": "false"
+        },
+        {
+          "command": "glade.cloneEnvironment",
+          "when": "false"
+        },
+        {
+          "command": "glade.deleteEnvironment",
+          "when": "false"
+        },
+        {
+          "command": "glade.revealEnvironmentDb",
+          "when": "false"
+        },
+        {
+          "command": "glade.inspectEnvironment",
+          "when": "false"
+        },
+        {
+          "command": "glade.seedLocalOrg",
+          "when": "false"
+        },
+        {
+          "command": "glade.resetLocalOrg",
+          "when": "false"
+        },
+        {
+          "command": "glade.exportLocalOrg",
+          "when": "false"
+        },
+        {
+          "command": "glade.executeAnonymous",
+          "when": "false"
+        },
+        {
+          "command": "glade.debugAnonymous",
+          "when": "false"
+        },
+        {
+          "command": "glade.debugCurrentTest",
+          "when": "false"
+        },
+        {
+          "command": "glade.openOutput",
+          "when": "false"
+        },
+        {
+          "command": "glade.runSoql",
+          "when": "false"
+        },
+        {
+          "command": "glade.workbench.runEntry",
+          "when": "false"
+        },
+        {
+          "command": "glade.workbench.runLastSoql",
+          "when": "false"
+        },
+        {
+          "command": "glade.workbench.describe",
+          "when": "false"
+        },
+        {
+          "command": "glade.workbench.openResult",
+          "when": "false"
+        },
+        {
+          "command": "glade.schemaImportDescribe",
+          "when": "false"
+        },
+        {
+          "command": "glade.salesforceTargetStatus",
+          "when": "false"
+        },
+        {
+          "command": "glade.runPluginAction",
+          "when": "false"
+        },
+        {
+          "command": "glade.refreshPlugins",
+          "when": "false"
+        },
+        {
+          "command": "glade.linkLocalPlugin",
+          "when": "false"
+        },
+        {
+          "command": "glade.installPluginArchive",
+          "when": "false"
+        }
+      ],
       "editor/title": [
         {
           "command": "glade.executeAnonymous",
@@ -488,7 +629,7 @@
     "compile": "tsc -p ./",
     "bundle": "esbuild src/extension.ts --bundle --minify --platform=node --format=cjs --target=node20 --external:vscode --outfile=out/extension.js",
     "package": "mkdir -p dist && npm run compile && npm run bundle && vsce package --allow-missing-repository --out dist/vscode-glade-${npm_package_version}.vsix",
-    "test": "npm run compile && node test/commands.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/environmentActions.test.js && node test/localOrg.test.js && node test/localOrgArgs.test.js && node test/watch.test.js && node test/statusModel.test.js && node test/package.test.js && node test/branding.test.js && node test/prototype.test.js && node test/extensionHubRefresh.test.js && node test/startHereModel.test.js && node test/startHereState.test.js && node test/hubModel.test.js && node test/hubActions.test.js && node test/hubHtml.test.js && node test/hubController.test.js && node test/hubSalesforce.test.js && node test/pluginModules.test.js && node test/pluginController.test.js && node test/workbenchModel.test.js && node test/workbenchStore.test.js && node test/workbenchCli.test.js && node test/workbenchView.test.js"
+    "test": "npm run compile && node test/commands.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/environmentActions.test.js && node test/localOrg.test.js && node test/localOrgArgs.test.js && node test/watch.test.js && node test/statusModel.test.js && node test/package.test.js && node test/branding.test.js && node test/prototype.test.js && node test/extensionHubRefresh.test.js && node test/startHereModel.test.js && node test/startHereState.test.js && node test/hubModel.test.js && node test/hubActions.test.js && node test/hubHtml.test.js && node test/hubController.test.js && node test/hubSalesforce.test.js && node test/pluginModules.test.js && node test/pluginController.test.js && node test/workbenchModel.test.js && node test/workbenchStore.test.js && node test/workbenchCli.test.js && node test/workbenchView.test.js && node test/sidebarViews.test.js"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

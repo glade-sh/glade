@@ -27,18 +27,14 @@ export class EnvironmentsView implements vscode.TreeDataProvider<GladeTreeItem> 
     const items: GladeTreeItem[] = [];
     if (this.project) {
       const active = configuredActiveEnvironment(this.project);
-      items.push(labelItem(`Active: ${active.name}`, active.dbPath));
       for (const environment of configuredEnvironments(this.project)) {
         items.push(environmentItem(environment, active.name));
       }
     } else {
-      items.push(new GladeTreeItem("No Salesforce DX project"));
+      return [];
     }
     items.push(
-      commandItem("Create", "glade.createEnvironment", "Create a local data environment.", new vscode.ThemeIcon("add")),
-      commandItem("Seed Active", "glade.seedLocalOrg", "Seed the active local data environment.", new vscode.ThemeIcon("cloud-upload")),
-      commandItem("Reset Active", "glade.resetLocalOrg", "Reset the active local data environment.", new vscode.ThemeIcon("discard")),
-      commandItem("Export Active", "glade.exportLocalOrg", "Export the active local data environment.", new vscode.ThemeIcon("save")),
+      commandItem("Create data environment", "glade.createEnvironment", "Create a local data environment.", new vscode.ThemeIcon("add")),
     );
     return items;
   }

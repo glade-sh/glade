@@ -23,6 +23,7 @@ export class GladeTestController {
     private readonly context: vscode.ExtensionContext,
     private readonly output?: vscode.OutputChannel,
     private readonly onRunComplete?: (summary: StartHereRunSummary) => void,
+    private readonly onFailedCountChange?: (failedCount: number) => void,
   ) {
     context.subscriptions.push(this.controller);
     this.controller.refreshHandler = () => this.discover();
@@ -31,6 +32,9 @@ export class GladeTestController {
   }
 
   setProject(project: GladeProjectContext | undefined): void {
+    if (this.project?.projectRoot !== project?.projectRoot) {
+      this.clearFailedItems();
+    }
     this.project = project;
     void this.discover();
   }
@@ -38,6 +42,7 @@ export class GladeTestController {
   async discover(): Promise<void> {
     if (!this.project) {
       this.controller.items.replace([]);
+      this.clearFailedItems();
       return;
     }
     const pattern = new vscode.RelativePattern(this.project.projectRoot, "**/*.cls");
@@ -162,10 +167,10 @@ export class GladeTestController {
       const failed = childResults.find((candidate) => candidate.status !== "pass");
       if (failed) {
         run.failed(item, testMessage(failed), result.summary.durationMs);
-        this.failedItems.set(item.id, item);
+        this.setFailedItem(item);
       } else {
         run.passed(item, result.summary.durationMs);
-        this.failedItems.delete(item.id);
+        this.deleteFailedItem(item);
       }
     } catch (error) {
       run.errored(item, new vscode.TestMessage(error instanceof Error ? error.message : String(error)));
@@ -179,11 +184,34 @@ export class GladeTestController {
   private recordResult(run: vscode.TestRun, item: vscode.TestItem, result: FlatTestCaseResult): void {
     if (result.status === "pass") {
       run.passed(item, result.durationMs);
-      this.failedItems.delete(item.id);
+      this.deleteFailedItem(item);
       return;
     }
     run.failed(item, testMessage(result), result.durationMs);
+    this.setFailedItem(item);
+  }
+
+  private clearFailedItems(): void {
+    if (this.failedItems.size === 0) {
+      return;
+    }
+    this.failedItems.clear();
+    this.onFailedCountChange?.(0);
+  }
+
+  private setFailedItem(item: vscode.TestItem): void {
+    const before = this.failedItems.size;
     this.failedItems.set(item.id, item);
+    if (this.failedItems.size !== before) {
+      this.onFailedCountChange?.(this.failedItems.size);
+    }
+  }
+
+  private deleteFailedItem(item: vscode.TestItem): void {
+    if (!this.failedItems.delete(item.id)) {
+      return;
+    }
+    this.onFailedCountChange?.(this.failedItems.size);
   }
 
   private findTestItem(result: FlatTestCaseResult): vscode.TestItem | undefined {

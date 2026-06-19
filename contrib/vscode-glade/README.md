@@ -29,21 +29,22 @@ The extension requires a global `glade` command on `PATH`.
 The Activity Bar uses the Glade contour mark. Glade Home uses the same dark
 shell, green action color, and status palette as the public site.
 
-Open a normal Salesforce DX project. The Glade Activity Bar shows:
+Open a normal Salesforce DX project. The Glade Activity Bar opens with a short
+Start Here panel. The other sections stay collapsed until you need them.
 
 Use **Glade: Open Home** for the daily hub. Home is task-first: run, Glade org,
 local data, debug, Salesforce, and review actions sit on the first tab. State
 is the second tab: project root, active Glade org, active data environment,
 Salesforce target, tests, watch state, and plugin reports.
 
-- Start Here: Salesforce DX root, active local data environment, local DB state, watch
-  state, last run state, plugin action count, and a shortcut into Glade Home.
-- Local Runs: changed tests, failed tests, and warm watch controls.
+- Start Here: project state, active local data environment, changed tests, and
+  a shortcut into Glade Home.
+- Tests: changed tests, failed tests, and warm watch controls.
 - Data Environments: named SQLite local orgs and the active DB path.
-- Local Org: start, stop, inspect, seed, reset, and export commands for local work.
-- Exec & SOQL: SOQL scratch buffers, saved SOQL entries, describes, and last results.
-- Debug: current VS Code Apex breakpoint count and local debug actions.
-- Plugins: installed plugins, plugin actions, and plugin artifacts.
+- Data Browser: active local data state and the inspect action.
+- Apex & SOQL: anonymous Apex, SOQL scratch buffers, and saved SOQL entries.
+- Debug: local debug actions, hidden by default until needed.
+- Plugins: installed plugins, plugin actions, and plugin artifacts, hidden by default.
 
 ## Daily Local Apex Loop
 
@@ -53,7 +54,7 @@ Open the Glade Activity Bar and start in **Start Here**.
 2. Start the local Glade org when you need the Salesforce-shaped API:
    `glade org start my-glade-org --project .`.
 3. Click **Run changed tests** before pushing work to a scratch org.
-4. Use **Data Environments** to clone, seed, reset, inspect, and export local state.
+4. Use **Data Environments** to switch or create local data. Use **Data Browser** to inspect it.
 5. Use org-backed tools for deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
 
 Glade actions are local. Salesforce actions stay org-backed.
@@ -61,8 +62,9 @@ Glade actions are local. Salesforce actions stay org-backed.
 ## Native VS Code Surfaces
 
 Glade uses one Activity Bar item and one Status Bar item. The sidebar shows
-Start Here, Local Runs, Data Environments, Local Org, Exec & SOQL, Debug, and
-Plugins.
+Start Here, Tests, Data Environments, Data Browser, Apex & SOQL, Debug, and
+Plugins. Start Here opens first; Tests, Data Environments, Data Browser, and
+Apex & SOQL default to collapsed. Debug and Plugins stay hidden until needed.
 
 Local Apex tests appear in the native VS Code Testing view under `Glade Apex`.
 Glade does not add a second Apex Tests sidebar tree. Breakpoints stay in the
@@ -92,7 +94,7 @@ Linked local plugins are included after:
 glade plugins link --exec <plugin-executable>
 ```
 
-Plugin actions may target Start Here, Local Runs, Local Org, Debug, or Plugins
+Plugin actions may target Tests, Data Browser, Debug, or Plugins
 views. If an action emits `glade.findings.v1`, the extension maps
 those findings into VS Code Problems with severity, file, line, column, rule
 id, source, and message.

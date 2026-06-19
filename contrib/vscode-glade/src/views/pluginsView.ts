@@ -27,10 +27,7 @@ export class PluginsView implements vscode.TreeDataProvider<GladeTreeItem> {
 
   getChildren(): GladeTreeItem[] {
     return [
-      commandItem("Manage Plugins", "glade.managePlugins", "Manage Glade plugins.", new vscode.ThemeIcon("extensions")),
-      commandItem("Refresh", "glade.refreshPlugins", "Refresh installed Glade plugins.", new vscode.ThemeIcon("refresh")),
-      commandItem("Link Local Plugin", "glade.linkLocalPlugin", "Link a local Glade plugin executable.", new vscode.ThemeIcon("link")),
-      commandItem("Install Plugin Archive", "glade.installPluginArchive", "Install a Glade plugin archive.", new vscode.ThemeIcon("archive")),
+      commandItem("Manage plugins", "glade.managePlugins", "Manage Glade plugins.", new vscode.ThemeIcon("extensions")),
       ...this.plugins.map(pluginItem),
       ...this.actions.map(actionItem),
       ...this.artifacts.map(artifactItem),

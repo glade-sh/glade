@@ -48,17 +48,17 @@ export class LocalOrgView implements vscode.TreeDataProvider<GladeTreeItem> {
   }
 
   getChildren(): GladeTreeItem[] {
+    if (!this.project) {
+      return [];
+    }
+    const activeEnvironment = configuredActiveEnvironment(this.project);
+    const visibleEnvironment = this.summary ? this.environment || activeEnvironment : activeEnvironment;
     const commands = [
-      commandItem("Inspect active environment", "glade.inspectLocalOrg"),
-      commandItem("Seed active environment", "glade.seedLocalOrg"),
-      commandItem("Reset active environment", "glade.resetLocalOrg"),
-      commandItem("Export active environment", "glade.exportLocalOrg"),
+      commandItem("Inspect data", "glade.inspectLocalOrg"),
     ];
-    const environmentRows = this.environment
-      ? [labelItem(`Active: ${this.environment.name}`, this.environment.dbPath, this.environment.dbPath)]
-      : this.project
-        ? [labelItem("Active data", "not inspected", this.project.projectRoot)]
-        : [];
+    const environmentRows = [
+      labelItem(`Active: ${visibleEnvironment.name}`, visibleEnvironment.dbPath, visibleEnvironment.dbPath),
+    ];
     if (!this.summary) {
       return [...environmentRows, ...commands, ...pluginActionTreeRows(this.pluginActions)];
     }
