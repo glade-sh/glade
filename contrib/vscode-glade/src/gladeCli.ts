@@ -39,6 +39,9 @@ export function runGlade(args: string[], options: GladeRunOptions = {}): Promise
 }
 
 export function parseJSONOutput<T>(stdout: string, label: string): T {
+  if (stdout.trim() === "") {
+    throw new Error(`${label} produced no JSON output`);
+  }
   try {
     return JSON.parse(stdout) as T;
   } catch (error) {
@@ -51,6 +54,9 @@ export function parseJSONRunResult<T>(result: GladeRunResult, label: string, all
   if (!allowedCodes.includes(result.code)) {
     const detail = result.stderr.trim() || result.stdout.trim() || `exit code ${result.code}`;
     throw new Error(`${label} failed: ${detail}`);
+  }
+  if (result.stdout.trim() === "" && result.stderr.trim() !== "") {
+    throw new Error(`${label} failed: ${firstLine(result.stderr.trim())}`);
   }
   return parseJSONOutput<T>(result.stdout, label);
 }
@@ -72,4 +78,8 @@ export async function runGladeJSONWithCodes<T>(
 ): Promise<T> {
   const result = await runGlade(args, options);
   return parseJSONRunResult<T>(result, label, allowedCodes);
+}
+
+function firstLine(value: string): string {
+  return value.split(/\r?\n/, 1)[0] || value;
 }

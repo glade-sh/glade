@@ -34,7 +34,7 @@ export function buildStartHereRows(snapshot: StartHereSnapshot): StartHereRow[] 
     return [
       {
         id: "open-project",
-        label: "Open an SFDX project",
+        label: "Open a Salesforce DX project",
         description: "sfdx-project.json required",
         tooltip: "Open a folder containing sfdx-project.json.",
         command: "vscode.openFolder",
@@ -60,7 +60,7 @@ export function buildStartHereRows(snapshot: StartHereSnapshot): StartHereRow[] 
     {
       id: "ready",
       label: "Ready for local Apex",
-      description: project.configFound ? "project config loaded" : "using SFDX defaults",
+      description: project.configFound ? "project config loaded" : "using project defaults",
       tooltip: project.projectRoot,
       contextValue: "gladeStartHereStatus",
     },
@@ -94,7 +94,7 @@ export function buildStartHereRows(snapshot: StartHereSnapshot): StartHereRow[] 
     },
     {
       id: "local-proof",
-      label: "Run local proof",
+      label: "Run changed tests",
       description: `changed since ${snapshot.changedSince}`,
       tooltip: "Run changed local Apex tests, inspect the active DB, and update this panel.",
       command: "glade.runLocalProof",
@@ -103,7 +103,7 @@ export function buildStartHereRows(snapshot: StartHereSnapshot): StartHereRow[] 
     {
       id: "last-run",
       label: lastRun ? lastRun.label : "No local run yet",
-      description: lastRun ? `${lastRun.passed} passed, ${lastRun.failed} failed` : "run local proof",
+      description: lastRun ? `${lastRun.passed} passed, ${lastRun.failed} failed` : "run changed tests",
       tooltip: lastRun
         ? `Last local run: ${lastRun.passed} passed, ${lastRun.failed} failed.`
         : "No local test run has been recorded in this window.",

@@ -32,7 +32,7 @@ export class EnvironmentsView implements vscode.TreeDataProvider<GladeTreeItem> 
         items.push(environmentItem(environment, active.name));
       }
     } else {
-      items.push(new GladeTreeItem("No SFDX project"));
+      items.push(new GladeTreeItem("No Salesforce DX project"));
     }
     items.push(
       commandItem("Create", "glade.createEnvironment", "Create a local data environment.", new vscode.ThemeIcon("add")),

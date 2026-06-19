@@ -26,6 +26,11 @@ const renderedCommands = new Set([
   ...collectHomeCommands({ changedSince: "origin/main" }),
   ...collectHomeCommands({ project, changedSince: "origin/main", watchRunning: false }),
   ...collectHomeCommands({ project, changedSince: "origin/main", watchRunning: true }),
+  ...collectHomeCommands({
+    project,
+    changedSince: "origin/main",
+    projectOrg: { alias: "my-glade-org", state: "running" },
+  }),
 ]);
 
 assert.deepStrictEqual(

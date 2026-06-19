@@ -37,7 +37,7 @@ assert.strictEqual(rows[3].description, "3 actions");
 assert.strictEqual(rows[3].tooltip, "3 plugin actions ready.");
 assert.strictEqual(rows[4].label, "Data env: dev");
 assert.strictEqual(rows[4].description, "48 records");
-assert.strictEqual(rows[5].label, "Run local proof");
+assert.strictEqual(rows[5].label, "Run changed tests");
 assert.strictEqual(rows[5].command, "glade.runLocalProof");
 assert.strictEqual(rows[6].description, "8 passed, 1 failed");
 assert(
@@ -50,7 +50,7 @@ assert(
 );
 
 const missingRows = model.buildStartHereRows({ project: undefined, changedSince: "origin/main" });
-assert.strictEqual(missingRows[0].label, "Open an SFDX project");
+assert.strictEqual(missingRows[0].label, "Open a Salesforce DX project");
 assert.strictEqual(missingRows[0].command, "vscode.openFolder");
 
 const noDbRows = model.buildStartHereRows({

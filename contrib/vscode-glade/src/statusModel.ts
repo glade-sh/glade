@@ -18,13 +18,13 @@ export interface GladeStatusSnapshot {
 
 export function buildStatusText(snapshot: GladeStatusSnapshot): string {
   if (!snapshot.projectReady) {
-    return "Glade: no SFDX root";
+    return "Glade: no Salesforce DX project";
   }
   if (snapshot.busyLabel) {
     return `Glade: ${snapshot.busyLabel}`;
   }
   if (snapshot.pluginActionCount && snapshot.pluginActionCount > 0) {
-    return `Glade: plugin ${snapshot.pluginActionCount} ${plural("finding", snapshot.pluginActionCount)}`;
+    return `Glade: plugin ${snapshot.pluginActionCount} ${plural("report", snapshot.pluginActionCount)}`;
   }
   const environment = snapshot.activeEnvironment || "dev";
   if (snapshot.missingDb) {
@@ -51,7 +51,7 @@ export function buildStatusTooltip(snapshot: GladeStatusSnapshot): string {
     `Environment: ${snapshot.activeEnvironment || "dev"}`,
     snapshot.dbPath ? `DB: ${snapshot.dbPath}` : undefined,
     snapshot.pluginActionCount !== undefined
-      ? `Plugin actions: ${snapshot.pluginActionCount} ${plural("finding", snapshot.pluginActionCount)}`
+      ? `Plugin reports: ${snapshot.pluginActionCount} ${plural("report", snapshot.pluginActionCount)}`
       : undefined,
     snapshot.lastCommand ? `Last command: ${snapshot.lastCommand}` : undefined,
   ].filter((line): line is string => Boolean(line));

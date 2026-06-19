@@ -34,6 +34,10 @@
     "onCommand:glade.debugAnonymous",
     "onCommand:glade.debugCurrentTest",
     "onCommand:glade.runLocalProof",
+    "onCommand:glade.createProjectOrg",
+    "onCommand:glade.startProjectOrg",
+    "onCommand:glade.stopProjectOrg",
+    "onCommand:glade.projectOrgStatus",
     "onCommand:glade.cloneEnvironment",
     "onCommand:glade.deleteEnvironment",
     "onCommand:glade.revealEnvironmentDb",
@@ -125,7 +129,23 @@
       },
       {
         "command": "glade.runLocalProof",
-        "title": "Glade: Run Local Proof"
+        "title": "Glade: Run Changed Local Tests"
+      },
+      {
+        "command": "glade.createProjectOrg",
+        "title": "Glade: Create Local Org"
+      },
+      {
+        "command": "glade.startProjectOrg",
+        "title": "Glade: Start Local Org"
+      },
+      {
+        "command": "glade.stopProjectOrg",
+        "title": "Glade: Stop Local Org"
+      },
+      {
+        "command": "glade.projectOrgStatus",
+        "title": "Glade: Check Local Org State"
       },
       {
         "command": "glade.runLocalTestFromCodeLens",
@@ -241,7 +261,7 @@
       },
       {
         "command": "glade.salesforceTargetStatus",
-        "title": "Glade: Check Salesforce Target"
+        "title": "Glade: Check Salesforce Org"
       },
       {
         "command": "glade.refreshPlugins",
@@ -386,7 +406,7 @@
               },
               "project": {
                 "type": "string",
-                "description": "SFDX project root. Defaults to the workspace folder."
+                "description": "Salesforce DX project root. Defaults to the workspace folder."
               },
               "dbPath": {
                 "type": "string",

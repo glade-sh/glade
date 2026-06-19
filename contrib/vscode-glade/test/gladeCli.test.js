@@ -13,9 +13,24 @@ assert.throws(
   /glade test produced invalid JSON/,
 );
 
+assert.throws(
+  () => glade.parseJSONOutput("", "glade test changed"),
+  /glade test changed produced no JSON output/,
+);
+
 assert.deepStrictEqual(
   glade.parseJSONRunResult({ code: 1, stdout: '{"summary":{"failed":1}}\n', stderr: "" }, "glade test", [0, 1]),
   { summary: { failed: 1 } },
+);
+
+assert.throws(
+  () =>
+    glade.parseJSONRunResult(
+      { code: 1, stdout: "", stderr: "glade: bad revision origin/main\n" },
+      "glade test changed",
+      [0, 1],
+    ),
+  /glade test changed failed: glade: bad revision origin\/main/,
 );
 
 assert.throws(

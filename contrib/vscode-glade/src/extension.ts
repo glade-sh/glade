@@ -8,16 +8,20 @@ import { registerGladeCommands } from "./commands";
 import { addEnvironment, clonedEnvironment, removeEnvironment, settingsValue } from "./environmentActions";
 import { environmentNameFromInput, GladeEnvironment } from "./environments";
 import { GladeHomeController } from "./hub/controller";
-import { HubSnapshot, SalesforceTargetState } from "./hub/model";
+import { HubSnapshot, ProjectOrgState, SalesforceTargetState } from "./hub/model";
 import { checkSalesforceTarget } from "./hub/salesforce";
 import { GladeLspClient } from "./lsp";
 import {
+  checkProjectOrg,
   configuredActiveEnvironment,
   configuredEnvironments,
+  createProjectOrg,
   dbExportArgs,
   dbResetArgs,
   dbSeedArgs,
   inspectLocalOrg,
+  orgCreateArgs,
+  orgStartArgs,
   schemaImportDescribeArgs,
   sendGladeTerminal,
   sendLocalOrgTerminal,
@@ -66,7 +70,10 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(pluginDiagnostics);
   let currentProject: GladeProjectContext | undefined;
   let salesforceTarget: SalesforceTargetState | undefined;
+  let projectOrg: ProjectOrgState | undefined;
+  let projectOrgTerminal: vscode.Terminal | undefined;
   let homeController: GladeHomeController | undefined;
+  const projectOrgAlias = "my-glade-org";
   function updateHome(): void {
     homeController?.update();
   }
@@ -116,6 +123,8 @@ export function activate(context: vscode.ExtensionContext): void {
       project,
       activeEnvironment: project ? configuredActiveEnvironment(project) : undefined,
       localOrgSummary: runtime.localOrgSummary,
+      projectOrg,
+      projectOrgAlias,
       missingDb: runtime.missingDb,
       watchRunning: runtime.watchRunning,
       lastRun: runtime.lastRun,
@@ -174,6 +183,7 @@ export function activate(context: vscode.ExtensionContext): void {
       currentProject = project;
       if (previousProjectRoot !== project?.projectRoot) {
         salesforceTarget = undefined;
+        projectOrg = undefined;
       }
       const testExplorerEnabled = vscode.workspace.getConfiguration("glade").get<boolean>("enableTestExplorer", true);
       const environment = project ? configuredActiveEnvironment(project) : undefined;
@@ -193,6 +203,7 @@ export function activate(context: vscode.ExtensionContext): void {
       const message = error instanceof Error ? error.message : String(error);
       currentProject = undefined;
       salesforceTarget = undefined;
+      projectOrg = undefined;
       status.setProject(undefined);
       status.setMissingDb(false);
       startHereState.setMissingDb(undefined);
@@ -211,10 +222,45 @@ export function activate(context: vscode.ExtensionContext): void {
   async function projectOrWarn(): Promise<GladeProjectContext | undefined> {
     const project = await findProjectContext();
     if (!project) {
-      void vscode.window.showErrorMessage("Glade local data commands require an SFDX project.");
+      void vscode.window.showErrorMessage("Glade local data commands require a Salesforce DX project.");
       return undefined;
     }
     return project;
+  }
+
+  async function refreshProjectOrg(project: GladeProjectContext, detail = "checking"): Promise<void> {
+    projectOrg = { alias: projectOrgAlias, state: "unknown", detail };
+    updateHome();
+    projectOrg = await checkProjectOrg(project, projectOrgAlias);
+    updateHome();
+  }
+
+  async function ensureProjectOrg(project: GladeProjectContext): Promise<void> {
+    const current = await checkProjectOrg(project, projectOrgAlias);
+    if (current.state !== "missing") {
+      projectOrg = current;
+      updateHome();
+      return;
+    }
+    output.logs.appendLine(`$ ${terminalCommand(["glade", ...orgCreateArgs({ projectRoot: "." }, projectOrgAlias)])}`);
+    await createProjectOrg(project, projectOrgAlias);
+    projectOrg = { alias: projectOrgAlias, state: "stopped", detail: "created local org" };
+    updateHome();
+  }
+
+  function scheduleProjectOrgRefresh(project: GladeProjectContext): void {
+    setTimeout(() => {
+      void checkProjectOrg(project, projectOrgAlias)
+        .then((state) => {
+          projectOrg = state;
+          updateHome();
+        })
+        .catch((error) => {
+          const message = error instanceof Error ? error.message : String(error);
+          projectOrg = { alias: projectOrgAlias, state: "unknown", detail: message };
+          updateHome();
+        });
+    }, 1200);
   }
 
   async function openAnonymousApexScratch(): Promise<void> {
@@ -363,16 +409,79 @@ export function activate(context: vscode.ExtensionContext): void {
         updateHome();
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        startHereState.setLastRun({ label: "Local proof failed", passed: 0, failed: 1 });
+        startHereState.setLastRun({ label: "Changed tests failed", passed: 0, failed: 1 });
         status.setLastRun({ failed: 1 }, command);
         output.tests.appendLine(message);
         updateHome();
-        void vscode.window.showErrorMessage(`Glade local proof failed: ${message}`, "Show Output")
+        void vscode.window.showErrorMessage(`Glade changed tests failed: ${message}`, "Show Output")
           .then((picked) => {
             if (picked === "Show Output") {
               output.tests.show(true);
             }
           });
+      }
+    }),
+    vscode.commands.registerCommand("glade.createProjectOrg", async () => {
+      const project = await projectOrWarn();
+      if (!project) {
+        return;
+      }
+      try {
+        projectOrg = { alias: projectOrgAlias, state: "unknown", detail: "creating" };
+        updateHome();
+        output.logs.appendLine(`$ ${terminalCommand(["glade", ...orgCreateArgs({ projectRoot: "." }, projectOrgAlias)])}`);
+        await createProjectOrg(project, projectOrgAlias);
+        projectOrg = { alias: projectOrgAlias, state: "stopped", detail: "created local org" };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        projectOrg = { alias: projectOrgAlias, state: "missing", detail: message };
+        void vscode.window.showErrorMessage(`Glade org create failed: ${message}`);
+      }
+      updateHome();
+    }),
+    vscode.commands.registerCommand("glade.startProjectOrg", async () => {
+      const project = await projectOrWarn();
+      if (!project) {
+        return;
+      }
+      try {
+        projectOrg = { alias: projectOrgAlias, state: "unknown", detail: "starting" };
+        updateHome();
+        await ensureProjectOrg(project);
+        projectOrgTerminal?.dispose();
+        const command = terminalCommand(["glade", ...orgStartArgs({ projectRoot: "." }, projectOrgAlias)]);
+        output.logs.appendLine(`$ ${command}`);
+        projectOrgTerminal = sendGladeTerminal(command, project.projectRoot);
+        projectOrg = { alias: projectOrgAlias, state: "running", detail: command };
+        scheduleProjectOrgRefresh(project);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        projectOrg = { alias: projectOrgAlias, state: "missing", detail: message };
+        void vscode.window.showErrorMessage(`Glade org start failed: ${message}`);
+      }
+      updateHome();
+    }),
+    vscode.commands.registerCommand("glade.stopProjectOrg", () => {
+      if (projectOrgTerminal) {
+        projectOrgTerminal.dispose();
+        projectOrgTerminal = undefined;
+        projectOrg = { alias: projectOrgAlias, state: "stopped", detail: "VS Code terminal stopped" };
+      } else {
+        projectOrg = { alias: projectOrgAlias, state: "unknown", detail: "No org terminal started by this window." };
+      }
+      updateHome();
+    }),
+    vscode.commands.registerCommand("glade.projectOrgStatus", async () => {
+      const project = await projectOrWarn();
+      if (!project) {
+        return;
+      }
+      try {
+        await refreshProjectOrg(project);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        projectOrg = { alias: projectOrgAlias, state: "unknown", detail: message };
+        updateHome();
       }
     }),
     vscode.commands.registerCommand("glade.debugTestItem", (item?: vscode.TestItem) => tests.debugTestItem(item)),
@@ -721,7 +830,7 @@ export function activate(context: vscode.ExtensionContext): void {
           { label: "Inspect Active Local Data", command: "glade.inspectLocalOrg" },
           { label: "Open Anonymous Apex Scratch", command: "glade.workbench.newAnonymousApex" },
           { label: "Run Last SOQL", command: "glade.workbench.runLastSoql" },
-          { label: "Run Local Proof", command: "glade.runLocalProof" },
+          { label: "Run Changed Tests", command: "glade.runLocalProof" },
           { label: "Manage Plugins", command: "glade.managePlugins" },
           { label: "Open Glade Output", command: "glade.openOutput" },
         ],
@@ -754,6 +863,15 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
     vscode.window.onDidChangeActiveTextEditor(() => syncPluginViews()),
+    vscode.window.onDidCloseTerminal((terminal) => {
+      if (terminal === projectOrgTerminal) {
+        projectOrgTerminal = undefined;
+        if (projectOrg?.state === "running") {
+          projectOrg = { alias: projectOrgAlias, state: "stopped", detail: "Terminal closed" };
+          updateHome();
+        }
+      }
+    }),
     vscode.debug.onDidChangeBreakpoints(() => debugView.refresh()),
     vscode.languages.registerCodeLensProvider({ language: "apex", scheme: "file" }, new GladeCodeLensProvider()),
   );

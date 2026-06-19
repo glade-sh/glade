@@ -47,9 +47,9 @@ export class DebugView implements vscode.TreeDataProvider<GladeTreeItem> {
 }
 
 function environmentItem(environment: ReturnType<typeof configuredActiveEnvironment> | undefined): GladeTreeItem {
-  const item = new GladeTreeItem(environment ? `Env: ${environment.name}` : "Env: no SFDX project");
+  const item = new GladeTreeItem(environment ? `Env: ${environment.name}` : "Env: no Salesforce DX project");
   item.description = environment ? path.basename(environment.dbPath) : undefined;
-  item.tooltip = environment?.dbPath || "Open an SFDX project.";
+  item.tooltip = environment?.dbPath || "Open a Salesforce DX project.";
   item.iconPath = new vscode.ThemeIcon("database");
   return item;
 }

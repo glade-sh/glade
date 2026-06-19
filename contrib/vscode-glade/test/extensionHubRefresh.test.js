@@ -31,3 +31,17 @@ const refreshProjectStart = source.indexOf("async function refreshProject");
 const refreshProjectEnd = source.indexOf("async function projectOrWarn", refreshProjectStart);
 const refreshProject = source.slice(refreshProjectStart, refreshProjectEnd);
 assert(refreshProject.includes("salesforceTarget = undefined;"), "project refresh must invalidate Salesforce target state");
+assert(refreshProject.includes("projectOrg = undefined;"), "project refresh must invalidate Glade org state");
+
+const startProjectOrg = commandBlock("glade.startProjectOrg", "glade.stopProjectOrg");
+assert(startProjectOrg.includes("orgStartArgs"), "start project org must build a glade org start command");
+assert(startProjectOrg.includes("sendGladeTerminal"), "start project org must send the start command to a terminal");
+assert(startProjectOrg.includes("project.projectRoot"), "start project org terminal must run from the project root");
+assert(startProjectOrg.includes("projectOrg ="), "start project org must update Home org state");
+
+const stopProjectOrg = commandBlock("glade.stopProjectOrg", "glade.projectOrgStatus");
+assert(stopProjectOrg.includes("dispose();"), "stop project org must close the terminal started by the extension");
+assert(stopProjectOrg.includes("projectOrg ="), "stop project org must update Home org state");
+
+assert(source.includes("vscode.window.onDidCloseTerminal"), "closing the org terminal manually must update Home state");
+assert(source.includes("terminal === projectOrgTerminal"), "terminal close handling must only react to the owned org terminal");
