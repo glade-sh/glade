@@ -21,9 +21,23 @@ const rendered = html.renderHubHtml(snapshot, {
   cspSource: "vscode-resource:",
   nonce: "abc123",
   initialTab: "home",
+  logoUri: "vscode-resource:/media/glade-brand.svg",
 });
+const csp = rendered.match(/Content-Security-Policy" content="([^"]+)"/)?.[1] || "";
 
 assert(rendered.includes("Glade Home"));
+assert(rendered.includes('class="brand-mark"'));
+assert(rendered.includes('src="vscode-resource:/media/glade-brand.svg"'));
+assert(rendered.includes("Local Apex workbench"));
+assert(csp.split(";").map((part) => part.trim()).includes("img-src vscode-resource:"));
+assert(!csp.includes("https:"));
+assert(!csp.includes("data:"));
+assert(rendered.includes("--glade: #9be870"));
+assert(rendered.includes("--glade-strong: #b7ff8a"));
+assert(rendered.includes("--brand-shell: #070b0d"));
+assert(rendered.includes("--warn: #f5c95f"));
+assert(rendered.includes("--error: #ff6b61"));
+assert(rendered.includes("--info: #7db7ff"));
 assert(rendered.includes('data-tab="home"'));
 assert(rendered.includes('data-tab="state"'));
 assert(rendered.includes('data-command="glade.runLocalProof"'));

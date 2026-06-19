@@ -5,6 +5,7 @@ const path = require("path");
 const root = path.resolve(__dirname, "..");
 const manifest = require(path.join(root, "package.json"));
 const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
+const mediaDir = path.join(root, "media");
 const ignore = fs.readFileSync(path.join(root, ".vscodeignore"), "utf8")
   .split(/\r?\n/)
   .map((line) => line.trim())
@@ -35,6 +36,12 @@ assert(ignore.includes("prototypes/**"), ".vscodeignore must exclude standalone 
 const startHereView = manifest.contributes.views.glade.find((view) => view.id === "glade.project");
 assert(startHereView, "glade.project view must exist");
 assert.strictEqual(startHereView.name, "Start Here");
+
+const activityIcon = manifest.contributes.viewsContainers.activitybar.find((entry) => entry.id === "glade")?.icon;
+assert.strictEqual(activityIcon, "media/glade.svg", "Glade Activity Bar must use the branded Glade mark");
+assert(fs.existsSync(path.join(mediaDir, "glade.svg")), "Activity Bar icon asset must exist");
+assert(fs.existsSync(path.join(mediaDir, "glade-brand.svg")), "Home webview brand mark asset must exist");
+assert(readme.includes("Glade contour mark"), "README must document the branded Activity Bar mark");
 
 const viewIds = manifest.contributes.views.glade.map((view) => view.id);
 assert.deepStrictEqual(viewIds, [
