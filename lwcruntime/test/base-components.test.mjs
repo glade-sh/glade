@@ -748,7 +748,7 @@ test("record forms and fields support LDS endpoints, validity, reset, and pickli
       const editForm = createElement("lightning-record-edit-form", { is: RecordEditForm });
       Object.assign(editForm, { objectApiName: "Account", recordId: "001000000000001AAA" });
       const nameField = createElement("lightning-input-field", { is: InputField });
-      Object.assign(nameField, { fieldName: "Name", value: "Local Shell Account", required: true });
+      Object.assign(nameField, { fieldName: "Name", required: true });
       editForm.appendChild(nameField);
       const formMessages = createElement("lightning-messages", { is: Messages });
       editForm.appendChild(formMessages);
@@ -822,6 +822,26 @@ test("record forms and fields support LDS endpoints, validity, reset, and pickli
       const dateValidAfterSet = dateField.reportValidity();
       dateField.reset();
 
+      const recordUiField = createElement("lightning-input-field", { is: InputField });
+      Object.assign(recordUiField, { fieldName: "Phone" });
+      host.appendChild(recordUiField);
+      recordUiField.wireRecordUi({
+        record: {
+          id: "001000000000001AAA",
+          apiName: "Account",
+          fields: {
+            Phone: { value: "415-555-0100", displayValue: "415-555-0100" },
+          },
+        },
+        objectInfo: {
+          apiName: "Account",
+          fields: {
+            Phone: { apiName: "Phone", label: "Business Phone", dataType: "Phone" },
+          },
+        },
+      });
+      await new Promise(requestAnimationFrame);
+
       window.__fieldContracts = {
         customInvalid,
         customReported,
@@ -847,6 +867,12 @@ test("record forms and fields support LDS endpoints, validity, reset, and pickli
           setValue: dateSetValue,
           resetValue: dateField.value,
           domValue: dateField.shadowRoot.querySelector("input").value,
+        },
+        recordUiField: {
+          value: recordUiField.value,
+          domValue: recordUiField.shadowRoot.querySelector("input").value,
+          label: recordUiField.label,
+          type: recordUiField.type,
         },
       };
     });
@@ -881,9 +907,16 @@ test("record forms and fields support LDS endpoints, validity, reset, and pickli
         resetValue: "2026-06-18",
         domValue: "2026-06-18",
       },
+      recordUiField: {
+        value: "415-555-0100",
+        domValue: "415-555-0100",
+        label: "Business Phone",
+        type: "tel",
+      },
     });
 
     const existingEditForm = page.locator("lightning-record-edit-form").first();
+    assert.equal(await existingEditForm.locator("lightning-input-field input").inputValue(), "Local Shell Account");
     await existingEditForm.locator("lightning-input-field input").fill("Edited Local Account");
     await existingEditForm.locator("button", { hasText: "Save" }).click();
     await page.waitForFunction(() => window.__recordFormEvents.some(([name]) => name === "success"));

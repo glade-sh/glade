@@ -189,6 +189,40 @@ func TestApplyDevVFProjectDataFixturesSeedsSFDXTreeData(t *testing.T) {
 	}
 }
 
+func TestApplyDevVFProjectDataFixturesSeedsSFDXRecordsObject(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "data", "contacts.json"), `{
+  "records": [
+    {
+      "attributes": {"type": "Contact", "referenceId": "LocalShellContact"},
+      "LastName": "Smith",
+      "Phone": "415-555-0100"
+    }
+  ]
+}`)
+	org := storage.NewOrgState()
+
+	if err := applyDevVFProjectDataFixtures(root, &org); err != nil {
+		t.Fatal(err)
+	}
+
+	contact := org.Objects["Contact"]
+	if contact.Definition.KeyPrefix != "003" {
+		t.Fatalf("Contact key prefix = %q", contact.Definition.KeyPrefix)
+	}
+	if _, ok := contact.Definition.Fields["LastName"]; !ok {
+		t.Fatalf("Contact fields = %#v", contact.Definition.Fields)
+	}
+	if len(contact.Records) != 1 {
+		t.Fatalf("Contact records = %#v", contact.Records)
+	}
+	for _, record := range contact.Records {
+		if record.Fields["LastName"].String != "Smith" || record.Fields["Phone"].String != "415-555-0100" {
+			t.Fatalf("record = %#v", record)
+		}
+	}
+}
+
 func TestApplyDevVFProjectDataFixturesIgnoresSFDXDataPlanArrays(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "data", "sample-data-plan.json"), `[

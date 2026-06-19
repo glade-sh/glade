@@ -373,6 +373,7 @@ export function createBaseComponent(selector, render, options = {}) {
 
     wireRecordUi(data) {
       this.__wiredData = data;
+      applyRecordUiToField(this, data);
     }
 
     getWiredPicklistValues() {
@@ -519,6 +520,11 @@ export function createBaseComponent(selector, render, options = {}) {
           return;
         }
         this.value = result?.data || result;
+        applyRecordUiToFormFields(this, {
+          record: this.value,
+          objectInfos: result?.data?.objectInfos || {},
+          objectInfo: result?.data?.objectInfos?.[this.value?.apiName],
+        });
       }).catch((err) => {
         const detail = { message: err?.message || String(err) };
         this.error = detail;
@@ -611,6 +617,71 @@ function recordFieldDisplayValue(record, field) {
     return value.displayValue ?? value.value ?? "";
   }
   return value ?? "";
+}
+
+function applyRecordUiToFormFields(form, data) {
+  for (const field of formFieldComponents(form)) {
+    field.wireRecordUi?.(data);
+  }
+}
+
+function applyRecordUiToField(field, data) {
+  const name = fieldApiName(field?.fieldName || field?.name);
+  if (!name) return;
+  const record = data?.record || {};
+  const objectInfo = data?.objectInfo || data?.objectInfos?.[record?.apiName] || {};
+  const metadata = objectInfo?.fields?.[name] || {};
+  const recordField = record?.fields?.[name];
+  const value = recordField && typeof recordField === "object" ? recordField.value : recordField;
+  if (value !== undefined) {
+    field.value = value;
+    field.__initialValue = value;
+    field.dirty = false;
+  }
+  if (!field.label && metadata.label) field.label = metadata.label;
+  if (field.required === undefined && metadata.required !== undefined) field.required = Boolean(metadata.required);
+  if (!field.type) {
+    const inputType = inputTypeForMetadata(metadata);
+    if (inputType) field.type = inputType;
+  }
+  if (!field.options && Array.isArray(metadata.picklistValues)) {
+    field.options = metadata.picklistValues.map((option) => ({
+      label: option.label ?? option.value ?? "",
+      value: option.value ?? option.label ?? "",
+    }));
+  }
+}
+
+function formFieldComponents(root) {
+  const fields = [];
+  for (const selector of ["lightning-input-field", "lightning-output-field"]) {
+    fields.push(...(root?.querySelectorAll?.(selector) || []));
+    for (const container of [root, root?.hostElement, root?.template?.host]) {
+      for (const element of container?.children || []) collectAssignedFields(element, fields, selector);
+    }
+    for (const slot of root?.template?.querySelectorAll?.("slot") || []) {
+      for (const element of slot.assignedElements?.({ flatten: true }) || []) collectAssignedFields(element, fields, selector);
+    }
+  }
+  return [...new Set(fields)];
+}
+
+function collectAssignedFields(element, fields, selector) {
+  if (!element) return;
+  if (element.tagName?.toLowerCase() === selector) fields.push(element);
+  for (const child of element.querySelectorAll?.(selector) || []) fields.push(child);
+}
+
+function inputTypeForMetadata(metadata) {
+  const type = String(metadata?.dataType || metadata?.type || "").toLowerCase();
+  if (["picklist", "multipicklist"].includes(type)) return "";
+  if (["boolean", "checkbox"].includes(type)) return "checkbox";
+  if (["double", "integer", "currency", "percent", "number"].includes(type)) return "number";
+  if (type === "date") return "date";
+  if (["datetime", "datetime-local"].includes(type)) return "datetime-local";
+  if (type === "email") return "email";
+  if (["phone", "tel"].includes(type)) return "tel";
+  return "";
 }
 
 export function selectedValueList(value) {

@@ -127,3 +127,79 @@ test("cacheable apex wires use stable param keys and refreshApex forces a fetch"
     globalThis.fetch = originalFetch;
   }
 });
+
+test("apex wires send local LWC context and cache by active record", async () => {
+  const calls = [];
+  let recordId = "001LOCAL0000001AAA";
+  const originalFetch = globalThis.fetch;
+  const originalDocument = globalThis.document;
+  const originalWindow = globalThis.window;
+  globalThis.document = {
+    getElementById(id) {
+      if (id === "glade-lwc-context") {
+        return {
+          textContent: JSON.stringify({
+            kind: "recordPage",
+            objectApiName: "Account",
+            recordId,
+          }),
+        };
+      }
+      if (id === "glade-lightning-config") {
+        return {
+          textContent: JSON.stringify({
+            pageReference: {
+              type: "standard__recordPage",
+              attributes: {
+                objectApiName: "Account",
+                recordId,
+                actionName: "view",
+              },
+            },
+          }),
+        };
+      }
+      return null;
+    },
+  };
+  globalThis.window = { location: { pathname: "/", search: "" } };
+  globalThis.fetch = async (_url, options) => {
+    calls.push({
+      body: JSON.parse(options.body),
+      headers: options.headers,
+    });
+    return {
+      async json() {
+        return { data: { count: calls.length } };
+      },
+    };
+  };
+  try {
+    const values = [];
+    const Adapter = createApexWireAdapter("ContextCtrl", "load", { cacheable: true });
+    const adapter = new Adapter((value) => values.push(value));
+
+    await adapter.update({});
+    assert.equal(values.at(-1).data.count, 1);
+
+    await adapter.update({});
+    assert.equal(values.at(-1).data.count, 1);
+    assert.equal(calls.length, 1);
+
+    recordId = "001LOCAL0000002AAA";
+    await adapter.update({});
+    assert.equal(values.at(-1).data.count, 2);
+    assert.equal(calls.length, 2);
+
+    const firstContext = JSON.parse(decodeURIComponent(calls[0].headers["X-Glade-LWC-Context"]));
+    const secondContext = JSON.parse(decodeURIComponent(calls[1].headers["X-Glade-LWC-Context"]));
+    assert.equal(firstContext.context.recordId, "001LOCAL0000001AAA");
+    assert.equal(secondContext.context.recordId, "001LOCAL0000002AAA");
+    assert.match(secondContext.url, /\/lwc\/preview\/record\/Account\/001LOCAL0000002AAA/);
+    assert.match(secondContext.url, /recordId=001LOCAL0000002AAA/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    globalThis.document = originalDocument;
+    globalThis.window = originalWindow;
+  }
+});

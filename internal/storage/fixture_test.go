@@ -168,6 +168,31 @@ func TestApplyFixtureInitializesNilExistingRecordMaps(t *testing.T) {
 	}
 }
 
+func TestApplyFixtureEnsuresKnownStandardObjectShape(t *testing.T) {
+	org := NewOrgState()
+	err := ApplyFixture(&org, Fixture{
+		Version: FixtureVersion,
+		Objects: []FixtureObject{
+			{Name: "Contact", Records: []FixtureRecord{{Fields: map[string]Value{"LastName": StringValue("Smith")}}}},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	contact := org.Objects["Contact"]
+	if contact.Definition.KeyPrefix != "003" {
+		t.Fatalf("Contact key prefix = %q", contact.Definition.KeyPrefix)
+	}
+	for _, field := range []string{"Name", "LastName", "AccountId"} {
+		if _, ok := contact.Definition.Fields[field]; !ok {
+			t.Fatalf("Contact missing standard field %s: %#v", field, contact.Definition.Fields)
+		}
+	}
+	if len(contact.Records) != 1 {
+		t.Fatalf("Contact records = %#v", contact.Records)
+	}
+}
+
 func TestApplyFixtureKeepsIDsForDuplicateObjectBlocks(t *testing.T) {
 	org := fixtureRelationshipOrg()
 	err := ApplyFixture(&org, Fixture{

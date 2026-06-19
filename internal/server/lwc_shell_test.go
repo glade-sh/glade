@@ -16,7 +16,7 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
-func TestLWCShellRootRendersWorkbenchRoutePicker(t *testing.T) {
+func TestLWCShellRootRendersWorkbenchRouteMenu(t *testing.T) {
 	root, err := lightningTestRepoRoot()
 	if err != nil {
 		t.Fatal(err)
@@ -38,8 +38,18 @@ func TestLWCShellRootRendersWorkbenchRoutePicker(t *testing.T) {
 	for _, want := range []string{
 		"Glade LWC Shell",
 		"data-glade-shell=\"workbench\"",
+		"data-glade-builder-active=\"true\"",
+		"data-glade-builder-link",
 		"data-glade-workbench-builder",
+		"glade-app-builder-shell",
+		"class=\"glade-builder-app-header\"",
+		"class=\"glade-builder-commandbar\"",
+		"glade-builder-palette",
+		"class=\"glade-builder-canvas-shell\"",
+		"class=\"glade-builder-properties\"",
+		"class=\"glade-route-menu\"",
 		"data-glade-component-catalog",
+		"data-glade-catalog-count",
 		"data-glade-page-canvas",
 		"data-glade-region-drop=\"main\"",
 		"data-glade-add-component=\"c:contextProbe\"",
@@ -55,11 +65,69 @@ func TestLWCShellRootRendersWorkbenchRoutePicker(t *testing.T) {
 			t.Fatalf("missing %q in:\n%s", want, body)
 		}
 	}
+	for _, unwanted := range []string{
+		`class="glade-builder-help"`,
+		`>Analyze</button>`,
+		`>Activation</button>`,
+		`>Save</button>`,
+		`>Cut</button>`,
+		`>Copy</button>`,
+		`>Paste</button>`,
+		`disabled>Fields</button>`,
+	} {
+		if strings.Contains(body, unwanted) {
+			t.Fatalf("builder should not render inert chrome %q in:\n%s", unwanted, body)
+		}
+	}
 	if !strings.Contains(body, `"components":[`) || !strings.Contains(body, `"qualifiedName":"c:contextProbe"`) {
 		t.Fatalf("workbench model missing component catalog in:\n%s", body)
 	}
 	if !strings.Contains(body, `"target":"lightning__AppPage"`) || !strings.Contains(body, `"target":"lightning__RecordPage"`) {
 		t.Fatalf("workbench model missing target support in:\n%s", body)
+	}
+}
+
+func TestLWCShellTabRouteIncludesPreviewRouteCatalog(t *testing.T) {
+	root, err := lightningTestRepoRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture := filepath.Join(root, "testdata", "local-tests", "lwc-shell")
+	p, err := project.Load(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewWithSource(&storage.OrgState{}, SourceMetadata{Project: p})
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lwc/preview/tab/Lwc_Probe", nil))
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	for _, want := range []string{
+		"data-glade-builder-link",
+		"href=\"/lwc\"",
+		"data-glade-region=\"main\"",
+		"data-glade-route",
+		"class=\"glade-route-menu\"",
+		"data-glade-route-link",
+		"href=\"/lwc/preview/component/c/contextProbe\"",
+		"href=\"/lwc/preview/tab/Lwc_Probe\"",
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("missing %q in:\n%s", want, body)
+		}
+	}
+	for _, unwanted := range []string{
+		"class=\"glade-route-picker\"",
+		"glade-app-builder-shell",
+		"data-glade-builder-active=\"true\"",
+	} {
+		if strings.Contains(body, unwanted) {
+			t.Fatalf("tab route should not include %q in:\n%s", unwanted, body)
+		}
 	}
 }
 
@@ -84,6 +152,8 @@ func TestServerRootRendersLWCWorkbenchWhenProjectHasLWCs(t *testing.T) {
 	body := rec.Body.String()
 	for _, want := range []string{
 		"Glade LWC Shell",
+		"data-glade-builder-active=\"true\"",
+		"glade-app-builder-shell",
 		"data-glade-workbench-builder",
 		"data-glade-add-component=\"c:contextProbe\"",
 	} {
@@ -153,6 +223,7 @@ func TestLWCShellRendersApplicationNavAndConsoleMode(t *testing.T) {
 		`Support Console`,
 		`standard-Case`,
 		`Lwc_Probe`,
+		`class="glade-utility-dock"`,
 		`data-glade-utility-bar`,
 		`data-glade-utility-item="Support_Utility"`,
 		`"utilities":[`,
@@ -199,6 +270,7 @@ func TestLWCShellResolvesUtilityBarRouteAndRendersChrome(t *testing.T) {
 	}
 	body := renderLWCShellHTML(lwcbrowser.PageConfig{}, shell)
 	for _, want := range []string{
+		`class="glade-utility-dock"`,
 		`data-glade-utility-bar`,
 		`data-glade-utility-item="utilityProbe"`,
 		`"utilities":[`,
@@ -413,9 +485,13 @@ func TestLightningRuntimeCSSKeepsShellControlsOutOfSLDS(t *testing.T) {
 		".glade-builder-toolbar button",
 		".glade-component-actions button",
 		".glade-draft-component button",
+		".glade-draft-component header",
+		".glade-draft-component strong",
+		".glade-draft-component code",
+		".glade-page-canvas h2",
 	} {
 		if strings.Contains(shellCSS, selector) {
-			t.Fatalf("shell CSS should not target all buttons with %q:\n%s", selector, shellCSS)
+			t.Fatalf("shell CSS should not target nested component markup with %q:\n%s", selector, shellCSS)
 		}
 	}
 	if !strings.Contains(shellCSS, ".glade-shell-button") {

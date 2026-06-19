@@ -288,6 +288,16 @@ func readDevVFProjectDataFixture(path string) (storage.Fixture, bool, error) {
 	if len(trimmed) > 0 && trimmed[0] == '[' {
 		return readDevVFSFDXTreeDataFixture(trimmed)
 	}
+	var tree struct {
+		Records []map[string]json.RawMessage `json:"records"`
+	}
+	if err := json.Unmarshal(trimmed, &tree); err == nil && len(tree.Records) > 0 {
+		records, err := json.Marshal(tree.Records)
+		if err != nil {
+			return storage.Fixture{}, false, err
+		}
+		return readDevVFSFDXTreeDataFixture(records)
+	}
 	var header struct {
 		Version string `json:"version"`
 	}

@@ -138,10 +138,7 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 	generator := NewIDGenerator(prefixesForOrg(*org))
 	generator.Sequences = copySequences(org.IDSequences)
 	for objectIndex, objectFixture := range fixture.Objects {
-		objectName := objectFixture.Name
-		if resolved, ok := ResolveObjectName(*org, objectName); ok {
-			objectName = resolved
-		}
+		objectName := ensureFixtureObjectState(org, objectFixture.Name, &generator)
 		object, ok := org.Objects[objectName]
 		if !ok {
 			object = ObjectState{
@@ -185,10 +182,7 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 		}
 	}
 	for objectIndex, objectFixture := range fixture.Objects {
-		objectName := objectFixture.Name
-		if resolved, ok := ResolveObjectName(*org, objectName); ok {
-			objectName = resolved
-		}
+		objectName := ensureFixtureObjectState(org, objectFixture.Name, &generator)
 		object := org.Objects[objectName]
 		for i, fixtureRecord := range objectFixture.Records {
 			record := Record{
@@ -230,6 +224,22 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 	}
 	org.IDSequences = copySequences(generator.Sequences)
 	return nil
+}
+
+func ensureFixtureObjectState(org *OrgState, objectName string, generator *IDGenerator) string {
+	if resolved, ok := ResolveObjectName(*org, objectName); ok {
+		objectName = resolved
+	}
+	if canonical, ok := ResolveKnownStandardObjectName(objectName); ok {
+		objectName = canonical
+		EnsureStandardObject(org, objectName)
+		if generator != nil {
+			if prefix := org.Objects[objectName].Definition.KeyPrefix; prefix != "" {
+				generator.Prefixes[objectName] = prefix
+			}
+		}
+	}
+	return objectName
 }
 
 func resolveFixtureAlias(aliases map[string]fixtureAlias, alias, objectName, field string) (fixtureAlias, error) {

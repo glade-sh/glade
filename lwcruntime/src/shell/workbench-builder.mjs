@@ -55,6 +55,7 @@ export function bootWorkbenchBuilder(root = document.body, config = {}) {
     flowInputs: builder.querySelector("[data-glade-flow-inputs]"),
     search: builder.querySelector("[data-glade-component-search]"),
     title: builder.querySelector("[data-glade-draft-title]"),
+    catalogCount: builder.querySelector("[data-glade-catalog-count]"),
     status: builder.querySelector("[data-glade-draft-status]"),
     clear: builder.querySelector("[data-glade-clear-draft]"),
   };
@@ -161,6 +162,9 @@ function renderDraft(builder, model, state, controls, config) {
     title.textContent = PAGE_LABEL_BY_KIND[state.kind] || PAGE_LABEL_BY_KIND.appPage;
   }
   const enabledCount = model.components?.filter((component) => componentSupportsTarget(component, target)).length || 0;
+  if (controls.catalogCount) {
+    controls.catalogCount.textContent = String(enabledCount);
+  }
   if (controls.status) {
     controls.status.textContent = `${state.components.length} placed / ${enabledCount} available`;
   }
@@ -221,8 +225,8 @@ function renderPlacement(builder, model, placement, index, state, controls, targ
   host.id = hostId;
   region.append(frame);
   const attrs = {
-    ...currentDraftAttrs(state, controls),
     ...defaultTargetProperties(component, target),
+    ...currentDraftAttrs(state, controls),
   };
   window.$Lightning.createComponent(component.qualifiedName, attrs, hostId, (_cmp, status, message) => {
     if (status === "SUCCESS") {

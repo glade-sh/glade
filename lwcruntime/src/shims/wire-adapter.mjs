@@ -6,6 +6,8 @@ import {
   writeLDSCache,
 } from "./lds-cache.mjs";
 
+const LOCAL_CONTEXT_HEADER = "X-Glade-LWC-Context";
+
 function wireValue(result) {
   if (result?.error) {
     return { error: result.error, data: undefined };
@@ -140,7 +142,7 @@ export function createApexWireAdapterWithOptions(className, methodName, options 
     if (hasUndefined(config)) {
       return;
     }
-    this.cacheKey = apexCacheKey(className, methodName, config ?? {});
+    this.cacheKey = apexCacheKey(className, methodName, config ?? {}, localContextToken());
     if (options.cacheable) {
       const cached = readLDSCache(this.cacheKey);
       if (cached) {
@@ -201,7 +203,7 @@ export function invokeApex(className, methodName, params) {
   }
   return fetch("/lightning/wire/apex", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...localContextHeaders() },
     body: JSON.stringify({
       className,
       method: methodName,
@@ -239,8 +241,8 @@ export function createGetRecordWireAdapter() {
   }));
 }
 
-function apexCacheKey(className, methodName, params) {
-  return ldsCacheKey("/lightning/wire/apex", { className, method: methodName, params });
+function apexCacheKey(className, methodName, params, context = "") {
+  return ldsCacheKey("/lightning/wire/apex", { className, method: methodName, params, context });
 }
 
 function apexWireErrorValue(err) {
@@ -267,4 +269,82 @@ function attachRefresh(value, adapter) {
     value: (options) => adapter.refresh(options),
   });
   return value;
+}
+
+function localContextHeaders() {
+  const token = localContextToken();
+  if (!token) {
+    return {};
+  }
+  return { [LOCAL_CONTEXT_HEADER]: token };
+}
+
+function localContextToken() {
+  const envelope = localContextEnvelope();
+  if (!envelope) {
+    return "";
+  }
+  try {
+    return encodeURIComponent(JSON.stringify(envelope));
+  } catch (_err) {
+    return "";
+  }
+}
+
+function localContextEnvelope() {
+  const context = readJSONScript("glade-lwc-context");
+  const config = readJSONScript("glade-lightning-config");
+  if (!context && !config) {
+    return null;
+  }
+  const pageReference = config?.pageReference || {};
+  return {
+    url: localContextURL(context || {}, pageReference),
+    context: context || {},
+    pageReference,
+  };
+}
+
+function readJSONScript(id) {
+  if (typeof document === "undefined") {
+    return null;
+  }
+  const node = document.getElementById(id);
+  if (!node) {
+    return null;
+  }
+  try {
+    return JSON.parse(node.textContent || "{}");
+  } catch (_err) {
+    return null;
+  }
+}
+
+function localContextURL(context, pageReference) {
+  const attrs = pageReference?.attributes || {};
+  const state = pageReference?.state || {};
+  const recordId = attrs.recordId || context.recordId || "";
+  const objectApiName = attrs.objectApiName || context.objectApiName || "";
+  if (recordId) {
+    const objectPath = objectApiName || "Record";
+    return `/lwc/preview/record/${encodeURIComponent(objectPath)}/${encodeURIComponent(recordId)}${localQuery({
+      ...state,
+      id: recordId,
+      recordId,
+      objectApiName,
+    })}`;
+  }
+  return `${window.location.pathname}${window.location.search}`;
+}
+
+function localQuery(values) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(values || {})) {
+    if (value == null || value === "") {
+      continue;
+    }
+    params.set(key, String(value));
+  }
+  const text = params.toString();
+  return text ? `?${text}` : "";
 }

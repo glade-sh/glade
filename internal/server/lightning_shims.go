@@ -227,10 +227,38 @@ func (s *Server) serveLabelShim(w http.ResponseWriter, parts []string) {
 	}
 	value, ok := lwcbrowser.ResolveLabelValue(s.Org, token)
 	if !ok {
-		writeSalesforceError(w, errUnknownEndpoint, "unknown label")
-		return
+		if sourceValue, sourceOK := s.resolveSourceLabelValue(token); sourceOK {
+			value = sourceValue
+		} else if fallback, fallbackOK := lightningPlatformLabelFallback(token); fallbackOK {
+			value = fallback
+		} else {
+			writeSalesforceError(w, errUnknownEndpoint, "unknown label")
+			return
+		}
 	}
 	writeJavaScript(w, []byte(lwcbrowser.LabelModuleJS(value)))
+}
+
+func lightningPlatformLabelFallback(token string) (string, bool) {
+	namespace, name, found := strings.Cut(strings.TrimSpace(token), ".")
+	if !found || !strings.EqualFold(namespace, "c") || !strings.HasPrefix(name, "lightning_") {
+		return "", false
+	}
+	return name, true
+}
+
+func (s *Server) resolveSourceLabelValue(token string) (string, bool) {
+	if s == nil || strings.TrimSpace(s.Source.Project.Root) == "" {
+		return "", false
+	}
+	registry, err := resource.LoadProjectWithDependencies(s.Source.Project)
+	if err != nil {
+		return "", false
+	}
+	org := storage.NewOrgState()
+	org.Namespace = s.Source.Project.Namespace
+	org.Metadata = registry
+	return lwcbrowser.ResolveLabelValue(&org, token)
 }
 
 func (s *Server) serveSchemaShim(w http.ResponseWriter, parts []string) {

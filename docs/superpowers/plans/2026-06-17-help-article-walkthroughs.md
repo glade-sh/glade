@@ -25,7 +25,7 @@ The help articles should not replace those pages. They should show the path with
 
 ## Article Set
 
-Create six articles.
+Create seven articles.
 
 1. `/help/first-local-check`
    - Install Glade, run `glade doctor`, initialize an SFDX project, run `glade check`.
@@ -45,8 +45,11 @@ Create six articles.
 6. `/help/changed-tests-before-pr`
    - Run `glade test changed --since origin/main`, rerun failures, write JSON and JUnit under `reports/`.
    - Screenshot source: Ghostty.
+7. `/help/glade-org-sf-data-import`
+   - Create a Glade org, register it with the Salesforce CLI, import data with `sf data import tree`, and query it back.
+   - Screenshot source: Ghostty.
 
-Leave `glade debug explain` and `glade debug repro` as a later article unless the first six land clean. Six is enough timber for the first wall.
+Leave `glade debug explain` and `glade debug repro` as a later article unless the first seven land clean. Seven is enough timber for the first wall.
 
 ## File Structure
 
@@ -70,6 +73,9 @@ Leave `glade debug explain` and `glade debug repro` as a later article unless th
 
 - Create `site/docs-src/help/changed-tests-before-pr.md`
   - PR-ready changed-test walkthrough.
+
+- Create `site/docs-src/help/glade-org-sf-data-import.md`
+  - Glade org and Salesforce CLI data-import walkthrough.
 
 - Create `site/docs-src/public/help/screenshots/.gitkeep`
   - Keeps the screenshot asset directory present before capture.
@@ -190,6 +196,7 @@ const helpDebugApexVsCode = await readFile(new URL("../docs-src/help/debug-apex-
 const helpAnonymousApexScratch = await readFile(new URL("../docs-src/help/anonymous-apex-scratch.md", import.meta.url), "utf8").catch(() => "");
 const helpLocalDataEnvironments = await readFile(new URL("../docs-src/help/local-data-environments.md", import.meta.url), "utf8").catch(() => "");
 const helpChangedTestsBeforePr = await readFile(new URL("../docs-src/help/changed-tests-before-pr.md", import.meta.url), "utf8").catch(() => "");
+const helpGladeOrgSfDataImport = await readFile(new URL("../docs-src/help/glade-org-sf-data-import.md", import.meta.url), "utf8").catch(() => "");
 const captureHelpScreenshotsScript = await readFile(new URL("../scripts/capture-help-screenshots.sh", import.meta.url), "utf8").catch(() => "");
 const checkHelpScreenshotsScript = await readFile(new URL("../scripts/check-help-screenshots.mjs", import.meta.url), "utf8").catch(() => "");
 ```
@@ -206,13 +213,14 @@ test("guided help articles are a small screenshot-backed set", () => {
     helpDebugApexVsCode,
     helpAnonymousApexScratch,
     helpLocalDataEnvironments,
-    helpChangedTestsBeforePr
+    helpChangedTestsBeforePr,
+    helpGladeOrgSfDataImport
   ];
 
   assert.match(config, /\{ text: 'Help', link: '\/help\/' \}/);
   assert.match(config, /text: 'Guided help'/);
   assert.match(helpIndex, /^# Guided Help/m);
-  assert.equal(articles.length, 6);
+  assert.equal(articles.length, 7);
 
   for (const article of articles) {
     assert.match(article, /class="docs-intro"/);
@@ -246,6 +254,8 @@ test("guided help screenshot capture uses Ghostty and clean VS Code profiles", (
   assert.match(helpDebugApexVsCode, /clean VS Code profile/);
   assert.match(helpAnonymousApexScratch, /clean VS Code profile/);
   assert.match(helpLocalDataEnvironments, /only Glade and optional Salesforce extensions/);
+  assert.match(helpGladeOrgSfDataImport, /Ghostty/);
+  assert.match(helpGladeOrgSfDataImport, /sf data import tree/);
 });
 ```
 
@@ -291,6 +301,7 @@ const outRoot = resolve(repoRoot, ".glade/help-fixture");
 
 await rm(outRoot, { recursive: true, force: true });
 await mkdir(resolve(outRoot, "force-app/main/default/classes"), { recursive: true });
+await mkdir(resolve(outRoot, "data"), { recursive: true });
 await mkdir(resolve(outRoot, "reports"), { recursive: true });
 
 await writeFile(resolve(outRoot, "sfdx-project.json"), JSON.stringify({
@@ -330,6 +341,20 @@ await writeFile(resolve(outRoot, "seed.json"), JSON.stringify({
   ]
 }, null, 2) + "\n");
 
+await writeFile(resolve(outRoot, "data/insertOrder.json"), JSON.stringify({
+  records: [
+    {
+      attributes: { type: "Account", referenceId: "AccountRef1" },
+      Name: "Imported Account"
+    },
+    {
+      attributes: { type: "Contact", referenceId: "ContactRef1" },
+      LastName: "Trail",
+      AccountId: "@AccountRef1"
+    }
+  ]
+}, null, 2) + "\n");
+
 console.log(outRoot);
 ```
 
@@ -354,6 +379,7 @@ The fixture contains:
 - `AccountService.cls`
 - `AccountServiceTest.cls`
 - `seed.json`
+- `data/insertOrder.json`
 - `reports/`
 ```
 
@@ -453,7 +479,10 @@ const required = [
   "local-data-environments-01-sidebar.png",
   "local-data-environments-02-ghostty.png",
   "changed-tests-before-pr-01-changed-tests.png",
-  "changed-tests-before-pr-02-reports.png"
+  "changed-tests-before-pr-02-reports.png",
+  "glade-org-sf-data-import-01-create-start.png",
+  "glade-org-sf-data-import-02-auth-list.png",
+  "glade-org-sf-data-import-03-import-query.png"
 ];
 
 const articleNames = [
@@ -463,7 +492,8 @@ const articleNames = [
   "debug-apex-vscode.md",
   "anonymous-apex-scratch.md",
   "local-data-environments.md",
-  "changed-tests-before-pr.md"
+  "changed-tests-before-pr.md",
+  "glade-org-sf-data-import.md"
 ];
 
 const articleText = (await Promise.all(articleNames.map(async (name) => {
@@ -598,6 +628,7 @@ These articles complement the reference docs. They show the work in Ghostty and 
 - [Use anonymous Apex scratch in VS Code](/help/anonymous-apex-scratch)
 - [Work with local data environments](/help/local-data-environments)
 - [Run changed tests before a PR](/help/changed-tests-before-pr)
+- [Set up a Glade org and import data with sf](/help/glade-org-sf-data-import)
 
 ## Reference docs
 
@@ -637,7 +668,8 @@ Add this sidebar group after `Start`:
     { text: 'Debug with breakpoints', link: '/help/debug-apex-vscode' },
     { text: 'Anonymous Apex scratch', link: '/help/anonymous-apex-scratch' },
     { text: 'Local data environments', link: '/help/local-data-environments' },
-    { text: 'Changed tests before a PR', link: '/help/changed-tests-before-pr' }
+    { text: 'Changed tests before a PR', link: '/help/changed-tests-before-pr' },
+    { text: 'Glade org data import', link: '/help/glade-org-sf-data-import' }
   ]
 },
 ```
@@ -650,7 +682,7 @@ Run:
 npm --prefix site test
 ```
 
-Expected: FAIL. The six article pages and screenshot files are still missing.
+Expected: FAIL. The seven article pages and screenshot files are still missing.
 
 - [ ] **Step 6: Commit if working in small commits**
 
@@ -659,7 +691,7 @@ git add site/.vitepress/config.ts site/docs-src/help site/docs-src/public/help
 git commit -m "docs: add guided help landing route"
 ```
 
-### Task 4: Draft the six guided articles
+### Task 4: Draft the seven guided articles
 
 **Files:**
 - Create: `site/docs-src/help/first-local-check.md`
@@ -668,6 +700,7 @@ git commit -m "docs: add guided help landing route"
 - Create: `site/docs-src/help/anonymous-apex-scratch.md`
 - Create: `site/docs-src/help/local-data-environments.md`
 - Create: `site/docs-src/help/changed-tests-before-pr.md`
+- Create: `site/docs-src/help/glade-org-sf-data-import.md`
 
 - [ ] **Step 1: Create first local check article**
 
@@ -997,7 +1030,80 @@ If changed-test selection finds no merge base, fetch full history first. In GitH
 - [Affected tests](/guide/affected-tests)
 ```
 
-- [ ] **Step 7: Run the site tests**
+- [ ] **Step 7: Create Glade org data-import article**
+
+Create `site/docs-src/help/glade-org-sf-data-import.md`:
+
+```markdown
+# Set Up a Glade Org and Import Data With sf
+
+<div class="docs-intro">
+  <p class="docs-intro-eyebrow">Guided help</p>
+  <p>Create a local Glade org target, register it with the Salesforce CLI, and import sample data.</p>
+  <ul>
+    <li>Create and start a Glade org.</li>
+    <li>Write the target into an isolated `sf` config.</li>
+    <li>Import tree data and query it back.</li>
+  </ul>
+</div>
+
+## Before you start
+
+- `glade doctor` passes from the SFDX project root.
+- The Salesforce CLI `sf` is installed.
+- The fixture has `data/insertOrder.json`.
+- Screenshots for this article are captured in Ghostty.
+- This creates a local Glade target. It does not create a Salesforce scratch org.
+
+## Steps
+
+### 1. Create and start the Glade org
+
+```bash
+glade org create my-glade-org
+glade org start my-glade-org --project .
+```
+
+Expected: Glade writes `.glade/orgs/my-glade-org.sqlite` and starts a loopback server for the saved target.
+
+![Ghostty showing glade org create and start output](/help/screenshots/glade-org-sf-data-import-01-create-start.png)
+
+### 2. Register the target with sf
+
+Open a second Ghostty tab in the same project and run:
+
+```bash
+export SF_CONFIG_DIR="$PWD/.sf-glade"
+glade org auth my-glade-org --project .
+sf org list
+```
+
+Expected: `sf org list` shows `my-glade-org` from the isolated local config.
+
+![Ghostty showing sf org list with a Glade target](/help/screenshots/glade-org-sf-data-import-02-auth-list.png)
+
+### 3. Import and query data
+
+```bash
+sf data import tree -p ./data/insertOrder.json -o my-glade-org
+sf data query -o my-glade-org -q "SELECT Id, Name FROM Account WHERE Name = 'Imported Account'"
+```
+
+Expected: the import succeeds and the query returns the local Account row.
+
+![Ghostty showing sf data import tree and query output](/help/screenshots/glade-org-sf-data-import-03-import-query.png)
+
+## Common wrong turn
+
+If `sf` cannot find the target, use the same `SF_CONFIG_DIR` for `glade org auth` and the later `sf` commands.
+
+## Next
+
+- [Use Glade as an sf target](/guide/glade-orgs)
+- [Local API routes](/guide/local-api-server)
+```
+
+- [ ] **Step 8: Run the site tests**
 
 Run:
 
@@ -1007,7 +1113,7 @@ npm --prefix site test
 
 Expected: FAIL until real screenshots exist. Markdown contract tests should now pass.
 
-- [ ] **Step 8: Commit if working in small commits**
+- [ ] **Step 9: Commit if working in small commits**
 
 ```bash
 git add site/docs-src/help
@@ -1043,6 +1149,7 @@ In Ghostty, run the commands from:
 - `/help/run-one-apex-test`
 - `/help/local-data-environments`
 - `/help/changed-tests-before-pr`
+- `/help/glade-org-sf-data-import`
 
 Capture with:
 
@@ -1053,6 +1160,9 @@ screencapture -i site/docs-src/public/help/screenshots/run-one-apex-test-01-cli.
 screencapture -i site/docs-src/public/help/screenshots/local-data-environments-02-ghostty.png
 screencapture -i site/docs-src/public/help/screenshots/changed-tests-before-pr-01-changed-tests.png
 screencapture -i site/docs-src/public/help/screenshots/changed-tests-before-pr-02-reports.png
+screencapture -i site/docs-src/public/help/screenshots/glade-org-sf-data-import-01-create-start.png
+screencapture -i site/docs-src/public/help/screenshots/glade-org-sf-data-import-02-auth-list.png
+screencapture -i site/docs-src/public/help/screenshots/glade-org-sf-data-import-03-import-query.png
 ```
 
 Expected: each image shows Ghostty, the command, and the relevant result.
@@ -1082,7 +1192,7 @@ Run:
 npm --prefix site run help:check
 ```
 
-Expected: PASS with `checked 14 help screenshots`.
+Expected: PASS with `checked 17 help screenshots`.
 
 - [ ] **Step 5: Commit if working in small commits**
 
@@ -1138,6 +1248,7 @@ http://127.0.0.1:4173/help/debug-apex-vscode
 http://127.0.0.1:4173/help/anonymous-apex-scratch
 http://127.0.0.1:4173/help/local-data-environments
 http://127.0.0.1:4173/help/changed-tests-before-pr
+http://127.0.0.1:4173/help/glade-org-sf-data-import
 ```
 
 Expected:

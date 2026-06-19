@@ -379,6 +379,7 @@ class %[2]s extends LightningElement {
   }
   wireRecordUi(data) {
     this.__wiredData = data;
+    applyBaseRecordUiToField(this, data);
   }
   getWiredPicklistValues() {
     return this.__wiredPicklistValues;
@@ -466,6 +467,11 @@ class %[2]s extends LightningElement {
         return;
       }
       this.value = result && result.data || result;
+      applyBaseRecordUiToFormFields(this, {
+        record: this.value,
+        objectInfos: result && result.data && result.data.objectInfos || {},
+        objectInfo: result && result.data && result.data.objectInfos && result.data.objectInfos[this.value && this.value.apiName]
+      });
     }).catch((err) => {
       const detail = { message: err && err.message || String(err) };
       this.error = detail;
@@ -562,6 +568,79 @@ function recordFieldDisplayValue(record, field) {
     return value.displayValue ?? value.value ?? "";
   }
   return value ?? "";
+}
+function applyBaseRecordUiToFormFields(form, data) {
+  for (const field of baseFormFieldComponents(form)) {
+    if (field && field.wireRecordUi) {
+      field.wireRecordUi(data);
+    }
+  }
+}
+function applyBaseRecordUiToField(field, data) {
+  const name = fieldApiName(field && (field.fieldName || field.name));
+  if (!name) {
+    return;
+  }
+  const record = data && data.record || {};
+  const objectInfo = data && (data.objectInfo || data.objectInfos && data.objectInfos[record && record.apiName]) || {};
+  const metadata = objectInfo && objectInfo.fields && objectInfo.fields[name] || {};
+  const recordField = record && record.fields && record.fields[name];
+  const value = recordField && typeof recordField === "object" ? recordField.value : recordField;
+  if (value !== undefined) {
+    field.value = value;
+    field.__initialValue = value;
+    field.dirty = false;
+  }
+  if (!field.label && metadata.label) {
+    field.label = metadata.label;
+  }
+  if (field.required === undefined && metadata.required !== undefined) {
+    field.required = Boolean(metadata.required);
+  }
+  if (!field.type) {
+    const inputType = baseInputTypeForMetadata(metadata);
+    if (inputType) {
+      field.type = inputType;
+    }
+  }
+  if (!field.options && Array.isArray(metadata.picklistValues)) {
+    field.options = metadata.picklistValues.map((option) => ({ label: option.label ?? option.value ?? "", value: option.value ?? option.label ?? "" }));
+  }
+}
+function baseFormFieldComponents(root) {
+  const fields = [];
+  for (const selector of ["lightning-input-field", "lightning-output-field"]) {
+    fields.push(...(root && root.querySelectorAll ? root.querySelectorAll(selector) : []));
+    for (const container of [root, root && root.hostElement, root && root.template && root.template.host]) {
+      for (const element of container && container.children || []) collectBaseAssignedFields(element, fields, selector);
+    }
+    for (const slot of root && root.template && root.template.querySelectorAll ? root.template.querySelectorAll("slot") : []) {
+      for (const element of slot.assignedElements ? slot.assignedElements({ flatten: true }) : []) collectBaseAssignedFields(element, fields, selector);
+    }
+  }
+  return [...new Set(fields)];
+}
+function collectBaseAssignedFields(element, fields, selector) {
+  if (!element) {
+    return;
+  }
+  if (element.tagName && element.tagName.toLowerCase() === selector) {
+    fields.push(element);
+  }
+  for (const child of element.querySelectorAll ? element.querySelectorAll(selector) : []) {
+    fields.push(child);
+  }
+}
+function baseInputTypeForMetadata(metadata) {
+  const type = String(metadata && (metadata.dataType || metadata.type) || "").toLowerCase();
+  if (["picklist", "multipicklist"].includes(type)) return "";
+  if (["boolean", "checkbox"].includes(type)) return "checkbox";
+  if (["double", "integer", "currency", "percent", "number"].includes(type)) return "number";
+  if (type === "date") return "date";
+  if (["datetime", "datetime-local"].includes(type)) return "datetime-local";
+  if (type === "email") return "email";
+  if (["phone", "tel"].includes(type)) return "tel";
+  return "";
 }
 function selectedValueList(value) {
   if (Array.isArray(value)) {

@@ -11,6 +11,7 @@
   <targetConfigs>
     <targetConfig targets="lightning__AppPage,lightning__HomePage,lightning__RecordPage">
       <property name="title" type="String" label="Title" default="Local Shell Context"/>
+      <property name="recordId" type="String" label="Record" default="001000000000999AAA"/>
     </targetConfig>
   </targetConfigs>
 </LightningComponentBundle>

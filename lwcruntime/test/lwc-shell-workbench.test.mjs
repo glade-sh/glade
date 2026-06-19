@@ -180,11 +180,15 @@ test("LWC shell workbench renders routes, context, and mounted record page", asy
     assert.equal(model.title, "Glade Lightning Shell");
     assert.ok(model.routes.some((route) => route.url === "/lwc/preview/app/Sales_Dashboard"));
     assert.ok(model.routes.some((route) => route.url === "/lwc/preview/tab/Lwc_Probe"));
+    assert.ok(model.routes.some((route) => route.url === "/lwc/preview/component/c/contextProbe"));
     assert.ok(model.routes.some((route) => route.url === "/lwc/preview/community/Partner_Portal/Account"));
 
     await page.goto(`${server.baseURL}/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page`, {
       waitUntil: "networkidle",
     });
+    await page.locator("details.glade-route-menu summary").click();
+    assert.ok(await page.locator('details.glade-route-menu[open] a[data-glade-route-link][href="/lwc/preview/component/c/contextProbe"]').count());
+    assert.ok(await page.locator('details.glade-route-menu[open] a[data-glade-route-link][href="/lwc/preview/tab/Lwc_Probe"]').count());
     assert.match(await page.locator("c-record-probe").innerText({ timeout: 60000 }), /Local Shell Account/);
     await assert.match(await page.locator("[data-glade-context-panel]").innerText(), /Record/);
     await assert.match(await page.locator("[data-glade-context-panel]").innerText(), /001000000000001AAA/);
@@ -259,13 +263,14 @@ test("LWC shell workbench lets developers compose a local page from available co
     await page.locator('[data-glade-draft-component="c:contextProbe"]').waitFor({ timeout: 60000 });
     await page.locator("c-context-probe").waitFor({ timeout: 60000 });
     const text = await page.locator("c-context-probe").innerText({ timeout: 60000 });
-    assert.match(text, /LOCAL SHELL CONTEXT/);
+    assert.match(text, /Local Shell Context/);
     assert.match(text, /001000000000001AAA/);
+    assert.doesNotMatch(text, /001000000000999AAA/);
     const contextPanel = await page.locator("[data-glade-context-panel]").innerText({ timeout: 60000 });
     assert.match(contextPanel, /standard__recordPage/);
     assert.match(contextPanel, /Account/);
     assert.match(contextPanel, /001000000000001AAA/);
-    assert.equal(await page.locator(".glade-route-picker[open]").count(), 0);
+    assert.equal(await page.locator(".glade-route-menu[open]").count(), 0);
     assert.equal(await page.locator(".glade-stage > .glade-region").count(), 0);
 
     const model = JSON.parse(await page.locator("#glade-lwc-workbench").textContent());
@@ -298,24 +303,41 @@ test("LWC shell workbench keeps the root builder dense on desktop", async (t) =>
     const metrics = await page.evaluate(() => {
       const box = (selector) => document.querySelector(selector).getBoundingClientRect();
       return {
-        toolbarHeight: box(".glade-builder-toolbar").height,
-        contextWidth: box(".glade-context-panel").width,
-        catalogWidth: box(".glade-component-catalog").width,
-        canvasWidth: box(".glade-page-canvas").width,
+        builderActive: document.body.getAttribute("data-glade-builder-active"),
+        commandbarHeight: box(".glade-builder-commandbar").height,
+        outsideContextDisplay: getComputedStyle(document.querySelector(".glade-context-panel")).display,
+        layoutColumns: getComputedStyle(document.querySelector(".glade-builder-layout")).gridTemplateColumns.split(" ").length,
+        paletteWidth: box(".glade-builder-palette").width,
+        canvasShellWidth: box(".glade-builder-canvas-shell").width,
+        propertiesWidth: box(".glade-builder-properties").width,
         canvasColumns: getComputedStyle(document.querySelector(".glade-page-canvas")).gridTemplateColumns.split(" ").length,
         consoleControlDisplay: getComputedStyle(document.querySelector(".glade-checkbox-control")).display,
         consoleInputWidth: box(".glade-checkbox-control input").width,
         mediumButtonWidth: box('[data-glade-form-factor-option="Medium"]').width,
-        routePickerOpen: document.querySelector("details.glade-route-picker")?.open ?? true,
+        routePickerCount: document.querySelectorAll("details.glade-route-picker").length,
+        routeMenuOpen: document.querySelector("details.glade-route-menu")?.open ?? true,
+        routeMenuTop: box(".glade-route-menu").top,
+        builderTop: box("[data-glade-workbench-builder]").top,
+        inertButtonCount: Array.from(document.querySelectorAll("button:disabled")).filter((button) =>
+          /Analyze|Activation|Save|Cut|Copy|Paste|Fields|Help/.test(button.textContent),
+        ).length,
         horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
       };
     });
 
     assert.equal(metrics.horizontalOverflow, false);
-    assert.equal(metrics.routePickerOpen, false);
-    assert.ok(metrics.toolbarHeight <= 145, `toolbar height = ${metrics.toolbarHeight}`);
-    assert.ok(metrics.contextWidth <= 320, `context width = ${metrics.contextWidth}`);
-    assert.ok(metrics.canvasWidth > metrics.catalogWidth, `canvas ${metrics.canvasWidth} catalog ${metrics.catalogWidth}`);
+    assert.equal(metrics.builderActive, "true");
+    assert.equal(metrics.outsideContextDisplay, "none");
+    assert.equal(metrics.routePickerCount, 0);
+    assert.equal(metrics.routeMenuOpen, false);
+    assert.ok(metrics.routeMenuTop <= metrics.builderTop + 12, `route menu top = ${metrics.routeMenuTop}, builder top = ${metrics.builderTop}`);
+    assert.equal(metrics.layoutColumns, 3);
+    assert.equal(metrics.inertButtonCount, 0);
+    assert.ok(metrics.commandbarHeight <= 52, `commandbar height = ${metrics.commandbarHeight}`);
+    assert.ok(metrics.paletteWidth <= 295, `palette width = ${metrics.paletteWidth}`);
+    assert.ok(metrics.propertiesWidth <= 360, `properties width = ${metrics.propertiesWidth}`);
+    assert.ok(metrics.canvasShellWidth > metrics.paletteWidth, `canvas ${metrics.canvasShellWidth} palette ${metrics.paletteWidth}`);
+    assert.ok(metrics.canvasShellWidth > metrics.propertiesWidth, `canvas ${metrics.canvasShellWidth} properties ${metrics.propertiesWidth}`);
     assert.equal(metrics.canvasColumns, 2);
     assert.equal(metrics.consoleControlDisplay, "flex");
     assert.ok(metrics.consoleInputWidth <= 20, `console input width = ${metrics.consoleInputWidth}`);
@@ -344,19 +366,21 @@ test("LWC shell workbench keeps the root builder compact on mobile", async (t) =
     const metrics = await page.evaluate(() => {
       const box = (selector) => document.querySelector(selector).getBoundingClientRect();
       return {
-        toolbarHeight: box(".glade-builder-toolbar").height,
-        toolbarColumns: getComputedStyle(document.querySelector(".glade-builder-toolbar")).gridTemplateColumns.split(" ").length,
+        commandbarHeight: box(".glade-builder-commandbar").height,
+        layoutColumns: getComputedStyle(document.querySelector(".glade-builder-layout")).gridTemplateColumns.split(" ").length,
         canvasColumns: getComputedStyle(document.querySelector(".glade-page-canvas")).gridTemplateColumns.split(" ").length,
-        routePickerOpen: document.querySelector("details.glade-route-picker")?.open ?? true,
+        routePickerCount: document.querySelectorAll("details.glade-route-picker").length,
+        routeMenuOpen: document.querySelector("details.glade-route-menu")?.open ?? true,
         horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
       };
     });
 
     assert.equal(metrics.horizontalOverflow, false);
-    assert.equal(metrics.routePickerOpen, false);
-    assert.equal(metrics.toolbarColumns, 2);
+    assert.equal(metrics.routePickerCount, 0);
+    assert.equal(metrics.routeMenuOpen, false);
+    assert.equal(metrics.layoutColumns, 1);
     assert.equal(metrics.canvasColumns, 1);
-    assert.ok(metrics.toolbarHeight <= 430, `toolbar height = ${metrics.toolbarHeight}`);
+    assert.ok(metrics.commandbarHeight <= 120, `commandbar height = ${metrics.commandbarHeight}`);
   } finally {
     await browser.close();
     await server.close();

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -472,6 +473,54 @@ func TestLightningLabelShim(t *testing.T) {
 	}
 }
 
+func TestLightningLabelShimFallsBackForUnknownPlatformLabel(t *testing.T) {
+	org := storage.NewOrgState()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/shims/label/c.lightning_LightningRecordForm_save", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, `export default "lightning_LightningRecordForm_save"`) {
+		t.Fatalf("body = %q", body)
+	}
+	if strings.Contains(body, "NOT_FOUND") {
+		t.Fatalf("served non-module response: %q", body)
+	}
+}
+
+func TestLightningLabelShimUsesSourceLabelsWhenOrgMissingLabel(t *testing.T) {
+	root := t.TempDir()
+	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"62.0"}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/translations/en_US.translation-meta.xml"), `<Translations xmlns="http://soap.sforce.com/2006/04/metadata">
+  <customLabels>
+    <name>lightning_LightningRecordForm_save</name>
+    <label>Save</label>
+  </customLabels>
+</Translations>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	handler := NewWithSource(&org, source)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/shims/label/c.lightning_LightningRecordForm_save", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `export default "Save"`) {
+		t.Fatalf("body = %q", rec.Body.String())
+	}
+}
+
 func TestLightningUserShimResolvesCurrentUser(t *testing.T) {
 	org := testOrg()
 	addUser(&org, "005000000000123", "ada@example.test", "ada.alias@example.test", "Ada Trail")
@@ -830,6 +879,50 @@ func TestLightningWireApexUsesRequestCurrentUser(t *testing.T) {
 	}
 }
 
+func TestLightningWireApexUsesLocalLWCContextHeader(t *testing.T) {
+	program, err := vm.CompileAnonymous(`
+PageReference page = ApexPages.currentPage();
+return page.getUrl() + ':' + page.getParameters().get('id') + ':' + page.getParameters().get('recordId');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := vm.New(nil)
+	if err := machine.RegisterMethod(vm.Method{
+		Name:       "ItemCtrl.currentRecord",
+		ClassName:  "ItemCtrl",
+		ReturnType: "String",
+		IsStatic:   true,
+		Modifiers:  []string{"AuraEnabled"},
+		Program:    program,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	handler := New(&org)
+	handler.SetProjectRuntime(typesys.Index{}, machine, nil)
+
+	body := `{"className":"ItemCtrl","method":"currentRecord","params":{}}`
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/lightning/wire/apex", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Glade-LWC-Context", url.QueryEscape(`{"url":"/lwc/preview/record/Account/001LOCAL0000001AAA?id=001LOCAL0000001AAA&recordId=001LOCAL0000001AAA","context":{"kind":"recordPage","recordId":"001LOCAL0000001AAA","objectApiName":"Account"}}`))
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var out lwcbrowser.WireResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Error != nil {
+		t.Fatalf("error = %#v", out.Error)
+	}
+	if got := out.Data; got != "/lwc/preview/record/Account/001LOCAL0000001AAA?id=001LOCAL0000001AAA&recordId=001LOCAL0000001AAA:001LOCAL0000001AAA:001LOCAL0000001AAA" {
+		t.Fatalf("data = %#v", got)
+	}
+}
+
 func TestLightningWireApexRejectsNonObjectParamsWithSalesforceError(t *testing.T) {
 	root := lightningFixtureRoot(t)
 	fixture := filepath.Join(root, "testdata", "local-tests", "lightning-out-vf")
@@ -1027,6 +1120,40 @@ func TestLightningWireGetRecordReturnsStoredName(t *testing.T) {
 	}
 	if nameField["label"] != "Account Name" {
 		t.Fatalf("Name label = %#v", nameField)
+	}
+}
+
+func TestLightningWireGetRecordMatchesFifteenAndEighteenCharacterIDs(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "00100000000LFLT", "Imported Account")
+	handler := New(&org)
+
+	body := `{"recordId":"00100000000LFLTAA4","fields":["Account.Name"]}`
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/lightning/wire/getRecord", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var out lwcbrowser.WireResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Error != nil {
+		t.Fatalf("error = %#v", out.Error)
+	}
+	payload, ok := out.Data.(map[string]any)
+	if !ok {
+		t.Fatalf("data = %#v", out.Data)
+	}
+	fields, ok := payload["fields"].(map[string]any)
+	if !ok {
+		t.Fatalf("fields = %#v", payload["fields"])
+	}
+	nameField, ok := fields["Name"].(map[string]any)
+	if !ok || nameField["value"] != "Imported Account" {
+		t.Fatalf("Name field = %#v", fields["Name"])
 	}
 }
 
@@ -1316,6 +1443,42 @@ func TestLightningWireGetObjectInfoReturnsLocalSchema(t *testing.T) {
 	values, ok := rating["picklistValues"].([]any)
 	if !ok || len(values) != 1 {
 		t.Fatalf("Rating picklistValues = %#v", rating["picklistValues"])
+	}
+}
+
+func TestLightningWireGetObjectInfoEnsuresKnownStandardObject(t *testing.T) {
+	org := storage.NewOrgState()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/lightning/wire/getObjectInfo", strings.NewReader(`{"objectApiName":"Contact"}`))
+	req.Header.Set("Content-Type", "application/json")
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var out lwcbrowser.WireResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Error != nil {
+		t.Fatalf("error = %#v", out.Error)
+	}
+	payload, ok := out.Data.(map[string]any)
+	if !ok {
+		t.Fatalf("data = %#v", out.Data)
+	}
+	if payload["apiName"] != "Contact" {
+		t.Fatalf("apiName = %#v", payload["apiName"])
+	}
+	fields, ok := payload["fields"].(map[string]any)
+	if !ok {
+		t.Fatalf("fields = %#v", payload["fields"])
+	}
+	for _, field := range []string{"Name", "LastName", "AccountId"} {
+		if _, ok := fields[field]; !ok {
+			t.Fatalf("missing field %s: %#v", field, fields)
+		}
 	}
 }
 

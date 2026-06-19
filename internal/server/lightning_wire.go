@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"sort"
 	"strings"
 
@@ -102,6 +103,11 @@ func (s *Server) invokeLightningApex(w http.ResponseWriter, r *http.Request, cla
 		return
 	}
 	machine.SetCurrentUser(s.currentUser(r, ""))
+	if pageURL := lightningLocalContextPageURL(r); pageURL != "" {
+		machine.SetCurrentPageURL(pageURL)
+	} else {
+		machine.ResetApexPageState()
+	}
 	params, paramErr := apexWireParams(rawParams)
 	if paramErr != nil {
 		writeWireJSON(w, lwcbrowser.WireResponse{
@@ -127,6 +133,47 @@ func (s *Server) invokeLightningApex(w http.ResponseWriter, r *http.Request, cla
 		return
 	}
 	writeWireJSON(w, lwcbrowser.WireResponse{Data: result.ReturnValue})
+}
+
+func lightningLocalContextPageURL(r *http.Request) string {
+	if r == nil {
+		return ""
+	}
+	raw := strings.TrimSpace(r.Header.Get("X-Glade-LWC-Context"))
+	if raw == "" {
+		return ""
+	}
+	decoded, err := url.QueryUnescape(raw)
+	if err != nil {
+		decoded = raw
+	}
+	var payload struct {
+		URL     string `json:"url"`
+		Context struct {
+			RecordID      string `json:"recordId"`
+			ObjectAPIName string `json:"objectApiName"`
+		} `json:"context"`
+	}
+	if err := json.Unmarshal([]byte(decoded), &payload); err != nil {
+		return ""
+	}
+	pageURL := strings.TrimSpace(payload.URL)
+	if pageURL != "" {
+		return pageURL
+	}
+	recordID := strings.TrimSpace(payload.Context.RecordID)
+	if recordID == "" {
+		return ""
+	}
+	objectAPIName := strings.TrimSpace(payload.Context.ObjectAPIName)
+	if objectAPIName == "" {
+		objectAPIName = "Record"
+	}
+	values := url.Values{}
+	values.Set("id", recordID)
+	values.Set("recordId", recordID)
+	values.Set("objectApiName", objectAPIName)
+	return "/lwc/preview/record/" + url.PathEscape(objectAPIName) + "/" + url.PathEscape(recordID) + "?" + values.Encode()
 }
 
 func apexWireParams(raw any) (map[string]any, error) {
@@ -716,7 +763,7 @@ func recordTypeIDForRecordUI(org *storage.OrgState, objectName string, recordID 
 	if !ok {
 		return ""
 	}
-	record, ok := object.Records[storage.ID(recordID)]
+	_, record, ok := storage.LookupRecordByID(object.Records, storage.ID(recordID))
 	if ok {
 		if value, hasValue := record.Fields["RecordTypeId"]; hasValue && value.ID != "" {
 			return string(value.ID)
@@ -1588,11 +1635,11 @@ func findOrgRecord(org *storage.OrgState, recordID string) (objectName string, r
 		if strings.TrimSpace(object.Definition.KeyPrefix) != prefix {
 			continue
 		}
-		if rec, found := object.Records[id]; found {
+		if storedID, rec, found := storage.LookupRecordByID(object.Records, id); found {
 			if rec.System.IsDeleted {
 				return "", storage.Record{}, false
 			}
-			rec.ID = id
+			rec.ID = storedID
 			return name, rec, true
 		}
 	}
@@ -1617,6 +1664,11 @@ func storageValueFromAny(raw any) storage.Value {
 func findOrgObject(org *storage.OrgState, objectAPIName string) (objectName string, object storage.ObjectState, ok bool) {
 	if org == nil {
 		return "", storage.ObjectState{}, false
+	}
+	objectAPIName = strings.TrimSpace(objectAPIName)
+	if canonical, known := storage.ResolveKnownStandardObjectName(objectAPIName); known {
+		storage.EnsureStandardObject(org, canonical)
+		objectAPIName = canonical
 	}
 	for name, candidate := range org.Objects {
 		if strings.EqualFold(name, objectAPIName) || strings.EqualFold(candidate.Definition.APIName, objectAPIName) {

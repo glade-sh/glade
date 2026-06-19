@@ -197,6 +197,11 @@ function createComponent(selector, render) {
           return;
         }
         this.value = result?.data || result;
+        applyRecordUiToFormFields(this, {
+          record: this.value,
+          objectInfos: result?.data?.objectInfos || {},
+          objectInfo: result?.data?.objectInfos?.[this.value?.apiName],
+        });
         this.dispatchEvent(new CustomEvent("load", {
           bubbles: true,
           composed: true,
@@ -291,6 +296,7 @@ function createComponent(selector, render) {
 
     wireRecordUi(data) {
       this.__wiredData = data;
+      applyRecordUiToField(this, data);
     }
 
     getWiredPicklistValues() {
@@ -658,10 +664,61 @@ function inputFieldsForForm(root) {
   return [...new Set(fields)];
 }
 
+function fieldComponentsForForm(root) {
+  const fields = [...inputFieldsForForm(root)];
+  for (const selector of ["lightning-output-field"]) {
+    fields.push(...(root?.querySelectorAll?.(selector) || []));
+    for (const container of [root, root?.hostElement, root?.template?.host]) {
+      for (const element of container?.children || []) collectAssignedFields(element, fields, selector);
+    }
+    for (const slot of root?.template?.querySelectorAll?.("slot") || []) {
+      for (const element of slot.assignedElements?.({ flatten: true }) || []) collectAssignedFields(element, fields, selector);
+    }
+  }
+  return [...new Set(fields)];
+}
+
+function applyRecordUiToFormFields(form, data) {
+  for (const field of fieldComponentsForForm(form)) field.wireRecordUi?.(data);
+}
+
+function applyRecordUiToField(field, data) {
+  const name = normalizeFieldName(field?.fieldName || field?.name);
+  if (!name) return;
+  const record = data?.record || {};
+  const objectInfo = data?.objectInfo || data?.objectInfos?.[record?.apiName] || {};
+  const metadata = objectInfo?.fields?.[name] || {};
+  const recordField = record?.fields?.[name];
+  const value = recordField && typeof recordField === "object" ? recordField.value : recordField;
+  if (value !== undefined) {
+    field.value = value;
+    field.__initialValue = value;
+    field.dirty = false;
+  }
+  if (!field.label && metadata.label) field.label = metadata.label;
+  if (field.required === undefined && metadata.required !== undefined) field.required = Boolean(metadata.required);
+  if (!field.type) {
+    const inputType = inputTypeForMetadata(metadata);
+    if (inputType) field.type = inputType;
+  }
+  if (!field.options && Array.isArray(metadata.picklistValues)) {
+    field.options = metadata.picklistValues.map((option) => ({
+      label: option.label ?? option.value ?? "",
+      value: option.value ?? option.label ?? "",
+    }));
+  }
+}
+
 function collectAssignedInputFields(element, fields) {
   if (!element) return;
   if (element.tagName?.toLowerCase() === "lightning-input-field") fields.push(element);
   for (const child of element.querySelectorAll?.("lightning-input-field") || []) fields.push(child);
+}
+
+function collectAssignedFields(element, fields, selector) {
+  if (!element) return;
+  if (element.tagName?.toLowerCase() === selector) fields.push(element);
+  for (const child of element.querySelectorAll?.(selector) || []) fields.push(child);
 }
 
 function registerInputFieldWithNearestForm(component) {
