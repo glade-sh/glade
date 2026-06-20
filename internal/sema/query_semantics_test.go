@@ -45,6 +45,27 @@ public class QueryProbe {
 	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "total")
 }
 
+func TestAnalyzeQuerySemanticsAcceptsKnownStandardObjectsWithoutProjectMetadata(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT Id, Name FROM Account];
+    List<Contact> contacts = [SELECT Id, LastName FROM Contact];
+    List<Profile> profiles = [SELECT Id, Name FROM Profile];
+    List<CustomPermission> permissions = [SELECT Id FROM CustomPermission];
+    List<ApexClass> classes = [SELECT Id, Name FROM ApexClass];
+  }
+}
+`
+	result := analyzeQueryProbe(t, source, schema.Schema{Objects: []schema.Object{
+		{Name: "Expression_Function__mdt"},
+	}})
+
+	for _, objectName := range []string{"Account", "Contact", "Profile", "CustomPermission", "ApexClass"} {
+		assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_OBJECT", objectName)
+	}
+}
+
 func TestAnalyzeSOQLTypeofBranchObjectDiagnostics(t *testing.T) {
 	source := `
 public class QueryProbe {

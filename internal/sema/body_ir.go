@@ -666,7 +666,7 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 		if expr.Left != nil {
 			diagnostics = append(diagnostics, a.checkIRExprVariables(typ, member, *expr.Left, scope, pos, bodyOffset, source, model, constructability)...)
 		}
-		if expr.Right != nil {
+		if expr.Right != nil && !strings.EqualFold(expr.Operator, "instanceof") {
 			diagnostics = append(diagnostics, a.checkIRExprVariables(typ, member, *expr.Right, scope, pos, bodyOffset, source, model, constructability)...)
 		}
 	case ir.ExprSOQL:

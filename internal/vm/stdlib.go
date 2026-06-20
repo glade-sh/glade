@@ -3774,24 +3774,58 @@ func substring(text string, args []Value) (Value, bool, error) {
 		return Null, true, fmt.Errorf("String.substring expects integer indexes")
 	}
 	start := int(args[0].Int)
-	end := utf8.RuneCountInString(text)
+	length := apexStringLength(text)
+	end := length
 	if len(args) == 2 {
 		end = int(args[1].Int)
 	}
 	if start >= 0 && end >= start && asciiPrefixLen(text, end) == end {
 		return String(text[start:end]), true, nil
 	}
-	runes := []rune(text)
-	if start < 0 || start > len(runes) {
+	if start < 0 || start > length {
 		return Null, true, newExceptionError("StringException", fmt.Sprintf("String substring index out of bounds: %d", start))
 	}
-	if end < 0 || end > len(runes) {
+	if end < 0 || end > length {
 		return Null, true, newExceptionError("StringException", fmt.Sprintf("String substring index out of bounds: %d", end))
 	}
 	if start > end {
 		return Null, true, newExceptionError("StringException", "String substring start index exceeds end index")
 	}
-	return String(string(runes[start:end])), true, nil
+	startByte, endByte := apexSubstringByteRange(text, start, end)
+	return String(text[startByte:endByte]), true, nil
+}
+
+func apexSubstringByteRange(text string, start, end int) (int, int) {
+	if start == end {
+		startByte := apexSubstringBoundary(text, start)
+		return startByte, startByte
+	}
+	return apexSubstringBoundary(text, start), apexSubstringBoundary(text, end)
+}
+
+func apexSubstringBoundary(text string, index int) int {
+	if index <= 0 {
+		return 0
+	}
+	unitStart := 0
+	for byteStart, r := range text {
+		unitWidth := 1
+		if r > 0xffff {
+			unitWidth = 2
+		}
+		unitEnd := unitStart + unitWidth
+		byteEnd := byteStart + utf8.RuneLen(r)
+		switch {
+		case index == unitStart:
+			return byteStart
+		case index > unitStart && index < unitEnd:
+			return byteEnd
+		case index == unitEnd:
+			return byteEnd
+		}
+		unitStart = unitEnd
+	}
+	return len(text)
 }
 
 func asciiPrefixLen(text string, limit int) int {

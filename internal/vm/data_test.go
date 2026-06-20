@@ -6454,6 +6454,25 @@ System.assertEquals(null, populated.get('Phone'));
 	}
 }
 
+func TestExecQueriedNullSObjectFieldIsSet(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+Account queried = [SELECT Id, Phone FROM Account WHERE Id = :a.Id];
+System.assertEquals(true, queried.isSet('Phone'));
+System.assertEquals(true, queried.isSet(Account.Phone));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecGetPopulatedFieldsAsMapOmitsDMLAuditFields(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');
