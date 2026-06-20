@@ -3697,6 +3697,15 @@ private class SampleTest {
 	if got["command"] != "test" || got["status"] != "passed" {
 		t.Fatalf("test JSON command/status = %#v", got)
 	}
+	suggestions, ok := got["suggestions"].([]any)
+	if !ok {
+		t.Fatalf("test JSON suggestions = %#v", got["suggestions"])
+	}
+	for _, suggestion := range suggestions {
+		if suggestion == "glade test failed" {
+			t.Fatalf("test JSON suggested last-failed rerun after passing run: %#v", suggestions)
+		}
+	}
 	junit, err := os.ReadFile(junitPath)
 	if err != nil {
 		t.Fatal(err)

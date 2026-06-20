@@ -79,10 +79,19 @@ func WriteConsoleWithOptions(w io.Writer, run Run, opts ConsoleOptions) error {
 		fmt.Fprintf(&out, "Report: %s\n", opts.ReportPath)
 	}
 	out.WriteString("\nNext:\n")
-	out.WriteString("  glade test --watch\n")
-	out.WriteString("  glade test failed\n")
+	for _, command := range NextCommands(summary) {
+		fmt.Fprintf(&out, "  %s\n", command)
+	}
 	_, err := io.WriteString(w, out.String())
 	return err
+}
+
+func NextCommands(summary Summary) []string {
+	commands := []string{"glade test --watch"}
+	if summary.Failed > 0 || summary.Errors > 0 {
+		commands = append(commands, "glade test failed")
+	}
+	return commands
 }
 
 func formatTestHeaderSummary(s Summary) string {

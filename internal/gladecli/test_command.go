@@ -612,17 +612,14 @@ func writeTestJSONEnvelope(w io.Writer, result testreport.Run, junitPath string)
 		artifacts = append(artifacts, map[string]string{"kind": "junit", "path": junitPath})
 	}
 	return writeCLIJSONEnvelope(w, cliJSONEnvelope{
-		Command:   "test",
-		Status:    statusForOK(ok),
-		ExitCode:  exitCodeForOK(ok),
-		Summary:   summary,
-		Tests:     flattenTestCases(result),
-		Artifacts: artifacts,
-		Suggestions: []string{
-			"glade test --watch",
-			"glade test failed",
-		},
-		Data: result,
+		Command:     "test",
+		Status:      statusForOK(ok),
+		ExitCode:    exitCodeForOK(ok),
+		Summary:     summary,
+		Tests:       flattenTestCases(result),
+		Artifacts:   artifacts,
+		Suggestions: testreport.NextCommands(summary),
+		Data:        result,
 	})
 }
 

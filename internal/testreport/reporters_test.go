@@ -35,6 +35,21 @@ func TestWriteConsole(t *testing.T) {
 	}
 }
 
+func TestWriteConsoleOmitsLastFailedSuggestionWhenRunPasses(t *testing.T) {
+	var out bytes.Buffer
+	if err := WriteConsole(&out, passingRun()); err != nil {
+		t.Fatal(err)
+	}
+
+	got := out.String()
+	if !bytes.Contains([]byte(got), []byte("glade test --watch")) {
+		t.Fatalf("console output missing watch suggestion:\n%s", got)
+	}
+	if bytes.Contains([]byte(got), []byte("glade test failed")) {
+		t.Fatalf("console output suggested last-failed rerun after passing run:\n%s", got)
+	}
+}
+
 func TestWriteConsoleOmitsLargePassListing(t *testing.T) {
 	run := Run{
 		Name:       "fixture",
@@ -307,5 +322,20 @@ func sampleRun() Run {
 				},
 			},
 		},
+	}
+}
+
+func passingRun() Run {
+	return Run{
+		Name: "fixture",
+		Suites: []Suite{{
+			Name: "AccountTest",
+			Cases: []Case{{
+				ClassName:  "AccountTest",
+				MethodName: "testCreatesAccount",
+				Status:     StatusPass,
+				DurationMS: 12,
+			}},
+		}},
 	}
 }
