@@ -91,8 +91,14 @@ try_static_release() {
   archive="glade_${resolved_version}_${os}_${arch}.tar.gz"
   url="$download_base/$resolved_version/$archive"
   echo "glade install: downloading $url"
-  curl -fsSL "$url" -o "$tmpdir/$archive" >/dev/null 2>&1 || return 1
-  curl -fsSL "$download_base/$resolved_version/SHA256SUMS.txt" -o "$tmpdir/SHA256SUMS.txt" >/dev/null 2>&1 || return 1
+  if ! curl -fsSL "$url" -o "$tmpdir/$archive" >/dev/null 2>&1; then
+    url="$download_base/$archive"
+    echo "glade install: downloading $url"
+    curl -fsSL "$url" -o "$tmpdir/$archive" >/dev/null 2>&1 || return 1
+  fi
+  if ! curl -fsSL "$download_base/$resolved_version/SHA256SUMS.txt" -o "$tmpdir/SHA256SUMS.txt" >/dev/null 2>&1; then
+    curl -fsSL "$download_base/SHA256SUMS.txt" -o "$tmpdir/SHA256SUMS.txt" >/dev/null 2>&1 || return 1
+  fi
   version="$resolved_version"
   return 0
 }

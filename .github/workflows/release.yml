@@ -45,8 +45,10 @@ jobs:
         with:
           name: glade-release-${{ matrix.artifact }}
           path: |
-            dist/*
+            dist/glade_*
+            dist/release-manifest-${{ matrix.artifact }}.json
             !dist/SHA256SUMS.txt
+            !dist/release-manifest.json
           if-no-files-found: error
 
   publish:
@@ -61,13 +63,72 @@ jobs:
           merge-multiple: true
       - name: Assemble checksums
         shell: bash
+        env:
+          VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
         run: |
           cd dist
           cat *.sha256 > SHA256SUMS.txt
+          python3 <<'PY'
+          import glob
+          import json
+          import os
+          import shutil
+
+          version = os.environ["VERSION"]
+          manifests = []
+          for path in sorted(glob.glob("release-manifest-*.json")):
+              with open(path, "r", encoding="utf-8") as f:
+                  manifests.append(json.load(f))
+          if not manifests:
+              raise SystemExit("no platform manifests found")
+
+          assets = []
+          verification = []
+          for manifest in manifests:
+              assets.extend(manifest.get("assets", []))
+              if "verification" in manifest:
+                  verification.append(manifest["verification"])
+
+          combined = {
+              "schemaVersion": 2,
+              "channel": "stable",
+              "version": version,
+              "assets": assets,
+              "installScript": "https://glade.sh/install.sh",
+              "pluginRegistry": "https://plugins.glade.sh/index.json",
+              "verification": verification,
+          }
+          with open("release-manifest.json", "w", encoding="utf-8") as f:
+              json.dump(combined, f, indent=2, sort_keys=True)
+              f.write("\n")
+
+          os.makedirs("latest", exist_ok=True)
+          shutil.copyfile("release-manifest.json", "latest/release-manifest.json")
+          os.makedirs(version, exist_ok=True)
+          for path in glob.glob("glade_*"):
+              if os.path.isfile(path):
+                  shutil.copyfile(path, os.path.join(version, os.path.basename(path)))
+          shutil.copyfile("SHA256SUMS.txt", os.path.join(version, "SHA256SUMS.txt"))
+
+          index = {
+              "schemaVersion": 1,
+              "channel": "stable",
+              "latest": version,
+              "versions": [
+                  {
+                      "version": version,
+                      "manifest": f"https://downloads.glade.sh/{version}/release-manifest.json",
+                  }
+              ],
+          }
+          with open("index.json", "w", encoding="utf-8") as f:
+              json.dump(index, f, indent=2, sort_keys=True)
+              f.write("\n")
+          PY
       - uses: actions/upload-artifact@v7
         with:
           name: glade-release-artifacts
-          path: dist/*
+          path: dist/**
           if-no-files-found: error
       - name: Publish GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
@@ -75,10 +136,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
+          files="$(find dist -maxdepth 1 -type f -print)"
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+            gh release upload "$GITHUB_REF_NAME" $files --clobber
           else
-            gh release create "$GITHUB_REF_NAME" dist/* \
+            gh release create "$GITHUB_REF_NAME" $files \
               --title "$GITHUB_REF_NAME" \
               --notes "See docs/KNOWN_GAPS.md for current compatibility gaps."
           fi

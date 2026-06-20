@@ -45,12 +45,17 @@ glade version
 glade doctor
 ```
 
-Verify the product download manifest when `downloads.glade.sh` is live:
+The release workflow assembles these product download files:
 
-```bash
-curl -fsSL https://downloads.glade.sh/index.json
-curl -fsSL https://downloads.glade.sh/latest/release-manifest.json
-```
+| Path | Purpose |
+| --- | --- |
+| `https://downloads.glade.sh/index.json` | Channel index for installers and update checks. |
+| `https://downloads.glade.sh/latest/release-manifest.json` | Latest stable product manifest. |
+| `https://downloads.glade.sh/vX.Y.Z/release-manifest.json` | Pinned version manifest. |
+| `https://downloads.glade.sh/vX.Y.Z/SHA256SUMS.txt` | Pinned checksums. |
+
+`site/install.sh` checks the product download host first and falls back to the
+GitHub release API while the static host is being filled.
 
 ## 4. Update Homebrew Tap
 

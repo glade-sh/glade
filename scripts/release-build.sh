@@ -4,6 +4,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSION="${VERSION:-$(git -C "${ROOT}" describe --tags --always --dirty 2>/dev/null || echo dev)}"
 DIST_DIR="${DIST_DIR:-${ROOT}/dist}"
+DOWNLOAD_BASE_URL="${DOWNLOAD_BASE_URL:-https://downloads.glade.sh}"
+INSTALL_SCRIPT_URL="${INSTALL_SCRIPT_URL:-https://glade.sh/install.sh}"
+PLUGIN_REGISTRY_URL="${PLUGIN_REGISTRY_URL:-https://plugins.glade.sh/index.json}"
 LDFLAGS="-s -w -X github.com/glade-sh/glade/internal/gladecli.Version=${VERSION}"
 
 goos="$(go env GOOS)"
@@ -113,38 +116,75 @@ if [[ "${parser_smoke}" != *'"name": "ParserSmoke"'* ]]; then
 fi
 
 export RELEASE_MANIFEST_PATH="${DIST_DIR}/release-manifest.json"
+export RELEASE_PLATFORM_MANIFEST_PATH="${DIST_DIR}/release-manifest-${goos}-${goarch}.json"
+export RELEASE_INDEX_PATH="${DIST_DIR}/index.json"
+export RELEASE_LATEST_MANIFEST_PATH="${DIST_DIR}/latest/release-manifest.json"
+export RELEASE_VERSION_MANIFEST_PATH="${DIST_DIR}/${VERSION}/release-manifest.json"
 export RELEASE_VERSION="${VERSION}"
+export RELEASE_CHANNEL="${RELEASE_CHANNEL:-stable}"
 export RELEASE_GOOS="${goos}"
 export RELEASE_GOARCH="${goarch}"
 export RELEASE_ARCHIVE="${archive}"
 export RELEASE_ARCHIVE_SHA256="${archive_sha256}"
+export RELEASE_ASSET_URL="${DOWNLOAD_BASE_URL%/}/${VERSION}/${archive}"
+export RELEASE_INSTALL_SCRIPT="${INSTALL_SCRIPT_URL}"
+export RELEASE_PLUGIN_REGISTRY="${PLUGIN_REGISTRY_URL}"
 export RELEASE_VERSION_OUTPUT="${version_output}"
 export RELEASE_DOCTOR_JSON="${doctor_json}"
 export RELEASE_PARSER_SMOKE="${parser_smoke}"
 export RELEASE_VSCODE_EXTENSION_PACKAGE="${vscode_extension_package}"
+mkdir -p "${DIST_DIR}/latest" "${DIST_DIR}/${VERSION}"
 python3 - <<'PY'
 import json
 import os
 
 manifest = {
-    "schemaVersion": 1,
+    "schemaVersion": 2,
+    "channel": os.environ["RELEASE_CHANNEL"],
     "version": os.environ["RELEASE_VERSION"],
-    "goos": os.environ["RELEASE_GOOS"],
-    "goarch": os.environ["RELEASE_GOARCH"],
-    "archive": os.environ["RELEASE_ARCHIVE"],
-    "archive_sha256": os.environ["RELEASE_ARCHIVE_SHA256"],
-    "version_output": os.environ["RELEASE_VERSION_OUTPUT"],
-    "doctor_json": json.loads(os.environ["RELEASE_DOCTOR_JSON"]),
-    "parser_smoke": {
-        "status": "passed",
-        "output": json.loads(os.environ["RELEASE_PARSER_SMOKE"]),
+    "assets": [
+        {
+            "os": os.environ["RELEASE_GOOS"],
+            "arch": os.environ["RELEASE_GOARCH"],
+            "url": os.environ["RELEASE_ASSET_URL"],
+            "sha256": os.environ["RELEASE_ARCHIVE_SHA256"],
+        }
+    ],
+    "installScript": os.environ["RELEASE_INSTALL_SCRIPT"],
+    "pluginRegistry": os.environ["RELEASE_PLUGIN_REGISTRY"],
+    "verification": {
+        "versionOutput": os.environ["RELEASE_VERSION_OUTPUT"],
+        "doctor": "passed",
+        "parserSmoke": "passed",
+        "vscodeExtensionPackage": os.environ["RELEASE_VSCODE_EXTENSION_PACKAGE"],
     },
-    "vscode_extension_package": os.environ["RELEASE_VSCODE_EXTENSION_PACKAGE"],
 }
-with open(os.environ["RELEASE_MANIFEST_PATH"], "w", encoding="utf-8") as f:
-    json.dump(manifest, f, indent=2, sort_keys=True)
+for path in (os.environ["RELEASE_MANIFEST_PATH"], os.environ["RELEASE_PLATFORM_MANIFEST_PATH"]):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2, sort_keys=True)
+        f.write("\n")
+for path in (os.environ["RELEASE_LATEST_MANIFEST_PATH"], os.environ["RELEASE_VERSION_MANIFEST_PATH"]):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2, sort_keys=True)
+        f.write("\n")
+index = {
+    "schemaVersion": 1,
+    "channel": os.environ["RELEASE_CHANNEL"],
+    "latest": os.environ["RELEASE_VERSION"],
+    "versions": [
+        {
+            "version": os.environ["RELEASE_VERSION"],
+            "manifest": f"https://downloads.glade.sh/{os.environ['RELEASE_VERSION']}/release-manifest.json",
+        }
+    ],
+}
+with open(os.environ["RELEASE_INDEX_PATH"], "w", encoding="utf-8") as f:
+    json.dump(index, f, indent=2, sort_keys=True)
     f.write("\n")
 PY
+cp "${DIST_DIR}/${archive}" "${DIST_DIR}/${VERSION}/${archive}"
+cp "${DIST_DIR}/${archive}.sha256" "${DIST_DIR}/${VERSION}/${archive}.sha256"
+cp "${DIST_DIR}/SHA256SUMS.txt" "${DIST_DIR}/${VERSION}/SHA256SUMS.txt"
 
 echo "release artifact written to ${DIST_DIR}/${archive}"
 echo "release manifest written to ${DIST_DIR}/release-manifest.json"
