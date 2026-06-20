@@ -1,11 +1,12 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const siteRoot = path.resolve(scriptDir, "..");
 const repoRoot = path.resolve(siteRoot, "..");
-const toolsRoot = process.env.GLADE_TOOLS_DIR
+const toolsRootExplicit = Boolean(process.env.GLADE_TOOLS_DIR);
+const toolsRoot = toolsRootExplicit
   ? path.resolve(process.env.GLADE_TOOLS_DIR)
   : path.resolve(repoRoot, "..", "glade-tools");
 const outDir = path.join(siteRoot, "docs-src", "maintainer", "tools");
@@ -58,6 +59,12 @@ function rewriteSyncedLinks(markdown) {
 }
 
 async function main() {
+  if (check && !toolsRootExplicit && process.env.CI === "true" && !(await exists(toolsRoot))) {
+    console.warn(`Skipping glade-tools docs sync check; ${toolsRoot} is not available in this CI job.`);
+    console.warn("Set GLADE_TOOLS_DIR or check out glade-tools beside glade to enable this guard.");
+    return;
+  }
+
   const generated = [];
   for (const doc of docs) {
     const sourcePath = path.join(toolsRoot, doc.source);
@@ -86,6 +93,15 @@ async function main() {
 
   await mkdir(outDir, { recursive: true });
   await Promise.all(generated.map((doc) => writeFile(doc.targetPath, doc.content)));
+}
+
+async function exists(candidate) {
+  try {
+    await access(candidate);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 main().catch((error) => {

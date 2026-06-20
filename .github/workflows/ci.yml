@@ -10,18 +10,8 @@ jobs:
     timeout-minutes: 30
     env:
       GOMAXPROCS: "2"
-    defaults:
-      run:
-        working-directory: glade
     steps:
       - uses: actions/checkout@v6
-        with:
-          path: glade
-      - uses: actions/checkout@v6
-        with:
-          repository: glade-sh/glade-tools
-          path: glade-tools
-          ref: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'main' }}
       - uses: actions/setup-go@v6
         with:
           go-version: "1.26.3"
@@ -30,8 +20,8 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: |
-            glade/third_party/lwc/package-lock.json
-            glade/site/package-lock.json
+            third_party/lwc/package-lock.json
+            site/package-lock.json
       - run: npm ci --prefix third_party/lwc
       - run: npm ci --prefix site
       - run: npm test --prefix site
