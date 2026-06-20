@@ -154,6 +154,9 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	if vm.currentProfileIsSystemAdministrator(profileID) {
 		return true
 	}
+	if method == "isAccessible" && isBaselineSystemFieldReadableWithoutObjectAccess(fieldName) {
+		return true
+	}
 	if objectMethod := fieldPermissionObjectMethod(method); objectMethod != "" && !vm.currentUserObjectPermission(objectName, objectMethod) {
 		return false
 	}
@@ -194,6 +197,11 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	}
 	return true
 }
+
+func isBaselineSystemFieldReadableWithoutObjectAccess(fieldName string) bool {
+	return strings.EqualFold(fieldName, "Id") || isBaselineSystemReadableField(fieldName)
+}
+
 func fieldPermissionObjectMethod(method string) string {
 	switch method {
 	case "isCreateable":
