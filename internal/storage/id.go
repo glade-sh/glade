@@ -39,9 +39,10 @@ func LookupRecordByID(records map[ID]Record, id ID) (ID, Record, bool) {
 }
 
 type IDGenerator struct {
-	Prefixes  map[string]string
-	Sequences map[string]uint64
-	Offset    uint64
+	Prefixes     map[string]string
+	Sequences    map[string]uint64
+	Offset       uint64
+	PrefixLookup func(objectName string) string
 }
 
 func NewIDGenerator(prefixes map[string]string) IDGenerator {
@@ -71,8 +72,35 @@ func NewRuntimeIDGeneratorWithOwnedPrefixes(prefixes map[string]string) IDGenera
 	}
 }
 
+func NewRuntimeIDGeneratorForOrg(org *OrgState) IDGenerator {
+	return IDGenerator{
+		Prefixes:  make(map[string]string),
+		Sequences: make(map[string]uint64),
+		Offset:    1000000,
+		PrefixLookup: func(objectName string) string {
+			if org == nil {
+				return ""
+			}
+			state, ok := org.Objects[objectName]
+			if !ok {
+				return ""
+			}
+			return state.Definition.KeyPrefix
+		},
+	}
+}
+
 func (g *IDGenerator) Next(objectName string) (ID, error) {
 	prefix := g.Prefixes[objectName]
+	if prefix == "" && g.PrefixLookup != nil {
+		prefix = strings.TrimSpace(g.PrefixLookup(objectName))
+		if prefix != "" {
+			if g.Prefixes == nil {
+				g.Prefixes = make(map[string]string)
+			}
+			g.Prefixes[objectName] = prefix
+		}
+	}
 	if prefix == "" {
 		return "", fmt.Errorf("storage: missing key prefix for %s", objectName)
 	}

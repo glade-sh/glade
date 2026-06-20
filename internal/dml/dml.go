@@ -128,13 +128,7 @@ type summaryRelation struct {
 
 func NewEngine(org *storage.OrgState) Engine {
 	storage.EnsureUniqueKeyPrefixes(org)
-	prefixes := make(map[string]string, len(org.Objects))
-	for name, object := range org.Objects {
-		if object.Definition.KeyPrefix != "" {
-			prefixes[name] = object.Definition.KeyPrefix
-		}
-	}
-	ids := storage.NewRuntimeIDGeneratorWithOwnedPrefixes(prefixes)
+	ids := storage.NewRuntimeIDGeneratorForOrg(org)
 	ids.Sequences = copySequences(org.IDSequences)
 	now := func() time.Time { return time.Now().UTC() }
 	if org.Now != nil {

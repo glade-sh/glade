@@ -77,6 +77,17 @@ func TestNewEngineAvoidsSecondPrefixMapCopy(t *testing.T) {
 	if allocs > 12 {
 		t.Fatalf("NewEngine allocs = %.0f, want <= 12", allocs)
 	}
+	engine := NewEngine(&org)
+	if got := len(engine.IDs.Prefixes); got > 2 {
+		t.Fatalf("NewEngine eagerly copied %d prefixes, want lazy prefix cache", got)
+	}
+	id, err := engine.IDs.Next("Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(string(id), "001") {
+		t.Fatalf("generated Account id = %q, want 001 prefix", id)
+	}
 }
 
 func TestInsertProbeTestObjectDoesNotCopyCustomNameToStandardName(t *testing.T) {

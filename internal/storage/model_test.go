@@ -152,6 +152,30 @@ func TestResolveFieldNameMapsUnqualifiedCustomFieldToOrgNamespace(t *testing.T) 
 	}
 }
 
+func TestNamespaceTokenNameCachesCustomAPINames(t *testing.T) {
+	if got := NamespaceTokenName("PKG", "Thing__c"); got != "PKG__Thing__c" {
+		t.Fatalf("NamespaceTokenName returned %q, want PKG__Thing__c", got)
+	}
+	if got := NamespaceTokenName("PKG", "Other__r"); got != "PKG__Other__r" {
+		t.Fatalf("NamespaceTokenName returned %q, want PKG__Other__r", got)
+	}
+	if got := NamespaceTokenName("PKG", "Other__Thing__c"); got != "Other__Thing__c" {
+		t.Fatalf("NamespaceTokenName double-prefixed %q", got)
+	}
+	if got := NamespaceTokenName("PKG", "Account"); got != "Account" {
+		t.Fatalf("NamespaceTokenName prefixed standard name %q", got)
+	}
+
+	allocs := testing.AllocsPerRun(100, func() {
+		if got := NamespaceTokenName("PKG", "Thing__c"); got != "PKG__Thing__c" {
+			t.Fatalf("NamespaceTokenName returned %q, want PKG__Thing__c", got)
+		}
+	})
+	if allocs != 0 {
+		t.Fatalf("cached NamespaceTokenName allocated %.0f times, want 0", allocs)
+	}
+}
+
 func TestResolveFieldNameMapsCustomFieldCaseInsensitiveToOrgNamespace(t *testing.T) {
 	definition := ObjectDefinition{APIName: "Account", Fields: map[string]Field{
 		"pkg__UpdatePrimaryLocation__c": {APIName: "pkg__UpdatePrimaryLocation__c", Type: FieldBoolean},

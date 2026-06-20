@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -2483,7 +2484,28 @@ func isCollectionType(name string) bool {
 }
 
 func normalizeName(name string) string {
-	return strings.ToLower(strings.TrimSpace(name))
+	name = strings.TrimSpace(name)
+	for i := 0; i < len(name); i++ {
+		c := name[i]
+		if c >= utf8.RuneSelf {
+			return strings.ToLower(name)
+		}
+		if c >= 'A' && c <= 'Z' {
+			buf := []byte(name)
+			buf[i] = c + ('a' - 'A')
+			for j := i + 1; j < len(buf); j++ {
+				c = buf[j]
+				if c >= utf8.RuneSelf {
+					return strings.ToLower(name)
+				}
+				if c >= 'A' && c <= 'Z' {
+					buf[j] = c + ('a' - 'A')
+				}
+			}
+			return string(buf)
+		}
+	}
+	return name
 }
 
 func (r Result) MarshalJSON() ([]byte, error) {

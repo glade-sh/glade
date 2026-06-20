@@ -1256,11 +1256,43 @@ func locationComponentLocalName(name, suffix string) string {
 	return base + suffix
 }
 
+type namespaceTokenNameCacheKey struct {
+	namespace string
+	name      string
+}
+
+const namespaceTokenNameCacheLimit = 8192
+
+var namespaceTokenNameCache = struct {
+	sync.RWMutex
+	names map[namespaceTokenNameCacheKey]string
+}{
+	names: make(map[namespaceTokenNameCacheKey]string),
+}
+
 func NamespaceTokenName(namespace, name string) string {
 	if namespace == "" || name == "" || !isCustomAPIName(name) || hasNamespaceToken(name) {
 		return name
 	}
-	return namespace + "__" + name
+	key := namespaceTokenNameCacheKey{namespace: namespace, name: name}
+	namespaceTokenNameCache.RLock()
+	if token, ok := namespaceTokenNameCache.names[key]; ok {
+		namespaceTokenNameCache.RUnlock()
+		return token
+	}
+	namespaceTokenNameCache.RUnlock()
+
+	token := namespace + "__" + name
+	namespaceTokenNameCache.Lock()
+	if cached, ok := namespaceTokenNameCache.names[key]; ok {
+		namespaceTokenNameCache.Unlock()
+		return cached
+	}
+	if len(namespaceTokenNameCache.names) < namespaceTokenNameCacheLimit {
+		namespaceTokenNameCache.names[key] = token
+	}
+	namespaceTokenNameCache.Unlock()
+	return token
 }
 
 func StripAnyNamespaceToken(name string) string {

@@ -3,6 +3,7 @@ package sema
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -60,6 +61,62 @@ func TestAnalyzeResolvesNamespaceQualifiedSchemaAliases(t *testing.T) {
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestSemaResolveFieldUsesShortCandidateIndex(t *testing.T) {
+	model := make(map[string]typeMembers)
+	for i := 0; i < 1000; i++ {
+		name := "pkg.CandidateType" + strconv.Itoa(i)
+		model[normalizeName(name)] = typeMembers{
+			name:     name,
+			shortKey: semaShortTypeKey(name),
+			fields:   map[string]typesys.MemberSymbol{},
+			methods:  map[string][]typesys.MemberSymbol{},
+		}
+	}
+	targetName := "pkg.TargetInner"
+	model[normalizeName(targetName)] = typeMembers{
+		name:     targetName,
+		shortKey: semaShortTypeKey(targetName),
+		fields: map[string]typesys.MemberSymbol{
+			"name": {Kind: apexast.DeclarationField, Name: "Name", Type: "String"},
+		},
+		methods: map[string][]typesys.MemberSymbol{},
+	}
+	registerSemaShortCandidateIndex(model)
+	defer unregisterSemaShortCandidateIndex(model)
+
+	field, ok := semaResolveField(model, "TargetInner", "Name", make(map[string]bool))
+	if !ok {
+		t.Fatal("short-name field lookup did not resolve")
+	}
+	if field.member.Type != "String" {
+		t.Fatalf("field type = %q, want String", field.member.Type)
+	}
+
+	allocs := testing.AllocsPerRun(20, func() {
+		if _, ok := semaResolveField(model, "TargetInner", "Name", make(map[string]bool)); !ok {
+			t.Fatal("short-name field lookup did not resolve")
+		}
+	})
+	if allocs > 20 {
+		t.Fatalf("short-name field lookup allocated %.0f times, want <= 20", allocs)
+	}
+}
+
+func TestNormalizeNameMatchesTrimmedLowercase(t *testing.T) {
+	cases := []string{
+		" Account__c ",
+		"already_lower__c",
+		"pkg.Outer.Inner",
+		"Straße",
+	}
+	for _, input := range cases {
+		want := strings.ToLower(strings.TrimSpace(input))
+		if got := normalizeName(input); got != want {
+			t.Fatalf("normalizeName(%q) = %q, want %q", input, got, want)
+		}
 	}
 }
 

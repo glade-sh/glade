@@ -128,6 +128,10 @@ func semaEnclosingTypeNames(typeName string) []string {
 }
 
 func semaResolveField(model map[string]typeMembers, typeName, fieldName string, seen map[string]bool) (resolvedMember, bool) {
+	return semaResolveFieldByKey(model, typeName, normalizeName(fieldName), seen)
+}
+
+func semaResolveFieldByKey(model map[string]typeMembers, typeName, fieldKey string, seen map[string]bool) (resolvedMember, bool) {
 	key := normalizeName(typeName)
 	if key == "" || seen[key] {
 		return resolvedMember{}, false
@@ -135,20 +139,21 @@ func semaResolveField(model map[string]typeMembers, typeName, fieldName string, 
 	seen[key] = true
 	members, ok := model[key]
 	if !ok {
-		for candidateKey, candidate := range model {
-			if candidateKey == key || semaShortTypeKey(candidate.name) != key || seen[candidateKey] {
+		for _, candidateKey := range semaShortCandidateKeys(model, key) {
+			if candidateKey == key || seen[candidateKey] {
 				continue
 			}
-			if field, ok := semaResolveField(model, candidate.name, fieldName, seen); ok {
+			candidate := model[candidateKey]
+			if field, ok := semaResolveFieldByKey(model, candidate.name, fieldKey, seen); ok {
 				return field, true
 			}
 		}
 		return resolvedMember{}, false
 	}
-	if field, ok := members.fields[normalizeName(fieldName)]; ok {
+	if field, ok := members.fields[fieldKey]; ok {
 		return resolvedMember{owner: members.name, member: field}, true
 	}
-	if field, ok := semaResolveField(model, members.superClass, fieldName, seen); ok {
+	if field, ok := semaResolveFieldByKey(model, members.superClass, fieldKey, seen); ok {
 		return field, true
 	}
 	return resolvedMember{}, false
