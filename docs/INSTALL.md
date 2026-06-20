@@ -29,6 +29,17 @@ glade version
 glade doctor   # confirm: "Ready."
 ```
 
+## Update
+
+Use the same installer path for upgrades:
+
+```bash
+glade update --dry-run
+glade update
+glade version
+glade doctor
+```
+
 ## Install VS Code Extension
 
 Release archives include the Glade VS Code extension at

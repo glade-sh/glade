@@ -1016,6 +1016,8 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.match(installation, /^## Install VS Code Extension/m);
   assert.match(installation, /glade editor doctor vscode/);
   assert.match(installation, /glade editor install vscode --force/);
+  assert.match(installation, /glade update --dry-run/);
+  assert.match(installation, /glade update/);
   assert.match(installation, /share\/glade\/editor\/vscode-glade\.vsix/);
   assert.match(installation, /Glade Home/);
   assert.match(installation, /Exec & SOQL scratch buffers/);

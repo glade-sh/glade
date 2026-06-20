@@ -85,6 +85,18 @@ Runtime      ✓ glade <version> · go<version> · <os>/<arch>
 Ready.
 ```
 
+## Update Glade
+
+Use the same installer path for updates. Check the command first when you want
+to see what will run:
+
+```bash
+glade update --dry-run
+glade update
+glade version
+glade doctor
+```
+
 Manual fallback:
 
 - Release archives: <https://github.com/glade-sh/glade/releases>

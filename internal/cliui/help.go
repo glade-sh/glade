@@ -48,6 +48,13 @@ var commandReferences = []CommandHelp{
 		Examples:    []string{"glade version", "glade version --json"},
 	},
 	{
+		Name:        "update",
+		Description: "Update the Glade binary and bundled assets.",
+		Usage:       []string{"glade update [--dry-run]"},
+		Flags:       []FlagHelp{{Name: "--dry-run", Description: "Print the update command without running it."}},
+		Examples:    []string{"glade update --dry-run", "glade update"},
+	},
+	{
 		Name:        "doctor",
 		Description: "Print environment and project configuration status.",
 		Usage:       []string{"glade doctor [--project <root>] [--json]"},
