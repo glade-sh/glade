@@ -29,6 +29,17 @@ glade version
 glade doctor   # confirm: "Ready."
 ```
 
+## Update
+
+Use the same installer path for upgrades:
+
+```bash
+glade update --dry-run
+glade update
+glade version
+glade doctor
+```
+
 ## Install VS Code Extension
 
 Release archives include the Glade VS Code extension at
@@ -156,10 +167,10 @@ glade package capture --target-org packaging --namespace pkg --output .glade/pac
 ```
 
 `glade package capture` dispatches to `glade orgpackage capture` when the
-`@glade/orgpackage` plugin is installed or linked. The short aliases `compat`,
-`performance`, and `orgpackage` resolve to `@glade/compat`,
-`@glade/performance`, and `@glade/orgpackage`. The public plugin registry is
-preview. Direct archives and local links are the fallback paths until a
+`@glade/orgpackage` plugin is installed or linked. The short aliases
+`performance` and `orgpackage` resolve to `@glade/performance` and
+`@glade/orgpackage`. `@glade/compat` is maintainer-facing support tooling. The
+public plugin registry is preview. Direct archives and local links are the fallback paths until a
 registry is configured. The first-party plugin catalog, local archive install
 path, and author contract are documented in [PLUGINS.md](PLUGINS.md).
 

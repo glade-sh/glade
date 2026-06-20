@@ -7,8 +7,7 @@ platform archives and `SHA256SUMS.txt` from the tagged source.
 
 A release can be promoted when:
 
-- `go test ./...` passes.
-- `scripts/smoke.sh` passes against the built binary.
+- `scripts/release-check.sh` passes.
 - `glade doctor` reports `Ready.` for release archives.
 - Public support docs describe the current command surface and unsupported
   boundaries.
@@ -63,7 +62,7 @@ Use [`docs/RELEASE_NOTES.md`](RELEASE_NOTES.md) as the ongoing release log.
 Use this workflow for an easy, repeatable distribution pass.
 
 1. Prepare release branch state.
-   - Run the required gates from current source.
+   - Run `scripts/release-check.sh`.
    - Confirm docs reflect the current command names and setup steps.
    - Run the first project check from `INSTALL.md` on at least one SFDX project.
 
@@ -77,7 +76,8 @@ git push <remote> vX.Y.Z
 3. Let the `Release` workflow publish artifacts.
    - Artifacts are built to `dist/` with CGO enabled on macOS and Linux runners.
    - `glade doctor` must report `Ready.` before an archive is written.
-   - `SHA256SUMS.txt` is published with the release assets.
+   - `SHA256SUMS.txt`, `index.json`, and `latest/release-manifest.json` are
+     published with the release assets.
 
 4. Verify install from release artifacts.
 

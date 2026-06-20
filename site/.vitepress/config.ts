@@ -118,13 +118,21 @@ export default defineConfig({
             items: [
               { text: 'First-party plugins', link: '/guide/plugins/first-party' },
               { text: 'Install and manage', link: '/guide/plugins/install-manage' },
-              { text: 'Lock files and CI', link: '/guide/plugins/lock-ci' },
-              { text: 'Build a plugin', link: '/guide/plugins/build' },
-              { text: 'Manifest reference', link: '/guide/plugins/manifest' },
-              { text: 'Marketplace', link: '/guide/plugins/marketplace' },
-              { text: 'Publish', link: '/guide/plugins/publish' }
+              { text: 'Lock files and CI', link: '/guide/plugins/lock-ci' }
             ]
           }
+        ]
+      },
+      {
+        text: 'Maintainer',
+        collapsed: true,
+        items: [
+          { text: 'Maintainer home', link: '/maintainer/' },
+          { text: 'Extend runtime support', link: '/maintainer/extend-runtime' },
+          { text: 'Release runbook', link: '/maintainer/release' },
+          { text: 'glade-tools', link: '/maintainer/glade-tools' },
+          { text: 'Plugin runtime', link: '/maintainer/plugin-runtime' },
+          { text: 'Tools docs', link: '/maintainer/tools/' }
         ]
       }
     ],

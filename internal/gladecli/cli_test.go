@@ -138,6 +138,28 @@ func TestRunVersionJSON(t *testing.T) {
 	}
 }
 
+func TestRunUpdateHelp(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"update", "--help"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("code = %d stderr=%s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "glade update") {
+		t.Fatalf("help omitted update usage:\n%s", stdout.String())
+	}
+}
+
+func TestRunUpdateDryRunPrintsInstallCommand(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"update", "--dry-run"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("code = %d stderr=%s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "curl -fsSL https://glade.sh/install.sh | sh") {
+		t.Fatalf("dry run omitted install command:\n%s", stdout.String())
+	}
+}
+
 func TestToolchainStatusJSONReportsMissingToolchain(t *testing.T) {
 	root := t.TempDir()
 	t.Chdir(root)
@@ -1435,7 +1457,7 @@ func TestRunCompletionBash(t *testing.T) {
 	for _, want := range []string{
 		"_glade_completion",
 		"complete -F _glade_completion glade",
-		"version doctor toolchain config init parse inspect schema refactor check exec",
+		"version update doctor toolchain config init parse inspect schema refactor check exec",
 		"--project",
 		"--class",
 		"--method",

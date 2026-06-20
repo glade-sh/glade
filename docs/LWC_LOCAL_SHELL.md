@@ -1,5 +1,9 @@
 # Local LWC Shell
 
+> Repo maintainer reference. User-facing setup lives in
+> <https://glade.sh/guide/lwc-local-shell>. Maintainer oracle capture belongs in
+> <https://glade.sh/maintainer/glade-tools>.
+
 The LWC local shell is a preview feature. Glade can serve Lightning Web
 Components from an SFDX project without deploying to Salesforce, but it does
 not replace hosted Lightning Experience. The shell reads the project on disk,

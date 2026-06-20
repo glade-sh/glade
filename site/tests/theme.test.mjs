@@ -14,6 +14,8 @@ const editorSupportTypes = await readFile(new URL("../.vitepress/theme/editor/ed
 const apexLanguageModule = await readFile(new URL("../.vitepress/theme/editor/apexLanguage.ts", import.meta.url), "utf8").catch(() => "");
 const apexCompletionsModule = await readFile(new URL("../.vitepress/theme/editor/apexCompletions.ts", import.meta.url), "utf8").catch(() => "");
 const buildEditorSupportScript = await readFile(new URL("../scripts/build-editor-support.mjs", import.meta.url), "utf8").catch(() => "");
+const syncToolsDocsScript = await readFile(new URL("../scripts/sync-tools-docs.mjs", import.meta.url), "utf8").catch(() => "");
+const checkDocRoutesScript = await readFile(new URL("../scripts/check-doc-routes.mjs", import.meta.url), "utf8").catch(() => "");
 const config = await readFile(new URL("../.vitepress/config.ts", import.meta.url), "utf8");
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 const siteReadme = await readFile(new URL("../README.md", import.meta.url), "utf8");
@@ -49,6 +51,8 @@ const maintainerIndex = await readFile(new URL("../docs-src/maintainer/index.md"
 const extendRuntime = await readFile(new URL("../docs-src/maintainer/extend-runtime.md", import.meta.url), "utf8").catch(() => "");
 const gladeToolsMaintainer = await readFile(new URL("../docs-src/maintainer/glade-tools.md", import.meta.url), "utf8").catch(() => "");
 const pluginRuntime = await readFile(new URL("../docs-src/maintainer/plugin-runtime.md", import.meta.url), "utf8").catch(() => "");
+const maintainerToolsIndex = await readFile(new URL("../docs-src/maintainer/tools/README.md", import.meta.url), "utf8").catch(() => "");
+const maintainerToolsRegistry = await readFile(new URL("../docs-src/maintainer/tools/plugin-registry.md", import.meta.url), "utf8").catch(() => "");
 const logoMark = await readFile(new URL("../docs-src/public/logo-mark.svg", import.meta.url), "utf8");
 const logoMarkOpen = await readFile(new URL("../docs-src/public/logo-mark-open.svg", import.meta.url), "utf8");
 
@@ -65,6 +69,10 @@ async function readSiteSourceFiles(relativeDir) {
 }
 
 const siteSourceFiles = await readSiteSourceFiles("../docs-src/");
+const allPublicGuideText = siteSourceFiles
+  .filter(([file]) => file.includes("/docs-src/guide/"))
+  .map(([, contents]) => contents)
+  .join("\n");
 const siteCopy = [
   index,
   config,
@@ -1013,6 +1021,8 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.match(installation, /^## Install VS Code Extension/m);
   assert.match(installation, /glade editor doctor vscode/);
   assert.match(installation, /glade editor install vscode --force/);
+  assert.match(installation, /glade update --dry-run/);
+  assert.match(installation, /glade update/);
   assert.match(installation, /share\/glade\/editor\/vscode-glade\.vsix/);
   assert.match(installation, /Glade Home/);
   assert.match(installation, /Exec & SOQL scratch buffers/);
@@ -1056,20 +1066,40 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.match(plugins, /Maintainer support tools/);
   assert.doesNotMatch(plugins, /glade plugins link --exec \.\/glade-plugin-quality/);
   assert.match(firstPartyPlugins, /install commands below[\s\S]*canonical coordinates once the registry/);
-  assert.match(firstPartyPlugins, /runtime capability reports/);
+  assert.match(firstPartyPlugins, /Maintainer support tools/);
+  assert.doesNotMatch(firstPartyPlugins, /glade plugins install @glade\/compat/);
   assert.match(firstPartyPlugins, /@glade\/orgpackage/);
   assert.match(firstPartyPlugins, /glade package capture --target-org packaging/);
   assert.match(pluginInstallManage, /Direct archives and local links are the[\s\S]*fallback paths/);
+  assert.doesNotMatch(pluginInstallManage, /glade plugins install @glade\/compat/);
   assert.match(pluginInstallManage, /glade plugins install @glade\/orgpackage/);
   assert.match(pluginLockCi, /^# Plugin lock files and CI/m);
   assert.match(pluginLockCi, /The default public plugin registry is not live yet/);
+  assert.doesNotMatch(pluginLockCi, /glade plugins install @glade\/compat/);
   assert.match(pluginLockCi, /glade plugins install @glade\/orgpackage/);
   assert.match(maintainerIndex, /glade stays the product front door/);
   assert.match(extendRuntime, /Write the failing fixture or product test first/);
   assert.match(extendRuntime, /go test \.\/internal\/vm \.\/internal\/apextest/);
   assert.match(gladeToolsMaintainer, /go run \.\/cmd\/glade-plugin-compat manifest --json/);
-  assert.match(gladeToolsMaintainer, /scripts\/build-plugin-archives\.sh 0\.1\.0/);
+  assert.match(gladeToolsMaintainer, /scripts\/build-plugin-archives\.sh 0\.2\.0/);
+  assert.match(gladeToolsMaintainer, /@glade\/maintainer/);
   assert.match(pluginRuntime, /Plugins are executable processes/);
+  assert.match(config, /link: '\/maintainer\/tools\/'/);
+  assert.match(packageJson.scripts.test, /sync:tools-docs -- --check/);
+  assert.match(packageJson.scripts.build, /sync:tools-docs -- --check/);
+  assert.match(packageJson.scripts.test, /check:routes/);
+  assert.match(packageJson.scripts.build, /check:routes/);
+  assert.match(syncToolsDocsScript, /docs\/CAPABILITY_WORK_QUEUE\.md/);
+  assert.match(checkDocRoutesScript, /Missing docs route source files/);
+  assert.match(maintainerToolsIndex, /Generated by site\/scripts\/sync-tools-docs\.mjs/);
+  assert.match(maintainerToolsIndex, /# glade-tools: Glade Tools/);
+  assert.match(maintainerToolsRegistry, /Source: `glade-tools\/docs\/plugin-registry\.md`/);
+  assert.doesNotMatch(lwcLocalShell, /cd \.\.\/glade-tools/);
+  assert.doesNotMatch(localTesting, /cd \.\.\/glade-tools/);
+  assert.match(lwcLocalShell, /maintainer\/glade-tools/);
+  assert.doesNotMatch(allPublicGuideText, /cd \.\.\/glade-tools/);
+  assert.doesNotMatch(allPublicGuideText, /oaer-probe-max/);
+  assert.doesNotMatch(allPublicGuideText, /Salesforce Docs Scraper/);
   assert.match(lwcLocalShell, /^## Data and services/m);
   assert.match(enterpriseWorkflows, /^## Cruft and dead code/m);
   for (const staleHeading of [

@@ -7,8 +7,7 @@ Use this runbook to cut and publish a Glade release with predictable output.
 From the repo root:
 
 ```bash
-go test ./...
-scripts/smoke.sh
+scripts/release-check.sh
 ```
 
 If a command fails, stop and fix before tagging.
@@ -24,7 +23,8 @@ git push <remote> vX.Y.Z
 
 The `Release` GitHub Actions workflow builds parser-capable macOS and Linux
 archives on matching CGO-enabled runners, verifies `glade doctor` reports
-`Ready.`, and publishes `SHA256SUMS.txt`.
+`Ready.`, and publishes `SHA256SUMS.txt` plus release manifests for the
+installer.
 
 ## 3. Verify Artifacts
 
@@ -44,6 +44,18 @@ curl -fsSL https://glade.sh/install.sh | sh
 glade version
 glade doctor
 ```
+
+The release workflow assembles these product download files:
+
+| Path | Purpose |
+| --- | --- |
+| `https://downloads.glade.sh/index.json` | Channel index for installers and update checks. |
+| `https://downloads.glade.sh/latest/release-manifest.json` | Latest stable product manifest. |
+| `https://downloads.glade.sh/vX.Y.Z/release-manifest.json` | Pinned version manifest. |
+| `https://downloads.glade.sh/vX.Y.Z/SHA256SUMS.txt` | Pinned checksums. |
+
+`site/install.sh` checks the product download host first and falls back to the
+GitHub release API while the static host is being filled.
 
 ## 4. Update Homebrew Tap
 

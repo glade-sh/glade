@@ -1,9 +1,11 @@
 {
   "scripts": {
+    "sync:tools-docs": "node scripts/sync-tools-docs.mjs",
+    "check:routes": "node scripts/check-doc-routes.mjs",
     "generate:editor-support": "node scripts/build-editor-support.mjs",
-    "dev": "vitepress dev .",
-    "build": "npm run generate:editor-support -- --check && vitepress build . && cp install.sh .vitepress/dist/install.sh",
-    "test": "npm run generate:editor-support -- --check && node --test tests/*.test.mjs",
+    "dev": "npm run sync:tools-docs && vitepress dev .",
+    "build": "npm run sync:tools-docs -- --check && npm run check:routes && npm run generate:editor-support -- --check && vitepress build . && cp install.sh .vitepress/dist/install.sh",
+    "test": "npm run sync:tools-docs -- --check && npm run check:routes && npm run generate:editor-support -- --check && node --test tests/*.test.mjs",
     "preview": "vitepress preview ."
   },
   "devDependencies": {

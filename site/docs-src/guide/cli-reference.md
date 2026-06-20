@@ -382,35 +382,35 @@ glade profile analyze reports/trace.json --format pprof > reports/trace.pb.gz
 ## `glade plugins`
 
 Install, link, list, inspect, lock, and restore executable plugins. First-party
-plugins provide compatibility fixtures and advisory scanners without putting
-that maintenance code in the base runtime.
+plugins provide advisory scanners and org package capture without putting that
+work in the base runtime.
 
 ```bash
 # Requires a live plugin registry, custom registry, direct archive, or linked plugin.
 glade plugins available
-glade plugins install @glade/compat
 glade plugins install @glade/performance
+glade plugins install @glade/orgpackage
 glade plugins list
 glade plugins search quality
-glade plugins info @glade/compat
+glade plugins info @glade/performance
 glade plugins doctor
-glade plugins which compat
+glade plugins which performance
 glade plugins lock
 glade plugins restore
 ```
 
-The short aliases `compat` and `performance` resolve to `@glade/compat` and
-`@glade/performance`. `available` lists configured registry plugins that can be
-installed.
+The short aliases `performance` and `orgpackage` resolve to `@glade/performance`
+and `@glade/orgpackage`. `available` lists configured registry plugins that can
+be installed.
 
 Once installed, plugin command roots behave like Glade commands:
 
 ```bash
-glade compat local-tests --project . --json
 glade performance scan --project . --json
+glade package capture --target-org packaging --namespace pkg --output .glade/packages/pkg.glade-package.json --config-snippet
 ```
 
-See [Plugins](/guide/plugins) for the author contract and archive layout.
+See [Plugins](/guide/plugins) for first-party install and lock-file docs.
 
 ## `glade debug`
 

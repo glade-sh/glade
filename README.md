@@ -121,10 +121,10 @@ generated ledgers ship as plugins and do not live in the product runtime
 packages.
 
 First-party plugins are documented in [docs/PLUGINS.md](docs/PLUGINS.md).
-Install them as `@glade/compat`, `@glade/performance`, and
-`@glade/orgpackage`. The short aliases `compat`, `performance`, and
-`orgpackage` resolve to those canonical names. Third-party plugins use the same
-executable manifest contract.
+Install user-facing plugins as `@glade/performance` and `@glade/orgpackage`.
+`@glade/compat` is maintainer-facing support tooling. The short aliases
+`performance` and `orgpackage` resolve to those canonical names. Third-party
+plugins use the same executable manifest contract.
 
 The public plugin registry is still preview. Coordinate installs need a live
 registry or custom registry. Direct archives and local links are the fallback

@@ -173,6 +173,12 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		return 0
+	case "update":
+		if err := runUpdate(ctx, args[1:], stdout, stderr); err != nil {
+			_ = cliui.WriteCLIError(stderr, err)
+			return 1
+		}
+		return 0
 	case "completion":
 		if err := runCompletion(args[1:], stdout); err != nil {
 			_ = cliui.WriteCLIError(stderr, err)
