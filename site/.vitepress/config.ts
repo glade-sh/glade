@@ -85,6 +85,7 @@ export default defineConfig({
           { text: 'Affected tests', link: '/guide/affected-tests' },
           { text: 'Local API routes', link: '/guide/local-api-server' },
           { text: 'sf target orgs', link: '/guide/glade-orgs' },
+          { text: 'AI-assisted Apex', link: '/guide/ai-assisted-apex' },
           { text: 'CI', link: '/guide/ci-artifacts' },
           { text: 'VS Code', link: '/guide/editor' },
           { text: 'Workbench', link: '/guide/workbench' }

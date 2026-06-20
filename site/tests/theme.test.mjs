@@ -33,6 +33,7 @@ const localTesting = await readFile(new URL("../docs-src/guide/local-testing.md"
 const affectedTests = await readFile(new URL("../docs-src/guide/affected-tests.md", import.meta.url), "utf8");
 const playground = await readFile(new URL("../docs-src/guide/playground.md", import.meta.url), "utf8");
 const workbench = await readFile(new URL("../docs-src/guide/workbench.md", import.meta.url), "utf8").catch(() => "");
+const aiAssistedApex = await readFile(new URL("../docs-src/guide/ai-assisted-apex.md", import.meta.url), "utf8").catch(() => "");
 const testerFieldGuide = await readFile(new URL("../docs-src/guide/tester-field-guide.md", import.meta.url), "utf8");
 const editor = await readFile(new URL("../docs-src/guide/editor.md", import.meta.url), "utf8");
 const supportMap = await readFile(new URL("../docs-src/guide/support-map.md", import.meta.url), "utf8");
@@ -240,6 +241,7 @@ test("home page uses a static local proof and final go-live workflow copy", () =
   assert.match(config, /\{ text: 'Docs', link: '\/guide\/overview' \}/);
   assert.match(config, /\{ text: 'Install', link: '\/guide\/installation' \}/);
   assert.match(config, /\{ text: 'Tester field guide', link: '\/guide\/tester-field-guide' \}/);
+  assert.match(config, /\{ text: 'AI-assisted Apex', link: '\/guide\/ai-assisted-apex' \}/);
   assert.match(config, /\{ text: 'Workbench', link: '\/guide\/workbench' \}/);
   assert.doesNotMatch(config, /\{ text: 'Coverage', link: '\/guide\/workbench' \}/);
   assert.doesNotMatch(config, /\{ text: 'Capability map', link: '\/guide\/support-map' \}/);
@@ -812,6 +814,7 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(overview, /class="docs-route-grid"/);
   assert.match(overview, /href="\/guide\/installation"[\s\S]*<strong>Install<\/strong>/);
   assert.match(overview, /href="\/guide\/tester-field-guide"[\s\S]*<strong>Tester field guide<\/strong>/);
+  assert.match(overview, /href="\/guide\/ai-assisted-apex"[\s\S]*<strong>AI-assisted Apex<\/strong>/);
   assert.match(overview, /href="\/guide\/workbench"[\s\S]*<strong>Interactive capability map<\/strong>/);
   assert.match(overview, /## First local loop/);
   assert.match(overview, /Glade models the local paths it can prove/);
@@ -900,6 +903,25 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(localApiServer, /Metadata job status/);
   assert.match(localApiServer, /Bulk API v2 simple scalar query job create\/status\/whole-result CSV/);
   assert.match(localApiServer, /limits\/recordCount\?sObjects=Account/);
+});
+
+test("AI-assisted Apex guide gives agents a Glade TDD contract", () => {
+  assert.match(aiAssistedApex, /^# AI-assisted Apex with Glade/m);
+  assert.match(aiAssistedApex, /Paste the long prompt into a global skill,\s+repository instruction file, or\s+agent memory/);
+  assert.match(aiAssistedApex, /Use this prompt for any Apex feature, bug fix, or refactor/);
+  assert.match(aiAssistedApex, /Write the smallest failing Apex test first/);
+  assert.match(aiAssistedApex, /Do not edit production Apex until a Glade test fails for the expected reason/);
+  assert.match(aiAssistedApex, /mkdir -p reports/);
+  assert.match(aiAssistedApex, /glade doctor/);
+  assert.match(aiAssistedApex, /glade config validate --project \./);
+  assert.match(aiAssistedApex, /glade check --project \. --format json --output reports\/glade-check\.json --no-progress/);
+  assert.match(aiAssistedApex, /glade test --project \. --class <TestClass> --method <TestMethod> --json --no-progress/);
+  assert.match(aiAssistedApex, /glade test changed --project \. --since origin\/main --json --no-progress/);
+  assert.match(aiAssistedApex, /Quote the exact command and the failing diagnostic/);
+  assert.match(aiAssistedApex, /Salesforce remains the validation gate/);
+  assert.match(aiAssistedApex, /Use Glade from the SFDX project root/);
+  assert.doesNotMatch(aiAssistedApex, /deploy-first|scratch org first|project-specific exception/i);
+  assert.match(testerFieldGuide, /\[AI-assisted Apex\]\(\/guide\/ai-assisted-apex\)/);
 });
 
 test("preview surfaces are labeled in public and repo docs", () => {

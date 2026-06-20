@@ -26,6 +26,10 @@ and exposes support gaps instead of hiding them.
     <strong>Tester field guide</strong>
     <span>Run a first project evaluation with CLI, VS Code, CI, and handoff proof.</span>
   </a>
+  <a class="docs-route-card" href="/guide/ai-assisted-apex">
+    <strong>AI-assisted Apex</strong>
+    <span>Add a reusable Glade and TDD prompt to your AI coding agent.</span>
+  </a>
   <a class="docs-route-card" href="/guide/quickstart">
     <strong>First local check</strong>
     <span>Run the shortest check and test loop.</span>

@@ -99,6 +99,8 @@ Glade gives AI tools small, checked work packets instead of open-ended guesses. 
 useful pattern is: inspect the project, run a local gate, fix the smallest
 thing, then rerun the same gate.
 
+For the reusable global skill prompt, use [AI-assisted Apex](/guide/ai-assisted-apex).
+
 Give an AI coding agent this contract from the SFDX project root:
 
 ```text
