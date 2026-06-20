@@ -585,6 +585,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if _, _, ok := objectFieldValue(receiver, field); ok {
 			return Bool(true), true, nil
 		}
+		if vm.queriedSObjectFieldsIncludes(receiver, field) {
+			return Bool(true), true, nil
+		}
 		return Bool(isSetSObjectField(receiver, field)), true, nil
 	case "clear":
 		if len(args) != 0 {

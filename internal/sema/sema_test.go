@@ -5374,6 +5374,65 @@ public class TotalAffiliatedAccounts {
 	}
 }
 
+func TestAnalyzeReturnEqualityDoesNotLookLikeAssignment(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Environment.cls"), `
+public class Environment {
+  private SObject context;
+  public Boolean equals(Object obj) {
+    Environment other = (Environment)obj;
+    return context == other.context;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Environment.cls")}}, schema.Schema{})
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA018" && strings.Contains(diag.Message, `variable "context"`) {
+			t.Fatalf("unexpected equality assignment diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeNestedCastFieldAccess(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Expr.cls"), `
+public class Expr {
+  public abstract class Base {}
+  public class Variable extends Base {
+    public Boolean isContext(Set<String> names) {
+      return true;
+    }
+  }
+  public class GetExpr extends Base {
+    public Base objectExpr;
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "ContextResolver.cls"), `
+public class ContextResolver {
+  public Boolean run(Expr.GetExpr expr, Set<String> names) {
+    if (expr.objectExpr instanceof Expr.Variable) {
+      return ((Expr.Variable)expr.objectExpr).isContext(names);
+    } else if (expr.objectExpr instanceof Expr.GetExpr) {
+      return run((Expr.GetExpr)expr.objectExpr, names);
+    }
+    return false;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Expr.cls"),
+		filepath.Join(root, "ContextResolver.cls"),
+	}}, schema.Schema{})
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA021" && (strings.Contains(diag.Message, "Variable") || strings.Contains(diag.Message, "GetExpr")) {
+			t.Fatalf("unexpected nested cast field diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeMultipleUninitializedLocalDeclarators(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "StandardRegistrationValidator.cls"), `

@@ -90,6 +90,25 @@ System.assert(String.isNotEmpty('x'));
 	}
 }
 
+func TestExecStringSubstringUsesApexUTF16Indexes(t *testing.T) {
+	program, err := CompileAnonymous(`
+String text = 'a😀b';
+System.assertEquals(4, text.length());
+System.assertEquals('😀', text.substring(1, 2));
+System.assertEquals('', text.substring(2, 3));
+System.assertEquals('😀', text.substring(1, 3));
+System.assertEquals('b', text.substring(3));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDomDocumentLoadAndXmlNodeMembers(t *testing.T) {
 	program, err := CompileAnonymous(`
 Dom.Document doc = new Dom.Document();

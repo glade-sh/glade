@@ -798,6 +798,11 @@ func semaAssignmentLooksLikeNamedArg(body string, targetStart int) bool {
 	return false
 }
 
+func semaAssignmentLooksLikeComparison(body string, assignmentEnd int) bool {
+	eq := assignmentEnd - 1
+	return eq >= 0 && eq+1 < len(body) && body[eq+1] == '='
+}
+
 func semaBodyEndsWithThrow(body string) bool {
 	body = strings.TrimSpace(body)
 	if !strings.HasSuffix(body, ";") {
@@ -838,6 +843,9 @@ func semaBodyExpressions(body string) []semaArg {
 	}
 	for _, match := range assignmentPattern.FindAllStringSubmatchIndex(body, -1) {
 		if semaOffsetInIgnoredText(body, match[0]) {
+			continue
+		}
+		if semaAssignmentLooksLikeComparison(body, match[1]) {
 			continue
 		}
 		exprs = append(exprs, trimSemaArg(body, match[1], semaStatementEnd(body, match[1])))

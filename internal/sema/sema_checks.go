@@ -10,6 +10,7 @@ import (
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/sosl"
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -331,11 +332,23 @@ func (c querySemanticsChecker) checkSOSLQuery(query sosl.Query, ctx queryTextCon
 }
 
 func (c querySemanticsChecker) object(name string) (schema.Object, bool) {
-	object, ok := c.objects[strings.ToLower(name)]
-	return object, ok
+	key := strings.ToLower(strings.TrimSpace(name))
+	if object, ok := c.objects[key]; ok {
+		return object, true
+	}
+	definition, ok := storage.StandardObjectDefinition(name)
+	if !ok {
+		return schema.Object{}, false
+	}
+	object := schemaObjectFromStorageDefinition(definition)
+	c.addObject(object)
+	return object, true
 }
 
 func (c querySemanticsChecker) field(objectName, fieldName string) (schema.Field, bool) {
+	if _, ok := c.object(objectName); !ok {
+		return schema.Field{}, false
+	}
 	fields, ok := c.fields[strings.ToLower(objectName)]
 	if !ok {
 		return schema.Field{}, false
@@ -345,11 +358,17 @@ func (c querySemanticsChecker) field(objectName, fieldName string) (schema.Field
 }
 
 func (c querySemanticsChecker) hasFieldMetadata(objectName string) bool {
+	if _, ok := c.object(objectName); !ok {
+		return false
+	}
 	fields, ok := c.fields[strings.ToLower(objectName)]
 	return ok && len(fields) > 0
 }
 
 func (c querySemanticsChecker) relationshipField(objectName, relationshipName string) (schema.Field, string, bool) {
+	if _, ok := c.object(objectName); !ok {
+		return schema.Field{}, "", false
+	}
 	fields, ok := c.fields[strings.ToLower(objectName)]
 	if !ok {
 		return schema.Field{}, "", false
@@ -375,7 +394,89 @@ func (c querySemanticsChecker) childObjectForRelationship(parentObject, relation
 			}
 		}
 	}
+	for _, objectName := range storage.KnownStandardObjectNames() {
+		object, ok := c.object(objectName)
+		if !ok {
+			continue
+		}
+		for _, field := range object.Fields {
+			if !strings.EqualFold(field.ChildRelationshipName, relationship) {
+				continue
+			}
+			for _, target := range field.ReferenceTo {
+				if strings.EqualFold(target, parentObject) {
+					return object, true
+				}
+			}
+		}
+	}
 	return schema.Object{}, false
+}
+
+func (c querySemanticsChecker) addObject(object schema.Object) {
+	if strings.TrimSpace(object.Name) == "" {
+		return
+	}
+	key := strings.ToLower(object.Name)
+	c.objects[key] = object
+	fieldMap := make(map[string]schema.Field, len(object.Fields))
+	for _, field := range object.Fields {
+		fieldMap[strings.ToLower(field.Name)] = field
+	}
+	c.fields[key] = fieldMap
+}
+
+func schemaObjectFromStorageDefinition(definition storage.ObjectDefinition) schema.Object {
+	object := schema.Object{
+		Name:         definition.APIName,
+		Label:        definition.Label,
+		PluralLabel:  definition.PluralLabel,
+		SharingModel: definition.SharingModel,
+		Fields:       make([]schema.Field, 0, len(definition.Fields)),
+	}
+	relationships := make(map[string]storage.Relationship, len(definition.Relations))
+	for _, relationship := range definition.Relations {
+		if relationship.Field != "" {
+			relationships[strings.ToLower(relationship.Field)] = relationship
+		}
+	}
+	for _, field := range definition.Fields {
+		relationship := relationships[strings.ToLower(field.APIName)]
+		referenceTo := append([]string(nil), field.ReferenceTo...)
+		if len(referenceTo) == 0 && len(relationship.ParentObjects) > 0 {
+			referenceTo = append(referenceTo, relationship.ParentObjects...)
+		}
+		relationshipName := field.RelationshipName
+		if relationshipName == "" {
+			relationshipName = relationship.ParentRelationship
+		}
+		childRelationshipName := field.ChildRelationshipName
+		if childRelationshipName == "" {
+			childRelationshipName = relationship.ChildRelationship
+		}
+		object.Fields = append(object.Fields, schema.Field{
+			Name:                  field.APIName,
+			Label:                 field.Label,
+			Type:                  string(field.Type),
+			Length:                field.Length,
+			Precision:             field.Precision,
+			Scale:                 field.Scale,
+			ReferenceTo:           referenceTo,
+			RelationshipName:      relationshipName,
+			ChildRelationshipName: childRelationshipName,
+			DefaultValue:          field.DefaultValue,
+			Required:              field.Required,
+			ExternalID:            field.ExternalID,
+			IDLookup:              field.IDLookup,
+			Unique:                field.Unique,
+			Encrypted:             field.Encrypted,
+			Formula:               field.Formula,
+		})
+	}
+	sort.Slice(object.Fields, func(i, j int) bool {
+		return object.Fields[i].Name < object.Fields[j].Name
+	})
+	return object
 }
 
 func (ctx queryTextContext) diagnostic(code, message, token string, queryOffset int) diagnostic.Diagnostic {
@@ -973,6 +1074,9 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 	var diagnostics []diagnostic.Diagnostic
 	for _, match := range assignmentPattern.FindAllStringSubmatchIndex(body, -1) {
 		if semaOffsetInIgnoredText(body, match[0]) {
+			continue
+		}
+		if semaAssignmentLooksLikeComparison(body, match[1]) {
 			continue
 		}
 		target := strings.TrimSpace(body[match[2]:match[3]])
