@@ -618,6 +618,7 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 		clone.childRelationshipLookupCache = vm.childRelationshipLookupCache
 		clone.sObjectFieldAliasCache = vm.sObjectFieldAliasCache
 		clone.fieldResolveCache = vm.fieldResolveCache
+		clone.soqlExecutionCache = vm.soqlExecutionCache
 		clone.dmlSummaryByChild = vm.dmlSummaryByChild
 		clone.loadedChildRelCache = vm.loadedChildRelCache
 		clone.lazyChildRelCache = vm.lazyChildRelCache
@@ -982,6 +983,9 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 		}
 	}
 	vm.Org = org
+	if vm.Org != nil && strings.TrimSpace(vm.metadataCacheStamp) != "" && vm.soqlExecutionCache == nil {
+		vm.soqlExecutionCache = soql.NewExecutionCache()
+	}
 	vm.clearTriggerMatchCache()
 	if vm.Org != nil {
 		vm.Org.Now = func() time.Time { return vm.fakeNow }

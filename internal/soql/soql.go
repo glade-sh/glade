@@ -235,7 +235,11 @@ func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) 
 		return Result{}, err
 	}
 	query.Fields = fields
-	if err := validateQueryReferences(org, object.Definition, query, query.SecurityMode); err != nil {
+	var childCache *childRelationshipQueryCache
+	if len(query.ChildQueries) > 0 {
+		childCache = newChildRelationshipQueryCache(cache)
+	}
+	if err := validateQueryReferencesWithChildCache(org, object.Definition, query, query.SecurityMode, childCache); err != nil {
 		return Result{}, err
 	}
 	if len(query.ChildQueries) > 0 && queryHasAggregates(query) {
@@ -299,7 +303,6 @@ func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) 
 	}
 	matchedRecords = applyWindow(matchedRecords, query.Offset, query.Limit, query.HasLimit)
 	records := make([]storage.Record, 0, len(matchedRecords))
-	childCache := newChildRelationshipQueryCache(cache)
 	for _, record := range matchedRecords {
 		if query.ForUpdate && record.System.Locked {
 			return Result{}, fmt.Errorf("soql: unable to lock row %s", record.ID)
@@ -1367,13 +1370,13 @@ func prepareChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	if query.Count || len(query.Aggregates) > 0 || len(query.GroupBy) > 0 || query.Having != nil {
 		return preparedChildRelationshipQuery{}, fmt.Errorf("soql: aggregate child relationship subqueries are not supported")
 	}
-	query.Fields = normalizeChildRelationshipSelectFields(org, childObjectName, childObject.Definition, query.Fields)
+	query.Fields = normalizeChildRelationshipSelectFields(org, childObjectName, childObject.Definition, query.Fields, childCache)
 	fields, err := expandFieldsFunctions(childObject.Definition, query.Fields)
 	if err != nil {
 		return preparedChildRelationshipQuery{}, err
 	}
 	query.Fields = fields
-	if err := validateQueryReferences(org, childObject.Definition, query, query.SecurityMode); err != nil {
+	if err := validateQueryReferencesWithChildCache(org, childObject.Definition, query, query.SecurityMode, childCache); err != nil {
 		return preparedChildRelationshipQuery{}, err
 	}
 	if query.Where != nil && conditionContainsSubquery(*query.Where) {
@@ -1390,23 +1393,52 @@ func prepareChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	return prepared, nil
 }
 
-func normalizeChildRelationshipSelectFields(org storage.OrgState, childObjectName string, definition storage.ObjectDefinition, fields []string) []string {
+func normalizeChildRelationshipSelectFields(org storage.OrgState, childObjectName string, definition storage.ObjectDefinition, fields []string, childCache *childRelationshipQueryCache) []string {
 	out := make([]string, len(fields))
 	for i, field := range fields {
-		out[i] = normalizeChildRelationshipSelectField(org, childObjectName, definition, field)
+		out[i] = normalizeChildRelationshipSelectField(org, childObjectName, definition, field, childCache)
 	}
 	return out
 }
 
-func normalizeChildRelationshipSelectField(org storage.OrgState, childObjectName string, definition storage.ObjectDefinition, field string) string {
+func normalizeChildRelationshipSelectField(org storage.OrgState, childObjectName string, definition storage.ObjectDefinition, field string, childCache *childRelationshipQueryCache) string {
 	prefix, rest, ok := strings.Cut(field, ".")
 	if !ok || strings.TrimSpace(prefix) == "" || strings.TrimSpace(rest) == "" {
 		return field
 	}
-	if childRelationshipFieldQualifierMatches(org, childObjectName, definition, prefix) {
+	if childRelationshipFieldQualifierMatchesCached(org, childObjectName, definition, prefix, childCache) {
 		return rest
 	}
 	return field
+}
+
+func childRelationshipFieldQualifierMatchesCached(org storage.OrgState, childObjectName string, definition storage.ObjectDefinition, prefix string, childCache *childRelationshipQueryCache) bool {
+	if childCache == nil || childCache.execution == nil {
+		return childRelationshipFieldQualifierMatches(org, childObjectName, definition, prefix)
+	}
+	cache := childCache.execution
+	key := childRelationshipFieldQualifierCacheKey(org.Namespace, childObjectName, definition.APIName, prefix)
+	cache.mu.Lock()
+	if cache.childFieldQualifierMatches != nil {
+		if cached, ok := cache.childFieldQualifierMatches[key]; ok {
+			cache.mu.Unlock()
+			return cached
+		}
+	}
+	cache.mu.Unlock()
+
+	matched := childRelationshipFieldQualifierMatches(org, childObjectName, definition, prefix)
+	cache.mu.Lock()
+	if cache.childFieldQualifierMatches == nil {
+		cache.childFieldQualifierMatches = make(map[string]bool)
+	}
+	cache.childFieldQualifierMatches[key] = matched
+	cache.mu.Unlock()
+	return matched
+}
+
+func childRelationshipFieldQualifierCacheKey(namespace, childObjectName, definitionName, prefix string) string {
+	return strings.ToLower(namespace) + "\x00" + strings.ToLower(childObjectName) + "\x00" + strings.ToLower(definitionName) + "\x00" + strings.ToLower(strings.TrimSpace(prefix))
 }
 
 func childRelationshipFieldQualifierMatches(org storage.OrgState, childObjectName string, definition storage.ObjectDefinition, prefix string) bool {
@@ -1877,6 +1909,10 @@ func fieldsFunctionMode(field string) (string, bool) {
 }
 
 func validateQueryReferences(org storage.OrgState, definition storage.ObjectDefinition, query Query, mode string) error {
+	return validateQueryReferencesWithChildCache(org, definition, query, mode, nil)
+}
+
+func validateQueryReferencesWithChildCache(org storage.OrgState, definition storage.ObjectDefinition, query Query, mode string, childCache *childRelationshipQueryCache) error {
 	if err := validateAggregateAliases(query); err != nil {
 		return err
 	}
@@ -1951,12 +1987,12 @@ func validateQueryReferences(org storage.OrgState, definition storage.ObjectDefi
 		}
 	}
 	for _, childQuery := range query.ChildQueries {
-		childName, _, ok := childRelationship(org, definition, childQuery.Relationship)
+		childName, _, ok := childRelationshipCached(org, definition, childQuery.Relationship, childCache)
 		if !ok {
 			return childRelationshipUnavailableError(childQuery.Relationship, mode)
 		}
 		child := org.Objects[childName]
-		normalizedFields := normalizeChildRelationshipSelectFields(org, childName, child.Definition, childQuery.Query.Fields)
+		normalizedFields := normalizeChildRelationshipSelectFields(org, childName, child.Definition, childQuery.Query.Fields, childCache)
 		childFields, err := expandFieldsFunctions(child.Definition, normalizedFields)
 		if err != nil {
 			return err
@@ -1964,7 +2000,7 @@ func validateQueryReferences(org storage.OrgState, definition storage.ObjectDefi
 		nested := childQuery.Query
 		nested.Fields = childFields
 		nested.SecurityMode = mode
-		if err := validateQueryReferences(org, child.Definition, nested, mode); err != nil {
+		if err := validateQueryReferencesWithChildCache(org, child.Definition, nested, mode, childCache); err != nil {
 			return err
 		}
 	}

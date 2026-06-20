@@ -67,8 +67,9 @@ type Result struct {
 	Rows    int              `json:"rows"`
 }
 type ExecutionCache struct {
-	mu                 sync.Mutex
-	childRelationships map[string]childRelationshipResolution
+	mu                         sync.Mutex
+	childRelationships         map[string]childRelationshipResolution
+	childFieldQualifierMatches map[string]bool
 }
 type childRelationshipResolution struct {
 	childObjectName string
