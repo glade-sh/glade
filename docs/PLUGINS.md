@@ -15,7 +15,7 @@ ship as first-party plugins.
 
 | Plugin | Alias | Command roots | Purpose |
 | --- | --- | --- | --- |
-| `@glade/compat` | `compat` | `compat`, `surface`, `local-tests`, `post-parity`, `examples`, `dashboard`, `gaps`, `stdlib` | Compatibility fixtures, support ledgers, docs inventory, and parity scanners. |
+| `@glade/compat` | `compat` | `compat`, `surface`, `local-tests`, `post-parity`, `examples`, `dashboard`, `gaps`, `stdlib` | Maintainer support tools, fixtures, surface ledgers, and parity scanners. |
 | `@glade/performance` | `performance` | `performance` | Advisory Salesforce project performance scans. Replaces the old base `glade inspect performance` path. |
 | `@glade/orgpackage` | `orgpackage` | `orgpackage` | Captures installed package contracts from Salesforce orgs into Glade package artifacts. |
 
@@ -34,17 +34,19 @@ Install first-party plugins with canonical coordinates:
 
 ```bash
 glade plugins available
-glade plugins install @glade/compat
 glade plugins install @glade/performance
 glade plugins install @glade/orgpackage
 glade plugins list
 ```
 
-The short aliases `compat`, `performance`, and `orgpackage` resolve to
-`@glade/compat`, `@glade/performance`, and `@glade/orgpackage`.
+The short aliases `performance` and `orgpackage` resolve to
+`@glade/performance` and `@glade/orgpackage`.
 Registry installs appear by canonical coordinate in `plugins list`,
 `plugins which`, and `plugins doctor`. Linked development plugins without a
 catalog coordinate use their manifest name.
+
+Maintainers can install `@glade/compat` when they need support ledgers, fixtures,
+or parity scanners.
 
 Name installs use the configured plugin registry. The default registry URL is
 `https://plugins.glade.sh/index.json` once that service is live. Local

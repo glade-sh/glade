@@ -85,10 +85,15 @@ Checked Salesforce coverage output needs an explicit docs input. Use
 GLADE_SALESFORCE_DOCS_SOURCE=/path/to/salesforce-docs go run ./cmd/glade-tools salesforce-coverage --check docs/generated/SALESFORCE_COVERAGE_MANIFEST.json
 ```
 
-## Plugin migration
+## Plugin release rail
 
-`glade-tools` remains for one migration release. New installs should use the
-first-party plugin binaries:
+`glade-tools` is the source for first-party plugin binaries. Product release
+assets go to `downloads.glade.sh`. Plugin assets go to `plugins.glade.sh`. Both
+rails can share the same version tag, but they publish to different hosts.
+
+`@glade/compat` keeps its package name for this release. Treat it as
+maintainer support tools, fixtures, surface ledgers, and parity scanners rather
+than first-run user setup.
 
 ```bash
 glade plugins install @glade/compat
@@ -131,7 +136,8 @@ glade performance scan --project . --json
 Release archives come from:
 
 ```bash
-scripts/build-plugin-archives.sh 0.1.0
+scripts/release-check.sh
+scripts/build-plugin-archives.sh 0.2.0
 ```
 
 The version argument is written into each archive name, archived `plugin.json`,
@@ -142,7 +148,7 @@ archives. The index uses canonical `@glade/*` names, first-party trust metadata,
 platform asset URLs, and archive SHA-256 values.
 
 ```bash
-OUT_DIR=dist/plugins TARGETS="darwin/arm64 linux/amd64" PLUGIN_ASSET_BASE_URL="https://plugins.glade.sh/v0.1.0" scripts/build-plugin-archives.sh 0.1.0
+OUT_DIR=dist/plugins TARGETS="darwin/arm64 linux/amd64" PLUGIN_ASSET_BASE_URL="https://plugins.glade.sh/v0.2.0" scripts/build-plugin-archives.sh 0.2.0
 ```
 
 See [`docs/plugin-registry.md`](/maintainer/tools/plugin-registry) for the private source

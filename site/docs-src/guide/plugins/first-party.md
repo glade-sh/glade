@@ -4,9 +4,9 @@ First-party plugins ship heavier Glade workflows without adding them to the
 default install. They use the same executable runtime as third-party plugins.
 
 Install these only when the base local runtime is not enough for the job.
-`@glade/compat` is for compatibility fixture work, runtime capability reports,
-and compatibility scans. `@glade/performance` is for advisory project scans.
-`@glade/orgpackage` is for org-backed package artifact capture.
+`@glade/performance` is for advisory project scans. `@glade/orgpackage` is for
+org-backed package artifact capture. `@glade/compat` is maintainer-facing
+support tooling and is not part of first-run setup.
 
 ::: warning Registry preview
 The default public plugin registry is not live yet. The install commands below
@@ -15,15 +15,7 @@ the archives. Until then, install from a direct archive or link a local plugin
 executable for private plugin installs and plugin development.
 :::
 
-## `@glade/compat`
-
-Registry install:
-
-```bash
-glade plugins install @glade/compat
-```
-
-The short alias `compat` resolves to `@glade/compat`.
+## Maintainer support tools
 
 Commands:
 
@@ -36,8 +28,9 @@ Commands:
 - `glade gaps ...`
 - `glade stdlib ...`
 
-The compat plugin owns compatibility fixtures, runtime capability reports, and compatibility
-scanners.
+`@glade/compat` owns maintainer support tools, fixtures, surface ledgers, and
+parity scanners. Use the [glade-tools maintainer guide](/maintainer/glade-tools)
+when you need it.
 
 ## `@glade/performance`
 

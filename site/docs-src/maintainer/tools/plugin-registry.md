@@ -9,6 +9,11 @@
 downloads one platform archive, checks SHA-256, checks the archive manifest, and
 then records the installed plugin.
 
+Product release assets belong on `downloads.glade.sh`. Plugin release assets
+belong on `plugins.glade.sh`. The two release rails can share the same version
+tag, but installers should not mix product archives with plugin archives.
+`@glade/compat` is maintainer-facing support tooling.
+
 The default endpoint in `glade` is:
 
 ```text
@@ -59,8 +64,8 @@ tarballs, `checksums.txt`, and `index.json` under `dist/plugins`.
 ```bash
 OUT_DIR=dist/plugins \
 TARGETS="darwin/arm64 darwin/amd64 linux/arm64 linux/amd64" \
-PLUGIN_ASSET_BASE_URL="https://plugins.glade.sh/v0.1.0" \
-scripts/build-plugin-archives.sh 0.1.0
+PLUGIN_ASSET_BASE_URL="https://plugins.glade.sh/v0.2.0" \
+scripts/build-plugin-archives.sh 0.2.0
 ```
 
 The generated `index.json` is the registry catalog. Each row names the plugin,
@@ -89,8 +94,8 @@ For the first public endpoint cut, upload this shape:
 
 ```text
 https://plugins.glade.sh/index.json
-https://plugins.glade.sh/v0.1.0/glade-plugin-compat_0.1.0_darwin_arm64.tar.gz
-https://plugins.glade.sh/v0.1.0/glade-plugin-performance_0.1.0_darwin_arm64.tar.gz
+https://plugins.glade.sh/v0.2.0/glade-plugin-compat_0.2.0_darwin_arm64.tar.gz
+https://plugins.glade.sh/v0.2.0/glade-plugin-performance_0.2.0_darwin_arm64.tar.gz
 ```
 
 The `index.json` asset URLs must match their hosted paths and SHA-256 values.

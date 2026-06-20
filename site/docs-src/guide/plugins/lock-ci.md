@@ -10,7 +10,7 @@ local links remain available for private plugin installs and plugin development.
 
 ```bash
 # Requires a live plugin registry or configured custom registry.
-glade plugins install @glade/compat
+glade plugins install @glade/performance
 glade plugins install @glade/orgpackage
 glade plugins lock
 glade plugins restore
@@ -26,7 +26,7 @@ identity:
   "version": 1,
   "plugins": [
     {
-      "name": "@glade/compat",
+      "name": "@glade/performance",
       "version": "0.1.0",
       "registry": "https://plugins.glade.sh/index.json",
       "os": "darwin",
