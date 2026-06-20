@@ -43,9 +43,12 @@ const lwcLocalShell = await readFile(new URL("../docs-src/guide/lwc-local-shell.
 const enterpriseWorkflows = await readFile(new URL("../docs-src/guide/enterprise-workflows.md", import.meta.url), "utf8");
 const plugins = await readFile(new URL("../docs-src/guide/plugins.md", import.meta.url), "utf8");
 const firstPartyPlugins = await readFile(new URL("../docs-src/guide/plugins/first-party.md", import.meta.url), "utf8");
-const pluginMarketplace = await readFile(new URL("../docs-src/guide/plugins/marketplace.md", import.meta.url), "utf8");
 const pluginInstallManage = await readFile(new URL("../docs-src/guide/plugins/install-manage.md", import.meta.url), "utf8");
 const pluginLockCi = await readFile(new URL("../docs-src/guide/plugins/lock-ci.md", import.meta.url), "utf8");
+const maintainerIndex = await readFile(new URL("../docs-src/maintainer/index.md", import.meta.url), "utf8").catch(() => "");
+const extendRuntime = await readFile(new URL("../docs-src/maintainer/extend-runtime.md", import.meta.url), "utf8").catch(() => "");
+const gladeToolsMaintainer = await readFile(new URL("../docs-src/maintainer/glade-tools.md", import.meta.url), "utf8").catch(() => "");
+const pluginRuntime = await readFile(new URL("../docs-src/maintainer/plugin-runtime.md", import.meta.url), "utf8").catch(() => "");
 const logoMark = await readFile(new URL("../docs-src/public/logo-mark.svg", import.meta.url), "utf8");
 const logoMarkOpen = await readFile(new URL("../docs-src/public/logo-mark-open.svg", import.meta.url), "utf8");
 
@@ -196,9 +199,12 @@ test("home page uses a static local proof and final go-live workflow copy", () =
   assert.match(index, /The base runtime stays focused on local Apex workflows\. Add plugins only when a project needs capability reports, advisory scans, or custom local checks\./);
   assert.match(index, /Base Glade workflows do not require plugins\. Registry commands are preview until a registry, archive URL, or linked plugin is configured\./);
   assert.match(index, /glade plugins list/);
-  assert.match(index, /glade plugins link --exec \.\/glade-plugin-quality/);
-  assert.match(index, /glade plugins install @glade\/compat/);
-  assert.match(index, /See plugin install, lock-file, authoring, and marketplace docs\./);
+  assert.match(index, /glade plugins install @glade\/performance/);
+  assert.match(index, /glade plugins install @glade\/orgpackage/);
+  assert.match(index, /See first-party plugin install and lock-file docs\./);
+  assert.doesNotMatch(index, /glade plugins link --exec \.\/glade-plugin-quality/);
+  assert.doesNotMatch(index, /glade plugins install @glade\/compat/);
+  assert.doesNotMatch(index, /authoring, and marketplace docs/);
   assert.match(index, /aria-label="Salesforce validation boundary"/);
   assert.match(index, /<h2 class="home-h2">Salesforce remains the validation gate\.<\/h2>/);
   assert.match(index, /Use Salesforce for live auth, hosted service engines, deploy and retrieve, exact Lightning Experience behavior, Streaming, Pub\/Sub, GraphQL, and exact production governor accounting\./);
@@ -751,10 +757,14 @@ test("theme uses the Host Signal design direction", () => {
   assert.match(config, /text: 'First-party plugins'/);
   assert.match(config, /text: 'Install and manage'/);
   assert.match(config, /text: 'Lock files and CI'/);
-  assert.match(config, /text: 'Build a plugin'/);
-  assert.match(config, /text: 'Manifest reference'/);
-  assert.match(config, /text: 'Marketplace'/);
-  assert.match(config, /text: 'Publish'/);
+  assert.match(config, /text: 'Maintainer'/);
+  assert.match(config, /link: '\/maintainer\/release'/);
+  assert.match(config, /link: '\/maintainer\/extend-runtime'/);
+  assert.match(config, /link: '\/maintainer\/glade-tools'/);
+  assert.doesNotMatch(config, /text: 'Build a plugin'/);
+  assert.doesNotMatch(config, /text: 'Manifest reference'/);
+  assert.doesNotMatch(config, /text: 'Marketplace'/);
+  assert.doesNotMatch(config, /text: 'Publish'/);
   assert.doesNotMatch(config, /text: 'Compatibility \/ proof reports'/);
   assert.doesNotMatch(config, /Automation And|Error Codes And|Marketplace And|Install And|Built-In|First-Party|Build A Plugin|Plugin Lock Files And CI/);
   assert.ok(config.indexOf("text: 'What is Glade?'") < config.indexOf("text: 'Plugins'"));
@@ -1022,33 +1032,44 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.match(editor, /Glade Activity Bar/);
   assert.doesNotMatch(editor, /Click \*\*Run local check\*\*/);
   assert.match(ciArtifacts, /mkdir -p reports/);
-  assert.match(plugins, /Registry-backed[\s\S]*installs are preview until a registry, archive URL, or local plugin is[\s\S]*configured\./);
-  assert.match(plugins, /plugins only when you need compatibility fixtures, capability reports,[\s\S]*compatibility dashboards, or project-specific checks\./);
+  assert.match(plugins, /Most Glade work does not require plugins\./);
+  assert.match(plugins, /Use plugins when you need a first-party extension that stays outside the base runtime\./);
   assert.match(plugins, /@glade\/orgpackage/);
   assert.match(plugins, /glade package capture \.\.\.[\s\S]*dispatches to `glade orgpackage capture \.\.\.`/);
   for (const pluginRoute of [
     "/guide/plugins/first-party",
     "/guide/plugins/install-manage",
-    "/guide/plugins/lock-ci",
+    "/guide/plugins/lock-ci"
+  ]) {
+    assert.match(plugins, new RegExp(`href="${pluginRoute}"`));
+    assert.match(config, new RegExp(`link: '${pluginRoute}'`));
+  }
+  for (const pluginRoute of [
     "/guide/plugins/build",
     "/guide/plugins/manifest",
     "/guide/plugins/marketplace",
     "/guide/plugins/publish"
   ]) {
-    assert.match(plugins, new RegExp(`href="${pluginRoute}"`));
-    assert.match(config, new RegExp(`link: '${pluginRoute}'`));
+    assert.doesNotMatch(plugins, new RegExp(`href="${pluginRoute}"`));
+    assert.doesNotMatch(config, new RegExp(`link: '${pluginRoute}'`));
   }
-  assert.match(plugins, /glade plugins link --exec \.\/glade-plugin-quality/);
+  assert.match(plugins, /Maintainer support tools/);
+  assert.doesNotMatch(plugins, /glade plugins link --exec \.\/glade-plugin-quality/);
   assert.match(firstPartyPlugins, /install commands below[\s\S]*canonical coordinates once the registry/);
   assert.match(firstPartyPlugins, /runtime capability reports/);
   assert.match(firstPartyPlugins, /@glade\/orgpackage/);
   assert.match(firstPartyPlugins, /glade package capture --target-org packaging/);
-  assert.match(pluginMarketplace, /The marketplace model is preview until the production registry is live/);
   assert.match(pluginInstallManage, /Direct archives and local links are the[\s\S]*fallback paths/);
   assert.match(pluginInstallManage, /glade plugins install @glade\/orgpackage/);
   assert.match(pluginLockCi, /^# Plugin lock files and CI/m);
   assert.match(pluginLockCi, /The default public plugin registry is not live yet/);
   assert.match(pluginLockCi, /glade plugins install @glade\/orgpackage/);
+  assert.match(maintainerIndex, /glade stays the product front door/);
+  assert.match(extendRuntime, /Write the failing fixture or product test first/);
+  assert.match(extendRuntime, /go test \.\/internal\/vm \.\/internal\/apextest/);
+  assert.match(gladeToolsMaintainer, /go run \.\/cmd\/glade-plugin-compat manifest --json/);
+  assert.match(gladeToolsMaintainer, /scripts\/build-plugin-archives\.sh 0\.1\.0/);
+  assert.match(pluginRuntime, /Plugins are executable processes/);
   assert.match(lwcLocalShell, /^## Data and services/m);
   assert.match(enterpriseWorkflows, /^## Cruft and dead code/m);
   for (const staleHeading of [

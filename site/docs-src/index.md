@@ -147,10 +147,10 @@ glade org create my-glade-org</code></pre>
     <p class="home-p">Base Glade workflows do not require plugins. Registry commands are preview until a registry, archive URL, or linked plugin is configured.</p>
     <div class="home-command-block">
       <pre><code>glade plugins list
-glade plugins link --exec ./glade-plugin-quality
-glade plugins install @glade/compat</code></pre>
+glade plugins install @glade/performance
+glade plugins install @glade/orgpackage</code></pre>
     </div>
-    <p class="home-p"><a href="/guide/plugins">See plugin install, lock-file, authoring, and marketplace docs.</a></p>
+    <p class="home-p"><a href="/guide/plugins">See first-party plugin install and lock-file docs.</a></p>
   </div>
 </section>
 
