@@ -34,10 +34,8 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.abs expects 0 arguments")
 		}
-		if err := ensureFiniteDecimal("Decimal.abs", receiver.Decimal); err != nil {
-			return Null, receiver, false, true, err
-		}
-		return Decimal(math.Abs(receiver.Decimal)), receiver, false, true, nil
+		value, err := decimalAbsValue(receiver)
+		return value, receiver, false, true, err
 	case "setScale":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.setScale expects scale and optional RoundingMode")
@@ -194,4 +192,17 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+func decimalAbsValue(value Value) (Value, error) {
+	if err := ensureFiniteDecimal("Decimal.abs", value.Decimal); err != nil {
+		return Null, err
+	}
+	out := Decimal(math.Abs(value.Decimal))
+	if text := strings.TrimSpace(value.Text); text != "" {
+		text = strings.TrimPrefix(text, "-")
+		text = strings.TrimPrefix(text, "+")
+		out.Text = text
+	}
+	return out, nil
 }

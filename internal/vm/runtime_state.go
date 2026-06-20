@@ -142,18 +142,19 @@ type VM struct {
 	subMgmtTestRecords map[string]Value
 	subMgmtTestSeq     int
 	// --- Debug / trace hooks ---
-	debugHooks         DebugHooks
-	hasDebugHooks      bool
-	debugOutputSink    func(DebugEvent)
-	traceEnabled       bool
-	ctx                context.Context
-	activeGetters      map[string]int
-	activeSetters      map[string]int
-	triggerGlobals     map[string]Value
-	cryptoRandomSeq    uint64
-	staticInitState    map[string]staticInitState
-	lastAmbiguous      *overloadDiagnostic
-	activeConstructors map[string]int
+	debugHooks           DebugHooks
+	hasDebugHooks        bool
+	debugOutputSink      func(DebugEvent)
+	traceEnabled         bool
+	ctx                  context.Context
+	activeGetters        map[string]int
+	activeSetters        map[string]int
+	triggerGlobals       map[string]Value
+	cryptoRandomSeq      uint64
+	staticInitState      map[string]staticInitState
+	frameworkIDSequences map[string]uint64
+	lastAmbiguous        *overloadDiagnostic
+	activeConstructors   map[string]int
 	// --- Describe caches ---
 	describeCache                map[string]Value
 	fieldDescribeCache           map[string]Value
@@ -543,6 +544,7 @@ func New(stdout io.Writer) *VM {
 		activeGetters:                make(map[string]int),
 		activeSetters:                make(map[string]int),
 		staticInitState:              make(map[string]staticInitState),
+		frameworkIDSequences:         make(map[string]uint64),
 		describeCache:                make(map[string]Value),
 		fieldDescribeCache:           make(map[string]Value),
 		describeDefCache:             make(map[string]storage.ObjectDefinition),

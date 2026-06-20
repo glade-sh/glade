@@ -610,6 +610,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	ensureObject(org, "Profile", "00e", map[string]Field{
 		"Name":                           {APIName: "Name", Type: FieldString, Required: true},
 		"UserLicenseId":                  {APIName: "UserLicenseId", Type: FieldReference, ReferenceTo: []string{"UserLicense"}, RelationshipName: "UserLicense"},
+		"UserType":                       {APIName: "UserType", Type: FieldString},
 		"PermissionsEditPublicTemplates": {APIName: "PermissionsEditPublicTemplates", Type: FieldBoolean},
 		"PermissionsManageSolutions":     {APIName: "PermissionsManageSolutions", Type: FieldBoolean},
 		"PermissionsActivateContract":    {APIName: "PermissionsActivateContract", Type: FieldBoolean},
@@ -804,6 +805,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	standardUserProfileID := ID("00e000000000005")
 	marketingUserProfileID := ID("00e000000000006")
 	guestProfileID := ID("00e000000000007")
+	customerCommunityLoginProfileID := ID("00e000000000008")
 	salesforceLicenseID := ID("100000000000001")
 	chatterExternalLicenseID := ID("100000000000002")
 	roleID := ID("00E000000000001")
@@ -886,12 +888,17 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		Object: "Profile",
 		Fields: profileSeedFields("Marketing User", salesforceLicenseID),
 	})
+	putSeedRecord(org, "Profile", Record{
+		ID:     customerCommunityLoginProfileID,
+		Object: "Profile",
+		Fields: profileSeedFieldsWithUserType("Customer Community Login User", chatterExternalLicenseID, "CspLitePortal"),
+	})
 	putSeedRecord(org, "Network", Record{
 		ID:     "0DB000000000001",
 		Object: "Network",
 		Fields: map[string]Value{
 			"Name":                       StringValue("Local Community"),
-			"SelfRegProfileId":           IDValue(chatterExternalProfileID),
+			"SelfRegProfileId":           IDValue(customerCommunityLoginProfileID),
 			"Status":                     StringValue("Live"),
 			"UrlPathPrefix":              StringValue("local"),
 			"OptionsGuestChatterEnabled": BooleanValue(false),
@@ -1014,6 +1021,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	seedProfileOwnedPermissionSet(ID("0PS000000000007"), "Standard User", standardUserProfileID)
 	seedProfileOwnedPermissionSet(ID("0PS000000000008"), "Marketing User", marketingUserProfileID)
 	seedProfileOwnedPermissionSet(ID("0PS000000000009"), "Customer Community Guest User", guestProfileID)
+	seedProfileOwnedPermissionSet(ID("0PS000000000010"), "Customer Community Login User", customerCommunityLoginProfileID)
 	putSeedRecord(org, "PermissionSetAssignment", Record{
 		ID:     assignmentID,
 		Object: "PermissionSetAssignment",
@@ -1046,6 +1054,24 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"PermissionsDelete": BooleanValue(false),
 		},
 	})
+	seedProfileObjectPermission := func(id ID, parentID ID, objectName string, read, create, edit, delete bool) {
+		putSeedRecord(org, "ObjectPermissions", Record{
+			ID:     id,
+			Object: "ObjectPermissions",
+			Fields: map[string]Value{
+				"ParentId":          IDValue(parentID),
+				"SObjectType":       StringValue(objectName),
+				"PermissionsRead":   BooleanValue(read),
+				"PermissionsCreate": BooleanValue(create),
+				"PermissionsEdit":   BooleanValue(edit),
+				"PermissionsDelete": BooleanValue(delete),
+			},
+		})
+	}
+	seedProfileObjectPermission(ID("110000000000003"), ID("0PS000000000003"), "Account", true, true, true, true)
+	seedProfileObjectPermission(ID("110000000000004"), ID("0PS000000000006"), "Account", true, true, true, false)
+	seedProfileObjectPermission(ID("110000000000005"), ID("0PS000000000007"), "Account", true, true, true, false)
+	seedProfileObjectPermission(ID("110000000000006"), ID("0PS000000000008"), "Account", true, true, true, false)
 	putSeedRecord(org, "FieldPermissions", Record{
 		ID:     ID("0FP000000000001"),
 		Object: "FieldPermissions",
@@ -1063,14 +1089,14 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	}
 	for object, sequence := range map[string]uint64{
 		"Organization":            1,
-		"Profile":                 7,
+		"Profile":                 8,
 		"UserLicense":             2,
 		"UserRole":                1,
 		"User":                    2,
-		"PermissionSet":           9,
+		"PermissionSet":           10,
 		"PermissionSetAssignment": 1,
 		"FieldPermissions":        1,
-		"ObjectPermissions":       2,
+		"ObjectPermissions":       6,
 		"SetupEntityAccess":       1,
 		"OpportunityStage":        10,
 		"RecordType":              maxRecordTypeSequence(*org),
@@ -1135,9 +1161,21 @@ func ensureOpportunityStageData(org *OrgState) {
 }
 
 func profileSeedFields(name string, licenseID ID) map[string]Value {
+	userType := "Standard"
+	switch name {
+	case "Chatter External User":
+		userType = "CsnOnly"
+	case "Customer Community Guest User":
+		userType = "Guest"
+	}
+	return profileSeedFieldsWithUserType(name, licenseID, userType)
+}
+
+func profileSeedFieldsWithUserType(name string, licenseID ID, userType string) map[string]Value {
 	return map[string]Value{
 		"Name":                           StringValue(name),
 		"UserLicenseId":                  IDValue(licenseID),
+		"UserType":                       StringValue(userType),
 		"PermissionsEditPublicTemplates": BooleanValue(false),
 		"PermissionsManageSolutions":     BooleanValue(false),
 		"PermissionsActivateContract":    BooleanValue(false),

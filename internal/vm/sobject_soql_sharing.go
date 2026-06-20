@@ -14,7 +14,33 @@ func (vm *VM) currentUserCanSeeSharedRecord(objectName string, record storage.Re
 		return vm.permissionSetAssignmentVisibleToUser(record, userID)
 	}
 	if strings.EqualFold(objectName, "Account") || strings.EqualFold(record.Object, "Account") {
-		return storage.IDsEqual(record.ID, storage.ID(vm.currentUserContactAccountID()))
+		return storage.IDsEqual(record.ID, storage.ID(vm.currentUserContactAccountID())) ||
+			vm.currentUserHasDirectAccountShare(record.ID, userID)
+	}
+	return false
+}
+
+func (vm *VM) currentUserHasDirectAccountShare(accountID storage.ID, userID string) bool {
+	if vm == nil || vm.Org == nil || accountID == "" || userID == "" {
+		return false
+	}
+	state, ok := vm.Org.Objects["AccountShare"]
+	if !ok {
+		return false
+	}
+	for _, share := range state.Records {
+		sharedAccount, ok := share.GetField("AccountId")
+		if !ok || !storage.IDsEqual(storage.ID(storageValueIDText(sharedAccount)), accountID) {
+			continue
+		}
+		sharedUser, ok := share.GetField("UserOrGroupId")
+		if !ok || !storage.IDsEqual(storage.ID(storageValueIDText(sharedUser)), storage.ID(userID)) {
+			continue
+		}
+		if access, ok := share.GetField("AccountAccessLevel"); ok && strings.EqualFold(access.String, "None") {
+			continue
+		}
+		return true
 	}
 	return false
 }

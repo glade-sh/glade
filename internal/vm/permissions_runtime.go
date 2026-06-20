@@ -96,13 +96,20 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 	if vm.currentProfileIsSystemAdministrator(profileID) {
 		return true
 	}
+	profilePermissionSetID := vm.profileOwnedPermissionSetID(profileID)
 	if method == "isAccessible" && vm.apexMetadataObjectReadable(objectName) {
 		return true
 	}
 	for _, permissionSetID := range vm.assignedPermissionSetIDs(stringField(user, "Id")) {
+		if storage.IDsEqual(storage.ID(permissionSetID), storage.ID(profilePermissionSetID)) {
+			continue
+		}
 		if allowed, ok := vm.explicitObjectPermission(permissionSetID, objectName, method); ok && allowed {
 			return true
 		}
+	}
+	if allowed, ok := vm.explicitObjectPermission(profilePermissionSetID, objectName, method); ok {
+		return allowed
 	}
 	if allowed, ok := vm.explicitObjectPermission(profileID, objectName, method); ok {
 		return allowed
@@ -147,13 +154,26 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	if vm.currentProfileIsSystemAdministrator(profileID) {
 		return true
 	}
+	if objectMethod := fieldPermissionObjectMethod(method); objectMethod != "" && !vm.currentUserObjectPermission(objectName, objectMethod) {
+		return false
+	}
+	profilePermissionSetID := vm.profileOwnedPermissionSetID(profileID)
 	for _, permissionSetID := range vm.assignedPermissionSetIDs(stringField(user, "Id")) {
+		if storage.IDsEqual(storage.ID(permissionSetID), storage.ID(profilePermissionSetID)) {
+			continue
+		}
 		if allowed, ok := vm.explicitFieldPermission(permissionSetID, objectName, fieldName, method); ok && allowed {
 			return true
 		}
 	}
+	if allowed, ok := vm.explicitFieldPermission(profilePermissionSetID, objectName, fieldName, method); ok {
+		return allowed
+	}
 	if allowed, ok := vm.explicitFieldPermission(profileID, objectName, fieldName, method); ok {
 		return allowed
+	}
+	if profilePermissionSetID != "" && vm.parentHasFieldPermissionsForObject(profilePermissionSetID, objectName) {
+		return false
 	}
 	if profileID != "" && vm.parentHasFieldPermissionsForObject(profileID, objectName) {
 		return false
@@ -173,6 +193,18 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 		return false
 	}
 	return true
+}
+func fieldPermissionObjectMethod(method string) string {
+	switch method {
+	case "isCreateable":
+		return "isCreateable"
+	case "isUpdateable":
+		return "isUpdateable"
+	case "isAccessible":
+		return "isAccessible"
+	default:
+		return ""
+	}
 }
 func (vm *VM) stripInaccessibleRecords(accessType string, records Value, enforceRootObjectCRUD bool) (Value, Value, Value, error) {
 	out := cloneValue(records)

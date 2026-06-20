@@ -193,7 +193,7 @@ func cloneChildRelationshipValue(value Value) Value {
 }
 
 func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinition) Value {
-	cacheKey := strings.ToLower(strings.TrimSpace(name))
+	cacheKey := vm.describeSObjectCacheKey(name)
 	if cacheKey != "" {
 		if cached, ok := vm.describeCache[cacheKey]; ok {
 			return cached
@@ -1270,7 +1270,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	if strings.TrimSpace(fieldName) == "" {
 		fieldName = requestedFieldName
 	}
-	cacheKey := strings.ToLower(objectName) + "." + strings.ToLower(fieldName)
+	cacheKey := vm.fieldDescribeCacheKey(objectName, fieldName)
 	if cached, ok := vm.fieldDescribeCache[cacheKey]; ok {
 		vm.storeFieldDescribeCacheAliases(objectName, requestedFieldName, fieldName, cached)
 		return cached, nil
@@ -1360,9 +1360,9 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		references = append(references, sObjectTypeToken(target))
 	}
 	desc.Fields["referenceTo"] = List(references...)
-	desc.Fields["accessible"] = Bool(storage.FieldFlagValue(field.Accessible, true))
-	desc.Fields["createable"] = Bool(storage.FieldFlagValue(field.Createable, !calculated))
-	desc.Fields["updateable"] = Bool(storage.FieldFlagValue(field.Updateable, !calculated))
+	desc.Fields["accessible"] = Bool(storage.FieldFlagValue(field.Accessible, true) && vm.currentUserFieldPermission(objectName, field.APIName, "isAccessible"))
+	desc.Fields["createable"] = Bool(storage.FieldFlagValue(field.Createable, !calculated) && vm.currentUserFieldPermission(objectName, field.APIName, "isCreateable"))
+	desc.Fields["updateable"] = Bool(storage.FieldFlagValue(field.Updateable, !calculated) && vm.currentUserFieldPermission(objectName, field.APIName, "isUpdateable"))
 	desc.Fields["filterable"] = Bool(storage.FieldFlagValue(field.Filterable, true))
 	desc.Fields["groupable"] = Bool(storage.FieldFlagValue(field.Groupable, true))
 	desc.Fields["sortable"] = Bool(storage.FieldFlagValue(field.Sortable, describeFieldSortable(field)))
@@ -1491,7 +1491,7 @@ func (vm *VM) fieldDescribeCacheKeys(objectName, fieldName string) []string {
 		if alias == "" {
 			continue
 		}
-		key := base + alias
+		key := vm.describePermissionCacheKey(base + alias)
 		if _, ok := seen[key]; ok {
 			continue
 		}
@@ -1499,6 +1499,36 @@ func (vm *VM) fieldDescribeCacheKeys(objectName, fieldName string) []string {
 		keys = append(keys, key)
 	}
 	return keys
+}
+
+func (vm *VM) describeSObjectCacheKey(objectName string) string {
+	return vm.describePermissionCacheKey(strings.ToLower(strings.TrimSpace(objectName)))
+}
+
+func (vm *VM) fieldDescribeCacheKey(objectName, fieldName string) string {
+	return vm.describePermissionCacheKey(strings.ToLower(strings.TrimSpace(objectName)) + "." + strings.ToLower(strings.TrimSpace(fieldName)))
+}
+
+func (vm *VM) describePermissionCacheKey(base string) string {
+	base = strings.TrimSpace(base)
+	if base == "" {
+		return ""
+	}
+	if vm == nil || vm.Org == nil {
+		return base
+	}
+	user := vm.executionUser
+	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
+		user = vm.testContext.CurrentUser
+	}
+	userID := strings.TrimSpace(stringField(user, "Id"))
+	profileID := strings.ToLower(strings.TrimSpace(stringField(user, "ProfileId")))
+	permissionSetIDs := vm.assignedPermissionSetIDs(userID)
+	sort.Strings(permissionSetIDs)
+	for i := range permissionSetIDs {
+		permissionSetIDs[i] = strings.ToLower(strings.TrimSpace(permissionSetIDs[i]))
+	}
+	return base + "|profile=" + profileID + "|user=" + strings.ToLower(userID) + "|permissions=" + strings.Join(permissionSetIDs, ",")
 }
 
 func describeFieldReferenceTargets(definition storage.ObjectDefinition, field storage.Field) []string {
@@ -1559,7 +1589,7 @@ func appendUniqueStringFold(values []string, value string) []string {
 }
 
 func (vm *VM) describeSyntheticFieldValue(objectName, fieldName string, field storage.Field) (Value, error) {
-	cacheKey := strings.ToLower(objectName) + "." + strings.ToLower(fieldName)
+	cacheKey := vm.fieldDescribeCacheKey(objectName, fieldName)
 	if cached, ok := vm.fieldDescribeCache[cacheKey]; ok {
 		return cached, nil
 	}
@@ -1606,9 +1636,9 @@ func (vm *VM) describeSyntheticFieldValue(objectName, fieldName string, field st
 	desc.Fields["picklistValues"] = List()
 	desc.Fields["sObjectType"] = sObjectTypeToken(objectName)
 	desc.Fields["sortable"] = Bool(storage.FieldFlagValue(field.Sortable, describeFieldSortable(field)))
-	desc.Fields["accessible"] = Bool(storage.FieldFlagValue(field.Accessible, true))
-	desc.Fields["createable"] = Bool(storage.FieldFlagValue(field.Createable, false))
-	desc.Fields["updateable"] = Bool(storage.FieldFlagValue(field.Updateable, false))
+	desc.Fields["accessible"] = Bool(storage.FieldFlagValue(field.Accessible, true) && vm.currentUserFieldPermission(objectName, field.APIName, "isAccessible"))
+	desc.Fields["createable"] = Bool(storage.FieldFlagValue(field.Createable, false) && vm.currentUserFieldPermission(objectName, field.APIName, "isCreateable"))
+	desc.Fields["updateable"] = Bool(storage.FieldFlagValue(field.Updateable, false) && vm.currentUserFieldPermission(objectName, field.APIName, "isUpdateable"))
 	desc.Fields["filterable"] = Bool(storage.FieldFlagValue(field.Filterable, true))
 	desc.Fields["groupable"] = Bool(storage.FieldFlagValue(field.Groupable, true))
 	desc.Fields["aggregatable"] = Bool(storage.FieldFlagValue(field.Aggregatable, true))

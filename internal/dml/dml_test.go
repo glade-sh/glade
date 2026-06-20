@@ -210,6 +210,40 @@ func TestBulkInsertUsesOneSystemTimestampWhenClockIsFixed(t *testing.T) {
 	}
 }
 
+func TestInsertSystemTimestampDoesNotMoveBackwardWhenClockBaseChanges(t *testing.T) {
+	org := testOrg()
+	engine := NewEngine(&org)
+	base := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
+	clock := base
+	engine.Now = func() time.Time { return clock }
+
+	var previousID storage.ID
+	for i := 0; i < 7; i++ {
+		results := engine.Insert([]storage.Record{{
+			Object: "Account",
+			Fields: map[string]storage.Value{"Name": storage.StringValue(fmt.Sprintf("Account %d", i))},
+		}})
+		if !results[0].Success {
+			t.Fatalf("insert %d = %#v", i, results[0])
+		}
+		previousID = results[0].ID
+	}
+	previousStamp := org.Objects["Account"].Records[previousID].System.CreatedDate
+
+	clock = base.Add(5 * time.Second)
+	results := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Later")},
+	}})
+	if !results[0].Success {
+		t.Fatalf("later insert = %#v", results[0])
+	}
+	nextStamp := org.Objects["Account"].Records[results[0].ID].System.CreatedDate
+	if nextStamp <= previousStamp {
+		t.Fatalf("next CreatedDate = %q, want after %q", nextStamp, previousStamp)
+	}
+}
+
 func TestDMLRejectsInvalidSystemOwnerIDPrefix(t *testing.T) {
 	org := testOrg()
 	org.Objects["Widget__c"] = storage.ObjectState{

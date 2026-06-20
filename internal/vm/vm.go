@@ -2227,7 +2227,7 @@ func mathUnary(callee string, args []Value) (Value, error) {
 			}
 			return args[0], nil
 		}
-		return Decimal(math.Abs(n)), nil
+		return decimalAbsValue(args[0])
 	case "Math.floor", "Math.ceil", "Math.rint":
 		switch callee {
 		case "Math.floor":

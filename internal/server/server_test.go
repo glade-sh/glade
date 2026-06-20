@@ -4059,11 +4059,11 @@ func TestGLADEResetScopesPreserveAndClearExpectedState(t *testing.T) {
 		wantProfiles int
 		wantNoOps    string
 	}{
-		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 7},
-		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 7},
-		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 7},
-		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 7},
-		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 7, wantNoOps: "limits,async"},
+		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 8},
+		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 8},
+		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 8},
+		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 8},
+		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 8, wantNoOps: "limits,async"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

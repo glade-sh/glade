@@ -337,7 +337,7 @@ func (vm *VM) abortJob(args []Value) (Value, error) {
 		return Null, fmt.Errorf("System.abortJob expects String job Id")
 	}
 	for i, job := range vm.testContext.AsyncJobs {
-		if job.ID != jobID && cronTriggerID(job.ID) != jobID {
+		if !asyncJobIDTextEqual(job.ID, jobID) && !asyncJobIDTextEqual(cronTriggerID(job.ID), jobID) {
 			continue
 		}
 		vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs[:i], vm.testContext.AsyncJobs[i+1:]...)
@@ -353,6 +353,11 @@ func (vm *VM) abortJob(args []Value) (Value, error) {
 	}
 	return Null, unsupportedCallError("System.abortJob unknown local async records")
 }
+
+func asyncJobIDTextEqual(left, right string) bool {
+	return storage.IDsEqual(storage.ID(left), storage.ID(right))
+}
+
 func (vm *VM) abortRecordedAsyncJob(jobID string) {
 	if vm == nil || vm.Org == nil {
 		return
@@ -363,8 +368,8 @@ func (vm *VM) abortRecordedAsyncJob(jobID string) {
 		asyncID = strings.Replace(asyncID, "08e", "707", 1)
 	}
 	if object, ok := vm.Org.Objects["AsyncApexJob"]; ok {
-		if record, found := object.Records[storage.ID(asyncID)]; found {
-			vm.recordIsolationJournalMutation("AsyncApexJob", storage.ID(asyncID), record, true)
+		if storedID, record, found := storage.LookupRecordByID(object.Records, storage.ID(asyncID)); found {
+			vm.recordIsolationJournalMutation("AsyncApexJob", storedID, record, true)
 			if record.Fields == nil {
 				record.Fields = make(map[string]storage.Value)
 			}
@@ -378,12 +383,13 @@ func (vm *VM) abortRecordedAsyncJob(jobID string) {
 		cronID = strings.Replace(cronID, "707", "08e", 1)
 	}
 	if object, ok := vm.Org.Objects["CronTrigger"]; ok {
-		if record, found := object.Records[storage.ID(cronID)]; found {
-			vm.recordIsolationJournalMutation("CronTrigger", storage.ID(cronID), record, true)
+		if storedID, record, found := storage.LookupRecordByID(object.Records, storage.ID(cronID)); found {
+			vm.recordIsolationJournalMutation("CronTrigger", storedID, record, true)
 			if record.Fields == nil {
 				record.Fields = make(map[string]storage.Value)
 			}
 			record.Fields["State"] = storage.StringValue("Deleted")
+			delete(record.Fields, "NextFireTime")
 			object.Records[record.ID] = record
 			vm.Org.Objects["CronTrigger"] = object
 		}
@@ -398,7 +404,7 @@ func (vm *VM) asyncJobRecordStatus(jobID string) string {
 		jobID = strings.Replace(jobID, "08e", "707", 1)
 	}
 	object := vm.Org.Objects["AsyncApexJob"]
-	record, ok := object.Records[storage.ID(jobID)]
+	_, record, ok := storage.LookupRecordByID(object.Records, storage.ID(jobID))
 	if !ok {
 		return ""
 	}
@@ -1762,6 +1768,9 @@ func (vm *VM) recordCronTrigger(job AsyncJob, state string) {
 	record.Fields["TimesTriggered"] = storage.IntegerValue(0)
 	if nextFireTime, ok := cronNextFireTime(job.Cron, vm.fakeNow); ok {
 		record.Fields["NextFireTime"] = storage.DateTimeValue(nextFireTime)
+	}
+	if strings.EqualFold(state, "Deleted") {
+		delete(record.Fields, "NextFireTime")
 	}
 	object.Records[record.ID] = record
 	vm.Org.Objects["CronTrigger"] = object

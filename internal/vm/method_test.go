@@ -2875,6 +2875,71 @@ System.assertEquals(null, proxy.results());
 	}
 }
 
+func TestExecApexMocksUnstubbedCurrencyFormatAccessorsUsePassiveDefaults(t *testing.T) {
+	providerProgram, err := CompileAnonymous("return null;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+CurrencyBase currencyInfo = (CurrencyBase)Test.createStub(CurrencyBase.class, new fflib_ApexMocks());
+System.assertEquals(2, currencyInfo.getDecimalPlaces());
+System.assertEquals('.', currencyInfo.getDecimalSeparator());
+System.assertEquals(',', currencyInfo.getGroupSeparator());
+System.assertEquals(3, currencyInfo.getGroupSizes());
+System.assertEquals('($n)', currencyInfo.getNegativePattern());
+System.assertEquals('$n', currencyInfo.getPositivePattern());
+System.assertEquals('$', currencyInfo.getSymbol());
+System.assertEquals(true, currencyInfo.shouldFormatGroup());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:      "CurrencyBase",
+		Access:    "global",
+		Modifiers: []string{"abstract"},
+		Methods: map[string]Method{
+			"getDecimalPlaces":    {Name: "CurrencyBase.getDecimalPlaces", ClassName: "CurrencyBase", ReturnType: "Integer", Access: "global", Modifiers: []string{"abstract"}},
+			"getDecimalSeparator": {Name: "CurrencyBase.getDecimalSeparator", ClassName: "CurrencyBase", ReturnType: "String", Access: "global", Modifiers: []string{"abstract"}},
+			"getGroupSeparator":   {Name: "CurrencyBase.getGroupSeparator", ClassName: "CurrencyBase", ReturnType: "String", Access: "global", Modifiers: []string{"abstract"}},
+			"getGroupSizes":       {Name: "CurrencyBase.getGroupSizes", ClassName: "CurrencyBase", ReturnType: "Integer", Access: "global", Modifiers: []string{"abstract"}},
+			"getNegativePattern":  {Name: "CurrencyBase.getNegativePattern", ClassName: "CurrencyBase", ReturnType: "String", Access: "global", Modifiers: []string{"abstract"}},
+			"getPositivePattern":  {Name: "CurrencyBase.getPositivePattern", ClassName: "CurrencyBase", ReturnType: "String", Access: "global", Modifiers: []string{"abstract"}},
+			"getSymbol":           {Name: "CurrencyBase.getSymbol", ClassName: "CurrencyBase", ReturnType: "String", Access: "global", Modifiers: []string{"abstract"}},
+			"shouldFormatGroup":   {Name: "CurrencyBase.shouldFormatGroup", ClassName: "CurrencyBase", ReturnType: "Boolean", Access: "public"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "fflib_ApexMocks",
+		Interfaces: []string{"StubProvider"},
+		Methods: map[string]Method{
+			"handleMethodCall": {
+				Name:       "fflib_ApexMocks.handleMethodCall",
+				ClassName:  "fflib_ApexMocks",
+				ReturnType: "Object",
+				Params: []Param{
+					{Name: "stubbedObject", Type: "Object"},
+					{Name: "stubbedMethodName", Type: "String"},
+					{Name: "returnType", Type: "Type"},
+					{Name: "listOfParamTypes", Type: "List<Type>"},
+					{Name: "listOfParamNames", Type: "List<String>"},
+					{Name: "listOfArgs", Type: "List<Object>"},
+				},
+				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTestCreateStubReportsResolvedMethodNameCasing(t *testing.T) {
 	providerProgram, err := CompileAnonymous(`
 System.assertEquals('getPaymentLinesByIds', stubbedMethodName);
@@ -3593,8 +3658,13 @@ func TestExecFrameworkIDGeneratorOrganizationAvoidsLocalOrgID(t *testing.T) {
 	program, err := CompileAnonymous(`
 String generated = String.valueOf(fflib_IDGenerator.generate(Organization.SObjectType));
 System.assertNotEquals(UserInfo.getOrganizationId(), generated);
-System.assertNotEquals(UserInfo.getUserId(), fflib_IDGenerator.generate(User.SObjectType));
-`)
+Id firstUser = fflib_IDGenerator.generate(User.SObjectType);
+Id secondUser = fflib_IDGenerator.generate(User.SObjectType);
+Id secondOrg = fflib_IDGenerator.generate(Organization.SObjectType);
+System.assertNotEquals(UserInfo.getUserId(), firstUser);
+System.assertNotEquals(firstUser, secondUser);
+System.assertNotEquals(generated, secondOrg);
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}

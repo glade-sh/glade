@@ -4002,6 +4002,31 @@ System.runAs(u) {
 	}
 }
 
+func TestExecSeedProfilesIncludePortalUserTypes(t *testing.T) {
+	program, err := CompileAnonymous(`
+Profile p = [
+	SELECT Id, UserType
+	FROM Profile
+	WHERE UserType = 'PowerCustomerSuccess' OR UserType = 'CspLitePortal'
+	ORDER BY CreatedDate DESC
+	LIMIT 1
+];
+System.assertNotEquals(null, p.Id);
+System.assert(p.UserType == 'PowerCustomerSuccess' || p.UserType == 'CspLitePortal');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecWithSharingRunAsCanSeeOwnPermissionSetAssignment(t *testing.T) {
 	program, err := CompileAnonymous(`
 PermissionSet ps = new PermissionSet(
@@ -8941,14 +8966,14 @@ User u = new User(
 insert u;
 insert new PermissionSetAssignment(AssigneeId = u.Id, PermissionSetId = ps.Id);
 System.runAs(u) {
-	System.assert(Account.SObjectType.getDescribe().isAccessible());
-	System.assert(!Account.SObjectType.getDescribe().isCreateable());
-	System.assert(!Lead.SObjectType.getDescribe().isUpdateable());
-	System.assert(!Opportunity.SObjectType.getDescribe().isDeletable());
-	System.assert(!Account.Name.getDescribe().isCreateable());
-	System.assert(Contact.LastName.getDescribe().isAccessible());
-	System.assert(Contact.Email.getDescribe().isAccessible());
-	System.assert(!Lead.Company.getDescribe().isUpdateable());
+	System.assert(Account.SObjectType.getDescribe().isAccessible(), 'Account should be readable through assigned permission set');
+	System.assert(!Account.SObjectType.getDescribe().isCreateable(), 'Account should not be createable');
+	System.assert(!Lead.SObjectType.getDescribe().isUpdateable(), 'Lead should not be updateable');
+	System.assert(!Opportunity.SObjectType.getDescribe().isDeletable(), 'Opportunity should not be deleteable');
+	System.assert(!Account.Name.getDescribe().isCreateable(), 'Account.Name should not be createable');
+	System.assert(Contact.LastName.getDescribe().isAccessible(), 'Contact.LastName should stay baseline readable');
+	System.assert(Contact.Email.getDescribe().isAccessible(), 'Contact.Email should be readable through assigned field permission');
+	System.assert(!Lead.Company.getDescribe().isUpdateable(), 'Lead.Company should not be updateable');
 }
 Profile admin = [SELECT Id FROM Profile WHERE Name = 'System Administrator'];
 User sys = new User(
@@ -8964,9 +8989,9 @@ User sys = new User(
 );
 insert sys;
 System.runAs(sys) {
-	System.assert(Account.SObjectType.getDescribe().isCreateable());
-	System.assert(Account.Name.getDescribe().isCreateable());
-	System.assert(Lead.Company.getDescribe().isUpdateable());
+	System.assert(Account.SObjectType.getDescribe().isCreateable(), 'admin Account should be createable');
+	System.assert(Account.Name.getDescribe().isCreateable(), 'admin Account.Name should be createable');
+	System.assert(Lead.Company.getDescribe().isUpdateable(), 'admin Lead.Company should be updateable');
 }
 `)
 	if err != nil {
@@ -8978,6 +9003,52 @@ System.runAs(sys) {
 	storage.EnsureStandardObject(&org, "Contact")
 	storage.EnsureStandardObject(&org, "Lead")
 	storage.EnsureStandardObject(&org, "Opportunity")
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribePermissionsUseProfileOwnedPermissionSetRows(t *testing.T) {
+	program, err := CompileAnonymous(`
+	PermissionSet ps = [
+		SELECT Id, Profile.Id, Profile.Name
+		FROM PermissionSet
+		WHERE IsOwnedByProfile = true
+		AND Profile.UserType = 'Standard'
+		AND Id NOT IN (
+			SELECT ParentId
+			FROM ObjectPermissions
+			WHERE SObjectType = 'Account'
+			AND PermissionsRead = true
+		)
+		LIMIT 1
+	];
+	System.assertEquals('Minimum Access - Salesforce', ps.Profile.Name);
+	User u = new User(
+		Username = 'profile-owned-no-account@example.invalid',
+		Alias = 'poacct',
+		Email = 'profile-owned-no-account@example.invalid',
+		LastName = 'ProfileOwned',
+		ProfileId = ps.Profile.Id,
+		TimeZoneSidKey = 'UTC',
+		LocaleSidKey = 'en_US',
+		LanguageLocaleKey = 'en_US',
+		EmailEncodingKey = 'UTF-8'
+	);
+	insert u;
+	System.runAs(u) {
+		System.assertEquals(false, Account.SObjectType.getDescribe().isAccessible());
+		System.assertEquals(false, Account.Name.getDescribe().isAccessible());
+	}
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
@@ -9077,6 +9148,53 @@ System.assertEquals(1, [SELECT Id FROM Account].size());
 			"ContactId": storage.IDValue("003000000000001"),
 		},
 	})
+	if err := machine.RegisterClass(Class{Name: "SharingProbe", Modifiers: []string{"with sharing"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.ExecuteInClass(program, "SharingProbe"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecWithSharingHonorsManualAccountShare(t *testing.T) {
+	program, err := CompileAnonymous(`
+Profile p = [SELECT Id FROM Profile WHERE Name = 'Standard User'];
+User u = new User(
+	Username = 'shared-account@example.invalid',
+	Alias = 'share',
+	Email = 'shared-account@example.invalid',
+	LastName = 'Shared',
+	ProfileId = p.Id,
+	TimeZoneSidKey = 'UTC',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	EmailEncodingKey = 'UTF-8'
+);
+insert u;
+Account a = new Account(Name = 'Shared Account');
+insert a;
+insert new AccountShare(
+	AccountId = a.Id,
+	UserOrGroupId = u.Id,
+	AccountAccessLevel = 'Edit',
+	OpportunityAccessLevel = 'Read'
+);
+System.runAs(u) {
+	System.assertEquals(1, [SELECT Id FROM Account WHERE Id = :a.Id].size());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "AccountShare")
+	account := org.Objects["Account"]
+	account.Definition.SharingModel = "Private"
+	org.Objects["Account"] = account
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{Name: "SharingProbe", Modifiers: []string{"with sharing"}}); err != nil {
 		t.Fatal(err)
 	}
