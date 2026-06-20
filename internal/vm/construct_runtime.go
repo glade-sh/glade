@@ -188,7 +188,7 @@ func (vm *VM) constructCollectionValue(typeName string, args []Value, namedArgs 
 		if len(args) == 1 && (args[0].Kind == ValueList || args[0].Kind == ValueMap || typedNullCollectionBase(args[0]) == "List") {
 			source := args[0]
 			if source.Kind == ValueNull {
-				source = Value{Kind: ValueList, Type: source.Type}
+				return Null, true, newExceptionError("System.NullPointerException", "Attempt to de-reference a null object")
 			}
 			if source.Kind == ValueMap {
 				records, ok := queryResultRecordsList(source)

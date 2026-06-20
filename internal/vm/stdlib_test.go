@@ -4025,6 +4025,7 @@ Long maxLong = Long.valueOf('+9223372036854775807');
 Decimal d = Decimal.valueOf('12.5');
 Decimal negativeDecimal = Decimal.valueOf(' -0.125 ');
 Decimal lowerCaseDecimal = decimal.valueOf('3.5');
+Decimal scaledNegative = Decimal.valueOf('-0.20');
 Double x = Double.valueOf('2.25');
 Double signedDouble = Double.valueOf(' +6.25 ');
 Decimal bigLong = Decimal.valueOf('3000000000');
@@ -4056,6 +4057,9 @@ System.assertEquals(12, d.longValue());
 System.assertEquals(3000000000, bigLong.longValue());
 System.assertEquals(12.5, d.doubleValue());
 System.assertEquals(12.5, d.abs());
+System.assertEquals(2, scaledNegative.abs().scale());
+System.assertEquals('0.20', Math.abs(scaledNegative).toPlainString());
+System.assertEquals(2, Math.abs(scaledNegative).scale());
 System.assertEquals(156.25, d.pow(2));
 System.assertEquals('12.5', d.format());
 System.assertEquals('10000.5', Decimal.valueOf('10000.5').toPlainString());
@@ -5216,8 +5220,12 @@ Account fromMore = more.get(b.Id);
 System.assertEquals('Beta', fromMore.Name);
 
 List<Account> maybeAccounts = null;
-Map<Id, Account> emptyById = new Map<Id, Account>(maybeAccounts);
-System.assert(emptyById.isEmpty());
+try {
+    new Map<Id, Account>(maybeAccounts);
+    System.assert(false, 'Expected null list map constructor to throw');
+} catch (System.NullPointerException e) {
+    System.assert(e.getMessage().contains('Attempt to de-reference a null object'));
+}
 	`)
 	if err != nil {
 		t.Fatal(err)

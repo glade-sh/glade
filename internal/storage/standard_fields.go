@@ -889,6 +889,14 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 	switch {
 	case stringsEqualFold(definition.APIName, "Account"):
 		markFieldRequired(definition, "Name")
+	case stringsEqualFold(definition.APIName, "AccountShare"):
+		ensureReferenceTarget(definition, "UserOrGroupId", "User")
+		markFieldCreateable(definition, "AccountId")
+		markFieldCreateable(definition, "UserOrGroupId")
+		markFieldCreateable(definition, "AccountAccessLevel")
+		markFieldCreateable(definition, "OpportunityAccessLevel")
+		markFieldCreateable(definition, "CaseAccessLevel")
+		markFieldCreateable(definition, "RowCause")
 	case stringsEqualFold(definition.APIName, "Asset"):
 		ensureField(definition, Field{APIName: "ExternalIdentifier", Label: "External Identifier", Type: FieldString, DisplayType: "STRING", Length: 255, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
 		ensureField(definition, Field{APIName: "CurrentMrr", Label: "Current MRR", Type: FieldDecimal, DisplayType: "CURRENCY", Precision: 18, Scale: 2, Createable: BoolFlag(true), Updateable: BoolFlag(true)})

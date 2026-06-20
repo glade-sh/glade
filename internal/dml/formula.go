@@ -1066,25 +1066,27 @@ func formulaRelationshipFieldValue(org *storage.OrgState, definition storage.Obj
 		if !ok {
 			return formulaValue{}, false
 		}
+		value, ok := formulaRecordField(currentRecord, lookupField.APIName)
+		if ok && value.Kind != storage.ValueNull {
+			parentID := idFromStorageValue(value)
+			if parentID == "" {
+				return formulaValue{kind: formulaNull}, true
+			}
+			if parentRecord, parentDefinition, ok := formulaParentRecord(*org, lookupField, parentID); ok {
+				currentRecord = parentRecord
+				currentDefinition = parentDefinition
+				continue
+			}
+		}
 		if parentRecord, parentDefinition, ok := formulaParentRelationshipRecord(*org, currentRecord, lookupField, relationship, resolutionNamespace); ok {
 			currentRecord = parentRecord
 			currentDefinition = parentDefinition
 			continue
 		}
-		value, ok := formulaRecordField(currentRecord, lookupField.APIName)
 		if !ok || value.Kind == storage.ValueNull {
 			return formulaValue{kind: formulaNull}, true
 		}
-		parentID := idFromStorageValue(value)
-		if parentID == "" {
-			return formulaValue{kind: formulaNull}, true
-		}
-		parentRecord, parentDefinition, ok := formulaParentRecord(*org, lookupField, parentID)
-		if !ok {
-			return formulaValue{kind: formulaNull}, true
-		}
-		currentRecord = parentRecord
-		currentDefinition = parentDefinition
+		return formulaValue{kind: formulaNull}, true
 	}
 	last := parts[len(parts)-1]
 	resolutionNamespace := formulaSourceNamespace(namespace, currentDefinition)

@@ -160,14 +160,28 @@ func (e Engine) systemTimestamp() string {
 		now = e.Now().UTC()
 	}
 	if e.Org != nil {
+		var previous time.Time
+		if e.Org.SystemTimestampBase != "" && e.Org.SystemTimestampSequence > 0 {
+			if parsed, err := time.Parse(time.RFC3339, e.Org.SystemTimestampBase); err == nil {
+				previous = parsed.Add(time.Duration(e.Org.SystemTimestampSequence-1) * time.Second)
+			}
+		}
 		base := now.Format(time.RFC3339)
 		if e.Org.SystemTimestampBase != base {
 			e.Org.SystemTimestampBase = base
 			e.Org.SystemTimestampSequence = 0
 		}
 		offset := e.Org.SystemTimestampSequence
-		e.Org.SystemTimestampSequence++
-		now = now.Add(time.Duration(offset) * time.Second)
+		candidate := now.Add(time.Duration(offset) * time.Second)
+		nextSequence := offset + 1
+		if !previous.IsZero() && !candidate.After(previous) {
+			candidate = previous.Add(time.Second)
+			if delta := candidate.Sub(now); delta >= 0 {
+				nextSequence = int64(delta/time.Second) + 1
+			}
+		}
+		e.Org.SystemTimestampSequence = nextSequence
+		now = candidate
 	}
 	return now.Format(time.RFC3339)
 }

@@ -3046,6 +3046,71 @@ func TestExecuteEvaluatesParentFormulaField(t *testing.T) {
 	}
 }
 
+func TestExecuteParentFormulaPrefersCurrentLookupRecordOverEmbeddedParent(t *testing.T) {
+	org := storage.NewOrgState()
+	lineDefinition := storage.ObjectDefinition{
+		APIName:   "OrderItemLine__c",
+		KeyPrefix: "a02",
+		Fields: map[string]storage.Field{
+			"Status__c": {APIName: "Status__c", Type: storage.FieldPicklist},
+		},
+	}
+	merchandiseDefinition := storage.ObjectDefinition{
+		APIName:   "Merchandise__c",
+		KeyPrefix: "a03",
+		Fields: map[string]storage.Field{
+			"OrderItemLine__c": {
+				APIName:          "OrderItemLine__c",
+				Type:             storage.FieldReference,
+				ReferenceTo:      []string{"OrderItemLine__c"},
+				RelationshipName: "Merchandises",
+			},
+			"Status__c": {
+				APIName: "Status__c",
+				Type:    storage.FieldCalculated,
+				Formula: "IF(ISBLANK(TEXT(OrderItemLine__r.Status__c)),'Imported',TEXT(OrderItemLine__r.Status__c))",
+			},
+		},
+	}
+	org.Objects["OrderItemLine__c"] = storage.ObjectState{
+		Definition: lineDefinition,
+		Records: map[storage.ID]storage.Record{
+			"a02000000000001": {
+				ID:     "a02000000000001",
+				Object: "OrderItemLine__c",
+				Fields: map[string]storage.Value{"Status__c": storage.StringValue("Cancelled")},
+			},
+		},
+	}
+	org.Objects["Merchandise__c"] = storage.ObjectState{
+		Definition: merchandiseDefinition,
+		Records: map[storage.ID]storage.Record{
+			"a03000000000001": {
+				ID:     "a03000000000001",
+				Object: "Merchandise__c",
+				Fields: map[string]storage.Value{
+					"OrderItemLine__c": storage.IDValue("a02000000000001"),
+				},
+				ParentRelationships: map[string]storage.Record{
+					"OrderItemLine__r": {
+						ID:     "a02000000000001",
+						Object: "OrderItemLine__c",
+						Fields: map[string]storage.Value{"Status__c": storage.StringValue("Active")},
+					},
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, Status__c FROM Merchandise__c WHERE Id = 'a03000000000001'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["Status__c"].String != "Cancelled" {
+		t.Fatalf("parent formula used stale embedded parent = %#v", result)
+	}
+}
+
 func TestExecuteNotInIgnoresNullCandidates(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Parent__c"] = storage.ObjectState{

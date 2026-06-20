@@ -263,10 +263,10 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 		Records:    make(map[ID]Record),
 	}
 	EnsureDeterministicPlatformData(&org)
-	for _, objectName := range []string{"Organization", "UserRole", "User", "UserLogin", "Profile", "UserLicense", "Network", "PermissionSet", "PermissionSetAssignment", "RecordType"} {
+	for _, objectName := range []string{"Organization", "UserRole", "User", "UserLogin", "Profile", "UserLicense", "Network", "PermissionSet", "PermissionSetAssignment", "ObjectPermissions", "RecordType"} {
 		want := 1
 		if objectName == "Profile" {
-			want = 7
+			want = 8
 		}
 		if objectName == "User" {
 			want = 2
@@ -278,7 +278,10 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 			want = 1
 		}
 		if objectName == "PermissionSet" {
-			want = 9
+			want = 10
+		}
+		if objectName == "ObjectPermissions" {
+			want = 6
 		}
 		if objectName == "UserLicense" {
 			want = 2
@@ -317,11 +320,14 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if _, ok := org.Objects["RecordType"].Records[recordTypeID]; !ok {
 		t.Fatalf("missing RecordType record %s: %#v", recordTypeID, org.Objects["RecordType"].Records)
 	}
-	if len(org.Objects["User"].Records) != 2 || len(org.Objects["UserLogin"].Records) != 2 || len(org.Objects["Profile"].Records) != 7 || len(org.Objects["UserLicense"].Records) != 2 {
+	if len(org.Objects["User"].Records) != 2 || len(org.Objects["UserLogin"].Records) != 2 || len(org.Objects["Profile"].Records) != 8 || len(org.Objects["UserLicense"].Records) != 2 {
 		t.Fatalf("platform records = %#v", InspectOrg("", org))
 	}
 	if _, ok := findRecordByStringField(org.Objects["Profile"].Records, "Name", "Customer Community Guest User"); !ok {
 		t.Fatalf("missing guest profile: %#v", org.Objects["Profile"].Records)
+	}
+	if profile, ok := findRecordByStringField(org.Objects["Profile"].Records, "Name", "Customer Community Login User"); !ok || profile.Fields["UserType"].String != "CspLitePortal" {
+		t.Fatalf("community login profile = %#v, %v", profile, ok)
 	}
 	user, ok := org.Objects["User"].Records["005000000000001"]
 	if !ok {

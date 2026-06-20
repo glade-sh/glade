@@ -2287,6 +2287,9 @@ func generatedPlatformTypeName(typeName string) bool {
 
 func managedPassiveReturnForMethod(typeName, method string, args []Value) (Value, bool, error) {
 	name := strings.ToLower(apexMethodMemberName(method))
+	if value, ok := passiveFormattingAccessorDefault(name, "", args); ok {
+		return value, true, nil
+	}
 	switch {
 	case strings.EqualFold(name, "enter"):
 		return Null, true, nil
@@ -2306,6 +2309,55 @@ func managedPassiveReturnForMethod(typeName, method string, args []Value) (Value
 		return Bool(false), true, nil
 	default:
 		return Null, false, nil
+	}
+}
+
+func passiveFormattingAccessorDefault(method, returnType string, args []Value) (Value, bool) {
+	if len(args) != 0 {
+		return Null, false
+	}
+	name := strings.ToLower(apexMethodMemberName(method))
+	switch name {
+	case "getdecimalplaces", "getgroupsizes":
+		if returnType != "" && !strings.EqualFold(returnType, "Integer") {
+			return Null, false
+		}
+		if name == "getgroupsizes" {
+			return Int(3), true
+		}
+		return Int(2), true
+	case "getdecimalseparator":
+		if returnType != "" && !strings.EqualFold(returnType, "String") {
+			return Null, false
+		}
+		return String("."), true
+	case "getgroupseparator":
+		if returnType != "" && !strings.EqualFold(returnType, "String") {
+			return Null, false
+		}
+		return String(","), true
+	case "getnegativepattern":
+		if returnType != "" && !strings.EqualFold(returnType, "String") {
+			return Null, false
+		}
+		return String("($n)"), true
+	case "getpositivepattern":
+		if returnType != "" && !strings.EqualFold(returnType, "String") {
+			return Null, false
+		}
+		return String("$n"), true
+	case "getsymbol":
+		if returnType != "" && !strings.EqualFold(returnType, "String") {
+			return Null, false
+		}
+		return String("$"), true
+	case "shouldformatgroup":
+		if returnType != "" && !strings.EqualFold(returnType, "Boolean") {
+			return Null, false
+		}
+		return Bool(true), true
+	default:
+		return Null, false
 	}
 }
 

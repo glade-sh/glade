@@ -19,13 +19,35 @@ func (vm *VM) callFrameworkIDGeneratorGenerate(method Method, args []Value) (Val
 		return Null, false
 	}
 	if strings.EqualFold(objectName, "Organization") {
-		return platformScalar("Id", "00D000000000002"), true
+		return platformScalar("Id", vm.nextFrameworkGeneratedID(objectName, "00D", 1)), true
 	}
 	if strings.EqualFold(objectName, "User") {
-		return platformScalar("Id", "005000000000999"), true
+		return platformScalar("Id", vm.nextFrameworkGeneratedID(objectName, "005", 998)), true
 	}
 	return Null, false
 }
+
+func (vm *VM) nextFrameworkGeneratedID(objectName, prefix string, floor uint64) string {
+	if vm == nil {
+		return fmt.Sprintf("%s%012d", prefix, floor+1)
+	}
+	if vm.frameworkIDSequences == nil {
+		vm.frameworkIDSequences = make(map[string]uint64)
+	}
+	next := vm.frameworkIDSequences[objectName]
+	if next < floor {
+		next = floor
+	}
+	if vm.Org != nil && vm.Org.IDSequences != nil {
+		if orgNext := vm.Org.IDSequences[objectName]; orgNext > next {
+			next = orgNext
+		}
+	}
+	next++
+	vm.frameworkIDSequences[objectName] = next
+	return fmt.Sprintf("%s%012d", prefix, next)
+}
+
 func (vm *VM) callFrameworkSObjectDescribeMember(receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
 	if strings.EqualFold(receiver.Type, "framework_SObjectDescribe") {
 		return vm.callFrameworkSObjectDescribe(receiver, method, args, result)

@@ -10373,6 +10373,39 @@ System.assertEquals(1, rows.size());
 	}
 }
 
+func TestExecAbortJobAcceptsQueriedCronTriggerIDString(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id scheduleId = System.schedule('nightly', '0 0 0 * * ?', new ScheduledWorker());
+CronTrigger row = [SELECT Id FROM CronTrigger WHERE Id = :scheduleId LIMIT 1];
+String queriedId = String.valueOf(row.Id);
+System.abortJob(queriedId);
+List<AsyncApexJob> rows = [
+	SELECT Id
+	FROM AsyncApexJob
+	WHERE JobType = 'ScheduledApex' AND Status = 'Aborted'
+];
+System.assertEquals(1, rows.size());
+System.assertEquals(0, [
+	SELECT COUNT()
+	FROM CronTrigger
+	WHERE Id = :queriedId AND NextFireTime != NULL
+]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "ScheduledWorker", Interfaces: []string{"Schedulable"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStopTestAllowsScheduledApexToEnqueueMultipleQueueables(t *testing.T) {
 	scheduledProgram, err := CompileAnonymous(`
 System.enqueueJob(new FirstWorker());

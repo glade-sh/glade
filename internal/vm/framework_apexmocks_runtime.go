@@ -190,6 +190,9 @@ func (vm *VM) frameworkStubQualifiedMethod(receiver Value, target Method) Value 
 	return methodValue
 }
 func (vm *VM) unstubbedFrameworkMockReturnFallback(receiver Value, method string, target Method, args []Value, result *Result) (Value, bool, error) {
+	if value, ok := passiveFormattingAccessorDefault(method, target.ReturnType, args); ok {
+		return value, true, nil
+	}
 	if concreteType, ok := vm.unstubbedUnitOfWorkFallbackType(receiver.Type, method, target); ok {
 		ctorArgs := args
 		if len(ctorArgs) == 0 {
