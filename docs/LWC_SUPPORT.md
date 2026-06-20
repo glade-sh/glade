@@ -1,5 +1,9 @@
 # LWC Local Support
 
+> Repo maintainer reference. User-facing setup lives in
+> <https://glade.sh/guide/lwc-local-shell>. Maintainer oracle capture belongs in
+> <https://glade.sh/maintainer/glade-tools>.
+
 This page lists the user-facing LWC preview feature surface for the local shell.
 The feature is centered on `glade dev lwc`, the home routes `/` and `/lwc`, the
 builder route `/lwc/builder`, and `/lwc/preview/*` routes. Visualforce appears

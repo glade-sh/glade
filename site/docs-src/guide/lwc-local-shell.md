@@ -371,21 +371,10 @@ The LWC shell supports:
 supports local URL generation and navigation for supported page targets.
 
 Checked capture rows are generated in `docs/generated/LWC_SHELL_SUPPORT.md`.
-They record the local support matrix for the LWC shell. The sibling
-`glade-tools` command can also run a two-sided browser oracle: local Glade shell
-DOM plus authenticated Salesforce DOM for deployed Lightning paths.
+They record the local support matrix for the LWC shell.
 
-```bash
-cd ../glade-tools
-go run ./cmd/glade-plugin-compat lwc capture \
-  --target-org <target-org> \
-  --project ../glade/testdata/local-tests/lwc-shell \
-  --targets app-page,custom-tab,url-addressable-component \
-  --local-browser-capture \
-  --glade-bin /tmp/glade-lwc-shell-bin \
-  --browser-capture \
-  --out /tmp/glade-lwc-two-sided-browser-check.json
-```
+Maintainers can run browser oracle captures from the `glade-tools` lane. See
+[glade-tools maintainer guide](/maintainer/glade-tools).
 
 That capture stores stable local and Salesforce paths and browser evidence
 only. It does not write frontdoor login URLs or one-time tokens. When both
@@ -404,20 +393,8 @@ hosted follow-up. Community routes have local Go and Playwright runtime
 coverage in this build; a refreshed compatibility capture should add the
 external support row for the community target.
 
-Use local-only browser capture for community and expanded base-component
-fixture routes:
-
-```bash
-cd ../glade-tools
-go run ./cmd/glade-plugin-compat lwc capture \
-  --target-org <target-org> \
-  --project ../glade/testdata/local-tests/lwc-shell \
-  --targets community-page,package-phase1-base-components,phase3-base-components \
-  --skip-deploy \
-  --local-browser-capture \
-  --glade-bin /tmp/glade-lwc-shell-bin \
-  --out /tmp/glade-lwc-local-only-browser-check.json
-```
+Maintainers can also use that lane for local-only browser capture of community
+and expanded base-component fixture routes.
 
 ## Fixtures
 
