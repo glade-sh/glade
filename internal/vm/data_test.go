@@ -4201,10 +4201,11 @@ User u = new User(
 	EmailEncodingKey = 'UTF-8'
 );
 insert u;
-System.runAs(u) {
-	System.assertEquals(false, Case.SObjectType.getDescribe().isAccessible());
-	System.assertEquals(false, Case.CaseNumber.getDescribe().isAccessible());
-}
+	System.runAs(u) {
+		System.assertEquals(false, Case.SObjectType.getDescribe().isAccessible());
+		System.assertEquals(true, Case.RecordTypeId.getDescribe().isAccessible());
+		System.assertEquals(false, Case.CaseNumber.getDescribe().isAccessible());
+	}
 `)
 	if err != nil {
 		t.Fatal(err)
