@@ -687,6 +687,29 @@ func TestCloneRuntimeSharesChildRelationshipCachesForSameSchemaStamp(t *testing.
 	}
 }
 
+func TestCloneRuntimeSharesSOQLExecutionCacheForSameSchemaStamp(t *testing.T) {
+	base := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Parent__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Parent__c",
+		Fields: map[string]storage.Field{
+			"Name": {APIName: "Name", Type: storage.FieldString},
+		},
+	}}
+	base.SetOrg(&org)
+	clone := base.CloneRuntime(nil)
+
+	if base.soqlExecutionCache == nil {
+		t.Fatal("base SOQL execution cache was not initialized")
+	}
+	if clone.soqlExecutionCache == nil {
+		t.Fatal("clone SOQL execution cache was not initialized")
+	}
+	if clone.soqlExecutionCache != base.soqlExecutionCache {
+		t.Fatal("CloneRuntime did not share immutable SOQL execution cache")
+	}
+}
+
 func TestCloneRuntimeSharesLoadedAndLazyChildRelationshipCachesForSameSchemaStamp(t *testing.T) {
 	base := New(nil)
 	org := storage.NewOrgState()

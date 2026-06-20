@@ -3598,6 +3598,66 @@ func TestExecuteWithCacheConcurrentChildRelationshipResolution(t *testing.T) {
 	}
 }
 
+func TestValidateQueryReferencesUsesChildRelationshipExecutionCache(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+		},
+	}
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Contact",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "AccountId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account",
+				ChildRelationship:  "Contacts",
+			}},
+		},
+	}
+	query, err := Parse("SELECT Id, (SELECT Id, LastName FROM Contacts) FROM Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cache := NewExecutionCache()
+	childCache := newChildRelationshipQueryCache(cache)
+	account := org.Objects["Account"]
+
+	if err := validateQueryReferencesWithChildCache(org, account.Definition, query, query.SecurityMode, childCache); err != nil {
+		t.Fatal(err)
+	}
+	if len(cache.childRelationships) != 1 {
+		t.Fatalf("child relationship cache entries = %d, want 1", len(cache.childRelationships))
+	}
+}
+
+func TestNormalizeChildRelationshipSelectFieldsUsesExecutionCache(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Contact",
+			Fields:  map[string]storage.Field{"LastName": {APIName: "LastName", Type: storage.FieldString}},
+		},
+	}
+	cache := NewExecutionCache()
+	childCache := newChildRelationshipQueryCache(cache)
+	contact := org.Objects["Contact"]
+
+	fields := normalizeChildRelationshipSelectFields(org, "Contact", contact.Definition, []string{"Contact.LastName"}, childCache)
+	if len(fields) != 1 || fields[0] != "LastName" {
+		t.Fatalf("normalized fields = %#v, want LastName", fields)
+	}
+	if len(cache.childFieldQualifierMatches) != 1 {
+		t.Fatalf("field qualifier cache entries = %d, want 1", len(cache.childFieldQualifierMatches))
+	}
+}
+
 func TestExecuteChildRelationshipUsesStandardRelationshipWithoutMetadataRelation(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{

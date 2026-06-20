@@ -461,6 +461,7 @@ func (vm *VM) clearMetadataCaches() {
 	vm.jsonChildRelTypeCache = newJSONChildRelTypeLookupCache()
 	vm.sObjectFieldAliasCache = newSObjectFieldAliasLookupCache()
 	vm.fieldResolveCache = newFieldResolveLookupCache()
+	vm.soqlExecutionCache = nil
 	vm.dmlSummaryByChild = dml.NewSummaryRelationCache()
 	vm.loadedChildRelCache = newLoadedChildRelationshipLookupCache()
 	vm.lazyChildRelCache = newLazyChildRelationshipLookupCache()
