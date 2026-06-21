@@ -4,6 +4,35 @@
 
 No changes yet.
 
+## v0.2.3 - 2026-06-21
+
+Issue closeout:
+
+- Ships the private-corpus semantic-check fixes after `v0.2.2`.
+- `glade check --project .` now exits 0 for the NU private workspace with 5,005
+  Apex types, 65 triggers, 174 objects, and one performance warning.
+- `glade check --project .` now exits 0 for the NAMS workspace with 3,696 Apex
+  types, 79 triggers, 254 objects, and source-backed dependency diagnostics
+  downgraded to warnings.
+- The SF credential package still reports three real duplicate top-level Apex
+  classes inside its configured `sfdx-project.json` package root.
+
+Semantic checks:
+
+- Source-backed managed-package dependency source is indexed for consumer
+  symbols without leaking dependency-source diagnostics into consumer project
+  errors.
+- Source-backed dependency uncertainty is reported as warnings so large
+  source-backed workspaces can still finish a check when the diagnostics are not
+  project-owned errors.
+- SObject field-token property chains such as
+  `Schema.SObjectType.Account.fields.Name.label` infer `String`.
+- Inner classes can resolve outer static helper methods before falling back to
+  inherited `Object` methods.
+- Duplicate top-level class bodies keep their own members during body checks, so
+  duplicate-symbol reporting does not cascade into false missing-method errors.
+- SOQL aggregate foreach literals infer `AggregateResult` element types.
+
 ## v0.2.2 - 2026-06-21
 
 Issue closeout:
