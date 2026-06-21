@@ -64,6 +64,113 @@ func TestAnalyzeResolvesNamespaceQualifiedSchemaAliases(t *testing.T) {
 	}
 }
 
+func TestAnalyzeResolvesProjectLocalNamesAgainstNamespacedSchema(t *testing.T) {
+	index := typesys.Index{
+		Project: typesys.ProjectInfo{Namespace: "pkg"},
+		Types: []typesys.TypeSymbol{
+			{
+				Kind: apexast.DeclarationClass,
+				Name: "Hello",
+				File: "Hello.cls",
+				Members: []typesys.MemberSymbol{
+					{Kind: apexast.DeclarationMethod, Name: "run", Type: "List<Thing__c>"},
+					{Kind: apexast.DeclarationMethod, Name: "save", Parameters: []apexast.Parameter{{Name: "row", Type: "Thing__c"}}},
+				},
+			},
+		},
+		Triggers: []typesys.TriggerSymbol{{Name: "ThingTrigger", ObjectName: "Thing__c", File: "Thing.trigger"}},
+		Objects: []schema.Object{{
+			Name: "pkg__Thing__c",
+			Fields: []schema.Field{
+				{Name: "pkg__Parent__c", Type: "Lookup", ReferenceTo: []string{"Thing__c"}},
+			},
+		}},
+	}
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeProjectLocalSObjectFieldsAgainstNamespacedSchema(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesNamespacedFields.cls"), `
+public class UsesNamespacedFields {
+  public void run(Membership__c membership) {
+    Date nextStart = membership.StartDate__c.addMonths(1);
+    MembershipType__c membershipType = membership.MembershipType2__r;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "UsesNamespacedFields.cls")}}, schema.Schema{
+		Objects: []schema.Object{
+			{
+				Name: "pkg__Membership__c",
+				Fields: []schema.Field{
+					{Name: "pkg__StartDate__c", Type: "Date"},
+					{Name: "pkg__MembershipType2__c", Type: "Lookup", ReferenceTo: []string{"pkg__MembershipType__c"}, RelationshipName: "pkg__MembershipType2__r"},
+				},
+			},
+			{Name: "pkg__MembershipType__c"},
+		},
+	})
+	index.Project.Namespace = "pkg"
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA008" || diag.Code == "GLADESEMA018" || diag.Code == "GLADESEMA021" {
+			t.Fatalf("unexpected namespaced SObject field diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeSOQLCountExpressionAssignsInteger(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "CountsRows.cls"), `
+public class CountsRows {
+  public Integer run(String prefix) {
+    Integer rows = [SELECT COUNT() FROM Thing__c WHERE Name LIKE :prefix];
+    return rows;
+  }
+  public Integer returnCount() {
+    return [SELECT COUNT() FROM Thing__c WHERE Name != null];
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "CountsRows.cls")}}, schema.Schema{
+		Objects: []schema.Object{{Name: "Thing__c", Fields: []schema.Field{{Name: "Name", Type: "Text"}}}},
+	})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA018" || diag.Code == "GLADESEMA019" {
+			t.Fatalf("unexpected COUNT() type diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzePageReferenceMethodChainsUseReturnTypes(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesPageReference.cls"), `
+public class UsesPageReference {
+  public void run() {
+    PageReference pageRef = Page.OrderPayment;
+    String pageUrl = Page.OrderPayment.getUrl();
+    String pageContent = Page.GetSessionId.getContent().toString();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "UsesPageReference.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA018" {
+			t.Fatalf("unexpected PageReference chain type diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestSemaResolveFieldUsesShortCandidateIndex(t *testing.T) {
 	model := make(map[string]typeMembers)
 	for i := 0; i < 1000; i++ {
@@ -3450,6 +3557,38 @@ public class OrderLine {
 	for _, diag := range result.Diagnostics {
 		if diag.Code == "GLADESEMA009" && strings.Contains(diag.Message, "Product.newInstance") {
 			t.Fatalf("unexpected relationship field overload diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeSelfLookupRelationshipNameStaysScalar(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesSelfLookup.cls"), `
+public class UsesSelfLookup {
+  public void run(Account account) {
+    Account current = account;
+    current = current.PrimaryAffiliation__r;
+    Id parentId = current.PrimaryAffiliation__r.Id;
+  }
+}
+`)
+	index := typesys.Build(
+		project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "UsesSelfLookup.cls")}},
+		schema.Schema{Objects: []schema.Object{{
+			Name: "Account",
+			Fields: []schema.Field{{
+				Name:             "PrimaryAffiliation__c",
+				Type:             "Lookup",
+				ReferenceTo:      []string{"Account"},
+				RelationshipName: "PrimaryAffiliation__r",
+			}},
+		}}},
+	)
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA018" || diag.Code == "GLADESEMA021" {
+			t.Fatalf("unexpected self lookup relationship diagnostic: %#v", result.Diagnostics)
 		}
 	}
 }

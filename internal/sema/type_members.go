@@ -103,6 +103,7 @@ func readSemaSource(path string, cache map[string]string) (string, bool) {
 func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 	out := make(map[string]typeMembers)
 	shortAliases := make(map[string][]string)
+	projectNamespace := index.Project.Namespace
 	for _, typ := range index.Types {
 		members := typeMembers{
 			name:       typ.Name,
@@ -198,11 +199,21 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 		semaAddCommonSObjectFields(objectMembers.fields)
 		for _, field := range object.Fields {
 			if field.Name != "" {
-				objectMembers.fields[normalizeName(field.Name)] = typesys.MemberSymbol{
+				semaAddSchemaFieldMember(objectMembers.fields, projectNamespace, typesys.MemberSymbol{
 					Kind:      apexast.DeclarationField,
 					Name:      field.Name,
 					Type:      semaApexTypeForSchemaField(field),
 					Modifiers: []string{"public"},
+				})
+				if strings.EqualFold(field.Type, "Location") {
+					for _, componentName := range semaLocationComponentFieldNames(field.Name) {
+						semaAddSchemaFieldMember(objectMembers.fields, projectNamespace, typesys.MemberSymbol{
+							Kind:      apexast.DeclarationField,
+							Name:      componentName,
+							Type:      "Decimal",
+							Modifiers: []string{"public"},
+						})
+					}
 				}
 			}
 			if field.RelationshipName != "" && len(field.ReferenceTo) != 0 {
@@ -210,24 +221,24 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 				if len(field.ReferenceTo) == 1 {
 					relationshipType = field.ReferenceTo[0]
 				}
-				objectMembers.fields[normalizeName(field.RelationshipName)] = typesys.MemberSymbol{
+				semaAddSchemaFieldMember(objectMembers.fields, projectNamespace, typesys.MemberSymbol{
 					Kind:      apexast.DeclarationField,
 					Name:      field.RelationshipName,
 					Type:      relationshipType,
 					Modifiers: []string{"public"},
-				}
+				})
 			}
 			if relationshipFieldName := semaParentRelationshipFieldName(field.Name); relationshipFieldName != "" && len(field.ReferenceTo) != 0 {
 				relationshipType := "SObject"
 				if len(field.ReferenceTo) == 1 {
 					relationshipType = field.ReferenceTo[0]
 				}
-				objectMembers.fields[normalizeName(relationshipFieldName)] = typesys.MemberSymbol{
+				semaAddSchemaFieldMember(objectMembers.fields, projectNamespace, typesys.MemberSymbol{
 					Kind:      apexast.DeclarationField,
 					Name:      relationshipFieldName,
 					Type:      relationshipType,
 					Modifiers: []string{"public"},
-				}
+				})
 			}
 			childRelationshipNames := []string{}
 			if field.ChildRelationshipName != "" {
@@ -260,27 +271,27 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 					parentMembers.fields = make(map[string]typesys.MemberSymbol)
 				}
 				for _, childRelationshipName := range childRelationshipNames {
-					parentMembers.fields[normalizeName(childRelationshipName)] = typesys.MemberSymbol{
+					semaAddSchemaFieldMemberIfAbsent(parentMembers.fields, projectNamespace, typesys.MemberSymbol{
 						Kind:      apexast.DeclarationField,
 						Name:      childRelationshipName,
 						Type:      "List<" + object.Name + ">",
 						Modifiers: []string{"public"},
-					}
+					})
 					if strings.HasSuffix(childRelationshipName, "__r") {
 						continue
 					}
 					childRelationshipAlias := childRelationshipName + "__r"
-					parentMembers.fields[normalizeName(childRelationshipAlias)] = typesys.MemberSymbol{
+					semaAddSchemaFieldMemberIfAbsent(parentMembers.fields, projectNamespace, typesys.MemberSymbol{
 						Kind:      apexast.DeclarationField,
 						Name:      childRelationshipAlias,
 						Type:      "List<" + object.Name + ">",
 						Modifiers: []string{"public"},
-					}
+					})
 				}
-				out[parentKey] = parentMembers
+				semaStoreSObjectTypeMembers(out, projectNamespace, parent, parentMembers)
 			}
 		}
-		out[objectKey] = objectMembers
+		semaStoreSObjectTypeMembers(out, projectNamespace, object.Name, objectMembers)
 	}
 	addStandardSObjectMembers(out)
 	semaApplyPlatformInterfaceOverlays(out)
@@ -352,6 +363,58 @@ func registerSemaShortCandidateIndex(model map[string]typeMembers) {
 
 func unregisterSemaShortCandidateIndex(model map[string]typeMembers) {
 	semaShortCandidateIndexes.Delete(semaModelCacheKey(model))
+}
+
+func semaAddSchemaFieldMember(fields map[string]typesys.MemberSymbol, namespace string, member typesys.MemberSymbol) {
+	if fields == nil || strings.TrimSpace(member.Name) == "" {
+		return
+	}
+	fields[normalizeName(member.Name)] = member
+	if localName, ok := semaProjectLocalAPIName(namespace, member.Name); ok {
+		alias := member
+		alias.Name = localName
+		fields[normalizeName(localName)] = alias
+	}
+}
+
+func semaAddSchemaFieldMemberIfAbsent(fields map[string]typesys.MemberSymbol, namespace string, member typesys.MemberSymbol) {
+	if fields == nil || strings.TrimSpace(member.Name) == "" {
+		return
+	}
+	if _, exists := fields[normalizeName(member.Name)]; exists {
+		return
+	}
+	fields[normalizeName(member.Name)] = member
+	if localName, ok := semaProjectLocalAPIName(namespace, member.Name); ok {
+		localKey := normalizeName(localName)
+		if _, exists := fields[localKey]; !exists {
+			alias := member
+			alias.Name = localName
+			fields[localKey] = alias
+		}
+	}
+}
+
+func semaLocationComponentFieldNames(fieldName string) []string {
+	if !strings.HasSuffix(fieldName, "__c") {
+		return nil
+	}
+	base := strings.TrimSuffix(fieldName, "__c")
+	return []string{base + "__Latitude__s", base + "__Longitude__s"}
+}
+
+func semaStoreSObjectTypeMembers(out map[string]typeMembers, namespace, objectName string, members typeMembers) {
+	key := normalizeName(objectName)
+	if key == "" {
+		return
+	}
+	out[key] = members
+	if localName, ok := semaProjectLocalAPIName(namespace, objectName); ok {
+		localKey := normalizeName(localName)
+		if existing, exists := out[localKey]; !exists || existing.sobject {
+			out[localKey] = members
+		}
+	}
 }
 
 func semaShortCandidateKeys(model map[string]typeMembers, short string) []string {
@@ -619,7 +682,9 @@ func semaAddCommonSObjectFields(fields map[string]typesys.MemberSymbol) {
 	for _, field := range []schema.Field{
 		{Name: "Id", Type: "Id"},
 		{Name: "Name", Type: "Text"},
+		{Name: "IsDeleted", Type: "Checkbox"},
 		{Name: "CreatedDate", Type: "Datetime"},
+		{Name: "LastActivityDate", Type: "Date"},
 		{Name: "LastModifiedDate", Type: "Datetime"},
 		{Name: "SystemModstamp", Type: "Datetime"},
 		{Name: "CreatedById", Type: "Id"},

@@ -71,6 +71,21 @@ func TestParseBackslashEscapedSOQLStringLiteral(t *testing.T) {
 	}
 }
 
+func TestParseSOQLSkipsComments(t *testing.T) {
+	query, err := Parse(`SELECT
+  Name,
+  // HiddenRevenue__c,
+  /* HiddenCost__c, */
+  TotalRevenue__c
+FROM Event__c`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if query.Object != "Event__c" || len(query.Fields) != 2 || query.Fields[0] != "Name" || query.Fields[1] != "TotalRevenue__c" {
+		t.Fatalf("query = %#v", query)
+	}
+}
+
 func TestExecuteUsingScopeEverythingReturnsVisibleRows(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{

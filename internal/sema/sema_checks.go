@@ -124,22 +124,19 @@ func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnos
 }
 
 type querySemanticsChecker struct {
-	objects map[string]schema.Object
-	fields  map[string]map[string]schema.Field
+	namespace string
+	objects   map[string]schema.Object
+	fields    map[string]map[string]schema.Field
 }
 
 func newQuerySemanticsChecker(index typesys.Index) querySemanticsChecker {
 	checker := querySemanticsChecker{
-		objects: make(map[string]schema.Object, len(index.Objects)),
-		fields:  make(map[string]map[string]schema.Field, len(index.Objects)),
+		namespace: index.Project.Namespace,
+		objects:   make(map[string]schema.Object, len(index.Objects)),
+		fields:    make(map[string]map[string]schema.Field, len(index.Objects)),
 	}
 	for _, object := range index.Objects {
-		checker.objects[strings.ToLower(object.Name)] = object
-		fieldMap := make(map[string]schema.Field, len(object.Fields))
-		for _, field := range object.Fields {
-			fieldMap[strings.ToLower(field.Name)] = field
-		}
-		checker.fields[strings.ToLower(object.Name)] = fieldMap
+		checker.addObject(object)
 	}
 	return checker
 }
@@ -268,6 +265,7 @@ func (c querySemanticsChecker) checkSOQLCondition(objectName string, condition s
 }
 
 func (c querySemanticsChecker) checkSOQLField(objectName, fieldPath string, ctx queryTextContext, cursor int) []diagnostic.Diagnostic {
+	fieldPath = semaSOQLFieldReference(fieldPath)
 	if fieldPath == "" || fieldPath == "COUNT()" || strings.HasPrefix(strings.ToUpper(fieldPath), "FIELDS(") || strings.Contains(fieldPath, "(") {
 		return nil
 	}
@@ -299,6 +297,22 @@ func (c querySemanticsChecker) checkSOQLField(objectName, fieldPath string, ctx 
 	return nil
 }
 
+func semaSOQLFieldReference(fieldPath string) string {
+	fieldPath = strings.TrimSpace(fieldPath)
+	if fieldPath == "" || strings.Contains(fieldPath, "(") {
+		return fieldPath
+	}
+	parts := strings.Fields(fieldPath)
+	switch {
+	case len(parts) >= 3 && strings.EqualFold(parts[len(parts)-2], "AS"):
+		return strings.Join(parts[:len(parts)-2], " ")
+	case len(parts) >= 2:
+		return parts[0]
+	default:
+		return fieldPath
+	}
+}
+
 func (c querySemanticsChecker) checkSOSLQuery(query sosl.Query, ctx queryTextContext) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	cursor := keywordIndexFold(ctx.queryText, "RETURNING")
@@ -322,6 +336,10 @@ func (c querySemanticsChecker) checkSOSLQuery(query sosl.Query, ctx queryTextCon
 				cursor = maxInt(fieldCursor+len(field), cursor)
 				continue
 			}
+			if strings.Contains(field, ".") && len(c.checkSOQLField(object.Name, field, ctx, cursor)) == 0 {
+				cursor = maxInt(fieldCursor+len(field), cursor)
+				continue
+			}
 			if _, ok := c.field(object.Name, field); !ok {
 				diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_SOSL_FIELD", fmt.Sprintf("SOSL RETURNING references unknown field %s.%s", object.Name, field), field, fieldCursor))
 			}
@@ -332,9 +350,14 @@ func (c querySemanticsChecker) checkSOSLQuery(query sosl.Query, ctx queryTextCon
 }
 
 func (c querySemanticsChecker) object(name string) (schema.Object, bool) {
-	key := strings.ToLower(strings.TrimSpace(name))
+	key := normalizeName(name)
 	if object, ok := c.objects[key]; ok {
 		return object, true
+	}
+	if namespaced, ok := semaProjectNamespacedAPIName(c.namespace, name); ok {
+		if object, ok := c.objects[normalizeName(namespaced)]; ok {
+			return object, true
+		}
 	}
 	definition, ok := storage.StandardObjectDefinition(name)
 	if !ok {
@@ -346,36 +369,73 @@ func (c querySemanticsChecker) object(name string) (schema.Object, bool) {
 }
 
 func (c querySemanticsChecker) field(objectName, fieldName string) (schema.Field, bool) {
-	if _, ok := c.object(objectName); !ok {
-		return schema.Field{}, false
-	}
-	fields, ok := c.fields[strings.ToLower(objectName)]
+	object, ok := c.object(objectName)
 	if !ok {
 		return schema.Field{}, false
 	}
-	field, ok := fields[strings.ToLower(fieldName)]
-	return field, ok
+	fields, ok := c.fields[normalizeName(object.Name)]
+	if !ok {
+		return schema.Field{}, false
+	}
+	if field, ok := fields[normalizeName(fieldName)]; ok {
+		return field, true
+	}
+	if namespaced, ok := semaProjectNamespacedAPIName(c.namespace, fieldName); ok {
+		if field, ok := fields[normalizeName(namespaced)]; ok {
+			return field, true
+		}
+	}
+	if field, ok := c.locationComponentField(object.Name, fieldName); ok {
+		return field, true
+	}
+	return schema.Field{}, false
+}
+
+func (c querySemanticsChecker) locationComponentField(objectName, fieldName string) (schema.Field, bool) {
+	component := ""
+	baseName := ""
+	switch {
+	case strings.HasSuffix(fieldName, "__Latitude__s"):
+		component = "Latitude"
+		baseName = strings.TrimSuffix(fieldName, "__Latitude__s") + "__c"
+	case strings.HasSuffix(fieldName, "__Longitude__s"):
+		component = "Longitude"
+		baseName = strings.TrimSuffix(fieldName, "__Longitude__s") + "__c"
+	default:
+		return schema.Field{}, false
+	}
+	baseField, ok := c.field(objectName, baseName)
+	if !ok || !strings.EqualFold(baseField.Type, "Location") {
+		return schema.Field{}, false
+	}
+	return schema.Field{Name: fieldName, Label: baseField.Label + " " + component, Type: "Number"}, true
 }
 
 func (c querySemanticsChecker) hasFieldMetadata(objectName string) bool {
-	if _, ok := c.object(objectName); !ok {
+	object, ok := c.object(objectName)
+	if !ok {
 		return false
 	}
-	fields, ok := c.fields[strings.ToLower(objectName)]
+	fields, ok := c.fields[normalizeName(object.Name)]
 	return ok && len(fields) > 0
 }
 
 func (c querySemanticsChecker) relationshipField(objectName, relationshipName string) (schema.Field, string, bool) {
-	if _, ok := c.object(objectName); !ok {
+	object, ok := c.object(objectName)
+	if !ok {
 		return schema.Field{}, "", false
 	}
-	fields, ok := c.fields[strings.ToLower(objectName)]
+	fields, ok := c.fields[normalizeName(object.Name)]
 	if !ok {
 		return schema.Field{}, "", false
 	}
 	for _, field := range fields {
-		if strings.EqualFold(field.RelationshipName, relationshipName) && len(field.ReferenceTo) > 0 {
-			return field, field.ReferenceTo[0], true
+		if c.apiNamesMatch(field.RelationshipName, relationshipName) && len(field.ReferenceTo) > 0 {
+			target := field.ReferenceTo[0]
+			if targetObject, ok := c.object(target); ok {
+				target = targetObject.Name
+			}
+			return field, target, true
 		}
 	}
 	return schema.Field{}, "", false
@@ -384,11 +444,11 @@ func (c querySemanticsChecker) relationshipField(objectName, relationshipName st
 func (c querySemanticsChecker) childObjectForRelationship(parentObject, relationship string) (schema.Object, bool) {
 	for _, object := range c.objects {
 		for _, field := range object.Fields {
-			if !strings.EqualFold(field.ChildRelationshipName, relationship) {
+			if !c.apiNamesMatch(field.ChildRelationshipName, relationship) {
 				continue
 			}
 			for _, target := range field.ReferenceTo {
-				if strings.EqualFold(target, parentObject) {
+				if c.apiNamesMatch(target, parentObject) {
 					return object, true
 				}
 			}
@@ -400,11 +460,11 @@ func (c querySemanticsChecker) childObjectForRelationship(parentObject, relation
 			continue
 		}
 		for _, field := range object.Fields {
-			if !strings.EqualFold(field.ChildRelationshipName, relationship) {
+			if !c.apiNamesMatch(field.ChildRelationshipName, relationship) {
 				continue
 			}
 			for _, target := range field.ReferenceTo {
-				if strings.EqualFold(target, parentObject) {
+				if c.apiNamesMatch(target, parentObject) {
 					return object, true
 				}
 			}
@@ -417,13 +477,219 @@ func (c querySemanticsChecker) addObject(object schema.Object) {
 	if strings.TrimSpace(object.Name) == "" {
 		return
 	}
-	key := strings.ToLower(object.Name)
+	object = mergeQueryStorageStandardFields(object)
+	object = mergeQuerySObjectSystemFields(object)
+	key := normalizeName(object.Name)
 	c.objects[key] = object
 	fieldMap := make(map[string]schema.Field, len(object.Fields))
 	for _, field := range object.Fields {
-		fieldMap[strings.ToLower(field.Name)] = field
+		fieldMap[normalizeName(field.Name)] = field
 	}
 	c.fields[key] = fieldMap
+	if localName, ok := semaProjectLocalAPIName(c.namespace, object.Name); ok {
+		c.objects[normalizeName(localName)] = object
+	}
+}
+
+func (c querySemanticsChecker) apiNamesMatch(left, right string) bool {
+	if strings.EqualFold(left, right) {
+		return true
+	}
+	if namespaced, ok := semaProjectNamespacedAPIName(c.namespace, right); ok && strings.EqualFold(left, namespaced) {
+		return true
+	}
+	if namespaced, ok := semaProjectNamespacedAPIName(c.namespace, left); ok && strings.EqualFold(namespaced, right) {
+		return true
+	}
+	if local, ok := semaProjectLocalAPIName(c.namespace, left); ok && strings.EqualFold(local, right) {
+		return true
+	}
+	if local, ok := semaProjectLocalAPIName(c.namespace, right); ok && strings.EqualFold(left, local) {
+		return true
+	}
+	return false
+}
+
+func mergeQueryStorageStandardFields(object schema.Object) schema.Object {
+	definition := storageDefinitionFromSchemaObject(object)
+	storage.EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
+	standard := schemaObjectFromStorageDefinition(definition)
+	if object.Label == "" {
+		object.Label = standard.Label
+	}
+	if object.PluralLabel == "" {
+		object.PluralLabel = standard.PluralLabel
+	}
+	if object.SharingModel == "" {
+		object.SharingModel = standard.SharingModel
+	}
+	seen := make(map[string]bool, len(object.Fields)+len(standard.Fields))
+	for _, field := range object.Fields {
+		seen[normalizeName(field.Name)] = true
+	}
+	for _, field := range standard.Fields {
+		if seen[normalizeName(field.Name)] {
+			continue
+		}
+		object.Fields = append(object.Fields, field)
+		seen[normalizeName(field.Name)] = true
+	}
+	sort.Slice(object.Fields, func(i, j int) bool {
+		return object.Fields[i].Name < object.Fields[j].Name
+	})
+	return object
+}
+
+func storageDefinitionFromSchemaObject(object schema.Object) storage.ObjectDefinition {
+	definition := storage.ObjectDefinition{
+		APIName:      object.Name,
+		Label:        object.Label,
+		PluralLabel:  object.PluralLabel,
+		SharingModel: object.SharingModel,
+		Fields:       make(map[string]storage.Field, len(object.Fields)),
+		RecordTypes:  make([]storage.RecordTypeInfo, 0, len(object.RecordTypes)),
+	}
+	for _, field := range object.Fields {
+		if field.Name == "" {
+			continue
+		}
+		definition.Fields[field.Name] = storageFieldFromSchemaField(field)
+	}
+	for _, recordType := range object.RecordTypes {
+		definition.RecordTypes = append(definition.RecordTypes, storage.RecordTypeInfo{
+			DeveloperName:    recordType.DeveloperName,
+			Name:             recordType.Label,
+			Active:           recordType.Active,
+			Default:          recordType.Default,
+			Description:      recordType.Description,
+			PicklistDefaults: recordType.PicklistDefaults,
+		})
+	}
+	return definition
+}
+
+func storageFieldFromSchemaField(field schema.Field) storage.Field {
+	return storage.Field{
+		APIName:               field.Name,
+		Label:                 field.Label,
+		InlineHelpText:        field.InlineHelpText,
+		Type:                  storageFieldTypeFromSchemaField(field),
+		Length:                field.Length,
+		Precision:             field.Precision,
+		Scale:                 field.Scale,
+		Formula:               field.Formula,
+		DefaultValue:          field.DefaultValue,
+		SummarizedField:       field.SummarizedField,
+		SummaryForeignKey:     field.SummaryForeignKey,
+		SummaryOperation:      field.SummaryOperation,
+		Required:              field.Required,
+		ExternalID:            field.ExternalID,
+		Unique:                field.Unique,
+		Encrypted:             field.Encrypted,
+		IDLookup:              field.IDLookup,
+		ReferenceTo:           append([]string(nil), field.ReferenceTo...),
+		RelationshipName:      field.RelationshipName,
+		ChildRelationshipName: field.ChildRelationshipName,
+		PicklistController:    field.PicklistController,
+		PicklistValueSettings: storagePicklistSettingsFromSchema(field.PicklistValueSettings),
+		PicklistValues:        storagePicklistValuesFromSchema(field.PicklistValues),
+	}
+}
+
+func storageFieldTypeFromSchemaField(field schema.Field) storage.FieldType {
+	switch normalizeName(field.Type) {
+	case "id":
+		return storage.FieldID
+	case "checkbox", "boolean":
+		return storage.FieldBoolean
+	case "int", "integer":
+		return storage.FieldInteger
+	case "long", "double", "currency", "percent", "number", "summary":
+		return storage.FieldDecimal
+	case "date":
+		return storage.FieldDate
+	case "datetime":
+		return storage.FieldDateTime
+	case "time":
+		return storage.FieldString
+	case "base64", "blob":
+		return storage.FieldBlob
+	case "address":
+		return storage.FieldAddress
+	case "location":
+		return storage.FieldLocation
+	case "lookup", "masterdetail", "metadatarelationship", "externallookup", "indirectlookup", "reference":
+		return storage.FieldReference
+	case "picklist", "combobox":
+		return storage.FieldPicklist
+	case "multipicklist", "multiselectpicklist":
+		return storage.FieldMultiPicklist
+	case "text", "textarea", "longtextarea", "html", "encryptedtext", "email", "phone", "url", "autonumber":
+		return storage.FieldString
+	}
+	key := normalizeName(field.Name)
+	switch {
+	case key == "id" || strings.HasSuffix(key, "id"):
+		return storage.FieldID
+	case key == "isdeleted" || strings.HasPrefix(key, "is") || strings.HasPrefix(key, "has"):
+		return storage.FieldBoolean
+	default:
+		return storage.FieldString
+	}
+}
+
+func storagePicklistSettingsFromSchema(values []schema.PicklistSetting) []storage.PicklistSetting {
+	out := make([]storage.PicklistSetting, 0, len(values))
+	for _, value := range values {
+		out = append(out, storage.PicklistSetting{
+			ValueName:              value.ValueName,
+			ControllingFieldValues: append([]string(nil), value.ControllingFieldValues...),
+		})
+	}
+	return out
+}
+
+func storagePicklistValuesFromSchema(values []schema.PicklistValue) []storage.PicklistValue {
+	out := make([]storage.PicklistValue, 0, len(values))
+	for _, value := range values {
+		out = append(out, storage.PicklistValue{
+			Value:   value.FullName,
+			Label:   value.Label,
+			Default: value.Default,
+			Active:  value.Active,
+		})
+	}
+	return out
+}
+
+func mergeQuerySObjectSystemFields(object schema.Object) schema.Object {
+	added := make(map[string]bool, len(object.Fields)+8)
+	for _, field := range object.Fields {
+		added[normalizeName(field.Name)] = true
+	}
+	addField := func(field schema.Field) {
+		if field.Name == "" || added[normalizeName(field.Name)] {
+			return
+		}
+		object.Fields = append(object.Fields, field)
+		added[normalizeName(field.Name)] = true
+	}
+	addField(schema.Field{Name: "Id", Type: "Id"})
+	addField(schema.Field{Name: "Name", Type: "Text"})
+	addField(schema.Field{Name: "IsDeleted", Type: "Checkbox"})
+	addField(schema.Field{Name: "CreatedDate", Type: "DateTime"})
+	addField(schema.Field{Name: "CreatedById", Type: "Lookup", ReferenceTo: []string{"User"}, RelationshipName: "CreatedBy"})
+	addField(schema.Field{Name: "LastActivityDate", Type: "Date"})
+	addField(schema.Field{Name: "LastModifiedDate", Type: "DateTime"})
+	addField(schema.Field{Name: "LastModifiedById", Type: "Lookup", ReferenceTo: []string{"User"}, RelationshipName: "LastModifiedBy"})
+	addField(schema.Field{Name: "SystemModstamp", Type: "DateTime"})
+	if len(object.RecordTypes) > 0 {
+		addField(schema.Field{Name: "RecordTypeId", Type: "Lookup", ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"})
+	}
+	sort.Slice(object.Fields, func(i, j int) bool {
+		return object.Fields[i].Name < object.Fields[j].Name
+	})
+	return object
 }
 
 func schemaObjectFromStorageDefinition(definition storage.ObjectDefinition) schema.Object {
@@ -472,6 +738,23 @@ func schemaObjectFromStorageDefinition(definition storage.ObjectDefinition) sche
 			Encrypted:             field.Encrypted,
 			Formula:               field.Formula,
 		})
+	}
+	fieldNames := make(map[string]bool, len(object.Fields)+len(definition.Relations))
+	for _, field := range object.Fields {
+		fieldNames[normalizeName(field.Name)] = true
+	}
+	for _, relationship := range definition.Relations {
+		if relationship.Field == "" || fieldNames[normalizeName(relationship.Field)] {
+			continue
+		}
+		object.Fields = append(object.Fields, schema.Field{
+			Name:                  relationship.Field,
+			Type:                  "Reference",
+			ReferenceTo:           append([]string(nil), relationship.ParentObjects...),
+			RelationshipName:      relationship.ParentRelationship,
+			ChildRelationshipName: relationship.ChildRelationship,
+		})
+		fieldNames[normalizeName(relationship.Field)] = true
 	}
 	sort.Slice(object.Fields, func(i, j int) bool {
 		return object.Fields[i].Name < object.Fields[j].Name

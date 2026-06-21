@@ -36,13 +36,17 @@ public class QueryProbe {
   public void run() {
     List<Account> badRelationship = [SELECT Bogus.Name FROM Account];
     AggregateResult okAlias = [SELECT COUNT(Id) total FROM Account ORDER BY total];
+    List<AggregateResult> groupedAlias = [SELECT CustomFlag__c flag FROM Account GROUP BY CustomFlag__c];
   }
 }
 `
-	result := analyzeQueryProbe(t, source, queryDiagnosticSchema())
+	sch := queryDiagnosticSchema()
+	sch.Objects[0].Fields = append(sch.Objects[0].Fields, schema.Field{Name: "CustomFlag__c", Type: "Checkbox"})
+	result := analyzeQueryProbe(t, source, sch)
 
 	assertDiagnosticAt(t, result, "GLADESEMA_QUERY_RELATIONSHIP", "Bogus.Name", 4, 45)
 	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "total")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "CustomFlag__c flag")
 }
 
 func TestAnalyzeQuerySemanticsAcceptsKnownStandardObjectsWithoutProjectMetadata(t *testing.T) {
@@ -64,6 +68,143 @@ public class QueryProbe {
 	for _, objectName := range []string{"Account", "Contact", "Profile", "CustomPermission", "ApexClass"} {
 		assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_OBJECT", objectName)
 	}
+}
+
+func TestAnalyzeQuerySemanticsMergesStandardFieldsIntoProjectStandardObject(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT Id, Name, CustomFlag__c FROM Account];
+  }
+}
+`
+	result := analyzeQueryProbe(t, source, schema.Schema{Objects: []schema.Object{
+		{
+			Name: "Account",
+			Fields: []schema.Field{
+				{Name: "CustomFlag__c", Type: "Checkbox"},
+			},
+		},
+	}})
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "Account.Id")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "Account.Name")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "CustomFlag__c")
+}
+
+func TestAnalyzeQuerySemanticsResolvesProjectLocalObjectNamesAgainstNamespacedSchema(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<Thing__c> things = [SELECT Name__c FROM Thing__c];
+  }
+}
+`
+	result := analyzeQueryProbeWithProject(t, source, typesys.ProjectInfo{Namespace: "pkg"}, schema.Schema{Objects: []schema.Object{
+		{
+			Name: "pkg__Thing__c",
+			Fields: []schema.Field{
+				{Name: "pkg__Name__c", Type: "Text"},
+			},
+		},
+	}})
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_OBJECT", "Thing__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "Name__c")
+}
+
+func TestAnalyzeQuerySemanticsAddsSystemFieldsToCustomObjects(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<Thing__c> things = [SELECT Id, Name, CreatedDate, LastActivityDate, IsDeleted, CustomFlag__c, RecordType.Name FROM Thing__c ALL ROWS];
+  }
+}
+`
+	result := analyzeQueryProbe(t, source, schema.Schema{Objects: []schema.Object{
+		{
+			Name: "Thing__c",
+			Fields: []schema.Field{
+				{Name: "CustomFlag__c", Type: "Checkbox"},
+			},
+			RecordTypes: []schema.RecordType{
+				{DeveloperName: "Default"},
+			},
+		},
+	}})
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "Thing__c.Id")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "Thing__c.Name")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "CreatedDate")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "LastActivityDate")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "IsDeleted")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_RELATIONSHIP", "RecordType.Name")
+}
+
+func TestAnalyzeQuerySemanticsAddsFeatureAndMetadataStandardFields(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT FirstName, LastName, IsPersonAccount, PersonContactId FROM Account];
+    List<Feature__mdt> features = [SELECT DeveloperName, NamespacePrefix, QualifiedAPIName FROM Feature__mdt];
+  }
+}
+`
+	result := analyzeQueryProbe(t, source, schema.Schema{Objects: []schema.Object{
+		{Name: "Account"},
+		{Name: "Feature__mdt"},
+	}})
+
+	for _, field := range []string{"FirstName", "LastName", "IsPersonAccount", "PersonContactId", "DeveloperName", "NamespacePrefix", "QualifiedAPIName"} {
+		assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", field)
+	}
+}
+
+func TestAnalyzeQuerySemanticsIgnoresSOQLComments(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<Event__c> events = [
+      SELECT
+        Name,
+        // HiddenRevenue__c,
+        /* HiddenCost__c, */
+        TotalRevenue__c
+      FROM Event__c
+    ];
+  }
+}
+`
+	result := analyzeQueryProbe(t, source, schema.Schema{Objects: []schema.Object{{
+		Name: "Event__c",
+		Fields: []schema.Field{
+			{Name: "Name", Type: "Text"},
+			{Name: "TotalRevenue__c", Type: "Currency"},
+		},
+	}}})
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "HiddenRevenue__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "HiddenCost__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "TotalRevenue__c")
+}
+
+func TestAnalyzeQuerySemanticsAcceptsLocationComponentFields(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT PrimaryLocation__Latitude__s, PrimaryLocation__Longitude__s FROM Account];
+  }
+}
+`
+	result := analyzeQueryProbe(t, source, schema.Schema{Objects: []schema.Object{{
+		Name: "Account",
+		Fields: []schema.Field{
+			{Name: "PrimaryLocation__c", Type: "Location"},
+		},
+	}}})
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "PrimaryLocation__Latitude__s")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "PrimaryLocation__Longitude__s")
 }
 
 func TestAnalyzeSOQLTypeofBranchObjectDiagnostics(t *testing.T) {
@@ -95,10 +236,16 @@ public class QueryProbe {
 
 func analyzeQueryProbe(t *testing.T, source string, sch schema.Schema) Result {
 	t.Helper()
+	return analyzeQueryProbeWithProject(t, source, typesys.ProjectInfo{}, sch)
+}
+
+func analyzeQueryProbeWithProject(t *testing.T, source string, info typesys.ProjectInfo, sch schema.Schema) Result {
+	t.Helper()
 	root := t.TempDir()
 	classPath := filepath.Join(root, "QueryProbe.cls")
 	writeSemaFile(t, classPath, source)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath}}, sch)
+	index.Project = info
 	return Analyze(index)
 }
 
