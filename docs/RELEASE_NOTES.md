@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+No changes yet.
+
+## v0.2.2 - 2026-06-21
+
+Issue closeout:
+
+- Fixes #1: `glade check --project .` no longer reports the false first-check
+  diagnostics in `cesarParra/expression`; the release candidate reports
+  `No diagnostics found`.
+- Fixes #2: `glade test --project .` now runs the same project with 713
+  selected tests, 713 passed, and 0 failed.
+
 Support status:
 
 - The published `glade` CLI is focused on local Apex parsing, checking,
