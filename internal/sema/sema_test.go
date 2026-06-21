@@ -6932,15 +6932,15 @@ func TestAnalyzeSOQLAggregateForEachLiteralUsesAggregateResultElements(t *testin
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "AggregateLoop.cls"), `
 public class AggregateLoop {
-  public void run(Set<String> vuids) {
+  public void run(Set<String> keys) {
     for (AggregateResult ar : [
-      SELECT COUNT(Id) cnt, Verifiable_External_Id__c vuid
-      FROM Sanction_Exclusion_Scan__c
-      WHERE Verifiable_External_Id__c IN :vuids
-      GROUP BY Verifiable_External_Id__c
+      SELECT COUNT(Id) cnt, External_Key__c keyValue
+      FROM Scan_Event__c
+      WHERE External_Key__c IN :keys
+      GROUP BY External_Key__c
       HAVING COUNT(Id) > 1
     ]) {
-      String vuid = (String) ar.get('vuid');
+      String keyValue = (String) ar.get('keyValue');
       Integer count = (Integer) ar.get('cnt');
     }
   }
@@ -6949,7 +6949,7 @@ public class AggregateLoop {
 	index := typesys.Build(project.Project{
 		Root:      root,
 		ApexFiles: []string{filepath.Join(root, "AggregateLoop.cls")},
-	}, schema.Schema{Objects: []schema.Object{{Name: "Sanction_Exclusion_Scan__c", Fields: []schema.Field{{Name: "Verifiable_External_Id__c", Type: "String"}}}}})
+	}, schema.Schema{Objects: []schema.Object{{Name: "Scan_Event__c", Fields: []schema.Field{{Name: "External_Key__c", Type: "String"}}}}})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
 		if diag.Code == "GLADESEMA024" {
