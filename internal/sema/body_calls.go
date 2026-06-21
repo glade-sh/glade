@@ -235,17 +235,29 @@ func resolveMemberMethods(model map[string]typeMembers, typeName, method string)
 }
 
 func resolveImplicitMemberMethods(model map[string]typeMembers, typeName, method string) []resolvedMember {
-	if direct := resolveMemberMethods(model, typeName, method); len(direct) > 0 {
-		return direct
+	var out []resolvedMember
+	seen := make(map[string]bool)
+	for _, candidate := range resolveMemberMethods(model, typeName, method) {
+		key := candidate.owner + ":" + methodSignatureKey(candidate.member)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, candidate)
 	}
 	parts := strings.Split(typeName, ".")
 	for i := len(parts) - 1; i > 0; i-- {
 		owner := strings.Join(parts[:i], ".")
-		if inherited := resolveMemberMethods(model, owner, method); len(inherited) > 0 {
-			return inherited
+		for _, candidate := range resolveMemberMethods(model, owner, method) {
+			key := candidate.owner + ":" + methodSignatureKey(candidate.member)
+			if seen[key] {
+				continue
+			}
+			seen[key] = true
+			out = append(out, candidate)
 		}
 	}
-	return nil
+	return out
 }
 
 func resolveMemberMethodsSeen(model map[string]typeMembers, typeName, method string, seen map[string]bool) []resolvedMember {
@@ -1085,6 +1097,9 @@ func semaConversionScore(paramType, argType string, model map[string]typeMembers
 	if strings.EqualFold(paramType, argType) {
 		return 1000
 	}
+	if strings.EqualFold(argType, "Database.QueryResult") && semaDynamicQueryResultAssignableTo(paramType, model) {
+		return 850
+	}
 	if strings.EqualFold(paramType, "Id") && strings.EqualFold(argType, "String") {
 		return 850
 	}
@@ -1607,6 +1622,28 @@ func inferSemaArgTypeWithModel(arg string, scope map[string]string, model map[st
 	}
 	defer leaveSemaInference(scope)
 	arg = strings.TrimSpace(arg)
+	arg = semaTrimSafeNavigationReceiverSuffix(arg)
+	if scope != nil && semaInferenceTrackableArg(arg) {
+		activeKey := semaInferenceActiveKey(arg)
+		if scope[activeKey] != "" {
+			return ""
+		}
+		scope[activeKey] = "1"
+		defer delete(scope, activeKey)
+	}
+	return inferSemaArgTypeWithModelUncached(arg, scope, model)
+}
+
+func inferSemaArgTypeWithModelUncached(arg string, scope map[string]string, model map[string]typeMembers) string {
+	if semaContainsStatementSeparator(arg) {
+		return ""
+	}
+	if semaLooksLikeSObjectFieldStringPropertyPath(arg) {
+		return "String"
+	}
+	if semaLooksLikeSObjectDescribeFieldResultPath(arg) {
+		return "Schema.DescribeFieldResult"
+	}
 	if inner, ok := trimSemaOuterParens(arg); ok {
 		return inferSemaArgTypeWithModel(inner, scope, model)
 	}
@@ -1656,6 +1693,38 @@ func inferSemaArgTypeWithModel(arg string, scope map[string]string, model map[st
 		return typ
 	}
 	return inferSemaArgType(arg, scope)
+}
+
+func semaContainsStatementSeparator(arg string) bool {
+	for i := 0; i < len(arg); i++ {
+		switch arg[i] {
+		case '\'':
+			i = skipSemaString(arg, i)
+		case '/':
+			if end, ok := skipSemaComment(arg, i); ok {
+				i = end
+			}
+		case ';':
+			return true
+		}
+	}
+	return false
+}
+
+func semaTrimSafeNavigationReceiverSuffix(arg string) string {
+	arg = strings.TrimSpace(arg)
+	if strings.HasSuffix(arg, "?") {
+		return strings.TrimSpace(strings.TrimSuffix(arg, "?"))
+	}
+	return arg
+}
+
+func semaInferenceTrackableArg(arg string) bool {
+	return arg != "" && len(arg) <= 2048
+}
+
+func semaInferenceActiveKey(arg string) string {
+	return "__glade_infer_active:" + arg
 }
 
 func enterSemaInference(scope map[string]string) bool {
@@ -1779,6 +1848,9 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 	if semaLooksLikeLabelReference(expr) {
 		return "String"
 	}
+	if semaLooksLikeSObjectFieldStringPropertyPath(expr) {
+		return "String"
+	}
 	if receiverExpr, field, ok := splitSemaMethodPath(expr); ok {
 		if castType, _, castOK := splitSemaCast(receiverExpr); castOK {
 			if target, ok := semaResolveFieldPath(model, castType, field); ok {
@@ -1789,6 +1861,9 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 	parts := strings.Split(strings.TrimSpace(expr), ".")
 	if len(parts) < 2 {
 		return ""
+	}
+	if semaLooksLikeSObjectDescribeFieldResultPath(expr) {
+		return "Schema.DescribeFieldResult"
 	}
 	if typ := semaEnumValuePathType(model, expr); typ != "" {
 		return typ
@@ -1809,7 +1884,7 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 			return "Schema.SObjectType"
 		}
 	}
-	if receiverExpr, field, ok := splitSemaMethodPath(expr); ok {
+	if receiverExpr, field, ok := splitSemaMethodPath(expr); ok && semaFieldReceiverNeedsInference(receiverExpr) {
 		if inferred := inferSemaArgTypeWithModel(receiverExpr, scope, model); inferred != "" {
 			if target, ok := semaResolveFieldPath(model, inferred, field); ok {
 				return target.member.Type
@@ -1853,14 +1928,6 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 			}
 		}
 	}
-	if receiverExpr, field, ok := splitSemaMethodPath(expr); ok {
-		inferred := inferSemaArgTypeWithModel(receiverExpr, scope, model)
-		if inferred != "" {
-			if target, ok := semaResolveFieldPath(model, inferred, field); ok {
-				return target.member.Type
-			}
-		}
-	}
 	if receiverType != "" {
 		if startIndex >= len(parts) {
 			return receiverType
@@ -1873,4 +1940,56 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 		}
 	}
 	return ""
+}
+
+func semaFieldReceiverNeedsInference(receiverExpr string) bool {
+	return strings.ContainsAny(receiverExpr, "()")
+}
+
+func semaLooksLikeSObjectDescribeFieldResultPath(expr string) bool {
+	parts := strings.Split(strings.TrimSpace(expr), ".")
+	if len(parts) == 5 && strings.EqualFold(parts[0], "Schema") && strings.EqualFold(parts[1], "SObjectType") && semaFieldTokenPart(parts[2]) && strings.EqualFold(parts[3], "fields") && semaFieldTokenPart(parts[4]) {
+		return true
+	}
+	if len(parts) == 4 && strings.EqualFold(parts[0], "SObjectType") && semaFieldTokenPart(parts[1]) && strings.EqualFold(parts[2], "fields") && semaFieldTokenPart(parts[3]) {
+		return true
+	}
+	return false
+}
+
+func semaLooksLikeSObjectFieldStringPropertyPath(expr string) bool {
+	parts := strings.Split(strings.TrimSpace(expr), ".")
+	if len(parts) < 5 || !semaDescribeFieldStringProperty(parts[len(parts)-1]) {
+		return false
+	}
+	for i := 0; i < len(parts); i++ {
+		if !strings.EqualFold(parts[i], "SObjectType") {
+			continue
+		}
+		if i+3 < len(parts) &&
+			strings.EqualFold(parts[i+1], "fields") &&
+			semaFieldTokenPart(parts[i+2]) &&
+			semaDescribeFieldStringProperty(parts[i+3]) &&
+			i+4 == len(parts) {
+			return true
+		}
+		if i+4 < len(parts) &&
+			semaFieldTokenPart(parts[i+1]) &&
+			strings.EqualFold(parts[i+2], "fields") &&
+			semaFieldTokenPart(parts[i+3]) &&
+			semaDescribeFieldStringProperty(parts[i+4]) &&
+			i+5 == len(parts) {
+			return true
+		}
+	}
+	return false
+}
+
+func semaDescribeFieldStringProperty(part string) bool {
+	switch strings.ToLower(strings.TrimSpace(part)) {
+	case "label", "name", "relationshipname":
+		return true
+	default:
+		return false
+	}
 }

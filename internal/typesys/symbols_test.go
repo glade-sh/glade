@@ -262,6 +262,34 @@ func TestBuildNamespacesSourceBackedDependencySchema(t *testing.T) {
 	}
 }
 
+func TestBuildDoesNotSurfaceSourceBackedDependencyDuplicateDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	first := filepath.Join(depRoot, "one.cls")
+	second := filepath.Join(depRoot, "two.cls")
+	writeFile(t, first, "public class SharedDependency {}")
+	writeFile(t, second, "public class sharedDependency {}")
+
+	depProject := project.Project{
+		Root:      depRoot,
+		Namespace: "pkg",
+		ApexFiles: []string{first, second},
+	}
+	idx := Build(project.Project{
+		Root: root,
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace:  "pkg",
+			SourceRoot: depRoot,
+			Status:     "loaded",
+			Project:    &depProject,
+		}},
+	}, schema.Schema{})
+
+	if idx.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", idx.Diagnostics)
+	}
+}
+
 func TestBuildIndexDiscoversTests(t *testing.T) {
 	root := t.TempDir()
 	classPath := filepath.Join(root, "HelloTest.cls")

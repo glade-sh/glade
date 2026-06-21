@@ -38,11 +38,16 @@ func (a *Analyzer) checkMethodBodies(index typesys.Index) []diagnostic.Diagnosti
 	model := buildTypeMembers(index)
 	defer unregisterSemaShortCandidateIndex(model)
 	constructability := buildConstructability(index)
+	duplicateTypes := semaDuplicateTypeKeys(index)
 	sources := make(map[string]string)
 	var diagnostics []diagnostic.Diagnostic
 	for _, typ := range index.Types {
-		if typ.Artifact {
+		if skipProjectDiagnosticType(typ) {
 			continue
+		}
+		bodyModel := model
+		if duplicateTypes[semaTypeSymbolKey(typ)] > 1 {
+			bodyModel = semaModelWithCurrentType(model, typ)
 		}
 		for _, member := range typ.Members {
 			switch member.Kind {
@@ -55,7 +60,7 @@ func (a *Analyzer) checkMethodBodies(index typesys.Index) []diagnostic.Diagnosti
 				if !ok {
 					continue
 				}
-				diagnostics = append(diagnostics, a.checkBodyText(typ, member, body, bodyOffset, source, model, constructability)...)
+				diagnostics = append(diagnostics, a.checkBodyText(typ, member, body, bodyOffset, source, bodyModel, constructability)...)
 			case apexast.DeclarationProperty:
 				for _, accessor := range member.Accessors {
 					if !accessor.HasBody {
@@ -76,12 +81,101 @@ func (a *Analyzer) checkMethodBodies(index typesys.Index) []diagnostic.Diagnosti
 						accessorMember.Type = "void"
 						accessorMember.Parameters = []apexast.Parameter{{Name: "value", Type: member.Type}}
 					}
-					diagnostics = append(diagnostics, a.checkBodyText(typ, accessorMember, body, bodyOffset, source, model, constructability)...)
+					diagnostics = append(diagnostics, a.checkBodyText(typ, accessorMember, body, bodyOffset, source, bodyModel, constructability)...)
 				}
 			}
 		}
 	}
 	return diagnostics
+}
+
+func semaDuplicateTypeKeys(index typesys.Index) map[string]int {
+	counts := make(map[string]int)
+	for _, typ := range index.Types {
+		counts[semaTypeSymbolKey(typ)]++
+	}
+	return counts
+}
+
+func semaTypeSymbolKey(typ typesys.TypeSymbol) string {
+	if typ.Namespace != "" {
+		return normalizeName(typ.Namespace + "." + typ.Name)
+	}
+	return normalizeName(typ.Name)
+}
+
+func semaModelWithCurrentType(model map[string]typeMembers, typ typesys.TypeSymbol) map[string]typeMembers {
+	out := make(map[string]typeMembers, len(model)+1)
+	for key, members := range model {
+		out[key] = members
+	}
+	members := semaTypeMembersFromSymbol(typ)
+	out[normalizeName(typ.Name)] = members
+	if typ.Namespace != "" {
+		out[normalizeName(typ.Namespace+"."+typ.Name)] = members
+	}
+	members.superClass = resolveNestedTypeName(out, members.name, members.superClass)
+	for i, iface := range members.interfaces {
+		members.interfaces[i] = resolveNestedTypeName(out, members.name, iface)
+	}
+	for fieldKey, field := range members.fields {
+		field.Type = resolveNestedTypeReference(out, members.name, field.Type)
+		members.fields[fieldKey] = field
+	}
+	for methodKey, overloads := range members.methods {
+		for i := range overloads {
+			overloads[i].Type = resolveNestedTypeReference(out, members.name, overloads[i].Type)
+			for j := range overloads[i].Parameters {
+				overloads[i].Parameters[j].Type = resolveNestedTypeReference(out, members.name, overloads[i].Parameters[j].Type)
+			}
+		}
+		members.methods[methodKey] = overloads
+	}
+	for i := range members.constructors {
+		for j := range members.constructors[i].Parameters {
+			members.constructors[i].Parameters[j].Type = resolveNestedTypeReference(out, members.name, members.constructors[i].Parameters[j].Type)
+		}
+	}
+	out[normalizeName(typ.Name)] = members
+	if typ.Namespace != "" {
+		out[normalizeName(typ.Namespace+"."+typ.Name)] = members
+	}
+	return out
+}
+
+func semaTypeMembersFromSymbol(typ typesys.TypeSymbol) typeMembers {
+	members := typeMembers{
+		name:       typ.Name,
+		shortKey:   semaShortTypeKey(typ.Name),
+		namespace:  typ.Namespace,
+		dependency: typ.Dependency,
+		kind:       typ.Kind,
+		superClass: typ.SuperClass,
+		interfaces: append([]string(nil), typ.Interfaces...),
+		methods:    make(map[string][]typesys.MemberSymbol),
+		fields:     make(map[string]typesys.MemberSymbol),
+	}
+	for _, member := range typ.Members {
+		switch member.Kind {
+		case apexast.DeclarationMethod:
+			members.methods[normalizeName(member.Name)] = append(members.methods[normalizeName(member.Name)], member)
+		case apexast.DeclarationConstructor:
+			members.constructors = append(members.constructors, member)
+		case apexast.DeclarationField, apexast.DeclarationProperty:
+			members.fields[normalizeName(member.Name)] = member
+		}
+	}
+	if typ.Kind == apexast.DeclarationEnum {
+		for _, value := range semaEnumValues(typ) {
+			members.fields[normalizeName(value)] = typesys.MemberSymbol{
+				Kind:      apexast.DeclarationField,
+				Name:      value,
+				Type:      typ.Name,
+				Modifiers: []string{"public", "static"},
+			}
+		}
+	}
+	return members
 }
 
 func readSemaSource(path string, cache map[string]string) (string, bool) {
@@ -911,6 +1005,23 @@ func resolveNestedTypeName(model map[string]typeMembers, owner, typeName string)
 		if _, ok := model[normalizeName(candidate)]; ok {
 			return candidate
 		}
+	}
+	seen := make(map[string]bool)
+	for current := owner; current != ""; {
+		key := normalizeName(current)
+		if key == "" || seen[key] {
+			break
+		}
+		seen[key] = true
+		members, ok := model[key]
+		if !ok || strings.TrimSpace(members.superClass) == "" {
+			break
+		}
+		candidate := members.superClass + "." + typeName
+		if _, ok := model[normalizeName(candidate)]; ok {
+			return candidate
+		}
+		current = members.superClass
 	}
 	return typeName
 }

@@ -295,12 +295,16 @@ func memberSymbolsFromArtifact(members []packageartifact.ApexMember) []MemberSym
 
 func appendProjectSymbols(idx *Index, parser *apexast.Parser, p project.Project, dependency bool, namespace, version string, seenTypes map[string][]seenTypeSymbol) {
 	for _, file := range projectSymbolFiles(parser, p, dependency, namespace, version) {
-		idx.Diagnostics = append(idx.Diagnostics, file.Diagnostics...)
+		if !dependency {
+			idx.Diagnostics = append(idx.Diagnostics, file.Diagnostics...)
+		}
 		for _, sym := range file.Types {
 			key := namespaceTypeKey(sym.Namespace, sym.Name)
 			currentPackage := p.PackagePathForFile(sym.File)
 			if previous, ok := conflictingSeenType(seenTypes[key], currentPackage); ok {
-				idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous.Symbol))
+				if !dependency {
+					idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous.Symbol))
+				}
 			} else {
 				seenTypes[key] = append(seenTypes[key], seenTypeSymbol{Symbol: sym, PackagePath: currentPackage})
 			}

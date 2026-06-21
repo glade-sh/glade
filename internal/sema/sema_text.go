@@ -107,6 +107,7 @@ func startsWithUpperASCII(text string) bool {
 }
 func splitSemaMethodPath(callee string) (string, string, bool) {
 	depth := 0
+	angleDepth := 0
 	idx := -1
 	for i := 0; i < len(callee); i++ {
 		switch callee[i] {
@@ -118,8 +119,16 @@ func splitSemaMethodPath(callee string) (string, string, bool) {
 			if depth > 0 {
 				depth--
 			}
+		case '<':
+			if depth == 0 && looksLikeSemaGenericOpen(callee, i) {
+				angleDepth++
+			}
+		case '>':
+			if angleDepth > 0 {
+				angleDepth--
+			}
 		case '.':
-			if depth == 0 {
+			if depth == 0 && angleDepth == 0 {
 				idx = i
 			}
 		}
@@ -138,6 +147,9 @@ func splitLastSemaCall(arg string) (string, string, []semaArg, bool) {
 		return "", "", nil, false
 	}
 	methodEnd := open
+	for methodEnd > 0 && isWhitespace(arg[methodEnd-1]) {
+		methodEnd--
+	}
 	methodStart := methodEnd
 	for methodStart > 0 && isIdentifierByte(arg[methodStart-1]) {
 		methodStart--
