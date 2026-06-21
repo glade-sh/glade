@@ -260,11 +260,17 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 				}
 			}
 		}
-		if !semaRequiresQualifiedDependencyName(typ) && out[normalizeName(typ.Name)].name == "" {
-			out[normalizeName(typ.Name)] = members
+		if !semaRequiresQualifiedDependencyName(typ) {
+			key := normalizeName(typ.Name)
+			if semaShouldStoreTypeMembers(out[key], typ) {
+				out[key] = members
+			}
 		}
 		if typ.Namespace != "" {
-			out[normalizeName(typ.Namespace+"."+typ.Name)] = members
+			key := normalizeName(typ.Namespace + "." + typ.Name)
+			if semaShouldStoreTypeMembers(out[key], typ) {
+				out[key] = members
+			}
 		}
 		if short := shortNestedTypeName(typ.Name); !semaRequiresQualifiedDependencyName(typ) && short != typ.Name {
 			shortAliases[normalizeName(short)] = append(shortAliases[normalizeName(short)], typ.Name)
@@ -436,6 +442,13 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 
 func semaRequiresQualifiedDependencyName(typ typesys.TypeSymbol) bool {
 	return typ.Dependency && typ.Namespace != "" && (typ.Artifact || typ.SourceRoot != "")
+}
+
+func semaShouldStoreTypeMembers(existing typeMembers, typ typesys.TypeSymbol) bool {
+	if existing.name == "" {
+		return true
+	}
+	return existing.dependency && !typ.Dependency
 }
 
 var semaShortCandidateIndexes sync.Map
@@ -987,8 +1000,27 @@ func shortNestedTypeName(typeName string) string {
 
 func resolveNestedTypeName(model map[string]typeMembers, owner, typeName string) string {
 	typeName = strings.TrimSpace(typeName)
-	if typeName == "" || strings.Contains(typeName, ".") {
+	if typeName == "" {
 		return typeName
+	}
+	if strings.Contains(typeName, ".") {
+		if owner != "" {
+			candidate := owner + "." + typeName
+			if _, ok := model[normalizeName(candidate)]; ok {
+				return candidate
+			}
+		}
+		ownerParts := strings.Split(owner, ".")
+		for i := len(ownerParts) - 1; i > 0; i-- {
+			candidate := strings.Join(append(append([]string{}, ownerParts[:i]...), typeName), ".")
+			if _, ok := model[normalizeName(candidate)]; ok {
+				return candidate
+			}
+		}
+		if _, ok := model[normalizeName(typeName)]; ok {
+			return typeName
+		}
+		return semaCanonicalPlatformAlias(typeName)
 	}
 	ownerParts := strings.Split(owner, ".")
 	if len(ownerParts) > 0 && strings.EqualFold(ownerParts[0], typeName) {
@@ -1023,7 +1055,7 @@ func resolveNestedTypeName(model map[string]typeMembers, owner, typeName string)
 		}
 		current = members.superClass
 	}
-	return typeName
+	return semaCanonicalPlatformAlias(typeName)
 }
 
 func resolveNestedTypeReference(model map[string]typeMembers, owner, typeName string) string {

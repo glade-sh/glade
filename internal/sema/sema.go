@@ -1166,6 +1166,12 @@ func semaEnumValuePathType(model map[string]typeMembers, expr string) string {
 		valueName := parts[i]
 		members, ok := model[normalizeName(typeName)]
 		if !ok || members.kind != apexast.DeclarationEnum {
+			canonical := semaCanonicalPlatformAlias(typeName)
+			if !strings.EqualFold(canonical, typeName) {
+				members, ok = model[normalizeName(canonical)]
+			}
+		}
+		if !ok || members.kind != apexast.DeclarationEnum {
 			continue
 		}
 		if _, ok := members.fields[normalizeName(valueName)]; ok {
@@ -1263,9 +1269,6 @@ func inferSemaMethodCallType(arg string, scope map[string]string, model map[stri
 		return typ
 	}
 	if receiverExpr, method, args, ok := splitLastSemaCall(arg); ok {
-		if semaDatabaseDynamicQueryTextCall(receiverExpr + "." + method) {
-			return "Database.QueryResult"
-		}
 		receiverType := semaTextReceiverType(receiverExpr, scope, model)
 		return semaResolvedCallReturnType(model, receiverType, method, args, scope)
 	}
@@ -1279,9 +1282,6 @@ func inferSemaMethodCallType(arg string, scope map[string]string, model map[stri
 		return ""
 	}
 	if strings.Contains(callee, ".") {
-		if semaDatabaseDynamicQueryTextCall(callee) {
-			return "Database.QueryResult"
-		}
 		receiver, method, ok := splitSemaMethodPath(callee)
 		if !ok || method == "" {
 			return ""
@@ -1383,6 +1383,9 @@ func semaTextReceiverType(receiver string, scope map[string]string, model map[st
 			}
 		}
 	}
+	if semaExplicitPlatformQualifiedName(receiver) {
+		return receiver
+	}
 	receiverType := inferSemaArgTypeWithModel(receiver, scope, model)
 	if receiverType != "" {
 		return receiverType
@@ -1408,23 +1411,28 @@ func semaResolvedCallReturnType(model map[string]typeMembers, receiverType, meth
 	if stubbedType := semaCreateStubReturnTypeFromText(model, receiverType, method, args); stubbedType != "" {
 		return stubbedType
 	}
-	if semaDatabaseDynamicQueryCall(receiverType, method) {
-		return "Database.QueryResult"
-	}
-	if returnType := semaDatabaseDMLReturnType(receiverType, method, argTypes); returnType != "" {
-		return returnType
-	}
 	if sig, ok := semaEnumMethodSignature(model, receiverType, method); ok {
 		return sig.returnType
 	}
 	if sig, ok := semaCollectionMethodSignature(receiverType, method); ok {
 		return sig.returnType
 	}
+	candidates := resolveMemberMethods(model, receiverType, method)
+	platformBackedCandidates := semaResolvedMembersAllPlatformBacked(model, candidates)
+	if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok && !platformBackedCandidates {
+		return candidate.member.Type
+	}
+	if semaDatabaseDynamicQueryCall(receiverType, method) {
+		return "Database.QueryResult"
+	}
+	if returnType := semaDatabaseDMLReturnType(receiverType, method, argTypes); returnType != "" {
+		return returnType
+	}
+	if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok {
+		return candidate.member.Type
+	}
 	if sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method); ok {
 		return sig.returnType
-	}
-	if candidate, ok, _ := bestResolvedMemberByArgTypes(resolveMemberMethods(model, receiverType, method), argTypes, model); ok {
-		return candidate.member.Type
 	}
 	return ""
 }
@@ -2297,6 +2305,12 @@ func (a *Analyzer) hasKnown(name string) bool {
 	}
 	if _, ok := a.known[normalizeName(name)]; ok {
 		return true
+	}
+	canonical := semaCanonicalPlatformAlias(name)
+	if !strings.EqualFold(canonical, name) {
+		if _, ok := a.known[normalizeName(canonical)]; ok {
+			return true
+		}
 	}
 	if a.hasExternalDependencyName(name) || semaLooksLikeUnconfiguredManagedPackageType(name) {
 		return true

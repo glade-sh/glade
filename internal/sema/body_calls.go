@@ -230,6 +230,19 @@ type resolvedMember struct {
 	member typesys.MemberSymbol
 }
 
+func semaResolvedMembersAllPlatformBacked(model map[string]typeMembers, candidates []resolvedMember) bool {
+	if len(candidates) == 0 {
+		return false
+	}
+	for _, candidate := range candidates {
+		owner, ok := model[normalizeName(candidate.owner)]
+		if !ok || (!owner.dependency && !owner.sobject) {
+			return false
+		}
+	}
+	return true
+}
+
 func resolveMemberMethods(model map[string]typeMembers, typeName, method string) []resolvedMember {
 	return resolveMemberMethodsSeen(model, typeName, method, make(map[string]bool))
 }
@@ -419,7 +432,7 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 	if !haveArgs {
 		return nil
 	}
-	if semaDatabaseDynamicQueryTextCall(callee) {
+	if receiver, method, ok := splitSemaMethodPath(callee); ok && semaDatabaseDynamicQueryCall(semaTextReceiverType(receiver, scope, model), method) {
 		return nil
 	}
 	if candidate, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok {
@@ -1539,83 +1552,6 @@ func semaShortTypeKeyFromNormalizedKey(key string) string {
 	return key
 }
 
-func semaCanonicalPlatformAlias(typeName string) string {
-	typeName = strings.TrimSpace(typeName)
-	if typeName == "" {
-		return typeName
-	}
-	base, args := semaGenericBaseAndArgs(typeName)
-	if len(args) > 0 {
-		canonicalArgs := make([]string, len(args))
-		for i, arg := range args {
-			canonicalArgs[i] = semaCanonicalPlatformAlias(arg)
-		}
-		return semaCanonicalPlatformAlias(base) + "<" + strings.Join(canonicalArgs, ",") + ">"
-	}
-	switch normalizeName(typeName) {
-	case "childrelationship":
-		return "Schema.ChildRelationship"
-	case "describefieldresult":
-		return "Schema.DescribeFieldResult"
-	case "describesobjectresult":
-		return "Schema.DescribeSObjectResult"
-	case "describetabresult":
-		return "Schema.DescribeTabResult"
-	case "describetabsetresult":
-		return "Schema.DescribeTabSetResult"
-	case "fieldset":
-		return "Schema.FieldSet"
-	case "fieldsetmember":
-		return "Schema.FieldSetMember"
-	case "picklistentry":
-		return "Schema.PicklistEntry"
-	case "recordtypeinfo":
-		return "Schema.RecordTypeInfo"
-	case "sobjectfield":
-		return "Schema.SObjectField"
-	case "sobjecttype":
-		return "Schema.SObjectType"
-	case "soaptype":
-		return "Schema.SoapType"
-	case "apexpages.pagereference":
-		return "PageReference"
-	case "system.type":
-		return "Type"
-	case "apex_object", "system.apex_object":
-		return "Object"
-	case "system.savepoint":
-		return "Savepoint"
-	case "system.iterable":
-		return "Iterable"
-	case "system.iterator":
-		return "Iterator"
-	case "system.address":
-		return "Address"
-	case "system.accesslevel":
-		return "AccessLevel"
-	case "system.accesstype":
-		return "AccessType"
-	case "system.callable":
-		return "Callable"
-	case "system.sobjectaccessdecision":
-		return "SObjectAccessDecision"
-	case "system.stubprovider":
-		return "StubProvider"
-	case "system.httpcalloutmock":
-		return "HttpCalloutMock"
-	case "system.statuscode":
-		return "StatusCode"
-	case "system.list":
-		return "List"
-	case "system.set":
-		return "Set"
-	case "system.map":
-		return "Map"
-	default:
-		return typeName
-	}
-}
-
 func inferSemaArgTypeWithModel(arg string, scope map[string]string, model map[string]typeMembers) string {
 	if !enterSemaInference(scope) {
 		return ""
@@ -1657,6 +1593,9 @@ func inferSemaArgTypeWithModelUncached(arg string, scope map[string]string, mode
 		return typ
 	}
 	if castType, _, ok := splitSemaCast(arg); ok {
+		if currentType := scope[semaCurrentTypeScopeKey]; currentType != "" {
+			return resolveNestedTypeReference(model, currentType, castType)
+		}
 		return castType
 	}
 	if match := newExprPattern.FindStringSubmatch(arg); len(match) == 2 {
@@ -1853,6 +1792,9 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 	}
 	if receiverExpr, field, ok := splitSemaMethodPath(expr); ok {
 		if castType, _, castOK := splitSemaCast(receiverExpr); castOK {
+			if currentType := scope[semaCurrentTypeScopeKey]; currentType != "" {
+				castType = resolveNestedTypeReference(model, currentType, castType)
+			}
 			if target, ok := semaResolveFieldPath(model, castType, field); ok {
 				return target.member.Type
 			}
