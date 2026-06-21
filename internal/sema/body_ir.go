@@ -1389,12 +1389,36 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 		}
 		return semaBinaryType(expr.Operator, leftType, rightType)
 	case ir.ExprSOQL:
-		if soql.IsSOSLFind(expr.Value) {
-			return "List<List<SObject>>"
-		}
-		return "Database.QueryResult"
+		return semaSOQLLiteralType(expr.Value)
 	}
 	return ""
+}
+
+func semaSOQLLiteralType(queryText string) string {
+	if soql.IsSOSLFind(queryText) {
+		return "List<List<SObject>>"
+	}
+	if semaLooksLikeSOQLCountLiteral(queryText) {
+		return "Integer"
+	}
+	query, err := soql.Parse(queryText)
+	if err == nil && query.Count {
+		return "Integer"
+	}
+	return "Database.QueryResult"
+}
+
+func semaLooksLikeSOQLCountLiteral(queryText string) bool {
+	normalized := strings.NewReplacer("(", " ( ", ")", " ) ").Replace(queryText)
+	tokens := strings.Fields(normalized)
+	if len(tokens) < 5 {
+		return false
+	}
+	return strings.EqualFold(tokens[0], "SELECT") &&
+		strings.EqualFold(tokens[1], "COUNT") &&
+		tokens[2] == "(" &&
+		tokens[3] == ")" &&
+		strings.EqualFold(tokens[4], "FROM")
 }
 
 func semaIRExprLooksLikeStaticSObjectToken(expr string, scope irSemaScope, model map[string]typeMembers) bool {

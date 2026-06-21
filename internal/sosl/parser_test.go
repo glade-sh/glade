@@ -37,6 +37,14 @@ func TestParseSOSLReturningObjectsAndFields(t *testing.T) {
 				Fields: []string{"Id", "Amount__c"},
 			}}},
 		},
+		{
+			name:  "relationship field path",
+			input: "FIND :term RETURNING Contact(LastName, Account.Name)",
+			want: sosl.Query{Returning: []sosl.ReturningObject{{
+				Object: "Contact",
+				Fields: []string{"LastName", "Account.Name"},
+			}}},
+		},
 	}
 
 	for _, tt := range tests {

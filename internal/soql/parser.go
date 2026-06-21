@@ -21,6 +21,20 @@ func lex(input string) ([]token, error) {
 		switch {
 		case input[i] == ' ' || input[i] == '\n' || input[i] == '\t' || input[i] == '\r':
 			i++
+		case i+1 < len(input) && input[i] == '/' && input[i+1] == '/':
+			i += 2
+			for i < len(input) && input[i] != '\n' && input[i] != '\r' {
+				i++
+			}
+		case i+1 < len(input) && input[i] == '/' && input[i+1] == '*':
+			i += 2
+			for i+1 < len(input) && !(input[i] == '*' && input[i+1] == '/') {
+				i++
+			}
+			if i+1 >= len(input) {
+				return nil, fmt.Errorf("soql: unterminated block comment")
+			}
+			i += 2
 		case input[i] == '\'':
 			start := i
 			i++

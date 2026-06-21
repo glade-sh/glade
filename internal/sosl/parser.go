@@ -185,7 +185,7 @@ func isIdentStart(ch byte) bool {
 }
 
 func isIdentPart(ch byte) bool {
-	return isIdentStart(ch) || ('0' <= ch && ch <= '9')
+	return ch == '.' || isIdentStart(ch) || ('0' <= ch && ch <= '9')
 }
 
 func equalFold(a, b string) bool {

@@ -1637,7 +1637,7 @@ func inferSemaArgTypeWithModel(arg string, scope map[string]string, model map[st
 	if strings.HasSuffix(strings.ToLower(arg), ".class") {
 		return "Type"
 	}
-	if receiver, name, ok := strings.Cut(arg, "."); ok && strings.EqualFold(receiver, "Page") && scope[normalizeName(receiver)] == "" && strings.TrimSpace(name) != "" {
+	if receiver, name, ok := strings.Cut(arg, "."); ok && strings.EqualFold(receiver, "Page") && scope[normalizeName(receiver)] == "" && semaPageReferenceTokenName(name) {
 		return "PageReference"
 	}
 	if receiver, ok := splitSemaIndexExpression(arg); ok {

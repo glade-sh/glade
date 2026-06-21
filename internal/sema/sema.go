@@ -2157,6 +2157,11 @@ func (a *Analyzer) hasKnown(name string) bool {
 		return true
 	}
 	if a.namespace != "" {
+		if namespaced, ok := semaProjectNamespacedAPIName(a.namespace, name); ok {
+			if _, ok := a.known[normalizeName(namespaced)]; ok {
+				return true
+			}
+		}
 		ns := normalizeName(a.namespace)
 		prefix := ns + "."
 		normalized := normalizeName(name)
@@ -2178,6 +2183,40 @@ func (a *Analyzer) hasKnown(name string) bool {
 		return ok
 	}
 	return false
+}
+
+func semaProjectNamespacedAPIName(namespace, name string) (string, bool) {
+	if namespace == "" || name == "" || !semaIsCustomAPIName(name) || semaHasNamespaceToken(name) {
+		return "", false
+	}
+	return namespace + "__" + name, true
+}
+
+func semaProjectLocalAPIName(namespace, name string) (string, bool) {
+	if namespace == "" || name == "" || !semaIsCustomAPIName(name) || !semaHasNamespaceToken(name) {
+		return "", false
+	}
+	prefix := namespace + "__"
+	if len(name) <= len(prefix) || !strings.EqualFold(name[:len(prefix)], prefix) {
+		return "", false
+	}
+	return name[len(prefix):], true
+}
+
+func semaIsCustomAPIName(name string) bool {
+	lower := strings.ToLower(strings.TrimSpace(name))
+	for _, suffix := range []string{"__c", "__r", "__e", "__mdt", "__b", "__s"} {
+		if strings.HasSuffix(lower, suffix) {
+			return true
+		}
+	}
+	return false
+}
+
+func semaHasNamespaceToken(name string) bool {
+	first := strings.Index(name, "__")
+	last := strings.LastIndex(name, "__")
+	return first > 0 && first < last
 }
 
 func hasAnyModifier(modifiers []string, left, right string) bool {
@@ -2352,10 +2391,15 @@ func inferSemaArgType(arg string, scope map[string]string) string {
 	if typ, ok := scope[normalizeName(arg)]; ok {
 		return typ
 	}
-	if receiver, name, ok := strings.Cut(arg, "."); ok && strings.EqualFold(receiver, "Page") && strings.TrimSpace(name) != "" {
+	if receiver, name, ok := strings.Cut(arg, "."); ok && strings.EqualFold(receiver, "Page") && semaPageReferenceTokenName(name) {
 		return "PageReference"
 	}
 	return ""
+}
+
+func semaPageReferenceTokenName(name string) bool {
+	name = strings.TrimSpace(name)
+	return name != "" && !strings.ContainsAny(name, "().[]{}")
 }
 
 func semaLeadingTypeToken(text string) string {
