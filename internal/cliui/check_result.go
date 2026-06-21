@@ -46,8 +46,15 @@ func WriteCheckResult(w io.Writer, info CheckResultInfo) error {
 		return nil
 	}
 
+	hasErrors := checkResultHasErrors(info.Diagnostics)
 	heading := FormatCount(len(info.Diagnostics), "diagnostic", "diagnostics")
-	if _, err := fmt.Fprintln(w, t.Red(t.GlyphFail)+" "+heading+" found"); err != nil {
+	icon := t.Red(t.GlyphFail)
+	exitCode := "1"
+	if !hasErrors {
+		icon = t.Yellow(t.GlyphWarn)
+		exitCode = "0"
+	}
+	if _, err := fmt.Fprintln(w, icon+" "+heading+" found"); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintln(w); err != nil {
@@ -107,7 +114,16 @@ func WriteCheckResult(w io.Writer, info CheckResultInfo) error {
 	if err := FprintlnKV(w, "diagnostics", fmt.Sprint(len(info.Diagnostics)), 13); err != nil {
 		return err
 	}
-	return FprintlnKV(w, "exit code", "1", 13)
+	return FprintlnKV(w, "exit code", exitCode, 13)
+}
+
+func checkResultHasErrors(diagnostics []diagnostic.Diagnostic) bool {
+	for _, diag := range diagnostics {
+		if diag.Severity == diagnostic.Error {
+			return true
+		}
+	}
+	return false
 }
 
 func formatCheckCount(count int, noun string) string {

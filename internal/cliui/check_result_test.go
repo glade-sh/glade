@@ -67,3 +67,30 @@ func TestWriteCheckResultRendersDiagnosticsWithTrySteps(t *testing.T) {
 		t.Fatalf("default check output leaked absolute path:\n%s", got)
 	}
 }
+
+func TestWriteCheckResultShowsZeroExitCodeForWarningOnlyDiagnostics(t *testing.T) {
+	var out bytes.Buffer
+	if err := WriteCheckResult(&out, CheckResultInfo{
+		ProjectRoot: "/tmp/project",
+		Types:       2,
+		Diagnostics: []diagnostic.Diagnostic{{
+			Severity: diagnostic.Warning,
+			Code:     "GLADEPERF001",
+			Message:  "Database DML call runs inside a loop.",
+			File:     "/tmp/project/force-app/main/default/classes/Task.cls",
+			Range:    &diagnostic.Range{Start: diagnostic.Position{Line: 26, Column: 13}},
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got := out.String()
+	if !strings.Contains(got, "warning GLADEPERF001 Database DML call runs inside a loop.") {
+		t.Fatalf("check output missing warning:\n%s", got)
+	}
+	if !strings.Contains(got, "exit code      0") {
+		t.Fatalf("warning-only check output did not show success exit code:\n%s", got)
+	}
+	if strings.Contains(got, "exit code      1") {
+		t.Fatalf("warning-only check output showed failing exit code:\n%s", got)
+	}
+}

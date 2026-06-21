@@ -2626,6 +2626,63 @@ public class UsesRestContext {
 	}
 }
 
+func TestAnalyzeAllowsSameClassHelperWithSystemRestRequest(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "AccountsResource.cls"), `
+@RestResource(urlMapping='/accounts/*')
+global class AccountsResource {
+  public static String list_all(System.RestRequest req) {
+    return req.requestURI;
+  }
+  @HttpGet
+  global static void doGet() {
+    RestRequest req = RestContext.request;
+    String uri = list_all(req);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "AccountsResource.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected same-class RestRequest diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeResolvesUnqualifiedNestedCastToCurrentOuter(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Alpha.cls"), `
+public class Alpha {
+  public class Book {
+    public String bookId;
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Library.cls"), `
+public class Library {
+  private class Book {
+    public Integer bookId;
+  }
+  public void run(Object obj) {
+    Integer bid = ((Book) obj).bookId;
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root: root,
+		ApexFiles: []string{
+			filepath.Join(root, "Alpha.cls"),
+			filepath.Join(root, "Library.cls"),
+		},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected current-outer nested cast diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeAllowsSearchFindSurface(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSearchFind.cls"), `

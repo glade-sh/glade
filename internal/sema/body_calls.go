@@ -1579,6 +1579,12 @@ func semaCanonicalPlatformAlias(typeName string) string {
 		return "Schema.SoapType"
 	case "apexpages.pagereference":
 		return "PageReference"
+	case "system.restcontext":
+		return "RestContext"
+	case "system.restrequest":
+		return "RestRequest"
+	case "system.restresponse":
+		return "RestResponse"
 	case "system.type":
 		return "Type"
 	case "apex_object", "system.apex_object":
@@ -1657,6 +1663,9 @@ func inferSemaArgTypeWithModelUncached(arg string, scope map[string]string, mode
 		return typ
 	}
 	if castType, _, ok := splitSemaCast(arg); ok {
+		if currentType := scope[semaCurrentTypeScopeKey]; currentType != "" {
+			return resolveNestedTypeReference(model, currentType, castType)
+		}
 		return castType
 	}
 	if match := newExprPattern.FindStringSubmatch(arg); len(match) == 2 {
@@ -1853,6 +1862,9 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 	}
 	if receiverExpr, field, ok := splitSemaMethodPath(expr); ok {
 		if castType, _, castOK := splitSemaCast(receiverExpr); castOK {
+			if currentType := scope[semaCurrentTypeScopeKey]; currentType != "" {
+				castType = resolveNestedTypeReference(model, currentType, castType)
+			}
 			if target, ok := semaResolveFieldPath(model, castType, field); ok {
 				return target.member.Type
 			}
