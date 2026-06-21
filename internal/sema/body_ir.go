@@ -1284,6 +1284,9 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 		if typ := semaEnumValuePathType(model, expr.Name); typ != "" {
 			return typ
 		}
+		if semaLooksLikeSObjectFieldStringPropertyPath(expr.Name) {
+			return "String"
+		}
 		if root, field, ok := strings.Cut(expr.Name, "."); ok {
 			if _, scoped := scope.lookup(root); !scoped {
 				if target, staticOK := semaStaticClassFieldPathMemberInContext(model, currentType, root, field); staticOK && !hasModifier(target.member.Modifiers, semaSyntheticStandardSObjectFieldModifier) {
@@ -1294,6 +1297,9 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 			}
 		}
 		if semaIRExprLooksLikeStaticSObjectToken(expr.Name, scope, model) {
+			if semaLooksLikeSObjectDescribeFieldResultPath(expr.Name) {
+				return "Schema.DescribeFieldResult"
+			}
 			if semaLooksLikeSObjectFieldTokenInModel(expr.Name, model) {
 				return "Schema.SObjectField"
 			}
@@ -1342,6 +1348,9 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 		}
 		if strings.HasPrefix(expr.Callee, "new:") {
 			return resolveNestedTypeReference(model, currentType, strings.TrimPrefix(expr.Callee, "new:"))
+		}
+		if strings.HasPrefix(expr.Callee, "newlit:") {
+			return resolveNestedTypeReference(model, currentType, strings.TrimPrefix(expr.Callee, "newlit:"))
 		}
 		if typ := a.inferFlattenedIRCallType(expr, scope, model, currentType); typ != "" {
 			return typ
@@ -1405,6 +1414,12 @@ func semaSOQLLiteralType(queryText string) string {
 	if err == nil && query.Count {
 		return "Integer"
 	}
+	if err == nil && (len(query.Aggregates) > 0 || len(query.GroupBy) > 0 || query.Having != nil) {
+		return "List<AggregateResult>"
+	}
+	if semaLooksLikeSOQLAggregateLiteral(queryText) {
+		return "List<AggregateResult>"
+	}
 	return "Database.QueryResult"
 }
 
@@ -1419,6 +1434,19 @@ func semaLooksLikeSOQLCountLiteral(queryText string) bool {
 		tokens[2] == "(" &&
 		tokens[3] == ")" &&
 		strings.EqualFold(tokens[4], "FROM")
+}
+
+func semaLooksLikeSOQLAggregateLiteral(queryText string) bool {
+	lower := strings.ToLower(queryText)
+	if strings.Contains(lower, " group by ") || strings.Contains(lower, " having ") {
+		return true
+	}
+	for _, fn := range []string{"count", "count_distinct", "sum", "avg", "min", "max", "grouping"} {
+		if strings.Contains(lower, fn+"(") || strings.Contains(lower, fn+" (") {
+			return true
+		}
+	}
+	return false
 }
 
 func semaIRExprLooksLikeStaticSObjectToken(expr string, scope irSemaScope, model map[string]typeMembers) bool {

@@ -48,6 +48,7 @@ const (
 type Analyzer struct {
 	known     map[string]TypeReference
 	namespace string
+	deps      map[string]bool
 }
 
 type AnalyzeOptions struct {
@@ -89,6 +90,7 @@ func (a *Analyzer) Analyze(index typesys.Index) (result Result) {
 
 func (a *Analyzer) AnalyzeWithOptions(index typesys.Index, opts AnalyzeOptions) (result Result) {
 	a.namespace = index.Project.Namespace
+	a.deps = make(map[string]bool)
 	index = enrichIndexWithStandardSymbols(index)
 	result = Result{
 		Project: index.Project,
@@ -109,6 +111,13 @@ func (a *Analyzer) AnalyzeWithOptions(index typesys.Index, opts AnalyzeOptions) 
 
 	for _, object := range index.Objects {
 		a.addKnown(object.Name, TypeSchema, "")
+	}
+	for _, dep := range index.Dependencies {
+		if dep.Status != "loaded" || strings.TrimSpace(dep.Namespace) == "" {
+			continue
+		}
+		a.deps[normalizeName(dep.Namespace)] = true
+		a.addKnown(dep.Namespace, TypePlatform, dep.SourceRoot)
 	}
 	for _, typ := range index.Types {
 		if !typ.Dependency {
@@ -149,6 +158,9 @@ func (a *Analyzer) AnalyzeWithOptions(index typesys.Index, opts AnalyzeOptions) 
 		result.Diagnostics = append(result.Diagnostics, a.checkSchemaReferences(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkQuerySemantics(index)...)
 	}
+	if indexHasSourceBackedDependency(index) {
+		result.Diagnostics = downgradeSourceDependencySemanticDiagnostics(result.Diagnostics)
+	}
 
 	result.Summary = Summary{
 		Types:       countProjectTypes(index.Types),
@@ -170,6 +182,32 @@ func countProjectTypes(types []typesys.TypeSymbol) int {
 		}
 	}
 	return count
+}
+
+func skipProjectDiagnosticType(typ typesys.TypeSymbol) bool {
+	return typ.Dependency || typ.Artifact
+}
+
+func indexHasSourceBackedDependency(index typesys.Index) bool {
+	for _, dep := range index.Dependencies {
+		if dep.Status == "loaded" && dep.SourceRoot != "" && !semaDependencyBackedByArtifact(index, dep.Namespace) {
+			return true
+		}
+	}
+	return false
+}
+
+func downgradeSourceDependencySemanticDiagnostics(diagnostics []diagnostic.Diagnostic) []diagnostic.Diagnostic {
+	out := append([]diagnostic.Diagnostic(nil), diagnostics...)
+	for i := range out {
+		if out[i].Severity != diagnostic.Error {
+			continue
+		}
+		if strings.HasPrefix(out[i].Code, "GLADESEMA") || strings.HasPrefix(out[i].Code, "dependency_") {
+			out[i].Severity = diagnostic.Warning
+		}
+	}
+	return out
 }
 
 func enrichIndexWithStandardSymbols(index typesys.Index) typesys.Index {
@@ -519,6 +557,9 @@ func (a *Analyzer) collectAdditionalSemaLocalDecls(typ typesys.TypeSymbol, membe
 	if isSemaKeyword(typeName) {
 		return nil
 	}
+	if semaLocalDeclLooksLikeSOQLClause(typeName, "") {
+		return nil
+	}
 	if match[1] <= 0 || body[match[1]-1] == ';' {
 		return nil
 	}
@@ -865,12 +906,27 @@ func semaBodyExpressions(body string) []semaArg {
 func semaLocalDeclMatchInIgnoredText(body string, match []int) bool {
 	if len(match) >= 4 && match[2] >= 0 {
 		typeName := strings.TrimSpace(body[match[2]:match[3]])
-		if semaLooksLikeSOQLClauseKeyword(typeName) {
+		name := ""
+		if len(match) >= 6 && match[4] >= 0 {
+			name = strings.TrimSpace(body[match[4]:match[5]])
+		}
+		if semaLocalDeclLooksLikeSOQLClause(typeName, name) {
 			return true
 		}
 		return semaOffsetInIgnoredText(body, match[2])
 	}
 	return len(match) < 1 || match[0] < 0 || semaOffsetInIgnoredText(body, match[0])
+}
+
+func semaLocalDeclLooksLikeSOQLClause(typeName, name string) bool {
+	switch strings.ToLower(strings.TrimSpace(typeName)) {
+	case "select", "find", "from", "where", "and", "or", "limit", "offset", "having":
+		return true
+	case "order", "group":
+		return strings.EqualFold(strings.TrimSpace(name), "by")
+	default:
+		return false
+	}
 }
 
 func semaLooksLikeSOQLClauseKeyword(typeName string) bool {
@@ -1150,6 +1206,9 @@ func semaLooksLikeSObjectFieldTokenInModel(expr string, model map[string]typeMem
 		if strings.EqualFold(parts[i], "SObjectType") && strings.EqualFold(parts[i+1], "fields") && semaFieldTokenPart(parts[i+2]) {
 			return true
 		}
+		if i+3 < len(parts) && strings.EqualFold(parts[i], "SObjectType") && semaFieldTokenPart(parts[i+1]) && strings.EqualFold(parts[i+2], "fields") && semaFieldTokenPart(parts[i+3]) {
+			return true
+		}
 	}
 	return false
 }
@@ -1200,6 +1259,9 @@ func semaLooksLikeSObjectTypeToken(expr string) bool {
 
 func inferSemaMethodCallType(arg string, scope map[string]string, model map[string]typeMembers) string {
 	arg = strings.TrimSpace(arg)
+	if typ, handled := inferSemaCallChainType(arg, scope, model); handled {
+		return typ
+	}
 	if receiverExpr, method, args, ok := splitLastSemaCall(arg); ok {
 		if semaDatabaseDynamicQueryTextCall(receiverExpr + "." + method) {
 			return "Database.QueryResult"
@@ -1231,6 +1293,72 @@ func inferSemaMethodCallType(arg string, scope map[string]string, model map[stri
 		return semaResolvedImplicitCallReturnType(model, currentType, callee, args, scope)
 	}
 	return ""
+}
+
+type semaCallSegment struct {
+	method string
+	args   []semaArg
+}
+
+func inferSemaCallChainType(arg string, scope map[string]string, model map[string]typeMembers) (string, bool) {
+	base, calls, ok := splitSemaCallChain(arg)
+	if !ok {
+		return "", false
+	}
+	receiverType := semaInitialCallReceiverType(base, scope, model)
+	if receiverType == "" {
+		return "", true
+	}
+	for _, call := range calls {
+		nextType := semaResolvedCallReturnType(model, receiverType, call.method, call.args, scope)
+		if nextType == "" {
+			return "", true
+		}
+		receiverType = nextType
+	}
+	return receiverType, true
+}
+
+func splitSemaCallChain(arg string) (string, []semaCallSegment, bool) {
+	expr := strings.TrimSpace(arg)
+	var reversed []semaCallSegment
+	for {
+		receiver, method, args, ok := splitLastSemaCall(expr)
+		if !ok {
+			break
+		}
+		reversed = append(reversed, semaCallSegment{method: method, args: args})
+		expr = strings.TrimSpace(receiver)
+	}
+	if expr == "" || len(reversed) == 0 {
+		return "", nil, false
+	}
+	calls := make([]semaCallSegment, len(reversed))
+	for i := range reversed {
+		calls[len(reversed)-1-i] = reversed[i]
+	}
+	return expr, calls, true
+}
+
+func semaInitialCallReceiverType(expr string, scope map[string]string, model map[string]typeMembers) string {
+	expr = strings.TrimSpace(expr)
+	if expr == "" {
+		return ""
+	}
+	if typ := inferSemaArgTypeWithModel(expr, scope, model); typ != "" {
+		return typ
+	}
+	if currentType := scope[semaCurrentTypeScopeKey]; currentType != "" {
+		if resolved := resolveNestedTypeName(model, currentType, expr); resolved != "" {
+			if members, ok := model[normalizeName(resolved)]; ok {
+				return members.name
+			}
+		}
+	}
+	if members, _, ok := semaLookupTypeMembers(model, expr); ok {
+		return members.name
+	}
+	return semaTextReceiverType(expr, scope, model)
 }
 
 func semaTextReceiverType(receiver string, scope map[string]string, model map[string]typeMembers) string {
@@ -1457,6 +1585,9 @@ func semaPlatformMethodSignatureForMode(model map[string]typeMembers, receiverTy
 	if sig, ok := semaGeneratedPlatformMethodSignature(model, receiverType, method, receiverMode); ok {
 		return sig, true
 	}
+	if sig, ok := semaUserDefinedCloneSignature(model, receiverType, method); ok {
+		return sig, true
+	}
 	if sig, ok := semaCustomDataStaticMethodSignature(receiverType, method); ok {
 		return sig, true
 	}
@@ -1504,6 +1635,17 @@ func semaPlatformMethodSignatureForMode(model map[string]typeMembers, receiverTy
 		return semaPlatformMethodSignature("Exception", method)
 	}
 	return semaCollectionSignature{}, false
+}
+
+func semaUserDefinedCloneSignature(model map[string]typeMembers, receiverType, method string) (semaCollectionSignature, bool) {
+	if normalizeName(method) != "clone" {
+		return semaCollectionSignature{}, false
+	}
+	members, _, ok := semaLookupTypeMembers(model, receiverType)
+	if !ok || members.kind != apexast.DeclarationClass {
+		return semaCollectionSignature{}, false
+	}
+	return semaCollectionSignature{returnType: members.name, params: [][]string{{}}}, true
 }
 
 func semaGeneratedPlatformMethodSignature(model map[string]typeMembers, receiverType, method, receiverMode string) (semaCollectionSignature, bool) {
@@ -2156,6 +2298,9 @@ func (a *Analyzer) hasKnown(name string) bool {
 	if _, ok := a.known[normalizeName(name)]; ok {
 		return true
 	}
+	if a.hasExternalDependencyName(name) || semaLooksLikeUnconfiguredManagedPackageType(name) {
+		return true
+	}
 	if a.namespace != "" {
 		if namespaced, ok := semaProjectNamespacedAPIName(a.namespace, name); ok {
 			if _, ok := a.known[normalizeName(namespaced)]; ok {
@@ -2183,6 +2328,33 @@ func (a *Analyzer) hasKnown(name string) bool {
 		return ok
 	}
 	return false
+}
+
+func (a *Analyzer) hasExternalDependencyName(name string) bool {
+	normalized := normalizeName(name)
+	for namespace := range a.deps {
+		if strings.HasPrefix(normalized, namespace+".") || strings.HasPrefix(normalized, namespace+"__") {
+			return true
+		}
+	}
+	return false
+}
+
+func semaLooksLikeUnconfiguredManagedPackageType(name string) bool {
+	parts := strings.Split(strings.TrimSpace(name), ".")
+	if len(parts) < 2 {
+		return false
+	}
+	root := strings.TrimSpace(parts[0])
+	if len(root) < 2 || root != strings.ToUpper(root) {
+		return false
+	}
+	for _, r := range root {
+		if (r < 'A' || r > 'Z') && (r < '0' || r > '9') && r != '_' {
+			return false
+		}
+	}
+	return true
 }
 
 func semaProjectNamespacedAPIName(namespace, name string) (string, bool) {

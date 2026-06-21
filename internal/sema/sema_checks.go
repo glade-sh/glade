@@ -17,6 +17,9 @@ import (
 func (a *Analyzer) checkTriggers(index typesys.Index) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, trigger := range index.Triggers {
+		if trigger.Dependency {
+			continue
+		}
 		if trigger.ObjectName == "" || a.hasKnown(trigger.ObjectName) {
 			continue
 		}
@@ -33,7 +36,7 @@ func (a *Analyzer) checkTriggers(index typesys.Index) []diagnostic.Diagnostic {
 func (a *Analyzer) checkMemberTypes(index typesys.Index) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, typ := range index.Types {
-		if typ.Artifact {
+		if skipProjectDiagnosticType(typ) {
 			continue
 		}
 		for _, member := range typ.Members {
@@ -59,7 +62,7 @@ func (a *Analyzer) checkMemberTypes(index typesys.Index) []diagnostic.Diagnostic
 func (a *Analyzer) checkMethodParameters(index typesys.Index) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, typ := range index.Types {
-		if typ.Artifact {
+		if skipProjectDiagnosticType(typ) {
 			continue
 		}
 		for _, member := range typ.Members {
@@ -111,7 +114,7 @@ func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnos
 	var diagnostics []diagnostic.Diagnostic
 	sourceCache := make(map[string]string)
 	for _, typ := range index.Types {
-		if typ.Artifact || typ.File == "" {
+		if skipProjectDiagnosticType(typ) || typ.File == "" {
 			continue
 		}
 		source, ok := readSemaSource(typ.File, sourceCache)
@@ -1050,6 +1053,9 @@ func maxInt(a, b int) int {
 func (a *Analyzer) checkAnnotations(index typesys.Index) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, typ := range index.Types {
+		if skipProjectDiagnosticType(typ) {
+			continue
+		}
 		if hasModifier(typ.Modifiers, "RestResource") && typ.Kind != apexast.DeclarationClass {
 			diagnostics = append(diagnostics, annotationDiagnostic(typ.File, typ.Range, "RestResource is only valid on classes"))
 		}
@@ -1094,6 +1100,9 @@ func checkMemberAnnotations(typ typesys.TypeSymbol, member typesys.MemberSymbol)
 func (a *Analyzer) checkVisibility(index typesys.Index) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, typ := range index.Types {
+		if skipProjectDiagnosticType(typ) {
+			continue
+		}
 		if hasAnyModifier(typ.Modifiers, "public", "global") {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
@@ -1123,7 +1132,7 @@ func (a *Analyzer) checkVisibility(index typesys.Index) []diagnostic.Diagnostic 
 func (a *Analyzer) checkManagedPackageAccess(index typesys.Index) []diagnostic.Diagnostic {
 	dependencyNamespaces := make(map[string]typesys.DependencyInfo)
 	for _, dep := range index.Dependencies {
-		if dep.Status == "loaded" {
+		if dep.Status == "loaded" && semaDependencyBackedByArtifact(index, dep.Namespace) {
 			dependencyNamespaces[strings.ToLower(dep.Namespace)] = dep
 		}
 	}
@@ -1194,12 +1203,22 @@ func (a *Analyzer) checkManagedPackageAccess(index typesys.Index) []diagnostic.D
 	}
 	return diagnostics
 }
+
+func semaDependencyBackedByArtifact(index typesys.Index, namespace string) bool {
+	for _, typ := range index.Types {
+		if typ.Dependency && typ.Artifact && strings.EqualFold(typ.Namespace, namespace) {
+			return true
+		}
+	}
+	return false
+}
+
 func (a *Analyzer) checkInheritanceContracts(index typesys.Index) []diagnostic.Diagnostic {
 	model := buildTypeMembers(index)
 	defer unregisterSemaShortCandidateIndex(model)
 	var diagnostics []diagnostic.Diagnostic
 	for _, typ := range index.Types {
-		if typ.Artifact {
+		if skipProjectDiagnosticType(typ) {
 			continue
 		}
 		if typ.Kind != apexast.DeclarationClass {
