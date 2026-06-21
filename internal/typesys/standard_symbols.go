@@ -72,6 +72,91 @@ func StandardPlatformSymbolView() []TypeSymbol {
 	return standardPlatformSymbolsCache
 }
 
+var (
+	standardSystemNamespaceTypeNamesOnce  sync.Once
+	standardSystemNamespaceTypeNamesCache []string
+	standardSchemaNamespaceTypeNamesOnce  sync.Once
+	standardSchemaNamespaceTypeNamesCache []string
+)
+
+func StandardSystemNamespaceTypeNames() []string {
+	standardSystemNamespaceTypeNamesOnce.Do(func() {
+		standardSystemNamespaceTypeNamesCache = buildStandardSystemNamespaceTypeNames()
+	})
+	return append([]string(nil), standardSystemNamespaceTypeNamesCache...)
+}
+
+func StandardSchemaNamespaceTypeNames() []string {
+	standardSchemaNamespaceTypeNamesOnce.Do(func() {
+		standardSchemaNamespaceTypeNamesCache = buildStandardSchemaNamespaceTypeNames()
+	})
+	return append([]string(nil), standardSchemaNamespaceTypeNamesCache...)
+}
+
+func buildStandardSystemNamespaceTypeNames() []string {
+	seen := map[string]string{}
+	add := func(name string) {
+		name = strings.TrimSpace(name)
+		if name == "" || strings.Contains(name, ".") {
+			return
+		}
+		key := strings.ToLower(name)
+		if _, ok := seen[key]; !ok {
+			seen[key] = name
+		}
+	}
+	for _, specs := range [][]StandardSymbolSpec{
+		standardPlatformSymbolSpecs,
+		systemStubSymbolSpecs,
+		standardPlatformSymbolOverlays,
+	} {
+		for _, spec := range specs {
+			add(spec.Name)
+		}
+	}
+	return sortedNamespaceNames(seen)
+}
+
+func buildStandardSchemaNamespaceTypeNames() []string {
+	seen := map[string]string{}
+	add := func(name string) {
+		name = strings.TrimSpace(name)
+		const prefix = "Schema."
+		if !strings.HasPrefix(name, prefix) {
+			return
+		}
+		short := strings.TrimPrefix(name, prefix)
+		if short == "" || strings.Contains(short, ".") {
+			return
+		}
+		key := strings.ToLower(short)
+		if _, ok := seen[key]; !ok {
+			seen[key] = short
+		}
+	}
+	for _, specs := range [][]StandardSymbolSpec{
+		standardPlatformSymbolSpecs,
+		systemStubSymbolSpecs,
+		standardPlatformSymbolOverlays,
+	} {
+		for _, spec := range specs {
+			add(spec.Name)
+		}
+	}
+	return sortedNamespaceNames(seen)
+}
+
+func sortedNamespaceNames(names map[string]string) []string {
+	out := make([]string, 0, len(names))
+	for _, name := range names {
+		out = append(out, name)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		return strings.ToLower(out[i]) < strings.ToLower(out[j])
+	})
+	return out
+}
+
 func buildStandardPlatformSymbols() []TypeSymbol {
 	specs := append([]StandardSymbolSpec(nil), standardPlatformSymbolSpecs...)
 	specs = append(specs, productNamespaceSymbolSpecs...)

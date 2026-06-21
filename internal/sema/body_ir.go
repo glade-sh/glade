@@ -794,15 +794,17 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 			}
 		}
 	}
-	if diagnostics, handled := a.checkIRPlatformCall(typ, member, receiverType, method, expr.Args, scope, pos, bodyOffset, source, model, receiverMode); handled {
-		return diagnostics
-	}
-	if diagnostics, handled := a.checkIRCollectionCall(typ, member, receiverType, method, expr.Args, scope, pos, bodyOffset, source, model); handled {
-		return diagnostics
-	}
 	candidates := resolveMemberMethods(model, receiverType, method)
 	if !explicitReceiver {
 		candidates = resolveImplicitMemberMethods(model, receiverType, method)
+	}
+	if len(candidates) == 0 {
+		if diagnostics, handled := a.checkIRPlatformCall(typ, member, receiverType, method, expr.Args, scope, pos, bodyOffset, source, model, receiverMode); handled {
+			return diagnostics
+		}
+		if diagnostics, handled := a.checkIRCollectionCall(typ, member, receiverType, method, expr.Args, scope, pos, bodyOffset, source, model); handled {
+			return diagnostics
+		}
 	}
 	if len(candidates) == 0 && !strings.Contains(expr.Callee, ".") && bodyOffset >= 0 && bodyOffset <= len(source) {
 		if chainedReceiver, chainedMethod, ok := semaChainedCallReceiverNear(source[bodyOffset:], pos, method, scope.flat(), model, typ.Name); ok && strings.EqualFold(chainedMethod, method) {
@@ -882,6 +884,14 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 			return nil
 		}
 		return []diagnostic.Diagnostic{ambiguousCallDiagnostic(typ, member, expr.Callee, len(expr.Args), bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
+	}
+	if semaResolvedMembersAllPlatformBacked(model, candidates) {
+		if diagnostics, handled := a.checkIRPlatformCall(typ, member, receiverType, method, expr.Args, scope, pos, bodyOffset, source, model, receiverMode); handled {
+			return diagnostics
+		}
+		if diagnostics, handled := a.checkIRCollectionCall(typ, member, receiverType, method, expr.Args, scope, pos, bodyOffset, source, model); handled {
+			return diagnostics
+		}
 	}
 	if semaKnownFluentHelperMethod(method) {
 		return nil
@@ -1503,23 +1513,28 @@ func semaResolvedIRCallReturnType(a *Analyzer, model map[string]typeMembers, rec
 	if stubbedType := semaCreateStubReturnTypeFromIR(model, receiverType, method, args, currentType); stubbedType != "" {
 		return stubbedType
 	}
+	if sig, ok := semaCollectionMethodSignature(receiverType, method); ok {
+		return sig.returnType
+	}
+	if sig, ok := semaEnumMethodSignature(model, receiverType, method); ok {
+		return sig.returnType
+	}
+	candidates := resolveMemberMethods(model, receiverType, method)
+	platformBackedCandidates := semaResolvedMembersAllPlatformBacked(model, candidates)
+	if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok && !platformBackedCandidates {
+		return candidate.member.Type
+	}
 	if semaDatabaseDynamicQueryCall(receiverType, method) {
 		return "Database.QueryResult"
 	}
 	if returnType := semaDatabaseDMLReturnType(receiverType, method, argTypes); returnType != "" {
 		return returnType
 	}
-	if sig, ok := semaCollectionMethodSignature(receiverType, method); ok {
-		return sig.returnType
+	if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok {
+		return candidate.member.Type
 	}
 	if sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method); ok {
 		return sig.returnType
-	}
-	if sig, ok := semaEnumMethodSignature(model, receiverType, method); ok {
-		return sig.returnType
-	}
-	if candidate, ok, _ := bestResolvedMemberByArgTypes(resolveMemberMethods(model, receiverType, method), argTypes, model); ok {
-		return candidate.member.Type
 	}
 	return ""
 }
