@@ -8,13 +8,14 @@ No changes yet.
 
 Issue closeout:
 
-- Ships the private-corpus semantic-check fixes after `v0.2.2`.
-- `glade check --project .` now exits 0 for the NU private workspace with 5,005
-  Apex types, 65 triggers, 174 objects, and one performance warning.
-- `glade check --project .` now exits 0 for the NAMS workspace with 3,696 Apex
-  types, 79 triggers, 254 objects, and source-backed dependency diagnostics
-  downgraded to warnings.
-- The SF credential package still reports three real duplicate top-level Apex
+- Ships semantic-check fixes for large source-backed SFDX workspaces after
+  `v0.2.2`.
+- `glade check --project .` now exits 0 for a namespaced SFDX workspace with
+  5,005 Apex types, 65 triggers, 174 objects, and one performance warning.
+- `glade check --project .` now exits 0 for a source-backed dependency
+  workspace with 3,696 Apex types, 79 triggers, 254 objects, and dependency
+  diagnostics downgraded to warnings.
+- A separate package workspace still reports three real duplicate top-level Apex
   classes inside its configured `sfdx-project.json` package root.
 
 Semantic checks:
