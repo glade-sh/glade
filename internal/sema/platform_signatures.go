@@ -10,6 +10,9 @@ import (
 
 func semaCollectionMethodSignature(receiverType, method string) (semaCollectionSignature, bool) {
 	receiverType = normalizeArrayType(receiverType)
+	if strings.EqualFold(receiverType, "Database.QueryResult") {
+		receiverType = "List<SObject>"
+	}
 	base, args := semaGenericBaseAndArgs(receiverType)
 	method = normalizeName(method)
 	switch normalizeName(base) {
@@ -146,6 +149,47 @@ func semaCollectionMethodSignature(receiverType, method string) (semaCollectionS
 		}
 	}
 	return semaCollectionSignature{}, false
+}
+
+func semaPlatformConstructorSignatures(typeName string) ([][]string, bool) {
+	lookup := normalizeName(semaCanonicalPlatformAlias(typeName))
+	for _, typ := range typesys.StandardPlatformSymbolView() {
+		if !semaPlatformSymbolMatchesConstructorType(typ, lookup) {
+			continue
+		}
+		var params [][]string
+		seen := make(map[string]bool)
+		for _, member := range typ.Members {
+			if member.Kind != apexast.DeclarationConstructor {
+				continue
+			}
+			signature := make([]string, len(member.Parameters))
+			for i, param := range member.Parameters {
+				signature[i] = param.Type
+			}
+			key := strings.Join(signature, "\x00")
+			if seen[key] {
+				continue
+			}
+			seen[key] = true
+			params = append(params, signature)
+		}
+		if len(params) == 0 {
+			return nil, false
+		}
+		return params, true
+	}
+	return nil, false
+}
+
+func semaPlatformSymbolMatchesConstructorType(typ typesys.TypeSymbol, lookup string) bool {
+	if normalizeName(typ.Name) == lookup {
+		return true
+	}
+	if typ.Namespace == "" {
+		return false
+	}
+	return normalizeName(typ.Namespace+"."+typ.Name) == lookup
 }
 
 func checkSemaCollectionCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []semaArg, start, end int, source string, scope map[string]string, model map[string]typeMembers) ([]diagnostic.Diagnostic, bool) {
@@ -337,6 +381,26 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		if method == "randomuuid" {
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
 		}
+	case "cookie":
+		switch method {
+		case "getmaxage":
+			return semaCollectionSignature{returnType: "Integer", params: [][]string{{}}}, true
+		case "getname", "getvalue", "getpath", "getdomain", "getsamesite":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
+		case "issecure", "ishttponly":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
+		}
+	case "dmlexception":
+		switch method {
+		case "getnumdml":
+			return semaCollectionSignature{returnType: "Integer", params: [][]string{{}}}, true
+		case "getdmlmessage", "getdmlstatuscode", "getdmlid":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"Integer"}}}, true
+		case "getdmltype":
+			return semaCollectionSignature{returnType: "StatusCode", params: [][]string{{"Integer"}}}, true
+		case "getdmlindex":
+			return semaCollectionSignature{returnType: "Integer", params: [][]string{{"Integer"}}}, true
+		}
 	case "blob":
 		switch method {
 		case "tostring":
@@ -507,7 +571,9 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 			return semaCollectionSignature{returnType: "String", params: [][]string{{"Integer"}, {"Integer", "String"}}}, true
 		case "trim", "normalizespace", "deletewhitespace":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
-		case "tolowercase", "touppercase", "capitalize", "uncapitalize":
+		case "tolowercase", "touppercase":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{}, {"String"}}}, true
+		case "capitalize", "uncapitalize":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
 		case "escapehtml3", "escapehtml4", "unescapehtml3", "unescapehtml4", "escapexml", "unescapexml":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
@@ -588,6 +654,10 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
 		case "geterrors":
 			return semaCollectionSignature{returnType: "List<Object>", params: [][]string{{}}}, true
+		case "setoptions":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"Database.DMLOptions"}}}, true
+		case "getoptions":
+			return semaCollectionSignature{returnType: "Database.DMLOptions", params: [][]string{{}}}, true
 		}
 	case "schema.recordtypeinfo":
 		switch method {
@@ -631,7 +701,7 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		case "getrequired", "getdbrequired":
 			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
 		case "gettype":
-			return semaCollectionSignature{returnType: "Schema.SoapType", params: [][]string{{}}}, true
+			return semaCollectionSignature{returnType: "Schema.DisplayType", params: [][]string{{}}}, true
 		}
 	case "schema.sobjecttype":
 		switch method {

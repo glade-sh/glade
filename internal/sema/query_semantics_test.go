@@ -113,6 +113,53 @@ public class QueryProbe {
 	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "Name__c")
 }
 
+func TestAnalyzeQuerySemanticsResolvesNamespacedStandardObjectExtensionField(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT pkg__PrimaryAffiliation__c FROM Account];
+  }
+}
+`
+	result := analyzeQueryProbeWithProject(t, source, typesys.ProjectInfo{Namespace: "pkg"}, schema.Schema{Objects: []schema.Object{
+		{
+			Name: "Account",
+			Fields: []schema.Field{
+				{Name: "PrimaryAffiliation__c", Type: "Lookup", ReferenceTo: []string{"Account"}},
+			},
+		},
+	}})
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "pkg__PrimaryAffiliation__c")
+}
+
+func TestAnalyzeQuerySemanticsMergesExtensionFieldsOnDuplicateObjects(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<vend__Order__c> orders = [SELECT vend__Total__c, pkg__State__c FROM vend__Order__c];
+  }
+}
+`
+	result := analyzeQueryProbeWithProject(t, source, typesys.ProjectInfo{Namespace: "pkg"}, schema.Schema{Objects: []schema.Object{
+		{
+			Name: "vend__Order__c",
+			Fields: []schema.Field{
+				{Name: "pkg__State__c", Type: "Picklist"},
+			},
+		},
+		{
+			Name: "vend__Order__c",
+			Fields: []schema.Field{
+				{Name: "vend__Total__c", Type: "Currency"},
+			},
+		},
+	}})
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "pkg__State__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "vend__Total__c")
+}
+
 func TestAnalyzeQuerySemanticsAddsSystemFieldsToCustomObjects(t *testing.T) {
 	source := `
 public class QueryProbe {

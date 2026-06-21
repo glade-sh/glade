@@ -18,6 +18,9 @@ func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) 
 	requireStandardConstructor(t, container, []string{})
 	requireStandardMethod(t, container, "addMetadata", []string{"Metadata.Metadata"}, false)
 
+	deployResult := requireStandardSymbol(t, symbols, "Metadata.DeployResult")
+	requireStandardProperty(t, deployResult, "errorMessage", "String")
+
 	settings := requireStandardSymbol(t, symbols, "ConnectApi.OrganizationSettings")
 	requireStandardProperty(t, settings, "userSettings", "ConnectApi.UserSettings")
 

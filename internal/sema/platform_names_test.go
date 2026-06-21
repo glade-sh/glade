@@ -1,6 +1,10 @@
 package sema
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/glade-sh/glade/internal/typesys"
+)
 
 func TestSemaCanonicalPlatformAliasCoversDocumentedSystemNamespace(t *testing.T) {
 	for _, tc := range []struct {
@@ -17,7 +21,9 @@ func TestSemaCanonicalPlatformAliasCoversDocumentedSystemNamespace(t *testing.T)
 		{"System.HttpRequest", "HttpRequest"},
 		{"System.HttpResponse", "HttpResponse"},
 		{"System.JSON", "JSON"},
+		{"System.Cookie", "Cookie"},
 		{"System.Limits", "Limits"},
+		{"System.Location", "Location"},
 		{"System.Math", "Math"},
 		{"System.RestContext", "RestContext"},
 		{"System.RestRequest", "RestRequest"},
@@ -30,6 +36,15 @@ func TestSemaCanonicalPlatformAliasCoversDocumentedSystemNamespace(t *testing.T)
 	} {
 		if got := semaCanonicalPlatformAlias(tc.in); got != tc.want {
 			t.Fatalf("semaCanonicalPlatformAlias(%q) = %q, want %q", tc.in, got, tc.want)
+		}
+	}
+}
+
+func TestSemaCanonicalPlatformAliasCoversEverySystemNamespaceTypeName(t *testing.T) {
+	for _, name := range typesys.StandardSystemNamespaceTypeNames() {
+		qualified := "System." + name
+		if got := semaCanonicalPlatformAlias(qualified); got == qualified {
+			t.Fatalf("semaCanonicalPlatformAlias(%q) did not resolve", qualified)
 		}
 	}
 }

@@ -390,7 +390,9 @@ func callArgumentsAt(body string, calleeEnd int) ([]semaArg, bool) {
 				parenDepth++
 			}
 		case '<':
-			angleDepth++
+			if looksLikeSemaGenericOpen(body, i) {
+				angleDepth++
+			}
 		case '>':
 			if angleDepth > 0 && (i == 0 || body[i-1] != '=') {
 				angleDepth--

@@ -383,7 +383,17 @@ func (c querySemanticsChecker) field(objectName, fieldName string) (schema.Field
 	if field, ok := fields[normalizeName(fieldName)]; ok {
 		return field, true
 	}
+	if local, ok := semaProjectLocalAPIName(c.namespace, fieldName); ok {
+		if field, ok := fields[normalizeName(local)]; ok {
+			return field, true
+		}
+	}
 	if namespaced, ok := semaProjectNamespacedAPIName(c.namespace, fieldName); ok {
+		if field, ok := fields[normalizeName(namespaced)]; ok {
+			return field, true
+		}
+	}
+	if namespaced, ok := semaOwnerNamespacedAPIName(object.Name, fieldName); ok {
 		if field, ok := fields[normalizeName(namespaced)]; ok {
 			return field, true
 		}
@@ -483,15 +493,210 @@ func (c querySemanticsChecker) addObject(object schema.Object) {
 	object = mergeQueryStorageStandardFields(object)
 	object = mergeQuerySObjectSystemFields(object)
 	key := normalizeName(object.Name)
-	c.objects[key] = object
-	fieldMap := make(map[string]schema.Field, len(object.Fields))
-	for _, field := range object.Fields {
-		fieldMap[normalizeName(field.Name)] = field
+	if existing, ok := c.objects[key]; ok {
+		object = mergeQueryDuplicateObject(existing, object)
 	}
+	c.objects[key] = object
+	fieldMap := queryFieldMap(object.Fields)
 	c.fields[key] = fieldMap
 	if localName, ok := semaProjectLocalAPIName(c.namespace, object.Name); ok {
 		c.objects[normalizeName(localName)] = object
+		c.fields[normalizeName(localName)] = fieldMap
 	}
+}
+
+func queryFieldMap(fields []schema.Field) map[string]schema.Field {
+	fieldMap := make(map[string]schema.Field, len(fields))
+	for _, field := range fields {
+		fieldMap[normalizeName(field.Name)] = field
+	}
+	return fieldMap
+}
+
+func mergeQueryDuplicateObject(existing, incoming schema.Object) schema.Object {
+	merged := existing
+	if merged.Name == "" {
+		merged.Name = incoming.Name
+	}
+	if merged.Label == "" {
+		merged.Label = incoming.Label
+	}
+	if merged.PluralLabel == "" {
+		merged.PluralLabel = incoming.PluralLabel
+	}
+	if merged.SharingModel == "" {
+		merged.SharingModel = incoming.SharingModel
+	}
+	if merged.CustomSettingsType == "" {
+		merged.CustomSettingsType = incoming.CustomSettingsType
+	}
+	merged.NameField = mergeQueryNameField(merged.NameField, incoming.NameField)
+	merged.Fields = mergeQueryFields(existing.Fields, incoming.Fields)
+	merged.RecordTypes = mergeQueryRecordTypes(existing.RecordTypes, incoming.RecordTypes)
+	merged.ValidationRules = mergeQueryValidationRules(existing.ValidationRules, incoming.ValidationRules)
+	return merged
+}
+
+func mergeQueryNameField(existing, incoming schema.NameField) schema.NameField {
+	if existing.Label == "" {
+		existing.Label = incoming.Label
+	}
+	if existing.Type == "" {
+		existing.Type = incoming.Type
+	}
+	if existing.DisplayFormat == "" {
+		existing.DisplayFormat = incoming.DisplayFormat
+	}
+	return existing
+}
+
+func mergeQueryFields(existing, incoming []schema.Field) []schema.Field {
+	out := make([]schema.Field, 0, len(existing)+len(incoming))
+	seen := make(map[string]int, len(existing)+len(incoming))
+	for _, field := range existing {
+		key := normalizeName(field.Name)
+		if key == "" {
+			continue
+		}
+		seen[key] = len(out)
+		out = append(out, field)
+	}
+	for _, field := range incoming {
+		key := normalizeName(field.Name)
+		if key == "" {
+			continue
+		}
+		if i, ok := seen[key]; ok {
+			out[i] = mergeQueryField(out[i], field)
+			continue
+		}
+		seen[key] = len(out)
+		out = append(out, field)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].Name < out[j].Name
+	})
+	return out
+}
+
+func mergeQueryField(existing, incoming schema.Field) schema.Field {
+	if existing.Label == "" {
+		existing.Label = incoming.Label
+	}
+	if existing.InlineHelpText == "" {
+		existing.InlineHelpText = incoming.InlineHelpText
+	}
+	if existing.Type == "" {
+		existing.Type = incoming.Type
+	}
+	if existing.Length == 0 {
+		existing.Length = incoming.Length
+	}
+	if existing.Precision == 0 {
+		existing.Precision = incoming.Precision
+	}
+	if existing.Scale == 0 {
+		existing.Scale = incoming.Scale
+	}
+	if len(existing.ReferenceTo) == 0 {
+		existing.ReferenceTo = append([]string(nil), incoming.ReferenceTo...)
+	}
+	if existing.RelationshipName == "" {
+		existing.RelationshipName = incoming.RelationshipName
+	}
+	if existing.ChildRelationshipName == "" {
+		existing.ChildRelationshipName = incoming.ChildRelationshipName
+	}
+	if existing.DeleteConstraint == "" {
+		existing.DeleteConstraint = incoming.DeleteConstraint
+	}
+	if existing.DefaultValue == "" {
+		existing.DefaultValue = incoming.DefaultValue
+	}
+	if existing.Formula == "" {
+		existing.Formula = incoming.Formula
+	}
+	if existing.SummarizedField == "" {
+		existing.SummarizedField = incoming.SummarizedField
+	}
+	if existing.SummaryForeignKey == "" {
+		existing.SummaryForeignKey = incoming.SummaryForeignKey
+	}
+	if existing.SummaryOperation == "" {
+		existing.SummaryOperation = incoming.SummaryOperation
+	}
+	if len(existing.SummaryFilterItems) == 0 {
+		existing.SummaryFilterItems = append([]schema.SummaryFilter(nil), incoming.SummaryFilterItems...)
+	}
+	if len(existing.FilteredLookupInfo.ControllingFields) == 0 && !existing.FilteredLookupInfo.Dependent && !existing.FilteredLookupInfo.OptionalFilter {
+		existing.FilteredLookupInfo = incoming.FilteredLookupInfo
+	}
+	if existing.PicklistController == "" {
+		existing.PicklistController = incoming.PicklistController
+	}
+	if len(existing.PicklistValueSettings) == 0 {
+		existing.PicklistValueSettings = append([]schema.PicklistSetting(nil), incoming.PicklistValueSettings...)
+	}
+	if existing.ValueSetName == "" {
+		existing.ValueSetName = incoming.ValueSetName
+	}
+	if len(existing.PicklistValues) == 0 {
+		existing.PicklistValues = append([]schema.PicklistValue(nil), incoming.PicklistValues...)
+	}
+	return existing
+}
+
+func mergeQueryRecordTypes(existing, incoming []schema.RecordType) []schema.RecordType {
+	out := make([]schema.RecordType, 0, len(existing)+len(incoming))
+	seen := make(map[string]bool, len(existing)+len(incoming))
+	for _, recordType := range existing {
+		key := normalizeName(recordType.DeveloperName)
+		if key == "" {
+			continue
+		}
+		seen[key] = true
+		out = append(out, recordType)
+	}
+	for _, recordType := range incoming {
+		key := normalizeName(recordType.DeveloperName)
+		if key == "" || seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, recordType)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].DeveloperName < out[j].DeveloperName
+	})
+	return out
+}
+
+func mergeQueryValidationRules(existing, incoming []schema.ValidationRule) []schema.ValidationRule {
+	out := make([]schema.ValidationRule, 0, len(existing)+len(incoming))
+	seen := make(map[string]bool, len(existing)+len(incoming))
+	for _, rule := range existing {
+		key := normalizeName(rule.Namespace + "." + rule.Name)
+		if key == "." {
+			continue
+		}
+		seen[key] = true
+		out = append(out, rule)
+	}
+	for _, rule := range incoming {
+		key := normalizeName(rule.Namespace + "." + rule.Name)
+		if key == "." || seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, rule)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Namespace != out[j].Namespace {
+			return out[i].Namespace < out[j].Namespace
+		}
+		return out[i].Name < out[j].Name
+	})
+	return out
 }
 
 func (c querySemanticsChecker) apiNamesMatch(left, right string) bool {
@@ -1328,7 +1533,7 @@ func databaseBatchableMethodCompatible(methodName, itemType string, methods []ty
 			if len(method.Parameters) != 1 || !sameSemaSignatureType(method.Parameters[0].Type, "Database.BatchableContext") {
 				continue
 			}
-			if strings.EqualFold(method.Type, "Database.QueryLocator") || databaseBatchableStartReturnCompatible(itemType, method.Type) {
+			if strings.EqualFold(method.Type, "Database.QueryLocator") || databaseBatchableStartReturnCompatible(itemType, method.Type, model) {
 				return true
 			}
 		case "execute":
@@ -1361,15 +1566,17 @@ func databaseBatchableExecuteScopeCompatible(itemType, scopeType string, model m
 	if !strings.EqualFold(scopeBase, "List") || len(scopeArgs) != 1 {
 		return false
 	}
-	return semaAssignableToType(itemType, scopeArgs[0], model)
+	return semaAssignableToType(itemType, scopeArgs[0], model) || semaAssignableToType(scopeArgs[0], itemType, model)
 }
 
-func databaseBatchableStartReturnCompatible(itemType, returnType string) bool {
+func databaseBatchableStartReturnCompatible(itemType, returnType string, model map[string]typeMembers) bool {
 	base, args := semaGenericBaseAndArgs(returnType)
 	if (!strings.EqualFold(base, "Iterable") && !strings.EqualFold(base, "List")) || len(args) != 1 {
 		return false
 	}
-	return sameSemaSignatureType(args[0], itemType)
+	return sameSemaSignatureType(args[0], itemType) ||
+		semaAssignableToType(itemType, args[0], model) ||
+		semaAssignableToType(args[0], itemType, model)
 }
 
 func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, scopes semaScopeModel, model map[string]typeMembers) []diagnostic.Diagnostic {
@@ -1432,10 +1639,10 @@ func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.Membe
 			continue
 		}
 		foundReturn = true
-		hasValue := match[2] >= 0
+		valueStart, valueEnd, hasValue := semaReturnValueRange(match)
 		if strings.EqualFold(returnType, "void") {
 			if hasValue {
-				diagnostics = append(diagnostics, returnTypeDiagnostic(typ, member, "void method cannot return a value", bodyOffset+match[2], bodyOffset+match[3], source))
+				diagnostics = append(diagnostics, returnTypeDiagnostic(typ, member, "void method cannot return a value", bodyOffset+valueStart, bodyOffset+valueEnd, source))
 			}
 			continue
 		}
@@ -1443,8 +1650,8 @@ func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.Membe
 			diagnostics = append(diagnostics, returnTypeDiagnostic(typ, member, fmt.Sprintf("method must return %s", returnType), bodyOffset+match[0], bodyOffset+match[1], source))
 			continue
 		}
-		value := trimSemaArg(body, match[2], match[3])
-		valueType := resolveNestedTypeReference(model, typ.Name, inferSemaArgTypeWithModel(value.text, scopes.flat(), model))
+		value := trimSemaArg(body, valueStart, valueEnd)
+		valueType := resolveNestedTypeReference(model, typ.Name, inferSemaArgTypeWithModel(value.text, scopes.flatAt(value.start), model))
 		if strings.EqualFold(returnType, "Boolean") && semaExprContainsComparison(value.text) {
 			valueType = "Boolean"
 		}

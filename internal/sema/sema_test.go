@@ -3,6 +3,8 @@ package sema
 import (
 	"os"
 	"path/filepath"
+	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -125,6 +127,31 @@ public class UsesNamespacedFields {
 	}
 }
 
+func TestAnalyzeCommonSObjectRelationshipsResolveStandardChains(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "UsesCommonRelationships.cls")
+	writeSemaFile(t, classPath, `
+public class UsesCommonRelationships {
+  public String licenseKey(pkg__Cart__c cart) {
+    return cart.CreatedBy.Profile.UserLicense.LicenseDefinitionKey;
+  }
+  public String modifierUsername(pkg__Cart__c cart) {
+    return cart.LastModifiedBy.Username;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{
+		Objects: []schema.Object{{Name: "pkg__Cart__c"}},
+	})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA019" || diag.Code == "GLADESEMA021" {
+			t.Fatalf("unexpected common SObject relationship diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeSOQLCountExpressionAssignsInteger(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "CountsRows.cls"), `
@@ -167,6 +194,28 @@ public class UsesPageReference {
 	for _, diag := range result.Diagnostics {
 		if diag.Code == "GLADESEMA018" {
 			t.Fatalf("unexpected PageReference chain type diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeVisualforceComponentTypesAssignableToApexPagesComponent(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesVisualforceComponents.cls"), `
+public class UsesVisualforceComponents {
+  public ApexPages.Component customComponent() {
+    return new Component.AccountDetail();
+  }
+  public ApexPages.Component standardComponent() {
+    return new Component.Apex.OutputPanel();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "UsesVisualforceComponents.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA019" || diag.Code == "GLADESEMA006" || diag.Code == "GLADESEMA011" {
+			t.Fatalf("unexpected Visualforce component diagnostic: %#v", result.Diagnostics)
 		}
 	}
 }
@@ -943,8 +992,11 @@ public class UsesProductNamespaces {
     container.addMetadata(item);
     Id deploymentId = Metadata.Operations.enqueueDeployment(container, null);
     Metadata.DeployResult result = Metadata.Operations.checkDeployStatus(deploymentId, true);
+    handleDeployResult(result.id, result.errorMessage, result.success);
     Cache.OrgPartition partition = cache.org.getpartition('local');
     partition.put('zone', zone.id, 60, cache.visibility.all, false);
+  }
+  private static void handleDeployResult(Id jobId, String message, Boolean success) {
   }
   public static Cache.Partition getPartition(Boolean session) {
     if (session) {
@@ -1545,6 +1597,8 @@ public class UsesCoreSystemTypes implements System.Finalizer {
   public static void run(FieldSet shortFieldSet, Schema.FieldSet schemaFieldSet, System.AccessLevel accessLevel, System.AccessType accessType) {
     List<Schema.FieldSetMember> shortMembers = shortFieldSet.getFields();
     List<Schema.FieldSetMember> schemaMembers = schemaFieldSet.getFields();
+    Schema.DisplayType shortType = shortMembers[0].getType();
+    Schema.DisplayType schemaType = schemaMembers[0].getType();
     System.AccessLevel systemMode = System.AccessLevel.SYSTEM_MODE;
     AccessLevel userMode = AccessLevel.USER_MODE;
     System.AccessType readable = System.AccessType.READABLE;
@@ -1559,6 +1613,107 @@ public class UsesCoreSystemTypes implements System.Finalizer {
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeExplicitSystemTypesBeatLocalShadows(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Cookie.cls"), `
+public class Cookie {
+  public Cookie() {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "UsesSystemCookie.cls"), `
+public class UsesSystemCookie {
+  public Integer run() {
+    System.Cookie cookie = new System.Cookie('name', 'value', '/', 60, true);
+    return cookie.getMaxAge();
+  }
+  public String path(System.Cookie cookie) {
+    return cookie.getPath();
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "UsesSystemLocation.cls"), `
+public class UsesSystemLocation {
+  private class Location {
+    public Location(System.Location location) {
+      if (location == null) {
+        return;
+      }
+      Latitude = location.getLatitude();
+      Longitude = location.getLongitude();
+    }
+    public Double Latitude { get; private set; }
+    public Double Longitude { get; private set; }
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "GeoLocator.cls"), `
+public class GeoLocator {
+  public class Location {
+    public Location(Decimal latitude, Decimal longitude) {}
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "UsesDmlException.cls"), `
+public class UsesDmlException {
+  public Integer count(DmlException error) {
+    return error.getNumDml();
+  }
+  public String message(DmlException error) {
+    return error.getDmlMessage(0);
+  }
+  public Object kind(DmlException error) {
+    return error.getDMLType(0);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		Namespace: "PKG",
+		ApexFiles: []string{
+			filepath.Join(root, "Cookie.cls"),
+			filepath.Join(root, "UsesSystemCookie.cls"),
+			filepath.Join(root, "UsesSystemLocation.cls"),
+			filepath.Join(root, "GeoLocator.cls"),
+			filepath.Join(root, "UsesDmlException.cls"),
+		},
+	}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA008" || diag.Code == "GLADESEMA011" || diag.Code == "GLADESEMA019" {
+			t.Fatalf("unexpected explicit System type diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestSemaPlatformConstructorSignaturesUseStandardSymbols(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		want [][]string
+	}{
+		{
+			name: "System.Cookie",
+			want: [][]string{
+				{"String", "String", "String", "Integer", "Boolean"},
+				{"String", "String", "String", "Integer", "Boolean", "String"},
+				{"String", "String", "String", "Integer", "Boolean", "String", "Boolean"},
+			},
+		},
+		{
+			name: "System.HttpRequest",
+			want: [][]string{{}},
+		},
+	} {
+		got, ok := semaPlatformConstructorSignatures(tc.name)
+		if !ok {
+			t.Fatalf("semaPlatformConstructorSignatures(%q) not found", tc.name)
+		}
+		if !reflect.DeepEqual(got, tc.want) {
+			t.Fatalf("semaPlatformConstructorSignatures(%q) = %#v, want %#v", tc.name, got, tc.want)
+		}
 	}
 }
 
@@ -1630,6 +1785,105 @@ public class UsesSchemaSObjectTypeFieldStrings {
 	}
 }
 
+func TestAnalyzeSObjectFieldsTokenGetDescribe(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesSObjectFieldsToken.cls"), `
+public class UsesSObjectFieldsToken {
+  public String run() {
+    return Settings__c.fields.Enabled__c.getDescribe().getName();
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesSObjectFieldsToken.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Settings__c", Fields: []schema.Field{{Name: "Enabled__c", Type: "Checkbox"}}}}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeRelationshipFieldTokenPathReturnsSObjectField(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesRelationshipFieldToken.cls"), `
+public class UsesRelationshipFieldToken {
+  public Schema.SObjectField run() {
+    return Thing__c.Account__c.Name;
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesRelationshipFieldToken.cls")},
+	}, schema.Schema{Objects: []schema.Object{
+		{Name: "Thing__c", Fields: []schema.Field{{Name: "Account__c", Type: "Lookup", ReferenceTo: []string{"Account"}}}},
+		{Name: "Account", Fields: []schema.Field{{Name: "Name", Type: "Text"}}},
+	}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeSchemaEmailTemplateSObjectShape(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesSchemaEmailTemplate.cls"), `
+public class UsesSchemaEmailTemplate {
+  public void run(Schema.EmailTemplate template) {
+    Id idValue = template.Id;
+    String name = template.Name;
+    String namespacePrefix = template.NamespacePrefix;
+    String developerName = template.DeveloperName;
+    String subject = template.Subject;
+    acceptTemplates(new List<Schema.EmailTemplate>{ template });
+  }
+
+  private void acceptTemplates(List<SObject> templates) {}
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesSchemaEmailTemplate.cls")},
+	}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeNamespacedObjectAcceptsLocalFieldAlias(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesNamespacedTemplate.cls"), `
+public class UsesNamespacedTemplate {
+  public String run(pkg__Template__c template) {
+    List<pkg__Template__c> templates = [
+      SELECT EmailRecipientFields__c
+      FROM pkg__Template__c
+    ];
+    return template.EmailRecipientFields__c.split(',')[0];
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesNamespacedTemplate.cls")},
+	}, schema.Schema{Objects: []schema.Object{{
+		Name: "pkg__Template__c",
+		Fields: []schema.Field{
+			{Name: "pkg__EmailRecipientFields__c", Type: "LongTextArea"},
+		},
+	}}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeNestedClassCanCallOuterStaticHelperOverObjectToString(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "OuterHelper.cls"), `
@@ -1655,6 +1909,38 @@ public class OuterHelper {
 		if diag.Code == "GLADESEMA009" && strings.Contains(diag.Message, "toString") {
 			t.Fatalf("inner class should resolve outer static toString(Object): %#v", result.Diagnostics)
 		}
+	}
+}
+
+func TestAnalyzeImplicitHelperMethodsBeatPlatformObjectMethods(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "HelperOverloads.cls"), `
+public class HelperOverloads {
+  private static String toString(Object value) {
+    return String.valueOf(value);
+  }
+
+  private static Boolean equals(Object left, Object right) {
+    return left == right;
+  }
+
+  public static Map<String, Object> withObj(Object key, Object value) {
+    return new Map<String, Object>{ toString(key) => value };
+  }
+
+  public static Boolean same(Object left, Object right) {
+    return equals(left, right);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "HelperOverloads.cls")},
+	}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
 	}
 }
 
@@ -1906,6 +2192,29 @@ public class UsesFallbackProperties {
 	for _, diag := range result.Diagnostics {
 		if (diag.Code == "GLADESEMA008" || diag.Code == "GLADESEMA023") && (strings.Contains(diag.Message, "addYears") || strings.Contains(diag.Message, "MembershipTermInfos")) {
 			t.Fatalf("fallback property names should provide Date/List types: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeUnknownExternalPackageFieldDoesNotUseFallbackPropertyType(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesExternalPackageResponse.cls"), `
+public class UsesExternalPackageResponse {
+  public void run(CBBP.TransactionServiceResponse serviceResponse) {
+    if (serviceResponse.SettlementDate != null) {
+      serviceResponse.SettlementDate.date();
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesExternalPackageResponse.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "SettlementDate.date") {
+			t.Fatalf("unknown external package fields should not use fallback Date type: %#v", result.Diagnostics)
 		}
 	}
 }
@@ -2242,6 +2551,57 @@ public class UsesGeneratedStubStaticAccess {
 	}
 }
 
+func TestAnalyzeSystemDateTodayStaticCall(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesSystemDate.cls"), `
+public class UsesSystemDate {
+  public Date run() {
+    return System.Date.today();
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesSystemDate.cls")},
+	}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA027" {
+			t.Fatalf("System.Date.today should be treated as a static platform call: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeStaticFieldReceiverBeatsCaseFoldedNestedType(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesStaticFieldReceiver.cls"), `
+public class UsesStaticFieldReceiver {
+  public static Runner pair = new Runner();
+  public class Pair {}
+  public class Runner {
+    public Object run(Object first, Object second) {
+      return null;
+    }
+  }
+  public Object check() {
+    return UsesStaticFieldReceiver.pair.run(1, 2);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesStaticFieldReceiver.cls")},
+	}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA027" {
+			t.Fatalf("static field receiver should not be treated as a nested type: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeObjectEqualsAndFluentPageReferenceRedirect(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesPlatformSeams.cls"), `
@@ -2314,9 +2674,11 @@ func TestAnalyzeArrayStyleAndWrappedLocalDeclarations(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesWrappedLocals.cls"), `
 public class UsesWrappedLocals {
-  public void run(Account testAccount) {
+  public void run(Account testAccount, Integer resultCount) {
     Id[] fixedSearchResults = new Id[1];
+    Id[] dynamicSearchResults = new Id[resultCount];
     fixedSearchResults[0] = testAccount.Id;
+    dynamicSearchResults[0] = testAccount.Id;
     Iterable<UsesWrappedLocals.Context>
       iterable = start(null);
     iterable.iterator();
@@ -2367,9 +2729,11 @@ public class UsesDatabaseQuery {
     SObject single = Database.query(query);
     Account account = Database.query(query);
     List<SObject> records = Database.query(query);
+    List<Object> objects = Database.query(query);
     List<Account> accounts = Database.query(query);
     List<AggregateResult> grouped = Database.query(query);
     SObject singleWithBinds = Database.queryWithBinds(query, binds);
+    List<Object> objectsWithBinds = Database.queryWithBinds(query, binds);
     List<Account> accountsWithBinds = Database.queryWithBinds(query, binds);
   }
 }
@@ -2405,6 +2769,43 @@ public class UsesDatabaseQueryForEach {
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected Database.query enhanced-for diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeDatabaseQueryResultCanBeIndexedAsSObjectList(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesDatabaseQueryIndex.cls"), `
+public class UsesDatabaseQueryIndex {
+  public Id run() {
+    SObject row = Database.query(
+      'SELECT Id FROM Account LIMIT 1'
+    )[0];
+    return (Id)row.get('Id');
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesDatabaseQueryIndex.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA023" && strings.Contains(diag.Message, "get") {
+			t.Fatalf("unexpected Database.query index diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestDatabaseQueryResultCollectionSignature(t *testing.T) {
+	sig, ok := semaCollectionMethodSignature("Database.QueryResult", "get")
+	if !ok {
+		t.Fatalf("Database.QueryResult.get signature not found")
+	}
+	if sig.returnType != "SObject" {
+		t.Fatalf("Database.QueryResult.get return type = %q, want SObject", sig.returnType)
+	}
+	if !reflect.DeepEqual(sig.params, [][]string{{"Integer"}}) {
+		t.Fatalf("Database.QueryResult.get params = %#v, want Integer", sig.params)
 	}
 }
 
@@ -2613,7 +3014,10 @@ public class UsesRestContext {
     Blob body = req.requestBody;
     Integer status = res.statusCode;
     Blob responseBody = res.responseBody;
+    route(req);
   }
+
+  private static void route(System.RestRequest req) {}
 }
 `)
 	index := typesys.Build(project.Project{
@@ -2680,6 +3084,28 @@ public class Library {
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected current-outer nested cast diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeCustomSObjectSetOptions(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesSObjectOptions.cls"), `
+public class UsesSObjectOptions {
+  public void run() {
+    Database.DMLOptions opts = new Database.DMLOptions();
+    Thing__c record = new Thing__c();
+    record.setOptions(opts);
+    Database.DMLOptions current = record.getOptions();
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesSObjectOptions.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Thing__c"}}})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected SObject options diagnostics: %#v", result.Diagnostics)
 	}
 }
 
@@ -3136,6 +3562,91 @@ public class AccountBatch implements Database.Batchable<SObject> {
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeDatabaseBatchableSObjectAllowsObjectExecuteScope(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "BaseBatch.cls"), `
+public abstract class BaseBatch {
+  public void execute(Database.BatchableContext context, List<Object> scope) {}
+  public void finish(Database.BatchableContext context) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "QueryLocatorBatch.cls"), `
+public class QueryLocatorBatch extends BaseBatch implements Database.Batchable<SObject> {
+  public Database.QueryLocator start(Database.BatchableContext context) {
+    return Database.getQueryLocator('SELECT Id FROM Account');
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "DirectBatch.cls"), `
+public class DirectBatch implements Database.Batchable<SObject> {
+  public Database.QueryLocator start(Database.BatchableContext context) {
+    return Database.getQueryLocator('SELECT Id FROM Account');
+  }
+  public void execute(Database.BatchableContext context, List<Object> scope) {}
+  public void finish(Database.BatchableContext context) {}
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "BaseBatch.cls"),
+		filepath.Join(root, "QueryLocatorBatch.cls"),
+		filepath.Join(root, "DirectBatch.cls"),
+	}}, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Id", Type: "Id"}}}}})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA017" {
+			t.Fatalf("unexpected Database.Batchable diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeStandardPermissionSetAssignmentsRelationship(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "PermissionSetStatus.cls"), `
+public class PermissionSetStatus {
+  public Boolean assigned(PermissionSet permissionSet) {
+    return permissionSet.Assignments.size() > 0;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "PermissionSetStatus.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA006" || diag.Code == "GLADESEMA008" || diag.Code == "GLADESEMA021" {
+			t.Fatalf("unexpected PermissionSet Assignments diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeCustomMetadataLabelAsString(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "MetadataLabelSorter.cls"), `
+public class MetadataLabelSorter {
+  public Integer compare(DynamicGridConfiguration__mdt left, DynamicGridConfiguration__mdt right) {
+    return left.Label.compareTo(right.Label);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "MetadataLabelSorter.cls"),
+	}}, schema.Schema{Objects: []schema.Object{{
+		Name: "DynamicGridConfiguration__mdt",
+		Fields: []schema.Field{
+			{Name: "IsActive__c", Type: "Checkbox"},
+		},
+	}}})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA008" || diag.Code == "GLADESEMA021" {
+			t.Fatalf("unexpected custom metadata Label diagnostic: %#v", result.Diagnostics)
+		}
 	}
 }
 
@@ -4899,10 +5410,14 @@ func TestAnalyzeScalarValueAndStringSliceMethods(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
-  public String run(Decimal amount, String name) {
+  public String run(Decimal amount, Integer count, String name) {
     Integer sortOrder = amount.intValue();
     String formatted = amount.toPlainString();
-    return name.left(sortOrder) + formatted.leftPad(4, '0');
+    String lower = name.toLowerCase(UserInfo.getLocale());
+    String upper = name.toUpperCase(UserInfo.getLocale());
+    Map<Object, Object> values = new Map<Object, Object>();
+    values.put('limit', count <= 0 ? 1 : count);
+    return name.left(sortOrder) + formatted.leftPad(4, '0') + lower + upper;
   }
 }
 `)
@@ -4910,7 +5425,7 @@ public class Hello {
 
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "GLADESEMA008" {
+		if diag.Code == "GLADESEMA008" || diag.Code == "GLADESEMA023" {
 			t.Fatalf("unexpected unknown method diagnostic: %#v", result.Diagnostics)
 		}
 	}
@@ -5147,6 +5662,31 @@ public class UseBatch {
 	for _, diag := range result.Diagnostics {
 		if strings.Contains(diag.Message, "ListReturnBatch") || strings.Contains(diag.Message, "executeBatch") {
 			t.Fatalf("unexpected List-return batch diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeDatabaseBatchableStartAcceptsNamespacedSObjectReturn(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "EntityBatch.cls"), `
+public class EntityBatch implements Database.Batchable<Entity__c> {
+  public Iterable<Entity__c> start(Database.BatchableContext context) {
+    return new List<Entity__c>();
+  }
+  public void execute(Database.BatchableContext context, List<Entity__c> scope) {}
+  public void finish(Database.BatchableContext context) {}
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		Namespace: "PKG",
+		ApexFiles: []string{filepath.Join(root, "EntityBatch.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "PKG__Entity__c", Fields: []schema.Field{{Name: "Id", Type: "Id"}}}}})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA017" {
+			t.Fatalf("unexpected namespaced batch contract diagnostic: %#v", result.Diagnostics)
 		}
 	}
 }
@@ -5489,6 +6029,35 @@ public class Hello {
 	}
 }
 
+func TestAnalyzeReturnCastWithoutWhitespaceAfterReturn(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Pluggable.cls"), `public interface Pluggable {}`)
+	writeSemaFile(t, filepath.Join(root, "Fields.cls"), `public class Fields implements Pluggable {}`)
+	writeSemaFile(t, filepath.Join(root, "UsesCastReturn.cls"), `
+public class UsesCastReturn {
+  public Pluggable run() {
+    return(Pluggable)new Fields();
+  }
+  public void done(Boolean skip) {
+    if (skip) {
+      return ;
+    }
+    System.debug('done');
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Pluggable.cls"),
+		filepath.Join(root, "Fields.cls"),
+		filepath.Join(root, "UsesCastReturn.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected cast return diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeSimpleReturnTypeDiagnostics(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
@@ -5524,6 +6093,28 @@ public class Hello {
 	}
 }
 
+func TestAnalyzeReturnUsesBlockScopedLocalType(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "BlockReturn.cls"), `
+public class BlockReturn {
+  public static BlockReturn choose(Boolean done) {
+    if (done) {
+      BlockReturn value = new BlockReturn();
+      return value;
+    }
+    String value = 'later';
+    return new BlockReturn();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "BlockReturn.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeIRBodyAllPathsReturnDiagnostics(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
@@ -5546,6 +6137,13 @@ public class Hello {
       return 1;
     } catch (Exception e) {
       return 2;
+    }
+  }
+  public Integer tryFinallyReturn() {
+    try {
+      return 1;
+    } finally {
+      System.debug('cleanup');
     }
   }
   public Integer missingElse(Boolean flag) {
@@ -6405,6 +7003,198 @@ public class CabinConsumer {
 	}
 }
 
+func TestAnalyzeManagedPackageInstancePropertyKeepsNamespace(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	if err := os.MkdirAll(depRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(consumerRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeSemaFile(t, filepath.Join(depRoot, "GatewayService.cls"), `
+global class GatewayService {
+  global Result save(Request request) {
+    return new Result();
+  }
+  global static GatewayService Instance {
+    get {
+      return new GatewayService();
+    }
+    private set;
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(depRoot, "Request.cls"), `
+global class Request {}
+`)
+	writeSemaFile(t, filepath.Join(depRoot, "Result.cls"), `
+global class Result {}
+`)
+	writeSemaFile(t, filepath.Join(depRoot, "Schedule.cls"), `
+global class Schedule {
+  global static Schedule newInstance(Schedule__c record) {
+    return new Schedule();
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(consumerRoot, "Consumer.cls"), `
+public class Consumer {
+  public pkgx.Result run() {
+    return pkgx.GatewayService.Instance.save(new pkgx.Request());
+  }
+  public pkgx.Schedule wrap(pkgx__Schedule__c record) {
+    return pkgx.Schedule.newInstance(record);
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(consumerRoot, "GatewayService.cls"), `
+public class GatewayService {
+  public String save(String input) {
+    return input;
+  }
+  public static String localOnly() {
+    return 'local';
+  }
+}
+`)
+	depProject := project.Project{
+		Root:      depRoot,
+		Namespace: "pkgx",
+		ApexFiles: []string{
+			filepath.Join(depRoot, "GatewayService.cls"),
+			filepath.Join(depRoot, "Request.cls"),
+			filepath.Join(depRoot, "Result.cls"),
+			filepath.Join(depRoot, "Schedule.cls"),
+		},
+	}
+	index := typesys.Build(project.Project{
+		Root: consumerRoot,
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace:  "pkgx",
+			SourceRoot: depRoot,
+			Version:    "1.0",
+			Project:    &depProject,
+			Status:     "loaded",
+		}},
+		ApexFiles: []string{
+			filepath.Join(consumerRoot, "Consumer.cls"),
+			filepath.Join(consumerRoot, "GatewayService.cls"),
+		},
+	}, schema.Schema{Objects: []schema.Object{{Name: "pkgx__Schedule__c"}}})
+
+	model := buildTypeMembers(index)
+	defer unregisterSemaShortCandidateIndex(model)
+	instance, ok := semaResolveField(model, "pkgx.GatewayService", "Instance", make(map[string]bool))
+	if !ok {
+		t.Fatalf("dependency Instance property was not indexed")
+	}
+	if got := resolveNestedTypeReference(model, instance.owner, instance.member.Type); got != "pkgx.GatewayService" {
+		t.Fatalf("dependency Instance type = %q, want pkgx.GatewayService", got)
+	}
+	var scheduleParam string
+	for _, candidate := range resolveMemberMethods(model, "pkgx.Schedule", "newInstance") {
+		if len(candidate.member.Parameters) == 1 {
+			scheduleParam = candidate.member.Parameters[0].Type
+			break
+		}
+	}
+	if scheduleParam != "pkgx__Schedule__c" {
+		t.Fatalf("dependency SObject parameter type = %q, want pkgx__Schedule__c", scheduleParam)
+	}
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if (diag.Code == "GLADESEMA008" || diag.Code == "GLADESEMA009") && strings.Contains(diag.Message, "GatewayService.Instance.save") {
+			t.Fatalf("dependency instance property lost namespace: %#v", result.Diagnostics)
+		}
+		if diag.Code == "GLADESEMA023" && strings.Contains(diag.Message, "Schedule.newInstance") {
+			t.Fatalf("dependency SObject overload reported as collection call: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeSameNamespaceSourceDependencyInheritance(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	if err := os.MkdirAll(depRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(consumerRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeSemaFile(t, filepath.Join(depRoot, "AgreementSetter.cls"), `
+global abstract class AgreementSetter {
+  global abstract OrderLineAgreement setAgreementFieldsFromCartLine(OrderLine line, OrderLineAgreement agreement);
+}
+`)
+	writeSemaFile(t, filepath.Join(depRoot, "OrderLine.cls"), `
+global class OrderLine {}
+`)
+	writeSemaFile(t, filepath.Join(depRoot, "OrderLineAgreement.cls"), `
+global abstract class OrderLineAgreement {
+  global abstract OrderLineAgreement setStartDate(Date startDate);
+}
+`)
+	writeSemaFile(t, filepath.Join(depRoot, "OrderLineAgreementImpl.cls"), `
+global virtual class OrderLineAgreementImpl extends OrderLineAgreement {
+  global virtual override OrderLineAgreement setStartDate(Date startDate) {
+    return this;
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(consumerRoot, "ProgramAgreement.cls"), `
+public class ProgramAgreement extends pkgx.OrderLineAgreementImpl {
+  public override pkgx.OrderLineAgreement setStartDate(Date startDate) {
+    return this;
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(consumerRoot, "ProgramAgreementSetter.cls"), `
+global class ProgramAgreementSetter extends pkgx.AgreementSetter {
+  global ProgramAgreementSetter() {
+    super();
+  }
+  global override pkgx.OrderLineAgreement setAgreementFieldsFromCartLine(pkgx.OrderLine line, pkgx.OrderLineAgreement agreement) {
+    return agreement;
+  }
+}
+`)
+	depProject := project.Project{
+		Root:      depRoot,
+		Namespace: "pkgx",
+		ApexFiles: []string{
+			filepath.Join(depRoot, "AgreementSetter.cls"),
+			filepath.Join(depRoot, "OrderLine.cls"),
+			filepath.Join(depRoot, "OrderLineAgreement.cls"),
+			filepath.Join(depRoot, "OrderLineAgreementImpl.cls"),
+		},
+	}
+	index := typesys.Build(project.Project{
+		Root:      consumerRoot,
+		Namespace: "pkgx",
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace:  "pkgx",
+			SourceRoot: depRoot,
+			Project:    &depProject,
+			Status:     "loaded",
+		}},
+		ApexFiles: []string{
+			filepath.Join(consumerRoot, "ProgramAgreement.cls"),
+			filepath.Join(consumerRoot, "ProgramAgreementSetter.cls"),
+		},
+	}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA011" || diag.Code == "GLADESEMA016" {
+			t.Fatalf("same-namespace source dependency inheritance should resolve: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeSkipsSourceBackedDependencyDiagnostics(t *testing.T) {
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
@@ -6738,6 +7528,7 @@ func TestAnalyzeTestVisibleMethodAccess(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Secret.cls"), `
 public class Secret {
+  @TestVisible private static String token = 'ok';
   @TestVisible private static void visibleForTests() {}
 }
 `)
@@ -6746,6 +7537,11 @@ public class Secret {
 private class SecretTest {
   @IsTest static void run() {
     Secret.visibleForTests();
+  }
+  private class Helper {
+    String read() {
+      return Secret.token;
+    }
   }
 }
 `)
@@ -6771,6 +7567,182 @@ public class Intruder {
 	}
 	if count != 1 {
 		t.Fatalf("GLADESEMA010 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzePropertyAccessUsesDeclaredDtoType(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "ProcessOrderCommand.cls"), `
+public class ProcessOrderCommand {
+  public CreditCardPaymentDetailsDto CreditCardPaymentDetails { get; private set; }
+  public ProcessOrderCommand(CreditCardPaymentDetailsDto details) {
+    this.CreditCardPaymentDetails = details;
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "CreditCardPaymentDetailsDto.cls"), `
+public class CreditCardPaymentDetailsDto {
+  public String cardHolderName { get; set; }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "CreditCardPaymentDetails.cls"), `
+public class CreditCardPaymentDetails {
+  private String cardHolderName;
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "ProcessOrderService.cls"), `
+public class ProcessOrderService {
+  public String run(ProcessOrderCommand command) {
+    return command.CreditCardPaymentDetails.cardHolderName;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, Namespace: "demo", ApexFiles: []string{
+		filepath.Join(root, "ProcessOrderCommand.cls"),
+		filepath.Join(root, "CreditCardPaymentDetailsDto.cls"),
+		filepath.Join(root, "CreditCardPaymentDetails.cls"),
+		filepath.Join(root, "ProcessOrderService.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA010" || diag.Code == "GLADESEMA021" {
+			t.Fatalf("unexpected field diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeNestedEnumConstantFieldPath(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "di_Binding.cls"), `
+public abstract class di_Binding {
+  public enum BindingType { Apex, VisualforceComponent, LightningComponent, Flow, Module }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "di_Module.cls"), `
+public class di_Module {
+  private di_Binding.BindingType bindingType;
+  public void flow() {
+    bindingType = di_Binding.BindingType.Flow;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, Namespace: "demo", ApexFiles: []string{
+		filepath.Join(root, "di_Binding.cls"),
+		filepath.Join(root, "di_Module.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA013" || diag.Code == "GLADESEMA021" {
+			t.Fatalf("unexpected nested enum diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeLocalNestedEnumWinsOverDependencyType(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	if err := os.MkdirAll(depRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(consumerRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeSemaFile(t, filepath.Join(depRoot, "di_Binding.cls"), `
+global abstract class di_Binding {
+  global enum BindingType { Apex, Module }
+}
+`)
+	writeSemaFile(t, filepath.Join(depRoot, "di_Module.cls"), `
+global class di_Module {
+  private di_Binding.BindingType bindingType;
+}
+`)
+	writeSemaFile(t, filepath.Join(consumerRoot, "di_Binding.cls"), `
+public abstract class di_Binding {
+  public enum BindingType { Apex, VisualforceComponent, LightningComponent, Flow, Module }
+}
+`)
+	writeSemaFile(t, filepath.Join(consumerRoot, "di_Module.cls"), `
+public class di_Module {
+  private di_Binding.BindingType bindingType;
+  public void flow() {
+    bindingType = di_Binding.BindingType.Flow;
+  }
+}
+`)
+	depProject := project.Project{
+		Root:      depRoot,
+		Namespace: "znu",
+		ApexFiles: []string{
+			filepath.Join(depRoot, "di_Binding.cls"),
+			filepath.Join(depRoot, "di_Module.cls"),
+		},
+	}
+	index := typesys.Build(project.Project{
+		Root:      consumerRoot,
+		Namespace: "demo",
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace:  "znu",
+			SourceRoot: depRoot,
+			Project:    &depProject,
+		}},
+		ApexFiles: []string{
+			filepath.Join(consumerRoot, "di_Binding.cls"),
+			filepath.Join(consumerRoot, "di_Module.cls"),
+		},
+	}, schema.Schema{})
+	sort.SliceStable(index.Types, func(i, j int) bool {
+		if index.Types[i].Dependency == index.Types[j].Dependency {
+			return false
+		}
+		return !index.Types[i].Dependency && index.Types[j].Dependency
+	})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA021" || diag.Code == "GLADESEMA013" {
+			t.Fatalf("unexpected dependency shadow diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeNamespacedNestedEnumConstantFieldPath(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "LmsEventService.cls"), `
+public class LmsEventService {
+  public enum RecordType { PRODUCT, PURCHASE }
+  public enum OperationType { ON_INSERT, ON_UPDATE }
+  public void publish(String recordId, RecordType recordType, OperationType operationType) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Order.cls"), `
+public class Order {
+  public static final String STATE_PRO_FORMA = 'Pro forma';
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "LmsEventServiceTest.cls"), `
+private class LmsEventServiceTest {
+  private static void run() {
+    LmsEventService service = new LmsEventService();
+    service.publish('testId', demo.LmsEventService.RecordType.PURCHASE, demo.LmsEventService.OperationType.ON_INSERT);
+    String state = demo.Order.STATE_PRO_FORMA;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, Namespace: "demo", ApexFiles: []string{
+		filepath.Join(root, "LmsEventService.cls"),
+		filepath.Join(root, "Order.cls"),
+		filepath.Join(root, "LmsEventServiceTest.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA013" || diag.Code == "GLADESEMA021" || diag.Code == "GLADESEMA009" {
+			t.Fatalf("unexpected namespaced nested enum diagnostic: %#v", result.Diagnostics)
+		}
 	}
 }
 

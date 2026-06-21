@@ -293,14 +293,24 @@ func TestBuildDoesNotSurfaceSourceBackedDependencyDuplicateDiagnostics(t *testin
 func TestBuildIndexDiscoversTests(t *testing.T) {
 	root := t.TempDir()
 	classPath := filepath.Join(root, "HelloTest.cls")
-	writeFile(t, classPath, "@IsTest(IsParallel=true) private class HelloTest { @isTest private static void run() {} }")
+	writeFile(t, classPath, "@IsTest(IsParallel=true) private class HelloTest { private class Helper {} @isTest private static void run() {} }")
 
 	idx := Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{})
 	if idx.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", idx.Diagnostics)
 	}
-	if !idx.Types[0].IsTest || !idx.Types[0].Members[0].IsTest {
-		t.Fatalf("test flags not set: %#v", idx.Types[0])
+	types := make(map[string]TypeSymbol)
+	for _, typ := range idx.Types {
+		types[typ.Name] = typ
+	}
+	runIsTest := false
+	for _, member := range types["HelloTest"].Members {
+		if member.Name == "run" {
+			runIsTest = member.IsTest
+		}
+	}
+	if !types["HelloTest"].IsTest || !types["HelloTest.Helper"].IsTest || !runIsTest {
+		t.Fatalf("test flags not set: %#v", idx.Types)
 	}
 }
 
@@ -316,6 +326,38 @@ func TestBuildIndexKeepsMethodParameters(t *testing.T) {
 	params := idx.Types[0].Members[0].Parameters
 	if len(params) != 2 || params[0].Name != "name" || params[1].Type != "Account" {
 		t.Fatalf("parameters = %#v", params)
+	}
+}
+
+func TestBuildIndexPreservesQualifiedMethodParameterTypes(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "Hello.cls")
+	writeFile(t, classPath, `
+public class Hello {
+  public void run(System.Location location, final List<System.Cookie> cookies) {}
+  private class Location {
+    public Location(System.Location location) {}
+  }
+}
+`)
+
+	idx := Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{})
+	if idx.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", idx.Diagnostics)
+	}
+	params := idx.Types[0].Members[0].Parameters
+	if len(params) != 2 {
+		t.Fatalf("parameters = %#v", params)
+	}
+	if params[0].Type != "System.Location" || params[1].Type != "List<System.Cookie>" {
+		t.Fatalf("parameter types = %#v", params)
+	}
+	nested := idx.Types[1]
+	if nested.Name != "Hello.Location" || len(nested.Members) != 1 || len(nested.Members[0].Parameters) != 1 {
+		t.Fatalf("nested type = %#v", nested)
+	}
+	if nested.Members[0].Parameters[0].Type != "System.Location" {
+		t.Fatalf("nested constructor parameters = %#v", nested.Members[0].Parameters)
 	}
 }
 
