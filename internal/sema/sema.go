@@ -896,11 +896,20 @@ func semaBodyExpressions(body string) []semaArg {
 		if semaReturnMatchInIgnoredText(body, match) {
 			continue
 		}
-		if match[2] >= 0 {
-			exprs = append(exprs, trimSemaArg(body, match[2], match[3]))
+		if start, end, ok := semaReturnValueRange(match); ok {
+			exprs = append(exprs, trimSemaArg(body, start, end))
 		}
 	}
 	return exprs
+}
+
+func semaReturnValueRange(match []int) (int, int, bool) {
+	for i := 2; i+1 < len(match); i += 2 {
+		if match[i] >= 0 {
+			return match[i], match[i+1], true
+		}
+	}
+	return 0, 0, false
 }
 
 func semaLocalDeclMatchInIgnoredText(body string, match []int) bool {
@@ -1206,6 +1215,12 @@ func semaLooksLikeSObjectFieldTokenInModel(expr string, model map[string]typeMem
 		return true
 	}
 	if len(parts) == 3 && strings.EqualFold(parts[0], "Schema") && semaFieldTokenPart(parts[1]) && semaFieldTokenPart(parts[2]) && isSemaSObjectLike(parts[1], model) && !strings.EqualFold(parts[2], "SObjectType") && !semaLooksLikeStaticConstantName(parts[2]) {
+		return true
+	}
+	if len(parts) == 3 && semaFieldTokenPart(parts[0]) && semaFieldTokenPart(parts[1]) && semaFieldTokenPart(parts[2]) && isSemaSObjectLike(parts[0], model) && !strings.EqualFold(parts[1], "SObjectType") && !strings.EqualFold(parts[1], "fields") && !semaLooksLikeStaticConstantName(parts[1]) && !semaLooksLikeStaticConstantName(parts[2]) {
+		return true
+	}
+	if len(parts) == 3 && semaFieldTokenPart(parts[0]) && strings.EqualFold(parts[1], "fields") && semaFieldTokenPart(parts[2]) && isSemaSObjectLike(parts[0], model) {
 		return true
 	}
 	for i := 0; i+2 < len(parts); i++ {
@@ -1637,6 +1652,10 @@ func semaPlatformMethodSignatureForMode(model map[string]typeMembers, receiverTy
 			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
 		case "geterrors":
 			return semaCollectionSignature{returnType: "List<Object>", params: [][]string{{}}}, true
+		case "setoptions":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"Database.DMLOptions"}}}, true
+		case "getoptions":
+			return semaCollectionSignature{returnType: "Database.DMLOptions", params: [][]string{{}}}, true
 		}
 	}
 	if semaTypeMatches(model, receiverType, "Exception", make(map[string]bool)) {
@@ -1858,7 +1877,7 @@ func normalizeArrayType(typeName string) string {
 	typeName = strings.TrimSpace(typeName)
 	if open := strings.LastIndexByte(typeName, '['); open > 0 && strings.HasSuffix(typeName, "]") {
 		inner := strings.TrimSpace(typeName[open+1 : len(typeName)-1])
-		if inner != "" && intLiteralPattern.MatchString(inner) {
+		if inner != "" {
 			typeName = strings.TrimSpace(typeName[:open]) + "[]"
 		}
 	}
@@ -2389,6 +2408,26 @@ func semaProjectLocalAPIName(namespace, name string) (string, bool) {
 	return name[len(prefix):], true
 }
 
+func semaOwnerNamespacedAPIName(ownerName, name string) (string, bool) {
+	namespace := semaNamespaceFromAPIName(ownerName)
+	if namespace == "" {
+		return "", false
+	}
+	return semaProjectNamespacedAPIName(namespace, name)
+}
+
+func semaNamespaceFromAPIName(name string) string {
+	if !semaIsCustomAPIName(name) {
+		return ""
+	}
+	first := strings.Index(name, "__")
+	last := strings.LastIndex(name, "__")
+	if first <= 0 || first >= last {
+		return ""
+	}
+	return name[:first]
+}
+
 func semaIsCustomAPIName(name string) bool {
 	lower := strings.ToLower(strings.TrimSpace(name))
 	for _, suffix := range []string{"__c", "__r", "__e", "__mdt", "__b", "__s"} {
@@ -2465,7 +2504,7 @@ var (
 	newExprPattern          = regexp.MustCompile(`(?is)^new\s+([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s*(?:\([^)]*\)|\{.*\})\s*$`)
 	decimalLiteralPattern   = regexp.MustCompile(`^-?(?:[0-9]+\.[0-9]*|[0-9]*\.[0-9]+)$`)
 	intLiteralPattern       = regexp.MustCompile(`^-?[0-9]+$`)
-	returnPattern           = regexp.MustCompile(`(?is)(?:^|[;{}\n])\s*return(?:\s+([^;]+))?\s*;`)
+	returnPattern           = regexp.MustCompile(`(?is)(?:^|[;{}\n])\s*return(?:\s+([^;\s][^;]*)|(\([^;]+))?\s*;`)
 	simpleIdentifierPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 )
 

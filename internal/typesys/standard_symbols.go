@@ -1108,6 +1108,7 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "DataSource.AsyncDeleteCallback", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "processDelete", ReturnType: "void", Parameters: []string{"Database.DeleteResult"}}}},
 	{Name: "DataSource.AsyncSaveCallback", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "processSave", ReturnType: "void", Parameters: []string{"Database.SaveResult"}}}},
+	{Name: "Metadata.DeployResult", Properties: []StandardPropertySpec{{Name: "errorMessage", Type: "String"}}},
 	{Name: "ApexPages.Message", Methods: []StandardMethodSpec{{Name: "getSeverity", ReturnType: "ApexPages.Severity"}}},
 	{Name: "AsyncInfo", Methods: []StandardMethodSpec{{Name: "getCurrentQueueableStackDepth", ReturnType: "Integer", Static: true}}},
 	{Name: "AsyncOptions", Methods: []StandardMethodSpec{{Name: "getMaximumQueueableStackDepth", ReturnType: "Integer"}, {Name: "setMinimumQueueableDelayInMinutes", ReturnType: "void", Parameters: []string{"Integer"}}}},

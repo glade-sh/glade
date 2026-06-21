@@ -475,7 +475,7 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 	for _, decl := range file.Declarations {
 		switch decl.Kind {
 		case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-			for _, sym := range typeSymbolsFromDeclaration(path, decl, "", source) {
+			for _, sym := range typeSymbolsFromDeclaration(path, decl, "", false, source) {
 				sym.Namespace = namespace
 				sym.SourceRoot = root
 				sym.Version = version
@@ -642,7 +642,7 @@ func UpdateApexFiles(previous Index, changedPaths, deletedPaths []string) (idx I
 		for _, decl := range file.Declarations {
 			switch decl.Kind {
 			case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-				for _, sym := range typeSymbolsFromDeclaration(path, decl, "", source) {
+				for _, sym := range typeSymbolsFromDeclaration(path, decl, "", false, source) {
 					key := strings.ToLower(sym.Name)
 					if previous, ok := seenTypes[key]; ok {
 						idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous))
@@ -696,20 +696,20 @@ func cleanFilePath(path string) string {
 	return filepath.Clean(path)
 }
 
-func typeSymbolsFromDeclaration(path string, decl apexast.Declaration, parent, source string) []TypeSymbol {
-	sym := typeSymbolFromDeclaration(path, decl, parent)
+func typeSymbolsFromDeclaration(path string, decl apexast.Declaration, parent string, parentIsTest bool, source string) []TypeSymbol {
+	sym := typeSymbolFromDeclaration(path, decl, parent, parentIsTest)
 	sym.SuperClass, sym.Interfaces = parseTypeInheritance(source, decl.Range)
 	out := []TypeSymbol{sym}
 	for _, member := range decl.Members {
 		switch member.Kind {
 		case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-			out = append(out, typeSymbolsFromDeclaration(path, member, sym.Name, source)...)
+			out = append(out, typeSymbolsFromDeclaration(path, member, sym.Name, sym.IsTest, source)...)
 		}
 	}
 	return out
 }
 
-func typeSymbolFromDeclaration(path string, decl apexast.Declaration, parent string) TypeSymbol {
+func typeSymbolFromDeclaration(path string, decl apexast.Declaration, parent string, parentIsTest bool) TypeSymbol {
 	name := decl.Name
 	if parent != "" {
 		name = parent + "." + decl.Name
@@ -719,7 +719,7 @@ func typeSymbolFromDeclaration(path string, decl apexast.Declaration, parent str
 		Name:      name,
 		File:      path,
 		Modifiers: decl.Modifiers,
-		IsTest:    hasTestModifier(decl.Modifiers),
+		IsTest:    parentIsTest || hasTestModifier(decl.Modifiers),
 		Range:     decl.Range,
 	}
 	for _, member := range decl.Members {

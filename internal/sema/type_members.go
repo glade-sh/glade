@@ -145,7 +145,7 @@ func semaModelWithCurrentType(model map[string]typeMembers, typ typesys.TypeSymb
 
 func semaTypeMembersFromSymbol(typ typesys.TypeSymbol) typeMembers {
 	members := typeMembers{
-		name:       typ.Name,
+		name:       semaTypeMembersName(typ),
 		shortKey:   semaShortTypeKey(typ.Name),
 		namespace:  typ.Namespace,
 		dependency: typ.Dependency,
@@ -156,6 +156,7 @@ func semaTypeMembersFromSymbol(typ typesys.TypeSymbol) typeMembers {
 		fields:     make(map[string]typesys.MemberSymbol),
 	}
 	for _, member := range typ.Members {
+		member = semaCloneMemberSymbol(member)
 		switch member.Kind {
 		case apexast.DeclarationMethod:
 			members.methods[normalizeName(member.Name)] = append(members.methods[normalizeName(member.Name)], member)
@@ -200,7 +201,7 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 	projectNamespace := index.Project.Namespace
 	for _, typ := range index.Types {
 		members := typeMembers{
-			name:       typ.Name,
+			name:       semaTypeMembersName(typ),
 			shortKey:   semaShortTypeKey(typ.Name),
 			namespace:  typ.Namespace,
 			dependency: typ.Dependency,
@@ -211,6 +212,7 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 			fields:     make(map[string]typesys.MemberSymbol),
 		}
 		for _, member := range typ.Members {
+			member = semaCloneMemberSymbol(member)
 			switch member.Kind {
 			case apexast.DeclarationMethod:
 				members.methods[normalizeName(member.Name)] = append(members.methods[normalizeName(member.Name)], member)
@@ -221,7 +223,7 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 			case apexast.DeclarationEnum:
 				nestedName := typ.Name + "." + member.Name
 				enumMembers := typeMembers{
-					name:       nestedName,
+					name:       semaQualifiedDependencyTypeName(typ.Namespace, nestedName, typ.Dependency, typ.Artifact, typ.SourceRoot),
 					shortKey:   semaShortTypeKey(nestedName),
 					namespace:  typ.Namespace,
 					dependency: typ.Dependency,
@@ -243,11 +245,16 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 						Modifiers: []string{"public", "static"},
 					}
 				}
-				out[normalizeName(nestedName)] = enumMembers
+				if !semaRequiresQualifiedDependencyName(typ) {
+					key := normalizeName(nestedName)
+					if semaShouldStoreTypeMembers(out[key], typ) {
+						out[key] = enumMembers
+					}
+					shortAliases[normalizeName(member.Name)] = append(shortAliases[normalizeName(member.Name)], nestedName)
+				}
 				if typ.Namespace != "" {
 					out[normalizeName(typ.Namespace+"."+nestedName)] = enumMembers
 				}
-				shortAliases[normalizeName(member.Name)] = append(shortAliases[normalizeName(member.Name)], nestedName)
 			}
 		}
 		if typ.Kind == apexast.DeclarationEnum {
@@ -441,7 +448,53 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 }
 
 func semaRequiresQualifiedDependencyName(typ typesys.TypeSymbol) bool {
-	return typ.Dependency && typ.Namespace != "" && (typ.Artifact || typ.SourceRoot != "")
+	return semaRequiresQualifiedDependencyNameValues(typ.Namespace, typ.Dependency, typ.Artifact, typ.SourceRoot)
+}
+
+func semaCloneMemberSymbol(member typesys.MemberSymbol) typesys.MemberSymbol {
+	member.Modifiers = append([]string(nil), member.Modifiers...)
+	member.Parameters = semaCloneParameters(member.Parameters)
+	member.Accessors = semaCloneAccessors(member.Accessors)
+	return member
+}
+
+func semaCloneParameters(parameters []apexast.Parameter) []apexast.Parameter {
+	if len(parameters) == 0 {
+		return nil
+	}
+	out := make([]apexast.Parameter, len(parameters))
+	for i, parameter := range parameters {
+		out[i] = parameter
+		out[i].Modifiers = append([]string(nil), parameter.Modifiers...)
+	}
+	return out
+}
+
+func semaCloneAccessors(accessors []apexast.Accessor) []apexast.Accessor {
+	if len(accessors) == 0 {
+		return nil
+	}
+	out := make([]apexast.Accessor, len(accessors))
+	for i, accessor := range accessors {
+		out[i] = accessor
+		out[i].Modifiers = append([]string(nil), accessor.Modifiers...)
+	}
+	return out
+}
+
+func semaTypeMembersName(typ typesys.TypeSymbol) string {
+	return semaQualifiedDependencyTypeName(typ.Namespace, typ.Name, typ.Dependency, typ.Artifact, typ.SourceRoot)
+}
+
+func semaQualifiedDependencyTypeName(namespace, name string, dependency, artifact bool, sourceRoot string) string {
+	if semaRequiresQualifiedDependencyNameValues(namespace, dependency, artifact, sourceRoot) {
+		return namespace + "." + name
+	}
+	return name
+}
+
+func semaRequiresQualifiedDependencyNameValues(namespace string, dependency, artifact bool, sourceRoot string) bool {
+	return dependency && namespace != "" && (artifact || sourceRoot != "")
 }
 
 func semaShouldStoreTypeMembers(existing typeMembers, typ typesys.TypeSymbol) bool {
@@ -551,7 +604,7 @@ func addStandardSObjectMembers(out map[string]typeMembers) {
 			continue
 		}
 		members, ok := out[key]
-		if ok && !members.sobject {
+		if ok && !members.sobject && !semaShouldMergeStandardSObjectMembers(objectName, members) {
 			continue
 		}
 		if !ok {
@@ -566,6 +619,18 @@ func addStandardSObjectMembers(out map[string]typeMembers) {
 		}
 		addStandardSObjectFields(&members, objectName, false)
 		out[key] = members
+	}
+}
+
+func semaShouldMergeStandardSObjectMembers(objectName string, members typeMembers) bool {
+	if !members.dependency {
+		return false
+	}
+	switch normalizeName(objectName) {
+	case "profile", "user", "userlicense":
+		return true
+	default:
+		return false
 	}
 }
 
@@ -647,6 +712,7 @@ func addStandardSObjectFields(members *typeMembers, objectName string, synthetic
 			Modifiers: []string{"public", "static", semaSyntheticStandardSObjectFieldModifier},
 		}
 	}
+	addFallbackStandardSObjectRelationshipMembers(members, objectName)
 }
 
 func semaApplyPlatformInterfaceOverlays(model map[string]typeMembers) {
@@ -794,17 +860,33 @@ func semaAddCommonSObjectFields(fields map[string]typesys.MemberSymbol) {
 		{Name: "LastActivityDate", Type: "Date"},
 		{Name: "LastModifiedDate", Type: "Datetime"},
 		{Name: "SystemModstamp", Type: "Datetime"},
-		{Name: "CreatedById", Type: "Id"},
-		{Name: "LastModifiedById", Type: "Id"},
+		{Name: "CreatedById", Type: "Lookup", ReferenceTo: []string{"User"}, RelationshipName: "CreatedBy"},
+		{Name: "LastModifiedById", Type: "Lookup", ReferenceTo: []string{"User"}, RelationshipName: "LastModifiedBy"},
 	} {
 		key := normalizeName(field.Name)
-		if _, exists := fields[key]; exists {
+		if _, exists := fields[key]; !exists {
+			fields[key] = typesys.MemberSymbol{
+				Kind:      apexast.DeclarationField,
+				Name:      field.Name,
+				Type:      semaApexTypeForSchemaField(field),
+				Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
+			}
+		}
+		if field.RelationshipName == "" || len(field.ReferenceTo) == 0 {
 			continue
 		}
-		fields[key] = typesys.MemberSymbol{
+		relationshipKey := normalizeName(field.RelationshipName)
+		if _, exists := fields[relationshipKey]; exists {
+			continue
+		}
+		relationshipType := "SObject"
+		if len(field.ReferenceTo) == 1 {
+			relationshipType = field.ReferenceTo[0]
+		}
+		fields[relationshipKey] = typesys.MemberSymbol{
 			Kind:      apexast.DeclarationField,
-			Name:      field.Name,
-			Type:      semaApexTypeForSchemaField(field),
+			Name:      field.RelationshipName,
+			Type:      relationshipType,
 			Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
 		}
 	}
@@ -839,6 +921,18 @@ func semaFallbackStandardSObjectFields(objectName string, synthetic bool) []sche
 		}
 	default:
 		return nil
+	}
+}
+
+func addFallbackStandardSObjectRelationshipMembers(members *typeMembers, objectName string) {
+	if !strings.EqualFold(objectName, "PermissionSet") {
+		return
+	}
+	members.fields[normalizeName("Assignments")] = typesys.MemberSymbol{
+		Kind:      apexast.DeclarationField,
+		Name:      "Assignments",
+		Type:      "List<PermissionSetAssignment>",
+		Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
 	}
 }
 
@@ -1003,6 +1097,9 @@ func resolveNestedTypeName(model map[string]typeMembers, owner, typeName string)
 	if typeName == "" {
 		return typeName
 	}
+	if semaShouldPreserveExplicitPlatformType(typeName) {
+		return typeName
+	}
 	if strings.Contains(typeName, ".") {
 		if owner != "" {
 			candidate := owner + "." + typeName
@@ -1025,6 +1122,13 @@ func resolveNestedTypeName(model map[string]typeMembers, owner, typeName string)
 	ownerParts := strings.Split(owner, ".")
 	if len(ownerParts) > 0 && strings.EqualFold(ownerParts[0], typeName) {
 		return typeName
+	}
+	if namespace := semaOwnerTypeNamespace(model, owner); namespace != "" {
+		if namespaced, ok := semaProjectNamespacedAPIName(namespace, typeName); ok {
+			if _, exists := model[normalizeName(namespaced)]; exists {
+				return namespaced
+			}
+		}
 	}
 	if owner != "" {
 		candidate := owner + "." + typeName
@@ -1056,6 +1160,22 @@ func resolveNestedTypeName(model map[string]typeMembers, owner, typeName string)
 		current = members.superClass
 	}
 	return semaCanonicalPlatformAlias(typeName)
+}
+
+func semaShouldPreserveExplicitPlatformType(typeName string) bool {
+	if !semaExplicitPlatformQualifiedName(typeName) {
+		return false
+	}
+	canonical := semaCanonicalPlatformAlias(typeName)
+	return !strings.EqualFold(canonical, typeName)
+}
+
+func semaOwnerTypeNamespace(model map[string]typeMembers, owner string) string {
+	members, _, ok := semaLookupTypeMembers(model, owner)
+	if !ok || strings.TrimSpace(members.namespace) == "" {
+		return ""
+	}
+	return members.namespace
 }
 
 func resolveNestedTypeReference(model map[string]typeMembers, owner, typeName string) string {
