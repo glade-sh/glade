@@ -198,8 +198,39 @@ install -m 0755 "$tmpdir/glade" "$install_dir/glade"
 share_dir="${GLADE_HOME:-$HOME/.local/share/glade}"
 if [ -d "$tmpdir/share/glade" ]; then
   mkdir -p "$share_dir"
-  rm -rf "$share_dir/third_party" "$share_dir/lwcruntime"
-  cp -R "$tmpdir/share/glade/." "$share_dir/"
+
+  replace_toolchain_dir() {
+    name="$1"
+    src="$tmpdir/share/glade/$name"
+    stage="$share_dir/.$name.install.$$"
+    backup="$share_dir/.$name.backup.$$"
+
+    [ -d "$src" ] || return 0
+    rm -rf "$stage" "$backup"
+    cp -R "$src" "$stage"
+
+    if [ -e "$share_dir/$name" ]; then
+      mv "$share_dir/$name" "$backup"
+    fi
+
+    if mv "$stage" "$share_dir/$name"; then
+      rm -rf "$backup"
+    else
+      rc="$?"
+      rm -rf "$stage"
+      if [ -e "$backup" ]; then
+        rm -rf "$share_dir/$name"
+        mv "$backup" "$share_dir/$name"
+        echo "glade install: restored previous $name after failed install" >&2
+      fi
+      exit "$rc"
+    fi
+  }
+
+  for packaged_dir in "$tmpdir/share/glade"/*; do
+    [ -e "$packaged_dir" ] || continue
+    replace_toolchain_dir "${packaged_dir##*/}"
+  done
   echo "glade LWC toolchain installed to $share_dir"
 fi
 

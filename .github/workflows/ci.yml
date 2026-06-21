@@ -27,11 +27,17 @@ jobs:
             glade
             glade-tools
           permission-contents: read
+      - name: Resolve glade-tools ref
+        id: glade-tools-ref
+        env:
+          GLADE_TOOLS_REMOTE: https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/glade-sh/glade-tools.git
+          REQUESTED_REF: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'main' }}
+        run: scripts/resolve-sibling-ref.sh "$GLADE_TOOLS_REMOTE" "$REQUESTED_REF" main
       - uses: actions/checkout@v6
         with:
           repository: glade-sh/glade-tools
           path: glade-tools
-          ref: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'main' }}
+          ref: ${{ steps.glade-tools-ref.outputs.ref }}
           token: ${{ steps.app-token.outputs.token }}
       - uses: actions/setup-go@v6
         with:

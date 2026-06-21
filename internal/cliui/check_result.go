@@ -13,6 +13,7 @@ type CheckResultInfo struct {
 	Types       int
 	Triggers    int
 	Objects     int
+	ExitCode    int
 	Diagnostics []diagnostic.Diagnostic
 }
 
@@ -49,10 +50,8 @@ func WriteCheckResult(w io.Writer, info CheckResultInfo) error {
 	hasErrors := checkResultHasErrors(info.Diagnostics)
 	heading := FormatCount(len(info.Diagnostics), "diagnostic", "diagnostics")
 	icon := t.Red(t.GlyphFail)
-	exitCode := "1"
 	if !hasErrors {
 		icon = t.Yellow(t.GlyphWarn)
-		exitCode = "0"
 	}
 	if _, err := fmt.Fprintln(w, icon+" "+heading+" found"); err != nil {
 		return err
@@ -114,7 +113,7 @@ func WriteCheckResult(w io.Writer, info CheckResultInfo) error {
 	if err := FprintlnKV(w, "diagnostics", fmt.Sprint(len(info.Diagnostics)), 13); err != nil {
 		return err
 	}
-	return FprintlnKV(w, "exit code", exitCode, 13)
+	return FprintlnKV(w, "exit code", fmt.Sprint(info.ExitCode), 13)
 }
 
 func checkResultHasErrors(diagnostics []diagnostic.Diagnostic) bool {

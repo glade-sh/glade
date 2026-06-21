@@ -37,6 +37,7 @@ func TestWriteCheckResultRendersDiagnosticsWithTrySteps(t *testing.T) {
 	if err := WriteCheckResult(&out, CheckResultInfo{
 		ProjectRoot: "/tmp/project",
 		Types:       2,
+		ExitCode:    1,
 		Diagnostics: []diagnostic.Diagnostic{{
 			Severity: diagnostic.Error,
 			Code:     "GLADESEMA002",
@@ -73,6 +74,7 @@ func TestWriteCheckResultShowsZeroExitCodeForWarningOnlyDiagnostics(t *testing.T
 	if err := WriteCheckResult(&out, CheckResultInfo{
 		ProjectRoot: "/tmp/project",
 		Types:       2,
+		ExitCode:    0,
 		Diagnostics: []diagnostic.Diagnostic{{
 			Severity: diagnostic.Warning,
 			Code:     "GLADEPERF001",

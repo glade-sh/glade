@@ -14,11 +14,24 @@ gains a new rail.
 
 1. Start from a clean branch.
 2. Run `scripts/release-check.sh`.
-3. Tag the release.
-4. Let GitHub Actions build archives for supported platforms.
-5. Publish the product release manifest to the product download host.
-6. Check a fresh install.
-7. Check an update from the prior release.
+3. Add the `vX.Y.Z` section to `docs/RELEASE_NOTES.md`.
+4. Check the notes body: `scripts/release-notes.sh vX.Y.Z`.
+5. Tag the release.
+6. Let GitHub Actions build archives for supported platforms.
+7. Check the GitHub release body for real blank lines, not literal `\n`.
+8. Publish the product release manifest and archives to `downloads.glade.sh`.
+9. Check a fresh install with temporary `GLADE_INSTALL_DIR` and `GLADE_HOME`.
+10. Check a pinned install with `GLADE_VERSION=vX.Y.Z`.
+11. Check an update from the prior release.
+
+Use this shape when setting installer environment variables:
+
+```bash
+curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR="$tmp/bin" GLADE_HOME="$tmp/home" sh
+```
+
+Putting `GLADE_*` before `curl` sets it only for `curl`; the installer runs on
+the right side of the pipe.
 
 ## Plugin release
 
@@ -28,6 +41,19 @@ plugin registry lane. Keep product release assets on the product download lane.
 ```bash
 go run ./cmd/glade-plugin-compat manifest --json
 scripts/build-plugin-archives.sh 0.1.0
+```
+
+Run the tools release check before cutting a coordinated plugin tag:
+
+```bash
+(cd ../glade-tools && scripts/release-check.sh)
+```
+
+Publish plugin archives and `index.json` to `plugins.glade.sh`, then check:
+
+```bash
+curl -fsSL https://plugins.glade.sh/index.json
+GLADE_HOME="$(mktemp -d)" GLADE_PLUGIN_REGISTRY_URL="https://plugins.glade.sh/index.json" glade plugins available
 ```
 
 ## Docs release

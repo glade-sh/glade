@@ -58,8 +58,8 @@ curl -fsSL https://glade.sh/install.sh | sh
 The script installs the latest release to `~/.local/bin` by default. Override the install directory or version when needed:
 
 ```bash
-GLADE_INSTALL_DIR=/usr/local/bin curl -fsSL https://glade.sh/install.sh | sh
-GLADE_VERSION=vX.Y.Z curl -fsSL https://glade.sh/install.sh | sh
+curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR=/usr/local/bin sh
+curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=vX.Y.Z sh
 ```
 
 Check the binary after it is on your path:
@@ -92,10 +92,14 @@ to see what will run:
 
 ```bash
 glade update --dry-run
-glade update
+GLADE_UPDATE_ALLOW_SHELL=1 glade update
 glade version
 glade doctor
 ```
+
+`glade update` prints the exact installer command before it runs. It updates the
+directory that contains the current `glade` binary. The environment guard keeps
+self-replacement explicit.
 
 Manual fallback:
 

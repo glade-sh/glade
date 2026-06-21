@@ -52,7 +52,8 @@ var commandReferences = []CommandHelp{
 		Description: "Update the Glade binary and bundled assets.",
 		Usage:       []string{"glade update [--dry-run]"},
 		Flags:       []FlagHelp{{Name: "--dry-run", Description: "Print the update command without running it."}},
-		Examples:    []string{"glade update --dry-run", "glade update"},
+		Notes:       []string{"Running the update command requires GLADE_UPDATE_ALLOW_SHELL=1."},
+		Examples:    []string{"glade update --dry-run", "GLADE_UPDATE_ALLOW_SHELL=1 glade update"},
 	},
 	{
 		Name:        "doctor",
