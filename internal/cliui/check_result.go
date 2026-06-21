@@ -13,6 +13,7 @@ type CheckResultInfo struct {
 	Types       int
 	Triggers    int
 	Objects     int
+	ExitCode    int
 	Diagnostics []diagnostic.Diagnostic
 }
 
@@ -107,7 +108,7 @@ func WriteCheckResult(w io.Writer, info CheckResultInfo) error {
 	if err := FprintlnKV(w, "diagnostics", fmt.Sprint(len(info.Diagnostics)), 13); err != nil {
 		return err
 	}
-	return FprintlnKV(w, "exit code", "1", 13)
+	return FprintlnKV(w, "exit code", fmt.Sprint(info.ExitCode), 13)
 }
 
 func formatCheckCount(count int, noun string) string {

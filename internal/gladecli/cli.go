@@ -1936,6 +1936,7 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		Types:       result.Summary.Types,
 		Triggers:    result.Summary.Triggers,
 		Objects:     result.Summary.Objects,
+		ExitCode:    exitCodeForOK(!result.HasErrors()),
 		Diagnostics: result.Diagnostics,
 	})
 }

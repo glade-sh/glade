@@ -147,6 +147,9 @@ func TestRunUpdateHelp(t *testing.T) {
 	if !strings.Contains(stdout.String(), "glade update") {
 		t.Fatalf("help omitted update usage:\n%s", stdout.String())
 	}
+	if !strings.Contains(stdout.String(), "GLADE_UPDATE_ALLOW_SHELL=1") {
+		t.Fatalf("help omitted update shell guard:\n%s", stdout.String())
+	}
 }
 
 func TestRunUpdateDryRunPrintsInstallCommand(t *testing.T) {
@@ -155,8 +158,27 @@ func TestRunUpdateDryRunPrintsInstallCommand(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("code = %d stderr=%s", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "curl -fsSL https://glade.sh/install.sh | sh") {
+	if !strings.Contains(stdout.String(), "curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR=") {
 		t.Fatalf("dry run omitted install command:\n%s", stdout.String())
+	}
+	if strings.Contains(stdout.String(), "curl -fsSL https://glade.sh/install.sh | sh") {
+		t.Fatalf("dry run should pin the install directory instead of using the default installer path:\n%s", stdout.String())
+	}
+}
+
+func TestUpdateInstallCommandUsesExecutableDirectory(t *testing.T) {
+	got := updateInstallCommandForExecutable("/tmp/Glade Bin/glade")
+	want := "curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR='/tmp/Glade Bin' sh"
+	if got != want {
+		t.Fatalf("command = %q, want %q", got, want)
+	}
+}
+
+func TestUpdateInstallCommandQuotesSingleQuotes(t *testing.T) {
+	got := updateInstallCommandForExecutable("/tmp/matt's bin/glade")
+	want := "curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR='/tmp/matt'\\''s bin' sh"
+	if got != want {
+		t.Fatalf("command = %q, want %q", got, want)
 	}
 }
 

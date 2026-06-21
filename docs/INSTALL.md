@@ -18,8 +18,8 @@ The script installs the latest release to `~/.local/bin` by default. Override
 the target directory or version when needed:
 
 ```bash
-GLADE_INSTALL_DIR=/usr/local/bin curl -fsSL https://glade.sh/install.sh | sh
-GLADE_VERSION=vX.Y.Z curl -fsSL https://glade.sh/install.sh | sh
+curl -fsSL https://glade.sh/install.sh | env GLADE_INSTALL_DIR=/usr/local/bin sh
+curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=vX.Y.Z sh
 ```
 
 Then check the binary:
@@ -35,10 +35,14 @@ Use the same installer path for upgrades:
 
 ```bash
 glade update --dry-run
-glade update
+GLADE_UPDATE_ALLOW_SHELL=1 glade update
 glade version
 glade doctor
 ```
+
+`glade update` prints the exact installer command before it runs. It updates the
+directory that contains the current `glade` binary. The environment guard keeps
+self-replacement explicit.
 
 ## Install VS Code Extension
 

@@ -6,6 +6,8 @@ No changes yet.
 
 ## v0.2.3 - 2026-06-21
 
+Glade v0.2.3 ships the latest fixes after v0.2.2.
+
 Issue closeout:
 
 - Ships semantic-check fixes for large source-backed SFDX workspaces after
