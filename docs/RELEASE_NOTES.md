@@ -4,6 +4,52 @@
 
 No changes yet.
 
+## v0.2.4 - 2026-06-21
+
+Glade v0.2.4 ships the semantic-check and release-hardening fixes after
+v0.2.3.
+
+Semantic checks:
+
+- Explicit `System.*` names now beat local shadows for generated platform
+  types, including platform constructors and methods.
+- Standard namespace aliases now come from the generated platform symbol set,
+  so newly indexed `System` types do not need one-off sema entries.
+- Dynamic `Database.query(...)` and `Database.queryWithBinds(...)` results can
+  flow through list indexing and `List<Object>` assignment where Apex permits
+  it.
+- Namespaced SObject fields and duplicate schema-object metadata are merged
+  before query checks, reducing false missing-field diagnostics in package-style
+  workspaces.
+- Source-backed managed-package member types keep their namespace when they
+  cross into a consumer project.
+- Same-namespace source dependencies resolve inheritance and override checks
+  without collapsing into local short names.
+- Common SObject relationship fields such as `CreatedBy` and `LastModifiedBy`
+  resolve through standard user/profile/license chains.
+- Custom metadata `Label`, `PermissionSet.Assignments`, Visualforce component
+  assignability, SObject DML options, String locale overloads, nested enum
+  paths, block-scoped returns, and cast-style returns have focused coverage.
+- Nested classes inside `@IsTest` classes now inherit test visibility for
+  `@TestVisible` access.
+
+Release engineering:
+
+- Hardened the release rails for both `glade` and first-party plugins.
+- Added checks to keep private corpus package markers out of product code and
+  tests.
+- Kept product downloads on `downloads.glade.sh` and first-party plugin
+  archives on `plugins.glade.sh`.
+
+Verification:
+
+- `scripts/release-check.sh` passed in `glade` and `glade-tools` before
+  tagging.
+- The release candidate passed checks on three large namespaced SFDX workspaces
+  with one performance warning and no semantic errors.
+- A source-backed dependency workspace now reports warning-only diagnostics
+  where referenced fields are absent from the checked source metadata.
+
 ## v0.2.3 - 2026-06-21
 
 Glade v0.2.3 ships the latest fixes after v0.2.2.
