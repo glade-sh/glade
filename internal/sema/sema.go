@@ -1813,10 +1813,14 @@ func semaChainedCallReceiver(body string, callStart int, scope map[string]string
 	}
 	fullReceiverExpr := strings.TrimSpace(body[exprStart:dot])
 	fullReceiverType := ""
-	if semaReceiverProbeIsBounded(fullReceiverExpr) {
+	boundedFullReceiver := semaReceiverProbeIsBounded(fullReceiverExpr)
+	if boundedFullReceiver {
 		fullReceiverType = inferSemaArgTypeWithModel(fullReceiverExpr, scope, model)
 	}
 	if fullReceiverType == "" && receiverCallStart > exprStart && receiverCallStart < open && !semaReceiverCallLooksLikeConstructor(body[exprStart:receiverCallStart]) {
+		if !boundedFullReceiver && semaReceiverCallStartDropsDottedReceiver(body, receiverCallStart) {
+			return "", "", false
+		}
 		exprStart = receiverCallStart
 	}
 	if exprStart > 0 && body[exprStart-1] == '(' {
@@ -1845,6 +1849,9 @@ func semaChainedCallReceiver(body string, callStart int, scope map[string]string
 	receiverExpr = semaTrimLeadingCast(receiverExpr)
 	receiverType := fullReceiverType
 	if receiverType == "" || !strings.EqualFold(receiverExpr, fullReceiverExpr) {
+		if !semaReceiverProbeIsBounded(receiverExpr) {
+			return "", "", false
+		}
 		receiverType = inferSemaArgTypeWithModel(receiverExpr, scope, model)
 	}
 	if receiverType == "" {
@@ -1871,6 +1878,14 @@ func semaReceiverProbeIsBounded(expr string) bool {
 func semaReceiverCallLooksLikeConstructor(prefix string) bool {
 	fields := strings.Fields(strings.TrimSpace(prefix))
 	return len(fields) > 0 && strings.EqualFold(fields[len(fields)-1], "new")
+}
+
+func semaReceiverCallStartDropsDottedReceiver(body string, receiverCallStart int) bool {
+	before := receiverCallStart - 1
+	for before >= 0 && isWhitespace(body[before]) {
+		before--
+	}
+	return before >= 0 && body[before] == '.'
 }
 
 func semaTrimLeadingCast(expr string) string {

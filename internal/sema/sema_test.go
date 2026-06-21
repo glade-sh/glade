@@ -465,6 +465,75 @@ func TestStaticClassFieldPathUnknownLongPathReturnsPromptly(t *testing.T) {
 	}
 }
 
+func TestChainedCallReceiverLongDottedFluentChainReturnsPromptly(t *testing.T) {
+	var chain strings.Builder
+	chain.WriteString("Mock.Stub.start()\n")
+	for i := 0; i < 24; i++ {
+		chain.WriteString("    .when(Mock.MI.MockService")
+		chain.WriteString(strconv.Itoa(i))
+		chain.WriteString(".generate((TransactionGenerator.TransactionGenerationRequest) match_anyObject()))\n")
+		chain.WriteString("    .then(mockResult)\n")
+	}
+	chain.WriteString("    .when(Mock.MI.MockTransactionGenerator2.generate((TransactionGenerator.TransactionGenerationRequest) match_anyObject()))\n")
+	chain.WriteString("    .then(mockTransactionResult)\n")
+	chain.WriteString("    .stop();")
+	body := chain.String()
+	callStart := strings.LastIndex(body, ".then(mockTransactionResult)")
+	if callStart < 0 {
+		t.Fatal("test setup did not find target chained call")
+	}
+	callStart++
+	done := make(chan bool, 1)
+	go func() {
+		_, _, _ = semaChainedCallReceiver(body, callStart, map[string]string{
+			semaCurrentTypeScopeKey: "TestCartSubmitter",
+		}, map[string]typeMembers{}, "TestCartSubmitter")
+		done <- true
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("long dotted fluent-chain receiver lookup did not return promptly")
+	}
+}
+
+func TestChainedCallReceiverExpandedLongReceiverReturnsPromptly(t *testing.T) {
+	var chain strings.Builder
+	chain.WriteString("Mock.Stub.start()\n")
+	chain.WriteString("    .when(Mock.MI.MockCartManager.getCartByIdForUpdate(cartToSubmit.Id)).then(cartToSubmit)\n")
+	chain.WriteString("    .when(Mock.MI.MockCartItemManager.getCartItemsWithoutCouponsByCartIds(match_anySetOfId())).then(cartToSubmit.CartItems__r)\n")
+	chain.WriteString("    .when(Mock.MI.MockCartItemManager.getClonedBillingHistoryCartItemsByCartIds(new set<Id> { cartToSubmit.Id }, true)).then(cartToSubmit.CartItems__r)\n")
+	for i := 0; i < 12; i++ {
+		chain.WriteString("    .when(Mock.MI.MockService")
+		chain.WriteString(strconv.Itoa(i))
+		chain.WriteString(".generate((TransactionGenerator.TransactionGenerationRequest) match_anyObject()))\n")
+		chain.WriteString("    .then(mockResult)\n")
+	}
+	chain.WriteString("    .when(Mock.MI.MockTransactionGenerator2.generate((TransactionGenerator.TransactionGenerationRequest) match_anyObject()))\n")
+	chain.WriteString("    .then(mockTransactionResult)\n")
+	chain.WriteString("    .stop();")
+	body := chain.String()
+	callStart := strings.LastIndex(body, ".then(mockTransactionResult)")
+	if callStart < 0 {
+		t.Fatal("test setup did not find target chained call")
+	}
+	callStart++
+	done := make(chan bool, 1)
+	go func() {
+		_, _, _ = semaChainedCallReceiver(body, callStart, map[string]string{
+			semaCurrentTypeScopeKey: "TestCartSubmitter",
+		}, map[string]typeMembers{}, "TestCartSubmitter")
+		done <- true
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("expanded long fluent-chain receiver lookup did not return promptly")
+	}
+}
+
 func TestAnalyzeNestedEnumShortQualifiedAssignment(t *testing.T) {
 	root := t.TempDir()
 	classPath := filepath.Join(root, "Comparator.cls")
