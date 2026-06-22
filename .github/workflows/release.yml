@@ -58,7 +58,6 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v6
-        if: startsWith(github.ref, 'refs/tags/')
         with:
           fetch-depth: 0
       - uses: actions/download-artifact@v8
@@ -81,8 +80,6 @@ jobs:
           import json
           import os
           import shutil
-          import sys
-          import urllib.request
 
           version = os.environ["VERSION"]
           manifests = []
@@ -115,51 +112,13 @@ jobs:
           os.makedirs("latest", exist_ok=True)
           shutil.copyfile("release-manifest.json", "latest/release-manifest.json")
           os.makedirs(version, exist_ok=True)
+          shutil.copyfile("release-manifest.json", os.path.join(version, "release-manifest.json"))
           for path in glob.glob("glade_*"):
               if os.path.isfile(path):
                   shutil.copyfile(path, os.path.join(version, os.path.basename(path)))
           shutil.copyfile("SHA256SUMS.txt", os.path.join(version, "SHA256SUMS.txt"))
-
-          current_version_row = {
-              "version": version,
-              "manifest": f"https://downloads.glade.sh/{version}/release-manifest.json",
-          }
-          versions_by_version = {}
-          try:
-              with urllib.request.urlopen("https://downloads.glade.sh/index.json", timeout=10) as response:
-                  existing_index = json.load(response)
-              for row in existing_index.get("versions", []):
-                  row_version = row.get("version")
-                  row_manifest = row.get("manifest")
-                  if row_version and row_manifest:
-                      versions_by_version[row_version] = {
-                          "version": row_version,
-                          "manifest": row_manifest,
-                      }
-          except Exception as exc:
-              print(f"warning: could not read existing download index: {exc}", file=sys.stderr)
-          versions_by_version[version] = current_version_row
-
-          def version_key(row):
-              parts = []
-              for part in row["version"].lstrip("v").split("."):
-                  try:
-                      parts.append(int(part))
-                  except ValueError:
-                      parts.append(part)
-              return tuple(parts)
-
-          versions = sorted(versions_by_version.values(), key=version_key, reverse=True)
-          index = {
-              "schemaVersion": 1,
-              "channel": "stable",
-              "latest": version,
-              "versions": versions,
-          }
-          with open("index.json", "w", encoding="utf-8") as f:
-              json.dump(index, f, indent=2, sort_keys=True)
-              f.write("\n")
           PY
+          python3 ../scripts/release-index.py --version "$VERSION" --output index.json
       - uses: actions/upload-artifact@v7
         with:
           name: glade-release-artifacts

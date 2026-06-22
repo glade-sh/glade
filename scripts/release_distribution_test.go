@@ -1,6 +1,9 @@
 package scripts
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -105,14 +108,104 @@ func TestReleaseWorkflowPreservesDownloadIndexHistory(t *testing.T) {
 	}
 	workflowText := string(workflow)
 	for _, want := range []string{
-		"urllib.request",
-		"https://downloads.glade.sh/index.json",
-		"versions_by_version",
-		"could not read existing download index",
+		"scripts/release-index.py",
+		`--version "$VERSION"`,
+		"--output index.json",
 	} {
 		if !strings.Contains(workflowText, want) {
 			t.Fatalf("release.yml missing index-history marker %q", want)
 		}
+	}
+
+	indexPath := filepath.Join("release-index.py")
+	indexScript, err := os.ReadFile(indexPath)
+	if err != nil {
+		t.Fatalf("read %s: %v", indexPath, err)
+	}
+	indexText := string(indexScript)
+	for _, want := range []string{
+		"urllib.request.Request",
+		"glade-release-workflow/1.0",
+		"versions_by_version",
+		"could not read existing download index",
+	} {
+		if !strings.Contains(indexText, want) {
+			t.Fatalf("release-index.py missing index-history marker %q", want)
+		}
+	}
+}
+
+func TestReleaseIndexScriptPreservesHistoryWithReleaseUserAgent(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.UserAgent(); got != "glade-release-workflow/1.0" {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+  "schemaVersion": 1,
+  "channel": "stable",
+  "latest": "v0.2.3",
+  "versions": [
+    {"version": "v0.2.3", "manifest": "https://downloads.glade.sh/v0.2.3/release-manifest.json"},
+    {"version": "v0.2.2", "manifest": "https://downloads.glade.sh/v0.2.2/release-manifest.json"}
+  ]
+}`))
+	}))
+	defer server.Close()
+
+	outputPath := filepath.Join(t.TempDir(), "index.json")
+	cmd := exec.Command("python3", "release-index.py",
+		"--version", "v0.2.4",
+		"--download-base", "https://downloads.glade.sh",
+		"--existing-index-url", server.URL,
+		"--output", outputPath,
+	)
+	cmd.Dir = "."
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("release-index.py failed: %v\n%s", err, out)
+	}
+
+	var index struct {
+		Latest   string `json:"latest"`
+		Versions []struct {
+			Version  string `json:"version"`
+			Manifest string `json:"manifest"`
+		} `json:"versions"`
+	}
+	indexBytes, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("read generated index: %v", err)
+	}
+	if err := json.Unmarshal(indexBytes, &index); err != nil {
+		t.Fatalf("parse generated index: %v\n%s", err, indexBytes)
+	}
+	if index.Latest != "v0.2.4" {
+		t.Fatalf("latest = %q, want v0.2.4", index.Latest)
+	}
+	gotVersions := make([]string, 0, len(index.Versions))
+	for _, row := range index.Versions {
+		gotVersions = append(gotVersions, row.Version)
+	}
+	wantVersions := []string{"v0.2.4", "v0.2.3", "v0.2.2"}
+	if strings.Join(gotVersions, ",") != strings.Join(wantVersions, ",") {
+		t.Fatalf("versions = %#v, want %#v\n%s", gotVersions, wantVersions, indexBytes)
+	}
+	if index.Versions[0].Manifest != "https://downloads.glade.sh/v0.2.4/release-manifest.json" {
+		t.Fatalf("current manifest = %q", index.Versions[0].Manifest)
+	}
+}
+
+func TestReleaseWorkflowCopiesVersionManifestIntoVersionDirectory(t *testing.T) {
+	workflowPath := filepath.Join("..", ".github", "workflows", "release.yml")
+	workflow, err := os.ReadFile(workflowPath)
+	if err != nil {
+		t.Fatalf("read %s: %v", workflowPath, err)
+	}
+	workflowText := string(workflow)
+	if !strings.Contains(workflowText, `shutil.copyfile("release-manifest.json", os.path.join(version, "release-manifest.json"))`) {
+		t.Fatalf("release.yml should copy the combined manifest into the version directory")
 	}
 }
 
