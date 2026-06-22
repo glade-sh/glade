@@ -68,14 +68,14 @@ commands run.
 ## Namespace Remaps
 
 Use a namespace remap when a source dependency keeps its production namespace
-in code but the consumer depends on a different local namespace. In the namz
-case, the source dependency uses the production namespace `NU`, while the
-consumer depends on `znu`:
+in code but the consumer depends on a different local namespace. In the consumer
+case, the source dependency uses the production namespace `BasePkg`, while the
+consumer depends on `stagepkg`:
 
 ```yaml
 project:
-  namespaceRemaps: ["NU:znu"]
-  managedPackageDependencies: ["znu:../nu-source"]
+  namespaceRemaps: ["BasePkg:stagepkg"]
+  managedPackageDependencies: ["stagepkg:../base-source"]
 ```
 
 The remap is applied in memory when Glade reads source-backed dependency code

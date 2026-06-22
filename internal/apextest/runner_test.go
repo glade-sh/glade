@@ -80,9 +80,9 @@ private class BillingTest {
 
 func TestRunRemapsProductionNamespaceSourceDependencyToProxyNamespace(t *testing.T) {
 	root := t.TempDir()
-	depRoot := filepath.Join(root, "nu-source")
+	depRoot := filepath.Join(root, "base-source")
 	consumerRoot := filepath.Join(root, "consumer")
-	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"NU","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"BasePkg","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(depRoot, "force-app/main/objects/Billing__c/Billing__c.object-meta.xml"), `
 <CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
   <label>Billing</label>
@@ -100,7 +100,7 @@ func TestRunRemapsProductionNamespaceSourceDependencyToProxyNamespace(t *testing
 `)
 	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/Helper.cls"), `
 global class Helper {
-  global static Integer amount(NU__Billing__c row) {
+  global static Integer amount(BasePkg__Billing__c row) {
     return Integer.valueOf(row.Amount__c);
   }
 }
@@ -108,31 +108,31 @@ global class Helper {
 	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/Gateway.cls"), `
 global class Gateway {
   global static Integer createAmount(Integer amount) {
-    NU__Billing__c row = new NU__Billing__c(Amount__c = amount);
+    BasePkg__Billing__c row = new BasePkg__Billing__c(Amount__c = amount);
     insert row;
-    List<NU__Billing__c> rows = [SELECT Amount__c FROM NU__Billing__c];
-    return NU.Helper.amount(rows[0]);
+    List<BasePkg__Billing__c> rows = [SELECT Amount__c FROM BasePkg__Billing__c];
+    return BasePkg.Helper.amount(rows[0]);
   }
 }
 `)
 	writeFile(t, filepath.Join(depRoot, "force-app/main/triggers/BillingTrigger.trigger"), `
-trigger BillingTrigger on NU__Billing__c (before insert) {
-  for (NU__Billing__c row : Trigger.new) {
-    row.Amount__c = NU.Helper.amount(row) + 1;
+trigger BillingTrigger on BasePkg__Billing__c (before insert) {
+  for (BasePkg__Billing__c row : Trigger.new) {
+    row.Amount__c = BasePkg.Helper.amount(row) + 1;
   }
 }
 `)
 	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
-  managedPackageDependencies: ["znu:../nu-source"]
-  namespaceRemaps: ["NU:znu"]
+  managedPackageDependencies: ["stagepkg:../base-source"]
+  namespaceRemaps: ["BasePkg:stagepkg"]
 `)
 	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/NamespaceRemapTest.cls"), `
 @isTest
 private class NamespaceRemapTest {
   @isTest static void remappedDependencyRuns() {
-    System.assertEquals(43, znu.Gateway.createAmount(42));
-    List<znu__Billing__c> rows = [SELECT Amount__c FROM znu__Billing__c];
+    System.assertEquals(43, stagepkg.Gateway.createAmount(42));
+    List<stagepkg__Billing__c> rows = [SELECT Amount__c FROM stagepkg__Billing__c];
     System.assertEquals(1, rows.size());
     System.assertEquals(43, Integer.valueOf(rows[0].Amount__c));
   }
@@ -6046,9 +6046,9 @@ private class JSONPropertySetterTest {
 func TestRunJSONDeserializeUntypedMapsMatchMapStringObjectInstanceOf(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/classes/JSONUntypedMapInstanceOfTest.cls"), `
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/JSOBasePkgntypedMapInstanceOfTest.cls"), `
 @isTest
-private class JSONUntypedMapInstanceOfTest {
+private class JSOBasePkgntypedMapInstanceOfTest {
   @isTest static void untypedNestedMapsAreMapStringObject() {
     List<Object> rows = (List<Object>)JSON.deserializeUntyped(
       '[{"payload":{"id":"V-1","settings":{"organizationId":"ORG"}}}]'
@@ -7688,7 +7688,7 @@ func TestOrgFromIndexIncludesProjectProfiles(t *testing.T) {
 func TestOrgFromIndexUsesPermissionSetsToSeedManagedObjectShape(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/NUObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
+	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/BasePkgObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
   <fieldPermissions>
     <editable>true</editable>
     <field>pkg__Affiliation__c.pkg__Account__c</field>
@@ -7811,7 +7811,7 @@ public class PriceClassShapeHarness {
   }
 }
 `)
-	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/NUObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
+	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/BasePkgObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
   <fieldPermissions>
     <editable>true</editable>
     <field>pkg__OrderItem__c.pkg__PriceClass__c</field>
@@ -7845,7 +7845,7 @@ public class ProductShapeHarness {
   }
 }
 `)
-	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/NUObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
+	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/BasePkgObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
   <fieldPermissions>
     <editable>true</editable>
     <field>pkg__Product__c.pkg__TrackInventory__c</field>
@@ -7861,7 +7861,7 @@ public class ProductShapeHarness {
 func TestOrgFromIndexPermissionSetDoesNotInferCustomLookupChildRelationship(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/NUObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
+	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/BasePkgObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
   <fieldPermissions>
     <editable>true</editable>
     <field>pkg__Product__c.pkg__Event__c</field>
@@ -7906,7 +7906,7 @@ func TestOrgFromIndexPermissionSetDoesNotInferCustomLookupChildRelationship(t *t
 func TestOrgFromIndexPermissionSetDoesNotInferPrefixedCustomLookupChildRelationship(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/NUObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
+	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/BasePkgObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
   <fieldPermissions>
     <editable>true</editable>
     <field>pkg__ProductLink__c.pkg__ParentProduct__c</field>
@@ -8004,7 +8004,7 @@ func TestOrgFromIndexLoadsCustomObjectLookupRelationshipAndCheckboxDefault(t *te
 func TestOrgFromIndexDoesNotInferProductDownloadURLFormula(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/NUObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
+	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/BasePkgObjectsPermissions.permissionset-meta.xml"), `<PermissionSet>
   <objectPermissions><allowRead>true</allowRead><object>pkg__OrderItemLine__c</object></objectPermissions>
   <objectPermissions><allowRead>true</allowRead><object>pkg__Product__c</object></objectPermissions>
   <fieldPermissions><readable>true</readable><field>pkg__OrderItemLine__c.pkg__Product2__c</field></fieldPermissions>

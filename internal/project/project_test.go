@@ -360,14 +360,14 @@ func TestLoadManagedPackageDependencies(t *testing.T) {
 
 func TestLoadManagedPackageDependencyInheritsMatchingNamespaceRemap(t *testing.T) {
 	root := t.TempDir()
-	depRoot := filepath.Join(root, "deps", "nu-source")
+	depRoot := filepath.Join(root, "deps", "base-source")
 	consumerRoot := filepath.Join(root, "consumer")
-	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"NU","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"BasePkg","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(depRoot, "force-app/main/default/classes/Helper.cls"), "global class Helper {}")
 	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
-  namespaceRemaps: ["NU:znu"]
-  managedPackageDependencies: ["znu:../deps/nu-source:1.0"]
+  namespaceRemaps: ["BasePkg:stagepkg"]
+  managedPackageDependencies: ["stagepkg:../deps/base-source:1.0"]
 `)
 	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/classes/Consumer.cls"), "public class Consumer {}")
 
@@ -375,33 +375,33 @@ func TestLoadManagedPackageDependencyInheritsMatchingNamespaceRemap(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(p.NamespaceRemaps) != 1 || p.NamespaceRemaps[0].From != "NU" || p.NamespaceRemaps[0].To != "znu" {
+	if len(p.NamespaceRemaps) != 1 || p.NamespaceRemaps[0].From != "BasePkg" || p.NamespaceRemaps[0].To != "stagepkg" {
 		t.Fatalf("project namespace remaps = %#v", p.NamespaceRemaps)
 	}
 	if len(p.ManagedPackageDependencies) != 1 {
 		t.Fatalf("dependency count = %d", len(p.ManagedPackageDependencies))
 	}
 	dep := p.ManagedPackageDependencies[0]
-	if dep.Status != "loaded" || dep.Namespace != "znu" || dep.Project == nil {
+	if dep.Status != "loaded" || dep.Namespace != "stagepkg" || dep.Project == nil {
 		t.Fatalf("dependency = %#v", dep)
 	}
-	if dep.Project.Namespace != "znu" {
-		t.Fatalf("dependency runtime namespace = %q, want znu", dep.Project.Namespace)
+	if dep.Project.Namespace != "stagepkg" {
+		t.Fatalf("dependency runtime namespace = %q, want stagepkg", dep.Project.Namespace)
 	}
-	if len(dep.Project.NamespaceRemaps) != 1 || dep.Project.NamespaceRemaps[0].From != "NU" || dep.Project.NamespaceRemaps[0].To != "znu" {
+	if len(dep.Project.NamespaceRemaps) != 1 || dep.Project.NamespaceRemaps[0].From != "BasePkg" || dep.Project.NamespaceRemaps[0].To != "stagepkg" {
 		t.Fatalf("dependency namespace remaps = %#v", dep.Project.NamespaceRemaps)
 	}
 }
 
 func TestMatchingNamespaceRemapsRequiresSourceAndRuntimeMatch(t *testing.T) {
-	rules := []namespaceremap.Rule{{From: "NU", To: "znu"}}
-	if got := matchingNamespaceRemaps(rules, "NU", "other"); len(got) != 0 {
+	rules := []namespaceremap.Rule{{From: "BasePkg", To: "stagepkg"}}
+	if got := matchingNamespaceRemaps(rules, "BasePkg", "other"); len(got) != 0 {
 		t.Fatalf("source-only match should not inherit remap: %#v", got)
 	}
-	if got := matchingNamespaceRemaps(rules, "Other", "znu"); len(got) != 0 {
+	if got := matchingNamespaceRemaps(rules, "Other", "stagepkg"); len(got) != 0 {
 		t.Fatalf("runtime-only match should not inherit remap: %#v", got)
 	}
-	if got := matchingNamespaceRemaps(rules, "NU", "znu"); len(got) != 1 {
+	if got := matchingNamespaceRemaps(rules, "BasePkg", "stagepkg"); len(got) != 1 {
 		t.Fatalf("source and runtime match should inherit remap: %#v", got)
 	}
 }

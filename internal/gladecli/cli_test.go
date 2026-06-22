@@ -342,7 +342,7 @@ func TestRunConfigShowJSON(t *testing.T) {
 	writeTestFile(t, filepath.Join(root, "glade.yml"), `project:
   packageDirs: [force-app, packages/core]
   defaultNamespace: glns
-  namespaceRemaps: ["NU:znu"]
+  namespaceRemaps: ["BasePkg:stagepkg"]
   managedPackageDependencies: ["pkg:artifact:.glade/packages/pkg.glade-package.json:1.0"]
   packageShims: ["pkg:test-support/package-shims/pkg"]
 org:
@@ -390,7 +390,7 @@ org:
 	if len(got.ManagedPackageDependencies) != 1 || got.ManagedPackageDependencies[0].Namespace != "pkg" {
 		t.Fatalf("managed package dependencies = %#v", got.ManagedPackageDependencies)
 	}
-	if len(got.NamespaceRemaps) != 1 || got.NamespaceRemaps[0].From != "NU" || got.NamespaceRemaps[0].To != "znu" {
+	if len(got.NamespaceRemaps) != 1 || got.NamespaceRemaps[0].From != "BasePkg" || got.NamespaceRemaps[0].To != "stagepkg" {
 		t.Fatalf("namespace remaps = %#v", got.NamespaceRemaps)
 	}
 	if len(got.PackageShims) != 1 || got.PackageShims[0].Namespace != "pkg" {
@@ -403,7 +403,7 @@ func TestRunConfigShowTextReportsNamespaceRemaps(t *testing.T) {
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
 	writeTestFile(t, filepath.Join(root, "glade.yml"), `project:
   packageDirs: [force-app]
-  namespaceRemaps: ["NU:znu"]
+  namespaceRemaps: ["BasePkg:stagepkg"]
 `)
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"config", "show", "--project", root}, &stdout, &stderr)
@@ -4453,7 +4453,7 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	}
 }
 
-func TestRunDBQueryJSONUsesSOQLRuntimeAndLimit(t *testing.T) {
+func TestRunDBQueryJSOBasePkgsesSOQLRuntimeAndLimit(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "glade.db")
 	fixturePath := filepath.Join(dir, "fixture.json")

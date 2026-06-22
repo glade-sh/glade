@@ -7250,7 +7250,7 @@ public class Consumer {
 
 func TestAnalyzeRemapsDependencySourceNamespaceReferences(t *testing.T) {
 	root := t.TempDir()
-	depRoot := filepath.Join(root, "nu-source")
+	depRoot := filepath.Join(root, "base-source")
 	consumerRoot := filepath.Join(root, "consumer")
 	for _, dir := range []string{
 		filepath.Join(depRoot, "force-app/main/classes"),
@@ -7261,7 +7261,7 @@ func TestAnalyzeRemapsDependencySourceNamespaceReferences(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	writeSemaFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"NU","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeSemaFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"BasePkg","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeSemaFile(t, filepath.Join(depRoot, "force-app/main/objects/Billing__c/Billing__c.object-meta.xml"), `
 <CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
   <label>Billing</label>
@@ -7279,7 +7279,7 @@ func TestAnalyzeRemapsDependencySourceNamespaceReferences(t *testing.T) {
 `)
 	writeSemaFile(t, filepath.Join(depRoot, "force-app/main/classes/Helper.cls"), `
 global class Helper {
-  global static Integer amount(NU__Billing__c row) {
+  global static Integer amount(BasePkg__Billing__c row) {
     return Integer.valueOf(row.Amount__c);
   }
 }
@@ -7287,20 +7287,20 @@ global class Helper {
 	writeSemaFile(t, filepath.Join(depRoot, "force-app/main/classes/Gateway.cls"), `
 global class Gateway {
   global static Integer createAmount(Integer amount) {
-    NU__Billing__c row = new NU__Billing__c(Amount__c = amount);
-    return NU.Helper.amount(row);
+    BasePkg__Billing__c row = new BasePkg__Billing__c(Amount__c = amount);
+    return BasePkg.Helper.amount(row);
   }
 }
 `)
 	writeSemaFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeSemaFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
-  managedPackageDependencies: ["znu:../nu-source"]
-  namespaceRemaps: ["NU:znu"]
+  managedPackageDependencies: ["stagepkg:../base-source"]
+  namespaceRemaps: ["BasePkg:stagepkg"]
 `)
 	writeSemaFile(t, filepath.Join(consumerRoot, "force-app/main/classes/Consumer.cls"), `
 public class Consumer {
-  public Integer run(znu__Billing__c row) {
-    return znu.Gateway.createAmount(Integer.valueOf(row.Amount__c));
+  public Integer run(stagepkg__Billing__c row) {
+    return stagepkg.Gateway.createAmount(Integer.valueOf(row.Amount__c));
   }
 }
 `)
@@ -7315,7 +7315,7 @@ public class Consumer {
 	}
 	result := Analyze(typesys.Build(p, s))
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "GLADESEMA006" && (strings.Contains(diag.Message, "NU.Helper") || strings.Contains(diag.Message, "NU__Billing__c")) {
+		if diag.Code == "GLADESEMA006" && (strings.Contains(diag.Message, "BasePkg.Helper") || strings.Contains(diag.Message, "BasePkg__Billing__c")) {
 			t.Fatalf("dependency source namespace reference was not remapped: %#v", result.Diagnostics)
 		}
 	}
@@ -7751,7 +7751,7 @@ public class di_Module {
 `)
 	depProject := project.Project{
 		Root:      depRoot,
-		Namespace: "znu",
+		Namespace: "stagepkg",
 		ApexFiles: []string{
 			filepath.Join(depRoot, "di_Binding.cls"),
 			filepath.Join(depRoot, "di_Module.cls"),
@@ -7761,7 +7761,7 @@ public class di_Module {
 		Root:      consumerRoot,
 		Namespace: "demo",
 		ManagedPackageDependencies: []project.ManagedPackageDependency{{
-			Namespace:  "znu",
+			Namespace:  "stagepkg",
 			SourceRoot: depRoot,
 			Project:    &depProject,
 		}},

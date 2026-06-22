@@ -293,26 +293,26 @@ func TestBuildDoesNotSurfaceSourceBackedDependencyDuplicateDiagnostics(t *testin
 
 func TestBuildRemapsSourceBackedDependencyNamespaceReferences(t *testing.T) {
 	root := t.TempDir()
-	depRoot := filepath.Join(root, "nu-source")
+	depRoot := filepath.Join(root, "base-source")
 	helper := filepath.Join(depRoot, "force-app/main/classes/Helper.cls")
 	gateway := filepath.Join(depRoot, "force-app/main/classes/Gateway.cls")
 	trigger := filepath.Join(depRoot, "force-app/main/triggers/BillingTrigger.trigger")
 	writeFile(t, helper, "global class Helper { global static String value() { return 'ok'; } }")
-	writeFile(t, gateway, "global class Gateway { global static String value() { return NU.Helper.value(); } }")
-	writeFile(t, trigger, "trigger BillingTrigger on NU__Billing__c (before insert) { NU.Helper.value(); }")
+	writeFile(t, gateway, "global class Gateway { global static String value() { return BasePkg.Helper.value(); } }")
+	writeFile(t, trigger, "trigger BillingTrigger on BasePkg__Billing__c (before insert) { BasePkg.Helper.value(); }")
 
 	idx := Build(project.Project{
 		Root:      root,
-		Namespace: "namz",
+		Namespace: "consumer",
 		ManagedPackageDependencies: []project.ManagedPackageDependency{{
-			Namespace: "znu",
+			Namespace: "stagepkg",
 			Status:    "loaded",
 			Project: &project.Project{
 				Root:      depRoot,
-				Namespace: "znu",
+				Namespace: "stagepkg",
 				NamespaceRemaps: []namespaceremap.Rule{{
-					From: "NU",
-					To:   "znu",
+					From: "BasePkg",
+					To:   "stagepkg",
 				}},
 				ApexFiles: []string{helper, gateway, trigger},
 			},
@@ -327,10 +327,10 @@ func TestBuildRemapsSourceBackedDependencyNamespaceReferences(t *testing.T) {
 			continue
 		}
 		typeFound = true
-		if typ.Namespace != "znu" {
-			t.Fatalf("Gateway namespace = %q, want znu", typ.Namespace)
+		if typ.Namespace != "stagepkg" {
+			t.Fatalf("Gateway namespace = %q, want stagepkg", typ.Namespace)
 		}
-		if len(typ.SourceNamespaceRemaps) != 1 || typ.SourceNamespaceRemaps[0].From != "NU" || typ.SourceNamespaceRemaps[0].To != "znu" {
+		if len(typ.SourceNamespaceRemaps) != 1 || typ.SourceNamespaceRemaps[0].From != "BasePkg" || typ.SourceNamespaceRemaps[0].To != "stagepkg" {
 			t.Fatalf("source remaps = %#v", typ.SourceNamespaceRemaps)
 		}
 	}
@@ -343,10 +343,10 @@ func TestBuildRemapsSourceBackedDependencyNamespaceReferences(t *testing.T) {
 			continue
 		}
 		triggerFound = true
-		if trig.Namespace != "znu" || trig.ObjectName != "znu__Billing__c" {
+		if trig.Namespace != "stagepkg" || trig.ObjectName != "stagepkg__Billing__c" {
 			t.Fatalf("trigger namespace/object = %q/%q", trig.Namespace, trig.ObjectName)
 		}
-		if len(trig.SourceNamespaceRemaps) != 1 || trig.SourceNamespaceRemaps[0].From != "NU" || trig.SourceNamespaceRemaps[0].To != "znu" {
+		if len(trig.SourceNamespaceRemaps) != 1 || trig.SourceNamespaceRemaps[0].From != "BasePkg" || trig.SourceNamespaceRemaps[0].To != "stagepkg" {
 			t.Fatalf("trigger source remaps = %#v", trig.SourceNamespaceRemaps)
 		}
 	}

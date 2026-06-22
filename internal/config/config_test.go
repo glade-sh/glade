@@ -12,7 +12,7 @@ project:
   root: .
   packageDirs: ["force-app", "packages/core"]
   defaultNamespace: samplepkg
-  namespaceRemaps: ["NU:znu"]
+  namespaceRemaps: ["BasePkg:stagepkg"]
   managedPackageDependencies: ["pkg:../pkg:1.2", "pkg2:/tmp/pkg"]
 `)
 	if err != nil {
@@ -27,7 +27,7 @@ project:
 	if cfg.Project.DefaultNamespace != "samplepkg" {
 		t.Fatalf("default namespace = %q", cfg.Project.DefaultNamespace)
 	}
-	if len(cfg.Project.NamespaceRemaps) != 1 || cfg.Project.NamespaceRemaps[0].From != "NU" || cfg.Project.NamespaceRemaps[0].To != "znu" {
+	if len(cfg.Project.NamespaceRemaps) != 1 || cfg.Project.NamespaceRemaps[0].From != "BasePkg" || cfg.Project.NamespaceRemaps[0].To != "stagepkg" {
 		t.Fatalf("namespace remaps = %#v", cfg.Project.NamespaceRemaps)
 	}
 	if got := len(cfg.Project.ManagedPackageDependencies); got != 2 {
@@ -41,7 +41,7 @@ project:
 func TestParseYAMLSubsetRejectsMalformedNamespaceRemap(t *testing.T) {
 	if _, err := parseYAMLSubset(`
 project:
-  namespaceRemaps: ["NU"]
+  namespaceRemaps: ["BasePkg"]
 `); err == nil {
 		t.Fatal("expected malformed namespace remap error")
 	}
@@ -50,7 +50,7 @@ project:
 func TestParseYAMLSubsetRejectsDuplicateNamespaceRemapSource(t *testing.T) {
 	if _, err := parseYAMLSubset(`
 project:
-  namespaceRemaps: ["NU:znu", "nu:other"]
+  namespaceRemaps: ["BasePkg:stagepkg", "basepkg:other"]
 `); err == nil {
 		t.Fatal("expected duplicate namespace remap source error")
 	}
@@ -59,7 +59,7 @@ project:
 func TestParseYAMLSubsetRejectsSameNamespaceRemapSourceAndTarget(t *testing.T) {
 	if _, err := parseYAMLSubset(`
 project:
-  namespaceRemaps: ["NU:nu"]
+  namespaceRemaps: ["BasePkg:basepkg"]
 `); err == nil {
 		t.Fatal("expected same source and target namespace remap error")
 	}
@@ -68,7 +68,7 @@ project:
 func TestParseYAMLSubsetRejectsNamespaceRemapCycle(t *testing.T) {
 	if _, err := parseYAMLSubset(`
 project:
-  namespaceRemaps: ["NU:znu", "znu:NU"]
+  namespaceRemaps: ["BasePkg:stagepkg", "stagepkg:BasePkg"]
 `); err == nil {
 		t.Fatal("expected namespace remap cycle error")
 	}

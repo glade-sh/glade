@@ -271,17 +271,17 @@ func TestLoadProjectUsesProjectNamespaceForOwnedUnqualifiedObjects(t *testing.T)
 
 func TestLoadProjectRemapsAlreadyNamespacedDependencySchema(t *testing.T) {
 	root := t.TempDir()
-	objectPath := filepath.Join(root, "force-app/main/objects/NU__Billing__c/NU__Billing__c.object-meta.xml")
-	fieldPath := filepath.Join(root, "force-app/main/objects/NU__Billing__c/fields/NU__Code__c.field-meta.xml")
+	objectPath := filepath.Join(root, "force-app/main/objects/BasePkg__Billing__c/BasePkg__Billing__c.object-meta.xml")
+	fieldPath := filepath.Join(root, "force-app/main/objects/BasePkg__Billing__c/fields/BasePkg__Code__c.field-meta.xml")
 	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Billing</label><pluralLabel>Billings</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>`)
-	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>NU__Code__c</fullName><label>Code</label><type>Text</type><length>80</length></CustomField>`)
+	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>BasePkg__Code__c</fullName><label>Code</label><type>Text</type><length>80</length></CustomField>`)
 
 	s, err := LoadProject(project.Project{
 		Root:      root,
-		Namespace: "znu",
+		Namespace: "stagepkg",
 		NamespaceRemaps: []namespaceremap.Rule{{
-			From: "NU",
-			To:   "znu",
+			From: "BasePkg",
+			To:   "stagepkg",
 		}},
 		ObjectFiles: []string{objectPath},
 		FieldFiles:  []string{fieldPath},
@@ -289,10 +289,10 @@ func TestLoadProjectRemapsAlreadyNamespacedDependencySchema(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(s.Objects) != 1 || s.Objects[0].Name != "znu__Billing__c" {
+	if len(s.Objects) != 1 || s.Objects[0].Name != "stagepkg__Billing__c" {
 		t.Fatalf("objects = %#v", s.Objects)
 	}
-	if len(s.Objects[0].Fields) != 1 || s.Objects[0].Fields[0].Name != "znu__Code__c" {
+	if len(s.Objects[0].Fields) != 1 || s.Objects[0].Fields[0].Name != "stagepkg__Code__c" {
 		t.Fatalf("fields = %#v", s.Objects[0].Fields)
 	}
 }
