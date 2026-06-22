@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/glade-sh/glade/internal/namespaceremap"
 )
 
 var ErrNotFound = errors.New("glade config not found")
@@ -19,6 +21,7 @@ type ProjectConfig struct {
 	Root                       string                     `json:"root"`
 	PackageDirs                []string                   `json:"packageDirs"`
 	DefaultNamespace           string                     `json:"defaultNamespace"`
+	NamespaceRemaps            []namespaceremap.Rule      `json:"namespaceRemaps,omitempty"`
 	ManagedPackageDependencies []ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
 	PackageShims               []PackageShim              `json:"packageShims,omitempty"`
 }
@@ -101,6 +104,16 @@ func parseYAMLSubset(src string) (Config, error) {
 			cfg.Project.Root = trimScalar(value)
 		case "project.defaultNamespace":
 			cfg.Project.DefaultNamespace = trimScalar(value)
+		case "project.namespaceRemaps":
+			values, err := parseInlineList(value)
+			if err != nil {
+				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
+			}
+			remaps, err := parseNamespaceRemaps(values)
+			if err != nil {
+				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
+			}
+			cfg.Project.NamespaceRemaps = remaps
 		case "project.packageDirs":
 			values, err := parseInlineList(value)
 			if err != nil {
@@ -139,6 +152,38 @@ func parseYAMLSubset(src string) (Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func parseNamespaceRemaps(values []string) ([]namespaceremap.Rule, error) {
+	seen := make(map[string]bool)
+	rules := make([]namespaceremap.Rule, 0, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if strings.Count(value, ":") != 1 {
+			return nil, fmt.Errorf("invalid namespace remap %q: expected source:runtime", value)
+		}
+		from, to, _ := strings.Cut(value, ":")
+		from = strings.TrimSpace(from)
+		to = strings.TrimSpace(to)
+		if from == "" || to == "" {
+			return nil, fmt.Errorf("invalid namespace remap %q: source and runtime namespaces are required", value)
+		}
+		if strings.EqualFold(from, to) {
+			return nil, fmt.Errorf("invalid namespace remap %q: source and runtime namespaces must differ", value)
+		}
+		fromKey := strings.ToLower(from)
+		if seen[fromKey] {
+			return nil, fmt.Errorf("duplicate namespace remap source %q", from)
+		}
+		for _, rule := range rules {
+			if strings.EqualFold(rule.From, to) && strings.EqualFold(rule.To, from) {
+				return nil, fmt.Errorf("namespace remap cycle between %q and %q", from, to)
+			}
+		}
+		seen[fromKey] = true
+		rules = append(rules, namespaceremap.Rule{From: from, To: to})
+	}
+	return rules, nil
 }
 
 func parsePackageShims(values []string) ([]PackageShim, error) {

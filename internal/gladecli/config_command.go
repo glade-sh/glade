@@ -12,6 +12,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/flagparse"
+	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/project"
 )
 
@@ -23,6 +24,7 @@ type configShowInfo struct {
 	SourceAPIVersion           string                            `json:"sourceApiVersion,omitempty"`
 	PackageDirs                []string                          `json:"packageDirs"`
 	OrgFeatures                []string                          `json:"orgFeatures,omitempty"`
+	NamespaceRemaps            []namespaceremap.Rule             `json:"namespaceRemaps,omitempty"`
 	ManagedPackageDependencies []config.ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
 	PackageShims               []config.PackageShim              `json:"packageShims,omitempty"`
 }
@@ -86,6 +88,9 @@ func runConfigShow(args []string, w io.Writer) error {
 	fmt.Fprintf(w, "packageDirs: %s\n", strings.Join(info.PackageDirs, ", "))
 	if len(info.OrgFeatures) > 0 {
 		fmt.Fprintf(w, "org.features: %s\n", strings.Join(info.OrgFeatures, ", "))
+	}
+	if len(info.NamespaceRemaps) > 0 {
+		fmt.Fprintf(w, "namespaceRemaps: %d\n", len(info.NamespaceRemaps))
 	}
 	if len(info.ManagedPackageDependencies) > 0 {
 		fmt.Fprintf(w, "managedPackageDependencies: %d\n", len(info.ManagedPackageDependencies))
@@ -200,6 +205,7 @@ func loadConfigShowInfo(root string) (configShowInfo, error) {
 		info.ConfigFound = true
 		info.ConfigPath = cfgPath
 		info.OrgFeatures = cfg.Org.Features
+		info.NamespaceRemaps = cfg.Project.NamespaceRemaps
 		info.ManagedPackageDependencies = cfg.Project.ManagedPackageDependencies
 		info.PackageShims = cfg.Project.PackageShims
 	} else if !errors.Is(err, config.ErrNotFound) {

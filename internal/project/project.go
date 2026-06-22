@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/config"
+	"github.com/glade-sh/glade/internal/namespaceremap"
 )
 
 type Project struct {
@@ -60,6 +61,7 @@ type Project struct {
 	LWCHTMLFiles               []string                   `json:"lwcHtmlFiles"`
 	LWCCSSFiles                []string                   `json:"lwcCssFiles"`
 	LWCMetaFiles               []string                   `json:"lwcMetaFiles"`
+	NamespaceRemaps            []namespaceremap.Rule      `json:"namespaceRemaps,omitempty"`
 	ManagedPackageDependencies []ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
 	PackageShims               []PackageShim              `json:"packageShims,omitempty"`
 	DependencyDiagnostics      []DependencyDiagnostic     `json:"dependencyDiagnostics,omitempty"`
@@ -346,7 +348,8 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 		PackageDirectories: cfg.PackageDirectories,
 	}
 	if cfgErr == nil {
-		p.ManagedPackageDependencies, p.DependencyDiagnostics = loadManagedPackageDependencies(gladeCfg.Project.ManagedPackageDependencies, stack)
+		p.NamespaceRemaps = gladeCfg.Project.NamespaceRemaps
+		p.ManagedPackageDependencies, p.DependencyDiagnostics = loadManagedPackageDependencies(gladeCfg.Project.ManagedPackageDependencies, gladeCfg.Project.NamespaceRemaps, stack)
 		p.PackageShims, p.DependencyDiagnostics = loadPackageShims(gladeCfg.Project.PackageShims, stack, p.DependencyDiagnostics)
 	}
 
@@ -434,7 +437,7 @@ func dependencyPackageDirectories(dirs []PackageDirectory) []PackageDirectory {
 	return dirs
 }
 
-func loadManagedPackageDependencies(configured []config.ManagedPackageDependency, stack map[string]bool) ([]ManagedPackageDependency, []DependencyDiagnostic) {
+func loadManagedPackageDependencies(configured []config.ManagedPackageDependency, remaps []namespaceremap.Rule, stack map[string]bool) ([]ManagedPackageDependency, []DependencyDiagnostic) {
 	deps := make([]ManagedPackageDependency, 0, len(configured))
 	var diagnostics []DependencyDiagnostic
 	for _, dep := range configured {
@@ -508,12 +511,47 @@ func loadManagedPackageDependencies(configured []config.ManagedPackageDependency
 			deps = append(deps, projectDep)
 			continue
 		}
+		loadedSourceNamespace := loaded.Namespace
+		loaded.NamespaceRemaps = appendNamespaceRemaps(loaded.NamespaceRemaps, matchingNamespaceRemaps(remaps, loadedSourceNamespace, dep.Namespace)...)
 		loaded.Namespace = dep.Namespace
 		projectDep.Project = &loaded
 		projectDep.Status = "loaded"
 		deps = append(deps, projectDep)
 	}
 	return deps, diagnostics
+}
+
+func matchingNamespaceRemaps(rules []namespaceremap.Rule, loadedNamespace, configuredNamespace string) []namespaceremap.Rule {
+	var matched []namespaceremap.Rule
+	for _, rule := range rules {
+		if strings.EqualFold(loadedNamespace, rule.From) && strings.EqualFold(configuredNamespace, rule.To) {
+			matched = append(matched, rule)
+		}
+	}
+	return matched
+}
+
+func appendNamespaceRemaps(base []namespaceremap.Rule, extra ...namespaceremap.Rule) []namespaceremap.Rule {
+	if len(extra) == 0 {
+		return base
+	}
+	seen := make(map[string]bool, len(base)+len(extra))
+	for _, rule := range base {
+		seen[namespaceRemapKey(rule)] = true
+	}
+	for _, rule := range extra {
+		key := namespaceRemapKey(rule)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		base = append(base, rule)
+	}
+	return base
+}
+
+func namespaceRemapKey(rule namespaceremap.Rule) string {
+	return strings.ToLower(rule.From) + "\x00" + strings.ToLower(rule.To)
 }
 
 func loadPackageShims(configured []config.PackageShim, stack map[string]bool, diagnostics []DependencyDiagnostic) ([]PackageShim, []DependencyDiagnostic) {

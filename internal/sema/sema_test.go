@@ -7248,6 +7248,82 @@ public class Consumer {
 	}
 }
 
+func TestAnalyzeRemapsDependencySourceNamespaceReferences(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "nu-source")
+	consumerRoot := filepath.Join(root, "consumer")
+	for _, dir := range []string{
+		filepath.Join(depRoot, "force-app/main/classes"),
+		filepath.Join(depRoot, "force-app/main/objects/Billing__c/fields"),
+		filepath.Join(consumerRoot, "force-app/main/classes"),
+	} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeSemaFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"NU","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeSemaFile(t, filepath.Join(depRoot, "force-app/main/objects/Billing__c/Billing__c.object-meta.xml"), `
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Billing</label>
+  <pluralLabel>Billings</pluralLabel>
+</CustomObject>
+`)
+	writeSemaFile(t, filepath.Join(depRoot, "force-app/main/objects/Billing__c/fields/Amount__c.field-meta.xml"), `
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>Amount__c</fullName>
+  <label>Amount</label>
+  <type>Number</type>
+  <precision>16</precision>
+  <scale>0</scale>
+</CustomField>
+`)
+	writeSemaFile(t, filepath.Join(depRoot, "force-app/main/classes/Helper.cls"), `
+global class Helper {
+  global static Integer amount(NU__Billing__c row) {
+    return Integer.valueOf(row.Amount__c);
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(depRoot, "force-app/main/classes/Gateway.cls"), `
+global class Gateway {
+  global static Integer createAmount(Integer amount) {
+    NU__Billing__c row = new NU__Billing__c(Amount__c = amount);
+    return NU.Helper.amount(row);
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeSemaFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
+  managedPackageDependencies: ["znu:../nu-source"]
+  namespaceRemaps: ["NU:znu"]
+`)
+	writeSemaFile(t, filepath.Join(consumerRoot, "force-app/main/classes/Consumer.cls"), `
+public class Consumer {
+  public Integer run(znu__Billing__c row) {
+    return znu.Gateway.createAmount(Integer.valueOf(row.Amount__c));
+  }
+}
+`)
+
+	p, err := project.Load(consumerRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := schema.LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result := Analyze(typesys.Build(p, s))
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA006" && (strings.Contains(diag.Message, "NU.Helper") || strings.Contains(diag.Message, "NU__Billing__c")) {
+			t.Fatalf("dependency source namespace reference was not remapped: %#v", result.Diagnostics)
+		}
+	}
+	if result.HasErrors() {
+		t.Fatalf("remapped dependency source should analyze without errors: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeSourceBackedDependencyDowngradesSemanticUncertainty(t *testing.T) {
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")

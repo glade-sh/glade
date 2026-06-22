@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -290,6 +291,67 @@ func TestApplyProjectIncludesLoadedDependencyFieldSets(t *testing.T) {
 	}
 	if len(org.Metadata.FieldSets) != 1 || org.Metadata.FieldSets[0].ObjectName != "Account" || org.Metadata.FieldSets[0].Name != "BillingAddress" || org.Metadata.FieldSets[0].Namespace != "pkg" {
 		t.Fatalf("field sets = %#v", org.Metadata.FieldSets)
+	}
+}
+
+func TestLoadProjectRemapsDependencyResourceNamespaces(t *testing.T) {
+	root := t.TempDir()
+	labelPath := filepath.Join(root, "force-app/main/labels/CustomLabels.labels-meta.xml")
+	resourcePath := filepath.Join(root, "force-app/main/staticresources/NU__BillingAssets.resource")
+	resourceMeta := filepath.Join(root, "force-app/main/staticresources/NU__BillingAssets.resource-meta.xml")
+	contentAssetPath := filepath.Join(root, "force-app/main/contentassets/NU__BillingLogo.asset")
+	tabPath := filepath.Join(root, "force-app/main/tabs/NU__Billing__c.tab-meta.xml")
+	quickActionPath := filepath.Join(root, "force-app/main/quickActions/NU__Billing__c.NU__Create.quickAction-meta.xml")
+	dataCategoryPath := filepath.Join(root, "force-app/main/datacategorygroups/Billing.dataCategoryGroup-meta.xml")
+	namedCredentialPath := filepath.Join(root, "force-app/main/namedCredentials/NU__BillingEndpoint.namedCredential-meta.xml")
+	writeFile(t, labelPath, `<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata"><labels><fullName>NU__Billing_Error</fullName><language>en_US</language><protected>false</protected><shortDescription>Billing Error</shortDescription><value>Bad bill</value></labels></CustomLabels>`)
+	writeFile(t, resourcePath, "body")
+	writeFile(t, resourceMeta, `<StaticResource xmlns="http://soap.sforce.com/2006/04/metadata"><cacheControl>Public</cacheControl><contentType>text/plain</contentType></StaticResource>`)
+	writeFile(t, contentAssetPath, "logo")
+	writeFile(t, tabPath, `<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata"><customObject>true</customObject><label>Billing</label></CustomTab>`)
+	writeFile(t, quickActionPath, `<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata"><label>Create</label><type>Create</type><targetObject>NU__Billing__c</targetObject><predefinedFieldValues><field>NU__Code__c</field><value>42</value></predefinedFieldValues></QuickAction>`)
+	writeFile(t, dataCategoryPath, `<DataCategoryGroup xmlns="http://soap.sforce.com/2006/04/metadata"><label>Billing</label><objectUsage><object>NU__Billing__c</object></objectUsage><dataCategory><name>All</name><label>All</label></dataCategory></DataCategoryGroup>`)
+	writeFile(t, namedCredentialPath, `<NamedCredential xmlns="http://soap.sforce.com/2006/04/metadata"><endpoint>https://example.com</endpoint><protocol>Password</protocol><principalType>NamedUser</principalType></NamedCredential>`)
+
+	registry, err := LoadProject(project.Project{
+		Root:      root,
+		Namespace: "znu",
+		NamespaceRemaps: []namespaceremap.Rule{{
+			From: "NU",
+			To:   "znu",
+		}},
+		LabelFiles:             []string{labelPath},
+		StaticResourceFiles:    []string{resourcePath},
+		StaticResourceMetas:    []string{resourceMeta},
+		ContentAssetFiles:      []string{contentAssetPath},
+		TabFiles:               []string{tabPath},
+		QuickActionFiles:       []string{quickActionPath},
+		DataCategoryGroupFiles: []string{dataCategoryPath},
+		NamedCredentialFiles:   []string{namedCredentialPath},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(registry.Labels) != 1 || registry.Labels[0].Name != "znu__Billing_Error" || registry.Labels[0].Namespace != "znu" {
+		t.Fatalf("labels = %#v", registry.Labels)
+	}
+	if len(registry.StaticResources) != 1 || registry.StaticResources[0].Name != "znu__BillingAssets" || registry.StaticResources[0].NamespacePrefix != "znu" {
+		t.Fatalf("static resources = %#v", registry.StaticResources)
+	}
+	if len(registry.ContentAssets) != 1 || registry.ContentAssets[0].Name != "znu__BillingLogo" || registry.ContentAssets[0].URL != ContentAssetURL("znu__BillingLogo") {
+		t.Fatalf("content assets = %#v", registry.ContentAssets)
+	}
+	if len(registry.Tabs) != 1 || registry.Tabs[0].Name != "znu__Billing__c" || registry.Tabs[0].SObjectName != "znu__Billing__c" {
+		t.Fatalf("tabs = %#v", registry.Tabs)
+	}
+	if len(registry.QuickActions) != 1 || registry.QuickActions[0].Name != "znu__Billing__c.znu__Create" || registry.QuickActions[0].TargetObject != "znu__Billing__c" || len(registry.QuickActions[0].PredefinedFieldValues) != 1 || registry.QuickActions[0].PredefinedFieldValues[0].Field != "znu__Code__c" {
+		t.Fatalf("quick actions = %#v", registry.QuickActions)
+	}
+	if len(registry.DataCategoryGroups) != 1 || registry.DataCategoryGroups[0].SObjectName != "znu__Billing__c" {
+		t.Fatalf("data category groups = %#v", registry.DataCategoryGroups)
+	}
+	if len(registry.Endpoints) != 1 || registry.Endpoints[0].Name != "znu__BillingEndpoint" {
+		t.Fatalf("endpoints = %#v", registry.Endpoints)
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/project"
 )
 
@@ -263,7 +264,7 @@ func LoadProject(p project.Project) (Schema, error) {
 	}
 
 	for _, path := range p.ObjectFiles {
-		object, err := loadObject(path, p.Namespace)
+		object, err := loadObject(path, p)
 		if err != nil {
 			return Schema{}, err
 		}
@@ -275,7 +276,7 @@ func LoadProject(p project.Project) (Schema, error) {
 	}
 
 	for _, path := range p.FieldFiles {
-		objectName := namespaceProjectObjectName(p.Namespace, objectNameFromFieldPath(path))
+		objectName := namespaceProjectObjectName(p.Namespace, remapProjectAPIName(p, objectNameFromFieldPath(path)))
 		if objectName == "" {
 			continue
 		}
@@ -283,6 +284,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		if err != nil {
 			return Schema{}, err
 		}
+		field = remapProjectField(p, field)
 		field = namespaceObjectField(p.Namespace, objectName, field)
 		applyValueSet(&field, valueSets)
 		object := byName[objectName]
@@ -294,7 +296,7 @@ func LoadProject(p project.Project) (Schema, error) {
 	}
 
 	for _, path := range p.RecordTypeFiles {
-		objectName := namespaceProjectObjectName(p.Namespace, objectNameFromRecordTypePath(path))
+		objectName := namespaceProjectObjectName(p.Namespace, remapProjectAPIName(p, objectNameFromRecordTypePath(path)))
 		if objectName == "" {
 			continue
 		}
@@ -311,7 +313,7 @@ func LoadProject(p project.Project) (Schema, error) {
 	}
 
 	for _, path := range p.ValidationRuleFiles {
-		objectName := namespaceProjectObjectName(p.Namespace, objectNameFromValidationRulePath(path))
+		objectName := namespaceProjectObjectName(p.Namespace, remapProjectAPIName(p, objectNameFromValidationRulePath(path)))
 		if objectName == "" {
 			continue
 		}
@@ -319,6 +321,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		if err != nil {
 			return Schema{}, err
 		}
+		rule = remapProjectValidationRule(p, rule)
 		object := byName[objectName]
 		if object == nil {
 			object = &Object{Name: objectName}
@@ -335,6 +338,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		if err != nil {
 			return Schema{}, err
 		}
+		record = remapProjectCustomMetadataRecord(p, record)
 		records = append(records, record)
 	}
 	sort.Slice(records, func(i, j int) bool {
@@ -576,7 +580,7 @@ func recordTypePicklistDefaults(values []recordTypePicklistXML) map[string]strin
 	return defaults
 }
 
-func loadObject(path, projectNamespace string) (Object, error) {
+func loadObject(path string, p project.Project) (Object, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return Object{}, err
@@ -586,7 +590,7 @@ func loadObject(path, projectNamespace string) (Object, error) {
 		return Object{}, err
 	}
 	object := Object{
-		Name:               namespaceProjectObjectName(projectNamespace, objectNameFromObjectPath(path)),
+		Name:               namespaceProjectObjectName(p.Namespace, remapProjectAPIName(p, objectNameFromObjectPath(path))),
 		Label:              raw.Label,
 		PluralLabel:        raw.PluralLabel,
 		SharingModel:       raw.SharingModel,
@@ -600,7 +604,8 @@ func loadObject(path, projectNamespace string) (Object, error) {
 	for _, rawField := range raw.Fields {
 		field := fieldFromXML(rawField, "")
 		if field.Name != "" {
-			field = namespaceObjectField(projectNamespace, object.Name, field)
+			field = remapProjectField(p, field)
+			field = namespaceObjectField(p.Namespace, object.Name, field)
 			object.Fields = append(object.Fields, field)
 		}
 	}
@@ -611,7 +616,8 @@ func loadObject(path, projectNamespace string) (Object, error) {
 		}
 	}
 	for _, rawRule := range raw.ValidationRules {
-		rule := validationRuleFromXML(rawRule, "", validationRuleSourceNamespace(projectNamespace, object.Name))
+		rule := validationRuleFromXML(rawRule, "", validationRuleSourceNamespace(p.Namespace, object.Name))
+		rule = remapProjectValidationRule(p, rule)
 		if rule.Name != "" {
 			object.ValidationRules = append(object.ValidationRules, rule)
 		}
@@ -674,6 +680,48 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		RestrictedPicklist:    raw.ValueSet.Restricted,
 		PicklistValues:        picklistValues(raw.ValueSet.Definition.Values),
 	}
+}
+
+func remapProjectAPIName(p project.Project, name string) string {
+	return namespaceremap.ApplyMetadataName(p.NamespaceRemaps, name)
+}
+
+func remapProjectField(p project.Project, field Field) Field {
+	field.Name = remapProjectAPIName(p, field.Name)
+	for i, referenceTo := range field.ReferenceTo {
+		field.ReferenceTo[i] = remapProjectAPIName(p, referenceTo)
+	}
+	field.RelationshipName = remapProjectAPIName(p, field.RelationshipName)
+	field.ChildRelationshipName = remapProjectAPIName(p, field.ChildRelationshipName)
+	field.SummarizedField = remapProjectAPIName(p, field.SummarizedField)
+	field.SummaryForeignKey = remapProjectAPIName(p, field.SummaryForeignKey)
+	for i, filter := range field.SummaryFilterItems {
+		filter.Field = remapProjectAPIName(p, filter.Field)
+		field.SummaryFilterItems[i] = filter
+	}
+	for i, fieldName := range field.FilteredLookupInfo.ControllingFields {
+		field.FilteredLookupInfo.ControllingFields[i] = remapProjectAPIName(p, fieldName)
+	}
+	field.PicklistController = remapProjectAPIName(p, field.PicklistController)
+	field.ValueSetName = remapProjectAPIName(p, field.ValueSetName)
+	return field
+}
+
+func remapProjectValidationRule(p project.Project, rule ValidationRule) ValidationRule {
+	rule.Name = remapProjectAPIName(p, rule.Name)
+	rule.Namespace = namespaceremap.ApplyNamespace(p.NamespaceRemaps, rule.Namespace)
+	rule.ErrorDisplayField = remapProjectAPIName(p, rule.ErrorDisplayField)
+	return rule
+}
+
+func remapProjectCustomMetadataRecord(p project.Project, record CustomMetadataRecord) CustomMetadataRecord {
+	record.FullName = remapProjectAPIName(p, record.FullName)
+	record.ObjectName = remapProjectAPIName(p, record.ObjectName)
+	for i, value := range record.Values {
+		value.Field = remapProjectAPIName(p, value.Field)
+		record.Values[i] = value
+	}
+	return record
 }
 
 func namespaceObjectField(projectNamespace, objectName string, field Field) Field {

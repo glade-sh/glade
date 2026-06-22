@@ -342,6 +342,7 @@ func TestRunConfigShowJSON(t *testing.T) {
 	writeTestFile(t, filepath.Join(root, "glade.yml"), `project:
   packageDirs: [force-app, packages/core]
   defaultNamespace: glns
+  namespaceRemaps: ["NU:znu"]
   managedPackageDependencies: ["pkg:artifact:.glade/packages/pkg.glade-package.json:1.0"]
   packageShims: ["pkg:test-support/package-shims/pkg"]
 org:
@@ -363,6 +364,10 @@ org:
 		ManagedPackageDependencies []struct {
 			Namespace string `json:"namespace"`
 		} `json:"managedPackageDependencies"`
+		NamespaceRemaps []struct {
+			From string `json:"from"`
+			To   string `json:"to"`
+		} `json:"namespaceRemaps"`
 		PackageShims []struct {
 			Namespace string `json:"namespace"`
 		} `json:"packageShims"`
@@ -385,8 +390,28 @@ org:
 	if len(got.ManagedPackageDependencies) != 1 || got.ManagedPackageDependencies[0].Namespace != "pkg" {
 		t.Fatalf("managed package dependencies = %#v", got.ManagedPackageDependencies)
 	}
+	if len(got.NamespaceRemaps) != 1 || got.NamespaceRemaps[0].From != "NU" || got.NamespaceRemaps[0].To != "znu" {
+		t.Fatalf("namespace remaps = %#v", got.NamespaceRemaps)
+	}
 	if len(got.PackageShims) != 1 || got.PackageShims[0].Namespace != "pkg" {
 		t.Fatalf("package shims = %#v", got.PackageShims)
+	}
+}
+
+func TestRunConfigShowTextReportsNamespaceRemaps(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	writeTestFile(t, filepath.Join(root, "glade.yml"), `project:
+  packageDirs: [force-app]
+  namespaceRemaps: ["NU:znu"]
+`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"config", "show", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "namespaceRemaps: 1") {
+		t.Fatalf("stdout = %q", stdout.String())
 	}
 }
 

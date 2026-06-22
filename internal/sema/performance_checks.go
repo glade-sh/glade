@@ -20,7 +20,7 @@ func (a *Analyzer) checkPerformancePatterns(index typesys.Index) []diagnostic.Di
 		if skipPerformanceDiagnostics(typ) {
 			continue
 		}
-		source, ok := readSemaSource(typ.File, sourceCache)
+		source, ok := readSemaSourceForType(typ, sourceCache)
 		if !ok {
 			continue
 		}

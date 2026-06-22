@@ -117,7 +117,7 @@ func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnos
 		if skipProjectDiagnosticType(typ) || typ.File == "" {
 			continue
 		}
-		source, ok := readSemaSource(typ.File, sourceCache)
+		source, ok := readSemaSourceForType(typ, sourceCache)
 		if !ok {
 			continue
 		}
@@ -1358,7 +1358,7 @@ func (a *Analyzer) checkManagedPackageAccess(index typesys.Index) []diagnostic.D
 		if typ.Dependency {
 			continue
 		}
-		source, ok := readSemaSource(typ.File, sourceCache)
+		source, ok := readSemaSourceForType(typ, sourceCache)
 		if !ok {
 			continue
 		}

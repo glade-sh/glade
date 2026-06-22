@@ -19,6 +19,7 @@ import (
 func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, caches ...*sourceCache) []vm.Class {
 	var out []vm.Class
 	sources := sourceCacheFor(caches)
+	sources.configureNamespaceRemaps(index.Types, index.Triggers)
 	knownTypes := knownTypeNames(index.Types)
 	sourceBackedTypes := sourceBackedTypeNames(index.Types)
 	methodsByClass := projectMethodsByClass(methods)
@@ -153,6 +154,7 @@ func compileProjectMethods(index typesys.Index, caches ...*sourceCache) map[stri
 		Method vm.Method
 	}
 	sources := sourceCacheFor(caches)
+	sources.configureNamespaceRemaps(index.Types, index.Triggers)
 	sourceBackedTypes := sourceBackedTypeNames(index.Types)
 	var jobs []methodCompileJob
 	var syntheticResults []methodCompileResult
@@ -350,6 +352,7 @@ func compileProjectTriggers(index typesys.Index, caches ...*sourceCache) ([]vm.T
 	var out []vm.Trigger
 	var errs []error
 	sources := sourceCacheFor(caches)
+	sources.configureNamespaceRemaps(index.Types, index.Triggers)
 	for _, trigger := range index.Triggers {
 		source, err := sources.read(trigger.File)
 		if err != nil {
@@ -392,6 +395,7 @@ func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.I
 	}
 	childRelationshipLookup := projectReferencedChildRelationshipLookup(*org)
 	cache := sourceCacheFor(caches)
+	cache.configureNamespaceRemaps(index.Types, index.Triggers)
 	cacheKey := projectReferencedStandardFieldCacheKey(index, cache)
 	if cacheKey != "" {
 		if cached, ok := projectReferencedStandardFieldCache.Load(cacheKey); ok {

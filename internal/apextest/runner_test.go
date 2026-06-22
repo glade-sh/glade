@@ -78,6 +78,73 @@ private class BillingTest {
 	}
 }
 
+func TestRunRemapsProductionNamespaceSourceDependencyToProxyNamespace(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "nu-source")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"NU","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/objects/Billing__c/Billing__c.object-meta.xml"), `
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Billing</label>
+  <pluralLabel>Billings</pluralLabel>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/objects/Billing__c/fields/Amount__c.field-meta.xml"), `
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>Amount__c</fullName>
+  <label>Amount</label>
+  <type>Number</type>
+  <precision>16</precision>
+  <scale>0</scale>
+</CustomField>
+`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/Helper.cls"), `
+global class Helper {
+  global static Integer amount(NU__Billing__c row) {
+    return Integer.valueOf(row.Amount__c);
+  }
+}
+`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/Gateway.cls"), `
+global class Gateway {
+  global static Integer createAmount(Integer amount) {
+    NU__Billing__c row = new NU__Billing__c(Amount__c = amount);
+    insert row;
+    List<NU__Billing__c> rows = [SELECT Amount__c FROM NU__Billing__c];
+    return NU.Helper.amount(rows[0]);
+  }
+}
+`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/triggers/BillingTrigger.trigger"), `
+trigger BillingTrigger on NU__Billing__c (before insert) {
+  for (NU__Billing__c row : Trigger.new) {
+    row.Amount__c = NU.Helper.amount(row) + 1;
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
+  managedPackageDependencies: ["znu:../nu-source"]
+  namespaceRemaps: ["NU:znu"]
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/classes/NamespaceRemapTest.cls"), `
+@isTest
+private class NamespaceRemapTest {
+  @isTest static void remappedDependencyRuns() {
+    System.assertEquals(43, znu.Gateway.createAmount(42));
+    List<znu__Billing__c> rows = [SELECT Amount__c FROM znu__Billing__c];
+    System.assertEquals(1, rows.size());
+    System.assertEquals(43, Integer.valueOf(rows[0].Amount__c));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, consumerRoot), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestCapturedPackageConstructorFailsWithNamedBoundaryWithoutShim(t *testing.T) {
 	root := t.TempDir()
 	writeCapturedBillingArtifact(t, filepath.Join(root, "packages/pkg.glade-package.json"))
