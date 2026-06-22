@@ -12,6 +12,7 @@ project:
   root: .
   packageDirs: ["force-app", "packages/core"]
   defaultNamespace: samplepkg
+  namespaceRemaps: ["NU:znu"]
   managedPackageDependencies: ["pkg:../pkg:1.2", "pkg2:/tmp/pkg"]
 `)
 	if err != nil {
@@ -26,11 +27,50 @@ project:
 	if cfg.Project.DefaultNamespace != "samplepkg" {
 		t.Fatalf("default namespace = %q", cfg.Project.DefaultNamespace)
 	}
+	if len(cfg.Project.NamespaceRemaps) != 1 || cfg.Project.NamespaceRemaps[0].From != "NU" || cfg.Project.NamespaceRemaps[0].To != "znu" {
+		t.Fatalf("namespace remaps = %#v", cfg.Project.NamespaceRemaps)
+	}
 	if got := len(cfg.Project.ManagedPackageDependencies); got != 2 {
 		t.Fatalf("managed dependency count = %d", got)
 	}
 	if dep := cfg.Project.ManagedPackageDependencies[0]; dep.Namespace != "pkg" || dep.SourceRoot != "../pkg" || dep.Version != "1.2" {
 		t.Fatalf("managed dependency[0] = %#v", dep)
+	}
+}
+
+func TestParseYAMLSubsetRejectsMalformedNamespaceRemap(t *testing.T) {
+	if _, err := parseYAMLSubset(`
+project:
+  namespaceRemaps: ["NU"]
+`); err == nil {
+		t.Fatal("expected malformed namespace remap error")
+	}
+}
+
+func TestParseYAMLSubsetRejectsDuplicateNamespaceRemapSource(t *testing.T) {
+	if _, err := parseYAMLSubset(`
+project:
+  namespaceRemaps: ["NU:znu", "nu:other"]
+`); err == nil {
+		t.Fatal("expected duplicate namespace remap source error")
+	}
+}
+
+func TestParseYAMLSubsetRejectsSameNamespaceRemapSourceAndTarget(t *testing.T) {
+	if _, err := parseYAMLSubset(`
+project:
+  namespaceRemaps: ["NU:nu"]
+`); err == nil {
+		t.Fatal("expected same source and target namespace remap error")
+	}
+}
+
+func TestParseYAMLSubsetRejectsNamespaceRemapCycle(t *testing.T) {
+	if _, err := parseYAMLSubset(`
+project:
+  namespaceRemaps: ["NU:znu", "znu:NU"]
+`); err == nil {
+		t.Fatal("expected namespace remap cycle error")
 	}
 }
 

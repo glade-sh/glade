@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/project"
 )
 
@@ -265,6 +266,34 @@ func TestLoadProjectUsesProjectNamespaceForOwnedUnqualifiedObjects(t *testing.T)
 	}
 	if len(object.ValidationRules) != 1 || object.ValidationRules[0].Namespace != "otherpkg" {
 		t.Fatalf("validation rules = %#v", object.ValidationRules)
+	}
+}
+
+func TestLoadProjectRemapsAlreadyNamespacedDependencySchema(t *testing.T) {
+	root := t.TempDir()
+	objectPath := filepath.Join(root, "force-app/main/objects/NU__Billing__c/NU__Billing__c.object-meta.xml")
+	fieldPath := filepath.Join(root, "force-app/main/objects/NU__Billing__c/fields/NU__Code__c.field-meta.xml")
+	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Billing</label><pluralLabel>Billings</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>`)
+	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>NU__Code__c</fullName><label>Code</label><type>Text</type><length>80</length></CustomField>`)
+
+	s, err := LoadProject(project.Project{
+		Root:      root,
+		Namespace: "znu",
+		NamespaceRemaps: []namespaceremap.Rule{{
+			From: "NU",
+			To:   "znu",
+		}},
+		ObjectFiles: []string{objectPath},
+		FieldFiles:  []string{fieldPath},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(s.Objects) != 1 || s.Objects[0].Name != "znu__Billing__c" {
+		t.Fatalf("objects = %#v", s.Objects)
+	}
+	if len(s.Objects[0].Fields) != 1 || s.Objects[0].Fields[0].Name != "znu__Code__c" {
+		t.Fatalf("fields = %#v", s.Objects[0].Fields)
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -52,7 +53,7 @@ func (a *Analyzer) checkMethodBodies(index typesys.Index) []diagnostic.Diagnosti
 		for _, member := range typ.Members {
 			switch member.Kind {
 			case apexast.DeclarationMethod, apexast.DeclarationConstructor, apexast.DeclarationInitializer:
-				source, ok := readSemaSource(typ.File, sources)
+				source, ok := readSemaSourceForType(typ, sources)
 				if !ok {
 					continue
 				}
@@ -66,7 +67,7 @@ func (a *Analyzer) checkMethodBodies(index typesys.Index) []diagnostic.Diagnosti
 					if !accessor.HasBody {
 						continue
 					}
-					source, ok := readSemaSource(typ.File, sources)
+					source, ok := readSemaSourceForType(typ, sources)
 					if !ok {
 						continue
 					}
@@ -180,10 +181,19 @@ func semaTypeMembersFromSymbol(typ typesys.TypeSymbol) typeMembers {
 }
 
 func readSemaSource(path string, cache map[string]string) (string, bool) {
+	return readSemaSourceWithRemaps(path, nil, cache)
+}
+
+func readSemaSourceForType(typ typesys.TypeSymbol, cache map[string]string) (string, bool) {
+	return readSemaSourceWithRemaps(typ.File, typ.SourceNamespaceRemaps, cache)
+}
+
+func readSemaSourceWithRemaps(path string, remaps []namespaceremap.Rule, cache map[string]string) (string, bool) {
 	if path == "" {
 		return "", false
 	}
-	if source, ok := cache[path]; ok {
+	key := semaSourceCacheKey(path, remaps)
+	if source, ok := cache[key]; ok {
 		return source, true
 	}
 	data, err := os.ReadFile(path)
@@ -191,8 +201,19 @@ func readSemaSource(path string, cache map[string]string) (string, bool) {
 		return "", false
 	}
 	source := string(data)
-	cache[path] = source
+	if len(remaps) > 0 {
+		source = namespaceremap.ApplySource(remaps, source)
+	}
+	cache[key] = source
 	return source, true
+}
+
+func semaSourceCacheKey(path string, remaps []namespaceremap.Rule) string {
+	fingerprint := namespaceremap.Fingerprint(remaps)
+	if fingerprint == "" {
+		return path
+	}
+	return path + "\x00" + fingerprint
 }
 
 func buildTypeMembers(index typesys.Index) map[string]typeMembers {

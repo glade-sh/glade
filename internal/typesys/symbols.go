@@ -11,6 +11,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/packageartifact"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
@@ -35,20 +36,21 @@ type ProjectInfo struct {
 }
 
 type TypeSymbol struct {
-	Kind       apexast.DeclarationKind `json:"kind"`
-	Name       string                  `json:"name"`
-	File       string                  `json:"file"`
-	Namespace  string                  `json:"namespace,omitempty"`
-	SourceRoot string                  `json:"sourceRoot,omitempty"`
-	Version    string                  `json:"version,omitempty"`
-	Dependency bool                    `json:"dependency,omitempty"`
-	Artifact   bool                    `json:"artifact,omitempty"`
-	Modifiers  []string                `json:"modifiers,omitempty"`
-	IsTest     bool                    `json:"isTest,omitempty"`
-	SuperClass string                  `json:"superClass,omitempty"`
-	Interfaces []string                `json:"interfaces,omitempty"`
-	Range      diagnostic.Range        `json:"range"`
-	Members    []MemberSymbol          `json:"members,omitempty"`
+	Kind                  apexast.DeclarationKind `json:"kind"`
+	Name                  string                  `json:"name"`
+	File                  string                  `json:"file"`
+	Namespace             string                  `json:"namespace,omitempty"`
+	SourceNamespaceRemaps []namespaceremap.Rule   `json:"sourceNamespaceRemaps,omitempty"`
+	SourceRoot            string                  `json:"sourceRoot,omitempty"`
+	Version               string                  `json:"version,omitempty"`
+	Dependency            bool                    `json:"dependency,omitempty"`
+	Artifact              bool                    `json:"artifact,omitempty"`
+	Modifiers             []string                `json:"modifiers,omitempty"`
+	IsTest                bool                    `json:"isTest,omitempty"`
+	SuperClass            string                  `json:"superClass,omitempty"`
+	Interfaces            []string                `json:"interfaces,omitempty"`
+	Range                 diagnostic.Range        `json:"range"`
+	Members               []MemberSymbol          `json:"members,omitempty"`
 }
 
 type MemberSymbol struct {
@@ -63,13 +65,14 @@ type MemberSymbol struct {
 }
 
 type TriggerSymbol struct {
-	Name       string           `json:"name"`
-	Namespace  string           `json:"namespace,omitempty"`
-	ObjectName string           `json:"objectName"`
-	Events     []string         `json:"events,omitempty"`
-	File       string           `json:"file"`
-	Dependency bool             `json:"dependency,omitempty"`
-	Range      diagnostic.Range `json:"range"`
+	Name                  string                `json:"name"`
+	Namespace             string                `json:"namespace,omitempty"`
+	SourceNamespaceRemaps []namespaceremap.Rule `json:"sourceNamespaceRemaps,omitempty"`
+	ObjectName            string                `json:"objectName"`
+	Events                []string              `json:"events,omitempty"`
+	File                  string                `json:"file"`
+	Dependency            bool                  `json:"dependency,omitempty"`
+	Range                 diagnostic.Range      `json:"range"`
 }
 
 type DependencyInfo struct {
@@ -294,7 +297,11 @@ func memberSymbolsFromArtifact(members []packageartifact.ApexMember) []MemberSym
 }
 
 func appendProjectSymbols(idx *Index, parser *apexast.Parser, p project.Project, dependency bool, namespace, version string, seenTypes map[string][]seenTypeSymbol) {
-	for _, file := range projectSymbolFiles(parser, p, dependency, namespace, version) {
+	var sourceRemaps []namespaceremap.Rule
+	if dependency {
+		sourceRemaps = p.NamespaceRemaps
+	}
+	for _, file := range projectSymbolFiles(parser, p, dependency, namespace, version, sourceRemaps) {
 		if !dependency {
 			idx.Diagnostics = append(idx.Diagnostics, file.Diagnostics...)
 		}
@@ -396,12 +403,12 @@ type projectSymbolFile struct {
 	Triggers    []TriggerSymbol
 }
 
-func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bool, namespace, version string) []projectSymbolFile {
+func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule) []projectSymbolFile {
 	if len(p.ApexFiles) == 0 {
 		return nil
 	}
 	if len(p.ApexFiles) == 1 {
-		return []projectSymbolFile{projectSymbolFileFromPath(parser, p.ApexFiles[0], p.Root, dependency, namespace, version)}
+		return []projectSymbolFile{projectSymbolFileFromPath(parser, p.ApexFiles[0], p.Root, dependency, namespace, version, sourceRemaps)}
 	}
 	workers := runtime.GOMAXPROCS(0)
 	if workers < 1 {
@@ -433,7 +440,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 			for job := range jobs {
 				results <- result{
 					Index: job.Index,
-					File:  projectSymbolFileFromPath(localParser, job.Path, p.Root, dependency, namespace, version),
+					File:  projectSymbolFileFromPath(localParser, job.Path, p.Root, dependency, namespace, version, sourceRemaps),
 				}
 			}
 		}()
@@ -454,7 +461,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 	return out
 }
 
-func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, dependency bool, namespace, version string) projectSymbolFile {
+func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule) projectSymbolFile {
 	var out projectSymbolFile
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -466,7 +473,7 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 		})
 		return out
 	}
-	source := string(data)
+	source := namespaceremap.ApplySource(sourceRemaps, string(data))
 	file := parser.ParseSource(path, source)
 	out.Diagnostics = append(out.Diagnostics, file.Diagnostics...)
 	if len(file.Diagnostics) > 0 {
@@ -477,6 +484,7 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 		case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
 			for _, sym := range typeSymbolsFromDeclaration(path, decl, "", false, source) {
 				sym.Namespace = namespace
+				sym.SourceNamespaceRemaps = append([]namespaceremap.Rule(nil), sourceRemaps...)
 				sym.SourceRoot = root
 				sym.Version = version
 				sym.Dependency = dependency
@@ -484,13 +492,14 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 			}
 		case apexast.DeclarationTrigger:
 			out.Triggers = append(out.Triggers, TriggerSymbol{
-				Name:       decl.Name,
-				Namespace:  namespace,
-				ObjectName: decl.ObjectName,
-				Events:     decl.Events,
-				File:       path,
-				Dependency: dependency,
-				Range:      decl.Range,
+				Name:                  decl.Name,
+				Namespace:             namespace,
+				SourceNamespaceRemaps: append([]namespaceremap.Rule(nil), sourceRemaps...),
+				ObjectName:            decl.ObjectName,
+				Events:                decl.Events,
+				File:                  path,
+				Dependency:            dependency,
+				Range:                 decl.Range,
 			})
 		}
 	}

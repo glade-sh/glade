@@ -21,6 +21,7 @@ import (
 	"github.com/glade-sh/glade/internal/automation"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/profile"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/resource"
@@ -383,12 +384,14 @@ func runtimeKey(index typesys.Index) runtimeCacheKey {
 		write(typ.File)
 		write(typ.Name)
 		write(typ.Namespace)
+		write(namespaceremap.Fingerprint(typ.SourceNamespaceRemaps))
 		writeFileBody(typ.File)
 	}
 	for _, trig := range index.Triggers {
 		write(trig.File)
 		write(trig.Name)
 		write(trig.ObjectName)
+		write(namespaceremap.Fingerprint(trig.SourceNamespaceRemaps))
 		writeFileBody(trig.File)
 	}
 	return runtimeCacheKey(hex.EncodeToString(h.Sum(nil)))
@@ -409,6 +412,9 @@ func cloneRuntimeCacheEntry(in runtimeCacheEntry) runtimeCacheEntry {
 }
 
 func runtimeFromIndex(index typesys.Index, sources *sourceCache) (runtimeCacheKey, runtimeCacheEntry) {
+	if sources != nil {
+		sources.configureNamespaceRemaps(index.Types, index.Triggers)
+	}
 	key := runtimeKey(index)
 	runtimeCacheMu.RLock()
 	if cached, ok := runtimeCache[key]; ok {
@@ -1355,8 +1361,9 @@ func registerVisualforcePages(machine *vm.VM, names []string) {
 }
 
 type sourceCache struct {
-	mu    sync.RWMutex
-	files map[string]string
+	mu         sync.RWMutex
+	files      map[string]string
+	fileRemaps map[string][]namespaceremap.Rule
 }
 
 func newSourceCache() *sourceCache {
@@ -1375,7 +1382,42 @@ func (cache *sourceCache) read(file string) (string, error) {
 		return "", fmt.Errorf("source cache is nil")
 	}
 	cache.mu.RLock()
-	if source, ok := cache.files[file]; ok {
+	remaps := append([]namespaceremap.Rule(nil), cache.fileRemaps[file]...)
+	cache.mu.RUnlock()
+	return cache.readWithRemaps(file, remaps)
+}
+
+func (cache *sourceCache) configureNamespaceRemaps(types []typesys.TypeSymbol, triggerSets ...[]typesys.TriggerSymbol) {
+	if cache == nil {
+		return
+	}
+	cache.mu.Lock()
+	defer cache.mu.Unlock()
+	fileRemaps := make(map[string][]namespaceremap.Rule)
+	for _, typ := range types {
+		if typ.File == "" || len(typ.SourceNamespaceRemaps) == 0 {
+			continue
+		}
+		fileRemaps[typ.File] = append([]namespaceremap.Rule(nil), typ.SourceNamespaceRemaps...)
+	}
+	for _, triggers := range triggerSets {
+		for _, trigger := range triggers {
+			if trigger.File == "" || len(trigger.SourceNamespaceRemaps) == 0 {
+				continue
+			}
+			fileRemaps[trigger.File] = append([]namespaceremap.Rule(nil), trigger.SourceNamespaceRemaps...)
+		}
+	}
+	cache.fileRemaps = fileRemaps
+}
+
+func (cache *sourceCache) readWithRemaps(file string, remaps []namespaceremap.Rule) (string, error) {
+	if cache == nil {
+		return "", fmt.Errorf("source cache is nil")
+	}
+	key := sourceCacheKey(file, remaps)
+	cache.mu.RLock()
+	if source, ok := cache.files[key]; ok {
 		cache.mu.RUnlock()
 		return source, nil
 	}
@@ -1386,14 +1428,25 @@ func (cache *sourceCache) read(file string) (string, error) {
 		return "", err
 	}
 	source := string(data)
+	if len(remaps) > 0 {
+		source = namespaceremap.ApplySource(remaps, source)
+	}
 
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
-	if existing, ok := cache.files[file]; ok {
+	if existing, ok := cache.files[key]; ok {
 		return existing, nil
 	}
-	cache.files[file] = source
+	cache.files[key] = source
 	return source, nil
+}
+
+func sourceCacheKey(file string, remaps []namespaceremap.Rule) string {
+	fingerprint := namespaceremap.Fingerprint(remaps)
+	if fingerprint == "" {
+		return file
+	}
+	return file + "\x00" + fingerprint
 }
 
 func passiveStandardRuntimeClasses(indexTypes []typesys.TypeSymbol, existing []vm.Class) []vm.Class {
@@ -1832,6 +1885,9 @@ func standardApexTestOrg() storage.OrgState {
 }
 
 func orgFromIndex(index typesys.Index, caches ...*sourceCache) storage.OrgState {
+	sources := sourceCacheFor(caches)
+	sources.configureNamespaceRemaps(index.Types, index.Triggers)
+	caches = []*sourceCache{sources}
 	org := standardApexTestOrg()
 	org.Namespace = index.Project.Namespace
 	org.OrgID = "00D000000000001"

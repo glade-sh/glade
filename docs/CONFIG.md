@@ -43,6 +43,7 @@ project:
   root: .
   packageDirs: [force-app]
   defaultNamespace: pkg
+  namespaceRemaps: []
   managedPackageDependencies: []
   packageShims: []
 org:
@@ -56,12 +57,30 @@ Supported keys:
 | `project.root` | Project root. Relative paths resolve from `glade.yml`. |
 | `project.packageDirs` | Source package directories. Overrides `sfdx-project.json`. |
 | `project.defaultNamespace` | Default namespace for package-local code. |
+| `project.namespaceRemaps` | Namespace aliases for local source dependencies. |
 | `project.managedPackageDependencies` | Managed package source or artifact references. |
 | `project.packageShims` | Local source roots that provide test/runtime bodies for captured package artifacts. |
 | `org.features` | Scratch-org style features for local runtime behavior. |
 
 `glade config validate` reports unsupported keys and parse errors before heavier
 commands run.
+
+## Namespace Remaps
+
+Use a namespace remap when a source dependency keeps its production namespace
+in code but the consumer depends on a different local namespace. In the namz
+case, the source dependency uses the production namespace `NU`, while the
+consumer depends on `znu`:
+
+```yaml
+project:
+  namespaceRemaps: ["NU:znu"]
+  managedPackageDependencies: ["znu:../nu-source"]
+```
+
+The remap is applied in memory when Glade reads source-backed dependency code
+and metadata. Files on disk are not rewritten. Apex string literals are remapped
+too, so dynamic SOQL and metadata names see the runtime namespace.
 
 ## Package Artifacts
 

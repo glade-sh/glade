@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -216,6 +217,7 @@ func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 		}
 		registry.Endpoints = append(registry.Endpoints, endpoint)
 	}
+	remapProjectRegistry(&registry, p)
 	sortRegistry(&registry)
 	return registry, nil
 }
@@ -278,6 +280,82 @@ func mergeRegistry(dst *storage.MetadataRegistry, src storage.MetadataRegistry) 
 	dst.QuickActions = append(dst.QuickActions, src.QuickActions...)
 	dst.FieldSets = append(dst.FieldSets, src.FieldSets...)
 	dst.Endpoints = append(dst.Endpoints, src.Endpoints...)
+}
+
+func remapProjectRegistry(registry *storage.MetadataRegistry, p project.Project) {
+	if registry == nil {
+		return
+	}
+	for i := range registry.Labels {
+		registry.Labels[i].Name = remapProjectMetadataName(p, registry.Labels[i].Name)
+		registry.Labels[i].Namespace = namespaceremap.ApplyNamespace(p.NamespaceRemaps, registry.Labels[i].Namespace)
+	}
+	for i := range registry.ManagedLabelNamespaces {
+		registry.ManagedLabelNamespaces[i] = namespaceremap.ApplyNamespace(p.NamespaceRemaps, registry.ManagedLabelNamespaces[i])
+	}
+	registry.ManagedLabelNamespaces = uniqueNonProjectNamespaces(registry.ManagedLabelNamespaces, p.Namespace)
+	for i := range registry.DataCategoryGroups {
+		registry.DataCategoryGroups[i].SObjectName = remapProjectMetadataName(p, registry.DataCategoryGroups[i].SObjectName)
+	}
+	for i := range registry.StaticResources {
+		registry.StaticResources[i].Name = remapProjectMetadataName(p, registry.StaticResources[i].Name)
+		registry.StaticResources[i].NamespacePrefix = namespaceremap.ApplyNamespace(p.NamespaceRemaps, registry.StaticResources[i].NamespacePrefix)
+		registry.StaticResources[i].URL = StaticResourceURL(registry.StaticResources[i].Name)
+	}
+	for i := range registry.ContentAssets {
+		registry.ContentAssets[i].Name = remapProjectMetadataName(p, registry.ContentAssets[i].Name)
+		registry.ContentAssets[i].URL = ContentAssetURL(registry.ContentAssets[i].Name)
+	}
+	for i := range registry.Tabs {
+		registry.Tabs[i].Name = remapProjectMetadataName(p, registry.Tabs[i].Name)
+		registry.Tabs[i].SObjectName = remapProjectMetadataName(p, registry.Tabs[i].SObjectName)
+	}
+	for i := range registry.QuickActions {
+		registry.QuickActions[i].Name = remapProjectMetadataName(p, registry.QuickActions[i].Name)
+		registry.QuickActions[i].TargetObject = remapProjectMetadataName(p, registry.QuickActions[i].TargetObject)
+		for j := range registry.QuickActions[i].PredefinedFieldValues {
+			registry.QuickActions[i].PredefinedFieldValues[j].Field = remapProjectMetadataName(p, registry.QuickActions[i].PredefinedFieldValues[j].Field)
+		}
+	}
+	for i := range registry.FieldSets {
+		registry.FieldSets[i].ObjectName = remapProjectMetadataName(p, registry.FieldSets[i].ObjectName)
+		registry.FieldSets[i].Name = remapProjectMetadataName(p, registry.FieldSets[i].Name)
+		registry.FieldSets[i].Namespace = namespaceremap.ApplyNamespace(p.NamespaceRemaps, registry.FieldSets[i].Namespace)
+		for j := range registry.FieldSets[i].Fields {
+			registry.FieldSets[i].Fields[j].Field = remapProjectMetadataName(p, registry.FieldSets[i].Fields[j].Field)
+		}
+	}
+	for i := range registry.EmailTemplates {
+		registry.EmailTemplates[i].Name = remapProjectMetadataName(p, registry.EmailTemplates[i].Name)
+		registry.EmailTemplates[i].DeveloperName = remapProjectMetadataName(p, registry.EmailTemplates[i].DeveloperName)
+		registry.EmailTemplates[i].Namespace = namespaceremap.ApplyNamespace(p.NamespaceRemaps, registry.EmailTemplates[i].Namespace)
+	}
+	for i := range registry.Endpoints {
+		registry.Endpoints[i].Name = remapProjectMetadataName(p, registry.Endpoints[i].Name)
+	}
+}
+
+func remapProjectMetadataName(p project.Project, name string) string {
+	return namespaceremap.ApplyMetadataName(p.NamespaceRemaps, name)
+}
+
+func uniqueNonProjectNamespaces(values []string, projectNamespace string) []string {
+	seen := make(map[string]bool)
+	out := make([]string, 0, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" || (projectNamespace != "" && strings.EqualFold(value, projectNamespace)) {
+			continue
+		}
+		key := strings.ToLower(value)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, value)
+	}
+	sort.Strings(out)
+	return out
 }
 
 func StaticResourceURL(name string) string {

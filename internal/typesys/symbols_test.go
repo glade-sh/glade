@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/packageartifact"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
@@ -287,6 +288,70 @@ func TestBuildDoesNotSurfaceSourceBackedDependencyDuplicateDiagnostics(t *testin
 
 	if idx.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", idx.Diagnostics)
+	}
+}
+
+func TestBuildRemapsSourceBackedDependencyNamespaceReferences(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "nu-source")
+	helper := filepath.Join(depRoot, "force-app/main/classes/Helper.cls")
+	gateway := filepath.Join(depRoot, "force-app/main/classes/Gateway.cls")
+	trigger := filepath.Join(depRoot, "force-app/main/triggers/BillingTrigger.trigger")
+	writeFile(t, helper, "global class Helper { global static String value() { return 'ok'; } }")
+	writeFile(t, gateway, "global class Gateway { global static String value() { return NU.Helper.value(); } }")
+	writeFile(t, trigger, "trigger BillingTrigger on NU__Billing__c (before insert) { NU.Helper.value(); }")
+
+	idx := Build(project.Project{
+		Root:      root,
+		Namespace: "namz",
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace: "znu",
+			Status:    "loaded",
+			Project: &project.Project{
+				Root:      depRoot,
+				Namespace: "znu",
+				NamespaceRemaps: []namespaceremap.Rule{{
+					From: "NU",
+					To:   "znu",
+				}},
+				ApexFiles: []string{helper, gateway, trigger},
+			},
+		}},
+	}, schema.Schema{})
+	if idx.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", idx.Diagnostics)
+	}
+	typeFound := false
+	for _, typ := range idx.Types {
+		if typ.Name != "Gateway" {
+			continue
+		}
+		typeFound = true
+		if typ.Namespace != "znu" {
+			t.Fatalf("Gateway namespace = %q, want znu", typ.Namespace)
+		}
+		if len(typ.SourceNamespaceRemaps) != 1 || typ.SourceNamespaceRemaps[0].From != "NU" || typ.SourceNamespaceRemaps[0].To != "znu" {
+			t.Fatalf("source remaps = %#v", typ.SourceNamespaceRemaps)
+		}
+	}
+	if !typeFound {
+		t.Fatalf("Gateway dependency type not found: %#v", idx.Types)
+	}
+	triggerFound := false
+	for _, trig := range idx.Triggers {
+		if trig.Name != "BillingTrigger" {
+			continue
+		}
+		triggerFound = true
+		if trig.Namespace != "znu" || trig.ObjectName != "znu__Billing__c" {
+			t.Fatalf("trigger namespace/object = %q/%q", trig.Namespace, trig.ObjectName)
+		}
+		if len(trig.SourceNamespaceRemaps) != 1 || trig.SourceNamespaceRemaps[0].From != "NU" || trig.SourceNamespaceRemaps[0].To != "znu" {
+			t.Fatalf("trigger source remaps = %#v", trig.SourceNamespaceRemaps)
+		}
+	}
+	if !triggerFound {
+		t.Fatalf("BillingTrigger dependency trigger not found: %#v", idx.Triggers)
 	}
 }
 
