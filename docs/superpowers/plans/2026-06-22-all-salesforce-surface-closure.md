@@ -12,57 +12,58 @@
 
 ## Current Baseline
 
-This baseline was generated against `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage` using a temporary Go workspace so `glade-tools` resolved `github.com/glade-sh/glade` to the worktree, not `/Users/matt/Dev/glade` `main`.
+This baseline was regenerated after `merge: salesforce sema coverage` landed on `/Users/matt/Dev/glade` `main` at `f4b2fde6`. The old worktree `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage` no longer exists. Use fresh paired squad worktrees for implementation, then run the baseline command from each squad with `SQUAD_GLADE`, `SQUAD_TOOLS`, and `SURFACE_OUT` set.
 
 ```bash
 tmp=$(mktemp -d /tmp/glade-tools-work.XXXXXX)
 cd "$tmp"
-go work init /Users/matt/Dev/glade-tools /Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage
-go work edit -replace github.com/glade-sh/apex-parser=/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/third_party/glade-apex-parser
-GOWORK="$tmp/go.work" go run /Users/matt/Dev/glade-tools/cmd/glade-tools surface refresh \
+go work init "$SQUAD_TOOLS" "$SQUAD_GLADE"
+go work edit -replace github.com/glade-sh/apex-parser="$SQUAD_GLADE/third_party/glade-apex-parser"
+GOWORK="$tmp/go.work" go run "$SQUAD_TOOLS/cmd/glade-tools" surface refresh \
   --docs "/Users/matt/Dev/glade/example-projects/Salesforce Docs Scraper/salesforce-docs-expanded-run" \
-  --tooling-completions /Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/testdata/generated/tooling_system_symbols.json.gz \
-  --out /tmp/glade-surface-refresh-codex-salesforce-sema-coverage-worktree
+  --tooling-completions "$SQUAD_GLADE/testdata/generated/tooling_system_symbols.json.gz" \
+  --out "$SURFACE_OUT"
 ```
 
-Expected baseline before this plan starts:
+Current baseline before the overnight sprint:
 
 ```text
-implemented=125923
-passive=43819
-stubNoOp=245
-explicitUnsupported=957
-gap=22162
-failure=4174
-missingShape=14106
-missingEvidence=8056
-returnTypeMismatch=4033
+implemented=130046
+passive=43682
+stubNoOp=186
+explicitUnsupported=6328
+gap=13067
+failure=4161
+missingShape=13060
+missingEvidence=7
+returnTypeMismatch=4020
 parameterMismatch=141
-total=197280
+total=197470
 ```
+
+The landed work closed 9,119 formerly open rows and introduced 11 new open rows from docs/source normalization. The large wins are `no docs source` 6095 to 253, `apex` 6722 to 4250, `tooling-api` 352 to 25, `rest-api` 374 to 65, `soql-sosl` 73 to 0, and `missing-evidence` 8056 to 7. Good progress. Plenty of stump left.
 
 Source-family backlog from the current ledger:
 
 | source family | open rows |
 | --- | ---: |
 | connect-rest-api | 7673 |
-| apex | 6722 |
-| no docs source | 6095 |
-| soap-api | 991 |
-| metadata-api | 903 |
+| apex | 4250 |
+| soap-api | 987 |
+| metadata-api | 898 |
 | ui-api | 856 |
-| site-references | 817 |
-| apex-guide | 554 |
-| rest-api | 374 |
-| tooling-api | 352 |
-| platform-events | 230 |
+| site-references | 770 |
+| apex-guide | 535 |
+| no docs source | 253 |
+| platform-events | 227 |
 | bulk-api | 161 |
-| lightning | 151 |
+| lightning | 146 |
 | cli-reference | 105 |
-| streaming-api | 92 |
 | service-connector-api-reference | 91 |
-| soql-sosl | 73 |
+| streaming-api | 90 |
 | analytics-cli-reference | 68 |
+| rest-api | 65 |
+| tooling-api | 25 |
 | commerce-cli-reference | 17 |
 | limits-reference | 10 |
 | REFERENCE_COVERAGE.md | 1 |
@@ -70,50 +71,38 @@ Source-family backlog from the current ledger:
 Apex and Apex Guide backlog:
 
 ```text
-open apex/apex-guide rows: 7276
-failure: 3918
-gap: 3358
-property rows: 4000
-method rows: 2585
-type rows: 691
+open apex/apex-guide rows: 4785
+failure: 3914
+gap: 871
+property rows: 3937
+method rows: 303
+type rows: 545
 ```
 
 Top Apex clusters:
 
 | cluster | open rows |
 | --- | ---: |
-| ConnectApi | 3951 |
-| ChatterFeeds | 203 |
-| String | 110 |
-| DescribeSObjectResult | 70 |
-| ContentHub | 64 |
-| Database | 56 |
-| Action | 56 |
-| DescribeFieldResult | 52 |
-| Limits | 51 |
-| CdpQuery | 50 |
-| Datetime | 42 |
-| Site | 42 |
-| CommerceBuyerExperience | 41 |
-| System | 38 |
-| Test | 34 |
-| XmlStreamReader | 32 |
-| ChatterMessages | 30 |
-| ChatterUsers | 28 |
-| Topics | 28 |
-| JSONGenerator | 28 |
-| Matcher | 27 |
-| Math | 27 |
-| SingleEmailMessage | 26 |
-| XmlNode | 25 |
-| Partition | 23 |
-| LeadConvert | 23 |
-| UserInfo | 23 |
-| ManagedContent | 22 |
-| Recommendations | 22 |
-| StandardSetController | 21 |
+| ConnectApi | 3907 |
+| Database | 32 |
+| Apex | 29 |
+| Using | 26 |
 | LineItemInput | 21 |
 | EnhancedPaymentDataInput | 17 |
+| ReportMetadata | 16 |
+| Get | 16 |
+| Shipping | 14 |
+| Post | 14 |
+| LeadConvert | 13 |
+| Site | 13 |
+| ZipEntry | 11 |
+| Testing | 11 |
+| SingleEmailMessage | 10 |
+| List | 10 |
+| System | 10 |
+| Map | 9 |
+| Set | 9 |
+| Understanding | 9 |
 
 ## Closure Rules
 
@@ -166,6 +155,8 @@ open rows: 0
 - Modify: `/Users/matt/Dev/glade-tools/internal/toolcli/compat_surface_command_test.go`
 - Modify: `/Users/matt/Dev/glade-tools/internal/apexdocs/inventory.go`
 - Modify: `/Users/matt/Dev/glade-tools/internal/apexdocs/inventory_test.go`
+- Create: `/Users/matt/Dev/glade-tools/internal/capability/declaration_contracts.go`
+- Create: `/Users/matt/Dev/glade-tools/internal/capability/declaration_contracts_test.go`
 - Modify: `/Users/matt/Dev/glade-tools/internal/capability/doc_contracts.go`
 - Modify: `/Users/matt/Dev/glade-tools/internal/capability/doc_contracts_test.go`
 - Modify: `/Users/matt/Dev/glade-tools/internal/corpuscheck/corpuscheck.go`
@@ -173,24 +164,24 @@ open rows: 0
 
 `glade` owns product behavior and generated product shape:
 
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/scripts/generate-system-stub-symbols.mjs`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/testdata/generated/apex_docs_contracts.json`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/typesys/system_stub_symbols_generated.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/typesys/standard_symbols.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/typesys/standard_symbols_test.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/typesys/symbols.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/sema/sema_test.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/sema/body_calls.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/sema/body_ir.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/sema/type_members.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/sema/sema_checks.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/vm/platform_passive_members.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/vm/generated_platform_runtime.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/vm/dispatch_static.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/vm/stdlib.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/vm/*_test.go` files matching touched runtime surfaces.
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/storage/standard_fields.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/storage/model_test.go`
+- Modify: `$SQUAD_GLADE/scripts/generate-system-stub-symbols.mjs`
+- Modify: `$SQUAD_GLADE/testdata/generated/apex_docs_contracts.json`
+- Modify: `$SQUAD_GLADE/internal/typesys/system_stub_symbols_generated.go`
+- Modify: `$SQUAD_GLADE/internal/typesys/standard_symbols.go`
+- Modify: `$SQUAD_GLADE/internal/typesys/standard_symbols_test.go`
+- Modify: `$SQUAD_GLADE/internal/typesys/symbols.go`
+- Modify: `$SQUAD_GLADE/internal/sema/sema_test.go`
+- Modify: `$SQUAD_GLADE/internal/sema/body_calls.go`
+- Modify: `$SQUAD_GLADE/internal/sema/body_ir.go`
+- Modify: `$SQUAD_GLADE/internal/sema/type_members.go`
+- Modify: `$SQUAD_GLADE/internal/sema/sema_checks.go`
+- Modify: `$SQUAD_GLADE/internal/vm/platform_passive_members.go`
+- Modify: `$SQUAD_GLADE/internal/vm/generated_platform_runtime.go`
+- Modify: `$SQUAD_GLADE/internal/vm/dispatch_static.go`
+- Modify: `$SQUAD_GLADE/internal/vm/stdlib.go`
+- Modify: `$SQUAD_GLADE/internal/vm/*_test.go` files matching touched runtime surfaces.
+- Modify: `$SQUAD_GLADE/internal/storage/standard_fields.go`
+- Modify: `$SQUAD_GLADE/internal/storage/model_test.go`
 
 ## Worktree Layout
 
@@ -230,6 +221,146 @@ Expected proof:
 ```text
 "Dir": "$SQUAD_GLADE"
 ```
+
+## Current Tool State For Overnight
+
+These commands exist in current `glade-tools` and can be used tonight:
+
+```text
+glade-tools surface refresh --docs <dir> --tooling-completions <path> --out <dir>
+glade-tools surface sources --docs <dir> --output <path>|--check <path>|--json
+glade-tools surface docs --source <dir> --output <path>|--json
+glade-tools surface packet --ledger <ledger> --area <AreaRegistry name> --out <path>
+glade-tools surface explain --ledger <ledger> --id <surfaceId>
+glade-tools surface check --ledger <ledger> --max-missing-shape <n> --max-missing-behavior <n> --max-parser-failures <n> --max-return-type-mismatch <n> --max-parameter-mismatch <n>
+glade-tools docs-inventory --source <dir> --json|--output <path>|--check <path>
+glade-tools doc-contracts --inventory <path> --behavior <kind> --json|--output <path>|--check <path>
+glade-tools corpus check --root <corpus-root> --glade <binary> --out <dir> --fail-on-unclassified --fail-on-check-closure
+```
+
+These commands do not exist yet and must be built before workers rely on them:
+
+```text
+glade-tools surface check --strict
+glade-tools surface packet --ledger <ledger> --manifest <path>
+glade-tools declaration-contracts --inventory <inventory.json> --output <apex_docs_contracts.json>
+```
+
+`doc-contracts` is for documented behavior prose, not generated Apex declaration shape. Do not use it to overwrite `testdata/generated/apex_docs_contracts.json`. That file needs declaration contracts shaped as:
+
+```json
+{
+  "schemaVersion": 1,
+  "documents": [
+    {
+      "sourcePath": "apex/apex_methods_system_string.md",
+      "kind": "class",
+      "namespace": "System",
+      "name": "String",
+      "members": [
+        {"kind": "method", "name": "trim", "returnType": "String", "parameters": []}
+      ]
+    }
+  ]
+}
+```
+
+## Overnight Sprint Dispatch Board
+
+Do not launch workers from the ambient checkouts. First cut the paired worktrees, set `SQUAD_GLADE`, `SQUAD_TOOLS`, and `SURFACE_OUT`, and prove `go list -m -json github.com/glade-sh/glade` points at the squad `glade` worktree. One dull tool can spoil a long night.
+
+Launch gate for the lead integrator:
+
+```bash
+git -C /Users/matt/Dev/glade status --short --branch
+git -C /Users/matt/Dev/glade-tools status --short --branch
+git -C /Users/matt/Dev/glade log --oneline --decorate --max-count=5
+git -C /Users/matt/Dev/glade-tools log --oneline --decorate --max-count=5
+```
+
+If `/Users/matt/Dev/glade-tools` has uncommitted changes, freeze them into the integration base before workers fork. The current useful pieces are docs inventory extraction, behavior `doc-contracts`, corpus closure checking, return/parameter ratchets, and expanded source classification. Workers must not silently miss that tool work.
+
+Wave 0, lead integrator only:
+
+- [ ] Create paired integration worktrees at `/Users/matt/Dev/.worktrees/all-surface-closure/integration/glade` and `/Users/matt/Dev/.worktrees/all-surface-closure/integration/glade-tools`.
+- [ ] Run the baseline refresh and save `/tmp/glade-surface-baseline-current/SURFACE_LEDGER.json`.
+- [ ] Generate initial area packets with existing `surface packet --area <AreaRegistry name> --out <path>` for `ConnectApi.PassiveDTOs`, `Server.RESTResources`, `Server.ToolingObjects`, `Integration.SOAPAPI`, `Integration.MetadataAPI`, `UI.UIAPI`, `Data.Reference.ObjectsFields`, and `Core.Runtime.SystemAndStdlib`.
+- [ ] Start only Wave 1 after the baseline report exists.
+
+Wave 1, safe parallel work:
+
+| squad | worktree | owns | must not touch | start command |
+| --- | --- | --- | --- | --- |
+| Ledger gates | `/Users/matt/Dev/.worktrees/all-surface-closure/ledger-gates` | `/Users/matt/Dev/glade-tools/internal/surfaceledger/report.go`, `/Users/matt/Dev/glade-tools/internal/surfaceledger/packets.go`, `/Users/matt/Dev/glade-tools/internal/toolcli/compat_surface_command.go`, related tests | product runtime files under `internal/vm`, `internal/sema`, `internal/typesys` | Task 1 and Task 2 |
+| Declaration contracts | `/Users/matt/Dev/.worktrees/all-surface-closure/docs-contracts` | `/Users/matt/Dev/glade-tools/internal/capability/declaration_contracts.go`, `/Users/matt/Dev/glade-tools/internal/toolcli/compat_command.go`, `$SQUAD_GLADE/testdata/generated/apex_docs_contracts.json`, `$SQUAD_GLADE/scripts/generate-system-stub-symbols.mjs` | runtime behavior files | Task 3 and Task 4 declaration export |
+| Server/data/UI classifier | `/Users/matt/Dev/.worktrees/all-surface-closure/server-shape` | `/Users/matt/Dev/glade-tools/internal/surfaceledger/docs_snapshot.go`, `/Users/matt/Dev/glade-tools/internal/surfaceledger/merge.go`, `/Users/matt/Dev/glade-tools/internal/surfaceledger/model.go`, classifier tests | packet/check CLI files owned by Ledger gates | Task 7, Task 8, Task 9, Task 10 classifiers |
+| Corpus proof | `/Users/matt/Dev/.worktrees/all-surface-closure/corpus-proof` | `/Users/matt/Dev/glade-tools/internal/corpuscheck`, corpus command tests, report templates | product sema/runtime fixes | Task 11 gate shaping only |
+
+Wave 2, product implementation after Wave 1 returns:
+
+| squad | worktree | owns | dependency | target |
+| --- | --- | --- | --- | --- |
+| Apex core runtime | `/Users/matt/Dev/.worktrees/all-surface-closure/apex-core` | `$SQUAD_GLADE/internal/vm`, `$SQUAD_GLADE/internal/sema`, `$SQUAD_GLADE/internal/typesys/standard_symbols.go`, evidence snapshot tests | Ledger gates packet manifest and declaration contracts | Apex/apex-guide method rows, now 303 methods open |
+| ConnectApi DTOs and services | `/Users/matt/Dev/.worktrees/all-surface-closure/apex-dto` | generated platform shape, passive members, UnsupportedFeature runtime tests | declaration contracts | ConnectApi, now 3907 Apex rows plus connect REST DTO rows |
+| Server API shape | `/Users/matt/Dev/.worktrees/all-surface-closure/server-shape` | server-side shape classifiers and explicit unsupported rows | classifier result from Wave 1 | connect-rest-api, rest-api, tooling-api, bulk-api, streaming-api |
+| UI shape | `/Users/matt/Dev/.worktrees/all-surface-closure/ui-shape` | UI/LWC/Aura/Visualforce shape and local preview fences | classifier result from Wave 1 | ui-api, lightning, site-references |
+
+Already handled by the landed Salesforce sema coverage merge. Treat these as verification-only unless the current packet still shows open rows:
+
+```text
+duplicate GLADETYPE001 hygiene
+Flow.Interview static type generation
+Schema describe and fieldset chains
+Type alias basics
+Batchable and Iterator generic assignability
+SOQL literal and typed overload selection
+Event and Activity standard field overlays
+Approval list overloads and typed list runtime results
+ConnectApi.ManagedContentVersionCollection.items and managedContentTypes
+```
+
+Wave 3, integration:
+
+- [ ] Merge Ledger gates first.
+- [ ] Merge Declaration contracts second.
+- [ ] Regenerate `system_stub_symbols_generated.go`.
+- [ ] Merge classifier-only work.
+- [ ] Merge product runtime squads one at a time.
+- [ ] Run one full `surface refresh` after each merge.
+- [ ] Run broad tests only from the integration worktree.
+
+Concurrency rules:
+
+- Run at most four active subagents.
+- Run at most one full `surface refresh` at a time.
+- Run at most one `go test ./...` at a time.
+- Each worker writes reports under `/tmp/glade-surface-<squad>.*`.
+- No worker pushes, rebases, deletes worktrees, or edits another squad's owned files.
+- If two workers need the same file, the lead integrator owns that file for the night.
+
+Each worker return packet must include:
+
+```text
+worktree:
+branch:
+files changed:
+tests run:
+surface refresh output path:
+before open rows for owned packet:
+after open rows for owned packet:
+rows closed by bucket:
+rows still open by source family:
+first remaining surface explain command:
+blocked rows with reason:
+```
+
+Stop rules:
+
+- Stop product workers if `surface check --strict` or packet manifest support is not merged by the end of Wave 1.
+- Stop declaration-shape work if the generated `apex_docs_contracts.json` does not cover more than 500 Apex documents.
+- Stop a classifier worker if it changes total ledger row count by more than 5 percent without a written explanation and source-family diff.
+- Stop a runtime worker if it closes rows by weakening evidence rules instead of adding sema, VM, fixture, or explicit unsupported proof.
+- Stop all workers if the integration refresh cannot reproduce the baseline command with the expected `github.com/glade-sh/glade` module `Dir`.
 
 ## Task 1: Add The Strict Zero-Open Surface Gate
 
@@ -501,7 +632,7 @@ Expected:
 
 ```text
 surface packet manifest: ok
-open rows: 26336
+open rows: 17228
 packets: <nonzero>
 unassigned: 0
 ```
@@ -514,6 +645,8 @@ git commit -m "feat: assign every open surface row to packets"
 ```
 
 ## Task 3: Expand Docs Extraction Across Every Source Family
+
+Current `glade-tools` already has broad docs inventory, docs-source audit, behavior `doc-contracts`, product namespace, and corpus check work. Do not reimplement those. This task closes the remaining source-family misses, adds missing declaration extraction, and protects the source shelf with tests.
 
 **Files:**
 - Modify: `/Users/matt/Dev/glade-tools/internal/apexdocs/inventory.go`
@@ -613,33 +746,150 @@ git commit -m "feat: extract all Salesforce docs source families"
 ## Task 4: Generate Product Shape From Docs Contracts
 
 **Files:**
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/testdata/generated/apex_docs_contracts.json`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/scripts/generate-system-stub-symbols.mjs`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/typesys/system_stub_symbols_generated.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/typesys/standard_symbols.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/typesys/standard_symbols_test.go`
+- Create: `/Users/matt/Dev/glade-tools/internal/capability/declaration_contracts.go`
+- Create: `/Users/matt/Dev/glade-tools/internal/capability/declaration_contracts_test.go`
+- Modify: `/Users/matt/Dev/glade-tools/internal/toolcli/compat_command.go`
+- Modify: `/Users/matt/Dev/glade-tools/internal/toolcli/plugin_command_test.go`
+- Modify: `$SQUAD_GLADE/testdata/generated/apex_docs_contracts.json`
+- Modify: `$SQUAD_GLADE/scripts/generate-system-stub-symbols.mjs`
+- Modify: `$SQUAD_GLADE/internal/typesys/system_stub_symbols_generated.go`
+- Modify: `$SQUAD_GLADE/internal/typesys/standard_symbols.go`
+- Modify: `$SQUAD_GLADE/internal/typesys/standard_symbols_test.go`
 
-- [ ] **Step 1: Replace the one-row contract file with generated contracts**
+- [ ] **Step 1: Add a declaration-contract exporter**
 
-Generate `apex_docs_contracts.json` from the docs scrape. It must include all Apex docs rows, not only `ConnectApi.ManagedContentVersionCollection`.
+Do not use `doc-contracts` for this file. That command reports behavioral prose such as callout and throws contracts. Add a separate declaration exporter that writes the schema consumed by `scripts/generate-system-stub-symbols.mjs`.
+
+Add `internal/capability/declaration_contracts.go`:
+
+```go
+package capability
+
+import (
+	"encoding/json"
+	"io"
+	"sort"
+
+	"github.com/glade-sh/glade/tools/internal/apexdocs"
+)
+
+type DeclarationContractReport struct {
+	SchemaVersion int                   `json:"schemaVersion"`
+	Documents     []DeclarationDocument `json:"documents"`
+}
+
+type DeclarationDocument struct {
+	SourcePath string              `json:"sourcePath"`
+	Kind       string              `json:"kind"`
+	Namespace  string              `json:"namespace,omitempty"`
+	Name       string              `json:"name"`
+	Members    []DeclarationMember `json:"members"`
+}
+
+type DeclarationMember struct {
+	Kind         string                 `json:"kind"`
+	Name         string                 `json:"name"`
+	Signature    string                 `json:"signature,omitempty"`
+	PropertyType string                 `json:"propertyType,omitempty"`
+	ReturnType   string                 `json:"returnType,omitempty"`
+	Parameters   []DeclarationParameter `json:"parameters,omitempty"`
+	Static       bool                   `json:"static,omitempty"`
+}
+
+type DeclarationParameter struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+func BuildDeclarationContracts(inv apexdocs.Inventory) DeclarationContractReport {
+	report := DeclarationContractReport{SchemaVersion: 1}
+	for _, doc := range inv.Documents {
+		if doc.Namespace == "" || doc.Name == "" || len(doc.Members) == 0 {
+			continue
+		}
+		out := DeclarationDocument{
+			SourcePath: doc.SourcePath,
+			Kind:       doc.Kind,
+			Namespace:  doc.Namespace,
+			Name:       doc.Name,
+		}
+		for _, member := range doc.Members {
+			out.Members = append(out.Members, DeclarationMember{
+				Kind:         member.Kind,
+				Name:         member.Name,
+				Signature:    member.Signature,
+				PropertyType: member.PropertyType,
+				ReturnType:   member.ReturnType,
+				Parameters:   declarationParameters(member.Parameters),
+				Static:       member.Static,
+			})
+		}
+		report.Documents = append(report.Documents, out)
+	}
+	sort.SliceStable(report.Documents, func(i, j int) bool {
+		return report.Documents[i].SourcePath < report.Documents[j].SourcePath
+	})
+	return report
+}
+
+func declarationParameters(params []apexdocs.Parameter) []DeclarationParameter {
+	out := make([]DeclarationParameter, 0, len(params))
+	for _, param := range params {
+		out = append(out, DeclarationParameter{Name: param.Name, Type: param.Type})
+	}
+	return out
+}
+
+func WriteDeclarationContractsJSON(w io.Writer, report DeclarationContractReport) error {
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	return enc.Encode(report)
+}
+```
+
+Add `declaration-contracts --inventory <path> --json|--output <path>|--check <path>` to `runCompat`, `compatUsage`, and `plugin_command_test.go`.
+
+- [ ] **Step 2: Write exporter tests**
+
+Add tests that pin type, property, method, constructor, static flag, return type, and parameter types. The failing test must include a `ConnectApi.ManagedContentVersionCollection.items` property and a `System.String.trim()` method so both generated DTO and core method shapes are covered.
+
+Run:
 
 ```bash
 cd /Users/matt/Dev/glade-tools
-glade_tools_work=/tmp/glade-tools-work-for-contracts
-mkdir -p "$glade_tools_work"
-go run ./cmd/glade-tools surface docs \
-  --docs "/Users/matt/Dev/glade/example-projects/Salesforce Docs Scraper/salesforce-docs-expanded-run" \
-  --output /Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/testdata/generated/apex_docs_contracts.json
+go test ./internal/capability ./internal/toolcli -run 'TestBuildDeclarationContracts|TestCompatDeclarationContracts' -count=1
+```
+
+Expected before implementation:
+
+```text
+FAIL
+unknown command "declaration-contracts"
+```
+
+- [ ] **Step 3: Replace the one-row contract file with generated contracts**
+
+Generate `apex_docs_contracts.json` from the docs inventory. It must include all Apex docs rows, not only `ConnectApi.ManagedContentVersionCollection`.
+
+```bash
+cd /Users/matt/Dev/glade-tools
+inventory=$(mktemp /tmp/glade-docs-inventory.XXXXXX.json)
+GOWORK="$tmp/go.work" go run "$SQUAD_TOOLS/cmd/glade-tools" docs-inventory \
+  --source "/Users/matt/Dev/glade/example-projects/Salesforce Docs Scraper/salesforce-docs-expanded-run" \
+  --output "$inventory"
+GOWORK="$tmp/go.work" go run "$SQUAD_TOOLS/cmd/glade-tools" declaration-contracts \
+  --inventory "$inventory" \
+  --output "$SQUAD_GLADE/testdata/generated/apex_docs_contracts.json"
 ```
 
 Expected:
 
 ```text
-surface docs: ok
-contracts: greater than 1
+documents: greater than 500
+members: greater than 5000
 ```
 
-- [ ] **Step 2: Add a guard test that rejects tiny contract files**
+- [ ] **Step 4: Add a guard test that rejects tiny contract files**
 
 Add to `internal/typesys/standard_symbols_test.go`:
 
@@ -683,10 +933,10 @@ func TestApexDocsContractsCoverBroadDocsSurface(t *testing.T) {
 }
 ```
 
-- [ ] **Step 3: Run red or green based on contract generation**
+- [ ] **Step 5: Run red or green based on contract generation**
 
 ```bash
-cd /Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage
+cd $SQUAD_GLADE
 go test ./internal/typesys -run TestApexDocsContractsCoverBroadDocsSurface -count=1
 ```
 
@@ -697,10 +947,10 @@ FAIL
 docs contract file has 1 documents
 ```
 
-- [ ] **Step 4: Regenerate standard symbols**
+- [ ] **Step 6: Regenerate standard symbols**
 
 ```bash
-cd /Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage
+cd $SQUAD_GLADE
 node scripts/generate-system-stub-symbols.mjs \
   example-projects/stubs/apex-system-stubs \
   internal/typesys/system_stub_symbols_generated.go \
@@ -714,9 +964,14 @@ Expected:
 generated symbols include typed properties and signatures from docs contracts
 ```
 
-- [ ] **Step 5: Verify and commit**
+- [ ] **Step 7: Verify and commit**
 
 ```bash
+cd /Users/matt/Dev/glade-tools
+go test ./internal/capability ./internal/toolcli -run 'DeclarationContracts|DocContracts' -count=1
+git add internal/capability/declaration_contracts.go internal/capability/declaration_contracts_test.go internal/toolcli/compat_command.go internal/toolcli/plugin_command_test.go
+git commit -m "feat: export Apex declaration contracts"
+cd "$SQUAD_GLADE"
 go test ./internal/typesys -count=1
 git diff --check
 git add testdata/generated/apex_docs_contracts.json scripts/generate-system-stub-symbols.mjs internal/typesys internal/typesys/system_stub_symbols_generated.go
@@ -726,39 +981,62 @@ git commit -m "feat: generate Apex platform shape from docs contracts"
 ## Task 5: Close Apex Core Runtime And Evidence Rows
 
 **Files:**
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/typesys/standard_symbols.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/typesys/standard_symbols_test.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/sema/sema_test.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/vm/dispatch_static.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/vm/platform_passive_members.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/vm/generated_platform_runtime.go`
-- Modify: matching `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/vm/*_test.go`
+- Modify: `$SQUAD_GLADE/internal/typesys/standard_symbols.go`
+- Modify: `$SQUAD_GLADE/internal/typesys/standard_symbols_test.go`
+- Modify: `$SQUAD_GLADE/internal/sema/sema_test.go`
+- Modify: `$SQUAD_GLADE/internal/vm/dispatch_static.go`
+- Modify: `$SQUAD_GLADE/internal/vm/platform_passive_members.go`
+- Modify: `$SQUAD_GLADE/internal/vm/generated_platform_runtime.go`
+- Modify: matching `$SQUAD_GLADE/internal/vm/*_test.go`
 - Modify: `/Users/matt/Dev/glade-tools/internal/surfaceledger/evidence_snapshot.go`
 - Modify: `/Users/matt/Dev/glade-tools/internal/surfaceledger/evidence_snapshot_test.go`
 
 - [ ] **Step 1: Generate Apex core packets**
 
 ```bash
-cd /Users/matt/Dev/glade-tools
-go run ./cmd/glade-tools surface packet \
-  --ledger /tmp/glade-surface-refresh-codex-salesforce-sema-coverage-worktree/SURFACE_LEDGER.json \
-  --owner runtime \
-  --source apex \
-  --manifest /tmp/apex-core-packets.json
+cd "$SQUAD_TOOLS"
+GOWORK="$tmp/go.work" go run "$SQUAD_TOOLS/cmd/glade-tools" surface packet \
+  --ledger "$SURFACE_OUT/SURFACE_LEDGER.json" \
+  --manifest /tmp/all-surface-packets.json
+GOWORK="$tmp/go.work" go run "$SQUAD_TOOLS/cmd/glade-tools" surface packet \
+  --ledger "$SURFACE_OUT/SURFACE_LEDGER.json" \
+  --area Core.Runtime.SystemAndStdlib \
+  --out /tmp/apex-core-system-and-stdlib.md
+GOWORK="$tmp/go.work" go run "$SQUAD_TOOLS/cmd/glade-tools" surface packet \
+  --ledger "$SURFACE_OUT/SURFACE_LEDGER.json" \
+  --area Data.Runtime.SchemaDescribe \
+  --out /tmp/apex-core-schema-describe.md
+python3 - <<'PY'
+import json
+manifest=json.load(open('/tmp/all-surface-packets.json'))
+apex=[p for p in manifest['packets'] if p.get('sourceDir') in ('apex','apex-guide') and p.get('owner') in ('runtime','data-runtime','tests')]
+if not apex:
+    raise SystemExit('no Apex core packets found')
+print(f'apex core packet groups={len(apex)} rows={sum(len(p["rows"]) for p in apex)}')
+if manifest['unassigned']:
+    raise SystemExit(f'unassigned rows={len(manifest["unassigned"])} first={manifest["unassigned"][0]}')
+PY
 ```
 
 Expected:
 
 ```text
 unassigned: 0
+apex core packet groups: nonzero
 ```
 
 - [ ] **Step 2: Close supported-but-no-evidence rows with fixtures**
 
-For every row where `bucket=gap`, `gladeBehavior=supported`, and `evidence=none`, add a fixture or reclassify to explicit unsupported. Start with these clusters because they have many open rows and users hit them in real Apex:
+For every current packet row where `bucket=gap`, `gladeBehavior=supported`, and `evidence=none`, add a fixture or reclassify to explicit unsupported. Do not reopen landed sema work unless the fresh ledger proves a row still open. Start with these remaining clusters only when they appear in `/tmp/all-surface-packets.json`:
 
 ```text
-Approval, Database, Schema, ApexPages, System, String, Datetime, Date, Decimal, Math, Limits, UserInfo, Test, Matcher, Pattern, JSON, JSONGenerator, JSONParser, XmlNode, XmlStreamReader, XmlStreamWriter, Messaging.SingleEmailMessage, Site, Cache.Org, Cache.Session, Cache.Partition.
+Database, ApexPages, System, String, Datetime, Date, Decimal, Math, Limits, UserInfo, Test, Matcher, Pattern, JSON, JSONGenerator, JSONParser, XmlNode, XmlStreamReader, XmlStreamWriter, Messaging.SingleEmailMessage, Site, Cache.Org, Cache.Session, Cache.Partition.
+```
+
+Verification-only lanes from the landed merge:
+
+```text
+Approval list overloads, Schema describe and fieldset chains, SOQL typed overload selection, Flow.Interview generation, Batchable/Iterator generic assignability, Event/Activity standard fields, Type aliases, and ConnectApi.ManagedContentVersionCollection.items.
 ```
 
 Fixture rule:
@@ -807,7 +1085,7 @@ Each new fixture must produce rows in `EvidenceSnapshot`. Use exact surface IDs 
 
 ```bash
 go run ./cmd/glade-tools surface explain \
-  --ledger /tmp/glade-surface-refresh-codex-salesforce-sema-coverage-worktree/SURFACE_LEDGER.json \
+  --ledger $SURFACE_OUT/SURFACE_LEDGER.json \
   --id 'apex:Database.SaveResult.getId()'
 ```
 
@@ -820,7 +1098,7 @@ surface id appears with evidence=fixture after refresh
 - [ ] **Step 5: Verify Apex core packets**
 
 ```bash
-cd /Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage
+cd $SQUAD_GLADE
 go test ./internal/typesys ./internal/sema ./internal/vm -count=1
 cd /Users/matt/Dev/glade-tools
 go test ./internal/surfaceledger -count=1
@@ -839,12 +1117,12 @@ git commit -m "test: record Apex core surface evidence"
 ## Task 6: Close Apex DTO And Static Service Shape
 
 **Files:**
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/testdata/generated/apex_docs_contracts.json`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/typesys/system_stub_symbols_generated.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/typesys/standard_symbols.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/vm/platform_passive_members.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/vm/generated_platform_runtime.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/sema/sema_test.go`
+- Modify: `$SQUAD_GLADE/testdata/generated/apex_docs_contracts.json`
+- Modify: `$SQUAD_GLADE/internal/typesys/system_stub_symbols_generated.go`
+- Modify: `$SQUAD_GLADE/internal/typesys/standard_symbols.go`
+- Modify: `$SQUAD_GLADE/internal/vm/platform_passive_members.go`
+- Modify: `$SQUAD_GLADE/internal/vm/generated_platform_runtime.go`
+- Modify: `$SQUAD_GLADE/internal/sema/sema_test.go`
 - Modify: `/Users/matt/Dev/glade-tools/internal/surfaceledger/glade_snapshot.go`
 - Modify: `/Users/matt/Dev/glade-tools/internal/surfaceledger/glade_snapshot_test.go`
 
@@ -906,12 +1184,12 @@ Surface Ledger must classify the row as explicitUnsupported or passive, not gap 
 - [ ] **Step 4: Verify DTO and static service closure**
 
 ```bash
-cd /Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage
+cd $SQUAD_GLADE
 go test ./internal/typesys ./internal/sema ./internal/vm -count=1
 cd /Users/matt/Dev/glade-tools
 GOWORK="$tmp/go.work" go run ./cmd/glade-tools surface refresh \
   --docs "/Users/matt/Dev/glade/example-projects/Salesforce Docs Scraper/salesforce-docs-expanded-run" \
-  --tooling-completions /Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/testdata/generated/tooling_system_symbols.json.gz \
+  --tooling-completions $SQUAD_GLADE/testdata/generated/tooling_system_symbols.json.gz \
   --out /tmp/glade-surface-after-apex-dto
 GOWORK="$tmp/go.work" go run ./cmd/glade-tools surface check --ledger /tmp/glade-surface-after-apex-dto/SURFACE_LEDGER.json \
   --max-return-type-mismatch 0 \
@@ -1011,8 +1289,8 @@ git commit -m "feat: close pure Salesforce server API rows as explicit unsupport
 - Modify: `/Users/matt/Dev/glade-tools/internal/surfaceledger/docs_snapshot.go`
 - Modify: `/Users/matt/Dev/glade-tools/internal/surfaceledger/glade_snapshot.go`
 - Modify: `/Users/matt/Dev/glade-tools/internal/surfaceledger/merge.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/storage/standard_fields.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/storage/model_test.go`
+- Modify: `$SQUAD_GLADE/internal/storage/standard_fields.go`
+- Modify: `$SQUAD_GLADE/internal/storage/model_test.go`
 
 - [ ] **Step 1: Split data reference from server DTOs**
 
@@ -1030,7 +1308,7 @@ ObjectInfo.fields -> server DTO shape-only
 - [ ] **Step 2: Regenerate standard fields if data-reference rows are missing**
 
 ```bash
-cd /Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage
+cd $SQUAD_GLADE
 go test ./internal/storage -run 'Standard|Field|Model' -count=1
 ```
 
@@ -1070,8 +1348,8 @@ git commit -m "test: classify data reference rows separately"
 - Modify: `/Users/matt/Dev/glade-tools/internal/surfaceledger/merge.go`
 - Modify: `/Users/matt/Dev/glade-tools/internal/compat/lwc_corpus_scan.go`
 - Modify: `/Users/matt/Dev/glade-tools/internal/compat/lwc_corpus_scan_test.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/vm/page_render.go`
-- Modify: `/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/internal/vm/*visualforce*_test.go`
+- Modify: `$SQUAD_GLADE/internal/vm/page_render.go`
+- Modify: `$SQUAD_GLADE/internal/vm/*visualforce*_test.go`
 
 - [ ] **Step 1: Classify UI docs rows**
 
@@ -1115,7 +1393,7 @@ PY
 cd /Users/matt/Dev/glade-tools
 git add internal/surfaceledger internal/compat
 git commit -m "feat: close Salesforce UI docs rows"
-cd /Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage
+cd $SQUAD_GLADE
 git add internal/vm
 git commit -m "test: add UI surface runtime evidence"
 ```
@@ -1244,7 +1522,7 @@ func TestCorpusClosureDisallowsSurfaceGaps(t *testing.T) {
 - [ ] **Step 3: Verify corpus closure**
 
 ```bash
-cd /Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage
+cd $SQUAD_GLADE
 go build -o /tmp/glade-all-surface-closure ./cmd/glade
 cd /Users/matt/Dev/glade-tools
 go run ./cmd/glade-tools corpus check \
@@ -1284,7 +1562,7 @@ git commit -m "test: forbid corpus closure surface gaps"
 - [ ] **Step 1: Rebuild Glade**
 
 ```bash
-cd /Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage
+cd $SQUAD_GLADE
 go build -o /tmp/glade-all-surface-final ./cmd/glade
 ```
 
@@ -1299,11 +1577,11 @@ exit 0
 ```bash
 tmp=$(mktemp -d /tmp/glade-tools-work.XXXXXX)
 cd "$tmp"
-go work init /Users/matt/Dev/glade-tools /Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage
-go work edit -replace github.com/glade-sh/apex-parser=/Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/third_party/glade-apex-parser
+go work init /Users/matt/Dev/glade-tools $SQUAD_GLADE
+go work edit -replace github.com/glade-sh/apex-parser=$SQUAD_GLADE/third_party/glade-apex-parser
 GOWORK="$tmp/go.work" go run /Users/matt/Dev/glade-tools/cmd/glade-tools surface refresh \
   --docs "/Users/matt/Dev/glade/example-projects/Salesforce Docs Scraper/salesforce-docs-expanded-run" \
-  --tooling-completions /Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage/testdata/generated/tooling_system_symbols.json.gz \
+  --tooling-completions $SQUAD_GLADE/testdata/generated/tooling_system_symbols.json.gz \
   --out /tmp/glade-surface-final
 ```
 
@@ -1333,7 +1611,7 @@ open rows: 0
 - [ ] **Step 4: Run product tests**
 
 ```bash
-cd /Users/matt/Dev/glade/.worktrees/codex-salesforce-sema-coverage
+cd $SQUAD_GLADE
 go test ./internal/typesys ./internal/sema ./internal/vm ./internal/storage ./internal/project -count=1
 go test ./...
 scripts/smoke.sh
