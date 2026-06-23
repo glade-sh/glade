@@ -228,7 +228,7 @@ func semaCollectionFieldPathArgsMatch(params [][]string, args []semaArg, scope m
 				continue
 			}
 			fieldType := semaSObjectFieldPathArgType(args[i].text, scope, model)
-			if fieldType == "" || !semaAssignableToType(param, fieldType, model) {
+			if fieldType == "" || (!semaAssignableToType(param, fieldType, model) && !semaChildRelationshipListArgCompatible(param, fieldType, args[i].text)) {
 				matched = false
 				break
 			}
@@ -253,6 +253,25 @@ func semaSObjectFieldPathArgType(arg string, scope map[string]string, model map[
 		return target.member.Type
 	}
 	return semaFallbackFieldPathType(field)
+}
+
+func semaChildRelationshipListArgCompatible(paramType, argType, argText string) bool {
+	_, field, ok := splitSemaMethodPath(strings.TrimSpace(argText))
+	field = strings.TrimSuffix(field, "__r")
+	if !ok || !semaLooksLikeChildRelationship(normalizeName(field)) {
+		return false
+	}
+	paramBase, paramArgs := semaGenericBaseAndArgs(paramType)
+	argBase, argArgs := semaGenericBaseAndArgs(argType)
+	if !strings.EqualFold(paramBase, "List") || !strings.EqualFold(argBase, "List") || len(paramArgs) != 1 || len(argArgs) != 1 {
+		return false
+	}
+	return semaIsCustomSObjectTypeName(paramArgs[0]) && semaIsCustomSObjectTypeName(argArgs[0])
+}
+
+func semaIsCustomSObjectTypeName(typeName string) bool {
+	key := normalizeName(typeName)
+	return strings.HasSuffix(key, "__c") || strings.HasSuffix(key, "__e") || strings.HasSuffix(key, "__mdt")
 }
 
 func checkSemaEnumCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []semaArg, start, end int, source string, scope map[string]string, model map[string]typeMembers) ([]diagnostic.Diagnostic, bool) {
@@ -289,9 +308,13 @@ func semaAddErrorArgsAccepted(argTypes []string, model map[string]typeMembers) b
 }
 
 func semaEnumMethodSignature(model map[string]typeMembers, receiverType, method string) (semaCollectionSignature, bool) {
+	originalType := strings.TrimSpace(receiverType)
+	receiverType = semaCanonicalPlatformAlias(receiverType)
 	members, ok := model[normalizeName(receiverType)]
 	if !ok || members.kind != apexast.DeclarationEnum {
-		return semaCollectionSignature{}, false
+		if !semaExplicitPlatformEnumType(originalType) {
+			return semaCollectionSignature{}, false
+		}
 	}
 	switch normalizeName(method) {
 	case "name", "tostring":
@@ -309,6 +332,22 @@ func semaEnumMethodSignature(model map[string]typeMembers, receiverType, method 
 func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSignature, bool) {
 	receiverType = semaCanonicalPlatformAlias(receiverType)
 	method = normalizeName(method)
+	if strings.EqualFold(receiverType, "System") {
+		switch method {
+		case "hashcode":
+			return semaCollectionSignature{returnType: "Integer", params: [][]string{{"Object"}}}, true
+		}
+	}
+	switch method {
+	case "clone":
+		return semaCollectionSignature{returnType: receiverType, params: [][]string{{}}}, true
+	case "hashcode":
+		return semaCollectionSignature{returnType: "Integer", params: [][]string{{}}}, true
+	case "tostring":
+		return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
+	case "equals":
+		return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"Object"}}}, true
+	}
 	receiverBase, receiverArgs := semaGenericBaseAndArgs(receiverType)
 	if strings.EqualFold(receiverBase, "Database.Batchable") {
 		itemType := "Object"
@@ -473,6 +512,8 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 			return semaCollectionSignature{returnType: "Double", params: [][]string{{}}}, true
 		case "decimalvalue":
 			return semaCollectionSignature{returnType: "Decimal", params: [][]string{{}}}, true
+		case "round":
+			return semaCollectionSignature{returnType: "Long", params: [][]string{{}, {"System.RoundingMode"}, {"RoundingMode"}}}, true
 		case "setscale":
 			return semaCollectionSignature{returnType: "Decimal", params: [][]string{{"Integer"}, {"Integer", "System.RoundingMode"}}}, true
 		case "toplainstring", "format":
@@ -545,6 +586,10 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		}
 	case "string":
 		switch method {
+		case "getchars":
+			return semaCollectionSignature{returnType: "List<Integer>", params: [][]string{{}}}, true
+		case "fromchararray":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"List<Integer>"}}}, true
 		case "indexof", "lastindexof":
 			return semaCollectionSignature{returnType: "Integer", params: [][]string{{"String"}, {"String", "Integer"}}}, true
 		case "equals":
@@ -653,7 +698,7 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		case "haserrors":
 			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
 		case "geterrors":
-			return semaCollectionSignature{returnType: "List<Object>", params: [][]string{{}}}, true
+			return semaCollectionSignature{returnType: "List<Database.Error>", params: [][]string{{}}}, true
 		case "setoptions":
 			return semaCollectionSignature{returnType: "void", params: [][]string{{"Database.DMLOptions"}}}, true
 		case "getoptions":
@@ -694,6 +739,13 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		case "getlabel":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
 		}
+	case "schema.sobjecttypefieldsets":
+		switch method {
+		case "get":
+			return semaCollectionSignature{returnType: "Schema.FieldSet", params: [][]string{{"String"}}}, true
+		case "getmap":
+			return semaCollectionSignature{returnType: "Map<String,Schema.FieldSet>", params: [][]string{{}}}, true
+		}
 	case "schema.fieldsetmember":
 		switch method {
 		case "getfieldpath", "getlabel":
@@ -719,7 +771,9 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		case "getname", "getlabel", "getlabelplural", "getkeyprefix":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
 		case "getfields":
-			return semaCollectionSignature{returnType: "Map<String,Schema.SObjectField>", params: [][]string{{}}}, true
+			return semaCollectionSignature{returnType: "Schema.SObjectTypeFields", params: [][]string{{}}}, true
+		case "getfieldsets":
+			return semaCollectionSignature{returnType: "Schema.SObjectTypeFieldSets", params: [][]string{{}}}, true
 		case "getrecordtypeinfos":
 			return semaCollectionSignature{returnType: "List<Schema.RecordTypeInfo>", params: [][]string{{}}}, true
 		case "getrecordtypeinfosbyname", "getrecordtypeinfosbydevelopername":
@@ -733,7 +787,7 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		case "isaccessible", "iscreateable", "isupdateable", "isdeletable", "isqueryable", "issearchable":
 			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
 		}
-	case "schema.sobjectfields":
+	case "schema.sobjecttypefields", "schema.sobjectfields":
 		switch method {
 		case "getmap":
 			return semaCollectionSignature{returnType: "Map<String,Schema.SObjectField>", params: [][]string{{}}}, true
@@ -843,6 +897,8 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		}
 	case "test":
 		switch method {
+		case "isrunningtest":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
 		case "createstub":
 			return semaCollectionSignature{returnType: "Object", params: [][]string{{"Type", "StubProvider"}}}, true
 		case "calculatepermissionsetgroup":
@@ -900,4 +956,13 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		}
 	}
 	return semaCollectionSignature{}, false
+}
+
+func semaObjectMethodName(method string) bool {
+	switch normalizeName(method) {
+	case "clone", "hashcode", "tostring", "equals":
+		return true
+	default:
+		return false
+	}
 }

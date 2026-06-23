@@ -616,6 +616,9 @@ func TestEnsureStandardObjectFieldsRemovesEventNameOverlay(t *testing.T) {
 	if field, ok := definition.Fields["Type"]; !ok || field.Type != FieldPicklist || !FieldFlagValue(field.Createable, false) {
 		t.Fatalf("Event.Type field = %#v, %v", field, ok)
 	}
+	if field, ok := definition.Fields["IsClosed"]; !ok || field.Type != FieldBoolean {
+		t.Fatalf("Event.IsClosed field = %#v, %v", field, ok)
+	}
 }
 
 func TestEnsureStandardObjectFieldsAddsTaskTypeOverlay(t *testing.T) {

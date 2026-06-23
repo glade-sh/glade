@@ -151,6 +151,7 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 		}
 		depSchema = namespaceDependencySchema(depSchema, dep.Namespace)
 		beforeTypes := len(idx.Types)
+		appendFlowInterviewSymbols(&idx, *dep.Project, dep.Namespace, true)
 		appendProjectSymbols(&idx, parser, *dep.Project, true, dep.Namespace, dep.Version, seenTypes)
 		idx.Objects = append(idx.Objects, depSchema.Objects...)
 		idx.CustomMetadataRecords = append(idx.CustomMetadataRecords, depSchema.CustomMetadataRecords...)
@@ -167,6 +168,10 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 	}
 	for _, shim := range p.PackageShims {
 		appendPackageShimSymbols(&idx, parser, shim, seenTypes)
+	}
+	appendFlowInterviewSymbols(&idx, p, "", false)
+	if p.Namespace != "" {
+		appendFlowInterviewSymbols(&idx, p, p.Namespace, false)
 	}
 	appendDataWeaveScriptResourceSymbols(&idx, p)
 	appendProjectSymbols(&idx, parser, p, false, p.Namespace, "", seenTypes)
@@ -344,6 +349,73 @@ func appendDataWeaveScriptResourceSymbols(idx *Index, p project.Project) {
 	}
 }
 
+func appendFlowInterviewSymbols(idx *Index, p project.Project, namespace string, dependency bool) {
+	for _, flow := range flowInterviewNames(p) {
+		name := "Flow.Interview." + flow
+		if namespace != "" {
+			name = "Flow.Interview." + namespace + "." + flow
+		}
+		idx.Types = append(idx.Types, TypeSymbol{
+			Kind:       apexast.DeclarationClass,
+			Name:       name,
+			File:       flowInterviewFile(p, flow),
+			Dependency: dependency,
+			SourceRoot: p.Root,
+			SuperClass: "Flow.Interview",
+			Members: []MemberSymbol{{
+				Kind:      apexast.DeclarationConstructor,
+				Name:      flow,
+				Modifiers: []string{"public"},
+				Parameters: []apexast.Parameter{{
+					Name: "inputVariables",
+					Type: "Map<String,Object>",
+				}},
+			}},
+		})
+	}
+}
+
+func flowInterviewNames(p project.Project) []string {
+	seen := make(map[string]bool)
+	for _, path := range p.FlowFiles {
+		name := flowInterviewName(path)
+		if name != "" {
+			seen[strings.ToLower(name)] = true
+		}
+	}
+	names := make([]string, 0, len(seen))
+	for _, path := range p.FlowFiles {
+		name := flowInterviewName(path)
+		key := strings.ToLower(name)
+		if name == "" || !seen[key] {
+			continue
+		}
+		names = append(names, name)
+		delete(seen, key)
+	}
+	sort.Strings(names)
+	return names
+}
+
+func flowInterviewName(path string) string {
+	base := filepath.Base(path)
+	base = strings.TrimSuffix(base, "-meta.xml")
+	base = strings.TrimSuffix(base, ".flow")
+	if base == "" || base == filepath.Base(path) {
+		return ""
+	}
+	return base
+}
+
+func flowInterviewFile(p project.Project, name string) string {
+	for _, path := range p.FlowFiles {
+		if strings.EqualFold(flowInterviewName(path), name) {
+			return path
+		}
+	}
+	return "<flow>"
+}
+
 func dataWeaveScriptResourceNames(p project.Project) []string {
 	seen := make(map[string]bool)
 	for _, path := range append(append([]string{}, p.DataWeaveFiles...), p.DataWeaveMetas...) {
@@ -466,7 +538,7 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 		})
 		return out
 	}
-	source := string(data)
+	source := project.NormalizeApexNamespaceTokens(string(data), namespace)
 	file := parser.ParseSource(path, source)
 	out.Diagnostics = append(out.Diagnostics, file.Diagnostics...)
 	if len(file.Diagnostics) > 0 {
@@ -633,7 +705,7 @@ func UpdateApexFiles(previous Index, changedPaths, deletedPaths []string) (idx I
 			})
 			continue
 		}
-		source := string(data)
+		source := project.NormalizeApexNamespaceTokens(string(data), previous.Project.Namespace)
 		file := parser.ParseSource(path, source)
 		idx.Diagnostics = append(idx.Diagnostics, file.Diagnostics...)
 		if len(file.Diagnostics) > 0 {
@@ -744,14 +816,12 @@ func parseTypeInheritance(source string, r diagnostic.Range) (string, []string) 
 	if r.Start.Offset < 0 || r.End.Offset <= r.Start.Offset || r.End.Offset > len(source) {
 		return "", nil
 	}
-	text := source[r.Start.Offset:r.End.Offset]
+	text := stripTypeInheritanceComments(source[r.Start.Offset:r.End.Offset])
 	open := strings.IndexByte(text, '{')
 	if open >= 0 {
 		text = text[:open]
 	}
-	fields := strings.FieldsFunc(text, func(r rune) bool {
-		return r == ' ' || r == '\t' || r == '\n' || r == '\r' || r == ','
-	})
+	fields := splitTypeInheritanceFields(text)
 	var super string
 	var interfaces []string
 	for i := 0; i < len(fields); i++ {
@@ -773,6 +843,78 @@ func parseTypeInheritance(source string, r diagnostic.Range) (string, []string) 
 		}
 	}
 	return super, interfaces
+}
+
+func stripTypeInheritanceComments(text string) string {
+	var out strings.Builder
+	for i := 0; i < len(text); i++ {
+		if text[i] == '/' && i+1 < len(text) {
+			switch text[i+1] {
+			case '/':
+				for i < len(text) && text[i] != '\n' {
+					i++
+				}
+				if i < len(text) {
+					out.WriteByte(text[i])
+				}
+				continue
+			case '*':
+				i += 2
+				for i+1 < len(text) && !(text[i] == '*' && text[i+1] == '/') {
+					if text[i] == '\n' {
+						out.WriteByte('\n')
+					} else {
+						out.WriteByte(' ')
+					}
+					i++
+				}
+				if i+1 < len(text) {
+					i++
+				}
+				continue
+			}
+		}
+		out.WriteByte(text[i])
+	}
+	return out.String()
+}
+
+func splitTypeInheritanceFields(text string) []string {
+	var fields []string
+	start := -1
+	depth := 0
+	for i, r := range text {
+		switch r {
+		case '<':
+			if start < 0 {
+				start = i
+			}
+			depth++
+		case '>':
+			if start < 0 {
+				start = i
+			}
+			if depth > 0 {
+				depth--
+			}
+		case ' ', '\t', '\n', '\r', ',':
+			if depth == 0 {
+				if start >= 0 {
+					fields = append(fields, strings.TrimSpace(text[start:i]))
+					start = -1
+				}
+				continue
+			}
+		default:
+			if start < 0 {
+				start = i
+			}
+		}
+	}
+	if start >= 0 {
+		fields = append(fields, strings.TrimSpace(text[start:]))
+	}
+	return fields
 }
 
 func hasTestModifier(modifiers []string) bool {

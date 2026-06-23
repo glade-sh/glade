@@ -97,6 +97,47 @@ func TestLoadSFDXProject(t *testing.T) {
 	}
 }
 
+func TestNormalizeApexNamespaceTokensForUnnamespacedProject(t *testing.T) {
+	source := `public class UsesTokens {
+  public void run() {
+    %%%NAMESPACE_DOT%%%UTIL_CustomSettings_API.getSettingsForTests(
+      new %%%NAMESPACE%%%Hierarchy_Settings__c(%%%NAMESPACE%%%Disable_Preferred_Email_Enforcement__c = false)
+    );
+    for (%%%NAMESPACE_DOT%%%TDTM_Global_API.TdtmToken token : %%%NAMESPACE_DOT%%%TDTM_Global_API.getTdtmConfig()) {
+    }
+  }
+}`
+	got := NormalizeApexNamespaceTokens(source, "")
+	if strings.Contains(got, "%%%") {
+		t.Fatalf("namespace token remained in source:\n%s", got)
+	}
+	if !strings.Contains(got, "UTIL_CustomSettings_API.getSettingsForTests") {
+		t.Fatalf("dot token was not removed:\n%s", got)
+	}
+	if !strings.Contains(got, "new Hierarchy_Settings__c(Disable_Preferred_Email_Enforcement__c = false)") {
+		t.Fatalf("API token was not removed:\n%s", got)
+	}
+}
+
+func TestNormalizeApexNamespaceTokensForNamespacedProject(t *testing.T) {
+	source := `public class UsesTokens {
+  public void run() {
+    %%%NAMESPACE_DOT%%%UTIL_CustomSettings_API.getSettingsForTests(
+      new %%%NAMESPACE%%%Hierarchy_Settings__c(%%%NAMESPACE%%%Disable_Preferred_Email_Enforcement__c = false)
+    );
+  }
+}`
+	got := NormalizeApexNamespaceTokens(source, " hed ")
+	for _, want := range []string{
+		"hed.UTIL_CustomSettings_API.getSettingsForTests",
+		"new hed__Hierarchy_Settings__c(hed__Disable_Preferred_Email_Enforcement__c = false)",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("normalized source missing %q:\n%s", want, got)
+		}
+	}
+}
+
 func TestOrgShapeFeaturesLoadsScratchDefinition(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [MultiCurrency]\n")
@@ -166,7 +207,7 @@ func TestLoadLegacySrcLayout(t *testing.T) {
 	}
 }
 
-func TestLoadSupplementsConventionalUnpackagedRoot(t *testing.T) {
+func TestLoadRespectsDeclaredPackageDirectoriesOverConventionalUnpackagedRoot(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app/main/default","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/Main.cls"), "public class Main {}")
@@ -176,8 +217,8 @@ func TestLoadSupplementsConventionalUnpackagedRoot(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(p.ApexFiles) != 2 {
-		t.Fatalf("apex files = %d, want 2: %#v", len(p.ApexFiles), p.ApexFiles)
+	if len(p.ApexFiles) != 1 || filepath.Base(p.ApexFiles[0]) != "Main.cls" {
+		t.Fatalf("apex files = %#v, want only declared package source", p.ApexFiles)
 	}
 }
 
@@ -242,6 +283,37 @@ func TestLoadDoesNotDuplicateCoveredNestedRoots(t *testing.T) {
 	}
 	if len(p.ApexFiles) != 1 {
 		t.Fatalf("apex files = %d, want 1: %#v", len(p.ApexFiles), p.ApexFiles)
+	}
+}
+
+func TestLoadDeduplicatesOverlappingPackageDirectorySourceFiles(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"packages"},{"path":"packages/app","default":true}]}`)
+	sharedPath := filepath.Join(root, "packages/app/classes/Shared.cls")
+	appDuplicatePath := filepath.Join(root, "packages/app/classes/Duplicate.cls")
+	libDuplicatePath := filepath.Join(root, "packages/lib/classes/Duplicate.cls")
+	writeFile(t, sharedPath, "public class Shared {}")
+	writeFile(t, appDuplicatePath, "public class Duplicate {}")
+	writeFile(t, libDuplicatePath, "public class Duplicate {}")
+
+	p, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ApexFiles) != 3 {
+		t.Fatalf("apex files = %#v, want each physical file once", p.ApexFiles)
+	}
+	sharedCount := 0
+	for _, file := range p.ApexFiles {
+		if file == sharedPath {
+			sharedCount++
+		}
+	}
+	if sharedCount != 1 {
+		t.Fatalf("shared source file count = %d, want 1 in %#v", sharedCount, p.ApexFiles)
+	}
+	if !slices.Contains(p.ApexFiles, appDuplicatePath) || !slices.Contains(p.ApexFiles, libDuplicatePath) {
+		t.Fatalf("apex files = %#v, want both true duplicate class files", p.ApexFiles)
 	}
 }
 

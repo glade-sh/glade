@@ -31,6 +31,23 @@ func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) 
 	requireStandardProperty(t, visibility, "ALL", "Cache.Visibility")
 }
 
+func TestStandardPlatformSymbolsTypeConnectApiCollectionProperties(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	managedContent := requireStandardSymbol(t, symbols, "ConnectApi.ManagedContentVersion")
+	requireStandardProperty(t, managedContent, "contentNodes", "Map<String,ConnectApi.ManagedContentNodeValue>")
+
+	managedCollection := requireStandardSymbol(t, symbols, "ConnectApi.ManagedContentVersionCollection")
+	requireStandardProperty(t, managedCollection, "items", "List<ConnectApi.ManagedContentVersion>")
+	requireStandardProperty(t, managedCollection, "managedContentTypes", "Map<String,ConnectApi.ManagedContentType>")
+
+	orgSettings := requireStandardSymbol(t, symbols, "ConnectApi.OrganizationSettings")
+	requireStandardProperty(t, orgSettings, "orgId", "Id")
+
+	orchestrationCollection := requireStandardSymbol(t, symbols, "ConnectApi.OrchestrationInstanceCollection")
+	requireStandardProperty(t, orchestrationCollection, "instances", "List<ConnectApi.OrchestrationInstance>")
+}
+
 func TestStandardPlatformSymbolsReturnsIndependentSlices(t *testing.T) {
 	first := StandardPlatformSymbols()
 	if len(first) == 0 {
@@ -595,6 +612,142 @@ func TestStandardPlatformSymbolsTypeAuthProviders(t *testing.T) {
 	requireNoStandardSymbol(t, symbols, "Approval.Approval")
 }
 
+func TestStandardPlatformSymbolsIncludeApprovalProcessListOverloads(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	approval := requireStandardSymbol(t, symbols, "Approval")
+	requireStandardMethodReturn(t, approval, "process", []string{"Approval.ProcessRequest"}, "Approval.ProcessResult", true)
+	requireStandardMethodReturn(t, approval, "process", []string{"Approval.ProcessRequest", "Boolean"}, "Approval.ProcessResult", true)
+	requireStandardMethodReturn(t, approval, "process", []string{"List<Approval.ProcessRequest>"}, "List<Approval.ProcessResult>", true)
+	requireStandardMethodReturn(t, approval, "process", []string{"List<Approval.ProcessRequest>", "Boolean"}, "List<Approval.ProcessResult>", true)
+	requireStandardMethodReturn(t, approval, "process", []string{"Approval.ProcessSubmitRequest"}, "Approval.ProcessResult", true)
+	requireStandardMethodReturn(t, approval, "process", []string{"Approval.ProcessWorkitemRequest"}, "Approval.ProcessResult", true)
+	requireStandardMethodReturn(t, approval, "process", []string{"List<Approval.ProcessSubmitRequest>"}, "List<Approval.ProcessResult>", true)
+	requireStandardMethodReturn(t, approval, "process", []string{"List<Approval.ProcessWorkitemRequest>"}, "List<Approval.ProcessResult>", true)
+
+	submit := requireStandardSymbol(t, symbols, "Approval.ProcessSubmitRequest")
+	if submit.SuperClass != "Approval.ProcessRequest" {
+		t.Fatalf("Approval.ProcessSubmitRequest superclass = %q, want Approval.ProcessRequest", submit.SuperClass)
+	}
+	workitem := requireStandardSymbol(t, symbols, "Approval.ProcessWorkitemRequest")
+	if workitem.SuperClass != "Approval.ProcessRequest" {
+		t.Fatalf("Approval.ProcessWorkitemRequest superclass = %q, want Approval.ProcessRequest", workitem.SuperClass)
+	}
+}
+
+func TestStandardPlatformSymbolsIncludeTestAndMathRows(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	testClass := requireStandardSymbol(t, symbols, "Test")
+	requireStandardMethodReturn(t, testClass, "isRunningTest", nil, "Boolean", true)
+
+	math := requireStandardSymbol(t, symbols, "Math")
+	requireStandardProperty(t, math, "PI", "Decimal")
+	requireStandardProperty(t, math, "E", "Decimal")
+	requireStandardMethodReturn(t, math, "random", nil, "Double", true)
+}
+
+func TestStandardPlatformSymbolsIncludeConnectApiFeedInputShapes(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	feedElement := requireStandardSymbol(t, symbols, "ConnectApi.FeedElement")
+	requireStandardProperty(t, feedElement, "body", "ConnectApi.FeedBody")
+	requireStandardProperty(t, feedElement, "id", "Id")
+	feedBody := requireStandardSymbol(t, symbols, "ConnectApi.FeedBody")
+	requireStandardProperty(t, feedBody, "messageSegments", "List<ConnectApi.MessageSegment>")
+
+	feedInput := requireStandardSymbol(t, symbols, "ConnectApi.FeedItemInput")
+	if feedInput.SuperClass != "ConnectApi.FeedElementInput" {
+		t.Fatalf("ConnectApi.FeedItemInput superclass = %q, want ConnectApi.FeedElementInput", feedInput.SuperClass)
+	}
+	requireStandardProperty(t, feedInput, "body", "ConnectApi.MessageBodyInput")
+	requireStandardProperty(t, feedInput, "feedElementType", "ConnectApi.FeedElementType")
+	requireStandardProperty(t, feedInput, "subjectId", "Id")
+
+	messageBody := requireStandardSymbol(t, symbols, "ConnectApi.MessageBody")
+	requireStandardProperty(t, messageBody, "messageSegments", "List<ConnectApi.MessageSegment>")
+	messageBodyInput := requireStandardSymbol(t, symbols, "ConnectApi.MessageBodyInput")
+	requireStandardProperty(t, messageBodyInput, "messageSegments", "List<ConnectApi.MessageSegmentInput>")
+	commentInput := requireStandardSymbol(t, symbols, "ConnectApi.CommentInput")
+	requireStandardProperty(t, commentInput, "body", "ConnectApi.MessageBodyInput")
+
+	for _, name := range []string{
+		"ConnectApi.EntityLinkSegment",
+		"ConnectApi.HashtagSegment",
+		"ConnectApi.InlineImageSegment",
+		"ConnectApi.LinkSegment",
+		"ConnectApi.MarkupBeginSegment",
+		"ConnectApi.MarkupEndSegment",
+		"ConnectApi.MentionSegment",
+		"ConnectApi.TextSegment",
+	} {
+		symbol := requireStandardSymbol(t, symbols, name)
+		if symbol.SuperClass != "ConnectApi.MessageSegment" {
+			t.Fatalf("%s superclass = %q, want ConnectApi.MessageSegment", name, symbol.SuperClass)
+		}
+	}
+
+	for _, name := range []string{
+		"ConnectApi.EntityLinkSegmentInput",
+		"ConnectApi.HashtagSegmentInput",
+		"ConnectApi.InlineImageSegmentInput",
+		"ConnectApi.LinkSegmentInput",
+		"ConnectApi.MarkupBeginSegmentInput",
+		"ConnectApi.MarkupEndSegmentInput",
+		"ConnectApi.MentionSegmentInput",
+		"ConnectApi.TextSegmentInput",
+	} {
+		symbol := requireStandardSymbol(t, symbols, name)
+		if symbol.SuperClass != "ConnectApi.MessageSegmentInput" {
+			t.Fatalf("%s superclass = %q, want ConnectApi.MessageSegmentInput", name, symbol.SuperClass)
+		}
+	}
+	text := requireStandardSymbol(t, symbols, "ConnectApi.TextSegmentInput")
+	requireStandardProperty(t, text, "text", "String")
+	reference := requireStandardSymbol(t, symbols, "ConnectApi.Reference")
+	requireStandardProperty(t, reference, "id", "Id")
+}
+
+func TestStandardPlatformSymbolsIncludeConnectApiNBARecommendationShapes(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	recommendations := requireStandardSymbol(t, symbols, "ConnectApi.NBARecommendations")
+	requireStandardProperty(t, recommendations, "recommendations", "List<ConnectApi.NBARecommendation>")
+	requireStandardProperty(t, recommendations, "executionId", "Id")
+	requireStandardProperty(t, recommendations, "onBehalfOfId", "Id")
+
+	recommendation := requireStandardSymbol(t, symbols, "ConnectApi.NBARecommendation")
+	requireStandardProperty(t, recommendation, "acceptanceLabel", "String")
+	requireStandardProperty(t, recommendation, "externalId", "String")
+	requireStandardProperty(t, recommendation, "description", "String")
+	requireStandardProperty(t, recommendation, "rejectionLabel", "String")
+
+	native := requireStandardSymbol(t, symbols, "ConnectApi.NBANativeRecommendation")
+	requireStandardProperty(t, native, "id", "Id")
+	requireStandardProperty(t, native, "name", "String")
+	requireStandardProperty(t, native, "url", "String")
+
+	flow := requireStandardSymbol(t, symbols, "ConnectApi.NBAFlowAction")
+	requireStandardProperty(t, flow, "name", "String")
+	requireStandardProperty(t, flow, "flowType", "ConnectApi.NBAFlowType")
+	requireStandardProperty(t, flow, "parameters", "List<ConnectApi.NBAActionParameter>")
+
+	parameter := requireStandardSymbol(t, symbols, "ConnectApi.NBAActionParameter")
+	requireStandardProperty(t, parameter, "name", "String")
+	requireStandardProperty(t, parameter, "value", "String")
+	requireStandardProperty(t, parameter, "type", "String")
+}
+
+func TestStandardPlatformSymbolsIncludeMetadataLayoutItemShapes(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	platformAction := requireStandardSymbol(t, symbols, "Metadata.PlatformActionListItem")
+	requireStandardProperty(t, platformAction, "actionName", "String")
+
+	relatedList := requireStandardSymbol(t, symbols, "Metadata.RelatedListItem")
+	requireStandardProperty(t, relatedList, "relatedList", "String")
+}
+
 func TestStandardPlatformSymbolsIncludeUserInfoStubMethodsAndFieldTokenProperties(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 
@@ -617,8 +770,18 @@ func TestStandardPlatformSymbolsIncludeSchemaDescribeShape(t *testing.T) {
 	requireStandardMethodType(t, schema, "describeTabs", "List<Schema.DescribeTabSetResult>")
 
 	describe := requireStandardSymbol(t, symbols, "Schema.DescribeSObjectResult")
-	requireStandardProperty(t, describe, "fieldSets", "Schema.FieldSetMap")
-	requireStandardMethodType(t, describe, "getFieldSets", "Schema.FieldSetMap")
+	requireStandardProperty(t, describe, "fields", "Schema.SObjectTypeFields")
+	requireStandardMethodType(t, describe, "getFields", "Schema.SObjectTypeFields")
+	requireStandardProperty(t, describe, "fieldSets", "Schema.SObjectTypeFieldSets")
+	requireStandardMethodType(t, describe, "getFieldSets", "Schema.SObjectTypeFieldSets")
+
+	fieldMap := requireStandardSymbol(t, symbols, "Schema.SObjectTypeFields")
+	requireStandardMethodType(t, fieldMap, "getMap", "Map<String,Schema.SObjectField>")
+	requireStandardMethod(t, fieldMap, "get", []string{"String"}, false)
+
+	fieldSetTypeMap := requireStandardSymbol(t, symbols, "Schema.SObjectTypeFieldSets")
+	requireStandardMethodType(t, fieldSetTypeMap, "getMap", "Map<String,Schema.FieldSet>")
+	requireStandardMethod(t, fieldSetTypeMap, "get", []string{"String"}, false)
 
 	fieldSetMap := requireStandardSymbol(t, symbols, "Schema.FieldSetMap")
 	requireStandardMethodType(t, fieldSetMap, "getMap", "Map<String,Schema.FieldSet>")
@@ -655,6 +818,13 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 	requireStandardMethod(t, stringClass, "equals", []string{"String"}, false)
 	requireStandardMethod(t, stringClass, "format", []string{"String", "List<Object>"}, true)
 	requireStandardMethod(t, stringClass, "template", []string{"Map<String,Object>"}, false)
+
+	httpRequest := requireStandardSymbol(t, symbols, "HttpRequest")
+	requireStandardMethod(t, httpRequest, "getBody", nil, false)
+	requireStandardMethod(t, httpRequest, "getEndpoint", nil, false)
+	systemHttpRequest := requireStandardSymbol(t, symbols, "System.HttpRequest")
+	requireStandardMethod(t, systemHttpRequest, "getBody", nil, false)
+	requireStandardMethod(t, systemHttpRequest, "getEndpoint", nil, false)
 
 	systemClass := requireStandardSymbol(t, symbols, "System")
 	requireStandardMethod(t, systemClass, "debug", []string{"LoggingLevel", "Object"}, true)
@@ -750,6 +920,20 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 	requireStandardProperty(t, externalCredential, "principals", "List<ConnectApi.ExternalCredentialPrincipal>")
 	externalCredentialInput := requireStandardSymbol(t, symbols, "ConnectApi.ExternalCredentialInput")
 	requireStandardProperty(t, externalCredentialInput, "principals", "List<ConnectApi.ExternalCredentialPrincipalInput>")
+	namedCredential := requireStandardSymbol(t, symbols, "ConnectApi.NamedCredential")
+	requireStandardProperty(t, namedCredential, "developerName", "String")
+	requireStandardProperty(t, namedCredential, "masterLabel", "String")
+	requireStandardProperty(t, namedCredential, "type", "ConnectApi.NamedCredentialType")
+	requireStandardProperty(t, namedCredential, "calloutUrl", "String")
+	requireStandardProperty(t, namedCredential, "calloutOptions", "ConnectApi.NamedCredentialCalloutOptions")
+	requireStandardProperty(t, namedCredential, "externalCredentials", "List<ConnectApi.ExternalCredential>")
+	namedCredentialInput := requireStandardSymbol(t, symbols, "ConnectApi.NamedCredentialInput")
+	requireStandardProperty(t, namedCredentialInput, "developerName", "String")
+	requireStandardProperty(t, namedCredentialInput, "masterLabel", "String")
+	requireStandardProperty(t, namedCredentialInput, "type", "ConnectApi.NamedCredentialType")
+	requireStandardProperty(t, namedCredentialInput, "calloutUrl", "String")
+	requireStandardProperty(t, namedCredentialInput, "calloutOptions", "ConnectApi.NamedCredentialCalloutOptionsInput")
+	requireStandardProperty(t, namedCredentialInput, "externalCredentials", "List<ConnectApi.ExternalCredentialInput>")
 	inboundEmail := requireStandardSymbol(t, symbols, "Messaging.InboundEmail")
 	requireStandardProperty(t, inboundEmail, "authenticationResults", "List<Messaging.InboundEmail.AuthenticationResult>")
 	requireStandardProperty(t, inboundEmail, "binaryAttachments", "List<Messaging.InboundEmail.BinaryAttachment>")
@@ -797,6 +981,15 @@ func TestStandardPlatformSymbolsIncludeWaveTemplatePassiveShapes(t *testing.T) {
 	} {
 		requireStandardPropertyStatic(t, variableType, constant, "wavetemplate.VariableTypeEnum", true)
 	}
+}
+
+func TestStandardPlatformSymbolsKeepCoreStringMethodTypes(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+	stringType := requireStandardSymbol(t, symbols, "String")
+	requireStandardMethodType(t, stringType, "hashCode", "Integer")
+	requireStandardMethodType(t, stringType, "split", "List<String>")
+	requireStandardMethodType(t, stringType, "toLowerCase", "String")
+	requireStandardMethodType(t, stringType, "isNotBlank", "Boolean")
 }
 
 func TestStandardPlatformSymbolsIncludeCoreRuntimeCollectionObjectShapes(t *testing.T) {
@@ -1163,6 +1356,26 @@ func requireStandardMethod(t *testing.T, symbol TypeSymbol, name string, params 
 		return
 	}
 	t.Fatalf("missing method %s.%s with params %#v static=%v: %#v", standardSymbolFullName(symbol), name, params, static, symbol.Members)
+}
+
+func requireStandardMethodReturn(t *testing.T, symbol TypeSymbol, name string, params []string, typ string, static bool) {
+	t.Helper()
+	for _, member := range symbol.Members {
+		if member.Kind != apexast.DeclarationMethod || !strings.EqualFold(member.Name, name) {
+			continue
+		}
+		if !standardMemberParamsEqual(member, params) {
+			continue
+		}
+		if !strings.EqualFold(member.Type, typ) {
+			continue
+		}
+		if memberHasModifier(member, "static") != static {
+			continue
+		}
+		return
+	}
+	t.Fatalf("missing method %s.%s with params %#v return %s static=%v: %#v", standardSymbolFullName(symbol), name, params, typ, static, symbol.Members)
 }
 
 func requireStandardProperty(t *testing.T, symbol TypeSymbol, name, typ string) {

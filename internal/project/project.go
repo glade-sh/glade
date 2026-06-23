@@ -90,6 +90,19 @@ type DependencyDiagnostic struct {
 	Message    string `json:"message"`
 }
 
+func NormalizeApexNamespaceTokens(source, namespace string) string {
+	namespace = strings.TrimSpace(namespace)
+	apiPrefix := ""
+	dotPrefix := ""
+	if namespace != "" {
+		apiPrefix = namespace + "__"
+		dotPrefix = namespace + "."
+	}
+	source = strings.ReplaceAll(source, "%%%NAMESPACE_DOT%%%", dotPrefix)
+	source = strings.ReplaceAll(source, "%%%NAMESPACE%%%", apiPrefix)
+	return source
+}
+
 type PackageDirectory struct {
 	Path    string `json:"path"`
 	Default bool   `json:"default,omitempty"`
@@ -284,6 +297,7 @@ type sfdxProject struct {
 	PackageDirectories []PackageDirectory `json:"packageDirectories"`
 	Namespace          string             `json:"namespace"`
 	SourceAPIVersion   string             `json:"sourceApiVersion"`
+	HasManifest        bool               `json:"-"`
 }
 
 func Load(root string) (Project, error) {
@@ -327,6 +341,7 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 		}
 		if len(gladeCfg.Project.PackageDirs) > 0 {
 			cfg.PackageDirectories = packageDirectoriesFromConfig(gladeCfg.Project.PackageDirs)
+			cfg.HasManifest = true
 		}
 		if gladeCfg.Project.DefaultNamespace != "" {
 			cfg.Namespace = gladeCfg.Project.DefaultNamespace
@@ -350,7 +365,8 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 		p.PackageShims, p.DependencyDiagnostics = loadPackageShims(gladeCfg.Project.PackageShims, stack, p.DependencyDiagnostics)
 	}
 
-	for _, pkgRoot := range packageRoots(absRoot, p.PackageDirectories, !dependency) {
+	includeConventionalRoots := !dependency && !cfg.HasManifest
+	for _, pkgRoot := range packageRoots(absRoot, p.PackageDirectories, includeConventionalRoots) {
 		if _, err := os.Stat(pkgRoot); err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				continue
@@ -361,6 +377,8 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 			return Project{}, err
 		}
 	}
+
+	dedupeProjectFiles(&p)
 
 	sort.Strings(p.ApexFiles)
 	sort.Strings(p.ObjectFiles)
@@ -407,6 +425,80 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 	sort.Strings(p.LWCCSSFiles)
 	sort.Strings(p.LWCMetaFiles)
 	return p, nil
+}
+
+func dedupeProjectFiles(p *Project) {
+	p.ApexFiles = dedupeFilePaths(p.ApexFiles)
+	p.ObjectFiles = dedupeFilePaths(p.ObjectFiles)
+	p.FieldFiles = dedupeFilePaths(p.FieldFiles)
+	p.FieldSetFiles = dedupeFilePaths(p.FieldSetFiles)
+	p.RecordTypeFiles = dedupeFilePaths(p.RecordTypeFiles)
+	p.ValidationRuleFiles = dedupeFilePaths(p.ValidationRuleFiles)
+	p.LabelFiles = dedupeFilePaths(p.LabelFiles)
+	p.TranslationFiles = dedupeFilePaths(p.TranslationFiles)
+	p.StaticResourceFiles = dedupeFilePaths(p.StaticResourceFiles)
+	p.StaticResourceMetas = dedupeFilePaths(p.StaticResourceMetas)
+	p.DataCategoryGroupFiles = dedupeFilePaths(p.DataCategoryGroupFiles)
+	p.DataWeaveFiles = dedupeFilePaths(p.DataWeaveFiles)
+	p.DataWeaveMetas = dedupeFilePaths(p.DataWeaveMetas)
+	p.ContentAssetFiles = dedupeFilePaths(p.ContentAssetFiles)
+	p.ContentAssetMetas = dedupeFilePaths(p.ContentAssetMetas)
+	p.EmailTemplateFiles = dedupeFilePaths(p.EmailTemplateFiles)
+	p.FolderFiles = dedupeFilePaths(p.FolderFiles)
+	p.NamedCredentialFiles = dedupeFilePaths(p.NamedCredentialFiles)
+	p.RemoteSiteFiles = dedupeFilePaths(p.RemoteSiteFiles)
+	p.CustomMetadataFiles = dedupeFilePaths(p.CustomMetadataFiles)
+	p.WorkflowFiles = dedupeFilePaths(p.WorkflowFiles)
+	p.FlowFiles = dedupeFilePaths(p.FlowFiles)
+	p.ProfileFiles = dedupeFilePaths(p.ProfileFiles)
+	p.PermissionSetFiles = dedupeFilePaths(p.PermissionSetFiles)
+	p.PermissionSetGroupFiles = dedupeFilePaths(p.PermissionSetGroupFiles)
+	p.PermissionAssignmentFiles = dedupeFilePaths(p.PermissionAssignmentFiles)
+	p.ListViewFiles = dedupeFilePaths(p.ListViewFiles)
+	p.LayoutFiles = dedupeFilePaths(p.LayoutFiles)
+	p.CompactLayoutFiles = dedupeFilePaths(p.CompactLayoutFiles)
+	p.TabFiles = dedupeFilePaths(p.TabFiles)
+	p.WebLinkFiles = dedupeFilePaths(p.WebLinkFiles)
+	p.QuickActionFiles = dedupeFilePaths(p.QuickActionFiles)
+	p.GlobalValueSetFiles = dedupeFilePaths(p.GlobalValueSetFiles)
+	p.StandardValueSetFiles = dedupeFilePaths(p.StandardValueSetFiles)
+	p.FlexiPageFiles = dedupeFilePaths(p.FlexiPageFiles)
+	p.ApplicationFiles = dedupeFilePaths(p.ApplicationFiles)
+	p.VisualforcePageFiles = dedupeFilePaths(p.VisualforcePageFiles)
+	p.VisualforceComponentFiles = dedupeFilePaths(p.VisualforceComponentFiles)
+	p.AuraFiles = dedupeFilePaths(p.AuraFiles)
+	p.LWCFiles = dedupeFilePaths(p.LWCFiles)
+	p.LWCHTMLFiles = dedupeFilePaths(p.LWCHTMLFiles)
+	p.LWCCSSFiles = dedupeFilePaths(p.LWCCSSFiles)
+	p.LWCMetaFiles = dedupeFilePaths(p.LWCMetaFiles)
+}
+
+func dedupeFilePaths(paths []string) []string {
+	if len(paths) < 2 {
+		return paths
+	}
+	seen := make(map[string]bool, len(paths))
+	out := make([]string, 0, len(paths))
+	for _, path := range paths {
+		key := canonicalFileKey(path)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, path)
+	}
+	return out
+}
+
+func canonicalFileKey(path string) string {
+	resolved, err := filepath.EvalSymlinks(path)
+	if err == nil {
+		return filepath.Clean(resolved)
+	}
+	if abs, err := filepath.Abs(path); err == nil {
+		return filepath.Clean(abs)
+	}
+	return filepath.Clean(path)
 }
 
 func packageDirectoriesFromConfig(paths []string) []PackageDirectory {
@@ -693,6 +785,7 @@ func loadSFDXProject(root string) (sfdxProject, error) {
 	if err := json.Unmarshal(data, &cfg); err != nil {
 		return sfdxProject{}, err
 	}
+	cfg.HasManifest = true
 	return cfg, nil
 }
 

@@ -62467,8 +62467,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 		Properties: []StandardPropertySpec{
 			{Name: "currentPageUrl", Type: "Object"},
-			{Name: "items", Type: "Object"},
-			{Name: "managedContentTypes", Type: "Object"},
+			{Name: "items", Type: "List<ConnectApi.ManagedContentVersion>"},
+			{Name: "managedContentTypes", Type: "Map<String,ConnectApi.ManagedContentType>"},
 			{Name: "nextPageUrl", Type: "Object"},
 			{Name: "total", Type: "Object"},
 			{Name: "totalTypes", Type: "Object"},

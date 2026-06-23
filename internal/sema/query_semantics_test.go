@@ -133,6 +133,63 @@ public class QueryProbe {
 	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "pkg__PrimaryAffiliation__c")
 }
 
+func TestAnalyzeQuerySemanticsAllowsCurrentObjectQualifiedFields(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    Integer matches = [SELECT Count() FROM Account WHERE Account.pkg__Status__c = 'Open'];
+  }
+}
+`
+	result := analyzeQueryProbeWithProject(t, source, typesys.ProjectInfo{Namespace: "pkg"}, schema.Schema{Objects: []schema.Object{
+		{
+			Name: "Account",
+			Fields: []schema.Field{
+				{Name: "Status__c", Type: "Text"},
+			},
+		},
+	}})
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_RELATIONSHIP", "Account.pkg__Status__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "pkg__Status__c")
+}
+
+func TestAnalyzeQuerySemanticsCopiesActivityFieldsToTaskAndEvent(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<Task> tasks = [SELECT pkg__Engagement_Plan__c FROM Task];
+    List<Event> events = [SELECT pkg__Engagement_Plan__c FROM Event];
+  }
+}
+`
+	result := analyzeQueryProbeWithProject(t, source, typesys.ProjectInfo{Namespace: "pkg"}, schema.Schema{Objects: []schema.Object{
+		{
+			Name: "Activity",
+			Fields: []schema.Field{
+				{Name: "pkg__Engagement_Plan__c", Type: "Lookup", ReferenceTo: []string{"pkg__Engagement_Plan__c"}, RelationshipName: "pkg__Engagement_Plan__r"},
+			},
+		},
+		{Name: "pkg__Engagement_Plan__c"},
+	}})
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "Task.pkg__Engagement_Plan__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "Event.pkg__Engagement_Plan__c")
+}
+
+func TestAnalyzeQuerySemanticsIncludesEventIsClosed(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<Event> events = [SELECT Id, IsClosed FROM Event];
+  }
+}
+`
+	result := analyzeQueryProbeWithProject(t, source, typesys.ProjectInfo{}, schema.Schema{Objects: []schema.Object{{Name: "Event"}}})
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "Event.IsClosed")
+}
+
 func TestAnalyzeQuerySemanticsMergesExtensionFieldsOnDuplicateObjects(t *testing.T) {
 	source := `
 public class QueryProbe {
@@ -164,7 +221,7 @@ func TestAnalyzeQuerySemanticsAddsSystemFieldsToCustomObjects(t *testing.T) {
 	source := `
 public class QueryProbe {
   public void run() {
-    List<Thing__c> things = [SELECT Id, Name, CreatedDate, LastActivityDate, IsDeleted, CustomFlag__c, RecordType.Name FROM Thing__c ALL ROWS];
+    List<Thing__c> things = [SELECT Id, Name, Owner.Name, Owner.Type, CreatedDate, LastActivityDate, IsDeleted, CustomFlag__c, RecordType.Name FROM Thing__c ALL ROWS];
   }
 }
 `
@@ -173,9 +230,7 @@ public class QueryProbe {
 			Name: "Thing__c",
 			Fields: []schema.Field{
 				{Name: "CustomFlag__c", Type: "Checkbox"},
-			},
-			RecordTypes: []schema.RecordType{
-				{DeveloperName: "Default"},
+				{Name: "RecordTypeId", Type: "Lookup"},
 			},
 		},
 	}})
@@ -185,7 +240,29 @@ public class QueryProbe {
 	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "CreatedDate")
 	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "LastActivityDate")
 	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "IsDeleted")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_RELATIONSHIP", "Owner.Name")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "Owner.Type")
 	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_RELATIONSHIP", "RecordType.Name")
+}
+
+func TestAnalyzeQuerySemanticsAcceptsSetupOwnerTypeOnHierarchySettings(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<Settings__c> settings = [SELECT SetupOwner.Name, SetupOwner.Type FROM Settings__c];
+  }
+}
+`
+	result := analyzeQueryProbe(t, source, schema.Schema{Objects: []schema.Object{{
+		Name:               "Settings__c",
+		CustomSettingsType: "Hierarchy",
+		Fields: []schema.Field{
+			{Name: "SetupOwnerId", Type: "Lookup"},
+		},
+	}}})
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_RELATIONSHIP", "SetupOwner.Name")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "SetupOwner.Type")
 }
 
 func TestAnalyzeQuerySemanticsAddsFeatureAndMetadataStandardFields(t *testing.T) {

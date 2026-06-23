@@ -95,7 +95,11 @@ func TestGeneratedSystemStubsReproduceFromGenerator(t *testing.T) {
 		t.Skipf("node unavailable: %v", err)
 	}
 	output := filepath.Join(t.TempDir(), "system_stub_symbols_generated.go")
-	cmd := exec.Command(node, filepath.Join(root, "scripts", "generate-system-stub-symbols.mjs"), inputRoot, output)
+	args := []string{filepath.Join(root, "scripts", "generate-system-stub-symbols.mjs"), inputRoot, output}
+	if contracts := filepath.Join(root, "testdata", "generated", "apex_docs_contracts.json"); regularFileExists(contracts) {
+		args = append(args, contracts)
+	}
+	cmd := exec.Command(node, args...)
 	cmd.Dir = root
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("generate-system-stub-symbols failed: %v\n%s", err, out)
@@ -111,6 +115,11 @@ func TestGeneratedSystemStubsReproduceFromGenerator(t *testing.T) {
 	if !bytes.Equal(generated, checkedIn) {
 		t.Fatal("internal/typesys/system_stub_symbols_generated.go does not match scripts/generate-system-stub-symbols.mjs output")
 	}
+}
+
+func regularFileExists(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && !info.IsDir()
 }
 
 func TestGenericSObjectHandlersAvoidStandardObjectShortcuts(t *testing.T) {

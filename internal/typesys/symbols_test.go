@@ -30,6 +30,29 @@ func TestBuildIndex(t *testing.T) {
 	}
 }
 
+func TestBuildParsesNamespaceTokenApex(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "UsesTokens.cls")
+	writeFile(t, path, `public class UsesTokens {
+  public void run() {
+    %%%NAMESPACE_DOT%%%UTIL_CustomSettings_API.getSettingsForTests(
+      new %%%NAMESPACE%%%Hierarchy_Settings__c(%%%NAMESPACE%%%Disable_Preferred_Email_Enforcement__c = false)
+    );
+  }
+}`)
+
+	idx := Build(project.Project{
+		Root:      root,
+		Namespace: "",
+		ApexFiles: []string{path},
+	}, schema.Schema{})
+	for _, diag := range idx.Diagnostics {
+		if diag.Code == "APEXPARSE001" {
+			t.Fatalf("unexpected parse diagnostic: %#v", diag)
+		}
+	}
+}
+
 func TestBuildIndexDuplicateType(t *testing.T) {
 	root := t.TempDir()
 	first := filepath.Join(root, "one.cls")
@@ -361,6 +384,62 @@ public class Hello {
 	}
 }
 
+func TestBuildIndexPreservesGenericInterfacesWithCommaArgs(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "MapBatch.cls")
+	writeFile(t, classPath, `
+public class MapBatch implements Database.Batchable<Map<String, Object>>,
+    Database.Stateful {
+}
+`)
+
+	idx := Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{})
+	if idx.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", idx.Diagnostics)
+	}
+	var found TypeSymbol
+	for _, typ := range idx.Types {
+		if typ.Name == "MapBatch" {
+			found = typ
+			break
+		}
+	}
+	if len(found.Interfaces) != 2 ||
+		found.Interfaces[0] != "Database.Batchable<Map<String, Object>>" ||
+		found.Interfaces[1] != "Database.Stateful" {
+		t.Fatalf("interfaces = %#v", found.Interfaces)
+	}
+}
+
+func TestBuildIndexParsesInheritanceAfterCommentBrace(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "PostInstall.cls")
+	writeFile(t, classPath, `
+@SuppressWarnings('PMD.AvoidGlobalModifier')
+/**
+ * @author {@link Example}
+ */
+global class PostInstall implements InstallHandler {
+  global void onInstall(InstallContext context) {}
+}
+`)
+
+	idx := Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{})
+	if idx.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", idx.Diagnostics)
+	}
+	var found TypeSymbol
+	for _, typ := range idx.Types {
+		if typ.Name == "PostInstall" {
+			found = typ
+			break
+		}
+	}
+	if len(found.Interfaces) != 1 || found.Interfaces[0] != "InstallHandler" {
+		t.Fatalf("interfaces = %#v", found.Interfaces)
+	}
+}
+
 func TestBuildIndexPromotesNestedTypes(t *testing.T) {
 	root := t.TempDir()
 	classPath := filepath.Join(root, "Outer.cls")
@@ -420,6 +499,42 @@ func TestBuildIndexAddsDataWeaveScriptResources(t *testing.T) {
 		if typ.SuperClass != "DataWeave.Script" || len(typ.Members) != 2 {
 			t.Fatalf("type %s = %#v", name, typ)
 		}
+	}
+}
+
+func TestBuildIndexAddsFlowInterviewTypes(t *testing.T) {
+	root := t.TempDir()
+	flowPath := filepath.Join(root, "force-app/main/default/flows/Calculate_discounts.flow-meta.xml")
+	writeFile(t, flowPath, "<Flow/>")
+
+	idx := Build(project.Project{
+		Root:      root,
+		FlowFiles: []string{flowPath},
+	}, schema.Schema{})
+	if idx.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", idx.Diagnostics)
+	}
+	types := map[string]TypeSymbol{}
+	for _, typ := range idx.Types {
+		types[typ.Name] = typ
+	}
+	typ, ok := types["Flow.Interview.Calculate_discounts"]
+	if !ok {
+		t.Fatalf("missing flow interview type in %#v", idx.Types)
+	}
+	if typ.SuperClass != "Flow.Interview" {
+		t.Fatalf("type = %#v", typ)
+	}
+	var found bool
+	for _, member := range typ.Members {
+		if member.Kind == apexast.DeclarationConstructor &&
+			len(member.Parameters) == 1 &&
+			member.Parameters[0].Type == "Map<String,Object>" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("members = %#v", typ.Members)
 	}
 }
 
