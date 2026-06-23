@@ -6046,9 +6046,9 @@ private class JSONPropertySetterTest {
 func TestRunJSONDeserializeUntypedMapsMatchMapStringObjectInstanceOf(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/classes/JSOBasePkgntypedMapInstanceOfTest.cls"), `
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/JSONUntypedMapInstanceOfTest.cls"), `
 @isTest
-private class JSOBasePkgntypedMapInstanceOfTest {
+private class JSONUntypedMapInstanceOfTest {
   @isTest static void untypedNestedMapsAreMapStringObject() {
     List<Object> rows = (List<Object>)JSON.deserializeUntyped(
       '[{"payload":{"id":"V-1","settings":{"organizationId":"ORG"}}}]'

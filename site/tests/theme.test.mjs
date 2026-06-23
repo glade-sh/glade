@@ -27,6 +27,7 @@ const highlight = await readFile(new URL("../docs-src/public/js/highlight.js", i
 const homeScript = await readFile(new URL("../docs-src/public/js/home.js", import.meta.url), "utf8");
 const ciArtifacts = await readFile(new URL("../docs-src/guide/ci-artifacts.md", import.meta.url), "utf8");
 const automation = await readFile(new URL("../docs-src/guide/automation.md", import.meta.url), "utf8");
+const configuration = await readFile(new URL("../docs-src/guide/configuration.md", import.meta.url), "utf8");
 const installation = await readFile(new URL("../docs-src/guide/installation.md", import.meta.url), "utf8");
 const overview = await readFile(new URL("../docs-src/guide/overview.md", import.meta.url), "utf8");
 const quickstart = await readFile(new URL("../docs-src/guide/quickstart.md", import.meta.url), "utf8");
@@ -887,11 +888,17 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(supportMap, /\| ApexPages and PageReference \| Supported controller rows, hosted rendering gaps \| 15 supported, 2 unsupported \/ 17 tracked \|/);
   assert.match(supportMap, /\| UserInfo, URL, Label, and TrailblazerIdentity \| Broad local capability \| 24 supported \/ 24 tracked \|/);
   assert.match(supportMap, /\| Type, FeatureManagement, and Exception \| Supported local rows, hosted package gap \| 8 supported, 1 unsupported \/ 9 tracked \|/);
+  assert.match(supportMap, /\| Local test harness and request context \| Supported local rows, hosted and malformed-input gaps \| 32 supported, 2 unsupported \/ 34 tracked \|/);
   assert.match(supportMap, /\| Hosted-service and platform boundary rows \| Requires Salesforce, plus stable diagnostics \| 1 supported diagnostic row, 2 unsupported \/ 3 tracked \|/);
   assert.match(supportMap, /## Capability claims/);
   assert.match(supportMap, /\| Capability features marked `supported` \| 30 \|/);
   assert.match(supportMap, /\| Capability features marked `partial` \| 0 \|/);
+  assert.match(supportMap, /\| Standard-library rows marked `supported` \| 267 \|/);
   assert.match(supportMap, /\| Standard-library rows marked `unsupported` \| 19 \|/);
+  assert.match(supportMap, /Approval list\s+processing/);
+  assert.match(configuration, /namespaceRemaps: \[\]/);
+  assert.match(configuration, /Namespace remaps/);
+  assert.match(configuration, /BasePkg:stagepkg/);
   assert.doesNotMatch(supportMap, /Approval\.process is not supported/);
   assert.match(installation, /Recommended path: use the one-line installer/);
   assert.match(installation, /class="docs-install-grid"/);

@@ -24,6 +24,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Approval | `Approval.process hosted approval engine routing` | `unsupported` | Hosted criteria evaluation, queue/group approver routing, and live approval service routing require Salesforce approval services. |
 | Approval | `Approval.process(Approval.ProcessRequest)` | `supported` | Runs a seeded local ProcessDefinition, ProcessNode, ProcessInstance, and ProcessInstanceWorkitem engine for submit, approve, and reject request shapes. |
 | Approval | `Approval.process(Approval.ProcessRequest, Boolean)` | `supported` | Runs the seeded local approval engine with allOrNone error shaping for submit, approve, and reject request shapes. |
+| Approval | `Approval.process(List<Approval.ProcessRequest>)` | `supported` | Runs ordered local submit and workitem request lists and rolls back earlier successful local approval records when the default allOrNone path fails later in the list. |
+| Approval | `Approval.process(List<Approval.ProcessRequest>, Boolean)` | `supported` | Runs ordered local submit and workitem request lists, returning per-request errors when allOrNone is false and rolling back the local list transaction when allOrNone is true. |
 | Assert | `Assert.areEqual` | `supported` | Routes through local assertion failures with optional message text. |
 | Assert | `Assert.areNotEqual` | `supported` | Routes through local assertion failures with optional message text. |
 | Assert | `Assert.fail` | `supported` | Raises local System.AssertException with optional message text. |

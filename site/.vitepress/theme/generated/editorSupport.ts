@@ -242,7 +242,9 @@ export const editorSupportCatalog = {
           "source": "docs/STDLIB_COVERAGE.md",
           "signatures": [
             "process(Approval.ProcessRequest)",
-            "process(Approval.ProcessRequest, Boolean)"
+            "process(Approval.ProcessRequest, Boolean)",
+            "process(List<Approval.ProcessRequest>)",
+            "process(List<Approval.ProcessRequest>, Boolean)"
           ]
         }
       ]

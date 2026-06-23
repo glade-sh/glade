@@ -100,7 +100,7 @@ UnsupportedFeature: unsupported call "Answers.findSimilar local Answers zone sea
 | Apex front end | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Parser, project loader, symbols, semantic checks, LSP, and diagnostics form the starting point. |
 | Runtime and tests | <span class="docs-status-chip docs-status-supported">Runs locally</span> | VM execution, local tests, SObjects, SOQL, DML, triggers, async drain, and local storage are the core contract. |
 | Local Salesforce API | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Useful for local REST, SObject CRUD/query, record count, Tooling `executeAnonymous`, and local source/schema metadata flows. It is not a hosted-org replacement. |
-| Standard library | <span class="docs-status-chip docs-status-supported">Runs locally</span> | The checked standard-library report has 265 supported rows, 19 unsupported hosted-boundary rows, and 0 partial rows. |
+| Standard library | <span class="docs-status-chip docs-status-supported">Runs locally</span> | The checked standard-library report has 267 supported rows, 19 unsupported hosted-boundary rows, and 0 partial rows. |
 | Platform service APIs | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Deterministic DTO and harness rows are modeled when the capability report says supported. Hosted service execution stays explicitly unsupported. |
 
 ## Standard library families
@@ -123,13 +123,14 @@ state.
 | Search and SOSL helpers | Supported local rows, hosted ranking gap | 11 supported, 1 unsupported / 12 tracked |
 | UserInfo, URL, Label, and TrailblazerIdentity | Broad local capability | 24 supported / 24 tracked |
 | Type, FeatureManagement, and Exception | Supported local rows, hosted package gap | 8 supported, 1 unsupported / 9 tracked |
-| Local test harness and request context | Supported local rows, hosted and malformed-input gaps | 30 supported, 2 unsupported / 32 tracked |
+| Local test harness and request context | Supported local rows, hosted and malformed-input gaps | 32 supported, 2 unsupported / 34 tracked |
 | Hosted-service and platform boundary rows | Requires Salesforce, plus stable diagnostics | 1 supported diagnostic row, 2 unsupported / 3 tracked |
 
-The local test harness and request-context group includes Approval,
-BusinessHours, QuickAction, Request, UIRequest, Sandbox, Schedulable, and
-AccessLevel rows. The hosted-service boundary group includes Answers and
-ResetPasswordResult rows plus the stable UnsupportedFeature diagnostic row.
+The local test harness and request-context group includes Approval list
+processing, BusinessHours, QuickAction, Request, UIRequest, Sandbox,
+Schedulable, and AccessLevel rows. The hosted-service boundary group includes
+Answers and ResetPasswordResult rows plus the stable UnsupportedFeature
+diagnostic row.
 
 ## Capability claims
 
@@ -141,7 +142,7 @@ Every remaining hosted-only behavior is split into an explicit unsupported row.
 | Capability features marked `supported` | 30 |
 | Capability features marked `partial` | 0 |
 | Capability features marked `unsupported` | 2 |
-| Standard-library rows marked `supported` | 265 |
+| Standard-library rows marked `supported` | 267 |
 | Standard-library rows marked `partial` | 0 |
 | Standard-library rows marked `unsupported` | 19 |
 
