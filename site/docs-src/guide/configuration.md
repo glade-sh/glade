@@ -50,6 +50,7 @@ project:
   root: .
   packageDirs: [force-app]
   defaultNamespace: pkg
+  namespaceRemaps: []
   managedPackageDependencies: []
   packageShims: []
 org:
@@ -61,9 +62,26 @@ org:
 | `project.root` | Project root. Relative paths resolve from `glade.yml`. |
 | `project.packageDirs` | Source package directories. Overrides `sfdx-project.json`. |
 | `project.defaultNamespace` | Default namespace for package-local code. |
+| `project.namespaceRemaps` | Namespace aliases for local source dependencies. |
 | `project.managedPackageDependencies` | Managed package source or artifact references. |
 | `project.packageShims` | Local source roots that provide test/runtime bodies for captured package artifacts. |
 | `org.features` | Scratch-org style features for local runtime behavior. |
+
+## Namespace remaps
+
+Use a namespace remap when source-backed package code still names its production
+namespace, but the local consumer depends on that code under another namespace.
+Glade applies the remap in memory while reading dependency Apex and metadata.
+Files on disk stay unchanged.
+
+```yaml
+project:
+  namespaceRemaps: ["BasePkg:stagepkg"]
+  managedPackageDependencies: ["stagepkg:../base-source"]
+```
+
+Apex string literals are remapped too. Dynamic SOQL and metadata names see the
+runtime namespace in the local test and exec loop.
 
 ## Package artifacts
 

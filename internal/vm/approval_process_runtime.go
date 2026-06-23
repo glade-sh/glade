@@ -28,10 +28,16 @@ func (vm *VM) executeApprovalProcess(args []Value) (Value, error) {
 }
 
 func (vm *VM) executeApprovalProcessList(requests Value, allOrNone bool) (Value, error) {
+	rollback := vm.beginDMLRollbackPoint(allOrNone, false)
+	sideEffects := vm.snapshotSideEffects()
 	results := typedList("List<Approval.ProcessResult>")
 	for _, request := range requests.List {
 		result, err := vm.executeApprovalProcessRequest(request, allOrNone)
 		if err != nil {
+			if allOrNone {
+				vm.restoreDMLRollbackPoint(rollback)
+				vm.restoreSideEffects(sideEffects)
+			}
 			return Null, err
 		}
 		results.List = append(results.List, result)

@@ -224,6 +224,33 @@ func TestExecApprovalProcessLocalEngineListAllOrNoneFalseReturnsPerRequestResult
 	}
 }
 
+func TestExecApprovalProcessLocalEngineListAllOrNoneTrueRollsBackEarlierRequests(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	testSeedApprovalMetadata(t, &org)
+	testSeedApprovalAccount(t, &org, "001000000000101AAA", "First")
+	machine.SetOrg(&org)
+
+	good := Object("Approval.ProcessSubmitRequest")
+	good.Fields["ObjectId"] = platformScalar("Id", "001000000000101AAA")
+	good.Fields["SkipEntryCriteria"] = Bool(true)
+	good.Fields["NextApproverIds"] = List(platformScalar("Id", "005000000000002"))
+	bad := Object("Approval.ProcessSubmitRequest")
+	requests := typedList("List<Approval.ProcessRequest>")
+	requests.List = append(requests.List, good, bad)
+
+	_, err := machine.executeApprovalProcess([]Value{requests})
+	if err == nil {
+		t.Fatal("expected allOrNone=true list failure")
+	}
+	if object, ok := machine.Org.Objects["ProcessInstance"]; ok && len(object.Records) != 0 {
+		t.Fatalf("ProcessInstance records survived rollback: %#v", object.Records)
+	}
+	if object, ok := machine.Org.Objects["ProcessInstanceWorkitem"]; ok && len(object.Records) != 0 {
+		t.Fatalf("ProcessInstanceWorkitem records survived rollback: %#v", object.Records)
+	}
+}
+
 func TestExecApprovalProcessHostedRoutingStaysUnsupported(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'Needs Approval');

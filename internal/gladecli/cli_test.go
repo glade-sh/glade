@@ -4453,7 +4453,7 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	}
 }
 
-func TestRunDBQueryJSOBasePkgsesSOQLRuntimeAndLimit(t *testing.T) {
+func TestRunDBQueryJSONUsesSOQLRuntimeAndLimit(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "glade.db")
 	fixturePath := filepath.Join(dir, "fixture.json")
