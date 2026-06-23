@@ -4,6 +4,46 @@
 
 No changes yet.
 
+## v0.2.5 - 2026-06-23
+
+Glade v0.2.5 ships the configuration, package-contract, and Salesforce surface
+coverage changes after v0.2.4.
+
+Project configuration and packages:
+
+- Added `project.namespaceRemaps` so source-backed package dependencies can keep
+  production namespace tokens while running locally under a different dependency
+  namespace.
+- Added managed-package artifact dependencies and `packageShims` so a project
+  can compile against captured package contracts while supplying local test or
+  runtime bodies only where needed.
+- Documented `glade package capture` as the product bridge to the
+  `@glade/orgpackage` plugin, keeping live org capture in first-party tooling
+  while base Glade owns artifact loading, validation, diffing, and runtime use.
+
+Semantic checks and runtime coverage:
+
+- Expanded schema inference for package-style workspaces, relationship fields,
+  standard SObjects, change events, namespace-token fields, and external managed
+  package shapes.
+- Closed the checked Apex docs surface contracts by adding generated contract
+  data and platform symbol coverage for documented `System` and `Schema` type
+  spellings.
+- Broadened platform signatures, inherited member lookup, nested type
+  resolution, package access checks, and SObject field/member handling for large
+  namespaced source trees.
+- Added Approval process runtime coverage and refreshed generated editor
+  support data for the expanded platform surface.
+
+Release engineering:
+
+- Added release index generation and hardened release workflow publishing for
+  `index.json`, per-version manifests, checksums, and latest manifests.
+- Kept support-map and configuration site docs aligned with the current
+  product/plugin boundary.
+- Reduced redundant generated sema coverage test work so the full Go suite stays
+  under the default package timeout on release hardware.
+
 ## v0.2.4 - 2026-06-21
 
 Glade v0.2.4 ships the semantic-check and release-hardening fixes after

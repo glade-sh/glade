@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -5,9 +6,7 @@ import { fileURLToPath } from "node:url";
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const siteRoot = path.resolve(scriptDir, "..");
 const repoRoot = path.resolve(siteRoot, "..");
-const toolsRoot = process.env.GLADE_TOOLS_DIR
-  ? path.resolve(process.env.GLADE_TOOLS_DIR)
-  : path.resolve(repoRoot, "..", "glade-tools");
+const toolsRoot = resolveToolsRoot();
 const outDir = path.join(siteRoot, "docs-src", "maintainer", "tools");
 const check = process.argv.includes("--check");
 
@@ -26,6 +25,18 @@ const routeBySource = new Map([
   ["docs/visualforce-oracle.md", "/maintainer/tools/visualforce-oracle"],
   ["docs/reports/lwc-shell-oracle-support.md", "/maintainer/tools/lwc-shell-oracle-support"]
 ]);
+
+function resolveToolsRoot() {
+  if (process.env.GLADE_TOOLS_DIR) return path.resolve(process.env.GLADE_TOOLS_DIR);
+
+  const candidates = [path.resolve(repoRoot, "..", "glade-tools")];
+  const repoParent = path.dirname(repoRoot);
+  if (path.basename(repoParent) === ".worktrees") {
+    candidates.push(path.resolve(repoParent, "..", "..", "glade-tools"));
+  }
+
+  return candidates.find((candidate) => existsSync(path.join(candidate, "README.md"))) ?? candidates[0];
+}
 
 function normalizeMarkdown(input, source) {
   let markdown = input.replace(/\r\n/g, "\n").trimEnd();
