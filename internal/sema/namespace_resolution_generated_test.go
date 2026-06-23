@@ -1,7 +1,9 @@
 package sema
 
 import (
+	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -125,41 +127,38 @@ global with sharing class RestResourceHelper {
 }
 
 func TestAnalyzeAllowsEveryDocumentedSystemQualifiedTypeSpelling(t *testing.T) {
+	typeNames := make([]string, 0, len(typesys.StandardSystemNamespaceTypeNames()))
 	for _, name := range typesys.StandardSystemNamespaceTypeNames() {
-		t.Run(name, func(t *testing.T) {
-			typeName := "System." + name
-			result := analyzeSingleGeneratedClass(t, "UsesSystemQualified.cls", namespaceResolutionSourceForType("UsesSystemQualified", typeName))
-			if result.HasErrors() {
-				t.Fatalf("unexpected diagnostics for %s: %#v", typeName, result.Diagnostics)
-			}
-		})
+		typeNames = append(typeNames, "System."+name)
+	}
+	result := analyzeSingleGeneratedClass(t, "UsesSystemQualified.cls", namespaceResolutionSourceForTypes("UsesSystemQualified", typeNames))
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics for documented System-qualified types: %#v", result.Diagnostics)
 	}
 }
 
 func TestAnalyzeAllowsEveryDocumentedSchemaImplicitTypeSpelling(t *testing.T) {
-	for _, name := range typesys.StandardSchemaNamespaceTypeNames() {
-		t.Run(name, func(t *testing.T) {
-			result := analyzeSingleGeneratedClass(t, "UsesSchemaImplicit.cls", namespaceResolutionSourceForType("UsesSchemaImplicit", name))
-			if result.HasErrors() {
-				t.Fatalf("unexpected diagnostics for Schema implicit %s: %#v", name, result.Diagnostics)
-			}
-		})
+	result := analyzeSingleGeneratedClass(t, "UsesSchemaImplicit.cls", namespaceResolutionSourceForTypes("UsesSchemaImplicit", typesys.StandardSchemaNamespaceTypeNames()))
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics for documented Schema implicit types: %#v", result.Diagnostics)
 	}
 }
 
-func namespaceResolutionSourceForType(className, typeName string) string {
-	return `
-public class ` + className + ` {
-  private ` + typeName + ` fieldValue;
-  public ` + typeName + ` roundTrip(` + typeName + ` input) {
-    ` + typeName + ` localValue = input;
-    Object obj = localValue;
-    ` + typeName + ` castValue = (` + typeName + `)obj;
-    List<` + typeName + `> values = new List<` + typeName + `>();
-    return castValue;
-  }
-}
-`
+func namespaceResolutionSourceForTypes(className string, typeNames []string) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "\npublic class %s {\n", className)
+	for i, typeName := range typeNames {
+		fmt.Fprintf(&b, "  private %s fieldValue%d;\n", typeName, i)
+		fmt.Fprintf(&b, "  public %s roundTrip%d(%s input) {\n", typeName, i, typeName)
+		fmt.Fprintf(&b, "    %s localValue%d = input;\n", typeName, i)
+		fmt.Fprintf(&b, "    Object obj%d = localValue%d;\n", i, i)
+		fmt.Fprintf(&b, "    %s castValue%d = (%s)obj%d;\n", typeName, i, typeName, i)
+		fmt.Fprintf(&b, "    List<%s> values%d = new List<%s>();\n", typeName, i, typeName)
+		fmt.Fprintf(&b, "    return castValue%d;\n", i)
+		fmt.Fprintln(&b, "  }")
+	}
+	fmt.Fprintln(&b, "}")
+	return b.String()
 }
 
 func analyzeSingleGeneratedClass(t *testing.T, fileName, source string) Result {
