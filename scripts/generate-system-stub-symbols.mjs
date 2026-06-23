@@ -46,14 +46,20 @@ function splitTopLevel(value, separator = ",") {
 }
 
 function normalizeType(typeName) {
-  let out = (typeName || "").trim();
-  if (!out) return "Object";
+ let out = (typeName || "").trim();
+ if (!out) return "Object";
   out = out.replace(/\bAPEX_OBJECT\b/g, "Object");
   out = out.replace(/\bANY\b/g, "Object");
   out = out.replace(/\bVoid\b/g, "void");
   out = out.replace(/\bSystem\.([A-Za-z_][A-Za-z0-9_]*)\b/g, "$1");
   out = out.replace(/\s+/g, "");
-  return out;
+ return out;
+}
+
+function normalizeContractType(typeName) {
+  const raw = (typeName || "").trim();
+  if (!raw) return "";
+  return normalizeType(raw);
 }
 
 function applySignatureOverrides(spec) {
@@ -80,12 +86,12 @@ function loadDocsContracts(filePath) {
     const contract = ensure(type.name);
     if (!contract) continue;
     for (const prop of type.properties || []) {
-      contract.properties.push({ name: prop.name, type: normalizeType(prop.type || prop.propertyType || prop.returnType), static: Boolean(prop.static) });
+      contract.properties.push({ name: prop.name, type: normalizeContractType(prop.type || prop.propertyType || prop.returnType), static: Boolean(prop.static) });
     }
     for (const method of type.methods || []) {
       contract.methods.push({
         name: method.name,
-        returnType: normalizeType(method.returnType || method.type),
+        returnType: normalizeContractType(method.returnType || method.type),
         parameters: contractParameterSpecs(method.parameters || method.parameterTypes || []),
         static: Boolean(method.static),
       });
@@ -102,12 +108,14 @@ function loadDocsContracts(filePath) {
     if (!contract) continue;
     for (const member of doc.members || doc.Members || []) {
       const kind = String(member.kind || "").toLowerCase();
-      const type = normalizeType(member.propertyType || member.returnType || member.type || "");
+      const type = normalizeContractType(member.propertyType || member.returnType || member.type || "");
       const params = contractParameterSpecs(member.parameters || []);
       if (kind === "property") {
         contract.properties.push({ name: member.name, type, static: Boolean(member.static) });
       } else if (kind === "constructor") {
-        contract.constructors.push(params);
+        if (params.length > 0 || signatureHasEmptyParameterList(member.signature || "")) {
+          contract.constructors.push(params);
+        }
       } else if (kind === "method") {
         contract.methods.push({ name: member.name, returnType: type, parameters: params, static: Boolean(member.static) });
       }
@@ -119,8 +127,8 @@ function loadDocsContracts(filePath) {
 function contractParameterSpecs(parameters) {
   return (parameters || [])
     .map((param, index) => {
-      if (typeof param === "string") return { name: `arg${index}`, type: normalizeType(param) };
-      return { name: param.name || `arg${index}`, type: normalizeType(param.type || param.Type || "") };
+      if (typeof param === "string") return { name: `arg${index}`, type: normalizeContractType(param) };
+      return { name: param.name || `arg${index}`, type: normalizeContractType(param.type || param.Type || "") };
     })
     .filter((param) => param.type);
 }
@@ -132,6 +140,7 @@ function applyDocsContracts(specs, contracts) {
     let spec = byName.get(contract.name.toLowerCase());
     if (!spec) {
       spec = emptySpec(contract.name);
+      spec.superClass = "";
       specs.push(spec);
       byName.set(spec.name.toLowerCase(), spec);
     }
@@ -145,30 +154,59 @@ function applyDocsContracts(specs, contracts) {
       spec.properties.push({ name: contractProp.name, type: contractProp.type, static: Boolean(contractProp.static) });
     }
     for (const contractMethod of contract.methods) {
-      if (!contractMethod.name) continue;
-      const existing = spec.methods.find((method) =>
-        method.name.toLowerCase() === contractMethod.name.toLowerCase() &&
-        Boolean(method.static) === Boolean(contractMethod.static) &&
-        parameterTypesKey(method.parameters) === parameterTypesKey(contractMethod.parameters));
+      if (!contractMethod.name || !contractMethod.returnType) continue;
+      const existing = findContractMethodMatch(spec.methods, contractMethod);
       if (existing) {
+        contractMethod.name = existing.name;
+        contractMethod.static = existing.static;
         if (contractMethod.returnType && isUntypedApexType(existing.returnType)) existing.returnType = contractMethod.returnType;
+        continue;
+      }
+      if (isLowInformationContractMethod(contractMethod) &&
+        spec.methods.some((method) => method.name.toLowerCase() === contractMethod.name.toLowerCase())) {
         continue;
       }
       if (contractMethod.returnType) spec.methods.push(contractMethod);
     }
     for (const ctor of contract.constructors) {
-      if (!spec.constructors.some((existing) => constructorKey(existing) === constructorKey(ctor))) {
-        spec.constructors.push(ctor);
-      }
+      mergeContractConstructor(spec, ctor);
     }
     dedupeSpec(spec);
   }
   return specs.sort((a, b) => a.name.localeCompare(b.name));
 }
 
+function signatureHasEmptyParameterList(signature) {
+  const match = String(signature || "").match(/\(([^)]*)\)/);
+  return Boolean(match && match[1].trim() === "");
+}
+
+function mergeContractConstructor(spec, ctor) {
+  if (spec.constructors.some((existing) => constructorKey(existing) === constructorKey(ctor))) {
+    return;
+  }
+  const weakSameArityIndex = spec.constructors.findIndex((existing) => existing.length === ctor.length && isWeakParameterList(existing));
+  if (weakSameArityIndex >= 0 && !isWeakParameterList(ctor)) {
+    spec.constructors[weakSameArityIndex] = ctor;
+    return;
+  }
+  if (isWeakParameterList(ctor) && spec.constructors.some((existing) => existing.length === ctor.length)) {
+    return;
+  }
+  spec.constructors.push(ctor);
+}
+
 function isUntypedApexType(typeName) {
   const key = normalizeType(typeName).toLowerCase();
   return key === "" || key === "object" || key === "apex_object" || key === "any";
+}
+
+function isWeakParameterList(parameters) {
+  return parameters.every((param) => isUntypedApexType(param.type) || isGenericPlaceholderType(param.type));
+}
+
+function isGenericPlaceholderType(typeName) {
+  return /^[A-Z]$/.test(normalizeType(typeName));
 }
 
 function ensureProperty(spec, name, type, isStatic = false) {
@@ -501,6 +539,26 @@ function parameterTypesKey(params) {
   return params.map((p) => p.type.toLowerCase()).join(",");
 }
 
+function findContractMethodMatch(methods, contractMethod) {
+  const wantedName = contractMethod.name.toLowerCase();
+  const wantedParameters = parameterTypesKey(contractMethod.parameters);
+  return methods.find((method) =>
+    method.name.toLowerCase() === wantedName &&
+      Boolean(method.static) === Boolean(contractMethod.static) &&
+      parameterTypesKey(method.parameters) === wantedParameters) ||
+    methods.find((method) =>
+      method.name.toLowerCase() === wantedName &&
+      parameterTypesKey(method.parameters) === wantedParameters) ||
+    methods.find((method) =>
+      method.name.toLowerCase() === wantedName &&
+      method.parameters.length === contractMethod.parameters.length &&
+      contractMethod.parameters.some((param) => isGenericPlaceholderType(param.type)));
+}
+
+function isLowInformationContractMethod(method) {
+  return (!method.returnType || isUntypedApexType(method.returnType)) && method.parameters.length === 0;
+}
+
 function methodKey(method) {
   return `${method.name.toLowerCase()}|${method.static}|${parameterTypesKey(method.parameters)}|${method.returnType.toLowerCase()}`;
 }
@@ -735,11 +793,36 @@ function addReferencedPlaceholders(specs) {
   return specs.concat([...additions.values()]).sort((a, b) => a.name.localeCompare(b.name));
 }
 
+function applyGeneratedCompatibilityOverrides(specs) {
+  const byName = new Map(specs.map((spec) => [spec.name.toLowerCase(), spec]));
+  forcePropertyType(byName, "RestResponse", "responseBody", false, "Object");
+  forcePropertyType(byName, "ConnectApi.OrchestrationStageInstance", "status", false, "ConnectApi.OrchestrationInstanceStatus");
+  forcePropertyType(byName, "ConnectApi.OrchestrationStepInstance", "status", false, "ConnectApi.OrchestrationInstanceStatus");
+  forcePropertyType(byName, "ConnectApi.QuestionAndAnswersSuggestions", "articles", false, "Object");
+  forcePropertyType(byName, "ConnectApi.QuestionAndAnswersSuggestions", "questions", false, "Object");
+  for (const spec of specs) dedupeSpec(spec);
+  return specs;
+}
+
+function forcePropertyType(byName, specName, propertyName, isStatic, typeName) {
+  const spec = byName.get(specName.toLowerCase());
+  if (!spec) return;
+  const prop = spec.properties.find((candidate) =>
+    candidate.name.toLowerCase() === propertyName.toLowerCase() &&
+      Boolean(candidate.static) === Boolean(isStatic));
+  if (prop) {
+    if (!isUntypedApexType(prop.type)) return;
+    prop.type = typeName;
+    return;
+  }
+  spec.properties.push({ name: propertyName, type: typeName, static: Boolean(isStatic) });
+}
+
 const docsContracts = loadDocsContracts(docsContractFile);
-const specs = addReferencedPlaceholders(applyDocsContracts(materializeNestedStubSpecs(ensureConnectApiStubShape(collectStubFiles(inputRoot)
+const specs = addReferencedPlaceholders(applyGeneratedCompatibilityOverrides(applyDocsContracts(materializeNestedStubSpecs(ensureConnectApiStubShape(collectStubFiles(inputRoot)
   .map(parseStub)
   .filter(Boolean)
-  .sort((a, b) => a.name.localeCompare(b.name)))), docsContracts));
+  .sort((a, b) => a.name.localeCompare(b.name)))), docsContracts)));
 
 let out = `// Code generated by scripts/generate-system-stub-symbols.mjs; DO NOT EDIT.\n\n`;
 out += `package typesys\n\n`;

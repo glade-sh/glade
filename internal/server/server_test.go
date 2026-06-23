@@ -3516,7 +3516,8 @@ global class WidgetResource {
   }
   @HttpPost global static void postIt() {
     RestContext.response.statusCode = 201;
-    RestContext.response.responseBody = 'created:' + RestContext.request.requestURI + ':' + RestContext.request.remoteAddress;
+    RestContext.response.addHeader('Content-Type', 'text/plain');
+    RestContext.response.responseBody = Blob.valueOf('created:' + RestContext.request.requestURI + ':' + RestContext.request.remoteAddress);
   }
 }
 `,

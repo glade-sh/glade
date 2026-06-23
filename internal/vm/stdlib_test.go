@@ -3393,6 +3393,34 @@ System.assertEquals('FIELD_CUSTOM_VALIDATION_EXCEPTION', code.toString());
 	}
 }
 
+func TestExecGeneratedPlatformEnumValuesForSurfacePacket(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assert(AccessType.values().size() >= 4);
+System.assert(CallbackStatus.values().size() > 0);
+System.assert(CustomizationType.values().size() > 0);
+System.assert(DomainType.values().size() > 0);
+System.assert(JSONToken.values().size() > 0);
+System.assert(LoggingLevel.values().size() >= 8);
+System.assert(OrgMetricPublishTypeEnum.values().size() > 0);
+System.assert(OrgMetricServiceEnum.values().size() > 0);
+System.assert(OrgMetricTypeEnum.values().size() > 0);
+System.assert(ParentJobResult.values().size() > 0);
+System.assert(Quiddity.values().size() > 0);
+System.assert(RoundingMode.values().size() >= 8);
+System.assert(SetupScope.values().size() > 0);
+System.assert(StatusCode.values().size() > 0);
+System.assert(TriggerOperation.values().size() >= 7);
+System.assert(XmlTag.values().size() > 0);
+System.assertEquals(StatusCode.FIELD_CUSTOM_VALIDATION_EXCEPTION, StatusCode.valueOf('FIELD_CUSTOM_VALIDATION_EXCEPTION'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecIdComparisonUsesLexicalOrder(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id older = '001000000000001';
