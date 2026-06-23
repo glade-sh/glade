@@ -382,7 +382,7 @@ func (s *Server) writeApexRestResponse(w http.ResponseWriter, response, returnVa
 		raw, contentType := apexRestRawBody(body)
 		if contentType != "" {
 			w.Header().Set("Content-Type", contentType)
-		} else {
+		} else if w.Header().Get("Content-Type") == "" {
 			w.Header().Del("Content-Type")
 		}
 		w.WriteHeader(status)

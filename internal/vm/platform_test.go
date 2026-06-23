@@ -2660,13 +2660,14 @@ assignment.label = 'Submit Content';
 assignment.screenFlowId = '3009A0000000JxIQAU';
 assignment.screenFlowInputParameters = '{"recordId":["0019A00000Gg58lQAB"]}';
 assignment.status = ConnectApi.OrchestrationInstanceStatus.NotStarted;
+ConnectApi.OrchestrationStatus orchestrationStatus = null;
 
 ConnectApi.OrchestrationStepInstance step = new ConnectApi.OrchestrationStepInstance();
 step.workAssignments = new List<ConnectApi.OrchestrationWorkAssignment>{ assignment };
 step.id = '0jL9A000000000VUAQ';
 step.label = 'Submit Content for Approval';
 step.name = 'Submit_Content_for_Approval';
-step.status = ConnectApi.OrchestrationInstanceStatus.InProgress;
+step.status = orchestrationStatus;
 step.type = ConnectApi.OrchestrationStepType.Task;
 
 ConnectApi.OrchestrationStageInstance stage = new ConnectApi.OrchestrationStageInstance();
@@ -2674,7 +2675,7 @@ stage.stageStepInstances = new List<ConnectApi.OrchestrationStepInstance>{ step 
 stage.id = '0jL9A000000000KUAQ';
 stage.label = 'Stage1';
 stage.name = 'Stage1';
-stage.status = ConnectApi.OrchestrationInstanceStatus.InProgress;
+stage.status = orchestrationStatus;
 stage.position = 0;
 
 ConnectApi.OrchestrationInstance instance = new ConnectApi.OrchestrationInstance();
@@ -4720,6 +4721,8 @@ ApexPages.StandardSetController setController = new ApexPages.StandardSetControl
 System.assertEquals(2, setController.getResultSize());
 System.assertEquals(account, setController.getRecord());
 System.assertEquals(0, setController.getListViewOptions().size());
+setController.setSelected(new List<Account>{account});
+System.assertEquals(1, setController.getSelected().size());
 setController.setFilterId('00B000000000001');
 System.assertEquals('00B000000000001', setController.getFilterId());
 setController.setPageSize(1);
@@ -4738,6 +4741,20 @@ System.assert(setController.getHasPrevious());
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecIdeaStandardSetControllerListViewOptions(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.IdeaStandardSetController controller = new ApexPages.IdeaStandardSetController();
+System.assertEquals(0, controller.getListViewOptions().size());
+System.assertEquals(0, controller.getSelected().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -12090,8 +12107,13 @@ System.assertEquals(null, new Support.EmailTemplateSelector().getDefaultTemplate
 System.assertEquals(0, new Support.MilestoneTriggerTimeCalculator().calculateMilestoneTriggerTime('001000000000001', 'First_Response'));
 System.assertEquals(0, Support.LifeScienceAttendees.parse('{}').attendees.size());
 Support.LifeScienceUpdateEmailTransactions.updateRecords('[]');
+String paymentData = null;
+RichMessaging.AddressableContact billingContact = null;
+RichMessaging.AddressableContact shippingContact = null;
+RichMessaging.PaymentMethod paymentMethod = null;
+RichMessaging.ShippingMethod shippingMethod = null;
 System.assertEquals(null, new RichMessaging.ProcessFormHandler().processFormRequest(new RichMessaging.ProcessFormResponse(new Map<String,String>(), '0Mw000000000001', '0Mc000000000001', 'local', 'reply-1')));
-System.assert(new RichMessaging.ProcessPaymentHandler().processPaymentRequest(new RichMessaging.ProcessPaymentRequest('txn-1', null, null, null, null, null, '001000000000001')) != null);
+System.assert(new RichMessaging.ProcessPaymentHandler().processPaymentRequest(new RichMessaging.ProcessPaymentRequest('txn-1', paymentData, billingContact, shippingContact, paymentMethod, shippingMethod, '001000000000001')) != null);
 System.assert(new RichMessaging.ProcessCatalogOrderHandler().processCatalogOrderRequest(new RichMessaging.ProcessCatalogOrderRequest()) != null);
 System.assert(new RichMessaging.AuthRequestHandler().handleAuthRequest(new RichMessaging.AuthRequestResponse('token', '001000000000001', 'provider')) != null);
 `)

@@ -1,6 +1,8 @@
 package typesys
 
 import (
+	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 
@@ -1165,6 +1167,73 @@ func TestGeneratedStubSpecsCaseInsensitiveBreadthAudit(t *testing.T) {
 	auditGeneratedStubSpecs(t, "product namespace", productNamespaceSymbolSpecs)
 }
 
+func TestApexDocsContractsGeneratedBroadCoverage(t *testing.T) {
+	data, err := os.ReadFile("../../testdata/generated/apex_docs_contracts.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var contracts struct {
+		SchemaVersion int `json:"schemaVersion"`
+		Documents     []struct {
+			SourcePath string `json:"sourcePath"`
+			Members    []struct {
+				Name string `json:"name"`
+			} `json:"members"`
+		} `json:"documents"`
+	}
+	if err := json.Unmarshal(data, &contracts); err != nil {
+		t.Fatal(err)
+	}
+	if contracts.SchemaVersion != 1 {
+		t.Fatalf("schema version = %d", contracts.SchemaVersion)
+	}
+	if len(contracts.Documents) <= 500 {
+		t.Fatalf("docs contracts documents = %d, want more than 500", len(contracts.Documents))
+	}
+	byPath := make(map[string]bool, len(contracts.Documents))
+	memberCount := 0
+	for _, doc := range contracts.Documents {
+		byPath[doc.SourcePath] = true
+		memberCount += len(doc.Members)
+	}
+	if memberCount <= 500 {
+		t.Fatalf("docs contracts members = %d, want more than 500", memberCount)
+	}
+	for _, path := range []string{
+		"apex/apex_methods_system_string.md",
+		"apex/apex_methods_system_database.md",
+		"apex/apex_methods_system_sobject_describe.md",
+		"apex/apex_ConnectAPI_ChatterFeeds_static_methods.md",
+		"apex/apex_class_commercepayments_LineItemInput.md",
+	} {
+		if !byPath[path] {
+			t.Fatalf("generated docs contracts missing %s", path)
+		}
+	}
+}
+
+func TestApexDocsContractsGeneratedPreciseShapes(t *testing.T) {
+	symbols := StandardPlatformSymbolView()
+
+	jws := requireStandardSymbol(t, symbols, "Auth.JWS")
+	requireStandardConstructor(t, jws, []string{"Auth.JWT", "String"})
+	requireStandardConstructor(t, jws, []string{"String", "String"})
+
+	suggestions := requireStandardSymbol(t, symbols, "ConnectApi.QuestionAndAnswersSuggestions")
+	requireStandardProperty(t, suggestions, "articles", "List<ConnectApi.ArticleItem>")
+	requireStandardProperty(t, suggestions, "questions", "List<ConnectApi.FeedElement>")
+
+	stage := requireStandardSymbol(t, symbols, "ConnectApi.OrchestrationStageInstance")
+	requireStandardProperty(t, stage, "status", "ConnectApi.OrchestrationStatus")
+	step := requireStandardSymbol(t, symbols, "ConnectApi.OrchestrationStepInstance")
+	requireStandardProperty(t, step, "status", "ConnectApi.OrchestrationStatus")
+
+	tax := requireStandardSymbol(t, symbols, "ConnectApi.TaxPlatform")
+	requireNoStandardMethod(t, tax, "calculateTax", nil, true)
+	activation := requireStandardSymbol(t, symbols, "ConnectApi.CdpActivation")
+	requireNoStandardMethod(t, activation, "getActivationsPaginated", nil, true)
+}
+
 func auditGeneratedStubSpecs(t *testing.T, label string, specs []StandardSymbolSpec) {
 	t.Helper()
 	byName := make(map[string]StandardSymbolSpec, len(specs))
@@ -1356,6 +1425,22 @@ func requireStandardMethod(t *testing.T, symbol TypeSymbol, name string, params 
 		return
 	}
 	t.Fatalf("missing method %s.%s with params %#v static=%v: %#v", standardSymbolFullName(symbol), name, params, static, symbol.Members)
+}
+
+func requireNoStandardMethod(t *testing.T, symbol TypeSymbol, name string, params []string, static bool) {
+	t.Helper()
+	for _, member := range symbol.Members {
+		if member.Kind != apexast.DeclarationMethod || !strings.EqualFold(member.Name, name) {
+			continue
+		}
+		if !standardMemberParamsEqual(member, params) {
+			continue
+		}
+		if memberHasModifier(member, "static") != static {
+			continue
+		}
+		t.Fatalf("unexpected method %s.%s with params %#v static=%v: %#v", standardSymbolFullName(symbol), name, params, static, member)
+	}
 }
 
 func requireStandardMethodReturn(t *testing.T, symbol TypeSymbol, name string, params []string, typ string, static bool) {

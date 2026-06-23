@@ -585,9 +585,9 @@ func TestExecGeneratedPlatformConstructsPassiveValueObjectWithProperties(t *test
 	program, err := CompileAnonymous(`
 ConnectApi.QuestionAndAnswersSuggestions suggestions =
 	new ConnectApi.QuestionAndAnswersSuggestions();
-System.assertEquals(null, suggestions.articles);
-suggestions.questions = 'placeholder';
-System.assertEquals('placeholder', suggestions.questions);
+System.assertEquals(0, suggestions.articles.size());
+suggestions.questions = new List<ConnectApi.FeedElement>{ new ConnectApi.FeedElement() };
+System.assertEquals(1, suggestions.questions.size());
 `)
 	if err != nil {
 		t.Fatal(err)
