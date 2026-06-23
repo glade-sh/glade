@@ -66,6 +66,29 @@ func blockBoundsAfter(body string, pos int) (int, int) {
 	}
 	return pos, len(body)
 }
+func statementOrBlockBoundsAfter(body string, pos int) (int, int) {
+	for i := pos; i < len(body); i++ {
+		switch body[i] {
+		case ' ', '\t', '\r', '\n':
+			continue
+		case '/':
+			if end, ok := skipSemaComment(body, i); ok {
+				i = end
+				continue
+			}
+		case '{':
+			return blockBoundsAt(body, i+1)
+		case ';':
+			return i, i
+		}
+		end := semaStatementEnd(body, i)
+		if end < i {
+			return i, i
+		}
+		return i, end
+	}
+	return pos, len(body)
+}
 func (s semaScopeModel) flat() map[string]string {
 	out := make(map[string]string, len(s.base)+len(s.locals))
 	for name, typeName := range s.base {
@@ -194,7 +217,12 @@ func splitSemaCast(arg string) (string, string, bool) {
 	if typeName == "" || value == "" {
 		return "", "", false
 	}
-	if strings.HasPrefix(value, ".") || strings.HasPrefix(value, "+") || strings.HasPrefix(value, "-") || strings.HasPrefix(value, "*") || strings.HasPrefix(value, "/") || strings.HasPrefix(value, "%") {
+	for _, op := range []string{".", "+", "-", "*", "/", "%", "&&", "||", "==", "!=", "<=", ">=", "<", ">", "?", ":", ","} {
+		if strings.HasPrefix(value, op) {
+			return "", "", false
+		}
+	}
+	if value == "" {
 		return "", "", false
 	}
 	if !typeReferencePattern.MatchString(typeName) {
@@ -530,6 +558,7 @@ func skipSemaCall(callee string) bool {
 	switch normalizeName(callee) {
 	case "if", "for", "while", "switch", "catch", "new", "return", "throw",
 		"insert", "update", "upsert", "delete", "undelete", "merge", "on", "when",
+		"select", "find", "from", "where", "and", "or", "in", "not", "like", "includes", "excludes", "group", "order", "having", "limit", "offset",
 		"__mapentry", "__coalesce", "__safe_call:get", "system.assert", "system.assertequals", "system.debug",
 		"count", "count_distinct", "sum", "avg", "min", "max":
 		return true

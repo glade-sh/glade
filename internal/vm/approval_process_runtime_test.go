@@ -151,6 +151,79 @@ System.assertEquals(true, caught);
 	}
 }
 
+func TestExecApprovalProcessLocalEngineListProcessesRequestsInOrder(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	testSeedApprovalMetadata(t, &org)
+	testSeedApprovalAccount(t, &org, "001000000000101AAA", "First")
+	testSeedApprovalAccount(t, &org, "001000000000102AAA", "Second")
+	machine.SetOrg(&org)
+
+	first := Object("Approval.ProcessSubmitRequest")
+	first.Fields["ObjectId"] = platformScalar("Id", "001000000000101AAA")
+	first.Fields["SkipEntryCriteria"] = Bool(true)
+	first.Fields["NextApproverIds"] = List(platformScalar("Id", "005000000000002"))
+	second := Object("Approval.ProcessSubmitRequest")
+	second.Fields["ObjectId"] = platformScalar("Id", "001000000000102AAA")
+	second.Fields["SkipEntryCriteria"] = Bool(true)
+	second.Fields["NextApproverIds"] = List(platformScalar("Id", "005000000000002"))
+	requests := typedList("List<Approval.ProcessRequest>")
+	requests.List = append(requests.List, first, second)
+
+	result, err := machine.executeApprovalProcess([]Value{requests})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Kind != ValueList || !strings.EqualFold(result.Type, "List<Approval.ProcessResult>") {
+		t.Fatalf("result = %#v, want typed List<Approval.ProcessResult>", result)
+	}
+	if len(result.List) != 2 {
+		t.Fatalf("result size = %d, want 2", len(result.List))
+	}
+	if got := testApprovalResultID(t, result.List[0], "entityId"); got != "001000000000101AAA" {
+		t.Fatalf("first entityId = %q, want first account", got)
+	}
+	if got := testApprovalResultID(t, result.List[1], "entityId"); got != "001000000000102AAA" {
+		t.Fatalf("second entityId = %q, want second account", got)
+	}
+}
+
+func TestExecApprovalProcessLocalEngineListAllOrNoneFalseReturnsPerRequestResults(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	testSeedApprovalMetadata(t, &org)
+	testSeedApprovalAccount(t, &org, "001000000000101AAA", "First")
+	machine.SetOrg(&org)
+
+	good := Object("Approval.ProcessSubmitRequest")
+	good.Fields["ObjectId"] = platformScalar("Id", "001000000000101AAA")
+	good.Fields["SkipEntryCriteria"] = Bool(true)
+	good.Fields["NextApproverIds"] = List(platformScalar("Id", "005000000000002"))
+	bad := Object("Approval.ProcessSubmitRequest")
+	requests := typedList("List<Approval.ProcessRequest>")
+	requests.List = append(requests.List, good, bad)
+
+	result, err := machine.executeApprovalProcess([]Value{requests, Bool(false)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Kind != ValueList || !strings.EqualFold(result.Type, "List<Approval.ProcessResult>") {
+		t.Fatalf("result = %#v, want typed List<Approval.ProcessResult>", result)
+	}
+	if len(result.List) != 2 {
+		t.Fatalf("result size = %d, want 2", len(result.List))
+	}
+	if success := result.List[0].Fields["success"].Bool; !success {
+		t.Fatalf("first success = false, want true")
+	}
+	if success := result.List[1].Fields["success"].Bool; success {
+		t.Fatalf("second success = true, want false")
+	}
+	if got := len(result.List[1].Fields["errors"].List); got != 1 {
+		t.Fatalf("second errors = %d, want 1", got)
+	}
+}
+
 func TestExecApprovalProcessHostedRoutingStaysUnsupported(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'Needs Approval');
@@ -206,6 +279,34 @@ func testSeedApprovalMetadata(t *testing.T, org *storage.OrgState) {
 		},
 	}
 	org.Objects["ProcessNode"] = nodes
+}
+
+func testSeedApprovalAccount(t *testing.T, org *storage.OrgState, id storage.ID, name string) {
+	t.Helper()
+	storage.EnsureStandardObject(org, "Account")
+	accounts := org.Objects["Account"]
+	accounts.Records[id] = storage.Record{
+		ID:     id,
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Id":   storage.IDValue(id),
+			"Name": storage.StringValue(name),
+		},
+	}
+	org.Objects["Account"] = accounts
+}
+
+func testApprovalResultID(t *testing.T, result Value, field string) string {
+	t.Helper()
+	value, ok := result.Fields[field]
+	if !ok {
+		t.Fatalf("missing result field %s", field)
+	}
+	text, ok := idValueText(value)
+	if !ok {
+		t.Fatalf("result field %s = %#v, want Id", field, value)
+	}
+	return text
 }
 
 func testOnlyRecord(t *testing.T, org *storage.OrgState, objectName string) storage.Record {

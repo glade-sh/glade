@@ -21,6 +21,25 @@ func (vm *VM) executeApprovalProcess(args []Value) (Value, error) {
 		allOrNone = args[1].Bool
 	}
 	request := args[0]
+	if request.Kind == ValueList {
+		return vm.executeApprovalProcessList(request, allOrNone)
+	}
+	return vm.executeApprovalProcessRequest(request, allOrNone)
+}
+
+func (vm *VM) executeApprovalProcessList(requests Value, allOrNone bool) (Value, error) {
+	results := typedList("List<Approval.ProcessResult>")
+	for _, request := range requests.List {
+		result, err := vm.executeApprovalProcessRequest(request, allOrNone)
+		if err != nil {
+			return Null, err
+		}
+		results.List = append(results.List, result)
+	}
+	return results, nil
+}
+
+func (vm *VM) executeApprovalProcessRequest(request Value, allOrNone bool) (Value, error) {
 	if request.Kind != ValueObject {
 		return Null, unsupportedCallError("Approval.process request type " + runtimeValueTypeName(request))
 	}

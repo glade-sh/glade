@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "documents": [
+    {
+      "sourcePath": "apex/apex_connectapi_output_ManagedContentVersionCollection.md",
+      "kind": "output",
+      "namespace": "ConnectApi",
+      "name": "ManagedContentVersionCollection",
+      "members": [
+        {
+          "kind": "property",
+          "name": "items",
+          "signature": "items",
+          "propertyType": "List<ConnectApi.ManagedContentVersion>"
+        },
+        {
+          "kind": "property",
+          "name": "managedContentTypes",
+          "signature": "managedContentTypes",
+          "propertyType": "Map<String,ConnectApi.ManagedContentType>"
+        }
+      ]
+    }
+  ]
+}

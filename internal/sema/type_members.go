@@ -3,12 +3,14 @@ package sema
 import (
 	"os"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/namespaceremap"
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -181,18 +183,18 @@ func semaTypeMembersFromSymbol(typ typesys.TypeSymbol) typeMembers {
 }
 
 func readSemaSource(path string, cache map[string]string) (string, bool) {
-	return readSemaSourceWithRemaps(path, nil, cache)
+	return readSemaSourceWithRemaps(path, "", nil, cache)
 }
 
 func readSemaSourceForType(typ typesys.TypeSymbol, cache map[string]string) (string, bool) {
-	return readSemaSourceWithRemaps(typ.File, typ.SourceNamespaceRemaps, cache)
+	return readSemaSourceWithRemaps(typ.File, typ.Namespace, typ.SourceNamespaceRemaps, cache)
 }
 
-func readSemaSourceWithRemaps(path string, remaps []namespaceremap.Rule, cache map[string]string) (string, bool) {
+func readSemaSourceWithRemaps(path, namespace string, remaps []namespaceremap.Rule, cache map[string]string) (string, bool) {
 	if path == "" {
 		return "", false
 	}
-	key := semaSourceCacheKey(path, remaps)
+	key := semaSourceCacheKey(path, namespace, remaps)
 	if source, ok := cache[key]; ok {
 		return source, true
 	}
@@ -200,7 +202,7 @@ func readSemaSourceWithRemaps(path string, remaps []namespaceremap.Rule, cache m
 	if err != nil {
 		return "", false
 	}
-	source := string(data)
+	source := project.NormalizeApexNamespaceTokens(string(data), namespace)
 	if len(remaps) > 0 {
 		source = namespaceremap.ApplySource(remaps, source)
 	}
@@ -208,12 +210,9 @@ func readSemaSourceWithRemaps(path string, remaps []namespaceremap.Rule, cache m
 	return source, true
 }
 
-func semaSourceCacheKey(path string, remaps []namespaceremap.Rule) string {
+func semaSourceCacheKey(path, namespace string, remaps []namespaceremap.Rule) string {
 	fingerprint := namespaceremap.Fingerprint(remaps)
-	if fingerprint == "" {
-		return path
-	}
-	return path + "\x00" + fingerprint
+	return path + "\x00" + namespace + "\x00" + fingerprint
 }
 
 func buildTypeMembers(index typesys.Index) map[string]typeMembers {
@@ -307,7 +306,7 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 	for _, object := range index.Objects {
 		objectKey := normalizeName(object.Name)
 		objectMembers, objectOK := out[objectKey]
-		if objectOK && !objectMembers.sobject {
+		if objectOK && !objectMembers.sobject && !semaShouldMergeStandardSObjectMembers(object.Name, objectMembers) {
 			continue
 		}
 		if !objectOK {
@@ -330,7 +329,7 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 				semaAddSchemaFieldMember(objectMembers.fields, projectNamespace, typesys.MemberSymbol{
 					Kind:      apexast.DeclarationField,
 					Name:      field.Name,
-					Type:      semaApexTypeForSchemaField(field),
+					Type:      semaApexTypeForSchemaFieldInObjects(index.Objects, field),
 					Modifiers: []string{"public"},
 				})
 				if strings.EqualFold(field.Type, "Location") {
@@ -372,9 +371,6 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 			if field.ChildRelationshipName != "" {
 				childRelationshipNames = append(childRelationshipNames, field.ChildRelationshipName)
 			}
-			if field.RelationshipName != "" {
-				childRelationshipNames = append(childRelationshipNames, field.RelationshipName)
-			}
 			if len(childRelationshipNames) == 0 {
 				continue
 			}
@@ -383,11 +379,24 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 				if parentKey == "" {
 					continue
 				}
-				parentMembers, ok := out[parentKey]
-				if !ok {
+				parentMembers := objectMembers
+				if parentKey != objectKey {
+					var ok bool
+					parentMembers, ok = out[parentKey]
+					if !ok {
+						parentMembers = typeMembers{
+							name:     parent,
+							shortKey: semaShortTypeKey(parent),
+							sobject:  true,
+							kind:     apexast.DeclarationClass,
+							fields:   make(map[string]typesys.MemberSymbol),
+							methods:  make(map[string][]typesys.MemberSymbol),
+						}
+					}
+				} else if parentMembers.fields == nil {
 					parentMembers = typeMembers{
-						name:     parent,
-						shortKey: semaShortTypeKey(parent),
+						name:     object.Name,
+						shortKey: semaShortTypeKey(object.Name),
 						sobject:  true,
 						kind:     apexast.DeclarationClass,
 						fields:   make(map[string]typesys.MemberSymbol),
@@ -416,7 +425,11 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 						Modifiers: []string{"public"},
 					})
 				}
-				semaStoreSObjectTypeMembers(out, projectNamespace, parent, parentMembers)
+				if parentKey == objectKey {
+					objectMembers = parentMembers
+				} else {
+					semaStoreSObjectTypeMembers(out, projectNamespace, parent, parentMembers)
+				}
 			}
 		}
 		semaStoreSObjectTypeMembers(out, projectNamespace, object.Name, objectMembers)
@@ -644,6 +657,12 @@ func addStandardSObjectMembers(out map[string]typeMembers) {
 }
 
 func semaShouldMergeStandardSObjectMembers(objectName string, members typeMembers) bool {
+	if !members.sobject && !members.dependency {
+		return false
+	}
+	if storage.IsKnownStandardObject(objectName) {
+		return true
+	}
 	if !members.dependency {
 		return false
 	}
@@ -664,6 +683,7 @@ var semaStandardSObjectMembersCache struct {
 func semaStandardSObjectMembers() ([]string, map[string]typeMembers) {
 	semaStandardSObjectMembersCache.once.Do(func() {
 		sourceNames := append(storage.KnownStandardObjectNames(), semaAdditionalStandardSObjectNames()...)
+		sourceNames = append(sourceNames, semaStandardChangeEventNames(sourceNames)...)
 		names := make([]string, 0, len(sourceNames))
 		membersByKey := make(map[string]typeMembers, len(sourceNames))
 		seen := make(map[string]bool, len(sourceNames))
@@ -700,7 +720,13 @@ func addStandardSObjectFields(members *typeMembers, objectName string, synthetic
 		Type:      "Schema.SObjectType",
 		Modifiers: []string{"public", "static", semaSyntheticStandardSObjectFieldModifier},
 	}
-	if definition, ok := storage.StandardObjectDefinition(objectName); ok {
+	definitionName := objectName
+	isChangeEvent := false
+	if baseName, ok := semaChangeEventBaseObjectName(objectName); ok {
+		definitionName = baseName
+		isChangeEvent = true
+	}
+	if definition, ok := storage.StandardObjectDefinition(definitionName); ok {
 		for _, field := range definition.Fields {
 			if field.APIName == "" {
 				continue
@@ -725,6 +751,22 @@ func addStandardSObjectFields(members *typeMembers, objectName string, synthetic
 			}
 		}
 	}
+	if isChangeEvent {
+		members.fields[normalizeName("ChangeEventHeader")] = typesys.MemberSymbol{
+			Kind:      apexast.DeclarationField,
+			Name:      "ChangeEventHeader",
+			Type:      "EventBus.ChangeEventHeader",
+			Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
+		}
+	}
+	for _, relationship := range semaStandardChildRelationshipMembers(objectName) {
+		semaAddSchemaFieldMemberIfAbsent(members.fields, "", typesys.MemberSymbol{
+			Kind:      apexast.DeclarationField,
+			Name:      relationship.name,
+			Type:      relationship.typ,
+			Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
+		})
+	}
 	for _, field := range semaFallbackStandardSObjectFields(objectName, synthetic) {
 		members.fields[normalizeName(field.Name)] = typesys.MemberSymbol{
 			Kind:      apexast.DeclarationField,
@@ -732,8 +774,106 @@ func addStandardSObjectFields(members *typeMembers, objectName string, synthetic
 			Type:      semaApexTypeForSchemaField(field),
 			Modifiers: []string{"public", "static", semaSyntheticStandardSObjectFieldModifier},
 		}
+		if field.RelationshipName != "" && len(field.ReferenceTo) != 0 {
+			relationshipType := "SObject"
+			if len(field.ReferenceTo) == 1 {
+				relationshipType = field.ReferenceTo[0]
+			}
+			members.fields[normalizeName(field.RelationshipName)] = typesys.MemberSymbol{
+				Kind:      apexast.DeclarationField,
+				Name:      field.RelationshipName,
+				Type:      relationshipType,
+				Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
+			}
+		}
 	}
 	addFallbackStandardSObjectRelationshipMembers(members, objectName)
+}
+
+type semaStandardChildRelationshipMember struct {
+	name string
+	typ  string
+}
+
+var semaStandardChildRelationshipCache struct {
+	once     sync.Once
+	byParent map[string][]semaStandardChildRelationshipMember
+}
+
+func semaStandardChildRelationshipMembers(objectName string) []semaStandardChildRelationshipMember {
+	semaStandardChildRelationshipCache.once.Do(func() {
+		byParent := make(map[string][]semaStandardChildRelationshipMember)
+		seen := make(map[string]bool)
+		for _, childObject := range storage.KnownStandardObjectNames() {
+			childName := childObject
+			if canonical, ok := storage.ResolveKnownStandardObjectName(childObject); ok {
+				childName = canonical
+			}
+			storage.VisitStandardObjectRelationships(childName, nil, func(relationship storage.Relationship) {
+				if relationship.ChildRelationship == "" {
+					return
+				}
+				for _, parent := range relationship.ParentObjects {
+					parentName := parent
+					if canonical, ok := storage.ResolveKnownStandardObjectName(parent); ok {
+						parentName = canonical
+					}
+					parentKey := normalizeName(parentName)
+					if parentKey == "" {
+						continue
+					}
+					member := semaStandardChildRelationshipMember{
+						name: relationship.ChildRelationship,
+						typ:  "List<" + childName + ">",
+					}
+					dedupeKey := parentKey + "\x00" + normalizeName(member.name) + "\x00" + normalizeName(member.typ)
+					if seen[dedupeKey] {
+						continue
+					}
+					seen[dedupeKey] = true
+					byParent[parentKey] = append(byParent[parentKey], member)
+				}
+			})
+		}
+		semaStandardChildRelationshipCache.byParent = byParent
+	})
+	key := normalizeName(objectName)
+	if canonical, ok := storage.ResolveKnownStandardObjectName(objectName); ok {
+		key = normalizeName(canonical)
+	}
+	return semaStandardChildRelationshipCache.byParent[key]
+}
+
+func semaStandardChangeEventNames(objectNames []string) []string {
+	seen := make(map[string]bool, len(objectNames))
+	out := make([]string, 0, len(objectNames))
+	for _, objectName := range objectNames {
+		if _, ok := semaChangeEventBaseObjectName(objectName); ok {
+			continue
+		}
+		name := objectName + "ChangeEvent"
+		key := normalizeName(name)
+		if key == "" || seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, name)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func semaChangeEventBaseObjectName(objectName string) (string, bool) {
+	name := strings.TrimSpace(objectName)
+	if strings.HasSuffix(name, "__ChangeEvent") {
+		base := strings.TrimSuffix(name, "__ChangeEvent") + "__c"
+		return base, base != "__c"
+	}
+	if strings.HasSuffix(name, "ChangeEvent") {
+		base := strings.TrimSuffix(name, "ChangeEvent")
+		return base, base != ""
+	}
+	return "", false
 }
 
 func semaApplyPlatformInterfaceOverlays(model map[string]typeMembers) {
@@ -863,7 +1003,7 @@ func semaWithModifier(modifiers []string, modifier string) []string {
 }
 
 func semaAdditionalStandardSObjectNames() []string {
-	return []string{"ApexClass", "ApexPage", "CronJobDetail", "CronTrigger", "EntityDefinition", "EntityParticle", "FieldDefinition", "Folder", "NamedCredential", "Note", "RecentlyViewed", "Report", "UserEntityAccess", "UserFieldAccess", "UserRecordAccess"}
+	return []string{"ApexClass", "ApexPage", "CronJobDetail", "CronTrigger", "EntityDefinition", "EntityParticle", "FieldDefinition", "FlowDefinitionView", "Folder", "NamedCredential", "Note", "RecentlyViewed", "Report", "UserEntityAccess", "UserFieldAccess", "UserRecordAccess"}
 }
 
 func semaAddCommonSObjectFields(fields map[string]typesys.MemberSymbol) {
@@ -883,6 +1023,7 @@ func semaAddCommonSObjectFields(fields map[string]typesys.MemberSymbol) {
 		{Name: "SystemModstamp", Type: "Datetime"},
 		{Name: "CreatedById", Type: "Lookup", ReferenceTo: []string{"User"}, RelationshipName: "CreatedBy"},
 		{Name: "LastModifiedById", Type: "Lookup", ReferenceTo: []string{"User"}, RelationshipName: "LastModifiedBy"},
+		{Name: "OwnerId", Type: "Lookup", ReferenceTo: []string{"User"}, RelationshipName: "Owner"},
 	} {
 		key := normalizeName(field.Name)
 		if _, exists := fields[key]; !exists {
@@ -915,6 +1056,48 @@ func semaAddCommonSObjectFields(fields map[string]typesys.MemberSymbol) {
 
 func semaFallbackStandardSObjectFields(objectName string, synthetic bool) []schema.Field {
 	switch {
+	case strings.EqualFold(objectName, "Name"):
+		return []schema.Field{
+			{Name: "Id", Type: "Id"},
+			{Name: "Name", Type: "Text"},
+			{Name: "Type", Type: "Text"},
+		}
+	case strings.EqualFold(objectName, "FlowDefinitionView"):
+		return []schema.Field{
+			{Name: "Id", Type: "Id"},
+			{Name: "ActiveVersionId", Type: "Id"},
+			{Name: "ApiVersionRuntime", Type: "Number"},
+			{Name: "ApiName", Type: "Text"},
+			{Name: "Description", Type: "LongTextArea"},
+			{Name: "DurableId", Type: "Text"},
+			{Name: "FlowDefinitionViewId", Type: "Id"},
+			{Name: "Label", Type: "Text"},
+			{Name: "LastModifiedBy", Type: "Text"},
+			{Name: "LastModifiedDate", Type: "Datetime"},
+			{Name: "ManageableState", Type: "Picklist"},
+			{Name: "OverriddenById", Type: "Lookup", ReferenceTo: []string{"Schema.FlowDefinitionView"}, RelationshipName: "OverriddenBy"},
+			{Name: "OverriddenFlowId", Type: "Lookup", ReferenceTo: []string{"Schema.FlowDefinitionView"}, RelationshipName: "OverriddenFlow"},
+			{Name: "ProcessType", Type: "Text"},
+			{Name: "RecordTriggerType", Type: "Text"},
+			{Name: "SourceTemplateId", Type: "Lookup", ReferenceTo: []string{"Schema.FlowDefinitionView"}, RelationshipName: "SourceTemplate"},
+			{Name: "TriggerOrder", Type: "Number"},
+			{Name: "TriggerType", Type: "Text"},
+			{Name: "TriggerObjectOrEventId", Type: "Lookup", ReferenceTo: []string{"EntityDefinition"}, RelationshipName: "TriggerObjectOrEvent"},
+		}
+	case strings.EqualFold(objectName, "Event"):
+		return []schema.Field{
+			{Name: "IsClosed", Type: "Checkbox"},
+		}
+	case strings.EqualFold(objectName, "AccountShare"):
+		return semaStandardShareFallbackFields("Account", []string{"AccountAccessLevel", "CaseAccessLevel", "ContactAccessLevel", "OpportunityAccessLevel"})
+	case strings.EqualFold(objectName, "CaseShare"):
+		return semaStandardShareFallbackFields("Case", []string{"CaseAccessLevel"})
+	case strings.EqualFold(objectName, "ContactShare"):
+		return semaStandardShareFallbackFields("Contact", []string{"ContactAccessLevel"})
+	case strings.EqualFold(objectName, "LeadShare"):
+		return semaStandardShareFallbackFields("Lead", []string{"LeadAccessLevel"})
+	case strings.EqualFold(objectName, "OpportunityShare"):
+		return semaStandardShareFallbackFields("Opportunity", []string{"OpportunityAccessLevel"})
 	case strings.EqualFold(objectName, "ApexClass"):
 		return []schema.Field{
 			{Name: "Id", Type: "Id"},
@@ -945,6 +1128,19 @@ func semaFallbackStandardSObjectFields(objectName string, synthetic bool) []sche
 	}
 }
 
+func semaStandardShareFallbackFields(parentObject string, accessFields []string) []schema.Field {
+	fields := []schema.Field{
+		{Name: "Id", Type: "Id"},
+		{Name: parentObject + "Id", Type: "Lookup", ReferenceTo: []string{parentObject}, RelationshipName: parentObject},
+		{Name: "UserOrGroupId", Type: "Lookup", ReferenceTo: []string{"Name"}, RelationshipName: "UserOrGroup"},
+		{Name: "RowCause", Type: "Picklist"},
+	}
+	for _, accessField := range accessFields {
+		fields = append(fields, schema.Field{Name: accessField, Type: "Picklist"})
+	}
+	return fields
+}
+
 func addFallbackStandardSObjectRelationshipMembers(members *typeMembers, objectName string) {
 	if !strings.EqualFold(objectName, "PermissionSet") {
 		return
@@ -958,7 +1154,16 @@ func addFallbackStandardSObjectRelationshipMembers(members *typeMembers, objectN
 }
 
 func semaApexTypeForSchemaField(field schema.Field) string {
+	return semaApexTypeForSchemaFieldInObjects(nil, field)
+}
+
+func semaApexTypeForSchemaFieldInObjects(objects []schema.Object, field schema.Field) string {
 	fieldType := normalizeName(field.Type)
+	if fieldType == "summary" {
+		if summarizedType := semaApexTypeForSummarizedField(objects, field.SummarizedField); summarizedType != "" {
+			return summarizedType
+		}
+	}
 	switch fieldType {
 	case "id":
 		return "Id"
@@ -982,7 +1187,9 @@ func semaApexTypeForSchemaField(field schema.Field) string {
 		return "Address"
 	case "location":
 		return "Location"
-	case "lookup", "masterdetail", "metadatarelationship", "externallookup", "indirectlookup", "reference":
+	case "metadatarelationship":
+		return "String"
+	case "lookup", "masterdetail", "externallookup", "indirectlookup", "reference":
 		return "Id"
 	case "text", "textarea", "longtextarea", "html", "encryptedtext", "email", "phone", "url", "picklist", "multipicklist", "multiselectpicklist", "combobox", "autonumber":
 		return "String"
@@ -999,6 +1206,43 @@ func semaApexTypeForSchemaField(field schema.Field) string {
 		}
 	}
 	return "Object"
+}
+
+func semaApexTypeForSummarizedField(objects []schema.Object, summarizedField string) string {
+	objectName, fieldName, ok := strings.Cut(strings.TrimSpace(summarizedField), ".")
+	if !ok || objectName == "" || fieldName == "" {
+		return ""
+	}
+	for _, object := range objects {
+		if !semaSchemaAPINameEquivalent(object.Name, objectName) {
+			continue
+		}
+		for _, field := range object.Fields {
+			if semaSchemaAPINameEquivalent(field.Name, fieldName) {
+				return semaApexTypeForSchemaFieldInObjects(objects, field)
+			}
+		}
+	}
+	return ""
+}
+
+func semaSchemaAPINameEquivalent(left, right string) bool {
+	if strings.EqualFold(left, right) {
+		return true
+	}
+	return strings.EqualFold(semaSchemaLocalAPIName(left), semaSchemaLocalAPIName(right))
+}
+
+func semaSchemaLocalAPIName(name string) string {
+	name = strings.TrimSpace(name)
+	if !semaIsCustomAPIName(name) || !semaHasNamespaceToken(name) {
+		return name
+	}
+	first := strings.Index(name, "__")
+	if first <= 0 || first+2 >= len(name) {
+		return name
+	}
+	return name[first+2:]
 }
 
 func semaApexTypeForStorageField(field storage.Field) string {
@@ -1144,6 +1388,11 @@ func resolveNestedTypeName(model map[string]typeMembers, owner, typeName string)
 	if len(ownerParts) > 0 && strings.EqualFold(ownerParts[0], typeName) {
 		return typeName
 	}
+	if semaIsCustomAPIName(typeName) {
+		if _, ok := model[normalizeName(typeName)]; ok {
+			return typeName
+		}
+	}
 	if namespace := semaOwnerTypeNamespace(model, owner); namespace != "" {
 		if namespaced, ok := semaProjectNamespacedAPIName(namespace, typeName); ok {
 			if _, exists := model[normalizeName(namespaced)]; exists {
@@ -1163,6 +1412,19 @@ func resolveNestedTypeName(model map[string]typeMembers, owner, typeName string)
 			return candidate
 		}
 	}
+	for i := len(ownerParts) - 1; i > 0; i-- {
+		enclosing := strings.Join(ownerParts[:i], ".")
+		if resolved := resolveNestedTypeNameFromSuperclasses(model, enclosing, typeName); resolved != "" {
+			return resolved
+		}
+	}
+	if resolved := resolveNestedTypeNameFromSuperclasses(model, owner, typeName); resolved != "" {
+		return resolved
+	}
+	return semaCanonicalPlatformAlias(typeName)
+}
+
+func resolveNestedTypeNameFromSuperclasses(model map[string]typeMembers, owner, typeName string) string {
 	seen := make(map[string]bool)
 	for current := owner; current != ""; {
 		key := normalizeName(current)
@@ -1180,7 +1442,7 @@ func resolveNestedTypeName(model map[string]typeMembers, owner, typeName string)
 		}
 		current = members.superClass
 	}
-	return semaCanonicalPlatformAlias(typeName)
+	return ""
 }
 
 func semaShouldPreserveExplicitPlatformType(typeName string) bool {

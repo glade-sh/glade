@@ -14,6 +14,7 @@ const inputRoot = process.argv[2]
 const outputFile = process.argv[3]
   ? path.resolve(process.argv[3])
   : path.join(repoRoot, "internal", "typesys", "system_stub_symbols_generated.go");
+const docsContractFile = process.argv[4] ? path.resolve(process.argv[4]) : "";
 
 const systemNamespace = "System";
 
@@ -62,6 +63,112 @@ function applySignatureOverrides(spec) {
       method.returnType = "Integer";
     }
   }
+}
+
+function loadDocsContracts(filePath) {
+  if (!filePath) return new Map();
+  const data = JSON.parse(fs.readFileSync(filePath, "utf8"));
+  const contracts = new Map();
+  const ensure = (name) => {
+    const key = String(name || "").toLowerCase();
+    if (!key) return null;
+    if (!contracts.has(key)) contracts.set(key, { name, properties: [], methods: [], constructors: [] });
+    return contracts.get(key);
+  };
+
+  for (const type of data.types || []) {
+    const contract = ensure(type.name);
+    if (!contract) continue;
+    for (const prop of type.properties || []) {
+      contract.properties.push({ name: prop.name, type: normalizeType(prop.type || prop.propertyType || prop.returnType), static: Boolean(prop.static) });
+    }
+    for (const method of type.methods || []) {
+      contract.methods.push({
+        name: method.name,
+        returnType: normalizeType(method.returnType || method.type),
+        parameters: contractParameterSpecs(method.parameters || method.parameterTypes || []),
+        static: Boolean(method.static),
+      });
+    }
+    for (const ctor of type.constructors || []) {
+      contract.constructors.push(contractParameterSpecs(ctor.parameters || ctor));
+    }
+  }
+
+  for (const doc of data.documents || []) {
+    const namespace = doc.namespace || "";
+    const name = namespace && namespace !== systemNamespace ? `${namespace}.${doc.name}` : doc.name;
+    const contract = ensure(name);
+    if (!contract) continue;
+    for (const member of doc.members || doc.Members || []) {
+      const kind = String(member.kind || "").toLowerCase();
+      const type = normalizeType(member.propertyType || member.returnType || member.type || "");
+      const params = contractParameterSpecs(member.parameters || []);
+      if (kind === "property") {
+        contract.properties.push({ name: member.name, type, static: Boolean(member.static) });
+      } else if (kind === "constructor") {
+        contract.constructors.push(params);
+      } else if (kind === "method") {
+        contract.methods.push({ name: member.name, returnType: type, parameters: params, static: Boolean(member.static) });
+      }
+    }
+  }
+  return contracts;
+}
+
+function contractParameterSpecs(parameters) {
+  return (parameters || [])
+    .map((param, index) => {
+      if (typeof param === "string") return { name: `arg${index}`, type: normalizeType(param) };
+      return { name: param.name || `arg${index}`, type: normalizeType(param.type || param.Type || "") };
+    })
+    .filter((param) => param.type);
+}
+
+function applyDocsContracts(specs, contracts) {
+  if (!contracts.size) return specs;
+  const byName = new Map(specs.map((spec) => [spec.name.toLowerCase(), spec]));
+  for (const contract of contracts.values()) {
+    let spec = byName.get(contract.name.toLowerCase());
+    if (!spec) {
+      spec = emptySpec(contract.name);
+      specs.push(spec);
+      byName.set(spec.name.toLowerCase(), spec);
+    }
+    for (const contractProp of contract.properties) {
+      if (!contractProp.name || !contractProp.type) continue;
+      const existing = spec.properties.find((prop) => prop.name.toLowerCase() === contractProp.name.toLowerCase() && Boolean(prop.static) === Boolean(contractProp.static));
+      if (existing) {
+        if (isUntypedApexType(existing.type)) existing.type = contractProp.type;
+        continue;
+      }
+      spec.properties.push({ name: contractProp.name, type: contractProp.type, static: Boolean(contractProp.static) });
+    }
+    for (const contractMethod of contract.methods) {
+      if (!contractMethod.name) continue;
+      const existing = spec.methods.find((method) =>
+        method.name.toLowerCase() === contractMethod.name.toLowerCase() &&
+        Boolean(method.static) === Boolean(contractMethod.static) &&
+        parameterTypesKey(method.parameters) === parameterTypesKey(contractMethod.parameters));
+      if (existing) {
+        if (contractMethod.returnType && isUntypedApexType(existing.returnType)) existing.returnType = contractMethod.returnType;
+        continue;
+      }
+      if (contractMethod.returnType) spec.methods.push(contractMethod);
+    }
+    for (const ctor of contract.constructors) {
+      if (!spec.constructors.some((existing) => constructorKey(existing) === constructorKey(ctor))) {
+        spec.constructors.push(ctor);
+      }
+    }
+    dedupeSpec(spec);
+  }
+  return specs.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function isUntypedApexType(typeName) {
+  const key = normalizeType(typeName).toLowerCase();
+  return key === "" || key === "object" || key === "apex_object" || key === "any";
 }
 
 function ensureProperty(spec, name, type, isStatic = false) {
@@ -628,10 +735,11 @@ function addReferencedPlaceholders(specs) {
   return specs.concat([...additions.values()]).sort((a, b) => a.name.localeCompare(b.name));
 }
 
-const specs = addReferencedPlaceholders(materializeNestedStubSpecs(ensureConnectApiStubShape(collectStubFiles(inputRoot)
+const docsContracts = loadDocsContracts(docsContractFile);
+const specs = addReferencedPlaceholders(applyDocsContracts(materializeNestedStubSpecs(ensureConnectApiStubShape(collectStubFiles(inputRoot)
   .map(parseStub)
   .filter(Boolean)
-  .sort((a, b) => a.name.localeCompare(b.name)))));
+  .sort((a, b) => a.name.localeCompare(b.name)))), docsContracts));
 
 let out = `// Code generated by scripts/generate-system-stub-symbols.mjs; DO NOT EDIT.\n\n`;
 out += `package typesys\n\n`;

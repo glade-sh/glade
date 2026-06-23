@@ -928,6 +928,8 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		markFieldCreateable(definition, "Body")
 		markFieldCreateable(definition, "Type")
 		markFieldCreateable(definition, "Visibility")
+	case stringsEqualFold(definition.APIName, "Site"):
+		ensureField(definition, Field{APIName: "OptionsRequireHttps", Label: "Require HTTPS", Type: FieldBoolean, DisplayType: "BOOLEAN"})
 	case stringsEqualFold(definition.APIName, "Note"):
 		markFieldWriteable(definition, "ParentId")
 	case stringsEqualFold(definition.APIName, "EmailTemplate"):
@@ -964,8 +966,11 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		ensureReferenceShape(definition, "FieldDefinitionId", []string{"FieldDefinition"}, "FieldDefinition")
 	case stringsEqualFold(definition.APIName, "FieldDefinition"):
 		ensureReferenceShape(definition, "RunningUserFieldAccessId", []string{"UserFieldAccess"}, "RunningUserFieldAccess")
+	case stringsEqualFold(definition.APIName, "Activity"):
+		ensureField(definition, Field{APIName: "IsClosed", Label: "Closed", Type: FieldBoolean, DisplayType: "BOOLEAN", Createable: BoolFlag(false), Updateable: BoolFlag(false)})
 	case stringsEqualFold(definition.APIName, "Event"):
 		removeField(definition, "Name")
+		ensureField(definition, Field{APIName: "IsClosed", Label: "Closed", Type: FieldBoolean, DisplayType: "BOOLEAN", Createable: BoolFlag(false), Updateable: BoolFlag(false)})
 		ensureField(definition, Field{APIName: "Type", Label: "Type", Type: FieldPicklist, DisplayType: "PICKLIST", Length: 255, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
 	case stringsEqualFold(definition.APIName, "Task"):
 		ensureField(definition, Field{APIName: "Type", Label: "Type", Type: FieldPicklist, DisplayType: "PICKLIST", Length: 255, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
