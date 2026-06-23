@@ -22,6 +22,7 @@ type typeMembers struct {
 	namespace                string
 	dependency               bool
 	sobject                  bool
+	externalPackageSObject   bool
 	kind                     apexast.DeclarationKind
 	superClass               string
 	interfaces               []string
@@ -311,25 +312,40 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 		}
 		if !objectOK {
 			objectMembers = typeMembers{
-				name:     object.Name,
-				shortKey: semaShortTypeKey(object.Name),
-				sobject:  true,
-				kind:     apexast.DeclarationClass,
-				fields:   make(map[string]typesys.MemberSymbol),
-				methods:  make(map[string][]typesys.MemberSymbol),
+				name:                   object.Name,
+				shortKey:               semaShortTypeKey(object.Name),
+				namespace:              semaNamespaceFromAPIName(object.Name),
+				sobject:                true,
+				externalPackageSObject: semaIsExternalManagedPackageAPIName(projectNamespace, object.Name),
+				kind:                   apexast.DeclarationClass,
+				fields:                 make(map[string]typesys.MemberSymbol),
+				methods:                make(map[string][]typesys.MemberSymbol),
 			}
 		}
 		objectMembers.sobject = true
+		if objectMembers.namespace == "" {
+			objectMembers.namespace = semaNamespaceFromAPIName(object.Name)
+		}
+		objectMembers.externalPackageSObject = semaIsExternalManagedPackageAPIName(projectNamespace, object.Name)
 		if objectMembers.fields == nil {
 			objectMembers.fields = make(map[string]typesys.MemberSymbol)
 		}
 		semaAddCommonSObjectFields(objectMembers.fields)
+		if semaObjectSupportsRecordTypeRelationship(object) {
+			semaAddSObjectRecordTypeRelationship(objectMembers.fields)
+		}
 		for _, field := range object.Fields {
 			if field.Name != "" {
+				fieldType := semaApexTypeForSchemaFieldInObjects(index.Objects, field)
+				if fieldType == "" {
+					if _, exists := objectMembers.fields[normalizeName(field.Name)]; exists {
+						continue
+					}
+				}
 				semaAddSchemaFieldMember(objectMembers.fields, projectNamespace, typesys.MemberSymbol{
 					Kind:      apexast.DeclarationField,
 					Name:      field.Name,
-					Type:      semaApexTypeForSchemaFieldInObjects(index.Objects, field),
+					Type:      fieldType,
 					Modifiers: []string{"public"},
 				})
 				if strings.EqualFold(field.Type, "Location") {
@@ -1054,6 +1070,41 @@ func semaAddCommonSObjectFields(fields map[string]typesys.MemberSymbol) {
 	}
 }
 
+func semaObjectSupportsRecordTypeRelationship(object schema.Object) bool {
+	if strings.HasSuffix(strings.ToLower(object.Name), "__c") {
+		return true
+	}
+	if len(object.RecordTypes) > 0 {
+		return true
+	}
+	for _, field := range object.Fields {
+		if strings.EqualFold(field.Name, "RecordTypeId") || strings.EqualFold(field.RelationshipName, "RecordType") {
+			return true
+		}
+	}
+	return false
+}
+
+func semaAddSObjectRecordTypeRelationship(fields map[string]typesys.MemberSymbol) {
+	if _, exists := fields[normalizeName("RecordTypeId")]; !exists {
+		fields[normalizeName("RecordTypeId")] = typesys.MemberSymbol{
+			Kind:      apexast.DeclarationField,
+			Name:      "RecordTypeId",
+			Type:      "Id",
+			Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
+		}
+	}
+	if _, exists := fields[normalizeName("RecordType")]; exists {
+		return
+	}
+	fields[normalizeName("RecordType")] = typesys.MemberSymbol{
+		Kind:      apexast.DeclarationField,
+		Name:      "RecordType",
+		Type:      "RecordType",
+		Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
+	}
+}
+
 func semaFallbackStandardSObjectFields(objectName string, synthetic bool) []schema.Field {
 	switch {
 	case strings.EqualFold(objectName, "Name"):
@@ -1159,6 +1210,9 @@ func semaApexTypeForSchemaField(field schema.Field) string {
 
 func semaApexTypeForSchemaFieldInObjects(objects []schema.Object, field schema.Field) string {
 	fieldType := normalizeName(field.Type)
+	if fieldType == "any" || fieldType == "object" {
+		fieldType = ""
+	}
 	if fieldType == "summary" {
 		if summarizedType := semaApexTypeForSummarizedField(objects, field.SummarizedField); summarizedType != "" {
 			return summarizedType
@@ -1196,14 +1250,27 @@ func semaApexTypeForSchemaFieldInObjects(objects []schema.Object, field schema.F
 	}
 	if field.Name != "" {
 		key := normalizeName(field.Name)
+		localKey := normalizeName(semaSchemaLocalAPIName(field.Name))
 		switch {
 		case key == "id" || strings.HasSuffix(key, "id"):
 			return "Id"
-		case key == "isdeleted" || strings.HasPrefix(key, "is") || strings.HasPrefix(key, "has"):
+		case strings.HasSuffix(key, "email"):
+			return "String"
+		case key == "isdeleted" || strings.HasPrefix(key, "is") || strings.HasPrefix(key, "has") || localKey == "mandatory__c":
 			return "Boolean"
-		case key == "name" || key == "developername" || key == "masterlabel":
+		case strings.HasSuffix(localKey, "datetime__c"):
+			return "Datetime"
+		case strings.HasSuffix(localKey, "date__c"):
+			return "Date"
+		case key == "name" || key == "developername" || key == "masterlabel" || key == "label" || key == "namespaceprefix" || key == "qualifiedapiname":
+			return "String"
+		case strings.Contains(key, "name") || strings.Contains(key, "class") || strings.HasSuffix(key, "type") ||
+			strings.Contains(localKey, "name") || strings.Contains(localKey, "class") || strings.HasSuffix(localKey, "type__c"):
 			return "String"
 		}
+	}
+	if fieldType == "" {
+		return ""
 	}
 	return "Object"
 }

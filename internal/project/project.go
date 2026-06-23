@@ -106,8 +106,15 @@ func NormalizeApexNamespaceTokens(source, namespace string) string {
 }
 
 type PackageDirectory struct {
-	Path    string `json:"path"`
-	Default bool   `json:"default,omitempty"`
+	Path         string              `json:"path"`
+	Default      bool                `json:"default,omitempty"`
+	Package      string              `json:"package,omitempty"`
+	Dependencies []PackageDependency `json:"dependencies,omitempty"`
+}
+
+type PackageDependency struct {
+	Package       string `json:"package"`
+	VersionNumber string `json:"versionNumber,omitempty"`
 }
 
 type scratchOrgDefinition struct {
@@ -367,6 +374,15 @@ func load(root string, stack map[string]bool, dependency bool) (Project, error) 
 		p.ManagedPackageDependencies, p.DependencyDiagnostics = loadManagedPackageDependencies(gladeCfg.Project.ManagedPackageDependencies, gladeCfg.Project.NamespaceRemaps, stack)
 		p.PackageShims, p.DependencyDiagnostics = loadPackageShims(gladeCfg.Project.PackageShims, stack, p.DependencyDiagnostics)
 	}
+	var dependencyCfg config.Config
+	dependencyCfgOK := false
+	if cfgErr != nil {
+		if nearestCfg, _, err := config.LoadNearest(absRoot); err == nil {
+			dependencyCfg = nearestCfg
+			dependencyCfgOK = true
+		}
+	}
+	p.ManagedPackageDependencies, p.DependencyDiagnostics = loadLocalSFDXPackageDependencies(absRoot, cfg, p, stack, dependencyCfg, dependencyCfgOK)
 
 	includeConventionalRoots := !dependency && !cfg.HasManifest
 	for _, pkgRoot := range packageRoots(absRoot, p.PackageDirectories, includeConventionalRoots) {
@@ -611,6 +627,247 @@ func loadManagedPackageDependencies(configured []config.ManagedPackageDependency
 		deps = append(deps, projectDep)
 	}
 	return deps, diagnostics
+}
+
+func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, stack map[string]bool, dependencyCfg config.Config, dependencyCfgOK bool) ([]ManagedPackageDependency, []DependencyDiagnostic) {
+	deps := append([]ManagedPackageDependency(nil), p.ManagedPackageDependencies...)
+	diagnostics := append([]DependencyDiagnostic(nil), p.DependencyDiagnostics...)
+	packageNames := sfdxPackageDependencyNames(cfg)
+	if dependencyCfgOK {
+		configured := matchingConfiguredManagedPackageDependencies(packageNames, dependencyCfg.Project.ManagedPackageDependencies)
+		configDeps, configDiagnostics := loadManagedPackageDependencies(configured, dependencyCfg.Project.NamespaceRemaps, stack)
+		for _, dep := range configDeps {
+			if managedPackageDependencySourceLoaded(deps, dep.SourceRoot) || managedPackageDependencyNamespaceLoaded(deps, dep.Namespace) {
+				continue
+			}
+			deps = append(deps, dep)
+		}
+		diagnostics = append(diagnostics, configDiagnostics...)
+	}
+	for _, packageName := range packageNames {
+		depRoot, ok := findLocalSFDXPackageDependencyRoot(root, packageName, dependencyCfgOK)
+		if !ok || sameFilePath(depRoot, root) || managedPackageDependencySourceLoaded(deps, depRoot) || managedPackageDependencyNamespaceLoaded(deps, packageName) {
+			continue
+		}
+		loaded, err := load(depRoot, stack, true)
+		if err != nil {
+			diagnostics = append(diagnostics, DependencyDiagnostic{
+				SourceRoot: depRoot,
+				Status:     "load_error",
+				Code:       "dependency_load_error",
+				Message:    err.Error(),
+			})
+			continue
+		}
+		if loaded.Root == "" {
+			continue
+		}
+		namespace := loaded.Namespace
+		if namespace == "" {
+			namespace = p.Namespace
+		}
+		deps = append(deps, ManagedPackageDependency{
+			Namespace:  namespace,
+			SourceRoot: depRoot,
+			Project:    &loaded,
+			Status:     "loaded",
+		})
+	}
+	return deps, diagnostics
+}
+
+func matchingConfiguredManagedPackageDependencies(packageNames []string, configured []config.ManagedPackageDependency) []config.ManagedPackageDependency {
+	wanted := make(map[string]bool, len(packageNames))
+	for _, name := range packageNames {
+		if normalized := normalizeSFDXPackageName(name); normalized != "" {
+			wanted[normalized] = true
+		}
+	}
+	if len(wanted) == 0 {
+		return nil
+	}
+	matched := make([]config.ManagedPackageDependency, 0, len(configured))
+	for _, dep := range configured {
+		if wanted[normalizeSFDXPackageName(dep.Namespace)] {
+			matched = append(matched, dep)
+		}
+	}
+	return matched
+}
+
+func sfdxPackageDependencyNames(cfg sfdxProject) []string {
+	seen := make(map[string]bool)
+	var names []string
+	for _, dir := range cfg.PackageDirectories {
+		for _, dep := range dir.Dependencies {
+			name := normalizeSFDXPackageName(dep.Package)
+			if name == "" || seen[name] {
+				continue
+			}
+			seen[name] = true
+			names = append(names, dep.Package)
+		}
+	}
+	return names
+}
+
+func findLocalSFDXPackageDependencyRoot(root, packageName string, allowSiblingScan bool) (string, bool) {
+	wanted := normalizeSFDXPackageName(packageName)
+	if wanted == "" {
+		return "", false
+	}
+	root = filepath.Clean(root)
+	seen := make(map[string]bool)
+	for _, candidate := range localSFDXPackageDependencyCandidates(root, packageName, allowSiblingScan) {
+		if sameFilePath(candidate, root) || seen[candidate] {
+			continue
+		}
+		seen[candidate] = true
+		cfg, err := loadSFDXProject(candidate)
+		if err != nil || !sfdxProjectDeclaresPackage(cfg, wanted) {
+			continue
+		}
+		return candidate, true
+	}
+	return "", false
+}
+
+func localSFDXPackageDependencyCandidates(root, packageName string, allowSiblingScan bool) []string {
+	seen := make(map[string]bool)
+	var candidates []string
+	add := func(dir string) {
+		dir = filepath.Clean(dir)
+		if dir == "." || dir == string(filepath.Separator) || seen[dir] {
+			return
+		}
+		seen[dir] = true
+		candidates = append(candidates, dir)
+	}
+	parent := filepath.Dir(filepath.Clean(root))
+	grandparent := filepath.Dir(parent)
+	for _, base := range []string{parent, grandparent} {
+		if base == "" || base == "." {
+			continue
+		}
+		add(base)
+		for _, name := range localSFDXPackageDependencyDirNames(packageName) {
+			if name == "" {
+				continue
+			}
+			add(filepath.Join(base, name))
+			add(filepath.Join(base, "packages", name))
+		}
+	}
+	if allowSiblingScan {
+		for _, candidate := range localSFDXSiblingProjectCandidates(parent) {
+			add(candidate)
+		}
+	}
+	return candidates
+}
+
+func localSFDXSiblingProjectCandidates(parent string) []string {
+	entries, err := os.ReadDir(parent)
+	if err != nil {
+		return nil
+	}
+	candidates := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if !entry.IsDir() || strings.HasPrefix(entry.Name(), ".") {
+			continue
+		}
+		candidate := filepath.Join(parent, entry.Name())
+		info, err := os.Stat(filepath.Join(candidate, "sfdx-project.json"))
+		if err == nil && !info.IsDir() {
+			candidates = append(candidates, candidate)
+		}
+	}
+	sort.Strings(candidates)
+	return candidates
+}
+
+func localSFDXPackageDependencyDirNames(packageName string) []string {
+	raw := strings.TrimSpace(packageName)
+	if i := strings.Index(raw, "@"); i >= 0 {
+		raw = strings.TrimSpace(raw[:i])
+	}
+	normalized := normalizeSFDXPackageName(raw)
+	var names []string
+	add := func(name string) {
+		name = strings.TrimSpace(name)
+		if name == "" || strings.ContainsAny(name, `/\`) {
+			return
+		}
+		for _, existing := range names {
+			if existing == name {
+				return
+			}
+		}
+		names = append(names, name)
+	}
+	add(normalized)
+	add(raw)
+	add(strings.ReplaceAll(normalized, " ", "-"))
+	add(strings.ReplaceAll(normalized, " ", "_"))
+	add(strings.ReplaceAll(normalized, " ", ""))
+	return names
+}
+
+func sfdxProjectDeclaresPackage(cfg sfdxProject, wanted string) bool {
+	for _, dir := range cfg.PackageDirectories {
+		if normalizeSFDXPackageName(dir.Package) == wanted {
+			return true
+		}
+	}
+	return false
+}
+
+func normalizeSFDXPackageName(name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return ""
+	}
+	if i := strings.Index(name, "@"); i >= 0 {
+		name = name[:i]
+	}
+	return strings.ToLower(strings.TrimSpace(name))
+}
+
+func managedPackageDependencySourceLoaded(deps []ManagedPackageDependency, sourceRoot string) bool {
+	for _, dep := range deps {
+		if dep.SourceRoot != "" && sameFilePath(dep.SourceRoot, sourceRoot) {
+			return true
+		}
+	}
+	return false
+}
+
+func managedPackageDependencyNamespaceLoaded(deps []ManagedPackageDependency, namespace string) bool {
+	namespace = normalizeSFDXPackageName(namespace)
+	if namespace == "" {
+		return false
+	}
+	for _, dep := range deps {
+		if normalizeSFDXPackageName(dep.Namespace) == namespace {
+			return true
+		}
+	}
+	return false
+}
+
+func sameFilePath(left, right string) bool {
+	if left == "" || right == "" {
+		return false
+	}
+	leftAbs, leftErr := filepath.Abs(left)
+	rightAbs, rightErr := filepath.Abs(right)
+	if leftErr == nil {
+		left = leftAbs
+	}
+	if rightErr == nil {
+		right = rightAbs
+	}
+	return filepath.Clean(left) == filepath.Clean(right)
 }
 
 func matchingNamespaceRemaps(rules []namespaceremap.Rule, loadedNamespace, configuredNamespace string) []namespaceremap.Rule {

@@ -2345,6 +2345,30 @@ func TestRunCheckReportsMalformedMetadataAsDiagnostic(t *testing.T) {
 	}
 }
 
+func TestRunCheckDoesNotReportPerformanceDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/QueryInLoop.cls"), `
+public class QueryInLoop {
+  public static void run(List<Account> accounts) {
+    for (Account account : accounts) {
+      List<Contact> contacts = [SELECT Id FROM Contact WHERE AccountId = :account.Id];
+      System.debug(contacts.size());
+    }
+  }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"check", "--project", root, "--json", "--no-progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if strings.Contains(stdout.String(), "GLADEPERF") {
+		t.Fatalf("check JSON reported performance diagnostics:\n%s", stdout.String())
+	}
+}
+
 func TestRunCheckFormatsForCI(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

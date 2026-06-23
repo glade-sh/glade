@@ -1884,7 +1884,11 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		Current: 3,
 		Total:   4,
 	})
-	result := sema.Analyze(index)
+	result := sema.AnalyzeWithOptions(index, sema.AnalyzeOptions{
+		Diagnostics:                    true,
+		ExportTypes:                    true,
+		SuppressPerformanceDiagnostics: true,
+	})
 	renderer.Render(cliui.Event{
 		Kind:    cliui.EventPhaseEnd,
 		Phase:   "check",

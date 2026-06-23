@@ -82,7 +82,9 @@ func parseYAMLSubset(src string) (Config, error) {
 	var cfg Config
 	var section string
 
-	for lineNo, raw := range strings.Split(src, "\n") {
+	lines := strings.Split(src, "\n")
+	for lineNo := 0; lineNo < len(lines); lineNo++ {
+		raw := lines[lineNo]
 		line := strings.TrimSpace(stripComment(raw))
 		if line == "" {
 			continue
@@ -121,15 +123,28 @@ func parseYAMLSubset(src string) (Config, error) {
 			}
 			cfg.Project.PackageDirs = values
 		case "project.managedPackageDependencies":
-			values, err := parseInlineList(value)
-			if err != nil {
-				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
+			if value == "" {
+				entries, nextLine, err := parseManagedPackageDependencyBlock(lines, lineNo+1, leadingSpaces(raw))
+				if err != nil {
+					return Config{}, err
+				}
+				deps, err := parseManagedPackageDependencyEntries(entries)
+				if err != nil {
+					return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
+				}
+				cfg.Project.ManagedPackageDependencies = deps
+				lineNo = nextLine - 1
+			} else {
+				values, err := parseInlineList(value)
+				if err != nil {
+					return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
+				}
+				deps, err := parseManagedPackageDependencies(values)
+				if err != nil {
+					return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
+				}
+				cfg.Project.ManagedPackageDependencies = deps
 			}
-			deps, err := parseManagedPackageDependencies(values)
-			if err != nil {
-				return Config{}, fmt.Errorf("glade.yml:%d: %w", lineNo+1, err)
-			}
-			cfg.Project.ManagedPackageDependencies = deps
 		case "project.packageShims":
 			values, err := parseInlineList(value)
 			if err != nil {
@@ -152,6 +167,55 @@ func parseYAMLSubset(src string) (Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func parseManagedPackageDependencyBlock(lines []string, start, parentIndent int) ([]ManagedPackageDependency, int, error) {
+	var entries []ManagedPackageDependency
+	current := -1
+	for lineNo := start; lineNo < len(lines); lineNo++ {
+		raw := lines[lineNo]
+		line := strings.TrimSpace(stripComment(raw))
+		if line == "" {
+			continue
+		}
+		if leadingSpaces(raw) <= parentIndent {
+			return entries, lineNo, nil
+		}
+		if strings.HasPrefix(line, "- ") {
+			entries = append(entries, ManagedPackageDependency{})
+			current = len(entries) - 1
+			line = strings.TrimSpace(strings.TrimPrefix(line, "- "))
+			if line == "" {
+				continue
+			}
+		} else if current < 0 {
+			return nil, lineNo, fmt.Errorf("glade.yml:%d: expected managed package dependency list item", lineNo+1)
+		}
+
+		key, value, ok := strings.Cut(line, ":")
+		if !ok {
+			return nil, lineNo, fmt.Errorf("glade.yml:%d: expected key: value", lineNo+1)
+		}
+		key = strings.TrimSpace(key)
+		value = trimScalar(value)
+		switch key {
+		case "namespace":
+			entries[current].Namespace = value
+		case "sourceRoot":
+			entries[current].SourceRoot = value
+		case "artifactPath":
+			entries[current].ArtifactPath = value
+		case "version":
+			entries[current].Version = value
+		default:
+			return nil, lineNo, fmt.Errorf("glade.yml:%d: unsupported managed package dependency key %q", lineNo+1, key)
+		}
+	}
+	return entries, len(lines), nil
+}
+
+func leadingSpaces(s string) int {
+	return len(s) - len(strings.TrimLeft(s, " "))
 }
 
 func parseNamespaceRemaps(values []string) ([]namespaceremap.Rule, error) {
@@ -239,7 +303,6 @@ func parseInlineList(s string) ([]string, error) {
 }
 
 func parseManagedPackageDependencies(values []string) ([]ManagedPackageDependency, error) {
-	seen := make(map[string]bool)
 	deps := make([]ManagedPackageDependency, 0, len(values))
 	for _, value := range values {
 		namespace, spec, ok := strings.Cut(strings.TrimSpace(value), ":")
@@ -266,20 +329,36 @@ func parseManagedPackageDependencies(values []string) ([]ManagedPackageDependenc
 			sourceRoot = strings.TrimSpace(path)
 			version = strings.TrimSpace(requiredVersion)
 		}
-		if namespace == "" || (sourceRoot == "" && artifactPath == "") {
-			return nil, fmt.Errorf("invalid managed package dependency %q: namespace and path are required", value)
-		}
-		key := strings.ToLower(namespace)
-		if seen[key] {
-			return nil, fmt.Errorf("duplicate managed package dependency namespace %q", namespace)
-		}
-		seen[key] = true
 		deps = append(deps, ManagedPackageDependency{
 			Namespace:    namespace,
 			SourceRoot:   sourceRoot,
 			ArtifactPath: artifactPath,
 			Version:      version,
 		})
+	}
+	return parseManagedPackageDependencyEntries(deps)
+}
+
+func parseManagedPackageDependencyEntries(entries []ManagedPackageDependency) ([]ManagedPackageDependency, error) {
+	seen := make(map[string]bool)
+	deps := make([]ManagedPackageDependency, 0, len(entries))
+	for _, dep := range entries {
+		dep.Namespace = strings.TrimSpace(dep.Namespace)
+		dep.SourceRoot = strings.TrimSpace(dep.SourceRoot)
+		dep.ArtifactPath = strings.TrimSpace(dep.ArtifactPath)
+		dep.Version = strings.TrimSpace(dep.Version)
+		if dep.Namespace == "" || (dep.SourceRoot == "" && dep.ArtifactPath == "") {
+			return nil, fmt.Errorf("invalid managed package dependency %q: namespace and path are required", dep.Namespace)
+		}
+		if dep.SourceRoot != "" && dep.ArtifactPath != "" {
+			return nil, fmt.Errorf("invalid managed package dependency %q: sourceRoot and artifactPath are mutually exclusive", dep.Namespace)
+		}
+		key := strings.ToLower(dep.Namespace)
+		if seen[key] {
+			return nil, fmt.Errorf("duplicate managed package dependency namespace %q", dep.Namespace)
+		}
+		seen[key] = true
+		deps = append(deps, dep)
 	}
 	return deps, nil
 }

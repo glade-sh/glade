@@ -1273,6 +1273,32 @@ public class UsesConcreteSObjectAccessors {
 	}
 }
 
+func TestAnalyzeSObjectRelationshipAssignmentAllowsReferencedRecord(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "AssignsRelationshipRecord.cls"), `
+public class AssignsRelationshipRecord {
+  public static void run(CartItem__c item) {
+    RecordType recordType = [SELECT Id, Name FROM RecordType WHERE DeveloperName = 'Registration' LIMIT 1];
+    item.RecordType = recordType;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "AssignsRelationshipRecord.cls"),
+	}}, schema.Schema{Objects: []schema.Object{{Name: "CartItem__c"}}})
+
+	model := buildTypeMembers(index)
+	targetType := semaFieldScope(model, "CartItem__c", make(map[string]bool))[normalizeName("RecordType")]
+	if targetType != "RecordType" {
+		t.Fatalf("CartItem__c.RecordType type = %q", targetType)
+	}
+	if !semaAssignableToType(targetType, "RecordType", model) {
+		t.Fatalf("%q should be assignable to RecordType", targetType)
+	}
+	result := Analyze(index)
+	assertNoDiagnosticContaining(t, result, "GLADESEMA018", "item.RecordType")
+}
+
 func TestAnalyzeStandardSObjectRelationshipAccessors(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesStandardSObjectAccessors.cls"), `
@@ -9727,6 +9753,164 @@ global class ProgramAgreementSetter extends pkgx.AgreementSetter {
 	}
 }
 
+func TestAnalyzeSameNamespaceSourceDependencyShortName(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	if err := os.MkdirAll(depRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(consumerRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeSemaFile(t, filepath.Join(depRoot, "Q.cls"), `
+global class Q {}
+`)
+	writeSemaFile(t, filepath.Join(consumerRoot, "UsesQ.cls"), `
+public class UsesQ {
+  public Q query;
+  public void run() {
+    Q localQuery = new Q();
+  }
+}
+`)
+	depProject := project.Project{
+		Root:      depRoot,
+		Namespace: "pkgx",
+		ApexFiles: []string{filepath.Join(depRoot, "Q.cls")},
+	}
+	index := typesys.Build(project.Project{
+		Root:      consumerRoot,
+		Namespace: "pkgx",
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace:  "pkgx",
+			SourceRoot: depRoot,
+			Project:    &depProject,
+			Status:     "loaded",
+		}},
+		ApexFiles: []string{filepath.Join(consumerRoot, "UsesQ.cls")},
+	}, schema.Schema{})
+
+	result := Analyze(index)
+	assertNoDiagnosticContaining(t, result, "GLADESEMA002", "Q")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA006", "Q")
+}
+
+func TestAnalyzeSameNamespaceSourceDependencyProtectedFieldAccess(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	if err := os.MkdirAll(depRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(consumerRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeSemaFile(t, filepath.Join(depRoot, "RestRoute.cls"), `
+global abstract class RestRoute {
+  protected String resourceId;
+}
+`)
+	writeSemaFile(t, filepath.Join(consumerRoot, "ProductRoute.cls"), `
+public class ProductRoute extends RestRoute {
+  protected Object doGet() {
+    if (String.isNotEmpty(this.resourceId)) {
+      return this.resourceId;
+    }
+    return null;
+  }
+}
+`)
+	depProject := project.Project{
+		Root:      depRoot,
+		Namespace: "pkgx",
+		ApexFiles: []string{filepath.Join(depRoot, "RestRoute.cls")},
+	}
+	index := typesys.Build(project.Project{
+		Root:      consumerRoot,
+		Namespace: "pkgx",
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace:  "pkgx",
+			SourceRoot: depRoot,
+			Project:    &depProject,
+			Status:     "loaded",
+		}},
+		ApexFiles: []string{filepath.Join(consumerRoot, "ProductRoute.cls")},
+	}, schema.Schema{})
+
+	result := Analyze(index)
+	assertNoDiagnosticContaining(t, result, "GLADESEMA010", "resourceId")
+}
+
+func TestAnalyzeAcceptsLowercaseExternalManagedPackageApexNamespace(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "UsesVendor.cls")
+	writeSemaFile(t, classPath, `
+public class UsesVendor {
+  public vendor.PaymentGatewayResponse run(vendor.PaymentGatewayRequest request) {
+    return null;
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		Namespace: "localpkg",
+		ApexFiles: []string{classPath},
+	}, schema.Schema{})
+
+	result := Analyze(index)
+	assertNoDiagnosticContaining(t, result, "GLADESEMA002", "vendor.PaymentGatewayResponse")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA004", "vendor.PaymentGatewayRequest")
+}
+
+func TestAnalyzeLeavesExternalManagedPackageSObjectFieldsOpen(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "UsesExternalFields.cls")
+	writeSemaFile(t, classPath, `
+public class UsesExternalFields {
+  public void run(vend__Membership__c membership) {
+    membership.vend__EndDate__c.addMonths(1);
+    membership.vend__Amount__c = 10.5;
+    vend__ProductFrequencyLink__c link;
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		Namespace: "localpkg",
+		ApexFiles: []string{classPath},
+	}, schema.Schema{Objects: []schema.Object{{Name: "vend__Membership__c"}}})
+
+	result := Analyze(index)
+	assertNoDiagnosticContaining(t, result, "GLADESEMA002", "vend__ProductFrequencyLink__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA004", "vend__Membership__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA006", "vend__ProductFrequencyLink__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA008", "vend__EndDate__c.addMonths")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA018", "vend__Amount__c")
+}
+
+func TestAnalyzeKeepsLocalManagedPackageSObjectFieldsStrict(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "UsesLocalFields.cls")
+	writeSemaFile(t, classPath, `
+public class UsesLocalFields {
+  public void run(localpkg__Membership__c membership) {
+    membership.localpkg__EndDate__c.addMonths(1);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		Namespace: "localpkg",
+		ApexFiles: []string{classPath},
+	}, schema.Schema{Objects: []schema.Object{{Name: "localpkg__Membership__c"}}})
+
+	result := Analyze(index)
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA008") {
+		t.Fatalf("expected local missing field call diagnostic, got %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeSkipsSourceBackedDependencyDiagnostics(t *testing.T) {
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
@@ -10963,6 +11147,321 @@ public class OrderBuilderUse {
 	for _, diag := range result.Diagnostics {
 		if diag.Code == "GLADESEMA018" {
 			t.Fatalf("fluent static constructor chain should resolve left to right: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeFluentConstructorChainKeepsReceiverType(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Fabricated.cls"), `
+public class Fabricated {
+  public Fabricated(Type recordType) {
+  }
+
+  public Fabricated set(Schema.SObjectField field, Object value) {
+    return this;
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "FabricatedUse.cls"), `
+public class FabricatedUse {
+  public void run(Id productId) {
+    Fabricated product = new Fabricated(Product__c.class)
+      .set(Product__c.Id, productId)
+      .set(Product__c.Name, 'Test Product')
+      .set(Product__c.Mandatory__c, false);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Fabricated.cls"),
+		filepath.Join(root, "FabricatedUse.cls"),
+	}}, schema.Schema{Objects: []schema.Object{{
+		Name: "Product__c",
+		Fields: []schema.Field{
+			{Name: "Name", Type: "Text"},
+			{Name: "Mandatory__c", Type: "Checkbox"},
+		},
+	}}})
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA018" || diag.Code == "GLADESEMA019" {
+			t.Fatalf("constructor fluent chain should keep Fabricated return type: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeCommaSeparatedLocalInitializersStopAtDeclaratorComma(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "CommaLocals.cls"), `
+public class CommaLocals {
+  public void run(Account acct1, Account acct2) {
+    Account acct1changed = acct1.clone(),
+      acct2changed = acct2.clone();
+    acct1changed.Name = 'Changed';
+    acct2changed.Name = 'Changed';
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "CommaLocals.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA018" {
+			t.Fatalf("first comma-separated initializer should not include the next declarator: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeCustomMetadataStandardFieldsAreStrings(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesCustomMetadataStandardFields.cls"), `
+public class UsesCustomMetadataStandardFields {
+  public String apiName(Feature__mdt feature) {
+    return feature.QualifiedApiName;
+  }
+
+  public String label(Feature__mdt feature) {
+    return feature.Label;
+  }
+
+  public Boolean blankNamespace(Feature__mdt feature) {
+    return String.isBlank(feature.NamespacePrefix);
+  }
+
+  public VisualEditor.DataRow row(Feature__mdt feature) {
+    return new VisualEditor.DataRow(feature.Label, feature.QualifiedApiName);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesCustomMetadataStandardFields.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Feature__mdt"}}})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("custom metadata standard fields should be typed as strings: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeProjectReferencedLiteralFieldTypesFlowToAssignmentsAndConstructors(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "FeeDto.cls"), `
+public class FeeDto {
+  public String paymentMethod;
+  public Boolean mandatory;
+
+  public FeeDto(String paymentMethod, Boolean mandatory) {
+    this.paymentMethod = paymentMethod;
+    this.mandatory = mandatory;
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "UsesInferredFeeFields.cls"), `
+public class UsesInferredFeeFields {
+  public void seed() {
+    Fee__c fee = new Fee__c(
+      PaymentMethodType__c = 'Credit Card',
+      Mandatory__c = false
+    );
+  }
+
+  public void run(Fee__c fee) {
+    FeeDto dto = new FeeDto(fee.PaymentMethodType__c, fee.Mandatory__c);
+    dto.paymentMethod = fee.PaymentMethodType__c;
+    dto.mandatory = fee.Mandatory__c;
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root: root,
+		ApexFiles: []string{
+			filepath.Join(root, "FeeDto.cls"),
+			filepath.Join(root, "UsesInferredFeeFields.cls"),
+		},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Fee__c"}}})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("literal-backed inferred fields should carry useful types: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeProjectReferencedDateFactoryFieldTypeFlowsToCalls(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesInferredDateFields.cls"), `
+public class UsesInferredDateFields {
+  public void seed() {
+    Agreement__c agreement = new Agreement__c(
+      StartDate__c = Date.today(),
+      EndDate__c = Date.newInstance(2026, 5, 7)
+    );
+  }
+
+  public String run(Agreement__c agreement) {
+    return agreement.StartDate__c.format() + agreement.EndDate__c.format();
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesInferredDateFields.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Agreement__c"}}})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("date factory inferred fields should carry Date type: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeProjectReferencedAnyFieldDoesNotBlockStringOverload(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "StringConsumer.cls"), `
+public class StringConsumer {
+  public static void accept(String value) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "UsesUnknownInferredField.cls"), `
+public class UsesUnknownInferredField {
+  public void run(Config__mdt config) {
+    StringConsumer.accept(config.FromStates__c);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root: root,
+		ApexFiles: []string{
+			filepath.Join(root, "StringConsumer.cls"),
+			filepath.Join(root, "UsesUnknownInferredField.cls"),
+		},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Config__mdt"}}})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unknown inferred fields should not force Object overload mismatches: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeProjectReferencedSchemaDoesNotInferFieldsForAuthoritativeObjects(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesTypoField.cls"), `
+public class UsesTypoField {
+  public void seed() {
+    Fee__c seeded = new Fee__c(Typo__c = 'not metadata');
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesTypoField.cls")},
+	}, schema.Schema{Objects: []schema.Object{{
+		Name: "Fee__c",
+		Fields: []schema.Field{
+			{Name: "Id", Type: "Id"},
+		},
+	}}})
+	enriched := enrichIndexWithProjectReferencedSchemaFields(index)
+	for _, object := range enriched.Objects {
+		if !strings.EqualFold(object.Name, "Fee__c") {
+			continue
+		}
+		for _, field := range object.Fields {
+			if strings.EqualFold(field.Name, "Typo__c") {
+				t.Fatalf("authoritative object inferred typo field: %#v", object.Fields)
+			}
+		}
+		return
+	}
+	t.Fatalf("missing Fee__c object: %#v", enriched.Objects)
+}
+
+func TestAnalyzeProjectReferencedSchemaIgnoresNestedNamedArgsInSObjectLiteral(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "NestedArgs.cls"), `
+public class NestedArgs {
+  public Object helper(Object value) {
+    return value;
+  }
+
+  public void seed() {
+    Fee__c fee = new Fee__c(
+      Name = 'Fee',
+      Description__c = helper(new Object(Nested__c = 'not a Fee field'))
+    );
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "NestedArgs.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Fee__c"}}})
+	enriched := enrichIndexWithProjectReferencedSchemaFields(index)
+	for _, object := range enriched.Objects {
+		if !strings.EqualFold(object.Name, "Fee__c") {
+			continue
+		}
+		for _, field := range object.Fields {
+			if strings.EqualFold(field.Name, "Nested__c") {
+				t.Fatalf("nested named arg inferred as Fee__c field: %#v", object.Fields)
+			}
+		}
+		return
+	}
+	t.Fatalf("missing Fee__c object: %#v", enriched.Objects)
+}
+
+func TestAnalyzeProjectReferencedFieldsRefineExistingAnyAndObjectFields(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "FeeDto.cls"), `
+public class FeeDto {
+  public FeeDto(String paymentMethod, Boolean mandatory) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "UsesExistingLooseFields.cls"), `
+public class UsesExistingLooseFields {
+  public void seed() {
+    Fee__c fee = new Fee__c(
+      PaymentMethodType__c = 'Credit Card',
+      Mandatory__c = false
+    );
+  }
+
+  public void run(Fee__c fee) {
+    FeeDto dto = new FeeDto(fee.PaymentMethodType__c, fee.Mandatory__c);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root: root,
+		ApexFiles: []string{
+			filepath.Join(root, "FeeDto.cls"),
+			filepath.Join(root, "UsesExistingLooseFields.cls"),
+		},
+	}, schema.Schema{Objects: []schema.Object{{
+		Name: "Fee__c",
+		Fields: []schema.Field{
+			{Name: "PaymentMethodType__c", Type: "Any"},
+			{Name: "Mandatory__c", Type: "Object"},
+		},
+	}}})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("literal-backed loose fields should refine to useful types: %#v", result.Diagnostics)
+	}
+}
+
+func TestSemaApexTypeForObjectSchemaFieldUsesNameFallbacks(t *testing.T) {
+	tests := []struct {
+		field schema.Field
+		want  string
+	}{
+		{field: schema.Field{Name: "pkg__PaymentMethodType__c", Type: "Object"}, want: "String"},
+		{field: schema.Field{Name: "pkg__Mandatory__c", Type: "Object"}, want: "Boolean"},
+		{field: schema.Field{Name: "pkg__StartDate__c", Type: "Object"}, want: "Date"},
+		{field: schema.Field{Name: "pkg__StartDateTime__c", Type: "Object"}, want: "Datetime"},
+	}
+	for _, tt := range tests {
+		if got := semaApexTypeForSchemaField(tt.field); got != tt.want {
+			t.Fatalf("semaApexTypeForSchemaField(%#v) = %q, want %q", tt.field, got, tt.want)
 		}
 	}
 }

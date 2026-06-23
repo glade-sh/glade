@@ -48,14 +48,16 @@ const (
 )
 
 type Analyzer struct {
-	known     map[string]TypeReference
-	namespace string
-	deps      map[string]bool
+	known                         map[string]TypeReference
+	namespace                     string
+	deps                          map[string]bool
+	includePerformanceDiagnostics bool
 }
 
 type AnalyzeOptions struct {
-	Diagnostics bool
-	ExportTypes bool
+	Diagnostics                    bool
+	ExportTypes                    bool
+	SuppressPerformanceDiagnostics bool
 }
 
 func NewAnalyzer() *Analyzer {
@@ -97,7 +99,9 @@ func (a *Analyzer) Analyze(index typesys.Index) (result Result) {
 func (a *Analyzer) AnalyzeWithOptions(index typesys.Index, opts AnalyzeOptions) (result Result) {
 	a.namespace = index.Project.Namespace
 	a.deps = make(map[string]bool)
+	a.includePerformanceDiagnostics = opts.Diagnostics && !opts.SuppressPerformanceDiagnostics
 	index = enrichIndexWithStandardSymbols(index)
+	index = enrichIndexWithProjectReferencedSchemaFields(index)
 	index = enrichIndexWithSchemaDerivedObjects(index)
 	result = Result{
 		Project: index.Project,
@@ -158,7 +162,9 @@ func (a *Analyzer) AnalyzeWithOptions(index typesys.Index, opts AnalyzeOptions) 
 		result.Diagnostics = append(result.Diagnostics, a.checkMethodParameters(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkAnnotations(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkMethodBodies(index)...)
-		result.Diagnostics = append(result.Diagnostics, a.checkPerformancePatterns(index)...)
+		if !opts.SuppressPerformanceDiagnostics {
+			result.Diagnostics = append(result.Diagnostics, a.checkPerformancePatterns(index)...)
+		}
 		result.Diagnostics = append(result.Diagnostics, a.checkVisibility(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkManagedPackageAccess(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkInheritanceContracts(index)...)
@@ -252,6 +258,17 @@ func enrichIndexWithSchemaDerivedObjects(index typesys.Index) typesys.Index {
 }
 
 func semaEnrichSchemaObject(object schema.Object) schema.Object {
+	if strings.HasSuffix(normalizeName(object.Name), "__mdt") {
+		for _, field := range []schema.Field{
+			{Name: "DeveloperName", Type: "Text"},
+			{Name: "MasterLabel", Type: "Text"},
+			{Name: "Label", Type: "Text"},
+			{Name: "NamespacePrefix", Type: "Text"},
+			{Name: "QualifiedApiName", Type: "Text"},
+		} {
+			object.Fields = semaMergeSchemaField(object.Fields, field)
+		}
+	}
 	if strings.EqualFold(object.CustomSettingsType, "Hierarchy") {
 		object.Fields = semaMergeSchemaField(object.Fields, schema.Field{
 			Name:             "SetupOwnerId",
@@ -811,7 +828,7 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 		}
 	}
 	if match[1] > 0 && body[match[1]-1] == '=' {
-		value := trimSemaArg(body, match[1], semaStatementEnd(body, match[1]))
+		value := trimSemaArg(body, match[1], semaLocalInitializerEnd(body, match[1]))
 		resolvedTypeName := resolveNestedTypeReference(model, typ.Name, typeName)
 		valueType := resolveNestedTypeReference(model, typ.Name, inferSemaArgTypeWithModel(value.text, scopes.flat(), model))
 		if valueType != "" && valueType != "null" && !semaAssignableToType(resolvedTypeName, valueType, model) && !semaSOQLSingletonAssignable(resolvedTypeName, valueType, value.text, model) {
@@ -848,7 +865,7 @@ func semaLocalVisibleStart(body string, delimiter, fallback int) int {
 	if delimiter < 0 || delimiter >= len(body) || body[delimiter] != '=' {
 		return fallback
 	}
-	end := semaStatementEnd(body, delimiter+1)
+	end := semaLocalInitializerEnd(body, delimiter+1)
 	if end <= delimiter {
 		return fallback
 	}
@@ -2691,7 +2708,13 @@ func (a *Analyzer) hasKnown(name string) bool {
 	if a.hasExternalDependencyName(name) || semaLooksLikeUnconfiguredManagedPackageType(name) {
 		return true
 	}
+	if semaIsExternalManagedPackageAPIName(a.namespace, name) {
+		return true
+	}
 	if a.namespace != "" {
+		if _, ok := a.known[normalizeName(a.namespace+"."+name)]; ok {
+			return true
+		}
 		if namespaced, ok := semaProjectNamespacedAPIName(a.namespace, name); ok {
 			if _, ok := a.known[normalizeName(namespaced)]; ok {
 				return true
@@ -2736,15 +2759,22 @@ func semaLooksLikeUnconfiguredManagedPackageType(name string) bool {
 		return false
 	}
 	root := strings.TrimSpace(parts[0])
-	if len(root) < 2 || root != strings.ToUpper(root) {
+	typeName := strings.TrimSpace(parts[1])
+	if len(root) < 2 || len(typeName) == 0 || !isUpperASCII(typeName[0]) {
 		return false
 	}
 	for _, r := range root {
 		if (r < 'A' || r > 'Z') && (r < '0' || r > '9') && r != '_' {
-			return false
+			if r < 'a' || r > 'z' {
+				return false
+			}
 		}
 	}
 	return true
+}
+
+func isUpperASCII(b byte) bool {
+	return b >= 'A' && b <= 'Z'
 }
 
 func semaProjectNamespacedAPIName(namespace, name string) (string, bool) {
@@ -2783,6 +2813,14 @@ func semaNamespaceFromAPIName(name string) string {
 		return ""
 	}
 	return name[:first]
+}
+
+func semaIsExternalManagedPackageAPIName(projectNamespace, name string) bool {
+	namespace := semaNamespaceFromAPIName(name)
+	if namespace == "" {
+		return false
+	}
+	return projectNamespace == "" || !strings.EqualFold(projectNamespace, namespace)
 }
 
 func semaIsCustomAPIName(name string) bool {
@@ -2937,6 +2975,51 @@ func semaStatementEnd(body string, start int) int {
 			}
 		case ';':
 			if depth == 0 {
+				return i
+			}
+		}
+	}
+	return len(body)
+}
+
+func semaLocalInitializerEnd(body string, start int) int {
+	parens, brackets, braces, angles := 0, 0, 0, 0
+	for i := start; i < len(body); i++ {
+		switch body[i] {
+		case '/':
+			if end, ok := skipSemaComment(body, i); ok {
+				i = end
+			}
+		case '\'':
+			i = skipSemaString(body, i)
+		case '(':
+			parens++
+		case ')':
+			if parens > 0 {
+				parens--
+			}
+		case '[':
+			brackets++
+		case ']':
+			if brackets > 0 {
+				brackets--
+			}
+		case '{':
+			braces++
+		case '}':
+			if braces > 0 {
+				braces--
+			}
+		case '<':
+			if parens == 0 && brackets == 0 && braces == 0 && looksLikeSemaGenericOpen(body, i) {
+				angles++
+			}
+		case '>':
+			if parens == 0 && brackets == 0 && braces == 0 && angles > 0 {
+				angles--
+			}
+		case ',', ';':
+			if parens == 0 && brackets == 0 && braces == 0 && angles == 0 {
 				return i
 			}
 		}

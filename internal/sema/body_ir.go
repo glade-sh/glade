@@ -7,6 +7,7 @@ import (
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
@@ -311,12 +312,63 @@ func semaSObjectFieldMember(typeName, fieldName string, model map[string]typeMem
 	case fieldKey == "isdeleted" || strings.HasPrefix(fieldKey, "is") || strings.HasPrefix(fieldKey, "has"):
 		fieldType = "Boolean"
 	}
+	if fieldType == "" && semaExternalPackageSObjectType(typeName, model) && semaIsCustomAPIName(fieldName) {
+		fieldType = semaApexTypeForSchemaField(schema.Field{Name: fieldName, Type: "Object"})
+		if fieldType == "" {
+			fieldType = "Object"
+		}
+	}
 	return resolvedMember{owner: typeName, member: typesys.MemberSymbol{
 		Kind:      apexast.DeclarationField,
 		Name:      fieldName,
 		Type:      fieldType,
 		Modifiers: []string{"public"},
 	}}, true
+}
+
+func semaExternalPackageSObjectType(typeName string, model map[string]typeMembers) bool {
+	members, _, ok := semaLookupTypeMembers(model, typeName)
+	return ok && members.sobject && members.externalPackageSObject
+}
+
+func semaExternalPackageSObjectFieldPath(expr string, scope map[string]string, model map[string]typeMembers) bool {
+	parts := strings.Split(strings.TrimSpace(expr), ".")
+	if len(parts) < 2 {
+		return false
+	}
+	receiverType := ""
+	start := 1
+	switch {
+	case strings.EqualFold(parts[0], "this"):
+		receiverType = scope[semaCurrentTypeScopeKey]
+	case strings.EqualFold(parts[0], "super"):
+		if members, _, ok := semaLookupTypeMembers(model, scope[semaCurrentTypeScopeKey]); ok {
+			receiverType = members.superClass
+		}
+	default:
+		if scoped, ok := scope[normalizeName(parts[0])]; ok {
+			receiverType = scoped
+		} else if members, _, ok := semaLookupTypeMembers(model, parts[0]); ok {
+			receiverType = members.name
+		}
+	}
+	if receiverType == "" {
+		return false
+	}
+	for _, field := range parts[start:] {
+		if field == "" {
+			return false
+		}
+		if semaExternalPackageSObjectType(receiverType, model) && semaIsCustomAPIName(field) {
+			return true
+		}
+		resolved, ok := semaResolveFieldPath(model, receiverType, field)
+		if !ok {
+			return false
+		}
+		receiverType = resolved.member.Type
+	}
+	return false
 }
 
 func semaParentRelationshipFieldName(fieldName string) string {
@@ -450,7 +502,10 @@ func (a *Analyzer) checkBodyIR(typ typesys.TypeSymbol, member typesys.MemberSymb
 		return nil
 	}
 	scope := newIRSemaScope(base)
-	diagnostics := performanceDiagnosticsForProgram(typ, program, bodyOffset, source)
+	var diagnostics []diagnostic.Diagnostic
+	if a.includePerformanceDiagnostics {
+		diagnostics = append(diagnostics, performanceDiagnosticsForProgram(typ, program, bodyOffset, source)...)
+	}
 	diagnostics = append(diagnostics, a.checkIRInstructions(typ, member, program.Instructions, &scope, bodyOffset, source, model, constructability)...)
 	returnType := strings.TrimSpace(member.Type)
 	memberSource := ""
@@ -911,6 +966,9 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 			if lastDot := strings.LastIndex(expr.Callee, "."); lastDot > 0 && lastDot < len(expr.Callee)-1 {
 				receiverExpr = expr.Callee[:lastDot]
 				methodName = expr.Callee[lastDot+1:]
+			}
+			if semaExternalPackageSObjectFieldPath(receiverExpr, scope.flat(), model) {
+				return nil
 			}
 			if semaCallReceiverEntersDependencyType(model, typ.Name, receiverExpr, scope) {
 				return nil
@@ -1649,9 +1707,6 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 				method = cutMethod
 			}
 			method = strings.TrimPrefix(method, "__safe_call:")
-			if strings.EqualFold(method, "set") && len(expr.Args) == 2 {
-				return a.inferIRExprType(expr.Args[1], scope, model, currentType)
-			}
 			if sig, ok := semaEnumMethodSignature(model, receiverType, method); ok {
 				return sig.returnType
 			}
@@ -1663,6 +1718,9 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 			}
 			if sig, ok := semaCollectionMethodSignature(receiverType, method); ok {
 				return sig.returnType
+			}
+			if strings.EqualFold(method, "set") && len(expr.Args) == 2 && isSemaSObjectLike(receiverType, model) {
+				return a.inferIRExprType(expr.Args[1], scope, model, currentType)
 			}
 			if sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method); ok {
 				return sig.returnType

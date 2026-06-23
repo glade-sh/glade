@@ -430,6 +430,148 @@ func TestLoadManagedPackageDependencies(t *testing.T) {
 	}
 }
 
+func TestLoadResolvesLocalSFDXPackageDependencies(t *testing.T) {
+	root := t.TempDir()
+	coreRoot := filepath.Join(root, "packages", "core")
+	consumerRoot := filepath.Join(root, "packages", "consumer")
+	writeFile(t, filepath.Join(coreRoot, "sfdx-project.json"), `{
+  "namespace": "pkgx",
+  "packageDirectories": [{"path":"force-app","default":true,"package":"Core"}]
+}`)
+	writeFile(t, filepath.Join(coreRoot, "force-app/main/default/classes/CoreHelper.cls"), "global class CoreHelper {}")
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{
+  "namespace": "pkgx",
+  "packageDirectories": [{
+    "path":"force-app",
+    "default":true,
+    "package":"Consumer",
+    "dependencies": [{"package":"Core"}]
+  }]
+}`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/classes/Consumer.cls"), "public class Consumer {}")
+
+	p, err := Load(consumerRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 1 {
+		t.Fatalf("dependency count = %d", len(p.ManagedPackageDependencies))
+	}
+	dep := p.ManagedPackageDependencies[0]
+	if dep.Status != "loaded" || dep.Namespace != "pkgx" || dep.Project == nil {
+		t.Fatalf("dependency = %#v", dep)
+	}
+	if dep.Project.Root != coreRoot || len(dep.Project.ApexFiles) != 1 || filepath.Base(dep.Project.ApexFiles[0]) != "CoreHelper.cls" {
+		t.Fatalf("loaded dependency project = %#v", dep.Project)
+	}
+}
+
+func TestLoadDoesNotScanUnrelatedGrandchildrenForSFDXPackageDependencies(t *testing.T) {
+	root := t.TempDir()
+	consumerRoot := filepath.Join(root, "workspace", "consumer")
+	unrelatedCoreRoot := filepath.Join(root, "workspace", "unrelated", "core")
+	writeFile(t, filepath.Join(unrelatedCoreRoot, "sfdx-project.json"), `{
+  "namespace": "pkgx",
+  "packageDirectories": [{"path":"force-app","default":true,"package":"Core"}]
+}`)
+	writeFile(t, filepath.Join(unrelatedCoreRoot, "force-app/main/default/classes/CoreHelper.cls"), "global class CoreHelper {}")
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{
+  "namespace": "pkgx",
+  "packageDirectories": [{
+    "path":"force-app",
+    "default":true,
+    "package":"Consumer",
+    "dependencies": [{"package":"Core"}]
+  }]
+}`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/classes/Consumer.cls"), "public class Consumer {}")
+
+	p, err := Load(consumerRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 0 {
+		t.Fatalf("dependency count = %d, dependency = %#v", len(p.ManagedPackageDependencies), p.ManagedPackageDependencies)
+	}
+}
+
+func TestLoadResolvesSiblingSFDXPackageDependencyWithAncestorGladeConfig(t *testing.T) {
+	root := t.TempDir()
+	workspaceRoot := filepath.Join(root, "workspace")
+	coreRoot := filepath.Join(workspaceRoot, "modules", "src-core-package")
+	consumerRoot := filepath.Join(workspaceRoot, "modules", "src-consumer-package")
+	writeFile(t, filepath.Join(workspaceRoot, "glade.yml"), `project:
+  managedPackageDependencies: ["vend:../vendor"]
+`)
+	writeFile(t, filepath.Join(root, "vendor", "sfdx-project.json"), `{"namespace":"vend","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "vendor", "force-app/main/default/classes/Vendor.cls"), "global class Vendor {}")
+	writeFile(t, filepath.Join(coreRoot, "sfdx-project.json"), `{
+  "namespace": "pkgx",
+  "packageDirectories": [{"path":"force-app","default":true,"package":"Core"}]
+}`)
+	writeFile(t, filepath.Join(coreRoot, "force-app/main/default/classes/CoreHelper.cls"), "global class CoreHelper {}")
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{
+  "namespace": "pkgx",
+  "packageDirectories": [{
+    "path":"force-app",
+    "default":true,
+    "package":"Consumer",
+    "dependencies": [{"package":"Core"}]
+  }]
+}`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/classes/Consumer.cls"), "public class Consumer {}")
+
+	p, err := Load(consumerRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 1 {
+		t.Fatalf("dependency count = %d", len(p.ManagedPackageDependencies))
+	}
+	dep := p.ManagedPackageDependencies[0]
+	if dep.SourceRoot != coreRoot || dep.Project == nil || dep.Project.Root != coreRoot {
+		t.Fatalf("dependency = %#v", dep)
+	}
+}
+
+func TestLoadResolvesSFDXPackageDependencyFromAncestorGladeConfig(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "upstream-package-develop")
+	workspaceRoot := filepath.Join(root, "consumer-workspace")
+	consumerRoot := filepath.Join(workspaceRoot, "sfdx-source", "apps", "consumer-core")
+	writeFile(t, filepath.Join(workspaceRoot, "glade.yml"), `project:
+  namespaceRemaps: ["UP:vend"]
+  managedPackageDependencies: ["vend:../upstream-package-develop"]
+`)
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"UP","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/classes/UpstreamGateway.cls"), "global class UpstreamGateway {}")
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{
+  "namespace": "corepkg",
+  "packageDirectories": [{
+    "path":"force-app",
+    "default":true,
+    "package":"Core",
+    "dependencies": [{"package":"vend"}]
+  }]
+}`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/classes/Consumer.cls"), "public class Consumer {}")
+
+	p, err := Load(consumerRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 1 {
+		t.Fatalf("dependency count = %d", len(p.ManagedPackageDependencies))
+	}
+	dep := p.ManagedPackageDependencies[0]
+	if dep.Status != "loaded" || dep.Namespace != "vend" || dep.Project == nil {
+		t.Fatalf("dependency = %#v", dep)
+	}
+	if dep.Project.Namespace != "vend" || len(dep.Project.NamespaceRemaps) != 1 {
+		t.Fatalf("dependency project = %#v", dep.Project)
+	}
+}
+
 func TestLoadManagedPackageDependencyInheritsMatchingNamespaceRemap(t *testing.T) {
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "deps", "base-source")

@@ -38,6 +38,30 @@ project:
 	}
 }
 
+func TestParseYAMLSubsetParsesBlockManagedPackageDependencies(t *testing.T) {
+	cfg, err := parseYAMLSubset(`
+project:
+  managedPackageDependencies:
+    - namespace: vendorpkg
+      artifactPath: .glade/deps/vendorpkg.artifact.json
+      version: "1.0"
+    - namespace: pkg
+      sourceRoot: ../pkg
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := len(cfg.Project.ManagedPackageDependencies); got != 2 {
+		t.Fatalf("managed dependency count = %d", got)
+	}
+	if dep := cfg.Project.ManagedPackageDependencies[0]; dep.Namespace != "vendorpkg" || dep.ArtifactPath != ".glade/deps/vendorpkg.artifact.json" || dep.SourceRoot != "" || dep.Version != "1.0" {
+		t.Fatalf("managed dependency[0] = %#v", dep)
+	}
+	if dep := cfg.Project.ManagedPackageDependencies[1]; dep.Namespace != "pkg" || dep.SourceRoot != "../pkg" || dep.ArtifactPath != "" || dep.Version != "" {
+		t.Fatalf("managed dependency[1] = %#v", dep)
+	}
+}
+
 func TestParseYAMLSubsetRejectsMalformedNamespaceRemap(t *testing.T) {
 	if _, err := parseYAMLSubset(`
 project:

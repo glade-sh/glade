@@ -282,6 +282,9 @@ func (c querySemanticsChecker) checkSOQLField(objectName, fieldPath string, ctx 
 		if _, ok := c.field(objectName, fieldPath); ok {
 			return nil
 		}
+		if c.allowsIncompleteExternalManagedPackageObject(objectName) {
+			return nil
+		}
 		return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_FIELD", fmt.Sprintf("SOQL query references unknown field %s.%s", objectName, fieldPath), fieldPath, offset)}
 	}
 	parts := strings.Split(fieldPath, ".")
@@ -290,6 +293,9 @@ func (c querySemanticsChecker) checkSOQLField(objectName, fieldPath string, ctx 
 		parts = parts[1:]
 		if len(parts) == 1 {
 			if _, ok := c.field(current, parts[0]); ok {
+				return nil
+			}
+			if c.allowsIncompleteExternalManagedPackageObject(current) {
 				return nil
 			}
 			return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_FIELD", fmt.Sprintf("SOQL query references unknown field %s.%s via %q", current, parts[0], fieldPath), fieldPath, offset)}
@@ -301,11 +307,17 @@ func (c querySemanticsChecker) checkSOQLField(objectName, fieldPath string, ctx 
 		}
 		_, target, ok := c.relationshipField(current, relationship)
 		if !ok {
+			if c.allowsIncompleteExternalManagedPackageObject(current) {
+				return nil
+			}
 			return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_RELATIONSHIP", fmt.Sprintf("SOQL query references unknown relationship path %q on %s", fieldPath, current), fieldPath, offset)}
 		}
 		current = target
 	}
 	if _, ok := c.field(current, parts[len(parts)-1]); !ok {
+		if c.allowsIncompleteExternalManagedPackageObject(current) {
+			return nil
+		}
 		return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_FIELD", fmt.Sprintf("SOQL query references unknown field %s.%s via %q", current, parts[len(parts)-1], fieldPath), fieldPath, offset)}
 	}
 	return nil
@@ -453,6 +465,18 @@ func (c querySemanticsChecker) hasFieldMetadata(objectName string) bool {
 	return ok && len(fields) > 0
 }
 
+func (c querySemanticsChecker) allowsIncompleteExternalManagedPackageObject(objectName string) bool {
+	object, ok := c.object(objectName)
+	if !ok {
+		return false
+	}
+	namespace := semaNamespaceFromAPIName(object.Name)
+	if namespace == "" {
+		return false
+	}
+	return c.namespace == "" || !strings.EqualFold(namespace, c.namespace)
+}
+
 func (c querySemanticsChecker) relationshipField(objectName, relationshipName string) (schema.Field, string, bool) {
 	object, ok := c.object(objectName)
 	if !ok {
@@ -501,6 +525,18 @@ func (c querySemanticsChecker) childObjectForRelationship(parentObject, relation
 					return object, true
 				}
 			}
+		}
+	}
+	for _, relationshipMember := range semaStandardChildRelationshipMembers(parentObject) {
+		if !c.apiNamesMatch(relationshipMember.name, relationship) {
+			continue
+		}
+		base, args := semaGenericBaseAndArgs(relationshipMember.typ)
+		if !strings.EqualFold(base, "List") || len(args) != 1 {
+			continue
+		}
+		if object, ok := c.object(args[0]); ok {
+			return object, true
 		}
 	}
 	return schema.Object{}, false
@@ -766,16 +802,18 @@ func mergeQueryStorageStandardFields(object schema.Object) schema.Object {
 	if object.SharingModel == "" {
 		object.SharingModel = standard.SharingModel
 	}
-	seen := make(map[string]bool, len(object.Fields)+len(standard.Fields))
-	for _, field := range object.Fields {
-		seen[normalizeName(field.Name)] = true
+	seen := make(map[string]int, len(object.Fields)+len(standard.Fields))
+	for i, field := range object.Fields {
+		seen[normalizeName(field.Name)] = i
 	}
 	for _, field := range standard.Fields {
-		if seen[normalizeName(field.Name)] {
+		key := normalizeName(field.Name)
+		if i, ok := seen[key]; ok {
+			object.Fields[i] = mergeQueryField(object.Fields[i], field)
 			continue
 		}
 		object.Fields = append(object.Fields, field)
-		seen[normalizeName(field.Name)] = true
+		seen[key] = len(object.Fields) - 1
 	}
 	sort.Slice(object.Fields, func(i, j int) bool {
 		return object.Fields[i].Name < object.Fields[j].Name

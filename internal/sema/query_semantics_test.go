@@ -70,6 +70,26 @@ public class QueryProbe {
 	}
 }
 
+func TestAnalyzeQuerySemanticsUsesGeneratedStandardRelationshipShape(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run(Set<Id> accountIds) {
+    List<User> selected = [SELECT Id, Contact.AccountId FROM User WHERE Contact.AccountId IN :accountIds];
+  }
+}
+`
+	result := analyzeQueryProbe(t, source, schema.Schema{Objects: []schema.Object{{
+		Name: "User",
+		Fields: []schema.Field{
+			{Name: "Id", Type: "Id"},
+			{Name: "ContactId", Type: "Id"},
+		},
+	}}})
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_RELATIONSHIP", "Contact.AccountId")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "Contact.AccountId")
+}
+
 func TestAnalyzeQuerySemanticsMergesStandardFieldsIntoProjectStandardObject(t *testing.T) {
 	source := `
 public class QueryProbe {
@@ -282,6 +302,102 @@ public class QueryProbe {
 	for _, field := range []string{"FirstName", "LastName", "IsPersonAccount", "PersonContactId", "DeveloperName", "NamespacePrefix", "QualifiedAPIName"} {
 		assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", field)
 	}
+}
+
+func TestAnalyzeQuerySemanticsUsesStandardChildRelationshipFallback(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT Id, (SELECT Id, LastName FROM Contacts) FROM Account];
+  }
+}
+`
+	result := analyzeQueryProbe(t, source, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_RELATIONSHIP", "Contacts")
+}
+
+func TestAnalyzeQuerySemanticsUsesProjectReferencedPackageFieldShape(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run(Id entityId) {
+    pkg__Entity__c entityRecord = new pkg__Entity__c();
+    pkg__EntityPaymentGatewayLink__c gatewayLink = new pkg__EntityPaymentGatewayLink__c(
+      pkg__Entity__c = entityRecord.Id
+    );
+    pkg__ProcessingFee__c fee = new pkg__ProcessingFee__c(
+      pkg__PaymentMethodType__c = 'Credit Card',
+      pkg__Mandatory__c = false,
+      pkg__EntityPaymentGatewayLink__c = gatewayLink.Id
+    );
+    List<pkg__ProcessingFee__c> fees = [
+      SELECT Id, pkg__PaymentMethodType__c, pkg__Mandatory__c
+      FROM pkg__ProcessingFee__c
+      WHERE pkg__EntityPaymentGatewayLink__r.pkg__Entity__r.Id = :entityId
+    ];
+  }
+}
+`
+	result := analyzeQueryProbeWithProject(t, source, typesys.ProjectInfo{Namespace: "pkg"}, schema.Schema{Objects: []schema.Object{
+		{Name: "pkg__ProcessingFee__c"},
+		{Name: "pkg__EntityPaymentGatewayLink__c"},
+		{Name: "pkg__Entity__c"},
+	}})
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "pkg__PaymentMethodType__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "pkg__Mandatory__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_RELATIONSHIP", "pkg__EntityPaymentGatewayLink__r.pkg__Entity__r.Id")
+}
+
+func TestAnalyzeQuerySemanticsLeavesExternalManagedPackageShapeOpen(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<vend__OrderItem__c> rows = [
+      SELECT Id, vend__MembershipType2__r.vend__Term__c
+      FROM vend__OrderItem__c
+    ];
+  }
+}
+`
+	result := analyzeQueryProbeWithProject(t, source, typesys.ProjectInfo{Namespace: "localpkg"}, schema.Schema{Objects: []schema.Object{
+		{
+			Name: "vend__OrderItem__c",
+			Fields: []schema.Field{
+				{Name: "Id", Type: "Id"},
+				{Name: "vend__MembershipType2__c", Type: "Lookup", ReferenceTo: []string{"vend__MembershipType2__c"}, RelationshipName: "vend__MembershipType2__r"},
+			},
+		},
+		{
+			Name: "vend__MembershipType2__c",
+			Fields: []schema.Field{
+				{Name: "Id", Type: "Id"},
+			},
+		},
+	}})
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "vend__MembershipType2__r.vend__Term__c")
+}
+
+func TestAnalyzeQuerySemanticsKeepsLocalManagedPackageShapeStrict(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<localpkg__OrderItem__c> rows = [
+      SELECT Id, localpkg__Missing__c
+      FROM localpkg__OrderItem__c
+    ];
+  }
+}
+`
+	result := analyzeQueryProbeWithProject(t, source, typesys.ProjectInfo{Namespace: "localpkg"}, schema.Schema{Objects: []schema.Object{{
+		Name: "localpkg__OrderItem__c",
+		Fields: []schema.Field{
+			{Name: "Id", Type: "Id"},
+		},
+	}}})
+
+	assertDiagnosticAt(t, result, "GLADESEMA_QUERY_FIELD", "localpkg__Missing__c", 5, 18)
 }
 
 func TestAnalyzeQuerySemanticsIgnoresSOQLComments(t *testing.T) {

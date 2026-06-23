@@ -529,6 +529,9 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 				receiverExpr = callee[:lastDot]
 				method = callee[lastDot+1:]
 			}
+			if semaExternalPackageSObjectFieldPath(receiverExpr, scope, model) {
+				return nil
+			}
 			if semaTextCallReceiverEntersDependencyType(model, receiverExpr, scope) {
 				return nil
 			}
@@ -1113,12 +1116,37 @@ func semaIsSubclass(model map[string]typeMembers, child, parent string) bool {
 		if !ok {
 			return false
 		}
-		if normalizeName(members.superClass) == normalizeName(parent) {
+		if semaTypeNameMatches(model, members.name, members.superClass, parent) {
 			return true
 		}
-		child = members.superClass
+		resolved := resolveNestedTypeName(model, members.name, members.superClass)
+		if resolved == "" {
+			resolved = members.superClass
+		}
+		child = resolved
 	}
 	return false
+}
+
+func semaTypeNameMatches(model map[string]typeMembers, context, left, right string) bool {
+	if normalizeName(left) == normalizeName(right) {
+		return true
+	}
+	if semaShortTypeKey(left) != "" && semaShortTypeKey(left) == semaShortTypeKey(right) {
+		return true
+	}
+	leftResolved := resolveNestedTypeName(model, context, left)
+	rightResolved := resolveNestedTypeName(model, context, right)
+	switch {
+	case leftResolved != "" && normalizeName(leftResolved) == normalizeName(right):
+		return true
+	case rightResolved != "" && normalizeName(left) == normalizeName(rightResolved):
+		return true
+	case leftResolved != "" && rightResolved != "" && normalizeName(leftResolved) == normalizeName(rightResolved):
+		return true
+	default:
+		return false
+	}
 }
 
 func semaSameTypeFamily(left, right string) bool {
