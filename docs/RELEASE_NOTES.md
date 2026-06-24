@@ -4,6 +4,30 @@
 
 No changes yet.
 
+## v0.2.6 - 2026-06-24
+
+Glade v0.2.6 ships the public-corpus semantic-check closure and a targeted
+local-test throughput cut after v0.2.5.
+
+Semantic checks:
+
+- Added checked public-corpus gates for relationship fields, schema inference,
+  standard symbols, static access, test-helper annotations, and type
+  compatibility.
+- Broadened schema inference, platform signature lookup, field-token handling,
+  constructor/method checking, namespace-aware SObject member access, and
+  project-owned diagnostic filtering for large Salesforce source trees.
+- Expanded standard symbol coverage for common platform namespace spellings and
+  added focused tests so public-project semantic regressions stay fenced.
+
+Runtime and performance:
+
+- Narrowed bulk DML SObject alias indexing to the record refs being written,
+  while preserving Salesforce-style alias merge behavior and fallback
+  boundaries.
+- Reduced wall time on profiled large NU test methods without changing
+  Salesforce DML, trigger, or alias semantics.
+
 ## v0.2.5 - 2026-06-23
 
 Glade v0.2.5 ships the configuration, package-contract, and Salesforce surface
