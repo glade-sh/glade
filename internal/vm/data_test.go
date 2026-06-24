@@ -13475,6 +13475,65 @@ func TestRecordsFromValueMergesSObjectAliasesFromCallerScope(t *testing.T) {
 	}
 }
 
+func TestSObjectAliasMergeIndexForRefsFiltersUnrelatedRecords(t *testing.T) {
+	target := Object("Account")
+	target.Ref = 42
+	target.Fields["Id"] = platformScalar("Id", "001000000000999AAA")
+	alias := Object("Account")
+	alias.Ref = 42
+	alias.Fields["Name"] = String("Test Org")
+	unrelated := Object("Account")
+	unrelated.Ref = 99
+	unrelated.Fields["Name"] = String("Other Org")
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.Globals["target"] = target
+	machine.Globals["unrelated"] = unrelated
+	machine.scopeStack = []map[string]Value{{"alias": alias}}
+	aliases := machine.sObjectAliasMergeIndexForRefs(map[uint64]struct{}{42: {}})
+	if len(aliases) != 1 {
+		t.Fatalf("aliases len = %d, want 1", len(aliases))
+	}
+	if _, ok := aliases[99]; ok {
+		t.Fatal("unrelated record ref was indexed")
+	}
+	merged, ok := aliases[42]
+	if !ok {
+		t.Fatal("target ref was not indexed")
+	}
+	if got := merged.Fields["Name"]; got.Kind != ValueString || got.Text != "Test Org" {
+		t.Fatalf("merged Name = %#v", got)
+	}
+}
+
+func TestRecordsFromValueBulkFilteredAliasIndexPreservesFallbackBoundary(t *testing.T) {
+	target := Object("Account")
+	target.Ref = 42
+	target.Fields["Id"] = platformScalar("Id", "001000000000999AAA")
+	peer := Object("Account")
+	peer.Ref = 43
+	peer.Fields["Id"] = platformScalar("Id", "001000000000998AAA")
+	unrelated := Object("Account")
+	unrelated.Ref = 99
+	unrelated.Fields["Name"] = String("Other Org")
+	rawAlias := Object("NotAnSObject")
+	rawAlias.Ref = 42
+	rawAlias.Fields["Name"] = String("Should Not Merge")
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.Globals["unrelated"] = unrelated
+	machine.scopeStack = []map[string]Value{{"rawAlias": rawAlias}}
+	records, _, err := machine.recordsFromValue(List(target, peer))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := records[0].GetField("Name"); ok {
+		t.Fatal("bulk DML fallback merged a non-SObject alias after seeing an unrelated SObject alias")
+	}
+}
+
 func TestExecSObjectFieldAssignmentPropagatesToSameIDAliasBeforeInsert(t *testing.T) {
 	program, err := CompileAnonymous(`
 SObject cached = new Account(Id = '001000000000999AAA', Name = 'Old');

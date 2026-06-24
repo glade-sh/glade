@@ -4759,7 +4759,7 @@ func (vm *VM) recordsFromValue(value Value) ([]storage.Record, []*Value, error) 
 		targets := make([]*Value, 0, len(value.List))
 		var aliases map[uint64]Value
 		if len(value.List) > 1 {
-			aliases = vm.sObjectAliasMergeIndex()
+			aliases = vm.sObjectAliasMergeIndexForRefs(vm.sObjectAliasRefsForDMLList(value.List))
 		}
 		for i := range value.List {
 			merged := value.List[i]
@@ -4803,62 +4803,108 @@ func (vm *VM) mergeSObjectAliasFields(value Value) Value {
 	return merged
 }
 func (vm *VM) sObjectAliasMergeIndex() map[uint64]Value {
+	return vm.sObjectAliasMergeIndexForRefs(nil)
+}
+func (vm *VM) sObjectAliasRefsForDMLList(values []Value) map[uint64]struct{} {
+	var refs map[uint64]struct{}
+	for _, value := range values {
+		if value.Kind != ValueObject || value.Ref == 0 || !vm.isSObjectLikeType(value.Type) {
+			continue
+		}
+		if refs == nil {
+			refs = make(map[uint64]struct{}, len(values))
+		}
+		refs[value.Ref] = struct{}{}
+	}
+	return refs
+}
+func (vm *VM) sObjectAliasMergeIndexForRefs(refs map[uint64]struct{}) map[uint64]Value {
 	if vm == nil || (len(vm.Globals) == 0 && len(vm.scopeStack) == 0) {
+		return nil
+	}
+	if refs != nil && len(refs) == 0 {
 		return nil
 	}
 	index := make(map[uint64]Value)
 	seen := make(map[uint64]bool)
+	sawSObjectAlias := false
 	for _, root := range vm.Globals {
-		vm.collectSObjectAliasMergeIndex(root, index, seen)
+		if vm.collectSObjectAliasMergeIndex(root, index, seen, refs) {
+			sawSObjectAlias = true
+		}
 	}
 	for _, scope := range vm.scopeStack {
 		for _, root := range scope {
-			vm.collectSObjectAliasMergeIndex(root, index, seen)
+			if vm.collectSObjectAliasMergeIndex(root, index, seen, refs) {
+				sawSObjectAlias = true
+			}
 		}
 	}
 	if len(index) == 0 {
+		if refs != nil && sawSObjectAlias {
+			return index
+		}
 		return nil
 	}
 	return index
 }
-func (vm *VM) collectSObjectAliasMergeIndex(value Value, index map[uint64]Value, seen map[uint64]bool) {
+func (vm *VM) collectSObjectAliasMergeIndex(value Value, index map[uint64]Value, seen map[uint64]bool, refs map[uint64]struct{}) bool {
 	if value.Ref != 0 {
 		if seen[value.Ref] {
-			return
+			return false
 		}
 		seen[value.Ref] = true
 		defer delete(seen, value.Ref)
 	}
+	sawSObjectAlias := false
 	if value.Kind == ValueObject && value.Ref != 0 && vm.isSObjectLikeType(value.Type) {
-		merged := index[value.Ref]
-		if merged.Kind == "" {
-			merged = value
-		} else {
-			mergeSObjectFieldsInto(&merged, value)
+		sawSObjectAlias = true
+		shouldIndex := refs == nil
+		if refs != nil {
+			_, shouldIndex = refs[value.Ref]
 		}
-		index[value.Ref] = merged
+		if shouldIndex {
+			merged := index[value.Ref]
+			if merged.Kind == "" {
+				merged = value
+			} else {
+				mergeSObjectFieldsInto(&merged, value)
+			}
+			index[value.Ref] = merged
+		}
 	}
 	switch value.Kind {
 	case ValueObject:
 		for _, child := range value.Fields {
-			vm.collectSObjectAliasMergeIndex(child, index, seen)
+			if vm.collectSObjectAliasMergeIndex(child, index, seen, refs) {
+				sawSObjectAlias = true
+			}
 		}
 	case ValueMap:
 		for _, child := range value.Map {
-			vm.collectSObjectAliasMergeIndex(child, index, seen)
+			if vm.collectSObjectAliasMergeIndex(child, index, seen, refs) {
+				sawSObjectAlias = true
+			}
 		}
 		for _, child := range value.MapKeys {
-			vm.collectSObjectAliasMergeIndex(child, index, seen)
+			if vm.collectSObjectAliasMergeIndex(child, index, seen, refs) {
+				sawSObjectAlias = true
+			}
 		}
 	case ValueList:
 		for _, child := range value.List {
-			vm.collectSObjectAliasMergeIndex(child, index, seen)
+			if vm.collectSObjectAliasMergeIndex(child, index, seen, refs) {
+				sawSObjectAlias = true
+			}
 		}
 	case ValueSet:
 		for _, child := range value.Set {
-			vm.collectSObjectAliasMergeIndex(child, index, seen)
+			if vm.collectSObjectAliasMergeIndex(child, index, seen, refs) {
+				sawSObjectAlias = true
+			}
 		}
 	}
+	return sawSObjectAlias
 }
 func mergeSObjectFieldsInto(merged *Value, source Value) {
 	if merged == nil || source.Kind != ValueObject {
