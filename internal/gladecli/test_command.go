@@ -391,7 +391,14 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		ParallelMethods:     parallelMethods,
 		TimeoutMS:           testTimeout.Milliseconds(),
 		NoDiskCache:         noCache,
+		PerfCounters:        strings.TrimSpace(perfJSONPath) != "",
 	}
+	durationHistory, err := loadCLIDurationHistory(durationHistoryPath)
+	if err != nil {
+		return testreport.Run{}, err
+	}
+	testOpts.ClassDurationMS = durationHistory.Classes
+	testOpts.MethodDurationMS = durationHistory.Methods
 	if progressReporter != nil {
 		testOpts.Progress = func(progress apextest.TestProgress) {
 			if progress.Event == "compile_done" {
@@ -863,41 +870,82 @@ func cliClassWeights(cases []apextest.TestCase, durations map[string]int64) []cl
 	return weights
 }
 
+type cliDurationHistory struct {
+	Classes map[string]int64
+	Methods map[string]int64
+}
+
 func loadCLIClassDurationHistory(path string) (map[string]int64, error) {
-	if strings.TrimSpace(path) == "" {
-		return nil, nil
-	}
-	data, err := os.ReadFile(path)
+	history, err := loadCLIDurationHistory(path)
 	if err != nil {
 		return nil, err
 	}
+	return history.Classes, nil
+}
+
+func loadCLIDurationHistory(path string) (cliDurationHistory, error) {
+	if strings.TrimSpace(path) == "" {
+		return cliDurationHistory{}, nil
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return cliDurationHistory{}, err
+	}
 	var perf struct {
-		TopSlowClasses []struct {
+		ClassDurations  map[string]int64 `json:"classDurations"`
+		MethodDurations map[string]int64 `json:"methodDurations"`
+		TopSlowClasses  []struct {
 			Class      string `json:"class"`
 			DurationMS int64  `json:"durationMs"`
 		} `json:"topSlowClasses"`
 	}
 	if err := json.Unmarshal(data, &perf); err != nil {
-		return nil, err
+		return cliDurationHistory{}, err
 	}
-	out := map[string]int64{}
+	out := cliDurationHistory{
+		Classes: cleanDurationMap(perf.ClassDurations),
+		Methods: cleanDurationMap(perf.MethodDurations),
+	}
 	for _, class := range perf.TopSlowClasses {
 		if strings.TrimSpace(class.Class) != "" && class.DurationMS > 0 {
-			out[class.Class] = class.DurationMS
+			if out.Classes == nil {
+				out.Classes = map[string]int64{}
+			}
+			out.Classes[class.Class] = class.DurationMS
 		}
 	}
-	if len(out) != 0 {
+	if len(out.Classes) != 0 || len(out.Methods) != 0 {
 		return out, nil
 	}
 	var direct map[string]int64
 	if err := json.Unmarshal(data, &direct); err == nil {
 		for className, durationMS := range direct {
 			if strings.TrimSpace(className) != "" && durationMS > 0 {
-				out[className] = durationMS
+				if out.Classes == nil {
+					out.Classes = map[string]int64{}
+				}
+				out.Classes[className] = durationMS
 			}
 		}
 	}
 	return out, nil
+}
+
+func cleanDurationMap(in map[string]int64) map[string]int64 {
+	if len(in) == 0 {
+		return nil
+	}
+	out := map[string]int64{}
+	for name, durationMS := range in {
+		name = strings.TrimSpace(name)
+		if name != "" && durationMS > 0 {
+			out[name] = durationMS
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 func writeTestHelp(w io.Writer) error {
@@ -1281,17 +1329,19 @@ func (r *cliTestProgressReporter) finish() {
 }
 
 type runPerfSummary struct {
-	GeneratedAt    string                `json:"generatedAt"`
-	Project        string                `json:"project"`
-	DurationMS     int64                 `json:"durationMs"`
-	DiscoverMS     int64                 `json:"discoverMs"`
-	CompileMS      int64                 `json:"compileMs"`
-	TotalMS        int64                 `json:"totalMs"`
-	Summary        testreport.Summary    `json:"summary"`
-	ApexPerf       apextest.PerfCounters `json:"apexPerf"`
-	TopSlowClasses []runPerfClass        `json:"topSlowClasses,omitempty"`
-	CPUProfilePath string                `json:"cpuProfilePath,omitempty"`
-	MemProfilePath string                `json:"memProfilePath,omitempty"`
+	GeneratedAt     string                `json:"generatedAt"`
+	Project         string                `json:"project"`
+	DurationMS      int64                 `json:"durationMs"`
+	DiscoverMS      int64                 `json:"discoverMs"`
+	CompileMS       int64                 `json:"compileMs"`
+	TotalMS         int64                 `json:"totalMs"`
+	Summary         testreport.Summary    `json:"summary"`
+	ApexPerf        apextest.PerfCounters `json:"apexPerf"`
+	ClassDurations  map[string]int64      `json:"classDurations,omitempty"`
+	MethodDurations map[string]int64      `json:"methodDurations,omitempty"`
+	TopSlowClasses  []runPerfClass        `json:"topSlowClasses,omitempty"`
+	CPUProfilePath  string                `json:"cpuProfilePath,omitempty"`
+	MemProfilePath  string                `json:"memProfilePath,omitempty"`
 }
 
 type runPerfClass struct {
@@ -1353,16 +1403,18 @@ func maybeWriteRunPerfJSON(perfJSONPath, root string, result testreport.Run, cpu
 	}
 	absRoot, _ := filepath.Abs(root)
 	perf := runPerfSummary{
-		GeneratedAt:    time.Now().UTC().Format(time.RFC3339),
-		Project:        absRoot,
-		DurationMS:     result.Summary().DurationMS,
-		DiscoverMS:     discoverMS,
-		CompileMS:      compileMS,
-		TotalMS:        totalMS,
-		Summary:        result.Summary(),
-		ApexPerf:       apextest.SnapshotPerfCounters(),
-		CPUProfilePath: strings.TrimSpace(cpuProfilePath),
-		MemProfilePath: strings.TrimSpace(memProfilePath),
+		GeneratedAt:     time.Now().UTC().Format(time.RFC3339),
+		Project:         absRoot,
+		DurationMS:      result.Summary().DurationMS,
+		DiscoverMS:      discoverMS,
+		CompileMS:       compileMS,
+		TotalMS:         totalMS,
+		Summary:         result.Summary(),
+		ApexPerf:        apextest.SnapshotPerfCounters(),
+		ClassDurations:  runClassDurations(result),
+		MethodDurations: runMethodDurations(result),
+		CPUProfilePath:  strings.TrimSpace(cpuProfilePath),
+		MemProfilePath:  strings.TrimSpace(memProfilePath),
 	}
 	perf.TopSlowClasses = runTopSlowClasses(result, 15)
 	if err := os.MkdirAll(filepath.Dir(perfJSONPath), 0o755); err != nil {
@@ -1373,6 +1425,46 @@ func maybeWriteRunPerfJSON(perfJSONPath, root string, result testreport.Run, cpu
 		return err
 	}
 	return os.WriteFile(perfJSONPath, append(data, '\n'), 0o644)
+}
+
+func runClassDurations(result testreport.Run) map[string]int64 {
+	out := map[string]int64{}
+	for _, suite := range result.Suites {
+		for _, testCase := range suite.Cases {
+			className := strings.TrimSpace(testCase.ClassName)
+			if className == "" {
+				className = strings.TrimSpace(suite.Name)
+			}
+			if className != "" {
+				out[className] += testCase.DurationMS
+			}
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func runMethodDurations(result testreport.Run) map[string]int64 {
+	out := map[string]int64{}
+	for _, suite := range result.Suites {
+		for _, testCase := range suite.Cases {
+			className := strings.TrimSpace(testCase.ClassName)
+			if className == "" {
+				className = strings.TrimSpace(suite.Name)
+			}
+			methodName := strings.TrimSpace(testCase.MethodName)
+			if className == "" || methodName == "" {
+				continue
+			}
+			out[className+"."+methodName] = testCase.DurationMS
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 func runTopSlowClasses(result testreport.Run, limit int) []runPerfClass {

@@ -14846,6 +14846,99 @@ func TestNeedsEarlyDMLRollbackSnapshotKeepsRiskyCases(t *testing.T) {
 	}
 }
 
+func TestBulkAllOrNoneDMLRollbackPointUsesTemporaryJournal(t *testing.T) {
+	storage.ResetCloneStats()
+	t.Cleanup(storage.ResetCloneStats)
+
+	program, err := CompileAnonymous(`
+List<Account> accounts = new List<Account>{
+  new Account(Name = 'One'),
+  new Account(Name = 'Two')
+};
+insert accounts;
+System.assertEquals(2, [SELECT Id FROM Account].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	if got := storage.SnapshotCloneStats().CloneRollbackSnapshotCalls; got != 0 {
+		t.Fatalf("rollback snapshots = %d, want temporary journal path", got)
+	}
+}
+
+func TestTemporaryDMLJournalRollsBackBulkTriggerFailure(t *testing.T) {
+	storage.ResetCloneStats()
+	t.Cleanup(storage.ResetCloneStats)
+
+	triggerProgram, err := CompileAnonymous(`
+for (Account account : Trigger.new) {
+  if (account.Name == 'Bad') {
+    account.addError('blocked');
+  }
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+try {
+  insert new List<Account>{
+    new Account(Name = 'Good'),
+    new Account(Name = 'Bad')
+  };
+  System.assert(false, 'expected DML failure');
+} catch (DmlException e) {
+  System.assert(e.getMessage().contains('blocked'), e.getMessage());
+}
+System.assertEquals(0, [SELECT Id FROM Account].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeInsert",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	if got := storage.SnapshotCloneStats().CloneRollbackSnapshotCalls; got != 0 {
+		t.Fatalf("rollback snapshots = %d, want temporary journal path", got)
+	}
+}
+
+func TestTemporaryDMLJournalDoesNotReplaceClassJournal(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	journal := storage.NewIsolationJournal(&org)
+	machine.SetOrg(&org)
+	machine.SetIsolationJournal(journal)
+
+	point := machine.beginDMLRollbackPoint(true, false)
+	machine.finishDMLRollbackPoint(point)
+
+	if machine.isolationJournal != journal {
+		t.Fatalf("class journal was replaced")
+	}
+}
+
 func TestExecDMLUpdateIgnoresUnmodifiedReadonlyQueriedField(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = [SELECT Name, ReadonlyText__c FROM Account WHERE Id = '001000000000001' LIMIT 1];

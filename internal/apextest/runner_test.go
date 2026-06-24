@@ -445,6 +445,23 @@ func TestSortClassRunOrderFallsBackToMethodCount(t *testing.T) {
 	}
 }
 
+func TestSortMethodIndexesUsesDurationHistory(t *testing.T) {
+	planned := []testCasePlan{
+		{TestCase: TestCase{ClassName: "SlowClass", MethodName: "fast"}},
+		{TestCase: TestCase{ClassName: "SlowClass", MethodName: "slow"}},
+	}
+	indexes := []int{0, 1}
+
+	sortMethodIndexes(indexes, planned, map[string]int64{
+		"SlowClass.slow": 8000,
+		"SlowClass.fast": 20,
+	})
+
+	if indexes[0] != 1 || indexes[1] != 0 {
+		t.Fatalf("indexes = %#v, want slow method first", indexes)
+	}
+}
+
 func TestEnsureProjectDataReferencedObjectFieldPreservesExistingLookupTarget(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Namespace = "pkg"

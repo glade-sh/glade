@@ -5,17 +5,22 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 type PerfCounters struct {
-	CloneRuntimeOrgCalls  uint64           `json:"cloneRuntimeOrgCalls"`
-	JournalRollbacks      uint64           `json:"journalRollbacks"`
-	CloneFallbacks        uint64           `json:"cloneFallbacks"`
-	SetupDurationMS       int64            `json:"setupDurationMs"`
-	RunDurationMS         int64            `json:"runDurationMs"`
-	CloneRuntimeOrgMS     int64            `json:"cloneRuntimeOrgMs"`
-	CloneRuntimeMachineMS int64            `json:"cloneRuntimeMachineMs"`
-	CloneClasses          []PerfCloneClass `json:"cloneClasses,omitempty"`
+	CloneRuntimeOrgCalls  uint64             `json:"cloneRuntimeOrgCalls"`
+	JournalRollbacks      uint64             `json:"journalRollbacks"`
+	CloneFallbacks        uint64             `json:"cloneFallbacks"`
+	SetupDurationMS       int64              `json:"setupDurationMs"`
+	RunDurationMS         int64              `json:"runDurationMs"`
+	CloneRuntimeOrgMS     int64              `json:"cloneRuntimeOrgMs"`
+	CloneRuntimeMachineMS int64              `json:"cloneRuntimeMachineMs"`
+	StorageCloneStats     storage.CloneStats `json:"storageCloneStats"`
+	VMPerf                vm.PerfCounters    `json:"vmPerf,omitempty"`
+	CloneClasses          []PerfCloneClass   `json:"cloneClasses,omitempty"`
 }
 
 type PerfCloneClass struct {
@@ -37,6 +42,8 @@ var perfCounters struct {
 }
 
 func ResetPerfCounters() {
+	storage.ResetCloneStats()
+	vm.ResetPerfCounters()
 	perfCounters.cloneRuntimeOrg.Store(0)
 	perfCounters.journalRollbacks.Store(0)
 	perfCounters.cloneFallbacks.Store(0)
@@ -60,6 +67,8 @@ func SnapshotPerfCounters() PerfCounters {
 		RunDurationMS:         perfCounters.runDurationMS.Load(),
 		CloneRuntimeOrgMS:     perfCounters.cloneRuntimeOrgMS.Load(),
 		CloneRuntimeMachineMS: perfCounters.cloneRuntimeMachineMS.Load(),
+		StorageCloneStats:     storage.SnapshotCloneStats(),
+		VMPerf:                vm.SnapshotPerfCounters(),
 	}
 	if len(perfCounters.classes) > 0 {
 		out.CloneClasses = make([]PerfCloneClass, 0, len(perfCounters.classes))

@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -2246,6 +2247,259 @@ func TestStaticValueRefIndexTracksContainingFields(t *testing.T) {
 	}
 	if got := machine.staticValueRefFields[other.Ref].locations(); len(got) != 1 || got[0].FieldName != "other" {
 		t.Fatalf("other ref locations = %#v", got)
+	}
+}
+
+func TestPropagateAliasSnapshotToStaticsUsesLearnedChildHint(t *testing.T) {
+	ResetPerfCounters()
+	SetPerfCountersEnabled(true)
+	t.Cleanup(ResetPerfCounters)
+
+	machine := New(nil)
+	target := Object("Provider")
+	firstUpdate := Object("Provider")
+	firstUpdate.Ref = target.Ref
+	firstUpdate.Fields["Name"] = String("first")
+	secondUpdate := Object("Provider")
+	secondUpdate.Ref = target.Ref
+	secondUpdate.Fields["Name"] = String("second")
+	key := mapKey(String("provider"))
+	wrapper := Object("Wrapper")
+	wrapper.Fields["Provider"] = target
+	holder := Map()
+	holder.Map[key] = wrapper
+	holder.MapKeys[key] = String("provider")
+	machine.Classes["Registry"] = Class{
+		Name: "Registry",
+		StaticFields: map[string]Field{
+			"values": {Name: "values", Type: "Map<String,Object>", Value: holder},
+		},
+	}
+	machine.staticValueRefs, machine.staticValueRefFields = machine.collectStaticValueRefs()
+
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(target), firstUpdate)
+	if hits := SnapshotPerfCounters().StaticAlias.ChildHintHits; hits != 0 {
+		t.Fatalf("child hint hits after first propagation = %d, want 0", hits)
+	}
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(firstUpdate), secondUpdate)
+
+	got := machine.Classes["Registry"].StaticFields["values"].Value.Map[key].Fields["Provider"]
+	if got.Fields["Name"].Text != "second" {
+		t.Fatalf("provider name = %q, want second", got.Fields["Name"].Text)
+	}
+	if hits := SnapshotPerfCounters().StaticAlias.ChildHintHits; hits != 1 {
+		t.Fatalf("child hint hits = %d, want 1", hits)
+	}
+}
+
+func TestPropagateAliasSnapshotToStaticsUsesDirectMapChildIndex(t *testing.T) {
+	ResetPerfCounters()
+	SetPerfCountersEnabled(true)
+	t.Cleanup(ResetPerfCounters)
+
+	machine := New(nil)
+	holder := Map()
+	var target Value
+	var targetKey string
+	for i := 0; i < 80; i++ {
+		keyValue := String("provider-" + strconv.Itoa(i))
+		key := mapKey(keyValue)
+		provider := Object("Provider")
+		holder.Map[key] = provider
+		holder.MapKeys[key] = keyValue
+		if i == 57 {
+			target = provider
+			targetKey = key
+		}
+	}
+	machine.Classes["Registry"] = Class{
+		Name: "Registry",
+		StaticFields: map[string]Field{
+			"values": {Name: "values", Type: "Map<String,Object>", Value: holder},
+		},
+	}
+	machine.staticValueRefs, machine.staticValueRefFields = machine.collectStaticValueRefs()
+
+	updated := Object("Provider")
+	updated.Ref = target.Ref
+	updated.Fields["Name"] = String("updated")
+
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(target), updated)
+
+	got := machine.Classes["Registry"].StaticFields["values"].Value.Map[targetKey]
+	if got.Fields["Name"].Text != "updated" {
+		t.Fatalf("provider name = %q, want updated", got.Fields["Name"].Text)
+	}
+	if hits := SnapshotPerfCounters().StaticAlias.DirectChildHits; hits != 1 {
+		t.Fatalf("direct child hits = %d, want 1", hits)
+	}
+}
+
+func TestDirectMapChildIndexRespectsPrimitiveMapKeyType(t *testing.T) {
+	ResetPerfCounters()
+	SetPerfCountersEnabled(true)
+	t.Cleanup(ResetPerfCounters)
+
+	machine := New(nil)
+	holder := Map()
+	holder.Type = "Map<String,Object>"
+	var targetKey string
+	var target Value
+	for i := 0; i < 80; i++ {
+		keyObject := Object("Provider")
+		keyObject.Fields["Name"] = String("provider-" + strconv.Itoa(i))
+		key := mapKey(keyObject)
+		holder.Map[key] = String("value-" + strconv.Itoa(i))
+		holder.MapKeys[key] = keyObject
+		if i == 25 {
+			target = keyObject
+			targetKey = key
+		}
+	}
+	machine.Classes["Registry"] = Class{
+		Name: "Registry",
+		StaticFields: map[string]Field{
+			"values": {Name: "values", Type: "Map<String,Object>", Value: holder},
+		},
+	}
+	machine.staticValueRefs, machine.staticValueRefFields = machine.collectStaticValueRefs()
+
+	updated := Object("Provider")
+	updated.Ref = target.Ref
+	updated.Fields["Name"] = String("updated")
+
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(target), updated)
+
+	got := machine.Classes["Registry"].StaticFields["values"].Value.MapKeys[targetKey]
+	if got.Fields["Name"].Text != "provider-25" {
+		t.Fatalf("primitive typed map key changed to %q", got.Fields["Name"].Text)
+	}
+	if hits := SnapshotPerfCounters().StaticAlias.DirectChildHits; hits != 0 {
+		t.Fatalf("direct child hits = %d, want 0 for primitive key type", hits)
+	}
+}
+
+func TestPropagateAliasSnapshotToStaticsRemembersNestedRefsFromSameRefUpdate(t *testing.T) {
+	machine := New(nil)
+	target := Object("Provider")
+	nested := Object("Nested")
+	updated := Object("Provider")
+	updated.Ref = target.Ref
+	updated.Fields["Nested"] = nested
+	key := mapKey(String("provider"))
+	holder := Map()
+	holder.Map[key] = target
+	holder.MapKeys[key] = String("provider")
+	machine.Classes["Registry"] = Class{
+		Name: "Registry",
+		StaticFields: map[string]Field{
+			"values": {Name: "values", Type: "Map<String,Object>", Value: holder},
+		},
+	}
+	machine.staticValueRefs, machine.staticValueRefFields = machine.collectStaticValueRefs()
+
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(target), updated)
+
+	if !machine.staticValueRefs[nested.Ref] {
+		t.Fatalf("nested ref %d was not remembered", nested.Ref)
+	}
+	locations := machine.staticValueRefFields[nested.Ref].locations()
+	if len(locations) != 1 || locations[0].FieldName != "values" {
+		t.Fatalf("nested ref locations = %#v", locations)
+	}
+}
+
+func TestStaticValueRefCacheReplaceInvalidatesChildHints(t *testing.T) {
+	machine := New(nil)
+	location := staticFieldRef{ClassName: "Registry", FieldName: "values"}
+	target := Object("Provider")
+	updated := Object("Provider")
+	updated.Ref = target.Ref
+	updated.Fields["Name"] = String("first")
+	key := mapKey(String("provider"))
+	wrapper := Object("Wrapper")
+	wrapper.Fields["Provider"] = target
+	holder := Map()
+	holder.Map[key] = wrapper
+	holder.MapKeys[key] = String("provider")
+	machine.Classes["Registry"] = Class{
+		Name: "Registry",
+		StaticFields: map[string]Field{
+			"values": {Name: "values", Type: "Map<String,Object>", Value: holder},
+		},
+	}
+	machine.staticValueRefs, machine.staticValueRefFields = machine.collectStaticValueRefs()
+
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(target), updated)
+	if len(machine.staticAliasChildHints) == 0 {
+		t.Fatalf("child hint was not learned")
+	}
+	machine.replaceStaticValueRefsInField(holder, Map(), location)
+	if len(machine.staticAliasChildHints) != 0 {
+		t.Fatalf("child hints were not invalidated: %#v", machine.staticAliasChildHints)
+	}
+}
+
+func TestStaticCollectionWritebackInvalidatesDirectMapChildIndex(t *testing.T) {
+	ResetPerfCounters()
+	SetPerfCountersEnabled(true)
+	t.Cleanup(ResetPerfCounters)
+
+	machine := New(nil)
+	location := staticFieldRef{ClassName: "Registry", FieldName: "values"}
+	holder := Map()
+	var target Value
+	for i := 0; i < 80; i++ {
+		keyValue := String("provider-" + strconv.Itoa(i))
+		key := mapKey(keyValue)
+		provider := Object("Provider")
+		holder.Map[key] = provider
+		holder.MapKeys[key] = keyValue
+		if i == 12 {
+			target = provider
+		}
+	}
+	machine.Classes["Registry"] = Class{
+		Name: "Registry",
+		StaticFields: map[string]Field{
+			"values": {Name: "values", Type: "Map<String,Object>", Value: holder},
+		},
+	}
+	machine.staticValueRefs, machine.staticValueRefFields = machine.collectStaticValueRefs()
+
+	updated := Object("Provider")
+	updated.Ref = target.Ref
+	updated.Fields["Name"] = String("updated")
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(target), updated)
+	if len(machine.staticAliasDirectChildren) == 0 {
+		t.Fatalf("direct child index was not built")
+	}
+
+	machine.replaceStaticValueRefsInField(holder, holder, location)
+
+	if len(machine.staticAliasDirectChildren) != 0 {
+		t.Fatalf("direct child index survived static collection writeback: %#v", machine.staticAliasDirectChildren)
+	}
+}
+
+func TestReplaceAliasSnapshotWithStaticChildHintHandlesRootCycle(t *testing.T) {
+	target := Object("Provider")
+	updated := Object("Provider")
+	updated.Ref = target.Ref
+	updated.Fields["Name"] = String("updated")
+	root := Object("Root")
+	cycle := Object("Cycle")
+	root.Fields["Cycle"] = cycle
+	root.Fields["Target"] = target
+	cycle.Fields["Root"] = root
+	root.Fields["Cycle"] = cycle
+
+	replaced, changed, _, _ := replaceAliasSnapshotWithStaticChildHint(root, snapshotAlias(target), updated, make(map[uint64]bool))
+	if !changed {
+		t.Fatalf("cyclic static child replacement did not change")
+	}
+	if got := replaced.Fields["Target"].Fields["Name"].Text; got != "updated" {
+		t.Fatalf("target name = %q, want updated", got)
 	}
 }
 

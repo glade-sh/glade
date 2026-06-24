@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -531,16 +532,42 @@ func (vm *VM) propagateValueMutationToStatics(previous, updated Value) {
 		if !ok {
 			return
 		}
+		previousAlias := snapshotAlias(previous)
+		if replaced, hint, ok := vm.replaceStaticAliasUsingDirectChildIndex(field.Value, location, previousAlias, updated); ok {
+			field.Value = replaced
+			class.StaticFields[location.FieldName] = field
+			vm.Classes[location.ClassName] = class
+			vm.rememberStaticAliasUpdateRefs(previousAlias, updated, location)
+			vm.rememberStaticAliasDirectChildHint(previousAlias, updated, location, hint)
+			return
+		}
+		if replaced, hint, ok := vm.replaceStaticAliasUsingChildHint(field.Value, location, previousAlias, updated); ok {
+			field.Value = replaced
+			class.StaticFields[location.FieldName] = field
+			vm.Classes[location.ClassName] = class
+			vm.rememberStaticAliasUpdateRefs(previousAlias, updated, location)
+			vm.rememberStaticAliasChildHint(previousAlias, updated, location, hint)
+			return
+		}
 		clearRefSeen(seen)
-		replaced, changed := replaceValueAlias(field.Value, previous, updated, seen)
+		replaced, changed, hint, hintOK := replaceAliasSnapshotWithStaticChildHint(field.Value, previousAlias, updated, seen)
 		if !changed {
 			vm.forgetStaticValueRefInField(previous.Ref, location)
 			return
 		}
+		wasTopLevelAlias := field.Value.Ref != 0 && field.Value.Ref == previousAlias.ref && field.Value.Kind == previousAlias.kind
 		field.Value = replaced
 		class.StaticFields[location.FieldName] = field
 		vm.Classes[location.ClassName] = class
-		vm.rememberAdditionalStaticValueRefsInField(updated, location)
+		if wasTopLevelAlias {
+			vm.rememberAdditionalStaticValueRefsInField(updated, location)
+		} else {
+			vm.rememberStaticAliasUpdateRefs(previousAlias, updated, location)
+		}
+		if hintOK {
+			vm.rememberStaticAliasChildHint(previousAlias, updated, location, hint)
+			vm.rememberStaticAliasDirectChildHint(previousAlias, updated, location, hint)
+		}
 	})
 }
 func (vm *VM) propagateAliasSnapshotToScope(scope map[string]Value, previous aliasSnapshot, updated Value) {
@@ -570,11 +597,31 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 	if vm.localOnlyCollectionAlias(previous) {
 		return
 	}
+	perfOn := perfEnabled()
+	var started time.Time
+	var locationVisits uint64
+	var changedAny bool
 	if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
+		var collectStarted time.Time
+		if perfOn {
+			collectStarted = time.Now()
+		}
 		vm.staticValueRefs, vm.staticValueRefFields = vm.collectStaticValueRefs()
+		if perfOn {
+			recordStaticAliasCollectPerf(time.Since(collectStarted))
+		}
 	}
 	if !vm.staticValueRefs[previous.ref] {
+		if perfOn {
+			recordStaticAliasPerf(0, true, 0, false)
+		}
 		return
+	}
+	if perfOn {
+		started = time.Now()
+		defer func() {
+			recordStaticAliasPerf(time.Since(started), false, locationVisits, changedAny)
+		}()
 	}
 	locations := vm.staticValueRefFields[previous.ref]
 	if locations.empty() {
@@ -596,11 +643,48 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 		if !ok {
 			return
 		}
+		var fieldPerfName string
+		var fieldPerfKind string
+		var fieldPerfChildren int
+		var fieldPerfStarted time.Time
+		if perfOn {
+			locationVisits++
+			fieldPerfName = location.ClassName + "." + location.FieldName
+			fieldPerfKind, fieldPerfChildren = staticAliasPerfValueShape(field.Value)
+			fieldPerfStarted = time.Now()
+		}
+		recordFieldPerf := func(changed bool) {
+			if perfOn {
+				recordStaticAliasFieldPerf(fieldPerfName, fieldPerfKind, fieldPerfChildren, time.Since(fieldPerfStarted), changed)
+			}
+		}
 		if field.Value.Ref != 0 && field.Value.Ref == previous.ref && field.Value.Kind == previous.kind {
 			field.Value = updated
 			class.StaticFields[location.FieldName] = field
 			vm.Classes[location.ClassName] = class
 			vm.rememberAdditionalStaticValueRefsInField(updated, location)
+			recordFieldPerf(true)
+			changedAny = true
+			return
+		}
+		if replaced, hint, ok := vm.replaceStaticAliasUsingDirectChildIndex(field.Value, location, previous, updated); ok {
+			field.Value = replaced
+			class.StaticFields[location.FieldName] = field
+			vm.Classes[location.ClassName] = class
+			vm.rememberStaticAliasUpdateRefs(previous, updated, location)
+			vm.rememberStaticAliasDirectChildHint(previous, updated, location, hint)
+			recordFieldPerf(true)
+			changedAny = true
+			return
+		}
+		if replaced, hint, ok := vm.replaceStaticAliasUsingChildHint(field.Value, location, previous, updated); ok {
+			field.Value = replaced
+			class.StaticFields[location.FieldName] = field
+			vm.Classes[location.ClassName] = class
+			vm.rememberStaticAliasUpdateRefs(previous, updated, location)
+			vm.rememberStaticAliasChildHint(previous, updated, location, hint)
+			recordFieldPerf(true)
+			changedAny = true
 			return
 		}
 		if seenPtr == nil {
@@ -608,15 +692,22 @@ func (vm *VM) propagateAliasSnapshotToStatics(previous aliasSnapshot, updated Va
 			seen = *seenPtr
 		}
 		clearRefSeen(seen)
-		replaced, changed := replaceAliasSnapshot(field.Value, previous, updated, seen)
+		replaced, changed, hint, hintOK := replaceAliasSnapshotWithStaticChildHint(field.Value, previous, updated, seen)
 		if !changed {
 			vm.forgetStaticValueRefInField(previous.ref, location)
+			recordFieldPerf(false)
 			return
 		}
 		field.Value = replaced
 		class.StaticFields[location.FieldName] = field
 		vm.Classes[location.ClassName] = class
-		vm.rememberAdditionalStaticValueRefsInField(updated, location)
+		vm.rememberStaticAliasUpdateRefs(previous, updated, location)
+		if hintOK {
+			vm.rememberStaticAliasChildHint(previous, updated, location, hint)
+			vm.rememberStaticAliasDirectChildHint(previous, updated, location, hint)
+		}
+		recordFieldPerf(true)
+		changedAny = true
 	})
 }
 func (vm *VM) propagateAliasSnapshotMutationToScope(scope map[string]Value, previous aliasSnapshot, original, updated Value, refreshNestedCollections bool) bool {
@@ -903,8 +994,11 @@ func (vm *VM) replaceStaticValueRefsInField(previous, value Value, location stat
 		return
 	}
 	if sameStaticCollectionWriteback(previous, value) {
+		vm.forgetStaticAliasDirectChildrenInField(location)
 		return
 	}
+	vm.forgetStaticAliasChildHintsInField(location)
+	vm.forgetStaticAliasDirectChildrenInField(location)
 	vm.forgetStaticValueRefsFromValue(previous, location)
 	vm.collectStaticFieldValueRefsInField(value, location)
 }
@@ -912,7 +1006,26 @@ func (vm *VM) rememberAdditionalStaticValueRefsInField(value Value, location sta
 	if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
 		return
 	}
+	vm.forgetStaticAliasChildHintsInField(location)
+	vm.forgetStaticAliasDirectChildrenInField(location)
 	vm.collectStaticFieldValueRefsInField(value, location)
+}
+func (vm *VM) rememberStaticAliasUpdateRefs(previous aliasSnapshot, updated Value, location staticFieldRef) {
+	if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
+		return
+	}
+	vm.forgetStaticAliasChildHintsInField(location)
+	if previous.valid() && updated.Ref == previous.ref && updated.Kind == previous.kind {
+		seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
+		seen := *seenPtr
+		clear(seen)
+		hasNested := valueHasNestedAliasRef(updated, updated.Ref, seen)
+		aliasRefSetPool.Put(seenPtr)
+		if !hasNested {
+			return
+		}
+	}
+	vm.collectStaticFieldValueRefsInField(updated, location)
 }
 func (vm *VM) collectStaticFieldValueRefsInField(value Value, location staticFieldRef) {
 	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
@@ -925,6 +1038,8 @@ func (vm *VM) forgetStaticValueRefsInField(location staticFieldRef) {
 	if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
 		return
 	}
+	vm.forgetStaticAliasChildHintsInField(location)
+	vm.forgetStaticAliasDirectChildrenInField(location)
 	for ref := range vm.staticValueRefFields {
 		vm.forgetStaticValueRefInField(ref, location)
 	}
@@ -984,6 +1099,8 @@ func (vm *VM) forgetStaticValueRefInField(ref uint64, location staticFieldRef) {
 func (vm *VM) invalidateStaticValueRefs() {
 	vm.staticValueRefs = nil
 	vm.staticValueRefFields = nil
+	vm.staticAliasChildHints = nil
+	vm.staticAliasDirectChildren = nil
 }
 func (vm *VM) invalidateStaticValueRefsForChange(previous, updated Value) {
 	if vm.staticValueRefs == nil {
@@ -1037,8 +1154,9 @@ func (vm *VM) collectStaticValueRefs() (map[uint64]bool, map[uint64]staticFieldR
 	seen := make(map[uint64]bool)
 	for className, class := range vm.Classes {
 		for fieldName, field := range class.StaticFields {
+			location := staticFieldRef{ClassName: className, FieldName: fieldName}
 			clearRefSeen(seen)
-			collectStaticFieldValueRefs(field.Value, refs, fields, staticFieldRef{ClassName: className, FieldName: fieldName}, seen)
+			collectStaticFieldValueRefs(field.Value, refs, fields, location, seen)
 		}
 	}
 	return refs, fields
@@ -1178,6 +1296,361 @@ func (s staticFieldRefSet) locations() []staticFieldRef {
 		out = append(out, location)
 	})
 	return out
+}
+
+type staticAliasChildHintKind string
+
+const (
+	staticAliasDirectMapChildIndexMinChildren                          = 64
+	staticAliasChildHintObjectField           staticAliasChildHintKind = "objectField"
+	staticAliasChildHintMapValue              staticAliasChildHintKind = "mapValue"
+	staticAliasChildHintMapKey                staticAliasChildHintKind = "mapKey"
+	staticAliasChildHintListIndex             staticAliasChildHintKind = "listIndex"
+	staticAliasChildHintSetIndex              staticAliasChildHintKind = "setIndex"
+)
+
+type staticAliasChildHintKey struct {
+	Ref      uint64
+	Kind     ValueKind
+	Location staticFieldRef
+}
+
+type staticAliasChildHint struct {
+	Kind  staticAliasChildHintKind
+	Name  string
+	Key   string
+	Index int
+}
+
+type staticAliasDirectChildKey struct {
+	Ref  uint64
+	Kind ValueKind
+}
+
+type staticAliasDirectChildIndex struct {
+	RootRef    uint64
+	RootKind   ValueKind
+	ChildCount int
+	Children   map[staticAliasDirectChildKey]staticAliasChildHint
+}
+
+func (vm *VM) staticAliasChildHintKey(previous aliasSnapshot, location staticFieldRef) staticAliasChildHintKey {
+	return staticAliasChildHintKey{Ref: previous.ref, Kind: previous.kind, Location: location}
+}
+
+func (vm *VM) replaceStaticAliasUsingDirectChildIndex(value Value, location staticFieldRef, previous aliasSnapshot, updated Value) (Value, staticAliasChildHint, bool) {
+	if vm == nil || !previous.valid() {
+		return value, staticAliasChildHint{}, false
+	}
+	index, ok := vm.staticAliasDirectChildIndex(value, location)
+	if !ok {
+		return value, staticAliasChildHint{}, false
+	}
+	key := staticAliasDirectChildKey{Ref: previous.ref, Kind: previous.kind}
+	hint, ok := index.Children[key]
+	if !ok {
+		return value, staticAliasChildHint{}, false
+	}
+	if hint.Kind == staticAliasChildHintMapKey && mapKeyTypeCannotContainAlias(value.Type, previous) {
+		delete(index.Children, key)
+		vm.staticAliasDirectChildren[location] = index
+		return value, staticAliasChildHint{}, false
+	}
+	child, ok := staticAliasChildHintValue(value, hint)
+	if !ok || child.Ref != previous.ref || child.Kind != previous.kind {
+		delete(index.Children, key)
+		vm.staticAliasDirectChildren[location] = index
+		return value, staticAliasChildHint{}, false
+	}
+	recordStaticAliasDirectChildHit()
+	return replaceStaticAliasChildHintValue(value, hint, updated), hint, true
+}
+
+func (vm *VM) staticAliasDirectChildIndex(value Value, location staticFieldRef) (staticAliasDirectChildIndex, bool) {
+	if value.Kind != ValueMap {
+		return staticAliasDirectChildIndex{}, false
+	}
+	childCount := len(value.Map) + len(value.MapKeys)
+	if childCount < staticAliasDirectMapChildIndexMinChildren {
+		return staticAliasDirectChildIndex{}, false
+	}
+	if vm.staticAliasDirectChildren != nil {
+		if index, ok := vm.staticAliasDirectChildren[location]; ok &&
+			index.RootRef == value.Ref &&
+			index.RootKind == value.Kind &&
+			index.ChildCount == childCount {
+			return index, true
+		}
+	}
+	index := staticAliasDirectChildIndex{
+		RootRef:    value.Ref,
+		RootKind:   value.Kind,
+		ChildCount: childCount,
+		Children:   make(map[staticAliasDirectChildKey]staticAliasChildHint),
+	}
+	duplicates := make(map[staticAliasDirectChildKey]bool)
+	add := func(child Value, hint staticAliasChildHint) {
+		if child.Ref == 0 {
+			return
+		}
+		key := staticAliasDirectChildKey{Ref: child.Ref, Kind: child.Kind}
+		if duplicates[key] {
+			return
+		}
+		if _, exists := index.Children[key]; exists {
+			delete(index.Children, key)
+			duplicates[key] = true
+			return
+		}
+		index.Children[key] = hint
+	}
+	for key, child := range value.Map {
+		add(child, staticAliasChildHint{Kind: staticAliasChildHintMapValue, Key: key})
+	}
+	for key, child := range value.MapKeys {
+		add(child, staticAliasChildHint{Kind: staticAliasChildHintMapKey, Key: key})
+	}
+	if vm.staticAliasDirectChildren == nil {
+		vm.staticAliasDirectChildren = make(map[staticFieldRef]staticAliasDirectChildIndex)
+	}
+	vm.staticAliasDirectChildren[location] = index
+	return index, true
+}
+
+func (vm *VM) rememberStaticAliasDirectChildHint(previous aliasSnapshot, updated Value, location staticFieldRef, hint staticAliasChildHint) {
+	if vm == nil || !previous.valid() || vm.staticAliasDirectChildren == nil {
+		return
+	}
+	if hint.Kind != staticAliasChildHintMapValue && hint.Kind != staticAliasChildHintMapKey {
+		return
+	}
+	index, ok := vm.staticAliasDirectChildren[location]
+	if !ok {
+		return
+	}
+	previousKey := staticAliasDirectChildKey{Ref: previous.ref, Kind: previous.kind}
+	if updated.Ref == 0 {
+		delete(index.Children, previousKey)
+		vm.staticAliasDirectChildren[location] = index
+		return
+	}
+	updatedKey := staticAliasDirectChildKey{Ref: updated.Ref, Kind: updated.Kind}
+	if updatedKey != previousKey {
+		delete(index.Children, previousKey)
+	}
+	index.Children[updatedKey] = hint
+	vm.staticAliasDirectChildren[location] = index
+}
+
+func (vm *VM) replaceStaticAliasUsingChildHint(value Value, location staticFieldRef, previous aliasSnapshot, updated Value) (Value, staticAliasChildHint, bool) {
+	if vm == nil || len(vm.staticAliasChildHints) == 0 || !previous.valid() {
+		return value, staticAliasChildHint{}, false
+	}
+	key := vm.staticAliasChildHintKey(previous, location)
+	hint, ok := vm.staticAliasChildHints[key]
+	if !ok {
+		return value, staticAliasChildHint{}, false
+	}
+	child, ok := staticAliasChildHintValue(value, hint)
+	if !ok {
+		delete(vm.staticAliasChildHints, key)
+		return value, staticAliasChildHint{}, false
+	}
+	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
+	seen := *seenPtr
+	clear(seen)
+	defer aliasRefSetPool.Put(seenPtr)
+	if !valueContainsAliasRef(child, previous.ref, previous.kind, seen) {
+		delete(vm.staticAliasChildHints, key)
+		return value, staticAliasChildHint{}, false
+	}
+	clearRefSeen(seen)
+	replacedChild, changed := replaceAliasSnapshot(child, previous, updated, seen)
+	if !changed {
+		delete(vm.staticAliasChildHints, key)
+		return value, staticAliasChildHint{}, false
+	}
+	recordStaticAliasChildHintHit()
+	return replaceStaticAliasChildHintValue(value, hint, replacedChild), hint, true
+}
+
+func (vm *VM) rememberStaticAliasChildHint(previous aliasSnapshot, updated Value, location staticFieldRef, hint staticAliasChildHint) {
+	if vm == nil || !previous.valid() {
+		return
+	}
+	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
+	seen := *seenPtr
+	clear(seen)
+	defer aliasRefSetPool.Put(seenPtr)
+	key := vm.staticAliasChildHintKey(previous, location)
+	if !valueContainsAliasRef(updated, previous.ref, previous.kind, seen) {
+		if vm.staticAliasChildHints != nil {
+			delete(vm.staticAliasChildHints, key)
+		}
+		return
+	}
+	if vm.staticAliasChildHints == nil {
+		vm.staticAliasChildHints = make(map[staticAliasChildHintKey]staticAliasChildHint)
+	}
+	vm.staticAliasChildHints[key] = hint
+}
+
+func (vm *VM) forgetStaticAliasChildHintsInField(location staticFieldRef) {
+	if vm == nil || len(vm.staticAliasChildHints) == 0 {
+		return
+	}
+	for key := range vm.staticAliasChildHints {
+		if key.Location == location {
+			delete(vm.staticAliasChildHints, key)
+		}
+	}
+}
+
+func (vm *VM) forgetStaticAliasDirectChildrenInField(location staticFieldRef) {
+	if vm == nil || len(vm.staticAliasDirectChildren) == 0 {
+		return
+	}
+	delete(vm.staticAliasDirectChildren, location)
+}
+
+func staticAliasChildHintValue(value Value, hint staticAliasChildHint) (Value, bool) {
+	switch hint.Kind {
+	case staticAliasChildHintObjectField:
+		if value.Kind != ValueObject || value.Fields == nil {
+			return Value{}, false
+		}
+		child, ok := value.Fields[hint.Name]
+		return child, ok
+	case staticAliasChildHintMapValue:
+		if value.Kind != ValueMap || value.Map == nil {
+			return Value{}, false
+		}
+		child, ok := value.Map[hint.Key]
+		return child, ok
+	case staticAliasChildHintMapKey:
+		if value.Kind != ValueMap || value.MapKeys == nil {
+			return Value{}, false
+		}
+		child, ok := value.MapKeys[hint.Key]
+		return child, ok
+	case staticAliasChildHintListIndex:
+		if value.Kind != ValueList || hint.Index < 0 || hint.Index >= len(value.List) {
+			return Value{}, false
+		}
+		return value.List[hint.Index], true
+	case staticAliasChildHintSetIndex:
+		if value.Kind != ValueSet || hint.Index < 0 || hint.Index >= len(value.Set) {
+			return Value{}, false
+		}
+		return value.Set[hint.Index], true
+	default:
+		return Value{}, false
+	}
+}
+
+func replaceStaticAliasChildHintValue(value Value, hint staticAliasChildHint, child Value) Value {
+	switch hint.Kind {
+	case staticAliasChildHintObjectField:
+		if value.Fields != nil {
+			value.Fields[hint.Name] = child
+		}
+	case staticAliasChildHintMapValue:
+		if value.Map != nil {
+			value.Map[hint.Key] = child
+		}
+	case staticAliasChildHintMapKey:
+		if value.MapKeys != nil {
+			value.MapKeys[hint.Key] = child
+		}
+	case staticAliasChildHintListIndex:
+		if hint.Index >= 0 && hint.Index < len(value.List) {
+			value.List[hint.Index] = child
+		}
+	case staticAliasChildHintSetIndex:
+		if hint.Index >= 0 && hint.Index < len(value.Set) {
+			value.Set[hint.Index] = child
+		}
+	}
+	return value
+}
+
+func replaceAliasSnapshotWithStaticChildHint(value Value, previous aliasSnapshot, updated Value, seen map[uint64]bool) (Value, bool, staticAliasChildHint, bool) {
+	if !previous.valid() {
+		return value, false, staticAliasChildHint{}, false
+	}
+	if value.Ref != 0 && value.Ref == previous.ref && value.Kind == previous.kind {
+		return updated, true, staticAliasChildHint{}, false
+	}
+	changedCount := 0
+	var hint staticAliasChildHint
+	recordHint := func(next staticAliasChildHint) {
+		changedCount++
+		if changedCount == 1 {
+			hint = next
+		}
+	}
+	switch value.Kind {
+	case ValueObject:
+		for name, child := range value.Fields {
+			if valueCannotContainAliasRef(child, previous.ref, previous.kind) {
+				continue
+			}
+			replaced, childChanged := replaceValueAliasRef(child, previous, updated, seen)
+			if childChanged {
+				value.Fields[name] = replaced
+				recordHint(staticAliasChildHint{Kind: staticAliasChildHintObjectField, Name: name})
+			}
+		}
+	case ValueMap:
+		for key, child := range value.Map {
+			if valueCannotContainAliasRef(child, previous.ref, previous.kind) {
+				continue
+			}
+			replaced, childChanged := replaceValueAliasRef(child, previous, updated, seen)
+			if childChanged {
+				value.Map[key] = replaced
+				recordHint(staticAliasChildHint{Kind: staticAliasChildHintMapValue, Key: key})
+			}
+		}
+		if !mapKeyTypeCannotContainAlias(value.Type, previous) {
+			for key, child := range value.MapKeys {
+				if valueCannotContainAliasRef(child, previous.ref, previous.kind) {
+					continue
+				}
+				replaced, childChanged := replaceValueAliasRef(child, previous, updated, seen)
+				if childChanged {
+					value.MapKeys[key] = replaced
+					recordHint(staticAliasChildHint{Kind: staticAliasChildHintMapKey, Key: key})
+				}
+			}
+		}
+	case ValueList:
+		if listCannotContainAliasRef(value.List, previous.ref, previous.kind) {
+			return value, false, staticAliasChildHint{}, false
+		}
+		for i, child := range value.List {
+			replaced, childChanged := replaceValueAliasRef(child, previous, updated, seen)
+			if childChanged {
+				value.List[i] = replaced
+				recordHint(staticAliasChildHint{Kind: staticAliasChildHintListIndex, Index: i})
+			}
+		}
+	case ValueSet:
+		if listCannotContainAliasRef(value.Set, previous.ref, previous.kind) {
+			return value, false, staticAliasChildHint{}, false
+		}
+		for i, child := range value.Set {
+			replaced, childChanged := replaceValueAliasRef(child, previous, updated, seen)
+			if childChanged {
+				value.Set[i] = replaced
+				recordHint(staticAliasChildHint{Kind: staticAliasChildHintSetIndex, Index: i})
+			}
+		}
+	default:
+		replaced, changed := replaceAliasSnapshot(value, previous, updated, seen)
+		return replaced, changed, staticAliasChildHint{}, false
+	}
+	return value, changedCount > 0, hint, changedCount == 1
 }
 
 func sameStaticCollectionWriteback(previous, value Value) bool {

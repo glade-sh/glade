@@ -5,6 +5,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/vm"
 )
 
 func TestPerfCountersCapturePhaseDurations(t *testing.T) {
@@ -38,5 +41,22 @@ func TestPerfCountersCapturePhaseDurations(t *testing.T) {
 		if !strings.Contains(string(data), field) {
 			t.Fatalf("counter JSON missing %s: %s", field, data)
 		}
+	}
+}
+
+func TestPerfCountersIncludeStorageAndVMStats(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
+
+	storage.ResetCloneStats()
+	_ = storage.SnapshotRuntimeOrg(&storage.OrgState{})
+	vm.SetPerfCountersEnabled(true)
+
+	stats := SnapshotPerfCounters()
+	if stats.StorageCloneStats.CloneRollbackSnapshotCalls == 0 {
+		t.Fatalf("storage clone stats missing rollback snapshot count: %#v", stats.StorageCloneStats)
+	}
+	if !stats.VMPerf.Enabled {
+		t.Fatalf("vm perf counters not marked enabled: %#v", stats.VMPerf)
 	}
 }
