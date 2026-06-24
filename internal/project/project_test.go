@@ -319,6 +319,36 @@ func TestLoadDeduplicatesOverlappingPackageDirectorySourceFiles(t *testing.T) {
 	}
 }
 
+func TestLoadSkipsSFDXDependencyCandidateThatIsSamePhysicalProject(t *testing.T) {
+	parent := t.TempDir()
+	root := filepath.Join(parent, "rflib")
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{
+  "packageDirectories": [
+    {"path":"rflib","default":true,"package":"RFLIB"},
+    {"path":"rflib-fs","package":"RFLIB-FS","dependencies":[{"package":"RFLIB"}]}
+  ]
+}`)
+	writeFile(t, filepath.Join(root, "rflib/main/default/classes/Core.cls"), "public class Core {}")
+	writeFile(t, filepath.Join(root, "rflib-fs/main/default/classes/Extension.cls"), "public class Extension {}")
+	alias := filepath.Join(parent, "RFLIB")
+	if _, err := os.Stat(alias); err != nil {
+		if err := os.Symlink(root, alias); err != nil {
+			t.Skipf("could not create same-project alias path: %v", err)
+		}
+	}
+
+	p, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 0 {
+		t.Fatalf("dependencies = %#v, want no self dependency through %s", p.ManagedPackageDependencies, alias)
+	}
+	if len(p.ApexFiles) != 2 {
+		t.Fatalf("apex files = %#v, want each project file once", p.ApexFiles)
+	}
+}
+
 func TestPackagePathForFileChoosesConfiguredPackageRoot(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"packages"},{"path":"packages/app","default":true},{"path":"packages/lib"}]}`)

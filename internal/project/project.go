@@ -873,6 +873,11 @@ func sameFilePath(left, right string) bool {
 	if left == "" || right == "" {
 		return false
 	}
+	if leftInfo, leftErr := os.Stat(left); leftErr == nil {
+		if rightInfo, rightErr := os.Stat(right); rightErr == nil && os.SameFile(leftInfo, rightInfo) {
+			return true
+		}
+	}
 	leftAbs, leftErr := filepath.Abs(left)
 	rightAbs, rightErr := filepath.Abs(right)
 	if leftErr == nil {
