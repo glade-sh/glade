@@ -1673,29 +1673,54 @@ func mergeDMLResults(failures, successes []dml.Result) []dml.Result {
 }
 
 type vmDMLRollbackPoint struct {
-	enabled bool
-	journal bool
-	mark    storage.IsolationMark
-	org     storage.OrgState
+	enabled          bool
+	journal          bool
+	temporaryJournal bool
+	mark             storage.IsolationMark
+	org              storage.OrgState
+	previousJournal  *storage.IsolationJournal
 }
 
 func (vm *VM) beginDMLRollbackPoint(enabled bool, forceSnapshot bool) vmDMLRollbackPoint {
 	if !enabled {
 		return vmDMLRollbackPoint{}
 	}
-	if !forceSnapshot && vm != nil && vm.isolationJournal != nil {
-		return vmDMLRollbackPoint{enabled: true, journal: true, mark: vm.isolationJournal.Mark()}
+	if !forceSnapshot && vm != nil && vm.Org != nil {
+		if vm.isolationJournal != nil {
+			vm.recordJournalDMLRollbackPoint()
+			return vmDMLRollbackPoint{enabled: true, journal: true, mark: vm.isolationJournal.Mark()}
+		}
+		journal := storage.NewIsolationJournal(vm.Org)
+		previous := vm.isolationJournal
+		vm.isolationJournal = journal
+		vm.recordTemporaryDMLJournalPoint()
+		return vmDMLRollbackPoint{
+			enabled:          true,
+			journal:          true,
+			temporaryJournal: true,
+			mark:             journal.Mark(),
+			previousJournal:  previous,
+		}
 	}
 	if vm == nil || vm.Org == nil {
 		return vmDMLRollbackPoint{enabled: true}
 	}
+	vm.recordSnapshotDMLRollbackPoint()
 	return vmDMLRollbackPoint{enabled: true, org: snapshotRuntimeOrgState(vm.Org)}
+}
+
+func (vm *VM) finishDMLRollbackPoint(point vmDMLRollbackPoint) {
+	if vm == nil || !point.enabled || !point.temporaryJournal {
+		return
+	}
+	vm.isolationJournal = point.previousJournal
 }
 
 func (vm *VM) restoreDMLRollbackPoint(point vmDMLRollbackPoint) {
 	if vm == nil || vm.Org == nil || !point.enabled {
 		return
 	}
+	defer vm.finishDMLRollbackPoint(point)
 	if point.journal && vm.isolationJournal != nil {
 		_ = vm.isolationJournal.Rollback(point.mark)
 		return
@@ -1794,6 +1819,11 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	restoreRollback := func() {
 		vm.restoreDMLRollbackPoint(rollback)
 	}
+	defer func() {
+		if rollbackReady {
+			vm.finishDMLRollbackPoint(rollback)
+		}
+	}()
 	var partialAfterTriggerBackup storage.OrgState
 	partialAfterTriggerBackupReady := false
 	ensurePartialAfterTriggerBackup := func() {
@@ -2300,6 +2330,11 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 	restoreRollback := func() {
 		vm.restoreDMLRollbackPoint(rollback)
 	}
+	defer func() {
+		if rollbackReady {
+			vm.finishDMLRollbackPoint(rollback)
+		}
+	}()
 	var partialAfterTriggerBackup storage.OrgState
 	partialAfterTriggerBackupReady := false
 	ensurePartialAfterTriggerBackup := func() {

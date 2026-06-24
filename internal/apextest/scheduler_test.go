@@ -36,6 +36,21 @@ func TestClassDispatcherPrefersObservedDuration(t *testing.T) {
 	}
 }
 
+func TestAdaptiveMethodBudgetGivesDominantClassMoreWorkers(t *testing.T) {
+	classes := []classScheduleInput{
+		{ClassName: "BigClass", Methods: 40, DurationMS: 400_000},
+		{ClassName: "SmallA", Methods: 2, DurationMS: 1_000},
+		{ClassName: "SmallB", Methods: 2, DurationMS: 1_000},
+		{ClassName: "SmallC", Methods: 2, DurationMS: 1_000},
+	}
+
+	budget := adaptiveClassMethodBudget(4, classes)
+
+	if budget["BigClass"] < 2 {
+		t.Fatalf("BigClass budget = %d, want at least 2", budget["BigClass"])
+	}
+}
+
 func TestClassDispatcherStableTieBreak(t *testing.T) {
 	d := newClassDispatcher([]string{"a", "b", "c"}, nil, nil)
 	got := []string{}

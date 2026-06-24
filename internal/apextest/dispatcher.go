@@ -3,6 +3,7 @@ package apextest
 import (
 	"container/heap"
 	"os"
+	"sort"
 	"sync"
 )
 
@@ -17,14 +18,14 @@ import (
 // for the remaining queue reflects the actual cost we just measured.
 //
 // classDispatcher is concurrency-safe. Callers should:
-//   1. push all classNames with their cost hints,
-//   2. call next() from each worker goroutine,
-//   3. call recordObserved(class, durationMS) when the class finishes.
+//  1. push all classNames with their cost hints,
+//  2. call next() from each worker goroutine,
+//  3. call recordObserved(class, durationMS) when the class finishes.
 type classDispatcher struct {
-	mu       sync.Mutex
-	cond     *sync.Cond
-	heap     classScoreHeap
-	closed   bool
+	mu        sync.Mutex
+	cond      *sync.Cond
+	heap      classScoreHeap
+	closed    bool
 	remaining int
 }
 
@@ -48,6 +49,61 @@ func newClassDispatcher(classOrder []string, costHints, durationHints map[string
 	heap.Init(&d.heap)
 	d.remaining = len(d.heap)
 	return d
+}
+
+type classScheduleInput struct {
+	ClassName  string
+	Methods    int
+	DurationMS int64
+}
+
+func classScheduleInputs(classOrder []string, classIndexes map[string][]int, classDurationMS map[string]int64) []classScheduleInput {
+	if len(classOrder) == 0 || len(classDurationMS) == 0 {
+		return nil
+	}
+	out := make([]classScheduleInput, 0, len(classOrder))
+	for _, className := range classOrder {
+		durationMS := classDurationMS[className]
+		if durationMS <= 0 {
+			continue
+		}
+		out = append(out, classScheduleInput{
+			ClassName:  className,
+			Methods:    len(classIndexes[className]),
+			DurationMS: durationMS,
+		})
+	}
+	return out
+}
+
+func adaptiveClassMethodBudget(totalParallelism int, classes []classScheduleInput) map[string]int {
+	out := map[string]int{}
+	if totalParallelism <= 1 || len(classes) == 0 {
+		return out
+	}
+	sort.SliceStable(classes, func(i, j int) bool {
+		return classes[i].DurationMS > classes[j].DurationMS
+	})
+	top := classes[0]
+	if top.Methods <= 1 || top.DurationMS <= 0 {
+		return out
+	}
+	var rest int64
+	for _, item := range classes[1:] {
+		rest += item.DurationMS
+	}
+	if rest == 0 || top.DurationMS < rest/2 {
+		return out
+	}
+	reserve := totalParallelism / 2
+	if reserve < 2 {
+		reserve = 2
+	}
+	if reserve > top.Methods {
+		reserve = top.Methods
+	}
+	out[top.ClassName] = reserve
+	return out
 }
 
 // next blocks until a class is available, or returns ("", false) when the

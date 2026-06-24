@@ -50,6 +50,8 @@ type Options struct {
 	ParallelMethods     bool
 	NoDiskCache         bool
 	ClassDurationMS     map[string]int64
+	MethodDurationMS    map[string]int64
+	PerfCounters        bool
 	Progress            func(TestProgress)
 }
 
@@ -189,6 +191,7 @@ func RunContext(ctx context.Context, index typesys.Index, opts Options) testrepo
 
 func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cases []TestCase) testreport.Run {
 	ResetPerfCounters()
+	vm.SetPerfCountersEnabled(opts.PerfCounters)
 	started := time.Now()
 	emitProgress := opts.Progress != nil
 	if cases == nil {
@@ -658,7 +661,9 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 		go func() {
 			defer wg.Done()
 			for className := range jobs {
-				for _, i := range classIndexes[className] {
+				methodIndexes := append([]int(nil), classIndexes[className]...)
+				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS)
+				for _, i := range methodIndexes {
 					if results[i].Status != "" {
 						continue
 					}
@@ -698,6 +703,22 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 	if parallelism > 1 {
 		sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS)
 	}
+	adaptiveBudgets := map[string]int{}
+	if opts.ParallelMethods {
+		adaptiveBudgets = adaptiveClassMethodBudget(opts.Parallelism, classScheduleInputs(classOrder, classIndexes, opts.ClassDurationMS))
+		reservedMethodWorkers := 0
+		for _, budget := range adaptiveBudgets {
+			if budget > 1 && budget-1 > reservedMethodWorkers {
+				reservedMethodWorkers = budget - 1
+			}
+		}
+		if reservedMethodWorkers > 0 && parallelism > 1 {
+			parallelism -= reservedMethodWorkers
+			if parallelism < 1 {
+				parallelism = 1
+			}
+		}
+	}
 	costHints := aggregateClassCostHints(classOrder, planned)
 	dispatcher := newClassDispatcher(classOrder, costHints, opts.ClassDurationMS)
 	defer dispatcher.close()
@@ -724,21 +745,26 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 				if emitProgress {
 					reportProgress(opts, TestProgress{Event: "setup_done", ClassName: className, DurationMS: time.Since(started).Milliseconds(), Status: progressStatus(setupErr)})
 				}
-				if opts.ParallelMethods && len(classIndexes[className]) > 1 {
-					methodParallelism := methodParallelismForClassRun(opts.Parallelism, parallelism, len(classIndexes[className]), dispatcher.unfinishedClassCount())
-					runClassMethodIndexes(ctx, classIndexes[className], planned, results, setupOrg, setupErr, setupRandom, setupShared, baseMachine, baseRuntimeErr, triggerErrors, opts, methodParallelism)
+				methodIndexes := append([]int(nil), classIndexes[className]...)
+				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS)
+				if opts.ParallelMethods && len(methodIndexes) > 1 {
+					methodParallelism := methodParallelismForClassRun(opts.Parallelism, parallelism, len(methodIndexes), dispatcher.unfinishedClassCount())
+					if extra := adaptiveBudgets[className]; extra > methodParallelism {
+						methodParallelism = extra
+					}
+					runClassMethodIndexes(ctx, methodIndexes, planned, results, setupOrg, setupErr, setupRandom, setupShared, baseMachine, baseRuntimeErr, triggerErrors, opts, methodParallelism)
 					dispatcher.recordObserved(className, time.Since(classStart).Milliseconds())
 					continue
 				}
 				var journal *storage.IsolationJournal
-				if len(classIndexes[className]) > 1 && classSupportsJournalIsolation(classIndexes[className], planned) {
+				if len(methodIndexes) > 1 && classSupportsJournalIsolation(methodIndexes, planned) {
 					if setupShared {
 						setupOrg = cloneRuntimeOrgForClass(setupOrg, className, "setup")
 						setupShared = false
 					}
 					journal = storage.NewIsolationJournal(&setupOrg)
 				}
-				for _, i := range classIndexes[className] {
+				for _, i := range methodIndexes {
 					if results[i].Status != "" {
 						continue
 					}
@@ -751,7 +777,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 						reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 					}
 					caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
-					cloneOrg := len(classIndexes[className]) > 1 || plan.SetupShared
+					cloneOrg := len(methodIndexes) > 1 || plan.SetupShared
 					var mark storage.IsolationMark
 					caseJournal := journal
 					if caseJournal != nil {
@@ -865,6 +891,25 @@ func sortClassRunOrder(classOrder []string, classIndexes map[string][]int, class
 	})
 }
 
+func sortMethodIndexes(indexes []int, planned []testCasePlan, methodDurationMS map[string]int64) {
+	if len(indexes) <= 1 || len(methodDurationMS) == 0 {
+		return
+	}
+	sort.SliceStable(indexes, func(i, j int) bool {
+		left := planned[indexes[i]].TestCase
+		right := planned[indexes[j]].TestCase
+		leftMS := methodDurationMS[left.ClassName+"."+left.MethodName]
+		rightMS := methodDurationMS[right.ClassName+"."+right.MethodName]
+		if leftMS == rightMS {
+			if left.ClassName == right.ClassName {
+				return left.MethodName < right.MethodName
+			}
+			return left.ClassName < right.ClassName
+		}
+		return leftMS > rightMS
+	})
+}
+
 func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCasePlan, results []testreport.Case, setupOrg storage.OrgState, setupErr error, setupRandom uint64, setupShared bool, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options, parallelism int) {
 	emitProgress := opts.Progress != nil
 	if parallelism <= 1 {
@@ -942,7 +987,12 @@ func runSingleClassTestPlans(ctx context.Context, planned []testCasePlan, result
 			}
 		}()
 	}
+	indexes := make([]int, 0, len(planned))
 	for i := range planned {
+		indexes = append(indexes, i)
+	}
+	sortMethodIndexes(indexes, planned, opts.MethodDurationMS)
+	for _, i := range indexes {
 		jobs <- i
 	}
 	close(jobs)

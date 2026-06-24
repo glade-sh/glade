@@ -215,6 +215,28 @@ func TestRunTestSelectsDeterministicClassShard(t *testing.T) {
 	}
 }
 
+func TestLoadCLIDurationHistoryReadsClassAndMethodMaps(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "perf.json")
+	data := `{
+	  "classDurations": {"SlowClass": 9000, "FastClass": 10},
+	  "methodDurations": {"SlowClass.slow": 8000, "SlowClass.fast": 20}
+	}`
+	if err := os.WriteFile(path, []byte(data), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	history, err := loadCLIDurationHistory(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if history.Classes["SlowClass"] != 9000 {
+		t.Fatalf("class duration missing: %#v", history.Classes)
+	}
+	if history.Methods["SlowClass.slow"] != 8000 {
+		t.Fatalf("method duration missing: %#v", history.Methods)
+	}
+}
+
 func runSelectionTest(t *testing.T, args ...string) testreport.Run {
 	t.Helper()
 	return runSelectionTestInRoot(t, selectionFixtureRoot(t), args...)

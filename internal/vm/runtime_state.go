@@ -179,6 +179,8 @@ type VM struct {
 	// --- Static-field reference tracking (alias invalidation) ---
 	staticValueRefs           map[uint64]bool
 	staticValueRefFields      map[uint64]staticFieldRefSet
+	staticAliasChildHints     map[staticAliasChildHintKey]staticAliasChildHint
+	staticAliasDirectChildren map[staticFieldRef]staticAliasDirectChildIndex
 	localOnlyCollectionRefs   map[uint64]bool
 	collectionMutationSeq     uint64
 	frameworkRecorderRollback *frameworkMethodCountRecorderRollback
