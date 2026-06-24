@@ -19,6 +19,7 @@ type Schema struct {
 
 type Object struct {
 	Name               string           `json:"name"`
+	Partial            bool             `json:"partial,omitempty"`
 	Label              string           `json:"label,omitempty"`
 	PluralLabel        string           `json:"pluralLabel,omitempty"`
 	SharingModel       string           `json:"sharingModel,omitempty"`
@@ -289,7 +290,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		applyValueSet(&field, valueSets)
 		object := byName[objectName]
 		if object == nil {
-			object = &Object{Name: objectName}
+			object = &Object{Name: objectName, Partial: true}
 			byName[objectName] = object
 		}
 		object.Fields = append(object.Fields, field)
@@ -306,7 +307,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		}
 		object := byName[objectName]
 		if object == nil {
-			object = &Object{Name: objectName}
+			object = &Object{Name: objectName, Partial: true}
 			byName[objectName] = object
 		}
 		object.RecordTypes = append(object.RecordTypes, recordType)
@@ -324,7 +325,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		rule = remapProjectValidationRule(p, rule)
 		object := byName[objectName]
 		if object == nil {
-			object = &Object{Name: objectName}
+			object = &Object{Name: objectName, Partial: true}
 			byName[objectName] = object
 		}
 		object.ValidationRules = append(object.ValidationRules, rule)
@@ -450,7 +451,7 @@ func addReferencedCustomObjects(byName map[string]*Object) {
 		if _, ok := byName[name]; ok {
 			continue
 		}
-		byName[name] = &Object{Name: name}
+		byName[name] = &Object{Name: name, Partial: true}
 	}
 }
 

@@ -546,7 +546,19 @@ func looksLikeSemaGenericOpen(arg string, pos int) bool {
 			if depth == 0 {
 				return true
 			}
-		case '(', '[', '{', ';', '=':
+		case '[':
+			if depth == 1 {
+				next := i + 1
+				for next < len(arg) && isWhitespace(arg[next]) {
+					next++
+				}
+				if next < len(arg) && arg[next] == ']' {
+					i = next
+					continue
+				}
+				return false
+			}
+		case '(', '{', ';', '=':
 			if depth == 1 {
 				return false
 			}

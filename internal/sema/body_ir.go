@@ -312,7 +312,7 @@ func semaSObjectFieldMember(typeName, fieldName string, model map[string]typeMem
 	case fieldKey == "isdeleted" || strings.HasPrefix(fieldKey, "is") || strings.HasPrefix(fieldKey, "has"):
 		fieldType = "Boolean"
 	}
-	if fieldType == "" && semaExternalPackageSObjectType(typeName, model) && semaIsCustomAPIName(fieldName) {
+	if fieldType == "" && semaAllowsShapedSObjectField(typeName, model) && semaIsCustomAPIName(fieldName) {
 		fieldType = semaApexTypeForSchemaField(schema.Field{Name: fieldName, Type: "Object"})
 		if fieldType == "" {
 			fieldType = "Object"
@@ -329,6 +329,11 @@ func semaSObjectFieldMember(typeName, fieldName string, model map[string]typeMem
 func semaExternalPackageSObjectType(typeName string, model map[string]typeMembers) bool {
 	members, _, ok := semaLookupTypeMembers(model, typeName)
 	return ok && members.sobject && members.externalPackageSObject
+}
+
+func semaAllowsShapedSObjectField(typeName string, model map[string]typeMembers) bool {
+	members, _, ok := semaLookupTypeMembers(model, typeName)
+	return ok && members.sobject && (members.externalPackageSObject || members.partialSObject)
 }
 
 func semaExternalPackageSObjectFieldPath(expr string, scope map[string]string, model map[string]typeMembers) bool {
@@ -940,7 +945,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 			candidates = resolveMemberMethods(model, receiverType, method)
 			argTypes := irCallArgTypes(a, expr.Args, scope, model, typ.Name)
 			if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok && !semaResolvedMembersAllPlatformBacked(model, candidates) {
-				if staticDiagnostic, blocked := checkSemaStaticAccess(typ, member, expr.Callee, candidate, receiverMode, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source); blocked {
+				if staticDiagnostic, blocked := checkSemaStaticAccessWithModel(typ, member, expr.Callee, candidate, receiverMode, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source, model); blocked {
 					return []diagnostic.Diagnostic{staticDiagnostic}
 				}
 				if visibilityDiagnostic, blocked := checkSemaMemberAccess(typ, member, expr.Callee, candidate, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source, model); blocked {
@@ -1012,7 +1017,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	}
 	argTypes := irCallArgTypes(a, expr.Args, scope, model, typ.Name)
 	if candidate, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok {
-		if staticDiagnostic, blocked := checkSemaStaticAccess(typ, member, expr.Callee, candidate, receiverMode, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source); blocked {
+		if staticDiagnostic, blocked := checkSemaStaticAccessWithModel(typ, member, expr.Callee, candidate, receiverMode, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source, model); blocked {
 			return []diagnostic.Diagnostic{staticDiagnostic}
 		}
 		return nil
@@ -1477,6 +1482,9 @@ func irCallArgsMatch(a *Analyzer, params []apexast.Parameter, args []ir.Expr, sc
 func (a *Analyzer) checkIRAssignmentType(typ typesys.TypeSymbol, member typesys.MemberSymbol, targetType, target string, expr ir.Expr, scope *irSemaScope, pos, bodyOffset int, source string, model map[string]typeMembers, verb string) []diagnostic.Diagnostic {
 	targetType = resolveNestedTypeReference(model, typ.Name, targetType)
 	valueType := resolveNestedTypeReference(model, typ.Name, a.inferIRExprType(expr, *scope, model, typ.Name))
+	if strings.EqualFold(valueType, "void") && semaIRExprLooksLikeIndexAssignmentValue(expr, source, bodyOffset+pos) {
+		valueType = resolveNestedTypeReference(model, typ.Name, a.inferIRExprType(expr.Args[1], *scope, model, typ.Name))
+	}
 	if valueType == "" || valueType == "null" || semaAssignableToType(targetType, valueType, model) || (expr.Kind == ir.ExprSOQL && semaSOQLSingletonAssignable(targetType, valueType, "["+expr.Value+"]", model)) {
 		return nil
 	}
@@ -1487,6 +1495,37 @@ func (a *Analyzer) checkIRAssignmentType(typ typesys.TypeSymbol, member typesys.
 		File:     typ.File,
 		Range:    semaRange(source, bodyOffset+pos, bodyOffset+pos+max(1, len(target))),
 	}}
+}
+
+func semaIRExprLooksLikeIndexAssignmentValue(expr ir.Expr, source string, pos int) bool {
+	if expr.Kind != ir.ExprCall || !strings.EqualFold(expr.Callee, "set") || expr.Left == nil || len(expr.Args) != 2 {
+		return false
+	}
+	if pos < 0 || pos >= len(source) {
+		return false
+	}
+	end := semaStatementEnd(source, pos)
+	if end <= pos || end > len(source) {
+		return false
+	}
+	statement := source[pos:end]
+	eq := strings.IndexByte(statement, '=')
+	if eq < 0 {
+		return false
+	}
+	for i := eq + 1; i < len(statement); i++ {
+		if statement[i] != ']' {
+			continue
+		}
+		next := i + 1
+		for next < len(statement) && isWhitespace(statement[next]) {
+			next++
+		}
+		if next < len(statement) && statement[next] == '=' {
+			return true
+		}
+	}
+	return false
 }
 
 func (a *Analyzer) checkIRReturnType(typ typesys.TypeSymbol, member typesys.MemberSymbol, returnType string, expr ir.Expr, scope *irSemaScope, pos, bodyOffset int, source string, model map[string]typeMembers) []diagnostic.Diagnostic {
@@ -1872,7 +1911,7 @@ func semaResolvedIRCallReturnType(a *Analyzer, model map[string]typeMembers, rec
 	candidates := resolveMemberMethods(model, receiverType, method)
 	platformBackedCandidates := semaResolvedMembersAllPlatformBacked(model, candidates)
 	if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok && !platformBackedCandidates {
-		return candidate.member.Type
+		return semaResolvedMemberReturnType(model, candidate)
 	}
 	if sig, ok := semaCollectionMethodSignature(receiverType, method); ok {
 		return sig.returnType
@@ -1887,7 +1926,7 @@ func semaResolvedIRCallReturnType(a *Analyzer, model map[string]typeMembers, rec
 		return sig.returnType
 	}
 	if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok {
-		return candidate.member.Type
+		return semaResolvedMemberReturnType(model, candidate)
 	}
 	if sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method); ok {
 		return sig.returnType

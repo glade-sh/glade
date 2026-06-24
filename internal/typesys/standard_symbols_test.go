@@ -22,6 +22,7 @@ func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) 
 
 	deployResult := requireStandardSymbol(t, symbols, "Metadata.DeployResult")
 	requireStandardProperty(t, deployResult, "errorMessage", "String")
+	requireStandardProperty(t, deployResult, "errorStatusCode", "Metadata.StatusCode")
 
 	settings := requireStandardSymbol(t, symbols, "ConnectApi.OrganizationSettings")
 	requireStandardProperty(t, settings, "userSettings", "ConnectApi.UserSettings")
@@ -610,6 +611,13 @@ func TestStandardPlatformSymbolsTypeAuthProviders(t *testing.T) {
 
 	authConfiguration := requireStandardSymbol(t, symbols, "Auth.AuthConfiguration")
 	requireStandardMethodType(t, authConfiguration, "getAuthProviders", "List<AuthProvider>")
+	requireStandardMethod(t, authConfiguration, "getAuthProviderSsoDomainUrl", []string{"String", "String", "String"}, true)
+	requireStandardMethod(t, authConfiguration, "getAuthProviderSsoUrl", []string{"String", "String", "String"}, true)
+	requireStandardMethod(t, authConfiguration, "getCertificateLoginUrl", []string{"String", "String"}, true)
+	requireStandardMethod(t, authConfiguration, "getSamlSsoUrl", []string{"String", "String", "String"}, true)
+
+	authToken := requireStandardSymbol(t, symbols, "Auth.AuthToken")
+	requireStandardMethod(t, authToken, "revokeAccess", []string{"String", "String", "String", "String"}, true)
 	requireNoStandardSymbol(t, symbols, "Auth.Auth")
 	requireNoStandardSymbol(t, symbols, "Approval.Approval")
 }
@@ -776,6 +784,7 @@ func TestStandardPlatformSymbolsIncludeSchemaDescribeShape(t *testing.T) {
 	requireStandardMethodType(t, describe, "getFields", "Schema.SObjectTypeFields")
 	requireStandardProperty(t, describe, "fieldSets", "Schema.SObjectTypeFieldSets")
 	requireStandardMethodType(t, describe, "getFieldSets", "Schema.SObjectTypeFieldSets")
+	requireStandardMethodType(t, describe, "getChildRelationships", "List<Schema.ChildRelationship>")
 
 	fieldMap := requireStandardSymbol(t, symbols, "Schema.SObjectTypeFields")
 	requireStandardMethodType(t, fieldMap, "getMap", "Map<String,Schema.SObjectField>")
@@ -796,6 +805,15 @@ func TestStandardPlatformSymbolsIncludeSchemaDescribeShape(t *testing.T) {
 
 	fieldSetMember := requireStandardSymbol(t, symbols, "Schema.FieldSetMember")
 	requireStandardMethodType(t, fieldSetMember, "getSObjectField", "Schema.SObjectField")
+}
+
+func TestStandardPlatformSymbolsIncludeSObjectFieldBooleanAccessors(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	field := requireStandardSymbol(t, symbols, "Schema.SObjectField")
+	for _, name := range []string{"isAccessible", "isCreateable", "isUpdateable"} {
+		requireStandardMethodReturn(t, field, name, nil, "Boolean", false)
+	}
 }
 
 func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) {
@@ -921,7 +939,14 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 	externalCredential := requireStandardSymbol(t, symbols, "ConnectApi.ExternalCredential")
 	requireStandardProperty(t, externalCredential, "principals", "List<ConnectApi.ExternalCredentialPrincipal>")
 	externalCredentialInput := requireStandardSymbol(t, symbols, "ConnectApi.ExternalCredentialInput")
+	requireStandardProperty(t, externalCredentialInput, "developerName", "String")
+	requireStandardProperty(t, externalCredentialInput, "masterLabel", "String")
+	requireStandardProperty(t, externalCredentialInput, "authenticationProtocol", "ConnectApi.CredentialAuthenticationProtocol")
 	requireStandardProperty(t, externalCredentialInput, "principals", "List<ConnectApi.ExternalCredentialPrincipalInput>")
+	principalInput := requireStandardSymbol(t, symbols, "ConnectApi.ExternalCredentialPrincipalInput")
+	requireStandardProperty(t, principalInput, "principalName", "String")
+	requireStandardProperty(t, principalInput, "principalType", "ConnectApi.CredentialPrincipalType")
+	requireStandardProperty(t, principalInput, "sequenceNumber", "Integer")
 	namedCredential := requireStandardSymbol(t, symbols, "ConnectApi.NamedCredential")
 	requireStandardProperty(t, namedCredential, "developerName", "String")
 	requireStandardProperty(t, namedCredential, "masterLabel", "String")
@@ -1224,9 +1249,9 @@ func TestApexDocsContractsGeneratedPreciseShapes(t *testing.T) {
 	requireStandardProperty(t, suggestions, "questions", "List<ConnectApi.FeedElement>")
 
 	stage := requireStandardSymbol(t, symbols, "ConnectApi.OrchestrationStageInstance")
-	requireStandardProperty(t, stage, "status", "ConnectApi.OrchestrationStatus")
+	requireStandardProperty(t, stage, "status", "ConnectApi.OrchestrationInstanceStatus")
 	step := requireStandardSymbol(t, symbols, "ConnectApi.OrchestrationStepInstance")
-	requireStandardProperty(t, step, "status", "ConnectApi.OrchestrationStatus")
+	requireStandardProperty(t, step, "status", "ConnectApi.OrchestrationInstanceStatus")
 
 	tax := requireStandardSymbol(t, symbols, "ConnectApi.TaxPlatform")
 	requireNoStandardMethod(t, tax, "calculateTax", nil, true)

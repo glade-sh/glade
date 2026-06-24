@@ -47,7 +47,7 @@ func newSemaProjectReferencedSchemaContext(objects []schema.Object, namespace st
 	}
 	for i := range objects {
 		ctx.indexObject(i)
-		if len(objects[i].Fields) == 0 {
+		if len(objects[i].Fields) == 0 || objects[i].Partial {
 			ctx.markObjectInferenceAllowed(objects[i].Name)
 		}
 	}
@@ -332,7 +332,7 @@ func semaProjectReferencedSObjectLiteralNamedArgs(body string) []semaProjectRefe
 			continue
 		}
 		j := semaProjectReferencedSkipSpaces(body, nameEnd)
-		if j >= len(body) || body[j] != '=' || semaProjectReferencedAssignmentOperatorNeighbor(body, j) {
+		if j >= len(body) || body[j] != '=' || semaAssignmentOperatorNeighbor(body, j) {
 			i = nameEnd
 			continue
 		}
@@ -348,22 +348,6 @@ func semaProjectReferencedSObjectLiteralNamedArgs(body string) []semaProjectRefe
 		}
 	}
 	return args
-}
-
-func semaProjectReferencedAssignmentOperatorNeighbor(source string, idx int) bool {
-	if idx > 0 {
-		switch source[idx-1] {
-		case '=', '!', '<', '>':
-			return true
-		}
-	}
-	if idx+1 < len(source) {
-		switch source[idx+1] {
-		case '=', '>':
-			return true
-		}
-	}
-	return false
 }
 
 func semaProjectReferencedSkipDelimiters(source string, idx int) int {
@@ -512,6 +496,9 @@ func semaRecordProjectReferencedSchemaFieldWithType(ctx *semaProjectReferencedSc
 	if ctx.schemaNameIsChildRelationship(ctx.objects[idx].Name, fieldName) {
 		return
 	}
+	if semaProjectReferencedSchemaAPINamesMatch(ctx.namespace, fieldName, "Name") {
+		fieldType = "Text"
+	}
 	for _, field := range ctx.objects[idx].Fields {
 		if semaProjectReferencedSchemaAPINamesMatch(ctx.namespace, field.Name, fieldName) || semaProjectReferencedSchemaAPINamesMatch(ctx.namespace, field.RelationshipName, fieldName) {
 			if fieldType != "" {
@@ -559,6 +546,9 @@ func semaRecordProjectReferencedLookupSchemaField(ctx *semaProjectReferencedSche
 			return
 		}
 	}
+	if !ctx.allowsFieldInference(ctx.objects[idx].Name) {
+		return
+	}
 	ctx.objects[idx].Fields = semaProjectReferencedUpsertSchemaField(ctx.objects[idx].Fields, schema.Field{
 		Name:             fieldName,
 		Type:             "Lookup",
@@ -572,7 +562,7 @@ func semaProjectReferencedUpsertSchemaField(fields []schema.Field, incoming sche
 		if !semaSchemaAPINameEquivalent(existing.Name, incoming.Name) {
 			continue
 		}
-		if fields[i].Type == "" || strings.EqualFold(fields[i].Type, "Any") || strings.EqualFold(fields[i].Type, "Object") {
+		if incoming.Type != "" && (fields[i].Type == "" || strings.EqualFold(fields[i].Type, "Any") || strings.EqualFold(fields[i].Type, "Object")) {
 			fields[i].Type = incoming.Type
 		}
 		if len(fields[i].ReferenceTo) == 0 && len(incoming.ReferenceTo) > 0 {
@@ -599,6 +589,8 @@ func semaProjectReferencedSchemaFieldTypeFromValue(value string) string {
 		return "Text"
 	case strings.EqualFold(value, "true"), strings.EqualFold(value, "false"):
 		return "Checkbox"
+	case strings.Contains(compact, ".format("), strings.Contains(compact, ".formatgmt("):
+		return "Text"
 	case strings.HasPrefix(compact, "date.today("), strings.HasPrefix(compact, "system.date.today("), strings.HasPrefix(compact, "date.newinstance("):
 		return "Date"
 	case strings.HasPrefix(compact, "datetime.now("), strings.HasPrefix(compact, "system.now("), strings.HasPrefix(compact, "system.datetime.now("), strings.HasPrefix(compact, "datetime.newinstance("):

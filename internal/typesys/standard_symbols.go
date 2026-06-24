@@ -41,6 +41,7 @@ type StandardPropertySpec struct {
 	Name   string
 	Type   string
 	Static bool
+	Force  bool
 }
 
 func standardEnumProperties(typeName string, names ...string) []StandardPropertySpec {
@@ -408,18 +409,33 @@ func appendUniqueStandardConstructorSpecs(values, additions []StandardConstructo
 
 func appendUniqueStandardMethods(values, additions []StandardMethodSpec) []StandardMethodSpec {
 	seen := make(map[string]bool, len(values)+len(additions))
-	for _, value := range values {
+	byKey := make(map[string]int, len(values))
+	for i, value := range values {
 		seen[standardMethodKey(value)] = true
+		byKey[standardMethodKey(value)] = i
 	}
 	for _, addition := range additions {
 		key := standardMethodKey(addition)
 		if seen[key] {
+			if index, ok := byKey[key]; ok && shouldReplaceStandardMethod(values[index], addition) {
+				values[index] = addition
+			}
 			continue
 		}
 		seen[key] = true
+		byKey[key] = len(values)
 		values = append(values, addition)
 	}
 	return values
+}
+
+func shouldReplaceStandardMethod(existing, addition StandardMethodSpec) bool {
+	existingType := strings.TrimSpace(existing.ReturnType)
+	additionType := strings.TrimSpace(addition.ReturnType)
+	if additionType == "" || strings.EqualFold(additionType, "Object") {
+		return false
+	}
+	return existingType == "" || strings.EqualFold(existingType, "Object")
 }
 
 func appendUniqueStandardProperties(values, additions []StandardPropertySpec) []StandardPropertySpec {
@@ -450,6 +466,9 @@ func shouldReplaceStandardProperty(existing, addition StandardPropertySpec) bool
 	additionType := strings.TrimSpace(addition.Type)
 	if additionType == "" || strings.EqualFold(additionType, "Object") {
 		return false
+	}
+	if addition.Force {
+		return true
 	}
 	if strings.EqualFold(additionType, "Id") &&
 		strings.EqualFold(existingType, "String") &&
@@ -851,7 +870,22 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	{Name: "DataWeaveScriptResource", Constructors: [][]string{{}}},
 	{Name: "DataWeaveScriptException", SuperClass: "Exception", Constructors: [][]string{{}, {"String"}}},
 	{Name: "ConnectApi.ExternalCredential", Properties: []StandardPropertySpec{{Name: "principals", Type: "List<ConnectApi.ExternalCredentialPrincipal>"}}},
-	{Name: "ConnectApi.ExternalCredentialInput", Properties: []StandardPropertySpec{{Name: "principals", Type: "List<ConnectApi.ExternalCredentialPrincipalInput>"}}},
+	{Name: "ConnectApi.ExternalCredentialInput", Properties: []StandardPropertySpec{
+		{Name: "authenticationProtocol", Type: "ConnectApi.CredentialAuthenticationProtocol"},
+		{Name: "authenticationProtocolVariant", Type: "ConnectApi.CredentialAuthenticationProtocolVariant"},
+		{Name: "customHeaders", Type: "List<ConnectApi.CredentialCustomHeader>"},
+		{Name: "developerName", Type: "String"},
+		{Name: "masterLabel", Type: "String"},
+		{Name: "parameters", Type: "List<ConnectApi.ExternalCredentialParameterInput>"},
+		{Name: "principals", Type: "List<ConnectApi.ExternalCredentialPrincipalInput>"},
+	}},
+	{Name: "ConnectApi.ExternalCredentialPrincipalInput", Properties: []StandardPropertySpec{
+		{Name: "id", Type: "String"},
+		{Name: "parameters", Type: "List<ConnectApi.ExternalCredentialParameterInput>"},
+		{Name: "principalName", Type: "String"},
+		{Name: "principalType", Type: "ConnectApi.CredentialPrincipalType"},
+		{Name: "sequenceNumber", Type: "Integer"},
+	}},
 	{Name: "ConnectApi.NamedCredential", Properties: []StandardPropertySpec{{Name: "developerName", Type: "String"}, {Name: "masterLabel", Type: "String"}, {Name: "type", Type: "ConnectApi.NamedCredentialType"}, {Name: "calloutUrl", Type: "String"}, {Name: "calloutOptions", Type: "ConnectApi.NamedCredentialCalloutOptions"}, {Name: "externalCredentials", Type: "List<ConnectApi.ExternalCredential>"}}},
 	{Name: "ConnectApi.NamedCredentialInput", Properties: []StandardPropertySpec{{Name: "developerName", Type: "String"}, {Name: "masterLabel", Type: "String"}, {Name: "type", Type: "ConnectApi.NamedCredentialType"}, {Name: "calloutUrl", Type: "String"}, {Name: "calloutOptions", Type: "ConnectApi.NamedCredentialCalloutOptionsInput"}, {Name: "externalCredentials", Type: "List<ConnectApi.ExternalCredentialInput>"}}},
 	{Name: "ConnectApi.NamedCredentialCalloutOptions", Properties: []StandardPropertySpec{{Name: "allowMergeFieldsInBody", Type: "Boolean"}, {Name: "allowMergeFieldsInHeader", Type: "Boolean"}, {Name: "generateAuthorizationHeader", Type: "Boolean"}}},
@@ -859,8 +893,22 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	{Name: "ConnectApi.EinsteinLLMGenerationItemOutput", Properties: []StandardPropertySpec{{Name: "text", Type: "String"}}},
 	{Name: "ConnectApi.EinsteinPromptTemplateGenerationsRepresentation", Properties: []StandardPropertySpec{{Name: "generations", Type: "List<ConnectApi.EinsteinLLMGenerationItemOutput>"}}},
 	{Name: "ConnectApi.OrchestrationInstance", Properties: []StandardPropertySpec{{Name: "id", Type: "Id"}, {Name: "stageInstances", Type: "List<ConnectApi.OrchestrationStageInstance>"}}},
-	{Name: "ConnectApi.OrchestrationStageInstance", Properties: []StandardPropertySpec{{Name: "id", Type: "Id"}, {Name: "label", Type: "String"}, {Name: "stageStepInstances", Type: "List<ConnectApi.OrchestrationStepInstance>"}}},
-	{Name: "ConnectApi.OrchestrationStepInstance", Properties: []StandardPropertySpec{{Name: "id", Type: "Id"}, {Name: "label", Type: "String"}, {Name: "workAssignments", Type: "List<ConnectApi.OrchestrationWorkAssignment>"}}},
+	{Name: "ConnectApi.OrchestrationStageInstance", Properties: []StandardPropertySpec{
+		{Name: "id", Type: "Id"},
+		{Name: "label", Type: "String"},
+		{Name: "name", Type: "String"},
+		{Name: "position", Type: "Integer"},
+		{Name: "stageStepInstances", Type: "List<ConnectApi.OrchestrationStepInstance>"},
+		{Name: "status", Type: "ConnectApi.OrchestrationInstanceStatus", Force: true},
+	}},
+	{Name: "ConnectApi.OrchestrationStepInstance", Properties: []StandardPropertySpec{
+		{Name: "id", Type: "Id"},
+		{Name: "label", Type: "String"},
+		{Name: "name", Type: "String"},
+		{Name: "status", Type: "ConnectApi.OrchestrationInstanceStatus", Force: true},
+		{Name: "type", Type: "ConnectApi.OrchestrationStepType"},
+		{Name: "workAssignments", Type: "List<ConnectApi.OrchestrationWorkAssignment>"},
+	}},
 	{Name: "ConnectApi.OrchestrationWorkAssignment", Properties: []StandardPropertySpec{{Name: "id", Type: "Id"}, {Name: "label", Type: "String"}, {Name: "contextRecordId", Type: "Id"}, {Name: "screenFlowId", Type: "String"}}},
 	{Name: "ConnectApi.CommentInput", Properties: []StandardPropertySpec{{Name: "body", Type: "ConnectApi.MessageBodyInput"}}},
 	{Name: "ConnectApi.FeedBody", Properties: []StandardPropertySpec{{Name: "messageSegments", Type: "List<ConnectApi.MessageSegment>"}}},
@@ -1065,7 +1113,7 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	{Name: "Datetime", Methods: []StandardMethodSpec{{Name: "now", ReturnType: "Datetime", Static: true}, {Name: "newInstance", ReturnType: "Datetime", Parameters: []string{"Integer", "Integer", "Integer"}, Static: true}, {Name: "newInstance", ReturnType: "Datetime", Parameters: []string{"Long"}, Static: true}, {Name: "newInstance", ReturnType: "Datetime", Parameters: []string{"Integer", "Integer", "Integer", "Integer", "Integer", "Integer"}, Static: true}, {Name: "newInstance", ReturnType: "Datetime", Parameters: []string{"Date", "Time"}, Static: true}, {Name: "newInstanceGmt", ReturnType: "Datetime", Parameters: []string{"Integer", "Integer", "Integer"}, Static: true}, {Name: "newInstanceGmt", ReturnType: "Datetime", Parameters: []string{"Integer", "Integer", "Integer", "Integer", "Integer", "Integer"}, Static: true}, {Name: "newInstanceGmt", ReturnType: "Datetime", Parameters: []string{"Date", "Time"}, Static: true}, {Name: "valueOf", ReturnType: "Datetime", Parameters: []string{"String"}, Static: true}, {Name: "valueOf", ReturnType: "Datetime", Parameters: []string{"Object"}, Static: true}, {Name: "valueOfGmt", ReturnType: "Datetime", Parameters: []string{"String"}, Static: true}, {Name: "addDays", ReturnType: "Datetime", Parameters: []string{"Integer"}}, {Name: "addMonths", ReturnType: "Datetime", Parameters: []string{"Integer"}}, {Name: "addYears", ReturnType: "Datetime", Parameters: []string{"Integer"}}, {Name: "addHours", ReturnType: "Datetime", Parameters: []string{"Integer"}}, {Name: "addMinutes", ReturnType: "Datetime", Parameters: []string{"Integer"}}, {Name: "addSeconds", ReturnType: "Datetime", Parameters: []string{"Integer"}}, {Name: "addMilliseconds", ReturnType: "Datetime", Parameters: []string{"Integer"}}, {Name: "format", ReturnType: "String"}, {Name: "format", ReturnType: "String", Parameters: []string{"String"}}, {Name: "format", ReturnType: "String", Parameters: []string{"String", "String"}}, {Name: "formatGmt", ReturnType: "String"}, {Name: "formatGmt", ReturnType: "String", Parameters: []string{"String"}}, {Name: "date", ReturnType: "Date"}, {Name: "dateGmt", ReturnType: "Date"}, {Name: "time", ReturnType: "Time"}, {Name: "timeGmt", ReturnType: "Time"}, {Name: "day", ReturnType: "Integer"}, {Name: "month", ReturnType: "Integer"}, {Name: "year", ReturnType: "Integer"}, {Name: "hour", ReturnType: "Integer"}, {Name: "minute", ReturnType: "Integer"}, {Name: "second", ReturnType: "Integer"}, {Name: "millisecond", ReturnType: "Integer"}, {Name: "toString", ReturnType: "String"}}},
 	{Name: "Schema", Methods: []StandardMethodSpec{{Name: "getGlobalDescribe", ReturnType: "Map<String,Schema.SObjectType>", Static: true}, {Name: "describeSObjects", ReturnType: "List<Schema.DescribeSObjectResult>", Parameters: []string{"List<String>"}, Static: true}, {Name: "describeTabs", ReturnType: "List<Schema.DescribeTabSetResult>", Static: true}}},
 	{Name: "Schema.SObjectType", Methods: []StandardMethodSpec{{Name: "getDescribe", ReturnType: "Schema.DescribeSObjectResult"}, {Name: "getDescribe", ReturnType: "Schema.DescribeSObjectResult", Parameters: []string{"SObjectDescribeOptions"}}, {Name: "newSObject", ReturnType: "SObject"}}},
-	{Name: "Schema.SObjectField", Methods: []StandardMethodSpec{{Name: "getDescribe", ReturnType: "Schema.DescribeFieldResult"}}, Properties: []StandardPropertySpec{{Name: "label", Type: "String"}, {Name: "name", Type: "String"}}},
+	{Name: "Schema.SObjectField", Methods: []StandardMethodSpec{{Name: "getDescribe", ReturnType: "Schema.DescribeFieldResult"}, {Name: "isAccessible", ReturnType: "Boolean"}, {Name: "isCreateable", ReturnType: "Boolean"}, {Name: "isUpdateable", ReturnType: "Boolean"}}, Properties: []StandardPropertySpec{{Name: "label", Type: "String"}, {Name: "name", Type: "String"}}},
 	{Name: "Schema.DescribeSObjectResult", Methods: []StandardMethodSpec{{Name: "getName", ReturnType: "String"}, {Name: "getLabel", ReturnType: "String"}, {Name: "getLabelPlural", ReturnType: "String"}, {Name: "getKeyPrefix", ReturnType: "String"}, {Name: "getFields", ReturnType: "Schema.SObjectTypeFields"}, {Name: "getFieldSets", ReturnType: "Schema.SObjectTypeFieldSets"}, {Name: "getRecordTypeInfos", ReturnType: "List<Schema.RecordTypeInfo>"}, {Name: "getRecordTypeInfosByName", ReturnType: "Map<String,Schema.RecordTypeInfo>"}, {Name: "getRecordTypeInfosByDeveloperName", ReturnType: "Map<String,Schema.RecordTypeInfo>"}, {Name: "getRecordTypeInfosById", ReturnType: "Map<Id,Schema.RecordTypeInfo>"}, {Name: "getChildRelationships", ReturnType: "List<Schema.ChildRelationship>"}, {Name: "getSObjectType", ReturnType: "Schema.SObjectType"}, {Name: "isAccessible", ReturnType: "Boolean"}, {Name: "isCreateable", ReturnType: "Boolean"}, {Name: "isUpdateable", ReturnType: "Boolean"}, {Name: "isDeletable", ReturnType: "Boolean"}, {Name: "isQueryable", ReturnType: "Boolean"}, {Name: "isSearchable", ReturnType: "Boolean"}}, Properties: []StandardPropertySpec{{Name: "fields", Type: "Schema.SObjectTypeFields"}, {Name: "fieldSets", Type: "Schema.SObjectTypeFieldSets"}}},
 	{Name: "Schema.SObjectTypeFields", Methods: []StandardMethodSpec{{Name: "get", ReturnType: "Schema.SObjectField", Parameters: []string{"String"}}, {Name: "getMap", ReturnType: "Map<String,Schema.SObjectField>"}}},
 	{Name: "Schema.SObjectTypeFieldSets", Methods: []StandardMethodSpec{{Name: "get", ReturnType: "Schema.FieldSet", Parameters: []string{"String"}}, {Name: "getMap", ReturnType: "Map<String,Schema.FieldSet>"}}},
@@ -1099,7 +1147,7 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	{Name: "ConnectApi.ChatterFeeds", Methods: []StandardMethodSpec{{Name: "postFeedElement", ReturnType: "ConnectApi.FeedElement", Parameters: []string{"String", "ConnectApi.FeedElementInput"}, Static: true}, {Name: "postFeedElement", ReturnType: "ConnectApi.FeedElement", Parameters: []string{"String", "String", "ConnectApi.FeedElementType", "String"}, Static: true}}},
 	{Name: "ConnectApi.UserProfiles", Methods: []StandardMethodSpec{{Name: "getUserProfile", ReturnType: "ConnectApi.UserProfile", Parameters: []string{"String", "String"}, Static: true}}},
 	{Name: "Auth.AuthConfiguration", Constructors: [][]string{{}, {"String", "String"}}, Methods: []StandardMethodSpec{{Name: "getAuthConfig", ReturnType: "Auth.AuthConfiguration", Static: true}, {Name: "getAuthProviders", ReturnType: "List<AuthProvider>"}, {Name: "getFooterText", ReturnType: "String"}, {Name: "getBackgroundColor", ReturnType: "String"}, {Name: "getStartUrl", ReturnType: "String"}, {Name: "isCommunityUsingSiteAsContainer", ReturnType: "Boolean"},
-		{Name: "getAllowInternalUserLoginEnabled", ReturnType: "Boolean"}, {Name: "getAuthConfigProviders", ReturnType: "List<Auth.AuthConfig>"}, {Name: "getAuthProviderSsoDomainUrl", ReturnType: "String", Parameters: []string{"String", "String", "String"}}, {Name: "getAuthProviderSsoUrl", ReturnType: "String", Parameters: []string{"String", "String", "String"}}, {Name: "getCertificateLoginEnabled", ReturnType: "Boolean", Parameters: []string{"String"}}, {Name: "getCertificateLoginUrl", ReturnType: "String", Parameters: []string{"String", "String"}}, {Name: "getDefaultProfileForRegistration", ReturnType: "String"}, {Name: "getForgotPasswordUrl", ReturnType: "String"}, {Name: "getHeadlessForgotPasswordEnabled", ReturnType: "Boolean"}, {Name: "getHeadlessFrgtPswEnabled", ReturnType: "Boolean"}, {Name: "getHeadlessPasswordlessLoginEnabled", ReturnType: "Boolean"}, {Name: "getHeadlessRegistrationEnabled", ReturnType: "Boolean"}, {Name: "getLogoUrl", ReturnType: "String"}, {Name: "getRightFrameUrl", ReturnType: "String"}, {Name: "getSamlProviders", ReturnType: "List<Auth.AuthConfig>"}, {Name: "getSamlSsoUrl", ReturnType: "String", Parameters: []string{"String", "String", "String"}}, {Name: "getSelfRegistrationEnabled", ReturnType: "Boolean"}, {Name: "getSelfRegistrationUrl", ReturnType: "String"}, {Name: "getUsernamePasswordEnabled", ReturnType: "Boolean"}}},
+		{Name: "getAllowInternalUserLoginEnabled", ReturnType: "Boolean"}, {Name: "getAuthConfigProviders", ReturnType: "List<Auth.AuthConfig>"}, {Name: "getAuthProviderSsoDomainUrl", ReturnType: "String", Parameters: []string{"String", "String", "String"}, Static: true}, {Name: "getAuthProviderSsoUrl", ReturnType: "String", Parameters: []string{"String", "String", "String"}, Static: true}, {Name: "getCertificateLoginEnabled", ReturnType: "Boolean", Parameters: []string{"String"}}, {Name: "getCertificateLoginUrl", ReturnType: "String", Parameters: []string{"String", "String"}, Static: true}, {Name: "getDefaultProfileForRegistration", ReturnType: "String"}, {Name: "getForgotPasswordUrl", ReturnType: "String"}, {Name: "getHeadlessForgotPasswordEnabled", ReturnType: "Boolean"}, {Name: "getHeadlessFrgtPswEnabled", ReturnType: "Boolean"}, {Name: "getHeadlessPasswordlessLoginEnabled", ReturnType: "Boolean"}, {Name: "getHeadlessRegistrationEnabled", ReturnType: "Boolean"}, {Name: "getLogoUrl", ReturnType: "String"}, {Name: "getRightFrameUrl", ReturnType: "String"}, {Name: "getSamlProviders", ReturnType: "List<Auth.AuthConfig>"}, {Name: "getSamlSsoUrl", ReturnType: "String", Parameters: []string{"String", "String", "String"}, Static: true}, {Name: "getSelfRegistrationEnabled", ReturnType: "Boolean"}, {Name: "getSelfRegistrationUrl", ReturnType: "String"}, {Name: "getUsernamePasswordEnabled", ReturnType: "Boolean"}}},
 	{Name: "Auth.AuthProviderCallbackState", Constructors: [][]string{{"Map<String,String>", "String", "Map<String,String>"}}, Properties: []StandardPropertySpec{{Name: "headers", Type: "Map<String,String>"}, {Name: "body", Type: "String"}, {Name: "queryParameters", Type: "Map<String,String>"}}},
 	{Name: "Auth.AuthProviderPlugin", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "initiate", ReturnType: "PageReference", Parameters: []string{"Map<String,String>", "String"}}, {Name: "handleCallback", ReturnType: "Auth.AuthProviderTokenResponse", Parameters: []string{"Map<String,String>", "Auth.AuthProviderCallbackState"}}, {Name: "getUserInfo", ReturnType: "Auth.UserData", Parameters: []string{"Map<String,String>", "Auth.AuthProviderTokenResponse"}}, {Name: "getCustomMetadataType", ReturnType: "String"}}},
 	{Name: "Auth.AuthProviderPluginClass", Methods: []StandardMethodSpec{{Name: "initiate", ReturnType: "PageReference", Parameters: []string{"Map<String,String>", "String"}}, {Name: "handleCallback", ReturnType: "Auth.AuthProviderTokenResponse", Parameters: []string{"Map<String,String>", "Auth.AuthProviderCallbackState"}}, {Name: "getUserInfo", ReturnType: "Auth.UserData", Parameters: []string{"Map<String,String>", "Auth.AuthProviderTokenResponse"}}, {Name: "getCustomMetadataType", ReturnType: "String"}, {Name: "refresh", ReturnType: "Auth.OAuthRefreshResult", Parameters: []string{"Map<String,String>", "String"}}}},
@@ -1182,7 +1230,11 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 var standardPlatformSymbolOverlays = []StandardSymbolSpec{
 	{Name: "DataSource.AsyncDeleteCallback", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "processDelete", ReturnType: "void", Parameters: []string{"Database.DeleteResult"}}}},
 	{Name: "DataSource.AsyncSaveCallback", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "processSave", ReturnType: "void", Parameters: []string{"Database.SaveResult"}}}},
-	{Name: "Metadata.DeployResult", Properties: []StandardPropertySpec{{Name: "errorMessage", Type: "String"}}},
+	{Name: "Metadata.DeployResult", Properties: []StandardPropertySpec{
+		{Name: "errorMessage", Type: "String"},
+		{Name: "errorStatusCode", Type: "Metadata.StatusCode", Force: true},
+		{Name: "success", Type: "Boolean"},
+	}},
 	{Name: "ApexPages.Message", Methods: []StandardMethodSpec{{Name: "getSeverity", ReturnType: "ApexPages.Severity"}}},
 	{Name: "AsyncInfo", Methods: []StandardMethodSpec{{Name: "getCurrentQueueableStackDepth", ReturnType: "Integer", Static: true}}},
 	{Name: "AsyncOptions", Methods: []StandardMethodSpec{{Name: "getMaximumQueueableStackDepth", ReturnType: "Integer"}, {Name: "setMinimumQueueableDelayInMinutes", ReturnType: "void", Parameters: []string{"Integer"}}}},

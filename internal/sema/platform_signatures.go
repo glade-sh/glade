@@ -332,10 +332,33 @@ func semaEnumMethodSignature(model map[string]typeMembers, receiverType, method 
 func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSignature, bool) {
 	receiverType = semaCanonicalPlatformAlias(receiverType)
 	method = normalizeName(method)
+	if semaDescribeSObjectResultChildRelationships(receiverType, method) {
+		return semaCollectionSignature{returnType: "List<Schema.ChildRelationship>", params: [][]string{{}}}, true
+	}
 	if strings.EqualFold(receiverType, "System") {
 		switch method {
 		case "hashcode":
 			return semaCollectionSignature{returnType: "Integer", params: [][]string{{"Object"}}}, true
+		}
+	}
+	if strings.EqualFold(receiverType, "Auth.AuthToken") {
+		switch method {
+		case "getaccesstoken":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"String", "String"}}}, true
+		case "getaccesstokenmap":
+			return semaCollectionSignature{returnType: "Map<String,String>", params: [][]string{{"String", "String"}}}, true
+		case "refreshaccesstoken":
+			return semaCollectionSignature{returnType: "Auth.OAuthRefreshResult", params: [][]string{{"String", "String", "String"}}}, true
+		case "revokeaccess":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"String", "String", "String", "String"}}}, true
+		}
+	}
+	if strings.EqualFold(receiverType, "Auth.AuthConfiguration") {
+		switch method {
+		case "getauthproviderssodomainurl", "getauthproviderssourl", "getsamlssourl":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"String", "String", "String"}}}, true
+		case "getcertificateloginurl":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"String", "String"}}}, true
 		}
 	}
 	switch method {
@@ -766,7 +789,7 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		case "getrecordtypeinfosbyid":
 			return semaCollectionSignature{returnType: "Map<Id,Schema.RecordTypeInfo>", params: [][]string{{}}}, true
 		}
-	case "schema.describesobjectresult":
+	case "schema.describesobjectresult", "describesobjectresult":
 		switch method {
 		case "getname", "getlabel", "getlabelplural", "getkeyprefix":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
@@ -956,6 +979,12 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		}
 	}
 	return semaCollectionSignature{}, false
+}
+
+func semaDescribeSObjectResultChildRelationships(receiverType, method string) bool {
+	receiverType = semaCanonicalPlatformAlias(receiverType)
+	return (strings.EqualFold(receiverType, "Schema.DescribeSObjectResult") || strings.EqualFold(receiverType, "DescribeSObjectResult")) &&
+		normalizeName(method) == "getchildrelationships"
 }
 
 func semaObjectMethodName(method string) bool {

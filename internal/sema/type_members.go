@@ -23,6 +23,7 @@ type typeMembers struct {
 	dependency               bool
 	sobject                  bool
 	externalPackageSObject   bool
+	partialSObject           bool
 	kind                     apexast.DeclarationKind
 	superClass               string
 	interfaces               []string
@@ -317,12 +318,14 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 				namespace:              semaNamespaceFromAPIName(object.Name),
 				sobject:                true,
 				externalPackageSObject: semaIsExternalManagedPackageAPIName(projectNamespace, object.Name),
+				partialSObject:         object.Partial,
 				kind:                   apexast.DeclarationClass,
 				fields:                 make(map[string]typesys.MemberSymbol),
 				methods:                make(map[string][]typesys.MemberSymbol),
 			}
 		}
 		objectMembers.sobject = true
+		objectMembers.partialSObject = objectMembers.partialSObject || object.Partial
 		if objectMembers.namespace == "" {
 			objectMembers.namespace = semaNamespaceFromAPIName(object.Name)
 		}
