@@ -56,6 +56,48 @@ private class MathTest {
 	}
 }
 
+func TestRunRejectsSetArgumentWhenOnlyListObjectOverloadExists(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Q.cls"), `
+public class Q {
+  public static QCondition condition(String fieldName) {
+    return new QCondition();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/QCondition.cls"), `
+public class QCondition {
+  public QCondition isIn(List<Object> values) {
+    return this;
+  }
+  public QCondition isIn(String value) {
+    return this;
+  }
+  public QCondition isIn(Q subquery) {
+    return this;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/QConditionTest.cls"), `
+@isTest
+private class QConditionTest {
+  @isTest static void rejectsSetIdArgument() {
+    Set<Id> productIds = new Set<Id>{'001000000000001AAA'};
+    Q.condition('Parent__c').isIn(productIds);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Failed != 1 {
+		t.Fatalf("summary = %#v problem=%q run=%#v", got, firstRunProblem(run), run)
+	}
+	if problem := firstRunProblem(run); !strings.Contains(problem, "isIn") {
+		t.Fatalf("problem = %q, want isIn overload failure", problem)
+	}
+}
+
 func TestCapturedPackageMethodFailsWithNamedBoundaryWithoutShim(t *testing.T) {
 	root := t.TempDir()
 	writeCapturedBillingArtifact(t, filepath.Join(root, "packages/pkg.glade-package.json"))

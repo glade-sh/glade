@@ -83,6 +83,11 @@ project:
 Apex string literals are remapped too. Dynamic SOQL and metadata names see the
 runtime namespace in the local test and exec loop.
 
+If a source-backed dependency's `sfdx-project.json` namespace differs from the
+configured dependency namespace, Glade requires a matching namespace remap. For
+example, source namespace `BasePkg` loaded as `stagepkg` needs
+`namespaceRemaps: ["BasePkg:stagepkg"]`.
+
 ## Package artifacts
 
 Use an artifact dependency when a project needs installed package contracts
