@@ -108,7 +108,7 @@ func (a *Analyzer) checkSchemaReferences(index typesys.Index) []diagnostic.Diagn
 }
 
 func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnostic {
-	checker := newQuerySemanticsChecker(index)
+	checker := newQuerySemanticsChecker(index, a.queryDeclaredObjects...)
 	if len(checker.objects) == 0 {
 		return nil
 	}
@@ -128,16 +128,23 @@ func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnos
 }
 
 type querySemanticsChecker struct {
-	namespace string
-	objects   map[string]schema.Object
-	fields    map[string]map[string]schema.Field
+	namespace      string
+	objects        map[string]schema.Object
+	fields         map[string]map[string]schema.Field
+	declaredFields map[string]int
+	hasBaseline    bool
 }
 
-func newQuerySemanticsChecker(index typesys.Index) querySemanticsChecker {
+func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Object) querySemanticsChecker {
 	checker := querySemanticsChecker{
-		namespace: index.Project.Namespace,
-		objects:   make(map[string]schema.Object, len(index.Objects)),
-		fields:    make(map[string]map[string]schema.Field, len(index.Objects)),
+		namespace:      index.Project.Namespace,
+		objects:        make(map[string]schema.Object, len(index.Objects)),
+		fields:         make(map[string]map[string]schema.Field, len(index.Objects)),
+		declaredFields: make(map[string]int, len(index.Objects)),
+		hasBaseline:    len(declaredObjects) > 0,
+	}
+	for _, object := range declaredObjects {
+		checker.recordDeclaredFields(object)
 	}
 	for _, object := range index.Objects {
 		checker.addObject(object)
@@ -282,6 +289,9 @@ func (c querySemanticsChecker) checkSOQLField(objectName, fieldPath string, ctx 
 		if _, ok := c.field(objectName, fieldPath); ok {
 			return nil
 		}
+		if c.allowsIncompleteExternalManagedPackageField(objectName, fieldPath) {
+			return nil
+		}
 		if c.allowsIncompleteExternalManagedPackageObject(objectName) {
 			return nil
 		}
@@ -293,6 +303,9 @@ func (c querySemanticsChecker) checkSOQLField(objectName, fieldPath string, ctx 
 		parts = parts[1:]
 		if len(parts) == 1 {
 			if _, ok := c.field(current, parts[0]); ok {
+				return nil
+			}
+			if c.allowsIncompleteExternalManagedPackageField(current, parts[0]) {
 				return nil
 			}
 			if c.allowsIncompleteExternalManagedPackageObject(current) {
@@ -315,6 +328,9 @@ func (c querySemanticsChecker) checkSOQLField(objectName, fieldPath string, ctx 
 		current = target
 	}
 	if _, ok := c.field(current, parts[len(parts)-1]); !ok {
+		if c.allowsIncompleteExternalManagedPackageField(current, parts[len(parts)-1]) {
+			return nil
+		}
 		if c.allowsIncompleteExternalManagedPackageObject(current) {
 			return nil
 		}
@@ -385,6 +401,11 @@ func (c querySemanticsChecker) object(name string) (schema.Object, bool) {
 			return object, true
 		}
 	}
+	if local := semaSchemaLocalAPIName(name); !strings.EqualFold(local, name) {
+		if object, ok := c.objects[normalizeName(local)]; ok {
+			return object, true
+		}
+	}
 	if strings.EqualFold(name, "Name") {
 		object := schema.Object{Name: "Name", Fields: []schema.Field{
 			{Name: "Id", Type: "Id"},
@@ -430,6 +451,11 @@ func (c querySemanticsChecker) field(objectName, fieldName string) (schema.Field
 			return field, true
 		}
 	}
+	if local := semaSchemaLocalAPIName(fieldName); !strings.EqualFold(local, fieldName) {
+		if field, ok := fields[normalizeName(local)]; ok {
+			return field, true
+		}
+	}
 	if field, ok := c.locationComponentField(object.Name, fieldName); ok {
 		return field, true
 	}
@@ -465,6 +491,14 @@ func (c querySemanticsChecker) hasFieldMetadata(objectName string) bool {
 	return ok && len(fields) > 0
 }
 
+func (c querySemanticsChecker) hasDeclaredFieldMetadata(objectName string) bool {
+	object, ok := c.object(objectName)
+	if !ok {
+		return false
+	}
+	return c.declaredFields[normalizeName(object.Name)] > 0
+}
+
 func (c querySemanticsChecker) allowsIncompleteExternalManagedPackageObject(objectName string) bool {
 	object, ok := c.object(objectName)
 	if !ok {
@@ -477,6 +511,22 @@ func (c querySemanticsChecker) allowsIncompleteExternalManagedPackageObject(obje
 	return c.namespace == "" || !strings.EqualFold(namespace, c.namespace)
 }
 
+func (c querySemanticsChecker) allowsIncompleteExternalManagedPackageField(objectName, fieldName string) bool {
+	fieldNamespace := semaNamespaceFromAPIName(fieldName)
+	if fieldNamespace == "" || strings.EqualFold(fieldNamespace, c.namespace) {
+		return false
+	}
+	object, ok := c.object(objectName)
+	if !ok {
+		return false
+	}
+	if objectNamespace := semaNamespaceFromAPIName(object.Name); objectNamespace != "" {
+		return !strings.EqualFold(objectNamespace, c.namespace)
+	}
+	_, ok = storage.StandardObjectDefinition(object.Name)
+	return ok
+}
+
 func (c querySemanticsChecker) relationshipField(objectName, relationshipName string) (schema.Field, string, bool) {
 	object, ok := c.object(objectName)
 	if !ok {
@@ -484,15 +534,94 @@ func (c querySemanticsChecker) relationshipField(objectName, relationshipName st
 	}
 	fields, ok := c.fields[normalizeName(object.Name)]
 	if !ok {
-		return schema.Field{}, "", false
+		return c.inferredPackageParentRelationshipField(relationshipName)
 	}
 	for _, field := range fields {
 		if c.apiNamesMatch(field.RelationshipName, relationshipName) && len(field.ReferenceTo) > 0 {
 			target := field.ReferenceTo[0]
+			targetObject, hasTargetObject := c.object(target)
+			canonicalTarget, hasCanonicalTarget := c.standardTargetForPackageRelationship(field.RelationshipName, target)
+			if !hasCanonicalTarget {
+				canonicalTarget, hasCanonicalTarget = c.standardTargetForPackageRelationship(relationshipName, target)
+			}
+			if hasTargetObject && (!hasCanonicalTarget || c.hasDeclaredFieldMetadata(targetObject.Name)) {
+				return field, targetObject.Name, true
+			}
+			if hasCanonicalTarget {
+				target = canonicalTarget
+			}
 			if targetObject, ok := c.object(target); ok {
 				target = targetObject.Name
 			}
 			return field, target, true
+		}
+	}
+	return c.inferredPackageParentRelationshipField(relationshipName)
+}
+
+func (c querySemanticsChecker) standardTargetForPackageRelationship(relationshipName, target string) (string, bool) {
+	relationshipName = strings.TrimSpace(relationshipName)
+	if !strings.HasSuffix(strings.ToLower(relationshipName), "__r") {
+		return "", false
+	}
+	hasNamespace := semaHasNamespaceToken(relationshipName)
+	if !hasNamespace && c.namespace == "" {
+		return "", false
+	}
+	candidates := []string{}
+	if local, ok := semaProjectLocalAPIName(c.namespace, relationshipName); ok {
+		candidates = append(candidates, strings.TrimSuffix(local, "__r"))
+	}
+	if local := semaSchemaLocalAPIName(relationshipName); !strings.EqualFold(local, relationshipName) {
+		candidates = append(candidates, strings.TrimSuffix(local, "__r"))
+	}
+	if !hasNamespace {
+		candidates = append(candidates, strings.TrimSuffix(relationshipName, "__r"))
+	}
+	for _, candidate := range candidates {
+		candidate = strings.TrimSpace(candidate)
+		if candidate == "" {
+			continue
+		}
+		targetLocal := semaSchemaLocalAPIName(target)
+		if !strings.EqualFold(targetLocal, candidate+"__c") {
+			continue
+		}
+		if _, ok := storage.StandardObjectDefinition(candidate); ok {
+			return candidate, true
+		}
+	}
+	return "", false
+}
+
+func (c querySemanticsChecker) inferredPackageParentRelationshipField(relationshipName string) (schema.Field, string, bool) {
+	relationshipName = strings.TrimSpace(relationshipName)
+	if !strings.HasSuffix(strings.ToLower(relationshipName), "__r") {
+		return schema.Field{}, "", false
+	}
+	candidates := []string{}
+	if local, ok := semaProjectLocalAPIName(c.namespace, relationshipName); ok {
+		candidates = append(candidates, strings.TrimSuffix(local, "__r"))
+		candidates = append(candidates, strings.TrimSuffix(local, "__r")+"__c")
+	}
+	if local := semaSchemaLocalAPIName(relationshipName); !strings.EqualFold(local, relationshipName) {
+		candidates = append(candidates, strings.TrimSuffix(local, "__r"))
+		candidates = append(candidates, strings.TrimSuffix(local, "__r")+"__c")
+	}
+	if c.namespace != "" && !semaHasNamespaceToken(relationshipName) {
+		candidates = append(candidates, strings.TrimSuffix(relationshipName, "__r"))
+	}
+	candidates = append(candidates, strings.TrimSuffix(relationshipName, "__r")+"__c")
+	seen := make(map[string]bool, len(candidates))
+	for _, candidate := range candidates {
+		candidate = strings.TrimSpace(candidate)
+		key := normalizeName(candidate)
+		if candidate == "" || seen[key] {
+			continue
+		}
+		seen[key] = true
+		if object, ok := c.object(candidate); ok {
+			return schema.Field{Name: strings.TrimSuffix(relationshipName, "__r") + "__c", Type: "Lookup", RelationshipName: relationshipName, ReferenceTo: []string{object.Name}}, object.Name, true
 		}
 	}
 	return schema.Field{}, "", false
@@ -539,12 +668,46 @@ func (c querySemanticsChecker) childObjectForRelationship(parentObject, relation
 			return object, true
 		}
 	}
+	if object, ok := c.inferredPackageChildRelationshipObject(relationship); ok {
+		return object, true
+	}
+	return schema.Object{}, false
+}
+
+func (c querySemanticsChecker) inferredPackageChildRelationshipObject(relationship string) (schema.Object, bool) {
+	relationship = strings.TrimSpace(relationship)
+	if !strings.HasSuffix(strings.ToLower(relationship), "__r") {
+		return schema.Object{}, false
+	}
+	candidates := []string{}
+	if local, ok := semaProjectLocalAPIName(c.namespace, relationship); ok {
+		candidates = append(candidates, strings.TrimSuffix(local, "__r")+"__c")
+	}
+	if local := semaSchemaLocalAPIName(relationship); !strings.EqualFold(local, relationship) {
+		candidates = append(candidates, strings.TrimSuffix(local, "__r")+"__c")
+	}
+	candidates = append(candidates, strings.TrimSuffix(relationship, "__r")+"__c")
+	seen := make(map[string]bool, len(candidates))
+	for _, candidate := range candidates {
+		candidate = strings.TrimSpace(candidate)
+		key := normalizeName(candidate)
+		if candidate == "" || seen[key] {
+			continue
+		}
+		seen[key] = true
+		if object, ok := c.object(candidate); ok {
+			return object, true
+		}
+	}
 	return schema.Object{}, false
 }
 
 func (c querySemanticsChecker) addObject(object schema.Object) {
 	if strings.TrimSpace(object.Name) == "" {
 		return
+	}
+	if !c.hasBaseline {
+		c.recordDeclaredFields(object)
 	}
 	object = mergeQueryStorageStandardFields(object)
 	object = mergeQuerySObjectSystemFields(object)
@@ -558,6 +721,23 @@ func (c querySemanticsChecker) addObject(object schema.Object) {
 	if localName, ok := semaProjectLocalAPIName(c.namespace, object.Name); ok {
 		c.objects[normalizeName(localName)] = object
 		c.fields[normalizeName(localName)] = fieldMap
+	}
+}
+
+func (c querySemanticsChecker) recordDeclaredFields(object schema.Object) {
+	if strings.TrimSpace(object.Name) == "" {
+		return
+	}
+	declaredFieldCount := len(object.Fields)
+	key := normalizeName(object.Name)
+	if declaredFieldCount > c.declaredFields[key] {
+		c.declaredFields[key] = declaredFieldCount
+	}
+	if localName, ok := semaProjectLocalAPIName(c.namespace, object.Name); ok {
+		localKey := normalizeName(localName)
+		if declaredFieldCount > c.declaredFields[localKey] {
+			c.declaredFields[localKey] = declaredFieldCount
+		}
 	}
 }
 
@@ -784,6 +964,9 @@ func (c querySemanticsChecker) apiNamesMatch(left, right string) bool {
 		return true
 	}
 	if local, ok := semaProjectLocalAPIName(c.namespace, right); ok && strings.EqualFold(left, local) {
+		return true
+	}
+	if localLeft, localRight := semaSchemaLocalAPIName(left), semaSchemaLocalAPIName(right); strings.EqualFold(localLeft, localRight) {
 		return true
 	}
 	return false

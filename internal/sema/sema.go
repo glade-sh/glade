@@ -52,6 +52,7 @@ type Analyzer struct {
 	namespace                     string
 	deps                          map[string]bool
 	includePerformanceDiagnostics bool
+	queryDeclaredObjects          []schema.Object
 }
 
 type AnalyzeOptions struct {
@@ -100,6 +101,7 @@ func (a *Analyzer) AnalyzeWithOptions(index typesys.Index, opts AnalyzeOptions) 
 	a.namespace = index.Project.Namespace
 	a.deps = make(map[string]bool)
 	a.includePerformanceDiagnostics = opts.Diagnostics && !opts.SuppressPerformanceDiagnostics
+	a.queryDeclaredObjects = append([]schema.Object(nil), index.Objects...)
 	index = enrichIndexWithStandardSymbols(index)
 	index = enrichIndexWithProjectReferencedSchemaFields(index)
 	index = enrichIndexWithSchemaDerivedObjects(index)
@@ -1748,7 +1750,7 @@ func semaResolvedCallReturnType(model map[string]typeMembers, receiverType, meth
 	candidates := resolveMemberMethods(model, receiverType, method)
 	platformBackedCandidates := semaResolvedMembersAllPlatformBacked(model, candidates)
 	if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok && !platformBackedCandidates {
-		return candidate.member.Type
+		return semaResolvedMemberReturnType(model, candidate)
 	}
 	if sig, ok := semaSObjectCloneSignature(model, receiverType, method); ok {
 		return sig.returnType
@@ -1763,7 +1765,7 @@ func semaResolvedCallReturnType(model map[string]typeMembers, receiverType, meth
 		return returnType
 	}
 	if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok {
-		return candidate.member.Type
+		return semaResolvedMemberReturnType(model, candidate)
 	}
 	if sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method); ok {
 		return sig.returnType
@@ -1856,7 +1858,7 @@ func semaResolvedImplicitCallReturnType(model map[string]typeMembers, receiverTy
 		return sig.returnType
 	}
 	if candidate, ok, _ := bestResolvedMemberByArgTypes(resolveImplicitMemberMethods(model, receiverType, method), argTypes, model); ok {
-		return candidate.member.Type
+		return semaResolvedMemberReturnType(model, candidate)
 	}
 	return ""
 }
@@ -2276,11 +2278,8 @@ func semaIterableElementTypeInModel(typeName string, model map[string]typeMember
 }
 
 func semaChainedCallReceiver(body string, callStart int, scope map[string]string, model map[string]typeMembers, currentType string) (string, string, bool) {
-	dot := callStart - 1
-	for dot >= 0 && isWhitespace(body[dot]) {
-		dot--
-	}
-	if dot < 1 || body[dot] != '.' {
+	dot, ok := semaPreviousDottedChainDot(body, callStart)
+	if !ok || dot < 1 {
 		return "", "", false
 	}
 	methodStart := callStart
@@ -2474,13 +2473,41 @@ func semaConstructorReceiverType(expr string) string {
 }
 
 func semaLooksLikeDottedCall(body string, callStart int) bool {
-	for i := callStart - 1; i >= 0; i-- {
-		if isWhitespace(body[i]) {
-			continue
-		}
-		return body[i] == '.'
+	_, ok := semaPreviousDottedChainDot(body, callStart)
+	return ok
+}
+
+func semaPreviousDottedChainDot(body string, callStart int) (int, bool) {
+	i := callStart - 1
+	for i >= 0 && isWhitespace(body[i]) {
+		i--
 	}
-	return false
+	if i >= 0 && body[i] == '.' {
+		return i, true
+	}
+	if dot := semaDotBeforeTrailingLineComment(body, i); dot >= 0 {
+		return dot, true
+	}
+	return -1, false
+}
+
+func semaDotBeforeTrailingLineComment(body string, end int) int {
+	if end < 0 || end >= len(body) {
+		return -1
+	}
+	lineStart := strings.LastIndexByte(body[:end+1], '\n') + 1
+	comment := strings.LastIndex(body[lineStart:end+1], "//")
+	if comment < 0 {
+		return -1
+	}
+	i := lineStart + comment - 1
+	for i >= lineStart && isWhitespace(body[i]) {
+		i--
+	}
+	if i >= lineStart && body[i] == '.' {
+		return i
+	}
+	return -1
 }
 
 func semaChainedCallReceiverNear(body string, pos int, method string, scope map[string]string, model map[string]typeMembers, currentType string) (string, string, bool) {
@@ -2587,6 +2614,9 @@ func semaExpressionStart(expr string) int {
 			if depth == 0 && angleDepth == 0 && semaContinuesWithDot(expr, i+1) {
 				continue
 			}
+			if depth == 0 && angleDepth == 0 && semaPreviousLineContinuesWithDot(expr, i-1) {
+				continue
+			}
 			if depth == 0 && angleDepth == 0 && semaPreviousNonWhitespaceByte(expr, i-1) == '(' {
 				continue
 			}
@@ -2637,6 +2667,17 @@ func semaContinuesWithDot(expr string, start int) bool {
 		return expr[i] == '.'
 	}
 	return false
+}
+
+func semaPreviousLineContinuesWithDot(expr string, end int) bool {
+	i := end
+	for i >= 0 && isWhitespace(expr[i]) {
+		i--
+	}
+	if i >= 0 && expr[i] == '.' {
+		return true
+	}
+	return semaDotBeforeTrailingLineComment(expr, i) >= 0
 }
 
 func semaPreviousNonWhitespaceByte(expr string, start int) byte {

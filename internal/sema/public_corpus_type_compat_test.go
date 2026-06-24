@@ -41,3 +41,53 @@ public class ChainedAssignment {
 	result := analyzePublicCorpusFiles(t, root, "ChainedAssignment.cls")
 	assertNoDiagnosticContaining(t, result, "GLADESEMA018", "mockResult with void")
 }
+
+func TestPublicCorpusNestedFluentReturnKeepsOwnerType(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "SObjectDataLoader.cls"), `
+public class SObjectDataLoader {
+  public static String serialize(Object records, SerializeConfig config) {
+    return '';
+  }
+
+  public class SerializeConfig {
+    public SerializeConfig auto(Schema.SObjectType objectType) {
+      return this;
+    }
+
+    public SerializeConfig follow(Schema.SObjectField field) {
+      return this;
+    }
+
+    public SerializeConfig followChild(Schema.SObjectField field) {
+      return this;
+    }
+
+    public SerializeConfig omit(Schema.SObjectField field) {
+      return this;
+    }
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "UsesSObjectDataLoader.cls"), `
+public class UsesSObjectDataLoader {
+  public void run() {
+    String serializedData = SObjectDataLoader.serialize(new List<Opportunity>(),
+      new SObjectDataLoader.SerializeConfig().
+        followChild(OpportunityLineItem.OpportunityId).     // child records
+          follow(OpportunityLineItem.PricebookEntryId).     // price book entries
+            follow(PricebookEntry.Product2Id).              // products
+            omit(OpportunityLineItem.UnitPrice));
+
+    serializedData = SObjectDataLoader.serialize(new Set<Id>{'006000000000000AAA'},
+      new SObjectDataLoader.SerializeConfig().
+        auto(Opportunity.sObjectType).          // infer graph
+        omit(Opportunity.AccountId));
+  }
+}
+`)
+	result := analyzePublicCorpusFiles(t, root, "SObjectDataLoader.cls", "UsesSObjectDataLoader.cls")
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA008", "follow")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA008", "omit")
+}

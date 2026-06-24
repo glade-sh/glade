@@ -39,6 +39,9 @@ func TestLoadProject(t *testing.T) {
 	if len(s.Objects) != 1 || s.Objects[0].Name != "Thing__c" {
 		t.Fatalf("objects = %#v", s.Objects)
 	}
+	if s.Objects[0].Partial {
+		t.Fatalf("object metadata-backed object marked partial: %#v", s.Objects[0])
+	}
 	if len(s.Objects[0].Fields) != 5 {
 		t.Fatalf("fields = %#v", s.Objects[0].Fields)
 	}
@@ -95,6 +98,23 @@ func TestLoadProject(t *testing.T) {
 	rules := s.Objects[0].ValidationRules
 	if len(rules) != 1 || rules[0].Name != "Block" || !rules[0].Active || rules[0].ErrorMessage != `blocked by "rule" and 'apostrophe'` || rules[0].ErrorDisplayField != "Parent__c" {
 		t.Fatalf("validation rules = %#v", rules)
+	}
+}
+
+func TestLoadProjectMarksFieldOnlyObjectPartial(t *testing.T) {
+	root := t.TempDir()
+	fieldPath := filepath.Join(root, "force-app/main/objects/Agreement__c/fields/StartDate__c.field-meta.xml")
+	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>StartDate__c</fullName><label>Start Date</label><type>Date</type></CustomField>`)
+
+	s, err := LoadProject(project.Project{FieldFiles: []string{fieldPath}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(s.Objects) != 1 || s.Objects[0].Name != "Agreement__c" {
+		t.Fatalf("objects = %#v", s.Objects)
+	}
+	if !s.Objects[0].Partial {
+		t.Fatalf("field-only object not marked partial: %#v", s.Objects[0])
 	}
 }
 

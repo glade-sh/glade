@@ -51,6 +51,28 @@ public class PublicCorpusSymbols {
 	assertNoDiagnosticContaining(t, result, "GLADESEMA018", "errorStatusCode")
 }
 
+func TestPublicCorpusSObjectFieldDirectBooleanAccessors(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "FieldAccessors.cls"), `
+public class FieldAccessors {
+  public Boolean run() {
+    return Schema.SObjectType.Preference__c.fields.User__c.isCreateable();
+  }
+}
+`)
+	result := analyzePublicCorpusWithSchema(t, root, schema.Schema{Objects: []schema.Object{{
+		Name: "Preference__c",
+		Fields: []schema.Field{{
+			Name:        "User__c",
+			Type:        "Lookup",
+			ReferenceTo: []string{"User"},
+		}},
+	}}}, "FieldAccessors.cls")
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA008", "isCreateable")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA018", "Boolean")
+}
+
 func analyzeStandardSymbolProject(root string, files ...string) Result {
 	return Analyze(typesys.Build(project.Project{Root: root, ApexFiles: files}, schema.Schema{}))
 }

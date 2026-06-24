@@ -318,3 +318,31 @@ public class QueryProbe {
 
 	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_RELATIONSHIP", "npe01__OppPayment__r")
 }
+
+func TestPublicCorpusNamespacedQueryObjectMatchesLocalMetadata(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "BatchJobScheduler.cls"), `
+public class BatchJobScheduler {
+  public void run() {
+    for (Batch_Apex_Job__c job : [
+      SELECT Id, Name, batchjobsch__Batch_Group__c
+      FROM batchjobsch__Batch_Apex_Job__c
+    ]) {
+      Integer groupNumber = Integer.valueOf(job.Batch_Group__c);
+    }
+  }
+}
+`)
+	result := analyzePublicCorpusWithSchema(t, root, schema.Schema{Objects: []schema.Object{{
+		Name: "Batch_Apex_Job__c",
+		Fields: []schema.Field{
+			{Name: "Id", Type: "Id"},
+			{Name: "Name", Type: "Text"},
+			{Name: "Batch_Group__c", Type: "Number"},
+		},
+	}}}, "BatchJobScheduler.cls")
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_OBJECT", "batchjobsch__Batch_Apex_Job__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "batchjobsch__Batch_Group__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA024", "batchjobsch__Batch_Apex_Job__c")
+}

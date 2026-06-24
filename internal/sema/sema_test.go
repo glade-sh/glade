@@ -10669,7 +10669,7 @@ public class Caller {
 			count++
 		}
 	}
-	if count != 3 {
+	if count != 2 {
 		t.Fatalf("GLADESEMA027 count = %d diagnostics=%#v", count, result.Diagnostics)
 	}
 }
