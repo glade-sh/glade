@@ -71,6 +71,7 @@ repository.
 | Area | Current support |
 | --- | --- |
 | Apex parse, indexing, and semantic checks | Works well for the local development contract. |
+| Project configuration | `glade.yml` and `sfdx-project.json` discovery cover package directories, default namespace, namespace remaps, source-backed managed package dependencies, captured package artifacts, package shims, org features, storage, and local limit settings. |
 | Local Apex tests | Works well for the VM subset, with isolated test data, statics, limits, async drain, and JSON/JUnit output. |
 | SOQL, DML, triggers, SObjects, and storage | Work well for the checked local data runtime contract. |
 | `Database` methods | Supported for the tracked local rows in the stdlib ledger. |

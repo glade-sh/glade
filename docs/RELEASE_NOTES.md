@@ -2,7 +2,15 @@
 
 ## Unreleased
 
-No changes yet.
+Release prep:
+
+- Fixed project dependency discovery so case-variant paths that resolve to the
+  same physical SFDX project are not loaded as separate managed-package source
+  dependencies. This removes false duplicate-symbol diagnostics on
+  case-insensitive filesystems while preserving real duplicate class detection.
+- Refreshed the release-facing docs and site copy for project configuration,
+  including namespace remaps, source-backed managed package dependencies,
+  captured package artifacts, and package shims.
 
 ## v0.2.6 - 2026-06-24
 
