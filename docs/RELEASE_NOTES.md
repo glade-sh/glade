@@ -2,7 +2,13 @@
 
 ## Unreleased
 
-Release prep:
+No changes yet.
+
+## v0.2.7 - 2026-06-24
+
+Glade v0.2.7 ships the release-prep fixes after v0.2.6.
+
+Project configuration and release prep:
 
 - Fixed project dependency discovery so case-variant paths that resolve to the
   same physical SFDX project are not loaded as separate managed-package source
