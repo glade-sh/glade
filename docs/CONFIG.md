@@ -82,6 +82,11 @@ The remap is applied in memory when Glade reads source-backed dependency code
 and metadata. Files on disk are not rewritten. Apex string literals are remapped
 too, so dynamic SOQL and metadata names see the runtime namespace.
 
+If a source-backed dependency's `sfdx-project.json` namespace differs from the
+configured dependency namespace, Glade requires a matching namespace remap. For
+example, source namespace `BasePkg` loaded as `stagepkg` needs
+`namespaceRemaps: ["BasePkg:stagepkg"]`.
+
 ## Package Artifacts
 
 Use an artifact dependency when a local project needs package contracts but not

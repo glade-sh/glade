@@ -7619,6 +7619,56 @@ public class Hello {
 	}
 }
 
+func TestAnalyzeRejectsSetArgumentWhenOnlyListObjectOverloadExists(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Q.cls"), `
+public class Q {
+  public Q() {}
+  public Q(Schema.SObjectType objectType) {}
+  public static QCondition condition(String fieldName) {
+    return new QCondition();
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "QCondition.cls"), `
+public class QCondition {
+  public QCondition isIn(List<Object> values) {
+    return this;
+  }
+  public QCondition isIn(String value) {
+    return this;
+  }
+  public QCondition isIn(Q subquery) {
+    return this;
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "UsesQ.cls"), `
+public class UsesQ {
+  public void run(Set<Id> productIds) {
+    Q.condition('Parent__c').isIn(productIds);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Q.cls"),
+		filepath.Join(root, "QCondition.cls"),
+		filepath.Join(root, "UsesQ.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	found := false
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA009" && strings.Contains(diag.Message, "isIn") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected no matching overload diagnostic for Set<Id> isIn argument, got %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeFallbackCustomStringFieldContains(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `

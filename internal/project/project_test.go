@@ -605,6 +605,39 @@ func TestLoadManagedPackageDependencyInheritsMatchingNamespaceRemap(t *testing.T
 	if len(dep.Project.NamespaceRemaps) != 1 || dep.Project.NamespaceRemaps[0].From != "BasePkg" || dep.Project.NamespaceRemaps[0].To != "stagepkg" {
 		t.Fatalf("dependency namespace remaps = %#v", dep.Project.NamespaceRemaps)
 	}
+	if len(p.DependencyDiagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", p.DependencyDiagnostics)
+	}
+}
+
+func TestLoadManagedPackageDependencyReportsMissingNamespaceRemap(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "deps", "base-source")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"BasePkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/classes/Helper.cls"), "global class Helper {}")
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
+  managedPackageDependencies: ["stagepkg:../deps/base-source:1.0"]
+`)
+
+	p, err := Load(consumerRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 1 {
+		t.Fatalf("dependency count = %d", len(p.ManagedPackageDependencies))
+	}
+	dep := p.ManagedPackageDependencies[0]
+	if dep.Status != "namespace_mismatch" || dep.Project != nil {
+		t.Fatalf("dependency = %#v", dep)
+	}
+	if len(p.DependencyDiagnostics) != 1 || p.DependencyDiagnostics[0].Code != "dependency_namespace_remap_missing" {
+		t.Fatalf("diagnostics = %#v", p.DependencyDiagnostics)
+	}
+	if !strings.Contains(p.DependencyDiagnostics[0].Message, `namespaceRemaps: ["BasePkg:stagepkg"]`) {
+		t.Fatalf("diagnostic message = %q", p.DependencyDiagnostics[0].Message)
+	}
 }
 
 func TestMatchingNamespaceRemapsRequiresSourceAndRuntimeMatch(t *testing.T) {

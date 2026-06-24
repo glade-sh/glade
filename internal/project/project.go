@@ -620,7 +620,21 @@ func loadManagedPackageDependencies(configured []config.ManagedPackageDependency
 			continue
 		}
 		loadedSourceNamespace := loaded.Namespace
-		loaded.NamespaceRemaps = appendNamespaceRemaps(loaded.NamespaceRemaps, matchingNamespaceRemaps(remaps, loadedSourceNamespace, dep.Namespace)...)
+		matchedRemaps := matchingNamespaceRemaps(remaps, loadedSourceNamespace, dep.Namespace)
+		if sourceNamespaceRemapRequired(loadedSourceNamespace, dep.Namespace) && len(matchedRemaps) == 0 {
+			projectDep.Status = "namespace_mismatch"
+			diagnostics = append(diagnostics, DependencyDiagnostic{
+				Namespace:  dep.Namespace,
+				SourceRoot: dep.SourceRoot,
+				Version:    dep.Version,
+				Status:     "namespace_mismatch",
+				Code:       "dependency_namespace_remap_missing",
+				Message:    fmt.Sprintf("managed package dependency source namespace %q differs from configured namespace %q; add project.namespaceRemaps: [\"%s:%s\"]", loadedSourceNamespace, dep.Namespace, loadedSourceNamespace, dep.Namespace),
+			})
+			deps = append(deps, projectDep)
+			continue
+		}
+		loaded.NamespaceRemaps = appendNamespaceRemaps(loaded.NamespaceRemaps, matchedRemaps...)
 		loaded.Namespace = dep.Namespace
 		projectDep.Project = &loaded
 		projectDep.Status = "loaded"
@@ -878,6 +892,12 @@ func matchingNamespaceRemaps(rules []namespaceremap.Rule, loadedNamespace, confi
 		}
 	}
 	return matched
+}
+
+func sourceNamespaceRemapRequired(loadedNamespace, configuredNamespace string) bool {
+	loadedNamespace = strings.TrimSpace(loadedNamespace)
+	configuredNamespace = strings.TrimSpace(configuredNamespace)
+	return loadedNamespace != "" && configuredNamespace != "" && !strings.EqualFold(loadedNamespace, configuredNamespace)
 }
 
 func appendNamespaceRemaps(base []namespaceremap.Rule, extra ...namespaceremap.Rule) []namespaceremap.Rule {

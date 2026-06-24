@@ -2088,6 +2088,10 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	if dbPath != "" && projectRoot == "" {
 		projectRoot = "."
 	}
+	if runtimeProjectRoot == "" && dbPath == "" && currentDirIsGladeProjectRoot() {
+		projectRoot = "."
+		runtimeProjectRoot = "."
+	}
 	tracePath = parsed.String("trace")
 	debugLogArg := strings.TrimSpace(parsed.String("debug-log"))
 	logOutPath := strings.TrimSpace(parsed.String("log-out"))
@@ -2228,6 +2232,16 @@ func defaultExecLogPath(root string) string {
 		base = "."
 	}
 	return filepath.Join(base, ".glade", "logs", "exec-"+time.Now().UTC().Format("20060102T150405Z")+".log")
+}
+
+func currentDirIsGladeProjectRoot() bool {
+	for _, marker := range []string{"sfdx-project.json", "glade.yml"} {
+		info, err := os.Stat(marker)
+		if err == nil && !info.IsDir() {
+			return true
+		}
+	}
+	return false
 }
 
 func defaultLogSuggestion(path string) string {

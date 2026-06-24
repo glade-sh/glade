@@ -3156,6 +3156,22 @@ public class LocalProbe {
 	}
 }
 
+func TestRunExecLoadsCurrentProjectOrgFeaturesByDefault(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	writeTestFile(t, filepath.Join(root, "glade.yml"), "org:\n  features: [MultiCurrency]\n")
+	t.Chdir(root)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"exec",
+		"System.assert(UserInfo.isMultiCurrencyOrganization());",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exec failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+}
+
 func TestRunExecWithDBDryRunDoesNotPersist(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
