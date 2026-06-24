@@ -47,6 +47,7 @@ These areas are the main local development contract.
 | Area | What to expect |
 | --- | --- |
 | Apex parsing and project indexing | Large SFDX projects, nested types, namespace tokens, and stable parse diagnostics. |
+| Project configuration and package contracts | `glade.yml` and SFDX discovery cover package dirs, default namespace, namespace remaps, source-backed managed package dependencies, captured package artifacts, package shims, org features, storage, and local limits. |
 | Semantic checks | Type references, inheritance, interfaces, overloads, locals, assignments, return paths, and token ranges for the supported VM subset. |
 | Local Apex tests | `@isTest`, `@TestSetup`, isolated org state, static reset, governor windows, async drain, stack frames, JSON, and JUnit output. |
 | SOQL, DML, triggers, and SObjects | Static and dynamic SOQL, DML statements, `Database.*` result objects, trigger context, schema-backed SObjects, and local SQLite-backed storage. |

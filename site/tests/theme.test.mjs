@@ -881,6 +881,10 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(supportMap, /Visualforce Lightning Out for LWCs[\s\S]*Preview feature with limits/);
   assert.match(supportMap, /Local LWC Shell/);
   assert.match(supportMap, /docs\/LWC_SUPPORT\.md/);
+  assert.match(supportMap, /Project configuration and package contracts/);
+  assert.match(supportMap, /namespace remaps/);
+  assert.match(supportMap, /captured package artifacts/);
+  assert.match(supportMap, /package shims/);
   assert.doesNotMatch(supportMap, /folded into this page/);
   assert.match(supportMap, /## Requires Salesforce/);
   assert.match(supportMap, /Counts come from the checked standard library capability report/);
