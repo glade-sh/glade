@@ -26,12 +26,17 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 		`go-version: "1.26.3"`,
 		"actions/setup-node@v6",
 		`node-version: "22"`,
-		"actions/upload-artifact@v7",
-		"actions/download-artifact@v8",
+		"Upload platform release assets",
+		"gh release upload",
+		"gh release download",
+		"glade-release-artifacts-$VERSION.tar.gz",
 	} {
 		if !strings.Contains(workflowText, want) {
 			t.Fatalf("release.yml missing %q", want)
 		}
+	}
+	if strings.Contains(workflowText, "actions/upload-artifact") || strings.Contains(workflowText, "actions/download-artifact") {
+		t.Fatalf("release.yml should not use Actions artifact storage for release assets")
 	}
 }
 

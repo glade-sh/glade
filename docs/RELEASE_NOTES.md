@@ -39,6 +39,8 @@ Release engineering:
 
 - Added release index generation and hardened release workflow publishing for
   `index.json`, per-version manifests, checksums, and latest manifests.
+- Moved release asset handoff through GitHub Release assets so artifact storage
+  quota does not block tagged releases.
 - Kept support-map and configuration site docs aligned with the current
   product/plugin boundary.
 - Reduced redundant generated sema coverage test work so the full Go suite stays

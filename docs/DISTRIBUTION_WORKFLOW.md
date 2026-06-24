@@ -77,7 +77,8 @@ curl -fsSL https://glade.sh/install.sh | env GLADE_VERSION=vX.Y.Z GLADE_INSTALL_
 "$tmp/bin/glade" doctor
 ```
 
-The release workflow assembles these product download files:
+The release workflow uploads platform assets to the GitHub Release, downloads
+them back in the publish job, and assembles these product download files:
 
 | Path | Purpose |
 | --- | --- |
@@ -89,8 +90,15 @@ The release workflow assembles these product download files:
 `site/install.sh` checks the product download host first and falls back to the
 GitHub release API while the static host is being filled.
 
-Publish the product download files to the static host after downloading the
-`glade-release-artifacts` workflow artifact:
+Publish the product download files to the static host after downloading and
+unpacking the `glade-release-artifacts-vX.Y.Z.tar.gz` GitHub Release asset:
+
+```bash
+tmp="$(mktemp -d)"
+gh release download vX.Y.Z --pattern "glade-release-artifacts-vX.Y.Z.tar.gz" --dir "$tmp"
+mkdir -p dist
+tar -C dist -xzf "$tmp/glade-release-artifacts-vX.Y.Z.tar.gz"
+```
 
 ```bash
 npx --yes wrangler r2 object put glade-downloads/index.json --remote --file dist/index.json

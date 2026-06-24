@@ -11,8 +11,40 @@ on:
         required: false
         default: dev
 
+permissions:
+  contents: write
+
 jobs:
+  prepare:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Build release notes
+        shell: bash
+        run: scripts/release-notes.sh "$GITHUB_REF_NAME" > release-notes.md
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" \
+              --title "$GITHUB_REF_NAME" \
+              --notes-file release-notes.md
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              --title "$GITHUB_REF_NAME" \
+              --notes-file release-notes.md
+          fi
+
   build:
+    needs: prepare
+    if: always() && (needs.prepare.result == 'success' || needs.prepare.result == 'skipped')
     strategy:
       fail-fast: false
       matrix:
@@ -41,18 +73,20 @@ jobs:
         env:
           VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
         run: scripts/release-build.sh
-      - uses: actions/upload-artifact@v7
-        with:
-          name: glade-release-${{ matrix.artifact }}
-          path: |
-            dist/glade_*
-            dist/release-manifest-${{ matrix.artifact }}.json
-            !dist/SHA256SUMS.txt
-            !dist/release-manifest.json
-          if-no-files-found: error
+      - name: Upload platform release assets
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release upload "$GITHUB_REF_NAME" \
+            dist/glade_* \
+            dist/release-manifest-${{ matrix.artifact }}.json \
+            --clobber
 
   publish:
     needs: build
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -60,12 +94,19 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: actions/download-artifact@v8
-        with:
-          path: dist
-          merge-multiple: true
+      - name: Download platform release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          rm -rf dist
+          mkdir -p dist
+          gh release download "$GITHUB_REF_NAME" \
+            --dir dist \
+            --pattern 'glade_*' \
+            --pattern 'release-manifest-*.json' \
+            --clobber
       - name: Build release notes
-        if: startsWith(github.ref, 'refs/tags/')
         shell: bash
         run: scripts/release-notes.sh "$GITHUB_REF_NAME" > release-notes.md
       - name: Assemble checksums
@@ -119,13 +160,10 @@ jobs:
           shutil.copyfile("SHA256SUMS.txt", os.path.join(version, "SHA256SUMS.txt"))
           PY
           python3 ../scripts/release-index.py --version "$VERSION" --output index.json
-      - uses: actions/upload-artifact@v7
-        with:
-          name: glade-release-artifacts
-          path: dist/**
-          if-no-files-found: error
+          bundle="glade-release-artifacts-$VERSION.tar.gz"
+          tar -C . -czf "../$bundle" .
+          mv "../$bundle" .
       - name: Publish GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
