@@ -64,7 +64,8 @@ The repository runs:
 - `npm audit --omit=dev --audit-level=high` for packaged JavaScript
   production dependencies.
 - GitHub Dependency Review on pull requests.
-- OpenSSF Scorecard with published results for the public badge.
+- OpenSSF Scorecard with results ready for a public badge after repository
+  publication.
 - Release smoke checks, checksums, SBOM generation, and artifact attestations.
 
 `gosec` is uploaded to code scanning while the baseline is being triaged. Treat

@@ -360,8 +360,11 @@ test("site copy is task-first and names local capabilities plainly", () => {
 });
 
 test("security trust surface is public, checked, and release-backed", () => {
-  assert.match(repoReadme, /OpenSSF Scorecard/);
-  assert.match(repoReadme, /https:\/\/api\.scorecard\.dev\/projects\/github\.com\/glade-sh\/glade\/badge/);
+  assert.match(repoReadme, /Security workflow/);
+  assert.match(repoReadme, /https:\/\/github\.com\/glade-sh\/glade\/actions\/workflows\/security\.yml\/badge\.svg\?branch=main/);
+  assert.match(repoReadme, /https:\/\/github\.com\/glade-sh\/glade\/actions\/workflows\/security\.yml/);
+  assert.doesNotMatch(repoReadme, /api\.scorecard\.dev/);
+  assert.doesNotMatch(repoReadme, /scorecard\.dev\/viewer/);
   assert.match(repoReadme, /\[Security & Trust\]\(docs\/SECURITY_TRUST\.md\)/);
   assert.match(repoReadme, /\[Security policy\]\(SECURITY\.md\)/);
 
@@ -375,6 +378,7 @@ test("security trust surface is public, checked, and release-backed", () => {
   assert.match(config, /\{ text: 'Security & Trust', link: '\/guide\/security-trust' \}/);
   assert.match(securityTrust, /^# Security & Trust/m);
   assert.match(securityTrust, /OpenSSF Scorecard/);
+  assert.match(securityTrust, /after the repository is public/);
   assert.match(securityTrust, /govulncheck/);
   assert.match(securityTrust, /CodeQL/);
   assert.match(securityTrust, /gosec/);

@@ -18,7 +18,7 @@ release assets.
 
 | Gate | What it checks |
 | --- | --- |
-| OpenSSF Scorecard | Repository posture and public badge. |
+| OpenSSF Scorecard | Repository posture; public badge after the repository is public. |
 | govulncheck | Reachable Go vulnerabilities in modules and the Go standard library. |
 | CodeQL | GitHub code scanning for Go with the security-extended query suite. |
 | gosec | Go source-pattern findings uploaded as SARIF. |

@@ -13,7 +13,8 @@ of checked facts, not one badge.
   production dependencies in the LWC toolchain and VS Code extension.
 - GitHub Dependency Review blocks pull requests that add high-severity
   vulnerable dependencies.
-- OpenSSF Scorecard publishes the repository security posture for the badge.
+- OpenSSF Scorecard records repository posture. Its public badge becomes useful
+  after the repository is public.
 
 ## Release proof
 
@@ -67,4 +68,5 @@ Give reviewers:
 - [Install guide](INSTALL.md).
 - [Release policy](RELEASE_POLICY.md).
 - Latest GitHub release assets, checksums, SBOMs, and attestations.
-- The OpenSSF Scorecard badge and CodeQL/gosec code scanning status.
+- The Security workflow badge, CodeQL/gosec code scanning status, and OpenSSF
+  Scorecard results for public display after repository publication.

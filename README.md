@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://scorecard.dev/viewer/?uri=github.com/glade-sh/glade"><img alt="OpenSSF Scorecard" src="https://api.scorecard.dev/projects/github.com/glade-sh/glade/badge"></a>
+  <a href="https://github.com/glade-sh/glade/actions/workflows/security.yml"><img alt="Security workflow" src="https://github.com/glade-sh/glade/actions/workflows/security.yml/badge.svg?branch=main"></a>
 </p>
 
 <p align="center">
