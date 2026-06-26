@@ -11,6 +11,7 @@ layout: home
       <a class="home-cta primary" href="/guide/installation" data-demo-link>Install Glade</a>
       <a class="home-cta link" href="/guide/quickstart">Run your first local check</a>
     </div>
+    <p class="home-release-line">Latest stable release:<span class="home-release-version">v0.2.7</span></p>
     <p class="home-local-line">No Salesforce org login required for supported local checks.</p>
   </div>
 

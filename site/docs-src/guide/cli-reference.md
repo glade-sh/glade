@@ -22,7 +22,7 @@ Human output is terminal text. Use `--json` or `--format` for scripts. See [CLI 
 <div class="docs-command-grid" aria-label="Command groups">
   <a class="docs-command-card" href="#glade-config">
     <strong>Project setup</strong>
-    <span><code>glade doctor</code>, <code>glade init</code>, <code>glade config</code>, and shell completion.</span>
+    <span><code>glade doctor</code>, <code>glade update</code>, <code>glade init</code>, <code>glade config</code>, and shell completion.</span>
   </a>
   <a class="docs-command-card" href="#glade-check">
     <strong>Check, inspect, and refactor</strong>
@@ -64,6 +64,17 @@ Print build and version information.
 
 ```bash
 glade version
+```
+
+## `glade update`
+
+Update the Glade binary and bundled assets. The default dry run prints the
+installer command without running it. A real update requires an explicit shell
+opt-in.
+
+```bash
+glade update --dry-run
+GLADE_UPDATE_ALLOW_SHELL=1 glade update
 ```
 
 ## `glade doctor`

@@ -1025,8 +1025,34 @@ body:has(.VPHome) .VPNavBarSearch {
   box-shadow: none;
 }
 
+.home-release-line {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 18px 0 0;
+  color: var(--vp-c-text-2);
+  font-size: 13px;
+  font-weight: 720;
+  line-height: 1.4;
+}
+
+.home-release-version {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  border: 1px solid rgba(155, 232, 112, 0.34);
+  border-radius: 999px;
+  background: rgba(155, 232, 112, 0.08);
+  color: var(--glade);
+  font-family: var(--vp-font-family-mono);
+  font-size: 12px;
+  font-weight: 760;
+  padding: 0 10px;
+}
+
 .home-local-line {
-  margin: 20px 0 0;
+  margin: 12px 0 0;
   color: var(--vp-c-text-1);
   font-size: 15px;
   font-weight: 700;
