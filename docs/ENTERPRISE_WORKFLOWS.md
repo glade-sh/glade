@@ -61,8 +61,8 @@ safe rename:
 ```bash
 glade inspect graph --project . --json
 glade inspect definition --project . --symbol Account.Name
-glade inspect references --project . --symbol InvoiceService.total --json
-glade refactor rename --project . --symbol InvoiceService --to BillingService --dry-run --json
+glade inspect references --project . --symbol RefinementService.total --json
+glade refactor rename --project . --symbol RefinementService --to FileRefinementService --dry-run --json
 ```
 
 Definition, reference, and rename commands use the same code-intelligence graph

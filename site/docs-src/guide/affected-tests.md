@@ -54,8 +54,8 @@ The affected-test report distinguishes three useful outcomes:
 ```json
 {
   "mode": "direct",
-  "changed": ["force-app/main/default/classes/AccountService.cls"],
-  "tests": ["AccountServiceTest"]
+  "changed": ["force-app/main/default/classes/RefinementService.cls"],
+  "tests": ["RefinementServiceTest"]
 }
 ```
 
@@ -83,7 +83,7 @@ glade test --project . --junit reports/glade-junit.xml
 During a focused edit:
 
 ```bash
-glade test --project . --class AccountServiceTest --watch
+glade test --project . --class RefinementServiceTest --watch
 ```
 
 When Glade cannot prove a smaller safe set, it runs more tests rather than risk

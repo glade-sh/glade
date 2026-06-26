@@ -581,8 +581,8 @@ func writeExamplesList(w io.Writer, tag string) error {
 	}
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Try:")
-	fmt.Fprintln(w, "  glade playground --example account-service --open")
-	fmt.Fprintln(w, "  glade examples show account-service")
+	fmt.Fprintln(w, "  glade playground --example refinement-service --open")
+	fmt.Fprintln(w, "  glade examples show refinement-service")
 	return nil
 }
 

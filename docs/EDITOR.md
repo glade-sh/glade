@@ -396,7 +396,7 @@ in place, and how `glade test serve` interacts with the on-disk file.
 
 ```bash
 glade test clear-cache --project .
-glade test --project . --no-cache --class AccountServiceTest
+glade test --project . --no-cache --class RefinementServiceTest
 ```
 
 Clear the cache after branch switches or Glade upgrades. Restart
@@ -447,11 +447,11 @@ project code-intelligence graph for scripts, editor tasks, and quick terminal
 checks.
 
 ```bash
-glade inspect definition --project . --symbol InvoiceService
-glade inspect definition --project . --file force-app/main/default/classes/InvoiceService.cls --line 6 --column 13
-glade inspect references --project . --symbol InvoiceService.total --json
+glade inspect definition --project . --symbol RefinementService
+glade inspect definition --project . --file force-app/main/default/classes/RefinementService.cls --line 6 --column 13
+glade inspect references --project . --symbol RefinementService.total --json
 glade inspect references --project . --symbol Account.Name --include-declaration
-glade refactor rename --project . --symbol InvoiceService --to BillingService --dry-run
+glade refactor rename --project . --symbol RefinementService --to FileRefinementService --dry-run
 glade schema import describe --input reports/org-describe.json --project-cache .
 ```
 

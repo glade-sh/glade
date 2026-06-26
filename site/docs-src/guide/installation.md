@@ -191,8 +191,8 @@ glade test --project . --json --no-progress
 Run one class, one method, or tests affected by a git ref:
 
 ```bash
-glade test --project . --class AccountServiceTest --json
-glade test --project . --class AccountServiceTest --method testCreatesAccount --json
+glade test --project . --class RefinementServiceTest --json
+glade test --project . --class RefinementServiceTest --method testRefinesFileRow --json
 glade test changed --project . --since origin/main --json --no-progress
 ```
 

@@ -10,7 +10,7 @@ CLI commands in this repository.
 
 Keep heavy maintenance work in first-party tools and plugins. That includes
 compatibility fixtures, capability catalogs, dashboards, surface ledgers,
-example-project scans, Salesforce docs inventories, and generated maintenance
+open-source corpus scans, Salesforce docs inventories, and generated maintenance
 reports.
 
 ## Maintainer paths

@@ -9,25 +9,25 @@ org, and Salesforce remains the validation gate.
 Create a named local target from the project root:
 
 ```bash
-glade org create my-glade-org
+glade org create refinement-local
 ```
 
 The database holds local SObject rows. The project supplies Apex, schema, and
 metadata shape. By default, Glade writes the database to
-`.glade/orgs/my-glade-org.sqlite` and picks the next loopback address starting
+`.glade/orgs/refinement-local.sqlite` and picks the next loopback address starting
 at `127.0.0.1:17911`.
 
 Pass `--project` when creating the target from outside the project root:
 
 ```bash
-glade org create my-glade-org --project /path/to/project
+glade org create refinement-local --project /path/to/macrodata-apex
 ```
 
 Use `--db` or `--addr` only when you want to pin the database path or local
 server address:
 
 ```bash
-glade org create my-glade-org --db .glade/orgs/my-glade-org.sqlite --addr 127.0.0.1:17911
+glade org create refinement-local --db .glade/orgs/refinement-local.sqlite --addr 127.0.0.1:17911
 ```
 
 ## Start the local org
@@ -35,7 +35,7 @@ glade org create my-glade-org --db .glade/orgs/my-glade-org.sqlite --addr 127.0.
 Start the local server from the saved target:
 
 ```bash
-glade org start my-glade-org --project .
+glade org start refinement-local --project .
 ```
 
 The target uses Glade's local Salesforce API routes. Keep it on loopback unless
@@ -46,13 +46,13 @@ an authenticating reverse proxy stands in front of it.
 Write the target into an `sf` config directory:
 
 ```bash
-glade org auth my-glade-org --project .
+glade org auth refinement-local --project .
 ```
 
 Use a temporary config when testing scripts:
 
 ```bash
-SF_CONFIG_DIR="$(mktemp -d)" glade org auth my-glade-org --project .
+SF_CONFIG_DIR="$(mktemp -d)" glade org auth refinement-local --project .
 ```
 
 `glade org list`, `status`, `start`, and `auth` read the saved target from the
@@ -64,8 +64,8 @@ project's `.glade/orgs` directory. Run them from the project root or pass
 Point `sf data` at the Glade alias:
 
 ```bash
-sf data create record -o my-glade-org -s Account -v "Name='Local' External_Id__c='acct-1'"
-sf data query -o my-glade-org -q "SELECT Id, Name FROM Account WHERE External_Id__c = 'acct-1'"
+sf data create record -o refinement-local -s FileRow__c -v "Name='Refine 01' External_Id__c='file-1'"
+sf data query -o refinement-local -q "SELECT Id, Name FROM FileRow__c WHERE External_Id__c = 'file-1'"
 ```
 
 Some installed `sf` versions use `-o`; some plugin commands still document
@@ -76,8 +76,8 @@ Some installed `sf` versions use `-o`; some plugin commands still document
 Run anonymous Apex against the local runtime:
 
 ```bash
-printf "insert new Account(Name = 'Apex Local', External_Id__c = 'apex-1');\n" > scripts/seed.apex
-sf apex run -o my-glade-org -f scripts/seed.apex
+printf "RefinementService.run();\n" > scripts/refinement.apex
+sf apex run -o refinement-local -f scripts/refinement.apex
 ```
 
 ## Run manifest-based data imports
@@ -86,12 +86,11 @@ Manifest-based imports can target the same alias when their route needs stay
 inside Glade's supported local API set:
 
 ```bash
-sf data import tree -p ./data/insertOrder.json -o my-glade-org
+sf data import tree -p ./data/fileRowsImport.json -o refinement-local
 ```
 
-The sample fixture in
-`testdata/local-tests/glade-org-data-import/insertOrder.json` covers ordered
-Account and Contact records, external-id references, and an ApexScript cleaner.
+The checked import fixture under `testdata/local-tests/glade-org-data-import`
+covers ordered records, external-id references, and an ApexScript cleaner.
 
 ## Supported locally
 

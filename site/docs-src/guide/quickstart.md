@@ -67,7 +67,7 @@ Expected:
 ## 4. Run one test
 
 ```bash
-glade test --project . --class AccountServiceTest
+glade test --project . --class RefinementServiceTest
 ```
 
 Expected: a selected/passed/failed summary, plus file and method details for any failure.

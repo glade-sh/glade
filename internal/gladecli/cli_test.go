@@ -1305,8 +1305,8 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name:    "org help",
 			args:    []string{"help", "org"},
-			want:    []string{"Usage:", "glade org create", "glade org list", "glade org status", "glade org auth", "glade org create my-glade-org", "--db .glade/orgs/my-glade-org.sqlite", "--addr 127.0.0.1:17911"},
-			notWant: []string{"glade org create my-glade-org --project . --db .glade/orgs/my-glade-org.sqlite --addr 127.0.0.1:17911"},
+			want:    []string{"Usage:", "glade org create", "glade org list", "glade org status", "glade org auth", "glade org create refinement-local", "--db .glade/orgs/refinement-local.sqlite", "--addr 127.0.0.1:17911"},
+			notWant: []string{"glade org create refinement-local --project . --db .glade/orgs/refinement-local.sqlite --addr 127.0.0.1:17911"},
 		},
 		{
 			name: "help test",
@@ -1321,7 +1321,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "help db",
 			args: []string{"help", "db"},
-			want: []string{"Usage:", "glade db query --db <path> --project <root> --json [--limit <n>] [--query-all] <soql>", "glade db describe --db <path> --project <root> --json [ObjectName]", "--limit <n>", "--query-all", "glade db query --db .glade/local-org.sqlite --project . --json \"SELECT Id, Name FROM Account\""},
+			want: []string{"Usage:", "glade db query --db <path> --project <root> --json [--limit <n>] [--query-all] <soql>", "glade db describe --db <path> --project <root> --json [ObjectName]", "--limit <n>", "--query-all", "glade db query --db .glade/refinement-local.sqlite --project . --json \"SELECT Id, Name FROM FileRow__c\""},
 		},
 		{
 			name: "help profile",
@@ -1455,12 +1455,12 @@ func TestRunDiscoveryCommands(t *testing.T) {
 		{
 			name: "examples",
 			args: []string{"examples"},
-			want: []string{"Built-in examples", "account-service", "Try:", "glade playground --example account-service --open"},
+			want: []string{"Built-in examples", "refinement-service", "Try:", "glade playground --example refinement-service --open"},
 		},
 		{
 			name: "example show",
-			args: []string{"examples", "show", "account-service"},
-			want: []string{"account-service", "Account", "Try:", "glade playground --example account-service --open"},
+			args: []string{"examples", "show", "refinement-service"},
+			want: []string{"refinement-service", "Refinement Service", "Try:", "glade playground --example refinement-service --open"},
 		},
 		{
 			name: "explain",
@@ -3503,7 +3503,7 @@ func TestRunPlaygroundListExamples(t *testing.T) {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
 	out := stdout.String()
-	for _, want := range []string{"account-service", "Account Factory + Selector", "files", "DML", "local-probe", "Local Probe"} {
+	for _, want := range []string{"refinement-service", "Refinement Service", "files", "DML", "local-probe", "Local Probe"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("list output missing %q:\n%s", want, out)
 		}
@@ -3523,13 +3523,13 @@ func TestRunPlaygroundExampleFlagPrintsDeepLocalURL(t *testing.T) {
 		"--workspace", "default",
 		"--data-root", root,
 		"--db", dbPath,
-		"--example", "account-service",
+		"--example", "refinement-service",
 		"--once",
 	}, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), "http://127.0.0.1:1789/playground/?example=account-service") {
+	if !strings.Contains(stdout.String(), "http://127.0.0.1:1789/playground/?example=refinement-service") {
 		t.Fatalf("stdout = %q", stdout.String())
 	}
 }
@@ -3542,13 +3542,13 @@ func TestRunPlaygroundExampleFlagImpliesExamples(t *testing.T) {
 		"playground",
 		"--wizard",
 		"--data-root", root,
-		"--example", "account-service",
+		"--example", "refinement-service",
 	}, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
 	out := stdout.String()
-	for _, want := range []string{"--examples", "--example", "account-service", "?example=account-service"} {
+	for _, want := range []string{"--examples", "--example", "refinement-service", "?example=refinement-service"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("wizard output missing %q:\n%s", want, out)
 		}
@@ -3571,7 +3571,7 @@ func TestRunPlaygroundExampleFlagRejectsProjectRoot(t *testing.T) {
 	writeTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"playground", "--project", projectRoot, "--example", "account-service", "--once"}, &stdout, &stderr)
+	code := Run(context.Background(), []string{"playground", "--project", projectRoot, "--example", "refinement-service", "--once"}, &stdout, &stderr)
 	if code != 1 {
 		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
 	}
@@ -3586,7 +3586,7 @@ func TestRunPlaygroundExampleFlagRejectsProjectRefs(t *testing.T) {
 	writeTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/LocalProbe.cls"), "public class LocalProbe {}")
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"playground", "--project-ref", "Local Probe=" + projectRoot, "--example", "account-service", "--once"}, &stdout, &stderr)
+	code := Run(context.Background(), []string{"playground", "--project-ref", "Local Probe=" + projectRoot, "--example", "refinement-service", "--once"}, &stdout, &stderr)
 	if code != 1 {
 		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
 	}
@@ -3699,12 +3699,12 @@ func TestRunPlaygroundWizardPrintsCommand(t *testing.T) {
 	root := t.TempDir()
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"playground", "--wizard", "--data-root", root, "--examples", "--example", "account-service", "--no-db", "--reset-on-start", "--public"}, &stdout, &stderr)
+	code := Run(context.Background(), []string{"playground", "--wizard", "--data-root", root, "--examples", "--example", "refinement-service", "--no-db", "--reset-on-start", "--public"}, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
 	out := stdout.String()
-	for _, want := range []string{"glade playground", "--data-root", root, "--examples", "--example", "account-service", "--no-db", "--reset-on-start", "--public", "--open", "?example=account-service"} {
+	for _, want := range []string{"glade playground", "--data-root", root, "--examples", "--example", "refinement-service", "--no-db", "--reset-on-start", "--public", "--open", "?example=refinement-service"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("wizard output missing %q:\n%s", want, out)
 		}
@@ -4411,7 +4411,7 @@ func TestRunProfileAnalyzeJSON(t *testing.T) {
 
 func TestRunProfileAnalyzePprofFormat(t *testing.T) {
 	tracePath := filepath.Join(t.TempDir(), "trace.json")
-	writeTestFile(t, tracePath, `{"format":"chrome-trace-event","version":1,"traceEvents":[{"name":"apex.method.InvoiceService.run","cat":"apex.method","ph":"X","ts":1,"dur":2000,"pid":1,"tid":1,"args":{"file":"InvoiceService.cls","line":3}}]}`)
+	writeTestFile(t, tracePath, `{"format":"chrome-trace-event","version":1,"traceEvents":[{"name":"apex.method.RefinementService.run","cat":"apex.method","ph":"X","ts":1,"dur":2000,"pid":1,"tid":1,"args":{"file":"RefinementService.cls","line":3}}]}`)
 
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"profile", "analyze", tracePath, "--format", "pprof"}, &stdout, &stderr)

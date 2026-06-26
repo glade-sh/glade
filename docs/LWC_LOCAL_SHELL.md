@@ -481,9 +481,9 @@ format.
 Use fixtures for records that record-page LWCs and LDS wires should see:
 
 ```text
-my-project/
+macrodata-apex/
   glade.lwc.json
-  data/accounts.json
+  data/file-rows.json
   force-app/main/default/lwc/
   force-app/main/default/flexipages/
   force-app/main/default/tabs/

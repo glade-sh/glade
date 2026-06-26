@@ -58,7 +58,7 @@ and exposes support gaps instead of hiding them.
 glade doctor
 glade init --project . --yes
 glade check --project .
-glade test --project . --class AccountServiceTest
+glade test --project . --class RefinementServiceTest
 glade test changed --project . --since origin/main
 ```
 

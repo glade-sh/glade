@@ -62,8 +62,8 @@ Existing package-level JSON structs remain available inside the `data` field whe
 Human diagnostics use:
 
 ```text
-force-app/main/default/classes/AccountService.cls:12:18
-error GLADESEMA002 unknown type AccountService
+force-app/main/default/classes/RefinementService.cls:12:18
+error GLADESEMA002 unknown type RefinementService
 ```
 
 Default human output uses project-relative paths. Absolute paths are for verbose/debug output.
