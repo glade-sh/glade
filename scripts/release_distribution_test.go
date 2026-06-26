@@ -23,7 +23,7 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 		"macos-15-intel",
 		"actions/checkout@v6",
 		"actions/setup-go@v6",
-		`go-version: "1.26.3"`,
+		`go-version: "1.26.4"`,
 		"actions/setup-node@v6",
 		`node-version: "22"`,
 		"Upload platform release assets",

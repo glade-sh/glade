@@ -42,8 +42,9 @@ func TestCIGoTestWrapperIsWired(t *testing.T) {
 	for _, want := range []string{
 		"timeout-minutes: 30",
 		"GOMAXPROCS: \"2\"",
-		"go-version: \"1.26.3\"",
+		"go-version: \"1.26.4\"",
 		"actions/checkout@v6",
+		"client-id: ${{ vars.GLADE_APP_CLIENT_ID }}",
 		"actions/setup-go@v6",
 		"actions/setup-node@v6",
 		"scripts/ci-go-test.sh test",
@@ -51,6 +52,9 @@ func TestCIGoTestWrapperIsWired(t *testing.T) {
 		if !strings.Contains(workflowText, want) {
 			t.Fatalf("ci.yml missing %q", want)
 		}
+	}
+	if strings.Contains(workflowText, "app-id: ${{ vars.GLADE_APP_CLIENT_ID }}") {
+		t.Fatalf("ci.yml should use create-github-app-token client-id, not deprecated app-id")
 	}
 	if strings.Contains(workflowText, "scripts/ci-go-test.sh race") {
 		t.Fatalf("ci.yml should not run the full race suite on GitHub-hosted runners")
