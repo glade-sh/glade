@@ -13,7 +13,7 @@ glade server --addr 127.0.0.1:8080
 Load project metadata and persist data to SQLite:
 
 ```bash
-glade server --project . --db .glade/local-org.sqlite --addr 127.0.0.1:8080
+glade server --project . --db .glade/refinement-local.sqlite --addr 127.0.0.1:8080
 ```
 
 Use strict or permissive limit behavior for supported execute paths:
@@ -27,10 +27,10 @@ glade server --project . --limit-mode strict
 Prepare a local database before starting the server:
 
 ```bash
-glade db reset --db .glade/local-org.sqlite --json
-glade db seed --wizard --db .glade/local-org.sqlite --project . seed.json
-glade db seed --db .glade/local-org.sqlite --project . --progress seed.json
-glade db inspect --db .glade/local-org.sqlite --json
+glade db reset --db .glade/refinement-local.sqlite --json
+glade db seed --wizard --db .glade/refinement-local.sqlite --project . data/file-rows.json
+glade db seed --db .glade/refinement-local.sqlite --project . --progress data/file-rows.json
+glade db inspect --db .glade/refinement-local.sqlite --json
 ```
 
 ## REST routes

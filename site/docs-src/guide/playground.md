@@ -83,7 +83,7 @@ glade playground --list-examples
 | Group | Example | Command |
 | --- | --- | --- |
 | Data and SOQL | Account + Contact Query | `glade playground --example contact-relationship-drill` |
-| Data and SOQL | Account Factory + Selector | `glade playground --example account-service` |
+| Data and SOQL | Refinement Service | `glade playground --example refinement-service` |
 | Triggers and DML | Before Insert Trigger | `glade playground --example trigger-contact-task` |
 | Triggers and DML | Bulk Trigger Rollup | `glade playground --example bulk-trigger-rollup` |
 | Data and SOQL | Collection Selector | `glade playground --example collection-selector` |

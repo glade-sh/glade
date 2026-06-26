@@ -199,7 +199,7 @@ path, and author contract are documented in [PLUGINS.md](PLUGINS.md).
 Run a focused class or only tests affected by changes since a git ref:
 
 ```bash
-glade test --project . --class AccountServiceTest --json
+glade test --project . --class RefinementServiceTest --json
 glade test changed --project . --since origin/main --json --no-progress
 mkdir -p reports
 glade performance scan --project . --trace reports/slow-test-trace.json > reports/glade-performance.md
@@ -263,18 +263,18 @@ Use `--db` when the local Salesforce-shaped API server should keep org state
 across restarts.
 
 ```bash
-glade db reset --db .glade/local-org.sqlite --json
-glade server --db .glade/local-org.sqlite --addr 127.0.0.1:8080
+glade db reset --db .glade/refinement-local.sqlite --json
+glade server --db .glade/refinement-local.sqlite --addr 127.0.0.1:8080
 ```
 
 Seed and inspect the same file with the DB commands:
 
 ```bash
-glade db seed --db .glade/local-org.sqlite seed.json --json
-glade db inspect --db .glade/local-org.sqlite --json
-glade db query --db .glade/local-org.sqlite --project . --json "SELECT Id, Name FROM Account"
-glade db describe --db .glade/local-org.sqlite --project . --json Account
-glade db export --db .glade/local-org.sqlite > exported-fixture.json
+glade db seed --db .glade/refinement-local.sqlite data/file-rows.json --json
+glade db inspect --db .glade/refinement-local.sqlite --json
+glade db query --db .glade/refinement-local.sqlite --project . --json "SELECT Id, Name FROM FileRow__c"
+glade db describe --db .glade/refinement-local.sqlite --project . --json FileRow__c
+glade db export --db .glade/refinement-local.sqlite > refinement-export.json
 ```
 
 The running server exposes fixture and reset endpoints under the REST version

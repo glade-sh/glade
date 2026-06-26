@@ -50,6 +50,6 @@ glade check --project .
 Check output prints the code beside the diagnostic:
 
 ```text
-force-app/main/default/classes/AccountService.cls:2:3
+force-app/main/default/classes/RefinementService.cls:2:3
 error GLADESEMA002 method "latestInvoice" references unknown type "Invoice__c"
 ```

@@ -60,7 +60,7 @@ The target contract reserves `--color auto|always|never` and `--no-color`. Until
 Human output uses project-relative paths by default:
 
 ```text
-force-app/main/default/classes/AccountService.cls:12:18
+force-app/main/default/classes/RefinementService.cls:12:18
 ```
 
 Verbose and debug output may show absolute paths.

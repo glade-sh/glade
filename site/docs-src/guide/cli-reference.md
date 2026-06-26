@@ -118,7 +118,7 @@ glade help commands
 glade help exit-codes
 glade examples
 glade examples --tag limits
-glade examples show account-service
+glade examples show refinement-service
 glade explain GLADESEMA002
 glade support
 ```
@@ -143,7 +143,7 @@ glade config init --project . --yes --package-dir force-app
 Parse Apex files and report parser diagnostics.
 
 ```bash
-glade parse force-app/main/default/classes/AccountService.cls
+glade parse force-app/main/default/classes/RefinementService.cls
 glade parse force-app/main/default/classes --progress
 glade parse force-app/main/default/classes --json
 ```
@@ -173,8 +173,8 @@ glade inspect graph --project . --json
 Resolve a symbol or source location to its definition.
 
 ```bash
-glade inspect definition --project . --symbol InvoiceService
-glade inspect definition --project . --file force-app/main/default/classes/InvoiceService.cls --line 6 --column 13
+glade inspect definition --project . --symbol RefinementService
+glade inspect definition --project . --file force-app/main/default/classes/RefinementService.cls --line 6 --column 13
 ```
 
 Use `--json` when an editor task or script needs the structured result.
@@ -184,7 +184,7 @@ Use `--json` when an editor task or script needs the structured result.
 Print references for an Apex type, member, SObject, or schema field.
 
 ```bash
-glade inspect references --project . --symbol InvoiceService.total --json
+glade inspect references --project . --symbol RefinementService.total --json
 glade inspect references --project . --symbol Account.Name --include-declaration
 ```
 
@@ -194,8 +194,8 @@ Plan or apply a safe rename from the same code-intelligence graph. Dry run is
 the default. Use `--write` only after reviewing the planned edits.
 
 ```bash
-glade refactor rename --project . --symbol InvoiceService --to BillingService --dry-run --json
-glade refactor rename --project . --file force-app/main/default/classes/InvoiceService.cls --line 5 --column 14 --to totalNet --write
+glade refactor rename --project . --symbol RefinementService --to FileRefinementService --dry-run --json
+glade refactor rename --project . --file force-app/main/default/classes/RefinementService.cls --line 5 --column 14 --to totalNet --write
 ```
 
 ## `glade schema load`
@@ -294,10 +294,10 @@ hashed payload after a cold build. See
 glade test serve --project .
 glade test daemon status --project .
 glade test --project .
-glade test --project . --class AccountServiceTest --json
+glade test --project . --class RefinementServiceTest --json
 mkdir -p reports
-glade test --project . --class AccountServiceTest --method testCreatesAccount --junit reports/glade-junit.xml
-glade test --project . --connect --class AccountServiceTest
+glade test --project . --class RefinementServiceTest --method testRefinesFileRow --junit reports/glade-junit.xml
+glade test --project . --connect --class RefinementServiceTest
 glade test changed --project . --since origin/main --json --no-progress
 glade test failed --project .
 glade test --project . --wizard
@@ -311,7 +311,7 @@ Clear the on-disk startup cache or skip it for one run:
 
 ```bash
 glade test clear-cache --project .
-glade test --project . --no-cache --class AccountServiceTest
+glade test --project . --no-cache --class RefinementServiceTest
 ```
 
 Run `glade help test` for the full flag list.
@@ -469,7 +469,7 @@ Start the local Salesforce API baseline. Use `--db` for persistence and `--limit
 
 ```bash
 glade server --addr 127.0.0.1:8080
-glade server --project . --db .glade/local-org.sqlite --addr 127.0.0.1:8080
+glade server --project . --db .glade/refinement-local.sqlite --addr 127.0.0.1:8080
 glade server --project . --limit-mode strict
 ```
 
@@ -479,11 +479,11 @@ Create, start, and register a local Glade org target for supported `sf`
 commands. This is a Glade-backed local API target, not a Salesforce scratch org.
 
 ```bash
-glade org create my-glade-org
-glade org start my-glade-org --project .
-glade org auth my-glade-org --project .
-sf data create record -o my-glade-org -s Account -v "Name='Local'"
-sf apex run -o my-glade-org -f scripts/seed.apex
+glade org create refinement-local
+glade org start refinement-local --project .
+glade org auth refinement-local --project .
+sf data create record -o refinement-local -s FileRow__c -v "Name='Refine 01'"
+sf apex run -o refinement-local -f scripts/refinement.apex
 ```
 
 See [Use Glade as an sf target](/guide/glade-orgs) for the data import path and
@@ -494,13 +494,13 @@ support boundary.
 Seed, reset, export, inspect, query, and describe local org storage fixtures.
 
 ```bash
-glade db reset --db .glade/local-org.sqlite --json
-glade db seed --wizard --db .glade/local-org.sqlite --project . seed.json
-glade db seed --db .glade/local-org.sqlite --project . --progress seed.json
-glade db inspect --db .glade/local-org.sqlite --json
-glade db query --db .glade/local-org.sqlite --project . --json "SELECT Id, Name FROM Account"
-glade db describe --db .glade/local-org.sqlite --project . --json Account
-glade db export --db .glade/local-org.sqlite > exported-fixture.json
+glade db reset --db .glade/refinement-local.sqlite --json
+glade db seed --wizard --db .glade/refinement-local.sqlite --project . data/file-rows.json
+glade db seed --db .glade/refinement-local.sqlite --project . --progress data/file-rows.json
+glade db inspect --db .glade/refinement-local.sqlite --json
+glade db query --db .glade/refinement-local.sqlite --project . --json "SELECT Id, Name FROM FileRow__c"
+glade db describe --db .glade/refinement-local.sqlite --project . --json FileRow__c
+glade db export --db .glade/refinement-local.sqlite > refinement-export.json
 ```
 
 ## `glade playground`
@@ -530,7 +530,7 @@ Built-in examples:
 | ID | Name | Command |
 | --- | --- | --- |
 | `contact-relationship-drill` | Account + Contact Query | `glade playground --example contact-relationship-drill` |
-| `account-service` | Account Factory + Selector | `glade playground --example account-service` |
+| `refinement-service` | Refinement Service | `glade playground --example refinement-service` |
 | `trigger-contact-task` | Before Insert Trigger | `glade playground --example trigger-contact-task` |
 | `bulk-trigger-rollup` | Bulk Trigger Rollup | `glade playground --example bulk-trigger-rollup` |
 | `collection-selector` | Collection Selector | `glade playground --example collection-selector` |

@@ -18,7 +18,7 @@ Passed:   1
 Failed:   0
 Runtime:  420ms
 
-  ✓  AccountServiceTest.testCreatesAccount  42ms
+  ✓  RefinementServiceTest.testRefinesFileRow  42ms
 
 Next:
   glade test --watch
@@ -45,13 +45,13 @@ glade test --project . --junit reports/glade-junit.xml
 Run a test class:
 
 ```bash
-glade test --project . --class AccountServiceTest
+glade test --project . --class RefinementServiceTest
 ```
 
 Run a single method:
 
 ```bash
-glade test --project . --class AccountServiceTest --method testCreatesAccount
+glade test --project . --class RefinementServiceTest --method testRefinesFileRow
 ```
 
 Use exact class and method selectors for the short inner loop. Then run the wider suite before shipping.
@@ -278,10 +278,10 @@ created, how it stays up to date, when it can be wrong, and how to recover.
 ```bash
 glade test serve --project .
 glade test daemon status --project .
-glade test --project . --class AccountServiceTest
+glade test --project . --class RefinementServiceTest
 glade test daemon stop --project .
 glade test clear-cache --project .
-glade test --project . --no-cache --class AccountServiceTest
+glade test --project . --no-cache --class RefinementServiceTest
 ```
 
 Clear the cache after `git pull` or Glade upgrades. Use `--no-cache` when
@@ -308,13 +308,13 @@ assertion means the test ran and failed. An unsupported feature means
 the runtime stopped at a known unsupported Salesforce API.
 
 ```text
-  ✓  AccountServiceTest.testCreatesAccount  42ms
-  ✗  AccountServiceTest.testRejectsBlankName  12ms
+  ✓  RefinementServiceTest.testRefinesFileRow  42ms
+  ✗  RefinementServiceTest.testRejectsBlankFileRow  12ms
 
-  AccountServiceTest.testRejectsBlankName
+  RefinementServiceTest.testRejectsBlankFileRow
   System.AssertException: expected 1, got 0
 
-  force-app/main/default/classes/AccountServiceTest.cls:42
+  force-app/main/default/classes/RefinementServiceTest.cls:42
 ```
 
 Check [what Glade runs locally](/guide/support-map) before relying on platform

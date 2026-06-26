@@ -186,10 +186,10 @@ keeps the prior org state and does not save the failed mutation.
 The same database file can be prepared and inspected through the CLI:
 
 ```bash
-glade db reset --db .glade/local-org.sqlite --json
-glade db seed --db .glade/local-org.sqlite fixtures/base-org.json --json
-glade db inspect --db .glade/local-org.sqlite --json
-glade server --db .glade/local-org.sqlite --addr 127.0.0.1:8080
+glade db reset --db .glade/refinement-local.sqlite --json
+glade db seed --db .glade/refinement-local.sqlite fixtures/refinement-base.json --json
+glade db inspect --db .glade/refinement-local.sqlite --json
+glade server --db .glade/refinement-local.sqlite --addr 127.0.0.1:8080
 ```
 
 Server-side Glade endpoints mirror the fixture lifecycle:
@@ -197,7 +197,7 @@ Server-side Glade endpoints mirror the fixture lifecycle:
 ```bash
 curl -s -X GET  http://127.0.0.1:8080/services/data/v65.0/glade/fixture
 curl -s -X POST http://127.0.0.1:8080/services/data/v65.0/glade/fixture \
-  -H 'content-type: application/json' --data @fixtures/base-org.json
+  -H 'content-type: application/json' --data @fixtures/refinement-base.json
 curl -s -X POST http://127.0.0.1:8080/services/data/v65.0/glade/reset
 curl -s -X POST http://127.0.0.1:8080/services/data/v65.0/glade/reset/data
 curl -s -X POST 'http://127.0.0.1:8080/services/data/v65.0/glade/reset?scope=users,limits,async'

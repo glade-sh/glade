@@ -5,21 +5,21 @@ Use `glade examples` to find local playground examples without opening the websi
 ```bash
 glade examples
 glade examples --tag limits
-glade examples show account-service
-glade examples run account-service
+glade examples show refinement-service
+glade examples run refinement-service
 ```
 
 Open one in the browser workbench:
 
 ```bash
-glade playground --example account-service --open
+glade playground --example refinement-service --open
 ```
 
 Useful first examples:
 
 | ID | Use it for |
 | --- | --- |
-| `account-service` | Classes, SOQL, DML, and tests |
+| `refinement-service` | Classes, SOQL, DML, and tests |
 | `deal-desk-discount-guard` | Trigger and limit behavior |
 | `limit-counter-drill` | Governor limit counters |
 | `org-diff-review-loop` | Local state diffs after DML |

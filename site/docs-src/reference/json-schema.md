@@ -43,7 +43,7 @@ Priority commands write a versioned JSON envelope.
   "code": "GLADESEMA002",
   "severity": "error",
   "message": "method \"latestInvoice\" references unknown type \"Invoice__c\"",
-  "file": "force-app/main/default/classes/AccountService.cls",
+  "file": "force-app/main/default/classes/RefinementService.cls",
   "line": 2,
   "column": 3,
   "why": "The Apex type reference is not present in local Apex, schema, or platform symbols.",

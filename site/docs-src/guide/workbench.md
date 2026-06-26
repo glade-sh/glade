@@ -87,14 +87,14 @@ Use the editor as a live capability map: type a dot, read the label, and see the
           <button id="output-tab-json" class="home-output-tab" type="button" role="tab" data-output-tab="json" aria-pressed="false" aria-selected="false" aria-controls="command-output-panel">JSON</button>
           <button id="output-tab-trace" class="home-output-tab" type="button" role="tab" data-output-tab="trace" aria-pressed="false" aria-selected="false" aria-controls="command-output-panel">Trace</button>
         </div>
-        <pre id="command-output-panel" class="home-command-output" role="tabpanel" aria-labelledby="output-tab-output"><code data-command-output data-cli-output data-output-view="output">$ glade check --project . --no-progress&#10;Glade check&#10;&#10;✗ 1 diagnostic found&#10;&#10;force-app/main/default/classes/AccountService.cls:2:3&#10;error GLADESEMA002 method "latestInvoice" references unknown type "Invoice__c"&#10;&#10;Try:&#10;  glade schema load --project .&#10;  glade check --project .</code></pre>
+        <pre id="command-output-panel" class="home-command-output" role="tabpanel" aria-labelledby="output-tab-output"><code data-command-output data-cli-output data-output-view="output">$ glade check --project . --no-progress&#10;Glade check&#10;&#10;✗ 1 diagnostic found&#10;&#10;force-app/main/default/classes/RefinementService.cls:2:3&#10;error GLADESEMA002 method "latestInvoice" references unknown type "Invoice__c"&#10;&#10;Try:&#10;  glade schema load --project .&#10;  glade check --project .</code></pre>
       </section>
       <section class="home-source-panel" aria-label="Workflow input">
         <div class="home-panel-top">
           <strong data-source-title>Apex input</strong>
-          <span data-source-label>AccountService.cls:2</span>
+          <span data-source-label>RefinementService.cls:2</span>
         </div>
-        <pre class="home-source-code"><code class="language-apex" data-source-code data-highlighted-line="2">public with sharing class AccountService {&#10;  public static Invoice__c latestInvoice() {&#10;    return null;&#10;  }&#10;}</code></pre>
+        <pre class="home-source-code"><code class="language-apex" data-source-code data-highlighted-line="2">public with sharing class RefinementService {&#10;  public static Invoice__c latestInvoice() {&#10;    return null;&#10;  }&#10;}</code></pre>
       </section>
       <section class="home-changed-panel" aria-label="What changed">
         <div class="home-panel-top">

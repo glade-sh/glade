@@ -69,8 +69,8 @@ buffers, and plugin actions.
 | Job | Command |
 | --- | --- |
 | Check source after a pull | `glade check --project .` |
-| Run one test class | `glade test --project . --class AccountServiceTest --json` |
-| Run one test method | `glade test --project . --class AccountServiceTest --method testCreatesAccount --json` |
+| Run one test class | `glade test --project . --class RefinementServiceTest --json` |
+| Run one test method | `glade test --project . --class RefinementServiceTest --method testRefinesFileRow --json` |
 | Run tests affected by a branch | `glade test changed --project . --since origin/main --json --no-progress` |
 | Rerun last failures | `glade test failed --project .` |
 | Let Glade pick the next loop | `glade test --project . --wizard` |
@@ -90,7 +90,7 @@ results:
 
 ```bash
 glade test clear-cache --project .
-glade test --project . --no-cache --class AccountServiceTest --json
+glade test --project . --no-cache --class RefinementServiceTest --json
 ```
 
 ## AI-assisted work

@@ -50,6 +50,29 @@ func TestNoPrivateExamplePackageReferences(t *testing.T) {
 	}
 }
 
+func TestPublicExampleNamesAvoidGenericPlaceholders(t *testing.T) {
+	root := repoRoot(t)
+	for _, rel := range repoTrackedFiles(t, root) {
+		if !isHumanFacingExampleSurface(rel) {
+			continue
+		}
+		fullPath := filepath.Join(root, filepath.FromSlash(rel))
+		fileData, err := os.ReadFile(fullPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if bytes.IndexByte(fileData, 0) >= 0 {
+			continue
+		}
+		text := string(fileData)
+		for _, term := range genericExampleNameTerms() {
+			if strings.Contains(text, term) {
+				t.Errorf("%s contains generic example name %q; use macrodata-apex, RefinementService, FileRow, or refinement-local instead", rel, term)
+			}
+		}
+	}
+}
+
 func TestCaseInsensitiveEqualityAvoidsToLower(t *testing.T) {
 	root := repoRoot(t)
 	pattern := regexp.MustCompile(`strings\.ToLower\([^\n]+\)\s*(?:==|!=)|(?:==|!=)\s*strings\.ToLower\(`)
@@ -241,6 +264,29 @@ func readRepoFile(t *testing.T, root, rel string) string {
 		t.Fatal(err)
 	}
 	return string(data)
+}
+
+func isHumanFacingExampleSurface(rel string) bool {
+	return rel == "README.md" ||
+		rel == "AGENTS.md" ||
+		rel == "internal/cliui/help.go" ||
+		rel == "internal/playground/examples.go" ||
+		strings.HasPrefix(rel, "docs/") ||
+		strings.HasPrefix(rel, "site/docs-src/")
+}
+
+func genericExampleNameTerms() []string {
+	return []string{
+		"example-project",
+		"help-fixture",
+		"my-project",
+		"my-glade-org",
+		"local-org.sqlite",
+		"account-service",
+		"AccountService",
+		"InvoiceService",
+		"BillingService",
+	}
 }
 
 func allowsCorpusTerms(rel string) bool {

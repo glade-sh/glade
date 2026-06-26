@@ -85,8 +85,8 @@ Map and prove larger Apex changes with local evidence:
 ```bash
 glade inspect graph --project . --json
 glade inspect definition --project . --symbol Account.Name
-glade inspect references --project . --symbol InvoiceService.total --json
-glade refactor rename --project . --symbol InvoiceService --to BillingService --dry-run --json
+glade inspect references --project . --symbol RefinementService.total --json
+glade refactor rename --project . --symbol RefinementService --to FileRefinementService --dry-run --json
 mkdir -p reports
 glade report assess --project . --format html --out reports/glade-assessment.html
 glade report cruft --project . --format html --out reports/glade-cruft.html

@@ -108,8 +108,8 @@ The rule is simple. A supported row has code and checked coverage.
 Run one class, one method, or only tests affected by local changes:
 
 ```bash
-glade test --project . --class AccountServiceTest --json --no-progress
-glade test --project . --class AccountServiceTest --method testCreatesAccount --json --no-progress
+glade test --project . --class RefinementServiceTest --json --no-progress
+glade test --project . --class RefinementServiceTest --method testRefinesFileRow --json --no-progress
 glade test changed --project . --since origin/main --json --no-progress
 glade test failed --project .
 glade plugins install @glade/performance
@@ -203,8 +203,8 @@ Map a large codebase and collect branch-change proof:
 ```bash
 glade inspect graph --project . --json
 glade inspect definition --project . --symbol Account.Name
-glade inspect references --project . --symbol InvoiceService.total --json
-glade refactor rename --project . --symbol InvoiceService --to BillingService --dry-run --json
+glade inspect references --project . --symbol RefinementService.total --json
+glade refactor rename --project . --symbol RefinementService --to FileRefinementService --dry-run --json
 mkdir -p reports
 glade report assess --project . --format html --out reports/glade-assessment.html
 glade report cruft --project . --format html --out reports/glade-cruft.html

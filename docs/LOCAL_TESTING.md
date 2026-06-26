@@ -10,7 +10,7 @@ runs tests in the local VM.
 Start from a Salesforce-shaped project with `sfdx-project.json` at the root:
 
 ```text
-my-project/
+macrodata-apex/
   sfdx-project.json
   force-app/main/default/classes/
   force-app/main/default/triggers/
@@ -182,8 +182,8 @@ reference, and refactor queries.
 
 ```bash
 glade inspect definition --project . --symbol Account.Name
-glade inspect references --project . --symbol InvoiceService.total --json
-glade refactor rename --project . --symbol InvoiceService --to BillingService --dry-run --json
+glade inspect references --project . --symbol RefinementService.total --json
+glade refactor rename --project . --symbol RefinementService --to FileRefinementService --dry-run --json
 glade schema import describe --input reports/org-describe.json --output schema/local.schema.json --project-cache .
 ```
 
@@ -249,8 +249,8 @@ glade test --project . --json
 Run one test class or one method:
 
 ```bash
-glade test --project . --class AccountServiceTest --json
-glade test --project . --class AccountServiceTest --method testCreatesAccount --json
+glade test --project . --class RefinementServiceTest --json
+glade test --project . --class RefinementServiceTest --method testRefinesFileRow --json
 ```
 
 ## Run a Performance Risk Scan
@@ -365,8 +365,8 @@ that two test classes reach:
 ```json
 {"event":"watch.started","time":"...","config":{...}}
 {"event":"watch.changes","time":"...","changes":[{"path":".../InvoiceCalculator.cls","op":"modified","kind":"apex_class","name":"InvoiceCalculator"}]}
-{"event":"watch.tests_selected","time":"...","selection":{"mode":"direct","testClasses":["InvoiceServiceTest","InvoiceSummaryTest"],"reason":"changed types reach affected tests"}}
-{"event":"watch.run_started","time":"...","runId":2,"testClasses":["InvoiceServiceTest","InvoiceSummaryTest"]}
+{"event":"watch.tests_selected","time":"...","selection":{"mode":"direct","testClasses":["RefinementServiceTest","RefinementSummaryTest"],"reason":"changed types reach affected tests"}}
+{"event":"watch.run_started","time":"...","runId":2,"testClasses":["RefinementServiceTest","RefinementSummaryTest"]}
 {"event":"watch.run_finished","time":"...","runId":2,"summary":{"total":9,"passed":9,"failed":0,"passedAll":true}}
 ```
 
@@ -413,7 +413,7 @@ Then run focused tests from another terminal. `glade test` auto-connects when
 
 ```bash
 glade test daemon status --project .
-glade test --project . --class AccountServiceTest
+glade test --project . --class RefinementServiceTest
 glade test daemon stop --project .
 ```
 

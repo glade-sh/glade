@@ -5,7 +5,7 @@ maintainer docs into this site, but the product repository does not depend on
 tool internals.
 
 Use it for compatibility fixtures, capability catalogs, dashboards, stdlib
-ledgers, support scanners, surface-ledger refresh, example-project scans,
+ledgers, support scanners, surface-ledger refresh, open-source corpus scans,
 Salesforce docs inventories, catalog reconcile work, and plugin archives.
 
 Use product Glade for runtime behavior and user workflows. Use glade-tools when

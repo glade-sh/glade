@@ -32,15 +32,15 @@ func exampleTemplateByID(id string) (exampleTemplate, bool) {
 var exampleProjects = []exampleTemplate{
 	{
 		ExampleProject: ExampleProject{
-			ID:          "account-service",
-			Name:        "Account Factory + Selector",
-			Description: "One service inserts an Account, one reporter formats it, and SOQL reads back the saved fields.",
+			ID:          "refinement-service",
+			Name:        "Refinement Service",
+			Description: "One service inserts a local row, one formatter labels it, and SOQL reads back the saved fields.",
 			Tags:        []string{"DML", "SOQL", "classes"},
 		},
 		Files: map[string]string{
 			"sfdx-project.json": sfdxProjectJSON,
-			"force-app/main/default/classes/AccountService.cls": `public class AccountService {
-  public static Account createAccount(String name, String number) {
+			"force-app/main/default/classes/RefinementService.cls": `public class RefinementService {
+  public static Account createFileRow(String name, String number) {
     Account account = new Account(Name = name, AccountNumber = number);
     insert account;
     return [
@@ -52,14 +52,14 @@ var exampleProjects = []exampleTemplate{
   }
 }
 `,
-			"force-app/main/default/classes/AccountReporter.cls": `public class AccountReporter {
+			"force-app/main/default/classes/FileRow.cls": `public class FileRow {
   public static String label(Account account) {
     return account.Name + ' #' + account.AccountNumber;
   }
 }
 `,
-			"anonymous.apex": `Account account = AccountService.createAccount('North Ridge Supply', 'A-100');
-System.debug(AccountReporter.label(account));
+			"anonymous.apex": `Account row = RefinementService.createFileRow('Refine 01', 'F-100');
+System.debug(FileRow.label(row));
 System.debug(Limits.getDmlStatements());
 `,
 			"seed.json": "{}\n",

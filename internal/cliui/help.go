@@ -128,7 +128,7 @@ var commandReferences = []CommandHelp{
 			{Name: "--progress-json", Description: "Print NDJSON progress events to stderr."},
 			{Name: "--no-progress", Description: "Disable progress."},
 		},
-		Examples: []string{"glade parse force-app/main/default/classes/AccountService.cls", "glade parse force-app --progress", "glade parse force-app --json"},
+		Examples: []string{"glade parse force-app/main/default/classes/RefinementService.cls", "glade parse force-app --progress", "glade parse force-app --json"},
 	},
 	{
 		Name:        "inspect",
@@ -148,7 +148,7 @@ var commandReferences = []CommandHelp{
 		},
 		Flags: []FlagHelp{
 			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
-			{Name: "--symbol", Value: "<name>", Description: "Symbol name, such as InvoiceService, InvoiceService.total, or Account.Name."},
+			{Name: "--symbol", Value: "<name>", Description: "Symbol name, such as RefinementService, RefinementService.total, or Account.Name."},
 			{Name: "--file", Value: "<path>", Description: "Project-relative source file for location lookup."},
 			{Name: "--line", Value: "<n>", Description: "One-based source line for location lookup."},
 			{Name: "--column", Value: "<n>", Description: "One-based source column for location lookup."},
@@ -160,9 +160,9 @@ var commandReferences = []CommandHelp{
 		Examples: []string{
 			"glade inspect symbols --project .",
 			"glade inspect symbols --project . --kind class",
-			"glade inspect definition --project . --symbol InvoiceService",
-			"glade inspect definition --project . --file force-app/main/default/classes/InvoiceService.cls --line 6 --column 13",
-			"glade inspect references --project . --symbol InvoiceService.total --json",
+			"glade inspect definition --project . --symbol RefinementService",
+			"glade inspect definition --project . --file force-app/main/default/classes/RefinementService.cls --line 6 --column 13",
+			"glade inspect references --project . --symbol RefinementService.total --json",
 			"glade inspect references --project . --symbol Account.Name --include-declaration",
 			"glade inspect graph --project . --json",
 		},
@@ -197,7 +197,7 @@ var commandReferences = []CommandHelp{
 		},
 		Flags: []FlagHelp{
 			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
-			{Name: "--symbol", Value: "<name>", Description: "Symbol name or id, such as InvoiceService, InvoiceService.total, or Account.Name."},
+			{Name: "--symbol", Value: "<name>", Description: "Symbol name or id, such as RefinementService, RefinementService.total, or Account.Name."},
 			{Name: "--file", Value: "<path>", Description: "Project-relative source file for location lookup."},
 			{Name: "--line", Value: "<n>", Description: "One-based source line for location lookup."},
 			{Name: "--column", Value: "<n>", Description: "One-based source column for location lookup."},
@@ -207,8 +207,8 @@ var commandReferences = []CommandHelp{
 			{Name: "--json", Description: "Write structured output."},
 		},
 		Examples: []string{
-			"glade refactor rename --project . --symbol InvoiceService --to BillingService --dry-run --json",
-			"glade refactor rename --project . --file force-app/main/default/classes/InvoiceService.cls --line 5 --column 14 --to totalNet --write",
+			"glade refactor rename --project . --symbol RefinementService --to FileRefinementService --dry-run --json",
+			"glade refactor rename --project . --file force-app/main/default/classes/RefinementService.cls --line 5 --column 14 --to totalNet --write",
 		},
 	},
 	{
@@ -329,7 +329,7 @@ var commandReferences = []CommandHelp{
 			{Name: "--gc-aggressive", Description: "Run with GOGC=50."},
 			{Name: "--limit-mode", Value: "<mode>", Description: "Governor limit mode: permissive or strict."},
 		},
-		Examples: []string{"glade test serve --project .", "glade test --project . --class AccountServiceTest", "glade test --project . --class AccountServiceTest --method testCreatesAccount", "glade test --project . --class-file tests.txt"},
+		Examples: []string{"glade test serve --project .", "glade test --project . --class RefinementServiceTest", "glade test --project . --class RefinementServiceTest --method testRefinesFileRow", "glade test --project . --class-file tests.txt"},
 	},
 	{
 		Name:        "dev",
@@ -411,7 +411,7 @@ var commandReferences = []CommandHelp{
 		Description: "List and inspect bundled playground examples.",
 		Usage:       []string{"glade examples [--tag <tag>]", "glade examples show <id>", "glade examples run <id>"},
 		Flags:       []FlagHelp{{Name: "--tag", Value: "<tag>", Description: "Filter examples by tag."}},
-		Examples:    []string{"glade examples", "glade examples show account-service", "glade examples run account-service"},
+		Examples:    []string{"glade examples", "glade examples show refinement-service", "glade examples run refinement-service"},
 	},
 	{
 		Name:        "explain",
@@ -554,11 +554,11 @@ var commandReferences = []CommandHelp{
 			{Name: "--json", Description: "Write structured JSON output."},
 		},
 		Examples: []string{
-			"glade org create my-glade-org",
-			"glade org create my-glade-org --project /path/to/project",
-			"glade org create my-glade-org --db .glade/orgs/my-glade-org.sqlite --addr 127.0.0.1:17911",
-			"glade org start my-glade-org --project .",
-			"glade org auth my-glade-org --project .",
+			"glade org create refinement-local",
+			"glade org create refinement-local --project /path/to/macrodata-apex",
+			"glade org create refinement-local --db .glade/orgs/refinement-local.sqlite --addr 127.0.0.1:17911",
+			"glade org start refinement-local --project .",
+			"glade org auth refinement-local --project .",
 		},
 	},
 	{
@@ -630,11 +630,11 @@ var commandReferences = []CommandHelp{
 			{Name: "--no-progress", Description: "Disable progress."},
 		},
 		Examples: []string{
-			"glade db inspect --db .glade/org.sqlite",
-			"glade db seed --wizard --db .glade/org.sqlite fixture.json",
-			"glade db seed --db .glade/org.sqlite --progress fixture.json",
-			`glade db query --db .glade/local-org.sqlite --project . --json "SELECT Id, Name FROM Account"`,
-			"glade db describe --db .glade/local-org.sqlite --project . --json Account",
+			"glade db inspect --db .glade/refinement-local.sqlite",
+			"glade db seed --wizard --db .glade/refinement-local.sqlite data/file-rows.json",
+			"glade db seed --db .glade/refinement-local.sqlite --progress data/file-rows.json",
+			`glade db query --db .glade/refinement-local.sqlite --project . --json "SELECT Id, Name FROM FileRow__c"`,
+			"glade db describe --db .glade/refinement-local.sqlite --project . --json FileRow__c",
 		},
 	},
 	{
@@ -793,7 +793,7 @@ Local check loop:
 
 Local execution:
   glade exec --project . "System.debug('local');"
-  glade db inspect --db .glade/local-org.sqlite
+  glade db inspect --db .glade/refinement-local.sqlite
 
 Debug logs:
   glade exec "System.debug('local');"
@@ -1095,10 +1095,10 @@ Examples:
   glade test changed --project . --since HEAD
   glade test failed --project .
   glade test clear-cache --project .
-  glade test --project . --class AccountServiceTest
-  glade test --project . --class AccountServiceTest --method testCreatesAccount
-  glade test --project . --no-cache --class AccountServiceTest
-  glade test --project . --connect --class AccountServiceTest
+  glade test --project . --class RefinementServiceTest
+  glade test --project . --class RefinementServiceTest --method testRefinesFileRow
+  glade test --project . --no-cache --class RefinementServiceTest
+  glade test --project . --connect --class RefinementServiceTest
   glade test --project . --daemon --watch
   glade test --project . --changed-since origin/main --json --no-progress
 `)

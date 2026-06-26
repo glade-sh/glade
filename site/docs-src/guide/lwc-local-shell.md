@@ -403,9 +403,9 @@ storage fixtures from `data/*.json`. Use those fixtures for records that
 record-page LWCs and LDS wires should read.
 
 ```text
-my-project/
+macrodata-apex/
   glade.lwc.json
-  data/accounts.json
+  data/file-rows.json
   force-app/main/default/lwc/
   force-app/main/default/flexipages/
   force-app/main/default/tabs/
