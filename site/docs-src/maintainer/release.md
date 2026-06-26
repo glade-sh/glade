@@ -59,5 +59,4 @@ GLADE_HOME="$(mktemp -d)" GLADE_PLUGIN_REGISTRY_URL="https://plugins.glade.sh/in
 ## Docs release
 
 The docs site is the single public docs surface. User docs live under
-`/guide/...`. Maintainer docs live under `/maintainer/...`. Synchronized
-`glade-tools` docs land under `/maintainer/tools/...`.
+`/guide/...`. Maintainer docs live under `/maintainer/...`.
