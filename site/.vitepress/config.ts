@@ -146,8 +146,7 @@ export default defineConfig({
           { text: 'Extend runtime support', link: '/maintainer/extend-runtime' },
           { text: 'Release runbook', link: '/maintainer/release' },
           { text: 'glade-tools', link: '/maintainer/glade-tools' },
-          { text: 'Plugin runtime', link: '/maintainer/plugin-runtime' },
-          { text: 'Tools docs', link: '/maintainer/tools/' }
+          { text: 'Plugin runtime', link: '/maintainer/plugin-runtime' }
         ]
       }
     ],

@@ -25,5 +25,4 @@ go run ./cmd/glade-plugin-compat manifest --json
 scripts/build-plugin-archives.sh 0.2.0
 ```
 
-The selected docs synced from glade-tools appear under `/maintainer/tools/...`.
-Repo-only notes stay in the tools checkout.
+Repo-only notes and generated tool reports stay in the tools checkout.

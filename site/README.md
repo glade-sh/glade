@@ -21,7 +21,7 @@ npm run preview
 
 ## Cloudflare Pages
 
-Connect the private GitHub repository to Cloudflare Pages with Git integration.
+Connect the GitHub repository to Cloudflare Pages with Git integration.
 Use these settings:
 
 ```

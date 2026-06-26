@@ -100,8 +100,8 @@ layout metadata, permissions, security enforcement, automation behavior, or
 feature provisioning side effects beyond the explicit feature-gated schema
 overlays above.
 
-The active standard-object coverage report currently tracks 1,374 known
-standard SObjects, all marked as `shape`, with 26,637 fields and 5,752
+The active standard-object coverage report currently tracks 5,473 known
+standard SObjects, all marked as `shape`, with 93,978 fields and 19,897
 relationships. Twenty-eight locally modeled standard objects are marked as
 `behavior`: Account, Attachment, CampaignMember, CampaignMemberStatus, Contact,
 ContentDistribution, ContentDocument, ContentDocumentLink, ContentVersion,

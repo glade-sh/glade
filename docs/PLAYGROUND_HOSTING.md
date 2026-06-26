@@ -60,7 +60,7 @@ doctl apps create --spec .do/app.yaml      # first deploy
 doctl apps update <app-id> --spec .do/app.yaml   # subsequent deploys
 ```
 
-Update the `github.repo`/`branch` fields in `.do/app.yaml` only for a private
+Update the `github.repo`/`branch` fields in `.do/app.yaml` only for a temporary
 validation app. Keep `deploy_on_push: false` while public publishing is paused.
 
 If you prefer a prebuilt image instead of a source build, push one to a registry
