@@ -1,0 +1,41 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Glade local Apex runtime social preview">
+  <defs>
+    <linearGradient id="card-bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#070B0D"/>
+      <stop offset="0.56" stop-color="#10191E"/>
+      <stop offset="1" stop-color="#13232A"/>
+    </linearGradient>
+    <clipPath id="screen-clip">
+      <rect x="628" y="90" width="470" height="286" rx="28"/>
+    </clipPath>
+  </defs>
+  <rect width="1200" height="630" fill="url(#card-bg)"/>
+  <path d="M-10 520C122 456 192 467 302 543C415 621 537 614 674 548C816 480 952 480 1214 558" stroke="#26363D" stroke-width="2" opacity="0.7"/>
+  <path d="M-24 430C118 360 238 377 365 466C492 555 615 542 761 471C923 392 1011 398 1228 456" stroke="#9BE870" stroke-width="2" opacity="0.14"/>
+  <path d="M-28 336C115 270 244 292 386 388C520 479 643 456 795 380C956 300 1040 308 1230 356" stroke="#B7FF8A" stroke-width="2" opacity="0.1"/>
+
+  <rect x="116" y="104" width="172" height="172" rx="34" fill="#0B1114" stroke="#B7FF8A" stroke-width="8"/>
+  <image href="logo-mark.svg" x="133" y="121" width="138" height="138" preserveAspectRatio="xMidYMid meet"/>
+
+  <text x="116" y="348" fill="#B7FF8A" font-family="Host Grotesk, Inter, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="5">LOCAL APEX RUNTIME</text>
+  <text x="116" y="432" fill="#F4F8F2" font-family="Host Grotesk, Inter, Arial, sans-serif" font-size="108" font-weight="800">Glade</text>
+  <text x="122" y="494" fill="#C8D7CC" font-family="Host Grotesk, Inter, Arial, sans-serif" font-size="34" font-weight="500">Run supported Apex checks</text>
+  <text x="122" y="538" fill="#C8D7CC" font-family="Host Grotesk, Inter, Arial, sans-serif" font-size="34" font-weight="500">before the Salesforce round trip.</text>
+
+  <rect x="628" y="90" width="470" height="286" rx="28" fill="#0B1114" stroke="#26363D" stroke-width="2"/>
+  <g clip-path="url(#screen-clip)">
+    <rect x="628" y="90" width="470" height="286" fill="#0B1114"/>
+    <rect x="628" y="90" width="470" height="58" fill="#14232A"/>
+    <circle cx="668" cy="119" r="7" fill="#FF6B61"/>
+    <circle cx="694" cy="119" r="7" fill="#F5C95F"/>
+    <circle cx="720" cy="119" r="7" fill="#9BE870"/>
+    <text x="664" y="194" fill="#8FA19A" font-family="Monaspace Argon, SFMono-Regular, Menlo, monospace" font-size="24">$</text>
+    <text x="694" y="194" fill="#F4F8F2" font-family="Monaspace Argon, SFMono-Regular, Menlo, monospace" font-size="23">glade check --project .</text>
+    <rect x="664" y="226" width="362" height="1" fill="#26363D"/>
+    <text x="664" y="270" fill="#F5C95F" font-family="Monaspace Argon, SFMono-Regular, Menlo, monospace" font-size="22">Diagnostic</text>
+    <text x="664" y="308" fill="#C8D7CC" font-family="Monaspace Argon, SFMono-Regular, Menlo, monospace" font-size="21">RenewalQuoteService.cls:42</text>
+    <text x="664" y="346" fill="#9BE870" font-family="Monaspace Argon, SFMono-Regular, Menlo, monospace" font-size="21">0 deploys needed</text>
+  </g>
+  <rect x="668" y="424" width="388" height="58" rx="16" fill="#14232A" stroke="#375246" stroke-width="2"/>
+  <text x="696" y="462" fill="#B7FF8A" font-family="Host Grotesk, Inter, Arial, sans-serif" font-size="24" font-weight="700">Local proof before the org</text>
+</svg>

@@ -63,6 +63,7 @@ const maintainerToolsIndex = await readFile(new URL("../docs-src/maintainer/tool
 const maintainerToolsRegistry = await readFile(new URL("../docs-src/maintainer/tools/plugin-registry.md", import.meta.url), "utf8").catch(() => "");
 const logoMark = await readFile(new URL("../docs-src/public/logo-mark.svg", import.meta.url), "utf8");
 const logoMarkOpen = await readFile(new URL("../docs-src/public/logo-mark-open.svg", import.meta.url), "utf8");
+const socialCardPng = await readFile(new URL("../docs-src/public/social-card.png", import.meta.url)).catch(() => Buffer.alloc(0));
 
 async function readSiteSourceFiles(relativeDir) {
   const dir = new URL(relativeDir, import.meta.url);
@@ -113,6 +114,26 @@ test("site is dark-only and does not render the appearance switch", () => {
   assert.match(config, /appearance: 'force-dark'/);
   assert.doesNotMatch(config, /appearance: 'dark'/);
   assert.doesNotMatch(css, /VPNavBarAppearance|VPSwitchAppearance/);
+});
+
+test("social share metadata exposes a raster preview card", () => {
+  assert.equal(socialCardPng.toString("ascii", 1, 4), "PNG");
+  assert.ok(socialCardPng.length > 10_000, "social card should be a real raster asset");
+  assert.match(config, /\['meta', \{ property: 'og:url', content: 'https:\/\/glade\.sh\/' \}\]/);
+  assert.match(config, /\['meta', \{ property: 'og:site_name', content: 'Glade' \}\]/);
+  assert.match(config, /\['meta', \{ property: 'og:image', content: 'https:\/\/glade\.sh\/social-card\.png' \}\]/);
+  assert.match(config, /\['meta', \{ property: 'og:image:secure_url', content: 'https:\/\/glade\.sh\/social-card\.png' \}\]/);
+  assert.match(config, /\['meta', \{ property: 'og:image:type', content: 'image\/png' \}\]/);
+  assert.match(config, /\['meta', \{ property: 'og:image:width', content: '1200' \}\]/);
+  assert.match(config, /\['meta', \{ property: 'og:image:height', content: '630' \}\]/);
+  assert.match(config, /\['meta', \{ property: 'og:image:alt', content: 'Glade local Apex runtime social preview' \}\]/);
+  assert.match(config, /\['meta', \{ name: 'twitter:card', content: 'summary_large_image' \}\]/);
+  assert.match(config, /\['meta', \{ name: 'twitter:title', content: 'Glade — Local Apex runtime for SFDX projects' \}\]/);
+  assert.match(config, /\['meta', \{ name: 'twitter:description', content: 'Run supported Apex checks before the Salesforce round trip\.' \}\]/);
+  assert.match(config, /\['meta', \{ name: 'twitter:image', content: 'https:\/\/glade\.sh\/social-card\.png' \}\]/);
+  assert.match(config, /\['meta', \{ name: 'twitter:image:alt', content: 'Glade local Apex runtime social preview' \}\]/);
+  const imageTags = config.match(/\['meta', \{ (?:property|name): '(?:og|twitter):image[^']*', content: '[^']+' \}\]/g) || [];
+  assert.ok(imageTags.every((tag) => !tag.includes("logo-mark.svg")));
 });
 
 test("vite config keeps dev and preview tunnel output clean", () => {

@@ -49,7 +49,20 @@ export default defineConfig({
     ['meta', { name: 'description', content: 'Local Apex checks and focused tests before the Salesforce validation gate.' }],
     ['meta', { property: 'og:title', content: 'Glade — Local Apex runtime for SFDX projects' }],
     ['meta', { property: 'og:description', content: 'Run supported Apex checks before the Salesforce round trip.' }],
-    ['meta', { property: 'og:type', content: 'website' }]
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:url', content: 'https://glade.sh/' }],
+    ['meta', { property: 'og:site_name', content: 'Glade' }],
+    ['meta', { property: 'og:image', content: 'https://glade.sh/social-card.png' }],
+    ['meta', { property: 'og:image:secure_url', content: 'https://glade.sh/social-card.png' }],
+    ['meta', { property: 'og:image:type', content: 'image/png' }],
+    ['meta', { property: 'og:image:width', content: '1200' }],
+    ['meta', { property: 'og:image:height', content: '630' }],
+    ['meta', { property: 'og:image:alt', content: 'Glade local Apex runtime social preview' }],
+    ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+    ['meta', { name: 'twitter:title', content: 'Glade — Local Apex runtime for SFDX projects' }],
+    ['meta', { name: 'twitter:description', content: 'Run supported Apex checks before the Salesforce round trip.' }],
+    ['meta', { name: 'twitter:image', content: 'https://glade.sh/social-card.png' }],
+    ['meta', { name: 'twitter:image:alt', content: 'Glade local Apex runtime social preview' }]
   ],
   themeConfig: {
     siteTitle: 'Glade',
