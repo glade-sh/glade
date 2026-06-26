@@ -58,6 +58,7 @@ export default defineConfig({
     nav: [
       { text: 'Install', link: '/guide/installation' },
       { text: 'What runs locally', link: '/guide/support-map' },
+      { text: 'Security', link: '/guide/security-trust' },
       { text: 'VS Code', link: '/guide/editor' },
       { text: 'Playground', link: '/guide/playground' },
       { text: 'Docs', link: '/guide/overview' },
@@ -72,6 +73,7 @@ export default defineConfig({
           { text: 'First local check', link: '/guide/quickstart' },
           { text: 'Tester field guide', link: '/guide/tester-field-guide' },
           { text: 'What runs locally', link: '/guide/support-map' },
+          { text: 'Security & Trust', link: '/guide/security-trust' },
           { text: 'Playground', link: '/guide/playground' }
         ]
       },

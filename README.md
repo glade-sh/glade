@@ -9,11 +9,17 @@
 </p>
 
 <p align="center">
+  <a href="https://scorecard.dev/viewer/?uri=github.com/glade-sh/glade"><img alt="OpenSSF Scorecard" src="https://api.scorecard.dev/projects/github.com/glade-sh/glade/badge"></a>
+</p>
+
+<p align="center">
   <a href="https://glade.sh">Site</a>
   ·
   <a href="https://glade.sh/guide/quickstart">Quickstart</a>
   ·
   <a href="https://glade.sh/guide/support-map">Capability map</a>
+  ·
+  <a href="https://glade.sh/guide/security-trust">Security</a>
   ·
   <a href="docs/TESTER_FIELD_GUIDE.md">Tester field guide</a>
 </p>
@@ -214,6 +220,8 @@ glade report refactor-proof --project . --since origin/main --format html --out 
 - [CI artifacts](docs/CI_ARTIFACTS.md)
 - [Rich local workflows](docs/RICH_LOCAL_WORKFLOWS.md)
 - [Enterprise workflows](docs/ENTERPRISE_WORKFLOWS.md)
+- [Security & Trust](docs/SECURITY_TRUST.md)
+- [Security policy](SECURITY.md)
 - [Test startup cache](docs/TEST_STARTUP_CACHE.md)
 - [Plugins](docs/PLUGINS.md)
 - [Architecture](docs/ARCHITECTURE.md)

@@ -29,6 +29,24 @@ glade version
 glade doctor   # confirm: "Ready."
 ```
 
+## Security verification
+
+Release archives publish checksums, CycloneDX SBOMs, and GitHub artifact
+attestations. Use this path when a laptop policy needs pinned proof:
+
+```bash
+curl -L -o glade.tar.gz "$GLADE_RELEASE_URL"
+curl -L -o SHA256SUMS.txt "$GLADE_CHECKSUMS_URL"
+shasum -a 256 -c SHA256SUMS.txt
+gh attestation verify glade.tar.gz -R glade-sh/glade
+tar -xzf glade.tar.gz
+./glade version
+./glade doctor
+```
+
+Download the matching `*.sbom.json` release asset when your review process
+requires a dependency inventory.
+
 ## Update
 
 Use the same installer path for upgrades:
@@ -232,6 +250,7 @@ Use a release artifact:
     curl -L -o glade.tar.gz "$GLADE_RELEASE_URL"
     curl -L -o SHA256SUMS.txt "$GLADE_CHECKSUMS_URL"
     shasum -a 256 -c SHA256SUMS.txt
+    gh attestation verify glade.tar.gz -R glade-sh/glade
     tar -xzf glade.tar.gz
     install -m 0755 glade ~/.local/bin/glade
     glade version

@@ -20,9 +20,14 @@ const config = await readFile(new URL("../.vitepress/config.ts", import.meta.url
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 const siteReadme = await readFile(new URL("../README.md", import.meta.url), "utf8");
 const pagesWorkflow = await readFile(new URL("../../.github/workflows/pages.yml", import.meta.url), "utf8").catch(() => "");
+const ciWorkflow = await readFile(new URL("../../.github/workflows/ci.yml", import.meta.url), "utf8");
+const releaseWorkflow = await readFile(new URL("../../.github/workflows/release.yml", import.meta.url), "utf8");
+const securityWorkflow = await readFile(new URL("../../.github/workflows/security.yml", import.meta.url), "utf8").catch(() => "");
 const repoReadme = await readFile(new URL("../../README.md", import.meta.url), "utf8");
+const repoSecurityPolicy = await readFile(new URL("../../SECURITY.md", import.meta.url), "utf8").catch(() => "");
 const repoCompatibility = await readFile(new URL("../../docs/COMPATIBILITY.md", import.meta.url), "utf8");
 const repoLwcSupport = await readFile(new URL("../../docs/LWC_SUPPORT.md", import.meta.url), "utf8");
+const repoInstallDocs = await readFile(new URL("../../docs/INSTALL.md", import.meta.url), "utf8");
 const highlight = await readFile(new URL("../docs-src/public/js/highlight.js", import.meta.url), "utf8");
 const homeScript = await readFile(new URL("../docs-src/public/js/home.js", import.meta.url), "utf8");
 const ciArtifacts = await readFile(new URL("../docs-src/guide/ci-artifacts.md", import.meta.url), "utf8");
@@ -30,6 +35,7 @@ const automation = await readFile(new URL("../docs-src/guide/automation.md", imp
 const configuration = await readFile(new URL("../docs-src/guide/configuration.md", import.meta.url), "utf8");
 const installation = await readFile(new URL("../docs-src/guide/installation.md", import.meta.url), "utf8");
 const overview = await readFile(new URL("../docs-src/guide/overview.md", import.meta.url), "utf8");
+const securityTrust = await readFile(new URL("../docs-src/guide/security-trust.md", import.meta.url), "utf8").catch(() => "");
 const quickstart = await readFile(new URL("../docs-src/guide/quickstart.md", import.meta.url), "utf8");
 const cliReference = await readFile(new URL("../docs-src/guide/cli-reference.md", import.meta.url), "utf8");
 const localTesting = await readFile(new URL("../docs-src/guide/local-testing.md", import.meta.url), "utf8");
@@ -318,6 +324,62 @@ test("site copy is task-first and names local capabilities plainly", () => {
   assert.match(siteCopy, /glade plugins install @glade\/orgpackage/);
   assert.match(cliReference, /glade package capture --target-org packaging --namespace pkg/);
   assert.equal((cliReference.match(/auto-connect through `\.glade\/test\/serve\.sock` unless `--no-serve` is set\./g) || []).length, 1);
+});
+
+test("security trust surface is public, checked, and release-backed", () => {
+  assert.match(repoReadme, /OpenSSF Scorecard/);
+  assert.match(repoReadme, /https:\/\/api\.scorecard\.dev\/projects\/github\.com\/glade-sh\/glade\/badge/);
+  assert.match(repoReadme, /\[Security & Trust\]\(docs\/SECURITY_TRUST\.md\)/);
+  assert.match(repoReadme, /\[Security policy\]\(SECURITY\.md\)/);
+
+  assert.match(repoSecurityPolicy, /^# Security Policy/m);
+  assert.match(repoSecurityPolicy, /Supported versions/);
+  assert.match(repoSecurityPolicy, /Report a vulnerability/);
+  assert.match(repoSecurityPolicy, /Local laptop behavior/);
+  assert.match(repoSecurityPolicy, /Glade does not require a Salesforce org login for supported local checks\./);
+
+  assert.match(config, /\{ text: 'Security', link: '\/guide\/security-trust' \}/);
+  assert.match(config, /\{ text: 'Security & Trust', link: '\/guide\/security-trust' \}/);
+  assert.match(securityTrust, /^# Security & Trust/m);
+  assert.match(securityTrust, /OpenSSF Scorecard/);
+  assert.match(securityTrust, /govulncheck/);
+  assert.match(securityTrust, /CodeQL/);
+  assert.match(securityTrust, /gosec/);
+  assert.match(securityTrust, /CycloneDX SBOM/);
+  assert.match(securityTrust, /Artifact attestations/);
+  assert.match(securityTrust, /gh attestation verify/);
+  assert.match(securityTrust, /SHA256SUMS\.txt/);
+  assert.match(securityTrust, /Laptop behavior/);
+  assert.match(securityTrust, /Network access/);
+  assert.match(securityTrust, /Local storage/);
+
+  assert.match(securityWorkflow, /name: Security/);
+  assert.match(securityWorkflow, /golang\.org\/x\/vuln\/cmd\/govulncheck@latest/);
+  assert.match(securityWorkflow, /github\/codeql-action\/init@v/);
+  assert.match(securityWorkflow, /queries: \+security-extended/);
+  assert.match(securityWorkflow, /github\/codeql-action\/analyze@v/);
+  assert.match(securityWorkflow, /securego\/gosec@/);
+  assert.match(securityWorkflow, /upload-sarif/);
+  assert.match(securityWorkflow, /npm audit --omit=dev --audit-level=high/);
+  assert.match(securityWorkflow, /working-directory: third_party\/lwc/);
+  assert.match(securityWorkflow, /working-directory: contrib\/vscode-glade/);
+  assert.match(securityWorkflow, /actions\/dependency-review-action@v/);
+  assert.match(securityWorkflow, /ossf\/scorecard-action@v/);
+  assert.match(securityWorkflow, /publish_results: true/);
+
+  assert.match(ciWorkflow, /go-version: "1\.26\.4"/);
+  assert.match(releaseWorkflow, /go-version: "1\.26\.4"/);
+  assert.match(releaseWorkflow, /cyclonedx-gomod/);
+  assert.match(releaseWorkflow, /tar -xzf "\$archive" -C "\$extract_dir" glade/);
+  assert.match(releaseWorkflow, /cyclonedx-gomod bin -json -version "\$VERSION" -output "\$sbom" "\$extract_dir\/glade"/);
+  assert.match(releaseWorkflow, /glade_.*\.sbom\.json/);
+  assert.match(releaseWorkflow, /actions\/attest@v/);
+  assert.match(releaseWorkflow, /attestations: write/);
+
+  assert.match(repoInstallDocs, /Security verification/);
+  assert.match(repoInstallDocs, /gh attestation verify/);
+  assert.match(installation, /Security verification/);
+  assert.match(installation, /gh attestation verify/);
 });
 
 test("editor support catalog is generated from checked Glade support data", () => {

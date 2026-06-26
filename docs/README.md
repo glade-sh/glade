@@ -10,13 +10,14 @@ of the way.
 3. Project configuration: [CONFIG.md](CONFIG.md)
 4. Run Apex tests and preview Visualforce pages and LWC shells without an org: [LOCAL_TESTING.md](LOCAL_TESTING.md)
 5. CI outputs and saved artifacts: [CI_ARTIFACTS.md](CI_ARTIFACTS.md)
-6. Rich local workflows: [RICH_LOCAL_WORKFLOWS.md](RICH_LOCAL_WORKFLOWS.md)
-7. Local LWC shell: [LWC_LOCAL_SHELL.md](LWC_LOCAL_SHELL.md)
-8. Enterprise workflows: [ENTERPRISE_WORKFLOWS.md](ENTERPRISE_WORKFLOWS.md)
-9. Test startup cache (when it is safe to trust): [TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md)
-10. Install and author plugins: [PLUGINS.md](PLUGINS.md)
-11. Day-to-day editor commands, Glade Home, and debug setup: [EDITOR.md](EDITOR.md)
-12. Current support surface:
+6. Security and release proof: [SECURITY_TRUST.md](SECURITY_TRUST.md)
+7. Rich local workflows: [RICH_LOCAL_WORKFLOWS.md](RICH_LOCAL_WORKFLOWS.md)
+8. Local LWC shell: [LWC_LOCAL_SHELL.md](LWC_LOCAL_SHELL.md)
+9. Enterprise workflows: [ENTERPRISE_WORKFLOWS.md](ENTERPRISE_WORKFLOWS.md)
+10. Test startup cache (when it is safe to trust): [TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md)
+11. Install and author plugins: [PLUGINS.md](PLUGINS.md)
+12. Day-to-day editor commands, Glade Home, and debug setup: [EDITOR.md](EDITOR.md)
+13. Current support surface:
    - Public Apex and Salesforce support map: <https://glade.sh/guide/support-map>
    - Method-level standard-library rows: [STDLIB_COVERAGE.md](STDLIB_COVERAGE.md)
    - Local LWC support rows: [LWC_SUPPORT.md](LWC_SUPPORT.md)
