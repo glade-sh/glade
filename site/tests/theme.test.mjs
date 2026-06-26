@@ -23,6 +23,7 @@ const pagesWorkflow = await readFile(new URL("../../.github/workflows/pages.yml"
 const repoReadme = await readFile(new URL("../../README.md", import.meta.url), "utf8");
 const repoCompatibility = await readFile(new URL("../../docs/COMPATIBILITY.md", import.meta.url), "utf8");
 const repoLwcSupport = await readFile(new URL("../../docs/LWC_SUPPORT.md", import.meta.url), "utf8");
+const releaseNotes = await readFile(new URL("../../docs/RELEASE_NOTES.md", import.meta.url), "utf8");
 const highlight = await readFile(new URL("../docs-src/public/js/highlight.js", import.meta.url), "utf8");
 const homeScript = await readFile(new URL("../docs-src/public/js/home.js", import.meta.url), "utf8");
 const ciArtifacts = await readFile(new URL("../docs-src/guide/ci-artifacts.md", import.meta.url), "utf8");
@@ -82,6 +83,17 @@ const siteCopy = [
   homeScript,
   ...siteSourceFiles.map(([, contents]) => contents)
 ].join("\n");
+
+test("home page names the latest stable release from release notes", () => {
+  const releaseMatch = releaseNotes.match(/^## (v\d+\.\d+\.\d+) - /m);
+  assert.ok(releaseMatch, "release notes should name the latest release");
+  const latestRelease = releaseMatch[1];
+
+  assert.match(index, new RegExp(`<span class="home-release-version">${latestRelease}</span>`));
+  assert.match(index, /Latest stable release/);
+  assert.match(index, /Latest stable release:<span class="home-release-version">/);
+  assert.doesNotMatch(index, /Latest stable release[\s\S]*0\.0\.0-dev/);
+});
 
 test("theme defines complete light and dark color tokens", () => {
   assert.match(css, /html:not\(\.dark\)\s*\{[\s\S]*--vp-c-bg:/);
@@ -980,6 +992,9 @@ test("enterprise workflow docs expose current report commands", () => {
 });
 
 test("cli reference documents current code intelligence commands", () => {
+  assert.match(cliReference, /## `glade update`/);
+  assert.match(cliReference, /glade update --dry-run/);
+  assert.match(cliReference, /GLADE_UPDATE_ALLOW_SHELL=1 glade update/);
   assert.match(cliReference, /glade inspect definition --project \. --symbol InvoiceService/);
   assert.match(cliReference, /glade inspect definition --project \. --file force-app\/main\/default\/classes\/InvoiceService\.cls --line 6 --column 13/);
   assert.match(cliReference, /glade inspect references --project \. --symbol InvoiceService\.total --json/);
