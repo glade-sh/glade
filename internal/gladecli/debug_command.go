@@ -14,6 +14,7 @@ import (
 	"github.com/glade-sh/glade/internal/cliui"
 	"github.com/glade-sh/glade/internal/debuglog"
 	"github.com/glade-sh/glade/internal/profile"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 func runDebug(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
@@ -21,7 +22,7 @@ func runDebug(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		return err
 	}
 	if len(args) == 0 {
-		return errors.New("usage: glade debug parse|profile|explain|repro|replay --log <path> [--json]")
+		return errors.New("usage: glade debug parse|profile|explain|editor|repro|replay --log <path> [--json]")
 	}
 
 	subcommand := args[0]
@@ -34,12 +35,14 @@ func runDebug(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		return runDebugProfile(ctx, subcommandArgs, w, renderer)
 	case "explain":
 		return runDebugExplain(ctx, subcommandArgs, w, renderer)
+	case "editor":
+		return runDebugEditor(ctx, subcommandArgs, w, renderer)
 	case "repro":
 		return runDebugRepro(ctx, subcommandArgs, w, renderer)
 	case "replay":
 		return runDebugReplay(ctx, subcommandArgs, w, renderer)
 	default:
-		return errors.New("usage: glade debug parse|profile|explain|repro|replay --log <path> [--json]")
+		return errors.New("usage: glade debug parse|profile|explain|editor|repro|replay --log <path> [--json]")
 	}
 }
 
@@ -159,6 +162,61 @@ func runDebugExplain(ctx context.Context, args []string, w io.Writer, renderer c
 	return debuglog.WriteText(w, annotated, minConfidence)
 }
 
+func runDebugEditor(ctx context.Context, args []string, w io.Writer, renderer cliui.Renderer) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	logPath, jsonOut, minConfidence, maxCandidates, projectRoot, err := parseDebugEditorArgs(args)
+	if err != nil {
+		return err
+	}
+
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "debug editor", Label: "Reading log"})
+	log, err := parseDebugLogFile(logPath)
+	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "debug failed"})
+		return err
+	}
+
+	index := typesys.Index{}
+	var objectFiles []string
+	var fieldFiles []string
+	if projectRoot != "" {
+		projectState, loadedIndex, err := loadProjectIndexWithProgress(projectRoot, "debug editor", renderer)
+		if err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "debug failed"})
+			return err
+		}
+		index = loadedIndex
+		objectFiles = projectState.ObjectFiles
+		fieldFiles = projectState.FieldFiles
+	}
+
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "debug editor", Label: "Analyzing log", Current: 2, Total: 3})
+	analysis := debuglog.BuildEditorAnalysis(log, index, debuglog.EditorOptions{
+		LogFile:       logPath,
+		ProjectRoot:   projectRoot,
+		ObjectFiles:   objectFiles,
+		FieldFiles:    fieldFiles,
+		MinConfidence: minConfidence,
+		MaxCandidates: maxCandidates,
+	})
+	renderer.Finish(cliui.Result{OK: true, Label: "debug complete"})
+	if jsonOut {
+		return writeIndentedJSON(w, analysis)
+	}
+	_, err = fmt.Fprintf(w, "Glade debug editor\nLog: %s\nEntries: %d\nFolds: %d\nLinks: %d\nVariables: %d\nDiagnostics: %d\nNext:\n  Open this file in VS Code with language Apex Log.\n",
+		logPath,
+		len(analysis.Entries),
+		len(analysis.Folds),
+		len(analysis.Links),
+		len(analysis.Variables),
+		len(analysis.Diagnostics),
+	)
+	return err
+}
+
 func runDebugRepro(ctx context.Context, args []string, w io.Writer, renderer cliui.Renderer) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -200,7 +258,7 @@ func runDebugReplay(ctx context.Context, args []string, w io.Writer, renderer cl
 		return err
 	}
 
-	logPath, jsonOut, minConfidence, projectRoot, err := parseDebugExplainArgs(args)
+	logPath, jsonOut, minConfidence, projectRoot, entryIndex, err := parseDebugReplayArgs(args)
 	if err != nil {
 		return err
 	}
@@ -221,7 +279,7 @@ func runDebugReplay(ctx context.Context, args []string, w io.Writer, renderer cl
 		renderer.Finish(cliui.Result{OK: false, Label: "debug failed"})
 		return err
 	}
-	plan, err := debuglog.SynthesizeReplay(annotated, minConfidence)
+	plan, err := debuglog.SynthesizeReplayWithOptions(annotated, debuglog.ReplayOptions{MinConfidence: minConfidence, EntryIndex: entryIndex, UseEntryIndex: entryIndex >= 0, SourceIndex: debuglog.BuildSourceIndex(index)})
 	if err != nil {
 		renderer.Finish(cliui.Result{OK: false, Label: "debug failed"})
 		return err
@@ -241,6 +299,109 @@ func runDebugReplay(ctx context.Context, args []string, w io.Writer, renderer cl
 	}
 	_, err = io.WriteString(w, plan.Source)
 	return err
+}
+
+func parseDebugEditorArgs(args []string) (logPath string, jsonOut bool, minConfidence float64, maxCandidates int, projectRoot string, err error) {
+	minConfidence = 0.35
+	maxCandidates = 5
+	logSeen := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--log":
+			if i+1 >= len(args) {
+				return "", false, 0, 0, "", errors.New("--log requires a path")
+			}
+			logPath = args[i+1]
+			logSeen = true
+			i++
+		case "--project":
+			if i+1 >= len(args) {
+				return "", false, 0, 0, "", errors.New("--project requires a value")
+			}
+			projectRoot = args[i+1]
+			i++
+		case "--min-confidence":
+			if i+1 >= len(args) {
+				return "", false, 0, 0, "", errors.New("--min-confidence requires a value")
+			}
+			var parseErr error
+			minConfidence, parseErr = parseDebugFloat(args[i+1], "--min-confidence")
+			if parseErr != nil {
+				return "", false, 0, 0, "", parseErr
+			}
+			i++
+		case "--max-candidates":
+			if i+1 >= len(args) {
+				return "", false, 0, 0, "", errors.New("--max-candidates requires a value")
+			}
+			parsed, parseErr := strconv.Atoi(strings.TrimSpace(args[i+1]))
+			if parseErr != nil || parsed <= 0 {
+				return "", false, 0, 0, "", errors.New("--max-candidates must be a positive integer")
+			}
+			maxCandidates = parsed
+			i++
+		case "--json":
+			jsonOut = true
+		default:
+			return "", false, 0, 0, "", fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	if !logSeen {
+		return "", false, 0, 0, "", errors.New("--log is required")
+	}
+	return logPath, jsonOut, minConfidence, maxCandidates, projectRoot, nil
+}
+
+func parseDebugReplayArgs(args []string) (logPath string, jsonOut bool, minConfidence float64, projectRoot string, entryIndex int, err error) {
+	projectRoot = "."
+	minConfidence = 0.50
+	entryIndex = -1
+	logSeen := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--log":
+			if i+1 >= len(args) {
+				return "", false, 0, "", -1, errors.New("--log requires a path")
+			}
+			logPath = args[i+1]
+			logSeen = true
+			i++
+		case "--project":
+			if i+1 >= len(args) {
+				return "", false, 0, "", -1, errors.New("--project requires a value")
+			}
+			projectRoot = args[i+1]
+			i++
+		case "--min-confidence":
+			if i+1 >= len(args) {
+				return "", false, 0, "", -1, errors.New("--min-confidence requires a value")
+			}
+			var parseErr error
+			minConfidence, parseErr = parseDebugFloat(args[i+1], "--min-confidence")
+			if parseErr != nil {
+				return "", false, 0, "", -1, parseErr
+			}
+			i++
+		case "--entry-index":
+			if i+1 >= len(args) {
+				return "", false, 0, "", -1, errors.New("--entry-index requires a value")
+			}
+			parsed, parseErr := strconv.Atoi(strings.TrimSpace(args[i+1]))
+			if parseErr != nil || parsed < 0 {
+				return "", false, 0, "", -1, errors.New("--entry-index must be a non-negative integer")
+			}
+			entryIndex = parsed
+			i++
+		case "--json":
+			jsonOut = true
+		default:
+			return "", false, 0, "", -1, fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	if !logSeen {
+		return "", false, 0, "", -1, errors.New("--log is required")
+	}
+	return logPath, jsonOut, minConfidence, projectRoot, entryIndex, nil
 }
 
 func parseDebugCommandArgs(args []string) (logPath string, jsonOut bool, err error) {

@@ -42,7 +42,7 @@ func TestSynthesizeReplayBuildsAnonymousSetupAndCall(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	plan, err := SynthesizeReplay(annotated, 0.5)
+	plan, err := SynthesizeReplayWithOptions(annotated, ReplayOptions{MinConfidence: 0.5, SourceIndex: BuildSourceIndex(index)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,6 +70,37 @@ func TestSynthesizeReplayBuildsAnonymousSetupAndCall(t *testing.T) {
 	}
 	if !strings.Contains(plan.Source, "\nList<Account> setup_accountRows") {
 		t.Fatalf("replay setup should be top-level anonymous Apex, got:\n%s", plan.Source)
+	}
+}
+
+func TestSynthesizeReplayRejectsEntryPointBelowMinConfidence(t *testing.T) {
+	index := mustLoadDebugIndex(t, filepath.Join("testdata", "project"))
+	log := mustReadApexLog(t, filepath.Join("testdata", "subscriber.log"))
+	annotated, err := Annotate(log, index, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	plan, err := SynthesizeReplayWithOptions(annotated, ReplayOptions{MinConfidence: 0.99, SourceIndex: BuildSourceIndex(index)})
+	if err == nil {
+		t.Fatalf("expected replay confidence error, plan=%#v", plan)
+	}
+}
+
+func TestSynthesizeReplayRejectsLogOnlyEntryPoint(t *testing.T) {
+	index := mustLoadDebugIndex(t, filepath.Join("testdata", "project"))
+	log := mustReadApexLog(t, filepath.Join("testdata", "subscriber.log"))
+	annotated, err := Annotate(log, index, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	plan, err := SynthesizeReplayWithOptions(annotated, ReplayOptions{MinConfidence: 0.5})
+	if err == nil {
+		t.Fatalf("expected missing source index error, plan=%#v", plan)
+	}
+	if !strings.Contains(err.Error(), "source index") {
+		t.Fatalf("error = %v, want source index", err)
 	}
 }
 
@@ -101,6 +132,101 @@ func TestSynthesizeReplayUsesExecuteAnonymousSource(t *testing.T) {
 	}
 	if len(plan.SetupObjects) == 0 || plan.SetupObjects[0].ObjectName != "Account" {
 		t.Fatalf("setup evidence = %#v, want Account evidence", plan.SetupObjects)
+	}
+}
+
+func TestSynthesizeReplayWithEntryIndexUsesSelectedMethodFrame(t *testing.T) {
+	index := mustLoadDebugIndex(t, filepath.Join("testdata", "project"))
+	log := mustReadApexLog(t, filepath.Join("..", "apexlog", "testdata", "exception.log"))
+	annotated, err := Annotate(log, index, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	entryIndex := -1
+	for i, entry := range annotated.Log.Entries {
+		if entry.Kind == "EXCEPTION_THROWN" {
+			entryIndex = i
+			break
+		}
+	}
+	if entryIndex < 0 {
+		t.Fatal("missing exception entry")
+	}
+
+	plan, err := SynthesizeReplayWithOptions(annotated, ReplayOptions{MinConfidence: 0.5, EntryIndex: entryIndex, UseEntryIndex: true, SourceIndex: BuildSourceIndex(index)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plan.EntryPoint.ClassName != "TestProcessor" || plan.EntryPoint.Method != "fail" {
+		t.Fatalf("entry point = %#v, want TestProcessor.fail", plan.EntryPoint)
+	}
+	if !strings.Contains(plan.Source, "ns.TestProcessor.fail();") {
+		t.Fatalf("source missing fail call:\n%s", plan.Source)
+	}
+}
+
+func TestSynthesizeReplayEntryIndexRejectsNonReplayableEntry(t *testing.T) {
+	index := mustLoadDebugIndex(t, filepath.Join("testdata", "project"))
+	log := mustReadApexLog(t, filepath.Join("testdata", "subscriber.log"))
+	annotated, err := Annotate(log, index, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	plan, err := SynthesizeReplayWithOptions(annotated, ReplayOptions{MinConfidence: 0.5, EntryIndex: 5, UseEntryIndex: true, SourceIndex: BuildSourceIndex(index)})
+	if err == nil {
+		t.Fatalf("expected non-replayable entry error, plan=%#v", plan)
+	}
+	if !strings.Contains(err.Error(), "not replayable") {
+		t.Fatalf("error = %v, want not replayable", err)
+	}
+}
+
+func TestSynthesizeReplayEntryIndexRejectsParameterizedMethod(t *testing.T) {
+	index := mustLoadDebugIndex(t, filepath.Join("testdata", "project"))
+	log := mustParseEditorLog(t, strings.Join([]string{
+		"00:00:00.001 (1000000)|METHOD_ENTRY|[14]|01p000000000001|ns.TestProcessor.withParam(String)",
+		"00:00:00.002 (2000000)|METHOD_EXIT|[14]|ns.TestProcessor.withParam(String)",
+		"",
+	}, "\n"))
+	annotated, err := Annotate(log, index, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	plan, err := SynthesizeReplayWithOptions(annotated, ReplayOptions{MinConfidence: 0.5, EntryIndex: 0, UseEntryIndex: true, SourceIndex: BuildSourceIndex(index)})
+	if err == nil {
+		t.Fatalf("expected parameterized method to be non-replayable, plan=%#v", plan)
+	}
+}
+
+func TestSynthesizeReplayEntryIndexRejectsMissingSource(t *testing.T) {
+	index := mustLoadDebugIndex(t, filepath.Join("testdata", "project"))
+	log := mustParseEditorLog(t, strings.Join([]string{
+		"00:00:00.001 (1000000)|METHOD_ENTRY|[2]|01p000000000001|ns.MissingClass.run()",
+		"00:00:00.002 (2000000)|METHOD_EXIT|[2]|ns.MissingClass.run()",
+		"",
+	}, "\n"))
+	annotated, err := Annotate(log, index, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	plan, err := SynthesizeReplayWithOptions(annotated, ReplayOptions{MinConfidence: 0.5, EntryIndex: 0, UseEntryIndex: true, SourceIndex: BuildSourceIndex(index)})
+	if err == nil {
+		t.Fatalf("expected missing source to be non-replayable, plan=%#v", plan)
+	}
+}
+
+func TestParseMethodEntrySymbolAcceptsCandidateAndConstructorForms(t *testing.T) {
+	ns, typ, method := parseMethodEntrySymbol("|METHOD_ENTRY|ns.TestProcessor.run")
+	if ns != "ns" || typ != "TestProcessor" || method != "run" {
+		t.Fatalf("candidate symbol = %q %q %q", ns, typ, method)
+	}
+	ns, typ, method = parseMethodEntrySymbol("00:00:00.001 (1)|CONSTRUCTOR_ENTRY|[2]|01p|ns.TestProcessor.TestProcessor()")
+	if ns != "ns" || typ != "TestProcessor" || method != "TestProcessor" {
+		t.Fatalf("constructor symbol = %q %q %q", ns, typ, method)
 	}
 }
 

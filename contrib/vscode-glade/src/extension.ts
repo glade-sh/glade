@@ -2,6 +2,10 @@ import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import { adapterExecutable, GladeDebugConfiguration, resolveGladeConfiguration } from "./adapter";
+import { ApexLogAnalysisCache } from "./apexLog/cache";
+import { ApexLogDiagnostics } from "./apexLog/diagnostics";
+import { looksLikeApexLog } from "./apexLog/detection";
+import { registerApexLogProviders } from "./apexLog/providers";
 import { GladeCodeLensProvider, LocalTestTarget } from "./codeLens";
 import { debugAnonymousSessionOptions, debugReplayArgs, debugReplayConfig, debugTestConfig, editorSoqlSource } from "./commandModel";
 import { registerGladeCommands } from "./commands";
@@ -76,6 +80,9 @@ export function activate(context: vscode.ExtensionContext): void {
   const pluginsView = new PluginsView();
   const pluginDiagnostics = vscode.languages.createDiagnosticCollection("glade-plugins");
   context.subscriptions.push(pluginDiagnostics);
+  const apexLogCache = new ApexLogAnalysisCache();
+  const apexLogDiagnostics = new ApexLogDiagnostics();
+  context.subscriptions.push(apexLogDiagnostics);
   let currentProject: GladeProjectContext | undefined;
   let salesforceTarget: SalesforceTargetState | undefined;
   let projectOrg: ProjectOrgState | undefined;
@@ -312,7 +319,7 @@ export function activate(context: vscode.ExtensionContext): void {
     await runWorkbenchCommand(() => workbench.runSoqlText(query));
   }
 
-  async function replayDebugLog(uri?: vscode.Uri): Promise<void> {
+  async function replayDebugLog(uri?: vscode.Uri, entryIndex?: number): Promise<void> {
     const logPath = uri?.fsPath || vscode.window.activeTextEditor?.document.uri.fsPath;
     if (!logPath || !isApexDebugLogPath(logPath)) {
       void vscode.window.showInformationMessage("Open an Apex debug log to replay.");
@@ -324,7 +331,7 @@ export function activate(context: vscode.ExtensionContext): void {
       return;
     }
     const environment = configuredActiveEnvironment(project);
-    const args = debugReplayArgs(logPath, project.projectRoot);
+    const args = debugReplayArgs(logPath, project.projectRoot, entryIndex);
     output.logs.appendLine(`$ ${terminalCommand(["glade", ...args])}`);
     let replay: DebugReplayEnvelope;
     try {
@@ -354,6 +361,79 @@ export function activate(context: vscode.ExtensionContext): void {
       debugReplayConfig(project.projectRoot, source, environment.dbPath),
       debugAnonymousSessionOptions(),
     );
+  }
+
+  async function refreshApexLogAnalysis(): Promise<void> {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || editor.document.languageId !== "apexlog") {
+      void vscode.window.showInformationMessage("Open an Apex Log editor to refresh analysis.");
+      return;
+    }
+    await analyzeApexLogDocument(editor.document, true);
+  }
+
+  async function analyzeApexLogDocument(document: vscode.TextDocument, force = false): Promise<void> {
+    if (document.languageId !== "apexlog") {
+      return;
+    }
+    if (force) {
+      apexLogCache.clear(document);
+    }
+    const analysis = await apexLogCache.getAnalysis(document);
+    apexLogDiagnostics.update(document, analysis?.diagnostics || apexLogCache.diagnosticsFor(document));
+  }
+
+  function refreshOpenApexLogDocuments(force = false): void {
+    for (const document of vscode.workspace.textDocuments) {
+      if (document.languageId === "apexlog") {
+        if (force) {
+          apexLogCache.clear(document);
+        }
+        void analyzeApexLogDocument(document, force);
+      }
+    }
+  }
+
+  async function treatCurrentFileAsApexLog(): Promise<void> {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      return;
+    }
+    await vscode.languages.setTextDocumentLanguage(editor.document, "apexlog");
+    await analyzeApexLogDocument(editor.document, true);
+  }
+
+  async function replayApexLogFrame(entryIndex?: number): Promise<void> {
+    if (entryIndex === undefined) {
+      void vscode.window.showInformationMessage("Replay from this frame is not available for this log entry.");
+      return;
+    }
+    await replayDebugLog(undefined, entryIndex);
+  }
+
+  async function maybeDetectApexLog(editor?: vscode.TextEditor): Promise<void> {
+    const target = editor || vscode.window.activeTextEditor;
+    if (!target || target.document.languageId === "apexlog") {
+      return;
+    }
+    const filePath = target.document.uri.fsPath;
+    const uriKey = `apexLog.detectedLanguageMode:${target.document.uri.toString()}`;
+    if (context.workspaceState.get(uriKey) !== undefined) {
+      return;
+    }
+    if (!looksLikeApexLog(filePath, target.document.getText())) {
+      return;
+    }
+    const picked = await vscode.window.showInformationMessage(
+      "This looks like a Salesforce debug log. Use Apex Log language mode?",
+      "Use Apex Log",
+      "Not Now",
+    );
+    await context.workspaceState.update(uriKey, picked === "Use Apex Log");
+    if (picked === "Use Apex Log") {
+      await vscode.languages.setTextDocumentLanguage(target.document, "apexlog");
+      await analyzeApexLogDocument(target.document, true);
+    }
   }
 
   context.subscriptions.push(
@@ -433,6 +513,15 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand("glade.workbench.openResult", () => workbench.openLastResult()),
     vscode.commands.registerCommand("glade.replayDebugLog", async (uri?: vscode.Uri) => {
       await replayDebugLog(uri);
+    }),
+    vscode.commands.registerCommand("glade.apexLog.refreshAnalysis", async () => {
+      await refreshApexLogAnalysis();
+    }),
+    vscode.commands.registerCommand("glade.apexLog.treatAsApexLog", async () => {
+      await treatCurrentFileAsApexLog();
+    }),
+    vscode.commands.registerCommand("glade.apexLog.replayFromFrame", async (entryIndex?: number) => {
+      await replayApexLogFrame(entryIndex);
     }),
     vscode.commands.registerCommand("glade.runChangedTests", () => tests.runChanged()),
     vscode.commands.registerCommand("glade.runFailedTests", () => tests.runFailed()),
@@ -915,6 +1004,13 @@ export function activate(context: vscode.ExtensionContext): void {
       if (event.affectsConfiguration("glade.enableTestExplorer")) {
         void refreshProject();
       }
+      if (
+        event.affectsConfiguration("glade.apexLog.smartFeatures.enabled")
+        || event.affectsConfiguration("glade.apexLog.maxAnalysisBytes")
+      ) {
+        apexLogDiagnostics.clearAll();
+        refreshOpenApexLogDocuments(true);
+      }
       if (event.affectsConfiguration("glade.environments") || event.affectsConfiguration("glade.activeEnvironment")) {
         startHereState.setLocalOrgSummary(undefined);
         startHereState.setMissingDb(undefined);
@@ -928,6 +1024,28 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
     vscode.window.onDidChangeActiveTextEditor(() => syncPluginViews()),
+    vscode.window.onDidChangeActiveTextEditor((editor) => {
+      void maybeDetectApexLog(editor);
+      if (editor?.document.languageId === "apexlog") {
+        void analyzeApexLogDocument(editor.document);
+      }
+    }),
+    vscode.workspace.onDidOpenTextDocument((document) => {
+      if (document.languageId === "apexlog") {
+        void analyzeApexLogDocument(document);
+      }
+    }),
+    vscode.workspace.onDidSaveTextDocument((document) => {
+      if (document.languageId === "apexlog") {
+        void analyzeApexLogDocument(document, true);
+      }
+    }),
+    vscode.workspace.onDidCloseTextDocument((document) => {
+      if (document.languageId === "apexlog") {
+        apexLogCache.clear(document);
+        apexLogDiagnostics.clear(document);
+      }
+    }),
     vscode.window.onDidCloseTerminal((terminal) => {
       if (terminal === projectOrgTerminal) {
         projectOrgTerminal = undefined;
@@ -940,6 +1058,8 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.debug.onDidChangeBreakpoints(() => debugView.refresh()),
     vscode.languages.registerCodeLensProvider({ language: "apex", scheme: "file" }, new GladeCodeLensProvider()),
   );
+  registerApexLogProviders(context, { cache: apexLogCache });
+  void maybeDetectApexLog();
   void refreshProject();
   void refreshPlugins();
 

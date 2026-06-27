@@ -39,6 +39,13 @@ type ReplayPlan struct {
 	Warnings     []string            `json:"warnings,omitempty"`
 }
 
+type ReplayOptions struct {
+	MinConfidence float64
+	EntryIndex    int
+	UseEntryIndex bool
+	SourceIndex   SourceIndex
+}
+
 type ReplayEntryPoint struct {
 	Namespace string `json:"namespace,omitempty"`
 	ClassName string `json:"className,omitempty"`
@@ -53,12 +60,42 @@ type ReplaySetupObject struct {
 }
 
 func SynthesizeReplay(annotated AnnotatedLog, minConfidence float64) (ReplayPlan, error) {
+	return SynthesizeReplayWithOptions(annotated, ReplayOptions{MinConfidence: minConfidence})
+}
+
+func SynthesizeReplayWithOptions(annotated AnnotatedLog, opts ReplayOptions) (ReplayPlan, error) {
 	if len(annotated.Log.Entries) == 0 && len(annotated.Entries) == 0 {
 		return ReplayPlan{}, errors.New("cannot synthesize replay from an empty log")
 	}
-	entryPoint := inferEntryPoint(annotated)
-	setups := inferSetupObjects(annotated)
+	minConfidence := opts.MinConfidence
+	if minConfidence <= 0 {
+		minConfidence = 0.5
+	}
 	anonymousSource := strings.TrimSpace(annotated.Log.AnonymousApex)
+	entryPoint := inferEntryPoint(annotated)
+	if opts.UseEntryIndex {
+		selected, ok := inferEntryPointAtEntry(annotated, opts.EntryIndex)
+		if !ok {
+			return ReplayPlan{}, fmt.Errorf("log entry %d is not replayable", opts.EntryIndex)
+		}
+		if anonymousSource == "" {
+			if !sourceIndexHasMethods(opts.SourceIndex) {
+				return ReplayPlan{}, fmt.Errorf("log entry %d is not replayable without a local source index", opts.EntryIndex)
+			}
+			if replayEntryPointLocation(opts.SourceIndex, selected, minConfidence).File == "" {
+				return ReplayPlan{}, fmt.Errorf("log entry %d is not replayable from local source", opts.EntryIndex)
+			}
+		}
+		entryPoint = selected
+	} else if anonymousSource == "" {
+		if !sourceIndexHasMethods(opts.SourceIndex) {
+			return ReplayPlan{}, errors.New("replay requires a local source index")
+		}
+		if replayEntryPointLocation(opts.SourceIndex, entryPoint, minConfidence).File == "" {
+			return ReplayPlan{}, errors.New("replay entry point is not backed by a callable local zero-argument static method")
+		}
+	}
+	setups := inferSetupObjects(annotated)
 	warnings := replayWarnings(annotated, entryPoint, setups)
 
 	var b strings.Builder
@@ -242,12 +279,87 @@ func inferEntryPoint(annotated AnnotatedLog) reproEntryPoint {
 	return reproEntryPoint{}
 }
 
+func inferEntryPointAtEntry(annotated AnnotatedLog, entryIndex int) (reproEntryPoint, bool) {
+	if entryIndex < 0 || entryIndex >= len(annotated.Log.Entries) {
+		return reproEntryPoint{}, false
+	}
+	entry := annotated.Log.Entries[entryIndex]
+	switch entry.Kind {
+	case apexlog.EntryCodeUnitStarted:
+		ns, typ, method := parseCodeUnitSymbol(entry.Data.CodeUnit)
+		if typ != "" && method != "" {
+			return reproEntryPoint{Namespace: ns, ClassName: typ, Method: method}, true
+		}
+	case apexlog.EntryMethodEntry, apexlog.EntryConstructorEntry:
+		ns, typ, method := parseMethodEntrySymbol(entry.Raw)
+		if typ != "" && method != "" && !strings.EqualFold(typ, method) {
+			return reproEntryPoint{Namespace: ns, ClassName: typ, Method: method}, true
+		}
+	case apexlog.EntryExceptionThrown, apexlog.EntryFatalError:
+		if len(entry.Data.StackFrames) > 0 {
+			frame := entry.Data.StackFrames[0]
+			if frame.Class != "" && frame.Method != "" {
+				return reproEntryPoint{Namespace: frame.Namespace, ClassName: frame.Class, Method: frame.Method}, true
+			}
+		}
+	}
+	switch entry.Kind {
+	case apexlog.EntryUserDebug, apexlog.EntryStatementExecute:
+	default:
+		return reproEntryPoint{}, false
+	}
+	if entryIndex < len(annotated.Entries) {
+		candidate := annotated.Entries[entryIndex].Best
+		ns, typ, method := parseMethodEntrySymbol("|METHOD_ENTRY|" + candidate.Symbol)
+		if typ != "" && method != "" && !strings.EqualFold(typ, method) {
+			return reproEntryPoint{Namespace: ns, ClassName: typ, Method: method}, true
+		}
+	}
+	return reproEntryPoint{}, false
+}
+
+func sourceIndexHasMethods(index SourceIndex) bool {
+	return len(index.methods) > 0 || len(index.methodsBySymbol) > 0
+}
+
+func replayEntryPointLocation(index SourceIndex, entry reproEntryPoint, minConfidence float64) EditorLocation {
+	if entry.ClassName == "" || entry.Method == "" {
+		return EditorLocation{}
+	}
+	for _, method := range methodBySymbol(index, entry.Namespace, entry.ClassName, entry.Method) {
+		if !sourceMethodCanReplay(method) {
+			continue
+		}
+		location := EditorLocation{
+			File:       method.File,
+			Line:       method.StartLine,
+			Symbol:     methodSymbol(method.Namespace, method.TypeName, method.Name),
+			Reason:     "replay entry point",
+			Confidence: 0.9,
+		}
+		if locationMeetsConfidence(location, minConfidence) {
+			return location
+		}
+	}
+	return EditorLocation{}
+}
+
+func sourceMethodCanReplay(method sourceMethod) bool {
+	if method.File == "" || method.ParameterCount != 0 {
+		return false
+	}
+	if strings.EqualFold(method.TypeName, method.Name) {
+		return false
+	}
+	return method.Static
+}
+
 func parseMethodEntrySymbol(raw string) (namespace, typeName, methodName string) {
-	if !strings.Contains(raw, "|METHOD_ENTRY|") {
+	if !strings.Contains(raw, "|METHOD_ENTRY|") && !strings.Contains(raw, "|CONSTRUCTOR_ENTRY|") {
 		return "", "", ""
 	}
 	parts := strings.Split(raw, "|")
-	if len(parts) < 4 {
+	if len(parts) < 3 {
 		return "", "", ""
 	}
 	symbol := strings.TrimSpace(parts[len(parts)-1])

@@ -459,6 +459,7 @@ glade profile analyze reports/trace.json --format pprof > reports/trace.pb.gz
 - `parse` prints structured JSON log entries.
 - `profile` builds measured runtime output.
 - `explain` adds conservative source candidate matches.
+- `editor` builds the Apex Log editor map for navigation, folding, hovers, and diagnostics.
 - `repro` writes a best-effort Apex test class from the subscriber log.
 - `replay` builds dry-run anonymous Apex for VS Code log replay.
 
@@ -467,8 +468,10 @@ glade debug parse --log logs/apex-debug.log --json
 glade debug profile --log logs/apex-debug.log
 glade debug explain --log logs/apex-debug.log --project .
 glade debug explain --log logs/apex-debug.log --project . --json
+glade debug editor --log logs/apex-debug.log --project . --json
 glade debug repro --log logs/apex-debug.log --project . > ReproTest.cls
 glade debug replay --log logs/apex-debug.log --project . --json
+glade debug replay --log logs/apex-debug.log --project . --entry-index 12 --json
 ```
 
 `repro` infers setup records from SOQL equality filters, entry-point calls from
@@ -476,14 +479,26 @@ code-unit or stack-frame entries, and baseline assertions from DML and exception
 events. Treat the generated class as the first local reproducer, then tighten
 the assertions after the bug is understood.
 
+`editor` uses that same evidence to make `.apexlog` and `.apex.log` files
+easier to scan in VS Code. It folds execution units, methods, constructors,
+SOQL, DML, limits, and exceptions. It links classes, methods, source-line
+events, variables, SOQL objects, SOQL fields, and DML objects when local source
+or metadata proves the target. Downloaded `.log` or `.txt` files can use
+`Glade: Treat Current File as Apex Log`.
+
 `replay` uses the same evidence to create anonymous Apex that VS Code can run
-through `glade dap --dry-run`. Capture Apex Code at DEBUG minimum, Database at
-INFO minimum, System at DEBUG for branch markers, Apex Profiling at INFO for
-limits, Callout at INFO for HTTP-dependent paths, Validation and Workflow at
-INFO when automation changes data, Visualforce at INFO only for Visualforce
-entry points, and NBA/Wave/other feature categories at NONE unless the feature
-is in the path. Use FINER or FINEST for Apex Code only when method-entry call
-stack detail matters.
+through `glade dap --dry-run`. `--entry-index` replays from one source-backed
+frame when the log has enough entry-point evidence.
+
+For best replay and editor navigation, capture Apex Code at FINEST, Apex
+Profiling at FINE, Callout at INFO, Database at FINE, System at DEBUG,
+Validation at INFO, Visualforce at INFO, Workflow at INFO, and NBA/Wave/other
+feature categories at NONE unless the feature is in the path. The minimum useful
+trace is Apex Code: FINE, Apex Profiling: INFO, Database: INFO, System: DEBUG,
+Validation: INFO, and Workflow: INFO. Variable navigation and frame replay lose
+shape when Apex Code is below FINEST. SOQL and DML links lose shape when
+Database is below INFO. Limit folding loses shape when Apex Profiling is below
+INFO.
 
 ## Playground
 

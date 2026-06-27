@@ -77,9 +77,12 @@ for (const command of [
   "glade.openHome",
   "glade.startProjectOrg",
   "glade.stopProjectOrg",
-  "glade.projectOrgStatus",
-  "glade.replayDebugLog",
-  "glade.schemaImportDescribe",
+	  "glade.projectOrgStatus",
+	  "glade.replayDebugLog",
+	  "glade.apexLog.refreshAnalysis",
+	  "glade.apexLog.treatAsApexLog",
+	  "glade.apexLog.replayFromFrame",
+	  "glade.schemaImportDescribe",
   "glade.salesforceTargetStatus",
 ]) {
   assert(activationEvents.includes(`onCommand:${command}`), `${command} must activate the extension`);
@@ -109,9 +112,11 @@ const visibleCommandAllowlist = [
   "glade.runLocalProof",
   "glade.startProjectOrg",
   "glade.stopProjectOrg",
-  "glade.inspectLocalOrg",
-  "glade.replayDebugLog",
-  "glade.statusQuickPick",
+	  "glade.inspectLocalOrg",
+	  "glade.replayDebugLog",
+	  "glade.apexLog.refreshAnalysis",
+	  "glade.apexLog.treatAsApexLog",
+	  "glade.statusQuickPick",
   "glade.workbench.newAnonymousApex",
   "glade.workbench.newSoql",
   "glade.managePlugins",
@@ -142,9 +147,12 @@ for (const command of [
   "glade.revealEnvironmentDb",
   "glade.inspectEnvironment",
   "glade.statusQuickPick",
-  "glade.openOutput",
-  "glade.replayDebugLog",
-  "glade.refreshPlugins",
+	  "glade.openOutput",
+	  "glade.replayDebugLog",
+	  "glade.apexLog.refreshAnalysis",
+	  "glade.apexLog.treatAsApexLog",
+	  "glade.apexLog.replayFromFrame",
+	  "glade.refreshPlugins",
   "glade.managePlugins",
   "glade.runPluginAction",
   "glade.linkLocalPlugin",
@@ -196,8 +204,10 @@ assert(
     entry.id === "apexlog"
     && entry.aliases.includes("Apex Log")
     && entry.extensions.includes(".apexlog")
+    && entry.extensions.includes(".apex.log")
     && !entry.extensions.includes(".log")
     && /APEX_CODE/.test(entry.firstLine || "")
+    && /NONE/.test(entry.firstLine || "")
   ),
   "debug logs need a contributed Apex Log language without claiming every .log file",
 );
@@ -238,6 +248,22 @@ assert(
   replayTitle.when.includes("editorLangId == apexlog"),
   "Apex Log replay must be scoped to Apex Log editors",
 );
+
+const refreshApexLogTitle = editorTitle.find((entry) => entry.command === "glade.apexLog.refreshAnalysis");
+assert(refreshApexLogTitle, "Apex Log editors must expose analysis refresh");
+assert(
+  refreshApexLogTitle.when.includes("editorLangId == apexlog"),
+  "Apex Log refresh must be scoped to Apex Log editors",
+);
+
+const configProps = manifest.contributes.configuration.properties;
+for (const key of [
+  "glade.apexLog.smartFeatures.enabled",
+  "glade.apexLog.maxAnalysisBytes",
+  "glade.apexLog.codeLens.enabled",
+]) {
+  assert(configProps[key], `${key} must be contributed`);
+}
 
 assert(
   (manifest.contributes.keybindings || []).some((entry) =>

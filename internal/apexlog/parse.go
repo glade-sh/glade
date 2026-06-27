@@ -18,6 +18,7 @@ func Parse(r io.Reader) (Log, error) {
 	lastExceptionIndex := -1
 	headerSeen := false
 	var anonymousLines []string
+	byteOffset := 0
 
 	for {
 		rawLine, readErr := reader.ReadString('\n')
@@ -32,6 +33,9 @@ func Parse(r io.Reader) (Log, error) {
 			continue
 		}
 
+		byteStart := byteOffset
+		byteOffset += len(rawLine)
+		byteEnd := byteOffset
 		lineNum++
 		line := strings.TrimSuffix(rawLine, "\n")
 		line = strings.TrimSuffix(line, "\r")
@@ -51,7 +55,7 @@ func Parse(r io.Reader) (Log, error) {
 			goto consume
 		}
 
-		if entry, ok := parseEventLine(line, lineNum); ok {
+		if entry, ok := parseEventLine(line, lineNum, byteStart, byteEnd); ok {
 			switch entry.Kind {
 			case EntryCumulativeLimitUsage:
 				inLimits = true
@@ -130,7 +134,7 @@ func parseExecuteAnonymousLine(line string) (string, bool) {
 	return source, true
 }
 
-func parseEventLine(raw string, lineNum int) (Entry, bool) {
+func parseEventLine(raw string, lineNum, byteStart, byteEnd int) (Entry, bool) {
 	parts := strings.SplitN(raw, "|", 3)
 	if len(parts) < 2 {
 		return Entry{}, false
@@ -140,6 +144,8 @@ func parseEventLine(raw string, lineNum int) (Entry, bool) {
 		Raw:       raw,
 		Timestamp: strings.TrimSpace(parts[0]),
 		Line:      lineNum,
+		ByteStart: byteStart,
+		ByteEnd:   byteEnd,
 		Kind:      EntryKind(strings.TrimSpace(parts[1])),
 	}
 	if len(parts) == 3 {
@@ -164,6 +170,46 @@ func parseEventLine(raw string, lineNum int) (Entry, bool) {
 		}
 		if len(tokens) > 1 {
 			entry.Data.CodeUnit = strings.TrimSpace(tokens[len(tokens)-1])
+		}
+	case EntryMethodEntry, EntryMethodExit, EntryConstructorEntry, EntryConstructorExit,
+		EntrySystemMethodEntry, EntrySystemMethodExit:
+		if len(tokens) > 0 {
+			entry.Data.SourceLine = parseSourceLine(tokens[0])
+		}
+		if len(tokens) > 0 {
+			entry.Data.MethodSymbol = strings.TrimSpace(tokens[len(tokens)-1])
+		}
+	case EntryVariableScopeBegin:
+		if len(tokens) > 0 {
+			entry.Data.SourceLine = parseSourceLine(tokens[0])
+		}
+		if len(tokens) > 1 {
+			entry.Data.VariableName = strings.TrimSpace(tokens[1])
+		}
+		if len(tokens) > 2 {
+			entry.Data.VariableType = strings.TrimSpace(tokens[2])
+		}
+	case EntryVariableAssignment:
+		if len(tokens) > 0 {
+			entry.Data.SourceLine = parseSourceLine(tokens[0])
+		}
+		if len(tokens) > 1 {
+			entry.Data.VariableName = strings.TrimSpace(tokens[1])
+		}
+		if len(tokens) > 2 {
+			entry.Data.VariableValue = strings.TrimSpace(strings.Join(tokens[2:], "|"))
+		}
+	case EntryStatementExecute:
+		if len(tokens) > 0 {
+			entry.Data.SourceLine = parseSourceLine(tokens[0])
+		}
+	case EntryHeapAllocate:
+		if len(tokens) > 0 {
+			entry.Data.SourceLine = parseSourceLine(tokens[0])
+		}
+		values := parseKeyValuePayload(payload)
+		if bytes, ok := values["Bytes"]; ok {
+			entry.Data.HeapBytes = mustParseInt(bytes, 0)
 		}
 	case EntryUserDebug:
 		if len(tokens) > 0 {
@@ -214,6 +260,13 @@ func parseEventLine(raw string, lineNum int) (Entry, bool) {
 	case EntryDMLEnd:
 		if len(tokens) > 0 {
 			entry.Data.SourceLine = parseSourceLine(tokens[0])
+		}
+	case EntryValidationRule:
+		if len(tokens) > 0 {
+			entry.Data.SourceLine = parseSourceLine(tokens[0])
+		}
+		if len(tokens) > 1 {
+			entry.Data.ValidationRule = strings.TrimSpace(strings.Join(tokens[1:], "|"))
 		}
 	case EntryExceptionThrown, EntryFatalError:
 		if len(tokens) > 0 {

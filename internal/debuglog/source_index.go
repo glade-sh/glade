@@ -28,12 +28,14 @@ type SourceIndex struct {
 }
 
 type sourceMethod struct {
-	Namespace string
-	TypeName  string
-	Name      string
-	File      string
-	StartLine int
-	EndLine   int
+	Namespace      string
+	TypeName       string
+	Name           string
+	File           string
+	StartLine      int
+	EndLine        int
+	Static         bool
+	ParameterCount int
 }
 
 type sourceDebugLiteral struct {
@@ -86,12 +88,14 @@ func BuildSourceIndex(index typesys.Index) SourceIndex {
 				continue
 			}
 			method := sourceMethod{
-				Namespace: typ.Namespace,
-				TypeName:  typ.Name,
-				Name:      member.Name,
-				File:      file,
-				StartLine: member.Range.Start.Line,
-				EndLine:   member.Range.End.Line,
+				Namespace:      typ.Namespace,
+				TypeName:       typ.Name,
+				Name:           member.Name,
+				File:           file,
+				StartLine:      member.Range.Start.Line,
+				EndLine:        member.Range.End.Line,
+				Static:         declarationHasModifier(member.Modifiers, "static"),
+				ParameterCount: len(member.Parameters),
 			}
 			if method.StartLine == 0 {
 				method.StartLine = typ.Range.Start.Line
@@ -342,6 +346,15 @@ func methodSymbol(namespace, typeName, methodName string) string {
 		return typeText + "." + methodName
 	}
 	return ns + "." + typeText + "." + methodName
+}
+
+func declarationHasModifier(modifiers []string, expected string) bool {
+	for _, modifier := range modifiers {
+		if strings.EqualFold(strings.TrimSpace(modifier), expected) {
+			return true
+		}
+	}
+	return false
 }
 
 func dedupeMethods(methods []sourceMethod) []sourceMethod {
