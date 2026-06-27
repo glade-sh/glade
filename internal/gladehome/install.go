@@ -8,10 +8,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 )
 
-// InstallFrom copies the LWC toolchain from a glade checkout into UserShareDir().
+// InstallFrom copies source-built toolchain assets from a glade checkout into UserShareDir().
 func InstallFrom(src string) error {
 	src, ok := validateRoot(src)
 	if !ok {
@@ -43,6 +44,9 @@ func InstallFrom(src string) error {
 		if err := copyTree(from, to); err != nil {
 			return fmt.Errorf("copy %s: %w", pair.rel, err)
 		}
+	}
+	if err := installEditorVSIX(src, dst); err != nil {
+		return err
 	}
 	return nil
 }
@@ -82,6 +86,26 @@ func findInstallSource() (string, error) {
 		return fallback, nil
 	}
 	return "", fmt.Errorf("no glade checkout with LWC toolchain found; run from a glade repo or use --from <path>")
+}
+
+func installEditorVSIX(src, dst string) error {
+	pattern := filepath.Join(src, "contrib", "vscode-glade", "dist", "vscode-glade-*.vsix")
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return fmt.Errorf("find editor vsix: %w", err)
+	}
+	if len(matches) == 0 {
+		return nil
+	}
+	sort.Sort(sort.Reverse(sort.StringSlice(matches)))
+	to := filepath.Join(dst, "editor", "vscode-glade.vsix")
+	if samePath(matches[0], to) {
+		return nil
+	}
+	if err := copyFilePath(matches[0], to, 0o644); err != nil {
+		return fmt.Errorf("copy editor vscode-glade.vsix: %w", err)
+	}
+	return nil
 }
 
 func samePath(a, b string) bool {
@@ -147,6 +171,10 @@ func copyTreeWalk(src, dst string) error {
 }
 
 func copyFile(src, dst string, entry fs.DirEntry) error {
+	return copyFilePath(src, dst, fileMode(entry))
+}
+
+func copyFilePath(src, dst string, mode fs.FileMode) error {
 	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		return err
 	}
@@ -155,7 +183,7 @@ func copyFile(src, dst string, entry fs.DirEntry) error {
 		return err
 	}
 	defer in.Close()
-	out, err := os.OpenFile(dst, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, fileMode(entry))
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, mode)
 	if err != nil {
 		return err
 	}
