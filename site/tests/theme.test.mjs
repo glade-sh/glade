@@ -41,6 +41,29 @@ const cliReference = await readFile(new URL("../docs-src/guide/cli-reference.md"
 const localTesting = await readFile(new URL("../docs-src/guide/local-testing.md", import.meta.url), "utf8");
 const affectedTests = await readFile(new URL("../docs-src/guide/affected-tests.md", import.meta.url), "utf8");
 const playground = await readFile(new URL("../docs-src/guide/playground.md", import.meta.url), "utf8");
+const workflowsIndex = await readFile(new URL("../docs-src/guide/workflows.md", import.meta.url), "utf8").catch(() => "");
+const workflowApexTests = await readFile(new URL("../docs-src/guide/workflows/apex-tests.md", import.meta.url), "utf8").catch(() => "");
+const workflowDebugApex = await readFile(new URL("../docs-src/guide/workflows/debug-apex.md", import.meta.url), "utf8").catch(() => "");
+const workflowLwcPreview = await readFile(new URL("../docs-src/guide/workflows/lwc-preview.md", import.meta.url), "utf8").catch(() => "");
+const workflowVisualforcePreview = await readFile(new URL("../docs-src/guide/workflows/visualforce-preview.md", import.meta.url), "utf8").catch(() => "");
+const workflowLocalData = await readFile(new URL("../docs-src/guide/workflows/local-data.md", import.meta.url), "utf8").catch(() => "");
+const workflowCi = await readFile(new URL("../docs-src/guide/workflows/ci.md", import.meta.url), "utf8").catch(() => "");
+const modulesIndex = await readFile(new URL("../docs-src/guide/modules.md", import.meta.url), "utf8").catch(() => "");
+const moduleApexRuntime = await readFile(new URL("../docs-src/guide/modules/apex-runtime.md", import.meta.url), "utf8").catch(() => "");
+const moduleTestRunner = await readFile(new URL("../docs-src/guide/modules/test-runner.md", import.meta.url), "utf8").catch(() => "");
+const moduleLocalOrgData = await readFile(new URL("../docs-src/guide/modules/local-org-data.md", import.meta.url), "utf8").catch(() => "");
+const moduleLwcPreview = await readFile(new URL("../docs-src/guide/modules/lwc-preview.md", import.meta.url), "utf8").catch(() => "");
+const moduleVisualforcePreview = await readFile(new URL("../docs-src/guide/modules/visualforce-preview.md", import.meta.url), "utf8").catch(() => "");
+const moduleDebugProfile = await readFile(new URL("../docs-src/guide/modules/debug-profile.md", import.meta.url), "utf8").catch(() => "");
+const moduleEditor = await readFile(new URL("../docs-src/guide/modules/editor.md", import.meta.url), "utf8").catch(() => "");
+const modulePlugins = await readFile(new URL("../docs-src/guide/modules/plugins.md", import.meta.url), "utf8").catch(() => "");
+const referenceCli = await readFile(new URL("../docs-src/reference/cli.md", import.meta.url), "utf8").catch(() => "");
+const referenceConfig = await readFile(new URL("../docs-src/reference/config.md", import.meta.url), "utf8").catch(() => "");
+const referenceErrors = await readFile(new URL("../docs-src/reference/errors.md", import.meta.url), "utf8").catch(() => "");
+const referenceApexSupport = await readFile(new URL("../docs-src/reference/apex-support.md", import.meta.url), "utf8").catch(() => "");
+const referenceLwcSupport = await readFile(new URL("../docs-src/reference/lwc-support.md", import.meta.url), "utf8").catch(() => "");
+const referenceVisualforceSupport = await readFile(new URL("../docs-src/reference/visualforce-support.md", import.meta.url), "utf8").catch(() => "");
+const referenceLocalApiRoutes = await readFile(new URL("../docs-src/reference/local-api-routes.md", import.meta.url), "utf8").catch(() => "");
 const workbench = await readFile(new URL("../docs-src/guide/workbench.md", import.meta.url), "utf8").catch(() => "");
 const aiAssistedApex = await readFile(new URL("../docs-src/guide/ai-assisted-apex.md", import.meta.url), "utf8").catch(() => "");
 const testerFieldGuide = await readFile(new URL("../docs-src/guide/tester-field-guide.md", import.meta.url), "utf8");
@@ -302,15 +325,88 @@ test("home page uses a static local proof and final go-live workflow copy", () =
   assert.match(config, /copyright: 'Released by the Glade project\.'/);
   assert.match(config, /\{ text: 'Playground', link: '\/guide\/playground' \}/);
   assert.match(config, /\{ text: 'What runs locally', link: '\/guide\/support-map' \}/);
-  assert.match(config, /\{ text: 'VS Code', link: '\/guide\/editor' \}/);
+  assert.match(config, /\{ text: 'Use VS Code', link: '\/guide\/editor' \}/);
   assert.match(config, /\{ text: 'sf target orgs', link: '\/guide\/glade-orgs' \}/);
-  assert.match(config, /\{ text: 'Docs', link: '\/guide\/overview' \}/);
+  assert.match(config, /\{ text: 'What is Glade\?', link: '\/guide\/overview' \}/);
   assert.match(config, /\{ text: 'Install', link: '\/guide\/installation' \}/);
   assert.match(config, /\{ text: 'Tester field guide', link: '\/guide\/tester-field-guide' \}/);
   assert.match(config, /\{ text: 'AI-assisted Apex', link: '\/guide\/ai-assisted-apex' \}/);
-  assert.match(config, /\{ text: 'Workbench', link: '\/guide\/workbench' \}/);
+  assert.match(config, /\{ text: 'Execute anonymous Apex and SOQL', link: '\/guide\/workbench' \}/);
   assert.doesNotMatch(config, /\{ text: 'Coverage', link: '\/guide\/workbench' \}/);
   assert.doesNotMatch(config, /\{ text: 'Capability map', link: '\/guide\/support-map' \}/);
+});
+
+test("docs navigation exposes workflows modules and references as separate trails", () => {
+  function assertConfigLink(text, link) {
+    const escapedText = text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const escapedLink = link.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    assert.match(config, new RegExp(`\\{ text: '${escapedText}', link: '${escapedLink}' \\}`));
+  }
+
+  assertConfigLink("Workflows", "/guide/workflows");
+  assertConfigLink("Product areas", "/guide/modules");
+  assertConfigLink("Reference", "/reference/cli");
+  assertConfigLink("Run Apex tests", "/guide/workflows/apex-tests");
+  assertConfigLink("Debug Apex", "/guide/workflows/debug-apex");
+  assertConfigLink("Preview LWC", "/guide/workflows/lwc-preview");
+  assertConfigLink("Preview Visualforce", "/guide/workflows/visualforce-preview");
+  assertConfigLink("Work with local data", "/guide/workflows/local-data");
+  assertConfigLink("Add Glade to CI", "/guide/workflows/ci");
+  assertConfigLink("Apex runtime", "/guide/modules/apex-runtime");
+  assertConfigLink("Test runner", "/guide/modules/test-runner");
+  assertConfigLink("Local org and data", "/guide/modules/local-org-data");
+  assertConfigLink("LWC preview", "/guide/modules/lwc-preview");
+  assertConfigLink("Visualforce preview", "/guide/modules/visualforce-preview");
+  assertConfigLink("Debug and profile", "/guide/modules/debug-profile");
+  assertConfigLink("Editor and workbench", "/guide/modules/editor");
+  assertConfigLink("Plugins", "/guide/modules/plugins");
+  assertConfigLink("CLI reference", "/reference/cli");
+  assertConfigLink("Config reference", "/reference/config");
+  assertConfigLink("Error codes", "/reference/errors");
+  assertConfigLink("Apex support map", "/reference/apex-support");
+  assertConfigLink("LWC support matrix", "/reference/lwc-support");
+  assertConfigLink("Visualforce support matrix", "/reference/visualforce-support");
+  assertConfigLink("Local API routes", "/reference/local-api-routes");
+});
+
+test("new docs pages use clear page roles and link to deeper references", () => {
+  assert.match(workflowsIndex, /^# Choose a Glade workflow/m);
+  assert.match(workflowsIndex, /Run Apex tests/);
+  assert.match(workflowsIndex, /Preview LWC locally/);
+  assert.match(workflowsIndex, /Preview Visualforce locally/);
+
+  assert.match(workflowApexTests, /^# Run Apex tests/m);
+  assert.match(workflowApexTests, /glade test --project \./);
+  assert.match(workflowApexTests, /\[Test runner\]\(\/guide\/modules\/test-runner\)/);
+  assert.match(workflowDebugApex, /^# Debug Apex/m);
+  assert.match(workflowDebugApex, /glade dap --project/);
+  assert.match(workflowDebugApex, /\[Debug and profile\]\(\/guide\/modules\/debug-profile\)/);
+  assert.match(workflowLwcPreview, /^# Preview LWC locally/m);
+  assert.match(workflowLwcPreview, /glade dev lwc --project \. --open/);
+  assert.match(workflowLwcPreview, /\[LWC support matrix\]\(\/reference\/lwc-support\)/);
+  assert.match(workflowVisualforcePreview, /^# Preview Visualforce locally/m);
+  assert.match(workflowVisualforcePreview, /glade dev vf --project \./);
+  assert.match(workflowVisualforcePreview, /\[Visualforce support matrix\]\(\/reference\/visualforce-support\)/);
+  assert.match(workflowLocalData, /^# Work with local data/m);
+  assert.match(workflowCi, /^# Add Glade to CI/m);
+
+  assert.match(modulesIndex, /^# Product areas/m);
+  assert.match(moduleApexRuntime, /^# Apex runtime/m);
+  assert.match(moduleTestRunner, /^# Test runner/m);
+  assert.match(moduleLocalOrgData, /^# Local org and data/m);
+  assert.match(moduleLwcPreview, /^# LWC preview/m);
+  assert.match(moduleVisualforcePreview, /^# Visualforce preview/m);
+  assert.match(moduleDebugProfile, /^# Debug and profile/m);
+  assert.match(moduleEditor, /^# Editor and workbench/m);
+  assert.match(modulePlugins, /^# Plugins/m);
+
+  assert.match(referenceCli, /^# CLI reference/m);
+  assert.match(referenceConfig, /^# Config reference/m);
+  assert.match(referenceErrors, /^# Error codes/m);
+  assert.match(referenceApexSupport, /^# Apex support map/m);
+  assert.match(referenceLwcSupport, /^# LWC support matrix/m);
+  assert.match(referenceVisualforceSupport, /^# Visualforce support matrix/m);
+  assert.match(referenceLocalApiRoutes, /^# Local API routes/m);
 });
 
 test("site copy is task-first and names local capabilities plainly", () => {
@@ -386,7 +482,6 @@ test("security trust surface is public, checked, and release-backed", () => {
   assert.match(repoSecurityPolicy, /Local laptop behavior/);
   assert.match(repoSecurityPolicy, /Glade does not require a Salesforce org login for supported local checks\./);
 
-  assert.match(config, /\{ text: 'Security', link: '\/guide\/security-trust' \}/);
   assert.match(config, /\{ text: 'Security & Trust', link: '\/guide\/security-trust' \}/);
   assert.match(securityTrust, /^# Security & Trust/m);
   assert.match(securityTrust, /OpenSSF Scorecard/);
@@ -1151,27 +1246,34 @@ test("theme uses the Host Signal design direction", () => {
   assert.match(config, /Salesforce validation gate/);
   assert.match(config, /lastUpdated: false/);
   assert.match(config, /\['link', \{ rel: 'icon', type: 'image\/svg\+xml', href: '\/logo-mark\.svg' \}\]/);
-  assert.match(config, /\{ text: 'Docs', link: '\/guide\/overview' \}/);
+  assert.match(config, /\{ text: 'Workflows', link: '\/guide\/workflows' \}/);
+  assert.match(config, /\{ text: 'Product areas', link: '\/guide\/modules' \}/);
+  assert.match(config, /\{ text: 'Reference', link: '\/reference\/cli' \}/);
+  assert.match(config, /\{ text: 'What is Glade\?', link: '\/guide\/overview' \}/);
   assert.match(config, /text: 'What is Glade\?'/);
   assert.match(config, /text: 'First local check'/);
   assert.match(config, /text: 'Tester field guide'/);
   assert.match(config, /text: 'What runs locally'/);
   assert.doesNotMatch(config, /text: 'Capability map'/);
   assert.doesNotMatch(config, /text: 'Coverage workbench'/);
-  assert.match(config, /text: 'Workflows',\n\s+collapsed: true,/);
-  assert.match(config, /text: 'Check source'/);
-  assert.match(config, /text: 'Run tests'/);
+  assert.match(config, /text: 'Workflows',\n\s+collapsed: false,/);
+  assert.match(config, /text: 'Product areas',\n\s+collapsed: false,/);
+  assert.match(config, /text: 'Run Apex tests'/);
+  assert.match(config, /text: 'Debug Apex'/);
   assert.match(config, /text: 'Affected tests'/);
   assert.match(config, /text: 'Local API routes'/);
-  assert.match(config, /text: 'VS Code'/);
-  assert.match(config, /text: 'Workbench'/);
+  assert.match(config, /text: 'Preview LWC'/);
+  assert.match(config, /text: 'Preview Visualforce'/);
+  assert.match(config, /text: 'Use VS Code'/);
+  assert.match(config, /text: 'Execute anonymous Apex and SOQL'/);
+  assert.match(config, /text: 'Editor and workbench'/);
   assert.match(config, /text: 'Automation and JSON'/);
-  assert.match(config, /text: 'Error codes and `glade explain`'/);
+  assert.match(config, /text: 'Error codes'/);
   assert.match(config, /text: 'Reports and package artifacts'/);
   assert.match(config, /text: 'Plugins'/);
   assert.match(config, /text: 'First-party plugins'/);
-  assert.match(config, /text: 'Install and manage'/);
-  assert.match(config, /text: 'Lock files and CI'/);
+  assert.match(config, /text: 'Plugin install and manage'/);
+  assert.match(config, /text: 'Plugin lock files and CI'/);
   assert.match(config, /text: 'Maintainer'/);
   assert.match(config, /link: '\/maintainer\/release'/);
   assert.match(config, /link: '\/maintainer\/extend-runtime'/);
@@ -1360,14 +1462,17 @@ test("AI-assisted Apex guide gives agents a Glade TDD contract", () => {
 });
 
 test("preview surfaces are labeled in public and repo docs", () => {
-  assert.match(localTesting, /## LWC dev shell[\s\S]*preview feature/i);
-  assert.match(localTesting, /\/lwc\/preview\/utility\/<UtilityBar>/);
-  assert.match(localTesting, /\/lwc\/preview\/flow\/<FlowApiName>/);
-  assert.match(localTesting, /\/lwc\/preview\/community\/<site>\/<page>/);
+  assert.match(workflowLwcPreview, /preview routes/i);
+  assert.match(workflowLwcPreview, /glade dev lwc --project \. --open/);
+  assert.match(moduleLwcPreview, /The LWC shell is a local preview surface/);
+  assert.match(workflowVisualforcePreview, /\/apex\/<PageName>/);
+  assert.match(workflowVisualforcePreview, /glade dev vf --project \./);
+  assert.match(moduleVisualforcePreview, /The Visualforce server is a local preview surface/);
+  assert.match(localTesting, /\[Preview LWC locally\]\(\/guide\/workflows\/lwc-preview\)/);
+  assert.match(localTesting, /\[Preview Visualforce locally\]\(\/guide\/workflows\/visualforce-preview\)/);
   assert.match(lwcLocalShell, /"phase3BaseComponents"/);
   assert.match(supportMap, /`lightning\/refresh`/);
   assert.match(supportMap, /packaged SLDS 2 and classic SLDS assets/);
-  assert.match(localTesting, /## Visualforce dev server[\s\S]*preview feature/i);
   assert.match(index, /Visualforce and LWC local shells remain preview features\./);
   assert.match(repoReadme, /Visualforce preview feature[\s\S]*glade dev vf/);
   assert.match(repoCompatibility, /Visualforce dev rendering \| preview feature/i);
@@ -1410,13 +1515,18 @@ test("cli reference documents current code intelligence commands", () => {
 });
 
 test("ci docs create reports directory before report outputs", () => {
-  for (const page of [automation, localTesting, affectedTests]) {
+  for (const page of [automation, localTesting, affectedTests, workflowCi]) {
     const mkdirIndex = page.indexOf("mkdir -p reports");
     const junitIndex = page.indexOf("glade test --project . --junit reports/glade-junit.xml");
     assert.notEqual(mkdirIndex, -1);
     assert.notEqual(junitIndex, -1);
     assert.ok(mkdirIndex < junitIndex);
   }
+
+  const mkdirIndex = workflowCi.indexOf("mkdir -p reports");
+  const sarifIndex = workflowCi.indexOf("glade check --project . --format sarif --output reports/glade-check.sarif");
+  assert.notEqual(sarifIndex, -1);
+  assert.ok(mkdirIndex < sarifIndex);
 });
 
 test("public launch docs avoid stale public routes and registry promises", () => {

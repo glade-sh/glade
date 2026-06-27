@@ -31,3 +31,10 @@ These articles complement the reference docs. They show the work in a terminal a
 - [VS Code Extension, LSP, and DAP](/guide/editor)
 - [Run Apex Tests Locally](/guide/local-testing)
 - [What Glade runs locally](/guide/support-map)
+
+## Product paths
+
+- [Choose a workflow](/guide/workflows)
+- [Product areas](/guide/modules)
+- [CLI reference](/reference/cli)
+- [What runs locally](/guide/support-map)
