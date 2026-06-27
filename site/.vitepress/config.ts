@@ -61,6 +61,7 @@ export default defineConfig({
       { text: 'Security', link: '/guide/security-trust' },
       { text: 'VS Code', link: '/guide/editor' },
       { text: 'Playground', link: '/guide/playground' },
+      { text: 'Help', link: '/help/' },
       { text: 'Docs', link: '/guide/overview' },
       { text: 'GitHub', link: 'https://github.com/glade-sh/glade' }
     ],
@@ -75,6 +76,22 @@ export default defineConfig({
           { text: 'What runs locally', link: '/guide/support-map' },
           { text: 'Security & Trust', link: '/guide/security-trust' },
           { text: 'Playground', link: '/guide/playground' }
+        ]
+      },
+      {
+        text: 'Guided help',
+        collapsed: false,
+        items: [
+          { text: 'Help overview', link: '/help/' },
+          { text: 'First local check', link: '/help/first-local-check' },
+          { text: 'Run one Apex test', link: '/help/run-one-apex-test' },
+          { text: 'Debug with breakpoints', link: '/help/debug-apex-vscode' },
+          { text: 'Anonymous Apex scratch', link: '/help/anonymous-apex-scratch' },
+          { text: 'Local data environments', link: '/help/local-data-environments' },
+          { text: 'Changed tests before a PR', link: '/help/changed-tests-before-pr' },
+          { text: 'Glade org data import', link: '/help/glade-org-sf-data-import' },
+          { text: 'Profile a debug log', link: '/help/profile-apex-debug-log' },
+          { text: 'CI setup', link: '/help/ci-setup' }
         ]
       },
       {
