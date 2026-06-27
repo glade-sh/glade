@@ -460,6 +460,7 @@ glade profile analyze reports/trace.json --format pprof > reports/trace.pb.gz
 - `profile` builds measured runtime output.
 - `explain` adds conservative source candidate matches.
 - `repro` writes a best-effort Apex test class from the subscriber log.
+- `replay` builds dry-run anonymous Apex for VS Code log replay.
 
 ```bash
 glade debug parse --log logs/apex-debug.log --json
@@ -467,12 +468,22 @@ glade debug profile --log logs/apex-debug.log
 glade debug explain --log logs/apex-debug.log --project .
 glade debug explain --log logs/apex-debug.log --project . --json
 glade debug repro --log logs/apex-debug.log --project . > ReproTest.cls
+glade debug replay --log logs/apex-debug.log --project . --json
 ```
 
 `repro` infers setup records from SOQL equality filters, entry-point calls from
 code-unit or stack-frame entries, and baseline assertions from DML and exception
 events. Treat the generated class as the first local reproducer, then tighten
 the assertions after the bug is understood.
+
+`replay` uses the same evidence to create anonymous Apex that VS Code can run
+through `glade dap --dry-run`. Capture Apex Code at DEBUG minimum, Database at
+INFO minimum, System at DEBUG for branch markers, Apex Profiling at INFO for
+limits, Callout at INFO for HTTP-dependent paths, Validation and Workflow at
+INFO when automation changes data, Visualforce at INFO only for Visualforce
+entry points, and NBA/Wave/other feature categories at NONE unless the feature
+is in the path. Use FINER or FINEST for Apex Code only when method-entry call
+stack detail matters.
 
 ## Playground
 

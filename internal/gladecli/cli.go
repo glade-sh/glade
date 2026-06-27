@@ -2231,7 +2231,7 @@ func defaultExecLogPath(root string) string {
 	if base == "" {
 		base = "."
 	}
-	return filepath.Join(base, ".glade", "logs", "exec-"+time.Now().UTC().Format("20060102T150405Z")+".log")
+	return filepath.Join(base, ".glade", "logs", "exec-"+time.Now().UTC().Format("20060102T150405Z")+".apexlog")
 }
 
 func currentDirIsGladeProjectRoot() bool {

@@ -32,6 +32,62 @@ type reproDML struct {
 	Evidence  string
 }
 
+type ReplayPlan struct {
+	Source       string              `json:"source"`
+	EntryPoint   ReplayEntryPoint    `json:"entryPoint"`
+	SetupObjects []ReplaySetupObject `json:"setupObjects,omitempty"`
+	Warnings     []string            `json:"warnings,omitempty"`
+}
+
+type ReplayEntryPoint struct {
+	Namespace string `json:"namespace,omitempty"`
+	ClassName string `json:"className,omitempty"`
+	Method    string `json:"method,omitempty"`
+}
+
+type ReplaySetupObject struct {
+	ObjectName string            `json:"objectName"`
+	Rows       int               `json:"rows"`
+	Fields     map[string]string `json:"fields,omitempty"`
+	Evidence   string            `json:"evidence,omitempty"`
+}
+
+func SynthesizeReplay(annotated AnnotatedLog, minConfidence float64) (ReplayPlan, error) {
+	if len(annotated.Log.Entries) == 0 && len(annotated.Entries) == 0 {
+		return ReplayPlan{}, errors.New("cannot synthesize replay from an empty log")
+	}
+	entryPoint := inferEntryPoint(annotated)
+	setups := inferSetupObjects(annotated)
+	warnings := replayWarnings(annotated, entryPoint, setups)
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "// Replay source synthesized from an Apex debug log.\n")
+	fmt.Fprintf(&b, "// Source matching threshold: %.2f\n", minConfidence)
+	for _, warning := range warnings {
+		fmt.Fprintf(&b, "// Warning: %s\n", warning)
+	}
+	if len(setups) > 0 {
+		fmt.Fprintf(&b, "\n")
+		for _, setup := range setups {
+			writeSetupObjectWithIndent(&b, setup, "")
+		}
+	}
+	fmt.Fprintf(&b, "\n")
+	if entryPoint.ClassName == "" || entryPoint.Method == "" {
+		fmt.Fprintf(&b, "// Fill in the entry point. The log did not include CODE_UNIT_STARTED or stack frames.\n")
+		fmt.Fprintf(&b, "System.assert(true);\n")
+	} else {
+		fmt.Fprintf(&b, "%s;\n", entryPointCall(entryPoint))
+	}
+
+	return ReplayPlan{
+		Source:       b.String(),
+		EntryPoint:   ReplayEntryPoint(entryPoint),
+		SetupObjects: replaySetupObjects(setups),
+		Warnings:     warnings,
+	}, nil
+}
+
 // SynthesizeTest creates a best-effort Apex test class from annotated subscriber
 // log evidence. It favors concrete log-backed setup and fill-in comments where
 // the log does not contain enough shape to produce exact Apex.
@@ -102,6 +158,47 @@ func SynthesizeTest(annotated AnnotatedLog, minConfidence float64) (string, erro
 	fmt.Fprintf(&b, "    }\n")
 	fmt.Fprintf(&b, "}\n")
 	return b.String(), nil
+}
+
+func replaySetupObjects(setups []reproSetupObject) []ReplaySetupObject {
+	out := make([]ReplaySetupObject, 0, len(setups))
+	for _, setup := range setups {
+		fields := make(map[string]string, len(setup.Fields))
+		for key, value := range setup.Fields {
+			fields[key] = value
+		}
+		out = append(out, ReplaySetupObject{
+			ObjectName: setup.ObjectName,
+			Rows:       setup.Rows,
+			Fields:     fields,
+			Evidence:   setup.Evidence,
+		})
+	}
+	return out
+}
+
+func replayWarnings(annotated AnnotatedLog, entryPoint reproEntryPoint, setups []reproSetupObject) []string {
+	var warnings []string
+	if entryPoint.ClassName == "" || entryPoint.Method == "" {
+		warnings = append(warnings, "entry point could not be inferred; capture Apex Code at DEBUG or higher")
+	}
+	if len(setups) == 0 {
+		warnings = append(warnings, "no setup data could be inferred; capture Database at INFO or higher")
+	}
+	if !logContainsKind(annotated.Log.Entries, "METHOD_ENTRY") {
+		warnings = append(warnings, "log has no METHOD_ENTRY detail; capture Apex Code at FINER or FINEST for better call-stack replay")
+	}
+	return warnings
+}
+
+func logContainsKind(entries []apexlog.Entry, kind string) bool {
+	needle := "|" + kind
+	for _, entry := range entries {
+		if string(entry.Kind) == kind || strings.Contains(entry.Raw, needle) {
+			return true
+		}
+	}
+	return false
 }
 
 func inferEntryPoint(annotated AnnotatedLog) reproEntryPoint {
@@ -222,16 +319,20 @@ func firstException(annotated AnnotatedLog) *apexlog.Entry {
 }
 
 func writeSetupObject(b *strings.Builder, setup reproSetupObject) {
-	fmt.Fprintf(b, "        // %s\n", setup.Evidence)
-	fmt.Fprintf(b, "        List<%s> setup_%sRows = new List<%s>();\n", setup.ObjectName, lowerIdentifier(setup.ObjectName), setup.ObjectName)
+	writeSetupObjectWithIndent(b, setup, "        ")
+}
+
+func writeSetupObjectWithIndent(b *strings.Builder, setup reproSetupObject, indent string) {
+	fmt.Fprintf(b, "%s// %s\n", indent, setup.Evidence)
+	fmt.Fprintf(b, "%sList<%s> setup_%sRows = new List<%s>();\n", indent, setup.ObjectName, lowerIdentifier(setup.ObjectName), setup.ObjectName)
 	rows := setup.Rows
 	if rows <= 0 {
 		rows = 1
 	}
 	for i := 1; i <= rows; i++ {
-		fmt.Fprintf(b, "        setup_%sRows.add(new %s(%s));\n", lowerIdentifier(setup.ObjectName), setup.ObjectName, constructorFields(setup.ObjectName, setup.Fields, i))
+		fmt.Fprintf(b, "%ssetup_%sRows.add(new %s(%s));\n", indent, lowerIdentifier(setup.ObjectName), setup.ObjectName, constructorFields(setup.ObjectName, setup.Fields, i))
 	}
-	fmt.Fprintf(b, "        insert setup_%sRows;\n", lowerIdentifier(setup.ObjectName))
+	fmt.Fprintf(b, "%sinsert setup_%sRows;\n", indent, lowerIdentifier(setup.ObjectName))
 }
 
 func writeDMLAssertion(b *strings.Builder, d reproDML) {

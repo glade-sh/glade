@@ -12,6 +12,7 @@ export interface GladeDebugConfig {
   name: string;
   project?: string;
   dbPath?: string;
+  dryRun?: boolean;
   className?: string;
   methodName?: string;
   source: string;
@@ -52,6 +53,10 @@ export function execAnonymousArgs(source: string, projectRoot?: string, dbPath?:
   return args;
 }
 
+export function debugReplayArgs(logPath: string, projectRoot: string): string[] {
+  return ["debug", "replay", "--log", logPath, "--project", projectRoot, "--json"];
+}
+
 export function debugAnonymousConfig(project: string | undefined, source: string, dbPath?: string): GladeDebugConfig {
   const config: GladeDebugConfig = {
     type: "glade",
@@ -59,6 +64,21 @@ export function debugAnonymousConfig(project: string | undefined, source: string
     name: "Glade: Debug Anonymous Apex",
     project,
     source,
+  };
+  if (dbPath) {
+    config.dbPath = dbPath;
+  }
+  return config;
+}
+
+export function debugReplayConfig(project: string | undefined, source: string, dbPath?: string): GladeDebugConfig {
+  const config: GladeDebugConfig = {
+    type: "glade",
+    request: "launch",
+    name: "Glade: Replay Apex Log",
+    project,
+    source,
+    dryRun: true,
   };
   if (dbPath) {
     config.dbPath = dbPath;

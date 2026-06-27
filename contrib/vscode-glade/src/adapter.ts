@@ -5,6 +5,7 @@ export interface GladeDebugConfiguration extends vscode.DebugConfiguration {
   program: string;
   project?: string;
   dbPath?: string;
+  dryRun?: boolean;
   className?: string;
   methodName?: string;
 }
@@ -27,6 +28,10 @@ export function resolveGladeConfiguration(
 }
 
 export function adapterExecutable(config: GladeDebugConfiguration): vscode.DebugAdapterExecutable {
+  return new vscode.DebugAdapterExecutable("glade", debugAdapterArgs(config));
+}
+
+export function debugAdapterArgs(config: GladeDebugConfiguration): string[] {
   const args = ["dap"];
   if (config.project) {
     args.push("--project", config.project);
@@ -34,5 +39,8 @@ export function adapterExecutable(config: GladeDebugConfiguration): vscode.Debug
   if (config.dbPath) {
     args.push("--db", config.dbPath);
   }
-  return new vscode.DebugAdapterExecutable("glade", args);
+  if (config.dryRun) {
+    args.push("--dry-run");
+  }
+  return args;
 }

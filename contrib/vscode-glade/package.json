@@ -16,6 +16,7 @@
   "activationEvents": [
     "workspaceContains:**/sfdx-project.json",
     "onLanguage:apex",
+    "onLanguage:apexlog",
     "onLanguage:soql",
     "onView:glade.project",
     "onView:glade.recommendedRuns",
@@ -33,6 +34,7 @@
     "onCommand:glade.executeAnonymous",
     "onCommand:glade.debugAnonymous",
     "onCommand:glade.debugCurrentTest",
+    "onCommand:glade.replayDebugLog",
     "onCommand:glade.runLocalProof",
     "onCommand:glade.createProjectOrg",
     "onCommand:glade.startProjectOrg",
@@ -223,6 +225,11 @@
       {
         "command": "glade.debugCurrentTest",
         "title": "Glade: Debug Local Current Test"
+      },
+      {
+        "command": "glade.replayDebugLog",
+        "title": "Glade: Replay Apex Debug Log",
+        "icon": "$(debug-restart)"
       },
       {
         "command": "glade.statusQuickPick",
@@ -455,6 +462,11 @@
           "command": "glade.runSoql",
           "when": "resourceScheme == untitled && editorLangId == soql",
           "group": "navigation@1"
+        },
+        {
+          "command": "glade.replayDebugLog",
+          "when": "editorLangId == apexlog",
+          "group": "navigation@1"
         }
       ],
       "view/item/context": [
@@ -504,6 +516,18 @@
         "configuration": "./language-configuration.json"
       },
       {
+        "id": "apexlog",
+        "aliases": [
+          "Apex Log",
+          "apexlog"
+        ],
+        "extensions": [
+          ".apexlog"
+        ],
+        "firstLine": "^\\d+(?:\\.\\d+)?\\s+(?=.*\\bAPEX_CODE,)(?:[A-Z_]+,(?:ERROR|WARN|INFO|DEBUG|FINE|FINER|FINEST);?)+",
+        "configuration": "./language-configuration.json"
+      },
+      {
         "id": "soql",
         "aliases": [
           "SOQL",
@@ -516,6 +540,11 @@
       }
     ],
     "grammars": [
+      {
+        "language": "apexlog",
+        "scopeName": "source.apexlog",
+        "path": "./syntaxes/apexlog.tmLanguage.json"
+      },
       {
         "language": "soql",
         "scopeName": "source.soql",
@@ -552,6 +581,10 @@
               "dbPath": {
                 "type": "string",
                 "description": "SQLite local org path for DB-backed debug sessions."
+              },
+              "dryRun": {
+                "type": "boolean",
+                "description": "Run the debug session without saving local org DB changes."
               },
               "className": {
                 "type": "string",
@@ -629,7 +662,7 @@
     "compile": "tsc -p ./",
     "bundle": "esbuild src/extension.ts --bundle --minify --platform=node --format=cjs --target=node20 --external:vscode --outfile=out/extension.js",
     "package": "mkdir -p dist && npm run compile && npm run bundle && vsce package --allow-missing-repository --out dist/vscode-glade-${npm_package_version}.vsix",
-    "test": "npm run compile && node test/commands.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/environmentActions.test.js && node test/localOrg.test.js && node test/localOrgArgs.test.js && node test/watch.test.js && node test/statusModel.test.js && node test/package.test.js && node test/branding.test.js && node test/extensionHubRefresh.test.js && node test/startHereModel.test.js && node test/startHereState.test.js && node test/hubModel.test.js && node test/hubActions.test.js && node test/hubHtml.test.js && node test/hubController.test.js && node test/hubSalesforce.test.js && node test/pluginModules.test.js && node test/pluginController.test.js && node test/workbenchModel.test.js && node test/workbenchStore.test.js && node test/workbenchCli.test.js && node test/workbenchView.test.js && node test/sidebarViews.test.js"
+    "test": "npm run compile && node test/commands.test.js && node test/adapter.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/environmentActions.test.js && node test/localOrg.test.js && node test/localOrgArgs.test.js && node test/watch.test.js && node test/statusModel.test.js && node test/package.test.js && node test/branding.test.js && node test/extensionHubRefresh.test.js && node test/startHereModel.test.js && node test/startHereState.test.js && node test/hubModel.test.js && node test/hubActions.test.js && node test/hubHtml.test.js && node test/hubController.test.js && node test/hubSalesforce.test.js && node test/pluginModules.test.js && node test/pluginController.test.js && node test/workbenchModel.test.js && node test/workbenchStore.test.js && node test/workbenchCli.test.js && node test/workbenchView.test.js && node test/sidebarViews.test.js"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

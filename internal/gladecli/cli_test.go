@@ -3072,7 +3072,7 @@ func TestRunExec(t *testing.T) {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
 	got := stdout.String()
-	for _, want := range []string{"Glade exec", "Anonymous Apex executed", "USER_DEBUG x=2", "Limits:", "SOQL queries", "Log:", ".glade/logs/exec-", "Next:", "glade debug profile --log"} {
+	for _, want := range []string{"Glade exec", "Anonymous Apex executed", "USER_DEBUG x=2", "Limits:", "SOQL queries", "Log:", ".glade/logs/exec-", ".apexlog", "Next:", "glade debug profile --log"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("exec output missing %q:\n%s", want, got)
 		}
@@ -3236,6 +3236,22 @@ func TestRunExecWithDBDoesNotPersistOnExecutionError(t *testing.T) {
 	}
 	if got := inspect.ByObject["Account"]; got != 0 {
 		t.Fatalf("Account rows = %d, want 0; inspect=%s", got, stdout.String())
+	}
+}
+
+func TestRunDebugReplayJSON(t *testing.T) {
+	projectRoot := filepath.Join("..", "debuglog", "testdata", "project")
+	logPath := filepath.Join("..", "debuglog", "testdata", "subscriber.log")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"debug", "replay", "--log", logPath, "--project", projectRoot, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	got := stdout.String()
+	for _, want := range []string{`"command": "debug replay"`, `"source"`, "insert setup_accountRows;", "ns.TestProcessor.run();"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("replay stdout missing %q:\n%s", want, got)
+		}
 	}
 }
 

@@ -191,6 +191,7 @@ post processing:
 - `profile` converts measured log lines into the runtime profile format.
 - `explain` adds conservative source annotations for log-backed evidence.
 - `repro` emits a best-effort Apex test class from the same log evidence.
+- `replay` emits dry-run anonymous Apex for VS Code log replay.
 
 Try these command lines from a project with matching `.cls` files:
 
@@ -200,6 +201,7 @@ glade debug profile --log logs/apex-debug.log
 glade debug explain --log logs/apex-debug.log --project .
 glade debug explain --log logs/apex-debug.log --project . --json
 glade debug repro --log logs/apex-debug.log --project . > ReproTest.cls
+glade debug replay --log logs/apex-debug.log --project . --json
 ```
 
 Matching is conservative. `explain` will rank candidates by confidence and keep
@@ -209,6 +211,25 @@ text output keeps the default threshold.
 `repro` uses the same annotations, SOQL object names, equality filters, DML row
 counts, code-unit entries, and exception stack frames. It writes Apex to stdout
 so the file can enter the local test loop after review.
+
+`replay` uses the same evidence to build anonymous Apex for a dry-run local
+debug session. VS Code exposes it as `Glade: Replay Apex Debug Log` from
+`.apexlog` and `.log` editors. It can stop on normal Apex breakpoints once the
+generated setup reaches the inferred entry point.
+
+Capture enough log detail for replay:
+
+- Apex Code: DEBUG minimum; FINER or FINEST when method-entry call stack detail matters.
+- Database: INFO minimum for SOQL and DML evidence.
+- System: DEBUG when `System.debug` markers identify branches or state.
+- Apex Profiling: INFO for limits and runtime profile.
+- Callout: INFO when HTTP side effects affect the path.
+- Validation and Workflow: INFO when automation changes data shape.
+- Visualforce: INFO only for Visualforce entry points.
+- NBA, Wave, and other feature categories: NONE unless that feature is on the path.
+
+Avoid setting every category to FINEST. Oversized logs lose the trail when the
+platform truncates them.
 
 ## VS Code Tasks
 

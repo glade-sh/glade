@@ -3,10 +3,11 @@ import * as path from "path";
 import * as vscode from "vscode";
 import { adapterExecutable, GladeDebugConfiguration, resolveGladeConfiguration } from "./adapter";
 import { GladeCodeLensProvider, LocalTestTarget } from "./codeLens";
-import { debugTestConfig, editorSoqlSource } from "./commandModel";
+import { debugAnonymousSessionOptions, debugReplayArgs, debugReplayConfig, debugTestConfig, editorSoqlSource } from "./commandModel";
 import { registerGladeCommands } from "./commands";
 import { addEnvironment, clonedEnvironment, removeEnvironment, settingsValue } from "./environmentActions";
 import { environmentNameFromInput, GladeEnvironment } from "./environments";
+import { runGladeJSON } from "./gladeCli";
 import { GladeHomeController } from "./hub/controller";
 import { HubSnapshot, ProjectOrgState, SalesforceTargetState } from "./hub/model";
 import { checkSalesforceTarget } from "./hub/salesforce";
@@ -30,7 +31,7 @@ import {
 import { summaryFromInspect } from "./localOrgModel";
 import { GladeOutput } from "./output";
 import { PluginController, PluginDiagnosticEntry, pluginArtifactRows } from "./plugins/controller";
-import { PluginAvailableContexts, PluginEditorAction, PluginFindingSeverity } from "./plugins/model";
+import { isApexDebugLogEditor, isApexDebugLogPath, PluginAvailableContexts, PluginEditorAction, PluginFindingSeverity } from "./plugins/model";
 import { findProjectContext } from "./projectContext";
 import { GladeProjectContext } from "./projectModel";
 import { StartHereState } from "./startHereState";
@@ -52,6 +53,13 @@ class GladeDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
   createDebugAdapterDescriptor(session: vscode.DebugSession): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
     return adapterExecutable(session.configuration as GladeDebugConfiguration);
   }
+}
+
+interface DebugReplayEnvelope {
+  data?: {
+    source?: string;
+    warnings?: string[];
+  };
 }
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -148,11 +156,12 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(home);
 
   function pluginContexts(): PluginAvailableContexts {
-    const activeFile = vscode.window.activeTextEditor?.document.uri.fsPath;
+    const activeEditor = vscode.window.activeTextEditor;
+    const activeFile = activeEditor?.document.uri.fsPath;
     return {
       project: currentProject !== undefined,
       activeApexFile: activeFile ? /\.(cls|trigger)$/i.test(activeFile) : false,
-      activeDebugLog: activeFile ? /\.log$/i.test(activeFile) : false,
+      activeDebugLog: isApexDebugLogEditor(activeFile, activeEditor?.document.languageId),
       activeDataEnvironment: currentProject !== undefined,
       lastLocalRun: startHereState.snapshot().lastRun !== undefined,
     };
@@ -303,6 +312,50 @@ export function activate(context: vscode.ExtensionContext): void {
     await runWorkbenchCommand(() => workbench.runSoqlText(query));
   }
 
+  async function replayDebugLog(uri?: vscode.Uri): Promise<void> {
+    const logPath = uri?.fsPath || vscode.window.activeTextEditor?.document.uri.fsPath;
+    if (!logPath || !isApexDebugLogPath(logPath)) {
+      void vscode.window.showInformationMessage("Open an Apex debug log to replay.");
+      return;
+    }
+    const project = await findProjectContext();
+    if (!project) {
+      void vscode.window.showErrorMessage("Glade replay requires a Salesforce DX project.");
+      return;
+    }
+    const environment = configuredActiveEnvironment(project);
+    const args = debugReplayArgs(logPath, project.projectRoot);
+    output.logs.appendLine(`$ ${terminalCommand(["glade", ...args])}`);
+    let replay: DebugReplayEnvelope;
+    try {
+      replay = await runGladeJSON<DebugReplayEnvelope>(args, { cwd: project.projectRoot }, "glade debug replay");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      output.logs.appendLine(message);
+      void vscode.window.showErrorMessage(`Glade replay failed: ${message}`, "Show Output")
+        .then((picked) => {
+          if (picked === "Show Output") {
+            output.logs.show(true);
+          }
+        });
+      return;
+    }
+    const source = replay.data?.source?.trim();
+    if (!source) {
+      void vscode.window.showErrorMessage("Glade replay did not return Apex source.");
+      return;
+    }
+    for (const warning of replay.data?.warnings || []) {
+      output.logs.appendLine(`Replay warning: ${warning}`);
+    }
+    const folder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(project.projectRoot));
+    await vscode.debug.startDebugging(
+      folder,
+      debugReplayConfig(project.projectRoot, source, environment.dbPath),
+      debugAnonymousSessionOptions(),
+    );
+  }
+
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider("glade.project", startHereView),
     vscode.window.registerTreeDataProvider("glade.recommendedRuns", runsView),
@@ -378,6 +431,9 @@ export function activate(context: vscode.ExtensionContext): void {
       await runWorkbenchCommand(() => workbench.describe(objectName));
     }),
     vscode.commands.registerCommand("glade.workbench.openResult", () => workbench.openLastResult()),
+    vscode.commands.registerCommand("glade.replayDebugLog", async (uri?: vscode.Uri) => {
+      await replayDebugLog(uri);
+    }),
     vscode.commands.registerCommand("glade.runChangedTests", () => tests.runChanged()),
     vscode.commands.registerCommand("glade.runFailedTests", () => tests.runFailed()),
     vscode.commands.registerCommand("glade.runLocalProof", async () => {
