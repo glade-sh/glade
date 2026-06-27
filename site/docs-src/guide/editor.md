@@ -33,6 +33,11 @@ Test Explorer controller, and CodeLens labels that include `Local`. It does not
 take over org-backed commands, scratch-org tests, CodeLens, replay debugging, or
 language-server ownership.
 
+The Command Palette also includes `Glade: Open TUI`, `Glade: Open Tests TUI`,
+`Glade: Open Data TUI`, and `Glade: Open Plugins TUI`. Each command opens a
+terminal and runs `glade tui` for the current project. The data TUI uses the
+active local data environment.
+
 ## Daily Local Apex Loop
 
 Open the Glade Activity Bar and start in **Start Here**.

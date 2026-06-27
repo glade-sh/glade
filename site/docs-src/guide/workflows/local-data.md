@@ -47,6 +47,15 @@ Inspect the database:
 glade db inspect --db .glade/refinement-local.sqlite --json
 ```
 
+Open the data board when you want inspect, query, seed, reset, and export in
+one terminal surface:
+
+```bash
+glade db --ui --db .glade/refinement-local.sqlite --project .
+```
+
+In VS Code, use `Glade: Open Data TUI` for the active local data environment.
+
 ## Expected output
 
 The org commands create and start a local target. `sf data query` returns local

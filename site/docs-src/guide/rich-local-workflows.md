@@ -18,6 +18,24 @@ Use `--progress-json` when an editor or wrapper wants NDJSON progress events.
 Use `--no-progress` for silent scripts. Commands that already had `--quiet`
 keep it as an alias.
 
+## Terminal UI
+
+Use `glade tui` when you want one terminal surface for common local work. It
+opens boards for project checks, local tests, persistent data, and plugins.
+
+```bash
+glade tui --project .
+glade tui --project . --view tests
+glade tui --project . --db .glade/org.sqlite --view data
+```
+
+The test and data commands can open the same boards:
+
+```bash
+glade test --ui --project .
+glade db --ui --db .glade/org.sqlite --project .
+```
+
 ## DB seed wizard
 
 Use the wizard when you know the fixture and database path, but want the full

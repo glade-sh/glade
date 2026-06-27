@@ -30,6 +30,11 @@ language features, or scratch-org test runs. Glade surfaces use `Glade: ...`
 command titles, `glade.*` command ids, a separate `Glade Apex` Test Explorer
 controller, and CodeLens labels that include `Local`.
 
+The Command Palette also exposes `Glade: Open TUI`, `Glade: Open Tests TUI`,
+`Glade: Open Data TUI`, and `Glade: Open Plugins TUI`. These commands open a
+terminal and run `glade tui` against the current project. The data TUI uses the
+active local data environment.
+
 The sidebar shows:
 
 - Start Here: SFDX root, active local data environment, local DB state, watch
