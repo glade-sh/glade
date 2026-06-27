@@ -13,7 +13,7 @@ type ActionContext struct {
 	ProjectRoot string
 	DBPath      string
 	Query       string
-	Fixture    string
+	Fixture     string
 }
 
 type Action struct {

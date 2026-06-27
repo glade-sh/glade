@@ -341,6 +341,20 @@ var commandReferences = []CommandHelp{
 		Examples: []string{"glade test serve --project .", "glade test --project . --class RefinementServiceTest", "glade test --project . --class RefinementServiceTest --method testRefinesFileRow", "glade test --project . --class-file tests.txt"},
 	},
 	{
+		Name:        "tui",
+		Description: "Open the terminal UI for project, test, data, and plugin workflows.",
+		Usage:       []string{"glade tui [--project <root>] [--db <path>] [--view <project|tests|data|plugins>]"},
+		Flags: []FlagHelp{
+			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
+			{Name: "--db", Value: "<path>", Description: "SQLite local org path for DB actions."},
+			{Name: "--view", Value: "<name>", Description: "Initial board: project, tests, data, or plugins."},
+			{Name: "--query", Value: "<soql>", Description: "Default SOQL for the data query action."},
+			{Name: "--fixture", Value: "<path>", Description: "Default fixture path for the data seed action."},
+			{Name: "--no-ui", Description: "Validate options and print the selected TUI target without launching."},
+		},
+		Examples: []string{"glade tui --project .", "glade tui --project . --view tests", "glade tui --project . --db .glade/orgs/dev.sqlite --view data"},
+	},
+	{
 		Name:        "dev",
 		Description: "Run the human-focused local development cockpit.",
 		Usage:       []string{"glade dev [--project <root>]", "glade dev test [--project <root>] [--class <name>|--test <Class.method>|--changed|--failed] [--out <runs-dir>]", "glade dev watch [--project <root>] [--out <runs-dir>]", "glade dev vf [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]", "glade dev lwc [--project <root>] [--port <port>|--addr <host:port>] [--ready-file <path>]"},

@@ -1091,6 +1091,23 @@ func TestPluginsHelpShowsAvailable(t *testing.T) {
 	}
 }
 
+func TestRunTUIValidateNoUI(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"tui", "--project", ".", "--view", "tests", "--no-ui"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("tui exit=%d stderr=%s", code, stderr.String())
+	}
+	for _, want := range []string{
+		"Glade TUI",
+		"project: .",
+		"view: tests",
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("tui dry run missing %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
 func TestCodeIntelligenceHelpListsProductCommands(t *testing.T) {
 	tests := []struct {
 		name string
@@ -1312,6 +1329,11 @@ func TestRunCommandHelp(t *testing.T) {
 			name: "help test",
 			args: []string{"help", "test"},
 			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "--no-cache", "--connect", "--daemon"},
+		},
+		{
+			name: "help tui",
+			args: []string{"help", "tui"},
+			want: []string{"Usage:", "glade tui [--project <root>] [--db <path>] [--view <project|tests|data|plugins>]", "--no-ui", "glade tui --project . --view tests"},
 		},
 		{
 			name: "help dev",
