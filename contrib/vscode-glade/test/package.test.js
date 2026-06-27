@@ -84,6 +84,10 @@ for (const command of [
 	  "glade.apexLog.replayFromFrame",
 	  "glade.schemaImportDescribe",
   "glade.salesforceTargetStatus",
+  "glade.openTui",
+  "glade.openTestsTui",
+  "glade.openDataTui",
+  "glade.openPluginsTui",
 ]) {
   assert(activationEvents.includes(`onCommand:${command}`), `${command} must activate the extension`);
 }
@@ -120,6 +124,10 @@ const visibleCommandAllowlist = [
   "glade.workbench.newAnonymousApex",
   "glade.workbench.newSoql",
   "glade.managePlugins",
+  "glade.openTui",
+  "glade.openTestsTui",
+  "glade.openDataTui",
+  "glade.openPluginsTui",
 ];
 assert.strictEqual(hiddenCommands.size, commandPalette.length, "command palette hidden entries must not repeat commands");
 for (const entry of commandPalette) {
@@ -153,6 +161,10 @@ for (const command of [
 	  "glade.apexLog.treatAsApexLog",
 	  "glade.apexLog.replayFromFrame",
 	  "glade.refreshPlugins",
+  "glade.openTui",
+  "glade.openTestsTui",
+  "glade.openDataTui",
+  "glade.openPluginsTui",
   "glade.managePlugins",
   "glade.runPluginAction",
   "glade.linkLocalPlugin",
@@ -193,6 +205,12 @@ assert.strictEqual(soqlScratchCommand.title, "Glade: Open SOQL Scratch");
 const soqlRunCommand = manifest.contributes.commands.find((entry) => entry.command === "glade.runSoql");
 assert(soqlRunCommand, "SOQL run command must be contributed");
 assert.strictEqual(soqlRunCommand.title, "Glade: Run Local SOQL");
+
+const tuiCommands = new Map(manifest.contributes.commands.map((entry) => [entry.command, entry.title]));
+assert.strictEqual(tuiCommands.get("glade.openTui"), "Glade: Open TUI");
+assert.strictEqual(tuiCommands.get("glade.openTestsTui"), "Glade: Open Tests TUI");
+assert.strictEqual(tuiCommands.get("glade.openDataTui"), "Glade: Open Data TUI");
+assert.strictEqual(tuiCommands.get("glade.openPluginsTui"), "Glade: Open Plugins TUI");
 
 const languages = manifest.contributes.languages || [];
 assert(

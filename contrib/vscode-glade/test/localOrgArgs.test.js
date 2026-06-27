@@ -37,6 +37,21 @@ assert.deepStrictEqual(
 );
 
 assert.deepStrictEqual(
+  localOrg.tuiArgs({ projectRoot: "/repo" }, "project"),
+  ["tui", "--project", "/repo", "--view", "project"],
+);
+
+assert.deepStrictEqual(
+  localOrg.tuiArgs({ projectRoot: "/repo" }, "tests"),
+  ["tui", "--project", "/repo", "--view", "tests"],
+);
+
+assert.deepStrictEqual(
+  localOrg.tuiArgs({ projectRoot: "/repo" }, "data", "/repo/.glade/envs/dev.sqlite"),
+  ["tui", "--project", "/repo", "--view", "data", "--db", "/repo/.glade/envs/dev.sqlite"],
+);
+
+assert.deepStrictEqual(
   localOrg.projectOrgStateFromStatus({
     alias: "my-glade-org",
     status: "running",

@@ -39,6 +39,23 @@ assert(startProjectOrg.includes("sendGladeTerminal"), "start project org must se
 assert(startProjectOrg.includes("project.projectRoot"), "start project org terminal must run from the project root");
 assert(startProjectOrg.includes("projectOrg ="), "start project org must update Home org state");
 
+const openTui = commandBlock("glade.openTui", "glade.openTestsTui");
+assert(openTui.includes("tuiArgs(project, \"project\")"), "open TUI must launch the project board");
+assert(openTui.includes("sendGladeTerminal"), "open TUI must send a glade tui command to a terminal");
+
+const openTestsTui = commandBlock("glade.openTestsTui", "glade.openDataTui");
+assert(openTestsTui.includes("tuiArgs(project, \"tests\")"), "open tests TUI must launch the tests board");
+assert(openTestsTui.includes("sendGladeTerminal"), "open tests TUI must send a glade tui command to a terminal");
+
+const openDataTui = commandBlock("glade.openDataTui", "glade.openPluginsTui");
+assert(openDataTui.includes("configuredActiveEnvironment"), "open data TUI must use the active data environment");
+assert(openDataTui.includes("tuiArgs(project, \"data\", environment.dbPath)"), "open data TUI must launch the data board with a DB");
+assert(openDataTui.includes("sendLocalOrgTerminal"), "open data TUI must use the local data terminal");
+
+const openPluginsTui = commandBlock("glade.openPluginsTui", "glade.runPluginAction");
+assert(openPluginsTui.includes("tuiArgs(project, \"plugins\")"), "open plugins TUI must launch the plugins board");
+assert(openPluginsTui.includes("sendGladeTerminal"), "open plugins TUI must send a glade tui command to a terminal");
+
 const stopProjectOrg = commandBlock("glade.stopProjectOrg", "glade.projectOrgStatus");
 assert(stopProjectOrg.includes("dispose();"), "stop project org must close the terminal started by the extension");
 assert(stopProjectOrg.includes("projectOrg ="), "stop project org must update Home org state");
