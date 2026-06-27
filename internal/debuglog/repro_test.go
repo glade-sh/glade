@@ -73,6 +73,37 @@ func TestSynthesizeReplayBuildsAnonymousSetupAndCall(t *testing.T) {
 	}
 }
 
+func TestSynthesizeReplayUsesExecuteAnonymousSource(t *testing.T) {
+	index := mustLoadDebugIndex(t, filepath.Join("testdata", "project"))
+	log := mustReadApexLog(t, filepath.Join("..", "apexlog", "testdata", "anonymous.log"))
+	annotated, err := Annotate(log, index, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	plan, err := SynthesizeReplay(annotated, 0.5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"System.debug(\n    TestProcessor.run()\n);",
+		"Replay uses the Execute Anonymous source captured in the log.",
+	} {
+		if !strings.Contains(plan.Source, want) {
+			t.Fatalf("source missing %q:\n%s", want, plan.Source)
+		}
+	}
+	if strings.Contains(plan.Source, "insert setup_accountRows") {
+		t.Fatalf("execute anonymous replay should not run inferred setup inserts first:\n%s", plan.Source)
+	}
+	if plan.EntryPoint.ClassName != "TestProcessor" || plan.EntryPoint.Method != "run" {
+		t.Fatalf("entry point = %#v, want TestProcessor.run", plan.EntryPoint)
+	}
+	if len(plan.SetupObjects) == 0 || plan.SetupObjects[0].ObjectName != "Account" {
+		t.Fatalf("setup evidence = %#v, want Account evidence", plan.SetupObjects)
+	}
+}
+
 func TestSynthesizeTestWrapsLoggedException(t *testing.T) {
 	index := mustLoadDebugIndex(t, filepath.Join("testdata", "project"))
 	log := mustReadApexLog(t, filepath.Join("..", "apexlog", "testdata", "exception.log"))

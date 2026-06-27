@@ -58,6 +58,7 @@ func SynthesizeReplay(annotated AnnotatedLog, minConfidence float64) (ReplayPlan
 	}
 	entryPoint := inferEntryPoint(annotated)
 	setups := inferSetupObjects(annotated)
+	anonymousSource := strings.TrimSpace(annotated.Log.AnonymousApex)
 	warnings := replayWarnings(annotated, entryPoint, setups)
 
 	var b strings.Builder
@@ -66,14 +67,22 @@ func SynthesizeReplay(annotated AnnotatedLog, minConfidence float64) (ReplayPlan
 	for _, warning := range warnings {
 		fmt.Fprintf(&b, "// Warning: %s\n", warning)
 	}
-	if len(setups) > 0 {
+	if anonymousSource != "" {
+		fmt.Fprintf(&b, "// Replay uses the Execute Anonymous source captured in the log.\n")
+		if len(setups) > 0 {
+			fmt.Fprintf(&b, "// Setup evidence is reported in JSON but not executed because query-derived rows can be incomplete.\n")
+		}
+		fmt.Fprintf(&b, "\n%s\n", anonymousSource)
+	} else if len(setups) > 0 {
 		fmt.Fprintf(&b, "\n")
 		for _, setup := range setups {
 			writeSetupObjectWithIndent(&b, setup, "")
 		}
+		fmt.Fprintf(&b, "\n")
 	}
-	fmt.Fprintf(&b, "\n")
-	if entryPoint.ClassName == "" || entryPoint.Method == "" {
+	if anonymousSource != "" {
+		// The captured anonymous body is the entry point.
+	} else if entryPoint.ClassName == "" || entryPoint.Method == "" {
 		fmt.Fprintf(&b, "// Fill in the entry point. The log did not include CODE_UNIT_STARTED or stack frames.\n")
 		fmt.Fprintf(&b, "System.assert(true);\n")
 	} else {
@@ -221,7 +230,31 @@ func inferEntryPoint(annotated AnnotatedLog) reproEntryPoint {
 		frame := entry.Data.StackFrames[0]
 		return reproEntryPoint{Namespace: frame.Namespace, ClassName: frame.Class, Method: frame.Method}
 	}
+	for _, entry := range annotated.Log.Entries {
+		ns, typ, method := parseMethodEntrySymbol(entry.Raw)
+		if typ != "" && method != "" {
+			if strings.EqualFold(typ, method) {
+				continue
+			}
+			return reproEntryPoint{Namespace: ns, ClassName: typ, Method: method}
+		}
+	}
 	return reproEntryPoint{}
+}
+
+func parseMethodEntrySymbol(raw string) (namespace, typeName, methodName string) {
+	if !strings.Contains(raw, "|METHOD_ENTRY|") {
+		return "", "", ""
+	}
+	parts := strings.Split(raw, "|")
+	if len(parts) < 4 {
+		return "", "", ""
+	}
+	symbol := strings.TrimSpace(parts[len(parts)-1])
+	if open := strings.Index(symbol, "("); open >= 0 {
+		symbol = strings.TrimSpace(symbol[:open])
+	}
+	return parseCodeUnitSymbol(symbol)
 }
 
 func reproClassName(entry reproEntryPoint) string {

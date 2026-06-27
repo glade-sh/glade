@@ -34,6 +34,14 @@ func TestParseSOQLQueryContainingPipe(t *testing.T) {
 	}
 }
 
+func TestParseExecuteAnonymousSource(t *testing.T) {
+	log := mustReadLog(t, "anonymous.log")
+	want := "System.debug(\n    TestProcessor.run()\n);"
+	if log.AnonymousApex != want {
+		t.Fatalf("anonymous apex = %q, want %q", log.AnonymousApex, want)
+	}
+}
+
 func TestParseExceptionStackFrames(t *testing.T) {
 	log := mustReadLog(t, "exception.log")
 	entry := findEntry(log, EntryExceptionThrown)

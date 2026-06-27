@@ -1,10 +1,11 @@
 package apexlog
 
 type Log struct {
-	APIVersion string       `json:"apiVersion,omitempty"`
-	Header     string       `json:"header,omitempty"`
-	Entries    []Entry      `json:"entries"`
-	Limits     []LimitUsage `json:"limits,omitempty"`
+	APIVersion    string       `json:"apiVersion,omitempty"`
+	Header        string       `json:"header,omitempty"`
+	AnonymousApex string       `json:"anonymousApex,omitempty"`
+	Entries       []Entry      `json:"entries"`
+	Limits        []LimitUsage `json:"limits,omitempty"`
 }
 
 type Entry struct {

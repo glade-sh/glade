@@ -17,6 +17,7 @@ func Parse(r io.Reader) (Log, error) {
 	var limitNamespace string
 	lastExceptionIndex := -1
 	headerSeen := false
+	var anonymousLines []string
 
 	for {
 		rawLine, readErr := reader.ReadString('\n')
@@ -42,6 +43,11 @@ func Parse(r io.Reader) (Log, error) {
 			if !strings.HasSuffix(line, "\n") {
 				// continue
 			}
+			goto consume
+		}
+
+		if source, ok := parseExecuteAnonymousLine(line); ok {
+			anonymousLines = append(anonymousLines, source)
 			goto consume
 		}
 
@@ -94,6 +100,10 @@ func Parse(r io.Reader) (Log, error) {
 		}
 	}
 
+	if len(anonymousLines) > 0 {
+		log.AnonymousApex = strings.TrimRight(strings.Join(anonymousLines, "\n"), "\n")
+	}
+
 	return log, nil
 }
 
@@ -106,6 +116,18 @@ func isHeaderLine(line string) bool {
 		return false
 	}
 	return strings.Contains(line, ",") || strings.Contains(line, ";")
+}
+
+func parseExecuteAnonymousLine(line string) (string, bool) {
+	const prefix = "Execute Anonymous:"
+	if !strings.HasPrefix(line, prefix) {
+		return "", false
+	}
+	source := strings.TrimPrefix(line, prefix)
+	if strings.HasPrefix(source, " ") {
+		source = strings.TrimPrefix(source, " ")
+	}
+	return source, true
 }
 
 func parseEventLine(raw string, lineNum int) (Entry, bool) {
