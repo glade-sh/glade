@@ -50,6 +50,49 @@ func runTUI(ctx context.Context, args []string, stdout io.Writer, _ io.Writer) e
 	return tui.Run(opts)
 }
 
+func runTUIView(ctx context.Context, args []string, board tui.Board, stdout io.Writer, stderr io.Writer) error {
+	parsed, err := flagparse.New("glade tui alias").
+		Bool("ui", "").
+		String("project", "p").
+		String("db", "").
+		String("query", "").
+		String("fixture", "").
+		Bool("no-ui", "").
+		Parse(args)
+	if err != nil {
+		return err
+	}
+	if !parsed.Bool("ui") {
+		return fmt.Errorf("missing --ui")
+	}
+	tuiArgs := []string{"--view", string(board)}
+	if parsed.String("project") != "" {
+		tuiArgs = append(tuiArgs, "--project", parsed.String("project"))
+	}
+	if parsed.String("db") != "" {
+		tuiArgs = append(tuiArgs, "--db", parsed.String("db"))
+	}
+	if parsed.String("query") != "" {
+		tuiArgs = append(tuiArgs, "--query", parsed.String("query"))
+	}
+	if parsed.String("fixture") != "" {
+		tuiArgs = append(tuiArgs, "--fixture", parsed.String("fixture"))
+	}
+	if parsed.Bool("no-ui") {
+		tuiArgs = append(tuiArgs, "--no-ui")
+	}
+	return runTUI(ctx, tuiArgs, stdout, stderr)
+}
+
+func hasUIFlag(args []string) bool {
+	for _, arg := range args {
+		if arg == "--ui" {
+			return true
+		}
+	}
+	return false
+}
+
 func writeTUIDryRun(w io.Writer, opts tui.AppOptions) error {
 	if _, err := fmt.Fprintln(w, "Glade TUI"); err != nil {
 		return err

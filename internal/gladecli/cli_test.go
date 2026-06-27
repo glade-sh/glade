@@ -1108,6 +1108,42 @@ func TestRunTUIValidateNoUI(t *testing.T) {
 	}
 }
 
+func TestRunTestUIAliasValidateNoUI(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--ui", "--project", ".", "--no-ui"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("test ui exit=%d stderr=%s", code, stderr.String())
+	}
+	for _, want := range []string{
+		"Glade TUI",
+		"project: .",
+		"view: tests",
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("test ui dry run missing %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
+func TestRunDBUIAliasValidateNoUI(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "glade.db")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "--ui", "--db", dbPath, "--project", ".", "--no-ui"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("db ui exit=%d stderr=%s", code, stderr.String())
+	}
+	for _, want := range []string{
+		"Glade TUI",
+		"project: .",
+		"db: " + dbPath,
+		"view: data",
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("db ui dry run missing %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
 func TestCodeIntelligenceHelpListsProductCommands(t *testing.T) {
 	tests := []struct {
 		name string
@@ -1328,7 +1364,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "help test",
 			args: []string{"help", "test"},
-			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "--no-cache", "--connect", "--daemon"},
+			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "--no-cache", "--connect", "--daemon", "--ui"},
 		},
 		{
 			name: "help tui",
@@ -1343,7 +1379,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "help db",
 			args: []string{"help", "db"},
-			want: []string{"Usage:", "glade db query --db <path> --project <root> --json [--limit <n>] [--query-all] <soql>", "glade db describe --db <path> --project <root> --json [ObjectName]", "--limit <n>", "--query-all", "glade db query --db .glade/refinement-local.sqlite --project . --json \"SELECT Id, Name FROM FileRow__c\""},
+			want: []string{"Usage:", "glade db --ui --db <path> [--project <root>]", "glade db query --db <path> --project <root> --json [--limit <n>] [--query-all] <soql>", "glade db describe --db <path> --project <root> --json [ObjectName]", "--limit <n>", "--query-all", "--ui", "glade db query --db .glade/refinement-local.sqlite --project . --json \"SELECT Id, Name FROM FileRow__c\""},
 		},
 		{
 			name: "help profile",

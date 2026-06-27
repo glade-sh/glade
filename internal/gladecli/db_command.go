@@ -22,12 +22,16 @@ import (
 	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/trace"
+	"github.com/glade-sh/glade/internal/tui"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
 func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
+	}
+	if hasUIFlag(args) {
+		return runTUIView(ctx, args, tui.BoardData, w, progressW)
 	}
 	if len(args) == 0 {
 		return errors.New("usage: glade db seed|reset|export|inspect|query|describe --db <path> [--project <root>] [--json] [fixture.json]")

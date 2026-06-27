@@ -314,6 +314,7 @@ var commandReferences = []CommandHelp{
 			{Name: "--no-serve", Description: "Do not auto-connect to a running test server."},
 			{Name: "--no-cache", Description: "Skip the on-disk startup cache."},
 			{Name: "--last-failed", Description: "Rerun tests that failed in the last completed run."},
+			{Name: "--ui", Description: "Open the TUI on the test board."},
 			{Name: "--wizard", Description: "Print daily test loop command suggestions."},
 			{Name: "--daemon", Description: "Keep index warm in process for watch loops."},
 			{Name: "--json", Description: "Write JSON test results."},
@@ -625,6 +626,7 @@ var commandReferences = []CommandHelp{
 		Name:        "db",
 		Description: "Seed, reset, export, inspect, query, and describe a persistent local database.",
 		Usage: []string{
+			"glade db --ui --db <path> [--project <root>]",
 			"glade db seed --db <path> [--project <root>] [--json] [--progress|--progress-json|--no-progress] <fixture.json>",
 			"glade db seed --wizard --db <path> [--project <root>] <fixture.json>",
 			"glade db reset --db <path> [--project <root>] [--json]",
@@ -644,6 +646,7 @@ var commandReferences = []CommandHelp{
 		Flags: []FlagHelp{
 			{Name: "--db", Value: "<path>", Description: "Persistent local database path."},
 			{Name: "--project", Value: "<root>", Description: "Project root for schema bootstrap."},
+			{Name: "--ui", Description: "Open the TUI on the data board."},
 			{Name: "--json", Description: "Write structured JSON output."},
 			{Name: "--wizard", Description: "Print a seed and inspect command pair."},
 			{Name: "--limit", Value: "<n>", Description: "Limit glade db query rows."},
@@ -1085,6 +1088,7 @@ Common flags:
   --no-serve                Do not auto-connect to a running test server.
   --no-cache                Skip the on-disk startup cache for this run.
   --last-failed             Rerun tests that failed in the last completed run.
+  --ui                      Open the TUI on the test board.
   --wizard                  Print daily test loop command suggestions.
   --daemon                  Keep index warm in-process for --watch loops.
   --json                    Write JSON test results.
