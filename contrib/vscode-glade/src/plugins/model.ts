@@ -73,6 +73,17 @@ export type EditorAction = PluginEditorAction;
 export type PluginAvailableContexts = Partial<Record<PluginActionContext, boolean>>;
 export type AvailableActionContexts = PluginAvailableContexts;
 
+export function isApexDebugLogPath(filePath: string | undefined): boolean {
+  return filePath ? /\.(?:apexlog|log)$/i.test(filePath) : false;
+}
+
+export function isApexDebugLogEditor(filePath: string | undefined, languageId: string | undefined): boolean {
+  if (languageId === "apexlog") {
+    return true;
+  }
+  return filePath ? /\.apexlog$/i.test(filePath) : false;
+}
+
 export interface PluginActionResolutionValues {
   projectRoot?: string;
   workspaceFolder?: string;

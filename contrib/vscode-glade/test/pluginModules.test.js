@@ -51,6 +51,12 @@ assert(model.supportedActionContexts.includes("lastLocalRun"));
 assert(!model.supportedActionViews.includes("preview"));
 assert(!model.supportedActionContexts.includes("lwcServerRunning"));
 assert(!model.supportedActionContexts.includes("vfServerRunning"));
+assert.strictEqual(model.isApexDebugLogPath("/repo/.glade/logs/exec-20260627T120000Z.apexlog"), true);
+assert.strictEqual(model.isApexDebugLogPath("/repo/.glade/logs/legacy.log"), true);
+assert.strictEqual(model.isApexDebugLogPath("/repo/.glade/logs/plain.txt"), false);
+assert.strictEqual(model.isApexDebugLogEditor("/repo/.glade/logs/exec-20260627T120000Z.apexlog", "plaintext"), true);
+assert.strictEqual(model.isApexDebugLogEditor("/repo/.glade/logs/legacy.log", "apexlog"), true);
+assert.strictEqual(model.isApexDebugLogEditor("/repo/.glade/logs/plain.log", "plaintext"), false);
 
 assert.deepStrictEqual(cli.pluginsListArgs(), ["plugins", "list", "--json"]);
 assert.deepStrictEqual(cli.pluginsDoctorArgs(), ["plugins", "doctor", "--json"]);

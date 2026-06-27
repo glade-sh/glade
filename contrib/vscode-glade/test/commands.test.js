@@ -29,6 +29,24 @@ assert.deepStrictEqual(
 );
 
 assert.deepStrictEqual(
+  commands.debugReplayConfig('/tmp/project', 'insert new Account();\nInvoiceService.run();', '/tmp/project/.glade/envs/dev.sqlite'),
+  {
+    type: 'glade',
+    request: 'launch',
+    name: 'Glade: Replay Apex Log',
+    project: '/tmp/project',
+    dbPath: '/tmp/project/.glade/envs/dev.sqlite',
+    source: 'insert new Account();\nInvoiceService.run();',
+    dryRun: true,
+  }
+);
+
+assert.deepStrictEqual(
+  commands.debugReplayArgs('/tmp/replay.apexlog', '/tmp/project'),
+  ['debug', 'replay', '--log', '/tmp/replay.apexlog', '--project', '/tmp/project', '--json']
+);
+
+assert.deepStrictEqual(
   commands.debugAnonymousSessionOptions(),
   { suppressSaveBeforeStart: true },
 );

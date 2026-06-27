@@ -1,0 +1,137 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Apex Log",
+  "scopeName": "source.apexlog",
+  "patterns": [
+    {
+      "include": "#header"
+    },
+    {
+      "include": "#timestamp"
+    },
+    {
+      "include": "#events"
+    },
+    {
+      "include": "#limits"
+    },
+    {
+      "include": "#soql"
+    },
+    {
+      "include": "#messages"
+    },
+    {
+      "include": "#errors"
+    }
+  ],
+  "repository": {
+    "header": {
+      "patterns": [
+        {
+          "name": "constant.numeric.version.apexlog",
+          "match": "^\\d+(?:\\.\\d+)?\\b"
+        },
+        {
+          "name": "support.constant.log-category.apexlog",
+          "match": "\\b(?:APEX_CODE|APEX_PROFILING|CALLOUT|DB|SYSTEM|VALIDATION|WORKFLOW),(?:ERROR|WARN|INFO|DEBUG|FINE|FINER|FINEST)\\b"
+        }
+      ]
+    },
+    "timestamp": {
+      "patterns": [
+        {
+          "name": "constant.numeric.timestamp.apexlog",
+          "match": "^\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\s+\\(\\d+\\)"
+        },
+        {
+          "name": "constant.numeric.line.apexlog",
+          "match": "\\[\\d+\\]"
+        }
+      ]
+    },
+    "events": {
+      "patterns": [
+        {
+          "name": "keyword.control.lifecycle.apexlog",
+          "match": "\\b(?:EXECUTION_STARTED|EXECUTION_FINISHED|CODE_UNIT_STARTED|CODE_UNIT_FINISHED|METHOD_ENTRY|METHOD_EXIT|CONSTRUCTOR_ENTRY|CONSTRUCTOR_EXIT|SYSTEM_METHOD_ENTRY|SYSTEM_METHOD_EXIT)\\b"
+        },
+        {
+          "name": "entity.name.tag.debug.apexlog",
+          "match": "\\bUSER_DEBUG\\b"
+        },
+        {
+          "name": "keyword.other.dml.apexlog",
+          "match": "\\b(?:DML_BEGIN|DML_END|DML_ROWS|WF_RULE_EVAL_BEGIN|WF_RULE_EVAL_END|VALIDATION_RULE)\\b"
+        },
+        {
+          "name": "keyword.other.query.apexlog",
+          "match": "\\b(?:SOQL_EXECUTE_BEGIN|SOQL_EXECUTE_END|SOSL_EXECUTE_BEGIN|SOSL_EXECUTE_END)\\b"
+        },
+        {
+          "name": "support.type.event.apexlog",
+          "match": "\\|[A-Z][A-Z0-9_]+(?=\\||$)"
+        }
+      ]
+    },
+    "limits": {
+      "patterns": [
+        {
+          "name": "keyword.control.limits.apexlog",
+          "match": "\\b(?:CUMULATIVE_LIMIT_USAGE|CUMULATIVE_LIMIT_USAGE_END|LIMIT_USAGE_FOR_NS)\\b"
+        },
+        {
+          "name": "support.constant.limit-name.apexlog",
+          "match": "^\\s*(?:Number of SOQL queries|Number of query rows|Number of SOSL queries|Number of DML statements|Number of DML rows|Maximum CPU time|Maximum heap size|Number of callouts|Number of Email Invocations|Number of future calls|Number of queueable jobs added to the queue):"
+        },
+        {
+          "name": "constant.numeric.limit.apexlog",
+          "match": "\\b\\d+\\b(?=\\s+(?:out of|/)|$)"
+        }
+      ]
+    },
+    "soql": {
+      "patterns": [
+        {
+          "name": "keyword.control.soql.apexlog",
+          "match": "\\b(?i:SELECT|FROM|WHERE|ORDER\\s+BY|GROUP\\s+BY|HAVING|LIMIT|OFFSET|AND|OR|NOT|IN|LIKE|ASC|DESC|NULLS\\s+FIRST|NULLS\\s+LAST)\\b"
+        },
+        {
+          "name": "string.quoted.single.apexlog",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.apexlog",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "messages": {
+      "patterns": [
+        {
+          "name": "constant.language.level.apexlog",
+          "match": "\\b(?:ERROR|WARN|INFO|DEBUG|FINE|FINER|FINEST)\\b"
+        },
+        {
+          "name": "variable.other.field.apexlog",
+          "match": "\\b(?:Op|Type|Rows|Aggregations):[^|]+"
+        }
+      ]
+    },
+    "errors": {
+      "patterns": [
+        {
+          "name": "invalid.illegal.fatal.apexlog",
+          "match": "\\b(?:FATAL_ERROR|EXCEPTION_THROWN)\\b"
+        },
+        {
+          "name": "support.type.exception.apexlog",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*(?:Exception|Error)\\b"
+        }
+      ]
+    }
+  }
+}

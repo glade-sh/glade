@@ -241,21 +241,27 @@ var commandReferences = []CommandHelp{
 	{
 		Name:        "debug",
 		Description: "Parse, profile, explain, and synthesize from Salesforce debug logs.",
-		Usage:       []string{"glade debug parse --log <path> [--json]", "glade debug profile --log <path> [--json] [--format text|markdown]", "glade debug explain --log <path> [--project <root>] [--min-confidence <n>] [--json]", "glade debug repro --log <path> [--project <root>] [--min-confidence <n>]"},
+		Usage:       []string{"glade debug parse --log <path> [--json]", "glade debug profile --log <path> [--json] [--format text|markdown]", "glade debug explain --log <path> [--project <root>] [--min-confidence <n>] [--json]", "glade debug repro --log <path> [--project <root>] [--min-confidence <n>]", "glade debug replay --log <path> [--project <root>] [--min-confidence <n>] [--json]"},
 		Subcommands: []SubcommandHelp{
 			{Name: "parse", Description: "Parse a Salesforce debug log."},
 			{Name: "profile", Description: "Profile a parsed debug log."},
 			{Name: "explain", Description: "Annotate log frames with project symbols."},
 			{Name: "repro", Description: "Synthesize a local test from a debug log."},
+			{Name: "replay", Description: "Build dry-run anonymous Apex for replay debugging."},
 		},
 		Flags: []FlagHelp{
 			{Name: "--log", Value: "<path>", Description: "Debug log path. Use - where supported."},
-			{Name: "--project", Value: "<root>", Description: "Project root for explain and repro."},
-			{Name: "--min-confidence", Value: "<n>", Description: "Minimum confidence for explain and repro."},
+			{Name: "--project", Value: "<root>", Description: "Project root for explain, repro, and replay."},
+			{Name: "--min-confidence", Value: "<n>", Description: "Minimum confidence for explain, repro, and replay."},
 			{Name: "--json", Description: "Write structured output where available."},
 			{Name: "--format", Value: "<mode>", Description: "Profile output format: text or markdown."},
 		},
-		Examples: []string{"glade debug profile --log apex.log", "glade debug explain --log apex.log --project ."},
+		Notes: []string{
+			"Replay works best with Apex Code: DEBUG minimum, FINER/FINEST for METHOD_ENTRY detail.",
+			"Use Database: INFO for SOQL/DML setup evidence and System: DEBUG for System.debug branch markers.",
+			"Use Apex Profiling: INFO for limits, Callout: INFO for HTTP paths, Validation/Workflow: INFO when automation changes data, Visualforce: INFO only for Visualforce entry points, and NBA/Wave/other feature categories: NONE unless used.",
+		},
+		Examples: []string{"glade debug profile --log apex.log", "glade debug explain --log apex.log --project .", "glade debug replay --log apex.log --project . --json"},
 	},
 	{
 		Name:        "editor",

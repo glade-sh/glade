@@ -34,6 +34,45 @@ func TestSynthesizeTestBuildsSetupAndCall(t *testing.T) {
 	}
 }
 
+func TestSynthesizeReplayBuildsAnonymousSetupAndCall(t *testing.T) {
+	index := mustLoadDebugIndex(t, filepath.Join("testdata", "project"))
+	log := mustReadApexLog(t, filepath.Join("testdata", "subscriber.log"))
+	annotated, err := Annotate(log, index, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	plan, err := SynthesizeReplay(annotated, 0.5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"List<Account> setup_accountRows",
+		"new Account(Name = 'Acme')",
+		"insert setup_accountRows;",
+		"ns.TestProcessor.run();",
+	} {
+		if !strings.Contains(plan.Source, want) {
+			t.Fatalf("source missing %q:\n%s", want, plan.Source)
+		}
+	}
+	if plan.EntryPoint.ClassName != "TestProcessor" || plan.EntryPoint.Method != "run" {
+		t.Fatalf("entry point = %#v, want TestProcessor.run", plan.EntryPoint)
+	}
+	if len(plan.SetupObjects) != 1 || plan.SetupObjects[0].ObjectName != "Account" {
+		t.Fatalf("setup objects = %#v, want Account", plan.SetupObjects)
+	}
+	if len(plan.Warnings) == 0 || !strings.Contains(strings.Join(plan.Warnings, "\n"), "METHOD_ENTRY") {
+		t.Fatalf("warnings = %#v, want METHOD_ENTRY guidance", plan.Warnings)
+	}
+	if strings.Contains(plan.Source, "@IsTest") || strings.Contains(plan.Source, "private class") {
+		t.Fatalf("replay source should be anonymous Apex, got:\n%s", plan.Source)
+	}
+	if !strings.Contains(plan.Source, "\nList<Account> setup_accountRows") {
+		t.Fatalf("replay setup should be top-level anonymous Apex, got:\n%s", plan.Source)
+	}
+}
+
 func TestSynthesizeTestWrapsLoggedException(t *testing.T) {
 	index := mustLoadDebugIndex(t, filepath.Join("testdata", "project"))
 	log := mustReadApexLog(t, filepath.Join("..", "apexlog", "testdata", "exception.log"))

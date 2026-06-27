@@ -71,12 +71,14 @@ assert(!activationEvents.includes("onView:glade.apexTests"), "glade.apexTests ac
 assert(!activationEvents.includes("onView:glade.preview"), "glade.preview must not activate the extension");
 assert(activationEvents.includes("onView:glade.plugins"), "glade.plugins view must activate the extension");
 assert(activationEvents.includes("onView:glade.workbench"), "glade.workbench view must activate the extension");
+assert(activationEvents.includes("onLanguage:apexlog"), "Apex Log editors must activate the extension");
 assert(activationEvents.includes("onLanguage:soql"), "SOQL scratch editors must activate the extension");
 for (const command of [
   "glade.openHome",
   "glade.startProjectOrg",
   "glade.stopProjectOrg",
   "glade.projectOrgStatus",
+  "glade.replayDebugLog",
   "glade.schemaImportDescribe",
   "glade.salesforceTargetStatus",
 ]) {
@@ -108,6 +110,7 @@ const visibleCommandAllowlist = [
   "glade.startProjectOrg",
   "glade.stopProjectOrg",
   "glade.inspectLocalOrg",
+  "glade.replayDebugLog",
   "glade.statusQuickPick",
   "glade.workbench.newAnonymousApex",
   "glade.workbench.newSoql",
@@ -140,6 +143,7 @@ for (const command of [
   "glade.inspectEnvironment",
   "glade.statusQuickPick",
   "glade.openOutput",
+  "glade.replayDebugLog",
   "glade.refreshPlugins",
   "glade.managePlugins",
   "glade.runPluginAction",
@@ -188,9 +192,28 @@ assert(
   "SOQL scratch editors need a contributed language",
 );
 assert(
+  languages.some((entry) =>
+    entry.id === "apexlog"
+    && entry.aliases.includes("Apex Log")
+    && entry.extensions.includes(".apexlog")
+    && !entry.extensions.includes(".log")
+    && /APEX_CODE/.test(entry.firstLine || "")
+  ),
+  "debug logs need a contributed Apex Log language without claiming every .log file",
+);
+assert(
   (manifest.contributes.grammars || []).some((entry) => entry.language === "soql" && entry.scopeName === "source.soql"),
   "SOQL scratch editors need syntax highlighting",
 );
+assert(
+  (manifest.contributes.grammars || []).some((entry) =>
+    entry.language === "apexlog"
+    && entry.scopeName === "source.apexlog"
+    && entry.path === "./syntaxes/apexlog.tmLanguage.json"
+  ),
+  "Apex debug logs need syntax highlighting",
+);
+assert(fs.existsSync(path.join(root, "syntaxes", "apexlog.tmLanguage.json")), "Apex Log grammar asset must exist");
 
 const editorTitle = manifest.contributes.menus["editor/title"] || [];
 for (const command of ["glade.executeAnonymous", "glade.debugAnonymous"]) {
@@ -207,6 +230,13 @@ assert(soqlRunTitle, "SOQL scratch editors must expose a run action");
 assert(
   soqlRunTitle.when.includes("resourceScheme == untitled") && soqlRunTitle.when.includes("editorLangId == soql"),
   "SOQL run action must be scoped to untitled SOQL editors",
+);
+
+const replayTitle = editorTitle.find((entry) => entry.command === "glade.replayDebugLog");
+assert(replayTitle, "Apex Log editors must expose replay");
+assert(
+  replayTitle.when.includes("editorLangId == apexlog"),
+  "Apex Log replay must be scoped to Apex Log editors",
 );
 
 assert(

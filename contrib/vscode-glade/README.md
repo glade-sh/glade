@@ -125,6 +125,26 @@ Debug launches pass the active local data environment:
 glade dap --project <root> --db <root>/.glade/envs/dev.sqlite
 ```
 
+Open an `.apexlog` or `.log` file and run `Glade: Replay Apex Debug Log` to
+build a dry-run replay from the log evidence. Glade infers setup rows from SOQL
+filters, calls the inferred entry point, and starts normal VS Code debugging
+against the active local data environment. Breakpoints stay in the usual Apex
+source files. Replay setup data is not saved back to the DB.
+
+For meaningful replay logs, capture the smallest useful trace:
+
+- Apex Code: DEBUG minimum; FINER or FINEST when method-entry call stack detail matters.
+- Database: INFO minimum for SOQL and DML evidence.
+- System: DEBUG when `System.debug` markers identify branches or state.
+- Apex Profiling: INFO for limits and runtime profile.
+- Callout: INFO when HTTP side effects affect the path.
+- Validation and Workflow: INFO when automation changes data shape.
+- Visualforce: INFO only for Visualforce entry points.
+- NBA, Wave, and other feature categories: NONE unless that feature is on the path.
+
+Avoid setting every category to FINEST. Oversized logs lose the trail when the
+platform truncates them.
+
 ## Local Data Environments
 
 The default environment is `dev` at `.glade/envs/dev.sqlite`. Configure named
