@@ -57,6 +57,12 @@ func TestPublicExampleNamesAvoidGenericPlaceholders(t *testing.T) {
 			continue
 		}
 		fullPath := filepath.Join(root, filepath.FromSlash(rel))
+		if _, err := os.Stat(fullPath); err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			t.Fatal(err)
+		}
 		fileData, err := os.ReadFile(fullPath)
 		if err != nil {
 			t.Fatal(err)
@@ -69,6 +75,36 @@ func TestPublicExampleNamesAvoidGenericPlaceholders(t *testing.T) {
 			if strings.Contains(text, term) {
 				t.Errorf("%s contains generic example name %q; use macrodata-apex, RefinementService, FileRow, or refinement-local instead", rel, term)
 			}
+		}
+	}
+}
+
+func TestNoAgentPlanningDocsInReleaseSurface(t *testing.T) {
+	root := repoRoot(t)
+	for _, rel := range repoTrackedFiles(t, root) {
+		fullPath := filepath.Join(root, filepath.FromSlash(rel))
+		if _, err := os.Stat(fullPath); err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			t.Fatal(err)
+		}
+		if strings.HasPrefix(rel, "docs/superpowers/") {
+			t.Errorf("%s is an agent planning artifact; keep release docs product-facing", rel)
+			continue
+		}
+		if !strings.HasPrefix(rel, "docs/") && !strings.HasPrefix(rel, "site/docs-src/") {
+			continue
+		}
+		fileData, err := os.ReadFile(fullPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if bytes.IndexByte(fileData, 0) >= 0 {
+			continue
+		}
+		if strings.Contains(string(fileData), "For agentic workers") {
+			t.Errorf("%s contains agent planning instructions; keep release docs product-facing", rel)
 		}
 	}
 }
