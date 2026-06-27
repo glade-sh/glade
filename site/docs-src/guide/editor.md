@@ -70,6 +70,8 @@ LWC and Visualforce preview are CLI preview features. They remain available
 through `glade dev`, but the VS Code extension does not start, stop, list, or
 monitor those servers until the preview workflow is steadier.
 
+Use [Preview LWC locally](/guide/workflows/lwc-preview) and [Preview Visualforce locally](/guide/workflows/visualforce-preview) for task steps. Use [LWC preview](/guide/modules/lwc-preview) and [Visualforce preview](/guide/modules/visualforce-preview) for subsystem boundaries.
+
 ```bash
 glade toolchain install
 glade dev lwc --project . --open
@@ -145,6 +147,8 @@ The Local Org view can inspect, seed, reset, and export the active DB.
 ## Debug
 
 Glade debug sessions use Debug Adapter Protocol over stdio:
+
+Use [Debug Apex](/guide/workflows/debug-apex) for the task path and [Debug and profile](/guide/modules/debug-profile) for the subsystem boundary.
 
 ```bash
 glade dap --project PROJECT_ROOT --db ACTIVE_DB

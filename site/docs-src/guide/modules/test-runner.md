@@ -28,7 +28,7 @@ glade test serve --project .
 Salesforce remains the validation gate for hosted platform behavior.
 
 Run Salesforce tests for org-only dependencies, live services, installed package
-behavior that is not captured locally, and release gates that require an org.
+behavior that is not captured locally, and final hosted validation.
 
 ## Related workflows
 

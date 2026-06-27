@@ -11,6 +11,8 @@
   </ul>
 </div>
 
+Use [Preview LWC locally](/guide/workflows/lwc-preview) for the task path. This page is the deeper route, context, service, fixture, and diagnostic reference.
+
 The LWC local shell is a preview feature. Glade can render LWCs from local
 source without a deploy, but it does not replace hosted Lightning Experience.
 It reads LWC bundle metadata, FlexiPages, custom apps, custom tabs, quick
