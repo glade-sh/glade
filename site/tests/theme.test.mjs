@@ -1515,13 +1515,18 @@ test("cli reference documents current code intelligence commands", () => {
 });
 
 test("ci docs create reports directory before report outputs", () => {
-  for (const page of [automation, localTesting, affectedTests]) {
+  for (const page of [automation, localTesting, affectedTests, workflowCi]) {
     const mkdirIndex = page.indexOf("mkdir -p reports");
     const junitIndex = page.indexOf("glade test --project . --junit reports/glade-junit.xml");
     assert.notEqual(mkdirIndex, -1);
     assert.notEqual(junitIndex, -1);
     assert.ok(mkdirIndex < junitIndex);
   }
+
+  const mkdirIndex = workflowCi.indexOf("mkdir -p reports");
+  const sarifIndex = workflowCi.indexOf("glade check --project . --format sarif --output reports/glade-check.sarif");
+  assert.notEqual(sarifIndex, -1);
+  assert.ok(mkdirIndex < sarifIndex);
 });
 
 test("public launch docs avoid stale public routes and registry promises", () => {

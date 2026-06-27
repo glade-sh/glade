@@ -14,6 +14,7 @@ runs.
 Write SARIF for code scanning:
 
 ```bash
+mkdir -p reports
 glade check --project . --format sarif --output reports/glade-check.sarif
 ```
 
