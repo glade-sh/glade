@@ -41,6 +41,29 @@ const cliReference = await readFile(new URL("../docs-src/guide/cli-reference.md"
 const localTesting = await readFile(new URL("../docs-src/guide/local-testing.md", import.meta.url), "utf8");
 const affectedTests = await readFile(new URL("../docs-src/guide/affected-tests.md", import.meta.url), "utf8");
 const playground = await readFile(new URL("../docs-src/guide/playground.md", import.meta.url), "utf8");
+const workflowsIndex = await readFile(new URL("../docs-src/guide/workflows.md", import.meta.url), "utf8").catch(() => "");
+const workflowApexTests = await readFile(new URL("../docs-src/guide/workflows/apex-tests.md", import.meta.url), "utf8").catch(() => "");
+const workflowDebugApex = await readFile(new URL("../docs-src/guide/workflows/debug-apex.md", import.meta.url), "utf8").catch(() => "");
+const workflowLwcPreview = await readFile(new URL("../docs-src/guide/workflows/lwc-preview.md", import.meta.url), "utf8").catch(() => "");
+const workflowVisualforcePreview = await readFile(new URL("../docs-src/guide/workflows/visualforce-preview.md", import.meta.url), "utf8").catch(() => "");
+const workflowLocalData = await readFile(new URL("../docs-src/guide/workflows/local-data.md", import.meta.url), "utf8").catch(() => "");
+const workflowCi = await readFile(new URL("../docs-src/guide/workflows/ci.md", import.meta.url), "utf8").catch(() => "");
+const modulesIndex = await readFile(new URL("../docs-src/guide/modules.md", import.meta.url), "utf8").catch(() => "");
+const moduleApexRuntime = await readFile(new URL("../docs-src/guide/modules/apex-runtime.md", import.meta.url), "utf8").catch(() => "");
+const moduleTestRunner = await readFile(new URL("../docs-src/guide/modules/test-runner.md", import.meta.url), "utf8").catch(() => "");
+const moduleLocalOrgData = await readFile(new URL("../docs-src/guide/modules/local-org-data.md", import.meta.url), "utf8").catch(() => "");
+const moduleLwcPreview = await readFile(new URL("../docs-src/guide/modules/lwc-preview.md", import.meta.url), "utf8").catch(() => "");
+const moduleVisualforcePreview = await readFile(new URL("../docs-src/guide/modules/visualforce-preview.md", import.meta.url), "utf8").catch(() => "");
+const moduleDebugProfile = await readFile(new URL("../docs-src/guide/modules/debug-profile.md", import.meta.url), "utf8").catch(() => "");
+const moduleEditor = await readFile(new URL("../docs-src/guide/modules/editor.md", import.meta.url), "utf8").catch(() => "");
+const modulePlugins = await readFile(new URL("../docs-src/guide/modules/plugins.md", import.meta.url), "utf8").catch(() => "");
+const referenceCli = await readFile(new URL("../docs-src/reference/cli.md", import.meta.url), "utf8").catch(() => "");
+const referenceConfig = await readFile(new URL("../docs-src/reference/config.md", import.meta.url), "utf8").catch(() => "");
+const referenceErrors = await readFile(new URL("../docs-src/reference/errors.md", import.meta.url), "utf8").catch(() => "");
+const referenceApexSupport = await readFile(new URL("../docs-src/reference/apex-support.md", import.meta.url), "utf8").catch(() => "");
+const referenceLwcSupport = await readFile(new URL("../docs-src/reference/lwc-support.md", import.meta.url), "utf8").catch(() => "");
+const referenceVisualforceSupport = await readFile(new URL("../docs-src/reference/visualforce-support.md", import.meta.url), "utf8").catch(() => "");
+const referenceLocalApiRoutes = await readFile(new URL("../docs-src/reference/local-api-routes.md", import.meta.url), "utf8").catch(() => "");
 const workbench = await readFile(new URL("../docs-src/guide/workbench.md", import.meta.url), "utf8").catch(() => "");
 const aiAssistedApex = await readFile(new URL("../docs-src/guide/ai-assisted-apex.md", import.meta.url), "utf8").catch(() => "");
 const testerFieldGuide = await readFile(new URL("../docs-src/guide/tester-field-guide.md", import.meta.url), "utf8");
@@ -311,6 +334,79 @@ test("home page uses a static local proof and final go-live workflow copy", () =
   assert.match(config, /\{ text: 'Workbench', link: '\/guide\/workbench' \}/);
   assert.doesNotMatch(config, /\{ text: 'Coverage', link: '\/guide\/workbench' \}/);
   assert.doesNotMatch(config, /\{ text: 'Capability map', link: '\/guide\/support-map' \}/);
+});
+
+test("docs navigation exposes workflows modules and references as separate trails", () => {
+  function assertConfigLink(text, link) {
+    const escapedText = text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const escapedLink = link.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    assert.match(config, new RegExp(`\\{ text: '${escapedText}', link: '${escapedLink}' \\}`));
+  }
+
+  assertConfigLink("Workflows", "/guide/workflows");
+  assertConfigLink("Product areas", "/guide/modules");
+  assertConfigLink("Reference", "/reference/cli");
+  assertConfigLink("Run Apex tests", "/guide/workflows/apex-tests");
+  assertConfigLink("Debug Apex", "/guide/workflows/debug-apex");
+  assertConfigLink("Preview LWC", "/guide/workflows/lwc-preview");
+  assertConfigLink("Preview Visualforce", "/guide/workflows/visualforce-preview");
+  assertConfigLink("Work with local data", "/guide/workflows/local-data");
+  assertConfigLink("Add Glade to CI", "/guide/workflows/ci");
+  assertConfigLink("Apex runtime", "/guide/modules/apex-runtime");
+  assertConfigLink("Test runner", "/guide/modules/test-runner");
+  assertConfigLink("Local org and data", "/guide/modules/local-org-data");
+  assertConfigLink("LWC preview", "/guide/modules/lwc-preview");
+  assertConfigLink("Visualforce preview", "/guide/modules/visualforce-preview");
+  assertConfigLink("Debug and profile", "/guide/modules/debug-profile");
+  assertConfigLink("Editor and workbench", "/guide/modules/editor");
+  assertConfigLink("Plugins", "/guide/modules/plugins");
+  assertConfigLink("CLI reference", "/reference/cli");
+  assertConfigLink("Config reference", "/reference/config");
+  assertConfigLink("Error codes", "/reference/errors");
+  assertConfigLink("Apex support map", "/reference/apex-support");
+  assertConfigLink("LWC support matrix", "/reference/lwc-support");
+  assertConfigLink("Visualforce support matrix", "/reference/visualforce-support");
+  assertConfigLink("Local API routes", "/reference/local-api-routes");
+});
+
+test("new docs pages use clear page roles and link to deeper references", () => {
+  assert.match(workflowsIndex, /^# Choose a Glade workflow/m);
+  assert.match(workflowsIndex, /Run Apex tests/);
+  assert.match(workflowsIndex, /Preview LWC locally/);
+  assert.match(workflowsIndex, /Preview Visualforce locally/);
+
+  assert.match(workflowApexTests, /^# Run Apex tests/m);
+  assert.match(workflowApexTests, /glade test --project \./);
+  assert.match(workflowApexTests, /\[Test runner\]\(\/guide\/modules\/test-runner\)/);
+  assert.match(workflowDebugApex, /^# Debug Apex/m);
+  assert.match(workflowDebugApex, /glade dap --project/);
+  assert.match(workflowDebugApex, /\[Debug and profile\]\(\/guide\/modules\/debug-profile\)/);
+  assert.match(workflowLwcPreview, /^# Preview LWC locally/m);
+  assert.match(workflowLwcPreview, /glade dev lwc --project \. --open/);
+  assert.match(workflowLwcPreview, /\[LWC support matrix\]\(\/reference\/lwc-support\)/);
+  assert.match(workflowVisualforcePreview, /^# Preview Visualforce locally/m);
+  assert.match(workflowVisualforcePreview, /glade dev vf --project \./);
+  assert.match(workflowVisualforcePreview, /\[Visualforce support matrix\]\(\/reference\/visualforce-support\)/);
+  assert.match(workflowLocalData, /^# Work with local data/m);
+  assert.match(workflowCi, /^# Add Glade to CI/m);
+
+  assert.match(modulesIndex, /^# Product areas/m);
+  assert.match(moduleApexRuntime, /^# Apex runtime/m);
+  assert.match(moduleTestRunner, /^# Test runner/m);
+  assert.match(moduleLocalOrgData, /^# Local org and data/m);
+  assert.match(moduleLwcPreview, /^# LWC preview/m);
+  assert.match(moduleVisualforcePreview, /^# Visualforce preview/m);
+  assert.match(moduleDebugProfile, /^# Debug and profile/m);
+  assert.match(moduleEditor, /^# Editor and workbench/m);
+  assert.match(modulePlugins, /^# Plugins/m);
+
+  assert.match(referenceCli, /^# CLI reference/m);
+  assert.match(referenceConfig, /^# Config reference/m);
+  assert.match(referenceErrors, /^# Error codes/m);
+  assert.match(referenceApexSupport, /^# Apex support map/m);
+  assert.match(referenceLwcSupport, /^# LWC support matrix/m);
+  assert.match(referenceVisualforceSupport, /^# Visualforce support matrix/m);
+  assert.match(referenceLocalApiRoutes, /^# Local API routes/m);
 });
 
 test("site copy is task-first and names local capabilities plainly", () => {
