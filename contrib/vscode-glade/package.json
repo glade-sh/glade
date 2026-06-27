@@ -35,6 +35,9 @@
     "onCommand:glade.debugAnonymous",
     "onCommand:glade.debugCurrentTest",
     "onCommand:glade.replayDebugLog",
+    "onCommand:glade.apexLog.refreshAnalysis",
+    "onCommand:glade.apexLog.treatAsApexLog",
+    "onCommand:glade.apexLog.replayFromFrame",
     "onCommand:glade.runLocalProof",
     "onCommand:glade.createProjectOrg",
     "onCommand:glade.startProjectOrg",
@@ -232,6 +235,19 @@
         "icon": "$(debug-restart)"
       },
       {
+        "command": "glade.apexLog.refreshAnalysis",
+        "title": "Glade: Refresh Apex Log Analysis",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "glade.apexLog.treatAsApexLog",
+        "title": "Glade: Treat Current File as Apex Log"
+      },
+      {
+        "command": "glade.apexLog.replayFromFrame",
+        "title": "Glade: Replay From Log Frame"
+      },
+      {
         "command": "glade.statusQuickPick",
         "title": "Glade: Show Local Status"
       },
@@ -403,6 +419,10 @@
           "when": "false"
         },
         {
+          "command": "glade.apexLog.replayFromFrame",
+          "when": "false"
+        },
+        {
           "command": "glade.runSoql",
           "when": "false"
         },
@@ -467,6 +487,11 @@
           "command": "glade.replayDebugLog",
           "when": "editorLangId == apexlog",
           "group": "navigation@1"
+        },
+        {
+          "command": "glade.apexLog.refreshAnalysis",
+          "when": "editorLangId == apexlog",
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
@@ -522,9 +547,10 @@
           "apexlog"
         ],
         "extensions": [
-          ".apexlog"
+          ".apexlog",
+          ".apex.log"
         ],
-        "firstLine": "^\\d+(?:\\.\\d+)?\\s+(?=.*\\bAPEX_CODE,)(?:[A-Z_]+,(?:ERROR|WARN|INFO|DEBUG|FINE|FINER|FINEST);?)+",
+        "firstLine": "^\\d+(?:\\.\\d+)?\\s+(?=.*\\bAPEX_CODE,)(?:[A-Z_]+,(?:NONE|ERROR|WARN|INFO|DEBUG|FINE|FINER|FINEST);?)+",
         "configuration": "./language-configuration.json"
       },
       {
@@ -622,6 +648,21 @@
           "default": false,
           "description": "Enable Glade local Apex language diagnostics."
         },
+        "glade.apexLog.smartFeatures.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Glade-powered Apex debug log navigation, folding, symbols, hovers, diagnostics, and semantic tokens."
+        },
+        "glade.apexLog.maxAnalysisBytes": {
+          "type": "number",
+          "default": 10485760,
+          "description": "Maximum Apex log size, in bytes, for background smart analysis."
+        },
+        "glade.apexLog.codeLens.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show Apex log code lenses for source navigation and replay."
+        },
         "glade.environments": {
           "type": "array",
           "default": [],
@@ -662,7 +703,7 @@
     "compile": "tsc -p ./",
     "bundle": "esbuild src/extension.ts --bundle --minify --platform=node --format=cjs --target=node20 --external:vscode --outfile=out/extension.js",
     "package": "mkdir -p dist && npm run compile && npm run bundle && vsce package --allow-missing-repository --out dist/vscode-glade-${npm_package_version}.vsix",
-    "test": "npm run compile && node test/commands.test.js && node test/adapter.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/environmentActions.test.js && node test/localOrg.test.js && node test/localOrgArgs.test.js && node test/watch.test.js && node test/statusModel.test.js && node test/package.test.js && node test/branding.test.js && node test/extensionHubRefresh.test.js && node test/startHereModel.test.js && node test/startHereState.test.js && node test/hubModel.test.js && node test/hubActions.test.js && node test/hubHtml.test.js && node test/hubController.test.js && node test/hubSalesforce.test.js && node test/pluginModules.test.js && node test/pluginController.test.js && node test/workbenchModel.test.js && node test/workbenchStore.test.js && node test/workbenchCli.test.js && node test/workbenchView.test.js && node test/sidebarViews.test.js"
+    "test": "npm run compile && node test/commands.test.js && node test/apexLogDetection.test.js && node test/apexLogCache.test.js && node test/apexLogDiagnostics.test.js && node test/apexLogProviders.test.js && node test/adapter.test.js && node test/projectModel.test.js && node test/gladeCli.test.js && node test/testDiscovery.test.js && node test/testResults.test.js && node test/environments.test.js && node test/environmentActions.test.js && node test/localOrg.test.js && node test/localOrgArgs.test.js && node test/watch.test.js && node test/statusModel.test.js && node test/package.test.js && node test/branding.test.js && node test/extensionHubRefresh.test.js && node test/startHereModel.test.js && node test/startHereState.test.js && node test/hubModel.test.js && node test/hubActions.test.js && node test/hubHtml.test.js && node test/hubController.test.js && node test/hubSalesforce.test.js && node test/pluginModules.test.js && node test/pluginController.test.js && node test/workbenchModel.test.js && node test/workbenchStore.test.js && node test/workbenchCli.test.js && node test/workbenchView.test.js && node test/sidebarViews.test.js"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

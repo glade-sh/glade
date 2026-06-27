@@ -47,6 +47,11 @@ assert.deepStrictEqual(
 );
 
 assert.deepStrictEqual(
+  commands.debugReplayArgs('/tmp/replay.apexlog', '/tmp/project', 12),
+  ['debug', 'replay', '--log', '/tmp/replay.apexlog', '--project', '/tmp/project', '--entry-index', '12', '--json']
+);
+
+assert.deepStrictEqual(
   commands.debugAnonymousSessionOptions(),
   { suppressSaveBeforeStart: true },
 );

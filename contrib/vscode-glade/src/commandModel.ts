@@ -53,8 +53,13 @@ export function execAnonymousArgs(source: string, projectRoot?: string, dbPath?:
   return args;
 }
 
-export function debugReplayArgs(logPath: string, projectRoot: string): string[] {
-  return ["debug", "replay", "--log", logPath, "--project", projectRoot, "--json"];
+export function debugReplayArgs(logPath: string, projectRoot: string, entryIndex?: number): string[] {
+  const args = ["debug", "replay", "--log", logPath, "--project", projectRoot];
+  if (entryIndex !== undefined) {
+    args.push("--entry-index", String(entryIndex));
+  }
+  args.push("--json");
+  return args;
 }
 
 export function debugAnonymousConfig(project: string | undefined, source: string, dbPath?: string): GladeDebugConfig {

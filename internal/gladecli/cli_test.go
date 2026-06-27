@@ -2768,6 +2768,61 @@ func TestRunDebugExplainJSON(t *testing.T) {
 	}
 }
 
+func TestRunDebugEditorJSON(t *testing.T) {
+	projectRoot := filepath.Join("..", "debuglog", "testdata", "project")
+	logPath := filepath.Join("..", "debuglog", "testdata", "subscriber.log")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"debug", "editor", "--log", logPath, "--project", projectRoot, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	got := stdout.String()
+	for _, want := range []string{`"language": "apexlog"`, `"folds"`, `"links"`, `"hovers"`, `"semanticTokens"`, `"diagnostics"`, `"replayFrames"`} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("editor json missing %q:\n%s", want, got)
+		}
+	}
+	if strings.Contains(got, `"command": "debug editor"`) {
+		t.Fatalf("editor json should be raw analysis, not CLI envelope:\n%s", got)
+	}
+}
+
+func TestRunDebugEditorJSONWithoutProject(t *testing.T) {
+	dir := t.TempDir()
+	logPath := filepath.Join(dir, "apex.log")
+	if err := os.WriteFile(logPath, []byte(strings.Join([]string{
+		"00:00:00.001 (1000000)|METHOD_ENTRY|[2]|01p000000000001|ns.MissingClass.run()",
+		"00:00:00.002 (2000000)|USER_DEBUG|[3]|DEBUG|hello",
+		"00:00:00.003 (3000000)|METHOD_EXIT|[2]|ns.MissingClass.run()",
+		"",
+	}, "\n")), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"debug", "editor", "--log", logPath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"language": "apexlog"`) || !strings.Contains(stdout.String(), `"folds"`) {
+		t.Fatalf("editor json missing parser-only analysis: %s", stdout.String())
+	}
+}
+
+func TestRunDebugEditorTextSummary(t *testing.T) {
+	projectRoot := filepath.Join("..", "debuglog", "testdata", "project")
+	logPath := filepath.Join("..", "debuglog", "testdata", "subscriber.log")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"debug", "editor", "--log", logPath, "--project", projectRoot}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	for _, want := range []string{"Glade debug editor", "Entries:", "Folds:", "Links:", "Variables:", "Diagnostics:", "Next:"} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("editor text missing %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
 func TestRunDebugRepro(t *testing.T) {
 	projectRoot := filepath.Join("..", "debuglog", "testdata", "project")
 	logPath := filepath.Join("..", "debuglog", "testdata", "subscriber.log")
@@ -3252,6 +3307,19 @@ func TestRunDebugReplayJSON(t *testing.T) {
 		if !strings.Contains(got, want) {
 			t.Fatalf("replay stdout missing %q:\n%s", want, got)
 		}
+	}
+}
+
+func TestRunDebugReplayEntryIndexJSON(t *testing.T) {
+	projectRoot := filepath.Join("..", "debuglog", "testdata", "project")
+	logPath := filepath.Join("..", "apexlog", "testdata", "exception.log")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"debug", "replay", "--log", logPath, "--project", projectRoot, "--entry-index", "2", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), "ns.TestProcessor.fail();") {
+		t.Fatalf("replay entry-index json missing selected method: %s", stdout.String())
 	}
 }
 

@@ -74,6 +74,75 @@ func TestParseLimitUsage(t *testing.T) {
 	}
 }
 
+func TestParseEditorEventsAndOffsets(t *testing.T) {
+	input := strings.Join([]string{
+		"10:12:14.1 (123456)|METHOD_ENTRY|[7]|01p000000000001|AccountService.run(String)",
+		"10:12:14.2 (123457)|VARIABLE_SCOPE_BEGIN|[7]|name|String|false|false",
+		"10:12:14.3 (123458)|VARIABLE_ASSIGNMENT|[7]|name|\"Acme\"",
+		"10:12:14.4 (123459)|STATEMENT_EXECUTE|[8]",
+		"10:12:14.5 (123460)|HEAP_ALLOCATE|[9]|Bytes:44",
+		"10:12:14.6 (123461)|SOQL_EXECUTE_BEGIN|[10]|Aggregations:0|SELECT Id, Name FROM Account WHERE Name = :name",
+		"10:12:14.7 (123462)|SOQL_EXECUTE_END|[10]|Rows:1",
+		"10:12:14.8 (123463)|METHOD_EXIT|[7]|AccountService.run(String)",
+		"",
+	}, "\n")
+
+	log, err := Parse(strings.NewReader(input))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(log.Entries) != 8 {
+		t.Fatalf("entries = %d, want 8", len(log.Entries))
+	}
+
+	method := log.Entries[0]
+	if method.Kind != EntryMethodEntry {
+		t.Fatalf("method kind = %q, want %q", method.Kind, EntryMethodEntry)
+	}
+	if method.Line != 1 || method.ByteStart != 0 || method.ByteEnd <= method.ByteStart {
+		t.Fatalf("method position = line %d bytes %d-%d", method.Line, method.ByteStart, method.ByteEnd)
+	}
+	if method.Data.SourceLine != 7 || method.Data.MethodSymbol != "AccountService.run(String)" {
+		t.Fatalf("method data = %#v", method.Data)
+	}
+
+	scope := log.Entries[1]
+	if scope.Kind != EntryVariableScopeBegin {
+		t.Fatalf("scope kind = %q, want %q", scope.Kind, EntryVariableScopeBegin)
+	}
+	if scope.Data.VariableName != "name" || scope.Data.VariableType != "String" {
+		t.Fatalf("scope data = %#v", scope.Data)
+	}
+
+	assign := log.Entries[2]
+	if assign.Kind != EntryVariableAssignment {
+		t.Fatalf("assignment kind = %q, want %q", assign.Kind, EntryVariableAssignment)
+	}
+	if assign.Data.VariableName != "name" || assign.Data.VariableValue != "\"Acme\"" {
+		t.Fatalf("assignment data = %#v", assign.Data)
+	}
+
+	statement := log.Entries[3]
+	if statement.Kind != EntryStatementExecute || statement.Data.SourceLine != 8 {
+		t.Fatalf("statement = %#v", statement)
+	}
+
+	heap := log.Entries[4]
+	if heap.Kind != EntryHeapAllocate || heap.Data.HeapBytes != 44 {
+		t.Fatalf("heap = %#v", heap)
+	}
+
+	soql := log.Entries[5]
+	if soql.Data.SourceLine != 10 || soql.Data.SOQLQuery != "SELECT Id, Name FROM Account WHERE Name = :name" {
+		t.Fatalf("soql = %#v", soql.Data)
+	}
+
+	exit := log.Entries[7]
+	if exit.Kind != EntryMethodExit || exit.Data.MethodSymbol != "AccountService.run(String)" {
+		t.Fatalf("exit = %#v", exit)
+	}
+}
+
 func mustReadLog(t *testing.T, name string) Log {
 	t.Helper()
 	path := filepath.Join("testdata", name)

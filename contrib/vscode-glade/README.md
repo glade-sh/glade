@@ -125,22 +125,53 @@ Debug launches pass the active local data environment:
 glade dap --project <root> --db <root>/.glade/envs/dev.sqlite
 ```
 
-Open an `.apexlog` or `.log` file and run `Glade: Replay Apex Debug Log` to
-build a dry-run replay from the log evidence. Glade infers setup rows from SOQL
-filters, calls the inferred entry point, and starts normal VS Code debugging
-against the active local data environment. Breakpoints stay in the usual Apex
-source files. Replay setup data is not saved back to the DB.
+Open an `.apexlog` or `.apex.log` file and run `Glade: Replay Apex Debug Log`
+to build a dry-run replay from the log evidence. Downloaded `.log` and `.txt`
+files can be switched with `Glade: Treat Current File as Apex Log` when the
+extension detects Salesforce debug-log events. Glade infers setup rows from
+SOQL filters, calls the inferred entry point, and starts normal VS Code
+debugging against the active local data environment. Breakpoints stay in the
+usual Apex source files. Replay setup data is not saved back to the DB.
 
-For meaningful replay logs, capture the smallest useful trace:
+The Apex Log editor uses `glade debug editor --log <path> --project . --json`
+behind the scenes. It adds folding for execution units, methods, constructors,
+SOQL, DML, limits, and exceptions. It also adds outline symbols, hovers,
+Problems diagnostics, semantic colors, source links, and go-to-definition for
+class, method, source-line, variable, SOQL object, SOQL field, and DML object
+references when local source or metadata proves the target. If no project is
+open, grammar highlighting, folding, hovers, and parse diagnostics still work
+where the log itself has enough shape.
 
-- Apex Code: DEBUG minimum; FINER or FINEST when method-entry call stack detail matters.
-- Database: INFO minimum for SOQL and DML evidence.
-- System: DEBUG when `System.debug` markers identify branches or state.
-- Apex Profiling: INFO for limits and runtime profile.
-- Callout: INFO when HTTP side effects affect the path.
-- Validation and Workflow: INFO when automation changes data shape.
-- Visualforce: INFO only for Visualforce entry points.
+Use `Glade: Refresh Apex Log Analysis` after editing or replacing a log file.
+`Glade: Replay From Log Frame` is available from source-backed log frames and
+passes `--entry-index` to the replay command.
+
+For meaningful replay and editor navigation logs, capture this trace when you
+can:
+
+- Apex Code: FINEST.
+- Apex Profiling: FINE.
+- Callout: INFO.
+- Database: FINE.
+- System: DEBUG.
+- Validation: INFO.
+- Visualforce: INFO.
+- Workflow: INFO.
 - NBA, Wave, and other feature categories: NONE unless that feature is on the path.
+
+The minimum useful trace is:
+
+- Apex Profiling: INFO for limits and runtime profile.
+- Apex Code: FINE.
+- Database: INFO.
+- System: DEBUG.
+- Validation: INFO.
+- Workflow: INFO.
+
+Variable navigation and replay degrade when Apex Code is below FINEST because
+`VARIABLE_SCOPE_BEGIN`, `VARIABLE_ASSIGNMENT`, and source-line events may be
+missing. Query and DML navigation degrade when Database is below INFO. Limit
+folding and profiling degrade when Apex Profiling is below INFO.
 
 Avoid setting every category to FINEST. Oversized logs lose the trail when the
 platform truncates them.

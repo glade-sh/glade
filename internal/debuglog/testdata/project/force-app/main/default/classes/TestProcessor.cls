@@ -10,4 +10,8 @@ public with sharing class TestProcessor {
     public static void fail() {
         throw new AuraHandledException('Nope');
     }
+
+    public static void withParam(String inputName) {
+        System.debug(inputName);
+    }
 }

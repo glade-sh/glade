@@ -190,6 +190,7 @@ post processing:
 - `parse` prints structured log entries.
 - `profile` converts measured log lines into the runtime profile format.
 - `explain` adds conservative source annotations for log-backed evidence.
+- `editor` builds the JSON map used by VS Code Apex Log intelligence.
 - `repro` emits a best-effort Apex test class from the same log evidence.
 - `replay` emits dry-run anonymous Apex for VS Code log replay.
 
@@ -200,8 +201,10 @@ glade debug parse --log logs/apex-debug.log --json
 glade debug profile --log logs/apex-debug.log
 glade debug explain --log logs/apex-debug.log --project .
 glade debug explain --log logs/apex-debug.log --project . --json
+glade debug editor --log logs/apex-debug.log --project . --json
 glade debug repro --log logs/apex-debug.log --project . > ReproTest.cls
 glade debug replay --log logs/apex-debug.log --project . --json
+glade debug replay --log logs/apex-debug.log --project . --entry-index 12 --json
 ```
 
 Matching is conservative. `explain` will rank candidates by confidence and keep
@@ -212,21 +215,40 @@ text output keeps the default threshold.
 counts, code-unit entries, and exception stack frames. It writes Apex to stdout
 so the file can enter the local test loop after review.
 
+`editor` returns folding ranges, outline symbols, hovers, source links,
+semantic tokens, diagnostics, variables, and replay frames. VS Code uses that
+map for `.apexlog` and `.apex.log` files. Downloaded `.log` or `.txt` files can
+be switched with `Glade: Treat Current File as Apex Log` when they contain
+Salesforce debug-log events. The editor can go to source for classes, methods,
+source-line events, variables, SOQL objects, SOQL fields, and DML objects when
+local source or metadata proves the target. If it cannot prove a variable
+source declaration, it links back to the nearest runtime `VARIABLE_SCOPE_BEGIN`
+entry in the log.
+
 `replay` uses the same evidence to build anonymous Apex for a dry-run local
-debug session. VS Code exposes it as `Glade: Replay Apex Debug Log` from
-`.apexlog` and `.log` editors. It can stop on normal Apex breakpoints once the
-generated setup reaches the inferred entry point.
+debug session. VS Code exposes it as `Glade: Replay Apex Debug Log` from Apex
+Log editors. `Glade: Replay From Log Frame` passes `--entry-index` for the
+selected source-backed frame. Replay can stop on normal Apex breakpoints once
+the generated setup reaches the inferred entry point.
 
-Capture enough log detail for replay:
+Capture enough log detail for replay and editor navigation:
 
-- Apex Code: DEBUG minimum; FINER or FINEST when method-entry call stack detail matters.
-- Database: INFO minimum for SOQL and DML evidence.
-- System: DEBUG when `System.debug` markers identify branches or state.
-- Apex Profiling: INFO for limits and runtime profile.
-- Callout: INFO when HTTP side effects affect the path.
-- Validation and Workflow: INFO when automation changes data shape.
-- Visualforce: INFO only for Visualforce entry points.
+- Apex Code: FINEST.
+- Apex Profiling: FINE.
+- Callout: INFO.
+- Database: FINE.
+- System: DEBUG.
+- Validation: INFO.
+- Visualforce: INFO.
+- Workflow: INFO.
 - NBA, Wave, and other feature categories: NONE unless that feature is on the path.
+
+The minimum useful trace is Apex Code: FINE, Apex Profiling: INFO, Database:
+INFO, System: DEBUG, Validation: INFO, and Workflow: INFO. Variable navigation
+and frame replay degrade below Apex Code: FINEST because variable scope,
+assignment, and source-line events may be missing. SOQL and DML links degrade
+below Database: INFO. Limit folding and profiling degrade below Apex Profiling:
+INFO.
 
 Avoid setting every category to FINEST. Oversized logs lose the trail when the
 platform truncates them.

@@ -12,6 +12,8 @@ type Entry struct {
 	Raw       string    `json:"raw"`
 	Timestamp string    `json:"timestamp,omitempty"`
 	Line      int       `json:"line"`
+	ByteStart int       `json:"byteStart"`
+	ByteEnd   int       `json:"byteEnd"`
 	Kind      EntryKind `json:"kind"`
 	Payload   string    `json:"payload,omitempty"`
 	Data      EntryData `json:"data,omitempty"`
@@ -26,11 +28,22 @@ const (
 	EntryExecutionFinished       EntryKind = "EXECUTION_FINISHED"
 	EntryCodeUnitStarted         EntryKind = "CODE_UNIT_STARTED"
 	EntryCodeUnitFinished        EntryKind = "CODE_UNIT_FINISHED"
+	EntryMethodEntry             EntryKind = "METHOD_ENTRY"
+	EntryMethodExit              EntryKind = "METHOD_EXIT"
+	EntryConstructorEntry        EntryKind = "CONSTRUCTOR_ENTRY"
+	EntryConstructorExit         EntryKind = "CONSTRUCTOR_EXIT"
+	EntrySystemMethodEntry       EntryKind = "SYSTEM_METHOD_ENTRY"
+	EntrySystemMethodExit        EntryKind = "SYSTEM_METHOD_EXIT"
+	EntryVariableScopeBegin      EntryKind = "VARIABLE_SCOPE_BEGIN"
+	EntryVariableAssignment      EntryKind = "VARIABLE_ASSIGNMENT"
+	EntryStatementExecute        EntryKind = "STATEMENT_EXECUTE"
+	EntryHeapAllocate            EntryKind = "HEAP_ALLOCATE"
 	EntryUserDebug               EntryKind = "USER_DEBUG"
 	EntrySOQLExecuteBegin        EntryKind = "SOQL_EXECUTE_BEGIN"
 	EntrySOQLExecuteEnd          EntryKind = "SOQL_EXECUTE_END"
 	EntryDMLBegin                EntryKind = "DML_BEGIN"
 	EntryDMLEnd                  EntryKind = "DML_END"
+	EntryValidationRule          EntryKind = "VALIDATION_RULE"
 	EntryExceptionThrown         EntryKind = "EXCEPTION_THROWN"
 	EntryFatalError              EntryKind = "FATAL_ERROR"
 	EntryEnteringManagedPackage  EntryKind = "ENTERING_MANAGED_PKG"
@@ -43,6 +56,12 @@ const (
 
 type EntryData struct {
 	SourceLine      int          `json:"sourceLine,omitempty"`
+	MethodSymbol    string       `json:"methodSymbol,omitempty"`
+	VariableName    string       `json:"variableName,omitempty"`
+	VariableType    string       `json:"variableType,omitempty"`
+	VariableValue   string       `json:"variableValue,omitempty"`
+	HeapBytes       int          `json:"heapBytes,omitempty"`
+	ValidationRule  string       `json:"validationRule,omitempty"`
 	DebugLevel      string       `json:"debugLevel,omitempty"`
 	DebugMessage    string       `json:"debugMessage,omitempty"`
 	SOQLQuery       string       `json:"soqlQuery,omitempty"`
