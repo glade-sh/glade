@@ -58,6 +58,21 @@ const maintainerIndex = await readFile(new URL("../docs-src/maintainer/index.md"
 const extendRuntime = await readFile(new URL("../docs-src/maintainer/extend-runtime.md", import.meta.url), "utf8").catch(() => "");
 const gladeToolsMaintainer = await readFile(new URL("../docs-src/maintainer/glade-tools.md", import.meta.url), "utf8").catch(() => "");
 const pluginRuntime = await readFile(new URL("../docs-src/maintainer/plugin-runtime.md", import.meta.url), "utf8").catch(() => "");
+const helpIndex = await readFile(new URL("../docs-src/help/index.md", import.meta.url), "utf8").catch(() => "");
+const helpFirstLocalCheck = await readFile(new URL("../docs-src/help/first-local-check.md", import.meta.url), "utf8").catch(() => "");
+const helpRunOneApexTest = await readFile(new URL("../docs-src/help/run-one-apex-test.md", import.meta.url), "utf8").catch(() => "");
+const helpDebugApexVsCode = await readFile(new URL("../docs-src/help/debug-apex-vscode.md", import.meta.url), "utf8").catch(() => "");
+const helpAnonymousApexScratch = await readFile(new URL("../docs-src/help/anonymous-apex-scratch.md", import.meta.url), "utf8").catch(() => "");
+const helpLocalDataEnvironments = await readFile(new URL("../docs-src/help/local-data-environments.md", import.meta.url), "utf8").catch(() => "");
+const helpChangedTestsBeforePr = await readFile(new URL("../docs-src/help/changed-tests-before-pr.md", import.meta.url), "utf8").catch(() => "");
+const helpGladeOrgSfDataImport = await readFile(new URL("../docs-src/help/glade-org-sf-data-import.md", import.meta.url), "utf8").catch(() => "");
+const helpProfileApexDebugLog = await readFile(new URL("../docs-src/help/profile-apex-debug-log.md", import.meta.url), "utf8").catch(() => "");
+const helpCiSetup = await readFile(new URL("../docs-src/help/ci-setup.md", import.meta.url), "utf8").catch(() => "");
+const helpScreenshotReadme = await readFile(new URL("../docs-src/public/help/screenshots/README.md", import.meta.url), "utf8").catch(() => "");
+const captureHelpScreenshotsScript = await readFile(new URL("../scripts/capture-help-screenshots.sh", import.meta.url), "utf8").catch(() => "");
+const captureHelpScreenshotTargetScript = await readFile(new URL("../scripts/capture-help-screenshot-target.sh", import.meta.url), "utf8").catch(() => "");
+const checkHelpScreenshotsScript = await readFile(new URL("../scripts/check-help-screenshots.mjs", import.meta.url), "utf8").catch(() => "");
+const helpProjectSetupScript = await readFile(new URL("../scripts/help-project/setup.mjs", import.meta.url), "utf8").catch(() => "");
 const logoMark = await readFile(new URL("../docs-src/public/logo-mark.svg", import.meta.url), "utf8");
 const logoMarkOpen = await readFile(new URL("../docs-src/public/logo-mark-open.svg", import.meta.url), "utf8");
 const socialCardPng = await readFile(new URL("../docs-src/public/social-card.png", import.meta.url)).catch(() => Buffer.alloc(0));
@@ -414,6 +429,301 @@ test("security trust surface is public, checked, and release-backed", () => {
   assert.match(repoInstallDocs, /gh attestation verify/);
   assert.match(installation, /Security verification/);
   assert.match(installation, /gh attestation verify/);
+});
+
+test("guided help articles are a small screenshot-backed set", () => {
+  const articles = [
+    helpFirstLocalCheck,
+    helpRunOneApexTest,
+    helpDebugApexVsCode,
+    helpAnonymousApexScratch,
+    helpLocalDataEnvironments,
+    helpChangedTestsBeforePr,
+    helpGladeOrgSfDataImport,
+    helpProfileApexDebugLog,
+    helpCiSetup
+  ];
+
+  assert.match(config, /\{ text: 'Help', link: '\/help\/' \}/);
+  assert.match(config, /text: 'Guided help'/);
+  assert.match(helpIndex, /^# Guided Help/m);
+  assert.equal(articles.length, 9);
+
+  for (const article of articles) {
+    assert.match(article, /class="docs-intro"/);
+    assert.match(article, /## Before you start/);
+    assert.match(article, /## Common wrong turn/);
+    assert.match(article, /## Next/);
+    assert.match(article, /!\[[^\]]+\]\(\/help\/screenshots\/[a-z0-9-]+\.png\)/);
+  }
+  const helpArticleCopy = articles.join("\n");
+  assert.doesNotMatch(helpArticleCopy, /RefinementService|RefinementServiceTest|macrodata-apex|refine-local|insert account|opensFile/);
+  assert.doesNotMatch(helpArticleCopy, /Walkthrough refinement|Quarterly refinement|Imported refinement file|generated help fixture|fixture/);
+  assert.doesNotMatch(helpArticleCopy, /data\/insertOrder\.json|data\/accounts\.json|data\/contacts\.json|dev\.sqlite/);
+
+  assert.match(helpRunOneApexTest, /Debug from Test Explorer/);
+  assert.match(helpRunOneApexTest, /Variables/);
+  assert.match(helpLocalDataEnvironments, /Open the Glade side view/);
+  assert.doesNotMatch(helpLocalDataEnvironments, /Open the Glade Activity Bar/);
+  assert.match(helpIndex, /Profile an Apex debug log/);
+  assert.match(helpIndex, /Add Glade to CI/);
+  assert.match(config, /Profile a debug log/);
+  assert.match(config, /CI setup/);
+  assert.match(helpProfileApexDebugLog, /glade debug profile --log <debug-log> --format markdown/);
+  assert.match(helpProfileApexDebugLog, /glade debug profile --log <debug-log> --json/);
+  assert.match(helpProfileApexDebugLog, /glade profile analyze/);
+  assert.match(helpCiSetup, /fetch-depth: 0/);
+  assert.match(helpCiSetup, /glade check --project \. --format sarif --output reports\/glade-check\.sarif/);
+  assert.match(helpCiSetup, /glade test changed --project \. --since origin\/main --json --no-progress/);
+  assert.match(helpCiSetup, /glade test --project \. --junit reports\/glade-junit\.xml --no-progress/);
+  assert.match(helpChangedTestsBeforePr, /glade test --project \. --junit reports\/glade-junit\.xml --no-progress/);
+  assert.match(helpChangedTestsBeforePr, /\[Add Glade to CI\]\(\/help\/ci-setup\)/);
+  assert.match(helpGladeOrgSfDataImport, /glade org create <local-target> --project \./);
+  assert.match(helpCiSetup, /Expected: the report files exist and have non-zero size\./);
+  assert.match(helpCiSetup, /actions\/upload-artifact@v4/);
+});
+
+test("guided help screenshot capture uses terminal copy and clean VS Code profiles", () => {
+  const publicHelpCopy = [
+    helpIndex,
+    helpFirstLocalCheck,
+    helpRunOneApexTest,
+    helpDebugApexVsCode,
+    helpAnonymousApexScratch,
+    helpLocalDataEnvironments,
+    helpChangedTestsBeforePr,
+    helpGladeOrgSfDataImport,
+    helpProfileApexDebugLog,
+    helpCiSetup,
+    helpScreenshotReadme
+  ].join("\n");
+
+  assert.doesNotMatch(publicHelpCopy, /Ghostty|ghostty/);
+  assert.doesNotMatch(publicHelpCopy, /\/Users\/matt|apollo|matt@/i);
+  assert.match(captureHelpScreenshotsScript, /--user-data-dir/);
+  assert.match(captureHelpScreenshotsScript, /--extensions-dir/);
+  assert.match(captureHelpScreenshotsScript, /VSCODE_PROFILE_ROOT="\$\{TMPDIR:-\/tmp\}\/glade-help-vscode"/);
+  assert.match(captureHelpScreenshotsScript, /--new-window/);
+  assert.match(captureHelpScreenshotsScript, /vscode-glade-\$?\{?npm_package_version|vscode-glade-\*\.vsix|vscode-glade-\.\*\.vsix/);
+  assert.match(captureHelpScreenshotsScript, /salesforce/);
+  assert.match(captureHelpScreenshotsScript, /code --list-extensions/);
+  assert.match(captureHelpScreenshotsScript, /RefinementServiceTest\.cls/);
+  assert.match(captureHelpScreenshotsScript, /VSCODE_WINDOW_ZOOM="\$\{VSCODE_WINDOW_ZOOM:-1\.15\}"/);
+  assert.match(captureHelpScreenshotsScript, /VSCODE_CAPTURE_WIDTH="\$\{VSCODE_CAPTURE_WIDTH:-1100\}"/);
+  assert.match(captureHelpScreenshotsScript, /VSCODE_CAPTURE_HEIGHT="\$\{VSCODE_CAPTURE_HEIGHT:-750\}"/);
+  assert.match(captureHelpScreenshotsScript, /CATPPUCCIN_EXTENSION_ID="\$\{CATPPUCCIN_EXTENSION_ID:-catppuccin\.catppuccin-vsc\}"/);
+  assert.match(captureHelpScreenshotsScript, /SALESFORCE_APEX_EXTENSION_ID="\$\{SALESFORCE_APEX_EXTENSION_ID:-salesforce\.salesforcedx-vscode-apex\}"/);
+  assert.match(captureHelpScreenshotsScript, /vscode_open_command=\(\n  env\n  HOME="\$SF_CAPTURE_HOME"\n  SF_USE_GENERIC_UNIX_KEYCHAIN=true\n  SFDX_USE_GENERIC_UNIX_KEYCHAIN=true\n  SF_DISABLE_TELEMETRY=true\n  SFDX_DISABLE_TELEMETRY=true\n  SF_SKIP_NEW_VERSION_CHECK=true\n  code/);
+  assert.match(captureHelpScreenshotsScript, /--password-store=basic/);
+  assert.match(captureHelpScreenshotsScript, /--use-mock-keychain/);
+  assert.match(captureHelpScreenshotsScript, /--skip-welcome/);
+  assert.match(captureHelpScreenshotTargetScript, /--skip-welcome/);
+  assert.match(captureHelpScreenshotTargetScript, /open_vscode_location "\$file" 1 1/);
+  assert.doesNotMatch(captureHelpScreenshotsScript, /--disable-extension salesforce\.salesforcedx-vscode-core/);
+  assert.doesNotMatch(captureHelpScreenshotsScript, /--disable-extension salesforce\.salesforcedx-vscode-services/);
+  assert.match(captureHelpScreenshotsScript, /--install-extension "\$CATPPUCCIN_EXTENSION_ID"/);
+  assert.match(captureHelpScreenshotsScript, /--install-extension "\$SALESFORCE_APEX_EXTENSION_ID"/);
+  assert.match(captureHelpScreenshotsScript, /Only Glade, Catppuccin, Salesforce Apex, its Salesforce dependencies/);
+  assert.match(captureHelpScreenshotsScript, /"workbench\.colorTheme": "Catppuccin Mocha"/);
+  assert.match(captureHelpScreenshotsScript, /"workbench\.sideBar\.location": "left"/);
+  assert.match(captureHelpScreenshotsScript, /"workbench\.activityBar\.location": "hidden"/);
+  assert.match(captureHelpScreenshotsScript, /"workbench\.secondarySideBar\.defaultVisibility": "hidden"/);
+  assert.match(captureHelpScreenshotsScript, /"window\.zoomLevel": 1\.15/);
+  assert.match(captureHelpScreenshotsScript, /"editor\.fontSize": 16/);
+  assert.match(captureHelpScreenshotsScript, /"editor\.minimap\.enabled": false/);
+  assert.match(captureHelpScreenshotsScript, /"debug\.showInStatusBar": "never"/);
+  assert.match(captureHelpScreenshotsScript, /"debug\.autoExpandLazyVariables": "on"/);
+  assert.match(captureHelpScreenshotsScript, /"salesforcedx-vscode-core\.telemetry\.enabled": false/);
+  assert.match(captureHelpScreenshotsScript, /"salesforcedx-vscode-core\.show-cli-success-msg": false/);
+  assert.match(captureHelpScreenshotsScript, /"salesforcedx-vscode-apex\.advanced\.enable-completion-statistics": false/);
+  assert.match(captureHelpScreenshotsScript, /"salesforcedx-vscode-apex\.enable-apex-ls-error-to-telemetry": false/);
+  assert.match(captureHelpScreenshotsScript, /"\*\.apex": "apex"/);
+  assert.match(captureHelpScreenshotsScript, /GHOSTTY_FONT_SIZE="\$\{GHOSTTY_FONT_SIZE:-18\}"/);
+  assert.match(captureHelpScreenshotsScript, /--font-size="\$GHOSTTY_FONT_SIZE"/);
+  assert.match(captureHelpScreenshotsScript, /--window-show-tab-bar=never/);
+  assert.match(captureHelpScreenshotsScript, /OPEN_HELP_CAPTURE_APPS/);
+  assert.match(captureHelpScreenshotsScript, /SF_CAPTURE_HOME="\$PROJECT_ROOT\/\.glade\/sf-home"/);
+  assert.match(captureHelpScreenshotsScript, /SF_USE_GENERIC_UNIX_KEYCHAIN=true/);
+  assert.match(captureHelpScreenshotsScript, /SFDX_USE_GENERIC_UNIX_KEYCHAIN=true/);
+  assert.match(captureHelpScreenshotsScript, /SF_DISABLE_TELEMETRY=true/);
+  assert.match(captureHelpScreenshotsScript, /SFDX_DISABLE_TELEMETRY=true/);
+  assert.match(captureHelpScreenshotsScript, /SF_SKIP_NEW_VERSION_CHECK=true/);
+  assert.match(captureHelpScreenshotsScript, /workbench\.welcomePage\.walkthroughs\.openOnInstall/);
+  assert.match(captureHelpScreenshotsScript, /chat\.allowAnonymousAccess/);
+  assert.match(captureHelpScreenshotsScript, /chat\.titleBar\.signIn\.enabled/);
+  assert.match(captureHelpScreenshotsScript, /git\.openRepositoryInParentFolders/);
+  assert.match(captureHelpScreenshotsScript, /"git\.enabled": false/);
+  assert.match(captureHelpScreenshotsScript, /"extensions\.ignoreRecommendations": true/);
+  assert.match(captureHelpScreenshotsScript, /"update\.showReleaseNotes": false/);
+  assert.match(captureHelpScreenshotsScript, /--disable-extension github\.copilot-chat/);
+  assert.match(captureHelpScreenshotsScript, /--disable-extension vscode\.git/);
+  assert.match(captureHelpScreenshotsScript, /--disable-extension vscode\.github-authentication/);
+  assert.match(captureHelpScreenshotsScript, /screencapture/);
+  assert.match(captureHelpScreenshotsScript, /Use a terminal for CLI screenshots/);
+  assert.match(captureHelpScreenshotsScript, /Open terminal when ready/);
+  assert.match(captureHelpScreenshotsScript, /open -na Ghostty\.app/);
+  assert.match(captureHelpScreenshotsScript, /--title="?Glade Help CLI Capture"?/);
+  assert.match(captureHelpScreenshotTargetScript, /terminal_done_file/);
+  assert.match(captureHelpScreenshotTargetScript, /terminal_ready_file/);
+  assert.match(captureHelpScreenshotTargetScript, /wait_for_terminal_exit/);
+  assert.match(captureHelpScreenshotTargetScript, /wait_for_terminal_ready/);
+  assert.match(captureHelpScreenshotTargetScript, /TERMINAL_SETTLE_SECONDS="\$\{TERMINAL_SETTLE_SECONDS:-2\}"/);
+  assert.match(captureHelpScreenshotTargetScript, /position_process_window "Ghostty" "\$terminal_pid" "\$rect"[\s\S]*sleep "\$TERMINAL_SETTLE_SECONDS"/);
+  assert.match(captureHelpScreenshotTargetScript, /touch "\$done_file"/);
+  assert.match(captureHelpScreenshotTargetScript, /printf 'touch %q\\n' "\$ready_file"/);
+  assert.doesNotMatch(captureHelpScreenshotTargetScript, /sleep 600/);
+  assert.match(checkHelpScreenshotsScript, /help\/screenshots/);
+  assert.match(checkHelpScreenshotsScript, /local-data-environments-02-terminal\.png/);
+  assert.doesNotMatch(checkHelpScreenshotsScript, /local-data-environments-02-ghostty/);
+  assert.match(checkHelpScreenshotsScript, /minWidth/);
+  assert.match(checkHelpScreenshotsScript, /minHeight/);
+  assert.match(checkHelpScreenshotsScript, /maxWidth/);
+  assert.match(checkHelpScreenshotsScript, /maxHeight/);
+  assert.match(helpProjectSetupScript, /glade\.yml/);
+  assert.match(helpProjectSetupScript, /packageDirs: \[force-app\]/);
+  assert.match(helpProjectSetupScript, /macrodata-apex/);
+  assert.match(helpProjectSetupScript, /RefinementServiceTest/);
+  assert.match(helpProjectSetupScript, /Walkthrough refinement file/);
+
+  assert.match(helpFirstLocalCheck, /terminal/);
+  assert.match(helpChangedTestsBeforePr, /terminal/);
+  assert.match(helpDebugApexVsCode, /clean VS Code profile/);
+  assert.match(helpDebugApexVsCode, /Open an Apex class or test file/);
+  assert.match(helpAnonymousApexScratch, /clean VS Code profile/);
+  assert.match(helpScreenshotReadme, /salesforce\.salesforcedx-vscode-apex/);
+  assert.match(helpScreenshotReadme, /Salesforce Core and Services dependencies/);
+  assert.match(helpScreenshotReadme, /Do not disable Salesforce Core or Services/);
+  assert.match(helpRunOneApexTest, /Salesforce Apex extension/);
+  assert.match(helpRunOneApexTest, /glade test --project \. --class <TestClass> --no-progress/);
+  assert.match(helpRunOneApexTest, /Set a breakpoint on the line you want to inspect before starting the debug action/);
+  assert.doesNotMatch(helpRunOneApexTest, /RefinementService|insert account|opensFile|macrodata-apex/);
+  assert.doesNotMatch(helpRunOneApexTest, /RefinementServiceTest --json/);
+  assert.match(captureHelpScreenshotTargetScript, /run-one-apex-test-01-cli\)[\s\S]*RefinementServiceTest --no-progress/);
+  assert.doesNotMatch(captureHelpScreenshotTargetScript, /RefinementServiceTest --json/);
+  assert.match(helpAnonymousApexScratch, /Salesforce Apex extension/);
+  assert.match(helpLocalDataEnvironments, /Salesforce Apex extension/);
+  assert.match(helpGladeOrgSfDataImport, /terminal/);
+  assert.match(helpGladeOrgSfDataImport, /disposable Salesforce CLI home/);
+  assert.match(helpGladeOrgSfDataImport, /SF_USE_GENERIC_UNIX_KEYCHAIN=true/);
+  assert.match(helpGladeOrgSfDataImport, /SF_SKIP_NEW_VERSION_CHECK=true/);
+  assert.match(helpGladeOrgSfDataImport, /sf org list/);
+  assert.match(helpGladeOrgSfDataImport, /<local-target>/);
+  assert.match(helpGladeOrgSfDataImport, /sf data import tree --plan <plan-file> --target-org <local-target>/);
+  assert.match(helpGladeOrgSfDataImport, /sf data query --query "SELECT Id, Name FROM Account" --target-org <local-target>/);
+  assert.doesNotMatch(helpGladeOrgSfDataImport, /--sf-config-dir/);
+  assert.doesNotMatch(helpGladeOrgSfDataImport, / -o refine-local/);
+  assert.match(helpGladeOrgSfDataImport, /sf data import tree/);
+  assert.doesNotMatch(captureHelpScreenshotTargetScript, /ls -lh reports/);
+  assert.doesNotMatch(helpScreenshotReadme, /ls -lh reports/);
+  assert.match(captureHelpScreenshotTargetScript, /mark_changed_apex_file\(\)/);
+  assert.match(captureHelpScreenshotTargetScript, /changed-tests-before-pr-01-changed-tests\)[\s\S]*changed-apex/);
+  assert.match(captureHelpScreenshotTargetScript, /changed-tests-before-pr-02-reports\)[\s\S]*changed-apex/);
+  assert.match(captureHelpScreenshotTargetScript, /glade-org-sf-data-import-02-auth-list\)[\s\S]*reuse-project/);
+  assert.match(captureHelpScreenshotTargetScript, /glade-org-sf-data-import-03-import-query\)[\s\S]*reuse-project/);
+  assert.match(captureHelpScreenshotTargetScript, /run_terminal_with_server\(\)[\s\S]*live/);
+  assert.match(captureHelpScreenshotTargetScript, /stop_local_org_server\(\)/);
+  assert.match(captureHelpScreenshotTargetScript, /cleanup_help_screenshot_capture\(\)[\s\S]*stop_local_org_server/);
+  assert.match(captureHelpScreenshotTargetScript, /glade-org-sf-data-import-02-auth-list\)[\s\S]*TERMINAL_WIDE_RECT/);
+  assert.match(captureHelpScreenshotTargetScript, /glade-org-sf-data-import-03-import-query\)[\s\S]*TERMINAL_WIDE_RECT/);
+  assert.match(captureHelpScreenshotTargetScript, /glade org auth refine-local --project \. >\/dev\/null/);
+  assert.match(captureHelpScreenshotTargetScript, /ensure_local_org_server\(\)[\s\S]*org\.json/);
+  assert.match(captureHelpScreenshotTargetScript, /pkill -f "glade org start refine-local --project \$PROJECT_ROOT"/);
+  assert.match(captureHelpScreenshotTargetScript, /close_bottom_panel\(\)/);
+  assert.match(captureHelpScreenshotTargetScript, /run_vscode\(\)[\s\S]*close_bottom_panel/);
+  assert.match(captureHelpScreenshotTargetScript, /reset_vscode_capture_state\(\)/);
+  assert.match(captureHelpScreenshotTargetScript, /show_explorer_view\(\)/);
+  assert.match(captureHelpScreenshotTargetScript, /show_run_and_debug_view\(\)/);
+  assert.match(captureHelpScreenshotTargetScript, /set_vscode_breakpoint_from_menu\(\)/);
+  assert.match(captureHelpScreenshotTargetScript, /open_glade_sidebar\(\)/);
+  assert.match(captureHelpScreenshotTargetScript, /dismiss_vscode_first_run_prompts\(\)/);
+  assert.match(captureHelpScreenshotTargetScript, /notifications\.clearAll/);
+  assert.match(captureHelpScreenshotTargetScript, /workbench\.debug\.action\.focusVariablesView/);
+  assert.match(captureHelpScreenshotTargetScript, /focus_debug_variables_view\(\)/);
+  assert.match(captureHelpScreenshotTargetScript, /clear_vscode_launch_config\(\)/);
+  assert.match(captureHelpScreenshotTargetScript, /close_vscode_capture_windows\(\)/);
+  assert.match(captureHelpScreenshotTargetScript, /pkill -f "\$VSCODE_USER"/);
+  assert.match(captureHelpScreenshotTargetScript, /pkill -9 -f "\$VSCODE_USER"/);
+  assert.match(captureHelpScreenshotTargetScript, /cleanup_help_screenshot_capture\(\)/);
+  assert.match(captureHelpScreenshotTargetScript, /trap cleanup_help_screenshot_capture EXIT/);
+  assert.match(captureHelpScreenshotTargetScript, /open_vscode_file\(\)[\s\S]*close_vscode_capture_windows[\s\S]*env \\/);
+  assert.match(captureHelpScreenshotTargetScript, /open_vscode_file\(\)[\s\S]*dismiss_vscode_first_run_prompts/);
+  assert.match(captureHelpScreenshotTargetScript, /open_vscode_location\(\)[\s\S]*dismiss_vscode_first_run_prompts/);
+  assert.match(captureHelpScreenshotTargetScript, /run_vscode\(\)[\s\S]*reset_vscode_capture_state/);
+  assert.match(captureHelpScreenshotTargetScript, /run_vscode\(\)[\s\S]*clear_vscode_launch_config/);
+  assert.match(captureHelpScreenshotTargetScript, /run_vscode\(\)[\s\S]*capture_rect "\$target" "\$VSCODE_RECT"[\s\S]*close_vscode_capture_windows/);
+  const vscodeActionBlock = (name) => {
+    const match = captureHelpScreenshotTargetScript.match(new RegExp(`\\n    ${name}\\)\\n([\\s\\S]*?)\\n      ;;`));
+    assert.ok(match, `missing VS Code capture action: ${name}`);
+    return match[1];
+  };
+  assert.doesNotMatch(vscodeActionBlock("breakpoint"), /click_relative/);
+  assert.doesNotMatch(vscodeActionBlock("debug-toolbar"), /click_relative 103 242|key_code 96/);
+  assert.doesNotMatch(vscodeActionBlock("glade-data"), /click_relative 51 450/);
+  assert.match(captureHelpScreenshotTargetScript, /wc -c reports\/glade-test-changed\.json reports\/glade-junit\.xml/);
+  assert.match(helpScreenshotReadme, /wc -c reports\/glade-test-changed\.json reports\/glade-junit\.xml/);
+  assert.match(helpChangedTestsBeforePr, /wc -c reports\/glade-test-changed\.json reports\/glade-junit\.xml/);
+  assert.match(helpProfileApexDebugLog, /terminal/);
+  assert.match(helpProfileApexDebugLog, /Hot events/);
+  assert.match(helpCiSetup, /terminal/);
+  assert.match(helpCiSetup, /reports\/glade-check\.sarif/);
+  assert.match(captureHelpScreenshotTargetScript, /profile-apex-debug-log-01-profile\)[\s\S]*glade debug profile --log reports\/anonymous-output\.txt --format markdown/);
+  assert.match(captureHelpScreenshotTargetScript, /profile-apex-debug-log-02-json\)[\s\S]*glade debug profile --log reports\/anonymous-output\.txt --json/);
+  assert.match(captureHelpScreenshotTargetScript, /ci-setup-01-workflow\)[\s\S]*write_ci_workflow/);
+  assert.match(captureHelpScreenshotTargetScript, /ci-setup-02-artifacts\)[\s\S]*glade-check\.sarif/);
+});
+
+test("guided help screenshot runner names every capture target", () => {
+  const screenshotNames = [
+    "first-local-check-01-doctor.png",
+    "first-local-check-02-check.png",
+    "run-one-apex-test-01-cli.png",
+    "run-one-apex-test-02-codelens.png",
+    "run-one-apex-test-03-test-explorer.png",
+    "debug-apex-vscode-01-breakpoint.png",
+    "debug-apex-vscode-02-debug-toolbar.png",
+    "debug-apex-vscode-03-variables.png",
+    "anonymous-apex-scratch-01-buffer.png",
+    "anonymous-apex-scratch-02-run.png",
+    "local-data-environments-01-sidebar.png",
+    "local-data-environments-02-terminal.png",
+    "changed-tests-before-pr-01-changed-tests.png",
+    "changed-tests-before-pr-02-reports.png",
+    "glade-org-sf-data-import-01-create-start.png",
+    "glade-org-sf-data-import-02-auth-list.png",
+    "glade-org-sf-data-import-03-import-query.png",
+    "profile-apex-debug-log-01-profile.png",
+    "profile-apex-debug-log-02-json.png",
+    "ci-setup-01-workflow.png",
+    "ci-setup-02-artifacts.png"
+  ];
+
+  assert.match(packageJson.scripts["help:screenshot"], /scripts\/capture-help-screenshot-target\.sh/);
+  assert.match(captureHelpScreenshotTargetScript, /--list/);
+  assert.match(captureHelpScreenshotTargetScript, /--all/);
+  assert.match(captureHelpScreenshotTargetScript, /run_terminal/);
+  assert.match(captureHelpScreenshotTargetScript, /run_vscode/);
+  assert.match(captureHelpScreenshotTargetScript, /find_ghostty_pid_for_command/);
+  assert.match(captureHelpScreenshotTargetScript, /position_process_window "Ghostty"/);
+  assert.match(captureHelpScreenshotTargetScript, /CAPTURE_XDG_DATA_HOME/);
+  assert.match(captureHelpScreenshotTargetScript, /debug-breakpoint/);
+  assert.match(captureHelpScreenshotTargetScript, /menu item "Start Debugging"/);
+  assert.match(captureHelpScreenshotTargetScript, /run-one-apex-test-03-test-explorer\)[\s\S]*debug-breakpoint/);
+  assert.match(captureHelpScreenshotTargetScript, /expand_debug_locals\(\)/);
+  assert.match(captureHelpScreenshotTargetScript, /expand_debug_locals\(\)[\s\S]*focus_debug_variables_view[\s\S]*key_code 124[\s\S]*key_code 125[\s\S]*key_code 124/);
+  assert.match(captureHelpScreenshotTargetScript, /debug-breakpoint\)[\s\S]*start_debugging_from_menu[\s\S]*expand_debug_locals/);
+  assert.match(captureHelpScreenshotTargetScript, /breakpoint\)[\s\S]*open_vscode_location "\$file" 4 1[\s\S]*set_vscode_breakpoint_from_menu/);
+  assert.match(captureHelpScreenshotTargetScript, /debug-apex-vscode-01-breakpoint\)[\s\S]*RefinementService\.cls" breakpoint/);
+  assert.doesNotMatch(captureHelpScreenshotTargetScript, /tell application "Visual Studio Code"/);
+  assert.doesNotMatch(captureHelpScreenshotTargetScript, /tell application "\$app_name"/);
+  assert.match(captureHelpScreenshotTargetScript, /screencapture/);
+  assert.match(captureHelpScreenshotTargetScript, /PROMPT='macrodata-apex % '/);
+  assert.doesNotMatch(captureHelpScreenshotTargetScript, /apollo/i);
+
+  for (const name of screenshotNames) {
+    const target = name.replace(/\.png$/, "");
+    assert.match(captureHelpScreenshotTargetScript, new RegExp(`${target}\\)`));
+    assert.match(helpScreenshotReadme, new RegExp(`npm --prefix site run help:screenshot -- ${target}`));
+  }
 });
 
 test("editor support catalog is generated from checked Glade support data", () => {
@@ -774,8 +1084,8 @@ test("theme uses the Host Signal design direction", () => {
   assert.match(css, /--lh-ui: 1\.35;/);
   assert.match(css, /--lh-body: 1\.65;/);
   assert.match(css, /--lh-code: 1\.6;/);
-  assert.match(css, /--vp-sidebar-width: 240px;/);
-  assert.match(css, /--vp-layout-max-width: 1280px;/);
+  assert.match(css, /--vp-sidebar-width: 220px;/);
+  assert.match(css, /--vp-layout-max-width: 1360px;/);
   assert.match(css, /--glade-page-max: 1280px;/);
   assert.match(css, /--bg: #070b0d;/);
   assert.match(css, /--surface: #10191e;/);
@@ -1201,6 +1511,8 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.equal(packageJson.scripts["sync:tools-docs"], undefined);
   assert.match(packageJson.scripts.test, /check:routes/);
   assert.match(packageJson.scripts.build, /check:routes/);
+  assert.match(packageJson.scripts.test, /help:check/);
+  assert.match(packageJson.scripts.build, /help:check/);
   assert.match(checkDocRoutesScript, /Missing docs route source files/);
   assert.doesNotMatch(lwcLocalShell, /cd \.\.\/glade-tools/);
   assert.doesNotMatch(localTesting, /cd \.\.\/glade-tools/);

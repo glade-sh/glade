@@ -1,7 +1,7 @@
 :root {
   --vp-nav-height: 60px;
-  --vp-sidebar-width: 240px;
-  --vp-layout-max-width: 1280px;
+  --vp-sidebar-width: 220px;
+  --vp-layout-max-width: 1360px;
   --vp-font-family-base: 'Host Grotesk Variable', 'Host Grotesk', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --vp-font-family-mono: 'Monaspace Argon', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
   --glade-font-accent: var(--vp-font-family-base);
@@ -445,7 +445,7 @@ body:has(.VPHome) .VPNavBarSearch {
 }
 
 .VPDoc.has-aside .content-container {
-  max-width: 760px;
+  max-width: 880px;
 }
 
 .VPDoc.has-sidebar {

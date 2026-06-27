@@ -2,9 +2,13 @@
   "scripts": {
     "check:routes": "node scripts/check-doc-routes.mjs",
     "generate:editor-support": "node scripts/build-editor-support.mjs",
+    "help:project": "node scripts/help-project/setup.mjs",
+    "help:capture": "bash scripts/capture-help-screenshots.sh",
+    "help:screenshot": "bash scripts/capture-help-screenshot-target.sh",
+    "help:check": "node scripts/check-help-screenshots.mjs",
     "dev": "vitepress dev .",
-    "build": "npm run check:routes && npm run generate:editor-support -- --check && vitepress build . && cp install.sh .vitepress/dist/install.sh",
-    "test": "npm run check:routes && npm run generate:editor-support -- --check && node --test tests/*.test.mjs",
+    "build": "npm run check:routes && npm run generate:editor-support -- --check && npm run help:check && vitepress build . && cp install.sh .vitepress/dist/install.sh",
+    "test": "npm run check:routes && npm run generate:editor-support -- --check && npm run help:check && node --test tests/*.test.mjs",
     "preview": "vitepress preview ."
   },
   "devDependencies": {
