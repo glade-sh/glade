@@ -12,11 +12,15 @@ import (
 
 // Annotate matches log entries to likely Apex source locations.
 func Annotate(log apexlog.Log, index typesys.Index, maxCandidates int) (AnnotatedLog, error) {
+	sourceIndex := BuildSourceIndex(index)
+	return annotateWithSourceIndex(log, sourceIndex, maxCandidates)
+}
+
+func annotateWithSourceIndex(log apexlog.Log, sourceIndex SourceIndex, maxCandidates int) (AnnotatedLog, error) {
 	if maxCandidates <= 0 {
 		maxCandidates = 5
 	}
 
-	sourceIndex := BuildSourceIndex(index)
 	out := AnnotatedLog{
 		Log:     log,
 		Entries: make([]AnnotatedEntry, 0, len(log.Entries)),
@@ -64,6 +68,18 @@ func matchEntry(entry apexlog.Entry, index SourceIndex, currentCodeUnitMethods [
 				Symbol:     methodSymbol(method.Namespace, method.TypeName, method.MethodKey()),
 				Reason:     "stack frame",
 				Confidence: 0.95,
+			})
+		}
+	}
+
+	if isMethodLikeEntry(entry.Kind) && entry.Data.MethodSymbol != "" {
+		for _, method := range methodsForEntrySymbol(index, entry.Kind, entry.Data.MethodSymbol) {
+			addCandidate(candidates, SourceCandidate{
+				File:       method.File,
+				Line:       method.StartLine,
+				Symbol:     methodSymbol(method.Namespace, method.TypeName, method.Name),
+				Reason:     "method symbol",
+				Confidence: 0.90,
 			})
 		}
 	}
@@ -205,6 +221,60 @@ func matchEntry(entry apexlog.Entry, index SourceIndex, currentCodeUnitMethods [
 	}
 
 	return out
+}
+
+func methodsForEntrySymbol(index SourceIndex, kind apexlog.EntryKind, symbol string) []sourceMethod {
+	ns, typeName, methodName := parseMethodLikeSymbol(symbol)
+	methods := methodsForSymbol(index, ns, typeName, methodName)
+	if len(methods) > 0 {
+		return methods
+	}
+	if !isConstructorLikeEntry(kind) && strings.Contains(symbol, "(") {
+		return nil
+	}
+	ns, typeName, methodName = parseConstructorLikeSymbol(symbol)
+	if typeName == "" || methodName == "" {
+		return nil
+	}
+	return methodsForSymbol(index, ns, typeName, methodName)
+}
+
+func isMethodLikeEntry(kind apexlog.EntryKind) bool {
+	switch kind {
+	case apexlog.EntryMethodEntry, apexlog.EntryMethodExit,
+		apexlog.EntryConstructorEntry, apexlog.EntryConstructorExit,
+		apexlog.EntrySystemMethodEntry, apexlog.EntrySystemMethodExit:
+		return true
+	default:
+		return false
+	}
+}
+
+func isConstructorLikeEntry(kind apexlog.EntryKind) bool {
+	switch kind {
+	case apexlog.EntryConstructorEntry, apexlog.EntryConstructorExit:
+		return true
+	default:
+		return false
+	}
+}
+
+func parseConstructorLikeSymbol(value string) (namespace, typeName, methodName string) {
+	value = strings.TrimSpace(strings.TrimPrefix(value, "Class."))
+	if value == "" || strings.HasPrefix(value, "<") {
+		return "", "", ""
+	}
+	if open := strings.Index(value, "("); open >= 0 {
+		value = strings.TrimSpace(value[:open])
+	}
+	parts := strings.Split(value, ".")
+	if len(parts) == 0 {
+		return "", "", ""
+	}
+	typeName = strings.TrimSpace(parts[len(parts)-1])
+	namespace = strings.Join(parts[:len(parts)-1], ".")
+	methodName = constructorNameForType(typeName)
+	return namespace, typeName, methodName
 }
 
 func addCandidate(candidates map[string]SourceCandidate, candidate SourceCandidate) {

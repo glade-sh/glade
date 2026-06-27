@@ -83,9 +83,13 @@ func BuildSourceIndex(index typesys.Index) SourceIndex {
 			continue
 		}
 		file := filepath.Clean(typ.File)
+		hasConstructor := false
 		for _, member := range typ.Members {
 			if member.Kind != apexast.DeclarationMethod && member.Kind != apexast.DeclarationConstructor {
 				continue
+			}
+			if member.Kind == apexast.DeclarationConstructor {
+				hasConstructor = true
 			}
 			method := sourceMethod{
 				Namespace:      typ.Namespace,
@@ -96,6 +100,26 @@ func BuildSourceIndex(index typesys.Index) SourceIndex {
 				EndLine:        member.Range.End.Line,
 				Static:         declarationHasModifier(member.Modifiers, "static"),
 				ParameterCount: len(member.Parameters),
+			}
+			if method.StartLine == 0 {
+				method.StartLine = typ.Range.Start.Line
+			}
+			if method.EndLine == 0 {
+				method.EndLine = typ.Range.End.Line
+			}
+			methodsByFile[file] = append(methodsByFile[file], method)
+			addMethodLookup(&sourceIndex, method)
+			sourceIndex.methods = append(sourceIndex.methods, method)
+		}
+		if typ.Kind == apexast.DeclarationClass && !hasConstructor {
+			method := sourceMethod{
+				Namespace:      typ.Namespace,
+				TypeName:       typ.Name,
+				Name:           constructorNameForType(typ.Name),
+				File:           file,
+				StartLine:      typ.Range.Start.Line,
+				EndLine:        typ.Range.Start.Line,
+				ParameterCount: 0,
 			}
 			if method.StartLine == 0 {
 				method.StartLine = typ.Range.Start.Line
@@ -254,6 +278,15 @@ func methodByLine(methods []sourceMethod, line int) sourceMethod {
 		}
 	}
 	return out
+}
+
+func constructorNameForType(typeName string) string {
+	typeName = strings.TrimSpace(typeName)
+	if typeName == "" {
+		return ""
+	}
+	parts := strings.Split(typeName, ".")
+	return strings.TrimSpace(parts[len(parts)-1])
 }
 
 func variableTypesByMethod(lines []string, methods []sourceMethod, byLine func(int) sourceMethod) map[string]map[string]string {

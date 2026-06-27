@@ -6,7 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/apexlog"
+	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -87,6 +89,62 @@ func TestAnnotateKeepsWeakMatchesWeak(t *testing.T) {
 	}
 	if weak.Best.Line <= 0 {
 		t.Fatalf("weak line = %d, want positive line", weak.Best.Line)
+	}
+}
+
+func TestAnnotateUsesMethodEntrySymbolBeforeLineFallback(t *testing.T) {
+	root := t.TempDir()
+	retrieverFile := filepath.Join(root, "ParentAffiliationRetriever.cls")
+	couponFile := filepath.Join(root, "CouponManager.cls")
+	if err := os.WriteFile(retrieverFile, []byte("public virtual class ParentAffiliationRetriever {\n}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(couponFile, []byte("public abstract class CouponManager {\n    protected CouponManager() { }\n}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	index := typesys.Index{Types: []typesys.TypeSymbol{
+		{
+			Kind:      apexast.DeclarationClass,
+			Name:      "ParentAffiliationRetriever",
+			Namespace: "pkg",
+			File:      retrieverFile,
+			Range: diagnostic.Range{
+				Start: diagnostic.Position{Line: 6},
+				End:   diagnostic.Position{Line: 20},
+			},
+		},
+		{
+			Kind:      apexast.DeclarationClass,
+			Name:      "CouponManager",
+			Namespace: "pkg",
+			File:      couponFile,
+			Range: diagnostic.Range{
+				Start: diagnostic.Position{Line: 1},
+				End:   diagnostic.Position{Line: 8},
+			},
+			Members: []typesys.MemberSymbol{{
+				Kind: apexast.DeclarationConstructor,
+				Name: "CouponManager",
+				Range: diagnostic.Range{
+					Start: diagnostic.Position{Line: 6},
+					End:   diagnostic.Position{Line: 6},
+				},
+			}},
+		},
+	}}
+	log := mustParseEditorLog(t, "00:00:00.001 (1000000)|METHOD_ENTRY|[6]|01p000000000001|pkg.ParentAffiliationRetriever.ParentAffiliationRetriever()\n")
+
+	annotated, err := Annotate(log, index, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	best := annotated.Entries[0].Best
+
+	if best.File != retrieverFile {
+		t.Fatalf("best = %#v, want %s", best, retrieverFile)
+	}
+	if best.Reason != "method symbol" {
+		t.Fatalf("reason = %q, want method symbol", best.Reason)
 	}
 }
 

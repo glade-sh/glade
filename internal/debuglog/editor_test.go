@@ -1,13 +1,16 @@
 package debuglog
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 	"unicode/utf16"
 
+	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/apexlog"
+	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -61,7 +64,8 @@ func TestBuildEditorAnalysisUsesDocumentLinesForFoldsAfterHeader(t *testing.T) {
 
 func TestBuildEditorAnalysisLinksMethodEntriesToSource(t *testing.T) {
 	index := mustLoadDebugIndex(t, filepath.Join("testdata", "project"))
-	log := mustParseEditorLog(t, "00:00:00.001 (1000000)|METHOD_ENTRY|[2]|01p000000000001|ns.TestProcessor.run()\n")
+	raw := "00:00:00.001 (1000000)|METHOD_ENTRY|[2]|01p000000000001|ns.TestProcessor.run()"
+	log := mustParseEditorLog(t, raw+"\n")
 
 	analysis := BuildEditorAnalysis(log, index, testEditorOptions())
 	link := findEditorLink(analysis, "method")
@@ -71,6 +75,188 @@ func TestBuildEditorAnalysisLinksMethodEntriesToSource(t *testing.T) {
 	}
 	if link.Target.Line != 2 {
 		t.Fatalf("method line = %d, want 2", link.Target.Line)
+	}
+	wantStart := strings.Index(raw, "ns.TestProcessor.run()")
+	if link.Range.StartColumn != wantStart || link.Range.EndColumn != wantStart+len("ns.TestProcessor.run()") {
+		t.Fatalf("method link range = %#v, want symbol columns %d-%d", link.Range, wantStart, wantStart+len("ns.TestProcessor.run()"))
+	}
+}
+
+func TestBuildEditorAnalysisLinksImplicitDefaultConstructorToClass(t *testing.T) {
+	root := t.TempDir()
+	retrieverFile := filepath.Join(root, "ParentAffiliationRetriever.cls")
+	couponFile := filepath.Join(root, "CouponManager.cls")
+	if err := os.WriteFile(retrieverFile, []byte("public virtual class ParentAffiliationRetriever {\n}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(couponFile, []byte("public abstract class CouponManager {\n    protected CouponManager() { }\n}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	index := typesys.Index{Types: []typesys.TypeSymbol{
+		{
+			Kind:      apexast.DeclarationClass,
+			Name:      "ParentAffiliationRetriever",
+			Namespace: "pkg",
+			File:      retrieverFile,
+			Range: diagnostic.Range{
+				Start: diagnostic.Position{Line: 6},
+				End:   diagnostic.Position{Line: 20},
+			},
+		},
+		{
+			Kind:      apexast.DeclarationClass,
+			Name:      "CouponManager",
+			Namespace: "pkg",
+			File:      couponFile,
+			Range: diagnostic.Range{
+				Start: diagnostic.Position{Line: 1},
+				End:   diagnostic.Position{Line: 8},
+			},
+			Members: []typesys.MemberSymbol{{
+				Kind: apexast.DeclarationConstructor,
+				Name: "CouponManager",
+				Range: diagnostic.Range{
+					Start: diagnostic.Position{Line: 6},
+					End:   diagnostic.Position{Line: 6},
+				},
+			}},
+		},
+	}}
+	log := mustParseEditorLog(t, "00:00:00.001 (1000000)|METHOD_ENTRY|[6]|01p000000000001|pkg.ParentAffiliationRetriever.ParentAffiliationRetriever()\n")
+
+	analysis := BuildEditorAnalysis(log, index, testEditorOptions())
+	link := findEditorLink(analysis, "method")
+
+	if link.Target.File != retrieverFile {
+		t.Fatalf("method target = %#v, want %s", link.Target, retrieverFile)
+	}
+	if analysis.Entries[0].Source.File != retrieverFile {
+		t.Fatalf("method entry source = %#v, want %s", analysis.Entries[0].Source, retrieverFile)
+	}
+	if link.Target.Line != 6 {
+		t.Fatalf("method line = %d, want 6", link.Target.Line)
+	}
+	wantStart := strings.Index(log.Entries[0].Raw, "pkg.ParentAffiliationRetriever.ParentAffiliationRetriever()")
+	if link.Range.StartColumn != wantStart || link.Range.EndColumn != wantStart+len("pkg.ParentAffiliationRetriever.ParentAffiliationRetriever()") {
+		t.Fatalf("method link range = %#v, want symbol columns %d-%d", link.Range, wantStart, wantStart+len("pkg.ParentAffiliationRetriever.ParentAffiliationRetriever()"))
+	}
+	if strings.Contains(strings.ToLower(link.Target.File), "couponmanager") {
+		t.Fatalf("method target should not fall back to same-line CouponManager: %#v", link.Target)
+	}
+}
+
+func TestBuildEditorAnalysisLinksConstructorEntryClassSymbolToClass(t *testing.T) {
+	root := t.TempDir()
+	retrieverFile := filepath.Join(root, "ParentAffiliationRetriever.cls")
+	callerFile := filepath.Join(root, "OnePaymentUi.cls")
+	if err := os.WriteFile(retrieverFile, []byte("public virtual class ParentAffiliationRetriever {\n}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(callerFile, []byte("public class OnePaymentUi {\n    static void build() { Object o = new ParentAffiliationRetriever(); }\n}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	index := typesys.Index{Types: []typesys.TypeSymbol{
+		{
+			Kind:      apexast.DeclarationClass,
+			Name:      "ParentAffiliationRetriever",
+			Namespace: "pkg",
+			File:      retrieverFile,
+			Range: diagnostic.Range{
+				Start: diagnostic.Position{Line: 6},
+				End:   diagnostic.Position{Line: 20},
+			},
+		},
+		{
+			Kind:      apexast.DeclarationClass,
+			Name:      "OnePaymentUi",
+			Namespace: "pkg",
+			File:      callerFile,
+			Range: diagnostic.Range{
+				Start: diagnostic.Position{Line: 1},
+				End:   diagnostic.Position{Line: 700},
+			},
+			Members: []typesys.MemberSymbol{{
+				Kind: apexast.DeclarationMethod,
+				Name: "build",
+				Range: diagnostic.Range{
+					Start: diagnostic.Position{Line: 682},
+					End:   diagnostic.Position{Line: 682},
+				},
+			}},
+		},
+	}}
+	raw := "00:00:00.001 (1000000)|CONSTRUCTOR_ENTRY|[682]|01p000000000001|<init>()|pkg.ParentAffiliationRetriever"
+	log := mustParseEditorLog(t, raw+"\n")
+
+	analysis := BuildEditorAnalysis(log, index, testEditorOptions())
+	link := findEditorLink(analysis, "method")
+
+	if link.Target.File != retrieverFile {
+		t.Fatalf("constructor target = %#v, want %s", link.Target, retrieverFile)
+	}
+	if analysis.Entries[0].Source.File != retrieverFile {
+		t.Fatalf("constructor entry source = %#v, want %s", analysis.Entries[0].Source, retrieverFile)
+	}
+	wantStart := strings.Index(raw, "pkg.ParentAffiliationRetriever")
+	if link.Range.StartColumn != wantStart || link.Range.EndColumn != wantStart+len("pkg.ParentAffiliationRetriever") {
+		t.Fatalf("constructor link range = %#v, want class symbol columns %d-%d", link.Range, wantStart, wantStart+len("pkg.ParentAffiliationRetriever"))
+	}
+}
+
+func TestBuildEditorAnalysisUsesActiveFrameSourceForChildLines(t *testing.T) {
+	root := t.TempDir()
+	retrieverFile := filepath.Join(root, "ParentAffiliationRetriever.cls")
+	couponFile := filepath.Join(root, "CouponManager.cls")
+	if err := os.WriteFile(retrieverFile, []byte("public virtual class ParentAffiliationRetriever {\n}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(couponFile, []byte("public abstract class CouponManager {\n    protected CouponManager() { }\n}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	index := typesys.Index{Types: []typesys.TypeSymbol{
+		{
+			Kind:      apexast.DeclarationClass,
+			Name:      "ParentAffiliationRetriever",
+			Namespace: "pkg",
+			File:      retrieverFile,
+			Range: diagnostic.Range{
+				Start: diagnostic.Position{Line: 6},
+				End:   diagnostic.Position{Line: 20},
+			},
+		},
+		{
+			Kind:      apexast.DeclarationClass,
+			Name:      "CouponManager",
+			Namespace: "pkg",
+			File:      couponFile,
+			Range: diagnostic.Range{
+				Start: diagnostic.Position{Line: 1},
+				End:   diagnostic.Position{Line: 8},
+			},
+			Members: []typesys.MemberSymbol{{
+				Kind: apexast.DeclarationConstructor,
+				Name: "CouponManager",
+				Range: diagnostic.Range{
+					Start: diagnostic.Position{Line: 6},
+					End:   diagnostic.Position{Line: 6},
+				},
+			}},
+		},
+	}}
+	log := mustParseEditorLog(t, strings.Join([]string{
+		"00:00:00.001 (1000000)|METHOD_ENTRY|[6]|01p000000000001|pkg.ParentAffiliationRetriever.ParentAffiliationRetriever()",
+		"00:00:00.002 (2000000)|STATEMENT_EXECUTE|[6]",
+		"",
+	}, "\n"))
+
+	analysis := BuildEditorAnalysis(log, index, testEditorOptions())
+	statement := analysis.Entries[1]
+
+	if statement.Source.File != retrieverFile {
+		t.Fatalf("statement source = %#v, want active frame file %s", statement.Source, retrieverFile)
+	}
+	if statement.Source.Reason != "frame source line" {
+		t.Fatalf("statement source reason = %q, want frame source line", statement.Source.Reason)
 	}
 }
 
@@ -97,6 +283,16 @@ func TestBuildEditorAnalysisLinksVariablesToSourceDeclaration(t *testing.T) {
 	}
 	if link := findEditorLink(analysis, "variableSource"); link.Target.File == "" {
 		t.Fatalf("missing variable source link: %#v", analysis.Links)
+	} else {
+		raw := log.Entries[2].Raw
+		wantStart := strings.Index(raw, "|a|")
+		if wantStart < 0 {
+			t.Fatalf("raw variable scope missing variable token: %s", raw)
+		}
+		wantStart++
+		if link.Range.StartColumn != wantStart || link.Range.EndColumn != wantStart+len("a") {
+			t.Fatalf("variable link range = %#v, want variable columns %d-%d", link.Range, wantStart, wantStart+len("a"))
+		}
 	}
 }
 
@@ -219,7 +415,8 @@ func TestBuildEditorAnalysisUsesUTF16Columns(t *testing.T) {
 
 func TestBuildEditorAnalysisLinksSOQLObjectAndFields(t *testing.T) {
 	index := mustLoadDebugIndex(t, filepath.Join("testdata", "project"))
-	log := mustParseEditorLog(t, "00:00:00.001 (1000000)|SOQL_EXECUTE_BEGIN|[6]|Aggregations:0|SELECT Id, Name FROM Account WHERE Name = 'Acme'\n")
+	raw := "00:00:00.001 (1000000)|SOQL_EXECUTE_BEGIN|[6]|Aggregations:0|SELECT Id, AccountName__c, Name FROM Account WHERE Name = 'Acme'"
+	log := mustParseEditorLog(t, raw+"\n")
 
 	analysis := BuildEditorAnalysis(log, index, testEditorOptions())
 	objectLink := findEditorLink(analysis, "schemaObject")
@@ -230,6 +427,31 @@ func TestBuildEditorAnalysisLinksSOQLObjectAndFields(t *testing.T) {
 	}
 	if !strings.HasSuffix(fieldLink.Target.File, filepath.Join("objects", "Account", "fields", "Name.field-meta.xml")) {
 		t.Fatalf("field target = %#v", fieldLink.Target)
+	}
+	wantObjectStart := strings.Index(raw, "FROM Account") + len("FROM ")
+	if objectLink.Range.StartColumn != wantObjectStart || objectLink.Range.EndColumn != wantObjectStart+len("Account") {
+		t.Fatalf("object link range = %#v, want Account columns %d-%d", objectLink.Range, wantObjectStart, wantObjectStart+len("Account"))
+	}
+	wantFieldStart := strings.Index(raw, ", Name FROM") + len(", ")
+	if fieldLink.Range.StartColumn != wantFieldStart || fieldLink.Range.EndColumn != wantFieldStart+len("Name") {
+		t.Fatalf("field link range = %#v, want Name columns %d-%d", fieldLink.Range, wantFieldStart, wantFieldStart+len("Name"))
+	}
+}
+
+func TestBuildEditorAnalysisLinksDMLObjectRange(t *testing.T) {
+	index := mustLoadDebugIndex(t, filepath.Join("testdata", "project"))
+	raw := "00:00:00.001 (1000000)|DML_BEGIN|[5]|Op:Insert|Type:Account|Rows:1"
+	log := mustParseEditorLog(t, raw+"\n")
+
+	analysis := BuildEditorAnalysis(log, index, testEditorOptions())
+	objectLink := findEditorLink(analysis, "schemaObject")
+
+	if !strings.HasSuffix(objectLink.Target.File, filepath.Join("objects", "Account", "Account.object-meta.xml")) {
+		t.Fatalf("object target = %#v", objectLink.Target)
+	}
+	wantObjectStart := strings.Index(raw, "Account")
+	if objectLink.Range.StartColumn != wantObjectStart || objectLink.Range.EndColumn != wantObjectStart+len("Account") {
+		t.Fatalf("object link range = %#v, want Account columns %d-%d", objectLink.Range, wantObjectStart, wantObjectStart+len("Account"))
 	}
 }
 
