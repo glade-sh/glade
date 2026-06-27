@@ -74,7 +74,7 @@ export type PluginAvailableContexts = Partial<Record<PluginActionContext, boolea
 export type AvailableActionContexts = PluginAvailableContexts;
 
 export function isApexDebugLogPath(filePath: string | undefined): boolean {
-  return filePath ? /\.(?:apexlog|log)$/i.test(filePath) : false;
+  return filePath ? /\.(?:apexlog|log|txt)$/i.test(filePath) : false;
 }
 
 export function isApexDebugLogEditor(filePath: string | undefined, languageId: string | undefined): boolean {
