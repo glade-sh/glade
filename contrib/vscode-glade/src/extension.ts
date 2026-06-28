@@ -490,7 +490,8 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
       const environment = configuredActiveEnvironment(project);
-      sendLocalOrgTerminal(terminalCommand(["glade", ...tuiArgs(project, "data", environment.dbPath)]));
+      const targetOrg = salesforceTarget?.state === "ready" ? salesforceTarget.label : undefined;
+      sendLocalOrgTerminal(terminalCommand(["glade", ...tuiArgs(project, "data", environment.dbPath, targetOrg)]));
     }),
     vscode.commands.registerCommand("glade.openPluginsTui", async () => {
       const project = await projectOrWarn();

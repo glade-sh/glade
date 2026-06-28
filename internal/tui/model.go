@@ -49,6 +49,18 @@ type commandFinishedMsg struct {
 	events []cliui.Event
 }
 
+type commandStreamStartedMsg struct {
+	action Action
+	ch     <-chan RunUpdate
+}
+
+type commandProgressMsg struct {
+	action Action
+	ch     <-chan RunUpdate
+	event  *cliui.Event
+	stderr string
+}
+
 func NewApp(opts AppOptions) App {
 	board := opts.InitialBoard
 	if board == "" {

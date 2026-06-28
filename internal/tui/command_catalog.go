@@ -24,6 +24,12 @@ type Action struct {
 	Label       string
 	Description string
 	Args        func(ActionContext) []string
+	Details     func(ActionContext) []Detail
+}
+
+type Detail struct {
+	Label string
+	Value string
 }
 
 type Catalog struct {
@@ -40,16 +46,16 @@ func DefaultCatalog() Catalog {
 		}},
 		{ID: "tests.lastFailed", Board: BoardTests, Label: "Last Failed", Description: "Run last failed tests.", Args: projectArgs("test", "--last-failed", "--json", "--progress-json")},
 		{ID: "tests.daemon", Board: BoardTests, Label: "Daemon Status", Description: "Inspect the test daemon.", Args: projectArgs("test", "daemon", "status")},
-		{ID: "data.inspect", Board: BoardData, Label: "Inspect DB", Description: "Show local DB counts.", Args: dbArgs("inspect", "--json")},
+		{ID: "data.inspect", Board: BoardData, Label: "Inspect DB", Description: "Show local DB counts.", Args: dbArgs("inspect", "--json"), Details: dbDetails},
 		{ID: "data.query", Board: BoardData, Label: "Query DB", Description: "Run local SOQL.", Args: func(ctx ActionContext) []string {
 			return []string{"db", "query", "--db", ctx.DBPath, "--project", ctx.ProjectRoot, "--json", defaultString(ctx.Query, "SELECT Id FROM Account LIMIT 10")}
-		}},
+		}, Details: queryDetails},
 		{ID: "data.seed", Board: BoardData, Label: "Seed DB", Description: "Apply a fixture to the local DB.", Args: func(ctx ActionContext) []string {
 			return []string{"db", "seed", "--db", ctx.DBPath, "--project", ctx.ProjectRoot, "--json", "--progress-json", defaultString(ctx.Fixture, "fixture.json")}
-		}},
-		{ID: "data.importSF", Board: BoardData, Label: "Import From Org", Description: "Query sf records into the local DB.", Args: sfImportArgs},
-		{ID: "data.reset", Board: BoardData, Label: "Reset DB", Description: "Clear local DB data.", Args: dbArgs("reset", "--json")},
-		{ID: "data.export", Board: BoardData, Label: "Export DB", Description: "Write fixture JSON to stdout.", Args: dbArgs("export")},
+		}, Details: seedDetails},
+		{ID: "data.importSF", Board: BoardData, Label: "Import From Org", Description: "Query sf records into the local DB.", Args: sfImportArgs, Details: sfImportDetails},
+		{ID: "data.reset", Board: BoardData, Label: "Reset DB", Description: "Clear local DB data.", Args: dbArgs("reset", "--json"), Details: dbDetails},
+		{ID: "data.export", Board: BoardData, Label: "Export DB", Description: "Write fixture JSON to stdout.", Args: dbArgs("export"), Details: dbDetails},
 		{ID: "plugins.list", Board: BoardPlugins, Label: "Installed Plugins", Description: "List installed plugins.", Args: func(ActionContext) []string {
 			return []string{"plugins", "list", "--json"}
 		}},
@@ -60,6 +66,13 @@ func DefaultCatalog() Catalog {
 			return []string{"plugins", "doctor", "--json", "--progress-json"}
 		}},
 	}}
+}
+
+func (a Action) DetailLines(ctx ActionContext) []Detail {
+	if a.Details == nil {
+		return nil
+	}
+	return a.Details(ctx)
 }
 
 func (c Catalog) Action(id string) (Action, bool) {
@@ -120,6 +133,37 @@ func sfImportArgs(ctx ActionContext) []string {
 		args = append(args, "--target-org", ctx.TargetOrg)
 	}
 	return append(args, "--json", "--progress-json")
+}
+
+func dbDetails(ctx ActionContext) []Detail {
+	return []Detail{{Label: "DB", Value: ctx.DBPath}}
+}
+
+func queryDetails(ctx ActionContext) []Detail {
+	return []Detail{
+		{Label: "DB", Value: ctx.DBPath},
+		{Label: "Query", Value: defaultString(ctx.Query, "SELECT Id FROM Account LIMIT 10")},
+	}
+}
+
+func seedDetails(ctx ActionContext) []Detail {
+	return []Detail{
+		{Label: "DB", Value: ctx.DBPath},
+		{Label: "Fixture", Value: defaultString(ctx.Fixture, "fixture.json")},
+	}
+}
+
+func sfImportDetails(ctx ActionContext) []Detail {
+	targetOrg := ctx.TargetOrg
+	if targetOrg == "" {
+		targetOrg = "Salesforce CLI default"
+	}
+	return []Detail{
+		{Label: "DB", Value: ctx.DBPath},
+		{Label: "Object", Value: defaultString(ctx.ImportObject, "Account")},
+		{Label: "Limit", Value: "25"},
+		{Label: "Target org", Value: targetOrg},
+	}
 }
 
 func defaultString(value, fallback string) string {

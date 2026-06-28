@@ -2,10 +2,12 @@ package tui
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/glade-sh/glade/internal/cliui"
 )
 
 type fakeRunner struct {
@@ -87,6 +89,25 @@ func TestAppViewShowsTargetOrgWhenSet(t *testing.T) {
 	}
 }
 
+func TestAppViewShowsSelectedActionContext(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	app := NewApp(AppOptions{ProjectRoot: "/tmp/acme", DBPath: ".glade/envs/dev.sqlite", TargetOrg: "devhub", InitialBoard: BoardData, Runner: &fakeRunner{}})
+	app.Selected[BoardData] = 3
+	view := app.View()
+	for _, want := range []string{
+		"Selected",
+		"Command: glade db import sf",
+		"DB: .glade/envs/dev.sqlite",
+		"Object: Account",
+		"Limit: 25",
+		"Target org: devhub",
+	} {
+		if !strings.Contains(view, want) {
+			t.Fatalf("selected context missing %q:\n%s", want, view)
+		}
+	}
+}
+
 func TestAppViewSummarizesDBInspectJSON(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	app := NewApp(AppOptions{ProjectRoot: "/tmp/acme", DBPath: ".glade/envs/dev.sqlite", Runner: &fakeRunner{}})
@@ -140,5 +161,83 @@ func TestAppViewLabelsResultState(t *testing.T) {
 	}
 	if !strings.Contains(view, "\x1b[38;") {
 		t.Fatalf("view missing result color:\n%q", view)
+	}
+}
+
+type failingRunner struct{}
+
+func (failingRunner) Run(_ context.Context, args []string) (RunResult, error) {
+	return RunResult{
+		Args:     append([]string{}, args...),
+		ExitCode: 1,
+		Stderr: strings.Join([]string{
+			`{"kind":"phase_start","phase":"db seed","label":"Opening fixture"}`,
+			`{"kind":"done","label":"db seed failed","ok":false,"exitCode":1}`,
+			"glade: open fixture.json: no such file or directory",
+		}, "\n"),
+	}, errors.New("exit status 1")
+}
+
+func TestAppViewShowsChildStderrOnFailureWithMixedProgressJSON(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	app := NewApp(AppOptions{ProjectRoot: "/tmp/acme", DBPath: ".glade/envs/dev.sqlite", InitialBoard: BoardData, Runner: failingRunner{}})
+	app.Selected[BoardData] = 2
+	model, cmd := app.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	if cmd == nil {
+		t.Fatal("expected command")
+	}
+	model, _ = model.Update(cmd())
+	view := model.(App).View()
+	for _, want := range []string{
+		"Progress",
+		"Opening fixture",
+		"db seed failed",
+		"Error output",
+		"glade: open fixture.json: no such file or directory",
+	} {
+		if !strings.Contains(view, want) {
+			t.Fatalf("failure view missing %q:\n%s", want, view)
+		}
+	}
+	if strings.Contains(view, "Error: exit status 1") {
+		t.Fatalf("failure view should prefer child stderr over wrapper status:\n%s", view)
+	}
+}
+
+type streamingRunner struct {
+	ch chan RunUpdate
+}
+
+func (r *streamingRunner) Run(_ context.Context, args []string) (RunResult, error) {
+	return RunResult{Args: append([]string{}, args...), ExitCode: 0}, nil
+}
+
+func (r *streamingRunner) RunStreaming(_ context.Context, args []string) (<-chan RunUpdate, error) {
+	r.ch = make(chan RunUpdate, 2)
+	r.ch <- RunUpdate{Args: append([]string{}, args...), Event: &cliui.Event{Kind: cliui.EventPhaseStart, Phase: "check", Label: "Loading project"}}
+	return r.ch, nil
+}
+
+func TestAppStreamsProgressBeforeCommandFinishes(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	runner := &streamingRunner{}
+	app := NewApp(AppOptions{ProjectRoot: "/tmp/acme", DBPath: ".glade/envs/dev.sqlite", Runner: runner})
+	model, cmd := app.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	if cmd == nil {
+		t.Fatal("expected start command")
+	}
+	model, cmd = model.Update(cmd())
+	if cmd == nil {
+		t.Fatal("expected stream wait command")
+	}
+	model, cmd = model.Update(cmd())
+	if cmd == nil {
+		t.Fatal("expected stream to keep waiting after progress")
+	}
+	view := model.(App).View()
+	for _, want := range []string{"Running", "Progress", "Loading project"} {
+		if !strings.Contains(view, want) {
+			t.Fatalf("streaming view missing %q:\n%s", want, view)
+		}
 	}
 }

@@ -1387,7 +1387,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "help tui",
 			args: []string{"help", "tui"},
-			want: []string{"Usage:", "glade tui [--project <root>] [--db <path>] [--view <project|tests|data|plugins>] [--target-org <alias>] [--object <Object>]", "--target-org <alias>", "--object <Object>", "--no-ui", "glade tui --project . --view tests"},
+			want: []string{"Usage:", "glade tui [--project <root>] [--db <path>] [--view <project|tests|data|plugins>] [--target-org <alias>] [--object <Object>]", "--target-org <alias>", "--object <Object>", "--no-ui", "glade tui --project . --view tests", ".glade/envs/dev.sqlite"},
 		},
 		{
 			name: "help dev",
@@ -1397,7 +1397,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "help db",
 			args: []string{"help", "db"},
-			want: []string{"Usage:", "glade db --ui --db <path> [--project <root>]", "glade db import sf [--target-org <alias>] --db <path>", "glade db import sf [--target-org <alias>] --list-objects", "glade db query --db <path> --project <root> --json [--limit <n>] [--query-all] <soql>", "glade db describe --db <path> --project <root> --json [ObjectName]", "--target-org <alias>", "--object <Object>", "--fields <list>", "--limit <n>", "--query-all", "--ui", "glade db import sf --target-org devhub --db .glade/refinement-local.sqlite --project . --object Account", "glade db query --db .glade/refinement-local.sqlite --project . --json \"SELECT Id, Name FROM FileRow__c\""},
+			want: []string{"Usage:", "glade db --ui --db <path> [--project <root>] [--target-org <alias>] [--object <Object>]", "glade db import sf [--target-org <alias>] --db <path>", "glade db import sf [--target-org <alias>] --list-objects", "glade db query --db <path> --project <root> --json [--limit <n>] [--query-all] <soql>", "glade db describe --db <path> --project <root> --json [ObjectName]", "--target-org <alias>", "--object <Object>", "--fields <list>", "--limit <n>", "--query-all", "--ui", "glade db import sf --target-org devhub --db .glade/refinement-local.sqlite --project . --object Account", "glade db query --db .glade/refinement-local.sqlite --project . --json \"SELECT Id, Name FROM FileRow__c\""},
 		},
 		{
 			name: "help profile",

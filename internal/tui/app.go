@@ -2,9 +2,11 @@ package tui
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/glade-sh/glade/internal/cliui"
 )
 
 func (a App) Init() tea.Cmd {
@@ -69,13 +71,22 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.LastResult = &msg.result
 		a.RunningAction = nil
 		a.RunningArgs = nil
-		a.Progress = msg.events
-		if msg.err != nil && msg.result.ExitCode != 0 {
+		if len(msg.events) > 0 {
+			a.Progress = msg.events
+		}
+		if msg.err != nil && msg.result.ExitCode != 0 && visibleStderr(msg.result.Stderr) == "" {
 			a.LastError = msg.err.Error()
 		} else {
 			a.LastError = ""
 		}
 		return a, nil
+	case commandStreamStartedMsg:
+		return a, waitForRunUpdate(msg.action, msg.ch)
+	case commandProgressMsg:
+		if msg.event != nil {
+			a.Progress = append(a.Progress, *msg.event)
+		}
+		return a, waitForRunUpdate(msg.action, msg.ch)
 	}
 	return a, nil
 }
@@ -97,13 +108,49 @@ func (a *App) moveSelection(delta int) {
 }
 
 func (a App) runAction(action Action, args []string) tea.Cmd {
+	if runner, ok := a.Runner.(StreamingRunner); ok {
+		return func() tea.Msg {
+			ch, err := runner.RunStreaming(context.Background(), args)
+			if err != nil {
+				return commandFinishedMsg{
+					action: action,
+					result: RunResult{Args: append([]string{}, args...), ExitCode: 1},
+					err:    err,
+				}
+			}
+			return commandStreamStartedMsg{action: action, ch: ch}
+		}
+	}
 	return func() tea.Msg {
 		result, err := a.Runner.Run(context.Background(), args)
-		events, parseErr := ReadProgressEvents(strings.NewReader(result.Stderr))
-		if parseErr != nil {
-			events = nil
+		output, parseErr := ReadProgressOutput(strings.NewReader(result.Stderr))
+		if parseErr == nil {
+			return commandFinishedMsg{action: action, result: result, err: err, events: output.Events}
 		}
-		return commandFinishedMsg{action: action, result: result, err: err, events: events}
+		return commandFinishedMsg{action: action, result: result, err: err}
+	}
+}
+
+func waitForRunUpdate(action Action, ch <-chan RunUpdate) tea.Cmd {
+	return func() tea.Msg {
+		update, ok := <-ch
+		if !ok {
+			return commandFinishedMsg{
+				action: action,
+				result: RunResult{ExitCode: 1},
+				err:    errors.New("command stream closed before result"),
+			}
+		}
+		if update.Result != nil {
+			events := []cliui.Event(nil)
+			if update.Result.Stderr != "" {
+				if output, err := ReadProgressOutput(strings.NewReader(update.Result.Stderr)); err == nil {
+					events = output.Events
+				}
+			}
+			return commandFinishedMsg{action: action, result: *update.Result, err: update.Err, events: events}
+		}
+		return commandProgressMsg{action: action, ch: ch, event: update.Event, stderr: update.Stderr}
 	}
 }
 

@@ -45,6 +45,7 @@ func (a App) View() string {
 	b.WriteString("\n")
 	b.WriteString(a.renderActions(styles))
 	b.WriteString("\n")
+	b.WriteString(a.renderSelected(styles))
 	b.WriteString(a.renderRunning(styles))
 	b.WriteString(a.renderProgress(styles))
 	b.WriteString(a.renderLastResult(styles))
@@ -95,10 +96,29 @@ func (a App) renderRunning(styles viewStyles) string {
 	if a.RunningAction == nil {
 		return ""
 	}
-	command := strings.Join(a.RunningArgs, " ")
+	command := formatCommand(append([]string{"glade"}, a.RunningArgs...))
 	lines := []string{
 		"\n" + styles.section.Render("Running"),
-		"  " + styles.progress.Render("glade "+command),
+		"  " + styles.progress.Render(command),
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
+func (a App) renderSelected(styles viewStyles) string {
+	action, ok := a.selectedAction()
+	if !ok {
+		return ""
+	}
+	ctx := a.actionContext()
+	lines := []string{
+		"\n" + styles.section.Render("Selected"),
+		"Command: " + styles.dim.Render(formatCommand(append([]string{"glade"}, action.Args(ctx)...))),
+	}
+	for _, detail := range action.DetailLines(ctx) {
+		if strings.TrimSpace(detail.Value) == "" {
+			continue
+		}
+		lines = append(lines, fmt.Sprintf("%s: %s", detail.Label, detail.Value))
 	}
 	return strings.Join(lines, "\n") + "\n"
 }
@@ -125,7 +145,7 @@ func (a App) renderLastResult(styles viewStyles) string {
 	if a.LastResult == nil {
 		return ""
 	}
-	command := strings.Join(a.LastResult.Args, " ")
+	command := formatCommand(append([]string{"glade"}, a.LastResult.Args...))
 	result := "ok"
 	resultStyle := styles.success
 	if a.LastResult.ExitCode != 0 {
@@ -134,11 +154,18 @@ func (a App) renderLastResult(styles viewStyles) string {
 	}
 	lines := []string{
 		"\n" + styles.section.Render("Last run"),
-		"Command: " + styles.dim.Render("glade "+command),
+		"Command: " + styles.dim.Render(command),
 		resultStyle.Render(fmt.Sprintf("Result: %s (exit %d)", result, a.LastResult.ExitCode)),
 	}
 	if a.LastError != "" {
 		lines = append(lines, styles.failure.Render("Error: "+a.LastError))
+	}
+	if stderr := visibleStderr(a.LastResult.Stderr); stderr != "" {
+		title := "Messages"
+		if a.LastResult.ExitCode != 0 {
+			title = "Error output"
+		}
+		lines = append(lines, styles.section.Render(title), indent(trimOutput(stderr)))
 	}
 	if trimmed := strings.TrimSpace(a.LastResult.Stdout); trimmed != "" {
 		if title, summary, ok := summarizeOutput(trimmed); ok {
@@ -209,6 +236,32 @@ func trimOutput(text string) string {
 	out := append([]string{}, lines[:maxLines]...)
 	out = append(out, fmt.Sprintf("... %d more lines", len(lines)-maxLines))
 	return strings.Join(out, "\n")
+}
+
+func visibleStderr(stderr string) string {
+	output, err := ReadProgressOutput(strings.NewReader(stderr))
+	if err != nil {
+		return strings.TrimSpace(stderr)
+	}
+	return strings.TrimSpace(output.Stderr)
+}
+
+func formatCommand(args []string) string {
+	parts := make([]string, 0, len(args))
+	for _, arg := range args {
+		parts = append(parts, shellQuote(arg))
+	}
+	return strings.Join(parts, " ")
+}
+
+func shellQuote(arg string) string {
+	if arg == "" {
+		return "''"
+	}
+	if !strings.ContainsAny(arg, " \t\n'\"`$\\|&;()<>*?![]{}") {
+		return arg
+	}
+	return "'" + strings.ReplaceAll(arg, "'", "'\\''") + "'"
 }
 
 func currentViewStyles() viewStyles {

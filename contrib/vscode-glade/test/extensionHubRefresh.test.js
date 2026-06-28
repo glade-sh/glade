@@ -49,7 +49,8 @@ assert(openTestsTui.includes("sendGladeTerminal"), "open tests TUI must send a g
 
 const openDataTui = commandBlock("glade.openDataTui", "glade.openPluginsTui");
 assert(openDataTui.includes("configuredActiveEnvironment"), "open data TUI must use the active data environment");
-assert(openDataTui.includes("tuiArgs(project, \"data\", environment.dbPath)"), "open data TUI must launch the data board with a DB");
+assert(openDataTui.includes("salesforceTarget?.state === \"ready\""), "open data TUI must use a checked ready Salesforce target when present");
+assert(openDataTui.includes("tuiArgs(project, \"data\", environment.dbPath, targetOrg)"), "open data TUI must launch the data board with a DB and target org");
 assert(openDataTui.includes("sendLocalOrgTerminal"), "open data TUI must use the local data terminal");
 
 const openPluginsTui = commandBlock("glade.openPluginsTui", "glade.runPluginAction");

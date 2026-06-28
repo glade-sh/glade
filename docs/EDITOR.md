@@ -33,8 +33,8 @@ controller, and CodeLens labels that include `Local`.
 The Command Palette also exposes `Glade: Open TUI`, `Glade: Open Tests TUI`,
 `Glade: Open Data TUI`, and `Glade: Open Plugins TUI`. These commands open a
 terminal and run `glade tui` against the current project. The data TUI uses the
-active local data environment and can pass a Salesforce CLI target org to the
-import-from-org action.
+active local data environment. When `Glade: Check Salesforce Org` has found a
+ready target, the data TUI passes that target to the import-from-org action.
 
 The sidebar shows:
 

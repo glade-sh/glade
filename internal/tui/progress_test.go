@@ -24,3 +24,16 @@ func TestReadProgressEventsReportsInvalidJSON(t *testing.T) {
 		t.Fatal("expected invalid JSON error")
 	}
 }
+
+func TestReadProgressOutputKeepsEventsAndPlainStderr(t *testing.T) {
+	output, err := ReadProgressOutput(strings.NewReader("{\"kind\":\"phase_start\",\"phase\":\"db seed\",\"label\":\"Opening fixture\"}\nglade: open fixture.json: no such file or directory\n{\"kind\":\"done\",\"label\":\"db seed failed\",\"ok\":false,\"exitCode\":1}\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(output.Events) != 2 {
+		t.Fatalf("events = %#v", output.Events)
+	}
+	if output.Stderr != "glade: open fixture.json: no such file or directory" {
+		t.Fatalf("stderr = %q", output.Stderr)
+	}
+}

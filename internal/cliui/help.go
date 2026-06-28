@@ -355,7 +355,7 @@ var commandReferences = []CommandHelp{
 			{Name: "--object", Value: "<Object>", Description: "Default object for the data import action."},
 			{Name: "--no-ui", Description: "Validate options and print the selected TUI target without launching."},
 		},
-		Examples: []string{"glade tui --project .", "glade tui --project . --view tests", "glade tui --project . --db .glade/orgs/dev.sqlite --view data", "glade tui --project . --db .glade/orgs/dev.sqlite --view data --target-org devhub --object Account"},
+		Examples: []string{"glade tui --project .", "glade tui --project . --view tests", "glade tui --project . --db .glade/envs/dev.sqlite --view data", "glade tui --project . --db .glade/envs/dev.sqlite --view data --target-org devhub --object Account"},
 	},
 	{
 		Name:        "dev",
@@ -628,7 +628,7 @@ var commandReferences = []CommandHelp{
 		Name:        "db",
 		Description: "Seed, reset, export, inspect, query, and describe a persistent local database.",
 		Usage: []string{
-			"glade db --ui --db <path> [--project <root>]",
+			"glade db --ui --db <path> [--project <root>] [--target-org <alias>] [--object <Object>]",
 			"glade db seed --db <path> [--project <root>] [--json] [--progress|--progress-json|--no-progress] <fixture.json>",
 			"glade db seed --wizard --db <path> [--project <root>] <fixture.json>",
 			"glade db import sf [--target-org <alias>] --db <path> [--project <root>] [--object <Object>|--query <soql>] [--fields Id,Name] [--limit <n>] [--json]",

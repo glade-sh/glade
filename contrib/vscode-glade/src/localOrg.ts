@@ -63,10 +63,14 @@ export function tuiArgs(
   project: Pick<GladeProjectContext, "projectRoot">,
   view: TUIView,
   dbPath?: string,
+  targetOrg?: string,
 ): string[] {
   const args = ["tui", "--project", project.projectRoot, "--view", view];
   if (dbPath) {
     args.push("--db", dbPath);
+  }
+  if (targetOrg) {
+    args.push("--target-org", targetOrg);
   }
   return args;
 }
