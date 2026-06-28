@@ -1,9 +1,11 @@
 package tui
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -43,6 +45,7 @@ func (a App) View() string {
 	b.WriteString("\n")
 	b.WriteString(a.renderActions(styles))
 	b.WriteString("\n")
+	b.WriteString(a.renderRunning(styles))
 	b.WriteString(a.renderProgress(styles))
 	b.WriteString(a.renderLastResult(styles))
 	b.WriteString("\n")
@@ -88,6 +91,18 @@ func (a App) renderActions(styles viewStyles) string {
 	return strings.Join(lines, "\n")
 }
 
+func (a App) renderRunning(styles viewStyles) string {
+	if a.RunningAction == nil {
+		return ""
+	}
+	command := strings.Join(a.RunningArgs, " ")
+	lines := []string{
+		"\n" + styles.section.Render("Running"),
+		"  " + styles.progress.Render("glade "+command),
+	}
+	return strings.Join(lines, "\n") + "\n"
+}
+
 func (a App) renderProgress(styles viewStyles) string {
 	if len(a.Progress) == 0 {
 		return ""
@@ -126,9 +141,74 @@ func (a App) renderLastResult(styles viewStyles) string {
 		lines = append(lines, styles.failure.Render("Error: "+a.LastError))
 	}
 	if trimmed := strings.TrimSpace(a.LastResult.Stdout); trimmed != "" {
-		lines = append(lines, styles.section.Render("Output"), indent(trimmed))
+		if title, summary, ok := summarizeOutput(trimmed); ok {
+			lines = append(lines, styles.section.Render(title), indent(strings.Join(summary, "\n")))
+		} else {
+			lines = append(lines, styles.section.Render("Output"), indent(trimOutput(trimmed)))
+		}
 	}
 	return strings.Join(lines, "\n") + "\n"
+}
+
+type dbInspectOutput struct {
+	Path          string         `json:"path"`
+	SchemaVersion int            `json:"schemaVersion"`
+	Objects       int            `json:"objects"`
+	Records       int            `json:"records"`
+	ByObject      map[string]int `json:"byObject"`
+	Users         int            `json:"users"`
+	Profiles      int            `json:"profiles"`
+	Permissions   int            `json:"permissions"`
+}
+
+func summarizeOutput(stdout string) (string, []string, bool) {
+	var inspect dbInspectOutput
+	if err := json.Unmarshal([]byte(stdout), &inspect); err != nil {
+		return "", nil, false
+	}
+	if inspect.ByObject == nil {
+		return "", nil, false
+	}
+	lines := []string{
+		fmt.Sprintf("objects: %d", inspect.Objects),
+		fmt.Sprintf("records: %d", inspect.Records),
+	}
+	if inspect.SchemaVersion > 0 {
+		lines = append(lines, fmt.Sprintf("schemaVersion: %d", inspect.SchemaVersion))
+	}
+	if inspect.Path != "" {
+		lines = append(lines, "db: "+inspect.Path)
+	}
+	names := make([]string, 0, len(inspect.ByObject))
+	for name := range inspect.ByObject {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	if len(names) > 0 {
+		lines = append(lines, "", "Objects:")
+	}
+	visible := len(names)
+	if visible > 12 {
+		visible = 12
+	}
+	for _, name := range names[:visible] {
+		lines = append(lines, fmt.Sprintf("%s: %d", name, inspect.ByObject[name]))
+	}
+	if omitted := len(names) - visible; omitted > 0 {
+		lines = append(lines, fmt.Sprintf("... %d more objects", omitted))
+	}
+	return "Database state", lines, true
+}
+
+func trimOutput(text string) string {
+	const maxLines = 24
+	lines := strings.Split(text, "\n")
+	if len(lines) <= maxLines {
+		return text
+	}
+	out := append([]string{}, lines[:maxLines]...)
+	out = append(out, fmt.Sprintf("... %d more lines", len(lines)-maxLines))
+	return strings.Join(out, "\n")
 }
 
 func currentViewStyles() viewStyles {

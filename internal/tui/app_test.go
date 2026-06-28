@@ -52,6 +52,21 @@ func TestAppRunsSelectedAction(t *testing.T) {
 	}
 }
 
+func TestAppViewShowsRunningCommandImmediately(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	app := NewApp(AppOptions{ProjectRoot: "/tmp/acme", DBPath: ".glade/envs/dev.sqlite", Runner: &fakeRunner{}})
+	model, cmd := app.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	if cmd == nil {
+		t.Fatal("expected command")
+	}
+	view := model.(App).View()
+	for _, want := range []string{"Running", "glade doctor --json --project /tmp/acme"} {
+		if !strings.Contains(view, want) {
+			t.Fatalf("running view missing %q:\n%s", want, view)
+		}
+	}
+}
+
 func TestAppViewShowsBoardAndActions(t *testing.T) {
 	t.Setenv("NO_COLOR", "1")
 	app := NewApp(AppOptions{ProjectRoot: "/tmp/acme", DBPath: ".glade/envs/dev.sqlite", Runner: &fakeRunner{}})
@@ -69,6 +84,25 @@ func TestAppViewShowsTargetOrgWhenSet(t *testing.T) {
 	view := app.View()
 	if !strings.Contains(view, "org=devhub") {
 		t.Fatalf("view missing target org:\n%s", view)
+	}
+}
+
+func TestAppViewSummarizesDBInspectJSON(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	app := NewApp(AppOptions{ProjectRoot: "/tmp/acme", DBPath: ".glade/envs/dev.sqlite", Runner: &fakeRunner{}})
+	app.LastResult = &RunResult{
+		Args:     []string{"db", "import", "sf", "--db", ".glade/envs/dev.sqlite", "--project", "/tmp/acme", "--object", "Account", "--json"},
+		ExitCode: 0,
+		Stdout:   `{"path":".glade/envs/dev.sqlite","schemaVersion":1,"objects":3,"records":4,"byObject":{"Account":1,"User":2,"Profile":1},"users":2,"profiles":1,"permissions":0}`,
+	}
+	view := app.View()
+	for _, want := range []string{"Database state", "records: 4", "Account: 1", "User: 2"} {
+		if !strings.Contains(view, want) {
+			t.Fatalf("summary view missing %q:\n%s", want, view)
+		}
+	}
+	if strings.Contains(view, `"byObject"`) || strings.Contains(view, `"schemaVersion"`) {
+		t.Fatalf("summary view leaked raw JSON:\n%s", view)
 	}
 }
 

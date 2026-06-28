@@ -30,14 +30,16 @@ type App struct {
 	TargetOrg    string
 	ImportObject string
 
-	Catalog     Catalog
-	ActiveBoard Board
-	Selected    map[Board]int
-	LastAction  *Action
-	LastResult  *RunResult
-	LastError   string
-	Progress    []cliui.Event
-	Runner      Runner
+	Catalog       Catalog
+	ActiveBoard   Board
+	Selected      map[Board]int
+	LastAction    *Action
+	LastResult    *RunResult
+	LastError     string
+	RunningAction *Action
+	RunningArgs   []string
+	Progress      []cliui.Event
+	Runner        Runner
 }
 
 type commandFinishedMsg struct {

@@ -36,25 +36,39 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.moveSelection(1)
 			return a, nil
 		case "r":
+			if a.RunningAction != nil {
+				return a, nil
+			}
 			if a.LastAction == nil {
 				return a, nil
 			}
 			action := *a.LastAction
 			a.LastError = ""
 			a.Progress = nil
-			return a, a.runAction(action)
+			args := action.Args(a.actionContext())
+			a.RunningAction = &action
+			a.RunningArgs = args
+			return a, a.runAction(action, args)
 		case "enter":
+			if a.RunningAction != nil {
+				return a, nil
+			}
 			action, ok := a.selectedAction()
 			if !ok {
 				return a, nil
 			}
 			a.LastError = ""
 			a.Progress = nil
-			return a, a.runAction(action)
+			args := action.Args(a.actionContext())
+			a.RunningAction = &action
+			a.RunningArgs = args
+			return a, a.runAction(action, args)
 		}
 	case commandFinishedMsg:
 		a.LastAction = &msg.action
 		a.LastResult = &msg.result
+		a.RunningAction = nil
+		a.RunningArgs = nil
 		a.Progress = msg.events
 		if msg.err != nil && msg.result.ExitCode != 0 {
 			a.LastError = msg.err.Error()
@@ -82,9 +96,8 @@ func (a *App) moveSelection(delta int) {
 	a.Selected[a.ActiveBoard] = next
 }
 
-func (a App) runAction(action Action) tea.Cmd {
+func (a App) runAction(action Action, args []string) tea.Cmd {
 	return func() tea.Msg {
-		args := action.Args(a.actionContext())
 		result, err := a.Runner.Run(context.Background(), args)
 		events, parseErr := ReadProgressEvents(strings.NewReader(result.Stderr))
 		if parseErr != nil {
