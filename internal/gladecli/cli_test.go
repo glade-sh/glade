@@ -1489,6 +1489,7 @@ func TestRunTopLevelHelpIsWorkflowDoorway(t *testing.T) {
 		"glade doctor",
 		"glade check",
 		"glade test changed --since origin/main",
+		"glade tui --project .",
 		"Workflows:",
 		"More:",
 		"glade help workflows",

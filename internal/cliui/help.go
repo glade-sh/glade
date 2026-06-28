@@ -739,6 +739,7 @@ func WriteHelp(w io.Writer) error {
 		"glade doctor",
 		"glade check",
 		"glade test changed --since origin/main",
+		"glade tui --project .",
 		"glade playground --examples --open",
 	} {
 		if _, err := fmt.Fprintln(w, "  "+command); err != nil {
