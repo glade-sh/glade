@@ -626,7 +626,7 @@ var commandReferences = []CommandHelp{
 	},
 	{
 		Name:        "db",
-		Description: "Seed, reset, export, inspect, query, and describe a persistent local database.",
+		Description: "Seed, import, reset, export, inspect, query, and describe a persistent local database.",
 		Usage: []string{
 			"glade db --ui --db <path> [--project <root>] [--target-org <alias>] [--object <Object>]",
 			"glade db seed --db <path> [--project <root>] [--json] [--progress|--progress-json|--no-progress] <fixture.json>",
@@ -836,10 +836,10 @@ Local execution:
   glade db inspect --db .glade/refinement-local.sqlite
 
 Debug logs:
-  glade exec "System.debug('local');"
-  glade debug profile --log .glade/logs/latest.log
-  glade debug explain --log .glade/logs/latest.log --project .
-  glade debug editor --log .glade/logs/latest.log --project . --json
+  glade exec --debug-log .glade/logs/latest.apexlog "System.debug('local');"
+  glade debug profile --log .glade/logs/latest.apexlog
+  glade debug explain --log .glade/logs/latest.apexlog --project .
+  glade debug editor --log .glade/logs/latest.apexlog --project . --json
 
 Browser workbench:
   glade examples

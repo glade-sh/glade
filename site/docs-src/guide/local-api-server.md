@@ -39,14 +39,15 @@ The server exposes a Salesforce-style baseline for local work: API discovery,
 object describe and CRUD-style record operations, SOQL query execution, limits
 and record counts, source-backed Tooling metadata reads, virtual schema metadata
 queries, Composite sObject inserts, Composite Batch and Tree local requests,
+Composite Graph local requests over supported local subrequests,
 Bulk API v2 simple scalar query job create/status/whole-result CSV routes,
 layout/default-value metadata, metadata job status, and execute-anonymous routes
 where supported by the runtime.
 
 Check [what Glade runs locally](/guide/support-map) before relying on live auth,
-Composite Graph execution, Bulk API locator paging,
-Streaming, Pub/Sub, GraphQL, live metadata deploy/retrieve, or Tooling APIs
-outside the checked local source/schema metadata baseline.
+Bulk API locator paging, Streaming, Pub/Sub, GraphQL, live metadata
+deploy/retrieve, or Tooling APIs outside the checked local source/schema
+metadata baseline.
 
 | Area | Endpoint | Status |
 | --- | --- | --- |
@@ -63,6 +64,7 @@ outside the checked local source/schema metadata baseline.
 | Composite sObject insert | `/services/data/vXX.X/composite/sobjects` | supported baseline |
 | Composite Batch | `/services/data/vXX.X/composite/batch` | supported local subrequests |
 | Composite Tree | `/services/data/vXX.X/composite/tree/<Object>` | supported local tree requests |
+| Composite Graph | `/services/data/vXX.X/composite/graph` | supported local subrequests |
 | Bulk API v1 ingest | `/services/async/vXX.X/job...` | supported insert/upsert CSV baseline |
 | Bulk API v2 query | `/services/data/vXX.X/jobs/query` and `/results` | supported simple scalar local query whole-result CSV |
 | Layout and default metadata | local layout/default-value REST routes | supported local metadata baseline |

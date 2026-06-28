@@ -1552,7 +1552,7 @@ func TestRunDiscoveryCommands(t *testing.T) {
 		{
 			name: "workflows help",
 			args: []string{"help", "workflows"},
-			want: []string{"Workflows", "Local check loop", "glade test changed --since origin/main"},
+			want: []string{"Workflows", "Local check loop", "glade test changed --since origin/main", ".glade/logs/latest.apexlog"},
 		},
 	}
 	for _, tt := range tests {
@@ -1651,7 +1651,7 @@ func TestRunTopLevelHelpAlignment(t *testing.T) {
 		"playground",
 		"Start the local Apex playground web UI.",
 		"db",
-		"Seed, reset, export, inspect, query, and describe a persistent local database.",
+		"Seed, import, reset, export, inspect, query, and describe a persistent local database.",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("stdout missing aligned line %q:\n%s", want, got)

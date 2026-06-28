@@ -29,17 +29,18 @@ Write the same profile as JSON:
 glade debug profile --log reports/anonymous-output.txt --json
 ```
 
-Convert the log to pprof:
+Capture a local native trace and convert it to pprof:
 
 ```bash
-glade profile analyze --log reports/anonymous-output.txt --format pprof
+glade exec --project . --trace reports/trace.json "System.debug(1);"
+glade profile analyze reports/trace.json --format pprof
 ```
 
 ## Expected output
 
 The debug adapter waits for an editor session. Profile commands print method
-timing, call counts, and source locations when the log contains trace data. JSON
-and pprof modes are for tools.
+timing, call counts, and source locations when the log or native trace contains
+the needed events. JSON and pprof modes are for tools.
 
 ## Common wrong turn
 

@@ -14,7 +14,8 @@ debug-log summaries, or pprof output from local execution logs.
 ```bash
 glade dap --project .
 glade debug profile --log reports/anonymous-output.txt --format markdown
-glade profile analyze --log reports/anonymous-output.txt --format pprof
+glade exec --project . --trace reports/trace.json "System.debug(1);"
+glade profile analyze reports/trace.json --format pprof
 ```
 
 ## What this module owns
