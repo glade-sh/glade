@@ -40,6 +40,10 @@ Human output is terminal text. Use `--json` or `--format` for scripts. See [CLI 
     <strong>Editor and debug</strong>
     <span>LSP, DAP, VS Code install, debug-log parsing, and profile analysis.</span>
   </a>
+  <a class="docs-command-card" href="#glade-tui">
+    <strong>Terminal UI</strong>
+    <span>Open project, test, data, and plugin workflows in one terminal board.</span>
+  </a>
   <a class="docs-command-card" href="#glade-plugins">
     <strong>Plugins</strong>
     <span>Install, link, inspect, lock, restore, and run first-party plugins.</span>
@@ -54,7 +58,7 @@ Human output is terminal text. Use `--json` or `--format` for scripts. See [CLI 
   </a>
   <a class="docs-command-card" href="#glade-db">
     <strong>Database</strong>
-    <span>Seed, reset, inspect, and export persistent local org state.</span>
+    <span>Seed, import, query, describe, inspect, reset, and export persistent local org state.</span>
   </a>
 </div>
 
@@ -316,6 +320,18 @@ glade test --project . --no-cache --class RefinementServiceTest
 
 Run `glade help test` for the full flag list.
 
+## `glade tui`
+
+Open the terminal UI for project, test, data, and plugin workflows.
+
+```bash
+glade tui --project .
+glade tui --project . --view tests
+glade tui --project . --db .glade/refinement-local.sqlite --view data
+glade tui --project . --db .glade/refinement-local.sqlite --view data --target-org devhub --object Account
+glade tui --project . --no-ui
+```
+
 ## `glade dev` and `glade report`
 
 Run the human-focused test loop and save artifacts under `.glade/runs`.
@@ -432,6 +448,9 @@ glade debug parse --log apex.log --json
 glade debug profile --log apex.log
 glade debug profile --log apex.log --format markdown
 glade debug explain --log apex.log --project . --json
+glade debug editor --log apex.log --project . --json
+glade debug repro --log apex.log --project . > ReproTest.cls
+glade debug replay --log apex.log --project . --json
 ```
 
 `glade debug profile --log apex.log` profiles a Salesforce debug log. `glade profile analyze reports/trace.json` profiles a Glade native trace.

@@ -170,7 +170,8 @@ Import happens in two passes:
 
 Export sorts object names, record IDs, field names, and explicit-null lists to
 keep compatibility fixtures stable in source control. The CLI exposes this
-through `glade db seed`, `glade db reset`, `glade db export`, and
+through `glade db seed`, `glade db import sf`, `glade db query`,
+`glade db describe`, `glade db reset`, `glade db export`, and
 `glade db inspect --db <path>`.
 
 `fieldRefs` can resolve fixture relationships by alias so fixtures do not need

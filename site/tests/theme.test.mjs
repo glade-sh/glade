@@ -25,9 +25,11 @@ const securityWorkflow = await readFile(new URL("../../.github/workflows/securit
 const repoReadme = await readFile(new URL("../../README.md", import.meta.url), "utf8");
 const repoSecurityPolicy = await readFile(new URL("../../SECURITY.md", import.meta.url), "utf8").catch(() => "");
 const repoCompatibility = await readFile(new URL("../../docs/COMPATIBILITY.md", import.meta.url), "utf8");
+const repoCompatibilityDashboard = await readFile(new URL("../../docs/COMPATIBILITY_DASHBOARD.md", import.meta.url), "utf8");
 const repoLwcSupport = await readFile(new URL("../../docs/LWC_SUPPORT.md", import.meta.url), "utf8");
 const releaseNotes = await readFile(new URL("../../docs/RELEASE_NOTES.md", import.meta.url), "utf8");
 const repoInstallDocs = await readFile(new URL("../../docs/INSTALL.md", import.meta.url), "utf8");
+const storageSchema = await readFile(new URL("../../docs/storage-schema.md", import.meta.url), "utf8");
 const highlight = await readFile(new URL("../docs-src/public/js/highlight.js", import.meta.url), "utf8");
 const homeScript = await readFile(new URL("../docs-src/public/js/home.js", import.meta.url), "utf8");
 const ciArtifacts = await readFile(new URL("../docs-src/guide/ci-artifacts.md", import.meta.url), "utf8");
@@ -135,6 +137,14 @@ test("home page names the latest stable release from release notes", () => {
   assert.match(index, /Latest stable release/);
   assert.match(index, /Latest stable release:<span class="home-release-version">/);
   assert.doesNotMatch(index, /Latest stable release[\s\S]*0\.0\.0-dev/);
+});
+
+test("release notes cover the next stable release", () => {
+  assert.match(releaseNotes, /^## v0\.2\.8 - 2026-06-28/m);
+  assert.match(releaseNotes, /Terminal UI and local data workflows/);
+  assert.match(releaseNotes, /Apex debug log replay and editor analysis/);
+  assert.match(releaseNotes, /Security and release trust/);
+  assert.doesNotMatch(releaseNotes, /^## Unreleased\n\nNo changes yet\.\n\n## v0\.2\.7/m);
 });
 
 test("theme defines complete light and dark color tokens", () => {
@@ -1403,7 +1413,7 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(supportMap, /\| Local test harness and request context \| Supported local rows, hosted and malformed-input gaps \| 32 supported, 2 unsupported \/ 34 tracked \|/);
   assert.match(supportMap, /\| Hosted-service and platform boundary rows \| Requires Salesforce, plus stable diagnostics \| 1 supported diagnostic row, 2 unsupported \/ 3 tracked \|/);
   assert.match(supportMap, /## Capability claims/);
-  assert.match(supportMap, /\| Capability features marked `supported` \| 30 \|/);
+  assert.match(supportMap, /\| Capability features marked `supported` \| 31 \|/);
   assert.match(supportMap, /\| Capability features marked `partial` \| 0 \|/);
   assert.match(supportMap, /\| Standard-library rows marked `supported` \| 267 \|/);
   assert.match(supportMap, /\| Standard-library rows marked `unsupported` \| 19 \|/);
@@ -1436,10 +1446,20 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(localApiServer, /Tooling schema metadata/);
   assert.match(localApiServer, /Composite sObject insert/);
   assert.match(localApiServer, /Composite Batch and Tree local requests/);
+  assert.match(localApiServer, /Composite Graph local requests/);
+  assert.match(localApiServer, /supported local subrequests/);
+  assert.doesNotMatch(localApiServer, /Composite Graph execution, Bulk API locator paging/);
   assert.match(localApiServer, /Layout and default metadata/);
   assert.match(localApiServer, /Metadata job status/);
   assert.match(localApiServer, /Bulk API v2 simple scalar query job create\/status\/whole-result CSV/);
   assert.match(localApiServer, /limits\/recordCount\?sObjects=Account/);
+  assert.match(supportMap, /Composite Graph local requests/);
+  assert.doesNotMatch(supportMap, /Composite Graph execution, Streaming\/PubSub/);
+  assert.match(repoCompatibility, /Composite Graph local requests/);
+  assert.doesNotMatch(repoCompatibility, /Composite Graph execution, broader Bulk API locator paging/);
+  assert.match(repoCompatibilityDashboard, /Composite Graph local requests/);
+  assert.match(repoCompatibilityDashboard, /apex\.namespace-resolution/);
+  assert.doesNotMatch(repoCompatibilityDashboard, /Composite Graph execution, and broader hosted REST namespaces/);
 });
 
 test("AI-assisted Apex guide gives agents a Glade TDD contract", () => {
@@ -1502,6 +1522,22 @@ test("cli reference documents current code intelligence commands", () => {
   assert.match(cliReference, /glade refactor rename --project \. --file force-app\/main\/default\/classes\/RefinementService\.cls --line 5 --column 14 --to totalNet --write/);
   assert.match(cliReference, /glade schema import describe --input reports\/org-describe\.json --output schema\/local\.schema\.json --project-cache \./);
   assert.match(cliReference, /writes schema symbols under `\.glade\/symbols`/);
+  assert.match(cliReference, /href="#glade-tui"/);
+  assert.match(cliReference, /## `glade tui`/);
+  assert.match(cliReference, /glade tui --project \. --view tests/);
+  assert.match(cliReference, /glade tui --project \. --db \.glade\/refinement-local\.sqlite --view data --target-org devhub --object Account/);
+  assert.match(cliReference, /glade debug editor --log apex\.log --project \. --json/);
+  assert.match(cliReference, /glade debug repro --log apex\.log --project \. > ReproTest\.cls/);
+  assert.match(cliReference, /glade debug replay --log apex\.log --project \. --json/);
+  assert.match(cliReference, /Seed, import, query, describe, inspect, reset, and export persistent local org state/);
+  assert.match(moduleDebugProfile, /glade exec --project \. --trace reports\/trace\.json/);
+  assert.match(moduleDebugProfile, /glade profile analyze reports\/trace\.json --format pprof/);
+  assert.match(workflowDebugApex, /glade exec --project \. --trace reports\/trace\.json/);
+  assert.match(workflowDebugApex, /glade profile analyze reports\/trace\.json --format pprof/);
+  assert.doesNotMatch(moduleDebugProfile + workflowDebugApex, /glade profile analyze --log/);
+  assert.match(storageSchema, /`glade db import sf`/);
+  assert.match(storageSchema, /`glade db query`/);
+  assert.match(storageSchema, /`glade db describe`/);
   assert.match(editor, /glade inspect definition --project \. --symbol RefinementService/);
   assert.match(editor, /glade inspect references --project \. --symbol Account\.Name --include-declaration/);
   assert.match(editor, /glade refactor rename --project \. --symbol RefinementService --to FileRefinementService --dry-run/);

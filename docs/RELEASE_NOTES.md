@@ -4,6 +4,60 @@
 
 No changes yet.
 
+## v0.2.8 - 2026-06-28
+
+Glade v0.2.8 ships the local terminal UI, richer debug-log tooling, local data
+import workflows, and release trust hardening after v0.2.7.
+
+Terminal UI and local data workflows:
+
+- Added `glade tui`, `glade test --ui`, and `glade db --ui` as terminal-first
+  boards for project, test, data, and plugin workflows.
+- Added `glade db import sf` so small Salesforce CLI org slices can seed local
+  SQLite data by object, field list, raw SOQL, or importable-object discovery.
+- Refreshed VS Code commands so Glade Home can launch the project, tests, data,
+  and plugin TUI views from the current workspace.
+
+Apex debug log replay and editor analysis:
+
+- Added Apex log parsing improvements, `.apexlog` language support, and smart
+  editor analysis for navigation, folding, symbols, hovers, diagnostics, and
+  source links.
+- Added `glade debug replay` for dry-run anonymous Apex replay from
+  source-backed log frames and tightened replay for execute-anonymous text log
+  exports.
+- Added `glade debug editor` and VS Code Apex Log commands for source-backed
+  log inspection without requiring hosted replay debugging.
+
+Docs and site:
+
+- Reorganized the public site into workflow, module, and reference entry
+  points, with screenshot-backed help articles for first checks, test runs,
+  debug logs, CI setup, local data, and Salesforce data import.
+- Refreshed public example naming around `refinement-service`, `FileRow`, and
+  `refinement-local`, and removed stale maintainer-tool pages from the public
+  site.
+- Updated CLI, editor, local testing, local data, security, and install docs to
+  match the current command surface.
+
+Security and release trust:
+
+- Added public security and trust docs, a repository security policy, checked
+  release workflow wording, SBOM generation, and archive attestation steps.
+- Kept release hosting product-facing through `glade.sh` and
+  `downloads.glade.sh`, with plugin distribution staying on `plugins.glade.sh`.
+- Hardened the VS Code extension packaging dependency graph by pinning patched
+  transitive `form-data` and `undici` versions used by `@vscode/vsce`.
+
+Verification and performance:
+
+- Added focused tests for Apex log parsing, debug editor contracts, debug replay,
+  terminal UI models, Salesforce data import, extension commands, and docs/site
+  information architecture.
+- Checked the hot local test path against v0.2.7; the basic no-cache fixture
+  stayed in the same 1.63-1.66 second band while the added terminal UI
+  dependencies increased cold build cost.
+
 ## v0.2.7 - 2026-06-24
 
 Glade v0.2.7 ships the release-prep fixes after v0.2.6.

@@ -15,9 +15,9 @@ Keep product work here:
 - The VM, test runner, SOQL, DML, storage, schema, and server runtime.
 - Product CLI commands: `version`, `update`, `doctor`, `toolchain`, `config`,
   `init`, `parse`, `inspect`, `schema`, `refactor`, `check`, `exec`, `debug`,
-  `editor`, `dap`, `test`, `dev`, `report`, `lsp`, `profile`, `examples`,
-  `explain`, `support`, `plugins`, `package`, `server`, `org`, `playground`,
-  `db`, `completion`, and `help`.
+  `editor`, `dap`, `test`, `tui`, `dev`, `report`, `lsp`, `profile`,
+  `examples`, `explain`, `support`, `plugins`, `package`, `server`, `org`,
+  `playground`, `db`, `completion`, and `help`.
 - Product docs, release scripts, install docs, editor docs, storage docs, and
   checked support reports.
 

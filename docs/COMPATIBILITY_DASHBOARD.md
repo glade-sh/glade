@@ -10,14 +10,14 @@ No post-MVP lane may stay `partial`. Each lane must be split into a complete loc
 
 - Target: full-featured glade-parity MVP
 - Readiness: ready
-- Required complete: 21/21
+- Required complete: 22/22
 - Required incomplete: 0
 
 ## Status Counts
 
 | Status | Features |
 | --- | ---: |
-| `supported` | 30 |
+| `supported` | 31 |
 | `partial` | 0 |
 | `stub` | 0 |
 | `unsupported` | 2 |
@@ -27,6 +27,7 @@ No post-MVP lane may stay `partial`. Each lane must be split into a complete loc
 
 | Area | ID | Status | Capability | Notes |
 | --- | --- | --- | --- | --- |
+| Apex front end | `apex.namespace-resolution` | `supported` | Apex System, Schema, namespace, class, and variable name resolution | Apex namespace resolution covers System default imports, Schema implicit imports, System-qualified disambiguation for shadowed platform classes, Schema-qualified SObject disambiguation, local-variable/class/namespace expression precedence, scalar/local/class/system type precedence, inner-type-before-namespace type resolution, generics, casts, constructors, locals, fields, params, returns, static members, enum values, and generated coverage for every documented System and Schema type spelling. |
 | Apex front end | `apex.parser.project-scale` | `supported` | Parse and index large SFDX projects | Parser and symbol baselines cover qualified nested type symbols, stable malformed-parse diagnostics, type-index/sema panic recovery diagnostics, enterprise-style multi-class check fixtures, selector/service/domain fixtures with object metadata schemas, namespace/package-directory fixtures, and bounded large-index stress coverage for the local Apex execution corpus. |
 | Apex front end | `apex.sema.body` | `supported` | Method-body semantic analysis | Method-body sema covers declarations, member and parameter type references, project namespace-qualified and namespace-token schema references, visibility and override checks, interface and abstract implementation checks, local declarations, duplicate locals, initializer and assignment type mismatches, return type and non-void path checks, constructor references and chaining, non-instantiable constructor calls, unknown variable reads, project method calls, inherited/interface/super calls, this/super field and return type inference, inherited instance field scope, @TestVisible access, overload arity and specificity, numeric widening, decimal literal typing, simple binary expression typing, object assignability, generic collection constructor assignability, receiver and constructor-call return typing, IR-backed scoped local reads, Boolean conditions, user-object field reads and writes, constructor-call validation across statements/control-flow bodies, and token-level diagnostic ranges for the supported VM subset. |
 | Data runtime | `dml.apex` | `supported` | Apex DML statements and Database methods | Apex insert/update/delete/upsert/undelete/merge syntax and Database.insert/update/delete/upsert/undelete/merge allOrNone paths call the DML engine, return SaveResult/UpsertResult/MergeResult objects with single and multi-entry Database.Error lists carrying statusCode, message, and fields arrays, isCreated, merged record IDs, set Ids, stamp common system fields, roll back allOrNone failures, soft-delete and undelete records, match implicit and explicit external-ID upserts, reject ID/object mismatches, enforce unique fields, validate lookup references, enforce simple Metadata API validation rules, reparent lookups on merge, fire supported upsert insert/update and merge update/delete trigger hooks only for successful rows, cascade soft-delete children from relationship metadata, and include bounded bulk-DML stress coverage. Trigger context includes operation flags, size, new/old lists, nullable unavailable contexts, and newMap/oldMap for supported operations. |
@@ -59,8 +60,8 @@ No post-MVP lane may stay `partial`. Each lane must be split into a complete loc
 | Developer experience | `watch.profile-trace-reports` | `supported` | Profile-driven watch reports | Watch runs emit profile and trace report events beside affected-test selection, rerun, and stale-run suppression events. |
 | Limits | `limits.configurable-local-profiles` | `supported` | Configurable local governor cap profiles | glade exec, test, and server accept deterministic local limit profiles and per-counter caps for supported governor counters. |
 | Limits | `limits.exact-salesforce-accounting` | `unsupported` | Exact hosted Salesforce governor accounting | Exact Salesforce runtime counter deltas require hosted execution accounting and remain outside deterministic local execution. |
-| Local API server | `server.rest-breadth.hosted-auth-live-org-deploy` | `unsupported` | Hosted auth, live-org Tooling, and deployment services | OAuth token issuance, live org-only Tooling objects, live metadata deploy/retrieve, Composite Graph execution, and broader hosted REST namespaces require Salesforce services. |
-| Local API server | `server.rest-breadth.local-expanded` | `supported` | Expanded local REST, Composite, Bulk, layout, and metadata jobs | Composite Batch and Tree, Bulk API v2 simple query jobs, layout/default-value metadata, metadata job status, REST limits, and local Tooling shapes are covered by server tests. |
+| Local API server | `server.rest-breadth.hosted-auth-live-org-deploy` | `unsupported` | Hosted auth, live-org Tooling, and deployment services | OAuth token issuance, live org-only Tooling objects, live metadata deploy/retrieve, and broader hosted REST namespaces require Salesforce services. |
+| Local API server | `server.rest-breadth.local-expanded` | `supported` | Expanded local REST, Composite, Bulk, layout, and metadata jobs | Composite Batch, Tree, and Composite Graph local requests, Bulk API v2 simple query jobs, layout/default-value metadata, metadata job status, REST limits, and local Tooling shapes are covered by server tests. |
 | Release | `compat.fixture-expansion` | `supported` | Compatibility fixture expansion | Fixture evidence coverage is gated by the first-party compat tooling and generated fixture reports. |
 | Release | `release.distribution-automation` | `supported` | Package-manager distribution, signing, and promotion automation | Release scripts build installable archives, checksums, manifests, smoke checks, and promotion metadata for the local binary distribution path. |
 | Runtime | `stdlib.platform-breadth` | `supported` | Broader System stdlib and platform service parity | All locally pursuable stdlib rows are modeled as supported local behavior or split into exact hosted-service unsupported rows with stable diagnostics. |

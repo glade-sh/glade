@@ -84,7 +84,7 @@ Check this list before relying on Glade for a project.
 | Live service APIs | Answers zone search, password reset output, live identity/admin mutation, and hosted process/service engines require Salesforce-hosted data or execution. |
 | Exact hosted Visualforce behavior | Glade serves local Visualforce pages for development. It does not promise Salesforce-hosted chrome, every component edge, exact lifecycle timing, Apex `PageReference.getContent*` output, every remoting/browser behavior, or byte-for-byte PDF output. |
 | Exact hosted Lightning Experience behavior | The local LWC shell does not promise Salesforce-hosted app chrome, hosted permission assignment, full UI API and GraphQL semantics, every `lightning-*` base component edge, exact SLDS fidelity, Flow Builder behavior, live EMP streaming, hosted utility chrome, or every Lightning Out edge. Console workspace APIs and utility-bar APIs have local models for development; exact hosted console behavior remains a Salesforce check. The package-exposed base-component module surface resolves locally with practical shims, including common button/card/layout/formatted-number contracts, with a small source-backed allowlist for simple base components. |
-| REST and Tooling APIs outside the local baseline | The local API server covers the checked local baseline, including Composite Batch and Tree, Bulk API v2 simple query jobs, layout/default-value metadata, metadata job status, and local Tooling responses. Bulk API locator paging, Composite Graph execution, Streaming/PubSub, GraphQL, live metadata deploy/retrieve, live auth, and live org-only Tooling APIs remain outside the local contract. |
+| REST and Tooling APIs outside the local baseline | The local API server covers the checked local baseline, including Composite Batch, Tree, and Composite Graph local requests over supported subrequests, Bulk API v2 simple query jobs, layout/default-value metadata, metadata job status, and local Tooling responses. Bulk API locator paging, Streaming/PubSub, GraphQL, live metadata deploy/retrieve, live auth, and live org-only Tooling APIs remain outside the local contract. |
 | Live outbound side effects | Real callouts, delivered email, push notifications, and external service mutations are not performed. Tests should use local mocks and result objects. |
 | Exact Salesforce governor accounting | Glade tracks deterministic local limits. Salesforce's full production accounting and every platform-specific counter are not complete. |
 
@@ -140,7 +140,7 @@ Every remaining hosted-only behavior is split into an explicit unsupported row.
 
 | Measure | Rows |
 | --- | ---: |
-| Capability features marked `supported` | 30 |
+| Capability features marked `supported` | 31 |
 | Capability features marked `partial` | 0 |
 | Capability features marked `unsupported` | 2 |
 | Standard-library rows marked `supported` | 267 |

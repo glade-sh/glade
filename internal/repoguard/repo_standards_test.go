@@ -143,6 +143,23 @@ func TestReleaseBuildProducesParserCapableArtifacts(t *testing.T) {
 	}
 }
 
+func TestAgentGuideListsCurrentProductCommands(t *testing.T) {
+	root := repoRoot(t)
+	guide := readRepoFile(t, root, "AGENTS.md")
+	for _, command := range []string{
+		"`version`", "`update`", "`doctor`", "`toolchain`", "`config`",
+		"`init`", "`parse`", "`inspect`", "`schema`", "`refactor`",
+		"`check`", "`exec`", "`debug`", "`editor`", "`dap`", "`test`",
+		"`tui`", "`dev`", "`report`", "`lsp`", "`profile`", "`examples`",
+		"`explain`", "`support`", "`plugins`", "`package`", "`server`",
+		"`org`", "`playground`", "`db`", "`completion`", "`help`",
+	} {
+		if !strings.Contains(guide, command) {
+			t.Fatalf("AGENTS.md product command list is missing %s", command)
+		}
+	}
+}
+
 func TestGeneratedSystemStubsReproduceFromGenerator(t *testing.T) {
 	root := repoRoot(t)
 	inputRoot := filepath.Join(root, hyphen("example", "projects"), "stubs", "apex-system-stubs")
