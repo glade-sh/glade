@@ -46,3 +46,26 @@ func TestCatalogBuildsDataSeedArgs(t *testing.T) {
 		}
 	}
 }
+
+func TestCatalogBuildsDataImportSFArgs(t *testing.T) {
+	catalog := DefaultCatalog()
+	action, ok := catalog.Action("data.importSF")
+	if !ok {
+		t.Fatal("data.importSF action missing")
+	}
+	args := action.Args(ActionContext{
+		ProjectRoot:  "/tmp/acme",
+		DBPath:       ".glade/envs/dev.sqlite",
+		TargetOrg:    "devhub",
+		ImportObject: "Invoice__c",
+	})
+	want := []string{"db", "import", "sf", "--db", ".glade/envs/dev.sqlite", "--project", "/tmp/acme", "--object", "Invoice__c", "--limit", "25", "--target-org", "devhub", "--json", "--progress-json"}
+	if len(args) != len(want) {
+		t.Fatalf("args len = %d, want %d: %#v", len(args), len(want), args)
+	}
+	for i := range want {
+		if args[i] != want[i] {
+			t.Fatalf("args[%d] = %q, want %q", i, args[i], want[i])
+		}
+	}
+}

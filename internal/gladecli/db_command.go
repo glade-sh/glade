@@ -15,6 +15,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/automation"
 	"github.com/glade-sh/glade/internal/cliui"
+	"github.com/glade-sh/glade/internal/orgimport"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/resource"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
@@ -47,6 +48,12 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 	progress := false
 	progressJSON := false
 	noProgress := false
+	targetOrg := ""
+	importFields := make([]string, 0)
+	importObjects := make([]string, 0)
+	importQuery := ""
+	importCategory := "all"
+	listObjects := false
 	positionals := make([]string, 0)
 	for i := 1; i < len(args); i++ {
 		switch args[i] {
@@ -79,6 +86,38 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 			limitSet = true
 		case "--query-all":
 			queryAll = true
+		case "--target-org", "-o":
+			value, err := takeFlagValue(args, &i, "--target-org requires a value")
+			if err != nil {
+				return err
+			}
+			targetOrg = value
+		case "--object":
+			value, err := takeFlagValue(args, &i, "--object requires a value")
+			if err != nil {
+				return err
+			}
+			importObjects = append(importObjects, value)
+		case "--fields":
+			value, err := takeFlagValue(args, &i, "--fields requires a value")
+			if err != nil {
+				return err
+			}
+			importFields = append(importFields, splitCommaList(value)...)
+		case "--query":
+			value, err := takeFlagValue(args, &i, "--query requires a value")
+			if err != nil {
+				return err
+			}
+			importQuery = value
+		case "--category":
+			value, err := takeFlagValue(args, &i, "--category requires a value")
+			if err != nil {
+				return err
+			}
+			importCategory = value
+		case "--list-objects":
+			listObjects = true
 		case "--progress":
 			progress = true
 		case "--progress-json":
@@ -95,13 +134,29 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 			positionals = append(positionals, args[i])
 		}
 	}
-	if command != "query" && (limitSet || queryAll) {
+	if command != "query" && command != "import" && (limitSet || queryAll) {
 		return fmt.Errorf("glade db %s does not accept --limit or --query-all", command)
+	}
+	if command != "import" && (targetOrg != "" || len(importObjects) > 0 || len(importFields) > 0 || importQuery != "" || importCategory != "all" || listObjects) {
+		return fmt.Errorf("glade db %s does not accept Salesforce import flags", command)
 	}
 	if wizard {
 		return writeDBWizard(w, command, dbPath, root, jsonOut, positionals)
 	}
 	progressMode := progressModeForFlags(jsonOut, progress, progressJSON, noProgress)
+	if command == "import" {
+		return runDBImport(ctx, w, progressW, progressMode, dbPath, root, jsonOut, dbImportOptions{
+			TargetOrg:   targetOrg,
+			Objects:     importObjects,
+			Fields:      importFields,
+			Query:       importQuery,
+			Limit:       limit,
+			AllRows:     queryAll,
+			Category:    importCategory,
+			ListObjects: listObjects,
+			Positionals: positionals,
+		})
+	}
 	if dbPath == "" {
 		return errors.New("glade db requires --db <path>")
 	}
@@ -191,6 +246,96 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 	default:
 		return errors.New("usage: glade db seed|reset|export|inspect|query|describe --db <path> [--project <root>] [--json] [fixture.json]")
 	}
+}
+
+type dbImportOptions struct {
+	TargetOrg   string
+	Objects     []string
+	Fields      []string
+	Query       string
+	Limit       int
+	AllRows     bool
+	Category    string
+	ListObjects bool
+	Positionals []string
+}
+
+func runDBImport(ctx context.Context, w io.Writer, progressW io.Writer, progressMode cliui.ProgressMode, dbPath, root string, jsonOut bool, opts dbImportOptions) error {
+	if len(opts.Positionals) != 1 || opts.Positionals[0] != "sf" {
+		return errors.New("usage: glade db import sf [--target-org <alias>] [--db <path>] [--object <Object>] [--fields Id,Name] [--limit <n>] [--json]")
+	}
+	if opts.ListObjects {
+		objects, err := orgimport.ListObjects(ctx, orgimport.CommandRunner{}, orgimport.ListObjectsOptions{TargetOrg: opts.TargetOrg, Category: opts.Category})
+		if err != nil {
+			return err
+		}
+		if jsonOut {
+			payload := struct {
+				TargetOrg string   `json:"targetOrg,omitempty"`
+				Category  string   `json:"category"`
+				Objects   []string `json:"objects"`
+			}{TargetOrg: opts.TargetOrg, Category: importCategoryOrDefault(opts.Category), Objects: objects}
+			enc := json.NewEncoder(w)
+			enc.SetIndent("", "  ")
+			return enc.Encode(payload)
+		}
+		for _, object := range objects {
+			if _, err := fmt.Fprintln(w, object); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if dbPath == "" {
+		return errors.New("glade db import sf requires --db <path>")
+	}
+	renderer := cliui.NewRenderer(cliui.RendererOptions{
+		Stderr: progressW,
+		Mode:   progressMode,
+	})
+	store, org, err := openDBStore(dbPath, root)
+	if err != nil {
+		return err
+	}
+	defer store.Close()
+	schemaVersion, err := store.SchemaVersion()
+	if err != nil {
+		return err
+	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "db import sf", Label: "Querying Salesforce"})
+	result, err := orgimport.Import(ctx, orgimport.CommandRunner{}, orgimport.ImportOptions{
+		TargetOrg: opts.TargetOrg,
+		Objects:   opts.Objects,
+		Fields:    opts.Fields,
+		Query:     opts.Query,
+		Limit:     opts.Limit,
+		AllRows:   opts.AllRows,
+	})
+	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "db import failed"})
+		return err
+	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "db import sf", Label: "Applying imported rows", Current: 1, Total: 3})
+	if err := storage.ApplyFixture(&org, result.Fixture); err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "db import failed"})
+		return err
+	}
+	storage.EnsureDeterministicPlatformData(&org)
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "db import sf", Label: "Saving database", Current: 2, Total: 3})
+	if err := store.Save(org); err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "db import failed"})
+		return err
+	}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "db import sf", Label: fmt.Sprintf("Imported %d records", result.Records), Current: 3, Total: 3})
+	renderer.Finish(cliui.Result{OK: true, Label: "db import complete"})
+	return writeDBInspect(w, dbPath, org, jsonOut, schemaVersion)
+}
+
+func importCategoryOrDefault(category string) string {
+	if category == "" {
+		return "all"
+	}
+	return category
 }
 
 func writeDBWizard(w io.Writer, command, dbPath, root string, jsonOut bool, positionals []string) error {

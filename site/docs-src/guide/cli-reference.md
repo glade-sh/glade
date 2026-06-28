@@ -497,6 +497,8 @@ Seed, reset, export, inspect, query, and describe local org storage fixtures.
 glade db reset --db .glade/refinement-local.sqlite --json
 glade db seed --wizard --db .glade/refinement-local.sqlite --project . data/file-rows.json
 glade db seed --db .glade/refinement-local.sqlite --project . --progress data/file-rows.json
+glade db import sf --target-org devhub --db .glade/refinement-local.sqlite --project . --object Account --fields Id,Name --limit 25 --json
+glade db import sf --target-org devhub --list-objects --category custom --json
 glade db inspect --db .glade/refinement-local.sqlite --json
 glade db query --db .glade/refinement-local.sqlite --project . --json "SELECT Id, Name FROM FileRow__c"
 glade db describe --db .glade/refinement-local.sqlite --project . --json FileRow__c

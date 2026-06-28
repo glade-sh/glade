@@ -41,6 +41,12 @@ Seed a local database:
 glade db seed --db .glade/refinement-local.sqlite --project . data/file-rows.json
 ```
 
+Import a small slice from an org already connected through the Salesforce CLI:
+
+```bash
+glade db import sf --target-org devhub --db .glade/refinement-local.sqlite --project . --object Account --fields Id,Name --limit 25 --json
+```
+
 Inspect the database:
 
 ```bash
@@ -52,6 +58,7 @@ one terminal surface:
 
 ```bash
 glade db --ui --db .glade/refinement-local.sqlite --project .
+glade db --ui --db .glade/refinement-local.sqlite --project . --target-org devhub --object Account
 ```
 
 In VS Code, use `Glade: Open Data TUI` for the active local data environment.
@@ -59,8 +66,8 @@ In VS Code, use `Glade: Open Data TUI` for the active local data environment.
 ## Expected output
 
 The org commands create and start a local target. `sf data query` returns local
-records through the Glade target. Seed and inspect commands report the SQLite
-tables and rows Glade can use.
+records through the Glade target. Seed, import, and inspect commands report the
+SQLite tables and rows Glade can use.
 
 ## Common wrong turn
 

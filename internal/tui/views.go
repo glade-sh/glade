@@ -29,7 +29,14 @@ type viewStyles struct {
 func (a App) View() string {
 	styles := currentViewStyles()
 	var b strings.Builder
-	fmt.Fprintf(&b, "%s  %s  %s\n", styles.header.Render("Glade TUI"), styles.meta.Render("project="+a.ProjectRoot), styles.meta.Render("db="+displayDB(a.DBPath)))
+	meta := []string{
+		styles.meta.Render("project=" + a.ProjectRoot),
+		styles.meta.Render("db=" + displayDB(a.DBPath)),
+	}
+	if a.TargetOrg != "" {
+		meta = append(meta, styles.meta.Render("org="+a.TargetOrg))
+	}
+	fmt.Fprintf(&b, "%s  %s\n", styles.header.Render("Glade TUI"), strings.Join(meta, "  "))
 	b.WriteString(a.renderTabs(styles))
 	b.WriteString("\n\n")
 	b.WriteString(styles.section.Render("Actions"))

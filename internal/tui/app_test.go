@@ -63,6 +63,15 @@ func TestAppViewShowsBoardAndActions(t *testing.T) {
 	}
 }
 
+func TestAppViewShowsTargetOrgWhenSet(t *testing.T) {
+	t.Setenv("NO_COLOR", "1")
+	app := NewApp(AppOptions{ProjectRoot: "/tmp/acme", DBPath: ".glade/envs/dev.sqlite", TargetOrg: "devhub", Runner: &fakeRunner{}})
+	view := app.View()
+	if !strings.Contains(view, "org=devhub") {
+		t.Fatalf("view missing target org:\n%s", view)
+	}
+}
+
 func TestAppViewUsesAccentColorWhenAllowed(t *testing.T) {
 	t.Setenv("NO_COLOR", "")
 	t.Setenv("TERM", "xterm-256color")

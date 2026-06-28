@@ -36,7 +36,8 @@ language-server ownership.
 The Command Palette also includes `Glade: Open TUI`, `Glade: Open Tests TUI`,
 `Glade: Open Data TUI`, and `Glade: Open Plugins TUI`. Each command opens a
 terminal and runs `glade tui` for the current project. The data TUI uses the
-active local data environment.
+active local data environment and can pass a Salesforce CLI target org to the
+import-from-org action.
 
 ## Daily Local Apex Loop
 

@@ -7,6 +7,8 @@ type AppOptions struct {
 	DBPath       string
 	Query        string
 	Fixture      string
+	TargetOrg    string
+	ImportObject string
 	InitialBoard Board
 	Runner       Runner
 }
@@ -21,10 +23,12 @@ type CommandState struct {
 }
 
 type App struct {
-	ProjectRoot string
-	DBPath      string
-	Query       string
-	Fixture     string
+	ProjectRoot  string
+	DBPath       string
+	Query        string
+	Fixture      string
+	TargetOrg    string
+	ImportObject string
 
 	Catalog     Catalog
 	ActiveBoard Board
@@ -53,23 +57,27 @@ func NewApp(opts AppOptions) App {
 		runner = ExecRunner{Dir: opts.ProjectRoot}
 	}
 	return App{
-		ProjectRoot: defaultString(opts.ProjectRoot, "."),
-		DBPath:      defaultString(opts.DBPath, ".glade/envs/dev.sqlite"),
-		Query:       opts.Query,
-		Fixture:     opts.Fixture,
-		Catalog:     DefaultCatalog(),
-		ActiveBoard: board,
-		Selected:    make(map[Board]int),
-		Runner:      runner,
+		ProjectRoot:  defaultString(opts.ProjectRoot, "."),
+		DBPath:       defaultString(opts.DBPath, ".glade/envs/dev.sqlite"),
+		Query:        opts.Query,
+		Fixture:      opts.Fixture,
+		TargetOrg:    opts.TargetOrg,
+		ImportObject: opts.ImportObject,
+		Catalog:      DefaultCatalog(),
+		ActiveBoard:  board,
+		Selected:     make(map[Board]int),
+		Runner:       runner,
 	}
 }
 
 func (a App) actionContext() ActionContext {
 	return ActionContext{
-		ProjectRoot: a.ProjectRoot,
-		DBPath:      a.DBPath,
-		Query:       a.Query,
-		Fixture:     a.Fixture,
+		ProjectRoot:  a.ProjectRoot,
+		DBPath:       a.DBPath,
+		Query:        a.Query,
+		Fixture:      a.Fixture,
+		TargetOrg:    a.TargetOrg,
+		ImportObject: a.ImportObject,
 	}
 }
 

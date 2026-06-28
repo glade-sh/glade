@@ -10,10 +10,12 @@ const (
 )
 
 type ActionContext struct {
-	ProjectRoot string
-	DBPath      string
-	Query       string
-	Fixture     string
+	ProjectRoot  string
+	DBPath       string
+	Query        string
+	Fixture      string
+	TargetOrg    string
+	ImportObject string
 }
 
 type Action struct {
@@ -45,6 +47,7 @@ func DefaultCatalog() Catalog {
 		{ID: "data.seed", Board: BoardData, Label: "Seed DB", Description: "Apply a fixture to the local DB.", Args: func(ctx ActionContext) []string {
 			return []string{"db", "seed", "--db", ctx.DBPath, "--project", ctx.ProjectRoot, "--json", "--progress-json", defaultString(ctx.Fixture, "fixture.json")}
 		}},
+		{ID: "data.importSF", Board: BoardData, Label: "Import From Org", Description: "Query sf records into the local DB.", Args: sfImportArgs},
 		{ID: "data.reset", Board: BoardData, Label: "Reset DB", Description: "Clear local DB data.", Args: dbArgs("reset", "--json")},
 		{ID: "data.export", Board: BoardData, Label: "Export DB", Description: "Write fixture JSON to stdout.", Args: dbArgs("export")},
 		{ID: "plugins.list", Board: BoardPlugins, Label: "Installed Plugins", Description: "List installed plugins.", Args: func(ActionContext) []string {
@@ -103,6 +106,20 @@ func dbArgs(command string, tail ...string) func(ActionContext) []string {
 		args := []string{"db", command, "--db", ctx.DBPath, "--project", ctx.ProjectRoot}
 		return append(args, tail...)
 	}
+}
+
+func sfImportArgs(ctx ActionContext) []string {
+	args := []string{
+		"db", "import", "sf",
+		"--db", ctx.DBPath,
+		"--project", ctx.ProjectRoot,
+		"--object", defaultString(ctx.ImportObject, "Account"),
+		"--limit", "25",
+	}
+	if ctx.TargetOrg != "" {
+		args = append(args, "--target-org", ctx.TargetOrg)
+	}
+	return append(args, "--json", "--progress-json")
 }
 
 func defaultString(value, fallback string) string {

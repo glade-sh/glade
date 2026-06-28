@@ -19,6 +19,8 @@ func runTUI(ctx context.Context, args []string, stdout io.Writer, _ io.Writer) e
 		String("view", "").
 		String("query", "").
 		String("fixture", "").
+		String("target-org", "o").
+		String("object", "").
 		Bool("no-ui", "").
 		Parse(args)
 	if err != nil {
@@ -41,6 +43,8 @@ func runTUI(ctx context.Context, args []string, stdout io.Writer, _ io.Writer) e
 		DBPath:       parsed.String("db"),
 		Query:        parsed.String("query"),
 		Fixture:      parsed.String("fixture"),
+		TargetOrg:    parsed.String("target-org"),
+		ImportObject: parsed.String("object"),
 		InitialBoard: board,
 		Runner:       tui.ExecRunner{Dir: root},
 	}
@@ -57,6 +61,8 @@ func runTUIView(ctx context.Context, args []string, board tui.Board, stdout io.W
 		String("db", "").
 		String("query", "").
 		String("fixture", "").
+		String("target-org", "o").
+		String("object", "").
 		Bool("no-ui", "").
 		Parse(args)
 	if err != nil {
@@ -77,6 +83,12 @@ func runTUIView(ctx context.Context, args []string, board tui.Board, stdout io.W
 	}
 	if parsed.String("fixture") != "" {
 		tuiArgs = append(tuiArgs, "--fixture", parsed.String("fixture"))
+	}
+	if parsed.String("target-org") != "" {
+		tuiArgs = append(tuiArgs, "--target-org", parsed.String("target-org"))
+	}
+	if parsed.String("object") != "" {
+		tuiArgs = append(tuiArgs, "--object", parsed.String("object"))
 	}
 	if parsed.Bool("no-ui") {
 		tuiArgs = append(tuiArgs, "--no-ui")
@@ -102,6 +114,16 @@ func writeTUIDryRun(w io.Writer, opts tui.AppOptions) error {
 	}
 	if opts.DBPath != "" {
 		if _, err := fmt.Fprintf(w, "db: %s\n", opts.DBPath); err != nil {
+			return err
+		}
+	}
+	if opts.TargetOrg != "" {
+		if _, err := fmt.Fprintf(w, "target-org: %s\n", opts.TargetOrg); err != nil {
+			return err
+		}
+	}
+	if opts.ImportObject != "" {
+		if _, err := fmt.Fprintf(w, "object: %s\n", opts.ImportObject); err != nil {
 			return err
 		}
 	}
