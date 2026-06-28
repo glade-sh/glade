@@ -103,6 +103,50 @@ func TestInstallFromCopiesToolchain(t *testing.T) {
 	}
 }
 
+func TestInstallFromCopiesEditorVSIX(t *testing.T) {
+	repo := t.TempDir()
+	writeMinimalToolchainFile(t, repo, "third_party/lwc/compile.mjs")
+	writeMinimalToolchainFile(t, repo, "third_party/lwc/node_modules/@lwc/compiler/package.json")
+	writeMinimalToolchainFile(t, repo, "lwcruntime/src/experience/cmsDeliveryApi.mjs")
+	writeMinimalToolchainFile(t, repo, "lwcruntime/src/shims/wire-adapter.mjs")
+	writeMinimalToolchainFile(t, repo, "lwcruntime/src/shims/lds-cache.mjs")
+	writeMinimalToolchainFile(t, repo, "lwcruntime/src/shell/app.mjs")
+	writeMinimalToolchainFile(t, repo, "lwcruntime/src/slds/slds-loader.mjs")
+	writeMinimalToolchainFile(t, repo, "lwcruntime/src/lightning/button.mjs")
+	sourceVSIX := filepath.Join(repo, "contrib", "vscode-glade", "dist", "vscode-glade-0.0.1.vsix")
+	if err := os.MkdirAll(filepath.Dir(sourceVSIX), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(sourceVSIX, []byte("fresh-vsix"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("XDG_DATA_HOME", t.TempDir())
+
+	if err := InstallFrom(repo); err != nil {
+		t.Fatal(err)
+	}
+
+	installedVSIX := filepath.Join(UserShareDir(), "editor", "vscode-glade.vsix")
+	got, err := os.ReadFile(installedVSIX)
+	if err != nil {
+		t.Fatalf("installed editor vsix missing: %v", err)
+	}
+	if string(got) != "fresh-vsix" {
+		t.Fatalf("installed editor vsix = %q, want fresh-vsix", string(got))
+	}
+}
+
+func writeMinimalToolchainFile(t *testing.T, root, rel string) {
+	t.Helper()
+	path := filepath.Join(root, filepath.FromSlash(rel))
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(rel), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare(t *testing.T) {
 	wd, err := os.Getwd()
 	if err != nil {

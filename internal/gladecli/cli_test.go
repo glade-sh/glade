@@ -1893,6 +1893,74 @@ func TestRunEditorInstallVSCodeUsesGladeHomeBundledVSIX(t *testing.T) {
 	}
 }
 
+func TestRunEditorInstallVSCodePrefersSourceCheckoutOverUserShareVSIX(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module github.com/glade-sh/glade\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	extensionRoot := filepath.Join(root, "contrib", "vscode-glade")
+	if err := os.MkdirAll(filepath.Join(extensionRoot, "dist"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(extensionRoot, "package.json"), []byte(`{"name":"vscode-glade"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	sourceVSIX := filepath.Join(extensionRoot, "dist", "vscode-glade-0.0.2.vsix")
+	if err := os.WriteFile(sourceVSIX, []byte("source-vsix"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if resolved, err := filepath.EvalSymlinks(sourceVSIX); err == nil {
+		sourceVSIX = resolved
+	}
+	xdg := filepath.Join(root, "xdg")
+	userShareVSIX := filepath.Join(xdg, "glade", "editor", "vscode-glade.vsix")
+	if err := os.MkdirAll(filepath.Dir(userShareVSIX), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(userShareVSIX, []byte("stale-user-share-vsix"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GLADE_VSCODE_VSIX", "")
+	t.Setenv("GLADE_HOME", "")
+	t.Setenv("XDG_DATA_HOME", xdg)
+	originalCWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(extensionRoot); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(originalCWD); err != nil {
+			t.Fatalf("restore cwd: %v", err)
+		}
+	})
+
+	var ranArgs []string
+	restore := stubEditorCommandDeps(t,
+		func(name string) (string, error) {
+			if name != "code" {
+				t.Fatalf("looked up %q, want code", name)
+			}
+			return "/usr/local/bin/code", nil
+		},
+		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+			ranArgs = append([]string(nil), args...)
+			return []byte("installed\n"), nil
+		},
+	)
+	defer restore()
+
+	var stdout bytes.Buffer
+	if err := runEditor(context.Background(), []string{"install", "vscode"}, &stdout); err != nil {
+		t.Fatal(err)
+	}
+	wantArgs := []string{"--install-extension", sourceVSIX}
+	if strings.Join(ranArgs, "\x00") != strings.Join(wantArgs, "\x00") {
+		t.Fatalf("ran args = %#v, want %#v", ranArgs, wantArgs)
+	}
+}
+
 func TestRunEditorInstallVSCodeFindsSourceCheckoutVSIX(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module github.com/glade-sh/glade\n"), 0o644); err != nil {

@@ -217,6 +217,8 @@ func bundledVSIXCandidates() []string {
 	if home := strings.TrimSpace(os.Getenv("GLADE_HOME")); home != "" {
 		candidates = append(candidates, filepath.Join(home, "editor", "vscode-glade.vsix"))
 	}
+	// A source checkout package should not be hidden by an older global bundle.
+	candidates = append(candidates, sourceCheckoutVSIXCandidates()...)
 	candidates = append(candidates, filepath.Join(gladehome.UserShareDir(), "editor", "vscode-glade.vsix"))
 	exe, err := os.Executable()
 	if err == nil {
@@ -226,7 +228,6 @@ func bundledVSIXCandidates() []string {
 			filepath.Join(exeDir, "..", "share", "glade", "editor", "vscode-glade.vsix"),
 		)
 	}
-	candidates = append(candidates, sourceCheckoutVSIXCandidates()...)
 	return candidates
 }
 

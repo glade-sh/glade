@@ -60,7 +60,8 @@ func BuildEditorAnalysis(log apexlog.Log, index typesys.Index, opts EditorOption
 	if opts.Now != nil {
 		now = opts.Now
 	}
-	annotated, _ := Annotate(log, index, opts.MaxCandidates)
+	sourceIndex := BuildSourceIndex(index)
+	annotated, _ := annotateWithSourceIndex(log, sourceIndex, opts.MaxCandidates)
 
 	analysis := EditorAnalysis{
 		Version:     1,
@@ -74,7 +75,6 @@ func BuildEditorAnalysis(log apexlog.Log, index typesys.Index, opts EditorOption
 		},
 	}
 
-	sourceIndex := BuildSourceIndex(index)
 	replayable := replayableEntryIndexes(annotated, sourceIndex, opts.MinConfidence)
 	schemaIndex := buildEditorSchemaIndex(opts.ProjectRoot, opts.ObjectFiles, opts.FieldFiles)
 	var stack []editorFrame
@@ -96,9 +96,12 @@ func BuildEditorAnalysis(log apexlog.Log, index typesys.Index, opts EditorOption
 			if !locationMeetsConfidence(source, opts.MinConfidence) {
 				source = EditorLocation{}
 			}
-			if source.File != "" {
-				analysis.Coverage.ResolvedSources++
-			}
+		}
+		if !isMethodLikeEntry(entry.Kind) {
+			source = sourceWithinActiveFrame(stack, entry, source)
+		}
+		if source.File != "" {
+			analysis.Coverage.ResolvedSources++
 		}
 
 		editorEntry := EditorEntry{
@@ -122,7 +125,7 @@ func BuildEditorAnalysis(log apexlog.Log, index typesys.Index, opts EditorOption
 			frame := editorFrame{ID: frameID(i, name), Kind: "codeUnit", Name: name, Entry: i, Range: rng, Depth: editorDepth(len(stack)), ParentID: parentID, Source: source}
 			stack = append(stack, frame)
 			editorEntry.FrameID = frame.ID
-			addSourceLink(&analysis, "source", rng, source)
+			addSourceLink(&analysis, "source", codeUnitLinkRange(entry, rng), source)
 		case apexlog.EntryMethodEntry, apexlog.EntryConstructorEntry, apexlog.EntrySystemMethodEntry:
 			name := displayMethodSymbol(entry.Data.MethodSymbol)
 			kind := "method"
@@ -133,8 +136,8 @@ func BuildEditorAnalysis(log apexlog.Log, index typesys.Index, opts EditorOption
 				kind = "systemMethod"
 			}
 			if source.File == "" {
-				source = methodEntryLocation(sourceIndex, entry.Data.MethodSymbol)
-			} else if methodSource := methodEntryLocation(sourceIndex, entry.Data.MethodSymbol); methodSource.File != "" {
+				source = methodEntryLocation(sourceIndex, entry.Kind, entry.Data.MethodSymbol)
+			} else if methodSource := methodEntryLocation(sourceIndex, entry.Kind, entry.Data.MethodSymbol); methodSource.File != "" {
 				source = methodSource
 			}
 			if !locationMeetsConfidence(source, opts.MinConfidence) {
@@ -143,15 +146,15 @@ func BuildEditorAnalysis(log apexlog.Log, index typesys.Index, opts EditorOption
 			frame := editorFrame{ID: frameID(i, name), Kind: kind, Name: name, Entry: i, Range: rng, Depth: editorDepth(len(stack)), ParentID: parentID, Source: source}
 			stack = append(stack, frame)
 			editorEntry.FrameID = frame.ID
-			addSourceLink(&analysis, "method", rng, source)
+			addSourceLink(&analysis, "method", methodSymbolLinkRange(entry, rng), source)
 		case apexlog.EntrySOQLExecuteBegin:
-			addSourceLink(&analysis, "source", rng, source)
+			addSourceLink(&analysis, "source", soqlLinkRange(entry, rng), source)
 			addSOQLSchemaLinks(&analysis, entry, rng, schemaIndex)
 			frame := editorFrame{ID: frameID(i, "soql"), Kind: "soql", Name: "SOQL", Entry: i, Range: rng, Depth: editorDepth(len(stack)), ParentID: parentID, Source: source}
 			stack = append(stack, frame)
 			editorEntry.FrameID = frame.ID
 		case apexlog.EntryDMLBegin:
-			addSourceLink(&analysis, "source", rng, source)
+			addSourceLink(&analysis, "source", dmlLinkRange(entry, rng), source)
 			addDMLSchemaLink(&analysis, entry, rng, schemaIndex)
 			frame := editorFrame{ID: frameID(i, "dml"), Kind: "dml", Name: strings.TrimSpace(entry.Data.DMLOperation + " " + entry.Data.DMLType), Entry: i, Range: rng, Depth: editorDepth(len(stack)), ParentID: parentID, Source: source}
 			stack = append(stack, frame)
@@ -173,7 +176,7 @@ func BuildEditorAnalysis(log apexlog.Log, index typesys.Index, opts EditorOption
 				scope.SourceDef = EditorLocation{}
 			}
 			activeVars[varKey(parentID, entry.Data.VariableName)] = scope
-			addVariableLinks(&analysis, scope, rng, false)
+			addVariableLinks(&analysis, scope, variableNameLinkRange(entry, rng), false)
 		case apexlog.EntryVariableAssignment:
 			scope, ok := activeVars[varKey(parentID, entry.Data.VariableName)]
 			if !ok {
@@ -191,7 +194,7 @@ func BuildEditorAnalysis(log apexlog.Log, index typesys.Index, opts EditorOption
 			}
 			variable.Value = entry.Data.VariableValue
 			variable.Assignment = EditorLocation{File: opts.LogFile, Line: rng.StartLine + 1, Column: rng.StartColumn, Symbol: scope.Name, Reason: "variable assignment", Confidence: 1}
-			addVariableLinks(&analysis, scope, rng, true)
+			addVariableLinks(&analysis, scope, variableNameLinkRange(entry, rng), true)
 			if scope.SourceDef.File != "" {
 				analysis.Coverage.ResolvedVariables++
 			}
@@ -272,6 +275,134 @@ func rangeForEntry(entry apexlog.Entry) EditorRange {
 	return EditorRange{StartLine: line, StartColumn: 0, EndLine: line, EndColumn: utf16ColumnLen(entry.Raw)}
 }
 
+func methodSymbolLinkRange(entry apexlog.Entry, fallback EditorRange) EditorRange {
+	if entry.Data.MethodSymbol != "" {
+		return substringRange(entry.Raw, entry.Data.MethodSymbol, fallback)
+	}
+	return fallback
+}
+
+func codeUnitLinkRange(entry apexlog.Entry, fallback EditorRange) EditorRange {
+	if entry.Data.CodeUnit != "" {
+		return substringRange(entry.Raw, entry.Data.CodeUnit, fallback)
+	}
+	return fallback
+}
+
+func variableNameLinkRange(entry apexlog.Entry, fallback EditorRange) EditorRange {
+	if entry.Data.VariableName == "" {
+		return fallback
+	}
+	if rng, ok := payloadTokenRange(entry.Raw, fallback.StartLine, 1); ok && tokenText(entry.Raw, rng, fallback.StartLine) == entry.Data.VariableName {
+		return rng
+	}
+	return substringRange(entry.Raw, entry.Data.VariableName, fallback)
+}
+
+func soqlLinkRange(entry apexlog.Entry, fallback EditorRange) EditorRange {
+	if entry.Data.SOQLQuery != "" {
+		return substringRange(entry.Raw, entry.Data.SOQLQuery, fallback)
+	}
+	return fallback
+}
+
+func dmlLinkRange(entry apexlog.Entry, fallback EditorRange) EditorRange {
+	if entry.Data.DMLType != "" {
+		return substringRange(entry.Raw, entry.Data.DMLType, fallback)
+	}
+	if entry.Data.DMLOperation != "" {
+		return substringRange(entry.Raw, entry.Data.DMLOperation, fallback)
+	}
+	return fallback
+}
+
+func substringRange(raw, needle string, fallback EditorRange) EditorRange {
+	if raw == "" || needle == "" {
+		return fallback
+	}
+	start := strings.Index(raw, needle)
+	if start < 0 {
+		return fallback
+	}
+	return byteRange(raw, fallback.StartLine, start, start+len(needle))
+}
+
+func payloadTokenRange(raw string, line, payloadIndex int) (EditorRange, bool) {
+	if payloadIndex < 0 {
+		return EditorRange{}, false
+	}
+	pipes := make([]int, 0, 8)
+	for i, r := range raw {
+		if r == '|' {
+			pipes = append(pipes, i)
+		}
+	}
+	startPipe := payloadIndex + 1
+	if startPipe >= len(pipes) {
+		return EditorRange{}, false
+	}
+	start := pipes[startPipe] + 1
+	end := len(raw)
+	if startPipe+1 < len(pipes) {
+		end = pipes[startPipe+1]
+	}
+	if start > end {
+		return EditorRange{}, false
+	}
+	return byteRange(raw, line, start, end), true
+}
+
+func byteRange(raw string, line, start, end int) EditorRange {
+	if start < 0 {
+		start = 0
+	}
+	if end < start {
+		end = start
+	}
+	if end > len(raw) {
+		end = len(raw)
+	}
+	return EditorRange{
+		StartLine:   line,
+		StartColumn: utf16ColumnLen(raw[:start]),
+		EndLine:     line,
+		EndColumn:   utf16ColumnLen(raw[:end]),
+	}
+}
+
+func tokenText(raw string, rng EditorRange, line int) string {
+	if rng.StartLine != line || rng.EndLine != line {
+		return ""
+	}
+	start := byteIndexForUTF16Column(raw, rng.StartColumn)
+	end := byteIndexForUTF16Column(raw, rng.EndColumn)
+	if start < 0 || end < start || end > len(raw) {
+		return ""
+	}
+	return raw[start:end]
+}
+
+func byteIndexForUTF16Column(raw string, column int) int {
+	if column <= 0 {
+		return 0
+	}
+	count := 0
+	for i, r := range raw {
+		width := len(utf16.Encode([]rune{r}))
+		if count >= column {
+			return i
+		}
+		if count+width > column {
+			return -1
+		}
+		count += width
+	}
+	if count == column {
+		return len(raw)
+	}
+	return -1
+}
+
 func fieldsForEditorEntry(entry apexlog.Entry) map[string]any {
 	fields := map[string]any{}
 	if entry.Data.SourceLine > 0 {
@@ -327,9 +458,25 @@ func locationMeetsConfidence(location EditorLocation, minConfidence float64) boo
 	return location.Confidence >= minConfidence
 }
 
-func methodEntryLocation(index SourceIndex, symbol string) EditorLocation {
-	ns, typ, method := parseMethodLikeSymbol(symbol)
-	for _, sourceMethod := range methodBySymbol(index, ns, typ, method) {
+func sourceWithinActiveFrame(stack []editorFrame, entry apexlog.Entry, current EditorLocation) EditorLocation {
+	frame := parentFrame(stack)
+	if frame.Source.File == "" || entry.Data.SourceLine <= 0 {
+		return current
+	}
+	if current.File != "" && current.Confidence > 0.5 && current.Reason != "line" {
+		return current
+	}
+	return EditorLocation{
+		File:       frame.Source.File,
+		Line:       entry.Data.SourceLine,
+		Symbol:     frame.Source.Symbol,
+		Reason:     "frame source line",
+		Confidence: 0.75,
+	}
+}
+
+func methodEntryLocation(index SourceIndex, kind apexlog.EntryKind, symbol string) EditorLocation {
+	for _, sourceMethod := range methodsForEntrySymbol(index, kind, symbol) {
 		return EditorLocation{File: sourceMethod.File, Line: sourceMethod.StartLine, Symbol: methodSymbol(sourceMethod.Namespace, sourceMethod.TypeName, sourceMethod.Name), Reason: "method entry", Confidence: 0.9}
 	}
 	return EditorLocation{}
@@ -411,12 +558,12 @@ func addSOQLSchemaLinks(analysis *EditorAnalysis, entry apexlog.Entry, rng Edito
 		return
 	}
 	if target, ok := schema.objectLocation(objectName); ok {
-		analysis.Links = append(analysis.Links, EditorLink{Kind: "schemaObject", Range: rng, Target: target, Title: "Open schema object"})
+		analysis.Links = append(analysis.Links, EditorLink{Kind: "schemaObject", Range: soqlObjectTokenRange(entry, objectName, rng), Target: target, Title: "Open schema object"})
 		analysis.Coverage.ResolvedSchemaRefs++
 	}
 	for _, field := range parseSelectFields(entry.Data.SOQLQuery) {
 		if target, ok := schema.fieldLocation(objectName, field); ok {
-			analysis.Links = append(analysis.Links, EditorLink{Kind: "schemaField", Range: rng, Target: target, Title: "Open schema field"})
+			analysis.Links = append(analysis.Links, EditorLink{Kind: "schemaField", Range: soqlSelectFieldTokenRange(entry, field, rng), Target: target, Title: "Open schema field"})
 			analysis.Coverage.ResolvedSchemaRefs++
 		}
 	}
@@ -424,9 +571,100 @@ func addSOQLSchemaLinks(analysis *EditorAnalysis, entry apexlog.Entry, rng Edito
 
 func addDMLSchemaLink(analysis *EditorAnalysis, entry apexlog.Entry, rng EditorRange, schema editorSchemaIndex) {
 	if target, ok := schema.objectLocation(entry.Data.DMLType); ok {
-		analysis.Links = append(analysis.Links, EditorLink{Kind: "schemaObject", Range: rng, Target: target, Title: "Open schema object"})
+		analysis.Links = append(analysis.Links, EditorLink{Kind: "schemaObject", Range: dmlLinkRange(entry, rng), Target: target, Title: "Open schema object"})
 		analysis.Coverage.ResolvedSchemaRefs++
 	}
+}
+
+func soqlTokenRange(entry apexlog.Entry, token string, fallback EditorRange) EditorRange {
+	query, queryStart, ok := soqlQueryOffset(entry)
+	if !ok || token == "" {
+		return fallback
+	}
+	tokenStart := indexIdentifierToken(query, token)
+	if tokenStart < 0 {
+		return substringRange(entry.Raw, token, fallback)
+	}
+	start := queryStart + tokenStart
+	return byteRange(entry.Raw, fallback.StartLine, start, start+len(token))
+}
+
+func soqlObjectTokenRange(entry apexlog.Entry, objectName string, fallback EditorRange) EditorRange {
+	query, queryStart, ok := soqlQueryOffset(entry)
+	if !ok || objectName == "" {
+		return fallback
+	}
+	match := selectFieldsRe.FindStringSubmatchIndex(query)
+	if len(match) >= 6 && match[4] >= 0 {
+		objectSegment := query[match[4]:match[5]]
+		if strings.EqualFold(objectSegment, objectName) {
+			start := queryStart + match[4]
+			return byteRange(entry.Raw, fallback.StartLine, start, start+len(objectSegment))
+		}
+		if tokenStart := indexIdentifierToken(objectSegment, objectName); tokenStart >= 0 {
+			start := queryStart + match[4] + tokenStart
+			return byteRange(entry.Raw, fallback.StartLine, start, start+len(objectName))
+		}
+	}
+	return soqlTokenRange(entry, objectName, fallback)
+}
+
+func soqlSelectFieldTokenRange(entry apexlog.Entry, fieldName string, fallback EditorRange) EditorRange {
+	query, queryStart, ok := soqlQueryOffset(entry)
+	if !ok || fieldName == "" {
+		return fallback
+	}
+	match := selectFieldsRe.FindStringSubmatchIndex(query)
+	if len(match) >= 4 && match[2] >= 0 {
+		selectSegment := query[match[2]:match[3]]
+		if tokenStart := indexIdentifierToken(selectSegment, fieldName); tokenStart >= 0 {
+			start := queryStart + match[2] + tokenStart
+			return byteRange(entry.Raw, fallback.StartLine, start, start+len(fieldName))
+		}
+	}
+	return soqlTokenRange(entry, fieldName, fallback)
+}
+
+func soqlQueryOffset(entry apexlog.Entry) (string, int, bool) {
+	query := entry.Data.SOQLQuery
+	if query == "" {
+		return "", -1, false
+	}
+	queryStart := strings.Index(entry.Raw, query)
+	if queryStart < 0 {
+		return "", -1, false
+	}
+	return query, queryStart, true
+}
+
+func indexIdentifierToken(segment, token string) int {
+	if segment == "" || token == "" {
+		return -1
+	}
+	lowerSegment := strings.ToLower(segment)
+	lowerToken := strings.ToLower(token)
+	offset := 0
+	for offset <= len(lowerSegment) {
+		idx := strings.Index(lowerSegment[offset:], lowerToken)
+		if idx < 0 {
+			return -1
+		}
+		idx += offset
+		end := idx + len(lowerToken)
+		if isSOQLTokenBoundary(segment, idx-1) && isSOQLTokenBoundary(segment, end) {
+			return idx
+		}
+		offset = idx + len(lowerToken)
+	}
+	return -1
+}
+
+func isSOQLTokenBoundary(value string, index int) bool {
+	if index < 0 || index >= len(value) {
+		return true
+	}
+	ch := value[index]
+	return !((ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_')
 }
 
 func closeFrameKind(analysis *EditorAnalysis, stack *[]editorFrame, kind string, endIndex int, rng EditorRange, symbolsByFrame map[string]*EditorSymbol, parentByFrame map[string]string, replayable map[int]bool, activeVars map[string]editorVarScope) bool {
