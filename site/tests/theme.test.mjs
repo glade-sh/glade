@@ -1453,6 +1453,7 @@ test("support docs summarize the checked compatibility artifacts", () => {
   assert.match(localApiServer, /Metadata job status/);
   assert.match(localApiServer, /Bulk API v2 simple scalar query job create\/status\/whole-result CSV/);
   assert.match(localApiServer, /limits\/recordCount\?sObjects=Account/);
+  assert.match(supportMap, /Composite Batch, Tree, and Graph local requests/);
   assert.match(supportMap, /Composite Graph local requests/);
   assert.doesNotMatch(supportMap, /Composite Graph execution, Streaming\/PubSub/);
   assert.match(repoCompatibility, /Composite Graph local requests/);
@@ -1530,6 +1531,7 @@ test("cli reference documents current code intelligence commands", () => {
   assert.match(cliReference, /glade debug repro --log apex\.log --project \. > ReproTest\.cls/);
   assert.match(cliReference, /glade debug replay --log apex\.log --project \. --json/);
   assert.match(cliReference, /Seed, import, query, describe, inspect, reset, and export persistent local org state/);
+  assert.match(cliReference, /Seed, import, query, describe, inspect, reset, and export local org storage fixtures/);
   assert.match(moduleDebugProfile, /glade exec --project \. --trace reports\/trace\.json/);
   assert.match(moduleDebugProfile, /glade profile analyze reports\/trace\.json --format pprof/);
   assert.match(workflowDebugApex, /glade exec --project \. --trace reports\/trace\.json/);

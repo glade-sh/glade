@@ -510,7 +510,7 @@ support boundary.
 
 ## `glade db`
 
-Seed, reset, export, inspect, query, and describe local org storage fixtures.
+Seed, import, query, describe, inspect, reset, and export local org storage fixtures.
 
 ```bash
 glade db reset --db .glade/refinement-local.sqlite --json
