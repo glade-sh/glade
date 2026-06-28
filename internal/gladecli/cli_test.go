@@ -1091,6 +1091,77 @@ func TestPluginsHelpShowsAvailable(t *testing.T) {
 	}
 }
 
+func TestRunTUIValidateNoUI(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"tui", "--project", ".", "--view", "tests", "--no-ui"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("tui exit=%d stderr=%s", code, stderr.String())
+	}
+	for _, want := range []string{
+		"Glade TUI",
+		"project: .",
+		"view: tests",
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("tui dry run missing %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
+func TestRunTestUIAliasValidateNoUI(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--ui", "--project", ".", "--no-ui"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("test ui exit=%d stderr=%s", code, stderr.String())
+	}
+	for _, want := range []string{
+		"Glade TUI",
+		"project: .",
+		"view: tests",
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("test ui dry run missing %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
+func TestRunDBUIAliasValidateNoUI(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "glade.db")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "--ui", "--db", dbPath, "--project", ".", "--no-ui"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("db ui exit=%d stderr=%s", code, stderr.String())
+	}
+	for _, want := range []string{
+		"Glade TUI",
+		"project: .",
+		"db: " + dbPath,
+		"view: data",
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("db ui dry run missing %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
+func TestRunDBUIAliasCarriesImportDefaults(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "glade.db")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "--ui", "--db", dbPath, "--project", ".", "--target-org", "devhub", "--object", "Account", "--no-ui"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("db ui exit=%d stderr=%s", code, stderr.String())
+	}
+	for _, want := range []string{
+		"target-org: devhub",
+		"object: Account",
+		"view: data",
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("db ui dry run missing %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
 func TestCodeIntelligenceHelpListsProductCommands(t *testing.T) {
 	tests := []struct {
 		name string
@@ -1311,7 +1382,12 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "help test",
 			args: []string{"help", "test"},
-			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "--no-cache", "--connect", "--daemon"},
+			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "--no-cache", "--connect", "--daemon", "--ui"},
+		},
+		{
+			name: "help tui",
+			args: []string{"help", "tui"},
+			want: []string{"Usage:", "glade tui [--project <root>] [--db <path>] [--view <project|tests|data|plugins>] [--target-org <alias>] [--object <Object>]", "--target-org <alias>", "--object <Object>", "--no-ui", "glade tui --project . --view tests", ".glade/envs/dev.sqlite"},
 		},
 		{
 			name: "help dev",
@@ -1321,7 +1397,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "help db",
 			args: []string{"help", "db"},
-			want: []string{"Usage:", "glade db query --db <path> --project <root> --json [--limit <n>] [--query-all] <soql>", "glade db describe --db <path> --project <root> --json [ObjectName]", "--limit <n>", "--query-all", "glade db query --db .glade/refinement-local.sqlite --project . --json \"SELECT Id, Name FROM FileRow__c\""},
+			want: []string{"Usage:", "glade db --ui --db <path> [--project <root>] [--target-org <alias>] [--object <Object>]", "glade db import sf [--target-org <alias>] --db <path>", "glade db import sf [--target-org <alias>] --list-objects", "glade db query --db <path> --project <root> --json [--limit <n>] [--query-all] <soql>", "glade db describe --db <path> --project <root> --json [ObjectName]", "--target-org <alias>", "--object <Object>", "--fields <list>", "--limit <n>", "--query-all", "--ui", "glade db import sf --target-org devhub --db .glade/refinement-local.sqlite --project . --object Account", "glade db query --db .glade/refinement-local.sqlite --project . --json \"SELECT Id, Name FROM FileRow__c\""},
 		},
 		{
 			name: "help profile",
@@ -1431,6 +1507,7 @@ func TestRunTopLevelHelpIsWorkflowDoorway(t *testing.T) {
 		"glade doctor",
 		"glade check",
 		"glade test changed --since origin/main",
+		"glade tui --project .",
 		"Workflows:",
 		"More:",
 		"glade help workflows",
@@ -4892,6 +4969,101 @@ func TestRunDBDescribeObjectJSONIncludesFields(t *testing.T) {
 		}
 	}
 	t.Fatalf("OwnerId missing from fields: %#v", got.Fields)
+}
+
+func TestRunDBImportSFListsObjects(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell helper uses sh")
+	}
+	dir := t.TempDir()
+	fakeSF := filepath.Join(dir, "sf")
+	writeTestFile(t, fakeSF, `#!/bin/sh
+if [ "$1" = "sobject" ] && [ "$2" = "list" ]; then
+  printf '{"status":0,"result":["Account","Invoice__c"]}'
+  exit 0
+fi
+echo "unexpected sf args: $*" >&2
+exit 1
+`)
+	if err := os.Chmod(fakeSF, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "import", "sf", "--target-org", "devhub", "--list-objects", "--category", "all", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("import list exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	var got struct {
+		TargetOrg string   `json:"targetOrg"`
+		Category  string   `json:"category"`
+		Objects   []string `json:"objects"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("list JSON decode: %v\n%s", err, stdout.String())
+	}
+	if got.TargetOrg != "devhub" || got.Category != "all" || strings.Join(got.Objects, ",") != "Account,Invoice__c" {
+		t.Fatalf("list payload = %#v", got)
+	}
+}
+
+func TestRunDBImportSFSeedsDatabase(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell helper uses sh")
+	}
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "glade.db")
+	fakeSF := filepath.Join(dir, "sf")
+	writeTestFile(t, fakeSF, `#!/bin/sh
+case "$*" in
+  *"sobject list"*)
+    printf '{"status":0,"result":["Account","Invoice__c"]}'
+    exit 0
+    ;;
+  *"data query"*Account*)
+    printf '{"status":0,"result":{"totalSize":1,"done":true,"records":[{"attributes":{"type":"Account"},"Id":"001000000000123AAA","Name":"Acme","NumberOfEmployees":7,"IsDeleted":false}]}}'
+    exit 0
+    ;;
+esac
+echo "unexpected sf args: $*" >&2
+exit 1
+`)
+	if err := os.Chmod(fakeSF, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "import", "sf", "--target-org", "devhub", "--db", dbPath, "--project", ".", "--object", "Account", "--fields", "Id,Name,NumberOfEmployees,IsDeleted", "--limit", "2", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("import exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	var inspect struct {
+		ByObject map[string]int `json:"byObject"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &inspect); err != nil {
+		t.Fatalf("inspect JSON decode: %v\n%s", err, stdout.String())
+	}
+	if inspect.ByObject["Account"] != 1 {
+		t.Fatalf("inspect payload = %#v", inspect)
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "query", "--db", dbPath, "--project", ".", "--json", "SELECT Id, Name, NumberOfEmployees, IsDeleted FROM Account"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("query exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	var query struct {
+		Records []map[string]any `json:"records"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &query); err != nil {
+		t.Fatalf("query JSON decode: %v\n%s", err, stdout.String())
+	}
+	if len(query.Records) != 1 || query.Records[0]["Name"] != "Acme" || query.Records[0]["NumberOfEmployees"] != float64(7) {
+		t.Fatalf("query payload = %#v", query)
+	}
 }
 
 func TestRunDBSeedWizardAndProgress(t *testing.T) {

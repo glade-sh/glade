@@ -24,6 +24,7 @@ import (
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/trace"
+	"github.com/glade-sh/glade/internal/tui"
 	"github.com/glade-sh/glade/internal/vm"
 	"github.com/glade-sh/glade/internal/watch"
 )
@@ -34,6 +35,12 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	}
 	if len(args) > 0 && isHelpArg(args[0]) {
 		_ = writeTestHelp(w)
+		return testreport.Run{}, nil
+	}
+	if hasUIFlag(args) {
+		if err := runTUIView(ctx, args, tui.BoardTests, w, progressW); err != nil {
+			return testreport.Run{}, err
+		}
 		return testreport.Run{}, nil
 	}
 	if len(args) > 0 && args[0] == "clear-cache" {
@@ -974,6 +981,7 @@ Common flags:
   --no-serve                Do not auto-connect to a running test server.
   --no-cache                Skip the on-disk startup cache for this run.
   --last-failed             Rerun tests that failed in the last completed run.
+  --ui                      Open the TUI on the test board.
   --wizard                  Print daily test loop command suggestions.
   --daemon                  Keep index warm in-process for --watch loops.
   --json                    Write JSON test results.

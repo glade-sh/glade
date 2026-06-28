@@ -18,6 +18,25 @@ Use `--progress-json` when an editor or wrapper wants NDJSON progress events.
 Use `--no-progress` for silent scripts. Commands that already had `--quiet`
 keep it as an alias.
 
+## Terminal UI
+
+Use `glade tui` when you want one terminal surface for common local work. It
+opens boards for project checks, local tests, persistent data, and plugins.
+
+```bash
+glade tui --project .
+glade tui --project . --view tests
+glade tui --project . --db .glade/org.sqlite --view data
+glade tui --project . --db .glade/org.sqlite --view data --target-org devhub --object Account
+```
+
+The test and data commands can open the same boards:
+
+```bash
+glade test --ui --project .
+glade db --ui --db .glade/org.sqlite --project .
+```
+
 ## DB seed wizard
 
 Use the wizard when you know the fixture and database path, but want the full
@@ -29,6 +48,22 @@ glade db seed --wizard --db .glade/org.sqlite --project . fixtures/dev.json
 
 It prints a seed command with progress enabled and an inspect command for the
 same database.
+
+## DB import from Salesforce
+
+Use `glade db import sf` when you want a small, repeatable slice of data from an
+org already connected through the Salesforce CLI. The command queries `sf`,
+converts rows into a Glade fixture, applies it to the SQLite database, and then
+prints the normal inspect output.
+
+```bash
+glade db import sf --target-org devhub --db .glade/org.sqlite --project . --object Account --fields Id,Name --limit 25 --json
+glade db import sf --target-org devhub --list-objects --category custom --json
+```
+
+Omit `--target-org` to use the Salesforce CLI default target org. Generated
+object imports default to 25 rows. Use `--query` instead of `--object` when you
+need a hand-written SOQL cut.
 
 ## Playground wizard
 

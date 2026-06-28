@@ -57,6 +57,24 @@ export function dbInspectArgs(project: GladeProjectContext, environment: GladeEn
   return ["db", "inspect", "--db", environment.dbPath, "--project", project.projectRoot, "--json"];
 }
 
+export type TUIView = "project" | "tests" | "data" | "plugins";
+
+export function tuiArgs(
+  project: Pick<GladeProjectContext, "projectRoot">,
+  view: TUIView,
+  dbPath?: string,
+  targetOrg?: string,
+): string[] {
+  const args = ["tui", "--project", project.projectRoot, "--view", view];
+  if (dbPath) {
+    args.push("--db", dbPath);
+  }
+  if (targetOrg) {
+    args.push("--target-org", targetOrg);
+  }
+  return args;
+}
+
 export function schemaImportDescribeArgs(project: Pick<GladeProjectContext, "projectRoot">, input: string): string[] {
   return ["schema", "import", "describe", "--input", input, "--project-cache", project.projectRoot];
 }

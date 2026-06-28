@@ -314,6 +314,7 @@ var commandReferences = []CommandHelp{
 			{Name: "--no-serve", Description: "Do not auto-connect to a running test server."},
 			{Name: "--no-cache", Description: "Skip the on-disk startup cache."},
 			{Name: "--last-failed", Description: "Rerun tests that failed in the last completed run."},
+			{Name: "--ui", Description: "Open the TUI on the test board."},
 			{Name: "--wizard", Description: "Print daily test loop command suggestions."},
 			{Name: "--daemon", Description: "Keep index warm in process for watch loops."},
 			{Name: "--json", Description: "Write JSON test results."},
@@ -339,6 +340,22 @@ var commandReferences = []CommandHelp{
 			{Name: "--limit-mode", Value: "<mode>", Description: "Governor limit mode: permissive or strict."},
 		},
 		Examples: []string{"glade test serve --project .", "glade test --project . --class RefinementServiceTest", "glade test --project . --class RefinementServiceTest --method testRefinesFileRow", "glade test --project . --class-file tests.txt"},
+	},
+	{
+		Name:        "tui",
+		Description: "Open the terminal UI for project, test, data, and plugin workflows.",
+		Usage:       []string{"glade tui [--project <root>] [--db <path>] [--view <project|tests|data|plugins>] [--target-org <alias>] [--object <Object>]"},
+		Flags: []FlagHelp{
+			{Name: "--project", Value: "<root>", Description: "Project root. Defaults to current directory."},
+			{Name: "--db", Value: "<path>", Description: "SQLite local org path for DB actions."},
+			{Name: "--view", Value: "<name>", Description: "Initial board: project, tests, data, or plugins."},
+			{Name: "--query", Value: "<soql>", Description: "Default SOQL for the data query action."},
+			{Name: "--fixture", Value: "<path>", Description: "Default fixture path for the data seed action."},
+			{Name: "--target-org", Value: "<alias>", Description: "Salesforce CLI target org for the data import action."},
+			{Name: "--object", Value: "<Object>", Description: "Default object for the data import action."},
+			{Name: "--no-ui", Description: "Validate options and print the selected TUI target without launching."},
+		},
+		Examples: []string{"glade tui --project .", "glade tui --project . --view tests", "glade tui --project . --db .glade/envs/dev.sqlite --view data", "glade tui --project . --db .glade/envs/dev.sqlite --view data --target-org devhub --object Account"},
 	},
 	{
 		Name:        "dev",
@@ -611,8 +628,11 @@ var commandReferences = []CommandHelp{
 		Name:        "db",
 		Description: "Seed, reset, export, inspect, query, and describe a persistent local database.",
 		Usage: []string{
+			"glade db --ui --db <path> [--project <root>] [--target-org <alias>] [--object <Object>]",
 			"glade db seed --db <path> [--project <root>] [--json] [--progress|--progress-json|--no-progress] <fixture.json>",
 			"glade db seed --wizard --db <path> [--project <root>] <fixture.json>",
+			"glade db import sf [--target-org <alias>] --db <path> [--project <root>] [--object <Object>|--query <soql>] [--fields Id,Name] [--limit <n>] [--json]",
+			"glade db import sf [--target-org <alias>] --list-objects [--category all|standard|custom] [--json]",
 			"glade db reset --db <path> [--project <root>] [--json]",
 			"glade db export --db <path> [--project <root>]",
 			"glade db inspect --db <path> [--project <root>] [--json]",
@@ -621,6 +641,7 @@ var commandReferences = []CommandHelp{
 		},
 		Subcommands: []SubcommandHelp{
 			{Name: "seed", Description: "Apply a fixture to a persistent database."},
+			{Name: "import", Description: "Import selected Salesforce CLI org records into a local database."},
 			{Name: "reset", Description: "Clear data from a persistent database."},
 			{Name: "export", Description: "Write a fixture from a database."},
 			{Name: "inspect", Description: "Print database counts."},
@@ -630,10 +651,17 @@ var commandReferences = []CommandHelp{
 		Flags: []FlagHelp{
 			{Name: "--db", Value: "<path>", Description: "Persistent local database path."},
 			{Name: "--project", Value: "<root>", Description: "Project root for schema bootstrap."},
+			{Name: "--ui", Description: "Open the TUI on the data board."},
 			{Name: "--json", Description: "Write structured JSON output."},
 			{Name: "--wizard", Description: "Print a seed and inspect command pair."},
-			{Name: "--limit", Value: "<n>", Description: "Limit glade db query rows."},
+			{Name: "--limit", Value: "<n>", Description: "Limit glade db query rows or generated Salesforce import rows. Generated imports default to 25."},
 			{Name: "--query-all", Description: "Include soft-deleted rows when the query supports them."},
+			{Name: "--target-org", Value: "<alias>", Description: "Salesforce CLI target org for import."},
+			{Name: "--object", Value: "<Object>", Description: "Object to import. Can be repeated."},
+			{Name: "--fields", Value: "<list>", Description: "Comma-separated fields for generated import queries. Defaults to Id,Name."},
+			{Name: "--query", Value: "<soql>", Description: "Raw SOQL query for Salesforce import."},
+			{Name: "--list-objects", Description: "List importable Salesforce objects instead of seeding rows."},
+			{Name: "--category", Value: "<name>", Description: "Object list category: all, standard, or custom."},
 			{Name: "--progress", Description: "Show progress on stderr; uses a progress bar on TTY and line output when redirected."},
 			{Name: "--progress-json", Description: "Print NDJSON progress events to stderr."},
 			{Name: "--no-progress", Description: "Disable progress."},
@@ -642,6 +670,8 @@ var commandReferences = []CommandHelp{
 			"glade db inspect --db .glade/refinement-local.sqlite",
 			"glade db seed --wizard --db .glade/refinement-local.sqlite data/file-rows.json",
 			"glade db seed --db .glade/refinement-local.sqlite --progress data/file-rows.json",
+			"glade db import sf --target-org devhub --db .glade/refinement-local.sqlite --project . --object Account --fields Id,Name --limit 25 --json",
+			"glade db import sf --target-org devhub --list-objects --category custom --json",
 			`glade db query --db .glade/refinement-local.sqlite --project . --json "SELECT Id, Name FROM FileRow__c"`,
 			"glade db describe --db .glade/refinement-local.sqlite --project . --json FileRow__c",
 		},
@@ -722,6 +752,7 @@ func WriteHelp(w io.Writer) error {
 		"glade doctor",
 		"glade check",
 		"glade test changed --since origin/main",
+		"glade tui --project .",
 		"glade playground --examples --open",
 	} {
 		if _, err := fmt.Fprintln(w, "  "+command); err != nil {
@@ -1071,6 +1102,7 @@ Common flags:
   --no-serve                Do not auto-connect to a running test server.
   --no-cache                Skip the on-disk startup cache for this run.
   --last-failed             Rerun tests that failed in the last completed run.
+  --ui                      Open the TUI on the test board.
   --wizard                  Print daily test loop command suggestions.
   --daemon                  Keep index warm in-process for --watch loops.
   --json                    Write JSON test results.

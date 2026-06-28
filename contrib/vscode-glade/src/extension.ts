@@ -31,6 +31,7 @@ import {
   sendGladeTerminal,
   sendLocalOrgTerminal,
   terminalCommand,
+  tuiArgs,
 } from "./localOrg";
 import { summaryFromInspect } from "./localOrgModel";
 import { GladeOutput } from "./output";
@@ -468,6 +469,36 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand("glade.installPluginArchive", async () => {
       await plugins.installPluginArchive();
       syncPluginViews();
+    }),
+    vscode.commands.registerCommand("glade.openTui", async () => {
+      const project = await projectOrWarn();
+      if (!project) {
+        return;
+      }
+      sendGladeTerminal(terminalCommand(["glade", ...tuiArgs(project, "project")]), project.projectRoot);
+    }),
+    vscode.commands.registerCommand("glade.openTestsTui", async () => {
+      const project = await projectOrWarn();
+      if (!project) {
+        return;
+      }
+      sendGladeTerminal(terminalCommand(["glade", ...tuiArgs(project, "tests")]), project.projectRoot);
+    }),
+    vscode.commands.registerCommand("glade.openDataTui", async () => {
+      const project = await projectOrWarn();
+      if (!project) {
+        return;
+      }
+      const environment = configuredActiveEnvironment(project);
+      const targetOrg = salesforceTarget?.state === "ready" ? salesforceTarget.label : undefined;
+      sendLocalOrgTerminal(terminalCommand(["glade", ...tuiArgs(project, "data", environment.dbPath, targetOrg)]));
+    }),
+    vscode.commands.registerCommand("glade.openPluginsTui", async () => {
+      const project = await projectOrWarn();
+      if (!project) {
+        return;
+      }
+      sendGladeTerminal(terminalCommand(["glade", ...tuiArgs(project, "plugins")]), project.projectRoot);
     }),
     vscode.commands.registerCommand("glade.runPluginAction", async (action?: PluginEditorAction) => {
       let target = action;

@@ -27,6 +27,10 @@
     "onView:glade.plugins",
     "onDebugResolve:glade",
     "onCommand:glade.openHome",
+    "onCommand:glade.openTui",
+    "onCommand:glade.openTestsTui",
+    "onCommand:glade.openDataTui",
+    "onCommand:glade.openPluginsTui",
     "onCommand:glade.runChangedTests",
     "onCommand:glade.runFailedTests",
     "onCommand:glade.runLocalTestFromCodeLens",
@@ -300,6 +304,22 @@
       {
         "command": "glade.managePlugins",
         "title": "Glade: Manage Plugins"
+      },
+      {
+        "command": "glade.openTui",
+        "title": "Glade: Open TUI"
+      },
+      {
+        "command": "glade.openTestsTui",
+        "title": "Glade: Open Tests TUI"
+      },
+      {
+        "command": "glade.openDataTui",
+        "title": "Glade: Open Data TUI"
+      },
+      {
+        "command": "glade.openPluginsTui",
+        "title": "Glade: Open Plugins TUI"
       },
       {
         "command": "glade.runPluginAction",
