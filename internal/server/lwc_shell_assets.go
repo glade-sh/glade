@@ -269,8 +269,8 @@ func lwcShellWorkbenchBuilderHTML(model lwcshell.WorkbenchModel) string {
 	}
 	b.WriteString(`</div></section>`)
 	b.WriteString(`<section class="glade-builder-canvas-shell" aria-label="Page canvas">`)
-	b.WriteString(`<div class="glade-canvas-toolbar"><span>Canvas</span><span>Desktop</span></div>`)
-	b.WriteString(`<section class="glade-page-canvas" data-glade-page-canvas data-glade-page-layout data-glade-layout="mainSidebar" aria-label="Draft Lightning page">`)
+	b.WriteString(`<div class="glade-canvas-toolbar"><span>Canvas</span><span data-glade-canvas-form-factor>Large</span></div>`)
+	b.WriteString(`<section class="glade-page-canvas" data-glade-page-canvas data-glade-page-layout data-glade-layout="mainSidebar" data-glade-form-factor="Large" aria-label="Draft Lightning page">`)
 	for _, region := range []struct{ name, label string }{
 		{"main", "Main"},
 		{"sidebar", "Sidebar"},

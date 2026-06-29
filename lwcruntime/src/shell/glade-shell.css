@@ -799,6 +799,7 @@
   min-height: calc(100vh - 8rem);
   min-width: 0;
   padding: 0.75rem;
+  width: 100%;
 }
 
 .glade-page-canvas[data-glade-layout="single"] {
@@ -811,6 +812,19 @@
 
 .glade-page-canvas[data-glade-layout="twoColumn"] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.glade-page-canvas[data-glade-form-factor="Medium"] {
+  max-width: 52rem;
+}
+
+.glade-page-canvas[data-glade-form-factor="Small"] {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 24.375rem;
+}
+
+.glade-page-canvas[data-glade-form-factor="Small"] [data-glade-region-drop="sidebar"] {
+  display: none;
 }
 
 .glade-draft-region {

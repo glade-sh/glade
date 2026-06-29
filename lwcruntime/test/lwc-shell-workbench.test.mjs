@@ -407,6 +407,12 @@ test("LWC shell workbench keeps the root builder dense on desktop", async (t) =>
     assert.equal(metrics.consoleControlDisplay, "flex");
     assert.ok(metrics.consoleInputWidth <= 20, `console input width = ${metrics.consoleInputWidth}`);
     assert.ok(metrics.mediumButtonWidth >= 64, `medium button width = ${metrics.mediumButtonWidth}`);
+    const noSidecar = await page.evaluate(() => ({
+      mobileSidecarCount: document.querySelectorAll("[data-glade-mobile-sidecar], .glade-mobile-frame").length,
+      previewCanvasCount: document.querySelectorAll("[data-glade-preview-canvas]").length,
+    }));
+    assert.equal(noSidecar.mobileSidecarCount, 0);
+    assert.equal(noSidecar.previewCanvasCount, 1);
   } finally {
     await browser.close();
     await server.close();
@@ -491,7 +497,35 @@ test("LWC shell workbench builder exposes context controls", async (t) => {
     await page.locator("[data-glade-state-value]").fill("detail");
     await page.locator("[data-glade-community-selector]").fill("Partner_Portal");
     await page.locator("[data-glade-console-mode]").check();
+    await page.locator("[data-glade-component-search]").fill("context");
+    await page.locator('[data-glade-add-component="c:contextProbe"][data-glade-region="sidebar"]').click();
+    await page.locator('[data-glade-region-items="sidebar"] [data-glade-draft-component="c:contextProbe"]').waitFor({ timeout: 60000 });
     await page.locator('[data-glade-form-factor-option="Small"]').click();
+    const viewportMetrics = await page.evaluate(() => {
+      const canvas = document.querySelector("[data-glade-page-canvas]");
+      const box = canvas.getBoundingClientRect();
+      const sidebarAdd = document.querySelector(
+        '[data-glade-component-card][data-glade-component="c:contextProbe"]:not([hidden]) [data-glade-add-component="c:contextProbe"][data-glade-region="sidebar"]',
+      );
+      sidebarAdd?.click();
+      return {
+        canvasFormFactorLabel: document.querySelector("[data-glade-canvas-form-factor]")?.textContent?.trim(),
+        formFactor: canvas.dataset.gladeFormFactor,
+        mainDraftCount: document.querySelectorAll('[data-glade-region-items="main"] [data-glade-draft-component="c:contextProbe"]').length,
+        sidebarAddAriaDisabled: sidebarAdd?.getAttribute("aria-disabled"),
+        sidebarAddDisabled: Boolean(sidebarAdd?.disabled),
+        sidebarDraftCount: document.querySelectorAll('[data-glade-region-items="sidebar"] [data-glade-draft-component]').length,
+        width: box.width,
+        sidecarCount: document.querySelectorAll("[data-glade-mobile-sidecar], .glade-mobile-frame").length,
+      };
+    });
+    assert.equal(viewportMetrics.formFactor, "Small");
+    assert.equal(viewportMetrics.canvasFormFactorLabel, "Small");
+    assert.equal(viewportMetrics.sidebarAddDisabled || viewportMetrics.sidebarAddAriaDisabled === "true", true);
+    assert.equal(viewportMetrics.sidebarDraftCount, 0);
+    assert.equal(viewportMetrics.mainDraftCount, 1);
+    assert.equal(viewportMetrics.sidecarCount, 0);
+    assert.ok(viewportMetrics.width <= 430, `small viewport width = ${viewportMetrics.width}`);
 
     const context = await page.locator("script#glade-lwc-context").evaluate((node) => JSON.parse(node.textContent));
     assert.equal(context.kind, "recordPage");

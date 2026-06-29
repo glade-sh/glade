@@ -50,6 +50,7 @@ export function bootWorkbenchBuilder(root = document.body, config = {}) {
     community: builder.querySelector("[data-glade-community-selector]"),
     formFactor: builder.querySelector("[data-glade-form-factor]"),
     formFactorOptions: Array.from(builder.querySelectorAll("[data-glade-form-factor-option]")),
+    canvasFormFactor: builder.querySelector("[data-glade-canvas-form-factor]"),
     layout: builder.querySelector("[data-glade-layout-picker]"),
     canvas: builder.querySelector("[data-glade-page-layout]"),
     consoleMode: builder.querySelector("[data-glade-console-mode]"),
@@ -185,14 +186,15 @@ function readWorkbenchModel() {
 function renderDraft(builder, model, state, controls, config) {
   state.kind = controls.kind?.value || state.kind || "appPage";
   state.layout = controls.layout?.value || state.layout || "mainSidebar";
+  const formFactor = currentFormFactor(controls);
   const target = TARGET_BY_KIND[state.kind] || TARGET_BY_KIND.appPage;
   if (controls.componentPicker?.value && controls.search && controls.search.value !== controls.componentPicker.value) {
     controls.search.value = controls.componentPicker.value;
   }
   updateLayout(builder, state, controls);
-  updateCatalog(builder, model, target, controls.search?.value);
+  updateCatalog(builder, model, target, controls.search?.value, formFactor);
   state.components = state.components.filter((placement) => componentSupportsTarget(findComponent(model, placement.qualifiedName), target));
-  if (state.layout === "single") {
+  if (!sidebarAvailable(state.layout, formFactor)) {
     state.components = state.components.map((placement) => placement.region === "sidebar" ? { ...placement, region: "main" } : placement);
   }
   updateContextScripts(state, controls, config);
@@ -217,7 +219,7 @@ function renderDraft(builder, model, state, controls, config) {
   state.components.forEach((placement, index) => renderPlacement(builder, model, placement, index, state, controls, target));
 }
 
-function updateCatalog(builder, model, target, query) {
+function updateCatalog(builder, model, target, query, formFactor = "Large") {
   const search = normalize(query);
   const layout = builder.dataset.gladeLayout || "mainSidebar";
   for (const card of builder.querySelectorAll("[data-glade-component-card]")) {
@@ -228,7 +230,7 @@ function updateCatalog(builder, model, target, query) {
     card.dataset.gladeComponentMatches = String(matched);
     card.hidden = !matched;
     for (const button of card.querySelectorAll("[data-glade-add-component]")) {
-      const regionAvailable = layout !== "single" || button.dataset.gladeRegion !== "sidebar";
+      const regionAvailable = button.dataset.gladeRegion !== "sidebar" || sidebarAvailable(layout, formFactor);
       button.disabled = !supported || !regionAvailable;
       button.setAttribute("aria-disabled", String(button.disabled));
     }
@@ -237,12 +239,25 @@ function updateCatalog(builder, model, target, query) {
 
 function updateLayout(builder, state, controls) {
   builder.dataset.gladeLayout = state.layout;
+  const formFactor = currentFormFactor(controls);
   if (controls.canvas) {
     controls.canvas.dataset.gladeLayout = state.layout;
+    controls.canvas.dataset.gladeFormFactor = formFactor;
+  }
+  if (controls.canvasFormFactor) {
+    controls.canvasFormFactor.textContent = formFactor;
   }
   for (const region of builder.querySelectorAll("[data-glade-region-drop]")) {
-    region.hidden = state.layout === "single" && region.dataset.gladeRegionDrop === "sidebar";
+    region.hidden = region.dataset.gladeRegionDrop === "sidebar" && !sidebarAvailable(state.layout, formFactor);
   }
+}
+
+function currentFormFactor(controls) {
+  return controls.formFactor?.value || "Large";
+}
+
+function sidebarAvailable(layout, formFactor) {
+  return layout !== "single" && formFactor !== "Small";
 }
 
 function updateContextScripts(state, controls, config) {
@@ -303,7 +318,7 @@ function currentDraftContext(state, controls) {
     recordId: controls.record?.value || "",
     objectApiName: controls.object?.value || "",
     appName: controls.app?.value || "",
-    formFactor: controls.formFactor?.value || "Large",
+    formFactor: currentFormFactor(controls),
     state: statePairs,
     community: {
       site: controls.community?.value || "",
