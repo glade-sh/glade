@@ -197,6 +197,51 @@ test("LWC shell workbench renders routes, context, and mounted record page", asy
     await assert.match(await page.locator("[data-glade-context-panel]").innerText(), /001000000000001AAA/);
     assert.equal(await page.locator("script#glade-lwc-context").evaluate((node) => JSON.parse(node.textContent).kind), "recordPage");
 
+    const consoleMetrics = await page.evaluate(() => {
+      const box = (selector) => document.querySelector(selector).getBoundingClientRect();
+      const console = document.querySelector("[data-glade-workbench-console]");
+      return {
+        mode: console?.dataset.gladeWorkbenchMode,
+        columns: getComputedStyle(console).gridTemplateColumns.split(" ").length,
+        rows: getComputedStyle(console).gridTemplateRows.split(" ").length,
+        sidebarWidth: box("[data-glade-workbench-sidebar]").width,
+        canvasWidth: box("[data-glade-preview-canvas]").width,
+        contextWidth: box("[data-glade-context-inspector]").width,
+        dockHeight: box("[data-glade-debug-dock]").height,
+        horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      };
+    });
+    assert.equal(consoleMetrics.mode, "recordPage");
+    assert.equal(consoleMetrics.horizontalOverflow, false);
+    assert.equal(consoleMetrics.columns, 3);
+    assert.equal(consoleMetrics.rows, 2);
+    assert.ok(consoleMetrics.sidebarWidth >= 260 && consoleMetrics.sidebarWidth <= 340);
+    assert.ok(consoleMetrics.canvasWidth > consoleMetrics.sidebarWidth);
+    assert.ok(consoleMetrics.canvasWidth > consoleMetrics.contextWidth);
+    assert.ok(consoleMetrics.dockHeight >= 180 && consoleMetrics.dockHeight <= 300);
+
+    await page.setViewportSize({ width: 900, height: 900 });
+    const compactConsoleMetrics = await page.evaluate(() => {
+      const box = (selector) => document.querySelector(selector).getBoundingClientRect();
+      const console = document.querySelector("[data-glade-workbench-console]");
+      return {
+        columns: getComputedStyle(console).gridTemplateColumns.split(" ").length,
+        rows: getComputedStyle(console).gridTemplateRows.split(" ").length,
+        sidebarTop: box("[data-glade-workbench-sidebar]").top,
+        canvasTop: box("[data-glade-preview-canvas]").top,
+        contextTop: box("[data-glade-context-inspector]").top,
+        dockTop: box("[data-glade-debug-dock]").top,
+        horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      };
+    });
+    assert.equal(compactConsoleMetrics.horizontalOverflow, false);
+    assert.equal(compactConsoleMetrics.columns, 1);
+    assert.equal(compactConsoleMetrics.rows, 4);
+    assert.ok(compactConsoleMetrics.sidebarTop < compactConsoleMetrics.canvasTop);
+    assert.ok(compactConsoleMetrics.canvasTop < compactConsoleMetrics.contextTop);
+    assert.ok(compactConsoleMetrics.contextTop < compactConsoleMetrics.dockTop);
+    await page.setViewportSize({ width: 1280, height: 720 });
+
     const contextResponse = await page.request.get(`${server.baseURL}/lightning/local/context.json?url=/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page`);
     assert.equal(contextResponse.ok(), true);
     const context = await contextResponse.json();
