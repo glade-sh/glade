@@ -86,6 +86,80 @@
   padding: 0.75rem;
 }
 
+.glade-shell:not([data-glade-builder-active="true"]) .glade-workbench-console {
+  grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr) minmax(12rem, 16rem);
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.glade-shell:not([data-glade-builder-active="true"]) .glade-workbench-sidebar {
+  background: #ffffff;
+  border: 1px solid #dddbda;
+  border-radius: 4px;
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 0.75rem;
+}
+
+.glade-shell:not([data-glade-builder-active="true"]) .glade-workbench-console > .glade-stage {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.glade-shell:not([data-glade-builder-active="true"]) .glade-workbench-console > .glade-context-panel {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.glade-shell:not([data-glade-builder-active="true"]) .glade-debug-dock {
+  background: #10161d;
+  border: 1px solid #2d3844;
+  border-radius: 4px;
+  color: #d9e3ed;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-height: 10rem;
+  overflow: hidden;
+}
+
+.glade-shell[data-glade-builder-active="true"] .glade-workbench-sidebar,
+.glade-shell[data-glade-builder-active="true"] .glade-debug-dock {
+  display: none;
+}
+
+.glade-debug-tabs {
+  background: #151c24;
+  border-bottom: 1px solid #2d3844;
+  display: flex;
+  gap: 0.125rem;
+  min-height: 2.25rem;
+  padding: 0 0.75rem;
+}
+
+.glade-debug-tabs button {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: #b8c4cf;
+  cursor: pointer;
+  font: inherit;
+  padding: 0.5rem 0.625rem 0.375rem;
+}
+
+.glade-debug-tabs button[aria-selected="true"] {
+  border-color: #8dc5ff;
+  color: #f8fafc;
+}
+
+.glade-debug-dock pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  margin: 0;
+  padding: 0.75rem;
+  white-space: pre-wrap;
+}
+
 .glade-shell[data-glade-app-mode="console"] .glade-workbench {
   grid-template-columns: 4rem minmax(0, 1fr) minmax(12rem, 16rem);
 }
