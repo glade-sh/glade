@@ -1501,6 +1501,23 @@ test("preview surfaces are labeled in public and repo docs", () => {
   assert.match(repoLwcSupport, /Visualforce Lightning Out \| Preview feature/i);
 });
 
+test("LWC local shell docs describe Workbench Console workflow", () => {
+  assert.match(lwcLocalShell, /Workbench Console/);
+  assert.match(lwcLocalShell, /route discovery/);
+  assert.match(lwcLocalShell, /preview canvas/);
+  assert.match(lwcLocalShell, /editable context/);
+  assert.match(lwcLocalShell, /debug\s+panes[\s\S]*Apex[\s\S]*LDS[\s\S]*network calls[\s\S]*navigation\/events[\s\S]*runtime issues/);
+  assert.match(lwcLocalShell, /mobile preview[\s\S]*main canvas/i);
+  assert.match(lwcLocalShell, /does not reserve a side-by-side phone panel/i);
+  assert.match(workflowLwcPreview, /Workbench Console/);
+  assert.match(workflowLwcPreview, /debug\s+panes[\s\S]*network calls[\s\S]*navigation\/events/);
+  assert.match(workflowLwcPreview, /mobile preview[\s\S]*main canvas/i);
+  assert.match(workflowLwcPreview, /permanent side-by-side phone panel/i);
+  assert.match(repoLwcSupport, /local shell UI is the Workbench Console/);
+  assert.match(repoLwcSupport, /component, record page, builder, tab, and\s+app contexts/);
+  assert.match(repoLwcSupport, /Apex, LDS, navigation,\s+PageReference, and runtime issues/);
+});
+
 test("enterprise workflow docs expose current report commands", () => {
   assert.match(enterpriseWorkflows, /^# Enterprise Workflows/m);
   assert.match(enterpriseWorkflows, /glade inspect graph --project \. --json/);

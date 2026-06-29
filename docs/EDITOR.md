@@ -121,10 +121,13 @@ glade dev lwc --project . --context accountRecord --open
 glade dev vf --project . --port 8080
 ```
 
-LWC opens the printed base URL workbench, also available at `/lwc`, and can
-target context presets from `glade.lwc.json`. Raw LWC routes use `/lwc/preview/...`. Visualforce routes use
-`/apex/<Page>`. Visualforce-backed LWC tab routes resolve through the LWC shell
-and then open the Visualforce page.
+LWC opens the Workbench Console, also available at `/lwc`. The console has
+route discovery, a preview canvas, editable context, and debug panes for Apex,
+LDS, network calls, navigation/events, and runtime issues. Raw preview routes
+use `/lwc/preview/...`. Builder mode is `/lwc/builder`; its mobile preview uses
+the main canvas viewport control instead of a permanent side-by-side phone
+panel. Visualforce routes use `/apex/<Page>`. Visualforce-backed LWC tab routes
+resolve through the LWC shell and then open the Visualforce page.
 
 ## Plugin Actions And Findings
 

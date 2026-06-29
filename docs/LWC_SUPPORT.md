@@ -10,6 +10,11 @@ builder route `/lwc/builder`, and `/lwc/preview/*` routes. Visualforce appears
 here only where a Visualforce-backed tab or shared Lightning Out runtime
 affects an LWC.
 
+The local shell UI is the Workbench Console. It is designed for developer
+preview and debugging of local LWCs in component, record page, builder, tab, and
+app contexts. It exposes local diagnostics for Apex, LDS, navigation,
+PageReference, and runtime issues.
+
 Generated capture rows live in
 [generated/LWC_SHELL_SUPPORT.md](generated/LWC_SHELL_SUPPORT.md). They are
 prepared from the `glade-tools` LWC capture command. Two-sided browser capture
