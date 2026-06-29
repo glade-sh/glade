@@ -66,6 +66,41 @@ func TestBuildWorkbenchModelUsesConsoleModeForConsoleApplication(t *testing.T) {
 	}
 }
 
+func TestBuildWorkbenchModelIncludesRecordPageAndTabRoutes(t *testing.T) {
+	root := t.TempDir()
+	tabPath := writeProjectFile(t, root, "force-app/main/default/tabs/Account_Workbench.tab-meta.xml", `<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Account Workbench</label>
+  <lwcComponent>c:contextProbe</lwcComponent>
+</CustomTab>`)
+	pagePath := writeProjectFile(t, root, "force-app/main/default/flexipages/Account_Record_Page.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
+  <masterLabel>Account Record Page</masterLabel>
+  <type>RecordPage</type>
+  <sobjectType>Account</sobjectType>
+</FlexiPage>`)
+	p := project.Project{Root: root, TabFiles: []string{tabPath}, FlexiPageFiles: []string{pagePath}}
+
+	model := BuildWorkbenchModel(p, ShellPage{Context: PageContext{
+		Kind:          RenderTargetRecordPage,
+		PageName:      "Account_Record_Page",
+		ObjectAPIName: "Account",
+		RecordID:      "001000000000001AAA",
+	}}, "/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page")
+
+	if model.ActiveRoute == "" || model.Active.Context.Kind != RenderTargetRecordPage {
+		t.Fatalf("active model = %#v", model)
+	}
+	if !slices.ContainsFunc(model.Routes, func(route ShellRoute) bool {
+		return route.Kind == RenderTargetRecordPage && route.PageName == "Account_Record_Page"
+	}) {
+		t.Fatalf("routes missing record page: %#v", model.Routes)
+	}
+	if !slices.ContainsFunc(model.Routes, func(route ShellRoute) bool {
+		return route.Kind == RenderTargetTab && route.TabName == "Account_Workbench"
+	}) {
+		t.Fatalf("routes missing tab: %#v", model.Routes)
+	}
+}
+
 func TestDiscoverShellRoutesIncludesUtilityBarFlexiPages(t *testing.T) {
 	root := t.TempDir()
 	writeProjectFile(t, root, "force-app/main/default/flexipages/Support_Utility.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">

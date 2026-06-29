@@ -154,6 +154,29 @@ func TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord(t *te
 	}
 }
 
+func TestRenderLWCBuilderUsesSingleCanvasViewportControls(t *testing.T) {
+	p := project.Project{
+		Root:         "/tmp/project",
+		LWCMetaFiles: []string{},
+	}
+	body := renderLWCShellDocument(p, lwcbrowser.PageConfig{}, lwcshell.ShellPage{}, "/lwc/builder", "001000000000001AAA")
+
+	for _, want := range []string{
+		`data-glade-workbench-builder`,
+		`data-glade-form-factor-option="Large"`,
+		`data-glade-form-factor-option="Medium"`,
+		`data-glade-form-factor-option="Small"`,
+		`data-glade-preview-canvas`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("builder shell missing %s:\n%s", want, body)
+		}
+	}
+	if strings.Contains(body, `data-glade-mobile-sidecar`) || strings.Contains(body, `glade-mobile-frame`) {
+		t.Fatalf("builder must not reserve permanent side-by-side mobile preview space:\n%s", body)
+	}
+}
+
 func TestLWCShellTabRouteIncludesPreviewRouteCatalog(t *testing.T) {
 	root, err := lightningTestRepoRoot()
 	if err != nil {
@@ -1091,6 +1114,48 @@ func TestLightningLocalContextJSONReportsDirectComponentContext(t *testing.T) {
 	}
 	if len(got.Mounts) != 1 || got.Mounts[0].Attrs["recordId"] != "001000000000001AAA" || got.Mounts[0].Attrs["objectApiName"] != "Account" {
 		t.Fatalf("mounts = %#v", got.Mounts)
+	}
+}
+
+func TestRenderLWCShellDocumentUsesWorkbenchConsoleForRecordPage(t *testing.T) {
+	body := renderLWCShellDocument(project.Project{}, lwcbrowser.PageConfig{}, lwcshell.ShellPage{
+		Context: lwcshell.PageContext{
+			Kind:          lwcshell.RenderTargetRecordPage,
+			PageName:      "Account_Record_Page",
+			ObjectAPIName: "Account",
+			RecordID:      "001000000000001AAA",
+			AppName:       "Preview_Workspace",
+			State:         map[string]string{"c__mode": "record"},
+		},
+		Regions: []lwcshell.PageRegion{{
+			Name: "main",
+			Components: []lwcshell.PageComponent{{
+				ComponentName: "c:recordProbe",
+			}},
+		}},
+	}, "/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page", "001000000000001AAA")
+
+	for _, want := range []string{
+		`data-glade-workbench-console`,
+		`data-glade-workbench-mode="recordPage"`,
+		`data-glade-workbench-sidebar`,
+		`data-glade-preview-canvas`,
+		`data-glade-context-inspector`,
+		`data-glade-debug-dock`,
+		`data-glade-debug-tab="console"`,
+		`data-glade-debug-tab="apex"`,
+		`data-glade-debug-tab="lds"`,
+		`data-glade-debug-tab="network"`,
+		`data-glade-debug-tab="issues"`,
+		`Account_Record_Page`,
+		`001000000000001AAA`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("rendered shell missing %s:\n%s", want, body)
+		}
+	}
+	if strings.Contains(body, `data-glade-mobile-preview`) {
+		t.Fatalf("mobile preview must not render as a permanent side panel:\n%s", body)
 	}
 }
 
