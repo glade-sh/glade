@@ -21,12 +21,18 @@ const shellFiles = {
   "/lightning/runtime/shell/navigation-service.mjs": "lwcruntime/src/shell/navigation-service.mjs",
   "/lightning/runtime/shell/workbench-builder.js": "lwcruntime/src/shell/workbench-builder.mjs",
   "/lightning/runtime/shell/workbench-builder.mjs": "lwcruntime/src/shell/workbench-builder.mjs",
+  "/lightning/runtime/shell/workbench-console.js": "lwcruntime/src/shell/workbench-console.mjs",
+  "/lightning/runtime/shell/workbench-console.mjs": "lwcruntime/src/shell/workbench-console.mjs",
   "/lightning/runtime/shell/toast-service.js": "lwcruntime/src/shell/toast-service.mjs",
   "/lightning/runtime/shell/toast-service.mjs": "lwcruntime/src/shell/toast-service.mjs",
   "/lightning/runtime/slds/slds-loader.js": "lwcruntime/src/slds/slds-loader.mjs",
   "/lightning/runtime/slds/slds-loader.mjs": "lwcruntime/src/slds/slds-loader.mjs",
   "/lightning/runtime/shims/community.js": "lwcruntime/src/shims/community.mjs",
   "/lightning/runtime/shims/community.mjs": "lwcruntime/src/shims/community.mjs",
+  "/lightning/runtime/shims/lds-cache.js": "lwcruntime/src/shims/lds-cache.mjs",
+  "/lightning/runtime/shims/lds-cache.mjs": "lwcruntime/src/shims/lds-cache.mjs",
+  "/lightning/runtime/shims/wire-adapter.js": "lwcruntime/src/shims/wire-adapter.mjs",
+  "/lightning/runtime/shims/wire-adapter.mjs": "lwcruntime/src/shims/wire-adapter.mjs",
 };
 
 function startWorkbenchServer() {
@@ -62,9 +68,27 @@ function startWorkbenchServer() {
 </head>
 <body>
   <header><a data-glade-route href="/lwc">Workbench</a></header>
-  <main data-glade-main>Mounted component region</main>
-  <section data-glade-flow-events></section>
-  <aside data-glade-context-panel></aside>
+  <div data-glade-workbench-console data-glade-workbench-mode="recordPage">
+    <main data-glade-main>Mounted component region</main>
+    <section data-glade-flow-events></section>
+    <aside data-glade-context-panel></aside>
+    <footer data-glade-debug-dock>
+      <div role="tablist" aria-label="Debug output">
+        <button type="button" role="tab" id="glade-debug-tab-console" data-glade-debug-tab="console" aria-controls="glade-debug-panel-console" aria-selected="true">Console</button>
+        <button type="button" role="tab" id="glade-debug-tab-apex" data-glade-debug-tab="apex" aria-controls="glade-debug-panel-apex" aria-selected="false">Apex</button>
+        <button type="button" role="tab" id="glade-debug-tab-lds" data-glade-debug-tab="lds" aria-controls="glade-debug-panel-lds" aria-selected="false">LDS Cache</button>
+        <button type="button" role="tab" id="glade-debug-tab-network" data-glade-debug-tab="network" aria-controls="glade-debug-panel-network" aria-selected="false">Network</button>
+        <button type="button" role="tab" id="glade-debug-tab-events" data-glade-debug-tab="events" aria-controls="glade-debug-panel-events" aria-selected="false">Events</button>
+        <button type="button" role="tab" id="glade-debug-tab-issues" data-glade-debug-tab="issues" aria-controls="glade-debug-panel-issues" aria-selected="false">Issues</button>
+      </div>
+      <section id="glade-debug-panel-console" role="tabpanel" aria-labelledby="glade-debug-tab-console" data-glade-debug-panel="console"><pre data-glade-debug-output="console"></pre></section>
+      <section id="glade-debug-panel-apex" role="tabpanel" aria-labelledby="glade-debug-tab-apex" data-glade-debug-panel="apex" hidden><pre data-glade-debug-output="apex"></pre></section>
+      <section id="glade-debug-panel-lds" role="tabpanel" aria-labelledby="glade-debug-tab-lds" data-glade-debug-panel="lds" hidden><pre data-glade-debug-output="lds"></pre></section>
+      <section id="glade-debug-panel-network" role="tabpanel" aria-labelledby="glade-debug-tab-network" data-glade-debug-panel="network" hidden><pre data-glade-debug-output="network"></pre></section>
+      <section id="glade-debug-panel-events" role="tabpanel" aria-labelledby="glade-debug-tab-events" data-glade-debug-panel="events" hidden><pre data-glade-debug-output="events"></pre></section>
+      <section id="glade-debug-panel-issues" role="tabpanel" aria-labelledby="glade-debug-tab-issues" data-glade-debug-panel="issues" hidden><pre data-glade-debug-output="issues"></pre></section>
+    </footer>
+  </div>
   <script type="module">
     import { bootGladeShell } from "/lightning/runtime/shell/app.js";
     import { reportDiagnostic } from "/lightning/runtime/shell/diagnostics.js";
@@ -111,6 +135,133 @@ function runtimeSLDSFile(pathname) {
   }
   return path.join("lwcruntime/src/slds", pathname.slice("/lightning/runtime/slds/".length));
 }
+
+test("Workbench Console collects runtime events and switches debug tabs with aria-selected", async () => {
+  const server = await startWorkbenchServer();
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.goto(`${server.baseURL}/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page`, { waitUntil: "networkidle" });
+    await page.locator('[data-glade-debug-output="issues"]').waitFor({ state: "attached", timeout: 60000 });
+
+    await page.evaluate(() => {
+      document.dispatchEvent(new CustomEvent("glade:runtime-event", {
+        detail: {
+          kind: "apex",
+          label: "AccountController.load",
+          status: "success",
+          detail: { className: "AccountController", method: "load" },
+        },
+      }));
+      document.dispatchEvent(new CustomEvent("glade:runtime-event", {
+        detail: {
+          kind: "lds",
+          label: "notifyRecordUpdateAvailable",
+          detail: { recordIds: ["001000000000001AAA"] },
+        },
+      }));
+      document.dispatchEvent(new CustomEvent("glade:runtime-event", {
+        detail: {
+          kind: "network",
+          label: "/lightning/wire/getRecord",
+          status: "success",
+          detail: { endpoint: "/lightning/wire/getRecord" },
+        },
+      }));
+    });
+    await page.evaluate(async () => {
+      const { createFetchWireAdapter, invokeApex } = await import("/lightning/runtime/shims/wire-adapter.js");
+      const { notifyRecordUpdateAvailable } = await import("/lightning/runtime/shims/lds-cache.js");
+      const { emitPageReference } = await import("/lightning/runtime/shell/navigation-service.js");
+      const originalFetch = window.fetch;
+      window.fetch = async (endpoint) => ({
+        ok: true,
+        status: 200,
+        json: async () => {
+          if (endpoint === "/lightning/wire/apex") {
+            return { data: { loaded: true } };
+          }
+          return { data: { endpoint, fields: { Id: "001000000000777AAA" } } };
+        },
+      });
+      try {
+        const Adapter = createFetchWireAdapter("/lightning/wire/taskFiveProbe", () => ({
+          recordId: "001000000000777AAA",
+        }));
+        const adapter = new Adapter(() => {});
+        await adapter.update({ recordId: "001000000000777AAA" });
+        await notifyRecordUpdateAvailable([{ recordId: "001000000000777AAA" }]);
+        await invokeApex("TaskFiveController", "refresh", { recordId: "001000000000777AAA" });
+        emitPageReference({
+          type: "standard__recordPage",
+          attributes: {
+            objectApiName: "Account",
+            recordId: "001000000000777AAA",
+            actionName: "view",
+          },
+          state: { page: "Task_Five_Page" },
+        });
+      } finally {
+        window.fetch = originalFetch;
+      }
+    });
+
+    async function activeDebugState() {
+      return page.evaluate(() => ({
+        tabs: Array.from(document.querySelectorAll("[data-glade-debug-tab]")).map((tab) => ({
+          kind: tab.dataset.gladeDebugTab,
+          selected: tab.getAttribute("aria-selected"),
+          pressed: tab.getAttribute("aria-pressed"),
+        })),
+        panels: Array.from(document.querySelectorAll("[data-glade-debug-panel]")).map((panel) => ({
+          kind: panel.dataset.gladeDebugPanel,
+          hidden: panel.hidden,
+        })),
+      }));
+    }
+
+    const initialState = await activeDebugState();
+    assert.equal(initialState.tabs.find((tab) => tab.kind === "console").selected, "true");
+    assert.equal(initialState.tabs.find((tab) => tab.kind === "apex").selected, "false");
+    assert.equal(initialState.tabs.every((tab) => tab.pressed === null), true);
+    assert.equal(initialState.panels.find((panel) => panel.kind === "console").hidden, false);
+    assert.equal(initialState.panels.find((panel) => panel.kind === "apex").hidden, true);
+
+    await page.locator('[data-glade-debug-tab="apex"]').click();
+    assert.equal(await page.locator('[data-glade-debug-tab="apex"]').getAttribute("aria-selected"), "true");
+    assert.equal(await page.locator('[data-glade-debug-panel="apex"]').evaluate((node) => node.hidden), false);
+    assert.equal(await page.locator('[data-glade-debug-panel="console"]').evaluate((node) => node.hidden), true);
+    assert.match(await page.locator('[data-glade-debug-output="apex"]').innerText(), /AccountController\.load/);
+    assert.match(await page.locator('[data-glade-debug-output="apex"]').innerText(), /TaskFiveController\.refresh/);
+
+    await page.locator('[data-glade-debug-tab="lds"]').click();
+    assert.equal(await page.locator('[data-glade-debug-tab="lds"]').getAttribute("aria-selected"), "true");
+    assert.equal(await page.locator('[data-glade-debug-panel="lds"]').evaluate((node) => node.hidden), false);
+    assert.equal(await page.locator('[data-glade-debug-panel="apex"]').evaluate((node) => node.hidden), true);
+    assert.match(await page.locator('[data-glade-debug-output="lds"]').innerText(), /notifyRecordUpdateAvailable/);
+    assert.match(await page.locator('[data-glade-debug-output="lds"]').innerText(), /writeLDSCache/);
+
+    await page.locator('[data-glade-debug-tab="network"]').click();
+    assert.equal(await page.locator('[data-glade-debug-tab="network"]').getAttribute("aria-selected"), "true");
+    assert.match(await page.locator('[data-glade-debug-output="network"]').innerText(), /\/lightning\/wire\/getRecord/);
+    assert.match(await page.locator('[data-glade-debug-output="network"]').innerText(), /\/lightning\/wire\/taskFiveProbe/);
+    assert.match(await page.locator('[data-glade-debug-output="network"]').innerText(), /\/lightning\/wire\/apex/);
+
+    await page.locator('[data-glade-debug-tab="events"]').click();
+    const eventsText = await page.locator('[data-glade-debug-output="events"]').innerText();
+    assert.match(eventsText, /AccountController\.load/);
+    assert.match(eventsText, /notifyRecordUpdateAvailable/);
+    assert.match(eventsText, /\/lightning\/wire\/getRecord/);
+    assert.match(eventsText, /PageReference/);
+
+    await page.locator('[data-glade-debug-tab="issues"]').click();
+    assert.match(await page.locator('[data-glade-debug-output="issues"]').innerText(), /GLADELWC999/);
+    assert.match(await page.locator('[data-glade-debug-output="issues"]').innerText(), /probe diagnostic/);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
 
 test("lwc shell workbench boots context panel diagnostics toasts and route kind", async () => {
   const server = await startWorkbenchServer();

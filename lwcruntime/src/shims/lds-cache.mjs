@@ -11,6 +11,12 @@ export function readLDSCache(key) {
 
 export function writeLDSCache(key, value) {
   ldsCache.set(key, value);
+  emitRuntimeEvent({
+    kind: "lds",
+    label: "writeLDSCache",
+    status: "write",
+    detail: { action: "write", key },
+  });
 }
 
 export function registerLDSAdapter(adapter) {
@@ -22,6 +28,11 @@ export function registerLDSAdapter(adapter) {
 
 export function notifyRecordUpdateAvailable(items = []) {
   const recordIds = normalizeRecordIds(items);
+  emitRuntimeEvent({
+    kind: "lds",
+    label: "notifyRecordUpdateAvailable",
+    detail: { recordIds: Array.from(recordIds) },
+  });
   const refreshes = [];
   for (const adapter of Array.from(ldsAdapters)) {
     if (typeof adapter.refresh !== "function") {
@@ -122,4 +133,25 @@ function stableStringify(value) {
     .sort()
     .map((key) => `${JSON.stringify(key)}:${stableStringify(value[key])}`)
     .join(",")}}`;
+}
+
+function emitRuntimeEvent(detail) {
+  if (typeof document === "undefined" || typeof CustomEvent === "undefined") {
+    return;
+  }
+  defer(() => {
+    try {
+      document.dispatchEvent(new CustomEvent("glade:runtime-event", { detail }));
+    } catch (_err) {
+      // Runtime event collection must not affect LDS behavior.
+    }
+  });
+}
+
+function defer(callback) {
+  if (typeof queueMicrotask === "function") {
+    queueMicrotask(callback);
+    return;
+  }
+  Promise.resolve().then(callback);
 }

@@ -99,6 +99,11 @@ export function emitPageReference(pageReference = currentPageReference()) {
   for (const listener of [...pageReferenceListeners]) {
     listener(pageReference);
   }
+  emitRuntimeEvent({
+    kind: "events",
+    label: "PageReference",
+    detail: { pageReference },
+  });
   document.dispatchEvent(new CustomEvent("glade:page-reference", { detail: pageReference }));
 }
 
@@ -426,4 +431,25 @@ function withState(path, state = {}) {
 
 function enc(value) {
   return encodeURIComponent(String(value || ""));
+}
+
+function emitRuntimeEvent(detail) {
+  if (typeof document === "undefined" || typeof CustomEvent === "undefined") {
+    return;
+  }
+  defer(() => {
+    try {
+      document.dispatchEvent(new CustomEvent("glade:runtime-event", { detail }));
+    } catch (_err) {
+      // Runtime event collection must not affect navigation behavior.
+    }
+  });
+}
+
+function defer(callback) {
+  if (typeof queueMicrotask === "function") {
+    queueMicrotask(callback);
+    return;
+  }
+  Promise.resolve().then(callback);
 }
