@@ -145,6 +145,7 @@ test("Workbench Console collects runtime events and switches debug tabs with ari
     await page.locator('[data-glade-debug-output="issues"]').waitFor({ state: "attached", timeout: 60000 });
 
     await page.evaluate(() => {
+      console.log("console probe ready", { source: "workbench" });
       document.dispatchEvent(new CustomEvent("glade:runtime-event", {
         detail: {
           kind: "apex",
@@ -226,6 +227,8 @@ test("Workbench Console collects runtime events and switches debug tabs with ari
     assert.equal(initialState.tabs.every((tab) => tab.pressed === null), true);
     assert.equal(initialState.panels.find((panel) => panel.kind === "console").hidden, false);
     assert.equal(initialState.panels.find((panel) => panel.kind === "apex").hidden, true);
+    assert.match(await page.locator('[data-glade-debug-output="console"]').innerText(), /console probe ready/);
+    assert.match(await page.locator('[data-glade-debug-output="console"]').innerText(), /workbench/);
 
     await page.locator('[data-glade-debug-tab="apex"]').click();
     assert.equal(await page.locator('[data-glade-debug-tab="apex"]').getAttribute("aria-selected"), "true");

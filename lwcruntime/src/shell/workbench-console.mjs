@@ -5,6 +5,7 @@ let fallbackEvents = null;
 let runtimeBinding = null;
 let renderScheduled = false;
 const consoleRenderers = new Set();
+const originalConsoleMethods = {};
 
 export function bootWorkbenchConsole(root = document.body) {
   if (typeof document === "undefined") {
@@ -172,6 +173,7 @@ function ensureRuntimeBinding() {
   });
   document.addEventListener("glade:runtime-event", onRuntimeEvent);
   document.addEventListener("glade:diagnostic", onDiagnostic);
+  installConsoleCapture(recordAndRender);
   if (typeof window !== "undefined") {
     window.addEventListener("error", onError);
     window.addEventListener("unhandledrejection", onUnhandledRejection);
@@ -180,6 +182,7 @@ function ensureRuntimeBinding() {
     dispose() {
       document.removeEventListener("glade:runtime-event", onRuntimeEvent);
       document.removeEventListener("glade:diagnostic", onDiagnostic);
+      uninstallConsoleCapture();
       if (typeof window !== "undefined") {
         window.removeEventListener("error", onError);
         window.removeEventListener("unhandledrejection", onUnhandledRejection);
@@ -261,6 +264,47 @@ function normalizeKind(kind) {
     return "events";
   }
   return EVENT_KIND_SET.has(value) ? value : "events";
+}
+
+function installConsoleCapture(recordAndRender) {
+  if (typeof console === "undefined") {
+    return;
+  }
+  for (const level of ["log", "info", "warn", "error"]) {
+    if (typeof console[level] !== "function" || originalConsoleMethods[level]) {
+      continue;
+    }
+    originalConsoleMethods[level] = console[level].bind(console);
+    console[level] = (...args) => {
+      originalConsoleMethods[level](...args);
+      recordAndRender({
+        kind: "console",
+        label: args.map(consoleValue).join(" ") || level,
+        status: level,
+        detail: { level, args: args.map(consoleValue) },
+      });
+    };
+  }
+}
+
+function uninstallConsoleCapture() {
+  if (typeof console === "undefined") {
+    return;
+  }
+  for (const [level, method] of Object.entries(originalConsoleMethods)) {
+    console[level] = method;
+    delete originalConsoleMethods[level];
+  }
+}
+
+function consoleValue(value) {
+  if (value instanceof Error) {
+    return value.stack || value.message || String(value);
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  return readableDetail(value) || String(value);
 }
 
 function eventLabel(kind, detail) {
