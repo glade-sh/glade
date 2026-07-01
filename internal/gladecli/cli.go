@@ -917,8 +917,10 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 		info.ConfigPath = cfgPath
 		info.ProjectRoot = cfg.Project.Root
 		info.DefaultNamespace = cfg.Project.DefaultNamespace
+		localData := doctorLocalData(root)
+		info.LocalData = &localData
 	}
-	ok := info.ParserOK && info.ToolchainOK && !info.ConfigMissing
+	ok := info.ParserOK && info.ToolchainOK && !info.ConfigMissing && (info.LocalData == nil || info.LocalData.OK)
 	info.Status = statusForOK(ok)
 	info.ExitCode = exitCodeForOK(ok)
 	info.Suggestions = []string{"glade check", "glade test changed --since origin/main", "glade playground --examples --open"}
@@ -928,6 +930,93 @@ func runDoctor(ctx context.Context, args []string, w io.Writer) (int, error) {
 		return info.ExitCode, enc.Encode(info)
 	}
 	return info.ExitCode, cliui.WriteDoctor(w, info)
+}
+
+func doctorLocalData(root string) cliui.DoctorLocalData {
+	path := projectEnvDBPath(root, "dev")
+	info := cliui.DoctorLocalData{
+		Env:    "dev",
+		Path:   path,
+		Status: "missing",
+		OK:     true,
+	}
+	stat, err := os.Stat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return info
+	}
+	if err != nil {
+		info.Status = "error"
+		info.OK = false
+		info.Detail = err.Error()
+		return info
+	}
+	if stat.IsDir() {
+		info.Status = "error"
+		info.OK = false
+		info.Detail = "path is a directory"
+		return info
+	}
+	info.Exists = true
+	store, err := storage.OpenSQLite(path)
+	if err != nil {
+		info.Status = "error"
+		info.OK = false
+		info.Detail = err.Error()
+		return info
+	}
+	defer store.Close()
+	org, err := store.Load()
+	if err != nil {
+		info.Status = "error"
+		info.OK = false
+		info.Detail = err.Error()
+		return info
+	}
+	summary := storage.InspectOrg(path, org)
+	info.Objects = summary.Objects
+	info.Records = summary.Records
+	if version, err := store.SchemaVersion(); err == nil {
+		info.SchemaVersion = version
+	}
+	if err := checkDoctorLocalDataBinding(store, root, org); err != nil {
+		info.Status = "mismatch"
+		info.OK = false
+		info.Detail = err.Error()
+		return info
+	}
+	info.Status = "ready"
+	return info
+}
+
+func checkDoctorLocalDataBinding(store *storage.SQLiteStore, root string, org storage.OrgState) error {
+	_, expected, hasBinding, err := projectOrgAndDBBinding(root)
+	if err != nil || !hasBinding {
+		return err
+	}
+	stored, ok, err := store.ProjectBinding()
+	if err != nil {
+		return err
+	}
+	if ok {
+		if stored.ProjectRoot != "" && !sameCleanPath(stored.ProjectRoot, expected.ProjectRoot) {
+			return errors.New("schema mismatch")
+		}
+		if stored.SchemaFingerprint != "" && stored.SchemaFingerprint != expected.SchemaFingerprint {
+			if stored.ProjectRoot != "" {
+				return fmt.Errorf("schema changed; run glade db inspect --project %s to refresh", shellPathArg(root))
+			}
+			return errors.New("schema mismatch")
+		}
+		return nil
+	}
+	actualFingerprint, err := storage.SchemaFingerprint(org)
+	if err != nil {
+		return err
+	}
+	if actualFingerprint != expected.SchemaFingerprint {
+		return errors.New("schema mismatch")
+	}
+	return nil
 }
 
 // parserSelfCheck parses a trivial Apex class and reports whether the bundled
