@@ -78,6 +78,8 @@ func (s *Server) handleGLADE(w http.ResponseWriter, r *http.Request, parts []str
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"success": true, "mode": mode, "summary": storage.InspectOrg("", *s.Org)})
+	case len(parts) >= 1 && parts[0] == "db-manager":
+		s.handleDBManagerAPI(w, r, parts[1:])
 	case len(parts) == 0:
 		writeMethodNotAllowed(w, http.MethodGet)
 	case len(parts) >= 1 && parts[0] == "reset":
@@ -162,10 +164,11 @@ func gladeDiscovery(version string) gladeDiscoveryPayload {
 	return gladeDiscoveryPayload{
 		LocalOnly: true,
 		URLs: map[string]string{
-			"fixture": base + "/fixture",
-			"inspect": base + "/inspect",
-			"reset":   base + "/reset",
-			"state":   base + "/state",
+			"dbManager": base + "/db-manager",
+			"fixture":   base + "/fixture",
+			"inspect":   base + "/inspect",
+			"reset":     base + "/reset",
+			"state":     base + "/state",
 		},
 	}
 }

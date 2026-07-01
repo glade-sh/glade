@@ -629,6 +629,7 @@ var commandReferences = []CommandHelp{
 		Name:        "db",
 		Description: "Seed, import, reset, export, inspect, query, and describe a persistent local database.",
 		Usage: []string{
+			"glade db ui [--project <root>] [--env <name>|--db <path>] [--port <port>|--addr <host:port>] [--no-open]",
 			"glade db --ui [--project <root>] [--env <name>|--db <path>] [--target-org <alias>] [--object <Object>]",
 			"glade db seed [--project <root>] [--env <name>|--db <path>] [--json] [--progress|--progress-json|--no-progress] <fixture.json>",
 			"glade db seed --wizard [--project <root>] [--env <name>|--db <path>] <fixture.json>",
@@ -641,6 +642,7 @@ var commandReferences = []CommandHelp{
 			"glade db describe [--project <root>] [--env <name>|--db <path>] --json [ObjectName]",
 		},
 		Subcommands: []SubcommandHelp{
+			{Name: "ui", Description: "Start the browser record manager for a project database."},
 			{Name: "seed", Description: "Apply a fixture to a persistent database."},
 			{Name: "import", Description: "Import selected Salesforce CLI org records into a local database."},
 			{Name: "reset", Description: "Clear data from a persistent database."},
@@ -654,6 +656,11 @@ var commandReferences = []CommandHelp{
 			{Name: "--db", Value: "<path>", Description: "Explicit database path override."},
 			{Name: "--project", Value: "<root>", Description: "Project root for schema bootstrap."},
 			{Name: "--ui", Description: "Open the TUI on the data board."},
+			{Name: "--addr", Value: "<host:port>", Description: "Address for glade db ui. Defaults to 127.0.0.1:0."},
+			{Name: "--port", Value: "<port>", Description: "Port for glade db ui on 127.0.0.1."},
+			{Name: "--open", Description: "Open the browser record manager."},
+			{Name: "--no-open", Description: "Start glade db ui without opening a browser."},
+			{Name: "--ready-file", Value: "<path>", Description: "Write glade db ui readiness details as JSON."},
 			{Name: "--json", Description: "Write structured JSON output."},
 			{Name: "--wizard", Description: "Print a seed and inspect command pair."},
 			{Name: "--limit", Value: "<n>", Description: "Limit glade db query rows or generated Salesforce import rows. Generated imports default to 25."},
@@ -669,6 +676,7 @@ var commandReferences = []CommandHelp{
 			{Name: "--no-progress", Description: "Disable progress."},
 		},
 		Examples: []string{
+			"glade db ui --project .",
 			"glade db inspect --project .",
 			"glade db seed --wizard --project . data/file-rows.json",
 			"glade db seed --project . --progress data/file-rows.json",

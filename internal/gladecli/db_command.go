@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -19,6 +21,7 @@ import (
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/resource"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/server"
 	"github.com/glade-sh/glade/internal/sobject"
 	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/storage"
@@ -35,9 +38,12 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 		return runTUIView(ctx, args, tui.BoardData, w, progressW)
 	}
 	if len(args) == 0 {
-		return errors.New("usage: glade db seed|reset|export|inspect|query|describe [--project <root>] [--env <name>|--db <path>] [--json] [fixture.json]")
+		return errors.New("usage: glade db ui|seed|reset|export|inspect|query|describe [--project <root>] [--env <name>|--db <path>] [--json] [fixture.json]")
 	}
 	command := args[0]
+	if command == "ui" {
+		return runDBUI(ctx, args[1:], w, progressW)
+	}
 	dbPath := ""
 	envName := "dev"
 	root := "."
@@ -257,8 +263,165 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 		}
 		return writeDBInspect(w, dbPath, org, jsonOut, schemaVersion)
 	default:
-		return errors.New("usage: glade db seed|reset|export|inspect|query|describe [--project <root>] [--env <name>|--db <path>] [--json] [fixture.json]")
+		return errors.New("usage: glade db ui|seed|reset|export|inspect|query|describe [--project <root>] [--env <name>|--db <path>] [--json] [fixture.json]")
 	}
+}
+
+var dbUIOpenURL = openURL
+
+type dbUIOptions struct {
+	addr      string
+	dbPath    string
+	envName   string
+	root      string
+	readyFile string
+	open      bool
+}
+
+type dbUIReadyFile struct {
+	URL     string `json:"url"`
+	Addr    string `json:"addr"`
+	DB      string `json:"db"`
+	Project string `json:"project"`
+	Env     string `json:"env,omitempty"`
+}
+
+func runDBUI(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
+	opts, err := parseDBUIOptions(args)
+	if err != nil {
+		return err
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	dbPath := resolveDBPath(opts.dbPath, opts.root, opts.envName)
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: cliui.ProgressAuto})
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "db ui", Label: "Opening database"})
+	store, org, err := openDBStore(dbPath, opts.root)
+	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "db ui failed"})
+		return err
+	}
+	defer store.Close()
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "db ui", Label: "Starting listener", Current: 1, Total: 2})
+	listener, err := net.Listen("tcp", opts.addr)
+	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "db ui failed"})
+		return err
+	}
+	actualAddr := listener.Addr().String()
+	url := "http://" + actualAddr + "/db"
+	if opts.readyFile != "" {
+		if err := writeDBUIReadyFile(opts.readyFile, actualAddr, dbPath, opts.root, opts.envName); err != nil {
+			_ = listener.Close()
+			renderer.Finish(cliui.Result{OK: false, Label: "db ui failed"})
+			return err
+		}
+	}
+	if opts.open {
+		if err := dbUIOpenURL(url); err != nil {
+			_ = listener.Close()
+			renderer.Finish(cliui.Result{OK: false, Label: "db ui failed"})
+			return err
+		}
+	}
+	handler := server.NewWithStore(&org, store)
+	httpServer := &http.Server{Addr: opts.addr, Handler: handler}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "db ui", Label: "Record manager ready", Current: 2, Total: 2})
+	renderer.Finish(cliui.Result{OK: true, Label: "db ui ready"})
+	printDBUIStartupSummary(w, url, actualAddr, dbPath, opts.root)
+	go func() {
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		_ = httpServer.Shutdown(shutdownCtx)
+	}()
+	return normalizeDevVFServeError(httpServer.Serve(listener))
+}
+
+func parseDBUIOptions(args []string) (dbUIOptions, error) {
+	opts := dbUIOptions{addr: "127.0.0.1:0", envName: "dev", root: ".", open: true}
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--db":
+			value, err := takeFlagValue(args, &i, "--db requires a path")
+			if err != nil {
+				return opts, err
+			}
+			opts.dbPath = value
+		case "--env":
+			value, err := takeFlagValue(args, &i, "--env requires a name")
+			if err != nil {
+				return opts, err
+			}
+			if err := validateDBEnvName(value); err != nil {
+				return opts, err
+			}
+			opts.envName = value
+		case "--project":
+			value, err := takeFlagValue(args, &i, "--project requires a value")
+			if err != nil {
+				return opts, err
+			}
+			opts.root = value
+		case "--addr":
+			value, err := takeFlagValue(args, &i, "--addr requires a value")
+			if err != nil {
+				return opts, err
+			}
+			opts.addr = value
+		case "--port":
+			value, err := takeFlagValue(args, &i, "--port requires a value")
+			if err != nil {
+				return opts, err
+			}
+			port, err := strconv.Atoi(value)
+			if err != nil || port < 0 || port > 65535 {
+				return opts, errors.New("--port requires a port number between 0 and 65535")
+			}
+			opts.addr = "127.0.0.1:" + value
+		case "--ready-file":
+			value, err := takeFlagValue(args, &i, "--ready-file requires a value")
+			if err != nil {
+				return opts, err
+			}
+			opts.readyFile = value
+		case "--open":
+			opts.open = true
+		case "--no-open":
+			opts.open = false
+		default:
+			if strings.HasPrefix(args[i], "-") && args[i] != "-" {
+				return opts, fmt.Errorf("unknown flag %q", args[i])
+			}
+			return opts, fmt.Errorf("unexpected argument %q", args[i])
+		}
+	}
+	return opts, nil
+}
+
+func writeDBUIReadyFile(path, addr, dbPath, root, envName string) error {
+	ready := dbUIReadyFile{
+		URL:     "http://" + addr + "/db",
+		Addr:    addr,
+		DB:      filepath.ToSlash(dbPath),
+		Project: root,
+		Env:     envName,
+	}
+	data, err := json.MarshalIndent(ready, "", "  ")
+	if err != nil {
+		return err
+	}
+	data = append(data, '\n')
+	return os.WriteFile(path, data, 0o644)
+}
+
+func printDBUIStartupSummary(w io.Writer, url, addr, dbPath, root string) {
+	fmt.Fprintln(w, "Glade db ui")
+	fmt.Fprintf(w, "URL: %s\n", url)
+	fmt.Fprintf(w, "addr: %s\n", addr)
+	fmt.Fprintf(w, "project: %s\n", root)
+	fmt.Fprintf(w, "db: %s\n", dbPath)
 }
 
 func resolveDBPath(dbPath, root, envName string) string {

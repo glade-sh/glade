@@ -88,6 +88,33 @@ grep -q '"Account": 1' "${TMP}/db-seed.json"
 "${GLADE}" db inspect --project "${PROJECT}" --db "${DB}" >"${TMP}/db-inspect.out"
 grep -q 'Account: 1' "${TMP}/db-inspect.out"
 
+DB_UI_READY="${TMP}/db-ui-ready.json"
+"${GLADE}" db ui --project "${PROJECT}" --db "${DB}" --addr 127.0.0.1:0 --no-open --ready-file "${DB_UI_READY}" >"${TMP}/db-ui.log" 2>&1 &
+SERVER_PID="$!"
+db_ui_ready=0
+for _ in $(seq 1 300); do
+  if [[ -s "${DB_UI_READY}" ]]; then
+    db_ui_ready=1
+    break
+  fi
+  sleep 0.1
+done
+if [[ "${db_ui_ready}" != "1" ]]; then
+  tail -c 4000 "${TMP}/db-ui.log" >&2
+  exit 1
+fi
+DB_UI_URL="$(python3 - "${DB_UI_READY}" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as f:
+    print(json.load(f)["url"])
+PY
+)"
+curl -fsS "${DB_UI_URL}" >"${TMP}/db-ui.html"
+grep -q 'Glade DB Record Manager' "${TMP}/db-ui.html"
+kill "${SERVER_PID}" 2>/dev/null || true
+wait "${SERVER_PID}" 2>/dev/null || true
+SERVER_PID=""
+
 "${GLADE}" playground --data-root "${TMP}/playground" --db "${TMP}/playground.sqlite" --once >"${TMP}/playground.out"
 grep -q 'http://127.0.0.1:1789/playground/' "${TMP}/playground.out"
 
