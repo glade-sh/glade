@@ -1,7 +1,9 @@
 package storage
 
 import (
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -14,6 +16,23 @@ type SQLiteStore struct {
 }
 
 const sqliteSchemaVersion = 1
+
+type ProjectBinding struct {
+	ProjectRoot       string `json:"projectRoot,omitempty"`
+	SchemaFingerprint string `json:"schemaFingerprint,omitempty"`
+	SourceAPIVersion  string `json:"sourceApiVersion,omitempty"`
+	Namespace         string `json:"namespace,omitempty"`
+}
+
+const (
+	metaOrgID                    = "orgId"
+	metaAPIVersion               = "apiVersion"
+	metaNamespace                = "namespace"
+	metaProjectRoot              = "glade.project.root"
+	metaProjectSchemaFingerprint = "glade.project.schemaFingerprint"
+	metaProjectSourceAPIVersion  = "glade.project.sourceApiVersion"
+	metaProjectNamespace         = "glade.project.namespace"
+)
 
 type sqliteMigration struct {
 	version    int
@@ -92,11 +111,11 @@ func (s *SQLiteStore) Load() (OrgState, error) {
 			return OrgState{}, err
 		}
 		switch key {
-		case "orgId":
+		case metaOrgID:
 			org.OrgID = value
-		case "apiVersion":
+		case metaAPIVersion:
 			org.APIVersion = value
-		case "namespace":
+		case metaNamespace:
 			org.Namespace = value
 		}
 	}
@@ -173,6 +192,13 @@ func (s *SQLiteStore) Load() (OrgState, error) {
 }
 
 func (s *SQLiteStore) Save(org OrgState) error {
+	meta, err := s.Metadata()
+	if err != nil {
+		return err
+	}
+	setMetaValue(meta, metaOrgID, org.OrgID)
+	setMetaValue(meta, metaAPIVersion, org.APIVersion)
+	setMetaValue(meta, metaNamespace, org.Namespace)
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
@@ -187,11 +213,6 @@ func (s *SQLiteStore) Save(org OrgState) error {
 		if _, err := tx.Exec(stmt); err != nil {
 			return err
 		}
-	}
-	meta := map[string]string{
-		"orgId":      org.OrgID,
-		"apiVersion": org.APIVersion,
-		"namespace":  org.Namespace,
 	}
 	metaStmt, err := tx.Prepare(`insert into org_meta(key, value) values(?, ?)`)
 	if err != nil {
@@ -259,6 +280,74 @@ func (s *SQLiteStore) Save(org OrgState) error {
 	return tx.Commit()
 }
 
+func (s *SQLiteStore) Metadata() (map[string]string, error) {
+	rows, err := s.db.Query(`select key, value from org_meta`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	meta := map[string]string{}
+	for rows.Next() {
+		var key, value string
+		if err := rows.Scan(&key, &value); err != nil {
+			return nil, err
+		}
+		meta[key] = value
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return meta, nil
+}
+
+func (s *SQLiteStore) ProjectBinding() (ProjectBinding, bool, error) {
+	meta, err := s.Metadata()
+	if err != nil {
+		return ProjectBinding{}, false, err
+	}
+	binding := ProjectBinding{
+		ProjectRoot:       meta[metaProjectRoot],
+		SchemaFingerprint: meta[metaProjectSchemaFingerprint],
+		SourceAPIVersion:  meta[metaProjectSourceAPIVersion],
+		Namespace:         meta[metaProjectNamespace],
+	}
+	ok := binding.ProjectRoot != "" || binding.SchemaFingerprint != "" || binding.SourceAPIVersion != "" || binding.Namespace != ""
+	return binding, ok, nil
+}
+
+func (s *SQLiteStore) SetProjectBinding(binding ProjectBinding) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for _, key := range []string{metaProjectRoot, metaProjectSchemaFingerprint, metaProjectSourceAPIVersion, metaProjectNamespace} {
+		if _, err := tx.Exec(`delete from org_meta where key = ?`, key); err != nil {
+			return err
+		}
+	}
+	values := map[string]string{
+		metaProjectRoot:              binding.ProjectRoot,
+		metaProjectSchemaFingerprint: binding.SchemaFingerprint,
+		metaProjectSourceAPIVersion:  binding.SourceAPIVersion,
+		metaProjectNamespace:         binding.Namespace,
+	}
+	stmt, err := tx.Prepare(`insert into org_meta(key, value) values(?, ?)`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	for key, value := range values {
+		if value == "" {
+			continue
+		}
+		if _, err := stmt.Exec(key, value); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
 func (s *SQLiteStore) Reset(org OrgState) error {
 	ResetData(&org)
 	return s.Save(org)
@@ -294,6 +383,70 @@ func InspectOrg(path string, org OrgState) InspectSummary {
 		}
 	}
 	return summary
+}
+
+func SchemaFingerprint(org OrgState) (string, error) {
+	type fingerprintField struct {
+		Name             string    `json:"name"`
+		Type             FieldType `json:"type"`
+		DisplayType      string    `json:"displayType,omitempty"`
+		RelationshipName string    `json:"relationshipName,omitempty"`
+		ReferenceTo      []string  `json:"referenceTo,omitempty"`
+	}
+	type fingerprintObject struct {
+		Name      string             `json:"name"`
+		KeyPrefix string             `json:"keyPrefix,omitempty"`
+		Fields    []fingerprintField `json:"fields"`
+	}
+	names := make([]string, 0, len(org.Objects))
+	for name := range org.Objects {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	objects := make([]fingerprintObject, 0, len(names))
+	for _, name := range names {
+		definition := org.Objects[name].Definition
+		fieldNames := make([]string, 0, len(definition.Fields))
+		for fieldName := range definition.Fields {
+			fieldNames = append(fieldNames, fieldName)
+		}
+		sort.Strings(fieldNames)
+		fields := make([]fingerprintField, 0, len(fieldNames))
+		for _, fieldName := range fieldNames {
+			field := definition.Fields[fieldName]
+			referenceTo := append([]string(nil), field.ReferenceTo...)
+			sort.Strings(referenceTo)
+			fields = append(fields, fingerprintField{
+				Name:             fieldName,
+				Type:             field.Type,
+				DisplayType:      field.DisplayType,
+				RelationshipName: field.RelationshipName,
+				ReferenceTo:      referenceTo,
+			})
+		}
+		objects = append(objects, fingerprintObject{
+			Name:      name,
+			KeyPrefix: definition.KeyPrefix,
+			Fields:    fields,
+		})
+	}
+	payload := struct {
+		Objects []fingerprintObject `json:"objects"`
+	}{Objects: objects}
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.Sum256(raw)
+	return hex.EncodeToString(sum[:]), nil
+}
+
+func setMetaValue(meta map[string]string, key, value string) {
+	if value == "" {
+		delete(meta, key)
+		return
+	}
+	meta[key] = value
 }
 
 func (s *SQLiteStore) init() error {

@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -19,6 +21,7 @@ import (
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/resource"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/server"
 	"github.com/glade-sh/glade/internal/sobject"
 	"github.com/glade-sh/glade/internal/soql"
 	"github.com/glade-sh/glade/internal/storage"
@@ -35,10 +38,14 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 		return runTUIView(ctx, args, tui.BoardData, w, progressW)
 	}
 	if len(args) == 0 {
-		return errors.New("usage: glade db seed|reset|export|inspect|query|describe --db <path> [--project <root>] [--json] [fixture.json]")
+		return errors.New("usage: glade db ui|seed|reset|export|inspect|query|describe [--project <root>] [--env <name>|--db <path>] [--json] [fixture.json]")
 	}
 	command := args[0]
+	if command == "ui" {
+		return runDBUI(ctx, args[1:], w, progressW)
+	}
 	dbPath := ""
+	envName := "dev"
 	root := "."
 	jsonOut := false
 	wizard := false
@@ -63,6 +70,15 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 				return err
 			}
 			dbPath = value
+		case "--env":
+			value, err := takeFlagValue(args, &i, "--env requires a name")
+			if err != nil {
+				return err
+			}
+			if err := validateDBEnvName(value); err != nil {
+				return err
+			}
+			envName = value
 		case "--project":
 			value, err := takeFlagValue(args, &i, "--project requires a value")
 			if err != nil {
@@ -141,10 +157,13 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 		return fmt.Errorf("glade db %s does not accept Salesforce import flags", command)
 	}
 	if wizard {
-		return writeDBWizard(w, command, dbPath, root, jsonOut, positionals)
+		return writeDBWizard(w, command, resolveDBPath(dbPath, root, envName), root, jsonOut, positionals)
 	}
 	progressMode := progressModeForFlags(jsonOut, progress, progressJSON, noProgress)
 	if command == "import" {
+		if dbPath == "" && !listObjects {
+			dbPath = projectEnvDBPath(root, envName)
+		}
 		return runDBImport(ctx, w, progressW, progressMode, dbPath, root, jsonOut, dbImportOptions{
 			TargetOrg:   targetOrg,
 			Objects:     importObjects,
@@ -158,7 +177,7 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 		})
 	}
 	if dbPath == "" {
-		return errors.New("glade db requires --db <path>")
+		dbPath = projectEnvDBPath(root, envName)
 	}
 	renderer := cliui.NewRenderer(cliui.RendererOptions{
 		Stderr: progressW,
@@ -176,15 +195,15 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 	switch command {
 	case "query":
 		if !jsonOut {
-			return errors.New("usage: glade db query --db <path> --project <root> --json [--limit <n>] [--query-all] <soql>")
+			return errors.New("usage: glade db query [--project <root>] [--env <name>|--db <path>] --json [--limit <n>] [--query-all] <soql>")
 		}
 		if len(positionals) != 1 {
-			return errors.New("usage: glade db query --db <path> --project <root> --json [--limit <n>] [--query-all] <soql>")
+			return errors.New("usage: glade db query [--project <root>] [--env <name>|--db <path>] --json [--limit <n>] [--query-all] <soql>")
 		}
 		return writeDBQueryJSON(w, org, positionals[0], limit, limitSet, queryAll)
 	case "describe":
 		if !jsonOut {
-			return errors.New("usage: glade db describe --db <path> --project <root> --json [ObjectName]")
+			return errors.New("usage: glade db describe [--project <root>] [--env <name>|--db <path>] --json [ObjectName]")
 		}
 		if len(positionals) > 1 {
 			return fmt.Errorf("unexpected argument %q", positionals[1])
@@ -196,7 +215,7 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 		return writeDBDescribeJSON(w, org, objectName)
 	case "seed":
 		if len(positionals) != 1 {
-			return errors.New("usage: glade db seed --db <path> [--project <root>] <fixture.json>")
+			return errors.New("usage: glade db seed [--project <root>] [--env <name>|--db <path>] <fixture.json>")
 		}
 		renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "db seed", Label: "Opening fixture"})
 		file, err := os.Open(positionals[0])
@@ -244,8 +263,189 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 		}
 		return writeDBInspect(w, dbPath, org, jsonOut, schemaVersion)
 	default:
-		return errors.New("usage: glade db seed|reset|export|inspect|query|describe --db <path> [--project <root>] [--json] [fixture.json]")
+		return errors.New("usage: glade db ui|seed|reset|export|inspect|query|describe [--project <root>] [--env <name>|--db <path>] [--json] [fixture.json]")
 	}
+}
+
+var dbUIOpenURL = openURL
+
+type dbUIOptions struct {
+	addr      string
+	dbPath    string
+	envName   string
+	root      string
+	readyFile string
+	open      bool
+}
+
+type dbUIReadyFile struct {
+	URL     string `json:"url"`
+	Addr    string `json:"addr"`
+	DB      string `json:"db"`
+	Project string `json:"project"`
+	Env     string `json:"env,omitempty"`
+}
+
+func runDBUI(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
+	opts, err := parseDBUIOptions(args)
+	if err != nil {
+		return err
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	dbPath := resolveDBPath(opts.dbPath, opts.root, opts.envName)
+	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: progressW, Mode: cliui.ProgressAuto})
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "db ui", Label: "Opening database"})
+	store, org, err := openDBStore(dbPath, opts.root)
+	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "db ui failed"})
+		return err
+	}
+	defer store.Close()
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "db ui", Label: "Starting listener", Current: 1, Total: 2})
+	listener, err := net.Listen("tcp", opts.addr)
+	if err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "db ui failed"})
+		return err
+	}
+	actualAddr := listener.Addr().String()
+	url := "http://" + actualAddr + "/db"
+	if opts.readyFile != "" {
+		if err := writeDBUIReadyFile(opts.readyFile, actualAddr, dbPath, opts.root, opts.envName); err != nil {
+			_ = listener.Close()
+			renderer.Finish(cliui.Result{OK: false, Label: "db ui failed"})
+			return err
+		}
+	}
+	if opts.open {
+		if err := dbUIOpenURL(url); err != nil {
+			_ = listener.Close()
+			renderer.Finish(cliui.Result{OK: false, Label: "db ui failed"})
+			return err
+		}
+	}
+	handler := server.NewWithStore(&org, store)
+	httpServer := &http.Server{Addr: opts.addr, Handler: handler}
+	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "db ui", Label: "Record manager ready", Current: 2, Total: 2})
+	renderer.Finish(cliui.Result{OK: true, Label: "db ui ready"})
+	printDBUIStartupSummary(w, url, actualAddr, dbPath, opts.root)
+	go func() {
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		_ = httpServer.Shutdown(shutdownCtx)
+	}()
+	return normalizeDevVFServeError(httpServer.Serve(listener))
+}
+
+func parseDBUIOptions(args []string) (dbUIOptions, error) {
+	opts := dbUIOptions{addr: "127.0.0.1:0", envName: "dev", root: ".", open: true}
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--db":
+			value, err := takeFlagValue(args, &i, "--db requires a path")
+			if err != nil {
+				return opts, err
+			}
+			opts.dbPath = value
+		case "--env":
+			value, err := takeFlagValue(args, &i, "--env requires a name")
+			if err != nil {
+				return opts, err
+			}
+			if err := validateDBEnvName(value); err != nil {
+				return opts, err
+			}
+			opts.envName = value
+		case "--project":
+			value, err := takeFlagValue(args, &i, "--project requires a value")
+			if err != nil {
+				return opts, err
+			}
+			opts.root = value
+		case "--addr":
+			value, err := takeFlagValue(args, &i, "--addr requires a value")
+			if err != nil {
+				return opts, err
+			}
+			opts.addr = value
+		case "--port":
+			value, err := takeFlagValue(args, &i, "--port requires a value")
+			if err != nil {
+				return opts, err
+			}
+			port, err := strconv.Atoi(value)
+			if err != nil || port < 0 || port > 65535 {
+				return opts, errors.New("--port requires a port number between 0 and 65535")
+			}
+			opts.addr = "127.0.0.1:" + value
+		case "--ready-file":
+			value, err := takeFlagValue(args, &i, "--ready-file requires a value")
+			if err != nil {
+				return opts, err
+			}
+			opts.readyFile = value
+		case "--open":
+			opts.open = true
+		case "--no-open":
+			opts.open = false
+		default:
+			if strings.HasPrefix(args[i], "-") && args[i] != "-" {
+				return opts, fmt.Errorf("unknown flag %q", args[i])
+			}
+			return opts, fmt.Errorf("unexpected argument %q", args[i])
+		}
+	}
+	return opts, nil
+}
+
+func writeDBUIReadyFile(path, addr, dbPath, root, envName string) error {
+	ready := dbUIReadyFile{
+		URL:     "http://" + addr + "/db",
+		Addr:    addr,
+		DB:      filepath.ToSlash(dbPath),
+		Project: root,
+		Env:     envName,
+	}
+	data, err := json.MarshalIndent(ready, "", "  ")
+	if err != nil {
+		return err
+	}
+	data = append(data, '\n')
+	return os.WriteFile(path, data, 0o644)
+}
+
+func printDBUIStartupSummary(w io.Writer, url, addr, dbPath, root string) {
+	fmt.Fprintln(w, "Glade db ui")
+	fmt.Fprintf(w, "URL: %s\n", url)
+	fmt.Fprintf(w, "addr: %s\n", addr)
+	fmt.Fprintf(w, "project: %s\n", root)
+	fmt.Fprintf(w, "db: %s\n", dbPath)
+}
+
+func resolveDBPath(dbPath, root, envName string) string {
+	if dbPath != "" {
+		return dbPath
+	}
+	return projectEnvDBPath(root, envName)
+}
+
+func projectEnvDBPath(root, envName string) string {
+	if envName == "" {
+		envName = "dev"
+	}
+	return filepath.Join(root, ".glade", "envs", envName+".sqlite")
+}
+
+func validateDBEnvName(name string) error {
+	if strings.TrimSpace(name) == "" {
+		return errors.New("--env requires a name")
+	}
+	if strings.ContainsAny(name, `/\`) || name == "." || name == ".." {
+		return fmt.Errorf("invalid db environment name %q", name)
+	}
+	return nil
 }
 
 type dbImportOptions struct {
@@ -345,9 +545,6 @@ func writeDBWizard(w io.Writer, command, dbPath, root string, jsonOut bool, posi
 		if len(positionals) > 0 {
 			fixture = positionals[0]
 		}
-		if dbPath == "" {
-			dbPath = filepath.Join(".glade", "org.sqlite")
-		}
 		args := []string{"glade", "db", "seed", "--db", dbPath, "--project", root, "--progress"}
 		if jsonOut {
 			args = append(args, "--json")
@@ -358,7 +555,7 @@ func writeDBWizard(w io.Writer, command, dbPath, root string, jsonOut bool, posi
 		fmt.Fprintf(w, "  %s\n", shellCommand("glade", "db", "inspect", "--db", dbPath, "--project", root))
 		return nil
 	default:
-		return errors.New("usage: glade db seed --wizard --db <path> [--project <root>] <fixture.json>")
+		return errors.New("usage: glade db seed --wizard [--project <root>] [--env <name>|--db <path>] <fixture.json>")
 	}
 }
 
@@ -377,19 +574,157 @@ func openDBStore(path, root string) (*storage.SQLiteStore, storage.OrgState, err
 		_ = store.Close()
 		return nil, storage.OrgState{}, err
 	}
+	projectOrg, binding, hasBinding, err := projectOrgAndDBBinding(root)
+	if err != nil {
+		_ = store.Close()
+		return nil, storage.OrgState{}, err
+	}
 	if len(org.Objects) == 0 {
-		org, err = orgForProject(root)
-		if err != nil {
-			_ = store.Close()
-			return nil, storage.OrgState{}, err
+		if hasBinding {
+			org = projectOrg
+		} else {
+			org, err = orgForProject(root)
+			if err != nil {
+				_ = store.Close()
+				return nil, storage.OrgState{}, err
+			}
 		}
 		storage.EnsureDeterministicPlatformData(&org)
 		if err := store.Save(org); err != nil {
 			_ = store.Close()
 			return nil, storage.OrgState{}, err
 		}
+		if hasBinding {
+			if err := store.SetProjectBinding(binding); err != nil {
+				_ = store.Close()
+				return nil, storage.OrgState{}, err
+			}
+		}
+	} else if hasBinding {
+		org, err = validateDBProjectBinding(store, path, root, binding, org, projectOrg)
+		if err != nil {
+			_ = store.Close()
+			return nil, storage.OrgState{}, err
+		}
 	}
 	return store, org, nil
+}
+
+func projectOrgAndDBBinding(root string) (storage.OrgState, storage.ProjectBinding, bool, error) {
+	if root == "." && !currentDirIsGladeProjectRoot() {
+		return storage.OrgState{}, storage.ProjectBinding{}, false, nil
+	}
+	p, index, err := loadProjectIndex(root)
+	if err != nil {
+		if root == "." {
+			return storage.OrgState{}, storage.ProjectBinding{}, false, nil
+		}
+		return storage.OrgState{}, storage.ProjectBinding{}, false, err
+	}
+	org := orgStateFromIndex(root, p, index)
+	fingerprint, err := storage.SchemaFingerprint(org)
+	if err != nil {
+		return storage.OrgState{}, storage.ProjectBinding{}, false, err
+	}
+	projectRoot := p.Root
+	if projectRoot == "" {
+		projectRoot = root
+	}
+	if abs, err := filepath.Abs(projectRoot); err == nil {
+		projectRoot = abs
+	}
+	return org, storage.ProjectBinding{
+		ProjectRoot:       filepath.Clean(projectRoot),
+		SchemaFingerprint: fingerprint,
+		SourceAPIVersion:  org.APIVersion,
+		Namespace:         org.Namespace,
+	}, true, nil
+}
+
+func validateDBProjectBinding(store *storage.SQLiteStore, dbPath, root string, expected storage.ProjectBinding, org, projectOrg storage.OrgState) (storage.OrgState, error) {
+	stored, ok, err := store.ProjectBinding()
+	if err != nil {
+		return org, err
+	}
+	if !ok {
+		actualFingerprint, err := storage.SchemaFingerprint(org)
+		if err != nil {
+			return org, err
+		}
+		if actualFingerprint != expected.SchemaFingerprint {
+			return org, dbProjectMismatchError(dbPath, root, stored)
+		}
+		return org, store.SetProjectBinding(expected)
+	}
+	if stored.ProjectRoot != "" && !sameCleanPath(stored.ProjectRoot, expected.ProjectRoot) {
+		return org, dbProjectMismatchError(dbPath, root, stored)
+	}
+	if stored.SchemaFingerprint != "" && stored.SchemaFingerprint != expected.SchemaFingerprint {
+		if stored.ProjectRoot == "" {
+			return org, dbProjectMismatchError(dbPath, root, stored)
+		}
+		refreshed, err := refreshDBProjectSchema(store, org, projectOrg, expected)
+		if err != nil {
+			return org, err
+		}
+		return refreshed, nil
+	}
+	return org, nil
+}
+
+func refreshDBProjectSchema(store *storage.SQLiteStore, current, projectOrg storage.OrgState, binding storage.ProjectBinding) (storage.OrgState, error) {
+	refreshed := projectOrg.Clone()
+	refreshed.OrgID = current.OrgID
+	refreshed.SystemTimestampBase = current.SystemTimestampBase
+	refreshed.SystemTimestampSequence = current.SystemTimestampSequence
+	for name, existingObject := range current.Objects {
+		target, ok := refreshed.Objects[name]
+		if !ok {
+			continue
+		}
+		target.Records = make(map[storage.ID]storage.Record, len(existingObject.Records))
+		for id, record := range existingObject.Records {
+			target.Records[id] = record.Clone()
+		}
+		refreshed.Objects[name] = target
+	}
+	if refreshed.IDSequences == nil {
+		refreshed.IDSequences = make(map[string]uint64, len(current.IDSequences))
+	}
+	for objectName, sequence := range current.IDSequences {
+		if _, ok := refreshed.Objects[objectName]; ok {
+			refreshed.IDSequences[objectName] = sequence
+		}
+	}
+	storage.EnsureDeterministicPlatformData(&refreshed)
+	storage.RebuildIndexes(&refreshed)
+	if err := store.Save(refreshed); err != nil {
+		return storage.OrgState{}, err
+	}
+	if err := store.SetProjectBinding(binding); err != nil {
+		return storage.OrgState{}, err
+	}
+	return refreshed, nil
+}
+
+func dbProjectMismatchError(dbPath, root string, stored storage.ProjectBinding) error {
+	detail := ""
+	if stored.ProjectRoot != "" {
+		detail = "\nDatabase project: " + filepath.ToSlash(stored.ProjectRoot)
+	}
+	return fmt.Errorf("database belongs to a different Glade project schema: %s%s\nUse this project's database with: glade db inspect --project %s", filepath.ToSlash(dbPath), detail, shellPathArg(root))
+}
+
+func sameCleanPath(left, right string) bool {
+	leftAbs, leftErr := filepath.Abs(left)
+	rightAbs, rightErr := filepath.Abs(right)
+	if leftErr == nil {
+		left = leftAbs
+	}
+	if rightErr == nil {
+		right = rightAbs
+	}
+	return filepath.Clean(left) == filepath.Clean(right)
 }
 
 func orgForProject(root string) (storage.OrgState, error) {

@@ -16,6 +16,7 @@ func runTUI(ctx context.Context, args []string, stdout io.Writer, _ io.Writer) e
 	parsed, err := flagparse.New("glade tui").
 		String("project", "p").
 		String("db", "").
+		String("env", "").
 		String("view", "").
 		String("query", "").
 		String("fixture", "").
@@ -30,6 +31,15 @@ func runTUI(ctx context.Context, args []string, stdout io.Writer, _ io.Writer) e
 	if root == "" {
 		root = "."
 	}
+	envName := parsed.String("env")
+	if envName == "" {
+		envName = "dev"
+	}
+	if parsed.String("env") != "" {
+		if err := validateDBEnvName(envName); err != nil {
+			return err
+		}
+	}
 	board := tui.BoardProject
 	if parsed.String("view") != "" {
 		parsedBoard, ok := tui.BoardFromString(parsed.String("view"))
@@ -38,9 +48,13 @@ func runTUI(ctx context.Context, args []string, stdout io.Writer, _ io.Writer) e
 		}
 		board = parsedBoard
 	}
+	dbPath := parsed.String("db")
+	if dbPath == "" && board == tui.BoardData {
+		dbPath = projectEnvDBPath(root, envName)
+	}
 	opts := tui.AppOptions{
 		ProjectRoot:  root,
-		DBPath:       parsed.String("db"),
+		DBPath:       dbPath,
 		Query:        parsed.String("query"),
 		Fixture:      parsed.String("fixture"),
 		TargetOrg:    parsed.String("target-org"),
@@ -59,6 +73,7 @@ func runTUIView(ctx context.Context, args []string, board tui.Board, stdout io.W
 		Bool("ui", "").
 		String("project", "p").
 		String("db", "").
+		String("env", "").
 		String("query", "").
 		String("fixture", "").
 		String("target-org", "o").
@@ -77,6 +92,9 @@ func runTUIView(ctx context.Context, args []string, board tui.Board, stdout io.W
 	}
 	if parsed.String("db") != "" {
 		tuiArgs = append(tuiArgs, "--db", parsed.String("db"))
+	}
+	if parsed.String("env") != "" {
+		tuiArgs = append(tuiArgs, "--env", parsed.String("env"))
 	}
 	if parsed.String("query") != "" {
 		tuiArgs = append(tuiArgs, "--query", parsed.String("query"))

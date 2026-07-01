@@ -5,9 +5,9 @@ scratch org. Keep Salesforce as the validation gate for live org services.
 
 ## Before you start
 
-Run from the project root. Decide the local org name and the SQLite file you
-want to inspect or seed. Keep seed data in source control when a workflow
-depends on it.
+Run from the project root. Keep seed data in source control when a workflow
+depends on it. The default project DB is `.glade/envs/dev.sqlite`; use
+`--env <name>` for another project-local DB.
 
 ## Steps
 
@@ -38,27 +38,36 @@ sf data query -o refinement-local -q "SELECT Id, Name FROM Account"
 Seed a local database:
 
 ```bash
-glade db seed --db .glade/refinement-local.sqlite --project . data/file-rows.json
+glade db seed --project . data/file-rows.json
 ```
 
 Import a small slice from an org already connected through the Salesforce CLI:
 
 ```bash
-glade db import sf --target-org devhub --db .glade/refinement-local.sqlite --project . --object Account --fields Id,Name --limit 25 --json
+glade db import sf --target-org devhub --project . --object Account --fields Id,Name --limit 25 --json
 ```
 
 Inspect the database:
 
 ```bash
-glade db inspect --db .glade/refinement-local.sqlite --json
+glade db inspect --project .
 ```
 
-Open the data board when you want inspect, query, seed, reset, and export in
-one terminal surface:
+Open the browser record manager when you want to browse records, create rows,
+edit fields with Salesforce-like controls, delete rows, or undelete soft-deleted
+rows:
 
 ```bash
-glade db --ui --db .glade/refinement-local.sqlite --project .
-glade db --ui --db .glade/refinement-local.sqlite --project . --target-org devhub --object Account
+glade db ui --project .
+glade db ui --project . --env qa
+```
+
+Open the data board when you want inspect, query, seed, reset, and export in one
+terminal surface:
+
+```bash
+glade db --ui --project .
+glade db --ui --project . --target-org devhub --object Account
 ```
 
 In VS Code, use `Glade: Open Data TUI` for the active local data environment.
@@ -67,12 +76,17 @@ In VS Code, use `Glade: Open Data TUI` for the active local data environment.
 
 The org commands create and start a local target. `sf data query` returns local
 records through the Glade target. Seed, import, and inspect commands report the
-SQLite tables and rows Glade can use.
+SQLite tables and rows Glade can use. `glade db ui` opens the project-local DB in
+a browser record manager at `/db`.
 
 ## Common wrong turn
 
 Do not use local data as proof of live auth, hosted sharing, external services,
 or production data behavior. It is a deterministic local model.
+
+Do not point a project at another project's SQLite file. Glade stores project
+schema metadata in the DB and rejects mismatches before local runtime commands
+load the wrong object or field shape.
 
 ## Deeper reference
 
