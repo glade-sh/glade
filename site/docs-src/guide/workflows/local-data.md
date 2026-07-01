@@ -53,8 +53,17 @@ Inspect the database:
 glade db inspect --project .
 ```
 
-Open the data board when you want inspect, query, seed, reset, and export in
-one terminal surface:
+Open the browser record manager when you want to browse records, create rows,
+edit fields with Salesforce-like controls, delete rows, or undelete soft-deleted
+rows:
+
+```bash
+glade db ui --project .
+glade db ui --project . --env qa
+```
+
+Open the data board when you want inspect, query, seed, reset, and export in one
+terminal surface:
 
 ```bash
 glade db --ui --project .
@@ -67,7 +76,8 @@ In VS Code, use `Glade: Open Data TUI` for the active local data environment.
 
 The org commands create and start a local target. `sf data query` returns local
 records through the Glade target. Seed, import, and inspect commands report the
-SQLite tables and rows Glade can use.
+SQLite tables and rows Glade can use. `glade db ui` opens the project-local DB in
+a browser record manager at `/db`.
 
 ## Common wrong turn
 
