@@ -27,16 +27,26 @@ Open the Glade side view. Use Data Environments and Local Org to see the active 
 ### 2. Seed and inspect from a terminal
 
 ```bash
-mkdir -p .glade/envs
-glade db seed --db .glade/envs/<environment>.sqlite --project . <seed-file>
-glade db inspect --db .glade/envs/<environment>.sqlite --project .
+glade doctor --project .
+glade db seed --project . <seed-file>
+glade db inspect --project .
 ```
 
-Expected: Glade reports local rows in the SQLite-backed environment.
+Expected: `doctor` shows the project local data environment, and `db inspect` reports local rows in `.glade/envs/dev.sqlite`.
+
+Use a named environment when you want a separate project DB:
+
+```bash
+glade db seed --project . --env qa <seed-file>
+glade db inspect --project . --env qa
+```
 
 ![Terminal showing local data seed and inspect output](/help/screenshots/local-data-environments-02-terminal.png)
 
 ## Common wrong turn
+
+Do not reuse a SQLite file from another project. Glade binds local DBs to the
+project schema and stops early when the object or field shape does not match.
 
 `Glade: Clone Local Data Environment` copies local SQLite state. It does not contact Salesforce or refresh data from an org.
 

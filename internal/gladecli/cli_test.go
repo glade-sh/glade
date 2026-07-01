@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -299,6 +300,61 @@ func TestRunDoctorProjectPathMustExist(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), missing) || !strings.Contains(stderr.String(), "no such file or directory") {
 		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestRunDoctorReportsProjectLocalDataEnvironment(t *testing.T) {
+	root := t.TempDir()
+	writeProjectWithWidgetField(t, root, "Label__c")
+	writeTestFile(t, filepath.Join(root, "glade.yml"), `project:
+  packageDirs: [force-app]
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"doctor", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	got := stdout.String()
+	for _, want := range []string{"Local data", filepath.ToSlash(filepath.Join(root, ".glade", "envs", "dev.sqlite")), "not created"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("doctor output missing %q:\n%s", want, got)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(root, ".glade", "envs", "dev.sqlite")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("doctor should not create the default db, stat err=%v", err)
+	}
+}
+
+func TestRunDoctorReportsProjectLocalDataSchemaRefresh(t *testing.T) {
+	root := t.TempDir()
+	writeProjectWithWidgetField(t, root, "First_Field__c")
+	writeTestFile(t, filepath.Join(root, "glade.yml"), `project:
+  packageDirs: [force-app]
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "inspect", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("inspect exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	firstFieldPath := filepath.Join(root, "force-app/main/default/objects/Widget__c/fields/First_Field__c.field-meta.xml")
+	if err := os.Remove(firstFieldPath); err != nil {
+		t.Fatal(err)
+	}
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/objects/Widget__c/fields/Second_Field__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Second_Field__c</fullName><label>Second_Field__c</label><type>Text</type></CustomField>`)
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"doctor", "--project", root}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("doctor unexpectedly succeeded stdout=%q", stdout.String())
+	}
+	got := stdout.String()
+	for _, want := range []string{"Local data", "schema changed", "glade db inspect --project"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("doctor output missing %q:\n%s", want, got)
+		}
 	}
 }
 
@@ -1387,7 +1443,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "help tui",
 			args: []string{"help", "tui"},
-			want: []string{"Usage:", "glade tui [--project <root>] [--db <path>] [--view <project|tests|data|plugins>] [--target-org <alias>] [--object <Object>]", "--target-org <alias>", "--object <Object>", "--no-ui", "glade tui --project . --view tests", ".glade/envs/dev.sqlite"},
+			want: []string{"Usage:", "glade tui [--project <root>] [--env <name>|--db <path>] [--view <project|tests|data|plugins>] [--target-org <alias>] [--object <Object>]", "--env <name>", "--target-org <alias>", "--object <Object>", "--no-ui", "glade tui --project . --view tests", "glade tui --project . --view data"},
 		},
 		{
 			name: "help dev",
@@ -1397,7 +1453,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "help db",
 			args: []string{"help", "db"},
-			want: []string{"Usage:", "glade db --ui --db <path> [--project <root>] [--target-org <alias>] [--object <Object>]", "glade db import sf [--target-org <alias>] --db <path>", "glade db import sf [--target-org <alias>] --list-objects", "glade db query --db <path> --project <root> --json [--limit <n>] [--query-all] <soql>", "glade db describe --db <path> --project <root> --json [ObjectName]", "--target-org <alias>", "--object <Object>", "--fields <list>", "--limit <n>", "--query-all", "--ui", "glade db import sf --target-org devhub --db .glade/refinement-local.sqlite --project . --object Account", "glade db query --db .glade/refinement-local.sqlite --project . --json \"SELECT Id, Name FROM FileRow__c\""},
+			want: []string{"Usage:", "glade db --ui [--project <root>] [--env <name>|--db <path>]", "glade db import sf [--target-org <alias>] [--project <root>] [--env <name>|--db <path>]", "glade db import sf [--target-org <alias>] --list-objects", "glade db query [--project <root>] [--env <name>|--db <path>] --json [--limit <n>] [--query-all] <soql>", "glade db describe [--project <root>] [--env <name>|--db <path>] --json [ObjectName]", "--env <name>", "--db <path>", "--target-org <alias>", "--object <Object>", "--fields <list>", "--limit <n>", "--query-all", "--ui", "glade db inspect --project .", "glade db import sf --target-org devhub --project . --object Account", "glade db query --project . --json \"SELECT Id, Name FROM FileRow__c\""},
 		},
 		{
 			name: "help profile",
@@ -4722,6 +4778,91 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	}
 }
 
+func TestRunDBInspectUsesDefaultProjectEnvironment(t *testing.T) {
+	root := t.TempDir()
+	writeProjectWithWidgetField(t, root, "Label__c")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "inspect", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("inspect exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), filepath.ToSlash(filepath.Join(root, ".glade", "envs", "dev.sqlite"))) {
+		t.Fatalf("inspect did not use default project env db:\n%s", stdout.String())
+	}
+	if _, err := os.Stat(filepath.Join(root, ".glade", "envs", "dev.sqlite")); err != nil {
+		t.Fatalf("default db was not created: %v", err)
+	}
+}
+
+func TestRunDBRejectsDatabaseFromDifferentProjectSchema(t *testing.T) {
+	first := t.TempDir()
+	second := t.TempDir()
+	writeProjectWithWidgetField(t, first, "First_Field__c")
+	writeProjectWithWidgetField(t, second, "Second_Field__c")
+	dbPath := filepath.Join(first, ".glade", "envs", "dev.sqlite")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "inspect", "--project", first}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("first inspect exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "inspect", "--project", second, "--db", dbPath}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("second inspect unexpectedly succeeded stdout=%q", stdout.String())
+	}
+	got := stderr.String()
+	for _, want := range []string{"database belongs to a different Glade project schema", filepath.ToSlash(dbPath), "glade db inspect --project"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("stderr missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestRunDBRefreshesSameProjectSchemaDrift(t *testing.T) {
+	root := t.TempDir()
+	writeProjectWithWidgetField(t, root, "First_Field__c")
+	dbPath := filepath.Join(root, ".glade", "envs", "dev.sqlite")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "inspect", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("first inspect exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+
+	firstFieldPath := filepath.Join(root, "force-app/main/default/objects/Widget__c/fields/First_Field__c.field-meta.xml")
+	if err := os.Remove(firstFieldPath); err != nil {
+		t.Fatal(err)
+	}
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/objects/Widget__c/fields/Second_Field__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Second_Field__c</fullName><label>Second_Field__c</label><type>Text</type></CustomField>`)
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "inspect", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("second inspect exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "describe", "--project", root, "--json", "Widget__c"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("describe exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"name": "Second_Field__c"`) {
+		t.Fatalf("describe did not include refreshed field:\n%s", stdout.String())
+	}
+	if strings.Contains(stdout.String(), `"name": "First_Field__c"`) {
+		t.Fatalf("describe still included stale field:\n%s", stdout.String())
+	}
+	if _, err := os.Stat(dbPath); err != nil {
+		t.Fatalf("default db missing after refresh: %v", err)
+	}
+}
+
 func TestRunDBQueryJSONUsesSOQLRuntimeAndLimit(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "glade.db")
@@ -5177,6 +5318,14 @@ func writeTestFile(t *testing.T, path, content string) {
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func writeProjectWithWidgetField(t *testing.T, root, fieldName string) {
+	t.Helper()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/WidgetService.cls"), "public class WidgetService { public void run() {} }")
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/objects/Widget__c/Widget__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Widget</label><pluralLabel>Widgets</pluralLabel></CustomObject>`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/objects/Widget__c/fields/"+fieldName+".field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>`+fieldName+`</fullName><label>`+fieldName+`</label><type>Text</type></CustomField>`)
 }
 
 func writeTestProject(t *testing.T, root string) {

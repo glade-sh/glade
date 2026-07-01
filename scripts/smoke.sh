@@ -83,9 +83,9 @@ cat >"${TMP}/fixture.json" <<'JSON'
   ]
 }
 JSON
-"${GLADE}" db seed --db "${DB}" "${TMP}/fixture.json" --json >"${TMP}/db-seed.json"
+"${GLADE}" db seed --project "${PROJECT}" --db "${DB}" "${TMP}/fixture.json" --json >"${TMP}/db-seed.json"
 grep -q '"Account": 1' "${TMP}/db-seed.json"
-"${GLADE}" db inspect --db "${DB}" >"${TMP}/db-inspect.out"
+"${GLADE}" db inspect --project "${PROJECT}" --db "${DB}" >"${TMP}/db-inspect.out"
 grep -q 'Account: 1' "${TMP}/db-inspect.out"
 
 "${GLADE}" playground --data-root "${TMP}/playground" --db "${TMP}/playground.sqlite" --once >"${TMP}/playground.out"
