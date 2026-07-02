@@ -97,6 +97,16 @@ export function createFetchWireAdapter(endpoint, mapBody) {
       const cached = readLDSCache(this.cacheKey);
       if (cached) {
         this.__lastEmptyValue = null;
+        emitRuntimeEvent({
+          kind: "lds",
+          label: endpoint,
+          status: "cache-hit",
+          detail: {
+            endpoint,
+            body: this.body,
+            result: cached?.data,
+          },
+        });
         this.dataCallback(cached);
         return Promise.resolve(cached);
       }
@@ -131,6 +141,18 @@ export function createFetchWireAdapter(endpoint, mapBody) {
         const value = attachRefresh(wireValue(result), this);
         this.__lastEmptyValue = null;
         writeLDSCache(this.cacheKey, value);
+        emitRuntimeEvent({
+          kind: "lds",
+          label: endpoint,
+          status: result?.error ? "error" : "success",
+          detail: {
+            endpoint,
+            body: this.body,
+            result: result?.data,
+            error: result?.error,
+            durationMs: elapsedMs(started),
+          },
+        });
         this.dataCallback(value);
         return value;
       })
@@ -152,6 +174,17 @@ export function createFetchWireAdapter(endpoint, mapBody) {
         }
         const value = attachRefresh({ error: { message: String(err) } }, this);
         this.__lastEmptyValue = null;
+        emitRuntimeEvent({
+          kind: "lds",
+          label: endpoint,
+          status: "error",
+          detail: {
+            endpoint,
+            body: this.body,
+            error: errorMessage(err),
+            durationMs: elapsedMs(started),
+          },
+        });
         this.dataCallback(value);
         return value;
       });
@@ -191,6 +224,9 @@ export function createApexWireAdapterWithOptions(className, methodName, options 
     if (options.cacheable) {
       const cached = readLDSCache(this.cacheKey);
       if (cached) {
+        emitApexEvent(className, methodName, config ?? {}, "cache-hit", {
+          result: cached?.data,
+        });
         this.dataCallback(cached);
         return Promise.resolve(cached);
       }
@@ -293,6 +329,7 @@ export function invokeApex(className, methodName, params) {
       apexRecorded = true;
       emitApexEvent(className, methodName, bodyParams, "success", {
         durationMs,
+        result: result?.data,
       });
       return result?.data;
     })

@@ -32,6 +32,30 @@ func TestPollingWatcherReportsChanges(t *testing.T) {
 	}
 }
 
+func TestPollingWatcherReportsLightningWebComponentChanges(t *testing.T) {
+	root := t.TempDir()
+	lwcPath := filepath.Join(root, "force-app", "main", "default", "lwc", "accountWorkspace", "accountWorkspace.js")
+	writeWatchFile(t, lwcPath, "export default class AccountWorkspace {}")
+	initial, err := CaptureSnapshot(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	watcher := NewPollingWatcher(ctx, Config{Root: root, Debounce: 10 * time.Millisecond}, initial)
+	defer watcher.Close()
+
+	writeWatchFile(t, lwcPath, "export default class AccountWorkspace { connectedCallback() {} }")
+	select {
+	case changes := <-watcher.Changes():
+		assertChange(t, changes, lwcPath, ChangeModified, FileKindLightningWebComponent)
+	case err := <-watcher.Errors():
+		t.Fatal(err)
+	case <-time.After(time.Second):
+		t.Fatal("timeout waiting for polling LWC change")
+	}
+}
+
 func TestBackendSelectionUsesPolling(t *testing.T) {
 	root := t.TempDir()
 	initial, err := CaptureSnapshot(root)

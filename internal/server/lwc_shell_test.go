@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/lwcbrowser"
@@ -390,6 +391,7 @@ func TestLightningRuntimeServesShellAndSLDSAssets(t *testing.T) {
 	}{
 		{path: "/lightning/runtime/shell/app.js", want: "bootGladeShell"},
 		{path: "/lightning/runtime/shell/community-host.js", want: "applyCommunityHost"},
+		{path: "/lightning/runtime/shell/workbench-lab.js", want: "bootComponentLab"},
 		{path: "/lightning/runtime/shell/workspace-service.js", want: "configureWorkspace"},
 		{path: "/lightning/runtime/shell/emp-service.js", want: "__gladePublish"},
 		{path: "/lightning/runtime/shell/flow-service.js", want: "readFlowContext"},
@@ -1114,6 +1116,167 @@ func TestLightningLocalContextJSONReportsDirectComponentContext(t *testing.T) {
 	}
 	if len(got.Mounts) != 1 || got.Mounts[0].Attrs["recordId"] != "001000000000001AAA" || got.Mounts[0].Attrs["objectApiName"] != "Account" {
 		t.Fatalf("mounts = %#v", got.Mounts)
+	}
+}
+
+func TestLightningLocalSearchesObjectsAndRecordsFromOrgState(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	account := org.Objects["Account"]
+	account.Records = map[storage.ID]storage.Record{
+		"001LOCALACCT001": {
+			ID:     "001LOCALACCT001",
+			Object: "Account",
+			Fields: map[string]storage.Value{
+				"Name":     storage.StringValue("Local Preview Account"),
+				"Industry": storage.StringValue("Technology"),
+			},
+		},
+	}
+	org.Objects["Account"] = account
+	storage.EnsureStandardObject(&org, "Contact")
+	contact := org.Objects["Contact"]
+	contact.Records = map[storage.ID]storage.Record{
+		"003LOCALCONT001": {
+			ID:     "003LOCALCONT001",
+			Object: "Contact",
+			Fields: map[string]storage.Value{
+				"Name": storage.StringValue("Local Contact"),
+			},
+		},
+	}
+	org.Objects["Contact"] = contact
+	handler := NewWithSource(&org, SourceMetadata{})
+
+	objectsRec := httptest.NewRecorder()
+	handler.ServeHTTP(objectsRec, httptest.NewRequest(http.MethodGet, "/lightning/local/objects.json?q=acc", nil))
+	if objectsRec.Code != http.StatusOK {
+		t.Fatalf("objects status = %d body=%s", objectsRec.Code, objectsRec.Body.String())
+	}
+	var objectsPayload struct {
+		Objects []struct {
+			APIName     string `json:"apiName"`
+			Label       string `json:"label"`
+			RecordCount int    `json:"recordCount"`
+		} `json:"objects"`
+	}
+	if err := json.Unmarshal(objectsRec.Body.Bytes(), &objectsPayload); err != nil {
+		t.Fatalf("objects JSON: %v\n%s", err, objectsRec.Body.String())
+	}
+	if len(objectsPayload.Objects) != 1 || objectsPayload.Objects[0].APIName != "Account" || objectsPayload.Objects[0].RecordCount != 1 {
+		t.Fatalf("objects = %#v", objectsPayload.Objects)
+	}
+
+	recordsRec := httptest.NewRecorder()
+	handler.ServeHTTP(recordsRec, httptest.NewRequest(http.MethodGet, "/lightning/local/records.json?object=Account&q=preview", nil))
+	if recordsRec.Code != http.StatusOK {
+		t.Fatalf("records status = %d body=%s", recordsRec.Code, recordsRec.Body.String())
+	}
+	var recordsPayload struct {
+		ObjectAPIName string `json:"objectApiName"`
+		Records       []struct {
+			ID    string `json:"id"`
+			Title string `json:"title"`
+		} `json:"records"`
+	}
+	if err := json.Unmarshal(recordsRec.Body.Bytes(), &recordsPayload); err != nil {
+		t.Fatalf("records JSON: %v\n%s", err, recordsRec.Body.String())
+	}
+	if recordsPayload.ObjectAPIName != "Account" || len(recordsPayload.Records) != 1 ||
+		recordsPayload.Records[0].ID != "001LOCALACCT001" ||
+		recordsPayload.Records[0].Title != "Local Preview Account" {
+		t.Fatalf("records = %#v", recordsPayload)
+	}
+}
+
+func TestLightningLocalRunsReportsRecordedDevRuns(t *testing.T) {
+	handler := New(&storage.OrgState{})
+	handler.RecordDevRun(DevRunEvent{
+		ID:           "save-001",
+		Status:       "running",
+		Label:        "Saved 2 files",
+		ChangedFiles: []string{"force-app/main/default/lwc/accountWorkspace/accountWorkspace.js", "force-app/main/default/classes/PreviewWorkflowController.cls"},
+		StartedAt:    "2026-06-29T12:00:00Z",
+	})
+	handler.RecordDevRun(DevRunEvent{
+		ID:         "save-001",
+		Status:     "success",
+		Label:      "Saved 2 files",
+		DurationMS: 840,
+		Reload:     true,
+		FinishedAt: "2026-06-29T12:00:00.840Z",
+	})
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/local/runs.json?since=1", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var payload struct {
+		LatestSequence int `json:"latestSequence"`
+		Runs           []struct {
+			Sequence     int      `json:"sequence"`
+			ID           string   `json:"id"`
+			Status       string   `json:"status"`
+			Label        string   `json:"label"`
+			ChangedFiles []string `json:"changedFiles"`
+			DurationMS   int      `json:"durationMs"`
+			Reload       bool     `json:"reload"`
+		} `json:"runs"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("runs JSON: %v\n%s", err, rec.Body.String())
+	}
+	if payload.LatestSequence != 2 {
+		t.Fatalf("latest sequence = %d", payload.LatestSequence)
+	}
+	if len(payload.Runs) != 1 {
+		t.Fatalf("runs = %#v", payload.Runs)
+	}
+	run := payload.Runs[0]
+	if run.Sequence != 2 || run.ID != "save-001" || run.Status != "success" || run.Label != "Saved 2 files" || run.DurationMS != 840 || !run.Reload {
+		t.Fatalf("run = %#v", run)
+	}
+	if len(run.ChangedFiles) != 2 || run.ChangedFiles[0] != "force-app/main/default/lwc/accountWorkspace/accountWorkspace.js" {
+		t.Fatalf("changed files = %#v", run.ChangedFiles)
+	}
+}
+
+func TestLightningLocalRunsCanPollWhileRunsAreRecorded(t *testing.T) {
+	handler := New(&storage.OrgState{})
+	errs := make(chan string, 40)
+	var wg sync.WaitGroup
+	for i := 0; i < 20; i++ {
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			handler.RecordDevRun(DevRunEvent{
+				ID:     "save-001",
+				Status: "running",
+				Label:  "Saved files",
+			})
+		}()
+		go func() {
+			defer wg.Done()
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/lightning/local/runs.json", nil))
+			if rec.Code != http.StatusOK {
+				errs <- rec.Body.String()
+				return
+			}
+			var payload struct {
+				LatestSequence int           `json:"latestSequence"`
+				Runs           []DevRunEvent `json:"runs"`
+			}
+			if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+				errs <- err.Error()
+			}
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		t.Error(err)
 	}
 }
 

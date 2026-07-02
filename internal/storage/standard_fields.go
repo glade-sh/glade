@@ -22,6 +22,9 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	}
 	featureSignature := canonicalFeatureSignature(features)
 	if standardFieldsOverlayApplied(*definition, featureSignature) {
+		if standardReadOnlyFlagsNeedRepair(definition) {
+			applyStandardSObjectStubReadOnlyFields(definition)
+		}
 		return
 	}
 	stateAndCountryPicklistEnabled := hasCanonicalFeature(features, "StateAndCountryPicklist")
@@ -793,6 +796,19 @@ func applyStandardSObjectStubReadOnlyFields(definition *ObjectDefinition) {
 		}
 		definition.Fields[name] = field
 	}
+}
+
+func standardReadOnlyFlagsNeedRepair(definition *ObjectDefinition) bool {
+	if definition == nil || len(definition.Fields) == 0 {
+		return false
+	}
+	for _, name := range []string{"Id", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"} {
+		field, ok := definition.Fields[name]
+		if ok && (field.Createable == nil || field.Updateable == nil) {
+			return true
+		}
+	}
+	return false
 }
 
 func mergeStandardSObjectStubRelationships(definition *ObjectDefinition, features []string) {

@@ -128,6 +128,59 @@ test("cacheable apex wires use stable param keys and refreshApex forces a fetch"
   }
 });
 
+test("cacheable apex wire cache hits emit Apex console events", async () => {
+  const calls = [];
+  const events = [];
+  const originalFetch = globalThis.fetch;
+  const originalDocument = globalThis.document;
+  const originalCustomEvent = globalThis.CustomEvent;
+  globalThis.fetch = async (_url, options) => {
+    calls.push(JSON.parse(options.body));
+    return {
+      async json() {
+        return { data: { count: calls.length } };
+      },
+    };
+  };
+  globalThis.CustomEvent = class CustomEvent {
+    constructor(type, init = {}) {
+      this.type = type;
+      this.detail = init.detail;
+    }
+  };
+  globalThis.document = {
+    getElementById() {
+      return null;
+    },
+    dispatchEvent(event) {
+      if (event.type === "glade:runtime-event") {
+        events.push(event.detail);
+      }
+    },
+  };
+  try {
+    const values = [];
+    const Adapter = createApexWireAdapter("EventCtrl", "load", { cacheable: true });
+    const adapter = new Adapter((value) => values.push(value));
+
+    await adapter.update({ accountId: "001EVENT0000001AAA" });
+    await Promise.resolve();
+    await adapter.update({ accountId: "001EVENT0000001AAA" });
+    await Promise.resolve();
+
+    assert.equal(calls.length, 1);
+    assert.equal(values.at(-1).data.count, 1);
+    const apexEvents = events.filter((event) => event.kind === "apex" && event.label === "EventCtrl.load");
+    assert.deepEqual(apexEvents.map((event) => event.status), ["success", "cache-hit"]);
+    assert.deepEqual(apexEvents.at(-1).detail.params, { accountId: "001EVENT0000001AAA" });
+    assert.deepEqual(apexEvents.at(-1).detail.result, { count: 1 });
+  } finally {
+    globalThis.fetch = originalFetch;
+    globalThis.document = originalDocument;
+    globalThis.CustomEvent = originalCustomEvent;
+  }
+});
+
 test("apex wires send local LWC context and cache by active record", async () => {
   const calls = [];
   let recordId = "001LOCAL0000001AAA";

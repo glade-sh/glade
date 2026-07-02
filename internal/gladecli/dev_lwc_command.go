@@ -52,10 +52,23 @@ func runDevLWC(ctx context.Context, args []string, w io.Writer, progressW io.Wri
 		return err
 	}
 	org := apextest.OrgFromIndex(index)
-	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "dev lwc", Label: "Applying data fixtures", Current: 3, Total: 6})
-	if err := applyDevLWCProjectDataFixtures(p.Root, &org); err != nil {
-		renderer.Finish(cliui.Result{OK: false, Label: "dev lwc failed"})
-		return err
+	var store *storage.SQLiteStore
+	if opts.dbPath != "" {
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "dev lwc", Label: "Loading local database", Current: 3, Total: 6})
+		loadedStore, loadedOrg, err := openDBStore(opts.dbPath, p.Root)
+		if err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "dev lwc failed"})
+			return err
+		}
+		defer loadedStore.Close()
+		store = loadedStore
+		org = loadedOrg
+	} else {
+		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "dev lwc", Label: "Applying data fixtures", Current: 3, Total: 6})
+		if err := applyDevLWCProjectDataFixtures(p.Root, &org); err != nil {
+			renderer.Finish(cliui.Result{OK: false, Label: "dev lwc failed"})
+			return err
+		}
 	}
 	source, err := server.NewSourceMetadataFromProject(p)
 	if err != nil {
@@ -63,6 +76,9 @@ func runDevLWC(ctx context.Context, args []string, w io.Writer, progressW io.Wri
 		return err
 	}
 	handler := server.NewWithSource(&org, source)
+	if store != nil {
+		handler = server.NewWithStoreAndSource(&org, store, source)
+	}
 	installDevVFRuntime(handler, index)
 	if root, err := gladehome.EnsureRoot(); err != nil {
 		renderer.Render(cliui.Event{Kind: cliui.EventWarn, Phase: "dev lwc", Label: "LWC toolchain unavailable", Detail: err.Error()})
@@ -88,10 +104,7 @@ func runDevLWC(ctx context.Context, args []string, w io.Writer, progressW io.Wri
 		}
 	}
 	if opts.open {
-		openTarget := selectedURL
-		if openTarget == "" {
-			openTarget = baseURL + "/lwc"
-		}
+		openTarget := opts.openTargetURL(baseURL, selectedURL)
 		if err := devLWCOpenURL(openTarget); err != nil {
 			_ = listener.Close()
 			renderer.Finish(cliui.Result{OK: false, Label: "dev lwc failed"})
@@ -118,6 +131,7 @@ var devLWCOpenURL = openURL
 type devLWCOptions struct {
 	addr         string
 	root         string
+	dbPath       string
 	readyFile    string
 	open         bool
 	contextName  string
@@ -143,8 +157,9 @@ type devLWCContextPresetFlags struct {
 }
 
 type devLWCSelection struct {
-	Name    string
-	Context lwcshell.PageContext
+	Name           string
+	DefaultContext bool
+	Context        lwcshell.PageContext
 }
 
 func parseDevLWCOptions(args []string) (devLWCOptions, error) {
@@ -172,6 +187,12 @@ func parseDevLWCOptions(args []string) (devLWCOptions, error) {
 				return opts, err
 			}
 			opts.root = value
+		case "--db":
+			value, err := takeFlagValue(args, &i, "--db requires a value")
+			if err != nil {
+				return opts, err
+			}
+			opts.dbPath = value
 		case "--ready-file":
 			value, err := takeFlagValue(args, &i, "--ready-file requires a value")
 			if err != nil {
@@ -310,6 +331,7 @@ func (opts devLWCOptions) selection() (devLWCSelection, error) {
 	var preset lwcshell.ContextPreset
 	var name string
 	hasPreset := false
+	defaultContext := false
 	if opts.contextFile != "" {
 		file, err := lwcshell.LoadContextPresetFile(opts.contextFile)
 		if err != nil {
@@ -324,6 +346,7 @@ func (opts devLWCOptions) selection() (devLWCSelection, error) {
 			name = opts.contextName
 			if name == "" {
 				name = file.DefaultContext
+				defaultContext = true
 			}
 			hasPreset = true
 		}
@@ -341,6 +364,7 @@ func (opts devLWCOptions) selection() (devLWCSelection, error) {
 			name = opts.contextName
 			if name == "" {
 				name = file.DefaultContext
+				defaultContext = true
 			}
 			hasPreset = true
 		}
@@ -351,7 +375,7 @@ func (opts devLWCOptions) selection() (devLWCSelection, error) {
 		if err != nil {
 			return devLWCSelection{}, err
 		}
-		return devLWCSelection{Name: name, Context: ctx}, nil
+		return devLWCSelection{Name: name, DefaultContext: defaultContext, Context: ctx}, nil
 	}
 	if !opts.explicit.any() {
 		return devLWCSelection{}, nil
@@ -363,6 +387,13 @@ func (opts devLWCOptions) selection() (devLWCSelection, error) {
 		return devLWCSelection{}, err
 	}
 	return devLWCSelection{Context: ctx}, nil
+}
+
+func (opts devLWCOptions) openTargetURL(baseURL, selectedURL string) string {
+	if (opts.contextName != "" || opts.explicit.any()) && selectedURL != "" {
+		return selectedURL
+	}
+	return strings.TrimRight(baseURL, "/") + "/lwc"
 }
 
 func (f devLWCContextPresetFlags) any() bool {
@@ -447,14 +478,18 @@ func applyDevLWCProjectDataFixtures(root string, org *storage.OrgState) error {
 }
 
 func runDevLWCReload(ctx context.Context, root string, srv *server.Server, w io.Writer) {
-	runDevVFReload(ctx, root, srv, w)
+	runDevReload(ctx, root, srv, w, "LWC")
 }
 
 func printDevLWCStartupSummary(w io.Writer, addr string, p project.Project, selection devLWCSelection) {
 	fmt.Fprintf(w, "LWC dev shell: http://%s\n", addr)
 	if selectedURL := devLWCSelectedURL("http://"+addr, selection.Context); selectedURL != "" {
 		if selection.Name != "" {
-			fmt.Fprintf(w, "Selected context %s: %s\n", selection.Name, selectedURL)
+			label := "Selected context"
+			if selection.DefaultContext {
+				label = "Default context"
+			}
+			fmt.Fprintf(w, "%s %s: %s\n", label, selection.Name, selectedURL)
 		} else {
 			fmt.Fprintf(w, "Selected route: %s\n", selectedURL)
 		}
@@ -594,8 +629,8 @@ func printDevLWCHelp(w io.Writer) {
 Start a local LWC preview development shell with Salesforce-like context.
 
 Usage:
-  glade dev lwc [--project <root>] [--context <name>] [--open]
-  glade dev lwc [--project <root>] [--target component|record-page|app-page|home-page|tab|url-addressable|record-action|global-action|utility-bar|flow-screen|flow-action] [flags]
+  glade dev lwc [--project <root>] [--db <path>] [--context <name>] [--open]
+  glade dev lwc [--project <root>] [--db <path>] [--target component|record-page|app-page|home-page|tab|url-addressable|record-action|global-action|utility-bar|flow-screen|flow-action] [flags]
 
 Preview feature:
   Useful local Lightning-style preview routes. Not full hosted Lightning
@@ -619,6 +654,7 @@ Preview routes:
 Context flags:
   --context <name>
   --context-file <path>
+  --db .glade/envs/lwc-preview.sqlite
   --target component|record-page|app-page|home-page|tab|url-addressable|record-action|global-action|utility-bar|flow-screen|flow-action
   --component c:contextProbe
   --object Account

@@ -24,14 +24,24 @@ Then start the local workbench from the project root:
 glade dev lwc --project . --open
 ```
 
+Use a DB-backed local org when record-page LWCs, LDS, Apex, or the builder's
+record picker should use persisted data:
+
+```bash
+glade db seed --db .glade/envs/lwc-preview.sqlite --project . data/lwc-preview-db.json
+glade dev lwc --project . --db .glade/envs/lwc-preview.sqlite --open
+```
+
 The printed base URL opens the LWC home page at `/`. The same home page is
 also available at `/lwc` for stable links. It groups formal tabs, app pages,
 record pages, direct components, utilities, flows, and community routes. Use
 `/lwc/builder` or the **Open builder** link when you want to compose a draft
 app, home, record, tab, URL-addressable, quick-action, or community page
 context. The builder lists and filters available LWCs, lets you drag or add
-target-compatible components into canvas regions, switches page layouts, and
-shows active context and local diagnostics.
+target-compatible components into canvas regions, switches page layouts, keeps
+record fields out of app and home contexts, searches objects and records from
+the active local DB for record pages, and shows active context and local
+diagnostics. Mobile preview uses the main canvas viewport control.
 
 Use an ephemeral port and ready file for scripts:
 
@@ -264,12 +274,16 @@ The shell exposes local state for tools and browser tests:
 
 ```text
 /lightning/local/context.json
+/lightning/local/objects.json?q=acc
+/lightning/local/records.json?object=Account&q=local
 ```
 
 The response includes the active route, PageReference, route context, mounted
 components, route list, diagnostics when present, and service support such as
 Apex, LDS, UI API shims, navigation, labels, resources, LMS, quick actions,
 Experience Cloud context, base components, Visualforce host support, and toast.
+The object and record endpoints expose the active local org data used by the
+builder's record-page pickers.
 
 `CurrentPageReference` uses the same local PageReference shapes:
 
@@ -476,7 +490,7 @@ edge cases, and hosted base-component details.
 
 `glade dev lwc` starts with local org state inferred from the project schema and
 loads fixture files from `data/*.json` when they use the Glade storage fixture
-format.
+format. Pass `--db <path>` to load and save a SQLite local org instead.
 
 Use fixtures for records that record-page LWCs and LDS wires should see:
 

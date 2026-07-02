@@ -23,6 +23,14 @@ Open the Workbench Console:
 glade dev lwc --project . --open
 ```
 
+Use a seeded local DB when record-page LWCs, LDS, Apex, or builder record
+search need persisted rows:
+
+```bash
+glade db seed --db .glade/envs/lwc-preview.sqlite --project . data/lwc-preview-db.json
+glade dev lwc --project . --db .glade/envs/lwc-preview.sqlite --open
+```
+
 Open a named context:
 
 ```bash
@@ -40,8 +48,10 @@ glade dev lwc --project . --target record-page --object Account --record 0010000
 Glade prints a local URL and opens the Workbench Console when `--open` is set.
 The console shows route discovery, a preview canvas, editable context, debug
 panes for Apex, LDS, network calls, navigation/events, and runtime issues, and
-local data service behavior. Builder mobile preview uses the main canvas
-viewport control instead of a permanent side-by-side phone panel.
+local data service behavior. Builder record pages search objects and records
+from the active local DB, while app and home page contexts stay record-free.
+Builder mobile preview uses the main canvas viewport control instead of a
+permanent side-by-side phone panel.
 
 ## Common wrong turn
 

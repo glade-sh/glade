@@ -32,6 +32,8 @@ type Server struct {
 	bulkV1Jobs             map[string]bulkV1Job
 	nextBulkV1JobID        int
 	lightning              lightningState
+	devRunEvents           []DevRunEvent
+	nextDevRunSeq          int
 	metadataJobs           map[string]metadataLocalJob
 	nextMetadataDeployID   int
 	nextMetadataRetrieveID int

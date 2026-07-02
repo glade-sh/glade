@@ -6,6 +6,7 @@ import { installToastService } from "./toast-service.mjs";
 import { applyCommunityHost } from "./community-host.mjs";
 import { bootWorkbenchBuilder } from "./workbench-builder.mjs";
 import { bootWorkbenchConsole } from "./workbench-console.mjs";
+import { bootComponentLab } from "./workbench-lab.mjs";
 
 export async function bootGladeShell({ root = document.body, config = readConfig() } = {}) {
   await loadSLDS();
@@ -25,6 +26,7 @@ export async function bootGladeShell({ root = document.body, config = readConfig
   document.addEventListener("glade:context-changed", renderPanel);
   document.addEventListener("glade:flow-event", recordFlowEvent);
   bindFlowDiagnostics(root);
+  bootComponentLab(root, config);
   bootWorkbenchBuilder(root, config);
   bootWorkbenchConsole(root);
   return { config, diagnostics, disposeToastService };

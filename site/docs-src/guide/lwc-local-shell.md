@@ -33,13 +33,22 @@ Start the Workbench Console:
 glade dev lwc --project . --open
 ```
 
+Use a DB-backed local org when record-page LWCs, LDS, Apex, or the builder's
+record picker should use persisted data:
+
+```bash
+glade db seed --db .glade/envs/lwc-preview.sqlite --project . data/lwc-preview-db.json
+glade dev lwc --project . --db .glade/envs/lwc-preview.sqlite --open
+```
+
 The printed base URL opens the Workbench Console at `/`; `/lwc` is the stable
 home link. The console has route discovery, a preview canvas, editable context,
 and debug panes for Apex, LDS, network calls, navigation/events, and runtime
 issues. Use the **Open builder** link or `/lwc/builder` to compose a local page,
-drag LWCs into canvas regions, switch layouts, and tune record, app, community,
-Flow, and PageReference context. Builder mobile preview uses the main canvas
-viewport control and does not reserve a side-by-side phone panel.
+drag LWCs into canvas regions, switch layouts, keep record fields out of app and
+home contexts, search objects and records from the active local DB for record
+pages, and tune app, community, Flow, and PageReference context. Mobile preview
+uses the main canvas viewport control and does not reserve a side-by-side phone panel.
 
 Open a named context:
 
@@ -256,13 +265,17 @@ Tools can read the current local shell state:
 
 ```text
 /lightning/local/context.json
+/lightning/local/objects.json?q=acc
+/lightning/local/records.json?object=Account&q=local
 ```
 
 The JSON includes active route, PageReference, route context, mounted
 components, discovered apps, route list, named context presets, default and
 selected context names, diagnostics when present, and service support for Apex,
 LDS, UI API shims, navigation, labels, resources, LMS, quick actions, base
-components, Experience Cloud context, Visualforce host support, and toast.
+components, Experience Cloud context, Visualforce host support, and toast. The
+object and record endpoints expose the active local org data used by the
+builder's record-page pickers.
 
 ## Data and services
 

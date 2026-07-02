@@ -680,6 +680,23 @@ func TestEnsureStandardObjectFieldsUsesGeneratedStubsCaseInsensitively(t *testin
 	}
 }
 
+func TestEnsureStandardObjectFieldsRepairsReadOnlyFlagsWhenOverlayAlreadyMarked(t *testing.T) {
+	definition := ObjectDefinition{
+		APIName: "Account",
+		Fields: map[string]Field{
+			"Id": {APIName: "Id", Type: FieldID},
+		},
+		Metadata: map[string]string{standardFieldsOverlayMarker: ""},
+	}
+
+	EnsureStandardObjectFields(&definition)
+
+	field := definition.Fields["Id"]
+	if FieldFlagValue(field.Createable, true) || FieldFlagValue(field.Updateable, true) {
+		t.Fatalf("Account.Id flags = %#v", field)
+	}
+}
+
 func TestEnsureStandardObjectFieldsEnrichesShallowExistingStandardFields(t *testing.T) {
 	definition := ObjectDefinition{
 		APIName: "Account",

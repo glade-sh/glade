@@ -10,9 +10,11 @@ import (
 func TestCaptureSnapshotAndDiffByModtimeAndSize(t *testing.T) {
 	root := t.TempDir()
 	classPath := filepath.Join(root, "InvoiceService.cls")
+	lwcPath := filepath.Join(root, "force-app", "main", "default", "lwc", "accountWorkspace", "accountWorkspace.js")
 	fieldPath := filepath.Join(root, "objects", "Invoice__c", "fields", "Amount__c.field-meta.xml")
 	ignoredPath := filepath.Join(root, "README.md")
 	writeWatchFile(t, classPath, "public class InvoiceService {}")
+	writeWatchFile(t, lwcPath, "export default class AccountWorkspace {}")
 	writeWatchFile(t, fieldPath, "<CustomField><fullName>Amount__c</fullName></CustomField>")
 	writeWatchFile(t, ignoredPath, "ignored")
 
@@ -20,12 +22,13 @@ func TestCaptureSnapshotAndDiffByModtimeAndSize(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(before.Files) != 2 {
+	if len(before.Files) != 3 {
 		t.Fatalf("snapshot files = %#v", before.Files)
 	}
 
 	time.Sleep(time.Nanosecond)
 	writeWatchFile(t, classPath, "public class InvoiceService { public void run() {} }")
+	writeWatchFile(t, lwcPath, "export default class AccountWorkspace { connectedCallback() {} }")
 	addedPath := filepath.Join(root, "InvoiceServiceTest.cls")
 	writeWatchFile(t, addedPath, "@IsTest private class InvoiceServiceTest {}")
 	if err := os.Remove(fieldPath); err != nil {
@@ -37,10 +40,11 @@ func TestCaptureSnapshotAndDiffByModtimeAndSize(t *testing.T) {
 		t.Fatal(err)
 	}
 	changes := DiffSnapshots(before, after)
-	if len(changes) != 3 {
+	if len(changes) != 4 {
 		t.Fatalf("changes = %#v", changes)
 	}
 	assertChange(t, changes, classPath, ChangeModified, FileKindApexClass)
+	assertChange(t, changes, lwcPath, ChangeModified, FileKindLightningWebComponent)
 	assertChange(t, changes, addedPath, ChangeAdded, FileKindApexClass)
 	assertChange(t, changes, fieldPath, ChangeDeleted, FileKindFieldMeta)
 }

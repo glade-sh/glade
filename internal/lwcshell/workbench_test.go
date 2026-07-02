@@ -101,6 +101,54 @@ func TestBuildWorkbenchModelIncludesRecordPageAndTabRoutes(t *testing.T) {
 	}
 }
 
+func TestDiscoverWorkbenchComponentsInfersAPIProperties(t *testing.T) {
+	root := t.TempDir()
+	jsPath := writeProjectFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js", `import { LightningElement, api } from "lwc";
+export default class ContextProbe extends LightningElement {
+  @api title = "Local Shell Context";
+  @api recordId;
+  @api disabled = false;
+}`)
+	metaPath := writeProjectFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+  <apiVersion>61.0</apiVersion>
+  <isExposed>true</isExposed>
+  <masterLabel>Context Probe</masterLabel>
+  <targets>
+    <target>lightning__AppPage</target>
+  </targets>
+  <targetConfigs>
+    <targetConfig targets="lightning__AppPage">
+      <property name="title" type="String" label="Title" default="Configured Title"/>
+    </targetConfig>
+  </targetConfigs>
+</LightningComponentBundle>`)
+	p := project.Project{Root: root, LWCFiles: []string{jsPath}, LWCMetaFiles: []string{metaPath}}
+
+	components := DiscoverWorkbenchComponents(p)
+
+	if len(components) != 1 {
+		t.Fatalf("components = %#v", components)
+	}
+	props := components[0].APIProperties
+	if len(props) != 3 {
+		t.Fatalf("api properties = %#v", props)
+	}
+	want := map[string]ShellComponentProperty{
+		"title":    {Name: "title", Type: "String", Label: "Title", Default: "Configured Title", Source: "targetConfig"},
+		"recordId": {Name: "recordId", Type: "String", Label: "Record Id", Source: "api"},
+		"disabled": {Name: "disabled", Type: "Boolean", Label: "Disabled", Default: "false", Source: "api"},
+	}
+	for _, prop := range props {
+		expected, ok := want[prop.Name]
+		if !ok {
+			t.Fatalf("unexpected prop %#v in %#v", prop, props)
+		}
+		if prop != expected {
+			t.Fatalf("prop %s = %#v, want %#v", prop.Name, prop, expected)
+		}
+	}
+}
+
 func TestDiscoverShellRoutesIncludesUtilityBarFlexiPages(t *testing.T) {
 	root := t.TempDir()
 	writeProjectFile(t, root, "force-app/main/default/flexipages/Support_Utility.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
