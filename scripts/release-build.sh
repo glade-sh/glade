@@ -64,7 +64,7 @@ cp -R "${ROOT}/lwcruntime/src/shell" "${workdir}/share/glade/lwcruntime/src/shel
 cp -R "${ROOT}/lwcruntime/src/shims" "${workdir}/share/glade/lwcruntime/src/shims"
 cp -R "${ROOT}/lwcruntime/src/slds" "${workdir}/share/glade/lwcruntime/src/slds"
 
-doctor_out="$("${workdir}/${binary}" doctor --json 2>&1)"
+doctor_out="$("${workdir}/${binary}" doctor --json 2>&1 || true)"
 if [[ "${doctor_out}" != *'"parserOK": true'* ]]; then
 	echo "ERROR: built binary reports parser unavailable; aborting" >&2
 	printf '%s\n' "${doctor_out}" >&2
@@ -95,7 +95,7 @@ else
 	tar -C "${verifydir}" -xzf "${DIST_DIR}/${archive}"
 fi
 version_output="$("${verifydir}/${binary}" version 2>&1)"
-doctor_json="$("${verifydir}/${binary}" doctor --json 2>&1)"
+doctor_json="$("${verifydir}/${binary}" doctor --json 2>&1 || true)"
 if [[ "${doctor_json}" != *'"parserOK": true'* ]]; then
 	echo "ERROR: unpacked binary reports parser unavailable; aborting" >&2
 	printf '%s\n' "${doctor_json}" >&2

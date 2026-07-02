@@ -84,6 +84,24 @@ func TestReleaseBuildPackagesLWCRuntimeAssets(t *testing.T) {
 	}
 }
 
+func TestReleaseBuildKeepsDoctorJSONWhenDoctorReportsLocalDataFailure(t *testing.T) {
+	releasePath := filepath.Join("..", "scripts", "release-build.sh")
+	releaseScript, err := os.ReadFile(releasePath)
+	if err != nil {
+		t.Fatalf("read %s: %v", releasePath, err)
+	}
+	scriptText := string(releaseScript)
+	for _, want := range []string{
+		`doctor_out="$("${workdir}/${binary}" doctor --json 2>&1 || true)"`,
+		`doctor_json="$("${verifydir}/${binary}" doctor --json 2>&1 || true)"`,
+		`"parserOK": true`,
+	} {
+		if !strings.Contains(scriptText, want) {
+			t.Fatalf("release-build.sh missing %q", want)
+		}
+	}
+}
+
 func TestReleaseWorkflowUsesRepoReleaseNotes(t *testing.T) {
 	workflowPath := filepath.Join("..", ".github", "workflows", "release.yml")
 	workflow, err := os.ReadFile(workflowPath)
