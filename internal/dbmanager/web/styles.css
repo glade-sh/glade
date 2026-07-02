@@ -119,6 +119,29 @@ button {
   margin-top: 10px;
 }
 
+.dbm-object-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.dbm-object-filters button {
+  min-height: 28px;
+  border: 1px solid #c9d1dc;
+  border-radius: 6px;
+  padding: 3px 8px;
+  color: #344054;
+  background: #ffffff;
+}
+
+.dbm-object-filters button:hover,
+.dbm-object-filters button[aria-pressed="true"] {
+  border-color: #1f6feb;
+  color: #1f6feb;
+  background: #eef5ff;
+}
+
 .dbm-object {
   width: 100%;
   display: flex;
@@ -154,6 +177,22 @@ button {
 .dbm-field small {
   color: #667085;
   font-size: 12px;
+}
+
+.dbm-object small:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.dbm-object b {
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: #475467;
+  background: #eef2f6;
+  font-size: 11px;
+  font-weight: 650;
 }
 
 .dbm-object em {
@@ -248,7 +287,7 @@ button {
 }
 
 .dbm-primary:disabled {
-  cursor: wait;
+  cursor: not-allowed;
   opacity: 0.65;
 }
 
@@ -418,6 +457,15 @@ button {
 
 .dbm-alert {
   margin-bottom: 12px;
+}
+
+.dbm-capability-note {
+  border: 1px solid #f2d68f;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  color: #7a4b00;
+  background: #fff8e6;
 }
 
 .dbm-form-error {

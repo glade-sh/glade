@@ -9,6 +9,9 @@ import (
 )
 
 func (m Manager) CreateRecord(objectName string, payload MutationPayload) MutationResult {
+	if blocked, ok := m.blockedObjectMutation(objectName, "create"); ok {
+		return blocked
+	}
 	record, definition, result := m.sparseRecord(objectName, "", payload)
 	if !result.Success {
 		return result
@@ -19,6 +22,9 @@ func (m Manager) CreateRecord(objectName string, payload MutationPayload) Mutati
 }
 
 func (m Manager) UpdateRecord(objectName, id string, payload MutationPayload) MutationResult {
+	if blocked, ok := m.blockedObjectMutation(objectName, "update"); ok {
+		return blocked
+	}
 	record, definition, result := m.sparseRecord(objectName, id, payload)
 	if !result.Success {
 		return result
@@ -33,6 +39,9 @@ func (m Manager) DeleteRecord(objectName, id string) MutationResult {
 	if !ok {
 		return failedMutation("INVALID_TYPE", fmt.Sprintf("unknown object %s", objectName), nil)
 	}
+	if blocked, ok := blockedObjectMutationResult(resolved, object.Definition, "delete"); ok {
+		return blocked
+	}
 	engine := dml.NewEngine(m.Org)
 	results := engine.Delete([]storage.Record{{Object: resolved, ID: storage.ID(id)}})
 	return m.mutationResult(object.Definition, firstDMLResult(results), false)
@@ -42,6 +51,9 @@ func (m Manager) UndeleteRecord(objectName, id string) MutationResult {
 	resolved, object, ok := m.object(objectName)
 	if !ok {
 		return failedMutation("INVALID_TYPE", fmt.Sprintf("unknown object %s", objectName), nil)
+	}
+	if blocked, ok := blockedObjectMutationResult(resolved, object.Definition, "undelete"); ok {
+		return blocked
 	}
 	engine := dml.NewEngine(m.Org)
 	results := engine.Undelete([]storage.Record{{Object: resolved, ID: storage.ID(id)}})
@@ -108,6 +120,37 @@ func firstDMLResult(results []dml.Result) dml.Result {
 		return dml.Result{Success: false, Error: "dml returned no result", StatusCode: "UNKNOWN_EXCEPTION"}
 	}
 	return results[0]
+}
+
+func (m Manager) blockedObjectMutation(objectName, operation string) (MutationResult, bool) {
+	resolved, object, ok := m.object(objectName)
+	if !ok {
+		return failedMutation("INVALID_TYPE", fmt.Sprintf("unknown object %s", objectName), nil), true
+	}
+	return blockedObjectMutationResult(resolved, object.Definition, operation)
+}
+
+func blockedObjectMutationResult(objectName string, definition storage.ObjectDefinition, operation string) (MutationResult, bool) {
+	_, capabilities := objectCategoryAndCapabilities(objectName, definition)
+	allowed := false
+	switch operation {
+	case "create":
+		allowed = capabilities.Createable
+	case "update":
+		allowed = capabilities.Updateable
+	case "delete":
+		allowed = capabilities.Deletable
+	case "undelete":
+		allowed = capabilities.Undeletable
+	}
+	if allowed {
+		return MutationResult{}, false
+	}
+	message := capabilities.Reason
+	if message == "" {
+		message = fmt.Sprintf("%s cannot %s records in the local data manager.", firstNonEmpty(definition.APIName, objectName), operation)
+	}
+	return failedMutation("INVALID_OPERATION", message, nil), true
 }
 
 func failedMutation(statusCode, message string, fields []string) MutationResult {

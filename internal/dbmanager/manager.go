@@ -25,19 +25,32 @@ type ObjectList struct {
 }
 
 type ObjectSummary struct {
-	Name        string `json:"name"`
-	Label       string `json:"label"`
-	PluralLabel string `json:"pluralLabel,omitempty"`
-	KeyPrefix   string `json:"keyPrefix,omitempty"`
-	Records     int    `json:"records"`
+	Name         string             `json:"name"`
+	Label        string             `json:"label"`
+	PluralLabel  string             `json:"pluralLabel,omitempty"`
+	KeyPrefix    string             `json:"keyPrefix,omitempty"`
+	Category     string             `json:"category"`
+	Capabilities ObjectCapabilities `json:"capabilities"`
+	Records      int                `json:"records"`
 }
 
 type ObjectDetail struct {
-	Name        string        `json:"name"`
-	Label       string        `json:"label"`
-	PluralLabel string        `json:"pluralLabel,omitempty"`
-	KeyPrefix   string        `json:"keyPrefix,omitempty"`
-	Fields      []FieldEditor `json:"fields"`
+	Name         string             `json:"name"`
+	Label        string             `json:"label"`
+	PluralLabel  string             `json:"pluralLabel,omitempty"`
+	KeyPrefix    string             `json:"keyPrefix,omitempty"`
+	Category     string             `json:"category"`
+	Capabilities ObjectCapabilities `json:"capabilities"`
+	Fields       []FieldEditor      `json:"fields"`
+}
+
+type ObjectCapabilities struct {
+	Queryable   bool   `json:"queryable"`
+	Createable  bool   `json:"createable"`
+	Updateable  bool   `json:"updateable"`
+	Deletable   bool   `json:"deletable"`
+	Undeletable bool   `json:"undeletable"`
+	Reason      string `json:"reason,omitempty"`
 }
 
 type FieldEditor struct {
@@ -98,12 +111,15 @@ func (m Manager) ListObjects(opts ListObjectsOptions) ObjectList {
 	out := ObjectList{Objects: make([]ObjectSummary, 0, len(names))}
 	for _, name := range names {
 		object := m.Org.Objects[name]
+		category, capabilities := objectCategoryAndCapabilities(name, object.Definition)
 		summary := ObjectSummary{
-			Name:        firstNonEmpty(object.Definition.APIName, name),
-			Label:       firstNonEmpty(object.Definition.Label, object.Definition.APIName, name),
-			PluralLabel: object.Definition.PluralLabel,
-			KeyPrefix:   object.Definition.KeyPrefix,
-			Records:     liveRecordCount(object),
+			Name:         firstNonEmpty(object.Definition.APIName, name),
+			Label:        firstNonEmpty(object.Definition.Label, object.Definition.APIName, name),
+			PluralLabel:  object.Definition.PluralLabel,
+			KeyPrefix:    object.Definition.KeyPrefix,
+			Category:     category,
+			Capabilities: capabilities,
+			Records:      liveRecordCount(object),
 		}
 		if query != "" && !objectSummaryMatches(summary, query) {
 			continue
@@ -118,12 +134,15 @@ func (m Manager) ObjectDetail(objectName string) (ObjectDetail, error) {
 	if !ok {
 		return ObjectDetail{}, fmt.Errorf("unknown object %s", objectName)
 	}
+	category, capabilities := objectCategoryAndCapabilities(resolved, object.Definition)
 	return ObjectDetail{
-		Name:        firstNonEmpty(object.Definition.APIName, resolved),
-		Label:       firstNonEmpty(object.Definition.Label, object.Definition.APIName, resolved),
-		PluralLabel: object.Definition.PluralLabel,
-		KeyPrefix:   object.Definition.KeyPrefix,
-		Fields:      fieldEditors(object.Definition),
+		Name:         firstNonEmpty(object.Definition.APIName, resolved),
+		Label:        firstNonEmpty(object.Definition.Label, object.Definition.APIName, resolved),
+		PluralLabel:  object.Definition.PluralLabel,
+		KeyPrefix:    object.Definition.KeyPrefix,
+		Category:     category,
+		Capabilities: capabilities,
+		Fields:       fieldEditors(object.Definition),
 	}, nil
 }
 
@@ -213,6 +232,89 @@ func liveRecordCount(object storage.ObjectState) int {
 		}
 	}
 	return count
+}
+
+func objectCategoryAndCapabilities(objectName string, definition storage.ObjectDefinition) (string, ObjectCapabilities) {
+	apiName := firstNonEmpty(definition.APIName, objectName)
+	if setupReason := setupObjectReason(apiName, definition); setupReason != "" {
+		return "setup", ObjectCapabilities{
+			Queryable: true,
+			Reason:    setupReason,
+		}
+	}
+	category := "standard"
+	if isCustomDataObject(apiName, definition) {
+		category = "custom"
+	}
+	return category, ObjectCapabilities{
+		Queryable:   true,
+		Createable:  true,
+		Updateable:  true,
+		Deletable:   true,
+		Undeletable: true,
+	}
+}
+
+func setupObjectReason(apiName string, definition storage.ObjectDefinition) string {
+	if strings.HasSuffix(strings.ToLower(apiName), "__mdt") || strings.EqualFold(definition.Metadata["kind"], "customMetadata") {
+		return fmt.Sprintf("%s is metadata-backed. Edit metadata source, then reload or reseed the project database.", apiName)
+	}
+	if metadataBackedSetupObjects[strings.ToLower(apiName)] {
+		return fmt.Sprintf("%s is metadata-backed. Edit metadata source, then reload or reseed the project database.", apiName)
+	}
+	return ""
+}
+
+func isCustomDataObject(apiName string, definition storage.ObjectDefinition) bool {
+	if strings.HasSuffix(strings.ToLower(apiName), "__c") {
+		return true
+	}
+	if strings.EqualFold(definition.Metadata["kind"], "customSetting") || definition.Metadata["customSettingsType"] != "" {
+		return true
+	}
+	return false
+}
+
+var metadataBackedSetupObjects = map[string]bool{
+	"apexclass":                             true,
+	"apexclassaccess":                       true,
+	"apexpage":                              true,
+	"apexpageaccess":                        true,
+	"contentasset":                          true,
+	"contentfolder":                         true,
+	"currencytype":                          true,
+	"custompermission":                      true,
+	"datacategorygroup":                     true,
+	"datedconversionrate":                   true,
+	"emailtemplate":                         true,
+	"fieldpermissions":                      true,
+	"flowdefinitionview":                    true,
+	"flowinterview":                         true,
+	"flowversionview":                       true,
+	"folder":                                true,
+	"group":                                 true,
+	"network":                               true,
+	"objectpermissions":                     true,
+	"opportunitystage":                      true,
+	"organization":                          true,
+	"permissionset":                         true,
+	"permissionsetassignment":               true,
+	"permissionsetapexclassaccess":          true,
+	"permissionsetapexpageaccess":           true,
+	"permissionsetapplicationvisibility":    true,
+	"permissionsetcustommetadatatypeaccess": true,
+	"permissionsetcustompermissions":        true,
+	"permissionsetexternaldatasourceaccess": true,
+	"permissionsetfieldpermissions":         true,
+	"permissionsetgroup":                    true,
+	"permissionsettabsetting":               true,
+	"profile":                               true,
+	"recordtype":                            true,
+	"setupentityaccess":                     true,
+	"staticresource":                        true,
+	"userlicense":                           true,
+	"userlogin":                             true,
+	"userrole":                              true,
 }
 
 func fieldEditors(definition storage.ObjectDefinition) []FieldEditor {
