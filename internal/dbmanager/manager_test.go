@@ -19,6 +19,98 @@ func TestManagerListsObjectsWithCounts(t *testing.T) {
 	}
 }
 
+func TestManagerListObjectsReturnsCategoryAndCapabilities(t *testing.T) {
+	org := testManagerOrg()
+	org.Objects["Project__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Project__c",
+			Label:   "Project",
+			Fields: map[string]storage.Field{
+				"Id":   {APIName: "Id", Type: storage.FieldID, Createable: storage.BoolFlag(false), Updateable: storage.BoolFlag(false)},
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["Profile"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Profile",
+			Label:   "Profile",
+			Fields: map[string]storage.Field{
+				"Id":   {APIName: "Id", Type: storage.FieldID, Createable: storage.BoolFlag(false), Updateable: storage.BoolFlag(false)},
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["Rule__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:  "Rule__mdt",
+			Label:    "Rule",
+			Metadata: map[string]string{"kind": "customMetadata"},
+			Fields: map[string]storage.Field{
+				"Id":            {APIName: "Id", Type: storage.FieldID, Createable: storage.BoolFlag(false), Updateable: storage.BoolFlag(false)},
+				"DeveloperName": {APIName: "DeveloperName", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	setupNames := []string{"ApexPage", "CurrencyType", "DatedConversionRate", "Network", "OpportunityStage", "PermissionSetAssignment", "StaticResource", "UserLicense", "UserLogin"}
+	for _, name := range setupNames {
+		org.Objects[name] = storage.ObjectState{
+			Definition: storage.ObjectDefinition{
+				APIName: name,
+				Label:   name,
+				Fields: map[string]storage.Field{
+					"Id":   {APIName: "Id", Type: storage.FieldID, Createable: storage.BoolFlag(false), Updateable: storage.BoolFlag(false)},
+					"Name": {APIName: "Name", Type: storage.FieldString},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		}
+	}
+	manager := dbmanager.New(&org)
+
+	got := manager.ListObjects(dbmanager.ListObjectsOptions{})
+
+	account := objectSummaryByName(t, got, "Account")
+	if account.Category != "standard" || !account.Capabilities.Createable || !account.Capabilities.Updateable || !account.Capabilities.Deletable {
+		t.Fatalf("Account summary = %#v", account)
+	}
+	custom := objectSummaryByName(t, got, "Project__c")
+	if custom.Category != "custom" || !custom.Capabilities.Createable {
+		t.Fatalf("Project__c summary = %#v", custom)
+	}
+	profile := objectSummaryByName(t, got, "Profile")
+	if profile.Category != "setup" || profile.Capabilities.Createable || profile.Capabilities.Reason == "" {
+		t.Fatalf("Profile summary = %#v", profile)
+	}
+	metadata := objectSummaryByName(t, got, "Rule__mdt")
+	if metadata.Category != "setup" || metadata.Capabilities.Createable || metadata.Capabilities.Reason == "" {
+		t.Fatalf("Rule__mdt summary = %#v", metadata)
+	}
+	for _, name := range setupNames {
+		setup := objectSummaryByName(t, got, name)
+		if setup.Category != "setup" || setup.Capabilities.Createable || setup.Capabilities.Reason == "" {
+			t.Fatalf("%s summary = %#v", name, setup)
+		}
+	}
+}
+
+func TestManagerObjectDetailReturnsCategoryAndCapabilities(t *testing.T) {
+	org := testManagerOrg()
+	manager := dbmanager.New(&org)
+
+	got, err := manager.ObjectDetail("Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got.Category != "standard" || !got.Capabilities.Createable {
+		t.Fatalf("detail = %#v", got)
+	}
+}
+
 func TestManagerObjectDetailBuildsSalesforceLikeFieldEditors(t *testing.T) {
 	org := testManagerOrg()
 	manager := dbmanager.New(&org)
@@ -94,6 +186,17 @@ func assertFieldEditor(t *testing.T, fields []dbmanager.FieldEditor, name, contr
 		return
 	}
 	t.Fatalf("field %s missing from %#v", name, fields)
+}
+
+func objectSummaryByName(t *testing.T, list dbmanager.ObjectList, name string) dbmanager.ObjectSummary {
+	t.Helper()
+	for _, object := range list.Objects {
+		if object.Name == name {
+			return object
+		}
+	}
+	t.Fatalf("object %s missing from %#v", name, list.Objects)
+	return dbmanager.ObjectSummary{}
 }
 
 func testManagerOrg() storage.OrgState {

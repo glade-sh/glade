@@ -110,7 +110,7 @@ with open(sys.argv[1], encoding="utf-8") as f:
 PY
 )"
 curl -fsS "${DB_UI_URL}" >"${TMP}/db-ui.html"
-grep -q 'Glade DB Record Manager' "${TMP}/db-ui.html"
+grep -q 'Glade Local Data' "${TMP}/db-ui.html"
 kill "${SERVER_PID}" 2>/dev/null || true
 wait "${SERVER_PID}" 2>/dev/null || true
 SERVER_PID=""

@@ -9,6 +9,7 @@ const state = {
   recordTotal: 0,
   query: "",
   objectQuery: "",
+  objectFilter: "data",
   includeDeleted: false,
   selectedRecordId: "",
   editing: null,
@@ -79,6 +80,12 @@ function fieldIsEditable(field) {
   if (getFieldControl(field) === "readonly") {
     return false;
   }
+  if (state.editing.mode === "create" && !objectCanCreate()) {
+    return false;
+  }
+  if (state.editing.mode === "edit" && !objectCanUpdate()) {
+    return false;
+  }
   return state.editing.mode === "create" ? fieldIsCreateable(field) : fieldIsUpdateable(field);
 }
 
@@ -108,6 +115,74 @@ function objectLabel(object) {
 
 function objectName(object) {
   return object?.name || object?.apiName || "";
+}
+
+function objectCategory(object) {
+  const category = normalizeName(object?.category || "");
+  if (category) {
+    return category;
+  }
+  const name = objectName(object).toLowerCase();
+  if (name.endsWith("__mdt")) {
+    return "setup";
+  }
+  if (name.endsWith("__c")) {
+    return "custom";
+  }
+  return "standard";
+}
+
+function objectCapabilities(object) {
+  return object?.capabilities || {};
+}
+
+function selectedObjectSummary() {
+  return state.objects.find((object) => objectName(object) === state.selectedObject) || null;
+}
+
+function selectedObjectCapabilities() {
+  return objectCapabilities(state.objectDetail || selectedObjectSummary());
+}
+
+function capabilityEnabled(capabilities, key) {
+  return capabilities?.[key] !== false && capabilities?.[key] !== "false";
+}
+
+function objectCanCreate() {
+  return capabilityEnabled(selectedObjectCapabilities(), "createable");
+}
+
+function objectCanUpdate() {
+  return capabilityEnabled(selectedObjectCapabilities(), "updateable");
+}
+
+function objectCanDelete() {
+  return capabilityEnabled(selectedObjectCapabilities(), "deletable");
+}
+
+function objectCanUndelete() {
+  return capabilityEnabled(selectedObjectCapabilities(), "undeletable");
+}
+
+function objectCapabilityReason() {
+  return selectedObjectCapabilities().reason || "";
+}
+
+function objectMatchesFilter(object) {
+  const category = objectCategory(object);
+  switch (state.objectFilter) {
+  case "custom":
+    return category === "custom";
+  case "standard":
+    return category === "standard";
+  case "setup":
+    return category === "setup";
+  case "all":
+    return true;
+  case "data":
+  default:
+    return category !== "setup";
+  }
 }
 
 function picklistValues(field) {
@@ -147,8 +222,11 @@ async function loadObjects() {
   }
   const data = await json(url.pathname + url.search);
   state.objects = data.objects || [];
-  if (!state.selectedObject && state.objects.length > 0) {
-    state.selectedObject = objectName(state.objects[0]);
+  if (state.selectedObject && !state.objects.some((object) => objectName(object) === state.selectedObject)) {
+    state.selectedObject = "";
+    state.objectDetail = null;
+    state.records = [];
+    state.recordTotal = 0;
   }
 }
 
@@ -194,6 +272,11 @@ async function loadRecords() {
 async function openCreateDrawer() {
   if (!state.objectDetail) {
     await loadObjectDetail();
+  }
+  if (!objectCanCreate()) {
+    state.error = objectCapabilityReason() || `${state.selectedObject} cannot create records.`;
+    render();
+    return;
   }
   state.selectedRecordId = "";
   state.fieldErrors = [];
@@ -331,13 +414,13 @@ async function undeleteSelectedRecord(id) {
 
 function render() {
   const selected = state.objectDetail || state.objects.find((object) => objectName(object) === state.selectedObject);
-  const title = selected ? objectLabel(selected) : "Local data";
+  const title = selected ? objectLabel(selected) : "Local Data";
   root.dataset.loading = "false";
   root.innerHTML = `
     <main class="dbm-shell">
       <header class="dbm-header">
         <div>
-          <div class="dbm-kicker">DB Record Manager</div>
+          <div class="dbm-kicker">Local Data</div>
           <h1>${escapeHTML(title)}</h1>
         </div>
         <div class="dbm-status">
@@ -357,18 +440,25 @@ function render() {
 
 function renderObjectRail() {
   const query = normalizeName(state.objectQuery);
-  const objects = state.objects.filter((object) => {
+  const objects = state.objects.filter((object) => objectMatchesFilter(object)).filter((object) => {
     const haystack = `${objectName(object)} ${objectLabel(object)} ${object.pluralLabel || ""}`;
     return normalizeName(haystack).includes(query);
   });
   const buttons = objects.map((object) => {
     const name = objectName(object);
     const selected = name === state.selectedObject;
+    const category = objectCategory(object);
+    const capabilities = objectCapabilities(object);
+    const readOnly = capabilities.createable === false || capabilities.updateable === false;
     return `
       <button class="dbm-object" type="button" data-action="select-object" data-object="${attr(name)}" aria-selected="${selected}">
         <span>
           <strong>${escapeHTML(objectLabel(object))}</strong>
           <small>${escapeHTML(name)}</small>
+          <small>
+            <b>${escapeHTML(categoryLabel(category))}</b>
+            ${readOnly ? `<b>Read-only</b>` : ""}
+          </small>
         </span>
         <em>${escapeHTML(object.records ?? object.recordCount ?? 0)}</em>
       </button>
@@ -380,6 +470,7 @@ function renderObjectRail() {
         <span>Objects</span>
         <input type="search" data-action="object-search" value="${attr(state.objectQuery)}" placeholder="Search objects">
       </label>
+      ${renderObjectFilters()}
       <div class="dbm-object-list">
         ${buttons || `<div class="dbm-empty">No matching objects</div>`}
       </div>
@@ -387,10 +478,44 @@ function renderObjectRail() {
   `;
 }
 
+function renderObjectFilters() {
+  const filters = [
+    ["data", "Data"],
+    ["custom", "Custom"],
+    ["standard", "Standard"],
+    ["setup", "Setup"],
+    ["all", "All"]
+  ];
+  return `
+    <div class="dbm-object-filters" aria-label="Object filters">
+      ${filters.map(([value, label]) => `
+        <button type="button" data-action="object-filter" data-filter="${attr(value)}" aria-pressed="${state.objectFilter === value}">
+          ${escapeHTML(label)}
+        </button>
+      `).join("")}
+    </div>
+  `;
+}
+
+function categoryLabel(category) {
+  switch (category) {
+  case "custom":
+    return "Custom";
+  case "setup":
+    return "Setup";
+  case "standard":
+    return "Standard";
+  default:
+    return "Data";
+  }
+}
+
 function renderRecordTable() {
   if (!state.selectedObject) {
     return `<div class="dbm-empty dbm-empty-large">Select an object to browse records.</div>`;
   }
+  const canCreate = objectCanCreate();
+  const createReason = objectCapabilityReason();
   const fields = (state.objectDetail?.fields || []).filter((field) => getFieldName(field) !== "Id").slice(0, 6);
   const columnHeaders = fields.map((field) => `<th>${escapeHTML(getFieldLabel(field))}</th>`).join("");
   const deletedHeader = state.includeDeleted ? "<th>Deleted</th>" : "";
@@ -426,8 +551,9 @@ function renderRecordTable() {
         Show deleted
       </label>
       <button type="button" class="dbm-icon-button" data-action="refresh" title="Refresh">&#8635;</button>
-      <button type="button" class="dbm-primary" data-action="create-record">Create</button>
+      <button type="button" class="dbm-primary" data-action="create-record" ${canCreate ? "" : "disabled"} title="${attr(canCreate ? "Create record" : createReason || "Create is unavailable")}">Create</button>
     </div>
+    ${!canCreate && createReason ? `<div class="dbm-capability-note">${escapeHTML(createReason)}</div>` : ""}
     <div class="dbm-table-wrap">
       <table class="dbm-table">
         <thead>
@@ -455,6 +581,7 @@ function renderRecordForm() {
   const isCreate = state.editing.mode === "create";
   const title = isCreate ? `New ${detail?.label || state.selectedObject}` : recordTitle(record);
   const deleted = recordDeleted(record);
+  const canSave = isCreate ? objectCanCreate() : objectCanUpdate();
   const fields = (detail?.fields || []).map((field) => renderFieldRow(field, record)).join("");
   return `
     <aside class="dbm-drawer" aria-label="Record form">
@@ -469,10 +596,10 @@ function renderRecordForm() {
         <div class="dbm-field-list">${fields}</div>
         <div class="dbm-drawer-footer">
           ${state.error ? `<div class="dbm-form-error">${escapeHTML(state.error)}</div>` : ""}
-          ${!isCreate && deleted ? `<button type="button" class="dbm-secondary" data-action="undelete-record" data-record-id="${attr(record.id)}">Undelete</button>` : ""}
-          ${!isCreate && !deleted ? `<button type="button" class="dbm-danger" data-action="delete-record" data-record-id="${attr(record.id)}">Delete</button>` : ""}
+          ${!isCreate && deleted && objectCanUndelete() ? `<button type="button" class="dbm-secondary" data-action="undelete-record" data-record-id="${attr(record.id)}">Undelete</button>` : ""}
+          ${!isCreate && !deleted && objectCanDelete() ? `<button type="button" class="dbm-danger" data-action="delete-record" data-record-id="${attr(record.id)}">Delete</button>` : ""}
           <button type="button" class="dbm-secondary" data-action="close-drawer">Cancel</button>
-          <button type="button" class="dbm-primary" data-action="save-record" ${state.saving ? "disabled" : ""}>${state.saving ? "Saving" : "Save"}</button>
+          <button type="button" class="dbm-primary" data-action="save-record" ${state.saving || !canSave ? "disabled" : ""}>${state.saving ? "Saving" : "Save"}</button>
         </div>
       </form>
     </aside>
@@ -646,6 +773,20 @@ root.addEventListener("click", async (event) => {
   try {
     if (action === "select-object") {
       await selectObject(actionTarget.dataset.object);
+    } else if (action === "object-filter") {
+      state.objectFilter = actionTarget.dataset.filter || "data";
+      if (state.selectedObject) {
+        const selected = selectedObjectSummary();
+        if (selected && !objectMatchesFilter(selected)) {
+          state.selectedObject = "";
+          state.selectedRecordId = "";
+          state.objectDetail = null;
+          state.records = [];
+          state.recordTotal = 0;
+          state.editing = null;
+        }
+      }
+      render();
     } else if (action === "refresh") {
       await loadObjects();
       await loadRecords();

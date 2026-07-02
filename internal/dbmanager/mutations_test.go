@@ -1,6 +1,7 @@
 package dbmanager_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/dbmanager"
@@ -52,6 +53,33 @@ func TestManagerCreateRecordReturnsFieldErrors(t *testing.T) {
 	}})
 	if result.Success || result.StatusCode == "" || !containsString(result.Fields, "Name") {
 		t.Fatalf("result = %#v", result)
+	}
+}
+
+func TestManagerCreateRecordBlocksSetupObjects(t *testing.T) {
+	org := testManagerOrg()
+	org.Objects["Profile"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Profile",
+			Label:   "Profile",
+			Fields: map[string]storage.Field{
+				"Id":   {APIName: "Id", Type: storage.FieldID, Createable: storage.BoolFlag(false), Updateable: storage.BoolFlag(false)},
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	manager := dbmanager.New(&org)
+
+	result := manager.CreateRecord("Profile", dbmanager.MutationPayload{Fields: map[string]dbmanager.FieldInput{
+		"Name": {State: "value", Value: "Standard User"},
+	}})
+
+	if result.Success || result.StatusCode != "INVALID_OPERATION" || !strings.Contains(result.Message, "metadata-backed") {
+		t.Fatalf("result = %#v", result)
+	}
+	if len(org.Objects["Profile"].Records) != 0 {
+		t.Fatalf("records = %#v, want none", org.Objects["Profile"].Records)
 	}
 }
 

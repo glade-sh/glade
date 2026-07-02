@@ -23,7 +23,7 @@ func TestDBManagerServesBrowserAssets(t *testing.T) {
 	if got := page.Header().Get("Content-Type"); !strings.HasPrefix(got, "text/html") {
 		t.Fatalf("page Content-Type = %q", got)
 	}
-	if body := page.Body.String(); !strings.Contains(body, "Glade DB Record Manager") || !strings.Contains(body, "/db/assets/app.js") {
+	if body := page.Body.String(); !strings.Contains(body, "Glade Local Data") || !strings.Contains(body, "/db/assets/app.js") {
 		t.Fatalf("page body missing DB manager shell markers: %s", body)
 	}
 
@@ -33,7 +33,7 @@ func TestDBManagerServesBrowserAssets(t *testing.T) {
 		t.Fatalf("app status = %d body=%s", app.Code, app.Body.String())
 	}
 	body := app.Body.String()
-	for _, marker := range []string{"renderObjectRail", "renderRecordTable", "renderRecordForm", "createRecord", "updateRecord", "lookupSearch"} {
+	for _, marker := range []string{"renderObjectRail", "renderObjectFilters", "objectMatchesFilter", "Local Data", "Data", "Setup", "renderRecordForm", "createRecord", "updateRecord", "lookupSearch"} {
 		if !strings.Contains(body, marker) {
 			t.Fatalf("app.js missing marker %q", marker)
 		}
@@ -62,6 +62,9 @@ func TestDBManagerAPIListsObjectsFieldsAndRecords(t *testing.T) {
 	if len(objectList.Objects) != 1 || objectList.Objects[0].Name != "Account" || objectList.Objects[0].Records != 1 {
 		t.Fatalf("object list = %#v", objectList)
 	}
+	if objectList.Objects[0].Category != "standard" || !objectList.Objects[0].Capabilities.Createable {
+		t.Fatalf("object metadata = %#v", objectList.Objects[0])
+	}
 
 	detail := httptest.NewRecorder()
 	handler.ServeHTTP(detail, httptest.NewRequest(http.MethodGet, serverTestDataPath+"/glade/db-manager/objects/Account", nil))
@@ -71,6 +74,9 @@ func TestDBManagerAPIListsObjectsFieldsAndRecords(t *testing.T) {
 	var objectDetail dbmanager.ObjectDetail
 	if err := json.Unmarshal(detail.Body.Bytes(), &objectDetail); err != nil {
 		t.Fatal(err)
+	}
+	if objectDetail.Category != "standard" || !objectDetail.Capabilities.Createable {
+		t.Fatalf("object detail metadata = %#v", objectDetail)
 	}
 	assertDBManagerField(t, objectDetail, "Industry", "picklist")
 	assertDBManagerField(t, objectDetail, "Services__c", "multipicklist")
