@@ -97,33 +97,94 @@ export function createFetchWireAdapter(endpoint, mapBody) {
       const cached = readLDSCache(this.cacheKey);
       if (cached) {
         this.__lastEmptyValue = null;
+        emitRuntimeEvent({
+          kind: "lds",
+          label: endpoint,
+          status: "cache-hit",
+          detail: {
+            endpoint,
+            body: this.body,
+            result: cached?.data,
+          },
+        });
         this.dataCallback(cached);
         return Promise.resolve(cached);
       }
     }
     const ticket = ++this.pending;
+    const started = nowMs();
+    let responseStatus = 0;
     return fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(this.body),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        responseStatus = response.status || 0;
+        return response.json();
+      })
       .then((result) => {
+        emitRuntimeEvent({
+          kind: "network",
+          label: endpoint,
+          status: result?.error ? "error" : "success",
+          detail: {
+            endpoint,
+            method: "POST",
+            status: responseStatus,
+            durationMs: elapsedMs(started),
+          },
+        });
         if (ticket !== this.pending) {
           return;
         }
         const value = attachRefresh(wireValue(result), this);
         this.__lastEmptyValue = null;
         writeLDSCache(this.cacheKey, value);
+        emitRuntimeEvent({
+          kind: "lds",
+          label: endpoint,
+          status: result?.error ? "error" : "success",
+          detail: {
+            endpoint,
+            body: this.body,
+            result: result?.data,
+            error: result?.error,
+            durationMs: elapsedMs(started),
+          },
+        });
         this.dataCallback(value);
         return value;
       })
       .catch((err) => {
+        emitRuntimeEvent({
+          kind: "network",
+          label: endpoint,
+          status: "error",
+          detail: {
+            endpoint,
+            method: "POST",
+            status: responseStatus || undefined,
+            durationMs: elapsedMs(started),
+            error: errorMessage(err),
+          },
+        });
         if (ticket !== this.pending) {
           return;
         }
         const value = attachRefresh({ error: { message: String(err) } }, this);
         this.__lastEmptyValue = null;
+        emitRuntimeEvent({
+          kind: "lds",
+          label: endpoint,
+          status: "error",
+          detail: {
+            endpoint,
+            body: this.body,
+            error: errorMessage(err),
+            durationMs: elapsedMs(started),
+          },
+        });
         this.dataCallback(value);
         return value;
       });
@@ -163,6 +224,9 @@ export function createApexWireAdapterWithOptions(className, methodName, options 
     if (options.cacheable) {
       const cached = readLDSCache(this.cacheKey);
       if (cached) {
+        emitApexEvent(className, methodName, config ?? {}, "cache-hit", {
+          result: cached?.data,
+        });
         this.dataCallback(cached);
         return Promise.resolve(cached);
       }
@@ -218,6 +282,10 @@ export function invokeApex(className, methodName, params) {
   } catch (err) {
     return Promise.reject(err);
   }
+  const started = nowMs();
+  let responseStatus = 0;
+  let networkRecorded = false;
+  let apexRecorded = false;
   return fetch("/lightning/wire/apex", {
     method: "POST",
     headers: { "Content-Type": "application/json", ...localContextHeaders() },
@@ -227,16 +295,69 @@ export function invokeApex(className, methodName, params) {
       params: bodyParams,
     }),
   })
-    .then((response) => response.json())
+    .then((response) => {
+      responseStatus = response.status || 0;
+      return response.json();
+    })
     .then((result) => {
+      const durationMs = elapsedMs(started);
+      networkRecorded = true;
+      emitRuntimeEvent({
+        kind: "network",
+        label: "/lightning/wire/apex",
+        status: result?.error ? "error" : "success",
+        detail: {
+          endpoint: "/lightning/wire/apex",
+          method: "POST",
+          status: responseStatus,
+          durationMs,
+        },
+      });
       if (result?.error) {
         const body = result.error.body || result.error;
         const err = new Error(body.message || result.error.message || "Apex invocation failed");
         err.body = body;
         err.status = result.error.status;
+        apexRecorded = true;
+        emitApexEvent(className, methodName, bodyParams, "error", {
+          durationMs,
+          body,
+          status: err.status,
+        });
         throw err;
       }
+      apexRecorded = true;
+      emitApexEvent(className, methodName, bodyParams, "success", {
+        durationMs,
+        result: result?.data,
+      });
       return result?.data;
+    })
+    .catch((err) => {
+      const durationMs = elapsedMs(started);
+      if (!networkRecorded) {
+        emitRuntimeEvent({
+          kind: "network",
+          label: "/lightning/wire/apex",
+          status: "error",
+          detail: {
+            endpoint: "/lightning/wire/apex",
+            method: "POST",
+            status: responseStatus || err?.status,
+            durationMs,
+            error: errorMessage(err),
+          },
+        });
+      }
+      if (!apexRecorded) {
+        emitApexEvent(className, methodName, bodyParams, "error", {
+          durationMs,
+          body: err?.body,
+          status: err?.status,
+          error: errorMessage(err),
+        });
+      }
+      throw err;
     });
 }
 
@@ -364,4 +485,54 @@ function localQuery(values) {
   }
   const text = params.toString();
   return text ? `?${text}` : "";
+}
+
+function emitApexEvent(className, methodName, params, status, detail = {}) {
+  emitRuntimeEvent({
+    kind: "apex",
+    label: `${className}.${methodName}`,
+    status,
+    detail: {
+      className,
+      method: methodName,
+      params,
+      ...detail,
+    },
+  });
+}
+
+function emitRuntimeEvent(detail) {
+  if (typeof document === "undefined" || typeof CustomEvent === "undefined") {
+    return;
+  }
+  defer(() => {
+    try {
+      document.dispatchEvent(new CustomEvent("glade:runtime-event", { detail }));
+    } catch (_err) {
+      // Runtime event collection must not affect wire behavior.
+    }
+  });
+}
+
+function nowMs() {
+  if (typeof performance !== "undefined" && typeof performance.now === "function") {
+    return performance.now();
+  }
+  return Date.now();
+}
+
+function elapsedMs(started) {
+  return Math.round((nowMs() - started) * 100) / 100;
+}
+
+function errorMessage(err) {
+  return err?.message || String(err || "");
+}
+
+function defer(callback) {
+  if (typeof queueMicrotask === "function") {
+    queueMicrotask(callback);
+    return;
+  }
+  Promise.resolve().then(callback);
 }

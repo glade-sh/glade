@@ -3,7 +3,10 @@ package lwcshell
 import (
 	"fmt"
 	"net/url"
+	"os"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/lwc"
@@ -46,13 +49,14 @@ type ShellRoute struct {
 }
 
 type ShellComponent struct {
-	Name          string                 `json:"name"`
-	Namespace     string                 `json:"namespace"`
-	QualifiedName string                 `json:"qualifiedName"`
-	Label         string                 `json:"label"`
-	Exposed       bool                   `json:"exposed"`
-	Targets       []string               `json:"targets,omitempty"`
-	TargetSupport []ShellComponentTarget `json:"targetSupport,omitempty"`
+	Name          string                   `json:"name"`
+	Namespace     string                   `json:"namespace"`
+	QualifiedName string                   `json:"qualifiedName"`
+	Label         string                   `json:"label"`
+	Exposed       bool                     `json:"exposed"`
+	Targets       []string                 `json:"targets,omitempty"`
+	TargetSupport []ShellComponentTarget   `json:"targetSupport,omitempty"`
+	APIProperties []ShellComponentProperty `json:"apiProperties,omitempty"`
 }
 
 type ShellComponentTarget struct {
@@ -60,6 +64,15 @@ type ShellComponentTarget struct {
 	Properties           map[string]string `json:"properties,omitempty"`
 	SupportedObjects     []string          `json:"supportedObjects,omitempty"`
 	SupportedFormFactors []string          `json:"supportedFormFactors,omitempty"`
+}
+
+type ShellComponentProperty struct {
+	Name     string `json:"name"`
+	Type     string `json:"type,omitempty"`
+	Label    string `json:"label,omitempty"`
+	Default  string `json:"default,omitempty"`
+	Required bool   `json:"required,omitempty"`
+	Source   string `json:"source,omitempty"`
 }
 
 func BuildWorkbenchModel(p project.Project, active ShellPage, activeRoute string) WorkbenchModel {
@@ -366,9 +379,171 @@ func DiscoverWorkbenchComponents(p project.Project) []ShellComponent {
 			Exposed:       meta.IsExposed,
 			Targets:       workbenchComponentTargets(meta),
 			TargetSupport: workbenchComponentTargetSupport(meta),
+			APIProperties: workbenchComponentAPIProperties(bundle, meta),
 		})
 	}
 	return out
+}
+
+var workbenchAPIPropertyPattern = regexp.MustCompile(`(?s)@api\s+(?:get\s+|set\s+)?([A-Za-z_$][A-Za-z0-9_$]*)\s*(?:=\s*([^;\n\r]+))?`)
+
+func workbenchComponentAPIProperties(bundle lwc.Bundle, meta lwc.ComponentMeta) []ShellComponentProperty {
+	byName := map[string]*ShellComponentProperty{}
+	var order []string
+	add := func(prop ShellComponentProperty) {
+		prop.Name = strings.TrimSpace(prop.Name)
+		if prop.Name == "" {
+			return
+		}
+		if prop.Type == "" {
+			prop.Type = "String"
+		}
+		if prop.Label == "" {
+			prop.Label = workbenchPropertyLabel(prop.Name)
+		}
+		key := strings.ToLower(prop.Name)
+		if current := byName[key]; current != nil {
+			*current = mergeWorkbenchProperty(*current, prop)
+			return
+		}
+		copyProp := prop
+		byName[key] = &copyProp
+		order = append(order, key)
+	}
+	for _, cfg := range meta.TargetConfigs {
+		for _, raw := range cfg.Properties {
+			name := strings.TrimSpace(raw.Name)
+			if name == "" {
+				continue
+			}
+			add(ShellComponentProperty{
+				Name:     name,
+				Type:     normalizeWorkbenchPropertyType(raw.Type),
+				Label:    strings.TrimSpace(raw.Label),
+				Default:  strings.TrimSpace(raw.Default),
+				Required: raw.Required,
+				Source:   "targetConfig",
+			})
+		}
+	}
+	data, err := os.ReadFile(bundle.JSFile)
+	if err == nil {
+		for _, match := range workbenchAPIPropertyPattern.FindAllStringSubmatch(string(data), -1) {
+			name := strings.TrimSpace(match[1])
+			kind, value := workbenchPropertyDefault(matchValue(match, 2))
+			add(ShellComponentProperty{
+				Name:    name,
+				Type:    kind,
+				Label:   workbenchPropertyLabel(name),
+				Default: value,
+				Source:  "api",
+			})
+		}
+	}
+	out := make([]ShellComponentProperty, 0, len(order))
+	for _, key := range order {
+		if prop := byName[key]; prop != nil {
+			out = append(out, *prop)
+		}
+	}
+	return out
+}
+
+func mergeWorkbenchProperty(current, incoming ShellComponentProperty) ShellComponentProperty {
+	if current.Source == "targetConfig" && incoming.Source == "api" {
+		return current
+	}
+	if incoming.Type != "" {
+		current.Type = incoming.Type
+	}
+	if incoming.Label != "" {
+		current.Label = incoming.Label
+	}
+	if incoming.Default != "" || current.Default == "" {
+		current.Default = incoming.Default
+	}
+	if incoming.Required {
+		current.Required = true
+	}
+	if incoming.Source != "" {
+		current.Source = incoming.Source
+	}
+	return current
+}
+
+func matchValue(matches []string, index int) string {
+	if index >= 0 && index < len(matches) {
+		return matches[index]
+	}
+	return ""
+}
+
+func workbenchPropertyDefault(raw string) (kind string, value string) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "String", ""
+	}
+	raw = strings.TrimSuffix(raw, ";")
+	switch strings.ToLower(raw) {
+	case "true", "false":
+		return "Boolean", strings.ToLower(raw)
+	case "null", "undefined":
+		return "String", ""
+	}
+	if unquoted, err := strconv.Unquote(raw); err == nil {
+		return "String", unquoted
+	}
+	if _, err := strconv.ParseFloat(raw, 64); err == nil {
+		return "Number", raw
+	}
+	if strings.HasPrefix(raw, "[") {
+		return "Array", raw
+	}
+	if strings.HasPrefix(raw, "{") {
+		return "Object", raw
+	}
+	return "String", strings.Trim(raw, `'"`)
+}
+
+func normalizeWorkbenchPropertyType(value string) string {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "boolean", "bool":
+		return "Boolean"
+	case "integer", "int", "long", "double", "decimal", "number":
+		return "Number"
+	case "array", "list":
+		return "Array"
+	case "object":
+		return "Object"
+	default:
+		return "String"
+	}
+}
+
+func workbenchPropertyLabel(name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return ""
+	}
+	var words []string
+	var current strings.Builder
+	for i, r := range name {
+		if i > 0 && r >= 'A' && r <= 'Z' && current.Len() > 0 {
+			words = append(words, current.String())
+			current.Reset()
+		}
+		current.WriteRune(r)
+	}
+	if current.Len() > 0 {
+		words = append(words, current.String())
+	}
+	for i, word := range words {
+		if word == "" {
+			continue
+		}
+		words[i] = strings.ToUpper(word[:1]) + word[1:]
+	}
+	return strings.Join(words, " ")
 }
 
 func workbenchComponentTargets(meta lwc.ComponentMeta) []string {

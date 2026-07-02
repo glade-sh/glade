@@ -4,13 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/lwcshell"
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/storage"
 )
 
 func TestRunDevLWCHelpUsesLWCHelp(t *testing.T) {
@@ -41,7 +44,8 @@ func TestRunDevLWCHelpUsesLWCHelp(t *testing.T) {
 	for _, want := range []string{
 		"Start a local LWC preview development shell",
 		"Preview feature:",
-		"glade dev lwc [--project <root>] [--context <name>] [--open]",
+		"glade dev lwc [--project <root>] [--db <path>] [--context <name>] [--open]",
+		"--db .glade/envs/lwc-preview.sqlite",
 		"--target component|record-page|app-page|home-page|tab|url-addressable|record-action|global-action|utility-bar|flow-screen|flow-action",
 		"--action Update_Status",
 		"--flow Membership_Flow",
@@ -414,4 +418,173 @@ func TestRunDevLWCOpenDefaultsToWorkbench(t *testing.T) {
 	if !strings.HasSuffix(opened, "/lwc") {
 		t.Fatalf("opened = %q", opened)
 	}
+}
+
+func TestRunDevLWCOpenDefaultsToWorkbenchWhenProjectHasDefaultContext(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+  <isExposed>true</isExposed>
+</LightningComponentBundle>`)
+	writeTestFile(t, filepath.Join(root, "glade.lwc.json"), `{
+  "defaultContext": "accountRecord",
+  "contexts": {
+    "accountRecord": {
+      "target": "recordPage",
+      "objectApiName": "Account",
+      "recordId": "001000000000001AAA",
+      "page": "Account_Record_Page"
+    }
+  }
+}`)
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	var opened string
+	var stdout bytes.Buffer
+	oldOpen := devLWCOpenURL
+	devLWCOpenURL = func(url string) error {
+		opened = url
+		cancel()
+		return nil
+	}
+	defer func() { devLWCOpenURL = oldOpen }()
+
+	err := runDevLWC(ctx, []string{"--project", root, "--addr", "127.0.0.1:0", "--open"}, &stdout, &bytes.Buffer{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasSuffix(opened, "/lwc") {
+		t.Fatalf("opened = %q", opened)
+	}
+	if !strings.Contains(stdout.String(), "Default context accountRecord: ") {
+		t.Fatalf("stdout missing default context label:\n%s", stdout.String())
+	}
+	if strings.Contains(stdout.String(), "Selected context accountRecord: ") {
+		t.Fatalf("stdout should not call implicit default context selected:\n%s", stdout.String())
+	}
+}
+
+func TestRunDevLWCUsesDBForLocalBuilderSearch(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+  <isExposed>true</isExposed>
+</LightningComponentBundle>`)
+	dbPath := filepath.Join(root, ".glade", "envs", "lwc-preview.sqlite")
+	store, org, err := openDBStore(dbPath, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	storage.EnsureStandardObject(&org, "Account")
+	account := org.Objects["Account"]
+	if account.Records == nil {
+		account.Records = make(map[storage.ID]storage.Record)
+	}
+	account.Records["001DBPREVIEW001"] = storage.Record{
+		ID:     "001DBPREVIEW001",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Database Preview Account"),
+		},
+	}
+	org.Objects["Account"] = account
+	if err := store.Save(org); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	readyPath := filepath.Join(t.TempDir(), "ready.json")
+	var stdout, stderr bytes.Buffer
+	done := make(chan error, 1)
+	go func() {
+		done <- runDevLWC(ctx, []string{"--project", root, "--addr", "127.0.0.1:0", "--db", dbPath, "--ready-file", readyPath, "--no-progress"}, &stdout, &stderr)
+	}()
+
+	ready := waitForDevLWCReadyFileOrDone(t, readyPath, done, &stdout, &stderr)
+	client := http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(ready.URL + "/lightning/local/records.json?object=Account&q=database")
+	if err != nil {
+		cancel()
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		cancel()
+		t.Fatalf("status = %d", resp.StatusCode)
+	}
+	var payload struct {
+		Records []struct {
+			ID    string `json:"id"`
+			Title string `json:"title"`
+		} `json:"records"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		cancel()
+		t.Fatal(err)
+	}
+	cancel()
+	if err := <-done; err != nil {
+		t.Fatalf("runDevLWC error = %v stdout=%q stderr=%q", err, stdout.String(), stderr.String())
+	}
+	if len(payload.Records) != 1 || payload.Records[0].ID != "001DBPREVIEW001" || payload.Records[0].Title != "Database Preview Account" {
+		t.Fatalf("records = %#v", payload.Records)
+	}
+}
+
+func waitForDevLWCReadyFile(t *testing.T, path string) devLWCReadyFile {
+	t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	var lastErr error
+	for time.Now().Before(deadline) {
+		data, err := os.ReadFile(path)
+		if err == nil {
+			var ready devLWCReadyFile
+			if err := json.Unmarshal(data, &ready); err != nil {
+				t.Fatalf("ready file JSON: %v\n%s", err, data)
+			}
+			if ready.URL != "" {
+				return ready
+			}
+		} else {
+			lastErr = err
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+	t.Fatalf("timed out waiting for ready file %s: %v", path, lastErr)
+	return devLWCReadyFile{}
+}
+
+func waitForDevLWCReadyFileOrDone(t *testing.T, path string, done <-chan error, stdout, stderr *bytes.Buffer) devLWCReadyFile {
+	t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	var lastErr error
+	for time.Now().Before(deadline) {
+		select {
+		case err := <-done:
+			if err != nil {
+				t.Fatalf("runDevLWC error before ready file = %v stdout=%q stderr=%q", err, stdout.String(), stderr.String())
+			}
+			t.Fatalf("runDevLWC exited before ready file stdout=%q stderr=%q", stdout.String(), stderr.String())
+		default:
+		}
+		data, err := os.ReadFile(path)
+		if err == nil {
+			var ready devLWCReadyFile
+			if err := json.Unmarshal(data, &ready); err != nil {
+				t.Fatalf("ready file JSON: %v\n%s", err, data)
+			}
+			if ready.URL != "" {
+				return ready
+			}
+		} else {
+			lastErr = err
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+	t.Fatalf("timed out waiting for ready file %s: %v stdout=%q stderr=%q", path, lastErr, stdout.String(), stderr.String())
+	return devLWCReadyFile{}
 }

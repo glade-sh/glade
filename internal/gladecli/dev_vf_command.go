@@ -139,8 +139,16 @@ func normalizeDevVFServeError(err error) error {
 }
 
 func runDevVFReload(ctx context.Context, root string, srv *server.Server, w io.Writer) {
+	runDevReload(ctx, root, srv, w, "Visualforce")
+}
+
+func runDevReload(ctx context.Context, root string, srv *server.Server, w io.Writer, label string) {
 	if w == nil {
 		w = io.Discard
+	}
+	label = strings.TrimSpace(label)
+	if label == "" {
+		label = "local"
 	}
 	cfg := watch.Config{Root: root}
 	previous, err := watch.CaptureSnapshot(root)
@@ -179,28 +187,87 @@ func runDevVFReload(ctx context.Context, root string, srv *server.Server, w io.W
 			if !relevant {
 				continue
 			}
+			runID := fmt.Sprintf("save-%d", time.Now().UnixNano())
+			started := time.Now()
+			changedFiles := devReloadChangedFiles(root, changes)
+			if srv != nil {
+				srv.RecordDevRun(server.DevRunEvent{
+					ID:           runID,
+					Status:       "running",
+					Label:        fmt.Sprintf("Saved %d file(s)", len(changedFiles)),
+					ChangedFiles: changedFiles,
+					StartedAt:    started.Format(time.RFC3339Nano),
+				})
+			}
+			recordReloadError := func(err error) {
+				if srv != nil && err != nil {
+					srv.RecordDevRun(server.DevRunEvent{
+						ID:         runID,
+						Status:     "error",
+						Error:      err.Error(),
+						DurationMS: int(time.Since(started).Milliseconds()),
+						FinishedAt: time.Now().Format(time.RFC3339Nano),
+					})
+				}
+			}
 			p, err := project.Load(root)
 			if err != nil {
 				fmt.Fprintf(w, "reload failed: %v\n", err)
+				recordReloadError(err)
 				continue
 			}
 			source, err := server.NewSourceMetadataFromProject(p)
 			if err != nil {
 				fmt.Fprintf(w, "reload failed: %v\n", err)
+				recordReloadError(err)
 				continue
 			}
 			index, err := loadIndex(root)
 			if err != nil {
 				fmt.Fprintf(w, "reload failed: %v\n", err)
+				recordReloadError(err)
 				continue
 			}
 			if srv != nil {
 				machine, runtimeErr := buildDevVFRuntime(index)
 				srv.ReloadProjectState(source, index, machine, runtimeErr)
+				status := "success"
+				errorMessage := ""
+				if runtimeErr != nil {
+					status = "error"
+					errorMessage = runtimeErr.Error()
+				}
+				srv.RecordDevRun(server.DevRunEvent{
+					ID:         runID,
+					Status:     status,
+					Error:      errorMessage,
+					DurationMS: int(time.Since(started).Milliseconds()),
+					FinishedAt: time.Now().Format(time.RFC3339Nano),
+					Reload:     status == "success",
+				})
 			}
-			fmt.Fprintf(w, "Reloaded Visualforce project metadata (%d change(s)).\n", len(changes))
+			fmt.Fprintf(w, "Reloaded %s project metadata (%d change(s)).\n", label, len(changes))
 		}
 	}
+}
+
+func devReloadChangedFiles(root string, changes []watch.Change) []string {
+	files := make([]string, 0, len(changes))
+	seen := map[string]bool{}
+	for _, change := range changes {
+		path := filepath.Clean(change.Path)
+		if rel, err := filepath.Rel(root, path); err == nil && !strings.HasPrefix(rel, "..") {
+			path = rel
+		}
+		path = filepath.ToSlash(path)
+		if path == "." || path == "" || seen[path] {
+			continue
+		}
+		seen[path] = true
+		files = append(files, path)
+	}
+	sort.Strings(files)
+	return files
 }
 
 func printDevVFStartupSummary(w io.Writer, addr string, p project.Project) {

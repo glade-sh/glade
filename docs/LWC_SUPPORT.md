@@ -10,6 +10,11 @@ builder route `/lwc/builder`, and `/lwc/preview/*` routes. Visualforce appears
 here only where a Visualforce-backed tab or shared Lightning Out runtime
 affects an LWC.
 
+The local shell UI is the Workbench Console. It is designed for developer
+preview and debugging of local LWCs in component, record page, builder, tab, and
+app contexts. It exposes local diagnostics for Apex, LDS, navigation,
+PageReference, and runtime issues.
+
 Generated capture rows live in
 [generated/LWC_SHELL_SUPPORT.md](generated/LWC_SHELL_SUPPORT.md). They are
 prepared from the `glade-tools` LWC capture command. Two-sided browser capture
@@ -20,7 +25,7 @@ Salesforce target org.
 
 | Host | Status | Support key | Notes |
 | --- | --- | --- | --- |
-| LWC workbench | Preview feature | `lwc.host.lightning-shell` | The printed base URL at `/` and `/lwc` opens a local home page with tabs and discovered routes. `/lwc/builder` opens the draft page composer with a filterable available-LWC catalog, drag-and-drop placement, layout switching, seeded record context, active context, and diagnostics. |
+| LWC workbench | Preview feature | `lwc.host.lightning-shell` | The printed base URL at `/` and `/lwc` opens a local home page with tabs and discovered routes. `/lwc/builder` opens the draft page composer with a filterable available-LWC catalog, drag-and-drop placement, layout switching, target-specific context controls, DB-backed object and record search for record pages, active context, and diagnostics. |
 | Direct component shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/component/<namespace>/<component>` mounts one exposed component for local development. |
 | Record page shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>` resolves FlexiPage regions and record context. |
 | App page shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/app/<Page>` resolves app-page FlexiPage metadata. |
@@ -40,7 +45,9 @@ Salesforce target org.
 ```bash
 glade toolchain install
 glade dev lwc --project . --open
+glade dev lwc --project . --db .glade/envs/lwc-preview.sqlite --open
 glade dev lwc --project . --context accountRecord --open
+glade dev lwc --project . --db .glade/envs/lwc-preview.sqlite --context accountRecord --open
 glade dev lwc --project . --context-file config/lwc-contexts.json --context accountRecord --open
 glade dev lwc --project . --target record-page --object Account --record 001000000000001AAA --page Account_Record_Page --open
 glade dev lwc --project . --port 8080 --open
@@ -56,7 +63,9 @@ target selects the first browser route.
 
 `/lightning/local/context.json` returns the active route, PageReference, route
 context, mounted components, discovered apps, named context presets,
-diagnostics, route list, and service support.
+diagnostics, route list, and service support. `/lightning/local/objects.json`
+and `/lightning/local/records.json` expose the active local org data used by
+the builder's record-page object and record pickers.
 
 ## Runtime Services
 

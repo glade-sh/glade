@@ -66,6 +66,89 @@ func TestBuildWorkbenchModelUsesConsoleModeForConsoleApplication(t *testing.T) {
 	}
 }
 
+func TestBuildWorkbenchModelIncludesRecordPageAndTabRoutes(t *testing.T) {
+	root := t.TempDir()
+	tabPath := writeProjectFile(t, root, "force-app/main/default/tabs/Account_Workbench.tab-meta.xml", `<CustomTab xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Account Workbench</label>
+  <lwcComponent>c:contextProbe</lwcComponent>
+</CustomTab>`)
+	pagePath := writeProjectFile(t, root, "force-app/main/default/flexipages/Account_Record_Page.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">
+  <masterLabel>Account Record Page</masterLabel>
+  <type>RecordPage</type>
+  <sobjectType>Account</sobjectType>
+</FlexiPage>`)
+	p := project.Project{Root: root, TabFiles: []string{tabPath}, FlexiPageFiles: []string{pagePath}}
+
+	model := BuildWorkbenchModel(p, ShellPage{Context: PageContext{
+		Kind:          RenderTargetRecordPage,
+		PageName:      "Account_Record_Page",
+		ObjectAPIName: "Account",
+		RecordID:      "001000000000001AAA",
+	}}, "/lwc/preview/record/Account/001000000000001AAA?page=Account_Record_Page")
+
+	if model.ActiveRoute == "" || model.Active.Context.Kind != RenderTargetRecordPage {
+		t.Fatalf("active model = %#v", model)
+	}
+	if !slices.ContainsFunc(model.Routes, func(route ShellRoute) bool {
+		return route.Kind == RenderTargetRecordPage && route.PageName == "Account_Record_Page"
+	}) {
+		t.Fatalf("routes missing record page: %#v", model.Routes)
+	}
+	if !slices.ContainsFunc(model.Routes, func(route ShellRoute) bool {
+		return route.Kind == RenderTargetTab && route.TabName == "Account_Workbench"
+	}) {
+		t.Fatalf("routes missing tab: %#v", model.Routes)
+	}
+}
+
+func TestDiscoverWorkbenchComponentsInfersAPIProperties(t *testing.T) {
+	root := t.TempDir()
+	jsPath := writeProjectFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js", `import { LightningElement, api } from "lwc";
+export default class ContextProbe extends LightningElement {
+  @api title = "Local Shell Context";
+  @api recordId;
+  @api disabled = false;
+}`)
+	metaPath := writeProjectFile(t, root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml", `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+  <apiVersion>61.0</apiVersion>
+  <isExposed>true</isExposed>
+  <masterLabel>Context Probe</masterLabel>
+  <targets>
+    <target>lightning__AppPage</target>
+  </targets>
+  <targetConfigs>
+    <targetConfig targets="lightning__AppPage">
+      <property name="title" type="String" label="Title" default="Configured Title"/>
+    </targetConfig>
+  </targetConfigs>
+</LightningComponentBundle>`)
+	p := project.Project{Root: root, LWCFiles: []string{jsPath}, LWCMetaFiles: []string{metaPath}}
+
+	components := DiscoverWorkbenchComponents(p)
+
+	if len(components) != 1 {
+		t.Fatalf("components = %#v", components)
+	}
+	props := components[0].APIProperties
+	if len(props) != 3 {
+		t.Fatalf("api properties = %#v", props)
+	}
+	want := map[string]ShellComponentProperty{
+		"title":    {Name: "title", Type: "String", Label: "Title", Default: "Configured Title", Source: "targetConfig"},
+		"recordId": {Name: "recordId", Type: "String", Label: "Record Id", Source: "api"},
+		"disabled": {Name: "disabled", Type: "Boolean", Label: "Disabled", Default: "false", Source: "api"},
+	}
+	for _, prop := range props {
+		expected, ok := want[prop.Name]
+		if !ok {
+			t.Fatalf("unexpected prop %#v in %#v", prop, props)
+		}
+		if prop != expected {
+			t.Fatalf("prop %s = %#v, want %#v", prop.Name, prop, expected)
+		}
+	}
+}
+
 func TestDiscoverShellRoutesIncludesUtilityBarFlexiPages(t *testing.T) {
 	root := t.TempDir()
 	writeProjectFile(t, root, "force-app/main/default/flexipages/Support_Utility.flexipage-meta.xml", `<FlexiPage xmlns="http://soap.sforce.com/2006/04/metadata">

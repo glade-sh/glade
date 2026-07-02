@@ -2,7 +2,7 @@
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Local Lightning</p>
-  <p>Serve Lightning Web Components from an SFDX project with a local home page, builder, page context, local data, diagnostics, and a Glade-owned Lightning workbench.</p>
+  <p>Serve Lightning Web Components from an SFDX project with the Workbench Console, route discovery, page context, local data, diagnostics, and a Glade-owned Lightning preview canvas.</p>
   <ul>
     <li>Start <code>glade dev lwc --open</code>.</li>
     <li>Select contexts from <code>glade.lwc.json</code>.</li>
@@ -27,16 +27,28 @@ Install the local LWC toolchain:
 glade toolchain install
 ```
 
-Start the workbench:
+Start the Workbench Console:
 
 ```bash
 glade dev lwc --project . --open
 ```
 
-The printed base URL opens home at `/`; `/lwc` is the stable home link. Use the
-**Open builder** link or `/lwc/builder` to compose a local page, drag LWCs into
-canvas regions, switch layouts, and tune record, app, community, Flow, and
-PageReference context.
+Use a DB-backed local org when record-page LWCs, LDS, Apex, or the builder's
+record picker should use persisted data:
+
+```bash
+glade db seed --db .glade/envs/lwc-preview.sqlite --project . data/lwc-preview-db.json
+glade dev lwc --project . --db .glade/envs/lwc-preview.sqlite --open
+```
+
+The printed base URL opens the Workbench Console at `/`; `/lwc` is the stable
+home link. The console has route discovery, a preview canvas, editable context,
+and debug panes for Apex, LDS, network calls, navigation/events, and runtime
+issues. Use the **Open builder** link or `/lwc/builder` to compose a local page,
+drag LWCs into canvas regions, switch layouts, keep record fields out of app and
+home contexts, search objects and records from the active local DB for record
+pages, and tune app, community, Flow, and PageReference context. Mobile preview
+uses the main canvas viewport control and does not reserve a side-by-side phone panel.
 
 Open a named context:
 
@@ -182,12 +194,11 @@ Direct flags override preset fields.
 
 ## Routes
 
-The printed base URL opens the workbench at `/`. `/lwc` opens the same
-workbench for stable links. It lists available LWCs, filters by search text and
+The printed base URL opens the Workbench Console at `/`. `/lwc` opens the same
+console for stable links. It lists available LWCs, filters by search text and
 selected target, lets you place components into draft app, home, record, tab,
 URL-addressable, action, and community contexts, and keeps active context and
-diagnostics visible. Raw preview routes remain stable for scripts and
-bookmarks:
+diagnostics visible. Raw preview routes remain stable for scripts and bookmarks:
 
 ```text
 /
@@ -254,13 +265,17 @@ Tools can read the current local shell state:
 
 ```text
 /lightning/local/context.json
+/lightning/local/objects.json?q=acc
+/lightning/local/records.json?object=Account&q=local
 ```
 
 The JSON includes active route, PageReference, route context, mounted
 components, discovered apps, route list, named context presets, default and
 selected context names, diagnostics when present, and service support for Apex,
 LDS, UI API shims, navigation, labels, resources, LMS, quick actions, base
-components, Experience Cloud context, Visualforce host support, and toast.
+components, Experience Cloud context, Visualforce host support, and toast. The
+object and record endpoints expose the active local org data used by the
+builder's record-page pickers.
 
 ## Data and services
 
@@ -428,8 +443,10 @@ missing SLDS assets, and unsupported Salesforce services return named
 community context and navigation issues use `GLADELWC100` through
 `GLADELWC103`, and Lightning Out host issues use `GLADELWC080` through
 `GLADELWC082`.
-Look in the workbench context panel, browser console, and
-`/lightning/local/context.json`.
+Look in the Workbench Console debug panes for Apex, LDS, network calls,
+navigation/events, and runtime issues. The workbench context panel, browser
+console, and `/lightning/local/context.json` expose the same local state for
+tools and deeper checks.
 
 ## Current Limits
 
