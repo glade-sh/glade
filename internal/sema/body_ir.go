@@ -96,11 +96,13 @@ func semaFieldScope(model map[string]typeMembers, typeName string, seen map[stri
 	if !ok {
 		return out
 	}
+	members = semaEnsureStandardSObjectTypeMembers(model, key, members)
 	for _, owner := range semaEnclosingTypeNames(members.name) {
 		ownerMembers, ok := model[normalizeName(owner)]
 		if !ok {
 			continue
 		}
+		ownerMembers = semaEnsureStandardSObjectTypeMembers(model, normalizeName(owner), ownerMembers)
 		for name, field := range ownerMembers.fields {
 			if hasModifier(field.Modifiers, "static") {
 				out[name] = field.Type
@@ -160,11 +162,24 @@ func semaResolveFieldByKey(model map[string]typeMembers, typeName, fieldKey stri
 }
 
 func semaResolveFieldFromMembers(model map[string]typeMembers, members typeMembers, fieldKey string, seen map[string]bool) (resolvedMember, bool) {
+	members = semaEnsureStandardSObjectTypeMembers(model, normalizeName(members.name), members)
 	if field, ok := members.fields[fieldKey]; ok {
 		return resolvedMember{owner: members.name, member: field}, true
 	}
 	if namespaced, ok := semaOwnerNamespacedAPIName(members.name, fieldKey); ok {
 		if field, ok := members.fields[normalizeName(namespaced)]; ok {
+			return resolvedMember{owner: members.name, member: field}, true
+		}
+	}
+	if members.sobject {
+		if field, ok := semaStandardChildRelationshipMemberForKey(members.name, fieldKey); ok {
+			if members.fields == nil {
+				members.fields = make(map[string]typesys.MemberSymbol)
+			}
+			members.fields[fieldKey] = field
+			if key := normalizeName(members.name); key != "" {
+				model[key] = members
+			}
 			return resolvedMember{owner: members.name, member: field}, true
 		}
 	}

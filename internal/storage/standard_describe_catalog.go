@@ -7,6 +7,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 //go:embed standard_describe_catalog.json.gz
@@ -87,6 +88,75 @@ type standardDescribeChildRelationshipInfo struct {
 	cascadeDelete    bool
 	restrictedDelete bool
 	conflict         bool
+}
+
+var standardObjectCatalogLookupCache struct {
+	generatedOnce    sync.Once
+	generatedByLC    map[string]standardObjectCatalogEntry
+	describeNameOnce sync.Once
+	describeNameByLC map[string]string
+	describeOnce     sync.Once
+	describeByLC     map[string]standardObjectCatalogEntry
+}
+
+func standardObjectCatalogEntryForName(objectName string) (standardObjectCatalogEntry, bool) {
+	objectName = strings.TrimSpace(objectName)
+	if objectName == "" {
+		return standardObjectCatalogEntry{}, false
+	}
+	if entry, ok := standardObjectCatalogData[objectName]; ok {
+		return entry, true
+	}
+	standardObjectCatalogLookupCache.generatedOnce.Do(func() {
+		byLC := make(map[string]standardObjectCatalogEntry, len(standardObjectCatalogData))
+		for name, entry := range standardObjectCatalogData {
+			byLC[standardObjectLookupKey(name)] = entry
+		}
+		standardObjectCatalogLookupCache.generatedByLC = byLC
+	})
+	if entry, ok := standardObjectCatalogLookupCache.generatedByLC[standardObjectLookupKey(objectName)]; ok {
+		return entry, true
+	}
+	canonical, ok := standardDescribeCatalogCanonicalName(objectName)
+	if !ok {
+		return standardObjectCatalogEntry{}, false
+	}
+	if _, ok := standardSObjectStubFieldData[canonical]; ok {
+		return standardObjectCatalogEntry{}, false
+	}
+	standardObjectCatalogLookupCache.describeOnce.Do(func() {
+		describeCatalog := loadEmbeddedStandardDescribeCatalog()
+		byLC := make(map[string]standardObjectCatalogEntry, len(describeCatalog))
+		for name, entry := range describeCatalog {
+			if _, ok := standardSObjectStubFieldData[name]; ok {
+				continue
+			}
+			byLC[standardObjectLookupKey(name)] = entry
+		}
+		standardObjectCatalogLookupCache.describeByLC = byLC
+	})
+	if entry, ok := standardObjectCatalogLookupCache.describeByLC[standardObjectLookupKey(canonical)]; ok {
+		return entry, true
+	}
+	return standardObjectCatalogEntry{}, false
+}
+
+func standardDescribeCatalogCanonicalName(objectName string) (string, bool) {
+	objectName = strings.TrimSpace(objectName)
+	if objectName == "" {
+		return "", false
+	}
+	standardObjectCatalogLookupCache.describeNameOnce.Do(func() {
+		byLC := make(map[string]string, len(standardDescribeCatalogObjectNames))
+		for _, name := range standardDescribeCatalogObjectNames {
+			if name = strings.TrimSpace(name); name != "" {
+				byLC[standardObjectLookupKey(name)] = name
+			}
+		}
+		standardObjectCatalogLookupCache.describeNameByLC = byLC
+	})
+	canonical, ok := standardObjectCatalogLookupCache.describeNameByLC[standardObjectLookupKey(objectName)]
+	return canonical, ok
 }
 
 func loadEmbeddedStandardDescribeCatalog() map[string]standardObjectCatalogEntry {

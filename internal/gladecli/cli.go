@@ -2031,6 +2031,8 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 
 	switch outputFormat {
 	case "json":
+		checkData := result
+		checkData.Diagnostics = nil
 		return result, writeCLIJSONEnvelope(out, cliJSONEnvelope{
 			Command:     "check",
 			Status:      statusForOK(!result.HasErrors()),
@@ -2040,7 +2042,7 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 			Diagnostics: diagnosticsJSON(result.Project.Root, result.Diagnostics),
 			Artifacts:   []any{},
 			Suggestions: []string{"glade schema load --project .", "glade check --project ."},
-			Data:        result,
+			Data:        checkData,
 		})
 	case "sarif":
 		return result, diagnostic.Report{Diagnostics: result.Diagnostics}.WriteSARIF(out)

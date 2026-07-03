@@ -2320,7 +2320,7 @@ func semaLookupTypeMembers(model map[string]typeMembers, typeName string) (typeM
 	}
 	key := normalizeName(typeName)
 	if members, ok := model[key]; ok {
-		return members, key, true
+		return semaEnsureStandardSObjectTypeMembers(model, key, members), key, true
 	}
 	base, args := semaGenericBaseAndArgs(typeName)
 	if len(args) == 0 {
@@ -2328,6 +2328,9 @@ func semaLookupTypeMembers(model map[string]typeMembers, typeName string) (typeM
 	}
 	baseKey := normalizeName(base)
 	members, ok := model[baseKey]
+	if ok {
+		members = semaEnsureStandardSObjectTypeMembers(model, baseKey, members)
+	}
 	return members, baseKey, ok
 }
 
@@ -2338,11 +2341,14 @@ func semaExplicitSchemaSObjectMembers(typeName string, model map[string]typeMemb
 	}
 	schemaKey := normalizeName(schemaName)
 	if members, ok := model[schemaKey]; ok && members.sobject {
+		return semaEnsureStandardSObjectTypeMembers(model, schemaKey, members), schemaKey, true
+	}
+	if objectName, ok := semaStandardSObjectNameForKey(schemaKey); ok {
+		members := semaBuildStandardSObjectMembers(objectName)
+		model[schemaKey] = members
 		return members, schemaKey, true
 	}
-	_, cached := semaStandardSObjectMembers()
-	members, ok := cached[schemaKey]
-	return members, schemaKey, ok
+	return typeMembers{}, schemaKey, false
 }
 
 func semaSchemaQualifiedTypeName(typeName string) (string, bool) {

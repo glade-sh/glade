@@ -1,7 +1,6 @@
 project:
   root: .
-  packageDirs: []
+  packageDirs: [testdata/local-tests/lwc-shell/force-app]
   defaultNamespace: ""
 org:
   features: [MultiCurrency]
-

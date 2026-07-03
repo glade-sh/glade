@@ -6887,11 +6887,7 @@ public class UsesChangeEvent {
 }
 
 func TestSemaStandardSObjectMembersIncludeChangeEvent(t *testing.T) {
-	_, members := semaStandardSObjectMembers()
-	changeEvent, ok := members[normalizeName("ContactPointAddressChangeEvent")]
-	if !ok {
-		t.Fatalf("missing ContactPointAddressChangeEvent")
-	}
+	changeEvent := semaBuildStandardSObjectMembers("ContactPointAddressChangeEvent")
 	if field, ok := changeEvent.fields[normalizeName("ChangeEventHeader")]; !ok || field.Type != "EventBus.ChangeEventHeader" {
 		t.Fatalf("ChangeEventHeader = %#v", field)
 	}
