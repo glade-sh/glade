@@ -345,20 +345,7 @@ func repoGoFiles(t *testing.T, root string) []string {
 
 func repoTrackedFiles(t *testing.T, root string) []string {
 	t.Helper()
-	cmd := exec.Command("git", "ls-files", "--cached", "--others", "--exclude-standard")
-	cmd.Dir = root
-	out, err := cmd.Output()
-	if err != nil {
-		t.Fatalf("git ls-files: %v", err)
-	}
-	var files []string
-	for _, line := range strings.Split(string(out), "\n") {
-		if line == "" {
-			continue
-		}
-		files = append(files, filepath.ToSlash(line))
-	}
-	return files
+	return repoCachedFiles(t, root)
 }
 
 func repoCachedFiles(t *testing.T, root string) []string {
