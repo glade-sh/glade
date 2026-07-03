@@ -37,6 +37,7 @@ type Runner struct {
 	lastOrgCacheKey    string
 	loadWorkspaceIndex workspaceIndexLoader
 	runtimeTemplate    *cachedRuntimeTemplate
+	initErr            error
 	mu                 sync.Mutex
 }
 
@@ -57,10 +58,11 @@ func NewRunner(workspace *Workspace, opts RunnerOptions) *Runner {
 		version = "dev"
 	}
 	store := opts.Org
+	var initErr error
 	if store == nil {
 		store = &vmOrgStore{org: baselineOrg(), db: opts.DBPath}
 		if opts.DBPath != "" {
-			store.org = loadOrCreateDBOrg(opts.DBPath)
+			store.org, initErr = loadOrCreateDBOrg(opts.DBPath)
 		}
 	}
 	return &Runner{
@@ -69,6 +71,7 @@ func NewRunner(workspace *Workspace, opts RunnerOptions) *Runner {
 		cache:              NewResultCache(filepath.Join(workspace.DataRoot, "cache")),
 		store:              store,
 		loadWorkspaceIndex: loadWorkspaceIndex,
+		initErr:            initErr,
 	}
 }
 
@@ -89,15 +92,22 @@ func (r *Runner) CurrentOrg() storage.OrgState {
 	return r.store.org.Clone()
 }
 
-func (r *Runner) Reset() {
+func (r *Runner) Reset() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.store.mu.Lock()
 	defer r.store.mu.Unlock()
+	if r.initErr != nil {
+		return r.initErr
+	}
+	org := baselineOrg()
+	if err := saveDBOrg(r.store.db, org); err != nil {
+		return err
+	}
 	r.store.org = baselineOrg()
 	r.lastOrg = nil
 	r.lastOrgCacheKey = ""
-	_ = saveDBOrg(r.store.db, r.store.org)
+	return nil
 }
 
 func (r *Runner) Seed(reader io.Reader) error {
@@ -109,6 +119,9 @@ func (r *Runner) Seed(reader io.Reader) error {
 	}
 	r.store.mu.Lock()
 	defer r.store.mu.Unlock()
+	if r.initErr != nil {
+		return r.initErr
+	}
 	org := r.store.org.Clone()
 	if len(org.Objects) == 0 {
 		org = baselineOrg()
@@ -136,6 +149,9 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 
 	if ctx == nil {
 		ctx = context.Background()
+	}
+	if r.initErr != nil {
+		return RunResult{}, r.initErr
 	}
 	if req.Mode == "" {
 		req.Mode = RunModeScratch
@@ -237,8 +253,12 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 
 	if req.Mode == RunModePersist {
 		r.store.mu.Lock()
-		r.store.org = runOrg.Clone()
-		_ = saveDBOrg(r.store.db, r.store.org)
+		persisted := runOrg.Clone()
+		if err := saveDBOrg(r.store.db, persisted); err != nil {
+			r.store.mu.Unlock()
+			return RunResult{}, err
+		}
+		r.store.org = persisted
 		r.store.mu.Unlock()
 	}
 	if err := r.cache.Store(cacheKey, result); err != nil {
@@ -327,18 +347,20 @@ func mergeObjectDefinition(existing, incoming storage.ObjectDefinition) storage.
 	return merged
 }
 
-func loadOrCreateDBOrg(path string) storage.OrgState {
+func loadOrCreateDBOrg(path string) (storage.OrgState, error) {
 	store, err := storage.OpenSQLite(path)
 	if err != nil {
-		return baselineOrg()
+		return baselineOrg(), fmt.Errorf("open playground db %s: %w", path, err)
 	}
 	defer store.Close()
 	org, err := store.Load()
 	if err != nil || len(org.Objects) == 0 {
 		org = baselineOrg()
-		_ = store.Save(org)
+		if err := store.Save(org); err != nil {
+			return baselineOrg(), fmt.Errorf("bootstrap playground db %s: %w", path, err)
+		}
 	}
-	return org
+	return org, nil
 }
 
 func saveDBOrg(path string, org storage.OrgState) error {
@@ -347,10 +369,13 @@ func saveDBOrg(path string, org storage.OrgState) error {
 	}
 	store, err := storage.OpenSQLite(path)
 	if err != nil {
-		return err
+		return fmt.Errorf("open playground db %s: %w", path, err)
 	}
 	defer store.Close()
-	return store.Save(org)
+	if err := store.Save(org); err != nil {
+		return fmt.Errorf("save playground db %s: %w", path, err)
+	}
+	return nil
 }
 
 func loadWorkspaceIndex(root string) (typesys.Index, []diagnostic.Diagnostic, error) {

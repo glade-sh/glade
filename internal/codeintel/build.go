@@ -19,12 +19,19 @@ func Build(index typesys.Index, opts ...Options) Graph {
 	if len(opts) > 0 {
 		options = opts[0]
 	}
-	graph := BuildDeclarations(index)
 	if options.UseCache {
-		if cached, _, err := ReadCache(index.Project.Root); err == nil && cacheUsableForIndex(index, cached) {
-			mergeCachedGraph(&graph, cached)
+		if cached, _, err := ReadCache(index.Project.Root); err == nil {
+			if CacheFresh(index.Project.Root, index) {
+				return cached
+			}
+			if cachedGraphIsSchemaOnly(cached) && len(index.Objects) == 0 && len(index.CustomMetadataRecords) == 0 {
+				graph := BuildDeclarations(index)
+				mergeCachedGraph(&graph, cached)
+				return graph
+			}
 		}
 	}
+	graph := BuildDeclarations(index)
 	addArtifactContracts(&graph, index.CodeIntelSymbols, index.CodeIntelUses)
 	for _, use := range collectApexUses(index, graph) {
 		graph.AddUse(use)
@@ -44,13 +51,6 @@ func Build(index typesys.Index, opts ...Options) Graph {
 		}
 	}
 	return graph
-}
-
-func cacheUsableForIndex(index typesys.Index, cached Graph) bool {
-	if CacheFresh(index.Project.Root, index) {
-		return true
-	}
-	return cachedGraphIsSchemaOnly(cached) && len(index.Objects) == 0 && len(index.CustomMetadataRecords) == 0
 }
 
 func cachedGraphIsSchemaOnly(cached Graph) bool {

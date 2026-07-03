@@ -99,11 +99,6 @@ func matchEntry(entry apexlog.Entry, index SourceIndex, currentCodeUnitMethods [
 
 	sourceLine := entry.Data.SourceLine
 	methodCandidates := currentCodeUnitMethods
-	if sourceLine > 0 && len(methodCandidates) == 0 {
-		if method := methodByLine(index.methods, sourceLine); method.Name != "" {
-			methodCandidates = append(methodCandidates, method)
-		}
-	}
 
 	if entry.Kind == apexlog.EntryUserDebug && entry.Data.DebugMessage != "" {
 		normalized := normalizeForMatch(entry.Data.DebugMessage)
@@ -201,14 +196,6 @@ func matchEntry(entry apexlog.Entry, index SourceIndex, currentCodeUnitMethods [
 					Confidence: 0.75,
 				})
 			}
-		} else if method := methodByLine(index.methods, sourceLine); method.Name != "" {
-			addCandidate(candidates, SourceCandidate{
-				File:       method.File,
-				Line:       sourceLine,
-				Symbol:     methodSymbol(method.Namespace, method.TypeName, method.Name),
-				Reason:     "line",
-				Confidence: 0.50,
-			})
 		}
 	}
 

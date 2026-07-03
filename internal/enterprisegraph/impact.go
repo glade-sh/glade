@@ -1,7 +1,5 @@
 package enterprisegraph
 
-import "strings"
-
 type ImpactResult struct {
 	Impacted         []string
 	RecommendedTests []string
@@ -49,5 +47,5 @@ func isTestNode(node Node) bool {
 	if node.Metadata != nil && node.Metadata["test"] == "true" {
 		return true
 	}
-	return strings.HasSuffix(strings.ToLower(node.Name), "test") || strings.HasSuffix(strings.ToLower(node.ID), "test")
+	return false
 }

@@ -171,6 +171,50 @@ func TestRenderIncludeLightningWithoutBootstrapDoesNotEmitNotice(t *testing.T) {
 	}
 }
 
+func TestRenderMarkupTreePropagatesVisibleExpressionTemplateErrors(t *testing.T) {
+	cases := []struct {
+		name   string
+		markup string
+	}{
+		{
+			name:   "select list selected value",
+			markup: `<apex:page><apex:selectList value="{!$Api.Session_ID}"><apex:selectOption itemValue="A" itemLabel="A"/></apex:selectList></apex:page>`,
+		},
+		{
+			name:   "data table cell value",
+			markup: `<apex:page><apex:dataTable value="{!items}" var="item"><apex:column value="{!$Api.Session_ID}"/></apex:dataTable></apex:page>`,
+		},
+		{
+			name:   "page message summary",
+			markup: `<apex:page><apex:pageMessage summary="{!$Api.Session_ID}"/></apex:page>`,
+		},
+		{
+			name:   "message summary",
+			markup: `<apex:page><apex:message for="field" summary="{!$Api.Session_ID}"/></apex:page>`,
+		},
+		{
+			name:   "image alt text",
+			markup: `<apex:page><apex:image value="/resource/logo" alt="{!$Api.Session_ID}"/></apex:page>`,
+		},
+	}
+	controller := vm.Object("Controller")
+	controller.Fields["items"] = vmList("first")
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			tree, err := ParseMarkupTree(tc.markup)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = RenderMarkupTree(tree, &RenderContext{
+				Expression: &ExpressionContext{Controller: controller},
+			})
+			if err == nil || !strings.Contains(err.Error(), "$Api: unsupported Visualforce global") {
+				t.Fatalf("err = %v, want unsupported global expression error", err)
+			}
+		})
+	}
+}
+
 func TestResolveStaticResourceFileReadsNestedZipResourceEntry(t *testing.T) {
 	root := t.TempDir()
 	resourcePath := filepath.Join(root, "force-app/main/default/staticresources", "Bundle.resource")

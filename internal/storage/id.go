@@ -142,7 +142,11 @@ func EnsureUniqueKeyPrefixes(org *OrgState) {
 	if org == nil {
 		return
 	}
+	if org.keyPrefixesValidated && org.keyPrefixesValidatedObjectCount == len(org.Objects) && keyPrefixValidationSnapshotMatches(org) {
+		return
+	}
 	if uniqueKeyPrefixesAlreadyValid(org) {
+		markKeyPrefixesValidated(org)
 		return
 	}
 	names := make([]string, 0, len(org.Objects))
@@ -172,6 +176,7 @@ func EnsureUniqueKeyPrefixes(org *OrgState) {
 		org.Objects[name] = state
 		used[prefix] = name
 	}
+	markKeyPrefixesValidated(org)
 }
 
 func uniqueKeyPrefixesAlreadyValid(org *OrgState) bool {
@@ -201,6 +206,34 @@ func uniqueKeyPrefixesAlreadyValid(org *OrgState) bool {
 			return false
 		}
 		seen[word] |= mask
+	}
+	return true
+}
+
+func markKeyPrefixesValidated(org *OrgState) {
+	org.keyPrefixesValidated = true
+	org.keyPrefixesValidatedObjectCount = len(org.Objects)
+	if org.keyPrefixesValidatedPrefixes == nil || len(org.keyPrefixesValidatedPrefixes) != len(org.Objects) {
+		org.keyPrefixesValidatedPrefixes = make(map[string]string, len(org.Objects))
+	}
+	for name := range org.keyPrefixesValidatedPrefixes {
+		if _, ok := org.Objects[name]; !ok {
+			delete(org.keyPrefixesValidatedPrefixes, name)
+		}
+	}
+	for name, state := range org.Objects {
+		org.keyPrefixesValidatedPrefixes[name] = state.Definition.KeyPrefix
+	}
+}
+
+func keyPrefixValidationSnapshotMatches(org *OrgState) bool {
+	if org.keyPrefixesValidatedPrefixes == nil || len(org.keyPrefixesValidatedPrefixes) != len(org.Objects) {
+		return false
+	}
+	for name, state := range org.Objects {
+		if org.keyPrefixesValidatedPrefixes[name] != state.Definition.KeyPrefix {
+			return false
+		}
 	}
 	return true
 }

@@ -242,6 +242,40 @@ func TestLoadProjectDiscoversUnpackagedStaticResourceFiles(t *testing.T) {
 	t.Fatalf("resetcss StaticResource record was not created; records=%#v", object.Records)
 }
 
+func TestLoadStaticResourceExtensionFileUsesMetaName(t *testing.T) {
+	root := t.TempDir()
+	content := filepath.Join(root, "force-app/main/default/staticresources/resetcss.css")
+	meta := filepath.Join(root, "force-app/main/default/staticresources/resetcss.resource-meta.xml")
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, content, "h2{color:red}")
+	writeFile(t, meta, `<StaticResource><contentType>text/css</contentType><cacheControl>Public</cacheControl></StaticResource>`)
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	registry, err := LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(registry.StaticResources) != 1 || registry.StaticResources[0].Name != "resetcss" {
+		t.Fatalf("static resources = %#v", registry.StaticResources)
+	}
+	if registry.StaticResources[0].Content != "h2{color:red}" {
+		t.Fatalf("static resource content = %q", registry.StaticResources[0].Content)
+	}
+	org := storage.NewOrgState()
+	if err := ApplyProject(&org, p); err != nil {
+		t.Fatal(err)
+	}
+	for _, record := range org.Objects["StaticResource"].Records {
+		if record.Fields["Name"].String == "resetcss" && record.Fields["Body"].String == "h2{color:red}" {
+			return
+		}
+	}
+	t.Fatalf("resetcss StaticResource body was not created; records=%#v", org.Objects["StaticResource"].Records)
+}
+
 func TestLoadStaticResourcesKeepsDirectoryContentPath(t *testing.T) {
 	root := t.TempDir()
 	content := filepath.Join(root, "force-app/fixture-app/main/staticresources/Bundle/css/main.css")
@@ -352,6 +386,26 @@ func TestLoadProjectRemapsDependencyResourceNamespaces(t *testing.T) {
 	}
 	if len(registry.Endpoints) != 1 || registry.Endpoints[0].Name != "stagepkg__BillingEndpoint" {
 		t.Fatalf("endpoints = %#v", registry.Endpoints)
+	}
+}
+
+func TestApplyProjectReportsInvalidVisualforcePageMetaXML(t *testing.T) {
+	root := t.TempDir()
+	pagePath := filepath.Join(root, "force-app/main/default/pages/Broken.page")
+	metaPath := pagePath + "-meta.xml"
+	writeFile(t, pagePath, `<apex:page>Broken</apex:page>`)
+	writeFile(t, metaPath, `<ApexPage><apiVersion>59.0</apiVersion>`)
+
+	org := storage.NewOrgState()
+	err := ApplyProject(&org, project.Project{
+		Root:                 root,
+		VisualforcePageFiles: []string{pagePath},
+	})
+	if err == nil {
+		t.Fatal("ApplyProject err = nil, want invalid Visualforce page metadata error")
+	}
+	if !strings.Contains(err.Error(), "load Visualforce page metadata") || !strings.Contains(err.Error(), metaPath) {
+		t.Fatalf("ApplyProject err = %v, want metadata path context", err)
 	}
 }
 

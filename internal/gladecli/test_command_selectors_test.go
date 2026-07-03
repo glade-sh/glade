@@ -237,6 +237,53 @@ func TestLoadCLIDurationHistoryReadsClassAndMethodMaps(t *testing.T) {
 	}
 }
 
+func TestDefaultCLIDurationHistoryPathUsesGladeCache(t *testing.T) {
+	root := t.TempDir()
+	want := filepath.Join(root, ".glade", "test-durations.json")
+	if got := defaultCLIDurationHistoryPath(root); got != want {
+		t.Fatalf("default duration history path = %q, want %q", got, want)
+	}
+}
+
+func TestWriteCLIDurationHistoryMergesObservedDurations(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "test-durations.json")
+	existing := cliDurationHistory{
+		Classes: map[string]int64{"BillingTest": 1000},
+		Methods: map[string]int64{"BillingTest.slow": 900},
+	}
+	run := testreport.Run{Suites: []testreport.Suite{{
+		Name: "BillingTest",
+		Cases: []testreport.Case{{
+			ClassName:  "BillingTest",
+			MethodName: "slow",
+			Status:     testreport.StatusPass,
+			DurationMS: 2100,
+		}, {
+			ClassName:  "BillingTest",
+			MethodName: "fast",
+			Status:     testreport.StatusPass,
+			DurationMS: 300,
+		}},
+	}}}
+
+	if err := writeCLIDurationHistory(path, run, existing); err != nil {
+		t.Fatal(err)
+	}
+	history, err := loadCLIDurationHistory(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := history.Classes["BillingTest"], int64(1350); got != want {
+		t.Fatalf("merged class duration = %d, want %d", got, want)
+	}
+	if got, want := history.Methods["BillingTest.slow"], int64(1200); got != want {
+		t.Fatalf("merged method duration = %d, want %d", got, want)
+	}
+	if got := history.Methods["BillingTest.fast"]; got != 300 {
+		t.Fatalf("new method duration = %d, want 300", got)
+	}
+}
+
 func runSelectionTest(t *testing.T, args ...string) testreport.Run {
 	t.Helper()
 	return runSelectionTestInRoot(t, selectionFixtureRoot(t), args...)

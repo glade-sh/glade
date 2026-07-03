@@ -38,7 +38,7 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 		return runTUIView(ctx, args, tui.BoardData, w, progressW)
 	}
 	if len(args) == 0 {
-		return errors.New("usage: glade db ui|seed|reset|export|inspect|query|describe [--project <root>] [--env <name>|--db <path>] [--json] [fixture.json]")
+		return errors.New("usage: glade db ui|seed|reset|export|inspect|query|describe|import [--project <root>] [--env <name>|--db <path>] [--json] [fixture.json]")
 	}
 	command := args[0]
 	if command == "ui" {
@@ -242,7 +242,7 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 		}
 		renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "db seed", Label: "Fixture applied", Current: 3, Total: 3})
 		renderer.Finish(cliui.Result{OK: true, Label: "db seed complete"})
-		return writeDBInspect(w, dbPath, org, jsonOut, schemaVersion)
+		return writeDBInspect(w, dbPath, org, jsonOut, schemaVersion, "")
 	case "reset":
 		if len(positionals) != 0 {
 			return fmt.Errorf("unexpected argument %q", positionals[0])
@@ -251,7 +251,7 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 		if err := store.Save(org); err != nil {
 			return err
 		}
-		return writeDBInspect(w, dbPath, org, jsonOut, schemaVersion)
+		return writeDBInspect(w, dbPath, org, jsonOut, schemaVersion, "")
 	case "export":
 		if len(positionals) != 0 {
 			return fmt.Errorf("unexpected argument %q", positionals[0])
@@ -261,9 +261,9 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 		if len(positionals) != 0 {
 			return fmt.Errorf("unexpected argument %q", positionals[0])
 		}
-		return writeDBInspect(w, dbPath, org, jsonOut, schemaVersion)
+		return writeDBInspect(w, dbPath, org, jsonOut, schemaVersion, "db inspect")
 	default:
-		return errors.New("usage: glade db ui|seed|reset|export|inspect|query|describe [--project <root>] [--env <name>|--db <path>] [--json] [fixture.json]")
+		return errors.New("usage: glade db ui|seed|reset|export|inspect|query|describe|import [--project <root>] [--env <name>|--db <path>] [--json] [fixture.json]")
 	}
 }
 
@@ -292,6 +292,9 @@ func runDBUI(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		return err
 	}
 	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if err := validateServerBindAllowed(opts.addr); err != nil {
 		return err
 	}
 	dbPath := resolveDBPath(opts.dbPath, opts.root, opts.envName)
@@ -325,7 +328,7 @@ func runDBUI(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			return err
 		}
 	}
-	handler := server.NewWithStore(&org, store)
+	handler := dbUIRouteScopedHandler{next: server.NewWithStore(&org, store)}
 	httpServer := &http.Server{Addr: opts.addr, Handler: handler}
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "db ui", Label: "Record manager ready", Current: 2, Total: 2})
 	renderer.Finish(cliui.Result{OK: true, Label: "db ui ready"})
@@ -337,6 +340,31 @@ func runDBUI(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		_ = httpServer.Shutdown(shutdownCtx)
 	}()
 	return normalizeDevVFServeError(httpServer.Serve(listener))
+}
+
+type dbUIRouteScopedHandler struct {
+	next http.Handler
+}
+
+func (h dbUIRouteScopedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if !dbUIRouteAllowed(r.URL.Path) {
+		http.NotFound(w, r)
+		return
+	}
+	h.next.ServeHTTP(w, r)
+}
+
+func dbUIRouteAllowed(path string) bool {
+	trimmed := strings.Trim(path, "/")
+	if trimmed == "db" || strings.HasPrefix(trimmed, "db/") {
+		return true
+	}
+	parts := strings.Split(trimmed, "/")
+	return len(parts) >= 5 &&
+		parts[0] == "services" &&
+		parts[1] == "data" &&
+		parts[3] == "glade" &&
+		parts[4] == "db-manager"
 }
 
 func parseDBUIOptions(args []string) (dbUIOptions, error) {
@@ -528,7 +556,7 @@ func runDBImport(ctx context.Context, w io.Writer, progressW io.Writer, progress
 	}
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "db import sf", Label: fmt.Sprintf("Imported %d records", result.Records), Current: 3, Total: 3})
 	renderer.Finish(cliui.Result{OK: true, Label: "db import complete"})
-	return writeDBInspect(w, dbPath, org, jsonOut, schemaVersion)
+	return writeDBInspect(w, dbPath, org, jsonOut, schemaVersion, "")
 }
 
 func importCategoryOrDefault(category string) string {
@@ -621,7 +649,10 @@ func projectOrgAndDBBinding(root string) (storage.OrgState, storage.ProjectBindi
 		}
 		return storage.OrgState{}, storage.ProjectBinding{}, false, err
 	}
-	org := orgStateFromIndex(root, p, index)
+	org, err := orgStateFromIndex(root, p, index)
+	if err != nil {
+		return storage.OrgState{}, storage.ProjectBinding{}, false, err
+	}
 	fingerprint, err := storage.SchemaFingerprint(org)
 	if err != nil {
 		return storage.OrgState{}, storage.ProjectBinding{}, false, err
@@ -663,7 +694,7 @@ func validateDBProjectBinding(store *storage.SQLiteStore, dbPath, root string, e
 		if stored.ProjectRoot == "" {
 			return org, dbProjectMismatchError(dbPath, root, stored)
 		}
-		refreshed, err := refreshDBProjectSchema(store, org, projectOrg, expected)
+		refreshed, err := refreshDBProjectSchema(store, dbPath, root, org, projectOrg, expected)
 		if err != nil {
 			return org, err
 		}
@@ -672,11 +703,14 @@ func validateDBProjectBinding(store *storage.SQLiteStore, dbPath, root string, e
 	return org, nil
 }
 
-func refreshDBProjectSchema(store *storage.SQLiteStore, current, projectOrg storage.OrgState, binding storage.ProjectBinding) (storage.OrgState, error) {
+func refreshDBProjectSchema(store *storage.SQLiteStore, dbPath, root string, current, projectOrg storage.OrgState, binding storage.ProjectBinding) (storage.OrgState, error) {
 	refreshed := projectOrg.Clone()
 	refreshed.OrgID = current.OrgID
 	refreshed.SystemTimestampBase = current.SystemTimestampBase
 	refreshed.SystemTimestampSequence = current.SystemTimestampSequence
+	if dropped := droppedRefreshRecordCounts(current, refreshed); len(dropped) > 0 {
+		return storage.OrgState{}, destructiveSchemaRefreshError(dbPath, root, dropped)
+	}
 	for name, existingObject := range current.Objects {
 		target, ok := refreshed.Objects[name]
 		if !ok {
@@ -707,6 +741,33 @@ func refreshDBProjectSchema(store *storage.SQLiteStore, current, projectOrg stor
 	return refreshed, nil
 }
 
+func droppedRefreshRecordCounts(current, refreshed storage.OrgState) map[string]int {
+	dropped := make(map[string]int)
+	for name, existingObject := range current.Objects {
+		if _, ok := refreshed.Objects[name]; ok || len(existingObject.Records) == 0 {
+			continue
+		}
+		dropped[name] = len(existingObject.Records)
+	}
+	return dropped
+}
+
+func destructiveSchemaRefreshError(dbPath, root string, dropped map[string]int) error {
+	names := make([]string, 0, len(dropped))
+	for name := range dropped {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	var b strings.Builder
+	fmt.Fprintf(&b, "schema refresh would drop local records from %s\n", filepath.ToSlash(dbPath))
+	fmt.Fprintln(&b, "Dropped records:")
+	for _, name := range names {
+		fmt.Fprintf(&b, "  %s: %d\n", name, dropped[name])
+	}
+	fmt.Fprintf(&b, "Export a backup first: glade db export --db %s --project %s > exported-fixture.json", filepath.ToSlash(dbPath), shellPathArg(root))
+	return errors.New(strings.TrimSpace(b.String()))
+}
+
 func dbProjectMismatchError(dbPath, root string, stored storage.ProjectBinding) error {
 	detail := ""
 	if stored.ProjectRoot != "" {
@@ -735,10 +796,10 @@ func orgForProject(root string) (storage.OrgState, error) {
 		}
 		return storage.OrgState{}, err
 	}
-	return orgStateFromIndex(root, p, index), nil
+	return orgStateFromIndex(root, p, index)
 }
 
-func orgStateFromIndex(root string, p project.Project, index typesys.Index) storage.OrgState {
+func orgStateFromIndex(root string, p project.Project, index typesys.Index) (storage.OrgState, error) {
 	org := storage.NewOrgState()
 	org.APIVersion = index.Project.SourceAPIVersion
 	org.Namespace = index.Project.Namespace
@@ -749,20 +810,32 @@ func orgStateFromIndex(root string, p project.Project, index typesys.Index) stor
 			Records:    make(map[storage.ID]storage.Record),
 		}
 	}
-	_ = storage.ApplyCustomMetadataRecords(&org, index.CustomMetadataRecords)
-	_ = resource.ApplyProject(&org, p)
+	if err := storage.ApplyCustomMetadataRecords(&org, index.CustomMetadataRecords); err != nil {
+		return storage.OrgState{}, err
+	}
+	if err := resource.ApplyProject(&org, p); err != nil {
+		return storage.OrgState{}, err
+	}
 	if automationIndex, err := automation.LoadProject(p); err == nil {
 		automation.ApplyToOrg(&org, automationIndex)
 	}
 	storage.EnsureDeterministicPlatformData(&org)
 	storage.ApplyOrgShape(&org, project.OrgShapeFeatures(root))
-	return org
+	return org, nil
 }
 
-func writeDBInspect(w io.Writer, path string, org storage.OrgState, jsonOut bool, schemaVersion int) error {
+func writeDBInspect(w io.Writer, path string, org storage.OrgState, jsonOut bool, schemaVersion int, command string) error {
 	summary := storage.InspectOrg(path, org)
 	summary.SchemaVersion = schemaVersion
 	if jsonOut {
+		if strings.TrimSpace(command) != "" {
+			return writeCLIJSONEnvelope(w, cliJSONEnvelope{
+				Command:  command,
+				Status:   "passed",
+				ExitCode: 0,
+				Data:     summary,
+			})
+		}
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 		return enc.Encode(summary)
@@ -835,9 +908,12 @@ func writeDBQueryJSON(w io.Writer, org storage.OrgState, rawQuery string, limit 
 		Columns:   dbQueryColumns(query, records),
 		Records:   records,
 	}
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
-	return enc.Encode(payload)
+	return writeCLIJSONEnvelope(w, cliJSONEnvelope{
+		Command:  "db query",
+		Status:   "passed",
+		ExitCode: 0,
+		Data:     payload,
+	})
 }
 
 func dbQueryColumns(query soql.Query, records []map[string]any) []string {
@@ -994,21 +1070,29 @@ type dbDescribeFieldJSON struct {
 }
 
 func writeDBDescribeJSON(w io.Writer, org storage.OrgState, objectName string) error {
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
 	if strings.TrimSpace(objectName) == "" {
-		return enc.Encode(dbDescribeListJSON{Objects: dbDescribeObjectSummaries(org)})
+		return writeCLIJSONEnvelope(w, cliJSONEnvelope{
+			Command:  "db describe",
+			Status:   "passed",
+			ExitCode: 0,
+			Data:     dbDescribeListJSON{Objects: dbDescribeObjectSummaries(org)},
+		})
 	}
 	resolved, ok := storage.ResolveObjectName(org, objectName)
 	if !ok {
 		return fmt.Errorf("unknown object %s", objectName)
 	}
 	object := org.Objects[resolved]
-	return enc.Encode(dbDescribeObjectJSON{
-		Name:      firstNonEmpty(object.Definition.APIName, resolved),
-		Label:     firstNonEmpty(object.Definition.Label, object.Definition.APIName, resolved),
-		KeyPrefix: object.Definition.KeyPrefix,
-		Fields:    dbDescribeFields(object.Definition),
+	return writeCLIJSONEnvelope(w, cliJSONEnvelope{
+		Command:  "db describe",
+		Status:   "passed",
+		ExitCode: 0,
+		Data: dbDescribeObjectJSON{
+			Name:      firstNonEmpty(object.Definition.APIName, resolved),
+			Label:     firstNonEmpty(object.Definition.Label, object.Definition.APIName, resolved),
+			KeyPrefix: object.Definition.KeyPrefix,
+			Fields:    dbDescribeFields(object.Definition),
+		},
 	})
 }
 

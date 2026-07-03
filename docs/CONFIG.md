@@ -14,6 +14,8 @@ inferred defaults without prompts:
 glade init --project . --yes
 ```
 
+`glade config init` is the same initializer under the `config` command group.
+
 Check it:
 
 ```bash

@@ -15,6 +15,8 @@ import (
 
 var disableDiskCache atomic.Bool
 
+const testRuntimeCacheABI = "apextest-runtime-v4"
+
 func DisableDiskCacheForTesting() func() {
 	wasDisabled := disableDiskCache.Load()
 	disableDiskCache.Store(true)
@@ -37,7 +39,7 @@ func tryLoadDiskRuntime(index typesys.Index) (runtimeCacheEntry, bool) {
 	}
 	root = filepath.Clean(root)
 	entry, err := startupcache.Read(root, startupcache.SubdirTest)
-	if err != nil || entry == nil || !startupcache.Fresh(entry, root, startupcache.Version) {
+	if err != nil || entry == nil || !startupcache.FreshRuntime(entry, root, startupcache.Version, testRuntimeCacheABI) {
 		return runtimeCacheEntry{}, false
 	}
 	return runtimeCacheEntryFromStartup(*entry), true
@@ -61,6 +63,7 @@ func persistDiskRuntime(index typesys.Index, entry runtimeCacheEntry) {
 		Triggers:  entry.Triggers,
 		PageNames: entry.PageNames,
 	})
+	cacheEntry.RuntimeABI = testRuntimeCacheABI
 	_ = startupcache.Write(&cacheEntry, startupcache.SubdirTest)
 }
 

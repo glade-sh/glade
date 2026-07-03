@@ -16,6 +16,7 @@ import (
 
 type Handler struct {
 	index        typesys.Index
+	parser       *apexast.Parser
 	analysisOnce sync.Once
 	analysis     sema.Result
 	documents    map[DocumentURI]openDocument
@@ -32,6 +33,7 @@ type openDocument struct {
 func NewHandler(index typesys.Index) *Handler {
 	return &Handler{
 		index:     index,
+		parser:    apexast.NewParser(),
 		documents: make(map[DocumentURI]openDocument),
 	}
 }
@@ -106,8 +108,7 @@ func (h *Handler) DidClose(params DidCloseTextDocumentParams) []Notification {
 }
 
 func (h *Handler) documentDiagnostics(doc openDocument) []Notification {
-	parser := apexast.NewParser()
-	file := parser.ParseSource(doc.Path, doc.Text)
+	file := h.parser.ParseSource(doc.Path, doc.Text)
 	diagnostics := file.Diagnostics
 	if len(diagnostics) == 0 {
 		diagnostics = h.diagnosticsForDocument(doc.URI)

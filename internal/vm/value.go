@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"math/big"
 	"sort"
 	"strconv"
 	"strings"
@@ -257,10 +258,10 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 	}
 	if v.Kind != other.Kind {
 		if v.Kind == ValueInt && other.Kind == ValueDecimal {
-			return float64(v.Int) == other.Decimal
+			return numericDecimalValuesEqual(v, other)
 		}
 		if v.Kind == ValueDecimal && other.Kind == ValueInt {
-			return v.Decimal == float64(other.Int)
+			return numericDecimalValuesEqual(v, other)
 		}
 		if v.Kind == ValueString && other.Kind == ValueObject && strings.EqualFold(other.Type, "Id") {
 			if text, ok := platformScalarObjectText(other); ok {
@@ -286,13 +287,15 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 	case ValueInt:
 		return v.Int == other.Int
 	case ValueDecimal:
-		return v.Decimal == other.Decimal
+		return numericDecimalValuesEqual(v, other)
 	case ValueBool:
 		return v.Bool == other.Bool
 	case ValueString:
 		if shouldCompareTextAsID(v.Text, other.Text) {
 			return apexIDTextEqual(v.Text, other.Text)
 		}
+		// Apex String equality is case-sensitive. SOQL text comparison is intentionally
+		// case-insensitive in internal/soql to match query semantics.
 		return v.Text == other.Text
 	case ValueList:
 		if len(v.List) != len(other.List) {
@@ -374,10 +377,60 @@ func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
 		if sObjectValueType(v.Type) && sObjectValueType(other.Type) {
 			return sObjectValuesEqual(v, other, seen)
 		}
+		if v.Ref == 0 && other.Ref == 0 && strings.EqualFold(v.Type, other.Type) {
+			return objectFieldsEqual(v.Fields, other.Fields, seen)
+		}
 		return strings.EqualFold(v.Type, other.Type) && fmt.Sprintf("%p", v.Fields) == fmt.Sprintf("%p", other.Fields)
 	default:
 		return false
 	}
+}
+
+func numericDecimalValuesEqual(left, right Value) bool {
+	leftRat, leftOK := valueDecimalRat(left)
+	rightRat, rightOK := valueDecimalRat(right)
+	if leftOK && rightOK {
+		return leftRat.Cmp(rightRat) == 0
+	}
+	switch {
+	case left.Kind == ValueInt && right.Kind == ValueDecimal:
+		return float64(left.Int) == right.Decimal
+	case left.Kind == ValueDecimal && right.Kind == ValueInt:
+		return left.Decimal == float64(right.Int)
+	case left.Kind == ValueDecimal && right.Kind == ValueDecimal:
+		return left.Decimal == right.Decimal
+	default:
+		return false
+	}
+}
+
+func valueDecimalRat(value Value) (*big.Rat, bool) {
+	switch value.Kind {
+	case ValueInt:
+		return new(big.Rat).SetInt64(value.Int), true
+	case ValueDecimal:
+		text := strings.TrimSpace(value.Text)
+		if text == "" {
+			text = strconv.FormatFloat(value.Decimal, 'f', -1, 64)
+		}
+		rat, ok := new(big.Rat).SetString(text)
+		return rat, ok
+	default:
+		return nil, false
+	}
+}
+
+func objectFieldsEqual(left, right map[string]Value, seen map[[2]uint64]bool) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for key, leftValue := range left {
+		rightValue, ok := right[key]
+		if !ok || !leftValue.equal(rightValue, seen) {
+			return false
+		}
+	}
+	return true
 }
 
 func sameDateAndMidnightDatetime(dateValue, datetimeValue Value) bool {

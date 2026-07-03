@@ -564,6 +564,60 @@ func TestLoadResolvesSiblingSFDXPackageDependencyWithAncestorGladeConfig(t *test
 	}
 }
 
+func TestLoadResolvesReferencedNamespaceSFDXDependencyWithoutPackageName(t *testing.T) {
+	root := t.TempDir()
+	workspaceRoot := filepath.Join(root, "workspace")
+	depRoot := filepath.Join(workspaceRoot, "dep-package")
+	sameNamespaceRoot := filepath.Join(workspaceRoot, "same-namespace-package")
+	consumerRoot := filepath.Join(workspaceRoot, "consumer-package")
+	writeFile(t, filepath.Join(workspaceRoot, "glade.yml"), `project: {}`)
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{
+  "namespace": "depns",
+  "packageDirectories": [{"path":"force-app","default":true}]
+}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/objects/Contact/fields/ExternalID__c.field-meta.xml"), `<CustomField>
+  <fullName>ExternalID__c</fullName>
+  <type>Text</type>
+ <externalId>true</externalId>
+</CustomField>`)
+	writeFile(t, filepath.Join(sameNamespaceRoot, "sfdx-project.json"), `{
+  "namespace": "workns",
+  "packageDirectories": [{"path":"src","default":true}]
+}`)
+	writeFile(t, filepath.Join(sameNamespaceRoot, "src/classes/OtherConsumer.cls"), "global class OtherConsumer {}")
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{
+  "namespace": "workns",
+  "packageDirectories": [{
+    "path":"force-app",
+    "default":true,
+    "package":"consumer-package",
+    "dependencies": [{"package":"missing-dep-name"}]
+  }]
+}`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/classes/Consumer.cls"), `
+public class Consumer {
+  public static void touch(Contact c) {
+    c.depns__ExternalID__c = 'external';
+    c.workns__Local_Field__c = 'local';
+  }
+}`)
+
+	p, err := Load(consumerRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 1 {
+		t.Fatalf("dependency count = %d, deps=%#v", len(p.ManagedPackageDependencies), p.ManagedPackageDependencies)
+	}
+	dep := p.ManagedPackageDependencies[0]
+	if dep.Namespace != "depns" || dep.SourceRoot != depRoot || dep.Project == nil || dep.Project.Root != depRoot {
+		t.Fatalf("dependency = %#v", dep)
+	}
+	if len(dep.Project.FieldFiles) != 1 {
+		t.Fatalf("dependency field files = %#v", dep.Project.FieldFiles)
+	}
+}
+
 func TestLoadResolvesSFDXPackageDependencyFromAncestorGladeConfig(t *testing.T) {
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "upstream-package-develop")

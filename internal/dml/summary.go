@@ -1,6 +1,7 @@
 package dml
 
 import (
+	"math/big"
 	"strconv"
 	"strings"
 
@@ -387,7 +388,7 @@ func summaryValueMatchesText(value storage.Value, text string) bool {
 
 type summaryAccumulator struct {
 	count int64
-	sum   float64
+	sum   *big.Rat
 	has   bool
 	min   storage.Value
 	max   storage.Value
@@ -399,12 +400,15 @@ func (a *summaryAccumulator) add(operation string, value storage.Value) bool {
 		a.count++
 		return true
 	case "", "sum":
-		number, ok := summaryNumericValue(value)
+		number, ok := summaryNumericRat(value)
 		if !ok {
 			return false
 		}
 		a.count++
-		a.sum += number
+		if a.sum == nil {
+			a.sum = new(big.Rat)
+		}
+		a.sum.Add(a.sum, number)
 		return true
 	case "max", "min":
 		if _, ok := summaryComparableValue(value); !ok {
@@ -434,7 +438,10 @@ func (a summaryAccumulator) value(operation string) (storage.Value, bool) {
 	case "count":
 		return storage.IntegerValue(a.count), true
 	case "", "sum":
-		return storage.DecimalValue(strconv.FormatFloat(a.sum, 'f', -1, 64)), true
+		if a.sum == nil {
+			return storage.DecimalValue("0"), true
+		}
+		return storage.DecimalValue(summaryDecimalString(a.sum)), true
 	case "max":
 		if !a.has {
 			return storage.NullValue(), true
@@ -492,6 +499,74 @@ func summaryComparableValue(value storage.Value) (summaryComparable, bool) {
 	default:
 		return summaryComparable{}, false
 	}
+}
+
+func summaryNumericRat(value storage.Value) (*big.Rat, bool) {
+	switch value.Kind {
+	case storage.ValueInteger:
+		return new(big.Rat).SetInt64(value.Integer), true
+	case storage.ValueDecimal:
+		parsed, ok := new(big.Rat).SetString(value.Decimal)
+		return parsed, ok
+	case storage.ValueString:
+		parsed, ok := new(big.Rat).SetString(value.String)
+		return parsed, ok
+	default:
+		return nil, false
+	}
+}
+
+func summaryDecimalString(value *big.Rat) string {
+	if value.IsInt() {
+		return value.Num().String()
+	}
+	numerator := new(big.Int).Set(value.Num())
+	denominator := new(big.Int).Set(value.Denom())
+	sign := ""
+	if numerator.Sign() < 0 {
+		sign = "-"
+		numerator.Abs(numerator)
+	}
+	twos := 0
+	fives := 0
+	two := big.NewInt(2)
+	five := big.NewInt(5)
+	zero := new(big.Int)
+	for {
+		quotient, rem := new(big.Int).QuoRem(denominator, two, new(big.Int))
+		if rem.Cmp(zero) != 0 {
+			break
+		}
+		denominator = quotient
+		twos++
+	}
+	for {
+		quotient, rem := new(big.Int).QuoRem(denominator, five, new(big.Int))
+		if rem.Cmp(zero) != 0 {
+			break
+		}
+		denominator = quotient
+		fives++
+	}
+	if denominator.Sign() == 1 && denominator.Cmp(big.NewInt(1)) == 0 {
+		scale := twos
+		if fives > scale {
+			scale = fives
+		}
+		multiplier := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(scale)), nil)
+		scaled := new(big.Int).Mul(numerator, multiplier)
+		scaled.Quo(scaled, value.Denom())
+		text := scaled.String()
+		if scale == 0 {
+			return sign + text
+		}
+		if len(text) <= scale {
+			text = strings.Repeat("0", scale-len(text)+1) + text
+		}
+		point := len(text) - scale
+		return strings.TrimRight(strings.TrimRight(sign+text[:point]+"."+text[point:], "0"), ".")
+	}
+	return strings.TrimRight(strings.TrimRight(value.FloatString(18), "0"), ".")
 }
 
 func summaryNumericValue(value storage.Value) (float64, bool) {

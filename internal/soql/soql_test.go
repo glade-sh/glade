@@ -86,6 +86,63 @@ FROM Event__c`)
 	}
 }
 
+func TestIndexedCandidateIDsUsesIndexForOrAndInBranches(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Indexes: []storage.IndexDefinition{{
+				Name:   "Account.Rating",
+				Object: "Account",
+				Fields: []string{"Rating"},
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{"Rating": storage.StringValue("Hot")}},
+			"001000000000002": {ID: "001000000000002", Object: "Account", Fields: map[string]storage.Value{"Rating": storage.StringValue("Warm")}},
+			"001000000000003": {ID: "001000000000003", Object: "Account", Fields: map[string]storage.Value{"Rating": storage.StringValue("Cold")}},
+		},
+	}
+	storage.RebuildIndexes(&org)
+	object := org.Objects["Account"]
+
+	tests := []struct {
+		name  string
+		where Condition
+		want  []string
+	}{
+		{
+			name: "or",
+			where: Condition{Or: []Condition{
+				{Field: "Rating", Op: "=", Value: storage.StringValue("Hot")},
+				{Field: "Rating", Op: "=", Value: storage.StringValue("Cold")},
+			}},
+			want: []string{"001000000000001", "001000000000003"},
+		},
+		{
+			name:  "in",
+			where: Condition{Field: "Rating", Op: "IN", Values: []storage.Value{storage.StringValue("Warm"), storage.StringValue("Cold")}},
+			want:  []string{"001000000000002", "001000000000003"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := indexedCandidateIDs(object, &tt.where, false)
+			if !ok {
+				t.Fatal("condition did not use index")
+			}
+			gotText := make([]string, 0, len(got))
+			for _, id := range got {
+				gotText = append(gotText, string(id))
+			}
+			sort.Strings(gotText)
+			if !reflect.DeepEqual(gotText, tt.want) {
+				t.Fatalf("candidate IDs = %#v, want %#v", gotText, tt.want)
+			}
+		})
+	}
+}
+
 func TestExecuteUsingScopeEverythingReturnsVisibleRows(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{
@@ -2116,6 +2173,14 @@ func TestExecuteFiltersProjectsAndOrders(t *testing.T) {
 		t.Fatalf("multi-order result = %#v", result)
 	}
 
+	result, err = ParseAndExecute(org, "SELECT Id, Name FROM Account WHERE Active = true ORDER BY Name LIMIT 1 OFFSET 1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].ID != "001000000000002" {
+		t.Fatalf("offset window result = %#v", result)
+	}
+
 	org.Objects["Account"].Records["001000000000001"] = storage.Record{
 		ID:     "001000000000001",
 		Object: "Account",
@@ -2186,13 +2251,16 @@ func TestExecuteFiltersProjectsAndOrders(t *testing.T) {
 	if !result.Records[0].System.Locked || !result.Records[1].System.Locked {
 		t.Fatalf("for update did not mark rows locked: %#v", result.Records)
 	}
-
-	locked := org.Objects["Account"].Records["001000000000001"]
-	locked.System.Locked = true
-	org.Objects["Account"].Records["001000000000001"] = locked
-	_, err = ParseAndExecute(org, "SELECT Id FROM Account WHERE Id = '001000000000001' FOR UPDATE")
-	if err == nil || !strings.Contains(err.Error(), "unable to lock row 001000000000001") {
-		t.Fatalf("expected lock error, got %v", err)
+	if org.Objects["Account"].Records["001000000000001"].System.Locked ||
+		org.Objects["Account"].Records["001000000000002"].System.Locked {
+		t.Fatalf("for update persisted transaction locks: %#v", org.Objects["Account"].Records)
+	}
+	result, err = ParseAndExecute(org, "SELECT Id FROM Account WHERE Id = '001000000000001' FOR UPDATE")
+	if err != nil {
+		t.Fatalf("same transaction for update should be reentrant: %v", err)
+	}
+	if result.Rows != 1 || !result.Records[0].System.Locked {
+		t.Fatalf("for update reentrant result = %#v", result)
 	}
 
 	_, err = ParseAndExecute(org, "SELECT COUNT(Id) FROM Account FOR UPDATE")

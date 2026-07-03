@@ -369,8 +369,7 @@ type managedPackageReference struct {
 }
 
 func managedPackageReferences(source, namespace string) []managedPackageReference {
-	pattern := regexp.MustCompile(`\b` + regexp.QuoteMeta(namespace) + `\.([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)`)
-	matches := pattern.FindAllStringSubmatch(source, -1)
+	matches := managedPackageReferencePattern(namespace).FindAllStringSubmatch(source, -1)
 	out := make([]managedPackageReference, 0, len(matches))
 	for _, match := range matches {
 		if len(match) < 2 {
@@ -385,6 +384,17 @@ func managedPackageReferences(source, namespace string) []managedPackageReferenc
 		out = append(out, ref)
 	}
 	return out
+}
+
+var managedPackageReferencePatterns sync.Map
+
+func managedPackageReferencePattern(namespace string) *regexp.Regexp {
+	if cached, ok := managedPackageReferencePatterns.Load(namespace); ok {
+		return cached.(*regexp.Regexp)
+	}
+	pattern := regexp.MustCompile(`\b` + regexp.QuoteMeta(namespace) + `\.([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)`)
+	actual, _ := managedPackageReferencePatterns.LoadOrStore(namespace, pattern)
+	return actual.(*regexp.Regexp)
 }
 
 func findManagedPackageType(types []typesys.TypeSymbol, name string) (typesys.TypeSymbol, bool) {

@@ -35,7 +35,9 @@ func (vm *VM) executeApprovalProcessList(requests Value, allOrNone bool) (Value,
 		result, err := vm.executeApprovalProcessRequest(request, allOrNone)
 		if err != nil {
 			if allOrNone {
-				vm.restoreDMLRollbackPoint(rollback)
+				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+					return Null, rollbackErr
+				}
 				vm.restoreSideEffects(sideEffects)
 			}
 			return Null, err

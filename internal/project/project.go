@@ -687,6 +687,30 @@ func loadLocalSFDXPackageDependencies(root string, cfg sfdxProject, p Project, s
 			Status:     "loaded",
 		})
 	}
+	for _, depRoot := range findReferencedNamespaceSiblingSFDXPackageDependencyRoots(root, packageNames, p, true) {
+		if sameFilePath(depRoot, root) || managedPackageDependencySourceLoaded(deps, depRoot) {
+			continue
+		}
+		loaded, err := load(depRoot, stack, true)
+		if err != nil {
+			diagnostics = append(diagnostics, DependencyDiagnostic{
+				SourceRoot: depRoot,
+				Status:     "load_error",
+				Code:       "dependency_load_error",
+				Message:    err.Error(),
+			})
+			continue
+		}
+		if loaded.Root == "" || loaded.Namespace == "" || managedPackageDependencyNamespaceLoaded(deps, loaded.Namespace) {
+			continue
+		}
+		deps = append(deps, ManagedPackageDependency{
+			Namespace:  loaded.Namespace,
+			SourceRoot: depRoot,
+			Project:    &loaded,
+			Status:     "loaded",
+		})
+	}
 	return deps, diagnostics
 }
 
@@ -744,6 +768,41 @@ func findLocalSFDXPackageDependencyRoot(root, packageName string, allowSiblingSc
 		return candidate, true
 	}
 	return "", false
+}
+
+func findReferencedNamespaceSiblingSFDXPackageDependencyRoots(root string, packageNames []string, p Project, allowSiblingScan bool) []string {
+	if !allowSiblingScan {
+		return nil
+	}
+	unresolved := make(map[string]bool, len(packageNames))
+	for _, packageName := range packageNames {
+		if normalized := normalizeSFDXPackageName(packageName); normalized != "" {
+			unresolved[normalized] = true
+		}
+	}
+	if len(unresolved) == 0 {
+		return nil
+	}
+	parent := filepath.Dir(filepath.Clean(root))
+	var roots []string
+	for _, candidate := range localSFDXSiblingProjectCandidates(parent) {
+		if sameFilePath(candidate, root) {
+			continue
+		}
+		cfg, err := loadSFDXProject(candidate)
+		if err != nil {
+			continue
+		}
+		for _, dir := range cfg.PackageDirectories {
+			delete(unresolved, normalizeSFDXPackageName(dir.Package))
+		}
+		namespace := strings.TrimSpace(cfg.Namespace)
+		if namespace == "" || strings.EqualFold(namespace, p.Namespace) || !projectRootReferencesNamespaceToken(root, p, namespace) {
+			continue
+		}
+		roots = append(roots, candidate)
+	}
+	return roots
 }
 
 func localSFDXPackageDependencyCandidates(root, packageName string, allowSiblingScan bool) []string {
@@ -830,6 +889,76 @@ func localSFDXPackageDependencyDirNames(packageName string) []string {
 func sfdxProjectDeclaresPackage(cfg sfdxProject, wanted string) bool {
 	for _, dir := range cfg.PackageDirectories {
 		if normalizeSFDXPackageName(dir.Package) == wanted {
+			return true
+		}
+	}
+	return false
+}
+
+func projectRootReferencesNamespaceToken(root string, p Project, namespace string) bool {
+	namespace = strings.TrimSpace(namespace)
+	if namespace == "" {
+		return false
+	}
+	token := namespace + "__"
+	for _, pkgRoot := range packageRoots(root, p.PackageDirectories, true) {
+		if referencesNamespaceTokenInRoot(pkgRoot, token) {
+			return true
+		}
+	}
+	return false
+}
+
+func referencesNamespaceTokenInRoot(root, token string) bool {
+	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if path != root && strings.HasPrefix(d.Name(), ".") {
+			if d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if d.IsDir() {
+			if shouldSkipDir(d.Name()) && path != root {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !namespaceReferenceCandidatePath(path) {
+			return nil
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return nil
+		}
+		if strings.Contains(string(data), token) {
+			return errFoundNamespaceReference
+		}
+		return nil
+	})
+	return errors.Is(err, errFoundNamespaceReference)
+}
+
+var errFoundNamespaceReference = errors.New("found namespace reference")
+
+func namespaceReferenceCandidatePath(path string) bool {
+	lower := strings.ToLower(path)
+	for _, suffix := range []string{
+		".cls",
+		".trigger",
+		".object",
+		".object-meta.xml",
+		".field-meta.xml",
+		".fieldset-meta.xml",
+		".recordtype-meta.xml",
+		".validationrule-meta.xml",
+		".layout-meta.xml",
+		".permissionset-meta.xml",
+		".profile-meta.xml",
+	} {
+		if strings.HasSuffix(lower, suffix) {
 			return true
 		}
 	}

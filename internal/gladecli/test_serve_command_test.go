@@ -51,6 +51,28 @@ func TestTryTestServerRunAutoConnect(t *testing.T) {
 	}
 }
 
+func TestRunTestConnectRequiresServerWithImplicitDurationHistory(t *testing.T) {
+	root := t.TempDir()
+	writeServeTestProject(t, root)
+	historyPath := defaultCLIDurationHistoryPath(root)
+	if err := os.MkdirAll(filepath.Dir(historyPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(historyPath, []byte(`{"classDurations":{"WarmOneTest":1}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--connect", "--json", "--no-progress"}, &stdout, &stderr)
+
+	if code == 0 {
+		t.Fatalf("exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "test server is not running") {
+		t.Fatalf("stderr = %q, want missing server error", stderr.String())
+	}
+}
+
 func TestRunTestServeRejectsFlagTokenAsValue(t *testing.T) {
 	err := runTestServe(context.Background(), []string{"--project", "--socket", "--bogus"}, io.Discard)
 	if err == nil {

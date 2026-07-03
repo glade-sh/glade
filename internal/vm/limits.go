@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 type LimitMode string
@@ -112,6 +113,9 @@ func (vm *VM) SetLimitCaps(caps LimitCaps) {
 func (vm *VM) ResetLimits() {
 	vm.limits = Limits{}
 	vm.limitViolations = nil
+	vm.cpuBudgetUsed = 0
+	vm.cpuStartedAt = time.Time{}
+	vm.cpuRunning = false
 }
 
 func (vm *VM) incrementLimit(name string, delta int) error {
@@ -132,8 +136,7 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 		vm.limits.HeapSize += delta
 		return vm.checkLimit(name, vm.limits.HeapSize, vm.limitCaps.HeapSize)
 	case "cpuTime":
-		vm.limits.CPUTimeMS += delta
-		return vm.checkLimit(name, vm.limits.CPUTimeMS, vm.limitCaps.CPUTimeMS)
+		return vm.incrementCPUBudget(delta)
 	case "callouts":
 		vm.limits.Callouts += delta
 		return vm.checkLimit(name, vm.limits.Callouts, vm.limitCaps.Callouts)
@@ -176,6 +179,37 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 	default:
 		return fmt.Errorf("unknown limit %q", name)
 	}
+}
+
+func (vm *VM) startCPUClock() {
+	if vm.cpuRunning {
+		return
+	}
+	vm.cpuStartedAt = time.Now()
+	vm.cpuRunning = true
+}
+
+func (vm *VM) sampleCPUTimeMS() int {
+	if !vm.cpuRunning || vm.cpuStartedAt.IsZero() {
+		return vm.limits.CPUTimeMS
+	}
+	ms := int(time.Since(vm.cpuStartedAt).Milliseconds())
+	if ms <= 0 {
+		ms = 1
+	}
+	if ms > vm.limits.CPUTimeMS {
+		vm.limits.CPUTimeMS = ms
+	}
+	return vm.limits.CPUTimeMS
+}
+
+func (vm *VM) incrementCPUBudget(delta int) error {
+	if delta <= 0 {
+		return nil
+	}
+	vm.cpuBudgetUsed += delta
+	vm.sampleCPUTimeMS()
+	return vm.checkLimit("cpuTime", vm.cpuBudgetUsed, vm.limitCaps.CPUTimeMS)
 }
 
 func (vm *VM) checkLimit(name string, used, cap int) error {
@@ -244,7 +278,7 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getLimitHeapSize":
 		return Int(int64(vm.limitCaps.HeapSize)), true
 	case "getCpuTime":
-		return Int(int64(vm.limits.CPUTimeMS)), true
+		return Int(int64(vm.sampleCPUTimeMS())), true
 	case "getLimitCpuTime":
 		return Int(int64(vm.limitCaps.CPUTimeMS)), true
 	case "getCallouts":

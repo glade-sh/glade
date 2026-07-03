@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -37,6 +38,22 @@ func TestParseDBUIOptionsPort(t *testing.T) {
 	}
 }
 
+func TestRunDBUIRejectsPublicBindWithoutOptIn(t *testing.T) {
+	t.Setenv("GLADE_SERVER_PUBLIC", "")
+	root := t.TempDir()
+	writeProjectWithWidgetField(t, root, "Name__c")
+	var stdout, stderr bytes.Buffer
+
+	code := Run(context.Background(), []string{"db", "ui", "--project", root, "--addr", "0.0.0.0:0", "--no-open"}, &stdout, &stderr)
+
+	if code != 1 {
+		t.Fatalf("exit = %d, want 1; stdout=%s stderr=%s", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "GLADE_SERVER_PUBLIC=1") {
+		t.Fatalf("stderr missing public bind guidance: %q", stderr.String())
+	}
+}
+
 func TestRunDBUIReadyFileUsesDefaultProjectEnv(t *testing.T) {
 	root := t.TempDir()
 	writeProjectWithWidgetField(t, root, "Name__c")
@@ -65,6 +82,54 @@ func TestRunDBUIReadyFileUsesDefaultProjectEnv(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "Glade db ui") || !strings.Contains(stdout.String(), "/db") {
 		t.Fatalf("stdout missing startup summary: %s", stdout.String())
+	}
+}
+
+func TestRunDBUIScopesRoutesToDBManager(t *testing.T) {
+	root := t.TempDir()
+	writeProjectWithWidgetField(t, root, "Name__c")
+	readyPath := filepath.Join(t.TempDir(), "ready.json")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan int, 1)
+	var stdout, stderr bytes.Buffer
+	go func() {
+		done <- Run(ctx, []string{"db", "ui", "--project", root, "--addr", "127.0.0.1:0", "--no-open", "--ready-file", readyPath}, &stdout, &stderr)
+	}()
+	ready := waitForDBUIReadyFile(t, readyPath)
+	client := http.Client{Timeout: 2 * time.Second}
+
+	reset, err := http.NewRequest(http.MethodPost, "http://"+ready.Addr+"/services/data/v60.0/glade/reset", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resetRes, err := client.Do(reset)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resetRes.Body.Close()
+	if resetRes.StatusCode != http.StatusNotFound {
+		t.Fatalf("reset status = %d, want 404", resetRes.StatusCode)
+	}
+
+	dbRes, err := client.Get("http://" + ready.Addr + "/services/data/v60.0/glade/db-manager/objects")
+	if err != nil {
+		t.Fatal(err)
+	}
+	dbRes.Body.Close()
+	if dbRes.StatusCode != http.StatusOK {
+		t.Fatalf("db-manager status = %d, want 200", dbRes.StatusCode)
+	}
+
+	cancel()
+	select {
+	case code := <-done:
+		if code != 0 {
+			t.Fatalf("exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatalf("db ui did not stop after cancel; stdout=%s stderr=%s", stdout.String(), stderr.String())
 	}
 }
 

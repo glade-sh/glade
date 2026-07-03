@@ -18,7 +18,17 @@ import (
 
 func requireWellFormedJSONBody(w http.ResponseWriter, r *http.Request) bool {
 	var body any
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	return decodeCompositeJSONBody(w, r, &body)
+}
+
+func decodeCompositeJSONBody(w http.ResponseWriter, r *http.Request, dest any) bool {
+	if rejectOversizeRequestBody(w, r) {
+		return false
+	}
+	if err := json.NewDecoder(r.Body).Decode(dest); err != nil {
+		if writeRequestBodyLimitError(w, err) {
+			return false
+		}
 		writeSalesforceError(w, errMalformedJSON, err.Error())
 		return false
 	}
@@ -53,8 +63,7 @@ func decodeCompositeRequestEnvelope(w http.ResponseWriter, r *http.Request) (com
 		AllOrNone        bool                           `json:"allOrNone"`
 		CompositeRequest *[]compositeSubrequestEnvelope `json:"compositeRequest"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeSalesforceError(w, errMalformedJSON, err.Error())
+	if !decodeCompositeJSONBody(w, r, &body) {
 		return compositeRequestEnvelope{}, false
 	}
 	if body.CompositeRequest == nil || len(*body.CompositeRequest) == 0 {
@@ -77,8 +86,7 @@ func decodeCompositeBatchEnvelope(w http.ResponseWriter, r *http.Request) (compo
 		BatchRequests *[]compositeSubrequestEnvelope `json:"batchRequests"`
 		HaltOnError   bool                           `json:"haltOnError"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeSalesforceError(w, errMalformedJSON, err.Error())
+	if !decodeCompositeJSONBody(w, r, &body) {
 		return compositeBatchEnvelope{}, false
 	}
 	if body.BatchRequests == nil || len(*body.BatchRequests) == 0 {
@@ -99,8 +107,7 @@ func requireCompositeTreeEnvelope(w http.ResponseWriter, r *http.Request) bool {
 	var body struct {
 		Records *[]map[string]json.RawMessage `json:"records"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeSalesforceError(w, errMalformedJSON, err.Error())
+	if !decodeCompositeJSONBody(w, r, &body) {
 		return false
 	}
 	if body.Records == nil || len(*body.Records) == 0 {
@@ -135,8 +142,7 @@ func requireCompositeGraphEnvelope(w http.ResponseWriter, r *http.Request) bool 
 			CompositeRequest *[]compositeSubrequestEnvelope `json:"compositeRequest"`
 		} `json:"graphs"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeSalesforceError(w, errMalformedJSON, err.Error())
+	if !decodeCompositeJSONBody(w, r, &body) {
 		return false
 	}
 	if body.Graphs == nil || len(*body.Graphs) == 0 {
@@ -207,9 +213,16 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) 
 	}
 	source := r.URL.Query().Get("anonymousBody")
 	if source == "" && r.Method == http.MethodPost {
+		if rejectOversizeRequestBody(w, r) {
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, maxLocalRequestBodyBytes)
 		var err error
 		source, err = executeAnonymousBodySource(r)
 		if err != nil {
+			if writeRequestBodyLimitError(w, err) {
+				return
+			}
 			writeJSON(w, http.StatusOK, executeAnonymousFailure(false, err.Error(), nil))
 			return
 		}
@@ -368,6 +381,12 @@ func executeAnonymousFailure(compiled bool, message string, logs []string) map[s
 }
 
 func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version string, parts []string) {
+	if r.Body != nil && r.Method != http.MethodGet {
+		if rejectOversizeRequestBody(w, r) {
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, maxLocalRequestBodyBytes)
+	}
 	if len(parts) == 0 {
 		switch r.Method {
 		case http.MethodGet:
@@ -611,7 +630,7 @@ func (s *Server) executeCompositeSubrequest(parent *http.Request, version string
 	if !compositeSubrequestRouteSupported(req.URL, version) {
 		writeSalesforceError(rec, errUnsupportedFeature, "Composite subrequest route is not supported by the local generic Composite orchestrator")
 	} else {
-		s.serveHTTPLocked(rec, req)
+		s.serveHTTPLocked(rec, req, splitPath(req.URL.EscapedPath()))
 	}
 	result := rec.Result()
 	defer result.Body.Close()
@@ -956,8 +975,7 @@ func (s *Server) handleCompositeSObjectTypedUpsert(w http.ResponseWriter, r *htt
 		AllOrNone bool                          `json:"allOrNone"`
 		Records   *[]map[string]json.RawMessage `json:"records"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeSalesforceError(w, errMalformedJSON, err.Error())
+	if !decodeCompositeJSONBody(w, r, &body) {
 		return
 	}
 	if body.Records == nil || len(*body.Records) == 0 {
@@ -1029,8 +1047,7 @@ func decodeCompositeSObjectBody(w http.ResponseWriter, r *http.Request, requireI
 		AllOrNone bool                          `json:"allOrNone"`
 		Records   *[]map[string]json.RawMessage `json:"records"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&rawBody); err != nil {
-		writeSalesforceError(w, errMalformedJSON, err.Error())
+	if !decodeCompositeJSONBody(w, r, &rawBody) {
 		return compositeSObjectBody{}, false
 	}
 	if rawBody.Records == nil || len(*rawBody.Records) == 0 {

@@ -94,6 +94,9 @@ type VM struct {
 	limitCaps       LimitCaps
 	limitMode       LimitMode
 	limitViolations []LimitViolation
+	cpuBudgetUsed   int
+	cpuStartedAt    time.Time
+	cpuRunning      bool
 	fakeNow         time.Time
 	lastNow         time.Time
 	hasLastNow      bool
@@ -142,19 +145,20 @@ type VM struct {
 	subMgmtTestRecords map[string]Value
 	subMgmtTestSeq     int
 	// --- Debug / trace hooks ---
-	debugHooks           DebugHooks
-	hasDebugHooks        bool
-	debugOutputSink      func(DebugEvent)
-	traceEnabled         bool
-	ctx                  context.Context
-	activeGetters        map[string]int
-	activeSetters        map[string]int
-	triggerGlobals       map[string]Value
-	cryptoRandomSeq      uint64
-	staticInitState      map[string]staticInitState
-	frameworkIDSequences map[string]uint64
-	lastAmbiguous        *overloadDiagnostic
-	activeConstructors   map[string]int
+	debugHooks                  DebugHooks
+	hasDebugHooks               bool
+	debugOutputSink             func(DebugEvent)
+	traceEnabled                bool
+	ctx                         context.Context
+	activeGetters               map[string]int
+	activeSetters               map[string]int
+	triggerGlobals              map[string]Value
+	frameworkDomainTriggerState map[string][]Value
+	cryptoRandomSeq             uint64
+	staticInitState             map[string]staticInitState
+	frameworkIDSequences        map[string]uint64
+	lastAmbiguous               *overloadDiagnostic
+	activeConstructors          map[string]int
 	// --- Describe caches ---
 	describeCache                map[string]Value
 	fieldDescribeCache           map[string]Value
@@ -164,6 +168,7 @@ type VM struct {
 	customDataCache              map[string]Value
 	soqlExecutionCache           *soql.ExecutionCache
 	dmlSummaryByChild            *dml.SummaryRelationCache
+	summarySideEffectObjects     map[string]bool
 	managedFeatureValues         map[string]Value
 	childRelCache                *childRelationshipCache
 	childRelationshipLookupCache *childRelationshipLookupCache
@@ -622,6 +627,7 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 		clone.fieldResolveCache = vm.fieldResolveCache
 		clone.soqlExecutionCache = vm.soqlExecutionCache
 		clone.dmlSummaryByChild = vm.dmlSummaryByChild
+		clone.summarySideEffectObjects = vm.summarySideEffectObjects
 		clone.loadedChildRelCache = vm.loadedChildRelCache
 		clone.lazyChildRelCache = vm.lazyChildRelCache
 	} else {
@@ -1375,7 +1381,9 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 		outcome, err := engine.ApplyAutomation(record.Object, record.ID)
 		if err != nil {
 			if allOrNone {
-				vm.restoreDMLRollbackPoint(rollback)
+				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+					return rollbackErr
+				}
 				vm.restoreSideEffects(sideEffects)
 				appendTrace(result, "apex.automation.rollback", "apex.automation", map[string]any{
 					"object": record.Object,
@@ -1392,7 +1400,9 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records, oldRecords []
 			}
 			if err := vm.refireAutomationUpdateTriggers(record.Object, record.ID, oldRecord, allOrNone, rollback, result); err != nil {
 				if allOrNone {
-					vm.restoreDMLRollbackPoint(rollback)
+					if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+						return rollbackErr
+					}
 					vm.restoreSideEffects(sideEffects)
 				}
 				return err
@@ -1433,7 +1443,9 @@ func (vm *VM) refireAutomationUpdateTriggers(objectName string, id storage.ID, o
 	}
 	if hasDMLFailures(failures) {
 		if allOrNone {
-			vm.restoreDMLRollbackPoint(rollback)
+			if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+				return rollbackErr
+			}
 		}
 		return fmt.Errorf("workflow update trigger failed for %s: %s", objectName, failures[0].Error)
 	}
@@ -1686,6 +1698,7 @@ func (vm *VM) ExecuteInClass(program ir.Program, className string) (result Resul
 }
 
 func (vm *VM) execute(program ir.Program, className string) (result Result, err error) {
+	vm.startCPUClock()
 	result = Result{Vars: vm.Globals, traceEnabled: vm.traceEnabled}
 	if vm.traceEnabled {
 		result.TraceFormat = trace.FormatChromeTraceEvent
@@ -1695,6 +1708,7 @@ func (vm *VM) execute(program ir.Program, className string) (result Result, err 
 			err = fmt.Errorf("internal VM panic: %v", recovered)
 		}
 		result.CapturedEmails = append([]CapturedEmail(nil), vm.capturedEmails...)
+		vm.sampleCPUTimeMS()
 		result.Limits = vm.limits
 		result.LimitMode = vm.limitMode
 		result.LimitViolations = append([]LimitViolation(nil), vm.limitViolations...)

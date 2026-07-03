@@ -50,6 +50,30 @@ func TestNoPrivateExamplePackageReferences(t *testing.T) {
 	}
 }
 
+func TestNoPersonalAbsolutePathsInTrackedText(t *testing.T) {
+	root := repoRoot(t)
+	forbidden := "/Users/" + "matt"
+	for _, rel := range repoTrackedFiles(t, root) {
+		fullPath := filepath.Join(root, filepath.FromSlash(rel))
+		if _, err := os.Stat(fullPath); err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			t.Fatal(err)
+		}
+		fileData, err := os.ReadFile(fullPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if bytes.IndexByte(fileData, 0) >= 0 {
+			continue
+		}
+		if strings.Contains(string(fileData), forbidden) {
+			t.Errorf("%s contains a personal absolute path", rel)
+		}
+	}
+}
+
 func TestPublicExampleNamesAvoidGenericPlaceholders(t *testing.T) {
 	root := repoRoot(t)
 	for _, rel := range repoTrackedFiles(t, root) {
@@ -140,6 +164,33 @@ func TestReleaseBuildProducesParserCapableArtifacts(t *testing.T) {
 	}
 	if strings.Contains(text, "doctor 2>/dev/null | grep -q") {
 		t.Fatal("scripts/release-build.sh must not pipe doctor into grep -q under pipefail")
+	}
+}
+
+func TestNoTrackedBuildArtifacts(t *testing.T) {
+	root := repoRoot(t)
+	for _, rel := range repoCachedFiles(t, root) {
+		if isTrackedBuildArtifact(rel) {
+			t.Errorf("%s is a tracked build artifact", rel)
+		}
+	}
+}
+
+func TestTrackedBuildArtifactMatcher(t *testing.T) {
+	tests := map[string]bool{
+		"apextest.test":              true,
+		"internal/vm/vm.test":        true,
+		"bin/glade":                  true,
+		"dist/SHA256SUMS.txt":        true,
+		"coverage.out":               true,
+		"internal/server/.DS_Store":  true,
+		"docs/coverage.out.md":       false,
+		"internal/testreport/report": false,
+	}
+	for rel, want := range tests {
+		if got := isTrackedBuildArtifact(rel); got != want {
+			t.Fatalf("isTrackedBuildArtifact(%q) = %v, want %v", rel, got, want)
+		}
 	}
 }
 
@@ -308,6 +359,34 @@ func repoTrackedFiles(t *testing.T, root string) []string {
 		files = append(files, filepath.ToSlash(line))
 	}
 	return files
+}
+
+func repoCachedFiles(t *testing.T, root string) []string {
+	t.Helper()
+	cmd := exec.Command("git", "ls-files", "--cached")
+	cmd.Dir = root
+	out, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("git ls-files --cached: %v", err)
+	}
+	var files []string
+	for _, line := range strings.Split(string(out), "\n") {
+		if line == "" {
+			continue
+		}
+		files = append(files, filepath.ToSlash(line))
+	}
+	return files
+}
+
+func isTrackedBuildArtifact(rel string) bool {
+	path := filepath.ToSlash(rel)
+	base := filepath.Base(path)
+	return strings.HasSuffix(base, ".test") ||
+		base == ".DS_Store" ||
+		base == "coverage.out" ||
+		strings.HasPrefix(path, "bin/") ||
+		strings.HasPrefix(path, "dist/")
 }
 
 func readRepoFile(t *testing.T, root, rel string) string {

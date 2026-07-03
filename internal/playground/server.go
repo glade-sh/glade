@@ -100,7 +100,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.Method == http.MethodPost && r.URL.Path == "/playground/api/run":
 		s.handleRun(w, r)
 	case r.Method == http.MethodPost && r.URL.Path == "/playground/api/reset":
-		s.runner.Reset()
+		if err := s.runner.Reset(); err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 		writeJSON(w, http.StatusOK, map[string]bool{"reset": true})
 	case r.Method == http.MethodPost && r.URL.Path == "/playground/api/seed":
 		s.handleSeed(w, r)
@@ -143,7 +146,10 @@ func (s *Server) handleLoadExample(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	s.runner.Reset()
+	if err := s.runner.Reset(); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 	s.runner.InvalidateSourceRuntime()
 	if s.runner.cache != nil {
 		_ = s.runner.cache.ClearLatest()

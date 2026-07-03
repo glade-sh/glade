@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -147,6 +148,10 @@ func runServer(ctx context.Context, args []string, w io.Writer, progressW io.Wri
 			return err
 		}
 	}
+	if err := validateServerBindAllowed(addr); err != nil {
+		renderer.Finish(cliui.Result{OK: false, Label: "server failed"})
+		return err
+	}
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "server", Label: "Starting listener", Current: 3, Total: 3})
 	renderer.Finish(cliui.Result{OK: true, Label: "server ready"})
 	url := server.URL(addr)
@@ -168,7 +173,11 @@ func runServer(ctx context.Context, args []string, w io.Writer, progressW io.Wri
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Stop:")
 	fmt.Fprintln(w, "  Ctrl-C")
-	return http.ListenAndServe(addr, handler)
+	if isPublicServerBind(addr) {
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "WARNING  Server is network-reachable. Local org data and mutation routes are unauthenticated.")
+	}
+	return serveHTTPWithContext(ctx, addr, handler)
 }
 
 func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
@@ -361,6 +370,9 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 			ratePerMinute:  ratePerMinute,
 		})
 	}
+	if err := validateServerBindAllowed(addr); err != nil {
+		return err
+	}
 	if resetOnStart {
 		renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "playground", Label: "Preparing database"})
 		if err := resetPlaygroundState(dataRoot, workspaceID, dbPath); err != nil {
@@ -408,6 +420,10 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 	if resetOnStart {
 		fmt.Fprintln(w, "Reset     completed")
 	}
+	if isPublicServerBind(addr) {
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "WARNING  Playground is network-reachable. Local org data and mutation routes are unauthenticated.")
+	}
 	renderer.Finish(cliui.Result{OK: true, Label: "playground ready"})
 	if once {
 		_ = handler
@@ -416,7 +432,41 @@ func runPlayground(ctx context.Context, args []string, w io.Writer, progressW io
 	if openBrowser {
 		_ = openURL(url)
 	}
-	return http.ListenAndServe(addr, handler)
+	return serveHTTPWithContext(ctx, addr, handler)
+}
+
+func serveHTTPWithContext(ctx context.Context, addr string, handler http.Handler) error {
+	httpServer := &http.Server{Addr: addr, Handler: handler}
+	go func() {
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		_ = httpServer.Shutdown(shutdownCtx)
+	}()
+	return normalizeDevVFServeError(httpServer.ListenAndServe())
+}
+
+func validateServerBindAllowed(addr string) error {
+	if !isPublicServerBind(addr) || os.Getenv("GLADE_SERVER_PUBLIC") == "1" {
+		return nil
+	}
+	return fmt.Errorf("refusing network-reachable bind %q; set GLADE_SERVER_PUBLIC=1 to expose unauthenticated local server routes", addr)
+}
+
+func isPublicServerBind(addr string) bool {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		host = addr
+	}
+	host = strings.Trim(strings.TrimSpace(host), "[]")
+	if strings.EqualFold(host, "localhost") {
+		return false
+	}
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return true
+	}
+	return !ip.IsLoopback()
 }
 
 type playgroundWizardOptions struct {
@@ -491,8 +541,12 @@ func writePlaygroundWizard(w io.Writer, opts playgroundWizardOptions) error {
 	} else {
 		args = append(args, "--open")
 	}
+	command := shellCommand(args...)
+	if opts.public || isPublicServerBind(opts.addr) {
+		command = "GLADE_SERVER_PUBLIC=1 " + command
+	}
 	fmt.Fprintln(w, "Playground wizard")
-	fmt.Fprintf(w, "  %s\n", shellCommand(args...))
+	fmt.Fprintf(w, "  %s\n", command)
 	fmt.Fprintln(w, "  Open: "+playgroundURL(opts.addr, opts.exampleID))
 	return nil
 }

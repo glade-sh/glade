@@ -14,10 +14,18 @@ and composed by the CLI.
 - `internal/config`: `glade.yml` discovery and parsing.
 - `internal/diagnostic`: shared diagnostic model for parser, semantic analysis,
   runtime, and CLI.
+- `internal/flagparse`, `internal/cliui`, `internal/gladehome`, and
+  `internal/runartifact`: shared command parsing, terminal output, user data
+  locations, and checked artifact paths.
 - `internal/project`: SFDX package directory discovery and source file
   collection.
+- `internal/resource`, `internal/orgimport`, and `internal/automation`:
+  local project resource loading, Salesforce data import orchestration, and
+  editor/automation-facing payload contracts.
 - `internal/schema`: Metadata API custom object, field, picklist, and record type
   model.
+- `internal/orgdescribe`: captured describe-symbol support for local
+  intelligence.
 - `internal/typesys`: first symbol index for declarations, members, triggers,
   and schema objects.
 - `internal/codeintel`: editor-neutral project intelligence built from the type
@@ -48,6 +56,8 @@ and composed by the CLI.
 - `internal/soql`: in-memory SOQL parser and executor for the supported query
   subset, including binds, ordering, limits, offsets, `COUNT()`, and simple
   parent relationship projection.
+- `internal/sosl`: local SOSL parsing/execution for the supported search
+  surface.
 - `internal/dml`: DML insert/update/delete/upsert/undelete pipeline,
   all-or-none result shaping, validation, rollback snapshots, and trigger
   invocation hooks for the supported VM paths.
@@ -61,6 +71,8 @@ and composed by the CLI.
   type-dependency graph, refreshed incrementally).
 - `internal/profile`: native trace/profile aggregation and JSON/Markdown
   reporting.
+- `internal/debuglog`, `internal/apexlog`, and `internal/trace`: debug log
+  parsing, Apex log surfaces, and native trace event capture.
 - `internal/enterprise`, `internal/enterprisegraph`,
   `internal/enterpriseassess`, `internal/enterprisecruft`, and
   `internal/refactorproof`: enterprise report contracts, static project graph,
@@ -73,6 +85,15 @@ and composed by the CLI.
   stubs, Tooling `executeAnonymous`, local Tooling source/schema metadata reads,
   composite sObject insert, fixture/scoped reset endpoints, stable unsupported
   Apex REST dispatch errors, and optional SQLite-backed persistence.
+- `internal/dbmanager`: browser-facing local record-manager API contracts used
+  by the DB UI.
+- `internal/playground`, `internal/tui`, `internal/visualforce`,
+  `internal/aura`, `internal/lwc`, `internal/lwcbrowser`,
+  `internal/lwcruntime`, and `internal/lwcshell`: local browser preview,
+  terminal UI, Visualforce, Aura/LWC analysis, runtime asset, and shell support.
+- `internal/namespaceremap`, `internal/refactor`, and `internal/refactorproof`:
+  namespace aliasing and conservative refactor/proof support.
+- `internal/startupcache`: local startup-cache metadata.
 - Maintenance scanners, compatibility fixtures, capability catalogs, advisory
   performance scans, docs inventory, and surface ledgers ship as plugins.
   Salesforce docs inventory extraction lives in the compat plugin because it

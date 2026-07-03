@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/packageartifact"
 	"github.com/glade-sh/glade/internal/project"
@@ -62,8 +63,11 @@ func TestBuildIndexDuplicateType(t *testing.T) {
 	writeFile(t, second, "public class hello {}")
 
 	idx := Build(project.Project{Root: root, ApexFiles: []string{first, second}}, schema.Schema{})
-	if !idx.HasErrors() {
-		t.Fatalf("expected duplicate diagnostic: %#v", idx.Diagnostics)
+	if idx.HasErrors() {
+		t.Fatalf("duplicate type should be warning-only: %#v", idx.Diagnostics)
+	}
+	if len(idx.Diagnostics) != 1 || idx.Diagnostics[0].Code != "GLADETYPE001" || idx.Diagnostics[0].Severity != diagnostic.Warning {
+		t.Fatalf("expected duplicate warning diagnostic: %#v", idx.Diagnostics)
 	}
 }
 

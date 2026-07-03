@@ -29,7 +29,7 @@ type PerfCloneClass struct {
 	TestClones  uint64 `json:"testClones,omitempty"`
 }
 
-var perfCounters struct {
+type runPerfCounters struct {
 	cloneRuntimeOrg       atomic.Uint64
 	journalRollbacks      atomic.Uint64
 	cloneFallbacks        atomic.Uint64
@@ -37,26 +37,50 @@ var perfCounters struct {
 	runDurationMS         atomic.Int64
 	cloneRuntimeOrgMS     atomic.Int64
 	cloneRuntimeMachineMS atomic.Int64
+	storageCloneRuntime   atomic.Uint64
+	storageCloneRollback  atomic.Uint64
 	mu                    sync.Mutex
 	classes               map[string]*PerfCloneClass
+}
+
+var compatibilityPerfCounters atomic.Pointer[runPerfCounters]
+
+func newRunPerfCounters() *runPerfCounters {
+	return &runPerfCounters{}
+}
+
+func currentPerfCounters() *runPerfCounters {
+	if counters := compatibilityPerfCounters.Load(); counters != nil {
+		return counters
+	}
+	counters := newRunPerfCounters()
+	if compatibilityPerfCounters.CompareAndSwap(nil, counters) {
+		return counters
+	}
+	return compatibilityPerfCounters.Load()
+}
+
+func publishPerfCounters(counters *runPerfCounters) {
+	if counters == nil {
+		return
+	}
+	compatibilityPerfCounters.Store(counters)
 }
 
 func ResetPerfCounters() {
 	storage.ResetCloneStats()
 	vm.ResetPerfCounters()
-	perfCounters.cloneRuntimeOrg.Store(0)
-	perfCounters.journalRollbacks.Store(0)
-	perfCounters.cloneFallbacks.Store(0)
-	perfCounters.setupDurationMS.Store(0)
-	perfCounters.runDurationMS.Store(0)
-	perfCounters.cloneRuntimeOrgMS.Store(0)
-	perfCounters.cloneRuntimeMachineMS.Store(0)
-	perfCounters.mu.Lock()
-	perfCounters.classes = nil
-	perfCounters.mu.Unlock()
+	compatibilityPerfCounters.Store(newRunPerfCounters())
 }
 
 func SnapshotPerfCounters() PerfCounters {
+	return snapshotPerfCounters(currentPerfCounters())
+}
+
+func snapshotPerfCounters(perfCounters *runPerfCounters) PerfCounters {
+	if perfCounters == nil {
+		return PerfCounters{}
+	}
 	perfCounters.mu.Lock()
 	defer perfCounters.mu.Unlock()
 	out := PerfCounters{
@@ -67,8 +91,11 @@ func SnapshotPerfCounters() PerfCounters {
 		RunDurationMS:         perfCounters.runDurationMS.Load(),
 		CloneRuntimeOrgMS:     perfCounters.cloneRuntimeOrgMS.Load(),
 		CloneRuntimeMachineMS: perfCounters.cloneRuntimeMachineMS.Load(),
-		StorageCloneStats:     storage.SnapshotCloneStats(),
-		VMPerf:                vm.SnapshotPerfCounters(),
+		StorageCloneStats: storage.CloneStats{
+			CloneRuntimeCalls:          perfCounters.storageCloneRuntime.Load(),
+			CloneRollbackSnapshotCalls: perfCounters.storageCloneRollback.Load(),
+		},
+		VMPerf: vm.SnapshotPerfCounters(),
 	}
 	if len(perfCounters.classes) > 0 {
 		out.CloneClasses = make([]PerfCloneClass, 0, len(perfCounters.classes))
@@ -87,31 +114,45 @@ func SnapshotPerfCounters() PerfCounters {
 	return out
 }
 
-func recordJournalRollback() {
+func perfCounterFor(counters []*runPerfCounters) *runPerfCounters {
+	if len(counters) > 0 && counters[0] != nil {
+		return counters[0]
+	}
+	return currentPerfCounters()
+}
+
+func recordJournalRollback(counters ...*runPerfCounters) {
+	perfCounters := perfCounterFor(counters)
 	perfCounters.journalRollbacks.Add(1)
 }
 
-func recordCloneFallback() {
+func recordCloneFallback(counters ...*runPerfCounters) {
+	perfCounters := perfCounterFor(counters)
 	perfCounters.cloneFallbacks.Add(1)
 }
 
-func recordSetupDuration(d time.Duration) {
+func recordSetupDuration(d time.Duration, counters ...*runPerfCounters) {
+	perfCounters := perfCounterFor(counters)
 	perfCounters.setupDurationMS.Add(d.Milliseconds())
 }
 
-func recordRunDuration(d time.Duration) {
+func recordRunDuration(d time.Duration, counters ...*runPerfCounters) {
+	perfCounters := perfCounterFor(counters)
 	perfCounters.runDurationMS.Add(d.Milliseconds())
 }
 
-func recordCloneRuntimeOrgDuration(d time.Duration) {
+func recordCloneRuntimeOrgDuration(d time.Duration, counters ...*runPerfCounters) {
+	perfCounters := perfCounterFor(counters)
 	perfCounters.cloneRuntimeOrgMS.Add(d.Milliseconds())
 }
 
-func recordCloneRuntimeMachineDuration(d time.Duration) {
+func recordCloneRuntimeMachineDuration(d time.Duration, counters ...*runPerfCounters) {
+	perfCounters := perfCounterFor(counters)
 	perfCounters.cloneRuntimeMachineMS.Add(d.Milliseconds())
 }
 
-func recordCloneRuntimeOrg(className, phase string) {
+func recordCloneRuntimeOrg(className, phase string, counters ...*runPerfCounters) {
+	perfCounters := perfCounterFor(counters)
 	perfCounters.cloneRuntimeOrg.Add(1)
 	if className == "" {
 		return
@@ -132,4 +173,15 @@ func recordCloneRuntimeOrg(className, phase string) {
 	case "test":
 		entry.TestClones++
 	}
+}
+
+func recordStorageCloneRuntime(counters ...*runPerfCounters) {
+	perfCounters := perfCounterFor(counters)
+	perfCounters.storageCloneRuntime.Add(1)
+}
+
+func recordStorageCloneRollbackSnapshot(counters ...*runPerfCounters) {
+	perfCounters := perfCounterFor(counters)
+	perfCounters.storageCloneRollback.Add(1)
+	perfCounters.storageCloneRuntime.Add(1)
 }

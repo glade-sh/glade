@@ -72,8 +72,14 @@ func (s *Server) handleApexRest(w http.ResponseWriter, r *http.Request) {
 		writeSalesforceError(w, errUnsupportedFeature, "Apex REST method "+route.ClassName+"."+route.Method.Name+" must be static and take no parameters in the local server")
 		return
 	}
-	body, err := io.ReadAll(r.Body)
+	if rejectOversizeRequestBody(w, r) {
+		return
+	}
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxLocalRequestBodyBytes))
 	if err != nil {
+		if writeRequestBodyLimitError(w, err) {
+			return
+		}
 		writeSalesforceError(w, errMalformedJSON, err.Error())
 		return
 	}

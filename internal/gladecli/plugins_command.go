@@ -118,9 +118,12 @@ func writePluginsListJSON(ctx context.Context, w io.Writer, plugins []pluginhost
 		}
 		out.Plugins = append(out.Plugins, entry)
 	}
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
-	return enc.Encode(out)
+	return writeCLIJSONEnvelope(w, cliJSONEnvelope{
+		Command:  "plugins list",
+		Status:   "passed",
+		ExitCode: 0,
+		Data:     out,
+	})
 }
 
 func loadInstalledPluginManifest(ctx context.Context, plugin pluginhost.InstalledPlugin) (pluginhost.Manifest, bool, error) {
@@ -617,7 +620,7 @@ func runInstalledPluginCommand(ctx context.Context, args []string, stdout, stder
 	store := pluginhost.NewStore(pluginhost.DefaultRoot())
 	state, err := store.ReadInstalled()
 	if err != nil {
-		fmt.Fprintf(stderr, "glade: read plugin state: %v\n", err)
+		writeCommandError(stderr, args[0], fmt.Errorf("read plugin state: %w", err))
 		return 1, true
 	}
 	plugin, ok := pluginhost.FindByCommandRoot(state, args[0])
@@ -626,7 +629,7 @@ func runInstalledPluginCommand(ctx context.Context, args []string, stdout, stder
 	}
 	code, err := pluginhost.RunPlugin(ctx, plugin, args, stdout, stderr)
 	if err != nil {
-		fmt.Fprintf(stderr, "glade: plugin %s failed: %v\n", plugin.IdentityName(), err)
+		writeCommandError(stderr, args[0], fmt.Errorf("plugin %s failed: %w", plugin.IdentityName(), err))
 		return 1, true
 	}
 	return code, true

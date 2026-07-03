@@ -926,6 +926,89 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 	}
 }
 
+func TestDMLSummarySumUsesExactDecimalArithmetic(t *testing.T) {
+	org := testOrg()
+	org.Objects["Parent__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Parent__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Total__c": {APIName: "Total__c", Type: storage.FieldSummary, SummarizedField: "Child__c.Amount__c", SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "sum"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Child__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}},
+				"Amount__c": {APIName: "Amount__c", Type: storage.FieldDecimal},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	parent := engine.Insert([]storage.Record{{Object: "Parent__c"}})
+	if !parent[0].Success {
+		t.Fatalf("parent insert = %#v", parent[0])
+	}
+	children := engine.Insert([]storage.Record{
+		{Object: "Child__c", Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parent[0].ID), "Amount__c": storage.DecimalValue("133.33")}},
+		{Object: "Child__c", Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parent[0].ID), "Amount__c": storage.DecimalValue("133.33")}},
+		{Object: "Child__c", Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parent[0].ID), "Amount__c": storage.DecimalValue("133.34")}},
+	})
+	if !children[0].Success || !children[1].Success || !children[2].Success {
+		t.Fatalf("child insert = %#v", children)
+	}
+	stored := org.Objects["Parent__c"].Records[parent[0].ID]
+	if got := stored.Fields["Total__c"].Decimal; got != "400" {
+		t.Fatalf("summary total = %q, want 400", got)
+	}
+}
+
+func TestDMLSummarySumPreservesHighScaleDecimal(t *testing.T) {
+	org := testOrg()
+	org.Objects["Parent__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Parent__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Total__c": {APIName: "Total__c", Type: storage.FieldSummary, SummarizedField: "Child__c.Amount__c", SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "sum"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Child__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}},
+				"Amount__c": {APIName: "Amount__c", Type: storage.FieldDecimal},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	parent := engine.Insert([]storage.Record{{Object: "Parent__c"}})
+	if !parent[0].Success {
+		t.Fatalf("parent insert = %#v", parent[0])
+	}
+	children := engine.Insert([]storage.Record{
+		{Object: "Child__c", Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parent[0].ID), "Amount__c": storage.DecimalValue("0.00000000001")}},
+		{Object: "Child__c", Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parent[0].ID), "Amount__c": storage.DecimalValue("0.00000000001")}},
+	})
+	if !children[0].Success || !children[1].Success {
+		t.Fatalf("child insert = %#v", children)
+	}
+	stored := org.Objects["Parent__c"].Records[parent[0].ID]
+	if got := stored.Fields["Total__c"].Decimal; got != "0.00000000002" {
+		t.Fatalf("high-scale summary total = %q, want 0.00000000002", got)
+	}
+}
+
 func TestDMLRecalculatesSummaryFieldsWithNestedFormulaAndDefaultFilter(t *testing.T) {
 	org := testOrg()
 	org.Objects["Parent__c"] = storage.ObjectState{
@@ -4850,6 +4933,22 @@ func TestWorkflowFieldUpdateWithIsolationJournalAvoidsRollbackSnapshot(t *testin
 	}
 }
 
+func TestRestoreRollbackPointReturnsIsolationJournalRollbackError(t *testing.T) {
+	org := testOrg()
+	engine := NewEngine(&org)
+	journal := storage.NewIsolationJournal(&org)
+	engine.IsolationJournal = journal
+	mark := journal.Mark()
+	journal.RecordUpdate("Account", "001000000000001", storage.Record{ID: "001000000000001", Object: "Account"})
+	delete(org.Objects, "Account")
+
+	err := engine.restoreRollbackPoint(rollbackPoint{enabled: true, journal: true, mark: mark})
+
+	if err == nil || !strings.Contains(err.Error(), "isolation journal rollback missing object Account") {
+		t.Fatalf("rollback error = %v", err)
+	}
+}
+
 func TestWorkflowFieldUpdateBooleanNumericLiteral(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]
@@ -5236,6 +5335,27 @@ func TestFormulaEvaluatesMultiplication(t *testing.T) {
 
 	value, _, ok := EvaluateRecordFormulaValueInOrg(definition.Fields["Total__c"].Formula, definition.Fields["Total__c"], &org, definition, record)
 	if !ok || value.Kind != storage.ValueDecimal || value.Decimal != "21.5" {
+		t.Fatalf("formula value = %#v, ok=%v", value, ok)
+	}
+}
+
+func TestFormulaDecimalArithmeticPreservesComputedText(t *testing.T) {
+	org := testOrg()
+	definition := storage.ObjectDefinition{
+		APIName: "Line__c",
+		Fields: map[string]storage.Field{
+			"MembershipAmount__c": {APIName: "MembershipAmount__c", Type: storage.FieldDecimal},
+			"MonthlyAmount__c":    {APIName: "MonthlyAmount__c", Type: storage.FieldDecimal},
+			"Remaining__c":        {APIName: "Remaining__c", Type: storage.FieldCalculated, DisplayType: "Currency", Formula: "MembershipAmount__c - (MonthlyAmount__c * 11)"},
+		},
+	}
+	record := storage.Record{Object: "Line__c", Fields: map[string]storage.Value{
+		"MembershipAmount__c": storage.DecimalValue("1600"),
+		"MonthlyAmount__c":    storage.DecimalValue("133.33"),
+	}}
+
+	value, _, ok := EvaluateRecordFormulaValueInOrg(definition.Fields["Remaining__c"].Formula, definition.Fields["Remaining__c"], &org, definition, record)
+	if !ok || value.Kind != storage.ValueDecimal || value.Decimal != "133.37" {
 		t.Fatalf("formula value = %#v, ok=%v", value, ok)
 	}
 }

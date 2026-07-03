@@ -19,6 +19,8 @@ const (
 	signalThrow    controlSignal = "throw"
 )
 
+const maxTraceEvents = 10000
+
 type execOutcome struct {
 	value       Value
 	signal      controlSignal
@@ -52,21 +54,16 @@ func apexConditionBool(value Value, context string) (bool, error) {
 
 func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, error) {
 	for seq, inst := range program.Instructions {
-		vm.limits.CPUTimeMS++
-		if vm.limits.CPUTimeMS%64 == 0 {
+		if err := vm.incrementCPUBudget(1); err != nil {
+			return execOutcome{}, err
+		}
+		if vm.cpuBudgetUsed%64 == 0 {
 			if err := vm.ctx.Err(); err != nil {
 				return execOutcome{}, err
 			}
 		}
-		if vm.limitCaps.CPUTimeMS >= 0 && vm.limits.CPUTimeMS > vm.limitCaps.CPUTimeMS {
-			if vm.limitMode == LimitModeStrict || vm.limits.CPUTimeMS == vm.limitCaps.CPUTimeMS+1 {
-				if err := vm.checkLimit("cpuTime", vm.limits.CPUTimeMS, vm.limitCaps.CPUTimeMS); err != nil {
-					return execOutcome{}, err
-				}
-			}
-		}
 		if vm.traceEnabled && result != nil {
-			result.Trace = append(result.Trace, statementTraceEvent(seq, inst, program.Source))
+			appendResultTrace(result, statementTraceEvent(seq, inst, program.Source))
 		}
 		vm.setCurrentStatement(inst, program.Source)
 		if err := vm.maybePauseForDebug(inst); err != nil {
@@ -254,7 +251,7 @@ func appendTrace(result *Result, name, category string, args map[string]any) {
 	if result == nil || !result.traceEnabled {
 		return
 	}
-	result.Trace = append(result.Trace, trace.Instant(name, category, int64(len(result.Trace)), args))
+	appendResultTrace(result, trace.Instant(name, category, int64(len(result.Trace)), args))
 }
 
 func traceIsEnabled(result *Result) bool {
@@ -272,7 +269,7 @@ func appendDurationTrace(result *Result, name, category string, startSeq int64, 
 	if result == nil || !result.traceEnabled || durationUS <= 0 {
 		return
 	}
-	result.Trace = append(result.Trace, trace.Duration(name, category, startSeq, durationUS, args))
+	appendResultTrace(result, trace.Duration(name, category, startSeq, durationUS, args))
 }
 
 func appendDurationTraceLazy(result *Result, name, category string, startSeq int64, durationUS int64, args func() map[string]any) {
@@ -287,6 +284,29 @@ func traceSeqLen(result *Result) int {
 		return 0
 	}
 	return len(result.Trace)
+}
+
+func appendResultTrace(result *Result, event trace.Event) {
+	if result == nil {
+		return
+	}
+	if len(result.Trace) < maxTraceEvents {
+		result.Trace = append(result.Trace, event)
+		return
+	}
+	if len(result.Trace) == maxTraceEvents {
+		result.Trace = append(result.Trace, trace.Instant("apex.trace.truncated", "apex.trace", int64(maxTraceEvents), map[string]any{
+			"dropped": 1,
+			"limit":   maxTraceEvents,
+		}))
+		return
+	}
+	last := &result.Trace[len(result.Trace)-1]
+	if last.Args == nil {
+		last.Args = make(map[string]any)
+	}
+	dropped, _ := last.Args["dropped"].(int)
+	last.Args["dropped"] = dropped + 1
 }
 
 func traceSpanStart(result *Result) (int64, time.Time) {

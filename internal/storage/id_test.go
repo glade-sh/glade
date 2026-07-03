@@ -112,6 +112,47 @@ func TestEnsureUniqueKeyPrefixesFastPathAvoidsFullPrefixRebuild(t *testing.T) {
 	}
 }
 
+func TestEnsureUniqueKeyPrefixesValidatedMarkerTracksObjectCount(t *testing.T) {
+	org := NewOrgState()
+	org.Objects["Alpha__c"] = ObjectState{Definition: ObjectDefinition{APIName: "Alpha__c", KeyPrefix: "a00"}}
+
+	EnsureUniqueKeyPrefixes(&org)
+	if !org.keyPrefixesValidated || org.keyPrefixesValidatedObjectCount != 1 {
+		t.Fatalf("validation marker = %v/%d, want true/1", org.keyPrefixesValidated, org.keyPrefixesValidatedObjectCount)
+	}
+
+	org.Objects["Beta__c"] = ObjectState{Definition: ObjectDefinition{APIName: "Beta__c", KeyPrefix: "a00"}}
+	EnsureUniqueKeyPrefixes(&org)
+
+	alpha := org.Objects["Alpha__c"].Definition.KeyPrefix
+	beta := org.Objects["Beta__c"].Definition.KeyPrefix
+	if alpha == "" || beta == "" || alpha == beta {
+		t.Fatalf("custom prefixes alpha=%q beta=%q, want unique after object-count change", alpha, beta)
+	}
+	if !org.keyPrefixesValidated || org.keyPrefixesValidatedObjectCount != 2 {
+		t.Fatalf("validation marker after repair = %v/%d, want true/2", org.keyPrefixesValidated, org.keyPrefixesValidatedObjectCount)
+	}
+}
+
+func TestEnsureUniqueKeyPrefixesValidatedMarkerTracksPrefixChanges(t *testing.T) {
+	org := NewOrgState()
+	org.Objects["Alpha__c"] = ObjectState{Definition: ObjectDefinition{APIName: "Alpha__c", KeyPrefix: "a00"}}
+	org.Objects["Beta__c"] = ObjectState{Definition: ObjectDefinition{APIName: "Beta__c", KeyPrefix: "a01"}}
+
+	EnsureUniqueKeyPrefixes(&org)
+	beta := org.Objects["Beta__c"]
+	beta.Definition.KeyPrefix = "a00"
+	org.Objects["Beta__c"] = beta
+
+	EnsureUniqueKeyPrefixes(&org)
+
+	alphaPrefix := org.Objects["Alpha__c"].Definition.KeyPrefix
+	betaPrefix := org.Objects["Beta__c"].Definition.KeyPrefix
+	if alphaPrefix == "" || betaPrefix == "" || alphaPrefix == betaPrefix {
+		t.Fatalf("custom prefixes alpha=%q beta=%q, want unique after same-count prefix change", alphaPrefix, betaPrefix)
+	}
+}
+
 func TestCustomPrefixDoesNotCycleAfterLeadingARange(t *testing.T) {
 	const fullFirstCycle = 62*62 + 61*62*62
 	seen := make(map[string]struct{}, fullFirstCycle)

@@ -15,7 +15,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-const Version = 2
+const Version = 3
 
 // DAPCacheVersion matches the historical DAP startup cache version.
 const DAPCacheVersion = 3
@@ -39,6 +39,7 @@ type Entry struct {
 	Version     int              `json:"version"`
 	ProjectRoot string           `json:"projectRoot"`
 	BuiltAt     string           `json:"builtAt"`
+	RuntimeABI  string           `json:"runtimeAbi,omitempty"`
 	Manifest    Manifest         `json:"manifest"`
 	Org         storage.OrgState `json:"org"`
 	Runtime     CompiledRuntime  `json:"runtime"`
@@ -143,6 +144,13 @@ func Fresh(entry *Entry, projectRoot string, expectedVersion int) bool {
 	return freshManifest(entry.Version, entry.ProjectRoot, entry.Manifest, projectRoot, expectedVersion)
 }
 
+func FreshRuntime(entry *Entry, projectRoot string, expectedVersion int, expectedRuntimeABI string) bool {
+	if !Fresh(entry, projectRoot, expectedVersion) {
+		return false
+	}
+	return entry.RuntimeABI != "" && entry.RuntimeABI == expectedRuntimeABI
+}
+
 func freshManifest(version int, entryProjectRoot string, manifest Manifest, projectRoot string, expectedVersion int) bool {
 	if version != expectedVersion {
 		return false
@@ -174,25 +182,36 @@ func freshManifest(version int, entryProjectRoot string, manifest Manifest, proj
 
 func BuildManifest(projectRoot string, p project.Project, index typesys.Index) Manifest {
 	paths := make([]File, 0, 128)
-	for _, file := range deduplicateStrings(appendProjectFilesFromProject(p)) {
-		abs := filepath.Clean(file)
-		if !filepath.IsAbs(abs) {
-			abs = filepath.Join(projectRoot, abs)
+	for _, manifestProject := range manifestProjects(p) {
+		for _, file := range deduplicateStrings(appendProjectFilesFromProject(manifestProject)) {
+			abs := filepath.Clean(file)
+			if !filepath.IsAbs(abs) {
+				abs = filepath.Join(manifestProject.Root, abs)
+			}
+			if fp, ok := statFile(projectRoot, abs); ok {
+				paths = append(paths, fp)
+			}
 		}
-		if fp, ok := statFile(projectRoot, abs); ok {
+	}
+	for _, artifactPath := range dependencyArtifactPaths(p) {
+		if fp, ok := statFile(projectRoot, artifactPath); ok {
 			paths = append(paths, fp)
 		}
 	}
 	configPaths := make([]File, 0, 16)
-	for _, configPath := range collectConfigPaths(p) {
-		if fp, ok := statFile(projectRoot, configPath); ok {
-			configPaths = append(configPaths, fp)
+	for _, manifestProject := range manifestProjects(p) {
+		for _, configPath := range collectConfigPaths(manifestProject) {
+			if fp, ok := statFile(projectRoot, configPath); ok {
+				configPaths = append(configPaths, fp)
+			}
 		}
 	}
 	packageRoots := make([]Directory, 0, len(p.PackageDirectories))
-	for _, pkgRoot := range packageRootsForProject(p) {
-		if fp, ok := statDirectory(projectRoot, pkgRoot); ok {
-			packageRoots = append(packageRoots, fp)
+	for _, manifestProject := range manifestProjects(p) {
+		for _, pkgRoot := range packageRootsForProject(manifestProject) {
+			if fp, ok := statDirectory(projectRoot, pkgRoot); ok {
+				packageRoots = append(packageRoots, fp)
+			}
 		}
 	}
 	sort.Slice(paths, func(i, j int) bool { return paths[i].Path < paths[j].Path })
@@ -287,15 +306,46 @@ func appendProjectFilesFromProject(p project.Project) []string {
 			}
 		}
 	}
-	for _, dep := range p.ManagedPackageDependencies {
-		if dep.SourceRoot != "" {
-			out = append(out, filepath.Clean(dep.SourceRoot))
-		}
-		if dep.ArtifactPath != "" {
-			out = append(out, filepath.Clean(dep.ArtifactPath))
+	return out
+}
+
+func manifestProjects(p project.Project) []project.Project {
+	out := []project.Project{p}
+	seen := map[string]bool{filepath.Clean(p.Root): true}
+	var appendDeps func(project.Project)
+	appendDeps = func(parent project.Project) {
+		for _, dep := range parent.ManagedPackageDependencies {
+			if dep.Project == nil || dep.Project.Root == "" {
+				continue
+			}
+			root := filepath.Clean(dep.Project.Root)
+			if seen[root] {
+				continue
+			}
+			seen[root] = true
+			out = append(out, *dep.Project)
+			appendDeps(*dep.Project)
 		}
 	}
+	appendDeps(p)
 	return out
+}
+
+func dependencyArtifactPaths(p project.Project) []string {
+	var out []string
+	var appendDeps func(project.Project)
+	appendDeps = func(parent project.Project) {
+		for _, dep := range parent.ManagedPackageDependencies {
+			if dep.ArtifactPath != "" {
+				out = append(out, filepath.Clean(dep.ArtifactPath))
+			}
+			if dep.Project != nil {
+				appendDeps(*dep.Project)
+			}
+		}
+	}
+	appendDeps(p)
+	return deduplicateStrings(out)
 }
 
 func collectConfigPaths(p project.Project) []string {

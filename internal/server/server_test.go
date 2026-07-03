@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
@@ -149,6 +150,82 @@ func TestVersionDiscoveryRootMethodNotAllowed(t *testing.T) {
 	assertSalesforceError(t, rec, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
 	if rec.Header().Get("Allow") != http.MethodGet {
 		t.Fatalf("Allow = %q", rec.Header().Get("Allow"))
+	}
+}
+
+type blockingResponseWriter struct {
+	header      http.Header
+	release     chan struct{}
+	wroteHeader chan struct{}
+	code        int
+	once        sync.Once
+}
+
+func newBlockingResponseWriter() *blockingResponseWriter {
+	return &blockingResponseWriter{
+		header:      http.Header{},
+		release:     make(chan struct{}),
+		wroteHeader: make(chan struct{}),
+	}
+}
+
+func (w *blockingResponseWriter) Header() http.Header {
+	return w.header
+}
+
+func (w *blockingResponseWriter) WriteHeader(code int) {
+	w.code = code
+	w.once.Do(func() {
+		close(w.wroteHeader)
+	})
+	<-w.release
+}
+
+func (w *blockingResponseWriter) Write(payload []byte) (int, error) {
+	if w.code == 0 {
+		w.WriteHeader(http.StatusOK)
+	}
+	return len(payload), nil
+}
+
+func TestReadDiscoveryRequestsDoNotSerializeOnResponseWrite(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	blocking := newBlockingResponseWriter()
+	firstDone := make(chan struct{})
+	go func() {
+		defer close(firstDone)
+		handler.ServeHTTP(blocking, httptest.NewRequest(http.MethodGet, "/services/data", nil))
+	}()
+
+	select {
+	case <-blocking.wroteHeader:
+	case <-time.After(2 * time.Second):
+		t.Fatal("first discovery request did not reach response write")
+	}
+
+	secondDone := make(chan *httptest.ResponseRecorder, 1)
+	go func() {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data", nil))
+		secondDone <- rec
+	}()
+
+	select {
+	case rec := <-secondDone:
+		if rec.Code != http.StatusOK {
+			t.Fatalf("second discovery status = %d body=%s", rec.Code, rec.Body.String())
+		}
+	case <-time.After(200 * time.Millisecond):
+		t.Fatal("second read-only discovery request was blocked by another read response write")
+	}
+
+	close(blocking.release)
+	select {
+	case <-firstDone:
+	case <-time.After(2 * time.Second):
+		t.Fatal("first discovery request did not finish")
 	}
 }
 
@@ -2354,6 +2431,25 @@ func TestCompositeBatchRejectsMoreThanTwentyFiveSubrequests(t *testing.T) {
 	assertSalesforceError(t, rec, http.StatusBadRequest, "REQUEST_LIMIT_EXCEEDED", "25 subrequests")
 }
 
+func TestCompositeRejectsOversizeBody(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	body := `{"compositeRequest":[{"method":"GET","url":"` + serverTestDataPath + `/limits","referenceId":"` + strings.Repeat("x", maxLocalRequestBodyBytes+1) + `"}]}`
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/composite", strings.NewReader(body)))
+	if rec.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("status = %d, want 413; body length=%d", rec.Code, rec.Body.Len())
+	}
+	var errors []salesforceError
+	if err := json.Unmarshal(rec.Body.Bytes(), &errors); err != nil {
+		t.Fatalf("body is not a Salesforce error array: %v", err)
+	}
+	if len(errors) != 1 || errors[0].ErrorCode != "REQUEST_LIMIT_EXCEEDED" || !strings.Contains(errors[0].Message, "request body too large") {
+		t.Fatalf("errors = %#v", errors)
+	}
+}
+
 func TestGenericCompositeAllOrNoneRollsBackMutatingSubrequests(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -3547,6 +3643,23 @@ global class WidgetResource {
 	if got := post.Header().Get("Content-Type"); !strings.HasPrefix(got, "text/plain") {
 		t.Fatalf("POST Content-Type = %q, want text/plain", got)
 	}
+}
+
+func TestApexRestDispatchRejectsOversizeBody(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	handler.SetProjectIndex(writeApexRestProject(t, map[string]string{
+		"WidgetResource.cls": `
+@RestResource(urlMapping='/widgets/*')
+global class WidgetResource {
+  @HttpPost global static void postIt() {}
+}
+`,
+	}))
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/apexrest/widgets/42", strings.NewReader(strings.Repeat("x", maxLocalRequestBodyBytes+1))))
+	assertSalesforceError(t, rec, http.StatusRequestEntityTooLarge, "REQUEST_LIMIT_EXCEEDED", "request body too large")
 }
 
 func TestApexRestDispatchSerializesNestedMapValues(t *testing.T) {
@@ -5402,6 +5515,22 @@ func TestToolingExecuteAnonymousValidatesBodyEdges(t *testing.T) {
 				t.Fatalf("validation failure committed %d records", got)
 			}
 		})
+	}
+}
+
+func TestToolingExecuteAnonymousRejectsOversizePostBody(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	body := `{"anonymousBody":"` + strings.Repeat("x", maxLocalRequestBodyBytes+1) + `"}`
+	req := httptest.NewRequest(http.MethodPost, serverTestDataPath+"/tooling/executeAnonymous", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	assertSalesforceError(t, rec, http.StatusRequestEntityTooLarge, "REQUEST_LIMIT_EXCEEDED", "request body too large")
+	if got := len(org.Objects["Account"].Records); got != 0 {
+		t.Fatalf("oversize executeAnonymous committed %d records", got)
 	}
 }
 

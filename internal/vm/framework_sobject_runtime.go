@@ -58,7 +58,7 @@ func (vm *VM) callFrameworkSObjectDescribeMember(receiver Value, method string, 
 	}
 	return Null, false, nil
 }
-func (vm *VM) callFrameworkSObjectDomainTriggerHandler(args []Value) (Value, bool, error) {
+func (vm *VM) callFrameworkSObjectDomainTriggerHandler(frameworkClassName string, args []Value) (Value, bool, error) {
 	if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "Type") {
 		return Null, true, fmt.Errorf("framework_SObjectDomain.triggerHandler expects Type")
 	}
@@ -66,11 +66,11 @@ func (vm *VM) callFrameworkSObjectDomainTriggerHandler(args []Value) (Value, boo
 	if domainClassName == "" {
 		return Null, true, fmt.Errorf("framework_SObjectDomain.triggerHandler Type is blank")
 	}
-	if ctx, ok := vm.frameworkMockDatabaseContext(false); ok {
-		afterCtx, hasAfterCtx := vm.frameworkMockDatabaseContext(true)
+	if ctx, ok := vm.frameworkMockDatabaseContext(frameworkClassName, false); ok {
+		afterCtx, hasAfterCtx := vm.frameworkMockDatabaseContext(frameworkClassName, true)
 		saved := vm.triggerGlobals
 		vm.triggerGlobals = ctx
-		beforeDomain, _, err := vm.callFrameworkSObjectDomainTriggerHandlerForContext(domainClassName)
+		beforeDomain, _, err := vm.callFrameworkSObjectDomainTriggerHandlerForContext(frameworkClassName, domainClassName)
 		if err != nil {
 			vm.triggerGlobals = saved
 			return Null, true, err
@@ -81,7 +81,7 @@ func (vm *VM) callFrameworkSObjectDomainTriggerHandler(args []Value) (Value, boo
 			if frameworkDomainTriggerStateEnabled(beforeDomain) {
 				domainOverride = beforeDomain
 			}
-			if _, _, err := vm.callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(domainClassName, domainOverride); err != nil {
+			if _, _, err := vm.callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(frameworkClassName, domainClassName, domainOverride); err != nil {
 				vm.triggerGlobals = saved
 				return Null, true, err
 			}
@@ -89,13 +89,13 @@ func (vm *VM) callFrameworkSObjectDomainTriggerHandler(args []Value) (Value, boo
 		vm.triggerGlobals = saved
 		return Null, true, nil
 	}
-	return vm.callFrameworkSObjectDomainTriggerHandlerForContext(domainClassName)
+	return vm.callFrameworkSObjectDomainTriggerHandlerForContext(frameworkClassName, domainClassName)
 }
-func (vm *VM) callFrameworkSObjectDomainTriggerHandlerForContext(domainClassName string) (Value, bool, error) {
-	return vm.callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(domainClassName, Null)
+func (vm *VM) callFrameworkSObjectDomainTriggerHandlerForContext(frameworkClassName, domainClassName string) (Value, bool, error) {
+	return vm.callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(frameworkClassName, domainClassName, Null)
 }
-func (vm *VM) callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(domainClassName string, domainOverride Value) (Value, bool, error) {
-	if !vm.frameworkTriggerEventEnabled(domainClassName) {
+func (vm *VM) callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(frameworkClassName, domainClassName string, domainOverride Value) (Value, bool, error) {
+	if !vm.frameworkTriggerEventEnabled(frameworkClassName, domainClassName) {
 		return Null, true, nil
 	}
 	records := vm.triggerGlobals["Trigger.new"]
@@ -108,6 +108,14 @@ func (vm *VM) callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(domai
 	}
 	records = withConcreteSObjectListRuntime(records)
 	domain := domainOverride
+	if domain.Kind != ValueObject && triggerBool(vm.triggerGlobals, "Trigger.isAfter") {
+		if popped, ok := vm.popFrameworkDomainTriggerState(domainClassName); ok {
+			domain = popped
+		}
+	}
+	if domain.Kind == ValueObject {
+		domain = frameworkDomainWithRecords(domain, records)
+	}
 	var err error
 	if domain.Kind != ValueObject {
 		domain, err = vm.constructValue(domainClassName, []Value{records}, nil, resultForLookup())
@@ -124,6 +132,9 @@ func (vm *VM) callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(domai
 		if err != nil {
 			return Null, true, err
 		}
+	}
+	if domain.Kind == ValueObject {
+		domain = frameworkDomainWithRecords(domain, records)
 	}
 	handler := ""
 	switch {
@@ -160,13 +171,20 @@ func (vm *VM) callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(domai
 		return Null, true, vm.ambiguousOverloadError(domain.Type+"."+handler, handlerArgs)
 	}
 	if !ok {
-		if handled, err := vm.callFrameworkSObjectDomainBaseHandler(domain, handler, handlerArgs, resultForLookup()); handled || err != nil {
+		handled, err := vm.callFrameworkSObjectDomainBaseHandler(domain, handler, handlerArgs, resultForLookup())
+		if err != nil {
 			return Null, true, err
 		}
-		return Null, true, fmt.Errorf("%s.%s not found", domain.Type, handler)
+		if !handled {
+			return Null, true, fmt.Errorf("%s.%s not found", domain.Type, handler)
+		}
+	} else {
+		if _, err := vm.callMethodWithReceiver(target, domain, handlerArgs, resultForLookup()); err != nil {
+			return Null, true, err
+		}
 	}
-	if _, err := vm.callMethodWithReceiver(target, domain, handlerArgs, resultForLookup()); err != nil {
-		return Null, true, err
+	if triggerBool(vm.triggerGlobals, "Trigger.isBefore") && frameworkDomainTriggerStateEnabled(domain) {
+		vm.pushFrameworkDomainTriggerState(domainClassName, domain)
 	}
 	if triggerBool(vm.triggerGlobals, "Trigger.isBefore") && !triggerBool(vm.triggerGlobals, "Trigger.isDelete") {
 		if records, ok := frameworkDomainRecords(domain); ok {
@@ -175,6 +193,41 @@ func (vm *VM) callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(domai
 	}
 	return domain, true, nil
 }
+
+func (vm *VM) pushFrameworkDomainTriggerState(domainClassName string, domain Value) {
+	if vm == nil || domain.Kind != ValueObject {
+		return
+	}
+	if vm.frameworkDomainTriggerState == nil {
+		vm.frameworkDomainTriggerState = make(map[string][]Value)
+	}
+	key := frameworkDomainTriggerStateKey(domainClassName)
+	vm.frameworkDomainTriggerState[key] = append(vm.frameworkDomainTriggerState[key], domain)
+}
+
+func (vm *VM) popFrameworkDomainTriggerState(domainClassName string) (Value, bool) {
+	if vm == nil || len(vm.frameworkDomainTriggerState) == 0 {
+		return Null, false
+	}
+	key := frameworkDomainTriggerStateKey(domainClassName)
+	stack := vm.frameworkDomainTriggerState[key]
+	if len(stack) == 0 {
+		return Null, false
+	}
+	domain := stack[len(stack)-1]
+	stack = stack[:len(stack)-1]
+	if len(stack) == 0 {
+		delete(vm.frameworkDomainTriggerState, key)
+	} else {
+		vm.frameworkDomainTriggerState[key] = stack
+	}
+	return domain, true
+}
+
+func frameworkDomainTriggerStateKey(domainClassName string) string {
+	return strings.ToLower(strings.TrimSpace(domainClassName))
+}
+
 func (vm *VM) callFrameworkSObjectDomainBaseHandler(domain Value, handler string, handlerArgs []Value, result *Result) (bool, error) {
 	call := func(name string, args []Value) error {
 		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(domain.Type, name, args)
@@ -247,12 +300,32 @@ func frameworkDomainRecords(domain Value) (Value, bool) {
 	if domain.Kind != ValueObject {
 		return Null, false
 	}
-	for name, value := range domain.Fields {
-		if strings.EqualFold(name, "objects") && value.Kind == ValueList {
-			return value, true
-		}
+	if _, records, ok := objectFieldValue(domain, "Records"); ok && records.Kind == ValueList {
+		return records, true
+	}
+	if _, records, ok := objectFieldValue(domain, "objects"); ok && records.Kind == ValueList {
+		return records, true
 	}
 	return Null, false
+}
+
+func frameworkDomainWithRecords(domain Value, records Value) Value {
+	if domain.Kind != ValueObject || records.Kind != ValueList {
+		return domain
+	}
+	if domain.Fields == nil {
+		domain.Fields = make(map[string]Value)
+	}
+	if actual, _, ok := objectFieldValue(domain, "Records"); ok {
+		domain.Fields[actual] = records
+		return domain
+	}
+	if actual, _, ok := objectFieldValue(domain, "objects"); ok {
+		domain.Fields[actual] = records
+		return domain
+	}
+	domain.Fields["Records"] = records
+	return domain
 }
 func (vm *VM) callFrameworkSObjectDescribe(receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
 	token, ok := frameworkSObjectDescribeToken(receiver)

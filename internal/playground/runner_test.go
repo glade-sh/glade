@@ -1,11 +1,13 @@
 package playground
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -33,6 +35,54 @@ func TestRunnerExecutesAnonymousAgainstWorkspaceClass(t *testing.T) {
 	}
 	if len(result.OrgDiff) == 0 || result.OrgDiff[0].Object != "Account" || result.OrgDiff[0].Inserted != 1 {
 		t.Fatalf("org diff = %#v", result.OrgDiff)
+	}
+}
+
+func TestRunnerReturnsDBBootstrapError(t *testing.T) {
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	dbPath := filepath.Join(t.TempDir(), "not-a-db")
+	if err := os.Mkdir(dbPath, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	runner := NewRunner(ws, RunnerOptions{Version: "test", DBPath: dbPath})
+
+	_, err = runner.Run(t.Context(), RunRequest{
+		AnonymousBody: "System.debug('probe');",
+		Mode:          RunModeScratch,
+		LimitMode:     "permissive",
+		UseCache:      false,
+	})
+	if err == nil {
+		t.Fatalf("Run() error = nil, want DB bootstrap error")
+	}
+	if !strings.Contains(err.Error(), "not-a-db") {
+		t.Fatalf("Run() error = %v, want DB path detail", err)
+	}
+}
+
+func TestRunnerResetReturnsDBSaveError(t *testing.T) {
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	dbPath := filepath.Join(t.TempDir(), "not-a-db")
+	if err := os.Mkdir(dbPath, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	runner := NewRunner(ws, RunnerOptions{
+		Version: "test",
+		Org:     &vmOrgStore{org: storage.NewOrgState(), db: dbPath},
+	})
+
+	err = runner.Reset()
+	if err == nil {
+		t.Fatalf("Reset() error = nil, want DB save error")
+	}
+	if !strings.Contains(err.Error(), "not-a-db") {
+		t.Fatalf("Reset() error = %v, want DB path detail", err)
 	}
 }
 

@@ -2409,6 +2409,82 @@ func TestPropagateAliasSnapshotToStaticsRemembersNestedRefsFromSameRefUpdate(t *
 	}
 }
 
+func TestPropagateAliasSnapshotToStaticsIndexesSameLengthCollectionReplacement(t *testing.T) {
+	machine := New(nil)
+	root := List(Object("Provider"))
+	replacement := Object("Provider")
+	replacement.Fields["Name"] = String("replacement")
+	updated := root
+	updated.List = []Value{replacement}
+	machine.Classes["Registry"] = Class{
+		Name: "Registry",
+		StaticFields: map[string]Field{
+			"values": {Name: "values", Type: "List<Provider>", Value: root},
+		},
+	}
+	machine.staticValueRefs, machine.staticValueRefFields = machine.collectStaticValueRefs()
+
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(root), updated)
+
+	if !machine.staticValueRefs[replacement.Ref] {
+		t.Fatalf("replacement ref %d was not indexed", replacement.Ref)
+	}
+	got := machine.Classes["Registry"].StaticFields["values"].Value.List[0]
+	if got.Fields["Name"].Text != "replacement" {
+		t.Fatalf("static list replacement name = %q, want replacement", got.Fields["Name"].Text)
+	}
+}
+
+func TestExecStaticMapNestedListPreservesObjectMutation(t *testing.T) {
+	addProgram, err := CompileAnonymous(`
+if (RecordsByName == null) {
+	RecordsByName = new Map<String, List<Account>>();
+}
+List<Account> accounts = RecordsByName.get('state');
+if (accounts == null) {
+	accounts = new List<Account>();
+	RecordsByName.put('state', accounts);
+}
+Account account = new Account(Name = 'Old');
+accounts.add(account);
+account.Name = 'New';
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	readProgram, err := CompileAnonymous(`
+return RecordsByName.get('state')[0].Name;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testProgram, err := CompileAnonymous(`
+StaticAliasState.addAndMutate();
+System.assertEquals('New', StaticAliasState.read());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "StaticAliasState",
+		StaticFields: map[string]Field{
+			"RecordsByName": {Name: "RecordsByName", Type: "Map<String,List<Account>>", Static: true},
+		},
+		Methods: map[string]Method{
+			"addAndMutate#": {Name: "StaticAliasState.addAndMutate", ClassName: "StaticAliasState", ReturnType: "void", Program: addProgram, IsStatic: true},
+			"read#":         {Name: "StaticAliasState.read", ClassName: "StaticAliasState", ReturnType: "String", Program: readProgram, IsStatic: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(testProgram); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStaticValueRefCacheReplaceInvalidatesChildHints(t *testing.T) {
 	machine := New(nil)
 	location := staticFieldRef{ClassName: "Registry", FieldName: "values"}
@@ -2540,7 +2616,8 @@ stack.add(domain);
 	}
 	popProgram, err := CompileAnonymous(`
 List<BaseDomain> stack = stacks.get(key);
-return stack.remove(stack.size() - 1);
+BaseDomain domain = stack.remove(stack.size() - 1);
+return domain;
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2619,6 +2696,175 @@ System.assertEquals('one', Registry.pop(SubDomain.class).state);
 	}); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNestedConfigMutationControlsStaticStatefulPush(t *testing.T) {
+	pushProgram, err := CompileAnonymous(`
+if (domain.config.enabled) {
+	domains.add(domain);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	popProgram, err := CompileAnonymous(`return domains.remove(domains.size() - 1);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	enableProgram, err := CompileAnonymous(`
+enabled = true;
+return this;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	domainCtor, err := CompileAnonymous(`
+config = new Config();
+config.enable();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Domain domain = new Domain();
+Registry.push(domain);
+domain.state = 'stored';
+System.assertEquals('stored', Registry.pop().state);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Config",
+		Fields: map[string]Field{
+			"enabled": {Name: "enabled", Type: "Boolean"},
+		},
+		Constructors: []Method{{Name: "Config.<init>", ClassName: "Config"}},
+		Methods: map[string]Method{
+			"enable": {Name: "Config.enable", ClassName: "Config", ReturnType: "Config", Program: enableProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Domain",
+		Fields: map[string]Field{
+			"config": {Name: "config", Type: "Config"},
+			"state":  {Name: "state", Type: "String"},
+		},
+		Constructors: []Method{{Name: "Domain.<init>", ClassName: "Domain", Program: domainCtor}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Registry",
+		StaticFields: map[string]Field{
+			"domains": {Name: "domains", Type: "List<Domain>", Static: true, Value: List()},
+		},
+		Methods: map[string]Method{
+			"push": {Name: "Registry.push", ClassName: "Registry", ReturnType: "void", Params: []Param{{Name: "domain", Type: "Domain"}}, Program: pushProgram, IsStatic: true},
+			"pop":  {Name: "Registry.pop", ClassName: "Registry", ReturnType: "Domain", Program: popProgram, IsStatic: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStaticNamespacedNestedTypeKeyMapStoresState(t *testing.T) {
+	pushProgram, err := CompileAnonymous(`
+List<BaseDomain> stack = stacks.get(key);
+if (stack == null) {
+	stacks.put(key, stack = new List<BaseDomain>());
+}
+stack.add(domain);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	popProgram, err := CompileAnonymous(`
+List<BaseDomain> stack = stacks.get(key);
+return stack.remove(stack.size() - 1);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Outer.Domain domain = new Outer.Domain();
+Registry.push(Outer.Domain.Constructor.class, domain);
+domain.state = 'stored';
+System.assertEquals('stored', ((Outer.Domain) Registry.pop(Outer.Domain.Constructor.class, new List<Account>{ new Account(Name = 'After') })).state);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "BaseDomain",
+		Namespace: "pkg",
+		Access:    "global",
+		Fields: map[string]Field{
+			"records": {Name: "records", Type: "List<SObject>", Access: "global"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Outer.Domain",
+		Namespace:  "pkg",
+		SuperClass: "BaseDomain",
+		Access:     "global",
+		Fields: map[string]Field{
+			"state":   {Name: "state", Type: "String", Access: "global"},
+			"records": {Name: "records", Type: "List<SObject>", Access: "global"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:      "Outer.Domain.Constructor",
+		Namespace: "pkg",
+		Access:    "global",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:      "Registry",
+		Namespace: "pkg",
+		Access:    "global",
+		StaticFields: map[string]Field{
+			"stacks": {Name: "stacks", Type: "Map<Type,List<BaseDomain>>", Static: true, Value: Map()},
+		},
+		Methods: map[string]Method{
+			"push": {
+				Name:       "Registry.push",
+				ClassName:  "Registry",
+				ReturnType: "void",
+				Params:     []Param{{Name: "key", Type: "Type"}, {Name: "domain", Type: "BaseDomain"}},
+				Program:    pushProgram,
+				Access:     "global",
+			},
+			"pop": {
+				Name:       "Registry.pop",
+				ClassName:  "Registry",
+				ReturnType: "BaseDomain",
+				Params:     []Param{{Name: "key", Type: "Type"}, {Name: "records", Type: "List<SObject>"}},
+				Program:    popProgram,
+				Access:     "global",
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}

@@ -43,12 +43,18 @@ type OrgState struct {
 	SystemTimestampSequence int64  `json:"-"`
 	RuntimeSchemaStamp      string `json:"-"`
 
-	objectNameCache *sync.Map
+	objectNameCache                 *sync.Map
+	keyPrefixesValidated            bool
+	keyPrefixesValidatedObjectCount int
+	keyPrefixesValidatedPrefixes    map[string]string
 }
 
 func (o *OrgState) ClearRuntimeSchemaStamp() {
 	if o != nil {
 		o.RuntimeSchemaStamp = ""
+		o.keyPrefixesValidated = false
+		o.keyPrefixesValidatedObjectCount = 0
+		o.keyPrefixesValidatedPrefixes = nil
 	}
 }
 

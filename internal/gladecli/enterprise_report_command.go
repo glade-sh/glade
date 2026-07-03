@@ -2,7 +2,6 @@ package gladecli
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -62,9 +61,12 @@ func runInspectGraph(ctx context.Context, args []string, w io.Writer, progressW 
 		fmt.Fprintf(w, "edges: %d\n", len(graph.Edges))
 		return nil
 	}
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
-	return enc.Encode(graph)
+	return writeCLIJSONEnvelope(w, cliJSONEnvelope{
+		Command:  "inspect graph",
+		Status:   "passed",
+		ExitCode: 0,
+		Data:     graph,
+	})
 }
 
 type enterpriseReportOptions struct {
@@ -107,7 +109,7 @@ func runEnterpriseReport(ctx context.Context, command string, args []string, w i
 			Strict:          opts.Strict,
 		})
 		report.Command = enterpriseCommandLine("report", command, args)
-		if err := writeEnterpriseReport(w, report, opts.Format, opts.Out); err != nil {
+		if err := writeEnterpriseReport(w, report, opts.Format, opts.Out, "report "+command); err != nil {
 			renderer.Finish(cliui.Result{OK: false, Label: "report failed"})
 			return err
 		}
@@ -129,7 +131,7 @@ func runEnterpriseReport(ctx context.Context, command string, args []string, w i
 		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "report " + command, Label: "Analyzing report", Current: 2, Total: 3})
 		report := enterprisecruft.Scan(ctxData, graph)
 		report.Command = enterpriseCommandLine("report", command, args)
-		if err := writeEnterpriseReport(w, report, opts.Format, opts.Out); err != nil {
+		if err := writeEnterpriseReport(w, report, opts.Format, opts.Out, "report "+command); err != nil {
 			renderer.Finish(cliui.Result{OK: false, Label: "report failed"})
 			return err
 		}
@@ -148,7 +150,7 @@ func runEnterpriseReport(ctx context.Context, command string, args []string, w i
 			return err
 		}
 		result.Report.Command = enterpriseCommandLine("report", command, args)
-		if err := writeEnterpriseReport(w, result.Report, opts.Format, opts.Out); err != nil {
+		if err := writeEnterpriseReport(w, result.Report, opts.Format, opts.Out, "report "+command); err != nil {
 			renderer.Finish(cliui.Result{OK: false, Label: "report failed"})
 			return err
 		}
@@ -229,7 +231,7 @@ func validateEnterpriseReportOptions(command string, opts enterpriseReportOption
 	return nil
 }
 
-func writeEnterpriseReport(w io.Writer, report enterprise.Report, format, out string) error {
+func writeEnterpriseReport(w io.Writer, report enterprise.Report, format, out, command string) error {
 	if format == "" {
 		format = "json"
 	}
@@ -254,7 +256,13 @@ func writeEnterpriseReport(w io.Writer, report enterprise.Report, format, out st
 	}
 	switch format {
 	case "json":
-		if err := enterprise.WriteJSON(writer, report); err != nil {
+		ok := report.Status != enterprise.StatusFail
+		if err := writeCLIJSONEnvelope(writer, cliJSONEnvelope{
+			Command:  command,
+			Status:   statusForOK(ok),
+			ExitCode: exitCodeForOK(ok),
+			Data:     report,
+		}); err != nil {
 			return err
 		}
 	case "html":

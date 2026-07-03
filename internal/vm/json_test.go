@@ -822,6 +822,26 @@ System.assertEquals(null, parser.nextToken());
 	}
 }
 
+func TestExecJSONParserAllowsUnreadTrailingMalformedText(t *testing.T) {
+	program, err := CompileAnonymous(`
+JSONParser parser = JSON.createParser('{"a":1}"');
+System.assertEquals(JSONToken.START_OBJECT, parser.nextToken());
+System.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());
+System.assertEquals('a', parser.getText());
+System.assertEquals(JSONToken.VALUE_NUMBER_INT, parser.nextToken());
+System.assertEquals(1, parser.getIntegerValue());
+System.assertEquals(JSONToken.END_OBJECT, parser.nextToken());
+System.assertEquals(null, parser.nextToken());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONParserPlatformAccessors(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONParser parser = JSON.createParser('{"date":"2024-02-29","when":"2024-02-29T12:34:56Z","clock":"05:06:07","id":"001B000001DVM9t","blob":"YWJj"}');

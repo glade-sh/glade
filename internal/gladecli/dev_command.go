@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -786,15 +787,19 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 	result := testreport.Run{Name: "glade test"}
 	var graph *watch.RefGraph
 	initialSelection := watch.TestSelection{Mode: watch.SelectionAll, TestClasses: nil, Reason: "initial watch run"}
-	activeRunID := runID
-	cancelRun, runDone := startWatchRun(ctx, index, opts, initialSelection, runID)
-	defer cancelRun()
-	if err := writeJSONLine(w, watch.NewRunStartedEvent(time.Now().UTC(), runID, nil)); err != nil {
+	coordinator := newWatchRunCoordinator(runID)
+	started := coordinator.Start(initialSelection, func(runID int, selection watch.TestSelection) (context.CancelFunc, <-chan watchRunResult) {
+		return startWatchRun(ctx, index, opts, selection, runID)
+	})
+	runDone := started.Done
+	defer coordinator.Stop()
+	if err := writeJSONLine(w, watch.NewRunStartedEvent(time.Now().UTC(), started.RunID, nil)); err != nil {
 		return result, err
 	}
 	if once {
 		select {
 		case <-ctx.Done():
+			coordinator.Stop()
 			return result, ctx.Err()
 		case finished := <-runDone:
 			result = finished.Result
@@ -812,22 +817,27 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 	for {
 		select {
 		case <-ctx.Done():
-			cancelRun()
+			coordinator.Stop()
 			return result, ctx.Err()
 		case finished := <-runDone:
-			if finished.RunID != activeRunID {
-				continue
+			emit, next := coordinator.Complete(finished)
+			if emit {
+				result = finished.Result
+				if err := writeJSONLine(w, watch.NewRunFinishedEvent(time.Now().UTC(), finished.RunID, watchSummary(result))); err != nil {
+					return result, err
+				}
+				if summary, ok := watchProfileSummary(result); ok {
+					if err := writeJSONLine(w, watch.NewProfileSummaryEvent(time.Now().UTC(), finished.RunID, summary)); err != nil {
+						return result, err
+					}
+				}
 			}
-			result = finished.Result
-			runDone = nil
-			if err := writeJSONLine(w, watch.NewRunFinishedEvent(time.Now().UTC(), finished.RunID, watchSummary(result))); err != nil {
-				return result, err
-			}
-			if summary, ok := watchProfileSummary(result); ok {
-				if err := writeJSONLine(w, watch.NewProfileSummaryEvent(time.Now().UTC(), finished.RunID, summary)); err != nil {
+			if next.Started {
+				if err := writeJSONLine(w, watch.NewRunStartedEvent(time.Now().UTC(), next.RunID, next.Selection.TestClasses)); err != nil {
 					return result, err
 				}
 			}
+			runDone = coordinator.Done()
 		case err, ok := <-watcher.Errors():
 			if !ok {
 				return result, nil
@@ -856,12 +866,15 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 			if selection.Mode == watch.SelectionNone {
 				continue
 			}
-			cancelRun()
-			runID++
-			activeRunID = runID
-			cancelRun, runDone = startWatchRun(ctx, index, opts, selection, runID)
-			if err := writeJSONLine(w, watch.NewRunStartedEvent(time.Now().UTC(), runID, selection.TestClasses)); err != nil {
-				return result, err
+			runIndex := index
+			started := coordinator.Request(selection, func(runID int, selection watch.TestSelection) (context.CancelFunc, <-chan watchRunResult) {
+				return startWatchRun(ctx, runIndex, opts, selection, runID)
+			})
+			if started.Started {
+				if err := writeJSONLine(w, watch.NewRunStartedEvent(time.Now().UTC(), started.RunID, started.Selection.TestClasses)); err != nil {
+					return result, err
+				}
+				runDone = coordinator.Done()
 			}
 		}
 	}
@@ -888,15 +901,19 @@ func runWatchTestsDaemon(ctx context.Context, root string, daemon *testdaemon.Da
 	runID := 1
 	result := testreport.Run{Name: "glade test"}
 	initialSelection := watch.TestSelection{Mode: watch.SelectionAll, TestClasses: nil, Reason: "initial watch run"}
-	activeRunID := runID
-	cancelRun, runDone := startDaemonWatchRun(ctx, daemon, opts, initialSelection, runID)
-	defer cancelRun()
-	if err := writeJSONLine(w, watch.NewRunStartedEvent(time.Now().UTC(), runID, nil)); err != nil {
+	coordinator := newWatchRunCoordinator(runID)
+	started := coordinator.Start(initialSelection, func(runID int, selection watch.TestSelection) (context.CancelFunc, <-chan watchRunResult) {
+		return startDaemonWatchRun(ctx, daemon, opts, selection, runID)
+	})
+	runDone := started.Done
+	defer coordinator.Stop()
+	if err := writeJSONLine(w, watch.NewRunStartedEvent(time.Now().UTC(), started.RunID, nil)); err != nil {
 		return result, err
 	}
 	if once {
 		select {
 		case <-ctx.Done():
+			coordinator.Stop()
 			return result, ctx.Err()
 		case finished := <-runDone:
 			result = finished.Result
@@ -914,22 +931,27 @@ func runWatchTestsDaemon(ctx context.Context, root string, daemon *testdaemon.Da
 	for {
 		select {
 		case <-ctx.Done():
-			cancelRun()
+			coordinator.Stop()
 			return result, ctx.Err()
 		case finished := <-runDone:
-			if finished.RunID != activeRunID {
-				continue
+			emit, next := coordinator.Complete(finished)
+			if emit {
+				result = finished.Result
+				if err := writeJSONLine(w, watch.NewRunFinishedEvent(time.Now().UTC(), finished.RunID, watchSummary(result))); err != nil {
+					return result, err
+				}
+				if summary, ok := watchProfileSummary(result); ok {
+					if err := writeJSONLine(w, watch.NewProfileSummaryEvent(time.Now().UTC(), finished.RunID, summary)); err != nil {
+						return result, err
+					}
+				}
 			}
-			result = finished.Result
-			runDone = nil
-			if err := writeJSONLine(w, watch.NewRunFinishedEvent(time.Now().UTC(), finished.RunID, watchSummary(result))); err != nil {
-				return result, err
-			}
-			if summary, ok := watchProfileSummary(result); ok {
-				if err := writeJSONLine(w, watch.NewProfileSummaryEvent(time.Now().UTC(), finished.RunID, summary)); err != nil {
+			if next.Started {
+				if err := writeJSONLine(w, watch.NewRunStartedEvent(time.Now().UTC(), next.RunID, next.Selection.TestClasses)); err != nil {
 					return result, err
 				}
 			}
+			runDone = coordinator.Done()
 		case err, ok := <-watcher.Errors():
 			if !ok {
 				return result, nil
@@ -956,12 +978,14 @@ func runWatchTestsDaemon(ctx context.Context, root string, daemon *testdaemon.Da
 			if selection.Mode == watch.SelectionNone {
 				continue
 			}
-			cancelRun()
-			runID++
-			activeRunID = runID
-			cancelRun, runDone = startDaemonWatchRun(ctx, daemon, opts, selection, runID)
-			if err := writeJSONLine(w, watch.NewRunStartedEvent(time.Now().UTC(), runID, selection.TestClasses)); err != nil {
-				return result, err
+			started := coordinator.Request(selection, func(runID int, selection watch.TestSelection) (context.CancelFunc, <-chan watchRunResult) {
+				return startDaemonWatchRun(ctx, daemon, opts, selection, runID)
+			})
+			if started.Started {
+				if err := writeJSONLine(w, watch.NewRunStartedEvent(time.Now().UTC(), started.RunID, started.Selection.TestClasses)); err != nil {
+					return result, err
+				}
+				runDone = coordinator.Done()
 			}
 		}
 	}
@@ -970,6 +994,139 @@ func runWatchTestsDaemon(ctx context.Context, root string, daemon *testdaemon.Da
 type watchRunResult struct {
 	RunID  int
 	Result testreport.Run
+}
+
+type watchRunStarter func(runID int, selection watch.TestSelection) (context.CancelFunc, <-chan watchRunResult)
+
+type watchRunStart struct {
+	RunID     int
+	Selection watch.TestSelection
+	Done      <-chan watchRunResult
+	Started   bool
+}
+
+type pendingWatchRun struct {
+	selection watch.TestSelection
+	starter   watchRunStarter
+}
+
+type watchRunCoordinator struct {
+	nextRunID int
+
+	activeRunID int
+	cancel      context.CancelFunc
+	done        <-chan watchRunResult
+	canceling   bool
+
+	pending *pendingWatchRun
+}
+
+func newWatchRunCoordinator(firstRunID int) *watchRunCoordinator {
+	return &watchRunCoordinator{nextRunID: firstRunID}
+}
+
+func (c *watchRunCoordinator) Start(selection watch.TestSelection, starter watchRunStarter) watchRunStart {
+	if c.done != nil {
+		return watchRunStart{}
+	}
+	return c.start(selection, starter)
+}
+
+func (c *watchRunCoordinator) Request(selection watch.TestSelection, starter watchRunStarter) watchRunStart {
+	if c.done == nil {
+		return c.start(selection, starter)
+	}
+	if c.pending == nil {
+		c.pending = &pendingWatchRun{selection: selection, starter: starter}
+	} else {
+		c.pending.selection = coalesceWatchSelections(c.pending.selection, selection)
+		c.pending.starter = starter
+	}
+	if !c.canceling && c.cancel != nil {
+		c.cancel()
+		c.canceling = true
+	}
+	return watchRunStart{}
+}
+
+func (c *watchRunCoordinator) Complete(finished watchRunResult) (bool, watchRunStart) {
+	if finished.RunID != c.activeRunID {
+		return false, watchRunStart{}
+	}
+	emit := !c.canceling
+	c.activeRunID = 0
+	c.cancel = nil
+	c.done = nil
+	c.canceling = false
+	if c.pending == nil {
+		return emit, watchRunStart{}
+	}
+	pending := c.pending
+	c.pending = nil
+	return emit, c.start(pending.selection, pending.starter)
+}
+
+func (c *watchRunCoordinator) Done() <-chan watchRunResult {
+	return c.done
+}
+
+func (c *watchRunCoordinator) Stop() {
+	if c.cancel != nil {
+		c.cancel()
+		c.canceling = true
+	}
+}
+
+func (c *watchRunCoordinator) start(selection watch.TestSelection, starter watchRunStarter) watchRunStart {
+	runID := c.nextRunID
+	c.nextRunID++
+	cancel, done := starter(runID, selection)
+	c.activeRunID = runID
+	c.cancel = cancel
+	c.done = done
+	c.canceling = false
+	return watchRunStart{RunID: runID, Selection: selection, Done: done, Started: true}
+}
+
+func coalesceWatchSelections(a, b watch.TestSelection) watch.TestSelection {
+	if a.Mode == watch.SelectionNone {
+		return b
+	}
+	if b.Mode == watch.SelectionNone {
+		return a
+	}
+	if a.Mode == watch.SelectionAll || b.Mode == watch.SelectionAll {
+		return watch.TestSelection{
+			Mode:        watch.SelectionAll,
+			TestClasses: unionTestClasses(a.TestClasses, b.TestClasses),
+			Reason:      "coalesced watch changes require all tests",
+		}
+	}
+	return watch.TestSelection{
+		Mode:        watch.SelectionDirect,
+		TestClasses: unionTestClasses(a.TestClasses, b.TestClasses),
+		Reason:      "coalesced watch changes reach affected tests",
+	}
+}
+
+func unionTestClasses(a, b []string) []string {
+	seen := make(map[string]struct{}, len(a)+len(b))
+	for _, name := range a {
+		if strings.TrimSpace(name) != "" {
+			seen[name] = struct{}{}
+		}
+	}
+	for _, name := range b {
+		if strings.TrimSpace(name) != "" {
+			seen[name] = struct{}{}
+		}
+	}
+	out := make([]string, 0, len(seen))
+	for name := range seen {
+		out = append(out, name)
+	}
+	sort.Strings(out)
+	return out
 }
 
 func startWatchRun(ctx context.Context, index typesys.Index, opts apextest.Options, selection watch.TestSelection, runID int) (context.CancelFunc, <-chan watchRunResult) {

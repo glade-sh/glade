@@ -502,6 +502,9 @@ func standardObjectDefinitionNeedsWrite(definition ObjectDefinition, objectName 
 	if !standardFieldsOverlayApplied(definition, "") {
 		return true
 	}
+	if standardReadOnlyFlagsNeedRepair(&definition) {
+		return true
+	}
 	if entry, ok := standardObjectCatalogEntryFor(objectName); ok {
 		if definition.Label == objectName && entry.Definition.Label != "" && entry.Definition.Label != definition.Label {
 			return true

@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"math"
+	"math/big"
 	"strconv"
 	"strings"
 	"time"
@@ -438,16 +439,82 @@ func decimalBinary(op string, left, right Value, fn func(float64, float64) float
 	if !isNumeric(left) || !isNumeric(right) {
 		return Null, fmt.Errorf("operator %s requires numeric operands", op)
 	}
-	result := fn(decimalOf(left), decimalOf(right))
-	if math.IsInf(result, 0) || math.IsNaN(result) {
-		return Null, fmt.Errorf("operator %s result must be finite", op)
+	result, ok := preciseDecimalBinary(op, left, right)
+	if !ok {
+		floatResult := fn(decimalOf(left), decimalOf(right))
+		if math.IsInf(floatResult, 0) || math.IsNaN(floatResult) {
+			return Null, fmt.Errorf("operator %s result must be finite", op)
+		}
+		return Decimal(floatResult), nil
 	}
-	return Decimal(normalizeDecimalResult(result)), nil
+	return result, nil
 }
 
-func normalizeDecimalResult(value float64) float64 {
-	const scale = 1e12
-	return math.Round(value*scale) / scale
+func preciseDecimalBinary(op string, left, right Value) (Value, bool) {
+	leftRat, ok := decimalRat(left)
+	if !ok {
+		return Null, false
+	}
+	rightRat, ok := decimalRat(right)
+	if !ok {
+		return Null, false
+	}
+	result := new(big.Rat)
+	scale := 0
+	switch op {
+	case "+":
+		result.Add(leftRat, rightRat)
+		scale = max(decimalScale(left), decimalScale(right))
+	case "-":
+		result.Sub(leftRat, rightRat)
+		scale = max(decimalScale(left), decimalScale(right))
+	case "*":
+		result.Mul(leftRat, rightRat)
+		scale = decimalScale(left) + decimalScale(right)
+	case "/":
+		if rightRat.Sign() == 0 {
+			return Null, false
+		}
+		return Null, false
+	default:
+		return Null, false
+	}
+	text := normalizeComputedDecimalText(ratFixedText(result, int64(scale)))
+	parsed, err := strconv.ParseFloat(text, 64)
+	if err != nil {
+		return Null, false
+	}
+	out := Decimal(parsed)
+	out.Text = text
+	return out, true
+}
+
+func normalizeComputedDecimalText(text string) string {
+	text = strings.TrimSpace(text)
+	if strings.Contains(text, ".") {
+		text = strings.TrimRight(text, "0")
+		text = strings.TrimRight(text, ".")
+	}
+	if text == "" || text == "-0" {
+		return "0"
+	}
+	return text
+}
+
+func decimalRat(value Value) (*big.Rat, bool) {
+	switch value.Kind {
+	case ValueInt:
+		return new(big.Rat).SetInt64(value.Int), true
+	case ValueDecimal:
+		raw := strings.TrimSpace(value.Text)
+		if raw == "" {
+			raw = strconv.FormatFloat(value.Decimal, 'f', -1, 64)
+		}
+		rat, ok := new(big.Rat).SetString(raw)
+		return rat, ok
+	default:
+		return nil, false
+	}
 }
 
 func checkIntBinaryOverflow(op string, left, right int64) error {

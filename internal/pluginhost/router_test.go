@@ -25,6 +25,7 @@ func TestRunPluginStreamsOutputInputAndEnv(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("shell helper uses sh")
 	}
+	t.Setenv("SF_ACCESS_TOKEN", "00D000000000001!secret")
 	dir := t.TempDir()
 	exe := writeShellPlugin(t, dir, "compat", `#!/bin/sh
 printf "plugin stdout: %s\n" "$*"
@@ -32,6 +33,9 @@ printf "plugin stderr\n" >&2
 read line
 printf "stdin: %s\n" "$line"
 printf "host=%s api=%s\n" "$GLADE_PLUGIN_HOST" "$GLADE_PLUGIN_API_VERSION"
+if env | grep '^SF_ACCESS_TOKEN=' >/dev/null; then
+  printf "secret leaked\n"
+fi
 `)
 	var stdout, stderr bytes.Buffer
 
@@ -53,6 +57,9 @@ printf "host=%s api=%s\n" "$GLADE_PLUGIN_HOST" "$GLADE_PLUGIN_API_VERSION"
 	}
 	if !strings.Contains(stderr.String(), "plugin stderr") {
 		t.Fatalf("stderr not streamed: %q", stderr.String())
+	}
+	if strings.Contains(stdout.String(), "secret leaked") {
+		t.Fatalf("plugin inherited SF_ACCESS_TOKEN:\n%s", stdout.String())
 	}
 }
 

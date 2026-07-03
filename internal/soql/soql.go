@@ -302,11 +302,13 @@ func ExecuteWithCache(org storage.OrgState, query Query, cache *ExecutionCache) 
 		})
 	}
 	matchedRecords = applyWindow(matchedRecords, query.Offset, query.Limit, query.HasLimit)
+	if query.ForUpdate {
+		for i := range matchedRecords {
+			matchedRecords[i].System.Locked = true
+		}
+	}
 	records := make([]storage.Record, 0, len(matchedRecords))
 	for _, record := range matchedRecords {
-		if query.ForUpdate && record.System.Locked {
-			return Result{}, fmt.Errorf("soql: unable to lock row %s", record.ID)
-		}
 		projected, err := projectRecord(org, object.Definition, record, query.Fields, query.ChildQueries, query.Typeofs, childCache)
 		if err != nil {
 			return Result{}, err
@@ -624,8 +626,11 @@ func candidateRecordIDs(object storage.ObjectState, where *Condition, allRows bo
 }
 
 func indexedCandidateIDs(object storage.ObjectState, where *Condition, allRows bool) ([]storage.ID, bool) {
-	if allRows || where == nil || where.Not || len(where.Or) != 0 {
+	if allRows || where == nil || where.Not {
 		return nil, false
+	}
+	if len(where.Or) != 0 {
+		return unionIndexedCandidateIDs(object, where.Or, allRows)
 	}
 	if len(where.And) != 0 {
 		var best []storage.ID
@@ -644,12 +649,59 @@ func indexedCandidateIDs(object storage.ObjectState, where *Condition, allRows b
 		return nil, false
 	}
 	if where.Range || where.Subquery != nil || where.Op != "=" {
-		return nil, false
+		if where.Range || where.Subquery != nil || where.Op != "IN" {
+			return nil, false
+		}
+		if strings.Contains(where.Field, ".") {
+			return nil, false
+		}
+		return unionLookupIndexValues(object, where.Field, where.Values)
 	}
 	if strings.Contains(where.Field, ".") {
 		return nil, false
 	}
 	return storage.LookupIndex(object, where.Field, where.Value)
+}
+
+func unionIndexedCandidateIDs(object storage.ObjectState, conditions []Condition, allRows bool) ([]storage.ID, bool) {
+	if len(conditions) == 0 {
+		return nil, false
+	}
+	seen := make(map[storage.ID]struct{})
+	out := make([]storage.ID, 0)
+	for i := range conditions {
+		ids, ok := indexedCandidateIDs(object, &conditions[i], allRows)
+		if !ok {
+			return nil, false
+		}
+		for _, id := range ids {
+			if _, exists := seen[id]; exists {
+				continue
+			}
+			seen[id] = struct{}{}
+			out = append(out, id)
+		}
+	}
+	return out, true
+}
+
+func unionLookupIndexValues(object storage.ObjectState, field string, values []storage.Value) ([]storage.ID, bool) {
+	seen := make(map[storage.ID]struct{})
+	out := make([]storage.ID, 0)
+	for _, value := range values {
+		ids, ok := storage.LookupIndex(object, field, value)
+		if !ok {
+			return nil, false
+		}
+		for _, id := range ids {
+			if _, exists := seen[id]; exists {
+				continue
+			}
+			seen[id] = struct{}{}
+			out = append(out, id)
+		}
+	}
+	return out, true
 }
 
 func applyWindow[T any](records []T, offset, limit int, hasLimit bool) []T {
@@ -3204,6 +3256,8 @@ func equalValues(left, right storage.Value) bool {
 		if idTextEqual(left.String, right.String) {
 			return true
 		}
+		// SOQL text equality is case-insensitive. Apex VM String == remains
+		// case-sensitive in internal/vm/value.go.
 		return strings.EqualFold(left.String, right.String)
 	case storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
 		return left.String == right.String
@@ -3289,6 +3343,8 @@ func compareValues(left, right storage.Value) int {
 	}
 	switch left.Kind {
 	case storage.ValueString:
+		// SOQL ORDER BY uses folded text ordering with the original text as a stable
+		// tie-breaker; this intentionally differs from Apex String comparisons.
 		return compareSOQLText(left.String, right.String)
 	case storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
 		return strings.Compare(left.String, right.String)

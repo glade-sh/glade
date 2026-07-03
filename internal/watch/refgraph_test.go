@@ -145,6 +145,60 @@ func TestRefGraphRefreshPicksUpNewEdge(t *testing.T) {
 	}
 }
 
+func TestRefGraphRefreshUpdatesKnownModifiedFileInPlace(t *testing.T) {
+	root := t.TempDir()
+	writeWatchFile(t, filepath.Join(root, "Base.cls"), "public virtual class Base {}")
+	writeWatchFile(t, filepath.Join(root, "Service.cls"), "public class Service {}")
+	writeWatchFile(t, filepath.Join(root, "ServiceTest.cls"), "@IsTest class ServiceTest { @IsTest static void runs() { Service s = new Service(); } }")
+	index := typesys.Index{
+		Project: typesys.ProjectInfo{Root: root},
+		Types: []typesys.TypeSymbol{
+			classSymbol(root, "Base", false, ""),
+			classSymbol(root, "Service", false, "Base"),
+			classSymbol(root, "ServiceTest", true, ""),
+		},
+	}
+	graph := BuildReferenceGraph(index)
+
+	refreshed := graph.Refresh(index, []Change{classChange(root, "Service", ChangeModified)})
+
+	if refreshed != graph {
+		t.Fatal("Refresh replaced graph for a known modified file; want in-place incremental update")
+	}
+}
+
+func TestRefGraphRefreshRemovesModifiedFileMissingFromIndex(t *testing.T) {
+	root := t.TempDir()
+	writeWatchFile(t, filepath.Join(root, "Base.cls"), "public virtual class Base {}")
+	writeWatchFile(t, filepath.Join(root, "Service.cls"), "public class Service extends Base {}")
+	writeWatchFile(t, filepath.Join(root, "ServiceTest.cls"), "@IsTest class ServiceTest { @IsTest static void runs() { Service s = new Service(); } }")
+	index := typesys.Index{
+		Project: typesys.ProjectInfo{Root: root},
+		Types: []typesys.TypeSymbol{
+			classSymbol(root, "Base", false, ""),
+			classSymbol(root, "Service", false, "Base"),
+			classSymbol(root, "ServiceTest", true, ""),
+		},
+	}
+	graph := BuildReferenceGraph(index)
+
+	refreshedIndex := typesys.Index{
+		Project: typesys.ProjectInfo{Root: root},
+		Types: []typesys.TypeSymbol{
+			classSymbol(root, "Base", false, ""),
+			classSymbol(root, "ServiceTest", true, ""),
+		},
+	}
+	refreshed := graph.Refresh(refreshedIndex, []Change{classChange(root, "Service", ChangeModified)})
+
+	if _, ok := refreshed.deps["Service"]; ok {
+		t.Fatalf("deps still contain Service: %#v", refreshed.deps["Service"])
+	}
+	if _, ok := refreshed.dependents["Base"]["Service"]; ok {
+		t.Fatalf("Base dependents still contain Service: %#v", refreshed.dependents["Base"])
+	}
+}
+
 func TestRefGraphUsesCodeintelMemberReferencesNotCommentWords(t *testing.T) {
 	root := t.TempDir()
 	writeWatchFile(t, filepath.Join(root, "Helper.cls"), "public class Helper { public void go() {} }")

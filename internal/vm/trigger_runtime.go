@@ -171,25 +171,33 @@ func (vm *VM) runSummaryUpdateTriggers(engine *dml.Engine, allOrNone bool, rollb
 		failures, err := vm.runTriggers(triggerTimingBefore, "update", triggerRecords, before, result)
 		if err != nil {
 			if allOrNone {
-				vm.restoreDMLRollbackPoint(rollback)
+				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+					return rollbackErr
+				}
 			}
 			return dmlExceptionFromTriggerError("update", err)
 		}
 		if hasDMLFailures(failures) {
 			if allOrNone {
-				vm.restoreDMLRollbackPoint(rollback)
+				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+					return rollbackErr
+				}
 			}
 			return fmt.Errorf("summary update trigger failed for %s: %s", objectName, failures[0].Error)
 		}
 		if err := vm.storeTriggerRecords(objectName, triggerRecords); err != nil {
 			if allOrNone {
-				vm.restoreDMLRollbackPoint(rollback)
+				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+					return rollbackErr
+				}
 			}
 			return err
 		}
 		if _, err := vm.runTriggers(triggerTimingAfter, "update", triggerRecords, before, result); err != nil {
 			if allOrNone {
-				vm.restoreDMLRollbackPoint(rollback)
+				if rollbackErr := vm.restoreDMLRollbackPoint(rollback); rollbackErr != nil {
+					return rollbackErr
+				}
 			}
 			return dmlExceptionFromTriggerError("update", err)
 		}

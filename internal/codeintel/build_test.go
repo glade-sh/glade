@@ -92,6 +92,43 @@ func TestBuildSkipsStaleCachedSchemaSymbols(t *testing.T) {
 	}
 }
 
+func TestBuildUseCacheReturnsFreshCachedGraphWithoutDuplicatingUses(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join("force-app", "main", "default", "classes", "Searcher.cls")
+	source := "public class Searcher {\n" +
+		"  void run() {\n" +
+		"    List<List<SObject>> rows = [FIND 'Acme' IN ALL FIELDS RETURNING Account(Id, Name)];\n" +
+		"  }\n" +
+		"}\n"
+	writeBuildTestFile(t, filepath.Join(root, classPath), source)
+	index := typesys.Index{
+		Project: typesys.ProjectInfo{Root: root},
+		Types: []typesys.TypeSymbol{{
+			Kind:  apexast.DeclarationClass,
+			Name:  "Searcher",
+			File:  classPath,
+			Range: diagnostic.Range{Start: diagnostic.Position{Line: 1, Column: 1}, End: diagnostic.Position{Line: 5, Column: 2}},
+		}},
+		Objects: []schema.Object{{
+			Name: "Account",
+			Fields: []schema.Field{
+				{Name: "Id", Type: "Id"},
+				{Name: "Name", Type: "String"},
+			},
+		}},
+	}
+	cached := codeintel.Build(index)
+	if err := codeintel.WriteCache(root, cached); err != nil {
+		t.Fatalf("WriteCache: %v", err)
+	}
+
+	graph := codeintel.Build(index, codeintel.Options{UseCache: true})
+
+	if len(graph.Uses) != len(cached.Uses) {
+		t.Fatalf("uses = %d, want cached count %d\nuses=%#v", len(graph.Uses), len(cached.Uses), graph.Uses)
+	}
+}
+
 func writeBuildTestFile(t *testing.T, path, text string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

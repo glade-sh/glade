@@ -23,10 +23,20 @@ const cacheIndexFile = "index.json"
 var ErrCacheMiss = errors.New("codeintel cache miss")
 
 type CacheMetadata struct {
-	SchemaVersion int       `json:"schemaVersion"`
-	ProjectRoot   string    `json:"projectRoot"`
-	SourceHash    string    `json:"sourceHash"`
-	CreatedAt     time.Time `json:"createdAt"`
+	SchemaVersion int               `json:"schemaVersion"`
+	ProjectRoot   string            `json:"projectRoot"`
+	SourceHash    string            `json:"sourceHash"`
+	SourceFiles   []CacheSourceFile `json:"sourceFiles"`
+	CreatedAt     time.Time         `json:"createdAt"`
+}
+
+type CacheSourceFile struct {
+	Path            string `json:"path"`
+	ModTimeUnixNano int64  `json:"modTimeUnixNano,omitempty"`
+	Size            int64  `json:"size,omitempty"`
+	Mode            string `json:"mode,omitempty"`
+	Missing         bool   `json:"missing,omitempty"`
+	ContentHash     string `json:"contentHash,omitempty"`
 }
 
 type cacheEntry struct {
@@ -50,19 +60,20 @@ func WriteCache(projectRoot string, graph Graph) error {
 	if graph.ProjectRoot == "" {
 		graph.ProjectRoot = root
 	}
-	sourceHash, err := sourceHashForGraph(root, graph)
+	sourceHash, sourceFiles, err := sourceFingerprintForGraph(root, graph)
 	if err != nil {
 		return err
 	}
-	return writeCacheEntry(root, graph, sourceHash)
+	return writeCacheEntry(root, graph, sourceHash, sourceFiles)
 }
 
-func writeCacheEntry(root string, graph Graph, sourceHash string) error {
+func writeCacheEntry(root string, graph Graph, sourceHash string, sourceFiles []CacheSourceFile) error {
 	entry := cacheEntry{
 		Metadata: CacheMetadata{
 			SchemaVersion: cacheSchemaVersion,
 			ProjectRoot:   root,
 			SourceHash:    sourceHash,
+			SourceFiles:   sourceFiles,
 			CreatedAt:     time.Now().UTC(),
 		},
 		Graph: graph,
@@ -108,11 +119,11 @@ func WriteSchemaCache(projectRoot string, s schema.Schema) error {
 		CustomMetadataRecords: s.CustomMetadataRecords,
 	}
 	graph := BuildDeclarations(index)
-	sourceHash, err := sourceHashForIndex(root, index)
+	sourceHash, sourceFiles, err := sourceFingerprintForIndex(root, index)
 	if err != nil {
 		return err
 	}
-	return writeCacheEntry(root, graph, sourceHash)
+	return writeCacheEntry(root, graph, sourceHash, sourceFiles)
 }
 
 func ReadCache(projectRoot string) (Graph, CacheMetadata, error) {
@@ -141,7 +152,7 @@ func ReadCache(projectRoot string) (Graph, CacheMetadata, error) {
 }
 
 func CacheFresh(projectRoot string, index typesys.Index) bool {
-	_, meta, err := ReadCache(projectRoot)
+	graph, meta, err := ReadCache(projectRoot)
 	if err != nil {
 		return false
 	}
@@ -152,18 +163,37 @@ func CacheFresh(projectRoot string, index typesys.Index) bool {
 	if meta.SchemaVersion != cacheSchemaVersion || filepath.Clean(meta.ProjectRoot) != root {
 		return false
 	}
-	sourceHash, err := sourceHashForIndex(root, index)
-	if err != nil {
+	if meta.SourceFiles != nil {
+		sourceFiles, fresh, err := freshSourceFiles(root, meta.SourceFiles, cachePathsForIndex(index))
+		if err != nil || !fresh {
+			return false
+		}
+		sourceHash, err := sourceHashForFingerprints(root, sourceFiles, cacheShapeForIndex(index))
+		if err != nil {
+			return false
+		}
+		if meta.SourceHash == sourceHash {
+			return true
+		}
+	} else {
+		sourceHash, _, err := sourceFingerprintForIndex(root, index)
+		if err != nil {
+			return false
+		}
+		if meta.SourceHash == sourceHash {
+			return true
+		}
+	}
+	if len(index.Diagnostics) > 0 {
 		return false
 	}
-	if meta.SourceHash == sourceHash {
-		return true
-	}
-	graphHash, err := sourceHashForGraph(root, Build(index))
-	if err != nil {
+	graphHash, _, err := sourceFingerprintForGraph(root, graph)
+	if err != nil || meta.SourceHash != graphHash {
 		return false
 	}
-	return meta.SourceHash == graphHash
+	current := BuildDeclarations(index)
+	addArtifactContracts(&current, index.CodeIntelSymbols, index.CodeIntelUses)
+	return declarationShapeHash(graph) == declarationShapeHash(current)
 }
 
 func ClearCache(projectRoot string) error {
@@ -178,7 +208,7 @@ func cleanAbsRoot(projectRoot string) (string, error) {
 	return filepath.Clean(root), nil
 }
 
-func sourceHashForGraph(projectRoot string, graph Graph) (string, error) {
+func sourceFingerprintForGraph(projectRoot string, graph Graph) (string, []CacheSourceFile, error) {
 	paths := make(map[string]struct{})
 	for _, symbol := range graph.Symbols {
 		addCachePath(paths, symbol.File)
@@ -189,14 +219,16 @@ func sourceHashForGraph(projectRoot string, graph Graph) (string, error) {
 	for _, diag := range graph.Diagnostics {
 		addCachePath(paths, diag.File)
 	}
-	hash, err := sourceHashForPaths(projectRoot, sortedCachePaths(paths))
+	sourceFiles, err := sourceFingerprintsForPaths(projectRoot, sortedCachePaths(paths), true)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
+	var shape []byte
 	if !graphHasContractInputs(graph) {
-		return hash, nil
+		hash, err := sourceHashForFingerprints(projectRoot, sourceFiles, nil)
+		return hash, sourceFiles, err
 	}
-	data, err := json.Marshal(struct {
+	shape, err = json.Marshal(struct {
 		Symbols map[SymbolID]Symbol `json:"symbols,omitempty"`
 		Uses    []Use               `json:"uses,omitempty"`
 	}{
@@ -204,12 +236,10 @@ func sourceHashForGraph(projectRoot string, graph Graph) (string, error) {
 		Uses:    graph.Uses,
 	})
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
-	sum := sha256.New()
-	io.WriteString(sum, hash)
-	sum.Write(data)
-	return hex.EncodeToString(sum.Sum(nil)), nil
+	hash, err := sourceHashForFingerprints(projectRoot, sourceFiles, shape)
+	return hash, sourceFiles, err
 }
 
 func graphHasContractInputs(graph Graph) bool {
@@ -231,7 +261,37 @@ func graphHasContractInputs(graph Graph) bool {
 	return false
 }
 
-func sourceHashForIndex(projectRoot string, index typesys.Index) (string, error) {
+func declarationShapeHash(graph Graph) string {
+	shape := struct {
+		Symbols []Symbol `json:"symbols,omitempty"`
+		Uses    []Use    `json:"uses,omitempty"`
+	}{
+		Symbols: graph.SortedSymbols(),
+	}
+	for _, use := range graph.Uses {
+		if use.Kind == UseDeclaration {
+			shape.Uses = append(shape.Uses, use)
+		}
+	}
+	sortUses(shape.Uses)
+	data, err := json.Marshal(shape)
+	if err != nil {
+		return ""
+	}
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
+}
+
+func sourceFingerprintForIndex(projectRoot string, index typesys.Index) (string, []CacheSourceFile, error) {
+	sourceFiles, err := sourceFingerprintsForPaths(projectRoot, cachePathsForIndex(index), true)
+	if err != nil {
+		return "", nil, err
+	}
+	hash, err := sourceHashForFingerprints(projectRoot, sourceFiles, cacheShapeForIndex(index))
+	return hash, sourceFiles, err
+}
+
+func cachePathsForIndex(index typesys.Index) []string {
 	paths := make(map[string]struct{})
 	for _, typ := range index.Types {
 		addCachePath(paths, typ.File)
@@ -245,12 +305,12 @@ func sourceHashForIndex(projectRoot string, index typesys.Index) (string, error)
 	for _, dep := range index.Dependencies {
 		addCachePath(paths, dep.SourceRoot)
 	}
-	hash, err := sourceHashForPaths(projectRoot, sortedCachePaths(paths))
-	if err != nil {
-		return "", err
-	}
+	return sortedCachePaths(paths)
+}
+
+func cacheShapeForIndex(index typesys.Index) []byte {
 	if len(index.Objects) == 0 && len(index.CustomMetadataRecords) == 0 && len(index.CodeIntelSymbols) == 0 && len(index.CodeIntelUses) == 0 && len(index.Dependencies) == 0 {
-		return hash, nil
+		return nil
 	}
 	shape := struct {
 		Objects               any `json:"objects,omitempty"`
@@ -267,12 +327,9 @@ func sourceHashForIndex(projectRoot string, index typesys.Index) (string, error)
 	}
 	data, err := json.Marshal(shape)
 	if err != nil {
-		return "", err
+		return nil
 	}
-	sum := sha256.New()
-	io.WriteString(sum, hash)
-	sum.Write(data)
-	return hex.EncodeToString(sum.Sum(nil)), nil
+	return data
 }
 
 func addCachePath(paths map[string]struct{}, path string) {
@@ -291,8 +348,55 @@ func sortedCachePaths(paths map[string]struct{}) []string {
 	return out
 }
 
-func sourceHashForPaths(projectRoot string, paths []string) (string, error) {
-	hash := sha256.New()
+func freshSourceFiles(projectRoot string, cached []CacheSourceFile, paths []string) ([]CacheSourceFile, bool, error) {
+	current, err := sourceFingerprintsForPaths(projectRoot, paths, false)
+	if err != nil {
+		return nil, false, err
+	}
+	if len(current) != len(cached) {
+		return nil, false, nil
+	}
+	cachedByPath := make(map[string]CacheSourceFile, len(cached))
+	for _, file := range cached {
+		cachedByPath[file.Path] = file
+	}
+	for i, file := range current {
+		cachedFile, ok := cachedByPath[file.Path]
+		if !ok {
+			return nil, false, nil
+		}
+		if file.Missing || cachedFile.Missing {
+			if file.Missing == cachedFile.Missing {
+				current[i].ContentHash = cachedFile.ContentHash
+				continue
+			}
+			return nil, false, nil
+		}
+		if sameSourceFileStat(file, cachedFile) {
+			current[i].ContentHash = cachedFile.ContentHash
+			continue
+		}
+		if file.Size != cachedFile.Size {
+			return nil, false, nil
+		}
+		contentHash, err := contentHashForCachePath(projectRoot, file.Path)
+		if err != nil {
+			return nil, false, err
+		}
+		if contentHash != cachedFile.ContentHash {
+			return nil, false, nil
+		}
+		current[i].ContentHash = contentHash
+	}
+	return current, true, nil
+}
+
+func sameSourceFileStat(a, b CacheSourceFile) bool {
+	return a.ModTimeUnixNano == b.ModTimeUnixNano && a.Size == b.Size && a.Mode == b.Mode
+}
+
+func sourceFingerprintsForPaths(projectRoot string, paths []string, includeContent bool) ([]CacheSourceFile, error) {
+	files := make([]CacheSourceFile, 0, len(paths))
 	for _, path := range paths {
 		abs := path
 		if !filepath.IsAbs(abs) {
@@ -305,34 +409,83 @@ func sourceHashForPaths(projectRoot string, paths []string) (string, error) {
 				rel = r
 			}
 		}
+		rel = filepath.ToSlash(filepath.Clean(rel))
 		info, err := os.Stat(abs)
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
-				io.WriteString(hash, rel)
-				io.WriteString(hash, "\x00missing\x00")
+				files = append(files, CacheSourceFile{Path: rel, Missing: true})
 				continue
 			}
-			return "", err
+			return nil, err
 		}
 		if info.IsDir() {
 			continue
 		}
-		io.WriteString(hash, filepath.ToSlash(rel))
-		io.WriteString(hash, "\x00")
-		io.WriteString(hash, info.ModTime().UTC().Format(time.RFC3339Nano))
-		io.WriteString(hash, "\x00")
-		io.WriteString(hash, info.Mode().String())
-		io.WriteString(hash, "\x00")
-		io.WriteString(hash, formatCacheSize(info.Size()))
-		io.WriteString(hash, "\x00")
-		data, err := os.ReadFile(abs)
-		if err != nil {
-			return "", err
+		file := CacheSourceFile{
+			Path:            rel,
+			ModTimeUnixNano: info.ModTime().UnixNano(),
+			Size:            info.Size(),
+			Mode:            info.Mode().String(),
 		}
-		hash.Write(data)
+		if includeContent {
+			contentHash, err := contentHashForAbsPath(abs)
+			if err != nil {
+				return nil, err
+			}
+			file.ContentHash = contentHash
+		}
+		files = append(files, file)
+	}
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].Path < files[j].Path
+	})
+	return files, nil
+}
+
+func sourceHashForFingerprints(projectRoot string, files []CacheSourceFile, shape []byte) (string, error) {
+	hash := sha256.New()
+	for _, file := range files {
+		io.WriteString(hash, file.Path)
+		io.WriteString(hash, "\x00")
+		if file.Missing {
+			io.WriteString(hash, "missing")
+			io.WriteString(hash, "\x00")
+			continue
+		}
+		contentHash := file.ContentHash
+		if contentHash == "" {
+			var err error
+			contentHash, err = contentHashForCachePath(projectRoot, file.Path)
+			if err != nil {
+				return "", err
+			}
+		}
+		io.WriteString(hash, formatCacheSize(file.Size))
+		io.WriteString(hash, "\x00")
+		io.WriteString(hash, contentHash)
 		io.WriteString(hash, "\x00")
 	}
+	if len(shape) > 0 {
+		hash.Write(shape)
+	}
 	return hex.EncodeToString(hash.Sum(nil)), nil
+}
+
+func contentHashForCachePath(projectRoot, path string) (string, error) {
+	abs := path
+	if !filepath.IsAbs(abs) {
+		abs = filepath.Join(projectRoot, filepath.FromSlash(path))
+	}
+	return contentHashForAbsPath(abs)
+}
+
+func contentHashForAbsPath(abs string) (string, error) {
+	data, err := os.ReadFile(abs)
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:]), nil
 }
 
 func formatCacheSize(size int64) string {

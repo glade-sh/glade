@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -129,6 +130,8 @@ func (w *NativeWatcher) run(ctx context.Context, cfg Config, previous Snapshot) 
 	defer close(w.changes)
 	defer close(w.errors)
 	pending := false
+	pendingFull := false
+	pendingPaths := make(map[string]struct{})
 	timer := newTimer()
 	defer timer.Stop()
 	for {
@@ -147,27 +150,103 @@ func (w *NativeWatcher) run(ctx context.Context, cfg Config, previous Snapshot) 
 			if event.Op&(fsnotify.Create|fsnotify.Rename) != 0 {
 				addCreatedDir(w.inner, event.Name)
 			}
-			if ClassifyPath(event.Name).Watchable || event.Op&(fsnotify.Create|fsnotify.Remove|fsnotify.Rename) != 0 {
+			classification := ClassifyPath(event.Name)
+			if nativeEventNeedsFullSnapshot(event, classification) {
 				pending = true
+				pendingFull = true
 				resetTimer(timer, cfg.Debounce)
+				continue
+			}
+			if classification.Watchable {
+				pending = true
+				if abs, err := filepath.Abs(event.Name); err == nil {
+					pendingPaths[filepath.Clean(abs)] = struct{}{}
+				}
+				resetTimer(timer, cfg.Debounce)
+				continue
 			}
 		case <-timer.C:
 			if !pending {
 				continue
 			}
 			pending = false
-			current, err := CaptureSnapshot(cfg.Root)
+			paths := sortedPendingPaths(pendingPaths)
+			pendingPaths = make(map[string]struct{})
+			currentFull := pendingFull
+			pendingFull = false
+			changes, current, err := snapshotPendingPaths(cfg.Root, previous, paths, currentFull)
 			if err != nil {
 				sendWatchError(ctx, w.errors, err)
 				continue
 			}
-			changes := DiffSnapshots(previous, current)
 			previous = current
 			if len(changes) > 0 {
 				sendWatchChanges(ctx, w.changes, changes)
 			}
 		}
 	}
+}
+
+func nativeEventNeedsFullSnapshot(event fsnotify.Event, classification FileClassification) bool {
+	if !classification.Watchable {
+		return event.Op&(fsnotify.Create|fsnotify.Remove|fsnotify.Rename) != 0
+	}
+	if event.Op&(fsnotify.Create|fsnotify.Rename) != 0 {
+		if info, err := os.Stat(event.Name); err == nil && info.IsDir() {
+			return true
+		}
+	}
+	return event.Op&(fsnotify.Remove|fsnotify.Rename) != 0 && filepath.Ext(filepath.Base(event.Name)) == ""
+}
+
+func snapshotPendingPaths(root string, previous Snapshot, paths []string, full bool) ([]Change, Snapshot, error) {
+	if full || len(paths) == 0 {
+		current, err := CaptureSnapshot(root)
+		if err != nil {
+			return nil, previous, err
+		}
+		return DiffSnapshots(previous, current), current, nil
+	}
+	currentSubset, err := CapturePaths(paths)
+	if err != nil {
+		return nil, previous, err
+	}
+	previousSubset := Snapshot{Files: make(map[string]FileState, len(paths))}
+	for _, path := range paths {
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			return nil, previous, err
+		}
+		absPath = filepath.Clean(absPath)
+		if state, ok := previous.Files[absPath]; ok {
+			previousSubset.Files[absPath] = state
+		}
+	}
+	changes := DiffSnapshots(previousSubset, currentSubset)
+	current := Snapshot{Files: make(map[string]FileState, len(previous.Files)+len(currentSubset.Files))}
+	for path, state := range previous.Files {
+		current.Files[path] = state
+	}
+	for _, path := range paths {
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			return nil, previous, err
+		}
+		delete(current.Files, filepath.Clean(absPath))
+	}
+	for path, state := range currentSubset.Files {
+		current.Files[path] = state
+	}
+	return changes, current, nil
+}
+
+func sortedPendingPaths(paths map[string]struct{}) []string {
+	out := make([]string, 0, len(paths))
+	for path := range paths {
+		out = append(out, path)
+	}
+	sort.Strings(out)
+	return out
 }
 
 func addWatchDirs(w *fsnotify.Watcher, root string) error {

@@ -18,6 +18,22 @@ func TestImpactWalksReverseEdgesAndRecommendsTest(t *testing.T) {
 	}
 }
 
+func TestImpactDoesNotRecommendNameSuffixTestWithoutMetadata(t *testing.T) {
+	var g Graph
+	g.AddNode(Node{ID: "AccountService", Kind: NodeKindClass, Name: "AccountService"})
+	g.AddNode(Node{ID: "Contest", Kind: NodeKindClass, Name: "Contest"})
+	g.AddEdge(Edge{From: "Contest", To: "AccountService", Kind: EdgeKindCalls})
+
+	result := Impact(g, []string{"AccountService"})
+
+	if !contains(result.Impacted, "Contest") {
+		t.Fatalf("impacted = %v, want Contest", result.Impacted)
+	}
+	if contains(result.RecommendedTests, "Contest") {
+		t.Fatalf("recommended tests = %v, did not want Contest", result.RecommendedTests)
+	}
+}
+
 func contains(values []string, want string) bool {
 	for _, value := range values {
 		if value == want {

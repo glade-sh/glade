@@ -18,8 +18,24 @@ type token struct {
 }
 
 func collectApexUses(index typesys.Index, declarations Graph) []Use {
+	return collectApexUsesForFiles(index, declarations, apexUseFiles(index))
+}
+
+// BuildApexReferences builds declarations plus Apex type/member references for
+// the requested source files. A nil files slice scans every indexed Apex file.
+func BuildApexReferences(index typesys.Index, files []string) Graph {
+	graph := BuildDeclarations(index)
+	if files == nil {
+		files = apexUseFiles(index)
+	}
+	for _, use := range collectApexUsesForFiles(index, graph, files) {
+		graph.AddUse(use)
+	}
+	return graph
+}
+
+func collectApexUsesForFiles(index typesys.Index, declarations Graph, files []string) []Use {
 	resolver := newApexUseResolver(index, declarations)
-	files := apexUseFiles(index)
 	var uses []Use
 	for _, file := range files {
 		data, err := os.ReadFile(sourcePath(index.Project.Root, file))

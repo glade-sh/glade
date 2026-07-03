@@ -397,6 +397,9 @@ func jsonParserTokenize(text string) ([]Value, error) {
 			}
 			tokens = append(tokens, jsonParserToken("VALUE_NULL", "null", name, ""))
 		}
+		if rootWritten && len(stack) == 0 {
+			break
+		}
 	}
 	if len(tokens) == 0 {
 		return nil, fmt.Errorf("JSONParser input is empty")

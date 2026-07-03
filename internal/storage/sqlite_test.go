@@ -1,7 +1,9 @@
 package storage
 
 import (
+	"encoding/json"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -69,6 +71,50 @@ func TestSQLiteStoreAppliesMigrations(t *testing.T) {
 		if err := store.db.QueryRow(`select name from sqlite_master where type = 'table' and name = ?`, table).Scan(&name); err != nil {
 			t.Fatalf("table %s missing: %v", table, err)
 		}
+	}
+}
+
+func TestSQLiteStoreUsesSingleConnectionPool(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "glade.db")
+	store, err := OpenSQLite(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	stats := store.db.Stats()
+	if stats.MaxOpenConnections != 1 {
+		t.Fatalf("MaxOpenConnections = %d, want 1", stats.MaxOpenConnections)
+	}
+}
+
+func TestSQLiteStoreLoadRejectsOrphanRecordRows(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "glade.db")
+	store, err := OpenSQLite(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	record := Record{
+		ID:     "a00000000000001",
+		Object: "Missing__c",
+		Fields: map[string]Value{"Name": StringValue("Orphan")},
+	}
+	raw, err := json.Marshal(record)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.db.Exec(`insert into records(object_name, id, record_json) values(?, ?, ?)`, "Missing__c", record.ID, raw); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = store.Load()
+	if err == nil {
+		t.Fatalf("Load() error = nil, want orphan record error")
+	}
+	if !strings.Contains(err.Error(), "orphan record row") || !strings.Contains(err.Error(), "Missing__c") {
+		t.Fatalf("Load() error = %v, want orphan record detail", err)
 	}
 }
 

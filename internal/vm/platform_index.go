@@ -14,6 +14,7 @@ import (
 
 var (
 	commonSObjectTypeNamesOnce       sync.Once
+	commonSObjectTypeNameSetOnce     sync.Once
 	generatedPlatformTypeIndexOnce   sync.Once
 	generatedPlatformMethodIndexOnce sync.Once
 )
@@ -23,6 +24,18 @@ func CommonSObjectTypeNames() []string {
 		commonSObjectTypeNames = buildCommonSObjectTypeNames()
 	})
 	return commonSObjectTypeNames
+}
+
+func commonSObjectTypeNameLookup() map[string]bool {
+	commonSObjectTypeNameSetOnce.Do(func() {
+		commonSObjectTypeNameSet = make(map[string]bool, len(standardSObjectPrefixes))
+		for _, objectName := range standardSObjectPrefixes {
+			if objectName = strings.TrimSpace(objectName); objectName != "" {
+				commonSObjectTypeNameSet[strings.ToLower(objectName)] = true
+			}
+		}
+	})
+	return commonSObjectTypeNameSet
 }
 
 func generatedPlatformTypes() map[string]generatedPlatformType {

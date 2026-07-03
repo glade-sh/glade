@@ -126,7 +126,13 @@ func (s *Server) handleDBManagerRecords(w http.ResponseWriter, r *http.Request, 
 		writeJSON(w, http.StatusOK, records)
 	case http.MethodPost:
 		var payload dbmanager.MutationPayload
-		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		if rejectOversizeRequestBody(w, r) {
+			return
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxLocalRequestBodyBytes)).Decode(&payload); err != nil {
+			if writeRequestBodyLimitError(w, err) {
+				return
+			}
 			writeSalesforceError(w, errMalformedJSON, err.Error())
 			return
 		}
@@ -150,7 +156,13 @@ func (s *Server) handleDBManagerRecord(w http.ResponseWriter, r *http.Request, o
 		writeJSON(w, http.StatusOK, record)
 	case http.MethodPatch:
 		var payload dbmanager.MutationPayload
-		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		if rejectOversizeRequestBody(w, r) {
+			return
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxLocalRequestBodyBytes)).Decode(&payload); err != nil {
+			if writeRequestBodyLimitError(w, err) {
+				return
+			}
 			writeSalesforceError(w, errMalformedJSON, err.Error())
 			return
 		}
@@ -170,7 +182,7 @@ func (s *Server) handleDBManagerMutation(w http.ResponseWriter, mutate func(dbma
 	next := s.Org.Clone()
 	result := mutate(dbmanager.New(&next))
 	if !result.Success {
-		writeJSON(w, http.StatusBadRequest, result)
+		writeDBManagerMutationFailure(w, result)
 		return
 	}
 	if err := s.commitOrg(next); err != nil {
@@ -178,6 +190,22 @@ func (s *Server) handleDBManagerMutation(w http.ResponseWriter, mutate func(dbma
 		return
 	}
 	writeJSON(w, http.StatusOK, result)
+}
+
+func writeDBManagerMutationFailure(w http.ResponseWriter, result dbmanager.MutationResult) {
+	code := strings.TrimSpace(result.StatusCode)
+	if code == "" {
+		code = salesforceErrorCode(errDMLFailure)
+	}
+	message := strings.TrimSpace(result.Message)
+	if message == "" {
+		message = "DML operation failed"
+	}
+	writeJSON(w, http.StatusBadRequest, []salesforceError{{
+		ErrorCode: code,
+		Message:   message,
+		Fields:    append([]string(nil), result.Fields...),
+	}})
 }
 
 func dbManagerIntQuery(r *http.Request, name string, fallback int) int {

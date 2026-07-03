@@ -584,21 +584,24 @@ func (e *Engine) beginRollbackPoint(enabled bool) rollbackPoint {
 	}
 }
 
-func (e *Engine) restoreRollbackPoint(point rollbackPoint) {
+func (e *Engine) restoreRollbackPoint(point rollbackPoint) error {
 	if e == nil || !point.enabled {
-		return
+		return nil
 	}
 	if point.journal && e.IsolationJournal != nil {
-		_ = e.IsolationJournal.Rollback(point.mark)
+		if err := e.IsolationJournal.Rollback(point.mark); err != nil {
+			return err
+		}
 		if e.Org != nil {
 			e.IDs.Sequences = copySequences(e.Org.IDSequences)
 		}
 		e.clearUniqueIndexes()
-		return
+		return nil
 	}
 	*e.Org = point.org
 	e.IDs.Sequences = point.sequences
 	e.clearUniqueIndexes()
+	return nil
 }
 
 func (e *Engine) TakeSummaryUpdates() []SummaryUpdate {
@@ -731,13 +734,17 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	e.addUniqueIndexRecord(objectName, object.Definition, record)
 	e.recalculateSummaryFieldsForChildren(objectName, record)
 	if err := e.afterInsertSObject(objectName, record); err != nil {
-		e.restoreRollbackPoint(rollback)
+		if rollbackErr := e.restoreRollbackPoint(rollback); rollbackErr != nil {
+			return "", rollbackErr
+		}
 		return "", err
 	}
 	if createPersonContact {
 		if err := e.afterInsertPersonAccount(record); err != nil {
 			if needsFullRollback {
-				e.restoreRollbackPoint(rollback)
+				if rollbackErr := e.restoreRollbackPoint(rollback); rollbackErr != nil {
+					return "", rollbackErr
+				}
 			} else {
 				e.rollbackInsertedRecord(objectName, object.Definition, record, rollbackSequences)
 			}
@@ -746,7 +753,9 @@ func (e *Engine) insertOne(record storage.Record, statementStamp *string) (stora
 	}
 	if !e.DeferAutomation {
 		if _, err := e.ApplyAutomation(objectName, record.ID); err != nil {
-			e.restoreRollbackPoint(rollback)
+			if rollbackErr := e.restoreRollbackPoint(rollback); rollbackErr != nil {
+				return "", rollbackErr
+			}
 			return "", err
 		}
 	}

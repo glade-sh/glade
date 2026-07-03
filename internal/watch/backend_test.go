@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/fsnotify/fsnotify"
 )
 
 func TestPollingWatcherReportsChanges(t *testing.T) {
@@ -125,5 +127,73 @@ func TestNativeWatcherAddsCreatedDirectories(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Fatal("timeout waiting for native created directory change")
+	}
+}
+
+func TestSnapshotPendingPathsUpdatesOnlyChangedWatchableFiles(t *testing.T) {
+	root := t.TempDir()
+	changedPath := filepath.Join(root, "Changed.cls")
+	unchangedPath := filepath.Join(root, "Unchanged.cls")
+	writeWatchFile(t, changedPath, "public class Changed {}")
+	writeWatchFile(t, unchangedPath, "public class Unchanged {}")
+	previous, err := CaptureSnapshot(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	writeWatchFile(t, changedPath, "public class Changed { void run() {} }")
+	changes, current, err := snapshotPendingPaths(root, previous, []string{changedPath}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(changes) != 1 {
+		t.Fatalf("changes = %#v, want one modified file", changes)
+	}
+	assertChange(t, changes, changedPath, ChangeModified, FileKindApexClass)
+	if _, ok := current.Files[unchangedPath]; !ok {
+		t.Fatalf("unchanged file missing after targeted snapshot: %#v", current.Files)
+	}
+}
+
+func TestSnapshotPendingPathsDeletesOnlyChangedWatchableFile(t *testing.T) {
+	root := t.TempDir()
+	deletedPath := filepath.Join(root, "Deleted.cls")
+	unchangedPath := filepath.Join(root, "Unchanged.cls")
+	writeWatchFile(t, deletedPath, "public class Deleted {}")
+	writeWatchFile(t, unchangedPath, "public class Unchanged {}")
+	previous, err := CaptureSnapshot(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.Remove(deletedPath); err != nil {
+		t.Fatal(err)
+	}
+	changes, current, err := snapshotPendingPaths(root, previous, []string{deletedPath}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(changes) != 1 {
+		t.Fatalf("changes = %#v, want one deleted file", changes)
+	}
+	assertChange(t, changes, deletedPath, ChangeDeleted, FileKindApexClass)
+	if _, ok := current.Files[deletedPath]; ok {
+		t.Fatalf("deleted file still present after targeted snapshot: %#v", current.Files)
+	}
+	if _, ok := current.Files[unchangedPath]; !ok {
+		t.Fatalf("unchanged file missing after targeted delete: %#v", current.Files)
+	}
+}
+
+func TestNativeEventNeedsFullSnapshotForWatchableBundleDirectoryRemove(t *testing.T) {
+	event := fsnotify.Event{
+		Name: filepath.Join("force-app", "main", "default", "lwc", "accountWorkspace"),
+		Op:   fsnotify.Remove,
+	}
+
+	if !nativeEventNeedsFullSnapshot(event, ClassifyPath(event.Name)) {
+		t.Fatal("watchable bundle directory removal should force a full snapshot")
 	}
 }

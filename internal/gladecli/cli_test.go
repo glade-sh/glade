@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/vm"
@@ -37,6 +38,34 @@ func replaceDefaultHTTPClient(t *testing.T, fn roundTripFunc) func() {
 	}
 }
 
+type cliJSONEnvelopeForTest struct {
+	SchemaVersion string          `json:"schemaVersion"`
+	Command       string          `json:"command"`
+	Status        string          `json:"status"`
+	ExitCode      int             `json:"exitCode"`
+	Data          json.RawMessage `json:"data"`
+}
+
+func decodeCLIEnvelopeData(t *testing.T, raw []byte, command string, out any) cliJSONEnvelopeForTest {
+	t.Helper()
+	var env cliJSONEnvelopeForTest
+	if err := json.Unmarshal(raw, &env); err != nil {
+		t.Fatalf("stdout is not JSON: %v\n%s", err, string(raw))
+	}
+	if env.SchemaVersion != "1.0" || env.Command != command {
+		t.Fatalf("unexpected envelope: %#v\n%s", env, string(raw))
+	}
+	if len(env.Data) == 0 {
+		t.Fatalf("envelope missing data: %#v\n%s", env, string(raw))
+	}
+	if out != nil {
+		if err := json.Unmarshal(env.Data, out); err != nil {
+			t.Fatalf("envelope data is not expected JSON: %v\n%s", err, string(raw))
+		}
+	}
+	return env
+}
+
 func TestRunVersion(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"version"}, &stdout, &stderr)
@@ -45,6 +74,30 @@ func TestRunVersion(t *testing.T) {
 	}
 	if got := stdout.String(); got != "glade "+Version+"\n" {
 		t.Fatalf("stdout = %q", got)
+	}
+}
+
+func TestRunVersionJSONUsesCLIEnvelope(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"version", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	var got struct {
+		SchemaVersion string `json:"schemaVersion"`
+		Command       string `json:"command"`
+		Status        string `json:"status"`
+		ExitCode      int    `json:"exitCode"`
+		Data          struct {
+			Version string `json:"version"`
+			Go      string `json:"go"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout is not JSON: %v\n%s", err, stdout.String())
+	}
+	if got.SchemaVersion != "1.0" || got.Command != "version" || got.Status != "passed" || got.ExitCode != 0 || got.Data.Version == "" || got.Data.Go == "" {
+		t.Fatalf("unexpected envelope: %#v\n%s", got, stdout.String())
 	}
 }
 
@@ -125,17 +178,24 @@ func TestRunVersionJSON(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	var got map[string]string
+	var got struct {
+		SchemaVersion string      `json:"schemaVersion"`
+		Command       string      `json:"command"`
+		Status        string      `json:"status"`
+		ExitCode      int         `json:"exitCode"`
+		Data          versionInfo `json:"data"`
+	}
 	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
 		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
 	}
-	if got["version"] != Version {
-		t.Fatalf("version = %q, want %q", got["version"], Version)
+	if got.SchemaVersion != "1.0" || got.Command != "version" || got.Status != "passed" || got.ExitCode != 0 {
+		t.Fatalf("unexpected envelope: %#v\n%s", got, stdout.String())
 	}
-	for _, key := range []string{"go", "os", "arch"} {
-		if got[key] == "" {
-			t.Fatalf("missing %s in %#v", key, got)
-		}
+	if got.Data.Version != Version {
+		t.Fatalf("version = %q, want %q", got.Data.Version, Version)
+	}
+	if got.Data.Go == "" || got.Data.OS == "" || got.Data.Arch == "" {
+		t.Fatalf("missing version fields in %#v", got)
 	}
 }
 
@@ -392,6 +452,18 @@ func TestRunConfigValidateReportsParseError(t *testing.T) {
 	}
 }
 
+func TestRunConfigValidateMissingProjectUsesConfigExitCode(t *testing.T) {
+	root := t.TempDir()
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"config", "validate", "--project", root}, &stdout, &stderr)
+	if code != 3 {
+		t.Fatalf("exit code = %d, want 3; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "glade.yml not found") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
 func TestRunConfigShowJSON(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"sfdxns","sourceApiVersion":"65.0"}`)
@@ -410,47 +482,56 @@ org:
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
 	var got struct {
-		ConfigPath                 string   `json:"configPath"`
-		ConfigFound                bool     `json:"configFound"`
-		ProjectRoot                string   `json:"projectRoot"`
-		Namespace                  string   `json:"namespace"`
-		SourceAPIVersion           string   `json:"sourceApiVersion"`
-		PackageDirs                []string `json:"packageDirs"`
-		OrgFeatures                []string `json:"orgFeatures"`
-		ManagedPackageDependencies []struct {
-			Namespace string `json:"namespace"`
-		} `json:"managedPackageDependencies"`
-		NamespaceRemaps []struct {
-			From string `json:"from"`
-			To   string `json:"to"`
-		} `json:"namespaceRemaps"`
-		PackageShims []struct {
-			Namespace string `json:"namespace"`
-		} `json:"packageShims"`
+		SchemaVersion string `json:"schemaVersion"`
+		Command       string `json:"command"`
+		Status        string `json:"status"`
+		ExitCode      int    `json:"exitCode"`
+		Data          struct {
+			ConfigPath                 string   `json:"configPath"`
+			ConfigFound                bool     `json:"configFound"`
+			ProjectRoot                string   `json:"projectRoot"`
+			Namespace                  string   `json:"namespace"`
+			SourceAPIVersion           string   `json:"sourceApiVersion"`
+			PackageDirs                []string `json:"packageDirs"`
+			OrgFeatures                []string `json:"orgFeatures"`
+			ManagedPackageDependencies []struct {
+				Namespace string `json:"namespace"`
+			} `json:"managedPackageDependencies"`
+			NamespaceRemaps []struct {
+				From string `json:"from"`
+				To   string `json:"to"`
+			} `json:"namespaceRemaps"`
+			PackageShims []struct {
+				Namespace string `json:"namespace"`
+			} `json:"packageShims"`
+		} `json:"data"`
 	}
 	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
 		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
 	}
-	if !got.ConfigFound || got.ConfigPath != filepath.Join(root, "glade.yml") {
+	if got.SchemaVersion != "1.0" || got.Command != "config show" || got.Status != "passed" || got.ExitCode != 0 {
+		t.Fatalf("unexpected envelope: %#v\n%s", got, stdout.String())
+	}
+	if !got.Data.ConfigFound || got.Data.ConfigPath != filepath.Join(root, "glade.yml") {
 		t.Fatalf("config fields = %#v", got)
 	}
-	if got.ProjectRoot != root || got.Namespace != "glns" || got.SourceAPIVersion != "65.0" {
+	if got.Data.ProjectRoot != root || got.Data.Namespace != "glns" || got.Data.SourceAPIVersion != "65.0" {
 		t.Fatalf("project fields = %#v", got)
 	}
-	if strings.Join(got.PackageDirs, ",") != "force-app,packages/core" {
-		t.Fatalf("packageDirs = %#v", got.PackageDirs)
+	if strings.Join(got.Data.PackageDirs, ",") != "force-app,packages/core" {
+		t.Fatalf("packageDirs = %#v", got.Data.PackageDirs)
 	}
-	if strings.Join(got.OrgFeatures, ",") != "PersonAccounts" {
-		t.Fatalf("orgFeatures = %#v", got.OrgFeatures)
+	if strings.Join(got.Data.OrgFeatures, ",") != "PersonAccounts" {
+		t.Fatalf("orgFeatures = %#v", got.Data.OrgFeatures)
 	}
-	if len(got.ManagedPackageDependencies) != 1 || got.ManagedPackageDependencies[0].Namespace != "pkg" {
-		t.Fatalf("managed package dependencies = %#v", got.ManagedPackageDependencies)
+	if len(got.Data.ManagedPackageDependencies) != 1 || got.Data.ManagedPackageDependencies[0].Namespace != "pkg" {
+		t.Fatalf("managed package dependencies = %#v", got.Data.ManagedPackageDependencies)
 	}
-	if len(got.NamespaceRemaps) != 1 || got.NamespaceRemaps[0].From != "BasePkg" || got.NamespaceRemaps[0].To != "stagepkg" {
-		t.Fatalf("namespace remaps = %#v", got.NamespaceRemaps)
+	if len(got.Data.NamespaceRemaps) != 1 || got.Data.NamespaceRemaps[0].From != "BasePkg" || got.Data.NamespaceRemaps[0].To != "stagepkg" {
+		t.Fatalf("namespace remaps = %#v", got.Data.NamespaceRemaps)
 	}
-	if len(got.PackageShims) != 1 || got.PackageShims[0].Namespace != "pkg" {
-		t.Fatalf("package shims = %#v", got.PackageShims)
+	if len(got.Data.PackageShims) != 1 || got.Data.PackageShims[0].Namespace != "pkg" {
+		t.Fatalf("package shims = %#v", got.Data.PackageShims)
 	}
 }
 
@@ -695,35 +776,44 @@ func TestPluginsListJSONIncludesEditorMetadata(t *testing.T) {
 		t.Fatalf("list exit=%d stderr=%s", code, stderr.String())
 	}
 	var got struct {
-		Plugins []struct {
-			Identity     string   `json:"identity"`
-			Version      string   `json:"version"`
-			Linked       bool     `json:"linked"`
-			CommandRoots []string `json:"commandRoots"`
-			Executable   string   `json:"executable"`
-			ManifestPath string   `json:"manifestPath"`
-			Source       string   `json:"source"`
-			Editor       *struct {
-				Actions []struct {
-					ID      string   `json:"id"`
-					View    string   `json:"view"`
-					Command []string `json:"command"`
-					Output  string   `json:"output"`
-					Inputs  []struct {
-						Name     string `json:"name"`
-						Required bool   `json:"required"`
-					} `json:"inputs"`
-				} `json:"actions"`
-			} `json:"editor"`
-		} `json:"plugins"`
+		SchemaVersion string `json:"schemaVersion"`
+		Command       string `json:"command"`
+		Status        string `json:"status"`
+		ExitCode      int    `json:"exitCode"`
+		Data          struct {
+			Plugins []struct {
+				Identity     string   `json:"identity"`
+				Version      string   `json:"version"`
+				Linked       bool     `json:"linked"`
+				CommandRoots []string `json:"commandRoots"`
+				Executable   string   `json:"executable"`
+				ManifestPath string   `json:"manifestPath"`
+				Source       string   `json:"source"`
+				Editor       *struct {
+					Actions []struct {
+						ID      string   `json:"id"`
+						View    string   `json:"view"`
+						Command []string `json:"command"`
+						Output  string   `json:"output"`
+						Inputs  []struct {
+							Name     string `json:"name"`
+							Required bool   `json:"required"`
+						} `json:"inputs"`
+					} `json:"actions"`
+				} `json:"editor"`
+			} `json:"plugins"`
+		} `json:"data"`
 	}
 	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
 		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
 	}
-	if len(got.Plugins) != 1 {
-		t.Fatalf("plugins length = %d, want 1: %#v", len(got.Plugins), got)
+	if got.SchemaVersion != "1.0" || got.Command != "plugins list" || got.Status != "passed" || got.ExitCode != 0 {
+		t.Fatalf("unexpected envelope: %#v\n%s", got, stdout.String())
 	}
-	plugin := got.Plugins[0]
+	if len(got.Data.Plugins) != 1 {
+		t.Fatalf("plugins length = %d, want 1: %#v", len(got.Data.Plugins), got)
+	}
+	plugin := got.Data.Plugins[0]
 	if plugin.Identity != "@glade/compat" || plugin.Version != "0.1.0" || !plugin.Linked || plugin.CommandRoots[0] != "surface" ||
 		plugin.ManifestPath != manifestPath || plugin.Source == "" || plugin.Editor == nil {
 		t.Fatalf("plugin JSON missing identity fields or editor metadata: %#v", plugin)
@@ -764,22 +854,24 @@ fi
 		t.Fatalf("list exit=%d stderr=%s", code, stderr.String())
 	}
 	var got struct {
-		Plugins []struct {
-			Editor *struct {
-				Actions []struct {
-					ID     string `json:"id"`
-					Output string `json:"output"`
-				} `json:"actions"`
-			} `json:"editor"`
-		} `json:"plugins"`
+		Data struct {
+			Plugins []struct {
+				Editor *struct {
+					Actions []struct {
+						ID     string `json:"id"`
+						Output string `json:"output"`
+					} `json:"actions"`
+				} `json:"editor"`
+			} `json:"plugins"`
+		} `json:"data"`
 	}
 	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
 		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
 	}
-	if len(got.Plugins) != 1 || got.Plugins[0].Editor == nil || len(got.Plugins[0].Editor.Actions) != 1 {
+	if len(got.Data.Plugins) != 1 || got.Data.Plugins[0].Editor == nil || len(got.Data.Plugins[0].Editor.Actions) != 1 {
 		t.Fatalf("linked plugin editor metadata missing:\n%#v\n%s", got, stdout.String())
 	}
-	action := got.Plugins[0].Editor.Actions[0]
+	action := got.Data.Plugins[0].Editor.Actions[0]
 	if action.ID != "compat.postParity" || action.Output != "glade.findings.v1" {
 		t.Fatalf("unexpected linked plugin editor action: %#v", action)
 	}
@@ -1218,6 +1310,17 @@ func TestRunDBUIAliasCarriesImportDefaults(t *testing.T) {
 	}
 }
 
+func TestRunDBUsageMentionsImport(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), "usage: glade db ui|seed|reset|export|inspect|query|describe|import") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
 func TestCodeIntelligenceHelpListsProductCommands(t *testing.T) {
 	tests := []struct {
 		name string
@@ -1427,12 +1530,17 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "playground help",
 			args: []string{"playground", "--help"},
-			want: []string{"Usage:", "glade playground", "--list-examples", "--example <id>", "--no-db", "--reset-on-start"},
+			want: []string{"Usage:", "glade playground", "--list-examples", "--example <id>", "--no-db", "--reset-on-start", "GLADE_SERVER_PUBLIC=1"},
+		},
+		{
+			name: "server help",
+			args: []string{"help", "server"},
+			want: []string{"Usage:", "glade server", "--addr <host:port>", "GLADE_SERVER_PUBLIC=1"},
 		},
 		{
 			name:    "org help",
 			args:    []string{"help", "org"},
-			want:    []string{"Usage:", "glade org create", "glade org list", "glade org status", "glade org auth", "glade org create refinement-local", "--db .glade/orgs/refinement-local.sqlite", "--addr 127.0.0.1:17911"},
+			want:    []string{"Usage:", "glade org create", "glade org list", "glade org status", "glade org auth", "glade org create refinement-local", "--db .glade/orgs/refinement-local.sqlite", "--addr 127.0.0.1:17911", "GLADE_SERVER_PUBLIC=1"},
 			notWant: []string{"glade org create refinement-local --project . --db .glade/orgs/refinement-local.sqlite --addr 127.0.0.1:17911"},
 		},
 		{
@@ -1453,7 +1561,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "help db",
 			args: []string{"help", "db"},
-			want: []string{"Usage:", "glade db --ui [--project <root>] [--env <name>|--db <path>]", "glade db import sf [--target-org <alias>] [--project <root>] [--env <name>|--db <path>]", "glade db import sf [--target-org <alias>] --list-objects", "glade db query [--project <root>] [--env <name>|--db <path>] --json [--limit <n>] [--query-all] <soql>", "glade db describe [--project <root>] [--env <name>|--db <path>] --json [ObjectName]", "--env <name>", "--db <path>", "--target-org <alias>", "--object <Object>", "--fields <list>", "--limit <n>", "--query-all", "--ui", "glade db inspect --project .", "glade db import sf --target-org devhub --project . --object Account", "glade db query --project . --json \"SELECT Id, Name FROM FileRow__c\""},
+			want: []string{"Usage:", "glade db --ui [--project <root>] [--env <name>|--db <path>]", "glade db import sf [--target-org <alias>] [--project <root>] [--env <name>|--db <path>]", "glade db import sf [--target-org <alias>] --list-objects", "glade db query [--project <root>] [--env <name>|--db <path>] --json [--limit <n>] [--query-all] <soql>", "glade db describe [--project <root>] [--env <name>|--db <path>] --json [ObjectName]", "--env <name>", "--db <path>", "--target-org <alias>", "--object <Object>", "--fields <list>", "--limit <n>", "--query-all", "--ui", "GLADE_SERVER_PUBLIC=1", "glade db inspect --project .", "glade db import sf --target-org devhub --project . --object Account", "glade db query --project . --json \"SELECT Id, Name FROM FileRow__c\""},
 		},
 		{
 			name: "help profile",
@@ -1791,13 +1899,14 @@ func TestRunEditorInstallVSCodeSuppressesSuccessfulEditorOutput(t *testing.T) {
 }
 
 func TestRunEditorDoctorVSCodeReportsPaths(t *testing.T) {
+	gladePath := filepath.Join(t.TempDir(), "bin", "glade")
 	restore := stubEditorCommandDeps(t,
 		func(name string) (string, error) {
 			switch name {
 			case "code":
 				return "/usr/local/bin/code", nil
 			case "glade":
-				return "/Users/matt/.local/bin/glade", nil
+				return gladePath, nil
 			default:
 				return "", os.ErrNotExist
 			}
@@ -1815,7 +1924,7 @@ func TestRunEditorDoctorVSCodeReportsPaths(t *testing.T) {
 	out := stdout.String()
 	for _, want := range []string{
 		"editor: code (/usr/local/bin/code)",
-		"glade: /Users/matt/.local/bin/glade",
+		"glade: " + gladePath,
 	} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("stdout missing %q:\n%s", want, out)
@@ -1839,7 +1948,7 @@ func TestRunEditorDoctorVSCodeJSONReportsBundledVSIX(t *testing.T) {
 			case "code":
 				return "/usr/local/bin/code", nil
 			case "glade":
-				return "/Users/matt/.local/bin/glade", nil
+				return filepath.Join(home, ".local", "bin", "glade"), nil
 			default:
 				return "", os.ErrNotExist
 			}
@@ -2420,8 +2529,13 @@ public class Hidden {
 	if !strings.Contains(strings.Join(memberNames, ","), "street") || !strings.Contains(strings.Join(memberNames, ","), "format") {
 		t.Fatalf("missing global members: %#v", artifact.ApexTypes[0].Members)
 	}
-	if !strings.Contains(stdout.String(), `"namespace": "pkg"`) {
-		t.Fatalf("stdout = %q", stdout.String())
+	var buildOut struct {
+		Namespace string `json:"namespace"`
+		Version   string `json:"version"`
+	}
+	env := decodeCLIEnvelopeData(t, stdout.Bytes(), "package build", &buildOut)
+	if env.Status != "passed" || env.ExitCode != 0 || buildOut.Namespace != "pkg" || buildOut.Version != "test-version" {
+		t.Fatalf("unexpected package build envelope: env=%#v data=%#v\n%s", env, buildOut, stdout.String())
 	}
 }
 
@@ -2615,8 +2729,13 @@ func TestRunParseJSON(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), `"name": "Hello"`) {
-		t.Fatalf("stdout did not include parsed declaration: %q", stdout.String())
+	var got apexast.Result
+	env := decodeCLIEnvelopeData(t, stdout.Bytes(), "parse", &got)
+	if env.Status != "passed" || env.ExitCode != 0 {
+		t.Fatalf("unexpected parse envelope: %#v\n%s", env, stdout.String())
+	}
+	if len(got.Files) != 1 || len(got.Files[0].Declarations) != 1 || got.Files[0].Declarations[0].Name != "Hello" {
+		t.Fatalf("parse data did not include parsed declaration: %#v\n%s", got, stdout.String())
 	}
 }
 
@@ -3201,9 +3320,7 @@ func TestRunDAPWithDBPersistsOnCleanTermination(t *testing.T) {
 	var inspect struct {
 		ByObject map[string]int `json:"byObject"`
 	}
-	if err := json.Unmarshal(stdout.Bytes(), &inspect); err != nil {
-		t.Fatalf("inspect json: %v\n%s", err, stdout.String())
-	}
+	decodeCLIEnvelopeData(t, stdout.Bytes(), "db inspect", &inspect)
 	if got := inspect.ByObject["Account"]; got != 1 {
 		t.Fatalf("Account rows = %d, want 1; inspect=%s", got, stdout.String())
 	}
@@ -3311,9 +3428,7 @@ private class SampleTest {
 	var inspect struct {
 		ByObject map[string]int `json:"byObject"`
 	}
-	if err := json.Unmarshal(stdout.Bytes(), &inspect); err != nil {
-		t.Fatalf("inspect json: %v\n%s", err, stdout.String())
-	}
+	decodeCLIEnvelopeData(t, stdout.Bytes(), "db inspect", &inspect)
 	if got := inspect.ByObject["Account"]; got != 0 {
 		t.Fatalf("Account rows = %d, want 0; inspect=%s", got, stdout.String())
 	}
@@ -3382,9 +3497,7 @@ func TestRunExecWithDBPersistsAnonymousDML(t *testing.T) {
 		ByObject map[string]int `json:"byObject"`
 		Records  int            `json:"records"`
 	}
-	if err := json.Unmarshal(stdout.Bytes(), &inspect); err != nil {
-		t.Fatalf("inspect json: %v\n%s", err, stdout.String())
-	}
+	decodeCLIEnvelopeData(t, stdout.Bytes(), "db inspect", &inspect)
 	if got := inspect.ByObject["Account"]; got != 1 {
 		t.Fatalf("Account rows = %d, want 1; inspect=%s", got, stdout.String())
 	}
@@ -3454,9 +3567,7 @@ func TestRunExecWithDBDryRunDoesNotPersist(t *testing.T) {
 	var inspect struct {
 		ByObject map[string]int `json:"byObject"`
 	}
-	if err := json.Unmarshal(stdout.Bytes(), &inspect); err != nil {
-		t.Fatalf("inspect json: %v\n%s", err, stdout.String())
-	}
+	decodeCLIEnvelopeData(t, stdout.Bytes(), "db inspect", &inspect)
 	if got := inspect.ByObject["Account"]; got != 0 {
 		t.Fatalf("Account rows = %d, want 0; inspect=%s", got, stdout.String())
 	}
@@ -3487,9 +3598,7 @@ func TestRunExecWithDBDoesNotPersistOnExecutionError(t *testing.T) {
 	var inspect struct {
 		ByObject map[string]int `json:"byObject"`
 	}
-	if err := json.Unmarshal(stdout.Bytes(), &inspect); err != nil {
-		t.Fatalf("inspect json: %v\n%s", err, stdout.String())
-	}
+	decodeCLIEnvelopeData(t, stdout.Bytes(), "db inspect", &inspect)
 	if got := inspect.ByObject["Account"]; got != 0 {
 		t.Fatalf("Account rows = %d, want 0; inspect=%s", got, stdout.String())
 	}
@@ -3989,7 +4098,7 @@ func TestRunPlaygroundWizardPrintsCommand(t *testing.T) {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
 	out := stdout.String()
-	for _, want := range []string{"glade playground", "--data-root", root, "--examples", "--example", "refinement-service", "--no-db", "--reset-on-start", "--public", "--open", "?example=refinement-service"} {
+	for _, want := range []string{"GLADE_SERVER_PUBLIC=1", "glade playground", "--data-root", root, "--examples", "--example", "refinement-service", "--no-db", "--reset-on-start", "--public", "--open", "?example=refinement-service"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("wizard output missing %q:\n%s", want, out)
 		}
@@ -4007,13 +4116,32 @@ func TestRunPlaygroundWizardHonorsNoOpenAndPublicAddress(t *testing.T) {
 		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
 	out := stdout.String()
-	for _, want := range []string{"--public", "--no-open", "http://0.0.0.0:8080/playground/"} {
+	for _, want := range []string{"GLADE_SERVER_PUBLIC=1", "--public", "--no-open", "http://0.0.0.0:8080/playground/"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("wizard output missing %q:\n%s", want, out)
 		}
 	}
 	if strings.Contains(out, "--open") {
 		t.Fatalf("wizard output should not include --open when --no-open is explicit:\n%s", out)
+	}
+}
+
+func TestRunPlaygroundWizardPublicAddressPrintsOptInEnv(t *testing.T) {
+	root := t.TempDir()
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"playground", "--wizard", "--addr", "0.0.0.0:8080", "--data-root", root, "--no-open"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	out := stdout.String()
+	for _, want := range []string{"GLADE_SERVER_PUBLIC=1", "--addr 0.0.0.0:8080", "--no-open", "http://0.0.0.0:8080/playground/"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("wizard output missing %q:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "--public") {
+		t.Fatalf("explicit public --addr wizard should not rewrite to --public:\n%s", out)
 	}
 }
 
@@ -4863,6 +4991,41 @@ func TestRunDBRefreshesSameProjectSchemaDrift(t *testing.T) {
 	}
 }
 
+func TestRunDBRejectsSchemaRefreshThatWouldDropRecords(t *testing.T) {
+	root := t.TempDir()
+	writeProjectWithWidgetField(t, root, "Label__c")
+	dbPath := filepath.Join(root, ".glade", "envs", "dev.sqlite")
+	fixturePath := filepath.Join(root, "fixture.json")
+	writeTestFile(t, fixturePath, `{
+  "version":"glade.storage.v1",
+  "objects":[{"name":"Widget__c","records":[{"alias":"widget","fields":{"Name":{"kind":"string","string":"Kept"}}}]}]
+}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "seed", "--project", root, fixturePath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("seed exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+
+	if err := os.RemoveAll(filepath.Join(root, "force-app/main/default/objects/Widget__c")); err != nil {
+		t.Fatal(err)
+	}
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/objects/Other__c/Other__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Other</label><pluralLabel>Others</pluralLabel></CustomObject>`)
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "inspect", "--project", root}, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("inspect unexpectedly refreshed destructive schema change; stdout=%q", stdout.String())
+	}
+	got := stderr.String()
+	for _, want := range []string{"schema refresh would drop local records", "Widget__c: 1", filepath.ToSlash(dbPath), "glade db export"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("stderr missing %q:\n%s", want, got)
+		}
+	}
+}
+
 func TestRunDBQueryJSONUsesSOQLRuntimeAndLimit(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "glade.db")
@@ -4895,8 +5058,9 @@ func TestRunDBQueryJSONUsesSOQLRuntimeAndLimit(t *testing.T) {
 		Columns   []string         `json:"columns"`
 		Records   []map[string]any `json:"records"`
 	}
-	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
-		t.Fatalf("query JSON decode: %v\n%s", err, stdout.String())
+	env := decodeCLIEnvelopeData(t, stdout.Bytes(), "db query", &got)
+	if env.Status != "passed" || env.ExitCode != 0 {
+		t.Fatalf("unexpected query envelope: %#v\n%s", env, stdout.String())
 	}
 	if got.Query != "SELECT Id, Name FROM Account ORDER BY Name" {
 		t.Fatalf("query = %q", got.Query)
@@ -4923,9 +5087,7 @@ func TestRunDBQueryJSONUsesSOQLRuntimeAndLimit(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("ordered query exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
-		t.Fatalf("ordered query JSON decode: %v\n%s", err, stdout.String())
-	}
+	decodeCLIEnvelopeData(t, stdout.Bytes(), "db query", &got)
 	if fmt.Sprint(got.Columns) != "[Name Id]" {
 		t.Fatalf("ordered query columns = %#v", got.Columns)
 	}
@@ -4936,9 +5098,7 @@ func TestRunDBQueryJSONUsesSOQLRuntimeAndLimit(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("FIELDS query exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
-		t.Fatalf("FIELDS query JSON decode: %v\n%s", err, stdout.String())
-	}
+	decodeCLIEnvelopeData(t, stdout.Bytes(), "db query", &got)
 	if len(got.Columns) == 1 && got.Columns[0] == "FIELDS(ALL)" {
 		t.Fatalf("FIELDS query columns were not expanded: %#v\n%s", got.Columns, stdout.String())
 	}
@@ -4952,9 +5112,7 @@ func TestRunDBQueryJSONUsesSOQLRuntimeAndLimit(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("COUNT query exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
-		t.Fatalf("COUNT query JSON decode: %v\n%s", err, stdout.String())
-	}
+	decodeCLIEnvelopeData(t, stdout.Bytes(), "db query", &got)
 	if fmt.Sprint(got.Columns) != "[expr0]" {
 		t.Fatalf("COUNT query columns should match aggregate record payload: %#v\n%s", got.Columns, stdout.String())
 	}
@@ -5006,9 +5164,7 @@ func TestRunDBQueryAllJSONIncludesDeletedRows(t *testing.T) {
 		TotalSize int              `json:"totalSize"`
 		Records   []map[string]any `json:"records"`
 	}
-	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
-		t.Fatalf("query JSON decode: %v\n%s", err, stdout.String())
-	}
+	decodeCLIEnvelopeData(t, stdout.Bytes(), "db query", &got)
 	if got.TotalSize != 2 || len(got.Records) != 2 {
 		t.Fatalf("query-all payload = %#v", got)
 	}
@@ -5056,8 +5212,9 @@ func TestRunDBDescribeJSONListsObjectsWithRecordCounts(t *testing.T) {
 			Records   int    `json:"records"`
 		} `json:"objects"`
 	}
-	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
-		t.Fatalf("describe JSON decode: %v\n%s", err, stdout.String())
+	env := decodeCLIEnvelopeData(t, stdout.Bytes(), "db describe", &got)
+	if env.Status != "passed" || env.ExitCode != 0 {
+		t.Fatalf("unexpected describe envelope: %#v\n%s", env, stdout.String())
 	}
 	for _, object := range got.Objects {
 		if object.Name == "Account" {
@@ -5092,8 +5249,9 @@ func TestRunDBDescribeObjectJSONIncludesFields(t *testing.T) {
 			ReferenceTo []string `json:"referenceTo"`
 		} `json:"fields"`
 	}
-	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
-		t.Fatalf("describe object JSON decode: %v\n%s", err, stdout.String())
+	env := decodeCLIEnvelopeData(t, stdout.Bytes(), "db describe", &got)
+	if env.Status != "passed" || env.ExitCode != 0 {
+		t.Fatalf("unexpected describe object envelope: %#v\n%s", env, stdout.String())
 	}
 	if got.Name != "Account" || got.Label != "Account" || got.KeyPrefix != "001" {
 		t.Fatalf("object describe = %#v", got)
@@ -5199,9 +5357,7 @@ exit 1
 	var query struct {
 		Records []map[string]any `json:"records"`
 	}
-	if err := json.Unmarshal(stdout.Bytes(), &query); err != nil {
-		t.Fatalf("query JSON decode: %v\n%s", err, stdout.String())
-	}
+	decodeCLIEnvelopeData(t, stdout.Bytes(), "db query", &query)
 	if len(query.Records) != 1 || query.Records[0]["Name"] != "Acme" || query.Records[0]["NumberOfEmployees"] != float64(7) {
 		t.Fatalf("query payload = %#v", query)
 	}

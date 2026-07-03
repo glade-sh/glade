@@ -18,13 +18,22 @@ func TestRunInspectGraphJSON(t *testing.T) {
 		t.Fatalf("exit = %d stderr=%q", code, stderr.String())
 	}
 	var got struct {
-		Nodes map[string]any   `json:"nodes"`
-		Edges []map[string]any `json:"edges"`
+		SchemaVersion string `json:"schemaVersion"`
+		Command       string `json:"command"`
+		Status        string `json:"status"`
+		ExitCode      int    `json:"exitCode"`
+		Data          struct {
+			Nodes map[string]any   `json:"nodes"`
+			Edges []map[string]any `json:"edges"`
+		} `json:"data"`
 	}
 	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
 		t.Fatalf("stdout is not graph JSON: %v\n%s", err, stdout.String())
 	}
-	if len(got.Nodes) == 0 {
+	if got.SchemaVersion != "1.0" || got.Command != "inspect graph" || got.Status != "passed" || got.ExitCode != 0 {
+		t.Fatalf("unexpected envelope: %#v\n%s", got, stdout.String())
+	}
+	if len(got.Data.Nodes) == 0 {
 		t.Fatalf("expected graph nodes")
 	}
 }
@@ -37,8 +46,9 @@ func TestRunReportAssessJSON(t *testing.T) {
 		t.Fatalf("exit = %d stderr=%q", code, stderr.String())
 	}
 	var got map[string]any
-	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
-		t.Fatalf("stdout is not JSON: %v\n%s", err, stdout.String())
+	env := decodeCLIEnvelopeData(t, stdout.Bytes(), "report assess", &got)
+	if env.Status != "passed" || env.ExitCode != 0 {
+		t.Fatalf("unexpected report envelope: %#v\n%s", env, stdout.String())
 	}
 	if got["schema_version"] != "glade.enterprise.report/v0" {
 		t.Fatalf("report = %#v", got)
@@ -59,8 +69,9 @@ func TestRunReportAssessStrictFailsOnDiagnostics(t *testing.T) {
 		t.Fatalf("exit = 0 stdout=%q stderr=%q", stdout.String(), stderr.String())
 	}
 	var got map[string]any
-	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
-		t.Fatalf("stdout is not JSON: %v\n%s", err, stdout.String())
+	env := decodeCLIEnvelopeData(t, stdout.Bytes(), "report assess", &got)
+	if env.Status != "failed" || env.ExitCode != 1 {
+		t.Fatalf("unexpected report envelope: %#v\n%s", env, stdout.String())
 	}
 	if got["status"] != "fail" {
 		t.Fatalf("status = %#v, report=%#v", got["status"], got)
@@ -77,8 +88,10 @@ func TestRunReportAcceptsUppercaseFormat(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d stderr=%q", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), `"schema_version"`) {
-		t.Fatalf("stdout = %q", stdout.String())
+	var got map[string]any
+	env := decodeCLIEnvelopeData(t, stdout.Bytes(), "report assess", &got)
+	if env.Status != "passed" || got["schema_version"] != "glade.enterprise.report/v0" {
+		t.Fatalf("unexpected report envelope: env=%#v data=%#v\n%s", env, got, stdout.String())
 	}
 }
 
@@ -106,8 +119,9 @@ func TestRunReportRefactorProofJSON(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"report", "refactor-proof", "--project", ".", "--since", "HEAD", "--format", "json"}, &stdout, &stderr)
 	var got map[string]any
-	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
-		t.Fatalf("stdout is not JSON: %v\n%s", err, stdout.String())
+	env := decodeCLIEnvelopeData(t, stdout.Bytes(), "report refactor-proof", &got)
+	if env.ExitCode != code {
+		t.Fatalf("envelope exitCode=%d process=%d\n%s", env.ExitCode, code, stdout.String())
 	}
 	if got["schema_version"] != "glade.enterprise.report/v0" {
 		t.Fatalf("report = %#v", got)

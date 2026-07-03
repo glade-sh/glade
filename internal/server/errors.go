@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 )
@@ -76,6 +77,30 @@ func writeSalesforceError(w http.ResponseWriter, kind serverErrorKind, message .
 		msg = message[0]
 	}
 	writeJSON(w, spec.status, []salesforceError{{ErrorCode: spec.code, Message: msg}})
+}
+
+func writeRequestBodyLimitError(w http.ResponseWriter, err error) bool {
+	var maxErr *http.MaxBytesError
+	if !errors.As(err, &maxErr) {
+		return false
+	}
+	writeRequestBodyTooLarge(w)
+	return true
+}
+
+func rejectOversizeRequestBody(w http.ResponseWriter, r *http.Request) bool {
+	if r != nil && r.ContentLength > maxLocalRequestBodyBytes {
+		writeRequestBodyTooLarge(w)
+		return true
+	}
+	return false
+}
+
+func writeRequestBodyTooLarge(w http.ResponseWriter) {
+	writeJSON(w, http.StatusRequestEntityTooLarge, []salesforceError{{
+		ErrorCode: salesforceErrorCode(errRequestLimitExceeded),
+		Message:   "request body too large",
+	}})
 }
 
 func salesforceErrorCode(kind serverErrorKind) string {

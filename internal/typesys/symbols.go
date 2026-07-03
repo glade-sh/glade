@@ -951,7 +951,7 @@ func hasModifier(modifiers []string, expected string) bool {
 
 func duplicateDiagnostic(current, previous TypeSymbol) diagnostic.Diagnostic {
 	return diagnostic.Diagnostic{
-		Severity: diagnostic.Error,
+		Severity: diagnostic.Warning,
 		Code:     "GLADETYPE001",
 		Message:  fmt.Sprintf("duplicate top-level symbol %q; first seen in %s", current.Name, previous.File),
 		File:     current.File,

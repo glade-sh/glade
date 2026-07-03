@@ -204,7 +204,9 @@ Build from source in GitHub Actions:
 - uses: actions/setup-go@v5
   with:
     go-version-file: go.mod
-- run: go install github.com/glade-sh/glade/cmd/glade@latest
+- run: sudo apt-get update && sudo apt-get install -y build-essential
+- run: CGO_ENABLED=1 go install github.com/glade-sh/glade/cmd/glade@latest
+- run: glade doctor --json
 - run: glade check --project .
 - run: glade test --project . --json
 - run: glade check --project . --format sarif --output glade-check.sarif

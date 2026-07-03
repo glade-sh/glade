@@ -442,7 +442,10 @@ func renderApexCommandLink(node *MarkupNode, ctx *RenderContext) (string, error)
 
 func renderApexSelectList(node *MarkupNode, ctx *RenderContext) (string, error) {
 	name := fieldName(node)
-	selected, _ := RenderExpressionTemplate(node.Attribute("value"), ctx.Expression)
+	selected, err := RenderExpressionTemplate(node.Attribute("value"), ctx.Expression)
+	if err != nil {
+		return "", err
+	}
 	options, err := selectOptionNodes(node, ctx)
 	if err != nil {
 		return "", err
@@ -516,20 +519,24 @@ func renderApexDataTable(node *MarkupNode, ctx *RenderContext, pageBlockStyle bo
 	}
 	builder.WriteString(`</tr></thead><tbody>`)
 	for _, row := range rows {
-		ctx.Scope.WithFrame(func() {
-			varName := strings.TrimSpace(node.Attribute("var"))
-			if varName != "" {
-				ctx.Scope.Set(varName, row)
+		ctx.Scope.PushFrame()
+		varName := strings.TrimSpace(node.Attribute("var"))
+		if varName != "" {
+			ctx.Scope.Set(varName, row)
+		}
+		builder.WriteString(`<tr>`)
+		for _, col := range columns {
+			cell, err := RenderExpressionTemplate(col.Attribute("value"), ctx.Expression)
+			if err != nil {
+				ctx.Scope.PopFrame()
+				return "", err
 			}
-			builder.WriteString(`<tr>`)
-			for _, col := range columns {
-				cell, _ := RenderExpressionTemplate(col.Attribute("value"), ctx.Expression)
-				builder.WriteString(`<td>`)
-				builder.WriteString(html.EscapeString(cell))
-				builder.WriteString(`</td>`)
-			}
-			builder.WriteString(`</tr>`)
-		})
+			builder.WriteString(`<td>`)
+			builder.WriteString(html.EscapeString(cell))
+			builder.WriteString(`</td>`)
+		}
+		builder.WriteString(`</tr>`)
+		ctx.Scope.PopFrame()
 	}
 	builder.WriteString(`</tbody></table>`)
 	return builder.String(), nil
@@ -728,24 +735,39 @@ func renderApexPageMessages(node *MarkupNode, ctx *RenderContext) (string, error
 
 func renderApexPageMessage(node *MarkupNode, ctx *RenderContext) (string, error) {
 	severity := strings.ToLower(strings.TrimSpace(node.Attribute("severity")))
-	summary, _ := RenderExpressionTemplate(node.Attribute("summary"), ctx.Expression)
-	detail, _ := RenderExpressionTemplate(node.Attribute("detail"), ctx.Expression)
+	summary, err := RenderExpressionTemplate(node.Attribute("summary"), ctx.Expression)
+	if err != nil {
+		return "", err
+	}
+	detail, err := RenderExpressionTemplate(node.Attribute("detail"), ctx.Expression)
+	if err != nil {
+		return "", err
+	}
 	if summary != "" && detail != "" {
 		summary = strings.TrimSpace(summary + " " + detail)
 	} else if detail != "" {
 		summary = detail
 	}
 	if summary == "" {
-		summary, _ = renderChildren(node, ctx)
+		summary, err = renderChildren(node, ctx)
+		if err != nil {
+			return "", err
+		}
 	}
 	return `<div class="message ` + html.EscapeString(severity) + `">` + html.EscapeString(summary) + `</div>`, nil
 }
 
 func renderApexMessage(node *MarkupNode, ctx *RenderContext) (string, error) {
 	target := strings.TrimSpace(node.Attribute("for"))
-	summary, _ := RenderExpressionTemplate(firstNonEmpty(node.Attribute("summary"), node.Attribute("detail")), ctx.Expression)
+	summary, err := RenderExpressionTemplate(firstNonEmpty(node.Attribute("summary"), node.Attribute("detail")), ctx.Expression)
+	if err != nil {
+		return "", err
+	}
 	if summary == "" {
-		summary, _ = renderChildren(node, ctx)
+		summary, err = renderChildren(node, ctx)
+		if err != nil {
+			return "", err
+		}
 	}
 	return `<div class="message" data-for="` + html.EscapeString(target) + `">` + html.EscapeString(summary) + `</div>`, nil
 }
@@ -989,7 +1011,10 @@ func renderApexImage(node *MarkupNode, ctx *RenderContext) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	alt, _ := RenderExpressionTemplate(node.Attribute("alt"), ctx.Expression)
+	alt, err := RenderExpressionTemplate(node.Attribute("alt"), ctx.Expression)
+	if err != nil {
+		return "", err
+	}
 	return `<img src="` + html.EscapeString(src) + `" alt="` + html.EscapeString(alt) + `" />`, nil
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/glade-sh/glade/internal/packageartifact"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/startupcache"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -263,6 +264,120 @@ private class CacheToggleTest {
 	}
 	if diskCacheEnabled() {
 		t.Fatal("NoDiskCache run re-enabled a globally disabled disk cache")
+	}
+}
+
+func TestRunNoDiskCacheDoesNotToggleGlobalDisable(t *testing.T) {
+	wasDisabled := disableDiskCache.Load()
+	disableDiskCache.Store(false)
+	t.Cleanup(func() { disableDiskCache.Store(wasDisabled) })
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/CacheToggleEnabledTest.cls"), `
+@isTest
+private class CacheToggleEnabledTest {
+  @isTest static void runs() {
+    System.assert(true);
+  }
+}
+
+`)
+
+	run := Run(loadTestIndex(t, root), Options{NoDiskCache: true})
+	summary := run.Summary()
+	if summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v", summary)
+	}
+	if !diskCacheEnabled() {
+		t.Fatal("NoDiskCache run disabled the package-global disk cache flag")
+	}
+}
+
+func TestTryLoadDiskRuntimeRejectsRuntimeABIMismatch(t *testing.T) {
+	wasDisabled := disableDiskCache.Load()
+	disableDiskCache.Store(false)
+	t.Cleanup(func() {
+		disableDiskCache.Store(wasDisabled)
+		InvalidateRuntimeCaches()
+	})
+	InvalidateRuntimeCaches()
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/CacheABIProbeTest.cls"), `
+@isTest
+private class CacheABIProbeTest {
+  @isTest static void runs() {
+    System.assert(true);
+  }
+}
+`)
+	index := loadTestIndex(t, root)
+	loadedProject, err := project.Load(root)
+	if err != nil {
+		t.Fatalf("project.Load() error = %v", err)
+	}
+	entry := startupcache.NewEntry(root, loadedProject, index, storage.NewOrgState(), startupcache.CompiledRuntime{})
+	entry.RuntimeABI = "old-runtime-abi"
+	if err := startupcache.Write(&entry, startupcache.SubdirTest); err != nil {
+		t.Fatalf("Write(old ABI) error = %v", err)
+	}
+	if _, ok := tryLoadDiskRuntime(index); ok {
+		t.Fatal("tryLoadDiskRuntime accepted a stale runtime ABI")
+	}
+
+	entry.RuntimeABI = testRuntimeCacheABI
+	if err := startupcache.Write(&entry, startupcache.SubdirTest); err != nil {
+		t.Fatalf("Write(current ABI) error = %v", err)
+	}
+	if _, ok := tryLoadDiskRuntime(index); !ok {
+		t.Fatal("tryLoadDiskRuntime rejected the current runtime ABI")
+	}
+}
+
+func TestRunParallelMethodsBypassesDiskRuntimeCache(t *testing.T) {
+	wasDisabled := disableDiskCache.Load()
+	disableDiskCache.Store(false)
+	t.Cleanup(func() {
+		disableDiskCache.Store(wasDisabled)
+		InvalidateRuntimeCaches()
+	})
+	InvalidateRuntimeCaches()
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/CacheProbe.cls"), `
+public class CacheProbe {
+  public static Boolean value() {
+    return true;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/CacheProbeTest.cls"), `
+@isTest
+private class CacheProbeTest {
+  @isTest static void first() {
+    System.assertEquals(true, CacheProbe.value());
+  }
+
+  @isTest static void second() {
+    System.assertEquals(true, CacheProbe.value());
+  }
+}
+`)
+	index := loadTestIndex(t, root)
+	loadedProject, err := project.Load(root)
+	if err != nil {
+		t.Fatalf("project.Load() error = %v", err)
+	}
+	entry := startupcache.NewEntry(root, loadedProject, index, storage.NewOrgState(), startupcache.CompiledRuntime{})
+	entry.RuntimeABI = testRuntimeCacheABI
+	if err := startupcache.Write(&entry, startupcache.SubdirTest); err != nil {
+		t.Fatalf("Write() error = %v", err)
+	}
+
+	run := Run(index, Options{ParallelMethods: true, Parallelism: 2})
+
+	if summary := run.Summary(); summary.Total != 2 || summary.Passed != 2 {
+		t.Fatalf("summary = %#v problem=%q", summary, firstRunProblem(run))
 	}
 }
 
@@ -817,6 +932,73 @@ private class NoSetupJournalTest {
 	}
 }
 
+func TestRunUsesWorkerJournalsForParallelMethods(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ParallelJournalTest.cls"), `
+@isTest
+private class ParallelJournalTest {
+  @isTest static void aFirstMethodAddsRecord() {
+    insert new Account(Name = 'First');
+    System.assertEquals(1, [SELECT COUNT() FROM Account]);
+  }
+  @isTest static void bSecondMethodDoesNotSeeFirstMethodRecord() {
+    System.assertEquals(0, [SELECT COUNT() FROM Account]);
+  }
+  @isTest static void cThirdMethodAddsRecord() {
+    insert new Account(Name = 'Third');
+    System.assertEquals(1, [SELECT COUNT() FROM Account]);
+  }
+  @isTest static void dFourthMethodDoesNotSeeThirdMethodRecord() {
+    System.assertEquals(0, [SELECT COUNT() FROM Account]);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{Parallelism: 2, ParallelMethods: true})
+	if summary := run.Summary(); summary.Total != 4 || summary.Passed != 4 {
+		if len(run.Suites) > 0 {
+			t.Fatalf("summary = %#v cases = %#v", summary, run.Suites[0].Cases)
+		}
+		t.Fatalf("summary = %#v suites = %#v", summary, run.Suites)
+	}
+	stats := SnapshotPerfCounters()
+	if stats.CloneRuntimeOrgCalls != 2 {
+		t.Fatalf("cloneRuntimeOrg calls = %d, want one journal org per worker", stats.CloneRuntimeOrgCalls)
+	}
+	if stats.CloneFallbacks != 0 {
+		t.Fatalf("clone fallbacks = %d, want worker journal path", stats.CloneFallbacks)
+	}
+	if stats.JournalRollbacks != 4 {
+		t.Fatalf("journal rollbacks = %d, want one per method", stats.JournalRollbacks)
+	}
+}
+
+func TestRunPerfCountersOptionEnablesVMPerfCounters(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PerfCounterTest.cls"), `
+@isTest
+private class PerfCounterTest {
+  @isTest static void passes() {
+    System.assertEquals(1, 1);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{PerfCounters: true})
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v suites = %#v", summary, run.Suites)
+	}
+	if stats := SnapshotPerfCounters(); !stats.VMPerf.Enabled {
+		t.Fatalf("VM perf counters not enabled: %#v", stats.VMPerf)
+	}
+}
+
 func TestClassJournalDisabledForMergeDML(t *testing.T) {
 	root := t.TempDir()
 	file := filepath.Join(root, "MergeJournalTest.cls")
@@ -856,6 +1038,36 @@ private class MetadataJournalTest {
 	}
 	if classSupportsJournalIsolation([]int{0, 1}, planned) {
 		t.Fatalf("metadata deployment class should use per-method org clones")
+	}
+}
+
+func TestClassJournalIsolationProbeReadsEachFileOnce(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "ReadOnceJournalTest.cls")
+	writeFile(t, file, `
+@isTest
+private class ReadOnceJournalTest {
+  @isTest static void first() {}
+  @isTest static void second() {}
+  @isTest static void third() {}
+}
+`)
+	planned := []testCasePlan{
+		{TestCase: TestCase{ClassName: "ReadOnceJournalTest", MethodName: "first", File: file}},
+		{TestCase: TestCase{ClassName: "ReadOnceJournalTest", MethodName: "second", File: file}},
+		{TestCase: TestCase{ClassName: "ReadOnceJournalTest", MethodName: "third", File: file}},
+	}
+	reads := 0
+	cache := newClassIsolationProbeCache(func(path string) ([]byte, error) {
+		reads++
+		return os.ReadFile(path)
+	})
+
+	if !cache.supportsJournalIsolation([]int{0, 1, 2}, planned) {
+		t.Fatalf("class should support journal isolation")
+	}
+	if reads != 1 {
+		t.Fatalf("source reads = %d, want 1", reads)
 	}
 }
 
@@ -4308,6 +4520,47 @@ private class SetupRandomTest {
 `)
 
 	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+}
+
+func TestRunUpsertUsesNamespacedExternalIDFromSiblingDependency(t *testing.T) {
+	root := t.TempDir()
+	workspaceRoot := filepath.Join(root, "workspace")
+	depRoot := filepath.Join(workspaceRoot, "dep-package")
+	consumerRoot := filepath.Join(workspaceRoot, "consumer-package")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{
+  "namespace": "depns",
+  "packageDirectories": [{"path":"force-app","default":true}]
+}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/objects/Contact/fields/ExternalID__c.field-meta.xml"), `<CustomField>
+  <fullName>ExternalID__c</fullName>
+  <type>Text</type>
+  <externalId>true</externalId>
+  <unique>true</unique>
+</CustomField>`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{
+  "namespace": "workns",
+  "packageDirectories": [{
+    "path":"force-app",
+    "default":true,
+    "package":"consumer-package",
+    "dependencies": [{"package":"missing-dep-name"}]
+  }]
+}`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/classes/NamespacedExternalIDTest.cls"), `
+@isTest
+private class NamespacedExternalIDTest {
+  @isTest static void upsertsWithDependencyFieldToken() {
+    Contact c = new Contact(LastName = 'External', depns__ExternalId__c = 'E-1');
+    Database.upsert(c, Contact.depns__ExternalId__c);
+    System.assertNotEquals(null, c.Id);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, consumerRoot), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
 	}

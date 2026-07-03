@@ -11,6 +11,20 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+var (
+	soqlSeparatorBytes     = byteSet(",=!*()<>")
+	soqlTokenBoundaryBytes = byteSet(" \n\t\r,=!*()<>")
+	soqlLiteralStopBytes   = byteSet(",)(")
+)
+
+func byteSet(chars string) [256]bool {
+	var out [256]bool
+	for i := 0; i < len(chars); i++ {
+		out[chars[i]] = true
+	}
+	return out
+}
+
 type token struct {
 	text string
 }
@@ -62,7 +76,7 @@ func lex(input string) ([]token, error) {
 				i++
 			}
 			return nil, fmt.Errorf("soql: unterminated string literal")
-		case strings.ContainsRune(",=!*()<>", rune(input[i])):
+		case soqlSeparatorBytes[input[i]]:
 			if i+1 < len(input) && input[i:i+2] == "!=" {
 				out = append(out, token{text: "!="})
 				i += 2
@@ -78,7 +92,7 @@ func lex(input string) ([]token, error) {
 			}
 		default:
 			start := i
-			for i < len(input) && !strings.ContainsRune(" \n\t\r,=!*()<>", rune(input[i])) {
+			for i < len(input) && !soqlTokenBoundaryBytes[input[i]] {
 				i++
 			}
 			out = append(out, token{text: input[start:i]})
@@ -1515,7 +1529,7 @@ func (p *parser) literalToken(tok string) string {
 	}
 	colon := p.advance().text
 	next := p.peek().text
-	if next == "" || strings.ContainsRune(",)(", rune(next[0])) {
+	if next == "" || soqlLiteralStopBytes[next[0]] {
 		return tok + colon
 	}
 	p.advance()
@@ -1526,7 +1540,7 @@ func (p *parser) signedLiteralToken(tok string) string {
 		return tok
 	}
 	next := p.peek().text
-	if next == "" || strings.ContainsRune(",)(", rune(next[0])) {
+	if next == "" || soqlLiteralStopBytes[next[0]] {
 		return tok
 	}
 	p.advance()

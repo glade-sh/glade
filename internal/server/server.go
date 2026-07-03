@@ -11,7 +11,7 @@ import (
 )
 
 type Server struct {
-	mu    sync.Mutex
+	mu    sync.RWMutex
 	Org   *storage.OrgState
 	Store interface {
 		Save(storage.OrgState) error
@@ -53,6 +53,8 @@ const (
 	maxQueryBatchSize = 2000
 	maxQueryLocators  = 32
 )
+
+const maxLocalRequestBodyBytes = 4 * 1000 * 1000
 
 type apiVersionEntry struct {
 	Version string `json:"version"`
@@ -181,14 +183,60 @@ func (s *Server) ReloadProjectState(source SourceMetadata, index typesys.Index, 
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.serveHTTPLocked(w, r)
+	parts := splitPath(r.URL.EscapedPath())
+	if canServeWithReadLock(r, parts) {
+		s.mu.RLock()
+		defer s.mu.RUnlock()
+	} else {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+	}
+	s.serveHTTPLocked(w, r, parts)
 }
 
-func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request) {
+func canServeWithReadLock(r *http.Request, parts []string) bool {
+	if r == nil || r.Method != http.MethodGet {
+		return false
+	}
+	if len(parts) == 0 {
+		return false
+	}
+	if len(parts) == 3 && parts[0] == "id" {
+		return true
+	}
+	if len(parts) >= 1 && parts[0] == "resource" {
+		return true
+	}
+	if len(parts) >= 1 && parts[0] == "assets" {
+		return true
+	}
+	if len(parts) < 2 || parts[0] != "services" {
+		return false
+	}
+	if parts[1] == "oauth2" {
+		return true
+	}
+	if parts[1] != "data" {
+		return false
+	}
+	if len(parts) == 2 || len(parts) == 3 {
+		return true
+	}
+	rest := parts[3:]
+	if len(rest) == 0 {
+		return true
+	}
+	switch rest[0] {
+	case "sobjects", "recent", "search", "limits":
+		return true
+	default:
+		_, unsupported := unsupportedRESTNamespaceMessage(rest[0])
+		return unsupported
+	}
+}
+
+func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request, parts []string) {
 	w.Header().Set("Content-Type", "application/json")
-	parts := splitPath(r.URL.EscapedPath())
 	if len(parts) == 0 && s.hasLWCWorkbenchProject() {
 		s.handleLWCShell(w, r, nil)
 		return

@@ -16,7 +16,7 @@ trap cleanup EXIT
 
 cd "${ROOT}"
 
-go build -o "${TMP}/glade" ./cmd/glade
+CGO_ENABLED=1 go build -o "${TMP}/glade" ./cmd/glade
 GLADE="${TMP}/glade"
 
 "${GLADE}" version >/dev/null

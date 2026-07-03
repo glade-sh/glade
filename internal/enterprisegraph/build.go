@@ -83,7 +83,7 @@ func nodeKindFromMember(kind apexast.DeclarationKind, test bool) NodeKind {
 }
 
 func testMetadata(test bool, name string) map[string]string {
-	if test || strings.HasSuffix(strings.ToLower(name), "test") {
+	if test {
 		return map[string]string{"test": "true"}
 	}
 	return nil
@@ -181,7 +181,7 @@ func nodeKindFromCodeintelType(symbol codeintel.Symbol) NodeKind {
 }
 
 func nodeKindFromCodeintelMember(symbol codeintel.Symbol) NodeKind {
-	if symbol.Metadata["test"] == "true" || strings.HasSuffix(strings.ToLower(symbol.Name), "test") {
+	if symbol.Metadata["test"] == "true" {
 		return NodeKindTestMethod
 	}
 	switch apexast.DeclarationKind(symbol.Metadata["declarationKind"]) {

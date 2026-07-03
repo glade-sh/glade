@@ -29,7 +29,10 @@ func loadDAPStartupState(projectRoot string) (storage.OrgState, apextest.Compile
 	if err != nil {
 		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, err
 	}
-	org := orgStateFromIndex(root, p, index)
+	org, err := orgStateFromIndex(root, p, index)
+	if err != nil {
+		return storage.OrgState{}, apextest.CompiledProjectRuntime{}, err
+	}
 	runtime := apextest.CompileProjectRuntimeForRequest(index)
 	built := startupcache.NewEntry(root, p, index, org, compiledRuntimeToCache(runtime))
 	built.Version = dapCacheVersion

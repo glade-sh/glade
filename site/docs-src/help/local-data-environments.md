@@ -33,7 +33,7 @@ glade db seed --project . <seed-file>
 glade db inspect --project .
 ```
 
-Expected: `doctor` shows the project local data environment, and `db inspect` reports local rows in `.glade/envs/dev.sqlite`.
+Expected: `doctor` shows the project local data environment, and `db inspect` reports local rows in the default project DB.
 
 Use a named environment when you want a separate project DB:
 
@@ -50,7 +50,7 @@ glade db inspect --project . --env qa
 glade db ui --project .
 ```
 
-Expected: Glade opens `/db` for `.glade/envs/dev.sqlite`. Use the object rail
+Expected: Glade opens `/db` for the default project DB. Use the object rail
 to pick an object, then use Create, Save, Delete, and Undelete from the record
 table and drawer.
 

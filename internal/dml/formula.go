@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html"
 	"math"
+	"math/big"
 	"regexp"
 	"sort"
 	"strconv"
@@ -24,12 +25,13 @@ const (
 )
 
 type formulaValue struct {
-	kind      formulaKind
-	bool      bool
-	text      string
-	number    float64
-	fieldType storage.FieldType
-	display   string
+	kind       formulaKind
+	bool       bool
+	text       string
+	number     float64
+	numberText string
+	fieldType  storage.FieldType
+	display    string
 }
 
 func evaluateRecordFormula(formula string, record storage.Record) (bool, bool) {
@@ -369,10 +371,12 @@ func (p *formulaParser) parseAdditive() (formulaValue, bool) {
 		if !leftOK || !rightOK {
 			return formulaValue{}, false
 		}
-		if op == "+" {
-			left = formulaValue{kind: formulaNumber, number: leftNumber + rightNumber}
+		if exact, ok := preciseFormulaNumberBinary(op, left, right); ok {
+			left = exact
+		} else if op == "+" {
+			left = formulaNumberValue(leftNumber + rightNumber)
 		} else {
-			left = formulaValue{kind: formulaNumber, number: leftNumber - rightNumber}
+			left = formulaNumberValue(leftNumber - rightNumber)
 		}
 	}
 }
@@ -398,13 +402,17 @@ func (p *formulaParser) parseMultiplicative() (formulaValue, bool) {
 			return formulaValue{}, false
 		}
 		if op == "*" {
-			left = formulaValue{kind: formulaNumber, number: leftNumber * rightNumber}
+			if exact, ok := preciseFormulaNumberBinary(op, left, right); ok {
+				left = exact
+			} else {
+				left = formulaNumberValue(leftNumber * rightNumber)
+			}
 			continue
 		}
 		if rightNumber == 0 {
 			return formulaValue{kind: formulaNull}, true
 		}
-		left = formulaValue{kind: formulaNumber, number: leftNumber / rightNumber}
+		left = formulaNumberValue(leftNumber / rightNumber)
 	}
 }
 
@@ -431,7 +439,7 @@ func (p *formulaParser) parsePrimary() (formulaValue, bool) {
 		if err != nil {
 			return formulaValue{}, false
 		}
-		return formulaValue{kind: formulaNumber, number: number}, true
+		return formulaValue{kind: formulaNumber, number: number, numberText: normalizeFormulaNumberText(token.text)}, true
 	case formulaTokenIdent:
 		p.pos++
 		if p.matchSymbol("(") {
@@ -1349,11 +1357,11 @@ func formulaStorageValue(value storage.Value) formulaValue {
 		if err != nil {
 			return formulaValue{kind: formulaString, text: value.Decimal}
 		}
-		return formulaValue{kind: formulaNumber, number: number}
+		return formulaValue{kind: formulaNumber, number: number, numberText: normalizeFormulaNumberText(value.Decimal)}
 	case storage.ValueID:
 		return formulaValue{kind: formulaString, text: string(value.ID)}
 	case storage.ValueInteger:
-		return formulaValue{kind: formulaNumber, number: float64(value.Integer)}
+		return formulaValue{kind: formulaNumber, number: float64(value.Integer), numberText: strconv.FormatInt(value.Integer, 10)}
 	case storage.ValueBoolean:
 		return formulaValue{kind: formulaBool, bool: value.Boolean}
 	default:
@@ -1367,6 +1375,7 @@ func formulaStorageValueForDefinition(value storage.Value, fieldDef storage.Fiel
 	out.display = strings.ToUpper(fieldDef.DisplayType)
 	if out.kind == formulaNumber && out.display == "PERCENT" {
 		out.number = out.number / 100
+		out.numberText = normalizeFormulaNumberText(strconv.FormatFloat(out.number, 'f', -1, 64))
 	}
 	return out
 }
@@ -1500,6 +1509,9 @@ func (v formulaValue) asString() string {
 		}
 		return "false"
 	case formulaNumber:
+		if v.numberText != "" {
+			return v.numberText
+		}
 		return strconv.FormatFloat(v.number, 'f', -1, 64)
 	case formulaString:
 		return v.text
@@ -1508,6 +1520,78 @@ func (v formulaValue) asString() string {
 	default:
 		return ""
 	}
+}
+
+func formulaNumberValue(number float64) formulaValue {
+	return formulaValue{kind: formulaNumber, number: number}
+}
+
+func formulaNumberValueFromText(text string) (formulaValue, bool) {
+	text = normalizeFormulaNumberText(text)
+	number, err := strconv.ParseFloat(text, 64)
+	if err != nil {
+		return formulaValue{}, false
+	}
+	return formulaValue{kind: formulaNumber, number: number, numberText: text}, true
+}
+
+func normalizeFormulaNumberText(text string) string {
+	text = strings.TrimSpace(text)
+	if strings.Contains(text, ".") {
+		text = strings.TrimRight(text, "0")
+		text = strings.TrimRight(text, ".")
+	}
+	if text == "" || text == "-0" {
+		return "0"
+	}
+	return text
+}
+
+func preciseFormulaNumberBinary(op string, left, right formulaValue) (formulaValue, bool) {
+	leftRat, ok := formulaNumberRat(left)
+	if !ok {
+		return formulaValue{}, false
+	}
+	rightRat, ok := formulaNumberRat(right)
+	if !ok {
+		return formulaValue{}, false
+	}
+	result := new(big.Rat)
+	scale := 0
+	switch op {
+	case "+":
+		result.Add(leftRat, rightRat)
+		scale = max(formulaNumberScale(left), formulaNumberScale(right))
+	case "-":
+		result.Sub(leftRat, rightRat)
+		scale = max(formulaNumberScale(left), formulaNumberScale(right))
+	case "*":
+		result.Mul(leftRat, rightRat)
+		scale = formulaNumberScale(left) + formulaNumberScale(right)
+	default:
+		return formulaValue{}, false
+	}
+	return formulaNumberValueFromText(result.FloatString(scale))
+}
+
+func formulaNumberRat(value formulaValue) (*big.Rat, bool) {
+	text := strings.TrimSpace(value.numberText)
+	if text == "" {
+		text = strconv.FormatFloat(value.number, 'f', -1, 64)
+	}
+	rat, ok := new(big.Rat).SetString(text)
+	return rat, ok
+}
+
+func formulaNumberScale(value formulaValue) int {
+	text := strings.TrimSpace(value.numberText)
+	if text == "" {
+		text = strconv.FormatFloat(value.number, 'f', -1, 64)
+	}
+	if i := strings.IndexByte(text, '.'); i >= 0 {
+		return len(text) - i - 1
+	}
+	return 0
 }
 
 func (v formulaValue) asNumber() (float64, bool) {

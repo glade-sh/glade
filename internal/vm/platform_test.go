@@ -3329,10 +3329,10 @@ List<Account> rows = new List<Account>{
 };
 insert rows;
 Integer afterDml = Limits.getCpuTime();
-System.assert(afterDml >= start + 3);
+System.assert(afterDml >= start);
 List<Account> queried = [SELECT Id FROM Account];
 Integer afterQuery = Limits.getCpuTime();
-System.assert(afterQuery >= afterDml + 3);
+System.assert(afterQuery >= afterDml);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -3340,8 +3340,18 @@ System.assert(afterQuery >= afterDml + 3);
 	machine := New(nil)
 	org := testDataOrg()
 	machine.SetOrg(&org)
-	if _, err := machine.Execute(program); err != nil {
+	caps := defaultLimitCaps()
+	caps.CPUTimeMS = 4
+	machine.SetLimitCaps(caps)
+	result, err := machine.Execute(program)
+	if err != nil {
 		t.Fatal(err)
+	}
+	if len(result.LimitViolations) == 0 {
+		t.Fatalf("expected CPU budget violation from instruction and row costs")
+	}
+	if result.LimitViolations[0].Used <= result.Limits.CPUTimeMS {
+		t.Fatalf("CPU budget used = %d, public cpu time = %d; want separate budget counter", result.LimitViolations[0].Used, result.Limits.CPUTimeMS)
 	}
 }
 
@@ -3602,6 +3612,15 @@ System.assertEquals(1, [SELECT COUNT() FROM Contact WHERE LastName = 'Private Fu
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestMethodHasModifierMatchesAnnotationWithArguments(t *testing.T) {
+	if !methodHasModifier([]string{"@future(callout=true)"}, "future") {
+		t.Fatal("methodHasModifier did not match @future(callout=true)")
+	}
+	if !methodHasModifier([]string{"AuraEnabled(cacheable=true)"}, "AuraEnabled") {
+		t.Fatal("methodHasModifier did not match AuraEnabled(cacheable=true)")
 	}
 }
 

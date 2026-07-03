@@ -38,6 +38,8 @@ import (
 
 var Version = "0.0.0-dev"
 
+var errCLIConfig = errors.New("cli config error")
+
 type versionInfo struct {
 	Version string `json:"version"`
 	Go      string `json:"go"`
@@ -77,6 +79,13 @@ func statusForOK(ok bool) string {
 func exitCodeForOK(ok bool) int {
 	if ok {
 		return 0
+	}
+	return 1
+}
+
+func cliExitCode(err error) int {
+	if errors.Is(err, errCLIConfig) {
+		return 3
 	}
 	return 1
 }
@@ -218,7 +227,7 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 	case "config":
 		if err := runConfig(".", args[1:], stdout); err != nil {
 			writeCommandError(stderr, args[0], err)
-			return 1
+			return cliExitCode(err)
 		}
 		return 0
 	case "init":
@@ -546,13 +555,16 @@ func runVersion(args []string, w io.Writer) error {
 		return err
 	}
 	if parsed.Bool("json") {
-		enc := json.NewEncoder(w)
-		enc.SetIndent("", "  ")
-		return enc.Encode(versionInfo{
-			Version: Version,
-			Go:      runtime.Version(),
-			OS:      runtime.GOOS,
-			Arch:    runtime.GOARCH,
+		return writeCLIJSONEnvelope(w, cliJSONEnvelope{
+			Command:  "version",
+			Status:   "passed",
+			ExitCode: 0,
+			Data: versionInfo{
+				Version: Version,
+				Go:      runtime.Version(),
+				OS:      runtime.GOOS,
+				Arch:    runtime.GOARCH,
+			},
 		})
 	}
 	fmt.Fprintf(w, "glade %s\n", Version)
@@ -675,9 +687,12 @@ func runPackageBuild(ctx context.Context, args []string, w io.Writer, progressW 
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseEnd, Phase: "package", Label: "Artifact written", Detail: output, Current: 4, Total: 4})
 	renderer.Finish(cliui.Result{OK: true, Label: "package built"})
 	if jsonOut {
-		enc := json.NewEncoder(w)
-		enc.SetIndent("", "  ")
-		return enc.Encode(artifact)
+		return writeCLIJSONEnvelope(w, cliJSONEnvelope{
+			Command:  "package build",
+			Status:   "passed",
+			ExitCode: 0,
+			Data:     artifact,
+		})
 	}
 	fmt.Fprintf(w, "package artifact: %s\n", output)
 	fmt.Fprintf(w, "namespace: %s\n", artifact.Namespace)
@@ -1087,9 +1102,12 @@ func runParse(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 	renderer.Finish(cliui.Result{OK: !result.HasErrors(), Label: "parse complete"})
 
 	if jsonOut {
-		enc := json.NewEncoder(w)
-		enc.SetIndent("", "  ")
-		return result, enc.Encode(result)
+		return result, writeCLIJSONEnvelope(w, cliJSONEnvelope{
+			Command:  "parse",
+			Status:   statusForOK(!result.HasErrors()),
+			ExitCode: exitCodeForOK(!result.HasErrors()),
+			Data:     result,
+		})
 	}
 
 	for _, file := range result.Files {
@@ -2249,7 +2267,10 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 		projectIndex = index
 		hasProjectRuntime = true
 		if dbPath == "" {
-			org := orgStateFromIndex(runtimeProjectRoot, p, index)
+			org, err := orgStateFromIndex(runtimeProjectRoot, p, index)
+			if err != nil {
+				return err
+			}
 			machine.SetOrg(&org)
 			machine.SetCurrentNamespace(org.Namespace)
 		}

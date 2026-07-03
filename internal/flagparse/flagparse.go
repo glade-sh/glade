@@ -76,6 +76,9 @@ func (p *Parser) Parse(args []string) (Result, error) {
 			result.Positionals = append(result.Positionals, arg)
 			continue
 		}
+		if p.looksLikeSingleDashLongFlag(arg) {
+			return result, p.unknownFlag(arg)
+		}
 
 		name, inlineValue, hasInlineValue := splitFlag(arg)
 		canonical, ok := p.canonicalName(name)
@@ -105,6 +108,22 @@ func (p *Parser) Parse(args []string) (Result, error) {
 		result.bools[canonical] = true
 	}
 	return result, nil
+}
+
+func (p *Parser) looksLikeSingleDashLongFlag(arg string) bool {
+	if !strings.HasPrefix(arg, "-") || strings.HasPrefix(arg, "--") || len(arg) <= 2 {
+		return false
+	}
+	name := strings.TrimPrefix(arg, "-")
+	if before, _, ok := strings.Cut(name, "="); ok {
+		name = before
+	}
+	for long := range p.flags {
+		if strings.TrimPrefix(long, "--") == name {
+			return true
+		}
+	}
+	return false
 }
 
 func (r Result) String(name string) string {

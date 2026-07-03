@@ -87,3 +87,17 @@ func TestParserRejectsFlagTokenAsValue(t *testing.T) {
 		t.Fatalf("error = %v", err)
 	}
 }
+
+func TestParserRejectsSingleDashLongFlagTypo(t *testing.T) {
+	parser := New("glade check").
+		String("project", "p").
+		AllowPositionals(true)
+
+	_, err := parser.Parse([]string{"-project", "force-app"})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), `unknown flag "-project"`) {
+		t.Fatalf("error = %v", err)
+	}
+}

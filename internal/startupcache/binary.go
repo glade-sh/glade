@@ -31,6 +31,7 @@ type testCacheHeader struct {
 	Version       int      `json:"version"`
 	ProjectRoot   string   `json:"projectRoot"`
 	BuiltAt       string   `json:"builtAt"`
+	RuntimeABI    string   `json:"runtimeAbi,omitempty"`
 	Manifest      Manifest `json:"manifest"`
 	PayloadFile   string   `json:"payloadFile"`
 	PayloadSHA256 string   `json:"payloadSha256"`
@@ -131,6 +132,7 @@ func readSplitTestCache(projectRoot, subdir string) (*Entry, error) {
 		Version:     header.Version,
 		ProjectRoot: header.ProjectRoot,
 		BuiltAt:     header.BuiltAt,
+		RuntimeABI:  header.RuntimeABI,
 		Manifest:    header.Manifest,
 		Org:         payload.Org,
 		Runtime:     payload.Runtime,
@@ -247,6 +249,7 @@ func writeSplitTestCache(entry *Entry, subdir string) error {
 			Version:       entry.Version,
 			ProjectRoot:   entry.ProjectRoot,
 			BuiltAt:       entry.BuiltAt,
+			RuntimeABI:    entry.RuntimeABI,
 			Manifest:      entry.Manifest,
 			PayloadFile:   payloadFile,
 			PayloadSHA256: sum,

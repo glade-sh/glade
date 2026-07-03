@@ -1975,13 +1975,15 @@ func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.Membe
 }
 
 func semaBodyContainsReturnKeyword(body string) bool {
-	for _, match := range regexp.MustCompile(`\breturn\b`).FindAllStringIndex(body, -1) {
+	for _, match := range semaReturnKeywordPattern.FindAllStringIndex(body, -1) {
 		if !semaOffsetInIgnoredText(body, match[0]) {
 			return true
 		}
 	}
 	return false
 }
+
+var semaReturnKeywordPattern = regexp.MustCompile(`\breturn\b`)
 
 func (a *Analyzer) checkBodyTernaryConditions(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, scopes semaScopeModel, model map[string]typeMembers) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic

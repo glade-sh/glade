@@ -310,6 +310,75 @@ func TestReplaceAliasSnapshotSeenMapCanBeReused(t *testing.T) {
 	}
 }
 
+func TestPropagateAliasSnapshotToScopeSkipsValuesWithoutAliasRef(t *testing.T) {
+	machine := New(nil)
+	target := Object("Account")
+	target.Ref = 42
+	updated := target
+	updated.Fields["Name"] = String("Updated")
+	scope := map[string]Value{
+		"target": target,
+		"wide": List(func() Value {
+			item := Object("Contact")
+			item.Ref = 99
+			item.Fields["Name"] = String("Unrelated")
+			return item
+		}()),
+	}
+
+	machine.propagateAliasSnapshotToScope(scope, snapshotAlias(target), updated)
+
+	if got := scope["target"].Fields["Name"].Text; got != "Updated" {
+		t.Fatalf("target Name = %q, want Updated", got)
+	}
+	if got := scope["wide"].List[0].Fields["Name"].Text; got != "Unrelated" {
+		t.Fatalf("unrelated scope value changed to %q", got)
+	}
+}
+
+func TestRuntimeClassNameInternsQualifiedName(t *testing.T) {
+	class := Class{Name: strings.Join([]string{"Invoice", "Service"}, ""), Namespace: strings.Join([]string{"pkg"}, "")}
+	_ = runtimeClassName(class)
+
+	allocs := testing.AllocsPerRun(100, func() {
+		_ = runtimeClassName(class)
+	})
+	if allocs != 0 {
+		t.Fatalf("runtimeClassName allocs = %.0f, want 0", allocs)
+	}
+}
+
+func TestHasSummarySideEffectsUsesCachedDependencyIndex(t *testing.T) {
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Invoice__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Invoice__c",
+		Fields: map[string]storage.Field{
+			"Total__c": {
+				APIName:           "Total__c",
+				Type:              storage.FieldSummary,
+				SummarizedField:   "Line__c.Amount__c",
+				SummaryForeignKey: "Line__c.Invoice__c",
+			},
+		},
+	}}
+	org.Objects["Line__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Line__c",
+		Fields:  map[string]storage.Field{"Amount__c": {APIName: "Amount__c", Type: storage.FieldDecimal}},
+	}}
+	machine.SetOrg(&org)
+
+	if !machine.hasSummarySideEffectsForDML([]storage.Record{{Object: "Line__c"}}) {
+		t.Fatalf("Line__c DML should be summary-sensitive")
+	}
+	if machine.summarySideEffectObjects == nil || !machine.summarySideEffectObjects["line__c"] {
+		t.Fatalf("summary side-effect index = %#v, want line__c", machine.summarySideEffectObjects)
+	}
+	if machine.hasSummarySideEffectsForDML([]storage.Record{{Object: "Invoice__c"}}) {
+		t.Fatalf("Invoice__c DML should not be treated as child summary DML")
+	}
+}
+
 func TestTriggerNamespaceByNameCachesCurrentNamespaceFallback(t *testing.T) {
 	machine := New(nil)
 	machine.currentNamespace = "pkg"

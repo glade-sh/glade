@@ -32,7 +32,7 @@ against glibc and runs on a glibc base image.
 ## Public-mode flags
 
 ```bash
-glade playground --examples --public --addr 0.0.0.0:${PORT:-8080}
+GLADE_SERVER_PUBLIC=1 glade playground --examples --public --addr 0.0.0.0:${PORT:-8080}
 ```
 
 Public mode enforces:

@@ -1716,16 +1716,16 @@ func (vm *VM) finishDMLRollbackPoint(point vmDMLRollbackPoint) {
 	vm.isolationJournal = point.previousJournal
 }
 
-func (vm *VM) restoreDMLRollbackPoint(point vmDMLRollbackPoint) {
+func (vm *VM) restoreDMLRollbackPoint(point vmDMLRollbackPoint) error {
 	if vm == nil || vm.Org == nil || !point.enabled {
-		return
+		return nil
 	}
 	defer vm.finishDMLRollbackPoint(point)
 	if point.journal && vm.isolationJournal != nil {
-		_ = vm.isolationJournal.Rollback(point.mark)
-		return
+		return vm.isolationJournal.Rollback(point.mark)
 	}
 	*vm.Org = point.org
+	return nil
 }
 
 func mergeDMLFailuresInPlace(target, source []dml.Result) {
@@ -1816,8 +1816,8 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		rollback = vm.beginDMLRollbackPoint(true, forceSnapshot)
 		rollbackReady = true
 	}
-	restoreRollback := func() {
-		vm.restoreDMLRollbackPoint(rollback)
+	restoreRollback := func() error {
+		return vm.restoreDMLRollbackPoint(rollback)
 	}
 	defer func() {
 		if rollbackReady {
@@ -1845,7 +1845,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		vm.applyBeforeDMLDerivedFields(beforeTriggerRecords)
 		if err := vm.applyBeforeSaveFlows(beforeTriggerRecords, result); err != nil {
 			ensureRollback(false)
-			restoreRollback()
+			if rollbackErr := restoreRollback(); rollbackErr != nil {
+				return nil, rollbackErr
+			}
 			return nil, err
 		}
 		vm.applyBeforeDMLDerivedFields(beforeTriggerRecords)
@@ -1856,7 +1858,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		err = triggerErr
 		if err != nil {
 			ensureRollback(false)
-			restoreRollback()
+			if rollbackErr := restoreRollback(); rollbackErr != nil {
+				return nil, rollbackErr
+			}
 			return nil, dmlExceptionFromTriggerError(op, err)
 		}
 		currentFailures = triggerFailures
@@ -1895,7 +1899,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		appendDMLResultTrace(result, op, records, beforeFailures)
 		if allOrNone {
 			ensureRollback(false)
-			restoreRollback()
+			if rollbackErr := restoreRollback(); rollbackErr != nil {
+				return nil, rollbackErr
+			}
 			return beforeFailures, nil
 		}
 		filterFailures := beforeFailures
@@ -1911,7 +1917,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		if err := vm.resolveSameBatchParentRelationships(records, targets); err != nil {
 			if allOrNone {
 				ensureRollback(false)
-				restoreRollback()
+				if rollbackErr := restoreRollback(); rollbackErr != nil {
+					return nil, rollbackErr
+				}
 			}
 			return nil, err
 		}
@@ -1956,7 +1964,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		for _, dmlResult := range results {
 			if !dmlResult.Success {
 				ensureRollback(false)
-				restoreRollback()
+				if rollbackErr := restoreRollback(); rollbackErr != nil {
+					return nil, rollbackErr
+				}
 				return results, nil
 			}
 		}
@@ -1984,7 +1994,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		if err != nil {
 			if allOrNone {
 				ensureRollback(false)
-				restoreRollback()
+				if rollbackErr := restoreRollback(); rollbackErr != nil {
+					return nil, rollbackErr
+				}
 			}
 			return nil, err
 		}
@@ -1992,7 +2004,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		if err != nil {
 			if allOrNone {
 				ensureRollback(false)
-				restoreRollback()
+				if rollbackErr := restoreRollback(); rollbackErr != nil {
+					return nil, rollbackErr
+				}
 			}
 			return nil, dmlExceptionFromTriggerError(op, err)
 		}
@@ -2000,7 +2014,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 			results = mergeAfterTriggerDMLResults(results, afterFailures)
 			if allOrNone {
 				ensureRollback(false)
-				restoreRollback()
+				if rollbackErr := restoreRollback(); rollbackErr != nil {
+					return nil, rollbackErr
+				}
 				vm.clearDMLResultFieldsForFailures(targets, results, []string{op})
 				return results, nil
 			}
@@ -2327,8 +2343,8 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		rollback = vm.beginDMLRollbackPoint(true, forceSnapshot)
 		rollbackReady = true
 	}
-	restoreRollback := func() {
-		vm.restoreDMLRollbackPoint(rollback)
+	restoreRollback := func() error {
+		return vm.restoreDMLRollbackPoint(rollback)
 	}
 	defer func() {
 		if rollbackReady {
@@ -2380,7 +2396,9 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		if err := vm.applyBeforeSaveFlows(triggerRecords, result); err != nil {
 			if allOrNone {
 				ensureRollback(false)
-				restoreRollback()
+				if rollbackErr := restoreRollback(); rollbackErr != nil {
+					return nil, rollbackErr
+				}
 			}
 			return nil, err
 		}
@@ -2388,7 +2406,9 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		failures, err := vm.runTriggers(triggerTimingBefore, kind, triggerRecords, groupBefore, result)
 		if err != nil {
 			ensureRollback(false)
-			restoreRollback()
+			if rollbackErr := restoreRollback(); rollbackErr != nil {
+				return nil, rollbackErr
+			}
 			return nil, dmlExceptionFromTriggerError("upsert", err)
 		}
 		for groupIndex, failure := range failures {
@@ -2417,7 +2437,9 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 	if hasDMLFailures(beforeFailures) {
 		if allOrNone {
 			ensureRollback(false)
-			restoreRollback()
+			if rollbackErr := restoreRollback(); rollbackErr != nil {
+				return nil, rollbackErr
+			}
 			return beforeFailures, nil
 		}
 		records, before, targets, kinds = filterUpsertInputs(records, before, targets, kinds, beforeFailures)
@@ -2428,7 +2450,9 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 	if err := vm.resolveSameBatchParentRelationships(records, targets); err != nil {
 		if allOrNone {
 			ensureRollback(false)
-			restoreRollback()
+			if rollbackErr := restoreRollback(); rollbackErr != nil {
+				return nil, rollbackErr
+			}
 		}
 		return nil, err
 	}
@@ -2456,7 +2480,9 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		for _, dmlResult := range results {
 			if !dmlResult.Success {
 				ensureRollback(false)
-				restoreRollback()
+				if rollbackErr := restoreRollback(); rollbackErr != nil {
+					return nil, rollbackErr
+				}
 				return results, nil
 			}
 		}
@@ -2476,7 +2502,9 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		if err != nil {
 			if allOrNone {
 				ensureRollback(false)
-				restoreRollback()
+				if rollbackErr := restoreRollback(); rollbackErr != nil {
+					return nil, rollbackErr
+				}
 			}
 			return results, err
 		}
@@ -2484,7 +2512,9 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		if err != nil {
 			if allOrNone {
 				ensureRollback(false)
-				restoreRollback()
+				if rollbackErr := restoreRollback(); rollbackErr != nil {
+					return nil, rollbackErr
+				}
 			}
 			return nil, dmlExceptionFromTriggerError("upsert", err)
 		}
@@ -2496,7 +2526,9 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			}
 			if allOrNone {
 				ensureRollback(false)
-				restoreRollback()
+				if rollbackErr := restoreRollback(); rollbackErr != nil {
+					return nil, rollbackErr
+				}
 				vm.clearDMLResultFieldsForFailures(targets, results, kinds)
 				return results, nil
 			}
@@ -2542,6 +2574,23 @@ func (vm *VM) hasSummarySideEffectsForDML(records []storage.Record) bool {
 	if len(objects) == 0 {
 		return false
 	}
+	index := vm.summarySideEffectObjectIndex()
+	for objectName := range objects {
+		if index[objectName] {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) summarySideEffectObjectIndex() map[string]bool {
+	if vm == nil || vm.Org == nil {
+		return nil
+	}
+	if vm.summarySideEffectObjects != nil {
+		return vm.summarySideEffectObjects
+	}
+	index := make(map[string]bool)
 	for _, object := range vm.Org.Objects {
 		for _, field := range object.Definition.Fields {
 			if field.Type != storage.FieldSummary {
@@ -2549,25 +2598,32 @@ func (vm *VM) hasSummarySideEffectsForDML(records []storage.Record) bool {
 			}
 			summaryObject, _ := splitQualifiedField(field.SummarizedField)
 			lookupObject, _ := splitQualifiedField(field.SummaryForeignKey)
-			if vm.summaryDMLObjectMatches(objects, summaryObject) || vm.summaryDMLObjectMatches(objects, lookupObject) {
-				return true
-			}
+			vm.addSummarySideEffectObject(index, summaryObject)
+			vm.addSummarySideEffectObject(index, lookupObject)
 		}
 	}
-	return false
+	vm.summarySideEffectObjects = index
+	return index
 }
 
-func (vm *VM) summaryDMLObjectMatches(objects map[string]bool, objectName string) bool {
+func (vm *VM) addSummarySideEffectObject(index map[string]bool, objectName string) {
+	objectName = vm.resolveSummarySideEffectObjectName(objectName)
+	if objectName != "" {
+		index[strings.ToLower(objectName)] = true
+	}
+}
+
+func (vm *VM) resolveSummarySideEffectObjectName(objectName string) string {
 	objectName = strings.TrimSpace(objectName)
 	if objectName == "" {
-		return false
+		return ""
 	}
 	if vm != nil && vm.Org != nil {
 		if resolved, ok := vm.resolveObjectName(objectName); ok {
 			objectName = resolved
 		}
 	}
-	return objects[strings.ToLower(objectName)]
+	return objectName
 }
 
 func (vm *VM) dmlObjectNameSet(records []storage.Record) map[string]bool {
@@ -4079,7 +4135,9 @@ func coerceStoredSObjectFieldRuntimeValue(value Value, field storage.Field) Valu
 	}
 	text := strings.TrimSpace(value.Text)
 	if text == "" {
-		return value
+		out := Decimal(0)
+		out.Text = "0"
+		return out
 	}
 	parsed, err := strconv.ParseFloat(text, 64)
 	if err != nil {

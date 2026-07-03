@@ -50,6 +50,25 @@ Glade uses the network for install, update, plugin registry/archive downloads,
 and optional toolchain install paths. Local check, test, parse, exec, SOQL, DML,
 and local API work do not call a hosted Glade service.
 
+## Plugins
+
+Plugins are local executables installed or linked by the user. Trust labels in
+the registry are informational except where CI blocks community or unlisted
+installs without an explicit approval flag. Review community and unlisted plugin
+source before installing them.
+
+`glade plugins link --exec <path>` trusts that executable immediately. Use it
+only for plugin binaries you built or reviewed.
+
+Plugin subprocesses run as the current OS user. Glade passes a minimal
+environment to plugin commands: basic process variables such as `PATH`, `HOME`,
+and temp directories, plus `GLADE_*` variables. It does not pass common ambient
+Salesforce, GitHub, AWS, or other shell tokens by default.
+
+The plugin registry index is a JSON document fetched over HTTPS. The index is
+not separately signed. Archive integrity comes from the SHA256 listed in the
+index or supplied on the command line.
+
 ## Local storage
 
 Glade can write:

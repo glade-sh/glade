@@ -2,6 +2,7 @@ package resource
 
 import (
 	"encoding/xml"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -232,7 +233,9 @@ func ApplyProject(org *storage.OrgState, p project.Project) error {
 	if err := ensureFolderObject(org, projectFolderFilesWithDependencies(p), p.Namespace); err != nil {
 		return err
 	}
-	ensureApexPageObject(org, p.VisualforcePageFiles, p.Namespace)
+	if err := ensureApexPageObject(org, p.VisualforcePageFiles, p.Namespace); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -898,6 +901,8 @@ func staticResourceNameAndSubpath(file string) (name string, subpath string, ok 
 			name = strings.TrimSuffix(parts[i+1], ".resource")
 			if i+2 < len(parts) {
 				subpath = strings.Join(parts[i+2:], "/")
+			} else if name == parts[i+1] {
+				name = strings.TrimSuffix(name, filepath.Ext(name))
 			}
 			return name, subpath, name != ""
 		}
@@ -1084,9 +1089,9 @@ func ensureMetadataObjects(org *storage.OrgState) {
 	}
 }
 
-func ensureApexPageObject(org *storage.OrgState, pageFiles []string, namespace string) {
+func ensureApexPageObject(org *storage.OrgState, pageFiles []string, namespace string) error {
 	if org == nil || len(pageFiles) == 0 {
-		return
+		return nil
 	}
 	object := storage.ObjectState{
 		Definition: storage.ObjectDefinition{
@@ -1116,7 +1121,10 @@ func ensureApexPageObject(org *storage.OrgState, pageFiles []string, namespace s
 		if name == "" {
 			continue
 		}
-		meta := loadVisualforcePageMeta(visualforcePageMetaPath(path))
+		meta, err := loadVisualforcePageMeta(visualforcePageMetaPath(path))
+		if err != nil {
+			return err
+		}
 		markup := ""
 		if !hasSuffixFold(path, ".page-meta.xml") {
 			data, err := os.ReadFile(path)
@@ -1140,6 +1148,7 @@ func ensureApexPageObject(org *storage.OrgState, pageFiles []string, namespace s
 		}}
 	}
 	org.Objects["ApexPage"] = object
+	return nil
 }
 
 func ensureStaticResourceObject(org *storage.OrgState) {
@@ -1337,14 +1346,16 @@ func visualforcePageMetaPath(path string) string {
 	return path + "-meta.xml"
 }
 
-func loadVisualforcePageMeta(path string) visualforcePageXML {
+func loadVisualforcePageMeta(path string) (visualforcePageXML, error) {
 	var page visualforcePageXML
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return page
+		return page, nil
 	}
-	_ = xml.Unmarshal(data, &page)
-	return page
+	if err := xml.Unmarshal(data, &page); err != nil {
+		return visualforcePageXML{}, fmt.Errorf("load Visualforce page metadata %s: %w", path, err)
+	}
+	return page, nil
 }
 
 func visualforcePageAPIVersion(raw string) storage.Value {

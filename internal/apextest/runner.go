@@ -189,33 +189,40 @@ func RunContext(ctx context.Context, index typesys.Index, opts Options) testrepo
 	return RunCasesContext(ctx, index, opts, nil)
 }
 
+type runExecution struct {
+	diskCacheEnabled bool
+	counters         *runPerfCounters
+}
+
 func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cases []TestCase) testreport.Run {
-	ResetPerfCounters()
+	storage.ResetCloneStats()
+	vm.ResetPerfCounters()
 	vm.SetPerfCountersEnabled(opts.PerfCounters)
+	runState := runExecution{
+		diskCacheEnabled: useDiskRuntimeCache(opts),
+		counters:         newRunPerfCounters(),
+	}
+	defer publishPerfCounters(runState.counters)
 	started := time.Now()
 	emitProgress := opts.Progress != nil
 	if cases == nil {
 		cases = Discover(index, opts)
 	}
 	sources := newSourceCache()
-	if opts.NoDiskCache {
-		wasDisabled := disableDiskCache.Load()
-		disableDiskCache.Store(true)
-		defer disableDiskCache.Store(wasDisabled)
-	}
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_start"})
 	}
-	runtimeKey, runtime := runtimeFromIndex(index, sources)
+	runtimeKey, runtime := runtimeFromIndex(index, sources, runState.diskCacheEnabled)
 	setups, setupErrors, setupInvokePrograms, setupInvokeErrors := compileTestSetupsCached(index, runtimeKey, testCaseClassSet(cases), sources)
 	triggerErrors := runtime.TriggerErrors
 	testMethods, testMethodErrors, testInvokePrograms, testInvokeErrors := compileTestsCached(index, runtimeKey, cases, sources)
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_done", DurationMS: time.Since(started).Milliseconds(), Status: "pass"})
 	}
+	recordStorageCloneRuntime(runState.counters)
 	org := runtime.Template.CloneRuntimeOrg()
 	initializeTestOrg(&org)
-	baseMachine := cloneRuntimeMachine(runtime.BaseMachine)
+	baseMachine := cloneRuntimeMachine(runtime.BaseMachine, runState.counters)
 	baseMachine.SetTraceEnabled(false)
 	baseMachine.EnableTestContext()
 	// Prime the schema stamp so per-test clones inherit it and reuse the shared
@@ -275,10 +282,10 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 			planned[i].SetupOrg = org
 			planned[i].SetupShared = true
 		}
-		runTestPlans(ctx, planned, results, baseMachine, baseRuntimeErr, triggerErrors, opts)
+		runTestPlans(ctx, planned, results, baseMachine, baseRuntimeErr, triggerErrors, opts, runState.counters)
 		goto assemble
 	}
-	runTestPlansWithSetups(ctx, order, suiteIndexes, planned, results, baseMachine, baseRuntimeErr, setups, setupErrors, setupInvokePrograms, setupInvokeErrors, triggerErrors, org, opts)
+	runTestPlansWithSetups(ctx, order, suiteIndexes, planned, results, baseMachine, baseRuntimeErr, setups, setupErrors, setupInvokePrograms, setupInvokeErrors, triggerErrors, org, opts, runState.counters)
 assemble:
 	for className, indexes := range suiteIndexes {
 		for _, index := range indexes {
@@ -294,6 +301,13 @@ assemble:
 		run.Suites = append(run.Suites, testreport.Suite{Name: name, Cases: suites[name]})
 	}
 	return run
+}
+
+func useDiskRuntimeCache(opts Options) bool {
+	if opts.NoDiskCache || !diskCacheEnabled() {
+		return false
+	}
+	return !(opts.ParallelMethods && opts.Parallelism > 1)
 }
 
 type testCasePlan struct {
@@ -414,9 +428,13 @@ func cloneRuntimeCacheEntry(in runtimeCacheEntry) runtimeCacheEntry {
 	}
 }
 
-func runtimeFromIndex(index typesys.Index, sources *sourceCache) (runtimeCacheKey, runtimeCacheEntry) {
+func runtimeFromIndex(index typesys.Index, sources *sourceCache, useDiskCache ...bool) (runtimeCacheKey, runtimeCacheEntry) {
 	if sources != nil {
 		sources.configureNamespaceRemaps(index.Types, index.Triggers)
+	}
+	diskCacheAllowed := diskCacheEnabled()
+	if len(useDiskCache) > 0 {
+		diskCacheAllowed = useDiskCache[0]
 	}
 	key := runtimeKey(index)
 	runtimeCacheMu.RLock()
@@ -426,11 +444,13 @@ func runtimeFromIndex(index typesys.Index, sources *sourceCache) (runtimeCacheKe
 	}
 	runtimeCacheMu.RUnlock()
 
-	if diskEntry, ok := tryLoadDiskRuntime(index); ok {
-		runtimeCacheMu.Lock()
-		runtimeCache[key] = diskEntry
-		runtimeCacheMu.Unlock()
-		return key, cloneRuntimeCacheEntry(diskEntry)
+	if diskCacheAllowed {
+		if diskEntry, ok := tryLoadDiskRuntime(index); ok {
+			runtimeCacheMu.Lock()
+			runtimeCache[key] = diskEntry
+			runtimeCacheMu.Unlock()
+			return key, cloneRuntimeCacheEntry(diskEntry)
+		}
 	}
 
 	methods := compileProjectMethods(index, sources)
@@ -458,7 +478,9 @@ func runtimeFromIndex(index typesys.Index, sources *sourceCache) (runtimeCacheKe
 	runtimeCacheMu.Lock()
 	runtimeCache[key] = entry
 	runtimeCacheMu.Unlock()
-	persistDiskRuntime(index, entry)
+	if diskCacheAllowed {
+		persistDiskRuntime(index, entry)
+	}
 	return key, cloneRuntimeCacheEntry(entry)
 }
 
@@ -549,7 +571,7 @@ func compileTestsCached(index typesys.Index, baseKey runtimeCacheKey, cases []Te
 	return methods, methodErrs, programs, programErrs
 }
 
-func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options) map[string]testSetupResult {
+func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) map[string]testSetupResult {
 	results := make(map[string]testSetupResult, len(classNames))
 	emitProgress := opts.Progress != nil
 	parallelism := opts.Parallelism
@@ -560,7 +582,7 @@ func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm
 			}
 			started := time.Now()
 			setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
-			setupOrg, setupRandom, setupErr, shared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts)
+			setupOrg, setupRandom, setupErr, shared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts, counters)
 			if setupCancel != nil {
 				setupCancel()
 			}
@@ -591,7 +613,7 @@ func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm
 				}
 				started := time.Now()
 				setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
-				setupOrg, setupRandom, setupErr, shared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts)
+				setupOrg, setupRandom, setupErr, shared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts, counters)
 				if setupCancel != nil {
 					setupCancel()
 				}
@@ -614,7 +636,7 @@ func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm
 	return results
 }
 
-func runTestPlans(ctx context.Context, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options) {
+func runTestPlans(ctx context.Context, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options, counters *runPerfCounters) {
 	parallelism := opts.Parallelism
 	emitProgress := opts.Progress != nil
 	classOrder := make([]string, 0)
@@ -636,7 +658,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 			}
 			caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
 			cloneOrg := len(planned) > 1 || plan.SetupShared
-			results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, nil)
+			results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, nil, counters)
 			if caseCancel != nil {
 				caseCancel()
 			}
@@ -647,7 +669,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 		return
 	}
 	if opts.ParallelMethods && len(classOrder) == 1 && len(planned) > 1 {
-		runSingleClassTestPlans(ctx, planned, results, baseMachine, baseRuntimeErr, triggerErrors, opts, parallelism)
+		runSingleClassTestPlans(ctx, planned, results, baseMachine, baseRuntimeErr, triggerErrors, opts, counters, parallelism)
 		return
 	}
 	if parallelism > len(classOrder) {
@@ -673,7 +695,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 					}
 					caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
 					cloneOrg := len(planned) > 1 || plan.SetupShared
-					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, nil)
+					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, nil, counters)
 					if caseCancel != nil {
 						caseCancel()
 					}
@@ -691,7 +713,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 	wg.Wait()
 }
 
-func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndexes map[string][]int, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options) {
+func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndexes map[string][]int, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) {
 	parallelism := opts.Parallelism
 	if parallelism <= 1 {
 		parallelism = 1
@@ -738,7 +760,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 				}
 				started := time.Now()
 				setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
-				setupOrg, setupRandom, setupErr, setupShared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts)
+				setupOrg, setupRandom, setupErr, setupShared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts, counters)
 				if setupCancel != nil {
 					setupCancel()
 				}
@@ -752,14 +774,14 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 					if extra := adaptiveBudgets[className]; extra > methodParallelism {
 						methodParallelism = extra
 					}
-					runClassMethodIndexes(ctx, methodIndexes, planned, results, setupOrg, setupErr, setupRandom, setupShared, baseMachine, baseRuntimeErr, triggerErrors, opts, methodParallelism)
+					runClassMethodIndexes(ctx, methodIndexes, planned, results, setupOrg, setupErr, setupRandom, setupShared, baseMachine, baseRuntimeErr, triggerErrors, opts, counters, methodParallelism)
 					dispatcher.recordObserved(className, time.Since(classStart).Milliseconds())
 					continue
 				}
 				var journal *storage.IsolationJournal
 				if len(methodIndexes) > 1 && classSupportsJournalIsolation(methodIndexes, planned) {
 					if setupShared {
-						setupOrg = cloneRuntimeOrgForClass(setupOrg, className, "setup")
+						setupOrg = cloneRuntimeOrgForClass(setupOrg, className, "setup", counters)
 						setupShared = false
 					}
 					journal = storage.NewIsolationJournal(&setupOrg)
@@ -785,15 +807,15 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 						cloneOrg = false
 					}
 					if cloneOrg {
-						recordCloneFallback()
+						recordCloneFallback(counters)
 					}
-					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, caseJournal)
+					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, caseJournal, counters)
 					if caseJournal != nil {
 						if rollbackErr := caseJournal.Rollback(mark); rollbackErr != nil && results[i].Problem == nil {
 							results[i].Status = testreport.StatusFail
 							results[i].Problem = problem("InternalError", rollbackErr.Error(), plan.TestCase)
 						}
-						recordJournalRollback()
+						recordJournalRollback(counters)
 					}
 					if caseCancel != nil {
 						caseCancel()
@@ -812,7 +834,27 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 var apexMergeDMLPattern = regexp.MustCompile(`(?i)\bmerge\s+(?:new\s+)?[A-Za-z_][A-Za-z0-9_]*`)
 var apexMetadataMutationPattern = regexp.MustCompile(`(?i)\bMetadata\s*\.`)
 
+type classIsolationProbeCache struct {
+	mu       sync.Mutex
+	readFile func(string) ([]byte, error)
+	files    map[string]bool
+}
+
+func newClassIsolationProbeCache(readFile func(string) ([]byte, error)) *classIsolationProbeCache {
+	if readFile == nil {
+		readFile = os.ReadFile
+	}
+	return &classIsolationProbeCache{
+		readFile: readFile,
+		files:    make(map[string]bool),
+	}
+}
+
 func classSupportsJournalIsolation(indexes []int, planned []testCasePlan) bool {
+	return newClassIsolationProbeCache(os.ReadFile).supportsJournalIsolation(indexes, planned)
+}
+
+func (c *classIsolationProbeCache) supportsJournalIsolation(indexes []int, planned []testCasePlan) bool {
 	for _, i := range indexes {
 		if i < 0 || i >= len(planned) {
 			continue
@@ -821,15 +863,34 @@ func classSupportsJournalIsolation(indexes []int, planned []testCasePlan) bool {
 		if file == "" {
 			continue
 		}
-		source, err := os.ReadFile(file)
-		if err != nil {
-			continue
-		}
-		if apexMergeDMLPattern.Match(source) || apexMetadataMutationPattern.Match(source) {
+		if !c.fileSupportsJournalIsolation(file) {
 			return false
 		}
 	}
 	return true
+}
+
+func (c *classIsolationProbeCache) fileSupportsJournalIsolation(file string) bool {
+	if c == nil {
+		c = newClassIsolationProbeCache(os.ReadFile)
+	}
+	c.mu.Lock()
+	if supported, ok := c.files[file]; ok {
+		c.mu.Unlock()
+		return supported
+	}
+	c.mu.Unlock()
+
+	source, err := c.readFile(file)
+	supported := true
+	if err == nil && (apexMergeDMLPattern.Match(source) || apexMetadataMutationPattern.Match(source)) {
+		supported = false
+	}
+
+	c.mu.Lock()
+	c.files[file] = supported
+	c.mu.Unlock()
+	return supported
 }
 
 // aggregateClassCostHints sums the per-test CostHint values for every class
@@ -910,7 +971,7 @@ func sortMethodIndexes(indexes []int, planned []testCasePlan, methodDurationMS m
 	})
 }
 
-func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCasePlan, results []testreport.Case, setupOrg storage.OrgState, setupErr error, setupRandom uint64, setupShared bool, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options, parallelism int) {
+func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCasePlan, results []testreport.Case, setupOrg storage.OrgState, setupErr error, setupRandom uint64, setupShared bool, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options, counters *runPerfCounters, parallelism int) {
 	emitProgress := opts.Progress != nil
 	if parallelism <= 1 {
 		parallelism = 1
@@ -918,26 +979,53 @@ func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCas
 	if parallelism > len(indexes) {
 		parallelism = len(indexes)
 	}
+	useJournal := len(indexes) > 1 && classSupportsJournalIsolation(indexes, planned)
 	jobs := make(chan int)
 	var wg sync.WaitGroup
 	for worker := 0; worker < parallelism; worker++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			workerOrg := setupOrg
+			workerSetupShared := setupShared
+			var journal *storage.IsolationJournal
+			if useJournal {
+				className := ""
+				if len(indexes) > 0 {
+					className = planned[indexes[0]].TestCase.ClassName
+				}
+				workerOrg = cloneRuntimeOrgForClass(setupOrg, className, "test-worker", counters)
+				workerSetupShared = false
+				journal = storage.NewIsolationJournal(&workerOrg)
+			}
 			for i := range jobs {
 				if results[i].Status != "" {
 					continue
 				}
 				plan := planned[i]
 				plan.SetupErr = setupErr
-				plan.SetupOrg = setupOrg
+				plan.SetupOrg = workerOrg
 				plan.SetupRandom = setupRandom
-				plan.SetupShared = setupShared
+				plan.SetupShared = workerSetupShared
 				if emitProgress {
 					reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 				}
 				caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
-				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, true, nil)
+				cloneOrg := true
+				caseJournal := journal
+				var mark storage.IsolationMark
+				if caseJournal != nil {
+					mark = caseJournal.Mark()
+					cloneOrg = false
+				}
+				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, cloneOrg, caseJournal, counters)
+				if caseJournal != nil {
+					if rollbackErr := caseJournal.Rollback(mark); rollbackErr != nil && results[i].Problem == nil {
+						results[i].Status = testreport.StatusFail
+						results[i].Problem = problem("InternalError", rollbackErr.Error(), plan.TestCase)
+					}
+					recordJournalRollback(counters)
+				}
 				if caseCancel != nil {
 					caseCancel()
 				}
@@ -954,7 +1042,7 @@ func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCas
 	wg.Wait()
 }
 
-func runSingleClassTestPlans(ctx context.Context, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options, parallelism int) {
+func runSingleClassTestPlans(ctx context.Context, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options, counters *runPerfCounters, parallelism int) {
 	emitProgress := opts.Progress != nil
 	if parallelism <= 1 {
 		parallelism = 1
@@ -977,7 +1065,7 @@ func runSingleClassTestPlans(ctx context.Context, planned []testCasePlan, result
 					reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 				}
 				caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
-				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, len(planned) > 1, nil)
+				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts, len(planned) > 1, nil, counters)
 				if caseCancel != nil {
 					caseCancel()
 				}
@@ -1026,9 +1114,9 @@ func initializeTestOrg(org *storage.OrgState) {
 	machine.EnableTestContext()
 }
 
-func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.VM, baseRuntimeErr error, setups []vm.Method, setupErr error, setupPrograms []ir.Program, setupProgramErr error, triggerErrors []error, org storage.OrgState, opts Options) (storage.OrgState, uint64, error, bool) {
+func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.VM, baseRuntimeErr error, setups []vm.Method, setupErr error, setupPrograms []ir.Program, setupProgramErr error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) (storage.OrgState, uint64, error, bool) {
 	started := time.Now()
-	defer func() { recordSetupDuration(time.Since(started)) }()
+	defer func() { recordSetupDuration(time.Since(started), counters) }()
 	if err := ctx.Err(); err != nil {
 		return org, 0, err, true
 	}
@@ -1047,8 +1135,8 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 	if len(setups) == 0 {
 		return org, 0, nil, true
 	}
-	setupOrg := cloneRuntimeOrgForClass(org, className, "setup")
-	machine := cloneRuntimeMachine(baseMachine)
+	setupOrg := cloneRuntimeOrgForClass(org, className, "setup", counters)
+	machine := cloneRuntimeMachine(baseMachine, counters)
 	machine.SetTraceEnabled(false)
 	if opts.LimitMode != "" {
 		machine.SetLimitMode(opts.LimitMode)
@@ -1074,7 +1162,7 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 	return setupOrg, machine.DeterministicRandomState(), nil, false
 }
 
-func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invokeProgram ir.Program, invokeErr error, baseMachine *vm.VM, baseRuntimeErr error, setupErr error, triggerErrors []error, org storage.OrgState, setupRandom uint64, opts Options, cloneOrg bool, journal *storage.IsolationJournal) testreport.Case {
+func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invokeProgram ir.Program, invokeErr error, baseMachine *vm.VM, baseRuntimeErr error, setupErr error, triggerErrors []error, org storage.OrgState, setupRandom uint64, opts Options, cloneOrg bool, journal *storage.IsolationJournal, counters *runPerfCounters) testreport.Case {
 	if err := ctx.Err(); err != nil {
 		return canceledCase(testCase, err)
 	}
@@ -1086,7 +1174,7 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 	started := time.Now()
 	defer func() {
 		elapsed := time.Since(started)
-		recordRunDuration(elapsed)
+		recordRunDuration(elapsed, counters)
 		out.DurationMS = elapsed.Milliseconds()
 	}()
 	if setupErr != nil {
@@ -1119,7 +1207,7 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 		out.Problem = problem("UnsupportedFeature", invokeErr.Error(), testCase)
 		return out
 	}
-	machine := cloneRuntimeMachine(baseMachine)
+	machine := cloneRuntimeMachine(baseMachine, counters)
 	machine.SetDeterministicRandomState(setupRandom)
 	machine.SetTraceEnabled(opts.TraceAll || opts.TraceBlocked || opts.SlowTestThresholdMS > 0)
 	if opts.LimitMode != "" {
@@ -1130,7 +1218,7 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 	}
 	machine.SetContext(ctx)
 	if cloneOrg {
-		org = cloneRuntimeOrgForClass(org, testCase.ClassName, "test")
+		org = cloneRuntimeOrgForClass(org, testCase.ClassName, "test", counters)
 	}
 	if journal != nil && !cloneOrg {
 		machine.SetOrg(journal.Org())
@@ -1223,26 +1311,28 @@ func registerRuntime(machine *vm.VM, methods map[string]vm.Method, classes []vm.
 	return registerTestRuntime(machine, setups)
 }
 
-func cloneRuntimeOrg(org storage.OrgState) storage.OrgState {
-	recordCloneRuntimeOrg("", "")
+func cloneRuntimeOrg(org storage.OrgState, counters ...*runPerfCounters) storage.OrgState {
+	recordCloneRuntimeOrg("", "", counters...)
+	recordStorageCloneRollbackSnapshot(counters...)
 	started := time.Now()
 	clone := org.CloneRollbackSnapshot()
-	recordCloneRuntimeOrgDuration(time.Since(started))
+	recordCloneRuntimeOrgDuration(time.Since(started), counters...)
 	return clone
 }
 
-func cloneRuntimeOrgForClass(org storage.OrgState, className, phase string) storage.OrgState {
-	recordCloneRuntimeOrg(className, phase)
+func cloneRuntimeOrgForClass(org storage.OrgState, className, phase string, counters ...*runPerfCounters) storage.OrgState {
+	recordCloneRuntimeOrg(className, phase, counters...)
+	recordStorageCloneRuntime(counters...)
 	started := time.Now()
 	clone := org.CloneRuntimeFrozenShared()
-	recordCloneRuntimeOrgDuration(time.Since(started))
+	recordCloneRuntimeOrgDuration(time.Since(started), counters...)
 	return clone
 }
 
-func cloneRuntimeMachine(machine *vm.VM) *vm.VM {
+func cloneRuntimeMachine(machine *vm.VM, counters ...*runPerfCounters) *vm.VM {
 	started := time.Now()
 	clone := machine.CloneRuntime(nil)
-	recordCloneRuntimeMachineDuration(time.Since(started))
+	recordCloneRuntimeMachineDuration(time.Since(started), counters...)
 	return clone
 }
 

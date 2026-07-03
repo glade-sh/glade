@@ -137,6 +137,34 @@ func TestDBManagerAPIMutationsPersistThroughStore(t *testing.T) {
 	}
 }
 
+func TestDBManagerMutationFailureUsesSalesforceErrorArray(t *testing.T) {
+	org := dbManagerTestOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/glade/db-manager/objects/Account/records", strings.NewReader(`{"fields":{}}`)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var errors []salesforceError
+	if err := json.Unmarshal(rec.Body.Bytes(), &errors); err != nil {
+		t.Fatalf("body is not a Salesforce error array: %v\n%s", err, rec.Body.String())
+	}
+	if len(errors) != 1 || errors[0].ErrorCode == "" || !strings.Contains(errors[0].Message, "Name") {
+		t.Fatalf("errors = %#v", errors)
+	}
+}
+
+func TestDBManagerMutationRejectsOversizeBody(t *testing.T) {
+	org := dbManagerTestOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	body := `{"fields":{"Name":{"state":"value","value":"` + strings.Repeat("x", maxLocalRequestBodyBytes+1) + `"}}}`
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, serverTestDataPath+"/glade/db-manager/objects/Account/records", strings.NewReader(body)))
+	assertSalesforceError(t, rec, http.StatusRequestEntityTooLarge, "REQUEST_LIMIT_EXCEEDED", "request body too large")
+}
+
 func TestDBManagerAPILookupSearch(t *testing.T) {
 	org := dbManagerTestOrg()
 	handler := New(&org)

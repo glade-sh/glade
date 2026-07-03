@@ -69,9 +69,12 @@ func runConfigShow(args []string, w io.Writer) error {
 		return err
 	}
 	if jsonOut {
-		enc := json.NewEncoder(w)
-		enc.SetIndent("", "  ")
-		return enc.Encode(info)
+		return writeCLIJSONEnvelope(w, cliJSONEnvelope{
+			Command:  "config show",
+			Status:   "passed",
+			ExitCode: 0,
+			Data:     info,
+		})
 	}
 	fmt.Fprintf(w, "project: %s\n", info.ProjectRoot)
 	if info.ConfigFound {
@@ -115,7 +118,7 @@ func runConfigValidate(args []string, w io.Writer) error {
 	_, cfgPath, err := config.LoadNearest(root)
 	if err != nil {
 		if errors.Is(err, config.ErrNotFound) {
-			return fmt.Errorf("glade.yml not found from %s; run glade init --project %s", root, root)
+			return fmt.Errorf("%w: glade.yml not found from %s; run glade init --project %s", errCLIConfig, root, root)
 		}
 		return err
 	}

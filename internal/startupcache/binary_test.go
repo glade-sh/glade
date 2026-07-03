@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -122,6 +124,83 @@ func TestFreshRejectsMissingManifestProjectFile(t *testing.T) {
 	}
 }
 
+func TestBuildManifestTracksLoadedDependencyProjectFiles(t *testing.T) {
+	root := t.TempDir()
+	consumerRoot := filepath.Join(root, "consumer")
+	depRoot := filepath.Join(root, "dependency")
+	consumerClass := filepath.Join(consumerRoot, "force-app", "main", "default", "classes", "Consumer.cls")
+	depField := filepath.Join(depRoot, "force-app", "main", "default", "objects", "Contact", "fields", "ExternalID__c.field-meta.xml")
+	depConfig := filepath.Join(depRoot, "sfdx-project.json")
+	for _, path := range []string{consumerClass, depField, depConfig} {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatalf("MkdirAll(%s) error = %v", path, err)
+		}
+	}
+	if err := os.WriteFile(consumerClass, []byte("public class Consumer {}\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+	if err := os.WriteFile(depField, []byte("<CustomField><externalId>true</externalId></CustomField>\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+	if err := os.WriteFile(depConfig, []byte(`{"packageDirectories":[{"path":"force-app","default":true}]}`), 0o644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+	consumer := project.Project{
+		Root:               consumerRoot,
+		PackageDirectories: []project.PackageDirectory{{Path: "force-app", Default: true}},
+		ApexFiles:          []string{consumerClass},
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace:  "depns",
+			SourceRoot: depRoot,
+			Status:     "loaded",
+			Project: &project.Project{
+				Root:               depRoot,
+				PackageDirectories: []project.PackageDirectory{{Path: "force-app", Default: true}},
+				FieldFiles:         []string{depField},
+			},
+		}},
+	}
+
+	manifest := BuildManifest(consumerRoot, consumer, typesys.Index{})
+	if !manifestHasFile(manifest.Files, "../dependency/force-app/main/default/objects/Contact/fields/ExternalID__c.field-meta.xml") {
+		t.Fatalf("dependency field missing from manifest files: %#v", manifest.Files)
+	}
+	if !manifestHasFile(manifest.ConfigFiles, "../dependency/sfdx-project.json") {
+		t.Fatalf("dependency config missing from manifest config files: %#v", manifest.ConfigFiles)
+	}
+	if !manifestHasDirectory(manifest.PackageRoots, "../dependency/force-app") {
+		t.Fatalf("dependency package root missing from manifest package roots: %#v", manifest.PackageRoots)
+	}
+	entry := Entry{Version: Version, ProjectRoot: consumerRoot, Manifest: manifest}
+	if !Fresh(&entry, consumerRoot, Version) {
+		t.Fatal("Fresh() = false, want true before dependency edit")
+	}
+	if err := os.WriteFile(depField, []byte("<CustomField><externalId>false</externalId></CustomField>\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile() edit error = %v", err)
+	}
+	if Fresh(&entry, consumerRoot, Version) {
+		t.Fatal("Fresh() = true, want false after dependency field edit")
+	}
+}
+
+func manifestHasFile(files []File, path string) bool {
+	for _, file := range files {
+		if file.Path == path {
+			return true
+		}
+	}
+	return false
+}
+
+func manifestHasDirectory(dirs []Directory, path string) bool {
+	for _, dir := range dirs {
+		if dir.Path == path {
+			return true
+		}
+	}
+	return false
+}
+
 func TestSplitCacheWritesHeaderAndHashedPayload(t *testing.T) {
 	dir := t.TempDir()
 	classPath := filepath.Join(dir, "classes", "Foo.cls")
@@ -139,6 +218,7 @@ func TestSplitCacheWritesHeaderAndHashedPayload(t *testing.T) {
 		Version:     Version,
 		ProjectRoot: dir,
 		BuiltAt:     "2026-06-16T00:00:00Z",
+		RuntimeABI:  "test-runtime-abi",
 		Manifest: Manifest{
 			ProjectRoot: dir,
 			Files:       []File{fp},
@@ -166,6 +246,9 @@ func TestSplitCacheWritesHeaderAndHashedPayload(t *testing.T) {
 	if err := json.Unmarshal(headerData, &header); err != nil {
 		t.Fatalf("header json error = %v", err)
 	}
+	if header.RuntimeABI != entry.RuntimeABI {
+		t.Fatalf("header runtime ABI = %q, want %q", header.RuntimeABI, entry.RuntimeABI)
+	}
 	if header.PayloadFile == "" || header.PayloadSHA256 == "" || header.PayloadSize <= 0 {
 		t.Fatalf("header missing payload fields: %#v", header)
 	}
@@ -180,8 +263,28 @@ func TestSplitCacheWritesHeaderAndHashedPayload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Read() error = %v", err)
 	}
-	if got == nil || got.Runtime.Methods["Foo.bar"].Name != "bar" {
+	if got == nil || got.RuntimeABI != entry.RuntimeABI || got.Runtime.Methods["Foo.bar"].Name != "bar" {
 		t.Fatalf("Read() = %#v", got)
+	}
+}
+
+func TestFreshRuntimeRejectsABIMismatch(t *testing.T) {
+	dir := t.TempDir()
+	entry := Entry{
+		Version:     Version,
+		ProjectRoot: dir,
+		RuntimeABI:  "old-runtime-abi",
+		Manifest:    Manifest{ProjectRoot: dir},
+	}
+	if FreshRuntime(&entry, dir, Version, "new-runtime-abi") {
+		t.Fatal("FreshRuntime() = true, want false for runtime ABI mismatch")
+	}
+	if !FreshRuntime(&entry, dir, Version, "old-runtime-abi") {
+		t.Fatal("FreshRuntime() = false, want true for matching runtime ABI")
+	}
+	entry.RuntimeABI = ""
+	if FreshRuntime(&entry, dir, Version, "old-runtime-abi") {
+		t.Fatal("FreshRuntime() = true, want false for missing runtime ABI")
 	}
 }
 

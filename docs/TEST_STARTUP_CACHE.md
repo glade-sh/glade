@@ -91,7 +91,7 @@ payloads or legacy gob files are ignored and trigger a cold rebuild.
 Each cache entry carries a **manifest** of fingerprints recorded at write time.
 On load, `Fresh()` requires:
 
-- Cache format version matches (currently **2**).
+- Cache format version matches (currently **3**).
 - `projectRoot` matches the current `--project` path.
 - Every **tracked project file** in the manifest still exists with the same
   size and modification time.

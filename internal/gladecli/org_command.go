@@ -114,6 +114,9 @@ func runOrgCreate(args []string, w io.Writer) error {
 			return err
 		}
 	}
+	if err := validateServerBindAllowed(addr); err != nil {
+		return err
+	}
 	store, _, err := openDBStore(dbOpenPath, projectRoot)
 	if err != nil {
 		return err
@@ -134,7 +137,7 @@ func runOrgCreate(args []string, w io.Writer) error {
 		return err
 	}
 	if jsonOut {
-		return writeOrgJSON(w, cfg)
+		return writeOrgJSON(w, "org create", cfg)
 	}
 	fmt.Fprintf(w, "created org %s\n", alias)
 	fmt.Fprintf(w, "Config    %s\n", filepath.ToSlash(orgConfigPath(projectRoot, alias)))
@@ -165,7 +168,7 @@ func runOrgList(args []string, w io.Writer) error {
 		return err
 	}
 	if jsonOut {
-		return writeOrgJSON(w, struct {
+		return writeOrgJSON(w, "org list", struct {
 			Orgs []orgConfig `json:"orgs"`
 		}{Orgs: orgs})
 	}
@@ -190,7 +193,7 @@ func runOrgStatus(ctx context.Context, args []string, w io.Writer) error {
 	}
 	status := checkOrgStatus(ctx, cfg)
 	if jsonOut {
-		return writeOrgJSON(w, status)
+		return writeOrgJSON(w, "org status", status)
 	}
 	fmt.Fprintf(w, "%s  %s\n", status.Alias, status.Status)
 	if status.Error != "" {
@@ -450,10 +453,13 @@ func checkOrgStatus(ctx context.Context, cfg orgConfig) orgStatus {
 	return status
 }
 
-func writeOrgJSON(w io.Writer, value any) error {
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
-	return enc.Encode(value)
+func writeOrgJSON(w io.Writer, command string, value any) error {
+	return writeCLIJSONEnvelope(w, cliJSONEnvelope{
+		Command:  command,
+		Status:   "passed",
+		ExitCode: 0,
+		Data:     value,
+	})
 }
 
 func shellEnvAssignment(name, value string) string {

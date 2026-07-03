@@ -131,7 +131,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 	e.recalculateSummaryFieldsForChildren(objectName, oldRecord, finalRecord)
 	if syncPersonContactAfterUpdate(objectName) {
 		if err := e.syncPersonContact(existing); err != nil {
-			e.restoreRollbackPoint(rollback)
+			if rollbackErr := e.restoreRollbackPoint(rollback); rollbackErr != nil {
+				return rollbackErr
+			}
 			return err
 		}
 	}
@@ -140,7 +142,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 			_, err := e.ApplyAutomation(objectName, storedID)
 			return err
 		}); err != nil {
-			e.restoreRollbackPoint(rollback)
+			if rollbackErr := e.restoreRollbackPoint(rollback); rollbackErr != nil {
+				return rollbackErr
+			}
 			return err
 		}
 	}

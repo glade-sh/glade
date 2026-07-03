@@ -177,6 +177,29 @@ func TestLightningCacheRootIncludesProjectIdentity(t *testing.T) {
 	}
 }
 
+func TestLightningModulesRejectsEscapingPaths(t *testing.T) {
+	org := storage.NewOrgState()
+	handler := New(&org)
+	cacheRoot := filepath.Join(t.TempDir(), "cache")
+	cacheDir := filepath.Join(cacheRoot, "lwc")
+	writeLightningFixtureFile(t, filepath.Join(cacheDir, "c", "widget", "widget.js"), "export default 1;")
+	handler.lightning = lightningState{
+		cacheRoot: cacheRoot,
+		cacheDir:  cacheDir,
+		manifest:  lwcbrowser.Manifest{Modules: map[string]lwcbrowser.ModuleEntry{"c:widget": {URL: "/lightning/modules/c/widget/widget.js"}}},
+	}
+
+	for _, path := range []string{
+		"/lightning/modules/%2Fetc%2Fpasswd",
+		"/lightning/modules/c/widget/%2e%2e/secret.js",
+		"/lightning/modules/%5Cwindows%5Csystem.ini",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		assertSalesforceError(t, rec, http.StatusNotFound, "NOT_FOUND", "invalid module path")
+	}
+}
+
 func TestResetLightningCacheRemovesCompiledOutput(t *testing.T) {
 	org := storage.NewOrgState()
 	handler := New(&org)

@@ -11944,17 +11944,11 @@ System.assert(caught);
 	}
 }
 
-func TestExecSOQLForUpdateLockContentionIsCatchable(t *testing.T) {
+func TestExecSOQLForUpdatePreservesExistingApprovalLock(t *testing.T) {
 	program, err := CompileAnonymous(`
-Boolean caught = false;
-try {
-    List<Account> rows = [SELECT Id FROM Account WHERE Id = '001000000000001' FOR UPDATE];
-} catch (QueryException qe) {
-    caught = true;
-    String message = qe.getMessage();
-    System.assert(message.contains('unable to lock row 001000000000001'));
-}
-System.assert(caught);
+List<Account> rows = [SELECT Id FROM Account WHERE Id = '001000000000001' FOR UPDATE];
+System.assertEquals(1, rows.size());
+System.assert(Approval.isLocked(rows[0].Id));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -13955,6 +13949,111 @@ func TestSObjectGetCoercesNumericStringByFieldDefinition(t *testing.T) {
 	}
 }
 
+func TestSObjectNumericFieldBlankStringReadsAsZeroDecimal(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["AnnualRevenue"] = storage.Field{APIName: "AnnualRevenue", Type: storage.FieldDecimal}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	record := Object("Account")
+	setExplicitSObjectField(&record, "AnnualRevenue", String(""))
+
+	value, handled, err := machine.callSObjectMember(record, "get", []Value{String("AnnualRevenue")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !handled {
+		t.Fatal("get was not handled")
+	}
+	if value.Kind != ValueDecimal || value.Decimal != 0 {
+		t.Fatalf("AnnualRevenue value = %#v, want zero decimal", value)
+	}
+}
+
+func TestExecSObjectPutBlankNumericStringSupportsTypedFieldAddition(t *testing.T) {
+	program, err := CompileAnonymous(`
+SObject record = Account.SObjectType.newSObject();
+record.put(Account.AnnualRevenue, '');
+Account account = (Account)record;
+Decimal total = 0;
+total += account.AnnualRevenue;
+System.assertEquals(0, total);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["AnnualRevenue"] = storage.Field{APIName: "AnnualRevenue", Type: storage.FieldDecimal}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNamespacedSObjectBlankNumericStringSupportsUnqualifiedFieldAddition(t *testing.T) {
+	program, err := CompileAnonymous(`
+pkg__Line__c line = (pkg__Line__c)pkg__Line__c.SObjectType.newSObject();
+line.put(pkg__Line__c.pkg__Amount__c, '');
+Decimal total = 0;
+total += line.Amount__c;
+System.assertEquals(0, total);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Namespace = "pkg"
+	org.Objects["pkg__Line__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "pkg__Line__c",
+			Fields: map[string]storage.Field{
+				"pkg__Amount__c": {APIName: "pkg__Amount__c", Type: storage.FieldDecimal},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNamespacedSObjectBlankNumericStringThroughFieldTokenMapAddsAsZero(t *testing.T) {
+	program, err := CompileAnonymous(`
+pkg__Line__c line = (pkg__Line__c)pkg__Line__c.SObjectType.newSObject();
+line.put(pkg__Line__c.pkg__Amount__c, '');
+Map<Schema.SObjectField,Object> byField = new Map<Schema.SObjectField,Object>();
+byField.put(Line__c.Amount__c, line.Amount__c);
+Decimal total = 0;
+total += (Decimal)byField.get(Line__c.Amount__c);
+System.assertEquals(0, total);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Namespace = "pkg"
+	org.Objects["pkg__Line__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "pkg__Line__c",
+			Fields: map[string]storage.Field{
+				"pkg__Amount__c": {APIName: "pkg__Amount__c", Type: storage.FieldDecimal},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCatchNestedExceptionByQualifiedName(t *testing.T) {
 	program, err := CompileAnonymous(`
 Boolean caught = false;
@@ -14939,6 +15038,23 @@ func TestTemporaryDMLJournalDoesNotReplaceClassJournal(t *testing.T) {
 	}
 }
 
+func TestRestoreDMLRollbackPointReturnsIsolationJournalRollbackError(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	journal := storage.NewIsolationJournal(&org)
+	machine.SetOrg(&org)
+	machine.SetIsolationJournal(journal)
+	mark := journal.Mark()
+	journal.RecordUpdate("Account", "001000000000001", storage.Record{ID: "001000000000001", Object: "Account"})
+	delete(org.Objects, "Account")
+
+	err := machine.restoreDMLRollbackPoint(vmDMLRollbackPoint{enabled: true, journal: true, mark: mark})
+
+	if err == nil || !strings.Contains(err.Error(), "isolation journal rollback missing object Account") {
+		t.Fatalf("rollback error = %v", err)
+	}
+}
+
 func TestExecDMLUpdateIgnoresUnmodifiedReadonlyQueriedField(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = [SELECT Name, ReadonlyText__c FROM Account WHERE Id = '001000000000001' LIMIT 1];
@@ -15519,6 +15635,299 @@ System.assertEquals(0, [SELECT COUNT() FROM Account WHERE Name = 'Blocked']);
 		Timing:    triggerTimingAfter,
 		Operation: "insert",
 		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFrameworkSObjectDomainTriggerStateReusesBeforeDomain(t *testing.T) {
+	configCtor, err := CompileAnonymous(`TriggerStateEnabled = false;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	enableProgram, err := CompileAnonymous(`
+TriggerStateEnabled = true;
+return this;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	baseCtor, err := CompileAnonymous(`
+Records = records.clone();
+Configuration = new DomainConfiguration();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	domainCtor, err := CompileAnonymous(`
+super(records);
+Configuration.enableTriggerState();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	beforeProgram, err := CompileAnonymous(`someState = 'blocked through state';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	afterProgram, err := CompileAnonymous(`
+if (someState != null) {
+	for (Account candidate : (List<Account>) Records) {
+		candidate.addError(someState);
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	triggerProgram, err := CompileAnonymous(`framework_SObjectDomain.triggerHandler(AccountDomain.class);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+try {
+	insert new Account(Name = 'Blocked');
+	System.assert(false, 'insert should fail');
+} catch (DmlException ex) {
+	System.assertEquals(1, ex.getNumDml());
+	System.assertEquals('blocked through state', ex.getDmlMessage(0));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "DomainConfiguration",
+		Fields: map[string]Field{
+			"TriggerStateEnabled": {Name: "TriggerStateEnabled", Type: "Boolean"},
+		},
+		Constructors: []Method{{
+			Name:          "DomainConfiguration.<init>",
+			ClassName:     "DomainConfiguration",
+			ReturnType:    "void",
+			IsConstructor: true,
+			Program:       configCtor,
+		}},
+		Methods: map[string]Method{
+			"enableTriggerState": {Name: "DomainConfiguration.enableTriggerState", ClassName: "DomainConfiguration", ReturnType: "DomainConfiguration", Program: enableProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "framework_SObjectDomain",
+		Fields: map[string]Field{
+			"Configuration": {Name: "Configuration", Type: "DomainConfiguration"},
+			"Records":       {Name: "Records", Type: "List<SObject>"},
+		},
+		Constructors: []Method{{
+			Name:          "framework_SObjectDomain.<init>",
+			ClassName:     "framework_SObjectDomain",
+			ReturnType:    "void",
+			IsConstructor: true,
+			Params:        []Param{{Name: "records", Type: "List<SObject>"}},
+			Program:       baseCtor,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "AccountDomain",
+		SuperClass: "framework_SObjectDomain",
+		Fields: map[string]Field{
+			"someState": {Name: "someState", Type: "String"},
+		},
+		Constructors: []Method{{
+			Name:          "AccountDomain.<init>",
+			ClassName:     "AccountDomain",
+			ReturnType:    "void",
+			IsConstructor: true,
+			Params:        []Param{{Name: "records", Type: "List<SObject>"}},
+			Program:       domainCtor,
+		}},
+		Methods: map[string]Method{
+			"onBeforeInsert": {Name: "AccountDomain.onBeforeInsert", ClassName: "AccountDomain", ReturnType: "void", Program: beforeProgram},
+			"onAfterInsert":  {Name: "AccountDomain.onAfterInsert", ClassName: "AccountDomain", ReturnType: "void", Program: afterProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountDomainInsert",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountDomainAfterInsert",
+		Object:    "Account",
+		Timing:    triggerTimingAfter,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFflibSObjectDomainMockTriggerStateReusesBeforeDomain(t *testing.T) {
+	configCtor, err := CompileAnonymous(`TriggerStateEnabled = false;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	enableProgram, err := CompileAnonymous(`
+TriggerStateEnabled = true;
+return this;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	baseCtor, err := CompileAnonymous(`
+Records = records.clone();
+Configuration = new DomainConfiguration();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	domainCtor, err := CompileAnonymous(`
+super(records);
+Configuration.enableTriggerState();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	constructProgram, err := CompileAnonymous(`return new AccountDomain(sObjectList);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	beforeProgram, err := CompileAnonymous(`
+for (Account candidate : (List<Account>) Records) {
+	someState = 'mock state for ' + candidate.Name;
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	afterProgram, err := CompileAnonymous(`
+if (someState != null) {
+	Probe.count = Probe.count + 1;
+	Probe.message = someState;
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+fflib_SObjectDomain.triggerHandler(AccountDomainConstructor.class);
+System.assertEquals(1, Probe.count);
+System.assertEquals('mock state for Mocked', Probe.message);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	mockAccount := Object("Account")
+	setExplicitSObjectField(&mockAccount, "Name", String("Mocked"))
+	records := typedList("List<SObject>")
+	records.List = []Value{mockAccount}
+	database := Object("fflib_SObjectDomain.MockDatabase")
+	database.Fields["isInsert"] = Bool(true)
+	database.Fields["records"] = records
+	database.Fields["oldRecords"] = typedMap("Map<Id,SObject>")
+	testFactory := Object("fflib_SObjectDomain.TestFactory")
+	testFactory.Fields["Database"] = database
+	if err := machine.RegisterClass(Class{
+		Name: "DomainConfiguration",
+		Fields: map[string]Field{
+			"TriggerStateEnabled": {Name: "TriggerStateEnabled", Type: "Boolean"},
+		},
+		Constructors: []Method{{
+			Name:          "DomainConfiguration.<init>",
+			ClassName:     "DomainConfiguration",
+			ReturnType:    "void",
+			IsConstructor: true,
+			Program:       configCtor,
+		}},
+		Methods: map[string]Method{
+			"enableTriggerState": {Name: "DomainConfiguration.enableTriggerState", ClassName: "DomainConfiguration", ReturnType: "DomainConfiguration", Program: enableProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "fflib_SObjectDomain",
+		Fields: map[string]Field{
+			"Configuration": {Name: "Configuration", Type: "DomainConfiguration"},
+			"Records":       {Name: "Records", Type: "List<SObject>"},
+		},
+		StaticFields: map[string]Field{
+			"Test": {Name: "Test", Type: "fflib_SObjectDomain.TestFactory", Static: true, Value: testFactory},
+		},
+		Constructors: []Method{{
+			Name:          "fflib_SObjectDomain.<init>",
+			ClassName:     "fflib_SObjectDomain",
+			ReturnType:    "void",
+			IsConstructor: true,
+			Params:        []Param{{Name: "records", Type: "List<SObject>"}},
+			Program:       baseCtor,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "AccountDomain",
+		SuperClass: "fflib_SObjectDomain",
+		Fields: map[string]Field{
+			"someState": {Name: "someState", Type: "String"},
+		},
+		Constructors: []Method{{
+			Name:          "AccountDomain.<init>",
+			ClassName:     "AccountDomain",
+			ReturnType:    "void",
+			IsConstructor: true,
+			Params:        []Param{{Name: "records", Type: "List<Account>"}},
+			Program:       domainCtor,
+		}},
+		Methods: map[string]Method{
+			"onBeforeInsert": {Name: "AccountDomain.onBeforeInsert", ClassName: "AccountDomain", ReturnType: "void", Program: beforeProgram},
+			"onAfterInsert":  {Name: "AccountDomain.onAfterInsert", ClassName: "AccountDomain", ReturnType: "void", Program: afterProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "AccountDomainConstructor",
+		Methods: map[string]Method{
+			"construct": {
+				Name:       "AccountDomainConstructor.construct",
+				ClassName:  "AccountDomainConstructor",
+				ReturnType: "fflib_SObjectDomain",
+				Params:     []Param{{Name: "sObjectList", Type: "List<SObject>"}},
+				Program:    constructProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Probe",
+		StaticFields: map[string]Field{
+			"count":   {Name: "count", Type: "Integer", Static: true, Value: Int(0)},
+			"message": {Name: "message", Type: "String", Static: true},
+		},
 	}); err != nil {
 		t.Fatal(err)
 	}

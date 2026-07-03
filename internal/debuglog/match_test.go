@@ -65,7 +65,7 @@ func TestAnnotateUsesStackFrameForException(t *testing.T) {
 	}
 }
 
-func TestAnnotateKeepsWeakMatchesWeak(t *testing.T) {
+func TestAnnotateIgnoresSourceLineWithoutCodeUnitContext(t *testing.T) {
 	index := mustLoadDebugIndex(t, filepath.Join("testdata", "project"))
 	log := apexlog.Log{
 		Entries: []apexlog.Entry{
@@ -83,12 +83,9 @@ func TestAnnotateKeepsWeakMatchesWeak(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	weak := annotated.Entries[0]
-	if weak.Best.Confidence > 0.50 {
-		t.Fatalf("weak confidence = %.2f, want <= 0.50", weak.Best.Confidence)
-	}
-	if weak.Best.Line <= 0 {
-		t.Fatalf("weak line = %d, want positive line", weak.Best.Line)
+	entry := annotated.Entries[0]
+	if len(entry.Candidates) != 0 {
+		t.Fatalf("candidates = %#v, want none", entry.Candidates)
 	}
 }
 
@@ -145,6 +142,62 @@ func TestAnnotateUsesMethodEntrySymbolBeforeLineFallback(t *testing.T) {
 	}
 	if best.Reason != "method symbol" {
 		t.Fatalf("reason = %q, want method symbol", best.Reason)
+	}
+}
+
+func TestAnnotateDoesNotMatchSourceLineWithoutFileContext(t *testing.T) {
+	firstFile := filepath.Join(t.TempDir(), "First.cls")
+	secondFile := filepath.Join(t.TempDir(), "Second.cls")
+	index := typesys.Index{Types: []typesys.TypeSymbol{
+		{
+			Kind: apexast.DeclarationClass,
+			Name: "First",
+			File: firstFile,
+			Range: diagnostic.Range{
+				Start: diagnostic.Position{Line: 1},
+				End:   diagnostic.Position{Line: 10},
+			},
+			Members: []typesys.MemberSymbol{{
+				Kind: apexast.DeclarationMethod,
+				Name: "run",
+				Range: diagnostic.Range{
+					Start: diagnostic.Position{Line: 3},
+					End:   diagnostic.Position{Line: 7},
+				},
+			}},
+		},
+		{
+			Kind: apexast.DeclarationClass,
+			Name: "Second",
+			File: secondFile,
+			Range: diagnostic.Range{
+				Start: diagnostic.Position{Line: 1},
+				End:   diagnostic.Position{Line: 10},
+			},
+			Members: []typesys.MemberSymbol{{
+				Kind: apexast.DeclarationMethod,
+				Name: "run",
+				Range: diagnostic.Range{
+					Start: diagnostic.Position{Line: 3},
+					End:   diagnostic.Position{Line: 7},
+				},
+			}},
+		},
+	}}
+	log := apexlog.Log{Entries: []apexlog.Entry{{
+		Raw:       "00:00:00.000 (0)|OTHER|[5]|",
+		Line:      1,
+		Kind:      apexlog.EntryOther,
+		Timestamp: "00:00:00.000 (0)",
+		Data:      apexlog.EntryData{SourceLine: 5},
+	}}}
+
+	annotated, err := Annotate(log, index, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := annotated.Entries[0].Candidates; len(got) != 0 {
+		t.Fatalf("candidates = %#v, want none without file or code-unit context", got)
 	}
 }
 

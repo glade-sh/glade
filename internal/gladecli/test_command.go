@@ -367,6 +367,17 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		}
 		filter = strings.Join(failures, ",")
 	}
+	durationHistoryExplicit := durationHistoryPath != ""
+	defaultDurationHistoryPath := defaultCLIDurationHistoryPath(root)
+	if durationHistoryPath == "" {
+		if _, err := os.Stat(defaultDurationHistoryPath); err == nil {
+			durationHistoryPath = defaultDurationHistoryPath
+		}
+	}
+	durationHistoryWritePath := ""
+	if !durationHistoryExplicit && shouldPersistCLIDurationHistory(filter, selectedClasses, methodName, changedSince, shardCount, writeClassShardsDir) {
+		durationHistoryWritePath = defaultDurationHistoryPath
+	}
 	stopProfile, err := startCLIProfiler(cpuProfilePath, memProfilePath)
 	if err != nil {
 		return testreport.Run{}, err
@@ -425,11 +436,20 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if noCache {
 		noServe = true
 	}
-	if len(selectedClasses) != 0 || methodName != "" || shardCount > 0 || durationHistoryPath != "" || writeClassShardsDir != "" || tracePath != "" || servicesPath != "" {
+	localOnlyTestOptions := len(selectedClasses) != 0 || methodName != "" || shardCount > 0 || durationHistoryExplicit || writeClassShardsDir != "" || tracePath != "" || servicesPath != ""
+	if connectMode && localOnlyTestOptions {
+		return testreport.Run{}, errors.New("--connect cannot be combined with local-only test options")
+	}
+	if localOnlyTestOptions {
 		noServe = true
 	}
 	if !noServe && !watchMode && !daemonMode && !debug {
 		if result, used, err := tryTestServerRun(ctx, root, connectMode, filter, changedSince, format, junitPath, debug, w); used || err != nil {
+			if used && err == nil {
+				if writeErr := maybeWriteCLIDurationHistory(durationHistoryWritePath, result, durationHistory); writeErr != nil {
+					return result, writeErr
+				}
+			}
 			return result, err
 		}
 	}
@@ -466,6 +486,9 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			stopProfile = nil
 		}
 		if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath, 0, 0, result.Summary().DurationMS); err != nil {
+			return result, err
+		}
+		if err := maybeWriteCLIDurationHistory(durationHistoryWritePath, result, durationHistory); err != nil {
 			return result, err
 		}
 		if tracePath != "" {
@@ -592,6 +615,9 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	}
 	result.Dependencies = append(result.Dependencies, index.Dependencies...)
 	if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath, discoverTimeMS, compileDoneMS, runDurationMS); err != nil {
+		return result, err
+	}
+	if err := maybeWriteCLIDurationHistory(durationHistoryWritePath, result, durationHistory); err != nil {
 		return result, err
 	}
 	if tracePath != "" {
@@ -936,6 +962,77 @@ func loadCLIDurationHistory(path string) (cliDurationHistory, error) {
 		}
 	}
 	return out, nil
+}
+
+func defaultCLIDurationHistoryPath(root string) string {
+	root = strings.TrimSpace(root)
+	if root == "" {
+		root = "."
+	}
+	return filepath.Join(root, ".glade", "test-durations.json")
+}
+
+func shouldPersistCLIDurationHistory(filter string, selectedClasses []string, methodName, changedSince string, shardCount int, writeClassShardsDir string) bool {
+	if strings.TrimSpace(filter) != "" || len(selectedClasses) != 0 || strings.TrimSpace(methodName) != "" || strings.TrimSpace(changedSince) != "" {
+		return false
+	}
+	if shardCount > 0 || strings.TrimSpace(writeClassShardsDir) != "" {
+		return false
+	}
+	return true
+}
+
+func maybeWriteCLIDurationHistory(path string, result testreport.Run, previous cliDurationHistory) error {
+	if strings.TrimSpace(path) == "" || result.Summary().Total == 0 {
+		return nil
+	}
+	return writeCLIDurationHistory(path, result, previous)
+}
+
+func writeCLIDurationHistory(path string, result testreport.Run, previous cliDurationHistory) error {
+	classDurations := mergeCLIDurationMap(previous.Classes, runClassDurations(result))
+	methodDurations := mergeCLIDurationMap(previous.Methods, runMethodDurations(result))
+	payload := struct {
+		ClassDurations  map[string]int64 `json:"classDurations,omitempty"`
+		MethodDurations map[string]int64 `json:"methodDurations,omitempty"`
+	}{
+		ClassDurations:  classDurations,
+		MethodDurations: methodDurations,
+	}
+	data, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		return err
+	}
+	data = append(data, '\n')
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0o644)
+}
+
+func mergeCLIDurationMap(previous, observed map[string]int64) map[string]int64 {
+	merged := cleanDurationMap(previous)
+	for name, durationMS := range cleanDurationMap(observed) {
+		if merged == nil {
+			merged = map[string]int64{}
+		}
+		if old := merged[name]; old > 0 {
+			merged[name] = mergeCLIDurationMS(old, durationMS)
+			continue
+		}
+		merged[name] = durationMS
+	}
+	return merged
+}
+
+func mergeCLIDurationMS(previous, observed int64) int64 {
+	if previous <= 0 {
+		return observed
+	}
+	if observed <= 0 {
+		return previous
+	}
+	return (previous*3 + observed) / 4
 }
 
 func cleanDurationMap(in map[string]int64) map[string]int64 {

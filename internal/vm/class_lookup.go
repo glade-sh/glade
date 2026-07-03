@@ -2,8 +2,19 @@ package vm
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/storage"
+)
+
+type runtimeClassNameCacheKey struct {
+	Namespace string
+	Name      string
+}
+
+var (
+	runtimeClassNameCacheMu sync.RWMutex
+	runtimeClassNameCache   = make(map[runtimeClassNameCacheKey]string)
 )
 
 func (vm *VM) classNamespace(className string) string {
@@ -525,15 +536,14 @@ func isTypeNameToken(name string) bool {
 	return isBuiltinTypeName(name) || isGenericTypeName(name) || isCommonSObjectTypeName(name)
 }
 func isCommonSObjectTypeName(name string) bool {
-	if storage.IsKnownStandardObject(name) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return false
+	}
+	if commonSObjectTypeNameLookup()[strings.ToLower(name)] {
 		return true
 	}
-	for _, objectName := range standardSObjectPrefixes {
-		if strings.EqualFold(name, objectName) {
-			return true
-		}
-	}
-	return false
+	return storage.IsKnownStandardObject(name)
 }
 func (vm *VM) resolveClassName(typeName string) (string, bool) {
 	if isCommonSObjectTypeName(typeName) {
@@ -798,7 +808,22 @@ func runtimeClassName(class Class) string {
 	if hasTypePrefixFold(name, namespace) {
 		return name
 	}
-	return namespace + "." + name
+	key := runtimeClassNameCacheKey{Namespace: namespace, Name: name}
+	runtimeClassNameCacheMu.RLock()
+	cached, ok := runtimeClassNameCache[key]
+	runtimeClassNameCacheMu.RUnlock()
+	if ok {
+		return cached
+	}
+	qualified := namespace + "." + name
+	runtimeClassNameCacheMu.Lock()
+	if cached, ok := runtimeClassNameCache[key]; ok {
+		runtimeClassNameCacheMu.Unlock()
+		return cached
+	}
+	runtimeClassNameCache[key] = qualified
+	runtimeClassNameCacheMu.Unlock()
+	return qualified
 }
 
 func (vm *VM) topLevelClassLookupIndex() map[string]topLevelClassLookup {

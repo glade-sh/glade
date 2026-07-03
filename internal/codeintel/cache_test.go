@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/codeintel"
@@ -101,6 +102,111 @@ func TestCacheFreshReturnsFalseForStaleSourceHash(t *testing.T) {
 
 	if codeintel.CacheFresh(root, index) {
 		t.Fatal("cache should be stale after source changes")
+	}
+}
+
+func TestCacheFreshReturnsFalseWhenIndexedDiagnosticFileChanges(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join("force-app", "main", "default", "classes", "InvoiceService.cls")
+	diagPath := filepath.Join("force-app", "main", "default", "classes", "Broken.cls")
+	writeCacheTestFile(t, filepath.Join(root, classPath), "public class InvoiceService {}\n")
+	writeCacheTestFile(t, filepath.Join(root, diagPath), "public class Broken {\n")
+	graph := codeintel.NewGraph(root)
+	graph.AddSymbol(codeintel.Symbol{
+		ID:   codeintel.ApexTypeID("", "InvoiceService"),
+		Kind: codeintel.SymbolApexType,
+		Name: "InvoiceService",
+		File: classPath,
+	})
+	index := typesys.Index{
+		Project: typesys.ProjectInfo{Root: root},
+		Types: []typesys.TypeSymbol{{
+			Kind: apexast.DeclarationClass,
+			Name: "InvoiceService",
+			File: classPath,
+		}},
+		Diagnostics: []diagnostic.Diagnostic{{
+			File:    diagPath,
+			Message: "parse error",
+		}},
+	}
+
+	if err := codeintel.WriteCache(root, graph); err != nil {
+		t.Fatalf("WriteCache: %v", err)
+	}
+	writeCacheTestFile(t, filepath.Join(root, diagPath), "public class Broken {}\n")
+
+	if codeintel.CacheFresh(root, index) {
+		t.Fatal("cache should be stale after an indexed diagnostic input changes")
+	}
+}
+
+func TestCacheFreshUsesContentHashTieBreakWhenOnlyModTimeChanges(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join("force-app", "main", "default", "classes", "InvoiceService.cls")
+	absClassPath := filepath.Join(root, classPath)
+	writeCacheTestFile(t, absClassPath, "public class InvoiceService {}\n")
+	graph := codeintel.NewGraph(root)
+	graph.AddSymbol(codeintel.Symbol{
+		ID:   codeintel.ApexTypeID("", "InvoiceService"),
+		Kind: codeintel.SymbolApexType,
+		Name: "InvoiceService",
+		File: classPath,
+	})
+	index := typesys.Index{
+		Project: typesys.ProjectInfo{Root: root},
+		Types: []typesys.TypeSymbol{{
+			Kind: apexast.DeclarationClass,
+			Name: "InvoiceService",
+			File: classPath,
+		}},
+	}
+
+	if err := codeintel.WriteCache(root, graph); err != nil {
+		t.Fatalf("WriteCache: %v", err)
+	}
+	future := time.Now().Add(5 * time.Second)
+	if err := os.Chtimes(absClassPath, future, future); err != nil {
+		t.Fatalf("Chtimes: %v", err)
+	}
+
+	if !codeintel.CacheFresh(root, index) {
+		t.Fatal("cache should remain fresh when only file mtime changes")
+	}
+}
+
+func TestCacheFreshReturnsFalseForSameSizeContentChange(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join("force-app", "main", "default", "classes", "InvoiceService.cls")
+	absClassPath := filepath.Join(root, classPath)
+	writeCacheTestFile(t, absClassPath, "public class InvoiceService { Integer one; }\n")
+	graph := codeintel.NewGraph(root)
+	graph.AddSymbol(codeintel.Symbol{
+		ID:   codeintel.ApexTypeID("", "InvoiceService"),
+		Kind: codeintel.SymbolApexType,
+		Name: "InvoiceService",
+		File: classPath,
+	})
+	index := typesys.Index{
+		Project: typesys.ProjectInfo{Root: root},
+		Types: []typesys.TypeSymbol{{
+			Kind: apexast.DeclarationClass,
+			Name: "InvoiceService",
+			File: classPath,
+		}},
+	}
+
+	if err := codeintel.WriteCache(root, graph); err != nil {
+		t.Fatalf("WriteCache: %v", err)
+	}
+	writeCacheTestFile(t, absClassPath, "public class InvoiceService { Integer two; }\n")
+	future := time.Now().Add(5 * time.Second)
+	if err := os.Chtimes(absClassPath, future, future); err != nil {
+		t.Fatalf("Chtimes: %v", err)
+	}
+
+	if codeintel.CacheFresh(root, index) {
+		t.Fatal("cache should be stale when same-size file content changes")
 	}
 }
 

@@ -65,7 +65,40 @@ func (g *RefGraph) Refresh(index typesys.Index, changes []Change) *RefGraph {
 	if g == nil || g.needsFullRebuild(changes) {
 		return BuildReferenceGraph(index)
 	}
-	return BuildReferenceGraph(index)
+	oldCanonByFile := g.canonByFile
+	g.refreshLightMaps(index)
+	changedFiles := make([]string, 0, len(changes))
+	for _, change := range changes {
+		if change.Kind != FileKindApexClass {
+			continue
+		}
+			file := cleanPath(change.Path)
+			name := g.canonByFile[file]
+			if name == "" {
+				if oldName := oldCanonByFile[file]; oldName != "" {
+					g.setDeps(oldName, nil)
+				}
+				continue
+			}
+		refs := make(map[string]struct{})
+		for _, typ := range index.Types {
+			if typ.Dependency || cleanPath(typ.File) != file {
+				continue
+			}
+			g.addStructuralRef(typ.Name, typ.SuperClass, refs)
+			for _, iface := range typ.Interfaces {
+				g.addStructuralRef(typ.Name, iface, refs)
+			}
+			name = typ.Name
+			break
+		}
+		g.setDeps(name, refs)
+		changedFiles = append(changedFiles, file)
+	}
+	if len(changedFiles) > 0 {
+		g.addCodeintelRefsForFiles(index, changedFiles)
+	}
+	return g
 }
 
 func (g *RefGraph) needsFullRebuild(changes []Change) bool {
@@ -166,7 +199,11 @@ func (g *RefGraph) removeFile(path string) {
 }
 
 func (g *RefGraph) addCodeintelRefs(index typesys.Index) {
-	cg := codeintel.Build(index, codeintel.Options{})
+	g.addCodeintelRefsForFiles(index, nil)
+}
+
+func (g *RefGraph) addCodeintelRefsForFiles(index typesys.Index, files []string) {
+	cg := codeintel.BuildApexReferences(index, files)
 	typeByFile := make(map[string]string, len(index.Types))
 	for _, typ := range index.Types {
 		if typ.Dependency || typ.File == "" {

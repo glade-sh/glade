@@ -13,6 +13,21 @@ import (
 	"github.com/glade-sh/glade/internal/storage"
 )
 
+var (
+	unsupportedSOSLHostedSearchOptions = []struct {
+		pattern *regexp.Regexp
+		message string
+	}{
+		{regexp.MustCompile(`(?i)\bWITH\s+DATA\s+CATEGORY\b`), "Search.query SOSL WITH DATA CATEGORY hosted search service"},
+		{regexp.MustCompile(`(?i)\bWITH\s+DIVISIONFILTER\b`), "Search.query SOSL WITH DivisionFilter hosted search service"},
+		{regexp.MustCompile(`(?i)\bWITH\s+METADATA\b`), "Search.query SOSL WITH METADATA hosted search service"},
+		{regexp.MustCompile(`(?i)\bUSING\s+LISTVIEW\b`), "Search.query SOSL USING ListView hosted search service"},
+		{regexp.MustCompile(`(?i)\bUPDATE\s+TRACKING\b`), "Search.query SOSL UPDATE TRACKING hosted search analytics"},
+		{regexp.MustCompile(`(?i)\bUPDATE\s+VIEWSTAT\b`), "Search.query SOSL UPDATE VIEWSTAT hosted search analytics"},
+	}
+	soslReturningObjectsPattern = regexp.MustCompile(`(?is)\bRETURNING\s+(.+?)(?:\s+LIMIT\s+\d+\s*)?$`)
+)
+
 func (vm *VM) parseSOQLAt(queryText string) (soql.Query, error) {
 	month := 1
 	if vm != nil && vm.Org != nil {
@@ -1016,19 +1031,8 @@ func validateSOSLSpellCorrectionOption(query string) error {
 }
 
 func validateSOSLHostedSearchOptions(query string) error {
-	unsupported := []struct {
-		pattern string
-		message string
-	}{
-		{`(?i)\bWITH\s+DATA\s+CATEGORY\b`, "Search.query SOSL WITH DATA CATEGORY hosted search service"},
-		{`(?i)\bWITH\s+DIVISIONFILTER\b`, "Search.query SOSL WITH DivisionFilter hosted search service"},
-		{`(?i)\bWITH\s+METADATA\b`, "Search.query SOSL WITH METADATA hosted search service"},
-		{`(?i)\bUSING\s+LISTVIEW\b`, "Search.query SOSL USING ListView hosted search service"},
-		{`(?i)\bUPDATE\s+TRACKING\b`, "Search.query SOSL UPDATE TRACKING hosted search analytics"},
-		{`(?i)\bUPDATE\s+VIEWSTAT\b`, "Search.query SOSL UPDATE VIEWSTAT hosted search analytics"},
-	}
-	for _, candidate := range unsupported {
-		if regexp.MustCompile(candidate.pattern).MatchString(query) {
+	for _, candidate := range unsupportedSOSLHostedSearchOptions {
+		if candidate.pattern.MatchString(query) {
 			return unsupportedCallError(candidate.message)
 		}
 	}
@@ -1196,7 +1200,7 @@ func containsFold(text, needle string) bool {
 }
 
 func parseSOSLReturningObjects(query string) ([]soslReturningObject, error) {
-	match := regexp.MustCompile(`(?is)\bRETURNING\s+(.+?)(?:\s+LIMIT\s+\d+\s*)?$`).FindStringSubmatch(query)
+	match := soslReturningObjectsPattern.FindStringSubmatch(query)
 	if len(match) != 2 {
 		return nil, unsupportedCallError("Search.query SOSL RETURNING clause")
 	}

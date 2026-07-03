@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
@@ -48,8 +47,7 @@ func TestPerfCountersIncludeStorageAndVMStats(t *testing.T) {
 	ResetPerfCounters()
 	t.Cleanup(ResetPerfCounters)
 
-	storage.ResetCloneStats()
-	_ = storage.SnapshotRuntimeOrg(&storage.OrgState{})
+	recordStorageCloneRollbackSnapshot()
 	vm.SetPerfCountersEnabled(true)
 
 	stats := SnapshotPerfCounters()
@@ -58,5 +56,41 @@ func TestPerfCountersIncludeStorageAndVMStats(t *testing.T) {
 	}
 	if !stats.VMPerf.Enabled {
 		t.Fatalf("vm perf counters not marked enabled: %#v", stats.VMPerf)
+	}
+}
+
+func TestRunPerfCountersAreIndependent(t *testing.T) {
+	first := newRunPerfCounters()
+	second := newRunPerfCounters()
+
+	recordSetupDuration(3*time.Millisecond, first)
+	recordRunDuration(5*time.Millisecond, first)
+	recordCloneRuntimeOrg("FirstTest", "setup", first)
+	recordStorageCloneRuntime(first)
+
+	recordSetupDuration(17*time.Millisecond, second)
+	recordRunDuration(19*time.Millisecond, second)
+	recordCloneRuntimeOrg("SecondTest", "test", second)
+	recordStorageCloneRollbackSnapshot(second)
+
+	firstStats := snapshotPerfCounters(first)
+	secondStats := snapshotPerfCounters(second)
+	if firstStats.SetupDurationMS != 3 || firstStats.RunDurationMS != 5 {
+		t.Fatalf("first stats changed: %#v", firstStats)
+	}
+	if secondStats.SetupDurationMS != 17 || secondStats.RunDurationMS != 19 {
+		t.Fatalf("second stats changed: %#v", secondStats)
+	}
+	if firstStats.StorageCloneStats.CloneRuntimeCalls != 1 || firstStats.StorageCloneStats.CloneRollbackSnapshotCalls != 0 {
+		t.Fatalf("first storage stats = %#v, want one runtime clone only", firstStats.StorageCloneStats)
+	}
+	if secondStats.StorageCloneStats.CloneRuntimeCalls != 1 || secondStats.StorageCloneStats.CloneRollbackSnapshotCalls != 1 {
+		t.Fatalf("second storage stats = %#v, want one rollback snapshot", secondStats.StorageCloneStats)
+	}
+	if firstStats.CloneClasses[0].Class != "FirstTest" {
+		t.Fatalf("first clone classes = %#v", firstStats.CloneClasses)
+	}
+	if secondStats.CloneClasses[0].Class != "SecondTest" {
+		t.Fatalf("second clone classes = %#v", secondStats.CloneClasses)
 	}
 }

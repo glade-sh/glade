@@ -1,6 +1,10 @@
 package vm
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/glade-sh/glade/internal/trace"
+)
 
 func TestAppendTraceLazySkipsBuilderWhenTraceDisabled(t *testing.T) {
 	called := false
@@ -21,5 +25,22 @@ func TestResultForLookupDoesNotCollectTrace(t *testing.T) {
 	result := resultForLookup()
 	if result.traceEnabled {
 		t.Fatal("lookup result should not collect trace events")
+	}
+}
+
+func TestAppendResultTraceCapsAndCoalesces(t *testing.T) {
+	result := &Result{traceEnabled: true}
+	for i := 0; i < maxTraceEvents+3; i++ {
+		appendResultTrace(result, trace.Instant("apex.statement.expr", "apex.statement", int64(i), nil))
+	}
+	if len(result.Trace) != maxTraceEvents+1 {
+		t.Fatalf("trace length = %d, want capped trace plus truncation event", len(result.Trace))
+	}
+	last := result.Trace[len(result.Trace)-1]
+	if last.Name != "apex.trace.truncated" {
+		t.Fatalf("last trace event = %#v, want truncation marker", last)
+	}
+	if got := last.Args["dropped"]; got != 3 {
+		t.Fatalf("dropped trace count = %#v, want 3", got)
 	}
 }

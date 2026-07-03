@@ -104,6 +104,12 @@ func TestDecodeViewStateRejectsTamperedPayload(t *testing.T) {
 	}
 }
 
+func TestVerifyViewStateCSRFRejectsEmptyPayloadToken(t *testing.T) {
+	if err := VerifyViewStateCSRF(ViewStatePayload{}, "token"); err == nil {
+		t.Fatal("expected missing payload CSRF to be rejected")
+	}
+}
+
 func TestRenderPageInjectsCSRFFieldForLocalClients(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, root+"/sfdx-project.json", `{"packageDirectories":[{"path":"force-app","default":true}]}`)

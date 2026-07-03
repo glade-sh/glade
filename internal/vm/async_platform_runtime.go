@@ -463,6 +463,7 @@ func (vm *VM) clearMetadataCaches() {
 	vm.fieldResolveCache = newFieldResolveLookupCache()
 	vm.soqlExecutionCache = nil
 	vm.dmlSummaryByChild = dml.NewSummaryRelationCache()
+	vm.summarySideEffectObjects = nil
 	vm.loadedChildRelCache = newLoadedChildRelationshipLookupCache()
 	vm.lazyChildRelCache = newLazyChildRelationshipLookupCache()
 	vm.objectNameCache = make(map[string]objectNameLookup)

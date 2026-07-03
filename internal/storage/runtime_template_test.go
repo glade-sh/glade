@@ -80,3 +80,31 @@ func TestRuntimeTemplateSchemaStampClearsOnMutableDefinition(t *testing.T) {
 		t.Fatalf("RuntimeSchemaStamp should clear after definition mutation")
 	}
 }
+
+func TestEnsureStandardObjectRepairClonesFrozenDefinition(t *testing.T) {
+	org := OrgState{}
+	EnsureStandardObject(&org, "PermissionSetAssignment")
+
+	state := org.Objects["PermissionSetAssignment"]
+	idField := state.Definition.Fields["Id"]
+	idField.Createable = nil
+	idField.Updateable = nil
+	state.Definition.Fields["Id"] = idField
+	org.Objects["PermissionSetAssignment"] = state
+
+	clone := NewRuntimeTemplate(org).CloneRuntimeOrg()
+	if !sameFieldMap(org.Objects["PermissionSetAssignment"].Definition.Fields, clone.Objects["PermissionSetAssignment"].Definition.Fields) {
+		t.Fatalf("runtime template clone did not share frozen definition fields")
+	}
+
+	EnsureStandardObject(&clone, "PermissionSetAssignment")
+
+	baseField := org.Objects["PermissionSetAssignment"].Definition.Fields["Id"]
+	if baseField.Createable != nil || baseField.Updateable != nil {
+		t.Fatalf("standard object repair mutated the frozen template definition")
+	}
+	cloneField := clone.Objects["PermissionSetAssignment"].Definition.Fields["Id"]
+	if cloneField.Createable == nil || cloneField.Updateable == nil || *cloneField.Createable || *cloneField.Updateable {
+		t.Fatalf("standard object repair did not restore clone read-only flags")
+	}
+}

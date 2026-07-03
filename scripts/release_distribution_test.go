@@ -240,6 +240,9 @@ func TestReleaseNotesScriptExtractsVersionSectionWithRealLineBreaks(t *testing.T
 		t.Fatalf("release-notes.sh v0.2.3 failed: %v\n%s", err, out)
 	}
 	notes := string(out)
+	if strings.TrimSpace(notes) == "" {
+		t.Fatal("release notes were empty")
+	}
 	for _, want := range []string{
 		"Glade v0.2.3 ships the latest fixes after v0.2.2.",
 		"Issue closeout:",
@@ -253,6 +256,7 @@ func TestReleaseNotesScriptExtractsVersionSectionWithRealLineBreaks(t *testing.T
 	}
 	for _, notWant := range []string{
 		`\n`,
+		"## v0.2.3",
 		"## v0.2.2",
 		"## Unreleased",
 	} {

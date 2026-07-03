@@ -869,6 +869,7 @@ var standardSObjectPrefixes = map[string]string{
 }
 
 var commonSObjectTypeNames []string
+var commonSObjectTypeNameSet map[string]bool
 var generatedPlatformTypeIndex map[string]generatedPlatformType
 var generatedPlatformMethodIndex map[string]map[string][]Method
 
@@ -4162,11 +4163,19 @@ func (vm *VM) sObjectNameFromIDSetValue(value Value) string {
 
 func methodHasModifier(modifiers []string, expected string) bool {
 	for _, modifier := range modifiers {
-		if strings.EqualFold(strings.TrimPrefix(modifier, "@"), expected) {
+		if strings.EqualFold(baseModifierName(modifier), expected) {
 			return true
 		}
 	}
 	return false
+}
+
+func baseModifierName(modifier string) string {
+	modifier = strings.TrimSpace(strings.TrimPrefix(modifier, "@"))
+	if idx := strings.IndexByte(modifier, '('); idx >= 0 {
+		modifier = strings.TrimSpace(modifier[:idx])
+	}
+	return modifier
 }
 
 func describeFieldPermissionFlagName(method string) string {

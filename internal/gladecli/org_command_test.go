@@ -46,6 +46,11 @@ func TestRunOrgCreateWritesConfigAndInitializesDB(t *testing.T) {
 	if got.InstanceURL != "http://127.0.0.1:17911" || got.OrgID != "00D000000000001" || got.UserID != "005000000000001" {
 		t.Fatalf("org identity = %#v", got)
 	}
+	var createOut orgConfig
+	env := decodeCLIEnvelopeData(t, stdout.Bytes(), "org create", &createOut)
+	if env.Status != "passed" || env.ExitCode != 0 || createOut.Alias != "my-glade-org" || createOut.InstanceURL != "http://127.0.0.1:17911" {
+		t.Fatalf("unexpected org create envelope: env=%#v data=%#v\n%s", env, createOut, stdout.String())
+	}
 	store, err := storage.OpenSQLite(dbPath)
 	if err != nil {
 		t.Fatal(err)
@@ -57,6 +62,24 @@ func TestRunOrgCreateWritesConfigAndInitializesDB(t *testing.T) {
 	}
 	if len(org.Objects) == 0 {
 		t.Fatalf("created database has no objects")
+	}
+}
+
+func TestRunOrgCreateRejectsPublicBindWithoutOptIn(t *testing.T) {
+	t.Setenv("GLADE_SERVER_PUBLIC", "")
+	root := t.TempDir()
+	writeTestProject(t, root)
+	var stdout, stderr bytes.Buffer
+
+	code := Run(context.Background(), []string{"org", "create", "public-org", "--project", root, "--addr", "0.0.0.0:17911"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "GLADE_SERVER_PUBLIC=1") {
+		t.Fatalf("stderr missing public bind guidance: %q", stderr.String())
+	}
+	if _, err := os.Stat(filepath.Join(root, ".glade", "orgs", "public-org", "org.json")); !os.IsNotExist(err) {
+		t.Fatalf("public org config stat err = %v, want not exist", err)
 	}
 }
 
@@ -87,8 +110,9 @@ func TestRunOrgListShowsConfiguredOrg(t *testing.T) {
 			InstanceURL string `json:"instanceUrl"`
 		} `json:"orgs"`
 	}
-	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
-		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
+	env := decodeCLIEnvelopeData(t, stdout.Bytes(), "org list", &got)
+	if env.Status != "passed" || env.ExitCode != 0 {
+		t.Fatalf("unexpected org list envelope: %#v\n%s", env, stdout.String())
 	}
 	if len(got.Orgs) != 1 || got.Orgs[0].Alias != "listed" || got.Orgs[0].InstanceURL != "http://127.0.0.1:17912" {
 		t.Fatalf("org list = %#v", got.Orgs)
@@ -120,8 +144,10 @@ func TestRunOrgCommandsUseProjectFlagForConfigLookup(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("status exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), `"status": "stopped"`) {
-		t.Fatalf("status stdout = %s", stdout.String())
+	var statusOut orgStatus
+	env := decodeCLIEnvelopeData(t, stdout.Bytes(), "org status", &statusOut)
+	if env.Status != "passed" || env.ExitCode != 0 || statusOut.Alias != "remote" || statusOut.Status != "stopped" {
+		t.Fatalf("unexpected org status envelope: env=%#v data=%#v\n%s", env, statusOut, stdout.String())
 	}
 
 	stdout.Reset()
@@ -168,8 +194,9 @@ func TestRunOrgStatusReportsStoppedWhenServerIsNotRunning(t *testing.T) {
 		Alias  string `json:"alias"`
 		Status string `json:"status"`
 	}
-	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
-		t.Fatalf("stdout was not JSON: %v\n%s", err, stdout.String())
+	env := decodeCLIEnvelopeData(t, stdout.Bytes(), "org status", &got)
+	if env.Status != "passed" || env.ExitCode != 0 {
+		t.Fatalf("unexpected org status envelope: %#v\n%s", env, stdout.String())
 	}
 	if got.Alias != "stopped" || got.Status != "stopped" {
 		t.Fatalf("status = %#v", got)

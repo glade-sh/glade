@@ -170,14 +170,22 @@ func (s *Server) handleLightningModules(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 	rel := strings.Join(parts, "/")
-	if rel == "" || strings.Contains(rel, "..") {
+	if rel == "" || strings.Contains(rel, "..") || strings.HasPrefix(rel, "/") || strings.HasPrefix(rel, `\`) {
 		writeSalesforceError(w, errUnknownEndpoint, "invalid module path")
 		return
 	}
 	path := filepath.Join(s.lightning.cacheDir, filepath.FromSlash(rel))
+	if !pathWithinDir(s.lightning.cacheDir, path) {
+		writeSalesforceError(w, errUnknownEndpoint, "invalid module path")
+		return
+	}
 	content, err := os.ReadFile(path)
 	if err != nil && !strings.HasSuffix(rel, ".js") {
 		path = path + ".js"
+		if !pathWithinDir(s.lightning.cacheDir, path) {
+			writeSalesforceError(w, errUnknownEndpoint, "invalid module path")
+			return
+		}
 		content, err = os.ReadFile(path)
 	}
 	if err != nil {
@@ -187,4 +195,12 @@ func (s *Server) handleLightningModules(w http.ResponseWriter, r *http.Request, 
 	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 	setDevNoStore(w)
 	_, _ = w.Write(content)
+}
+
+func pathWithinDir(root string, path string) bool {
+	rel, err := filepath.Rel(root, path)
+	if err != nil {
+		return false
+	}
+	return rel == "." || (rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)))
 }

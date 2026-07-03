@@ -225,8 +225,10 @@ func frameworkMismatchedStubReturnFallback(returnType string, value Value, provi
 func (vm *VM) callFrameworkStaticMember(className, method string, args []Value) (Value, bool, error) {
 	switch {
 	case strings.EqualFold(method, "triggerHandler") &&
-		(strings.EqualFold(className, "framework_SObjectDomain") || strings.EqualFold(shortTypeName(className), "SObjectDomain")):
-		return vm.callFrameworkSObjectDomainTriggerHandler(args)
+		(strings.EqualFold(className, "framework_SObjectDomain") ||
+			strings.EqualFold(shortTypeName(className), "SObjectDomain") ||
+			strings.EqualFold(frameworkMockSupportType(className), "SObjectDomain")):
+		return vm.callFrameworkSObjectDomainTriggerHandler(className, args)
 	case strings.EqualFold(frameworkMockSupportType(className), "ApexMocks") && strings.EqualFold(method, "extractTypeName"):
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("framework_ApexMocks.extractTypeName expects 1 argument")
@@ -258,8 +260,8 @@ func (vm *VM) callFrameworkStaticMember(className, method string, args []Value) 
 		return Null, false, nil
 	}
 }
-func (vm *VM) frameworkTriggerEventEnabled(domainClassName string) bool {
-	field, _, ok := vm.lookupStaticField("framework_SObjectDomain", "TriggerEventByClass")
+func (vm *VM) frameworkTriggerEventEnabled(frameworkClassName, domainClassName string) bool {
+	field, _, ok := vm.lookupFrameworkSObjectDomainStaticField(frameworkClassName, "TriggerEventByClass")
 	if !ok || field.Value.Kind != ValueMap {
 		return true
 	}
@@ -302,14 +304,47 @@ func (vm *VM) frameworkTriggerEventEnabled(domainClassName string) bool {
 	_, enabled, ok := objectFieldValue(event, fieldName)
 	return !ok || enabled.Kind != ValueBool || enabled.Bool
 }
-func (vm *VM) frameworkMockDatabaseContext(after bool) (map[string]Value, bool) {
+
+func (vm *VM) lookupFrameworkSObjectDomainStaticField(className, fieldName string) (Field, string, bool) {
+	for _, candidate := range frameworkSObjectDomainClassCandidates(className) {
+		field, owner, ok := vm.lookupStaticField(candidate, fieldName)
+		if ok {
+			return field, owner, true
+		}
+	}
+	return Field{}, "", false
+}
+
+func frameworkSObjectDomainClassCandidates(className string) []string {
+	seen := make(map[string]bool)
+	out := make([]string, 0, 5)
+	add := func(candidate string) {
+		candidate = strings.TrimSpace(candidate)
+		if candidate == "" {
+			return
+		}
+		key := strings.ToLower(candidate)
+		if seen[key] {
+			return
+		}
+		seen[key] = true
+		out = append(out, candidate)
+	}
+	add(className)
+	if short := shortTypeName(className); !strings.EqualFold(short, className) {
+		add(short)
+	}
+	add("framework_SObjectDomain")
+	add("fflib_SObjectDomain")
+	add("SObjectDomain")
+	return out
+}
+
+func (vm *VM) frameworkMockDatabaseContext(frameworkClassName string, after bool) (map[string]Value, bool) {
 	if vm == nil {
 		return nil, false
 	}
-	testField, _, ok := vm.lookupStaticField("framework_SObjectDomain", "Test")
-	if !ok {
-		testField, _, ok = vm.lookupStaticField("SObjectDomain", "Test")
-	}
+	testField, _, ok := vm.lookupFrameworkSObjectDomainStaticField(frameworkClassName, "Test")
 	if !ok || testField.Value.Kind != ValueObject {
 		return nil, false
 	}

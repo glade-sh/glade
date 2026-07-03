@@ -108,7 +108,7 @@ func DecodeViewState(encoded string, secret []byte) (ViewStatePayload, error) {
 
 func VerifyViewStateCSRF(payload ViewStatePayload, formCSRF string) error {
 	if strings.TrimSpace(payload.CSRF) == "" {
-		return nil
+		return ErrViewStateCSRF
 	}
 	if strings.TrimSpace(formCSRF) != payload.CSRF {
 		return ErrViewStateCSRF

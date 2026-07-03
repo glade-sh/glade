@@ -59,6 +59,95 @@ func TestCanonicalIDMapKeyKeepsCaseSignificantPrefix(t *testing.T) {
 	}
 }
 
+func TestReflessValueObjectsCompareByFields(t *testing.T) {
+	left := Value{Kind: ValueObject, Type: "QualifiedMethod", Fields: map[string]Value{
+		"typeName":       String("Selector"),
+		"methodName":     String("selectById"),
+		"methodArgTypes": List(platformScalar("Type", "Id")),
+	}}
+	right := Value{Kind: ValueObject, Type: "QualifiedMethod", Fields: map[string]Value{
+		"typeName":       String("Selector"),
+		"methodName":     String("selectById"),
+		"methodArgTypes": List(platformScalar("Type", "Id")),
+	}}
+
+	if !left.Equal(right) {
+		t.Fatalf("ref-less value objects with same fields should compare equal:\nleft=%#v\nright=%#v", left, right)
+	}
+}
+
+func TestRefBackedObjectsKeepIdentityComparison(t *testing.T) {
+	left := Object("Probe")
+	left.Fields["Code"] = String("same")
+	right := Object("Probe")
+	right.Fields["Code"] = String("same")
+
+	if left.Equal(right) {
+		t.Fatalf("ref-backed objects with same fields should remain identity-distinct")
+	}
+}
+
+func TestDecimalValueEqualityIsExact(t *testing.T) {
+	if Decimal(1.000000000000001).Equal(Decimal(1.000000000000002)) {
+		t.Fatal("distinct decimal values compared equal")
+	}
+}
+
+func TestDecimalValueEqualityUsesDecimalText(t *testing.T) {
+	left := Decimal(133.37)
+	left.Text = "133.37"
+	right := Decimal(133.370)
+	right.Text = "133.370"
+	if !left.Equal(right) {
+		t.Fatal("decimal values with equivalent text did not compare equal")
+	}
+}
+
+func TestDecimalArithmeticPreservesExactComputedText(t *testing.T) {
+	current := Decimal(133.37)
+	current.Text = "133.37"
+	last := Decimal(133.33)
+	last.Text = "133.33"
+	difference, err := evalBinary("-", current, last)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := evalBinary("+", last, difference)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Text != "133.37" {
+		t.Fatalf("computed decimal text = %q, value=%#v", got.Text, got)
+	}
+}
+
+func TestDecimalArithmeticReusesComputedDecimalText(t *testing.T) {
+	monthly := Decimal(133.33)
+	monthly.Text = "133.33"
+	eleven := Int(11)
+	paid, err := evalBinary("*", monthly, eleven)
+	if err != nil {
+		t.Fatal(err)
+	}
+	total := Int(1600)
+	remaining, err := evalBinary("-", total, paid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if remaining.Text != "133.37" {
+		t.Fatalf("remaining decimal text = %q, value=%#v", remaining.Text, remaining)
+	}
+	if !remaining.Equal(decimalValueWithText(133.37, "133.37")) {
+		t.Fatalf("remaining decimal did not equal 133.37: %#v", remaining)
+	}
+}
+
+func decimalValueWithText(number float64, text string) Value {
+	value := Decimal(number)
+	value.Text = text
+	return value
+}
+
 func TestSObjectValueEqualityTreatsUnqualifiedAndNamespacedCustomObjectAsEquivalent(t *testing.T) {
 	local := Object("Schedule__c")
 	setExplicitSObjectField(&local, "Id", String("a010000000000001"))

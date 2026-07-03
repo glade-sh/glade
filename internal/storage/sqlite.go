@@ -83,6 +83,8 @@ func OpenSQLite(path string) (*SQLiteStore, error) {
 	if err != nil {
 		return nil, err
 	}
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
 	store := &SQLiteStore{db: db}
 	if err := store.init(); err != nil {
 		_ = db.Close()
@@ -158,9 +160,9 @@ func (s *SQLiteStore) Load() (OrgState, error) {
 		if err := json.Unmarshal(raw, &record); err != nil {
 			return OrgState{}, fmt.Errorf("storage: decode record %s/%s: %w", objectName, id, err)
 		}
-		object := org.Objects[objectName]
-		if object.Definition.APIName == "" {
-			object.Definition.APIName = objectName
+		object, ok := org.Objects[objectName]
+		if !ok {
+			return OrgState{}, fmt.Errorf("storage: orphan record row for undefined object %s/%s", objectName, id)
 		}
 		if object.Records == nil {
 			object.Records = make(map[ID]Record)
