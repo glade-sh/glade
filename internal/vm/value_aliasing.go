@@ -1000,6 +1000,7 @@ func (vm *VM) replaceStaticValueRefsInField(previous, value Value, location stat
 	}
 	if sameStaticCollectionWriteback(previous, value) {
 		vm.forgetStaticAliasDirectChildrenInField(location)
+		vm.collectStaticFieldValueRefsInField(value, location)
 		return
 	}
 	vm.forgetStaticAliasChildHintsInField(location)
@@ -1375,11 +1376,8 @@ func (vm *VM) replaceStaticAliasUsingDirectChildIndex(value Value, location stat
 }
 
 func (vm *VM) staticAliasDirectChildIndex(value Value, location staticFieldRef) (staticAliasDirectChildIndex, bool) {
-	if value.Kind != ValueMap {
-		return staticAliasDirectChildIndex{}, false
-	}
-	childCount := len(value.Map) + len(value.MapKeys)
-	if childCount < staticAliasDirectMapChildIndexMinChildren {
+	childCount := staticAliasDirectChildCount(value)
+	if childCount == 0 {
 		return staticAliasDirectChildIndex{}, false
 	}
 	if vm.staticAliasDirectChildren != nil {
@@ -1412,11 +1410,20 @@ func (vm *VM) staticAliasDirectChildIndex(value Value, location staticFieldRef) 
 		}
 		index.Children[key] = hint
 	}
-	for key, child := range value.Map {
-		add(child, staticAliasChildHint{Kind: staticAliasChildHintMapValue, Key: key})
-	}
-	for key, child := range value.MapKeys {
-		add(child, staticAliasChildHint{Kind: staticAliasChildHintMapKey, Key: key})
+	switch value.Kind {
+	case ValueObject:
+		for name, child := range value.Fields {
+			add(child, staticAliasChildHint{Kind: staticAliasChildHintObjectField, Name: name})
+		}
+	case ValueMap:
+		for key, child := range value.Map {
+			add(child, staticAliasChildHint{Kind: staticAliasChildHintMapValue, Key: key})
+		}
+		for key, child := range value.MapKeys {
+			add(child, staticAliasChildHint{Kind: staticAliasChildHintMapKey, Key: key})
+		}
+	default:
+		return staticAliasDirectChildIndex{}, false
 	}
 	if vm.staticAliasDirectChildren == nil {
 		vm.staticAliasDirectChildren = make(map[staticFieldRef]staticAliasDirectChildIndex)
@@ -1425,11 +1432,26 @@ func (vm *VM) staticAliasDirectChildIndex(value Value, location staticFieldRef) 
 	return index, true
 }
 
+func staticAliasDirectChildCount(value Value) int {
+	switch value.Kind {
+	case ValueObject:
+		return len(value.Fields)
+	case ValueMap:
+		childCount := len(value.Map) + len(value.MapKeys)
+		if childCount < staticAliasDirectMapChildIndexMinChildren {
+			return 0
+		}
+		return childCount
+	default:
+		return 0
+	}
+}
+
 func (vm *VM) rememberStaticAliasDirectChildHint(previous aliasSnapshot, updated Value, location staticFieldRef, hint staticAliasChildHint) {
 	if vm == nil || !previous.valid() || vm.staticAliasDirectChildren == nil {
 		return
 	}
-	if hint.Kind != staticAliasChildHintMapValue && hint.Kind != staticAliasChildHintMapKey {
+	if !staticAliasDirectChildHintKind(hint.Kind) {
 		return
 	}
 	index, ok := vm.staticAliasDirectChildren[location]
@@ -1444,10 +1466,20 @@ func (vm *VM) rememberStaticAliasDirectChildHint(previous aliasSnapshot, updated
 	}
 	updatedKey := staticAliasDirectChildKey{Ref: updated.Ref, Kind: updated.Kind}
 	if updatedKey != previousKey {
-		delete(index.Children, previousKey)
+		delete(vm.staticAliasDirectChildren, location)
+		return
 	}
 	index.Children[updatedKey] = hint
 	vm.staticAliasDirectChildren[location] = index
+}
+
+func staticAliasDirectChildHintKind(kind staticAliasChildHintKind) bool {
+	switch kind {
+	case staticAliasChildHintObjectField, staticAliasChildHintMapValue, staticAliasChildHintMapKey:
+		return true
+	default:
+		return false
+	}
 }
 
 func (vm *VM) replaceStaticAliasUsingChildHint(value Value, location staticFieldRef, previous aliasSnapshot, updated Value) (Value, staticAliasChildHint, bool) {
