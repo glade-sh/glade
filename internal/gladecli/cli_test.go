@@ -2921,6 +2921,44 @@ func TestRunCheckJSON(t *testing.T) {
 	if got["command"] != "check" || got["status"] != "passed" {
 		t.Fatalf("check JSON command/status = %#v", got)
 	}
+	data, ok := got["data"].(map[string]any)
+	if !ok {
+		t.Fatalf("check JSON missing data object: %#v", got["data"])
+	}
+	if _, ok := data["diagnostics"]; ok {
+		t.Fatalf("check JSON data duplicated diagnostics: %#v", data["diagnostics"])
+	}
+}
+
+func TestRunCheckJSONOmitsDuplicateDataDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/Broken.cls"), "public class Broken { public MissingType run() { return null; } }")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"check", "--project", root, "--json", "--no-progress"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	var got struct {
+		Diagnostics []map[string]any `json:"diagnostics"`
+		Summary     struct {
+			Diagnostics int `json:"diagnostics"`
+		} `json:"summary"`
+		Data map[string]json.RawMessage `json:"data"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatalf("stdout is not JSON: %v\n%s", err, stdout.String())
+	}
+	if len(got.Diagnostics) == 0 {
+		t.Fatalf("envelope diagnostics missing:\n%s", stdout.String())
+	}
+	if got.Summary.Diagnostics == 0 {
+		t.Fatalf("summary diagnostics missing:\n%s", stdout.String())
+	}
+	if _, ok := got.Data["diagnostics"]; ok {
+		t.Fatalf("data duplicated diagnostics:\n%s", stdout.String())
+	}
 }
 
 func TestRunCheckUnknownType(t *testing.T) {

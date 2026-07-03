@@ -9,6 +9,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/glade-sh/glade/internal/project"
 )
 
 func TestNoCorpusSpecificReferencesInRuntimeCode(t *testing.T) {
@@ -176,6 +178,30 @@ func TestNoTrackedBuildArtifacts(t *testing.T) {
 	}
 }
 
+func TestRepoRootProjectScopeStaysNarrow(t *testing.T) {
+	root := repoRoot(t)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wantPackageDirs := []string{"testdata/local-tests/lwc-shell/force-app"}
+	if got := packageDirPaths(p.PackageDirectories); !stringSlicesEqual(got, wantPackageDirs) {
+		t.Fatalf("repo root packageDirs = %#v, want %#v", got, wantPackageDirs)
+	}
+
+	for _, file := range projectFiles(p) {
+		rel, err := filepath.Rel(root, file)
+		if err != nil {
+			t.Fatalf("rel %s: %v", file, err)
+		}
+		rel = filepath.ToSlash(rel)
+		if isBroadRootProjectFile(rel) {
+			t.Errorf("repo root project loaded out-of-scope file %s", rel)
+		}
+	}
+}
+
 func TestTrackedBuildArtifactMatcher(t *testing.T) {
 	tests := map[string]bool{
 		"apextest.test":              true,
@@ -192,6 +218,84 @@ func TestTrackedBuildArtifactMatcher(t *testing.T) {
 			t.Fatalf("isTrackedBuildArtifact(%q) = %v, want %v", rel, got, want)
 		}
 	}
+}
+
+func packageDirPaths(dirs []project.PackageDirectory) []string {
+	out := make([]string, 0, len(dirs))
+	for _, dir := range dirs {
+		out = append(out, filepath.ToSlash(dir.Path))
+	}
+	return out
+}
+
+func stringSlicesEqual(got, want []string) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for i := range got {
+		if got[i] != want[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func projectFiles(p project.Project) []string {
+	var out []string
+	out = append(out, p.ApexFiles...)
+	out = append(out, p.ObjectFiles...)
+	out = append(out, p.FieldFiles...)
+	out = append(out, p.FieldSetFiles...)
+	out = append(out, p.RecordTypeFiles...)
+	out = append(out, p.ValidationRuleFiles...)
+	out = append(out, p.LabelFiles...)
+	out = append(out, p.TranslationFiles...)
+	out = append(out, p.StaticResourceFiles...)
+	out = append(out, p.StaticResourceMetas...)
+	out = append(out, p.DataCategoryGroupFiles...)
+	out = append(out, p.DataWeaveFiles...)
+	out = append(out, p.DataWeaveMetas...)
+	out = append(out, p.ContentAssetFiles...)
+	out = append(out, p.ContentAssetMetas...)
+	out = append(out, p.EmailTemplateFiles...)
+	out = append(out, p.FolderFiles...)
+	out = append(out, p.NamedCredentialFiles...)
+	out = append(out, p.RemoteSiteFiles...)
+	out = append(out, p.CustomMetadataFiles...)
+	out = append(out, p.WorkflowFiles...)
+	out = append(out, p.FlowFiles...)
+	out = append(out, p.ProfileFiles...)
+	out = append(out, p.PermissionSetFiles...)
+	out = append(out, p.PermissionSetGroupFiles...)
+	out = append(out, p.PermissionAssignmentFiles...)
+	out = append(out, p.ListViewFiles...)
+	out = append(out, p.LayoutFiles...)
+	out = append(out, p.CompactLayoutFiles...)
+	out = append(out, p.TabFiles...)
+	out = append(out, p.WebLinkFiles...)
+	out = append(out, p.QuickActionFiles...)
+	out = append(out, p.GlobalValueSetFiles...)
+	out = append(out, p.StandardValueSetFiles...)
+	out = append(out, p.FlexiPageFiles...)
+	out = append(out, p.ApplicationFiles...)
+	out = append(out, p.VisualforcePageFiles...)
+	out = append(out, p.VisualforceComponentFiles...)
+	out = append(out, p.AuraFiles...)
+	out = append(out, p.LWCFiles...)
+	out = append(out, p.LWCHTMLFiles...)
+	out = append(out, p.LWCCSSFiles...)
+	out = append(out, p.LWCMetaFiles...)
+	return out
+}
+
+func isBroadRootProjectFile(rel string) bool {
+	if strings.HasPrefix(rel, hyphen("example", "projects")+"/") || strings.HasPrefix(rel, ".sfdx/") || strings.HasPrefix(rel, ".sf/") {
+		return true
+	}
+	if strings.Contains(rel, "/testdata/") || strings.HasPrefix(rel, "internal/") {
+		return true
+	}
+	return false
 }
 
 func TestAgentGuideListsCurrentProductCommands(t *testing.T) {

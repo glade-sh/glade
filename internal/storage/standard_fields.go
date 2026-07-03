@@ -200,7 +200,7 @@ func ensureCommonRecordTypeField(definition *ObjectDefinition) {
 }
 
 func standardFieldsForObject(objectName string) []Field {
-	if _, ok := standardObjectCatalogEntryFor(objectName); ok && !stringsEqualFold(objectName, "Account") {
+	if _, ok := standardObjectCatalogEntryForName(objectName); ok && !stringsEqualFold(objectName, "Account") {
 		return nil
 	}
 	switch {
@@ -476,7 +476,7 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 		state.Indexes = make(map[string]IndexSet)
 	}
 	EnsureStandardObjectFields(&state.Definition)
-	if entry, ok := standardObjectCatalogEntryFor(objectName); ok {
+	if entry, ok := standardObjectCatalogEntryForName(objectName); ok {
 		if state.Definition.Label == objectName && entry.Definition.Label != "" {
 			state.Definition.Label = entry.Definition.Label
 		}
@@ -505,7 +505,7 @@ func standardObjectDefinitionNeedsWrite(definition ObjectDefinition, objectName 
 	if standardReadOnlyFlagsNeedRepair(&definition) {
 		return true
 	}
-	if entry, ok := standardObjectCatalogEntryFor(objectName); ok {
+	if entry, ok := standardObjectCatalogEntryForName(objectName); ok {
 		if definition.Label == objectName && entry.Definition.Label != "" && entry.Definition.Label != definition.Label {
 			return true
 		}
@@ -541,11 +541,14 @@ func isKnownStandardObjectExact(objectName string) bool {
 	if _, ok := standardSObjectStubFieldData[objectName]; ok {
 		return true
 	}
+	if canonical, ok := standardDescribeCatalogCanonicalName(objectName); ok && canonical == objectName {
+		return true
+	}
 	if stringsHasSuffixFold(objectName, "__c") || stringsHasSuffixFold(objectName, "__mdt") ||
 		stringsHasSuffixFold(objectName, "__e") || stringsHasSuffixFold(objectName, "__r") {
 		return false
 	}
-	return len(standardFieldsForObject(objectName)) > 0
+	return false
 }
 
 func ResolveKnownStandardObjectName(objectName string) (string, bool) {
@@ -567,11 +570,7 @@ func KnownStandardObjectNames() []string {
 
 func initKnownStandardObjectCache() {
 	knownStandardObjectCache.once.Do(func() {
-		describeCatalog := loadEmbeddedStandardDescribeCatalog()
 		names := buildKnownStandardObjectNameSet()
-		for name := range describeCatalog {
-			names[name] = true
-		}
 		out := make([]string, 0, len(names))
 		for name := range names {
 			out = append(out, name)
@@ -581,19 +580,8 @@ func initKnownStandardObjectCache() {
 		for _, name := range out {
 			canonicalByLC[standardObjectLookupKey(name)] = name
 		}
-		catalogByLC := make(map[string]standardObjectCatalogEntry, len(standardObjectCatalogData)+len(describeCatalog))
-		for name, entry := range describeCatalog {
-			if _, ok := standardSObjectStubFieldData[name]; ok {
-				continue
-			}
-			catalogByLC[standardObjectLookupKey(name)] = entry
-		}
-		for name, entry := range standardObjectCatalogData {
-			catalogByLC[standardObjectLookupKey(name)] = entry
-		}
 		knownStandardObjectCache.names = out
 		knownStandardObjectCache.canonicalByLC = canonicalByLC
-		knownStandardObjectCache.catalogByLC = catalogByLC
 	})
 }
 
@@ -643,6 +631,9 @@ func buildKnownStandardObjectNameSet() map[string]bool {
 		names[name] = true
 	}
 	for name := range standardObjectCatalogData {
+		names[name] = true
+	}
+	for _, name := range standardDescribeCatalogObjectNames {
 		names[name] = true
 	}
 	for _, name := range standardSObjectStubNames() {
@@ -724,7 +715,7 @@ func StandardObjectDefinition(objectName string) (ObjectDefinition, bool) {
 }
 
 func mergeStandardObjectDefinition(definition *ObjectDefinition, features []string) {
-	entry, ok := standardObjectCatalogEntryFor(definition.APIName)
+	entry, ok := standardObjectCatalogEntryForName(definition.APIName)
 	if !ok {
 		return
 	}
@@ -828,7 +819,7 @@ func mergeStandardSObjectStubRelationships(definition *ObjectDefinition, feature
 func VisitStandardObjectRelationships(objectName string, features []string, visit func(Relationship)) bool {
 	found := false
 	personAccounts := hasCanonicalFeature(features, "PersonAccounts")
-	if entry, ok := standardObjectCatalogEntryFor(objectName); ok {
+	if entry, ok := standardObjectCatalogEntryForName(objectName); ok {
 		for _, relationship := range entry.Definition.Relations {
 			if !personAccounts && isPersonAccountRelationship(relationship) {
 				continue
