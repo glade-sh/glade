@@ -2335,6 +2335,567 @@ func TestPropagateAliasSnapshotToStaticsUsesDirectMapChildIndex(t *testing.T) {
 	}
 }
 
+func TestPropagateAliasSnapshotToStaticsUsesDirectObjectChildIndex(t *testing.T) {
+	ResetPerfCounters()
+	SetPerfCountersEnabled(true)
+	t.Cleanup(ResetPerfCounters)
+
+	machine := New(nil)
+	target := Object("Provider")
+	target.Fields["Name"] = String("initial")
+	holder := Object("UnitOfWork")
+	holder.Fields["Providers"] = target
+	holder.Fields["Accounts"] = List(Object("Account"))
+	holder.Fields["Contacts"] = List(Object("Contact"))
+	holder.Fields["Requests"] = List(Object("ActionRequest"))
+	machine.Classes["MappingUnitOfWork"] = Class{
+		Name: "MappingUnitOfWork",
+		StaticFields: map[string]Field{
+			"Instance": {Name: "Instance", Type: "MappingUnitOfWork", Value: holder},
+		},
+	}
+	machine.staticValueRefs, machine.staticValueRefFields = machine.collectStaticValueRefs()
+
+	updated := Object("Provider")
+	updated.Ref = target.Ref
+	updated.Fields["Name"] = String("updated")
+
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(target), updated)
+
+	got := machine.Classes["MappingUnitOfWork"].StaticFields["Instance"].Value.Fields["Providers"]
+	if got.Fields["Name"].Text != "updated" {
+		t.Fatalf("provider name = %q, want updated", got.Fields["Name"].Text)
+	}
+	if hits := SnapshotPerfCounters().StaticAlias.DirectChildHits; hits != 1 {
+		t.Fatalf("direct child hits = %d, want 1", hits)
+	}
+}
+
+func TestDirectObjectChildIndexFallsBackForDuplicateRefs(t *testing.T) {
+	ResetPerfCounters()
+	SetPerfCountersEnabled(true)
+	t.Cleanup(ResetPerfCounters)
+
+	machine := New(nil)
+	target := Object("Provider")
+	target.Fields["Name"] = String("initial")
+	holder := Object("UnitOfWork")
+	holder.Fields["Primary"] = target
+	holder.Fields["Secondary"] = target
+	holder.Fields["Requests"] = List(Object("ActionRequest"))
+	machine.Classes["MappingUnitOfWork"] = Class{
+		Name: "MappingUnitOfWork",
+		StaticFields: map[string]Field{
+			"Instance": {Name: "Instance", Type: "MappingUnitOfWork", Value: holder},
+		},
+	}
+	machine.staticValueRefs, machine.staticValueRefFields = machine.collectStaticValueRefs()
+
+	updated := Object("Provider")
+	updated.Ref = target.Ref
+	updated.Fields["Name"] = String("updated")
+
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(target), updated)
+
+	instance := machine.Classes["MappingUnitOfWork"].StaticFields["Instance"].Value
+	if got := instance.Fields["Primary"].Fields["Name"].Text; got != "updated" {
+		t.Fatalf("primary provider name = %q, want updated", got)
+	}
+	if got := instance.Fields["Secondary"].Fields["Name"].Text; got != "updated" {
+		t.Fatalf("secondary provider name = %q, want updated", got)
+	}
+	if hits := SnapshotPerfCounters().StaticAlias.DirectChildHits; hits != 0 {
+		t.Fatalf("direct child hits = %d, want 0 for duplicate refs", hits)
+	}
+}
+
+func TestDirectObjectChildIndexInvalidatesWhenUpdateCreatesDuplicateDirectRef(t *testing.T) {
+	ResetPerfCounters()
+	SetPerfCountersEnabled(true)
+	t.Cleanup(ResetPerfCounters)
+
+	machine := New(nil)
+	first := Object("Provider")
+	first.Fields["Name"] = String("first")
+	second := Object("Provider")
+	second.Fields["Name"] = String("second")
+	holder := Object("UnitOfWork")
+	holder.Fields["Primary"] = first
+	holder.Fields["Secondary"] = second
+	machine.Classes["MappingUnitOfWork"] = Class{
+		Name: "MappingUnitOfWork",
+		StaticFields: map[string]Field{
+			"Instance": {Name: "Instance", Type: "MappingUnitOfWork", Value: holder},
+		},
+	}
+	machine.staticValueRefs, machine.staticValueRefFields = machine.collectStaticValueRefs()
+
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(first), second)
+
+	updated := Object("Provider")
+	updated.Ref = second.Ref
+	updated.Fields["Name"] = String("updated")
+	machine.propagateAliasSnapshotToStatics(snapshotAlias(second), updated)
+
+	instance := machine.Classes["MappingUnitOfWork"].StaticFields["Instance"].Value
+	if got := instance.Fields["Primary"].Fields["Name"].Text; got != "updated" {
+		t.Fatalf("primary provider name = %q, want updated", got)
+	}
+	if got := instance.Fields["Secondary"].Fields["Name"].Text; got != "updated" {
+		t.Fatalf("secondary provider name = %q, want updated", got)
+	}
+}
+
+func TestStaticMapNestedSetMutationFromGetPersists(t *testing.T) {
+	hasExecutedProgram, err := CompileAnonymous(`
+if (Seen == null) {
+	Seen = new Map<SObjectType, Set<TriggerOperation>>();
+}
+if (!Seen.containsKey(Account.SObjectType)) {
+	Seen.put(Account.SObjectType, new Set<TriggerOperation>());
+}
+if (Seen.get(Account.SObjectType).contains(TriggerOperation.AFTER_UPDATE)) {
+	return true;
+}
+Seen.get(Account.SObjectType).add(TriggerOperation.AFTER_UPDATE);
+return false;
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testProgram, err := CompileAnonymous(`
+System.assertEquals(false, TriggerGuardProbe.hasExecuted());
+System.assertEquals(true, TriggerGuardProbe.hasExecuted());
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerGuardProbe",
+		StaticFields: map[string]Field{
+			"Seen": {Name: "Seen", Type: "Map<SObjectType, Set<TriggerOperation>>", Static: true},
+		},
+		Methods: map[string]Method{
+			"hasExecuted#": {Name: "TriggerGuardProbe.hasExecuted", ClassName: "TriggerGuardProbe", ReturnType: "Boolean", IsStatic: true, Program: hasExecutedProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(testProgram); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStaticMapNestedSetMutationFromObjectFieldsPersists(t *testing.T) {
+	hasExecutedProgram, err := CompileAnonymous(`
+if (Seen == null) {
+	Seen = new Map<SObjectType, Set<TriggerOperation>>();
+}
+if (!Seen.containsKey(context.objectType)) {
+	Seen.put(context.objectType, new Set<TriggerOperation>());
+}
+if (Seen.get(context.objectType).contains(context.operation)) {
+	return true;
+}
+Seen.get(context.objectType).add(context.operation);
+return false;
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testProgram, err := CompileAnonymous(`
+TriggerGuardContext context = new TriggerGuardContext();
+context.objectType = Account.SObjectType;
+context.operation = TriggerOperation.AFTER_UPDATE;
+System.assertEquals(false, TriggerGuardProbe.hasExecuted(context));
+System.assertEquals(true, TriggerGuardProbe.hasExecuted(context));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerGuardContext",
+		Fields: map[string]Field{
+			"objectType": {Name: "objectType", Type: "SObjectType"},
+			"operation":  {Name: "operation", Type: "TriggerOperation"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerGuardProbe",
+		StaticFields: map[string]Field{
+			"Seen": {Name: "Seen", Type: "Map<SObjectType, Set<TriggerOperation>>", Static: true},
+		},
+		Methods: map[string]Method{
+			"hasExecuted#TriggerGuardContext": {Name: "TriggerGuardProbe.hasExecuted", ClassName: "TriggerGuardProbe", ReturnType: "Boolean", Params: []Param{{Name: "context", Type: "TriggerGuardContext"}}, IsStatic: true, Program: hasExecutedProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(testProgram); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSetContainsEnumValueFromObjectField(t *testing.T) {
+	testProgram, err := CompileAnonymous(`
+TriggerGuardContext context = new TriggerGuardContext();
+context.operation = TriggerOperation.AFTER_UPDATE;
+Set<TriggerOperation> seen = new Set<TriggerOperation>();
+seen.add(context.operation);
+System.assert(seen.contains(context.operation));
+System.assert(seen.contains(TriggerOperation.AFTER_UPDATE));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerGuardContext",
+		Fields: map[string]Field{
+			"operation": {Name: "operation", Type: "TriggerOperation"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(testProgram); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestMapContainsSObjectTypeFromObjectField(t *testing.T) {
+	testProgram, err := CompileAnonymous(`
+TriggerGuardContext context = new TriggerGuardContext();
+context.objectType = Account.SObjectType;
+Map<SObjectType, String> seen = new Map<SObjectType, String>();
+seen.put(context.objectType, 'seen');
+System.assert(seen.containsKey(context.objectType));
+System.assert(seen.containsKey(Account.SObjectType));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerGuardContext",
+		Fields: map[string]Field{
+			"objectType": {Name: "objectType", Type: "SObjectType"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(testProgram); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStaticMapSObjectTypeKeyFromObjectFieldPersists(t *testing.T) {
+	hasSeenProgram, err := CompileAnonymous(`
+if (Seen == null) {
+	Seen = new Map<SObjectType, String>();
+}
+if (Seen.containsKey(context.objectType)) {
+	return true;
+}
+Seen.put(context.objectType, 'seen');
+return false;
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testProgram, err := CompileAnonymous(`
+TriggerGuardContext context = new TriggerGuardContext();
+context.objectType = Account.SObjectType;
+System.assertEquals(false, TriggerGuardProbe.hasSeen(context));
+System.assertEquals(true, TriggerGuardProbe.hasSeen(context));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerGuardContext",
+		Fields: map[string]Field{
+			"objectType": {Name: "objectType", Type: "SObjectType"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerGuardProbe",
+		StaticFields: map[string]Field{
+			"Seen": {Name: "Seen", Type: "Map<SObjectType, String>", Static: true},
+		},
+		Methods: map[string]Method{
+			"hasSeen#TriggerGuardContext": {Name: "TriggerGuardProbe.hasSeen", ClassName: "TriggerGuardProbe", ReturnType: "Boolean", Params: []Param{{Name: "context", Type: "TriggerGuardContext"}}, IsStatic: true, Program: hasSeenProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(testProgram); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStaticMapNestedSetMutationWithFieldKeyAndConstantValuePersists(t *testing.T) {
+	hasExecutedProgram, err := CompileAnonymous(`
+if (Seen == null) {
+	Seen = new Map<SObjectType, Set<TriggerOperation>>();
+}
+if (!Seen.containsKey(context.objectType)) {
+	Seen.put(context.objectType, new Set<TriggerOperation>());
+}
+if (Seen.get(context.objectType).contains(TriggerOperation.AFTER_UPDATE)) {
+	return true;
+}
+Seen.get(context.objectType).add(TriggerOperation.AFTER_UPDATE);
+return false;
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testProgram, err := CompileAnonymous(`
+TriggerGuardContext context = new TriggerGuardContext();
+context.objectType = Account.SObjectType;
+System.assertEquals(false, TriggerGuardProbe.hasExecuted(context));
+System.assertEquals(true, TriggerGuardProbe.hasExecuted(context));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerGuardContext",
+		Fields: map[string]Field{
+			"objectType": {Name: "objectType", Type: "SObjectType"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerGuardProbe",
+		StaticFields: map[string]Field{
+			"Seen": {Name: "Seen", Type: "Map<SObjectType, Set<TriggerOperation>>", Static: true},
+		},
+		Methods: map[string]Method{
+			"hasExecuted#TriggerGuardContext": {Name: "TriggerGuardProbe.hasExecuted", ClassName: "TriggerGuardProbe", ReturnType: "Boolean", Params: []Param{{Name: "context", Type: "TriggerGuardContext"}}, IsStatic: true, Program: hasExecutedProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(testProgram); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStaticMapNestedSetMutationFromLocalSetAliasPersists(t *testing.T) {
+	hasExecutedProgram, err := CompileAnonymous(`
+if (Seen == null) {
+	Seen = new Map<SObjectType, Set<TriggerOperation>>();
+}
+if (!Seen.containsKey(context.objectType)) {
+	Seen.put(context.objectType, new Set<TriggerOperation>());
+}
+Set<TriggerOperation> operations = Seen.get(context.objectType);
+if (operations.contains(TriggerOperation.AFTER_UPDATE)) {
+	return true;
+}
+operations.add(TriggerOperation.AFTER_UPDATE);
+return false;
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testProgram, err := CompileAnonymous(`
+TriggerGuardContext context = new TriggerGuardContext();
+context.objectType = Account.SObjectType;
+System.assertEquals(false, TriggerGuardProbe.hasExecuted(context));
+System.assertEquals(true, TriggerGuardProbe.hasExecuted(context));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerGuardContext",
+		Fields: map[string]Field{
+			"objectType": {Name: "objectType", Type: "SObjectType"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerGuardProbe",
+		StaticFields: map[string]Field{
+			"Seen": {Name: "Seen", Type: "Map<SObjectType, Set<TriggerOperation>>", Static: true},
+		},
+		Methods: map[string]Method{
+			"hasExecuted#TriggerGuardContext": {Name: "TriggerGuardProbe.hasExecuted", ClassName: "TriggerGuardProbe", ReturnType: "Boolean", Params: []Param{{Name: "context", Type: "TriggerGuardContext"}}, IsStatic: true, Program: hasExecutedProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(testProgram); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStaticMapNestedSetMutationWithLocalKeyPersists(t *testing.T) {
+	hasExecutedProgram, err := CompileAnonymous(`
+if (Seen == null) {
+	Seen = new Map<SObjectType, Set<TriggerOperation>>();
+}
+SObjectType objectType = Account.SObjectType;
+if (!Seen.containsKey(objectType)) {
+	Seen.put(objectType, new Set<TriggerOperation>());
+}
+if (Seen.get(objectType).contains(TriggerOperation.AFTER_UPDATE)) {
+	return true;
+}
+Seen.get(objectType).add(TriggerOperation.AFTER_UPDATE);
+return false;
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testProgram, err := CompileAnonymous(`
+System.assertEquals(false, TriggerGuardProbe.hasExecuted());
+System.assertEquals(true, TriggerGuardProbe.hasExecuted());
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerGuardProbe",
+		StaticFields: map[string]Field{
+			"Seen": {Name: "Seen", Type: "Map<SObjectType, Set<TriggerOperation>>", Static: true},
+		},
+		Methods: map[string]Method{
+			"hasExecuted#": {Name: "TriggerGuardProbe.hasExecuted", ClassName: "TriggerGuardProbe", ReturnType: "Boolean", IsStatic: true, Program: hasExecutedProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(testProgram); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStaticMapNestedSetMutationWithLocalValuePersists(t *testing.T) {
+	hasExecutedProgram, err := CompileAnonymous(`
+if (Seen == null) {
+	Seen = new Map<SObjectType, Set<TriggerOperation>>();
+}
+TriggerOperation operation = TriggerOperation.AFTER_UPDATE;
+if (!Seen.containsKey(Account.SObjectType)) {
+	Seen.put(Account.SObjectType, new Set<TriggerOperation>());
+}
+if (Seen.get(Account.SObjectType).contains(operation)) {
+	return true;
+}
+Seen.get(Account.SObjectType).add(operation);
+return false;
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testProgram, err := CompileAnonymous(`
+System.assertEquals(false, TriggerGuardProbe.hasExecuted());
+System.assertEquals(true, TriggerGuardProbe.hasExecuted());
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerGuardProbe",
+		StaticFields: map[string]Field{
+			"Seen": {Name: "Seen", Type: "Map<SObjectType, Set<TriggerOperation>>", Static: true},
+		},
+		Methods: map[string]Method{
+			"hasExecuted#": {Name: "TriggerGuardProbe.hasExecuted", ClassName: "TriggerGuardProbe", ReturnType: "Boolean", IsStatic: true, Program: hasExecutedProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(testProgram); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStaticMapNestedSetMutationWithConstantKeyAndFieldValuePersists(t *testing.T) {
+	hasExecutedProgram, err := CompileAnonymous(`
+if (Seen == null) {
+	Seen = new Map<SObjectType, Set<TriggerOperation>>();
+}
+if (!Seen.containsKey(Account.SObjectType)) {
+	Seen.put(Account.SObjectType, new Set<TriggerOperation>());
+}
+if (Seen.get(Account.SObjectType).contains(context.operation)) {
+	return true;
+}
+Seen.get(Account.SObjectType).add(context.operation);
+return false;
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testProgram, err := CompileAnonymous(`
+TriggerGuardContext context = new TriggerGuardContext();
+context.operation = TriggerOperation.AFTER_UPDATE;
+System.assertEquals(false, TriggerGuardProbe.hasExecuted(context));
+System.assertEquals(true, TriggerGuardProbe.hasExecuted(context));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerGuardContext",
+		Fields: map[string]Field{
+			"operation": {Name: "operation", Type: "TriggerOperation"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerGuardProbe",
+		StaticFields: map[string]Field{
+			"Seen": {Name: "Seen", Type: "Map<SObjectType, Set<TriggerOperation>>", Static: true},
+		},
+		Methods: map[string]Method{
+			"hasExecuted#TriggerGuardContext": {Name: "TriggerGuardProbe.hasExecuted", ClassName: "TriggerGuardProbe", ReturnType: "Boolean", Params: []Param{{Name: "context", Type: "TriggerGuardContext"}}, IsStatic: true, Program: hasExecutedProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(testProgram); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestDirectMapChildIndexRespectsPrimitiveMapKeyType(t *testing.T) {
 	ResetPerfCounters()
 	SetPerfCountersEnabled(true)
