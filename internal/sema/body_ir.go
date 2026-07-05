@@ -23,8 +23,10 @@ func (a *Analyzer) checkBodyText(typ typesys.TypeSymbol, member typesys.MemberSy
 	for _, param := range member.Parameters {
 		baseScope[normalizeName(param.Name)] = param.Type
 	}
+	bodyScan := newSemaBodyExpressionScan(body)
 	scopes, diagnostics := a.collectBodyScopes(typ, member, body, bodyOffset, source, baseScope, model)
-	diagnostics = append(diagnostics, a.checkBodyIR(typ, member, body, bodyOffset, source, baseScope, model, constructability)...)
+	irDiagnostics, irOK := a.checkBodyIRWithCompileStatus(typ, member, body, bodyOffset, source, baseScope, model, constructability)
+	diagnostics = append(diagnostics, irDiagnostics...)
 	for _, ctor := range constructorTypes(body) {
 		for _, ref := range extractTypeNames(ctor.text) {
 			if !a.hasKnown(ref) {
@@ -51,10 +53,12 @@ func (a *Analyzer) checkBodyText(typ typesys.TypeSymbol, member typesys.MemberSy
 			}
 		}
 	}
-	diagnostics = append(diagnostics, a.checkBodyAssignments(typ, member, body, bodyOffset, source, scopes, model)...)
-	diagnostics = append(diagnostics, a.checkBodyReturns(typ, member, body, bodyOffset, source, scopes, model)...)
-	diagnostics = append(diagnostics, a.checkBodyTernaryConditions(typ, member, body, bodyOffset, source, scopes, model)...)
-	diagnostics = append(diagnostics, a.checkBodyExpressionTypeReferences(typ, member, body, bodyOffset, source)...)
+	diagnostics = append(diagnostics, a.checkBodyAssignments(typ, member, bodyScan, bodyOffset, source, scopes, model)...)
+	diagnostics = append(diagnostics, a.checkBodyReturns(typ, member, bodyScan, bodyOffset, source, scopes, model)...)
+	diagnostics = append(diagnostics, a.checkBodyTernaryConditions(typ, member, bodyScan, bodyOffset, source, scopes, model)...)
+	if !irOK {
+		diagnostics = append(diagnostics, a.checkBodyExpressionTypeReferences(typ, member, bodyScan, bodyOffset, source)...)
+	}
 	diagnostics = append(diagnostics, a.checkBodyCalls(typ, member, body, bodyOffset, source, scopes, model)...)
 	return dedupeBodyDiagnostics(diagnostics)
 }
@@ -517,15 +521,21 @@ func (s irSemaScope) flat() map[string]string {
 }
 
 func (a *Analyzer) checkBodyIR(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, base map[string]string, model map[string]typeMembers, constructability map[string]typesys.TypeSymbol) []diagnostic.Diagnostic {
+	diagnostics, _ := a.checkBodyIRWithCompileStatus(typ, member, body, bodyOffset, source, base, model, constructability)
+	return diagnostics
+}
+
+func (a *Analyzer) checkBodyIRWithCompileStatus(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, base map[string]string, model map[string]typeMembers, constructability map[string]typesys.TypeSymbol) ([]diagnostic.Diagnostic, bool) {
 	program, err := vm.CompileAnonymous(body)
 	if err != nil {
-		return nil
+		return nil, false
 	}
 	scope := newIRSemaScope(base)
 	var diagnostics []diagnostic.Diagnostic
 	if a.includePerformanceDiagnostics {
 		diagnostics = append(diagnostics, performanceDiagnosticsForProgram(typ, program, bodyOffset, source)...)
 	}
+	diagnostics = append(diagnostics, a.checkIRExpressionTypeReferences(typ, member, program.Instructions, body, bodyOffset, source)...)
 	diagnostics = append(diagnostics, a.checkIRInstructions(typ, member, program.Instructions, &scope, bodyOffset, source, model, constructability)...)
 	returnType := strings.TrimSpace(member.Type)
 	memberSource := ""
@@ -535,7 +545,108 @@ func (a *Analyzer) checkBodyIR(typ typesys.TypeSymbol, member typesys.MemberSymb
 	if returnType != "" && !strings.EqualFold(returnType, "void") && !irInstructionsTerminate(program.Instructions) && !semaBodyEndsWithThrow(body) && !semaBodyEndsWithThrow(memberSource) {
 		diagnostics = append(diagnostics, returnTypeDiagnostic(typ, member, fmt.Sprintf("method must return %s on all paths", returnType), member.Range.Start.Offset, member.Range.End.Offset, source))
 	}
+	return diagnostics, true
+}
+
+func (a *Analyzer) checkIRExpressionTypeReferences(typ typesys.TypeSymbol, member typesys.MemberSymbol, instructions []ir.Instruction, body string, bodyOffset int, source string) []diagnostic.Diagnostic {
+	var seen map[string]bool
+	var diagnostics []diagnostic.Diagnostic
+	var walkExpr func(ir.Expr, int)
+	var walkInstruction func(ir.Instruction)
+	var walkInstructions func([]ir.Instruction)
+	appendTypeDiagnostics := func(typeName string, pos int) {
+		if seen == nil {
+			seen = make(map[string]bool)
+		}
+		start := bodyOffset + semaIRExpressionTypeReferenceStart(body, pos, typeName)
+		diagnostics = append(diagnostics, a.expressionTypeReferenceDiagnostics(typ, member, typeName, start, source, seen)...)
+	}
+	walkExpr = func(expr ir.Expr, pos int) {
+		if expr.Kind == "" {
+			return
+		}
+		switch expr.Kind {
+		case ir.ExprCall:
+			if strings.HasPrefix(expr.Callee, "__cast:") {
+				typeName := strings.TrimPrefix(expr.Callee, "__cast:")
+				appendTypeDiagnostics(typeName, pos)
+			}
+			if expr.Left != nil {
+				walkExpr(*expr.Left, pos)
+			}
+			for _, arg := range expr.Args {
+				walkExpr(arg, pos)
+			}
+			for _, arg := range expr.NamedArgs {
+				walkExpr(arg.Expr, pos)
+			}
+		case ir.ExprUnary:
+			if expr.Left != nil {
+				walkExpr(*expr.Left, pos)
+			}
+			if expr.Right != nil {
+				walkExpr(*expr.Right, pos)
+			}
+		case ir.ExprBinary:
+			if expr.Left != nil {
+				walkExpr(*expr.Left, pos)
+			}
+			if strings.EqualFold(expr.Operator, "instanceof") {
+				if expr.Right != nil {
+					typeName := expr.Right.Name
+					appendTypeDiagnostics(typeName, pos)
+				}
+				return
+			}
+			if expr.Right != nil {
+				walkExpr(*expr.Right, pos)
+			}
+		}
+	}
+	walkInstruction = func(inst ir.Instruction) {
+		walkExpr(inst.Expr, inst.Pos)
+		if inst.Init != nil {
+			walkInstruction(*inst.Init)
+		}
+		walkInstructions(inst.Inits)
+		if inst.Update != nil {
+			walkInstruction(*inst.Update)
+		}
+		walkInstructions(inst.Updates)
+		walkInstructions(inst.Then)
+		walkInstructions(inst.Else)
+		walkInstructions(inst.Catch)
+		for _, catchClause := range inst.Catches {
+			walkInstructions(catchClause.Body)
+		}
+		walkInstructions(inst.Finally)
+		for _, switchCase := range inst.Cases {
+			for _, expr := range switchCase.Exprs {
+				walkExpr(expr, switchCase.Pos)
+			}
+			walkInstructions(switchCase.Body)
+		}
+	}
+	walkInstructions = func(instructions []ir.Instruction) {
+		for _, inst := range instructions {
+			walkInstruction(inst)
+		}
+	}
+	walkInstructions(instructions)
 	return diagnostics
+}
+
+func semaIRExpressionTypeReferenceStart(body string, pos int, typeName string) int {
+	if pos < 0 || pos > len(body) {
+		pos = 0
+	}
+	if typeName == "" {
+		return pos
+	}
+	if idx := strings.Index(body[pos:], typeName); idx >= 0 {
+		return pos + idx
+	}
+	return pos
 }
 
 func semaNormalizeMemberTypes(model map[string]typeMembers, owner string, member typesys.MemberSymbol) typesys.MemberSymbol {
@@ -1010,6 +1121,9 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 				}
 				if diagnostics, handled := a.checkIRCollectionCall(typ, member, receiverTyp, methodName, expr.Args, scope, pos, bodyOffset, source, model); handled {
 					return diagnostics
+				}
+				if a.hasKnown(receiverTyp) {
+					return nil
 				}
 			}
 		}
@@ -1500,7 +1614,7 @@ func (a *Analyzer) checkIRAssignmentType(typ typesys.TypeSymbol, member typesys.
 	if strings.EqualFold(valueType, "void") && semaIRExprLooksLikeIndexAssignmentValue(expr, source, bodyOffset+pos) {
 		valueType = resolveNestedTypeReference(model, typ.Name, a.inferIRExprType(expr.Args[1], *scope, model, typ.Name))
 	}
-	if valueType == "" || valueType == "null" || semaAssignableToType(targetType, valueType, model) || (expr.Kind == ir.ExprSOQL && semaSOQLSingletonAssignable(targetType, valueType, "["+expr.Value+"]", model)) {
+	if valueType == "" || valueType == "null" || semaAssignableToType(targetType, valueType, model) || semaIRPlatformEnumTypeFieldAssignable(targetType, target, valueType, model) || (expr.Kind == ir.ExprSOQL && semaSOQLSingletonAssignable(targetType, valueType, "["+expr.Value+"]", model)) {
 		return nil
 	}
 	return []diagnostic.Diagnostic{{
@@ -1510,6 +1624,18 @@ func (a *Analyzer) checkIRAssignmentType(typ typesys.TypeSymbol, member typesys.
 		File:     typ.File,
 		Range:    semaRange(source, bodyOffset+pos, bodyOffset+pos+max(1, len(target))),
 	}}
+}
+
+func semaIRPlatformEnumTypeFieldAssignable(targetType, target, valueType string, model map[string]typeMembers) bool {
+	if !strings.EqualFold(targetType, "String") {
+		return false
+	}
+	lastDot := strings.LastIndex(target, ".")
+	if lastDot < 0 || !strings.EqualFold(target[lastDot+1:], "type") {
+		return false
+	}
+	members, _, ok := semaLookupTypeMembers(model, valueType)
+	return ok && members.dependency && members.kind == apexast.DeclarationEnum
 }
 
 func semaIRExprLooksLikeIndexAssignmentValue(expr ir.Expr, source string, pos int) bool {

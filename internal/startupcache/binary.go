@@ -240,8 +240,7 @@ func writeSplitTestCache(entry *Entry, subdir string) error {
 		}
 		sum := hex.EncodeToString(hasher.Sum(nil))
 		payloadFile := payloadFilePrefix + sum + payloadFileSuffix
-		payloadPath := filepath.Join(cacheDir, payloadFile)
-		if err := os.Rename(tmpPath, payloadPath); err != nil {
+		if err := activateTestPayload(cacheDir, tmpPath, payloadFile, counting.n); err != nil {
 			return err
 		}
 		header := testCacheHeader{
@@ -265,6 +264,18 @@ func writeSplitTestCache(entry *Entry, subdir string) error {
 		return writeErr
 	}
 	return nil
+}
+
+func activateTestPayload(cacheDir, tmpPath, payloadFile string, payloadSize int64) error {
+	payloadPath := filepath.Join(cacheDir, payloadFile)
+	if info, err := os.Stat(payloadPath); err == nil {
+		if info.Size() == payloadSize {
+			return os.Remove(tmpPath)
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	return os.Rename(tmpPath, payloadPath)
 }
 
 func writeTestCacheHeader(cacheDir string, header testCacheHeader) error {

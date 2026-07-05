@@ -2250,6 +2250,45 @@ func TestStaticValueRefIndexTracksContainingFields(t *testing.T) {
 	}
 }
 
+func TestDeclaredSchemaMapCannotContainCollectionAliasRef(t *testing.T) {
+	describes := Map()
+	describes.Type = "Schema.GlobalDescribeMap"
+	describes.Map[mapKey(String("Account"))] = Object("Schema.SObjectType")
+	describes.MapKeys[mapKey(String("Account"))] = String("Account")
+	target := Map()
+
+	if !valueCannotContainAliasRef(describes, target.Ref, target.Kind) {
+		t.Fatal("declared schema map should not be scanned for collection aliases")
+	}
+
+	generic := describes
+	generic.Type = "Map<String,Object>"
+	if valueCannotContainAliasRef(generic, target.Ref, target.Kind) {
+		t.Fatal("generic object map may contain collection aliases")
+	}
+}
+
+func TestAliasContainmentCacheDoesNotHideObjectFieldMutation(t *testing.T) {
+	machine := New(nil)
+	target := List()
+	holder := Object("Holder")
+	wrappers := List(holder)
+	scope := map[string]Value{"wrappers": wrappers}
+
+	machine.propagateAliasSnapshotToScope(scope, snapshotAlias(target), target)
+
+	machine.setObjectFieldValue(&holder, "Nested", target)
+	wrappers.List[0] = holder
+	updated := target
+	updated.List = append(updated.List, String("added"))
+	machine.propagateAliasSnapshotToScope(scope, snapshotAlias(target), updated)
+
+	got := scope["wrappers"].List[0].Fields["Nested"]
+	if len(got.List) != 1 || got.List[0].Text != "added" {
+		t.Fatalf("nested list alias = %#v, want updated list", got)
+	}
+}
+
 func TestPropagateAliasSnapshotToStaticsUsesLearnedChildHint(t *testing.T) {
 	ResetPerfCounters()
 	SetPerfCountersEnabled(true)
@@ -6170,6 +6209,228 @@ System.assertEquals(1, factory.construct(records));
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecSubclassFieldShadowsBaseRecordsAfterSuperConstructor(t *testing.T) {
+	baseCtor, err := CompileAnonymous("this.Records = records.clone();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wrapperCtor, err := CompileAnonymous("this.record = record;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	toListProgram, err := CompileAnonymous(`
+List<Wrapper> out = new List<Wrapper>();
+for (SObject record : records) {
+	out.add(new Wrapper(record));
+}
+return out;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	childCtor, err := CompileAnonymous("super(records); this.Records = Wrapper.toList(records);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	handleProgram, err := CompileAnonymous("onBeforeInsert();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	onBeforeInsertProgram, err := CompileAnonymous(`
+Integer count = 0;
+for (Wrapper wrapper : Records) {
+	count++;
+}
+System.assertEquals(1, count);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<SObject> records = new Account[] { new Account(Name = 'Acme') };
+BaseDomain domain = new Child(records);
+domain.handleBeforeInsert();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "BaseDomain",
+		Fields: map[string]Field{
+			"Records": {Name: "Records", Type: "List<SObject>"},
+		},
+		Constructors: []Method{{
+			Name:          "BaseDomain.<init>",
+			ClassName:     "BaseDomain",
+			Params:        []Param{{Name: "records", Type: "List<SObject>"}},
+			Program:       baseCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"handleBeforeInsert": {Name: "BaseDomain.handleBeforeInsert", ClassName: "BaseDomain", ReturnType: "void", Program: handleProgram},
+			"onBeforeInsert":     {Name: "BaseDomain.onBeforeInsert", ClassName: "BaseDomain", ReturnType: "void", Modifiers: []string{"virtual"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Wrapper",
+		Fields: map[string]Field{
+			"record": {Name: "record", Type: "SObject"},
+		},
+		Constructors: []Method{{
+			Name:          "Wrapper.<init>",
+			ClassName:     "Wrapper",
+			Params:        []Param{{Name: "record", Type: "SObject"}},
+			Program:       wrapperCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"toList": {Name: "Wrapper.toList", ClassName: "Wrapper", ReturnType: "List<Wrapper>", Params: []Param{{Name: "records", Type: "List<SObject>"}}, Program: toListProgram, IsStatic: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "BaseDomain",
+		Fields: map[string]Field{
+			"Records": {Name: "Records", Type: "List<Wrapper>"},
+		},
+		Constructors: []Method{{
+			Name:          "Child.<init>",
+			ClassName:     "Child",
+			Params:        []Param{{Name: "records", Type: "List<SObject>"}},
+			Program:       childCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"onBeforeInsert": {Name: "Child.onBeforeInsert", ClassName: "Child", ReturnType: "void", Program: onBeforeInsertProgram, Modifiers: []string{"override"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFrameworkDomainTriggerHandlerPreservesSubclassRecordsShadow(t *testing.T) {
+	baseCtor, err := CompileAnonymous("this.Records = records.clone();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	handleProgram, err := CompileAnonymous("onBeforeInsert();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wrapperCtor, err := CompileAnonymous("this.record = record;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	toListProgram, err := CompileAnonymous(`
+List<Wrapper> out = new List<Wrapper>();
+for (SObject record : records) {
+	out.add(new Wrapper(record));
+}
+return out;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	childCtor, err := CompileAnonymous("super(records); this.Records = Wrapper.toList(records);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	onBeforeInsertProgram, err := CompileAnonymous(`
+Integer count = 0;
+for (Wrapper wrapper : Records) {
+	count++;
+}
+System.assertEquals(1, count);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "fflib_SObjectDomain",
+		Fields: map[string]Field{
+			"Records": {Name: "Records", Type: "List<SObject>"},
+		},
+		Constructors: []Method{{
+			Name:          "fflib_SObjectDomain.<init>",
+			ClassName:     "fflib_SObjectDomain",
+			Params:        []Param{{Name: "records", Type: "List<SObject>"}},
+			Program:       baseCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"handleBeforeInsert": {Name: "fflib_SObjectDomain.handleBeforeInsert", ClassName: "fflib_SObjectDomain", ReturnType: "void", Program: handleProgram},
+			"onBeforeInsert":     {Name: "fflib_SObjectDomain.onBeforeInsert", ClassName: "fflib_SObjectDomain", ReturnType: "void", Modifiers: []string{"virtual"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Wrapper",
+		Fields: map[string]Field{
+			"record": {Name: "record", Type: "SObject"},
+		},
+		Constructors: []Method{{
+			Name:          "Wrapper.<init>",
+			ClassName:     "Wrapper",
+			Params:        []Param{{Name: "record", Type: "SObject"}},
+			Program:       wrapperCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"toList": {Name: "Wrapper.toList", ClassName: "Wrapper", ReturnType: "List<Wrapper>", Params: []Param{{Name: "records", Type: "List<SObject>"}}, Program: toListProgram, IsStatic: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "fflib_SObjectDomain",
+		Fields: map[string]Field{
+			"Records": {Name: "Records", Type: "List<Wrapper>"},
+		},
+		Constructors: []Method{{
+			Name:          "Child.<init>",
+			ClassName:     "Child",
+			Params:        []Param{{Name: "records", Type: "List<SObject>"}},
+			Program:       childCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"onBeforeInsert": {Name: "Child.onBeforeInsert", ClassName: "Child", ReturnType: "void", Program: onBeforeInsertProgram, Modifiers: []string{"override"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	record := Object("Account")
+	records := List(record)
+	records.Type = "List<Account>"
+	records.Static = "List<Account>"
+	machine.triggerGlobals = map[string]Value{
+		"Trigger.new":      records,
+		"Trigger.isBefore": Bool(true),
+		"Trigger.isInsert": Bool(true),
+	}
+	if _, _, err := machine.callFrameworkSObjectDomainTriggerHandlerForContextWithDomain("fflib_SObjectDomain", "Child", Null); err != nil {
+		t.Fatal(err)
+	}
+	updated := machine.triggerGlobals["Trigger.new"]
+	if len(updated.List) != 1 || updated.List[0].Type != "Account" {
+		t.Fatalf("Trigger.new = %#v, want original Account records", updated)
 	}
 }
 

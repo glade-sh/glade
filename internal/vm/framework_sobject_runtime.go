@@ -114,7 +114,7 @@ func (vm *VM) callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(frame
 		}
 	}
 	if domain.Kind == ValueObject {
-		domain = frameworkDomainWithRecords(domain, records)
+		domain = vm.frameworkDomainWithRecords(frameworkClassName, domain, records)
 	}
 	var err error
 	if domain.Kind != ValueObject {
@@ -134,7 +134,7 @@ func (vm *VM) callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(frame
 		}
 	}
 	if domain.Kind == ValueObject {
-		domain = frameworkDomainWithRecords(domain, records)
+		domain = vm.frameworkDomainWithRecords(frameworkClassName, domain, records)
 	}
 	handler := ""
 	switch {
@@ -187,7 +187,7 @@ func (vm *VM) callFrameworkSObjectDomainTriggerHandlerForContextWithDomain(frame
 		vm.pushFrameworkDomainTriggerState(domainClassName, domain)
 	}
 	if triggerBool(vm.triggerGlobals, "Trigger.isBefore") && !triggerBool(vm.triggerGlobals, "Trigger.isDelete") {
-		if records, ok := frameworkDomainRecords(domain); ok {
+		if records, ok := vm.frameworkDomainRecords(frameworkClassName, domain); ok {
 			vm.triggerGlobals["Trigger.new"] = records
 		}
 	}
@@ -296,12 +296,14 @@ func (vm *VM) constructDomainThroughFrameworkConstructor(constructorName string,
 	}
 	return vm.callMethodWithReceiver(construct, constructor, []Value{records}, resultForLookup())
 }
-func frameworkDomainRecords(domain Value) (Value, bool) {
+func (vm *VM) frameworkDomainRecords(frameworkClassName string, domain Value) (Value, bool) {
 	if domain.Kind != ValueObject {
 		return Null, false
 	}
-	if _, records, ok := objectFieldValue(domain, "Records"); ok && records.Kind == ValueList {
-		return records, true
+	if vm.frameworkDomainRecordsFieldOwnedByFramework(frameworkClassName, domain.Type) {
+		if _, records, ok := objectFieldValue(domain, "Records"); ok && records.Kind == ValueList {
+			return records, true
+		}
 	}
 	if _, records, ok := objectFieldValue(domain, "objects"); ok && records.Kind == ValueList {
 		return records, true
@@ -309,14 +311,18 @@ func frameworkDomainRecords(domain Value) (Value, bool) {
 	return Null, false
 }
 
-func frameworkDomainWithRecords(domain Value, records Value) Value {
+func (vm *VM) frameworkDomainWithRecords(frameworkClassName string, domain Value, records Value) Value {
 	if domain.Kind != ValueObject || records.Kind != ValueList {
 		return domain
 	}
 	if domain.Fields == nil {
 		domain.Fields = make(map[string]Value)
 	}
-	if actual, _, ok := objectFieldValue(domain, "Records"); ok {
+	if vm.frameworkDomainRecordsFieldOwnedByFramework(frameworkClassName, domain.Type) {
+		actual := "Records"
+		if found, _, ok := objectFieldValue(domain, "Records"); ok {
+			actual = found
+		}
 		domain.Fields[actual] = records
 		return domain
 	}
@@ -324,8 +330,47 @@ func frameworkDomainWithRecords(domain Value, records Value) Value {
 		domain.Fields[actual] = records
 		return domain
 	}
+	if _, _, ok := vm.lookupExactReceiverField(domain.Type, "Records"); ok {
+		return domain
+	}
 	domain.Fields["Records"] = records
 	return domain
+}
+
+func (vm *VM) frameworkDomainRecordsFieldOwnedByFramework(frameworkClassName, domainType string) bool {
+	if vm == nil || strings.TrimSpace(domainType) == "" {
+		return false
+	}
+	_, owner, ok := vm.lookupExactReceiverField(domainType, "Records")
+	if !ok {
+		return false
+	}
+	for _, candidate := range frameworkSObjectDomainClassCandidates(frameworkClassName) {
+		if sameFrameworkClassName(owner, candidate) {
+			return true
+		}
+	}
+	return false
+}
+
+func sameFrameworkClassName(owner, candidate string) bool {
+	owner = strings.TrimSpace(owner)
+	candidate = strings.TrimSpace(candidate)
+	if owner == "" || candidate == "" {
+		return false
+	}
+	if strings.EqualFold(owner, candidate) {
+		return true
+	}
+	ownerBase := owner
+	if dot := strings.LastIndexByte(ownerBase, '.'); dot >= 0 {
+		ownerBase = ownerBase[dot+1:]
+	}
+	candidateBase := candidate
+	if dot := strings.LastIndexByte(candidateBase, '.'); dot >= 0 {
+		candidateBase = candidateBase[dot+1:]
+	}
+	return strings.EqualFold(ownerBase, candidateBase)
 }
 func (vm *VM) callFrameworkSObjectDescribe(receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
 	token, ok := frameworkSObjectDescribeToken(receiver)

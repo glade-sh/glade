@@ -6,6 +6,7 @@ import (
 )
 
 func TestPublicCorpusAllowsStaticMethodCallThroughInstance(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "StaticThroughInstance.cls"), `
 public class StaticThroughInstance {

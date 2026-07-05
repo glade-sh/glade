@@ -12,6 +12,7 @@ import (
 )
 
 func TestAnalyzeSOQLQueryDiagnosticsUseSchemaResolution(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -31,6 +32,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeSOQLRelationshipAndAggregateAliasDiagnostics(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -50,6 +52,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeQuerySemanticsAcceptsKnownStandardObjectsWithoutProjectMetadata(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -71,6 +74,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeQuerySemanticsUsesGeneratedStandardRelationshipShape(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run(Set<Id> accountIds) {
@@ -91,6 +95,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeQuerySemanticsMergesStandardFieldsIntoProjectStandardObject(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -113,6 +118,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeQuerySemanticsResolvesProjectLocalObjectNamesAgainstNamespacedSchema(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -134,6 +140,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeQuerySemanticsResolvesNamespacedStandardObjectExtensionField(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -154,6 +161,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeQuerySemanticsAllowsCurrentObjectQualifiedFields(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -175,6 +183,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeQuerySemanticsCopiesActivityFieldsToTaskAndEvent(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -198,6 +207,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeQuerySemanticsIncludesEventIsClosed(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -211,6 +221,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeQuerySemanticsMergesExtensionFieldsOnDuplicateObjects(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -238,6 +249,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeQuerySemanticsAddsSystemFieldsToCustomObjects(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -266,6 +278,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeQuerySemanticsAcceptsSetupOwnerTypeOnHierarchySettings(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -286,6 +299,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeQuerySemanticsAddsFeatureAndMetadataStandardFields(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -305,6 +319,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeQuerySemanticsUsesStandardChildRelationshipFallback(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -318,6 +333,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeQuerySemanticsUsesProjectReferencedPackageFieldShape(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run(Id entityId) {
@@ -350,6 +366,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeQuerySemanticsLeavesExternalManagedPackageShapeOpen(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -380,6 +397,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeQuerySemanticsKeepsLocalManagedPackageShapeStrict(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -400,7 +418,53 @@ public class QueryProbe {
 	assertDiagnosticAt(t, result, "GLADESEMA_QUERY_FIELD", "localpkg__Missing__c", 5, 18)
 }
 
+func TestQuerySemanticsEmailMessageParentPrefersStandardCase(t *testing.T) {
+	t.Parallel()
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<EmailMessage> rows = [
+      SELECT Subject, parent.Status, parent.caseNumber, parent.Contact.Name, parent.IsEscalated, parent.Subject
+      FROM EmailMessage
+    ];
+  }
+}
+`
+	result := analyzeQueryProbe(t, source, schema.Schema{Objects: []schema.Object{{
+		Name: "Case",
+		Fields: []schema.Field{
+			{Name: "HVEMPreviousQueue__c", Type: "Text"},
+		},
+	}}})
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "parent.Status")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "parent.caseNumber")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_RELATIONSHIP", "parent.Contact.Name")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "parent.IsEscalated")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "parent.Subject")
+}
+
+func TestQuerySemanticsKeepsInferredObjectsPartial(t *testing.T) {
+	t.Parallel()
+	source := `
+public class QueryProbe {
+  public void run(Id caseId) {
+    List<ASR_Survey_Log__c> logs = [
+      SELECT Id
+      FROM ASR_Survey_Log__c
+      WHERE Case__c = :caseId
+    ];
+  }
+}
+`
+	result := analyzeQueryProbe(t, source, schema.Schema{})
+
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_OBJECT", "ASR_Survey_Log__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "ASR_Survey_Log__c.Case__c")
+}
+
 func TestAnalyzeQuerySemanticsIgnoresSOQLComments(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -429,6 +493,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeQuerySemanticsAcceptsLocationComponentFields(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -448,6 +513,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeSOQLTypeofBranchObjectDiagnostics(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -461,6 +527,7 @@ public class QueryProbe {
 }
 
 func TestAnalyzeSOSLReturningFieldDiagnostics(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {

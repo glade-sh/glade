@@ -10,6 +10,7 @@ import (
 )
 
 func TestPublicCorpusOpportunityContactRolesStandardChildRelationship(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -26,6 +27,7 @@ public class QueryProbe {
 }
 
 func TestPublicCorpusOpportunityContactRolesAfterDynamicQuery(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesOpportunityContactRoles.cls"), `
 public class UsesOpportunityContactRoles {
@@ -46,6 +48,7 @@ public class UsesOpportunityContactRoles {
 }
 
 func TestPublicCorpusOpportunityContactRolesWithProjectOpportunityFields(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesOpportunityContactRoles.cls"), `
 public class UsesOpportunityContactRoles {
@@ -65,6 +68,7 @@ public class UsesOpportunityContactRoles {
 }
 
 func TestPublicCorpusOpportunityContactRolesInNamespacedProject(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesOpportunityContactRoles.cls"), `
 public class UsesOpportunityContactRoles {
@@ -89,6 +93,7 @@ public class UsesOpportunityContactRoles {
 }
 
 func TestPublicCorpusPackageRelationshipToStandardObjectWithoutLookupMetadata(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -110,6 +115,7 @@ public class QueryProbe {
 }
 
 func TestPublicCorpusLocalPackageRelationshipToStandardObjectWithoutLookupMetadata(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -129,6 +135,7 @@ public class QueryProbe {
 }
 
 func TestPublicCorpusPackageRelationshipMetadataTargetCanonicalizesStandardObject(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -155,6 +162,7 @@ public class QueryProbe {
 }
 
 func TestPublicCorpusExternalPackageRelationshipMetadataTargetCanonicalizesStandardObject(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -181,6 +189,7 @@ public class QueryProbe {
 }
 
 func TestPublicCorpusPackageRelationshipEmptyProjectTargetCanonicalizesStandardObject(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -208,6 +217,7 @@ public class QueryProbe {
 }
 
 func TestPublicCorpusPackageRelationshipLocalNameCanonicalizesStandardObject(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -234,6 +244,7 @@ public class QueryProbe {
 }
 
 func TestPublicCorpusPackageRelationshipPrefersProjectCustomObjectOverStandardName(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -268,6 +279,7 @@ public class QueryProbe {
 }
 
 func TestPublicCorpusExternalPackageObjectFieldNamespaceEquivalence(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -301,6 +313,7 @@ public class QueryProbe {
 }
 
 func TestPublicCorpusPackageChildRelationshipWithoutLookupMetadata(t *testing.T) {
+	t.Parallel()
 	source := `
 public class QueryProbe {
   public void run() {
@@ -320,6 +333,7 @@ public class QueryProbe {
 }
 
 func TestPublicCorpusNamespacedQueryObjectMatchesLocalMetadata(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "BatchJobScheduler.cls"), `
 public class BatchJobScheduler {

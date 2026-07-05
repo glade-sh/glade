@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -4570,6 +4571,69 @@ private class WarmTwoTest {
 	}
 }
 
+func TestRunTestDaemonChangedSinceNarrowsMultipleAffectedClasses(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not available")
+	}
+	root := t.TempDir()
+	runGitCLI(t, root, "init")
+	runGitCLI(t, root, "config", "user.email", "glade@example.test")
+	runGitCLI(t, root, "config", "user.name", "GLADE")
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/Helper.cls"), `
+public class Helper {
+  public static void touch() {}
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/WarmOneTest.cls"), `
+@isTest
+private class WarmOneTest {
+  @isTest static void passes() {
+    Helper.touch();
+    System.assert(true);
+  }
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/WarmTwoTest.cls"), `
+@isTest
+private class WarmTwoTest {
+  @isTest static void passes() {
+    Helper.touch();
+    System.assert(true);
+  }
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/WarmThreeTest.cls"), `
+@isTest
+private class WarmThreeTest {
+  @isTest static void passes() {
+    System.assert(true);
+  }
+}
+`)
+	runGitCLI(t, root, "add", ".")
+	runGitCLI(t, root, "commit", "-m", "baseline")
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/Helper.cls"), `
+public class Helper {
+  public static void touch() {
+    // changed implementation detail
+  }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--daemon", "--changed-since", "HEAD", "--json", "--no-progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"total": 2`) || !strings.Contains(stdout.String(), `"passed": 2`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+	if strings.Contains(stdout.String(), "WarmThreeTest") {
+		t.Fatalf("daemon changed-since ran unselected class: %q", stdout.String())
+	}
+}
+
 func TestRunTestDaemonStatusNoServer(t *testing.T) {
 	root := t.TempDir()
 	var stdout, stderr bytes.Buffer
@@ -4745,6 +4809,14 @@ private class CacheHintTest {
 	}
 	if !strings.Contains(stderr.String(), "startup cache:") {
 		t.Fatalf("stderr missing cache hint:\n%s", stderr.String())
+	}
+}
+
+func runGitCLI(t *testing.T, root string, args ...string) {
+	t.Helper()
+	cmd := exec.Command("git", append([]string{"-C", root}, args...)...)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git %v: %v\n%s", args, err, out)
 	}
 }
 

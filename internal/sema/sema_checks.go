@@ -487,6 +487,9 @@ func (c querySemanticsChecker) hasFieldMetadata(objectName string) bool {
 	if !ok {
 		return false
 	}
+	if object.Partial {
+		return false
+	}
 	fields, ok := c.fields[normalizeName(object.Name)]
 	return ok && len(fields) > 0
 }
@@ -1887,9 +1890,10 @@ func databaseBatchableStartReturnCompatible(itemType, returnType string, model m
 		semaAssignableToType(args[0], itemType, model)
 }
 
-func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, scopes semaScopeModel, model map[string]typeMembers) []diagnostic.Diagnostic {
+func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model map[string]typeMembers) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
-	for _, match := range assignmentPattern.FindAllStringSubmatchIndex(body, -1) {
+	body := scan.body
+	for _, match := range scan.assignmentMatches {
 		if semaOffsetInIgnoredText(body, match[0]) {
 			continue
 		}
@@ -1935,14 +1939,15 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 	}
 	return diagnostics
 }
-func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, scopes semaScopeModel, model map[string]typeMembers) []diagnostic.Diagnostic {
+func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model map[string]typeMembers) []diagnostic.Diagnostic {
 	if member.Type == "" {
 		return nil
 	}
+	body := scan.body
 	var diagnostics []diagnostic.Diagnostic
 	returnType := strings.TrimSpace(member.Type)
 	foundReturn := false
-	for _, match := range returnPattern.FindAllStringSubmatchIndex(body, -1) {
+	for _, match := range scan.returnMatches {
 		if semaReturnMatchInIgnoredText(body, match) {
 			continue
 		}
@@ -1985,10 +1990,10 @@ func semaBodyContainsReturnKeyword(body string) bool {
 
 var semaReturnKeywordPattern = regexp.MustCompile(`\breturn\b`)
 
-func (a *Analyzer) checkBodyTernaryConditions(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, scopes semaScopeModel, model map[string]typeMembers) []diagnostic.Diagnostic {
+func (a *Analyzer) checkBodyTernaryConditions(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model map[string]typeMembers) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	seen := make(map[int]bool)
-	for _, expr := range semaBodyExpressions(body) {
+	for _, expr := range scan.expressions() {
 		if seen[expr.start] {
 			continue
 		}
@@ -2026,10 +2031,10 @@ func checkSemaTernaryCondition(typ typesys.TypeSymbol, member typesys.MemberSymb
 	diagnostics = append(diagnostics, checkSemaTernaryCondition(typ, member, whenFalse, falseStart, source, scope, model)...)
 	return diagnostics
 }
-func (a *Analyzer) checkBodyExpressionTypeReferences(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string) []diagnostic.Diagnostic {
+func (a *Analyzer) checkBodyExpressionTypeReferences(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	seen := make(map[string]bool)
-	for _, expr := range semaBodyExpressions(body) {
+	for _, expr := range scan.expressions() {
 		diagnostics = append(diagnostics, a.checkSemaExpressionTypeReferences(typ, member, expr.text, bodyOffset+expr.start, source, seen)...)
 	}
 	return diagnostics

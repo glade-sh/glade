@@ -10,6 +10,7 @@ import (
 )
 
 func TestAnalyzeExpressionPrecedenceLocalThenClassThenNamespace(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Database.cls"), `
 public class Database {
@@ -33,6 +34,7 @@ public class UsesPrecedence {
 }
 
 func TestAnalyzeSystemQualifierDisambiguatesShadowedDatabase(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Database.cls"), `
 public class Database {
@@ -55,6 +57,7 @@ public class UsesSystemDatabase {
 }
 
 func TestAnalyzeSchemaQualifierDisambiguatesShadowedSObject(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Account.cls"), `
 public class Account {
@@ -84,6 +87,7 @@ public class UsesSchemaAccount {
 }
 
 func TestAnalyzeInnerTypeWinsBeforeNamespaceType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Outer.cls"), `
 public class Outer {

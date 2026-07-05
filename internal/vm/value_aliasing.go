@@ -128,6 +128,7 @@ func (vm *VM) propagateCollectionMutation(previous, updated Value) {
 		return
 	}
 	vm.collectionMutationSeq++
+	vm.recordCollectionMutation(updated.Ref)
 	vm.propagateValueMutationToScope(vm.Globals, previous, updated)
 	vm.propagateValueMutationToStatics(previous, updated)
 }
@@ -141,6 +142,7 @@ func (vm *VM) propagateCollectionMutationFromSnapshot(previous aliasSnapshot, up
 		return
 	}
 	vm.collectionMutationSeq++
+	vm.recordCollectionMutation(updated.Ref)
 	vm.propagateTopLevelCollectionAliases(vm.Globals, updated)
 	localOnly := vm.localOnlyCollectionAlias(previous)
 	if !localOnly {
@@ -588,6 +590,10 @@ func (vm *VM) propagateAliasSnapshotToScope(scope map[string]Value, previous ali
 			continue
 		}
 		clearRefSeen(seen)
+		if !vm.valueContainsAliasRefCached(value, previous, seen) {
+			continue
+		}
+		clearRefSeen(seen)
 		replaced, changed := replaceAliasSnapshot(value, previous, updated, seen)
 		if changed {
 			scope[name] = replaced
@@ -1000,7 +1006,6 @@ func (vm *VM) replaceStaticValueRefsInField(previous, value Value, location stat
 	}
 	if sameStaticCollectionWriteback(previous, value) {
 		vm.forgetStaticAliasDirectChildrenInField(location)
-		vm.collectStaticFieldValueRefsInField(value, location)
 		return
 	}
 	vm.forgetStaticAliasChildHintsInField(location)
@@ -1010,6 +1015,10 @@ func (vm *VM) replaceStaticValueRefsInField(previous, value Value, location stat
 }
 func (vm *VM) rememberAdditionalStaticValueRefsInField(previous, value Value, location staticFieldRef) {
 	if vm.staticValueRefs == nil || vm.staticValueRefFields == nil {
+		return
+	}
+	if sameStaticCollectionWriteback(previous, value) {
+		vm.collectAdditionalStaticFieldValueRefsInField(value, location)
 		return
 	}
 	if sameStaticCollectionRefSurface(previous, value) {
@@ -1035,6 +1044,13 @@ func (vm *VM) rememberStaticAliasUpdateRefs(previous aliasSnapshot, updated Valu
 		}
 	}
 	vm.collectStaticFieldValueRefsInField(updated, location)
+}
+func (vm *VM) collectAdditionalStaticFieldValueRefsInField(value Value, location staticFieldRef) {
+	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
+	seen := *seenPtr
+	clear(seen)
+	defer aliasRefSetPool.Put(seenPtr)
+	collectAdditionalStaticFieldValueRefs(value, vm.staticValueRefs, vm.staticValueRefFields, location, seen, true)
 }
 func (vm *VM) collectStaticFieldValueRefsInField(value Value, location staticFieldRef) {
 	seenPtr := aliasRefSetPool.Get().(*map[uint64]bool)
@@ -1170,6 +1186,147 @@ func (vm *VM) collectStaticValueRefs() (map[uint64]bool, map[uint64]staticFieldR
 	}
 	return refs, fields
 }
+
+type aliasContainmentCacheKey struct {
+	ValueRef     uint64
+	ValueKind    ValueKind
+	ValueType    string
+	PreviousRef  uint64
+	PreviousKind ValueKind
+	MutationSeq  uint64
+}
+
+func (vm *VM) recordCollectionMutation(ref uint64) {
+	if vm == nil || ref == 0 {
+		return
+	}
+	if vm.collectionRefMutationSeq == nil {
+		vm.collectionRefMutationSeq = make(map[uint64]uint64)
+	}
+	vm.collectionRefMutationSeq[ref] = vm.collectionMutationSeq
+	if len(vm.aliasContainmentCache) > 16384 {
+		clear(vm.aliasContainmentCache)
+	}
+}
+
+func (vm *VM) collectionRefMutationVersion(ref uint64) uint64 {
+	if vm == nil || ref == 0 || vm.collectionRefMutationSeq == nil {
+		return 0
+	}
+	return vm.collectionRefMutationSeq[ref]
+}
+
+func (vm *VM) valueContainsAliasRefCached(value Value, previous aliasSnapshot, seen map[uint64]bool) bool {
+	if !previous.valid() {
+		return false
+	}
+	var cacheKey aliasContainmentCacheKey
+	cacheable := false
+	if value.Ref != 0 {
+		if value.Ref == previous.ref && value.Kind == previous.kind {
+			return true
+		}
+		if seen[value.Ref] {
+			return false
+		}
+		seen[value.Ref] = true
+		if cacheableAliasContainmentKind(value.Kind) {
+			cacheable = true
+			cacheKey = aliasContainmentCacheKey{
+				ValueRef:     value.Ref,
+				ValueKind:    value.Kind,
+				ValueType:    firstAliasContainmentType(value),
+				PreviousRef:  previous.ref,
+				PreviousKind: previous.kind,
+				MutationSeq:  vm.collectionRefMutationVersion(value.Ref),
+			}
+			if vm != nil && vm.aliasContainmentCache != nil && vm.aliasContainmentCache[cacheKey] {
+				return false
+			}
+		}
+	}
+	if valueCannotContainAliasRef(value, previous.ref, previous.kind) {
+		if cacheable {
+			vm.rememberAliasContainmentMiss(cacheKey)
+		}
+		return false
+	}
+	found := false
+	switch value.Kind {
+	case ValueObject:
+		for _, child := range value.Fields {
+			if vm.valueContainsAliasRefCached(child, previous, seen) {
+				found = true
+				break
+			}
+		}
+	case ValueMap:
+		for _, child := range value.Map {
+			if vm.valueContainsAliasRefCached(child, previous, seen) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			for _, child := range value.MapKeys {
+				if vm.valueContainsAliasRefCached(child, previous, seen) {
+					found = true
+					break
+				}
+			}
+		}
+	case ValueList:
+		for _, child := range value.List {
+			if vm.valueContainsAliasRefCached(child, previous, seen) {
+				found = true
+				break
+			}
+		}
+	case ValueSet:
+		for _, child := range value.Set {
+			if vm.valueContainsAliasRefCached(child, previous, seen) {
+				found = true
+				break
+			}
+		}
+	}
+	if cacheable && !found {
+		vm.rememberAliasContainmentMiss(cacheKey)
+	}
+	return found
+}
+
+func firstAliasContainmentType(value Value) string {
+	if strings.TrimSpace(value.Type) != "" {
+		return value.Type
+	}
+	if strings.TrimSpace(value.Static) != "" {
+		return value.Static
+	}
+	return value.Runtime
+}
+
+func (vm *VM) rememberAliasContainmentMiss(key aliasContainmentCacheKey) {
+	if vm == nil || key.ValueRef == 0 || key.PreviousRef == 0 {
+		return
+	}
+	if strings.TrimSpace(key.ValueType) == "" {
+		return
+	}
+	if vm.aliasContainmentCache == nil {
+		vm.aliasContainmentCache = make(map[aliasContainmentCacheKey]bool)
+	}
+	vm.aliasContainmentCache[key] = true
+}
+
+func cacheableAliasContainmentKind(kind ValueKind) bool {
+	switch kind {
+	case ValueList, ValueSet, ValueMap:
+		return true
+	default:
+		return false
+	}
+}
 func collectValueRefs(value Value, refs, seen map[uint64]bool) {
 	if value.Ref != 0 {
 		if seen[value.Ref] {
@@ -1233,6 +1390,44 @@ func collectStaticFieldValueRefs(value Value, refs map[uint64]bool, fields map[u
 		}
 	}
 }
+func collectAdditionalStaticFieldValueRefs(value Value, refs map[uint64]bool, fields map[uint64]staticFieldRefSet, location staticFieldRef, seen map[uint64]bool, scanKnownChildren bool) {
+	if value.Ref != 0 {
+		if seen[value.Ref] {
+			return
+		}
+		seen[value.Ref] = true
+		locations := fields[value.Ref]
+		knownInField := refs[value.Ref] && locations.contains(location)
+		if !knownInField {
+			refs[value.Ref] = true
+			locations.add(location)
+			fields[value.Ref] = locations
+		} else if !scanKnownChildren {
+			return
+		}
+	}
+	switch value.Kind {
+	case ValueObject:
+		for _, child := range value.Fields {
+			collectAdditionalStaticFieldValueRefs(child, refs, fields, location, seen, false)
+		}
+	case ValueMap:
+		for _, child := range value.Map {
+			collectAdditionalStaticFieldValueRefs(child, refs, fields, location, seen, false)
+		}
+		for _, child := range value.MapKeys {
+			collectAdditionalStaticFieldValueRefs(child, refs, fields, location, seen, false)
+		}
+	case ValueList:
+		for _, child := range value.List {
+			collectAdditionalStaticFieldValueRefs(child, refs, fields, location, seen, false)
+		}
+	case ValueSet:
+		for _, child := range value.Set {
+			collectAdditionalStaticFieldValueRefs(child, refs, fields, location, seen, false)
+		}
+	}
+}
 
 type staticFieldRefSet struct {
 	single    staticFieldRef
@@ -1276,6 +1471,17 @@ func (s *staticFieldRefSet) remove(location staticFieldRef) bool {
 		s.many = nil
 	}
 	return true
+}
+
+func (s staticFieldRefSet) contains(location staticFieldRef) bool {
+	if s.hasSingle && s.single == location {
+		return true
+	}
+	if len(s.many) == 0 {
+		return false
+	}
+	_, ok := s.many[location]
+	return ok
 }
 
 func (s staticFieldRefSet) empty() bool {
@@ -2074,6 +2280,11 @@ func valueCannotContainAliasRef(value Value, previousRef uint64, previousKind Va
 	switch value.Kind {
 	case ValueNull, ValueInt, ValueDecimal, ValueBool, ValueString:
 		return true
+	}
+	if valueDeclaredTypesCannotContainAliasKind(value, previousKind) {
+		return true
+	}
+	switch value.Kind {
 	case ValueObject:
 		return value.Ref != previousRef && len(value.Fields) == 0
 	case ValueList:
@@ -2085,6 +2296,32 @@ func valueCannotContainAliasRef(value Value, previousRef uint64, previousKind Va
 	default:
 		return false
 	}
+}
+
+func valueDeclaredTypesCannotContainAliasKind(value Value, previousKind ValueKind) bool {
+	switch previousKind {
+	case ValueList, ValueSet, ValueMap:
+	default:
+		return false
+	}
+	sawType := false
+	sawType, canContain := declaredValueTypeCanContainAliasKind(value.Type, previousKind, sawType)
+	if canContain {
+		return false
+	}
+	sawType, canContain = declaredValueTypeCanContainAliasKind(value.Static, previousKind, sawType)
+	if canContain {
+		return false
+	}
+	sawType, canContain = declaredValueTypeCanContainAliasKind(value.Runtime, previousKind, sawType)
+	return sawType && !canContain
+}
+
+func declaredValueTypeCanContainAliasKind(typeName string, previousKind ValueKind, sawType bool) (bool, bool) {
+	if strings.TrimSpace(typeName) == "" {
+		return sawType, false
+	}
+	return true, declaredTypeCanContainAliasKind(typeName, previousKind)
 }
 func collectionAliasMatch(left, right Value) bool {
 	return valueAliasMatch(left, right)

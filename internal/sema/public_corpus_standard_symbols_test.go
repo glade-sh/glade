@@ -10,6 +10,7 @@ import (
 )
 
 func TestPublicCorpusStandardSymbolAssignments(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "PublicCorpusSymbols.cls"), `
 public class PublicCorpusSymbols {
@@ -52,6 +53,7 @@ public class PublicCorpusSymbols {
 }
 
 func TestPublicCorpusSObjectFieldDirectBooleanAccessors(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "FieldAccessors.cls"), `
 public class FieldAccessors {

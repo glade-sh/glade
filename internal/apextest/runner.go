@@ -282,6 +282,10 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 			planned[i].SetupOrg = org
 			planned[i].SetupShared = true
 		}
+		if len(baseMachine.Triggers) == 0 && allPlansSupportJournalIsolation(planned) {
+			runNoSetupJournalPlans(ctx, planned, results, baseMachine, baseRuntimeErr, triggerErrors, org, opts, runState.counters)
+			goto assemble
+		}
 		runTestPlans(ctx, planned, results, baseMachine, baseRuntimeErr, triggerErrors, opts, runState.counters)
 		goto assemble
 	}
@@ -713,6 +717,87 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 	wg.Wait()
 }
 
+func runNoSetupJournalPlans(ctx context.Context, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) {
+	parallelism := opts.Parallelism
+	emitProgress := opts.Progress != nil
+	classOrder := make([]string, 0)
+	classIndexes := make(map[string][]int)
+	for i, plan := range planned {
+		if results[i].Status != "" {
+			continue
+		}
+		className := plan.TestCase.ClassName
+		if _, ok := classIndexes[className]; !ok {
+			classOrder = append(classOrder, className)
+		}
+		classIndexes[className] = append(classIndexes[className], i)
+	}
+	if len(classOrder) == 0 {
+		return
+	}
+	if parallelism <= 1 || len(classOrder) <= 1 {
+		journal := storage.NewIsolationJournal(&org)
+		for _, className := range classOrder {
+			methodIndexes := append([]int(nil), classIndexes[className]...)
+			sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS)
+			for _, i := range methodIndexes {
+				runJournaledNoSetupPlan(ctx, i, planned, results, journal, 0, baseMachine, baseRuntimeErr, triggerErrors, opts, counters, emitProgress)
+			}
+		}
+		return
+	}
+	if parallelism > len(classOrder) {
+		parallelism = len(classOrder)
+	}
+	sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS)
+	jobs := make(chan string)
+	var wg sync.WaitGroup
+	for worker := 0; worker < parallelism; worker++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			workerOrg := cloneRuntimeOrgForClass(org, "", "test-worker", counters)
+			journal := storage.NewIsolationJournal(&workerOrg)
+			for className := range jobs {
+				methodIndexes := append([]int(nil), classIndexes[className]...)
+				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS)
+				for _, i := range methodIndexes {
+					runJournaledNoSetupPlan(ctx, i, planned, results, journal, 0, baseMachine, baseRuntimeErr, triggerErrors, opts, counters, emitProgress)
+				}
+			}
+		}()
+	}
+	for _, className := range classOrder {
+		jobs <- className
+	}
+	close(jobs)
+	wg.Wait()
+}
+
+func runJournaledNoSetupPlan(ctx context.Context, i int, planned []testCasePlan, results []testreport.Case, journal *storage.IsolationJournal, setupRandom uint64, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options, counters *runPerfCounters, emitProgress bool) {
+	if i < 0 || i >= len(planned) || results[i].Status != "" {
+		return
+	}
+	plan := planned[i]
+	if emitProgress {
+		reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
+	}
+	caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
+	mark := journal.Mark()
+	results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, *journal.Org(), setupRandom, opts, false, journal, counters)
+	if rollbackErr := journal.Rollback(mark); rollbackErr != nil && results[i].Problem == nil {
+		results[i].Status = testreport.StatusFail
+		results[i].Problem = problem("InternalError", rollbackErr.Error(), plan.TestCase)
+	}
+	recordJournalRollback(counters)
+	if caseCancel != nil {
+		caseCancel()
+	}
+	if emitProgress {
+		reportProgress(opts, TestProgress{Event: "test_done", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName, DurationMS: results[i].DurationMS, Status: string(results[i].Status)})
+	}
+}
+
 func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndexes map[string][]int, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) {
 	parallelism := opts.Parallelism
 	if parallelism <= 1 {
@@ -833,6 +918,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 
 var apexMergeDMLPattern = regexp.MustCompile(`(?i)\bmerge\s+(?:new\s+)?[A-Za-z_][A-Za-z0-9_]*`)
 var apexMetadataMutationPattern = regexp.MustCompile(`(?i)\bMetadata\s*\.`)
+var apexTestSetMockPattern = regexp.MustCompile(`(?i)\b(?:System\s*\.\s*)?Test\s*\.\s*setMock\s*\(`)
 
 type classIsolationProbeCache struct {
 	mu       sync.Mutex
@@ -851,6 +937,17 @@ func newClassIsolationProbeCache(readFile func(string) ([]byte, error)) *classIs
 }
 
 func classSupportsJournalIsolation(indexes []int, planned []testCasePlan) bool {
+	return newClassIsolationProbeCache(os.ReadFile).supportsJournalIsolation(indexes, planned)
+}
+
+func allPlansSupportJournalIsolation(planned []testCasePlan) bool {
+	if len(planned) == 0 {
+		return true
+	}
+	indexes := make([]int, len(planned))
+	for i := range planned {
+		indexes[i] = i
+	}
 	return newClassIsolationProbeCache(os.ReadFile).supportsJournalIsolation(indexes, planned)
 }
 
@@ -882,10 +979,9 @@ func (c *classIsolationProbeCache) fileSupportsJournalIsolation(file string) boo
 	c.mu.Unlock()
 
 	source, err := c.readFile(file)
-	supported := true
-	if err == nil && (apexMergeDMLPattern.Match(source) || apexMetadataMutationPattern.Match(source)) {
-		supported = false
-	}
+	supported := err != nil || !apexMergeDMLPattern.Match(source) &&
+		!apexMetadataMutationPattern.Match(source) &&
+		!apexTestSetMockPattern.Match(source)
 
 	c.mu.Lock()
 	c.files[file] = supported

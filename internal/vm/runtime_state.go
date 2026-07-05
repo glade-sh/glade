@@ -188,6 +188,8 @@ type VM struct {
 	staticAliasDirectChildren map[staticFieldRef]staticAliasDirectChildIndex
 	localOnlyCollectionRefs   map[uint64]bool
 	collectionMutationSeq     uint64
+	collectionRefMutationSeq  map[uint64]uint64
+	aliasContainmentCache     map[aliasContainmentCacheKey]bool
 	frameworkRecorderRollback *frameworkMethodCountRecorderRollback
 	runtimeArtifactsShared    bool
 }

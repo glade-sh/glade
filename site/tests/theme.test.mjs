@@ -140,9 +140,11 @@ test("home page names the latest stable release from release notes", () => {
 });
 
 test("release notes cover the next stable release", () => {
-  assert.match(releaseNotes, /^## v0\.2\.8 - 2026-06-28/m);
+  assert.match(releaseNotes, /^## v0\.2\.8 - 2026-07-04/m);
   assert.match(releaseNotes, /Terminal UI and local data workflows/);
+  assert.match(releaseNotes, /LWC Workbench Console/);
   assert.match(releaseNotes, /Apex debug log replay and editor analysis/);
+  assert.match(releaseNotes, /Runtime, semantic checks, and performance/);
   assert.match(releaseNotes, /Security and release trust/);
   assert.doesNotMatch(releaseNotes, /^## Unreleased\n\nNo changes yet\.\n\n## v0\.2\.7/m);
 });

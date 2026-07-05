@@ -12,6 +12,7 @@ import (
 )
 
 func TestAnalyzeAllowsSystemQualifiedTypesEverywhere(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "SystemQualifiedEverywhere.cls"), `
 public class SystemQualifiedEverywhere {
@@ -35,6 +36,7 @@ public class SystemQualifiedEverywhere {
 }
 
 func TestAnalyzeAllowsSchemaImplicitTypesEverywhere(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "SchemaImplicitEverywhere.cls"), `
 public class SchemaImplicitEverywhere {
@@ -58,6 +60,7 @@ public class SchemaImplicitEverywhere {
 }
 
 func TestAnalyzeAllowsNamespaceStaticMembersAndEnumValues(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "NamespaceStaticMembers.cls"), `
 public class NamespaceStaticMembers {
@@ -81,6 +84,7 @@ public class NamespaceStaticMembers {
 }
 
 func TestAnalyzeAllowsSystemQualifiedDatabaseInnerReturnTypes(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "SystemDatabaseInnerReturns.cls"), `
 public class SystemDatabaseInnerReturns {
@@ -101,6 +105,7 @@ public class SystemDatabaseInnerReturns {
 }
 
 func TestAnalyzeRestResourceHelperUsesSystemQualifiedRequestAndNestedCast(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "RestResourceHelper.cls"), `
 @RestResource(urlMapping='/helper/*')
@@ -127,6 +132,7 @@ global with sharing class RestResourceHelper {
 }
 
 func TestAnalyzeAllowsEveryDocumentedSystemQualifiedTypeSpelling(t *testing.T) {
+	t.Parallel()
 	typeNames := make([]string, 0, len(typesys.StandardSystemNamespaceTypeNames()))
 	for _, name := range typesys.StandardSystemNamespaceTypeNames() {
 		typeNames = append(typeNames, "System."+name)
@@ -138,6 +144,7 @@ func TestAnalyzeAllowsEveryDocumentedSystemQualifiedTypeSpelling(t *testing.T) {
 }
 
 func TestAnalyzeAllowsEveryDocumentedSchemaImplicitTypeSpelling(t *testing.T) {
+	t.Parallel()
 	result := analyzeSingleGeneratedClass(t, "UsesSchemaImplicit.cls", namespaceResolutionSourceForTypes("UsesSchemaImplicit", typesys.StandardSchemaNamespaceTypeNames()))
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics for documented Schema implicit types: %#v", result.Diagnostics)

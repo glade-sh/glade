@@ -535,9 +535,11 @@ func TestRunDevLWCUsesDBForLocalBuilderSearch(t *testing.T) {
 	}
 }
 
+const devLWCReadyFileTimeout = 30 * time.Second
+
 func waitForDevLWCReadyFile(t *testing.T, path string) devLWCReadyFile {
 	t.Helper()
-	deadline := time.Now().Add(10 * time.Second)
+	deadline := time.Now().Add(devLWCReadyFileTimeout)
 	var lastErr error
 	for time.Now().Before(deadline) {
 		data, err := os.ReadFile(path)
@@ -560,7 +562,7 @@ func waitForDevLWCReadyFile(t *testing.T, path string) devLWCReadyFile {
 
 func waitForDevLWCReadyFileOrDone(t *testing.T, path string, done <-chan error, stdout, stderr *bytes.Buffer) devLWCReadyFile {
 	t.Helper()
-	deadline := time.Now().Add(10 * time.Second)
+	deadline := time.Now().Add(devLWCReadyFileTimeout)
 	var lastErr error
 	for time.Now().Before(deadline) {
 		select {

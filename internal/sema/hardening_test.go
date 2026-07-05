@@ -8,6 +8,7 @@ import (
 )
 
 func TestNoPanicOnMalformedIndex(t *testing.T) {
+	t.Parallel()
 	indexes := []typesys.Index{
 		{},
 		{

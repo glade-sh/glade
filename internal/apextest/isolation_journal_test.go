@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/dml"
@@ -113,6 +114,141 @@ private class JournalReuseTest {
 	}
 	if stats.JournalRollbacks != 2 {
 		t.Fatalf("journal rollbacks = %d, want one per method", stats.JournalRollbacks)
+	}
+}
+
+func TestRunNoSetupSingleMethodClassesUseSharedJournal(t *testing.T) {
+	ResetPerfCounters()
+	storage.ResetCloneStats()
+	t.Cleanup(ResetPerfCounters)
+	t.Cleanup(storage.ResetCloneStats)
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	for _, name := range []string{"Alpha", "Beta", "Gamma"} {
+		writeFile(t, filepath.Join(root, "force-app/main/classes/JournalNoSetup"+name+"Test.cls"), `
+@isTest
+private class JournalNoSetup`+name+`Test {
+  @isTest static void mutatesOrg() {
+    System.assertEquals(0, [SELECT count() FROM Account]);
+    insert new Account(Name = '`+name+`');
+  }
+}
+`)
+	}
+
+	run := Run(loadTestIndex(t, root), Options{Parallelism: 1})
+	if got := run.Summary(); got.Total != 3 || got.Passed != 3 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+	stats := SnapshotPerfCounters()
+	if stats.CloneRuntimeOrgCalls != 0 {
+		t.Fatalf("cloneRuntimeOrg calls = %d, want shared no-setup journal path", stats.CloneRuntimeOrgCalls)
+	}
+	if stats.JournalRollbacks != 3 {
+		t.Fatalf("journal rollbacks = %d, want one per method", stats.JournalRollbacks)
+	}
+}
+
+func TestRunNoSetupJournalKeepsMethodsInSameClassSerial(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/JournalNoSetupSerialTest.cls"), `
+@isTest
+private class JournalNoSetupSerialTest {
+  private static void burn() {
+    Integer total = 0;
+    for (Integer i = 0; i < 50000; i++) {
+      total += i;
+    }
+    System.assert(total > 0);
+  }
+  @isTest static void one() { burn(); }
+  @isTest static void two() { burn(); }
+  @isTest static void three() { burn(); }
+  @isTest static void four() { burn(); }
+}
+`)
+
+	var mu sync.Mutex
+	activeByClass := map[string]int{}
+	overlapped := false
+	run := Run(loadTestIndex(t, root), Options{
+		Parallelism: 4,
+		Progress: func(progress TestProgress) {
+			switch progress.Event {
+			case "test_start":
+				mu.Lock()
+				activeByClass[progress.ClassName]++
+				if activeByClass[progress.ClassName] > 1 {
+					overlapped = true
+				}
+				mu.Unlock()
+			case "test_done":
+				mu.Lock()
+				activeByClass[progress.ClassName]--
+				mu.Unlock()
+			}
+		},
+	})
+	if got := run.Summary(); got.Total != 4 || got.Passed != 4 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+	if overlapped {
+		t.Fatal("no-setup journal path ran methods from the same class concurrently")
+	}
+}
+
+func TestJournalIsolationProbeRejectsTestSetMock(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "MockedCalloutTest.cls")
+	writeFile(t, file, `
+@isTest
+private class MockedCalloutTest {
+  @isTest static void usesMock() {
+    System.Test.setMock(HttpCalloutMock.class, new Mock());
+  }
+}
+`)
+
+	if newClassIsolationProbeCache(nil).fileSupportsJournalIsolation(file) {
+		t.Fatal("Test.setMock class should use full clone isolation")
+	}
+}
+
+func TestRunNoSetupTriggerSuitesUseFullCloneIsolation(t *testing.T) {
+	ResetPerfCounters()
+	storage.ResetCloneStats()
+	t.Cleanup(ResetPerfCounters)
+	t.Cleanup(storage.ResetCloneStats)
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/triggers/AccountBeforeInsert.trigger"), `
+trigger AccountBeforeInsert on Account (before insert) {
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/JournalNoSetupTriggerTest.cls"), `
+@isTest
+private class JournalNoSetupTriggerTest {
+  @isTest static void one() {
+    insert new Account(Name = 'One');
+    System.assertEquals(1, [SELECT count() FROM Account]);
+  }
+  @isTest static void two() {
+    insert new Account(Name = 'Two');
+    System.assertEquals(1, [SELECT count() FROM Account]);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{Parallelism: 1})
+	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+	stats := SnapshotPerfCounters()
+	if stats.CloneRuntimeOrgCalls == 0 {
+		t.Fatal("trigger suite used shared no-setup journal path, want full clone isolation")
 	}
 }
 

@@ -54,13 +54,11 @@ func (d *Daemon) RunSelectionContext(ctx context.Context, opts apextest.Options,
 	d.mu.RLock()
 	index := d.index
 	d.mu.RUnlock()
-	if selection.Mode == watch.SelectionDirect && len(selection.TestClasses) == 1 {
-		opts.Filter = selection.TestClasses[0]
-	}
-	if selection.Mode == watch.SelectionNone {
+	selectedOpts, ok := optionsForSelection(opts, selection)
+	if !ok {
 		return testreport.Run{Name: "glade test"}
 	}
-	return apextest.RunContext(ctx, index, opts)
+	return apextest.RunContext(ctx, index, selectedOpts)
 }
 
 func (d *Daemon) RunChangedSince(ref string) (testreport.Run, watch.TestSelection, error) {
@@ -77,13 +75,11 @@ func (d *Daemon) RunChangedSinceOptions(ref string, opts apextest.Options) (test
 	graph := d.graph
 	d.mu.RUnlock()
 	selection := watch.SelectAffectedTestsWithRefGraph(index, changes, graph)
-	if selection.Mode == watch.SelectionDirect && len(selection.TestClasses) == 1 {
-		opts.Filter = selection.TestClasses[0]
-	}
-	if selection.Mode == watch.SelectionNone {
+	selectedOpts, ok := optionsForSelection(opts, selection)
+	if !ok {
 		return testreport.Run{Name: "glade test"}, selection, nil
 	}
-	return apextest.Run(index, opts), selection, nil
+	return apextest.Run(index, selectedOpts), selection, nil
 }
 
 func (d *Daemon) SelectAffected(changes []watch.Change) watch.TestSelection {
@@ -92,6 +88,59 @@ func (d *Daemon) SelectAffected(changes []watch.Change) watch.TestSelection {
 	graph := d.graph
 	d.mu.RUnlock()
 	return watch.SelectAffectedTestsWithRefGraph(index, changes, graph)
+}
+
+func optionsForSelection(opts apextest.Options, selection watch.TestSelection) (apextest.Options, bool) {
+	switch selection.Mode {
+	case watch.SelectionNone:
+		return opts, false
+	case watch.SelectionAll:
+		return opts, true
+	case watch.SelectionDirect:
+		selectedClasses := selectedClassesForDirectSelection(opts.SelectedClasses, selection.TestClasses)
+		if len(selectedClasses) == 0 {
+			return opts, false
+		}
+		opts.SelectedClasses = selectedClasses
+		return opts, true
+	default:
+		return opts, true
+	}
+}
+
+func selectedClassesForDirectSelection(existing, affected []string) []string {
+	affectedSet := make(map[string]string, len(affected))
+	for _, className := range affected {
+		className = strings.TrimSpace(className)
+		if className == "" {
+			continue
+		}
+		affectedSet[strings.ToLower(className)] = className
+	}
+	if len(affectedSet) == 0 {
+		return nil
+	}
+	if len(existing) == 0 {
+		out := make([]string, 0, len(affectedSet))
+		for _, className := range affected {
+			className = strings.TrimSpace(className)
+			if className != "" {
+				out = append(out, className)
+			}
+		}
+		return out
+	}
+	out := make([]string, 0, len(existing))
+	for _, className := range existing {
+		className = strings.TrimSpace(className)
+		if className == "" {
+			continue
+		}
+		if _, ok := affectedSet[strings.ToLower(className)]; ok {
+			out = append(out, className)
+		}
+	}
+	return out
 }
 
 func (d *Daemon) UpdateChanges(changes []watch.Change) error {

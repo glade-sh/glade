@@ -6,6 +6,7 @@ import (
 )
 
 func TestPublicCorpusMapArrayShorthandCompatibility(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "MapArrayShorthand.cls"), `
 public class MapArrayShorthand {
@@ -26,6 +27,7 @@ public class MapArrayShorthand {
 }
 
 func TestPublicCorpusChainedAssignmentReturnsAssignedValue(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "ChainedAssignment.cls"), `
 public class ChainedAssignment {
@@ -43,6 +45,7 @@ public class ChainedAssignment {
 }
 
 func TestPublicCorpusNestedFluentReturnKeepsOwnerType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "SObjectDataLoader.cls"), `
 public class SObjectDataLoader {

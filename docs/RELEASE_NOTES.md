@@ -4,10 +4,11 @@
 
 No changes yet.
 
-## v0.2.8 - 2026-06-28
+## v0.2.8 - 2026-07-04
 
 Glade v0.2.8 ships the local terminal UI, richer debug-log tooling, local data
-import workflows, and release trust hardening after v0.2.7.
+import and record-management workflows, the LWC Workbench Console, and release
+trust hardening after v0.2.7.
 
 Terminal UI and local data workflows:
 
@@ -15,8 +16,22 @@ Terminal UI and local data workflows:
   boards for project, test, data, and plugin workflows.
 - Added `glade db import sf` so small Salesforce CLI org slices can seed local
   SQLite data by object, field list, raw SOQL, or importable-object discovery.
+- Added `glade db ui`, a browser record manager for local SQLite data, with
+  object-aware field controls, lookup filters, create/edit/delete/undelete
+  actions, and project-schema checks before a DB is reused.
 - Refreshed VS Code commands so Glade Home can launch the project, tests, data,
   and plugin TUI views from the current workspace.
+
+LWC Workbench Console:
+
+- Made `glade dev lwc` open the Workbench Console at `/` and `/lwc`, with
+  Component Lab as the first workspace, route discovery, persistent builder
+  context, debug panes, and runtime event capture.
+- Added local builder search endpoints backed by project schema and optional
+  SQLite data, so record-page setup can find objects and records without a
+  hosted org.
+- Improved the console layout, mobile viewport mode, diagnostics, and local
+  route memory while keeping hosted Lightning parity limits explicit.
 
 Apex debug log replay and editor analysis:
 
@@ -40,6 +55,32 @@ Docs and site:
 - Updated CLI, editor, local testing, local data, security, and install docs to
   match the current command surface.
 
+Runtime, semantic checks, and performance:
+
+- Fixed static collection alias propagation in the Apex VM, preserving shared
+  list, set, and map values through static paths.
+- Reduced same-ref collection alias rescans in local test runs, fixing the
+  large-package data-mapping timeout while preserving nested map/list alias
+  behavior.
+- Reduced no-setup local test suite cost by reusing journal-backed org state for
+  single-method test classes instead of cloning the runtime org for every test.
+- Reduced root-scope check and standard object loading cost with lazy standard
+  object name loading and tighter project-root handling.
+- Reduced `glade check` semantic-analysis allocations for platform static field
+  lookups, method-body cast/`instanceof` checks, and project-referenced schema
+  inference scans.
+- Reused content-addressed test startup-cache payloads on identical rewrites, so
+  metadata/header refreshes do not replace unchanged runtime payload files.
+- Hardened daemon-backed affected-test runs so warm `--daemon --changed-since`
+  selections run all selected affected classes without expanding back to the
+  full suite.
+- Reduced internal sema package test wall time by running independent
+  analysis-focused tests in parallel while keeping cache and allocation guards
+  sequential.
+- Added test-runner and code-intelligence hardening for selected-test routing,
+  startup cache behavior, affected-test analysis, watch classification, SOQL,
+  DML, Visualforce, and local server request paths.
+
 Security and release trust:
 
 - Added public security and trust docs, a repository security policy, checked
@@ -52,11 +93,12 @@ Security and release trust:
 Verification and performance:
 
 - Added focused tests for Apex log parsing, debug editor contracts, debug replay,
-  terminal UI models, Salesforce data import, extension commands, and docs/site
-  information architecture.
-- Checked the hot local test path against v0.2.7; the basic no-cache fixture
-  stayed in the same 1.63-1.66 second band while the added terminal UI
-  dependencies increased cold build cost.
+  terminal UI models, Salesforce data import, DB manager behavior, LWC Workbench
+  Console behavior, VM aliasing, extension commands, and docs/site information
+  architecture.
+- Added release-readiness coverage for the new security workflow, release
+  archive checks, smoke coverage, repo guards, site tests, and extension
+  packaging.
 
 ## v0.2.7 - 2026-06-24
 

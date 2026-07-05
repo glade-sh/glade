@@ -19,6 +19,7 @@ import (
 )
 
 func TestAnalyzeResolvesMemberTypes(t *testing.T) {
+	t.Parallel()
 	index := typesys.Index{
 		Types: []typesys.TypeSymbol{
 			{
@@ -40,6 +41,7 @@ func TestAnalyzeResolvesMemberTypes(t *testing.T) {
 }
 
 func TestAnalyzeResolvesNamespaceQualifiedSchemaAliases(t *testing.T) {
+	t.Parallel()
 	index := typesys.Index{
 		Project: typesys.ProjectInfo{Namespace: "pkg"},
 		Types: []typesys.TypeSymbol{
@@ -68,6 +70,7 @@ func TestAnalyzeResolvesNamespaceQualifiedSchemaAliases(t *testing.T) {
 }
 
 func TestAnalyzeResolvesProjectLocalNamesAgainstNamespacedSchema(t *testing.T) {
+	t.Parallel()
 	index := typesys.Index{
 		Project: typesys.ProjectInfo{Namespace: "pkg"},
 		Types: []typesys.TypeSymbol{
@@ -97,6 +100,7 @@ func TestAnalyzeResolvesProjectLocalNamesAgainstNamespacedSchema(t *testing.T) {
 }
 
 func TestAnalyzeProjectLocalSObjectFieldsAgainstNamespacedSchema(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesNamespacedFields.cls"), `
 public class UsesNamespacedFields {
@@ -129,6 +133,7 @@ public class UsesNamespacedFields {
 }
 
 func TestAnalyzeCommonSObjectRelationshipsResolveStandardChains(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	classPath := filepath.Join(root, "UsesCommonRelationships.cls")
 	writeSemaFile(t, classPath, `
@@ -154,6 +159,7 @@ public class UsesCommonRelationships {
 }
 
 func TestAnalyzeSOQLCountExpressionAssignsInteger(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "CountsRows.cls"), `
 public class CountsRows {
@@ -179,6 +185,7 @@ public class CountsRows {
 }
 
 func TestAnalyzePageReferenceMethodChainsUseReturnTypes(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesPageReference.cls"), `
 public class UsesPageReference {
@@ -200,6 +207,7 @@ public class UsesPageReference {
 }
 
 func TestAnalyzeVisualforceComponentTypesAssignableToApexPagesComponent(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesVisualforceComponents.cls"), `
 public class UsesVisualforceComponents {
@@ -278,6 +286,7 @@ func TestNormalizeNameMatchesTrimmedLowercase(t *testing.T) {
 }
 
 func TestAnalyzeUnknownMemberType(t *testing.T) {
+	t.Parallel()
 	index := typesys.Index{
 		Types: []typesys.TypeSymbol{
 			{
@@ -301,6 +310,7 @@ func TestAnalyzeUnknownMemberType(t *testing.T) {
 }
 
 func TestAnalyzeMethodParameterTypes(t *testing.T) {
+	t.Parallel()
 	index := typesys.Index{
 		Types: []typesys.TypeSymbol{
 			{
@@ -332,6 +342,7 @@ func TestAnalyzeMethodParameterTypes(t *testing.T) {
 }
 
 func TestAnalyzeRecognizesCallableAndStubProviderTypes(t *testing.T) {
+	t.Parallel()
 	index := typesys.Index{
 		Types: []typesys.TypeSymbol{
 			{
@@ -458,6 +469,7 @@ func TestAnalyzeRecognizesCallableAndStubProviderTypes(t *testing.T) {
 }
 
 func TestAnalyzePlatformAPITestCreateStubAndSetMockBridge(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Greeter.cls"), `
 public interface Greeter {
@@ -502,6 +514,7 @@ private class PlatformBridgeTest {
 }
 
 func TestAnalyzePlatformAPITestSetCurrentPageReferencePageToken(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "PageTokenTest.cls"), `
 @isTest
@@ -523,6 +536,7 @@ private class PageTokenTest {
 }
 
 func TestAnalyzePlatformAPIInterfacesRequireContracts(t *testing.T) {
+	t.Parallel()
 	index := typesys.Index{
 		Types: []typesys.TypeSymbol{
 			{
@@ -541,6 +555,7 @@ func TestAnalyzePlatformAPIInterfacesRequireContracts(t *testing.T) {
 }
 
 func TestAnalyzeProjectNamespaceQualifiedTypes(t *testing.T) {
+	t.Parallel()
 	index := typesys.Index{
 		Project: typesys.ProjectInfo{Namespace: "pkg"},
 		Types: []typesys.TypeSymbol{
@@ -574,6 +589,7 @@ func TestAnalyzeProjectNamespaceQualifiedTypes(t *testing.T) {
 }
 
 func TestAnalyzeNestedTypeReferences(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Outer.cls"), `
 public class Outer {
@@ -619,6 +635,22 @@ func TestStaticClassFieldPathUnknownLongPathReturnsPromptly(t *testing.T) {
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("unknown static field path lookup did not return promptly")
+	}
+}
+
+func TestExplicitPlatformStaticFieldPathMemberUsesReadOnlyPlatformView(t *testing.T) {
+	typesys.StandardPlatformSymbolView()
+	allocs := testing.AllocsPerRun(10, func() {
+		target, ok := semaStaticClassFieldPathMember(map[string]typeMembers{}, "System.RoundingMode", "HALF_UP")
+		if !ok {
+			t.Fatal("expected System.RoundingMode.HALF_UP")
+		}
+		if target.member.Type != "RoundingMode" {
+			t.Fatalf("System.RoundingMode.HALF_UP type = %q, want RoundingMode", target.member.Type)
+		}
+	})
+	if allocs > 8 {
+		t.Fatalf("static platform field lookup allocated %.0f times, want at most 8", allocs)
 	}
 }
 
@@ -692,6 +724,7 @@ func TestChainedCallReceiverExpandedLongReceiverReturnsPromptly(t *testing.T) {
 }
 
 func TestAnalyzeNestedEnumShortQualifiedAssignment(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	classPath := filepath.Join(root, "Comparator.cls")
 	writeSemaFile(t, classPath, `
@@ -719,6 +752,7 @@ public class Comparator {
 }
 
 func TestAnalyzeForEachOverDynamicObjectDefersElementValidation(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	classPath := filepath.Join(root, "DynamicIterable.cls")
 	writeSemaFile(t, classPath, `
@@ -739,6 +773,7 @@ public class DynamicIterable {
 }
 
 func TestAnalyzeUserDefinedIterableAndAddAll(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	classPath := filepath.Join(root, "IterableClient.cls")
 	writeSemaFile(t, classPath, `
@@ -775,6 +810,7 @@ public class IterableClient implements Iterable<RecordPage> {
 }
 
 func TestAnalyzeSOSLFindLiteral(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	classPath := filepath.Join(root, "UsesSOSL.cls")
 	writeSemaFile(t, classPath, `
@@ -800,6 +836,7 @@ public class UsesSOSL {
 }
 
 func TestAnalyzeWarnsForSOQLInLoop(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	classPath := filepath.Join(root, "QueryInLoop.cls")
 	writeSemaFile(t, classPath, `
@@ -826,6 +863,7 @@ public class QueryInLoop {
 }
 
 func TestAnalyzeWarnsForDMLInLoop(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	classPath := filepath.Join(root, "DMLInLoop.cls")
 	writeSemaFile(t, classPath, `
@@ -851,6 +889,7 @@ public class DMLInLoop {
 }
 
 func TestAnalyzeWarnsForDatabaseDMLCallInLoop(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	classPath := filepath.Join(root, "DatabaseDMLInLoop.cls")
 	writeSemaFile(t, classPath, `
@@ -876,6 +915,7 @@ public class DatabaseDMLInLoop {
 }
 
 func TestAnalyzeWarnsForStaticFirstTouchMassMetadata(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	classPath := filepath.Join(root, "HeavyConstants.cls")
 	writeSemaFile(t, classPath, `
@@ -901,6 +941,7 @@ public class HeavyConstants {
 }
 
 func TestAnalyzeShortNestedTypeMatchesAnyCompatibleCandidate(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "One.cls"), `
 public class One {
@@ -939,6 +980,7 @@ public class UsesShared {
 }
 
 func TestAnalyzeNestedTestDoubleStaticMockAssignment(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "BaseMock.cls"), `
 public virtual class BaseMock {
@@ -978,6 +1020,7 @@ private class UsesMockTest {
 }
 
 func TestAnalyzeProductNamespaceGeneratedDeclarations(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesProductNamespaces.cls"), `
 public class UsesProductNamespaces {
@@ -1018,6 +1061,7 @@ public class UsesProductNamespaces {
 }
 
 func TestAnalyzeUserInfoStandardDeclarations(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesUserInfo.cls"), `
 public class UsesUserInfo {
@@ -1050,6 +1094,7 @@ public class UsesUserInfo {
 }
 
 func TestAnalyzeDatabaseDMLCollectionOverloads(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesDatabaseDML.cls"), `
 public class UsesDatabaseDML {
@@ -1110,6 +1155,7 @@ public class UsesDatabaseDML {
 }
 
 func TestAnalyzeCaseInsensitivePlatformEnumAndDateStatics(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesCaseInsensitivePlatformStatics.cls"), `
 public class UsesCaseInsensitivePlatformStatics {
@@ -1132,6 +1178,7 @@ public class UsesCaseInsensitivePlatformStatics {
 }
 
 func TestAnalyzeBroadSystemStubShapes(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesBroadSystemShapes.cls"), `
 public class UsesBroadSystemShapes {
@@ -1192,6 +1239,7 @@ public class UsesBroadSystemShapes {
 }
 
 func TestAnalyzeGeneratedSystemStubsAreCaseInsensitive(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesGeneratedStubCase.cls"), `
 public class UsesGeneratedStubCase {
@@ -1228,6 +1276,7 @@ public class UsesGeneratedStubCase {
 }
 
 func TestAnalyzeSObjectNamedConstructorsAndRunAsBlock(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSObjectConstructors.cls"), `
 @IsTest
@@ -1254,6 +1303,7 @@ public class UsesSObjectConstructors {
 }
 
 func TestAnalyzeConcreteSObjectRelationshipAccessors(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesConcreteSObjectAccessors.cls"), `
 public class UsesConcreteSObjectAccessors {
@@ -1274,6 +1324,7 @@ public class UsesConcreteSObjectAccessors {
 }
 
 func TestAnalyzeSObjectRelationshipAssignmentAllowsReferencedRecord(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "AssignsRelationshipRecord.cls"), `
 public class AssignsRelationshipRecord {
@@ -1300,6 +1351,7 @@ public class AssignsRelationshipRecord {
 }
 
 func TestAnalyzeStandardSObjectRelationshipAccessors(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesStandardSObjectAccessors.cls"), `
 public class UsesStandardSObjectAccessors {
@@ -1319,6 +1371,7 @@ public class UsesStandardSObjectAccessors {
 }
 
 func TestAnalyzePolymorphicStandardSObjectRelationshipAccessors(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesPolymorphicSObjectAccessors.cls"), `
 public class UsesPolymorphicSObjectAccessors {
@@ -1340,6 +1393,7 @@ public class UsesPolymorphicSObjectAccessors {
 }
 
 func TestAnalyzePolymorphicProjectSObjectRelationshipAccessors(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesPolymorphicProjectSObjectAccessors.cls"), `
 public class UsesPolymorphicProjectSObjectAccessors {
@@ -1369,6 +1423,7 @@ public class UsesPolymorphicProjectSObjectAccessors {
 }
 
 func TestAnalyzeSchemaDescribeSObjectResultMethods(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesDescribe.cls"), `
 public class UsesDescribe {
@@ -1408,6 +1463,7 @@ public class UsesDescribe {
 }
 
 func TestAnalyzeDateDatetimeStandardDeclarations(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesDates.cls"), `
 public class UsesDates {
@@ -1451,6 +1507,7 @@ public class UsesDates {
 }
 
 func TestAnalyzeSystemLabelReferencesAsStrings(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesLabels.cls"), `
 public class UsesLabels {
@@ -1474,6 +1531,7 @@ public class UsesLabels {
 }
 
 func TestAnalyzeSObjectTypeFieldsTokens(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSObjectTypeFields.cls"), `
 public class UsesSObjectTypeFields {
@@ -1504,6 +1562,7 @@ public class UsesSObjectTypeFields {
 }
 
 func TestAnalyzeDescribeSObjectResultFieldsGetMapChain(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesDescribeSObjectResultFields.cls"), `
 public class UsesDescribeSObjectResultFields {
@@ -1528,6 +1587,7 @@ public class UsesDescribeSObjectResultFields {
 }
 
 func TestAnalyzeChainedSObjectTypeToken(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesChainedSObjectType.cls"), `
 public class UsesChainedSObjectType {
@@ -1591,6 +1651,7 @@ func TestBlockBoundsAtSkipsCommentApostrophes(t *testing.T) {
 }
 
 func TestAnalyzeMultilineSOQLDoesNotDeclareLocals(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesMultilineSOQL.cls"), `
 public class UsesMultilineSOQL {
@@ -1616,6 +1677,7 @@ public class UsesMultilineSOQL {
 }
 
 func TestAnalyzeSecurityStripInaccessibleDecision(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSecurityStripInaccessible.cls"), `
 public class UsesSecurityStripInaccessible {
@@ -1638,6 +1700,7 @@ public class UsesSecurityStripInaccessible {
 }
 
 func TestAnalyzeCoreSystemTypeAliases(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesCoreSystemTypes.cls"), `
 public class UsesCoreSystemTypes implements System.Finalizer {
@@ -1668,6 +1731,7 @@ public class UsesCoreSystemTypes implements System.Finalizer {
 }
 
 func TestAnalyzeExplicitSystemTypesBeatLocalShadows(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Cookie.cls"), `
 public class Cookie {
@@ -1769,6 +1833,7 @@ func TestSemaPlatformConstructorSignaturesUseStandardSymbols(t *testing.T) {
 }
 
 func TestAnalyzeCaseInsensitiveVariableBeatsSObjectToken(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesPermissionSetGroup.cls"), `
 public class UsesPermissionSetGroup {
@@ -1791,6 +1856,7 @@ public class UsesPermissionSetGroup {
 }
 
 func TestAnalyzeSObjectTypeFieldsPathReturnsDescribeFieldResult(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSchemaSObjectTypeFields.cls"), `
 public class UsesSchemaSObjectTypeFields {
@@ -1813,6 +1879,7 @@ public class UsesSchemaSObjectTypeFields {
 }
 
 func TestAnalyzeSObjectTypeFieldsStringProperties(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSchemaSObjectTypeFieldStrings.cls"), `
 public class UsesSchemaSObjectTypeFieldStrings {
@@ -1837,6 +1904,7 @@ public class UsesSchemaSObjectTypeFieldStrings {
 }
 
 func TestAnalyzeSObjectTypeFieldSetsTokenPaths(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSchemaSObjectTypeFieldSets.cls"), `
 public class UsesSchemaSObjectTypeFieldSets {
@@ -1860,6 +1928,7 @@ public class UsesSchemaSObjectTypeFieldSets {
 }
 
 func TestAnalyzeSObjectFieldsTokenGetDescribe(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSObjectFieldsToken.cls"), `
 public class UsesSObjectFieldsToken {
@@ -1880,6 +1949,7 @@ public class UsesSObjectFieldsToken {
 }
 
 func TestAnalyzeRelationshipFieldTokenPathReturnsSObjectField(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesRelationshipFieldToken.cls"), `
 public class UsesRelationshipFieldToken {
@@ -1903,6 +1973,7 @@ public class UsesRelationshipFieldToken {
 }
 
 func TestAnalyzeSchemaEmailTemplateSObjectShape(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSchemaEmailTemplate.cls"), `
 public class UsesSchemaEmailTemplate {
@@ -1930,6 +2001,7 @@ public class UsesSchemaEmailTemplate {
 }
 
 func TestAnalyzeNamespacedObjectAcceptsLocalFieldAlias(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesNamespacedTemplate.cls"), `
 public class UsesNamespacedTemplate {
@@ -1959,6 +2031,7 @@ public class UsesNamespacedTemplate {
 }
 
 func TestAnalyzeNestedClassCanCallOuterStaticHelperOverObjectToString(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "OuterHelper.cls"), `
 public class OuterHelper {
@@ -1987,6 +2060,7 @@ public class OuterHelper {
 }
 
 func TestAnalyzeImplicitHelperMethodsBeatPlatformObjectMethods(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "HelperOverloads.cls"), `
 public class HelperOverloads {
@@ -2019,6 +2093,7 @@ public class HelperOverloads {
 }
 
 func TestAnalyzeFluentUserEqualsBeatsCollectionEquals(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Query.cls"), `
 public class Query {
@@ -2049,7 +2124,8 @@ public class UsesQuery {
 }
 `)
 	index := typesys.Build(project.Project{
-		Root: root,
+		Root:      root,
+		Namespace: "acme",
 		ApexFiles: []string{
 			filepath.Join(root, "Query.cls"),
 			filepath.Join(root, "UsesQuery.cls"),
@@ -2077,6 +2153,7 @@ public class UsesQuery {
 }
 
 func TestAnalyzeStaticUserEqualsAcceptsSObjectFieldToken(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Query.cls"), `
 public class Query {
@@ -2112,6 +2189,7 @@ public class UsesQuery {
 }
 
 func TestAnalyzeListSortComparator(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesListSortComparator.cls"), `
 public class UsesListSortComparator {
@@ -2136,6 +2214,7 @@ public class UsesListSortComparator {
 }
 
 func TestAnalyzeDatacloudDuplicateResultTypes(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesDatacloudDuplicateResult.cls"), `
 public class UsesDatacloudDuplicateResult {
@@ -2161,6 +2240,7 @@ public class UsesDatacloudDuplicateResult {
 }
 
 func TestAnalyzeURLStandardDeclarations(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesURL.cls"), `
 public class UsesURL {
@@ -2180,6 +2260,7 @@ public class UsesURL {
 }
 
 func TestAnalyzeListSortSystemComparatorSObjectForConcreteSObjects(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesListSortComparator.cls"), `
 public class UsesListSortComparator {
@@ -2204,6 +2285,7 @@ public class UsesListSortComparator {
 }
 
 func TestAnalyzeSObjectGetErrorsReturnsDatabaseErrors(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSObjectErrors.cls"), `
 public class UsesSObjectErrors {
@@ -2223,6 +2305,7 @@ public class UsesSObjectErrors {
 }
 
 func TestAnalyzePlatformExceptionSubtypeAssignableToException(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesCacheException.cls"), `
 public class UsesCacheException {
@@ -2249,6 +2332,7 @@ public class UsesCacheException {
 }
 
 func TestAnalyzeHttpRequestGetters(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesHttpRequest.cls"), `
 public class UsesHttpRequest {
@@ -2271,6 +2355,7 @@ public class UsesHttpRequest {
 }
 
 func TestAnalyzeNullCoalescingDoesNotReportSyntheticCall(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesCoalesce.cls"), `
 public class UsesCoalesce {
@@ -2292,6 +2377,7 @@ public class UsesCoalesce {
 }
 
 func TestAnalyzeNullCoalescingKeepsConcreteReturnType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesCoalesce.cls"), `
 public class UsesCoalesce {
@@ -2312,6 +2398,7 @@ public class UsesCoalesce {
 }
 
 func TestAnalyzeQualifiedEnumFieldPathMethods(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesEnumMethods.cls"), `
 public class UsesEnumMethods {
@@ -2338,6 +2425,7 @@ public class UsesEnumMethods {
 }
 
 func TestAnalyzeSystemEnumMethodsWithProjectShadowClass(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "TriggerOperation.cls"), `
 public class TriggerOperation {
@@ -2377,6 +2465,7 @@ public class UsesEnumMethods {
 }
 
 func TestAnalyzeStringLiteralMethodAndSplitTypes(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesStringLiterals.cls"), `
 public class UsesStringLiterals {
@@ -2399,6 +2488,7 @@ public class UsesStringLiterals {
 }
 
 func TestAnalyzeStaticStringFieldTokensStayStrings(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Order.cls"), `
 public class Order {
@@ -2431,6 +2521,7 @@ public class UsesOrderFieldNames {
 }
 
 func TestAnalyzeTestVisibleStaticMapFieldChainedGet(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "EmailContent.cls"), `
 public class EmailContent {
@@ -2466,6 +2557,7 @@ private class EmailContentTest {
 }
 
 func TestAnalyzeFluentBuilderNestedStaticConditionCalls(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Q.cls"), `
 public class Q {
@@ -2515,6 +2607,7 @@ public class UsesQ {
 }
 
 func TestAnalyzeExplicitCastsFromMapGetInitializeTypedLocals(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesMapCasts.cls"), `
 public class UsesMapCasts {
@@ -2538,6 +2631,7 @@ public class UsesMapCasts {
 }
 
 func TestAnalyzeExplicitCastsFromFluentBaseReturns(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "BaseFabricator.cls"), `
 public virtual class BaseFabricator {
@@ -2583,6 +2677,7 @@ public class AccountBuilder extends BaseBuilder {
 }
 
 func TestAnalyzeQualifiedIterableEnhancedFor(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesIterable.cls"), `
 public class UsesIterable {
@@ -2604,6 +2699,7 @@ public class UsesIterable {
 }
 
 func TestAnalyzeUnbracedEnhancedForLocalVisibleInNestedLoop(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesFieldSets.cls"), `
 public class UsesFieldSets {
@@ -2626,6 +2722,7 @@ public class UsesFieldSets {
 }
 
 func TestAnalyzeSchemaDerivedCustomMetadataAndShareFields(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesMetadata.cls"), `
 public class UsesMetadata {
@@ -2694,6 +2791,7 @@ public class FlowDefinitionView {
 }
 
 func TestAnalyzeStandardShareAccessFields(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesStandardShare.cls"), `
 public class UsesStandardShare {
@@ -2721,6 +2819,7 @@ public class UsesStandardShare {
 }
 
 func TestAnalyzeOverloadPrefersIterableIdOverSObjectList(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesBuilder.cls"), `
 public class UsesBuilder {
@@ -2746,6 +2845,7 @@ public class UsesBuilder {
 }
 
 func TestAnalyzeConnectApiOrganizationSettingsOrgIdIsId(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesConnectApi.cls"), `
 public class UsesConnectApi {
@@ -2768,6 +2868,7 @@ public class UsesConnectApi {
 }
 
 func TestAnalyzeNullCoalescingReturnKeepsConcreteType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesCoalesceReturn.cls"), `
 public class UsesCoalesceReturn {
@@ -2788,6 +2889,7 @@ public class UsesCoalesceReturn {
 }
 
 func TestAnalyzeObjectInitializerTernaryDoesNotUseNamedFieldAsCondition(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesInitializerTernary.cls"), `
 public class UsesInitializerTernary {
@@ -2817,6 +2919,7 @@ public class UsesInitializerTernary {
 }
 
 func TestAnalyzeStaticCallWithListConstructedFromSetArgument(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSetListArg.cls"), `
 public class UsesSetListArg {
@@ -2846,6 +2949,7 @@ public class UsesSetListArg {
 }
 
 func TestAnalyzeCollectionConstructorsWithArrayElementGenericTypes(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Address__c.cls"), `public class Address__c {}`)
 	writeSemaFile(t, filepath.Join(root, "UsesArrayElementGenerics.cls"), `
@@ -2869,6 +2973,7 @@ public class UsesArrayElementGenerics {
 }
 
 func TestAnalyzeMultilineSOQLDoesNotReportClauseKeywordsAsCalls(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesMultilineSOQL.cls"), `
 public class UsesMultilineSOQL {
@@ -2899,6 +3004,7 @@ public class UsesMultilineSOQL {
 }
 
 func TestAnalyzeEnhancedForSOQLWithRelationshipFieldsSkipsClauseKeywords(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesRelationshipSOQL.cls"), `
 public class UsesRelationshipSOQL {
@@ -2937,6 +3043,7 @@ public class UsesRelationshipSOQL {
 }
 
 func TestAnalyzeCastedStringComparisonIsBoolean(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesCastedComparison.cls"), `
 public class UsesCastedComparison {
@@ -2955,6 +3062,7 @@ public class UsesCastedComparison {
 }
 
 func TestAnalyzeCustomOrderPropertyDoesNotCollapseToStandardOrder(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "OrderItem.cls"), `
 public class OrderItem {
@@ -2992,6 +3100,7 @@ public class OrderItem {
 }
 
 func TestAnalyzeOverrideSkipsMissingExternalSuperclass(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesMissingBase.cls"), `
 public class UsesMissingBase extends pkg.MissingBase {
@@ -3009,6 +3118,7 @@ public class UsesMissingBase extends pkg.MissingBase {
 }
 
 func TestAnalyzeFieldPathSkipsMissingExternalReceiverType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesMissingDependencyField.cls"), `
 public class UsesMissingDependencyField {
@@ -3040,6 +3150,7 @@ public class UsesMissingDependencyField {
 }
 
 func TestAnalyzeSignedIntegerLiteralReturn(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSignedLiteral.cls"), `
 public class UsesSignedLiteral {
@@ -3059,6 +3170,7 @@ public class UsesSignedLiteral {
 }
 
 func TestAnalyzeInlineSOQLDMLChoosesListOverload(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesInlineSOQLDML.cls"), `
 public class UsesInlineSOQLDML {
@@ -3076,6 +3188,7 @@ public class UsesInlineSOQLDML {
 }
 
 func TestAnalyzeSOSLReturningFieldsAreNotCallArgs(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSOSLReturning.cls"), `
 public class UsesSOSLReturning {
@@ -3097,6 +3210,7 @@ public class UsesSOSLReturning {
 }
 
 func TestAnalyzeMapGetAcceptsCurrentClassStringConstant(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesMapConstant.cls"), `
 public class UsesMapConstant {
@@ -3116,6 +3230,7 @@ public class UsesMapConstant {
 }
 
 func TestAnalyzeMapGetAndRemoveAcceptCurrentClassStringConstantInsideCalls(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesMapConstantCalls.cls"), `
 public class UsesMapConstantCalls {
@@ -3136,6 +3251,7 @@ public class UsesMapConstantCalls {
 }
 
 func TestAnalyzeTestMethodMapGetAndRemoveAcceptPrivateStaticStringConstant(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesTestMethodMapConstant.cls"), `
 @isTest
@@ -3194,6 +3310,7 @@ private class UsesTestMethodMapConstant {
 }
 
 func TestAnalyzeNestedUtilityToStringOverloadBeatsPlatformToString(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesNestedUtility.cls"), `
 public class UsesNestedUtility {
@@ -3242,6 +3359,7 @@ public class UsesNestedUtility {
 }
 
 func TestAnalyzeDecimalRoundWithRoundingMode(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesDecimalRound.cls"), `
 public class UsesDecimalRound {
@@ -3259,6 +3377,7 @@ public class UsesDecimalRound {
 }
 
 func TestAnalyzeDecimalRoundOnParenthesizedNumericExpression(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesDecimalRoundExpression.cls"), `
 public class UsesDecimalRoundExpression {
@@ -3277,6 +3396,7 @@ public class UsesDecimalRoundExpression {
 }
 
 func TestAnalyzeSOQLRollupGroupByDoesNotReportCallArgs(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSOQLRollup.cls"), `
 public class UsesSOQLRollup {
@@ -3302,6 +3422,7 @@ public class UsesSOQLRollup {
 }
 
 func TestAnalyzeNamespacedSelfLookupChildRelationshipAlias(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesRefunds.cls"), `
 public class UsesRefunds {
@@ -3335,6 +3456,7 @@ public class UsesRefunds {
 }
 
 func TestAnalyzeSObjectTypeTokenMatchesDescribeSObjectResult(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesDescribeToken.cls"), `
 public class UsesDescribeToken {
@@ -3355,6 +3477,7 @@ public class UsesDescribeToken {
 }
 
 func TestAnalyzeSchemaQualifiedCustomSObjectMatchesCustomSObject(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSchemaCustomObject.cls"), `
 public class UsesSchemaCustomObject {
@@ -3385,6 +3508,7 @@ public class UsesSchemaCustomObject {
 }
 
 func TestAnalyzeUnknownExternalFieldTypeStopsFieldPathCheck(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesExternalField.cls"), `
 public class UsesExternalField {
@@ -3413,6 +3537,7 @@ public class UsesExternalField {
 }
 
 func TestAnalyzeEventSObjectTokensPreferStandardSObject(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesEventTokens.cls"), `
 public class UsesEventTokens {
@@ -3478,6 +3603,7 @@ public class UsesEventTokens {
 }
 
 func TestAnalyzeStandardEventIncludesIsClosed(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesEvent.cls"), `
 public class UsesEvent {
@@ -3501,6 +3627,7 @@ public class UsesEvent {
 }
 
 func TestAnalyzeTestIsRunningTestStaticCall(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesTest.cls"), `
 public class UsesTest {
@@ -3521,6 +3648,7 @@ public class UsesTest {
 }
 
 func TestAnalyzeTestIsRunningTestStaticCallInNamespacedProject(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesTest.cls"), `
 public class UsesTest {
@@ -3542,6 +3670,7 @@ public class UsesTest {
 }
 
 func TestAnalyzeTestIsRunningTestPrefersPlatformClassOverInheritedField(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Base.cls"), `
 public virtual class Base {
@@ -3575,6 +3704,7 @@ public class UsesTest extends Base {
 }
 
 func TestAnalyzeSObjectClonePreservesConcreteReceiverType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSObjectClone.cls"), `
 public class UsesSObjectClone {
@@ -3593,6 +3723,7 @@ public class UsesSObjectClone {
 }
 
 func TestAnalyzeNamespacedContactCheckboxAndFinalClone(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesContactFields.cls"), `
 public inherited sharing class UsesContactFields {
@@ -3685,6 +3816,7 @@ public inherited sharing class UsesContactFields {
 }
 
 func TestAnalyzeMapStringSObjectConstructorFromList(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesMapFromList.cls"), `
 public class UsesMapFromList {
@@ -3702,6 +3834,7 @@ public class UsesMapFromList {
 }
 
 func TestAnalyzeEnhancedForLocalDoesNotShadowClassAfterLoop(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesLoopShadow.cls"), `
 public class UsesLoopShadow {
@@ -3734,6 +3867,7 @@ public class UsesLoopShadow {
 }
 
 func TestAnalyzeMultilineLocalConstructorDeclarationStaysInScope(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesMultilineLocal.cls"), `
 public class UsesMultilineLocal {
@@ -3762,6 +3896,7 @@ public class UsesMultilineLocal {
 }
 
 func TestAnalyzeMultilineLocalConstructorDeclarationAcrossElseIf(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesMultilineLocal.cls"), `
 public class UsesMultilineLocal {
@@ -3804,6 +3939,7 @@ public class UsesMultilineLocal {
 }
 
 func TestAnalyzeNumericSetScaleAndSObjectErrors(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesPlatformMethods.cls"), `
 public class UsesPlatformMethods {
@@ -3828,6 +3964,7 @@ public class UsesPlatformMethods {
 }
 
 func TestAnalyzeDateArithmeticAndSObjectCloneOverloads(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "TermInfo.cls"), `
 public class TermInfo {
@@ -3874,6 +4011,7 @@ public class UsesCloneAndDate {
 }
 
 func TestAnalyzeAdditionalPlatformSeams(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "CustomException.cls"), `
 public class CustomException extends Exception {
@@ -3945,6 +4083,7 @@ public class SalesTaxRequest {
 }
 
 func TestAnalyzeFallbackPropertyNamesForDateAndList(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesFallbackProperties.cls"), `
 public class UsesFallbackProperties {
@@ -3967,6 +4106,7 @@ public class UsesFallbackProperties {
 }
 
 func TestAnalyzeUnknownExternalPackageFieldDoesNotUseFallbackPropertyType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesExternalPackageResponse.cls"), `
 public class UsesExternalPackageResponse {
@@ -3990,6 +4130,7 @@ public class UsesExternalPackageResponse {
 }
 
 func TestAnalyzeCommaSeparatedLocalDeclarations(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesCommaLocals.cls"), `
 public class UsesCommaLocals {
@@ -4017,6 +4158,7 @@ public class UsesCommaLocals {
 }
 
 func TestAnalyzeApexClassBodyFieldAsString(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesApexClassBody.cls"), `
 public class UsesApexClassBody {
@@ -4048,6 +4190,7 @@ public class UsesApexClassBody {
 }
 
 func TestAnalyzeNestedWrapperRecordCollectionAdd(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "WrapperController.cls"), `
 public class WrapperController {
@@ -4076,6 +4219,7 @@ public class WrapperController {
 }
 
 func TestAnalyzeMetadataSObjectFieldsAndStringEquals(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesMetadataObjects.cls"), `
 public class UsesMetadataObjects {
@@ -4105,6 +4249,7 @@ public class UsesMetadataObjects {
 }
 
 func TestAnalyzeStaticStandardSObjectFieldTokensInListInitializer(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesStandardFieldTokens.cls"), `
 public class UsesStandardFieldTokens {
@@ -4137,6 +4282,7 @@ public class UsesStandardFieldTokens {
 }
 
 func TestAnalyzeSObjectFieldTokenDoesNotShadowClassStaticField(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Order.cls"), `
 public class Order {
@@ -4160,6 +4306,7 @@ public class Order {
 }
 
 func TestAnalyzeChildRelationshipAddAllSpecificType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesChildRelationships.cls"), `
 public class UsesChildRelationships {
@@ -4186,6 +4333,7 @@ public class UsesChildRelationships {
 }
 
 func TestAnalyzeChildRelationshipAddAllToSObjectList(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesChildRelationships.cls"), `
 public class UsesChildRelationships {
@@ -4226,6 +4374,7 @@ public class UsesChildRelationships {
 }
 
 func TestAnalyzeMapConstructorAcceptsChildRelationshipList(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesChildRelationshipMapConstructor.cls"), `
 public class UsesChildRelationshipMapConstructor {
@@ -4256,6 +4405,7 @@ public class UsesChildRelationshipMapConstructor {
 }
 
 func TestAnalyzeStandardChildRelationshipListMemberCalls(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesStandardChildRelationships.cls"), `
 public class UsesStandardChildRelationships {
@@ -4276,6 +4426,7 @@ public class UsesStandardChildRelationships {
 }
 
 func TestAnalyzeCollectionAddAllIterableAndSObjectFieldLoop(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesIterableCollections.cls"), `
 public class UsesIterableCollections {
@@ -4299,6 +4450,7 @@ public class UsesIterableCollections {
 }
 
 func TestAnalyzeGenericInterfaceImplementationAssignableToInterface(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "MapBatch.cls"), `
 public class MapBatch implements Database.Batchable<Map<String, Object>> {
@@ -4333,6 +4485,7 @@ public class UsesMapBatch {
 }
 
 func TestAnalyzeNestedIteratorImplementationAssignableToIteratorReturn(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "IterableApiClient.cls"), `
 public class IterableApiClient implements Iterable<RecordPage> {
@@ -4359,6 +4512,7 @@ public class IterableApiClient implements Iterable<RecordPage> {
 }
 
 func TestAnalyzeInstallHandlerAssignableToTestInstall(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "PostInstall.cls"), `
 global class PostInstall implements InstallHandler {
@@ -4389,6 +4543,7 @@ private class PostInstallTest {
 }
 
 func TestAnalyzeInterfaceEqualsMethodDoesNotCollideWithObjectEquals(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Filter.cls"), `
 public interface Filter {
@@ -4415,6 +4570,7 @@ public class FilterImpl implements Filter {
 }
 
 func TestAnalyzeSOQLForLoopAcceptsListChunkVariable(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "AggregateChunks.cls"), `
 public class AggregateChunks {
@@ -4442,6 +4598,7 @@ public class AggregateChunks {
 }
 
 func TestAnalyzeRollupSummaryFieldUsesSummarizedFieldType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSummary.cls"), `
 public class UsesSummary {
@@ -4479,6 +4636,7 @@ public class UsesSummary {
 }
 
 func TestAnalyzeSOQLLiteralSelectsTypedListOverload(t *testing.T) {
+	t.Parallel()
 	if got := semaSOQLLiteralListType("[SELECT Id FROM Account]"); got != "List<Account>" {
 		t.Fatalf("SOQL literal type = %q", got)
 	}
@@ -4511,6 +4669,7 @@ public class UsesOverloads {
 }
 
 func TestAnalyzeSOQLSingletonAcceptsSObjectTargets(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSOQLReturn.cls"), `
 public class UsesSOQLReturn {
@@ -4544,6 +4703,7 @@ public class UsesSOQLReturn {
 }
 
 func TestAnalyzeStaticMethodNamedMatches(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "StringUtils.cls"), `
 public class StringUtils {
@@ -4572,6 +4732,7 @@ public class UsesStringUtils {
 }
 
 func TestAnalyzeAccessLevelWithPermissionSetIdOnEnumValue(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesAccessLevel.cls"), `
 public class UsesAccessLevel {
@@ -4593,6 +4754,7 @@ public class UsesAccessLevel {
 }
 
 func TestAnalyzeThrowTerminatesNonVoidMethod(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "ThrowsOnly.cls"), `
 public class ThrowsOnly {
@@ -4614,6 +4776,7 @@ public class ThrowsOnly {
 }
 
 func TestAnalyzeFinalThrowAfterBlockTerminatesNonVoidMethod(t *testing.T) {
+	t.Parallel()
 	if !semaBodyEndsWithThrow(`
     if (blocked) {
       ex.setMessage('blocked');
@@ -4650,6 +4813,7 @@ public class ThrowsAfterBlock {
 }
 
 func TestAnalyzeConditionalThrowDoesNotTerminateNonVoidMethod(t *testing.T) {
+	t.Parallel()
 	if semaBodyEndsWithThrow(`
     if (blocked) {
       throw ex;
@@ -4684,6 +4848,7 @@ public class ConditionalThrow {
 }
 
 func TestAnalyzeChainedCallOnNestedInterfaceReturn(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Conditions.cls"), `
 public class Conditions {
@@ -4718,6 +4883,7 @@ public class Conditions {
 }
 
 func TestAnalyzeAmbiguousNullOverloadsAccepted(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesNullOverloads.cls"), `
 public class UsesNullOverloads {
@@ -4744,6 +4910,7 @@ public class UsesNullOverloads {
 }
 
 func TestAnalyzeSystemTypeAliasAssignment(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSystemType.cls"), `
 public class UsesSystemType {
@@ -4765,6 +4932,7 @@ public class UsesSystemType {
 }
 
 func TestAnalyzeFlowInterviewProjectTypes(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	flowPath := filepath.Join(root, "force-app/main/default/flows/Calculate_discounts.flow-meta.xml")
 	if err := os.MkdirAll(filepath.Dir(flowPath), 0o755); err != nil {
@@ -4793,6 +4961,7 @@ public class UsesFlow {
 }
 
 func TestAnalyzeShortNestedEnumValueOverload(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "CanTheUser.cls"), `
 public class CanTheUser {
@@ -4816,6 +4985,7 @@ public class CanTheUser {
 }
 
 func TestAnalyzeFinalizerContextInterfaceArgument(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesFinalizer.cls"), `
 public class UsesFinalizer {
@@ -4856,6 +5026,7 @@ public class UsesFinalizer {
 }
 
 func TestAnalyzeBitwiseIntegerExpressionAssignment(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Point.cls"), `
 public class Point {
@@ -4876,6 +5047,7 @@ public class Point {
 }
 
 func TestAnalyzeListCapacityConstructors(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesListCapacity.cls"), `
 public class UsesListCapacity {
@@ -4897,6 +5069,7 @@ public class UsesListCapacity {
 }
 
 func TestAnalyzeGeneratedStubMethodStaticAccess(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesGeneratedStubStaticAccess.cls"), `
 public class UsesGeneratedStubStaticAccess {
@@ -4924,6 +5097,7 @@ public class UsesGeneratedStubStaticAccess {
 }
 
 func TestAnalyzeSystemDateTodayStaticCall(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSystemDate.cls"), `
 public class UsesSystemDate {
@@ -4946,6 +5120,7 @@ public class UsesSystemDate {
 }
 
 func TestAnalyzeStaticFieldReceiverBeatsCaseFoldedNestedType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesStaticFieldReceiver.cls"), `
 public class UsesStaticFieldReceiver {
@@ -4975,6 +5150,7 @@ public class UsesStaticFieldReceiver {
 }
 
 func TestAnalyzeObjectEqualsAndFluentPageReferenceRedirect(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesPlatformSeams.cls"), `
 public class UsesPlatformSeams {
@@ -4997,6 +5173,7 @@ public class UsesPlatformSeams {
 }
 
 func TestAnalyzeNestedEnumValuesStaticCall(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Logger.cls"), `
 public class Logger {
@@ -5021,6 +5198,7 @@ public class UsesLogger {
 }
 
 func TestAnalyzeGeneratedNestedEnumStaticMember(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesProcessParameterType.cls"), `
 public class UsesProcessParameterType {
@@ -5043,6 +5221,7 @@ public class UsesProcessParameterType {
 }
 
 func TestAnalyzeArrayStyleAndWrappedLocalDeclarations(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesWrappedLocals.cls"), `
 public class UsesWrappedLocals {
@@ -5072,6 +5251,7 @@ public class UsesWrappedLocals {
 }
 
 func TestAnalyzeAllowsSearchQueryCompileOnly(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSearchQuery.cls"), `
 public class UsesSearchQuery {
@@ -5094,6 +5274,7 @@ public class UsesSearchQuery {
 }
 
 func TestAnalyzeDatabaseQueryAssignsSingleAndListSObjectContexts(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesDatabaseQuery.cls"), `
 public class UsesDatabaseQuery {
@@ -5121,6 +5302,7 @@ public class UsesDatabaseQuery {
 }
 
 func TestAnalyzeDatabaseQueryIsIterableAsSObject(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesDatabaseQueryForEach.cls"), `
 public class UsesDatabaseQueryForEach {
@@ -5145,6 +5327,7 @@ public class UsesDatabaseQueryForEach {
 }
 
 func TestAnalyzeDatabaseQueryResultCanBeIndexedAsSObjectList(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesDatabaseQueryIndex.cls"), `
 public class UsesDatabaseQueryIndex {
@@ -5182,6 +5365,7 @@ func TestDatabaseQueryResultCollectionSignature(t *testing.T) {
 }
 
 func TestAnalyzeEncodingUtilAndBlobStaticMethods(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesEncodingUtil.cls"), `
 public class UsesEncodingUtil {
@@ -5207,6 +5391,7 @@ public class UsesEncodingUtil {
 }
 
 func TestAnalyzeSystemStatusCodeAlias(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesStatusCode.cls"), `
 public class UsesStatusCode {
@@ -5227,6 +5412,7 @@ public class UsesStatusCode {
 }
 
 func TestAnalyzeConcreteSObjectCloneReturnsConcreteType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSObjectClone.cls"), `
 public class UsesSObjectClone {
@@ -5248,6 +5434,7 @@ public class UsesSObjectClone {
 }
 
 func TestAnalyzeAssertClassMethods(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesAssert.cls"), `
 public class UsesAssert {
@@ -5273,6 +5460,7 @@ public class UsesAssert {
 }
 
 func TestAnalyzeAssertBooleanThroughNestedMapListFieldChain(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesNestedBooleanAssert.cls"), `
 public class UsesNestedBooleanAssert {
@@ -5320,6 +5508,7 @@ public class UsesNestedBooleanAssert {
 }
 
 func TestAnalyzeAssertBooleanThroughSingletonMethodResultChain(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSingletonMethodResultAssert.cls"), `
 public class UsesSingletonMethodResultAssert {
@@ -5355,6 +5544,7 @@ public class UsesSingletonMethodResultAssert {
 }
 
 func TestAnalyzeClassLiteralTypeMethodsAreInstanceCalls(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesClassLiteralType.cls"), `
 public class UsesClassLiteralType {
@@ -5376,6 +5566,7 @@ public class UsesClassLiteralType {
 }
 
 func TestAnalyzeRestContextStaticFields(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesRestContext.cls"), `
 public class UsesRestContext {
@@ -5403,6 +5594,7 @@ public class UsesRestContext {
 }
 
 func TestAnalyzeAllowsSameClassHelperWithSystemRestRequest(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "AccountsResource.cls"), `
 @RestResource(urlMapping='/accounts/*')
@@ -5428,6 +5620,7 @@ global class AccountsResource {
 }
 
 func TestAnalyzeResolvesUnqualifiedNestedCastToCurrentOuter(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Alpha.cls"), `
 public class Alpha {
@@ -5460,6 +5653,7 @@ public class Library {
 }
 
 func TestAnalyzeCustomSObjectSetOptions(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSObjectOptions.cls"), `
 public class UsesSObjectOptions {
@@ -5482,6 +5676,7 @@ public class UsesSObjectOptions {
 }
 
 func TestAnalyzeAllowsSearchFindSurface(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSearchFind.cls"), `
 public class UsesSearchFind {
@@ -5501,6 +5696,7 @@ public class UsesSearchFind {
 }
 
 func TestAnalyzeUserRecordAccessAndAddressComparison(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "MergeLike.cls"), `
 public class MergeLike {
@@ -5524,6 +5720,7 @@ public class MergeLike {
 }
 
 func TestAnalyzeTriggerOperationEnumValueArgs(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesTriggerOperation.cls"), `
 public class UsesTriggerOperation {
@@ -5556,6 +5753,7 @@ func TestCollectionSignaturesStripTypeModifiers(t *testing.T) {
 }
 
 func TestAnalyzeNestedCollectionAddAfterForEachShadow(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "MembershipTermInfo.cls"), `
 global class MembershipTermInfo {
@@ -5617,6 +5815,7 @@ public class UsesNestedCollectionAdd {
 }
 
 func TestAnalyzeNewListHelperAllowsUntypedExpressionArgument(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "BaseTest.cls"), `
 public class BaseTest {
@@ -5649,6 +5848,7 @@ public class UsesNewList extends BaseTest {
 }
 
 func TestAnalyzeEnumStaticMethods(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesEnum.cls"), `
 public class UsesEnum {
@@ -5676,6 +5876,7 @@ public class UsesEnum {
 }
 
 func TestAnalyzeSchemaSoapTypeAliases(t *testing.T) {
+	t.Parallel()
 	index := typesys.Index{
 		Types: []typesys.TypeSymbol{
 			{
@@ -5705,6 +5906,7 @@ func TestAnalyzeSchemaSoapTypeAliases(t *testing.T) {
 }
 
 func TestAnalyzeNestedTypeRelativeReferencesInsideOwner(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Outer.cls"), `
 public class Outer {
@@ -5736,6 +5938,7 @@ public class Outer {
 }
 
 func TestAnalyzeChainedStaticPropertyNestedFieldCall(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Outer.cls"), `
 public class Outer {
@@ -5811,6 +6014,7 @@ func TestCallArgumentsAtKeepsNestedFormatAndListInitializer(t *testing.T) {
 }
 
 func TestAnalyzeDatetimeFormatCall(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesDatetime.cls"), `
 public class UsesDatetime {
@@ -5830,6 +6034,7 @@ public class UsesDatetime {
 }
 
 func TestAnalyzeImplicitMethodArgumentSelectsSpecificOverload(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "DescribeHelper.cls"), `
 public class DescribeHelper {
@@ -5858,6 +6063,7 @@ public abstract class Selector {
 }
 
 func TestAnalyzeThisFieldAccessIgnoresShadowingParameter(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "ShadowedField.cls"), `
 public class ShadowedField {
@@ -5883,6 +6089,7 @@ public class ShadowedField {
 }
 
 func TestAnalyzeProtectedInheritedMethodAcceptsSchemaSObjectFieldToken(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "DomainBase.cls"), `
 public virtual class DomainBase {
@@ -5915,6 +6122,7 @@ public class AccountDomain extends DomainBase {
 }
 
 func TestAnalyzeDatabaseBatchableSObjectAllowsConcreteExecuteScope(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "AccountBatch.cls"), `
 public class AccountBatch implements Database.Batchable<SObject> {
@@ -5938,6 +6146,7 @@ public class AccountBatch implements Database.Batchable<SObject> {
 }
 
 func TestAnalyzeDatabaseBatchableSObjectAllowsObjectExecuteScope(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "BaseBatch.cls"), `
 public abstract class BaseBatch {
@@ -5976,6 +6185,7 @@ public class DirectBatch implements Database.Batchable<SObject> {
 }
 
 func TestAnalyzeStandardPermissionSetAssignmentsRelationship(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "PermissionSetStatus.cls"), `
 public class PermissionSetStatus {
@@ -5997,6 +6207,7 @@ public class PermissionSetStatus {
 }
 
 func TestAnalyzeCustomMetadataLabelAsString(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "MetadataLabelSorter.cls"), `
 public class MetadataLabelSorter {
@@ -6023,6 +6234,7 @@ public class MetadataLabelSorter {
 }
 
 func TestAnalyzeInheritedOverloadRemainsVisible(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "BaseBuilder.cls"), `
 public virtual class BaseBuilder {
@@ -6058,6 +6270,7 @@ public class UsesChildBuilder {
 }
 
 func TestAnalyzeUppercaseBooleanLiteral(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesBoolean.cls"), `
 public class UsesBoolean {
@@ -6077,6 +6290,7 @@ public class UsesBoolean {
 }
 
 func TestAnalyzeDatabaseSavepoint(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSavepoint.cls"), `
 public class UsesSavepoint {
@@ -6097,6 +6311,7 @@ public class UsesSavepoint {
 }
 
 func TestAnalyzeSystemSavepointAlias(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSystemSavepoint.cls"), `
 public class UsesSystemSavepoint {
@@ -6117,6 +6332,7 @@ public class UsesSystemSavepoint {
 }
 
 func TestAnalyzeSObjectIdFieldPath(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSObjectPath.cls"), `
 public class UsesSObjectPath {
@@ -6137,6 +6353,7 @@ public class UsesSObjectPath {
 }
 
 func TestAnalyzeSingleEmailMessageSetWhatId(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSingleEmail.cls"), `
 public class UsesSingleEmail {
@@ -6158,6 +6375,7 @@ public class UsesSingleEmail {
 }
 
 func TestAnalyzeSingleEmailMessageAssignableToMessagingEmail(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesMessagingEmail.cls"), `
 public class UsesMessagingEmail {
@@ -6179,6 +6397,7 @@ public class UsesMessagingEmail {
 }
 
 func TestAnalyzeCommonSalesSObjectTypes(t *testing.T) {
+	t.Parallel()
 	index := typesys.Index{Types: []typesys.TypeSymbol{{
 		Kind: apexast.DeclarationClass,
 		Name: "UsesSalesObjects",
@@ -6200,6 +6419,7 @@ func TestAnalyzeCommonSalesSObjectTypes(t *testing.T) {
 }
 
 func TestAnalyzeSalesSObjectAssignableToSObject(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSalesRelationship.cls"), `
 public class UsesSalesRelationship {
@@ -6220,6 +6440,7 @@ public class UsesSalesRelationship {
 }
 
 func TestAnalyzeChainedCallArgumentSelectsSObjectFieldOverload(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "DescribeWrapper.cls"), `
 public class DescribeWrapper {
@@ -6252,6 +6473,7 @@ public class Security {
 }
 
 func TestAnalyzeStringValueOfSelectsStringOverload(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "StringValueBuilder.cls"), `
 public class StringValueBuilder {
@@ -6273,6 +6495,7 @@ public class StringValueBuilder {
 }
 
 func TestAnalyzeStringFormatAcceptsObjectListArguments(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "StringFormatBuilder.cls"), `
 public class StringFormatBuilder {
@@ -6299,6 +6522,7 @@ public class StringFormatBuilder {
 }
 
 func TestAnalyzeFieldSetMemberPathSelectsStringOverload(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "FieldSetBuilder.cls"), `
 public class FieldSetBuilder {
@@ -6320,6 +6544,7 @@ public class FieldSetBuilder {
 }
 
 func TestAnalyzeVisibilityBaseline(t *testing.T) {
+	t.Parallel()
 	index := typesys.Index{
 		Types: []typesys.TypeSymbol{
 			{
@@ -6351,6 +6576,7 @@ func TestAnalyzeVisibilityBaseline(t *testing.T) {
 }
 
 func TestAnalyzeMethodBodyBaseline(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `
 public class Helper {
@@ -6383,6 +6609,7 @@ public class Hello {
 }
 
 func TestAnalyzeMethodBodyDiagnostics(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -6393,7 +6620,7 @@ public class Hello {
     missingCall();
   }
 }
-`)
+	`)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
 
 	result := Analyze(index)
@@ -6409,6 +6636,7 @@ public class Hello {
 }
 
 func TestAnalyzeNonConstructableTypeDiagnostics(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Base.cls"), `public abstract class Base {}`)
 	writeSemaFile(t, filepath.Join(root, "IThing.cls"), `public interface IThing {}`)
@@ -6442,6 +6670,7 @@ public class Uses {
 }
 
 func TestAnalyzeCommaSeparatedLocalDeclaration(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -6462,6 +6691,7 @@ public class Hello {
 }
 
 func TestAnalyzeCustomExceptionConstructorInheritance(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "MyException.cls"), `
 public class MyException extends Exception {}
@@ -6488,6 +6718,7 @@ public class Uses {
 }
 
 func TestAnalyzeCallArgumentSeesBareSObjectTypeLocal(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "SelectorFactory.cls"), `
 public class SelectorFactory {
@@ -6518,6 +6749,7 @@ public class SelectorFactory {
 }
 
 func TestAnalyzeCustomRelationshipFieldInfersReferencedObject(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Product.cls"), `
 public class Product {
@@ -6554,6 +6786,7 @@ public class OrderLine {
 }
 
 func TestAnalyzeSelfLookupRelationshipNameStaysScalar(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSelfLookup.cls"), `
 public class UsesSelfLookup {
@@ -6586,6 +6819,7 @@ public class UsesSelfLookup {
 }
 
 func TestAnalyzeMapLiteralValueChainedCallAfterArrow(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "ITestData.cls"), `
 public interface ITestData {
@@ -6624,6 +6858,7 @@ public class AffiliationTestData {
 }
 
 func TestAnalyzeSObjectAddErrorAndTriggerStaticFlags(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Handler.cls"), `
 public class Handler {
@@ -6659,6 +6894,7 @@ public class Handler {
 }
 
 func TestAnalyzeDescribeFieldGetNameSelectsStringOverload(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "CollectionUtil.cls"), `
 public class CollectionUtil {
@@ -6698,6 +6934,7 @@ public class Handler {
 }
 
 func TestAnalyzeSObjectMapGetSObjectType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Context.cls"), `
 public class Context {
@@ -6726,6 +6963,7 @@ public class Handler {
 }
 
 func TestAnalyzeStandardApexClassSelectorPatterns(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "InvalidOperationException.cls"), `
 public class InvalidOperationException extends Exception {}
@@ -6762,6 +7000,7 @@ public class ApexClassSelector {
 }
 
 func TestAnalyzeConcreteSObjectGetByFieldName(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Handler.cls"), `
 public class Handler {
@@ -6783,6 +7022,7 @@ public class Handler {
 }
 
 func TestAnalyzeSObjectGetPopulatedFieldsAsMap(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -6802,6 +7042,7 @@ public class Hello {
 }
 
 func TestAnalyzeCronJobDetailAndCronTriggerStandardObjects(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -6823,6 +7064,7 @@ public class Hello {
 }
 
 func TestAnalyzePlatformEventDomainListDowncast(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Domain.cls"), `
 public class Domain {
@@ -6860,6 +7102,7 @@ public class EventDomain extends Domain {
 }
 
 func TestAnalyzeStandardChangeEventSObjectFields(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesChangeEvent.cls"), `
 public class UsesChangeEvent {
@@ -6897,6 +7140,7 @@ func TestSemaStandardSObjectMembersIncludeChangeEvent(t *testing.T) {
 }
 
 func TestAnalyzeSObjectCloneAndAddError(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -6918,6 +7162,7 @@ public class Hello {
 }
 
 func TestAnalyzeConstructorPrefersEnumOverObject(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "EventHandlerResponse.cls"), `
 public class EventHandlerResponse {
@@ -6947,6 +7192,7 @@ public class Handler {
 }
 
 func TestAnalyzeThisConstructorCallWithNestedGenericList(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "AttachmentService.cls"), `
 public class AttachmentService {
@@ -6968,6 +7214,7 @@ public class AttachmentService {
 }
 
 func TestAnalyzeStaticFactoryOverloadWithSObjectInitializer(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Schedule.cls"), `
 public class Schedule {
@@ -6998,6 +7245,7 @@ public class Uses {
 }
 
 func TestAnalyzeChainedConstructorCallReturnType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "AccountEvaluator.cls"), `
 public class AccountEvaluator {
@@ -7026,6 +7274,7 @@ public class Uses {
 }
 
 func TestAnalyzeNestedGenericReturnShortName(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "BillingHelper.cls"), `
 public class BillingHelper {
@@ -7047,6 +7296,7 @@ public class BillingHelper {
 }
 
 func TestAnalyzeChainedCollectionCallAfterComparison(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7066,6 +7316,7 @@ public class Hello {
 }
 
 func TestAnalyzeChainedMapConstructorKeySet(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7085,6 +7336,7 @@ public class Hello {
 }
 
 func TestAnalyzeSOQLMapConstructorAndChunkLoop(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSOQL.cls"), `
 public class UsesSOQL {
@@ -7109,6 +7361,7 @@ public class UsesSOQL {
 }
 
 func TestAnalyzeGeneratedStandardSObjectShapeAndSOQL(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesGeneratedSObjectShape.cls"), `
 public class UsesGeneratedSObjectShape {
@@ -7135,6 +7388,7 @@ public class UsesGeneratedSObjectShape {
 }
 
 func TestAnalyzeChainedStaticFactoryCall(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Selector.cls"), `
 public class Selector {
@@ -7167,6 +7421,7 @@ public class Hello {
 }
 
 func TestAnalyzeStandardSetControllerAllowsUnresolvedQueryLocatorArg(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7186,6 +7441,7 @@ public class Hello {
 }
 
 func TestAnalyzeApexPagesHasMessagesSeverity(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7205,6 +7461,7 @@ public class Hello {
 }
 
 func TestAnalyzeFinalLocalVariable(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7225,6 +7482,7 @@ public class Hello {
 }
 
 func TestAnalyzeIRStaticPropertyChainCallArgType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UnitOfWork.cls"), `
 public class UnitOfWork {
@@ -7263,6 +7521,7 @@ public class Hello {
 }
 
 func TestAnalyzeSObjectGetSObjectFieldToken(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7282,6 +7541,7 @@ public class Hello {
 }
 
 func TestAnalyzeReturnAfterCommentStartingWithReturn(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7302,6 +7562,7 @@ public class Hello {
 }
 
 func TestAnalyzeListDeepClonePreserveFlags(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7321,6 +7582,7 @@ public class Hello {
 }
 
 func TestAnalyzeChainedCollectionCallAfterLessThan(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7342,6 +7604,7 @@ public class Hello {
 }
 
 func TestAnalyzeSummaryFieldReturnType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7370,6 +7633,7 @@ public class Hello {
 }
 
 func TestAnalyzeSObjectPutSObject(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7394,6 +7658,7 @@ public class Hello {
 }
 
 func TestAnalyzeMapInitializerValueChainedCall(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Base.cls"), `
 public class Base {
@@ -7425,6 +7690,7 @@ public class Hello extends Base {
 }
 
 func TestAnalyzeKnownFluentWithCall(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7446,6 +7712,7 @@ public class Hello {
 }
 
 func TestAnalyzeChainedCallAfterNestedStaticFactoryArg(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Generator.cls"), `
 public class Generator {
@@ -7490,6 +7757,7 @@ public class Hello {
 }
 
 func TestAnalyzeGetClassGetName(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7509,6 +7777,7 @@ public class Hello {
 }
 
 func TestAnalyzeGetClassGetNameInsideChainedArgument(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Selector.cls"), `
 public class Selector {
@@ -7545,6 +7814,7 @@ public class Hello {
 }
 
 func TestAnalyzeBooleanReturnWithCastComparison(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7568,6 +7838,7 @@ public class Hello {
 }
 
 func TestAnalyzeDateTimeFieldDateCall(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7589,6 +7860,7 @@ public class Hello {
 }
 
 func TestAnalyzeAmbiguousOverloadSameReturnType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7616,6 +7888,7 @@ public class Hello {
 }
 
 func TestAnalyzeRejectsSetArgumentWhenOnlyListObjectOverloadExists(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Q.cls"), `
 public class Q {
@@ -7666,6 +7939,7 @@ public class UsesQ {
 }
 
 func TestAnalyzeFallbackCustomStringFieldContains(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7687,6 +7961,7 @@ public class Hello {
 }
 
 func TestAnalyzeLocalDeclarationShadowsForEachVariable(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "CartItem.cls"), `
 public class CartItem {}
@@ -7718,6 +7993,7 @@ public class Hello {
 }
 
 func TestAnalyzeAuraHandledExceptionConstructable(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7737,6 +8013,7 @@ public class Hello {
 }
 
 func TestAnalyzeDescribeFieldDefaultValueFormula(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7756,6 +8033,7 @@ public class Hello {
 }
 
 func TestAnalyzeDescribeFieldReferenceRows(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7784,6 +8062,7 @@ public class Hello {
 }
 
 func TestAnalyzeDescribeBooleanRows(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7817,6 +8096,7 @@ public class Hello {
 }
 
 func TestAnalyzeDescribeSobjectTypeAlias(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7837,6 +8117,7 @@ public class Hello {
 }
 
 func TestAnalyzeObjectToStringCall(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "AddressUtil.cls"), `
 public class AddressUtil {
@@ -7866,6 +8147,7 @@ public class Hello {
 }
 
 func TestAnalyzeScalarValueAndStringSliceMethods(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7891,6 +8173,7 @@ public class Hello {
 }
 
 func TestAnalyzeTypedListLiteralDoesNotReportUnknownNewlitCall(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "PaymentLine__c.cls"), `public class PaymentLine__c {}`)
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
@@ -7914,6 +8197,7 @@ public class Hello {
 }
 
 func TestAnalyzeDomXmlNodeGetChildElement(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7933,6 +8217,7 @@ public class Hello {
 }
 
 func TestAnalyzeTypeNewInstance(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7952,6 +8237,7 @@ public class Hello {
 }
 
 func TestAnalyzeUserInfoOrganizationName(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7971,6 +8257,7 @@ public class Hello {
 }
 
 func TestAnalyzeMessagingSendEmailAllOrNothing(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -7990,6 +8277,7 @@ public class Hello {
 }
 
 func TestAnalyzeSystemHashCodeAcceptsObjectArgument(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -8009,9 +8297,12 @@ public class Hello {
 }
 
 func TestAnalyzeConnectApiNamedCredentialInputFieldTypes(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
+  public static ConnectApi.NamedCredential staticNamedCredential = new ConnectApi.NamedCredential();
+
   public ConnectApi.NamedCredential run(ConnectApi.NamedCredentialInput input) {
     ConnectApi.NamedCredential namedCredential = new ConnectApi.NamedCredential();
     namedCredential.developerName = input.developerName;
@@ -8019,6 +8310,11 @@ public class Hello {
     namedCredential.type = input.type;
     namedCredential.calloutUrl = input.calloutUrl;
     return namedCredential;
+  }
+
+  public Object handle(ConnectApi.NamedCredentialInput input) {
+    staticNamedCredential.type = input.type;
+    return staticNamedCredential;
   }
 }
 `)
@@ -8033,6 +8329,7 @@ public class Hello {
 }
 
 func TestAnalyzeStandardExceptionSubtypeAssignable(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Logger.cls"), `
 public class Logger {
@@ -8064,6 +8361,7 @@ public class Hello {
 }
 
 func TestAnalyzeListReturnAssignableToIterable(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -8083,6 +8381,7 @@ public class Hello {
 }
 
 func TestAnalyzeDatabaseBatchableMethods(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -8104,6 +8403,7 @@ public class Hello {
 }
 
 func TestAnalyzeDatabaseStatefulBatchCompiles(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "StatefulBatch.cls"), `
 public class StatefulBatch implements Database.Batchable<Integer>, Database.Stateful {
@@ -8138,6 +8438,7 @@ public class UseBatch {
 }
 
 func TestAnalyzeDatabaseBatchableStartAcceptsListReturn(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "ListReturnBatch.cls"), `
 public class ListReturnBatch implements Database.Batchable<Integer> {
@@ -8169,6 +8470,7 @@ public class UseBatch {
 }
 
 func TestAnalyzeDatabaseBatchableStartAcceptsNamespacedSObjectReturn(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "EntityBatch.cls"), `
 public class EntityBatch implements Database.Batchable<Entity__c> {
@@ -8194,6 +8496,7 @@ public class EntityBatch implements Database.Batchable<Entity__c> {
 }
 
 func TestAnalyzeDatabaseBatchableRequiresAllMethods(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "MissingExecuteBatch.cls"), `
 public class MissingExecuteBatch implements Database.Batchable<Integer> {
@@ -8233,6 +8536,7 @@ public class MissingFinishBatch implements Database.Batchable<Integer> {
 }
 
 func TestAnalyzeDatabaseBatchableRejectsWrongReturnTypes(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "WrongStartBatch.cls"), `
 public class WrongStartBatch implements Database.Batchable<Integer> {
@@ -8276,6 +8580,7 @@ public class WrongFinishBatch implements Database.Batchable<Integer> {
 }
 
 func TestAnalyzeDatabaseBatchableGenericContractUsesItemType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "WrongScopeBatch.cls"), `
 public class WrongScopeBatch implements Database.Batchable<Integer> {
@@ -8317,6 +8622,7 @@ public class WrongStartItemBatch implements Database.Batchable<Integer> {
 }
 
 func TestAnalyzeDatabaseExecuteBatchRequiresBatchable(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "NotBatch.cls"), `
 public class NotBatch {}
@@ -8343,6 +8649,7 @@ public class UseBatch {
 }
 
 func TestAnalyzeDatabaseExecuteBatchRejectsStructuralBatchShape(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "StructuralBatch.cls"), `
 public class StructuralBatch {
@@ -8374,6 +8681,7 @@ public class UseBatch {
 }
 
 func TestAnalyzeSystemScheduleBatchRequiresBatchable(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "NotBatch.cls"), `
 public class NotBatch {}
@@ -8400,6 +8708,7 @@ public class UseBatch {
 }
 
 func TestAnalyzeQueryLocatorAndIterableMethods(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -8432,6 +8741,7 @@ public class Hello {
 }
 
 func TestAnalyzeIgnoresSObjectConstructorNamedArgumentsAsAssignments(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -8455,6 +8765,7 @@ public class Hello {
 }
 
 func TestAnalyzeTernaryExpressionTypes(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -8496,7 +8807,39 @@ public class Hello {
 	}
 }
 
+func TestSemaBodyExpressionScanReusesExpressions(t *testing.T) {
+	var body strings.Builder
+	body.WriteString("Boolean pick = true;\n")
+	body.WriteString("Account left = new Account();\n")
+	body.WriteString("Account right = new Account();\n")
+	for i := 0; i < 40; i++ {
+		n := strconv.Itoa(i)
+		body.WriteString("Account selected")
+		body.WriteString(n)
+		body.WriteString(" = pick ? left : right;\n")
+		body.WriteString("selected")
+		body.WriteString(n)
+		body.WriteString(" = pick ? right : left;\n")
+	}
+	body.WriteString("return pick ? left : right;\n")
+
+	scan := newSemaBodyExpressionScan(body.String())
+	expressions := scan.expressions()
+	if len(expressions) != 84 {
+		t.Fatalf("scan expressions = %d, want 84", len(expressions))
+	}
+	allocs := testing.AllocsPerRun(10, func() {
+		if len(scan.expressions()) != len(expressions) {
+			t.Fatal("cached scan expression count changed")
+		}
+	})
+	if allocs != 0 {
+		t.Fatalf("cached scan expressions allocated %.0f times, want 0", allocs)
+	}
+}
+
 func TestAnalyzeCastAndInstanceOfExpressionTypes(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -8533,7 +8876,31 @@ public class Hello {
 	}
 }
 
+func TestCheckBodyIRReportsUnknownCastAndInstanceOfTypes(t *testing.T) {
+	body := `
+Object raw = null;
+Object casted = (MissingCastType) raw;
+Boolean checked = raw instanceof MissingInstanceType;
+`
+	typ := typesys.TypeSymbol{Kind: apexast.DeclarationClass, Name: "Hello", File: "Hello.cls"}
+	member := typesys.MemberSymbol{Kind: apexast.DeclarationMethod, Name: "run", Type: "void"}
+	baseScope := map[string]string{semaCurrentTypeScopeKey: "Hello"}
+	model := buildTypeMembers(typesys.Index{Types: []typesys.TypeSymbol{typ}})
+
+	diagnostics := NewAnalyzer().checkBodyIR(typ, member, body, 0, body, baseScope, model, nil)
+	var unknownTypes []string
+	for _, diag := range diagnostics {
+		if diag.Code == "GLADESEMA006" {
+			unknownTypes = append(unknownTypes, diag.Message)
+		}
+	}
+	if len(unknownTypes) != 2 {
+		t.Fatalf("unknown expression type diagnostics = %d, want 2; diagnostics=%#v", len(unknownTypes), diagnostics)
+	}
+}
+
 func TestAnalyzeReturnCastWithoutWhitespaceAfterReturn(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Pluggable.cls"), `public interface Pluggable {}`)
 	writeSemaFile(t, filepath.Join(root, "Fields.cls"), `public class Fields implements Pluggable {}`)
@@ -8563,6 +8930,7 @@ public class UsesCastReturn {
 }
 
 func TestAnalyzeSimpleReturnTypeDiagnostics(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -8598,6 +8966,7 @@ public class Hello {
 }
 
 func TestAnalyzeReturnUsesBlockScopedLocalType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "BlockReturn.cls"), `
 public class BlockReturn {
@@ -8620,6 +8989,7 @@ public class BlockReturn {
 }
 
 func TestAnalyzeIRBodyAllPathsReturnDiagnostics(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
 public class Hello {
@@ -8677,6 +9047,7 @@ public class Hello {
 }
 
 func TestAnalyzeSimpleExpressionTypeDiagnostics(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `
 public class Helper {
@@ -8716,6 +9087,7 @@ public class Hello {
 }
 
 func TestAnalyzeMethodCallOverloadBaseline(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `
 public class Helper {
@@ -8751,6 +9123,7 @@ public class Hello {
 }
 
 func TestAnalyzeNestedEnumOverloadDeclaredLater(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "ProductFabricator.cls"), `
 public class ProductFabricator {
@@ -8771,6 +9144,7 @@ public class ProductFabricator {
 }
 
 func TestAnalyzeCallArgumentsIgnoreCommentedArgument(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "TestOrderItemLineManager.cls"), `
 public class TestOrderItemLineManager {
@@ -8804,6 +9178,7 @@ public class TestOrderItemLineManager {
 }
 
 func TestAnalyzeChainedMapGetFieldIndexReturnType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "OrderConfirmation.cls"), `
 public class OrderConfirmation {
@@ -8826,6 +9201,7 @@ public class OrderConfirmation {
 }
 
 func TestAnalyzeMultipleLocalDeclaratorsKeepDeclaredType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "TotalAffiliatedAccounts.cls"), `
 public class TotalAffiliatedAccounts {
@@ -8851,6 +9227,7 @@ public class TotalAffiliatedAccounts {
 }
 
 func TestAnalyzeReturnEqualityDoesNotLookLikeAssignment(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Environment.cls"), `
 public class Environment {
@@ -8871,6 +9248,7 @@ public class Environment {
 }
 
 func TestAnalyzeNestedCastFieldAccess(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Expr.cls"), `
 public class Expr {
@@ -8910,6 +9288,7 @@ public class ContextResolver {
 }
 
 func TestAnalyzeMultipleUninitializedLocalDeclarators(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "StandardRegistrationValidator.cls"), `
 public class StandardRegistrationValidator {
@@ -8941,6 +9320,7 @@ public class StandardRegistrationValidator {
 }
 
 func TestAnalyzeVisibleOverrideWinsOverProtectedBaseMethod(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "SObjectWrapper.cls"), `
 public virtual class SObjectWrapper {
@@ -8978,6 +9358,7 @@ public class Service {
 }
 
 func TestAnalyzeMultilineLocalDeclarationDoesNotRedeclareLaterUse(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "PaymentSchedule.cls"), `
 public class PaymentSchedule {
@@ -9026,6 +9407,7 @@ public class Processor {
 }
 
 func TestAnalyzeCommentedConstructorDoesNotTriggerConstructability(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "SubscriptionManager.cls"), `
 public abstract class SubscriptionManager {
@@ -9052,6 +9434,7 @@ public class TestSubscriptions {
 }
 
 func TestAnalyzeSObjectInstanceFieldsUseValueTypes(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesInstanceFields.cls"), `
 public class UsesInstanceFields {
@@ -9078,6 +9461,7 @@ public class UsesInstanceFields {
 }
 
 func TestAnalyzeMethodCallNumericWideningBaseline(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `
 public class Helper {
@@ -9119,6 +9503,7 @@ public class Hello {
 }
 
 func TestAnalyzeMethodCallNumericOverloadChoosesNarrowestWidening(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `
 public class Helper {
@@ -9150,6 +9535,7 @@ public class Hello {
 }
 
 func TestAnalyzeMethodCallObjectOverloadChoosesNearestAncestor(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Root.cls"), `public virtual class Root {}`)
 	writeSemaFile(t, filepath.Join(root, "Parent.cls"), `public virtual class Parent extends Root {}`)
@@ -9184,6 +9570,7 @@ public class Hello {
 }
 
 func TestAnalyzeMethodCallOverloadUsesPairwiseSpecificity(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `
 public class Helper {
@@ -9217,6 +9604,7 @@ public class Hello {
 }
 
 func TestAnalyzeMethodCallNullUsesMostSpecificOverload(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `
 public class Helper {
@@ -9244,6 +9632,7 @@ public class Hello {
 }
 
 func TestAnalyzeInheritedAndSuperMethodCalls(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Worker.cls"), `
 public interface Worker {
@@ -9278,6 +9667,7 @@ public class Child extends Base implements Worker {
 }
 
 func TestAnalyzeInheritedSuperReturnAndFieldTypes(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Base.cls"), `
 public virtual class Base {
@@ -9319,6 +9709,7 @@ public class Child extends Base {
 }
 
 func TestAnalyzeSuppressesUnknownCallsThatMayComeFromMissingSuperclass(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Child.cls"), `
 public class Child extends MissingBase {
@@ -9341,6 +9732,7 @@ public class Child extends MissingBase {
 }
 
 func TestAnalyzeSuppressesUnknownFieldsThatMayComeFromMissingSuperclass(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Child.cls"), `
 public class Child extends MissingBase {
@@ -9369,6 +9761,7 @@ public class UseChild {
 }
 
 func TestAnalyzeSuppressesUnknownCallsThroughNestedTypeMissingSuperclass(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Base.cls"), `
 public class Base extends MissingBase {
@@ -9398,6 +9791,7 @@ public class Outer {
 }
 
 func TestAnalyzeSuppressesSuperConstructorCallsToMissingSuperclass(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Child.cls"), `
 public class Child extends MissingBase {
@@ -9419,6 +9813,7 @@ public class Child extends MissingBase {
 }
 
 func TestAnalyzeInterfaceAndOverrideReturnInference(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Worker.cls"), `
 public interface Worker {
@@ -9472,6 +9867,7 @@ public class Uses {
 }
 
 func TestAnalyzeOverrideAndImplementationContracts(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Worker.cls"), `
 public interface Worker {
@@ -9515,6 +9911,7 @@ public class Bad extends Base implements Worker {
 }
 
 func TestAnalyzeSkipsInheritanceContractsForPackageArtifacts(t *testing.T) {
+	t.Parallel()
 	result := Analyze(typesys.Index{Types: []typesys.TypeSymbol{{
 		Kind:       apexast.DeclarationClass,
 		Name:       "ScheduleLinesProcessorJob",
@@ -9533,6 +9930,7 @@ func TestAnalyzeSkipsInheritanceContractsForPackageArtifacts(t *testing.T) {
 }
 
 func TestAnalyzeManagedPackageAccessRules(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
 	consumerRoot := filepath.Join(root, "consumer")
@@ -9608,6 +10006,7 @@ public class CabinConsumer {
 }
 
 func TestAnalyzeManagedPackageInstancePropertyKeepsNamespace(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
 	consumerRoot := filepath.Join(root, "consumer")
@@ -9720,6 +10119,7 @@ public class GatewayService {
 }
 
 func TestAnalyzeSameNamespaceSourceDependencyInheritance(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
 	consumerRoot := filepath.Join(root, "consumer")
@@ -9800,6 +10200,7 @@ global class ProgramAgreementSetter extends pkgx.AgreementSetter {
 }
 
 func TestAnalyzeSameNamespaceSourceDependencyShortName(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
 	consumerRoot := filepath.Join(root, "consumer")
@@ -9843,6 +10244,7 @@ public class UsesQ {
 }
 
 func TestAnalyzeSameNamespaceSourceDependencyProtectedFieldAccess(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
 	consumerRoot := filepath.Join(root, "consumer")
@@ -9889,6 +10291,7 @@ public class ProductRoute extends RestRoute {
 }
 
 func TestAnalyzeAcceptsLowercaseExternalManagedPackageApexNamespace(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	classPath := filepath.Join(root, "UsesVendor.cls")
 	writeSemaFile(t, classPath, `
@@ -9910,6 +10313,7 @@ public class UsesVendor {
 }
 
 func TestAnalyzeLeavesExternalManagedPackageSObjectFieldsOpen(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	classPath := filepath.Join(root, "UsesExternalFields.cls")
 	writeSemaFile(t, classPath, `
@@ -9936,6 +10340,7 @@ public class UsesExternalFields {
 }
 
 func TestAnalyzeKeepsLocalManagedPackageSObjectFieldsStrict(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	classPath := filepath.Join(root, "UsesLocalFields.cls")
 	writeSemaFile(t, classPath, `
@@ -9958,6 +10363,7 @@ public class UsesLocalFields {
 }
 
 func TestAnalyzeSkipsSourceBackedDependencyDiagnostics(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
 	consumerRoot := filepath.Join(root, "consumer")
@@ -10011,6 +10417,7 @@ public class Consumer {
 }
 
 func TestAnalyzeRemapsDependencySourceNamespaceReferences(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "base-source")
 	consumerRoot := filepath.Join(root, "consumer")
@@ -10087,6 +10494,7 @@ public class Consumer {
 }
 
 func TestAnalyzeSourceBackedDependencyDowngradesSemanticUncertainty(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
 	consumerRoot := filepath.Join(root, "consumer")
@@ -10134,6 +10542,7 @@ public class Consumer {
 }
 
 func TestAnalyzeDoesNotRequirePlatformStubsToSatisfyInterfaces(t *testing.T) {
+	t.Parallel()
 	result := Analyze(typesys.Index{Types: []typesys.TypeSymbol{{
 		Kind:       apexast.DeclarationClass,
 		Name:       "OrderItem",
@@ -10151,6 +10560,7 @@ func TestAnalyzeDoesNotRequirePlatformStubsToSatisfyInterfaces(t *testing.T) {
 }
 
 func TestAnalyzeNestedSiblingOverrideSignatures(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "ExprNode.cls"), `
 public abstract class ExprNode {
@@ -10182,6 +10592,7 @@ public interface Context {
 }
 
 func TestAnalyzeNestedInterfaceResolutionPrefersEnclosingType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Filter.cls"), `
 public interface Filter {
@@ -10224,6 +10635,7 @@ public class SOQL {
 }
 
 func TestAnalyzePlatformOverrideSignatures(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Picklist.cls"), `
 global class Picklist extends VisualEditor.DynamicPickList {
@@ -10256,6 +10668,7 @@ public class Callback extends Metadata.DeployCallbackContext {
 }
 
 func TestAnalyzeConstructorChainingBaseline(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Base.cls"), `
 public class Base {
@@ -10284,6 +10697,7 @@ public class Child extends Base {
 }
 
 func TestAnalyzeConstructorChainingDiagnostics(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Plain.cls"), `
 public class Plain {
@@ -10310,6 +10724,7 @@ public class Plain {
 }
 
 func TestAnalyzeMethodCallVisibilityDiagnostics(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Secret.cls"), `
 public class Secret {
@@ -10363,6 +10778,7 @@ public class Intruder {
 }
 
 func TestAnalyzeTestVisibleMethodAccess(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Secret.cls"), `
 public class Secret {
@@ -10409,6 +10825,7 @@ public class Intruder {
 }
 
 func TestAnalyzePropertyAccessUsesDeclaredDtoType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "ProcessOrderCommand.cls"), `
 public class ProcessOrderCommand {
@@ -10451,6 +10868,7 @@ public class ProcessOrderService {
 }
 
 func TestAnalyzeNestedEnumConstantFieldPath(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "di_Binding.cls"), `
 public abstract class di_Binding {
@@ -10479,6 +10897,7 @@ public class di_Module {
 }
 
 func TestAnalyzeLocalNestedEnumWinsOverDependencyType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
 	consumerRoot := filepath.Join(root, "consumer")
@@ -10548,6 +10967,7 @@ public class di_Module {
 }
 
 func TestAnalyzeNamespacedNestedEnumConstantFieldPath(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "LmsEventService.cls"), `
 public class LmsEventService {
@@ -10585,6 +11005,7 @@ private class LmsEventServiceTest {
 }
 
 func TestAnalyzeTestVisibleConstructorAccess(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "SecretCtor.cls"), `
 public class SecretCtor {
@@ -10626,6 +11047,7 @@ public class IntruderCtor {
 }
 
 func TestAnalyzeAnnotationSemantics(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "GoodRest.cls"), `
 @RestResource(urlMapping='/good/*')
@@ -10681,6 +11103,7 @@ public class BadAnnotations {
 }
 
 func TestAnalyzeStaticAndInstanceMethodAccess(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Worker.cls"), `
 public class Worker {
@@ -10721,6 +11144,7 @@ public class Caller {
 }
 
 func TestAnalyzeLocalDoesNotShadowTypeInOwnInitializer(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Factory.cls"), `
 public class Factory {
@@ -10750,6 +11174,7 @@ public class Caller {
 }
 
 func TestAnalyzeDuplicateNamedClassUsesOwnMembersForBody(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	first := filepath.Join(root, "one", "ReviewDataProviderTest.cls")
 	second := filepath.Join(root, "two", "ReviewDataProviderTest.cls")
@@ -10796,6 +11221,7 @@ private class ReviewDataProviderTest {
 }
 
 func TestAnalyzeSOQLAggregateForEachLiteralUsesAggregateResultElements(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "AggregateLoop.cls"), `
 public class AggregateLoop {
@@ -10826,6 +11252,7 @@ public class AggregateLoop {
 }
 
 func TestAnalyzeProjectClassNamedStandardObjectKeepsLocalInstances(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Order.cls"), `
 public class Order {
@@ -10874,6 +11301,7 @@ public class OrderUse {
 }
 
 func TestAnalyzeMultilineSOQLDoesNotDeclareClauseLocals(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "QueryUse.cls"), `
 public class QueryUse {
@@ -10902,6 +11330,7 @@ public class QueryUse {
 }
 
 func TestAnalyzeCallArgumentAssignmentDoesNotDeclareLocal(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "ArgumentAssignment.cls"), `
 public class ArgumentAssignment {
@@ -10931,6 +11360,7 @@ public class ArgumentAssignment {
 }
 
 func TestAnalyzeSchemaAliasInstanceReceiverAllowsInstanceMethods(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "SchemaAliasReceiver.cls"), `
 public class SchemaAliasReceiver {
@@ -10953,6 +11383,7 @@ public class SchemaAliasReceiver {
 }
 
 func TestAnalyzeLowercaseLoopVariableDoesNotResolveAsPlatformType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "LoopVariableReceiver.cls"), `
 public class LoopVariableReceiver {
@@ -10980,6 +11411,7 @@ public class LoopVariableReceiver {
 }
 
 func TestAnalyzeStaticSOQLLiteralMatchesTypedListParameter(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "QueryArg.cls"), `
 public class QueryArg {
@@ -11008,6 +11440,7 @@ public class QueryArg {
 }
 
 func TestAnalyzeDatabaseDMLNewListLiteralReturnsResultList(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "DatabaseDMLInlineList.cls"), `
 public class DatabaseDMLInlineList {
@@ -11029,6 +11462,7 @@ public class DatabaseDMLInlineList {
 }
 
 func TestAnalyzeInheritedNestedTypeShortName(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "FlexiblePayment.cls"), `
 public abstract class FlexiblePayment {
@@ -11071,6 +11505,7 @@ public class FlexiblePaymentForError extends FlexiblePayment {
 }
 
 func TestAnalyzeMessagingEmailClone(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "EmailClone.cls"), `
 public class EmailClone {
@@ -11092,6 +11527,7 @@ public class EmailClone {
 }
 
 func TestAnalyzeUserDefinedClassClone(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Email.cls"), `
 public class Email {
@@ -11122,6 +11558,7 @@ public class EmailService {
 }
 
 func TestAnalyzeChainedCallWithArgumentsOnNextLine(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "StringSelector.cls"), `
 public class StringSelector {
@@ -11155,6 +11592,7 @@ public class ChainLineBreak {
 }
 
 func TestAnalyzeFluentStaticConstructorChain(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "OrderTestData.cls"), `
 public class OrderTestData {
@@ -11198,6 +11636,7 @@ public class OrderBuilderUse {
 }
 
 func TestAnalyzeFluentConstructorChainKeepsReceiverType(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Fabricated.cls"), `
 public class Fabricated {
@@ -11238,6 +11677,7 @@ public class FabricatedUse {
 }
 
 func TestAnalyzeCommaSeparatedLocalInitializersStopAtDeclaratorComma(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "CommaLocals.cls"), `
 public class CommaLocals {
@@ -11262,6 +11702,7 @@ public class CommaLocals {
 }
 
 func TestAnalyzeCustomMetadataStandardFieldsAreStrings(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesCustomMetadataStandardFields.cls"), `
 public class UsesCustomMetadataStandardFields {
@@ -11293,6 +11734,7 @@ public class UsesCustomMetadataStandardFields {
 }
 
 func TestAnalyzeProjectReferencedLiteralFieldTypesFlowToAssignmentsAndConstructors(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "FeeDto.cls"), `
 public class FeeDto {
@@ -11335,6 +11777,7 @@ public class UsesInferredFeeFields {
 }
 
 func TestAnalyzeProjectReferencedDateFactoryFieldTypeFlowsToCalls(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesInferredDateFields.cls"), `
 public class UsesInferredDateFields {
@@ -11361,6 +11804,7 @@ public class UsesInferredDateFields {
 }
 
 func TestAnalyzeProjectReferencedAnyFieldDoesNotBlockStringOverload(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "StringConsumer.cls"), `
 public class StringConsumer {
@@ -11388,6 +11832,7 @@ public class UsesUnknownInferredField {
 }
 
 func TestAnalyzeProjectReferencedSchemaDoesNotInferFieldsForAuthoritativeObjects(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesTypoField.cls"), `
 public class UsesTypoField {
@@ -11421,6 +11866,7 @@ public class UsesTypoField {
 }
 
 func TestAnalyzeProjectReferencedSchemaIgnoresNestedNamedArgsInSObjectLiteral(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "NestedArgs.cls"), `
 public class NestedArgs {
@@ -11455,7 +11901,94 @@ public class NestedArgs {
 	t.Fatalf("missing Fee__c object: %#v", enriched.Objects)
 }
 
+func TestAnalyzeProjectReferencedSchemaInfersObjectWhenSchemaEmpty(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "ManageApprovalSteps.cls"), `
+global with sharing class ManageApprovalSteps {
+  public static List<Member> getApprovalProcessSteps(Id approvalProcessId) {
+    List<ApprovalProcessStepDefinition__c> steps = [
+      SELECT Id, Name
+      FROM ApprovalProcessStepDefinition__c
+      WHERE ApprovalProcessDefinition__c = :approvalProcessId
+      ORDER BY Order__c ASC
+    ];
+    List<Member> members = new List<Member>();
+    for (ApprovalProcessStepDefinition__c step : steps) {
+      members.add(new Member(step.Name, step.Id));
+    }
+    return members;
+  }
+
+  public static void saveApprovalSteps(List<ApprovalProcessStepDefinition__c> appSteps) {
+    update appSteps;
+  }
+
+  global class Member {
+    public String label;
+    public String value;
+    public Member(String label, String value) {
+      this.label = label;
+      this.value = value;
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "ManageApprovalSteps.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_OBJECT", "ApprovalProcessStepDefinition__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA004", "ApprovalProcessStepDefinition__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA006", "ApprovalProcessStepDefinition__c")
+}
+
+func TestAnalyzeProjectReferencedSchemaInfersEnhancedForObjectWhenSchemaPresent(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "ManageApprovalSteps.cls"), `
+global with sharing class ManageApprovalSteps {
+  public static List<Member> getApprovalProcessSteps(Id approvalProcessId) {
+    List<ApprovalProcessStepDefinition__c> steps = [
+      SELECT Id, Name
+      FROM ApprovalProcessStepDefinition__c
+      WHERE ApprovalProcessDefinition__c = :approvalProcessId
+      ORDER BY Order__c ASC
+    ];
+    List<Member> members = new List<Member>();
+    for (ApprovalProcessStepDefinition__c step : steps) {
+      members.add(new Member(step.Name, step.Id));
+    }
+    return members;
+  }
+
+  public static void saveApprovalSteps(List<ApprovalProcessStepDefinition__c> appSteps) {
+    update appSteps;
+  }
+
+  global class Member {
+    public String label;
+    public String value;
+    public Member(String label, String value) {
+      this.label = label;
+      this.value = value;
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "ManageApprovalSteps.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Existing__c", Fields: []schema.Field{{Name: "Name", Type: "Text"}}}}})
+	result := Analyze(index)
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_OBJECT", "ApprovalProcessStepDefinition__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA004", "ApprovalProcessStepDefinition__c")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA006", "ApprovalProcessStepDefinition__c")
+}
+
 func TestAnalyzeProjectReferencedFieldsRefineExistingAnyAndObjectFields(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "FeeDto.cls"), `
 public class FeeDto {
@@ -11492,6 +12025,77 @@ public class UsesExistingLooseFields {
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("literal-backed loose fields should refine to useful types: %#v", result.Diagnostics)
+	}
+}
+
+func TestProjectReferencedSchemaInfersStandardObjectLiteralFields(t *testing.T) {
+	t.Parallel()
+	ctx := newSemaProjectReferencedSchemaContext([]schema.Object{{Name: "Existing__c"}}, "")
+	semaProjectReferencedSchemaFieldsFromSource(ctx, `
+public class UsesStandardObject {
+  public void seed() {
+    new Campaign(
+      Name = 'Campaign',
+      ExpectedRevenue = 100, // Currency(18,0)
+      ExpectedResponse = Math.mod(1,10) * 10 + Math.mod(1,100)/100 // Percent(8,2)
+    );
+  }
+}
+`)
+	for _, object := range ctx.objects {
+		if !strings.EqualFold(object.Name, "Campaign") {
+			continue
+		}
+		for _, field := range object.Fields {
+			if strings.EqualFold(field.Name, "ExpectedResponse") {
+				return
+			}
+		}
+		t.Fatalf("Campaign missing ExpectedResponse field: %#v", object.Fields)
+	}
+	t.Fatalf("missing inferred Campaign object: %#v", ctx.objects)
+}
+
+func TestProjectReferencedSchemaFieldsFromSourceKeepsMixedScanAllocationsBounded(t *testing.T) {
+	var source strings.Builder
+	source.WriteString("public class UsesInferredFields {\n")
+	source.WriteString("  public void run() {\n")
+	for i := 0; i < 40; i++ {
+		n := strconv.Itoa(i)
+		source.WriteString("    Entity__c entity")
+		source.WriteString(n)
+		source.WriteString(" = new Entity__c();\n")
+		source.WriteString("    Gateway__c gateway")
+		source.WriteString(n)
+		source.WriteString(" = new Gateway__c(Entity__c = entity")
+		source.WriteString(n)
+		source.WriteString(".Id);\n")
+		source.WriteString("    Fee__c fee")
+		source.WriteString(n)
+		source.WriteString(" = new Fee__c(PaymentMethodType__c = 'Credit Card', Mandatory__c = false, Gateway__c = gateway")
+		source.WriteString(n)
+		source.WriteString(".Id);\n")
+		source.WriteString("    String paymentMethod")
+		source.WriteString(n)
+		source.WriteString(" = fee")
+		source.WriteString(n)
+		source.WriteString(".PaymentMethodType__c;\n")
+	}
+	source.WriteString("  }\n")
+	source.WriteString("}\n")
+	sourceText := source.String()
+	objects := []schema.Object{
+		{Name: "Entity__c"},
+		{Name: "Gateway__c"},
+		{Name: "Fee__c"},
+	}
+
+	allocs := testing.AllocsPerRun(5, func() {
+		ctx := newSemaProjectReferencedSchemaContext(objects, "")
+		semaProjectReferencedSchemaFieldsFromSource(ctx, sourceText)
+	})
+	if allocs > 1100 {
+		t.Fatalf("project-referenced schema scan allocated %.0f times, want at most 1100", allocs)
 	}
 }
 
@@ -11573,6 +12177,7 @@ func TestInferSemaArgTypeSObjectTypeFieldsPath(t *testing.T) {
 }
 
 func TestAnalyzeSafeNavigationMethodReceiverField(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "CustomerOrder.cls"), `
 public class CustomerOrder {
@@ -11607,6 +12212,7 @@ public class OrderLineUse {
 }
 
 func TestAnalyzeFieldVisibilityDiagnostics(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Secret.cls"), `
 public class Secret {
@@ -11653,6 +12259,7 @@ public class Intruder {
 }
 
 func TestAnalyzeTriggerObject(t *testing.T) {
+	t.Parallel()
 	index := typesys.Index{
 		Triggers: []typesys.TriggerSymbol{{Name: "ThingTrigger", ObjectName: "Missing__c", File: "Thing.trigger"}},
 	}
@@ -11667,6 +12274,7 @@ func TestAnalyzeTriggerObject(t *testing.T) {
 }
 
 func TestAnalyzeBareInstanceFieldArgumentInChainedInterfaceCall(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "QueryBindings.cls"), `
 public class QueryBindings {}
@@ -11705,6 +12313,7 @@ public class QueryObject {
 }
 
 func TestAnalyzeBareInstanceFieldsInImplicitChainedInterfaceCall(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "QueryBindings.cls"), `
 public class QueryBindings {}
@@ -11763,6 +12372,171 @@ public class QueryObject {
 			t.Fatalf("bare instance fields should type-check in implicit chained interface call: %#v", result.Diagnostics)
 		}
 	}
+}
+
+func TestAnalyzeAbstractReceiverMethodThroughThisField(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "EmailTemplate.cls"), `
+public abstract class EmailTemplate {
+  public abstract String getId();
+  public abstract EmailTemplateApiName getApiName();
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "EmailTemplateApiName.cls"), `
+public class EmailTemplateApiName {}
+`)
+	writeSemaFile(t, filepath.Join(root, "fflib_ApexMocks.cls"), `
+public class fflib_ApexMocks {
+  public Object mock(Type typ) { return null; }
+  public void startStubbing() {}
+  public Stubber when(Object value) { return new Stubber(); }
+  public void stopStubbing() {}
+  public class Stubber {
+    public void thenReturn(Object value) {}
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "EmailTemplateTestData.cls"), `
+public class EmailTemplateTestData {
+  private final fflib_ApexMocks mocks;
+  private final EmailTemplate mockEmailTemplate;
+  private String id;
+  private EmailTemplateApiName apiName;
+
+  public EmailTemplateTestData() {
+    this.mocks = new fflib_ApexMocks();
+    this.mockEmailTemplate = (EmailTemplate)this.mocks.mock(EmailTemplate.class);
+  }
+
+  public EmailTemplate build() {
+    mocks.startStubbing();
+    mocks.when(this.mockEmailTemplate.getId())
+      .thenReturn(this.id);
+    mocks.when(this.mockEmailTemplate.getApiName())
+      .thenReturn(this.apiName);
+    mocks.stopStubbing();
+    return this.mockEmailTemplate;
+  }
+}
+`)
+	duplicateRoot := filepath.Join(root, "dependency")
+	if err := os.MkdirAll(duplicateRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeSemaFile(t, filepath.Join(duplicateRoot, "EmailTemplateTestData.cls"), `
+public class EmailTemplateTestData {}
+`)
+	index := typesys.Build(project.Project{
+		Root: root,
+		ApexFiles: []string{
+			filepath.Join(root, "EmailTemplate.cls"),
+			filepath.Join(root, "EmailTemplateApiName.cls"),
+			filepath.Join(root, "fflib_ApexMocks.cls"),
+			filepath.Join(root, "EmailTemplateTestData.cls"),
+			filepath.Join(duplicateRoot, "EmailTemplateTestData.cls"),
+		},
+	}, schema.Schema{})
+	for i := range index.Types {
+		if index.Types[i].File == filepath.Join(duplicateRoot, "EmailTemplateTestData.cls") {
+			index.Types[i].Namespace = "znu"
+			index.Types[i].Dependency = true
+			index.Types[i].SourceRoot = duplicateRoot
+		} else {
+			index.Types[i].Namespace = "acme"
+		}
+	}
+	result := Analyze(index)
+	assertNoDiagnosticContaining(t, result, "GLADESEMA008", "this.mockEmailTemplate.getId")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA008", "this.mockEmailTemplate.getApiName")
+}
+
+func TestDiagnoseMethodCallResolvesInferredDottedReceiverMethod(t *testing.T) {
+	t.Parallel()
+	index := typesys.Index{Types: []typesys.TypeSymbol{
+		{
+			Kind: apexast.DeclarationClass,
+			Name: "EmailTemplate",
+			Members: []typesys.MemberSymbol{
+				{Kind: apexast.DeclarationMethod, Name: "getId", Type: "String", Modifiers: []string{"public", "abstract"}},
+			},
+		},
+		{
+			Kind: apexast.DeclarationClass,
+			Name: "EmailTemplateTestData",
+			Members: []typesys.MemberSymbol{
+				{Kind: apexast.DeclarationField, Name: "mockEmailTemplate", Type: "EmailTemplate", Modifiers: []string{"private"}},
+			},
+		},
+	}}
+	model := buildTypeMembers(index)
+	scope := map[string]string{semaCurrentTypeScopeKey: "EmailTemplateTestData"}
+	for name, fieldType := range semaFieldScope(model, "EmailTemplateTestData", make(map[string]bool)) {
+		scope[name] = fieldType
+	}
+	typ := index.Types[1]
+	member := typesys.MemberSymbol{Kind: apexast.DeclarationMethod, Name: "build"}
+	diags := NewAnalyzer().diagnoseMethodCall(typ, member, "this.mockEmailTemplate.getId", nil, nil, true, "instance", 0, len("this.mockEmailTemplate.getId"), "this.mockEmailTemplate.getId()", scope, model)
+	for _, diag := range diags {
+		if diag.Code == "GLADESEMA008" {
+			t.Fatalf("inferred dotted receiver method should resolve: %#v", diags)
+		}
+	}
+
+	irScope := newIRSemaScope(scope)
+	irDiags := NewAnalyzer().checkIRCall(typ, member, ir.Expr{Kind: ir.ExprCall, Callee: "this.mockEmailTemplate.getId"}, irScope, 0, 0, "this.mockEmailTemplate.getId()", model, nil)
+	for _, diag := range irDiags {
+		if diag.Code == "GLADESEMA008" {
+			t.Fatalf("IR inferred dotted receiver method should resolve: %#v", irDiags)
+		}
+	}
+}
+
+func TestAnalyzeKnownPlatformFieldReceiverMethodStaysPermissive(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesEmailTemplate.cls"), `
+public class UsesEmailTemplate {
+  private EmailTemplate template;
+  public void run() {
+    this.template.getId();
+    this.template.getApiName();
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesEmailTemplate.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	assertNoDiagnosticContaining(t, result, "GLADESEMA008", "this.template.getId")
+	assertNoDiagnosticContaining(t, result, "GLADESEMA008", "this.template.getApiName")
+}
+
+func TestAnalyzeStandardSObjectInitializerNamedArgAfterLineComment(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "SortCollectionTest.cls"), `
+public class SortCollectionTest {
+  static void makeData() {
+    Integer i = 1;
+    String name = 'Campaign';
+    new Campaign(
+      Name = name,
+      ExpectedRevenue = i * 100, // Currency(18,0)
+      ExpectedResponse = Math.mod(i,10) * 10 + Math.mod(i,100)/100 // Percent(8,2)
+    );
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "SortCollectionTest.cls")},
+	}, schema.Schema{Objects: []schema.Object{{
+		Name: "Existing__c",
+	}}})
+	result := Analyze(index)
+	assertNoDiagnosticContaining(t, result, "GLADESEMA013", "ExpectedResponse")
 }
 
 func writeSemaFile(t *testing.T, path, contents string) {

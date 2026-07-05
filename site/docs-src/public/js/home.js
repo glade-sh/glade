@@ -45,7 +45,7 @@
     '  "status": "failed",',
     '  "exitCode": 1,',
     '  "project": {',
-    '    "root": "/private/tmp/glade-home-account-field",',
+    '    "root": "/tmp/glade-home-account-field",',
     '    "sourceApiVersion": "60.0"',
     "  },",
     '  "summary": {',

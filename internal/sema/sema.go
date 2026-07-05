@@ -1069,9 +1069,38 @@ func returnTypeDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, d
 	}
 }
 
+type semaBodyExpressionScan struct {
+	body              string
+	localDeclMatches  [][]int
+	assignmentMatches [][]int
+	returnMatches     [][]int
+	expressionsReady  bool
+	expressionsCached []semaArg
+}
+
+func newSemaBodyExpressionScan(body string) *semaBodyExpressionScan {
+	return &semaBodyExpressionScan{
+		body:              body,
+		localDeclMatches:  localDeclPattern.FindAllStringSubmatchIndex(body, -1),
+		assignmentMatches: assignmentPattern.FindAllStringSubmatchIndex(body, -1),
+		returnMatches:     returnPattern.FindAllStringSubmatchIndex(body, -1),
+	}
+}
+
 func semaBodyExpressions(body string) []semaArg {
+	return newSemaBodyExpressionScan(body).expressions()
+}
+
+func (scan *semaBodyExpressionScan) expressions() []semaArg {
+	if scan == nil {
+		return nil
+	}
+	if scan.expressionsReady {
+		return scan.expressionsCached
+	}
+	body := scan.body
 	var exprs []semaArg
-	for _, match := range localDeclPattern.FindAllStringSubmatchIndex(body, -1) {
+	for _, match := range scan.localDeclMatches {
 		if semaLocalDeclMatchInIgnoredText(body, match) {
 			continue
 		}
@@ -1079,7 +1108,7 @@ func semaBodyExpressions(body string) []semaArg {
 			exprs = append(exprs, trimSemaArg(body, match[1], semaStatementEnd(body, match[1])))
 		}
 	}
-	for _, match := range assignmentPattern.FindAllStringSubmatchIndex(body, -1) {
+	for _, match := range scan.assignmentMatches {
 		if semaOffsetInIgnoredText(body, match[0]) {
 			continue
 		}
@@ -1088,7 +1117,7 @@ func semaBodyExpressions(body string) []semaArg {
 		}
 		exprs = append(exprs, trimSemaArg(body, match[1], semaStatementEnd(body, match[1])))
 	}
-	for _, match := range returnPattern.FindAllStringSubmatchIndex(body, -1) {
+	for _, match := range scan.returnMatches {
 		if semaReturnMatchInIgnoredText(body, match) {
 			continue
 		}
@@ -1096,7 +1125,9 @@ func semaBodyExpressions(body string) []semaArg {
 			exprs = append(exprs, trimSemaArg(body, start, end))
 		}
 	}
-	return exprs
+	scan.expressionsCached = exprs
+	scan.expressionsReady = true
+	return scan.expressionsCached
 }
 
 func semaReturnValueRange(match []int) (int, int, bool) {
@@ -1391,7 +1422,7 @@ func semaExplicitPlatformStaticFieldPathMember(root, fieldPath string) (resolved
 		return resolvedMember{}, false
 	}
 	canonical := semaCanonicalPlatformAlias(root)
-	for _, symbol := range typesys.StandardPlatformSymbols() {
+	for _, symbol := range typesys.StandardPlatformSymbolView() {
 		if !strings.EqualFold(symbol.Name, canonical) {
 			continue
 		}
@@ -1497,7 +1528,7 @@ func semaInitStandardPlatformEnums() {
 	semaStandardPlatformEnumOnce.Do(func() {
 		semaStandardPlatformEnumTypes = map[string]string{}
 		semaStandardPlatformEnumValues = map[string]map[string]bool{}
-		for _, symbol := range typesys.StandardPlatformSymbols() {
+		for _, symbol := range typesys.StandardPlatformSymbolView() {
 			if symbol.Kind != apexast.DeclarationEnum {
 				continue
 			}
@@ -2875,13 +2906,13 @@ func semaIsExternalManagedPackageAPIName(projectNamespace, name string) bool {
 }
 
 func semaIsCustomAPIName(name string) bool {
-	lower := strings.ToLower(strings.TrimSpace(name))
-	for _, suffix := range []string{"__c", "__r", "__e", "__mdt", "__b", "__s"} {
-		if strings.HasSuffix(lower, suffix) {
-			return true
-		}
-	}
-	return false
+	name = strings.TrimSpace(name)
+	return semaHasAPISuffixFold(name, "__c") ||
+		semaHasAPISuffixFold(name, "__r") ||
+		semaHasAPISuffixFold(name, "__e") ||
+		semaHasAPISuffixFold(name, "__mdt") ||
+		semaHasAPISuffixFold(name, "__b") ||
+		semaHasAPISuffixFold(name, "__s")
 }
 
 func semaHasNamespaceToken(name string) bool {

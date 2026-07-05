@@ -555,6 +555,9 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 				if semaCallMayBelongToMissingSuperclass(model, typ, callee, receiverMode, receiverType) {
 					return nil
 				}
+				if resolved := resolveMemberMethods(model, receiverType, method); len(resolved) != 0 {
+					return a.diagnoseMethodCall(typ, member, callee, resolved, args, haveArgs, receiverMode, start, end, source, scope, model)
+				}
 				if sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method); ok {
 					argTypes := make([]string, len(args))
 					for i, arg := range args {
@@ -563,6 +566,9 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 					if len(args) == 0 || semaArgsMatchAny(sig.params, argTypes, model) {
 						return nil
 					}
+				}
+				if a.hasKnown(receiverType) {
+					return nil
 				}
 			}
 		}

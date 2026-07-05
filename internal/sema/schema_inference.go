@@ -4,11 +4,12 @@ import (
 	"strings"
 
 	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
 func enrichIndexWithProjectReferencedSchemaFields(index typesys.Index) typesys.Index {
-	if len(index.Objects) == 0 || len(index.Types) == 0 {
+	if len(index.Types) == 0 {
 		return index
 	}
 	ctx := newSemaProjectReferencedSchemaContext(index.Objects, index.Project.Namespace)
@@ -34,6 +35,7 @@ type semaProjectReferencedSchemaContext struct {
 	equivalentObjectIndexes    map[string]int
 	inferenceAllowedObjectKeys map[string]bool
 	childRelationshipTargetSet map[string]map[string]struct{}
+	inferObjectReferences      bool
 }
 
 func newSemaProjectReferencedSchemaContext(objects []schema.Object, namespace string) *semaProjectReferencedSchemaContext {
@@ -44,6 +46,7 @@ func newSemaProjectReferencedSchemaContext(objects []schema.Object, namespace st
 		equivalentObjectIndexes:    make(map[string]int, len(objects)),
 		inferenceAllowedObjectKeys: make(map[string]bool, len(objects)),
 		childRelationshipTargetSet: make(map[string]map[string]struct{}),
+		inferObjectReferences:      len(objects) == 0,
 	}
 	for i := range objects {
 		ctx.indexObject(i)
@@ -117,7 +120,7 @@ func (ctx *semaProjectReferencedSchemaContext) schemaObjectIndex(name string, cr
 	if !create || !semaProjectReferencedSchemaObjectLikeName(name) {
 		return 0, false
 	}
-	ctx.objects = append(ctx.objects, schema.Object{Name: name})
+	ctx.objects = append(ctx.objects, schema.Object{Name: name, Partial: true})
 	idx := len(ctx.objects) - 1
 	ctx.indexObject(idx)
 	ctx.markObjectInferenceAllowed(name)
@@ -134,6 +137,9 @@ func (ctx *semaProjectReferencedSchemaContext) allowsFieldInference(objectName s
 	if semaIsExternalManagedPackageAPIName(ctx.namespace, objectName) {
 		return true
 	}
+	if ctx.inferenceAllowedObjectKeys[semaProjectReferencedSchemaNameKey(objectName)] {
+		return true
+	}
 	for _, key := range semaProjectReferencedSchemaNameKeys(ctx.namespace, objectName) {
 		if ctx.inferenceAllowedObjectKeys[key] {
 			return true
@@ -143,6 +149,9 @@ func (ctx *semaProjectReferencedSchemaContext) allowsFieldInference(objectName s
 }
 
 func (ctx *semaProjectReferencedSchemaContext) schemaNameIsChildRelationship(objectName, fieldName string) bool {
+	if len(ctx.childRelationshipTargetSet) == 0 {
+		return false
+	}
 	for _, relationshipKey := range semaProjectReferencedSchemaNameKeys(ctx.namespace, fieldName) {
 		targetSet := ctx.childRelationshipTargetSet[relationshipKey]
 		if len(targetSet) == 0 {
@@ -196,17 +205,118 @@ func semaProjectReferencedSchemaNameKeys(namespace, name string) []string {
 
 func semaProjectReferencedSchemaFieldsFromSource(ctx *semaProjectReferencedSchemaContext, source string) {
 	scanSource := semaProjectReferencedSchemaScanSource(source)
+	if ctx.inferObjectReferences {
+		semaProjectReferencedSchemaObjectReferences(ctx, scanSource, semaProjectReferencedSchemaObjectReferenceOptions{
+			includeFrom:     true,
+			includeType:     true,
+			includeGeneric:  true,
+			includeForRange: true,
+		})
+	} else {
+		semaProjectReferencedSchemaObjectReferences(ctx, scanSource, semaProjectReferencedSchemaObjectReferenceOptions{
+			includeForRange: true,
+		})
+	}
 	varTypes := semaProjectReferencedSchemaVariableTypes(ctx, scanSource)
-	literals := semaProjectReferencedSObjectLiterals(ctx, scanSource)
+	literalFields, memberFields := semaProjectReferencedSchemaFieldReferences(ctx, scanSource, varTypes)
 
-	for _, literal := range literals {
-		semaRecordProjectReferencedSObjectLiteralLookupFields(ctx, literal, varTypes)
+	for _, field := range literalFields {
+		semaRecordProjectReferencedSchemaFieldWithType(ctx, field.objectName, field.fieldName, field.fieldType)
 	}
-	for _, literal := range literals {
-		semaRecordProjectReferencedSObjectLiteralFields(ctx, literal)
+	for _, field := range memberFields {
+		semaRecordProjectReferencedSchemaFieldWithType(ctx, field.objectName, field.fieldName, field.fieldType)
 	}
+}
 
-	semaRecordProjectReferencedMemberFields(ctx, scanSource, varTypes)
+type semaProjectReferencedSchemaObjectReferenceOptions struct {
+	includeFrom     bool
+	includeType     bool
+	includeGeneric  bool
+	includeForRange bool
+}
+
+func semaProjectReferencedSchemaObjectReferences(ctx *semaProjectReferencedSchemaContext, scanSource string, options semaProjectReferencedSchemaObjectReferenceOptions) {
+	for i := 0; i < len(scanSource); {
+		start, end, ok := semaProjectReferencedScanIdentifier(scanSource, i)
+		if !ok {
+			break
+		}
+		name := scanSource[start:end]
+		if options.includeFrom && strings.EqualFold(name, "from") {
+			objectStart := semaProjectReferencedSkipSpaces(scanSource, end)
+			objectStart, objectEnd, objectOK := semaProjectReferencedScanIdentifierAt(scanSource, objectStart)
+			if objectOK && semaProjectReferencedSchemaObjectLikeName(scanSource[objectStart:objectEnd]) {
+				ctx.schemaObjectIndex(scanSource[objectStart:objectEnd], true)
+				i = objectEnd
+				continue
+			}
+		} else if semaProjectReferencedSchemaObjectLikeName(name) {
+			switch {
+			case options.includeType && semaProjectReferencedLooksLikeTypeReference(scanSource, start, end):
+				ctx.schemaObjectIndex(name, true)
+			case options.includeGeneric && semaProjectReferencedLooksLikeGenericTypeArgument(scanSource, start, end):
+				ctx.schemaObjectIndex(name, true)
+			case options.includeForRange && semaProjectReferencedLooksLikeForRangeTypeReference(scanSource, start, end):
+				ctx.schemaObjectIndex(name, true)
+			}
+		}
+		i = end
+	}
+}
+
+func semaProjectReferencedContainsFold(source, needle string) bool {
+	if needle == "" || len(source) < len(needle) {
+		return false
+	}
+	for i := 0; i <= len(source)-len(needle); i++ {
+		if strings.EqualFold(source[i:i+len(needle)], needle) {
+			return true
+		}
+	}
+	return false
+}
+
+func semaProjectReferencedLooksLikeTypeReference(source string, start, end int) bool {
+	if start > 0 {
+		prev := semaProjectReferencedPreviousNonSpace(source, start)
+		if prev >= 0 && source[prev] == '.' {
+			return false
+		}
+	}
+	j := semaProjectReferencedSkipSpaces(source, end)
+	if j+1 < len(source) && source[j] == '[' && source[j+1] == ']' {
+		j = semaProjectReferencedSkipSpaces(source, j+2)
+	}
+	_, _, ok := semaProjectReferencedScanIdentifierAt(source, j)
+	return ok
+}
+
+func semaProjectReferencedLooksLikeGenericTypeArgument(source string, start, end int) bool {
+	prev := semaProjectReferencedPreviousNonSpace(source, start)
+	if prev < 0 || (source[prev] != '<' && source[prev] != ',') {
+		return false
+	}
+	next := semaProjectReferencedSkipSpaces(source, end)
+	return next < len(source) && (source[next] == '>' || source[next] == ',')
+}
+
+func semaProjectReferencedLooksLikeForRangeTypeReference(source string, start, end int) bool {
+	j := semaProjectReferencedSkipSpaces(source, end)
+	_, varEnd, ok := semaProjectReferencedScanIdentifierAt(source, j)
+	if !ok {
+		return false
+	}
+	j = semaProjectReferencedSkipSpaces(source, varEnd)
+	return j < len(source) && source[j] == ':'
+}
+
+func semaProjectReferencedPreviousNonSpace(source string, idx int) int {
+	for i := idx - 1; i >= 0; i-- {
+		if !isWhitespace(source[i]) {
+			return i
+		}
+	}
+	return -1
 }
 
 func semaProjectReferencedSchemaVariableTypes(ctx *semaProjectReferencedSchemaContext, scanSource string) map[string]string {
@@ -255,45 +365,104 @@ type semaProjectReferencedSObjectLiteral struct {
 	body       string
 }
 
-func semaProjectReferencedSObjectLiterals(ctx *semaProjectReferencedSchemaContext, scanSource string) []semaProjectReferencedSObjectLiteral {
-	var literals []semaProjectReferencedSObjectLiteral
+type semaProjectReferencedSchemaFieldReference struct {
+	objectName string
+	fieldName  string
+	fieldType  string
+}
+
+type semaProjectReferencedLookupFieldReference struct {
+	objectName       string
+	fieldName        string
+	parentObjectName string
+}
+
+func semaProjectReferencedSchemaFieldReferences(ctx *semaProjectReferencedSchemaContext, scanSource string, varTypes map[string]string) ([]semaProjectReferencedSchemaFieldReference, []semaProjectReferencedSchemaFieldReference) {
+	literalFields := make([]semaProjectReferencedSchemaFieldReference, 0, 16)
+	memberFields := make([]semaProjectReferencedSchemaFieldReference, 0, 16)
+	literalFieldSeen := make(map[semaProjectReferencedSchemaFieldReference]struct{}, 16)
+	memberFieldSeen := make(map[semaProjectReferencedSchemaFieldReference]struct{}, 16)
+	lookupFieldSeen := make(map[semaProjectReferencedLookupFieldReference]struct{}, 16)
 	for i := 0; i < len(scanSource); {
 		start, end, ok := semaProjectReferencedScanIdentifier(scanSource, i)
 		if !ok {
-			i++
-			continue
+			break
 		}
-		objectName := scanSource[start:end]
-		j := semaProjectReferencedSkipSpaces(scanSource, end)
-		if strings.EqualFold(objectName, "new") {
-			objectStart, objectEnd, objectOK := semaProjectReferencedScanIdentifier(scanSource, j)
-			if !objectOK {
-				i = end
-				continue
-			}
-			objectName = scanSource[objectStart:objectEnd]
-			j = semaProjectReferencedSkipSpaces(scanSource, objectEnd)
+		next := end
+		if literalEnd := semaCollectProjectReferencedSObjectLiteralAt(ctx, scanSource, varTypes, start, end, &literalFields, literalFieldSeen, lookupFieldSeen); literalEnd > next {
+			next = literalEnd
 		}
-		if j >= len(scanSource) || scanSource[j] != '(' {
-			i = end
-			continue
+		if chainEnd := semaCollectProjectReferencedMemberFieldAt(ctx, scanSource, varTypes, start, end, &memberFields, memberFieldSeen); chainEnd > next {
+			next = chainEnd
 		}
-		if _, ok := ctx.schemaObjectIndex(objectName, false); !ok && !semaProjectReferencedSchemaObjectLikeName(objectName) {
-			i = end
-			continue
-		}
-		closeParen, ok := semaProjectReferencedMatchingParen(scanSource, j)
-		if !ok {
-			i = end
-			continue
-		}
-		literals = append(literals, semaProjectReferencedSObjectLiteral{
-			objectName: objectName,
-			body:       scanSource[j+1 : closeParen],
-		})
-		i = closeParen + 1
+		i = next
 	}
-	return literals
+	return literalFields, memberFields
+}
+
+func semaCollectProjectReferencedSObjectLiteralAt(ctx *semaProjectReferencedSchemaContext, scanSource string, varTypes map[string]string, start, end int, fields *[]semaProjectReferencedSchemaFieldReference, fieldSeen map[semaProjectReferencedSchemaFieldReference]struct{}, lookupSeen map[semaProjectReferencedLookupFieldReference]struct{}) int {
+	objectName := scanSource[start:end]
+	objectEnd := end
+	j := semaProjectReferencedSkipSpaces(scanSource, end)
+	if strings.EqualFold(objectName, "new") {
+		objectStart, nextObjectEnd, objectOK := semaProjectReferencedScanIdentifier(scanSource, j)
+		if !objectOK {
+			return end
+		}
+		objectName = scanSource[objectStart:nextObjectEnd]
+		objectEnd = nextObjectEnd
+		j = semaProjectReferencedSkipSpaces(scanSource, objectEnd)
+	}
+	if j >= len(scanSource) || scanSource[j] != '(' {
+		return end
+	}
+	if _, ok := ctx.schemaObjectIndex(objectName, false); !ok && !semaProjectReferencedSchemaObjectLikeName(objectName) {
+		return end
+	}
+	closeParen, ok := semaProjectReferencedMatchingParen(scanSource, j)
+	if !ok {
+		return end
+	}
+	literal := semaProjectReferencedSObjectLiteral{
+		objectName: objectName,
+		body:       scanSource[j+1 : closeParen],
+	}
+	semaRecordProjectReferencedSObjectLiteralLookupAndCollectFields(ctx, literal, varTypes, fields, fieldSeen, lookupSeen)
+	return objectEnd
+}
+
+func semaRecordProjectReferencedSObjectLiteralLookupAndCollectFields(ctx *semaProjectReferencedSchemaContext, literal semaProjectReferencedSObjectLiteral, varTypes map[string]string, fields *[]semaProjectReferencedSchemaFieldReference, fieldSeen map[semaProjectReferencedSchemaFieldReference]struct{}, lookupSeen map[semaProjectReferencedLookupFieldReference]struct{}) {
+	semaProjectReferencedForEachSObjectLiteralNamedArg(literal.body, func(arg semaProjectReferencedNamedArg) {
+		if parentVar := semaProjectReferencedSObjectIDValue(arg.value); parentVar != "" {
+			if parentObjectName, ok := varTypes[normalizeName(parentVar)]; ok {
+				lookup := semaProjectReferencedLookupFieldReference{
+					objectName:       literal.objectName,
+					fieldName:        arg.name,
+					parentObjectName: parentObjectName,
+				}
+				if _, ok := lookupSeen[lookup]; !ok {
+					lookupSeen[lookup] = struct{}{}
+					semaRecordProjectReferencedLookupSchemaField(ctx, literal.objectName, arg.name, parentObjectName)
+				}
+			}
+		}
+		semaAppendProjectReferencedSchemaFieldReference(fields, fieldSeen, semaProjectReferencedSchemaFieldReference{
+			objectName: literal.objectName,
+			fieldName:  arg.name,
+			fieldType:  semaProjectReferencedSchemaFieldTypeFromValue(arg.value),
+		})
+	})
+}
+
+func semaAppendProjectReferencedSchemaFieldReference(fields *[]semaProjectReferencedSchemaFieldReference, seen map[semaProjectReferencedSchemaFieldReference]struct{}, field semaProjectReferencedSchemaFieldReference) {
+	if field.objectName == "" || field.fieldName == "" {
+		return
+	}
+	if _, ok := seen[field]; ok {
+		return
+	}
+	seen[field] = struct{}{}
+	*fields = append(*fields, field)
 }
 
 func semaRecordProjectReferencedSObjectLiteralFields(ctx *semaProjectReferencedSchemaContext, literal semaProjectReferencedSObjectLiteral) {
@@ -324,6 +493,13 @@ type semaProjectReferencedNamedArg struct {
 
 func semaProjectReferencedSObjectLiteralNamedArgs(body string) []semaProjectReferencedNamedArg {
 	var args []semaProjectReferencedNamedArg
+	semaProjectReferencedForEachSObjectLiteralNamedArg(body, func(arg semaProjectReferencedNamedArg) {
+		args = append(args, arg)
+	})
+	return args
+}
+
+func semaProjectReferencedForEachSObjectLiteralNamedArg(body string, fn func(semaProjectReferencedNamedArg)) {
 	for i := 0; i < len(body); {
 		i = semaProjectReferencedSkipDelimiters(body, i)
 		nameStart, nameEnd, ok := semaProjectReferencedScanIdentifierAt(body, i)
@@ -338,7 +514,7 @@ func semaProjectReferencedSObjectLiteralNamedArgs(body string) []semaProjectRefe
 		}
 		valueStart := semaProjectReferencedSkipSpaces(body, j+1)
 		valueEnd := semaProjectReferencedTopLevelValueEnd(body, valueStart)
-		args = append(args, semaProjectReferencedNamedArg{
+		fn(semaProjectReferencedNamedArg{
 			name:  body[nameStart:nameEnd],
 			value: strings.TrimSpace(body[valueStart:valueEnd]),
 		})
@@ -347,7 +523,6 @@ func semaProjectReferencedSObjectLiteralNamedArgs(body string) []semaProjectRefe
 			i++
 		}
 	}
-	return args
 }
 
 func semaProjectReferencedSkipDelimiters(source string, idx int) int {
@@ -428,56 +603,50 @@ func semaProjectReferencedSObjectIDValue(value string) string {
 	return value[varStart:varEnd]
 }
 
-func semaRecordProjectReferencedMemberFields(ctx *semaProjectReferencedSchemaContext, scanSource string, varTypes map[string]string) {
-	for i := 0; i < len(scanSource); {
-		start, end, ok := semaProjectReferencedScanIdentifier(scanSource, i)
-		if !ok {
-			i++
-			continue
+func semaCollectProjectReferencedMemberFieldAt(ctx *semaProjectReferencedSchemaContext, scanSource string, varTypes map[string]string, start, end int, fields *[]semaProjectReferencedSchemaFieldReference, seen map[semaProjectReferencedSchemaFieldReference]struct{}) int {
+	var parts [5]string
+	partCount := 1
+	parts[0] = scanSource[start:end]
+	j := semaProjectReferencedSkipSpaces(scanSource, end)
+	for j < len(scanSource) && scanSource[j] == '.' {
+		nextStart := semaProjectReferencedSkipSpaces(scanSource, j+1)
+		partStart, partEnd, partOK := semaProjectReferencedScanIdentifierAt(scanSource, nextStart)
+		if !partOK {
+			break
 		}
-		parts := []string{scanSource[start:end]}
-		j := semaProjectReferencedSkipSpaces(scanSource, end)
-		for j < len(scanSource) && scanSource[j] == '.' {
-			nextStart := semaProjectReferencedSkipSpaces(scanSource, j+1)
-			partStart, partEnd, partOK := semaProjectReferencedScanIdentifierAt(scanSource, nextStart)
-			if !partOK {
-				break
-			}
-			parts = append(parts, scanSource[partStart:partEnd])
-			end = partEnd
-			j = semaProjectReferencedSkipSpaces(scanSource, end)
+		if partCount < len(parts) {
+			parts[partCount] = scanSource[partStart:partEnd]
 		}
-		if len(parts) < 2 {
-			i = end
-			continue
-		}
-		if len(parts) >= 5 &&
-			strings.EqualFold(parts[0], "Schema") &&
-			strings.EqualFold(parts[1], "SObjectType") &&
-			strings.EqualFold(parts[3], "fields") {
-			semaRecordProjectReferencedSchemaField(ctx, parts[2], parts[4])
-			i = end
-			continue
-		}
-		if len(parts) >= 4 &&
-			strings.EqualFold(parts[1], "SObjectType") &&
-			strings.EqualFold(parts[2], "fields") {
-			semaRecordProjectReferencedSchemaField(ctx, parts[0], parts[3])
-			i = end
-			continue
-		}
-		if j < len(scanSource) && scanSource[j] == '(' {
-			i = end
-			continue
-		}
-		if objectName, ok := varTypes[normalizeName(parts[0])]; ok {
-			semaRecordProjectReferencedSchemaField(ctx, objectName, parts[1])
-		}
-		if _, ok := ctx.schemaObjectIndex(parts[0], false); ok || semaProjectReferencedSchemaObjectLikeName(parts[0]) {
-			semaRecordProjectReferencedSchemaField(ctx, parts[0], parts[1])
-		}
-		i = end
+		partCount++
+		end = partEnd
+		j = semaProjectReferencedSkipSpaces(scanSource, end)
 	}
+	if partCount < 2 {
+		return end
+	}
+	if partCount >= 5 &&
+		strings.EqualFold(parts[0], "Schema") &&
+		strings.EqualFold(parts[1], "SObjectType") &&
+		strings.EqualFold(parts[3], "fields") {
+		semaAppendProjectReferencedSchemaFieldReference(fields, seen, semaProjectReferencedSchemaFieldReference{objectName: parts[2], fieldName: parts[4]})
+		return end
+	}
+	if partCount >= 4 &&
+		strings.EqualFold(parts[1], "SObjectType") &&
+		strings.EqualFold(parts[2], "fields") {
+		semaAppendProjectReferencedSchemaFieldReference(fields, seen, semaProjectReferencedSchemaFieldReference{objectName: parts[0], fieldName: parts[3]})
+		return end
+	}
+	if j < len(scanSource) && scanSource[j] == '(' {
+		return end
+	}
+	if objectName, ok := varTypes[normalizeName(parts[0])]; ok {
+		semaAppendProjectReferencedSchemaFieldReference(fields, seen, semaProjectReferencedSchemaFieldReference{objectName: objectName, fieldName: parts[1]})
+	}
+	if _, ok := ctx.schemaObjectIndex(parts[0], false); ok || semaProjectReferencedSchemaObjectLikeName(parts[0]) {
+		semaAppendProjectReferencedSchemaFieldReference(fields, seen, semaProjectReferencedSchemaFieldReference{objectName: parts[0], fieldName: parts[1]})
+	}
+	return end
 }
 
 func semaRecordProjectReferencedSchemaField(ctx *semaProjectReferencedSchemaContext, objectName, fieldName string) {
@@ -581,7 +750,6 @@ func semaProjectReferencedUpsertSchemaField(fields []schema.Field, incoming sche
 
 func semaProjectReferencedSchemaFieldTypeFromValue(value string) string {
 	value = strings.TrimSpace(value)
-	compact := strings.ToLower(strings.Join(strings.Fields(value), ""))
 	switch {
 	case value == "":
 		return ""
@@ -589,16 +757,21 @@ func semaProjectReferencedSchemaFieldTypeFromValue(value string) string {
 		return "Text"
 	case strings.EqualFold(value, "true"), strings.EqualFold(value, "false"):
 		return "Checkbox"
+	case decimalLiteralPattern.MatchString(value):
+		return "Number"
+	case intLiteralPattern.MatchString(value):
+		return "Integer"
+	case !strings.Contains(value, "("):
+		return ""
+	}
+	compact := strings.ToLower(strings.Join(strings.Fields(value), ""))
+	switch {
 	case strings.Contains(compact, ".format("), strings.Contains(compact, ".formatgmt("):
 		return "Text"
 	case strings.HasPrefix(compact, "date.today("), strings.HasPrefix(compact, "system.date.today("), strings.HasPrefix(compact, "date.newinstance("):
 		return "Date"
 	case strings.HasPrefix(compact, "datetime.now("), strings.HasPrefix(compact, "system.now("), strings.HasPrefix(compact, "system.datetime.now("), strings.HasPrefix(compact, "datetime.newinstance("):
 		return "Datetime"
-	case decimalLiteralPattern.MatchString(value):
-		return "Number"
-	case intLiteralPattern.MatchString(value):
-		return "Integer"
 	default:
 		return ""
 	}
@@ -629,17 +802,29 @@ func semaProjectReferencedSchemaAPINamesMatch(namespace, left, right string) boo
 }
 
 func semaProjectReferencedSchemaObjectLikeName(name string) bool {
-	lower := strings.ToLower(strings.TrimSpace(name))
-	return strings.HasSuffix(lower, "__c") || strings.HasSuffix(lower, "__mdt") || strings.HasSuffix(lower, "__e")
+	name = strings.TrimSpace(name)
+	if semaHasAPISuffixFold(name, "__c") || semaHasAPISuffixFold(name, "__mdt") || semaHasAPISuffixFold(name, "__e") {
+		return true
+	}
+	_, ok := semaProjectReferencedStandardSObjectNames[name]
+	return ok
 }
+
+var semaProjectReferencedStandardSObjectNames = func() map[string]struct{} {
+	names := append(storage.KnownStandardObjectNames(), semaAdditionalStandardSObjectNames()...)
+	out := make(map[string]struct{}, len(names))
+	for _, name := range names {
+		out[name] = struct{}{}
+	}
+	return out
+}()
 
 func semaProjectReferencedParentRelationshipName(fieldName string) string {
 	fieldName = strings.TrimSpace(fieldName)
-	lower := strings.ToLower(fieldName)
 	switch {
-	case strings.HasSuffix(lower, "__c") && len(fieldName) > 3:
+	case semaHasAPISuffixFold(fieldName, "__c") && len(fieldName) > 3:
 		return fieldName[:len(fieldName)-3] + "__r"
-	case strings.HasSuffix(lower, "id") && len(fieldName) > 2:
+	case semaHasAPISuffixFold(fieldName, "id") && len(fieldName) > 2:
 		return fieldName[:len(fieldName)-2]
 	default:
 		return ""
@@ -647,23 +832,33 @@ func semaProjectReferencedParentRelationshipName(fieldName string) string {
 }
 
 func semaSkipProjectReferencedSchemaField(fieldName string) bool {
-	lower := strings.ToLower(strings.TrimSpace(fieldName))
+	fieldName = strings.TrimSpace(fieldName)
 	return fieldName == "" ||
-		strings.HasSuffix(lower, "__r") ||
-		semaProjectReferencedCommonRelationshipName(lower) ||
+		semaHasAPISuffixFold(fieldName, "__r") ||
+		semaProjectReferencedCommonRelationshipName(fieldName) ||
 		strings.EqualFold(fieldName, "class") ||
 		strings.EqualFold(fieldName, "SObjectType") ||
 		strings.EqualFold(fieldName, "Fields")
 }
 
-func semaProjectReferencedCommonRelationshipName(lower string) bool {
-	switch lower {
-	case "recordtype", "owner", "createdby", "lastmodifiedby", "setupowner",
-		"contact", "account", "parent", "parentaccount", "user":
-		return true
-	default:
+func semaProjectReferencedCommonRelationshipName(name string) bool {
+	return strings.EqualFold(name, "recordtype") ||
+		strings.EqualFold(name, "owner") ||
+		strings.EqualFold(name, "createdby") ||
+		strings.EqualFold(name, "lastmodifiedby") ||
+		strings.EqualFold(name, "setupowner") ||
+		strings.EqualFold(name, "contact") ||
+		strings.EqualFold(name, "account") ||
+		strings.EqualFold(name, "parent") ||
+		strings.EqualFold(name, "parentaccount") ||
+		strings.EqualFold(name, "user")
+}
+
+func semaHasAPISuffixFold(name, suffix string) bool {
+	if len(name) < len(suffix) {
 		return false
 	}
+	return strings.EqualFold(name[len(name)-len(suffix):], suffix)
 }
 
 func semaProjectReferencedScanIdentifier(source string, start int) (int, int, bool) {

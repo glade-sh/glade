@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
@@ -265,6 +266,59 @@ func TestSplitCacheWritesHeaderAndHashedPayload(t *testing.T) {
 	}
 	if got == nil || got.RuntimeABI != entry.RuntimeABI || got.Runtime.Methods["Foo.bar"].Name != "bar" {
 		t.Fatalf("Read() = %#v", got)
+	}
+}
+
+func TestSplitCacheReusesExistingPayloadOnIdenticalRewrite(t *testing.T) {
+	dir := t.TempDir()
+	entry := Entry{
+		Version:     Version,
+		ProjectRoot: dir,
+		BuiltAt:     "2026-06-16T00:00:00Z",
+		Manifest:    Manifest{ProjectRoot: dir},
+		Runtime: CompiledRuntime{
+			Methods: map[string]vm.Method{"Foo.one": {Name: "one", ClassName: "Foo"}},
+		},
+	}
+	if err := Write(&entry, SubdirTest); err != nil {
+		t.Fatalf("Write() first error = %v", err)
+	}
+	headerPath := filepath.Join(dir, ".glade", "test", stateHeaderFile)
+	headerData, err := os.ReadFile(headerPath)
+	if err != nil {
+		t.Fatalf("ReadFile() first header error = %v", err)
+	}
+	var first testCacheHeader
+	if err := json.Unmarshal(headerData, &first); err != nil {
+		t.Fatalf("Unmarshal() first header error = %v", err)
+	}
+	payloadPath := filepath.Join(dir, ".glade", "test", first.PayloadFile)
+	oldTime := time.Unix(1000, 0)
+	if err := os.Chtimes(payloadPath, oldTime, oldTime); err != nil {
+		t.Fatalf("Chtimes() error = %v", err)
+	}
+
+	entry.BuiltAt = "2026-06-16T00:01:00Z"
+	if err := Write(&entry, SubdirTest); err != nil {
+		t.Fatalf("Write() second error = %v", err)
+	}
+	headerData, err = os.ReadFile(headerPath)
+	if err != nil {
+		t.Fatalf("ReadFile() second header error = %v", err)
+	}
+	var second testCacheHeader
+	if err := json.Unmarshal(headerData, &second); err != nil {
+		t.Fatalf("Unmarshal() second header error = %v", err)
+	}
+	if second.PayloadFile != first.PayloadFile || second.PayloadSHA256 != first.PayloadSHA256 || second.PayloadSize != first.PayloadSize {
+		t.Fatalf("payload changed on identical rewrite: first=%#v second=%#v", first, second)
+	}
+	info, err := os.Stat(payloadPath)
+	if err != nil {
+		t.Fatalf("Stat() payload error = %v", err)
+	}
+	if !info.ModTime().Equal(oldTime) {
+		t.Fatalf("payload modtime = %s, want unchanged %s", info.ModTime(), oldTime)
 	}
 }
 

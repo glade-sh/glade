@@ -10,6 +10,7 @@ import (
 )
 
 func TestPublicCorpusCustomSettingNameRemainsStringWhenInitializedFromDatetimeFormat(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "CustomSettingName.cls"), `
 public class CustomSettingName {

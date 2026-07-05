@@ -2528,7 +2528,10 @@ func (vm *VM) assign(name string, value Value) error {
 
 func (vm *VM) writeStaticFieldValue(owner, memberName string, class Class, field Field, value Value) {
 	previous := field.Value
-	vm.markCollectionRefsEscaped(value)
+	sameStaticCollection := sameStaticCollectionWriteback(previous, value)
+	if !sameStaticCollection {
+		vm.markCollectionRefsEscaped(value)
+	}
 	field.Value = value
 	if class.StaticFields == nil {
 		class.StaticFields = make(map[string]Field)
