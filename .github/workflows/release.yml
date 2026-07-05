@@ -53,12 +53,16 @@ jobs:
         include:
           - runs-on: ubuntu-latest
             artifact: linux-amd64
+            archive: linux_amd64
           - runs-on: ubuntu-24.04-arm
             artifact: linux-arm64
+            archive: linux_arm64
           - runs-on: macos-15-intel
             artifact: darwin-amd64
+            archive: darwin_amd64
           - runs-on: macos-14
             artifact: darwin-arm64
+            archive: darwin_arm64
     runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v6
@@ -81,7 +85,7 @@ jobs:
           VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
         run: |
           go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.10.0
-          archive="dist/glade_${VERSION}_${{ matrix.artifact }}.tar.gz"
+          archive="dist/glade_${VERSION}_${{ matrix.archive }}.tar.gz"
           sbom="${archive}.sbom.json"
           extract_dir="$(mktemp -d)"
           trap 'rm -rf "$extract_dir"' EXIT
@@ -91,13 +95,13 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: actions/attest@v4
         with:
-          subject-path: dist/glade_${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}_${{ matrix.artifact }}.tar.gz
+          subject-path: dist/glade_${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}_${{ matrix.archive }}.tar.gz
       - name: Attest platform SBOM
         if: startsWith(github.ref, 'refs/tags/')
         uses: actions/attest@v4
         with:
-          subject-path: dist/glade_${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}_${{ matrix.artifact }}.tar.gz
-          sbom-path: dist/glade_${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}_${{ matrix.artifact }}.tar.gz.sbom.json
+          subject-path: dist/glade_${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}_${{ matrix.archive }}.tar.gz
+          sbom-path: dist/glade_${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}_${{ matrix.archive }}.tar.gz.sbom.json
       - name: Upload platform release assets
         if: startsWith(github.ref, 'refs/tags/')
         env:
