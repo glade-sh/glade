@@ -84,7 +84,8 @@ Runtime, semantic checks, and performance:
 Security and release trust:
 
 - Added public security and trust docs, a repository security policy, checked
-  release workflow wording, SBOM generation, and archive attestation steps.
+  release workflow wording, SBOM generation, and best-effort archive
+  attestation steps.
 - Kept release hosting product-facing through `glade.sh` and
   `downloads.glade.sh`, with plugin distribution staying on `plugins.glade.sh`.
 - Hardened the VS Code extension packaging dependency graph by pinning patched

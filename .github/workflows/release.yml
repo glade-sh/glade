@@ -93,11 +93,13 @@ jobs:
           cyclonedx-gomod bin -json -version "$VERSION" -output "$sbom" "$extract_dir/glade"
       - name: Attest platform archive
         if: startsWith(github.ref, 'refs/tags/')
+        continue-on-error: true
         uses: actions/attest@v4
         with:
           subject-path: dist/glade_${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}_${{ matrix.archive }}.tar.gz
       - name: Attest platform SBOM
         if: startsWith(github.ref, 'refs/tags/')
+        continue-on-error: true
         uses: actions/attest@v4
         with:
           subject-path: dist/glade_${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}_${{ matrix.archive }}.tar.gz

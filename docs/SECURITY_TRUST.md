@@ -25,7 +25,8 @@ workflow publishes:
 - `SHA256SUMS.txt`.
 - `release-manifest.json`.
 - A CycloneDX SBOM for each platform archive.
-- GitHub artifact attestations for the archive and SBOM.
+- GitHub artifact attestations for the archive and SBOM when the repository host
+  supports them.
 
 Verify a release archive:
 
@@ -37,6 +38,9 @@ gh attestation verify glade.tar.gz -R glade-sh/glade
 tar -xzf glade.tar.gz
 ./glade doctor
 ```
+
+If the release does not publish an attestation, use `SHA256SUMS.txt` and the
+matching `*.sbom.json` asset as the release proof.
 
 ## Laptop behavior
 
@@ -86,6 +90,6 @@ Give reviewers:
 - [Security policy](../SECURITY.md).
 - [Install guide](INSTALL.md).
 - [Release policy](RELEASE_POLICY.md).
-- Latest GitHub release assets, checksums, SBOMs, and attestations.
+- Latest GitHub release assets, checksums, SBOMs, and available attestations.
 - The Security workflow badge, CodeQL/gosec code scanning status, and OpenSSF
   Scorecard results for public display after repository publication.

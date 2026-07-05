@@ -31,8 +31,9 @@ glade doctor   # confirm: "Ready."
 
 ## Security verification
 
-Release archives publish checksums, CycloneDX SBOMs, and GitHub artifact
-attestations. Use this path when a laptop policy needs pinned proof:
+Release archives publish checksums and CycloneDX SBOMs. The release workflow
+also publishes GitHub artifact attestations when the repository host supports
+them. Use this path when a laptop policy needs pinned proof:
 
 ```bash
 curl -L -o glade.tar.gz "$GLADE_RELEASE_URL"
@@ -45,7 +46,8 @@ tar -xzf glade.tar.gz
 ```
 
 Download the matching `*.sbom.json` release asset when your review process
-requires a dependency inventory.
+requires a dependency inventory. If no attestation is available for the release,
+use the checksum and SBOM as the release proof.
 
 ## Update
 

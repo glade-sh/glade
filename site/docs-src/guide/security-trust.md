@@ -2,10 +2,10 @@
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Security</p>
-  <p>Glade is a local binary. The proof trail is checks, checksums, SBOMs, and release provenance.</p>
+  <p>Glade is a local binary. The proof trail is checks, checksums, SBOMs, and available release provenance.</p>
   <ul>
     <li>Security scans run in GitHub Actions.</li>
-    <li>Release archives publish checksums and attestations.</li>
+    <li>Release archives publish checksums, SBOMs, and best-effort attestations.</li>
     <li>Supported local checks do not require a Salesforce org login.</li>
   </ul>
 </div>
@@ -36,7 +36,8 @@ Tagged releases publish:
 - `SHA256SUMS.txt`.
 - `release-manifest.json`.
 - A CycloneDX SBOM for each archive.
-- Artifact attestations for the archive and SBOM.
+- Artifact attestations for the archive and SBOM when the repository host
+  supports them.
 
 Verify a downloaded archive:
 
@@ -48,6 +49,9 @@ gh attestation verify glade.tar.gz -R glade-sh/glade
 tar -xzf glade.tar.gz
 ./glade doctor
 ```
+
+If a release does not publish an attestation, use the checksum and matching
+`*.sbom.json` asset as the release proof.
 
 ## Laptop behavior
 
