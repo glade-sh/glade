@@ -59,7 +59,7 @@ in [`docs/RELEASE_POLICY.md`](RELEASE_POLICY.md), with ongoing notes in
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| CLI surface | supported | `version`, `doctor`, `toolchain`, `config`, `init`, `parse`, `inspect`, `schema`, `refactor`, `check`, `exec`, `debug`, `editor`, `dap`, `test`, `tui`, `dev`, `report`, `lsp`, `profile`, `examples`, `explain`, `support`, `plugins`, `package`, `server`, `org`, `playground`, `db`, `completion`, and `help` exist. Advisory compatibility and performance scans run through first-party plugins. |
+| CLI surface | supported | `version`, `update`, `doctor`, `toolchain`, `config`, `init`, `parse`, `inspect`, `schema`, `refactor`, `check`, `exec`, `debug`, `editor`, `dap`, `test`, `tui`, `dev`, `report`, `lsp`, `profile`, `examples`, `explain`, `support`, `plugins`, `package`, `server`, `org`, `playground`, `db`, `completion`, and `help` exist. Advisory compatibility and performance scans run through first-party plugins. |
 | Project config | supported | `glade.yml` and SFDX project discovery cover the local development contract, including package directories, source API version, default namespace, namespace remaps, source-backed managed package dependencies, captured package artifacts, package shims, org features, storage, limits, and local server settings. |
 | Diagnostics | supported | Shared diagnostic shape covers stable code, message, severity, source span, JSON, SARIF, and unsupported-feature reporting for checked local rows. |
 | Compatibility fixtures | supported | The maintenance fixture runner ships as the compat plugin. Checked fixtures cover parse, check, exec, test, DB lifecycle, server black-box behavior, and generated support drift checks. |

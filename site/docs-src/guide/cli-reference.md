@@ -441,7 +441,8 @@ See [Plugins](/guide/plugins) for first-party install and lock-file docs.
 
 ## `glade debug`
 
-Parse, profile, explain, or synthesize from Salesforce debug logs.
+Parse, profile, explain, analyze for editors, and synthesize from Salesforce
+debug logs.
 
 ```bash
 glade debug parse --log apex.log --json

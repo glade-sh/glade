@@ -22,6 +22,7 @@ const pagesWorkflow = await readFile(new URL("../../.github/workflows/pages.yml"
 const ciWorkflow = await readFile(new URL("../../.github/workflows/ci.yml", import.meta.url), "utf8");
 const releaseWorkflow = await readFile(new URL("../../.github/workflows/release.yml", import.meta.url), "utf8");
 const securityWorkflow = await readFile(new URL("../../.github/workflows/security.yml", import.meta.url), "utf8").catch(() => "");
+const agentGuide = await readFile(new URL("../../AGENTS.md", import.meta.url), "utf8");
 const repoReadme = await readFile(new URL("../../README.md", import.meta.url), "utf8");
 const repoSecurityPolicy = await readFile(new URL("../../SECURITY.md", import.meta.url), "utf8").catch(() => "");
 const repoCompatibility = await readFile(new URL("../../docs/COMPATIBILITY.md", import.meta.url), "utf8");
@@ -147,6 +148,17 @@ test("release notes cover the next stable release", () => {
   assert.match(releaseNotes, /Runtime, semantic checks, and performance/);
   assert.match(releaseNotes, /Security and release trust/);
   assert.doesNotMatch(releaseNotes, /^## Unreleased\n\nNo changes yet\.\n\n## v0\.2\.7/m);
+});
+
+test("repo compatibility CLI surface matches contributor guide inventory", () => {
+  const guideMatch = agentGuide.match(/Product CLI commands:\s*([\s\S]*?)\.\n/);
+  assert.ok(guideMatch, "AGENTS.md should list product CLI commands");
+  const compatibilityMatch = repoCompatibility.match(/\| CLI surface \| supported \| ([^|]+) exist\./);
+  assert.ok(compatibilityMatch, "COMPATIBILITY.md should list the supported CLI surface");
+
+  const commandsFromGuide = [...guideMatch[1].matchAll(/`([^`]+)`/g)].map((match) => match[1]);
+  const commandsFromCompatibility = [...compatibilityMatch[1].matchAll(/`([^`]+)`/g)].map((match) => match[1]);
+  assert.deepEqual(commandsFromCompatibility, commandsFromGuide);
 });
 
 test("theme defines complete light and dark color tokens", () => {
@@ -1546,6 +1558,7 @@ test("cli reference documents current code intelligence commands", () => {
   assert.match(cliReference, /## `glade tui`/);
   assert.match(cliReference, /glade tui --project \. --view tests/);
   assert.match(cliReference, /glade tui --project \. --db \.glade\/refinement-local\.sqlite --view data --target-org devhub --object Account/);
+  assert.match(cliReference, /Parse, profile, explain, analyze for editors, and synthesize from Salesforce\s+debug logs\./);
   assert.match(cliReference, /glade debug editor --log apex\.log --project \. --json/);
   assert.match(cliReference, /glade debug repro --log apex\.log --project \. > ReproTest\.cls/);
   assert.match(cliReference, /glade debug replay --log apex\.log --project \. --json/);
