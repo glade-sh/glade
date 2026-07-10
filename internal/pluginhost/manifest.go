@@ -11,6 +11,7 @@ import (
 
 func LoadManifestFromExecutable(ctx context.Context, executable string) (Manifest, error) {
 	cmd := exec.CommandContext(ctx, executable, "manifest", "--json")
+	configureManifestCommand(cmd)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

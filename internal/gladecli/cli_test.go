@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -884,15 +885,31 @@ func TestPluginsListJSONTimesOutLinkedExecutableEditorMetadata(t *testing.T) {
 	}
 	home := t.TempDir()
 	t.Setenv("GLADE_HOME", home)
+	pidPath := filepath.Join(home, "plugin-descendant.pid")
+	cleanupNeeded := true
+	t.Cleanup(func() {
+		if cleanupNeeded {
+			bestEffortKillCLIRecordedPID(pidPath)
+		}
+	})
+	t.Setenv("GLADE_PLUGIN_TEST_PID_FILE", pidPath)
 	exe := filepath.Join(home, "glade-plugin-compat")
 	script := `#!/bin/sh
+if [ "$1" = "prewarm" ]; then
+	exit 0
+fi
 if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
-  sleep 5
-  exit 0
+	  sleep 30 &
+	  child=$!
+	  printf '%s\n' "$child" > "$GLADE_PLUGIN_TEST_PID_FILE"
+	  wait "$child"
 fi
 `
 	if err := os.WriteFile(exe, []byte(script), 0o755); err != nil {
 		t.Fatal(err)
+	}
+	if err := exec.Command(exe, "prewarm").Run(); err != nil {
+		t.Fatalf("prewarm helper: %v", err)
 	}
 	statePath := filepath.Join(home, "plugins", "installed.json")
 	if err := os.MkdirAll(filepath.Dir(statePath), 0o755); err != nil {
@@ -907,13 +924,69 @@ fi
 	t.Cleanup(func() { pluginListManifestTimeout = oldTimeout })
 
 	var stdout, stderr bytes.Buffer
+	started := time.Now()
 	code := Run(context.Background(), []string{"plugins", "list", "--json"}, &stdout, &stderr)
+	elapsed := time.Since(started)
 	if code == 0 {
 		t.Fatalf("list unexpectedly succeeded:\n%s", stdout.String())
 	}
 	if !strings.Contains(stderr.String(), "context deadline exceeded") {
 		t.Fatalf("stderr did not include timeout diagnostic: %q", stderr.String())
 	}
+	if elapsed >= time.Second {
+		t.Fatalf("plugin list timeout took %s, want <1s", elapsed)
+	}
+	pid := readCLIRecordedPID(t, pidPath)
+	waitForCLIProcessAbsent(t, pid, time.Second)
+	cleanupNeeded = false
+}
+
+func readCLIRecordedPID(t *testing.T, path string) int {
+	t.Helper()
+	deadline := time.Now().Add(time.Second)
+	for {
+		data, err := os.ReadFile(path)
+		if err == nil {
+			pid, convErr := strconv.Atoi(strings.TrimSpace(string(data)))
+			if convErr != nil || pid <= 0 {
+				t.Fatalf("invalid recorded PID %q: %v", data, convErr)
+			}
+			return pid
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("read recorded PID: %v", err)
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("timed out waiting for PID file %s", path)
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+}
+
+func waitForCLIProcessAbsent(t *testing.T, pid int, timeout time.Duration) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for {
+		if err := exec.Command("kill", "-0", strconv.Itoa(pid)).Run(); err != nil {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("descendant PID %d remained after %s", pid, timeout)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+func bestEffortKillCLIRecordedPID(path string) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
+	if err != nil || pid <= 0 {
+		return
+	}
+	_ = exec.Command("kill", "-KILL", strconv.Itoa(pid)).Run()
 }
 
 func TestPluginsListAndWhichUseCanonicalIdentity(t *testing.T) {
