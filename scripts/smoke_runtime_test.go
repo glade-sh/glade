@@ -104,15 +104,19 @@ func TestSmokeAggregateBuildsRuntimeOnce(t *testing.T) {
 	}
 	for _, want := range []string{
 		`scripts/smoke-runtime.sh "${GLADE}"`,
-		`DIST_DIR="${TMP}/release-dist" VERSION=smoke scripts/release-build.sh`,
-		`grep -q 'release artifact written'`,
-		`grep -q 'release manifest written'`,
-		`grep -q 'glade_smoke_'`,
-		`grep -q '"parserSmoke": "passed"'`,
+		`scripts/smoke-distribution.sh`,
 		`echo "smoke: ok"`,
 	} {
 		if !strings.Contains(aggregate, want) {
 			t.Errorf("smoke.sh missing aggregate marker %q", want)
+		}
+	}
+	if got := strings.Count(aggregate, `scripts/smoke-distribution.sh`); got != 1 {
+		t.Errorf("smoke.sh distribution helper call count = %d, want 1", got)
+	}
+	for _, forbidden := range []string{"release-build.sh", "release-manifest.json", "parserSmoke", "release artifact written"} {
+		if strings.Contains(aggregate, forbidden) {
+			t.Errorf("smoke.sh retains inline distribution implementation marker %q", forbidden)
 		}
 	}
 }
