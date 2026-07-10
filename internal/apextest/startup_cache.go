@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/startupcache"
@@ -45,6 +46,30 @@ func tryLoadDiskRuntime(index typesys.Index) (runtimeCacheEntry, bool) {
 	return runtimeCacheEntryFromStartup(*entry), true
 }
 
+func tryLoadDiskRuntimeWithPerf(index typesys.Index, counters *runPerfCounters) (runtimeCacheEntry, bool) {
+	if !diskCacheEnabled() {
+		return runtimeCacheEntry{}, false
+	}
+	root := strings.TrimSpace(index.Project.Root)
+	if root == "" {
+		return runtimeCacheEntry{}, false
+	}
+	root = filepath.Clean(root)
+	entry, stats, err := startupcache.ReadWithStats(root, startupcache.SubdirTest)
+	counters.phases.cacheValidateNS.Add(stats.ValidationNS)
+	counters.phases.cacheDecodeNS.Add(stats.DecodeNS)
+	if err != nil || entry == nil {
+		return runtimeCacheEntry{}, false
+	}
+	validateStarted := time.Now()
+	fresh := startupcache.FreshRuntime(entry, root, startupcache.Version, testRuntimeCacheABI)
+	counters.phases.cacheValidateNS.Add(time.Since(validateStarted).Nanoseconds())
+	if !fresh {
+		return runtimeCacheEntry{}, false
+	}
+	return runtimeCacheEntryFromStartupWithPerf(*entry, counters), true
+}
+
 func persistDiskRuntime(index typesys.Index, entry runtimeCacheEntry) {
 	if !diskCacheEnabled() {
 		return
@@ -67,6 +92,29 @@ func persistDiskRuntime(index typesys.Index, entry runtimeCacheEntry) {
 	_ = startupcache.Write(&cacheEntry, startupcache.SubdirTest)
 }
 
+func persistDiskRuntimeWithPerf(index typesys.Index, entry runtimeCacheEntry, counters *runPerfCounters) {
+	if !diskCacheEnabled() {
+		return
+	}
+	root := strings.TrimSpace(index.Project.Root)
+	if root == "" {
+		return
+	}
+	p, err := project.Load(root)
+	if err != nil {
+		return
+	}
+	cacheEntry := startupcache.NewEntry(root, p, index, entry.Org, startupcache.CompiledRuntime{
+		Methods:   entry.Methods,
+		Classes:   entry.Classes,
+		Triggers:  entry.Triggers,
+		PageNames: entry.PageNames,
+	})
+	cacheEntry.RuntimeABI = testRuntimeCacheABI
+	stats, _ := startupcache.WriteWithStats(&cacheEntry, startupcache.SubdirTest)
+	counters.phases.cacheEncodeNS.Add(stats.EncodeNS)
+}
+
 func runtimeCacheEntryFromStartup(entry startupcache.Entry) runtimeCacheEntry {
 	runtime := CompiledProjectRuntime{
 		Methods:   entry.Runtime.Methods,
@@ -82,6 +130,39 @@ func runtimeCacheEntryFromStartup(entry startupcache.Entry) runtimeCacheEntry {
 	org := entry.Org
 	template := storage.NewRuntimeTemplate(org)
 	vm.PrimeRuntimeTemplateSchema(&template)
+	return runtimeCacheEntry{
+		Methods:       runtime.Methods,
+		Classes:       runtime.Classes,
+		Triggers:      runtime.Triggers,
+		TriggerErrors: nil,
+		Org:           org,
+		Template:      template,
+		PageNames:     pageNames,
+		BaseMachine:   baseMachine,
+		BaseErr:       baseErr,
+	}
+}
+
+func runtimeCacheEntryFromStartupWithPerf(entry startupcache.Entry, counters *runPerfCounters) runtimeCacheEntry {
+	projectStarted := time.Now()
+	runtime := CompiledProjectRuntime{
+		Methods:   entry.Runtime.Methods,
+		Classes:   entry.Runtime.Classes,
+		Triggers:  entry.Runtime.Triggers,
+		PageNames: entry.Runtime.PageNames,
+	}
+	pageNames := append([]string(nil), runtime.PageNames...)
+	baseMachine := vm.New(nil)
+	baseMachine.SetTraceEnabled(false)
+	registerVisualforcePages(baseMachine, pageNames)
+	baseErr := registerBaseRuntime(baseMachine, runtime.Methods, runtime.Classes, runtime.Triggers)
+	counters.phases.projectCompileNS.Add(time.Since(projectStarted).Nanoseconds())
+
+	orgStarted := time.Now()
+	org := entry.Org
+	template := storage.NewRuntimeTemplate(org)
+	vm.PrimeRuntimeTemplateSchema(&template)
+	counters.phases.orgBuildNS.Add(time.Since(orgStarted).Nanoseconds())
 	return runtimeCacheEntry{
 		Methods:       runtime.Methods,
 		Classes:       runtime.Classes,

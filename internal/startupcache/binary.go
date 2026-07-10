@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/glade-sh/glade/internal/storage"
 )
@@ -139,6 +140,59 @@ func readSplitTestCache(projectRoot, subdir string) (*Entry, error) {
 	}, nil
 }
 
+func readSplitTestCacheWithStats(projectRoot, subdir string) (*Entry, ReadStats, error) {
+	var stats ReadStats
+	validationStarted := time.Now()
+	cacheDir := filepath.Join(projectRoot, filepath.FromSlash(subdir))
+	header, err := readTestCacheHeader(filepath.Join(cacheDir, stateHeaderFile))
+	if err != nil {
+		stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
+		if errors.Is(err, os.ErrNotExist) {
+			decodeStarted := time.Now()
+			entry, legacyErr := readLegacyGob(projectRoot, subdir)
+			stats.DecodeNS = time.Since(decodeStarted).Nanoseconds()
+			return entry, stats, legacyErr
+		}
+		if errors.Is(err, errMalformedTestCacheHeader) {
+			return nil, stats, nil
+		}
+		return nil, stats, err
+	}
+	if header == nil {
+		stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
+		decodeStarted := time.Now()
+		entry, legacyErr := readLegacyGob(projectRoot, subdir)
+		stats.DecodeNS = time.Since(decodeStarted).Nanoseconds()
+		return entry, stats, legacyErr
+	}
+	if header.FormatVersion != testCacheFormatVersion ||
+		!freshManifest(header.Version, header.ProjectRoot, header.Manifest, projectRoot, Version) ||
+		!validPayloadFileName(header.PayloadFile, header.PayloadSHA256) || header.PayloadSize < 0 {
+		stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
+		return nil, stats, nil
+	}
+	stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
+	payloadPath := filepath.Join(cacheDir, header.PayloadFile)
+	decodeStarted := time.Now()
+	payload, err := readTestCachePayload(payloadPath, header.PayloadSHA256, header.PayloadSize)
+	stats.DecodeNS = time.Since(decodeStarted).Nanoseconds()
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, stats, err
+		}
+		return nil, stats, nil
+	}
+	return &Entry{
+		Version:     header.Version,
+		ProjectRoot: header.ProjectRoot,
+		BuiltAt:     header.BuiltAt,
+		RuntimeABI:  header.RuntimeABI,
+		Manifest:    header.Manifest,
+		Org:         payload.Org,
+		Runtime:     payload.Runtime,
+	}, stats, nil
+}
+
 func readTestCacheHeader(path string) (*testCacheHeader, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -264,6 +318,63 @@ func writeSplitTestCache(entry *Entry, subdir string) error {
 		return writeErr
 	}
 	return nil
+}
+
+func writeSplitTestCacheWithStats(entry *Entry, subdir string) (WriteStats, error) {
+	var stats WriteStats
+	if entry == nil || entry.ProjectRoot == "" {
+		return stats, errors.New("startup cache entry requires project root")
+	}
+	cacheDir := filepath.Join(entry.ProjectRoot, filepath.FromSlash(subdir))
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+		return stats, err
+	}
+	payload := testCachePayload{Org: entry.Org, Runtime: entry.Runtime}
+	tmp, err := os.CreateTemp(cacheDir, "startup-payload-*.gob")
+	if err != nil {
+		return stats, err
+	}
+	tmpPath := tmp.Name()
+	hasher := sha256.New()
+	counting := &countingWriter{writer: io.MultiWriter(tmp, hasher)}
+	writeErr := func() error {
+		defer os.Remove(tmpPath)
+		encodeStarted := time.Now()
+		encodeErr := gob.NewEncoder(counting).Encode(payload)
+		stats.EncodeNS = time.Since(encodeStarted).Nanoseconds()
+		if encodeErr != nil {
+			_ = tmp.Close()
+			return encodeErr
+		}
+		if err := tmp.Close(); err != nil {
+			return err
+		}
+		sum := hex.EncodeToString(hasher.Sum(nil))
+		payloadFile := payloadFilePrefix + sum + payloadFileSuffix
+		if err := activateTestPayload(cacheDir, tmpPath, payloadFile, counting.n); err != nil {
+			return err
+		}
+		header := testCacheHeader{
+			FormatVersion: testCacheFormatVersion,
+			Version:       entry.Version,
+			ProjectRoot:   entry.ProjectRoot,
+			BuiltAt:       entry.BuiltAt,
+			RuntimeABI:    entry.RuntimeABI,
+			Manifest:      entry.Manifest,
+			PayloadFile:   payloadFile,
+			PayloadSHA256: sum,
+			PayloadSize:   counting.n,
+		}
+		if err := writeTestCacheHeader(cacheDir, header); err != nil {
+			return err
+		}
+		return pruneInactiveTestPayloads(cacheDir, payloadFile)
+	}()
+	if writeErr != nil {
+		_ = os.Remove(tmpPath)
+		return stats, writeErr
+	}
+	return stats, nil
 }
 
 func activateTestPayload(cacheDir, tmpPath, payloadFile string, payloadSize int64) error {

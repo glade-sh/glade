@@ -1,6 +1,7 @@
 package startupcache
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -266,6 +267,92 @@ func TestSplitCacheWritesHeaderAndHashedPayload(t *testing.T) {
 	}
 	if got == nil || got.RuntimeABI != entry.RuntimeABI || got.Runtime.Methods["Foo.bar"].Name != "bar" {
 		t.Fatalf("Read() = %#v", got)
+	}
+}
+
+func TestSplitCacheReadStatsSeparateValidationAndDecode(t *testing.T) {
+	dir := t.TempDir()
+	entry := Entry{
+		Version:     Version,
+		ProjectRoot: dir,
+		BuiltAt:     "2026-07-09T00:00:00Z",
+		RuntimeABI:  "read-stats-abi",
+		Manifest:    Manifest{ProjectRoot: dir},
+		Runtime: CompiledRuntime{
+			Methods: map[string]vm.Method{"Stats.read": {Name: "read", ClassName: "Stats"}},
+		},
+	}
+	if err := Write(&entry, SubdirTest); err != nil {
+		t.Fatalf("Write() error = %v", err)
+	}
+
+	got, stats, err := ReadWithStats(dir, SubdirTest)
+	if err != nil {
+		t.Fatalf("ReadWithStats() error = %v", err)
+	}
+	if got == nil || got.Runtime.Methods["Stats.read"].Name != "read" {
+		t.Fatalf("ReadWithStats() = %#v", got)
+	}
+	if stats.ValidationNS <= 0 || stats.DecodeNS <= 0 {
+		t.Fatalf("read stats = %#v, want separate positive validation and decode", stats)
+	}
+}
+
+func TestSplitCacheWriteStatsRecordEncode(t *testing.T) {
+	dir := t.TempDir()
+	entry := Entry{
+		Version:     Version,
+		ProjectRoot: dir,
+		BuiltAt:     "2026-07-09T00:00:00Z",
+		Manifest:    Manifest{ProjectRoot: dir},
+		Runtime: CompiledRuntime{
+			Methods: map[string]vm.Method{"Stats.write": {Name: "write", ClassName: "Stats"}},
+		},
+	}
+	if err := Write(&entry, SubdirTest); err != nil {
+		t.Fatalf("Write() error = %v", err)
+	}
+	cacheDir := filepath.Join(dir, ".glade", "test")
+	normalHeader, err := os.ReadFile(filepath.Join(cacheDir, stateHeaderFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var header testCacheHeader
+	if err := json.Unmarshal(normalHeader, &header); err != nil {
+		t.Fatal(err)
+	}
+	normalPayload, err := os.ReadFile(filepath.Join(cacheDir, header.PayloadFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := Clear(dir, SubdirTest); err != nil {
+		t.Fatal(err)
+	}
+
+	stats, err := WriteWithStats(&entry, SubdirTest)
+	if err != nil {
+		t.Fatalf("WriteWithStats() error = %v", err)
+	}
+	if stats.EncodeNS <= 0 {
+		t.Fatalf("write stats = %#v, want positive encode duration", stats)
+	}
+	measuredHeader, err := os.ReadFile(filepath.Join(cacheDir, stateHeaderFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(measuredHeader, &header); err != nil {
+		t.Fatal(err)
+	}
+	measuredPayload, err := os.ReadFile(filepath.Join(cacheDir, header.PayloadFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(measuredHeader, normalHeader) || !bytes.Equal(measuredPayload, normalPayload) {
+		t.Fatal("WriteWithStats changed split-cache bytes")
+	}
+	got, err := Read(dir, SubdirTest)
+	if err != nil || got == nil || got.Runtime.Methods["Stats.write"].Name != "write" {
+		t.Fatalf("Read() = %#v, %v", got, err)
 	}
 }
 

@@ -191,6 +191,7 @@ type VM struct {
 	collectionRefMutationSeq  map[uint64]uint64
 	aliasContainmentCache     map[aliasContainmentCacheKey]bool
 	frameworkRecorderRollback *frameworkMethodCountRecorderRollback
+	perfRecorder              *PerfRecorder
 	runtimeArtifactsShared    bool
 }
 
@@ -512,6 +513,10 @@ type Trigger struct {
 }
 
 func New(stdout io.Writer) *VM {
+	return newVM(stdout, compatibilityPerfRecorder.Load())
+}
+
+func newVM(stdout io.Writer, recorder *PerfRecorder) *VM {
 	warmGeneratedPlatformRuntimeIndexes()
 	return &VM{
 		Globals:                      make(map[string]Value),
@@ -569,6 +574,13 @@ func New(stdout io.Writer) *VM {
 		lazyChildRelCache:            newLazyChildRelationshipLookupCache(),
 		objectNameCache:              make(map[string]objectNameLookup),
 		recentlyViewed:               make(map[string]map[storage.ID]recentlyViewedEntry),
+		perfRecorder:                 recorder,
+	}
+}
+
+func (vm *VM) SetPerfRecorder(recorder *PerfRecorder) {
+	if vm != nil {
+		vm.perfRecorder = recorder
 	}
 }
 
@@ -576,7 +588,7 @@ func New(stdout io.Writer) *VM {
 // classes, and triggers. Mutable runtime state such as globals, limits, org
 // state, current user, and static field values remains request-local.
 func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
-	clone := New(stdout)
+	clone := newVM(stdout, vm.perfRecorder)
 	// Methods, MethodOverloads, MethodFolded, and Triggers are compiled
 	// artifacts that are only mutated by Register*/unregister* at setup, never
 	// during execution. Share the maps by pointer and mark them shared so

@@ -2,12 +2,15 @@ package apextest
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -811,6 +814,7 @@ private class SeeAllDataTest {
 func TestCloneRuntimeOrgIsolatesRecordsAndDefinitions(t *testing.T) {
 	ResetPerfCounters()
 	t.Cleanup(ResetPerfCounters)
+	counters := newRunPerfCounters(true)
 	org := storage.NewOrgState()
 	org.OrgID = "00D000000000001"
 	org.Objects["Account"] = storage.ObjectState{
@@ -829,7 +833,7 @@ func TestCloneRuntimeOrgIsolatesRecordsAndDefinitions(t *testing.T) {
 		},
 	}
 
-	cloned := cloneRuntimeOrg(org)
+	cloned := cloneRuntimeOrg(org, counters)
 	account := cloned.Objects["Account"]
 	account.Records["001000000000001"].Fields["Name"] = storage.StringValue("Changed")
 	cloned.Objects["Account"] = account
@@ -846,7 +850,7 @@ func TestCloneRuntimeOrgIsolatesRecordsAndDefinitions(t *testing.T) {
 	if _, ok := org.Objects["Account"].Definition.Fields["RuntimeOnly__c"]; ok {
 		t.Fatalf("runtime clone shared definition fields with base org")
 	}
-	stats := SnapshotPerfCounters()
+	stats := snapshotPerfCounters(counters)
 	if stats.CloneRuntimeOrgCalls != 1 {
 		t.Fatalf("cloneRuntimeOrg calls = %d, want 1", stats.CloneRuntimeOrgCalls)
 	}
@@ -875,7 +879,7 @@ private class SetupJournalTest {
 }
 `)
 
-	run := Run(loadTestIndex(t, root), Options{Parallelism: 1})
+	run := Run(loadTestIndex(t, root), Options{Parallelism: 1, PerfCounters: true})
 	if summary := run.Summary(); summary.Total != 2 || summary.Passed != 2 {
 		if len(run.Suites) > 0 {
 			t.Fatalf("summary = %#v cases = %#v", summary, run.Suites[0].Cases)
@@ -913,7 +917,7 @@ private class NoSetupJournalTest {
 }
 `)
 
-	run := Run(loadTestIndex(t, root), Options{Parallelism: 1})
+	run := Run(loadTestIndex(t, root), Options{Parallelism: 1, PerfCounters: true})
 	if summary := run.Summary(); summary.Total != 2 || summary.Passed != 2 {
 		if len(run.Suites) > 0 {
 			t.Fatalf("summary = %#v cases = %#v", summary, run.Suites[0].Cases)
@@ -957,7 +961,7 @@ private class ParallelJournalTest {
 }
 `)
 
-	run := Run(loadTestIndex(t, root), Options{Parallelism: 2, ParallelMethods: true})
+	run := Run(loadTestIndex(t, root), Options{Parallelism: 2, ParallelMethods: true, PerfCounters: true})
 	if summary := run.Summary(); summary.Total != 4 || summary.Passed != 4 {
 		if len(run.Suites) > 0 {
 			t.Fatalf("summary = %#v cases = %#v", summary, run.Suites[0].Cases)
@@ -996,6 +1000,358 @@ private class PerfCounterTest {
 	}
 	if stats := SnapshotPerfCounters(); !stats.VMPerf.Enabled {
 		t.Fatalf("VM perf counters not enabled: %#v", stats.VMPerf)
+	}
+}
+
+func TestPerfCountersCapturePreRunAndRunnerPhases(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
+	InvalidateRuntimeCaches()
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PhaseTest.cls"), `
+@isTest
+private class PhaseTest {
+	@testSetup static void setupData() {}
+  @isTest static void passes() { System.assertEquals(1, 1); }
+}
+`)
+
+	pre := PreRunPhaseDurations{
+		ProjectLoad: 3 * time.Millisecond,
+		SchemaLoad:  5 * time.Millisecond,
+		IndexBuild:  7 * time.Millisecond,
+		Discover:    11 * time.Millisecond,
+	}
+	run := Run(loadTestIndex(t, root), Options{PerfCounters: true, NoDiskCache: true, PreRunPhaseDurations: pre})
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v suites = %#v", summary, run.Suites)
+	}
+	stats := SnapshotPerfCounters()
+	if !stats.Enabled {
+		t.Fatalf("Enabled = false: %#v", stats)
+	}
+	if stats.Phases.ProjectLoadNS != pre.ProjectLoad.Nanoseconds() || stats.Phases.SchemaLoadNS != pre.SchemaLoad.Nanoseconds() || stats.Phases.IndexBuildNS != pre.IndexBuild.Nanoseconds() || stats.Phases.DiscoverNS != pre.Discover.Nanoseconds() {
+		t.Fatalf("pre-run phases = %#v, want %#v", stats.Phases, pre)
+	}
+	if stats.Phases.DiscoverNS <= 0 || stats.Phases.RuntimeKeyNS <= 0 || stats.Phases.OrgBuildNS <= 0 || stats.Phases.ProjectCompileNS <= 0 || stats.Phases.TestCompileNS <= 0 || stats.Phases.ClassSetupNS <= 0 || stats.Phases.MethodRunNS <= 0 || stats.Phases.ReportAssemblyNS <= 0 {
+		t.Fatalf("runner phases incomplete: %#v", stats.Phases)
+	}
+}
+
+func TestPerfCountersCopySuppliedPreRunDiscoverDuration(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
+	InvalidateRuntimeCaches()
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PreDiscoveredTest.cls"), `
+@isTest private class PreDiscoveredTest {
+  @isTest static void passes() { System.assertEquals(1, 1); }
+}
+`)
+	index := loadTestIndex(t, root)
+	cases := Discover(index, Options{})
+	supplied := 13 * time.Millisecond
+	run := RunCasesContext(context.Background(), index, Options{
+		PerfCounters: true,
+		NoDiskCache:  true,
+		PreRunPhaseDurations: PreRunPhaseDurations{
+			Discover: supplied,
+		},
+	}, cases)
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v suites = %#v", summary, run.Suites)
+	}
+	if got := SnapshotPerfCounters().Phases.DiscoverNS; got != supplied.Nanoseconds() {
+		t.Fatalf("DiscoverNS = %d, want supplied %d", got, supplied.Nanoseconds())
+	}
+}
+
+func TestPerfCountersDiscoverRemainsZeroWithoutPreRunWiring(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
+	InvalidateRuntimeCaches()
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/UnwiredDiscoverTest.cls"), `
+@isTest private class UnwiredDiscoverTest {
+  @isTest static void passes() { System.assertEquals(1, 1); }
+}
+`)
+	run := Run(loadTestIndex(t, root), Options{PerfCounters: true, NoDiskCache: true})
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v suites = %#v", summary, run.Suites)
+	}
+	if got := SnapshotPerfCounters().Phases.DiscoverNS; got != 0 {
+		t.Fatalf("DiscoverNS = %d without pre-run wiring, want 0", got)
+	}
+}
+
+func TestRunPerfCountersSeparateMemoryDiskAndBuildPaths(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
+	InvalidateRuntimeCaches()
+	wasDiskCacheDisabled := disableDiskCache.Load()
+	disableDiskCache.Store(false)
+	t.Cleanup(func() { disableDiskCache.Store(wasDiskCacheDisabled) })
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/CachePhaseTest.cls"), `
+@isTest
+private class CachePhaseTest {
+  @isTest static void passes() { System.assertEquals(1, 1); }
+}
+`)
+	index := loadTestIndex(t, root)
+	if _, err := project.Load(root); err != nil {
+		t.Fatalf("project.Load() error = %v", err)
+	}
+
+	Run(index, Options{PerfCounters: true})
+	build := SnapshotPerfCounters().Phases
+	if build.CacheMisses != 1 || build.OrgBuildNS <= 0 || build.ProjectCompileNS <= 0 || build.CacheEncodeNS <= 0 {
+		t.Fatalf("build phases = %#v", build)
+	}
+
+	Run(index, Options{PerfCounters: true})
+	memory := SnapshotPerfCounters().Phases
+	if memory.MemoryCacheHits != 1 || memory.DiskCacheHits != 0 || memory.CacheMisses != 0 {
+		t.Fatalf("memory phases = %#v", memory)
+	}
+
+	InvalidateRuntimeCaches()
+	Run(index, Options{PerfCounters: true})
+	disk := SnapshotPerfCounters().Phases
+	if disk.DiskCacheHits != 1 || disk.MemoryCacheHits != 0 || disk.CacheValidateNS <= 0 || disk.CacheDecodeNS <= 0 || disk.CacheMisses != 0 {
+		t.Fatalf("disk phases = %#v", disk)
+	}
+}
+
+func TestRunPerfCountersAttributeDiskMaterializationPhases(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
+	InvalidateRuntimeCaches()
+	wasDiskCacheDisabled := disableDiskCache.Load()
+	disableDiskCache.Store(false)
+	t.Cleanup(func() { disableDiskCache.Store(wasDiskCacheDisabled) })
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/DiskMaterializationTest.cls"), `
+@isTest private class DiskMaterializationTest {
+  @isTest static void passes() { System.assertEquals(1, 1); }
+}
+`)
+	index := loadTestIndex(t, root)
+	Run(index, Options{PerfCounters: true})
+	InvalidateRuntimeCaches()
+
+	counters := newRunPerfCounters(true)
+	_, _ = runtimeFromIndexWithPerf(index, newSourceCache(), true, counters)
+	phases := snapshotPerfCounters(counters).Phases
+	if phases.DiskCacheHits != 1 || phases.CacheDecodeNS <= 0 {
+		t.Fatalf("disk cache phases = %#v", phases)
+	}
+	if phases.ProjectCompileNS <= 0 || phases.OrgBuildNS <= 0 {
+		t.Fatalf("disk materialization phases = %#v, want project compile and org build", phases)
+	}
+}
+
+func TestRunPerfCountersOwnVMRecordersAcrossOverlapAndPostRunActivity(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
+	makeRun := func(name, mutations string) (typesys.Index, []TestCase) {
+		root := t.TempDir()
+		writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+		writeFile(t, filepath.Join(root, "force-app/main/classes", name+".cls"), `
+@isTest private class `+name+` {
+  @isTest static void aliases() {
+    List<Integer> values = new List<Integer>();
+    List<List<Integer>> roots = new List<List<Integer>>{values};
+    `+mutations+`
+    System.assertEquals(values.size(), roots[0].size());
+  }
+}
+`)
+		index := loadTestIndex(t, root)
+		return index, Discover(index, Options{})
+	}
+	indexA, casesA := makeRun("OwnedRecorderATest", "values.add(1);")
+	indexB, casesB := makeRun("OwnedRecorderBTest", "values.add(1); values.add(2);")
+	normalize := func(stats vm.ScopeAliasPerfCounters) vm.ScopeAliasPerfCounters {
+		stats.ContainmentNS = 0
+		stats.ReplacementNS = 0
+		stats.DurationNS = 0
+		return stats
+	}
+	runAndSnapshot := func(index typesys.Index, cases []TestCase, opts Options) vm.ScopeAliasPerfCounters {
+		InvalidateRuntimeCaches()
+		run := RunCasesContext(context.Background(), index, opts, cases)
+		if summary := run.Summary(); summary.Failed != 0 || summary.Unsupported != 0 {
+			t.Fatalf("run summary = %#v suites = %#v", summary, run.Suites)
+		}
+		return normalize(SnapshotPerfCounters().VMPerf.ScopeAlias)
+	}
+	expectedA := runAndSnapshot(indexA, casesA, Options{PerfCounters: true, NoDiskCache: true})
+	expectedB := runAndSnapshot(indexB, casesB, Options{PerfCounters: true, NoDiskCache: true})
+	if expectedA.Calls == 0 || expectedB.Calls == 0 {
+		t.Fatalf("fixtures did not exercise scope alias instrumentation: A=%#v B=%#v", expectedA, expectedB)
+	}
+
+	InvalidateRuntimeCaches()
+	startedA := make(chan struct{})
+	releaseA := make(chan struct{})
+	doneA := make(chan testreport.Run, 1)
+	var blockOnce sync.Once
+	go func() {
+		doneA <- RunCasesContext(context.Background(), indexA, Options{
+			PerfCounters: true,
+			NoDiskCache:  true,
+			Progress: func(progress TestProgress) {
+				if progress.Event == "test_start" {
+					blockOnce.Do(func() { close(startedA) })
+					<-releaseA
+				}
+			},
+		}, casesA)
+	}()
+	<-startedA
+	runB := RunCasesContext(context.Background(), indexB, Options{PerfCounters: true, NoDiskCache: true}, casesB)
+	if summary := runB.Summary(); summary.Failed != 0 || summary.Unsupported != 0 {
+		t.Fatalf("overlapping B summary = %#v suites = %#v", summary, runB.Suites)
+	}
+	gotB := normalize(SnapshotPerfCounters().VMPerf.ScopeAlias)
+	close(releaseA)
+	runA := <-doneA
+	if summary := runA.Summary(); summary.Failed != 0 || summary.Unsupported != 0 {
+		t.Fatalf("overlapping A summary = %#v suites = %#v", summary, runA.Suites)
+	}
+	gotA := normalize(SnapshotPerfCounters().VMPerf.ScopeAlias)
+	if !reflect.DeepEqual(gotA, expectedA) || !reflect.DeepEqual(gotB, expectedB) {
+		t.Fatalf("overlapping recorder counts mixed: gotA=%#v wantA=%#v gotB=%#v wantB=%#v", gotA, expectedA, gotB, expectedB)
+	}
+
+	beforeReset := SnapshotPerfCounters()
+	vm.ResetPerfCounters()
+	if afterReset := SnapshotPerfCounters(); !reflect.DeepEqual(afterReset, beforeReset) {
+		t.Fatalf("post-run VM activity changed published snapshot:\nbefore=%#v\nafter=%#v", beforeReset.VMPerf, afterReset.VMPerf)
+	}
+}
+
+func TestRunDoesNotResetCompatibilityStorageCloneStats(t *testing.T) {
+	storage.ResetCloneStats()
+	t.Cleanup(storage.ResetCloneStats)
+	_ = storage.NewOrgState().CloneRollbackSnapshot()
+	prior := storage.SnapshotCloneStats()
+	if prior.CloneRuntimeCalls == 0 || prior.CloneRollbackSnapshotCalls == 0 {
+		t.Fatalf("precondition clone stats = %#v, want real runtime and rollback clones", prior)
+	}
+
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/StorageCompatibilityTest.cls"), `
+@isTest private class StorageCompatibilityTest {
+  @isTest static void passes() { System.assertEquals(1, 1); }
+}
+`)
+	run := Run(loadTestIndex(t, root), Options{NoDiskCache: true})
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v suites = %#v", summary, run.Suites)
+	}
+	after := storage.SnapshotCloneStats()
+	if after.CloneRuntimeCalls < prior.CloneRuntimeCalls || after.CloneRollbackSnapshotCalls < prior.CloneRollbackSnapshotCalls {
+		t.Fatalf("runner cleared compatibility clone stats: before=%#v after=%#v", prior, after)
+	}
+}
+
+func TestRunPerfCountersPreserveSuiteAndCaseOrder(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AlphaOrderTest.cls"), `
+@isTest private class AlphaOrderTest {
+  @isTest static void first() {}
+  @isTest static void second() {}
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BetaOrderTest.cls"), `
+@isTest private class BetaOrderTest {
+  @isTest static void only() {}
+}
+`)
+	index := loadTestIndex(t, root)
+	cases := Discover(index, Options{})
+
+	InvalidateRuntimeCaches()
+	without := RunCasesContext(context.Background(), index, Options{NoDiskCache: true}, cases)
+	if stats := SnapshotPerfCounters(); stats.Enabled || stats.Phases != (RunnerPhasePerfCounters{}) || len(stats.CloneReasons) != 0 || !reflect.DeepEqual(stats.VMPerf, vm.PerfCounters{}) {
+		t.Fatalf("disabled runner detailed snapshot = %#v, want zero phases/reasons/VM", stats)
+	}
+	InvalidateRuntimeCaches()
+	with := RunCasesContext(context.Background(), index, Options{PerfCounters: true, NoDiskCache: true}, cases)
+	identities := func(run testreport.Run) []string {
+		var out []string
+		for _, suite := range run.Suites {
+			for _, testCase := range suite.Cases {
+				problem := ""
+				if testCase.Problem != nil {
+					problem = testCase.Problem.Type + ":" + testCase.Problem.Message
+				}
+				out = append(out, suite.Name+"/"+testCase.ClassName+"."+testCase.MethodName+":"+string(testCase.Status)+":"+problem)
+			}
+		}
+		return out
+	}
+	if got, want := strings.Join(identities(with), "\n"), strings.Join(identities(without), "\n"); got != want {
+		t.Fatalf("instrumented run changed identities/status/order:\ngot=%s\nwant=%s", got, want)
+	}
+	normalizeDurations := func(run testreport.Run) testreport.Run {
+		run.DurationMS = 0
+		run.Suites = append([]testreport.Suite(nil), run.Suites...)
+		for suiteIndex := range run.Suites {
+			run.Suites[suiteIndex].DurationMS = 0
+			run.Suites[suiteIndex].Cases = append([]testreport.Case(nil), run.Suites[suiteIndex].Cases...)
+			for caseIndex := range run.Suites[suiteIndex].Cases {
+				run.Suites[suiteIndex].Cases[caseIndex].DurationMS = 0
+			}
+		}
+		return run
+	}
+	withoutJSON, err := json.Marshal(normalizeDurations(without))
+	if err != nil {
+		t.Fatal(err)
+	}
+	withJSON, err := json.Marshal(normalizeDurations(with))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(withJSON) != string(withoutJSON) {
+		t.Fatalf("instrumented run changed JSON object data:\ngot=%s\nwant=%s", withJSON, withoutJSON)
+	}
+}
+
+func TestRunPerfCountersReportAssemblyAndHistoryApply(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
+	InvalidateRuntimeCaches()
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/HistoryOneTest.cls"), `@isTest private class HistoryOneTest { @isTest static void one() {} }`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/HistoryTwoTest.cls"), `@isTest private class HistoryTwoTest { @isTest static void two() {} }`)
+
+	run := Run(loadTestIndex(t, root), Options{
+		PerfCounters:    true,
+		NoDiskCache:     true,
+		Parallelism:     2,
+		ClassDurationMS: map[string]int64{"HistoryOneTest": 1, "HistoryTwoTest": 2},
+	})
+	if summary := run.Summary(); summary.Total != 2 || summary.Passed != 2 {
+		t.Fatalf("summary = %#v suites = %#v", summary, run.Suites)
+	}
+	phases := SnapshotPerfCounters().Phases
+	if phases.HistoryApplyNS <= 0 || phases.ReportAssemblyNS <= 0 {
+		t.Fatalf("history/report phases = %#v", phases)
 	}
 }
 

@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"sync"
 	"testing"
 	"time"
 )
@@ -32,5 +33,185 @@ func TestStaticAliasTopFieldsRankByDurationAndTrackOutcomes(t *testing.T) {
 	}
 	if fields[1].Field != "Registry.slow" || fields[1].DurationNS != int64(3*time.Millisecond) {
 		t.Fatalf("second field = %#v, want Registry.slow with 3ms", fields[1])
+	}
+}
+
+func TestScopeAliasPerfCapturesCallsRootsVisitsCacheOutcomesAndReplacementTime(t *testing.T) {
+	ResetPerfCounters()
+	SetPerfCountersEnabled(true)
+	t.Cleanup(ResetPerfCounters)
+
+	machine := New(nil)
+	target := List(String("before"))
+	updated := target
+	updated.List = append(updated.List, String("after"))
+	containing := List(target)
+	containing.Type = "List<List<String>>"
+	absent := List(String("absent"))
+	absent.Type = "List<String>"
+
+	scope := map[string]Value{"containing": containing, "absent": absent}
+	machine.propagateAliasSnapshotToScope(scope, snapshotAlias(target), updated)
+	machine.propagateAliasSnapshotToScope(map[string]Value{"absent": absent}, snapshotAlias(target), updated)
+	machine.propagateAliasSnapshotToScope(map[string]Value{"absent": absent}, snapshotAlias(target), updated)
+
+	stats := SnapshotPerfCounters().ScopeAlias
+	if stats.Calls != 3 || stats.Roots != 4 {
+		t.Fatalf("calls/roots = %#v, want 3 calls and 4 roots", stats)
+	}
+	if stats.RecursiveVisits == 0 || stats.ContainmentCacheMisses == 0 || stats.ContainmentCacheHits == 0 {
+		t.Fatalf("containment counters = %#v", stats)
+	}
+	if stats.ReplacedRoots != 1 || stats.ContainmentNS <= 0 || stats.ReplacementNS <= 0 || stats.DurationNS <= 0 {
+		t.Fatalf("replacement/timing counters = %#v", stats)
+	}
+}
+
+func TestScopeAliasPerfRecordsContainmentCacheClearAndEvictedEntries(t *testing.T) {
+	ResetPerfCounters()
+	SetPerfCountersEnabled(true)
+	t.Cleanup(ResetPerfCounters)
+
+	machine := New(nil)
+	machine.aliasContainmentCache = make(map[aliasContainmentCacheKey]bool, 16385)
+	for i := 0; i < 16385; i++ {
+		machine.aliasContainmentCache[aliasContainmentCacheKey{ValueRef: uint64(i + 1)}] = true
+	}
+	machine.collectionMutationSeq = 1
+	machine.recordCollectionMutation(1)
+
+	stats := SnapshotPerfCounters().ScopeAlias
+	if stats.ContainmentCacheClears != 1 || stats.ContainmentEntriesEvicted != 16385 {
+		t.Fatalf("cache clear counters = %#v", stats)
+	}
+}
+
+func TestScopeAliasPerfRecordsMutationEpochAdvances(t *testing.T) {
+	ResetPerfCounters()
+	SetPerfCountersEnabled(true)
+	t.Cleanup(ResetPerfCounters)
+
+	machine := New(nil)
+	machine.collectionMutationSeq = 7
+	machine.recordCollectionMutation(11)
+	machine.collectionMutationSeq = 9
+	machine.recordCollectionMutation(11)
+
+	stats := SnapshotPerfCounters().ScopeAlias
+	if stats.MutationEpochAdvances != 2 || stats.MaxMutationEpoch != 9 {
+		t.Fatalf("mutation epoch counters = %#v", stats)
+	}
+}
+
+func TestScopeAliasPerfDisabledLeavesCountersZero(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
+
+	machine := New(nil)
+	target := List(String("before"))
+	updated := target
+	updated.List = append(updated.List, String("after"))
+	machine.propagateAliasSnapshotToScope(map[string]Value{"target": target}, snapshotAlias(target), updated)
+	machine.collectionMutationSeq = 1
+	machine.recordCollectionMutation(target.Ref)
+
+	if got := SnapshotPerfCounters().ScopeAlias; got != (ScopeAliasPerfCounters{}) {
+		t.Fatalf("disabled scope counters = %#v, want zero", got)
+	}
+}
+
+func TestStaticAndScopeAliasDurationsRemainSeparate(t *testing.T) {
+	ResetPerfCounters()
+	SetPerfCountersEnabled(true)
+	t.Cleanup(ResetPerfCounters)
+
+	recordStaticAliasPerf(3*time.Millisecond, false, 1, true)
+	machine := New(nil)
+	target := List(String("before"))
+	updated := target
+	updated.List = append(updated.List, String("after"))
+	machine.propagateAliasSnapshotToScope(map[string]Value{"target": List(target)}, snapshotAlias(target), updated)
+
+	stats := SnapshotPerfCounters()
+	if stats.StaticAlias.DurationNS != int64(3*time.Millisecond) {
+		t.Fatalf("static duration = %d, want %d", stats.StaticAlias.DurationNS, int64(3*time.Millisecond))
+	}
+	if stats.ScopeAlias.DurationNS <= 0 || stats.ScopeAlias.DurationNS == stats.StaticAlias.DurationNS {
+		t.Fatalf("static/scope durations mixed: static=%#v scope=%#v", stats.StaticAlias, stats.ScopeAlias)
+	}
+}
+
+func TestCloneRuntimeCarriesPerfRecorder(t *testing.T) {
+	recorder := NewPerfRecorder()
+	machine := New(nil)
+	machine.SetPerfRecorder(recorder)
+	clone := machine.CloneRuntime(nil)
+
+	target := List(String("before"))
+	updated := target
+	updated.List = append(updated.List, String("after"))
+	clone.propagateAliasSnapshotToScope(map[string]Value{"target": List(target)}, snapshotAlias(target), updated)
+
+	if stats := recorder.Snapshot().ScopeAlias; stats.Calls != 1 || stats.ReplacedRoots != 1 {
+		t.Fatalf("clone recorder stats = %#v, want one recorded scope replacement", stats)
+	}
+}
+
+func TestPerfRecordersRemainIndependentDuringConcurrentActivity(t *testing.T) {
+	first := NewPerfRecorder()
+	second := NewPerfRecorder()
+	firstVM := New(nil)
+	secondVM := New(nil)
+	firstVM.SetPerfRecorder(first)
+	secondVM.SetPerfRecorder(second)
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+	run := func(machine *VM, calls int) {
+		defer wg.Done()
+		for i := 0; i < calls; i++ {
+			target := List(String("before"))
+			updated := target
+			updated.List = append(updated.List, String("after"))
+			machine.propagateAliasSnapshotToScope(map[string]Value{"target": List(target)}, snapshotAlias(target), updated)
+		}
+	}
+	go run(firstVM, 2)
+	go run(secondVM, 3)
+	wg.Wait()
+
+	if got := first.Snapshot().ScopeAlias.Calls; got != 2 {
+		t.Fatalf("first recorder calls = %d, want 2", got)
+	}
+	if got := second.Snapshot().ScopeAlias.Calls; got != 3 {
+		t.Fatalf("second recorder calls = %d, want 3", got)
+	}
+}
+
+func TestDMLStaticAndScopePerfCountersRemainIndependent(t *testing.T) {
+	recorder := NewPerfRecorder()
+	machine := New(nil)
+	machine.SetPerfRecorder(recorder)
+
+	machine.recordSnapshotDMLRollbackPoint()
+	afterDML := recorder.Snapshot()
+	if afterDML.DML.RollbackPoints != 1 || afterDML.DML.SnapshotRollbackPoints != 1 {
+		t.Fatalf("DML counters = %#v, want one snapshot rollback", afterDML.DML)
+	}
+	if afterDML.StaticAlias.Calls != 0 || afterDML.ScopeAlias.Calls != 0 {
+		t.Fatalf("DML recording changed alias counters: static=%#v scope=%#v", afterDML.StaticAlias, afterDML.ScopeAlias)
+	}
+
+	recorder.recordStaticAliasPerf(time.Millisecond, false, 1, true)
+	target := List(String("before"))
+	updated := target
+	updated.List = append(updated.List, String("after"))
+	machine.propagateAliasSnapshotToScope(map[string]Value{"target": List(target)}, snapshotAlias(target), updated)
+	afterAliases := recorder.Snapshot()
+	if afterAliases.StaticAlias.Calls != 1 || afterAliases.ScopeAlias.Calls != 1 {
+		t.Fatalf("alias counters = static %#v scope %#v", afterAliases.StaticAlias, afterAliases.ScopeAlias)
+	}
+	if afterAliases.DML != afterDML.DML {
+		t.Fatalf("alias recording changed DML counters: before=%#v after=%#v", afterDML.DML, afterAliases.DML)
 	}
 }

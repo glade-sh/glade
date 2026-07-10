@@ -65,6 +65,15 @@ type Directory struct {
 	ModTime int64  `json:"modTime"`
 }
 
+type ReadStats struct {
+	ValidationNS int64 `json:"validationNs,omitempty"`
+	DecodeNS     int64 `json:"decodeNs,omitempty"`
+}
+
+type WriteStats struct {
+	EncodeNS int64 `json:"encodeNs,omitempty"`
+}
+
 func cachePath(projectRoot, subdir string) string {
 	return filepath.Join(projectRoot, filepath.FromSlash(subdir), stateFile)
 }
@@ -79,6 +88,19 @@ func Read(projectRoot, subdir string) (*Entry, error) {
 		return readGob(root, subdir)
 	}
 	return readJSON(root, subdir)
+}
+
+func ReadWithStats(projectRoot, subdir string) (*Entry, ReadStats, error) {
+	root, err := filepath.Abs(projectRoot)
+	if err != nil {
+		return nil, ReadStats{}, err
+	}
+	root = filepath.Clean(root)
+	if subdir == SubdirTest {
+		return readSplitTestCacheWithStats(root, subdir)
+	}
+	entry, err := readJSON(root, subdir)
+	return entry, ReadStats{}, err
 }
 
 func readJSON(projectRoot, subdir string) (*Entry, error) {
@@ -101,6 +123,13 @@ func Write(entry *Entry, subdir string) error {
 		return writeGob(entry, subdir)
 	}
 	return writeJSON(entry, subdir)
+}
+
+func WriteWithStats(entry *Entry, subdir string) (WriteStats, error) {
+	if subdir == SubdirTest {
+		return writeSplitTestCacheWithStats(entry, subdir)
+	}
+	return WriteStats{}, writeJSON(entry, subdir)
 }
 
 func writeJSON(entry *Entry, subdir string) error {

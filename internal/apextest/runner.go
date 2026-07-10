@@ -36,23 +36,31 @@ import (
 )
 
 type Options struct {
-	Filter              string
-	SelectedClasses     []string
-	SelectedMethod      string
-	LimitMode           vm.LimitMode
-	LimitCaps           vm.LimitCaps
-	LimitCapsSet        bool
-	TraceBlocked        bool
-	TraceAll            bool
-	SlowTestThresholdMS int64
-	TimeoutMS           int64
-	Parallelism         int
-	ParallelMethods     bool
-	NoDiskCache         bool
-	ClassDurationMS     map[string]int64
-	MethodDurationMS    map[string]int64
-	PerfCounters        bool
-	Progress            func(TestProgress)
+	Filter               string
+	SelectedClasses      []string
+	SelectedMethod       string
+	LimitMode            vm.LimitMode
+	LimitCaps            vm.LimitCaps
+	LimitCapsSet         bool
+	TraceBlocked         bool
+	TraceAll             bool
+	SlowTestThresholdMS  int64
+	TimeoutMS            int64
+	Parallelism          int
+	ParallelMethods      bool
+	NoDiskCache          bool
+	ClassDurationMS      map[string]int64
+	MethodDurationMS     map[string]int64
+	PerfCounters         bool
+	PreRunPhaseDurations PreRunPhaseDurations
+	Progress             func(TestProgress)
+}
+
+type PreRunPhaseDurations struct {
+	ProjectLoad time.Duration
+	SchemaLoad  time.Duration
+	IndexBuild  time.Duration
+	Discover    time.Duration
 }
 
 type permissionSetMetadata struct {
@@ -192,17 +200,29 @@ func RunContext(ctx context.Context, index typesys.Index, opts Options) testrepo
 type runExecution struct {
 	diskCacheEnabled bool
 	counters         *runPerfCounters
+	vmPerf           *vm.PerfRecorder
 }
 
 func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cases []TestCase) testreport.Run {
-	storage.ResetCloneStats()
-	vm.ResetPerfCounters()
-	vm.SetPerfCountersEnabled(opts.PerfCounters)
 	runState := runExecution{
 		diskCacheEnabled: useDiskRuntimeCache(opts),
-		counters:         newRunPerfCounters(),
+		counters:         newRunPerfCounters(opts.PerfCounters),
 	}
-	defer publishPerfCounters(runState.counters)
+	if opts.PerfCounters {
+		runState.vmPerf = vm.NewPerfRecorder()
+	}
+	defer func() {
+		if runState.vmPerf != nil {
+			runState.counters.captureVMPerf(runState.vmPerf.Snapshot())
+		}
+		publishPerfCounters(runState.counters)
+	}()
+	if runState.counters.enabled {
+		runState.counters.phases.projectLoadNS.Store(opts.PreRunPhaseDurations.ProjectLoad.Nanoseconds())
+		runState.counters.phases.schemaLoadNS.Store(opts.PreRunPhaseDurations.SchemaLoad.Nanoseconds())
+		runState.counters.phases.indexBuildNS.Store(opts.PreRunPhaseDurations.IndexBuild.Nanoseconds())
+		runState.counters.phases.discoverNS.Store(opts.PreRunPhaseDurations.Discover.Nanoseconds())
+	}
 	started := time.Now()
 	emitProgress := opts.Progress != nil
 	if cases == nil {
@@ -212,30 +232,71 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_start"})
 	}
-	runtimeKey, runtime := runtimeFromIndex(index, sources, runState.diskCacheEnabled)
+	var runtimeKey runtimeCacheKey
+	var runtime runtimeCacheEntry
+	if runState.counters.enabled {
+		runtimeKey, runtime = runtimeFromIndexWithPerf(index, sources, runState.diskCacheEnabled, runState.counters)
+	} else {
+		runtimeKey, runtime = runtimeFromIndex(index, sources, runState.diskCacheEnabled)
+	}
+	var testCompileStarted time.Time
+	if runState.counters.enabled {
+		testCompileStarted = time.Now()
+	}
 	setups, setupErrors, setupInvokePrograms, setupInvokeErrors := compileTestSetupsCached(index, runtimeKey, testCaseClassSet(cases), sources)
 	triggerErrors := runtime.TriggerErrors
 	testMethods, testMethodErrors, testInvokePrograms, testInvokeErrors := compileTestsCached(index, runtimeKey, cases, sources)
+	if runState.counters.enabled {
+		runState.counters.phases.testCompileNS.Add(time.Since(testCompileStarted).Nanoseconds())
+	}
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_done", DurationMS: time.Since(started).Milliseconds(), Status: "pass"})
 	}
+	var orgSetupStarted time.Time
+	if runState.counters.enabled {
+		orgSetupStarted = time.Now()
+	}
 	recordStorageCloneRuntime(runState.counters)
+	recordCloneReason("", "run-base", "org-template", runState.counters)
 	org := runtime.Template.CloneRuntimeOrg()
 	initializeTestOrg(&org)
-	baseMachine := cloneRuntimeMachine(runtime.BaseMachine, runState.counters)
+	if runState.counters.enabled {
+		runState.counters.phases.orgBuildNS.Add(time.Since(orgSetupStarted).Nanoseconds())
+	}
+	baseMachine := cloneRuntimeMachineFor(runtime.BaseMachine, "", "run-base", runState.counters)
+	baseMachine.SetPerfRecorder(runState.vmPerf)
 	baseMachine.SetTraceEnabled(false)
 	baseMachine.EnableTestContext()
 	// Prime the schema stamp so per-test clones inherit it and reuse the shared
 	// schema-describe caches instead of rebuilding them on every clone.
+	if runState.counters.enabled {
+		orgSetupStarted = time.Now()
+	}
 	baseMachine.PrimeMetadataSchema(&org)
+	if runState.counters.enabled {
+		runState.counters.phases.orgBuildNS.Add(time.Since(orgSetupStarted).Nanoseconds())
+	}
 	baseRuntimeErr := runtime.BaseErr
 	if baseRuntimeErr == nil {
+		if runState.counters.enabled {
+			testCompileStarted = time.Now()
+		}
 		baseRuntimeErr = registerTestRuntime(baseMachine, append(flattenSetupMethods(setups), methodMapValues(testMethods)...))
+		if runState.counters.enabled {
+			runState.counters.phases.testCompileNS.Add(time.Since(testCompileStarted).Nanoseconds())
+		}
 	}
 	// Freeze the alias/class lookup into a shared immutable index now that all
 	// classes and test methods are registered. Per-test clones then share it by
 	// pointer instead of rebuilding it on every CloneRuntime.
+	var freezeStarted time.Time
+	if runState.counters.enabled {
+		freezeStarted = time.Now()
+	}
 	baseMachine.FreezeClassLookup()
+	if runState.counters.enabled {
+		runState.counters.phases.projectCompileNS.Add(time.Since(freezeStarted).Nanoseconds())
+	}
 	suites := make(map[string][]testreport.Case)
 	order := make([]string, 0)
 	classSeen := make(map[string]bool)
@@ -274,6 +335,7 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 			})
 		}
 	}
+	var reportStarted time.Time
 	if noSetupFastPath(setups, setupErrors, setupInvokeErrors) && allClassesHaveSingleMethod(suiteIndexes) {
 		for i := range planned {
 			if results[i].Status != "" {
@@ -291,6 +353,9 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	}
 	runTestPlansWithSetups(ctx, order, suiteIndexes, planned, results, baseMachine, baseRuntimeErr, setups, setupErrors, setupInvokePrograms, setupInvokeErrors, triggerErrors, org, opts, runState.counters)
 assemble:
+	if runState.counters.enabled {
+		reportStarted = time.Now()
+	}
 	for className, indexes := range suiteIndexes {
 		for _, index := range indexes {
 			suites[className] = append(suites[className], results[index])
@@ -303,6 +368,9 @@ assemble:
 	}
 	for _, name := range order {
 		run.Suites = append(run.Suites, testreport.Suite{Name: name, Cases: suites[name]})
+	}
+	if runState.counters.enabled {
+		runState.counters.phases.reportAssemblyNS.Add(time.Since(reportStarted).Nanoseconds())
 	}
 	return run
 }
@@ -488,6 +556,71 @@ func runtimeFromIndex(index typesys.Index, sources *sourceCache, useDiskCache ..
 	return key, cloneRuntimeCacheEntry(entry)
 }
 
+func runtimeFromIndexWithPerf(index typesys.Index, sources *sourceCache, diskCacheAllowed bool, counters *runPerfCounters) (runtimeCacheKey, runtimeCacheEntry) {
+	if sources != nil {
+		sources.configureNamespaceRemaps(index.Types, index.Triggers)
+	}
+	keyStarted := time.Now()
+	key := runtimeKey(index)
+	counters.phases.runtimeKeyNS.Add(time.Since(keyStarted).Nanoseconds())
+	runtimeCacheMu.RLock()
+	if cached, ok := runtimeCache[key]; ok {
+		runtimeCacheMu.RUnlock()
+		counters.phases.memoryCacheHits.Add(1)
+		return key, cloneRuntimeCacheEntry(cached)
+	}
+	runtimeCacheMu.RUnlock()
+
+	if diskCacheAllowed {
+		if diskEntry, ok := tryLoadDiskRuntimeWithPerf(index, counters); ok {
+			runtimeCacheMu.Lock()
+			runtimeCache[key] = diskEntry
+			runtimeCacheMu.Unlock()
+			counters.phases.diskCacheHits.Add(1)
+			return key, cloneRuntimeCacheEntry(diskEntry)
+		}
+	}
+	counters.phases.cacheMisses.Add(1)
+
+	compileStarted := time.Now()
+	methods := compileProjectMethods(index, sources)
+	classes := compileProjectClasses(index, methods, sources)
+	triggers, triggerErrors := compileProjectTriggers(index, sources)
+	counters.phases.projectCompileNS.Add(time.Since(compileStarted).Nanoseconds())
+
+	orgStarted := time.Now()
+	org := orgFromIndex(index, sources)
+	template := storage.NewRuntimeTemplate(org)
+	vm.PrimeRuntimeTemplateSchema(&template)
+	counters.phases.orgBuildNS.Add(time.Since(orgStarted).Nanoseconds())
+
+	compileStarted = time.Now()
+	pageNames := visualforcePageNames(index)
+	baseMachine := vm.New(nil)
+	baseMachine.SetTraceEnabled(false)
+	registerVisualforcePages(baseMachine, pageNames)
+	baseErr := registerBaseRuntime(baseMachine, methods, classes, triggers)
+	counters.phases.projectCompileNS.Add(time.Since(compileStarted).Nanoseconds())
+	entry := runtimeCacheEntry{
+		Methods:       methods,
+		Classes:       classes,
+		Triggers:      triggers,
+		TriggerErrors: triggerErrors,
+		Org:           org,
+		Template:      template,
+		PageNames:     pageNames,
+		BaseMachine:   baseMachine,
+		BaseErr:       baseErr,
+	}
+	runtimeCacheMu.Lock()
+	runtimeCache[key] = entry
+	runtimeCacheMu.Unlock()
+	if diskCacheAllowed {
+		persistDiskRuntimeWithPerf(index, entry, counters)
+	}
+	return key, cloneRuntimeCacheEntry(entry)
+}
+
 func classSetKey(classes map[string]bool) string {
 	if len(classes) == 0 {
 		return ""
@@ -584,7 +717,10 @@ func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm
 			if emitProgress {
 				reportProgress(opts, TestProgress{Event: "setup_start", ClassName: className})
 			}
-			started := time.Now()
+			var started time.Time
+			if emitProgress {
+				started = time.Now()
+			}
 			setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
 			setupOrg, setupRandom, setupErr, shared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts, counters)
 			if setupCancel != nil {
@@ -615,7 +751,10 @@ func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm
 				if emitProgress {
 					reportProgress(opts, TestProgress{Event: "setup_start", ClassName: className})
 				}
-				started := time.Now()
+				var started time.Time
+				if emitProgress {
+					started = time.Now()
+				}
 				setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
 				setupOrg, setupRandom, setupErr, shared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts, counters)
 				if setupCancel != nil {
@@ -679,7 +818,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 	if parallelism > len(classOrder) {
 		parallelism = len(classOrder)
 	}
-	sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS)
+	sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS, counters)
 	jobs := make(chan string)
 	var wg sync.WaitGroup
 	for worker := 0; worker < parallelism; worker++ {
@@ -688,7 +827,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 			defer wg.Done()
 			for className := range jobs {
 				methodIndexes := append([]int(nil), classIndexes[className]...)
-				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS)
+				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS, counters)
 				for _, i := range methodIndexes {
 					if results[i].Status != "" {
 						continue
@@ -739,7 +878,7 @@ func runNoSetupJournalPlans(ctx context.Context, planned []testCasePlan, results
 		journal := storage.NewIsolationJournal(&org)
 		for _, className := range classOrder {
 			methodIndexes := append([]int(nil), classIndexes[className]...)
-			sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS)
+			sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS, counters)
 			for _, i := range methodIndexes {
 				runJournaledNoSetupPlan(ctx, i, planned, results, journal, 0, baseMachine, baseRuntimeErr, triggerErrors, opts, counters, emitProgress)
 			}
@@ -749,7 +888,7 @@ func runNoSetupJournalPlans(ctx context.Context, planned []testCasePlan, results
 	if parallelism > len(classOrder) {
 		parallelism = len(classOrder)
 	}
-	sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS)
+	sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS, counters)
 	jobs := make(chan string)
 	var wg sync.WaitGroup
 	for worker := 0; worker < parallelism; worker++ {
@@ -760,7 +899,7 @@ func runNoSetupJournalPlans(ctx context.Context, planned []testCasePlan, results
 			journal := storage.NewIsolationJournal(&workerOrg)
 			for className := range jobs {
 				methodIndexes := append([]int(nil), classIndexes[className]...)
-				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS)
+				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS, counters)
 				for _, i := range methodIndexes {
 					runJournaledNoSetupPlan(ctx, i, planned, results, journal, 0, baseMachine, baseRuntimeErr, triggerErrors, opts, counters, emitProgress)
 				}
@@ -808,11 +947,18 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 		parallelism = len(classOrder)
 	}
 	if parallelism > 1 {
-		sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS)
+		sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS, counters)
 	}
 	adaptiveBudgets := map[string]int{}
 	if opts.ParallelMethods {
+		var adaptiveHistoryStarted time.Time
+		if counters != nil && counters.enabled && len(opts.ClassDurationMS) > 0 {
+			adaptiveHistoryStarted = time.Now()
+		}
 		adaptiveBudgets = adaptiveClassMethodBudget(opts.Parallelism, classScheduleInputs(classOrder, classIndexes, opts.ClassDurationMS))
+		if counters != nil && counters.enabled && len(opts.ClassDurationMS) > 0 {
+			counters.phases.historyApplyNS.Add(time.Since(adaptiveHistoryStarted).Nanoseconds())
+		}
 		reservedMethodWorkers := 0
 		for _, budget := range adaptiveBudgets {
 			if budget > 1 && budget-1 > reservedMethodWorkers {
@@ -827,7 +973,14 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 		}
 	}
 	costHints := aggregateClassCostHints(classOrder, planned)
+	var historyStarted time.Time
+	if counters != nil && counters.enabled && len(opts.ClassDurationMS) > 0 {
+		historyStarted = time.Now()
+	}
 	dispatcher := newClassDispatcher(classOrder, costHints, opts.ClassDurationMS)
+	if counters != nil && counters.enabled && len(opts.ClassDurationMS) > 0 {
+		counters.phases.historyApplyNS.Add(time.Since(historyStarted).Nanoseconds())
+	}
 	defer dispatcher.close()
 	var wg sync.WaitGroup
 	for worker := 0; worker < parallelism; worker++ {
@@ -843,7 +996,10 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 				if emitProgress {
 					reportProgress(opts, TestProgress{Event: "setup_start", ClassName: className})
 				}
-				started := time.Now()
+				var started time.Time
+				if emitProgress {
+					started = time.Now()
+				}
 				setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
 				setupOrg, setupRandom, setupErr, setupShared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts, counters)
 				if setupCancel != nil {
@@ -853,7 +1009,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 					reportProgress(opts, TestProgress{Event: "setup_done", ClassName: className, DurationMS: time.Since(started).Milliseconds(), Status: progressStatus(setupErr)})
 				}
 				methodIndexes := append([]int(nil), classIndexes[className]...)
-				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS)
+				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS, counters)
 				if opts.ParallelMethods && len(methodIndexes) > 1 {
 					methodParallelism := methodParallelismForClassRun(opts.Parallelism, parallelism, len(methodIndexes), dispatcher.unfinishedClassCount())
 					if extra := adaptiveBudgets[className]; extra > methodParallelism {
@@ -1032,7 +1188,13 @@ func methodParallelismForClassRun(totalParallelism, classParallelism, methods, u
 	return parallelism
 }
 
-func sortClassRunOrder(classOrder []string, classIndexes map[string][]int, classDurationMS map[string]int64) {
+func sortClassRunOrder(classOrder []string, classIndexes map[string][]int, classDurationMS map[string]int64, counters ...*runPerfCounters) {
+	c := perfCounterFor(counters)
+	var started time.Time
+	if c.enabled && len(classDurationMS) > 0 {
+		started = time.Now()
+		defer func() { c.phases.historyApplyNS.Add(time.Since(started).Nanoseconds()) }()
+	}
 	sort.SliceStable(classOrder, func(i, j int) bool {
 		left := classOrder[i]
 		right := classOrder[j]
@@ -1048,9 +1210,15 @@ func sortClassRunOrder(classOrder []string, classIndexes map[string][]int, class
 	})
 }
 
-func sortMethodIndexes(indexes []int, planned []testCasePlan, methodDurationMS map[string]int64) {
+func sortMethodIndexes(indexes []int, planned []testCasePlan, methodDurationMS map[string]int64, counters ...*runPerfCounters) {
 	if len(indexes) <= 1 || len(methodDurationMS) == 0 {
 		return
+	}
+	c := perfCounterFor(counters)
+	var started time.Time
+	if c.enabled {
+		started = time.Now()
+		defer func() { c.phases.historyApplyNS.Add(time.Since(started).Nanoseconds()) }()
 	}
 	sort.SliceStable(indexes, func(i, j int) bool {
 		left := planned[indexes[i]].TestCase
@@ -1175,7 +1343,7 @@ func runSingleClassTestPlans(ctx context.Context, planned []testCasePlan, result
 	for i := range planned {
 		indexes = append(indexes, i)
 	}
-	sortMethodIndexes(indexes, planned, opts.MethodDurationMS)
+	sortMethodIndexes(indexes, planned, opts.MethodDurationMS, counters)
 	for _, i := range indexes {
 		jobs <- i
 	}
@@ -1232,7 +1400,7 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 		return org, 0, nil, true
 	}
 	setupOrg := cloneRuntimeOrgForClass(org, className, "setup", counters)
-	machine := cloneRuntimeMachine(baseMachine, counters)
+	machine := cloneRuntimeMachineFor(baseMachine, className, "setup", counters)
 	machine.SetTraceEnabled(false)
 	if opts.LimitMode != "" {
 		machine.SetLimitMode(opts.LimitMode)
@@ -1303,7 +1471,7 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 		out.Problem = problem("UnsupportedFeature", invokeErr.Error(), testCase)
 		return out
 	}
-	machine := cloneRuntimeMachine(baseMachine, counters)
+	machine := cloneRuntimeMachineFor(baseMachine, testCase.ClassName, "test", counters)
 	machine.SetDeterministicRandomState(setupRandom)
 	machine.SetTraceEnabled(opts.TraceAll || opts.TraceBlocked || opts.SlowTestThresholdMS > 0)
 	if opts.LimitMode != "" {
@@ -1410,6 +1578,7 @@ func registerRuntime(machine *vm.VM, methods map[string]vm.Method, classes []vm.
 func cloneRuntimeOrg(org storage.OrgState, counters ...*runPerfCounters) storage.OrgState {
 	recordCloneRuntimeOrg("", "", counters...)
 	recordStorageCloneRollbackSnapshot(counters...)
+	recordCloneReason("", "rollback-snapshot", "org-rollback-snapshot", counters...)
 	started := time.Now()
 	clone := org.CloneRollbackSnapshot()
 	recordCloneRuntimeOrgDuration(time.Since(started), counters...)
@@ -1419,6 +1588,13 @@ func cloneRuntimeOrg(org storage.OrgState, counters ...*runPerfCounters) storage
 func cloneRuntimeOrgForClass(org storage.OrgState, className, phase string, counters ...*runPerfCounters) storage.OrgState {
 	recordCloneRuntimeOrg(className, phase, counters...)
 	recordStorageCloneRuntime(counters...)
+	capability := "org-frozen-shared"
+	if phase == "test-worker" {
+		capability = "journal-worker"
+	} else if phase == "test" {
+		capability = "full-method-isolation"
+	}
+	recordCloneReason(className, phase, capability, counters...)
 	started := time.Now()
 	clone := org.CloneRuntimeFrozenShared()
 	recordCloneRuntimeOrgDuration(time.Since(started), counters...)
@@ -1426,9 +1602,14 @@ func cloneRuntimeOrgForClass(org storage.OrgState, className, phase string, coun
 }
 
 func cloneRuntimeMachine(machine *vm.VM, counters ...*runPerfCounters) *vm.VM {
+	return cloneRuntimeMachineFor(machine, "", "runtime", perfCounterFor(counters))
+}
+
+func cloneRuntimeMachineFor(machine *vm.VM, className, phase string, counters *runPerfCounters) *vm.VM {
+	recordCloneReason(className, phase, "vm-runtime", counters)
 	started := time.Now()
 	clone := machine.CloneRuntime(nil)
-	recordCloneRuntimeMachineDuration(time.Since(started), counters...)
+	recordCloneRuntimeMachineDuration(time.Since(started), counters)
 	return clone
 }
 
