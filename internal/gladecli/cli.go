@@ -1941,25 +1941,107 @@ func requireGladeProjectRoot(root string) error {
 	return fmt.Errorf("%s is not a Glade project root (missing sfdx-project.json or glade.yml)", cleanRoot)
 }
 
-func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writer) (sema.Result, error) {
+type checkOptions struct {
+	root           string
+	outputFormat   string
+	outputPath     string
+	progressMode   cliui.ProgressMode
+	cpuProfilePath string
+	memProfilePath string
+	perfJSONPath   string
+}
+
+type checkPerfSummary struct {
+	SchemaVersion  string        `json:"schemaVersion"`
+	Command        string        `json:"command"`
+	GeneratedAt    string        `json:"generatedAt"`
+	Project        string        `json:"project"`
+	Status         string        `json:"status"`
+	ExitCode       int           `json:"exitCode"`
+	TotalMS        int64         `json:"totalMs"`
+	Summary        sema.Summary  `json:"summary"`
+	ProjectLoadNS  int64         `json:"projectLoadNs"`
+	SchemaLoadNS   int64         `json:"schemaLoadNs"`
+	IndexBuildNS   int64         `json:"indexBuildNs"`
+	OutputNS       int64         `json:"outputNs"`
+	SemaPerf       checkSemaPerf `json:"semaPerf"`
+	CPUProfilePath string        `json:"cpuProfilePath,omitempty"`
+	MemProfilePath string        `json:"memProfilePath,omitempty"`
+}
+
+type checkSemaPerf struct {
+	Enabled                bool           `json:"enabled"`
+	TotalNS                uint64         `json:"totalNs"`
+	SourceSchemaEnrichment checkSemaPhase `json:"sourceSchemaEnrichment"`
+	PlatformModel          checkSemaPhase `json:"platformModel"`
+	TypeMemberModel        checkSemaPhase `json:"typeMemberModel"`
+	MethodBodies           checkSemaPhase `json:"methodBodies"`
+	Inheritance            checkSemaPhase `json:"inheritance"`
+	QuerySemantics         checkSemaPhase `json:"querySemantics"`
+	Export                 checkSemaPhase `json:"export"`
+	Mallocs                uint64         `json:"mallocs"`
+	TotalAllocBytes        uint64         `json:"totalAllocBytes"`
+	GCCount                uint64         `json:"gcCount"`
+	GCPauseNS              uint64         `json:"gcPauseNs"`
+}
+
+type checkSemaPhase struct {
+	Calls      uint64 `json:"calls"`
+	DurationNS uint64 `json:"durationNs"`
+}
+
+func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writer) (result sema.Result, retErr error) {
 	if err := ctx.Err(); err != nil {
 		return sema.Result{}, err
 	}
 
-	root, outputFormat, outputPath, progressMode, err := parseCheckFlags(args)
+	opts, err := parseCheckFlags(args)
 	if err != nil {
 		return sema.Result{}, err
 	}
+	perfEnabled := strings.TrimSpace(opts.perfJSONPath) != ""
+	if err := validateDistinctCLIArtifactDestinations(
+		cliArtifactDestination{Name: "--output", Path: opts.outputPath},
+		cliArtifactDestination{Name: "--perf-json", Path: strings.TrimSpace(opts.perfJSONPath)},
+		cliArtifactDestination{Name: "--cpu-profile", Path: strings.TrimSpace(opts.cpuProfilePath)},
+		cliArtifactDestination{Name: "--mem-profile", Path: strings.TrimSpace(opts.memProfilePath)},
+	); err != nil {
+		return sema.Result{}, err
+	}
+	stopProfile, err := startCLIProfiler(opts.cpuProfilePath, opts.memProfilePath)
+	if err != nil {
+		return sema.Result{}, err
+	}
+	defer func() {
+		if stopProfile == nil {
+			return
+		}
+		stop := stopProfile
+		stopProfile = nil
+		if err := stop(); err != nil && retErr == nil {
+			retErr = err
+		}
+	}()
 	renderer := cliui.NewRenderer(cliui.RendererOptions{
 		Stderr: progressW,
-		Mode:   progressMode,
+		Mode:   opts.progressMode,
 	})
 	renderer.Render(cliui.Event{
 		Kind:  cliui.EventPhaseStart,
 		Phase: "check",
 		Label: "Loading project",
 	})
-	p, err := project.Load(root)
+	var totalStarted time.Time
+	var projectStarted time.Time
+	if perfEnabled {
+		totalStarted = time.Now()
+		projectStarted = totalStarted
+	}
+	p, err := project.Load(opts.root)
+	var projectLoadNS int64
+	if perfEnabled {
+		projectLoadNS = time.Since(projectStarted).Nanoseconds()
+	}
 	if err != nil {
 		renderer.Finish(cliui.Result{OK: false, Label: "check failed"})
 		return sema.Result{}, err
@@ -1971,8 +2053,20 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		Current: 1,
 		Total:   4,
 	})
+	var schemaStarted time.Time
+	if perfEnabled {
+		schemaStarted = time.Now()
+	}
 	s, err := gladeschema.LoadProject(p)
+	var schemaLoadNS int64
+	if perfEnabled {
+		schemaLoadNS = time.Since(schemaStarted).Nanoseconds()
+	}
 	var index typesys.Index
+	var indexStarted time.Time
+	if perfEnabled {
+		indexStarted = time.Now()
+	}
 	if err != nil {
 		index = typesys.Build(p, gladeschema.Schema{})
 		index.Diagnostics = append(index.Diagnostics, diagnostic.Diagnostic{
@@ -1990,6 +2084,10 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		})
 		index = typesys.Build(p, s)
 	}
+	var indexBuildNS int64
+	if perfEnabled {
+		indexBuildNS = time.Since(indexStarted).Nanoseconds()
+	}
 	renderer.Render(cliui.Event{
 		Kind:    cliui.EventPhaseTick,
 		Phase:   "check",
@@ -1997,10 +2095,15 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		Current: 3,
 		Total:   4,
 	})
-	result := sema.AnalyzeWithOptions(index, sema.AnalyzeOptions{
+	var semaCounters *sema.PerfCounters
+	if perfEnabled {
+		semaCounters = &sema.PerfCounters{Enabled: true}
+	}
+	result = sema.AnalyzeWithOptions(index, sema.AnalyzeOptions{
 		Diagnostics:                    true,
 		ExportTypes:                    true,
 		SuppressPerformanceDiagnostics: true,
+		PerfCounters:                   semaCounters,
 	})
 	renderer.Render(cliui.Event{
 		Kind:    cliui.EventPhaseEnd,
@@ -2015,13 +2118,17 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		ExitCode: exitCodeForOK(!result.HasErrors()),
 	})
 
+	var outputStarted time.Time
+	if perfEnabled {
+		outputStarted = time.Now()
+	}
 	out := w
 	var file *os.File
-	if outputPath != "" {
-		if err := os.MkdirAll(filepath.Dir(outputPath), 0o755); err != nil {
+	if opts.outputPath != "" {
+		if err := os.MkdirAll(filepath.Dir(opts.outputPath), 0o755); err != nil {
 			return result, err
 		}
-		file, err = os.Create(outputPath)
+		file, err = os.Create(opts.outputPath)
 		if err != nil {
 			return result, err
 		}
@@ -2029,11 +2136,12 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		out = file
 	}
 
-	switch outputFormat {
+	var writeErr error
+	switch opts.outputFormat {
 	case "json":
 		checkData := result
 		checkData.Diagnostics = nil
-		return result, writeCLIJSONEnvelope(out, cliJSONEnvelope{
+		writeErr = writeCLIJSONEnvelope(out, cliJSONEnvelope{
 			Command:     "check",
 			Status:      statusForOK(!result.HasErrors()),
 			ExitCode:    exitCodeForOK(!result.HasErrors()),
@@ -2045,54 +2153,209 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 			Data:        checkData,
 		})
 	case "sarif":
-		return result, diagnostic.Report{Diagnostics: result.Diagnostics}.WriteSARIF(out)
+		writeErr = diagnostic.Report{Diagnostics: result.Diagnostics}.WriteSARIF(out)
 	case "github":
-		return result, diagnostic.Report{Diagnostics: result.Diagnostics}.WriteGitHubAnnotations(out)
+		writeErr = diagnostic.Report{Diagnostics: result.Diagnostics}.WriteGitHubAnnotations(out)
+	default:
+		writeErr = cliui.WriteCheckResult(out, cliui.CheckResultInfo{
+			ProjectRoot: result.Project.Root,
+			Types:       result.Summary.Types,
+			Triggers:    result.Summary.Triggers,
+			Objects:     result.Summary.Objects,
+			ExitCode:    exitCodeForOK(!result.HasErrors()),
+			Diagnostics: result.Diagnostics,
+		})
 	}
-
-	return result, cliui.WriteCheckResult(out, cliui.CheckResultInfo{
-		ProjectRoot: result.Project.Root,
-		Types:       result.Summary.Types,
-		Triggers:    result.Summary.Triggers,
-		Objects:     result.Summary.Objects,
-		ExitCode:    exitCodeForOK(!result.HasErrors()),
-		Diagnostics: result.Diagnostics,
-	})
+	var outputNS int64
+	if perfEnabled {
+		outputNS = time.Since(outputStarted).Nanoseconds()
+	}
+	if writeErr != nil {
+		return result, writeErr
+	}
+	if stopProfile != nil {
+		stop := stopProfile
+		stopProfile = nil
+		if err := stop(); err != nil {
+			return result, err
+		}
+	}
+	if perfEnabled {
+		if err := writeCheckPerfJSON(opts.perfJSONPath, result, checkPerfSummary{
+			ProjectLoadNS:  projectLoadNS,
+			SchemaLoadNS:   schemaLoadNS,
+			IndexBuildNS:   indexBuildNS,
+			OutputNS:       outputNS,
+			TotalMS:        time.Since(totalStarted).Milliseconds(),
+			SemaPerf:       newCheckSemaPerf(*semaCounters),
+			CPUProfilePath: strings.TrimSpace(opts.cpuProfilePath),
+			MemProfilePath: strings.TrimSpace(opts.memProfilePath),
+		}); err != nil {
+			return result, err
+		}
+	}
+	return result, nil
 }
 
-func parseCheckFlags(args []string) (root string, outputFormat string, outputPath string, progressMode cliui.ProgressMode, err error) {
-	root = "."
-	outputFormat = "text"
+func parseCheckFlags(args []string) (checkOptions, error) {
+	opts := checkOptions{root: ".", outputFormat: "text"}
 	parsed, err := flagparse.New("glade check").
 		String("project", "p").
 		Bool("json", "j").
 		String("format", "").
 		String("output", "o").
+		String("cpu-profile", "").
+		String("mem-profile", "").
+		String("perf-json", "").
 		Bool("progress", "").
 		Bool("progress-json", "").
 		Bool("no-progress", "").
 		Bool("quiet", "q").
 		Parse(args)
 	if err != nil {
-		return "", "", "", cliui.ProgressOff, err
+		return checkOptions{}, err
 	}
 	if parsed.String("project") != "" {
-		root = parsed.String("project")
+		opts.root = parsed.String("project")
 	}
 	if parsed.Bool("json") {
-		outputFormat = "json"
+		opts.outputFormat = "json"
 	}
 	if parsed.String("format") != "" {
-		outputFormat = strings.ToLower(strings.TrimSpace(parsed.String("format")))
+		opts.outputFormat = strings.ToLower(strings.TrimSpace(parsed.String("format")))
 	}
-	switch outputFormat {
+	switch opts.outputFormat {
 	case "text", "json", "sarif", "github":
 	default:
-		return "", "", "", cliui.ProgressOff, fmt.Errorf("--format must be text, json, sarif, or github")
+		return checkOptions{}, fmt.Errorf("--format must be text, json, sarif, or github")
 	}
-	outputPath = parsed.String("output")
-	progressMode = progressModeForFlags(outputFormat == "json", parsed.Bool("progress"), parsed.Bool("progress-json"), parsed.Bool("no-progress") || parsed.Bool("quiet"))
-	return root, outputFormat, outputPath, progressMode, nil
+	opts.outputPath = parsed.String("output")
+	opts.cpuProfilePath = parsed.String("cpu-profile")
+	opts.memProfilePath = parsed.String("mem-profile")
+	opts.perfJSONPath = parsed.String("perf-json")
+	opts.progressMode = progressModeForFlags(opts.outputFormat == "json", parsed.Bool("progress"), parsed.Bool("progress-json"), parsed.Bool("no-progress") || parsed.Bool("quiet"))
+	return opts, nil
+}
+
+func newCheckSemaPerf(counters sema.PerfCounters) checkSemaPerf {
+	phase := func(counters sema.PhaseCounters) checkSemaPhase {
+		return checkSemaPhase{Calls: counters.Calls, DurationNS: counters.DurationNS}
+	}
+	return checkSemaPerf{
+		Enabled:                counters.Enabled,
+		TotalNS:                counters.TotalNS,
+		SourceSchemaEnrichment: phase(counters.SourceSchemaEnrichment),
+		PlatformModel:          phase(counters.PlatformModel),
+		TypeMemberModel:        phase(counters.TypeMemberModel),
+		MethodBodies:           phase(counters.MethodBodies),
+		Inheritance:            phase(counters.Inheritance),
+		QuerySemantics:         phase(counters.QuerySemantics),
+		Export:                 phase(counters.Export),
+		Mallocs:                counters.Mallocs,
+		TotalAllocBytes:        counters.TotalAllocBytes,
+		GCCount:                counters.GCCount,
+		GCPauseNS:              counters.GCPauseNS,
+	}
+}
+
+func writeCheckPerfJSON(path string, result sema.Result, perf checkPerfSummary) error {
+	if strings.TrimSpace(path) == "" {
+		return nil
+	}
+	absRoot, _ := filepath.Abs(result.Project.Root)
+	perf.SchemaVersion = "1.0"
+	perf.Command = "check"
+	perf.GeneratedAt = time.Now().UTC().Format(time.RFC3339)
+	perf.Project = absRoot
+	perf.Status = statusForOK(!result.HasErrors())
+	perf.ExitCode = exitCodeForOK(!result.HasErrors())
+	perf.Summary = result.Summary
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(perf, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, append(data, '\n'), 0o644)
+}
+
+type cliArtifactDestination struct {
+	Name string
+	Path string
+}
+
+func validateDistinctCLIArtifactDestinations(destinations ...cliArtifactDestination) error {
+	nonEmpty := 0
+	for _, destination := range destinations {
+		if destination.Path != "" {
+			nonEmpty++
+		}
+	}
+	if nonEmpty <= 1 {
+		return nil
+	}
+	resolved := make(map[string]string, nonEmpty)
+	type existingDestination struct {
+		name string
+		info os.FileInfo
+	}
+	existing := make([]existingDestination, 0, nonEmpty)
+	for _, destination := range destinations {
+		if destination.Path == "" {
+			continue
+		}
+		path, err := resolveCLIArtifactDestination(destination.Path)
+		if err != nil {
+			return fmt.Errorf("resolve %s artifact destination: %w", destination.Name, err)
+		}
+		if previous, ok := resolved[path]; ok {
+			return fmt.Errorf("%s and %s must use different paths; they resolve to the same path", previous, destination.Name)
+		}
+		resolved[path] = destination.Name
+		info, err := os.Stat(path)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				continue
+			}
+			return fmt.Errorf("stat %s artifact destination: %w", destination.Name, err)
+		}
+		for _, previous := range existing {
+			if os.SameFile(previous.info, info) {
+				return fmt.Errorf("%s and %s must use different paths; they resolve to the same path", previous.name, destination.Name)
+			}
+		}
+		existing = append(existing, existingDestination{name: destination.Name, info: info})
+	}
+	return nil
+}
+
+func resolveCLIArtifactDestination(path string) (string, error) {
+	absolute, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	clean := filepath.Clean(absolute)
+	current := clean
+	var unresolved []string
+	for {
+		resolved, err := filepath.EvalSymlinks(current)
+		if err == nil {
+			for index := len(unresolved) - 1; index >= 0; index-- {
+				resolved = filepath.Join(resolved, unresolved[index])
+			}
+			return filepath.Clean(resolved), nil
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			return "", err
+		}
+		parent := filepath.Dir(current)
+		if parent == current {
+			return clean, nil
+		}
+		unresolved = append(unresolved, filepath.Base(current))
+		current = parent
+	}
 }
 
 func loadIndex(root string) (typesys.Index, error) {
