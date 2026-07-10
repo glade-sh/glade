@@ -6,11 +6,6 @@ if [[ ! "${heartbeat_seconds}" =~ ^[0-9]+$ ]] || [[ "${heartbeat_seconds}" -lt 1
 	heartbeat_seconds=60
 fi
 
-apextest_shard_size="${CI_APEXTEST_SHARD_SIZE:-25}"
-if [[ ! "${apextest_shard_size}" =~ ^[0-9]+$ ]] || [[ "${apextest_shard_size}" -lt 1 ]]; then
-	apextest_shard_size=25
-fi
-
 export GOMAXPROCS="${GOMAXPROCS:-2}"
 
 heavy_packages=(
@@ -60,102 +55,9 @@ remaining_packages() {
 	go list ./... | grep -Ev '/internal/(apextest|gladecli|playground|sema|server)$' || true
 }
 
-join_test_pattern() {
-	local pattern=""
-	local name
-	for name in "$@"; do
-		if [[ -n "${pattern}" ]]; then
-			pattern="${pattern}|${name}"
-		else
-			pattern="${name}"
-		fi
-	done
-	printf '^(%s)$' "${pattern}"
-}
-
-run_apextest_shards() {
-	local mode="$1"
-	local timeout="$2"
-	local tmp_dir
-	local binary
-	local rc=0
-	local compile_args=(-c -o)
-	local compile_label="go test -c"
-	local run_label="go test"
-	local tests=()
-	local total
-	local shard=1
-	local start=0
-	local end
-	local pattern
-	local list_output
-	local name
-
-	tmp_dir="$(mktemp -d)"
-	binary="${tmp_dir}/apextest.test"
-	if [[ "${mode}" == "race" ]]; then
-		compile_args=(-race -c -o)
-		compile_label="go test -race -c"
-		run_label="go test -race"
-	fi
-
-	run_with_heartbeat "${compile_label} ./internal/apextest" go test "${compile_args[@]}" "${binary}" ./internal/apextest || rc="$?"
-	if [[ "${rc}" -eq 0 ]]; then
-		if ! list_output="$(cd internal/apextest && "${binary}" -test.list '^Test')"; then
-			echo "Apex test discovery failed" >&2
-			rm -rf "${tmp_dir}"
-			return 1
-		fi
-		if [[ -z "${list_output}" ]]; then
-			echo "no Apex tests discovered" >&2
-			rm -rf "${tmp_dir}"
-			return 1
-		fi
-		mapfile -t tests <<<"${list_output}"
-		for name in "${tests[@]}"; do
-			if [[ ! "${name}" =~ ^Test[A-Za-z0-9_]*$ ]]; then
-				printf 'invalid Apex test name: %q\n' "${name}" >&2
-				rm -rf "${tmp_dir}"
-				return 1
-			fi
-		done
-		for ((start = 0; start < ${#tests[@]}; start++)); do
-			for ((end = start + 1; end < ${#tests[@]}; end++)); do
-				if [[ "${tests[start]}" == "${tests[end]}" ]]; then
-					printf 'duplicate Apex test name: %s\n' "${tests[start]}" >&2
-					rm -rf "${tmp_dir}"
-					return 1
-				fi
-			done
-		done
-		start=0
-		total="${#tests[@]}"
-		while [[ "${start}" -lt "${total}" ]]; do
-			end=$((start + apextest_shard_size))
-			if [[ "${end}" -gt "${total}" ]]; then
-				end="${total}"
-			fi
-			pattern="$(join_test_pattern "${tests[@]:start:end-start}")"
-			(
-				cd internal/apextest
-				run_with_heartbeat "${run_label} ./internal/apextest shard ${shard} (${start}-${end}/${total})" \
-					"${binary}" -test.v "-test.timeout=${timeout}" -test.run "${pattern}"
-			) || {
-				rc="$?"
-				break
-			}
-			start="${end}"
-			shard=$((shard + 1))
-		done
-	fi
-	rm -rf "${tmp_dir}"
-	return "${rc}"
-}
-
-run_normal_tests() {
+run_core_tests() {
 	local pkg
 	local remaining
-	run_apextest_shards test 30m
 	for pkg in "${heavy_packages[@]}"; do
 		run_with_heartbeat "go test ${pkg}" go test -v -timeout=30m "${pkg}"
 	done
@@ -166,10 +68,15 @@ run_normal_tests() {
 	fi
 }
 
+run_full_tests() {
+	run_with_heartbeat "go test ./internal/apextest" go test -timeout=30m ./internal/apextest
+	run_core_tests
+}
+
 run_race_tests() {
 	local pkg
 	local remaining
-	run_apextest_shards race 60m
+	run_with_heartbeat "go test -race ./internal/apextest" go test -race -timeout=60m ./internal/apextest
 	for pkg in "${heavy_packages[@]}"; do
 		run_with_heartbeat "go test -race ${pkg}" go test -race -v -timeout=60m "${pkg}"
 	done
@@ -180,15 +87,233 @@ run_race_tests() {
 	fi
 }
 
+validate_discovery() {
+	local raw_path="$1"
+	local discovery_path="$2"
+	python3 - "${raw_path}" "${discovery_path}" <<'PY'
+import re
+import sys
+
+raw_path, discovery_path = sys.argv[1:]
+names = []
+with open(raw_path, encoding="utf-8") as source:
+    for raw_line in source:
+        line = raw_line.rstrip("\n")
+        if re.fullmatch(r"Test[A-Za-z0-9_]*", line):
+            names.append(line)
+        elif re.match(r"^ok\s+github\.com/glade-sh/glade/internal/apextest(?:\s|$)", line):
+            continue
+        elif line:
+            raise SystemExit(f"invalid Apex discovery output: {line!r}")
+if not names:
+    raise SystemExit("no Apex tests discovered")
+if len(names) != len(set(names)):
+    raise SystemExit("duplicate Apex test name")
+with open(discovery_path, "w", encoding="utf-8") as target:
+    target.write("\n".join(names) + "\n")
+PY
+}
+
+select_and_validate_shard() {
+	local discovery_path="$1"
+	local plan_path="$2"
+	local index="$3"
+	local selected_path="$4"
+	python3 - "${discovery_path}" "${plan_path}" "${index}" "${selected_path}" <<'PY'
+import json
+import re
+import sys
+
+discovery_path, plan_path, index_text, selected_path = sys.argv[1:]
+index = int(index_text)
+with open(discovery_path, encoding="utf-8") as source:
+    discovered = [line.rstrip("\n") for line in source]
+with open(plan_path, encoding="utf-8") as source:
+    plan = json.load(source)
+if plan.get("version") != 1 or plan.get("package") != "github.com/glade-sh/glade/internal/apextest":
+    raise SystemExit("planner returned wrong schema or package")
+shards = plan.get("shards")
+if not isinstance(shards, list) or len(shards) != 2:
+    raise SystemExit("planner did not return exactly two shards")
+seen = []
+for expected_index, shard in enumerate(shards):
+    if not isinstance(shard, dict) or shard.get("index") != expected_index:
+        raise SystemExit("planner returned invalid shard index")
+    tests = shard.get("tests")
+    if not isinstance(tests, list) or not tests or tests != sorted(tests):
+        raise SystemExit("planner returned empty or non-canonical shard")
+    if any(not isinstance(name, str) or not re.fullmatch(r"Test[A-Za-z0-9_]*", name) for name in tests):
+        raise SystemExit("planner returned invalid test name")
+    if not isinstance(shard.get("regex"), str) or not shard["regex"]:
+        raise SystemExit("planner returned invalid regex")
+    seen.extend(tests)
+if len(seen) != len(set(seen)) or sorted(seen) != sorted(discovered):
+    raise SystemExit("planner two-shard union does not match discovery")
+with open(selected_path, "w", encoding="utf-8") as target:
+    json.dump(shards[index], target, sort_keys=True, indent=2)
+    target.write("\n")
+PY
+}
+
+render_failure_output() {
+	local events_path="$1"
+	python3 - "${events_path}" <<'PY' || true
+import json
+import sys
+
+try:
+    with open(sys.argv[1], encoding="utf-8") as source:
+        for line in source:
+            event = json.loads(line)
+            if isinstance(event.get("Output"), str):
+                print(event["Output"], end="")
+except Exception as error:
+    print(f"unable to render Apex JSON failure output: {error}", file=sys.stderr)
+PY
+}
+
+validate_apextest_results() {
+	local selected_path="$1"
+	local events_path="$2"
+	local summary_path="$3"
+	python3 - "${selected_path}" "${events_path}" "${summary_path}" <<'PY'
+import json
+import sys
+
+selected_path, events_path, summary_path = sys.argv[1:]
+summary = {"valid": False, "expected": [], "passed": [], "errors": []}
+try:
+    with open(selected_path, encoding="utf-8") as source:
+        selected = json.load(source)
+    expected = selected["tests"]
+    summary["expected"] = expected
+    terminal = {}
+    with open(events_path, encoding="utf-8") as source:
+        for line_number, line in enumerate(source, 1):
+            if not line.strip():
+                continue
+            event = json.loads(line)
+            if not isinstance(event, dict):
+                raise ValueError(f"event {line_number} is not an object")
+            package = event.get("Package")
+            if package != "github.com/glade-sh/glade/internal/apextest":
+                raise ValueError(f"event {line_number} has wrong package {package!r}")
+            name = event.get("Test")
+            action = event.get("Action")
+            if not isinstance(name, str) or "/" in name or action not in ("pass", "fail", "skip"):
+                continue
+            terminal.setdefault(name, []).append(action)
+    passed = sorted(name for name, actions in terminal.items() if actions == ["pass"])
+    summary["passed"] = passed
+    if passed != sorted(expected):
+        summary["errors"].append("top-level passing set does not match selected shard")
+    duplicates = sorted(name for name, actions in terminal.items() if len(actions) != 1)
+    if duplicates:
+        summary["errors"].append("duplicate top-level terminal results: " + ", ".join(duplicates))
+    wrong = sorted(name for name, actions in terminal.items() if actions != ["pass"])
+    if wrong:
+        summary["errors"].append("non-passing top-level results: " + ", ".join(wrong))
+    extras = sorted(set(terminal) - set(expected))
+    if extras:
+        summary["errors"].append("extra top-level results: " + ", ".join(extras))
+    missing = sorted(set(expected) - set(terminal))
+    if missing:
+        summary["errors"].append("missing top-level results: " + ", ".join(missing))
+    summary["valid"] = not summary["errors"]
+except Exception as error:
+    summary["errors"].append(str(error))
+with open(summary_path, "w", encoding="utf-8") as target:
+    json.dump(summary, target, sort_keys=True, indent=2)
+    target.write("\n")
+if not summary["valid"]:
+    for error in summary["errors"]:
+        print(f"Apex result validation: {error}", file=sys.stderr)
+    raise SystemExit(1)
+PY
+}
+
+run_apextest_matrix_shard() {
+	local index="${1:-}"
+	local artifact_suffix="invalid"
+	if [[ "${index}" =~ ^[01]$ ]]; then
+		artifact_suffix="${index}"
+	fi
+	local artifact_dir="${CI_APEXTEST_ARTIFACT_DIR:-ci-artifacts/apextest-${artifact_suffix}}"
+	local discovery_raw="${artifact_dir}/discovery-command.txt"
+	local discovery_stderr="${artifact_dir}/discovery-stderr.txt"
+	local discovery="${artifact_dir}/discovery.txt"
+	local plan="${artifact_dir}/plan.json"
+	local selected="${artifact_dir}/selected-shard.json"
+	local events="${artifact_dir}/events.json"
+	local summary="${artifact_dir}/validation-summary.json"
+	local regex
+	local discovery_rc
+	local native_rc
+	local validation_rc=0
+
+	mkdir -p "${artifact_dir}"
+	: >"${discovery_raw}"
+	: >"${discovery}"
+	: >"${discovery_stderr}"
+	: >"${plan}"
+	: >"${selected}"
+	: >"${events}"
+	printf '{"valid": false, "errors": ["shard did not reach result validation"]}\n' >"${summary}"
+	if [[ ! "${index}" =~ ^[01]$ ]]; then
+		echo "shard index must be 0 or 1" >&2
+		return 2
+	fi
+
+	set +e
+	go test -list '^Test' ./internal/apextest >"${discovery_raw}" 2>"${discovery_stderr}"
+	discovery_rc="$?"
+	set -e
+	if [[ -s "${discovery_stderr}" ]]; then
+		cat "${discovery_stderr}" >&2
+	fi
+	if [[ "${discovery_rc}" -ne 0 ]]; then
+		cat "${discovery_raw}" >&2
+		return "${discovery_rc}"
+	fi
+	validate_discovery "${discovery_raw}" "${discovery}"
+
+	if [[ -n "${CI_SHARD_PLANNER:-}" ]]; then
+		"${CI_SHARD_PLANNER}" --shards 2 --tests "${discovery}" >"${plan}"
+	else
+		go run ./scripts/internal/cishard --shards 2 --tests "${discovery}" >"${plan}"
+	fi
+	select_and_validate_shard "${discovery}" "${plan}" "${index}" "${selected}"
+	regex="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["regex"])' "${selected}")"
+
+	set +e
+	go test -json -timeout=30m -run "${regex}" ./internal/apextest | tee "${events}"
+	native_rc="${PIPESTATUS[0]}"
+	set -e
+	validate_apextest_results "${selected}" "${events}" "${summary}" || validation_rc="$?"
+	if [[ "${native_rc}" -ne 0 || "${validation_rc}" -ne 0 ]]; then
+		render_failure_output "${events}"
+	fi
+	if [[ "${native_rc}" -ne 0 ]]; then
+		return "${native_rc}"
+	fi
+	return "${validation_rc}"
+}
+
 case "${1:-test}" in
 	test)
-		run_normal_tests
+		run_full_tests
+		;;
+	core)
+		run_core_tests
 		;;
 	race)
 		run_race_tests
 		;;
+	apex-shard)
+		run_apextest_matrix_shard "${2:-}"
+		;;
 	*)
-		echo "usage: scripts/ci-go-test.sh [test|race]" >&2
+		echo "usage: scripts/ci-go-test.sh [core|test|race|apex-shard 0|1]" >&2
 		exit 2
 		;;
 esac
