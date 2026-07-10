@@ -42,7 +42,55 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: "1.26.4"
-          cache-dependency-path: glade/go.sum
+          cache: false
+      - name: Restore Go module cache
+        id: restore-go-mod-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.4-ci-test-${{ hashFiles('glade/go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.4-ci-test-${{ hashFiles('glade/go.sum') }}-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.4-ci-test-
+      - name: Report Go module cache restore
+        env:
+          MATCHED_KEY: ${{ steps.restore-go-mod-cache.outputs.cache-matched-key }}
+        run: |
+          if [[ -n "$MATCHED_KEY" ]]; then
+            echo "[cache] module restored-key=$MATCHED_KEY"
+          else
+            echo "[cache] module miss"
+          fi
+          bytes=0
+          if [[ -d "$HOME/go/pkg/mod" ]]; then
+            bytes="$(du -sb "$HOME/go/pkg/mod" 2>/dev/null | awk '{print $1}')" || bytes=0
+          fi
+          echo "[cache] module bytes=$bytes"
+      - name: Restore Go build cache
+        id: restore-go-build-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.4-ci-test-${{ hashFiles('glade/go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.4-ci-test-${{ hashFiles('glade/go.sum') }}-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.4-ci-test-
+      - name: Report Go build cache restore
+        env:
+          MATCHED_KEY: ${{ steps.restore-go-build-cache.outputs.cache-matched-key }}
+        run: |
+          if [[ -n "$MATCHED_KEY" ]]; then
+            echo "[cache] build restored-key=$MATCHED_KEY"
+          else
+            echo "[cache] build miss"
+          fi
+          bytes=0
+          if [[ -d "$HOME/.cache/go-build" ]]; then
+            bytes="$(du -sb "$HOME/.cache/go-build" 2>/dev/null | awk '{print $1}')" || bytes=0
+          fi
+          echo "[cache] build bytes=$bytes"
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
@@ -57,3 +105,15 @@ jobs:
       - run: go vet ./...
       - run: scripts/ci-go-test.sh test
       - run: scripts/smoke.sh
+      - name: Save Go module cache
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ steps.restore-go-mod-cache.outputs.cache-primary-key }}
+      - name: Save Go build cache
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
