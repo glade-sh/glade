@@ -76,6 +76,7 @@ jobs:
   codeql:
     name: CodeQL
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       actions: read
       contents: read
@@ -138,7 +139,9 @@ jobs:
         with:
           languages: go
           queries: +security-extended
-      - uses: github/codeql-action/autobuild@v4
+          build-mode: manual
+      - name: Build Glade for CodeQL
+        run: go build -o "${RUNNER_TEMP}/glade-codeql" ./cmd/glade
       - uses: github/codeql-action/analyze@v4
 
   gosec:
@@ -202,7 +205,7 @@ jobs:
           fi
           echo "[cache] build bytes=$bytes"
       - name: Run gosec security scanner
-        uses: securego/gosec@v2
+        uses: securego/gosec@9e6a9843d7a4a6e3e9a8539b02612c8a4aa3f889 # v2.27.1
         with:
           args: -no-fail -fmt sarif -out gosec.sarif ./...
       - name: Upload gosec SARIF
@@ -247,7 +250,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Run OpenSSF Scorecard
-        uses: ossf/scorecard-action@v2
+        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
         with:
           results_file: scorecard.sarif
           results_format: sarif
