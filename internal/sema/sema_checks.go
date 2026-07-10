@@ -1714,9 +1714,18 @@ func semaDependencyBackedByArtifact(index typesys.Index, namespace string) bool 
 }
 
 func (a *Analyzer) checkInheritanceContracts(index typesys.Index) []diagnostic.Diagnostic {
+	return a.checkInheritanceContractsWithRecorder(index, nil)
+}
+
+func (a *Analyzer) checkInheritanceContractsWithRecorder(index typesys.Index, recorder *perfRecorder) []diagnostic.Diagnostic {
+	modelStarted := recorder.beginPhase()
 	model := buildTypeMembers(index)
+	if recorder != nil {
+		recorder.endPhase(&recorder.counters.TypeMemberModel, modelStarted)
+	}
 	defer unregisterSemaShortCandidateIndex(model)
 	var diagnostics []diagnostic.Diagnostic
+	inheritanceStarted := recorder.beginPhase()
 	for _, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) {
 			continue
@@ -1766,6 +1775,9 @@ func (a *Analyzer) checkInheritanceContracts(index typesys.Index) []diagnostic.D
 			})
 		}
 		diagnostics = append(diagnostics, checkDatabaseBatchableGenericContract(model, typ)...)
+	}
+	if recorder != nil {
+		recorder.endPhase(&recorder.counters.Inheritance, inheritanceStarted)
 	}
 	return diagnostics
 }

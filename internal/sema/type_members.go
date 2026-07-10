@@ -41,12 +41,21 @@ const semaInferenceDepthScopeKey = "__glade_inference_depth"
 const semaSyntheticStandardSObjectFieldModifier = "__glade_standard_sobject_field"
 
 func (a *Analyzer) checkMethodBodies(index typesys.Index) []diagnostic.Diagnostic {
+	return a.checkMethodBodiesWithRecorder(index, nil)
+}
+
+func (a *Analyzer) checkMethodBodiesWithRecorder(index typesys.Index, recorder *perfRecorder) []diagnostic.Diagnostic {
+	modelStarted := recorder.beginPhase()
 	model := buildTypeMembers(index)
+	if recorder != nil {
+		recorder.endPhase(&recorder.counters.TypeMemberModel, modelStarted)
+	}
 	defer unregisterSemaShortCandidateIndex(model)
 	constructability := buildConstructability(index)
 	duplicateTypes := semaDuplicateTypeKeys(index)
 	sources := make(map[string]string)
 	var diagnostics []diagnostic.Diagnostic
+	bodyStarted := recorder.beginPhase()
 	for _, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) {
 			continue
@@ -91,6 +100,9 @@ func (a *Analyzer) checkMethodBodies(index typesys.Index) []diagnostic.Diagnosti
 				}
 			}
 		}
+	}
+	if recorder != nil {
+		recorder.endPhase(&recorder.counters.MethodBodies, bodyStarted)
 	}
 	return diagnostics
 }

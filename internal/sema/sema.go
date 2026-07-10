@@ -59,6 +59,7 @@ type AnalyzeOptions struct {
 	Diagnostics                    bool
 	ExportTypes                    bool
 	SuppressPerformanceDiagnostics bool
+	PerfCounters                   *PerfCounters
 }
 
 func NewAnalyzer() *Analyzer {
@@ -89,8 +90,16 @@ func Analyze(index typesys.Index) Result {
 	return AnalyzeWithOptions(index, AnalyzeOptions{Diagnostics: true, ExportTypes: true})
 }
 
-func AnalyzeWithOptions(index typesys.Index, opts AnalyzeOptions) Result {
-	return NewAnalyzer().AnalyzeWithOptions(index, opts)
+func AnalyzeWithOptions(index typesys.Index, opts AnalyzeOptions) (result Result) {
+	if opts.PerfCounters == nil || !opts.PerfCounters.Enabled {
+		return NewAnalyzer().analyzeWithOptions(index, opts, nil)
+	}
+	recorder := newPerfRecorder(opts.PerfCounters)
+	defer recorder.finish()
+	platformStarted := recorder.beginPhase()
+	analyzer := NewAnalyzer()
+	recorder.endPhase(&recorder.counters.PlatformModel, platformStarted)
+	return analyzer.analyzeWithOptions(index, opts, &recorder)
 }
 
 func (a *Analyzer) Analyze(index typesys.Index) (result Result) {
@@ -98,13 +107,21 @@ func (a *Analyzer) Analyze(index typesys.Index) (result Result) {
 }
 
 func (a *Analyzer) AnalyzeWithOptions(index typesys.Index, opts AnalyzeOptions) (result Result) {
-	a.namespace = index.Project.Namespace
-	a.deps = make(map[string]bool)
-	a.includePerformanceDiagnostics = opts.Diagnostics && !opts.SuppressPerformanceDiagnostics
-	a.queryDeclaredObjects = append([]schema.Object(nil), index.Objects...)
-	index = enrichIndexWithStandardSymbols(index)
-	index = enrichIndexWithProjectReferencedSchemaFields(index)
-	index = enrichIndexWithSchemaDerivedObjects(index)
+	if opts.PerfCounters == nil || !opts.PerfCounters.Enabled {
+		return a.analyzeWithOptions(index, opts, nil)
+	}
+	recorder := newPerfRecorder(opts.PerfCounters)
+	defer recorder.finish()
+	return a.analyzeWithOptions(index, opts, &recorder)
+}
+
+func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, recorder *perfRecorder) (result Result) {
+	a.prepareAnalysisContext(index, opts)
+	enrichmentStarted := recorder.beginPhase()
+	index = prepareAnalysisIndex(index)
+	if recorder != nil {
+		recorder.endPhase(&recorder.counters.SourceSchemaEnrichment, enrichmentStarted)
+	}
 	result = Result{
 		Project: index.Project,
 	}
@@ -122,6 +139,66 @@ func (a *Analyzer) AnalyzeWithOptions(index typesys.Index, opts AnalyzeOptions) 
 		}
 	}()
 
+	platformStarted := recorder.beginPhase()
+	a.prepareAnalysisModel(index)
+	if recorder != nil {
+		recorder.endPhase(&recorder.counters.PlatformModel, platformStarted)
+	}
+
+	if opts.Diagnostics {
+		result.Diagnostics = append(result.Diagnostics, a.checkTriggers(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkMemberTypes(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkMethodParameters(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkAnnotations(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkMethodBodiesWithRecorder(index, recorder)...)
+		if !opts.SuppressPerformanceDiagnostics {
+			result.Diagnostics = append(result.Diagnostics, a.checkPerformancePatterns(index)...)
+		}
+		result.Diagnostics = append(result.Diagnostics, a.checkVisibility(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkManagedPackageAccess(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkInheritanceContractsWithRecorder(index, recorder)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkSchemaReferences(index)...)
+		queryStarted := recorder.beginPhase()
+		result.Diagnostics = append(result.Diagnostics, a.checkQuerySemantics(index)...)
+		if recorder != nil {
+			recorder.endPhase(&recorder.counters.QuerySemantics, queryStarted)
+		}
+	}
+	if indexHasSourceBackedDependency(index) {
+		result.Diagnostics = downgradeSourceDependencySemanticDiagnostics(result.Diagnostics)
+	}
+
+	result.Summary = Summary{
+		Types:       countProjectTypes(index.Types),
+		Triggers:    len(index.Triggers),
+		Objects:     len(index.Objects),
+		Diagnostics: len(result.Diagnostics),
+	}
+	if opts.ExportTypes {
+		exportStarted := recorder.beginPhase()
+		result.Types = a.exportKnownTypes()
+		if recorder != nil {
+			recorder.endPhase(&recorder.counters.Export, exportStarted)
+		}
+	}
+	return result
+}
+
+func (a *Analyzer) prepareAnalysisContext(index typesys.Index, opts AnalyzeOptions) {
+	a.namespace = index.Project.Namespace
+	a.deps = make(map[string]bool)
+	a.includePerformanceDiagnostics = opts.Diagnostics && !opts.SuppressPerformanceDiagnostics
+	a.queryDeclaredObjects = append([]schema.Object(nil), index.Objects...)
+}
+
+func prepareAnalysisIndex(index typesys.Index) typesys.Index {
+	index = enrichIndexWithStandardSymbols(index)
+	index = enrichIndexWithProjectReferencedSchemaFields(index)
+	index = enrichIndexWithSchemaDerivedObjects(index)
+	return index
+}
+
+func (a *Analyzer) prepareAnalysisModel(index typesys.Index) {
 	for _, object := range index.Objects {
 		a.addKnown(object.Name, TypeSchema, "")
 	}
@@ -157,36 +234,6 @@ func (a *Analyzer) AnalyzeWithOptions(index typesys.Index, opts AnalyzeOptions) 
 			}
 		}
 	}
-
-	if opts.Diagnostics {
-		result.Diagnostics = append(result.Diagnostics, a.checkTriggers(index)...)
-		result.Diagnostics = append(result.Diagnostics, a.checkMemberTypes(index)...)
-		result.Diagnostics = append(result.Diagnostics, a.checkMethodParameters(index)...)
-		result.Diagnostics = append(result.Diagnostics, a.checkAnnotations(index)...)
-		result.Diagnostics = append(result.Diagnostics, a.checkMethodBodies(index)...)
-		if !opts.SuppressPerformanceDiagnostics {
-			result.Diagnostics = append(result.Diagnostics, a.checkPerformancePatterns(index)...)
-		}
-		result.Diagnostics = append(result.Diagnostics, a.checkVisibility(index)...)
-		result.Diagnostics = append(result.Diagnostics, a.checkManagedPackageAccess(index)...)
-		result.Diagnostics = append(result.Diagnostics, a.checkInheritanceContracts(index)...)
-		result.Diagnostics = append(result.Diagnostics, a.checkSchemaReferences(index)...)
-		result.Diagnostics = append(result.Diagnostics, a.checkQuerySemantics(index)...)
-	}
-	if indexHasSourceBackedDependency(index) {
-		result.Diagnostics = downgradeSourceDependencySemanticDiagnostics(result.Diagnostics)
-	}
-
-	result.Summary = Summary{
-		Types:       countProjectTypes(index.Types),
-		Triggers:    len(index.Triggers),
-		Objects:     len(index.Objects),
-		Diagnostics: len(result.Diagnostics),
-	}
-	if opts.ExportTypes {
-		result.Types = a.exportKnownTypes()
-	}
-	return result
 }
 
 func countProjectTypes(types []typesys.TypeSymbol) int {
