@@ -348,16 +348,109 @@ func TestRunnerKeepsProjectRuntimeAfterAnonymousFileSave(t *testing.T) {
 	}
 }
 
+func TestExampleProjectExecutionPlanCoversEveryProjectOnce(t *testing.T) {
+	plan := exampleProjectExecutionPlan(t)
+	examples := ListExampleProjects()
+	if len(plan) != len(examples) {
+		t.Fatalf("execution plan has %d examples, want %d", len(plan), len(examples))
+	}
+	seen := make(map[string]int, len(plan))
+	for _, testCase := range plan {
+		seen[testCase.example.ID]++
+	}
+	for _, example := range examples {
+		if seen[example.ID] != 1 {
+			t.Fatalf("execution plan count for %q = %d, want 1", example.ID, seen[example.ID])
+		}
+	}
+	wantExpectedLogs := map[string]bool{
+		"bulk-trigger-rollup":        true,
+		"map-selector-drill":         true,
+		"contact-relationship-drill": true,
+		"limit-counter-drill":        true,
+		"deal-desk-discount-guard":   true,
+		"renewal-health-scorecard":   true,
+		"org-diff-review-loop":       true,
+	}
+	for _, testCase := range plan {
+		if testCase.expectedLog == "" {
+			continue
+		}
+		if !wantExpectedLogs[testCase.example.ID] {
+			t.Fatalf("unexpected expected-log example %q", testCase.example.ID)
+		}
+		delete(wantExpectedLogs, testCase.example.ID)
+	}
+	if len(wantExpectedLogs) != 0 {
+		t.Fatalf("examples missing expected-log checks: %#v", wantExpectedLogs)
+	}
+}
+
+type exampleProjectExecutionTestCase struct {
+	example     ExampleProject
+	expectedLog string
+}
+
+func exampleProjectExecutionPlan(t *testing.T) []exampleProjectExecutionTestCase {
+	t.Helper()
+	expectedLogs := map[string]string{
+		"bulk-trigger-rollup":        "AUTO-3",
+		"map-selector-drill":         "Energy => 2",
+		"contact-relationship-drill": "contacts: 3",
+		"limit-counter-drill":        "dml rows:",
+		"deal-desk-discount-guard":   "top bucket: strategic",
+		"renewal-health-scorecard":   "health score: 85",
+		"org-diff-review-loop":       "decision: approved",
+	}
+	examples := ListExampleProjects()
+	plan := make([]exampleProjectExecutionTestCase, 0, len(examples))
+	seen := make(map[string]bool, len(examples))
+	for _, example := range examples {
+		if seen[example.ID] {
+			t.Fatalf("duplicate example id %q", example.ID)
+		}
+		seen[example.ID] = true
+		plan = append(plan, exampleProjectExecutionTestCase{
+			example:     example,
+			expectedLog: expectedLogs[example.ID],
+		})
+	}
+	for id := range expectedLogs {
+		if !seen[id] {
+			t.Fatalf("expected-log example %q is not listed", id)
+		}
+	}
+	return plan
+}
+
 func TestExampleProjectsRunAnonymous(t *testing.T) {
-	for _, example := range ListExampleProjects() {
-		t.Run(example.ID, func(t *testing.T) {
+	plan := exampleProjectExecutionPlan(t)
+	executed := make(map[string]int, len(plan))
+	for _, testCase := range plan {
+		t.Run(testCase.example.ID, func(t *testing.T) {
+			executed[testCase.example.ID]++
 			ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
 			if err != nil {
 				t.Fatalf("OpenWorkspace() error = %v", err)
 			}
-			meta, err := ws.LoadExample(example.ID)
+			meta, err := ws.LoadExample(testCase.example.ID)
 			if err != nil {
 				t.Fatalf("LoadExample() error = %v", err)
+			}
+			if testCase.example.ID == "deal-desk-discount-guard" || testCase.example.ID == "renewal-health-scorecard" || testCase.example.ID == "org-diff-review-loop" {
+				sourceFiles := 0
+				hasAnonymous := false
+				for _, file := range meta.Files {
+					switch file.Kind {
+					case "class", "trigger":
+						sourceFiles++
+					case "anonymous":
+						hasAnonymous = true
+					}
+				}
+				if sourceFiles < 3 || !hasAnonymous {
+					t.Fatalf("example %q files: source=%d anonymous=%t files=%#v", testCase.example.ID, sourceFiles, hasAnonymous, meta.Files)
+				}
 			}
 			runner := NewRunner(ws, RunnerOptions{Version: "test"})
 			result, err := runner.Run(t.Context(), RunRequest{
@@ -375,73 +468,18 @@ func TestExampleProjectsRunAnonymous(t *testing.T) {
 			if len(result.Logs) == 0 {
 				t.Fatalf("logs = %#v", result.Logs)
 			}
+			if testCase.expectedLog != "" {
+				joined := strings.Join(result.Logs, "\n")
+				if !strings.Contains(joined, testCase.expectedLog) {
+					t.Fatalf("logs missing %q: %#v", testCase.expectedLog, result.Logs)
+				}
+			}
 		})
 	}
-}
-
-func TestExampleProjectsHaveUniqueIDs(t *testing.T) {
-	seen := make(map[string]bool)
-	for _, example := range ListExampleProjects() {
-		if seen[example.ID] {
-			t.Fatalf("duplicate example id %q", example.ID)
+	for _, testCase := range plan {
+		if executed[testCase.example.ID] != 1 {
+			t.Fatalf("execution count for %q = %d, want 1", testCase.example.ID, executed[testCase.example.ID])
 		}
-		seen[example.ID] = true
-	}
-}
-
-func TestComplexExampleProjectsRunAnonymous(t *testing.T) {
-	want := map[string]string{
-		"bulk-trigger-rollup":        "AUTO-3",
-		"map-selector-drill":         "Energy => 2",
-		"contact-relationship-drill": "contacts: 3",
-		"limit-counter-drill":        "dml rows:",
-		"deal-desk-discount-guard":   "top bucket: strategic",
-		"renewal-health-scorecard":   "health score: 85",
-		"org-diff-review-loop":       "decision: approved",
-	}
-	for id, logText := range want {
-		t.Run(id, func(t *testing.T) {
-			ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
-			if err != nil {
-				t.Fatalf("OpenWorkspace() error = %v", err)
-			}
-			meta, err := ws.LoadExample(id)
-			if err != nil {
-				t.Fatalf("LoadExample() error = %v", err)
-			}
-			if id == "deal-desk-discount-guard" || id == "renewal-health-scorecard" || id == "org-diff-review-loop" {
-				sourceFiles := 0
-				hasAnonymous := false
-				for _, file := range meta.Files {
-					switch file.Kind {
-					case "class", "trigger":
-						sourceFiles++
-					case "anonymous":
-						hasAnonymous = true
-					}
-				}
-				if sourceFiles < 3 || !hasAnonymous {
-					t.Fatalf("example %q files: source=%d anonymous=%t files=%#v", id, sourceFiles, hasAnonymous, meta.Files)
-				}
-			}
-			runner := NewRunner(ws, RunnerOptions{Version: "test"})
-			result, err := runner.Run(t.Context(), RunRequest{
-				AnonymousBody: meta.AnonymousBody,
-				Mode:          RunModeScratch,
-				LimitMode:     "permissive",
-				UseCache:      false,
-			})
-			if err != nil {
-				t.Fatalf("Run() error = %v", err)
-			}
-			if result.Status != RunStatusPass {
-				t.Fatalf("status = %q diagnostics=%#v error=%s", result.Status, result.Diagnostics, result.ErrorMessage)
-			}
-			joined := strings.Join(result.Logs, "\n")
-			if !strings.Contains(joined, logText) {
-				t.Fatalf("logs missing %q: %#v", logText, result.Logs)
-			}
-		})
 	}
 }
 
