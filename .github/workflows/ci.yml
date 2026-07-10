@@ -55,5 +55,54 @@ jobs:
       - run: npm test --prefix site
       - run: npm run build --prefix site
       - run: go vet ./...
-      - run: scripts/ci-go-test.sh test
+      - run: scripts/ci-go-test.sh core
       - run: scripts/smoke.sh
+
+  apextest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1]
+    env:
+      GOMAXPROCS: "2"
+      GOMODCACHE: /tmp/go-mod-ci-apextest-${{ matrix.shard }}
+      GOCACHE: /tmp/go-build-ci-apextest-${{ matrix.shard }}
+      CI_APEXTEST_ARTIFACT_DIR: ci-artifacts/apextest-${{ matrix.shard }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.4"
+          cache: false
+      - name: Restore Apex module cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.GOMODCACHE }}
+          key: go-mod-v1-1.26.4-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-mod-v1-1.26.4-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-
+      - name: Restore Apex build cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.GOCACHE }}
+          key: go-build-v1-1.26.4-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-build-v1-1.26.4-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-
+      - name: Run Apex shard
+        run: scripts/ci-go-test.sh apex-shard "${{ matrix.shard }}"
+      - name: Upload Apex shard evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: apex-shard-${{ matrix.shard }}
+          path: |
+            ci-artifacts/apextest-${{ matrix.shard }}/discovery.txt
+            ci-artifacts/apextest-${{ matrix.shard }}/discovery-stderr.txt
+            ci-artifacts/apextest-${{ matrix.shard }}/discovery-command.txt
+            ci-artifacts/apextest-${{ matrix.shard }}/plan.json
+            ci-artifacts/apextest-${{ matrix.shard }}/selected-shard.json
+            ci-artifacts/apextest-${{ matrix.shard }}/events.json
+            ci-artifacts/apextest-${{ matrix.shard }}/validation-summary.json
+          if-no-files-found: error
