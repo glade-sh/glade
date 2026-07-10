@@ -27,10 +27,17 @@ func TestCIGoTestWrapperIsWired(t *testing.T) {
 		"./internal/gladecli",
 		"./internal/sema",
 		"go test -v",
+		`if ! list_output="$(cd internal/apextest && "${binary}" -test.list '^Test')"; then`,
+		"duplicate Apex test name",
+		"invalid Apex test name",
+		"no Apex tests discovered",
 	} {
 		if !strings.Contains(scriptText, want) {
 			t.Fatalf("ci-go-test.sh missing %q", want)
 		}
+	}
+	if strings.Contains(scriptText, `grep '^Test' || true`) {
+		t.Fatal("ci-go-test.sh must not suppress Apex test discovery failures")
 	}
 
 	workflowPath := filepath.Join("..", ".github", "workflows", "ci.yml")

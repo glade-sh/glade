@@ -88,6 +88,8 @@ run_apextest_shards() {
 	local start=0
 	local end
 	local pattern
+	local list_output
+	local name
 
 	tmp_dir="$(mktemp -d)"
 	binary="${tmp_dir}/apextest.test"
@@ -99,7 +101,34 @@ run_apextest_shards() {
 
 	run_with_heartbeat "${compile_label} ./internal/apextest" go test "${compile_args[@]}" "${binary}" ./internal/apextest || rc="$?"
 	if [[ "${rc}" -eq 0 ]]; then
-		mapfile -t tests < <(cd internal/apextest && "${binary}" -test.list '^Test' | grep '^Test' || true)
+		if ! list_output="$(cd internal/apextest && "${binary}" -test.list '^Test')"; then
+			echo "Apex test discovery failed" >&2
+			rm -rf "${tmp_dir}"
+			return 1
+		fi
+		if [[ -z "${list_output}" ]]; then
+			echo "no Apex tests discovered" >&2
+			rm -rf "${tmp_dir}"
+			return 1
+		fi
+		mapfile -t tests <<<"${list_output}"
+		for name in "${tests[@]}"; do
+			if [[ ! "${name}" =~ ^Test[A-Za-z0-9_]*$ ]]; then
+				printf 'invalid Apex test name: %q\n' "${name}" >&2
+				rm -rf "${tmp_dir}"
+				return 1
+			fi
+		done
+		for ((start = 0; start < ${#tests[@]}; start++)); do
+			for ((end = start + 1; end < ${#tests[@]}; end++)); do
+				if [[ "${tests[start]}" == "${tests[end]}" ]]; then
+					printf 'duplicate Apex test name: %s\n' "${tests[start]}" >&2
+					rm -rf "${tmp_dir}"
+					return 1
+				fi
+			done
+		done
+		start=0
 		total="${#tests[@]}"
 		while [[ "${start}" -lt "${total}" ]]; do
 			end=$((start + apextest_shard_size))
