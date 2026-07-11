@@ -19,6 +19,23 @@ import (
 
 const apexTestPackage = "github.com/glade-sh/glade/internal/apextest"
 
+var packageLaneNames = []string{
+	"apextest",
+	"gladecli",
+	"sema",
+	"server-and-playground",
+	"repoguard",
+	"remaining-go",
+}
+
+var specializedPackageLanes = map[string][]string{
+	"apextest":              {"github.com/glade-sh/glade/internal/apextest"},
+	"gladecli":              {"github.com/glade-sh/glade/internal/gladecli"},
+	"sema":                  {"github.com/glade-sh/glade/internal/sema"},
+	"server-and-playground": {"github.com/glade-sh/glade/internal/playground", "github.com/glade-sh/glade/internal/server"},
+	"repoguard":             {"github.com/glade-sh/glade/internal/repoguard"},
+}
+
 var testNamePattern = regexp.MustCompile(`^Test[A-Za-z0-9_]*$`)
 
 type historyTest struct {
@@ -53,6 +70,20 @@ type weightedTest struct {
 	hash     [sha256.Size]byte
 }
 
+type packageLanes struct {
+	ApexTest            []string `json:"apextest"`
+	GladeCLI            []string `json:"gladecli"`
+	Sema                []string `json:"sema"`
+	ServerAndPlayground []string `json:"server-and-playground"`
+	RepoGuard           []string `json:"repoguard"`
+	RemainingGo         []string `json:"remaining-go"`
+}
+
+type packageManifest struct {
+	Version int          `json:"version"`
+	Lanes   packageLanes `json:"lanes"`
+}
+
 func main() {
 	os.Exit(run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr))
 }
@@ -64,6 +95,9 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	testsPath := fs.String("tests", "", "newline-delimited discovered tests (default: stdin)")
 	historyPath := fs.String("history", "", "JSON test duration history")
 	index := fs.Int("index", -1, "emit only the zero-based shard index")
+	packageManifestPath := fs.String("package-manifest", "", "checked CI package ownership manifest")
+	packagesPath := fs.String("packages", "", "newline-delimited current Go packages")
+	lane := fs.String("lane", "", "emit only one package lane")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
@@ -77,6 +111,33 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 			indexSet = true
 		}
 	})
+	if *packageManifestPath != "" {
+		if *packagesPath == "" {
+			fmt.Fprintln(stderr, "cishard: --packages is required with --package-manifest")
+			return 2
+		}
+		forbidden := ""
+		fs.Visit(func(f *flag.Flag) {
+			switch f.Name {
+			case "package-manifest", "packages", "lane":
+			default:
+				forbidden = f.Name
+			}
+		})
+		if forbidden != "" {
+			fmt.Fprintf(stderr, "cishard: --%s is not supported in package manifest mode\n", forbidden)
+			return 2
+		}
+		if err := emitPackageManifest(*packageManifestPath, *packagesPath, *lane, stdout); err != nil {
+			fmt.Fprintf(stderr, "cishard: package manifest rejected: %v\n", err)
+			return 1
+		}
+		return 0
+	}
+	if *packagesPath != "" || *lane != "" {
+		fmt.Fprintln(stderr, "cishard: --packages and --lane require --package-manifest")
+		return 2
+	}
 	if indexSet && (*index < 0 || *index >= *shards) {
 		fmt.Fprintf(stderr, "cishard: --index must be between 0 and %d\n", *shards-1)
 		return 2
@@ -127,6 +188,200 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return 1
 	}
 	return 0
+}
+
+func emitPackageManifest(manifestPath, packagesPath, selectedLane string, stdout io.Writer) error {
+	manifestData, err := os.ReadFile(manifestPath)
+	if err != nil {
+		return fmt.Errorf("read manifest: %w", err)
+	}
+	currentFile, err := os.Open(packagesPath)
+	if err != nil {
+		return fmt.Errorf("read current packages: %w", err)
+	}
+	defer currentFile.Close()
+	current, err := readPackageNames(currentFile)
+	if err != nil {
+		return fmt.Errorf("current packages: %w", err)
+	}
+	lanes, err := validatePackageManifest(manifestData, current)
+	if err != nil {
+		return err
+	}
+	if selectedLane != "" {
+		if _, ok := lanes[selectedLane]; !ok {
+			return fmt.Errorf("unknown lane %q", selectedLane)
+		}
+	}
+	for _, lane := range packageLaneNames {
+		if selectedLane != "" && lane != selectedLane {
+			continue
+		}
+		for _, pkg := range lanes[lane] {
+			argument := strings.TrimPrefix(pkg, "github.com/glade-sh/glade/")
+			if argument != pkg {
+				argument = "./" + argument
+			}
+			if _, err := fmt.Fprintf(stdout, "%s\t%s\n", lane, argument); err != nil {
+				return fmt.Errorf("write package ownership: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+func readPackageNames(r io.Reader) ([]string, error) {
+	scanner := bufio.NewScanner(r)
+	var packages []string
+	seen := make(map[string]bool)
+	for scanner.Scan() {
+		pkg := scanner.Text()
+		if pkg == "" || strings.TrimSpace(pkg) != pkg || strings.ContainsAny(pkg, " \t") {
+			return nil, fmt.Errorf("invalid package path %q", pkg)
+		}
+		if seen[pkg] {
+			return nil, fmt.Errorf("duplicate package path %q", pkg)
+		}
+		seen[pkg] = true
+		packages = append(packages, pkg)
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	if len(packages) == 0 {
+		return nil, errors.New("no current packages")
+	}
+	return packages, nil
+}
+
+func validatePackageManifest(data []byte, current []string) (map[string][]string, error) {
+	if err := rejectDuplicateJSONKeys(data); err != nil {
+		return nil, err
+	}
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	var manifest packageManifest
+	if err := decoder.Decode(&manifest); err != nil {
+		return nil, err
+	}
+	if err := ensureJSONEOF(decoder); err != nil {
+		return nil, err
+	}
+	if manifest.Version != 1 {
+		return nil, fmt.Errorf("version = %d, want 1", manifest.Version)
+	}
+	lanes := map[string][]string{
+		"apextest":              manifest.Lanes.ApexTest,
+		"gladecli":              manifest.Lanes.GladeCLI,
+		"sema":                  manifest.Lanes.Sema,
+		"server-and-playground": manifest.Lanes.ServerAndPlayground,
+		"repoguard":             manifest.Lanes.RepoGuard,
+		"remaining-go":          manifest.Lanes.RemainingGo,
+	}
+	owned := make(map[string]string, len(current))
+	for _, lane := range packageLaneNames {
+		packages := lanes[lane]
+		if len(packages) == 0 {
+			return nil, fmt.Errorf("lane %q has empty ownership", lane)
+		}
+		if !sort.StringsAreSorted(packages) {
+			return nil, fmt.Errorf("lane %q packages are not lexical", lane)
+		}
+		for _, pkg := range packages {
+			if pkg == "" || strings.TrimSpace(pkg) != pkg || strings.ContainsAny(pkg, " \t*?") || strings.Contains(pkg, "...") {
+				return nil, fmt.Errorf("lane %q has invalid explicit package %q", lane, pkg)
+			}
+			if previous, exists := owned[pkg]; exists {
+				return nil, fmt.Errorf("package %q is owned by both %q and %q", pkg, previous, lane)
+			}
+			owned[pkg] = lane
+		}
+	}
+	for lane, want := range specializedPackageLanes {
+		if !equalStrings(lanes[lane], want) {
+			return nil, fmt.Errorf("lane %q ownership does not match specialized CI intent", lane)
+		}
+	}
+	want := make(map[string]bool, len(current))
+	for _, pkg := range current {
+		want[pkg] = true
+		if _, exists := owned[pkg]; !exists {
+			return nil, fmt.Errorf("current package %q is unowned", pkg)
+		}
+	}
+	for pkg := range owned {
+		if !want[pkg] {
+			return nil, fmt.Errorf("owned package %q is not in the current package set", pkg)
+		}
+	}
+	if len(owned) != len(want) {
+		return nil, fmt.Errorf("owned package count %d does not match current package count %d", len(owned), len(want))
+	}
+	return lanes, nil
+}
+
+func equalStrings(left, right []string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for i := range left {
+		if left[i] != right[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func rejectDuplicateJSONKeys(data []byte) error {
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	if err := consumeJSONValue(decoder); err != nil {
+		return err
+	}
+	return ensureJSONEOF(decoder)
+}
+
+func consumeJSONValue(decoder *json.Decoder) error {
+	token, err := decoder.Token()
+	if err != nil {
+		return err
+	}
+	delim, ok := token.(json.Delim)
+	if !ok {
+		return nil
+	}
+	switch delim {
+	case '{':
+		seen := make(map[string]bool)
+		for decoder.More() {
+			keyToken, err := decoder.Token()
+			if err != nil {
+				return err
+			}
+			key, ok := keyToken.(string)
+			if !ok {
+				return errors.New("object key is not a string")
+			}
+			if seen[key] {
+				return fmt.Errorf("duplicate JSON key %q", key)
+			}
+			seen[key] = true
+			if err := consumeJSONValue(decoder); err != nil {
+				return err
+			}
+		}
+		_, err = decoder.Token()
+		return err
+	case '[':
+		for decoder.More() {
+			if err := consumeJSONValue(decoder); err != nil {
+				return err
+			}
+		}
+		_, err = decoder.Token()
+		return err
+	default:
+		return fmt.Errorf("unexpected JSON delimiter %q", delim)
+	}
 }
 
 func readNames(r io.Reader) ([]string, error) {

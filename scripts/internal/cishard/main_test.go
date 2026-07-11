@@ -5,11 +5,82 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 )
+
+func TestCIPackageManifestLoadsExactLivePackageSet(t *testing.T) {
+	repoRoot := filepath.Clean(filepath.Join("..", "..", ".."))
+	manifestPath := filepath.Join(repoRoot, "scripts", "ci-package-lanes.json")
+	cmd := exec.Command("go", "list", "./...")
+	cmd.Dir = repoRoot
+	packages, err := cmd.Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	packagesPath := filepath.Join(t.TempDir(), "packages.txt")
+	if err := os.WriteFile(packagesPath, packages, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	rc := run([]string{"--package-manifest", manifestPath, "--packages", packagesPath}, strings.NewReader(""), &stdout, &stderr)
+	if rc != 0 {
+		t.Fatalf("manifest load rc=%d stderr=%s", rc, stderr.String())
+	}
+	lines := strings.Split(strings.TrimSpace(stdout.String()), "\n")
+	wantCount := len(strings.Fields(string(packages)))
+	if len(lines) != wantCount {
+		t.Fatalf("owned package rows = %d, want live package count %d", len(lines), wantCount)
+	}
+	for _, lane := range []string{"apextest", "gladecli", "sema", "server-and-playground", "repoguard", "remaining-go"} {
+		if !strings.Contains(stdout.String(), lane+"\t") {
+			t.Errorf("manifest output missing lane %q", lane)
+		}
+	}
+	if err := os.WriteFile(packagesPath, append(packages, []byte("github.com/glade-sh/glade/internal/newpackage\n")...), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	stdout.Reset()
+	stderr.Reset()
+	if rc := run([]string{"--package-manifest", manifestPath, "--packages", packagesPath}, strings.NewReader(""), &stdout, &stderr); rc == 0 {
+		t.Fatal("new current package was silently accepted without manifest ownership")
+	}
+}
+
+func TestCIPackageManifestRejectsUncertainOwnership(t *testing.T) {
+	packagesPath := filepath.Join(t.TempDir(), "packages.txt")
+	if err := os.WriteFile(packagesPath, []byte("example.test/a\nexample.test/b\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cases := map[string]string{
+		"malformed JSON":     `{`,
+		"duplicate JSON key": `{"version":1,"version":1,"lanes":{}}`,
+		"unknown field":      `{"version":1,"lanes":{"apextest":["example.test/a"],"gladecli":["example.test/b"],"sema":["example.test/c"],"server-and-playground":["example.test/d"],"repoguard":["example.test/e"],"remaining-go":["example.test/f"]},"extra":true}`,
+		"duplicate package":  `{"version":1,"lanes":{"apextest":["example.test/a"],"gladecli":["example.test/a"],"sema":["example.test/b"],"server-and-playground":["example.test/c"],"repoguard":["example.test/d"],"remaining-go":["example.test/e"]}}`,
+		"unknown lane":       `{"version":1,"lanes":{"apextest":["example.test/a"],"gladecli":["example.test/b"],"sema":["example.test/c"],"server-and-playground":["example.test/d"],"repoguard":["example.test/e"],"remaining-go":["example.test/f"],"surprise":["example.test/g"]}}`,
+		"empty ownership":    `{"version":1,"lanes":{"apextest":[],"gladecli":["example.test/a"],"sema":["example.test/b"],"server-and-playground":["example.test/c"],"repoguard":["example.test/d"],"remaining-go":["example.test/e"]}}`,
+		"package mismatch":   `{"version":1,"lanes":{"apextest":["example.test/a"],"gladecli":["example.test/b"],"sema":["example.test/c"],"server-and-playground":["example.test/d"],"repoguard":["example.test/e"],"remaining-go":["example.test/f"]}}`,
+	}
+	for name, contents := range cases {
+		t.Run(name, func(t *testing.T) {
+			manifestPath := filepath.Join(t.TempDir(), "manifest.json")
+			if err := os.WriteFile(manifestPath, []byte(contents), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			var stdout, stderr bytes.Buffer
+			if rc := run([]string{"--package-manifest", manifestPath, "--packages", packagesPath}, strings.NewReader(""), &stdout, &stderr); rc == 0 {
+				t.Fatalf("invalid manifest accepted: %s", stdout.String())
+			}
+			if stdout.Len() != 0 || stderr.Len() == 0 {
+				t.Fatalf("stdout/stderr = %q/%q", stdout.String(), stderr.String())
+			}
+		})
+	}
+}
 
 func validHistory(names []string, durations map[string]int64) []byte {
 	tests := make([]historyTest, 0, len(names))

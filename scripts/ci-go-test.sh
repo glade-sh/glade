@@ -8,10 +8,15 @@ fi
 
 export GOMAXPROCS="${GOMAXPROCS:-2}"
 
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd -- "${script_dir}/.." && pwd)"
+
 testlog_renderer_path=""
 testlog_renderer_dir=""
 testlog_status_files=()
 owned_child_roots=()
+package_map_temp=""
+package_lane_rows=""
 
 cleanup_testlog_renderer() {
 	local status_file
@@ -21,6 +26,9 @@ cleanup_testlog_renderer() {
 	if [[ -n "${testlog_renderer_dir}" ]]; then
 		rm -f "${testlog_renderer_dir}/testlog"
 		rmdir "${testlog_renderer_dir}" 2>/dev/null || true
+	fi
+	if [[ -n "${package_map_temp}" ]]; then
+		rm -f "${package_map_temp}"
 	fi
 }
 trap cleanup_testlog_renderer EXIT
@@ -72,13 +80,6 @@ handle_wrapper_signal() {
 
 trap 'handle_wrapper_signal 130' INT
 trap 'handle_wrapper_signal 143' TERM
-
-heavy_packages=(
-	./internal/gladecli
-	./internal/playground
-	./internal/sema
-	./internal/server
-)
 
 run_with_heartbeat() {
 	local label="$1"
@@ -172,13 +173,13 @@ run_json_with_heartbeat() {
 	testlog_status_files+=("${status_file}")
 	echo "::group::${label}"
 	printf '[ci] GOMAXPROCS=%s\n' "${GOMAXPROCS}"
-	printf '+ go test -json'
+	printf '+ go test -json -vet=off'
 	printf ' %q' "$@"
 	printf ' | testlog -output %q\n' "${artifact}"
 
 	(
 		set +e
-		go test -json "$@" | tee "${artifact}" | run_testlog_renderer
+		go test -json -vet=off "$@" | tee "${artifact}" | run_testlog_renderer
 		pipeline_status=("${PIPESTATUS[@]}")
 		printf '%s %s %s\n' "${pipeline_status[0]}" "${pipeline_status[1]}" "${pipeline_status[2]}" >"${status_file}"
 	) &
@@ -231,40 +232,87 @@ testlog_artifact() {
 	printf '%s/%s-%s.json\n' "${CI_GO_TEST_ARTIFACT_DIR:-ci-artifacts/go-test}" "${kind}" "${name}"
 }
 
-remaining_packages() {
-	go list ./... | grep -Ev '/internal/(apextest|gladecli|playground|sema|server)$' || true
+load_package_lanes() {
+	if [[ -n "${package_lane_rows}" ]]; then
+		return
+	fi
+	local go_command="${CI_GO_COMMAND:-go}"
+	package_map_temp="$(mktemp "${TMPDIR:-/tmp}/glade-ci-packages.XXXXXX")"
+	(cd "${repo_root}" && "${go_command}" list ./...) >"${package_map_temp}"
+	package_lane_rows="$(cd "${repo_root}" && "${go_command}" run ./scripts/internal/cishard --package-manifest "${script_dir}/ci-package-lanes.json" --packages "${package_map_temp}")"
+}
+
+package_lane_packages() {
+	local lane="$1"
+	load_package_lanes
+	awk -F '\t' -v lane="${lane}" '$1 == lane { print $2 }' <<<"${package_lane_rows}"
+}
+
+run_package_lane() {
+	local lane="$1"
+	local kind="$2"
+	local timeout="$3"
+	local parallelism="$4"
+	local -a packages=()
+	local -a args=()
+	load_package_lanes
+	while IFS= read -r pkg; do
+		packages+=("${pkg}")
+	done < <(awk -F '\t' -v lane="${lane}" '$1 == lane { print $2 }' <<<"${package_lane_rows}")
+	if [[ "${#packages[@]}" -eq 0 ]]; then
+		echo "[ci] package lane ${lane} is empty" >&2
+		return 1
+	fi
+	if [[ "${kind}" == "race" ]]; then
+		args+=(-race)
+	fi
+	if [[ "${parallelism}" != "0" ]]; then
+		args+=(-p="${parallelism}")
+	fi
+	args+=(-timeout="${timeout}")
+	run_json_with_heartbeat "go test ${lane}" "$(testlog_artifact "${kind}" "${lane}")" "${args[@]}" "${packages[@]}"
 }
 
 run_core_tests() {
-	local pkg
-	local remaining
-	for pkg in "${heavy_packages[@]}"; do
-		run_json_with_heartbeat "go test ${pkg}" "$(testlog_artifact test "${pkg}")" -timeout=30m "${pkg}"
-	done
-	remaining="$(remaining_packages)"
-	if [[ -n "${remaining}" ]]; then
-		# Intentional word splitting: package import paths do not contain spaces.
-		run_json_with_heartbeat "go test remaining packages" "$(testlog_artifact test remaining-packages)" -p=2 -timeout=20m ${remaining}
-	fi
+	run_named_package_lane "gladecli"
+	run_named_package_lane "sema"
+	run_named_package_lane "server-and-playground"
+	run_named_package_lane "repoguard"
+	run_named_package_lane "remaining-go"
+}
+
+run_named_package_lane() {
+	local lane="$1"
+	case "${lane}" in
+		gladecli|sema|server-and-playground|repoguard)
+			run_package_lane "${lane}" test 30m 0
+			;;
+		remaining-go)
+			run_package_lane "${lane}" test 20m 2
+			;;
+		apextest)
+			echo "[ci] apextest must use dedicated apex-shard routing" >&2
+			return 2
+			;;
+		*)
+			echo "[ci] unknown package lane: ${lane}" >&2
+			return 2
+			;;
+	esac
 }
 
 run_full_tests() {
-	run_json_with_heartbeat "go test ./internal/apextest" "$(testlog_artifact test ./internal/apextest)" -timeout=30m ./internal/apextest
+	run_package_lane "apextest" test 30m 0
 	run_core_tests
 }
 
 run_race_tests() {
-	local pkg
-	local remaining
-	run_json_with_heartbeat "go test -race ./internal/apextest" "$(testlog_artifact race ./internal/apextest)" -race -timeout=60m ./internal/apextest
-	for pkg in "${heavy_packages[@]}"; do
-		run_json_with_heartbeat "go test -race ${pkg}" "$(testlog_artifact race "${pkg}")" -race -timeout=60m "${pkg}"
-	done
-	remaining="$(remaining_packages)"
-	if [[ -n "${remaining}" ]]; then
-		# Intentional word splitting: package import paths do not contain spaces.
-		run_json_with_heartbeat "go test -race remaining packages" "$(testlog_artifact race remaining-packages)" -race -p=1 -timeout=30m ${remaining}
-	fi
+	run_package_lane "apextest" race 60m 0
+	run_package_lane "gladecli" race 60m 0
+	run_package_lane "sema" race 60m 0
+	run_package_lane "server-and-playground" race 60m 0
+	run_package_lane "repoguard" race 60m 0
+	run_package_lane "remaining-go" race 30m 1
 }
 
 validate_discovery() {
@@ -415,6 +463,8 @@ PY
 
 run_apextest_matrix_shard() {
 	local index="${1:-}"
+	local apex_package="./internal/apextest"
+	local -a apex_packages=()
 	local artifact_suffix="invalid"
 	if [[ "${index}" =~ ^[01]$ ]]; then
 		artifact_suffix="${index}"
@@ -444,9 +494,19 @@ run_apextest_matrix_shard() {
 		echo "shard index must be 0 or 1" >&2
 		return 2
 	fi
+	if [[ -z "${CI_SHARD_PLANNER:-}" ]]; then
+		while IFS= read -r pkg; do
+			apex_packages+=("${pkg}")
+		done < <(package_lane_packages "apextest")
+		if [[ "${#apex_packages[@]}" -ne 1 ]]; then
+			echo "[ci] apextest package lane must contain exactly one package" >&2
+			return 1
+		fi
+		apex_package="${apex_packages[0]}"
+	fi
 
 	set +e
-	go test -list '^Test' ./internal/apextest >"${discovery_raw}" 2>"${discovery_stderr}"
+	GOFLAGS="${GOFLAGS:+${GOFLAGS} }-vet=off" go test -list '^Test' "${apex_package}" >"${discovery_raw}" 2>"${discovery_stderr}"
 	discovery_rc="$?"
 	set -e
 	if [[ -s "${discovery_stderr}" ]]; then
@@ -471,7 +531,7 @@ run_apextest_matrix_shard() {
 	regex="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["regex"])' "${selected}")"
 
 	set +e
-	run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=30m -run "${regex}" ./internal/apextest
+	run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=30m -run "${regex}" "${apex_package}"
 	native_rc="$?"
 	set -e
 	validate_apextest_results "${selected}" "${events}" "${summary}" || validation_rc="$?"
@@ -699,6 +759,13 @@ main() {
 		race)
 			run_race_tests
 			;;
+		lane)
+			if [[ "$#" -ne 2 ]]; then
+				echo "usage: scripts/ci-go-test.sh lane {gladecli|sema|server-and-playground|repoguard|remaining-go}" >&2
+				return 2
+			fi
+			run_named_package_lane "$2"
+			;;
 		apex-shard)
 			run_apextest_matrix_shard "${2:-}"
 			;;
@@ -706,7 +773,7 @@ main() {
 			refresh_apextest_history "${2:-}" "${3:-}" "${4:-}"
 			;;
 		*)
-			echo "usage: scripts/ci-go-test.sh [core|test|race|apex-shard 0|1|apex-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT]" >&2
+			echo "usage: scripts/ci-go-test.sh [core|test|race|lane NAME|apex-shard 0|1|apex-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT]" >&2
 			return 2
 			;;
 	esac

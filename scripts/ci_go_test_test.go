@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -20,6 +21,15 @@ type apexHistoryFixture struct {
 	root   string
 	shards [2]string
 	output string
+}
+
+func realGoCommand(t *testing.T) string {
+	t.Helper()
+	path, err := exec.LookPath("go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return path
 }
 
 func writeJSONFixture(t *testing.T, path string, value any) {
@@ -983,12 +993,12 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 		"heartbeat_pid",
 		`kill -0 "${pid}"`,
 		"./internal/apextest",
-		`go test -list '^Test' ./internal/apextest`,
-		`run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=30m -run "${regex}" ./internal/apextest`,
+		`go test -list '^Test' "${apex_package}"`,
+		`run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=30m -run "${regex}" "${apex_package}"`,
 		"CI_SHARD_PLANNER",
 		"validation-summary.json",
-		"./internal/gladecli",
-		"./internal/sema",
+		`run_package_lane "gladecli"`,
+		`run_package_lane "sema"`,
 		"go test -json",
 		"run_json_with_heartbeat",
 		"CI_VERBOSE",
@@ -1061,6 +1071,189 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 	}
 }
 
+func TestCIPackageLanesRouteThroughCheckedManifest(t *testing.T) {
+	manifest, err := os.ReadFile("ci-package-lanes.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var document struct {
+		Version int                 `json:"version"`
+		Lanes   map[string][]string `json:"lanes"`
+	}
+	if err := json.Unmarshal(manifest, &document); err != nil {
+		t.Fatal(err)
+	}
+	if document.Version != 1 || len(document.Lanes) != 6 {
+		t.Fatalf("manifest version/lane count = %d/%d", document.Version, len(document.Lanes))
+	}
+	remaining := document.Lanes["remaining-go"]
+	if len(remaining) == 0 {
+		t.Fatal("remaining-go must be explicitly enumerated")
+	}
+	for _, pkg := range remaining {
+		if strings.Contains(pkg, "...") || strings.ContainsAny(pkg, "*?") {
+			t.Fatalf("remaining-go contains catch-all %q", pkg)
+		}
+	}
+	script, err := os.ReadFile("ci-go-test.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, lane := range []string{"gladecli", "sema", "server-and-playground", "repoguard", "remaining-go"} {
+		if !strings.Contains(string(script), `run_named_package_lane "`+lane+`"`) {
+			t.Errorf("core routing missing lane %q", lane)
+		}
+	}
+}
+
+func TestCIPackageLaneCommandRunsOnlyRequestedManifestPackagesAndPreservesStatus(t *testing.T) {
+	manifestData, err := os.ReadFile("ci-package-lanes.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var manifest struct {
+		Lanes map[string][]string `json:"lanes"`
+	}
+	if err := json.Unmarshal(manifestData, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	toArgument := func(pkg string) string {
+		return "./" + strings.TrimPrefix(pkg, "github.com/glade-sh/glade/")
+	}
+	allPackages := make(map[string]string)
+	for lane, packages := range manifest.Lanes {
+		for _, pkg := range packages {
+			allPackages[toArgument(pkg)] = lane
+		}
+	}
+
+	cases := []struct {
+		lane        string
+		wantTimeout string
+		wantP       string
+	}{
+		{lane: "gladecli", wantTimeout: "-timeout=30m"},
+		{lane: "sema", wantTimeout: "-timeout=30m"},
+		{lane: "server-and-playground", wantTimeout: "-timeout=30m"},
+		{lane: "repoguard", wantTimeout: "-timeout=30m"},
+		{lane: "remaining-go", wantTimeout: "-timeout=20m", wantP: "-p=2"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.lane, func(t *testing.T) {
+			dir := t.TempDir()
+			calls := filepath.Join(dir, "calls")
+			fakeGo := filepath.Join(dir, "go")
+			fakeRenderer := filepath.Join(dir, "testlog")
+			goScript := `#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$FIXTURE_CALLS"
+printf '%s\n' '{"Action":"output","Package":"example.test/pkg","Output":"failure\n"}'
+exit 23
+`
+			rendererScript := "#!/usr/bin/env bash\ncat >/dev/null\n"
+			if err := os.WriteFile(fakeGo, []byte(goScript), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(fakeRenderer, []byte(rendererScript), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			cmd := exec.Command("bash", "ci-go-test.sh", "lane", tc.lane)
+			cmd.Env = append(os.Environ(),
+				"PATH="+dir+":"+os.Getenv("PATH"),
+				"FIXTURE_CALLS="+calls,
+				"CI_GO_COMMAND="+realGoCommand(t),
+				"CI_TESTLOG_RENDERER="+fakeRenderer,
+				"CI_GO_TEST_ARTIFACT_DIR="+filepath.Join(dir, "artifacts"),
+				"CI_GO_TEST_HEARTBEAT_SECONDS=1",
+			)
+			out, err := cmd.CombinedOutput()
+			exitErr, ok := err.(*exec.ExitError)
+			if !ok || exitErr.ExitCode() != 23 {
+				t.Fatalf("lane status = %v, want native 23\n%s", err, out)
+			}
+			callData, err := os.ReadFile(calls)
+			if err != nil {
+				t.Fatal(err)
+			}
+			lines := strings.Split(strings.TrimSpace(string(callData)), "\n")
+			if len(lines) != 1 {
+				t.Fatalf("native executions = %d, want 1; calls:\n%s", len(lines), callData)
+			}
+			fields := strings.Fields(lines[0])
+			var gotPackages []string
+			for _, field := range fields {
+				if strings.HasPrefix(field, "./") {
+					gotPackages = append(gotPackages, field)
+				}
+			}
+			var wantPackages []string
+			for _, pkg := range manifest.Lanes[tc.lane] {
+				wantPackages = append(wantPackages, toArgument(pkg))
+			}
+			sort.Strings(gotPackages)
+			sort.Strings(wantPackages)
+			if !reflect.DeepEqual(gotPackages, wantPackages) {
+				t.Fatalf("lane packages = %v, want %v", gotPackages, wantPackages)
+			}
+			for _, field := range fields {
+				if owner, exists := allPackages[field]; exists && owner != tc.lane {
+					t.Errorf("lane executed package %s owned by %s", field, owner)
+				}
+			}
+			if !strings.Contains(lines[0], tc.wantTimeout) {
+				t.Errorf("lane call missing timeout %s: %s", tc.wantTimeout, lines[0])
+			}
+			if tc.wantP != "" {
+				if !strings.Contains(lines[0], tc.wantP) {
+					t.Errorf("lane call missing parallelism %s: %s", tc.wantP, lines[0])
+				}
+			} else if strings.Contains(lines[0], "-p=") {
+				t.Errorf("lane call has unexpected parallelism: %s", lines[0])
+			}
+		})
+	}
+}
+
+func TestCIPackageLaneCommandRejectsInvalidArguments(t *testing.T) {
+	cases := [][]string{
+		{"lane"},
+		{"lane", "unknown"},
+		{"lane", "apextest"},
+		{"lane", "gladecli", "extra"},
+	}
+	for _, args := range cases {
+		t.Run(strings.Join(args, "_"), func(t *testing.T) {
+			cmd := exec.Command("bash", append([]string{"ci-go-test.sh"}, args...)...)
+			out, err := cmd.CombinedOutput()
+			exitErr, ok := err.(*exec.ExitError)
+			if !ok || exitErr.ExitCode() != 2 {
+				t.Fatalf("invalid args %v status = %v, want 2\n%s", args, err, out)
+			}
+		})
+	}
+}
+
+func TestCIVetHasOneAuthoritativeGateAndNoImplicitLaneWork(t *testing.T) {
+	workflow, err := os.ReadFile(filepath.Join("..", ".github", "workflows", "ci.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Count(string(workflow), "go vet ./..."); got != 1 {
+		t.Fatalf("standalone full vet gates = %d, want 1", got)
+	}
+	script, err := os.ReadFile("ci-go-test.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		`go test -json -vet=off "$@"`,
+		`GOFLAGS="${GOFLAGS:+${GOFLAGS} }-vet=off" go test -list '^Test' "${apex_package}"`,
+	} {
+		if !strings.Contains(string(script), want) {
+			t.Errorf("wrapper missing implicit-vet suppression %q", want)
+		}
+	}
+}
+
 func TestCIGoTestLogModesPreserveFullDefaultAndCoreExcludesApex(t *testing.T) {
 	for _, tc := range []struct {
 		name          string
@@ -1103,7 +1296,7 @@ tee "$output"
 				t.Fatal(err)
 			}
 			cmd := exec.Command("bash", append([]string{"ci-go-test.sh"}, tc.args...)...)
-			cmd.Env = append(os.Environ(), "PATH="+dir+":"+os.Getenv("PATH"), "FIXTURE_CALLS="+calls, "CI_TESTLOG_RENDERER="+fakeRenderer, "CI_GO_TEST_ARTIFACT_DIR="+filepath.Join(dir, "artifacts"), "CI_GO_TEST_HEARTBEAT_SECONDS=1")
+			cmd.Env = append(os.Environ(), "PATH="+dir+":"+os.Getenv("PATH"), "FIXTURE_CALLS="+calls, "CI_GO_COMMAND="+realGoCommand(t), "CI_TESTLOG_RENDERER="+fakeRenderer, "CI_GO_TEST_ARTIFACT_DIR="+filepath.Join(dir, "artifacts"), "CI_GO_TEST_HEARTBEAT_SECONDS=1")
 			if out, err := cmd.CombinedOutput(); err != nil {
 				t.Fatalf("mode failed: %v\n%s", err, out)
 			}
@@ -1134,7 +1327,7 @@ tee "$output"
 					t.Errorf("race marker = %v, want %v: %s", got, tc.wantRace, call)
 				}
 			}
-			for _, pkg := range []string{"./internal/gladecli", "./internal/playground", "./internal/sema", "./internal/server", "github.com/glade-sh/glade/internal/other"} {
+			for _, pkg := range []string{"./internal/gladecli", "./internal/playground", "./internal/sema", "./internal/server", "./cmd/glade"} {
 				if got := strings.Count(callText, pkg); got != 1 {
 					t.Errorf("package lane %s executions = %d, want 1; calls:\n%s", pkg, got, b)
 				}
@@ -1151,8 +1344,8 @@ func TestCIGoTestLogAlwaysPreservesNativeStatus(t *testing.T) {
 		wantRC     int
 		wantCalls  int
 	}{
-		{name: "both success", wantCalls: 4},
-		{name: "native success renderer fail", rendererRC: 7, wantCalls: 4},
+		{name: "both success", wantCalls: 5},
+		{name: "native success renderer fail", rendererRC: 7, wantCalls: 5},
 		{name: "native fail renderer success", nativeRC: 23, wantRC: 23, wantCalls: 1},
 		{name: "both fail", nativeRC: 23, rendererRC: 7, wantRC: 23, wantCalls: 1},
 	} {
@@ -1192,6 +1385,7 @@ exit "$FIXTURE_RENDERER_RC"
 				fmt.Sprintf("FIXTURE_NATIVE_RC=%d", tc.nativeRC),
 				fmt.Sprintf("FIXTURE_RENDERER_RC=%d", tc.rendererRC),
 				"CI_TESTLOG_RENDERER="+fakeRenderer,
+				"CI_GO_COMMAND="+realGoCommand(t),
 				"CI_GO_TEST_ARTIFACT_DIR="+filepath.Join(dir, "artifacts"),
 				"CI_GO_TEST_HEARTBEAT_SECONDS=1",
 			)
@@ -1286,6 +1480,7 @@ exit "${FIXTURE_RENDERER_RC:-0}"
 		"FIXTURE_RENDERER_ARGS="+rendererArgs,
 		"FIXTURE_RENDERER_RC=7",
 		"CI_TESTLOG_RENDERER="+fakeRenderer,
+		"CI_GO_COMMAND="+realGoCommand(t),
 		"CI_GO_TEST_ARTIFACT_DIR="+artifactDir,
 		"CI_GO_TEST_HEARTBEAT_SECONDS=1",
 		"CI_VERBOSE=1",
@@ -1374,6 +1569,7 @@ wait
 			}
 			cmd.Env = append(os.Environ(),
 				"PATH="+dir+":"+os.Getenv("PATH"),
+				"CI_GO_COMMAND="+realGoCommand(t),
 				"CI_TESTLOG_RENDERER="+fakeRenderer,
 				"CI_GO_TEST_ARTIFACT_DIR="+filepath.Join(dir, "artifacts"),
 				"CI_GO_TEST_HEARTBEAT_SECONDS=30",
