@@ -8,6 +8,71 @@ fi
 
 export GOMAXPROCS="${GOMAXPROCS:-2}"
 
+testlog_renderer_path=""
+testlog_renderer_dir=""
+testlog_status_files=()
+owned_child_roots=()
+
+cleanup_testlog_renderer() {
+	local status_file
+	for status_file in "${testlog_status_files[@]}"; do
+		rm -f "${status_file}"
+	done
+	if [[ -n "${testlog_renderer_dir}" ]]; then
+		rm -f "${testlog_renderer_dir}/testlog"
+		rmdir "${testlog_renderer_dir}" 2>/dev/null || true
+	fi
+}
+trap cleanup_testlog_renderer EXIT
+
+register_owned_child() {
+	owned_child_roots+=("$1")
+}
+
+unregister_owned_child() {
+	local completed_pid="$1"
+	local pid
+	local -a remaining=()
+	for pid in "${owned_child_roots[@]}"; do
+		if [[ "${pid}" != "${completed_pid}" ]]; then
+			remaining+=("${pid}")
+		fi
+	done
+	owned_child_roots=("${remaining[@]}")
+}
+
+terminate_owned_tree() {
+	local root_pid="$1"
+	local child_pid
+	local children
+	children="$(pgrep -P "${root_pid}" 2>/dev/null || true)"
+	for child_pid in ${children}; do
+		terminate_owned_tree "${child_pid}"
+	done
+	kill -KILL "${root_pid}" 2>/dev/null || true
+}
+
+terminate_owned_children() {
+	local root_pid
+	for root_pid in "${owned_child_roots[@]}"; do
+		terminate_owned_tree "${root_pid}"
+	done
+	for root_pid in "${owned_child_roots[@]}"; do
+		wait "${root_pid}" 2>/dev/null || true
+	done
+	owned_child_roots=()
+}
+
+handle_wrapper_signal() {
+	local rc="$1"
+	trap - INT TERM
+	terminate_owned_children
+	exit "${rc}"
+}
+
+trap 'handle_wrapper_signal 130' INT
+trap 'handle_wrapper_signal 143' TERM
+
 heavy_packages=(
 	./internal/gladecli
 	./internal/playground
@@ -30,11 +95,17 @@ run_with_heartbeat() {
 
 	"$@" &
 	pid="$!"
+	register_owned_child "${pid}"
 
 	(
 		elapsed=0
+		sleep_pid=""
+		trap 'if [[ -n "${sleep_pid}" ]]; then kill "${sleep_pid}" 2>/dev/null || true; fi; exit 0' TERM INT
 		while true; do
-			sleep "${heartbeat_seconds}" || exit 0
+			sleep "${heartbeat_seconds}" &
+			sleep_pid="$!"
+			wait "${sleep_pid}" || exit 0
+			sleep_pid=""
 			if ! kill -0 "${pid}" 2>/dev/null; then
 				exit 0
 			fi
@@ -43,12 +114,121 @@ run_with_heartbeat() {
 		done
 	) &
 	heartbeat_pid="$!"
+	register_owned_child "${heartbeat_pid}"
 
 	wait "${pid}" || rc="$?"
+	unregister_owned_child "${pid}"
 	kill "${heartbeat_pid}" 2>/dev/null || true
 	wait "${heartbeat_pid}" 2>/dev/null || true
+	unregister_owned_child "${heartbeat_pid}"
 	echo "::endgroup::"
 	return "${rc}"
+}
+
+prepare_testlog_renderer() {
+	if [[ -n "${testlog_renderer_path}" ]]; then
+		return
+	fi
+	if [[ -n "${CI_TESTLOG_RENDERER:-}" ]]; then
+		testlog_renderer_path="${CI_TESTLOG_RENDERER}"
+		return
+	fi
+	testlog_renderer_dir="$(mktemp -d "${TMPDIR:-/tmp}/glade-ci-testlog-bin.XXXXXX")"
+	testlog_renderer_path="${testlog_renderer_dir}/testlog"
+	if ! go build -o "${testlog_renderer_path}" ./scripts/internal/testlog; then
+		echo "[ci] testlog renderer build failed; live output unavailable" >&2
+		testlog_renderer_path="/usr/bin/false"
+		return 1
+	fi
+}
+
+run_testlog_renderer() {
+	local renderer_rc=0
+	local -a args=(-output /dev/null)
+	if [[ "${CI_VERBOSE:-0}" == "1" ]]; then
+		args+=(-verbose)
+	fi
+	"${testlog_renderer_path}" "${args[@]}" || renderer_rc="$?"
+	# A renderer that exits early must not close the test pipeline. Drain the
+	# remaining stream so tee can finish the raw artifact and go test can exit.
+	cat >/dev/null
+	return "${renderer_rc}"
+}
+
+run_json_with_heartbeat() {
+	local label="$1"
+	local artifact="$2"
+	shift 2
+	local status_file
+	local pid
+	local heartbeat_pid
+	local native_rc
+	local tee_rc
+	local renderer_rc
+
+	mkdir -p "$(dirname "${artifact}")"
+	prepare_testlog_renderer || true
+	status_file="$(mktemp "${TMPDIR:-/tmp}/glade-ci-testlog.XXXXXX")"
+	testlog_status_files+=("${status_file}")
+	echo "::group::${label}"
+	printf '[ci] GOMAXPROCS=%s\n' "${GOMAXPROCS}"
+	printf '+ go test -json'
+	printf ' %q' "$@"
+	printf ' | testlog -output %q\n' "${artifact}"
+
+	(
+		set +e
+		go test -json "$@" | tee "${artifact}" | run_testlog_renderer
+		pipeline_status=("${PIPESTATUS[@]}")
+		printf '%s %s %s\n' "${pipeline_status[0]}" "${pipeline_status[1]}" "${pipeline_status[2]}" >"${status_file}"
+	) &
+	pid="$!"
+	register_owned_child "${pid}"
+	(
+		elapsed=0
+		sleep_pid=""
+		trap 'if [[ -n "${sleep_pid}" ]]; then kill "${sleep_pid}" 2>/dev/null || true; fi; exit 0' TERM INT
+		while true; do
+			sleep "${heartbeat_seconds}" &
+			sleep_pid="$!"
+			wait "${sleep_pid}" || exit 0
+			sleep_pid=""
+			if ! kill -0 "${pid}" 2>/dev/null; then
+				exit 0
+			fi
+			elapsed=$((elapsed + heartbeat_seconds))
+			printf '[ci] %s still running after %ss\n' "${label}" "${elapsed}"
+		done
+	) &
+	heartbeat_pid="$!"
+	register_owned_child "${heartbeat_pid}"
+	wait "${pid}" || true
+	unregister_owned_child "${pid}"
+	kill "${heartbeat_pid}" 2>/dev/null || true
+	wait "${heartbeat_pid}" 2>/dev/null || true
+	unregister_owned_child "${heartbeat_pid}"
+	echo "::endgroup::"
+	if ! read -r native_rc tee_rc renderer_rc <"${status_file}"; then
+		rm -f "${status_file}"
+		echo "[ci] unable to read go test pipeline status" >&2
+		return 1
+	fi
+	rm -f "${status_file}"
+	if [[ "${tee_rc}" -ne 0 ]]; then
+		printf '[ci] raw event writer failed with status %s; artifact: %s\n' "${tee_rc}" "${artifact}" >&2
+	fi
+	if [[ "${renderer_rc}" -ne 0 ]]; then
+		printf '[ci] testlog renderer failed with status %s; raw events: %s\n' "${renderer_rc}" "${artifact}" >&2
+	fi
+	return "${native_rc}"
+}
+
+testlog_artifact() {
+	local kind="$1"
+	local pkg="$2"
+	local name="${pkg#./}"
+	name="${name//\//-}"
+	printf '%s/%s-%s.json\n' "${CI_GO_TEST_ARTIFACT_DIR:-ci-artifacts/go-test}" "${kind}" "${name}"
 }
 
 remaining_packages() {
@@ -59,31 +239,31 @@ run_core_tests() {
 	local pkg
 	local remaining
 	for pkg in "${heavy_packages[@]}"; do
-		run_with_heartbeat "go test ${pkg}" go test -v -timeout=30m "${pkg}"
+		run_json_with_heartbeat "go test ${pkg}" "$(testlog_artifact test "${pkg}")" -timeout=30m "${pkg}"
 	done
 	remaining="$(remaining_packages)"
 	if [[ -n "${remaining}" ]]; then
 		# Intentional word splitting: package import paths do not contain spaces.
-		run_with_heartbeat "go test remaining packages" go test -p=2 -timeout=20m ${remaining}
+		run_json_with_heartbeat "go test remaining packages" "$(testlog_artifact test remaining-packages)" -p=2 -timeout=20m ${remaining}
 	fi
 }
 
 run_full_tests() {
-	run_with_heartbeat "go test ./internal/apextest" go test -timeout=30m ./internal/apextest
+	run_json_with_heartbeat "go test ./internal/apextest" "$(testlog_artifact test ./internal/apextest)" -timeout=30m ./internal/apextest
 	run_core_tests
 }
 
 run_race_tests() {
 	local pkg
 	local remaining
-	run_with_heartbeat "go test -race ./internal/apextest" go test -race -timeout=60m ./internal/apextest
+	run_json_with_heartbeat "go test -race ./internal/apextest" "$(testlog_artifact race ./internal/apextest)" -race -timeout=60m ./internal/apextest
 	for pkg in "${heavy_packages[@]}"; do
-		run_with_heartbeat "go test -race ${pkg}" go test -race -v -timeout=60m "${pkg}"
+		run_json_with_heartbeat "go test -race ${pkg}" "$(testlog_artifact race "${pkg}")" -race -timeout=60m "${pkg}"
 	done
 	remaining="$(remaining_packages)"
 	if [[ -n "${remaining}" ]]; then
 		# Intentional word splitting: package import paths do not contain spaces.
-		run_with_heartbeat "go test -race remaining packages" go test -race -p=1 -timeout=30m ${remaining}
+		run_json_with_heartbeat "go test -race remaining packages" "$(testlog_artifact race remaining-packages)" -race -p=1 -timeout=30m ${remaining}
 	fi
 }
 
@@ -286,8 +466,8 @@ run_apextest_matrix_shard() {
 	regex="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["regex"])' "${selected}")"
 
 	set +e
-	go test -json -timeout=30m -run "${regex}" ./internal/apextest | tee "${events}"
-	native_rc="${PIPESTATUS[0]}"
+	run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=30m -run "${regex}" ./internal/apextest
+	native_rc="$?"
 	set -e
 	validate_apextest_results "${selected}" "${events}" "${summary}" || validation_rc="$?"
 	if [[ "${native_rc}" -ne 0 || "${validation_rc}" -ne 0 ]]; then
@@ -299,21 +479,27 @@ run_apextest_matrix_shard() {
 	return "${validation_rc}"
 }
 
-case "${1:-test}" in
-	test)
-		run_full_tests
-		;;
-	core)
-		run_core_tests
-		;;
-	race)
-		run_race_tests
-		;;
-	apex-shard)
-		run_apextest_matrix_shard "${2:-}"
-		;;
-	*)
-		echo "usage: scripts/ci-go-test.sh [core|test|race|apex-shard 0|1]" >&2
-		exit 2
-		;;
-esac
+main() {
+	case "${1:-test}" in
+		test)
+			run_full_tests
+			;;
+		core)
+			run_core_tests
+			;;
+		race)
+			run_race_tests
+			;;
+		apex-shard)
+			run_apextest_matrix_shard "${2:-}"
+			;;
+		*)
+			echo "usage: scripts/ci-go-test.sh [core|test|race|apex-shard 0|1]" >&2
+			return 2
+			;;
+	esac
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+	main "$@"
+fi

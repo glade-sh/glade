@@ -1,13 +1,17 @@
 package scripts
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
+	"syscall"
 	"testing"
+	"time"
 )
 
 func TestCIGoCacheReportsMissingDirectoriesAsZero(t *testing.T) {
@@ -496,7 +500,7 @@ func workflowStepBlock(t *testing.T, jobBlock, marker string) string {
 	return ""
 }
 
-func TestCIGoTestWrapperIsWired(t *testing.T) {
+func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 	script, err := os.ReadFile("ci-go-test.sh")
 	if err != nil {
 		t.Fatalf("read ci-go-test.sh: %v", err)
@@ -512,12 +516,19 @@ func TestCIGoTestWrapperIsWired(t *testing.T) {
 		`kill -0 "${pid}"`,
 		"./internal/apextest",
 		`go test -list '^Test' ./internal/apextest`,
-		`go test -json -timeout=30m -run "${regex}" ./internal/apextest`,
+		`run_json_with_heartbeat "go test Apex shard ${index}" "${events}" -timeout=30m -run "${regex}" ./internal/apextest`,
 		"CI_SHARD_PLANNER",
 		"validation-summary.json",
 		"./internal/gladecli",
 		"./internal/sema",
-		"go test -v",
+		"go test -json",
+		"run_json_with_heartbeat",
+		"CI_VERBOSE",
+		"testlog_status_files",
+		"owned_child_roots",
+		"terminate_owned_tree",
+		`trap 'handle_wrapper_signal 143' TERM`,
+		`if [[ "${BASH_SOURCE[0]}" == "$0" ]]`,
 	} {
 		if !strings.Contains(scriptText, want) {
 			t.Fatalf("ci-go-test.sh missing %q", want)
@@ -582,31 +593,49 @@ func TestCIGoTestWrapperIsWired(t *testing.T) {
 	}
 }
 
-func TestCIGoTestModesPreserveFullDefaultAndCoreExcludesApex(t *testing.T) {
+func TestCIGoTestLogModesPreserveFullDefaultAndCoreExcludesApex(t *testing.T) {
 	for _, tc := range []struct {
-		name     string
-		args     []string
-		wantApex bool
+		name          string
+		args          []string
+		wantApex      bool
+		wantRace      bool
+		wantTestCalls int
 	}{
-		{name: "default", wantApex: true},
-		{name: "test", args: []string{"test"}, wantApex: true},
-		{name: "core", args: []string{"core"}, wantApex: false},
+		{name: "default", wantApex: true, wantTestCalls: 6},
+		{name: "test", args: []string{"test"}, wantApex: true, wantTestCalls: 6},
+		{name: "core", args: []string{"core"}, wantTestCalls: 5},
+		{name: "race", args: []string{"race"}, wantApex: true, wantRace: true, wantTestCalls: 6},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			dir := t.TempDir()
 			calls := filepath.Join(dir, "calls")
 			fakeGo := filepath.Join(dir, "go")
+			fakeRenderer := filepath.Join(dir, "testlog")
 			script := `#!/usr/bin/env bash
 printf '%s\n' "$*" >> "$FIXTURE_CALLS"
 if [[ "$1" == "list" ]]; then
   printf '%s\n' github.com/glade-sh/glade/internal/apextest github.com/glade-sh/glade/internal/other
 fi
 `
+			rendererScript := `#!/usr/bin/env bash
+while [[ $# -gt 0 ]]; do
+  if [[ "$1" == "-output" ]]; then
+    output="$2"
+    shift 2
+  else
+    shift
+  fi
+done
+tee "$output"
+`
 			if err := os.WriteFile(fakeGo, []byte(script), 0o700); err != nil {
 				t.Fatal(err)
 			}
+			if err := os.WriteFile(fakeRenderer, []byte(rendererScript), 0o700); err != nil {
+				t.Fatal(err)
+			}
 			cmd := exec.Command("bash", append([]string{"ci-go-test.sh"}, tc.args...)...)
-			cmd.Env = append(os.Environ(), "PATH="+dir+":"+os.Getenv("PATH"), "FIXTURE_CALLS="+calls, "CI_GO_TEST_HEARTBEAT_SECONDS=1")
+			cmd.Env = append(os.Environ(), "PATH="+dir+":"+os.Getenv("PATH"), "FIXTURE_CALLS="+calls, "CI_TESTLOG_RENDERER="+fakeRenderer, "CI_GO_TEST_ARTIFACT_DIR="+filepath.Join(dir, "artifacts"), "CI_GO_TEST_HEARTBEAT_SECONDS=1")
 			if out, err := cmd.CombinedOutput(); err != nil {
 				t.Fatalf("mode failed: %v\n%s", err, out)
 			}
@@ -614,10 +643,351 @@ fi
 			if err != nil {
 				t.Fatal(err)
 			}
-			gotApex := strings.Contains(string(b), "test -timeout=30m ./internal/apextest")
+			callText := string(b)
+			gotApex := strings.Contains(callText, "./internal/apextest")
 			if gotApex != tc.wantApex {
 				t.Fatalf("Apex invocation = %v, want %v; calls:\n%s", gotApex, tc.wantApex, b)
 			}
+			lines := strings.Split(strings.TrimSpace(callText), "\n")
+			var testCalls []string
+			for _, line := range lines {
+				if strings.HasPrefix(line, "test ") {
+					testCalls = append(testCalls, line)
+				}
+			}
+			if len(testCalls) != tc.wantTestCalls {
+				t.Fatalf("test calls = %d, want %d; calls:\n%s", len(testCalls), tc.wantTestCalls, b)
+			}
+			for _, call := range testCalls {
+				if !strings.Contains(call, " -json ") {
+					t.Errorf("test lane bypassed JSON renderer: %s", call)
+				}
+				if got := strings.Contains(call, " -race "); got != tc.wantRace {
+					t.Errorf("race marker = %v, want %v: %s", got, tc.wantRace, call)
+				}
+			}
+			for _, pkg := range []string{"./internal/gladecli", "./internal/playground", "./internal/sema", "./internal/server", "github.com/glade-sh/glade/internal/other"} {
+				if got := strings.Count(callText, pkg); got != 1 {
+					t.Errorf("package lane %s executions = %d, want 1; calls:\n%s", pkg, got, b)
+				}
+			}
 		})
 	}
+}
+
+func TestCIGoTestLogAlwaysPreservesNativeStatus(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		nativeRC   int
+		rendererRC int
+		wantRC     int
+		wantCalls  int
+	}{
+		{name: "both success", wantCalls: 4},
+		{name: "native success renderer fail", rendererRC: 7, wantCalls: 4},
+		{name: "native fail renderer success", nativeRC: 23, wantRC: 23, wantCalls: 1},
+		{name: "both fail", nativeRC: 23, rendererRC: 7, wantRC: 23, wantCalls: 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			calls := filepath.Join(dir, "calls")
+			fakeGo := filepath.Join(dir, "go")
+			fakeRenderer := filepath.Join(dir, "testlog")
+			goScript := `#!/usr/bin/env bash
+if [[ "$1" == "list" ]]; then
+  exit 0
+fi
+printf '%s\n' "$*" >> "$FIXTURE_CALLS"
+printf '%s\n' '{"Action":"output","Package":"example.test/pkg","Output":"ok  example.test/pkg 0.001s\n"}'
+exit "$FIXTURE_NATIVE_RC"
+`
+			rendererScript := `#!/usr/bin/env bash
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -output) output="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+tee "$output"
+exit "$FIXTURE_RENDERER_RC"
+`
+			if err := os.WriteFile(fakeGo, []byte(goScript), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(fakeRenderer, []byte(rendererScript), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			cmd := exec.Command("bash", "ci-go-test.sh", "core")
+			cmd.Env = append(os.Environ(),
+				"PATH="+dir+":"+os.Getenv("PATH"),
+				"FIXTURE_CALLS="+calls,
+				fmt.Sprintf("FIXTURE_NATIVE_RC=%d", tc.nativeRC),
+				fmt.Sprintf("FIXTURE_RENDERER_RC=%d", tc.rendererRC),
+				"CI_TESTLOG_RENDERER="+fakeRenderer,
+				"CI_GO_TEST_ARTIFACT_DIR="+filepath.Join(dir, "artifacts"),
+				"CI_GO_TEST_HEARTBEAT_SECONDS=1",
+			)
+			out, err := cmd.CombinedOutput()
+			gotRC := 0
+			if err != nil {
+				exitErr, ok := err.(*exec.ExitError)
+				if !ok {
+					t.Fatalf("wrapper error = %v\n%s", err, out)
+				}
+				gotRC = exitErr.ExitCode()
+			}
+			if gotRC != tc.wantRC {
+				t.Fatalf("wrapper status = %d, want native status %d\n%s", gotRC, tc.wantRC, out)
+			}
+			callData, readErr := os.ReadFile(calls)
+			if readErr != nil {
+				t.Fatal(readErr)
+			}
+			if got := strings.Count(string(callData), "test -json"); got != tc.wantCalls {
+				t.Fatalf("native test calls = %d, want %d; calls:\n%s", got, tc.wantCalls, callData)
+			}
+			if tc.rendererRC != 0 && !strings.Contains(string(out), "renderer failed with status 7") {
+				t.Fatalf("renderer failure was not logged:\n%s", out)
+			}
+		})
+	}
+}
+
+func TestCIApexShardLogUsesQuietRendererOnce(t *testing.T) {
+	dir := t.TempDir()
+	renderer := filepath.Join(dir, "testlog")
+	if err := os.WriteFile(renderer, []byte("#!/usr/bin/env bash\ncat >/dev/null\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("CI_TESTLOG_RENDERER", renderer)
+	events := `{"Action":"output","Package":"` + fixturePackage + `","Test":"TestAlpha","Output":"=== RUN   TestAlpha\n"}` + "\n" +
+		`{"Action":"output","Package":"` + fixturePackage + `","Test":"TestAlpha","Output":"    alpha_test.go:9: successful detail\n"}` + "\n" +
+		passEvent("TestAlpha")
+	out, err, artifacts := runApexShardFixture(t, "0", "TestAlpha\nTestBeta\nok  \t"+fixturePackage+"\n", 0, validFixturePlan(), 0, events, 0)
+	if err != nil {
+		t.Fatalf("apex shard failed: %v\n%s", err, out)
+	}
+	if strings.Contains(out, "successful detail") || strings.Contains(out, `"Action"`) {
+		t.Fatalf("Apex shard bypassed quiet renderer:\n%s", out)
+	}
+	calls, readErr := os.ReadFile(filepath.Join(filepath.Dir(artifacts), "calls"))
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if got := strings.Count(string(calls), "test -json"); got != 1 {
+		t.Fatalf("Apex native JSON executions = %d, want 1; calls:\n%s", got, calls)
+	}
+}
+
+func TestCIGoTestLogPreservesOriginalExitCodeAndRunsOnce(t *testing.T) {
+	dir := t.TempDir()
+	calls := filepath.Join(dir, "calls")
+	rendererArgs := filepath.Join(dir, "renderer-args")
+	fakeGo := filepath.Join(dir, "go")
+	fakeRenderer := filepath.Join(dir, "testlog")
+	artifactDir := filepath.Join(dir, "artifacts")
+	goScript := `#!/usr/bin/env bash
+printf '%s\n' "$*" >> "$FIXTURE_CALLS"
+if [[ "$1" == "test" ]]; then
+  printf '%s\n' '{"Action":"output","Package":"example.test/pkg","Test":"TestFailure","Output":"    failure_test.go:17: deliberate failure\n"}'
+  exit 23
+fi
+`
+	rendererScript := `#!/usr/bin/env bash
+printf '%s\n' "$*" > "$FIXTURE_RENDERER_ARGS"
+output=
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -output) output="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+tee "$output"
+exit "${FIXTURE_RENDERER_RC:-0}"
+`
+	if err := os.WriteFile(fakeGo, []byte(goScript), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(fakeRenderer, []byte(rendererScript), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("bash", "ci-go-test.sh", "core")
+	cmd.Env = append(os.Environ(),
+		"PATH="+dir+":"+os.Getenv("PATH"),
+		"FIXTURE_CALLS="+calls,
+		"FIXTURE_RENDERER_ARGS="+rendererArgs,
+		"FIXTURE_RENDERER_RC=7",
+		"CI_TESTLOG_RENDERER="+fakeRenderer,
+		"CI_GO_TEST_ARTIFACT_DIR="+artifactDir,
+		"CI_GO_TEST_HEARTBEAT_SECONDS=1",
+		"CI_VERBOSE=1",
+	)
+	out, err := cmd.CombinedOutput()
+	exitErr, ok := err.(*exec.ExitError)
+	if !ok || exitErr.ExitCode() != 23 {
+		t.Fatalf("wrapper exit = %v, want 23\n%s", err, out)
+	}
+	callData, readErr := os.ReadFile(calls)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if got := strings.Count(string(callData), "test -json"); got != 1 {
+		t.Fatalf("underlying JSON test executions = %d, want 1; calls:\n%s", got, callData)
+	}
+	entries, readErr := os.ReadDir(artifactDir)
+	if readErr != nil {
+		t.Fatalf("read artifact directory: %v", readErr)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("raw artifacts = %d, want 1", len(entries))
+	}
+	raw, readErr := os.ReadFile(filepath.Join(artifactDir, entries[0].Name()))
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if !strings.Contains(string(raw), "deliberate failure") {
+		t.Fatalf("raw artifact omitted failure output:\n%s", raw)
+	}
+	args, readErr := os.ReadFile(rendererArgs)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if !strings.Contains(string(args), "-verbose") {
+		t.Fatalf("CI_VERBOSE=1 did not reach renderer: %s", args)
+	}
+	if !strings.Contains(string(out), "renderer failed with status 7") {
+		t.Fatalf("renderer failure was not explicit:\n%s", out)
+	}
+}
+
+func TestCIGoTestLogSignalsTerminateOwnedChildren(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		signal     syscall.Signal
+		wantRC     int
+		jsonRunner bool
+	}{
+		{name: "ordinary heartbeat TERM", signal: syscall.SIGTERM, wantRC: 143},
+		{name: "ordinary heartbeat INT", signal: syscall.SIGINT, wantRC: 130},
+		{name: "JSON pipeline TERM", signal: syscall.SIGTERM, wantRC: 143, jsonRunner: true},
+		{name: "JSON pipeline INT", signal: syscall.SIGINT, wantRC: 130, jsonRunner: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			unrelated := exec.Command("sleep", "30")
+			if err := unrelated.Start(); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				_ = unrelated.Process.Kill()
+				_ = unrelated.Wait()
+			})
+			worker := filepath.Join(dir, "worker")
+			fakeGo := filepath.Join(dir, "go")
+			fakeRenderer := filepath.Join(dir, "renderer")
+			workerScript := "#!/usr/bin/env bash\nsleep 30 &\nwait\n"
+			goScript := `#!/usr/bin/env bash
+if [[ "$1" == "list" ]]; then exit 0; fi
+sleep 30 &
+wait
+`
+			rendererScript := "#!/usr/bin/env bash\nsleep 30 &\nwait\n"
+			for path, body := range map[string]string{worker: workerScript, fakeGo: goScript, fakeRenderer: rendererScript} {
+				if err := os.WriteFile(path, []byte(body), 0o700); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			var cmd *exec.Cmd
+			if tc.jsonRunner {
+				cmd = exec.Command("bash", "ci-go-test.sh", "core")
+			} else {
+				cmd = exec.Command("bash", "-c", `source ./ci-go-test.sh; run_with_heartbeat "fixture heartbeat" "$1"`, "signal-fixture", worker)
+			}
+			cmd.Env = append(os.Environ(),
+				"PATH="+dir+":"+os.Getenv("PATH"),
+				"CI_TESTLOG_RENDERER="+fakeRenderer,
+				"CI_GO_TEST_ARTIFACT_DIR="+filepath.Join(dir, "artifacts"),
+				"CI_GO_TEST_HEARTBEAT_SECONDS=30",
+			)
+			var output bytes.Buffer
+			cmd.Stdout = &output
+			cmd.Stderr = &output
+			if err := cmd.Start(); err != nil {
+				t.Fatal(err)
+			}
+			descendants := waitForDescendants(t, cmd.Process.Pid, 4)
+			if err := cmd.Process.Signal(tc.signal); err != nil {
+				t.Fatal(err)
+			}
+			err := cmd.Wait()
+			exitErr, ok := err.(*exec.ExitError)
+			if !ok || exitErr.ExitCode() != tc.wantRC {
+				t.Fatalf("wrapper exit = %v, want %d\n%s", err, tc.wantRC, output.String())
+			}
+			assertProcessesExit(t, descendants)
+			if err := unrelated.Process.Signal(syscall.Signal(0)); err != nil {
+				t.Fatalf("unrelated process was terminated: %v", err)
+			}
+		})
+	}
+}
+
+func waitForDescendants(t *testing.T, root, minimum int) []int {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		pids := descendantPIDs(t, root)
+		if len(pids) >= minimum {
+			return pids
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatalf("process %d did not start %d descendants", root, minimum)
+	return nil
+}
+
+func descendantPIDs(t *testing.T, root int) []int {
+	t.Helper()
+	out, err := exec.Command("pgrep", "-P", strconv.Itoa(root)).Output()
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
+			return nil
+		}
+		t.Fatalf("pgrep children of %d: %v", root, err)
+	}
+	var descendants []int
+	for _, field := range strings.Fields(string(out)) {
+		pid, err := strconv.Atoi(field)
+		if err != nil {
+			t.Fatalf("parse child pid %q: %v", field, err)
+		}
+		descendants = append(descendants, pid)
+		descendants = append(descendants, descendantPIDs(t, pid)...)
+	}
+	return descendants
+}
+
+func assertProcessesExit(t *testing.T, pids []int) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		var alive []int
+		for _, pid := range pids {
+			if err := syscall.Kill(pid, 0); err == nil || err == syscall.EPERM {
+				alive = append(alive, pid)
+			}
+		}
+		if len(alive) == 0 {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	var alive []int
+	for _, pid := range pids {
+		if err := syscall.Kill(pid, 0); err == nil || err == syscall.EPERM {
+			alive = append(alive, pid)
+		}
+	}
+	t.Fatalf("owned processes survived wrapper signal: %v", alive)
 }
