@@ -44,9 +44,48 @@ jobs:
               --notes-file release-notes.md
           fi
 
-  build:
+  shared-payload:
     needs: prepare
     if: always() && (needs.prepare.result == 'success' || needs.prepare.result == 'skipped')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Resolve npm cache path
+        id: npm-cache
+        shell: bash
+        run: echo "path=$(npm config get cache)" >> "$GITHUB_OUTPUT"
+      - name: Restore release npm cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.npm-cache.outputs.path }}
+          key: release-v1-npm-${{ runner.os }}-${{ hashFiles('third_party/lwc/package-lock.json', 'contrib/vscode-glade/package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            release-v1-npm-${{ runner.os }}-${{ hashFiles('third_party/lwc/package-lock.json', 'contrib/vscode-glade/package-lock.json') }}-
+      - name: Build shared release payload
+        shell: bash
+        env:
+          VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+        run: scripts/release-build.sh shared-payload
+      - name: Upload shared release payload
+        uses: actions/upload-artifact@v4
+        with:
+          name: glade-release-shared-payload
+          path: |
+            dist/glade-shared-payload.tar.gz
+            dist/glade-shared-payload.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 1
+
+  build:
+    needs: [prepare, shared-payload]
+    if: always() && needs.shared-payload.result == 'success' && (needs.prepare.result == 'success' || needs.prepare.result == 'skipped')
     strategy:
       fail-fast: false
       matrix:
@@ -71,26 +110,75 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: "1.26.4"
-      - uses: actions/setup-node@v6
+          cache: false
+      - name: Resolve Go cache paths
+        id: go-cache-paths
+        shell: bash
+        run: |
+          echo "gomod=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+          echo "gobuild=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
+      - name: Restore release Go caches
+        uses: actions/cache@v5
         with:
-          node-version: "22"
-      - name: Build release artifacts
+          path: |
+            ${{ steps.go-cache-paths.outputs.gomod }}
+            ${{ steps.go-cache-paths.outputs.gobuild }}
+          key: release-v1-go-${{ runner.os }}-${{ matrix.archive }}-${{ hashFiles('go.sum') }}-${{ github.sha }}
+          restore-keys: |
+            release-v1-go-${{ runner.os }}-${{ matrix.archive }}-${{ hashFiles('go.sum') }}-
+      - name: Download shared release payload
+        uses: actions/download-artifact@v4
+        with:
+          name: glade-release-shared-payload
+          path: .release-shared
+      - name: Verify shared release payload
+        shell: bash
+        run: |
+          expected="$(awk 'NR == 1 {print $1}' .release-shared/glade-shared-payload.tar.gz.sha256)"
+          actual="$(shasum -a 256 .release-shared/glade-shared-payload.tar.gz | awk '{print $1}')"
+          test -n "$expected"
+          test "$actual" = "$expected"
+      - name: Build platform release artifacts
         shell: bash
         env:
           VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
-        run: scripts/release-build.sh
+          RELEASE_SHARED_PAYLOAD_ARCHIVE: ${{ github.workspace }}/.release-shared/glade-shared-payload.tar.gz
+          RELEASE_SHARED_PAYLOAD_SHA256: ${{ github.workspace }}/.release-shared/glade-shared-payload.tar.gz.sha256
+        run: scripts/release-build.sh platform
+      - name: Restore CycloneDX tool
+        id: cyclonedx-cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ runner.temp }}/cyclonedx-bin
+          key: release-v1-cyclonedx-${{ runner.os }}-${{ matrix.archive }}-v1.10.0
+      - name: Install CycloneDX tool
+        if: steps.cyclonedx-cache.outputs.cache-hit != 'true'
+        shell: bash
+        env:
+          GOBIN: ${{ runner.temp }}/cyclonedx-bin
+        run: go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.10.0
       - name: Generate CycloneDX SBOM
         shell: bash
         env:
           VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
         run: |
-          go install github.com/CycloneDX/cyclonedx-gomod/cmd/cyclonedx-gomod@v1.10.0
           archive="dist/glade_${VERSION}_${{ matrix.archive }}.tar.gz"
           sbom="${archive}.sbom.json"
           extract_dir="$(mktemp -d)"
           trap 'rm -rf "$extract_dir"' EXIT
           tar -xzf "$archive" -C "$extract_dir" glade
+          export PATH="${{ runner.temp }}/cyclonedx-bin:$PATH"
           cyclonedx-gomod bin -json -version "$VERSION" -output "$sbom" "$extract_dir/glade"
+          test -s "$sbom"
+          python3 - "$sbom" <<'PY'
+          import json
+          import sys
+
+          with open(sys.argv[1], "r", encoding="utf-8") as f:
+              document = json.load(f)
+          if not isinstance(document, dict) or not document:
+              raise SystemExit("empty CycloneDX document")
+          PY
       - name: Attest platform archive
         if: startsWith(github.ref, 'refs/tags/')
         continue-on-error: true
