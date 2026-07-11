@@ -3330,6 +3330,10 @@ const dapTestTimeout = 45 * time.Second
 func TestRunDAPLaunchEmitsStopped(t *testing.T) {
 	inR, inW := io.Pipe()
 	outR, outW := io.Pipe()
+	t.Cleanup(func() {
+		_ = inW.Close()
+		_ = outR.Close()
+	})
 	done := make(chan error, 1)
 	go func() {
 		defer outW.Close()
