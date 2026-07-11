@@ -130,12 +130,22 @@ jobs:
       GOMODCACHE: /tmp/go-mod-ci-apextest-${{ matrix.shard }}
       GOCACHE: /tmp/go-build-ci-apextest-${{ matrix.shard }}
       CI_APEXTEST_ARTIFACT_DIR: ci-artifacts/apextest-${{ matrix.shard }}
+      CI_APEXTEST_HISTORY_PATH: /tmp/glade-apextest-duration-history/apextest-duration-history.json
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
         with:
           go-version: "1.26.5"
           cache: false
+      - name: Restore Apex duration history
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: /tmp/glade-apextest-duration-history
+          key: apextest-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          restore-keys: |
+            apextest-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('go.sum') }}-
+            apextest-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-
       - name: Restore Apex module cache
         uses: actions/cache@v5
         with:
@@ -164,5 +174,32 @@ jobs:
             ci-artifacts/apextest-${{ matrix.shard }}/plan.json
             ci-artifacts/apextest-${{ matrix.shard }}/selected-shard.json
             ci-artifacts/apextest-${{ matrix.shard }}/events.json
-             ci-artifacts/apextest-${{ matrix.shard }}/validation-summary.json
+            ci-artifacts/apextest-${{ matrix.shard }}/validation-summary.json
+          if-no-files-found: error
+
+  apextest-history:
+    needs: apextest
+    if: ${{ success() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download successful Apex shard evidence
+        uses: actions/download-artifact@v7
+        with:
+          pattern: apex-shard-*
+          path: /tmp/apextest-history-input
+      - name: Refresh and guard Apex duration history
+        run: scripts/ci-go-test.sh apex-history-refresh /tmp/apextest-history-input/apex-shard-0 /tmp/apextest-history-input/apex-shard-1 /tmp/glade-apextest-duration-history/apextest-duration-history.json
+      - name: Save Apex duration history
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: /tmp/glade-apextest-duration-history
+          key: apextest-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Upload Apex duration history evidence
+        uses: actions/upload-artifact@v6
+        with:
+          name: apextest-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/glade-apextest-duration-history/apextest-duration-history.json
           if-no-files-found: error

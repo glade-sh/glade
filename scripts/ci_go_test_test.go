@@ -2,7 +2,9 @@ package scripts
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,6 +15,472 @@ import (
 	"testing"
 	"time"
 )
+
+type apexHistoryFixture struct {
+	root   string
+	shards [2]string
+	output string
+}
+
+func writeJSONFixture(t *testing.T, path string, value any) {
+	t.Helper()
+	data, err := json.MarshalIndent(value, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	data = append(data, '\n')
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func newApexHistoryFixture(t *testing.T, shardElapsed [2]float64) apexHistoryFixture {
+	t.Helper()
+	fixture := apexHistoryFixture{root: t.TempDir()}
+	fixture.output = filepath.Join(fixture.root, "history", "apextest-duration-history.json")
+	names := make([]string, 279)
+	for i := range names {
+		names[i] = fmt.Sprintf("TestHistory%03d", i)
+	}
+	shardTests := [2][]string{names[:140], names[140:]}
+	shards := make([]map[string]any, 2)
+	for index := range shards {
+		regex := "^(?:" + strings.Join(shardTests[index], "|") + ")$"
+		shards[index] = map[string]any{
+			"index":                   index,
+			"tests":                   shardTests[index],
+			"estimatedDurationMillis": 0,
+			"regex":                   regex,
+		}
+	}
+	plan := map[string]any{
+		"version": 1, "package": fixturePackage, "historyUsed": false, "shards": shards,
+	}
+	for index := 0; index < 2; index++ {
+		dir := filepath.Join(fixture.root, fmt.Sprintf("apex-shard-%d", index))
+		fixture.shards[index] = dir
+		if err := os.MkdirAll(dir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "discovery.txt"), []byte(strings.Join(names, "\n")+"\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		writeJSONFixture(t, filepath.Join(dir, "plan.json"), plan)
+		writeJSONFixture(t, filepath.Join(dir, "selected-shard.json"), shards[index])
+		writeJSONFixture(t, filepath.Join(dir, "validation-summary.json"), map[string]any{
+			"valid": true, "expected": shardTests[index], "passed": shardTests[index], "errors": []string{},
+		})
+		var events strings.Builder
+		for testIndex, name := range shardTests[index] {
+			elapsed := 0.0
+			if testIndex == 0 {
+				elapsed = shardElapsed[index]
+			}
+			fmt.Fprintf(&events, "{\"Action\":\"pass\",\"Package\":%q,\"Test\":%q,\"Elapsed\":%g}\n", fixturePackage, name, elapsed)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "events.json"), []byte(events.String()), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return fixture
+}
+
+func runApexHistoryRefresh(t *testing.T, fixture apexHistoryFixture) (string, error) {
+	t.Helper()
+	cmd := exec.Command("bash", "ci-go-test.sh", "apex-history-refresh", fixture.shards[0], fixture.shards[1], fixture.output)
+	out, err := cmd.CombinedOutput()
+	return string(out), err
+}
+
+func TestCIApexDurationHistoryRefresh(t *testing.T) {
+	fixture := newApexHistoryFixture(t, [2]float64{1, 1})
+	out, err := runApexHistoryRefresh(t, fixture)
+	if err != nil {
+		t.Fatalf("refresh failed: %v\n%s", err, out)
+	}
+	data, err := os.ReadFile(fixture.output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var history struct {
+		Version  int    `json:"version"`
+		Package  string `json:"package"`
+		Complete bool   `json:"complete"`
+		Tests    []struct {
+			Name           string `json:"name"`
+			DurationMillis int64  `json:"durationMillis"`
+		} `json:"tests"`
+	}
+	if err := json.Unmarshal(data, &history); err != nil {
+		t.Fatal(err)
+	}
+	if history.Version != 1 || history.Package != fixturePackage || !history.Complete || len(history.Tests) != 279 {
+		t.Fatalf("history header/count = %+v / %d", history, len(history.Tests))
+	}
+	for i, item := range history.Tests {
+		if want := fmt.Sprintf("TestHistory%03d", i); item.Name != want {
+			t.Fatalf("history test %d = %q, want %q", i, item.Name, want)
+		}
+	}
+	if history.Tests[0].DurationMillis != 1000 || history.Tests[140].DurationMillis != 1000 {
+		t.Fatalf("history durations did not come from shard events: first=%d second=%d", history.Tests[0].DurationMillis, history.Tests[140].DurationMillis)
+	}
+}
+
+func TestCIApexDurationHistoryProducerCanonicalizesDiscovery(t *testing.T) {
+	fixture := newApexHistoryFixture(t, [2]float64{1, 1})
+	names := make([]string, 279)
+	for i := range names {
+		names[i] = fmt.Sprintf("TestHistory%03d", 278-i)
+	}
+	rawPath := filepath.Join(fixture.root, "go-test-list.txt")
+	canonicalPath := filepath.Join(fixture.root, "canonical-discovery.txt")
+	raw := strings.Join(names, "\n") + "\nok  \t" + fixturePackage + "\n"
+	if err := os.WriteFile(rawPath, []byte(raw), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("bash", "-c", `source ./ci-go-test.sh; validate_discovery "$1" "$2"`, "producer-fixture", rawPath, canonicalPath)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("discovery producer failed: %v\n%s", err, out)
+	}
+	canonical, err := os.ReadFile(canonicalPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var expected strings.Builder
+	for i := 0; i < 279; i++ {
+		fmt.Fprintf(&expected, "TestHistory%03d\n", i)
+	}
+	if string(canonical) != expected.String() {
+		t.Fatalf("producer discovery is not canonical; first lines: %q", strings.Join(strings.Split(string(canonical), "\n")[:3], "\n"))
+	}
+	for _, dir := range fixture.shards {
+		if err := os.WriteFile(filepath.Join(dir, "discovery.txt"), canonical, 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	out, err := runApexHistoryRefresh(t, fixture)
+	if err != nil {
+		t.Fatalf("refresh rejected producer-canonical discovery: %v\n%s", err, out)
+	}
+}
+
+func TestCIApexDurationHistoryRejectsInvalidEvidence(t *testing.T) {
+	mutateBothPlans := func(t *testing.T, fixture apexHistoryFixture, old, replacement string) {
+		t.Helper()
+		for _, dir := range fixture.shards {
+			path := filepath.Join(dir, "plan.json")
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			mutated := strings.Replace(string(data), old, replacement, 1)
+			if mutated == string(data) {
+				t.Fatalf("plan mutation did not replace %q", old)
+			}
+			if err := os.WriteFile(path, []byte(mutated), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	setPlanField := func(t *testing.T, fixture apexHistoryFixture, mutate func(map[string]any)) {
+		t.Helper()
+		for _, dir := range fixture.shards {
+			path := filepath.Join(dir, "plan.json")
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var plan map[string]any
+			if err := json.Unmarshal(data, &plan); err != nil {
+				t.Fatal(err)
+			}
+			mutate(plan)
+			writeJSONFixture(t, path, plan)
+		}
+	}
+	cases := map[string]func(*testing.T, apexHistoryFixture){
+		"duplicate terminal": func(t *testing.T, fixture apexHistoryFixture) {
+			path := filepath.Join(fixture.shards[0], "events.json")
+			data, _ := os.ReadFile(path)
+			data = append(data, []byte(fmt.Sprintf("{\"Action\":\"pass\",\"Package\":%q,\"Test\":\"TestHistory000\",\"Elapsed\":0}\n", fixturePackage))...)
+			_ = os.WriteFile(path, data, 0o600)
+		},
+		"missing terminal": func(t *testing.T, fixture apexHistoryFixture) {
+			path := filepath.Join(fixture.shards[0], "events.json")
+			data, _ := os.ReadFile(path)
+			lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+			_ = os.WriteFile(path, []byte(strings.Join(lines[1:], "\n")+"\n"), 0o600)
+		},
+		"failed terminal": func(t *testing.T, fixture apexHistoryFixture) {
+			path := filepath.Join(fixture.shards[0], "events.json")
+			data, _ := os.ReadFile(path)
+			_ = os.WriteFile(path, []byte(strings.Replace(string(data), `"Action":"pass"`, `"Action":"fail"`, 1)), 0o600)
+		},
+		"skipped terminal": func(t *testing.T, fixture apexHistoryFixture) {
+			path := filepath.Join(fixture.shards[0], "events.json")
+			data, _ := os.ReadFile(path)
+			_ = os.WriteFile(path, []byte(strings.Replace(string(data), `"Action":"pass"`, `"Action":"skip"`, 1)), 0o600)
+		},
+		"wrong package": func(t *testing.T, fixture apexHistoryFixture) {
+			path := filepath.Join(fixture.shards[0], "events.json")
+			data, _ := os.ReadFile(path)
+			_ = os.WriteFile(path, []byte(strings.Replace(string(data), fixturePackage, "example.invalid/apextest", 1)), 0o600)
+		},
+		"negative duration": func(t *testing.T, fixture apexHistoryFixture) {
+			path := filepath.Join(fixture.shards[0], "events.json")
+			data, _ := os.ReadFile(path)
+			_ = os.WriteFile(path, []byte(strings.Replace(string(data), `"Elapsed":1`, `"Elapsed":-1`, 1)), 0o600)
+		},
+		"nonfinite duration": func(t *testing.T, fixture apexHistoryFixture) {
+			path := filepath.Join(fixture.shards[0], "events.json")
+			data, _ := os.ReadFile(path)
+			_ = os.WriteFile(path, []byte(strings.Replace(string(data), `"Elapsed":1`, `"Elapsed":NaN`, 1)), 0o600)
+		},
+		"plan mismatch": func(t *testing.T, fixture apexHistoryFixture) {
+			path := filepath.Join(fixture.shards[1], "plan.json")
+			data, _ := os.ReadFile(path)
+			_ = os.WriteFile(path, []byte(strings.Replace(string(data), `"historyUsed": false`, `"historyUsed": true`, 1)), 0o600)
+		},
+		"discovery mismatch": func(t *testing.T, fixture apexHistoryFixture) {
+			path := filepath.Join(fixture.shards[1], "discovery.txt")
+			data, _ := os.ReadFile(path)
+			_ = os.WriteFile(path, []byte(strings.Replace(string(data), "TestHistory278", "TestHistory999", 1)), 0o600)
+		},
+		"swapped noncanonical discovery": func(t *testing.T, fixture apexHistoryFixture) {
+			for _, dir := range fixture.shards {
+				path := filepath.Join(dir, "discovery.txt")
+				data, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
+				mutated := strings.Replace(string(data), "TestHistory000\nTestHistory001", "TestHistory001\nTestHistory000", 1)
+				if err := os.WriteFile(path, []byte(mutated), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+		},
+		"invalid historyUsed type": func(t *testing.T, fixture apexHistoryFixture) {
+			mutateBothPlans(t, fixture, `"historyUsed": false`, `"historyUsed": "false"`)
+		},
+		"empty regex": func(t *testing.T, fixture apexHistoryFixture) {
+			setPlanField(t, fixture, func(plan map[string]any) {
+				plan["shards"].([]any)[0].(map[string]any)["regex"] = ""
+			})
+		},
+		"noncanonical regex": func(t *testing.T, fixture apexHistoryFixture) {
+			mutateBothPlans(t, fixture, `TestHistory000|TestHistory001`, `TestHistory001|TestHistory000`)
+		},
+		"string estimate": func(t *testing.T, fixture apexHistoryFixture) {
+			mutateBothPlans(t, fixture, `"estimatedDurationMillis": 0`, `"estimatedDurationMillis": "0"`)
+		},
+		"extra plan field": func(t *testing.T, fixture apexHistoryFixture) {
+			mutateBothPlans(t, fixture, `"historyUsed": false,`, `"historyUsed": false, "unexpected": true,`)
+		},
+		"invalid summary": func(t *testing.T, fixture apexHistoryFixture) {
+			writeJSONFixture(t, filepath.Join(fixture.shards[0], "validation-summary.json"), map[string]any{"valid": false})
+		},
+		"extra summary field": func(t *testing.T, fixture apexHistoryFixture) {
+			path := filepath.Join(fixture.shards[0], "validation-summary.json")
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			mutated := strings.Replace(string(data), `"valid": true`, `"valid": true, "unexpected": true`, 1)
+			if err := os.WriteFile(path, []byte(mutated), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		},
+		"selected union duplicate": func(t *testing.T, fixture apexHistoryFixture) {
+			path := filepath.Join(fixture.shards[1], "selected-shard.json")
+			data, _ := os.ReadFile(path)
+			_ = os.WriteFile(path, []byte(strings.Replace(string(data), "TestHistory140", "TestHistory000", 1)), 0o600)
+		},
+	}
+	for name, mutate := range cases {
+		t.Run(name, func(t *testing.T) {
+			fixture := newApexHistoryFixture(t, [2]float64{1, 1})
+			mutate(t, fixture)
+			out, err := runApexHistoryRefresh(t, fixture)
+			if err == nil {
+				t.Fatalf("invalid evidence was accepted\n%s", out)
+			}
+			if _, statErr := os.Stat(fixture.output); !os.IsNotExist(statErr) {
+				t.Fatalf("refresh published history on failure: %v", statErr)
+			}
+		})
+	}
+}
+
+func TestCIApexDurationHistoryRejectsAggregateOverflow(t *testing.T) {
+	// Every individual duration is below MaxInt64 milliseconds, while 279 of
+	// them overflow the schema-v1 aggregate. Equal per-test values keep the two
+	// shard elapsed totals balanced, isolating the overflow guard.
+	fixture := newApexHistoryFixture(t, [2]float64{})
+	for _, dir := range fixture.shards {
+		selectedData, err := os.ReadFile(filepath.Join(dir, "selected-shard.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var selected struct {
+			Tests []string `json:"tests"`
+		}
+		if err := json.Unmarshal(selectedData, &selected); err != nil {
+			t.Fatal(err)
+		}
+		var events strings.Builder
+		for _, name := range selected.Tests {
+			fmt.Fprintf(&events, "{\"Action\":\"pass\",\"Package\":%q,\"Test\":%q,\"Elapsed\":40000000000000}\n", fixturePackage, name)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "events.json"), []byte(events.String()), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	out, err := runApexHistoryRefresh(t, fixture)
+	if err == nil {
+		t.Fatalf("aggregate duration overflow was accepted\n%s", out)
+	}
+	if _, statErr := os.Stat(fixture.output); !os.IsNotExist(statErr) {
+		t.Fatalf("overflow refresh published history: %v", statErr)
+	}
+}
+
+func TestCIApexDurationHistoryAcceptsExactAggregateLimit(t *testing.T) {
+	fixture := newApexHistoryFixture(t, [2]float64{})
+	const maxInt64 = int64(^uint64(0) >> 1)
+	// Keep the large seconds value exactly representable as float64, calculate
+	// the generator's millisecond rounding, then fill the small remainder with
+	// a second event in each shard.
+	seconds := maxInt64/2000 - 10
+	baseMillis := int64(math.Floor(float64(seconds)*1000 + 0.5))
+	remainder := maxInt64 - 2*baseMillis
+	if remainder < 0 || remainder > 100000 {
+		t.Fatalf("unexpected exact-boundary fixture remainder %d", remainder)
+	}
+	extra := [2]int64{remainder / 2, remainder - remainder/2}
+	for index, dir := range fixture.shards {
+		selectedData, err := os.ReadFile(filepath.Join(dir, "selected-shard.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var selected struct {
+			Tests []string `json:"tests"`
+		}
+		if err := json.Unmarshal(selectedData, &selected); err != nil {
+			t.Fatal(err)
+		}
+		var events strings.Builder
+		for testIndex, name := range selected.Tests {
+			elapsed := "0"
+			if testIndex == 0 {
+				elapsed = strconv.FormatInt(seconds, 10)
+			} else if testIndex == 1 {
+				elapsed = strconv.FormatFloat(float64(extra[index])/1000, 'f', 3, 64)
+			}
+			fmt.Fprintf(&events, "{\"Action\":\"pass\",\"Package\":%q,\"Test\":%q,\"Elapsed\":%s}\n", fixturePackage, name, elapsed)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "events.json"), []byte(events.String()), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	out, err := runApexHistoryRefresh(t, fixture)
+	if err != nil {
+		t.Fatalf("exact MaxInt64 aggregate was rejected: %v\n%s", err, out)
+	}
+	data, err := os.ReadFile(fixture.output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var history struct {
+		Tests []struct {
+			DurationMillis int64 `json:"durationMillis"`
+		} `json:"tests"`
+	}
+	if err := json.Unmarshal(data, &history); err != nil {
+		t.Fatal(err)
+	}
+	var total uint64
+	for _, test := range history.Tests {
+		total += uint64(test.DurationMillis)
+	}
+	if total != uint64(maxInt64) {
+		t.Fatalf("history duration total = %d, want %d", total, uint64(maxInt64))
+	}
+}
+
+func TestCIApexDurationHistoryImbalanceGuard(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		elapsed [2]float64
+		wantErr bool
+	}{
+		{name: "balanced", elapsed: [2]float64{1, 1}},
+		{name: "exact 1.5 median boundary", elapsed: [2]float64{3, 1}},
+		{name: "above 1.5 median", elapsed: [2]float64{3.001, 1}, wantErr: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fixture := newApexHistoryFixture(t, tc.elapsed)
+			out, err := runApexHistoryRefresh(t, fixture)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("refresh error = %v, wantErr %v\n%s", err, tc.wantErr, out)
+			}
+		})
+	}
+}
+
+func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
+	scriptData, err := os.ReadFile("ci-go-test.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	script := string(scriptData)
+	for _, want := range []string{
+		`if [[ -s "${CI_APEXTEST_HISTORY_PATH:-}" ]]`,
+		`planner+=(--history "${CI_APEXTEST_HISTORY_PATH}")`,
+	} {
+		if !strings.Contains(script, want) {
+			t.Errorf("planner history input wiring missing %q", want)
+		}
+	}
+
+	workflowPath := filepath.Join("..", ".github", "workflows", "ci.yml")
+	data, err := os.ReadFile(workflowPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	workflow := string(data)
+	jobs := workflowJobBlocks(t, workflow)
+	matrix := jobs["apextest"]
+	refresh := jobs["apextest-history"]
+	for _, want := range []string{
+		"actions/cache/restore@v4", "apextest-duration-history-v1", "runner.os", "runner.arch", "1.26.5", "hashFiles('go.sum')",
+		"CI_APEXTEST_HISTORY_PATH", "github.sha", "github.run_id", "github.run_attempt",
+	} {
+		if !strings.Contains(matrix, want) {
+			t.Errorf("matrix history restore missing %q", want)
+		}
+	}
+	if strings.Contains(matrix, "actions/cache/save") {
+		t.Error("matrix job must be read-only for duration history")
+	}
+	for _, want := range []string{
+		"needs: apextest", "if: ${{ success() }}", "actions/download-artifact@v7", "apex-shard-*", "scripts/ci-go-test.sh apex-history-refresh",
+		"actions/cache/save@v4", "actions/upload-artifact@v6", "apextest-duration-history-v1", "github.sha", "github.run_id", "github.run_attempt",
+	} {
+		if !strings.Contains(refresh, want) {
+			t.Errorf("single-writer refresh job missing %q", want)
+		}
+	}
+	if strings.Count(workflow, "actions/cache/save@v4") != 3 {
+		t.Errorf("cache save count = %d, want existing two plus one history writer", strings.Count(workflow, "actions/cache/save@v4"))
+	}
+	if strings.Count(workflow, "shard: [0, 1]") != 1 {
+		t.Error("history work changed the two-native-shard topology")
+	}
+	if matches, _ := filepath.Glob(filepath.Join("..", "**", "*duration-history*.json")); len(matches) != 0 {
+		t.Fatalf("tracked duration history candidates: %v", matches)
+	}
+}
 
 func TestCIGoCacheReportsMissingDirectoriesAsZero(t *testing.T) {
 	readWorkflow := func(name string) string {

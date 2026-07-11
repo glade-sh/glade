@@ -289,6 +289,7 @@ if not names:
     raise SystemExit("no Apex tests discovered")
 if len(names) != len(set(names)):
     raise SystemExit("duplicate Apex test name")
+names.sort()
 with open(discovery_path, "w", encoding="utf-8") as target:
     target.write("\n".join(names) + "\n")
 PY
@@ -458,10 +459,14 @@ run_apextest_matrix_shard() {
 	validate_discovery "${discovery_raw}" "${discovery}"
 
 	if [[ -n "${CI_SHARD_PLANNER:-}" ]]; then
-		"${CI_SHARD_PLANNER}" --shards 2 --tests "${discovery}" >"${plan}"
+		planner=("${CI_SHARD_PLANNER}" --shards 2 --tests "${discovery}")
 	else
-		go run ./scripts/internal/cishard --shards 2 --tests "${discovery}" >"${plan}"
+		planner=(go run ./scripts/internal/cishard --shards 2 --tests "${discovery}")
 	fi
+	if [[ -s "${CI_APEXTEST_HISTORY_PATH:-}" ]]; then
+		planner+=(--history "${CI_APEXTEST_HISTORY_PATH}")
+	fi
+	"${planner[@]}" >"${plan}"
 	select_and_validate_shard "${discovery}" "${plan}" "${index}" "${selected}"
 	regex="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["regex"])' "${selected}")"
 
@@ -479,6 +484,210 @@ run_apextest_matrix_shard() {
 	return "${validation_rc}"
 }
 
+refresh_apextest_history() {
+	local shard_zero="${1:-}"
+	local shard_one="${2:-}"
+	local output="${3:-}"
+	if [[ -z "${shard_zero}" || -z "${shard_one}" || -z "${output}" ]]; then
+		echo "usage: scripts/ci-go-test.sh apex-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT" >&2
+		return 2
+	fi
+	python3 - "${shard_zero}" "${shard_one}" "${output}" <<'PY'
+import json
+import math
+import os
+import re
+import sys
+import tempfile
+
+PACKAGE = "github.com/glade-sh/glade/internal/apextest"
+TEST_COUNT = 279
+TEST_NAME = re.compile(r"Test[A-Za-z0-9_]*\Z")
+MAX_MILLIS = (1 << 63) - 1
+
+shard_dirs = sys.argv[1:3]
+output_path = sys.argv[3]
+try:
+    os.unlink(output_path)
+except FileNotFoundError:
+    pass
+
+def reject(message):
+    raise ValueError(message)
+
+def no_duplicate_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            reject(f"duplicate JSON key {key!r}")
+        result[key] = value
+    return result
+
+def load_json(path):
+    with open(path, encoding="utf-8") as source:
+        return json.load(source, object_pairs_hook=no_duplicate_object)
+
+def require_exact_keys(value, keys, label):
+    if not isinstance(value, dict) or set(value) != set(keys):
+        reject(f"{label} does not have the exact schema")
+
+def is_integer(value):
+    return isinstance(value, int) and not isinstance(value, bool)
+
+def load_discovery(path):
+    with open(path, encoding="utf-8") as source:
+        raw = source.read()
+    names = raw.splitlines()
+    if len(names) != TEST_COUNT:
+        reject(f"discovery contains {len(names)} tests, want {TEST_COUNT}")
+    if any(not TEST_NAME.fullmatch(name) for name in names):
+        reject("discovery contains an invalid top-level test name")
+    if len(set(names)) != len(names):
+        reject("discovery contains duplicate tests")
+    if names != sorted(names) or raw != "\n".join(names) + "\n":
+        reject("discovery is not in exact canonical order and format")
+    return names
+
+def validate_shard(shard, index, label):
+    require_exact_keys(shard, ("index", "tests", "estimatedDurationMillis", "regex"), label)
+    if not is_integer(shard["index"]) or shard["index"] != index:
+        reject(f"{label} has an invalid shard index")
+    tests = shard["tests"]
+    if not isinstance(tests, list) or not tests or tests != sorted(tests):
+        reject(f"{label} has an empty or non-canonical test list")
+    if any(not isinstance(name, str) or not TEST_NAME.fullmatch(name) for name in tests):
+        reject(f"{label} has an invalid top-level test name")
+    estimate = shard["estimatedDurationMillis"]
+    if not is_integer(estimate) or estimate < 0:
+        reject(f"{label} has an invalid estimated duration")
+    canonical_regex = "^(?:" + "|".join(re.escape(name) for name in tests) + ")$"
+    if not isinstance(shard["regex"], str) or shard["regex"] != canonical_regex:
+        reject(f"{label} does not have the canonical exact-test regex")
+    return tests
+
+try:
+    discoveries = [load_discovery(os.path.join(path, "discovery.txt")) for path in shard_dirs]
+    if discoveries[0] != discoveries[1]:
+        reject("shard discoveries do not match")
+    discovery = discoveries[0]
+
+    plans = [load_json(os.path.join(path, "plan.json")) for path in shard_dirs]
+    if plans[0] != plans[1]:
+        reject("shard plans do not match")
+    plan = plans[0]
+    require_exact_keys(plan, ("version", "package", "historyUsed", "shards"), "plan")
+    if not is_integer(plan["version"]) or plan["version"] != 1 or not isinstance(plan["package"], str) or plan["package"] != PACKAGE:
+        reject("plan has wrong schema or package")
+    if not isinstance(plan["historyUsed"], bool):
+        reject("plan historyUsed is not boolean")
+    shards = plan["shards"]
+    if not isinstance(shards, list) or len(shards) != 2:
+        reject("plan does not contain exactly two shards")
+    planned = []
+    for index, shard in enumerate(shards):
+        planned.extend(validate_shard(shard, index, f"plan shard {index}"))
+    if len(planned) != len(set(planned)) or sorted(planned) != discovery:
+        reject("plan union does not exactly match discovery")
+
+    durations = {}
+    total_duration_millis = 0
+    shard_elapsed = []
+    for index, shard_dir in enumerate(shard_dirs):
+        selected = load_json(os.path.join(shard_dir, "selected-shard.json"))
+        validate_shard(selected, index, f"selected shard {index}")
+        if selected != shards[index]:
+            reject(f"selected shard {index} does not match the canonical plan")
+        selected_tests = selected["tests"]
+        summary = load_json(os.path.join(shard_dir, "validation-summary.json"))
+        require_exact_keys(summary, ("valid", "expected", "passed", "errors"), f"shard {index} validation summary")
+        if summary["valid"] is not True:
+            reject(f"shard {index} validation summary is not valid")
+        if (not isinstance(summary["expected"], list) or
+                any(not isinstance(name, str) for name in summary["expected"]) or
+                not isinstance(summary["passed"], list) or
+                any(not isinstance(name, str) for name in summary["passed"]) or
+                not isinstance(summary["errors"], list) or
+                any(not isinstance(error, str) for error in summary["errors"]) or
+                summary["errors"] != [] or
+                summary["expected"] != selected_tests or
+                summary["passed"] != selected_tests):
+            reject(f"shard {index} validation summary does not exactly match its selection")
+
+        terminal = {}
+        with open(os.path.join(shard_dir, "events.json"), encoding="utf-8") as source:
+            for line_number, line in enumerate(source, 1):
+                if not line.strip():
+                    continue
+                event = json.loads(line, object_pairs_hook=no_duplicate_object)
+                if not isinstance(event, dict):
+                    reject(f"shard {index} event {line_number} is not an object")
+                if event.get("Package") != PACKAGE:
+                    reject(f"shard {index} event {line_number} has the wrong package")
+                name = event.get("Test")
+                action = event.get("Action")
+                if not isinstance(name, str) or "/" in name or action not in ("pass", "fail", "skip"):
+                    continue
+                terminal.setdefault(name, []).append(event)
+
+        if set(terminal) != set(selected_tests):
+            reject(f"shard {index} terminal test set does not match its selection")
+        elapsed_total = 0.0
+        for name in selected_tests:
+            events = terminal[name]
+            if len(events) != 1 or events[0].get("Action") != "pass":
+                reject(f"shard {index} test {name} does not have one passing terminal result")
+            elapsed = events[0].get("Elapsed")
+            if isinstance(elapsed, bool) or not isinstance(elapsed, (int, float)) or not math.isfinite(elapsed) or elapsed < 0:
+                reject(f"shard {index} test {name} has an invalid duration")
+            millis = math.floor(elapsed * 1000 + 0.5)
+            if millis > MAX_MILLIS:
+                reject(f"shard {index} test {name} duration overflows schema v1")
+            if millis > MAX_MILLIS - total_duration_millis:
+                reject("duration total overflows schema v1 int64")
+            total_duration_millis += millis
+            durations[name] = millis
+            elapsed_total += elapsed
+        if not math.isfinite(elapsed_total):
+            reject(f"shard {index} elapsed total is not finite")
+        shard_elapsed.append(elapsed_total)
+
+    if len(durations) != TEST_COUNT or sorted(durations) != discovery:
+        reject("passing terminal union does not exactly match all discovered tests")
+    # With two shards, median is their arithmetic mean. The exact 1.5x
+    # boundary is accepted; only a strict excess fails the refresh.
+    median = (shard_elapsed[0] + shard_elapsed[1]) / 2.0
+    limit = 1.5 * median
+    for index, elapsed in enumerate(shard_elapsed):
+        if elapsed > limit:
+            reject(f"shard {index} elapsed {elapsed:.6f}s exceeds 1.5x two-shard median {median:.6f}s")
+
+    history = {
+        "version": 1,
+        "package": PACKAGE,
+        "complete": True,
+        "tests": [{"name": name, "durationMillis": durations[name]} for name in discovery],
+    }
+    output_dir = os.path.dirname(output_path) or "."
+    os.makedirs(output_dir, exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(prefix=".apextest-duration-history.", dir=output_dir, text=True)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as target:
+            json.dump(history, target, sort_keys=True, indent=2, allow_nan=False)
+            target.write("\n")
+        os.replace(temporary, output_path)
+    except BaseException:
+        try:
+            os.unlink(temporary)
+        except FileNotFoundError:
+            pass
+        raise
+    print(f"[ci] Apex duration history refreshed: tests={TEST_COUNT} shard_elapsed={shard_elapsed} median={median:.6f}s")
+except Exception as error:
+    print(f"[ci] Apex duration history refresh rejected: {error}", file=sys.stderr)
+    raise SystemExit(1)
+PY
+}
+
 main() {
 	case "${1:-test}" in
 		test)
@@ -493,8 +702,11 @@ main() {
 		apex-shard)
 			run_apextest_matrix_shard "${2:-}"
 			;;
+		apex-history-refresh)
+			refresh_apextest_history "${2:-}" "${3:-}" "${4:-}"
+			;;
 		*)
-			echo "usage: scripts/ci-go-test.sh [core|test|race|apex-shard 0|1]" >&2
+			echo "usage: scripts/ci-go-test.sh [core|test|race|apex-shard 0|1|apex-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT]" >&2
 			return 2
 			;;
 	esac
