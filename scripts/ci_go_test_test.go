@@ -162,7 +162,7 @@ func TestCIGoCacheOwnership(t *testing.T) {
 		}
 		for _, key := range keys {
 			for _, dimension := range []string{
-				"cache-v1", "1.26.4", "runner.os", "runner.arch", sumExpression,
+				"cache-v1", "1.26.5", "runner.os", "runner.arch", sumExpression,
 				"github.sha", "github.run_id", "github.run_attempt",
 			} {
 				if !strings.Contains(key, dimension) {
@@ -196,7 +196,7 @@ func TestCIGoCacheOwnership(t *testing.T) {
 	if got := strings.Count(security, "ci-test-${{ hashFiles('go.sum') }}-"); got != 6 {
 		t.Errorf("security.yml digest-scoped ci-test restore prefixes = %d, want 6", got)
 	}
-	if got := strings.Count(security, "1.26.4-ci-test-"); got != 12 {
+	if got := strings.Count(security, "1.26.5-ci-test-"); got != 12 {
 		t.Errorf("security.yml ci-test restore prefixes = %d, want 12", got)
 	}
 
@@ -314,10 +314,10 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	coverageMarkers := map[string][]string{
 		"govulncheck":       {"go run golang.org/x/vuln/cmd/govulncheck@latest ./..."},
 		"codeql":            {"actions: read", "contents: read", "security-events: write"},
-		"gosec":             {"contents: read", "security-events: write", gosecPin, "args: -no-fail -fmt sarif -out gosec.sarif ./...", "github/codeql-action/upload-sarif@v4", "sarif_file: gosec.sarif"},
+		"gosec":             {"actions: read", "contents: read", "security-events: write", gosecPin, "args: -no-fail -fmt sarif -out gosec.sarif ./...", "github/codeql-action/upload-sarif@v4", "sarif_file: gosec.sarif"},
 		"npm-audit":         {"actions/setup-node@v6", `node-version: "22"`, "npm audit --omit=dev --audit-level=high", "working-directory: third_party/lwc", "working-directory: contrib/vscode-glade"},
 		"dependency-review": {"if: github.event_name == 'pull_request'", "contents: read", "actions/dependency-review-action@v5", "fail-on-severity: high"},
-		"scorecard":         {"contents: read", "id-token: write", "security-events: write", scorecardPin, "results_file: scorecard.sarif", "results_format: sarif", "publish_results: true", "github/codeql-action/upload-sarif@v4", "sarif_file: scorecard.sarif"},
+		"scorecard":         {"actions: read", "contents: read", "id-token: write", "security-events: write", scorecardPin, "results_file: scorecard.sarif", "results_format: sarif", "publish_results: true", "github/codeql-action/upload-sarif@v4", "sarif_file: scorecard.sarif"},
 	}
 	for jobName, markers := range coverageMarkers {
 		for _, marker := range markers {
@@ -536,7 +536,7 @@ func TestCIGoTestWrapperIsWired(t *testing.T) {
 	for _, want := range []string{
 		"timeout-minutes: 30",
 		"GOMAXPROCS: \"2\"",
-		"go-version: \"1.26.4\"",
+		"go-version: \"1.26.5\"",
 		"actions/checkout@v6",
 		"client-id: ${{ vars.GLADE_APP_CLIENT_ID }}",
 		"actions/setup-go@v6",
@@ -547,8 +547,8 @@ func TestCIGoTestWrapperIsWired(t *testing.T) {
 		"shard: [0, 1]",
 		"cache: false",
 		"ci-apextest-${{ matrix.shard }}",
-		"go-mod-v1-1.26.4-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
-		"go-build-v1-1.26.4-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+		"go-mod-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+		"go-build-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
 		"scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
 		"if: always()",
 		"actions/upload-artifact@v6",

@@ -41,7 +41,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.26.4"
+          go-version: "1.26.5"
           cache: false
       - name: Restore Go module cache
         id: restore-go-mod-cache
@@ -49,10 +49,10 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.4-ci-test-${{ hashFiles('glade/go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('glade/go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.4-ci-test-${{ hashFiles('glade/go.sum') }}-
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.4-ci-test-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('glade/go.sum') }}-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-
       - name: Report Go module cache restore
         env:
           MATCHED_KEY: ${{ steps.restore-go-mod-cache.outputs.cache-matched-key }}
@@ -73,10 +73,10 @@ jobs:
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.4-ci-test-${{ hashFiles('glade/go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('glade/go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.4-ci-test-${{ hashFiles('glade/go.sum') }}-
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.4-ci-test-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('glade/go.sum') }}-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-
       - name: Report Go build cache restore
         env:
           MATCHED_KEY: ${{ steps.restore-go-build-cache.outputs.cache-matched-key }}
@@ -134,22 +134,22 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.26.4"
+          go-version: "1.26.5"
           cache: false
       - name: Restore Apex module cache
         uses: actions/cache@v5
         with:
           path: ${{ env.GOMODCACHE }}
-          key: go-mod-v1-1.26.4-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: go-mod-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-mod-v1-1.26.4-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-
+            go-mod-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-
       - name: Restore Apex build cache
         uses: actions/cache@v5
         with:
           path: ${{ env.GOCACHE }}
-          key: go-build-v1-1.26.4-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: go-build-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-build-v1-1.26.4-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-
+            go-build-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-
       - name: Run Apex shard
         run: scripts/ci-go-test.sh apex-shard "${{ matrix.shard }}"
       - name: Upload Apex shard evidence

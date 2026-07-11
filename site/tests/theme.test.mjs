@@ -532,11 +532,11 @@ test("security trust surface is public, checked, and release-backed", () => {
   assert.match(securityWorkflow, /working-directory: third_party\/lwc/);
   assert.match(securityWorkflow, /working-directory: contrib\/vscode-glade/);
   assert.match(securityWorkflow, /actions\/dependency-review-action@v/);
-  assert.match(securityWorkflow, /ossf\/scorecard-action@v/);
+  assert.match(securityWorkflow, /ossf\/scorecard-action@[0-9a-f]{40}/);
   assert.match(securityWorkflow, /publish_results: true/);
 
-  assert.match(ciWorkflow, /go-version: "1\.26\.4"/);
-  assert.match(releaseWorkflow, /go-version: "1\.26\.4"/);
+  assert.match(ciWorkflow, /go-version: "1\.26\.5"/);
+  assert.match(releaseWorkflow, /go-version: "1\.26\.5"/);
   assert.match(releaseWorkflow, /cyclonedx-gomod/);
   assert.match(releaseWorkflow, /tar -xzf "\$archive" -C "\$extract_dir" glade/);
   assert.match(releaseWorkflow, /cyclonedx-gomod bin -json -version "\$VERSION" -output "\$sbom" "\$extract_dir\/glade"/);
