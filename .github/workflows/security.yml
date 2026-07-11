@@ -138,7 +138,14 @@ jobs:
       - uses: github/codeql-action/init@v4
         with:
           languages: go
-          queries: +security-extended
+          config: |
+            queries:
+              - uses: security-extended
+            query-filters:
+              # This query alone exceeded the 60-minute job timeout after the
+              # other 36 queries completed in about one minute (run 29155739678).
+              - exclude:
+                  id: go/allocation-size-overflow
           build-mode: manual
       - name: Build Glade for CodeQL
         run: go build -o "${RUNNER_TEMP}/glade-codeql" ./cmd/glade

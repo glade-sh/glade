@@ -282,7 +282,9 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	for _, want := range []string{
 		"timeout-minutes: 60",
 		"languages: go",
-		"queries: +security-extended",
+		"config: |",
+		"- uses: security-extended",
+		"id: go/allocation-size-overflow",
 		"build-mode: manual",
 		`run: go build -o "${RUNNER_TEMP}/glade-codeql" ./cmd/glade`,
 		"github/codeql-action/init@v4",
@@ -291,6 +293,9 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		if !strings.Contains(codeql, want) {
 			t.Errorf("codeql job missing %q", want)
 		}
+	}
+	if strings.Contains(codeql, "queries: +security-extended") {
+		t.Error("codeql job must use inline config so the pathological allocation-size query can be filtered")
 	}
 	if strings.Contains(codeql, "github/codeql-action/autobuild@") {
 		t.Error("codeql job must not use autobuild")

@@ -524,7 +524,8 @@ test("security trust surface is public, checked, and release-backed", () => {
   assert.match(securityWorkflow, /name: Security/);
   assert.match(securityWorkflow, /golang\.org\/x\/vuln\/cmd\/govulncheck@latest/);
   assert.match(securityWorkflow, /github\/codeql-action\/init@v/);
-  assert.match(securityWorkflow, /queries: \+security-extended/);
+  assert.match(securityWorkflow, /- uses: security-extended/);
+  assert.match(securityWorkflow, /id: go\/allocation-size-overflow/);
   assert.match(securityWorkflow, /github\/codeql-action\/analyze@v/);
   assert.match(securityWorkflow, /securego\/gosec@/);
   assert.match(securityWorkflow, /upload-sarif/);

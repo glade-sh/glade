@@ -20,7 +20,7 @@ release assets.
 | --- | --- |
 | OpenSSF Scorecard | Repository posture; public badge after the repository is public. |
 | govulncheck | Reachable Go vulnerabilities in modules and the Go standard library. |
-| CodeQL | GitHub code scanning for Go with the security-extended query suite. |
+| CodeQL | GitHub code scanning for Go with the security-extended query suite. The `go/allocation-size-overflow` query is excluded because it does not complete within the CI job limit on this codebase. |
 | gosec | Go source-pattern findings uploaded as SARIF. |
 | npm audit | High-severity production dependency findings in packaged JavaScript. |
 | Dependency Review | Pull requests that add vulnerable dependencies. |
