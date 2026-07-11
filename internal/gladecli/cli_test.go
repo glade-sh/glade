@@ -744,10 +744,28 @@ func TestRenderIsNotPublicCommand(t *testing.T) {
 	}
 }
 
+func testPluginsCommandConfig(t *testing.T) pluginsCommandConfig {
+	t.Helper()
+	return pluginsCommandConfig{
+		storeRoot:   t.TempDir(),
+		registryURL: pluginhost.DefaultRegistryURL,
+		ci:          false,
+	}
+}
+
+func runPluginsForTest(ctx context.Context, args []string, stdout, stderr io.Writer, config pluginsCommandConfig) int {
+	if err := runPluginsWithConfig(ctx, args, stdout, stderr, config); err != nil {
+		writeCommandError(stderr, "plugins", err)
+		return 1
+	}
+	return 0
+}
+
 func TestPluginsListEmpty(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "list"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"list"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
@@ -757,8 +775,10 @@ func TestPluginsListEmpty(t *testing.T) {
 }
 
 func TestPluginsListJSONIncludesEditorMetadata(t *testing.T) {
+	t.Parallel()
 	home := t.TempDir()
-	t.Setenv("GLADE_HOME", home)
+	config := testPluginsCommandConfig(t)
+	config.storeRoot = home
 	manifestPath := filepath.Join(home, "plugins", "compat", "0.1.0", "plugin.json")
 	if err := os.MkdirAll(filepath.Dir(manifestPath), 0o755); err != nil {
 		t.Fatal(err)
@@ -774,7 +794,7 @@ func TestPluginsListJSONIncludesEditorMetadata(t *testing.T) {
 	}
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "list", "--json"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"list", "--json"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("list exit=%d stderr=%s", code, stderr.String())
 	}
@@ -829,11 +849,13 @@ func TestPluginsListJSONIncludesEditorMetadata(t *testing.T) {
 }
 
 func TestPluginsListJSONIncludesLinkedExecutableEditorMetadata(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS == "windows" {
 		t.Skip("shell helper uses sh")
 	}
 	home := t.TempDir()
-	t.Setenv("GLADE_HOME", home)
+	config := testPluginsCommandConfig(t)
+	config.storeRoot = home
 	exe := filepath.Join(home, "glade-plugin-compat")
 	script := `#!/bin/sh
 if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
@@ -846,13 +868,13 @@ fi
 	}
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "link", "--exec", exe}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"link", "--exec", exe}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("link exit=%d stderr=%s", code, stderr.String())
 	}
 	stdout.Reset()
 	stderr.Reset()
-	code = Run(context.Background(), []string{"plugins", "list", "--json"}, &stdout, &stderr)
+	code = runPluginsForTest(context.Background(), []string{"list", "--json"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("list exit=%d stderr=%s", code, stderr.String())
 	}
@@ -979,8 +1001,10 @@ func bestEffortKillCLIRecordedPID(path string) {
 }
 
 func TestPluginsListAndWhichUseCanonicalIdentity(t *testing.T) {
+	t.Parallel()
 	home := t.TempDir()
-	t.Setenv("GLADE_HOME", home)
+	config := testPluginsCommandConfig(t)
+	config.storeRoot = home
 	statePath := filepath.Join(home, "plugins", "installed.json")
 	if err := os.MkdirAll(filepath.Dir(statePath), 0o755); err != nil {
 		t.Fatal(err)
@@ -990,7 +1014,7 @@ func TestPluginsListAndWhichUseCanonicalIdentity(t *testing.T) {
 	}
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "list"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"list"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("list exit=%d stderr=%s", code, stderr.String())
 	}
@@ -1000,7 +1024,7 @@ func TestPluginsListAndWhichUseCanonicalIdentity(t *testing.T) {
 
 	stdout.Reset()
 	stderr.Reset()
-	code = Run(context.Background(), []string{"plugins", "which", "compat"}, &stdout, &stderr)
+	code = runPluginsForTest(context.Background(), []string{"which", "compat"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("which exit=%d stderr=%s", code, stderr.String())
 	}
@@ -1010,11 +1034,13 @@ func TestPluginsListAndWhichUseCanonicalIdentity(t *testing.T) {
 }
 
 func TestPluginsDoctorJSON(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS == "windows" {
 		t.Skip("shell helper uses sh")
 	}
 	home := t.TempDir()
-	t.Setenv("GLADE_HOME", home)
+	config := testPluginsCommandConfig(t)
+	config.storeRoot = home
 	exe := filepath.Join(home, "glade-plugin-compat")
 	script := `#!/bin/sh
 if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
@@ -1035,7 +1061,7 @@ fi
 	}
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "doctor", "--json"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"doctor", "--json"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("doctor exit=%d stderr=%s", code, stderr.String())
 	}
@@ -1057,11 +1083,13 @@ fi
 }
 
 func TestPluginsLinkListsPlugin(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS == "windows" {
 		t.Skip("shell helper uses sh")
 	}
 	home := t.TempDir()
-	t.Setenv("GLADE_HOME", home)
+	config := testPluginsCommandConfig(t)
+	config.storeRoot = home
 	exe := filepath.Join(home, "glade-plugin-compat")
 	script := `#!/bin/sh
 if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
@@ -1073,13 +1101,13 @@ fi
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "link", "--exec", exe}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"link", "--exec", exe}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("link exit=%d stderr=%s", code, stderr.String())
 	}
 	stdout.Reset()
 	stderr.Reset()
-	code = Run(context.Background(), []string{"plugins", "list"}, &stdout, &stderr)
+	code = runPluginsForTest(context.Background(), []string{"list"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("list exit=%d stderr=%s", code, stderr.String())
 	}
@@ -1089,11 +1117,12 @@ fi
 }
 
 func TestPluginsInstallMissingArchiveDoesNotFetchRegistry(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
-	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", "http://127.0.0.1:1/index.json")
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
+	config.registryURL = "http://127.0.0.1:1/index.json"
 	var stdout, stderr bytes.Buffer
 
-	code := Run(context.Background(), []string{"plugins", "install", "./missing-plugin.tar.gz"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"install", "./missing-plugin.tar.gz"}, &stdout, &stderr, config)
 	if code != 1 {
 		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
 	}
@@ -1106,15 +1135,16 @@ func TestPluginsInstallMissingArchiveDoesNotFetchRegistry(t *testing.T) {
 }
 
 func TestPluginsSearchAndInfoUseRegistry(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `{"version":1,"plugins":[{"name":"@glade/compat","aliases":["compat"],"version":"0.1.0","publisher":"glade","trust":"first-party","summary":"Compatibility fixtures.","commands":["compat","surface"],"docsURL":"https://glade.sh/guide/plugins/compat","assets":[{"os":%q,"arch":%q,"url":"https://example.test/compat.tar.gz","sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]}]}`, runtime.GOOS, runtime.GOARCH)
 	}))
 	defer server.Close()
-	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", server.URL)
+	config.registryURL = server.URL
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "search", "surface"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"search", "surface"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("search exit=%d stderr=%s", code, stderr.String())
 	}
@@ -1124,7 +1154,7 @@ func TestPluginsSearchAndInfoUseRegistry(t *testing.T) {
 
 	stdout.Reset()
 	stderr.Reset()
-	code = Run(context.Background(), []string{"plugins", "info", "@glade/compat"}, &stdout, &stderr)
+	code = runPluginsForTest(context.Background(), []string{"info", "@glade/compat"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("info exit=%d stderr=%s", code, stderr.String())
 	}
@@ -1134,15 +1164,16 @@ func TestPluginsSearchAndInfoUseRegistry(t *testing.T) {
 }
 
 func TestPluginsAvailableListsRegistry(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `{"version":1,"plugins":[{"name":"@glade/compat","aliases":["compat"],"version":"0.1.0","publisher":"glade","trust":"first-party","summary":"Compatibility fixtures.","commands":["compat","surface"],"assets":[{"os":%q,"arch":%q,"url":"https://example.test/compat.tar.gz","sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]},{"name":"@glade/performance","aliases":["performance"],"version":"0.1.0","publisher":"glade","trust":"first-party","summary":"Performance scans.","commands":["performance"],"assets":[{"os":%q,"arch":%q,"url":"https://example.test/performance.tar.gz","sha256":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}]}]}`, runtime.GOOS, runtime.GOARCH, runtime.GOOS, runtime.GOARCH)
 	}))
 	defer server.Close()
-	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", server.URL)
+	config.registryURL = server.URL
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "available"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"available"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("available exit=%d stderr=%s", code, stderr.String())
 	}
@@ -1153,8 +1184,7 @@ func TestPluginsAvailableListsRegistry(t *testing.T) {
 }
 
 func TestPluginsAvailableDefaultRegistryPreviewError(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
-	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", "")
+	config := testPluginsCommandConfig(t)
 	restoreHTTPClient := replaceDefaultHTTPClient(t, func(req *http.Request) (*http.Response, error) {
 		if got, want := req.URL.String(), "https://plugins.glade.sh/index.json"; got != want {
 			t.Fatalf("registry URL = %q, want %q", got, want)
@@ -1164,7 +1194,7 @@ func TestPluginsAvailableDefaultRegistryPreviewError(t *testing.T) {
 	defer restoreHTTPClient()
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "available"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"available"}, &stdout, &stderr, config)
 	if code != 1 {
 		t.Fatalf("available exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
 	}
@@ -1186,8 +1216,7 @@ func TestPluginsAvailableDefaultRegistryPreviewError(t *testing.T) {
 }
 
 func TestPluginsInstallDefaultRegistryPreviewError(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
-	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", "")
+	config := testPluginsCommandConfig(t)
 	restoreHTTPClient := replaceDefaultHTTPClient(t, func(req *http.Request) (*http.Response, error) {
 		if got, want := req.URL.String(), "https://plugins.glade.sh/index.json"; got != want {
 			t.Fatalf("registry URL = %q, want %q", got, want)
@@ -1197,7 +1226,7 @@ func TestPluginsInstallDefaultRegistryPreviewError(t *testing.T) {
 	defer restoreHTTPClient()
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "install", "@glade/compat"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"install", "@glade/compat"}, &stdout, &stderr, config)
 	if code != 1 {
 		t.Fatalf("install exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
 	}
@@ -1216,15 +1245,15 @@ func TestPluginsInstallDefaultRegistryPreviewError(t *testing.T) {
 }
 
 func TestPluginsAvailableCustomRegistryKeepsEndpointError(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
-	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", "https://registry.example.test/index.json")
+	config := testPluginsCommandConfig(t)
+	config.registryURL = "https://registry.example.test/index.json"
 	restoreHTTPClient := replaceDefaultHTTPClient(t, func(req *http.Request) (*http.Response, error) {
 		return nil, fmt.Errorf("dial tcp: lookup registry.example.test: no such host")
 	})
 	defer restoreHTTPClient()
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "available"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"available"}, &stdout, &stderr, config)
 	if code != 1 {
 		t.Fatalf("available exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
 	}
@@ -1243,8 +1272,10 @@ func TestPluginsAvailableCustomRegistryKeepsEndpointError(t *testing.T) {
 }
 
 func TestPluginsAvailableRejectsArguments(t *testing.T) {
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "available", "quality"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"available", "quality"}, &stdout, &stderr, config)
 	if code != 1 {
 		t.Fatalf("available exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
 	}
@@ -1254,15 +1285,16 @@ func TestPluginsAvailableRejectsArguments(t *testing.T) {
 }
 
 func TestPluginsSearchWithoutQueryListsRegistry(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `{"version":1,"plugins":[{"name":"@glade/compat","version":"0.1.0","trust":"first-party","summary":"Compatibility fixtures.","assets":[{"os":%q,"arch":%q,"url":"https://example.test/compat.tar.gz","sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]}]}`, runtime.GOOS, runtime.GOARCH)
 	}))
 	defer server.Close()
-	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", server.URL)
+	config.registryURL = server.URL
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "search"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"search"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("search exit=%d stderr=%s", code, stderr.String())
 	}
@@ -1272,8 +1304,10 @@ func TestPluginsSearchWithoutQueryListsRegistry(t *testing.T) {
 }
 
 func TestPluginsHelpShowsAvailable(t *testing.T) {
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "--help"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"--help"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("help exit=%d stderr=%s", code, stderr.String())
 	}
@@ -1423,10 +1457,10 @@ func TestCodeIntelligenceHelpListsProductCommands(t *testing.T) {
 }
 
 func TestPluginsInstallRemoteURLRequiresSHA256(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
-	t.Setenv("CI", "")
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "install", "https://example.test/plugin.tar.gz"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"install", "https://example.test/plugin.tar.gz"}, &stdout, &stderr, config)
 	if code != 1 {
 		t.Fatalf("exit=%d, want 1", code)
 	}
@@ -1436,10 +1470,11 @@ func TestPluginsInstallRemoteURLRequiresSHA256(t *testing.T) {
 }
 
 func TestPluginsInstallRemoteURLProgressFinishesOnTrustError(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
-	t.Setenv("CI", "1")
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
+	config.ci = true
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "install", "https://example.test/plugin.tar.gz", "--progress"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"install", "https://example.test/plugin.tar.gz", "--progress"}, &stdout, &stderr, config)
 	if code != 1 {
 		t.Fatalf("exit=%d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
 	}
@@ -1451,8 +1486,9 @@ func TestPluginsInstallRemoteURLProgressFinishesOnTrustError(t *testing.T) {
 }
 
 func TestPluginsInstallCommunityRegistryInCIStopsBeforeDownload(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
-	t.Setenv("CI", "1")
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
+	config.ci = true
 	downloaded := false
 	var server *httptest.Server
 	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -1468,10 +1504,10 @@ func TestPluginsInstallCommunityRegistryInCIStopsBeforeDownload(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", server.URL+"/index.json")
+	config.registryURL = server.URL + "/index.json"
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "install", "@acme/quality"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"install", "@acme/quality"}, &stdout, &stderr, config)
 	if code != 1 {
 		t.Fatalf("exit=%d, want 1", code)
 	}
@@ -1484,6 +1520,7 @@ func TestPluginsInstallCommunityRegistryInCIStopsBeforeDownload(t *testing.T) {
 }
 
 func TestScopedPluginCoordinateIsNotArchiveInstallArg(t *testing.T) {
+	t.Parallel()
 	if isArchiveInstallArg("@glade/compat") {
 		t.Fatal("@glade/compat was classified as an archive path")
 	}
@@ -1493,11 +1530,13 @@ func TestScopedPluginCoordinateIsNotArchiveInstallArg(t *testing.T) {
 }
 
 func TestCompatDispatchesToLinkedPlugin(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS == "windows" {
 		t.Skip("shell helper uses sh")
 	}
 	home := t.TempDir()
-	t.Setenv("GLADE_HOME", home)
+	config := testPluginsCommandConfig(t)
+	config.storeRoot = home
 	exe := filepath.Join(home, "glade-plugin-compat")
 	script := `#!/bin/sh
 if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
@@ -1510,12 +1549,15 @@ echo "called plugin with $*"
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	if code := Run(context.Background(), []string{"plugins", "link", "--exec", exe}, &stdout, &stderr); code != 0 {
+	if code := runPluginsForTest(context.Background(), []string{"link", "--exec", exe}, &stdout, &stderr, config); code != 0 {
 		t.Fatalf("link failed: %s", stderr.String())
 	}
 	stdout.Reset()
 	stderr.Reset()
-	code := Run(context.Background(), []string{"compat", "local-tests", "--help"}, &stdout, &stderr)
+	code, ok := runInstalledPluginCommandWithStore(context.Background(), []string{"compat", "local-tests", "--help"}, &stdout, &stderr, pluginhost.NewStore(config.storeRoot))
+	if !ok {
+		t.Fatal("compat command was not dispatched to installed plugin")
+	}
 	if code != 0 {
 		t.Fatalf("dispatch failed code=%d stderr=%s", code, stderr.String())
 	}
