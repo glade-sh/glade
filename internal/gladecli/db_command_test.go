@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -52,6 +54,52 @@ func TestRunDBUIRejectsPublicBindWithoutOptIn(t *testing.T) {
 	if !strings.Contains(stderr.String(), "GLADE_SERVER_PUBLIC=1") {
 		t.Fatalf("stderr missing public bind guidance: %q", stderr.String())
 	}
+}
+
+func TestRunDBUIWithOpenURLUsesListenerAddress(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeProjectWithWidgetField(t, root, "Name__c")
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	var opened string
+
+	err := runDBUIWithOpenURL(ctx, []string{"--project", root, "--addr", "127.0.0.1:0", "--open"}, &bytes.Buffer{}, &bytes.Buffer{}, func(url string) error {
+		opened = url
+		cancel()
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(opened, "http://127.0.0.1:") || !strings.HasSuffix(opened, "/db") {
+		t.Fatalf("opened = %q, want exact http://<listener>/db URL", opened)
+	}
+	addr := strings.TrimSuffix(strings.TrimPrefix(opened, "http://"), "/db")
+	if _, _, err := net.SplitHostPort(addr); err != nil {
+		t.Fatalf("opened listener address = %q: %v", addr, err)
+	}
+}
+
+func TestRunDBUIWithOpenURLErrorClosesListener(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeProjectWithWidgetField(t, root, "Name__c")
+	wantErr := errors.New("open failed")
+	var addr string
+
+	err := runDBUIWithOpenURL(t.Context(), []string{"--project", root, "--addr", "127.0.0.1:0", "--open"}, &bytes.Buffer{}, &bytes.Buffer{}, func(url string) error {
+		addr = strings.TrimSuffix(strings.TrimPrefix(url, "http://"), "/db")
+		return wantErr
+	})
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("error = %v, want %v", err, wantErr)
+	}
+	listener, listenErr := net.Listen("tcp", addr)
+	if listenErr != nil {
+		t.Fatalf("listener %q was not closed after opener error: %v", addr, listenErr)
+	}
+	listener.Close()
 }
 
 func TestRunDBUIReadyFileUsesDefaultProjectEnv(t *testing.T) {
