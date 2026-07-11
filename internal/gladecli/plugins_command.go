@@ -16,7 +16,7 @@ import (
 	"github.com/glade-sh/glade/internal/pluginhost"
 )
 
-var pluginListManifestTimeout = 3 * time.Second
+const defaultPluginListManifestTimeout = 3 * time.Second
 
 func runPlugins(ctx context.Context, args []string, stdout, stderr io.Writer) error {
 	if len(args) == 0 || isHelpArg(args[0]) {
@@ -98,6 +98,10 @@ type pluginListEntryJSON struct {
 }
 
 func writePluginsListJSON(ctx context.Context, w io.Writer, plugins []pluginhost.InstalledPlugin) error {
+	return writePluginsListJSONWithManifestTimeout(ctx, w, plugins, defaultPluginListManifestTimeout)
+}
+
+func writePluginsListJSONWithManifestTimeout(ctx context.Context, w io.Writer, plugins []pluginhost.InstalledPlugin, manifestTimeout time.Duration) error {
 	out := pluginsListJSON{Plugins: make([]pluginListEntryJSON, 0, len(plugins))}
 	for _, plugin := range plugins {
 		entry := pluginListEntryJSON{
@@ -111,7 +115,7 @@ func writePluginsListJSON(ctx context.Context, w io.Writer, plugins []pluginhost
 			ManifestPath: plugin.Manifest,
 			Source:       plugin.Source,
 		}
-		if manifest, ok, err := loadInstalledPluginManifest(ctx, plugin); err != nil {
+		if manifest, ok, err := loadInstalledPluginManifest(ctx, plugin, manifestTimeout); err != nil {
 			return err
 		} else if ok {
 			entry.Editor = manifest.Editor
@@ -126,13 +130,13 @@ func writePluginsListJSON(ctx context.Context, w io.Writer, plugins []pluginhost
 	})
 }
 
-func loadInstalledPluginManifest(ctx context.Context, plugin pluginhost.InstalledPlugin) (pluginhost.Manifest, bool, error) {
+func loadInstalledPluginManifest(ctx context.Context, plugin pluginhost.InstalledPlugin, manifestTimeout time.Duration) (pluginhost.Manifest, bool, error) {
 	if plugin.Manifest != "" {
 		manifest, err := pluginhost.LoadManifestFromFile(plugin.Manifest)
 		return manifest, true, err
 	}
 	if plugin.Linked && plugin.Executable != "" {
-		manifestCtx, cancel := context.WithTimeout(ctx, pluginListManifestTimeout)
+		manifestCtx, cancel := context.WithTimeout(ctx, manifestTimeout)
 		defer cancel()
 		manifest, err := pluginhost.LoadManifestFromExecutable(manifestCtx, plugin.Executable)
 		return manifest, true, err

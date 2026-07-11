@@ -20,6 +20,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/dap"
+	"github.com/glade-sh/glade/internal/pluginhost"
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/vm"
 	"github.com/glade-sh/glade/internal/watch"
@@ -880,28 +881,23 @@ fi
 }
 
 func TestPluginsListJSONTimesOutLinkedExecutableEditorMetadata(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS == "windows" {
 		t.Skip("shell helper uses sh")
 	}
-	home := t.TempDir()
-	t.Setenv("GLADE_HOME", home)
-	pidPath := filepath.Join(home, "plugin-descendant.pid")
+	exe := filepath.Join(t.TempDir(), "glade-plugin-compat")
+	pidPath := exe + ".pid"
 	cleanupNeeded := true
 	t.Cleanup(func() {
 		if cleanupNeeded {
 			bestEffortKillCLIRecordedPID(pidPath)
 		}
 	})
-	t.Setenv("GLADE_PLUGIN_TEST_PID_FILE", pidPath)
-	exe := filepath.Join(home, "glade-plugin-compat")
 	script := `#!/bin/sh
-if [ "$1" = "prewarm" ]; then
-	exit 0
-fi
 if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
 	  sleep 30 &
 	  child=$!
-	  printf '%s\n' "$child" > "$GLADE_PLUGIN_TEST_PID_FILE"
+	  printf '%s\n' "$child" > "$0.pid"
 	  wait "$child"
 fi
 `
@@ -911,27 +907,20 @@ fi
 	if err := exec.Command(exe, "prewarm").Run(); err != nil {
 		t.Fatalf("prewarm helper: %v", err)
 	}
-	statePath := filepath.Join(home, "plugins", "installed.json")
-	if err := os.MkdirAll(filepath.Dir(statePath), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	state := fmt.Sprintf(`{"version":1,"plugins":[{"name":"compat","version":"0.1.0","commands":["compat"],"executable":%q,"source":"link:test","linked":true}]}`+"\n", exe)
-	if err := os.WriteFile(statePath, []byte(state), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	oldTimeout := pluginListManifestTimeout
-	pluginListManifestTimeout = 25 * time.Millisecond
-	t.Cleanup(func() { pluginListManifestTimeout = oldTimeout })
 
-	var stdout, stderr bytes.Buffer
+	var stdout bytes.Buffer
 	started := time.Now()
-	code := Run(context.Background(), []string{"plugins", "list", "--json"}, &stdout, &stderr)
+	err := writePluginsListJSONWithManifestTimeout(context.Background(), &stdout, []pluginhost.InstalledPlugin{{
+		Name:       "compat",
+		Version:    "0.1.0",
+		Executable: exe,
+		Source:     "link:test",
+		Linked:     true,
+		Commands:   []string{"compat"},
+	}}, 25*time.Millisecond)
 	elapsed := time.Since(started)
-	if code == 0 {
-		t.Fatalf("list unexpectedly succeeded:\n%s", stdout.String())
-	}
-	if !strings.Contains(stderr.String(), "context deadline exceeded") {
-		t.Fatalf("stderr did not include timeout diagnostic: %q", stderr.String())
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("error = %v, want context deadline exceeded", err)
 	}
 	if elapsed >= time.Second {
 		t.Fatalf("plugin list timeout took %s, want <1s", elapsed)
