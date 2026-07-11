@@ -1907,29 +1907,29 @@ func TestRunTopLevelHelpAlignment(t *testing.T) {
 }
 
 func TestRunEditorInstallVSCodeUsesVSIX(t *testing.T) {
+	t.Parallel()
 	vsix := filepath.Join(t.TempDir(), "vscode-glade.vsix")
 	if err := os.WriteFile(vsix, []byte("vsix"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	var ranName string
 	var ranArgs []string
-	restore := stubEditorCommandDeps(t,
-		func(name string) (string, error) {
+	deps := editorCommandDeps{
+		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
 			}
 			return "/usr/local/bin/code", nil
 		},
-		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			ranName = name
 			ranArgs = append([]string(nil), args...)
 			return []byte("installed\n"), nil
 		},
-	)
-	defer restore()
+	}
 
 	var stdout bytes.Buffer
-	if err := runEditor(context.Background(), []string{"install", "vscode", "--vsix", vsix, "--force"}, &stdout); err != nil {
+	if err := runEditorWithCommandDeps(context.Background(), []string{"install", "vscode", "--vsix", vsix, "--force"}, &stdout, deps); err != nil {
 		t.Fatal(err)
 	}
 	if ranName != "/usr/local/bin/code" {
@@ -1945,25 +1945,25 @@ func TestRunEditorInstallVSCodeUsesVSIX(t *testing.T) {
 }
 
 func TestRunEditorInstallVSCodeSuppressesSuccessfulEditorOutput(t *testing.T) {
+	t.Parallel()
 	vsix := filepath.Join(t.TempDir(), "vscode-glade.vsix")
 	if err := os.WriteFile(vsix, []byte("vsix"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	restore := stubEditorCommandDeps(t,
-		func(name string) (string, error) {
+	deps := editorCommandDeps{
+		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
 			}
 			return "/usr/local/bin/code", nil
 		},
-		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			return []byte("Installing extensions...\nExtension 'vscode-glade-0.0.1.vsix' was successfully installed.\n(node:5882) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized.\n"), nil
 		},
-	)
-	defer restore()
+	}
 
 	var stdout bytes.Buffer
-	if err := runEditor(context.Background(), []string{"install", "vscode", "--vsix", vsix, "--force"}, &stdout); err != nil {
+	if err := runEditorWithCommandDeps(context.Background(), []string{"install", "vscode", "--vsix", vsix, "--force"}, &stdout, deps); err != nil {
 		t.Fatal(err)
 	}
 	want := fmt.Sprintf("installed vscode extension: %s\n", vsix)
@@ -1974,8 +1974,8 @@ func TestRunEditorInstallVSCodeSuppressesSuccessfulEditorOutput(t *testing.T) {
 
 func TestRunEditorDoctorVSCodeReportsPaths(t *testing.T) {
 	gladePath := filepath.Join(t.TempDir(), "bin", "glade")
-	restore := stubEditorCommandDeps(t,
-		func(name string) (string, error) {
+	deps := editorCommandDeps{
+		lookPath: func(name string) (string, error) {
 			switch name {
 			case "code":
 				return "/usr/local/bin/code", nil
@@ -1985,14 +1985,13 @@ func TestRunEditorDoctorVSCodeReportsPaths(t *testing.T) {
 				return "", os.ErrNotExist
 			}
 		},
-		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			return nil, nil
 		},
-	)
-	defer restore()
+	}
 
 	var stdout bytes.Buffer
-	if err := runEditor(context.Background(), []string{"doctor", "vscode"}, &stdout); err != nil {
+	if err := runEditorWithCommandDeps(context.Background(), []string{"doctor", "vscode"}, &stdout, deps); err != nil {
 		t.Fatal(err)
 	}
 	out := stdout.String()
@@ -2016,8 +2015,8 @@ func TestRunEditorDoctorVSCodeJSONReportsBundledVSIX(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("GLADE_HOME", home)
-	restore := stubEditorCommandDeps(t,
-		func(name string) (string, error) {
+	deps := editorCommandDeps{
+		lookPath: func(name string) (string, error) {
 			switch name {
 			case "code":
 				return "/usr/local/bin/code", nil
@@ -2027,14 +2026,13 @@ func TestRunEditorDoctorVSCodeJSONReportsBundledVSIX(t *testing.T) {
 				return "", os.ErrNotExist
 			}
 		},
-		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			return nil, nil
 		},
-	)
-	defer restore()
+	}
 
 	var stdout bytes.Buffer
-	if err := runEditor(context.Background(), []string{"doctor", "vscode", "--json"}, &stdout); err != nil {
+	if err := runEditorWithCommandDeps(context.Background(), []string{"doctor", "vscode", "--json"}, &stdout, deps); err != nil {
 		t.Fatal(err)
 	}
 	var got struct {
@@ -2072,22 +2070,21 @@ func TestRunEditorInstallVSCodeUsesBundledVSIXWhenPathOmitted(t *testing.T) {
 	}
 	t.Setenv("GLADE_VSCODE_VSIX", vsix)
 	var ranArgs []string
-	restore := stubEditorCommandDeps(t,
-		func(name string) (string, error) {
+	deps := editorCommandDeps{
+		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
 			}
 			return "/usr/local/bin/code", nil
 		},
-		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			ranArgs = append([]string(nil), args...)
 			return []byte("installed\n"), nil
 		},
-	)
-	defer restore()
+	}
 
 	var stdout bytes.Buffer
-	if err := runEditor(context.Background(), []string{"install", "vscode", "--force"}, &stdout); err != nil {
+	if err := runEditorWithCommandDeps(context.Background(), []string{"install", "vscode", "--force"}, &stdout, deps); err != nil {
 		t.Fatal(err)
 	}
 	wantArgs := []string{"--install-extension", vsix, "--force"}
@@ -2108,22 +2105,21 @@ func TestRunEditorInstallVSCodeUsesGladeHomeBundledVSIX(t *testing.T) {
 	t.Setenv("GLADE_HOME", home)
 	t.Setenv("GLADE_VSCODE_VSIX", "")
 	var ranArgs []string
-	restore := stubEditorCommandDeps(t,
-		func(name string) (string, error) {
+	deps := editorCommandDeps{
+		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
 			}
 			return "/usr/local/bin/code", nil
 		},
-		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			ranArgs = append([]string(nil), args...)
 			return []byte("installed\n"), nil
 		},
-	)
-	defer restore()
+	}
 
 	var stdout bytes.Buffer
-	if err := runEditor(context.Background(), []string{"install", "vscode", "--force"}, &stdout); err != nil {
+	if err := runEditorWithCommandDeps(context.Background(), []string{"install", "vscode", "--force"}, &stdout, deps); err != nil {
 		t.Fatal(err)
 	}
 	wantArgs := []string{"--install-extension", vsix, "--force"}
@@ -2176,22 +2172,21 @@ func TestRunEditorInstallVSCodePrefersSourceCheckoutOverUserShareVSIX(t *testing
 	})
 
 	var ranArgs []string
-	restore := stubEditorCommandDeps(t,
-		func(name string) (string, error) {
+	deps := editorCommandDeps{
+		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
 			}
 			return "/usr/local/bin/code", nil
 		},
-		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			ranArgs = append([]string(nil), args...)
 			return []byte("installed\n"), nil
 		},
-	)
-	defer restore()
+	}
 
 	var stdout bytes.Buffer
-	if err := runEditor(context.Background(), []string{"install", "vscode"}, &stdout); err != nil {
+	if err := runEditorWithCommandDeps(context.Background(), []string{"install", "vscode"}, &stdout, deps); err != nil {
 		t.Fatal(err)
 	}
 	wantArgs := []string{"--install-extension", sourceVSIX}
@@ -2236,39 +2231,26 @@ func TestRunEditorInstallVSCodeFindsSourceCheckoutVSIX(t *testing.T) {
 	})
 
 	var ranArgs []string
-	restore := stubEditorCommandDeps(t,
-		func(name string) (string, error) {
+	deps := editorCommandDeps{
+		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
 			}
 			return "/usr/local/bin/code", nil
 		},
-		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			ranArgs = append([]string(nil), args...)
 			return []byte("installed\n"), nil
 		},
-	)
-	defer restore()
+	}
 
 	var stdout bytes.Buffer
-	if err := runEditor(context.Background(), []string{"install", "vscode"}, &stdout); err != nil {
+	if err := runEditorWithCommandDeps(context.Background(), []string{"install", "vscode"}, &stdout, deps); err != nil {
 		t.Fatal(err)
 	}
 	wantArgs := []string{"--install-extension", vsix}
 	if strings.Join(ranArgs, "\x00") != strings.Join(wantArgs, "\x00") {
 		t.Fatalf("ran args = %#v, want %#v", ranArgs, wantArgs)
-	}
-}
-
-func stubEditorCommandDeps(t *testing.T, lookPath func(string) (string, error), run func(context.Context, string, ...string) ([]byte, error)) func() {
-	t.Helper()
-	origLookPath := editorCommandLookPath
-	origRun := editorCommandRun
-	editorCommandLookPath = lookPath
-	editorCommandRun = run
-	return func() {
-		editorCommandLookPath = origLookPath
-		editorCommandRun = origRun
 	}
 }
 

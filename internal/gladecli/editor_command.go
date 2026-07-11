@@ -15,13 +15,23 @@ import (
 	"github.com/glade-sh/glade/internal/gladehome"
 )
 
-var editorCommandLookPath = exec.LookPath
+type editorCommandDeps struct {
+	lookPath func(string) (string, error)
+	run      func(context.Context, string, ...string) ([]byte, error)
+}
 
-var editorCommandRun = func(ctx context.Context, name string, args ...string) ([]byte, error) {
+func runEditorCommand(ctx context.Context, name string, args ...string) ([]byte, error) {
 	return exec.CommandContext(ctx, name, args...).CombinedOutput()
 }
 
 func runEditor(ctx context.Context, args []string, w io.Writer) error {
+	return runEditorWithCommandDeps(ctx, args, w, editorCommandDeps{
+		lookPath: exec.LookPath,
+		run:      runEditorCommand,
+	})
+}
+
+func runEditorWithCommandDeps(ctx context.Context, args []string, w io.Writer, deps editorCommandDeps) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -35,15 +45,15 @@ func runEditor(ctx context.Context, args []string, w io.Writer) error {
 	}
 	switch command {
 	case "install":
-		return runEditorInstall(ctx, args[2:], w)
+		return runEditorInstall(ctx, args[2:], w, deps)
 	case "doctor":
-		return runEditorDoctor(args[2:], w)
+		return runEditorDoctor(args[2:], w, deps)
 	default:
 		return fmt.Errorf("unknown editor command %q", command)
 	}
 }
 
-func runEditorInstall(ctx context.Context, args []string, w io.Writer) error {
+func runEditorInstall(ctx context.Context, args []string, w io.Writer, deps editorCommandDeps) error {
 	editor := "code"
 	vsix := ""
 	force := false
@@ -80,7 +90,7 @@ func runEditorInstall(ctx context.Context, args []string, w io.Writer) error {
 		}
 		vsix = resolved
 	}
-	editorPath, err := resolveEditorCommand(editor)
+	editorPath, err := resolveEditorCommand(editor, deps)
 	if err != nil {
 		return err
 	}
@@ -88,7 +98,7 @@ func runEditorInstall(ctx context.Context, args []string, w io.Writer) error {
 	if force {
 		installArgs = append(installArgs, "--force")
 	}
-	out, err := editorCommandRun(ctx, editorPath, installArgs...)
+	out, err := deps.run(ctx, editorPath, installArgs...)
 	if err != nil {
 		if len(out) > 0 {
 			fmt.Fprint(w, string(out))
@@ -99,7 +109,7 @@ func runEditorInstall(ctx context.Context, args []string, w io.Writer) error {
 	return nil
 }
 
-func runEditorDoctor(args []string, w io.Writer) error {
+func runEditorDoctor(args []string, w io.Writer, deps editorCommandDeps) error {
 	editor := "code"
 	jsonOut := false
 	for i := 0; i < len(args); i++ {
@@ -118,7 +128,7 @@ func runEditorDoctor(args []string, w io.Writer) error {
 	}
 	report := editorDoctorReport{Target: "vscode"}
 	report.Editor.Command = editorCommandName(editor)
-	editorPath, err := resolveEditorCommand(editor)
+	editorPath, err := resolveEditorCommand(editor, deps)
 	if err != nil {
 		report.Editor.Error = err.Error()
 	} else {
@@ -126,7 +136,7 @@ func runEditorDoctor(args []string, w io.Writer) error {
 		report.Editor.OK = true
 	}
 	report.Glade.Command = "glade"
-	if gladePath, err := editorCommandLookPath("glade"); err != nil {
+	if gladePath, err := deps.lookPath("glade"); err != nil {
 		report.Glade.Error = err.Error()
 	} else {
 		report.Glade.Path = gladePath
@@ -175,12 +185,12 @@ type editorBundledVSIX struct {
 	Exists bool   `json:"exists"`
 }
 
-func resolveEditorCommand(editor string) (string, error) {
+func resolveEditorCommand(editor string, deps editorCommandDeps) (string, error) {
 	name := editorCommandName(editor)
 	if name == "" {
 		return "", fmt.Errorf("unsupported editor %q", editor)
 	}
-	path, err := editorCommandLookPath(name)
+	path, err := deps.lookPath(name)
 	if err != nil {
 		return "", fmt.Errorf("editor command %q not found on PATH: %w", name, err)
 	}
