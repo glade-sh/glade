@@ -1895,6 +1895,23 @@ func TestRunTopLevelHelpAlignment(t *testing.T) {
 	}
 }
 
+type editorCommandTestEnv map[string]string
+
+func (env editorCommandTestEnv) getenv(name string) string {
+	return env[name]
+}
+
+func testEditorCommandDeps(t *testing.T, deps editorCommandDeps) (editorCommandDeps, editorCommandTestEnv) {
+	t.Helper()
+	env := make(editorCommandTestEnv)
+	userShareDir := filepath.Join(t.TempDir(), "user-share")
+	deps.getenv = env.getenv
+	deps.userShareDir = func() string { return userShareDir }
+	deps.executable = func() (string, error) { return "", os.ErrNotExist }
+	deps.getwd = func() (string, error) { return "", os.ErrNotExist }
+	return deps, env
+}
+
 func TestRunEditorInstallVSCodeUsesVSIX(t *testing.T) {
 	t.Parallel()
 	vsix := filepath.Join(t.TempDir(), "vscode-glade.vsix")
@@ -1903,7 +1920,7 @@ func TestRunEditorInstallVSCodeUsesVSIX(t *testing.T) {
 	}
 	var ranName string
 	var ranArgs []string
-	deps := editorCommandDeps{
+	deps, _ := testEditorCommandDeps(t, editorCommandDeps{
 		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
@@ -1915,7 +1932,7 @@ func TestRunEditorInstallVSCodeUsesVSIX(t *testing.T) {
 			ranArgs = append([]string(nil), args...)
 			return []byte("installed\n"), nil
 		},
-	}
+	})
 
 	var stdout bytes.Buffer
 	if err := runEditorWithCommandDeps(context.Background(), []string{"install", "vscode", "--vsix", vsix, "--force"}, &stdout, deps); err != nil {
@@ -1939,7 +1956,7 @@ func TestRunEditorInstallVSCodeSuppressesSuccessfulEditorOutput(t *testing.T) {
 	if err := os.WriteFile(vsix, []byte("vsix"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	deps := editorCommandDeps{
+	deps, _ := testEditorCommandDeps(t, editorCommandDeps{
 		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
@@ -1949,7 +1966,7 @@ func TestRunEditorInstallVSCodeSuppressesSuccessfulEditorOutput(t *testing.T) {
 		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			return []byte("Installing extensions...\nExtension 'vscode-glade-0.0.1.vsix' was successfully installed.\n(node:5882) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized.\n"), nil
 		},
-	}
+	})
 
 	var stdout bytes.Buffer
 	if err := runEditorWithCommandDeps(context.Background(), []string{"install", "vscode", "--vsix", vsix, "--force"}, &stdout, deps); err != nil {
@@ -1962,8 +1979,9 @@ func TestRunEditorInstallVSCodeSuppressesSuccessfulEditorOutput(t *testing.T) {
 }
 
 func TestRunEditorDoctorVSCodeReportsPaths(t *testing.T) {
+	t.Parallel()
 	gladePath := filepath.Join(t.TempDir(), "bin", "glade")
-	deps := editorCommandDeps{
+	deps, _ := testEditorCommandDeps(t, editorCommandDeps{
 		lookPath: func(name string) (string, error) {
 			switch name {
 			case "code":
@@ -1977,7 +1995,7 @@ func TestRunEditorDoctorVSCodeReportsPaths(t *testing.T) {
 		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			return nil, nil
 		},
-	}
+	})
 
 	var stdout bytes.Buffer
 	if err := runEditorWithCommandDeps(context.Background(), []string{"doctor", "vscode"}, &stdout, deps); err != nil {
@@ -1995,6 +2013,7 @@ func TestRunEditorDoctorVSCodeReportsPaths(t *testing.T) {
 }
 
 func TestRunEditorDoctorVSCodeJSONReportsBundledVSIX(t *testing.T) {
+	t.Parallel()
 	home := t.TempDir()
 	vsix := filepath.Join(home, "editor", "vscode-glade.vsix")
 	if err := os.MkdirAll(filepath.Dir(vsix), 0o755); err != nil {
@@ -2003,8 +2022,7 @@ func TestRunEditorDoctorVSCodeJSONReportsBundledVSIX(t *testing.T) {
 	if err := os.WriteFile(vsix, []byte("vsix"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("GLADE_HOME", home)
-	deps := editorCommandDeps{
+	deps, env := testEditorCommandDeps(t, editorCommandDeps{
 		lookPath: func(name string) (string, error) {
 			switch name {
 			case "code":
@@ -2018,7 +2036,8 @@ func TestRunEditorDoctorVSCodeJSONReportsBundledVSIX(t *testing.T) {
 		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			return nil, nil
 		},
-	}
+	})
+	env["GLADE_HOME"] = home
 
 	var stdout bytes.Buffer
 	if err := runEditorWithCommandDeps(context.Background(), []string{"doctor", "vscode", "--json"}, &stdout, deps); err != nil {
@@ -2053,13 +2072,13 @@ func TestRunEditorDoctorVSCodeJSONReportsBundledVSIX(t *testing.T) {
 }
 
 func TestRunEditorInstallVSCodeUsesBundledVSIXWhenPathOmitted(t *testing.T) {
+	t.Parallel()
 	vsix := filepath.Join(t.TempDir(), "vscode-glade.vsix")
 	if err := os.WriteFile(vsix, []byte("vsix"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("GLADE_VSCODE_VSIX", vsix)
 	var ranArgs []string
-	deps := editorCommandDeps{
+	deps, env := testEditorCommandDeps(t, editorCommandDeps{
 		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
@@ -2070,7 +2089,8 @@ func TestRunEditorInstallVSCodeUsesBundledVSIXWhenPathOmitted(t *testing.T) {
 			ranArgs = append([]string(nil), args...)
 			return []byte("installed\n"), nil
 		},
-	}
+	})
+	env["GLADE_VSCODE_VSIX"] = vsix
 
 	var stdout bytes.Buffer
 	if err := runEditorWithCommandDeps(context.Background(), []string{"install", "vscode", "--force"}, &stdout, deps); err != nil {
@@ -2083,6 +2103,7 @@ func TestRunEditorInstallVSCodeUsesBundledVSIXWhenPathOmitted(t *testing.T) {
 }
 
 func TestRunEditorInstallVSCodeUsesGladeHomeBundledVSIX(t *testing.T) {
+	t.Parallel()
 	home := t.TempDir()
 	vsix := filepath.Join(home, "editor", "vscode-glade.vsix")
 	if err := os.MkdirAll(filepath.Dir(vsix), 0o755); err != nil {
@@ -2091,10 +2112,8 @@ func TestRunEditorInstallVSCodeUsesGladeHomeBundledVSIX(t *testing.T) {
 	if err := os.WriteFile(vsix, []byte("vsix"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("GLADE_HOME", home)
-	t.Setenv("GLADE_VSCODE_VSIX", "")
 	var ranArgs []string
-	deps := editorCommandDeps{
+	deps, env := testEditorCommandDeps(t, editorCommandDeps{
 		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
@@ -2105,7 +2124,9 @@ func TestRunEditorInstallVSCodeUsesGladeHomeBundledVSIX(t *testing.T) {
 			ranArgs = append([]string(nil), args...)
 			return []byte("installed\n"), nil
 		},
-	}
+	})
+	env["GLADE_HOME"] = home
+	env["GLADE_VSCODE_VSIX"] = ""
 
 	var stdout bytes.Buffer
 	if err := runEditorWithCommandDeps(context.Background(), []string{"install", "vscode", "--force"}, &stdout, deps); err != nil {
@@ -2118,6 +2139,7 @@ func TestRunEditorInstallVSCodeUsesGladeHomeBundledVSIX(t *testing.T) {
 }
 
 func TestRunEditorInstallVSCodePrefersSourceCheckoutOverUserShareVSIX(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module github.com/glade-sh/glade\n"), 0o644); err != nil {
 		t.Fatal(err)
@@ -2144,24 +2166,8 @@ func TestRunEditorInstallVSCodePrefersSourceCheckoutOverUserShareVSIX(t *testing
 	if err := os.WriteFile(userShareVSIX, []byte("stale-user-share-vsix"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("GLADE_VSCODE_VSIX", "")
-	t.Setenv("GLADE_HOME", "")
-	t.Setenv("XDG_DATA_HOME", xdg)
-	originalCWD, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(extensionRoot); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := os.Chdir(originalCWD); err != nil {
-			t.Fatalf("restore cwd: %v", err)
-		}
-	})
-
 	var ranArgs []string
-	deps := editorCommandDeps{
+	deps, env := testEditorCommandDeps(t, editorCommandDeps{
 		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
@@ -2172,7 +2178,11 @@ func TestRunEditorInstallVSCodePrefersSourceCheckoutOverUserShareVSIX(t *testing
 			ranArgs = append([]string(nil), args...)
 			return []byte("installed\n"), nil
 		},
-	}
+	})
+	env["GLADE_VSCODE_VSIX"] = ""
+	env["GLADE_HOME"] = ""
+	deps.userShareDir = func() string { return filepath.Join(xdg, "glade") }
+	deps.getwd = func() (string, error) { return filepath.EvalSymlinks(extensionRoot) }
 
 	var stdout bytes.Buffer
 	if err := runEditorWithCommandDeps(context.Background(), []string{"install", "vscode"}, &stdout, deps); err != nil {
@@ -2185,6 +2195,7 @@ func TestRunEditorInstallVSCodePrefersSourceCheckoutOverUserShareVSIX(t *testing
 }
 
 func TestRunEditorInstallVSCodeFindsSourceCheckoutVSIX(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module github.com/glade-sh/glade\n"), 0o644); err != nil {
 		t.Fatal(err)
@@ -2203,24 +2214,8 @@ func TestRunEditorInstallVSCodeFindsSourceCheckoutVSIX(t *testing.T) {
 	if resolved, err := filepath.EvalSymlinks(vsix); err == nil {
 		vsix = resolved
 	}
-	t.Setenv("GLADE_VSCODE_VSIX", "")
-	t.Setenv("GLADE_HOME", filepath.Join(root, "missing-glade-home"))
-	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "xdg"))
-	originalCWD, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(filepath.Join(root, "contrib", "vscode-glade")); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := os.Chdir(originalCWD); err != nil {
-			t.Fatalf("restore cwd: %v", err)
-		}
-	})
-
 	var ranArgs []string
-	deps := editorCommandDeps{
+	deps, env := testEditorCommandDeps(t, editorCommandDeps{
 		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
@@ -2231,6 +2226,12 @@ func TestRunEditorInstallVSCodeFindsSourceCheckoutVSIX(t *testing.T) {
 			ranArgs = append([]string(nil), args...)
 			return []byte("installed\n"), nil
 		},
+	})
+	env["GLADE_VSCODE_VSIX"] = ""
+	env["GLADE_HOME"] = filepath.Join(root, "missing-glade-home")
+	deps.userShareDir = func() string { return filepath.Join(root, "xdg", "glade") }
+	deps.getwd = func() (string, error) {
+		return filepath.EvalSymlinks(filepath.Join(root, "contrib", "vscode-glade"))
 	}
 
 	var stdout bytes.Buffer

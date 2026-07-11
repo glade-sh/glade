@@ -16,8 +16,12 @@ import (
 )
 
 type editorCommandDeps struct {
-	lookPath func(string) (string, error)
-	run      func(context.Context, string, ...string) ([]byte, error)
+	lookPath     func(string) (string, error)
+	run          func(context.Context, string, ...string) ([]byte, error)
+	getenv       func(string) string
+	userShareDir func() string
+	executable   func() (string, error)
+	getwd        func() (string, error)
 }
 
 func runEditorCommand(ctx context.Context, name string, args ...string) ([]byte, error) {
@@ -26,8 +30,12 @@ func runEditorCommand(ctx context.Context, name string, args ...string) ([]byte,
 
 func runEditor(ctx context.Context, args []string, w io.Writer) error {
 	return runEditorWithCommandDeps(ctx, args, w, editorCommandDeps{
-		lookPath: exec.LookPath,
-		run:      runEditorCommand,
+		lookPath:     exec.LookPath,
+		run:          runEditorCommand,
+		getenv:       os.Getenv,
+		userShareDir: gladehome.UserShareDir,
+		executable:   os.Executable,
+		getwd:        os.Getwd,
 	})
 }
 
@@ -78,7 +86,7 @@ func runEditorInstall(ctx context.Context, args []string, w io.Writer, deps edit
 		}
 	}
 	if vsix == "" {
-		resolved, err := resolveBundledVSIX()
+		resolved, err := resolveBundledVSIX(deps)
 		if err != nil {
 			return fmt.Errorf("--vsix is required when no bundled VS Code extension is available: %w", err)
 		}
@@ -142,7 +150,7 @@ func runEditorDoctor(args []string, w io.Writer, deps editorCommandDeps) error {
 		report.Glade.Path = gladePath
 		report.Glade.OK = true
 	}
-	if vsix, err := resolveBundledVSIX(); err == nil {
+	if vsix, err := resolveBundledVSIX(deps); err == nil {
 		report.BundledVSIX.Path = vsix
 		report.BundledVSIX.Exists = true
 	}
@@ -210,11 +218,11 @@ func editorCommandName(editor string) string {
 	}
 }
 
-func resolveBundledVSIX() (string, error) {
-	if fromEnv := strings.TrimSpace(os.Getenv("GLADE_VSCODE_VSIX")); fromEnv != "" {
+func resolveBundledVSIX(deps editorCommandDeps) (string, error) {
+	if fromEnv := strings.TrimSpace(deps.getenv("GLADE_VSCODE_VSIX")); fromEnv != "" {
 		return existingVSIX(fromEnv)
 	}
-	for _, candidate := range bundledVSIXCandidates() {
+	for _, candidate := range bundledVSIXCandidates(deps) {
 		if vsix, err := existingVSIX(candidate); err == nil {
 			return vsix, nil
 		}
@@ -222,15 +230,15 @@ func resolveBundledVSIX() (string, error) {
 	return "", fmt.Errorf("vscode-glade.vsix not found; from a source checkout run `npm --prefix contrib/vscode-glade install && npm --prefix contrib/vscode-glade run package`, then retry")
 }
 
-func bundledVSIXCandidates() []string {
+func bundledVSIXCandidates(deps editorCommandDeps) []string {
 	candidates := []string{}
-	if home := strings.TrimSpace(os.Getenv("GLADE_HOME")); home != "" {
+	if home := strings.TrimSpace(deps.getenv("GLADE_HOME")); home != "" {
 		candidates = append(candidates, filepath.Join(home, "editor", "vscode-glade.vsix"))
 	}
 	// A source checkout package should not be hidden by an older global bundle.
-	candidates = append(candidates, sourceCheckoutVSIXCandidates()...)
-	candidates = append(candidates, filepath.Join(gladehome.UserShareDir(), "editor", "vscode-glade.vsix"))
-	exe, err := os.Executable()
+	candidates = append(candidates, sourceCheckoutVSIXCandidates(deps)...)
+	candidates = append(candidates, filepath.Join(deps.userShareDir(), "editor", "vscode-glade.vsix"))
+	exe, err := deps.executable()
 	if err == nil {
 		exeDir := filepath.Dir(exe)
 		candidates = append(candidates,
@@ -241,8 +249,8 @@ func bundledVSIXCandidates() []string {
 	return candidates
 }
 
-func sourceCheckoutVSIXCandidates() []string {
-	cwd, err := os.Getwd()
+func sourceCheckoutVSIXCandidates(deps editorCommandDeps) []string {
+	cwd, err := deps.getwd()
 	if err != nil {
 		return nil
 	}
