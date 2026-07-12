@@ -90,6 +90,21 @@ type DependencyInfo struct {
 }
 
 func Build(p project.Project, s schema.Schema) (idx Index) {
+	idx, _ = BuildWithArtifacts(p, s)
+	return idx
+}
+
+// BuildWithArtifacts builds the type index and returns the source artifacts
+// produced during the build.
+func BuildWithArtifacts(p project.Project, s schema.Schema) (idx Index, artifacts BuildArtifacts) {
+	return buildWithWorkspaceSources(p, s, NewWorkspaceSources())
+}
+
+func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *WorkspaceSources) (idx Index, artifacts BuildArtifacts) {
+	if sources == nil {
+		sources = NewWorkspaceSources()
+	}
+	artifacts.Sources = sources
 	parser := apexast.NewParser()
 	idx = Index{
 		Project: ProjectInfo{
@@ -155,7 +170,7 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 		depSchema = namespaceDependencySchema(depSchema, dep.Namespace)
 		beforeTypes := len(idx.Types)
 		appendFlowInterviewSymbols(&idx, *dep.Project, dep.Namespace, true)
-		appendProjectSymbols(&idx, parser, *dep.Project, true, dep.Namespace, dep.Version, seenTypes)
+		appendProjectSymbols(&idx, parser, *dep.Project, true, dep.Namespace, dep.Version, seenTypes, sources)
 		idx.Objects = append(idx.Objects, depSchema.Objects...)
 		idx.CustomMetadataRecords = append(idx.CustomMetadataRecords, depSchema.CustomMetadataRecords...)
 		idx.Dependencies = append(idx.Dependencies, DependencyInfo{
@@ -170,14 +185,14 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 		})
 	}
 	for _, shim := range p.PackageShims {
-		appendPackageShimSymbols(&idx, parser, shim, seenTypes)
+		appendPackageShimSymbols(&idx, parser, shim, seenTypes, sources)
 	}
 	appendFlowInterviewSymbols(&idx, p, "", false)
 	if p.Namespace != "" {
 		appendFlowInterviewSymbols(&idx, p, p.Namespace, false)
 	}
 	appendDataWeaveScriptResourceSymbols(&idx, p)
-	appendProjectSymbols(&idx, parser, p, false, p.Namespace, "", seenTypes)
+	appendProjectSymbols(&idx, parser, p, false, p.Namespace, "", seenTypes, sources)
 
 	sort.Slice(idx.Types, func(i, j int) bool {
 		if idx.Types[i].Namespace == idx.Types[j].Namespace {
@@ -191,15 +206,15 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 		}
 		return idx.Triggers[i].Namespace < idx.Triggers[j].Namespace
 	})
-	return idx
+	return idx, artifacts
 }
 
-func appendPackageShimSymbols(idx *Index, parser *apexast.Parser, shim project.PackageShim, seenTypes map[string][]seenTypeSymbol) {
+func appendPackageShimSymbols(idx *Index, parser *apexast.Parser, shim project.PackageShim, seenTypes map[string][]seenTypeSymbol, sources *WorkspaceSources) {
 	if shim.Status != "loaded" || shim.Project == nil {
 		return
 	}
 	beforeTypes := len(idx.Types)
-	appendProjectSymbols(idx, parser, *shim.Project, true, shim.Namespace, "", seenTypes)
+	appendProjectSymbols(idx, parser, *shim.Project, true, shim.Namespace, "", seenTypes, sources)
 	idx.Dependencies = append(idx.Dependencies, DependencyInfo{
 		Namespace:  shim.Namespace,
 		SourceRoot: shim.SourceRoot,
@@ -301,12 +316,15 @@ func memberSymbolsFromArtifact(members []packageartifact.ApexMember) []MemberSym
 	return out
 }
 
-func appendProjectSymbols(idx *Index, parser *apexast.Parser, p project.Project, dependency bool, namespace, version string, seenTypes map[string][]seenTypeSymbol) {
+func appendProjectSymbols(idx *Index, parser *apexast.Parser, p project.Project, dependency bool, namespace, version string, seenTypes map[string][]seenTypeSymbol, sources *WorkspaceSources) {
 	var sourceRemaps []namespaceremap.Rule
 	if dependency {
 		sourceRemaps = p.NamespaceRemaps
 	}
-	for _, file := range projectSymbolFiles(parser, p, dependency, namespace, version, sourceRemaps) {
+	for _, file := range projectSymbolFiles(parser, p, dependency, namespace, version, sourceRemaps, sources) {
+		if file.Source != nil {
+			sources.record(*file.Source)
+		}
 		if !dependency {
 			idx.Diagnostics = append(idx.Diagnostics, file.Diagnostics...)
 		}
@@ -473,14 +491,15 @@ type projectSymbolFile struct {
 	Diagnostics []diagnostic.Diagnostic
 	Types       []TypeSymbol
 	Triggers    []TriggerSymbol
+	Source      *WorkspaceSource
 }
 
-func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule) []projectSymbolFile {
+func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule, sources *WorkspaceSources) []projectSymbolFile {
 	if len(p.ApexFiles) == 0 {
 		return nil
 	}
 	if len(p.ApexFiles) == 1 {
-		return []projectSymbolFile{projectSymbolFileFromPath(parser, p.ApexFiles[0], p.Root, dependency, namespace, version, sourceRemaps)}
+		return []projectSymbolFile{projectSymbolFileFromPath(parser, p.ApexFiles[0], p.Root, dependency, namespace, version, sourceRemaps, sources)}
 	}
 	workers := runtime.GOMAXPROCS(0)
 	if workers < 1 {
@@ -512,7 +531,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 			for job := range jobs {
 				results <- result{
 					Index: job.Index,
-					File:  projectSymbolFileFromPath(localParser, job.Path, p.Root, dependency, namespace, version, sourceRemaps),
+					File:  projectSymbolFileFromPath(localParser, job.Path, p.Root, dependency, namespace, version, sourceRemaps, sources),
 				}
 			}
 		}()
@@ -533,9 +552,16 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 	return out
 }
 
-func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule) projectSymbolFile {
+func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule, sources *WorkspaceSources) projectSymbolFile {
 	var out projectSymbolFile
-	data, err := os.ReadFile(path)
+	source, err := sources.load(SourceMetadata{
+		RequestedPath:   path,
+		Root:            root,
+		Namespace:       namespace,
+		Version:         version,
+		Dependency:      dependency,
+		NamespaceRemaps: sourceRemaps,
+	})
 	if err != nil {
 		out.Diagnostics = append(out.Diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
@@ -545,9 +571,9 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 		})
 		return out
 	}
-	source := project.NormalizeApexNamespaceTokens(string(data), namespace)
-	source = namespaceremap.ApplySource(sourceRemaps, source)
-	file := parser.ParseSource(path, source)
+	out.Source = &source
+	normalized := source.NormalizedString()
+	file := parser.ParseSource(path, normalized)
 	out.Diagnostics = append(out.Diagnostics, file.Diagnostics...)
 	if len(file.Diagnostics) > 0 {
 		return out
@@ -555,7 +581,7 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 	for _, decl := range file.Declarations {
 		switch decl.Kind {
 		case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-			for _, sym := range typeSymbolsFromDeclaration(path, decl, "", false, source) {
+			for _, sym := range typeSymbolsFromDeclaration(path, decl, "", false, normalized) {
 				sym.Namespace = namespace
 				sym.SourceNamespaceRemaps = append([]namespaceremap.Rule(nil), sourceRemaps...)
 				sym.SourceRoot = root
