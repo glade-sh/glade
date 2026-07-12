@@ -24,6 +24,49 @@ type apexHistoryFixture struct {
 	output string
 }
 
+const semaFixturePackage = "github.com/glade-sh/glade/internal/sema"
+
+func runSemaShardFixture(t *testing.T, index, discovery, plan, events string, nativeRC int) (string, error, string, string) {
+	t.Helper()
+	dir := t.TempDir()
+	binDir := filepath.Join(dir, "bin")
+	artifacts := filepath.Join(dir, "artifacts")
+	if err := os.Mkdir(binDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for name, contents := range map[string]string{"discovery": discovery, "events": events} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(contents), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	goScript := `#!/usr/bin/env bash
+if [[ "$*" == "test -list ^Test ./internal/sema" ]]; then cat "$FIXTURE_DISCOVERY"; exit 0; fi
+if [[ "$1" == "test" && "$2" == "-json" ]]; then printf '%s\n' "$*" >>"$FIXTURE_CALLS"; cat "$FIXTURE_EVENTS"; exit "$FIXTURE_NATIVE_RC"; fi
+exit 97
+`
+	plannerScript := "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >\"$FIXTURE_PLANNER_ARGS\"\ncat <<'EOF'\n" + plan + "\nEOF\n"
+	for name, contents := range map[string]string{"go": goScript, "planner": plannerScript} {
+		if err := os.WriteFile(filepath.Join(binDir, name), []byte(contents), 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	calls := filepath.Join(dir, "calls")
+	plannerArgs := filepath.Join(dir, "planner-args")
+	cmd := exec.Command("bash", "ci-go-test.sh", "sema-shard", index)
+	cmd.Env = append(os.Environ(), "PATH="+binDir+":"+os.Getenv("PATH"), "CI_SHARD_PLANNER="+filepath.Join(binDir, "planner"), "CI_SEMA_ARTIFACT_DIR="+artifacts, "FIXTURE_DISCOVERY="+filepath.Join(dir, "discovery"), "FIXTURE_EVENTS="+filepath.Join(dir, "events"), "FIXTURE_CALLS="+calls, "FIXTURE_PLANNER_ARGS="+plannerArgs, fmt.Sprintf("FIXTURE_NATIVE_RC=%d", nativeRC))
+	out, err := cmd.CombinedOutput()
+	return string(out), err, artifacts, plannerArgs
+}
+
+func semaFixturePlan() string {
+	return `{"version":1,"package":"` + semaFixturePackage + `","historyUsed":false,"shards":[{"index":0,"tests":["TestAlpha"],"estimatedDurationMillis":0,"regex":"^(?:TestAlpha)$"},{"index":1,"tests":["TestBeta"],"estimatedDurationMillis":0,"regex":"^(?:TestBeta)$"}]}`
+}
+
+func semaPassEvent(name string) string {
+	return `{"Action":"pass","Package":"` + semaFixturePackage + `","Test":"` + name + `","Elapsed":1}` + "\n" +
+		`{"Action":"pass","Package":"` + semaFixturePackage + `","Elapsed":1}` + "\n"
+}
+
 func realGoCommand(t *testing.T) string {
 	t.Helper()
 	path, err := exec.LookPath("go")
@@ -482,11 +525,11 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 			t.Errorf("single-writer refresh job missing %q", want)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@v4") != 15 {
-		t.Errorf("cache save count = %d, want fourteen parallel DAG writers plus one history writer", strings.Count(workflow, "actions/cache/save@v4"))
+	if strings.Count(workflow, "actions/cache/save@v4") != 14 {
+		t.Errorf("cache save count = %d, want existing DAG writers plus Apex and sema history writers", strings.Count(workflow, "actions/cache/save@v4"))
 	}
-	if strings.Count(workflow, "shard: [0, 1]") != 1 {
-		t.Error("history work changed the two-native-shard topology")
+	if strings.Count(workflow, "shard: [0, 1]") != 2 {
+		t.Error("workflow must contain the Apex and sema two-native-shard matrices")
 	}
 	if matches, _ := filepath.Glob(filepath.Join("..", "**", "*duration-history*.json")); len(matches) != 0 {
 		t.Fatalf("tracked duration history candidates: %v", matches)
@@ -1017,6 +1060,7 @@ func ciRequiredAggregateProblem(workflow string) string {
       - apextest-history
       - gladecli
       - sema
+      - sema-history
       - server-and-playground
       - test
       - smoke-runtime
@@ -1101,6 +1145,229 @@ func TestCIWorkflowConcurrencyContract(t *testing.T) {
 	}
 }
 
+func TestCISemaShardWorkflowContract(t *testing.T) {
+	workflow, jobs := readCIWorkflow(t)
+	if !strings.Contains(workflow, "  schedule:\n    - cron: '17 9 * * 1'") {
+		t.Fatal("CI workflow is missing the weekly sema full-oracle schedule")
+	}
+	sema := jobs["sema"]
+	for _, marker := range []string{
+		"fail-fast: false",
+		"shard: [0, 1]",
+		`scripts/ci-go-test.sh sema-shard "${{ matrix.shard }}"`,
+		"name: sema-shard-${{ matrix.shard }}",
+	} {
+		if !strings.Contains(sema, marker) {
+			t.Errorf("sema matrix contract missing %q", marker)
+		}
+	}
+	for _, name := range []string{"sema-history", "sema-full", "sema-equivalence"} {
+		if _, ok := jobs[name]; !ok {
+			t.Errorf("CI workflow is missing %s job", name)
+		}
+	}
+	if strings.Contains(jobs["required-ci"], "sema-full") || strings.Contains(jobs["required-ci"], "sema-equivalence") || strings.Contains(jobs["required-ci"], "required-scheduled-ci") {
+		t.Fatal("normal Required CI depends on a scheduled-only job")
+	}
+	scheduled := jobs["required-scheduled-ci"]
+	for _, marker := range []string{
+		"name: Required Scheduled CI",
+		"      - required-ci",
+		"      - sema-full",
+		"      - sema-equivalence",
+		"if: ${{ always() && github.event_name == 'schedule' }}",
+		`select(.value.result != "success")`,
+	} {
+		if !strings.Contains(scheduled, marker) {
+			t.Errorf("scheduled aggregate contract missing %q", marker)
+		}
+	}
+	if strings.Contains(scheduled, "continue-on-error:") {
+		t.Fatal("scheduled aggregate is allowed to continue on error")
+	}
+}
+
+func TestCIRequiredScheduledAggregateIsFailClosed(t *testing.T) {
+	_, jobs := readCIWorkflow(t)
+	script := requiredAggregateShell(t, jobs["required-scheduled-ci"])
+	for _, tc := range []struct {
+		name       string
+		results    string
+		wantStatus int
+	}{
+		{name: "all success", results: `{"required-ci":{"result":"success"},"sema-full":{"result":"success"},"sema-equivalence":{"result":"success"}}`},
+		{name: "normal CI failure", results: `{"required-ci":{"result":"failure"},"sema-full":{"result":"success"},"sema-equivalence":{"result":"success"}}`, wantStatus: 1},
+		{name: "full skipped", results: `{"required-ci":{"result":"success"},"sema-full":{"result":"skipped"},"sema-equivalence":{"result":"success"}}`, wantStatus: 1},
+		{name: "equivalence cancelled", results: `{"required-ci":{"result":"success"},"sema-full":{"result":"success"},"sema-equivalence":{"result":"cancelled"}}`, wantStatus: 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cmd := exec.Command("bash", "-c", script)
+			cmd.Env = append(os.Environ(), "REQUIRED_RESULTS="+tc.results)
+			out, err := cmd.CombinedOutput()
+			got := 0
+			if err != nil {
+				got = err.(*exec.ExitError).ExitCode()
+			}
+			if got != tc.wantStatus {
+				t.Fatalf("scheduled aggregate status=%d want=%d output=%s", got, tc.wantStatus, out)
+			}
+		})
+	}
+}
+
+func TestCISemaShardRunsOneNativePackageExecution(t *testing.T) {
+	out, err, artifacts, plannerArgs := runSemaShardFixture(t, "1", "TestBeta\nTestAlpha\nok  \t"+semaFixturePackage+"\n", semaFixturePlan(), semaPassEvent("TestBeta"), 0)
+	if err != nil {
+		t.Fatalf("sema shard failed: %v\n%s", err, out)
+	}
+	args, err := os.ReadFile(plannerArgs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(args), "--package "+semaFixturePackage) {
+		t.Fatalf("planner args omit requested package: %s", args)
+	}
+	calls, err := os.ReadFile(filepath.Join(filepath.Dir(artifacts), "calls"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Count(string(calls), "test -json") != 1 || !strings.Contains(string(calls), "-run ^(?:TestBeta)$ ./internal/sema") {
+		t.Fatalf("native sema calls = %q", calls)
+	}
+	var summary struct {
+		Valid bool `json:"valid"`
+	}
+	b, err := os.ReadFile(filepath.Join(artifacts, "validation-summary.json"))
+	if err != nil || json.Unmarshal(b, &summary) != nil || !summary.Valid {
+		t.Fatalf("invalid sema summary %s err=%v", b, err)
+	}
+}
+
+func TestCISemaShardRejectsMissingOrNonPassingTerminal(t *testing.T) {
+	for _, events := range []string{"", `{"Action":"skip","Package":"` + semaFixturePackage + `","Test":"TestAlpha"}` + "\n"} {
+		out, err, _, _ := runSemaShardFixture(t, "0", "TestAlpha\nTestBeta\nok  \t"+semaFixturePackage+"\n", semaFixturePlan(), events, 0)
+		if err == nil {
+			t.Fatalf("invalid terminal evidence accepted:\n%s", out)
+		}
+	}
+}
+
+func TestCISemaDiscoveryRequiresExactPackageTrailer(t *testing.T) {
+	for _, discovery := range []string{
+		"TestAlpha\nTestBeta\n",
+		"TestAlpha\n\nTestBeta\nok  \t" + semaFixturePackage + "\n",
+		"TestAlpha\nTestBeta\nok  \t" + semaFixturePackage + "\nok  \t" + semaFixturePackage + "\n",
+	} {
+		out, err, _, _ := runSemaShardFixture(t, "0", discovery, semaFixturePlan(), semaPassEvent("TestAlpha"), 0)
+		if err == nil {
+			t.Fatalf("non-exact sema discovery accepted:\n%s", out)
+		}
+	}
+}
+
+func TestCISemaCommandsRejectInvalidArguments(t *testing.T) {
+	for _, args := range [][]string{
+		{"sema-history-refresh", "a", "b", "c", "extra"},
+		{"sema-shard"},
+		{"sema-shard", "2"},
+		{"sema-shard", "0", "extra"},
+		{"sema-history-refresh", "a", "b"},
+		{"sema-full", "extra"},
+		{"sema-equivalence", "a", "b", "c"},
+		{"sema-equivalence", "a", "b", "c", "d", "extra"},
+	} {
+		cmd := exec.Command("bash", append([]string{"ci-go-test.sh"}, args...)...)
+		cmd.Env = append(os.Environ(), "CI_SEMA_ARTIFACT_DIR="+filepath.Join(t.TempDir(), "artifacts"))
+		out, err := cmd.CombinedOutput()
+		exitErr, ok := err.(*exec.ExitError)
+		if !ok || exitErr.ExitCode() != 2 {
+			t.Fatalf("invalid args %v status=%v want 2\n%s", args, err, out)
+		}
+	}
+}
+
+func semaPairFixture(t *testing.T) apexHistoryFixture {
+	t.Helper()
+	fixture := newApexHistoryFixture(t, [2]float64{140, 139})
+	fixture.output = filepath.Join(fixture.root, "history", "sema-duration-history.json")
+	for _, dir := range fixture.shards {
+		for _, name := range []string{"plan.json", "events.json"} {
+			path := filepath.Join(dir, name)
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			data = bytes.ReplaceAll(data, []byte(fixturePackage), []byte(semaFixturePackage))
+			if err := os.WriteFile(path, data, 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	return fixture
+}
+
+func TestCISemaHistoryAndScheduledEquivalence(t *testing.T) {
+	fixture := semaPairFixture(t)
+	cmd := exec.Command("bash", "ci-go-test.sh", "sema-history-refresh", fixture.shards[0], fixture.shards[1], fixture.output)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("sema history refresh failed: %v\n%s", err, out)
+	}
+	data, err := os.ReadFile(fixture.output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var history struct {
+		Package string `json:"package"`
+		Tests   []struct {
+			Name string `json:"name"`
+		} `json:"tests"`
+	}
+	if err := json.Unmarshal(data, &history); err != nil || history.Package != semaFixturePackage || len(history.Tests) != 279 {
+		t.Fatalf("sema history = %+v err=%v", history, err)
+	}
+
+	fullDir := filepath.Join(fixture.root, "full")
+	if err := os.Mkdir(fullDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	discovery, err := os.ReadFile(filepath.Join(fixture.shards[0], "discovery.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(fullDir, "discovery.txt"), discovery, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var fullEvents []byte
+	for _, dir := range fixture.shards {
+		part, err := os.ReadFile(filepath.Join(dir, "events.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		fullEvents = append(fullEvents, part...)
+	}
+	fullEventsPath := filepath.Join(fullDir, "events.json")
+	if err := os.WriteFile(fullEventsPath, fullEvents, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	equivalence := filepath.Join(fixture.root, "equivalence", "summary.json")
+	run := func() error {
+		return exec.Command("bash", "ci-go-test.sh", "sema-equivalence", fixture.shards[0], fixture.shards[1], fullDir, equivalence).Run()
+	}
+	if err := run(); err != nil {
+		t.Fatalf("matching full and shard maps rejected: %v", err)
+	}
+	corrupt := bytes.Replace(fullEvents, []byte(`"Action":"pass"`), []byte(`"Action":"skip"`), 1)
+	if err := os.WriteFile(fullEventsPath, corrupt, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(); err == nil {
+		t.Fatal("full terminal mismatch was accepted")
+	}
+	if _, err := os.Stat(equivalence); !os.IsNotExist(err) {
+		t.Fatalf("failed equivalence left stale success evidence: %v", err)
+	}
+}
+
 func TestCIRequiredAggregateContract(t *testing.T) {
 	workflow, jobs := readCIWorkflow(t)
 	if problem := ciRequiredAggregateProblem(workflow); problem != "" {
@@ -1165,7 +1432,7 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 func TestCIParallelDAGTopology(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	wantJobs := []string{
-		"apextest", "apextest-history", "gladecli", "required-ci", "sema",
+		"apextest", "apextest-history", "gladecli", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
 		"server-and-playground", "site", "smoke-distribution", "smoke-runtime", "test", "vet",
 	}
 	gotJobs := make([]string, 0, len(jobs))
@@ -1181,11 +1448,11 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		if !strings.Contains(job, "runs-on: ubuntu-latest") {
 			t.Errorf("%s is not an ubuntu-latest job", name)
 		}
-		if name != "apextest-history" && name != "required-ci" && strings.Contains(job, "needs:") {
+		if !map[string]bool{"apextest-history": true, "required-ci": true, "required-scheduled-ci": true, "sema-history": true, "sema-equivalence": true}[name] && strings.Contains(job, "needs:") {
 			t.Errorf("root job %s must not be serialized with needs", name)
 		}
 	}
-	for _, name := range []string{"site", "vet", "gladecli", "sema", "server-and-playground", "test", "smoke-runtime", "smoke-distribution"} {
+	for _, name := range []string{"site", "vet", "gladecli", "sema", "sema-full", "server-and-playground", "test", "smoke-runtime", "smoke-distribution"} {
 		if !strings.Contains(jobs[name], "timeout-minutes: 30") {
 			t.Errorf("%s timeout is not 30 minutes", name)
 		}
@@ -1199,7 +1466,6 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 	workflow, jobs := readCIWorkflow(t)
 	wantLaneCommands := map[string][]string{
 		"gladecli":              {"scripts/ci-go-test.sh lane gladecli"},
-		"sema":                  {"scripts/ci-go-test.sh lane sema"},
 		"server-and-playground": {"scripts/ci-go-test.sh lane server-and-playground"},
 		"test":                  {"scripts/ci-go-test.sh lane repoguard", "scripts/ci-go-test.sh lane remaining-go"},
 	}
@@ -1216,7 +1482,6 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 
 	wantArtifacts := map[string]string{
 		"gladecli":              "go-test-gladecli",
-		"sema":                  "go-test-sema",
 		"server-and-playground": "go-test-server-and-playground",
 		"test":                  "go-test-remaining-go",
 	}
@@ -1230,7 +1495,6 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 	}
 	for _, path := range []string{
 		"ci-artifacts/go-test/test-gladecli.json",
-		"ci-artifacts/go-test/test-sema.json",
 		"ci-artifacts/go-test/test-server-and-playground.json",
 		"ci-artifacts/go-test/test-repoguard.json",
 		"ci-artifacts/go-test/test-remaining-go.json",
@@ -1281,7 +1545,7 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 func TestCIParallelDAGCacheOwnership(t *testing.T) {
 	workflow, jobs := readCIWorkflow(t)
 	owners := map[string]string{
-		"vet": "ci-vet", "gladecli": "ci-gladecli", "sema": "ci-sema",
+		"vet": "ci-vet", "gladecli": "ci-gladecli",
 		"server-and-playground": "ci-server-playground", "test": "ci-test",
 		"smoke-runtime": "ci-smoke-runtime", "smoke-distribution": "ci-smoke-distribution",
 	}
@@ -1318,8 +1582,8 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 			t.Errorf("%s lacks the ci-test digest seed fallback", jobName)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@v4") != 15 {
-		t.Errorf("cache save count = %d, want 14 DAG writers plus unchanged Apex history writer", strings.Count(workflow, "actions/cache/save@v4"))
+	if strings.Count(workflow, "actions/cache/save@v4") != 14 {
+		t.Errorf("cache save count = %d, want existing DAG and two history writers", strings.Count(workflow, "actions/cache/save@v4"))
 	}
 }
 
@@ -1440,8 +1704,8 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 	if strings.Count(workflowText, "go test -json") != 0 {
 		t.Fatal("ci.yml must delegate the native Apex run to the tested wrapper")
 	}
-	if strings.Count(workflowText, "shard: [0, 1]") != 1 {
-		t.Fatal("ci.yml must define exactly one two-cell Apex matrix")
+	if strings.Count(workflowText, "shard: [0, 1]") != 2 {
+		t.Fatal("ci.yml must define two-cell Apex and sema matrices")
 	}
 	if strings.Contains(workflowText, ".ci-artifacts") || strings.Contains(scriptText, ".ci-artifacts") {
 		t.Fatal("Apex evidence must use a non-hidden path so upload-artifact includes it by default")

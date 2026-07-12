@@ -158,6 +158,48 @@ func TestBuildPlanUsesDeterministicLPTAndShardIndexTieBreak(t *testing.T) {
 	}
 }
 
+func TestBuildPlanUsesRequestedPackage(t *testing.T) {
+	const semaPackage = "github.com/glade-sh/glade/internal/sema"
+	names := []string{"TestAlpha", "TestBravo"}
+	history := validHistory(names, map[string]int64{"TestAlpha": 2, "TestBravo": 1})
+	history = bytes.Replace(history, []byte(apexTestPackage), []byte(semaPackage), 1)
+	historyPath := filepath.Join(t.TempDir(), "history.json")
+	if err := os.WriteFile(historyPath, history, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	rc := run([]string{"--package", semaPackage, "--shards", "2", "--history", historyPath}, strings.NewReader("TestBravo\nTestAlpha\n"), &stdout, &stderr)
+	if rc != 0 {
+		t.Fatalf("requested package plan rc=%d stderr=%s", rc, stderr.String())
+	}
+	var got plan
+	if err := json.Unmarshal(stdout.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Package != semaPackage || !got.HistoryUsed {
+		t.Fatalf("package/historyUsed = %q/%v, want %q/true", got.Package, got.HistoryUsed, semaPackage)
+	}
+}
+
+func TestRequestedPackageAndHistoryMustBeExact(t *testing.T) {
+	for _, packageName := range []string{"", "./internal/sema", "github.com/glade-sh/glade/internal/...", "github.com/glade-sh/glade/internal/sema/", "github.com/glade-sh/glade/internal/.", "github.com/glade-sh/glade/internal/..", "example.com/foo.", "example.com/foo./bar"} {
+		var stdout, stderr bytes.Buffer
+		if rc := run([]string{"--package", packageName}, strings.NewReader("TestA\nTestB\n"), &stdout, &stderr); rc == 0 {
+			t.Fatalf("invalid exact package %q accepted: %s", packageName, stdout.String())
+		}
+	}
+	const semaPackage = "github.com/glade-sh/glade/internal/sema"
+	history := []byte(`{"version":1,"version":1,"package":"` + semaPackage + `","complete":true,"tests":[{"name":"TestA","durationMillis":1},{"name":"TestB","durationMillis":1}]}`)
+	got, diagnostic, err := buildPlanForPackage(semaPackage, []string{"TestA", "TestB"}, 2, history)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diagnostic == "" || got.HistoryUsed {
+		t.Fatalf("duplicate-key history accepted: diagnostic=%q plan=%+v", diagnostic, got)
+	}
+}
+
 func TestBuildPlanIsByteIdenticalAcrossDiscoveryOrder(t *testing.T) {
 	names := []string{"TestD", "TestA", "TestC", "TestB"}
 	history := validHistory(names, map[string]int64{"TestA": 7, "TestB": 6, "TestC": 5, "TestD": 4})

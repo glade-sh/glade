@@ -3,6 +3,8 @@ name: CI
 on:
   push:
   pull_request:
+  schedule:
+    - cron: '17 9 * * 1'
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.run_id }}
@@ -133,55 +135,143 @@ jobs:
   sema:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1]
     env:
       GOMAXPROCS: "2"
+      GOMODCACHE: ${{ runner.temp }}/go-mod-sema-${{ matrix.shard }}
+      GOCACHE: ${{ runner.temp }}/go-build-sema-${{ matrix.shard }}
+      CI_SEMA_ARTIFACT_DIR: ci-artifacts/sema-${{ matrix.shard }}
+      CI_SEMA_HISTORY_PATH: /tmp/glade-sema-duration-history/sema-duration-history.json
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
         with:
           go-version: "1.26.5"
           cache: false
-      - name: Restore Go module cache
-        id: restore-go-mod-cache
+      - name: Restore sema duration history
         uses: actions/cache/restore@v4
         continue-on-error: true
         with:
-          path: ~/go/pkg/mod
-          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-sema-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/glade-sema-duration-history
+          key: sema-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-sema-${{ hashFiles('go.sum') }}-
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
-      - name: Restore Go build cache
-        id: restore-go-build-cache
-        uses: actions/cache/restore@v4
-        continue-on-error: true
+            sema-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('go.sum') }}-
+      - name: Restore and save isolated sema module cache
+        uses: actions/cache@v5
         with:
-          path: ~/.cache/go-build
-          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-sema-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.GOMODCACHE }}
+          key: go-mod-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-sema-${{ hashFiles('go.sum') }}-
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
-      - run: scripts/ci-go-test.sh lane sema
-      - name: Save Go module cache
-        if: success()
-        uses: actions/cache/save@v4
-        continue-on-error: true
+            go-mod-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-${{ matrix.shard }}-
+      - name: Restore and save isolated sema build cache
+        uses: actions/cache@v5
         with:
-          path: ~/go/pkg/mod
-          key: ${{ steps.restore-go-mod-cache.outputs.cache-primary-key }}
-      - name: Save Go build cache
-        if: success()
-        uses: actions/cache/save@v4
-        continue-on-error: true
-        with:
-          path: ~/.cache/go-build
-          key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
-      - name: Upload raw Go test events
+          path: ${{ env.GOCACHE }}
+          key: go-build-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-build-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-${{ matrix.shard }}-
+      - name: Run sema shard
+        run: scripts/ci-go-test.sh sema-shard "${{ matrix.shard }}"
+      - name: Upload sema shard evidence
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: go-test-sema
-          path: ci-artifacts/go-test/test-sema.json
+          name: sema-shard-${{ matrix.shard }}
+          path: ci-artifacts/sema-${{ matrix.shard }}/
+          if-no-files-found: error
+
+  sema-history:
+    needs: sema
+    if: ${{ success() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download successful sema shard evidence
+        uses: actions/download-artifact@v7
+        with:
+          pattern: sema-shard-*
+          path: /tmp/sema-history-input
+      - name: Refresh sema duration history
+        run: scripts/ci-go-test.sh sema-history-refresh /tmp/sema-history-input/sema-shard-0 /tmp/sema-history-input/sema-shard-1 /tmp/glade-sema-duration-history/sema-duration-history.json
+      - name: Save sema duration history
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: /tmp/glade-sema-duration-history
+          key: sema-duration-history-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Upload sema duration history evidence
+        uses: actions/upload-artifact@v6
+        with:
+          name: sema-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/glade-sema-duration-history/sema-duration-history.json
+          if-no-files-found: error
+
+  sema-full:
+    if: ${{ github.event_name == 'schedule' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GOMAXPROCS: "2"
+      GOMODCACHE: ${{ runner.temp }}/go-mod-sema-full
+      GOCACHE: ${{ runner.temp }}/go-build-sema-full
+      CI_SEMA_FULL_ARTIFACT_DIR: ci-artifacts/sema-full
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.5"
+          cache: false
+      - name: Restore sema full module cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ${{ env.GOMODCACHE }}
+          key: go-mod-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-full-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-mod-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-full-
+      - name: Restore sema full build cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ${{ env.GOCACHE }}
+          key: go-build-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-full-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-build-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-full-
+      - name: Run sema full oracle
+        run: scripts/ci-go-test.sh sema-full
+      - name: Upload sema full evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: sema-full
+          path: ci-artifacts/sema-full/
+          if-no-files-found: error
+
+  sema-equivalence:
+    needs:
+      - sema
+      - sema-full
+    if: ${{ github.event_name == 'schedule' && success() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download sema evidence
+        uses: actions/download-artifact@v7
+        with:
+          pattern: sema-*
+          path: /tmp/sema-equivalence-input
+      - name: Verify exact sema equivalence
+        run: scripts/ci-go-test.sh sema-equivalence /tmp/sema-equivalence-input/sema-shard-0 /tmp/sema-equivalence-input/sema-shard-1 /tmp/sema-equivalence-input/sema-full /tmp/sema-equivalence/equivalence.json
+      - name: Upload sema equivalence evidence
+        uses: actions/upload-artifact@v6
+        with:
+          name: sema-equivalence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: /tmp/sema-equivalence/equivalence.json
           if-no-files-found: error
 
   server-and-playground:
@@ -558,6 +648,7 @@ jobs:
       - apextest-history
       - gladecli
       - sema
+      - sema-history
       - server-and-playground
       - test
       - smoke-runtime
@@ -567,6 +658,26 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Require all CI jobs
+        env:
+          REQUIRED_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          failures="$(jq -r 'to_entries[] | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
+          if [[ -n "$failures" ]]; then
+            printf '%s\n' "$failures"
+            exit 1
+          fi
+
+  required-scheduled-ci:
+    name: Required Scheduled CI
+    needs:
+      - required-ci
+      - sema-full
+      - sema-equivalence
+    if: ${{ always() && github.event_name == 'schedule' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require all scheduled CI jobs
         env:
           REQUIRED_RESULTS: ${{ toJSON(needs) }}
         run: |

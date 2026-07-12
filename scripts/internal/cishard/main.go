@@ -37,6 +37,7 @@ var specializedPackageLanes = map[string][]string{
 }
 
 var testNamePattern = regexp.MustCompile(`^Test[A-Za-z0-9_]*$`)
+var importPathPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._~/-]*$`)
 
 type historyTest struct {
 	Name           string `json:"name"`
@@ -92,6 +93,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	fs := flag.NewFlagSet("cishard", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	shards := fs.Int("shards", 2, "number of shards")
+	requestedPackage := fs.String("package", apexTestPackage, "exact Go import path for the test package")
 	testsPath := fs.String("tests", "", "newline-delimited discovered tests (default: stdin)")
 	historyPath := fs.String("history", "", "JSON test duration history")
 	index := fs.Int("index", -1, "emit only the zero-based shard index")
@@ -138,6 +140,10 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "cishard: --packages and --lane require --package-manifest")
 		return 2
 	}
+	if err := validateImportPath(*requestedPackage); err != nil {
+		fmt.Fprintf(stderr, "cishard: --package: %v\n", err)
+		return 2
+	}
 	if indexSet && (*index < 0 || *index >= *shards) {
 		fmt.Fprintf(stderr, "cishard: --index must be between 0 and %d\n", *shards-1)
 		return 2
@@ -168,7 +174,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 			fmt.Fprintf(stderr, "cishard: history rejected: %v; using deterministic fallback\n", err)
 		}
 	}
-	result, diagnostic, err := buildPlan(names, *shards, history)
+	result, diagnostic, err := buildPlanForPackage(*requestedPackage, names, *shards, history)
 	if err != nil {
 		fmt.Fprintf(stderr, "cishard: %v\n", err)
 		return 1
@@ -188,6 +194,20 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return 1
 	}
 	return 0
+}
+
+func validateImportPath(packageName string) error {
+	if packageName == "" || !importPathPattern.MatchString(packageName) ||
+		strings.Contains(packageName, "//") || strings.Contains(packageName, "...") ||
+		strings.HasSuffix(packageName, "/") {
+		return fmt.Errorf("invalid exact import path %q", packageName)
+	}
+	for _, segment := range strings.Split(packageName, "/") {
+		if segment == "." || segment == ".." || strings.HasSuffix(segment, ".") {
+			return fmt.Errorf("invalid exact import path %q", packageName)
+		}
+	}
+	return nil
 }
 
 func emitPackageManifest(manifestPath, packagesPath, selectedLane string, stdout io.Writer) error {
@@ -404,6 +424,13 @@ func readNames(r io.Reader) ([]string, error) {
 }
 
 func buildPlan(names []string, shardCount int, history []byte) (plan, string, error) {
+	return buildPlanForPackage(apexTestPackage, names, shardCount, history)
+}
+
+func buildPlanForPackage(packageName string, names []string, shardCount int, history []byte) (plan, string, error) {
+	if err := validateImportPath(packageName); err != nil {
+		return plan{}, "", err
+	}
 	canonical, err := validateNames(names)
 	if err != nil {
 		return plan{}, "", err
@@ -415,7 +442,7 @@ func buildPlan(names []string, shardCount int, history []byte) (plan, string, er
 		return plan{}, "", fmt.Errorf("shard count %d exceeds test count %d", shardCount, len(canonical))
 	}
 
-	weights, diagnostic := historyWeights(canonical, history)
+	weights, diagnostic := historyWeightsForPackage(packageName, canonical, history)
 	historyUsed := diagnostic == ""
 	items := make([]weightedTest, 0, len(canonical))
 	for _, name := range canonical {
@@ -437,7 +464,7 @@ func buildPlan(names []string, shardCount int, history []byte) (plan, string, er
 		})
 	}
 
-	result := plan{Version: 1, Package: apexTestPackage, HistoryUsed: historyUsed, Shards: make([]shardPlan, shardCount)}
+	result := plan{Version: 1, Package: packageName, HistoryUsed: historyUsed, Shards: make([]shardPlan, shardCount)}
 	counts := make([]int, shardCount)
 	for i := range result.Shards {
 		result.Shards[i].Index = i
@@ -492,9 +519,16 @@ func validateNames(names []string) ([]string, error) {
 }
 
 func historyWeights(names []string, data []byte) (map[string]int64, string) {
+	return historyWeightsForPackage(apexTestPackage, names, data)
+}
+
+func historyWeightsForPackage(packageName string, names []string, data []byte) (map[string]int64, string) {
 	fallback := make(map[string]int64, len(names))
 	if len(data) == 0 {
 		return fallback, "history unavailable; using deterministic fallback"
+	}
+	if err := rejectDuplicateJSONKeys(data); err != nil {
+		return fallback, fmt.Sprintf("history rejected: %v; using deterministic fallback", err)
 	}
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
@@ -505,7 +539,7 @@ func historyWeights(names []string, data []byte) (map[string]int64, string) {
 	if err := ensureJSONEOF(decoder); err != nil {
 		return fallback, fmt.Sprintf("history rejected: %v; using deterministic fallback", err)
 	}
-	if history.Version != 1 || history.Package != apexTestPackage || !history.Complete {
+	if history.Version != 1 || history.Package != packageName || !history.Complete {
 		return fallback, "history rejected: wrong schema, package, or completeness; using deterministic fallback"
 	}
 	want := make(map[string]bool, len(names))
