@@ -4,6 +4,10 @@ on:
   push:
   pull_request:
 
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   site:
     runs-on: ubuntu-latest
@@ -544,3 +548,30 @@ jobs:
           name: apextest-duration-history-${{ github.run_id }}-${{ github.run_attempt }}
           path: /tmp/glade-apextest-duration-history/apextest-duration-history.json
           if-no-files-found: error
+
+  required-ci:
+    name: Required CI
+    needs:
+      - site
+      - vet
+      - apextest
+      - apextest-history
+      - gladecli
+      - sema
+      - server-and-playground
+      - test
+      - smoke-runtime
+      - smoke-distribution
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require all CI jobs
+        env:
+          REQUIRED_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          failures="$(jq -r 'to_entries[] | select(.value.result != "success") | "\(.key)=\(.value.result)"' <<<"$REQUIRED_RESULTS")"
+          if [[ -n "$failures" ]]; then
+            printf '%s\n' "$failures"
+            exit 1
+          fi

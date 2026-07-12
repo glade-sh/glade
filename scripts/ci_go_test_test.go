@@ -3,6 +3,7 @@ package scripts
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -985,11 +986,187 @@ func readCIWorkflow(t *testing.T) (string, map[string]string) {
 	return workflow, workflowJobBlocks(t, workflow)
 }
 
+func ciWorkflowConcurrencyProblem(workflow string) string {
+	header, _, found := strings.Cut(workflow, "\njobs:\n")
+	if !found {
+		return "missing top-level jobs boundary"
+	}
+	blocks, problem := workflowTopLevelBlocks(header)
+	if problem != "" {
+		return problem
+	}
+	want := `concurrency:
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true`
+	if blocks["concurrency"] != want {
+		return "top-level concurrency block does not match required structure"
+	}
+	return ""
+}
+
+func ciRequiredAggregateProblem(workflow string) string {
+	jobs := workflowJobBlocks(&testing.T{}, workflow)
+	job, ok := jobs["required-ci"]
+	if !ok || strings.Count(workflow, "\n  required-ci:\n") != 1 {
+		return "missing single required-ci job"
+	}
+	wantNeeds := `    needs:
+      - site
+      - vet
+      - apextest
+      - apextest-history
+      - gladecli
+      - sema
+      - server-and-playground
+      - test
+      - smoke-runtime
+      - smoke-distribution`
+	needsStart := strings.Index(job, "    needs:\n")
+	if needsStart < 0 {
+		return "required-ci missing needs block"
+	}
+	needsLines := strings.Split(job[needsStart:], "\n")
+	needsEnd := len(needsLines)
+	for i, line := range needsLines[1:] {
+		if strings.HasPrefix(line, "    ") && !strings.HasPrefix(line, "     ") {
+			needsEnd = i + 1
+			break
+		}
+	}
+	if got := strings.Join(needsLines[:needsEnd], "\n"); got != wantNeeds {
+		return "required-ci needs do not exactly match required jobs"
+	}
+	for _, forbidden := range []struct {
+		name   string
+		marker string
+	}{
+		{name: "job continue-on-error", marker: "\n    continue-on-error:"},
+		{name: "step continue-on-error", marker: "\n        continue-on-error:"},
+		{name: "step condition", marker: "\n        if:"},
+	} {
+		if strings.Contains(job, forbidden.marker) {
+			return "required-ci must not define " + forbidden.name
+		}
+	}
+	checks := []struct {
+		name string
+		want string
+	}{
+		{name: "name", want: "    name: Required CI"},
+		{name: "needs", want: wantNeeds},
+		{name: "always condition", want: "    if: always()"},
+		{name: "runner", want: "    runs-on: ubuntu-latest"},
+		{name: "timeout", want: "    timeout-minutes: 5"},
+		{name: "needs JSON environment", want: `          REQUIRED_RESULTS: ${{ toJSON(needs) }}`},
+		{name: "fail-closed predicate", want: `select(.value.result != "success")`},
+		{name: "failure exit", want: "            exit 1"},
+	}
+	for _, check := range checks {
+		if strings.Count(job, check.want) != 1 {
+			return fmt.Sprintf("required-ci %s marker count = %d, want 1", check.name, strings.Count(job, check.want))
+		}
+	}
+	_, steps, found := strings.Cut(job, "    steps:\n")
+	if !found || strings.Count(steps, "      - ") != 1 {
+		return fmt.Sprintf("required-ci step count = %d, want 1", strings.Count(steps, "      - "))
+	}
+	return ""
+}
+
+func requiredAggregateShell(t *testing.T, job string) string {
+	t.Helper()
+	marker := "        run: |\n"
+	_, script, found := strings.Cut(job, marker)
+	if !found {
+		t.Fatal("required-ci missing shell run block")
+	}
+	var lines []string
+	for _, line := range strings.Split(script, "\n") {
+		if line == "" {
+			lines = append(lines, "")
+			continue
+		}
+		if !strings.HasPrefix(line, "          ") {
+			break
+		}
+		lines = append(lines, strings.TrimPrefix(line, "          "))
+	}
+	return strings.Join(lines, "\n")
+}
+
+func TestCIWorkflowConcurrencyContract(t *testing.T) {
+	workflow, _ := readCIWorkflow(t)
+	if problem := ciWorkflowConcurrencyProblem(workflow); problem != "" {
+		t.Fatal(problem)
+	}
+}
+
+func TestCIRequiredAggregateContract(t *testing.T) {
+	workflow, jobs := readCIWorkflow(t)
+	if problem := ciRequiredAggregateProblem(workflow); problem != "" {
+		t.Fatal(problem)
+	}
+	script := requiredAggregateShell(t, jobs["required-ci"])
+	for _, tc := range []struct {
+		name       string
+		results    string
+		wantStatus int
+		wantOutput string
+	}{
+		{name: "all success", results: `{"site":{"result":"success"},"test":{"result":"success"}}`},
+		{name: "failure", results: `{"site":{"result":"success"},"test":{"result":"failure"}}`, wantStatus: 1, wantOutput: "test=failure"},
+		{name: "cancelled", results: `{"site":{"result":"cancelled"}}`, wantStatus: 1, wantOutput: "site=cancelled"},
+		{name: "skipped", results: `{"site":{"result":"skipped"}}`, wantStatus: 1, wantOutput: "site=skipped"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cmd := exec.Command("bash", "-c", script)
+			cmd.Env = append(os.Environ(), "REQUIRED_RESULTS="+tc.results)
+			out, err := cmd.CombinedOutput()
+			gotStatus := 0
+			if err != nil {
+				var exitErr *exec.ExitError
+				if !errors.As(err, &exitErr) {
+					t.Fatalf("aggregate shell failed to run: %v\n%s", err, out)
+				}
+				gotStatus = exitErr.ExitCode()
+			}
+			if gotStatus != tc.wantStatus || !strings.Contains(string(out), tc.wantOutput) {
+				t.Fatalf("aggregate status/output = %d/%q, want %d containing %q", gotStatus, out, tc.wantStatus, tc.wantOutput)
+			}
+		})
+	}
+}
+
+func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
+	workflow, _ := readCIWorkflow(t)
+	mutations := map[string]string{
+		"remove history":         strings.Replace(workflow, "      - apextest-history\n", "", 1),
+		"success-only condition": strings.Replace(workflow, "    if: always()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5", "    if: success()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5", 1),
+		"failure-only predicate": strings.Replace(workflow, `select(.value.result != "success")`, `select(.value.result == "failure")`, 1),
+		"remove exit":            strings.Replace(workflow, "            exit 1\n", "", 1),
+		"rename job":             strings.Replace(workflow, "  required-ci:\n", "  required-checks:\n", 1),
+		"rename display":         strings.Replace(workflow, "    name: Required CI\n    needs:\n", "    name: Required Checks\n    needs:\n", 1),
+		"job continue on error":  strings.Replace(workflow, "    if: always()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n", "    if: always()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    continue-on-error: true\n    steps:\n", 1),
+		"step continue on error": strings.Replace(workflow, "      - name: Require all CI jobs\n        env:\n", "      - name: Require all CI jobs\n        continue-on-error: true\n        env:\n", 1),
+		"step skip condition":    strings.Replace(workflow, "      - name: Require all CI jobs\n        env:\n", "      - name: Require all CI jobs\n        if: false\n        env:\n", 1),
+	}
+	for name, mutated := range mutations {
+		t.Run(name, func(t *testing.T) {
+			if mutated == workflow {
+				t.Fatal("test fixture did not mutate workflow")
+			}
+			if problem := ciRequiredAggregateProblem(mutated); problem == "" {
+				t.Fatal("required aggregate contract accepted weakening mutation")
+			}
+		})
+	}
+}
+
 func TestCIParallelDAGTopology(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	wantJobs := []string{
-		"apextest", "apextest-history", "gladecli", "sema", "server-and-playground",
-		"site", "smoke-distribution", "smoke-runtime", "test", "vet",
+		"apextest", "apextest-history", "gladecli", "required-ci", "sema",
+		"server-and-playground", "site", "smoke-distribution", "smoke-runtime", "test", "vet",
 	}
 	gotJobs := make([]string, 0, len(jobs))
 	for name := range jobs {
@@ -1004,7 +1181,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 		if !strings.Contains(job, "runs-on: ubuntu-latest") {
 			t.Errorf("%s is not an ubuntu-latest job", name)
 		}
-		if name != "apextest-history" && strings.Contains(job, "needs:") {
+		if name != "apextest-history" && name != "required-ci" && strings.Contains(job, "needs:") {
 			t.Errorf("root job %s must not be serialized with needs", name)
 		}
 	}
