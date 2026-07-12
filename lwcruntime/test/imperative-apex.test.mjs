@@ -66,7 +66,9 @@ test("apex import supports wire and imperative invocation", async (t) => {
     const page = await browser.newPage();
     await page.goto(`${server.baseURL}/imperative.html`, { waitUntil: "networkidle" });
     await page.getByRole("button", { name: "Load Imperative" }).click();
-    const text = await page.locator("c-wire-probe").innerText({ timeout: 10000 });
+    const host = page.locator("c-wire-probe");
+    await host.getByText("Imperative Shell Account", { exact: true }).waitFor({ timeout: 10000 });
+    const text = await host.innerText();
     assert.match(text, /wire:Technology/);
     assert.match(text, /Imperative Shell Account/);
   } finally {
