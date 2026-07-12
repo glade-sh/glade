@@ -94,9 +94,13 @@ case "${package}" in
 		heavy_package=true
 		;;
 	*)
+		direct_package_args=()
+		if [[ "${package}" == "./internal/server" ]]; then
+			direct_package_args=(-p=1)
+		fi
 		set +e
 		"${resource_runner}" "${artifact_dir}/resource.json" "race-${slug}" -- \
-			"${go_command}" test -race -count=1 -timeout=60m "${package}"
+			"${go_command}" test "${direct_package_args[@]}" -race -count=1 -timeout=60m "${package}"
 		native_rc="$?"
 		set -e
 		set +e

@@ -487,6 +487,29 @@ exit "${CI_RACE_GO_STATUS:-0}"
 	}
 }
 
+func TestCIRacePackageRunnerSerializesServerBuild(t *testing.T) {
+	root := t.TempDir()
+	logPath := filepath.Join(root, "calls.log")
+	goCommand := writeRaceFixture(t, "fake-go", `#!/usr/bin/env bash
+printf '%q ' "$@" >>"$CI_RACE_GO_LOG"
+printf '\n' >>"$CI_RACE_GO_LOG"
+exit 0
+`)
+	resource := writeRaceFixture(t, "fake-resource", raceResourceFixture())
+	env := []string{"CI_RACE_GO_COMMAND=" + goCommand, "CI_RACE_RESOURCE_RUNNER=" + resource, "CI_RACE_CALL_LOG=" + logPath, "CI_RACE_GO_LOG=" + logPath}
+	if out, err := runRacePackage(t, root, env, "./internal/server", "internal-server"); err != nil {
+		t.Fatalf("server package failed: %v\n%s", err, out)
+	}
+	data, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	log := string(data)
+	if strings.Count(log, "test -p=1 -race -count=1 -timeout=60m ./internal/server") != 1 {
+		t.Fatalf("server native call is not serialized:\n%s", log)
+	}
+}
+
 func TestCIRacePackageRunnerRejectsUnsafePackageSegmentsAndSlugs(t *testing.T) {
 	tests := []struct {
 		name string
