@@ -136,13 +136,143 @@ union_validation="${artifact_dir}/union-validation.json"
 union_sentinel="${union_validation}.tmp.$$"
 if [[ "${package}" == "./internal/playground" ]]; then
 	sentinel_counts='[0,0,0,0,0,0,0,0,0]'
+elif [[ "${package}" == "./internal/apextest" ]]; then
+	sentinel_counts='[0,0,0,0,0,0,0,0]'
 else
 	sentinel_counts='[0,0,0,0]'
 fi
 printf '{"schema_version":1,"package":"%s","discovered_count":0,"shard_counts":%s,"names_sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","valid":false}\n' "${package_name}" "${sentinel_counts}" >"${union_sentinel}"
 mv "${union_sentinel}" "${union_validation}"
 
-"${go_command}" test -race -list '.' "${package}" >"${discovery_raw}"
+if [[ "${package}" == "./internal/apextest" ]]; then
+	binary_metadata="${artifact_dir}/binary.json"
+	binary_path="$(mktemp "${TMPDIR:-/tmp}/glade-race-apextest.test.XXXXXX")"
+	rm -f "${binary_path}"
+	cleanup_apextest_binary() {
+		rm -f -- "${binary_path}"
+		if [[ -f "${binary_metadata}" ]]; then
+			python3 - "${binary_metadata}" <<'PY'
+import json, os, sys, tempfile
+path = sys.argv[1]
+try:
+    with open(path, encoding="utf-8") as source:
+        value = json.load(source)
+    if isinstance(value, dict) and set(value) == {"schema_version", "package", "sha256", "size_bytes", "removed"}:
+        value["removed"] = True
+        descriptor, temporary = tempfile.mkstemp(prefix=".binary.", dir=os.path.dirname(path), text=True)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as target:
+            json.dump(value, target, sort_keys=True, separators=(",", ":"))
+            target.write("\n")
+        os.replace(temporary, path)
+except (OSError, ValueError):
+    pass
+PY
+		fi
+	}
+	active_resource_pid=""
+	run_apextest_command() {
+		python3 - "$@" <<'PY' &
+import os, sys
+os.setsid()
+os.execvp(sys.argv[1], sys.argv[1:])
+PY
+		active_resource_pid="$!"
+		wait "${active_resource_pid}"
+		local wait_rc="$?"
+		active_resource_pid=""
+		return "${wait_rc}"
+	}
+	handle_apextest_signal() {
+		local signal_name="$1" signal_status="$2"
+		trap - HUP INT TERM
+		if [[ -n "${active_resource_pid}" ]] && kill -0 "${active_resource_pid}" 2>/dev/null; then
+			kill "-${signal_name}" -- "-${active_resource_pid}" 2>/dev/null || kill "-${signal_name}" "${active_resource_pid}" 2>/dev/null || true
+			set +e
+			wait "${active_resource_pid}" 2>/dev/null
+			set -e
+			active_resource_pid=""
+		fi
+		trap - EXIT
+		cleanup_apextest_binary
+		exit "${signal_status}"
+	}
+	trap cleanup_apextest_binary EXIT
+	trap 'handle_apextest_signal HUP 129' HUP
+	trap 'handle_apextest_signal INT 130' INT
+	trap 'handle_apextest_signal TERM 143' TERM
+
+	build_resource="${artifact_dir}/build-resource.json"
+	set +e
+	run_apextest_command "${resource_runner}" "${build_resource}" "race-${slug}-build" -- \
+		"${go_command}" test -race -c -o "${binary_path}" "${package}"
+	build_native_rc="$?"
+	set -e
+	set +e
+	validate_resource_evidence "${build_resource}" "race-${slug}-build" "${build_native_rc}"
+	build_validation_rc="$?"
+	set -e
+	if [[ "${build_native_rc}" -ne 0 ]]; then exit "${build_native_rc}"; fi
+	if [[ "${build_validation_rc}" -ne 0 ]]; then exit "${build_validation_rc}"; fi
+
+	python3 - "${binary_path}" "${binary_metadata}" "${package_name}" <<'PY'
+import hashlib, json, os, stat, sys, tempfile
+binary_path, output_path, package = sys.argv[1:]
+try:
+    info = os.stat(binary_path, follow_symlinks=False)
+except FileNotFoundError:
+    raise SystemExit("race apextest binary is missing after build")
+if not stat.S_ISREG(info.st_mode) or info.st_size <= 0 or not os.access(binary_path, os.X_OK):
+    raise SystemExit("race apextest binary is not a nonempty executable regular file")
+digest = hashlib.sha256()
+with open(binary_path, "rb") as source:
+    for chunk in iter(lambda: source.read(1024 * 1024), b""):
+        digest.update(chunk)
+value = {"schema_version": 1, "package": package, "sha256": digest.hexdigest(), "size_bytes": info.st_size, "removed": False}
+descriptor, temporary = tempfile.mkstemp(prefix=".binary.", dir=os.path.dirname(output_path), text=True)
+with os.fdopen(descriptor, "w", encoding="utf-8") as target:
+    json.dump(value, target, sort_keys=True, separators=(",", ":"))
+    target.write("\n")
+os.replace(temporary, output_path)
+PY
+	read -r binary_sha256 binary_size < <(python3 - "${binary_metadata}" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as source:
+    value = json.load(source)
+if not isinstance(value, dict) or set(value) != {"schema_version", "package", "sha256", "size_bytes", "removed"}:
+    raise SystemExit("race apextest binary metadata has an invalid schema")
+if value["schema_version"] != 1 or value["removed"] is not False:
+    raise SystemExit("race apextest binary metadata has invalid state")
+print(value["sha256"], value["size_bytes"])
+PY
+	)
+	verify_apextest_binary() {
+		python3 - "${binary_path}" "${binary_sha256}" "${binary_size}" <<'PY'
+import hashlib, os, stat, sys
+path, expected_sha, expected_size = sys.argv[1:]
+try:
+    info = os.stat(path, follow_symlinks=False)
+except FileNotFoundError:
+    raise SystemExit("race apextest binary is missing")
+if not stat.S_ISREG(info.st_mode) or not os.access(path, os.X_OK) or str(info.st_size) != expected_size:
+    raise SystemExit("race apextest binary has invalid type, mode, or size")
+digest = hashlib.sha256()
+with open(path, "rb") as source:
+    for chunk in iter(lambda: source.read(1024 * 1024), b""):
+        digest.update(chunk)
+if digest.hexdigest() != expected_sha:
+    raise SystemExit("race apextest binary checksum changed")
+PY
+	}
+	verify_apextest_binary
+	set +e
+	run_apextest_command "${binary_path}" -test.list '.' >"${discovery_raw}"
+	discovery_native_rc="$?"
+	set -e
+	if [[ "${discovery_native_rc}" -ne 0 ]]; then exit "${discovery_native_rc}"; fi
+	verify_apextest_binary
+else
+	"${go_command}" test -race -list '.' "${package}" >"${discovery_raw}"
+fi
 python3 - "${discovery_raw}" "${discovery}" "${discovery_benchmarks}" "${ordinary_discovery}" "${package_name}" <<'PY'
 import re
 import sys
@@ -154,6 +284,7 @@ trailer_pattern = re.compile(r"ok\s+" + re.escape(package) + r"(?:\s+[^\s]+)?\Z"
 names = []
 benchmarks = []
 trailers = 0
+direct_passes = 0
 with open(raw_path, encoding="utf-8") as source:
     for number, raw in enumerate(source, 1):
         line = raw.rstrip("\n")
@@ -167,6 +298,8 @@ with open(raw_path, encoding="utf-8") as source:
             raise SystemExit(f"race discovery contains unsupported example: {line!r}")
         elif trailer_pattern.fullmatch(line):
             trailers += 1
+        elif package == "github.com/glade-sh/glade/internal/apextest" and line == "PASS":
+            direct_passes += 1
         else:
             raise SystemExit(f"invalid race discovery line {number}: {line!r}")
 if not names:
@@ -175,7 +308,10 @@ if len(names) != len(set(names)):
     raise SystemExit("race discovery contains duplicate top-level tests")
 if len(benchmarks) != len(set(benchmarks)):
     raise SystemExit("race discovery contains duplicate benchmarks")
-if trailers != 1:
+if package == "github.com/glade-sh/glade/internal/apextest":
+    if trailers != 0 or direct_passes not in (0, 1):
+        raise SystemExit(f"race apextest binary discovery trailer counts are ok={trailers} PASS={direct_passes}")
+elif trailers != 1:
     raise SystemExit(f"race discovery package trailer count is {trailers}, want 1")
 names.sort()
 with open(output_path, "w", encoding="utf-8") as target:
@@ -208,6 +344,9 @@ if [[ "${package}" == "./internal/playground" ]]; then
 	planner_tests="${ordinary_discovery}"
 	planner_shards=5
 	plan_mode=playground
+elif [[ "${package}" == "./internal/apextest" ]]; then
+	planner_shards=8
+	plan_mode=apextest
 fi
 if [[ -n "${shard_planner}" ]]; then
 	if [[ "${shard_planner}" == */* ]]; then
@@ -294,6 +433,153 @@ if mode == "playground":
         with open(f"{lane_dir}/regex.txt", "w", encoding="utf-8") as target:
             target.write(selection["regex"] + "\n")
 PY
+
+if [[ "${package}" == "./internal/apextest" ]]; then
+	lane_names=(shard-0 shard-1 shard-2 shard-3 shard-4 shard-5 shard-6 shard-7)
+	event_paths=()
+	for lane_name in "${lane_names[@]}"; do
+		shard_dir="${artifact_dir}/${lane_name}"
+		events="${shard_dir}/events.json"
+		resource="${shard_dir}/resource.json"
+		regex="$(<"${shard_dir}/regex.txt")"
+		: >"${events}"
+		set +e
+		run_apextest_command "${resource_runner}" "${resource}" "race-${slug}-${lane_name}" -- \
+			bash -c '
+set -euo pipefail
+binary="$1"; expected_sha="$2"; expected_size="$3"; events="$4"; go_command="$5"; package="$6"; regex="$7"
+read -r actual_sha actual_size < <(python3 - "$binary" <<'"'"'PY'"'"'
+import hashlib
+import os
+import stat
+import sys
+path = sys.argv[1]
+try:
+    info = os.stat(path, follow_symlinks=False)
+except FileNotFoundError:
+    raise SystemExit("race apextest binary is missing before direct shard")
+if not stat.S_ISREG(info.st_mode) or info.st_size <= 0 or not os.access(path, os.X_OK):
+    raise SystemExit("race apextest binary is not executable before direct shard")
+digest = hashlib.sha256()
+with open(path, "rb") as source:
+    for chunk in iter(lambda: source.read(1024 * 1024), b""):
+        digest.update(chunk)
+print(digest.hexdigest(), info.st_size)
+PY
+)
+if [[ "$actual_sha" != "$expected_sha" || "$actual_size" != "$expected_size" ]]; then
+    echo "race apextest binary changed before direct shard" >&2
+    exit 125
+fi
+set +e
+"$binary" -test.v=test2json -test.count=1 -test.timeout=60m -test.run="$regex" | \
+    "$go_command" tool test2json -p "$package" >"$events"
+statuses=("${PIPESTATUS[@]}")
+set -e
+if [[ "${statuses[0]}" -ne 0 ]]; then exit "${statuses[0]}"; fi
+exit "${statuses[1]}"
+' bash "${binary_path}" "${binary_sha256}" "${binary_size}" "${events}" "${go_command}" "${package_name}" "${regex}"
+		native_rc="$?"
+		set -e
+		set +e
+		validate_resource_evidence "${resource}" "race-${slug}-${lane_name}" "${native_rc}"
+		validation_rc="$?"
+		set -e
+		if [[ "${native_rc}" -ne 0 ]]; then
+			exit "${native_rc}"
+		fi
+		if [[ "${validation_rc}" -ne 0 ]]; then
+			exit "${validation_rc}"
+		fi
+		python3 - "${shard_dir}/selection.json" "${events}" "${package_name}" "${lane_name}" <<'PY'
+import json
+import sys
+
+selection_path, events_path, package, index = sys.argv[1:]
+
+def reject_duplicates(pairs):
+    value = {}
+    for key, item in pairs:
+        if key in value:
+            raise ValueError(f"duplicate JSON key {key!r}")
+        value[key] = item
+    return value
+
+with open(selection_path, encoding="utf-8") as source:
+    selection = json.load(source, object_pairs_hook=reject_duplicates)
+if not isinstance(selection, dict) or set(selection) != {"index", "tests", "estimatedDurationMillis", "regex"}:
+    raise SystemExit(f"race shard {index} selection has an invalid schema")
+expected = selection["tests"]
+terminals = {}
+with open(events_path, encoding="utf-8") as source:
+    for number, line in enumerate(source, 1):
+        if not line.strip():
+            continue
+        event = json.loads(line, object_pairs_hook=reject_duplicates)
+        if not isinstance(event, dict):
+            raise ValueError(f"shard {index} event {number} is not an object")
+        if event.get("Package") != package:
+            raise ValueError(f"shard {index} event {number} has wrong package")
+        name = event.get("Test")
+        action = event.get("Action")
+        if isinstance(name, str) and "/" not in name and action in ("pass", "fail", "skip"):
+            terminals.setdefault(name, []).append(action)
+if set(terminals) != set(expected):
+    raise SystemExit(f"race shard {index} terminal set does not match selection")
+for name in expected:
+    if terminals[name] != ["pass"]:
+        raise SystemExit(f"race shard {index} test {name} does not have exactly one passing terminal")
+PY
+		event_paths+=("${events}")
+	done
+
+	python3 - "${discovery}" "${package_name}" "${union_validation}" "${event_paths[@]}" <<'PY'
+import hashlib
+import json
+import os
+import sys
+import tempfile
+
+discovery_path, package, output_path, *event_paths = sys.argv[1:]
+if len(event_paths) != 8:
+    raise SystemExit("race apextest union validation requires exactly 8 shard event files")
+with open(discovery_path, encoding="utf-8") as source:
+    expected = source.read().splitlines()
+passed = []
+shard_counts = []
+for path in event_paths:
+    shard_passed = []
+    with open(path, encoding="utf-8") as source:
+        for line in source:
+            if not line.strip():
+                continue
+            event = json.loads(line)
+            name = event.get("Test")
+            if event.get("Package") == package and isinstance(name, str) and "/" not in name and event.get("Action") == "pass":
+                passed.append(name)
+                shard_passed.append(name)
+    shard_counts.append(len(shard_passed))
+if len(passed) != len(set(passed)) or sorted(passed) != expected:
+    raise SystemExit("race passing apextest shard union does not exactly match discovery")
+canonical = "".join(name + "\n" for name in expected).encode("utf-8")
+result = {"schema_version": 1, "package": package, "discovered_count": len(expected), "shard_counts": shard_counts, "names_sha256": hashlib.sha256(canonical).hexdigest(), "valid": True}
+descriptor, temporary = tempfile.mkstemp(prefix=".union-validation.", dir=os.path.dirname(output_path), text=True)
+try:
+    with os.fdopen(descriptor, "w", encoding="utf-8") as target:
+        json.dump(result, target, sort_keys=True, separators=(",", ":"))
+        target.write("\n")
+    os.replace(temporary, output_path)
+except BaseException:
+    try:
+        os.unlink(temporary)
+    except FileNotFoundError:
+        pass
+    raise
+PY
+	cleanup_apextest_binary
+	trap - EXIT HUP INT TERM
+	exit 0
+fi
 
 lane_names=()
 if [[ "${package}" == "./internal/playground" ]]; then

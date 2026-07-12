@@ -10,9 +10,12 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
+	"syscall"
 	"testing"
+	"time"
 )
 
 const (
@@ -358,6 +361,84 @@ printf ']}\n'
 `
 }
 
+func raceApextestPlannerFixture() string {
+	return `#!/usr/bin/env bash
+set -euo pipefail
+package=""
+tests=""
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --package) package="$2"; shift 2 ;;
+    --shards) [[ "$2" == 8 ]]; shift 2 ;;
+    --tests) tests="$2"; shift 2 ;;
+    *) exit 91 ;;
+  esac
+done
+names=()
+while IFS= read -r name; do names+=("$name"); done <"$tests"
+[[ "${#names[@]}" == 8 ]]
+printf '{"version":1,"package":"%s","historyUsed":false,"shards":[' "$package"
+for index in 0 1 2 3 4 5 6 7; do
+  [[ "$index" == 0 ]] || printf ','
+  printf '{"index":%s,"tests":["%s"],"estimatedDurationMillis":0,"regex":"^(?:%s)$"}' "$index" "${names[$index]}" "${names[$index]}"
+done
+printf ']}\n'
+`
+}
+
+func raceApextestGoFixture() string {
+	return `#!/usr/bin/env bash
+set -euo pipefail
+line=go; for argument in "$@"; do printf -v quoted '%q' "$argument"; line+=" $quoted"; done; printf '%s\n' "$line" >>"$CI_RACE_CALL_LOG"
+if [[ "$*" == *"-list ."* ]]; then
+  exit 98
+fi
+if [[ "$1" == test && "$*" == *" -c "* ]]; then
+  if [[ "${CI_RACE_BUILD_STATUS:-0}" != 0 ]]; then exit "$CI_RACE_BUILD_STATUS"; fi
+  output=""
+  while [[ "$#" -gt 0 ]]; do if [[ "$1" == -o ]]; then output="$2"; break; fi; shift; done
+  [[ -n "$output" ]]
+  if [[ "${CI_RACE_BINARY_MODE:-}" == absent ]]; then exit 0; fi
+  printf '%s\n' '#!/usr/bin/env bash' 'set -euo pipefail' >"$output"
+  cat >>"$output" <<'BIN'
+line=binary; for argument in "$@"; do printf -v quoted '%q' "$argument"; line+=" $quoted"; done; printf '%s\n' "$line" >>"$CI_RACE_CALL_LOG"
+if [[ "$*" == *"-test.list ."* ]]; then
+  case "${CI_RACE_BINARY_DISCOVERY_MODE:-valid}" in
+    failure) exit "${CI_RACE_BINARY_DISCOVERY_STATUS:-32}" ;;
+    block) printf '%s\n' "$$" >"$CI_RACE_RUNNER_PID"; sleep 300 ;;
+    malformed) printf 'HelperThing\n' ;;
+    fuzz) printf 'FuzzBytes\n' ;;
+    example) printf 'ExampleThing\n' ;;
+    duplicate) printf '%b' "$CI_RACE_TEST_NAMES"; printf 'TestAlpha\nBenchmarkFixture\n' ;;
+    pass-duplicate) printf '%b' "$CI_RACE_TEST_NAMES"; printf 'BenchmarkFixture\nPASS\nPASS\n' ;;
+    go-trailer) printf '%b' "$CI_RACE_TEST_NAMES"; printf 'BenchmarkFixture\nok   github.com/glade-sh/glade/internal/apextest 0.001s\n' ;;
+    tampered) printf '# tampered during discovery\n' >>"$0"; printf '%b' "$CI_RACE_TEST_NAMES"; printf 'BenchmarkFixture\n' ;;
+    missing) rm -f "$0"; printf '%b' "$CI_RACE_TEST_NAMES"; printf 'BenchmarkFixture\n' ;;
+    *) printf '%b' "$CI_RACE_TEST_NAMES"; printf 'BenchmarkFixture\n'; [[ "${CI_RACE_BINARY_DISCOVERY_PASS:-0}" == 1 ]] && printf 'PASS\n' ;;
+  esac
+  exit 0
+fi
+while IFS= read -r candidate; do if [[ "$*" == *"$candidate"* ]]; then test="$candidate"; break; fi; done <<<"$CI_RACE_TEST_NAMES"
+case "${CI_RACE_DIRECT_EVENTS:-valid}" in
+  malformed) printf '{bad-json}\n' ;;
+  duplicate) printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/apextest","Test":"%s"}\n' "$test"; printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/apextest","Test":"%s"}\n' "$test" ;;
+  missing) ;;
+  skip|fail) printf '{"Action":"%s","Package":"github.com/glade-sh/glade/internal/apextest","Test":"%s"}\n' "$CI_RACE_DIRECT_EVENTS" "$test" ;;
+  *) printf '{"Action":"run","Package":"github.com/glade-sh/glade/internal/apextest","Test":"%s"}\n' "$test"; printf '{"Action":"pass","Package":"github.com/glade-sh/glade/internal/apextest","Test":"%s"}\n' "$test" ;;
+esac
+if [[ "${CI_RACE_DIRECT_FAIL_TEST:-}" == "$test" ]]; then exit "${CI_RACE_DIRECT_STATUS:-31}"; fi
+BIN
+  chmod +x "$output"
+  exit 0
+fi
+if [[ "$1" == tool && "$2" == test2json ]]; then
+  cat
+  exit "${CI_RACE_TEST2JSON_STATUS:-0}"
+fi
+exit 99
+`
+}
+
 func racePlannerOmissionFixture() string {
 	return `#!/usr/bin/env bash
 printf '%s\n' '{"version":1,"package":"github.com/glade-sh/glade/internal/playground","historyUsed":false,"shards":[{"index":0,"tests":["TestAlpha"],"estimatedDurationMillis":0,"regex":"^(?:TestAlpha)$"},{"index":1,"tests":["TestBeta"],"estimatedDurationMillis":0,"regex":"^(?:TestBeta)$"},{"index":2,"tests":["TestDelta"],"estimatedDurationMillis":0,"regex":"^(?:TestDelta)$"},{"index":3,"tests":["TestEpsilon"],"estimatedDurationMillis":0,"regex":"^(?:TestEpsilon)$"},{"index":4,"tests":["TestGamma"],"estimatedDurationMillis":0,"regex":"^(?:TestGamma)$"}]}'
@@ -576,7 +657,7 @@ func TestCIRacePlaygroundRealPlanUsesFiveOrdinaryShards(t *testing.T) {
 }
 
 func TestCIRacePackageRunnerGenericHeavyPackagesUseFourSequentialExactShards(t *testing.T) {
-	for _, pkg := range []string{"./internal/apextest", "./internal/gladecli"} {
+	for _, pkg := range []string{"./internal/gladecli"} {
 		t.Run(filepath.Base(pkg), func(t *testing.T) {
 			root := t.TempDir()
 			logPath := filepath.Join(root, "calls.log")
@@ -668,6 +749,273 @@ printf '{"Action":"pass","Package":"github.com/glade-sh/glade/%s","Test":"%s","E
 				union.DiscoveredCount != 4 || !reflect.DeepEqual(union.ShardCounts, []int{1, 1, 1, 1}) ||
 				union.NamesSHA256 != namesHash || !union.Valid {
 				t.Fatalf("union evidence = %#v", union)
+			}
+		})
+	}
+}
+
+func TestCIRacePackageRunnerApextestBuildsOnceAndUsesEightDirectShards(t *testing.T) {
+	root := t.TempDir()
+	logPath := filepath.Join(root, "calls.log")
+	testNames := []string{"TestAlpha", "TestBeta", "TestDelta", "TestEpsilon", "TestEta", "TestGamma", "TestTheta", "TestZeta"}
+	goCommand := writeRaceFixture(t, "fake-go", raceApextestGoFixture())
+	planner := writeRaceFixture(t, "fake-planner", raceApextestPlannerFixture())
+	resource := writeRaceFixture(t, "fake-resource", raceResourceFixture())
+	out, err := runRacePackage(t, root, []string{
+		"CI_RACE_GO_COMMAND=" + goCommand, "CI_RACE_SHARD_PLANNER=" + planner,
+		"CI_RACE_RESOURCE_RUNNER=" + resource, "CI_RACE_CALL_LOG=" + logPath,
+		"CI_RACE_TEST_NAMES=" + strings.Join(testNames, "\n") + "\n",
+		"CI_RACE_BINARY_DISCOVERY_PASS=1",
+		"TMPDIR=" + root,
+	}, "./internal/apextest", "internal-apextest")
+	if err != nil {
+		t.Fatalf("apextest direct shards failed: %v\n%s", err, out)
+	}
+	data, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	log := string(data)
+	if strings.Count(log, "go test ") != 1 || strings.Count(log, "go test -race -c -o") != 1 || strings.Count(log, "go tool test2json -p github.com/glade-sh/glade/internal/apextest") != 8 {
+		t.Fatalf("apextest build/test2json calls:\n%s", log)
+	}
+	if strings.Count(log, "binary -test.list .") != 1 || strings.Count(log, "binary -test.v=test2json -test.count=1 -test.timeout=60m -test.run=") != 8 || strings.Contains(log, "go test -json -race") || strings.Contains(log, "go test -race -list") {
+		t.Fatalf("apextest direct binary calls:\n%s", log)
+	}
+	for shard := 0; shard < 8; shard++ {
+		if !strings.Contains(log, "start race-internal-apextest-shard-"+fmt.Sprint(shard)) {
+			t.Fatalf("missing shard %d resource lane:\n%s", shard, log)
+		}
+	}
+	metadataPath := filepath.Join(root, "ci-artifacts/race/internal-apextest/binary.json")
+	metadataData, err := os.ReadFile(metadataPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var metadata struct {
+		SchemaVersion int    `json:"schema_version"`
+		Package       string `json:"package"`
+		SHA256        string `json:"sha256"`
+		SizeBytes     int64  `json:"size_bytes"`
+		Removed       bool   `json:"removed"`
+	}
+	if err := json.Unmarshal(metadataData, &metadata); err != nil || metadata.SchemaVersion != 1 || metadata.Package != "github.com/glade-sh/glade/internal/apextest" || len(metadata.SHA256) != 64 || metadata.SizeBytes <= 0 || !metadata.Removed {
+		t.Fatalf("binary metadata = %#v err=%v data=%s", metadata, err, metadataData)
+	}
+	unionData, err := os.ReadFile(filepath.Join(root, "ci-artifacts/race/internal-apextest/union-validation.json"))
+	var union struct {
+		DiscoveredCount int   `json:"discovered_count"`
+		ShardCounts     []int `json:"shard_counts"`
+		Valid           bool  `json:"valid"`
+	}
+	if err != nil || json.Unmarshal(unionData, &union) != nil || union.DiscoveredCount != 8 || !reflect.DeepEqual(union.ShardCounts, []int{1, 1, 1, 1, 1, 1, 1, 1}) || !union.Valid {
+		t.Fatalf("apextest union = %#v err=%v data=%s", union, err, unionData)
+	}
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		if strings.Contains(entry.Name(), "apextest.test") {
+			t.Fatalf("temporary race binary remained: %s", entry.Name())
+		}
+	}
+}
+
+func TestCIRacePackageRunnerApextestRejectsBuildAndDirectCorruption(t *testing.T) {
+	tests := []struct {
+		name          string
+		env           []string
+		planner       string
+		resource      string
+		wantStatus    int
+		wantMaxShards int
+	}{
+		{name: "build failure", env: []string{"CI_RACE_BUILD_STATUS=27"}, wantStatus: 27, wantMaxShards: 0},
+		{name: "build resource corruption", resource: "malformed-build", wantMaxShards: 0},
+		{name: "build native precedence", env: []string{"CI_RACE_BUILD_STATUS=28"}, resource: "malformed-build", wantStatus: 28, wantMaxShards: 0},
+		{name: "binary absent", env: []string{"CI_RACE_BINARY_MODE=absent"}, wantMaxShards: 0},
+		{name: "binary tampered", env: []string{"CI_RACE_BINARY_MODE=tampered"}, wantMaxShards: 1},
+		{name: "binary discovery failure", env: []string{"CI_RACE_BINARY_DISCOVERY_MODE=failure", "CI_RACE_BINARY_DISCOVERY_STATUS=32"}, wantStatus: 32, wantMaxShards: 0},
+		{name: "binary discovery tampered", env: []string{"CI_RACE_BINARY_DISCOVERY_MODE=tampered"}, wantMaxShards: 0},
+		{name: "binary discovery missing", env: []string{"CI_RACE_BINARY_DISCOVERY_MODE=missing"}, wantMaxShards: 0},
+		{name: "binary discovery malformed", env: []string{"CI_RACE_BINARY_DISCOVERY_MODE=malformed"}, wantMaxShards: 0},
+		{name: "binary discovery fuzz", env: []string{"CI_RACE_BINARY_DISCOVERY_MODE=fuzz"}, wantMaxShards: 0},
+		{name: "binary discovery example", env: []string{"CI_RACE_BINARY_DISCOVERY_MODE=example"}, wantMaxShards: 0},
+		{name: "binary discovery duplicate", env: []string{"CI_RACE_BINARY_DISCOVERY_MODE=duplicate"}, wantMaxShards: 0},
+		{name: "binary discovery duplicate pass", env: []string{"CI_RACE_BINARY_DISCOVERY_MODE=pass-duplicate"}, wantMaxShards: 0},
+		{name: "binary discovery go trailer", env: []string{"CI_RACE_BINARY_DISCOVERY_MODE=go-trailer"}, wantMaxShards: 0},
+		{name: "test2json failure", env: []string{"CI_RACE_TEST2JSON_STATUS=29"}, wantStatus: 29, wantMaxShards: 1},
+		{name: "test2json missing", env: []string{"CI_RACE_TEST2JSON_STATUS=127"}, wantStatus: 127, wantMaxShards: 1},
+		{name: "direct failure native precedence", env: []string{"CI_RACE_DIRECT_FAIL_TEST=TestAlpha", "CI_RACE_DIRECT_STATUS=31", "CI_RACE_TEST2JSON_STATUS=29"}, wantStatus: 31, wantMaxShards: 1},
+		{name: "direct resource corruption", resource: "malformed-direct", wantMaxShards: 1},
+		{name: "malformed direct event", env: []string{"CI_RACE_DIRECT_EVENTS=malformed"}, wantMaxShards: 1},
+		{name: "duplicate direct terminal", env: []string{"CI_RACE_DIRECT_EVENTS=duplicate"}, wantMaxShards: 1},
+		{name: "missing direct terminal", env: []string{"CI_RACE_DIRECT_EVENTS=missing"}, wantMaxShards: 1},
+		{name: "skipped direct terminal", env: []string{"CI_RACE_DIRECT_EVENTS=skip"}, wantMaxShards: 1},
+		{name: "failed direct terminal", env: []string{"CI_RACE_DIRECT_EVENTS=fail"}, wantMaxShards: 1},
+		{name: "planner omission", planner: "omission", wantMaxShards: 0},
+		{name: "planner duplicate", planner: "duplicate", wantMaxShards: 0},
+		{name: "planner empty", planner: "empty", wantMaxShards: 0},
+		{name: "planner schema", planner: "schema", wantMaxShards: 0},
+	}
+	for _, fixture := range tests {
+		t.Run(fixture.name, func(t *testing.T) {
+			root := t.TempDir()
+			logPath := filepath.Join(root, "calls.log")
+			testNames := []string{"TestAlpha", "TestBeta", "TestDelta", "TestEpsilon", "TestEta", "TestGamma", "TestTheta", "TestZeta"}
+			goCommand := writeRaceFixture(t, "fake-go", raceApextestGoFixture())
+			plannerText := raceApextestPlannerFixture()
+			switch fixture.planner {
+			case "omission":
+				plannerText = strings.Replace(plannerText, `[[ "${#names[@]}" == 8 ]]`, `names=("${names[@]:0:7}" "TestUnknown")`, 1)
+			case "duplicate":
+				plannerText = strings.Replace(plannerText, `[[ "${#names[@]}" == 8 ]]`, `names[7]="${names[0]}"`, 1)
+			case "empty":
+				plannerText = strings.Replace(plannerText, `for index in 0 1 2 3 4 5 6 7; do`, `names[7]=""; for index in 0 1 2 3 4 5 6 7; do`, 1)
+			case "schema":
+				plannerText = strings.Replace(plannerText, `"historyUsed":false`, `"historyUsed":false,"extra":true`, 1)
+			}
+			planner := writeRaceFixture(t, "fake-planner", plannerText)
+			resourceText := raceResourceFixture()
+			if fixture.resource == "malformed-build" {
+				resourceText = strings.Replace(resourceText, `printf '{"schema_version":1,"lane":"%s","elapsed_seconds":0,"user_seconds":0,"system_seconds":0,"max_rss_kb":0,"exit_status":%s}\n' "$lane" "$rc" >"$output"`, `if [[ "$lane" == race-internal-apextest-build ]]; then printf '{bad-json}\n' >"$output"; else printf '{"schema_version":1,"lane":"%s","elapsed_seconds":0,"user_seconds":0,"system_seconds":0,"max_rss_kb":0,"exit_status":%s}\n' "$lane" "$rc" >"$output"; fi`, 1)
+			}
+			if fixture.resource == "malformed-direct" {
+				resourceText = strings.Replace(resourceText, `printf '{"schema_version":1,"lane":"%s","elapsed_seconds":0,"user_seconds":0,"system_seconds":0,"max_rss_kb":0,"exit_status":%s}\n' "$lane" "$rc" >"$output"`, `if [[ "$lane" == race-internal-apextest-shard-0 ]]; then printf '{bad-json}\n' >"$output"; else printf '{"schema_version":1,"lane":"%s","elapsed_seconds":0,"user_seconds":0,"system_seconds":0,"max_rss_kb":0,"exit_status":%s}\n' "$lane" "$rc" >"$output"; fi`, 1)
+			}
+			if slices.Contains(fixture.env, "CI_RACE_BINARY_MODE=tampered") {
+				resourceText = strings.Replace(resourceText, `set +e
+"$@"`, `if [[ "$lane" == race-internal-apextest-shard-0 ]]; then printf '# tampered\n' >>"$(find "$TMPDIR" -maxdepth 1 -name 'glade-race-apextest.test.*' -print -quit)"; fi
+set +e
+"$@"`, 1)
+			}
+			resource := writeRaceFixture(t, "fake-resource", resourceText)
+			env := []string{
+				"CI_RACE_GO_COMMAND=" + goCommand, "CI_RACE_SHARD_PLANNER=" + planner,
+				"CI_RACE_RESOURCE_RUNNER=" + resource, "CI_RACE_CALL_LOG=" + logPath,
+				"CI_RACE_TEST_NAMES=" + strings.Join(testNames, "\n") + "\n",
+				"TMPDIR=" + root,
+			}
+			env = append(env, fixture.env...)
+			out, err := runRacePackage(t, root, env, "./internal/apextest", "internal-apextest")
+			if err == nil {
+				t.Fatalf("invalid apex topology accepted:\n%s", out)
+			}
+			if fixture.wantStatus != 0 && raceExitCode(err) != fixture.wantStatus {
+				t.Fatalf("status = %d, want %d\n%s", raceExitCode(err), fixture.wantStatus, out)
+			}
+			logData, _ := os.ReadFile(logPath)
+			if got := strings.Count(string(logData), "start race-internal-apextest-shard-"); got > fixture.wantMaxShards {
+				t.Fatalf("started %d shards, want at most %d:\n%s", got, fixture.wantMaxShards, logData)
+			}
+			unionData, readErr := os.ReadFile(filepath.Join(root, "ci-artifacts/race/internal-apextest/union-validation.json"))
+			var union struct {
+				Valid bool `json:"valid"`
+			}
+			if readErr != nil || json.Unmarshal(unionData, &union) != nil || union.Valid {
+				t.Fatalf("failed apex topology union = %#v err=%v data=%s", union, readErr, unionData)
+			}
+			entries, readDirErr := os.ReadDir(root)
+			if readDirErr != nil {
+				t.Fatal(readDirErr)
+			}
+			for _, entry := range entries {
+				if strings.Contains(entry.Name(), "apextest.test") {
+					t.Fatalf("failed apex topology left binary %s", entry.Name())
+				}
+			}
+		})
+	}
+}
+
+func TestCIRacePackageRunnerApextestSignalStopsActiveLaneAndRemovesBinary(t *testing.T) {
+	for _, phase := range []string{"discovery", "direct"} {
+		t.Run(phase, func(t *testing.T) {
+			root := t.TempDir()
+			logPath := filepath.Join(root, "calls.log")
+			runnerPIDPath := filepath.Join(root, "runner.pid")
+			testNames := []string{"TestAlpha", "TestBeta", "TestDelta", "TestEpsilon", "TestEta", "TestGamma", "TestTheta", "TestZeta"}
+			goCommand := writeRaceFixture(t, "fake-go", raceApextestGoFixture())
+			planner := writeRaceFixture(t, "fake-planner", raceApextestPlannerFixture())
+			resource := writeRaceFixture(t, "fake-resource", `#!/usr/bin/env bash
+set -euo pipefail
+output="$1"; lane="$2"; shift 3
+if [[ "${CI_RACE_SIGNAL_PHASE:-direct}" == direct && "$lane" == race-internal-apextest-shard-0 ]]; then
+  sleep 300 & child="$!"
+  trap 'kill -TERM "$child" 2>/dev/null || true; wait "$child" 2>/dev/null || true; exit 143' TERM HUP INT
+  printf '%s\n' "$$" >"$CI_RACE_RUNNER_PID"
+  wait "$child"
+fi
+set +e
+"$@"
+rc="$?"
+set -e
+mkdir -p "$(dirname "$output")"
+printf '{"schema_version":1,"lane":"%s","elapsed_seconds":0,"user_seconds":0,"system_seconds":0,"max_rss_kb":0,"exit_status":%s}\n' "$lane" "$rc" >"$output"
+exit "$rc"
+`)
+			script, err := filepath.Abs("ci-race-test.sh")
+			if err != nil {
+				t.Fatal(err)
+			}
+			cmd := exec.Command("bash", script, "./internal/apextest", "internal-apextest")
+			cmd.Dir = root
+			cmd.Env = append(os.Environ(),
+				"CI_RACE_DEADLINE_ACTIVE=1", "CI_RACE_GO_COMMAND="+goCommand,
+				"CI_RACE_SHARD_PLANNER="+planner, "CI_RACE_RESOURCE_RUNNER="+resource,
+				"CI_RACE_CALL_LOG="+logPath, "CI_RACE_RUNNER_PID="+runnerPIDPath,
+				"CI_RACE_TEST_NAMES="+strings.Join(testNames, "\n")+"\n", "TMPDIR="+root,
+				"CI_RACE_SIGNAL_PHASE="+phase,
+			)
+			if phase == "discovery" {
+				cmd.Env = append(cmd.Env, "CI_RACE_BINARY_DISCOVERY_MODE=block")
+			}
+			var output bytes.Buffer
+			cmd.Stdout = &output
+			cmd.Stderr = &output
+			if err := cmd.Start(); err != nil {
+				t.Fatal(err)
+			}
+			deadline := time.Now().Add(5 * time.Second)
+			for {
+				if _, err := os.Stat(runnerPIDPath); err == nil {
+					break
+				}
+				if time.Now().After(deadline) {
+					_ = cmd.Process.Kill()
+					_ = cmd.Wait()
+					t.Fatalf("direct lane did not start:\n%s", output.String())
+				}
+				time.Sleep(10 * time.Millisecond)
+			}
+			if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+				t.Fatal(err)
+			}
+			waited := make(chan error, 1)
+			go func() { waited <- cmd.Wait() }()
+			select {
+			case err := <-waited:
+				if raceExitCode(err) != 143 {
+					t.Fatalf("signal exit = %d, want 143:\n%s", raceExitCode(err), output.String())
+				}
+			case <-time.After(2 * time.Second):
+				pidData, _ := os.ReadFile(runnerPIDPath)
+				if runnerPID := strings.TrimSpace(string(pidData)); runnerPID != "" {
+					_ = exec.Command("kill", "-TERM", runnerPID).Run()
+				}
+				_ = cmd.Process.Kill()
+				<-waited
+				t.Fatal("signal did not promptly stop the active Apex resource lane")
+			}
+			entries, err := os.ReadDir(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, entry := range entries {
+				if strings.Contains(entry.Name(), "apextest.test") {
+					t.Fatalf("signal left temporary race binary %s", entry.Name())
+				}
 			}
 		})
 	}
