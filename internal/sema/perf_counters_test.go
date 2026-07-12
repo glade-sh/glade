@@ -5,8 +5,27 @@ import (
 	"reflect"
 	"sync"
 	"testing"
+	"time"
 	"unsafe"
 )
+
+func TestDurationNanosecondsClampsNegativeDurations(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		in   time.Duration
+		want uint64
+	}{
+		{name: "negative", in: -time.Nanosecond, want: 0},
+		{name: "zero", in: 0, want: 0},
+		{name: "positive", in: 42 * time.Nanosecond, want: 42},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := durationNanoseconds(tc.in); got != tc.want {
+				t.Fatalf("durationNanoseconds(%s) = %d, want %d", tc.in, got, tc.want)
+			}
+		})
+	}
+}
 
 func TestPerfRecorderDisabledStateIsCompact(t *testing.T) {
 	// Leave room for counters and scalar snapshots while preventing a full

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -13,6 +14,292 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
+
+func TestWriteWithStatsCreatesPrivateTestCacheDirectory(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix permission bits are not available on Windows")
+	}
+	dir := t.TempDir()
+	entry := Entry{Version: Version, ProjectRoot: dir, Manifest: Manifest{ProjectRoot: dir}}
+
+	if _, err := WriteWithStats(&entry, SubdirTest); err != nil {
+		t.Fatalf("WriteWithStats() error = %v", err)
+	}
+	info, err := os.Stat(filepath.Join(dir, ".glade", "test"))
+	if err != nil {
+		t.Fatalf("Stat() cache directory error = %v", err)
+	}
+	if got, want := info.Mode().Perm(), os.FileMode(0o700); got != want {
+		t.Fatalf("cache directory permissions = %04o, want %04o", got, want)
+	}
+}
+
+func TestWriteWithStatsRestrictsExistingTestCacheDirectory(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix permission bits are not available on Windows")
+	}
+	dir := t.TempDir()
+	cacheDir := filepath.Join(dir, ".glade", "test")
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	entry := Entry{Version: Version, ProjectRoot: dir, Manifest: Manifest{ProjectRoot: dir}}
+
+	if _, err := WriteWithStats(&entry, SubdirTest); err != nil {
+		t.Fatalf("WriteWithStats() error = %v", err)
+	}
+	info, err := os.Stat(cacheDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := info.Mode().Perm(), os.FileMode(0o700); got != want {
+		t.Fatalf("cache directory permissions = %04o, want %04o", got, want)
+	}
+}
+
+func TestWriteWithStatsRejectsSymlinkTestCacheDirectoryWithoutChangingTarget(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix symlink and permission behavior is not available on Windows")
+	}
+	dir := t.TempDir()
+	target := filepath.Join(t.TempDir(), "target")
+	if err := os.Mkdir(target, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	cacheDir := filepath.Join(dir, ".glade", "test")
+	if err := os.MkdirAll(filepath.Dir(cacheDir), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(target, cacheDir); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	entry := Entry{Version: Version, ProjectRoot: dir, Manifest: Manifest{ProjectRoot: dir}}
+
+	if _, err := WriteWithStats(&entry, SubdirTest); err == nil {
+		t.Fatal("WriteWithStats() error = nil, want symlink rejection")
+	}
+	info, err := os.Stat(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := info.Mode().Perm(), os.FileMode(0o755); got != want {
+		t.Fatalf("symlink target permissions = %04o, want unchanged %04o", got, want)
+	}
+}
+
+func TestWriteWithStatsRejectsSymlinkedCacheAncestorWithoutChangingTarget(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix symlink and permission behavior is not available on Windows")
+	}
+	dir := t.TempDir()
+	externalRoot := t.TempDir()
+	externalCache := filepath.Join(externalRoot, "test")
+	if err := os.Mkdir(externalCache, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(externalRoot, filepath.Join(dir, ".glade")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	entry := Entry{Version: Version, ProjectRoot: dir, Manifest: Manifest{ProjectRoot: dir}}
+
+	if _, err := WriteWithStats(&entry, SubdirTest); err == nil {
+		t.Fatal("WriteWithStats() error = nil, want symlinked ancestor rejection")
+	}
+	info, err := os.Stat(externalCache)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := info.Mode().Perm(), os.FileMode(0o755); got != want {
+		t.Fatalf("external cache permissions = %04o, want unchanged %04o", got, want)
+	}
+}
+
+func TestWriteWithStatsRejectsInProjectSymlinkedCacheAncestor(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix symlink and permission behavior is not available on Windows")
+	}
+	dir := t.TempDir()
+	target := filepath.Join(dir, "force-app")
+	if err := os.Mkdir(target, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(target, "sentinel"), []byte("unchanged\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("force-app", filepath.Join(dir, ".glade")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	entry := Entry{Version: Version, ProjectRoot: dir, Manifest: Manifest{ProjectRoot: dir}}
+
+	if _, err := WriteWithStats(&entry, SubdirTest); err == nil {
+		t.Fatal("WriteWithStats() error = nil, want in-project ancestor symlink rejection")
+	}
+	assertSentinelDirectoryUnchanged(t, target, 0o755)
+}
+
+func TestWriteWithStatsRejectsInProjectSymlinkedCacheLeaf(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix symlink and permission behavior is not available on Windows")
+	}
+	dir := t.TempDir()
+	gladeDir := filepath.Join(dir, ".glade")
+	target := filepath.Join(gladeDir, "sibling")
+	if err := os.MkdirAll(target, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(target, "sentinel"), []byte("unchanged\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("sibling", filepath.Join(gladeDir, "test")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	entry := Entry{Version: Version, ProjectRoot: dir, Manifest: Manifest{ProjectRoot: dir}}
+
+	if _, err := WriteWithStats(&entry, SubdirTest); err == nil {
+		t.Fatal("WriteWithStats() error = nil, want in-project leaf symlink rejection")
+	}
+	assertSentinelDirectoryUnchanged(t, target, 0o755)
+}
+
+func TestOpenPrivateTestCacheDirRejectsComponentSwap(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix rename behavior is not available on Windows")
+	}
+	dir := t.TempDir()
+	gladeDir := filepath.Join(dir, ".glade")
+	cacheDir := filepath.Join(gladeDir, "test")
+	originalDir := filepath.Join(gladeDir, "original-test")
+	replacementDir := filepath.Join(gladeDir, "replacement")
+	if err := os.MkdirAll(cacheDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(replacementDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	hook := func(component string) error {
+		if component != "test" {
+			return nil
+		}
+		if err := os.Rename(cacheDir, originalDir); err != nil {
+			return err
+		}
+		return os.Rename(replacementDir, cacheDir)
+	}
+
+	root, err := openPrivateTestCacheDirAfterLstat(dir, SubdirTest, hook)
+	if root != nil {
+		_ = root.Close()
+	}
+	if err == nil {
+		t.Fatal("openPrivateTestCacheDirAfterLstat() error = nil, want component identity mismatch")
+	}
+	if _, err := os.Stat(originalDir); err != nil {
+		t.Fatalf("original directory missing after swap: %v", err)
+	}
+	if _, err := os.Stat(cacheDir); err != nil {
+		t.Fatalf("replacement directory missing after swap: %v", err)
+	}
+}
+
+func assertSentinelDirectoryUnchanged(t *testing.T, directory string, wantMode os.FileMode) {
+	t.Helper()
+	entries, err := os.ReadDir(directory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 || entries[0].Name() != "sentinel" {
+		t.Fatalf("directory contents changed: %v", entries)
+	}
+	data, err := os.ReadFile(filepath.Join(directory, "sentinel"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "unchanged\n" {
+		t.Fatalf("sentinel changed: %q", data)
+	}
+	info, err := os.Stat(directory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := info.Mode().Perm(); got != wantMode {
+		t.Fatalf("directory permissions = %04o, want unchanged %04o", got, wantMode)
+	}
+}
+
+func TestWriteWithStatsRejectsNonDirectoryTestCachePath(t *testing.T) {
+	dir := t.TempDir()
+	cacheDir := filepath.Join(dir, ".glade", "test")
+	if err := os.MkdirAll(filepath.Dir(cacheDir), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(cacheDir, []byte("not a directory\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	entry := Entry{Version: Version, ProjectRoot: dir, Manifest: Manifest{ProjectRoot: dir}}
+
+	if _, err := WriteWithStats(&entry, SubdirTest); err == nil {
+		t.Fatal("WriteWithStats() error = nil, want non-directory rejection")
+	}
+}
+
+func TestWriteWithStatsContinuesInOpenedCacheAfterPathSwap(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix symlink and rename behavior is not available on Windows")
+	}
+	dir := t.TempDir()
+	cacheDir := filepath.Join(dir, ".glade", "test")
+	displacedCache := filepath.Join(dir, ".glade", "opened-test")
+	externalCache := filepath.Join(t.TempDir(), "external")
+	if err := os.Mkdir(externalCache, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(externalCache, "sentinel"), []byte("unchanged\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	entry := Entry{Version: Version, ProjectRoot: dir, Manifest: Manifest{ProjectRoot: dir}}
+	hook := func() error {
+		if err := os.Rename(cacheDir, displacedCache); err != nil {
+			return err
+		}
+		return os.Symlink(externalCache, cacheDir)
+	}
+
+	if _, err := writeSplitTestCacheWithStatsAfterRootOpened(&entry, SubdirTest, hook); err != nil {
+		t.Fatalf("writeSplitTestCacheWithStatsAfterRootOpened() error = %v", err)
+	}
+	entries, err := os.ReadDir(externalCache)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 || entries[0].Name() != "sentinel" {
+		t.Fatalf("external cache contents changed: %v", entries)
+	}
+	sentinel, err := os.ReadFile(filepath.Join(externalCache, "sentinel"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(sentinel) != "unchanged\n" {
+		t.Fatalf("external sentinel changed: %q", sentinel)
+	}
+	info, err := os.Stat(externalCache)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := info.Mode().Perm(), os.FileMode(0o755); got != want {
+		t.Fatalf("external cache permissions = %04o, want unchanged %04o", got, want)
+	}
+	headerData, err := os.ReadFile(filepath.Join(displacedCache, stateHeaderFile))
+	if err != nil {
+		t.Fatalf("read header from opened cache: %v", err)
+	}
+	var header testCacheHeader
+	if err := json.Unmarshal(headerData, &header); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(displacedCache, header.PayloadFile)); err != nil {
+		t.Fatalf("stat payload in opened cache: %v", err)
+	}
+}
 
 func TestLegacyGobRoundTrip(t *testing.T) {
 	dir := t.TempDir()

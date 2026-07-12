@@ -93,7 +93,7 @@ func (r *perfRecorder) endPhase(phase *PhaseCounters, started time.Time) {
 		return
 	}
 	phase.Calls++
-	phase.DurationNS += uint64(time.Since(started))
+	phase.DurationNS += durationNanoseconds(time.Since(started))
 }
 
 func (r *perfRecorder) finish() {
@@ -101,10 +101,17 @@ func (r *perfRecorder) finish() {
 		return
 	}
 	endMem := readPerfMemSnapshot()
-	r.counters.TotalNS = uint64(time.Since(r.started))
+	r.counters.TotalNS = durationNanoseconds(time.Since(r.started))
 	r.counters.Mallocs = endMem.mallocs - r.startMem.mallocs
 	r.counters.TotalAllocBytes = endMem.totalAlloc - r.startMem.totalAlloc
 	r.counters.GCCount = uint64(endMem.numGC - r.startMem.numGC)
 	r.counters.GCPauseNS = endMem.pauseNS - r.startMem.pauseNS
 	*r.output = r.counters
+}
+
+func durationNanoseconds(duration time.Duration) uint64 {
+	if duration <= 0 {
+		return 0
+	}
+	return uint64(duration)
 }

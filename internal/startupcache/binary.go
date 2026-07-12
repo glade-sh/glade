@@ -1,6 +1,7 @@
 package startupcache
 
 import (
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/gob"
 	"encoding/hex"
@@ -11,6 +12,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -321,24 +323,33 @@ func writeSplitTestCache(entry *Entry, subdir string) error {
 }
 
 func writeSplitTestCacheWithStats(entry *Entry, subdir string) (WriteStats, error) {
+	return writeSplitTestCacheWithStatsAfterRootOpened(entry, subdir, nil)
+}
+
+func writeSplitTestCacheWithStatsAfterRootOpened(entry *Entry, subdir string, afterRootOpened func() error) (WriteStats, error) {
 	var stats WriteStats
 	if entry == nil || entry.ProjectRoot == "" {
 		return stats, errors.New("startup cache entry requires project root")
 	}
-	cacheDir := filepath.Join(entry.ProjectRoot, filepath.FromSlash(subdir))
-	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
-		return stats, err
-	}
-	payload := testCachePayload{Org: entry.Org, Runtime: entry.Runtime}
-	tmp, err := os.CreateTemp(cacheDir, "startup-payload-*.gob")
+	cacheRoot, err := openPrivateTestCacheDir(entry.ProjectRoot, subdir)
 	if err != nil {
 		return stats, err
 	}
-	tmpPath := tmp.Name()
+	defer cacheRoot.Close()
+	if afterRootOpened != nil {
+		if err := afterRootOpened(); err != nil {
+			return stats, err
+		}
+	}
+	payload := testCachePayload{Org: entry.Org, Runtime: entry.Runtime}
+	tmp, tmpName, err := createTestCacheTemp(cacheRoot, "startup-payload-", ".gob")
+	if err != nil {
+		return stats, err
+	}
 	hasher := sha256.New()
 	counting := &countingWriter{writer: io.MultiWriter(tmp, hasher)}
 	writeErr := func() error {
-		defer os.Remove(tmpPath)
+		defer cacheRoot.Remove(tmpName)
 		encodeStarted := time.Now()
 		encodeErr := gob.NewEncoder(counting).Encode(payload)
 		stats.EncodeNS = time.Since(encodeStarted).Nanoseconds()
@@ -351,7 +362,7 @@ func writeSplitTestCacheWithStats(entry *Entry, subdir string) (WriteStats, erro
 		}
 		sum := hex.EncodeToString(hasher.Sum(nil))
 		payloadFile := payloadFilePrefix + sum + payloadFileSuffix
-		if err := activateTestPayload(cacheDir, tmpPath, payloadFile, counting.n); err != nil {
+		if err := activateTestPayloadInRoot(cacheRoot, tmpName, payloadFile, counting.n); err != nil {
 			return err
 		}
 		header := testCacheHeader{
@@ -365,16 +376,99 @@ func writeSplitTestCacheWithStats(entry *Entry, subdir string) (WriteStats, erro
 			PayloadSHA256: sum,
 			PayloadSize:   counting.n,
 		}
-		if err := writeTestCacheHeader(cacheDir, header); err != nil {
+		if err := writeTestCacheHeaderInRoot(cacheRoot, header); err != nil {
 			return err
 		}
-		return pruneInactiveTestPayloads(cacheDir, payloadFile)
+		return pruneInactiveTestPayloadsInRoot(cacheRoot, payloadFile)
 	}()
 	if writeErr != nil {
-		_ = os.Remove(tmpPath)
+		_ = cacheRoot.Remove(tmpName)
 		return stats, writeErr
 	}
 	return stats, nil
+}
+
+func createTestCacheTemp(cacheRoot *os.Root, prefix, suffix string) (*os.File, string, error) {
+	var random [16]byte
+	for range 100 {
+		if _, err := rand.Read(random[:]); err != nil {
+			return nil, "", err
+		}
+		name := prefix + hex.EncodeToString(random[:]) + suffix
+		file, err := cacheRoot.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0o600)
+		if err == nil {
+			return file, name, nil
+		}
+		if !errors.Is(err, os.ErrExist) {
+			return nil, "", err
+		}
+	}
+	return nil, "", errors.New("could not allocate unique startup cache temporary file")
+}
+
+func openPrivateTestCacheDir(projectRoot, subdir string) (*os.Root, error) {
+	return openPrivateTestCacheDirAfterLstat(projectRoot, subdir, nil)
+}
+
+func openPrivateTestCacheDirAfterLstat(projectRoot, subdir string, afterLstat func(component string) error) (*os.Root, error) {
+	cleanSubdir := filepath.Clean(filepath.FromSlash(subdir))
+	if filepath.IsAbs(cleanSubdir) || cleanSubdir == "." || cleanSubdir == ".." || strings.HasPrefix(cleanSubdir, ".."+string(os.PathSeparator)) {
+		return nil, fmt.Errorf("startup cache subdirectory %q must stay within the project root", subdir)
+	}
+	current, err := os.OpenRoot(projectRoot)
+	if err != nil {
+		return nil, err
+	}
+	for _, component := range strings.Split(cleanSubdir, string(os.PathSeparator)) {
+		if err := current.Mkdir(component, 0o700); err != nil && !errors.Is(err, os.ErrExist) {
+			_ = current.Close()
+			return nil, err
+		}
+		beforeOpen, err := current.Lstat(component)
+		if err != nil {
+			_ = current.Close()
+			return nil, err
+		}
+		if beforeOpen.Mode()&os.ModeSymlink != 0 {
+			_ = current.Close()
+			return nil, fmt.Errorf("startup cache path component %q must not be a symlink", component)
+		}
+		if !beforeOpen.IsDir() {
+			_ = current.Close()
+			return nil, fmt.Errorf("startup cache path component %q is not a directory", component)
+		}
+		if afterLstat != nil {
+			if err := afterLstat(component); err != nil {
+				_ = current.Close()
+				return nil, err
+			}
+		}
+		next, err := current.OpenRoot(component)
+		if err != nil {
+			_ = current.Close()
+			return nil, err
+		}
+		afterOpen, err := next.Stat(".")
+		if err != nil {
+			_ = next.Close()
+			_ = current.Close()
+			return nil, err
+		}
+		if !os.SameFile(beforeOpen, afterOpen) {
+			_ = next.Close()
+			_ = current.Close()
+			return nil, fmt.Errorf("startup cache path component %q changed while opening", component)
+		}
+		_ = current.Close()
+		current = next
+	}
+	if runtime.GOOS != "windows" {
+		if err := current.Chmod(".", 0o700); err != nil {
+			_ = current.Close()
+			return nil, fmt.Errorf("restrict startup cache directory: %w", err)
+		}
+	}
+	return current, nil
 }
 
 func activateTestPayload(cacheDir, tmpPath, payloadFile string, payloadSize int64) error {
@@ -387,6 +481,17 @@ func activateTestPayload(cacheDir, tmpPath, payloadFile string, payloadSize int6
 		return err
 	}
 	return os.Rename(tmpPath, payloadPath)
+}
+
+func activateTestPayloadInRoot(cacheRoot *os.Root, tmpName, payloadFile string, payloadSize int64) error {
+	if info, err := cacheRoot.Stat(payloadFile); err == nil {
+		if info.Size() == payloadSize {
+			return cacheRoot.Remove(tmpName)
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	return cacheRoot.Rename(tmpName, payloadFile)
 }
 
 func writeTestCacheHeader(cacheDir string, header testCacheHeader) error {
@@ -415,6 +520,31 @@ func writeTestCacheHeader(cacheDir string, header testCacheHeader) error {
 	return nil
 }
 
+func writeTestCacheHeaderInRoot(cacheRoot *os.Root, header testCacheHeader) error {
+	tmp, tmpName, err := createTestCacheTemp(cacheRoot, "startup-header-", ".json")
+	if err != nil {
+		return err
+	}
+	writeErr := func() error {
+		defer cacheRoot.Remove(tmpName)
+		enc := json.NewEncoder(tmp)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(header); err != nil {
+			_ = tmp.Close()
+			return err
+		}
+		if err := tmp.Close(); err != nil {
+			return err
+		}
+		return cacheRoot.Rename(tmpName, stateHeaderFile)
+	}()
+	if writeErr != nil {
+		_ = cacheRoot.Remove(tmpName)
+		return writeErr
+	}
+	return nil
+}
+
 func pruneInactiveTestPayloads(cacheDir, activePayloadFile string) error {
 	entries, err := os.ReadDir(cacheDir)
 	if err != nil {
@@ -430,6 +560,34 @@ func pruneInactiveTestPayloads(cacheDir, activePayloadFile string) error {
 		}
 		if strings.HasPrefix(name, payloadFilePrefix) && strings.HasSuffix(name, payloadFileSuffix) {
 			_ = os.Remove(filepath.Join(cacheDir, name))
+		}
+	}
+	return nil
+}
+
+func pruneInactiveTestPayloadsInRoot(cacheRoot *os.Root, activePayloadFile string) error {
+	directory, err := cacheRoot.Open(".")
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		return err
+	}
+	entries, readErr := directory.ReadDir(-1)
+	closeErr := directory.Close()
+	if readErr != nil {
+		return readErr
+	}
+	if closeErr != nil {
+		return closeErr
+	}
+	for _, entry := range entries {
+		name := entry.Name()
+		if name == activePayloadFile {
+			continue
+		}
+		if strings.HasPrefix(name, payloadFilePrefix) && strings.HasSuffix(name, payloadFileSuffix) {
+			_ = cacheRoot.Remove(name)
 		}
 	}
 	return nil

@@ -1676,14 +1676,14 @@ func maybeWriteRunPerfJSON(perfJSONPath, root string, result testreport.Run, cpu
 		MemProfilePath:  strings.TrimSpace(memProfilePath),
 	}
 	perf.TopSlowClasses = runTopSlowClasses(result, 15)
-	if err := os.MkdirAll(filepath.Dir(perfJSONPath), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(perfJSONPath), 0o700); err != nil {
 		return err
 	}
 	data, err := json.MarshalIndent(perf, "", "  ")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(perfJSONPath, append(data, '\n'), 0o644)
+	return os.WriteFile(perfJSONPath, append(data, '\n'), 0o600)
 }
 
 func runClassDurations(result testreport.Run) map[string]int64 {

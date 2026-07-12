@@ -2125,10 +2125,10 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 	out := w
 	var file *os.File
 	if opts.outputPath != "" {
-		if err := os.MkdirAll(filepath.Dir(opts.outputPath), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(opts.outputPath), 0o750); err != nil {
 			return result, err
 		}
-		file, err = os.Create(opts.outputPath)
+		file, err = os.OpenFile(opts.outputPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o640)
 		if err != nil {
 			return result, err
 		}
@@ -2270,14 +2270,14 @@ func writeCheckPerfJSON(path string, result sema.Result, perf checkPerfSummary) 
 	perf.Status = statusForOK(!result.HasErrors())
 	perf.ExitCode = exitCodeForOK(!result.HasErrors())
 	perf.Summary = result.Summary
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err
 	}
 	data, err := json.MarshalIndent(perf, "", "  ")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, append(data, '\n'), 0o644)
+	return os.WriteFile(path, append(data, '\n'), 0o600)
 }
 
 type cliArtifactDestination struct {

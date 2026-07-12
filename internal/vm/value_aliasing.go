@@ -593,7 +593,7 @@ func (vm *VM) propagateAliasSnapshotToScope(scope map[string]Value, previous ali
 		if perfOn {
 			probe.roots = uint64(len(scope))
 			started := time.Now()
-			probe.replacedRoots = uint64(propagateTopLevelAliasSnapshotToScopeCount(scope, previous, updated))
+			probe.replacedRoots = propagateTopLevelAliasSnapshotToScopeCount(scope, previous, updated)
 			probe.replacementDuration = time.Since(started)
 		} else {
 			propagateTopLevelAliasSnapshotToScope(scope, previous, updated)
@@ -814,11 +814,11 @@ func propagateTopLevelAliasSnapshotToScope(scope map[string]Value, previous alia
 	return propagateTopLevelAliasSnapshotToScopeCount(scope, previous, updated) > 0
 }
 
-func propagateTopLevelAliasSnapshotToScopeCount(scope map[string]Value, previous aliasSnapshot, updated Value) int {
+func propagateTopLevelAliasSnapshotToScopeCount(scope map[string]Value, previous aliasSnapshot, updated Value) uint64 {
 	if !previous.valid() || updated.Ref == 0 {
 		return 0
 	}
-	changed := 0
+	var changed uint64
 	for name, value := range scope {
 		if value.Ref == 0 || value.Ref != previous.ref || value.Kind != previous.kind {
 			continue

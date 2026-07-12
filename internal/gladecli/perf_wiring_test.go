@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -79,6 +80,28 @@ func TestRunCheckPerfJSONCapturesLowerCamelPhaseAndSemaCounters(t *testing.T) {
 	requirePositiveJSONNumber(t, methodBodies, "calls")
 	requirePositiveJSONNumber(t, methodBodies, "durationNs")
 	assertLowerCamelJSONKeys(t, perf, "")
+}
+
+func TestRunCheckArtifactPermissionsAreRestricted(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix permission bits are not available on Windows")
+	}
+	root := writePerfCheckProject(t, false)
+	directory := filepath.Join(t.TempDir(), "check-artifacts")
+	outputPath := filepath.Join(directory, "check.json")
+	perfPath := filepath.Join(directory, "private", "perf.json")
+
+	code, stdout, stderr := runPerfCLI(t, context.Background(),
+		"check", "--project", root, "--format", "json", "--no-progress",
+		"--output", outputPath, "--perf-json", perfPath,
+	)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stdout=%q stderr=%q", code, stdout, stderr)
+	}
+	assertPathPermissions(t, directory, 0o750)
+	assertPathPermissions(t, outputPath, 0o640)
+	assertPathPermissions(t, filepath.Dir(perfPath), 0o700)
+	assertPathPermissions(t, perfPath, 0o600)
 }
 
 func TestRunCheckPerfProfilesCloseOnSuccessDiagnosticsAndError(t *testing.T) {
@@ -305,6 +328,46 @@ func TestRunTestPerfJSONWiresPreRunAndRunnerPhasesAndPreservesResultIdentity(t *
 	} {
 		requirePositiveJSONNumber(t, phases, key)
 	}
+}
+
+func TestRunTestPerfJSONCreatesPrivateArtifact(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix permission bits are not available on Windows")
+	}
+	root := writePerfTestProject(t)
+	directory := filepath.Join(t.TempDir(), "private-perf")
+	perfPath := filepath.Join(directory, "test-perf.json")
+
+	code, stdout, stderr := runPerfCLI(t, context.Background(),
+		"test", "--project", root, "--json", "--no-progress", "--no-serve", "--no-cache",
+		"--perf-json", perfPath,
+	)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stdout=%q stderr=%q", code, stdout, stderr)
+	}
+	assertPathPermissions(t, directory, 0o700)
+	assertPathPermissions(t, perfPath, 0o600)
+}
+
+func TestRunTestPerfJSONPreservesExistingArtifactPermissions(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix permission bits are not available on Windows")
+	}
+	root := writePerfTestProject(t)
+	perfPath := filepath.Join(t.TempDir(), "caller-owned-perf.json")
+	if err := os.WriteFile(perfPath, []byte("sentinel\n"), 0o640); err != nil {
+		t.Fatal(err)
+	}
+
+	code, stdout, stderr := runPerfCLI(t, context.Background(),
+		"test", "--project", root, "--json", "--no-progress", "--no-serve", "--no-cache",
+		"--perf-json", perfPath,
+	)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stdout=%q stderr=%q", code, stdout, stderr)
+	}
+	readPerfJSONObject(t, perfPath)
+	assertPathPermissions(t, perfPath, 0o640)
 }
 
 func TestRunTestPerfJSONPreservesLegacyShapeAndDerivesDurationsFromPhases(t *testing.T) {
@@ -635,6 +698,17 @@ func requireNonEmptyFile(t *testing.T, path string) {
 	}
 	if info.Size() == 0 {
 		t.Fatalf("%s is empty", path)
+	}
+}
+
+func assertPathPermissions(t *testing.T, path string, want os.FileMode) {
+	t.Helper()
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("stat %s: %v", path, err)
+	}
+	if got := info.Mode().Perm(); got != want {
+		t.Fatalf("%s permissions = %04o, want %04o", path, got, want)
 	}
 }
 

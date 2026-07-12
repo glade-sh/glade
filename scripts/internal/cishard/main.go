@@ -211,11 +211,11 @@ func validateImportPath(packageName string) error {
 }
 
 func emitPackageManifest(manifestPath, packagesPath, selectedLane string, stdout io.Writer) error {
-	manifestData, err := os.ReadFile(manifestPath)
+	manifestData, err := os.ReadFile(manifestPath) // #nosec G304 -- --package-manifest is an intentional trusted CLI input.
 	if err != nil {
 		return fmt.Errorf("read manifest: %w", err)
 	}
-	currentFile, err := os.Open(packagesPath)
+	currentFile, err := os.Open(packagesPath) // #nosec G304 -- --packages is an intentional trusted CLI input.
 	if err != nil {
 		return fmt.Errorf("read current packages: %w", err)
 	}

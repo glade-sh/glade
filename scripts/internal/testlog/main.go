@@ -29,7 +29,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	raw, err := os.Create(outputPath)
+	raw, err := os.Create(outputPath) // #nosec G304 -- -output intentionally selects the caller-owned artifact destination.
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "testlog: create raw event artifact: %v\n", err)
 		if drainErr := render(os.Stdin, os.Stdout, nil, verbose); drainErr != nil {
