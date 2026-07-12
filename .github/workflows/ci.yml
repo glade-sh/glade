@@ -103,7 +103,7 @@ jobs:
           restore-keys: |
             go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-gladecli-${{ hashFiles('go.sum') }}-
             go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
-      - run: scripts/ci-go-test.sh lane gladecli
+      - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-gladecli.json gladecli -- scripts/ci-go-test.sh lane gladecli
       - name: Save Go module cache
         if: success()
         uses: actions/cache/save@v4
@@ -123,7 +123,9 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: go-test-gladecli
-          path: ci-artifacts/go-test/test-gladecli.json
+          path: |
+            ci-artifacts/go-test/test-gladecli.json
+            ci-artifacts/go-test/resource-gladecli.json
           if-no-files-found: error
 
   node-integration:
@@ -163,7 +165,7 @@ jobs:
           cache: npm
           cache-dependency-path: third_party/lwc/package-lock.json
       - run: npm ci --prefix third_party/lwc
-      - run: scripts/ci-go-test.sh node-integration
+      - run: scripts/ci-resource-run.sh ci-artifacts/go-test-node-integration/resource-usage.json node-integration -- scripts/ci-go-test.sh node-integration
       - name: Save Node integration Go module cache
         if: success()
         uses: actions/cache/save@v4
@@ -188,6 +190,7 @@ jobs:
             ci-artifacts/go-test-node-integration/expected.txt
             ci-artifacts/go-test-node-integration/discovery.txt
             ci-artifacts/go-test-node-integration/validation-summary.json
+            ci-artifacts/go-test-node-integration/resource-usage.json
           if-no-files-found: error
 
   sema:
@@ -232,7 +235,7 @@ jobs:
           restore-keys: |
             go-build-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-${{ matrix.shard }}-
       - name: Run sema shard
-        run: scripts/ci-go-test.sh sema-shard "${{ matrix.shard }}"
+        run: scripts/ci-resource-run.sh "$CI_SEMA_ARTIFACT_DIR/resource-usage.json" "sema-${{ matrix.shard }}" -- scripts/ci-go-test.sh sema-shard "${{ matrix.shard }}"
       - name: Upload sema shard evidence
         if: always()
         uses: actions/upload-artifact@v6
@@ -300,7 +303,7 @@ jobs:
           restore-keys: |
             go-build-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-sema-full-
       - name: Run sema full oracle
-        run: scripts/ci-go-test.sh sema-full
+        run: scripts/ci-resource-run.sh "$CI_SEMA_FULL_ARTIFACT_DIR/resource-usage.json" sema-full -- scripts/ci-go-test.sh sema-full
       - name: Upload sema full evidence
         if: always()
         uses: actions/upload-artifact@v6
@@ -363,7 +366,7 @@ jobs:
           restore-keys: |
             go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-server-playground-${{ hashFiles('go.sum') }}-
             go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
-      - run: scripts/ci-go-test.sh lane server-and-playground
+      - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-server-and-playground.json server-and-playground -- scripts/ci-go-test.sh lane server-and-playground
       - name: Save Go module cache
         if: success()
         uses: actions/cache/save@v4
@@ -383,7 +386,9 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: go-test-server-and-playground
-          path: ci-artifacts/go-test/test-server-and-playground.json
+          path: |
+            ci-artifacts/go-test/test-server-and-playground.json
+            ci-artifacts/go-test/resource-server-and-playground.json
           if-no-files-found: error
 
   test:
@@ -446,8 +451,8 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
-      - run: scripts/ci-go-test.sh lane repoguard
-      - run: scripts/ci-go-test.sh lane remaining-go
+      - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-repoguard.json repoguard -- scripts/ci-go-test.sh lane repoguard
+      - run: scripts/ci-resource-run.sh ci-artifacts/go-test/resource-remaining-go.json remaining-go -- scripts/ci-go-test.sh lane remaining-go
       - name: Save Go module cache
         if: success()
         uses: actions/cache/save@v4
@@ -470,6 +475,8 @@ jobs:
           path: |
             ci-artifacts/go-test/test-repoguard.json
             ci-artifacts/go-test/test-remaining-go.json
+            ci-artifacts/go-test/resource-repoguard.json
+            ci-artifacts/go-test/resource-remaining-go.json
           if-no-files-found: error
 
   smoke-runtime:
@@ -618,7 +625,7 @@ jobs:
           restore-keys: |
             go-build-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-
       - name: Run Apex shard
-        run: scripts/ci-go-test.sh apex-shard "${{ matrix.shard }}"
+        run: scripts/ci-resource-run.sh "$CI_APEXTEST_ARTIFACT_DIR/resource-usage.json" "apextest-${{ matrix.shard }}" -- scripts/ci-go-test.sh apex-shard "${{ matrix.shard }}"
       - name: Upload Apex shard evidence
         if: always()
         uses: actions/upload-artifact@v6
@@ -632,6 +639,7 @@ jobs:
             ci-artifacts/apextest-${{ matrix.shard }}/selected-shard.json
             ci-artifacts/apextest-${{ matrix.shard }}/events.json
             ci-artifacts/apextest-${{ matrix.shard }}/validation-summary.json
+            ci-artifacts/apextest-${{ matrix.shard }}/resource-usage.json
           if-no-files-found: error
 
   apextest-history:
