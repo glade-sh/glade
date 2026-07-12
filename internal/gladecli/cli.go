@@ -2128,7 +2128,7 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		if err := os.MkdirAll(filepath.Dir(opts.outputPath), 0o750); err != nil {
 			return result, err
 		}
-		file, err = os.OpenFile(opts.outputPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o640)
+		file, err = os.OpenFile(opts.outputPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 		if err != nil {
 			return result, err
 		}

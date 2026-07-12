@@ -99,7 +99,7 @@ func TestRunCheckArtifactPermissionsAreRestricted(t *testing.T) {
 		t.Fatalf("exit code = %d, want 0; stdout=%q stderr=%q", code, stdout, stderr)
 	}
 	assertPathPermissions(t, directory, 0o750)
-	assertPathPermissions(t, outputPath, 0o640)
+	assertPathPermissions(t, outputPath, 0o600)
 	assertPathPermissions(t, filepath.Dir(perfPath), 0o700)
 	assertPathPermissions(t, perfPath, 0o600)
 }
