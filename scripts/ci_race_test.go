@@ -279,7 +279,7 @@ func writeRaceFixture(t *testing.T, name, contents string) string {
 
 func runRacePackage(t *testing.T, workdir string, env []string, pkg, slug string) (string, error) {
 	t.Helper()
-	if pkg == "./internal/apextest" || pkg == "./internal/gladecli" || pkg == "./internal/playground" {
+	if pkg == "./internal/apextest" || pkg == "./internal/gladecli" || pkg == "./internal/playground" || pkg == "./internal/server" {
 		hasTimeout := false
 		for _, value := range env {
 			if strings.HasPrefix(value, "CI_RACE_TIMEOUT_COMMAND=") {
@@ -342,10 +342,11 @@ func racePlannerFixture() string {
 set -euo pipefail
 package=""
 tests=""
+shards=""
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
     --package) package="$2"; shift 2 ;;
-    --shards) [[ "$2" == 4 ]]; shift 2 ;;
+    --shards) shards="$2"; shift 2 ;;
     --tests) tests="$2"; shift 2 ;;
     *) exit 91 ;;
   esac
@@ -353,7 +354,7 @@ done
 names=()
 while IFS= read -r name; do names+=("$name"); done <"$tests"
 printf '{"version":1,"package":"%s","historyUsed":false,"shards":[' "$package"
-for index in 0 1 2 3; do
+for ((index=0; index<shards; index++)); do
   if [[ "$index" -gt 0 ]]; then printf ','; fi
   printf '{"index":%s,"tests":["%s"],"estimatedDurationMillis":0,"regex":"^(?:%s)$"}' "$index" "${names[$index]}" "${names[$index]}"
 done
@@ -484,29 +485,6 @@ exit "${CI_RACE_GO_STATUS:-0}"
 	}
 	if _, err := os.Stat(filepath.Join(root, "ci-artifacts/race/internal-storage/resource.json")); err != nil {
 		t.Fatalf("direct resource evidence: %v", err)
-	}
-}
-
-func TestCIRacePackageRunnerSerializesServerBuild(t *testing.T) {
-	root := t.TempDir()
-	logPath := filepath.Join(root, "calls.log")
-	goCommand := writeRaceFixture(t, "fake-go", `#!/usr/bin/env bash
-printf '%q ' "$@" >>"$CI_RACE_GO_LOG"
-printf '\n' >>"$CI_RACE_GO_LOG"
-exit 0
-`)
-	resource := writeRaceFixture(t, "fake-resource", raceResourceFixture())
-	env := []string{"CI_RACE_GO_COMMAND=" + goCommand, "CI_RACE_RESOURCE_RUNNER=" + resource, "CI_RACE_CALL_LOG=" + logPath, "CI_RACE_GO_LOG=" + logPath}
-	if out, err := runRacePackage(t, root, env, "./internal/server", "internal-server"); err != nil {
-		t.Fatalf("server package failed: %v\n%s", err, out)
-	}
-	data, err := os.ReadFile(logPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	log := string(data)
-	if strings.Count(log, "test -p=1 -race -count=1 -timeout=60m ./internal/server") != 1 {
-		t.Fatalf("server native call is not serialized:\n%s", log)
 	}
 }
 
@@ -679,12 +657,15 @@ func TestCIRacePlaygroundRealPlanUsesFiveOrdinaryShards(t *testing.T) {
 	}
 }
 
-func TestCIRacePackageRunnerGenericHeavyPackagesUseFourSequentialExactShards(t *testing.T) {
-	for _, pkg := range []string{"./internal/gladecli"} {
+func TestCIRacePackageRunnerGenericHeavyPackagesUseBoundedSequentialExactShards(t *testing.T) {
+	for _, pkg := range []string{"./internal/gladecli", "./internal/server"} {
 		t.Run(filepath.Base(pkg), func(t *testing.T) {
 			root := t.TempDir()
 			logPath := filepath.Join(root, "calls.log")
 			testNames := []string{"TestAlpha", "TestBeta", "TestDelta", "TestGamma"}
+			if pkg == "./internal/server" {
+				testNames = append(testNames, "TestEta", "TestIota", "TestKappa", "TestTheta")
+			}
 			goCommand := writeRaceFixture(t, "fake-go", `#!/usr/bin/env bash
 if [[ "$*" == *"-list ."* ]]; then
 	printf 'discovery %s\n' "$*" >>"$CI_RACE_CALL_LOG"
@@ -717,8 +698,12 @@ printf '{"Action":"pass","Package":"github.com/glade-sh/glade/%s","Test":"%s","E
 				t.Fatal(err)
 			}
 			log := string(data)
+			shardCount := 4
+			if pkg == "./internal/server" {
+				shardCount = 8
+			}
 			var wantOrder []string
-			for shard := 0; shard < 4; shard++ {
+			for shard := 0; shard < shardCount; shard++ {
 				wantOrder = append(wantOrder, "start race-"+slug+"-shard-"+fmt.Sprint(shard), "end race-"+slug+"-shard-"+fmt.Sprint(shard)+" 0")
 			}
 			position := 0
@@ -729,10 +714,14 @@ printf '{"Action":"pass","Package":"github.com/glade-sh/glade/%s","Test":"%s","E
 				}
 				position += next + len(marker)
 			}
-			if strings.Count(log, "native test -json -race -count=1 -timeout=60m -run") != 4 {
+			testPrefix := "test"
+			if pkg == "./internal/server" {
+				testPrefix = "test -p=1"
+			}
+			if strings.Count(log, "native "+testPrefix+" -json -race -count=1 -timeout=60m -run") != shardCount {
 				t.Fatalf("native heavy calls:\n%s", log)
 			}
-			if strings.Count(log, "discovery test -race -list . "+pkg) != 1 {
+			if strings.Count(log, "discovery "+testPrefix+" -race -list . "+pkg) != 1 {
 				t.Fatalf("heavy discovery did not use the exact race-tagged test set:\n%s", log)
 			}
 			if strings.Count(log, "deadline --signal=TERM --kill-after=30s 60m") != 1 {
@@ -742,7 +731,7 @@ printf '{"Action":"pass","Package":"github.com/glade-sh/glade/%s","Test":"%s","E
 			if err != nil || string(benchmarks) != "BenchmarkFixture\n" {
 				t.Fatalf("recorded benchmarks = %q, err=%v", benchmarks, err)
 			}
-			for shard := 0; shard < 4; shard++ {
+			for shard := 0; shard < shardCount; shard++ {
 				base := filepath.Join(root, "ci-artifacts/race", slug, "shard-"+string(rune('0'+shard)))
 				for _, name := range []string{"events.json", "resource.json"} {
 					if _, err := os.Stat(filepath.Join(base, name)); err != nil {
@@ -768,8 +757,12 @@ printf '{"Action":"pass","Package":"github.com/glade-sh/glade/%s","Test":"%s","E
 			canonicalNames := append([]string(nil), testNames...)
 			sort.Strings(canonicalNames)
 			namesHash := fmt.Sprintf("%x", sha256.Sum256([]byte(strings.Join(canonicalNames, "\n")+"\n")))
+			wantShardCounts := make([]int, shardCount)
+			for index := range wantShardCounts {
+				wantShardCounts[index] = 1
+			}
 			if union.SchemaVersion != 1 || union.Package != "github.com/glade-sh/glade/"+strings.TrimPrefix(pkg, "./") ||
-				union.DiscoveredCount != 4 || !reflect.DeepEqual(union.ShardCounts, []int{1, 1, 1, 1}) ||
+				union.DiscoveredCount != shardCount || !reflect.DeepEqual(union.ShardCounts, wantShardCounts) ||
 				union.NamesSHA256 != namesHash || !union.Valid {
 				t.Fatalf("union evidence = %#v", union)
 			}

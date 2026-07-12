@@ -90,17 +90,13 @@ PY
 
 heavy_package=false
 case "${package}" in
-	./internal/apextest|./internal/gladecli|./internal/playground)
+	./internal/apextest|./internal/gladecli|./internal/playground|./internal/server)
 		heavy_package=true
 		;;
 	*)
-		direct_package_args=()
-		if [[ "${package}" == "./internal/server" ]]; then
-			direct_package_args=(-p=1)
-		fi
 		set +e
 		"${resource_runner}" "${artifact_dir}/resource.json" "race-${slug}" -- \
-			"${go_command}" test "${direct_package_args[@]}" -race -count=1 -timeout=60m "${package}"
+			"${go_command}" test -race -count=1 -timeout=60m "${package}"
 		native_rc="$?"
 		set -e
 		set +e
@@ -131,6 +127,10 @@ if [[ "${heavy_package}" == true && "${CI_RACE_DEADLINE_ACTIVE:-0}" != "1" ]]; t
 fi
 
 package_name="github.com/glade-sh/glade/${package#./}"
+go_test_package_args=()
+if [[ "${package}" == "./internal/server" ]]; then
+	go_test_package_args=(-p=1)
+fi
 discovery_raw="${artifact_dir}/discovery-command.txt"
 discovery="${artifact_dir}/discovery.txt"
 discovery_benchmarks="${artifact_dir}/discovery-benchmarks.txt"
@@ -275,7 +275,7 @@ PY
 	if [[ "${discovery_native_rc}" -ne 0 ]]; then exit "${discovery_native_rc}"; fi
 	verify_apextest_binary
 else
-	"${go_command}" test -race -list '.' "${package}" >"${discovery_raw}"
+	"${go_command}" test "${go_test_package_args[@]}" -race -list '.' "${package}" >"${discovery_raw}"
 fi
 python3 - "${discovery_raw}" "${discovery}" "${discovery_benchmarks}" "${ordinary_discovery}" "${package_name}" <<'PY'
 import re
@@ -351,6 +351,8 @@ if [[ "${package}" == "./internal/playground" ]]; then
 elif [[ "${package}" == "./internal/apextest" ]]; then
 	planner_shards=8
 	plan_mode=apextest
+elif [[ "${package}" == "./internal/server" ]]; then
+	planner_shards=8
 fi
 if [[ -n "${shard_planner}" ]]; then
 	if [[ "${shard_planner}" == */* ]]; then
@@ -588,6 +590,8 @@ fi
 lane_names=()
 if [[ "${package}" == "./internal/playground" ]]; then
 	lane_names=(group-0 group-1 group-2 group-3 ordinary-0 ordinary-1 ordinary-2 ordinary-3 ordinary-4)
+elif [[ "${package}" == "./internal/server" ]]; then
+	lane_names=(shard-0 shard-1 shard-2 shard-3 shard-4 shard-5 shard-6 shard-7)
 else
 	lane_names=(shard-0 shard-1 shard-2 shard-3)
 fi
@@ -601,7 +605,7 @@ for lane_name in "${lane_names[@]}"; do
 	set +e
 	"${resource_runner}" "${resource}" "race-${slug}-${lane_name}" -- \
 		bash -c 'events="$1"; shift; "$@" >"${events}"' bash "${events}" \
-		"${go_command}" test -json -race -count=1 -timeout=60m -run "${regex}" "${package}"
+		"${go_command}" test "${go_test_package_args[@]}" -json -race -count=1 -timeout=60m -run "${regex}" "${package}"
 	native_rc="$?"
 	set -e
 	set +e
@@ -661,7 +665,12 @@ import sys
 import tempfile
 
 discovery_path, package, output_path, *event_paths = sys.argv[1:]
-expected_lanes = 9 if package == "github.com/glade-sh/glade/internal/playground" else 4
+if package == "github.com/glade-sh/glade/internal/playground":
+    expected_lanes = 9
+elif package == "github.com/glade-sh/glade/internal/server":
+    expected_lanes = 8
+else:
+    expected_lanes = 4
 if len(event_paths) != expected_lanes:
     raise SystemExit(f"race union validation requires exactly {expected_lanes} lane event files")
 with open(discovery_path, encoding="utf-8") as source:
