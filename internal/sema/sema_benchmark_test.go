@@ -164,20 +164,17 @@ func BenchmarkBuildTypeMembers(b *testing.B) {
 	benchmarkSemaSizesAndModes(b, func(b *testing.B, index typesys.Index, mode string) {
 		index, _ = benchmarkPreparedAnalysisPhase(b, index)
 		warmupSemaBenchmarkMode(mode, func() {
-			model := buildTypeMembers(index)
-			unregisterSemaShortCandidateIndex(model)
+			_ = buildTypeMembers(index)
 		})
-		var model map[string]typeMembers
+		var model *semaTypeMemberModel
 		b.ReportAllocs()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			model = buildTypeMembers(index)
-			unregisterSemaShortCandidateIndex(model)
 		}
 		b.StopTimer()
 		reference := buildTypeMembers(index)
-		defer unregisterSemaShortCandidateIndex(reference)
-		if len(model) == 0 {
+		if len(model.members) == 0 {
 			b.Fatal("missing type-member model")
 		}
 		if !reflect.DeepEqual(model, reference) {

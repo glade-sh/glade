@@ -14,7 +14,7 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
-func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, scopes semaScopeModel, model map[string]typeMembers) []diagnostic.Diagnostic {
+func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, scopes semaScopeModel, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, match := range callPattern.FindAllStringSubmatchIndex(body, -1) {
 		if semaOffsetInIgnoredText(body, match[0]) {
@@ -175,7 +175,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 				if isSemaBuiltinType(receiverType) {
 					continue
 				}
-				if classMembers, ok := model[normalizeName(receiverType)]; ok {
+				if classMembers, ok := model.lookup(normalizeName(receiverType)); ok {
 					diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, callee, resolveMemberMethods(model, classMembers.name, method), args, haveArgs, "instance", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
 				}
 				continue
@@ -212,8 +212,8 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 	return diagnostics
 }
 
-func semaClassMembersForReceiver(model map[string]typeMembers, current typesys.TypeSymbol, receiver string) (typeMembers, string, bool) {
-	if members, ok := model[normalizeName(receiver)]; ok {
+func semaClassMembersForReceiver(model *semaTypeMemberView, current typesys.TypeSymbol, receiver string) (typeMembers, string, bool) {
+	if members, ok := model.lookup(normalizeName(receiver)); ok {
 		if !semaPlatformReceiverSpellingMatches(receiver, members) {
 			return typeMembers{}, "", false
 		}
@@ -221,27 +221,27 @@ func semaClassMembersForReceiver(model map[string]typeMembers, current typesys.T
 	}
 	if current.Dependency && current.Namespace != "" && !strings.Contains(receiver, ".") {
 		qualified := current.Namespace + "." + receiver
-		if members, ok := model[normalizeName(qualified)]; ok {
+		if members, ok := model.lookup(normalizeName(qualified)); ok {
 			return members, qualified, true
 		}
 	}
 	return typeMembers{}, "", false
 }
 
-func semaCurrentClassMembers(model map[string]typeMembers, current typesys.TypeSymbol) (typeMembers, string, bool) {
-	if members, ok := model[normalizeName(current.Name)]; ok {
+func semaCurrentClassMembers(model *semaTypeMemberView, current typesys.TypeSymbol) (typeMembers, string, bool) {
+	if members, ok := model.lookup(normalizeName(current.Name)); ok {
 		return members, current.Name, true
 	}
 	if current.Dependency && current.Namespace != "" {
 		qualified := current.Namespace + "." + current.Name
-		if members, ok := model[normalizeName(qualified)]; ok {
+		if members, ok := model.lookup(normalizeName(qualified)); ok {
 			return members, qualified, true
 		}
 	}
 	return typeMembers{}, "", false
 }
 
-func semaArgTypes(args []semaArg, scope map[string]string, model map[string]typeMembers) []string {
+func semaArgTypes(args []semaArg, scope map[string]string, model *semaTypeMemberView) []string {
 	argTypes := make([]string, len(args))
 	for i, arg := range args {
 		argTypes[i] = semaArgType(arg.text, scope, model)
@@ -249,7 +249,7 @@ func semaArgTypes(args []semaArg, scope map[string]string, model map[string]type
 	return argTypes
 }
 
-func semaArgType(arg string, scope map[string]string, model map[string]typeMembers) string {
+func semaArgType(arg string, scope map[string]string, model *semaTypeMemberView) string {
 	if typ := semaSOQLLiteralListType(arg); typ != "" {
 		return typ
 	}
@@ -325,11 +325,11 @@ func semaChainedMethodMatchesCallee(callee, method string) bool {
 	return true
 }
 
-func semaUnresolvedFluentReceiver(receiverType string, model map[string]typeMembers) bool {
+func semaUnresolvedFluentReceiver(receiverType string, model *semaTypeMemberView) bool {
 	if receiverType == "" || isSemaBuiltinType(receiverType) {
 		return false
 	}
-	if _, ok := model[normalizeName(receiverType)]; ok {
+	if _, ok := model.lookup(normalizeName(receiverType)); ok {
 		return false
 	}
 	return strings.Contains(receiverType, "(") || strings.Contains(receiverType, ".")
@@ -358,12 +358,12 @@ type resolvedMember struct {
 	member typesys.MemberSymbol
 }
 
-func semaResolvedMembersAllPlatformBacked(model map[string]typeMembers, candidates []resolvedMember) bool {
+func semaResolvedMembersAllPlatformBacked(model *semaTypeMemberView, candidates []resolvedMember) bool {
 	if len(candidates) == 0 {
 		return false
 	}
 	for _, candidate := range candidates {
-		owner, ok := model[normalizeName(candidate.owner)]
+		owner, ok := model.lookup(normalizeName(candidate.owner))
 		if !ok || (!owner.dependency && !owner.sobject) {
 			return false
 		}
@@ -371,11 +371,11 @@ func semaResolvedMembersAllPlatformBacked(model map[string]typeMembers, candidat
 	return true
 }
 
-func resolveMemberMethods(model map[string]typeMembers, typeName, method string) []resolvedMember {
+func resolveMemberMethods(model *semaTypeMemberView, typeName, method string) []resolvedMember {
 	return resolveMemberMethodsSeen(model, typeName, method, make(map[string]bool))
 }
 
-func resolveImplicitMemberMethods(model map[string]typeMembers, typeName, method string) []resolvedMember {
+func resolveImplicitMemberMethods(model *semaTypeMemberView, typeName, method string) []resolvedMember {
 	var out []resolvedMember
 	seen := make(map[string]bool)
 	for _, candidate := range resolveMemberMethods(model, typeName, method) {
@@ -401,7 +401,7 @@ func resolveImplicitMemberMethods(model map[string]typeMembers, typeName, method
 	return out
 }
 
-func resolveMemberMethodsSeen(model map[string]typeMembers, typeName, method string, seen map[string]bool) []resolvedMember {
+func resolveMemberMethodsSeen(model *semaTypeMemberView, typeName, method string, seen map[string]bool) []resolvedMember {
 	members, key, ok := semaLookupTypeMembers(model, typeName)
 	if key == "" || seen[key] {
 		return nil
@@ -440,7 +440,7 @@ func resolveMemberMethodsSeen(model map[string]typeMembers, typeName, method str
 	return resolved
 }
 
-func (a *Analyzer) diagnoseConstructorChain(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, args []semaArg, start, end int, source string, model map[string]typeMembers) []diagnostic.Diagnostic {
+func (a *Analyzer) diagnoseConstructorChain(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, args []semaArg, start, end int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	if member.Kind != apexast.DeclarationConstructor {
 		return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, callee, "constructor chaining is only valid inside constructors", start, end, source)}
 	}
@@ -457,7 +457,7 @@ func (a *Analyzer) diagnoseConstructorChain(typ typesys.TypeSymbol, member types
 	if resolved := resolveNestedTypeName(model, typ.Name, targetType); resolved != "" {
 		targetType = resolved
 	}
-	target, ok := model[normalizeName(targetType)]
+	target, ok := model.lookup(normalizeName(targetType))
 	if !ok {
 		if callee == "super" {
 			return nil
@@ -505,7 +505,7 @@ func constructorDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	}
 }
 
-func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, candidates []resolvedMember, args []semaArg, haveArgs bool, receiverMode string, start, end int, source string, scope map[string]string, model map[string]typeMembers) []diagnostic.Diagnostic {
+func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, candidates []resolvedMember, args []semaArg, haveArgs bool, receiverMode string, start, end int, source string, scope map[string]string, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var argTypes []string
 	if haveArgs {
 		argTypes = make([]string, len(args))
@@ -671,7 +671,7 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 	}}
 }
 
-func diagnoseDatabaseExecuteBatchArg(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, argTypes []string, start, end int, source string, model map[string]typeMembers) (diagnostic.Diagnostic, bool) {
+func diagnoseDatabaseExecuteBatchArg(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, argTypes []string, start, end int, source string, model *semaTypeMemberView) (diagnostic.Diagnostic, bool) {
 	if len(argTypes) == 0 || !isBatchEnqueueCallee(callee) {
 		return diagnostic.Diagnostic{}, false
 	}
@@ -725,7 +725,7 @@ func semaKnownFluentHelperMethod(method string) bool {
 	}
 }
 
-func semaImmediateDottedCallResolved(body string, callStart int, args []semaArg, scope map[string]string, model map[string]typeMembers) bool {
+func semaImmediateDottedCallResolved(body string, callStart int, args []semaArg, scope map[string]string, model *semaTypeMemberView) bool {
 	receiverExpr, method, ok := semaImmediateDottedCallReceiverExpr(body, callStart)
 	if !ok {
 		return false
@@ -922,7 +922,7 @@ func semaIRExprLooksLikeCustomRelationship(expr ir.Expr) bool {
 	return false
 }
 
-func semaCalleeDependencyRoot(callee string, scope map[string]string, model map[string]typeMembers) bool {
+func semaCalleeDependencyRoot(callee string, scope map[string]string, model *semaTypeMemberView) bool {
 	root, _, ok := strings.Cut(strings.TrimSpace(callee), ".")
 	if !ok || root == "" {
 		return false
@@ -933,7 +933,7 @@ func semaCalleeDependencyRoot(callee string, scope map[string]string, model map[
 	return semaDependencyType(model, root)
 }
 
-func semaCallMayBelongToMissingSuperclass(model map[string]typeMembers, typ typesys.TypeSymbol, callee, receiverMode, receiverType string) bool {
+func semaCallMayBelongToMissingSuperclass(model *semaTypeMemberView, typ typesys.TypeSymbol, callee, receiverMode, receiverType string) bool {
 	trimmed := strings.TrimSpace(callee)
 	if receiverMode == "implicit" || receiverMode == "super" || strings.HasPrefix(strings.ToLower(trimmed), "super.") {
 		return semaTypeHasMissingSuperclass(model, semaTypeMembersName(typ), map[string]bool{})
@@ -944,7 +944,7 @@ func semaCallMayBelongToMissingSuperclass(model map[string]typeMembers, typ type
 	return semaTypeHasMissingSuperclass(model, receiverType, map[string]bool{})
 }
 
-func semaTypeHasMissingSuperclass(model map[string]typeMembers, typeName string, seen map[string]bool) bool {
+func semaTypeHasMissingSuperclass(model *semaTypeMemberView, typeName string, seen map[string]bool) bool {
 	if typeName == "" {
 		return false
 	}
@@ -953,7 +953,7 @@ func semaTypeHasMissingSuperclass(model map[string]typeMembers, typeName string,
 		return false
 	}
 	seen[key] = true
-	members, ok := model[key]
+	members, ok := model.lookup(key)
 	if !ok || members.superClass == "" {
 		return false
 	}
@@ -961,23 +961,23 @@ func semaTypeHasMissingSuperclass(model map[string]typeMembers, typeName string,
 	if resolved := resolveNestedTypeName(model, members.name, superName); resolved != "" {
 		superName = resolved
 	}
-	if _, ok := model[normalizeName(superName)]; !ok {
+	if _, ok := model.lookup(normalizeName(superName)); !ok {
 		return true
 	}
 	return semaTypeHasMissingSuperclass(model, superName, seen)
 }
 
-func semaDependencyType(model map[string]typeMembers, typeName string) bool {
+func semaDependencyType(model *semaTypeMemberView, typeName string) bool {
 	if typeName == "" {
 		return false
 	}
-	if members, ok := model[normalizeName(typeName)]; ok {
+	if members, ok := model.lookup(normalizeName(typeName)); ok {
 		return members.dependency
 	}
 	return false
 }
 
-func semaKnownChildRelationshipCollectionCall(receiverExpr, method string, scope map[string]string, model map[string]typeMembers) bool {
+func semaKnownChildRelationshipCollectionCall(receiverExpr, method string, scope map[string]string, model *semaTypeMemberView) bool {
 	parentExpr, relationship, ok := strings.Cut(strings.TrimSpace(receiverExpr), ".")
 	if !ok || strings.Contains(relationship, ".") {
 		return false
@@ -994,7 +994,7 @@ func semaKnownChildRelationshipCollectionCall(receiverExpr, method string, scope
 	return false
 }
 
-func semaKnownChildRelationshipListType(parentType, relationship string, model map[string]typeMembers) string {
+func semaKnownChildRelationshipListType(parentType, relationship string, model *semaTypeMemberView) string {
 	if target, ok := semaResolveFieldPath(model, parentType, relationship); ok {
 		base, _ := semaGenericBaseAndArgs(target.member.Type)
 		if strings.EqualFold(base, "List") {
@@ -1014,9 +1014,9 @@ func semaAssignmentOperatorNeighbor(arg string, i int) bool {
 		(i+1 < len(arg) && strings.ContainsRune("=>", rune(arg[i+1])))
 }
 
-func checkSemaStaticAccessWithModel(from typesys.TypeSymbol, context typesys.MemberSymbol, callee string, target resolvedMember, receiverMode string, start, end int, source string, model map[string]typeMembers) (diagnostic.Diagnostic, bool) {
+func checkSemaStaticAccessWithModel(from typesys.TypeSymbol, context typesys.MemberSymbol, callee string, target resolvedMember, receiverMode string, start, end int, source string, model *semaTypeMemberView) (diagnostic.Diagnostic, bool) {
 	if receiverMode == "instance" && hasModifier(target.member.Modifiers, "static") {
-		if owner, ok := model[normalizeName(target.owner)]; ok {
+		if owner, ok := model.lookup(normalizeName(target.owner)); ok {
 			if !owner.dependency && !owner.sobject {
 				return diagnostic.Diagnostic{}, false
 			}
@@ -1099,7 +1099,7 @@ func semaStaticAccessLooksTypeQualifiedAt(source string, start int) bool {
 	return root != "" && root[0] >= 'A' && root[0] <= 'Z'
 }
 
-func semaTextReceiverExprLooksLikeType(receiverExpr string, scope map[string]string, model map[string]typeMembers) bool {
+func semaTextReceiverExprLooksLikeType(receiverExpr string, scope map[string]string, model *semaTypeMemberView) bool {
 	receiverExpr = strings.TrimSpace(receiverExpr)
 	if receiverExpr == "" {
 		return false
@@ -1116,7 +1116,7 @@ func semaTextReceiverExprLooksLikeType(receiverExpr string, scope map[string]str
 		}
 	}
 	if semaModelHasType(model, receiverExpr) {
-		if members, ok := model[normalizeName(receiverExpr)]; ok && !semaPlatformReceiverSpellingMatches(receiverExpr, members) {
+		if members, ok := model.lookup(normalizeName(receiverExpr)); ok && !semaPlatformReceiverSpellingMatches(receiverExpr, members) {
 			return false
 		}
 		return true
@@ -1155,7 +1155,7 @@ func ambiguousCallDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol
 	}
 }
 
-func checkSemaMemberAccess(from typesys.TypeSymbol, context typesys.MemberSymbol, callee string, target resolvedMember, start, end int, source string, model map[string]typeMembers) (diagnostic.Diagnostic, bool) {
+func checkSemaMemberAccess(from typesys.TypeSymbol, context typesys.MemberSymbol, callee string, target resolvedMember, start, end int, source string, model *semaTypeMemberView) (diagnostic.Diagnostic, bool) {
 	access := accessModifier(target.member.Modifiers)
 	if access == "" || access == "public" || access == "global" || access == "webservice" {
 		return diagnostic.Diagnostic{}, false
@@ -1184,7 +1184,7 @@ func checkSemaMemberAccess(from typesys.TypeSymbol, context typesys.MemberSymbol
 	}, true
 }
 
-func semaIsSubclass(model map[string]typeMembers, child, parent string) bool {
+func semaIsSubclass(model *semaTypeMemberView, child, parent string) bool {
 	seen := make(map[string]bool)
 	for child != "" {
 		key := normalizeName(child)
@@ -1192,7 +1192,7 @@ func semaIsSubclass(model map[string]typeMembers, child, parent string) bool {
 			return false
 		}
 		seen[key] = true
-		members, ok := model[key]
+		members, ok := model.lookup(key)
 		if !ok {
 			return false
 		}
@@ -1208,7 +1208,7 @@ func semaIsSubclass(model map[string]typeMembers, child, parent string) bool {
 	return false
 }
 
-func semaTypeNameMatches(model map[string]typeMembers, context, left, right string) bool {
+func semaTypeNameMatches(model *semaTypeMemberView, context, left, right string) bool {
 	if normalizeName(left) == normalizeName(right) {
 		return true
 	}
@@ -1245,7 +1245,7 @@ func accessModifier(modifiers []string) string {
 	return ""
 }
 
-func callArgsMatch(params []apexast.Parameter, args []semaArg, scope map[string]string, model map[string]typeMembers) bool {
+func callArgsMatch(params []apexast.Parameter, args []semaArg, scope map[string]string, model *semaTypeMemberView) bool {
 	if len(params) != len(args) {
 		return false
 	}
@@ -1258,7 +1258,7 @@ func callArgsMatch(params []apexast.Parameter, args []semaArg, scope map[string]
 	return true
 }
 
-func bestResolvedMemberByArgTypes(candidates []resolvedMember, argTypes []string, model map[string]typeMembers) (resolvedMember, bool, bool) {
+func bestResolvedMemberByArgTypes(candidates []resolvedMember, argTypes []string, model *semaTypeMemberView) (resolvedMember, bool, bool) {
 	applicable := make([]resolvedMember, 0, len(candidates))
 	for _, candidate := range candidates {
 		if memberApplicable(candidate.member, argTypes, model) {
@@ -1274,7 +1274,7 @@ func bestResolvedMemberByArgTypes(candidates []resolvedMember, argTypes []string
 	return bestResolvedMemberBySpecificity(applicable, model)
 }
 
-func bestMemberByArgTypes(candidates []typesys.MemberSymbol, argTypes []string, model map[string]typeMembers) (typesys.MemberSymbol, bool, bool) {
+func bestMemberByArgTypes(candidates []typesys.MemberSymbol, argTypes []string, model *semaTypeMemberView) (typesys.MemberSymbol, bool, bool) {
 	applicable := make([]typesys.MemberSymbol, 0, len(candidates))
 	for _, candidate := range candidates {
 		if memberApplicable(candidate, argTypes, model) {
@@ -1290,7 +1290,7 @@ func bestMemberByArgTypes(candidates []typesys.MemberSymbol, argTypes []string, 
 	return bestMemberBySpecificity(applicable, model)
 }
 
-func bestResolvedMemberBySOQLSingletonArgs(candidates []resolvedMember, argTypes []string, args []semaArg, model map[string]typeMembers) (resolvedMember, bool) {
+func bestResolvedMemberBySOQLSingletonArgs(candidates []resolvedMember, argTypes []string, args []semaArg, model *semaTypeMemberView) (resolvedMember, bool) {
 	applicable := make([]resolvedMember, 0, len(candidates))
 	for _, candidate := range candidates {
 		if memberApplicableWithSOQLSingletonArgs(candidate.member, argTypes, args, model) {
@@ -1301,7 +1301,7 @@ func bestResolvedMemberBySOQLSingletonArgs(candidates []resolvedMember, argTypes
 	return best, ok && !ambiguous
 }
 
-func memberApplicableWithSOQLSingletonArgs(candidate typesys.MemberSymbol, argTypes []string, args []semaArg, model map[string]typeMembers) bool {
+func memberApplicableWithSOQLSingletonArgs(candidate typesys.MemberSymbol, argTypes []string, args []semaArg, model *semaTypeMemberView) bool {
 	if len(candidate.Parameters) != len(argTypes) || len(args) != len(argTypes) {
 		return false
 	}
@@ -1319,7 +1319,7 @@ func memberApplicableWithSOQLSingletonArgs(candidate typesys.MemberSymbol, argTy
 	return usedSingleton
 }
 
-func bestConstructorByArgTypes(candidates []typesys.MemberSymbol, positionalArgTypes []string, namedArgTypes map[string]string, model map[string]typeMembers) (typesys.MemberSymbol, bool, bool) {
+func bestConstructorByArgTypes(candidates []typesys.MemberSymbol, positionalArgTypes []string, namedArgTypes map[string]string, model *semaTypeMemberView) (typesys.MemberSymbol, bool, bool) {
 	if len(namedArgTypes) == 0 {
 		return bestMemberByArgTypes(candidates, positionalArgTypes, model)
 	}
@@ -1332,7 +1332,7 @@ func bestConstructorByArgTypes(candidates []typesys.MemberSymbol, positionalArgT
 	return bestMemberBySpecificity(applicable, model)
 }
 
-func bestConstructorByIRSOQLSingletonArgs(candidates []typesys.MemberSymbol, argTypes []string, args []ir.Expr, model map[string]typeMembers) (typesys.MemberSymbol, bool, bool) {
+func bestConstructorByIRSOQLSingletonArgs(candidates []typesys.MemberSymbol, argTypes []string, args []ir.Expr, model *semaTypeMemberView) (typesys.MemberSymbol, bool, bool) {
 	applicable := make([]typesys.MemberSymbol, 0, len(candidates))
 	for _, candidate := range candidates {
 		if memberApplicableWithIRSOQLSingletonArgs(candidate, argTypes, args, model) {
@@ -1348,7 +1348,7 @@ func bestConstructorByIRSOQLSingletonArgs(candidates []typesys.MemberSymbol, arg
 	return bestMemberBySpecificity(applicable, model)
 }
 
-func memberApplicableWithIRSOQLSingletonArgs(candidate typesys.MemberSymbol, argTypes []string, args []ir.Expr, model map[string]typeMembers) bool {
+func memberApplicableWithIRSOQLSingletonArgs(candidate typesys.MemberSymbol, argTypes []string, args []ir.Expr, model *semaTypeMemberView) bool {
 	if len(candidate.Parameters) != len(argTypes) || len(args) != len(argTypes) {
 		return false
 	}
@@ -1386,7 +1386,7 @@ func bestMemberByExactObjectTieBreak(applicable []typesys.MemberSymbol, argTypes
 	return applicable[bestIndex], true
 }
 
-func bestResolvedMemberByConversionScore(applicable []resolvedMember, argTypes []string, model map[string]typeMembers) (resolvedMember, bool) {
+func bestResolvedMemberByConversionScore(applicable []resolvedMember, argTypes []string, model *semaTypeMemberView) (resolvedMember, bool) {
 	bestIndex, ok := bestMemberConversionScoreIndex(len(applicable), argTypes, model, func(i int) typesys.MemberSymbol {
 		return applicable[i].member
 	})
@@ -1396,7 +1396,7 @@ func bestResolvedMemberByConversionScore(applicable []resolvedMember, argTypes [
 	return applicable[bestIndex], true
 }
 
-func bestMemberByConversionScore(applicable []typesys.MemberSymbol, argTypes []string, model map[string]typeMembers) (typesys.MemberSymbol, bool) {
+func bestMemberByConversionScore(applicable []typesys.MemberSymbol, argTypes []string, model *semaTypeMemberView) (typesys.MemberSymbol, bool) {
 	bestIndex, ok := bestMemberConversionScoreIndex(len(applicable), argTypes, model, func(i int) typesys.MemberSymbol {
 		return applicable[i]
 	})
@@ -1406,7 +1406,7 @@ func bestMemberByConversionScore(applicable []typesys.MemberSymbol, argTypes []s
 	return applicable[bestIndex], true
 }
 
-func bestMemberConversionScoreIndex(count int, argTypes []string, model map[string]typeMembers, candidateAt func(int) typesys.MemberSymbol) (int, bool) {
+func bestMemberConversionScoreIndex(count int, argTypes []string, model *semaTypeMemberView, candidateAt func(int) typesys.MemberSymbol) (int, bool) {
 	bestIndex := -1
 	bestScore := 0
 	bestExact := 0
@@ -1516,7 +1516,7 @@ func bestMemberExactObjectTieBreakIndex(count int, argTypes []string, candidateA
 	return bestIndex
 }
 
-func memberApplicable(candidate typesys.MemberSymbol, argTypes []string, model map[string]typeMembers) bool {
+func memberApplicable(candidate typesys.MemberSymbol, argTypes []string, model *semaTypeMemberView) bool {
 	if len(candidate.Parameters) != len(argTypes) {
 		return false
 	}
@@ -1528,7 +1528,7 @@ func memberApplicable(candidate typesys.MemberSymbol, argTypes []string, model m
 	return true
 }
 
-func memberApplicableWithNamedArgs(candidate typesys.MemberSymbol, positionalArgTypes []string, namedArgTypes map[string]string, model map[string]typeMembers) bool {
+func memberApplicableWithNamedArgs(candidate typesys.MemberSymbol, positionalArgTypes []string, namedArgTypes map[string]string, model *semaTypeMemberView) bool {
 	if len(candidate.Parameters) != len(positionalArgTypes)+len(namedArgTypes) || len(positionalArgTypes) > len(candidate.Parameters) {
 		return false
 	}
@@ -1559,7 +1559,7 @@ func memberApplicableWithNamedArgs(candidate typesys.MemberSymbol, positionalArg
 	return true
 }
 
-func bestResolvedMemberBySpecificity(applicable []resolvedMember, model map[string]typeMembers) (resolvedMember, bool, bool) {
+func bestResolvedMemberBySpecificity(applicable []resolvedMember, model *semaTypeMemberView) (resolvedMember, bool, bool) {
 	if len(applicable) == 0 {
 		return resolvedMember{}, false, false
 	}
@@ -1594,7 +1594,7 @@ func bestResolvedMemberBySpecificity(applicable []resolvedMember, model map[stri
 	return applicable[bestIndex], true, false
 }
 
-func compareResolvedSemaMemberSpecificity(left, right resolvedMember, model map[string]typeMembers) int {
+func compareResolvedSemaMemberSpecificity(left, right resolvedMember, model *semaTypeMemberView) int {
 	paramSpecificity := compareSemaMemberSpecificity(left.member, right.member, model)
 	if paramSpecificity != 0 && paramSpecificity != 2 {
 		return paramSpecificity
@@ -1611,7 +1611,7 @@ func compareResolvedSemaMemberSpecificity(left, right resolvedMember, model map[
 	}
 }
 
-func bestMemberBySpecificity(applicable []typesys.MemberSymbol, model map[string]typeMembers) (typesys.MemberSymbol, bool, bool) {
+func bestMemberBySpecificity(applicable []typesys.MemberSymbol, model *semaTypeMemberView) (typesys.MemberSymbol, bool, bool) {
 	if len(applicable) == 0 {
 		return typesys.MemberSymbol{}, false, false
 	}
@@ -1646,7 +1646,7 @@ func bestMemberBySpecificity(applicable []typesys.MemberSymbol, model map[string
 	return applicable[bestIndex], true, false
 }
 
-func compareSemaMemberSpecificity(left, right typesys.MemberSymbol, model map[string]typeMembers) int {
+func compareSemaMemberSpecificity(left, right typesys.MemberSymbol, model *semaTypeMemberView) int {
 	leftBetter := false
 	rightBetter := false
 	for i := range left.Parameters {
@@ -1672,7 +1672,7 @@ func compareSemaMemberSpecificity(left, right typesys.MemberSymbol, model map[st
 	}
 }
 
-func compareSemaTypeSpecificity(left, right string, model map[string]typeMembers) int {
+func compareSemaTypeSpecificity(left, right string, model *semaTypeMemberView) int {
 	if strings.EqualFold(left, right) {
 		return 0
 	}
@@ -1690,7 +1690,7 @@ func compareSemaTypeSpecificity(left, right string, model map[string]typeMembers
 	}
 }
 
-func semaConversionScore(paramType, argType string, model map[string]typeMembers) int {
+func semaConversionScore(paramType, argType string, model *semaTypeMemberView) int {
 	if argType == "" || strings.EqualFold(argType, "null") {
 		return 1
 	}
@@ -1744,7 +1744,7 @@ func semaConversionScore(paramType, argType string, model map[string]typeMembers
 	return -1
 }
 
-func semaSOQLSingletonArgAssignable(paramType, argType, argText string, model map[string]typeMembers) bool {
+func semaSOQLSingletonArgAssignable(paramType, argType, argText string, model *semaTypeMemberView) bool {
 	argText = strings.TrimSpace(argText)
 	if !strings.HasPrefix(argText, "[") || !strings.HasSuffix(argText, "]") {
 		return false
@@ -1789,7 +1789,7 @@ func semaNumericConversionScore(paramType, argType string) int {
 	return -1
 }
 
-func semaAssignableToType(paramType, argType string, model map[string]typeMembers) bool {
+func semaAssignableToType(paramType, argType string, model *semaTypeMemberView) bool {
 	paramType = semaCanonicalAssignableType(paramType)
 	argType = semaCanonicalAssignableType(argType)
 	if strings.EqualFold(argType, "Database.QueryResult") {
@@ -1871,7 +1871,7 @@ func semaAssignableToType(paramType, argType string, model map[string]typeMember
 	return semaTypeMatches(model, argType, paramType, make(map[string]bool))
 }
 
-func semaSObjectTypeTokenAssignableToDescribe(paramType, argType string, model map[string]typeMembers) bool {
+func semaSObjectTypeTokenAssignableToDescribe(paramType, argType string, model *semaTypeMemberView) bool {
 	if !strings.EqualFold(paramType, "Schema.DescribeSObjectResult") && !strings.EqualFold(paramType, "DescribeSObjectResult") {
 		return false
 	}
@@ -1902,7 +1902,7 @@ func semaSchemaDescribeMapAssignable(paramType, argType string) bool {
 	}
 }
 
-func semaNestedShortTypeEquivalent(left, right string, model map[string]typeMembers) bool {
+func semaNestedShortTypeEquivalent(left, right string, model *semaTypeMemberView) bool {
 	leftShort := shortNestedTypeName(left)
 	rightShort := shortNestedTypeName(right)
 	if leftShort == left && rightShort == right {
@@ -1920,7 +1920,7 @@ func semaNestedShortTypeEquivalent(left, right string, model map[string]typeMemb
 	return false
 }
 
-func semaDynamicQueryResultAssignableTo(paramType string, model map[string]typeMembers) bool {
+func semaDynamicQueryResultAssignableTo(paramType string, model *semaTypeMemberView) bool {
 	if strings.EqualFold(paramType, "Object") || strings.EqualFold(paramType, "SObject") || strings.EqualFold(paramType, "AggregateResult") || isSemaSObjectLike(paramType, model) {
 		return true
 	}
@@ -1931,7 +1931,7 @@ func semaDynamicQueryResultAssignableTo(paramType string, model map[string]typeM
 	return len(args) == 0 || strings.EqualFold(args[0], "Object") || strings.EqualFold(args[0], "SObject") || strings.EqualFold(args[0], "AggregateResult") || isSemaSObjectLike(args[0], model)
 }
 
-func semaPlatformAssignableToType(paramType, argType string, model map[string]typeMembers) bool {
+func semaPlatformAssignableToType(paramType, argType string, model *semaTypeMemberView) bool {
 	paramBase, paramArgs := semaGenericBaseAndArgs(semaCanonicalPlatformAlias(paramType))
 	argType = semaCanonicalPlatformAlias(argType)
 	if strings.EqualFold(paramBase, "Database.BatchableContext") && strings.EqualFold(argType, "Database.BatchableContextImpl") {
@@ -1977,7 +1977,7 @@ func semaMessagingEmailAssignable(paramType, argType string) bool {
 		(strings.EqualFold(argType, "Messaging.SingleEmailMessage") || strings.EqualFold(argType, "Messaging.MassEmailMessage"))
 }
 
-func semaGenericAssignableToType(paramType, argType string, model map[string]typeMembers) bool {
+func semaGenericAssignableToType(paramType, argType string, model *semaTypeMemberView) bool {
 	paramType = semaCanonicalAssignableType(paramType)
 	argType = semaCanonicalAssignableType(argType)
 	paramBase, paramArgs := semaGenericBaseAndArgs(paramType)
@@ -2040,7 +2040,7 @@ func semaGenericAssignableToType(paramType, argType string, model map[string]typ
 	}
 }
 
-func semaKnownStandardObjectListAssignable(paramElementType, argElementType string, model map[string]typeMembers) bool {
+func semaKnownStandardObjectListAssignable(paramElementType, argElementType string, model *semaTypeMemberView) bool {
 	if !strings.EqualFold(paramElementType, "SObject") {
 		return false
 	}
@@ -2057,11 +2057,11 @@ func semaKnownStandardObjectListAssignable(paramElementType, argElementType stri
 	return ok
 }
 
-func semaResolvedMemberReturnType(model map[string]typeMembers, candidate resolvedMember) string {
+func semaResolvedMemberReturnType(model *semaTypeMemberView, candidate resolvedMember) string {
 	return semaQualifyStandardSObjectType(resolveNestedTypeReference(model, candidate.owner, candidate.member.Type), model)
 }
 
-func semaQualifyStandardSObjectType(typeName string, model map[string]typeMembers) string {
+func semaQualifyStandardSObjectType(typeName string, model *semaTypeMemberView) string {
 	typeName = strings.TrimSpace(typeName)
 	base, args := semaGenericBaseAndArgs(typeName)
 	if len(args) > 0 {
@@ -2111,7 +2111,7 @@ func semaCustomAPITypeLocalName(typeName string) string {
 	return typeName
 }
 
-func isSemaSObjectLike(typeName string, model map[string]typeMembers) bool {
+func isSemaSObjectLike(typeName string, model *semaTypeMemberView) bool {
 	typeName = normalizeArrayType(strings.TrimSpace(typeName))
 	if typeName == "" || strings.Contains(typeName, "<") {
 		return false
@@ -2140,7 +2140,7 @@ func isSemaSObjectLike(typeName string, model map[string]typeMembers) bool {
 			return true
 		}
 	}
-	if members, ok := model[normalizeName(typeName)]; ok {
+	if members, ok := model.lookup(normalizeName(typeName)); ok {
 		return members.sobject
 	}
 	return false
@@ -2155,7 +2155,7 @@ func isCommonSemaSObjectName(typeName string) bool {
 	}
 }
 
-func semaTypeDistance(model map[string]typeMembers, typeName, target string, seen map[string]bool) (int, bool) {
+func semaTypeDistance(model *semaTypeMemberView, typeName, target string, seen map[string]bool) (int, bool) {
 	key := normalizeName(typeName)
 	targetKey := normalizeName(target)
 	if key == "" || seen[key] {
@@ -2165,14 +2165,14 @@ func semaTypeDistance(model map[string]typeMembers, typeName, target string, see
 		return 0, true
 	}
 	seen[key] = true
-	members, ok := model[key]
+	members, ok := model.lookup(key)
 	if !ok {
 		return semaTypeDistanceByShortName(model, key, target, seen)
 	}
 	return semaTypeDistanceFromMembers(model, members, target, seen)
 }
 
-func semaTypeDistanceFromMembers(model map[string]typeMembers, members typeMembers, target string, seen map[string]bool) (int, bool) {
+func semaTypeDistanceFromMembers(model *semaTypeMemberView, members typeMembers, target string, seen map[string]bool) (int, bool) {
 	targetKey := normalizeName(target)
 	if normalizeName(members.name) == targetKey {
 		return 0, true
@@ -2180,7 +2180,7 @@ func semaTypeDistanceFromMembers(model map[string]typeMembers, members typeMembe
 	if semaShortTypeKey(members.name) == targetKey {
 		return 0, true
 	}
-	if targetMembers, ok := model[targetKey]; ok && normalizeName(targetMembers.name) == normalizeName(members.name) {
+	if targetMembers, ok := model.lookup(targetKey); ok && normalizeName(targetMembers.name) == normalizeName(members.name) {
 		return 0, true
 	}
 	best := 0
@@ -2201,11 +2201,11 @@ func semaTypeDistanceFromMembers(model map[string]typeMembers, members typeMembe
 	return best, found
 }
 
-func semaTypeDistanceByShortName(model map[string]typeMembers, key, target string, seen map[string]bool) (int, bool) {
+func semaTypeDistanceByShortName(model *semaTypeMemberView, key, target string, seen map[string]bool) (int, bool) {
 	best := 0
 	found := false
 	for _, candidateKey := range semaShortCandidateKeys(model, key) {
-		members := model[candidateKey]
+		members := model.get(candidateKey)
 		if candidateKey == key || seen[candidateKey] {
 			continue
 		}
@@ -2221,7 +2221,7 @@ func semaTypeDistanceByShortName(model map[string]typeMembers, key, target strin
 	return best, found
 }
 
-func semaTypeMatches(model map[string]typeMembers, typeName, target string, seen map[string]bool) bool {
+func semaTypeMatches(model *semaTypeMemberView, typeName, target string, seen map[string]bool) bool {
 	typeName = semaCanonicalPlatformAlias(typeName)
 	target = semaCanonicalPlatformAlias(target)
 	key := normalizeName(typeName)
@@ -2258,7 +2258,7 @@ func semaTypeMatches(model map[string]typeMembers, typeName, target string, seen
 	return semaTypeMatchesFromMembers(model, members, target, seen)
 }
 
-func semaTypeMatchesFromMembers(model map[string]typeMembers, members typeMembers, target string, seen map[string]bool) bool {
+func semaTypeMatchesFromMembers(model *semaTypeMemberView, members typeMembers, target string, seen map[string]bool) bool {
 	targetKey := normalizeName(target)
 	if normalizeName(members.name) == targetKey {
 		return true
@@ -2269,7 +2269,7 @@ func semaTypeMatchesFromMembers(model map[string]typeMembers, members typeMember
 	if semaShortTypeKey(members.name) == targetKey {
 		return true
 	}
-	if targetMembers, ok := model[targetKey]; ok && normalizeName(targetMembers.name) == normalizeName(members.name) {
+	if targetMembers, ok := model.lookup(targetKey); ok && normalizeName(targetMembers.name) == normalizeName(members.name) {
 		return true
 	}
 	if semaTypeMatches(model, members.superClass, target, seen) {
@@ -2286,7 +2286,7 @@ func semaTypeMatchesFromMembers(model map[string]typeMembers, members typeMember
 	return false
 }
 
-func semaImplementedInterfaceMatchesTarget(model map[string]typeMembers, owner, iface, target string) bool {
+func semaImplementedInterfaceMatchesTarget(model *semaTypeMemberView, owner, iface, target string) bool {
 	ifaceBase, ifaceArgs := semaGenericBaseAndArgs(iface)
 	targetBase, targetArgs := semaGenericBaseAndArgs(target)
 	if len(ifaceArgs) == 0 || len(ifaceArgs) != len(targetArgs) || !strings.EqualFold(ifaceBase, targetBase) {
@@ -2306,10 +2306,10 @@ func semaImplementedInterfaceMatchesTarget(model map[string]typeMembers, owner, 
 	return true
 }
 
-func semaTypeMatchesByShortName(model map[string]typeMembers, key, target string, seen map[string]bool) bool {
+func semaTypeMatchesByShortName(model *semaTypeMemberView, key, target string, seen map[string]bool) bool {
 	found := false
 	for _, candidateKey := range semaShortCandidateKeys(model, key) {
-		members := model[candidateKey]
+		members := model.get(candidateKey)
 		if candidateKey == key || seen[candidateKey] {
 			continue
 		}
@@ -2320,12 +2320,12 @@ func semaTypeMatchesByShortName(model map[string]typeMembers, key, target string
 	return found
 }
 
-func semaLookupTypeMembers(model map[string]typeMembers, typeName string) (typeMembers, string, bool) {
+func semaLookupTypeMembers(model *semaTypeMemberView, typeName string) (typeMembers, string, bool) {
 	if members, schemaKey, ok := semaExplicitSchemaSObjectMembers(typeName, model); ok {
 		return members, schemaKey, true
 	}
 	key := normalizeName(typeName)
-	if members, ok := model[key]; ok {
+	if members, ok := model.lookup(key); ok {
 		return semaEnsureStandardSObjectTypeMembers(model, key, members), key, true
 	}
 	base, args := semaGenericBaseAndArgs(typeName)
@@ -2333,25 +2333,25 @@ func semaLookupTypeMembers(model map[string]typeMembers, typeName string) (typeM
 		return typeMembers{}, key, false
 	}
 	baseKey := normalizeName(base)
-	members, ok := model[baseKey]
+	members, ok := model.lookup(baseKey)
 	if ok {
 		members = semaEnsureStandardSObjectTypeMembers(model, baseKey, members)
 	}
 	return members, baseKey, ok
 }
 
-func semaExplicitSchemaSObjectMembers(typeName string, model map[string]typeMembers) (typeMembers, string, bool) {
+func semaExplicitSchemaSObjectMembers(typeName string, model *semaTypeMemberView) (typeMembers, string, bool) {
 	schemaName, ok := semaSchemaQualifiedTypeName(typeName)
 	if !ok || schemaName == "" {
 		return typeMembers{}, "", false
 	}
 	schemaKey := normalizeName(schemaName)
-	if members, ok := model[schemaKey]; ok && members.sobject {
+	if members, ok := model.lookup(schemaKey); ok && members.sobject {
 		return semaEnsureStandardSObjectTypeMembers(model, schemaKey, members), schemaKey, true
 	}
 	if objectName, ok := semaStandardSObjectNameForKey(schemaKey); ok {
 		members := semaBuildStandardSObjectMembers(objectName)
-		model[schemaKey] = members
+		model.storeHydrated(schemaKey, members)
 		return members, schemaKey, true
 	}
 	return typeMembers{}, schemaKey, false
@@ -2385,7 +2385,7 @@ func semaShortTypeKeyFromNormalizedKey(key string) string {
 	return key
 }
 
-func inferSemaArgTypeWithModel(arg string, scope map[string]string, model map[string]typeMembers) string {
+func inferSemaArgTypeWithModel(arg string, scope map[string]string, model *semaTypeMemberView) string {
 	if !enterSemaInference(scope) {
 		return ""
 	}
@@ -2403,7 +2403,7 @@ func inferSemaArgTypeWithModel(arg string, scope map[string]string, model map[st
 	return inferSemaArgTypeWithModelUncached(arg, scope, model)
 }
 
-func inferSemaArgTypeWithModelUncached(arg string, scope map[string]string, model map[string]typeMembers) string {
+func inferSemaArgTypeWithModelUncached(arg string, scope map[string]string, model *semaTypeMemberView) string {
 	arg = semaTrimExpressionPrefix(arg)
 	if semaContainsStatementSeparator(arg) {
 		return ""
@@ -2596,7 +2596,7 @@ func splitSemaIndexExpression(arg string) (string, bool) {
 	return "", false
 }
 
-func inferSemaBinaryTypeWithModel(arg string, scope map[string]string, model map[string]typeMembers) string {
+func inferSemaBinaryTypeWithModel(arg string, scope map[string]string, model *semaTypeMemberView) string {
 	for _, op := range []string{"&&", "||"} {
 		if left, right, ok := splitSemaBinary(arg, op); ok {
 			if strings.EqualFold(inferSemaArgTypeWithModel(left, scope, model), "Boolean") && strings.EqualFold(inferSemaArgTypeWithModel(right, scope, model), "Boolean") {
@@ -2640,7 +2640,7 @@ func inferSemaBinaryTypeWithModel(arg string, scope map[string]string, model map
 	return ""
 }
 
-func inferSemaDescribeFieldChainType(arg string, scope map[string]string, model map[string]typeMembers) string {
+func inferSemaDescribeFieldChainType(arg string, scope map[string]string, model *semaTypeMemberView) string {
 	const describeSuffix = ".getDescribe()"
 	arg = strings.TrimSpace(arg)
 	switch {
@@ -2663,7 +2663,7 @@ func inferSemaDescribeFieldChainType(arg string, scope map[string]string, model 
 	return ""
 }
 
-func inferSemaFieldAccessType(expr string, scope map[string]string, model map[string]typeMembers) string {
+func inferSemaFieldAccessType(expr string, scope map[string]string, model *semaTypeMemberView) string {
 	if semaLooksLikeLabelReference(expr) {
 		return "String"
 	}
@@ -2731,7 +2731,7 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 		}
 	} else if strings.EqualFold(parts[0], "super") && len(parts) > 1 {
 		if currentType := scope[semaCurrentTypeScopeKey]; currentType != "" {
-			if members, ok := model[normalizeName(currentType)]; ok {
+			if members, ok := model.lookup(normalizeName(currentType)); ok {
 				receiverType = members.superClass
 				startIndex = 1
 			}
@@ -2741,12 +2741,12 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 	} else {
 		currentType := scope[semaCurrentTypeScopeKey]
 		if resolved := resolveNestedTypeName(model, currentType, parts[0]); resolved != "" {
-			if members, ok := model[normalizeName(resolved)]; ok {
+			if members, ok := model.lookup(normalizeName(resolved)); ok {
 				receiverType = members.name
 			}
 		}
 		if receiverType == "" {
-			if members, ok := model[normalizeName(parts[0])]; ok {
+			if members, ok := model.lookup(normalizeName(parts[0])); ok {
 				if !semaPlatformReceiverSpellingMatches(parts[0], members) {
 					return ""
 				}
@@ -2768,7 +2768,7 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 	return ""
 }
 
-func semaLooksLikeCustomShareRowCauseToken(expr string, model map[string]typeMembers) bool {
+func semaLooksLikeCustomShareRowCauseToken(expr string, model *semaTypeMemberView) bool {
 	parts := strings.Split(strings.TrimSpace(expr), ".")
 	if len(parts) != 4 || !strings.EqualFold(parts[0], "Schema") || !strings.EqualFold(parts[2], "RowCause") {
 		return false
@@ -2780,19 +2780,19 @@ func semaLooksLikeCustomShareRowCauseToken(expr string, model map[string]typeMem
 	return ok
 }
 
-func semaUnknownExternalDottedType(typeName string, model map[string]typeMembers) bool {
+func semaUnknownExternalDottedType(typeName string, model *semaTypeMemberView) bool {
 	base, _ := semaGenericBaseAndArgs(strings.TrimSpace(typeName))
 	if !strings.Contains(base, ".") {
 		return false
 	}
-	if _, ok := model[normalizeName(base)]; ok {
+	if _, ok := model.lookup(normalizeName(base)); ok {
 		return false
 	}
 	root, _, ok := strings.Cut(base, ".")
 	if !ok || root == "" {
 		return false
 	}
-	if _, ok := model[normalizeName(root)]; ok {
+	if _, ok := model.lookup(normalizeName(root)); ok {
 		return false
 	}
 	return true

@@ -1718,12 +1718,11 @@ func (a *Analyzer) checkInheritanceContracts(index typesys.Index) []diagnostic.D
 }
 
 func (a *Analyzer) checkInheritanceContractsWithRecorder(index typesys.Index, recorder *perfRecorder) []diagnostic.Diagnostic {
-	modelStarted := recorder.beginPhase()
-	model := buildTypeMembers(index)
-	if recorder != nil {
-		recorder.endPhase(&recorder.counters.TypeMemberModel, modelStarted)
-	}
-	defer unregisterSemaShortCandidateIndex(model)
+	return a.checkInheritanceContractsWithState(index, buildSemaTypeMemberState(index, recorder), recorder)
+}
+
+func (a *Analyzer) checkInheritanceContractsWithState(index typesys.Index, state *semaTypeMemberState, recorder *perfRecorder) []diagnostic.Diagnostic {
+	model := state.view()
 	var diagnostics []diagnostic.Diagnostic
 	inheritanceStarted := recorder.beginPhase()
 	for _, typ := range index.Types {
@@ -1782,7 +1781,7 @@ func (a *Analyzer) checkInheritanceContractsWithRecorder(index typesys.Index, re
 	return diagnostics
 }
 
-func semaTypeMissingSuperclass(model map[string]typeMembers, typ typesys.TypeSymbol) bool {
+func semaTypeMissingSuperclass(model *semaTypeMemberView, typ typesys.TypeSymbol) bool {
 	superClass := strings.TrimSpace(typ.SuperClass)
 	if superClass == "" {
 		return false
@@ -1792,11 +1791,11 @@ func semaTypeMissingSuperclass(model map[string]typeMembers, typ typesys.TypeSym
 	if resolved == "" {
 		resolved = superClass
 	}
-	_, ok := model[normalizeName(resolved)]
+	_, ok := model.lookup(normalizeName(resolved))
 	return !ok
 }
 
-func checkDatabaseBatchableGenericContract(model map[string]typeMembers, typ typesys.TypeSymbol) []diagnostic.Diagnostic {
+func checkDatabaseBatchableGenericContract(model *semaTypeMemberView, typ typesys.TypeSymbol) []diagnostic.Diagnostic {
 	members, _, ok := semaLookupTypeMembers(model, typ.Name)
 	if !ok {
 		return nil
@@ -1831,10 +1830,10 @@ func checkDatabaseBatchableGenericContract(model map[string]typeMembers, typ typ
 	return diagnostics
 }
 
-func concreteMethodsByName(model map[string]typeMembers, typeName, methodName string) []typesys.MemberSymbol {
+func concreteMethodsByName(model *semaTypeMemberView, typeName, methodName string) []typesys.MemberSymbol {
 	var out []typesys.MemberSymbol
 	for current := typeName; current != ""; {
-		members, ok := model[normalizeName(current)]
+		members, ok := model.lookup(normalizeName(current))
 		if !ok {
 			return out
 		}
@@ -1848,7 +1847,7 @@ func concreteMethodsByName(model map[string]typeMembers, typeName, methodName st
 	return out
 }
 
-func databaseBatchableMethodCompatible(methodName, itemType string, methods []typesys.MemberSymbol, model map[string]typeMembers) bool {
+func databaseBatchableMethodCompatible(methodName, itemType string, methods []typesys.MemberSymbol, model *semaTypeMemberView) bool {
 	for _, method := range methods {
 		switch strings.ToLower(methodName) {
 		case "start":
@@ -1879,7 +1878,7 @@ func databaseBatchableMethodCompatible(methodName, itemType string, methods []ty
 	return false
 }
 
-func databaseBatchableExecuteScopeCompatible(itemType, scopeType string, model map[string]typeMembers) bool {
+func databaseBatchableExecuteScopeCompatible(itemType, scopeType string, model *semaTypeMemberView) bool {
 	required := "List<" + itemType + ">"
 	if sameSemaSignatureType(scopeType, required) {
 		return true
@@ -1891,7 +1890,7 @@ func databaseBatchableExecuteScopeCompatible(itemType, scopeType string, model m
 	return semaAssignableToType(itemType, scopeArgs[0], model) || semaAssignableToType(scopeArgs[0], itemType, model)
 }
 
-func databaseBatchableStartReturnCompatible(itemType, returnType string, model map[string]typeMembers) bool {
+func databaseBatchableStartReturnCompatible(itemType, returnType string, model *semaTypeMemberView) bool {
 	returnType = semaCanonicalPlatformAlias(returnType)
 	base, args := semaGenericBaseAndArgs(returnType)
 	if (!strings.EqualFold(base, "Iterable") && !strings.EqualFold(base, "List")) || len(args) != 1 {
@@ -1902,7 +1901,7 @@ func databaseBatchableStartReturnCompatible(itemType, returnType string, model m
 		semaAssignableToType(args[0], itemType, model)
 }
 
-func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model map[string]typeMembers) []diagnostic.Diagnostic {
+func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	body := scan.body
 	for _, match := range scan.assignmentMatches {
@@ -1951,7 +1950,7 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 	}
 	return diagnostics
 }
-func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model map[string]typeMembers) []diagnostic.Diagnostic {
+func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	if member.Type == "" {
 		return nil
 	}
@@ -2002,7 +2001,7 @@ func semaBodyContainsReturnKeyword(body string) bool {
 
 var semaReturnKeywordPattern = regexp.MustCompile(`\breturn\b`)
 
-func (a *Analyzer) checkBodyTernaryConditions(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model map[string]typeMembers) []diagnostic.Diagnostic {
+func (a *Analyzer) checkBodyTernaryConditions(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	seen := make(map[int]bool)
 	for _, expr := range scan.expressions() {
@@ -2014,7 +2013,7 @@ func (a *Analyzer) checkBodyTernaryConditions(typ typesys.TypeSymbol, member typ
 	}
 	return diagnostics
 }
-func checkSemaTernaryCondition(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr string, exprStart int, source string, scope map[string]string, model map[string]typeMembers) []diagnostic.Diagnostic {
+func checkSemaTernaryCondition(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr string, exprStart int, source string, scope map[string]string, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	question, colon, ok := semaTernaryPositions(expr)
 	if !ok {
 		return nil
@@ -2076,7 +2075,7 @@ func (a *Analyzer) checkSemaExpressionTypeReferences(typ typesys.TypeSymbol, mem
 	}
 	return diagnostics
 }
-func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []semaArg, start, end int, source string, scope map[string]string, model map[string]typeMembers, receiverMode string) ([]diagnostic.Diagnostic, bool) {
+func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []semaArg, start, end int, source string, scope map[string]string, model *semaTypeMemberView, receiverMode string) ([]diagnostic.Diagnostic, bool) {
 	if strings.EqualFold(receiverType, "System") && strings.EqualFold(method, "runAs") && len(args) == 1 {
 		return nil, true
 	}
@@ -2108,7 +2107,7 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	}
 	return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), start, end, source)}, true
 }
-func checkGeneratedPlatformStaticAccess(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method, receiverMode string, start, end int, source string, model map[string]typeMembers) (diagnostic.Diagnostic, bool) {
+func checkGeneratedPlatformStaticAccess(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method, receiverMode string, start, end int, source string, model *semaTypeMemberView) (diagnostic.Diagnostic, bool) {
 	switch receiverMode {
 	case "class", "instance", "implicit":
 	default:
@@ -2124,7 +2123,7 @@ func checkGeneratedPlatformStaticAccess(typ typesys.TypeSymbol, member typesys.M
 	if len(candidates) == 0 {
 		return diagnostic.Diagnostic{}, false
 	}
-	if owner, ok := model[normalizeName(candidates[0].owner)]; !ok || (!owner.dependency && !owner.sobject) {
+	if owner, ok := model.lookup(normalizeName(candidates[0].owner)); !ok || (!owner.dependency && !owner.sobject) {
 		return diagnostic.Diagnostic{}, false
 	}
 	if len(filterGeneratedPlatformMethodsByReceiverMode(candidates, receiverMode)) != 0 {
