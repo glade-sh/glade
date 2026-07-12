@@ -351,16 +351,16 @@ func TestRunnerKeepsProjectRuntimeAfterAnonymousFileSave(t *testing.T) {
 func TestExampleProjectExecutionPlanCoversEveryProjectOnce(t *testing.T) {
 	plan := exampleProjectExecutionPlan(t)
 	examples := ListExampleProjects()
-	if len(plan) != len(examples) {
-		t.Fatalf("execution plan has %d examples, want %d", len(plan), len(examples))
+	if len(plan) != 13 || len(examples) != 13 {
+		t.Fatalf("execution plan/examples = %d/%d, want 13/13", len(plan), len(examples))
 	}
-	seen := make(map[string]int, len(plan))
+	planSeen := make(map[string]int, len(plan))
 	for _, testCase := range plan {
-		seen[testCase.example.ID]++
+		planSeen[testCase.example.ID]++
 	}
 	for _, example := range examples {
-		if seen[example.ID] != 1 {
-			t.Fatalf("execution plan count for %q = %d, want 1", example.ID, seen[example.ID])
+		if planSeen[example.ID] != 1 {
+			t.Fatalf("execution plan count for %q = %d, want 1", example.ID, planSeen[example.ID])
 		}
 	}
 	wantExpectedLogs := map[string]bool{
@@ -383,6 +383,42 @@ func TestExampleProjectExecutionPlanCoversEveryProjectOnce(t *testing.T) {
 	}
 	if len(wantExpectedLogs) != 0 {
 		t.Fatalf("examples missing expected-log checks: %#v", wantExpectedLogs)
+	}
+	want := map[string]bool{
+		"refinement-service": true, "trigger-contact-task": true, "collection-selector": true,
+		"persist-mode-ledger": true, "bulk-trigger-rollup": true, "map-selector-drill": true,
+		"contact-relationship-drill": true, "governor-limits-strict": true, "org-diff-dml": true,
+		"deal-desk-discount-guard": true, "renewal-health-scorecard": true,
+		"org-diff-review-loop": true, "limit-counter-drill": true,
+	}
+	seen := make(map[string]int, len(plan))
+	wantGroupSizes := []int{4, 3, 3, 3}
+	for group := 0; group < 4; group++ {
+		selected := exampleProjectExecutionGroup(plan, group)
+		if len(selected) == 0 {
+			t.Fatalf("group %d is empty", group)
+		}
+		if len(selected) != wantGroupSizes[group] {
+			t.Fatalf("group %d has %d examples, want %d", group, len(selected), wantGroupSizes[group])
+		}
+		for _, testCase := range selected {
+			seen[testCase.example.ID]++
+		}
+	}
+	if len(seen) != 13 {
+		t.Fatalf("group union has %d IDs, want 13: %#v", len(seen), seen)
+	}
+	for _, testCase := range plan {
+		if seen[testCase.example.ID] != 1 {
+			t.Fatalf("group union count for %q = %d, want 1", testCase.example.ID, seen[testCase.example.ID])
+		}
+		if !want[testCase.example.ID] {
+			t.Fatalf("group union has unexpected ID %q", testCase.example.ID)
+		}
+		delete(want, testCase.example.ID)
+	}
+	if len(want) != 0 {
+		t.Fatalf("group union is missing exact IDs: %#v", want)
 	}
 }
 
@@ -423,8 +459,35 @@ func exampleProjectExecutionPlan(t *testing.T) []exampleProjectExecutionTestCase
 	return plan
 }
 
-func TestExampleProjectsRunAnonymous(t *testing.T) {
-	plan := exampleProjectExecutionPlan(t)
+func exampleProjectExecutionGroup(plan []exampleProjectExecutionTestCase, group int) []exampleProjectExecutionTestCase {
+	selected := make([]exampleProjectExecutionTestCase, 0, (len(plan)+3)/4)
+	for index, testCase := range plan {
+		if index%4 == group {
+			selected = append(selected, testCase)
+		}
+	}
+	return selected
+}
+
+func TestExampleProjectsRunAnonymousGroupOne(t *testing.T) {
+	runExampleProjectExecutionGroup(t, 0)
+}
+
+func TestExampleProjectsRunAnonymousGroupTwo(t *testing.T) {
+	runExampleProjectExecutionGroup(t, 1)
+}
+
+func TestExampleProjectsRunAnonymousGroupThree(t *testing.T) {
+	runExampleProjectExecutionGroup(t, 2)
+}
+
+func TestExampleProjectsRunAnonymousGroupFour(t *testing.T) {
+	runExampleProjectExecutionGroup(t, 3)
+}
+
+func runExampleProjectExecutionGroup(t *testing.T, group int) {
+	t.Helper()
+	plan := exampleProjectExecutionGroup(exampleProjectExecutionPlan(t), group)
 	executed := make(map[string]int, len(plan))
 	for _, testCase := range plan {
 		t.Run(testCase.example.ID, func(t *testing.T) {
