@@ -1,0 +1,119 @@
+name: Race
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '43 10 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: race-${{ github.event.pull_request.number || github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      packages: ${{ steps.classify.outputs.packages }}
+      has-packages: ${{ steps.classify.outputs.has-packages }}
+      mode: ${{ steps.classify.outputs.mode }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.5"
+          cache: false
+      - name: Classify race packages
+        id: classify
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          case "${{ github.event_name }}" in
+            pull_request)
+              mode=changed
+              packages="$(scripts/ci-race-packages.sh changed "$BASE_SHA" "$HEAD_SHA")"
+              ;;
+            push)
+              mode=high-risk
+              packages="$(scripts/ci-race-packages.sh high-risk)"
+              ;;
+            schedule|workflow_dispatch)
+              mode=full
+              packages="$(scripts/ci-race-packages.sh full)"
+              ;;
+            *)
+              echo "unsupported race event: ${{ github.event_name }}" >&2
+              exit 2
+              ;;
+          esac
+          if [[ "$packages" == "[]" ]]; then has_packages=false; else has_packages=true; fi
+          echo "mode=$mode" >>"$GITHUB_OUTPUT"
+          echo "packages=$packages" >>"$GITHUB_OUTPUT"
+          echo "has-packages=$has_packages" >>"$GITHUB_OUTPUT"
+          mkdir -p ci-artifacts/race-plan
+          printf '{"mode":"%s","packages":%s}\n' "$mode" "$packages" >ci-artifacts/race-plan/plan.json
+      - name: Upload race plan
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: race-plan-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ci-artifacts/race-plan/plan.json
+          if-no-files-found: error
+
+  race:
+    needs: plan
+    if: needs.plan.outputs.has-packages == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        package: ${{ fromJSON(needs.plan.outputs.packages) }}
+    env:
+      GOMAXPROCS: "2"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.5"
+          cache: false
+      - uses: actions/setup-node@v6
+        if: ${{ contains(fromJSON('["./internal/gladecli","./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: third_party/lwc/package-lock.json
+      - name: Install LWC toolchain
+        if: ${{ contains(fromJSON('["./internal/gladecli","./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
+        run: npm ci --prefix third_party/lwc
+      - name: Resolve artifact name
+        id: artifact
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: |
+          slug="${PACKAGE#./}"
+          slug="${slug//\//-}"
+          if [[ ! "$slug" =~ ^[A-Za-z0-9._-]+$ ]]; then exit 2; fi
+          echo "slug=$slug" >>"$GITHUB_OUTPUT"
+      - name: Run race detector
+        env:
+          PACKAGE: ${{ matrix.package }}
+          SLUG: ${{ steps.artifact.outputs.slug }}
+        run: scripts/ci-resource-run.sh "ci-artifacts/race/$SLUG.json" "race-$SLUG" -- go test -race -count=1 -timeout=60m "$PACKAGE"
+      - name: Upload race evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: race-${{ steps.artifact.outputs.slug }}
+          path: ci-artifacts/race/
+          if-no-files-found: error
