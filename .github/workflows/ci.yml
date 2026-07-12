@@ -5,6 +5,235 @@ on:
   pull_request:
 
 jobs:
+  site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci --prefix site
+      - run: npm test --prefix site
+      - run: npm run build --prefix site
+
+  vet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GOMAXPROCS: "2"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.5"
+          cache: false
+      - name: Restore Go module cache
+        id: restore-go-mod-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-vet-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-vet-${{ hashFiles('go.sum') }}-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Restore Go build cache
+        id: restore-go-build-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-vet-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-vet-${{ hashFiles('go.sum') }}-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
+      - run: go vet ./...
+      - name: Save Go module cache
+        if: success()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ steps.restore-go-mod-cache.outputs.cache-primary-key }}
+      - name: Save Go build cache
+        if: success()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
+
+  gladecli:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GOMAXPROCS: "2"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.5"
+          cache: false
+      - name: Restore Go module cache
+        id: restore-go-mod-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-gladecli-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-gladecli-${{ hashFiles('go.sum') }}-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Restore Go build cache
+        id: restore-go-build-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-gladecli-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-gladecli-${{ hashFiles('go.sum') }}-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
+      - run: scripts/ci-go-test.sh lane gladecli
+      - name: Save Go module cache
+        if: success()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ steps.restore-go-mod-cache.outputs.cache-primary-key }}
+      - name: Save Go build cache
+        if: success()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
+      - name: Upload raw Go test events
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: go-test-gladecli
+          path: ci-artifacts/go-test/test-gladecli.json
+          if-no-files-found: error
+
+  sema:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GOMAXPROCS: "2"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.5"
+          cache: false
+      - name: Restore Go module cache
+        id: restore-go-mod-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-sema-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-sema-${{ hashFiles('go.sum') }}-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Restore Go build cache
+        id: restore-go-build-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-sema-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-sema-${{ hashFiles('go.sum') }}-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
+      - run: scripts/ci-go-test.sh lane sema
+      - name: Save Go module cache
+        if: success()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ steps.restore-go-mod-cache.outputs.cache-primary-key }}
+      - name: Save Go build cache
+        if: success()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
+      - name: Upload raw Go test events
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: go-test-sema
+          path: ci-artifacts/go-test/test-sema.json
+          if-no-files-found: error
+
+  server-and-playground:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GOMAXPROCS: "2"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.5"
+          cache: false
+      - name: Restore Go module cache
+        id: restore-go-mod-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-server-playground-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-server-playground-${{ hashFiles('go.sum') }}-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Restore Go build cache
+        id: restore-go-build-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-server-playground-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-server-playground-${{ hashFiles('go.sum') }}-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: third_party/lwc/package-lock.json
+      - run: npm ci --prefix third_party/lwc
+      - run: scripts/ci-go-test.sh lane server-and-playground
+      - name: Save Go module cache
+        if: success()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ steps.restore-go-mod-cache.outputs.cache-primary-key }}
+      - name: Save Go build cache
+        if: success()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
+      - name: Upload raw Go test events
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: go-test-server-and-playground
+          path: ci-artifacts/go-test/test-server-and-playground.json
+          if-no-files-found: error
+
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -52,7 +281,6 @@ jobs:
           key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('glade/go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('glade/go.sum') }}-
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-
       - name: Report Go module cache restore
         env:
           MATCHED_KEY: ${{ steps.restore-go-mod-cache.outputs.cache-matched-key }}
@@ -76,7 +304,6 @@ jobs:
           key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('glade/go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('glade/go.sum') }}-
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-
       - name: Report Go build cache restore
         env:
           MATCHED_KEY: ${{ steps.restore-go-build-cache.outputs.cache-matched-key }}
@@ -95,23 +322,131 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: |
-            glade/third_party/lwc/package-lock.json
-            glade/site/package-lock.json
+          cache-dependency-path: glade/third_party/lwc/package-lock.json
       - run: npm ci --prefix third_party/lwc
-      - run: npm ci --prefix site
-      - run: npm test --prefix site
-      - run: npm run build --prefix site
-      - run: go vet ./...
-      - run: scripts/ci-go-test.sh core
-      - run: scripts/smoke.sh
+      - run: scripts/ci-go-test.sh lane repoguard
+      - run: scripts/ci-go-test.sh lane remaining-go
       - name: Save Go module cache
+        if: success()
         uses: actions/cache/save@v4
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
           key: ${{ steps.restore-go-mod-cache.outputs.cache-primary-key }}
       - name: Save Go build cache
+        if: success()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
+      - name: Upload raw Go test events
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: go-test-remaining-go
+          path: |
+            glade/ci-artifacts/go-test/test-repoguard.json
+            glade/ci-artifacts/go-test/test-remaining-go.json
+          if-no-files-found: error
+
+  smoke-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GOMAXPROCS: "2"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.5"
+          cache: false
+      - name: Restore Go module cache
+        id: restore-go-mod-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-smoke-runtime-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-smoke-runtime-${{ hashFiles('go.sum') }}-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Restore Go build cache
+        id: restore-go-build-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-smoke-runtime-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-smoke-runtime-${{ hashFiles('go.sum') }}-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
+      - run: CGO_ENABLED=1 go build -o "$RUNNER_TEMP/glade" ./cmd/glade
+      - run: scripts/smoke-runtime.sh "$RUNNER_TEMP/glade"
+      - name: Save Go module cache
+        if: success()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ steps.restore-go-mod-cache.outputs.cache-primary-key }}
+      - name: Save Go build cache
+        if: success()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: ${{ steps.restore-go-build-cache.outputs.cache-primary-key }}
+
+  smoke-distribution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GOMAXPROCS: "2"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.5"
+          cache: false
+      - name: Restore Go module cache
+        id: restore-go-mod-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-smoke-distribution-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-smoke-distribution-${{ hashFiles('go.sum') }}-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
+      - name: Restore Go build cache
+        id: restore-go-build-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ~/.cache/go-build
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-smoke-distribution-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-smoke-distribution-${{ hashFiles('go.sum') }}-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            third_party/lwc/package-lock.json
+            contrib/vscode-glade/package-lock.json
+      - run: npm ci --prefix third_party/lwc
+      - run: scripts/smoke-distribution.sh
+      - name: Save Go module cache
+        if: success()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ steps.restore-go-mod-cache.outputs.cache-primary-key }}
+      - name: Save Go build cache
+        if: success()
         uses: actions/cache/save@v4
         continue-on-error: true
         with:

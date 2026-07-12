@@ -481,8 +481,8 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 			t.Errorf("single-writer refresh job missing %q", want)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@v4") != 3 {
-		t.Errorf("cache save count = %d, want existing two plus one history writer", strings.Count(workflow, "actions/cache/save@v4"))
+	if strings.Count(workflow, "actions/cache/save@v4") != 15 {
+		t.Errorf("cache save count = %d, want fourteen parallel DAG writers plus one history writer", strings.Count(workflow, "actions/cache/save@v4"))
 	}
 	if strings.Count(workflow, "shard: [0, 1]") != 1 {
 		t.Error("history work changed the two-native-shard topology")
@@ -619,11 +619,6 @@ func TestCIGoCacheOwnership(t *testing.T) {
 				t.Errorf("%s missing separate cache marker %q", workflow.name, want)
 			}
 		}
-		for _, line := range strings.Split(workflow.text, "\n") {
-			if strings.TrimSpace(line) == "path: |" {
-				t.Errorf("%s contains a combined multi-path cache", workflow.name)
-			}
-		}
 	}
 
 	fullKeys := func(workflow string) []string {
@@ -706,10 +701,11 @@ func TestCIGoCacheOwnership(t *testing.T) {
 	}
 	for _, want := range []string{
 		"cache: npm",
-		"glade/third_party/lwc/package-lock.json",
-		"glade/site/package-lock.json",
+		"third_party/lwc/package-lock.json",
+		"site/package-lock.json",
+		"contrib/vscode-glade/package-lock.json",
 	} {
-		if !strings.Contains(ci, want) {
+		if !strings.Contains(ciWorkflow, want) {
 			t.Errorf("ci.yml npm cache block missing %q", want)
 		}
 	}
@@ -978,6 +974,209 @@ func workflowStepBlock(t *testing.T, jobBlock, marker string) string {
 	return ""
 }
 
+func readCIWorkflow(t *testing.T) (string, map[string]string) {
+	t.Helper()
+	path := filepath.Join("..", ".github", "workflows", "ci.yml")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read %s: %v", path, err)
+	}
+	workflow := string(data)
+	return workflow, workflowJobBlocks(t, workflow)
+}
+
+func TestCIParallelDAGTopology(t *testing.T) {
+	_, jobs := readCIWorkflow(t)
+	wantJobs := []string{
+		"apextest", "apextest-history", "gladecli", "sema", "server-and-playground",
+		"site", "smoke-distribution", "smoke-runtime", "test", "vet",
+	}
+	gotJobs := make([]string, 0, len(jobs))
+	for name := range jobs {
+		gotJobs = append(gotJobs, name)
+	}
+	sort.Strings(gotJobs)
+	if !reflect.DeepEqual(gotJobs, wantJobs) {
+		t.Fatalf("ci jobs = %v, want %v", gotJobs, wantJobs)
+	}
+	for _, name := range wantJobs {
+		job := jobs[name]
+		if !strings.Contains(job, "runs-on: ubuntu-latest") {
+			t.Errorf("%s is not an ubuntu-latest job", name)
+		}
+		if name != "apextest-history" && strings.Contains(job, "needs:") {
+			t.Errorf("root job %s must not be serialized with needs", name)
+		}
+	}
+	for _, name := range []string{"site", "vet", "gladecli", "sema", "server-and-playground", "test", "smoke-runtime", "smoke-distribution"} {
+		if !strings.Contains(jobs[name], "timeout-minutes: 30") {
+			t.Errorf("%s timeout is not 30 minutes", name)
+		}
+	}
+	if !strings.Contains(jobs["apextest"], "timeout-minutes: 35") || !strings.Contains(jobs["apextest-history"], "timeout-minutes: 5") {
+		t.Error("Apex job timeouts changed")
+	}
+}
+
+func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
+	workflow, jobs := readCIWorkflow(t)
+	wantLaneCommands := map[string][]string{
+		"gladecli":              {"scripts/ci-go-test.sh lane gladecli"},
+		"sema":                  {"scripts/ci-go-test.sh lane sema"},
+		"server-and-playground": {"scripts/ci-go-test.sh lane server-and-playground"},
+		"test":                  {"scripts/ci-go-test.sh lane repoguard", "scripts/ci-go-test.sh lane remaining-go"},
+	}
+	for jobName, commands := range wantLaneCommands {
+		for _, command := range commands {
+			if count := strings.Count(jobs[jobName], command); count != 1 {
+				t.Errorf("%s command %q count = %d, want 1", jobName, command, count)
+			}
+		}
+	}
+	if strings.Contains(workflow, "scripts/ci-go-test.sh core") || strings.Contains(workflow, "run: go test") {
+		t.Error("CI workflow bypasses the individual tested lane wrapper commands")
+	}
+
+	wantArtifacts := map[string]string{
+		"gladecli":              "go-test-gladecli",
+		"sema":                  "go-test-sema",
+		"server-and-playground": "go-test-server-and-playground",
+		"test":                  "go-test-remaining-go",
+	}
+	for jobName, artifact := range wantArtifacts {
+		job := jobs[jobName]
+		for _, marker := range []string{"if: always()", "actions/upload-artifact@v6", "name: " + artifact} {
+			if !strings.Contains(job, marker) {
+				t.Errorf("%s raw artifact missing %q", jobName, marker)
+			}
+		}
+	}
+	for _, path := range []string{
+		"ci-artifacts/go-test/test-gladecli.json",
+		"ci-artifacts/go-test/test-sema.json",
+		"ci-artifacts/go-test/test-server-and-playground.json",
+		"ci-artifacts/go-test/test-repoguard.json",
+		"ci-artifacts/go-test/test-remaining-go.json",
+	} {
+		if count := strings.Count(workflow, path); count != 1 {
+			t.Errorf("raw event path %q count = %d, want 1", path, count)
+		}
+	}
+	for jobName, laneCommands := range map[string][]string{
+		"server-and-playground": {"scripts/ci-go-test.sh lane server-and-playground"},
+		"test":                  {"scripts/ci-go-test.sh lane repoguard", "scripts/ci-go-test.sh lane remaining-go"},
+	} {
+		job := jobs[jobName]
+		lockfile := "third_party/lwc/package-lock.json"
+		if jobName == "test" {
+			lockfile = "glade/" + lockfile
+		}
+		for _, marker := range []string{
+			"actions/setup-node@v6", `node-version: "22"`, "cache: npm",
+			"cache-dependency-path: " + lockfile,
+			"npm ci --prefix third_party/lwc",
+		} {
+			if !strings.Contains(job, marker) {
+				t.Errorf("%s prerequisite missing %q", jobName, marker)
+			}
+		}
+		setupIndex := strings.Index(job, "actions/setup-node@v6")
+		installIndex := strings.Index(job, "npm ci --prefix third_party/lwc")
+		for _, laneCommand := range laneCommands {
+			laneIndex := strings.Index(job, laneCommand)
+			if setupIndex < 0 || installIndex < setupIndex || laneIndex < installIndex {
+				t.Errorf("%s prerequisite order setup=%d install=%d lane=%d for %q", jobName, setupIndex, installIndex, laneIndex, laneCommand)
+			}
+		}
+	}
+	for _, marker := range []string{
+		"npm ci --prefix site", "npm test --prefix site", "npm run build --prefix site",
+		"CGO_ENABLED=1 go build -o \"$RUNNER_TEMP/glade\" ./cmd/glade", "scripts/smoke-runtime.sh \"$RUNNER_TEMP/glade\"",
+		"scripts/smoke-distribution.sh",
+	} {
+		if count := strings.Count(workflow, marker); count != 1 {
+			t.Errorf("CI coverage marker %q count = %d, want 1", marker, count)
+		}
+	}
+}
+
+func TestCIParallelDAGCacheOwnership(t *testing.T) {
+	workflow, jobs := readCIWorkflow(t)
+	owners := map[string]string{
+		"vet": "ci-vet", "gladecli": "ci-gladecli", "sema": "ci-sema",
+		"server-and-playground": "ci-server-playground", "test": "ci-test",
+		"smoke-runtime": "ci-smoke-runtime", "smoke-distribution": "ci-smoke-distribution",
+	}
+	primaryKeys := make(map[string]string)
+	for jobName, namespace := range owners {
+		job := jobs[jobName]
+		sumPath := "go.sum"
+		if jobName == "test" {
+			sumPath = "glade/go.sum"
+		}
+		for _, marker := range []string{
+			"GOMAXPROCS: \"2\"", "actions/setup-go@v6", "go-version: \"1.26.5\"", "cache: false",
+			"actions/cache/restore@v4", "actions/cache/save@v4", "continue-on-error: true", "if: success()",
+			"${{ runner.os }}-${{ runner.arch }}-1.26.5-" + namespace,
+			"${{ hashFiles('" + sumPath + "') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+		} {
+			if !strings.Contains(job, marker) {
+				t.Errorf("%s cache contract missing %q", jobName, marker)
+			}
+		}
+		if strings.Count(job, "actions/cache/restore@v4") != 2 || strings.Count(job, "actions/cache/save@v4") != 2 {
+			t.Errorf("%s does not own one module/build restore-save pair", jobName)
+		}
+		for _, line := range strings.Split(job, "\n") {
+			trimmed := strings.TrimSpace(line)
+			if strings.HasPrefix(trimmed, "key: ") && strings.Contains(trimmed, namespace) {
+				if other, exists := primaryKeys[trimmed]; exists {
+					t.Errorf("%s and %s share primary key %q", other, jobName, trimmed)
+				}
+				primaryKeys[trimmed] = jobName
+			}
+		}
+		if namespace != "ci-test" && !strings.Contains(job, "-ci-test-${{ hashFiles('go.sum') }}-") {
+			t.Errorf("%s lacks the ci-test digest seed fallback", jobName)
+		}
+	}
+	if strings.Count(workflow, "actions/cache/save@v4") != 15 {
+		t.Errorf("cache save count = %d, want 14 DAG writers plus unchanged Apex history writer", strings.Count(workflow, "actions/cache/save@v4"))
+	}
+}
+
+func TestCIParallelDAGPreservesApexAndSiblingRef(t *testing.T) {
+	_, jobs := readCIWorkflow(t)
+	apex := jobs["apextest"]
+	history := jobs["apextest-history"]
+	for _, marker := range []string{
+		"shard: [0, 1]", "timeout-minutes: 35", "scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
+		"CI_APEXTEST_HISTORY_PATH", "actions/cache@v5", "name: apex-shard-${{ matrix.shard }}",
+	} {
+		if !strings.Contains(apex, marker) {
+			t.Errorf("Apex matrix contract missing %q", marker)
+		}
+	}
+	for _, marker := range []string{
+		"needs: apextest", "if: ${{ success() }}", "timeout-minutes: 5", "actions/download-artifact@v7",
+		"scripts/ci-go-test.sh apex-history-refresh", "actions/cache/save@v4",
+	} {
+		if !strings.Contains(history, marker) {
+			t.Errorf("Apex history contract missing %q", marker)
+		}
+	}
+	testJob := jobs["test"]
+	for _, marker := range []string{
+		"actions/create-github-app-token@v3", "id: app-token", "Resolve glade-tools ref",
+		"scripts/resolve-sibling-ref.sh \"$GLADE_TOOLS_REMOTE\" \"$REQUESTED_REF\" main",
+		"repository: glade-sh/glade-tools", "path: glade-tools", "ref: ${{ steps.glade-tools-ref.outputs.ref }}",
+	} {
+		if !strings.Contains(testJob, marker) {
+			t.Errorf("test sibling-ref contract missing %q", marker)
+		}
+	}
+}
+
 func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 	script, err := os.ReadFile("ci-go-test.sh")
 	if err != nil {
@@ -1035,7 +1234,7 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 		"client-id: ${{ vars.GLADE_APP_CLIENT_ID }}",
 		"actions/setup-go@v6",
 		"actions/setup-node@v6",
-		"scripts/ci-go-test.sh core",
+		"scripts/ci-go-test.sh lane remaining-go",
 		"apextest:",
 		"matrix:",
 		"shard: [0, 1]",
