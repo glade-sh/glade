@@ -48,7 +48,12 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 			t.Fatalf("release.yml missing %q", want)
 		}
 	}
-	if got := strings.Count(workflowText, "actions/upload-artifact@v4"); got != 1 {
+	requiredCIBlock := releaseWorkflowJobBlock(t, workflowText, "required-ci-attestation", "prepare")
+	if got := strings.Count(requiredCIBlock, "actions/upload-artifact@v4"); got != 1 {
+		t.Fatalf("Required CI attestation upload count = %d, want 1", got)
+	}
+	sharedBlock := releaseWorkflowJobBlock(t, workflowText, "shared-payload", "build")
+	if got := strings.Count(sharedBlock, "actions/upload-artifact@v4"); got != 1 {
 		t.Fatalf("shared payload upload count = %d, want 1", got)
 	}
 	if got := strings.Count(workflowText, "actions/download-artifact@v4"); got != 1 {

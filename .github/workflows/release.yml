@@ -17,7 +17,28 @@ permissions:
   attestations: write
 
 jobs:
+  required-ci-attestation:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify Required CI authority
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/verify-required-ci.sh "$GITHUB_REPOSITORY" "$GITHUB_SHA" > required-ci-attestation.json
+      - name: Upload Required CI attestation
+        uses: actions/upload-artifact@v4
+        with:
+          name: required-ci-attestation
+          path: required-ci-attestation.json
+          if-no-files-found: error
+          retention-days: 90
+
   prepare:
+    needs: required-ci-attestation
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
@@ -45,8 +66,8 @@ jobs:
           fi
 
   shared-payload:
-    needs: prepare
-    if: always() && (needs.prepare.result == 'success' || needs.prepare.result == 'skipped')
+    needs: [required-ci-attestation, prepare]
+    if: always() && (needs.required-ci-attestation.result == 'success' || needs.required-ci-attestation.result == 'skipped') && (needs.prepare.result == 'success' || needs.prepare.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -181,17 +202,25 @@ jobs:
           PY
       - name: Attest platform archive
         if: startsWith(github.ref, 'refs/tags/')
-        continue-on-error: true
         uses: actions/attest@v4
         with:
           subject-path: dist/glade_${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}_${{ matrix.archive }}.tar.gz
       - name: Attest platform SBOM
         if: startsWith(github.ref, 'refs/tags/')
-        continue-on-error: true
         uses: actions/attest@v4
         with:
           subject-path: dist/glade_${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}_${{ matrix.archive }}.tar.gz
           sbom-path: dist/glade_${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}_${{ matrix.archive }}.tar.gz.sbom.json
+      - name: Verify platform attestations
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          archive="dist/glade_${VERSION}_${{ matrix.archive }}.tar.gz"
+          gh attestation verify "$archive" -R "$GITHUB_REPOSITORY"
+          gh attestation verify "$archive" -R "$GITHUB_REPOSITORY" \
+            --predicate-type https://cyclonedx.org/bom
       - name: Upload platform release assets
         if: startsWith(github.ref, 'refs/tags/')
         env:

@@ -2,10 +2,10 @@
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Security</p>
-  <p>Glade is a local binary. The proof trail is checks, checksums, SBOMs, and available release provenance.</p>
+  <p>Glade is a local binary. The proof trail is checks, checksums, SBOMs, and verified release provenance.</p>
   <ul>
     <li>Security scans run in GitHub Actions.</li>
-    <li>Release archives publish checksums, SBOMs, and best-effort attestations.</li>
+    <li>Release archives publish checksums, SBOMs, and blocking attestations.</li>
     <li>Supported local checks do not require a Salesforce org login.</li>
   </ul>
 </div>
@@ -36,8 +36,11 @@ Tagged releases publish:
 - `SHA256SUMS.txt`.
 - `release-manifest.json`.
 - A CycloneDX SBOM for each archive.
-- Artifact attestations for the archive and SBOM when the repository host
-  supports them.
+- Artifact attestations for the archive and its CycloneDX SBOM.
+
+Tag publication is fail-closed. The tagged commit must already have an exact-SHA
+successful `Required CI` push run. Each platform archive's provenance and
+CycloneDX attestation must verify before any platform asset is uploaded.
 
 Verify a downloaded archive:
 
@@ -46,12 +49,11 @@ curl -L -o glade.tar.gz "$GLADE_RELEASE_URL"
 curl -L -o SHA256SUMS.txt "$GLADE_CHECKSUMS_URL"
 shasum -a 256 -c SHA256SUMS.txt
 gh attestation verify glade.tar.gz -R glade-sh/glade
+gh attestation verify glade.tar.gz -R glade-sh/glade \
+  --predicate-type https://cyclonedx.org/bom
 tar -xzf glade.tar.gz
 ./glade doctor
 ```
-
-If a release does not publish an attestation, use the checksum and matching
-`*.sbom.json` asset as the release proof.
 
 ## Laptop behavior
 
