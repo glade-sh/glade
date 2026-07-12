@@ -209,16 +209,14 @@ func describeChildRelationshipMap(describes map[string]standardDescribeObject) m
 			}
 			key := describeChildRelationshipKey(relationship.ChildSObject, relationship.Field)
 			existing := out[key]
-			if existing.relationshipName != "" && existing.relationshipName != relationship.RelationshipName {
+			if existing.relationshipName == "" {
+				existing.relationshipName = relationship.RelationshipName
+			} else if existing.relationshipName != relationship.RelationshipName {
 				existing.conflict = true
-				out[key] = existing
-				continue
 			}
-			out[key] = standardDescribeChildRelationshipInfo{
-				relationshipName: relationship.RelationshipName,
-				cascadeDelete:    existing.cascadeDelete || relationship.CascadeDelete,
-				restrictedDelete: existing.restrictedDelete || relationship.RestrictedDelete,
-			}
+			existing.cascadeDelete = existing.cascadeDelete || relationship.CascadeDelete
+			existing.restrictedDelete = existing.restrictedDelete || relationship.RestrictedDelete
+			out[key] = existing
 		}
 	}
 	return out
