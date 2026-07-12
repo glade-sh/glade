@@ -1,15 +1,12 @@
 package sema
 
 import (
-	"os"
 	"sort"
 	"strings"
 	"sync"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
-	"github.com/glade-sh/glade/internal/namespaceremap"
-	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -103,12 +100,16 @@ func (a *Analyzer) checkMethodBodies(index typesys.Index) []diagnostic.Diagnosti
 }
 
 func (a *Analyzer) checkMethodBodiesWithRecorder(index typesys.Index, recorder *perfRecorder) []diagnostic.Diagnostic {
-	return a.checkMethodBodiesWithState(index, buildSemaTypeMemberState(index, recorder), recorder)
+	return a.checkMethodBodiesWithState(index, buildSemaTypeMemberState(index, recorder, a.sources), recorder)
 }
 
-func buildSemaTypeMemberState(index typesys.Index, recorder *perfRecorder) *semaTypeMemberState {
+func buildSemaTypeMemberState(index typesys.Index, recorder *perfRecorder, sourceResolvers ...*semaSources) *semaTypeMemberState {
 	modelStarted := recorder.beginPhase()
-	model := buildTypeMembers(index)
+	var sources *semaSources
+	if len(sourceResolvers) > 0 {
+		sources = sourceResolvers[0]
+	}
+	model := buildTypeMembersWithSources(index, sources)
 	if recorder != nil {
 		recorder.endPhase(&recorder.counters.TypeMemberModel, modelStarted)
 	}
@@ -119,7 +120,10 @@ func (a *Analyzer) checkMethodBodiesWithState(index typesys.Index, state *semaTy
 	model := state.view()
 	constructability := buildConstructability(index)
 	duplicateTypes := semaDuplicateTypeKeys(index)
-	sources := make(map[string]string)
+	sources := a.sources
+	if sources == nil {
+		sources = newSemaSources(nil, recorder)
+	}
 	var diagnostics []diagnostic.Diagnostic
 	bodyStarted := recorder.beginPhase()
 	for _, typ := range index.Types {
@@ -133,7 +137,7 @@ func (a *Analyzer) checkMethodBodiesWithState(index typesys.Index, state *semaTy
 		for _, member := range typ.Members {
 			switch member.Kind {
 			case apexast.DeclarationMethod, apexast.DeclarationConstructor, apexast.DeclarationInitializer:
-				source, ok := readSemaSourceForType(typ, sources)
+				source, ok := sources.normalizedForType(typ)
 				if !ok {
 					continue
 				}
@@ -147,7 +151,7 @@ func (a *Analyzer) checkMethodBodiesWithState(index typesys.Index, state *semaTy
 					if !accessor.HasBody {
 						continue
 					}
-					source, ok := readSemaSourceForType(typ, sources)
+					source, ok := sources.normalizedForType(typ)
 					if !ok {
 						continue
 					}
@@ -263,40 +267,14 @@ func semaTypeMembersFromSymbol(typ typesys.TypeSymbol) typeMembers {
 	return members
 }
 
-func readSemaSource(path string, cache map[string]string) (string, bool) {
-	return readSemaSourceWithRemaps(path, "", nil, cache)
-}
-
-func readSemaSourceForType(typ typesys.TypeSymbol, cache map[string]string) (string, bool) {
-	return readSemaSourceWithRemaps(typ.File, typ.Namespace, typ.SourceNamespaceRemaps, cache)
-}
-
-func readSemaSourceWithRemaps(path, namespace string, remaps []namespaceremap.Rule, cache map[string]string) (string, bool) {
-	if path == "" {
-		return "", false
-	}
-	key := semaSourceCacheKey(path, namespace, remaps)
-	if source, ok := cache[key]; ok {
-		return source, true
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return "", false
-	}
-	source := project.NormalizeApexNamespaceTokens(string(data), namespace)
-	if len(remaps) > 0 {
-		source = namespaceremap.ApplySource(remaps, source)
-	}
-	cache[key] = source
-	return source, true
-}
-
-func semaSourceCacheKey(path, namespace string, remaps []namespaceremap.Rule) string {
-	fingerprint := namespaceremap.Fingerprint(remaps)
-	return path + "\x00" + namespace + "\x00" + fingerprint
-}
-
 func buildTypeMembers(index typesys.Index) *semaTypeMemberModel {
+	return buildTypeMembersWithSources(index, newSemaSources(nil, nil))
+}
+
+func buildTypeMembersWithSources(index typesys.Index, sources *semaSources) *semaTypeMemberModel {
+	if sources == nil {
+		sources = newSemaSources(nil, nil)
+	}
 	out := make(map[string]typeMembers)
 	shortAliases := make(map[string][]string)
 	projectNamespace := index.Project.Namespace
@@ -338,7 +316,12 @@ func buildTypeMembers(index typesys.Index) *semaTypeMemberModel {
 					File:  typ.File,
 					Range: member.Range,
 				}
-				for _, value := range semaEnumValues(enumType) {
+				enumType.Namespace = typ.Namespace
+				enumType.SourceNamespaceRemaps = append(enumType.SourceNamespaceRemaps, typ.SourceNamespaceRemaps...)
+				enumType.SourceRoot = typ.SourceRoot
+				enumType.Version = typ.Version
+				enumType.Dependency = typ.Dependency
+				for _, value := range semaEnumValuesWithSources(enumType, sources) {
 					enumMembers.fields[normalizeName(value)] = typesys.MemberSymbol{
 						Kind:      apexast.DeclarationField,
 						Name:      value,
@@ -359,7 +342,7 @@ func buildTypeMembers(index typesys.Index) *semaTypeMemberModel {
 			}
 		}
 		if typ.Kind == apexast.DeclarationEnum {
-			for _, value := range semaEnumValues(typ) {
+			for _, value := range semaEnumValuesWithSources(typ, sources) {
 				members.fields[normalizeName(value)] = typesys.MemberSymbol{
 					Kind:      apexast.DeclarationField,
 					Name:      value,
@@ -1510,14 +1493,17 @@ func semaApexTypeForStorageField(field storage.Field) string {
 }
 
 func semaEnumValues(typ typesys.TypeSymbol) []string {
+	return semaEnumValuesWithSources(typ, newSemaSources(nil, nil))
+}
+
+func semaEnumValuesWithSources(typ typesys.TypeSymbol, sources *semaSources) []string {
 	if typ.File == "" || typ.Range.Start.Offset < 0 || typ.Range.End.Offset <= typ.Range.Start.Offset {
 		return nil
 	}
-	data, err := os.ReadFile(typ.File)
-	if err != nil {
+	source, ok := sources.rawForType(typ)
+	if !ok {
 		return nil
 	}
-	source := string(data)
 	if typ.Range.End.Offset > len(source) {
 		return nil
 	}

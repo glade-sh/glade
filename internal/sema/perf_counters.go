@@ -23,19 +23,26 @@ type PhaseCounters struct {
 // Sharing one output pointer concurrently is unsupported. Read an output only
 // after its Analyze call returns.
 type PerfCounters struct {
-	Enabled                bool
-	TotalNS                uint64
-	SourceSchemaEnrichment PhaseCounters
-	PlatformModel          PhaseCounters
-	TypeMemberModel        PhaseCounters
-	MethodBodies           PhaseCounters
-	Inheritance            PhaseCounters
-	QuerySemantics         PhaseCounters
-	Export                 PhaseCounters
-	Mallocs                uint64
-	TotalAllocBytes        uint64
-	GCCount                uint64
-	GCPauseNS              uint64
+	Enabled                  bool
+	TotalNS                  uint64
+	SourceSchemaEnrichment   PhaseCounters
+	PlatformModel            PhaseCounters
+	TypeMemberModel          PhaseCounters
+	MethodBodies             PhaseCounters
+	Inheritance              PhaseCounters
+	QuerySemantics           PhaseCounters
+	Export                   PhaseCounters
+	Mallocs                  uint64
+	TotalAllocBytes          uint64
+	GCCount                  uint64
+	GCPauseNS                uint64
+	WorkspacePhysicalReads   uint64
+	WorkspacePhysicalSources uint64
+	WorkspaceLogicalViews    uint64
+	WorkspaceOccurrences     uint64
+	SourceArenaHits          uint64
+	SourceArenaMisses        uint64
+	SourceArenaFallbackReads uint64
 }
 
 type perfRecorder struct {

@@ -1970,19 +1970,26 @@ type checkPerfSummary struct {
 }
 
 type checkSemaPerf struct {
-	Enabled                bool           `json:"enabled"`
-	TotalNS                uint64         `json:"totalNs"`
-	SourceSchemaEnrichment checkSemaPhase `json:"sourceSchemaEnrichment"`
-	PlatformModel          checkSemaPhase `json:"platformModel"`
-	TypeMemberModel        checkSemaPhase `json:"typeMemberModel"`
-	MethodBodies           checkSemaPhase `json:"methodBodies"`
-	Inheritance            checkSemaPhase `json:"inheritance"`
-	QuerySemantics         checkSemaPhase `json:"querySemantics"`
-	Export                 checkSemaPhase `json:"export"`
-	Mallocs                uint64         `json:"mallocs"`
-	TotalAllocBytes        uint64         `json:"totalAllocBytes"`
-	GCCount                uint64         `json:"gcCount"`
-	GCPauseNS              uint64         `json:"gcPauseNs"`
+	Enabled                  bool           `json:"enabled"`
+	TotalNS                  uint64         `json:"totalNs"`
+	SourceSchemaEnrichment   checkSemaPhase `json:"sourceSchemaEnrichment"`
+	PlatformModel            checkSemaPhase `json:"platformModel"`
+	TypeMemberModel          checkSemaPhase `json:"typeMemberModel"`
+	MethodBodies             checkSemaPhase `json:"methodBodies"`
+	Inheritance              checkSemaPhase `json:"inheritance"`
+	QuerySemantics           checkSemaPhase `json:"querySemantics"`
+	Export                   checkSemaPhase `json:"export"`
+	Mallocs                  uint64         `json:"mallocs"`
+	TotalAllocBytes          uint64         `json:"totalAllocBytes"`
+	GCCount                  uint64         `json:"gcCount"`
+	GCPauseNS                uint64         `json:"gcPauseNs"`
+	WorkspacePhysicalReads   uint64         `json:"workspacePhysicalReads"`
+	WorkspacePhysicalSources uint64         `json:"workspacePhysicalSources"`
+	WorkspaceLogicalViews    uint64         `json:"workspaceLogicalViews"`
+	WorkspaceOccurrences     uint64         `json:"workspaceOccurrences"`
+	SourceArenaHits          uint64         `json:"sourceArenaHits"`
+	SourceArenaMisses        uint64         `json:"sourceArenaMisses"`
+	SourceArenaFallbackReads uint64         `json:"sourceArenaFallbackReads"`
 }
 
 type checkSemaPhase struct {
@@ -2063,12 +2070,13 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		schemaLoadNS = time.Since(schemaStarted).Nanoseconds()
 	}
 	var index typesys.Index
+	var buildArtifacts typesys.BuildArtifacts
 	var indexStarted time.Time
 	if perfEnabled {
 		indexStarted = time.Now()
 	}
 	if err != nil {
-		index = typesys.Build(p, gladeschema.Schema{})
+		index, buildArtifacts = typesys.BuildWithArtifacts(p, gladeschema.Schema{})
 		index.Diagnostics = append(index.Diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
 			Code:     "GLADESCHEMA001",
@@ -2082,7 +2090,7 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 			Current: 2,
 			Total:   4,
 		})
-		index = typesys.Build(p, s)
+		index, buildArtifacts = typesys.BuildWithArtifacts(p, s)
 	}
 	var indexBuildNS int64
 	if perfEnabled {
@@ -2104,6 +2112,7 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		ExportTypes:                    true,
 		SuppressPerformanceDiagnostics: true,
 		PerfCounters:                   semaCounters,
+		BuildArtifacts:                 &buildArtifacts,
 	})
 	renderer.Render(cliui.Event{
 		Kind:    cliui.EventPhaseEnd,
@@ -2242,19 +2251,26 @@ func newCheckSemaPerf(counters sema.PerfCounters) checkSemaPerf {
 		return checkSemaPhase{Calls: counters.Calls, DurationNS: counters.DurationNS}
 	}
 	return checkSemaPerf{
-		Enabled:                counters.Enabled,
-		TotalNS:                counters.TotalNS,
-		SourceSchemaEnrichment: phase(counters.SourceSchemaEnrichment),
-		PlatformModel:          phase(counters.PlatformModel),
-		TypeMemberModel:        phase(counters.TypeMemberModel),
-		MethodBodies:           phase(counters.MethodBodies),
-		Inheritance:            phase(counters.Inheritance),
-		QuerySemantics:         phase(counters.QuerySemantics),
-		Export:                 phase(counters.Export),
-		Mallocs:                counters.Mallocs,
-		TotalAllocBytes:        counters.TotalAllocBytes,
-		GCCount:                counters.GCCount,
-		GCPauseNS:              counters.GCPauseNS,
+		Enabled:                  counters.Enabled,
+		TotalNS:                  counters.TotalNS,
+		SourceSchemaEnrichment:   phase(counters.SourceSchemaEnrichment),
+		PlatformModel:            phase(counters.PlatformModel),
+		TypeMemberModel:          phase(counters.TypeMemberModel),
+		MethodBodies:             phase(counters.MethodBodies),
+		Inheritance:              phase(counters.Inheritance),
+		QuerySemantics:           phase(counters.QuerySemantics),
+		Export:                   phase(counters.Export),
+		Mallocs:                  counters.Mallocs,
+		TotalAllocBytes:          counters.TotalAllocBytes,
+		GCCount:                  counters.GCCount,
+		GCPauseNS:                counters.GCPauseNS,
+		WorkspacePhysicalReads:   counters.WorkspacePhysicalReads,
+		WorkspacePhysicalSources: counters.WorkspacePhysicalSources,
+		WorkspaceLogicalViews:    counters.WorkspaceLogicalViews,
+		WorkspaceOccurrences:     counters.WorkspaceOccurrences,
+		SourceArenaHits:          counters.SourceArenaHits,
+		SourceArenaMisses:        counters.SourceArenaMisses,
+		SourceArenaFallbackReads: counters.SourceArenaFallbackReads,
 	}
 }
 

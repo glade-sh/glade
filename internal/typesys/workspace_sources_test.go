@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 
@@ -313,5 +314,86 @@ func TestWorkspaceSourcesCachesReadErrorsWithoutDroppingDiagnostics(t *testing.T
 		if diag.Code != "GLADETYPE000" || diag.File != missing {
 			t.Fatalf("diagnostic = %#v", diag)
 		}
+	}
+}
+
+func TestBuildArtifactsSourceForTypeReturnsRecordedLogicalViewWithoutReading(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "UsesTokens.cls")
+	writeFile(t, path, "public class UsesTokens { String value = '%%%NAMESPACE%%%Thing__c BasePkg__Item__c'; }")
+	remaps := []namespaceremap.Rule{{From: "BasePkg", To: "runtime"}}
+	sources := newWorkspaceSources(func(path string) ([]byte, error) { return os.ReadFile(path) })
+	idx, artifacts := buildWithWorkspaceSources(project.Project{
+		Root: root, Namespace: "runtime", NamespaceRemaps: remaps, ApexFiles: []string{path},
+	}, schema.Schema{}, sources)
+	if len(idx.Types) != 1 {
+		t.Fatalf("types = %#v", idx.Types)
+	}
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	source, ok := artifacts.SourceForType(idx.Types[0])
+	if !ok {
+		t.Fatal("SourceForType missed recorded logical occurrence")
+	}
+	if got, want := source.NormalizedString(), "public class UsesTokens { String value = 'runtime__Thing__c BasePkg__Item__c'; }"; got != want {
+		t.Fatalf("normalized = %q, want %q", got, want)
+	}
+	if got := source.RawString(); got == "" {
+		t.Fatal("RawString returned empty source")
+	}
+}
+
+func TestBuildArtifactsSourceForTypeIncludesOrderedRemapFingerprint(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Ordered.cls")
+	writeFile(t, path, "public class Ordered { String value = 'Base__Item__c'; }")
+	firstRules := []namespaceremap.Rule{{From: "Base", To: "first"}, {From: "base", To: "second"}}
+	secondRules := []namespaceremap.Rule{{From: "base", To: "second"}, {From: "Base", To: "first"}}
+	sources := NewWorkspaceSources()
+	first, err := sources.load(SourceMetadata{RequestedPath: path, Root: root, NamespaceRemaps: firstRules})
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := sources.load(SourceMetadata{RequestedPath: path, Root: root, NamespaceRemaps: secondRules})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sources.record(first)
+	sources.record(second)
+	artifacts := BuildArtifacts{Sources: sources}
+	for _, tc := range []struct {
+		name   string
+		remaps []namespaceremap.Rule
+		want   string
+	}{{"first", firstRules, "first__Item__c"}, {"second", secondRules, "second__Item__c"}} {
+		source, ok := artifacts.SourceForType(TypeSymbol{File: path, SourceRoot: root, SourceNamespaceRemaps: tc.remaps})
+		if !ok || !strings.Contains(source.NormalizedString(), tc.want) {
+			t.Fatalf("%s lookup = %q, %v; want %q", tc.name, source.NormalizedString(), ok, tc.want)
+		}
+	}
+}
+
+func TestWorkspaceSourcesStatsCountAttemptsPhysicalLogicalAndOccurrences(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Shared.cls")
+	alias := filepath.Join(root, "Alias.cls")
+	writeFile(t, path, "public class Shared {}")
+	if err := os.Symlink(path, alias); err != nil {
+		t.Fatal(err)
+	}
+	sources := newWorkspaceSources(func(path string) ([]byte, error) { return os.ReadFile(path) })
+	first, err := sources.load(SourceMetadata{RequestedPath: path, Root: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := sources.load(SourceMetadata{RequestedPath: alias, Root: root, Namespace: "dep", Dependency: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sources.record(first)
+	sources.record(second)
+	if got, want := sources.Stats(), (WorkspaceSourceStats{PhysicalReadAttempts: 1, PhysicalSources: 1, LogicalViews: 2, Occurrences: 2}); got != want {
+		t.Fatalf("stats = %#v, want %#v", got, want)
 	}
 }

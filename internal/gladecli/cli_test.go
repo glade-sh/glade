@@ -21,6 +21,7 @@ import (
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/pluginhost"
+	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/vm"
 	"github.com/glade-sh/glade/internal/watch"
@@ -2769,6 +2770,68 @@ public class QueryInLoop {
 	}
 	if strings.Contains(stdout.String(), "GLADEPERF") {
 		t.Fatalf("check JSON reported performance diagnostics:\n%s", stdout.String())
+	}
+}
+
+func TestNewCheckSemaPerfIncludesSourceArenaCounters(t *testing.T) {
+	got := newCheckSemaPerf(sema.PerfCounters{
+		Enabled:                  true,
+		WorkspacePhysicalReads:   1,
+		WorkspacePhysicalSources: 1,
+		WorkspaceLogicalViews:    2,
+		WorkspaceOccurrences:     3,
+		SourceArenaHits:          17,
+		SourceArenaMisses:        0,
+		SourceArenaFallbackReads: 0,
+	})
+	data, err := json.Marshal(got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		`"workspacePhysicalReads":1`, `"workspacePhysicalSources":1`,
+		`"workspaceLogicalViews":2`, `"workspaceOccurrences":3`,
+		`"sourceArenaHits":17`, `"sourceArenaMisses":0`, `"sourceArenaFallbackReads":0`,
+	} {
+		if !bytes.Contains(data, []byte(want)) {
+			t.Fatalf("perf JSON missing %s: %s", want, data)
+		}
+	}
+}
+
+func TestRunCheckPerfJSONReportsSinglePhysicalSourceRead(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Arena.cls"), `public class Arena { public void run() { System.debug('arena'); } }`)
+	perfPath := filepath.Join(t.TempDir(), "check-perf.json")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"check", "--project", root, "--json", "--no-progress", "--perf-json", perfPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	data, err := os.ReadFile(perfPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var perf struct {
+		SemaPerf struct {
+			WorkspacePhysicalReads   uint64 `json:"workspacePhysicalReads"`
+			WorkspacePhysicalSources uint64 `json:"workspacePhysicalSources"`
+			WorkspaceOccurrences     uint64 `json:"workspaceOccurrences"`
+			SourceArenaHits          uint64 `json:"sourceArenaHits"`
+			SourceArenaMisses        uint64 `json:"sourceArenaMisses"`
+			SourceArenaFallbackReads uint64 `json:"sourceArenaFallbackReads"`
+		} `json:"semaPerf"`
+	}
+	if err := json.Unmarshal(data, &perf); err != nil {
+		t.Fatal(err)
+	}
+	got := perf.SemaPerf
+	if got.WorkspacePhysicalReads != 1 || got.WorkspacePhysicalSources != 1 || got.WorkspaceOccurrences != 1 {
+		t.Fatalf("workspace source counts = %#v", got)
+	}
+	if got.SourceArenaHits == 0 || got.SourceArenaMisses != 0 || got.SourceArenaFallbackReads != 0 {
+		t.Fatalf("source arena counts = %#v", got)
 	}
 }
 

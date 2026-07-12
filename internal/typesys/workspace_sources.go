@@ -35,6 +35,11 @@ func (s WorkspaceSource) Raw() []byte {
 	return []byte(s.raw)
 }
 
+// RawString returns the immutable source text exactly as read from disk.
+func (s WorkspaceSource) RawString() string {
+	return s.raw
+}
+
 // Normalized returns a copy of the source after namespace token normalization
 // and namespace remapping.
 func (s WorkspaceSource) Normalized() []byte {
@@ -64,14 +69,40 @@ type BuildArtifacts struct {
 	Sources *WorkspaceSources
 }
 
+// SourceForType returns the exact logical source occurrence used to build typ.
+// It never reads the filesystem.
+func (a BuildArtifacts) SourceForType(typ TypeSymbol) (WorkspaceSource, bool) {
+	if a.Sources == nil {
+		return WorkspaceSource{}, false
+	}
+	return a.Sources.sourceForMetadata(SourceMetadata{
+		RequestedPath:   typ.File,
+		Root:            typ.SourceRoot,
+		Namespace:       typ.Namespace,
+		Version:         typ.Version,
+		Dependency:      typ.Dependency,
+		NamespaceRemaps: typ.SourceNamespaceRemaps,
+	})
+}
+
+// WorkspaceSourceStats reports source-arena work for one index build.
+type WorkspaceSourceStats struct {
+	PhysicalReadAttempts uint64
+	PhysicalSources      uint64
+	LogicalViews         uint64
+	Occurrences          uint64
+}
+
 // WorkspaceSources owns physical reads and normalized logical source views for
 // one type-index build.
 type WorkspaceSources struct {
-	mu       sync.Mutex
-	readFile func(string) ([]byte, error)
-	physical map[string]*physicalSource
-	logical  map[logicalSourceKey]*logicalSource
-	all      []WorkspaceSource
+	mu                   sync.Mutex
+	readFile             func(string) ([]byte, error)
+	physical             map[string]*physicalSource
+	logical              map[logicalSourceKey]*logicalSource
+	occurrence           map[sourceOccurrenceKey]WorkspaceSource
+	all                  []WorkspaceSource
+	physicalReadAttempts uint64
 }
 
 type physicalSource struct {
@@ -87,6 +118,15 @@ type logicalSourceKey struct {
 	remapFingerprint [sha256.Size]byte
 }
 
+type sourceOccurrenceKey struct {
+	requestedPath    string
+	root             string
+	namespace        string
+	version          string
+	dependency       bool
+	remapFingerprint [sha256.Size]byte
+}
+
 type logicalSource struct {
 	ready      chan struct{}
 	normalized string
@@ -97,9 +137,10 @@ func newWorkspaceSources(readFile func(string) ([]byte, error)) *WorkspaceSource
 		readFile = os.ReadFile
 	}
 	return &WorkspaceSources{
-		readFile: readFile,
-		physical: make(map[string]*physicalSource),
-		logical:  make(map[logicalSourceKey]*logicalSource),
+		readFile:   readFile,
+		physical:   make(map[string]*physicalSource),
+		logical:    make(map[logicalSourceKey]*logicalSource),
+		occurrence: make(map[sourceOccurrenceKey]WorkspaceSource),
 	}
 }
 
@@ -119,10 +160,44 @@ func (s *WorkspaceSources) All() []WorkspaceSource {
 	return append([]WorkspaceSource(nil), s.all...)
 }
 
+// Stats returns a consistent snapshot of source-arena work.
+func (s *WorkspaceSources) Stats() WorkspaceSourceStats {
+	if s == nil {
+		return WorkspaceSourceStats{}
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return WorkspaceSourceStats{
+		PhysicalReadAttempts: s.physicalReadAttempts,
+		PhysicalSources:      uint64(len(s.physical)),
+		LogicalViews:         uint64(len(s.logical)),
+		Occurrences:          uint64(len(s.all)),
+	}
+}
+
 func (s *WorkspaceSources) record(source WorkspaceSource) {
 	s.mu.Lock()
 	s.all = append(s.all, source)
+	s.occurrence[sourceOccurrenceKeyForMetadata(source.metadata)] = source
 	s.mu.Unlock()
+}
+
+func (s *WorkspaceSources) sourceForMetadata(metadata SourceMetadata) (WorkspaceSource, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	source, ok := s.occurrence[sourceOccurrenceKeyForMetadata(metadata)]
+	return source, ok
+}
+
+func sourceOccurrenceKeyForMetadata(metadata SourceMetadata) sourceOccurrenceKey {
+	return sourceOccurrenceKey{
+		requestedPath:    metadata.RequestedPath,
+		root:             metadata.Root,
+		namespace:        metadata.Namespace,
+		version:          metadata.Version,
+		dependency:       metadata.Dependency,
+		remapFingerprint: sourceRemapFingerprint(metadata.NamespaceRemaps),
+	}
 }
 
 func (s *WorkspaceSources) load(metadata SourceMetadata) (WorkspaceSource, error) {
@@ -176,6 +251,9 @@ func (s *WorkspaceSources) loadPhysical(physicalPath, requestedPath string) (*ph
 	s.physical[physicalPath] = physical
 	s.mu.Unlock()
 
+	s.mu.Lock()
+	s.physicalReadAttempts++
+	s.mu.Unlock()
 	data, err := s.readFile(physicalPath)
 	if err == nil {
 		physical.raw = string(data)

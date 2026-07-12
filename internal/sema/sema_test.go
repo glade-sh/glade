@@ -11280,6 +11280,76 @@ public class Once {
 	}
 }
 
+func TestAnalyzeWithArtifactsSurvivesSourceRemovalWithoutReread(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "Arena.cls")
+	writeSemaFile(t, file, "public class Arena {\r\n  enum Café { 東京, Osaka }\r\n  public void run() {\r\n    for (Account item : [SELECT Missing__c FROM Account]) { insert item; }\r\n    System.debug(Café.東京);\r\n  }\r\n}\r\n")
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{file}}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+	opts := AnalyzeOptions{Diagnostics: true, ExportTypes: true, BuildArtifacts: &artifacts}
+	want := AnalyzeWithOptions(index, opts)
+	legacy := AnalyzeWithOptions(index, AnalyzeOptions{Diagnostics: true, ExportTypes: true})
+	if !reflect.DeepEqual(want, legacy) {
+		t.Fatalf("artifact analysis differs from legacy source reads:\nartifact=%#v\nlegacy=%#v", want, legacy)
+	}
+	if len(want.Diagnostics) == 0 {
+		t.Fatal("fixture produced no source-backed diagnostics")
+	}
+	if err := os.Rename(file, file+".removed"); err != nil {
+		t.Fatal(err)
+	}
+	got := AnalyzeWithOptions(index, opts)
+	again := AnalyzeWithOptions(index, opts)
+	if !reflect.DeepEqual(got, want) || !reflect.DeepEqual(again, want) {
+		t.Fatalf("artifact analysis changed after source removal:\nwant=%#v\ngot=%#v\nagain=%#v", want, got, again)
+	}
+	counters := PerfCounters{Enabled: true}
+	_ = AnalyzeWithOptions(index, AnalyzeOptions{Diagnostics: true, BuildArtifacts: &artifacts, PerfCounters: &counters})
+	if counters.SourceArenaFallbackReads != 0 || counters.SourceArenaMisses != 0 || counters.SourceArenaHits == 0 {
+		t.Fatalf("source counters = %#v", counters)
+	}
+	stats := artifacts.Sources.Stats()
+	if counters.WorkspacePhysicalReads != stats.PhysicalReadAttempts || counters.WorkspacePhysicalSources != stats.PhysicalSources || counters.WorkspaceLogicalViews != stats.LogicalViews || counters.WorkspaceOccurrences != stats.Occurrences {
+		t.Fatalf("workspace counters = %#v, stats = %#v", counters, stats)
+	}
+}
+
+func TestAnalyzeWithArtifactsMissingSourceDoesNotFallBackToDisk(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "MissingArena.cls")
+	writeSemaFile(t, file, "public class MissingArena { public void run() { for (Account item : [SELECT Id FROM Account]) { insert item; } } }")
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{file}}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+	empty := typesys.BuildArtifacts{Sources: typesys.NewWorkspaceSources()}
+	counters := PerfCounters{Enabled: true}
+	result := AnalyzeWithOptions(index, AnalyzeOptions{Diagnostics: true, BuildArtifacts: &empty, PerfCounters: &counters})
+	if hasDiagnosticCode(result.Diagnostics, "GLADEPERF001") {
+		t.Fatalf("missing artifact fell back to disk: %#v", result.Diagnostics)
+	}
+	if counters.SourceArenaFallbackReads != 0 || counters.SourceArenaMisses == 0 {
+		t.Fatalf("source counters = %#v", counters)
+	}
+}
+
+func TestSemaSourcesCachesFallbackMissForEntireAnalysis(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "AppearsLater.cls")
+	typ := typesys.TypeSymbol{File: file}
+	counters := PerfCounters{Enabled: true}
+	recorder := newPerfRecorder(&counters)
+	sources := newSemaSources(nil, &recorder)
+
+	if _, ok := sources.normalizedForType(typ); ok {
+		t.Fatal("missing source unexpectedly resolved")
+	}
+	writeSemaFile(t, file, "public class AppearsLater {}")
+	if _, ok := sources.normalizedForType(typ); ok {
+		t.Fatal("source appearing mid-analysis changed the resolved miss")
+	}
+	recorder.finish()
+	if counters.SourceArenaFallbackReads != 1 || counters.SourceArenaMisses != 2 {
+		t.Fatalf("source counters = %#v, want one fallback read and two stable misses", counters)
+	}
+}
+
 func TestAnalyzeSharedTypeMemberModelPreservesDiagnosticOrder(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()

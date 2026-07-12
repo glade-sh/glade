@@ -53,6 +53,7 @@ type Analyzer struct {
 	deps                          map[string]bool
 	includePerformanceDiagnostics bool
 	queryDeclaredObjects          []schema.Object
+	sources                       *semaSources
 }
 
 type AnalyzeOptions struct {
@@ -60,6 +61,7 @@ type AnalyzeOptions struct {
 	ExportTypes                    bool
 	SuppressPerformanceDiagnostics bool
 	PerfCounters                   *PerfCounters
+	BuildArtifacts                 *typesys.BuildArtifacts
 }
 
 func NewAnalyzer() *Analyzer {
@@ -116,9 +118,9 @@ func (a *Analyzer) AnalyzeWithOptions(index typesys.Index, opts AnalyzeOptions) 
 }
 
 func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, recorder *perfRecorder) (result Result) {
-	a.prepareAnalysisContext(index, opts)
+	a.prepareAnalysisContext(index, opts, recorder)
 	enrichmentStarted := recorder.beginPhase()
-	index = prepareAnalysisIndex(index)
+	index = prepareAnalysisIndexWithSources(index, a.sources)
 	if recorder != nil {
 		recorder.endPhase(&recorder.counters.SourceSchemaEnrichment, enrichmentStarted)
 	}
@@ -150,7 +152,7 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 		result.Diagnostics = append(result.Diagnostics, a.checkMemberTypes(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkMethodParameters(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkAnnotations(index)...)
-		typeMemberState := buildSemaTypeMemberState(index, recorder)
+		typeMemberState := buildSemaTypeMemberState(index, recorder, a.sources)
 		result.Diagnostics = append(result.Diagnostics, a.checkMethodBodiesWithState(index, typeMemberState, recorder)...)
 		if !opts.SuppressPerformanceDiagnostics {
 			result.Diagnostics = append(result.Diagnostics, a.checkPerformancePatterns(index)...)
@@ -185,16 +187,32 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 	return result
 }
 
-func (a *Analyzer) prepareAnalysisContext(index typesys.Index, opts AnalyzeOptions) {
+func (a *Analyzer) prepareAnalysisContext(index typesys.Index, opts AnalyzeOptions, recorder ...*perfRecorder) {
 	a.namespace = index.Project.Namespace
 	a.deps = make(map[string]bool)
 	a.includePerformanceDiagnostics = opts.Diagnostics && !opts.SuppressPerformanceDiagnostics
 	a.queryDeclaredObjects = append([]schema.Object(nil), index.Objects...)
+	var perf *perfRecorder
+	if len(recorder) > 0 {
+		perf = recorder[0]
+	}
+	a.sources = newSemaSources(opts.BuildArtifacts, perf)
+	if perf != nil && opts.BuildArtifacts != nil && opts.BuildArtifacts.Sources != nil {
+		stats := opts.BuildArtifacts.Sources.Stats()
+		perf.counters.WorkspacePhysicalReads = stats.PhysicalReadAttempts
+		perf.counters.WorkspacePhysicalSources = stats.PhysicalSources
+		perf.counters.WorkspaceLogicalViews = stats.LogicalViews
+		perf.counters.WorkspaceOccurrences = stats.Occurrences
+	}
 }
 
 func prepareAnalysisIndex(index typesys.Index) typesys.Index {
+	return prepareAnalysisIndexWithSources(index, newSemaSources(nil, nil))
+}
+
+func prepareAnalysisIndexWithSources(index typesys.Index, sources *semaSources) typesys.Index {
 	index = enrichIndexWithStandardSymbols(index)
-	index = enrichIndexWithProjectReferencedSchemaFields(index)
+	index = enrichIndexWithProjectReferencedSchemaFieldsWithSources(index, sources)
 	index = enrichIndexWithSchemaDerivedObjects(index)
 	return index
 }

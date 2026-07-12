@@ -113,12 +113,15 @@ func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnos
 		return nil
 	}
 	var diagnostics []diagnostic.Diagnostic
-	sourceCache := make(map[string]string)
+	sources := a.sources
+	if sources == nil {
+		sources = newSemaSources(nil, nil)
+	}
 	for _, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) || typ.File == "" {
 			continue
 		}
-		source, ok := readSemaSourceForType(typ, sourceCache)
+		source, ok := sources.normalizedForType(typ)
 		if !ok {
 			continue
 		}
@@ -1647,13 +1650,16 @@ func (a *Analyzer) checkManagedPackageAccess(index typesys.Index) []diagnostic.D
 		typesByNamespace[strings.ToLower(typ.Namespace)] = append(typesByNamespace[strings.ToLower(typ.Namespace)], typ)
 	}
 	var diagnostics []diagnostic.Diagnostic
-	sourceCache := make(map[string]string)
+	sources := a.sources
+	if sources == nil {
+		sources = newSemaSources(nil, nil)
+	}
 	seen := make(map[string]bool)
 	for _, typ := range index.Types {
 		if typ.Dependency {
 			continue
 		}
-		source, ok := readSemaSourceForType(typ, sourceCache)
+		source, ok := sources.normalizedForType(typ)
 		if !ok {
 			continue
 		}
@@ -1718,7 +1724,7 @@ func (a *Analyzer) checkInheritanceContracts(index typesys.Index) []diagnostic.D
 }
 
 func (a *Analyzer) checkInheritanceContractsWithRecorder(index typesys.Index, recorder *perfRecorder) []diagnostic.Diagnostic {
-	return a.checkInheritanceContractsWithState(index, buildSemaTypeMemberState(index, recorder), recorder)
+	return a.checkInheritanceContractsWithState(index, buildSemaTypeMemberState(index, recorder, a.sources), recorder)
 }
 
 func (a *Analyzer) checkInheritanceContractsWithState(index typesys.Index, state *semaTypeMemberState, recorder *perfRecorder) []diagnostic.Diagnostic {
