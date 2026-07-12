@@ -11,6 +11,7 @@ import (
 	"io"
 	"sort"
 	"strings"
+	"sync"
 )
 
 const standardDescribeCatalogV2HeaderSize = 16
@@ -45,6 +46,68 @@ type standardDescribeChildRelationshipV2Info struct {
 	CascadeDelete    bool   `json:"cascadeDelete"`
 	RestrictedDelete bool   `json:"restrictedDelete"`
 	Conflict         bool   `json:"conflict"`
+}
+
+type standardDescribeCatalogV2DecodeFunc func(standardDescribeCatalogV2IndexEntry) (standardObjectCatalogEntry, error)
+
+type standardDescribeCatalogV2Cache struct {
+	entries sync.Map
+	decode  standardDescribeCatalogV2DecodeFunc
+}
+
+type standardDescribeCatalogV2CacheEntry struct {
+	once       sync.Once
+	indexEntry standardDescribeCatalogV2IndexEntry
+	value      standardObjectCatalogEntry
+	err        error
+}
+
+var standardDescribeCatalogV2ProductionCache = newStandardDescribeCatalogV2Cache(standardDescribeCatalogV2EntryForResolvedIndexEntry)
+
+func newStandardDescribeCatalogV2Cache(decode standardDescribeCatalogV2DecodeFunc) *standardDescribeCatalogV2Cache {
+	return &standardDescribeCatalogV2Cache{decode: decode}
+}
+
+func (cache *standardDescribeCatalogV2Cache) entryForName(objectName string) (standardObjectCatalogEntry, bool, error) {
+	objectName = strings.TrimSpace(objectName)
+	if objectName == "" {
+		return standardObjectCatalogEntry{}, false, nil
+	}
+	if loaded, ok := cache.entries.Load(objectName); ok {
+		cached := loaded.(*standardDescribeCatalogV2CacheEntry)
+		return cache.decodeCachedEntry(cached)
+	}
+	indexEntry, ok := lookupStandardDescribeCatalogV2Index(standardDescribeCatalogV2Index, objectName)
+	if !ok {
+		return standardObjectCatalogEntry{}, false, nil
+	}
+	if err := validateResolvedStandardDescribeCatalogV2IndexEntry(indexEntry); err != nil {
+		return standardObjectCatalogEntry{}, true, err
+	}
+
+	loaded, _ := cache.entries.LoadOrStore(indexEntry.Name, &standardDescribeCatalogV2CacheEntry{indexEntry: indexEntry})
+	cached := loaded.(*standardDescribeCatalogV2CacheEntry)
+	return cache.decodeCachedEntry(cached)
+}
+
+func (cache *standardDescribeCatalogV2Cache) decodeCachedEntry(cached *standardDescribeCatalogV2CacheEntry) (standardObjectCatalogEntry, bool, error) {
+	cached.once.Do(func() {
+		cached.value, cached.err = cache.decode(cached.indexEntry)
+		if cached.err != nil {
+			cached.value = standardObjectCatalogEntry{}
+		}
+	})
+	// The projected catalog entry contains maps and slices. Production callers
+	// treat these shared values as immutable for the lifetime of the process.
+	return cached.value, true, cached.err
+}
+
+func validateResolvedStandardDescribeCatalogV2IndexEntry(entry standardDescribeCatalogV2IndexEntry) error {
+	canonical, ok := lookupStandardDescribeCatalogV2Index(standardDescribeCatalogV2Index, entry.Name)
+	if !ok || canonical != entry {
+		return fmt.Errorf("decode standard describe member %q: invalid generated index entry", entry.Name)
+	}
+	return nil
 }
 
 func lookupStandardDescribeCatalogV2(objectName string) (standardDescribeObject, bool, error) {
@@ -133,13 +196,17 @@ func decodeStandardDescribeCatalogV2MemberBytes(pack []byte, entry standardDescr
 }
 
 func standardDescribeCatalogV2EntryForName(objectName string) (standardObjectCatalogEntry, bool, error) {
-	describe, ok, err := lookupStandardDescribeCatalogV2(objectName)
-	if err != nil || !ok {
-		return standardObjectCatalogEntry{}, ok, err
+	return standardDescribeCatalogV2ProductionCache.entryForName(objectName)
+}
+
+func standardDescribeCatalogV2EntryForResolvedIndexEntry(indexEntry standardDescribeCatalogV2IndexEntry) (standardObjectCatalogEntry, error) {
+	describe, err := decodeStandardDescribeCatalogV2Member(standardDescribeCatalogV2Pack, indexEntry)
+	if err != nil {
+		return standardObjectCatalogEntry{}, err
 	}
 	childRelationships := map[string]standardDescribeChildRelationshipInfo{}
 	if reverse, reverseOK, reverseErr := lookupStandardDescribeChildRelationshipsV2(describe.Name); reverseErr != nil {
-		return standardObjectCatalogEntry{}, true, reverseErr
+		return standardObjectCatalogEntry{}, reverseErr
 	} else if reverseOK {
 		childRelationships = standardDescribeChildRelationshipMapV2(reverse)
 	}
@@ -152,7 +219,7 @@ func standardDescribeCatalogV2EntryForName(objectName string) (standardObjectCat
 		Relations:   describeRelationships(describe.Name, describe.Fields, childRelationships),
 		RecordTypes: describeRecordTypes(describe.RecordTypeInfos),
 	}}
-	return entry, true, nil
+	return entry, nil
 }
 
 func standardDescribeChildRelationshipMapV2(reverse standardDescribeChildRelationshipsV2Member) map[string]standardDescribeChildRelationshipInfo {

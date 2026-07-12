@@ -3,8 +3,12 @@ package storage
 import (
 	"bytes"
 	"crypto/sha256"
+	"errors"
+	"reflect"
 	"sort"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 )
 
@@ -165,4 +169,232 @@ func TestStandardDescribeCatalogV2ReverseProjectionMergesCaseFoldFields(t *testi
 	if got.relationshipName != "First" || !got.conflict || !got.cascadeDelete || !got.restrictedDelete {
 		t.Fatalf("case-fold projection merge = %#v", got)
 	}
+}
+
+func TestStandardDescribeCatalogV2CacheCanonicalLookupsDecodeOnce(t *testing.T) {
+	var decodes atomic.Int64
+	cache := newStandardDescribeCatalogV2Cache(func(entry standardDescribeCatalogV2IndexEntry) (standardObjectCatalogEntry, error) {
+		decodes.Add(1)
+		return standardDescribeCatalogV2EntryForResolvedIndexEntry(entry)
+	})
+
+	var first standardObjectCatalogEntry
+	for index, name := range []string{"CareProgram", "careprogram", "  CAREPROGRAM  "} {
+		got, ok, err := cache.entryForName(name)
+		if err != nil || !ok {
+			t.Fatalf("lookup %q: ok=%v err=%v", name, ok, err)
+		}
+		if index == 0 {
+			first = got
+		} else if !reflect.DeepEqual(got, first) {
+			t.Fatalf("lookup %q differs from canonical lookup", name)
+		}
+	}
+	if got := decodes.Load(); got != 1 {
+		t.Fatalf("canonical lookup decodes = %d, want 1", got)
+	}
+	if got := standardDescribeCatalogV2CacheEntryCount(cache); got != 1 {
+		t.Fatalf("canonical lookup cache entries = %d, want 1", got)
+	}
+}
+
+func TestStandardDescribeCatalogV2CacheWarmCanonicalLookupAllocatesNothing(t *testing.T) {
+	cache := newStandardDescribeCatalogV2Cache(standardDescribeCatalogV2EntryForResolvedIndexEntry)
+	if _, ok, err := cache.entryForName("CareProgram"); err != nil || !ok {
+		t.Fatalf("warmup CareProgram: ok=%v err=%v", ok, err)
+	}
+	allocations := testing.AllocsPerRun(1000, func() {
+		if _, ok, err := cache.entryForName("CareProgram"); err != nil || !ok {
+			panic("cached CareProgram lookup failed")
+		}
+	})
+	if allocations != 0 {
+		t.Fatalf("warm canonical lookup allocations = %g, want 0", allocations)
+	}
+}
+
+func TestStandardDescribeCatalogV2CacheConcurrentLookupDecodesOnce(t *testing.T) {
+	var decodes atomic.Int64
+	cache := newStandardDescribeCatalogV2Cache(func(entry standardDescribeCatalogV2IndexEntry) (standardObjectCatalogEntry, error) {
+		decodes.Add(1)
+		return standardDescribeCatalogV2EntryForResolvedIndexEntry(entry)
+	})
+
+	const workers = 64
+	start := make(chan struct{})
+	errorsByWorker := make(chan error, workers)
+	var wait sync.WaitGroup
+	wait.Add(workers)
+	for worker := 0; worker < workers; worker++ {
+		go func(worker int) {
+			defer wait.Done()
+			<-start
+			name := []string{"CareProgram", "careprogram", " CAREPROGRAM "}[worker%3]
+			entry, ok, err := cache.entryForName(name)
+			if err != nil || !ok || entry.Definition.APIName != "CareProgram" {
+				errorsByWorker <- errors.New("concurrent canonical lookup failed")
+			}
+		}(worker)
+	}
+	close(start)
+	wait.Wait()
+	close(errorsByWorker)
+	for err := range errorsByWorker {
+		t.Fatal(err)
+	}
+	if got := decodes.Load(); got != 1 {
+		t.Fatalf("concurrent lookup decodes = %d, want 1", got)
+	}
+}
+
+func TestStandardDescribeCatalogV2CacheStickyDecodeError(t *testing.T) {
+	wantErr := errors.New("corrupt CareProgram member")
+	var decodes atomic.Int64
+	cache := newStandardDescribeCatalogV2Cache(func(standardDescribeCatalogV2IndexEntry) (standardObjectCatalogEntry, error) {
+		decodes.Add(1)
+		return standardObjectCatalogEntry{Definition: ObjectDefinition{APIName: "partial"}}, wantErr
+	})
+
+	for _, name := range []string{"CareProgram", " careprogram ", "CAREPROGRAM"} {
+		entry, ok, err := cache.entryForName(name)
+		if !ok || !errors.Is(err, wantErr) || entry.Definition.APIName != "" {
+			t.Fatalf("sticky error lookup %q: entry=%#v ok=%v err=%v", name, entry, ok, err)
+		}
+	}
+	if got := decodes.Load(); got != 1 {
+		t.Fatalf("sticky error decodes = %d, want 1", got)
+	}
+	if got := standardDescribeCatalogV2CacheEntryCount(cache); got != 1 {
+		t.Fatalf("sticky error cache entries = %d, want 1", got)
+	}
+}
+
+func TestStandardDescribeCatalogV2CacheUnknownAndEmptyDoNotDecodeOrCache(t *testing.T) {
+	var decodes atomic.Int64
+	cache := newStandardDescribeCatalogV2Cache(func(entry standardDescribeCatalogV2IndexEntry) (standardObjectCatalogEntry, error) {
+		decodes.Add(1)
+		return standardDescribeCatalogV2EntryForResolvedIndexEntry(entry)
+	})
+
+	for _, name := range []string{"", "   ", "DefinitelyNotAStandardObject"} {
+		entry, ok, err := cache.entryForName(name)
+		if err != nil || ok {
+			t.Fatalf("unknown lookup %q: entry=%#v ok=%v err=%v", name, entry, ok, err)
+		}
+	}
+	if got := decodes.Load(); got != 0 {
+		t.Fatalf("unknown lookups decoded %d members, want 0", got)
+	}
+	if got := standardDescribeCatalogV2CacheEntryCount(cache); got != 0 {
+		t.Fatalf("unknown lookups cached %d entries, want 0", got)
+	}
+}
+
+func TestStandardDescribeCatalogV2CachedAndUncachedEntriesMatchLegacy(t *testing.T) {
+	withReverse := "CareProgram"
+	withoutReverse := ""
+	for _, indexEntry := range standardDescribeCatalogV2Index {
+		if _, ok := lookupStandardDescribeCatalogV2Index(standardDescribeChildRelationshipsV2Index, indexEntry.Name); !ok {
+			withoutReverse = indexEntry.Name
+			break
+		}
+	}
+	if withoutReverse == "" {
+		t.Fatal("catalog has no object without a reverse member")
+	}
+
+	legacy := loadEmbeddedStandardDescribeCatalog()
+	cache := newStandardDescribeCatalogV2Cache(standardDescribeCatalogV2EntryForResolvedIndexEntry)
+	for _, name := range []string{withReverse, withoutReverse} {
+		indexEntry, ok := lookupStandardDescribeCatalogV2Index(standardDescribeCatalogV2Index, name)
+		if !ok {
+			t.Fatalf("resolve %s", name)
+		}
+		uncached, err := standardDescribeCatalogV2EntryForResolvedIndexEntry(indexEntry)
+		if err != nil {
+			t.Fatalf("uncached %s: %v", name, err)
+		}
+		cached, ok, err := cache.entryForName(strings.ToLower(name))
+		if err != nil || !ok {
+			t.Fatalf("cached %s: ok=%v err=%v", name, ok, err)
+		}
+		want, ok := legacy[name]
+		if !ok {
+			t.Fatalf("legacy %s missing", name)
+		}
+		if !reflect.DeepEqual(cached, uncached) || !reflect.DeepEqual(canonicalizeStandardDescribeProjectedEntry(cached), canonicalizeStandardDescribeProjectedEntry(want)) {
+			t.Fatalf("cached/uncached/legacy mismatch for %s", name)
+		}
+	}
+}
+
+func TestStandardDescribeCatalogV2NamesOnlyPathsDecodeNothing(t *testing.T) {
+	resetKnownStandardObjectCacheForTest()
+	defer resetKnownStandardObjectCacheForTest()
+
+	var decodes atomic.Int64
+	fresh := newStandardDescribeCatalogV2Cache(func(entry standardDescribeCatalogV2IndexEntry) (standardObjectCatalogEntry, error) {
+		decodes.Add(1)
+		return standardDescribeCatalogV2EntryForResolvedIndexEntry(entry)
+	})
+	previous := standardDescribeCatalogV2ProductionCache
+	standardDescribeCatalogV2ProductionCache = fresh
+	defer func() { standardDescribeCatalogV2ProductionCache = previous }()
+
+	names := KnownStandardObjectNames()
+	if len(names) == 0 || !IsKnownStandardObject(" careprogram ") || IsKnownStandardObject("DefinitelyNotAStandardObject") {
+		t.Fatal("names-only standard object resolution returned unexpected results")
+	}
+	if got := decodes.Load(); got != 0 {
+		t.Fatalf("names-only paths decoded %d V2 members, want 0", got)
+	}
+	if got := standardDescribeCatalogV2CacheEntryCount(fresh); got != 0 {
+		t.Fatalf("names-only paths cached %d V2 entries, want 0", got)
+	}
+	if standardObjectCatalogLookupCache.describeByLC != nil {
+		t.Fatalf("names-only paths hydrated %d legacy catalog entries", len(standardObjectCatalogLookupCache.describeByLC))
+	}
+}
+
+func TestStandardDescribeCatalogV2CacheMixedConcurrentLookups(t *testing.T) {
+	var decodes atomic.Int64
+	cache := newStandardDescribeCatalogV2Cache(func(entry standardDescribeCatalogV2IndexEntry) (standardObjectCatalogEntry, error) {
+		decodes.Add(1)
+		return standardDescribeCatalogV2EntryForResolvedIndexEntry(entry)
+	})
+	lookups := []string{"CareProgram", " careprogram ", "Account", "ACCOUNT", "Contact", " contact ", "", "DefinitelyNotAStandardObject"}
+
+	const workers = 32
+	var wait sync.WaitGroup
+	wait.Add(workers)
+	for worker := 0; worker < workers; worker++ {
+		go func(worker int) {
+			defer wait.Done()
+			for iteration := 0; iteration < 20; iteration++ {
+				name := lookups[(worker+iteration)%len(lookups)]
+				_, ok, err := cache.entryForName(name)
+				wantKnown := strings.TrimSpace(name) != "" && name != "DefinitelyNotAStandardObject"
+				if err != nil || ok != wantKnown {
+					t.Errorf("mixed lookup %q: ok=%v err=%v", name, ok, err)
+					return
+				}
+			}
+		}(worker)
+	}
+	wait.Wait()
+	if got := decodes.Load(); got != 3 {
+		t.Fatalf("mixed lookups decoded %d canonical objects, want 3", got)
+	}
+	if got := standardDescribeCatalogV2CacheEntryCount(cache); got != 3 {
+		t.Fatalf("mixed lookups cached %d entries, want 3", got)
+	}
+}
+
+func standardDescribeCatalogV2CacheEntryCount(cache *standardDescribeCatalogV2Cache) int {
+	count := 0
+	cache.entries.Range(func(_, _ any) bool {
+		count++
+		return true
+	})
+	return count
 }

@@ -16,6 +16,11 @@ import (
 )
 
 func TestStandardDescribeCatalogV2DigestOracle(t *testing.T) {
+	freshCache := newStandardDescribeCatalogV2Cache(standardDescribeCatalogV2EntryForResolvedIndexEntry)
+	previousCache := standardDescribeCatalogV2ProductionCache
+	standardDescribeCatalogV2ProductionCache = freshCache
+	defer func() { standardDescribeCatalogV2ProductionCache = previousCache }()
+
 	file, err := standardDescribeCatalogFS.Open("standard_describe_catalog.json.gz")
 	if err != nil {
 		t.Fatal(err)
@@ -81,9 +86,9 @@ func TestStandardDescribeCatalogV2DigestOracle(t *testing.T) {
 		rawDigest.add([]byte(indexEntry.Name))
 		rawDigest.add(member)
 
-		v2Entry, ok, err := standardDescribeCatalogV2EntryForName(indexEntry.Name)
-		if err != nil || !ok {
-			t.Fatalf("project V2 %s: ok=%v err=%v", indexEntry.Name, ok, err)
+		v2Entry, err := standardDescribeCatalogV2EntryForResolvedIndexEntry(indexEntry)
+		if err != nil {
+			t.Fatalf("project V2 %s: %v", indexEntry.Name, err)
 		}
 		legacyEntry, ok := legacy[indexEntry.Name]
 		if !ok {
@@ -218,6 +223,9 @@ func TestStandardDescribeCatalogV2DigestOracle(t *testing.T) {
 		if gotDigests[section] != wantDigests[section] {
 			t.Errorf("%s digest = %s, want %s", section, gotDigests[section], wantDigests[section])
 		}
+	}
+	if got := standardDescribeCatalogV2CacheEntryCount(freshCache); got != 0 {
+		t.Fatalf("complete digest oracle retained %d V2 objects, want 0", got)
 	}
 }
 
