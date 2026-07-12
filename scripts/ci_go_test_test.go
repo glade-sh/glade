@@ -48,12 +48,24 @@ var nodeIntegrationTests = map[string][]string{
 		"TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate",
 		"TestCompileEnablesLwcOnDirective",
 	},
+	"github.com/glade-sh/glade/internal/lwcbrowser": {
+		"TestSetupBundleIncludesLabelsSibling",
+		"TestSetupImportMapIncludesLocalComponents",
+	},
 	"github.com/glade-sh/glade/internal/server": {
 		"TestVFPageBootstrapsLightningOut",
 		"TestVFPageBootstrapsMultiWidgetLightningOut",
 		"TestLightningModulesServesCompiledJS",
 		"TestLightningModulesServesSiblingModuleWithoutJSExtension",
 		"TestLWCShellComponentRouteServesHTML",
+		"TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink",
+		"TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord",
+		"TestLWCShellTabRouteIncludesPreviewRouteCatalog",
+		"TestServerRootRendersLWCHomeWhenProjectHasLWCs",
+		"TestLWCShellRendersApplicationNavAndConsoleMode",
+		"TestLWCShellAppRouteFallsBackToApplicationDefaultTab",
+		"TestLWCShellUnsupportedCustomTabReturnsDiagnostic",
+		"TestLWCShellMixedPageDiagnosticsStillRendersValidComponents",
 	},
 }
 
@@ -61,8 +73,13 @@ var nodeIntegrationRunNames = []string{
 	"TestCompileProjectLWCBundles", "TestCompileRewritesTemplateStylesheetImports", "TestCompileEmitsSiblingJSModules",
 	"TestCompileEmitsUtilityOnlyLWCModules", "TestCompileEmitsAdditionalHTMLTemplateModules",
 	"TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate", "TestCompileEnablesLwcOnDirective",
+	"TestSetupBundleIncludesLabelsSibling", "TestSetupImportMapIncludesLocalComponents",
 	"TestVFPageBootstrapsLightningOut", "TestVFPageBootstrapsMultiWidgetLightningOut", "TestLightningModulesServesCompiledJS",
 	"TestLightningModulesServesSiblingModuleWithoutJSExtension", "TestLWCShellComponentRouteServesHTML",
+	"TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink", "TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord",
+	"TestLWCShellTabRouteIncludesPreviewRouteCatalog", "TestServerRootRendersLWCHomeWhenProjectHasLWCs",
+	"TestLWCShellRendersApplicationNavAndConsoleMode", "TestLWCShellAppRouteFallsBackToApplicationDefaultTab",
+	"TestLWCShellUnsupportedCustomTabReturnsDiagnostic", "TestLWCShellMixedPageDiagnosticsStillRendersValidComponents",
 	"TestValidateRootFindsRepoCheckout", "TestInstallFromCWDSkipsGlobalShareAsSource", "TestInstallFromCopiesToolchain",
 	"TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare", "TestRunDoctorReportsParser", "TestRunDoctorJSON",
 	"TestRunDoctorShortFlags", "TestRunDoctorReportsProjectLocalDataEnvironment",
@@ -2153,7 +2170,7 @@ func TestCINodeIntegrationCommandExactSelectionAndEvidence(t *testing.T) {
 		t.Fatalf("native executions = %d, want 1; calls:\n%s", len(callLines), calls)
 	}
 	call := callLines[0]
-	for _, marker := range []string{"test -json -vet=off", "-count=1", "-timeout=30m", "./internal/gladecli", "./internal/gladehome", "./internal/lwc/compile", "./internal/server"} {
+	for _, marker := range []string{"test -json -vet=off", "-count=1", "-timeout=30m", "./internal/gladecli", "./internal/gladehome", "./internal/lwc/compile", "./internal/lwcbrowser", "./internal/server"} {
 		if !strings.Contains(call, marker) {
 			t.Errorf("native command missing %q: %s", marker, call)
 		}
@@ -2171,7 +2188,7 @@ func TestCINodeIntegrationCommandExactSelectionAndEvidence(t *testing.T) {
 		}
 	}
 	summary, err := os.ReadFile(filepath.Join(artifacts, "validation-summary.json"))
-	if err != nil || !strings.Contains(string(summary), `"tests": 20`) || !strings.Contains(string(summary), `"valid": true`) {
+	if err != nil || !strings.Contains(string(summary), `"tests": 30`) || !strings.Contains(string(summary), `"valid": true`) {
 		t.Errorf("validation summary invalid: err=%v data=%s", err, summary)
 	}
 }
@@ -2277,9 +2294,9 @@ func TestCINodeIntegrationWorkflowAndPurePartition(t *testing.T) {
 func TestCINodeIntegrationPureLaneSkipSelectors(t *testing.T) {
 	wantSkip := map[string]string{
 		"gladecli":              "^(?:TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$",
-		"server-and-playground": "^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML)$",
+		"server-and-playground": "^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestLWCShellRootRendersHomeWithFormalTabsAndBuilderLink|TestLWCShellBuilderRouteRendersBuilderNavigationLayoutAndSampleRecord|TestLWCShellTabRouteIncludesPreviewRouteCatalog|TestServerRootRendersLWCHomeWhenProjectHasLWCs|TestLWCShellRendersApplicationNavAndConsoleMode|TestLWCShellAppRouteFallsBackToApplicationDefaultTab|TestLWCShellUnsupportedCustomTabReturnsDiagnostic|TestLWCShellMixedPageDiagnosticsStillRendersValidComponents)$",
 		"repoguard":             "",
-		"remaining-go":          "^(?:TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$",
+		"remaining-go":          "^(?:TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestSetupBundleIncludesLabelsSibling|TestSetupImportMapIncludesLocalComponents|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$",
 	}
 	for lane, skip := range wantSkip {
 		t.Run(lane, func(t *testing.T) {
