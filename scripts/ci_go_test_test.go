@@ -1212,6 +1212,605 @@ func TestCISemaShardWorkflowContract(t *testing.T) {
 	}
 }
 
+type browserEvidenceFile struct {
+	name    string
+	command string
+}
+
+func browserEvidenceFiles() []browserEvidenceFile {
+	return []browserEvidenceFile{
+		{name: "npm-ci-third-party-lwc.log", command: `printf 'not run\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/npm-ci-third-party-lwc.log"`},
+		{name: "npm-ci-lwcruntime.log", command: `printf 'not run\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/npm-ci-lwcruntime.log"`},
+		{name: "playwright-install.log", command: `printf 'not run\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/playwright-install.log"`},
+		{name: "node-test.log", command: `printf 'not run\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/node-test.log"`},
+		{name: "go-test.json", command: `printf 'not run\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/go-test.json"`},
+		{name: "resource-usage.txt", command: `printf 'not run\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/resource-usage.txt"`},
+		{name: "validation-summary.json", command: `printf '{"scope":"pending"}\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/validation-summary.json"`},
+	}
+}
+
+func browserWorkflowProblem(workflow string) string {
+	required := []string{
+		"name: Browser",
+		"permissions:\n  contents: read",
+		"  pull_request:",
+		"  push:\n    branches: [main]\n    tags: ['v*']",
+		"  schedule:\n    - cron: '17 11 * * *'",
+		"  workflow_dispatch:",
+		"jobs:\n  browser:",
+		"name: Browser",
+		"runs-on: ubuntu-latest",
+		"timeout-minutes: 30",
+		"GOMAXPROCS: \"2\"",
+		"GLADE_LWC_BROWSER: \"1\"",
+		"PLAYWRIGHT_BROWSERS_PATH: /home/runner/.cache/ms-playwright",
+		"uses: actions/checkout@v6",
+		"fetch-depth: 0",
+		"persist-credentials: false",
+		"path: source",
+		"working-directory: source",
+		"github.event.pull_request.base.sha",
+		"github.event.pull_request.head.sha",
+		`changed_paths_file=$(mktemp "$RUNNER_TEMP/browser-changed-paths.XXXXXX")`,
+		`trap 'rm -f "$changed_paths_file"' EXIT`,
+		`if ! git diff --name-only -z --no-renames --diff-filter=ACDMRTUXB "$BASE_SHA" "$HEAD_SHA" >"$changed_paths_file"; then`,
+		`while IFS= read -r -d '' changed_path; do`,
+		`done <"$changed_paths_file"`,
+		`if [[ -z "$BASE_SHA" || -z "$HEAD_SHA" ]]; then
+              echo "pull request base/head SHA is missing" >&2
+              exit 1`,
+		`echo "git diff failed for $BASE_SHA..$HEAD_SHA" >&2
+              exit 1`,
+		"exit 1",
+		"*.go",
+		"go.mod|go.sum",
+		"lwcruntime/**",
+		"third_party/lwc/**",
+		"testdata/local-tests/lwc-shell/**",
+		"testdata/local-tests/lightning-out-vf/**",
+		".github/workflows/browser.yml",
+		"github.event_name != 'pull_request'",
+		"run_expensive=$UNCONDITIONAL",
+		"uses: actions/setup-go@v6",
+		"go-version: \"1.26.5\"",
+		"cache: false",
+		"uses: actions/setup-node@v6",
+		"node-version: \"22\"",
+		"third_party/lwc/package-lock.json",
+		"lwcruntime/package-lock.json",
+		`npm ci --prefix third_party/lwc 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/npm-ci-third-party-lwc.log"`,
+		`npm ci --prefix lwcruntime 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/npm-ci-lwcruntime.log"`,
+		`npm exec --prefix lwcruntime -- playwright install --with-deps chromium 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/playwright-install.log"`,
+		`printf '{"scope":"%s"}\n' "$run_expensive" >"$GITHUB_WORKSPACE/ci-artifacts/browser/validation-summary.json"`,
+		"timeout-minutes: 10",
+		"uses: actions/cache/restore@v4",
+		"uses: actions/cache/save@v4",
+		"go-mod-ci-browser",
+		"go-build-ci-browser",
+		"playwright-browser",
+		"ci-test-${{ hashFiles('source/go.sum') }}-",
+		"${{ runner.os }}-${{ runner.arch }}",
+		"${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
+		"continue-on-error: true",
+		"set -o pipefail",
+		"REAL_NPM=$(command -v npm)",
+		`: >"$BROWSER_NODE_TEST_LOG"`,
+		`cat >"$RUNNER_TEMP/browser-bin/npm" <<'WRAPPER'`,
+		"<<'WRAPPER'\n          #!/usr/bin/env bash\n          set -o pipefail",
+		`"$REAL_NPM" "$@" 2>&1 | tee -a "$BROWSER_NODE_TEST_LOG"`,
+		`npm_pipeline_status=("${PIPESTATUS[@]}")`,
+		`npm_rc=${npm_pipeline_status[0]}`,
+		`npm_tee_rc=${npm_pipeline_status[1]}`,
+		`if (( npm_rc != 0 )); then`,
+		`if (( npm_tee_rc != 0 )); then`,
+		`exit "$npm_rc"`,
+		`exit "$npm_tee_rc"`,
+		`export PATH="$RUNNER_TEMP/browser-bin:$PATH"`,
+		`/usr/bin/time -v -o "$GITHUB_WORKSPACE/ci-artifacts/browser/resource-usage.txt"`,
+		"go test -json -vet=off -p=1 -count=1 -timeout=25m",
+		"-run '^(TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$'",
+		"./internal/lwcruntime ./internal/lwcbrowser",
+		`tee "$GITHUB_WORKSPACE/ci-artifacts/browser/go-test.json"`,
+		"PIPESTATUS[@]",
+		"native_rc",
+		"pipeline_rc",
+		"validation-summary.json",
+		`artifact_dir = Path(os.environ["GITHUB_WORKSPACE"]) / "ci-artifacts" / "browser"`,
+		`node_events_path = artifact_dir / "node-test.log"`,
+		"TestBrowserRuntimeSuite",
+		"TestGeneratedPhase3BaseComponentsRunInBrowser",
+		`action in {"pass", "fail", "skip"}`,
+		`if action == "skip":`,
+		`elif actions[0] != "pass":`,
+		"Go test stream reported skip events",
+		"duplicate terminal",
+		"missing terminal",
+		"unexpected top-level terminal",
+		`if node_skips:`,
+		`node_skips = re.findall(r"(?im)^[ \t]*(?:ok|not ok)[ \t]+[0-9]+\b.*(?<!\\)#[ \t]*SKIP\b.*$", node_text)`,
+		`Node TAP reported numbered skip points`,
+		`node_failures = re.findall(r"(?im)^[ \t]*not ok[ \t]+[0-9]+\b.*$", node_text)`,
+		`if node_failures:`,
+		`Node TAP reported numbered failing points`,
+		`Node TAP reported cannot-launch text`,
+		`if "cannot launch chromium" in node_text.lower():`,
+		`for field in ("tests", "pass", "fail", "skipped"):`,
+		`tap["tests"] <= 0`,
+		`tap["pass"] != tap["tests"]`,
+		`tap["fail"] != 0`,
+		`tap["skipped"] != 0`,
+		"if (( native_rc != 0 ))",
+		"if (( pipeline_rc != 0 ))",
+		"if (( validator_rc != 0 ))",
+		"if: always()",
+		"uses: actions/upload-artifact@v6",
+		"name: browser-${{ github.run_id }}-${{ github.run_attempt }}",
+		"path: ci-artifacts/browser/**",
+		"if-no-files-found: error",
+		"retention-days: 7",
+	}
+	for _, marker := range required {
+		if !strings.Contains(workflow, marker) {
+			return fmt.Sprintf("missing %q", marker)
+		}
+	}
+	for _, forbidden := range []string{
+		"pull_request_target:",
+		"permissions: write",
+		"contents: write",
+		"secrets.",
+		"continue-on-error: true\n        run: go test",
+	} {
+		if strings.Contains(workflow, forbidden) {
+			return fmt.Sprintf("contains forbidden %q", forbidden)
+		}
+	}
+	if strings.Contains(workflowHeader(workflow), "paths:") {
+		return "workflow-level paths filter is forbidden"
+	}
+	jobs := workflowJobBlocksText(workflow)
+	if len(jobs) != 1 || jobs["browser"] == "" {
+		return fmt.Sprintf("jobs = %v, want only browser", reflect.ValueOf(jobs).MapKeys())
+	}
+	job := jobs["browser"]
+	_, steps, found := strings.Cut(job, "    steps:\n")
+	if !found || !strings.HasPrefix(steps, "      - name: Precreate browser evidence\n") {
+		return "browser evidence precreation is not the first job step"
+	}
+	precreate := workflowStepBlockText(job, "      - name: Precreate browser evidence")
+	if precreate == "" {
+		return "browser evidence precreation step is missing"
+	}
+	var expectedPrecreate strings.Builder
+	expectedPrecreate.WriteString("      - name: Precreate browser evidence\n")
+	expectedPrecreate.WriteString("        run: |\n")
+	expectedPrecreate.WriteString(`          mkdir -p "$GITHUB_WORKSPACE/ci-artifacts/browser"` + "\n")
+	for _, evidence := range browserEvidenceFiles() {
+		expectedPrecreate.WriteString("          ")
+		expectedPrecreate.WriteString(evidence.command)
+		expectedPrecreate.WriteByte('\n')
+	}
+	if strings.TrimSpace(precreate) != strings.TrimSpace(expectedPrecreate.String()) {
+		return fmt.Sprintf("browser evidence precreation body is not exact\ngot:\n%s\nwant:\n%s", precreate, expectedPrecreate.String())
+	}
+	for _, evidence := range browserEvidenceFiles() {
+		if strings.Count(workflow, evidence.command) != 1 {
+			return fmt.Sprintf("evidence %s creation count = %d, want 1", evidence.name, strings.Count(workflow, evidence.command))
+		}
+	}
+	for _, later := range []string{
+		"      - uses: actions/checkout@v6",
+		"      - name: Determine browser test scope",
+		"      - uses: actions/setup-go@v6",
+		"      - name: Install LWC compiler dependencies",
+		"      - name: Run browser authorities",
+	} {
+		if strings.Index(job, "      - name: Precreate browser evidence") >= strings.Index(job, later) || strings.Index(job, later) < 0 {
+			return fmt.Sprintf("browser evidence precreation must precede %q", later)
+		}
+	}
+	if strings.Count(workflow, "go test -json") != 1 {
+		return fmt.Sprintf("native go test execution count = %d, want 1", strings.Count(workflow, "go test -json"))
+	}
+	if strings.Count(workflow, "working-directory: source") != 5 {
+		return fmt.Sprintf("source working-directory count = %d, want 5 repo-dependent run steps", strings.Count(workflow, "working-directory: source"))
+	}
+	if strings.Count(workflow, "uses: actions/cache/save@v4") != 3 {
+		return fmt.Sprintf("cache save count = %d, want 3", strings.Count(workflow, "uses: actions/cache/save@v4"))
+	}
+	if strings.Count(workflow, "if: steps.scope.outputs.run_expensive == 'true' && success()") != 3 {
+		return fmt.Sprintf("success-only cache save conditions = %d, want 3", strings.Count(workflow, "if: steps.scope.outputs.run_expensive == 'true' && success()"))
+	}
+	if strings.Count(workflow, "continue-on-error: true") != 6 {
+		return fmt.Sprintf("continue-on-error count = %d, want 6 cache operations only", strings.Count(workflow, "continue-on-error: true"))
+	}
+	for marker, want := range map[string]int{
+		"          REAL_NPM=$(command -v npm)\n":                                              1,
+		"          export REAL_NPM\n":                                                         1,
+		`export BROWSER_NODE_TEST_LOG="$GITHUB_WORKSPACE/ci-artifacts/browser/node-test.log"`: 1,
+		`          : >"$BROWSER_NODE_TEST_LOG"` + "\n":                                        1,
+		`cat >"$RUNNER_TEMP/browser-bin/npm" <<'WRAPPER'`:                                     1,
+		`"$REAL_NPM" "$@" 2>&1 | tee -a "$BROWSER_NODE_TEST_LOG"`:                             1,
+		`npm_pipeline_status=("${PIPESTATUS[@]}")`:                                            1,
+		`npm_rc=${npm_pipeline_status[0]}`:                                                    1,
+		`npm_tee_rc=${npm_pipeline_status[1]}`:                                                1,
+		`export PATH="$RUNNER_TEMP/browser-bin:$PATH"`:                                        1,
+		"go test -json -vet=off -p=1 -count=1 -timeout=25m":                                   1,
+	} {
+		if got := strings.Count(workflow, marker); got != want {
+			return fmt.Sprintf("browser wrapper/authority marker %q count = %d, want %d", marker, got, want)
+		}
+	}
+	authority := workflowStepBlockText(job, "      - name: Run browser authorities")
+	wrapperSetup := "          export BROWSER_NODE_TEST_LOG=\"$GITHUB_WORKSPACE/ci-artifacts/browser/node-test.log\"\n" +
+		"          : >\"$BROWSER_NODE_TEST_LOG\"\n" +
+		"          mkdir -p \"$RUNNER_TEMP/browser-bin\""
+	if strings.Count(authority, wrapperSetup) != 1 {
+		return "Node evidence truncation must occur exactly once immediately before wrapper installation"
+	}
+	return ""
+}
+
+func workflowHeader(workflow string) string {
+	if index := strings.Index(workflow, "\njobs:\n"); index >= 0 {
+		return workflow[:index]
+	}
+	return workflow
+}
+
+func workflowJobBlocksText(workflow string) map[string]string {
+	jobs := make(map[string]string)
+	_, body, ok := strings.Cut(workflow, "\njobs:\n")
+	if !ok {
+		return jobs
+	}
+	var name string
+	var block strings.Builder
+	flush := func() {
+		if name != "" {
+			jobs[name] = block.String()
+		}
+	}
+	for _, line := range strings.Split(body, "\n") {
+		if strings.HasPrefix(line, "  ") && !strings.HasPrefix(line, "    ") && strings.HasSuffix(line, ":") {
+			flush()
+			name = strings.TrimSuffix(strings.TrimSpace(line), ":")
+			block.Reset()
+		}
+		if name != "" {
+			block.WriteString(line)
+			block.WriteByte('\n')
+		}
+	}
+	flush()
+	return jobs
+}
+
+func workflowStepBlockText(job, header string) string {
+	start := strings.Index(job, header)
+	if start < 0 {
+		return ""
+	}
+	tail := job[start:]
+	if next := strings.Index(tail[len(header):], "\n      - "); next >= 0 {
+		return tail[:len(header)+next]
+	}
+	return tail
+}
+
+func workflowRunScriptText(step string) string {
+	_, body, ok := strings.Cut(step, "        run: |\n")
+	if !ok {
+		return ""
+	}
+	var lines []string
+	for _, line := range strings.Split(body, "\n") {
+		if line == "" {
+			lines = append(lines, "")
+			continue
+		}
+		if !strings.HasPrefix(line, "          ") {
+			break
+		}
+		lines = append(lines, strings.TrimPrefix(line, "          "))
+	}
+	return strings.Join(lines, "\n")
+}
+
+func TestCIBrowserWorkflowContract(t *testing.T) {
+	path := filepath.Join("..", ".github", "workflows", "browser.yml")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read %s: %v", path, err)
+	}
+	workflow := string(data)
+	if problem := browserWorkflowProblem(workflow); problem != "" {
+		t.Fatal(problem)
+	}
+
+	mutations := map[string]func(string) string{
+		"workflow-level paths": func(s string) string {
+			return strings.Replace(s, "  pull_request:\n", "  pull_request:\n    paths: ['**.go']\n", 1)
+		},
+		"pull request target": func(s string) string { return strings.Replace(s, "  pull_request:\n", "  pull_request_target:\n", 1) },
+		"checkout overwrites early evidence": func(s string) string {
+			return strings.Replace(s, "          path: source\n", "", 1)
+		},
+		"missing Chromium": func(s string) string { return strings.Replace(s, " --with-deps chromium", " --with-deps", 1) },
+		"missing selector": func(s string) string {
+			return strings.Replace(s, "|TestGeneratedPhase3BaseComponentsRunInBrowser", "", 1)
+		},
+		"weakened skip": func(s string) string {
+			return strings.Replace(s, `action in {"pass", "fail", "skip"}`, `action in {"pass", "fail"}`, 1)
+		},
+		"weakened native status": func(s string) string {
+			return strings.Replace(s, "if (( native_rc != 0 ))", "if (( native_rc == 0 ))", 1)
+		},
+		"deleted paths excluded": func(s string) string {
+			return strings.Replace(s, "--diff-filter=ACDMRTUXB", "--diff-filter=ACMRTUXB", 1)
+		},
+		"nested Go skip ignored": func(s string) string {
+			return strings.Replace(s, `if action == "skip":`, `if action == "never":`, 1)
+		},
+		"pipeline status ignored": func(s string) string {
+			return strings.Replace(s, "if (( pipeline_rc != 0 ))", "if (( pipeline_rc == 0 ))", 1)
+		},
+		"Node guard disabled": func(s string) string {
+			return strings.Replace(s, "if node_skips:", "if False and node_skips:", 1)
+		},
+		"Go pass weakened": func(s string) string {
+			return strings.Replace(s, `elif actions[0] != "pass":`, `elif actions[0] not in {"pass", "skip"}:`, 1)
+		},
+		"PR diff operands reversed": func(s string) string {
+			return strings.Replace(s, `"$BASE_SHA" "$HEAD_SHA"`, `"$HEAD_SHA" "$BASE_SHA"`, 1)
+		},
+		"PR diff fail open": func(s string) string {
+			return strings.Replace(s, "echo \"git diff failed for $BASE_SHA..$HEAD_SHA\" >&2\n              exit 1", "echo \"git diff failed for $BASE_SHA..$HEAD_SHA\" >&2\n              run_expensive=false", 1)
+		},
+		"missing SHA fail open": func(s string) string {
+			return strings.Replace(s, "echo \"pull request base/head SHA is missing\" >&2\n              exit 1", "echo \"pull request base/head SHA is missing\" >&2\n              run_expensive=false", 1)
+		},
+		"non PR condition reversed": func(s string) string {
+			return strings.Replace(s, "github.event_name != 'pull_request'", "github.event_name == 'pull_request'", 1)
+		},
+		"non PR default disabled": func(s string) string {
+			return strings.Replace(s, "run_expensive=$UNCONDITIONAL", "run_expensive=false", 1)
+		},
+		"cache save after failure": func(s string) string {
+			return strings.Replace(s, "if: steps.scope.outputs.run_expensive == 'true' && success()", "if: steps.scope.outputs.run_expensive == 'true'", 1)
+		},
+		"wrapper pipefail disabled": func(s string) string {
+			return strings.Replace(s, "<<'WRAPPER'\n          #!/usr/bin/env bash\n          set -o pipefail", "<<'WRAPPER'\n          #!/usr/bin/env bash\n          set +o pipefail", 1)
+		},
+		"wrapper native status discarded": func(s string) string {
+			return strings.Replace(s, `exit "$npm_rc"`, "exit 0", 1)
+		},
+		"missing REAL_NPM export": func(s string) string {
+			return strings.Replace(s, "          export REAL_NPM\n", "", 1)
+		},
+		"missing Node evidence truncation": func(s string) string {
+			return strings.Replace(s, "          : >\"$BROWSER_NODE_TEST_LOG\"\n", "", 1)
+		},
+		"Node evidence truncation after authority": func(s string) string {
+			line := "          : >\"$BROWSER_NODE_TEST_LOG\"\n"
+			s = strings.Replace(s, line, "", 1)
+			return strings.Replace(s, "          pipeline_status=(\"${PIPESTATUS[@]}\")\n", "          pipeline_status=(\"${PIPESTATUS[@]}\")\n"+line, 1)
+		},
+		"duplicate REAL_NPM resolution": func(s string) string {
+			line := "          REAL_NPM=$(command -v npm)"
+			return strings.Replace(s, line, line+"\n"+line, 1)
+		},
+		"duplicate npm wrapper creation": func(s string) string {
+			line := `          cat >"$RUNNER_TEMP/browser-bin/npm" <<'WRAPPER'`
+			return strings.Replace(s, line, line+"\n"+line, 1)
+		},
+		"duplicate npm capture": func(s string) string {
+			line := `          "$REAL_NPM" "$@" 2>&1 | tee -a "$BROWSER_NODE_TEST_LOG"`
+			return strings.Replace(s, line, line+"\n"+line, 1)
+		},
+		"duplicate Go authority": func(s string) string {
+			line := "            go test -json -vet=off -p=1 -count=1 -timeout=25m"
+			return strings.Replace(s, line, line+"\n"+line, 1)
+		},
+		"wrapper tee target weakened": func(s string) string {
+			return strings.Replace(s, `tee -a "$BROWSER_NODE_TEST_LOG"`, `tee "$BROWSER_NODE_TEST_LOG"`, 1)
+		},
+		"wrapper PIPESTATUS weakened": func(s string) string {
+			return strings.Replace(s, `npm_pipeline_status=("${PIPESTATUS[@]}")`, `npm_pipeline_status=(0 0)`, 1)
+		},
+		"scope newline parsing": func(s string) string {
+			old := `if ! git diff --name-only -z --no-renames --diff-filter=ACDMRTUXB "$BASE_SHA" "$HEAD_SHA" >"$changed_paths_file"; then`
+			replacement := `if ! changed_paths=$(git diff --name-only --no-renames --diff-filter=ACDMRTUXB "$BASE_SHA" "$HEAD_SHA"); then`
+			s = strings.Replace(s, old, replacement, 1)
+			s = strings.Replace(s, `while IFS= read -r -d '' changed_path; do`, `while IFS= read -r changed_path; do`, 1)
+			return strings.Replace(s, `done <"$changed_paths_file"`, `done <<<"$changed_paths"`, 1)
+		},
+		"eighth evidence file": func(s string) string {
+			line := `          printf 'not run\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/extra.log"`
+			return strings.Replace(s, "      - uses: actions/checkout@v6", line+"\n\n      - uses: actions/checkout@v6", 1)
+		},
+		"evidence files reordered": func(s string) string {
+			first := `          printf 'not run\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/npm-ci-third-party-lwc.log"`
+			second := `          printf 'not run\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/npm-ci-lwcruntime.log"`
+			return strings.Replace(s, first+"\n"+second, second+"\n"+first, 1)
+		},
+		"TAP pass equality weakened": func(s string) string {
+			return strings.Replace(s, `tap["pass"] != tap["tests"]`, `tap["pass"] > tap["tests"]`, 1)
+		},
+		"TAP skipped allowed": func(s string) string {
+			return strings.Replace(s, `tap["skipped"] != 0`, `tap["skipped"] < 0`, 1)
+		},
+		"TAP escaped skip hash rejected": func(s string) string {
+			return strings.Replace(s, `(?<!\\)#[ \t]*SKIP`, `#[ \t]*SKIP`, 1)
+		},
+		"TAP empty suite allowed": func(s string) string {
+			return strings.Replace(s, `tap["tests"] <= 0`, `tap["tests"] < 0`, 1)
+		},
+		"TAP failures allowed": func(s string) string {
+			return strings.Replace(s, `tap["fail"] != 0`, `tap["fail"] < 0`, 1)
+		},
+		"TAP skipped summary not parsed": func(s string) string {
+			return strings.Replace(s, `for field in ("tests", "pass", "fail", "skipped"):`, `for field in ("tests", "pass", "fail"):`, 1)
+		},
+		"TAP not ok guard disabled": func(s string) string {
+			return strings.Replace(s, `if node_failures:`, `if False and node_failures:`, 1)
+		},
+		"TAP cannot launch guard disabled": func(s string) string {
+			return strings.Replace(s, `if "cannot launch chromium" in node_text.lower():`, `if False:`, 1)
+		},
+		"continue on error": func(s string) string {
+			return strings.Replace(s, "      - name: Run browser authorities", "      - name: Run browser authorities\n        continue-on-error: true", 1)
+		},
+	}
+	for _, evidence := range browserEvidenceFiles() {
+		evidence := evidence
+		mutations["missing evidence "+evidence.name] = func(s string) string {
+			return strings.Replace(s, "          "+evidence.command+"\n", "", 1)
+		}
+	}
+	mutations["evidence moved into authority step"] = func(s string) string {
+		var moved strings.Builder
+		for _, evidence := range browserEvidenceFiles() {
+			line := "          " + evidence.command + "\n"
+			if strings.Contains(s, line) {
+				s = strings.Replace(s, line, "", 1)
+				moved.WriteString("          ")
+				moved.WriteString(evidence.command)
+				moved.WriteByte('\n')
+			}
+		}
+		needle := "      - name: Run browser authorities\n        if: steps.scope.outputs.run_expensive == 'true'\n        working-directory: source\n        run: |\n"
+		return strings.Replace(s, needle, needle+moved.String(), 1)
+	}
+	for name, mutate := range mutations {
+		t.Run("rejects "+name, func(t *testing.T) {
+			mutated := mutate(workflow)
+			if mutated == workflow {
+				t.Fatal("mutation did not change workflow")
+			}
+			if problem := browserWorkflowProblem(mutated); problem == "" {
+				t.Fatal("mutated workflow passed contract")
+			}
+		})
+	}
+}
+
+func TestCIBrowserScopeHandlesNewlinePath(t *testing.T) {
+	path := filepath.Join("..", ".github", "workflows", "browser.yml")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	job := workflowJobBlocksText(string(data))["browser"]
+	script := workflowRunScriptText(workflowStepBlockText(job, "      - name: Determine browser test scope"))
+	script = strings.ReplaceAll(script, `${{ github.event_name }}`, "pull_request")
+	if script == "" {
+		t.Fatal("scope script is missing")
+	}
+
+	repo := t.TempDir()
+	runGit := func(args ...string) string {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = repo
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+		return strings.TrimSpace(string(out))
+	}
+	runGit("init", "-q")
+	runGit("config", "user.email", "browser-ci@example.invalid")
+	runGit("config", "user.name", "Browser CI")
+	if err := os.WriteFile(filepath.Join(repo, "README.md"), []byte("base\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	runGit("add", "README.md")
+	runGit("commit", "-qm", "base")
+	base := runGit("rev-parse", "HEAD")
+	if err := os.WriteFile(filepath.Join(repo, "newline\ncomponent.go"), []byte("package newline\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	runGit("add", "-A")
+	runGit("commit", "-qm", "newline go path")
+	head := runGit("rev-parse", "HEAD")
+
+	output := filepath.Join(repo, "github-output")
+	if err := os.MkdirAll(filepath.Join(repo, "ci-artifacts", "browser"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("bash", "-c", script)
+	cmd.Dir = repo
+	cmd.Env = append(os.Environ(), "BASE_SHA="+base, "HEAD_SHA="+head, "UNCONDITIONAL=false", "GITHUB_OUTPUT="+output, "GITHUB_WORKSPACE="+repo, "RUNNER_TEMP="+t.TempDir())
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("scope script failed: %v\n%s", err, out)
+	}
+	result, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(result) != "run_expensive=true\n" {
+		t.Fatalf("newline-bearing .go path scope = %q, want true", result)
+	}
+}
+
+func TestCIBrowserTAPValidationFixtures(t *testing.T) {
+	path := filepath.Join("..", ".github", "workflows", "browser.yml")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	job := workflowJobBlocksText(string(data))["browser"]
+	runScript := workflowRunScriptText(workflowStepBlockText(job, "      - name: Run browser authorities"))
+	_, tail, ok := strings.Cut(runScript, "python3 - <<'PY'\n")
+	if !ok {
+		t.Fatal("browser validator Python is missing")
+	}
+	python, _, ok := strings.Cut(tail, "\nPY\n")
+	if !ok {
+		t.Fatal("browser validator Python terminator is missing")
+	}
+	goEvents := strings.Join([]string{
+		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcruntime","Test":"TestBrowserRuntimeSuite"}`,
+		`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/lwcbrowser","Test":"TestGeneratedPhase3BaseComponentsRunInBrowser"}`,
+	}, "\n") + "\n"
+	cases := []struct {
+		name    string
+		nodeTAP string
+		valid   bool
+	}{
+		{name: "harmless diagnostic words", valid: true, nodeTAP: "TAP version 13\n# Subtest: name mentions not ok and # SKIP harmlessly\nok 1 - name mentions not ok and \\# SKIP harmlessly\n1..1\n# tests 1\n# pass 1\n# fail 0\n# skipped 0\n"},
+		{name: "numbered failure", nodeTAP: "TAP version 13\nnot ok 1 - failed\n1..1\n# tests 1\n# pass 1\n# fail 0\n# skipped 0\n"},
+		{name: "numbered skip", nodeTAP: "TAP version 13\nok 1 - unavailable # SKIP browser absent\n1..1\n# tests 1\n# pass 1\n# fail 0\n# skipped 0\n"},
+		{name: "cannot launch", nodeTAP: "TAP version 13\n# cannot launch chromium: denied\nok 1 - passes\n1..1\n# tests 1\n# pass 1\n# fail 0\n# skipped 0\n"},
+		{name: "successful evidence retains sentinel", nodeTAP: "not run\nTAP version 13\nok 1 - passes\n1..1\n# tests 1\n# pass 1\n# fail 0\n# skipped 0\n"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			workspace := t.TempDir()
+			artifacts := filepath.Join(workspace, "ci-artifacts", "browser")
+			if err := os.MkdirAll(artifacts, 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(artifacts, "go-test.json"), []byte(goEvents), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(artifacts, "node-test.log"), []byte(tc.nodeTAP), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			cmd := exec.Command("python3", "-c", python)
+			cmd.Env = append(os.Environ(), "GITHUB_WORKSPACE="+workspace)
+			out, err := cmd.CombinedOutput()
+			if tc.valid && err != nil {
+				t.Fatalf("valid TAP rejected: %v\n%s", err, out)
+			}
+			if !tc.valid && err == nil {
+				t.Fatalf("invalid TAP accepted:\n%s", out)
+			}
+		})
+	}
+}
+
 func TestCIRequiredScheduledAggregateIsFailClosed(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	script := requiredAggregateShell(t, jobs["required-scheduled-ci"])

@@ -1,0 +1,330 @@
+name: Browser
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['v*']
+  schedule:
+    - cron: '17 11 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    name: Browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GOMAXPROCS: "2"
+      GLADE_LWC_BROWSER: "1"
+      PLAYWRIGHT_BROWSERS_PATH: /home/runner/.cache/ms-playwright
+      GOMODCACHE: /tmp/go-mod-ci-browser
+      GOCACHE: /tmp/go-build-ci-browser
+    steps:
+      - name: Precreate browser evidence
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/ci-artifacts/browser"
+          printf 'not run\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/npm-ci-third-party-lwc.log"
+          printf 'not run\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/npm-ci-lwcruntime.log"
+          printf 'not run\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/playwright-install.log"
+          printf 'not run\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/node-test.log"
+          printf 'not run\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/go-test.json"
+          printf 'not run\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/resource-usage.txt"
+          printf '{"scope":"pending"}\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/validation-summary.json"
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          path: source
+
+      - name: Determine browser test scope
+        id: scope
+        working-directory: source
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          UNCONDITIONAL: ${{ github.event_name != 'pull_request' }}
+        run: |
+          set -euo pipefail
+          run_expensive=$UNCONDITIONAL
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            if [[ -z "$BASE_SHA" || -z "$HEAD_SHA" ]]; then
+              echo "pull request base/head SHA is missing" >&2
+              exit 1
+            fi
+            changed_paths_file=$(mktemp "$RUNNER_TEMP/browser-changed-paths.XXXXXX")
+            trap 'rm -f "$changed_paths_file"' EXIT
+            if ! git diff --name-only -z --no-renames --diff-filter=ACDMRTUXB "$BASE_SHA" "$HEAD_SHA" >"$changed_paths_file"; then
+              echo "git diff failed for $BASE_SHA..$HEAD_SHA" >&2
+              exit 1
+            fi
+            run_expensive=false
+            while IFS= read -r -d '' changed_path; do
+              case "$changed_path" in
+                *.go|go.mod|go.sum|lwcruntime/**|third_party/lwc/**|testdata/local-tests/lwc-shell/**|testdata/local-tests/lightning-out-vf/**|.github/workflows/browser.yml)
+                  run_expensive=true
+                  break
+                  ;;
+              esac
+            done <"$changed_paths_file"
+          fi
+          echo "run_expensive=$run_expensive" >>"$GITHUB_OUTPUT"
+          printf '{"scope":"%s"}\n' "$run_expensive" >"$GITHUB_WORKSPACE/ci-artifacts/browser/validation-summary.json"
+
+      - uses: actions/setup-go@v6
+        if: steps.scope.outputs.run_expensive == 'true'
+        with:
+          go-version: "1.26.5"
+          cache: false
+
+      - uses: actions/setup-node@v6
+        if: steps.scope.outputs.run_expensive == 'true'
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            source/third_party/lwc/package-lock.json
+            source/lwcruntime/package-lock.json
+
+      - name: Restore isolated browser module cache
+        id: restore-browser-mod-cache
+        if: steps.scope.outputs.run_expensive == 'true'
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ${{ env.GOMODCACHE }}
+          key: go-mod-ci-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('source/go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-mod-ci-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('source/go.sum') }}-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('source/go.sum') }}-
+
+      - name: Restore isolated browser build cache
+        id: restore-browser-build-cache
+        if: steps.scope.outputs.run_expensive == 'true'
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ${{ env.GOCACHE }}
+          key: go-build-ci-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('source/go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-build-ci-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('source/go.sum') }}-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('source/go.sum') }}-
+
+      - name: Restore Chromium cache
+        id: restore-browser-chromium-cache
+        if: steps.scope.outputs.run_expensive == 'true'
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: /home/runner/.cache/ms-playwright
+          key: playwright-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.60.0-${{ hashFiles('source/lwcruntime/package-lock.json') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            playwright-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.60.0-${{ hashFiles('source/lwcruntime/package-lock.json') }}-
+
+      - name: Install LWC compiler dependencies
+        if: steps.scope.outputs.run_expensive == 'true'
+        timeout-minutes: 10
+        working-directory: source
+        run: |
+          set -o pipefail
+          npm ci --prefix third_party/lwc 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/npm-ci-third-party-lwc.log"
+
+      - name: Install browser runtime dependencies
+        if: steps.scope.outputs.run_expensive == 'true'
+        timeout-minutes: 10
+        working-directory: source
+        run: |
+          set -o pipefail
+          npm ci --prefix lwcruntime 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/npm-ci-lwcruntime.log"
+
+      - name: Install Chromium with system dependencies
+        if: steps.scope.outputs.run_expensive == 'true'
+        timeout-minutes: 10
+        working-directory: source
+        run: |
+          set -o pipefail
+          npm exec --prefix lwcruntime -- playwright install --with-deps chromium 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/playwright-install.log"
+
+      - name: Run browser authorities
+        if: steps.scope.outputs.run_expensive == 'true'
+        working-directory: source
+        run: |
+          set -o pipefail
+          REAL_NPM=$(command -v npm)
+          export REAL_NPM
+          export BROWSER_NODE_TEST_LOG="$GITHUB_WORKSPACE/ci-artifacts/browser/node-test.log"
+          : >"$BROWSER_NODE_TEST_LOG"
+          mkdir -p "$RUNNER_TEMP/browser-bin"
+          cat >"$RUNNER_TEMP/browser-bin/npm" <<'WRAPPER'
+          #!/usr/bin/env bash
+          set -o pipefail
+          "$REAL_NPM" "$@" 2>&1 | tee -a "$BROWSER_NODE_TEST_LOG"
+          npm_pipeline_status=("${PIPESTATUS[@]}")
+          npm_rc=${npm_pipeline_status[0]}
+          npm_tee_rc=${npm_pipeline_status[1]}
+          if (( npm_rc != 0 )); then
+            exit "$npm_rc"
+          fi
+          if (( npm_tee_rc != 0 )); then
+            exit "$npm_tee_rc"
+          fi
+          exit 0
+          WRAPPER
+          chmod +x "$RUNNER_TEMP/browser-bin/npm"
+          export PATH="$RUNNER_TEMP/browser-bin:$PATH"
+
+          set +e
+          /usr/bin/time -v -o "$GITHUB_WORKSPACE/ci-artifacts/browser/resource-usage.txt" \
+            go test -json -vet=off -p=1 -count=1 -timeout=25m \
+              -run '^(TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$' \
+              ./internal/lwcruntime ./internal/lwcbrowser \
+            | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/go-test.json"
+          pipeline_status=("${PIPESTATUS[@]}")
+          native_rc=${pipeline_status[0]}
+          pipeline_rc=${pipeline_status[1]}
+          set -e
+
+          set +e
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          artifact_dir = Path(os.environ["GITHUB_WORKSPACE"]) / "ci-artifacts" / "browser"
+          events_path = artifact_dir / "go-test.json"
+          node_events_path = artifact_dir / "node-test.log"
+          summary_path = artifact_dir / "validation-summary.json"
+          expected = {
+              ("github.com/glade-sh/glade/internal/lwcruntime", "TestBrowserRuntimeSuite"),
+              ("github.com/glade-sh/glade/internal/lwcbrowser", "TestGeneratedPhase3BaseComponentsRunInBrowser"),
+          }
+          terminals = {}
+          errors = []
+          go_skips = []
+
+          for number, line in enumerate(events_path.read_text().splitlines(), 1):
+              try:
+                  event = json.loads(line)
+              except json.JSONDecodeError as exc:
+                  errors.append(f"line {number}: invalid JSON: {exc}")
+                  continue
+              action = event.get("Action")
+              test = event.get("Test", "")
+              package = event.get("Package", "")
+              if action == "skip":
+                  go_skips.append(f"{package}:{test or '<package>'}")
+              if test and "/" not in test and action in {"pass", "fail", "skip"}:
+                  key = (package, test)
+                  terminals.setdefault(key, []).append(action)
+
+          for key in sorted(expected):
+              actions = terminals.get(key, [])
+              if not actions:
+                  errors.append(f"missing terminal: {key[0]} {key[1]}")
+              elif len(actions) != 1:
+                  errors.append(f"duplicate terminal: {key[0]} {key[1]} {actions}")
+              elif actions[0] != "pass":
+                  errors.append(f"non-pass terminal: {key[0]} {key[1]} {actions[0]}")
+          for key, actions in sorted(terminals.items()):
+              if key not in expected:
+                  errors.append(f"unexpected top-level terminal: {key[0]} {key[1]} {actions}")
+          if go_skips:
+              errors.append(f"Go test stream reported skip events: {go_skips}")
+
+          node_text = node_events_path.read_text()
+          if node_text.startswith("not run\n"):
+              errors.append("Node evidence retained pre-run sentinel")
+          node_skips = re.findall(r"(?im)^[ \t]*(?:ok|not ok)[ \t]+[0-9]+\b.*(?<!\\)#[ \t]*SKIP\b.*$", node_text)
+          if node_skips:
+              errors.append(f"Node TAP reported numbered skip points: {node_skips}")
+          node_failures = re.findall(r"(?im)^[ \t]*not ok[ \t]+[0-9]+\b.*$", node_text)
+          if node_failures:
+              errors.append(f"Node TAP reported numbered failing points: {node_failures}")
+          if "cannot launch chromium" in node_text.lower():
+              errors.append("Node TAP reported cannot-launch text")
+
+          tap = {}
+          for field in ("tests", "pass", "fail", "skipped"):
+              matches = re.findall(rf"(?m)^# {field} ([0-9]+)\s*$", node_text)
+              if len(matches) != 1:
+                  errors.append(f"Node TAP {field} summary count={len(matches)}, want 1")
+              else:
+                  tap[field] = int(matches[0])
+          if "tests" in tap and tap["tests"] <= 0:
+              errors.append(f"Node TAP tests must be nonzero: {tap['tests']}")
+          if "pass" in tap and "tests" in tap and tap["pass"] != tap["tests"]:
+              errors.append(f"Node TAP pass must equal tests: {tap}")
+          if "fail" in tap and tap["fail"] != 0:
+              errors.append(f"Node TAP fail must be zero: {tap}")
+          if "skipped" in tap and tap["skipped"] != 0:
+              errors.append(f"Node TAP skipped must be zero: {tap}")
+
+          summary = {
+              "valid": not errors,
+              "expected": [f"{package}:{test}" for package, test in sorted(expected)],
+              "terminals": {f"{package}:{test}": actions for (package, test), actions in sorted(terminals.items())},
+              "nodeSkips": node_skips,
+              "nodeFailures": node_failures,
+              "nodeTap": tap,
+              "goSkips": go_skips,
+              "errors": errors,
+          }
+          summary_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
+          if errors:
+              for error in errors:
+                  print(error)
+              raise SystemExit(1)
+          PY
+          validator_rc=$?
+          set -e
+
+          if (( native_rc != 0 )); then
+            echo "native go test failed with status $native_rc" >&2
+            exit "$native_rc"
+          fi
+          if (( pipeline_rc != 0 )); then
+            echo "go test evidence pipeline failed with status $pipeline_rc" >&2
+            exit "$pipeline_rc"
+          fi
+          if (( validator_rc != 0 )); then
+            echo "browser evidence validation failed with status $validator_rc" >&2
+            exit "$validator_rc"
+          fi
+
+      - name: Save isolated browser module cache
+        if: steps.scope.outputs.run_expensive == 'true' && success()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ${{ env.GOMODCACHE }}
+          key: ${{ steps.restore-browser-mod-cache.outputs.cache-primary-key }}
+
+      - name: Save isolated browser build cache
+        if: steps.scope.outputs.run_expensive == 'true' && success()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ${{ env.GOCACHE }}
+          key: ${{ steps.restore-browser-build-cache.outputs.cache-primary-key }}
+
+      - name: Save Chromium cache
+        if: steps.scope.outputs.run_expensive == 'true' && success()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: /home/runner/.cache/ms-playwright
+          key: ${{ steps.restore-browser-chromium-cache.outputs.cache-primary-key }}
+
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: browser-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ci-artifacts/browser/**
+          if-no-files-found: error
+          retention-days: 7
