@@ -798,24 +798,26 @@ func TestReleaseNotesScriptExtractsVersionSectionWithRealLineBreaks(t *testing.T
 	}
 }
 
-func TestCIWorkflowResolvesGladeToolsRefBeforeCheckout(t *testing.T) {
+func TestCIWorkflowDoesNotCheckoutGladeTools(t *testing.T) {
 	workflowPath := filepath.Join("..", ".github", "workflows", "ci.yml")
 	workflow, err := os.ReadFile(workflowPath)
 	if err != nil {
 		t.Fatalf("read %s: %v", workflowPath, err)
 	}
 	workflowText := string(workflow)
-	for _, want := range []string{
+	for _, forbidden := range []string{
 		"Resolve glade-tools ref",
 		"scripts/resolve-sibling-ref.sh",
 		"steps.glade-tools-ref.outputs.ref",
+		"repository: glade-sh/glade-tools",
+		"actions/create-github-app-token",
 	} {
-		if !strings.Contains(workflowText, want) {
-			t.Fatalf("ci.yml missing %q", want)
+		if strings.Contains(workflowText, forbidden) {
+			t.Fatalf("ci.yml retains unused glade-tools marker %q", forbidden)
 		}
 	}
-	if strings.Contains(workflowText, "ref: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'main' }}") {
-		t.Fatalf("ci.yml should not require every glade tag to exist in glade-tools")
+	if _, err := os.Stat("resolve-sibling-ref.sh"); err != nil {
+		t.Fatalf("release helper must remain available: %v", err)
 	}
 }
 

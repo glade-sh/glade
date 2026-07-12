@@ -391,35 +391,8 @@ jobs:
     timeout-minutes: 30
     env:
       GOMAXPROCS: "2"
-    defaults:
-      run:
-        working-directory: glade
     steps:
       - uses: actions/checkout@v6
-        with:
-          path: glade
-      - uses: actions/create-github-app-token@v3
-        id: app-token
-        with:
-          client-id: ${{ vars.GLADE_APP_CLIENT_ID }}
-          private-key: ${{ secrets.GLADE_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: |
-            glade
-            glade-tools
-          permission-contents: read
-      - name: Resolve glade-tools ref
-        id: glade-tools-ref
-        env:
-          GLADE_TOOLS_REMOTE: https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/glade-sh/glade-tools.git
-          REQUESTED_REF: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'main' }}
-        run: scripts/resolve-sibling-ref.sh "$GLADE_TOOLS_REMOTE" "$REQUESTED_REF" main
-      - uses: actions/checkout@v6
-        with:
-          repository: glade-sh/glade-tools
-          path: glade-tools
-          ref: ${{ steps.glade-tools-ref.outputs.ref }}
-          token: ${{ steps.app-token.outputs.token }}
       - uses: actions/setup-go@v6
         with:
           go-version: "1.26.5"
@@ -430,9 +403,9 @@ jobs:
         continue-on-error: true
         with:
           path: ~/go/pkg/mod
-          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('glade/go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('glade/go.sum') }}-
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
       - name: Report Go module cache restore
         env:
           MATCHED_KEY: ${{ steps.restore-go-mod-cache.outputs.cache-matched-key }}
@@ -453,9 +426,9 @@ jobs:
         continue-on-error: true
         with:
           path: ~/.cache/go-build
-          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('glade/go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('glade/go.sum') }}-
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
       - name: Report Go build cache restore
         env:
           MATCHED_KEY: ${{ steps.restore-go-build-cache.outputs.cache-matched-key }}
@@ -495,8 +468,8 @@ jobs:
         with:
           name: go-test-remaining-go
           path: |
-            glade/ci-artifacts/go-test/test-repoguard.json
-            glade/ci-artifacts/go-test/test-remaining-go.json
+            ci-artifacts/go-test/test-repoguard.json
+            ci-artifacts/go-test/test-remaining-go.json
           if-no-files-found: error
 
   smoke-runtime:

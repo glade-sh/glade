@@ -757,7 +757,7 @@ func TestCIGoCacheOwnership(t *testing.T) {
 			}
 		}
 	}
-	assertFullKeys("ci.yml", ci, "hashFiles('glade/go.sum')", 2)
+	assertFullKeys("ci.yml", ci, "hashFiles('go.sum')", 2)
 	assertFullKeys("security.yml", security, "hashFiles('go.sum')", 6)
 
 	for _, want := range []string{
@@ -2476,9 +2476,6 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 	for jobName, namespace := range owners {
 		job := jobs[jobName]
 		sumPath := "go.sum"
-		if jobName == "test" {
-			sumPath = "glade/go.sum"
-		}
 		for _, marker := range []string{
 			"GOMAXPROCS: \"2\"", "actions/setup-go@v6", "go-version: \"1.26.5\"", "cache: false",
 			"actions/cache/restore@v4", "actions/cache/save@v4", "continue-on-error: true", "if: success()",
@@ -2510,7 +2507,7 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 	}
 }
 
-func TestCIParallelDAGPreservesApexAndSiblingRef(t *testing.T) {
+func TestCIParallelDAGPreservesApexAndUsesRootCheckout(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	apex := jobs["apextest"]
 	history := jobs["apextest-history"]
@@ -2532,12 +2529,23 @@ func TestCIParallelDAGPreservesApexAndSiblingRef(t *testing.T) {
 	}
 	testJob := jobs["test"]
 	for _, marker := range []string{
-		"actions/create-github-app-token@v3", "id: app-token", "Resolve glade-tools ref",
-		"scripts/resolve-sibling-ref.sh \"$GLADE_TOOLS_REMOTE\" \"$REQUESTED_REF\" main",
-		"repository: glade-sh/glade-tools", "path: glade-tools", "ref: ${{ steps.glade-tools-ref.outputs.ref }}",
+		"actions/checkout@v6", "hashFiles('go.sum')",
+		"ci-artifacts/go-test/test-repoguard.json", "ci-artifacts/go-test/test-remaining-go.json",
 	} {
 		if !strings.Contains(testJob, marker) {
-			t.Errorf("test sibling-ref contract missing %q", marker)
+			t.Errorf("root test checkout contract missing %q", marker)
+		}
+	}
+	if strings.Count(testJob, "actions/checkout@v6") != 1 {
+		t.Errorf("test checkout count = %d, want 1", strings.Count(testJob, "actions/checkout@v6"))
+	}
+	for _, forbidden := range []string{
+		"actions/create-github-app-token", "app-token", "Resolve glade-tools ref", "GLADE_TOOLS_REMOTE",
+		"repository: glade-sh/glade-tools", "path: glade-tools", "working-directory: glade",
+		"path: glade\n", "hashFiles('glade/go.sum')", "glade/ci-artifacts/",
+	} {
+		if strings.Contains(testJob, forbidden) {
+			t.Errorf("root test checkout retains %q", forbidden)
 		}
 	}
 }
@@ -2596,7 +2604,6 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 		"GOMAXPROCS: \"2\"",
 		"go-version: \"1.26.5\"",
 		"actions/checkout@v6",
-		"client-id: ${{ vars.GLADE_APP_CLIENT_ID }}",
 		"actions/setup-go@v6",
 		"actions/setup-node@v6",
 		"scripts/ci-go-test.sh lane remaining-go",
@@ -2618,8 +2625,10 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 			t.Fatalf("ci.yml missing %q", want)
 		}
 	}
-	if strings.Contains(workflowText, "app-id: ${{ vars.GLADE_APP_CLIENT_ID }}") {
-		t.Fatalf("ci.yml should use create-github-app-token client-id, not deprecated app-id")
+	for _, forbidden := range []string{"GLADE_APP_CLIENT_ID", "GLADE_APP_PRIVATE_KEY", "actions/create-github-app-token"} {
+		if strings.Contains(workflowText, forbidden) {
+			t.Fatalf("ci.yml retains unused app authentication marker %q", forbidden)
+		}
 	}
 	if strings.Contains(workflowText, "scripts/ci-go-test.sh race") {
 		t.Fatalf("ci.yml should not run the full race suite on GitHub-hosted runners")
