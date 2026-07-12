@@ -141,8 +141,8 @@ jobs:
         shard: [0, 1]
     env:
       GOMAXPROCS: "2"
-      GOMODCACHE: ${{ runner.temp }}/go-mod-sema-${{ matrix.shard }}
-      GOCACHE: ${{ runner.temp }}/go-build-sema-${{ matrix.shard }}
+      GOMODCACHE: /tmp/go-mod-ci-sema-${{ matrix.shard }}
+      GOCACHE: /tmp/go-build-ci-sema-${{ matrix.shard }}
       CI_SEMA_ARTIFACT_DIR: ci-artifacts/sema-${{ matrix.shard }}
       CI_SEMA_HISTORY_PATH: /tmp/glade-sema-duration-history/sema-duration-history.json
     steps:
@@ -216,8 +216,8 @@ jobs:
     timeout-minutes: 30
     env:
       GOMAXPROCS: "2"
-      GOMODCACHE: ${{ runner.temp }}/go-mod-sema-full
-      GOCACHE: ${{ runner.temp }}/go-build-sema-full
+      GOMODCACHE: /tmp/go-mod-ci-sema-full
+      GOCACHE: /tmp/go-build-ci-sema-full
       CI_SEMA_FULL_ARTIFACT_DIR: ci-artifacts/sema-full
     steps:
       - uses: actions/checkout@v6

@@ -1166,6 +1166,31 @@ func TestCISemaShardWorkflowContract(t *testing.T) {
 			t.Errorf("CI workflow is missing %s job", name)
 		}
 	}
+	for _, tc := range []struct {
+		name string
+		job  string
+		want []string
+	}{
+		{name: "matrix", job: sema, want: []string{
+			"GOMODCACHE: /tmp/go-mod-ci-sema-${{ matrix.shard }}",
+			"GOCACHE: /tmp/go-build-ci-sema-${{ matrix.shard }}",
+		}},
+		{name: "full", job: jobs["sema-full"], want: []string{
+			"GOMODCACHE: /tmp/go-mod-ci-sema-full",
+			"GOCACHE: /tmp/go-build-ci-sema-full",
+		}},
+	} {
+		t.Run(tc.name+" cache paths", func(t *testing.T) {
+			if strings.Contains(tc.job, "runner.temp") {
+				t.Fatal("job-level env uses unavailable runner context")
+			}
+			for _, marker := range tc.want {
+				if strings.Count(tc.job, marker) != 1 {
+					t.Errorf("cache path marker %q count = %d, want 1", marker, strings.Count(tc.job, marker))
+				}
+			}
+		})
+	}
 	if strings.Contains(jobs["required-ci"], "sema-full") || strings.Contains(jobs["required-ci"], "sema-equivalence") || strings.Contains(jobs["required-ci"], "required-scheduled-ci") {
 		t.Fatal("normal Required CI depends on a scheduled-only job")
 	}
