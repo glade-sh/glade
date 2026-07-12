@@ -26,6 +26,48 @@ type apexHistoryFixture struct {
 
 const semaFixturePackage = "github.com/glade-sh/glade/internal/sema"
 
+var nodeIntegrationTests = map[string][]string{
+	"github.com/glade-sh/glade/internal/gladecli": {
+		"TestRunDoctorReportsParser",
+		"TestRunDoctorJSON",
+		"TestRunDoctorShortFlags",
+		"TestRunDoctorReportsProjectLocalDataEnvironment",
+	},
+	"github.com/glade-sh/glade/internal/gladehome": {
+		"TestValidateRootFindsRepoCheckout",
+		"TestInstallFromCWDSkipsGlobalShareAsSource",
+		"TestInstallFromCopiesToolchain",
+		"TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare",
+	},
+	"github.com/glade-sh/glade/internal/lwc/compile": {
+		"TestCompileProjectLWCBundles",
+		"TestCompileRewritesTemplateStylesheetImports",
+		"TestCompileEmitsSiblingJSModules",
+		"TestCompileEmitsUtilityOnlyLWCModules",
+		"TestCompileEmitsAdditionalHTMLTemplateModules",
+		"TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate",
+		"TestCompileEnablesLwcOnDirective",
+	},
+	"github.com/glade-sh/glade/internal/server": {
+		"TestVFPageBootstrapsLightningOut",
+		"TestVFPageBootstrapsMultiWidgetLightningOut",
+		"TestLightningModulesServesCompiledJS",
+		"TestLightningModulesServesSiblingModuleWithoutJSExtension",
+		"TestLWCShellComponentRouteServesHTML",
+	},
+}
+
+var nodeIntegrationRunNames = []string{
+	"TestCompileProjectLWCBundles", "TestCompileRewritesTemplateStylesheetImports", "TestCompileEmitsSiblingJSModules",
+	"TestCompileEmitsUtilityOnlyLWCModules", "TestCompileEmitsAdditionalHTMLTemplateModules",
+	"TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate", "TestCompileEnablesLwcOnDirective",
+	"TestVFPageBootstrapsLightningOut", "TestVFPageBootstrapsMultiWidgetLightningOut", "TestLightningModulesServesCompiledJS",
+	"TestLightningModulesServesSiblingModuleWithoutJSExtension", "TestLWCShellComponentRouteServesHTML",
+	"TestValidateRootFindsRepoCheckout", "TestInstallFromCWDSkipsGlobalShareAsSource", "TestInstallFromCopiesToolchain",
+	"TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare", "TestRunDoctorReportsParser", "TestRunDoctorJSON",
+	"TestRunDoctorShortFlags", "TestRunDoctorReportsProjectLocalDataEnvironment",
+}
+
 func runSemaShardFixture(t *testing.T, index, discovery, plan, events string, nativeRC int) (string, error, string, string) {
 	t.Helper()
 	dir := t.TempDir()
@@ -525,7 +567,7 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 			t.Errorf("single-writer refresh job missing %q", want)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@v4") != 14 {
+	if strings.Count(workflow, "actions/cache/save@v4") != 16 {
 		t.Errorf("cache save count = %d, want existing DAG writers plus Apex and sema history writers", strings.Count(workflow, "actions/cache/save@v4"))
 	}
 	if strings.Count(workflow, "shard: [0, 1]") != 2 {
@@ -1059,6 +1101,7 @@ func ciRequiredAggregateProblem(workflow string) string {
       - apextest
       - apextest-history
       - gladecli
+      - node-integration
       - sema
       - sema-history
       - server-and-playground
@@ -2028,18 +2071,274 @@ func TestCIRequiredAggregateContract(t *testing.T) {
 	}
 }
 
+func nodeIntegrationExpectedPairs() [][2]string {
+	var pairs [][2]string
+	for pkg, names := range nodeIntegrationTests {
+		for _, name := range names {
+			pairs = append(pairs, [2]string{pkg, name})
+		}
+	}
+	sort.Slice(pairs, func(i, j int) bool {
+		if pairs[i][0] != pairs[j][0] {
+			return pairs[i][0] < pairs[j][0]
+		}
+		return pairs[i][1] < pairs[j][1]
+	})
+	return pairs
+}
+
+func nodeIntegrationEvents(action string) string {
+	var out strings.Builder
+	for _, pair := range nodeIntegrationExpectedPairs() {
+		fmt.Fprintf(&out, "{\"Action\":\"run\",\"Package\":%q,\"Test\":%q}\n", pair[0], pair[1])
+		fmt.Fprintf(&out, "{\"Action\":%q,\"Package\":%q,\"Test\":%q,\"Elapsed\":0.01}\n", action, pair[0], pair[1])
+	}
+	return out.String()
+}
+
+func runNodeIntegrationFixture(t *testing.T, events string, nativeRC int, mutatePath func(string) error) (string, error, string, string) {
+	t.Helper()
+	dir := t.TempDir()
+	binDir := filepath.Join(dir, "bin")
+	artifactDir := filepath.Join(dir, "artifacts")
+	if err := os.Mkdir(binDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	eventsPath := filepath.Join(dir, "events.json")
+	callsPath := filepath.Join(dir, "calls.txt")
+	if err := os.WriteFile(eventsPath, []byte(events), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	goScript := `#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$FIXTURE_CALLS"
+cat "$FIXTURE_EVENTS"
+exit "$FIXTURE_NATIVE_RC"
+`
+	rendererScript := "#!/usr/bin/env bash\ncat >/dev/null\n"
+	for name, contents := range map[string]string{"go": goScript, "testlog": rendererScript} {
+		if err := os.WriteFile(filepath.Join(binDir, name), []byte(contents), 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if mutatePath != nil {
+		if err := mutatePath(binDir); err != nil {
+			t.Fatal(err)
+		}
+	}
+	cmd := exec.Command("bash", "ci-go-test.sh", "node-integration")
+	cmd.Env = append(os.Environ(),
+		"PATH="+binDir+":"+os.Getenv("PATH"),
+		"FIXTURE_CALLS="+callsPath,
+		"FIXTURE_EVENTS="+eventsPath,
+		fmt.Sprintf("FIXTURE_NATIVE_RC=%d", nativeRC),
+		"CI_TESTLOG_RENDERER="+filepath.Join(binDir, "testlog"),
+		"CI_NODE_INTEGRATION_ARTIFACT_DIR="+artifactDir,
+		"CI_GO_TEST_HEARTBEAT_SECONDS=1",
+	)
+	out, err := cmd.CombinedOutput()
+	calls, readErr := os.ReadFile(callsPath)
+	if readErr != nil && !os.IsNotExist(readErr) {
+		t.Fatal(readErr)
+	}
+	return string(out), err, artifactDir, string(calls)
+}
+
+func TestCINodeIntegrationCommandExactSelectionAndEvidence(t *testing.T) {
+	out, err, artifacts, calls := runNodeIntegrationFixture(t, nodeIntegrationEvents("pass"), 0, nil)
+	if err != nil {
+		t.Fatalf("node integration fixture failed: %v\n%s", err, out)
+	}
+	callLines := strings.Split(strings.TrimSpace(calls), "\n")
+	if len(callLines) != 1 {
+		t.Fatalf("native executions = %d, want 1; calls:\n%s", len(callLines), calls)
+	}
+	call := callLines[0]
+	for _, marker := range []string{"test -json -vet=off", "-count=1", "-timeout=30m", "./internal/gladecli", "./internal/gladehome", "./internal/lwc/compile", "./internal/server"} {
+		if !strings.Contains(call, marker) {
+			t.Errorf("native command missing %q: %s", marker, call)
+		}
+	}
+	if strings.Contains(call, "TestBrowserRuntimeSuite") || strings.Contains(call, "TestGeneratedPhase3BaseComponentsRunInBrowser") {
+		t.Errorf("native command includes forbidden browser selector: %s", call)
+	}
+	wantRun := "-run ^(?:" + strings.Join(nodeIntegrationRunNames, "|") + ")$"
+	if !strings.Contains(call, wantRun) {
+		t.Errorf("native command run selector mismatch\n got: %s\nwant substring: %s", call, wantRun)
+	}
+	for _, name := range []string{"test-node-integration.json", "expected.txt", "discovery.txt", "validation-summary.json"} {
+		if _, err := os.Stat(filepath.Join(artifacts, name)); err != nil {
+			t.Errorf("evidence %s missing: %v", name, err)
+		}
+	}
+	summary, err := os.ReadFile(filepath.Join(artifacts, "validation-summary.json"))
+	if err != nil || !strings.Contains(string(summary), `"tests": 20`) || !strings.Contains(string(summary), `"valid": true`) {
+		t.Errorf("validation summary invalid: err=%v data=%s", err, summary)
+	}
+}
+
+func nodeIntegrationCountProblem(script string) string {
+	if !strings.Contains(script, `go test -json -vet=off -count=1 -timeout=30m -run "${node_integration_run_regex}"`) {
+		return "authoritative node integration command lacks -count=1"
+	}
+	return ""
+}
+
+func TestCINodeIntegrationCommandRequiresFreshExecution(t *testing.T) {
+	data, err := os.ReadFile("ci-go-test.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	script := string(data)
+	if problem := nodeIntegrationCountProblem(script); problem != "" {
+		t.Fatal(problem)
+	}
+	mutated := strings.Replace(script,
+		`go test -json -vet=off -count=1 -timeout=30m -run "${node_integration_run_regex}"`,
+		`go test -json -vet=off -timeout=30m -run "${node_integration_run_regex}"`, 1)
+	if mutated == script {
+		t.Fatal("fixture did not remove -count=1")
+	}
+	if problem := nodeIntegrationCountProblem(mutated); problem == "" {
+		t.Fatal("node integration command contract accepted removal of -count=1")
+	}
+}
+
+func TestCINodeIntegrationValidatorRejectsInvalidEvidence(t *testing.T) {
+	valid := nodeIntegrationEvents("pass")
+	pairs := nodeIntegrationExpectedPairs()
+	first := pairs[0]
+	terminal := fmt.Sprintf("{\"Action\":\"pass\",\"Package\":%q,\"Test\":%q,\"Elapsed\":0.01}\n", first[0], first[1])
+	cases := map[string]struct {
+		events   string
+		nativeRC int
+		mutate   func(string) error
+	}{
+		"skip":          {events: strings.Replace(valid, `"Action":"pass"`, `"Action":"skip"`, 1)},
+		"fail":          {events: strings.Replace(valid, `"Action":"pass"`, `"Action":"fail"`, 1)},
+		"missing":       {events: strings.Replace(valid, terminal, "", 1)},
+		"extra":         {events: valid + `{"Action":"pass","Package":"github.com/glade-sh/glade/internal/server","Test":"TestUnexpected"}` + "\n"},
+		"duplicate":     {events: valid + terminal},
+		"malformed":     {events: valid + "{not-json}\n"},
+		"wrong package": {events: strings.Replace(valid, first[0], "example.invalid/wrong", 1)},
+		"nested skip":   {events: valid + fmt.Sprintf("{\"Action\":\"skip\",\"Package\":%q,\"Test\":%q}\n", first[0], first[1]+"/nested")},
+		"native":        {events: valid, nativeRC: 23},
+		"tee": {events: valid, mutate: func(binDir string) error {
+			return os.WriteFile(filepath.Join(binDir, "tee"), []byte("#!/usr/bin/env bash\ncat >/dev/null\nexit 17\n"), 0o700)
+		}},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			out, err, artifacts, _ := runNodeIntegrationFixture(t, tc.events, tc.nativeRC, tc.mutate)
+			if err == nil {
+				t.Fatalf("invalid evidence accepted\n%s", out)
+			}
+			if _, statErr := os.Stat(filepath.Join(artifacts, "validation-summary.json")); !os.IsNotExist(statErr) {
+				t.Fatalf("invalid run left success summary: %v", statErr)
+			}
+		})
+	}
+}
+
+func TestCINodeIntegrationWorkflowAndPurePartition(t *testing.T) {
+	workflow, jobs := readCIWorkflow(t)
+	node := jobs["node-integration"]
+	for _, marker := range []string{
+		"runs-on: ubuntu-latest", "timeout-minutes: 30", "GOMAXPROCS: \"2\"",
+		"actions/setup-go@v6", "go-version: \"1.26.5\"", "cache: false",
+		"actions/setup-node@v6", "node-version: \"22\"", "cache: npm",
+		"cache-dependency-path: third_party/lwc/package-lock.json", "npm ci --prefix third_party/lwc",
+		"scripts/ci-go-test.sh node-integration", "ci-node-integration",
+		"actions/cache/restore@v4", "actions/cache/save@v4", "continue-on-error: true", "if: success()",
+		"go-test-node-integration", "if: always()", "ci-artifacts/go-test-node-integration/", "if-no-files-found: error",
+	} {
+		if !strings.Contains(node, marker) {
+			t.Errorf("node-integration job missing %q", marker)
+		}
+	}
+	if strings.Count(node, "npm ci --prefix third_party/lwc") != 1 || strings.Count(workflow, "npm ci --prefix third_party/lwc") != 2 {
+		t.Errorf("third_party/lwc npm install ownership count workflow/node = %d/%d, want 2/1 (distribution smoke plus node lane)", strings.Count(workflow, "npm ci --prefix third_party/lwc"), strings.Count(node, "npm ci --prefix third_party/lwc"))
+	}
+	for _, name := range []string{"gladecli", "server-and-playground"} {
+		if strings.Contains(jobs[name], "actions/setup-node") || strings.Contains(jobs[name], "npm ci") {
+			t.Errorf("pure job %s mutates Node dependencies", name)
+		}
+	}
+	testJob := jobs["test"]
+	if !strings.Contains(testJob, "actions/setup-node@v6") || !strings.Contains(testJob, `node-version: "22"`) {
+		t.Error("pure test job must retain Node 22 runtime")
+	}
+	for _, forbidden := range []string{"cache: npm", "cache-dependency-path:", "npm ci --prefix third_party/lwc"} {
+		if strings.Contains(testJob, forbidden) {
+			t.Errorf("pure test job contains forbidden Node mutation %q", forbidden)
+		}
+	}
+}
+
+func TestCINodeIntegrationPureLaneSkipSelectors(t *testing.T) {
+	wantSkip := map[string]string{
+		"gladecli":              "^(?:TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$",
+		"server-and-playground": "^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML)$",
+		"repoguard":             "",
+		"remaining-go":          "^(?:TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$",
+	}
+	for lane, skip := range wantSkip {
+		t.Run(lane, func(t *testing.T) {
+			dir := t.TempDir()
+			calls := filepath.Join(dir, "calls")
+			goScript := "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >\"$FIXTURE_CALLS\"\nexit 0\n"
+			rendererScript := "#!/usr/bin/env bash\ncat >/dev/null\n"
+			for name, contents := range map[string]string{"go": goScript, "testlog": rendererScript} {
+				if err := os.WriteFile(filepath.Join(dir, name), []byte(contents), 0o700); err != nil {
+					t.Fatal(err)
+				}
+			}
+			cmd := exec.Command("bash", "ci-go-test.sh", "lane", lane)
+			cmd.Env = append(os.Environ(),
+				"PATH="+dir+":"+os.Getenv("PATH"), "FIXTURE_CALLS="+calls,
+				"CI_GO_COMMAND="+realGoCommand(t), "CI_TESTLOG_RENDERER="+filepath.Join(dir, "testlog"),
+				"CI_GO_TEST_ARTIFACT_DIR="+filepath.Join(dir, "artifacts"),
+			)
+			if out, err := cmd.CombinedOutput(); err != nil {
+				t.Fatalf("lane failed: %v\n%s", err, out)
+			}
+			data, err := os.ReadFile(calls)
+			if err != nil {
+				t.Fatal(err)
+			}
+			call := strings.TrimSpace(string(data))
+			if skip == "" {
+				if strings.Contains(call, "-skip") {
+					t.Fatalf("repoguard unexpectedly skips tests: %s", call)
+				}
+			} else if !strings.Contains(call, "-skip "+skip) {
+				t.Fatalf("lane skip mismatch\n got: %s\nwant: %s", call, skip)
+			}
+			for _, keep := range []string{
+				"TestUIRecordAPIRecordInputHelpersFilterAndUnwrapFields", "TestUILayoutAPIModuleJSMapsGetLayoutRequest",
+				"TestUIObjectInfoAPIModuleJSMapsObjectAndPicklistRequests", "TestUIRelatedListAPIModuleJSMapsRecordRequests",
+				"TestGeneratedSystemStubsReproduceFromGenerator",
+			} {
+				if strings.Contains(skip, keep) {
+					t.Errorf("pure lane skip excludes Node-executable test %s", keep)
+				}
+			}
+		})
+	}
+}
+
 func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 	workflow, _ := readCIWorkflow(t)
 	mutations := map[string]string{
-		"remove history":         strings.Replace(workflow, "      - apextest-history\n", "", 1),
-		"success-only condition": strings.Replace(workflow, "    if: always()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5", "    if: success()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5", 1),
-		"failure-only predicate": strings.Replace(workflow, `select(.value.result != "success")`, `select(.value.result == "failure")`, 1),
-		"remove exit":            strings.Replace(workflow, "            exit 1\n", "", 1),
-		"rename job":             strings.Replace(workflow, "  required-ci:\n", "  required-checks:\n", 1),
-		"rename display":         strings.Replace(workflow, "    name: Required CI\n    needs:\n", "    name: Required Checks\n    needs:\n", 1),
-		"job continue on error":  strings.Replace(workflow, "    if: always()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n", "    if: always()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    continue-on-error: true\n    steps:\n", 1),
-		"step continue on error": strings.Replace(workflow, "      - name: Require all CI jobs\n        env:\n", "      - name: Require all CI jobs\n        continue-on-error: true\n        env:\n", 1),
-		"step skip condition":    strings.Replace(workflow, "      - name: Require all CI jobs\n        env:\n", "      - name: Require all CI jobs\n        if: false\n        env:\n", 1),
+		"remove history":          strings.Replace(workflow, "      - apextest-history\n", "", 1),
+		"remove node integration": strings.Replace(workflow, "      - node-integration\n", "", 1),
+		"success-only condition":  strings.Replace(workflow, "    if: always()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5", "    if: success()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5", 1),
+		"failure-only predicate":  strings.Replace(workflow, `select(.value.result != "success")`, `select(.value.result == "failure")`, 1),
+		"remove exit":             strings.Replace(workflow, "            exit 1\n", "", 1),
+		"rename job":              strings.Replace(workflow, "  required-ci:\n", "  required-checks:\n", 1),
+		"rename display":          strings.Replace(workflow, "    name: Required CI\n    needs:\n", "    name: Required Checks\n    needs:\n", 1),
+		"job continue on error":   strings.Replace(workflow, "    if: always()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n", "    if: always()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    continue-on-error: true\n    steps:\n", 1),
+		"step continue on error":  strings.Replace(workflow, "      - name: Require all CI jobs\n        env:\n", "      - name: Require all CI jobs\n        continue-on-error: true\n        env:\n", 1),
+		"step skip condition":     strings.Replace(workflow, "      - name: Require all CI jobs\n        env:\n", "      - name: Require all CI jobs\n        if: false\n        env:\n", 1),
 	}
 	for name, mutated := range mutations {
 		t.Run(name, func(t *testing.T) {
@@ -2056,7 +2355,7 @@ func TestCIRequiredAggregateContractRejectsWeakening(t *testing.T) {
 func TestCIParallelDAGTopology(t *testing.T) {
 	_, jobs := readCIWorkflow(t)
 	wantJobs := []string{
-		"apextest", "apextest-history", "gladecli", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
+		"apextest", "apextest-history", "gladecli", "node-integration", "required-ci", "required-scheduled-ci", "sema", "sema-equivalence", "sema-full", "sema-history",
 		"server-and-playground", "site", "smoke-distribution", "smoke-runtime", "test", "vet",
 	}
 	gotJobs := make([]string, 0, len(jobs))
@@ -2076,7 +2375,7 @@ func TestCIParallelDAGTopology(t *testing.T) {
 			t.Errorf("root job %s must not be serialized with needs", name)
 		}
 	}
-	for _, name := range []string{"site", "vet", "gladecli", "sema", "sema-full", "server-and-playground", "test", "smoke-runtime", "smoke-distribution"} {
+	for _, name := range []string{"site", "vet", "gladecli", "node-integration", "sema", "sema-full", "server-and-playground", "test", "smoke-runtime", "smoke-distribution"} {
 		if !strings.Contains(jobs[name], "timeout-minutes: 30") {
 			t.Errorf("%s timeout is not 30 minutes", name)
 		}
@@ -2090,6 +2389,7 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 	workflow, jobs := readCIWorkflow(t)
 	wantLaneCommands := map[string][]string{
 		"gladecli":              {"scripts/ci-go-test.sh lane gladecli"},
+		"node-integration":      {"scripts/ci-go-test.sh node-integration"},
 		"server-and-playground": {"scripts/ci-go-test.sh lane server-and-playground"},
 		"test":                  {"scripts/ci-go-test.sh lane repoguard", "scripts/ci-go-test.sh lane remaining-go"},
 	}
@@ -2106,6 +2406,7 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 
 	wantArtifacts := map[string]string{
 		"gladecli":              "go-test-gladecli",
+		"node-integration":      "go-test-node-integration",
 		"server-and-playground": "go-test-server-and-playground",
 		"test":                  "go-test-remaining-go",
 	}
@@ -2119,6 +2420,7 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 	}
 	for _, path := range []string{
 		"ci-artifacts/go-test/test-gladecli.json",
+		"ci-artifacts/go-test-node-integration/test-node-integration.json",
 		"ci-artifacts/go-test/test-server-and-playground.json",
 		"ci-artifacts/go-test/test-repoguard.json",
 		"ci-artifacts/go-test/test-remaining-go.json",
@@ -2127,33 +2429,12 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 			t.Errorf("raw event path %q count = %d, want 1", path, count)
 		}
 	}
-	for jobName, laneCommands := range map[string][]string{
-		"gladecli":              {"scripts/ci-go-test.sh lane gladecli"},
-		"server-and-playground": {"scripts/ci-go-test.sh lane server-and-playground"},
-		"test":                  {"scripts/ci-go-test.sh lane repoguard", "scripts/ci-go-test.sh lane remaining-go"},
-	} {
-		job := jobs[jobName]
-		lockfile := "third_party/lwc/package-lock.json"
-		if jobName == "test" {
-			lockfile = "glade/" + lockfile
-		}
-		for _, marker := range []string{
-			"actions/setup-node@v6", `node-version: "22"`, "cache: npm",
-			"cache-dependency-path: " + lockfile,
-			"npm ci --prefix third_party/lwc",
-		} {
-			if !strings.Contains(job, marker) {
-				t.Errorf("%s prerequisite missing %q", jobName, marker)
-			}
-		}
-		setupIndex := strings.Index(job, "actions/setup-node@v6")
-		installIndex := strings.Index(job, "npm ci --prefix third_party/lwc")
-		for _, laneCommand := range laneCommands {
-			laneIndex := strings.Index(job, laneCommand)
-			if setupIndex < 0 || installIndex < setupIndex || laneIndex < installIndex {
-				t.Errorf("%s prerequisite order setup=%d install=%d lane=%d for %q", jobName, setupIndex, installIndex, laneIndex, laneCommand)
-			}
-		}
+	nodeJob := jobs["node-integration"]
+	setupIndex := strings.Index(nodeJob, "actions/setup-node@v6")
+	installIndex := strings.Index(nodeJob, "npm ci --prefix third_party/lwc")
+	laneIndex := strings.Index(nodeJob, "scripts/ci-go-test.sh node-integration")
+	if setupIndex < 0 || installIndex < setupIndex || laneIndex < installIndex {
+		t.Errorf("node integration prerequisite order setup=%d install=%d lane=%d", setupIndex, installIndex, laneIndex)
 	}
 	for _, marker := range []string{
 		"npm ci --prefix site", "npm test --prefix site", "npm run build --prefix site",
@@ -2170,6 +2451,7 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 	workflow, jobs := readCIWorkflow(t)
 	owners := map[string]string{
 		"vet": "ci-vet", "gladecli": "ci-gladecli",
+		"node-integration":      "ci-node-integration",
 		"server-and-playground": "ci-server-playground", "test": "ci-test",
 		"smoke-runtime": "ci-smoke-runtime", "smoke-distribution": "ci-smoke-distribution",
 	}
@@ -2202,11 +2484,11 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 				primaryKeys[trimmed] = jobName
 			}
 		}
-		if namespace != "ci-test" && !strings.Contains(job, "-ci-test-${{ hashFiles('go.sum') }}-") {
+		if namespace != "ci-test" && namespace != "ci-node-integration" && !strings.Contains(job, "-ci-test-${{ hashFiles('go.sum') }}-") {
 			t.Errorf("%s lacks the ci-test digest seed fallback", jobName)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@v4") != 14 {
+	if strings.Count(workflow, "actions/cache/save@v4") != 16 {
 		t.Errorf("cache save count = %d, want existing DAG and two history writers", strings.Count(workflow, "actions/cache/save@v4"))
 	}
 }
@@ -2351,6 +2633,13 @@ func TestCIPackageLanesRouteThroughCheckedManifest(t *testing.T) {
 	if document.Version != 1 || len(document.Lanes) != 6 {
 		t.Fatalf("manifest version/lane count = %d/%d", document.Version, len(document.Lanes))
 	}
+	totalPackages := 0
+	for _, packages := range document.Lanes {
+		totalPackages += len(packages)
+	}
+	if totalPackages != 61 {
+		t.Fatalf("manifest package union = %d, want 61", totalPackages)
+	}
 	remaining := document.Lanes["remaining-go"]
 	if len(remaining) == 0 {
 		t.Fatal("remaining-go must be explicitly enumerated")
@@ -2484,6 +2773,7 @@ func TestCIPackageLaneCommandRejectsInvalidArguments(t *testing.T) {
 		{"lane", "unknown"},
 		{"lane", "apextest"},
 		{"lane", "gladecli", "extra"},
+		{"node-integration", "extra"},
 	}
 	for _, args := range cases {
 		t.Run(strings.Join(args, "_"), func(t *testing.T) {
@@ -2590,6 +2880,9 @@ tee "$output"
 				}
 				if got := strings.Contains(call, " -race "); got != tc.wantRace {
 					t.Errorf("race marker = %v, want %v: %s", got, tc.wantRace, call)
+				}
+				if strings.Contains(call, " -skip ") || strings.Contains(call, " -skip=") {
+					t.Errorf("aggregate mode filtered package coverage: %s", call)
 				}
 			}
 			for _, pkg := range []string{"./internal/gladecli", "./internal/playground", "./internal/sema", "./internal/server", "./cmd/glade"} {

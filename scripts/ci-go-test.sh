@@ -253,6 +253,7 @@ run_package_lane() {
 	local kind="$2"
 	local timeout="$3"
 	local parallelism="$4"
+	local skip_regex="${5:-}"
 	local -a packages=()
 	local -a args=()
 	load_package_lanes
@@ -270,7 +271,184 @@ run_package_lane() {
 		args+=(-p="${parallelism}")
 	fi
 	args+=(-timeout="${timeout}")
+	if [[ -n "${skip_regex}" ]]; then
+		args+=(-skip "${skip_regex}")
+	fi
 	run_json_with_heartbeat "go test ${lane}" "$(testlog_artifact "${kind}" "${lane}")" "${args[@]}" "${packages[@]}"
+}
+
+node_integration_run_regex='^(?:TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$'
+
+write_node_integration_expected() {
+	local output="$1"
+	cat >"${output}" <<'EOF'
+github.com/glade-sh/glade/internal/gladecli	TestRunDoctorJSON
+github.com/glade-sh/glade/internal/gladecli	TestRunDoctorReportsParser
+github.com/glade-sh/glade/internal/gladecli	TestRunDoctorReportsProjectLocalDataEnvironment
+github.com/glade-sh/glade/internal/gladecli	TestRunDoctorShortFlags
+github.com/glade-sh/glade/internal/gladehome	TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare
+github.com/glade-sh/glade/internal/gladehome	TestInstallFromCWDSkipsGlobalShareAsSource
+github.com/glade-sh/glade/internal/gladehome	TestInstallFromCopiesToolchain
+github.com/glade-sh/glade/internal/gladehome	TestValidateRootFindsRepoCheckout
+github.com/glade-sh/glade/internal/lwc/compile	TestCompileEmitsAdditionalHTMLTemplateModules
+github.com/glade-sh/glade/internal/lwc/compile	TestCompileEmitsSiblingJSModules
+github.com/glade-sh/glade/internal/lwc/compile	TestCompileEmitsUtilityOnlyLWCModules
+github.com/glade-sh/glade/internal/lwc/compile	TestCompileEnablesLwcOnDirective
+github.com/glade-sh/glade/internal/lwc/compile	TestCompileProjectLWCBundles
+github.com/glade-sh/glade/internal/lwc/compile	TestCompileRewritesTemplateStylesheetImports
+github.com/glade-sh/glade/internal/lwc/compile	TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate
+github.com/glade-sh/glade/internal/server	TestLWCShellComponentRouteServesHTML
+github.com/glade-sh/glade/internal/server	TestLightningModulesServesCompiledJS
+github.com/glade-sh/glade/internal/server	TestLightningModulesServesSiblingModuleWithoutJSExtension
+github.com/glade-sh/glade/internal/server	TestVFPageBootstrapsLightningOut
+github.com/glade-sh/glade/internal/server	TestVFPageBootstrapsMultiWidgetLightningOut
+EOF
+}
+
+validate_node_integration_events() {
+	local events_path="$1"
+	local expected_path="$2"
+	local discovery_path="$3"
+	local summary_path="$4"
+	python3 - "${events_path}" "${expected_path}" "${discovery_path}" "${summary_path}" <<'PY'
+import json
+import os
+import sys
+
+events_path, expected_path, discovery_path, summary_path = sys.argv[1:]
+expected = []
+with open(expected_path, encoding="utf-8") as source:
+    for line_number, raw in enumerate(source, 1):
+        fields = raw.rstrip("\n").split("\t")
+        if len(fields) != 2 or not all(fields):
+            raise SystemExit(f"[ci] malformed node integration expected row {line_number}")
+        expected.append(tuple(fields))
+if len(expected) != 20 or len(set(expected)) != 20 or expected != sorted(expected):
+    raise SystemExit("[ci] node integration expected set must be 20 unique sorted package/name pairs")
+
+expected_set = set(expected)
+discovered = []
+terminals = []
+try:
+    with open(events_path, encoding="utf-8") as source:
+        for line_number, raw in enumerate(source, 1):
+            try:
+                event = json.loads(raw)
+            except Exception as error:
+                raise ValueError(f"malformed JSON event at line {line_number}: {error}")
+            if not isinstance(event, dict):
+                raise ValueError(f"non-object JSON event at line {line_number}")
+            test = event.get("Test")
+            package = event.get("Package")
+            action = event.get("Action")
+            if test and action == "skip" and (package, test.split("/", 1)[0]) in expected_set:
+                raise ValueError(f"skip event for selected test {package}.{test}")
+            if not test or "/" in test:
+                continue
+            pair = (package, test)
+            if pair not in expected_set:
+                raise ValueError(f"unexpected top-level test event {package}.{test}")
+            if action == "run":
+                discovered.append(pair)
+            elif action in {"pass", "skip", "fail"}:
+                terminals.append((pair, action))
+    if len(discovered) != 20 or len(set(discovered)) != 20 or set(discovered) != expected_set:
+        raise ValueError("discovery does not contain each expected test exactly once")
+    if len(terminals) != 20:
+        raise ValueError(f"terminal count is {len(terminals)}, want 20")
+    terminal_pairs = [pair for pair, _ in terminals]
+    if len(set(terminal_pairs)) != 20 or set(terminal_pairs) != expected_set:
+        raise ValueError("terminal results do not contain each expected test exactly once")
+    not_passed = [(pair, action) for pair, action in terminals if action != "pass"]
+    if not_passed:
+        raise ValueError(f"non-pass terminal results: {not_passed}")
+except Exception as error:
+    for path in (summary_path,):
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+    print(f"[ci] node integration validation rejected: {error}", file=sys.stderr)
+    raise SystemExit(1)
+
+with open(discovery_path, "w", encoding="utf-8") as target:
+    for package, test in sorted(discovered):
+        target.write(f"{package}\t{test}\n")
+with open(summary_path, "w", encoding="utf-8") as target:
+    json.dump({"valid": True, "tests": 20, "passed": 20, "skipped": 0, "failed": 0}, target, sort_keys=True, indent=2)
+    target.write("\n")
+PY
+}
+
+run_node_integration() {
+	local artifact_dir="${CI_NODE_INTEGRATION_ARTIFACT_DIR:-ci-artifacts/go-test-node-integration}"
+	local events_path="${artifact_dir}/test-node-integration.json"
+	local expected_path="${artifact_dir}/expected.txt"
+	local discovery_path="${artifact_dir}/discovery.txt"
+	local summary_path="${artifact_dir}/validation-summary.json"
+	local status_file
+	local pid heartbeat_pid
+	local native_rc tee_rc renderer_rc validator_rc=0
+	mkdir -p "${artifact_dir}"
+	rm -f "${summary_path}" "${discovery_path}"
+	write_node_integration_expected "${expected_path}"
+	prepare_testlog_renderer || true
+	status_file="$(mktemp "${TMPDIR:-/tmp}/glade-ci-node-integration.XXXXXX")"
+	testlog_status_files+=("${status_file}")
+	echo "::group::go test node-integration"
+	printf '[ci] GOMAXPROCS=%s\n' "${GOMAXPROCS}"
+	printf '+ go test -json -vet=off -count=1 -timeout=30m -run %q ./internal/gladecli ./internal/gladehome ./internal/lwc/compile ./internal/server | testlog -output %q\n' "${node_integration_run_regex}" "${events_path}"
+	(
+		set +e
+		go test -json -vet=off -count=1 -timeout=30m -run "${node_integration_run_regex}" ./internal/gladecli ./internal/gladehome ./internal/lwc/compile ./internal/server | tee "${events_path}" | run_testlog_renderer
+		pipeline_status=("${PIPESTATUS[@]}")
+		printf '%s %s %s\n' "${pipeline_status[0]}" "${pipeline_status[1]}" "${pipeline_status[2]}" >"${status_file}"
+	) &
+	pid="$!"
+	register_owned_child "${pid}"
+	(
+		elapsed=0
+		sleep_pid=""
+		trap 'if [[ -n "${sleep_pid}" ]]; then kill "${sleep_pid}" 2>/dev/null || true; fi; exit 0' TERM INT
+		while true; do
+			sleep "${heartbeat_seconds}" &
+			sleep_pid="$!"
+			wait "${sleep_pid}" || exit 0
+			sleep_pid=""
+			if ! kill -0 "${pid}" 2>/dev/null; then exit 0; fi
+			elapsed=$((elapsed + heartbeat_seconds))
+			printf '[ci] go test node-integration still running after %ss\n' "${elapsed}"
+		done
+	) &
+	heartbeat_pid="$!"
+	register_owned_child "${heartbeat_pid}"
+	wait "${pid}" || true
+	unregister_owned_child "${pid}"
+	kill "${heartbeat_pid}" 2>/dev/null || true
+	wait "${heartbeat_pid}" 2>/dev/null || true
+	unregister_owned_child "${heartbeat_pid}"
+	echo "::endgroup::"
+	if ! read -r native_rc tee_rc renderer_rc <"${status_file}"; then
+		echo "[ci] unable to read node integration pipeline status" >&2
+		return 1
+	fi
+	if [[ "${native_rc}" -eq 0 && "${tee_rc}" -eq 0 ]]; then
+		validate_node_integration_events "${events_path}" "${expected_path}" "${discovery_path}" "${summary_path}" || validator_rc="$?"
+	else
+		rm -f "${summary_path}" "${discovery_path}"
+	fi
+	if [[ "${native_rc}" -ne 0 ]]; then
+		printf '[ci] native node integration go test failed with status %s\n' "${native_rc}" >&2
+		return "${native_rc}"
+	fi
+	if [[ "${tee_rc}" -ne 0 ]]; then
+		printf '[ci] node integration raw event writer failed with status %s\n' "${tee_rc}" >&2
+		return "${tee_rc}"
+	fi
+	if [[ "${renderer_rc}" -ne 0 ]]; then
+		printf '[ci] node integration testlog renderer failed with status %s; raw events preserved\n' "${renderer_rc}" >&2
+	fi
+	return "${validator_rc}"
 }
 
 run_core_tests() {
@@ -297,6 +475,27 @@ run_named_package_lane() {
 		*)
 			echo "[ci] unknown package lane: ${lane}" >&2
 			return 2
+			;;
+	esac
+}
+
+run_ci_package_lane() {
+	local lane="$1"
+	case "${lane}" in
+		gladecli)
+			run_package_lane "${lane}" test 30m 0 '^(?:TestRunDoctorReportsParser|TestRunDoctorJSON|TestRunDoctorShortFlags|TestRunDoctorReportsProjectLocalDataEnvironment)$'
+			;;
+		server-and-playground)
+			run_package_lane "${lane}" test 30m 0 '^(?:TestVFPageBootstrapsLightningOut|TestVFPageBootstrapsMultiWidgetLightningOut|TestLightningModulesServesCompiledJS|TestLightningModulesServesSiblingModuleWithoutJSExtension|TestLWCShellComponentRouteServesHTML)$'
+			;;
+		remaining-go)
+			run_package_lane "${lane}" test 20m 2 '^(?:TestCompileProjectLWCBundles|TestCompileRewritesTemplateStylesheetImports|TestCompileEmitsSiblingJSModules|TestCompileEmitsUtilityOnlyLWCModules|TestCompileEmitsAdditionalHTMLTemplateModules|TestCompileTransformsCustomRenderComponentWithoutSameNameTemplate|TestCompileEnablesLwcOnDirective|TestValidateRootFindsRepoCheckout|TestInstallFromCWDSkipsGlobalShareAsSource|TestInstallFromCopiesToolchain|TestEnsureRootHonorsExplicitGladeHomeBeforeUserShare|TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$'
+			;;
+		sema|repoguard)
+			run_named_package_lane "${lane}"
+			;;
+		*)
+			run_named_package_lane "${lane}"
 			;;
 	esac
 }
@@ -947,7 +1146,11 @@ main() {
 				echo "usage: scripts/ci-go-test.sh lane {gladecli|sema|server-and-playground|repoguard|remaining-go}" >&2
 				return 2
 			fi
-			run_named_package_lane "$2"
+			run_ci_package_lane "$2"
+			;;
+		node-integration)
+			if [[ "$#" -ne 1 ]]; then echo "usage: scripts/ci-go-test.sh node-integration" >&2; return 2; fi
+			run_node_integration
 			;;
 		apex-shard)
 			run_apextest_matrix_shard "${2:-}"
@@ -972,7 +1175,7 @@ main() {
 			validate_sema_equivalence "${2:-}" "${3:-}" "${4:-}" "${5:-}"
 			;;
 		*)
-			echo "usage: scripts/ci-go-test.sh [core|test|race|lane NAME|apex-shard 0|1|apex-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-shard 0|1|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
+			echo "usage: scripts/ci-go-test.sh [core|test|race|lane NAME|node-integration|apex-shard 0|1|apex-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-shard 0|1|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
 			return 2
 			;;
 	esac

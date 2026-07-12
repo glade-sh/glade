@@ -103,12 +103,6 @@ jobs:
           restore-keys: |
             go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-gladecli-${{ hashFiles('go.sum') }}-
             go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: third_party/lwc/package-lock.json
-      - run: npm ci --prefix third_party/lwc
       - run: scripts/ci-go-test.sh lane gladecli
       - name: Save Go module cache
         if: success()
@@ -130,6 +124,70 @@ jobs:
         with:
           name: go-test-gladecli
           path: ci-artifacts/go-test/test-gladecli.json
+          if-no-files-found: error
+
+  node-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GOMAXPROCS: "2"
+      GOMODCACHE: /tmp/go-mod-ci-node-integration
+      GOCACHE: /tmp/go-build-ci-node-integration
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.5"
+          cache: false
+      - name: Restore Node integration Go module cache
+        id: restore-node-integration-go-mod-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ${{ env.GOMODCACHE }}
+          key: go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-node-integration-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-node-integration-${{ hashFiles('go.sum') }}-
+      - name: Restore Node integration Go build cache
+        id: restore-node-integration-go-build-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: ${{ env.GOCACHE }}
+          key: go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-node-integration-${{ hashFiles('go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-node-integration-${{ hashFiles('go.sum') }}-
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: third_party/lwc/package-lock.json
+      - run: npm ci --prefix third_party/lwc
+      - run: scripts/ci-go-test.sh node-integration
+      - name: Save Node integration Go module cache
+        if: success()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ${{ env.GOMODCACHE }}
+          key: ${{ steps.restore-node-integration-go-mod-cache.outputs.cache-primary-key }}
+      - name: Save Node integration Go build cache
+        if: success()
+        uses: actions/cache/save@v4
+        continue-on-error: true
+        with:
+          path: ${{ env.GOCACHE }}
+          key: ${{ steps.restore-node-integration-go-build-cache.outputs.cache-primary-key }}
+      - name: Upload Node integration evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: go-test-node-integration
+          path: |
+            ci-artifacts/go-test-node-integration/test-node-integration.json
+            ci-artifacts/go-test-node-integration/expected.txt
+            ci-artifacts/go-test-node-integration/discovery.txt
+            ci-artifacts/go-test-node-integration/validation-summary.json
           if-no-files-found: error
 
   sema:
@@ -305,12 +363,6 @@ jobs:
           restore-keys: |
             go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-server-playground-${{ hashFiles('go.sum') }}-
             go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('go.sum') }}-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: third_party/lwc/package-lock.json
-      - run: npm ci --prefix third_party/lwc
       - run: scripts/ci-go-test.sh lane server-and-playground
       - name: Save Go module cache
         if: success()
@@ -421,9 +473,6 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "22"
-          cache: npm
-          cache-dependency-path: glade/third_party/lwc/package-lock.json
-      - run: npm ci --prefix third_party/lwc
       - run: scripts/ci-go-test.sh lane repoguard
       - run: scripts/ci-go-test.sh lane remaining-go
       - name: Save Go module cache
@@ -647,6 +696,7 @@ jobs:
       - apextest
       - apextest-history
       - gladecli
+      - node-integration
       - sema
       - sema-history
       - server-and-playground
