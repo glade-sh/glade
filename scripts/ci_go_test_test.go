@@ -1063,6 +1063,7 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 		}
 	}
 	for jobName, laneCommands := range map[string][]string{
+		"gladecli":              {"scripts/ci-go-test.sh lane gladecli"},
 		"server-and-playground": {"scripts/ci-go-test.sh lane server-and-playground"},
 		"test":                  {"scripts/ci-go-test.sh lane repoguard", "scripts/ci-go-test.sh lane remaining-go"},
 	} {
