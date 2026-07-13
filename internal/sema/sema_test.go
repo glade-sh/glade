@@ -2165,7 +2165,7 @@ public class UsesQuery {
 	}
 	source := string(sourceBytes)
 	pos := strings.LastIndex(source, "equals")
-	enrichedIndex := enrichIndexWithSchemaDerivedObjects(enrichIndexWithStandardSymbols(index))
+	enrichedIndex := enrichIndexWithSchemaDerivedObjects(index)
 	model := buildSemaTypeMemberView(enrichedIndex)
 	receiverType, chainedMethod, ok := semaChainedCallReceiverNear(source, pos, "equals", map[string]string{semaCurrentTypeScopeKey: "UsesQuery"}, model, "UsesQuery")
 	if !ok || chainedMethod != "equals" || receiverType != "Query.Condition" {
@@ -3301,7 +3301,7 @@ private class UsesTestMethodMapConstant {
 		Root:      root,
 		ApexFiles: []string{filepath.Join(root, "UsesTestMethodMapConstant.cls")},
 	}, schema.Schema{})
-	model := buildSemaTypeMemberView(enrichIndexWithSchemaDerivedObjects(enrichIndexWithStandardSymbols(index)))
+	model := buildSemaTypeMemberView(enrichIndexWithSchemaDerivedObjects(index))
 	fields := semaFieldScope(model, "UsesTestMethodMapConstant", make(map[string]bool))
 	if got := fields[normalizeName("PARAM_RETURL_FAIL")]; got != "String" {
 		t.Fatalf("PARAM_RETURL_FAIL field type = %q, want String", got)
@@ -3776,7 +3776,7 @@ public inherited sharing class UsesContactFields {
 			{Name: "Exclude_from_Household_Name__c", Type: "Checkbox"},
 		},
 	}}})
-	enrichedIndex := enrichIndexWithSchemaDerivedObjects(enrichIndexWithStandardSymbols(index))
+	enrichedIndex := enrichIndexWithSchemaDerivedObjects(index)
 	model := buildSemaTypeMemberView(enrichedIndex)
 	foundConParam := false
 	for _, typ := range index.Types {
@@ -5510,7 +5510,7 @@ public class UsesNestedBooleanAssert {
 		Root:      root,
 		ApexFiles: []string{filepath.Join(root, "UsesNestedBooleanAssert.cls")},
 	}, schema.Schema{})
-	model := buildSemaTypeMemberView(enrichIndexWithStandardSymbols(index))
+	model := buildSemaTypeMemberView(index)
 	scope := map[string]string{
 		normalizeName("result"): "UsesNestedBooleanAssert.Root",
 		semaCurrentTypeScopeKey: "UsesNestedBooleanAssert",

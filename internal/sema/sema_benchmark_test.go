@@ -77,7 +77,7 @@ func TestColdBenchmarkRequiresDedicatedProcess(t *testing.T) {
 }
 
 func TestColdBenchmarkRejectsInvalidProcessMarker(t *testing.T) {
-	const leaf = "BenchmarkStandardCatalogHydration/size=200/mode=cold"
+	const leaf = "BenchmarkAnalyzeIndex/size=200/mode=cold"
 	for name, marker := range map[string]string{
 		"missing":    "",
 		"mismatched": leaf + "-other",
@@ -85,7 +85,7 @@ func TestColdBenchmarkRejectsInvalidProcessMarker(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			cmd := exec.Command(os.Args[0],
 				"-test.run=^$",
-				"-test.bench=^BenchmarkStandardCatalogHydration$/^size=200$/^mode=cold$",
+				"-test.bench=^BenchmarkAnalyzeIndex$/^size=200$/^mode=cold$",
 				"-test.benchtime=1x",
 			)
 			cmd.Env = benchmarkEnvironmentWithColdLeaf(marker)
@@ -268,26 +268,6 @@ func BenchmarkCheckQuerySemantics(b *testing.B) {
 		}
 		if !reflect.DeepEqual(diagnostics, reference) {
 			b.Fatalf("measured query-semantics diagnostics differ from untimed reference\nwant: %#v\n got: %#v", reference, diagnostics)
-		}
-	})
-}
-
-func BenchmarkStandardCatalogHydration(b *testing.B) {
-	benchmarkSemaSizesAndModes(b, func(b *testing.B, index typesys.Index, mode string) {
-		warmupSemaBenchmarkMode(mode, func() { _ = enrichIndexWithStandardSymbols(index) })
-		var hydrated typesys.Index
-		b.ReportAllocs()
-		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
-			hydrated = enrichIndexWithStandardSymbols(index)
-		}
-		b.StopTimer()
-		reference := enrichIndexWithStandardSymbols(index)
-		if len(hydrated.Types) <= len(index.Types) {
-			b.Fatal("standard catalog was not hydrated")
-		}
-		if !reflect.DeepEqual(hydrated, reference) {
-			b.Fatalf("measured standard-catalog index differs from untimed reference\nwant: %#v\n got: %#v", reference, hydrated)
 		}
 	})
 }

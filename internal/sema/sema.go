@@ -328,21 +328,6 @@ func downgradeSourceDependencySemanticDiagnostics(diagnostics []diagnostic.Diagn
 	return out
 }
 
-func enrichIndexWithStandardSymbols(index typesys.Index) typesys.Index {
-	seen := make(map[string]bool, len(index.Types))
-	for _, typ := range index.Types {
-		seen[semaTypeKey(typ.Namespace, typ.Name)] = true
-	}
-	for _, typ := range typesys.StandardPlatformSymbolView() {
-		if seen[semaTypeKey(typ.Namespace, typ.Name)] {
-			continue
-		}
-		seen[semaTypeKey(typ.Namespace, typ.Name)] = true
-		index.Types = append(index.Types, typ)
-	}
-	return index
-}
-
 func enrichIndexWithSchemaDerivedObjects(index typesys.Index) typesys.Index {
 	if len(index.Objects) == 0 {
 		return index

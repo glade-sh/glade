@@ -312,8 +312,11 @@ func TestTypeMembersOnlyAddOwnerForAuthoritativeOwnerShapes(t *testing.T) {
 	}
 	view := newSemaTypeMemberState(model).view()
 	for _, objectName := range []string{"Account", "Thing__c", "Explicit__mdt"} {
-		key := normalizeName(objectName)
-		members := semaEnsureStandardSObjectTypeMembers(view, key, model.members[key])
+		members, _, ok := semaLookupTypeMembers(view, objectName)
+		if !ok {
+			t.Errorf("%s is not resolvable", objectName)
+			continue
+		}
 		for _, fieldName := range []string{"OwnerId", "Owner"} {
 			if _, exists := members.fields[normalizeName(fieldName)]; !exists {
 				t.Errorf("%s missing %s", objectName, fieldName)
@@ -332,40 +335,10 @@ func TestTypeMembersSyntheticChangeEventStillUsesBaseStandardShape(t *testing.T)
 	}
 }
 
-func TestSemaStandardSObjectMembersCacheIsNamesOnly(t *testing.T) {
-	resetSemaStandardSObjectMembersCacheForTest()
-	defer resetSemaStandardSObjectMembersCacheForTest()
-
-	names, members := semaStandardSObjectMembers()
-	if len(names) == 0 {
-		t.Fatalf("semaStandardSObjectMembers returned no names")
-	}
-	if len(members) != 0 {
-		t.Fatalf("semaStandardSObjectMembers eagerly materialized %d member sets", len(members))
-	}
-	if name, ok := semaStandardSObjectNameForKey(normalizeName("Account")); !ok || name != "Account" {
-		t.Fatalf("semaStandardSObjectNameForKey(Account) = %q, %v", name, ok)
-	}
-	if len(members) != 0 {
-		t.Fatalf("semaStandardSObjectNameForKey materialized %d member sets", len(members))
-	}
-	originalName := names[0]
-	names[0] = "CallerCorruption"
-	members[normalizeName("CallerCorruption")] = typeMembers{name: "CallerCorruption"}
-	namesAgain, membersAgain := semaStandardSObjectMembers()
-	if namesAgain[0] != originalName {
-		t.Fatalf("caller mutation changed cached standard object name from %q to %q", originalName, namesAgain[0])
-	}
-	if _, leaked := membersAgain[normalizeName("CallerCorruption")]; leaked {
-		t.Fatal("caller mutation changed cached standard object members")
-	}
-}
-
 func resetSemaStandardSObjectMembersCacheForTest() {
 	semaStandardSObjectMembersCache = struct {
 		once      sync.Once
 		names     []string
-		members   map[string]typeMembers
 		nameByKey map[string]string
 	}{}
 }
@@ -382,17 +355,16 @@ func TestStandardChildRelationshipMembersDoNotExposeSharedCache(t *testing.T) {
 	}
 }
 
-func TestAddStandardSObjectMembersUsesLazyPlaceholdersForUnreferencedObjects(t *testing.T) {
+func TestBuildTypeMembersDoesNotRetainPerAnalysisStandardPlaceholders(t *testing.T) {
 	resetSemaStandardSObjectMembersCacheForTest()
 	defer resetSemaStandardSObjectMembersCacheForTest()
 
 	model := buildTypeMembers(typesys.Index{})
-	account, ok := model.members[normalizeName("Account")]
-	if !ok {
-		t.Fatalf("missing Account placeholder")
+	if account, ok := model.members[normalizeName("Account")]; ok {
+		t.Fatalf("per-analysis model retained Account placeholder: %#v", account)
 	}
-	if account.fields != nil {
-		t.Fatalf("Account placeholder eagerly materialized %d fields", len(account.fields))
+	if _, _, ok := semaLookupTypeMembers(newSemaTypeMemberState(model).view(), "Account"); !ok {
+		t.Fatal("process-level standard-object lookup no longer resolves Account")
 	}
 }
 
@@ -689,8 +661,8 @@ func TestTypeMemberHydrationStaysAnalysisLocal(t *testing.T) {
 	if _, exists := second.hydrated[key]; exists {
 		t.Fatal("Account hydration leaked into a second analysis state")
 	}
-	if placeholder := base.members[key]; placeholder.fields != nil || placeholder.standardSObjectFieldsLoaded {
-		t.Fatalf("Account hydration mutated shared base placeholder: %#v", placeholder)
+	if _, exists := base.members[key]; exists {
+		t.Fatalf("Account hydration retained a per-analysis base placeholder")
 	}
 }
 

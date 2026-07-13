@@ -726,7 +726,6 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 		}
 		semaStoreSObjectTypeMembers(out, projectNamespace, object.Name, objectMembers)
 	}
-	addStandardSObjectMembers(out)
 	semaApplyPlatformInterfaceOverlays(out)
 	semaApplyPlatformFieldOverlays(out)
 	for short, names := range shortAliases {
@@ -995,33 +994,6 @@ func semaShortCandidateKeys(model *semaTypeMemberView, short string) []string {
 	return model.shortCandidateKeys(short)
 }
 
-func addStandardSObjectMembers(out map[string]typeMembers) {
-	ensureSemaStandardSObjectMembers()
-	for _, objectName := range semaStandardSObjectMembersCache.names {
-		key := normalizeName(objectName)
-		if key == "" {
-			continue
-		}
-		members, ok := out[key]
-		if ok && !members.sobject && !semaShouldMergeStandardSObjectMembers(objectName, members) {
-			continue
-		}
-		if !ok {
-			out[key] = semaStandardSObjectPlaceholder(objectName)
-			continue
-		}
-		if members.sobject && !members.syntheticStandardSObject {
-			continue
-		}
-		members.sobject = true
-		if members.fields == nil {
-			members.fields = make(map[string]typesys.MemberSymbol)
-		}
-		addStandardSObjectFields(&members, objectName, false)
-		out[key] = members
-	}
-}
-
 func semaShouldMergeStandardSObjectMembers(objectName string, members typeMembers) bool {
 	if !members.sobject && !members.dependency {
 		return false
@@ -1043,7 +1015,6 @@ func semaShouldMergeStandardSObjectMembers(objectName string, members typeMember
 var semaStandardSObjectMembersCache struct {
 	once      sync.Once
 	names     []string
-	members   map[string]typeMembers
 	nameByKey map[string]string
 }
 
@@ -1064,19 +1035,8 @@ func ensureSemaStandardSObjectMembers() {
 			nameByKey[key] = objectName
 		}
 		semaStandardSObjectMembersCache.names = names
-		semaStandardSObjectMembersCache.members = map[string]typeMembers{}
 		semaStandardSObjectMembersCache.nameByKey = nameByKey
 	})
-}
-
-func semaStandardSObjectMembers() ([]string, map[string]typeMembers) {
-	ensureSemaStandardSObjectMembers()
-	names := append([]string(nil), semaStandardSObjectMembersCache.names...)
-	members := make(map[string]typeMembers, len(semaStandardSObjectMembersCache.members))
-	for key, value := range semaStandardSObjectMembersCache.members {
-		members[key] = semaCloneTypeMembers(value)
-	}
-	return names, members
 }
 
 func semaStandardSObjectPlaceholder(objectName string) typeMembers {
@@ -1561,26 +1521,6 @@ func semaObjectSupportsRecordTypeRelationship(object schema.Object) bool {
 		}
 	}
 	return false
-}
-
-func semaAddSObjectRecordTypeRelationship(fields map[string]typesys.MemberSymbol) {
-	if _, exists := fields[normalizeName("RecordTypeId")]; !exists {
-		fields[normalizeName("RecordTypeId")] = typesys.MemberSymbol{
-			Kind:      apexast.DeclarationField,
-			Name:      "RecordTypeId",
-			Type:      "Id",
-			Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
-		}
-	}
-	if _, exists := fields[normalizeName("RecordType")]; exists {
-		return
-	}
-	fields[normalizeName("RecordType")] = typesys.MemberSymbol{
-		Kind:      apexast.DeclarationField,
-		Name:      "RecordType",
-		Type:      "RecordType",
-		Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
-	}
 }
 
 func semaFallbackStandardSObjectFields(objectName string, synthetic bool) []schema.Field {
