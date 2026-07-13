@@ -589,6 +589,46 @@ public class QueryProbe {
 	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_RELATIONSHIP", "PersonIndividual.Name")
 }
 
+func TestLayeredModelCutoverQueryAcceptsFeatureFieldsAndRejectsCrossObjectLeak(t *testing.T) {
+	t.Parallel()
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [
+      SELECT PersonContactId, FirstName, PersonDoNotCall,
+             BillingCountryCode, ShippingStateCode, CurrencyIsoCode
+      FROM Account
+    ];
+    List<Group> groups = [SELECT PersonContactId FROM Group];
+  }
+}
+`
+	result := analyzeQueryProbe(t, source, schema.Schema{Objects: []schema.Object{
+		{
+			Name: "Account",
+			Fields: []schema.Field{
+				{Name: "BillingCountryCode", Type: "Text"},
+				{Name: "ShippingStateCode", Type: "Text"},
+				{Name: "CurrencyIsoCode", Type: "Text"},
+			},
+		},
+		{Name: "Group", Fields: []schema.Field{{Name: "Id", Type: "Id"}}},
+	}})
+
+	for _, field := range []string{
+		"PersonContactId", "FirstName", "PersonDoNotCall",
+		"BillingCountryCode", "ShippingStateCode", "CurrencyIsoCode",
+	} {
+		assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", "Account."+field)
+	}
+	for _, item := range result.Diagnostics {
+		if item.Code == "GLADESEMA_QUERY_FIELD" && strings.Contains(item.Message, "CurrencyIsoCode") {
+			t.Fatalf("declared multi-currency field produced a query diagnostic: %#v", item)
+		}
+	}
+	assertDiagnosticAt(t, result, "GLADESEMA_QUERY_FIELD", "PersonContactId", 9, 34)
+}
+
 func TestAnalyzeQuerySemanticsRejectsOwnerOnCustomMetadata(t *testing.T) {
 	t.Parallel()
 	source := `

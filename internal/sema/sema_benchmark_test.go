@@ -196,6 +196,40 @@ func BenchmarkBuildPlatformTypeMemberModelCold(b *testing.B) {
 	}
 }
 
+func BenchmarkLayeredModelCutoverProof(b *testing.B) {
+	index := typesys.Index{
+		Types: []typesys.TypeSymbol{
+			{Kind: apexast.DeclarationClass, Name: "Math", Members: []typesys.MemberSymbol{{Kind: apexast.DeclarationField, Name: "ProjectOnly", Type: "String"}}},
+			{Kind: apexast.DeclarationClass, Name: "Database", Dependency: true, Artifact: true, Members: []typesys.MemberSymbol{{Kind: apexast.DeclarationField, Name: "DependencyOnly", Type: "String"}}},
+		},
+		Objects: []schema.Object{{
+			Name: "Account",
+			Fields: []schema.Field{
+				{Name: "BillingCountryCode", Type: "Text"},
+				{Name: "ShippingStateCode", Type: "Text"},
+				{Name: "CurrencyIsoCode", Type: "Text"},
+			},
+		}},
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		state := buildSemaTypeMemberState(index, nil)
+		view := state.view()
+		for _, name := range []string{"Math", "Database", "Account"} {
+			if _, _, ok := semaLookupTypeMembers(view, name); !ok {
+				b.Fatalf("layered model omitted %s", name)
+			}
+		}
+		checker := newQuerySemanticsChecker(index)
+		for _, name := range []string{"PersonContactId", "BillingCountryCode", "ShippingStateCode", "CurrencyIsoCode"} {
+			if _, ok := checker.field("Account", name); !ok {
+				b.Fatalf("layered query model omitted Account.%s", name)
+			}
+		}
+	}
+}
+
 func BenchmarkCheckInheritance(b *testing.B) {
 	benchmarkSemaSizesAndModes(b, func(b *testing.B, index typesys.Index, mode string) {
 		index, analyzer := benchmarkPreparedAnalysisPhase(b, index)

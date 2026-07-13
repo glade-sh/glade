@@ -126,6 +126,52 @@ func TestSemaSObjectFieldProviderDoesNotMutateStandardDefinitionForFeatures(t *t
 	}
 }
 
+func TestLayeredModelCutoverFeatureFieldsKeepExactTypesAndObjectIsolation(t *testing.T) {
+	account := schema.Object{
+		Name: "Account",
+		Fields: []schema.Field{
+			{Name: "BillingCountryCode", Type: "Text"},
+			{Name: "ShippingStateCode", Type: "Text"},
+			{Name: "CurrencyIsoCode", Type: "Text"},
+		},
+	}
+	provider := newSemaSObjectFieldProvider("", account)
+	for _, test := range []struct {
+		name string
+		typ  string
+	}{
+		{name: "PersonContactId", typ: "REFERENCE"},
+		{name: "FirstName", typ: "STRING"},
+		{name: "PersonDoNotCall", typ: "Boolean"},
+		{name: "BillingCountryCode", typ: "Text"},
+		{name: "ShippingStateCode", typ: "Text"},
+		{name: "CurrencyIsoCode", typ: "Text"},
+	} {
+		field, ok := provider.lookup(test.name)
+		if !ok || field.Name != test.name || !strings.EqualFold(field.Type, test.typ) {
+			t.Errorf("Account.%s = %#v, %v; want exact %s shape", test.name, field, ok, test.typ)
+		}
+	}
+	personContact, _ := provider.lookup("PersonContactId")
+	if !reflect.DeepEqual(personContact.ReferenceTo, []string{"Contact"}) || personContact.RelationshipName != "PersonContact" {
+		t.Fatalf("Account.PersonContactId relationship = %#v", personContact)
+	}
+
+	other := newSemaSObjectFieldProvider("", schema.Object{Name: "Group"})
+	for _, name := range []string{"PersonContactId", "PersonDoNotCall", "BillingCountryCode", "ShippingStateCode", "CurrencyIsoCode"} {
+		if field, ok := other.lookup(name); ok {
+			t.Errorf("Account feature field %s leaked to Group as %#v", name, field)
+		}
+	}
+	if !reflect.DeepEqual(account.Fields, []schema.Field{
+		{Name: "BillingCountryCode", Type: "Text"},
+		{Name: "ShippingStateCode", Type: "Text"},
+		{Name: "CurrencyIsoCode", Type: "Text"},
+	}) {
+		t.Fatalf("layered lookup mutated declared Account fields: %#v", account.Fields)
+	}
+}
+
 func TestSemaSObjectFieldProviderKeepsKnownStandardAndFallbackTypes(t *testing.T) {
 	for _, test := range []struct {
 		object string
