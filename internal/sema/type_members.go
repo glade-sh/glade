@@ -395,59 +395,8 @@ func buildTypeMembersWithSources(index typesys.Index, sources *semaSources) *sem
 		if objectMembers.fields == nil {
 			objectMembers.fields = make(map[string]typesys.MemberSymbol)
 		}
-		semaAddCommonSObjectFields(objectMembers.fields)
-		if semaObjectSupportsRecordTypeRelationship(object) {
-			semaAddSObjectRecordTypeRelationship(objectMembers.fields)
-		}
+		semaAddSObjectProviderMembers(&objectMembers, newSemaSObjectFieldProvider(projectNamespace, object), projectNamespace, index.Objects)
 		for _, field := range object.Fields {
-			if field.Name != "" {
-				fieldType := semaApexTypeForSchemaFieldInObjects(index.Objects, field)
-				if fieldType == "" {
-					if _, exists := objectMembers.fields[normalizeName(field.Name)]; exists {
-						continue
-					}
-				}
-				semaAddSchemaFieldMember(objectMembers.fields, projectNamespace, typesys.MemberSymbol{
-					Kind:      apexast.DeclarationField,
-					Name:      field.Name,
-					Type:      fieldType,
-					Modifiers: []string{"public"},
-				})
-				if strings.EqualFold(field.Type, "Location") {
-					for _, componentName := range semaLocationComponentFieldNames(field.Name) {
-						semaAddSchemaFieldMember(objectMembers.fields, projectNamespace, typesys.MemberSymbol{
-							Kind:      apexast.DeclarationField,
-							Name:      componentName,
-							Type:      "Decimal",
-							Modifiers: []string{"public"},
-						})
-					}
-				}
-			}
-			if field.RelationshipName != "" && len(field.ReferenceTo) != 0 {
-				relationshipType := "SObject"
-				if len(field.ReferenceTo) == 1 {
-					relationshipType = field.ReferenceTo[0]
-				}
-				semaAddSchemaFieldMember(objectMembers.fields, projectNamespace, typesys.MemberSymbol{
-					Kind:      apexast.DeclarationField,
-					Name:      field.RelationshipName,
-					Type:      relationshipType,
-					Modifiers: []string{"public"},
-				})
-			}
-			if relationshipFieldName := semaParentRelationshipFieldName(field.Name); relationshipFieldName != "" && len(field.ReferenceTo) != 0 {
-				relationshipType := "SObject"
-				if len(field.ReferenceTo) == 1 {
-					relationshipType = field.ReferenceTo[0]
-				}
-				semaAddSchemaFieldMember(objectMembers.fields, projectNamespace, typesys.MemberSymbol{
-					Kind:      apexast.DeclarationField,
-					Name:      relationshipFieldName,
-					Type:      relationshipType,
-					Modifiers: []string{"public"},
-				})
-			}
 			childRelationshipNames := []string{}
 			if field.ChildRelationshipName != "" {
 				childRelationshipNames = append(childRelationshipNames, field.ChildRelationshipName)
@@ -767,6 +716,9 @@ func addStandardSObjectMembers(out map[string]typeMembers) {
 		}
 		if !ok {
 			out[key] = semaStandardSObjectPlaceholder(objectName)
+			continue
+		}
+		if members.sobject && !members.syntheticStandardSObject {
 			continue
 		}
 		members.sobject = true
@@ -1220,6 +1172,70 @@ func semaAddCommonSObjectFields(fields map[string]typesys.MemberSymbol) {
 	}
 }
 
+func semaAddSObjectProviderMembers(members *typeMembers, provider semaSObjectFieldProvider, namespace string, objects []schema.Object) {
+	if members == nil || provider == nil {
+		return
+	}
+	if members.fields == nil {
+		members.fields = make(map[string]typesys.MemberSymbol)
+	}
+	if _, exists := members.fields[normalizeName("SObjectType")]; !exists {
+		members.fields[normalizeName("SObjectType")] = typesys.MemberSymbol{
+			Kind:      apexast.DeclarationField,
+			Name:      "SObjectType",
+			Type:      "Schema.SObjectType",
+			Modifiers: []string{"public", "static", semaSyntheticStandardSObjectFieldModifier},
+		}
+	}
+	provider.visit(func(field schema.Field) {
+		fieldType := semaApexTypeForSchemaFieldInObjects(objects, field)
+		if strings.EqualFold(field.Name, "ChangeEventHeader") && strings.EqualFold(field.Type, "EventBus.ChangeEventHeader") {
+			fieldType = "EventBus.ChangeEventHeader"
+		}
+		if fieldType != "" {
+			semaAddSchemaFieldMemberIfAbsent(members.fields, namespace, typesys.MemberSymbol{
+				Kind:      apexast.DeclarationField,
+				Name:      field.Name,
+				Type:      fieldType,
+				Modifiers: []string{"public"},
+			})
+		}
+		if strings.EqualFold(field.Type, "Location") {
+			for _, componentName := range semaLocationComponentFieldNames(field.Name) {
+				semaAddSchemaFieldMemberIfAbsent(members.fields, namespace, typesys.MemberSymbol{
+					Kind:      apexast.DeclarationField,
+					Name:      componentName,
+					Type:      "Decimal",
+					Modifiers: []string{"public"},
+				})
+			}
+		}
+		if len(field.ReferenceTo) == 0 {
+			return
+		}
+		relationshipType := "SObject"
+		if len(field.ReferenceTo) == 1 {
+			relationshipType = field.ReferenceTo[0]
+		}
+		if field.RelationshipName != "" {
+			semaAddSchemaFieldMemberIfAbsent(members.fields, namespace, typesys.MemberSymbol{
+				Kind:      apexast.DeclarationField,
+				Name:      field.RelationshipName,
+				Type:      relationshipType,
+				Modifiers: []string{"public"},
+			})
+		}
+		if relationshipFieldName := semaParentRelationshipFieldName(field.Name); relationshipFieldName != "" {
+			semaAddSchemaFieldMemberIfAbsent(members.fields, namespace, typesys.MemberSymbol{
+				Kind:      apexast.DeclarationField,
+				Name:      relationshipFieldName,
+				Type:      relationshipType,
+				Modifiers: []string{"public"},
+			})
+		}
+	})
+}
+
 func semaObjectSupportsRecordTypeRelationship(object schema.Object) bool {
 	if strings.HasSuffix(strings.ToLower(object.Name), "__c") {
 		return true
@@ -1377,7 +1393,7 @@ func semaApexTypeForSchemaFieldInObjects(objects []schema.Object, field schema.F
 		return "Integer"
 	case "long":
 		return "Long"
-	case "double", "currency", "percent", "number", "summary":
+	case "decimal", "double", "currency", "percent", "number", "summary":
 		return "Decimal"
 	case "date":
 		return "Date"
@@ -1395,7 +1411,7 @@ func semaApexTypeForSchemaFieldInObjects(objects []schema.Object, field schema.F
 		return "String"
 	case "lookup", "masterdetail", "externallookup", "indirectlookup", "reference":
 		return "Id"
-	case "text", "textarea", "longtextarea", "html", "encryptedtext", "email", "phone", "url", "picklist", "multipicklist", "multiselectpicklist", "combobox", "autonumber":
+	case "string", "text", "textarea", "longtextarea", "html", "encryptedtext", "email", "phone", "url", "picklist", "multipicklist", "multiselectpicklist", "combobox", "autonumber":
 		return "String"
 	}
 	if field.Name != "" {

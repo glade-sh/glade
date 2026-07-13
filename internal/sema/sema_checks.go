@@ -715,19 +715,53 @@ func (c querySemanticsChecker) addObject(object schema.Object) {
 	if !c.hasBaseline {
 		c.recordDeclaredFields(object)
 	}
-	object = mergeQueryStorageStandardFields(object)
-	object = mergeQuerySObjectSystemFields(object)
+	provider := newSemaSObjectFieldProvider(c.namespace, object)
+	object = mergeQuerySObjectProviderFields(object, provider)
 	key := normalizeName(object.Name)
-	if existing, ok := c.objects[key]; ok {
+	existing, duplicate := c.objects[key]
+	if duplicate {
 		object = mergeQueryDuplicateObject(existing, object)
 	}
 	c.objects[key] = object
-	fieldMap := queryFieldMap(object.Fields)
+	var fieldMap map[string]schema.Field
+	if resolved, ok := provider.(*semaSObjectFieldMapProvider); ok && !duplicate {
+		fieldMap = resolved.fields
+	} else {
+		fieldMap = queryFieldMap(object.Fields)
+	}
 	c.fields[key] = fieldMap
 	if localName, ok := semaProjectLocalAPIName(c.namespace, object.Name); ok {
 		c.objects[normalizeName(localName)] = object
 		c.fields[normalizeName(localName)] = fieldMap
 	}
+}
+
+func mergeQuerySObjectProviderFields(object schema.Object, provider semaSObjectFieldProvider) schema.Object {
+	if provider == nil {
+		return object
+	}
+	fields := make([]schema.Field, 0, len(object.Fields))
+	if resolved, ok := provider.(*semaSObjectFieldMapProvider); ok {
+		fields = make([]schema.Field, 0, len(resolved.keys))
+		for _, key := range resolved.keys {
+			fields = append(fields, resolved.fields[key])
+		}
+		if object.Label == "" {
+			object.Label = resolved.label
+		}
+		if object.PluralLabel == "" {
+			object.PluralLabel = resolved.pluralLabel
+		}
+		if object.SharingModel == "" {
+			object.SharingModel = resolved.sharingModel
+		}
+	} else {
+		provider.visit(func(field schema.Field) {
+			fields = append(fields, field)
+		})
+	}
+	object.Fields = fields
+	return object
 }
 
 func (c querySemanticsChecker) recordDeclaredFields(object schema.Object) {

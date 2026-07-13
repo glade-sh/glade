@@ -3,6 +3,7 @@ package sema
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -29,6 +30,117 @@ public class QueryProbe {
 	assertDiagnosticAt(t, result, "GLADESEMA_QUERY_FIELD", "Owner.Missing__c", 5, 31)
 	assertDiagnosticAt(t, result, "GLADESEMA_QUERY_RELATIONSHIP", "BadContacts", 6, 57)
 	assertDiagnosticAt(t, result, "GLADESEMA_QUERY_OBJECT", "Missing__c", 7, 39)
+}
+
+func TestQuerySemanticsFieldProviderKeepsProjectAuthority(t *testing.T) {
+	checker := newQuerySemanticsChecker(typesys.Index{
+		Project: typesys.ProjectInfo{Namespace: "pkg"},
+		Objects: []schema.Object{{
+			Name: "Account",
+			Fields: []schema.Field{
+				{Name: "Name", Type: "Number"},
+				{Name: "OwnerId", Type: "Lookup", ReferenceTo: []string{"pkg__Queue__c"}, RelationshipName: "pkg__Owner"},
+				{Name: "pkg__Flag__c", Type: "Checkbox"},
+			},
+		}},
+	})
+
+	name, ok := checker.field("Account", "name")
+	if !ok || name.Type != "Number" {
+		t.Fatalf("query Account.Name = %#v, %v; want project Number", name, ok)
+	}
+	owner, ok := checker.field("Account", "OwnerId")
+	if !ok || owner.Name != "OwnerId" || len(owner.ReferenceTo) != 1 || owner.ReferenceTo[0] != "pkg__Queue__c" || owner.RelationshipName != "pkg__Owner" {
+		t.Fatalf("query Account.OwnerId authority = %#v, %v", owner, ok)
+	}
+	flag, ok := checker.field("Account", "Flag__c")
+	if !ok || flag.Name != "pkg__Flag__c" {
+		t.Fatalf("query namespace alias = %#v, %v; want canonical pkg__Flag__c", flag, ok)
+	}
+	if _, ok := checker.field("Account", "CreatedDate"); !ok {
+		t.Fatal("query checker omitted standard Account.CreatedDate")
+	}
+}
+
+func TestQuerySemanticsCorrectsPartialStandardFieldsWithoutChangingProjectRelationship(t *testing.T) {
+	checker := newQuerySemanticsChecker(typesys.Index{
+		Project: typesys.ProjectInfo{Namespace: "pkg"},
+		Objects: []schema.Object{{
+			Name:    "Contact",
+			Partial: true,
+			Fields: []schema.Field{
+				{Name: "AccountId", Type: "Id", ReferenceTo: []string{"Name"}, RelationshipName: "Account"},
+				{Name: "HasOptedOutOfEmail", Type: "String"},
+				{Name: "pkg__ProjectParent__c", Type: "Lookup", ReferenceTo: []string{"pkg__ProjectTarget__c"}, RelationshipName: "pkg__ProjectParent__r"},
+			},
+		}},
+	})
+
+	account, ok := checker.field("Contact", "AccountId")
+	if !ok || len(account.ReferenceTo) != 1 || account.ReferenceTo[0] != "Account" || account.RelationshipName != "Account" {
+		t.Fatalf("query Contact.AccountId = %#v, %v; want standard Account relationship", account, ok)
+	}
+	optOut, ok := checker.field("Contact", "HasOptedOutOfEmail")
+	if !ok || !strings.EqualFold(optOut.Type, "Boolean") {
+		t.Fatalf("query Contact.HasOptedOutOfEmail = %#v, %v; want Boolean", optOut, ok)
+	}
+	projectParent, ok := checker.field("Contact", "ProjectParent__c")
+	if !ok || len(projectParent.ReferenceTo) != 1 || projectParent.ReferenceTo[0] != "pkg__ProjectTarget__c" || projectParent.RelationshipName != "pkg__ProjectParent__r" {
+		t.Fatalf("query project relationship authority = %#v, %v", projectParent, ok)
+	}
+}
+
+func TestQuerySemanticsProviderKeepsDeclaredCountsAndMissingDiagnostics(t *testing.T) {
+	checker := newQuerySemanticsChecker(typesys.Index{Objects: []schema.Object{{
+		Name:   "Account",
+		Fields: []schema.Field{{Name: "ProjectOnly__c", Type: "Text"}},
+	}}})
+	if got := checker.declaredFields[normalizeName("Account")]; got != 1 {
+		t.Fatalf("declared Account field count = %d, want 1 before provider enrichment", got)
+	}
+	if _, ok := checker.field("Account", "ProjectOnly__c"); !ok {
+		t.Fatal("query provider omitted project field")
+	}
+	if _, ok := checker.field("Account", "CreatedDate"); !ok {
+		t.Fatal("query provider omitted standard field")
+	}
+	if _, ok := checker.field("Account", "DefinitelyMissing__c"); ok {
+		t.Fatal("authoritative Account accepted a missing field")
+	}
+}
+
+func TestQuerySemanticsProviderKeepsPartialAndExternalObjectsOpen(t *testing.T) {
+	checker := newQuerySemanticsChecker(typesys.Index{
+		Project: typesys.ProjectInfo{Namespace: "local"},
+		Objects: []schema.Object{
+			{Name: "Partial__c", Partial: true, Fields: []schema.Field{{Name: "Known__c", Type: "Text"}}},
+			{Name: "vend__External__c", Fields: []schema.Field{{Name: "vend__Known__c", Type: "Text"}}},
+		},
+	})
+	if checker.hasFieldMetadata("Partial__c") {
+		t.Fatal("partial object became authoritative after provider enrichment")
+	}
+	if !checker.allowsIncompleteExternalManagedPackageObject("vend__External__c") {
+		t.Fatal("external managed object stopped failing open")
+	}
+}
+
+func TestQuerySemanticsProviderKeepsHierarchySetupOwnerTarget(t *testing.T) {
+	declared := schema.Object{
+		Name:               "Settings__c",
+		CustomSettingsType: "Hierarchy",
+		Fields:             []schema.Field{{Name: "SetupOwnerId", Type: "Lookup"}},
+	}
+	enriched := semaEnrichSchemaObject(declared)
+	provided, ok := newSemaSObjectFieldProvider("", declared).lookup("SetupOwnerId")
+	if !ok || len(provided.ReferenceTo) != 1 || provided.ReferenceTo[0] != "Name" {
+		t.Fatalf("declared SetupOwner provider = %#v, %v; want Name", provided, ok)
+	}
+	checker := newQuerySemanticsChecker(typesys.Index{Objects: []schema.Object{enriched}}, declared)
+	field, target, ok := checker.relationshipField("Settings__c", "SetupOwner")
+	if !ok || !strings.EqualFold(target, "Name") {
+		t.Fatalf("SetupOwner relationship = %#v, %q, %v; want Name", field, target, ok)
+	}
 }
 
 func TestAnalyzeSOQLRelationshipAndAggregateAliasDiagnostics(t *testing.T) {
@@ -303,19 +415,48 @@ func TestAnalyzeQuerySemanticsAddsFeatureAndMetadataStandardFields(t *testing.T)
 	source := `
 public class QueryProbe {
   public void run() {
-    List<Account> accounts = [SELECT FirstName, LastName, IsPersonAccount, PersonContactId FROM Account];
+    List<Account> accounts = [
+      SELECT FirstName, LastName, IsPersonAccount, PersonContactId,
+             PersonEmail, PersonBirthdate, PersonMailingStreet,
+             PersonMailingAddress, PersonIndividual.Name, PersonAlias__c
+      FROM Account
+    ];
     List<Feature__mdt> features = [SELECT DeveloperName, NamespacePrefix, QualifiedAPIName FROM Feature__mdt];
   }
 }
 `
-	result := analyzeQueryProbe(t, source, schema.Schema{Objects: []schema.Object{
-		{Name: "Account"},
+	result := analyzeQueryProbeWithProject(t, source, typesys.ProjectInfo{Namespace: "pkg"}, schema.Schema{Objects: []schema.Object{
+		{Name: "Account", Fields: []schema.Field{{Name: "pkg__PersonAlias__c", Type: "Text"}}},
 		{Name: "Feature__mdt"},
 	}})
 
-	for _, field := range []string{"FirstName", "LastName", "IsPersonAccount", "PersonContactId", "DeveloperName", "NamespacePrefix", "QualifiedAPIName"} {
+	for _, field := range []string{
+		"FirstName", "LastName", "IsPersonAccount", "PersonContactId",
+		"PersonEmail", "PersonBirthdate", "PersonMailingStreet", "PersonMailingAddress",
+		"PersonIndividual.Name", "PersonAlias__c",
+		"DeveloperName", "NamespacePrefix", "QualifiedAPIName",
+	} {
 		assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_FIELD", field)
 	}
+	assertNoDiagnosticContaining(t, result, "GLADESEMA_QUERY_RELATIONSHIP", "PersonIndividual.Name")
+}
+
+func TestAnalyzeQuerySemanticsRejectsOwnerOnCustomMetadata(t *testing.T) {
+	t.Parallel()
+	source := `
+public class QueryProbe {
+  public void run() {
+    List<Feature__mdt> features = [SELECT Owner.Name FROM Feature__mdt];
+  }
+}
+`
+	result := analyzeQueryProbe(t, source, schema.Schema{Objects: []schema.Object{{Name: "Feature__mdt"}}})
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA_QUERY_RELATIONSHIP" && strings.Contains(diag.Message, "Owner.Name") {
+			return
+		}
+	}
+	t.Fatalf("missing custom-metadata Owner relationship diagnostic: %#v", result.Diagnostics)
 }
 
 func TestAnalyzeQuerySemanticsUsesStandardChildRelationshipFallback(t *testing.T) {
