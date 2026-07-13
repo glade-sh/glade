@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 const (
@@ -36,6 +37,7 @@ type testCacheHeader struct {
 	BuiltAt       string   `json:"builtAt"`
 	PlatformABI   string   `json:"platformAbi"`
 	RuntimeABI    string   `json:"runtimeAbi,omitempty"`
+	RuntimeKey    string   `json:"runtimeKey,omitempty"`
 	Manifest      Manifest `json:"manifest"`
 	PayloadFile   string   `json:"payloadFile"`
 	PayloadSHA256 string   `json:"payloadSha256"`
@@ -138,6 +140,7 @@ func readSplitTestCache(projectRoot, subdir string) (*Entry, error) {
 		BuiltAt:     header.BuiltAt,
 		PlatformABI: header.PlatformABI,
 		RuntimeABI:  header.RuntimeABI,
+		RuntimeKey:  header.RuntimeKey,
 		Manifest:    header.Manifest,
 		Org:         payload.Org,
 		Runtime:     payload.Runtime,
@@ -192,6 +195,51 @@ func readSplitTestCacheWithStats(projectRoot, subdir string) (*Entry, ReadStats,
 		BuiltAt:     header.BuiltAt,
 		PlatformABI: header.PlatformABI,
 		RuntimeABI:  header.RuntimeABI,
+		RuntimeKey:  header.RuntimeKey,
+		Manifest:    header.Manifest,
+		Org:         payload.Org,
+		Runtime:     payload.Runtime,
+	}, stats, nil
+}
+
+func readFreshSplitTestRuntimeWithSourceDigests(projectRoot, subdir string, expectedVersion int, expectedRuntimeABI, expectedRuntimeKey string, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error)) (*Entry, ReadStats, error) {
+	var stats ReadStats
+	validationStarted := time.Now()
+	cacheDir := filepath.Join(projectRoot, filepath.FromSlash(subdir))
+	header, err := readTestCacheHeader(filepath.Join(cacheDir, stateHeaderFile))
+	if err != nil {
+		stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
+		if errors.Is(err, os.ErrNotExist) || errors.Is(err, errMalformedTestCacheHeader) {
+			return nil, stats, nil
+		}
+		return nil, stats, err
+	}
+	if header == nil || header.FormatVersion != testCacheFormatVersion ||
+		!validPayloadFileName(header.PayloadFile, header.PayloadSHA256) || header.PayloadSize < 0 ||
+		expectedRuntimeABI == "" || header.RuntimeABI != expectedRuntimeABI ||
+		expectedRuntimeKey == "" || header.RuntimeKey != expectedRuntimeKey ||
+		!freshManifestWithSourceDigests(header.Version, header.ProjectRoot, header.PlatformABI, header.Manifest, projectRoot, expectedVersion, digests, readFile) {
+		stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
+		return nil, stats, nil
+	}
+	stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
+	payloadPath := filepath.Join(cacheDir, header.PayloadFile)
+	decodeStarted := time.Now()
+	payload, err := readTestCachePayload(payloadPath, header.PayloadSHA256, header.PayloadSize)
+	stats.DecodeNS = time.Since(decodeStarted).Nanoseconds()
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, stats, err
+		}
+		return nil, stats, nil
+	}
+	return &Entry{
+		Version:     header.Version,
+		ProjectRoot: header.ProjectRoot,
+		BuiltAt:     header.BuiltAt,
+		PlatformABI: header.PlatformABI,
+		RuntimeABI:  header.RuntimeABI,
+		RuntimeKey:  header.RuntimeKey,
 		Manifest:    header.Manifest,
 		Org:         payload.Org,
 		Runtime:     payload.Runtime,
@@ -309,6 +357,7 @@ func writeSplitTestCache(entry *Entry, subdir string) error {
 			BuiltAt:       entry.BuiltAt,
 			PlatformABI:   entry.PlatformABI,
 			RuntimeABI:    entry.RuntimeABI,
+			RuntimeKey:    entry.RuntimeKey,
 			Manifest:      entry.Manifest,
 			PayloadFile:   payloadFile,
 			PayloadSHA256: sum,
@@ -376,6 +425,7 @@ func writeSplitTestCacheWithStatsAfterRootOpened(entry *Entry, subdir string, af
 			BuiltAt:       entry.BuiltAt,
 			PlatformABI:   entry.PlatformABI,
 			RuntimeABI:    entry.RuntimeABI,
+			RuntimeKey:    entry.RuntimeKey,
 			Manifest:      entry.Manifest,
 			PayloadFile:   payloadFile,
 			PayloadSHA256: sum,

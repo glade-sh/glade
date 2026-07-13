@@ -16,7 +16,7 @@ import (
 
 var disableDiskCache atomic.Bool
 
-const testRuntimeCacheABI = "apextest-runtime-v4"
+const testRuntimeCacheABI = "apextest-runtime-v5"
 
 func DisableDiskCacheForTesting() func() {
 	wasDisabled := disableDiskCache.Load()
@@ -31,6 +31,11 @@ func diskCacheEnabled() bool {
 }
 
 func tryLoadDiskRuntime(index typesys.Index) (runtimeCacheEntry, bool) {
+	key := runtimeKey(index)
+	return tryLoadDiskRuntimeWithSourceDigests(index, nil, key)
+}
+
+func tryLoadDiskRuntimeWithSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet, key runtimeCacheKey) (runtimeCacheEntry, bool) {
 	if !diskCacheEnabled() {
 		return runtimeCacheEntry{}, false
 	}
@@ -39,14 +44,14 @@ func tryLoadDiskRuntime(index typesys.Index) (runtimeCacheEntry, bool) {
 		return runtimeCacheEntry{}, false
 	}
 	root = filepath.Clean(root)
-	entry, err := startupcache.Read(root, startupcache.SubdirTest)
-	if err != nil || entry == nil || !startupcache.FreshRuntime(entry, root, startupcache.Version, testRuntimeCacheABI) {
+	entry, err := startupcache.ReadFreshRuntimeWithSourceDigests(root, startupcache.SubdirTest, startupcache.Version, testRuntimeCacheABI, string(key), digests)
+	if err != nil || entry == nil {
 		return runtimeCacheEntry{}, false
 	}
 	return runtimeCacheEntryFromStartup(*entry), true
 }
 
-func tryLoadDiskRuntimeWithPerf(index typesys.Index, counters *runPerfCounters) (runtimeCacheEntry, bool) {
+func tryLoadDiskRuntimeWithPerf(index typesys.Index, digests *typesys.SourceDigestSet, key runtimeCacheKey, counters *runPerfCounters) (runtimeCacheEntry, bool) {
 	if !diskCacheEnabled() {
 		return runtimeCacheEntry{}, false
 	}
@@ -55,22 +60,16 @@ func tryLoadDiskRuntimeWithPerf(index typesys.Index, counters *runPerfCounters) 
 		return runtimeCacheEntry{}, false
 	}
 	root = filepath.Clean(root)
-	entry, stats, err := startupcache.ReadWithStats(root, startupcache.SubdirTest)
+	entry, stats, err := startupcache.ReadFreshRuntimeWithSourceDigestsAndStats(root, startupcache.SubdirTest, startupcache.Version, testRuntimeCacheABI, string(key), digests)
 	counters.phases.cacheValidateNS.Add(stats.ValidationNS)
 	counters.phases.cacheDecodeNS.Add(stats.DecodeNS)
 	if err != nil || entry == nil {
 		return runtimeCacheEntry{}, false
 	}
-	validateStarted := time.Now()
-	fresh := startupcache.FreshRuntime(entry, root, startupcache.Version, testRuntimeCacheABI)
-	counters.phases.cacheValidateNS.Add(time.Since(validateStarted).Nanoseconds())
-	if !fresh {
-		return runtimeCacheEntry{}, false
-	}
 	return runtimeCacheEntryFromStartupWithPerf(*entry, counters), true
 }
 
-func persistDiskRuntime(index typesys.Index, entry runtimeCacheEntry) {
+func persistDiskRuntime(index typesys.Index, digests *typesys.SourceDigestSet, key runtimeCacheKey, entry runtimeCacheEntry) {
 	if !diskCacheEnabled() {
 		return
 	}
@@ -82,17 +81,18 @@ func persistDiskRuntime(index typesys.Index, entry runtimeCacheEntry) {
 	if err != nil {
 		return
 	}
-	cacheEntry := startupcache.NewEntry(root, p, index, entry.Org, startupcache.CompiledRuntime{
+	cacheEntry := startupcache.NewEntryWithSourceDigests(root, p, index, digests, entry.Org, startupcache.CompiledRuntime{
 		Methods:   entry.Methods,
 		Classes:   entry.Classes,
 		Triggers:  entry.Triggers,
 		PageNames: entry.PageNames,
 	})
 	cacheEntry.RuntimeABI = testRuntimeCacheABI
+	cacheEntry.RuntimeKey = string(key)
 	_ = startupcache.Write(&cacheEntry, startupcache.SubdirTest)
 }
 
-func persistDiskRuntimeWithPerf(index typesys.Index, entry runtimeCacheEntry, counters *runPerfCounters) {
+func persistDiskRuntimeWithPerf(index typesys.Index, digests *typesys.SourceDigestSet, key runtimeCacheKey, entry runtimeCacheEntry, counters *runPerfCounters) {
 	if !diskCacheEnabled() {
 		return
 	}
@@ -104,13 +104,14 @@ func persistDiskRuntimeWithPerf(index typesys.Index, entry runtimeCacheEntry, co
 	if err != nil {
 		return
 	}
-	cacheEntry := startupcache.NewEntry(root, p, index, entry.Org, startupcache.CompiledRuntime{
+	cacheEntry := startupcache.NewEntryWithSourceDigests(root, p, index, digests, entry.Org, startupcache.CompiledRuntime{
 		Methods:   entry.Methods,
 		Classes:   entry.Classes,
 		Triggers:  entry.Triggers,
 		PageNames: entry.PageNames,
 	})
 	cacheEntry.RuntimeABI = testRuntimeCacheABI
+	cacheEntry.RuntimeKey = string(key)
 	stats, _ := startupcache.WriteWithStats(&cacheEntry, startupcache.SubdirTest)
 	counters.phases.cacheEncodeNS.Add(stats.EncodeNS)
 }

@@ -3,6 +3,7 @@ package startupcache
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
@@ -31,6 +33,193 @@ func TestWriteWithStatsCreatesPrivateTestCacheDirectory(t *testing.T) {
 	}
 	if got, want := info.Mode().Perm(), os.FileMode(0o700); got != want {
 		t.Fatalf("cache directory permissions = %04o, want %04o", got, want)
+	}
+}
+
+func TestBuildManifestWithSourceDigestsUsesAllOrNothingApexOverlay(t *testing.T) {
+	root := t.TempDir()
+	dependencyRoot := t.TempDir()
+	mainApex := filepath.Join(root, "Main.cls")
+	dependencyApex := filepath.Join(dependencyRoot, "Dependency.cls")
+	objectMetadata := filepath.Join(root, "Thing__c.object-meta.xml")
+	writeStartupCacheTestFile(t, mainApex, "public class Main {}\n")
+	writeStartupCacheTestFile(t, dependencyApex, "public class Dependency {}\n")
+	writeStartupCacheTestFile(t, objectMetadata, "<CustomObject/>\n")
+	dependency := project.Project{Root: dependencyRoot, Namespace: "dep", ApexFiles: []string{dependencyApex}}
+	p := project.Project{
+		Root:        root,
+		ApexFiles:   []string{mainApex},
+		ObjectFiles: []string{objectMetadata},
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace: "dep",
+			Status:    "loaded",
+			Project:   &dependency,
+		}},
+	}
+	index, complete := typesys.BuildWithArtifacts(p, schema.Schema{})
+	_, incomplete := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{mainApex}}, schema.Schema{})
+
+	reads := make(map[string]int)
+	readFile := func(path string) ([]byte, error) {
+		reads[filepath.Clean(path)]++
+		return os.ReadFile(path)
+	}
+	fromSnapshot, err := buildManifestWithSourceDigests(root, p, true, complete.SourceDigests, readFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reads[mainApex] != 0 || reads[dependencyApex] != 0 || reads[objectMetadata] != 1 {
+		t.Fatalf("complete overlay reads = %#v, want Apex 0/0 and non-Apex 1", reads)
+	}
+	if fromDisk := BuildManifest(root, p, index); fmt.Sprintf("%#v", fromSnapshot) != fmt.Sprintf("%#v", fromDisk) {
+		t.Fatalf("snapshot manifest differs from disk manifest:\n snapshot=%#v\n disk=%#v", fromSnapshot, fromDisk)
+	}
+
+	clear(reads)
+	fromFallback, err := buildManifestWithSourceDigests(root, p, true, incomplete.SourceDigests, readFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reads[mainApex] != 1 || reads[dependencyApex] != 1 || reads[objectMetadata] != 1 {
+		t.Fatalf("incomplete overlay reads = %#v, want all-disk 1/1/1", reads)
+	}
+	if fmt.Sprintf("%#v", fromFallback) != fmt.Sprintf("%#v", fromSnapshot) {
+		t.Fatalf("fallback manifest differs from complete manifest:\n fallback=%#v\n complete=%#v", fromFallback, fromSnapshot)
+	}
+}
+
+func TestFreshManifestWithSourceDigestsUsesExactApexReadCounts(t *testing.T) {
+	root := t.TempDir()
+	first := filepath.Join(root, "force-app", "main", "default", "classes", "First.cls")
+	second := filepath.Join(root, "force-app", "main", "default", "classes", "Second.cls")
+	writeStartupCacheTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeStartupCacheTestFile(t, first, "public class First {}\n")
+	writeStartupCacheTestFile(t, second, "public class Second {}\n")
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index, complete := typesys.BuildWithArtifacts(p, schema.Schema{})
+	_, incomplete := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{first}}, schema.Schema{})
+	manifest := BuildManifestWithSourceDigests(root, p, index, complete.SourceDigests)
+
+	reads := make(map[string]int)
+	readFile := func(path string) ([]byte, error) {
+		reads[filepath.Clean(path)]++
+		return os.ReadFile(path)
+	}
+	if !freshManifestWithSourceDigests(Version, root, currentPlatformABI(), manifest, root, Version, complete.SourceDigests, readFile) {
+		t.Fatal("complete snapshot manifest is stale")
+	}
+	if reads[first] != 0 || reads[second] != 0 {
+		t.Fatalf("complete snapshot Apex reads = %d/%d, want 0/0", reads[first], reads[second])
+	}
+
+	clear(reads)
+	if !freshManifestWithSourceDigests(Version, root, currentPlatformABI(), manifest, root, Version, incomplete.SourceDigests, readFile) {
+		t.Fatal("all-disk fallback manifest is stale")
+	}
+	if reads[first] != 1 || reads[second] != 1 {
+		t.Fatalf("incomplete snapshot Apex reads = %d/%d, want all-disk 1/1", reads[first], reads[second])
+	}
+}
+
+func TestSplitCacheRuntimeKeyRoundTripsAndKeylessEntryRemainsReadable(t *testing.T) {
+	root := t.TempDir()
+	writeStartupCacheTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[]}`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	entry := NewEntry(root, p, typesys.Index{}, storage.NewOrgState(), CompiledRuntime{})
+	entry.RuntimeABI = "runtime-v5"
+	entry.RuntimeKey = "runtime-key"
+	if err := Write(&entry, SubdirTest); err != nil {
+		t.Fatal(err)
+	}
+	got, err := Read(root, SubdirTest)
+	if err != nil || got == nil {
+		t.Fatalf("Read() = %#v, %v", got, err)
+	}
+	if got.RuntimeKey != entry.RuntimeKey {
+		t.Fatalf("RuntimeKey = %q, want %q", got.RuntimeKey, entry.RuntimeKey)
+	}
+	header, err := readTestCacheHeader(filepath.Join(root, ".glade", "test", stateHeaderFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if header.RuntimeKey != entry.RuntimeKey {
+		t.Fatalf("header RuntimeKey = %q, want %q", header.RuntimeKey, entry.RuntimeKey)
+	}
+
+	entry.RuntimeKey = ""
+	if err := Write(&entry, SubdirTest); err != nil {
+		t.Fatal(err)
+	}
+	got, err = Read(root, SubdirTest)
+	if err != nil || got == nil || got.RuntimeKey != "" {
+		t.Fatalf("keyless Read() = %#v, %v", got, err)
+	}
+}
+
+func TestReadFreshRuntimeWithSourceDigestsValidatesKeyBeforePayload(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "force-app", "main", "default", "classes", "Cached.cls")
+	writeStartupCacheTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeStartupCacheTestFile(t, classPath, "public class Cached {}\n")
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index, artifacts := typesys.BuildWithArtifacts(p, schema.Schema{})
+	entry := NewEntryWithSourceDigests(root, p, index, artifacts.SourceDigests, storage.NewOrgState(), CompiledRuntime{})
+	entry.RuntimeABI = "runtime-v5"
+	entry.RuntimeKey = "runtime-key"
+	if err := Write(&entry, SubdirTest); err != nil {
+		t.Fatal(err)
+	}
+
+	apexReads := 0
+	manifestReads := 0
+	readFile := func(path string) ([]byte, error) {
+		manifestReads++
+		if filepath.Clean(path) == classPath {
+			apexReads++
+		}
+		return os.ReadFile(path)
+	}
+	got, err := readFreshRuntimeWithSourceDigests(root, SubdirTest, Version, "runtime-v5", "runtime-key", artifacts.SourceDigests, readFile)
+	if err != nil || got == nil {
+		t.Fatalf("fresh read = %#v, %v", got, err)
+	}
+	if apexReads != 0 {
+		t.Fatalf("fresh read Apex reads = %d, want 0", apexReads)
+	}
+	if manifestReads == 0 {
+		t.Fatal("eligible header did not validate non-Apex manifest inputs")
+	}
+
+	header, err := readTestCacheHeader(filepath.Join(root, ".glade", "test", stateHeaderFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(filepath.Join(root, ".glade", "test", header.PayloadFile)); err != nil {
+		t.Fatal(err)
+	}
+	manifestReads = 0
+	got, err = readFreshRuntimeWithSourceDigests(root, SubdirTest, Version, "runtime-v5", "wrong-key", artifacts.SourceDigests, readFile)
+	if err != nil || got != nil {
+		t.Fatalf("mismatched key should reject before missing payload: got=%#v err=%v", got, err)
+	}
+	if manifestReads != 0 {
+		t.Fatalf("mismatched key manifest reads = %d, want 0", manifestReads)
+	}
+	if _, err := readFreshRuntimeWithSourceDigests(root, SubdirTest, Version, "runtime-v5", "runtime-key", artifacts.SourceDigests, readFile); err == nil {
+		t.Fatal("exact key did not reach missing payload")
+	}
+	got, err = readFreshRuntimeWithSourceDigests(root, SubdirTest, Version, "runtime-v5", "", artifacts.SourceDigests, readFile)
+	if err != nil || got != nil {
+		t.Fatalf("keyless lookup should fail closed before payload: got=%#v err=%v", got, err)
 	}
 }
 

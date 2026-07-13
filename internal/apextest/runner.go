@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"encoding/xml"
@@ -53,6 +54,7 @@ type Options struct {
 	MethodDurationMS     map[string]int64
 	PerfCounters         bool
 	PreRunPhaseDurations PreRunPhaseDurations
+	SourceDigests        *typesys.SourceDigestSet
 	Progress             func(TestProgress)
 }
 
@@ -234,18 +236,28 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	}
 	var runtimeKey runtimeCacheKey
 	var runtime runtimeCacheEntry
+	var runtimeErr error
 	if runState.counters.enabled {
-		runtimeKey, runtime = runtimeFromIndexWithPerf(index, sources, runState.diskCacheEnabled, runState.counters)
+		runtimeKey, runtime, runtimeErr = runtimeFromIndexWithSourceDigestsAndPerf(index, opts.SourceDigests, sources, runState.diskCacheEnabled, runState.counters)
 	} else {
-		runtimeKey, runtime = runtimeFromIndex(index, sources, runState.diskCacheEnabled)
+		runtimeKey, runtime, runtimeErr = runtimeFromIndexWithSourceDigests(index, opts.SourceDigests, sources, runState.diskCacheEnabled)
+	}
+	if runtimeErr != nil {
+		return compileErrorRun(cases, runtimeErr, started, opts)
 	}
 	var testCompileStarted time.Time
 	if runState.counters.enabled {
 		testCompileStarted = time.Now()
 	}
-	setups, setupErrors, setupInvokePrograms, setupInvokeErrors := compileTestSetupsCached(index, runtimeKey, testCaseClassSet(cases), sources)
+	setups, setupErrors, setupInvokePrograms, setupInvokeErrors, setupSourceErr := compileTestSetupsCached(index, runtimeKey, testCaseClassSet(cases), sources)
+	if setupSourceErr != nil {
+		return compileErrorRun(cases, setupSourceErr, started, opts)
+	}
 	triggerErrors := runtime.TriggerErrors
-	testMethods, testMethodErrors, testInvokePrograms, testInvokeErrors := compileTestsCached(index, runtimeKey, cases, sources)
+	testMethods, testMethodErrors, testInvokePrograms, testInvokeErrors, testSourceErr := compileTestsCached(index, runtimeKey, cases, sources)
+	if testSourceErr != nil {
+		return compileErrorRun(cases, testSourceErr, started, opts)
+	}
 	if runState.counters.enabled {
 		runState.counters.phases.testCompileNS.Add(time.Since(testCompileStarted).Nanoseconds())
 	}
@@ -375,6 +387,41 @@ assemble:
 	return run
 }
 
+func compileErrorRun(cases []TestCase, compileErr error, started time.Time, opts Options) testreport.Run {
+	run := testreport.Run{
+		Name:       "glade test",
+		DurationMS: time.Since(started).Milliseconds(),
+	}
+	suiteIndexes := make(map[string]int)
+	for _, testCase := range cases {
+		index, ok := suiteIndexes[testCase.ClassName]
+		if !ok {
+			index = len(run.Suites)
+			suiteIndexes[testCase.ClassName] = index
+			run.Suites = append(run.Suites, testreport.Suite{Name: testCase.ClassName})
+		}
+		result := testreport.Case{
+			ClassName:  testCase.ClassName,
+			MethodName: testCase.MethodName,
+			Status:     testreport.StatusCompileError,
+			Problem:    problem("CompileError", compileErr.Error(), testCase),
+		}
+		run.Suites[index].Cases = append(run.Suites[index].Cases, result)
+	}
+	if opts.Progress != nil {
+		reportProgress(opts, TestProgress{Event: "compile_done", DurationMS: time.Since(started).Milliseconds(), Status: "fail"})
+		for _, testCase := range cases {
+			reportProgress(opts, TestProgress{
+				Event:      "test_done",
+				ClassName:  testCase.ClassName,
+				MethodName: testCase.MethodName,
+				Status:     string(testreport.StatusCompileError),
+			})
+		}
+	}
+	return run
+}
+
 func useDiskRuntimeCache(opts Options) bool {
 	if opts.NoDiskCache || !diskCacheEnabled() {
 		return false
@@ -445,24 +492,70 @@ var (
 )
 
 func runtimeKey(index typesys.Index) runtimeCacheKey {
+	return runtimeKeyWithSourceDigests(index, nil, os.ReadFile)
+}
+
+// RuntimeContentKey returns the exact key used by compiled-runtime caches.
+func RuntimeContentKey(index typesys.Index, digests *typesys.SourceDigestSet) string {
+	return string(runtimeKeyWithSourceDigests(index, digests, os.ReadFile))
+}
+
+func runtimeKeyWithSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error)) runtimeCacheKey {
+	var lookup func(string) ([sha256.Size]byte, bool)
+	if digests != nil {
+		lookup = digests.Digest
+	}
+	return runtimeKeyWithDigestLookup(index, lookup, readFile)
+}
+
+func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha256.Size]byte, bool), readFile func(string) ([]byte, error)) runtimeCacheKey {
+	if readFile == nil {
+		readFile = os.ReadFile
+	}
 	h := fnv.New128a()
 	write := func(s string) {
 		_, _ = h.Write([]byte(s))
 		_, _ = h.Write([]byte{0})
 	}
 	seenFiles := make(map[string]bool)
+	for _, typ := range index.Types {
+		if typ.File != "" {
+			seenFiles[typ.File] = true
+		}
+	}
+	for _, trigger := range index.Triggers {
+		if trigger.File != "" {
+			seenFiles[trigger.File] = true
+		}
+	}
+	useSnapshot := lookup != nil
+	if useSnapshot {
+		for file := range seenFiles {
+			if _, ok := lookup(file); !ok {
+				useSnapshot = false
+				break
+			}
+		}
+	}
+	clear(seenFiles)
 	writeFileBody := func(file string) {
 		if file == "" || seenFiles[file] {
 			return
 		}
 		seenFiles[file] = true
 		write("file:" + file)
-		data, err := os.ReadFile(file)
-		if err != nil {
-			write("read-error:" + err.Error())
-			return
+		var digest [sha256.Size]byte
+		if useSnapshot {
+			digest, _ = lookup(file)
+		} else {
+			data, err := readFile(file)
+			if err != nil {
+				write("read-error:" + err.Error())
+				return
+			}
+			digest = sha256.Sum256(data)
 		}
-		_, _ = h.Write(data)
+		_, _ = h.Write(digest[:])
 		_, _ = h.Write([]byte{0})
 	}
 	write(index.Project.Root)
@@ -500,28 +593,91 @@ func cloneRuntimeCacheEntry(in runtimeCacheEntry) runtimeCacheEntry {
 	}
 }
 
-func runtimeFromIndex(index typesys.Index, sources *sourceCache, useDiskCache ...bool) (runtimeCacheKey, runtimeCacheEntry) {
-	if sources != nil {
-		sources.configureNamespaceRemaps(index.Types, index.Triggers)
+func authoritativeRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet) *typesys.SourceDigestSet {
+	if digests == nil {
+		return nil
 	}
+	seen := make(map[string]bool)
+	complete := true
+	check := func(file string) {
+		if file == "" || seen[file] {
+			return
+		}
+		seen[file] = true
+		if _, ok := digests.Digest(file); !ok {
+			complete = false
+		}
+	}
+	for _, typ := range index.Types {
+		check(typ.File)
+	}
+	for _, trigger := range index.Triggers {
+		check(trigger.File)
+	}
+	if !complete {
+		return nil
+	}
+	return digests
+}
+
+func preloadRuntimeSources(index typesys.Index, sources *sourceCache) error {
+	seen := make(map[string]bool)
+	preload := func(file string) error {
+		if file == "" || seen[file] {
+			return nil
+		}
+		seen[file] = true
+		_, err := sources.read(file)
+		return err
+	}
+	for _, typ := range index.Types {
+		if err := preload(typ.File); err != nil {
+			return err
+		}
+	}
+	for _, trigger := range index.Triggers {
+		if err := preload(trigger.File); err != nil {
+			return err
+		}
+	}
+	return sources.sourceSnapshotError()
+}
+
+func runtimeFromIndex(index typesys.Index, sources *sourceCache, useDiskCache ...bool) (runtimeCacheKey, runtimeCacheEntry) {
+	key, entry, _ := runtimeFromIndexWithSourceDigests(index, nil, sources, useDiskCache...)
+	return key, entry
+}
+
+func runtimeFromIndexWithSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, useDiskCache ...bool) (runtimeCacheKey, runtimeCacheEntry, error) {
+	digests = authoritativeRuntimeSourceDigests(index, digests)
+	if sources == nil {
+		sources = newSourceCache()
+	}
+	sources.configureNamespaceRemaps(index.Types, index.Triggers)
+	sources.bindSourceDigests(digests)
 	diskCacheAllowed := diskCacheEnabled()
 	if len(useDiskCache) > 0 {
 		diskCacheAllowed = useDiskCache[0]
 	}
-	key := runtimeKey(index)
+	key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
 	runtimeCacheMu.RLock()
 	if cached, ok := runtimeCache[key]; ok {
 		runtimeCacheMu.RUnlock()
-		return key, cloneRuntimeCacheEntry(cached)
+		return key, cloneRuntimeCacheEntry(cached), nil
 	}
 	runtimeCacheMu.RUnlock()
 
 	if diskCacheAllowed {
-		if diskEntry, ok := tryLoadDiskRuntime(index); ok {
+		if diskEntry, ok := tryLoadDiskRuntimeWithSourceDigests(index, digests, key); ok {
 			runtimeCacheMu.Lock()
 			runtimeCache[key] = diskEntry
 			runtimeCacheMu.Unlock()
-			return key, cloneRuntimeCacheEntry(diskEntry)
+			return key, cloneRuntimeCacheEntry(diskEntry), nil
+		}
+	}
+	if digests != nil {
+		if err := preloadRuntimeSources(index, sources); err != nil {
+			return key, runtimeCacheEntry{}, err
 		}
 	}
 
@@ -536,6 +692,9 @@ func runtimeFromIndex(index typesys.Index, sources *sourceCache, useDiskCache ..
 	baseMachine.SetTraceEnabled(false)
 	registerVisualforcePages(baseMachine, pageNames)
 	baseErr := registerBaseRuntime(baseMachine, methods, classes, triggers)
+	if err := sources.sourceSnapshotError(); err != nil {
+		return key, runtimeCacheEntry{}, err
+	}
 	entry := runtimeCacheEntry{
 		Methods:       methods,
 		Classes:       classes,
@@ -551,36 +710,52 @@ func runtimeFromIndex(index typesys.Index, sources *sourceCache, useDiskCache ..
 	runtimeCache[key] = entry
 	runtimeCacheMu.Unlock()
 	if diskCacheAllowed {
-		persistDiskRuntime(index, entry)
+		persistDiskRuntime(index, digests, key, entry)
 	}
-	return key, cloneRuntimeCacheEntry(entry)
+	return key, cloneRuntimeCacheEntry(entry), nil
 }
 
 func runtimeFromIndexWithPerf(index typesys.Index, sources *sourceCache, diskCacheAllowed bool, counters *runPerfCounters) (runtimeCacheKey, runtimeCacheEntry) {
-	if sources != nil {
-		sources.configureNamespaceRemaps(index.Types, index.Triggers)
+	key, entry, _ := runtimeFromIndexWithSourceDigestsAndPerf(index, nil, sources, diskCacheAllowed, counters)
+	return key, entry
+}
+
+func runtimeFromIndexWithSourceDigestsAndPerf(index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, diskCacheAllowed bool, counters *runPerfCounters) (runtimeCacheKey, runtimeCacheEntry, error) {
+	digests = authoritativeRuntimeSourceDigests(index, digests)
+	if sources == nil {
+		sources = newSourceCache()
 	}
+	sources.configureNamespaceRemaps(index.Types, index.Triggers)
+	sources.bindSourceDigests(digests)
 	keyStarted := time.Now()
-	key := runtimeKey(index)
+	key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
 	counters.phases.runtimeKeyNS.Add(time.Since(keyStarted).Nanoseconds())
 	runtimeCacheMu.RLock()
 	if cached, ok := runtimeCache[key]; ok {
 		runtimeCacheMu.RUnlock()
 		counters.phases.memoryCacheHits.Add(1)
-		return key, cloneRuntimeCacheEntry(cached)
+		return key, cloneRuntimeCacheEntry(cached), nil
 	}
 	runtimeCacheMu.RUnlock()
 
 	if diskCacheAllowed {
-		if diskEntry, ok := tryLoadDiskRuntimeWithPerf(index, counters); ok {
+		if diskEntry, ok := tryLoadDiskRuntimeWithPerf(index, digests, key, counters); ok {
 			runtimeCacheMu.Lock()
 			runtimeCache[key] = diskEntry
 			runtimeCacheMu.Unlock()
 			counters.phases.diskCacheHits.Add(1)
-			return key, cloneRuntimeCacheEntry(diskEntry)
+			return key, cloneRuntimeCacheEntry(diskEntry), nil
 		}
 	}
 	counters.phases.cacheMisses.Add(1)
+	if digests != nil {
+		bindingStarted := time.Now()
+		err := preloadRuntimeSources(index, sources)
+		counters.phases.runtimeKeyNS.Add(time.Since(bindingStarted).Nanoseconds())
+		if err != nil {
+			return key, runtimeCacheEntry{}, err
+		}
+	}
 
 	compileStarted := time.Now()
 	methods := compileProjectMethods(index, sources)
@@ -601,6 +776,9 @@ func runtimeFromIndexWithPerf(index typesys.Index, sources *sourceCache, diskCac
 	registerVisualforcePages(baseMachine, pageNames)
 	baseErr := registerBaseRuntime(baseMachine, methods, classes, triggers)
 	counters.phases.projectCompileNS.Add(time.Since(compileStarted).Nanoseconds())
+	if err := sources.sourceSnapshotError(); err != nil {
+		return key, runtimeCacheEntry{}, err
+	}
 	entry := runtimeCacheEntry{
 		Methods:       methods,
 		Classes:       classes,
@@ -616,9 +794,9 @@ func runtimeFromIndexWithPerf(index typesys.Index, sources *sourceCache, diskCac
 	runtimeCache[key] = entry
 	runtimeCacheMu.Unlock()
 	if diskCacheAllowed {
-		persistDiskRuntimeWithPerf(index, entry, counters)
+		persistDiskRuntimeWithPerf(index, digests, key, entry, counters)
 	}
-	return key, cloneRuntimeCacheEntry(entry)
+	return key, cloneRuntimeCacheEntry(entry), nil
 }
 
 func classSetKey(classes map[string]bool) string {
@@ -677,35 +855,41 @@ func allClassesHaveSingleMethod(classIndexes map[string][]int) bool {
 	return true
 }
 
-func compileTestSetupsCached(index typesys.Index, baseKey runtimeCacheKey, selectedClasses map[string]bool, sources *sourceCache) (map[string][]vm.Method, map[string]error, map[string][]ir.Program, map[string]error) {
+func compileTestSetupsCached(index typesys.Index, baseKey runtimeCacheKey, selectedClasses map[string]bool, sources *sourceCache) (map[string][]vm.Method, map[string]error, map[string][]ir.Program, map[string]error, error) {
 	key := string(baseKey) + "|setup|" + classSetKey(selectedClasses)
 	setupCacheMu.RLock()
 	if cached, ok := setupCache[key]; ok {
 		setupCacheMu.RUnlock()
-		return cached.Methods, cached.Errors, cached.Programs, cached.ProgramErrs
+		return cached.Methods, cached.Errors, cached.Programs, cached.ProgramErrs, nil
 	}
 	setupCacheMu.RUnlock()
 	methods, errs, programs, programErrs := compileTestSetupMethodsForClasses(index, selectedClasses, sources)
+	if err := sources.sourceSnapshotError(); err != nil {
+		return methods, errs, programs, programErrs, err
+	}
 	setupCacheMu.Lock()
 	setupCache[key] = setupCompileCacheEntry{Methods: methods, Errors: errs, Programs: programs, ProgramErrs: programErrs}
 	setupCacheMu.Unlock()
-	return methods, errs, programs, programErrs
+	return methods, errs, programs, programErrs, nil
 }
 
-func compileTestsCached(index typesys.Index, baseKey runtimeCacheKey, cases []TestCase, sources *sourceCache) (map[string]vm.Method, map[string]error, map[string]ir.Program, map[string]error) {
+func compileTestsCached(index typesys.Index, baseKey runtimeCacheKey, cases []TestCase, sources *sourceCache) (map[string]vm.Method, map[string]error, map[string]ir.Program, map[string]error, error) {
 	key := string(baseKey) + "|tests|" + caseSetKey(cases)
 	testCacheMu.RLock()
 	if cached, ok := testCache[key]; ok {
 		testCacheMu.RUnlock()
-		return cached.Methods, cached.MethodErrs, cached.Programs, cached.ProgramErrs
+		return cached.Methods, cached.MethodErrs, cached.Programs, cached.ProgramErrs, nil
 	}
 	testCacheMu.RUnlock()
 	methods, methodErrs := compileTestMethods(cases, sources)
 	programs, programErrs := compileTestInvokePrograms(cases)
+	if err := sources.sourceSnapshotError(); err != nil {
+		return methods, methodErrs, programs, programErrs, err
+	}
 	testCacheMu.Lock()
 	testCache[key] = testCompileCacheEntry{Methods: methods, MethodErrs: methodErrs, Programs: programs, ProgramErrs: programErrs}
 	testCacheMu.Unlock()
-	return methods, methodErrs, programs, programErrs
+	return methods, methodErrs, programs, programErrs, nil
 }
 
 func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) map[string]testSetupResult {
@@ -1668,9 +1852,19 @@ func RegisterProjectRuntimeForRequest(machine *vm.VM, index typesys.Index) error
 }
 
 func CompileProjectRuntimeForRequest(index typesys.Index) CompiledProjectRuntime {
+	runtime, _ := CompileProjectRuntimeForRequestWithSourceDigests(index, nil)
+	return runtime
+}
+
+// CompileProjectRuntimeForRequestWithSourceDigests reuses the exact source
+// snapshot that produced index when building runtime cache keys.
+func CompileProjectRuntimeForRequestWithSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet) (CompiledProjectRuntime, error) {
 	sources := newSourceCache()
-	_, runtime := runtimeFromIndex(index, sources)
-	return compiledProjectRuntimeFromEntry(runtime)
+	_, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
+	if err != nil {
+		return CompiledProjectRuntime{}, err
+	}
+	return compiledProjectRuntimeFromEntry(runtime), nil
 }
 
 func RegisterCompiledProjectRuntimeForRequest(machine *vm.VM, runtime CompiledProjectRuntime) error {
@@ -1778,9 +1972,41 @@ func registerVisualforcePages(machine *vm.VM, names []string) {
 }
 
 type sourceCache struct {
-	mu         sync.RWMutex
-	files      map[string]string
-	fileRemaps map[string][]namespaceremap.Rule
+	mu              sync.RWMutex
+	expectedDigests *typesys.SourceDigestSet
+	snapshotErr     error
+	files           map[string]string
+	fileRemaps      map[string][]namespaceremap.Rule
+}
+
+// SourceSnapshotMismatchError reports that an authoritative source snapshot no
+// longer matches the raw bytes available for compilation.
+type SourceSnapshotMismatchError struct {
+	File           string
+	ExpectedSHA256 string
+	ActualSHA256   string
+	Cause          error
+}
+
+func (e *SourceSnapshotMismatchError) Error() string {
+	if e == nil {
+		return "source snapshot mismatch"
+	}
+	message := fmt.Sprintf("source snapshot mismatch for %s: expected sha256 %s", e.File, e.ExpectedSHA256)
+	if e.ActualSHA256 != "" {
+		return message + ", got " + e.ActualSHA256
+	}
+	if e.Cause != nil {
+		return message + ": " + e.Cause.Error()
+	}
+	return message
+}
+
+func (e *SourceSnapshotMismatchError) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return e.Cause
 }
 
 func newSourceCache() *sourceCache {
@@ -1792,6 +2018,59 @@ func sourceCacheFor(caches []*sourceCache) *sourceCache {
 		return caches[0]
 	}
 	return newSourceCache()
+}
+
+func (cache *sourceCache) bindSourceDigests(digests *typesys.SourceDigestSet) {
+	if cache == nil {
+		return
+	}
+	cache.mu.Lock()
+	if cache.expectedDigests != digests {
+		cache.files = make(map[string]string)
+		cache.snapshotErr = nil
+	}
+	cache.expectedDigests = digests
+	cache.mu.Unlock()
+}
+
+func (cache *sourceCache) expectedDigest(file string) ([sha256.Size]byte, bool) {
+	if cache == nil {
+		return [sha256.Size]byte{}, false
+	}
+	cache.mu.RLock()
+	digests := cache.expectedDigests
+	cache.mu.RUnlock()
+	if digests == nil {
+		return [sha256.Size]byte{}, false
+	}
+	return digests.Digest(file)
+}
+
+func (cache *sourceCache) recordSnapshotMismatch(file string, expected [sha256.Size]byte, actual *[sha256.Size]byte, cause error) error {
+	mismatch := &SourceSnapshotMismatchError{
+		File:           file,
+		ExpectedSHA256: hex.EncodeToString(expected[:]),
+		Cause:          cause,
+	}
+	if actual != nil {
+		mismatch.ActualSHA256 = hex.EncodeToString(actual[:])
+	}
+	cache.mu.Lock()
+	if cache.snapshotErr == nil {
+		cache.snapshotErr = mismatch
+	}
+	err := cache.snapshotErr
+	cache.mu.Unlock()
+	return err
+}
+
+func (cache *sourceCache) sourceSnapshotError() error {
+	if cache == nil {
+		return nil
+	}
+	cache.mu.RLock()
+	defer cache.mu.RUnlock()
+	return cache.snapshotErr
 }
 
 func (cache *sourceCache) read(file string) (string, error) {
@@ -1842,7 +2121,14 @@ func (cache *sourceCache) readWithRemaps(file string, remaps []namespaceremap.Ru
 
 	data, err := os.ReadFile(file)
 	if err != nil {
+		if expected, ok := cache.expectedDigest(file); ok {
+			return "", cache.recordSnapshotMismatch(file, expected, nil, err)
+		}
 		return "", err
+	}
+	digest := sha256.Sum256(data)
+	if expected, ok := cache.expectedDigest(file); ok && expected != digest {
+		return "", cache.recordSnapshotMismatch(file, expected, &digest, nil)
 	}
 	source := string(data)
 	if len(remaps) > 0 {
@@ -1853,6 +2139,9 @@ func (cache *sourceCache) readWithRemaps(file string, remaps []namespaceremap.Ru
 	defer cache.mu.Unlock()
 	if existing, ok := cache.files[key]; ok {
 		return existing, nil
+	}
+	if cache.files == nil {
+		cache.files = make(map[string]string)
 	}
 	cache.files[key] = source
 	return source, nil

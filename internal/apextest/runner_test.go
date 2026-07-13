@@ -3,6 +3,7 @@ package apextest
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -33,6 +34,375 @@ func firstRunProblem(run testreport.Run) string {
 		}
 	}
 	return ""
+}
+
+func TestRuntimeKeyWithSourceDigestsAvoidsRereadsAndMatchesDiskFallback(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app", "main", "default", "classes", "Unicode.cls")
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, path, "public class Unicode { String value = '雪'; }\r\n")
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index, artifacts := typesys.BuildWithArtifacts(p, gladeschema.Schema{})
+	if len(p.ApexFiles) != 1 || len(index.Types) != 1 {
+		t.Fatalf("loaded Apex/index types = %#v/%#v diagnostics=%#v", p.ApexFiles, index.Types, index.Diagnostics)
+	}
+	reads := 0
+	readFile := func(string) ([]byte, error) {
+		reads++
+		return nil, os.ErrNotExist
+	}
+
+	fromSnapshot := runtimeKeyWithSourceDigests(index, artifacts.SourceDigests, readFile)
+	if reads != 0 {
+		t.Fatalf("complete snapshot source reads = %d, want 0", reads)
+	}
+	fromDisk := runtimeKeyWithSourceDigests(index, nil, os.ReadFile)
+	if fromSnapshot != fromDisk {
+		t.Fatalf("snapshot key %q differs from disk key %q", fromSnapshot, fromDisk)
+	}
+	writeFile(t, path, "public class Unicode { String value = '雨'; }\r\n")
+	changedIndex, changedArtifacts := typesys.BuildWithArtifacts(p, gladeschema.Schema{})
+	if changed := runtimeKeyWithSourceDigests(changedIndex, changedArtifacts.SourceDigests, readFile); changed == fromSnapshot {
+		t.Fatal("raw source change did not change runtime key")
+	}
+	if reads != 0 {
+		t.Fatalf("changed complete snapshot source reads = %d, want 0", reads)
+	}
+}
+
+func TestRuntimeKeyWithIncompleteSourceDigestsFallsBackEntirely(t *testing.T) {
+	root := t.TempDir()
+	first := filepath.Join(root, "First.cls")
+	second := filepath.Join(root, "Second.cls")
+	writeFile(t, first, "public class First {}\n")
+	writeFile(t, second, "public class Second {}\n")
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{first}}, gladeschema.Schema{})
+	index.Types = append(index.Types, typesys.TypeSymbol{Name: "Second", File: second})
+	reads := 0
+	readFile := func(path string) ([]byte, error) {
+		reads++
+		return os.ReadFile(path)
+	}
+
+	got := runtimeKeyWithSourceDigests(index, artifacts.SourceDigests, readFile)
+	if reads != 2 {
+		t.Fatalf("incomplete snapshot source reads = %d, want all 2 unique sources", reads)
+	}
+	if want := runtimeKeyWithSourceDigests(index, nil, os.ReadFile); got != want {
+		t.Fatalf("incomplete snapshot key %q differs from all-disk key %q", got, want)
+	}
+}
+
+func TestRunWithSourceDigestsPersistsExactV5RuntimeKey(t *testing.T) {
+	if testRuntimeCacheABI != "apextest-runtime-v5" {
+		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v5", testRuntimeCacheABI)
+	}
+	wasDisabled := disableDiskCache.Load()
+	disableDiskCache.Store(false)
+	t.Cleanup(func() {
+		disableDiskCache.Store(wasDisabled)
+		InvalidateRuntimeCaches()
+		ResetPerfCounters()
+	})
+	InvalidateRuntimeCaches()
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app", "main", "classes", "DigestCacheTest.cls"), `
+@isTest
+private class DigestCacheTest {
+  @isTest static void runs() { System.assert(true); }
+}
+`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := gladeschema.LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index, artifacts := typesys.BuildWithArtifacts(p, s)
+	wantKey := RuntimeContentKey(index, artifacts.SourceDigests)
+	if len(p.ApexFiles) != 1 || len(index.Types) != 1 {
+		t.Fatalf("loaded Apex/index types = %#v/%#v diagnostics=%#v", p.ApexFiles, index.Types, index.Diagnostics)
+	}
+	run := Run(index, Options{SourceDigests: artifacts.SourceDigests})
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v problem=%q", summary, firstRunProblem(run))
+	}
+	entry, err := startupcache.Read(root, startupcache.SubdirTest)
+	if err != nil || entry == nil {
+		t.Fatalf("Read() = %#v, %v", entry, err)
+	}
+	if entry.RuntimeABI != testRuntimeCacheABI || entry.RuntimeKey != wantKey {
+		t.Fatalf("persisted ABI/key = %q/%q, want %q/%q", entry.RuntimeABI, entry.RuntimeKey, testRuntimeCacheABI, wantKey)
+	}
+	InvalidateRuntimeCaches()
+	if _, ok := tryLoadDiskRuntimeWithSourceDigests(index, artifacts.SourceDigests, runtimeCacheKey(wantKey)); !ok {
+		t.Fatal("exact SourceDigestSet runtime cache did not reload")
+	}
+
+	InvalidateRuntimeCaches()
+	ResetPerfCounters()
+	cached := Run(index, Options{SourceDigests: artifacts.SourceDigests, PerfCounters: true})
+	if phases := SnapshotPerfCounters().Phases; phases.DiskCacheHits != 1 || phases.CacheMisses != 0 {
+		t.Fatalf("source-digest cached phases = %#v", phases)
+	}
+	InvalidateRuntimeCaches()
+	ResetPerfCounters()
+	uncached := Run(index, Options{SourceDigests: artifacts.SourceDigests, PerfCounters: true, NoDiskCache: true})
+	if phases := SnapshotPerfCounters().Phases; phases.DiskCacheHits != 0 || phases.CacheMisses != 1 {
+		t.Fatalf("source-digest no-cache phases = %#v", phases)
+	}
+	normalize := func(run testreport.Run) testreport.Run {
+		run.DurationMS = 0
+		for suiteIndex := range run.Suites {
+			run.Suites[suiteIndex].DurationMS = 0
+			for caseIndex := range run.Suites[suiteIndex].Cases {
+				run.Suites[suiteIndex].Cases[caseIndex].DurationMS = 0
+			}
+		}
+		return run
+	}
+	if got, want := normalize(cached), normalize(uncached); !reflect.DeepEqual(got, want) {
+		t.Fatalf("source-digest cache/no-cache results differ:\n cache=%#v\n no-cache=%#v", got, want)
+	}
+}
+
+func TestRunWithStaleSourceDigestsFailsClosedWithoutCachePublish(t *testing.T) {
+	wasDisabled := disableDiskCache.Load()
+	disableDiskCache.Store(false)
+	t.Cleanup(func() {
+		disableDiskCache.Store(wasDisabled)
+		InvalidateRuntimeCaches()
+		ResetPerfCounters()
+	})
+	InvalidateRuntimeCaches()
+	root := t.TempDir()
+	helperPath := filepath.Join(root, "force-app", "main", "classes", "DigestMutationHelper.cls")
+	testPath := filepath.Join(root, "force-app", "main", "classes", "DigestMutationTest.cls")
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, helperPath, `public class DigestMutationHelper { public static Integer value() { return 1; } }`)
+	writeFile(t, testPath, `@isTest private class DigestMutationTest {
+  @isTest static void runsFirst() { System.assertEquals(1, DigestMutationHelper.value()); }
+  @isTest static void runsSecond() { System.assertEquals(1, DigestMutationHelper.value()); }
+}`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := gladeschema.LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index, artifacts := typesys.BuildWithArtifacts(p, s)
+	staleKey := RuntimeContentKey(index, artifacts.SourceDigests)
+	writeFile(t, helperPath, `public class DigestMutationHelper { public static Integer value() { return 2; } }`)
+	actualKey := RuntimeContentKey(index, nil)
+	if actualKey == staleKey {
+		t.Fatal("same-size source mutation did not change runtime key")
+	}
+	warmErr := WarmRuntimeWithSourceDigests(index, artifacts.SourceDigests)
+	var mismatch *SourceSnapshotMismatchError
+	if !errors.As(warmErr, &mismatch) {
+		t.Fatalf("WarmRuntimeWithSourceDigests error = %T %v", warmErr, warmErr)
+	}
+	if mismatch.File != helperPath || mismatch.ExpectedSHA256 == "" || mismatch.ActualSHA256 == "" {
+		t.Fatalf("changed-source mismatch = %#v", mismatch)
+	}
+	if _, compileErr := CompileProjectRuntimeForRequestWithSourceDigests(index, artifacts.SourceDigests); !errors.As(compileErr, &mismatch) {
+		t.Fatalf("CompileProjectRuntimeForRequestWithSourceDigests error = %T %v", compileErr, compileErr)
+	}
+	if err := os.Remove(helperPath); err != nil {
+		t.Fatal(err)
+	}
+	warmErr = WarmRuntimeWithSourceDigests(index, artifacts.SourceDigests)
+	mismatch = nil
+	if !errors.As(warmErr, &mismatch) || mismatch.ActualSHA256 != "" || !errors.Is(warmErr, os.ErrNotExist) {
+		t.Fatalf("unreadable-source mismatch = %#v, %v", mismatch, warmErr)
+	}
+	writeFile(t, helperPath, `public class DigestMutationHelper { public static Integer value() { return 2; } }`)
+
+	ResetPerfCounters()
+	first := Run(index, Options{SourceDigests: artifacts.SourceDigests, PerfCounters: true})
+	if summary := first.Summary(); summary.Total != 2 || summary.CompileErrors != 2 {
+		t.Fatalf("cold mutated summary = %#v problem=%q", summary, firstRunProblem(first))
+	}
+	if len(first.Suites) != 1 || len(first.Suites[0].Cases) != 2 ||
+		first.Suites[0].Cases[0].MethodName != "runsFirst" || first.Suites[0].Cases[1].MethodName != "runsSecond" {
+		t.Fatalf("cold mutated case order = %#v", first.Suites)
+	}
+	if problem := firstRunProblem(first); !strings.Contains(problem, "source snapshot mismatch") {
+		t.Fatalf("cold mutated problem = %q", problem)
+	}
+	runtimeCacheMu.RLock()
+	_, stalePublished := runtimeCache[runtimeCacheKey(staleKey)]
+	_, actualPublished := runtimeCache[runtimeCacheKey(actualKey)]
+	runtimeCacheMu.RUnlock()
+	if stalePublished || actualPublished {
+		t.Fatalf("mutated runtime cache published stale=%v actual=%v", stalePublished, actualPublished)
+	}
+	entry, err := startupcache.Read(root, startupcache.SubdirTest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if entry != nil {
+		t.Fatalf("mutated disk cache published key %q", entry.RuntimeKey)
+	}
+
+	writeFile(t, helperPath, `public class DigestMutationHelper { public static Integer value() { return 1; } }`)
+	restored := Run(index, Options{SourceDigests: artifacts.SourceDigests})
+	if summary := restored.Summary(); summary.Total != 2 || summary.Passed != 2 {
+		t.Fatalf("restored summary = %#v problem=%q", summary, firstRunProblem(restored))
+	}
+}
+
+func TestRunWithSourceDigestsRejectsLazySourceMutationWithoutCachePoison(t *testing.T) {
+	tests := []struct {
+		name     string
+		original string
+		mutated  string
+	}{
+		{
+			name: "ordinary test",
+			original: `@isTest private class LazySnapshotTest {
+  @isTest static void runs() { System.assertEquals(1, 1); }
+}`,
+			mutated: `@isTest private class LazySnapshotTest {
+  @isTest static void runs() { System.assertEquals(1, 2); }
+}`,
+		},
+		{
+			name: "test setup",
+			original: `@isTest private class LazySnapshotTest {
+  @TestSetup static void setup() { System.assertEquals(1, 1); }
+  @isTest static void runs() { System.assert(true); }
+}`,
+			mutated: `@isTest private class LazySnapshotTest {
+  @TestSetup static void setup() { System.assertEquals(1, 2); }
+  @isTest static void runs() { System.assert(true); }
+}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			restoreDisk := DisableDiskCacheForTesting()
+			t.Cleanup(restoreDisk)
+			t.Cleanup(InvalidateRuntimeCaches)
+			InvalidateRuntimeCaches()
+			root := t.TempDir()
+			path := filepath.Join(root, "LazySnapshotTest.cls")
+			writeFile(t, path, tt.original)
+			p := project.Project{Root: root, ApexFiles: []string{path}}
+			index, artifacts := typesys.BuildWithArtifacts(p, gladeschema.Schema{})
+			WarmRuntimeWithSourceDigests(index, artifacts.SourceDigests)
+
+			writeFile(t, path, tt.mutated)
+			mutated := Run(index, Options{SourceDigests: artifacts.SourceDigests})
+			if summary := mutated.Summary(); summary.Total != 1 || summary.CompileErrors != 1 {
+				t.Fatalf("mutated summary = %#v problem=%q", summary, firstRunProblem(mutated))
+			}
+			if problem := firstRunProblem(mutated); !strings.Contains(problem, "source snapshot mismatch") {
+				t.Fatalf("mutated problem = %q", problem)
+			}
+			if tt.name == "ordinary test" {
+				testCacheMu.RLock()
+				cached := len(testCache)
+				testCacheMu.RUnlock()
+				if cached != 0 {
+					t.Fatalf("mismatched ordinary test cached %d entries", cached)
+				}
+			} else {
+				setupCacheMu.RLock()
+				cached := len(setupCache)
+				setupCacheMu.RUnlock()
+				if cached != 0 {
+					t.Fatalf("mismatched test setup cached %d entries", cached)
+				}
+			}
+
+			writeFile(t, path, tt.original)
+			restored := Run(index, Options{SourceDigests: artifacts.SourceDigests})
+			if summary := restored.Summary(); summary.Total != 1 || summary.Passed != 1 {
+				t.Fatalf("restored summary = %#v problem=%q", summary, firstRunProblem(restored))
+			}
+		})
+	}
+}
+
+func TestRunWithSourceDigestsFullyWarmSkipsSourceReread(t *testing.T) {
+	restoreDisk := DisableDiskCacheForTesting()
+	t.Cleanup(restoreDisk)
+	t.Cleanup(InvalidateRuntimeCaches)
+	InvalidateRuntimeCaches()
+	root := t.TempDir()
+	path := filepath.Join(root, "FullyWarmSnapshotTest.cls")
+	writeFile(t, path, `@isTest private class FullyWarmSnapshotTest {
+  @TestSetup static void setup() { System.assert(true); }
+  @isTest static void runs() { System.assert(true); }
+}`)
+	p := project.Project{Root: root, ApexFiles: []string{path}}
+	index, artifacts := typesys.BuildWithArtifacts(p, gladeschema.Schema{})
+	first := Run(index, Options{SourceDigests: artifacts.SourceDigests})
+	if summary := first.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("initial summary = %#v problem=%q", summary, firstRunProblem(first))
+	}
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	ResetPerfCounters()
+	warm := Run(index, Options{SourceDigests: artifacts.SourceDigests, PerfCounters: true})
+	if summary := warm.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("fully warm summary = %#v problem=%q", summary, firstRunProblem(warm))
+	}
+	if phases := SnapshotPerfCounters().Phases; phases.MemoryCacheHits != 1 || phases.CacheMisses != 0 {
+		t.Fatalf("fully warm phases = %#v", phases)
+	}
+}
+
+func TestSourceDigestRuntimeWrappersPreserveNilCompatibility(t *testing.T) {
+	restore := DisableDiskCacheForTesting()
+	t.Cleanup(restore)
+	t.Cleanup(InvalidateRuntimeCaches)
+	root := t.TempDir()
+	path := filepath.Join(root, "Wrapper.cls")
+	writeFile(t, path, "public class Wrapper { public static Integer value() { return 1; } }\n")
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	if got, want := RuntimeContentKey(index, nil), string(runtimeKey(index)); got != want {
+		t.Fatalf("nil-digest public key = %q, want wrapper key %q", got, want)
+	}
+
+	InvalidateRuntimeCaches()
+	legacy := CompileProjectRuntimeForRequest(index)
+	InvalidateRuntimeCaches()
+	bridged, err := CompileProjectRuntimeForRequestWithSourceDigests(index, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(legacy.Methods, bridged.Methods) ||
+		!reflect.DeepEqual(legacy.Triggers, bridged.Triggers) ||
+		!reflect.DeepEqual(legacy.PageNames, bridged.PageNames) {
+		t.Fatal("nil-digest compiled runtime project methods/triggers/pages differ")
+	}
+
+	InvalidateRuntimeCaches()
+	WarmRuntime(index)
+	runtimeCacheMu.RLock()
+	_, legacyWarm := runtimeCache[runtimeKey(index)]
+	runtimeCacheMu.RUnlock()
+	InvalidateRuntimeCaches()
+	if err := WarmRuntimeWithSourceDigests(index, nil); err != nil {
+		t.Fatal(err)
+	}
+	runtimeCacheMu.RLock()
+	_, bridgedWarm := runtimeCache[runtimeKey(index)]
+	runtimeCacheMu.RUnlock()
+	if !legacyWarm || !bridgedWarm {
+		t.Fatalf("warm wrapper cache presence = legacy %v bridged %v", legacyWarm, bridgedWarm)
+	}
 }
 
 func TestRunExecutesAnonymousSubsetTestMethods(t *testing.T) {
@@ -332,8 +702,16 @@ private class CacheABIProbeTest {
 	if err := startupcache.Write(&entry, startupcache.SubdirTest); err != nil {
 		t.Fatalf("Write(current ABI) error = %v", err)
 	}
+	if _, ok := tryLoadDiskRuntime(index); ok {
+		t.Fatal("tryLoadDiskRuntime accepted a keyless current runtime ABI")
+	}
+
+	entry.RuntimeKey = string(runtimeKey(index))
+	if err := startupcache.Write(&entry, startupcache.SubdirTest); err != nil {
+		t.Fatalf("Write(current ABI/key) error = %v", err)
+	}
 	if _, ok := tryLoadDiskRuntime(index); !ok {
-		t.Fatal("tryLoadDiskRuntime rejected the current runtime ABI")
+		t.Fatal("tryLoadDiskRuntime rejected the current runtime ABI/key")
 	}
 }
 

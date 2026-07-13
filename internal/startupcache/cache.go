@@ -48,6 +48,7 @@ type Entry struct {
 	BuiltAt     string           `json:"builtAt"`
 	PlatformABI string           `json:"platformAbi"`
 	RuntimeABI  string           `json:"runtimeAbi,omitempty"`
+	RuntimeKey  string           `json:"runtimeKey,omitempty"`
 	Manifest    Manifest         `json:"manifest"`
 	Org         storage.OrgState `json:"org"`
 	Runtime     CompiledRuntime  `json:"runtime"`
@@ -114,6 +115,50 @@ func ReadWithStats(projectRoot, subdir string) (*Entry, ReadStats, error) {
 	}
 	entry, err := readJSON(root, subdir)
 	return entry, ReadStats{}, err
+}
+
+// ReadFreshRuntimeWithSourceDigests validates a persisted runtime against the
+// current source snapshot, runtime ABI, and exact runtime key before accepting
+// the split test-cache payload.
+func ReadFreshRuntimeWithSourceDigests(projectRoot, subdir string, expectedVersion int, expectedRuntimeABI, expectedRuntimeKey string, digests *typesys.SourceDigestSet) (*Entry, error) {
+	return readFreshRuntimeWithSourceDigests(projectRoot, subdir, expectedVersion, expectedRuntimeABI, expectedRuntimeKey, digests, nil)
+}
+
+func readFreshRuntimeWithSourceDigests(projectRoot, subdir string, expectedVersion int, expectedRuntimeABI, expectedRuntimeKey string, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error)) (*Entry, error) {
+	entry, _, err := readFreshRuntimeWithSourceDigestsAndStats(projectRoot, subdir, expectedVersion, expectedRuntimeABI, expectedRuntimeKey, digests, readFile)
+	return entry, err
+}
+
+// ReadFreshRuntimeWithSourceDigestsAndStats is the measured variant of
+// ReadFreshRuntimeWithSourceDigests.
+func ReadFreshRuntimeWithSourceDigestsAndStats(projectRoot, subdir string, expectedVersion int, expectedRuntimeABI, expectedRuntimeKey string, digests *typesys.SourceDigestSet) (*Entry, ReadStats, error) {
+	return readFreshRuntimeWithSourceDigestsAndStats(projectRoot, subdir, expectedVersion, expectedRuntimeABI, expectedRuntimeKey, digests, nil)
+}
+
+func readFreshRuntimeWithSourceDigestsAndStats(projectRoot, subdir string, expectedVersion int, expectedRuntimeABI, expectedRuntimeKey string, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error)) (*Entry, ReadStats, error) {
+	root, err := filepath.Abs(projectRoot)
+	if err != nil {
+		return nil, ReadStats{}, err
+	}
+	root = filepath.Clean(root)
+	if subdir == SubdirTest {
+		return readFreshSplitTestRuntimeWithSourceDigests(root, subdir, expectedVersion, expectedRuntimeABI, expectedRuntimeKey, digests, readFile)
+	}
+	started := time.Now()
+	entry, err := readJSON(root, subdir)
+	stats := ReadStats{ValidationNS: time.Since(started).Nanoseconds()}
+	if err != nil || entry == nil {
+		return entry, stats, err
+	}
+	validationStarted := time.Now()
+	if !freshManifestWithSourceDigests(entry.Version, entry.ProjectRoot, entry.PlatformABI, entry.Manifest, root, expectedVersion, digests, readFile) ||
+		expectedRuntimeKey == "" || entry.RuntimeKey != expectedRuntimeKey ||
+		(expectedRuntimeABI != "" && entry.RuntimeABI != expectedRuntimeABI) {
+		stats.ValidationNS += time.Since(validationStarted).Nanoseconds()
+		return nil, stats, nil
+	}
+	stats.ValidationNS += time.Since(validationStarted).Nanoseconds()
+	return entry, stats, nil
 }
 
 func readJSON(projectRoot, subdir string) (*Entry, error) {
@@ -194,6 +239,10 @@ func FreshRuntime(entry *Entry, projectRoot string, expectedVersion int, expecte
 }
 
 func freshManifest(version int, entryProjectRoot, entryPlatformABI string, manifest Manifest, projectRoot string, expectedVersion int) bool {
+	return freshManifestWithSourceDigests(version, entryProjectRoot, entryPlatformABI, manifest, projectRoot, expectedVersion, nil, nil)
+}
+
+func freshManifestWithSourceDigests(version int, entryProjectRoot, entryPlatformABI string, manifest Manifest, projectRoot string, expectedVersion int, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error)) bool {
 	if version != expectedVersion || entryPlatformABI == "" || entryPlatformABI != currentPlatformABI() {
 		return false
 	}
@@ -215,7 +264,7 @@ func freshManifest(version int, entryProjectRoot, entryPlatformABI string, manif
 	if err != nil {
 		return false
 	}
-	current, err := buildManifest(root, loaded, false)
+	current, err := buildManifestWithSourceDigests(root, loaded, false, digests, readFile)
 	if err != nil || !current.Complete {
 		return false
 	}
@@ -228,8 +277,11 @@ func freshManifest(version int, entryProjectRoot, entryPlatformABI string, manif
 		!sameDirectorySet(manifest.PackageRoots, current.PackageRoots) {
 		return false
 	}
+	apexDigests, useSnapshot := completeApexSourceDigests(loaded, digests)
 	for _, fp := range append(append([]File(nil), manifest.Files...), manifest.ConfigFiles...) {
-		if !fileFingerprintMatches(root, fp, true) {
+		absPath := filepath.Clean(filepath.Join(root, filepath.FromSlash(fp.Path)))
+		digest, isApex := apexDigests[absPath]
+		if !fileFingerprintMatchesWithSourceDigest(root, fp, true, digest, useSnapshot && isApex, readFile) {
 			return false
 		}
 	}
@@ -238,21 +290,36 @@ func freshManifest(version int, entryProjectRoot, entryPlatformABI string, manif
 
 func BuildManifest(projectRoot string, p project.Project, index typesys.Index) Manifest {
 	_ = index
-	manifest, _ := buildManifest(projectRoot, p, true)
+	manifest, _ := buildManifestWithSourceDigests(projectRoot, p, true, nil, nil)
 	return manifest
 }
 
 func buildManifest(projectRoot string, p project.Project, includeHashes bool) (Manifest, error) {
+	return buildManifestWithSourceDigests(projectRoot, p, includeHashes, nil, nil)
+}
+
+// BuildManifestWithSourceDigests reuses the exact Apex digests from an index
+// build only when the snapshot covers every Apex source in the project closure.
+// Non-Apex inputs retain the normal disk hashing path.
+func BuildManifestWithSourceDigests(projectRoot string, p project.Project, index typesys.Index, digests *typesys.SourceDigestSet) Manifest {
+	_ = index
+	manifest, _ := buildManifestWithSourceDigests(projectRoot, p, true, digests, nil)
+	return manifest
+}
+
+func buildManifestWithSourceDigests(projectRoot string, p project.Project, includeHashes bool, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error)) (Manifest, error) {
 	root, err := filepath.Abs(projectRoot)
 	if err != nil {
 		return Manifest{}, err
 	}
 	root = filepath.Clean(root)
+	apexDigests, useSnapshot := completeApexSourceDigests(p, digests)
 	paths := make([]File, 0, 128)
 	for _, manifestProject := range manifestProjects(p) {
 		for _, file := range deduplicateStrings(appendProjectFilesFromProject(manifestProject)) {
 			abs := absoluteProjectPath(manifestProject.Root, file)
-			fp, err := fingerprintFile(root, abs, includeHashes)
+			digest, isApex := apexDigests[filepath.Clean(abs)]
+			fp, err := fingerprintFileWithSourceDigest(root, abs, includeHashes, digest, useSnapshot && isApex, readFile)
 			if err != nil {
 				return incompleteManifest(root, p), err
 			}
@@ -260,7 +327,7 @@ func buildManifest(projectRoot string, p project.Project, includeHashes bool) (M
 		}
 		for _, source := range manifestProject.ApexFiles {
 			sidecar := absoluteProjectPath(manifestProject.Root, source) + "-meta.xml"
-			fp, exists, err := fingerprintOptionalFile(root, sidecar, includeHashes)
+			fp, exists, err := fingerprintOptionalFileWithReader(root, sidecar, includeHashes, readFile)
 			if err != nil {
 				return incompleteManifest(root, p), err
 			}
@@ -274,14 +341,14 @@ func buildManifest(projectRoot string, p project.Project, includeHashes bool) (M
 		return incompleteManifest(root, p), err
 	}
 	for _, input := range runtimeInputs {
-		fp, err := fingerprintFile(root, input, includeHashes)
+		fp, err := fingerprintFileWithSourceDigest(root, input, includeHashes, [sha256.Size]byte{}, false, readFile)
 		if err != nil {
 			return incompleteManifest(root, p), err
 		}
 		paths = append(paths, fp)
 	}
 	for _, artifactPath := range dependencyArtifactPaths(p) {
-		fp, err := fingerprintFile(root, artifactPath, includeHashes)
+		fp, err := fingerprintFileWithSourceDigest(root, artifactPath, includeHashes, [sha256.Size]byte{}, false, readFile)
 		if err != nil {
 			return incompleteManifest(root, p), err
 		}
@@ -294,7 +361,7 @@ func buildManifest(projectRoot string, p project.Project, includeHashes bool) (M
 			return incompleteManifest(root, p), err
 		}
 		for _, configPath := range candidates {
-			fp, exists, err := fingerprintOptionalFile(root, configPath, includeHashes)
+			fp, exists, err := fingerprintOptionalFileWithReader(root, configPath, includeHashes, readFile)
 			if err != nil {
 				return incompleteManifest(root, p), err
 			}
@@ -344,6 +411,27 @@ func absoluteProjectPath(root, path string) string {
 		abs = filepath.Join(root, abs)
 	}
 	return abs
+}
+
+func completeApexSourceDigests(p project.Project, digests *typesys.SourceDigestSet) (map[string][sha256.Size]byte, bool) {
+	if digests == nil {
+		return nil, false
+	}
+	out := make(map[string][sha256.Size]byte)
+	for _, manifestProject := range manifestProjects(p) {
+		for _, source := range deduplicateStrings(manifestProject.ApexFiles) {
+			abs := absoluteProjectPath(manifestProject.Root, source)
+			digest, ok := digests.Digest(source)
+			if !ok {
+				digest, ok = digests.Digest(abs)
+			}
+			if !ok {
+				return nil, false
+			}
+			out[filepath.Clean(abs)] = digest
+		}
+	}
+	return out, true
 }
 
 func runtimeDiscoveredInputPaths(p project.Project) ([]string, error) {
@@ -429,6 +517,12 @@ func skipProjectDataInputDir(name string) bool {
 }
 
 func NewEntry(projectRoot string, p project.Project, index typesys.Index, org storage.OrgState, runtime CompiledRuntime) Entry {
+	return NewEntryWithSourceDigests(projectRoot, p, index, nil, org, runtime)
+}
+
+// NewEntryWithSourceDigests creates an entry whose manifest reuses a complete
+// Apex digest snapshot while retaining disk hashing for every non-Apex input.
+func NewEntryWithSourceDigests(projectRoot string, p project.Project, index typesys.Index, digests *typesys.SourceDigestSet, org storage.OrgState, runtime CompiledRuntime) Entry {
 	root, _ := filepath.Abs(projectRoot)
 	root = filepath.Clean(root)
 	return Entry{
@@ -436,35 +530,70 @@ func NewEntry(projectRoot string, p project.Project, index typesys.Index, org st
 		ProjectRoot: root,
 		BuiltAt:     time.Now().Format(time.RFC3339Nano),
 		PlatformABI: currentPlatformABI(),
-		Manifest:    BuildManifest(root, p, index),
+		Manifest:    BuildManifestWithSourceDigests(root, p, index, digests),
 		Org:         org,
 		Runtime:     runtime,
 	}
 }
 
 func fileFingerprintMatches(projectRoot string, expected File, required bool) bool {
+	return fileFingerprintMatchesWithSourceDigest(projectRoot, expected, required, [sha256.Size]byte{}, false, nil)
+}
+
+func fileFingerprintMatchesWithSourceDigest(projectRoot string, expected File, required bool, digest [sha256.Size]byte, useDigest bool, readFile func(string) ([]byte, error)) bool {
 	absPath := filepath.Clean(filepath.Join(projectRoot, filepath.FromSlash(expected.Path)))
-	file, err := os.Open(absPath)
+	if useDigest {
+		info, err := os.Stat(absPath)
+		if err != nil {
+			return !required && errors.Is(err, os.ErrNotExist)
+		}
+		if info.IsDir() || info.Size() != expected.Size || info.ModTime().UnixNano() != expected.ModTime {
+			return false
+		}
+		return len(expected.SHA256) == sha256.Size*2 && hex.EncodeToString(digest[:]) == expected.SHA256
+	}
+	if readFile == nil {
+		file, err := os.Open(absPath)
+		if err != nil {
+			return !required && errors.Is(err, os.ErrNotExist)
+		}
+		defer file.Close()
+		info, err := file.Stat()
+		if err != nil {
+			return false
+		}
+		if info.IsDir() || info.Size() != expected.Size || info.ModTime().UnixNano() != expected.ModTime {
+			return false
+		}
+		hasher := sha256.New()
+		if _, err := io.Copy(hasher, file); err != nil {
+			return false
+		}
+		after, err := file.Stat()
+		if err != nil || after.Size() != info.Size() || after.ModTime() != info.ModTime() {
+			return false
+		}
+		got := hex.EncodeToString(hasher.Sum(nil))
+		return len(expected.SHA256) == sha256.Size*2 && got == expected.SHA256
+	}
+
+	info, err := os.Stat(absPath)
 	if err != nil {
 		return !required && errors.Is(err, os.ErrNotExist)
-	}
-	defer file.Close()
-	info, err := file.Stat()
-	if err != nil {
-		return false
 	}
 	if info.IsDir() || info.Size() != expected.Size || info.ModTime().UnixNano() != expected.ModTime {
 		return false
 	}
-	hasher := sha256.New()
-	if _, err := io.Copy(hasher, file); err != nil {
+	data, err := readFile(absPath)
+	if err != nil {
 		return false
 	}
-	after, err := file.Stat()
+	after, err := os.Stat(absPath)
 	if err != nil || after.Size() != info.Size() || after.ModTime() != info.ModTime() {
 		return false
 	}
-	got := hex.EncodeToString(hasher.Sum(nil))
+	gotDigest := sha256.Sum256(data)
+	got := hex.EncodeToString(gotDigest[:])
 	return len(expected.SHA256) == sha256.Size*2 && got == expected.SHA256
 }
 
@@ -477,15 +606,78 @@ func statFile(projectRoot, absPath string) (File, bool) {
 }
 
 func fingerprintFile(projectRoot, path string, includeHash bool) (File, error) {
-	file, err := os.Open(path)
+	return fingerprintFileWithSourceDigest(projectRoot, path, includeHash, [sha256.Size]byte{}, false, nil)
+}
+
+func fingerprintFileWithSourceDigest(projectRoot, path string, includeHash bool, digest [sha256.Size]byte, useDigest bool, readFile func(string) ([]byte, error)) (File, error) {
+	if useDigest {
+		info, err := os.Stat(path)
+		if err != nil {
+			return File{}, err
+		}
+		fp, err := fileFingerprintFromInfo(projectRoot, path, info)
+		if err != nil {
+			return File{}, err
+		}
+		if includeHash {
+			fp.SHA256 = hex.EncodeToString(digest[:])
+		}
+		return fp, nil
+	}
+	if readFile == nil {
+		file, err := os.Open(path)
+		if err != nil {
+			return File{}, err
+		}
+		defer file.Close()
+		info, err := file.Stat()
+		if err != nil {
+			return File{}, err
+		}
+		fp, err := fileFingerprintFromInfo(projectRoot, path, info)
+		if err != nil {
+			return File{}, err
+		}
+		if !includeHash {
+			return fp, nil
+		}
+		hasher := sha256.New()
+		if _, err := io.Copy(hasher, file); err != nil {
+			return File{}, err
+		}
+		after, err := file.Stat()
+		if err != nil || after.Size() != info.Size() || after.ModTime() != info.ModTime() {
+			return File{}, errors.New("startup cache input changed while hashing")
+		}
+		fp.SHA256 = hex.EncodeToString(hasher.Sum(nil))
+		return fp, nil
+	}
+
+	info, err := os.Stat(path)
 	if err != nil {
 		return File{}, err
 	}
-	defer file.Close()
-	info, err := file.Stat()
+	fp, err := fileFingerprintFromInfo(projectRoot, path, info)
 	if err != nil {
 		return File{}, err
 	}
+	if !includeHash {
+		return fp, nil
+	}
+	data, err := readFile(path)
+	if err != nil {
+		return File{}, err
+	}
+	after, err := os.Stat(path)
+	if err != nil || after.Size() != info.Size() || after.ModTime() != info.ModTime() {
+		return File{}, errors.New("startup cache input changed while hashing")
+	}
+	gotDigest := sha256.Sum256(data)
+	fp.SHA256 = hex.EncodeToString(gotDigest[:])
+	return fp, nil
+}
+
+func fileFingerprintFromInfo(projectRoot, path string, info os.FileInfo) (File, error) {
 	if info.IsDir() {
 		return File{}, errors.New("startup cache input is a directory")
 	}
@@ -493,24 +685,11 @@ func fingerprintFile(projectRoot, path string, includeHash bool) (File, error) {
 	if err != nil {
 		return File{}, err
 	}
-	fp := File{
+	return File{
 		Path:    filepath.ToSlash(filepath.Clean(rel)),
 		Size:    info.Size(),
 		ModTime: info.ModTime().UnixNano(),
-	}
-	if !includeHash {
-		return fp, nil
-	}
-	hasher := sha256.New()
-	if _, err := io.Copy(hasher, file); err != nil {
-		return File{}, err
-	}
-	after, err := file.Stat()
-	if err != nil || after.Size() != info.Size() || after.ModTime() != info.ModTime() {
-		return File{}, errors.New("startup cache input changed while hashing")
-	}
-	fp.SHA256 = hex.EncodeToString(hasher.Sum(nil))
-	return fp, nil
+	}, nil
 }
 
 func currentPlatformABI() string {
@@ -527,7 +706,11 @@ func incompleteManifest(root string, p project.Project) Manifest {
 }
 
 func fingerprintOptionalFile(projectRoot, path string, includeHash bool) (File, bool, error) {
-	fp, err := fingerprintFile(projectRoot, path, includeHash)
+	return fingerprintOptionalFileWithReader(projectRoot, path, includeHash, nil)
+}
+
+func fingerprintOptionalFileWithReader(projectRoot, path string, includeHash bool, readFile func(string) ([]byte, error)) (File, bool, error) {
+	fp, err := fingerprintFileWithSourceDigest(projectRoot, path, includeHash, [sha256.Size]byte{}, false, readFile)
 	if errors.Is(err, os.ErrNotExist) {
 		return File{}, false, nil
 	}
