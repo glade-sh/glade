@@ -381,6 +381,10 @@ func (a *Analyzer) checkMethodBodiesWithState(index typesys.Index, state *semaTy
 }
 
 func (a *Analyzer) checkMethodBodiesWithView(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder) []diagnostic.Diagnostic {
+	return a.checkMethodBodiesWithViewWorkers(index, model, recorder, 1)
+}
+
+func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder, workerCount int) []diagnostic.Diagnostic {
 	constructability := buildConstructability(index)
 	duplicateTypes := semaDuplicateTypeKeys(index)
 	sources := a.sources
@@ -390,6 +394,44 @@ func (a *Analyzer) checkMethodBodiesWithView(index typesys.Index, model *semaTyp
 	var diagnostics []diagnostic.Diagnostic
 	bodyStarted := recorder.beginPhase()
 	workItems := buildSemaMethodBodyWorkItems(index, sources)
+	if workerCount > 1 {
+		tasks := buildSemaMethodBodyTasks(index, workItems)
+		if workerCount > len(tasks) {
+			workerCount = len(tasks)
+		}
+		if workerCount > 1 {
+			results := make([]semaMethodBodyResult, len(index.Types))
+			views := make([]*semaTypeMemberView, workerCount)
+			views[0] = model
+			for workerID := 1; workerID < workerCount; workerID++ {
+				views[workerID] = model.state.view()
+			}
+			var workers sync.WaitGroup
+			for workerID := 0; workerID < workerCount; workerID++ {
+				workerID := workerID
+				workers.Add(1)
+				go func() {
+					defer workers.Done()
+					for taskIndex := workerID; taskIndex < len(tasks); taskIndex += workerCount {
+						task := tasks[taskIndex]
+						results[task.typeIndex] = a.checkSemaMethodBodyTask(index, task, workItems, views[workerID], duplicateTypes, constructability)
+					}
+				}()
+			}
+			workers.Wait()
+			for typeIndex := range index.Types {
+				result := results[typeIndex]
+				if result.recovered != nil {
+					panic(result.recovered)
+				}
+				diagnostics = append(diagnostics, result.diagnostics...)
+			}
+			if recorder != nil {
+				recorder.endPhase(&recorder.counters.MethodBodies, bodyStarted)
+			}
+			return diagnostics
+		}
+	}
 	workItemIndex := 0
 	for typeIndex, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) {
@@ -413,6 +455,57 @@ func (a *Analyzer) checkMethodBodiesWithView(index typesys.Index, model *semaTyp
 		recorder.endPhase(&recorder.counters.MethodBodies, bodyStarted)
 	}
 	return diagnostics
+}
+
+type semaMethodBodyTask struct {
+	typeIndex     int
+	workItemStart int
+	workItemEnd   int
+}
+
+type semaMethodBodyResult struct {
+	diagnostics []diagnostic.Diagnostic
+	recovered   any
+}
+
+func buildSemaMethodBodyTasks(index typesys.Index, workItems []semaMethodBodyWorkItem) []semaMethodBodyTask {
+	tasks := make([]semaMethodBodyTask, 0, len(index.Types))
+	workItemIndex := 0
+	for typeIndex, typ := range index.Types {
+		if skipProjectDiagnosticType(typ) {
+			continue
+		}
+		workItemStart := workItemIndex
+		for workItemIndex < len(workItems) && workItems[workItemIndex].typeIndex == typeIndex {
+			workItemIndex++
+		}
+		tasks = append(tasks, semaMethodBodyTask{
+			typeIndex:     typeIndex,
+			workItemStart: workItemStart,
+			workItemEnd:   workItemIndex,
+		})
+	}
+	return tasks
+}
+
+func (a *Analyzer) checkSemaMethodBodyTask(index typesys.Index, task semaMethodBodyTask, workItems []semaMethodBodyWorkItem, model *semaTypeMemberView, duplicateTypes map[string]int, constructability map[string]typesys.TypeSymbol) (result semaMethodBodyResult) {
+	defer func() {
+		result.recovered = recover()
+	}()
+	typ := index.Types[task.typeIndex]
+	bodyModel := model
+	if duplicateTypes[semaTypeSymbolKey(typ)] > 1 {
+		bodyModel = semaModelWithCurrentType(model, typ)
+	}
+	for workItemIndex := task.workItemStart; workItemIndex < task.workItemEnd; workItemIndex++ {
+		item := workItems[workItemIndex]
+		itemType, member, ok := resolveSemaMethodBodyWorkItem(index, item)
+		if !ok {
+			continue
+		}
+		result.diagnostics = append(result.diagnostics, a.checkBodyText(itemType, member, item.body, item.bodyOffset, item.source, bodyModel, constructability)...)
+	}
+	return result
 }
 
 type semaMethodBodyWorkItem struct {

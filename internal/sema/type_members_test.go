@@ -960,6 +960,210 @@ func TestZeroBodyDuplicateOverlayHydrationPrecedesLaterDiagnostics(t *testing.T)
 	}
 }
 
+func TestMethodBodyWorkerScaffoldKeepsViewsPrivate(t *testing.T) {
+	root := t.TempDir()
+	workerFile := filepath.Join(root, "WorkerOne.cls")
+	workerSource := `public class WorkerOne {
+    public void run() {
+        Account.primaryOnly();
+    }
+}
+`
+	writeSemaFile(t, workerFile, workerSource)
+	methodStart := strings.Index(workerSource, "public void run()")
+	methodEnd := strings.LastIndex(workerSource, "    }") + len("    }")
+	index := typesys.Index{Types: []typesys.TypeSymbol{
+		{Kind: apexast.DeclarationClass, Name: "ZeroBody"},
+		{
+			Kind: apexast.DeclarationClass,
+			Name: "WorkerOne",
+			File: workerFile,
+			Members: []typesys.MemberSymbol{{
+				Kind: apexast.DeclarationMethod,
+				Name: "run",
+				Type: "void",
+				Range: diagnostic.Range{
+					Start: diagnostic.Position{Offset: methodStart},
+					End:   diagnostic.Position{Offset: methodEnd},
+				},
+			}},
+		},
+	}}
+	state := buildSemaTypeMemberState(index, nil)
+	primary := state.view()
+	account, _, ok := semaLookupTypeMembers(primary, "Account")
+	if !ok {
+		t.Fatal("primary view could not hydrate Account")
+	}
+	methodKey := normalizeName("primaryOnly")
+	account.methods[methodKey] = []typesys.MemberSymbol{{
+		Kind: apexast.DeclarationMethod,
+		Name: "primaryOnly",
+		Type: "void",
+	}}
+	primary.storeHydrated(normalizeName("Account"), account)
+
+	analyzer := NewAnalyzer()
+	diagnostics := analyzer.checkMethodBodiesWithViewWorkers(index, primary, nil, 2)
+	if len(diagnostics) != 1 {
+		t.Fatalf("private-worker diagnostics = %d, want 1: %#v", len(diagnostics), diagnostics)
+	}
+	callee := "Account.primaryOnly"
+	callStart := strings.Index(workerSource, callee)
+	wantRange := semaRange(workerSource, callStart, callStart+len(callee))
+	want := diagnostic.Diagnostic{
+		Severity: diagnostic.Error,
+		Code:     "GLADESEMA008",
+		Message:  `method "run" calls unknown method "Account.primaryOnly"`,
+		File:     workerFile,
+		Range:    wantRange,
+	}
+	if !reflect.DeepEqual(diagnostics[0], want) {
+		t.Fatalf("private-worker diagnostic\nwant: %#v\n got: %#v", want, diagnostics[0])
+	}
+}
+
+func TestMethodBodyWorkerScaffoldMergesIndexedOrder(t *testing.T) {
+	root := t.TempDir()
+	index := typesys.Index{Types: make([]typesys.TypeSymbol, 4)}
+	type expectedDiagnostic struct {
+		code    string
+		message string
+		file    string
+		range_  diagnostic.Range
+	}
+	want := make([]expectedDiagnostic, 0, len(index.Types))
+	for i := range index.Types {
+		typeName := fmt.Sprintf("WorkerType%d", i)
+		callee := fmt.Sprintf("missing%d", i)
+		file := filepath.Join(root, typeName+".cls")
+		source := fmt.Sprintf("public class %s {\n    public void run() {\n        %s();\n    }\n}\n", typeName, callee)
+		writeSemaFile(t, file, source)
+		methodStart := strings.Index(source, "public void run()")
+		methodEnd := strings.LastIndex(source, "    }") + len("    }")
+		index.Types[i] = typesys.TypeSymbol{
+			Kind: apexast.DeclarationClass,
+			Name: typeName,
+			File: file,
+			Members: []typesys.MemberSymbol{{
+				Kind: apexast.DeclarationMethod,
+				Name: "run",
+				Type: "void",
+				Range: diagnostic.Range{
+					Start: diagnostic.Position{Offset: methodStart},
+					End:   diagnostic.Position{Offset: methodEnd},
+				},
+			}},
+		}
+		callStart := strings.Index(source, callee)
+		want = append(want, expectedDiagnostic{
+			code:    "GLADESEMA008",
+			message: fmt.Sprintf(`method "run" calls unknown method %q`, callee),
+			file:    file,
+			range_:  *semaRange(source, callStart, callStart+len(callee)),
+		})
+	}
+
+	analyzer := NewAnalyzer()
+	state := buildSemaTypeMemberState(index, nil)
+	diagnostics := analyzer.checkMethodBodiesWithViewWorkers(index, state.view(), nil, 2)
+	if len(diagnostics) != len(want) {
+		t.Fatalf("merged diagnostics = %d, want %d: %#v", len(diagnostics), len(want), diagnostics)
+	}
+	for i, item := range diagnostics {
+		if item.Range == nil {
+			t.Fatalf("merged diagnostic %d has no range: %#v", i, item)
+		}
+		got := expectedDiagnostic{code: item.Code, message: item.Message, file: item.File, range_: *item.Range}
+		if !reflect.DeepEqual(got, want[i]) {
+			t.Fatalf("merged diagnostic %d\nwant: %#v\n got: %#v", i, want[i], got)
+		}
+	}
+}
+
+func TestMethodBodyWorkerScaffoldDefaultPreservesOneWorkerHistory(t *testing.T) {
+	root := t.TempDir()
+	duplicateFirstFile := filepath.Join(root, "DuplicateFirst.cls")
+	duplicateSecondFile := filepath.Join(root, "DuplicateSecond.cls")
+	baseFile := filepath.Join(root, "EmailTemplate.cls")
+	wrapperFile := filepath.Join(root, "EmailTemplateWrapper.cls")
+	writeSemaFile(t, duplicateFirstFile, `public class Duplicate {
+    private HistorySeed__c seed;
+}
+`)
+	writeSemaFile(t, duplicateSecondFile, "public class Duplicate {}\n")
+	writeSemaFile(t, baseFile, `
+public abstract class EmailTemplate {
+    public abstract String getId();
+}
+`)
+	writeSemaFile(t, wrapperFile, `
+public class EmailTemplateWrapper extends EmailTemplate {
+    private Schema.EmailTemplate templateRecord;
+    public override String getId() {
+        return templateRecord.Id;
+    }
+}
+`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{
+		Root: root,
+		ApexFiles: []string{
+			duplicateFirstFile,
+			duplicateSecondFile,
+			baseFile,
+			wrapperFile,
+		},
+	}, schema.Schema{})
+	analyzer := NewAnalyzer()
+	analyzer.prepareAnalysisContext(index, AnalyzeOptions{Diagnostics: true, BuildArtifacts: &artifacts})
+	index = prepareAnalysisIndexWithSources(index, analyzer.sources)
+	analyzer.prepareAnalysisModel(index)
+	historyKey := normalizeName("HistorySeed__c")
+	state := buildSemaTypeMemberState(index, nil, analyzer.sources)
+	primary := state.view()
+	wantHistory := typeMembers{
+		name:    "HistorySeed__c",
+		kind:    apexast.DeclarationClass,
+		fields:  map[string]typesys.MemberSymbol{normalizeName("HistoryOnly"): {Kind: apexast.DeclarationField, Name: "HistoryOnly", Type: "String"}},
+		methods: make(map[string][]typesys.MemberSymbol),
+	}
+	primary.storeHydrated(historyKey, wantHistory)
+
+	bodyDiagnostics := analyzer.checkMethodBodiesWithView(index, primary, nil)
+	if len(bodyDiagnostics) != 0 {
+		t.Fatalf("default method-body diagnostics = %d, want 0: %#v", len(bodyDiagnostics), bodyDiagnostics)
+	}
+	if history, ok := primary.hydrated[historyKey]; !ok || !reflect.DeepEqual(history, wantHistory) {
+		t.Fatalf("default worker lost zero-body platform hydration: %#v, %v", history, ok)
+	}
+
+	inheritanceDiagnostics := analyzer.checkInheritanceContractsWithView(index, primary, nil)
+	if len(inheritanceDiagnostics) != 1 {
+		t.Fatalf("cross-phase inheritance diagnostics = %d, want 1: %#v", len(inheritanceDiagnostics), inheritanceDiagnostics)
+	}
+	var getIDRange diagnostic.Range
+	for _, typ := range index.Types {
+		if typ.Name != "EmailTemplateWrapper" {
+			continue
+		}
+		for _, member := range typ.Members {
+			if member.Kind == apexast.DeclarationMethod && member.Name == "getId" {
+				getIDRange = member.Range
+			}
+		}
+	}
+	want := diagnostic.Diagnostic{
+		Severity: diagnostic.Error,
+		Code:     "GLADESEMA016",
+		Message:  `method "getId" is marked override but no inherited method has the same signature`,
+		File:     wrapperFile,
+		Range:    &getIDRange,
+	}
+	if !reflect.DeepEqual(inheritanceDiagnostics[0], want) {
+		t.Fatalf("cross-phase inheritance diagnostic\nwant: %#v\n got: %#v", want, inheritanceDiagnostics[0])
+	}
+}
+
 func TestMethodBodyWorkItemsPreserveOriginalOrder(t *testing.T) {
 	root := t.TempDir()
 	firstFile := filepath.Join(root, "FirstShared.cls")
