@@ -124,21 +124,11 @@ func standardObjectCatalogEntryForName(objectName string) (standardObjectCatalog
 	if _, ok := standardSObjectStubFieldData[canonical]; ok {
 		return standardObjectCatalogEntry{}, false
 	}
-	standardObjectCatalogLookupCache.describeOnce.Do(func() {
-		describeCatalog := loadEmbeddedStandardDescribeCatalog()
-		byLC := make(map[string]standardObjectCatalogEntry, len(describeCatalog))
-		for name, entry := range describeCatalog {
-			if _, ok := standardSObjectStubFieldData[name]; ok {
-				continue
-			}
-			byLC[standardObjectLookupKey(name)] = entry
-		}
-		standardObjectCatalogLookupCache.describeByLC = byLC
-	})
-	if entry, ok := standardObjectCatalogLookupCache.describeByLC[standardObjectLookupKey(canonical)]; ok {
-		return entry, true
+	entry, ok, err := standardDescribeCatalogV2EntryForName(canonical)
+	if err != nil {
+		return standardObjectCatalogEntry{}, false
 	}
-	return standardObjectCatalogEntry{}, false
+	return entry, ok
 }
 
 func standardDescribeCatalogCanonicalName(objectName string) (string, bool) {

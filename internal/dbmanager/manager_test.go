@@ -129,6 +129,36 @@ func TestManagerObjectDetailBuildsSalesforceLikeFieldEditors(t *testing.T) {
 	assertFieldEditor(t, got.Fields, "LastContacted__c", "datetime", true)
 }
 
+func TestManagerCareProgramDetailAndParentLookupUseStandardCatalog(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "CareProgram")
+	state := org.Objects["CareProgram"]
+	state.Records["0kP000000000001"] = storage.Record{
+		ID:     "0kP000000000001",
+		Object: "CareProgram",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Parent Program")},
+	}
+	org.Objects["CareProgram"] = state
+	manager := dbmanager.New(&org)
+
+	detail, err := manager.ObjectDetail("CareProgram")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if detail.Label != "Care Program" {
+		t.Fatalf("CareProgram detail label = %q", detail.Label)
+	}
+	assertFieldEditor(t, detail.Fields, "ParentProgramId", "lookup", true)
+
+	lookup, err := manager.Lookup(dbmanager.LookupOptions{Object: "CareProgram", Field: "ParentProgramId", Query: "Parent"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lookup.Records) != 1 || lookup.Records[0].Object != "CareProgram" || lookup.Records[0].Title != "Parent Program" {
+		t.Fatalf("CareProgram parent lookup = %#v", lookup.Records)
+	}
+}
+
 func TestManagerListRecordsSkipsDeletedByDefault(t *testing.T) {
 	org := testManagerOrg()
 	manager := dbmanager.New(&org)

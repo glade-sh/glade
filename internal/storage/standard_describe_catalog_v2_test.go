@@ -390,6 +390,58 @@ func TestStandardDescribeCatalogV2CacheMixedConcurrentLookups(t *testing.T) {
 	}
 }
 
+func TestStandardObjectCatalogProductionUsesV2CacheOnceForCanonicalVariants(t *testing.T) {
+	var decodes atomic.Int64
+	fresh := newStandardDescribeCatalogV2Cache(func(entry standardDescribeCatalogV2IndexEntry) (standardObjectCatalogEntry, error) {
+		decodes.Add(1)
+		return standardDescribeCatalogV2EntryForResolvedIndexEntry(entry)
+	})
+	previous := standardDescribeCatalogV2ProductionCache
+	standardDescribeCatalogV2ProductionCache = fresh
+	defer func() { standardDescribeCatalogV2ProductionCache = previous }()
+
+	for _, name := range []string{"CareProgram", "careprogram", "  CAREPROGRAM  "} {
+		entry, ok := standardObjectCatalogEntryForName(name)
+		if !ok || entry.Definition.APIName != "CareProgram" {
+			t.Fatalf("production lookup %q: entry=%#v ok=%v", name, entry, ok)
+		}
+	}
+	for _, name := range []string{"", "   ", "DefinitelyNotAStandardObject"} {
+		entry, ok := standardObjectCatalogEntryForName(name)
+		if ok || entry.Definition.APIName != "" {
+			t.Fatalf("production unknown lookup %q: entry=%#v ok=%v", name, entry, ok)
+		}
+	}
+	if got := decodes.Load(); got != 1 {
+		t.Fatalf("production canonical variants decoded %d members, want 1", got)
+	}
+	if got := standardDescribeCatalogV2CacheEntryCount(fresh); got != 1 {
+		t.Fatalf("production canonical and unknown lookups cached %d entries, want 1", got)
+	}
+}
+
+func TestStandardObjectCatalogProductionV2DecodeErrorIsStickyAndFailClosed(t *testing.T) {
+	wantErr := errors.New("corrupt CareProgram member")
+	var decodes atomic.Int64
+	fresh := newStandardDescribeCatalogV2Cache(func(standardDescribeCatalogV2IndexEntry) (standardObjectCatalogEntry, error) {
+		decodes.Add(1)
+		return standardObjectCatalogEntry{Definition: ObjectDefinition{APIName: "partial"}}, wantErr
+	})
+	previous := standardDescribeCatalogV2ProductionCache
+	standardDescribeCatalogV2ProductionCache = fresh
+	defer func() { standardDescribeCatalogV2ProductionCache = previous }()
+
+	for _, name := range []string{"CareProgram", " careprogram ", "CAREPROGRAM"} {
+		entry, ok := standardObjectCatalogEntryForName(name)
+		if ok || entry.Definition.APIName != "" {
+			t.Fatalf("production corrupt lookup %q leaked partial entry: entry=%#v ok=%v", name, entry, ok)
+		}
+	}
+	if got := decodes.Load(); got != 1 {
+		t.Fatalf("production corrupt canonical variants decoded %d members, want 1", got)
+	}
+}
+
 func standardDescribeCatalogV2CacheEntryCount(cache *standardDescribeCatalogV2Cache) int {
 	count := 0
 	cache.entries.Range(func(_, _ any) bool {

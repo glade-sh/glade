@@ -7497,6 +7497,29 @@ public class AssetProbe {
 	}
 }
 
+func TestOrgFromIndexIncludesCareProgramParentRelationship(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/CareProgramProbe.cls"), `
+public class CareProgramProbe {
+	public static CareProgram parent(CareProgram program) {
+		return program.ParentProgram;
+	}
+}
+`)
+	index := loadTestIndex(t, root)
+
+	org := orgFromIndex(index)
+	state, ok := org.Objects["CareProgram"]
+	if !ok {
+		t.Fatal("CareProgram object was not exposed")
+	}
+	field, ok := state.Definition.Fields["ParentProgramId"]
+	if !ok || field.Type != storage.FieldReference || field.RelationshipName != "ParentProgram" || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "CareProgram" {
+		t.Fatalf("CareProgram.ParentProgramId = %#v", field)
+	}
+}
+
 func assertUnknownProjectReferencedField(t *testing.T, field storage.Field) {
 	t.Helper()
 	if field.Type != storage.FieldAny || field.DisplayType != "" || field.DefaultValue != "" ||

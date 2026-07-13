@@ -2,6 +2,7 @@ package storage
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/schema"
@@ -57,6 +58,106 @@ func TestStandardObjectDefinitionIncludesHealthCloudDescribeShape(t *testing.T) 
 	if field.Nillable == nil || !*field.Nillable || field.Createable == nil || !*field.Createable || field.Updateable == nil || !*field.Updateable {
 		t.Fatalf("ParentProgramId flags nillable/createable/updateable = %v/%v/%v", field.Nillable, field.Createable, field.Updateable)
 	}
+}
+
+func TestStandardObjectDefinitionDoesNotExposeCachedCatalogMutation(t *testing.T) {
+	flag := true
+	order := 7
+	cached := standardObjectCatalogEntry{Definition: ObjectDefinition{
+		APIName: "CareProgram",
+		Fields: map[string]Field{"ParentProgramId": {
+			APIName:               "ParentProgramId",
+			Type:                  FieldReference,
+			Nillable:              &flag,
+			DefaultedOnCreate:     &flag,
+			Accessible:            &flag,
+			Createable:            &flag,
+			Updateable:            &flag,
+			Filterable:            &flag,
+			Groupable:             &flag,
+			Sortable:              &flag,
+			Aggregatable:          &flag,
+			Permissionable:        &flag,
+			DeprecatedAndHidden:   &flag,
+			RelationshipOrder:     &order,
+			ReferenceTo:           []string{"CareProgram"},
+			PicklistValues:        []PicklistValue{{Value: "Open"}},
+			PicklistValueSettings: []PicklistSetting{{ValueName: "Open", ControllingFieldValues: []string{"Enabled"}}},
+		}},
+		Relations:   []Relationship{{Field: "ParentProgramId", ParentObjects: []string{"CareProgram"}}},
+		RecordTypes: []RecordTypeInfo{{DeveloperName: "Default", PicklistDefaults: map[string]string{"Status": "Open"}}},
+	}}
+	fresh := newStandardDescribeCatalogV2Cache(func(standardDescribeCatalogV2IndexEntry) (standardObjectCatalogEntry, error) {
+		return cached, nil
+	})
+	previous := standardDescribeCatalogV2ProductionCache
+	standardDescribeCatalogV2ProductionCache = fresh
+	defer func() { standardDescribeCatalogV2ProductionCache = previous }()
+
+	first, ok := StandardObjectDefinition("careprogram")
+	if !ok {
+		t.Fatal("first CareProgram definition missing")
+	}
+	field := first.Fields["ParentProgramId"]
+	for _, pointer := range []*bool{field.Nillable, field.DefaultedOnCreate, field.Accessible, field.Createable, field.Updateable, field.Filterable, field.Groupable, field.Sortable, field.Aggregatable, field.Permissionable, field.DeprecatedAndHidden} {
+		if pointer == nil {
+			t.Fatalf("production lookup did not use injected V2 field: %#v", field)
+		}
+		*pointer = false
+	}
+	if field.RelationshipOrder == nil || len(field.ReferenceTo) == 0 || len(field.PicklistValues) == 0 || len(field.PicklistValueSettings) == 0 || len(field.PicklistValueSettings[0].ControllingFieldValues) == 0 {
+		t.Fatalf("production lookup did not preserve injected V2 field shape: %#v", field)
+	}
+	*field.RelationshipOrder = 99
+	field.ReferenceTo[0] = "Mutated"
+	field.PicklistValues[0].Value = "Mutated"
+	field.PicklistValueSettings[0].ValueName = "Mutated"
+	field.PicklistValueSettings[0].ControllingFieldValues[0] = "Mutated"
+	first.Fields["ParentProgramId"] = field
+	first.Relations[0].ParentObjects[0] = "Mutated"
+	first.RecordTypes[0].PicklistDefaults["Status"] = "Mutated"
+
+	second, ok := StandardObjectDefinition("CAREPROGRAM")
+	if !ok {
+		t.Fatal("second CareProgram definition missing")
+	}
+	secondField := second.Fields["ParentProgramId"]
+	for _, pointer := range []*bool{secondField.Nillable, secondField.DefaultedOnCreate, secondField.Accessible, secondField.Createable, secondField.Updateable, secondField.Filterable, secondField.Groupable, secondField.Sortable, secondField.Aggregatable, secondField.Permissionable, secondField.DeprecatedAndHidden} {
+		if pointer == nil || !*pointer {
+			t.Fatalf("cached field bool pointer changed after returned definition mutation: %#v", secondField)
+		}
+	}
+	if secondField.RelationshipOrder == nil || *secondField.RelationshipOrder != 7 ||
+		!reflect.DeepEqual(secondField.ReferenceTo, []string{"CareProgram"}) ||
+		!reflect.DeepEqual(secondField.PicklistValues, []PicklistValue{{Value: "Open"}}) ||
+		!reflect.DeepEqual(secondField.PicklistValueSettings, []PicklistSetting{{ValueName: "Open", ControllingFieldValues: []string{"Enabled"}}}) {
+		t.Fatalf("cached field collection changed after returned definition mutation: %#v", secondField)
+	}
+	if got := relationshipParentObjects(second.Relations, "ParentProgramId"); !reflect.DeepEqual(got, []string{"CareProgram"}) {
+		t.Fatalf("cached relationship changed after returned definition mutation: parent objects=%#v", got)
+	}
+	if len(second.RecordTypes) == 0 || second.RecordTypes[0].PicklistDefaults["Status"] != "Open" {
+		t.Fatalf("cached record type changed after returned definition mutation: %#v", second.RecordTypes)
+	}
+
+	if !VisitStandardObjectRelationships("CareProgram", nil, func(relationship Relationship) {
+		relationship.ParentObjects[0] = "MutatedByCallback"
+	}) {
+		t.Fatal("CareProgram relationships missing")
+	}
+	third, _ := StandardObjectDefinition("CareProgram")
+	if got := relationshipParentObjects(third.Relations, "ParentProgramId"); !reflect.DeepEqual(got, []string{"CareProgram"}) {
+		t.Fatalf("relationship callback mutated cached catalog: parent objects=%#v", got)
+	}
+}
+
+func relationshipParentObjects(relationships []Relationship, field string) []string {
+	for _, relationship := range relationships {
+		if relationship.Field == field {
+			return relationship.ParentObjects
+		}
+	}
+	return nil
 }
 
 func TestStandardObjectDefinitionIncludesReferenceBackedShape(t *testing.T) {

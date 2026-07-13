@@ -25,6 +25,30 @@ func BenchmarkStandardDescribeCatalogV2CareProgramCold(b *testing.B) {
 	}
 }
 
+func BenchmarkStandardObjectDefinitionCareProgramCold(b *testing.B) {
+	previous := standardDescribeCatalogV2ProductionCache
+	defer func() { standardDescribeCatalogV2ProductionCache = previous }()
+	b.ReportAllocs()
+	for index := 0; index < b.N; index++ {
+		var decodes atomic.Int64
+		standardDescribeCatalogV2ProductionCache = newStandardDescribeCatalogV2Cache(func(entry standardDescribeCatalogV2IndexEntry) (standardObjectCatalogEntry, error) {
+			decodes.Add(1)
+			return standardDescribeCatalogV2EntryForResolvedIndexEntry(entry)
+		})
+		definition, ok := StandardObjectDefinition("CareProgram")
+		if !ok {
+			b.Fatal("CareProgram definition missing")
+		}
+		field := definition.Fields["ParentProgramId"]
+		if field.Type != FieldReference || field.RelationshipName != "ParentProgram" || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "CareProgram" {
+			b.Fatalf("CareProgram.ParentProgramId = %#v", field)
+		}
+		if decodes.Load() != 1 || standardDescribeCatalogV2CacheEntryCount(standardDescribeCatalogV2ProductionCache) != 1 {
+			b.Fatalf("CareProgram production lookup decodes=%d cacheEntries=%d, want 1/1", decodes.Load(), standardDescribeCatalogV2CacheEntryCount(standardDescribeCatalogV2ProductionCache))
+		}
+	}
+}
+
 func BenchmarkStandardDescribeCatalogV2CareProgramWarm(b *testing.B) {
 	cache := newStandardDescribeCatalogV2Cache(standardDescribeCatalogV2EntryForResolvedIndexEntry)
 	if _, ok, err := cache.entryForName("CareProgram"); err != nil || !ok {
