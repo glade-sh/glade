@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -396,4 +397,241 @@ func TestWorkspaceSourcesStatsCountAttemptsPhysicalLogicalAndOccurrences(t *test
 	if got, want := sources.Stats(), (WorkspaceSourceStats{PhysicalReadAttempts: 1, PhysicalSources: 1, LogicalViews: 2, Occurrences: 2}); got != want {
 		t.Fatalf("stats = %#v, want %#v", got, want)
 	}
+}
+
+func TestBuildWithArtifactsReturnsCompactSourceDigests(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Present.cls")
+	missing := filepath.Join(root, "Missing.cls")
+	raw := []byte("public class Present {\r\n  String café = '東京 %%%NAMESPACE%%%Thing__c BasePkg__Item__c';\r\n}\r\n")
+	if err := os.WriteFile(path, raw, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, artifacts := BuildWithArtifacts(project.Project{
+		Root:      root,
+		Namespace: "runtime",
+		NamespaceRemaps: []namespaceremap.Rule{{
+			From: "BasePkg",
+			To:   "runtime",
+		}},
+		ApexFiles: []string{path, missing},
+	}, schema.Schema{})
+
+	if artifacts.SourceDigests == nil {
+		t.Fatal("SourceDigests is nil")
+	}
+	if got, want := artifacts.SourceDigests.PhysicalCount(), 1; got != want {
+		t.Fatalf("PhysicalCount = %d, want %d", got, want)
+	}
+	if got, ok := artifacts.SourceDigests.Digest(path); !ok || got != sha256.Sum256(raw) {
+		t.Fatalf("Digest(%q) = %x, %v, want raw-byte SHA-256", path, got, ok)
+	}
+	if _, ok := artifacts.SourceDigests.Digest(missing); ok {
+		t.Fatalf("Digest(%q) retained failed read", missing)
+	}
+
+	_, empty := BuildWithArtifacts(project.Project{Root: root}, schema.Schema{})
+	if empty.SourceDigests == nil || empty.SourceDigests.PhysicalCount() != 0 {
+		t.Fatalf("empty SourceDigests = %#v, want non-nil empty set", empty.SourceDigests)
+	}
+	var zero BuildArtifacts
+	if zero.SourceDigests != nil {
+		t.Fatalf("zero BuildArtifacts SourceDigests = %#v, want nil", zero.SourceDigests)
+	}
+	if digest, ok := (*SourceDigestSet)(nil).Digest(path); ok || digest != ([sha256.Size]byte{}) {
+		t.Fatalf("nil Digest = %x, %v", digest, ok)
+	}
+	if got := (*SourceDigestSet)(nil).PhysicalCount(); got != 0 {
+		t.Fatalf("nil PhysicalCount = %d, want 0", got)
+	}
+}
+
+func TestSourceDigestSetResolvesLiteralRelativeAbsoluteAndSymlinkAliases(t *testing.T) {
+	root := t.TempDir()
+	physical := filepath.Join(root, "Physical.cls")
+	alias := filepath.Join(root, "Alias.cls")
+	raw := []byte("public class Physical {}\r\n")
+	if err := os.WriteFile(physical, raw, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(physical, alias); err != nil {
+		t.Fatal(err)
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	relative, err := filepath.Rel(cwd, physical)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dirtyRelative := filepath.Dir(relative) + string(filepath.Separator) + "." + string(filepath.Separator) + filepath.Base(relative)
+
+	_, artifacts := BuildWithArtifacts(project.Project{
+		Root:      root,
+		ApexFiles: []string{dirtyRelative, physical, alias},
+	}, schema.Schema{})
+
+	want := sha256.Sum256(raw)
+	for _, requested := range []string{
+		dirtyRelative,
+		physical,
+		alias,
+		filepath.Dir(physical) + string(filepath.Separator) + "." + string(filepath.Separator) + filepath.Base(physical),
+		filepath.Dir(alias) + string(filepath.Separator) + "." + string(filepath.Separator) + filepath.Base(alias),
+	} {
+		if got, ok := artifacts.SourceDigests.Digest(requested); !ok || got != want {
+			t.Errorf("Digest(%q) = %x, %v, want %x, true", requested, got, ok, want)
+		}
+	}
+	if _, ok := artifacts.SourceDigests.Digest(relative); ok {
+		t.Fatalf("Digest(%q) matched an uncaptured cleaned relative spelling", relative)
+	}
+	originalCWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(originalCWD); err != nil {
+			t.Errorf("restore working directory: %v", err)
+		}
+	})
+	for _, requested := range []string{dirtyRelative, physical, alias} {
+		if got, ok := artifacts.SourceDigests.Digest(requested); !ok || got != want {
+			t.Errorf("Digest(%q) after chdir = %x, %v, want %x, true", requested, got, ok, want)
+		}
+	}
+	if _, ok := artifacts.SourceDigests.Digest(filepath.Base(physical)); ok {
+		t.Fatalf("Digest(%q) matched only because the new cwd resolves it to a captured file", filepath.Base(physical))
+	}
+	if got := artifacts.SourceDigests.PhysicalCount(); got != 1 {
+		t.Fatalf("PhysicalCount = %d, want one physical source", got)
+	}
+}
+
+func TestSourceDigestSetCollapsesNamespaceAndRemapViews(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Shared.cls")
+	raw := []byte("public class Shared { String value = '%%%NAMESPACE%%%Thing__c BasePkg__Item__c'; }")
+	if err := os.WriteFile(path, raw, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	depProject := project.Project{
+		Root:             root,
+		Namespace:        "dep",
+		NamespaceRemaps:  []namespaceremap.Rule{{From: "BasePkg", To: "dep"}},
+		ApexFiles:        []string{path},
+		SourceAPIVersion: "64.0",
+	}
+	_, artifacts := BuildWithArtifacts(project.Project{
+		Root:      root,
+		Namespace: "main",
+		ApexFiles: []string{path},
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace:  "dep",
+			SourceRoot: root,
+			Version:    "1.0",
+			Status:     "loaded",
+			Project:    &depProject,
+		}},
+	}, schema.Schema{})
+
+	if got := artifacts.SourceDigests.PhysicalCount(); got != 1 {
+		t.Fatalf("PhysicalCount = %d, want one source across logical views", got)
+	}
+	if got, ok := artifacts.SourceDigests.Digest(path); !ok || got != sha256.Sum256(raw) {
+		t.Fatalf("Digest = %x, %v, want raw digest", got, ok)
+	}
+}
+
+func TestSourceDigestSetSnapshotIsImmutableAcrossSameSizeEdit(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Mutable.cls")
+	firstRaw := []byte("public class Mutable { Integer value = 1; }")
+	secondRaw := []byte("public class Mutable { Integer value = 2; }")
+	if len(firstRaw) != len(secondRaw) {
+		t.Fatal("test fixture edit must preserve size")
+	}
+	if err := os.WriteFile(path, firstRaw, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, first := BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+	if err := os.WriteFile(path, secondRaw, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, second := BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+
+	firstDigest, firstOK := first.SourceDigests.Digest(path)
+	secondDigest, secondOK := second.SourceDigests.Digest(path)
+	if !firstOK || !secondOK || firstDigest != sha256.Sum256(firstRaw) || secondDigest != sha256.Sum256(secondRaw) {
+		t.Fatalf("digests = %x/%v %x/%v", firstDigest, firstOK, secondDigest, secondOK)
+	}
+	if firstDigest == secondDigest {
+		t.Fatal("same-size edit did not change a new snapshot")
+	}
+}
+
+func TestSourceDigestSetSnapshotMapsDoNotAliasWorkspaceSources(t *testing.T) {
+	root := t.TempDir()
+	firstPath := filepath.Join(root, "First.cls")
+	secondPath := filepath.Join(root, "Second.cls")
+	writeFile(t, firstPath, "public class First {}")
+	writeFile(t, secondPath, "public class Second {}")
+	sources := NewWorkspaceSources()
+	first, err := sources.load(SourceMetadata{RequestedPath: firstPath, Root: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sources.record(first)
+	snapshot := sources.sourceDigestSet()
+
+	second, err := sources.load(SourceMetadata{RequestedPath: secondPath, Root: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sources.record(second)
+	if got := snapshot.PhysicalCount(); got != 1 {
+		t.Fatalf("snapshot PhysicalCount after arena mutation = %d, want 1", got)
+	}
+	if _, ok := snapshot.Digest(secondPath); ok {
+		t.Fatal("snapshot retained later arena mutation")
+	}
+	sources.mu.Lock()
+	delete(sources.physical, canonicalPhysicalPath(firstPath))
+	delete(sources.occurrence, sourceOccurrenceKeyForMetadata(first.metadata))
+	sources.mu.Unlock()
+	if got, ok := snapshot.Digest(firstPath); !ok || got != first.Digest() {
+		t.Fatalf("snapshot changed after arena map deletion: %x, %v", got, ok)
+	}
+}
+
+func TestSourceDigestSetSupportsConcurrentLookup(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Concurrent.cls")
+	raw := []byte("public class Concurrent {}")
+	if err := os.WriteFile(path, raw, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, artifacts := BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+	want := sha256.Sum256(raw)
+
+	workers := runtime.GOMAXPROCS(0) * 2
+	var wg sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 100; j++ {
+				if got, ok := artifacts.SourceDigests.Digest(path); !ok || got != want {
+					t.Errorf("Digest = %x, %v, want %x, true", got, ok, want)
+					return
+				}
+			}
+		}()
+	}
+	wg.Wait()
 }

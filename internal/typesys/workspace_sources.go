@@ -66,7 +66,46 @@ func (s WorkspaceSource) Metadata() SourceMetadata {
 // BuildArtifacts contains reusable artifacts produced while building a type
 // index. Consumers should treat the contained source arena as read-only.
 type BuildArtifacts struct {
-	Sources *WorkspaceSources
+	Sources       *WorkspaceSources
+	SourceDigests *SourceDigestSet
+}
+
+// SourceDigestSet is an immutable, compact snapshot of the exact raw source
+// digests used by one type-index build.
+type SourceDigestSet struct {
+	physical  map[string][sha256.Size]byte
+	requested map[string]string
+	absolute  map[string]string
+}
+
+// Digest returns the raw-byte SHA-256 digest captured for path. Lookup uses
+// only aliases recorded by the build and never reevaluates symlinks or reads
+// the filesystem.
+func (s *SourceDigestSet) Digest(path string) ([sha256.Size]byte, bool) {
+	if s == nil {
+		return [sha256.Size]byte{}, false
+	}
+	physicalPath, ok := s.requested[path]
+	if !ok {
+		if !filepath.IsAbs(path) {
+			return [sha256.Size]byte{}, false
+		}
+		physicalPath, ok = s.absolute[filepath.Clean(path)]
+		if !ok {
+			return [sha256.Size]byte{}, false
+		}
+	}
+	digest, ok := s.physical[physicalPath]
+	return digest, ok
+}
+
+// PhysicalCount returns the number of distinct successfully read physical
+// sources represented by the snapshot.
+func (s *SourceDigestSet) PhysicalCount() int {
+	if s == nil {
+		return 0
+	}
+	return len(s.physical)
 }
 
 // SourceForType returns the exact logical source occurrence used to build typ.
@@ -173,6 +212,37 @@ func (s *WorkspaceSources) Stats() WorkspaceSourceStats {
 		LogicalViews:         uint64(len(s.logical)),
 		Occurrences:          uint64(len(s.all)),
 	}
+}
+
+func (s *WorkspaceSources) sourceDigestSet() *SourceDigestSet {
+	digests := &SourceDigestSet{
+		physical:  make(map[string][sha256.Size]byte),
+		requested: make(map[string]string),
+		absolute:  make(map[string]string),
+	}
+	if s == nil {
+		return digests
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	digests.physical = make(map[string][sha256.Size]byte, len(s.physical))
+	for path, source := range s.physical {
+		if source.err != nil {
+			continue
+		}
+		digests.physical[path] = source.digest
+		digests.absolute[cleanedAbsolutePath(path)] = path
+	}
+	digests.requested = make(map[string]string, len(s.all))
+	for _, source := range s.all {
+		requestedPath := source.metadata.RequestedPath
+		physicalPath := source.metadata.PhysicalPath
+		digests.requested[requestedPath] = physicalPath
+		digests.absolute[cleanedAbsolutePath(requestedPath)] = physicalPath
+		digests.absolute[cleanedAbsolutePath(physicalPath)] = physicalPath
+	}
+	return digests
 }
 
 func (s *WorkspaceSources) record(source WorkspaceSource) {
@@ -283,11 +353,7 @@ func (s *WorkspaceSources) loadLogical(key logicalSourceKey, raw, namespace stri
 }
 
 func canonicalPhysicalPath(path string) string {
-	abs, err := filepath.Abs(path)
-	if err != nil {
-		abs = path
-	}
-	abs = filepath.Clean(abs)
+	abs := cleanedAbsolutePath(path)
 	resolved, err := filepath.EvalSymlinks(abs)
 	if err != nil {
 		return abs
@@ -297,6 +363,14 @@ func canonicalPhysicalPath(path string) string {
 		return filepath.Clean(resolved)
 	}
 	return filepath.Clean(resolvedAbs)
+}
+
+func cleanedAbsolutePath(path string) string {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		abs = path
+	}
+	return filepath.Clean(abs)
 }
 
 func sourceReadError(err error, requestedPath string) error {

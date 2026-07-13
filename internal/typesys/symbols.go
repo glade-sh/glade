@@ -193,6 +193,7 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 	}
 	appendDataWeaveScriptResourceSymbols(&idx, p)
 	appendProjectSymbols(&idx, parser, p, false, p.Namespace, "", seenTypes, sources)
+	artifacts.SourceDigests = sources.sourceDigestSet()
 
 	sort.Slice(idx.Types, func(i, j int) bool {
 		if idx.Types[i].Namespace == idx.Types[j].Namespace {
