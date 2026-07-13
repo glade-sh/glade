@@ -1088,6 +1088,486 @@ func TestPerfCountersDiscoverRemainsZeroWithoutPreRunWiring(t *testing.T) {
 	}
 }
 
+func TestDiskStartupCacheInvalidationMatchesNoCache(t *testing.T) {
+	ResetPerfCounters()
+	InvalidateRuntimeCaches()
+	wasDiskCacheDisabled := disableDiskCache.Load()
+	disableDiskCache.Store(false)
+	t.Cleanup(func() {
+		disableDiskCache.Store(wasDiskCacheDisabled)
+		InvalidateRuntimeCaches()
+		ResetPerfCounters()
+	})
+
+	root := t.TempDir()
+	helperPath := filepath.Join(root, "force-app/main/classes/CacheExactHelper.cls")
+	testPath := filepath.Join(root, "force-app/main/classes/CacheExactTest.cls")
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, helperPath, `
+public class CacheExactHelper {
+  public static Integer value() { return 1; }
+}
+`)
+	writeFile(t, testPath, `
+@isTest
+private class CacheExactTest {
+  @isTest static void seesCurrentHelper() {
+    System.assertEquals(1, CacheExactHelper.value());
+  }
+}
+`)
+
+	initial := Run(loadTestIndex(t, root), Options{PerfCounters: true})
+	if summary := initial.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("initial summary = %#v cases = %#v", summary, initial.Suites)
+	}
+	initialCounters := SnapshotPerfCounters().Phases
+	if initialCounters.CacheMisses != 1 || initialCounters.DiskCacheHits != 0 || initialCounters.CacheEncodeNS <= 0 {
+		t.Fatalf("initial counters = %#v", initialCounters)
+	}
+
+	helperInfo, err := os.Stat(helperPath)
+	if err != nil {
+		t.Fatalf("Stat(helper) error = %v", err)
+	}
+	testInfo, err := os.Stat(testPath)
+	if err != nil {
+		t.Fatalf("Stat(test) error = %v", err)
+	}
+	writeFile(t, helperPath, `
+public class CacheExactHelper {
+  public static Integer value() { return 2; }
+}
+`)
+	writeFile(t, testPath, `
+@isTest
+private class CacheExactTest {
+  @isTest static void seesCurrentHelper() {
+    System.assertEquals(2, CacheExactHelper.value());
+  }
+}
+`)
+	if err := os.Chtimes(helperPath, helperInfo.ModTime(), helperInfo.ModTime()); err != nil {
+		t.Fatalf("Chtimes(helper) error = %v", err)
+	}
+	if err := os.Chtimes(testPath, testInfo.ModTime(), testInfo.ModTime()); err != nil {
+		t.Fatalf("Chtimes(test) error = %v", err)
+	}
+	currentIndex := loadTestIndex(t, root)
+
+	InvalidateRuntimeCaches()
+	cachedPath := Run(currentIndex, Options{PerfCounters: true})
+	cachedCounters := SnapshotPerfCounters().Phases
+	if cachedCounters.CacheMisses != 1 || cachedCounters.DiskCacheHits != 0 || cachedCounters.MemoryCacheHits != 0 || cachedCounters.CacheValidateNS <= 0 || cachedCounters.CacheDecodeNS != 0 {
+		t.Fatalf("invalidated disk-cache counters = %#v", cachedCounters)
+	}
+
+	InvalidateRuntimeCaches()
+	noCachePath := Run(currentIndex, Options{PerfCounters: true, NoDiskCache: true})
+	noCacheCounters := SnapshotPerfCounters().Phases
+	if noCacheCounters.CacheMisses != 1 || noCacheCounters.DiskCacheHits != 0 || noCacheCounters.MemoryCacheHits != 0 || noCacheCounters.CacheValidateNS != 0 || noCacheCounters.CacheDecodeNS != 0 {
+		t.Fatalf("no-cache counters = %#v", noCacheCounters)
+	}
+
+	normalizeDurations := func(run testreport.Run) testreport.Run {
+		run.DurationMS = 0
+		for suiteIndex := range run.Suites {
+			run.Suites[suiteIndex].DurationMS = 0
+			for caseIndex := range run.Suites[suiteIndex].Cases {
+				run.Suites[suiteIndex].Cases[caseIndex].DurationMS = 0
+			}
+		}
+		return run
+	}
+	if got, want := normalizeDurations(cachedPath), normalizeDurations(noCachePath); !reflect.DeepEqual(got, want) {
+		t.Fatalf("invalidated disk-cache result != no-cache result:\ncache=%#v\nno-cache=%#v", got, want)
+	}
+	if summary := cachedPath.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("invalidated disk-cache summary = %#v cases = %#v", summary, cachedPath.Suites)
+	}
+
+	type runtimeInputMutation struct {
+		name   string
+		setup  func(t *testing.T, root, helperPath string)
+		mutate func(t *testing.T, root, helperPath string)
+		assert func(t *testing.T, runtime runtimeCacheEntry)
+	}
+	notificationPath := func(root string) string {
+		return filepath.Join(root, "force-app", "main", "default", "notificationtypes", "Cache_Notice.notiftype-meta.xml")
+	}
+	dataPath := func(root string) string {
+		return filepath.Join(root, "fixtures", "data", "CacheShape.json")
+	}
+	apexMeta := func(apiVersion string) string {
+		return `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>` + apiVersion + `</apiVersion></ApexClass>`
+	}
+	notification := func(label string) string {
+		return `<CustomNotificationType xmlns="http://soap.sforce.com/2006/04/metadata"><customNotifTypeName>` + label + `</customNotifTypeName></CustomNotificationType>`
+	}
+	data := func(field string) string {
+		return `{"records":{"CacheShape__c":[{"` + field + `":"value"}]}}`
+	}
+	assertAPIVersion := func(want string) func(*testing.T, runtimeCacheEntry) {
+		return func(t *testing.T, runtime runtimeCacheEntry) {
+			t.Helper()
+			for _, method := range runtime.Methods {
+				if method.Name == "CacheInputHelper.value" {
+					if method.APIVersion != want {
+						t.Fatalf("CacheInputHelper.value APIVersion = %q, want %q", method.APIVersion, want)
+					}
+					return
+				}
+			}
+			t.Fatalf("CacheInputHelper.value was not compiled: methods=%#v", runtime.Methods)
+		}
+	}
+	assertNotification := func(wantLabel string, wantPresent bool) func(*testing.T, runtimeCacheEntry) {
+		return func(t *testing.T, runtime runtimeCacheEntry) {
+			t.Helper()
+			state := runtime.Org.Objects["CustomNotificationType"]
+			present := recordWithFieldValueExists(state, "DeveloperName", "Cache_Notice")
+			if present != wantPresent {
+				t.Fatalf("CustomNotificationType Cache_Notice present = %v, want %v: records=%#v", present, wantPresent, state.Records)
+			}
+			if wantPresent && !recordWithFieldValueExists(state, "MasterLabel", wantLabel) {
+				t.Fatalf("CustomNotificationType MasterLabel %q was not created: records=%#v", wantLabel, state.Records)
+			}
+		}
+	}
+	assertDataFields := func(wantPresent []string, wantAbsent []string) func(*testing.T, runtimeCacheEntry) {
+		return func(t *testing.T, runtime runtimeCacheEntry) {
+			t.Helper()
+			fields := runtime.Org.Objects["CacheShape__c"].Definition.Fields
+			for _, name := range wantPresent {
+				if _, ok := fields[name]; !ok {
+					t.Fatalf("CacheShape__c.%s was not inferred: fields=%#v", name, fields)
+				}
+			}
+			for _, name := range wantAbsent {
+				if _, ok := fields[name]; ok {
+					t.Fatalf("CacheShape__c.%s remained inferred: fields=%#v", name, fields)
+				}
+			}
+		}
+	}
+	runtimeInputs := []runtimeInputMutation{
+		{
+			name: "add Apex metadata sidecar",
+			mutate: func(t *testing.T, _ string, helperPath string) {
+				writeFile(t, helperPath+"-meta.xml", apexMeta("61.0"))
+			},
+			assert: assertAPIVersion("61.0"),
+		},
+		{
+			name: "edit Apex metadata sidecar",
+			setup: func(t *testing.T, _ string, helperPath string) {
+				writeFile(t, helperPath+"-meta.xml", apexMeta("61.0"))
+			},
+			mutate: func(t *testing.T, _ string, helperPath string) {
+				writeFile(t, helperPath+"-meta.xml", apexMeta("62.0"))
+			},
+			assert: assertAPIVersion("62.0"),
+		},
+		{
+			name: "delete Apex metadata sidecar",
+			setup: func(t *testing.T, _ string, helperPath string) {
+				writeFile(t, helperPath+"-meta.xml", apexMeta("61.0"))
+			},
+			mutate: func(t *testing.T, _ string, helperPath string) {
+				if err := os.Remove(helperPath + "-meta.xml"); err != nil {
+					t.Fatalf("Remove(Apex metadata sidecar) error = %v", err)
+				}
+			},
+			assert: assertAPIVersion(""),
+		},
+		{
+			name: "add notification type",
+			mutate: func(t *testing.T, root, _ string) {
+				writeFile(t, notificationPath(root), notification("Added Label"))
+			},
+			assert: assertNotification("Added Label", true),
+		},
+		{
+			name: "edit notification type",
+			setup: func(t *testing.T, root, _ string) {
+				writeFile(t, notificationPath(root), notification("Before Label"))
+			},
+			mutate: func(t *testing.T, root, _ string) {
+				writeFile(t, notificationPath(root), notification("After Label"))
+			},
+			assert: assertNotification("After Label", true),
+		},
+		{
+			name: "delete notification type",
+			setup: func(t *testing.T, root, _ string) {
+				writeFile(t, notificationPath(root), notification("Deleted Label"))
+			},
+			mutate: func(t *testing.T, root, _ string) {
+				if err := os.Remove(notificationPath(root)); err != nil {
+					t.Fatalf("Remove(notification type) error = %v", err)
+				}
+			},
+			assert: assertNotification("", false),
+		},
+		{
+			name: "add project data JSON",
+			mutate: func(t *testing.T, root, _ string) {
+				writeFile(t, dataPath(root), data("Added__c"))
+			},
+			assert: assertDataFields([]string{"Added__c"}, nil),
+		},
+		{
+			name: "edit project data JSON",
+			setup: func(t *testing.T, root, _ string) {
+				writeFile(t, dataPath(root), data("Before__c"))
+			},
+			mutate: func(t *testing.T, root, _ string) {
+				writeFile(t, dataPath(root), data("After___c"))
+			},
+			assert: assertDataFields([]string{"After___c"}, []string{"Before__c"}),
+		},
+		{
+			name: "delete project data JSON",
+			setup: func(t *testing.T, root, _ string) {
+				writeFile(t, dataPath(root), data("Deleted__c"))
+			},
+			mutate: func(t *testing.T, root, _ string) {
+				if err := os.Remove(dataPath(root)); err != nil {
+					t.Fatalf("Remove(project data JSON) error = %v", err)
+				}
+			},
+			assert: assertDataFields(nil, []string{"Deleted__c"}),
+		},
+	}
+	for _, tc := range runtimeInputs {
+		t.Run(tc.name, func(t *testing.T) {
+			ResetPerfCounters()
+			InvalidateRuntimeCaches()
+			root := t.TempDir()
+			helperPath := filepath.Join(root, "force-app", "main", "default", "classes", "CacheInputHelper.cls")
+			writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+			writeFile(t, helperPath, `
+public class CacheInputHelper {
+  public static Integer value() { return 1; }
+}
+`)
+			writeFile(t, filepath.Join(root, "force-app", "main", "default", "classes", "CacheInputTest.cls"), `
+@isTest
+private class CacheInputTest {
+  @isTest static void passes() {
+    System.assertEquals(1, CacheInputHelper.value());
+  }
+}
+`)
+			if tc.setup != nil {
+				tc.setup(t, root, helperPath)
+			}
+
+			initial := Run(loadTestIndex(t, root), Options{PerfCounters: true})
+			if summary := initial.Summary(); summary.Total != 1 || summary.Passed != 1 {
+				t.Fatalf("initial summary = %#v cases = %#v", summary, initial.Suites)
+			}
+			initialCounters := SnapshotPerfCounters().Phases
+			if initialCounters.CacheMisses != 1 || initialCounters.DiskCacheHits != 0 || initialCounters.CacheEncodeNS <= 0 {
+				t.Fatalf("initial counters = %#v", initialCounters)
+			}
+
+			tc.mutate(t, root, helperPath)
+			currentIndex := loadTestIndex(t, root)
+			InvalidateRuntimeCaches()
+			cachedPath := Run(currentIndex, Options{PerfCounters: true})
+			cachedCounters := SnapshotPerfCounters().Phases
+			if cachedCounters.CacheMisses != 1 || cachedCounters.DiskCacheHits != 0 || cachedCounters.MemoryCacheHits != 0 || cachedCounters.CacheValidateNS <= 0 || cachedCounters.CacheDecodeNS != 0 {
+				t.Fatalf("invalidated disk-cache counters = %#v", cachedCounters)
+			}
+			runtimeCacheMu.RLock()
+			cachedRuntime, ok := runtimeCache[runtimeKey(currentIndex)]
+			runtimeCacheMu.RUnlock()
+			if !ok {
+				t.Fatal("invalidated disk-cache runtime was not retained in memory")
+			}
+			cachedRuntime = cloneRuntimeCacheEntry(cachedRuntime)
+
+			InvalidateRuntimeCaches()
+			noCachePath := Run(currentIndex, Options{PerfCounters: true, NoDiskCache: true})
+			noCacheCounters := SnapshotPerfCounters().Phases
+			if noCacheCounters.CacheMisses != 1 || noCacheCounters.DiskCacheHits != 0 || noCacheCounters.MemoryCacheHits != 0 || noCacheCounters.CacheValidateNS != 0 || noCacheCounters.CacheDecodeNS != 0 {
+				t.Fatalf("no-cache counters = %#v", noCacheCounters)
+			}
+			runtimeCacheMu.RLock()
+			noCacheRuntime, ok := runtimeCache[runtimeKey(currentIndex)]
+			runtimeCacheMu.RUnlock()
+			if !ok {
+				t.Fatal("no-cache runtime was not retained in memory")
+			}
+			noCacheRuntime = cloneRuntimeCacheEntry(noCacheRuntime)
+
+			if got, want := normalizeDurations(cachedPath), normalizeDurations(noCachePath); !reflect.DeepEqual(got, want) {
+				t.Fatalf("invalidated disk-cache result != no-cache result:\ncache=%#v\nno-cache=%#v", got, want)
+			}
+			if cachedRuntime.Org.OrgID != noCacheRuntime.Org.OrgID ||
+				cachedRuntime.Org.APIVersion != noCacheRuntime.Org.APIVersion ||
+				cachedRuntime.Org.Namespace != noCacheRuntime.Org.Namespace {
+				t.Fatalf("invalidated disk-cache org identity = (%q, %q, %q), no-cache = (%q, %q, %q)",
+					cachedRuntime.Org.OrgID, cachedRuntime.Org.APIVersion, cachedRuntime.Org.Namespace,
+					noCacheRuntime.Org.OrgID, noCacheRuntime.Org.APIVersion, noCacheRuntime.Org.Namespace)
+			}
+			if !reflect.DeepEqual(cachedRuntime.Methods, noCacheRuntime.Methods) {
+				t.Fatalf("invalidated disk-cache methods != no-cache methods:\ncache=%#v\nno-cache=%#v", cachedRuntime.Methods, noCacheRuntime.Methods)
+			}
+			if summary := cachedPath.Summary(); summary.Total != 1 || summary.Passed != 1 {
+				t.Fatalf("invalidated disk-cache summary = %#v cases = %#v", summary, cachedPath.Suites)
+			}
+			tc.assert(t, cachedRuntime)
+			tc.assert(t, noCacheRuntime)
+		})
+	}
+}
+
+func TestDiskStartupCacheInvalidatesLoadedDependencyData(t *testing.T) {
+	wasDiskCacheDisabled := disableDiskCache.Load()
+	disableDiskCache.Store(false)
+	t.Cleanup(func() {
+		disableDiskCache.Store(wasDiskCacheDisabled)
+		InvalidateRuntimeCaches()
+		ResetPerfCounters()
+	})
+	dataQuery := func(recordTypeName string) string {
+		return `{"query":"SELECT Id FROM RecordType WHERE SObjectType = 'pkg__Product__c' AND Name = '` + recordTypeName + `'"}`
+	}
+	type mutationCase struct {
+		name       string
+		initial    string
+		mutate     func(t *testing.T, path string)
+		want       string
+		wantAbsent string
+	}
+	cases := []mutationCase{
+		{
+			name: "add",
+			mutate: func(t *testing.T, path string) {
+				writeFile(t, path, dataQuery("Added Plan"))
+			},
+			want: "Added Plan",
+		},
+		{
+			name:    "edit",
+			initial: dataQuery("Before Plan"),
+			mutate: func(t *testing.T, path string) {
+				writeFile(t, path, dataQuery("After Plan"))
+			},
+			want:       "After Plan",
+			wantAbsent: "Before Plan",
+		},
+		{
+			name:    "delete",
+			initial: dataQuery("Deleted Plan"),
+			mutate: func(t *testing.T, path string) {
+				if err := os.Remove(path); err != nil {
+					t.Fatalf("Remove(dependency data) error = %v", err)
+				}
+			},
+			wantAbsent: "Deleted Plan",
+		},
+	}
+	normalizeDurations := func(run testreport.Run) testreport.Run {
+		run.DurationMS = 0
+		for suiteIndex := range run.Suites {
+			run.Suites[suiteIndex].DurationMS = 0
+			for caseIndex := range run.Suites[suiteIndex].Cases {
+				run.Suites[suiteIndex].Cases[caseIndex].DurationMS = 0
+			}
+		}
+		return run
+	}
+	recordTypeExists := func(runtime runtimeCacheEntry, label string) bool {
+		for _, recordType := range runtime.Org.Objects["pkg__Product__c"].Definition.RecordTypes {
+			if strings.EqualFold(recordType.Name, label) && strings.EqualFold(recordType.DeveloperName, recordTypeDeveloperNameFromLabel(label)) {
+				return true
+			}
+		}
+		return false
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ResetPerfCounters()
+			InvalidateRuntimeCaches()
+			root := t.TempDir()
+			consumerRoot := filepath.Join(root, "consumer")
+			dependencyRoot := filepath.Join(root, "dependency")
+			dataPath := filepath.Join(dependencyRoot, "fixtures", "data", "RecordTypes.json")
+			writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+			writeFile(t, filepath.Join(consumerRoot, "glade.yml"), "project:\n  managedPackageDependencies: [\"pkg:../dependency\"]\n")
+			writeFile(t, filepath.Join(consumerRoot, "force-app", "main", "default", "classes", "DependencyDataTest.cls"), `
+@isTest private class DependencyDataTest {
+  @isTest static void passes() { System.assertEquals(1, 1); }
+}
+`)
+			writeFile(t, filepath.Join(dependencyRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"pkg"}`)
+			writeFile(t, filepath.Join(dependencyRoot, "force-app", "main", "default", "objects", "Product__c", "Product__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Product</label></CustomObject>`)
+			if tc.initial != "" {
+				writeFile(t, dataPath, tc.initial)
+			}
+
+			initial := Run(loadTestIndex(t, consumerRoot), Options{PerfCounters: true})
+			if summary := initial.Summary(); summary.Total != 1 || summary.Passed != 1 {
+				t.Fatalf("initial summary = %#v cases = %#v", summary, initial.Suites)
+			}
+			initialCounters := SnapshotPerfCounters().Phases
+			if initialCounters.CacheMisses != 1 || initialCounters.DiskCacheHits != 0 || initialCounters.CacheEncodeNS <= 0 {
+				t.Fatalf("initial counters = %#v", initialCounters)
+			}
+
+			tc.mutate(t, dataPath)
+			currentIndex := loadTestIndex(t, consumerRoot)
+			InvalidateRuntimeCaches()
+			cachedPath := Run(currentIndex, Options{PerfCounters: true})
+			cachedCounters := SnapshotPerfCounters().Phases
+			if cachedCounters.CacheMisses != 1 || cachedCounters.DiskCacheHits != 0 || cachedCounters.MemoryCacheHits != 0 || cachedCounters.CacheValidateNS <= 0 || cachedCounters.CacheDecodeNS != 0 {
+				t.Fatalf("invalidated disk-cache counters = %#v", cachedCounters)
+			}
+			runtimeCacheMu.RLock()
+			cachedRuntime, ok := runtimeCache[runtimeKey(currentIndex)]
+			runtimeCacheMu.RUnlock()
+			if !ok {
+				t.Fatal("invalidated disk-cache runtime was not retained in memory")
+			}
+			cachedRuntime = cloneRuntimeCacheEntry(cachedRuntime)
+
+			InvalidateRuntimeCaches()
+			noCachePath := Run(currentIndex, Options{PerfCounters: true, NoDiskCache: true})
+			noCacheCounters := SnapshotPerfCounters().Phases
+			if noCacheCounters.CacheMisses != 1 || noCacheCounters.DiskCacheHits != 0 || noCacheCounters.MemoryCacheHits != 0 || noCacheCounters.CacheValidateNS != 0 || noCacheCounters.CacheDecodeNS != 0 {
+				t.Fatalf("no-cache counters = %#v", noCacheCounters)
+			}
+			runtimeCacheMu.RLock()
+			noCacheRuntime, ok := runtimeCache[runtimeKey(currentIndex)]
+			runtimeCacheMu.RUnlock()
+			if !ok {
+				t.Fatal("no-cache runtime was not retained in memory")
+			}
+			noCacheRuntime = cloneRuntimeCacheEntry(noCacheRuntime)
+
+			if got, want := normalizeDurations(cachedPath), normalizeDurations(noCachePath); !reflect.DeepEqual(got, want) {
+				t.Fatalf("invalidated disk-cache result != no-cache result:\ncache=%#v\nno-cache=%#v", got, want)
+			}
+			cachedRecordTypes := cachedRuntime.Org.Objects["pkg__Product__c"].Definition.RecordTypes
+			noCacheRecordTypes := noCacheRuntime.Org.Objects["pkg__Product__c"].Definition.RecordTypes
+			if !reflect.DeepEqual(cachedRecordTypes, noCacheRecordTypes) {
+				t.Fatalf("invalidated disk-cache record types != no-cache record types:\ncache=%#v\nno-cache=%#v", cachedRecordTypes, noCacheRecordTypes)
+			}
+			for name, runtime := range map[string]runtimeCacheEntry{"cache": cachedRuntime, "no-cache": noCacheRuntime} {
+				if tc.want != "" && !recordTypeExists(runtime, tc.want) {
+					t.Fatalf("%s runtime lacks dependency data record type %q: %#v", name, tc.want, runtime.Org.Objects["pkg__Product__c"].Definition.RecordTypes)
+				}
+				if tc.wantAbsent != "" && recordTypeExists(runtime, tc.wantAbsent) {
+					t.Fatalf("%s runtime retained dependency data record type %q: %#v", name, tc.wantAbsent, runtime.Org.Objects["pkg__Product__c"].Definition.RecordTypes)
+				}
+			}
+		})
+	}
+}
+
 func TestRunPerfCountersSeparateMemoryDiskAndBuildPaths(t *testing.T) {
 	ResetPerfCounters()
 	t.Cleanup(ResetPerfCounters)

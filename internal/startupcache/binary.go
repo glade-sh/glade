@@ -34,6 +34,7 @@ type testCacheHeader struct {
 	Version       int      `json:"version"`
 	ProjectRoot   string   `json:"projectRoot"`
 	BuiltAt       string   `json:"builtAt"`
+	PlatformABI   string   `json:"platformAbi"`
 	RuntimeABI    string   `json:"runtimeAbi,omitempty"`
 	Manifest      Manifest `json:"manifest"`
 	PayloadFile   string   `json:"payloadFile"`
@@ -117,7 +118,7 @@ func readSplitTestCache(projectRoot, subdir string) (*Entry, error) {
 	if header.FormatVersion != testCacheFormatVersion {
 		return nil, nil
 	}
-	if !freshManifest(header.Version, header.ProjectRoot, header.Manifest, projectRoot, Version) {
+	if !freshManifest(header.Version, header.ProjectRoot, header.PlatformABI, header.Manifest, projectRoot, Version) {
 		return nil, nil
 	}
 	if !validPayloadFileName(header.PayloadFile, header.PayloadSHA256) {
@@ -135,6 +136,7 @@ func readSplitTestCache(projectRoot, subdir string) (*Entry, error) {
 		Version:     header.Version,
 		ProjectRoot: header.ProjectRoot,
 		BuiltAt:     header.BuiltAt,
+		PlatformABI: header.PlatformABI,
 		RuntimeABI:  header.RuntimeABI,
 		Manifest:    header.Manifest,
 		Org:         payload.Org,
@@ -168,7 +170,7 @@ func readSplitTestCacheWithStats(projectRoot, subdir string) (*Entry, ReadStats,
 		return entry, stats, legacyErr
 	}
 	if header.FormatVersion != testCacheFormatVersion ||
-		!freshManifest(header.Version, header.ProjectRoot, header.Manifest, projectRoot, Version) ||
+		!freshManifest(header.Version, header.ProjectRoot, header.PlatformABI, header.Manifest, projectRoot, Version) ||
 		!validPayloadFileName(header.PayloadFile, header.PayloadSHA256) || header.PayloadSize < 0 {
 		stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
 		return nil, stats, nil
@@ -188,6 +190,7 @@ func readSplitTestCacheWithStats(projectRoot, subdir string) (*Entry, ReadStats,
 		Version:     header.Version,
 		ProjectRoot: header.ProjectRoot,
 		BuiltAt:     header.BuiltAt,
+		PlatformABI: header.PlatformABI,
 		RuntimeABI:  header.RuntimeABI,
 		Manifest:    header.Manifest,
 		Org:         payload.Org,
@@ -304,6 +307,7 @@ func writeSplitTestCache(entry *Entry, subdir string) error {
 			Version:       entry.Version,
 			ProjectRoot:   entry.ProjectRoot,
 			BuiltAt:       entry.BuiltAt,
+			PlatformABI:   entry.PlatformABI,
 			RuntimeABI:    entry.RuntimeABI,
 			Manifest:      entry.Manifest,
 			PayloadFile:   payloadFile,
@@ -370,6 +374,7 @@ func writeSplitTestCacheWithStatsAfterRootOpened(entry *Entry, subdir string, af
 			Version:       entry.Version,
 			ProjectRoot:   entry.ProjectRoot,
 			BuiltAt:       entry.BuiltAt,
+			PlatformABI:   entry.PlatformABI,
 			RuntimeABI:    entry.RuntimeABI,
 			Manifest:      entry.Manifest,
 			PayloadFile:   payloadFile,

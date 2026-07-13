@@ -413,6 +413,397 @@ func TestFreshRejectsMissingManifestProjectFile(t *testing.T) {
 	}
 }
 
+func TestFreshRejectsExactInvalidationMatrix(t *testing.T) {
+	t.Run("same-size content change with preserved mtime", func(t *testing.T) {
+		root, classPath, entry := newExactInvalidationFixture(t, nil)
+		info, err := os.Stat(classPath)
+		if err != nil {
+			t.Fatalf("Stat() error = %v", err)
+		}
+		writeStartupCacheTestFile(t, classPath, "public class Exact { Integer value = 2; }\n")
+		if err := os.Chtimes(classPath, info.ModTime(), info.ModTime()); err != nil {
+			t.Fatalf("Chtimes() error = %v", err)
+		}
+		if Fresh(&entry, root, Version) {
+			t.Fatal("Fresh() = true after same-size source mutation with preserved mtime")
+		}
+	})
+
+	t.Run("add nested project file", func(t *testing.T) {
+		root, _, entry := newExactInvalidationFixture(t, nil)
+		writeStartupCacheTestFile(t, filepath.Join(root, "force-app", "main", "default", "classes", "nested", "Added.cls"), "public class Added {}\n")
+		assertStartupCacheStale(t, &entry, root, "nested source addition")
+	})
+
+	t.Run("delete nested project file", func(t *testing.T) {
+		root, classPath, entry := newExactInvalidationFixture(t, nil)
+		if err := os.Remove(classPath); err != nil {
+			t.Fatalf("Remove() error = %v", err)
+		}
+		assertStartupCacheStale(t, &entry, root, "nested source deletion")
+	})
+
+	t.Run("rename nested project file", func(t *testing.T) {
+		root, classPath, entry := newExactInvalidationFixture(t, nil)
+		renamed := filepath.Join(filepath.Dir(classPath), "Renamed.cls")
+		if err := os.Rename(classPath, renamed); err != nil {
+			t.Fatalf("Rename() error = %v", err)
+		}
+		assertStartupCacheStale(t, &entry, root, "nested source rename")
+	})
+
+	t.Run("branch-like package replacement", func(t *testing.T) {
+		root, _, entry := newExactInvalidationFixture(t, nil)
+		packageRoot := filepath.Join(root, "force-app")
+		info, err := os.Stat(packageRoot)
+		if err != nil {
+			t.Fatalf("Stat() error = %v", err)
+		}
+		if err := os.Rename(packageRoot, filepath.Join(root, "old-force-app")); err != nil {
+			t.Fatalf("Rename() old package error = %v", err)
+		}
+		writeStartupCacheTestFile(t, filepath.Join(packageRoot, "main", "default", "classes", "Branch.cls"), "public class Branch {}\n")
+		if err := os.Chtimes(packageRoot, info.ModTime(), info.ModTime()); err != nil {
+			t.Fatalf("Chtimes() package root error = %v", err)
+		}
+		assertStartupCacheStale(t, &entry, root, "branch-like package replacement")
+	})
+
+	t.Run("API version change", func(t *testing.T) {
+		root, _, entry := newExactInvalidationFixture(t, nil)
+		writeStartupCacheTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+		assertStartupCacheStale(t, &entry, root, "source API version change")
+	})
+
+	t.Run("effective config addition", func(t *testing.T) {
+		root, _, entry := newExactInvalidationFixture(t, nil)
+		writeStartupCacheTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  defaultNamespace: exactns\n")
+		assertStartupCacheStale(t, &entry, root, "glade.yml addition")
+	})
+
+	t.Run("project-root redirect config change", func(t *testing.T) {
+		root, _, entry := newExactInvalidationFixture(t, func(root string) {
+			writeStartupCacheTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  root: nested\n# branch a\n")
+			writeStartupCacheTestFile(t, filepath.Join(root, "nested", "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+			writeStartupCacheTestFile(t, filepath.Join(root, "nested", "force-app", "main", "default", "classes", "Redirected.cls"), "public class Redirected {}\n")
+		})
+		configPath := filepath.Join(root, "glade.yml")
+		info, err := os.Stat(configPath)
+		if err != nil {
+			t.Fatalf("Stat() redirect config error = %v", err)
+		}
+		writeStartupCacheTestFile(t, configPath, "project:\n  root: nested\n# branch b\n")
+		if err := os.Chtimes(configPath, info.ModTime(), info.ModTime()); err != nil {
+			t.Fatalf("Chtimes() redirect config error = %v", err)
+		}
+		assertStartupCacheStale(t, &entry, root, "project-root redirect config change")
+	})
+
+	t.Run("namespace remap change", func(t *testing.T) {
+		root, _, entry := newExactInvalidationFixture(t, func(root string) {
+			writeStartupCacheTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  namespaceRemaps: [\"BasePkg:stagepkg\"]\n")
+		})
+		writeStartupCacheTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  namespaceRemaps: [\"BasePkg:otherpkg\"]\n")
+		assertStartupCacheStale(t, &entry, root, "namespace remap change")
+	})
+
+	t.Run("dependency project change", func(t *testing.T) {
+		root, _, entry := newExactInvalidationFixture(t, func(root string) {
+			writeStartupCacheTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  managedPackageDependencies: [\"dep:dependencies/dep\"]\n")
+			writeStartupCacheTestFile(t, filepath.Join(root, "dependencies", "dep", "sfdx-project.json"), `{"namespace":"dep","packageDirectories":[{"path":"force-app","default":true}]}`)
+			writeStartupCacheTestFile(t, filepath.Join(root, "dependencies", "dep", "force-app", "main", "default", "classes", "Dependency.cls"), "global class Dependency { global static Integer value = 1; }\n")
+		})
+		writeStartupCacheTestFile(t, filepath.Join(root, "dependencies", "dep", "force-app", "main", "default", "classes", "Dependency.cls"), "global class Dependency { global static Integer value = 2; }\n")
+		assertStartupCacheStale(t, &entry, root, "dependency source change")
+	})
+
+	t.Run("dependency artifact change", func(t *testing.T) {
+		root, _, entry := newExactInvalidationFixture(t, func(root string) {
+			writeStartupCacheTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  managedPackageDependencies: [\"pkg:artifact:packages/pkg.glade-package.json:1.0\"]\n")
+			writeStartupCacheTestFile(t, filepath.Join(root, "packages", "pkg.glade-package.json"), `{"namespace":"pkg","version":"1.0","sourceHash":"aaa"}`)
+		})
+		artifact := filepath.Join(root, "packages", "pkg.glade-package.json")
+		info, err := os.Stat(artifact)
+		if err != nil {
+			t.Fatalf("Stat() artifact error = %v", err)
+		}
+		writeStartupCacheTestFile(t, artifact, `{"namespace":"pkg","version":"1.0","sourceHash":"bbb"}`)
+		if err := os.Chtimes(artifact, info.ModTime(), info.ModTime()); err != nil {
+			t.Fatalf("Chtimes() artifact error = %v", err)
+		}
+		assertStartupCacheStale(t, &entry, root, "artifact content change")
+	})
+
+	t.Run("package shim change", func(t *testing.T) {
+		root, _, entry := newExactInvalidationFixture(t, func(root string) {
+			writeStartupCacheTestFile(t, filepath.Join(root, "glade.yml"), "project:\n  packageShims: [\"pkg:test-support/package-shims/pkg\"]\n")
+			writeStartupCacheTestFile(t, filepath.Join(root, "test-support", "package-shims", "pkg", "sfdx-project.json"), `{"packageDirectories":[{"path":"classes","default":true}]}`)
+			writeStartupCacheTestFile(t, filepath.Join(root, "test-support", "package-shims", "pkg", "classes", "Gateway.cls"), "global class Gateway { global static Integer value = 1; }\n")
+		})
+		writeStartupCacheTestFile(t, filepath.Join(root, "test-support", "package-shims", "pkg", "classes", "Gateway.cls"), "global class Gateway { global static Integer value = 2; }\n")
+		assertStartupCacheStale(t, &entry, root, "package shim source change")
+	})
+
+	t.Run("CumulusCI org feature input change", func(t *testing.T) {
+		root, _, entry := newExactInvalidationFixture(t, func(root string) {
+			writeStartupCacheTestFile(t, filepath.Join(root, "cumulusci.yml"), "orgs:\n  scratch:\n    config_file: config/cci-scratch.json\n")
+			writeStartupCacheTestFile(t, filepath.Join(root, "config", "cci-scratch.json"), `{"features":["Communities"]}`)
+		})
+		writeStartupCacheTestFile(t, filepath.Join(root, "config", "cci-scratch.json"), `{"features":["PersonAccounts"]}`)
+		assertStartupCacheStale(t, &entry, root, "CumulusCI feature input change")
+	})
+
+	t.Run("runtime-discovered input families", func(t *testing.T) {
+		type mutationCase struct {
+			name   string
+			setup  func(t *testing.T, root, classPath string)
+			mutate func(t *testing.T, root, classPath string)
+		}
+		notificationPath := func(root string) string {
+			return filepath.Join(root, "force-app", "main", "default", "notificationtypes", "Cache_Notice.notiftype-meta.xml")
+		}
+		dataPath := func(root string) string {
+			return filepath.Join(root, "fixtures", "data", "CacheShape.json")
+		}
+		apexMeta := func(apiVersion string) string {
+			return `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>` + apiVersion + `</apiVersion></ApexClass>`
+		}
+		notification := func(label string) string {
+			return `<CustomNotificationType xmlns="http://soap.sforce.com/2006/04/metadata"><customNotifTypeName>` + label + `</customNotifTypeName></CustomNotificationType>`
+		}
+		data := func(field string) string {
+			return `{"records":{"CacheShape__c":[{"` + field + `":"value"}]}}`
+		}
+		cases := []mutationCase{
+			{
+				name: "add Apex metadata sidecar",
+				mutate: func(t *testing.T, _, classPath string) {
+					writeStartupCacheTestFile(t, classPath+"-meta.xml", apexMeta("61.0"))
+				},
+			},
+			{
+				name: "edit Apex metadata sidecar",
+				setup: func(t *testing.T, _, classPath string) {
+					writeStartupCacheTestFile(t, classPath+"-meta.xml", apexMeta("61.0"))
+				},
+				mutate: func(t *testing.T, _, classPath string) {
+					writeStartupCacheTestFile(t, classPath+"-meta.xml", apexMeta("62.0"))
+				},
+			},
+			{
+				name: "delete Apex metadata sidecar",
+				setup: func(t *testing.T, _, classPath string) {
+					writeStartupCacheTestFile(t, classPath+"-meta.xml", apexMeta("61.0"))
+				},
+				mutate: func(t *testing.T, _, classPath string) {
+					if err := os.Remove(classPath + "-meta.xml"); err != nil {
+						t.Fatalf("Remove(Apex metadata sidecar) error = %v", err)
+					}
+				},
+			},
+			{
+				name: "add notification type",
+				mutate: func(t *testing.T, root, _ string) {
+					writeStartupCacheTestFile(t, notificationPath(root), notification("Added Label"))
+				},
+			},
+			{
+				name: "edit notification type",
+				setup: func(t *testing.T, root, _ string) {
+					writeStartupCacheTestFile(t, notificationPath(root), notification("Before Label"))
+				},
+				mutate: func(t *testing.T, root, _ string) {
+					writeStartupCacheTestFile(t, notificationPath(root), notification("After Label"))
+				},
+			},
+			{
+				name: "delete notification type",
+				setup: func(t *testing.T, root, _ string) {
+					writeStartupCacheTestFile(t, notificationPath(root), notification("Deleted Label"))
+				},
+				mutate: func(t *testing.T, root, _ string) {
+					if err := os.Remove(notificationPath(root)); err != nil {
+						t.Fatalf("Remove(notification type) error = %v", err)
+					}
+				},
+			},
+			{
+				name: "add project data JSON",
+				mutate: func(t *testing.T, root, _ string) {
+					writeStartupCacheTestFile(t, dataPath(root), data("Added__c"))
+				},
+			},
+			{
+				name: "edit project data JSON",
+				setup: func(t *testing.T, root, _ string) {
+					writeStartupCacheTestFile(t, dataPath(root), data("Before__c"))
+				},
+				mutate: func(t *testing.T, root, _ string) {
+					writeStartupCacheTestFile(t, dataPath(root), data("After___c"))
+				},
+			},
+			{
+				name: "delete project data JSON",
+				setup: func(t *testing.T, root, _ string) {
+					writeStartupCacheTestFile(t, dataPath(root), data("Deleted__c"))
+				},
+				mutate: func(t *testing.T, root, _ string) {
+					if err := os.Remove(dataPath(root)); err != nil {
+						t.Fatalf("Remove(project data JSON) error = %v", err)
+					}
+				},
+			},
+		}
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				root, classPath, entry := newExactInvalidationFixture(t, func(root string) {
+					if tc.setup != nil {
+						tc.setup(t, root, filepath.Join(root, "force-app", "main", "default", "classes", "Exact.cls"))
+					}
+				})
+				tc.mutate(t, root, classPath)
+				assertStartupCacheStale(t, &entry, root, tc.name)
+			})
+		}
+	})
+
+	t.Run("cache version mismatch", func(t *testing.T) {
+		root, _, entry := newExactInvalidationFixture(t, nil)
+		entry.Version--
+		assertStartupCacheStale(t, &entry, root, "cache version mismatch")
+	})
+
+	t.Run("manifest schema mismatch", func(t *testing.T) {
+		root, _, entry := newExactInvalidationFixture(t, nil)
+		entry.Manifest.SchemaVersion = 99
+		assertStartupCacheStale(t, &entry, root, "manifest schema mismatch")
+	})
+
+	t.Run("runtime ABI mismatch", func(t *testing.T) {
+		root, _, entry := newExactInvalidationFixture(t, nil)
+		entry.RuntimeABI = "old-runtime-abi"
+		if FreshRuntime(&entry, root, Version, "current-runtime-abi") {
+			t.Fatal("FreshRuntime() = true for runtime ABI mismatch")
+		}
+	})
+
+	t.Run("platform ABI mismatch", func(t *testing.T) {
+		root, _, entry := newExactInvalidationFixture(t, nil)
+		entry.PlatformABI = "foreign-platform-abi"
+		assertStartupCacheStale(t, &entry, root, "platform ABI mismatch")
+	})
+
+	t.Run("unreadable tracked input", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("Unix permission bits are not available on Windows")
+		}
+		root, classPath, entry := newExactInvalidationFixture(t, nil)
+		if err := os.Chmod(classPath, 0); err != nil {
+			t.Fatalf("Chmod() error = %v", err)
+		}
+		t.Cleanup(func() { _ = os.Chmod(classPath, 0o644) })
+		assertStartupCacheStale(t, &entry, root, "unreadable tracked source")
+	})
+
+	t.Run("incomplete manifest", func(t *testing.T) {
+		root, _, entry := newExactInvalidationFixture(t, nil)
+		entry.Manifest.Files = nil
+		assertStartupCacheStale(t, &entry, root, "incomplete manifest file set")
+	})
+}
+
+func TestBuildManifestTracksOnlyRuntimeConsumerInputs(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "force-app", "main", "default", "classes", "Exact.cls")
+	triggerPath := filepath.Join(root, "force-app", "main", "default", "triggers", "Exact.trigger")
+	writeStartupCacheTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeStartupCacheTestFile(t, classPath, "public class Exact {}\n")
+	writeStartupCacheTestFile(t, classPath+"-meta.xml", `<ApexClass><apiVersion>61.0</apiVersion></ApexClass>`)
+	writeStartupCacheTestFile(t, triggerPath, "trigger Exact on Account (before insert) {}\n")
+	writeStartupCacheTestFile(t, triggerPath+"-meta.xml", `<ApexTrigger><apiVersion>61.0</apiVersion></ApexTrigger>`)
+	writeStartupCacheTestFile(t, filepath.Join(root, "metadata", "Exact.notiftype"), `<CustomNotificationType/>`)
+	writeStartupCacheTestFile(t, filepath.Join(root, "fixtures", "data", "Shape.JSON"), `{"records":{}}`)
+	writeStartupCacheTestFile(t, filepath.Join(root, "fixtures", "Shape.json"), `{"ignored":true}`)
+	writeStartupCacheTestFile(t, filepath.Join(root, ".hidden", "data", "Hidden.json"), `{"ignored":true}`)
+	writeStartupCacheTestFile(t, filepath.Join(root, "node_modules", "data", "Dependency.json"), `{"ignored":true}`)
+	writeStartupCacheTestFile(t, filepath.Join(root, "fixtures", "data", "README.txt"), "ignored\n")
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatalf("project.Load() error = %v", err)
+	}
+	manifest := BuildManifest(root, p, typesys.Index{})
+	if !manifest.Complete {
+		t.Fatalf("manifest is incomplete: %#v", manifest)
+	}
+	tracked := make(map[string]bool, len(manifest.Files))
+	for _, file := range manifest.Files {
+		tracked[file.Path] = true
+	}
+	for _, path := range []string{
+		"force-app/main/default/classes/Exact.cls-meta.xml",
+		"force-app/main/default/triggers/Exact.trigger-meta.xml",
+		"metadata/Exact.notiftype",
+		"fixtures/data/Shape.JSON",
+	} {
+		if !tracked[path] {
+			t.Errorf("runtime consumer input %q is not tracked: files=%#v", path, manifest.Files)
+		}
+	}
+	for _, path := range []string{
+		"fixtures/Shape.json",
+		".hidden/data/Hidden.json",
+		"node_modules/data/Dependency.json",
+		"fixtures/data/README.txt",
+	} {
+		if tracked[path] {
+			t.Errorf("unconsumed runtime file %q is tracked: files=%#v", path, manifest.Files)
+		}
+	}
+}
+
+func newExactInvalidationFixture(t *testing.T, setup func(root string)) (string, string, Entry) {
+	t.Helper()
+	root := t.TempDir()
+	classPath := filepath.Join(root, "force-app", "main", "default", "classes", "Exact.cls")
+	writeStartupCacheTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"64.0"}`)
+	writeStartupCacheTestFile(t, classPath, "public class Exact { Integer value = 1; }\n")
+	if setup != nil {
+		setup(root)
+	}
+	loaded, err := project.Load(root)
+	if err != nil {
+		t.Fatalf("project.Load() error = %v", err)
+	}
+	entry := NewEntry(root, loaded, typesys.Index{Project: typesys.ProjectInfo{
+		Root:             root,
+		Namespace:        loaded.Namespace,
+		SourceAPIVersion: loaded.SourceAPIVersion,
+	}}, storage.NewOrgState(), CompiledRuntime{})
+	entry.RuntimeABI = "current-runtime-abi"
+	if !Fresh(&entry, root, Version) {
+		t.Fatal("Fresh() = false before mutation")
+	}
+	return root, classPath, entry
+}
+
+func assertStartupCacheStale(t *testing.T, entry *Entry, root, reason string) {
+	t.Helper()
+	if Fresh(entry, root, Version) {
+		t.Fatalf("Fresh() = true after %s", reason)
+	}
+}
+
+func writeStartupCacheTestFile(t *testing.T, path, contents string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatalf("MkdirAll(%q) error = %v", path, err)
+	}
+	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
+		t.Fatalf("WriteFile(%q) error = %v", path, err)
+	}
+}
+
 func TestBuildManifestTracksLoadedDependencyProjectFiles(t *testing.T) {
 	root := t.TempDir()
 	consumerRoot := filepath.Join(root, "consumer")
@@ -420,7 +811,9 @@ func TestBuildManifestTracksLoadedDependencyProjectFiles(t *testing.T) {
 	consumerClass := filepath.Join(consumerRoot, "force-app", "main", "default", "classes", "Consumer.cls")
 	depField := filepath.Join(depRoot, "force-app", "main", "default", "objects", "Contact", "fields", "ExternalID__c.field-meta.xml")
 	depConfig := filepath.Join(depRoot, "sfdx-project.json")
-	for _, path := range []string{consumerClass, depField, depConfig} {
+	consumerConfig := filepath.Join(consumerRoot, "sfdx-project.json")
+	consumerGlade := filepath.Join(consumerRoot, "glade.yml")
+	for _, path := range []string{consumerClass, depField, depConfig, consumerConfig, consumerGlade} {
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			t.Fatalf("MkdirAll(%s) error = %v", path, err)
 		}
@@ -434,20 +827,15 @@ func TestBuildManifestTracksLoadedDependencyProjectFiles(t *testing.T) {
 	if err := os.WriteFile(depConfig, []byte(`{"packageDirectories":[{"path":"force-app","default":true}]}`), 0o644); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
-	consumer := project.Project{
-		Root:               consumerRoot,
-		PackageDirectories: []project.PackageDirectory{{Path: "force-app", Default: true}},
-		ApexFiles:          []string{consumerClass},
-		ManagedPackageDependencies: []project.ManagedPackageDependency{{
-			Namespace:  "depns",
-			SourceRoot: depRoot,
-			Status:     "loaded",
-			Project: &project.Project{
-				Root:               depRoot,
-				PackageDirectories: []project.PackageDirectory{{Path: "force-app", Default: true}},
-				FieldFiles:         []string{depField},
-			},
-		}},
+	if err := os.WriteFile(consumerConfig, []byte(`{"packageDirectories":[{"path":"force-app","default":true}]}`), 0o644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+	if err := os.WriteFile(consumerGlade, []byte("project:\n  managedPackageDependencies: [\"depns:../dependency\"]\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+	consumer, err := project.Load(consumerRoot)
+	if err != nil {
+		t.Fatalf("project.Load() error = %v", err)
 	}
 
 	manifest := BuildManifest(consumerRoot, consumer, typesys.Index{})
@@ -460,7 +848,7 @@ func TestBuildManifestTracksLoadedDependencyProjectFiles(t *testing.T) {
 	if !manifestHasDirectory(manifest.PackageRoots, "../dependency/force-app") {
 		t.Fatalf("dependency package root missing from manifest package roots: %#v", manifest.PackageRoots)
 	}
-	entry := Entry{Version: Version, ProjectRoot: consumerRoot, Manifest: manifest}
+	entry := NewEntry(consumerRoot, consumer, typesys.Index{}, storage.NewOrgState(), CompiledRuntime{})
 	if !Fresh(&entry, consumerRoot, Version) {
 		t.Fatal("Fresh() = false, want true before dependency edit")
 	}
@@ -469,6 +857,148 @@ func TestBuildManifestTracksLoadedDependencyProjectFiles(t *testing.T) {
 	}
 	if Fresh(&entry, consumerRoot, Version) {
 		t.Fatal("Fresh() = true, want false after dependency field edit")
+	}
+}
+
+func TestFreshRejectsLoadedDirectDependencyDataMutations(t *testing.T) {
+	dataQuery := func(recordTypeName string) string {
+		return `{"query":"SELECT Id FROM RecordType WHERE SObjectType = 'pkg__Product__c' AND Name = '` + recordTypeName + `'"}`
+	}
+	type mutationCase struct {
+		name    string
+		initial string
+		mutate  func(t *testing.T, path string)
+		present bool
+	}
+	cases := []mutationCase{
+		{
+			name: "add",
+			mutate: func(t *testing.T, path string) {
+				writeStartupCacheTestFile(t, path, dataQuery("Added Plan"))
+			},
+			present: true,
+		},
+		{
+			name:    "edit",
+			initial: dataQuery("Before Plan"),
+			mutate: func(t *testing.T, path string) {
+				writeStartupCacheTestFile(t, path, dataQuery("After Plan"))
+			},
+			present: true,
+		},
+		{
+			name:    "delete",
+			initial: dataQuery("Deleted Plan"),
+			mutate: func(t *testing.T, path string) {
+				if err := os.Remove(path); err != nil {
+					t.Fatalf("Remove(dependency data) error = %v", err)
+				}
+			},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			consumerRoot := filepath.Join(root, "consumer")
+			dependencyRoot := filepath.Join(root, "dependency")
+			dataPath := filepath.Join(dependencyRoot, "fixtures", "data", "RecordTypes.json")
+			writeStartupCacheTestFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+			writeStartupCacheTestFile(t, filepath.Join(consumerRoot, "glade.yml"), "project:\n  managedPackageDependencies: [\"pkg:../dependency\"]\n")
+			writeStartupCacheTestFile(t, filepath.Join(consumerRoot, "force-app", "main", "default", "classes", "Consumer.cls"), "public class Consumer {}\n")
+			writeStartupCacheTestFile(t, filepath.Join(dependencyRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"pkg"}`)
+			writeStartupCacheTestFile(t, filepath.Join(dependencyRoot, "force-app", "main", "default", "objects", "Product__c", "Product__c.object-meta.xml"), `<CustomObject><label>Product</label></CustomObject>`)
+			writeStartupCacheTestFile(t, filepath.Join(dependencyRoot, "fixtures", "RecordTypes.json"), dataQuery("Ignored Plan"))
+			writeStartupCacheTestFile(t, filepath.Join(dependencyRoot, "metadata", "Ignored.notiftype"), `<CustomNotificationType/>`)
+			if tc.initial != "" {
+				writeStartupCacheTestFile(t, dataPath, tc.initial)
+			}
+
+			consumer, err := project.Load(consumerRoot)
+			if err != nil {
+				t.Fatalf("project.Load() error = %v", err)
+			}
+			entry := NewEntry(consumerRoot, consumer, typesys.Index{}, storage.NewOrgState(), CompiledRuntime{})
+			dependencyDataManifestPath := "../dependency/fixtures/data/RecordTypes.json"
+			if got := manifestHasFile(entry.Manifest.Files, dependencyDataManifestPath); got != (tc.initial != "") {
+				t.Fatalf("initial dependency data tracked = %v, want %v: files=%#v", got, tc.initial != "", entry.Manifest.Files)
+			}
+			for _, path := range []string{"../dependency/fixtures/RecordTypes.json", "../dependency/metadata/Ignored.notiftype"} {
+				if manifestHasFile(entry.Manifest.Files, path) {
+					t.Fatalf("unconsumed dependency input %q is tracked: files=%#v", path, entry.Manifest.Files)
+				}
+			}
+			if !Fresh(&entry, consumerRoot, Version) {
+				t.Fatal("Fresh() = false before dependency data mutation")
+			}
+
+			tc.mutate(t, dataPath)
+			if Fresh(&entry, consumerRoot, Version) {
+				t.Fatalf("Fresh() = true after direct dependency data %s", tc.name)
+			}
+			current, err := project.Load(consumerRoot)
+			if err != nil {
+				t.Fatalf("project.Load() after mutation error = %v", err)
+			}
+			currentManifest := BuildManifest(consumerRoot, current, typesys.Index{})
+			if got := manifestHasFile(currentManifest.Files, dependencyDataManifestPath); got != tc.present {
+				t.Fatalf("current dependency data tracked = %v, want %v: files=%#v", got, tc.present, currentManifest.Files)
+			}
+		})
+	}
+}
+
+func TestBuildManifestDoesNotTrackTransitiveDependencyData(t *testing.T) {
+	root := t.TempDir()
+	consumerRoot := filepath.Join(root, "consumer")
+	directRoot := filepath.Join(root, "direct")
+	transitiveRoot := filepath.Join(root, "transitive")
+	writeStartupCacheTestFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeStartupCacheTestFile(t, filepath.Join(consumerRoot, "glade.yml"), "project:\n  managedPackageDependencies: [\"direct:../direct\"]\n")
+	writeStartupCacheTestFile(t, filepath.Join(consumerRoot, "force-app", "main", "default", "classes", "Consumer.cls"), "public class Consumer {}\n")
+	writeStartupCacheTestFile(t, filepath.Join(directRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"direct"}`)
+	writeStartupCacheTestFile(t, filepath.Join(directRoot, "glade.yml"), "project:\n  managedPackageDependencies: [\"nested:../transitive\"]\n")
+	writeStartupCacheTestFile(t, filepath.Join(directRoot, "force-app", "main", "default", "classes", "Direct.cls"), "global class Direct {}\n")
+	writeStartupCacheTestFile(t, filepath.Join(transitiveRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"nested"}`)
+	writeStartupCacheTestFile(t, filepath.Join(transitiveRoot, "force-app", "main", "default", "classes", "Nested.cls"), "global class Nested {}\n")
+	writeStartupCacheTestFile(t, filepath.Join(transitiveRoot, "fixtures", "data", "RecordTypes.json"), `{"query":"SELECT Id FROM RecordType WHERE SObjectType = 'nested__Thing__c' AND Name = 'Nested Plan'"}`)
+
+	consumer, err := project.Load(consumerRoot)
+	if err != nil {
+		t.Fatalf("project.Load() error = %v", err)
+	}
+	manifest := BuildManifest(consumerRoot, consumer, typesys.Index{})
+	if manifestHasFile(manifest.Files, "../transitive/fixtures/data/RecordTypes.json") {
+		t.Fatalf("transitive dependency data is tracked: files=%#v", manifest.Files)
+	}
+	if !manifestHasFile(manifest.Files, "../transitive/force-app/main/default/classes/Nested.cls") {
+		t.Fatalf("transitive dependency source is missing from manifest closure: files=%#v", manifest.Files)
+	}
+}
+
+func TestBuildManifestCanonicalizesSemanticPackageDirectoryOrder(t *testing.T) {
+	root := t.TempDir()
+	for _, name := range []string{"first", "second"} {
+		if err := os.MkdirAll(filepath.Join(root, name), 0o755); err != nil {
+			t.Fatalf("MkdirAll(%q) error = %v", name, err)
+		}
+	}
+	first := project.Project{
+		Root: root,
+		PackageDirectories: []project.PackageDirectory{
+			{Path: "first", Default: true, Dependencies: []project.PackageDependency{{Package: "base", VersionNumber: "1.0"}, {Package: "common", VersionNumber: "2.0"}}},
+			{Path: "second", Package: "secondary"},
+		},
+	}
+	second := first
+	second.PackageDirectories = []project.PackageDirectory{
+		{Path: "second", Package: "secondary"},
+		{Path: "first", Default: true, Dependencies: []project.PackageDependency{{Package: "common", VersionNumber: "2.0"}, {Package: "base", VersionNumber: "1.0"}}},
+	}
+
+	firstManifest := BuildManifest(root, first, typesys.Index{})
+	secondManifest := BuildManifest(root, second, typesys.Index{})
+	if firstManifest.ProjectDigest == "" || firstManifest.ProjectDigest != secondManifest.ProjectDigest {
+		t.Fatalf("project digests differ for reordered semantics: first=%q second=%q", firstManifest.ProjectDigest, secondManifest.ProjectDigest)
 	}
 }
 
@@ -490,6 +1020,15 @@ func manifestHasDirectory(dirs []Directory, path string) bool {
 	return false
 }
 
+func currentStartupCacheTestEntry(t *testing.T, root string) Entry {
+	t.Helper()
+	loaded, err := project.Load(root)
+	if err != nil {
+		t.Fatalf("project.Load() error = %v", err)
+	}
+	return NewEntry(root, loaded, typesys.Index{}, storage.NewOrgState(), CompiledRuntime{})
+}
+
 func TestSplitCacheWritesHeaderAndHashedPayload(t *testing.T) {
 	dir := t.TempDir()
 	classPath := filepath.Join(dir, "classes", "Foo.cls")
@@ -499,29 +1038,16 @@ func TestSplitCacheWritesHeaderAndHashedPayload(t *testing.T) {
 	if err := os.WriteFile(classPath, []byte("public class Foo {}\n"), 0o644); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
-	fp, ok := statFile(dir, classPath)
-	if !ok {
-		t.Fatal("statFile() did not fingerprint class file")
-	}
-	entry := Entry{
-		Version:     Version,
-		ProjectRoot: dir,
-		BuiltAt:     "2026-06-16T00:00:00Z",
-		RuntimeABI:  "test-runtime-abi",
-		Manifest: Manifest{
-			ProjectRoot: dir,
-			Files:       []File{fp},
-		},
-		Org: storage.OrgState{
-			APIVersion: "64.0",
-			Objects: map[string]storage.ObjectState{
-				"Account": {Definition: storage.ObjectDefinition{APIName: "Account"}},
-			},
-		},
-		Runtime: CompiledRuntime{
-			Methods: map[string]vm.Method{"Foo.bar": {Name: "bar", ClassName: "Foo"}},
+	entry := currentStartupCacheTestEntry(t, dir)
+	entry.BuiltAt = "2026-06-16T00:00:00Z"
+	entry.RuntimeABI = "test-runtime-abi"
+	entry.Org = storage.OrgState{
+		APIVersion: "64.0",
+		Objects: map[string]storage.ObjectState{
+			"Account": {Definition: storage.ObjectDefinition{APIName: "Account"}},
 		},
 	}
+	entry.Runtime = CompiledRuntime{Methods: map[string]vm.Method{"Foo.bar": {Name: "bar", ClassName: "Foo"}}}
 
 	if err := Write(&entry, SubdirTest); err != nil {
 		t.Fatalf("Write() error = %v", err)
@@ -537,6 +1063,9 @@ func TestSplitCacheWritesHeaderAndHashedPayload(t *testing.T) {
 	}
 	if header.RuntimeABI != entry.RuntimeABI {
 		t.Fatalf("header runtime ABI = %q, want %q", header.RuntimeABI, entry.RuntimeABI)
+	}
+	if header.PlatformABI != entry.PlatformABI || header.PlatformABI == "" {
+		t.Fatalf("header platform ABI = %q, want %q", header.PlatformABI, entry.PlatformABI)
 	}
 	if header.PayloadFile == "" || header.PayloadSHA256 == "" || header.PayloadSize <= 0 {
 		t.Fatalf("header missing payload fields: %#v", header)
@@ -559,16 +1088,10 @@ func TestSplitCacheWritesHeaderAndHashedPayload(t *testing.T) {
 
 func TestSplitCacheReadStatsSeparateValidationAndDecode(t *testing.T) {
 	dir := t.TempDir()
-	entry := Entry{
-		Version:     Version,
-		ProjectRoot: dir,
-		BuiltAt:     "2026-07-09T00:00:00Z",
-		RuntimeABI:  "read-stats-abi",
-		Manifest:    Manifest{ProjectRoot: dir},
-		Runtime: CompiledRuntime{
-			Methods: map[string]vm.Method{"Stats.read": {Name: "read", ClassName: "Stats"}},
-		},
-	}
+	entry := currentStartupCacheTestEntry(t, dir)
+	entry.BuiltAt = "2026-07-09T00:00:00Z"
+	entry.RuntimeABI = "read-stats-abi"
+	entry.Runtime = CompiledRuntime{Methods: map[string]vm.Method{"Stats.read": {Name: "read", ClassName: "Stats"}}}
 	if err := Write(&entry, SubdirTest); err != nil {
 		t.Fatalf("Write() error = %v", err)
 	}
@@ -587,15 +1110,9 @@ func TestSplitCacheReadStatsSeparateValidationAndDecode(t *testing.T) {
 
 func TestSplitCacheWriteStatsRecordEncode(t *testing.T) {
 	dir := t.TempDir()
-	entry := Entry{
-		Version:     Version,
-		ProjectRoot: dir,
-		BuiltAt:     "2026-07-09T00:00:00Z",
-		Manifest:    Manifest{ProjectRoot: dir},
-		Runtime: CompiledRuntime{
-			Methods: map[string]vm.Method{"Stats.write": {Name: "write", ClassName: "Stats"}},
-		},
-	}
+	entry := currentStartupCacheTestEntry(t, dir)
+	entry.BuiltAt = "2026-07-09T00:00:00Z"
+	entry.Runtime = CompiledRuntime{Methods: map[string]vm.Method{"Stats.write": {Name: "write", ClassName: "Stats"}}}
 	if err := Write(&entry, SubdirTest); err != nil {
 		t.Fatalf("Write() error = %v", err)
 	}
@@ -698,12 +1215,8 @@ func TestSplitCacheReusesExistingPayloadOnIdenticalRewrite(t *testing.T) {
 
 func TestFreshRuntimeRejectsABIMismatch(t *testing.T) {
 	dir := t.TempDir()
-	entry := Entry{
-		Version:     Version,
-		ProjectRoot: dir,
-		RuntimeABI:  "old-runtime-abi",
-		Manifest:    Manifest{ProjectRoot: dir},
-	}
+	entry := currentStartupCacheTestEntry(t, dir)
+	entry.RuntimeABI = "old-runtime-abi"
 	if FreshRuntime(&entry, dir, Version, "new-runtime-abi") {
 		t.Fatal("FreshRuntime() = true, want false for runtime ABI mismatch")
 	}
@@ -756,12 +1269,14 @@ func TestSplitCacheFreshHeaderMissingPayloadReturnsError(t *testing.T) {
 	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
 		t.Fatalf("MkdirAll() error = %v", err)
 	}
+	entry := currentStartupCacheTestEntry(t, dir)
 	header := testCacheHeader{
 		FormatVersion: testCacheFormatVersion,
 		Version:       Version,
 		ProjectRoot:   dir,
 		BuiltAt:       "2026-06-16T00:00:00Z",
-		Manifest:      Manifest{ProjectRoot: dir},
+		PlatformABI:   entry.PlatformABI,
+		Manifest:      entry.Manifest,
 		PayloadFile:   "startup.payload.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.gob",
 		PayloadSHA256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		PayloadSize:   1,
@@ -784,7 +1299,7 @@ func TestSplitCacheFreshHeaderMissingPayloadReturnsError(t *testing.T) {
 
 func TestSplitCacheRejectsPayloadHashMismatch(t *testing.T) {
 	dir := t.TempDir()
-	entry := Entry{Version: Version, ProjectRoot: dir, Manifest: Manifest{ProjectRoot: dir}}
+	entry := currentStartupCacheTestEntry(t, dir)
 	if err := Write(&entry, SubdirTest); err != nil {
 		t.Fatalf("Write() error = %v", err)
 	}
@@ -847,24 +1362,58 @@ func TestLegacyGobFallbackWhenHeaderMissing(t *testing.T) {
 }
 
 func TestSplitCacheMalformedHeaderDoesNotFallBackToLegacyGob(t *testing.T) {
-	dir := t.TempDir()
-	entry := Entry{
-		Version:     Version,
-		ProjectRoot: dir,
-		Manifest:    Manifest{ProjectRoot: dir},
-		Runtime:     CompiledRuntime{Methods: map[string]vm.Method{"Legacy.method": {Name: "method", ClassName: "Legacy"}}},
+	tests := []struct {
+		name   string
+		mutate func(*testCacheHeader)
+		raw    []byte
+	}{
+		{name: "malformed JSON", raw: []byte("{not json\n")},
+		{name: "format version", mutate: func(header *testCacheHeader) { header.FormatVersion++ }},
+		{name: "manifest schema", mutate: func(header *testCacheHeader) { header.Manifest.SchemaVersion++ }},
+		{name: "platform ABI", mutate: func(header *testCacheHeader) { header.PlatformABI = "foreign-platform-abi" }},
+		{name: "incomplete manifest", mutate: func(header *testCacheHeader) { header.Manifest.Complete = false }},
 	}
-	if err := writeLegacyGob(&entry, SubdirTest); err != nil {
-		t.Fatalf("writeLegacyGob() error = %v", err)
-	}
-	headerPath := filepath.Join(dir, ".glade", "test", stateHeaderFile)
-	if err := os.WriteFile(headerPath, []byte("{not json\n"), 0o644); err != nil {
-		t.Fatalf("WriteFile() error = %v", err)
-	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			entry := currentStartupCacheTestEntry(t, dir)
+			entry.Runtime = CompiledRuntime{Methods: map[string]vm.Method{"Legacy.method": {Name: "method", ClassName: "Legacy"}}}
+			if err := writeLegacyGob(&entry, SubdirTest); err != nil {
+				t.Fatalf("writeLegacyGob() error = %v", err)
+			}
+			header := testCacheHeader{
+				FormatVersion: testCacheFormatVersion,
+				Version:       entry.Version,
+				ProjectRoot:   entry.ProjectRoot,
+				BuiltAt:       entry.BuiltAt,
+				PlatformABI:   entry.PlatformABI,
+				RuntimeABI:    entry.RuntimeABI,
+				Manifest:      entry.Manifest,
+				PayloadFile:   "startup.payload.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.gob",
+				PayloadSHA256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+				PayloadSize:   1,
+			}
+			if tc.mutate != nil {
+				tc.mutate(&header)
+			}
+			data := tc.raw
+			if data == nil {
+				var err error
+				data, err = json.Marshal(header)
+				if err != nil {
+					t.Fatalf("Marshal() error = %v", err)
+				}
+			}
+			headerPath := filepath.Join(dir, ".glade", "test", stateHeaderFile)
+			if err := os.WriteFile(headerPath, data, 0o644); err != nil {
+				t.Fatalf("WriteFile() error = %v", err)
+			}
 
-	got, err := Read(dir, SubdirTest)
-	if got != nil {
-		t.Fatalf("Read() = %#v, %v; malformed header fell back to legacy gob", got, err)
+			got, err := Read(dir, SubdirTest)
+			if got != nil {
+				t.Fatalf("Read() = %#v, %v; corrupt header fell back to legacy gob", got, err)
+			}
+		})
 	}
 }
 
