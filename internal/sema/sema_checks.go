@@ -1508,7 +1508,10 @@ func (a *Analyzer) checkInheritanceContractsWithRecorder(index typesys.Index, re
 }
 
 func (a *Analyzer) checkInheritanceContractsWithState(index typesys.Index, state *semaTypeMemberState, recorder *perfRecorder) []diagnostic.Diagnostic {
-	model := state.view()
+	return a.checkInheritanceContractsWithView(index, state.view(), recorder)
+}
+
+func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	inheritanceStarted := recorder.beginPhase()
 	for _, typ := range index.Types {

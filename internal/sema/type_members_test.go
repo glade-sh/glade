@@ -1,12 +1,17 @@
 package sema
 
 import (
+	"fmt"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
 	"testing"
+	"unsafe"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -651,18 +656,538 @@ func TestTypeMemberHydrationStaysAnalysisLocal(t *testing.T) {
 	first := newSemaTypeMemberState(base)
 	second := newSemaTypeMemberState(base)
 	key := normalizeName("Account")
+	firstView := first.view()
+	secondView := second.view()
 
-	if _, _, ok := semaLookupTypeMembers(first.view(), "Account"); !ok {
+	if _, _, ok := semaLookupTypeMembers(firstView, "Account"); !ok {
 		t.Fatal("first state could not hydrate Account")
 	}
-	if len(first.hydrated[key].fields) == 0 {
+	if len(firstView.hydrated[key].fields) == 0 {
 		t.Fatal("first state did not retain local Account hydration")
 	}
-	if _, exists := second.hydrated[key]; exists {
+	if _, exists := secondView.hydrated[key]; exists {
 		t.Fatal("Account hydration leaked into a second analysis state")
 	}
 	if _, exists := base.members[key]; exists {
 		t.Fatalf("Account hydration retained a per-analysis base placeholder")
+	}
+}
+
+func TestTypeMemberViewsKeepHydrationPrivate(t *testing.T) {
+	key := normalizeName("Account")
+	state := newSemaTypeMemberState(&semaTypeMemberModel{
+		members: map[string]typeMembers{key: semaStandardSObjectPlaceholder("Account")},
+	})
+	first := state.view()
+	second := state.view()
+
+	firstAccount, _, ok := semaLookupTypeMembers(first, "Account")
+	if !ok {
+		t.Fatal("first view could not hydrate Account")
+	}
+	const sentinel = "FirstViewOnly"
+	firstAccount.fields[normalizeName(sentinel)] = typesys.MemberSymbol{Name: sentinel, Type: "String"}
+	first.storeHydrated(key, firstAccount)
+
+	secondAccount, _, ok := semaLookupTypeMembers(second, "Account")
+	if !ok {
+		t.Fatal("second view could not hydrate Account")
+	}
+	if _, leaked := secondAccount.fields[normalizeName(sentinel)]; leaked {
+		t.Fatal("hydrated sentinel leaked between type-member views")
+	}
+}
+
+func TestFrozenTypeMemberViewsHydrateConcurrently(t *testing.T) {
+	state := buildSemaTypeMemberState(typesys.Index{}, nil)
+	reference, _, ok := semaLookupTypeMembers(state.view(), "Account")
+	if !ok {
+		t.Fatal("sequential reference could not hydrate Account")
+	}
+
+	const workers = 16
+	errors := make(chan string, workers)
+	var group sync.WaitGroup
+	for worker := 0; worker < workers; worker++ {
+		worker := worker
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			view := state.view()
+			account, _, lookupOK := semaLookupTypeMembers(view, "Account")
+			if !lookupOK {
+				errors <- fmt.Sprintf("worker %d could not hydrate Account", worker)
+				return
+			}
+			if !reflect.DeepEqual(account, reference) {
+				errors <- fmt.Sprintf("worker %d hydration differs from sequential reference", worker)
+				return
+			}
+			sentinel := normalizeName(fmt.Sprintf("Worker%dOnly", worker))
+			account.fields[sentinel] = typesys.MemberSymbol{Name: sentinel, Type: "String"}
+			view.storeHydrated(normalizeName("Account"), account)
+			if _, exists := view.hydrated[normalizeName("Account")].fields[sentinel]; !exists {
+				errors <- fmt.Sprintf("worker %d lost its private hydration", worker)
+			}
+		}()
+	}
+	group.Wait()
+	close(errors)
+	for message := range errors {
+		t.Error(message)
+	}
+}
+
+func TestOneWorkerViewPreservesCrossPhaseHydrationOrder(t *testing.T) {
+	root := t.TempDir()
+	baseFile := filepath.Join(root, "EmailTemplate.cls")
+	wrapperFile := filepath.Join(root, "EmailTemplateWrapper.cls")
+	writeSemaFile(t, baseFile, `
+public abstract class EmailTemplate {
+    public abstract String getId();
+}
+`)
+	writeSemaFile(t, wrapperFile, `
+public class EmailTemplateWrapper extends EmailTemplate {
+    private Schema.EmailTemplate templateRecord;
+    public override String getId() {
+        return templateRecord.Id;
+    }
+}
+`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{
+		Root:      root,
+		ApexFiles: []string{baseFile, wrapperFile},
+	}, schema.Schema{})
+	result := AnalyzeWithOptions(index, AnalyzeOptions{
+		Diagnostics:    true,
+		BuildArtifacts: &artifacts,
+	})
+
+	count := 0
+	for _, item := range result.Diagnostics {
+		if item.Code == "GLADESEMA016" && item.File == wrapperFile {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Fatalf("cross-phase override diagnostics = %d, want legacy one-worker result 1: %#v", count, result.Diagnostics)
+	}
+}
+
+func TestCurrentTypeOverlayKeepsWorkerHydrationHistory(t *testing.T) {
+	state := buildSemaTypeMemberState(typesys.Index{}, nil)
+	worker := state.view()
+	overlay := semaModelWithCurrentType(worker, typesys.TypeSymbol{
+		Kind: apexast.DeclarationClass,
+		Name: "Duplicate",
+	})
+	if _, _, ok := semaLookupTypeMembers(overlay, "Account"); !ok {
+		t.Fatal("current-type overlay could not hydrate Account")
+	}
+	key := normalizeName("Account")
+	if len(worker.hydrated[key].fields) == 0 {
+		t.Fatal("current-type overlay did not retain hydration in its owning worker view")
+	}
+}
+
+func TestAnalyzeDuplicateOverlayHydrationPreservesUnknownCallOrder(t *testing.T) {
+	root := t.TempDir()
+	emailTemplateFile := filepath.Join(root, "EmailTemplate.cls")
+	firstHydratorFile := filepath.Join(root, "HydratorOne.cls")
+	secondHydratorFile := filepath.Join(root, "HydratorTwo.cls")
+	orderedCallsFile := filepath.Join(root, "OrderedCalls.cls")
+	orderedCallsSource := `public class OrderedCalls {
+    public void run() {
+        Integer value = EmailTemplate.known();
+        EmailTemplate.missingFirst();
+        EmailTemplate.missingSecond();
+    }
+}
+`
+	writeSemaFile(t, emailTemplateFile, `public class EmailTemplate {
+    public static Integer known() { return 1; }
+}
+`)
+	writeSemaFile(t, firstHydratorFile, `public class Hydrator {
+    private Schema.EmailTemplate templateRecord;
+    public void hydrate() { String value = templateRecord.Id; }
+}
+`)
+	writeSemaFile(t, secondHydratorFile, `public class Hydrator {
+    public void secondCopy() {}
+}
+`)
+	writeSemaFile(t, orderedCallsFile, orderedCallsSource)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{
+		Root: root,
+		ApexFiles: []string{
+			emailTemplateFile,
+			firstHydratorFile,
+			secondHydratorFile,
+			orderedCallsFile,
+		},
+	}, schema.Schema{})
+	result := AnalyzeWithOptions(index, AnalyzeOptions{Diagnostics: true, BuildArtifacts: &artifacts})
+
+	type identity struct {
+		code    string
+		message string
+		range_  diagnostic.Range
+	}
+	var got []identity
+	for _, item := range result.Diagnostics {
+		if item.Code != "GLADESEMA008" || item.File != orderedCallsFile || item.Range == nil {
+			continue
+		}
+		got = append(got, identity{code: item.Code, message: item.Message, range_: *item.Range})
+	}
+	expectedRange := func(callee string) diagnostic.Range {
+		start := strings.Index(orderedCallsSource, callee)
+		if start < 0 {
+			t.Fatalf("ordered-call fixture is missing %q", callee)
+		}
+		return *semaRange(orderedCallsSource, start, start+len(callee))
+	}
+	want := []identity{
+		{
+			code:    "GLADESEMA008",
+			message: `method "run" calls unknown method "EmailTemplate.known"`,
+			range_:  expectedRange("EmailTemplate.known"),
+		},
+		{
+			code:    "GLADESEMA008",
+			message: `method "run" calls unknown method "EmailTemplate.missingFirst"`,
+			range_:  expectedRange("EmailTemplate.missingFirst"),
+		},
+		{
+			code:    "GLADESEMA008",
+			message: `method "run" calls unknown method "EmailTemplate.missingSecond"`,
+			range_:  expectedRange("EmailTemplate.missingSecond"),
+		},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("overlay-sensitive GLADESEMA008 identity/order changed\nwant: %#v\n got: %#v", want, got)
+	}
+}
+
+func TestZeroBodyDuplicateOverlayHydrationPrecedesLaterDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "LaterDiagnostics.cls")
+	source := `public class LaterDiagnostics {
+    public void run() {
+        OverlayOnly = 1;
+        missingHelper();
+    }
+}
+`
+	writeSemaFile(t, file, source)
+	methodStart := strings.Index(source, "public void run()")
+	if methodStart < 0 {
+		t.Fatal("later-diagnostic fixture is missing run method")
+	}
+	methodEnd := strings.LastIndex(source, "    }") + len("    }")
+	index := typesys.Index{Types: []typesys.TypeSymbol{
+		{
+			Kind: apexast.DeclarationClass,
+			Name: "DuplicateWithoutBody",
+			Members: []typesys.MemberSymbol{{
+				Kind: apexast.DeclarationField,
+				Name: "Seed",
+				Type: "OverlaySeed__c",
+			}},
+		},
+		{Kind: apexast.DeclarationClass, Name: "DuplicateWithoutBody"},
+		{
+			Kind: apexast.DeclarationClass,
+			Name: "LaterDiagnostics",
+			File: file,
+			Members: []typesys.MemberSymbol{{
+				Kind: apexast.DeclarationMethod,
+				Name: "run",
+				Type: "void",
+				Range: diagnostic.Range{
+					Start: diagnostic.Position{Offset: methodStart},
+					End:   diagnostic.Position{Offset: methodEnd},
+				},
+			}},
+		},
+	}}
+	lazyPlatform := newSemaLazyPlatformTypeMemberModel(nil)
+	lazyPlatform.lookups.Store(normalizeName("OverlaySeed__c"), semaPlatformTypeMemberLookup{
+		ok: true,
+		members: typeMembers{
+			name: "OverlaySeed__c",
+			kind: apexast.DeclarationClass,
+			fields: map[string]typesys.MemberSymbol{
+				normalizeName("OverlayOnly"): {
+					Kind: apexast.DeclarationField,
+					Name: "OverlayOnly",
+					Type: "Integer",
+				},
+			},
+			methods: make(map[string][]typesys.MemberSymbol),
+		},
+	})
+	base := buildTypeMemberLayerWithSources(index, newSemaSources(nil, nil), nil)
+	state := newSemaTypeMemberStateWithPlatform(base, &semaTypeMemberModel{
+		members:  make(map[string]typeMembers),
+		platform: lazyPlatform,
+	})
+	analyzer := NewAnalyzer()
+	diagnostics := analyzer.checkMethodBodiesWithView(index, state.view(), nil)
+
+	type identity struct {
+		code    string
+		message string
+		range_  diagnostic.Range
+	}
+	got := make([]identity, 0, len(diagnostics))
+	for _, item := range diagnostics {
+		if item.Range == nil {
+			continue
+		}
+		got = append(got, identity{code: item.Code, message: item.Message, range_: *item.Range})
+	}
+	callStart := strings.Index(source, "missingHelper")
+	want := []identity{{
+		code:    "GLADESEMA008",
+		message: `method "run" calls unknown method "missingHelper"`,
+		range_:  *semaRange(source, callStart, callStart+len("missingHelper")),
+	}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("zero-body overlay changed later diagnostic identity/order\nwant: %#v\n got: %#v", want, got)
+	}
+}
+
+func TestMethodBodyWorkItemsPreserveOriginalOrder(t *testing.T) {
+	root := t.TempDir()
+	firstFile := filepath.Join(root, "FirstShared.cls")
+	secondFile := filepath.Join(root, "SecondShared.cls")
+	firstSource := "firstMethod{} constructor{} initializer{} getter{} setter{}"
+	secondSource := "secondMethod{}"
+	writeSemaFile(t, firstFile, firstSource)
+	writeSemaFile(t, secondFile, secondSource)
+	rangeFor := func(source, marker string) diagnostic.Range {
+		start := strings.Index(source, marker)
+		if start < 0 {
+			t.Fatalf("fixture marker %q is missing", marker)
+		}
+		return diagnostic.Range{
+			Start: diagnostic.Position{Offset: start},
+			End:   diagnostic.Position{Offset: start + len(marker)},
+		}
+	}
+	index := typesys.Index{Types: []typesys.TypeSymbol{
+		{
+			Kind: apexast.DeclarationClass,
+			Name: "Shared",
+			File: firstFile,
+			Members: []typesys.MemberSymbol{
+				{Kind: apexast.DeclarationMethod, Name: "firstMethod", Type: "void", Range: rangeFor(firstSource, "firstMethod{}")},
+				{Kind: apexast.DeclarationConstructor, Name: "Shared", Range: rangeFor(firstSource, "constructor{}")},
+				{Kind: apexast.DeclarationInitializer, Name: "initializer", Range: rangeFor(firstSource, "initializer{}")},
+				{
+					Kind: apexast.DeclarationProperty,
+					Name: "Value",
+					Type: "String",
+					Accessors: []apexast.Accessor{
+						{Kind: "get", HasBody: true, Range: rangeFor(firstSource, "getter{}")},
+						{Kind: "set", HasBody: true, Range: rangeFor(firstSource, "setter{}")},
+					},
+				},
+			},
+		},
+		{
+			Kind: apexast.DeclarationClass,
+			Name: "Shared",
+			File: secondFile,
+			Members: []typesys.MemberSymbol{{
+				Kind:  apexast.DeclarationMethod,
+				Name:  "secondMethod",
+				Type:  "void",
+				Range: rangeFor(secondSource, "secondMethod{}"),
+			}},
+		},
+	}}
+	counters := PerfCounters{Enabled: true}
+	recorder := newPerfRecorder(&counters)
+	items := buildSemaMethodBodyWorkItems(index, newSemaSources(nil, &recorder))
+	recorder.finish()
+
+	type identity struct {
+		file        string
+		kind        apexast.DeclarationKind
+		name        string
+		typeName    string
+		parameters  []apexast.Parameter
+		memberRange diagnostic.Range
+		body        string
+		bodyOffset  int
+		source      string
+	}
+	got := make([]identity, 0, len(items))
+	for _, item := range items {
+		typ, member, ok := resolveSemaMethodBodyWorkItem(index, item)
+		if !ok {
+			t.Fatalf("method-body descriptor did not resolve: %#v", item)
+		}
+		got = append(got, identity{
+			file:        filepath.Base(typ.File),
+			kind:        member.Kind,
+			name:        member.Name,
+			typeName:    member.Type,
+			parameters:  member.Parameters,
+			memberRange: member.Range,
+			body:        item.body,
+			bodyOffset:  item.bodyOffset,
+			source:      item.source,
+		})
+	}
+	want := []identity{
+		{file: "FirstShared.cls", kind: apexast.DeclarationMethod, name: "firstMethod", typeName: "void", memberRange: rangeFor(firstSource, "firstMethod{}"), bodyOffset: strings.Index(firstSource, "firstMethod{}") + len("firstMethod{"), source: firstSource},
+		{file: "FirstShared.cls", kind: apexast.DeclarationConstructor, name: "Shared", memberRange: rangeFor(firstSource, "constructor{}"), bodyOffset: strings.Index(firstSource, "constructor{}") + len("constructor{"), source: firstSource},
+		{file: "FirstShared.cls", kind: apexast.DeclarationInitializer, name: "initializer", memberRange: rangeFor(firstSource, "initializer{}"), bodyOffset: strings.Index(firstSource, "initializer{}") + len("initializer{"), source: firstSource},
+		{file: "FirstShared.cls", kind: apexast.DeclarationMethod, name: "Value.get", typeName: "String", bodyOffset: strings.Index(firstSource, "getter{}") + len("getter{"), source: firstSource},
+		{file: "FirstShared.cls", kind: apexast.DeclarationMethod, name: "Value.set", typeName: "void", parameters: []apexast.Parameter{{Name: "value", Type: "String"}}, bodyOffset: strings.Index(firstSource, "setter{}") + len("setter{"), source: firstSource},
+		{file: "SecondShared.cls", kind: apexast.DeclarationMethod, name: "secondMethod", typeName: "void", memberRange: rangeFor(secondSource, "secondMethod{}"), bodyOffset: strings.Index(secondSource, "secondMethod{}") + len("secondMethod{"), source: secondSource},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("method-body work order = %#v, want %#v", got, want)
+	}
+	if cap(items) != len(items) {
+		t.Fatalf("method-body work capacity = %d, want exact length %d", cap(items), len(items))
+	}
+	if got := counters.SourceArenaHits + counters.SourceArenaMisses; got != 2 {
+		t.Fatalf("source resolutions = %d, want one per eligible type", got)
+	}
+}
+
+func TestMethodBodyWorkItemsDoNotReserveInvalidBodies(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "MixedBodies.cls")
+	source := "valid{} abstract; property;"
+	writeSemaFile(t, file, source)
+	rangeFor := func(marker string) diagnostic.Range {
+		start := strings.Index(source, marker)
+		if start < 0 {
+			t.Fatalf("fixture marker %q is missing", marker)
+		}
+		return diagnostic.Range{
+			Start: diagnostic.Position{Offset: start},
+			End:   diagnostic.Position{Offset: start + len(marker)},
+		}
+	}
+	index := typesys.Index{Types: []typesys.TypeSymbol{{
+		Kind: apexast.DeclarationClass,
+		Name: "MixedBodies",
+		File: file,
+		Members: []typesys.MemberSymbol{
+			{Kind: apexast.DeclarationMethod, Name: "valid", Type: "void", Range: rangeFor("valid{}")},
+			{Kind: apexast.DeclarationMethod, Name: "abstractMethod", Type: "void", Range: rangeFor("abstract;")},
+			{
+				Kind: apexast.DeclarationProperty,
+				Name: "Value",
+				Type: "String",
+				Accessors: []apexast.Accessor{{
+					Kind:    "get",
+					HasBody: true,
+					Range:   rangeFor("property;"),
+				}},
+			},
+		},
+	}}}
+	items := buildSemaMethodBodyWorkItems(index, newSemaSources(nil, nil))
+	if len(items) != 1 {
+		t.Fatalf("extractable method-body items = %#v, want only valid", items)
+	}
+	_, member, ok := resolveSemaMethodBodyWorkItem(index, items[0])
+	if !ok || member.Name != "valid" {
+		t.Fatalf("extractable method-body descriptor resolves to %#v, %v; want valid", member, ok)
+	}
+	if cap(items) != len(items) {
+		t.Fatalf("method-body work capacity = %d, want exact extracted length %d", cap(items), len(items))
+	}
+}
+
+func TestMethodBodyWorkItemDescriptorIsCompact(t *testing.T) {
+	const maxDescriptorBytes = 64
+	if size := unsafe.Sizeof(semaMethodBodyWorkItem{}); size > maxDescriptorBytes {
+		t.Fatalf("method-body work descriptor size = %d bytes, want at most %d", size, maxDescriptorBytes)
+	}
+}
+
+func TestResolveMethodBodyWorkItemRejectsInvalidIndexes(t *testing.T) {
+	index := typesys.Index{Types: []typesys.TypeSymbol{{
+		Kind: apexast.DeclarationClass,
+		Name: "Indexed",
+		Members: []typesys.MemberSymbol{
+			{Kind: apexast.DeclarationMethod, Name: "run"},
+			{
+				Kind: apexast.DeclarationProperty,
+				Name: "Value",
+				Accessors: []apexast.Accessor{
+					{Kind: "get", HasBody: true},
+					{Kind: "set", HasBody: false},
+				},
+			},
+		},
+	}}}
+	tests := []semaMethodBodyWorkItem{
+		{typeIndex: -1, memberIndex: 0, accessorIndex: semaMethodBodyNoAccessor},
+		{typeIndex: 1, memberIndex: 0, accessorIndex: semaMethodBodyNoAccessor},
+		{typeIndex: 0, memberIndex: -1, accessorIndex: semaMethodBodyNoAccessor},
+		{typeIndex: 0, memberIndex: 2, accessorIndex: semaMethodBodyNoAccessor},
+		{typeIndex: 0, memberIndex: 0, accessorIndex: 0},
+		{typeIndex: 0, memberIndex: 1, accessorIndex: semaMethodBodyNoAccessor},
+		{typeIndex: 0, memberIndex: 1, accessorIndex: -2},
+		{typeIndex: 0, memberIndex: 1, accessorIndex: 2},
+		{typeIndex: 0, memberIndex: 1, accessorIndex: 1},
+	}
+	for _, item := range tests {
+		if typ, member, ok := resolveSemaMethodBodyWorkItem(index, item); ok {
+			t.Fatalf("invalid descriptor %#v resolved to %#v, %#v", item, typ, member)
+		}
+	}
+}
+
+func TestCountExtractableMethodBodyRangesDoesNotAllocatePerAccessor(t *testing.T) {
+	const propertyCount = 128
+	source := "getter{} setter{}"
+	rangeFor := func(marker string) diagnostic.Range {
+		start := strings.Index(source, marker)
+		if start < 0 {
+			t.Fatalf("fixture marker %q is missing", marker)
+		}
+		return diagnostic.Range{
+			Start: diagnostic.Position{Offset: start},
+			End:   diagnostic.Position{Offset: start + len(marker)},
+		}
+	}
+	typ := typesys.TypeSymbol{
+		Kind:    apexast.DeclarationClass,
+		Name:    "PropertyHeavy",
+		Members: make([]typesys.MemberSymbol, propertyCount),
+	}
+	for i := range typ.Members {
+		typ.Members[i] = typesys.MemberSymbol{
+			Kind: apexast.DeclarationProperty,
+			Name: "Value",
+			Type: "String",
+			Accessors: []apexast.Accessor{
+				{Kind: "get", HasBody: true, Range: rangeFor("getter{}")},
+				{Kind: "set", HasBody: true, Range: rangeFor("setter{}")},
+			},
+		}
+	}
+
+	if got := countExtractableSemaMethodBodyRanges(typ, source); got != propertyCount*2 {
+		t.Fatalf("extractable accessor bodies = %d, want %d", got, propertyCount*2)
+	}
+	if allocations := testing.AllocsPerRun(100, func() {
+		_ = countExtractableSemaMethodBodyRanges(typ, source)
+	}); allocations != 0 {
+		t.Fatalf("count-only accessor allocations = %.2f, want 0", allocations)
 	}
 }
 

@@ -201,14 +201,16 @@ func TestLayeredModelCutoverSharedMutationIsolation(t *testing.T) {
 		t.Fatal("caller mutation leaked through the shared platform model")
 	}
 
-	if _, _, ok := semaLookupTypeMembers(first.view(), "Account"); !ok {
+	firstView := first.view()
+	secondView := second.view()
+	if _, _, ok := semaLookupTypeMembers(firstView, "Account"); !ok {
 		t.Fatal("first analysis could not hydrate Account")
 	}
 	key := normalizeName("Account")
-	if len(first.hydrated[key].fields) == 0 {
+	if len(firstView.hydrated[key].fields) == 0 {
 		t.Fatal("first analysis did not retain local Account hydration")
 	}
-	if _, leaked := second.hydrated[key]; leaked {
+	if _, leaked := secondView.hydrated[key]; leaked {
 		t.Fatal("standard SObject hydration leaked between analysis states")
 	}
 }

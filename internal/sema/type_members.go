@@ -91,12 +91,12 @@ func (m *semaTypeMemberModel) hasField(key string) bool {
 type semaTypeMemberState struct {
 	base     *semaTypeMemberModel
 	platform *semaTypeMemberModel
-	hydrated map[string]typeMembers
 }
 
 type semaTypeMemberView struct {
-	state   *semaTypeMemberState
-	current map[string]typeMembers
+	state    *semaTypeMemberState
+	current  map[string]typeMembers
+	hydrated map[string]typeMembers
 }
 
 func newSemaTypeMemberState(base *semaTypeMemberModel) *semaTypeMemberState {
@@ -107,12 +107,14 @@ func newSemaTypeMemberStateWithPlatform(base, platform *semaTypeMemberModel) *se
 	return &semaTypeMemberState{
 		base:     base,
 		platform: platform,
-		hydrated: make(map[string]typeMembers),
 	}
 }
 
 func (s *semaTypeMemberState) view() *semaTypeMemberView {
-	return &semaTypeMemberView{state: s}
+	return &semaTypeMemberView{
+		state:    s,
+		hydrated: make(map[string]typeMembers),
+	}
 }
 
 func (v *semaTypeMemberView) lookup(key string) (typeMembers, bool) {
@@ -122,7 +124,7 @@ func (v *semaTypeMemberView) lookup(key string) (typeMembers, bool) {
 	if members, ok := v.current[key]; ok {
 		return members, true
 	}
-	if members, ok := v.state.hydrated[key]; ok {
+	if members, ok := v.hydrated[key]; ok {
 		return members, true
 	}
 	if v.state.base != nil {
@@ -133,7 +135,7 @@ func (v *semaTypeMemberView) lookup(key string) (typeMembers, bool) {
 	if v.state.platform != nil {
 		members, ok := v.state.platform.lookup(key)
 		if ok {
-			v.state.hydrated[key] = members
+			v.hydrated[key] = members
 		}
 		return members, ok
 	}
@@ -149,7 +151,7 @@ func (v *semaTypeMemberView) storeHydrated(key string, members typeMembers) {
 	if v == nil || v.state == nil || key == "" {
 		return
 	}
-	v.state.hydrated[key] = members
+	v.hydrated[key] = members
 }
 
 func (v *semaTypeMemberView) shortCandidateKeys(short string) []string {
@@ -375,7 +377,10 @@ func buildSemaTypeMemberState(index typesys.Index, recorder *perfRecorder, sourc
 }
 
 func (a *Analyzer) checkMethodBodiesWithState(index typesys.Index, state *semaTypeMemberState, recorder *perfRecorder) []diagnostic.Diagnostic {
-	model := state.view()
+	return a.checkMethodBodiesWithView(index, state.view(), recorder)
+}
+
+func (a *Analyzer) checkMethodBodiesWithView(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder) []diagnostic.Diagnostic {
 	constructability := buildConstructability(index)
 	duplicateTypes := semaDuplicateTypeKeys(index)
 	sources := a.sources
@@ -384,7 +389,9 @@ func (a *Analyzer) checkMethodBodiesWithState(index typesys.Index, state *semaTy
 	}
 	var diagnostics []diagnostic.Diagnostic
 	bodyStarted := recorder.beginPhase()
-	for _, typ := range index.Types {
+	workItems := buildSemaMethodBodyWorkItems(index, sources)
+	workItemIndex := 0
+	for typeIndex, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) {
 			continue
 		}
@@ -392,47 +399,166 @@ func (a *Analyzer) checkMethodBodiesWithState(index typesys.Index, state *semaTy
 		if duplicateTypes[semaTypeSymbolKey(typ)] > 1 {
 			bodyModel = semaModelWithCurrentType(model, typ)
 		}
-		for _, member := range typ.Members {
-			switch member.Kind {
-			case apexast.DeclarationMethod, apexast.DeclarationConstructor, apexast.DeclarationInitializer:
-				source, ok := sources.normalizedForType(typ)
-				if !ok {
-					continue
-				}
-				body, bodyOffset, ok := extractBodyForSema(source, member.Range)
-				if !ok {
-					continue
-				}
-				diagnostics = append(diagnostics, a.checkBodyText(typ, member, body, bodyOffset, source, bodyModel, constructability)...)
-			case apexast.DeclarationProperty:
-				for _, accessor := range member.Accessors {
-					if !accessor.HasBody {
-						continue
-					}
-					source, ok := sources.normalizedForType(typ)
-					if !ok {
-						continue
-					}
-					body, bodyOffset, ok := extractBodyForSema(source, accessor.Range)
-					if !ok {
-						continue
-					}
-					accessorMember := member
-					accessorMember.Kind = apexast.DeclarationMethod
-					accessorMember.Name = member.Name + "." + accessor.Kind
-					if accessor.Kind == "set" {
-						accessorMember.Type = "void"
-						accessorMember.Parameters = []apexast.Parameter{{Name: "value", Type: member.Type}}
-					}
-					diagnostics = append(diagnostics, a.checkBodyText(typ, accessorMember, body, bodyOffset, source, bodyModel, constructability)...)
-				}
+		for workItemIndex < len(workItems) && workItems[workItemIndex].typeIndex == typeIndex {
+			item := workItems[workItemIndex]
+			workItemIndex++
+			itemType, member, ok := resolveSemaMethodBodyWorkItem(index, item)
+			if !ok {
+				continue
 			}
+			diagnostics = append(diagnostics, a.checkBodyText(itemType, member, item.body, item.bodyOffset, item.source, bodyModel, constructability)...)
 		}
 	}
 	if recorder != nil {
 		recorder.endPhase(&recorder.counters.MethodBodies, bodyStarted)
 	}
 	return diagnostics
+}
+
+type semaMethodBodyWorkItem struct {
+	typeIndex     int
+	memberIndex   int
+	accessorIndex int
+	body          string
+	bodyOffset    int
+	source        string
+}
+
+const semaMethodBodyNoAccessor = -1
+
+type semaMethodBodySource struct {
+	typeIndex int
+	source    string
+}
+
+func buildSemaMethodBodyWorkItems(index typesys.Index, sources *semaSources) []semaMethodBodyWorkItem {
+	bodySources, workItemCount := collectSemaMethodBodySources(index, sources)
+	workItems := make([]semaMethodBodyWorkItem, 0, workItemCount)
+	for _, bodySource := range bodySources {
+		typeIndex := bodySource.typeIndex
+		typ := index.Types[typeIndex]
+		source := bodySource.source
+		appendBody := func(memberIndex, accessorIndex int, bodyRange diagnostic.Range) {
+			body, bodyOffset, extracted := extractBodyForSema(source, bodyRange)
+			if !extracted {
+				return
+			}
+			workItems = append(workItems, semaMethodBodyWorkItem{
+				typeIndex:     typeIndex,
+				memberIndex:   memberIndex,
+				accessorIndex: accessorIndex,
+				body:          body,
+				bodyOffset:    bodyOffset,
+				source:        source,
+			})
+		}
+		for memberIndex, member := range typ.Members {
+			switch member.Kind {
+			case apexast.DeclarationMethod, apexast.DeclarationConstructor, apexast.DeclarationInitializer:
+				appendBody(memberIndex, semaMethodBodyNoAccessor, member.Range)
+			case apexast.DeclarationProperty:
+				for accessorIndex, accessor := range member.Accessors {
+					if accessor.HasBody {
+						appendBody(memberIndex, accessorIndex, accessor.Range)
+					}
+				}
+			}
+		}
+	}
+	return workItems
+}
+
+func resolveSemaMethodBodyWorkItem(index typesys.Index, item semaMethodBodyWorkItem) (typesys.TypeSymbol, typesys.MemberSymbol, bool) {
+	if item.typeIndex < 0 || item.typeIndex >= len(index.Types) {
+		return typesys.TypeSymbol{}, typesys.MemberSymbol{}, false
+	}
+	typ := index.Types[item.typeIndex]
+	if item.memberIndex < 0 || item.memberIndex >= len(typ.Members) {
+		return typesys.TypeSymbol{}, typesys.MemberSymbol{}, false
+	}
+	member := typ.Members[item.memberIndex]
+	if item.accessorIndex == semaMethodBodyNoAccessor {
+		switch member.Kind {
+		case apexast.DeclarationMethod, apexast.DeclarationConstructor, apexast.DeclarationInitializer:
+			return typ, member, true
+		default:
+			return typesys.TypeSymbol{}, typesys.MemberSymbol{}, false
+		}
+	}
+	if member.Kind != apexast.DeclarationProperty || item.accessorIndex < 0 || item.accessorIndex >= len(member.Accessors) {
+		return typesys.TypeSymbol{}, typesys.MemberSymbol{}, false
+	}
+	accessor := member.Accessors[item.accessorIndex]
+	if !accessor.HasBody {
+		return typesys.TypeSymbol{}, typesys.MemberSymbol{}, false
+	}
+	member.Kind = apexast.DeclarationMethod
+	member.Name += "." + accessor.Kind
+	if accessor.Kind == "set" {
+		propertyType := member.Type
+		member.Type = "void"
+		member.Parameters = []apexast.Parameter{{Name: "value", Type: propertyType}}
+	}
+	return typ, member, true
+}
+
+func collectSemaMethodBodySources(index typesys.Index, sources *semaSources) ([]semaMethodBodySource, int) {
+	var bodySources []semaMethodBodySource
+	workItemCount := 0
+	for typeIndex, typ := range index.Types {
+		if skipProjectDiagnosticType(typ) || !semaTypeHasMethodBodyWork(typ) {
+			continue
+		}
+		source, ok := sources.normalizedForType(typ)
+		if !ok {
+			continue
+		}
+		count := countExtractableSemaMethodBodyRanges(typ, source)
+		if count == 0 {
+			continue
+		}
+		bodySources = append(bodySources, semaMethodBodySource{typeIndex: typeIndex, source: source})
+		workItemCount += count
+	}
+	return bodySources, workItemCount
+}
+
+func countExtractableSemaMethodBodyRanges(typ typesys.TypeSymbol, source string) int {
+	count := 0
+	countRange := func(bodyRange diagnostic.Range) {
+		if _, _, extracted := extractBodyForSema(source, bodyRange); extracted {
+			count++
+		}
+	}
+	for _, member := range typ.Members {
+		switch member.Kind {
+		case apexast.DeclarationMethod, apexast.DeclarationConstructor, apexast.DeclarationInitializer:
+			countRange(member.Range)
+		case apexast.DeclarationProperty:
+			for _, accessor := range member.Accessors {
+				if accessor.HasBody {
+					countRange(accessor.Range)
+				}
+			}
+		}
+	}
+	return count
+}
+
+func semaTypeHasMethodBodyWork(typ typesys.TypeSymbol) bool {
+	for _, member := range typ.Members {
+		switch member.Kind {
+		case apexast.DeclarationMethod, apexast.DeclarationConstructor, apexast.DeclarationInitializer:
+			return true
+		case apexast.DeclarationProperty:
+			for _, accessor := range member.Accessors {
+				if accessor.HasBody {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func semaDuplicateTypeKeys(index typesys.Index) map[string]int {
@@ -452,8 +578,9 @@ func semaTypeSymbolKey(typ typesys.TypeSymbol) string {
 
 func semaModelWithCurrentType(model *semaTypeMemberView, typ typesys.TypeSymbol) *semaTypeMemberView {
 	out := &semaTypeMemberView{
-		state:   model.state,
-		current: make(map[string]typeMembers, 2),
+		state:    model.state,
+		current:  make(map[string]typeMembers, 2),
+		hydrated: model.hydrated,
 	}
 	members := semaTypeMembersFromSymbol(typ)
 	out.current[normalizeName(typ.Name)] = members

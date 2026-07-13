@@ -153,13 +153,14 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 		result.Diagnostics = append(result.Diagnostics, a.checkMethodParameters(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkAnnotations(index)...)
 		typeMemberState := buildSemaTypeMemberState(index, recorder, a.sources)
-		result.Diagnostics = append(result.Diagnostics, a.checkMethodBodiesWithState(index, typeMemberState, recorder)...)
+		typeMemberView := typeMemberState.view()
+		result.Diagnostics = append(result.Diagnostics, a.checkMethodBodiesWithView(index, typeMemberView, recorder)...)
 		if !opts.SuppressPerformanceDiagnostics {
 			result.Diagnostics = append(result.Diagnostics, a.checkPerformancePatterns(index)...)
 		}
 		result.Diagnostics = append(result.Diagnostics, a.checkVisibility(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkManagedPackageAccess(index)...)
-		result.Diagnostics = append(result.Diagnostics, a.checkInheritanceContractsWithState(index, typeMemberState, recorder)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkInheritanceContractsWithView(index, typeMemberView, recorder)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkSchemaReferences(index)...)
 		queryStarted := recorder.beginPhase()
 		result.Diagnostics = append(result.Diagnostics, a.checkQuerySemantics(index)...)
@@ -1092,7 +1093,7 @@ func semaAnyKnownField(model *semaTypeMemberView, name string) bool {
 	if model.state == nil {
 		return false
 	}
-	for _, members := range model.state.hydrated {
+	for _, members := range model.hydrated {
 		if _, ok := members.fields[key]; ok {
 			return true
 		}
