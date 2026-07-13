@@ -9938,6 +9938,79 @@ public class Bad extends Base implements Worker {
 	}
 }
 
+func TestAnalyzeInheritanceContractDiagnosticOrderIsDeterministic(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	contractFile := filepath.Join(root, "OrderedContract.cls")
+	baseFile := filepath.Join(root, "OrderedBase.cls")
+	concreteFile := filepath.Join(root, "MissingImplementation.cls")
+	writeSemaFile(t, contractFile, `
+public interface OrderedContract {
+  void zulu();
+  void alpha();
+  void shared();
+  void bravo();
+  void echo();
+  void charlie();
+}
+`)
+	writeSemaFile(t, baseFile, `
+public abstract class OrderedBase {
+  public abstract void yankee();
+  public abstract void delta();
+  public abstract void shared();
+  public abstract void golf();
+}
+`)
+	writeSemaFile(t, concreteFile, `
+public class MissingImplementation extends OrderedBase implements OrderedContract {
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		contractFile,
+		baseFile,
+		concreteFile,
+	}}, schema.Schema{})
+
+	type diagnosticIdentity struct {
+		severity diagnostic.Severity
+		code     string
+		file     string
+		range_   diagnostic.Range
+		message  string
+	}
+	result := Analyze(index)
+	got := make([]diagnosticIdentity, 0, 9)
+	for _, diag := range result.Diagnostics {
+		if diag.Code != "GLADESEMA017" {
+			continue
+		}
+		identity := diagnosticIdentity{severity: diag.Severity, code: diag.Code, file: diag.File, message: diag.Message}
+		if diag.Range != nil {
+			identity.range_ = *diag.Range
+		}
+		got = append(got, identity)
+	}
+	wantRange := diagnostic.Range{
+		Start: diagnostic.Position{Line: 2, Column: 1, Offset: 1},
+		End:   diagnostic.Position{Line: 3, Column: 2, Offset: 86},
+	}
+	want := []diagnosticIdentity{
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement interface method "alpha" from "OrderedContract"`},
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement interface method "bravo" from "OrderedContract"`},
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement interface method "charlie" from "OrderedContract"`},
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement interface method "echo" from "OrderedContract"`},
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement interface method "shared" from "OrderedContract"`},
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement interface method "zulu" from "OrderedContract"`},
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement abstract method "delta" from "OrderedBase"`},
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement abstract method "golf" from "OrderedBase"`},
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement abstract method "yankee" from "OrderedBase"`},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("inheritance contract diagnostic identity/order changed\nwant: %#v\n got: %#v", want, got)
+	}
+}
+
 func TestAnalyzeSkipsInheritanceContractsForPackageArtifacts(t *testing.T) {
 	t.Parallel()
 	result := Analyze(typesys.Index{Types: []typesys.TypeSymbol{{

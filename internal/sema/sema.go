@@ -601,7 +601,7 @@ func requiredMethodSignatures(model *semaTypeMemberView, typ typesys.TypeSymbol)
 		if !ok {
 			break
 		}
-		for _, overloads := range members.methods {
+		for _, overloads := range orderedMethodFamilies(members.methods) {
 			for _, method := range overloads {
 				if hasModifier(method.Modifiers, "abstract") {
 					key := methodSignatureKey(method)
@@ -626,7 +626,7 @@ func collectRequiredMethods(model *semaTypeMemberView, typeName, sourceKind stri
 		return nil
 	}
 	var out []methodRequirement
-	for _, overloads := range members.methods {
+	for _, overloads := range orderedMethodFamilies(members.methods) {
 		for _, method := range overloads {
 			if semaImplicitObjectInterfaceMethod(method) {
 				continue
@@ -751,6 +751,19 @@ func methodSignatureKey(member typesys.MemberSymbol) string {
 		parts = append(parts, normalizeName(param.Type))
 	}
 	return strings.Join(parts, "/")
+}
+
+func orderedMethodFamilies(methods map[string][]typesys.MemberSymbol) [][]typesys.MemberSymbol {
+	families := make([][]typesys.MemberSymbol, 0, len(methods))
+	for _, overloads := range methods {
+		if len(overloads) > 0 {
+			families = append(families, overloads)
+		}
+	}
+	sort.Slice(families, func(i, j int) bool {
+		return methodSignatureKey(families[i][0]) < methodSignatureKey(families[j][0])
+	})
+	return families
 }
 
 func collectClassicForLocals(body string) []semaLocal {
