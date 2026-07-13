@@ -133,7 +133,7 @@ func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnos
 type querySemanticsChecker struct {
 	namespace      string
 	objects        map[string]schema.Object
-	fields         map[string]map[string]schema.Field
+	providers      map[string]semaSObjectFieldProvider
 	declaredFields map[string]int
 	hasBaseline    bool
 }
@@ -142,7 +142,7 @@ func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Obj
 	checker := querySemanticsChecker{
 		namespace:      index.Project.Namespace,
 		objects:        make(map[string]schema.Object, len(index.Objects)),
-		fields:         make(map[string]map[string]schema.Field, len(index.Objects)),
+		providers:      make(map[string]semaSObjectFieldProvider, len(index.Objects)),
 		declaredFields: make(map[string]int, len(index.Objects)),
 		hasBaseline:    len(declaredObjects) > 0,
 	}
@@ -418,11 +418,11 @@ func (c querySemanticsChecker) object(name string) (schema.Object, bool) {
 		c.addObject(object)
 		return object, true
 	}
-	definition, ok := storage.StandardObjectDefinition(name)
+	canonical, ok := storage.ResolveKnownStandardObjectName(name)
 	if !ok {
 		return schema.Object{}, false
 	}
-	object := schemaObjectFromStorageDefinition(definition)
+	object := schema.Object{Name: canonical}
 	c.addObject(object)
 	return object, true
 }
@@ -432,32 +432,12 @@ func (c querySemanticsChecker) field(objectName, fieldName string) (schema.Field
 	if !ok {
 		return schema.Field{}, false
 	}
-	fields, ok := c.fields[normalizeName(object.Name)]
-	if !ok {
+	provider, ok := c.providers[normalizeName(object.Name)]
+	if !ok || provider == nil {
 		return schema.Field{}, false
 	}
-	if field, ok := fields[normalizeName(fieldName)]; ok {
+	if field, ok := provider.lookup(fieldName); ok {
 		return field, true
-	}
-	if local, ok := semaProjectLocalAPIName(c.namespace, fieldName); ok {
-		if field, ok := fields[normalizeName(local)]; ok {
-			return field, true
-		}
-	}
-	if namespaced, ok := semaProjectNamespacedAPIName(c.namespace, fieldName); ok {
-		if field, ok := fields[normalizeName(namespaced)]; ok {
-			return field, true
-		}
-	}
-	if namespaced, ok := semaOwnerNamespacedAPIName(object.Name, fieldName); ok {
-		if field, ok := fields[normalizeName(namespaced)]; ok {
-			return field, true
-		}
-	}
-	if local := semaSchemaLocalAPIName(fieldName); !strings.EqualFold(local, fieldName) {
-		if field, ok := fields[normalizeName(local)]; ok {
-			return field, true
-		}
 	}
 	if field, ok := c.locationComponentField(object.Name, fieldName); ok {
 		return field, true
@@ -493,8 +473,8 @@ func (c querySemanticsChecker) hasFieldMetadata(objectName string) bool {
 	if object.Partial {
 		return false
 	}
-	fields, ok := c.fields[normalizeName(object.Name)]
-	return ok && len(fields) > 0
+	provider, ok := c.providers[normalizeName(object.Name)]
+	return ok && provider != nil && provider.hasFields()
 }
 
 func (c querySemanticsChecker) hasDeclaredFieldMetadata(objectName string) bool {
@@ -538,29 +518,38 @@ func (c querySemanticsChecker) relationshipField(objectName, relationshipName st
 	if !ok {
 		return schema.Field{}, "", false
 	}
-	fields, ok := c.fields[normalizeName(object.Name)]
-	if !ok {
+	provider, ok := c.providers[normalizeName(object.Name)]
+	if !ok || provider == nil {
 		return c.inferredPackageParentRelationshipField(relationshipName)
 	}
-	for _, field := range fields {
-		if c.apiNamesMatch(field.RelationshipName, relationshipName) && len(field.ReferenceTo) > 0 {
-			target := field.ReferenceTo[0]
-			targetObject, hasTargetObject := c.object(target)
-			canonicalTarget, hasCanonicalTarget := c.standardTargetForPackageRelationship(field.RelationshipName, target)
-			if !hasCanonicalTarget {
-				canonicalTarget, hasCanonicalTarget = c.standardTargetForPackageRelationship(relationshipName, target)
-			}
-			if hasTargetObject && (!hasCanonicalTarget || c.hasDeclaredFieldMetadata(targetObject.Name)) {
-				return field, targetObject.Name, true
-			}
-			if hasCanonicalTarget {
-				target = canonicalTarget
-			}
-			if targetObject, ok := c.object(target); ok {
-				target = targetObject.Name
-			}
-			return field, target, true
+	var matched schema.Field
+	found := false
+	provider.visit(func(field schema.Field) {
+		if found {
+			return
 		}
+		if c.apiNamesMatch(field.RelationshipName, relationshipName) && len(field.ReferenceTo) > 0 {
+			matched = field
+			found = true
+		}
+	})
+	if found {
+		target := matched.ReferenceTo[0]
+		targetObject, hasTargetObject := c.object(target)
+		canonicalTarget, hasCanonicalTarget := c.standardTargetForPackageRelationship(matched.RelationshipName, target)
+		if !hasCanonicalTarget {
+			canonicalTarget, hasCanonicalTarget = c.standardTargetForPackageRelationship(relationshipName, target)
+		}
+		if hasTargetObject && (!hasCanonicalTarget || c.hasDeclaredFieldMetadata(targetObject.Name)) {
+			return matched, targetObject.Name, true
+		}
+		if hasCanonicalTarget {
+			target = canonicalTarget
+		}
+		if targetObject, ok := c.object(target); ok {
+			target = targetObject.Name
+		}
+		return matched, target, true
 	}
 	return c.inferredPackageParentRelationshipField(relationshipName)
 }
@@ -635,31 +624,27 @@ func (c querySemanticsChecker) inferredPackageParentRelationshipField(relationsh
 
 func (c querySemanticsChecker) childObjectForRelationship(parentObject, relationship string) (schema.Object, bool) {
 	for _, object := range c.objects {
-		for _, field := range object.Fields {
-			if !c.apiNamesMatch(field.ChildRelationshipName, relationship) {
-				continue
-			}
-			for _, target := range field.ReferenceTo {
-				if c.apiNamesMatch(target, parentObject) {
-					return object, true
-				}
-			}
-		}
-	}
-	for _, objectName := range storage.KnownStandardObjectNames() {
-		object, ok := c.object(objectName)
-		if !ok {
+		provider := c.providers[normalizeName(object.Name)]
+		if provider == nil {
 			continue
 		}
-		for _, field := range object.Fields {
+		matched := false
+		provider.visitDeclared(func(field schema.Field) {
+			if matched {
+				return
+			}
 			if !c.apiNamesMatch(field.ChildRelationshipName, relationship) {
-				continue
+				return
 			}
 			for _, target := range field.ReferenceTo {
 				if c.apiNamesMatch(target, parentObject) {
-					return object, true
+					matched = true
+					return
 				}
 			}
+		})
+		if matched {
+			return object, true
 		}
 	}
 	for _, relationshipMember := range semaStandardChildRelationshipMembers(parentObject) {
@@ -715,24 +700,17 @@ func (c querySemanticsChecker) addObject(object schema.Object) {
 	if !c.hasBaseline {
 		c.recordDeclaredFields(object)
 	}
-	provider := newSemaSObjectFieldProvider(c.namespace, object)
-	object = mergeQuerySObjectProviderFields(object, provider)
 	key := normalizeName(object.Name)
 	existing, duplicate := c.objects[key]
 	if duplicate {
 		object = mergeQueryDuplicateObject(existing, object)
 	}
+	provider := newSemaSObjectFieldProvider(c.namespace, object)
 	c.objects[key] = object
-	var fieldMap map[string]schema.Field
-	if resolved, ok := provider.(*semaSObjectFieldMapProvider); ok && !duplicate {
-		fieldMap = resolved.fields
-	} else {
-		fieldMap = queryFieldMap(object.Fields)
-	}
-	c.fields[key] = fieldMap
+	c.providers[key] = provider
 	if localName, ok := semaProjectLocalAPIName(c.namespace, object.Name); ok {
 		c.objects[normalizeName(localName)] = object
-		c.fields[normalizeName(localName)] = fieldMap
+		c.providers[normalizeName(localName)] = provider
 	}
 }
 
@@ -741,25 +719,9 @@ func mergeQuerySObjectProviderFields(object schema.Object, provider semaSObjectF
 		return object
 	}
 	fields := make([]schema.Field, 0, len(object.Fields))
-	if resolved, ok := provider.(*semaSObjectFieldMapProvider); ok {
-		fields = make([]schema.Field, 0, len(resolved.keys))
-		for _, key := range resolved.keys {
-			fields = append(fields, resolved.fields[key])
-		}
-		if object.Label == "" {
-			object.Label = resolved.label
-		}
-		if object.PluralLabel == "" {
-			object.PluralLabel = resolved.pluralLabel
-		}
-		if object.SharingModel == "" {
-			object.SharingModel = resolved.sharingModel
-		}
-	} else {
-		provider.visit(func(field schema.Field) {
-			fields = append(fields, field)
-		})
-	}
+	provider.visit(func(field schema.Field) {
+		fields = append(fields, field)
+	})
 	object.Fields = fields
 	return object
 }
@@ -783,7 +745,11 @@ func (c querySemanticsChecker) recordDeclaredFields(object schema.Object) {
 
 func (c querySemanticsChecker) addActivityFieldsToTaskAndEvent() {
 	activity, ok := c.object("Activity")
-	if !ok || len(activity.Fields) == 0 {
+	if !ok {
+		return
+	}
+	activityProvider := c.providers[normalizeName(activity.Name)]
+	if activityProvider == nil || !activityProvider.hasFields() {
 		return
 	}
 	for _, target := range []string{"Task", "Event"} {
@@ -791,8 +757,18 @@ func (c querySemanticsChecker) addActivityFieldsToTaskAndEvent() {
 		if !ok {
 			object = schema.Object{Name: target}
 		}
-		object = mergeQueryDuplicateObject(object, schema.Object{Name: target, Fields: activity.Fields})
-		c.addObject(object)
+		if _, exists := c.providers[normalizeName(object.Name)]; !exists {
+			c.addObject(object)
+		}
+		targetProvider := c.providers[normalizeName(object.Name)]
+		provider := &semaLayeredSObjectFieldProvider{
+			layers:         []semaSObjectFieldProvider{targetProvider, activityProvider},
+			declaredLayers: 2,
+		}
+		c.providers[normalizeName(object.Name)] = provider
+		if localName, ok := semaProjectLocalAPIName(c.namespace, object.Name); ok {
+			c.providers[normalizeName(localName)] = provider
+		}
 	}
 }
 

@@ -49,6 +49,16 @@ func TestSemaCanonicalPlatformAliasCoversEverySystemNamespaceTypeName(t *testing
 	}
 }
 
+func TestSemaPlatformAliasesDoesNotExposeSharedCache(t *testing.T) {
+	key := normalizeName("System.String")
+	want := semaCanonicalPlatformAlias("System.String")
+	aliases := semaPlatformAliases()
+	aliases[key] = "CallerCorruption"
+	if got := semaCanonicalPlatformAlias("System.String"); got != want {
+		t.Fatalf("caller mutation changed System.String alias from %q to %q", want, got)
+	}
+}
+
 func TestSemaCanonicalPlatformAliasCoversDocumentedSchemaImplicitImports(t *testing.T) {
 	for _, tc := range []struct {
 		in   string

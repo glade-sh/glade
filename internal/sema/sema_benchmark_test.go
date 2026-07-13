@@ -183,6 +183,19 @@ func BenchmarkBuildTypeMembers(b *testing.B) {
 	})
 }
 
+func BenchmarkBuildPlatformTypeMemberModelCold(b *testing.B) {
+	var model *semaTypeMemberModel
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		model = buildSemaPlatformTypeMemberModel()
+	}
+	b.StopTimer()
+	if model == nil || model.platform == nil || len(model.platform.symbols) == 0 {
+		b.Fatal("missing platform type-member model")
+	}
+}
+
 func BenchmarkCheckInheritance(b *testing.B) {
 	benchmarkSemaSizesAndModes(b, func(b *testing.B, index typesys.Index, mode string) {
 		index, analyzer := benchmarkPreparedAnalysisPhase(b, index)

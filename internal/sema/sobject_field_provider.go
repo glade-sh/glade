@@ -3,6 +3,7 @@ package sema
 import (
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/storage"
@@ -13,56 +14,262 @@ import (
 type semaSObjectFieldProvider interface {
 	lookup(fieldName string) (schema.Field, bool)
 	visit(func(schema.Field))
+	visitDeclared(func(schema.Field))
+	hasFields() bool
+}
+
+type semaNormalizedSObjectFieldProvider interface {
+	lookupNormalized(fieldName, normalizedName string) (schema.Field, bool)
+}
+
+func semaLookupSObjectFieldNormalized(provider semaSObjectFieldProvider, fieldName, normalizedName string) (schema.Field, bool) {
+	if normalized, ok := provider.(semaNormalizedSObjectFieldProvider); ok {
+		return normalized.lookupNormalized(fieldName, normalizedName)
+	}
+	return provider.lookup(fieldName)
 }
 
 type semaSObjectFieldMapProvider struct {
-	fields       map[string]schema.Field
-	aliases      map[string]string
-	keys         []string
-	label        string
-	pluralLabel  string
-	sharingModel string
+	fields  map[string]schema.Field
+	aliases map[string]string
+	keys    []string
 }
 
 func newSemaSObjectFieldProvider(namespace string, object schema.Object) semaSObjectFieldProvider {
-	provider := &semaSObjectFieldMapProvider{
-		fields:  make(map[string]schema.Field, len(object.Fields)+16),
-		aliases: make(map[string]string, (len(object.Fields)+16)*3),
-	}
-	provider.mergeLayer(namespace, object.Name, object.Fields, semaEnrichSObjectProviderField)
 	definitionName := object.Name
 	isChangeEvent := false
 	if baseName, ok := semaChangeEventBaseObjectName(object.Name); ok {
 		definitionName = baseName
 		isChangeEvent = true
 	}
-	definition, standardOK := storage.StandardObjectDefinition(definitionName)
-	provider.mergeLayer(namespace, object.Name, semaFallbackStandardSObjectFields(object.Name, !standardOK), semaEnrichSObjectProviderField)
-	if standardOK {
-		provider.label = definition.Label
-		provider.pluralLabel = definition.PluralLabel
-		provider.sharingModel = definition.SharingModel
-		if strings.EqualFold(definitionName, "Account") {
-			storage.EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
-		}
-		enrich := semaEnrichSObjectProviderField
-		if object.Partial {
-			enrich = semaEnrichPartialStandardSObjectProviderField
-		}
-		provider.mergeLayer(namespace, object.Name, semaSchemaFieldsFromStandardDefinition(definition), enrich)
-	}
 	var compatibilityFields []schema.Field
 	if isChangeEvent {
 		compatibilityFields = append(compatibilityFields, schema.Field{Name: "ChangeEventHeader", Type: "EventBus.ChangeEventHeader"})
 	}
-	provider.mergeLayer(namespace, object.Name, compatibilityFields, semaEnrichSObjectProviderField)
-	provider.mergeLayer(namespace, object.Name, semaCommonSObjectSchemaFields(object), semaEnrichSObjectProviderField)
+	return &semaLayeredSObjectFieldProvider{
+		partialStandard: object.Partial,
+		declaredLayers:  1,
+		layers: []semaSObjectFieldProvider{
+			newSemaSObjectFieldMapProvider(namespace, object.Name, object.Fields),
+			newSemaSObjectFieldMapProvider(namespace, object.Name, semaFallbackStandardSObjectFields(object.Name, !storage.IsKnownStandardObject(definitionName))),
+			semaStandardSObjectFieldProviderFor(definitionName),
+			newSemaSObjectFieldMapProvider(namespace, object.Name, compatibilityFields),
+			newSemaSObjectFieldMapProvider(namespace, object.Name, semaCommonSObjectSchemaFields(object)),
+		},
+	}
+}
+
+func newSemaSObjectFieldMapProvider(namespace, objectName string, fields []schema.Field) *semaSObjectFieldMapProvider {
+	provider := &semaSObjectFieldMapProvider{
+		fields:  make(map[string]schema.Field, len(fields)),
+		aliases: make(map[string]string, len(fields)*3),
+	}
+	provider.mergeLayer(namespace, objectName, fields, semaEnrichSObjectProviderField)
 	provider.keys = make([]string, 0, len(provider.fields))
 	for key := range provider.fields {
 		provider.keys = append(provider.keys, key)
 	}
 	sort.Strings(provider.keys)
 	return provider
+}
+
+type semaLayeredSObjectFieldProvider struct {
+	layers          []semaSObjectFieldProvider
+	partialStandard bool
+	declaredLayers  int
+	lookups         sync.Map
+}
+
+type semaSObjectFieldLookup struct {
+	field schema.Field
+	ok    bool
+}
+
+func (p *semaLayeredSObjectFieldProvider) lookup(fieldName string) (schema.Field, bool) {
+	return p.lookupNormalized(fieldName, normalizeName(fieldName))
+}
+
+func (p *semaLayeredSObjectFieldProvider) lookupNormalized(fieldName, normalizedName string) (schema.Field, bool) {
+	if p == nil {
+		return schema.Field{}, false
+	}
+	if cached, ok := p.lookups.Load(normalizedName); ok {
+		result := cached.(semaSObjectFieldLookup)
+		return semaCloneSchemaField(result.field), result.ok
+	}
+	var field schema.Field
+	found := false
+	for i, layer := range p.layers {
+		if layer == nil {
+			continue
+		}
+		if standard, ok := layer.(*semaStandardSObjectFieldProvider); ok &&
+			p.canSkipStandardLookup(standard, fieldName, normalizedName, field, found) {
+			continue
+		}
+		incoming, ok := semaLookupSObjectFieldNormalized(layer, fieldName, normalizedName)
+		if !ok {
+			continue
+		}
+		if !found {
+			field = incoming
+			found = true
+			continue
+		}
+		enrich := semaEnrichSObjectProviderField
+		if p.partialStandard && i == 2 {
+			enrich = semaEnrichPartialStandardSObjectProviderField
+		}
+		field = enrich(field, incoming)
+	}
+	if !found {
+		p.lookups.LoadOrStore(normalizedName, semaSObjectFieldLookup{})
+		return schema.Field{}, false
+	}
+	actual, _ := p.lookups.LoadOrStore(normalizedName, semaSObjectFieldLookup{field: field, ok: true})
+	result := actual.(semaSObjectFieldLookup)
+	return semaCloneSchemaField(result.field), result.ok
+}
+
+func (p *semaLayeredSObjectFieldProvider) canSkipStandardLookup(standard *semaStandardSObjectFieldProvider, fieldName, normalizedName string, field schema.Field, found bool) bool {
+	if p == nil || standard == nil || p.partialStandard {
+		return false
+	}
+	if semaIsCustomAPIName(fieldName) && !semaIsCustomAPIName(standard.objectName) {
+		// The canonical standard-object catalog cannot supply an org-owned custom
+		// field. A declared project field was already checked in an earlier layer.
+		return true
+	}
+	if !found || (normalizedName != normalizeName("Id") && normalizedName != normalizeName("Name")) || len(p.layers) == 0 {
+		return false
+	}
+	if field.Type == "" || strings.EqualFold(field.Type, "Any") || strings.EqualFold(field.Type, "Object") {
+		return false
+	}
+	// Id and Name may bypass the full standard decode only when the concrete
+	// common layer for this object actually contains the requested field.
+	_, ok := semaLookupSObjectFieldNormalized(p.layers[len(p.layers)-1], fieldName, normalizedName)
+	return ok
+}
+
+func (p *semaLayeredSObjectFieldProvider) visit(visit func(schema.Field)) {
+	if p == nil || visit == nil {
+		return
+	}
+	keys := make(map[string]string)
+	for _, layer := range p.layers {
+		if layer == nil {
+			continue
+		}
+		layer.visit(func(field schema.Field) {
+			key := normalizeName(field.Name)
+			if key != "" {
+				keys[key] = field.Name
+			}
+		})
+	}
+	ordered := make([]string, 0, len(keys))
+	for key := range keys {
+		ordered = append(ordered, key)
+	}
+	sort.Strings(ordered)
+	for _, key := range ordered {
+		if field, ok := p.lookup(keys[key]); ok {
+			visit(field)
+		}
+	}
+}
+
+func (p *semaLayeredSObjectFieldProvider) hasFields() bool {
+	if p == nil {
+		return false
+	}
+	for _, layer := range p.layers {
+		if layer != nil && layer.hasFields() {
+			return true
+		}
+	}
+	return false
+}
+
+func (p *semaLayeredSObjectFieldProvider) visitDeclared(visit func(schema.Field)) {
+	if p == nil || visit == nil {
+		return
+	}
+	limit := p.declaredLayers
+	if limit > len(p.layers) {
+		limit = len(p.layers)
+	}
+	for _, layer := range p.layers[:limit] {
+		if layer != nil {
+			layer.visitDeclared(visit)
+		}
+	}
+}
+
+type semaStandardSObjectFieldProvider struct {
+	objectName string
+	once       sync.Once
+	fields     *semaSObjectFieldMapProvider
+}
+
+var semaStandardSObjectFieldProviders sync.Map
+
+func semaStandardSObjectFieldProviderFor(objectName string) semaSObjectFieldProvider {
+	canonical, ok := storage.ResolveKnownStandardObjectName(objectName)
+	if !ok {
+		return nil
+	}
+	key := normalizeName(canonical)
+	if cached, ok := semaStandardSObjectFieldProviders.Load(key); ok {
+		return cached.(*semaStandardSObjectFieldProvider)
+	}
+	provider := &semaStandardSObjectFieldProvider{objectName: canonical}
+	actual, _ := semaStandardSObjectFieldProviders.LoadOrStore(key, provider)
+	return actual.(*semaStandardSObjectFieldProvider)
+}
+
+func (p *semaStandardSObjectFieldProvider) load() *semaSObjectFieldMapProvider {
+	if p == nil {
+		return nil
+	}
+	p.once.Do(func() {
+		definition, ok := storage.StandardObjectDefinition(p.objectName)
+		if !ok {
+			p.fields = newSemaSObjectFieldMapProvider("", p.objectName, nil)
+			return
+		}
+		if strings.EqualFold(p.objectName, "Account") {
+			storage.EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
+		}
+		p.fields = newSemaSObjectFieldMapProvider("", p.objectName, semaSchemaFieldsFromStandardDefinition(definition))
+	})
+	return p.fields
+}
+
+func (p *semaStandardSObjectFieldProvider) lookup(fieldName string) (schema.Field, bool) {
+	return p.lookupNormalized(fieldName, normalizeName(fieldName))
+}
+
+func (p *semaStandardSObjectFieldProvider) lookupNormalized(fieldName, normalizedName string) (schema.Field, bool) {
+	fields := p.load()
+	if fields == nil {
+		return schema.Field{}, false
+	}
+	return fields.lookupNormalized(fieldName, normalizedName)
+}
+
+func (p *semaStandardSObjectFieldProvider) visit(visit func(schema.Field)) {
+	fields := p.load()
+	if fields != nil {
+		fields.visit(visit)
+	}
+}
+
+func (p *semaStandardSObjectFieldProvider) visitDeclared(func(schema.Field)) {}
+
+func (p *semaStandardSObjectFieldProvider) hasFields() bool {
+	return p != nil && storage.IsKnownStandardObject(p.objectName)
 }
 
 func semaSchemaFieldsFromStandardDefinition(definition storage.ObjectDefinition) []schema.Field {
@@ -151,11 +358,22 @@ func (p *semaSObjectFieldMapProvider) addAlias(canonical, alias string) {
 }
 
 func (p *semaSObjectFieldMapProvider) lookup(fieldName string) (schema.Field, bool) {
-	key := normalizeName(fieldName)
+	return p.lookupNormalized(fieldName, normalizeName(fieldName))
+}
+
+func (p *semaSObjectFieldMapProvider) lookupNormalized(fieldName, normalizedName string) (schema.Field, bool) {
+	key := normalizedName
 	if canonical, ok := p.aliases[key]; ok {
 		key = canonical
 	}
 	field, ok := p.fields[key]
+	if !ok && semaIsCustomAPIName(fieldName) && semaHasNamespaceToken(fieldName) {
+		localKey := normalizeName(semaSchemaLocalAPIName(fieldName))
+		if canonical, exists := p.aliases[localKey]; exists {
+			localKey = canonical
+		}
+		field, ok = p.fields[localKey]
+	}
 	if !ok {
 		return schema.Field{}, false
 	}
@@ -171,11 +389,18 @@ func (p *semaSObjectFieldMapProvider) visit(visit func(schema.Field)) {
 	}
 }
 
+func (p *semaSObjectFieldMapProvider) hasFields() bool {
+	return p != nil && len(p.fields) > 0
+}
+
+func (p *semaSObjectFieldMapProvider) visitDeclared(visit func(schema.Field)) {
+	p.visit(visit)
+}
+
 func semaEnrichSObjectProviderField(existing, incoming schema.Field) schema.Field {
 	existing = semaCloneSchemaField(existing)
 	incoming = semaCloneSchemaField(incoming)
-	existingType := normalizeName(existing.Type)
-	if existing.Type == "" || existingType == "any" || existingType == "object" {
+	if existing.Type == "" || strings.EqualFold(existing.Type, "any") || strings.EqualFold(existing.Type, "object") {
 		existing.Type = incoming.Type
 	}
 	if strings.EqualFold(incoming.Name, "PersonDoNotCall") &&

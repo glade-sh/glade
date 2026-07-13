@@ -211,7 +211,6 @@ func prepareAnalysisIndex(index typesys.Index) typesys.Index {
 }
 
 func prepareAnalysisIndexWithSources(index typesys.Index, sources *semaSources) typesys.Index {
-	index = enrichIndexWithStandardSymbols(index)
 	index = enrichIndexWithProjectReferencedSchemaFieldsWithSources(index, sources)
 	index = enrichIndexWithSchemaDerivedObjects(index)
 	return index
@@ -228,29 +227,67 @@ func (a *Analyzer) prepareAnalysisModel(index typesys.Index) {
 		a.deps[normalizeName(dep.Namespace)] = true
 		a.addKnown(dep.Namespace, TypePlatform, dep.SourceRoot)
 	}
+	workspace := make(map[string]TypeReference, len(index.Types))
+	addWorkspace := func(name string, kind TypeKind, source string) {
+		if name == "" {
+			return
+		}
+		key := normalizeName(name)
+		if _, exists := workspace[key]; exists {
+			return
+		}
+		workspace[key] = TypeReference{Name: name, Kind: kind, Source: source}
+	}
 	for _, typ := range index.Types {
 		if !typ.Dependency {
-			a.addKnown(typ.Name, TypeApex, typ.File)
+			addWorkspace(typ.Name, TypeApex, typ.File)
 		} else if typ.Namespace == "" {
-			a.addKnown(typ.Name, TypePlatform, typ.File)
+			addWorkspace(typ.Name, TypePlatform, typ.File)
 		}
 		if typ.Namespace != "" {
 			kind := TypeApex
 			if typ.Dependency {
 				kind = TypePlatform
 			}
-			a.addKnown(typ.Namespace+"."+typ.Name, kind, typ.File)
+			addWorkspace(typ.Namespace+"."+typ.Name, kind, typ.File)
 		}
 		for _, member := range typ.Members {
 			if member.Kind == apexast.DeclarationClass || member.Kind == apexast.DeclarationInterface || member.Kind == apexast.DeclarationEnum {
 				if !typ.Dependency {
-					a.addKnown(member.Name, TypeApex, typ.File)
-					a.addKnown(typ.Name+"."+member.Name, TypeApex, typ.File)
+					addWorkspace(member.Name, TypeApex, typ.File)
+					addWorkspace(typ.Name+"."+member.Name, TypeApex, typ.File)
 				}
 				if typ.Namespace != "" {
-					a.addKnown(typ.Namespace+"."+typ.Name+"."+member.Name, TypeApex, typ.File)
+					kind := TypeApex
+					if typ.Dependency {
+						kind = TypePlatform
+					}
+					addWorkspace(typ.Namespace+"."+typ.Name+"."+member.Name, kind, typ.File)
 				}
 			}
+		}
+	}
+	for key, ref := range workspace {
+		existing, exists := a.known[key]
+		if !exists || existing.Kind == TypePlatform {
+			a.known[key] = ref
+		}
+	}
+	for _, typ := range typesys.StandardPlatformSymbolView() {
+		name := typ.Name
+		if typ.Namespace != "" {
+			name = typ.Namespace + "." + typ.Name
+		}
+		a.addKnown(name, TypePlatform, typ.File)
+		for _, member := range typ.Members {
+			if member.Kind != apexast.DeclarationClass && member.Kind != apexast.DeclarationInterface && member.Kind != apexast.DeclarationEnum {
+				continue
+			}
+			nested := typ.Name + "." + member.Name
+			if typ.Namespace != "" {
+				nested = typ.Namespace + "." + nested
+			}
+			a.addKnown(nested, TypePlatform, typ.File)
 		}
 	}
 }
@@ -1063,12 +1100,14 @@ func semaAnyKnownField(model *semaTypeMemberView, name string) bool {
 		}
 	}
 	if model.state.base == nil {
-		return false
-	}
-	for _, members := range model.state.base.members {
-		if _, ok := members.fields[key]; ok {
-			return true
+		if model.state.platform == nil {
+			return false
 		}
+	} else if model.state.base.hasField(key) {
+		return true
+	}
+	if model.state.platform != nil && model.state.platform.hasField(key) {
+		return true
 	}
 	return false
 }

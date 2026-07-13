@@ -143,6 +143,154 @@ func TestQuerySemanticsProviderKeepsHierarchySetupOwnerTarget(t *testing.T) {
 	}
 }
 
+func TestQuerySemanticsKeepsDeclaredFieldsOnObjectsAndStandardFieldsLayered(t *testing.T) {
+	checker := newQuerySemanticsChecker(typesys.Index{Objects: []schema.Object{{
+		Name:   "Account",
+		Fields: []schema.Field{{Name: "ProjectOnly__c", Type: "Text"}},
+	}}})
+
+	account, ok := checker.object("Account")
+	if !ok {
+		t.Fatal("query checker omitted Account")
+	}
+	if got := account.Fields; len(got) != 1 || got[0].Name != "ProjectOnly__c" {
+		t.Fatalf("query Account.Fields = %#v, want declared fields only", got)
+	}
+	if _, ok := checker.field("Account", "CreatedDate"); !ok {
+		t.Fatal("layered query provider omitted Account.CreatedDate")
+	}
+	account, _ = checker.object("Account")
+	if len(account.Fields) != 1 || account.Fields[0].Name != "ProjectOnly__c" {
+		t.Fatalf("standard lookup mutated Account.Fields: %#v", account.Fields)
+	}
+}
+
+func TestQuerySemanticsDefersStandardProviderDecodeUntilLookup(t *testing.T) {
+	const objectName = "CareProgram"
+	semaStandardSObjectFieldProviders.Delete(normalizeName(objectName))
+	checker := newQuerySemanticsChecker(typesys.Index{Objects: []schema.Object{{
+		Name:   objectName,
+		Fields: []schema.Field{{Name: "ProjectOnly__c", Type: "Text"}},
+	}}})
+
+	provider, ok := checker.providers[normalizeName(objectName)].(*semaLayeredSObjectFieldProvider)
+	if !ok || len(provider.layers) < 3 {
+		t.Fatalf("CareProgram provider = %#v, %v; want layered provider", provider, ok)
+	}
+	standard, ok := provider.layers[2].(*semaStandardSObjectFieldProvider)
+	if !ok || standard == nil {
+		t.Fatalf("CareProgram standard layer = %#v, %v", provider.layers[2], ok)
+	}
+	if standard.fields != nil {
+		t.Fatal("CareProgram standard fields decoded during checker construction")
+	}
+	if _, ok := checker.field(objectName, "ParentProgramId"); !ok {
+		t.Fatal("CareProgram provider omitted standard ParentProgramId")
+	}
+	if standard.fields == nil {
+		t.Fatal("CareProgram standard fields did not decode on lookup")
+	}
+}
+
+func TestQuerySemanticsDefersStandardProviderForCommonAndMissingCustomFields(t *testing.T) {
+	const objectName = "Account"
+	semaStandardSObjectFieldProviders.Delete(normalizeName(objectName))
+	checker := newQuerySemanticsChecker(typesys.Index{Objects: []schema.Object{{
+		Name: objectName,
+		Fields: []schema.Field{
+			{Name: "Id", Type: "Id"},
+			{Name: "Name", Type: "Text"},
+			{Name: "Declared__c", Type: "Checkbox"},
+		},
+	}}})
+	provider := checker.providers[normalizeName(objectName)].(*semaLayeredSObjectFieldProvider)
+	standard := provider.layers[2].(*semaStandardSObjectFieldProvider)
+
+	for _, fieldName := range []string{"iD", "nAmE"} {
+		if _, ok := checker.field(objectName, fieldName); !ok {
+			t.Fatalf("Account provider omitted common %s", fieldName)
+		}
+	}
+	if field, ok := checker.field(objectName, "dEcLaReD__C"); !ok || !strings.EqualFold(field.Type, "Checkbox") {
+		t.Fatalf("declared Account custom field = %#v, %v", field, ok)
+	}
+	if _, ok := checker.field(objectName, "mIsSiNgBeNcHmArKfIeLd__C"); ok {
+		t.Fatal("Account provider accepted a missing custom field")
+	}
+	if standard.fields != nil {
+		t.Fatal("common and missing custom fields decoded the full Account standard provider")
+	}
+	if _, ok := checker.field(objectName, "Website"); !ok {
+		t.Fatal("Account provider omitted standard Website")
+	}
+	if standard.fields == nil {
+		t.Fatal("real standard field did not decode the Account standard provider")
+	}
+
+	const customObject = "ProbeTestObject__c"
+	semaStandardSObjectFieldProviders.Delete(normalizeName(customObject))
+	customChecker := newQuerySemanticsChecker(typesys.Index{Objects: []schema.Object{{Name: customObject}}})
+	if field, ok := customChecker.field(customObject, "Name__c"); !ok || field.Type == "" {
+		t.Fatalf("standard custom-suffix object field = %#v, %v", field, ok)
+	}
+}
+
+func TestQuerySemanticsProviderReturnsIndependentFieldValues(t *testing.T) {
+	checker := newQuerySemanticsChecker(typesys.Index{Objects: []schema.Object{{Name: "Account"}}})
+	first, ok := checker.field("Account", "OwnerId")
+	if !ok || len(first.ReferenceTo) == 0 {
+		t.Fatalf("Account.OwnerId = %#v, %v", first, ok)
+	}
+	want := first.ReferenceTo[0]
+	first.ReferenceTo[0] = "Mutated__c"
+	second, ok := checker.field("Account", "OwnerId")
+	if !ok || len(second.ReferenceTo) == 0 || second.ReferenceTo[0] != want {
+		t.Fatalf("second Account.OwnerId = %#v, %v; shared field data escaped", second, ok)
+	}
+}
+
+func TestQuerySemanticsActivityFieldsStayInProviderOverlay(t *testing.T) {
+	checker := newQuerySemanticsChecker(typesys.Index{Objects: []schema.Object{
+		{Name: "Activity", Fields: []schema.Field{{Name: "ActivityOnly__c", Type: "Text"}}},
+		{Name: "Task", Fields: []schema.Field{{Name: "TaskOnly__c", Type: "Text"}}},
+		{Name: "Event"},
+	}})
+
+	for _, target := range []string{"Task", "Event"} {
+		if _, ok := checker.field(target, "ActivityOnly__c"); !ok {
+			t.Fatalf("%s provider omitted Activity field", target)
+		}
+		object, _ := checker.object(target)
+		for _, field := range object.Fields {
+			if field.Name == "ActivityOnly__c" {
+				t.Fatalf("Activity field was eagerly copied into %s.Fields", target)
+			}
+		}
+	}
+	if _, ok := checker.field("Task", "TaskOnly__c"); !ok {
+		t.Fatal("Task provider lost its declared field")
+	}
+}
+
+func TestQuerySemanticsLayeredFieldLookupAllocationBound(t *testing.T) {
+	checker := newQuerySemanticsChecker(typesys.Index{Objects: []schema.Object{{
+		Name:   "Account",
+		Fields: []schema.Field{{Name: "Id", Type: "Id"}, {Name: "Name", Type: "Text"}},
+	}}})
+	if _, ok := checker.field("Account", "Name"); !ok {
+		t.Fatal("query checker omitted Account.Name")
+	}
+
+	allocs := testing.AllocsPerRun(100, func() {
+		if _, ok := checker.field("Account", "Name"); !ok {
+			t.Fatal("query checker omitted Account.Name")
+		}
+	})
+	if allocs > 3 {
+		t.Fatalf("layered Account.Name lookup allocated %.0f times, want <= 3", allocs)
+	}
+}
+
 func TestAnalyzeSOQLRelationshipAndAggregateAliasDiagnostics(t *testing.T) {
 	t.Parallel()
 	source := `

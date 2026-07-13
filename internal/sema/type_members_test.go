@@ -303,6 +303,16 @@ func TestSemaStandardSObjectMembersCacheIsNamesOnly(t *testing.T) {
 	if len(members) != 0 {
 		t.Fatalf("semaStandardSObjectNameForKey materialized %d member sets", len(members))
 	}
+	originalName := names[0]
+	names[0] = "CallerCorruption"
+	members[normalizeName("CallerCorruption")] = typeMembers{name: "CallerCorruption"}
+	namesAgain, membersAgain := semaStandardSObjectMembers()
+	if namesAgain[0] != originalName {
+		t.Fatalf("caller mutation changed cached standard object name from %q to %q", originalName, namesAgain[0])
+	}
+	if _, leaked := membersAgain[normalizeName("CallerCorruption")]; leaked {
+		t.Fatal("caller mutation changed cached standard object members")
+	}
 }
 
 func resetSemaStandardSObjectMembersCacheForTest() {
@@ -312,6 +322,18 @@ func resetSemaStandardSObjectMembersCacheForTest() {
 		members   map[string]typeMembers
 		nameByKey map[string]string
 	}{}
+}
+
+func TestStandardChildRelationshipMembersDoNotExposeSharedCache(t *testing.T) {
+	relationships := semaStandardChildRelationshipMembers("Account")
+	want := append([]semaStandardChildRelationshipMember(nil), relationships...)
+	if len(want) == 0 {
+		t.Fatal("Account has no standard child relationships for cache isolation test")
+	}
+	relationships[0].name = "CallerCorruption"
+	if got := semaStandardChildRelationshipMembers("Account"); !reflect.DeepEqual(got, want) {
+		t.Fatalf("caller mutation changed standard child relationships: got %#v, want %#v", got, want)
+	}
 }
 
 func TestAddStandardSObjectMembersUsesLazyPlaceholdersForUnreferencedObjects(t *testing.T) {
@@ -392,5 +414,412 @@ func TestTypeMemberShortCandidateCollisionPreservesIndexOrder(t *testing.T) {
 	want := []string{normalizeName("First.Shared"), normalizeName("Second.Shared")}
 	if got := model.shortCandidates[normalizeName("Shared")]; !reflect.DeepEqual(got, want) {
 		t.Fatalf("Shared candidates = %#v, want %#v", got, want)
+	}
+}
+
+func TestPrepareAnalysisIndexKeepsPlatformSymbolsOutOfWorkspaceIndex(t *testing.T) {
+	projectType := typesys.TypeSymbol{Kind: apexast.DeclarationClass, Name: "ProjectOnly"}
+	index := typesys.Index{Types: []typesys.TypeSymbol{projectType}}
+
+	prepared := prepareAnalysisIndex(index)
+	if !reflect.DeepEqual(prepared.Types, []typesys.TypeSymbol{projectType}) {
+		t.Fatalf("prepared workspace types = %#v, want project-only index", prepared.Types)
+	}
+
+	analyzer := NewAnalyzer()
+	analyzer.prepareAnalysisContext(prepared, AnalyzeOptions{})
+	analyzer.prepareAnalysisModel(prepared)
+	for _, symbol := range typesys.StandardPlatformSymbolView() {
+		name := symbol.Name
+		if symbol.Namespace != "" {
+			name = symbol.Namespace + "." + symbol.Name
+		}
+		if !analyzer.hasKnown(name) {
+			t.Fatalf("platform type %q is not known without index hydration", name)
+		}
+	}
+}
+
+func TestTypeMemberStateResolvesPlatformOutsideWorkspaceIndex(t *testing.T) {
+	state := buildSemaTypeMemberState(typesys.Index{}, nil)
+	if _, _, ok := semaLookupTypeMembers(state.view(), "Math"); !ok {
+		t.Fatal("analysis state cannot resolve platform Math outside the workspace index")
+	}
+}
+
+func TestTypeMemberStateSharesImmutablePlatformModel(t *testing.T) {
+	first := buildSemaTypeMemberState(typesys.Index{}, nil)
+	second := buildSemaTypeMemberState(typesys.Index{}, nil)
+	if first.platform == nil || first.platform.platform == nil || len(first.platform.platform.symbols) == 0 {
+		t.Fatal("analysis state has no platform member model")
+	}
+	if first.platform != second.platform {
+		t.Fatal("analysis states did not share the process platform model")
+	}
+}
+
+func TestLazyPlatformTypeMemberModelDoesNotCacheUnknownLookups(t *testing.T) {
+	model := newSemaLazyPlatformTypeMemberModel(nil)
+	cacheSize := func() int {
+		size := 0
+		model.lookups.Range(func(_, _ any) bool {
+			size++
+			return true
+		})
+		return size
+	}
+
+	for i := 0; i < 256; i++ {
+		key := "projectonlytype" + strings.Repeat("x", i+1)
+		if _, ok := model.lookup(key); ok {
+			t.Fatalf("unknown lookup %q unexpectedly resolved", key)
+		}
+	}
+	if size := cacheSize(); size != 0 {
+		t.Fatalf("unknown lookups grew shared platform cache to %d entries", size)
+	}
+}
+
+func TestLazyPlatformTypeMemberModelDoesNotExposeCachedMathMembers(t *testing.T) {
+	model := buildSemaPlatformTypeMemberModel().platform
+	key := normalizeName("Math")
+	fieldKey := normalizeName("PI")
+	first, ok := model.lookup(key)
+	if !ok {
+		t.Fatal("shared platform model omitted Math")
+	}
+	pi, ok := first.fields[fieldKey]
+	if !ok || len(pi.Modifiers) == 0 {
+		t.Fatalf("Math.PI = %#v, %v; want a field with modifiers", pi, ok)
+	}
+	wantModifier := pi.Modifiers[0]
+	first.fields[normalizeName("CallerOnly")] = typesys.MemberSymbol{Name: "CallerOnly"}
+	pi.Modifiers[0] = "caller-mutated"
+	first.fields[fieldKey] = pi
+
+	second, ok := model.lookup(key)
+	if !ok {
+		t.Fatal("shared platform model lost Math after caller mutation")
+	}
+	if _, leaked := second.fields[normalizeName("CallerOnly")]; leaked {
+		t.Fatal("caller field mutation leaked into the shared Math cache")
+	}
+	if got := second.fields[fieldKey].Modifiers[0]; got != wantModifier {
+		t.Fatalf("caller modifier mutation leaked into Math.PI: got %q, want %q", got, wantModifier)
+	}
+
+	var workers sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		workers.Add(1)
+		go func() {
+			defer workers.Done()
+			members, lookupOK := model.lookup(key)
+			if !lookupOK {
+				return
+			}
+			field := members.fields[fieldKey]
+			field.Modifiers[0] = "concurrent-caller-mutation"
+			members.fields[fieldKey] = field
+		}()
+	}
+	workers.Wait()
+	final, ok := model.lookup(key)
+	if !ok || final.fields[fieldKey].Modifiers[0] != wantModifier {
+		t.Fatalf("concurrent caller mutation changed shared Math.PI: %#v, %v", final.fields[fieldKey], ok)
+	}
+}
+
+func TestLazyPlatformTypeMemberModelDeepClonesSourceAndLookupSlices(t *testing.T) {
+	newSymbol := func() typesys.TypeSymbol {
+		return typesys.TypeSymbol{
+			Kind:       apexast.DeclarationClass,
+			Name:       "SharedPlatformType",
+			Interfaces: []string{"Comparable"},
+			Members: []typesys.MemberSymbol{
+				{
+					Kind:       apexast.DeclarationMethod,
+					Name:       "run",
+					Type:       "void",
+					Modifiers:  []string{"public"},
+					Parameters: []apexast.Parameter{{Name: "value", Type: "String", Modifiers: []string{"final"}}},
+					Accessors:  []apexast.Accessor{{Kind: "get", Modifiers: []string{"public"}}},
+				},
+				{
+					Kind:       apexast.DeclarationConstructor,
+					Name:       "SharedPlatformType",
+					Modifiers:  []string{"public"},
+					Parameters: []apexast.Parameter{{Name: "value", Type: "String", Modifiers: []string{"final"}}},
+				},
+				{
+					Kind:      apexast.DeclarationProperty,
+					Name:      "Value",
+					Type:      "String",
+					Modifiers: []string{"public"},
+					Accessors: []apexast.Accessor{{Kind: "get", Modifiers: []string{"public"}}},
+				},
+			},
+		}
+	}
+
+	symbols := []typesys.TypeSymbol{newSymbol()}
+	want := semaTypeMembersFromPlatformSymbol(newSymbol())
+	model := newSemaLazyPlatformTypeMemberModel(symbols)
+	key := normalizeName(symbols[0].Name)
+	first, ok := model.lookup(key)
+	if !ok {
+		t.Fatal("synthetic platform symbol did not resolve")
+	}
+	first.interfaces[0] = "CallerMutation"
+	first.methods[normalizeName("run")][0].Modifiers[0] = "caller-mutated"
+	first.methods[normalizeName("run")][0].Parameters[0].Type = "CallerMutation"
+	first.methods[normalizeName("run")][0].Parameters[0].Modifiers[0] = "caller-mutated"
+	first.methods[normalizeName("run")][0].Accessors[0].Kind = "caller-mutated"
+	first.methods[normalizeName("run")][0].Accessors[0].Modifiers[0] = "caller-mutated"
+	first.constructors[0].Parameters[0].Type = "CallerMutation"
+	property := first.fields[normalizeName("Value")]
+	property.Modifiers[0] = "caller-mutated"
+	property.Accessors[0].Kind = "caller-mutated"
+	property.Accessors[0].Modifiers[0] = "caller-mutated"
+	first.fields[normalizeName("Value")] = property
+
+	symbols[0].Interfaces[0] = "SourceMutation"
+	symbols[0].Members[0].Modifiers[0] = "source-mutated"
+	symbols[0].Members[0].Parameters[0].Type = "SourceMutation"
+	symbols[0].Members[0].Parameters[0].Modifiers[0] = "source-mutated"
+	symbols[0].Members[0].Accessors[0].Kind = "source-mutated"
+	symbols[0].Members[0].Accessors[0].Modifiers[0] = "source-mutated"
+
+	second, ok := model.lookup(key)
+	if !ok || !reflect.DeepEqual(second, want) {
+		t.Fatalf("shared platform members changed after caller/source mutation:\ngot:  %#v\nwant: %#v", second, want)
+	}
+}
+
+func TestTypeMemberViewDoesNotExposeSharedPlatformCandidateSlices(t *testing.T) {
+	lazy := newSemaLazyPlatformTypeMemberModel([]typesys.TypeSymbol{
+		{Kind: apexast.DeclarationClass, Name: "First.Shared"},
+		{Kind: apexast.DeclarationClass, Name: "Second.Shared"},
+	})
+	platform := &semaTypeMemberModel{members: map[string]typeMembers{}, platform: lazy}
+	view := newSemaTypeMemberStateWithPlatform(nil, platform).view()
+	short := normalizeName("Shared")
+	candidates := view.shortCandidateKeys(short)
+	want := append([]string(nil), candidates...)
+	if len(want) < 2 {
+		t.Fatalf("shared candidate list = %#v, want at least two entries", want)
+	}
+	candidates[0] = "caller-corruption"
+	if got := view.shortCandidateKeys(short); !reflect.DeepEqual(got, want) {
+		t.Fatalf("caller mutation changed shared candidates: got %#v, want %#v", got, want)
+	}
+
+	var workers sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		workers.Add(1)
+		go func() {
+			defer workers.Done()
+			got := view.shortCandidateKeys(short)
+			got[0] = "concurrent-caller-corruption"
+		}()
+	}
+	workers.Wait()
+	if got := view.shortCandidateKeys(short); !reflect.DeepEqual(got, want) {
+		t.Fatalf("concurrent caller mutation changed shared candidates: got %#v, want %#v", got, want)
+	}
+}
+
+func TestTypeMemberHydrationStaysAnalysisLocal(t *testing.T) {
+	base := buildTypeMembers(typesys.Index{})
+	first := newSemaTypeMemberState(base)
+	second := newSemaTypeMemberState(base)
+	key := normalizeName("Account")
+
+	if _, _, ok := semaLookupTypeMembers(first.view(), "Account"); !ok {
+		t.Fatal("first state could not hydrate Account")
+	}
+	if len(first.hydrated[key].fields) == 0 {
+		t.Fatal("first state did not retain local Account hydration")
+	}
+	if _, exists := second.hydrated[key]; exists {
+		t.Fatal("Account hydration leaked into a second analysis state")
+	}
+	if placeholder := base.members[key]; placeholder.fields != nil || placeholder.standardSObjectFieldsLoaded {
+		t.Fatalf("Account hydration mutated shared base placeholder: %#v", placeholder)
+	}
+}
+
+func TestTypeMemberProjectOverlayShadowsPlatformWithoutMutation(t *testing.T) {
+	const sentinel = "projectSentinel"
+	projectMath := typesys.TypeSymbol{
+		Kind: apexast.DeclarationClass,
+		Name: "Math",
+		Members: []typesys.MemberSymbol{{
+			Kind: apexast.DeclarationField,
+			Name: sentinel,
+			Type: "String",
+		}},
+	}
+	platform := semaPlatformTypeMemberModel()
+	before, ok := platform.lookup(normalizeName(projectMath.Name))
+	if !ok {
+		t.Fatal("shared platform model omitted Math")
+	}
+	state := buildSemaTypeMemberState(typesys.Index{Types: []typesys.TypeSymbol{projectMath}}, nil)
+
+	members, _, ok := semaLookupTypeMembers(state.view(), projectMath.Name)
+	if !ok {
+		t.Fatal("project Math overlay is missing")
+	}
+	if _, ok := members.fields[normalizeName(sentinel)]; !ok {
+		t.Fatalf("project Math fields = %#v, want %s", members.fields, sentinel)
+	}
+	after, ok := platform.lookup(normalizeName(projectMath.Name))
+	if !ok || !reflect.DeepEqual(after, before) {
+		t.Fatal("project overlay mutated the shared platform Math members")
+	}
+	if _, ok := after.fields[normalizeName(sentinel)]; ok {
+		t.Fatal("project field leaked into the shared platform model")
+	}
+}
+
+func TestTypeMemberDependencyOverlayKeepsQualifiedAndShortResolution(t *testing.T) {
+	index := typesys.Index{Types: []typesys.TypeSymbol{
+		{
+			Kind:       apexast.DeclarationClass,
+			Name:       "Outer.Inner",
+			Namespace:  "pkg",
+			Dependency: true,
+			Artifact:   true,
+			Members: []typesys.MemberSymbol{{
+				Kind: apexast.DeclarationField,
+				Name: "dependencyField",
+				Type: "String",
+			}},
+		},
+		{Kind: apexast.DeclarationClass, Name: "Local.Inner"},
+	}}
+	state := buildSemaTypeMemberState(index, nil)
+	view := state.view()
+
+	if _, _, ok := semaLookupTypeMembers(view, "Outer.Inner"); ok {
+		t.Fatal("artifact dependency resolved without its namespace")
+	}
+	dependency, _, ok := semaLookupTypeMembers(view, "pkg.Outer.Inner")
+	if !ok || dependency.name != "pkg.Outer.Inner" {
+		t.Fatalf("qualified dependency lookup = %#v, %v", dependency, ok)
+	}
+	candidates := view.shortCandidateKeys(normalizeName("Inner"))
+	wantPrefix := []string{normalizeName("pkg.Outer.Inner"), normalizeName("Local.Inner")}
+	if len(candidates) < len(wantPrefix) || !reflect.DeepEqual(candidates[:len(wantPrefix)], wantPrefix) {
+		t.Fatalf("short candidates = %#v, want workspace index order prefix %#v", candidates, wantPrefix)
+	}
+}
+
+func TestTypeMemberPlatformLayerPreservesConstructorsInterfacesEnumsAndStaticFields(t *testing.T) {
+	view := buildSemaTypeMemberState(typesys.Index{}, nil).view()
+
+	exception, _, ok := semaLookupTypeMembers(view, "Exception")
+	if !ok || len(exception.constructors) != 5 {
+		t.Fatalf("Exception constructors = %#v, %v; want five platform overloads", exception.constructors, ok)
+	}
+	iterator, _, ok := semaLookupTypeMembers(view, "Iterator")
+	if !ok || iterator.kind != apexast.DeclarationInterface || len(iterator.methods[normalizeName("hasNext")]) == 0 {
+		t.Fatalf("Iterator platform shape = %#v, %v", iterator, ok)
+	}
+	accessLevel, _, ok := semaLookupTypeMembers(view, "AccessLevel")
+	if !ok || accessLevel.kind != apexast.DeclarationEnum || len(accessLevel.methods[normalizeName("withPermissionSetId")]) == 0 {
+		t.Fatalf("AccessLevel platform shape = %#v, %v", accessLevel, ok)
+	}
+	math, _, ok := semaLookupTypeMembers(view, "Math")
+	pi, hasPI := math.fields[normalizeName("PI")]
+	if !ok || !hasPI || !hasModifier(pi.Modifiers, "static") {
+		t.Fatalf("Math.PI platform shape = %#v, %v, %v", pi, ok, hasPI)
+	}
+}
+
+func TestExportTypesWorkspaceSymbolsShadowPlatformWithoutMutatingPlatformModel(t *testing.T) {
+	const (
+		mathFile     = "project/Math.cls"
+		databaseFile = "project/Database.cls"
+		sentinel     = "projectSentinel"
+	)
+	platform := semaPlatformTypeMemberModel()
+	mathBefore, mathOK := platform.lookup(normalizeName("Math"))
+	databaseBefore, databaseOK := platform.lookup(normalizeName("Database"))
+	if !mathOK || !databaseOK {
+		t.Fatalf("shared platform lookup Math=%v Database=%v, want both", mathOK, databaseOK)
+	}
+
+	result := AnalyzeWithOptions(typesys.Index{Types: []typesys.TypeSymbol{
+		{
+			Kind: apexast.DeclarationClass,
+			Name: "Math",
+			File: mathFile,
+			Members: []typesys.MemberSymbol{{
+				Kind: apexast.DeclarationField,
+				Name: sentinel,
+				Type: "String",
+			}},
+		},
+		{
+			Kind: apexast.DeclarationClass,
+			Name: "Database",
+			File: databaseFile,
+			Members: []typesys.MemberSymbol{{
+				Kind: apexast.DeclarationClass,
+				Name: "QueryLocator",
+			}},
+		},
+	}}, AnalyzeOptions{ExportTypes: true})
+
+	for name, want := range map[string]TypeReference{
+		"Math":                  {Name: "Math", Kind: TypeApex, Source: mathFile},
+		"Database.QueryLocator": {Name: "Database.QueryLocator", Kind: TypeApex, Source: databaseFile},
+	} {
+		if got := result.Types[name]; got != want {
+			t.Errorf("exported %s = %#v, want %#v", name, got, want)
+		}
+	}
+	mathAfter, mathOK := platform.lookup(normalizeName("Math"))
+	if !mathOK || !reflect.DeepEqual(mathAfter, mathBefore) {
+		t.Fatal("exporting project Math mutated the shared platform Math model")
+	}
+	databaseAfter, databaseOK := platform.lookup(normalizeName("Database"))
+	if !databaseOK || !reflect.DeepEqual(databaseAfter, databaseBefore) {
+		t.Fatal("exporting project Database mutated the shared platform Database model")
+	}
+}
+
+func TestExportTypesDependencySymbolShadowsPlatformSource(t *testing.T) {
+	const dependencyFile = "dependencies/base/Math.cls"
+	result := AnalyzeWithOptions(typesys.Index{Types: []typesys.TypeSymbol{
+		{
+			Kind:       apexast.DeclarationClass,
+			Name:       "Math",
+			File:       dependencyFile,
+			Dependency: true,
+			Artifact:   true,
+		},
+		{
+			Kind:       apexast.DeclarationClass,
+			Name:       "InboundEmail",
+			Namespace:  "Messaging",
+			File:       dependencyFile,
+			Dependency: true,
+			Artifact:   true,
+			Members: []typesys.MemberSymbol{{
+				Kind: apexast.DeclarationClass,
+				Name: "Header",
+			}},
+		},
+	}}, AnalyzeOptions{ExportTypes: true})
+
+	for name, want := range map[string]TypeReference{
+		"Math":                          {Name: "Math", Kind: TypePlatform, Source: dependencyFile},
+		"Messaging.InboundEmail.Header": {Name: "Messaging.InboundEmail.Header", Kind: TypePlatform, Source: dependencyFile},
+	} {
+		if got := result.Types[name]; got != want {
+			t.Errorf("exported dependency %s = %#v, want %#v", name, got, want)
+		}
 	}
 }

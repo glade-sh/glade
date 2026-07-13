@@ -25,7 +25,7 @@ func semaCanonicalPlatformAlias(typeName string) string {
 		}
 		return semaCanonicalPlatformAlias(base) + "<" + strings.Join(canonicalArgs, ",") + ">"
 	}
-	if canonical, ok := semaPlatformAliases()[normalizeName(typeName)]; ok {
+	if canonical, ok := semaPlatformAlias(typeName); ok {
 		return canonical
 	}
 	return typeName
@@ -49,7 +49,7 @@ func semaExplicitPlatformQualifiedName(typeName string) bool {
 	}
 }
 
-func semaPlatformAliases() map[string]string {
+func ensureSemaPlatformAliases() {
 	semaPlatformAliasOnce.Do(func() {
 		aliases := map[string]string{}
 		for _, name := range typesys.StandardSystemNamespaceTypeNames() {
@@ -64,5 +64,19 @@ func semaPlatformAliases() map[string]string {
 		aliases[normalizeName("System.APEX_OBJECT")] = "Object"
 		semaPlatformAliasMap = aliases
 	})
-	return semaPlatformAliasMap
+}
+
+func semaPlatformAlias(typeName string) (string, bool) {
+	ensureSemaPlatformAliases()
+	canonical, ok := semaPlatformAliasMap[normalizeName(typeName)]
+	return canonical, ok
+}
+
+func semaPlatformAliases() map[string]string {
+	ensureSemaPlatformAliases()
+	aliases := make(map[string]string, len(semaPlatformAliasMap))
+	for key, canonical := range semaPlatformAliasMap {
+		aliases[key] = canonical
+	}
+	return aliases
 }
