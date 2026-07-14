@@ -71,9 +71,10 @@ func runTestViaServer(
 	debug bool,
 	w io.Writer,
 ) (testreport.Run, error) {
-	resp, err := testdaemon.Run(ctx, socket, testdaemon.Request{
+	resp, err := testdaemon.RunV1(ctx, socket, testdaemon.RunRequestV1{
 		Filter:       filter,
 		ChangedSince: changedSince,
+		Parallelism:  1,
 	})
 	if err != nil {
 		return testreport.Run{}, err
@@ -113,18 +114,76 @@ func tryTestServerRun(
 	debug bool,
 	w io.Writer,
 ) (testreport.Run, bool, error) {
-	socket := testdaemon.ServeSocketPath(root)
-	if !testdaemon.ServerReachable(ctx, socket) {
-		if requireConnect {
-			return testreport.Run{}, false, errors.New("test server is not running; start one with: glade test serve --project " + root)
-		}
-		return testreport.Run{}, false, nil
+	resp, used, err := tryTestServerRequest(ctx, root, requireConnect, testdaemon.RunRequestV1{
+		Filter:       filter,
+		ChangedSince: changedSince,
+		Parallelism:  1,
+	})
+	if err != nil || !used {
+		return testreport.Run{}, used, err
 	}
-	result, err := runTestViaServer(ctx, socket, filter, changedSince, format, junitPath, debug, w)
+	if !resp.OK || resp.Run == nil {
+		message := strings.TrimSpace(resp.Error)
+		if message == "" {
+			message = "test server run failed"
+		}
+		return testreport.Run{}, true, errors.New(message)
+	}
+	result := *resp.Run
+	if debug {
+		err = serveDAPSnapshot(testRunSnapshot(result), w)
+	} else if junitPath != "" {
+		err = writeJUnitFile(junitPath, result)
+	}
+	if err == nil {
+		switch format {
+		case "json":
+			err = testreport.WriteJSON(w, result)
+		default:
+			err = testreport.WriteConsole(w, result)
+		}
+	}
 	if err == nil {
 		if recordErr := writeLastFailedTests(root, result); recordErr != nil {
 			return result, true, recordErr
 		}
 	}
 	return result, true, err
+}
+
+func tryTestServerRequest(
+	ctx context.Context,
+	root string,
+	requireConnect bool,
+	run testdaemon.RunRequestV1,
+) (testdaemon.ResponseV1, bool, error) {
+	socket := testdaemon.ServeSocketPath(root)
+	ping, err := testdaemon.PingV1(ctx, socket)
+	if err != nil {
+		if testdaemon.IsServerUnavailable(err) {
+			if requireConnect {
+				return testdaemon.ResponseV1{}, false, errors.New("test server is not running; start one with: glade test serve --project " + root)
+			}
+			return testdaemon.ResponseV1{}, false, nil
+		}
+		return testdaemon.ResponseV1{}, true, fmt.Errorf("test server protocol mismatch; restart the test server: %w", err)
+	}
+	if !ping.OK || ping.Op != testdaemon.OpPong {
+		return testdaemon.ResponseV1{}, true, errors.New("test server protocol mismatch; restart the test server")
+	}
+
+	resp, err := testdaemon.RunV1(ctx, socket, run)
+	if err != nil {
+		if resp.Version == testdaemon.ProtocolVersionV1 && resp.Op == testdaemon.OpError {
+			return resp, true, err
+		}
+		if testdaemon.IsServerUnavailable(err) {
+			return testdaemon.ResponseV1{}, true, fmt.Errorf("test server disconnected before the run; restart the test server: %w", err)
+		}
+		return testdaemon.ResponseV1{}, true, fmt.Errorf("test server protocol request failed; restart the test server: %w", err)
+	}
+	if resp.Op != testdaemon.OpRunResult {
+		return testdaemon.ResponseV1{}, true, fmt.Errorf("test server protocol returned operation %q; restart the test server", resp.Op)
+	}
+	return resp, true, nil
 }

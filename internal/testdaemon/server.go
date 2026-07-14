@@ -2,8 +2,8 @@ package testdaemon
 
 import (
 	"bufio"
+	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -11,13 +11,18 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/watch"
+)
+
+var (
+	serverReadIOTimeoutV1  = 10 * time.Second
+	serverWriteIOTimeoutV1 = 10 * time.Second
 )
 
 type ServerConfig struct {
@@ -40,7 +45,10 @@ type Server struct {
 	warming  bool
 	ready    bool
 
-	runMu sync.Mutex
+	runOnce      sync.Once
+	runAdmission chan struct{}
+	runExecution chan struct{}
+	runRequestV1 func(context.Context, RunRequestV1) (testreport.Run, watch.TestSelection, *ClassShardPlanV1, error)
 }
 
 func NewServer(cfg ServerConfig) (*Server, error) {
@@ -162,7 +170,11 @@ func (s *Server) ListenAndServe(ctx context.Context, log io.Writer) error {
 				}
 				return
 			}
-			go s.serveConn(ctx, conn)
+			go func() {
+				if err := s.serveConn(ctx, conn); err != nil && log != nil {
+					fmt.Fprintf(log, "glade test serve: connection error: %v\n", err)
+				}
+			}()
 		}
 	}()
 
@@ -189,65 +201,216 @@ func (s *Server) Close() error {
 	return nil
 }
 
-func (s *Server) serveConn(ctx context.Context, conn net.Conn) {
+func (s *Server) serveConn(ctx context.Context, conn net.Conn) error {
 	defer conn.Close()
+	if err := conn.SetReadDeadline(time.Now().Add(serverReadIOTimeoutV1)); err != nil {
+		return fmt.Errorf("set test daemon request read deadline: %w", err)
+	}
 	reader := bufio.NewReader(conn)
-	line, err := reader.ReadBytes('\n')
-	if err != nil && len(line) == 0 {
-		return
+	var request RequestV1
+	if err := decodeProtocolV1Frame(reader, &request); err != nil {
+		if clearErr := conn.SetReadDeadline(time.Time{}); clearErr != nil {
+			return fmt.Errorf("clear test daemon request read deadline: %w", clearErr)
+		}
+		return writeServerResponseV1(conn, ResponseV1{
+			Version: ProtocolVersionV1,
+			Op:      OpError,
+			ID:      request.ID,
+			OK:      false,
+			Error:   err.Error(),
+		})
 	}
-	var req Request
-	if err := json.Unmarshal(trimLine(line), &req); err != nil {
-		_ = writeResponse(conn, Response{Op: OpError, OK: false, Error: err.Error()})
-		return
+	if err := conn.SetReadDeadline(time.Time{}); err != nil {
+		return fmt.Errorf("clear test daemon request read deadline: %w", err)
 	}
-	resp := s.handle(ctx, req)
-	_ = writeResponse(conn, resp)
+	if err := validateProtocolVersionV1(request.Version); err != nil {
+		return writeServerResponseV1(conn, ResponseV1{
+			Version: ProtocolVersionV1,
+			Op:      OpError,
+			ID:      request.ID,
+			OK:      false,
+			Error:   err.Error(),
+		})
+	}
+	if request.Op != OpRun {
+		return writeServerResponseV1(conn, s.handleV1(ctx, request))
+	}
+	runCtx, cancelRun := context.WithCancel(ctx)
+	stopMonitor := monitorRunConnectionV1(conn, reader, cancelRun)
+	response := s.handleV1(runCtx, request)
+	if err := stopMonitor(); err != nil {
+		cancelRun()
+		return err
+	}
+	cancelRun()
+	return writeServerResponseV1(conn, response)
 }
 
-func (s *Server) handle(ctx context.Context, req Request) Response {
-	switch req.Op {
-	case OpPing:
-		ready, warming := s.status()
-		return Response{
-			Op:      OpPong,
-			OK:      true,
-			Ready:   ready,
-			Warming: warming,
-			Project: s.daemon.Root(),
+func monitorRunConnectionV1(conn net.Conn, reader *bufio.Reader, cancel context.CancelFunc) func() error {
+	stop := make(chan struct{})
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_, _ = reader.ReadByte()
+		select {
+		case <-stop:
+			return
+		default:
+			cancel()
 		}
-	case OpShutdown:
-		go func() { _ = s.Close() }()
-		return Response{Op: OpShutdownAck, OK: true}
-	case OpRun:
-		if err := s.waitReady(ctx); err != nil {
-			return Response{Op: OpError, ID: req.ID, OK: false, Error: err.Error()}
+	}()
+	return func() error {
+		close(stop)
+		if err := conn.SetReadDeadline(time.Now()); err != nil {
+			return fmt.Errorf("stop test daemon disconnect monitor: %w", err)
 		}
-		s.runMu.Lock()
-		defer s.runMu.Unlock()
-		opts := apextest.Options{Filter: req.Filter}
-		var (
-			run       testreport.Run
-			selection watch.TestSelection
-			err       error
-		)
-		if trimmed := strings.TrimSpace(req.ChangedSince); trimmed != "" {
-			run, selection, err = s.daemon.RunChangedSinceOptions(trimmed, opts)
-		} else {
-			run = s.daemon.RunOptions(opts)
+		<-done
+		if err := conn.SetReadDeadline(time.Time{}); err != nil {
+			return fmt.Errorf("clear test daemon disconnect monitor deadline: %w", err)
 		}
+		return nil
+	}
+}
+
+func writeServerResponseV1(conn net.Conn, response ResponseV1) error {
+	var frame bytes.Buffer
+	if err := EncodeResponseV1(&frame, response); err != nil {
+		frame.Reset()
+		fallback := ResponseV1{
+			Version: ProtocolVersionV1,
+			Op:      OpError,
+			ID:      response.ID,
+			OK:      false,
+			Error:   fmt.Sprintf("test daemon response could not be encoded within the maximum protocol frame size: %v", err),
+		}
+		if fallbackErr := EncodeResponseV1(&frame, fallback); fallbackErr != nil {
+			return fmt.Errorf("encode compact test daemon response error: %w", fallbackErr)
+		}
+	}
+	if err := conn.SetWriteDeadline(time.Now().Add(serverWriteIOTimeoutV1)); err != nil {
+		return fmt.Errorf("set test daemon response write deadline: %w", err)
+	}
+	data := frame.Bytes()
+	for len(data) > 0 {
+		n, err := conn.Write(data)
 		if err != nil {
-			return Response{Op: OpError, ID: req.ID, OK: false, Error: err.Error()}
+			return fmt.Errorf("write test daemon response: %w", err)
 		}
-		return Response{
-			Op:        OpRunResult,
-			ID:        req.ID,
-			OK:        true,
-			Run:       &run,
-			Selection: &selection,
+		if n <= 0 {
+			return fmt.Errorf("write test daemon response: %w", io.ErrShortWrite)
 		}
+		data = data[n:]
+	}
+	return nil
+}
+
+func (s *Server) handleV1(ctx context.Context, request RequestV1) ResponseV1 {
+	response := ResponseV1{
+		Version: ProtocolVersionV1,
+		ID:      request.ID,
+		OK:      false,
+	}
+	switch request.Op {
+	case OpPing:
+		if request.Run != nil {
+			response.Op = OpError
+			response.Error = "ping request cannot include run policy"
+			return response
+		}
+		ready, warming := s.status()
+		response.Op = OpPong
+		response.OK = true
+		response.Ready = ready
+		response.Warming = warming
+		response.Project = s.daemon.Root()
+		return response
+	case OpShutdown:
+		if request.Run != nil {
+			response.Op = OpError
+			response.Error = "shutdown request cannot include run policy"
+			return response
+		}
+		go func() { _ = s.Close() }()
+		response.Op = OpShutdownAck
+		response.OK = true
+		return response
+	case OpRun:
+		response.Op = OpError
+		if request.Run == nil {
+			response.Error = "run request requires run policy"
+			return response
+		}
+		if err := validateRunRequestV1(*request.Run); err != nil {
+			response.Error = err.Error()
+			return response
+		}
+		release, err := s.acquireRun(ctx)
+		if err != nil {
+			response.Error = err.Error()
+			return response
+		}
+		defer release()
+		if err := s.waitReady(ctx); err != nil {
+			response.Error = err.Error()
+			return response
+		}
+		runRequest := s.runRequestV1
+		if runRequest == nil {
+			runRequest = s.daemon.runRequestV1
+		}
+		if err := ctx.Err(); err != nil {
+			response.Error = err.Error()
+			return response
+		}
+		run, selection, shardPlan, err := runRequest(ctx, *request.Run)
+		if err != nil {
+			response.Error = err.Error()
+			return response
+		}
+		response.Op = OpRunResult
+		response.OK = true
+		response.Run = &run
+		response.Selection = &selection
+		response.ShardPlan = shardPlan
+		return response
 	default:
-		return Response{Op: OpError, ID: req.ID, OK: false, Error: fmt.Sprintf("unknown op %q", req.Op)}
+		response.Op = OpError
+		response.Error = fmt.Sprintf("unknown op %q", request.Op)
+		return response
+	}
+}
+
+func (s *Server) acquireRun(ctx context.Context) (func(), error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	s.runOnce.Do(func() {
+		s.runAdmission = make(chan struct{}, 2)
+		s.runExecution = make(chan struct{}, 1)
+	})
+	select {
+	case s.runAdmission <- struct{}{}:
+	default:
+		return nil, errors.New("test server is busy; retry the request")
+	}
+	if err := ctx.Err(); err != nil {
+		<-s.runAdmission
+		return nil, err
+	}
+	select {
+	case s.runExecution <- struct{}{}:
+		if err := ctx.Err(); err != nil {
+			<-s.runExecution
+			<-s.runAdmission
+			return nil, err
+		}
+		return func() {
+			<-s.runExecution
+			<-s.runAdmission
+		}, nil
+	case <-ctx.Done():
+		<-s.runAdmission
+		return nil, ctx.Err()
 	}
 }
 
@@ -288,16 +451,6 @@ func (s *Server) watchLoop(ctx context.Context, root string) {
 	}
 }
 
-func writeResponse(w io.Writer, resp Response) error {
-	data, err := json.Marshal(resp)
-	if err != nil {
-		return err
-	}
-	data = append(data, '\n')
-	_, err = w.Write(data)
-	return err
-}
-
 func writePID(path string) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
@@ -324,15 +477,4 @@ func processAlive(pid int) bool {
 		return false
 	}
 	return proc.Signal(syscall.Signal(0)) == nil
-}
-
-func trimLine(line []byte) []byte {
-	return bytesTrimNewline(line)
-}
-
-func bytesTrimNewline(line []byte) []byte {
-	for len(line) > 0 && (line[len(line)-1] == '\n' || line[len(line)-1] == '\r') {
-		line = line[:len(line)-1]
-	}
-	return line
 }

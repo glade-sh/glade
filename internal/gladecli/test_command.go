@@ -242,6 +242,9 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		if err != nil || parsedShardCount <= 0 {
 			return testreport.Run{}, errors.New("--shard-count must be a positive integer")
 		}
+		if parsedShardCount > testdaemon.MaxClassShardCountV1 {
+			return testreport.Run{}, fmt.Errorf("--shard-count cannot exceed %d", testdaemon.MaxClassShardCountV1)
+		}
 		shardCount = parsedShardCount
 	}
 	if parsed.String("shard-index") != "" {
@@ -423,6 +426,24 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	); err != nil {
 		return testreport.Run{}, err
 	}
+	if connectMode {
+		switch {
+		case watchMode:
+			return testreport.Run{}, errors.New("--connect cannot be combined with --watch or --watch-once")
+		case daemonMode:
+			return testreport.Run{}, errors.New("--connect cannot be combined with --daemon")
+		case debug:
+			return testreport.Run{}, errors.New("--connect cannot be combined with --debug")
+		case strings.TrimSpace(cpuProfilePath) != "":
+			return testreport.Run{}, errors.New("--connect cannot be combined with --cpu-profile")
+		case strings.TrimSpace(memProfilePath) != "":
+			return testreport.Run{}, errors.New("--connect cannot be combined with --mem-profile")
+		case strings.TrimSpace(servicesPath) != "":
+			return testreport.Run{}, errors.New("--connect cannot be combined with --services")
+		case noServe:
+			return testreport.Run{}, errors.New("--connect cannot be combined with --no-serve")
+		}
+	}
 	stopProfile, err := startCLIProfiler(cpuProfilePath, memProfilePath)
 	if err != nil {
 		return testreport.Run{}, err
@@ -475,27 +496,74 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		testOpts.Parallelism = parallelismOverride
 	case parallelMethods:
 		testOpts.Parallelism = runtime.GOMAXPROCS(0)
+	default:
+		testOpts.Parallelism = 1
+	}
+	effectiveShardCount := shardCount
+	if writeClassShardsDir != "" && effectiveShardCount <= 0 {
+		effectiveShardCount = testOpts.Parallelism
+	}
+	if writeClassShardsDir != "" && effectiveShardCount > testdaemon.MaxClassShardCountV1 {
+		return testreport.Run{}, fmt.Errorf("test shard count cannot exceed %d", testdaemon.MaxClassShardCountV1)
 	}
 	applyTestMemoryLimits(gcAggressive)
 
-	if noCache {
+	if noCache && !connectMode {
 		noServe = true
 	}
-	localOnlyTestOptions := perfEnabled || len(selectedClasses) != 0 || methodName != "" || shardCount > 0 || durationHistoryExplicit || writeClassShardsDir != "" || tracePath != "" || servicesPath != ""
-	if connectMode && localOnlyTestOptions {
-		return testreport.Run{}, errors.New("--connect cannot be combined with local-only test options")
-	}
+	localOnlyTestOptions := perfEnabled || strings.TrimSpace(cpuProfilePath) != "" || strings.TrimSpace(memProfilePath) != "" || servicesPath != ""
 	if localOnlyTestOptions {
 		noServe = true
 	}
 	if !noServe && !watchMode && !daemonMode && !debug {
-		if result, used, err := tryTestServerRun(ctx, root, connectMode, filter, changedSince, format, junitPath, debug, w); used || err != nil {
-			if used && err == nil {
-				if writeErr := maybeWriteCLIDurationHistory(durationHistoryWritePath, result, durationHistory); writeErr != nil {
-					return result, writeErr
+		request := testdaemon.NewRunRequestV1(testOpts, changedSince, effectiveShardCount, shardIndex, writeClassShardsDir != "")
+		if response, used, err := tryTestServerRequest(ctx, root, connectMode, request); used || err != nil {
+			if err != nil {
+				return testreport.Run{}, err
+			}
+			if !response.OK {
+				message := strings.TrimSpace(response.Error)
+				if message == "" {
+					message = "test server run failed"
+				}
+				return testreport.Run{}, errors.New(message)
+			}
+			if writeClassShardsDir != "" && (response.Run == nil || response.Run.Summary().Total == 0) {
+				if response.ShardPlan == nil {
+					return testreport.Run{}, errors.New("test server did not return a class shard plan")
+				}
+				return testreport.Run{}, writeCLIClassShardPlan(writeClassShardsDir, *response.ShardPlan, effectiveShardCount)
+			}
+			if response.Run == nil {
+				message := strings.TrimSpace(response.Error)
+				if message == "" {
+					message = "test server run failed"
+				}
+				return testreport.Run{}, errors.New(message)
+			}
+			result := *response.Run
+			if err := maybeWriteCLIDurationHistory(durationHistoryWritePath, result, durationHistory); err != nil {
+				return result, err
+			}
+			if tracePath != "" {
+				if err := writeTestTraceFile(tracePath, result); err != nil {
+					return result, err
 				}
 			}
-			return result, err
+			if err := writeLastFailedTests(root, result); err != nil {
+				return result, err
+			}
+			if junitPath != "" {
+				if err := writeJUnitFile(junitPath, result); err != nil {
+					return result, err
+				}
+			}
+			switch format {
+			case "json":
+				return result, writeTestJSONEnvelope(w, result, junitPath)
+			default:
+				return result, testreport.WriteConsole(w, result)
+			}
 		}
 	}
 
@@ -612,7 +680,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			}
 			cases = filterSelectedTestCases(cases, selection)
 			if strings.TrimSpace(writeClassShardsDir) != "" {
-				return testreport.Run{}, writeCLIClassShards(writeClassShardsDir, cases, durationHistoryPath, shardCount, parallelismOverride)
+				return testreport.Run{}, writeCLIClassShards(writeClassShardsDir, cases, durationHistoryPath, effectiveShardCount)
 			}
 			cases, err = applyCLIClassShard(cases, durationHistoryPath, shardCount, shardIndex)
 			if err != nil {
@@ -650,7 +718,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			result = selectorRun
 		} else {
 			if strings.TrimSpace(writeClassShardsDir) != "" {
-				return testreport.Run{}, writeCLIClassShards(writeClassShardsDir, cases, durationHistoryPath, shardCount, parallelismOverride)
+				return testreport.Run{}, writeCLIClassShards(writeClassShardsDir, cases, durationHistoryPath, effectiveShardCount)
 			}
 			cases, err = applyCLIClassShard(cases, durationHistoryPath, shardCount, shardIndex)
 			if err != nil {
@@ -912,11 +980,6 @@ type cliClassShard struct {
 	Classes         []string
 }
 
-type cliClassWeight struct {
-	Class  string
-	Weight int64
-}
-
 func applyCLIClassShard(cases []apextest.TestCase, historyPath string, shardCount, shardIndex int) ([]apextest.TestCase, error) {
 	if shardCount <= 0 {
 		return cases, nil
@@ -939,21 +1002,22 @@ func applyCLIClassShard(cases []apextest.TestCase, historyPath string, shardCoun
 	return out, nil
 }
 
-func writeCLIClassShards(dir string, cases []apextest.TestCase, historyPath string, shardCount, parallelism int) error {
-	if shardCount <= 0 {
-		shardCount = parallelism
-	}
-	if shardCount <= 0 {
-		shardCount = runtime.GOMAXPROCS(0)
-	}
-	if shardCount <= 0 {
-		shardCount = 1
+func writeCLIClassShards(dir string, cases []apextest.TestCase, historyPath string, shardCount int) error {
+	if shardCount < 1 || shardCount > testdaemon.MaxClassShardCountV1 {
+		return fmt.Errorf("test shard count must be between 1 and %d", testdaemon.MaxClassShardCountV1)
 	}
 	durations, err := loadCLIClassDurationHistory(historyPath)
 	if err != nil {
 		return err
 	}
-	shards := planCLIClassShards(cases, durations, shardCount)
+	return writeCLIClassShardPlan(dir, testdaemon.PlanClassShards(cases, durations, shardCount), shardCount)
+}
+
+func writeCLIClassShardPlan(dir string, plan testdaemon.ClassShardPlanV1, expectedCount int) error {
+	if err := validateCLIClassShardPlan(plan, expectedCount); err != nil {
+		return err
+	}
+	shards := plan.Shards
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
@@ -962,8 +1026,9 @@ func writeCLIClassShards(dir string, cases []apextest.TestCase, historyPath stri
 		width = 3
 	}
 	for _, shard := range shards {
-		sort.Strings(shard.Classes)
-		data := strings.Join(shard.Classes, "\n")
+		classes := append([]string(nil), shard.Classes...)
+		sort.Strings(classes)
+		data := strings.Join(classes, "\n")
 		if data != "" {
 			data += "\n"
 		}
@@ -975,64 +1040,37 @@ func writeCLIClassShards(dir string, cases []apextest.TestCase, historyPath stri
 	return nil
 }
 
-func planCLIClassShards(cases []apextest.TestCase, durations map[string]int64, shardCount int) []cliClassShard {
-	if shardCount <= 0 {
-		return nil
+func validateCLIClassShardPlan(plan testdaemon.ClassShardPlanV1, expectedCount int) error {
+	if expectedCount < 1 || expectedCount > testdaemon.MaxClassShardCountV1 {
+		return fmt.Errorf("test shard plan count must be between 1 and %d", testdaemon.MaxClassShardCountV1)
 	}
-	shards := make([]cliClassShard, shardCount)
-	for i := range shards {
-		shards[i].Index = i
+	if len(plan.Shards) != expectedCount {
+		return fmt.Errorf("test shard plan contains %d shards; expected %d", len(plan.Shards), expectedCount)
 	}
-	weights := cliClassWeights(cases, durations)
-	if len(durations) == 0 {
-		sort.Slice(weights, func(i, j int) bool {
-			return weights[i].Class < weights[j].Class
-		})
-		for i, weight := range weights {
-			target := i % shardCount
-			shards[target].Classes = append(shards[target].Classes, weight.Class)
-			shards[target].TotalDurationMS += weight.Weight
+	seen := make([]bool, expectedCount)
+	for _, shard := range plan.Shards {
+		if shard.Index < 0 || shard.Index >= expectedCount {
+			return fmt.Errorf("test shard plan index %d is outside 0..%d", shard.Index, expectedCount-1)
 		}
-		return shards
-	}
-	for _, weight := range weights {
-		target := 0
-		for i := 1; i < len(shards); i++ {
-			if shards[i].TotalDurationMS < shards[target].TotalDurationMS {
-				target = i
-			}
+		if seen[shard.Index] {
+			return fmt.Errorf("test shard plan contains duplicate index %d", shard.Index)
 		}
-		shards[target].Classes = append(shards[target].Classes, weight.Class)
-		shards[target].TotalDurationMS += weight.Weight
+		seen[shard.Index] = true
 	}
-	for i := range shards {
-		sort.Strings(shards[i].Classes)
-	}
-	return shards
+	return nil
 }
 
-func cliClassWeights(cases []apextest.TestCase, durations map[string]int64) []cliClassWeight {
-	methodCounts := map[string]int64{}
-	for _, testCase := range cases {
-		if testCase.ClassName != "" {
-			methodCounts[testCase.ClassName]++
-		}
+func planCLIClassShards(cases []apextest.TestCase, durations map[string]int64, shardCount int) []cliClassShard {
+	plan := testdaemon.PlanClassShards(cases, durations, shardCount)
+	shards := make([]cliClassShard, 0, len(plan.Shards))
+	for _, shard := range plan.Shards {
+		shards = append(shards, cliClassShard{
+			Index:           shard.Index,
+			TotalDurationMS: shard.TotalDurationMS,
+			Classes:         append([]string(nil), shard.Classes...),
+		})
 	}
-	weights := make([]cliClassWeight, 0, len(methodCounts))
-	for className, methodCount := range methodCounts {
-		weight := durations[className]
-		if weight <= 0 {
-			weight = methodCount
-		}
-		weights = append(weights, cliClassWeight{Class: className, Weight: weight})
-	}
-	sort.Slice(weights, func(i, j int) bool {
-		if weights[i].Weight == weights[j].Weight {
-			return weights[i].Class < weights[j].Class
-		}
-		return weights[i].Weight > weights[j].Weight
-	})
-	return weights
+	return shards
 }
 
 type cliDurationHistory struct {
