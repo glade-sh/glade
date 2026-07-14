@@ -48,7 +48,7 @@ func tryLoadDiskRuntimeWithSourceDigests(index typesys.Index, digests *typesys.S
 	if err != nil || entry == nil {
 		return runtimeCacheEntry{}, false
 	}
-	return runtimeCacheEntryFromStartup(*entry), true
+	return runtimeCacheEntryFromStartup(*entry)
 }
 
 func tryLoadDiskRuntimeWithPerf(index typesys.Index, digests *typesys.SourceDigestSet, key runtimeCacheKey, counters *runPerfCounters) (runtimeCacheEntry, bool) {
@@ -66,10 +66,10 @@ func tryLoadDiskRuntimeWithPerf(index typesys.Index, digests *typesys.SourceDige
 	if err != nil || entry == nil {
 		return runtimeCacheEntry{}, false
 	}
-	return runtimeCacheEntryFromStartupWithPerf(*entry, counters), true
+	return runtimeCacheEntryFromStartupWithPerf(*entry, counters)
 }
 
-func persistDiskRuntime(index typesys.Index, digests *typesys.SourceDigestSet, key runtimeCacheKey, entry runtimeCacheEntry) {
+func persistDiskRuntime(index typesys.Index, digests *typesys.SourceDigestSet, key runtimeCacheKey, org storage.OrgState, entry runtimeCacheEntry) {
 	if !diskCacheEnabled() {
 		return
 	}
@@ -81,7 +81,7 @@ func persistDiskRuntime(index typesys.Index, digests *typesys.SourceDigestSet, k
 	if err != nil {
 		return
 	}
-	cacheEntry := startupcache.NewEntryWithSourceDigests(root, p, index, digests, entry.Org, startupcache.CompiledRuntime{
+	cacheEntry := startupcache.NewEntryWithSourceDigests(root, p, index, digests, org, startupcache.CompiledRuntime{
 		Methods:   entry.Methods,
 		Classes:   entry.Classes,
 		Triggers:  entry.Triggers,
@@ -92,7 +92,7 @@ func persistDiskRuntime(index typesys.Index, digests *typesys.SourceDigestSet, k
 	_ = startupcache.Write(&cacheEntry, startupcache.SubdirTest)
 }
 
-func persistDiskRuntimeWithPerf(index typesys.Index, digests *typesys.SourceDigestSet, key runtimeCacheKey, entry runtimeCacheEntry, counters *runPerfCounters) {
+func persistDiskRuntimeWithPerf(index typesys.Index, digests *typesys.SourceDigestSet, key runtimeCacheKey, org storage.OrgState, entry runtimeCacheEntry, counters *runPerfCounters) {
 	if !diskCacheEnabled() {
 		return
 	}
@@ -104,7 +104,7 @@ func persistDiskRuntimeWithPerf(index typesys.Index, digests *typesys.SourceDige
 	if err != nil {
 		return
 	}
-	cacheEntry := startupcache.NewEntryWithSourceDigests(root, p, index, digests, entry.Org, startupcache.CompiledRuntime{
+	cacheEntry := startupcache.NewEntryWithSourceDigests(root, p, index, digests, org, startupcache.CompiledRuntime{
 		Methods:   entry.Methods,
 		Classes:   entry.Classes,
 		Triggers:  entry.Triggers,
@@ -116,7 +116,7 @@ func persistDiskRuntimeWithPerf(index typesys.Index, digests *typesys.SourceDige
 	counters.phases.cacheEncodeNS.Add(stats.EncodeNS)
 }
 
-func runtimeCacheEntryFromStartup(entry startupcache.Entry) runtimeCacheEntry {
+func runtimeCacheEntryFromStartup(entry startupcache.Entry) (runtimeCacheEntry, bool) {
 	runtime := CompiledProjectRuntime{
 		Methods:   entry.Runtime.Methods,
 		Classes:   entry.Runtime.Classes,
@@ -129,22 +129,18 @@ func runtimeCacheEntryFromStartup(entry startupcache.Entry) runtimeCacheEntry {
 	registerVisualforcePages(baseMachine, pageNames)
 	baseErr := registerBaseRuntime(baseMachine, runtime.Methods, runtime.Classes, runtime.Triggers)
 	org := entry.Org
-	template := storage.NewRuntimeTemplate(org)
-	vm.PrimeRuntimeTemplateSchema(&template)
-	return runtimeCacheEntry{
+	return validateRestoredRuntimeEntry(runtimeCacheEntry{
 		Methods:       runtime.Methods,
 		Classes:       runtime.Classes,
 		Triggers:      runtime.Triggers,
 		TriggerErrors: nil,
-		Org:           org,
-		Template:      template,
 		PageNames:     pageNames,
-		BaseMachine:   baseMachine,
 		BaseErr:       baseErr,
-	}
+		restored:      vm.NewRestoredRuntimeTemplate(org, baseMachine),
+	})
 }
 
-func runtimeCacheEntryFromStartupWithPerf(entry startupcache.Entry, counters *runPerfCounters) runtimeCacheEntry {
+func runtimeCacheEntryFromStartupWithPerf(entry startupcache.Entry, counters *runPerfCounters) (runtimeCacheEntry, bool) {
 	projectStarted := time.Now()
 	runtime := CompiledProjectRuntime{
 		Methods:   entry.Runtime.Methods,
@@ -161,20 +157,24 @@ func runtimeCacheEntryFromStartupWithPerf(entry startupcache.Entry, counters *ru
 
 	orgStarted := time.Now()
 	org := entry.Org
-	template := storage.NewRuntimeTemplate(org)
-	vm.PrimeRuntimeTemplateSchema(&template)
+	restored := vm.NewRestoredRuntimeTemplate(org, baseMachine)
 	counters.phases.orgBuildNS.Add(time.Since(orgStarted).Nanoseconds())
-	return runtimeCacheEntry{
+	return validateRestoredRuntimeEntry(runtimeCacheEntry{
 		Methods:       runtime.Methods,
 		Classes:       runtime.Classes,
 		Triggers:      runtime.Triggers,
 		TriggerErrors: nil,
-		Org:           org,
-		Template:      template,
 		PageNames:     pageNames,
-		BaseMachine:   baseMachine,
 		BaseErr:       baseErr,
+		restored:      restored,
+	})
+}
+
+func validateRestoredRuntimeEntry(entry runtimeCacheEntry) (runtimeCacheEntry, bool) {
+	if !entry.restored.Valid() {
+		return runtimeCacheEntry{}, false
 	}
+	return entry, true
 }
 
 type standardFieldScanResult struct {

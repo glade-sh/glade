@@ -270,12 +270,15 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	}
 	recordStorageCloneRuntime(runState.counters)
 	recordCloneReason("", "run-base", "org-template", runState.counters)
-	org := runtime.Template.CloneRuntimeOrg()
+	org := runtime.restored.CloneOrg()
 	initializeTestOrg(&org)
 	if runState.counters.enabled {
 		runState.counters.phases.orgBuildNS.Add(time.Since(orgSetupStarted).Nanoseconds())
 	}
-	baseMachine := cloneRuntimeMachineFor(runtime.BaseMachine, "", "run-base", runState.counters)
+	recordCloneReason("", "run-base", "vm-runtime", runState.counters)
+	machineCloneStarted := time.Now()
+	baseMachine := runtime.restored.CloneMachine(nil)
+	recordCloneRuntimeMachineDuration(time.Since(machineCloneStarted), runState.counters)
 	baseMachine.SetPerfRecorder(runState.vmPerf)
 	baseMachine.SetTraceEnabled(false)
 	baseMachine.EnableTestContext()
@@ -454,11 +457,9 @@ type runtimeCacheEntry struct {
 	Classes       []vm.Class
 	Triggers      []vm.Trigger
 	TriggerErrors []error
-	Org           storage.OrgState
-	Template      storage.RuntimeTemplate
 	PageNames     []string
-	BaseMachine   *vm.VM
 	BaseErr       error
+	restored      vm.RestoredRuntimeTemplate
 }
 
 type CompiledProjectRuntime struct {
@@ -585,12 +586,39 @@ func cloneRuntimeCacheEntry(in runtimeCacheEntry) runtimeCacheEntry {
 		Classes:       in.Classes,
 		Triggers:      in.Triggers,
 		TriggerErrors: in.TriggerErrors,
-		Org:           in.Org,
-		Template:      in.Template,
 		PageNames:     in.PageNames,
-		BaseMachine:   in.BaseMachine,
 		BaseErr:       in.BaseErr,
+		restored:      in.restored,
 	}
+}
+
+func validMemoryRuntimeEntry(key runtimeCacheKey) (runtimeCacheEntry, bool) {
+	runtimeCacheMu.RLock()
+	cached, ok := runtimeCache[key]
+	runtimeCacheMu.RUnlock()
+	if !ok {
+		return runtimeCacheEntry{}, false
+	}
+	if cached.restored.Valid() {
+		return cloneRuntimeCacheEntry(cached), true
+	}
+	return recheckMemoryRuntimeEntryAfterInvalidObservation(key)
+}
+
+func recheckMemoryRuntimeEntryAfterInvalidObservation(key runtimeCacheKey) (runtimeCacheEntry, bool) {
+	// Recheck under the write lock so an invalid observation cannot evict a
+	// concurrently published valid replacement.
+	runtimeCacheMu.Lock()
+	cached, ok := runtimeCache[key]
+	if ok && !cached.restored.Valid() {
+		delete(runtimeCache, key)
+		ok = false
+	}
+	runtimeCacheMu.Unlock()
+	if !ok {
+		return runtimeCacheEntry{}, false
+	}
+	return cloneRuntimeCacheEntry(cached), true
 }
 
 func authoritativeRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet) *typesys.SourceDigestSet {
@@ -660,12 +688,9 @@ func runtimeFromIndexWithSourceDigests(index typesys.Index, digests *typesys.Sou
 		diskCacheAllowed = useDiskCache[0]
 	}
 	key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
-	runtimeCacheMu.RLock()
-	if cached, ok := runtimeCache[key]; ok {
-		runtimeCacheMu.RUnlock()
-		return key, cloneRuntimeCacheEntry(cached), nil
+	if cached, ok := validMemoryRuntimeEntry(key); ok {
+		return key, cached, nil
 	}
-	runtimeCacheMu.RUnlock()
 
 	if diskCacheAllowed {
 		if diskEntry, ok := tryLoadDiskRuntimeWithSourceDigests(index, digests, key); ok {
@@ -685,8 +710,6 @@ func runtimeFromIndexWithSourceDigests(index typesys.Index, digests *typesys.Sou
 	classes := compileProjectClasses(index, methods, sources)
 	triggers, triggerErrors := compileProjectTriggers(index, sources)
 	org := orgFromIndex(index, sources)
-	template := storage.NewRuntimeTemplate(org)
-	vm.PrimeRuntimeTemplateSchema(&template)
 	pageNames := visualforcePageNames(index)
 	baseMachine := vm.New(nil)
 	baseMachine.SetTraceEnabled(false)
@@ -700,17 +723,15 @@ func runtimeFromIndexWithSourceDigests(index typesys.Index, digests *typesys.Sou
 		Classes:       classes,
 		Triggers:      triggers,
 		TriggerErrors: triggerErrors,
-		Org:           org,
-		Template:      template,
 		PageNames:     pageNames,
-		BaseMachine:   baseMachine,
 		BaseErr:       baseErr,
+		restored:      vm.NewRestoredRuntimeTemplate(org, baseMachine),
 	}
 	runtimeCacheMu.Lock()
 	runtimeCache[key] = entry
 	runtimeCacheMu.Unlock()
 	if diskCacheAllowed {
-		persistDiskRuntime(index, digests, key, entry)
+		persistDiskRuntime(index, digests, key, org, entry)
 	}
 	return key, cloneRuntimeCacheEntry(entry), nil
 }
@@ -730,13 +751,10 @@ func runtimeFromIndexWithSourceDigestsAndPerf(index typesys.Index, digests *type
 	keyStarted := time.Now()
 	key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
 	counters.phases.runtimeKeyNS.Add(time.Since(keyStarted).Nanoseconds())
-	runtimeCacheMu.RLock()
-	if cached, ok := runtimeCache[key]; ok {
-		runtimeCacheMu.RUnlock()
+	if cached, ok := validMemoryRuntimeEntry(key); ok {
 		counters.phases.memoryCacheHits.Add(1)
-		return key, cloneRuntimeCacheEntry(cached), nil
+		return key, cached, nil
 	}
-	runtimeCacheMu.RUnlock()
 
 	if diskCacheAllowed {
 		if diskEntry, ok := tryLoadDiskRuntimeWithPerf(index, digests, key, counters); ok {
@@ -765,8 +783,6 @@ func runtimeFromIndexWithSourceDigestsAndPerf(index typesys.Index, digests *type
 
 	orgStarted := time.Now()
 	org := orgFromIndex(index, sources)
-	template := storage.NewRuntimeTemplate(org)
-	vm.PrimeRuntimeTemplateSchema(&template)
 	counters.phases.orgBuildNS.Add(time.Since(orgStarted).Nanoseconds())
 
 	compileStarted = time.Now()
@@ -776,6 +792,9 @@ func runtimeFromIndexWithSourceDigestsAndPerf(index typesys.Index, digests *type
 	registerVisualforcePages(baseMachine, pageNames)
 	baseErr := registerBaseRuntime(baseMachine, methods, classes, triggers)
 	counters.phases.projectCompileNS.Add(time.Since(compileStarted).Nanoseconds())
+	restoredStarted := time.Now()
+	restored := vm.NewRestoredRuntimeTemplate(org, baseMachine)
+	counters.phases.orgBuildNS.Add(time.Since(restoredStarted).Nanoseconds())
 	if err := sources.sourceSnapshotError(); err != nil {
 		return key, runtimeCacheEntry{}, err
 	}
@@ -784,17 +803,15 @@ func runtimeFromIndexWithSourceDigestsAndPerf(index typesys.Index, digests *type
 		Classes:       classes,
 		Triggers:      triggers,
 		TriggerErrors: triggerErrors,
-		Org:           org,
-		Template:      template,
 		PageNames:     pageNames,
-		BaseMachine:   baseMachine,
 		BaseErr:       baseErr,
+		restored:      restored,
 	}
 	runtimeCacheMu.Lock()
 	runtimeCache[key] = entry
 	runtimeCacheMu.Unlock()
 	if diskCacheAllowed {
-		persistDiskRuntimeWithPerf(index, digests, key, entry, counters)
+		persistDiskRuntimeWithPerf(index, digests, key, org, entry, counters)
 	}
 	return key, cloneRuntimeCacheEntry(entry), nil
 }

@@ -1602,7 +1602,7 @@ private class CacheExactTest {
 	assertNotification := func(wantLabel string, wantPresent bool) func(*testing.T, runtimeCacheEntry) {
 		return func(t *testing.T, runtime runtimeCacheEntry) {
 			t.Helper()
-			state := runtime.Org.Objects["CustomNotificationType"]
+			state := runtime.restored.CloneOrg().Objects["CustomNotificationType"]
 			present := recordWithFieldValueExists(state, "DeveloperName", "Cache_Notice")
 			if present != wantPresent {
 				t.Fatalf("CustomNotificationType Cache_Notice present = %v, want %v: records=%#v", present, wantPresent, state.Records)
@@ -1615,7 +1615,7 @@ private class CacheExactTest {
 	assertDataFields := func(wantPresent []string, wantAbsent []string) func(*testing.T, runtimeCacheEntry) {
 		return func(t *testing.T, runtime runtimeCacheEntry) {
 			t.Helper()
-			fields := runtime.Org.Objects["CacheShape__c"].Definition.Fields
+			fields := runtime.restored.CloneOrg().Objects["CacheShape__c"].Definition.Fields
 			for _, name := range wantPresent {
 				if _, ok := fields[name]; !ok {
 					t.Fatalf("CacheShape__c.%s was not inferred: fields=%#v", name, fields)
@@ -1783,12 +1783,14 @@ private class CacheInputTest {
 			if got, want := normalizeDurations(cachedPath), normalizeDurations(noCachePath); !reflect.DeepEqual(got, want) {
 				t.Fatalf("invalidated disk-cache result != no-cache result:\ncache=%#v\nno-cache=%#v", got, want)
 			}
-			if cachedRuntime.Org.OrgID != noCacheRuntime.Org.OrgID ||
-				cachedRuntime.Org.APIVersion != noCacheRuntime.Org.APIVersion ||
-				cachedRuntime.Org.Namespace != noCacheRuntime.Org.Namespace {
+			cachedOrg := cachedRuntime.restored.CloneOrg()
+			noCacheOrg := noCacheRuntime.restored.CloneOrg()
+			if cachedOrg.OrgID != noCacheOrg.OrgID ||
+				cachedOrg.APIVersion != noCacheOrg.APIVersion ||
+				cachedOrg.Namespace != noCacheOrg.Namespace {
 				t.Fatalf("invalidated disk-cache org identity = (%q, %q, %q), no-cache = (%q, %q, %q)",
-					cachedRuntime.Org.OrgID, cachedRuntime.Org.APIVersion, cachedRuntime.Org.Namespace,
-					noCacheRuntime.Org.OrgID, noCacheRuntime.Org.APIVersion, noCacheRuntime.Org.Namespace)
+					cachedOrg.OrgID, cachedOrg.APIVersion, cachedOrg.Namespace,
+					noCacheOrg.OrgID, noCacheOrg.APIVersion, noCacheOrg.Namespace)
 			}
 			if !reflect.DeepEqual(cachedRuntime.Methods, noCacheRuntime.Methods) {
 				t.Fatalf("invalidated disk-cache methods != no-cache methods:\ncache=%#v\nno-cache=%#v", cachedRuntime.Methods, noCacheRuntime.Methods)
@@ -1859,7 +1861,7 @@ func TestDiskStartupCacheInvalidatesLoadedDependencyData(t *testing.T) {
 		return run
 	}
 	recordTypeExists := func(runtime runtimeCacheEntry, label string) bool {
-		for _, recordType := range runtime.Org.Objects["pkg__Product__c"].Definition.RecordTypes {
+		for _, recordType := range runtime.restored.CloneOrg().Objects["pkg__Product__c"].Definition.RecordTypes {
 			if strings.EqualFold(recordType.Name, label) && strings.EqualFold(recordType.DeveloperName, recordTypeDeveloperNameFromLabel(label)) {
 				return true
 			}
@@ -1929,17 +1931,17 @@ func TestDiskStartupCacheInvalidatesLoadedDependencyData(t *testing.T) {
 			if got, want := normalizeDurations(cachedPath), normalizeDurations(noCachePath); !reflect.DeepEqual(got, want) {
 				t.Fatalf("invalidated disk-cache result != no-cache result:\ncache=%#v\nno-cache=%#v", got, want)
 			}
-			cachedRecordTypes := cachedRuntime.Org.Objects["pkg__Product__c"].Definition.RecordTypes
-			noCacheRecordTypes := noCacheRuntime.Org.Objects["pkg__Product__c"].Definition.RecordTypes
+			cachedRecordTypes := cachedRuntime.restored.CloneOrg().Objects["pkg__Product__c"].Definition.RecordTypes
+			noCacheRecordTypes := noCacheRuntime.restored.CloneOrg().Objects["pkg__Product__c"].Definition.RecordTypes
 			if !reflect.DeepEqual(cachedRecordTypes, noCacheRecordTypes) {
 				t.Fatalf("invalidated disk-cache record types != no-cache record types:\ncache=%#v\nno-cache=%#v", cachedRecordTypes, noCacheRecordTypes)
 			}
 			for name, runtime := range map[string]runtimeCacheEntry{"cache": cachedRuntime, "no-cache": noCacheRuntime} {
 				if tc.want != "" && !recordTypeExists(runtime, tc.want) {
-					t.Fatalf("%s runtime lacks dependency data record type %q: %#v", name, tc.want, runtime.Org.Objects["pkg__Product__c"].Definition.RecordTypes)
+					t.Fatalf("%s runtime lacks dependency data record type %q: %#v", name, tc.want, runtime.restored.CloneOrg().Objects["pkg__Product__c"].Definition.RecordTypes)
 				}
 				if tc.wantAbsent != "" && recordTypeExists(runtime, tc.wantAbsent) {
-					t.Fatalf("%s runtime retained dependency data record type %q: %#v", name, tc.wantAbsent, runtime.Org.Objects["pkg__Product__c"].Definition.RecordTypes)
+					t.Fatalf("%s runtime retained dependency data record type %q: %#v", name, tc.wantAbsent, runtime.restored.CloneOrg().Objects["pkg__Product__c"].Definition.RecordTypes)
 				}
 			}
 		})
