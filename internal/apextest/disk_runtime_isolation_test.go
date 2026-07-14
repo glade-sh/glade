@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -25,8 +26,12 @@ func TestParallelMethodDiskRuntimeGuardRemainsEnabled(t *testing.T) {
 		{name: "workers-2-disabled", opts: Options{ParallelMethods: true, Parallelism: 2}},
 		{name: "workers-4-disabled", opts: Options{ParallelMethods: true, Parallelism: 4}},
 		{name: "workers-8-disabled", opts: Options{ParallelMethods: true, Parallelism: 8}},
+		{name: "workers-2-restored-opt-in", opts: Options{ParallelMethods: true, Parallelism: 2, RestoredRuntimeMultiWorker: true}, want: true},
+		{name: "workers-4-restored-opt-in", opts: Options{ParallelMethods: true, Parallelism: 4, RestoredRuntimeMultiWorker: true}, want: true},
+		{name: "workers-8-restored-opt-in", opts: Options{ParallelMethods: true, Parallelism: 8, RestoredRuntimeMultiWorker: true}, want: true},
 		{name: "explicit-no-disk-serial", opts: Options{Parallelism: 1, NoDiskCache: true}},
 		{name: "explicit-no-disk-parallel", opts: Options{ParallelMethods: true, Parallelism: 8, NoDiskCache: true}},
+		{name: "explicit-no-disk-restored-opt-in", opts: Options{ParallelMethods: true, Parallelism: 8, NoDiskCache: true, RestoredRuntimeMultiWorker: true}},
 	}
 	wasDisabled := disableDiskCache.Load()
 	disableDiskCache.Store(false)
@@ -38,13 +43,17 @@ func TestParallelMethodDiskRuntimeGuardRemainsEnabled(t *testing.T) {
 			}
 		})
 	}
+	disableDiskCache.Store(true)
+	if got := useDiskRuntimeCache(Options{ParallelMethods: true, Parallelism: 8, RestoredRuntimeMultiWorker: true}); got {
+		t.Fatal("restored multiworker opt-in bypassed the global disk-cache disable")
+	}
 }
 
 func TestDiskRuntimeIsolationDeterministicWorkers(t *testing.T) {
 	fixture := buildDiskRuntimeIsolationFixture(t)
 	want := runDiskRuntimeIsolationState(t, fixture, "built-no-disk", 1, fixture.cases, nil)
 	for _, workers := range []int{1, 2, 4, 8} {
-		for _, state := range []string{"built-no-disk", "memory-warm", "restored-preloaded"} {
+		for _, state := range diskRuntimeIsolationStates(workers) {
 			t.Run(fmt.Sprintf("%s/workers-%d", state, workers), func(t *testing.T) {
 				got := runDiskRuntimeIsolationState(t, fixture, state, workers, fixture.cases, nil)
 				if !reflect.DeepEqual(got, want) {
@@ -70,7 +79,7 @@ func TestDiskRuntimeIsolationRandomizedWorkers(t *testing.T) {
 			durations[testCase.ClassName+"."+testCase.MethodName] = int64(priorities[i] + 1)
 		}
 		for _, workers := range []int{1, 2, 4, 8} {
-			for _, state := range []string{"built-no-disk", "memory-warm", "restored-preloaded"} {
+			for _, state := range diskRuntimeIsolationStates(workers) {
 				t.Run(fmt.Sprintf("seed-%d/%s/workers-%d", seed, state, workers), func(t *testing.T) {
 					got := runDiskRuntimeIsolationState(t, fixture, state, workers, cases, durations)
 					if !reflect.DeepEqual(got, want) {
@@ -80,6 +89,64 @@ func TestDiskRuntimeIsolationRandomizedWorkers(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestRestoredRuntimeMultiWorkerCorruptDiskFallsBack(t *testing.T) {
+	fixture := buildDiskRuntimeIsolationFixture(t)
+	want := runDiskRuntimeIsolationState(t, fixture, "built-no-disk", 1, fixture.cases, nil)
+	InvalidateRuntimeCaches()
+	headerPath := filepath.Join(fixture.index.Project.Root, ".glade", "test", "startup.meta.json")
+	if err := os.WriteFile(headerPath, []byte("{malformed\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	ResetPerfCounters()
+	run := RunCasesContext(context.Background(), fixture.index, Options{
+		ParallelMethods:            true,
+		Parallelism:                4,
+		RestoredRuntimeMultiWorker: true,
+		PerfCounters:               true,
+		SourceDigests:              fixture.digests,
+	}, fixture.cases)
+	assertDiskRuntimeIsolationPass(t, run)
+	if got := canonicalDiskRuntimeIsolationResult(run); !reflect.DeepEqual(got, want) {
+		t.Fatalf("corrupt-disk fallback differs from oracle:\n got: %#v\nwant: %#v", got, want)
+	}
+	phases := SnapshotPerfCounters().Phases
+	if phases.DiskCacheHits != 0 || phases.MemoryCacheHits != 0 || phases.CacheMisses != 1 ||
+		phases.CacheValidateNS <= 0 || phases.CacheDecodeNS != 0 || phases.CacheEncodeNS <= 0 {
+		t.Fatalf("corrupt-disk fallback phases = %#v, want validation, one repaired miss, and no cache hit", phases)
+	}
+}
+
+func TestRestoredRuntimeMultiWorkerDefaultRemainsOff(t *testing.T) {
+	fixture := buildDiskRuntimeIsolationFixture(t)
+	want := runDiskRuntimeIsolationState(t, fixture, "built-no-disk", 1, fixture.cases, nil)
+	InvalidateRuntimeCaches()
+	ResetPerfCounters()
+	run := RunCasesContext(context.Background(), fixture.index, Options{
+		ParallelMethods: true,
+		Parallelism:     4,
+		PerfCounters:    true,
+		SourceDigests:   fixture.digests,
+	}, fixture.cases)
+	assertDiskRuntimeIsolationPass(t, run)
+	if got := canonicalDiskRuntimeIsolationResult(run); !reflect.DeepEqual(got, want) {
+		t.Fatalf("default-off result differs from oracle:\n got: %#v\nwant: %#v", got, want)
+	}
+	phases := SnapshotPerfCounters().Phases
+	if phases.DiskCacheHits != 0 || phases.MemoryCacheHits != 0 || phases.CacheMisses != 1 ||
+		phases.CacheValidateNS != 0 || phases.CacheDecodeNS != 0 {
+		t.Fatalf("default-off phases = %#v, want one build miss without disk access", phases)
+	}
+}
+
+func diskRuntimeIsolationStates(workers int) []string {
+	states := []string{"built-no-disk", "memory-warm", "restored-preloaded"}
+	if workers > 1 {
+		states = append(states, "restored-opt-in")
+	}
+	return states
 }
 
 type diskRuntimeIsolationFixture struct {
@@ -220,18 +287,20 @@ func runDiskRuntimeIsolationState(t *testing.T, fixture diskRuntimeIsolationFixt
 		if phases.DiskCacheHits != 1 || phases.MemoryCacheHits != 0 || phases.CacheMisses != 0 {
 			t.Fatalf("restore phases = %#v", phases)
 		}
+	case "restored-opt-in":
 	default:
 		t.Fatalf("unknown runtime state %q", state)
 	}
 
 	ResetPerfCounters()
 	opts := Options{
-		ParallelMethods:  true,
-		Parallelism:      workers,
-		NoDiskCache:      state == "built-no-disk",
-		MethodDurationMS: durations,
-		PerfCounters:     true,
-		SourceDigests:    fixture.digests,
+		ParallelMethods:            true,
+		Parallelism:                workers,
+		NoDiskCache:                state == "built-no-disk",
+		RestoredRuntimeMultiWorker: state == "restored-opt-in",
+		MethodDurationMS:           durations,
+		PerfCounters:               true,
+		SourceDigests:              fixture.digests,
 	}
 	run := RunCasesContext(context.Background(), fixture.index, opts, cases)
 	assertDiskRuntimeIsolationPass(t, run)
@@ -244,6 +313,10 @@ func runDiskRuntimeIsolationState(t *testing.T, fixture diskRuntimeIsolationFixt
 	case "memory-warm", "restored-preloaded":
 		if phases.MemoryCacheHits != 1 || phases.DiskCacheHits != 0 || phases.CacheMisses != 0 {
 			t.Fatalf("preloaded phases = %#v", phases)
+		}
+	case "restored-opt-in":
+		if phases.DiskCacheHits != 1 || phases.MemoryCacheHits != 0 || phases.CacheMisses != 0 {
+			t.Fatalf("restored opt-in phases = %#v", phases)
 		}
 	}
 	return canonicalDiskRuntimeIsolationResult(run)

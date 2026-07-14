@@ -37,25 +37,29 @@ import (
 )
 
 type Options struct {
-	Filter               string
-	SelectedClasses      []string
-	SelectedMethod       string
-	LimitMode            vm.LimitMode
-	LimitCaps            vm.LimitCaps
-	LimitCapsSet         bool
-	TraceBlocked         bool
-	TraceAll             bool
-	SlowTestThresholdMS  int64
-	TimeoutMS            int64
-	Parallelism          int
-	ParallelMethods      bool
-	NoDiskCache          bool
-	ClassDurationMS      map[string]int64
-	MethodDurationMS     map[string]int64
-	PerfCounters         bool
-	PreRunPhaseDurations PreRunPhaseDurations
-	SourceDigests        *typesys.SourceDigestSet
-	Progress             func(TestProgress)
+	Filter              string
+	SelectedClasses     []string
+	SelectedMethod      string
+	LimitMode           vm.LimitMode
+	LimitCaps           vm.LimitCaps
+	LimitCapsSet        bool
+	TraceBlocked        bool
+	TraceAll            bool
+	SlowTestThresholdMS int64
+	TimeoutMS           int64
+	Parallelism         int
+	ParallelMethods     bool
+	NoDiskCache         bool
+	// RestoredRuntimeMultiWorker is an internal, default-off experiment that
+	// permits disk-restored runtimes with parallel method workers. Product
+	// configuration and CLI surfaces intentionally do not expose it.
+	RestoredRuntimeMultiWorker bool
+	ClassDurationMS            map[string]int64
+	MethodDurationMS           map[string]int64
+	PerfCounters               bool
+	PreRunPhaseDurations       PreRunPhaseDurations
+	SourceDigests              *typesys.SourceDigestSet
+	Progress                   func(TestProgress)
 }
 
 type PreRunPhaseDurations struct {
@@ -429,7 +433,10 @@ func useDiskRuntimeCache(opts Options) bool {
 	if opts.NoDiskCache || !diskCacheEnabled() {
 		return false
 	}
-	return !(opts.ParallelMethods && opts.Parallelism > 1)
+	if opts.ParallelMethods && opts.Parallelism > 1 {
+		return opts.RestoredRuntimeMultiWorker
+	}
+	return true
 }
 
 type testCasePlan struct {
