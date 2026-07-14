@@ -901,6 +901,7 @@ func copyCacheMap(in map[string]map[string]cacheEntry) map[string]map[string]cac
 	for partition, entries := range in {
 		copied := make(map[string]cacheEntry, len(entries))
 		for key, entry := range entries {
+			entry.Value = cloneValue(entry.Value)
 			copied[key] = entry
 		}
 		out[partition] = copied
