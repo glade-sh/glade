@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -344,6 +345,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 				thrown.stack = vm.rawStackFrames()
 			}
 			return Null, thrown
+		}
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return Null, err
 		}
 		var runtimeErr *RuntimeError
 		if errors.As(err, &runtimeErr) {
