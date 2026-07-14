@@ -10,6 +10,7 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/namespaceremap"
 	"github.com/glade-sh/glade/internal/packageartifact"
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
@@ -100,6 +101,556 @@ func TestUpdateApexFilesCleanRichSamePathUsesFastPath(t *testing.T) {
 	}
 }
 
+func TestUpdateApexFilesCleanLifecycleUsesFastPath(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*testing.T, *incrementalEquivalenceFixture) (changed, deleted []string)
+	}{
+		{
+			name: "local class add",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) ([]string, []string) {
+				writeFile(t, fixture.localAddedClass, "public class LocalAdded { public void run() {} }")
+				fixture.localApexFiles = append(fixture.localApexFiles, fixture.localAddedClass)
+				return []string{fixture.localAddedClass}, nil
+			},
+		},
+		{
+			name: "local class same-path modify",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) ([]string, []string) {
+				writeFile(t, fixture.localClass, "public class LocalService { public static String changed() { return 'changed'; } }")
+				return []string{fixture.localClass}, nil
+			},
+		},
+		{
+			name: "local class delete",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) ([]string, []string) {
+				fixture.deleteFile(t, &fixture.localApexFiles, fixture.localClass)
+				return nil, []string{fixture.localClass}
+			},
+		},
+		{
+			name: "local class rename",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) ([]string, []string) {
+				fixture.renameFile(t, &fixture.localApexFiles, fixture.localClass, fixture.localRenamedClass)
+				writeFile(t, fixture.localRenamedClass, "public class LocalRenamed { public static String value() { return 'renamed'; } }")
+				return []string{fixture.localRenamedClass}, []string{fixture.localClass}
+			},
+		},
+		{
+			name: "local trigger add",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) ([]string, []string) {
+				writeFile(t, fixture.localAddedTrigger, "trigger LocalAddedTrigger on Contact (after insert) {}")
+				fixture.localApexFiles = append(fixture.localApexFiles, fixture.localAddedTrigger)
+				return []string{fixture.localAddedTrigger}, nil
+			},
+		},
+		{
+			name: "local trigger same-path modify",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) ([]string, []string) {
+				writeFile(t, fixture.localTrigger, "trigger LocalTrigger on Account (before insert, after update) {}")
+				return []string{fixture.localTrigger}, nil
+			},
+		},
+		{
+			name: "local trigger delete",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) ([]string, []string) {
+				fixture.deleteFile(t, &fixture.localApexFiles, fixture.localTrigger)
+				return nil, []string{fixture.localTrigger}
+			},
+		},
+		{
+			name: "local trigger rename",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) ([]string, []string) {
+				fixture.renameFile(t, &fixture.localApexFiles, fixture.localTrigger, fixture.localRenamedTrigger)
+				writeFile(t, fixture.localRenamedTrigger, "trigger LocalRenamedTrigger on Account (after insert) {}")
+				return []string{fixture.localRenamedTrigger}, []string{fixture.localTrigger}
+			},
+		},
+		{
+			name: "dependency class add",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) ([]string, []string) {
+				writeFile(t, fixture.dependencyAddedClass, "global class StageAdded { global void run() {} }")
+				fixture.dependencyApexFiles = append(fixture.dependencyApexFiles, fixture.dependencyAddedClass)
+				return []string{fixture.dependencyAddedClass}, nil
+			},
+		},
+		{
+			name: "dependency class same-path modify",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) ([]string, []string) {
+				writeFile(t, fixture.dependencyClass, "global class StageService { global static String changed() { return 'changed'; } }")
+				return []string{fixture.dependencyClass}, nil
+			},
+		},
+		{
+			name: "dependency class delete",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) ([]string, []string) {
+				fixture.deleteFile(t, &fixture.dependencyApexFiles, fixture.dependencyClass)
+				return nil, []string{fixture.dependencyClass}
+			},
+		},
+		{
+			name: "dependency class rename",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) ([]string, []string) {
+				fixture.renameFile(t, &fixture.dependencyApexFiles, fixture.dependencyClass, fixture.dependencyRenamedClass)
+				writeFile(t, fixture.dependencyRenamedClass, "global class StageRenamed { global static String value() { return 'renamed'; } }")
+				return []string{fixture.dependencyRenamedClass}, []string{fixture.dependencyClass}
+			},
+		},
+		{
+			name: "dependency trigger add",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) ([]string, []string) {
+				writeFile(t, fixture.dependencyAddedTrigger, "trigger StageAddedTrigger on BasePkg__Ledger__c (after insert) {}")
+				fixture.dependencyApexFiles = append(fixture.dependencyApexFiles, fixture.dependencyAddedTrigger)
+				return []string{fixture.dependencyAddedTrigger}, nil
+			},
+		},
+		{
+			name: "dependency trigger same-path modify",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) ([]string, []string) {
+				writeFile(t, fixture.dependencyTrigger, "trigger StageTrigger on BasePkg__Ledger__c (before insert, after update) {}")
+				return []string{fixture.dependencyTrigger}, nil
+			},
+		},
+		{
+			name: "dependency trigger delete",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) ([]string, []string) {
+				fixture.deleteFile(t, &fixture.dependencyApexFiles, fixture.dependencyTrigger)
+				return nil, []string{fixture.dependencyTrigger}
+			},
+		},
+		{
+			name: "dependency trigger rename",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) ([]string, []string) {
+				fixture.renameFile(t, &fixture.dependencyApexFiles, fixture.dependencyTrigger, fixture.dependencyRenamedTrigger)
+				writeFile(t, fixture.dependencyRenamedTrigger, "trigger StageRenamedTrigger on BasePkg__Ledger__c (after insert) {}")
+				return []string{fixture.dependencyRenamedTrigger}, []string{fixture.dependencyTrigger}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fixture := newCleanIncrementalEquivalenceFixture(t)
+			previous := fixture.buildFresh(t)
+			before := fixture.buildFresh(t)
+			changed, deleted := test.mutate(t, fixture)
+			candidate, fastPath := updateApexFilesIncremental(previous, changed, deleted)
+			if !fastPath {
+				t.Fatal("clean exact lifecycle event did not use private fast path")
+			}
+			fresh := fixture.buildFresh(t)
+			if mismatches := incrementalIndexMismatches(candidate, fresh); len(mismatches) > 0 {
+				t.Errorf("private fast path differs from full Build in fields %v:\ncandidate: %#v\nfresh: %#v", mismatches, candidate, fresh)
+			}
+			if !reflect.DeepEqual(previous, before) {
+				t.Errorf("private fast path mutated previous snapshot:\nafter: %#v\nbefore: %#v", previous, before)
+			}
+		})
+	}
+}
+
+func TestUpdateApexFilesLifecycleEditOrderIsDeterministic(t *testing.T) {
+	fixture := newCleanIncrementalEquivalenceFixture(t)
+	run := func(steps []string) Index {
+		writeFile(t, fixture.localClass, "public class LocalService { public static String value() { return 'initial'; } }")
+		writeFile(t, fixture.localTrigger, "trigger LocalTrigger on Account (before insert) {}")
+		incremental := fixture.buildFresh(t)
+		for _, step := range steps {
+			var path, source string
+			switch step {
+			case "class-one":
+				path = fixture.localClass
+				source = "public class LocalService { public static String value() { return 'one'; } }"
+			case "class-two":
+				path = fixture.localClass
+				source = "public class LocalService { public static String value() { return 'two'; } }"
+			case "trigger":
+				path = fixture.localTrigger
+				source = "trigger LocalTrigger on Account (before insert, after update) {}"
+			}
+			writeFile(t, path, source)
+			candidate, fastPath := updateApexFilesIncremental(incremental, []string{path}, nil)
+			if !fastPath {
+				t.Fatalf("%s rejected private fast path", step)
+			}
+			fresh := fixture.buildFresh(t)
+			if mismatches := incrementalIndexMismatches(candidate, fresh); len(mismatches) > 0 {
+				t.Fatalf("%s differs from full Build in fields %v", step, mismatches)
+			}
+			incremental = candidate
+		}
+		return incremental
+	}
+	first := run([]string{"class-one", "trigger", "class-two"})
+	second := run([]string{"trigger", "class-one", "class-two"})
+	if !reflect.DeepEqual(first, second) {
+		t.Errorf("different edit orders produced different final candidates:\nfirst: %#v\nsecond: %#v", first, second)
+	}
+}
+
+func TestUpdateApexFilesLoadsProjectIdentityOnce(t *testing.T) {
+	fixture := newCleanIncrementalEquivalenceFixture(t)
+	previous := fixture.buildFresh(t)
+	writeFile(t, fixture.localAddedClass, "public class LocalAdded {}")
+	fixture.localApexFiles = append(fixture.localApexFiles, fixture.localAddedClass)
+	loads := 0
+	statCalls := make(map[string]int)
+	candidate, fastPath := updateApexFilesIncrementalWithIdentityOps(previous, []string{fixture.localAddedClass}, nil, incrementalFileIdentityOps{
+		stat: func(path string) (os.FileInfo, error) {
+			statCalls[cleanFilePath(path)]++
+			return os.Stat(path)
+		},
+		sameFile: os.SameFile,
+		loadProject: func(root string) (project.Project, error) {
+			loads++
+			return project.Load(root)
+		},
+	})
+	if !fastPath {
+		t.Fatal("eligible add rejected private fast path")
+	}
+	if loads != 1 {
+		t.Errorf("project identity loads = %d, want exactly one", loads)
+	}
+	wantStatPaths := map[string]bool{cleanFilePath(fixture.localAddedClass): true}
+	for _, typ := range previous.Types {
+		if !typ.Artifact && strings.HasSuffix(strings.ToLower(typ.File), ".cls") {
+			wantStatPaths[cleanFilePath(typ.File)] = true
+		}
+	}
+	for _, trigger := range previous.Triggers {
+		wantStatPaths[cleanFilePath(trigger.File)] = true
+	}
+	if len(statCalls) != len(wantStatPaths) {
+		t.Errorf("distinct stat paths = %d, want %d: %#v", len(statCalls), len(wantStatPaths), statCalls)
+	}
+	for path := range wantStatPaths {
+		if statCalls[path] != 1 {
+			t.Errorf("stat calls for %q = %d, want exactly one", path, statCalls[path])
+		}
+	}
+	if fresh := fixture.buildFresh(t); !reflect.DeepEqual(candidate, fresh) {
+		t.Errorf("single-load candidate differs from full Build")
+	}
+}
+
+func TestUpdateApexFilesCheckedFallbackLoadsProjectOnce(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"localpkg","packageDirectories":[{"path":"force-app","default":true},{"path":"force-app"}]}`)
+	path := filepath.Join(root, "force-app/main/default/classes/Ambiguous.cls")
+	writeFile(t, path, "public class Ambiguous { public void beforeEdit() {} }")
+	previous := buildIncrementalIndexFromRoot(t, root)
+	writeFile(t, path, "public class Ambiguous { public void afterEdit() {} }")
+	loads := 0
+	updated, err := updateApexFilesCheckedWithIdentityOps(previous, []string{path}, nil, incrementalFileIdentityOps{
+		loadProject: func(root string) (project.Project, error) {
+			loads++
+			return project.Load(root)
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if loads != 1 {
+		t.Errorf("fallback project loads = %d, want exactly one", loads)
+	}
+	fresh := buildIncrementalIndexFromRoot(t, root)
+	if !reflect.DeepEqual(updated, fresh) {
+		t.Errorf("single-load fallback differs from full Build")
+	}
+}
+
+func TestUpdateApexFilesUsesDeepestConfiguredPackageDirectory(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"localpkg","packageDirectories":[{"path":"force-app"},{"path":"force-app/main/default","default":true}]}`)
+	path := filepath.Join(root, "force-app/main/default/classes/Nested.cls")
+	writeFile(t, path, "public class Nested { public void beforeEdit() {} }")
+	previous := buildIncrementalIndexFromRoot(t, root)
+	writeFile(t, path, "public class Nested { public void afterEdit() {} }")
+	candidate, fastPath := updateApexFilesIncremental(previous, []string{path}, nil)
+	if !fastPath {
+		t.Fatal("unique deepest configured package directory rejected fast path")
+	}
+	if fresh := buildIncrementalIndexFromRoot(t, root); !reflect.DeepEqual(candidate, fresh) {
+		t.Errorf("deepest-package candidate differs from full Build")
+	}
+}
+
+func TestUpdateApexFilesFallsBackForEqualDepthPackageIdentity(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"localpkg","packageDirectories":[{"path":"force-app","default":true},{"path":"force-app"}]}`)
+	path := filepath.Join(root, "force-app/main/default/classes/Ambiguous.cls")
+	writeFile(t, path, "public class Ambiguous { public void beforeEdit() {} }")
+	previous := buildIncrementalIndexFromRoot(t, root)
+	writeFile(t, path, "public class Ambiguous { public void afterEdit() {} }")
+	if candidate, fastPath := updateApexFilesIncremental(previous, []string{path}, nil); fastPath {
+		t.Fatalf("equal-depth package identity unexpectedly used fast path: %#v", candidate)
+	}
+	updated := UpdateApexFiles(previous, []string{path}, nil)
+	fresh := buildIncrementalIndexFromRoot(t, root)
+	if !reflect.DeepEqual(updated, fresh) {
+		t.Errorf("equal-depth package fallback differs from full Build")
+	}
+}
+
+func TestUpdateApexFilesFallsBackForConflictingDependencyIdentity(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*Index, string)
+	}{
+		{
+			name: "source root",
+			mutate: func(idx *Index, path string) {
+				for i := range idx.Types {
+					if cleanFilePath(idx.Types[i].File) == cleanFilePath(path) {
+						idx.Types[i].SourceRoot += "-other"
+					}
+				}
+			},
+		},
+		{
+			name: "version",
+			mutate: func(idx *Index, path string) {
+				for i := range idx.Types {
+					if cleanFilePath(idx.Types[i].File) == cleanFilePath(path) {
+						idx.Types[i].Version = "9.9.9"
+					}
+				}
+			},
+		},
+		{
+			name: "ordered namespace remap",
+			mutate: func(idx *Index, path string) {
+				for i := range idx.Types {
+					if cleanFilePath(idx.Types[i].File) == cleanFilePath(path) {
+						idx.Types[i].SourceNamespaceRemaps = []namespaceremap.Rule{{From: "Other", To: "stagepkg"}}
+					}
+				}
+			},
+		},
+		{
+			name: "multiple dependency owners",
+			mutate: func(idx *Index, _ string) {
+				for _, dependency := range idx.Dependencies {
+					if dependency.Namespace == "stagepkg" {
+						idx.Dependencies = append(idx.Dependencies, dependency)
+						return
+					}
+				}
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fixture := newCleanIncrementalEquivalenceFixture(t)
+			previous := fixture.buildFresh(t)
+			test.mutate(&previous, fixture.dependencyClass)
+			writeFile(t, fixture.dependencyClass, "global class StageService { global void changed() {} }")
+			if candidate, fastPath := updateApexFilesIncremental(previous, []string{fixture.dependencyClass}, nil); fastPath {
+				t.Fatalf("conflicting dependency identity unexpectedly used fast path: %#v", candidate)
+			}
+			updated := UpdateApexFiles(previous, []string{fixture.dependencyClass}, nil)
+			fresh := fixture.buildFresh(t)
+			if !reflect.DeepEqual(updated, fresh) {
+				t.Errorf("conflicting dependency fallback differs from full Build")
+			}
+		})
+	}
+}
+
+func TestUpdateApexFilesFallsBackForShimAndArtifactIdentity(t *testing.T) {
+	t.Run("artifact", func(t *testing.T) {
+		fixture := newCleanIncrementalEquivalenceFixture(t)
+		previous := fixture.buildFresh(t)
+		var artifactPath string
+		for _, typ := range previous.Types {
+			if typ.Artifact {
+				artifactPath = typ.File
+				break
+			}
+		}
+		if artifactPath == "" {
+			t.Fatal("fixture has no artifact type")
+		}
+		if candidate, fastPath := updateApexFilesIncremental(previous, []string{artifactPath}, nil); fastPath {
+			t.Fatalf("artifact identity unexpectedly used fast path: %#v", candidate)
+		}
+	})
+
+	t.Run("package shim", func(t *testing.T) {
+		root := t.TempDir()
+		consumerRoot := filepath.Join(root, "consumer")
+		shimRoot := filepath.Join(root, "shim")
+		writeIncrementalSFDXProject(t, consumerRoot, "localpkg")
+		writeIncrementalSFDXProject(t, shimRoot, "shimsrc")
+		writeFile(t, filepath.Join(consumerRoot, "glade.yml"), `project:
+  packageShims: ["shimns:../shim"]
+`)
+		shimPath := filepath.Join(shimRoot, "force-app/main/default/classes/ShimType.cls")
+		writeFile(t, shimPath, "global class ShimType { global void beforeEdit() {} }")
+		previous := buildIncrementalIndexFromRoot(t, consumerRoot)
+		writeFile(t, shimPath, "global class ShimType { global void afterEdit() {} }")
+		if candidate, fastPath := updateApexFilesIncremental(previous, []string{shimPath}, nil); fastPath {
+			t.Fatalf("shim identity unexpectedly used fast path: %#v", candidate)
+		}
+		updated := UpdateApexFiles(previous, []string{shimPath}, nil)
+		fresh := buildIncrementalIndexFromRoot(t, consumerRoot)
+		if !reflect.DeepEqual(updated, fresh) {
+			t.Errorf("shim fallback differs from full Build")
+		}
+	})
+}
+
+func TestUpdateApexFilesRejectsLiveDeletedIdentity(t *testing.T) {
+	t.Run("delete path was recreated", func(t *testing.T) {
+		fixture := newCleanIncrementalEquivalenceFixture(t)
+		previous := fixture.buildFresh(t)
+		writeFile(t, fixture.localClass, "public class LocalService { public void recreated() {} }")
+		if candidate, fastPath := updateApexFilesIncremental(previous, nil, []string{fixture.localClass}); fastPath {
+			t.Fatalf("recreated delete identity unexpectedly used fast path: %#v", candidate)
+		}
+		updated := UpdateApexFiles(previous, nil, []string{fixture.localClass})
+		fresh := fixture.buildFresh(t)
+		if !reflect.DeepEqual(updated, fresh) {
+			t.Errorf("recreated delete fallback differs from full Build")
+		}
+	})
+
+	t.Run("rename old path still exists", func(t *testing.T) {
+		fixture := newCleanIncrementalEquivalenceFixture(t)
+		previous := fixture.buildFresh(t)
+		writeFile(t, fixture.localRenamedClass, "public class LocalRenamed {}")
+		fixture.localApexFiles = append(fixture.localApexFiles, fixture.localRenamedClass)
+		changed := []string{fixture.localRenamedClass}
+		deleted := []string{fixture.localClass}
+		if candidate, fastPath := updateApexFilesIncremental(previous, changed, deleted); fastPath {
+			t.Fatalf("rename with live old path unexpectedly used fast path: %#v", candidate)
+		}
+		updated := UpdateApexFiles(previous, changed, deleted)
+		fresh := fixture.buildFresh(t)
+		if !reflect.DeepEqual(updated, fresh) {
+			t.Errorf("live-old-path rename fallback differs from full Build")
+		}
+	})
+}
+
+func TestUpdateApexFilesRejectsDormantProjectIdentityDrift(t *testing.T) {
+	tests := []struct {
+		name   string
+		mutate func(*testing.T, *incrementalEquivalenceFixture)
+	}{
+		{
+			name: "managed dependency removed",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) {
+				writeFile(t, filepath.Join(fixture.consumerRoot, "glade.yml"), `project:
+  namespaceRemaps: ["BasePkg:stagepkg"]
+  managedPackageDependencies: ["artifactpkg:artifact:../packages/artifactpkg.glade-package.json:3.1.0"]
+`)
+			},
+		},
+		{
+			name: "dependency version and remap changed",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) {
+				writeFile(t, filepath.Join(fixture.consumerRoot, "glade.yml"), `project:
+  namespaceRemaps: ["BasePkg:otherstage"]
+  managedPackageDependencies: ["artifactpkg:artifact:../packages/artifactpkg.glade-package.json:3.1.0", "otherstage:../base-source:3.0.0"]
+`)
+			},
+		},
+		{
+			name: "package directory default changed",
+			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) {
+				writeFile(t, filepath.Join(fixture.consumerRoot, "sfdx-project.json"), `{
+  "namespace": "localpkg",
+  "sourceApiVersion": "63.0",
+  "packageDirectories": [{"path": "force-app"}, {"path": "force-app/main/default", "default": true}]
+}`)
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fixture := newCleanIncrementalEquivalenceFixture(t)
+			previous := fixture.buildFresh(t)
+			test.mutate(t, fixture)
+			writeFile(t, fixture.localClass, "public class LocalService { public void changed() {} }")
+			if candidate, fastPath := updateApexFilesIncremental(previous, []string{fixture.localClass}, nil); fastPath {
+				t.Fatalf("dormant project identity drift unexpectedly used fast path: %#v", candidate)
+			}
+			updated := UpdateApexFiles(previous, []string{fixture.localClass}, nil)
+			fresh := buildIncrementalIndexFromRoot(t, fixture.consumerRoot)
+			if !reflect.DeepEqual(updated, fresh) {
+				t.Errorf("project-identity drift fallback differs from full Build")
+			}
+		})
+	}
+}
+
+func TestUpdateApexFilesRejectsDuplicateTriggerIdentity(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"localpkg","packageDirectories":[{"path":"packages/one","default":true},{"path":"packages/two"}]}`)
+	first := filepath.Join(root, "packages/one/triggers/Shared.trigger")
+	second := filepath.Join(root, "packages/two/triggers/Shared.trigger")
+	writeFile(t, first, "trigger Shared on Account (before insert) {}")
+	writeFile(t, second, "trigger Shared on Account (after insert) {}")
+	previous := buildIncrementalIndexFromRoot(t, root)
+	writeFile(t, first, "trigger Shared on Account (before update) {}")
+	if candidate, fastPath := updateApexFilesIncremental(previous, []string{first}, nil); fastPath {
+		t.Fatalf("duplicate trigger identity unexpectedly used fast path: %#v", candidate)
+	}
+	updated := UpdateApexFiles(previous, []string{first}, nil)
+	fresh := buildIncrementalIndexFromRoot(t, root)
+	if !reflect.DeepEqual(updated, fresh) {
+		t.Errorf("duplicate trigger fallback differs from full Build")
+	}
+}
+
+func TestUpdateApexFilesDependencyApexTypeDeltaPreservesFlowTypes(t *testing.T) {
+	fixture := newCleanIncrementalEquivalenceFixture(t)
+	flowPath := filepath.Join(fixture.dependencyRoot, "force-app/main/default/flows/DependencyFlow.flow-meta.xml")
+	writeFile(t, flowPath, "<Flow/>")
+	incremental := fixture.buildFresh(t)
+	baseline := dependencyApexTypeCount(t, incremental, "stagepkg")
+	if baseline < 2 {
+		t.Fatalf("dependency baseline ApexTypes = %d, want class plus flow types", baseline)
+	}
+	writeFile(t, fixture.dependencyAddedClass, "global class StageAdded {}")
+	fixture.dependencyApexFiles = append(fixture.dependencyApexFiles, fixture.dependencyAddedClass)
+	candidate, fastPath := updateApexFilesIncremental(incremental, []string{fixture.dependencyAddedClass}, nil)
+	if !fastPath {
+		t.Fatal("dependency class add with flow baseline rejected fast path")
+	}
+	if got := dependencyApexTypeCount(t, candidate, "stagepkg"); got != baseline+1 {
+		t.Errorf("dependency ApexTypes after add = %d, want %d", got, baseline+1)
+	}
+	if fresh := fixture.buildFresh(t); !reflect.DeepEqual(candidate, fresh) {
+		t.Errorf("dependency add with flow baseline differs from full Build")
+	}
+	fixture.renameFile(t, &fixture.dependencyApexFiles, fixture.dependencyAddedClass, fixture.dependencyRenamedClass)
+	writeFile(t, fixture.dependencyRenamedClass, "global class StageRenamed {}")
+	renamed, fastPath := updateApexFilesIncremental(candidate, []string{fixture.dependencyRenamedClass}, []string{fixture.dependencyAddedClass})
+	if !fastPath {
+		t.Fatal("dependency class rename with flow baseline rejected fast path")
+	}
+	if got := dependencyApexTypeCount(t, renamed, "stagepkg"); got != baseline+1 {
+		t.Errorf("dependency ApexTypes after rename = %d, want %d", got, baseline+1)
+	}
+	if fresh := fixture.buildFresh(t); !reflect.DeepEqual(renamed, fresh) {
+		t.Errorf("dependency rename with flow baseline differs from full Build")
+	}
+	fixture.deleteFile(t, &fixture.dependencyApexFiles, fixture.dependencyRenamedClass)
+	deleted, fastPath := updateApexFilesIncremental(renamed, nil, []string{fixture.dependencyRenamedClass})
+	if !fastPath {
+		t.Fatal("dependency class delete with flow baseline rejected fast path")
+	}
+	if got := dependencyApexTypeCount(t, deleted, "stagepkg"); got != baseline {
+		t.Errorf("dependency ApexTypes after delete = %d, want %d", got, baseline)
+	}
+	if fresh := fixture.buildFresh(t); !reflect.DeepEqual(deleted, fresh) {
+		t.Errorf("dependency delete with flow baseline differs from full Build")
+	}
+}
+
 func TestUpdateApexFilesDependencyClassCountChangesFallBack(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -113,14 +664,6 @@ func TestUpdateApexFilesDependencyClassCountChangesFallBack(t *testing.T) {
 				return []string{fixture.dependencyClass}, nil
 			},
 			wantCount: 2,
-		},
-		{
-			name: "deletion removes dependency type",
-			mutate: func(t *testing.T, fixture *incrementalEquivalenceFixture) ([]string, []string) {
-				fixture.deleteFile(t, &fixture.dependencyApexFiles, fixture.dependencyClass)
-				return nil, []string{fixture.dependencyClass}
-			},
-			wantCount: 0,
 		},
 	}
 
@@ -284,14 +827,17 @@ func TestUpdateApexFilesIdentityWorkIsBounded(t *testing.T) {
 			[]string{fixture.localClass},
 			newCountingOps(&statCalls, &sameFileCalls),
 		)
-		if fastPath {
-			t.Fatalf("delete-only change unexpectedly used fast path: %#v", candidate)
+		if !fastPath {
+			t.Fatal("clean delete-only change did not use fast path")
 		}
 		if statCalls != 0 || sameFileCalls != 0 {
 			t.Errorf("delete-only identity work: stat=%d sameFile=%d, want zero", statCalls, sameFileCalls)
 		}
 		updated := UpdateApexFiles(previous, nil, []string{fixture.localClass})
 		fresh := fixture.buildFresh(t)
+		if !reflect.DeepEqual(candidate, fresh) {
+			t.Errorf("delete-only candidate differs from full Build:\nincremental: %#v\nfull: %#v", candidate, fresh)
+		}
 		if !reflect.DeepEqual(updated, fresh) {
 			t.Errorf("delete-only fallback differs from full Build:\nincremental: %#v\nfull: %#v", updated, fresh)
 		}
