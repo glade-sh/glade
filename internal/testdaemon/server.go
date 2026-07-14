@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/apextest"
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/watch"
 )
@@ -49,6 +50,10 @@ type Server struct {
 	runAdmission chan struct{}
 	runExecution chan struct{}
 	runRequestV1 func(context.Context, RunRequestV1) (testreport.Run, watch.TestSelection, *ClassShardPlanV1, error)
+
+	captureScopeFn      func(watch.Scope) (watch.Snapshot, error)
+	newBackendWatcherFn func(context.Context, watch.Config, watch.Snapshot) (watch.BackendWatcher, watch.Backend, error)
+	afterWatchUpdateFn  func()
 }
 
 func NewServer(cfg ServerConfig) (*Server, error) {
@@ -415,18 +420,73 @@ func (s *Server) acquireRun(ctx context.Context) (func(), error) {
 }
 
 func (s *Server) watchLoop(ctx context.Context, root string) {
+	captureScope := s.captureScopeFn
+	if captureScope == nil {
+		captureScope = watch.CaptureScope
+	}
+	newBackendWatcher := s.newBackendWatcherFn
+	if newBackendWatcher == nil {
+		newBackendWatcher = watch.NewBackendWatcher
+	}
+	afterWatchUpdate := s.afterWatchUpdateFn
+	if afterWatchUpdate == nil {
+		afterWatchUpdate = func() {
+			apextest.InvalidateRuntimeCaches()
+			s.daemon.Warm()
+		}
+	}
 	cfg := watch.Config{Root: root}.Normalized()
-	previous, err := watch.CaptureSnapshot(root)
-	if err != nil {
-		return
+	var watcher watch.BackendWatcher
+	var watchCancel context.CancelFunc
+	for {
+		if ctx.Err() != nil {
+			return
+		}
+		var candidate watch.BackendWatcher
+		var candidateCancel context.CancelFunc
+		var candidateScope watch.Scope
+		err := s.daemon.ReloadPreparedStable(cfg.Scope, captureScope, func(_ project.Project, scope watch.Scope, baseline watch.Snapshot) error {
+			watchCtx, cancel := context.WithCancel(ctx)
+			started, _, startErr := newBackendWatcher(watchCtx, watch.Config{Root: root, Scope: scope}.Normalized(), baseline)
+			if startErr != nil {
+				cancel()
+				return startErr
+			}
+			candidate = started
+			candidateCancel = cancel
+			candidateScope = scope
+			return nil
+		})
+		if err == nil {
+			if ctx.Err() != nil {
+				if candidateCancel != nil {
+					candidateCancel()
+				}
+				if candidate != nil {
+					_ = candidate.Close()
+				}
+				return
+			}
+			watcher = candidate
+			watchCancel = candidateCancel
+			cfg.Scope = candidateScope
+			break
+		}
+		if candidateCancel != nil {
+			candidateCancel()
+		}
+		if candidate != nil {
+			_ = candidate.Close()
+		}
+		var drift *WatchStateDriftError
+		if !errors.As(err, &drift) {
+			return
+		}
 	}
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	watcher, _, err := watch.NewBackendWatcher(ctx, cfg, previous)
-	if err != nil {
-		return
-	}
-	defer watcher.Close()
+	defer func() {
+		watchCancel()
+		_ = watcher.Close()
+	}()
 	for {
 		select {
 		case <-ctx.Done():
@@ -442,11 +502,59 @@ func (s *Server) watchLoop(ctx context.Context, root string) {
 			if len(changes) == 0 {
 				continue
 			}
-			if err := s.daemon.UpdateChanges(changes); err != nil {
+			exact, err := s.daemon.TryUpdateChanges(ctx, changes, cfg.Scope)
+			if err != nil {
 				continue
 			}
-			apextest.InvalidateRuntimeCaches()
-			s.daemon.Warm()
+			if !exact {
+				var candidate watch.BackendWatcher
+				var candidateCancel context.CancelFunc
+				var candidateScope watch.Scope
+				var err error
+				for {
+					candidate = nil
+					candidateCancel = nil
+					err = s.daemon.ReloadPreparedStable(cfg.Scope, captureScope, func(_ project.Project, stableScope watch.Scope, candidateSnapshot watch.Snapshot) error {
+						candidateScope = stableScope
+						candidateCtx, cancel := context.WithCancel(ctx)
+						candidateWatcher, _, prepareErr := newBackendWatcher(candidateCtx, watch.Config{Root: root, Scope: candidateScope}.Normalized(), candidateSnapshot)
+						if prepareErr != nil {
+							cancel()
+							return prepareErr
+						}
+						candidate = candidateWatcher
+						candidateCancel = cancel
+						return nil
+					})
+					var drift *WatchStateDriftError
+					if !errors.As(err, &drift) || ctx.Err() != nil {
+						break
+					}
+					if candidateCancel != nil {
+						candidateCancel()
+					}
+					if candidate != nil {
+						_ = candidate.Close()
+					}
+				}
+				if err != nil {
+					if candidateCancel != nil {
+						candidateCancel()
+					}
+					if candidate != nil {
+						_ = candidate.Close()
+					}
+					continue
+				}
+				oldWatcher := watcher
+				oldCancel := watchCancel
+				watcher = candidate
+				watchCancel = candidateCancel
+				cfg.Scope = candidateScope
+				oldCancel()
+				_ = oldWatcher.Close()
+			}
+			afterWatchUpdate()
 		}
 	}
 }

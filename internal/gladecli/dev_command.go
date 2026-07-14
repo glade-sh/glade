@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -321,7 +322,7 @@ func writeDevTestArtifacts(outRoot, projectRoot string, result testreport.Run, e
 }
 
 func runDevWatch(ctx context.Context, root, outRoot string, once bool, w io.Writer) (testreport.Run, error) {
-	index, err := loadIndex(root)
+	p, index, err := loadProjectIndex(root)
 	if err != nil {
 		return testreport.Run{}, err
 	}
@@ -337,7 +338,7 @@ func runDevWatch(ctx context.Context, root, outRoot string, once bool, w io.Writ
 	fmt.Fprintln(w, "Press Ctrl-C to stop.")
 	fmt.Fprintln(w)
 	var events bytes.Buffer
-	result, err := runWatchTests(ctx, root, index, apextest.Options{}, watch.Config{Root: root}, once, &events)
+	result, err := runWatchTests(ctx, root, p, index, apextest.Options{}, watch.Config{Root: root}, once, &events)
 	if err != nil {
 		return result, err
 	}
@@ -765,27 +766,26 @@ func testRunSnapshot(result testreport.Run) dap.Snapshot {
 	return dap.Snapshot{Frames: frames, Vars: vars}
 }
 
-func runWatchTests(ctx context.Context, root string, index typesys.Index, opts apextest.Options, cfg watch.Config, once bool, w io.Writer) (testreport.Run, error) {
-	cfg = cfg.Normalized()
+func runWatchTests(ctx context.Context, root string, p project.Project, index typesys.Index, opts apextest.Options, cfg watch.Config, once bool, w io.Writer) (testreport.Run, error) {
 	if cfg.Root == "" {
 		cfg.Root = root
 	}
-	previous, err := watch.CaptureSnapshot(root)
+	requestedBackend := cfg.Backend
+	replacement, err := prepareInitialLocalWatchReplacement(ctx, root, cfg, requestedBackend, watch.CaptureScope)
 	if err != nil {
 		return testreport.Run{}, err
 	}
-	watcher, backend, err := watch.NewBackendWatcher(ctx, cfg, previous)
-	if err != nil {
-		return testreport.Run{}, err
-	}
-	defer watcher.Close()
-	cfg.Backend = backend
+	p = replacement.project
+	index = replacement.index
+	graph := replacement.graph
+	watcher := replacement.watcher
+	cfg = replacement.cfg
+	defer func() { _ = watcher.Close() }()
 	if err := writeJSONLine(w, watch.NewWatchStartedEvent(time.Now().UTC(), cfg)); err != nil {
 		return testreport.Run{}, err
 	}
 	runID := 1
 	result := testreport.Run{Name: "glade test"}
-	var graph *watch.RefGraph
 	initialSelection := watch.TestSelection{Mode: watch.SelectionAll, TestClasses: nil, Reason: "initial watch run"}
 	coordinator := newWatchRunCoordinator(runID)
 	started := coordinator.Start(initialSelection, func(runID int, selection watch.TestSelection) (context.CancelFunc, <-chan watchRunResult) {
@@ -853,10 +853,48 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 			if err := writeJSONLine(w, watch.NewDebouncedEvent(time.Now().UTC(), cfg, changes)); err != nil {
 				return result, err
 			}
-			index, graph, err = updateWatchIndexState(root, index, graph, changes)
-			if err != nil {
-				_ = writeJSONLine(w, watch.NewErrorEvent(time.Now().UTC(), err.Error(), root))
-				continue
+			reload := watchScopeChange(changes)
+			var scopeProject *project.Project
+			if !reload {
+				var update localWatchIndexUpdate
+				allowAuthoritativeGraphRefresh := true
+				for {
+					update, err = tryUpdateWatchIndexStateAllowRefresh(root, cfg.Scope, index, graph, changes, allowAuthoritativeGraphRefresh)
+					var drift *testdaemon.WatchStateDriftError
+					if !errors.As(err, &drift) || ctx.Err() != nil {
+						break
+					}
+					allowAuthoritativeGraphRefresh = false
+				}
+				if err != nil {
+					_ = writeJSONLine(w, watch.NewErrorEvent(time.Now().UTC(), err.Error(), root))
+					continue
+				}
+				reload = !update.reusable
+				if update.loaded {
+					scopeProject = &update.project
+				}
+				if update.reusable {
+					p = update.project
+					index = update.index
+					graph = update.graph
+				}
+			}
+			if reload {
+				var replacement localWatchReplacement
+				var loadErr error
+				replacement, loadErr = prepareLocalWatchReplacementRetry(ctx, root, cfg, requestedBackend, scopeProject, watch.CaptureScope)
+				if loadErr != nil {
+					_ = writeJSONLine(w, watch.NewErrorEvent(time.Now().UTC(), loadErr.Error(), root))
+					continue
+				}
+				oldWatcher := watcher
+				watcher = replacement.watcher
+				cfg = replacement.cfg
+				p = replacement.project
+				index = replacement.index
+				graph = replacement.graph
+				_ = oldWatcher.Close()
 			}
 			selection := watch.SelectAffectedTestsWithRefGraph(index, changes, graph)
 			if err := writeJSONLine(w, watch.NewTestsSelectedEvent(time.Now().UTC(), selection)); err != nil {
@@ -879,30 +917,204 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 	}
 }
 
+type localWatchReplacement struct {
+	watcher watch.BackendWatcher
+	cfg     watch.Config
+	project project.Project
+	index   typesys.Index
+	graph   *watch.RefGraph
+}
+
+func prepareLocalWatchReplacement(ctx context.Context, root string, cfg watch.Config, requestedBackend watch.Backend) (localWatchReplacement, error) {
+	return prepareLocalWatchReplacementWithCapture(ctx, root, cfg, requestedBackend, watch.CaptureScope)
+}
+
+func prepareLocalWatchReplacementRetry(ctx context.Context, root string, cfg watch.Config, requestedBackend watch.Backend, initial *project.Project, capture func(watch.Scope) (watch.Snapshot, error)) (localWatchReplacement, error) {
+	for {
+		if err := ctx.Err(); err != nil {
+			return localWatchReplacement{}, err
+		}
+		var replacement localWatchReplacement
+		var err error
+		if initial != nil {
+			replacement, err = prepareLocalWatchReplacementFromProjectWithCapture(ctx, root, cfg, requestedBackend, *initial, capture)
+			initial = nil
+		} else {
+			replacement, err = prepareLocalWatchReplacementWithCapture(ctx, root, cfg, requestedBackend, capture)
+		}
+		if err == nil {
+			return replacement, nil
+		}
+		var drift *testdaemon.WatchStateDriftError
+		if !errors.As(err, &drift) {
+			return localWatchReplacement{}, err
+		}
+	}
+}
+
+func prepareInitialLocalWatchReplacement(ctx context.Context, root string, cfg watch.Config, requestedBackend watch.Backend, capture func(watch.Scope) (watch.Snapshot, error)) (localWatchReplacement, error) {
+	for {
+		if err := ctx.Err(); err != nil {
+			return localWatchReplacement{}, err
+		}
+		replacement, err := prepareLocalWatchReplacementWithCapture(ctx, root, cfg, requestedBackend, capture)
+		if err == nil {
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				_ = replacement.watcher.Close()
+				return localWatchReplacement{}, ctxErr
+			}
+			return replacement, nil
+		}
+		var drift *testdaemon.WatchStateDriftError
+		if !errors.As(err, &drift) {
+			return localWatchReplacement{}, err
+		}
+	}
+}
+
+func prepareLocalWatchReplacementWithCapture(ctx context.Context, root string, cfg watch.Config, requestedBackend watch.Backend, capture func(watch.Scope) (watch.Snapshot, error)) (localWatchReplacement, error) {
+	scopeProject, err := project.Load(root)
+	if err != nil {
+		return localWatchReplacement{}, err
+	}
+	return prepareLocalWatchReplacementFromProjectWithCapture(ctx, root, cfg, requestedBackend, scopeProject, capture)
+}
+
+func prepareLocalWatchReplacementFromProjectWithCapture(ctx context.Context, root string, cfg watch.Config, requestedBackend watch.Backend, scopeProject project.Project, capture func(watch.Scope) (watch.Snapshot, error)) (localWatchReplacement, error) {
+	return prepareLocalWatchReplacementFromProjectWithGraphBuilder(ctx, root, cfg, requestedBackend, scopeProject, capture, watch.BuildReferenceGraph)
+}
+
+func prepareLocalWatchReplacementFromProjectWithGraphBuilder(ctx context.Context, root string, cfg watch.Config, requestedBackend watch.Backend, scopeProject project.Project, capture func(watch.Scope) (watch.Snapshot, error), buildGraph func(typesys.Index) *watch.RefGraph) (localWatchReplacement, error) {
+	scope := watch.ProjectScopeWithPrevious(root, scopeProject, cfg.Scope)
+	candidateCfg := cfg
+	candidateCfg.Backend = requestedBackend
+	candidateCfg.Scope = scope
+	candidateCfg = candidateCfg.Normalized()
+	baseline, err := capture(scope)
+	if err != nil {
+		return localWatchReplacement{}, err
+	}
+	candidate, candidateCfg, err := startScopedWatchBackendFromSnapshot(ctx, candidateCfg, requestedBackend, scope, baseline)
+	if err != nil {
+		return localWatchReplacement{}, err
+	}
+	replacement := localWatchReplacement{watcher: candidate}
+	stable := false
+	defer func() {
+		if !stable {
+			_ = candidate.Close()
+		}
+	}()
+	authoritativeProject, err := project.Load(root)
+	if err != nil {
+		return localWatchReplacement{}, err
+	}
+	authoritativeScope := watch.ProjectScopeWithPrevious(root, authoritativeProject, cfg.Scope)
+	if !reflect.DeepEqual(scope, authoritativeScope) {
+		return localWatchReplacement{}, &testdaemon.WatchStateDriftError{}
+	}
+	index := buildProjectIndex(authoritativeProject)
+	graph := buildGraph(index)
+	proof, err := capture(scope)
+	if err != nil {
+		return localWatchReplacement{}, err
+	}
+	if changes := watch.DiffSnapshots(baseline, proof); len(changes) != 0 {
+		return localWatchReplacement{}, &testdaemon.WatchStateDriftError{Path: changes[0].Path}
+	}
+	replacement.cfg = candidateCfg
+	replacement.project = authoritativeProject
+	replacement.index = index
+	replacement.graph = graph
+	stable = true
+	return replacement, nil
+}
+
+func startScopedWatchBackend(ctx context.Context, cfg watch.Config, requestedBackend watch.Backend, scope watch.Scope) (watch.BackendWatcher, watch.Config, error) {
+	initial, err := watch.CaptureScope(scope)
+	if err != nil {
+		return nil, cfg, err
+	}
+	return startScopedWatchBackendFromSnapshot(ctx, cfg, requestedBackend, scope, initial)
+}
+
+func startScopedWatchBackendFromSnapshot(ctx context.Context, cfg watch.Config, requestedBackend watch.Backend, scope watch.Scope, initial watch.Snapshot) (watch.BackendWatcher, watch.Config, error) {
+	candidateCfg := cfg
+	candidateCfg.Backend = requestedBackend
+	candidateCfg.Scope = scope
+	candidateCfg = candidateCfg.Normalized()
+	candidate, backend, err := watch.NewBackendWatcher(ctx, candidateCfg, initial)
+	if err != nil {
+		return nil, cfg, err
+	}
+	candidateCfg.Backend = backend
+	return candidate, candidateCfg, nil
+}
+
+func prepareInitialDaemonWatch(ctx context.Context, daemon *testdaemon.Daemon, cfg watch.Config, requestedBackend watch.Backend, capture func(watch.Scope) (watch.Snapshot, error)) (watch.BackendWatcher, watch.Config, error) {
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, cfg, err
+		}
+		var watcher watch.BackendWatcher
+		candidateCfg := cfg
+		err := daemon.ReloadPreparedStable(cfg.Scope, capture, func(_ project.Project, scope watch.Scope, baseline watch.Snapshot) error {
+			var prepareErr error
+			watcher, candidateCfg, prepareErr = startScopedWatchBackendFromSnapshot(ctx, cfg, requestedBackend, scope, baseline)
+			return prepareErr
+		})
+		if err == nil {
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				if watcher != nil {
+					_ = watcher.Close()
+				}
+				return nil, cfg, ctxErr
+			}
+			return watcher, candidateCfg, nil
+		}
+		if watcher != nil {
+			_ = watcher.Close()
+		}
+		var drift *testdaemon.WatchStateDriftError
+		if !errors.As(err, &drift) {
+			return nil, cfg, err
+		}
+	}
+}
+
+func watchScopeChange(changes []watch.Change) bool {
+	for _, change := range changes {
+		if change.Kind == watch.FileKindTopology {
+			return true
+		}
+		switch strings.ToLower(filepath.Base(change.Path)) {
+		case "sfdx-project.json", "glade.yml":
+			return true
+		}
+	}
+	return false
+}
+
 func runWatchTestsDaemon(ctx context.Context, root string, daemon *testdaemon.Daemon, opts apextest.Options, cfg watch.Config, once bool, w io.Writer) (testreport.Run, error) {
-	cfg = cfg.Normalized()
 	if cfg.Root == "" {
 		cfg.Root = root
 	}
-	previous, err := watch.CaptureSnapshot(root)
+	requestedBackend := cfg.Backend
+	watcher, cfg, err := prepareInitialDaemonWatch(ctx, daemon, cfg, requestedBackend, watch.CaptureScope)
 	if err != nil {
 		return testreport.Run{}, err
 	}
-	watcher, backend, err := watch.NewBackendWatcher(ctx, cfg, previous)
-	if err != nil {
-		return testreport.Run{}, err
-	}
-	defer watcher.Close()
-	cfg.Backend = backend
+	defer func() { _ = watcher.Close() }()
 	if err := writeJSONLine(w, watch.NewWatchStartedEvent(time.Now().UTC(), cfg)); err != nil {
 		return testreport.Run{}, err
 	}
 	runID := 1
 	result := testreport.Run{Name: "glade test"}
 	initialSelection := watch.TestSelection{Mode: watch.SelectionAll, TestClasses: nil, Reason: "initial watch run"}
+	initialIndex := daemon.IndexSnapshot()
 	coordinator := newWatchRunCoordinator(runID)
 	started := coordinator.Start(initialSelection, func(runID int, selection watch.TestSelection) (context.CancelFunc, <-chan watchRunResult) {
-		return startDaemonWatchRun(ctx, daemon, opts, selection, runID)
+		return startWatchRun(ctx, initialIndex, opts, selection, runID)
 	})
 	runDone := started.Done
 	defer coordinator.Stop()
@@ -966,20 +1178,54 @@ func runWatchTestsDaemon(ctx context.Context, root string, daemon *testdaemon.Da
 			if err := writeJSONLine(w, watch.NewDebouncedEvent(time.Now().UTC(), cfg, changes)); err != nil {
 				return result, err
 			}
-			if err := daemon.UpdateChanges(changes); err != nil {
-				_ = writeJSONLine(w, watch.NewErrorEvent(time.Now().UTC(), err.Error(), root))
-				continue
+			reload := watchScopeChange(changes)
+			if !reload {
+				exact, updateErr := daemon.TryUpdateChanges(ctx, changes, cfg.Scope)
+				if updateErr != nil {
+					_ = writeJSONLine(w, watch.NewErrorEvent(time.Now().UTC(), updateErr.Error(), root))
+					continue
+				}
+				reload = !exact
 			}
-			selection := daemon.SelectAffected(changes)
+			if reload {
+				var candidateWatcher watch.BackendWatcher
+				var candidateCfg watch.Config
+				var loadErr error
+				for {
+					candidateWatcher = nil
+					loadErr = daemon.ReloadPreparedStable(cfg.Scope, watch.CaptureScope, func(_ project.Project, candidateScope watch.Scope, baseline watch.Snapshot) error {
+						var prepareErr error
+						candidateWatcher, candidateCfg, prepareErr = startScopedWatchBackendFromSnapshot(ctx, cfg, requestedBackend, candidateScope, baseline)
+						return prepareErr
+					})
+					var drift *testdaemon.WatchStateDriftError
+					if !errors.As(loadErr, &drift) || ctx.Err() != nil {
+						break
+					}
+					if candidateWatcher != nil {
+						_ = candidateWatcher.Close()
+					}
+				}
+				if loadErr != nil {
+					if candidateWatcher != nil {
+						_ = candidateWatcher.Close()
+					}
+					_ = writeJSONLine(w, watch.NewErrorEvent(time.Now().UTC(), loadErr.Error(), root))
+					continue
+				}
+				oldWatcher := watcher
+				watcher = candidateWatcher
+				cfg = candidateCfg
+				_ = oldWatcher.Close()
+			}
+			selection, starter := prepareDaemonWatchRun(ctx, daemon, opts, changes)
 			if err := writeJSONLine(w, watch.NewTestsSelectedEvent(time.Now().UTC(), selection)); err != nil {
 				return result, err
 			}
 			if selection.Mode == watch.SelectionNone {
 				continue
 			}
-			started := coordinator.Request(selection, func(runID int, selection watch.TestSelection) (context.CancelFunc, <-chan watchRunResult) {
-				return startDaemonWatchRun(ctx, daemon, opts, selection, runID)
-			})
+			started := coordinator.Request(selection, starter)
 			if started.Started {
 				if err := writeJSONLine(w, watch.NewRunStartedEvent(time.Now().UTC(), started.RunID, started.Selection.TestClasses)); err != nil {
 					return result, err
@@ -1070,7 +1316,7 @@ func (c *watchRunCoordinator) Done() <-chan watchRunResult {
 }
 
 func (c *watchRunCoordinator) Stop() {
-	if c.cancel != nil {
+	if c.cancel != nil && !c.canceling {
 		c.cancel()
 		c.canceling = true
 	}
@@ -1109,22 +1355,32 @@ func coalesceWatchSelections(a, b watch.TestSelection) watch.TestSelection {
 }
 
 func unionTestClasses(a, b []string) []string {
-	seen := make(map[string]struct{}, len(a)+len(b))
-	for _, name := range a {
-		if strings.TrimSpace(name) != "" {
-			seen[name] = struct{}{}
+	canonical := make(map[string]string, len(a)+len(b))
+	add := func(names []string) {
+		for _, name := range names {
+			name = strings.TrimSpace(name)
+			key := strings.ToLower(name)
+			if key == "" {
+				continue
+			}
+			if _, exists := canonical[key]; exists {
+				continue
+			}
+			canonical[key] = name
 		}
 	}
-	for _, name := range b {
-		if strings.TrimSpace(name) != "" {
-			seen[name] = struct{}{}
-		}
+	add(a)
+	add(b)
+
+	keys := make([]string, 0, len(canonical))
+	for key := range canonical {
+		keys = append(keys, key)
 	}
-	out := make([]string, 0, len(seen))
-	for name := range seen {
-		out = append(out, name)
+	sort.Strings(keys)
+	out := make([]string, 0, len(keys))
+	for _, key := range keys {
+		out = append(out, canonical[key])
 	}
-	sort.Strings(out)
 	return out
 }
 
@@ -1140,16 +1396,11 @@ func startWatchRun(ctx context.Context, index typesys.Index, opts apextest.Optio
 	return cancel, done
 }
 
-func startDaemonWatchRun(ctx context.Context, daemon *testdaemon.Daemon, opts apextest.Options, selection watch.TestSelection, runID int) (context.CancelFunc, <-chan watchRunResult) {
-	runCtx, cancel := context.WithCancel(ctx)
-	done := make(chan watchRunResult, 1)
-	go func() {
-		done <- watchRunResult{
-			RunID:  runID,
-			Result: daemon.RunSelectionContext(runCtx, opts, selection),
-		}
-	}()
-	return cancel, done
+func prepareDaemonWatchRun(ctx context.Context, daemon *testdaemon.Daemon, opts apextest.Options, changes []watch.Change) (watch.TestSelection, watchRunStarter) {
+	index, selection := daemon.SnapshotSelection(changes)
+	return selection, func(runID int, selection watch.TestSelection) (context.CancelFunc, <-chan watchRunResult) {
+		return startWatchRun(ctx, index, opts, selection, runID)
+	}
 }
 
 func updateWatchIndex(root string, index typesys.Index, changes []watch.Change) (typesys.Index, error) {
@@ -1175,6 +1426,121 @@ func updateWatchIndexState(root string, index typesys.Index, graph *watch.RefGra
 		return index, graph, err
 	}
 	return updated, graph.Refresh(updated, changes), nil
+}
+
+type localWatchIndexUpdate struct {
+	project  project.Project
+	index    typesys.Index
+	graph    *watch.RefGraph
+	loaded   bool
+	reusable bool
+}
+
+func tryUpdateWatchIndexState(root string, currentScope watch.Scope, index typesys.Index, graph *watch.RefGraph, changes []watch.Change) (localWatchIndexUpdate, error) {
+	return tryUpdateWatchIndexStateAllowRefresh(root, currentScope, index, graph, changes, true)
+}
+
+func tryUpdateWatchIndexStateAllowRefresh(root string, currentScope watch.Scope, index typesys.Index, graph *watch.RefGraph, changes []watch.Change, allowAuthoritativeGraphRefresh bool) (localWatchIndexUpdate, error) {
+	return tryUpdateWatchIndexStateWithFuncs(root, currentScope, index, graph, changes, project.Load, func(p project.Project) (typesys.Index, error) {
+		return buildProjectIndex(p), nil
+	}, watch.CaptureScope, allowAuthoritativeGraphRefresh)
+}
+
+func tryUpdateWatchIndexStateWithFuncs(root string, currentScope watch.Scope, index typesys.Index, graph *watch.RefGraph, changes []watch.Change, load func(string) (project.Project, error), build func(project.Project) (typesys.Index, error), capture func(watch.Scope) (watch.Snapshot, error), allowAuthoritativeGraphRefresh ...bool) (localWatchIndexUpdate, error) {
+	allowRefresh := len(allowAuthoritativeGraphRefresh) == 0 || allowAuthoritativeGraphRefresh[0]
+	return tryUpdateWatchIndexStateWithGraphRefreshAllowed(root, currentScope, index, graph, changes, load, build, capture, func(graph *watch.RefGraph, index typesys.Index, changes []watch.Change) (*watch.RefGraph, error) {
+		return graph.Refreshed(index, changes), nil
+	}, allowRefresh)
+}
+
+func tryUpdateWatchIndexStateWithGraphRefresh(root string, currentScope watch.Scope, index typesys.Index, graph *watch.RefGraph, changes []watch.Change, load func(string) (project.Project, error), build func(project.Project) (typesys.Index, error), capture func(watch.Scope) (watch.Snapshot, error), refreshGraph func(*watch.RefGraph, typesys.Index, []watch.Change) (*watch.RefGraph, error)) (localWatchIndexUpdate, error) {
+	return tryUpdateWatchIndexStateWithGraphRefreshAllowed(root, currentScope, index, graph, changes, load, build, capture, refreshGraph, true)
+}
+
+func tryUpdateWatchIndexStateWithGraphRefreshAllowed(root string, currentScope watch.Scope, index typesys.Index, graph *watch.RefGraph, changes []watch.Change, load func(string) (project.Project, error), build func(project.Project) (typesys.Index, error), capture func(watch.Scope) (watch.Snapshot, error), refreshGraph func(*watch.RefGraph, typesys.Index, []watch.Change) (*watch.RefGraph, error), allowAuthoritativeGraphRefresh bool) (localWatchIndexUpdate, error) {
+	result := localWatchIndexUpdate{index: index, graph: graph}
+	if !canIncrementalIndex(changes) {
+		return result, nil
+	}
+	var changed []string
+	var deleted []string
+	for _, change := range changes {
+		switch change.Op {
+		case watch.ChangeDeleted:
+			deleted = append(deleted, change.Path)
+		default:
+			changed = append(changed, change.Path)
+		}
+	}
+	var baseline watch.Snapshot
+	baselineCaptured := false
+	if typesys.RequiresAuthoritativeApexRebuild(index, changed, deleted) {
+		var err error
+		baseline, err = capture(currentScope)
+		if err != nil {
+			return result, err
+		}
+		baselineCaptured = true
+	}
+	p, err := load(root)
+	if err != nil {
+		return result, err
+	}
+	result.project = p
+	result.loaded = true
+	updated, exact, err := typesys.TryUpdateApexFilesCheckedWithLoadedProject(index, changed, deleted, p)
+	if err != nil {
+		return result, err
+	}
+	if exact {
+		result.index = updated
+		result.graph = graph.Refresh(updated, changes)
+		result.reusable = true
+		return result, nil
+	}
+	if !baselineCaptured {
+		baseline, err = capture(currentScope)
+		if err != nil {
+			return result, err
+		}
+		p, err = load(root)
+		if err != nil {
+			return result, err
+		}
+		result.project = p
+	}
+	if !typesys.MatchesProjectIdentity(index, p) {
+		return result, nil
+	}
+	candidateScope := watch.ProjectScopeWithPrevious(root, p, currentScope)
+	if !reflect.DeepEqual(candidateScope, currentScope) {
+		return result, nil
+	}
+	updated, err = build(p)
+	if err != nil {
+		return result, err
+	}
+	var refreshedGraph *watch.RefGraph
+	graphChanges, digestCoverage := watch.AuthoritativeApexGraphChanges(index, updated)
+	if allowAuthoritativeGraphRefresh && digestCoverage && watch.CanRefreshAuthoritativeFallbackGraph(index, updated, graphChanges) {
+		refreshedGraph, err = refreshGraph(graph, updated, graphChanges)
+		if err != nil {
+			return result, err
+		}
+	} else {
+		refreshedGraph = watch.BuildReferenceGraph(updated)
+	}
+	proof, err := capture(currentScope)
+	if err != nil {
+		return result, err
+	}
+	if drift := watch.DiffSnapshots(baseline, proof); len(drift) != 0 {
+		return result, &testdaemon.WatchStateDriftError{Path: drift[0].Path}
+	}
+	result.index = updated
+	result.graph = refreshedGraph
+	result.reusable = true
+	return result, nil
 }
 
 func canIncrementalIndex(changes []watch.Change) bool {
@@ -1209,10 +1575,11 @@ func runSelectedTests(index typesys.Index, opts apextest.Options, selection watc
 }
 
 func runSelectedTestsContext(ctx context.Context, index typesys.Index, opts apextest.Options, selection watch.TestSelection) testreport.Run {
-	if selection.Mode == watch.SelectionDirect && len(selection.TestClasses) == 1 {
-		opts.Filter = selection.TestClasses[0]
+	selectedOpts, ok := watch.ApplyTestSelection(opts, selection)
+	if !ok {
+		return testreport.Run{Name: "glade test"}
 	}
-	return apextest.RunContext(ctx, index, opts)
+	return apextest.RunContext(ctx, index, selectedOpts)
 }
 
 func watchSummary(result testreport.Run) watch.RunSummary {

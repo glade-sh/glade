@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -20,6 +21,66 @@ type TestSelection struct {
 	Mode        SelectionMode `json:"mode"`
 	TestClasses []string      `json:"testClasses,omitempty"`
 	Reason      string        `json:"reason,omitempty"`
+}
+
+// ApplyTestSelection returns test options narrowed by a watch selection. It
+// preserves every caller option except SelectedClasses. The boolean is false
+// when the selection contains no runnable class after normalization or
+// intersection with an existing caller selection.
+func ApplyTestSelection(opts apextest.Options, selection TestSelection) (apextest.Options, bool) {
+	switch selection.Mode {
+	case SelectionNone:
+		return opts, false
+	case SelectionAll:
+		return opts, true
+	case SelectionDirect:
+		selectedClasses := intersectSelectedTestClasses(opts.SelectedClasses, selection.TestClasses)
+		if len(selectedClasses) == 0 {
+			return opts, false
+		}
+		opts.SelectedClasses = selectedClasses
+		return opts, true
+	default:
+		return opts, true
+	}
+}
+
+func intersectSelectedTestClasses(existing, affected []string) []string {
+	affectedSet := make(map[string]struct{}, len(affected))
+	normalizedAffected := make([]string, 0, len(affected))
+	for _, className := range affected {
+		className = strings.TrimSpace(className)
+		key := strings.ToLower(className)
+		if key == "" {
+			continue
+		}
+		if _, exists := affectedSet[key]; exists {
+			continue
+		}
+		affectedSet[key] = struct{}{}
+		normalizedAffected = append(normalizedAffected, className)
+	}
+	if len(existing) == 0 {
+		return normalizedAffected
+	}
+	out := make([]string, 0, len(existing))
+	seen := make(map[string]struct{}, len(existing))
+	for _, className := range existing {
+		className = strings.TrimSpace(className)
+		key := strings.ToLower(className)
+		if key == "" {
+			continue
+		}
+		if _, affected := affectedSet[key]; !affected {
+			continue
+		}
+		if _, duplicate := seen[key]; duplicate {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, className)
+	}
+	return out
 }
 
 // SelectAffectedTests builds a fresh reference graph and selects the tests
@@ -62,6 +123,8 @@ func SelectAffectedTestsWithRefGraph(index typesys.Index, changes []Change, grap
 			return allSelection(allTests, "changed trigger may affect any test")
 		case FileKindObjectMeta, FileKindFieldMeta:
 			return allSelection(allTests, "changed schema metadata may affect any test")
+		default:
+			return allSelection(allTests, "changed project configuration may affect any test")
 		}
 	}
 

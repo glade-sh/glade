@@ -2387,6 +2387,10 @@ func loadProjectIndex(root string) (project.Project, typesys.Index, error) {
 	if err != nil {
 		return project.Project{}, typesys.Index{}, err
 	}
+	return p, buildProjectIndex(p), nil
+}
+
+func buildProjectIndex(p project.Project) typesys.Index {
 	s, err := gladeschema.LoadProject(p)
 	if err != nil {
 		index := typesys.Build(p, gladeschema.Schema{})
@@ -2395,9 +2399,9 @@ func loadProjectIndex(root string) (project.Project, typesys.Index, error) {
 			Code:     "GLADESCHEMA001",
 			Message:  fmt.Sprintf("metadata schema load failed: %v", err),
 		})
-		return p, index, nil
+		return index
 	}
-	return p, typesys.Build(p, s), nil
+	return typesys.Build(p, s)
 }
 
 func loadProjectIndexWithProgress(root, phase string, renderer cliui.Renderer) (project.Project, typesys.Index, error) {

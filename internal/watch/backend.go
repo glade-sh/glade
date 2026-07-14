@@ -71,7 +71,7 @@ func (w *PollingWatcher) run(ctx context.Context, cfg Config, previous Snapshot)
 			close(w.errors)
 			return
 		case <-ticker.C:
-			current, err := CaptureSnapshot(cfg.Root)
+			current, err := CaptureScope(cfg.Scope)
 			if err != nil {
 				sendWatchError(ctx, w.errors, err)
 				continue
@@ -98,15 +98,16 @@ func NewNativeWatcher(ctx context.Context, cfg Config, initial Snapshot) (*Nativ
 		return nil, err
 	}
 	cfg = cfg.Normalized()
-	absRoot, err := filepath.Abs(cfg.Root)
+	if err := addScopeWatchDirs(inner, cfg.Scope); err != nil {
+		_ = inner.Close()
+		return nil, err
+	}
+	reconciled, err := CaptureScope(cfg.Scope)
 	if err != nil {
 		_ = inner.Close()
 		return nil, err
 	}
-	if err := addWatchDirs(inner, absRoot); err != nil {
-		_ = inner.Close()
-		return nil, err
-	}
+	reconciliationChanges := DiffSnapshots(initial, reconciled)
 	ctx, cancel := context.WithCancel(ctx)
 	w := &NativeWatcher{
 		cancel:  cancel,
@@ -114,7 +115,10 @@ func NewNativeWatcher(ctx context.Context, cfg Config, initial Snapshot) (*Nativ
 		changes: make(chan []Change, 1),
 		errors:  make(chan error, 1),
 	}
-	go w.run(ctx, cfg, initial)
+	if len(reconciliationChanges) > 0 {
+		w.changes <- reconciliationChanges
+	}
+	go w.run(ctx, cfg, reconciled)
 	return w, nil
 }
 
@@ -134,6 +138,13 @@ func (w *NativeWatcher) run(ctx context.Context, cfg Config, previous Snapshot) 
 	pendingPaths := make(map[string]struct{})
 	timer := newTimer()
 	defer timer.Stop()
+	var auxiliaryTicker *time.Ticker
+	var auxiliaryC <-chan time.Time
+	if len(cfg.Scope.Topology) > 0 || len(cfg.Scope.Files) > 0 {
+		auxiliaryTicker = newTicker(auxiliaryPollInterval(cfg.Debounce))
+		auxiliaryC = auxiliaryTicker.C
+		defer auxiliaryTicker.Stop()
+	}
 	for {
 		select {
 		case <-ctx.Done():
@@ -147,10 +158,24 @@ func (w *NativeWatcher) run(ctx context.Context, cfg Config, previous Snapshot) 
 			if !ok {
 				return
 			}
-			if event.Op&(fsnotify.Create|fsnotify.Rename) != 0 {
-				addCreatedDir(w.inner, event.Name)
+			eventPath, err := filepath.Abs(event.Name)
+			if err != nil {
+				continue
 			}
-			classification := ClassifyPath(event.Name)
+			eventPath = filepath.Clean(eventPath)
+			topologyRelevant := scopeTopologyRelevant(cfg.Scope, eventPath)
+			if event.Op&(fsnotify.Create|fsnotify.Rename) != 0 && topologyRelevant {
+				addCreatedDir(w.inner, event.Name, cfg.Scope)
+			}
+			classification := classifyScopePath(cfg.Scope, eventPath)
+			if !scopeCapturesPath(cfg.Scope, eventPath, classification) {
+				if topologyRelevant && event.Op&(fsnotify.Create|fsnotify.Remove|fsnotify.Rename) != 0 {
+					pending = true
+					pendingFull = true
+					resetTimer(timer, cfg.Debounce)
+				}
+				continue
+			}
 			if nativeEventNeedsFullSnapshot(event, classification) {
 				pending = true
 				pendingFull = true
@@ -174,7 +199,7 @@ func (w *NativeWatcher) run(ctx context.Context, cfg Config, previous Snapshot) 
 			pendingPaths = make(map[string]struct{})
 			currentFull := pendingFull
 			pendingFull = false
-			changes, current, err := snapshotPendingPaths(cfg.Root, previous, paths, currentFull)
+			changes, current, err := snapshotPendingScope(cfg.Scope, previous, paths, currentFull)
 			if err != nil {
 				sendWatchError(ctx, w.errors, err)
 				continue
@@ -183,11 +208,63 @@ func (w *NativeWatcher) run(ctx context.Context, cfg Config, previous Snapshot) 
 			if len(changes) > 0 {
 				sendWatchChanges(ctx, w.changes, changes)
 			}
+		case <-auxiliaryC:
+			currentAuxiliary, err := captureScopeAuxiliary(cfg.Scope)
+			if err != nil {
+				sendWatchError(ctx, w.errors, err)
+				continue
+			}
+			previousAuxiliary := scopeAuxiliarySnapshot(cfg.Scope, previous)
+			changes := DiffSnapshots(previousAuxiliary, currentAuxiliary)
+			for _, path := range cfg.Scope.Files {
+				delete(previous.Files, path)
+			}
+			for path, state := range currentAuxiliary.Files {
+				previous.Files[path] = state
+			}
+			previous.Topology = currentAuxiliary.Topology
+			if len(changes) > 0 {
+				sendWatchChanges(ctx, w.changes, changes)
+			}
 		}
 	}
 }
 
+func auxiliaryPollInterval(debounce time.Duration) time.Duration {
+	const minimum = 500 * time.Millisecond
+	if debounce < minimum {
+		return minimum
+	}
+	return debounce
+}
+
+func captureScopeAuxiliary(scope Scope) (Snapshot, error) {
+	files, err := captureScopePaths(scope, scope.Files)
+	if err != nil {
+		return Snapshot{}, err
+	}
+	topology, err := captureScopeTopology(scope)
+	if err != nil {
+		return Snapshot{}, err
+	}
+	files.Topology = topology
+	return files, nil
+}
+
+func scopeAuxiliarySnapshot(scope Scope, snapshot Snapshot) Snapshot {
+	files := make(map[string]FileState)
+	for _, path := range scope.Files {
+		if state, ok := snapshot.Files[path]; ok {
+			files[path] = state
+		}
+	}
+	return Snapshot{Files: files, Topology: snapshot.Topology}
+}
+
 func nativeEventNeedsFullSnapshot(event fsnotify.Event, classification FileClassification) bool {
+	if classification.Kind == FileKindTopology {
+		return true
+	}
 	if !classification.Watchable {
 		return event.Op&(fsnotify.Create|fsnotify.Remove|fsnotify.Rename) != 0
 	}
@@ -200,14 +277,18 @@ func nativeEventNeedsFullSnapshot(event fsnotify.Event, classification FileClass
 }
 
 func snapshotPendingPaths(root string, previous Snapshot, paths []string, full bool) ([]Change, Snapshot, error) {
+	return snapshotPendingScope(NormalizeScope(Scope{Roots: []string{root}}), previous, paths, full)
+}
+
+func snapshotPendingScope(scope Scope, previous Snapshot, paths []string, full bool) ([]Change, Snapshot, error) {
 	if full || len(paths) == 0 {
-		current, err := CaptureSnapshot(root)
+		current, err := CaptureScope(scope)
 		if err != nil {
 			return nil, previous, err
 		}
 		return DiffSnapshots(previous, current), current, nil
 	}
-	currentSubset, err := CapturePaths(paths)
+	currentSubset, err := captureScopePaths(scope, paths)
 	if err != nil {
 		return nil, previous, err
 	}
@@ -223,7 +304,7 @@ func snapshotPendingPaths(root string, previous Snapshot, paths []string, full b
 		}
 	}
 	changes := DiffSnapshots(previousSubset, currentSubset)
-	current := Snapshot{Files: make(map[string]FileState, len(previous.Files)+len(currentSubset.Files))}
+	current := Snapshot{Files: make(map[string]FileState, len(previous.Files)+len(currentSubset.Files)), Topology: previous.Topology}
 	for path, state := range previous.Files {
 		current.Files[path] = state
 	}
@@ -240,6 +321,85 @@ func snapshotPendingPaths(root string, previous Snapshot, paths []string, full b
 	return changes, current, nil
 }
 
+func captureScopePaths(scope Scope, paths []string) (Snapshot, error) {
+	files := make(map[string]FileState)
+	for _, path := range paths {
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			return Snapshot{}, err
+		}
+		absPath = filepath.Clean(absPath)
+		classification := ClassifyPath(absPath)
+		if !scopeCapturesPath(scope, absPath, classification) {
+			continue
+		}
+		state, ok, err := capturePath(absPath)
+		if err != nil {
+			return Snapshot{}, err
+		}
+		if ok {
+			files[state.Path] = state
+		}
+	}
+	return Snapshot{Files: files}, nil
+}
+
+func scopeCapturesPath(scope Scope, path string, classification FileClassification) bool {
+	if scopeExcludesPath(scope, path) {
+		return false
+	}
+	if _, topology := scopeTopologyEndpoint(scope, path); topology {
+		return classification.Kind == FileKindTopology
+	}
+	for _, file := range scope.Files {
+		if path == file {
+			return classification.Watchable
+		}
+	}
+	for _, root := range scope.Roots {
+		if !pathWithin(path, root) {
+			continue
+		}
+		return classification.Watchable && (classification.Kind != FileKindIgnored || isRootConfigPath(path, root))
+	}
+	return false
+}
+
+func classifyScopePath(scope Scope, path string) FileClassification {
+	if endpoint, ok := scopeTopologyEndpoint(scope, path); ok {
+		return FileClassification{Path: endpoint, Kind: FileKindTopology, Name: filepath.Base(endpoint), Watchable: true}
+	}
+	return ClassifyPath(path)
+}
+
+func scopeTopologyEndpoint(scope Scope, path string) (string, bool) {
+	for _, endpoint := range scope.Topology {
+		if path == endpoint || (filepath.Base(path) == filepath.Base(endpoint) && sameExistingFile(filepath.Dir(path), filepath.Dir(endpoint))) {
+			return endpoint, true
+		}
+	}
+	return "", false
+}
+
+func scopeTopologyRelevant(scope Scope, path string) bool {
+	for _, root := range scope.Roots {
+		if pathWithin(path, root) || pathWithin(root, path) {
+			return true
+		}
+	}
+	for _, file := range scope.Files {
+		if path == file || pathWithin(file, path) {
+			return true
+		}
+	}
+	for _, endpoint := range scope.Topology {
+		if _, ok := scopeTopologyEndpoint(scope, path); ok || pathWithin(endpoint, path) {
+			return true
+		}
+	}
+	return false
+}
+
 func sortedPendingPaths(paths map[string]struct{}) []string {
 	out := make([]string, 0, len(paths))
 	for path := range paths {
@@ -249,10 +409,48 @@ func sortedPendingPaths(paths map[string]struct{}) []string {
 	return out
 }
 
-func addWatchDirs(w *fsnotify.Watcher, root string) error {
+func addScopeWatchDirs(w *fsnotify.Watcher, scope Scope) error {
+	for _, root := range scope.Roots {
+		info, err := os.Stat(root)
+		if err == nil && info.IsDir() {
+			if err := addScopeRootWatchDirs(w, root, scope); err != nil {
+				return err
+			}
+			// Keep the parent registered so deleting and later recreating the
+			// scoped root remains observable after the root's own watch is gone.
+			if err := addNearestExistingDir(w, filepath.Dir(root)); err != nil {
+				return err
+			}
+			continue
+		}
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		if err := addNearestExistingDir(w, filepath.Dir(root)); err != nil {
+			return err
+		}
+	}
+	for _, endpoint := range scope.Topology {
+		if err := addNearestExistingDir(w, filepath.Dir(endpoint)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func addScopeRootWatchDirs(w *fsnotify.Watcher, root string, scope Scope) error {
 	return filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
+		}
+		if scopeExcludesPath(scope, path) {
+			if d.IsDir() {
+				if scopeNeedsExcludedTraversal(scope, path) {
+					return w.Add(path)
+				}
+				return filepath.SkipDir
+			}
+			return nil
 		}
 		if !d.IsDir() {
 			return nil
@@ -261,10 +459,30 @@ func addWatchDirs(w *fsnotify.Watcher, root string) error {
 	})
 }
 
-func addCreatedDir(w *fsnotify.Watcher, path string) {
+func addNearestExistingDir(w *fsnotify.Watcher, path string) error {
+	for {
+		info, err := os.Stat(path)
+		if err == nil && info.IsDir() {
+			return w.Add(path)
+		}
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		parent := filepath.Dir(path)
+		if parent == path {
+			return fmt.Errorf("no existing directory for watch path %q", path)
+		}
+		path = parent
+	}
+}
+
+func addCreatedDir(w *fsnotify.Watcher, path string, scope Scope) {
+	if scopeExcludesPath(scope, path) && !scopeNeedsExcludedTraversal(scope, path) {
+		return
+	}
 	info, err := os.Stat(path)
 	if err == nil && info.IsDir() {
-		_ = addWatchDirs(w, path)
+		_ = addScopeRootWatchDirs(w, path, scope)
 	}
 }
 

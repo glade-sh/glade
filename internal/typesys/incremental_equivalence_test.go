@@ -341,6 +341,11 @@ func TestUpdateApexFilesCheckedFallbackLoadsProjectOnce(t *testing.T) {
 	writeFile(t, path, "public class Ambiguous { public void beforeEdit() {} }")
 	previous := buildIncrementalIndexFromRoot(t, root)
 	writeFile(t, path, "public class Ambiguous { public void afterEdit() {} }")
+	if candidate, exact, err := TryUpdateApexFilesChecked(previous, []string{path}, nil); err != nil {
+		t.Fatal(err)
+	} else if exact || !reflect.DeepEqual(candidate, Index{}) {
+		t.Fatalf("exact-only update = (%#v, %t), want zero candidate and fallback required", candidate, exact)
+	}
 	loads := 0
 	updated, err := updateApexFilesCheckedWithIdentityOps(previous, []string{path}, nil, incrementalFileIdentityOps{
 		loadProject: func(root string) (project.Project, error) {

@@ -632,7 +632,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if perfEnabled {
 		perfRunStarted = time.Now()
 	}
-	index, preRunPhases, err := loadTestIndexWithPerfPhases(root, perfEnabled)
+	loadedProject, index, preRunPhases, err := loadTestIndexWithPerfPhases(root, perfEnabled)
 	if err != nil {
 		return testreport.Run{}, err
 	}
@@ -653,7 +653,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		}
 	}
 	if watchMode {
-		return runWatchTests(ctx, root, index, testOpts, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
+		return runWatchTests(ctx, root, loadedProject, index, testOpts, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
 	}
 	var result testreport.Run
 	if strings.TrimSpace(changedSince) != "" {
@@ -806,17 +806,17 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	}
 }
 
-func loadTestIndexWithPerfPhases(root string, enabled bool) (typesys.Index, apextest.PreRunPhaseDurations, error) {
+func loadTestIndexWithPerfPhases(root string, enabled bool) (project.Project, typesys.Index, apextest.PreRunPhaseDurations, error) {
 	if !enabled {
-		index, err := loadIndex(root)
-		return index, apextest.PreRunPhaseDurations{}, err
+		p, index, err := loadProjectIndex(root)
+		return p, index, apextest.PreRunPhaseDurations{}, err
 	}
 	var phases apextest.PreRunPhaseDurations
 	started := time.Now()
 	p, err := project.Load(root)
 	phases.ProjectLoad = time.Since(started)
 	if err != nil {
-		return typesys.Index{}, phases, err
+		return project.Project{}, typesys.Index{}, phases, err
 	}
 	started = time.Now()
 	s, schemaErr := gladeschema.LoadProject(p)
@@ -830,11 +830,11 @@ func loadTestIndexWithPerfPhases(root string, enabled bool) (typesys.Index, apex
 			Code:     "GLADESCHEMA001",
 			Message:  fmt.Sprintf("metadata schema load failed: %v", schemaErr),
 		})
-		return index, phases, nil
+		return p, index, phases, nil
 	}
 	index := typesys.Build(p, s)
 	phases.IndexBuild = time.Since(started)
-	return index, phases, nil
+	return p, index, phases, nil
 }
 
 func preRunPerfSnapshot(phases apextest.PreRunPhaseDurations) apextest.PerfCounters {

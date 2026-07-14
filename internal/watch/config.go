@@ -16,6 +16,7 @@ type Config struct {
 	Root     string        `json:"root"`
 	Debounce time.Duration `json:"-"`
 	Backend  Backend       `json:"backend,omitempty"`
+	Scope    Scope         `json:"-"`
 }
 
 type ConfigSnapshot struct {
@@ -31,6 +32,10 @@ func (c Config) Normalized() Config {
 	if c.Backend == "" {
 		c.Backend = BackendAuto
 	}
+	if len(c.Scope.Roots) == 0 && len(c.Scope.Files) == 0 && c.Root != "" {
+		c.Scope.Roots = []string{c.Root}
+	}
+	c.Scope = NormalizeScope(c.Scope)
 	return c
 }
 

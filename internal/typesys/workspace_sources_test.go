@@ -635,3 +635,26 @@ func TestSourceDigestSetSupportsConcurrentLookup(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestSourceDigestSetWithoutSourceRetainsPhysicalLookupForAnotherAlias(t *testing.T) {
+	root := t.TempDir()
+	physical := filepath.Join(root, "Physical.cls")
+	alias := filepath.Join(root, "Alias.cls")
+	want := sha256.Sum256([]byte("public class Physical {}"))
+	digests := &SourceDigestSet{
+		physical:  map[string][sha256.Size]byte{physical: want},
+		requested: map[string]string{physical: physical, alias: physical},
+		absolute:  map[string]string{physical: physical, alias: physical},
+	}
+
+	updated := digests.withoutSource(physical)
+	if got, ok := updated.Digest(physical); !ok || got != want {
+		t.Fatalf("retained physical digest = %x, %t, want %x, true", got, ok, want)
+	}
+	if got, ok := updated.Digest(alias); !ok || got != want {
+		t.Fatalf("remaining alias digest = %x, %t, want %x, true", got, ok, want)
+	}
+	if _, exists := updated.requested[physical]; exists {
+		t.Fatal("deleted requested alias remained in digest snapshot")
+	}
+}

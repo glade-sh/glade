@@ -32,6 +32,7 @@ type Index struct {
 	Dependencies          []DependencyInfo                  `json:"dependencies,omitempty"`
 	Diagnostics           []diagnostic.Diagnostic           `json:"diagnostics,omitempty"`
 	projectIdentity       string
+	sourceDigests         *SourceDigestSet
 }
 
 type ProjectInfo struct {
@@ -200,6 +201,7 @@ func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *Work
 	appendDataWeaveScriptResourceSymbols(&idx, p)
 	appendProjectSymbols(&idx, parser, p, false, p.Namespace, "", seenTypes, sources)
 	artifacts.SourceDigests = sources.sourceDigestSet()
+	idx.sourceDigests = artifacts.SourceDigests
 
 	sort.Slice(idx.Types, func(i, j int) bool {
 		if idx.Types[i].Namespace == idx.Types[j].Namespace {
@@ -728,13 +730,51 @@ func UpdateApexFilesChecked(previous Index, changedPaths, deletedPaths []string)
 	return updateApexFilesCheckedWithIdentityOps(previous, changedPaths, deletedPaths, incrementalFileIdentityOps{})
 }
 
+// TryUpdateApexFilesChecked applies only an exact incremental update. The
+// boolean is false when the caller must reload one authoritative project and
+// rebuild from it; no fallback index is returned in that case.
+func TryUpdateApexFilesChecked(previous Index, changedPaths, deletedPaths []string) (Index, bool, error) {
+	return tryUpdateApexFilesCheckedWithIdentityOps(previous, changedPaths, deletedPaths, incrementalFileIdentityOps{})
+}
+
+// TryUpdateApexFilesCheckedWithLoadedProject applies only an exact
+// incremental update while reusing an authoritative project already loaded by
+// the caller. The boolean is false when the caller must rebuild the complete
+// index from p.
+func TryUpdateApexFilesCheckedWithLoadedProject(previous Index, changedPaths, deletedPaths []string, p project.Project) (Index, bool, error) {
+	identityOps := incrementalIdentityOpsWithDefaults(incrementalFileIdentityOps{})
+	if idx, ok := updateApexFilesIncrementalWithLoadedProject(previous, changedPaths, deletedPaths, identityOps, p); ok {
+		return idx, true, nil
+	}
+	return Index{}, false, nil
+}
+
+// MatchesProjectIdentity reports whether p has the same configuration and
+// dependency identity as the authoritative project used to build idx.
+func MatchesProjectIdentity(idx Index, p project.Project) bool {
+	return idx.projectIdentity != "" && idx.projectIdentity == incrementalProjectIdentity(p) &&
+		p.Root == idx.Project.Root && p.Namespace == idx.Project.Namespace &&
+		p.SourceAPIVersion == idx.Project.SourceAPIVersion
+}
+
+// SourceDigest returns the raw source digest retained by the build that
+// produced idx. It never reads the filesystem.
+func (idx Index) SourceDigest(path string) ([32]byte, bool) {
+	return idx.sourceDigests.Digest(path)
+}
+
+// RequiresAuthoritativeApexRebuild reports whether the change shape cannot use
+// the exact incremental updater without first loading project identity.
+func RequiresAuthoritativeApexRebuild(previous Index, changedPaths, deletedPaths []string) bool {
+	return !incrementalUpdateShapeSupported(previous, changedPaths, deletedPaths)
+}
+
 func updateApexFilesCheckedWithIdentityOps(previous Index, changedPaths, deletedPaths []string, identityOps incrementalFileIdentityOps) (Index, error) {
-	identityOps = incrementalIdentityOpsWithDefaults(identityOps)
-	p, err := identityOps.loadProject(previous.Project.Root)
+	idx, exact, p, err := tryUpdateApexFilesCheckedWithLoadedProject(previous, changedPaths, deletedPaths, identityOps)
 	if err != nil {
 		return Index{}, err
 	}
-	if idx, ok := updateApexFilesIncrementalWithLoadedProject(previous, changedPaths, deletedPaths, identityOps, p); ok {
+	if exact {
 		return idx, nil
 	}
 	s, err := schema.LoadProject(p)
@@ -742,6 +782,23 @@ func updateApexFilesCheckedWithIdentityOps(previous Index, changedPaths, deleted
 		return Index{}, err
 	}
 	return Build(p, s), nil
+}
+
+func tryUpdateApexFilesCheckedWithIdentityOps(previous Index, changedPaths, deletedPaths []string, identityOps incrementalFileIdentityOps) (Index, bool, error) {
+	idx, exact, _, err := tryUpdateApexFilesCheckedWithLoadedProject(previous, changedPaths, deletedPaths, identityOps)
+	return idx, exact, err
+}
+
+func tryUpdateApexFilesCheckedWithLoadedProject(previous Index, changedPaths, deletedPaths []string, identityOps incrementalFileIdentityOps) (Index, bool, project.Project, error) {
+	identityOps = incrementalIdentityOpsWithDefaults(identityOps)
+	p, err := identityOps.loadProject(previous.Project.Root)
+	if err != nil {
+		return Index{}, false, project.Project{}, err
+	}
+	if idx, ok := updateApexFilesIncrementalWithLoadedProject(previous, changedPaths, deletedPaths, identityOps, p); ok {
+		return idx, true, p, nil
+	}
+	return Index{}, false, p, nil
 }
 
 func incrementalFallbackFailure(previous Index, err error) Index {
@@ -1092,6 +1149,10 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 		CodeIntelUses:         previous.CodeIntelUses,
 		Dependencies:          previous.Dependencies,
 		projectIdentity:       previous.projectIdentity,
+		sourceDigests:         previous.sourceDigests,
+	}
+	for path := range deleted {
+		idx.sourceDigests = idx.sourceDigests.withoutSource(path)
 	}
 	identityPathByRequestedKey := make(map[string]string)
 	ambiguousIdentity := false
@@ -1228,6 +1289,7 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 		if err != nil {
 			return Index{}, false
 		}
+		idx.sourceDigests = idx.sourceDigests.withSourceDigest(path, data)
 		metadata := changedSource.owner.metadata
 		source := project.NormalizeApexNamespaceTokens(string(data), metadata.namespace)
 		source = namespaceremap.ApplySource(metadata.namespaceRemaps, source)

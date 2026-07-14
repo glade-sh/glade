@@ -108,6 +108,86 @@ func (s *SourceDigestSet) PhysicalCount() int {
 	return len(s.physical)
 }
 
+func (s *SourceDigestSet) withSourceDigest(path string, raw []byte) *SourceDigestSet {
+	copySet := &SourceDigestSet{
+		physical:  make(map[string][sha256.Size]byte),
+		requested: make(map[string]string),
+		absolute:  make(map[string]string),
+	}
+	if s != nil {
+		for key, value := range s.physical {
+			copySet.physical[key] = value
+		}
+		for key, value := range s.requested {
+			copySet.requested[key] = value
+		}
+		for key, value := range s.absolute {
+			copySet.absolute[key] = value
+		}
+	}
+	physical := copySet.requested[path]
+	if physical == "" {
+		physical = copySet.absolute[cleanedAbsolutePath(path)]
+	}
+	if physical == "" {
+		physical = canonicalPhysicalPath(path)
+	}
+	copySet.physical[physical] = sha256.Sum256(raw)
+	copySet.requested[path] = physical
+	copySet.absolute[cleanedAbsolutePath(path)] = physical
+	copySet.absolute[cleanedAbsolutePath(physical)] = physical
+	return copySet
+}
+
+func (s *SourceDigestSet) withoutSource(path string) *SourceDigestSet {
+	if s == nil {
+		return nil
+	}
+	copySet := &SourceDigestSet{
+		physical:  make(map[string][sha256.Size]byte, len(s.physical)),
+		requested: make(map[string]string, len(s.requested)),
+		absolute:  make(map[string]string, len(s.absolute)),
+	}
+	for key, value := range s.physical {
+		copySet.physical[key] = value
+	}
+	for key, value := range s.requested {
+		copySet.requested[key] = value
+	}
+	for key, value := range s.absolute {
+		copySet.absolute[key] = value
+	}
+	cleaned := cleanedAbsolutePath(path)
+	physical := copySet.requested[path]
+	if physical == "" {
+		physical = copySet.absolute[cleaned]
+	}
+	for requested := range copySet.requested {
+		if requested == path || cleanedAbsolutePath(requested) == cleaned {
+			delete(copySet.requested, requested)
+		}
+	}
+	delete(copySet.absolute, cleaned)
+	retained := false
+	for _, candidate := range copySet.requested {
+		if candidate == physical {
+			retained = true
+			break
+		}
+	}
+	if physical != "" && !retained {
+		delete(copySet.physical, physical)
+		for alias, candidate := range copySet.absolute {
+			if candidate == physical {
+				delete(copySet.absolute, alias)
+			}
+		}
+	} else if physical != "" {
+		copySet.absolute[cleanedAbsolutePath(physical)] = physical
+	}
+	return copySet
+}
+
 // SourceForType returns the exact logical source occurrence used to build typ.
 // It never reads the filesystem.
 func (a BuildArtifacts) SourceForType(typ TypeSymbol) (WorkspaceSource, bool) {
