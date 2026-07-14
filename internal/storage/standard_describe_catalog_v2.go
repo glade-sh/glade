@@ -143,7 +143,7 @@ func lookupStandardDescribeCatalogV2Index(index []standardDescribeCatalogV2Index
 	position := sort.Search(len(index), func(position int) bool {
 		return strings.ToLower(index[position].Name) >= key
 	})
-	if position == len(index) || strings.ToLower(index[position].Name) != key {
+	if position == len(index) || !strings.EqualFold(index[position].Name, key) {
 		return standardDescribeCatalogV2IndexEntry{}, false
 	}
 	return index[position], true
