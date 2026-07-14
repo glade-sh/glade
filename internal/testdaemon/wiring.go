@@ -121,6 +121,15 @@ func (d *Daemon) runRequestV1(
 	ctx context.Context,
 	request RunRequestV1,
 ) (testreport.Run, watch.TestSelection, *ClassShardPlanV1, error) {
+	return d.runRequestV1WithProgress(ctx, request, nil, nil)
+}
+
+func (d *Daemon) runRequestV1WithProgress(
+	ctx context.Context,
+	request RunRequestV1,
+	progress func(apextest.TestProgress),
+	setProgressTotal func(int),
+) (testreport.Run, watch.TestSelection, *ClassShardPlanV1, error) {
 	if err := validateRunRequestV1(request); err != nil {
 		return testreport.Run{}, watch.TestSelection{}, nil, err
 	}
@@ -128,6 +137,7 @@ func (d *Daemon) runRequestV1(
 		return testreport.Run{}, watch.TestSelection{}, nil, err
 	}
 	options := apexOptionsFromRunRequestV1(request)
+	options.Progress = progress
 
 	d.mu.RLock()
 	index := d.index
@@ -215,9 +225,22 @@ func (d *Daemon) runRequestV1(
 			return testreport.Run{}, watch.TestSelection{}, nil, err
 		}
 	}
+	if setProgressTotal != nil {
+		setProgressTotal(len(cases))
+	}
 	run := apextest.RunCasesContext(ctx, index, options, cases)
 	run.Dependencies = append(run.Dependencies, index.Dependencies...)
 	return run, selection, nil, nil
+}
+
+// RunRequestV1 applies the versioned daemon request semantics in-process.
+func (d *Daemon) RunRequestV1(
+	ctx context.Context,
+	request RunRequestV1,
+	progress func(apextest.TestProgress),
+	setProgressTotal func(int),
+) (testreport.Run, watch.TestSelection, *ClassShardPlanV1, error) {
+	return d.runRequestV1WithProgress(ctx, request, progress, setProgressTotal)
 }
 
 func exactSelectorFailureV1(index typesys.Index, options apextest.Options) (testreport.Run, bool) {

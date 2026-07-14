@@ -575,15 +575,20 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		if watchMode {
 			return runWatchTestsDaemon(ctx, root, daemon, testOpts, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
 		}
-		var result testreport.Run
-		if strings.TrimSpace(changedSince) != "" {
-			run, _, err := daemon.RunChangedSinceOptions(changedSince, testOpts)
-			if err != nil {
-				return testreport.Run{}, err
+		request := testdaemon.NewRunRequestV1(testOpts, changedSince, effectiveShardCount, shardIndex, writeClassShardsDir != "")
+		var setProgressTotal func(int)
+		if progressReporter != nil {
+			setProgressTotal = progressReporter.setTotal
+		}
+		result, _, shardPlan, err := daemon.RunRequestV1(ctx, request, testOpts.Progress, setProgressTotal)
+		if err != nil {
+			return testreport.Run{}, err
+		}
+		if writeClassShardsDir != "" && result.Summary().Total == 0 {
+			if shardPlan == nil {
+				return testreport.Run{}, errors.New("test daemon did not return a class shard plan")
 			}
-			result = run
-		} else {
-			result = daemon.RunOptions(testOpts)
+			return testreport.Run{}, writeCLIClassShardPlan(writeClassShardsDir, *shardPlan, effectiveShardCount)
 		}
 		if err := writeLastFailedTests(root, result); err != nil {
 			return result, err
