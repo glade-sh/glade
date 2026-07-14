@@ -17,6 +17,8 @@ import (
 	"github.com/glade-sh/glade/internal/schema"
 )
 
+// Index is an immutable snapshot. Nested payloads may be structurally shared
+// between snapshots; callers must not mutate an Index after publication.
 type Index struct {
 	Project               ProjectInfo                       `json:"project"`
 	Types                 []TypeSymbol                      `json:"types"`
@@ -708,14 +710,201 @@ func duplicateSymbolsConflict(currentPackage, previousPackage string) bool {
 	return true
 }
 
-func UpdateApexFiles(previous Index, changedPaths, deletedPaths []string) (idx Index) {
+func UpdateApexFiles(previous Index, changedPaths, deletedPaths []string) Index {
+	idx, err := UpdateApexFilesChecked(previous, changedPaths, deletedPaths)
+	if err != nil {
+		return incrementalFallbackFailure(previous, err)
+	}
+	return idx
+}
+
+// UpdateApexFilesChecked updates Apex sources and reports an error when the
+// authoritative fallback index cannot be loaded.
+func UpdateApexFilesChecked(previous Index, changedPaths, deletedPaths []string) (Index, error) {
+	if idx, ok := updateApexFilesIncremental(previous, changedPaths, deletedPaths); ok {
+		return idx, nil
+	}
+	p, err := project.Load(previous.Project.Root)
+	if err != nil {
+		return Index{}, err
+	}
+	s, err := schema.LoadProject(p)
+	if err != nil {
+		return Index{}, err
+	}
+	return Build(p, s), nil
+}
+
+func incrementalFallbackFailure(previous Index, err error) Index {
+	idx := previous
+	idx.Diagnostics = append(append([]diagnostic.Diagnostic(nil), previous.Diagnostics...), diagnostic.Diagnostic{
+		Severity: diagnostic.Error,
+		Code:     "GLADETYPE000",
+		Message:  fmt.Sprintf("incremental fallback build failed: %v", err),
+	})
+	return idx
+}
+
+type incrementalFileIdentityOps struct {
+	stat     func(string) (os.FileInfo, error)
+	sameFile func(os.FileInfo, os.FileInfo) bool
+}
+
+func updateApexFilesIncremental(previous Index, changedPaths, deletedPaths []string) (Index, bool) {
+	return updateApexFilesIncrementalWithIdentityOps(previous, changedPaths, deletedPaths, incrementalFileIdentityOps{
+		stat:     os.Stat,
+		sameFile: os.SameFile,
+	})
+}
+
+func updateApexFilesIncrementalWithIdentityOps(previous Index, changedPaths, deletedPaths []string, identityOps incrementalFileIdentityOps) (idx Index, ok bool) {
+	if len(previous.Diagnostics) != 0 {
+		return Index{}, false
+	}
 	parser := apexast.NewParser()
 	idx = Index{
-		Project: previous.Project,
-		Objects: previous.Objects,
+		Project:               previous.Project,
+		Objects:               previous.Objects,
+		CustomMetadataRecords: previous.CustomMetadataRecords,
+		CodeIntelSymbols:      previous.CodeIntelSymbols,
+		CodeIntelUses:         previous.CodeIntelUses,
+		Dependencies:          previous.Dependencies,
 	}
 	deleted := pathSet(deletedPaths)
 	changed := pathSet(changedPaths)
+	if len(changed) != 1 || len(deleted) != 0 {
+		return Index{}, false
+	}
+	type sourceMetadata struct {
+		namespace       string
+		namespaceRemaps []namespaceremap.Rule
+		root            string
+		version         string
+		dependency      bool
+	}
+	cloneNamespaceRemaps := func(in []namespaceremap.Rule) []namespaceremap.Rule {
+		if in == nil {
+			return nil
+		}
+		out := make([]namespaceremap.Rule, len(in))
+		copy(out, in)
+		return out
+	}
+	sameMetadata := func(left, right sourceMetadata) bool {
+		if left.namespace != right.namespace || left.root != right.root || left.version != right.version || left.dependency != right.dependency || len(left.namespaceRemaps) != len(right.namespaceRemaps) {
+			return false
+		}
+		for i := range left.namespaceRemaps {
+			if left.namespaceRemaps[i] != right.namespaceRemaps[i] {
+				return false
+			}
+		}
+		return true
+	}
+	metadataByPath := make(map[string]sourceMetadata, len(changed))
+	requestedPathByKey := make(map[string]string, len(changed))
+	identityByRequestedKey := make(map[string]os.FileInfo)
+	knownDeleted := make(map[string]bool, len(deleted))
+	ambiguousMetadata := false
+	recordRequestedPath := func(key, path string) {
+		if existing, exists := requestedPathByKey[key]; exists && existing != path {
+			ambiguousMetadata = true
+			return
+		}
+		requestedPathByKey[key] = path
+	}
+	recordFileIdentity := func(key, path string) {
+		if _, exists := identityByRequestedKey[key]; exists {
+			return
+		}
+		info, err := identityOps.stat(path)
+		if err != nil {
+			ambiguousMetadata = true
+			return
+		}
+		identityByRequestedKey[key] = info
+	}
+	for _, typ := range previous.Types {
+		key := cleanFilePath(typ.File)
+		if !deleted[key] && !typ.Artifact && typ.File != "" && strings.HasSuffix(strings.ToLower(typ.File), ".cls") {
+			recordFileIdentity(key, typ.File)
+		}
+		if typ.Dependency && !typ.Artifact && strings.HasSuffix(strings.ToLower(typ.File), ".cls") && (changed[key] || deleted[key]) {
+			return Index{}, false
+		}
+		if deleted[key] && !typ.Artifact && typ.File != "" && strings.HasSuffix(strings.ToLower(typ.File), ".cls") {
+			knownDeleted[key] = true
+		}
+		if !changed[key] {
+			continue
+		}
+		if typ.Artifact || typ.File == "" || !strings.HasSuffix(strings.ToLower(typ.File), ".cls") {
+			ambiguousMetadata = true
+			continue
+		}
+		recordRequestedPath(key, typ.File)
+		metadata := sourceMetadata{
+			namespace:       typ.Namespace,
+			namespaceRemaps: cloneNamespaceRemaps(typ.SourceNamespaceRemaps),
+			root:            typ.SourceRoot,
+			version:         typ.Version,
+			dependency:      typ.Dependency,
+		}
+		if existing, exists := metadataByPath[key]; exists && !sameMetadata(existing, metadata) {
+			ambiguousMetadata = true
+			continue
+		}
+		metadataByPath[key] = metadata
+	}
+	for _, trigger := range previous.Triggers {
+		key := cleanFilePath(trigger.File)
+		if !deleted[key] && trigger.File != "" && strings.HasSuffix(strings.ToLower(trigger.File), ".trigger") {
+			recordFileIdentity(key, trigger.File)
+		}
+		if deleted[key] && trigger.File != "" && strings.HasSuffix(strings.ToLower(trigger.File), ".trigger") {
+			knownDeleted[key] = true
+		}
+		if !changed[key] {
+			continue
+		}
+		if trigger.File == "" || !strings.HasSuffix(strings.ToLower(trigger.File), ".trigger") {
+			ambiguousMetadata = true
+			continue
+		}
+		recordRequestedPath(key, trigger.File)
+		metadata := sourceMetadata{
+			namespace:       trigger.Namespace,
+			namespaceRemaps: cloneNamespaceRemaps(trigger.SourceNamespaceRemaps),
+			dependency:      trigger.Dependency,
+		}
+		if existing, exists := metadataByPath[key]; exists && !sameMetadata(existing, metadata) {
+			ambiguousMetadata = true
+			continue
+		}
+		metadataByPath[key] = metadata
+	}
+	if ambiguousMetadata {
+		return Index{}, false
+	}
+	for key := range changed {
+		if _, exists := metadataByPath[key]; !exists {
+			return Index{}, false
+		}
+		identity, exists := identityByRequestedKey[key]
+		if !exists {
+			return Index{}, false
+		}
+		for requestedKey, candidateIdentity := range identityByRequestedKey {
+			if requestedKey != key && identityOps.sameFile(identity, candidateIdentity) {
+				return Index{}, false
+			}
+		}
+	}
+	for key := range deleted {
+		if !knownDeleted[key] {
+			return Index{}, false
+		}
+	}
 	seenTypes := make(map[string]TypeSymbol)
 	for _, typ := range previous.Types {
 		if deleted[cleanFilePath(typ.File)] || changed[cleanFilePath(typ.File)] {
@@ -731,53 +920,83 @@ func UpdateApexFiles(previous Index, changedPaths, deletedPaths []string) (idx I
 		}
 		idx.Triggers = append(idx.Triggers, trigger)
 	}
-	for _, path := range changedPaths {
-		data, err := os.ReadFile(path)
-		if err != nil {
-			idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
-				Severity: diagnostic.Error,
-				Code:     "GLADETYPE000",
-				Message:  err.Error(),
-				File:     path,
-			})
+	parsedChanged := make(map[string]bool, len(changed))
+	for _, notifiedPath := range changedPaths {
+		key := cleanFilePath(notifiedPath)
+		if parsedChanged[key] {
 			continue
 		}
-		source := project.NormalizeApexNamespaceTokens(string(data), previous.Project.Namespace)
+		parsedChanged[key] = true
+		path, hasRequestedPath := requestedPathByKey[key]
+		if !hasRequestedPath {
+			return Index{}, false
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return Index{}, false
+		}
+		metadata, hasMetadata := metadataByPath[key]
+		namespace := previous.Project.Namespace
+		if hasMetadata {
+			namespace = metadata.namespace
+		}
+		source := project.NormalizeApexNamespaceTokens(string(data), namespace)
+		if hasMetadata {
+			source = namespaceremap.ApplySource(metadata.namespaceRemaps, source)
+		}
 		file := parser.ParseSource(path, source)
-		idx.Diagnostics = append(idx.Diagnostics, file.Diagnostics...)
 		if len(file.Diagnostics) > 0 {
-			continue
+			return Index{}, false
 		}
 		for _, decl := range file.Declarations {
 			switch decl.Kind {
 			case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
 				for _, sym := range typeSymbolsFromDeclaration(path, decl, "", false, source) {
+					if hasMetadata {
+						sym.Namespace = metadata.namespace
+						sym.SourceNamespaceRemaps = cloneNamespaceRemaps(metadata.namespaceRemaps)
+						sym.SourceRoot = metadata.root
+						sym.Version = metadata.version
+						sym.Dependency = metadata.dependency
+					}
 					key := strings.ToLower(sym.Name)
-					if previous, ok := seenTypes[key]; ok {
-						idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous))
+					if _, exists := seenTypes[key]; exists {
+						return Index{}, false
 					} else {
 						seenTypes[key] = sym
 					}
 					idx.Types = append(idx.Types, sym)
 				}
 			case apexast.DeclarationTrigger:
-				idx.Triggers = append(idx.Triggers, TriggerSymbol{
+				trigger := TriggerSymbol{
 					Name:       decl.Name,
 					ObjectName: decl.ObjectName,
 					Events:     decl.Events,
 					File:       path,
 					Range:      decl.Range,
-				})
+				}
+				if hasMetadata {
+					trigger.Namespace = metadata.namespace
+					trigger.SourceNamespaceRemaps = cloneNamespaceRemaps(metadata.namespaceRemaps)
+					trigger.Dependency = metadata.dependency
+				}
+				idx.Triggers = append(idx.Triggers, trigger)
 			}
 		}
 	}
 	sort.Slice(idx.Types, func(i, j int) bool {
+		if idx.Types[i].Namespace != idx.Types[j].Namespace {
+			return idx.Types[i].Namespace < idx.Types[j].Namespace
+		}
 		return idx.Types[i].Name < idx.Types[j].Name
 	})
 	sort.Slice(idx.Triggers, func(i, j int) bool {
+		if idx.Triggers[i].Namespace != idx.Triggers[j].Namespace {
+			return idx.Triggers[i].Namespace < idx.Triggers[j].Namespace
+		}
 		return idx.Triggers[i].Name < idx.Triggers[j].Name
 	})
-	return idx
+	return idx, true
 }
 
 func (idx Index) HasErrors() bool {

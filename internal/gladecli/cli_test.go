@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
@@ -23,6 +24,7 @@ import (
 	"github.com/glade-sh/glade/internal/pluginhost"
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/testdaemon"
+	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 	"github.com/glade-sh/glade/internal/watch"
 )
@@ -5022,6 +5024,69 @@ func TestWatchIndexUpdateUsesIncrementalForApexOnlyChanges(t *testing.T) {
 	}
 	if len(updated.Types) != 1 || len(updated.Types[0].Members) != 1 || updated.Types[0].Members[0].Name != "newName" {
 		t.Fatalf("types = %#v", updated.Types)
+	}
+}
+
+func TestWatchIndexUpdateReturnsFailedFallbackWithoutCandidate(t *testing.T) {
+	root := t.TempDir()
+	manifestPath := filepath.Join(root, "sfdx-project.json")
+	classPath := filepath.Join(root, "force-app/main/default/classes/Stable.cls")
+	writeTestFile(t, manifestPath, `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, classPath, "public class Stable { public void beforeEdit() {} }")
+	index, err := loadIndex(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	writeTestFile(t, manifestPath, "{")
+	writeTestFile(t, classPath, "public class Stable {")
+	updated, err := updateWatchIndex(root, index, []watch.Change{{
+		Path: classPath,
+		Op:   watch.ChangeModified,
+		Kind: watch.FileKindApexClass,
+		Name: "Stable",
+	}})
+	if err == nil {
+		t.Fatal("updateWatchIndex succeeded after authoritative fallback failed")
+	}
+	if updated.Project != (typesys.ProjectInfo{}) || len(updated.Types) != 0 || len(updated.Triggers) != 0 || len(updated.Diagnostics) != 0 {
+		t.Errorf("updateWatchIndex returned a candidate after failed fallback: %#v", updated)
+	}
+}
+
+func TestWatchIndexStatePreservesLiveStateAndRecoversAfterFailedFallback(t *testing.T) {
+	root := t.TempDir()
+	manifestPath := filepath.Join(root, "sfdx-project.json")
+	classPath := filepath.Join(root, "force-app/main/default/classes/Stable.cls")
+	manifest := `{"packageDirectories":[{"path":"force-app","default":true}]}`
+	writeTestFile(t, manifestPath, manifest)
+	writeTestFile(t, classPath, "public class Stable { public void beforeEdit() {} }")
+	index, err := loadIndex(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	graph := watch.BuildReferenceGraph(index)
+	beforeIndex := index
+	beforeGraph := watch.BuildReferenceGraph(index)
+
+	writeTestFile(t, manifestPath, "{")
+	writeTestFile(t, classPath, "public class Stable {")
+	index, graph, err = updateWatchIndexState(root, index, graph, []watch.Change{{Path: classPath, Op: watch.ChangeModified, Kind: watch.FileKindApexClass, Name: "Stable"}})
+	if err == nil {
+		t.Fatal("watch state update succeeded after fallback failure")
+	}
+	if !reflect.DeepEqual(index, beforeIndex) || !reflect.DeepEqual(graph, beforeGraph) {
+		t.Errorf("failed fallback changed live watch state:\nindex: %#v\ngraph: %#v", index, graph)
+	}
+
+	writeTestFile(t, manifestPath, manifest)
+	writeTestFile(t, classPath, "public class Stable { public void afterEdit() {} }")
+	index, graph, err = updateWatchIndexState(root, index, graph, []watch.Change{{Path: classPath, Op: watch.ChangeModified, Kind: watch.FileKindApexClass, Name: "Stable"}})
+	if err != nil {
+		t.Fatalf("subsequent valid change failed: %v", err)
+	}
+	if len(index.Types) != 1 || len(index.Types[0].Members) != 1 || index.Types[0].Members[0].Name != "afterEdit" || graph == nil {
+		t.Errorf("subsequent valid change did not use retained state: index=%#v graph=%#v", index, graph)
 	}
 }
 

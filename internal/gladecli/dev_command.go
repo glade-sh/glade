@@ -853,12 +853,11 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 			if err := writeJSONLine(w, watch.NewDebouncedEvent(time.Now().UTC(), cfg, changes)); err != nil {
 				return result, err
 			}
-			index, err = updateWatchIndex(root, index, changes)
+			index, graph, err = updateWatchIndexState(root, index, graph, changes)
 			if err != nil {
 				_ = writeJSONLine(w, watch.NewErrorEvent(time.Now().UTC(), err.Error(), root))
 				continue
 			}
-			graph = graph.Refresh(index, changes)
 			selection := watch.SelectAffectedTestsWithRefGraph(index, changes, graph)
 			if err := writeJSONLine(w, watch.NewTestsSelectedEvent(time.Now().UTC(), selection)); err != nil {
 				return result, err
@@ -1167,7 +1166,15 @@ func updateWatchIndex(root string, index typesys.Index, changes []watch.Change) 
 			changed = append(changed, change.Path)
 		}
 	}
-	return typesys.UpdateApexFiles(index, changed, deleted), nil
+	return typesys.UpdateApexFilesChecked(index, changed, deleted)
+}
+
+func updateWatchIndexState(root string, index typesys.Index, graph *watch.RefGraph, changes []watch.Change) (typesys.Index, *watch.RefGraph, error) {
+	updated, err := updateWatchIndex(root, index, changes)
+	if err != nil {
+		return index, graph, err
+	}
+	return updated, graph.Refresh(updated, changes), nil
 }
 
 func canIncrementalIndex(changes []watch.Change) bool {

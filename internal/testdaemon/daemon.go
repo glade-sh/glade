@@ -14,10 +14,16 @@ import (
 )
 
 type Daemon struct {
-	root  string
-	mu    sync.RWMutex
-	index typesys.Index
-	graph *watch.RefGraph
+	root string
+	mu   sync.RWMutex
+	// updateMu serializes every index/graph writer. A writer snapshots after
+	// acquiring it, so no other writer can publish before that snapshot is
+	// replaced and no generation retry is necessary.
+	updateMu      sync.Mutex
+	index         typesys.Index
+	graph         *watch.RefGraph
+	updateIndexFn func(typesys.Index, []string, []string) (typesys.Index, error)
+	loadIndexFn   func(string) (typesys.Index, error)
 }
 
 func New(root string) (*Daemon, error) {
@@ -25,7 +31,13 @@ func New(root string) (*Daemon, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Daemon{root: root, index: index, graph: watch.BuildReferenceGraph(index)}, nil
+	return &Daemon{
+		root:          root,
+		index:         index,
+		graph:         watch.BuildReferenceGraph(index),
+		updateIndexFn: typesys.UpdateApexFilesChecked,
+		loadIndexFn:   loadIndex,
+	}, nil
 }
 
 func (d *Daemon) Root() string {
@@ -144,8 +156,10 @@ func selectedClassesForDirectSelection(existing, affected []string) []string {
 }
 
 func (d *Daemon) UpdateChanges(changes []watch.Change) error {
+	d.updateMu.Lock()
+	defer d.updateMu.Unlock()
 	if !canIncrementalIndex(changes) {
-		return d.Reload()
+		return d.reloadLocked()
 	}
 	var changed []string
 	var deleted []string
@@ -157,21 +171,36 @@ func (d *Daemon) UpdateChanges(changes []watch.Change) error {
 			changed = append(changed, change.Path)
 		}
 	}
+	d.mu.RLock()
+	previous := d.index
+	d.mu.RUnlock()
+	index, err := d.updateIndexFn(previous, changed, deleted)
+	if err != nil {
+		return err
+	}
+	graph := watch.BuildReferenceGraph(index)
 	d.mu.Lock()
-	d.index = typesys.UpdateApexFiles(d.index, changed, deleted)
-	d.graph = d.graph.Refresh(d.index, changes)
+	d.index = index
+	d.graph = graph
 	d.mu.Unlock()
 	return nil
 }
 
 func (d *Daemon) Reload() error {
-	index, err := loadIndex(d.root)
+	d.updateMu.Lock()
+	defer d.updateMu.Unlock()
+	return d.reloadLocked()
+}
+
+func (d *Daemon) reloadLocked() error {
+	index, err := d.loadIndexFn(d.root)
 	if err != nil {
 		return err
 	}
+	graph := watch.BuildReferenceGraph(index)
 	d.mu.Lock()
 	d.index = index
-	d.graph = watch.BuildReferenceGraph(index)
+	d.graph = graph
 	d.mu.Unlock()
 	return nil
 }
