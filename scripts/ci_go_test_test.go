@@ -1088,6 +1088,321 @@ func readCIWorkflow(t *testing.T) (string, map[string]string) {
 	return workflow, workflowJobBlocks(t, workflow)
 }
 
+const benchmarkCachePairInput = `  workflow_dispatch:
+    inputs:
+      benchmark_cache_pair:
+        description: "Cache pair (0 normal; 1-999999 isolated benchmark)"
+        required: true
+        default: 0
+        type: number`
+
+const benchmarkCachePairPrefix = `${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}`
+
+func readWorkflowFile(t *testing.T, name string) string {
+	t.Helper()
+	path := filepath.Join("..", ".github", "workflows", name)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read %s: %v", path, err)
+	}
+	return string(data)
+}
+
+func explicitWorkflowCacheKeys(workflow string) []string {
+	lines := strings.Split(workflow, "\n")
+	var keys []string
+	restoreIndent := -1
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		indent := len(line) - len(strings.TrimLeft(line, " "))
+		if restoreIndent >= 0 {
+			if trimmed == "" {
+				continue
+			}
+			if indent > restoreIndent {
+				keys = append(keys, trimmed)
+				continue
+			}
+			restoreIndent = -1
+		}
+		if trimmed == "restore-keys: |" {
+			restoreIndent = indent
+			continue
+		}
+		if !strings.HasPrefix(trimmed, "key: ") {
+			continue
+		}
+		key := strings.TrimPrefix(trimmed, "key: ")
+		if strings.Contains(key, ".outputs.cache-primary-key") {
+			continue
+		}
+		keys = append(keys, key)
+	}
+	return keys
+}
+
+func workflowIfConditionCount(workflow, condition string) int {
+	count := 0
+	for _, line := range strings.Split(workflow, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "if: ") && strings.Contains(line, condition) {
+			count++
+		}
+	}
+	return count
+}
+
+func workflowStepBlocksText(job string) []string {
+	var steps []string
+	for searchAt := 0; searchAt < len(job); {
+		relativeStart := strings.Index(job[searchAt:], "\n      - ")
+		if relativeStart < 0 {
+			break
+		}
+		start := searchAt + relativeStart + 1
+		end := len(job)
+		if relativeEnd := strings.Index(job[start+1:], "\n      - "); relativeEnd >= 0 {
+			end = start + 1 + relativeEnd
+		}
+		steps = append(steps, job[start:end])
+		searchAt = end
+	}
+	return steps
+}
+
+func workflowCacheAccessSteps(job string) []string {
+	var cacheSteps []string
+	for _, step := range workflowStepBlocksText(job) {
+		explicitCache := strings.Contains(step, "uses: actions/cache")
+		setupNodeCache := strings.Contains(step, "uses: actions/setup-node@") &&
+			strings.Contains(step, "\n          cache:")
+		if explicitCache || setupNodeCache {
+			cacheSteps = append(cacheSteps, step)
+		}
+	}
+	return cacheSteps
+}
+
+func workflowFirstCacheAccessAt(job string) int {
+	first := -1
+	for _, step := range workflowCacheAccessSteps(job) {
+		at := strings.Index(job, step)
+		if first < 0 || at < first {
+			first = at
+		}
+	}
+	return first
+}
+
+func moveWorkflowStepBeforeValidation(t *testing.T, workflow, jobName, step, validationCommand string) string {
+	t.Helper()
+	job := workflowJobBlocksText(workflow)[jobName]
+	if job == "" {
+		t.Fatalf("workflow missing job %q", jobName)
+	}
+	if strings.Count(job, step) != 1 {
+		t.Fatalf("%s cache step count = %d, want 1", jobName, strings.Count(job, step))
+	}
+	validationAt := strings.Index(job, validationCommand)
+	if validationAt < 0 {
+		t.Fatalf("%s missing validation command", jobName)
+	}
+	validationStepStart := strings.LastIndex(job[:validationAt], "\n      - ")
+	if validationStepStart < 0 {
+		t.Fatalf("%s validation command is outside a workflow step", jobName)
+	}
+	validationStepStart++
+	withoutStep := strings.Replace(job, step, "", 1)
+	validationAt = strings.Index(withoutStep, validationCommand)
+	validationStepStart = strings.LastIndex(withoutStep[:validationAt], "\n      - ") + 1
+	mutatedJob := withoutStep[:validationStepStart] + step + "\n" + withoutStep[validationStepStart:]
+	job = strings.TrimSuffix(job, "\n")
+	mutatedJob = strings.TrimSuffix(mutatedJob, "\n")
+	if strings.Count(workflow, job) != 1 {
+		t.Fatalf("%s workflow job block count = %d, want 1", jobName, strings.Count(workflow, job))
+	}
+	return strings.Replace(workflow, job, mutatedJob, 1)
+}
+
+func benchmarkCachePairWorkflowProblem(name, workflow string) string {
+	if strings.Count(workflow, benchmarkCachePairInput) != 1 {
+		return "workflow_dispatch benchmark_cache_pair input is not exact"
+	}
+	keys := explicitWorkflowCacheKeys(workflow)
+	if len(keys) == 0 {
+		return "no explicit cache keys found"
+	}
+	for _, key := range keys {
+		if !strings.HasPrefix(key, benchmarkCachePairPrefix) {
+			return fmt.Sprintf("explicit cache key is not pair-prefixed: %q", key)
+		}
+	}
+	wantOpaqueNPM := 1
+	wantBenchmarkNPM := 1
+	if name == "ci.yml" {
+		wantOpaqueNPM = 3
+		wantBenchmarkNPM = 3
+	}
+	if got := strings.Count(workflow, "          cache: npm"); got != wantOpaqueNPM {
+		return fmt.Sprintf("setup-node opaque npm caches = %d, want %d normal-only caches", got, wantOpaqueNPM)
+	}
+	if got := workflowIfConditionCount(workflow, "inputs.benchmark_cache_pair == 0"); got != wantOpaqueNPM {
+		return fmt.Sprintf("normal-only setup-node conditions = %d, want %d", got, wantOpaqueNPM)
+	}
+	if got := strings.Count(workflow, "      - name: Set up Node for benchmark cache pair"); got != wantBenchmarkNPM {
+		return fmt.Sprintf("benchmark setup-node steps = %d, want %d", got, wantBenchmarkNPM)
+	}
+	if got := strings.Count(workflow, "      - name: Restore and save benchmark npm cache"); got != wantBenchmarkNPM {
+		return fmt.Sprintf("explicit benchmark npm caches = %d, want %d", got, wantBenchmarkNPM)
+	}
+	if got := strings.Count(workflow, "      - name: Resolve benchmark npm cache path"); got != wantBenchmarkNPM {
+		return fmt.Sprintf("benchmark npm cache path resolvers = %d, want %d", got, wantBenchmarkNPM)
+	}
+	if got := strings.Count(workflow, "          path: ${{ steps.benchmark-npm-cache.outputs.path }}"); got != wantBenchmarkNPM {
+		return fmt.Sprintf("explicit benchmark npm cache paths = %d, want %d", got, wantBenchmarkNPM)
+	}
+	if got := workflowIfConditionCount(workflow, "inputs.benchmark_cache_pair > 0"); got != wantBenchmarkNPM*3 {
+		return fmt.Sprintf("positive-pair benchmark npm conditions = %d, want %d", got, wantBenchmarkNPM*3)
+	}
+	if name == "browser.yml" {
+		if strings.Count(workflow, "        if: steps.scope.outputs.run_expensive == 'true' && (github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0)") != 1 {
+			return "browser normal setup-node condition is not exact"
+		}
+		if strings.Count(workflow, "        if: steps.scope.outputs.run_expensive == 'true' && github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0") != 3 {
+			return "browser benchmark npm conditions are not exact"
+		}
+		browser := workflowJobBlocksText(workflow)["browser"]
+		validation := `source/scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"`
+		if strings.Count(browser, validation) != 1 {
+			return "browser benchmark cache-pair validation command is not exact"
+		}
+		checkoutAt := strings.Index(browser, "      - uses: actions/checkout@v6")
+		validationAt := strings.Index(browser, validation)
+		cacheAt := workflowFirstCacheAccessAt(browser)
+		if checkoutAt < 0 || validationAt <= checkoutAt || cacheAt <= validationAt {
+			return "browser cache-pair validation must run after checkout and before cache access"
+		}
+		return ""
+	}
+	jobs := workflowJobBlocksText(workflow)
+	if strings.Count(workflow, "        if: github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0") != wantOpaqueNPM {
+		return "CI normal setup-node conditions are not exact"
+	}
+	if strings.Count(workflow, "        if: github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0") != wantBenchmarkNPM*3 {
+		return "CI benchmark npm conditions are not exact"
+	}
+	guard := "    if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}"
+	for _, jobName := range []string{
+		"site", "vet", "gladecli", "node-integration", "sema", "server-and-playground",
+		"test", "smoke-runtime", "smoke-distribution", "apextest",
+	} {
+		job := jobs[jobName]
+		if strings.Count(job, guard) != 1 {
+			return fmt.Sprintf("%s cache-pair bounds guard is not exact", jobName)
+		}
+		validation := `scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"`
+		if strings.Count(job, validation) != 1 {
+			return fmt.Sprintf("%s benchmark cache-pair validation command is not exact", jobName)
+		}
+		checkoutAt := strings.Index(job, "      - uses: actions/checkout@v6")
+		validationAt := strings.Index(job, validation)
+		cacheAt := workflowFirstCacheAccessAt(job)
+		if checkoutAt < 0 || validationAt <= checkoutAt || cacheAt <= validationAt {
+			return fmt.Sprintf("%s cache-pair validation must run after checkout and before cache access", jobName)
+		}
+	}
+	if strings.Count(jobs["sema-full"], "    if: ${{ github.event_name == 'schedule' }}") != 1 {
+		return "sema-full schedule condition changed"
+	}
+	return ""
+}
+
+func TestCIBenchmarkCachePairContract(t *testing.T) {
+	workflows := map[string]string{
+		"ci.yml":      readWorkflowFile(t, "ci.yml"),
+		"browser.yml": readWorkflowFile(t, "browser.yml"),
+	}
+	for name, workflow := range workflows {
+		t.Run(name, func(t *testing.T) {
+			if problem := benchmarkCachePairWorkflowProblem(name, workflow); problem != "" {
+				t.Fatal(problem)
+			}
+		})
+	}
+	if gotCI, gotBrowser := strings.Count(workflows["ci.yml"], benchmarkCachePairInput), strings.Count(workflows["browser.yml"], benchmarkCachePairInput); gotCI != gotBrowser {
+		t.Fatalf("workflow_dispatch benchmark_cache_pair input count differs: ci=%d browser=%d", gotCI, gotBrowser)
+	}
+}
+
+func TestCIBenchmarkCachePairContractRejectsAnyCacheBeforeValidation(t *testing.T) {
+	for _, tc := range []struct {
+		workflowName      string
+		jobNames          []string
+		validationCommand string
+	}{
+		{
+			workflowName:      "browser.yml",
+			jobNames:          []string{"browser"},
+			validationCommand: `source/scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"`,
+		},
+		{
+			workflowName: "ci.yml",
+			jobNames: []string{
+				"site", "vet", "gladecli", "node-integration", "sema", "server-and-playground",
+				"test", "smoke-runtime", "smoke-distribution", "apextest",
+			},
+			validationCommand: `scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"`,
+		},
+	} {
+		workflow := readWorkflowFile(t, tc.workflowName)
+		for _, jobName := range tc.jobNames {
+			job := workflowJobBlocksText(workflow)[jobName]
+			cacheSteps := workflowCacheAccessSteps(job)
+			if len(cacheSteps) == 0 {
+				t.Fatalf("%s/%s has no cache access steps", tc.workflowName, jobName)
+			}
+			for index, cacheStep := range cacheSteps {
+				t.Run(fmt.Sprintf("%s/%s/cache-%d", tc.workflowName, jobName, index), func(t *testing.T) {
+					mutated := moveWorkflowStepBeforeValidation(t, workflow, jobName, cacheStep, tc.validationCommand)
+					mutatedJob := workflowJobBlocksText(mutated)[jobName]
+					cacheAt := workflowFirstCacheAccessAt(mutatedJob)
+					validationAt := strings.Index(mutatedJob, tc.validationCommand)
+					if cacheAt < 0 || cacheAt >= validationAt {
+						t.Fatalf("mutation did not put cache access before validation: cache=%d validation=%d", cacheAt, validationAt)
+					}
+					if problem := benchmarkCachePairWorkflowProblem(tc.workflowName, mutated); problem == "" {
+						t.Fatal("workflow accepted cache access before benchmark cache-pair validation")
+					}
+				})
+			}
+		}
+	}
+}
+
+func TestCIBenchmarkCachePairValidator(t *testing.T) {
+	script := "./ci-benchmark-cache-pair.sh"
+	for _, tc := range []struct {
+		value   string
+		wantErr bool
+	}{
+		{value: "0"},
+		{value: "1"},
+		{value: "999999"},
+		{value: "", wantErr: true},
+		{value: "-1", wantErr: true},
+		{value: "1.5", wantErr: true},
+		{value: "1000000", wantErr: true},
+		{value: "not-a-number", wantErr: true},
+	} {
+		t.Run(tc.value, func(t *testing.T) {
+			cmd := exec.Command(script, tc.value)
+			out, err := cmd.CombinedOutput()
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("validator error = %v, wantErr %v\n%s", err, tc.wantErr, out)
+			}
+		})
+	}
+}
+
 func ciWorkflowConcurrencyProblem(workflow string) string {
 	header, _, found := strings.Cut(workflow, "\njobs:\n")
 	if !found {
@@ -1481,8 +1796,8 @@ func browserWorkflowProblem(workflow string) string {
 	if strings.Count(workflow, "if: steps.scope.outputs.run_expensive == 'true' && success()") != 3 {
 		return fmt.Sprintf("success-only cache save conditions = %d, want 3", strings.Count(workflow, "if: steps.scope.outputs.run_expensive == 'true' && success()"))
 	}
-	if strings.Count(workflow, "continue-on-error: true") != 6 {
-		return fmt.Sprintf("continue-on-error count = %d, want 6 cache operations only", strings.Count(workflow, "continue-on-error: true"))
+	if strings.Count(workflow, "continue-on-error: true") != 7 {
+		return fmt.Sprintf("continue-on-error count = %d, want 7 cache operations only", strings.Count(workflow, "continue-on-error: true"))
 	}
 	for marker, want := range map[string]int{
 		"          REAL_NPM=$(command -v npm)\n":                                              1,

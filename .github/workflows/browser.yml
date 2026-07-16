@@ -8,6 +8,12 @@ on:
   schedule:
     - cron: '17 11 * * *'
   workflow_dispatch:
+    inputs:
+      benchmark_cache_pair:
+        description: "Cache pair (0 normal; 1-999999 isolated benchmark)"
+        required: true
+        default: 0
+        type: number
 
 permissions:
   contents: read
@@ -40,6 +46,10 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
           path: source
+
+      - name: Validate benchmark cache pair
+        if: github.event_name == 'workflow_dispatch'
+        run: source/scripts/ci-benchmark-cache-pair.sh "${{ inputs.benchmark_cache_pair }}"
 
       - name: Determine browser test scope
         id: scope
@@ -82,13 +92,34 @@ jobs:
           cache: false
 
       - uses: actions/setup-node@v6
-        if: steps.scope.outputs.run_expensive == 'true'
+        if: steps.scope.outputs.run_expensive == 'true' && (github.event_name != 'workflow_dispatch' || inputs.benchmark_cache_pair == 0)
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: |
             source/third_party/lwc/package-lock.json
             source/lwcruntime/package-lock.json
+
+      - name: Set up Node for benchmark cache pair
+        if: steps.scope.outputs.run_expensive == 'true' && github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Resolve benchmark npm cache path
+        id: benchmark-npm-cache
+        if: steps.scope.outputs.run_expensive == 'true' && github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0
+        run: echo "path=$(npm config get cache)" >>"$GITHUB_OUTPUT"
+
+      - name: Restore and save benchmark npm cache
+        if: steps.scope.outputs.run_expensive == 'true' && github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0
+        uses: actions/cache@v5
+        continue-on-error: true
+        with:
+          path: ${{ steps.benchmark-npm-cache.outputs.path }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}npm-cache-v1-${{ runner.os }}-${{ runner.arch }}-22-browser-${{ hashFiles('source/third_party/lwc/package-lock.json', 'source/lwcruntime/package-lock.json') }}
+          restore-keys: |
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}npm-cache-v1-${{ runner.os }}-${{ runner.arch }}-22-browser-
 
       - name: Restore isolated browser module cache
         id: restore-browser-mod-cache
@@ -97,10 +128,10 @@ jobs:
         continue-on-error: true
         with:
           path: ${{ env.GOMODCACHE }}
-          key: go-mod-ci-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('source/go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-ci-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('source/go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-mod-ci-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('source/go.sum') }}-
-            go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('source/go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-ci-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('source/go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-mod-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('source/go.sum') }}-
 
       - name: Restore isolated browser build cache
         id: restore-browser-build-cache
@@ -109,10 +140,10 @@ jobs:
         continue-on-error: true
         with:
           path: ${{ env.GOCACHE }}
-          key: go-build-ci-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('source/go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-ci-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('source/go.sum') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            go-build-ci-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('source/go.sum') }}-
-            go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('source/go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-ci-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-${{ hashFiles('source/go.sum') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}go-build-cache-v1-${{ runner.os }}-${{ runner.arch }}-1.26.5-ci-test-${{ hashFiles('source/go.sum') }}-
 
       - name: Restore Chromium cache
         id: restore-browser-chromium-cache
@@ -121,9 +152,9 @@ jobs:
         continue-on-error: true
         with:
           path: /home/runner/.cache/ms-playwright
-          key: playwright-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.60.0-${{ hashFiles('source/lwcruntime/package-lock.json') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}playwright-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.60.0-${{ hashFiles('source/lwcruntime/package-lock.json') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            playwright-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.60.0-${{ hashFiles('source/lwcruntime/package-lock.json') }}-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.benchmark_cache_pair > 0 && inputs.benchmark_cache_pair <= 999999 && format('w2-6d-{0}-', inputs.benchmark_cache_pair) || '' }}playwright-browser-v1-${{ runner.os }}-${{ runner.arch }}-1.60.0-${{ hashFiles('source/lwcruntime/package-lock.json') }}-
 
       - name: Install LWC compiler dependencies
         if: steps.scope.outputs.run_expensive == 'true'
