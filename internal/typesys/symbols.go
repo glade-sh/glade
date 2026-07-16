@@ -1,6 +1,7 @@
 package typesys
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -755,6 +756,22 @@ func MatchesProjectIdentity(idx Index, p project.Project) bool {
 	return idx.projectIdentity != "" && idx.projectIdentity == incrementalProjectIdentity(p) &&
 		p.Root == idx.Project.Root && p.Namespace == idx.Project.Namespace &&
 		p.SourceAPIVersion == idx.Project.SourceAPIVersion
+}
+
+// SameProjectIdentity reports whether two immutable indexes were built from
+// the same project configuration and dependency identity.
+func SameProjectIdentity(left, right Index) bool {
+	return left.projectIdentity != "" && left.projectIdentity == right.projectIdentity
+}
+
+// ProjectIdentityDigest returns the immutable private project and dependency
+// identity captured by the build that produced idx. The digest deliberately
+// does not expose the private identity payload to callers.
+func ProjectIdentityDigest(idx Index) ([sha256.Size]byte, bool) {
+	if idx.projectIdentity == "" {
+		return [sha256.Size]byte{}, false
+	}
+	return sha256.Sum256([]byte(idx.projectIdentity)), true
 }
 
 // SourceDigest returns the raw source digest retained by the build that

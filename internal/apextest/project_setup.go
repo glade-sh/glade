@@ -17,6 +17,10 @@ import (
 )
 
 func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, caches ...*sourceCache) []vm.Class {
+	return compileProjectClassesWhere(index, methods, nil, caches...)
+}
+
+func compileProjectClassesWhere(index typesys.Index, methods map[string]vm.Method, include func(typesys.TypeSymbol) bool, caches ...*sourceCache) []vm.Class {
 	var out []vm.Class
 	sources := sourceCacheFor(caches)
 	sources.configureNamespaceRemaps(index.Types, index.Triggers)
@@ -24,6 +28,9 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, ca
 	sourceBackedTypes := sourceBackedTypeNames(index.Types)
 	methodsByClass := projectMethodsByClass(methods)
 	for _, typ := range index.Types {
+		if include != nil && !include(typ) {
+			continue
+		}
 		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface && typ.Kind != apexast.DeclarationEnum {
 			continue
 		}
@@ -136,10 +143,16 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, ca
 		}
 		out = append(out, class)
 	}
-	out = append(out, passiveStandardRuntimeClasses(index.Types, out)...)
+	if include == nil {
+		out = append(out, passiveStandardRuntimeClasses(index.Types, out)...)
+	}
 	return out
 }
 func compileProjectMethods(index typesys.Index, caches ...*sourceCache) map[string]vm.Method {
+	return compileProjectMethodsWhere(index, nil, caches...)
+}
+
+func compileProjectMethodsWhere(index typesys.Index, include func(typesys.TypeSymbol) bool, caches ...*sourceCache) map[string]vm.Method {
 	type methodCompileJob struct {
 		ClassName  string
 		Kind       apexast.DeclarationKind
@@ -159,6 +172,9 @@ func compileProjectMethods(index typesys.Index, caches ...*sourceCache) map[stri
 	var jobs []methodCompileJob
 	var syntheticResults []methodCompileResult
 	for _, typ := range index.Types {
+		if include != nil && !include(typ) {
+			continue
+		}
 		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface {
 			continue
 		}
@@ -202,7 +218,7 @@ func compileProjectMethods(index typesys.Index, caches ...*sourceCache) map[stri
 				Member:     member,
 				File:       typ.File,
 				Source:     source,
-				APIVersion: apiVersionForApexFile(typ.File),
+				APIVersion: sources.apexAPIVersion(typ.File),
 				Dependency: typ.Dependency,
 			})
 		}

@@ -460,13 +460,14 @@ type testSetupResult struct {
 type runtimeCacheKey string
 
 type runtimeCacheEntry struct {
-	Methods       map[string]vm.Method
-	Classes       []vm.Class
-	Triggers      []vm.Trigger
-	TriggerErrors []error
-	PageNames     []string
-	BaseErr       error
-	restored      vm.RestoredRuntimeTemplate
+	Methods        map[string]vm.Method
+	Classes        []vm.Class
+	Triggers       []vm.Trigger
+	TriggerErrors  []error
+	PageNames      []string
+	BaseErr        error
+	restored       vm.RestoredRuntimeTemplate
+	patchAuthority *runtimePatchAuthority
 }
 
 type CompiledProjectRuntime struct {
@@ -588,26 +589,79 @@ func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha25
 }
 
 func cloneRuntimeCacheEntry(in runtimeCacheEntry) runtimeCacheEntry {
-	return runtimeCacheEntry{
-		Methods:       in.Methods,
-		Classes:       in.Classes,
-		Triggers:      in.Triggers,
-		TriggerErrors: in.TriggerErrors,
-		PageNames:     in.PageNames,
-		BaseErr:       in.BaseErr,
-		restored:      in.restored,
+	out, _ := cloneRuntimeCacheEntryChecked(in)
+	return out
+}
+
+func cloneRuntimeCacheEntryChecked(in runtimeCacheEntry) (runtimeCacheEntry, bool) {
+	methods, ok := runtimePatchCloneMethods(in.Methods)
+	if !ok {
+		return runtimeCacheEntry{}, false
 	}
+	var classes []vm.Class
+	if in.Classes != nil {
+		classes = make([]vm.Class, len(in.Classes))
+	}
+	for i, class := range in.Classes {
+		classes[i], ok = runtimePatchCloneClass(class)
+		if !ok {
+			return runtimeCacheEntry{}, false
+		}
+	}
+	var triggers []vm.Trigger
+	if in.Triggers != nil {
+		triggers = make([]vm.Trigger, len(in.Triggers))
+	}
+	for i, trigger := range in.Triggers {
+		program, programOK := runtimePatchCloneProgram(trigger.Program, make(map[*ir.Expr]bool), 0)
+		if !programOK {
+			return runtimeCacheEntry{}, false
+		}
+		triggers[i] = trigger
+		triggers[i].Program = program
+	}
+	var authority *runtimePatchAuthority
+	if in.patchAuthority != nil {
+		copied := *in.patchAuthority
+		if in.patchAuthority.sourceReferences != nil {
+			copied.sourceReferences = make(map[string]string, len(in.patchAuthority.sourceReferences))
+			for path, reference := range in.patchAuthority.sourceReferences {
+				copied.sourceReferences[path] = reference
+			}
+		}
+		copied.affected = runtimePatchCloneSlice(in.patchAuthority.affected)
+		authority = &copied
+	}
+	return runtimeCacheEntry{
+		Methods:        methods,
+		Classes:        classes,
+		Triggers:       triggers,
+		TriggerErrors:  runtimePatchCloneSlice(in.TriggerErrors),
+		PageNames:      runtimePatchCloneSlice(in.PageNames),
+		BaseErr:        in.BaseErr,
+		restored:       in.restored,
+		patchAuthority: authority,
+	}, true
+}
+
+func runtimeCacheEntryUsable(entry runtimeCacheEntry) bool {
+	return entry.restored.Valid() && (entry.patchAuthority == nil || runtimePatchAuthorityMatchesPayload(entry))
 }
 
 func validMemoryRuntimeEntry(key runtimeCacheKey) (runtimeCacheEntry, bool) {
 	runtimeCacheMu.RLock()
 	cached, ok := runtimeCache[key]
+	if ok && runtimeCacheEntryUsable(cached) {
+		cloned, clonedOK := cloneRuntimeCacheEntryChecked(cached)
+		runtimeCacheMu.RUnlock()
+		if clonedOK && cloned.restored.Valid() {
+			return cloned, true
+		}
+		return recheckMemoryRuntimeEntryAfterInvalidObservation(key)
+	}
 	runtimeCacheMu.RUnlock()
 	if !ok {
 		return runtimeCacheEntry{}, false
-	}
-	if cached.restored.Valid() {
-		return cloneRuntimeCacheEntry(cached), true
 	}
 	return recheckMemoryRuntimeEntryAfterInvalidObservation(key)
 }
@@ -617,7 +671,15 @@ func recheckMemoryRuntimeEntryAfterInvalidObservation(key runtimeCacheKey) (runt
 	// concurrently published valid replacement.
 	runtimeCacheMu.Lock()
 	cached, ok := runtimeCache[key]
-	if ok && !cached.restored.Valid() {
+	var cloned runtimeCacheEntry
+	if ok && runtimeCacheEntryUsable(cached) {
+		var clonedOK bool
+		cloned, clonedOK = cloneRuntimeCacheEntryChecked(cached)
+		if !clonedOK || !cloned.restored.Valid() {
+			delete(runtimeCache, key)
+			ok = false
+		}
+	} else if ok {
 		delete(runtimeCache, key)
 		ok = false
 	}
@@ -625,7 +687,7 @@ func recheckMemoryRuntimeEntryAfterInvalidObservation(key runtimeCacheKey) (runt
 	if !ok {
 		return runtimeCacheEntry{}, false
 	}
-	return cloneRuntimeCacheEntry(cached), true
+	return cloned, true
 }
 
 func authoritativeRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet) *typesys.SourceDigestSet {
@@ -701,10 +763,12 @@ func runtimeFromIndexWithSourceDigests(index typesys.Index, digests *typesys.Sou
 
 	if diskCacheAllowed {
 		if diskEntry, ok := tryLoadDiskRuntimeWithSourceDigests(index, digests, key); ok {
-			runtimeCacheMu.Lock()
-			runtimeCache[key] = diskEntry
-			runtimeCacheMu.Unlock()
-			return key, cloneRuntimeCacheEntry(diskEntry), nil
+			if cloned, cloneOK := cloneRuntimeCacheEntryChecked(diskEntry); cloneOK && cloned.restored.Valid() {
+				runtimeCacheMu.Lock()
+				runtimeCache[key] = diskEntry
+				runtimeCacheMu.Unlock()
+				return key, cloned, nil
+			}
 		}
 	}
 	if digests != nil {
@@ -734,13 +798,18 @@ func runtimeFromIndexWithSourceDigests(index typesys.Index, digests *typesys.Sou
 		BaseErr:       baseErr,
 		restored:      vm.NewRestoredRuntimeTemplate(org, baseMachine),
 	}
+	entry.patchAuthority = newRuntimePatchAuthority(index, key, digests, sources, entry, org)
+	cloned, cloneOK := cloneRuntimeCacheEntryChecked(entry)
+	if !cloneOK || !cloned.restored.Valid() {
+		return key, runtimeCacheEntry{}, fmt.Errorf("compiled runtime payload cannot be cloned safely")
+	}
 	runtimeCacheMu.Lock()
 	runtimeCache[key] = entry
 	runtimeCacheMu.Unlock()
 	if diskCacheAllowed {
 		persistDiskRuntime(index, digests, key, org, entry)
 	}
-	return key, cloneRuntimeCacheEntry(entry), nil
+	return key, cloned, nil
 }
 
 func runtimeFromIndexWithPerf(index typesys.Index, sources *sourceCache, diskCacheAllowed bool, counters *runPerfCounters) (runtimeCacheKey, runtimeCacheEntry) {
@@ -765,11 +834,13 @@ func runtimeFromIndexWithSourceDigestsAndPerf(index typesys.Index, digests *type
 
 	if diskCacheAllowed {
 		if diskEntry, ok := tryLoadDiskRuntimeWithPerf(index, digests, key, counters); ok {
-			runtimeCacheMu.Lock()
-			runtimeCache[key] = diskEntry
-			runtimeCacheMu.Unlock()
-			counters.phases.diskCacheHits.Add(1)
-			return key, cloneRuntimeCacheEntry(diskEntry), nil
+			if cloned, cloneOK := cloneRuntimeCacheEntryChecked(diskEntry); cloneOK && cloned.restored.Valid() {
+				runtimeCacheMu.Lock()
+				runtimeCache[key] = diskEntry
+				runtimeCacheMu.Unlock()
+				counters.phases.diskCacheHits.Add(1)
+				return key, cloned, nil
+			}
 		}
 	}
 	counters.phases.cacheMisses.Add(1)
@@ -805,6 +876,7 @@ func runtimeFromIndexWithSourceDigestsAndPerf(index typesys.Index, digests *type
 	if err := sources.sourceSnapshotError(); err != nil {
 		return key, runtimeCacheEntry{}, err
 	}
+	authorityStarted := time.Now()
 	entry := runtimeCacheEntry{
 		Methods:       methods,
 		Classes:       classes,
@@ -814,13 +886,19 @@ func runtimeFromIndexWithSourceDigestsAndPerf(index typesys.Index, digests *type
 		BaseErr:       baseErr,
 		restored:      restored,
 	}
+	entry.patchAuthority = newRuntimePatchAuthority(index, key, digests, sources, entry, org)
+	counters.phases.projectCompileNS.Add(time.Since(authorityStarted).Nanoseconds())
+	cloned, cloneOK := cloneRuntimeCacheEntryChecked(entry)
+	if !cloneOK || !cloned.restored.Valid() {
+		return key, runtimeCacheEntry{}, fmt.Errorf("compiled runtime payload cannot be cloned safely")
+	}
 	runtimeCacheMu.Lock()
 	runtimeCache[key] = entry
 	runtimeCacheMu.Unlock()
 	if diskCacheAllowed {
 		persistDiskRuntimeWithPerf(index, digests, key, org, entry, counters)
 	}
-	return key, cloneRuntimeCacheEntry(entry), nil
+	return key, cloned, nil
 }
 
 func classSetKey(classes map[string]bool) string {
@@ -1996,11 +2074,14 @@ func registerVisualforcePages(machine *vm.VM, names []string) {
 }
 
 type sourceCache struct {
-	mu              sync.RWMutex
-	expectedDigests *typesys.SourceDigestSet
-	snapshotErr     error
-	files           map[string]string
-	fileRemaps      map[string][]namespaceremap.Rule
+	mu                   sync.RWMutex
+	expectedDigests      *typesys.SourceDigestSet
+	expectedDigestLookup func(string) ([sha256.Size]byte, bool)
+	snapshotErr          error
+	files                map[string]string
+	rawFiles             map[string]string
+	apiVersions          map[string]string
+	fileRemaps           map[string][]namespaceremap.Rule
 }
 
 // SourceSnapshotMismatchError reports that an authoritative source snapshot no
@@ -2034,7 +2115,7 @@ func (e *SourceSnapshotMismatchError) Unwrap() error {
 }
 
 func newSourceCache() *sourceCache {
-	return &sourceCache{files: make(map[string]string)}
+	return &sourceCache{files: make(map[string]string), rawFiles: make(map[string]string), apiVersions: make(map[string]string)}
 }
 
 func sourceCacheFor(caches []*sourceCache) *sourceCache {
@@ -2049,11 +2130,28 @@ func (cache *sourceCache) bindSourceDigests(digests *typesys.SourceDigestSet) {
 		return
 	}
 	cache.mu.Lock()
-	if cache.expectedDigests != digests {
+	cache.apiVersions = make(map[string]string)
+	if cache.expectedDigests != digests || cache.expectedDigestLookup != nil {
 		cache.files = make(map[string]string)
+		cache.rawFiles = make(map[string]string)
 		cache.snapshotErr = nil
 	}
 	cache.expectedDigests = digests
+	cache.expectedDigestLookup = nil
+	cache.mu.Unlock()
+}
+
+func (cache *sourceCache) bindSourceDigestLookup(lookup func(string) ([sha256.Size]byte, bool)) {
+	if cache == nil {
+		return
+	}
+	cache.mu.Lock()
+	cache.files = make(map[string]string)
+	cache.rawFiles = make(map[string]string)
+	cache.apiVersions = make(map[string]string)
+	cache.snapshotErr = nil
+	cache.expectedDigests = nil
+	cache.expectedDigestLookup = lookup
 	cache.mu.Unlock()
 }
 
@@ -2063,7 +2161,11 @@ func (cache *sourceCache) expectedDigest(file string) ([sha256.Size]byte, bool) 
 	}
 	cache.mu.RLock()
 	digests := cache.expectedDigests
+	lookup := cache.expectedDigestLookup
 	cache.mu.RUnlock()
+	if lookup != nil {
+		return lookup(file)
+	}
 	if digests == nil {
 		return [sha256.Size]byte{}, false
 	}
@@ -2095,6 +2197,33 @@ func (cache *sourceCache) sourceSnapshotError() error {
 	cache.mu.RLock()
 	defer cache.mu.RUnlock()
 	return cache.snapshotErr
+}
+
+func (cache *sourceCache) retainedRawSource(file string) (string, bool) {
+	if cache == nil {
+		return "", false
+	}
+	cache.mu.RLock()
+	defer cache.mu.RUnlock()
+	source, ok := cache.rawFiles[file]
+	return source, ok
+}
+
+func (cache *sourceCache) apexAPIVersion(file string) string {
+	if cache == nil {
+		return apiVersionForApexFile(file)
+	}
+	cache.mu.Lock()
+	defer cache.mu.Unlock()
+	if version, ok := cache.apiVersions[file]; ok {
+		return version
+	}
+	version := apiVersionForApexFile(file)
+	if cache.apiVersions == nil {
+		cache.apiVersions = make(map[string]string)
+	}
+	cache.apiVersions[file] = version
+	return version
 }
 
 func (cache *sourceCache) read(file string) (string, error) {
@@ -2141,20 +2270,24 @@ func (cache *sourceCache) readWithRemaps(file string, remaps []namespaceremap.Ru
 		cache.mu.RUnlock()
 		return source, nil
 	}
+	rawSource, rawOK := cache.rawFiles[file]
 	cache.mu.RUnlock()
 
-	data, err := os.ReadFile(file)
-	if err != nil {
-		if expected, ok := cache.expectedDigest(file); ok {
-			return "", cache.recordSnapshotMismatch(file, expected, nil, err)
+	if !rawOK {
+		data, err := os.ReadFile(file)
+		if err != nil {
+			if expected, ok := cache.expectedDigest(file); ok {
+				return "", cache.recordSnapshotMismatch(file, expected, nil, err)
+			}
+			return "", err
 		}
-		return "", err
+		digest := sha256.Sum256(data)
+		if expected, ok := cache.expectedDigest(file); ok && expected != digest {
+			return "", cache.recordSnapshotMismatch(file, expected, &digest, nil)
+		}
+		rawSource = string(data)
 	}
-	digest := sha256.Sum256(data)
-	if expected, ok := cache.expectedDigest(file); ok && expected != digest {
-		return "", cache.recordSnapshotMismatch(file, expected, &digest, nil)
-	}
-	source := string(data)
+	source := rawSource
 	if len(remaps) > 0 {
 		source = namespaceremap.ApplySource(remaps, source)
 	}
@@ -2166,6 +2299,12 @@ func (cache *sourceCache) readWithRemaps(file string, remaps []namespaceremap.Ru
 	}
 	if cache.files == nil {
 		cache.files = make(map[string]string)
+	}
+	if cache.rawFiles == nil {
+		cache.rawFiles = make(map[string]string)
+	}
+	if _, ok := cache.rawFiles[file]; !ok {
+		cache.rawFiles[file] = rawSource
 	}
 	cache.files[key] = source
 	return source, nil
