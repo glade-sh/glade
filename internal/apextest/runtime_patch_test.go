@@ -1279,6 +1279,21 @@ func TestValidMemoryRuntimeEntryEvictsUncloneablePayload(t *testing.T) {
 	}
 }
 
+func TestRuntimePatchCloneProgramAcceptsDeepAcyclicCompiledExpression(t *testing.T) {
+	source := "String value = " + strings.Repeat("'segment' + ", 600) + "'tail';"
+	program, err := vm.CompileAnonymous(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cloned, ok := runtimePatchCloneProgram(program, make(map[*ir.Expr]bool), 0)
+	if !ok {
+		t.Fatal("runtime patch clone rejected valid deep acyclic IR")
+	}
+	if !reflect.DeepEqual(cloned, program) {
+		t.Fatal("runtime patch clone changed valid deep acyclic IR")
+	}
+}
+
 func TestRuntimePatchBaseAuthorityRequiresExactRuntimeInputsAndCleanErrors(t *testing.T) {
 	InvalidateRuntimeCaches()
 	t.Cleanup(InvalidateRuntimeCaches)

@@ -1259,9 +1259,6 @@ func runtimePatchCloneInstruction(in ir.Instruction, active map[*ir.Expr]bool, d
 }
 
 func runtimePatchCloneExpr(in ir.Expr, active map[*ir.Expr]bool, depth int) (ir.Expr, bool) {
-	if depth > 256 {
-		return ir.Expr{}, false
-	}
 	out := in
 	if in.Args != nil {
 		out.Args = make([]ir.Expr, len(in.Args))
