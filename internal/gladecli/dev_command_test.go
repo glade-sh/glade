@@ -848,12 +848,27 @@ func TestSymlinkedDependencyRetargetReloadsScopeAndStopsOldTarget(t *testing.T) 
 			writeTestFile(t, classB, "global class StageService { global static String value() { return 'cccc'; } }")
 			waitForWatchChange(t, replacement.watcher, classB, watch.ChangeModified)
 			writeTestFile(t, classA, "global class StageService { global static String value() { return 'dddd'; } }")
-			select {
-			case changes := <-replacement.watcher.Changes():
-				t.Fatalf("retargeted watcher observed old target A: %#v", changes)
-			case err := <-replacement.watcher.Errors():
-				t.Fatal(err)
-			case <-time.After(100 * time.Millisecond):
+			deadline := time.NewTimer(100 * time.Millisecond)
+			defer deadline.Stop()
+			for {
+				select {
+				case changes, ok := <-replacement.watcher.Changes():
+					if !ok {
+						t.Fatal("retargeted watcher closed while checking old target A")
+					}
+					for _, change := range changes {
+						if filepath.Clean(change.Path) == filepath.Clean(classA) {
+							t.Fatalf("retargeted watcher observed old target A: %#v", changes)
+						}
+					}
+				case err, ok := <-replacement.watcher.Errors():
+					if !ok {
+						t.Fatal("retargeted watcher errors closed while checking old target A")
+					}
+					t.Fatal(err)
+				case <-deadline.C:
+					return
+				}
 			}
 		})
 	}
