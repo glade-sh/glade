@@ -289,6 +289,10 @@ func runDBUI(ctx context.Context, args []string, w io.Writer, progressW io.Write
 }
 
 func runDBUIWithOpenURL(ctx context.Context, args []string, w io.Writer, progressW io.Writer, opener func(string) error) error {
+	return runDBUIWithOpenURLAndListen(ctx, args, w, progressW, opener, net.Listen)
+}
+
+func runDBUIWithOpenURLAndListen(ctx context.Context, args []string, w io.Writer, progressW io.Writer, opener func(string) error, listen func(string, string) (net.Listener, error)) error {
 	opts, err := parseDBUIOptions(args)
 	if err != nil {
 		return err
@@ -309,7 +313,7 @@ func runDBUIWithOpenURL(ctx context.Context, args []string, w io.Writer, progres
 	}
 	defer store.Close()
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "db ui", Label: "Starting listener", Current: 1, Total: 2})
-	listener, err := net.Listen("tcp", opts.addr)
+	listener, err := listen("tcp", opts.addr)
 	if err != nil {
 		renderer.Finish(cliui.Result{OK: false, Label: "db ui failed"})
 		return err

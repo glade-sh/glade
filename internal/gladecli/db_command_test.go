@@ -86,20 +86,46 @@ func TestRunDBUIWithOpenURLErrorClosesListener(t *testing.T) {
 	root := t.TempDir()
 	writeProjectWithWidgetField(t, root, "Name__c")
 	wantErr := errors.New("open failed")
-	var addr string
+	var listener *dbUICloseTrackingListener
 
-	err := runDBUIWithOpenURL(t.Context(), []string{"--project", root, "--addr", "127.0.0.1:0", "--open"}, &bytes.Buffer{}, &bytes.Buffer{}, func(url string) error {
-		addr = strings.TrimSuffix(strings.TrimPrefix(url, "http://"), "/db")
-		return wantErr
-	})
+	err := runDBUIWithOpenURLAndListen(
+		t.Context(),
+		[]string{"--project", root, "--addr", "127.0.0.1:0", "--open"},
+		&bytes.Buffer{},
+		&bytes.Buffer{},
+		func(string) error { return wantErr },
+		func(network, address string) (net.Listener, error) {
+			base, err := net.Listen(network, address)
+			if err != nil {
+				return nil, err
+			}
+			if err := base.(*net.TCPListener).SetDeadline(time.Now().Add(time.Second)); err != nil {
+				base.Close()
+				return nil, err
+			}
+			listener = &dbUICloseTrackingListener{Listener: base}
+			return listener, nil
+		},
+	)
 	if !errors.Is(err, wantErr) {
 		t.Fatalf("error = %v, want %v", err, wantErr)
 	}
-	listener, listenErr := net.Listen("tcp", addr)
-	if listenErr != nil {
-		t.Fatalf("listener %q was not closed after opener error: %v", addr, listenErr)
+	if listener.closeCalls != 1 {
+		t.Fatalf("listener close calls = %d, want 1", listener.closeCalls)
 	}
-	listener.Close()
+	if _, err := listener.Listener.Accept(); !errors.Is(err, net.ErrClosed) {
+		t.Fatalf("underlying listener Accept error = %v, want %v", err, net.ErrClosed)
+	}
+}
+
+type dbUICloseTrackingListener struct {
+	net.Listener
+	closeCalls int
+}
+
+func (l *dbUICloseTrackingListener) Close() error {
+	l.closeCalls++
+	return l.Listener.Close()
 }
 
 func TestRunDBUIReadyFileUsesDefaultProjectEnv(t *testing.T) {
