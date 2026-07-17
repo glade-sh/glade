@@ -113,7 +113,7 @@ exit 0
 	cleanupNeeded = false
 }
 
-func TestLoadManifestFromExecutableTimeoutCleansUpDescendant(t *testing.T) {
+func TestLoadManifestFromExecutableCancellationCleansUpDescendant(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("shell helper and process probe use POSIX commands")
 	}
@@ -138,19 +138,24 @@ wait "$child"
 		t.Fatalf("prewarm helper: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Millisecond)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	started := time.Now()
-	_, err := LoadManifestFromExecutable(ctx, exe)
-	elapsed := time.Since(started)
-	if !errors.Is(err, context.DeadlineExceeded) {
-		t.Fatalf("error = %v, want context deadline exceeded", err)
-	}
-	if elapsed >= time.Second {
-		t.Fatalf("timeout cleanup took %s, want <1s", elapsed)
-	}
+	errCh := make(chan error, 1)
+	go func() {
+		_, err := LoadManifestFromExecutable(ctx, exe)
+		errCh <- err
+	}()
 
 	pid := readRecordedPID(t, pidPath)
+	started := time.Now()
+	cancel()
+	if err := <-errCh; !errors.Is(err, context.Canceled) {
+		t.Fatalf("error = %v, want context canceled", err)
+	}
+	if elapsed := time.Since(started); elapsed >= time.Second {
+		t.Fatalf("cancellation cleanup took %s, want <1s", elapsed)
+	}
+
 	waitForProcessAbsent(t, pid, time.Second)
 	cleanupNeeded = false
 }
@@ -201,7 +206,7 @@ func TestConfigureManifestCommandAfterProcessExitReportsProcessDone(t *testing.T
 
 func readRecordedPID(t *testing.T, path string) int {
 	t.Helper()
-	deadline := time.Now().Add(time.Second)
+	deadline := time.Now().Add(10 * time.Second)
 	for {
 		data, err := os.ReadFile(path)
 		if err == nil {

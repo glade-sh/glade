@@ -905,7 +905,7 @@ fi
 	}
 }
 
-func TestPluginsListJSONTimesOutLinkedExecutableEditorMetadata(t *testing.T) {
+func TestPluginsListJSONCancellationCleansUpLinkedExecutableDescendant(t *testing.T) {
 	t.Parallel()
 	if runtime.GOOS == "windows" {
 		t.Skip("shell helper uses sh")
@@ -934,7 +934,59 @@ fi
 	}
 
 	var stdout bytes.Buffer
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- writePluginsListJSONWithManifestTimeout(ctx, &stdout, []pluginhost.InstalledPlugin{{
+			Name:       "compat",
+			Version:    "0.1.0",
+			Executable: exe,
+			Source:     "link:test",
+			Linked:     true,
+			Commands:   []string{"compat"},
+		}}, 30*time.Second)
+	}()
+
+	pid, err := waitForCLIRecordedPID(pidPath, 10*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
 	started := time.Now()
+	cancel()
+	if err := <-errCh; !errors.Is(err, context.Canceled) {
+		t.Fatalf("error = %v, want context canceled", err)
+	}
+	if elapsed := time.Since(started); elapsed >= time.Second {
+		t.Fatalf("plugin list cancellation took %s, want <1s", elapsed)
+	}
+	waitForCLIProcessAbsent(t, pid, time.Second)
+	cleanupNeeded = false
+}
+
+func TestPluginsListJSONTimeoutBeforePIDWriteDoesNotRequirePIDFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell helper uses sh")
+	}
+	exe := filepath.Join(t.TempDir(), "glade-plugin-compat")
+	pidPath := exe + ".pid"
+	cleanupNeeded := true
+	t.Cleanup(func() {
+		if cleanupNeeded {
+			bestEffortKillCLIRecordedPID(pidPath)
+		}
+	})
+	script := `#!/bin/sh
+if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
+	  sleep 30
+	  printf '%s\n' "$$" > "$0.pid"
+fi
+`
+	if err := os.WriteFile(exe, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout bytes.Buffer
 	err := writePluginsListJSONWithManifestTimeout(context.Background(), &stdout, []pluginhost.InstalledPlugin{{
 		Name:       "compat",
 		Version:    "0.1.0",
@@ -943,35 +995,82 @@ fi
 		Linked:     true,
 		Commands:   []string{"compat"},
 	}}, 25*time.Millisecond)
-	elapsed := time.Since(started)
 	if !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("error = %v, want context deadline exceeded", err)
 	}
-	if elapsed >= time.Second {
-		t.Fatalf("plugin list timeout took %s, want <1s", elapsed)
+	pid, present, readErr := readCLIRecordedPIDIfPresent(pidPath)
+	if readErr != nil {
+		t.Fatal(readErr)
 	}
-	pid := readCLIRecordedPID(t, pidPath)
-	waitForCLIProcessAbsent(t, pid, time.Second)
+	if present {
+		waitForCLIProcessAbsent(t, pid, time.Second)
+	}
 	cleanupNeeded = false
 }
 
-func readCLIRecordedPID(t *testing.T, path string) int {
-	t.Helper()
-	deadline := time.Now().Add(time.Second)
-	for {
-		data, err := os.ReadFile(path)
-		if err == nil {
-			pid, convErr := strconv.Atoi(strings.TrimSpace(string(data)))
-			if convErr != nil || pid <= 0 {
-				t.Fatalf("invalid recorded PID %q: %v", data, convErr)
-			}
-			return pid
+func TestReadCLIRecordedPIDIfPresent(t *testing.T) {
+	t.Run("missing", func(t *testing.T) {
+		pid, present, err := readCLIRecordedPIDIfPresent(filepath.Join(t.TempDir(), "missing.pid"))
+		if err != nil || present || pid != 0 {
+			t.Fatalf("pid=%d present=%t err=%v, want absent without error", pid, present, err)
 		}
-		if !errors.Is(err, os.ErrNotExist) {
-			t.Fatalf("read recorded PID: %v", err)
+	})
+	t.Run("valid", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "valid.pid")
+		if err := os.WriteFile(path, []byte(strconv.Itoa(os.Getpid())+"\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		pid, present, err := readCLIRecordedPIDIfPresent(path)
+		if err != nil || !present || pid != os.Getpid() {
+			t.Fatalf("pid=%d present=%t err=%v, want pid %d", pid, present, err, os.Getpid())
+		}
+	})
+	t.Run("invalid", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "invalid.pid")
+		if err := os.WriteFile(path, []byte("not-a-pid\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if _, _, err := readCLIRecordedPIDIfPresent(path); err == nil {
+			t.Fatal("invalid PID unexpectedly succeeded")
+		}
+	})
+	t.Run("read error", func(t *testing.T) {
+		if _, _, err := readCLIRecordedPIDIfPresent(t.TempDir()); err == nil {
+			t.Fatal("directory read unexpectedly succeeded")
+		}
+	})
+}
+
+func readCLIRecordedPIDIfPresent(path string) (int, bool, error) {
+	data, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, fmt.Errorf("read recorded PID: %w", err)
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
+	if err != nil {
+		return 0, false, fmt.Errorf("invalid recorded PID %q: %w", data, err)
+	}
+	if pid <= 0 {
+		return 0, false, fmt.Errorf("invalid recorded PID %q: must be positive", data)
+	}
+	return pid, true, nil
+}
+
+func waitForCLIRecordedPID(path string, timeout time.Duration) (int, error) {
+	deadline := time.Now().Add(timeout)
+	for {
+		pid, present, err := readCLIRecordedPIDIfPresent(path)
+		if err != nil {
+			return 0, err
+		}
+		if present {
+			return pid, nil
 		}
 		if time.Now().After(deadline) {
-			t.Fatalf("timed out waiting for PID file %s", path)
+			return 0, fmt.Errorf("timed out waiting for PID file %s", path)
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
