@@ -174,6 +174,13 @@ func validateRestoredRuntimeEntry(entry runtimeCacheEntry) (runtimeCacheEntry, b
 	if !entry.restored.Valid() {
 		return runtimeCacheEntry{}, false
 	}
+	// Disk payloads are decoded and rebuilt outside the in-memory compiler
+	// boundary. Validate their complete structure exactly once before they can
+	// be published for narrow runner projections. The marker is not serialized.
+	if _, ok := cloneRuntimeCacheEntryChecked(entry); !ok {
+		return runtimeCacheEntry{}, false
+	}
+	entry.executionProjectionValidated = true
 	return entry, true
 }
 

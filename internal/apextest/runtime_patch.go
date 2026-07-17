@@ -504,6 +504,7 @@ func tryRuntimePatchTransition(previous, current typesys.Index, sources *sourceC
 	if !cloneOK || !clonedEntry.restored.Valid() {
 		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false
 	}
+	entry.executionProjectionValidated = true
 
 	runtimeCacheMu.Lock()
 	base, baseOK := runtimeCache[previousKey]

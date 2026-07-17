@@ -239,12 +239,12 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 		reportProgress(opts, TestProgress{Event: "compile_start"})
 	}
 	var runtimeKey runtimeCacheKey
-	var runtime runtimeCacheEntry
+	var runtime runtimeExecutionView
 	var runtimeErr error
 	if runState.counters.enabled {
-		runtimeKey, runtime, runtimeErr = runtimeFromIndexWithSourceDigestsAndPerf(index, opts.SourceDigests, sources, runState.diskCacheEnabled, runState.counters)
+		runtimeKey, runtime, runtimeErr = runtimeFromIndexForExecutionWithSourceDigestsAndPerf(index, opts.SourceDigests, sources, runState.diskCacheEnabled, runState.counters)
 	} else {
-		runtimeKey, runtime, runtimeErr = runtimeFromIndexWithSourceDigests(index, opts.SourceDigests, sources, runState.diskCacheEnabled)
+		runtimeKey, runtime, runtimeErr = runtimeFromIndexForExecutionWithSourceDigests(index, opts.SourceDigests, sources, runState.diskCacheEnabled)
 	}
 	if runtimeErr != nil {
 		return compileErrorRun(cases, runtimeErr, started, opts)
@@ -460,14 +460,25 @@ type testSetupResult struct {
 type runtimeCacheKey string
 
 type runtimeCacheEntry struct {
-	Methods        map[string]vm.Method
-	Classes        []vm.Class
-	Triggers       []vm.Trigger
-	TriggerErrors  []error
-	PageNames      []string
-	BaseErr        error
-	restored       vm.RestoredRuntimeTemplate
-	patchAuthority *runtimePatchAuthority
+	Methods                      map[string]vm.Method
+	Classes                      []vm.Class
+	Triggers                     []vm.Trigger
+	TriggerErrors                []error
+	PageNames                    []string
+	BaseErr                      error
+	restored                     vm.RestoredRuntimeTemplate
+	patchAuthority               *runtimePatchAuthority
+	executionProjectionValidated bool
+}
+
+// runtimeExecutionView is the immutable subset of a compiled runtime needed by
+// RunCasesContext after project compilation. The full compiled payload remains
+// cache-owned so runner startup does not deep-clone methods, classes, triggers,
+// page names, or patch authority that it never reads.
+type runtimeExecutionView struct {
+	TriggerErrors []error
+	BaseErr       error
+	restored      vm.RestoredRuntimeTemplate
 }
 
 type CompiledProjectRuntime struct {
@@ -641,7 +652,30 @@ func cloneRuntimeCacheEntryChecked(in runtimeCacheEntry) (runtimeCacheEntry, boo
 		BaseErr:        in.BaseErr,
 		restored:       in.restored,
 		patchAuthority: authority,
+		// A successful full structural clone is itself a validation boundary.
+		executionProjectionValidated: true,
 	}, true
+}
+
+func runtimeExecutionViewFromEntry(in runtimeCacheEntry) (runtimeExecutionView, bool) {
+	if !in.restored.Valid() {
+		return runtimeExecutionView{}, false
+	}
+	return runtimeExecutionView{
+		TriggerErrors: runtimePatchCloneSlice(in.TriggerErrors),
+		BaseErr:       in.BaseErr,
+		restored:      in.restored,
+	}, true
+}
+
+func runtimeExecutionProjection(in runtimeCacheEntry) (runtimeExecutionView, bool) {
+	// The marker is internal and never serialized. Only compiler-owned entries,
+	// structurally validated disk entries, and successful full clones receive
+	// it. Hand-injected or malformed entries therefore fail closed.
+	if !in.executionProjectionValidated {
+		return runtimeExecutionView{}, false
+	}
+	return runtimeExecutionViewFromEntry(in)
 }
 
 func runtimeCacheEntryUsable(entry runtimeCacheEntry) bool {
@@ -649,33 +683,46 @@ func runtimeCacheEntryUsable(entry runtimeCacheEntry) bool {
 }
 
 func validMemoryRuntimeEntry(key runtimeCacheKey) (runtimeCacheEntry, bool) {
+	return validMemoryRuntimeProjection(key, cloneRuntimeCacheEntryChecked)
+}
+
+func validMemoryRuntimeExecution(key runtimeCacheKey) (runtimeExecutionView, bool) {
+	return validMemoryRuntimeProjection(key, runtimeExecutionProjection)
+}
+
+func validMemoryRuntimeProjection[T any](key runtimeCacheKey, project func(runtimeCacheEntry) (T, bool)) (T, bool) {
 	runtimeCacheMu.RLock()
 	cached, ok := runtimeCache[key]
 	if ok && runtimeCacheEntryUsable(cached) {
-		cloned, clonedOK := cloneRuntimeCacheEntryChecked(cached)
+		projected, projectedOK := project(cached)
 		runtimeCacheMu.RUnlock()
-		if clonedOK && cloned.restored.Valid() {
-			return cloned, true
+		if projectedOK {
+			return projected, true
 		}
-		return recheckMemoryRuntimeEntryAfterInvalidObservation(key)
+		return recheckMemoryRuntimeProjectionAfterInvalidObservation(key, project)
 	}
 	runtimeCacheMu.RUnlock()
 	if !ok {
-		return runtimeCacheEntry{}, false
+		var zero T
+		return zero, false
 	}
-	return recheckMemoryRuntimeEntryAfterInvalidObservation(key)
+	return recheckMemoryRuntimeProjectionAfterInvalidObservation(key, project)
 }
 
 func recheckMemoryRuntimeEntryAfterInvalidObservation(key runtimeCacheKey) (runtimeCacheEntry, bool) {
+	return recheckMemoryRuntimeProjectionAfterInvalidObservation(key, cloneRuntimeCacheEntryChecked)
+}
+
+func recheckMemoryRuntimeProjectionAfterInvalidObservation[T any](key runtimeCacheKey, project func(runtimeCacheEntry) (T, bool)) (T, bool) {
 	// Recheck under the write lock so an invalid observation cannot evict a
 	// concurrently published valid replacement.
 	runtimeCacheMu.Lock()
 	cached, ok := runtimeCache[key]
-	var cloned runtimeCacheEntry
+	var projected T
 	if ok && runtimeCacheEntryUsable(cached) {
-		var clonedOK bool
-		cloned, clonedOK = cloneRuntimeCacheEntryChecked(cached)
-		if !clonedOK || !cloned.restored.Valid() {
+		var projectedOK bool
+		projected, projectedOK = project(cached)
+		if !projectedOK {
 			delete(runtimeCache, key)
 			ok = false
 		}
@@ -685,9 +732,10 @@ func recheckMemoryRuntimeEntryAfterInvalidObservation(key runtimeCacheKey) (runt
 	}
 	runtimeCacheMu.Unlock()
 	if !ok {
-		return runtimeCacheEntry{}, false
+		var zero T
+		return zero, false
 	}
-	return cloned, true
+	return projected, true
 }
 
 func authoritativeRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet) *typesys.SourceDigestSet {
@@ -746,6 +794,15 @@ func runtimeFromIndex(index typesys.Index, sources *sourceCache, useDiskCache ..
 }
 
 func runtimeFromIndexWithSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, useDiskCache ...bool) (runtimeCacheKey, runtimeCacheEntry, error) {
+	return runtimeFromIndexWithSourceDigestsProjected(index, digests, sources, cloneRuntimeCacheEntryChecked, useDiskCache...)
+}
+
+func runtimeFromIndexForExecutionWithSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, useDiskCache ...bool) (runtimeCacheKey, runtimeExecutionView, error) {
+	return runtimeFromIndexWithSourceDigestsProjected(index, digests, sources, runtimeExecutionProjection, useDiskCache...)
+}
+
+func runtimeFromIndexWithSourceDigestsProjected[T any](index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, project func(runtimeCacheEntry) (T, bool), useDiskCache ...bool) (runtimeCacheKey, T, error) {
+	var zero T
 	digests = authoritativeRuntimeSourceDigests(index, digests)
 	if sources == nil {
 		sources = newSourceCache()
@@ -757,23 +814,23 @@ func runtimeFromIndexWithSourceDigests(index typesys.Index, digests *typesys.Sou
 		diskCacheAllowed = useDiskCache[0]
 	}
 	key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
-	if cached, ok := validMemoryRuntimeEntry(key); ok {
+	if cached, ok := validMemoryRuntimeProjection(key, project); ok {
 		return key, cached, nil
 	}
 
 	if diskCacheAllowed {
 		if diskEntry, ok := tryLoadDiskRuntimeWithSourceDigests(index, digests, key); ok {
-			if cloned, cloneOK := cloneRuntimeCacheEntryChecked(diskEntry); cloneOK && cloned.restored.Valid() {
+			if projected, projectOK := project(diskEntry); projectOK {
 				runtimeCacheMu.Lock()
 				runtimeCache[key] = diskEntry
 				runtimeCacheMu.Unlock()
-				return key, cloned, nil
+				return key, projected, nil
 			}
 		}
 	}
 	if digests != nil {
 		if err := preloadRuntimeSources(index, sources); err != nil {
-			return key, runtimeCacheEntry{}, err
+			return key, zero, err
 		}
 	}
 
@@ -787,21 +844,22 @@ func runtimeFromIndexWithSourceDigests(index typesys.Index, digests *typesys.Sou
 	registerVisualforcePages(baseMachine, pageNames)
 	baseErr := registerBaseRuntime(baseMachine, methods, classes, triggers)
 	if err := sources.sourceSnapshotError(); err != nil {
-		return key, runtimeCacheEntry{}, err
+		return key, zero, err
 	}
 	entry := runtimeCacheEntry{
-		Methods:       methods,
-		Classes:       classes,
-		Triggers:      triggers,
-		TriggerErrors: triggerErrors,
-		PageNames:     pageNames,
-		BaseErr:       baseErr,
-		restored:      vm.NewRestoredRuntimeTemplate(org, baseMachine),
+		Methods:                      methods,
+		Classes:                      classes,
+		Triggers:                     triggers,
+		TriggerErrors:                triggerErrors,
+		PageNames:                    pageNames,
+		BaseErr:                      baseErr,
+		restored:                     vm.NewRestoredRuntimeTemplate(org, baseMachine),
+		executionProjectionValidated: true,
 	}
 	entry.patchAuthority = newRuntimePatchAuthority(index, key, digests, sources, entry, org)
-	cloned, cloneOK := cloneRuntimeCacheEntryChecked(entry)
-	if !cloneOK || !cloned.restored.Valid() {
-		return key, runtimeCacheEntry{}, fmt.Errorf("compiled runtime payload cannot be cloned safely")
+	projected, projectOK := project(entry)
+	if !projectOK {
+		return key, zero, fmt.Errorf("compiled runtime payload cannot be cloned safely")
 	}
 	runtimeCacheMu.Lock()
 	runtimeCache[key] = entry
@@ -809,7 +867,7 @@ func runtimeFromIndexWithSourceDigests(index typesys.Index, digests *typesys.Sou
 	if diskCacheAllowed {
 		persistDiskRuntime(index, digests, key, org, entry)
 	}
-	return key, cloned, nil
+	return key, projected, nil
 }
 
 func runtimeFromIndexWithPerf(index typesys.Index, sources *sourceCache, diskCacheAllowed bool, counters *runPerfCounters) (runtimeCacheKey, runtimeCacheEntry) {
@@ -818,6 +876,15 @@ func runtimeFromIndexWithPerf(index typesys.Index, sources *sourceCache, diskCac
 }
 
 func runtimeFromIndexWithSourceDigestsAndPerf(index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, diskCacheAllowed bool, counters *runPerfCounters) (runtimeCacheKey, runtimeCacheEntry, error) {
+	return runtimeFromIndexWithSourceDigestsAndPerfProjected(index, digests, sources, diskCacheAllowed, counters, cloneRuntimeCacheEntryChecked)
+}
+
+func runtimeFromIndexForExecutionWithSourceDigestsAndPerf(index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, diskCacheAllowed bool, counters *runPerfCounters) (runtimeCacheKey, runtimeExecutionView, error) {
+	return runtimeFromIndexWithSourceDigestsAndPerfProjected(index, digests, sources, diskCacheAllowed, counters, runtimeExecutionProjection)
+}
+
+func runtimeFromIndexWithSourceDigestsAndPerfProjected[T any](index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, diskCacheAllowed bool, counters *runPerfCounters, project func(runtimeCacheEntry) (T, bool)) (runtimeCacheKey, T, error) {
+	var zero T
 	digests = authoritativeRuntimeSourceDigests(index, digests)
 	if sources == nil {
 		sources = newSourceCache()
@@ -827,19 +894,19 @@ func runtimeFromIndexWithSourceDigestsAndPerf(index typesys.Index, digests *type
 	keyStarted := time.Now()
 	key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
 	counters.phases.runtimeKeyNS.Add(time.Since(keyStarted).Nanoseconds())
-	if cached, ok := validMemoryRuntimeEntry(key); ok {
+	if cached, ok := validMemoryRuntimeProjection(key, project); ok {
 		counters.phases.memoryCacheHits.Add(1)
 		return key, cached, nil
 	}
 
 	if diskCacheAllowed {
 		if diskEntry, ok := tryLoadDiskRuntimeWithPerf(index, digests, key, counters); ok {
-			if cloned, cloneOK := cloneRuntimeCacheEntryChecked(diskEntry); cloneOK && cloned.restored.Valid() {
+			if projected, projectOK := project(diskEntry); projectOK {
 				runtimeCacheMu.Lock()
 				runtimeCache[key] = diskEntry
 				runtimeCacheMu.Unlock()
 				counters.phases.diskCacheHits.Add(1)
-				return key, cloned, nil
+				return key, projected, nil
 			}
 		}
 	}
@@ -849,7 +916,7 @@ func runtimeFromIndexWithSourceDigestsAndPerf(index typesys.Index, digests *type
 		err := preloadRuntimeSources(index, sources)
 		counters.phases.runtimeKeyNS.Add(time.Since(bindingStarted).Nanoseconds())
 		if err != nil {
-			return key, runtimeCacheEntry{}, err
+			return key, zero, err
 		}
 	}
 
@@ -874,23 +941,24 @@ func runtimeFromIndexWithSourceDigestsAndPerf(index typesys.Index, digests *type
 	restored := vm.NewRestoredRuntimeTemplate(org, baseMachine)
 	counters.phases.orgBuildNS.Add(time.Since(restoredStarted).Nanoseconds())
 	if err := sources.sourceSnapshotError(); err != nil {
-		return key, runtimeCacheEntry{}, err
+		return key, zero, err
 	}
 	authorityStarted := time.Now()
 	entry := runtimeCacheEntry{
-		Methods:       methods,
-		Classes:       classes,
-		Triggers:      triggers,
-		TriggerErrors: triggerErrors,
-		PageNames:     pageNames,
-		BaseErr:       baseErr,
-		restored:      restored,
+		Methods:                      methods,
+		Classes:                      classes,
+		Triggers:                     triggers,
+		TriggerErrors:                triggerErrors,
+		PageNames:                    pageNames,
+		BaseErr:                      baseErr,
+		restored:                     restored,
+		executionProjectionValidated: true,
 	}
 	entry.patchAuthority = newRuntimePatchAuthority(index, key, digests, sources, entry, org)
 	counters.phases.projectCompileNS.Add(time.Since(authorityStarted).Nanoseconds())
-	cloned, cloneOK := cloneRuntimeCacheEntryChecked(entry)
-	if !cloneOK || !cloned.restored.Valid() {
-		return key, runtimeCacheEntry{}, fmt.Errorf("compiled runtime payload cannot be cloned safely")
+	projected, projectOK := project(entry)
+	if !projectOK {
+		return key, zero, fmt.Errorf("compiled runtime payload cannot be cloned safely")
 	}
 	runtimeCacheMu.Lock()
 	runtimeCache[key] = entry
@@ -898,7 +966,7 @@ func runtimeFromIndexWithSourceDigestsAndPerf(index typesys.Index, digests *type
 	if diskCacheAllowed {
 		persistDiskRuntimeWithPerf(index, digests, key, org, entry, counters)
 	}
-	return key, cloned, nil
+	return key, projected, nil
 }
 
 func classSetKey(classes map[string]bool) string {
