@@ -15,7 +15,9 @@ a git ref:
 glade test changed --project . --since origin/main --json --no-progress
 ```
 
-A changed production class selects tests that reference it. A changed test class selects itself. Metadata and unknown file types fall back to conservative behavior.
+A changed production class selects tests that reach it through direct or
+transitive references in the Apex graph. A changed test class selects itself.
+Metadata and unknown file types fall back to conservative behavior.
 
 ## Watch and one-shot modes
 
@@ -45,7 +47,8 @@ terminals or editor tasks.
 
 The affected-test report distinguishes three useful outcomes:
 
-- `direct` — tests selected from direct references to changed Apex symbols.
+- `direct` — a precise set of tests selected through direct and transitive
+  references to changed Apex symbols.
 - `all` — the safe fallback when Glade cannot narrow the impact.
 - `none` — no tests selected for the observed change set.
 

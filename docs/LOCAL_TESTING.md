@@ -289,7 +289,9 @@ The short alias `performance` resolves to `@glade/performance`.
 
 Use `--parallelism` to choose the worker count. Method-level parallel execution
 is on by default; use `--no-parallel-methods` only when a project has tests that
-share mutable local state.
+share mutable local state. The scheduler adapts within that fixed worker budget:
+it uses recorded class durations when available and shifts freed capacity to
+methods in the remaining classes. It never exceeds the requested parallelism.
 
 ```bash
 glade test --project . --parallelism 8 --json
