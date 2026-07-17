@@ -50,6 +50,69 @@ exit 7
 	}
 }
 
+func TestLoadManifestFromExecutableAcceptsCompleteManifestAfterPipeDelay(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell helper and process probe use POSIX commands")
+	}
+	pidPath := filepath.Join(t.TempDir(), "descendant.pid")
+	cleanupNeeded := true
+	t.Cleanup(func() {
+		if cleanupNeeded {
+			bestEffortKillRecordedPID(pidPath)
+		}
+	})
+	t.Setenv("GLADE_PLUGIN_TEST_PID_FILE", pidPath)
+	exe := writeShellPlugin(t, t.TempDir(), "compat", `#!/bin/sh
+sleep 30 &
+child=$!
+printf '%s\n' "$child" > "$GLADE_PLUGIN_TEST_PID_FILE"
+printf '{"apiVersion":"glade.plugin.v1","name":"compat","version":"0.1.0","commands":[{"path":["compat"],"summary":"Compat commands."}]}'
+exit 0
+`)
+
+	manifest, err := LoadManifestFromExecutable(context.Background(), exe)
+	if err != nil {
+		t.Fatalf("LoadManifestFromExecutable: %v", err)
+	}
+	if manifest.Name != "compat" {
+		t.Fatalf("unexpected manifest: %#v", manifest)
+	}
+
+	pid := readRecordedPID(t, pidPath)
+	waitForProcessAbsent(t, pid, time.Second)
+	cleanupNeeded = false
+}
+
+func TestLoadManifestFromExecutableRejectsTruncatedManifestAfterPipeDelay(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell helper and process probe use POSIX commands")
+	}
+	pidPath := filepath.Join(t.TempDir(), "descendant.pid")
+	cleanupNeeded := true
+	t.Cleanup(func() {
+		if cleanupNeeded {
+			bestEffortKillRecordedPID(pidPath)
+		}
+	})
+	t.Setenv("GLADE_PLUGIN_TEST_PID_FILE", pidPath)
+	exe := writeShellPlugin(t, t.TempDir(), "compat", `#!/bin/sh
+sleep 30 &
+child=$!
+printf '%s\n' "$child" > "$GLADE_PLUGIN_TEST_PID_FILE"
+printf '{"apiVersion":"glade.plugin.v1","name":"compat"'
+exit 0
+`)
+
+	_, err := LoadManifestFromExecutable(context.Background(), exe)
+	if !errors.Is(err, exec.ErrWaitDelay) {
+		t.Fatalf("error = %v, want exec.ErrWaitDelay", err)
+	}
+
+	pid := readRecordedPID(t, pidPath)
+	waitForProcessAbsent(t, pid, time.Second)
+	cleanupNeeded = false
+}
+
 func TestLoadManifestFromExecutableTimeoutCleansUpDescendant(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("shell helper and process probe use POSIX commands")
