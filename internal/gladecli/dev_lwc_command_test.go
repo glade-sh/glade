@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -361,6 +363,7 @@ func TestDevLWCOptionsApplyContextPresetAndExplicitOverrides(t *testing.T) {
 }
 
 func TestRunDevLWCOpenUsesStubbedOpener(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -377,15 +380,13 @@ func TestRunDevLWCOpenUsesStubbedOpener(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	var opened string
-	oldOpen := devLWCOpenURL
-	devLWCOpenURL = func(url string) error {
+	opener := func(url string) error {
 		opened = url
 		cancel()
 		return nil
 	}
-	defer func() { devLWCOpenURL = oldOpen }()
 
-	err := runDevLWC(ctx, []string{"--project", root, "--addr", "127.0.0.1:0", "--context", "componentProbe", "--open"}, &bytes.Buffer{}, &bytes.Buffer{})
+	err := runDevLWCWithOpenURL(ctx, []string{"--project", root, "--addr", "127.0.0.1:0", "--context", "componentProbe", "--open"}, &bytes.Buffer{}, &bytes.Buffer{}, opener)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -395,6 +396,7 @@ func TestRunDevLWCOpenUsesStubbedOpener(t *testing.T) {
 }
 
 func TestRunDevLWCOpenDefaultsToWorkbench(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -403,15 +405,13 @@ func TestRunDevLWCOpenDefaultsToWorkbench(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	var opened string
-	oldOpen := devLWCOpenURL
-	devLWCOpenURL = func(url string) error {
+	opener := func(url string) error {
 		opened = url
 		cancel()
 		return nil
 	}
-	defer func() { devLWCOpenURL = oldOpen }()
 
-	err := runDevLWC(ctx, []string{"--project", root, "--addr", "127.0.0.1:0", "--open"}, &bytes.Buffer{}, &bytes.Buffer{})
+	err := runDevLWCWithOpenURL(ctx, []string{"--project", root, "--addr", "127.0.0.1:0", "--open"}, &bytes.Buffer{}, &bytes.Buffer{}, opener)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -421,6 +421,7 @@ func TestRunDevLWCOpenDefaultsToWorkbench(t *testing.T) {
 }
 
 func TestRunDevLWCOpenDefaultsToWorkbenchWhenProjectHasDefaultContext(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
@@ -441,15 +442,13 @@ func TestRunDevLWCOpenDefaultsToWorkbenchWhenProjectHasDefaultContext(t *testing
 	defer cancel()
 	var opened string
 	var stdout bytes.Buffer
-	oldOpen := devLWCOpenURL
-	devLWCOpenURL = func(url string) error {
+	opener := func(url string) error {
 		opened = url
 		cancel()
 		return nil
 	}
-	defer func() { devLWCOpenURL = oldOpen }()
 
-	err := runDevLWC(ctx, []string{"--project", root, "--addr", "127.0.0.1:0", "--open"}, &stdout, &bytes.Buffer{})
+	err := runDevLWCWithOpenURL(ctx, []string{"--project", root, "--addr", "127.0.0.1:0", "--open"}, &stdout, &bytes.Buffer{}, opener)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -462,6 +461,30 @@ func TestRunDevLWCOpenDefaultsToWorkbenchWhenProjectHasDefaultContext(t *testing
 	if strings.Contains(stdout.String(), "Selected context accountRecord: ") {
 		t.Fatalf("stdout should not call implicit default context selected:\n%s", stdout.String())
 	}
+}
+
+func TestRunDevLWCWithOpenURLErrorClosesListener(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/lwc/contextProbe/contextProbe.js-meta.xml"), `<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+  <isExposed>true</isExposed>
+</LightningComponentBundle>`)
+	wantErr := errors.New("open failed")
+	var addr string
+
+	err := runDevLWCWithOpenURL(t.Context(), []string{"--project", root, "--addr", "127.0.0.1:0", "--open"}, &bytes.Buffer{}, &bytes.Buffer{}, func(url string) error {
+		addr = strings.TrimSuffix(strings.TrimPrefix(url, "http://"), "/lwc")
+		return wantErr
+	})
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("error = %v, want %v", err, wantErr)
+	}
+	listener, listenErr := net.Listen("tcp", addr)
+	if listenErr != nil {
+		t.Fatalf("listener %q was not closed after opener error: %v", addr, listenErr)
+	}
+	listener.Close()
 }
 
 func TestRunDevLWCUsesDBForLocalBuilderSearch(t *testing.T) {

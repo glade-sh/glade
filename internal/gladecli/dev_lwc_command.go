@@ -24,6 +24,10 @@ import (
 )
 
 func runDevLWC(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
+	return runDevLWCWithOpenURL(ctx, args, w, progressW, openURL)
+}
+
+func runDevLWCWithOpenURL(ctx context.Context, args []string, w io.Writer, progressW io.Writer, opener func(string) error) error {
 	opts, err := parseDevLWCOptions(args)
 	if err != nil {
 		if errors.Is(err, errDevLWCHelp) {
@@ -105,7 +109,7 @@ func runDevLWC(ctx context.Context, args []string, w io.Writer, progressW io.Wri
 	}
 	if opts.open {
 		openTarget := opts.openTargetURL(baseURL, selectedURL)
-		if err := devLWCOpenURL(openTarget); err != nil {
+		if err := opener(openTarget); err != nil {
 			_ = listener.Close()
 			renderer.Finish(cliui.Result{OK: false, Label: "dev lwc failed"})
 			return err
@@ -126,7 +130,6 @@ func runDevLWC(ctx context.Context, args []string, w io.Writer, progressW io.Wri
 }
 
 var errDevLWCHelp = errors.New("dev lwc help requested")
-var devLWCOpenURL = openURL
 
 type devLWCOptions struct {
 	addr         string

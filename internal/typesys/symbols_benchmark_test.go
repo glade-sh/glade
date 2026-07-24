@@ -1,9 +1,11 @@
 package typesys
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
@@ -31,6 +33,41 @@ func BenchmarkBuildIndex(b *testing.B) {
 		if idx.HasErrors() {
 			b.Fatalf("unexpected diagnostics: %#v", idx.Diagnostics)
 		}
+	}
+}
+
+func BenchmarkWorkspaceSourceDigestSetSnapshot(b *testing.B) {
+	for _, tc := range []struct {
+		name     string
+		bodySize int
+	}{{"small", 64}, {"large", 256 << 10}} {
+		b.Run(tc.name, func(b *testing.B) {
+			const fileCount = 128
+			body := strings.Repeat("x", tc.bodySize)
+			sources := newWorkspaceSources(func(string) ([]byte, error) {
+				return []byte(body), nil
+			})
+			for i := 0; i < fileCount; i++ {
+				path := filepath.Join("/workspace/source", fmt.Sprintf("Class%04d.cls", i))
+				source, err := sources.load(SourceMetadata{RequestedPath: path})
+				if err != nil {
+					b.Fatal(err)
+				}
+				sources.record(source)
+			}
+			if len(sources.physical) != fileCount || sources.physical[filepath.Join("/workspace/source", "Class0000.cls")].digest != sha256.Sum256([]byte(body)) {
+				b.Fatal("benchmark source arena is incomplete")
+			}
+
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				digests := sources.sourceDigestSet()
+				if digests.PhysicalCount() != fileCount {
+					b.Fatalf("PhysicalCount = %d, want %d", digests.PhysicalCount(), fileCount)
+				}
+			}
+		})
 	}
 }
 

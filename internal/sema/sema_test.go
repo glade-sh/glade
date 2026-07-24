@@ -249,10 +249,9 @@ func TestSemaResolveFieldUsesShortCandidateIndex(t *testing.T) {
 		},
 		methods: map[string][]typesys.MemberSymbol{},
 	}
-	registerSemaShortCandidateIndex(model)
-	defer unregisterSemaShortCandidateIndex(model)
+	view := semaTypeMemberViewFromMembers(model)
 
-	field, ok := semaResolveField(model, "TargetInner", "Name", make(map[string]bool))
+	field, ok := semaResolveField(view, "TargetInner", "Name", make(map[string]bool))
 	if !ok {
 		t.Fatal("short-name field lookup did not resolve")
 	}
@@ -261,12 +260,40 @@ func TestSemaResolveFieldUsesShortCandidateIndex(t *testing.T) {
 	}
 
 	allocs := testing.AllocsPerRun(20, func() {
-		if _, ok := semaResolveField(model, "TargetInner", "Name", make(map[string]bool)); !ok {
+		if _, ok := semaResolveField(view, "TargetInner", "Name", make(map[string]bool)); !ok {
 			t.Fatal("short-name field lookup did not resolve")
 		}
 	})
 	if allocs > 20 {
 		t.Fatalf("short-name field lookup allocated %.0f times, want <= 20", allocs)
+	}
+}
+
+func TestSemaAnyKnownFieldNilModel(t *testing.T) {
+	if semaAnyKnownField(nil, "Name") {
+		t.Fatal("nil model reported a known field")
+	}
+}
+
+func TestSemaAnyKnownFieldZeroView(t *testing.T) {
+	if semaAnyKnownField(&semaTypeMemberView{}, "Name") {
+		t.Fatal("zero view reported a known field")
+	}
+}
+
+func TestSemaAnyKnownFieldCurrentOnlyView(t *testing.T) {
+	model := &semaTypeMemberView{current: map[string]typeMembers{
+		"current": {
+			fields: map[string]typesys.MemberSymbol{
+				normalizeName("OverlayField"): {Kind: apexast.DeclarationField, Name: "OverlayField", Type: "String"},
+			},
+		},
+	}}
+	if !semaAnyKnownField(model, "OverlayField") {
+		t.Fatal("current-only view did not report its field")
+	}
+	if semaAnyKnownField(model, "MissingField") {
+		t.Fatal("current-only view reported a missing field")
 	}
 }
 
@@ -624,7 +651,7 @@ func TestStaticClassFieldPathUnknownLongPathReturnsPromptly(t *testing.T) {
 	}, ".")
 	done := make(chan bool, 1)
 	go func() {
-		_, ok := semaStaticClassFieldPathMember(map[string]typeMembers{}, "Missing", fieldPath)
+		_, ok := semaStaticClassFieldPathMember(semaTypeMemberViewFromMembers(map[string]typeMembers{}), "Missing", fieldPath)
 		done <- ok
 	}()
 
@@ -640,8 +667,9 @@ func TestStaticClassFieldPathUnknownLongPathReturnsPromptly(t *testing.T) {
 
 func TestExplicitPlatformStaticFieldPathMemberUsesReadOnlyPlatformView(t *testing.T) {
 	typesys.StandardPlatformSymbolView()
+	model := semaTypeMemberViewFromMembers(map[string]typeMembers{})
 	allocs := testing.AllocsPerRun(10, func() {
-		target, ok := semaStaticClassFieldPathMember(map[string]typeMembers{}, "System.RoundingMode", "HALF_UP")
+		target, ok := semaStaticClassFieldPathMember(model, "System.RoundingMode", "HALF_UP")
 		if !ok {
 			t.Fatal("expected System.RoundingMode.HALF_UP")
 		}
@@ -676,7 +704,7 @@ func TestChainedCallReceiverLongDottedFluentChainReturnsPromptly(t *testing.T) {
 	go func() {
 		_, _, _ = semaChainedCallReceiver(body, callStart, map[string]string{
 			semaCurrentTypeScopeKey: "TestCartSubmitter",
-		}, map[string]typeMembers{}, "TestCartSubmitter")
+		}, semaTypeMemberViewFromMembers(map[string]typeMembers{}), "TestCartSubmitter")
 		done <- true
 	}()
 
@@ -712,7 +740,7 @@ func TestChainedCallReceiverExpandedLongReceiverReturnsPromptly(t *testing.T) {
 	go func() {
 		_, _, _ = semaChainedCallReceiver(body, callStart, map[string]string{
 			semaCurrentTypeScopeKey: "TestCartSubmitter",
-		}, map[string]typeMembers{}, "TestCartSubmitter")
+		}, semaTypeMemberViewFromMembers(map[string]typeMembers{}), "TestCartSubmitter")
 		done <- true
 	}()
 
@@ -1338,7 +1366,7 @@ public class AssignsRelationshipRecord {
 		filepath.Join(root, "AssignsRelationshipRecord.cls"),
 	}}, schema.Schema{Objects: []schema.Object{{Name: "CartItem__c"}}})
 
-	model := buildTypeMembers(index)
+	model := buildSemaTypeMemberView(index)
 	targetType := semaFieldScope(model, "CartItem__c", make(map[string]bool))[normalizeName("RecordType")]
 	if targetType != "RecordType" {
 		t.Fatalf("CartItem__c.RecordType type = %q", targetType)
@@ -2137,8 +2165,8 @@ public class UsesQuery {
 	}
 	source := string(sourceBytes)
 	pos := strings.LastIndex(source, "equals")
-	enrichedIndex := enrichIndexWithSchemaDerivedObjects(enrichIndexWithStandardSymbols(index))
-	model := buildTypeMembers(enrichedIndex)
+	enrichedIndex := enrichIndexWithSchemaDerivedObjects(index)
+	model := buildSemaTypeMemberView(enrichedIndex)
 	receiverType, chainedMethod, ok := semaChainedCallReceiverNear(source, pos, "equals", map[string]string{semaCurrentTypeScopeKey: "UsesQuery"}, model, "UsesQuery")
 	if !ok || chainedMethod != "equals" || receiverType != "Query.Condition" {
 		t.Fatalf("chained receiver = (%q, %q, %v)", receiverType, chainedMethod, ok)
@@ -3273,7 +3301,7 @@ private class UsesTestMethodMapConstant {
 		Root:      root,
 		ApexFiles: []string{filepath.Join(root, "UsesTestMethodMapConstant.cls")},
 	}, schema.Schema{})
-	model := buildTypeMembers(enrichIndexWithSchemaDerivedObjects(enrichIndexWithStandardSymbols(index)))
+	model := buildSemaTypeMemberView(enrichIndexWithSchemaDerivedObjects(index))
 	fields := semaFieldScope(model, "UsesTestMethodMapConstant", make(map[string]bool))
 	if got := fields[normalizeName("PARAM_RETURL_FAIL")]; got != "String" {
 		t.Fatalf("PARAM_RETURL_FAIL field type = %q, want String", got)
@@ -3558,7 +3586,7 @@ public class UsesEventTokens {
 		Root:      root,
 		ApexFiles: []string{filepath.Join(root, "UsesEventTokens.cls")},
 	}, schema.Schema{})
-	model := buildTypeMembers(index)
+	model := buildSemaTypeMemberView(index)
 	scope := map[string]string{semaCurrentTypeScopeKey: "UsesEventTokens"}
 	if got := inferSemaArgTypeWithModel("Event.SObjectType", scope, model); got != "Schema.SObjectType" {
 		t.Fatalf("Event.SObjectType type = %q, want Schema.SObjectType", got)
@@ -3748,8 +3776,8 @@ public inherited sharing class UsesContactFields {
 			{Name: "Exclude_from_Household_Name__c", Type: "Checkbox"},
 		},
 	}}})
-	enrichedIndex := enrichIndexWithSchemaDerivedObjects(enrichIndexWithStandardSymbols(index))
-	model := buildTypeMembers(enrichedIndex)
+	enrichedIndex := enrichIndexWithSchemaDerivedObjects(index)
+	model := buildSemaTypeMemberView(enrichedIndex)
 	foundConParam := false
 	for _, typ := range index.Types {
 		if typ.Name != "UsesContactFields" {
@@ -5008,7 +5036,7 @@ public class UsesFinalizer {
 		Root:      root,
 		ApexFiles: []string{filepath.Join(root, "UsesFinalizer.cls")},
 	}, schema.Schema{})
-	model := buildTypeMembers(index)
+	model := buildSemaTypeMemberView(index)
 	argType := inferSemaArgTypeWithModel("new MockFinalizerContext()", map[string]string{semaCurrentTypeScopeKey: "UsesFinalizer"}, model)
 	if argType != "UsesFinalizer.MockFinalizerContext" {
 		t.Fatalf("arg type = %q", argType)
@@ -5482,7 +5510,7 @@ public class UsesNestedBooleanAssert {
 		Root:      root,
 		ApexFiles: []string{filepath.Join(root, "UsesNestedBooleanAssert.cls")},
 	}, schema.Schema{})
-	model := buildTypeMembers(enrichIndexWithStandardSymbols(index))
+	model := buildSemaTypeMemberView(index)
 	scope := map[string]string{
 		normalizeName("result"): "UsesNestedBooleanAssert.Root",
 		semaCurrentTypeScopeKey: "UsesNestedBooleanAssert",
@@ -8885,7 +8913,7 @@ Boolean checked = raw instanceof MissingInstanceType;
 	typ := typesys.TypeSymbol{Kind: apexast.DeclarationClass, Name: "Hello", File: "Hello.cls"}
 	member := typesys.MemberSymbol{Kind: apexast.DeclarationMethod, Name: "run", Type: "void"}
 	baseScope := map[string]string{semaCurrentTypeScopeKey: "Hello"}
-	model := buildTypeMembers(typesys.Index{Types: []typesys.TypeSymbol{typ}})
+	model := buildSemaTypeMemberView(typesys.Index{Types: []typesys.TypeSymbol{typ}})
 
 	diagnostics := NewAnalyzer().checkBodyIR(typ, member, body, 0, body, baseScope, model, nil)
 	var unknownTypes []string
@@ -9910,6 +9938,79 @@ public class Bad extends Base implements Worker {
 	}
 }
 
+func TestAnalyzeInheritanceContractDiagnosticOrderIsDeterministic(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	contractFile := filepath.Join(root, "OrderedContract.cls")
+	baseFile := filepath.Join(root, "OrderedBase.cls")
+	concreteFile := filepath.Join(root, "MissingImplementation.cls")
+	writeSemaFile(t, contractFile, `
+public interface OrderedContract {
+  void zulu();
+  void alpha();
+  void shared();
+  void bravo();
+  void echo();
+  void charlie();
+}
+`)
+	writeSemaFile(t, baseFile, `
+public abstract class OrderedBase {
+  public abstract void yankee();
+  public abstract void delta();
+  public abstract void shared();
+  public abstract void golf();
+}
+`)
+	writeSemaFile(t, concreteFile, `
+public class MissingImplementation extends OrderedBase implements OrderedContract {
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		contractFile,
+		baseFile,
+		concreteFile,
+	}}, schema.Schema{})
+
+	type diagnosticIdentity struct {
+		severity diagnostic.Severity
+		code     string
+		file     string
+		range_   diagnostic.Range
+		message  string
+	}
+	result := Analyze(index)
+	got := make([]diagnosticIdentity, 0, 9)
+	for _, diag := range result.Diagnostics {
+		if diag.Code != "GLADESEMA017" {
+			continue
+		}
+		identity := diagnosticIdentity{severity: diag.Severity, code: diag.Code, file: diag.File, message: diag.Message}
+		if diag.Range != nil {
+			identity.range_ = *diag.Range
+		}
+		got = append(got, identity)
+	}
+	wantRange := diagnostic.Range{
+		Start: diagnostic.Position{Line: 2, Column: 1, Offset: 1},
+		End:   diagnostic.Position{Line: 3, Column: 2, Offset: 86},
+	}
+	want := []diagnosticIdentity{
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement interface method "alpha" from "OrderedContract"`},
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement interface method "bravo" from "OrderedContract"`},
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement interface method "charlie" from "OrderedContract"`},
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement interface method "echo" from "OrderedContract"`},
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement interface method "shared" from "OrderedContract"`},
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement interface method "zulu" from "OrderedContract"`},
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement abstract method "delta" from "OrderedBase"`},
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement abstract method "golf" from "OrderedBase"`},
+		{severity: diagnostic.Error, code: "GLADESEMA017", file: concreteFile, range_: wantRange, message: `concrete class "MissingImplementation" must implement abstract method "yankee" from "OrderedBase"`},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("inheritance contract diagnostic identity/order changed\nwant: %#v\n got: %#v", want, got)
+	}
+}
+
 func TestAnalyzeSkipsInheritanceContractsForPackageArtifacts(t *testing.T) {
 	t.Parallel()
 	result := Analyze(typesys.Index{Types: []typesys.TypeSymbol{{
@@ -10087,8 +10188,7 @@ public class GatewayService {
 		},
 	}, schema.Schema{Objects: []schema.Object{{Name: "pkgx__Schedule__c"}}})
 
-	model := buildTypeMembers(index)
-	defer unregisterSemaShortCandidateIndex(model)
+	model := buildSemaTypeMemberView(index)
 	instance, ok := semaResolveField(model, "pkgx.GatewayService", "Instance", make(map[string]bool))
 	if !ok {
 		t.Fatalf("dependency Instance property was not indexed")
@@ -11189,8 +11289,12 @@ func TestAnalyzeDuplicateNamedClassUsesOwnMembersForBody(t *testing.T) {
 private class ReviewDataProviderTest {
   @IsTest
   static void firstOnly() {
+	firstHelper();
     System.assert(true);
   }
+
+	private static void firstHelper() {
+	}
 }
 `)
 	writeSemaFile(t, second, `
@@ -11214,9 +11318,173 @@ private class ReviewDataProviderTest {
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{first, second}}, schema.Schema{})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "GLADESEMA008" && (strings.Contains(diag.Message, "stubSetupMapping") || strings.Contains(diag.Message, "getFixture")) {
-			t.Fatalf("duplicate type body should use its own members: %#v", result.Diagnostics)
+		if diag.Code != "GLADESEMA008" {
+			continue
 		}
+		if strings.Contains(diag.Message, "firstHelper") && diag.File == first {
+			t.Fatalf("first duplicate body should use first file members: %#v", result.Diagnostics)
+		}
+		if (strings.Contains(diag.Message, "stubSetupMapping") || strings.Contains(diag.Message, "getFixture")) && diag.File == second {
+			t.Fatalf("second duplicate body should use second file members: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeBuildsTypeMemberModelOnce(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	file := filepath.Join(root, "Once.cls")
+	writeSemaFile(t, file, `
+public class Once {
+  public void run() {
+    System.debug('once');
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{file}}, schema.Schema{})
+	counters := PerfCounters{Enabled: true}
+	AnalyzeWithOptions(index, AnalyzeOptions{
+		Diagnostics:  true,
+		ExportTypes:  true,
+		PerfCounters: &counters,
+	})
+	if got := counters.TypeMemberModel.Calls; got != 1 {
+		t.Fatalf("type-member model calls = %d, want 1", got)
+	}
+}
+
+func TestAnalyzeWithArtifactsSurvivesSourceRemovalWithoutReread(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "Arena.cls")
+	writeSemaFile(t, file, "public class Arena {\r\n  enum Café { 東京, Osaka }\r\n  public void run() {\r\n    for (Account item : [SELECT Missing__c FROM Account]) { insert item; }\r\n    System.debug(Café.東京);\r\n  }\r\n}\r\n")
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{file}}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+	opts := AnalyzeOptions{Diagnostics: true, ExportTypes: true, BuildArtifacts: &artifacts}
+	want := AnalyzeWithOptions(index, opts)
+	legacy := AnalyzeWithOptions(index, AnalyzeOptions{Diagnostics: true, ExportTypes: true})
+	if !reflect.DeepEqual(want, legacy) {
+		t.Fatalf("artifact analysis differs from legacy source reads:\nartifact=%#v\nlegacy=%#v", want, legacy)
+	}
+	if len(want.Diagnostics) == 0 {
+		t.Fatal("fixture produced no source-backed diagnostics")
+	}
+	if err := os.Rename(file, file+".removed"); err != nil {
+		t.Fatal(err)
+	}
+	got := AnalyzeWithOptions(index, opts)
+	again := AnalyzeWithOptions(index, opts)
+	if !reflect.DeepEqual(got, want) || !reflect.DeepEqual(again, want) {
+		t.Fatalf("artifact analysis changed after source removal:\nwant=%#v\ngot=%#v\nagain=%#v", want, got, again)
+	}
+	counters := PerfCounters{Enabled: true}
+	_ = AnalyzeWithOptions(index, AnalyzeOptions{Diagnostics: true, BuildArtifacts: &artifacts, PerfCounters: &counters})
+	if counters.SourceArenaFallbackReads != 0 || counters.SourceArenaMisses != 0 || counters.SourceArenaHits == 0 {
+		t.Fatalf("source counters = %#v", counters)
+	}
+	stats := artifacts.Sources.Stats()
+	if counters.WorkspacePhysicalReads != stats.PhysicalReadAttempts || counters.WorkspacePhysicalSources != stats.PhysicalSources || counters.WorkspaceLogicalViews != stats.LogicalViews || counters.WorkspaceOccurrences != stats.Occurrences {
+		t.Fatalf("workspace counters = %#v, stats = %#v", counters, stats)
+	}
+}
+
+func TestAnalyzeWithArtifactsMissingSourceDoesNotFallBackToDisk(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "MissingArena.cls")
+	writeSemaFile(t, file, "public class MissingArena { public void run() { for (Account item : [SELECT Id FROM Account]) { insert item; } } }")
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{file}}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+	empty := typesys.BuildArtifacts{Sources: typesys.NewWorkspaceSources()}
+	counters := PerfCounters{Enabled: true}
+	result := AnalyzeWithOptions(index, AnalyzeOptions{Diagnostics: true, BuildArtifacts: &empty, PerfCounters: &counters})
+	if hasDiagnosticCode(result.Diagnostics, "GLADEPERF001") {
+		t.Fatalf("missing artifact fell back to disk: %#v", result.Diagnostics)
+	}
+	if counters.SourceArenaFallbackReads != 0 || counters.SourceArenaMisses == 0 {
+		t.Fatalf("source counters = %#v", counters)
+	}
+}
+
+func TestSemaSourcesCachesFallbackMissForEntireAnalysis(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "AppearsLater.cls")
+	typ := typesys.TypeSymbol{File: file}
+	counters := PerfCounters{Enabled: true}
+	recorder := newPerfRecorder(&counters)
+	sources := newSemaSources(nil, &recorder)
+
+	if _, ok := sources.normalizedForType(typ); ok {
+		t.Fatal("missing source unexpectedly resolved")
+	}
+	writeSemaFile(t, file, "public class AppearsLater {}")
+	if _, ok := sources.normalizedForType(typ); ok {
+		t.Fatal("source appearing mid-analysis changed the resolved miss")
+	}
+	recorder.finish()
+	if counters.SourceArenaFallbackReads != 1 || counters.SourceArenaMisses != 2 {
+		t.Fatalf("source counters = %#v, want one fallback read and two stable misses", counters)
+	}
+}
+
+func TestAnalyzeSharedTypeMemberModelPreservesDiagnosticOrder(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	bodyFile := filepath.Join(root, "BodyFailure.cls")
+	inheritanceFile := filepath.Join(root, "InheritanceFailure.cls")
+	writeSemaFile(t, bodyFile, `
+public class BodyFailure {
+  public void run() {
+    missingHelper();
+  }
+}
+`)
+	writeSemaFile(t, inheritanceFile, `
+public class InheritanceFailure {
+  public override void invalidOverride() {
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{bodyFile, inheritanceFile}}, schema.Schema{})
+	result := Analyze(index)
+	type diagnosticIdentity struct {
+		severity diagnostic.Severity
+		code     string
+		file     string
+		range_   diagnostic.Range
+		message  string
+	}
+	var got []diagnosticIdentity
+	for _, diag := range result.Diagnostics {
+		if diag.Code != "GLADESEMA008" && diag.Code != "GLADESEMA016" {
+			continue
+		}
+		identity := diagnosticIdentity{severity: diag.Severity, code: diag.Code, file: diag.File, message: diag.Message}
+		if diag.Range != nil {
+			identity.range_ = *diag.Range
+		}
+		got = append(got, identity)
+	}
+	want := []diagnosticIdentity{
+		{
+			severity: diagnostic.Error,
+			code:     "GLADESEMA008",
+			file:     bodyFile,
+			range_: diagnostic.Range{
+				Start: diagnostic.Position{Line: 4, Column: 5, Offset: 54},
+				End:   diagnostic.Position{Line: 4, Column: 18, Offset: 67},
+			},
+			message: "method \"run\" calls unknown method \"missingHelper\"",
+		},
+		{
+			severity: diagnostic.Error,
+			code:     "GLADESEMA016",
+			file:     inheritanceFile,
+			range_: diagnostic.Range{
+				Start: diagnostic.Position{Line: 3, Column: 3, Offset: 37},
+				End:   diagnostic.Position{Line: 4, Column: 4, Offset: 81},
+			},
+			message: "method \"invalidOverride\" is marked override but no inherited method has the same signature",
+		},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("diagnostic identity/order changed\nwant: %#v\n got: %#v", want, got)
 	}
 }
 
@@ -12131,7 +12399,7 @@ public class Query {
 		Root:      root,
 		ApexFiles: []string{filepath.Join(root, "Query.cls")},
 	}, schema.Schema{})
-	model := buildTypeMembers(index)
+	model := buildSemaTypeMemberView(index)
 	scope := map[string]string{semaCurrentTypeScopeKey: "Query"}
 
 	got := inferSemaArgTypeWithModel("new Query.Condition().equals('Name', 'test').equals('Reason', 'Other')", scope, model)
@@ -12469,7 +12737,7 @@ func TestDiagnoseMethodCallResolvesInferredDottedReceiverMethod(t *testing.T) {
 			},
 		},
 	}}
-	model := buildTypeMembers(index)
+	model := buildSemaTypeMemberView(index)
 	scope := map[string]string{semaCurrentTypeScopeKey: "EmailTemplateTestData"}
 	for name, fieldType := range semaFieldScope(model, "EmailTemplateTestData", make(map[string]bool)) {
 		scope[name] = fieldType

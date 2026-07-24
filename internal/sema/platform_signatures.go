@@ -192,7 +192,7 @@ func semaPlatformSymbolMatchesConstructorType(typ typesys.TypeSymbol, lookup str
 	return normalizeName(typ.Namespace+"."+typ.Name) == lookup
 }
 
-func checkSemaCollectionCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []semaArg, start, end int, source string, scope map[string]string, model map[string]typeMembers) ([]diagnostic.Diagnostic, bool) {
+func checkSemaCollectionCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []semaArg, start, end int, source string, scope map[string]string, model *semaTypeMemberView) ([]diagnostic.Diagnostic, bool) {
 	sig, ok := semaCollectionMethodSignature(receiverType, method)
 	if !ok {
 		return nil, false
@@ -216,7 +216,7 @@ func checkSemaCollectionCall(typ typesys.TypeSymbol, member typesys.MemberSymbol
 	return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), start, end, source)}, true
 }
 
-func semaCollectionFieldPathArgsMatch(params [][]string, args []semaArg, scope map[string]string, model map[string]typeMembers) bool {
+func semaCollectionFieldPathArgsMatch(params [][]string, args []semaArg, scope map[string]string, model *semaTypeMemberView) bool {
 	for _, candidate := range params {
 		if len(candidate) != len(args) {
 			continue
@@ -240,7 +240,7 @@ func semaCollectionFieldPathArgsMatch(params [][]string, args []semaArg, scope m
 	return false
 }
 
-func semaSObjectFieldPathArgType(arg string, scope map[string]string, model map[string]typeMembers) string {
+func semaSObjectFieldPathArgType(arg string, scope map[string]string, model *semaTypeMemberView) string {
 	receiverExpr, field, ok := splitSemaMethodPath(strings.TrimSpace(arg))
 	if !ok {
 		return ""
@@ -274,7 +274,7 @@ func semaIsCustomSObjectTypeName(typeName string) bool {
 	return strings.HasSuffix(key, "__c") || strings.HasSuffix(key, "__e") || strings.HasSuffix(key, "__mdt")
 }
 
-func checkSemaEnumCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []semaArg, start, end int, source string, scope map[string]string, model map[string]typeMembers) ([]diagnostic.Diagnostic, bool) {
+func checkSemaEnumCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []semaArg, start, end int, source string, scope map[string]string, model *semaTypeMemberView) ([]diagnostic.Diagnostic, bool) {
 	sig, ok := semaEnumMethodSignature(model, receiverType, method)
 	if !ok {
 		return nil, false
@@ -289,7 +289,7 @@ func checkSemaEnumCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, rece
 	return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), start, end, source)}, true
 }
 
-func semaAddErrorArgsAccepted(argTypes []string, model map[string]typeMembers) bool {
+func semaAddErrorArgsAccepted(argTypes []string, model *semaTypeMemberView) bool {
 	switch len(argTypes) {
 	case 1:
 		return semaAssignableToType("String", argTypes[0], model) || semaAssignableToType("Exception", argTypes[0], model)
@@ -307,10 +307,10 @@ func semaAddErrorArgsAccepted(argTypes []string, model map[string]typeMembers) b
 	}
 }
 
-func semaEnumMethodSignature(model map[string]typeMembers, receiverType, method string) (semaCollectionSignature, bool) {
+func semaEnumMethodSignature(model *semaTypeMemberView, receiverType, method string) (semaCollectionSignature, bool) {
 	originalType := strings.TrimSpace(receiverType)
 	receiverType = semaCanonicalPlatformAlias(receiverType)
-	members, ok := model[normalizeName(receiverType)]
+	members, ok := model.lookup(normalizeName(receiverType))
 	if !ok || members.kind != apexast.DeclarationEnum {
 		if !semaExplicitPlatformEnumType(originalType) {
 			return semaCollectionSignature{}, false

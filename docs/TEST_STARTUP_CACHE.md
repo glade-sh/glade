@@ -76,11 +76,12 @@ On each `glade test` run (unless `--no-cache` or a running test server handles
 the request), Glade:
 
 1. Reads `startup.meta.json` if it exists.
-2. Verifies the header manifest is **fresh** (see below).
-3. If fresh, checks the payload file name, size, and SHA-256 hash.
-4. If fresh and verified, restores org state and compiled runtime and skips the
-   cold harness.
-5. If missing, corrupt, stale, wrong version, or hash-mismatched, performs a
+2. Verifies the cache version, manifest schema, and platform ABI.
+3. Reloads the project and verifies the header manifest is **fresh** (see below).
+4. If fresh, checks the payload file name, size, and SHA-256 hash.
+5. Verifies the test runtime ABI, then restores org state and compiled runtime
+   and skips the cold harness.
+6. If missing, corrupt, stale, wrong version, or hash-mismatched, performs a
    cold build and may write a new cache.
 
 Legacy `startup.gob` files are read only when no split header exists. Corrupt
@@ -88,23 +89,44 @@ payloads or legacy gob files are ignored and trigger a cold rebuild.
 
 ## Freshness: how the cache stays up to date
 
-Each cache entry carries a **manifest** of fingerprints recorded at write time.
-On load, `Fresh()` requires:
+Each cache entry carries a schema-versioned **manifest** of fingerprints
+recorded at write time. The current cache version is **4** and the current
+manifest schema is **1**. On load, `Fresh()` requires:
 
-- Cache format version matches (currently **3**).
+- Cache version, manifest schema, and platform ABI match the running Glade
+  binary. The test runtime ABI is checked separately.
 - `projectRoot` matches the current `--project` path.
-- Every **tracked project file** in the manifest still exists with the same
-  size and modification time.
-- Every **config file** in the manifest still exists with the same size and
-  modification time.
-- Every **package root directory** in the manifest still exists with the same
-  modification time.
+- Reloading the project and rebuilding its trusted input set succeeds.
+- The rebuilt set exactly matches the recorded project, dependency, package
+  shim, artifact, and config paths. Additions, deletions, and renames are
+  stale.
+- The canonical project digest still matches. It covers API version,
+  namespace, namespace remaps, package directories, managed dependencies,
+  artifacts, package shims, and effective org-shape features.
+- Every tracked file still has the recorded size and modification time. These
+  are early rejection checks only. Acceptance also requires the recorded
+  SHA-256 content hash to match.
 
 ### Tracked project files
 
-The manifest includes paths from the loaded project model, including Apex
+The manifest includes paths from the reloaded project model, including Apex
 classes and triggers, object and field metadata, profiles, permission sets,
-managed-package dependency roots, and other metadata files Glade indexes.
+recursive managed-package dependency projects, package-shim projects,
+dependency artifacts, and other metadata files Glade indexes. It also includes
+the inputs discovered directly by the test runtime:
+
+- Optional `-meta.xml` sidecars for every known Apex class and trigger. These
+  files select the API version used to compile project methods.
+- `*.notiftype` and `*.notiftype-meta.xml` files below the project root. These
+  files populate `CustomNotificationType` records.
+- JSON files below eligible `data` directories in the main project and loaded
+  direct managed dependencies. These files contribute inferred fields,
+  relationships, and record types. Hidden directories and generated or
+  dependency directories such as `node_modules`, `vendor`, `dist`, and `bin`
+  are skipped, matching runtime discovery. Transitive dependency data is not
+  scanned because the test runtime does not consume it.
+
+Unrelated JSON files outside `data` directories are not cache inputs.
 
 ### Tracked config files
 
@@ -114,37 +136,37 @@ managed-package dependency roots, and other metadata files Glade indexes.
 - `config/hc-project-scratch-def.json`
 - `cumulusci.yml`
 - `cumulusci.template.yml`
+- JSON scratch definitions referenced by CumulusCI `config_file` entries
 
-### Package roots
+An optional config file is part of the exact set as soon as it exists. Adding a
+new `glade.yml`, scratch definition, or CumulusCI input invalidates a cache that
+was built without it.
 
-Package directory entries from `sfdx-project.json` are tracked by directory
-modification time. Adding or removing files under a package usually updates the
-parent directory mtime and invalidates the cache.
+### Package roots and project semantics
 
-## When the cache can be wrong
+Package directory roots are rebuilt from the current project instead of being
+trusted from the stored header. Relevant files below those roots are compared
+as a deterministic sorted set. The manifest also records a canonical semantic
+digest, so an effective API version, namespace, remap, dependency, artifact,
+shim, package-directory, or feature change cannot reuse the old harness.
 
-Fingerprinting is fast but not perfect. Know these gaps:
+## Cache boundaries
 
-**New files not yet in the manifest.** The cache only checks files that were
-present when it was written. A newly added Apex class or metadata file may not
-invalidate an existing cache until something else triggers a cold build (for
-example, a package-root mtime change or an edit to a file already in the
-manifest).
-
-**Deleted tracked files.** Missing project files that were in the manifest
-invalidate the cache. Deleting a tracked Apex class, trigger, or metadata file
-forces a cold harness build before tests run.
+The exact manifest closes the former size/mtime and stored-file-list gaps.
+Same-size edits with preserved mtimes are rejected by content hash. Relevant
+file additions, deletions, renames, and branch-like directory replacements are
+rejected by rebuilding the current set.
 
 **Running test server after `clear-cache`.** `glade test clear-cache` removes
 the header, payload, and legacy gob files. A `glade test serve` process that is
 already running keeps its in-memory warm state until you restart it.
 
-**Glade upgrades.** A new Glade release may change org inference or compilation
-without bumping the cache format version. After upgrading Glade, clear the cache
-if harness behavior looks wrong.
+**Glade upgrades.** Cache version, manifest schema, runtime ABI, and platform ABI
+changes are safe misses. An old cache is rebuilt rather than decoded as current.
 
-**Unusual filesystem behavior.** Tools that preserve mtimes across checkouts or
-copies can delay invalidation. When in doubt, clear the cache.
+**Read or load errors.** An unreadable input, incomplete manifest, project-load
+error, or hash error is a cache miss. Glade rebuilds instead of accepting
+partial freshness evidence.
 
 If tests behave as if an old version of the project is still loaded — missing
 new classes, stale org fields, or failures that disappear with `--no-cache` —

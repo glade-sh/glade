@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -9,16 +10,54 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
+func TestPerfCountersDisabledByDefault(t *testing.T) {
+	ResetPerfCounters()
+	t.Cleanup(ResetPerfCounters)
+	counters := newRunPerfCounters()
+	recordRunDuration(time.Millisecond, counters)
+	recordCloneReason("ExampleTest", "test", "full-method-isolation", counters)
+
+	stats := snapshotPerfCounters(counters)
+	if stats.Enabled {
+		t.Fatalf("Enabled = true, want false: %#v", stats)
+	}
+	if stats.RunDurationMS != 1 {
+		t.Fatalf("legacy RunDurationMS = %d, want 1", stats.RunDurationMS)
+	}
+	if stats.Phases != (RunnerPhasePerfCounters{}) || len(stats.CloneReasons) != 0 || !reflect.DeepEqual(stats.VMPerf, vm.PerfCounters{}) {
+		t.Fatalf("disabled detailed snapshot = %#v, want zero phases/reasons/VM", stats)
+	}
+}
+
+func TestRunPerfCountersClassifyCloneReasonsByClassAndCapability(t *testing.T) {
+	counters := newRunPerfCounters(true)
+	recordCloneReason("ZuluTest", "test", "full-method-isolation", counters)
+	recordCloneReason("AlphaTest", "setup", "org-frozen-shared", counters)
+	recordCloneReason("AlphaTest", "setup", "org-frozen-shared", counters)
+	recordCloneReason("", "run-base", "org-template", counters)
+
+	got := snapshotPerfCounters(counters).CloneReasons
+	want := []PerfCloneReason{
+		{Class: "", Reason: "run-base", Capability: "org-template", Count: 1},
+		{Class: "AlphaTest", Reason: "setup", Capability: "org-frozen-shared", Count: 2},
+		{Class: "ZuluTest", Reason: "test", Capability: "full-method-isolation", Count: 1},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("CloneReasons = %#v, want %#v", got, want)
+	}
+}
+
 func TestPerfCountersCapturePhaseDurations(t *testing.T) {
 	ResetPerfCounters()
 	t.Cleanup(ResetPerfCounters)
+	counters := newRunPerfCounters(true)
 
-	recordSetupDuration(3 * time.Millisecond)
-	recordRunDuration(5 * time.Millisecond)
-	recordCloneRuntimeOrgDuration(7 * time.Millisecond)
-	recordCloneRuntimeMachineDuration(11 * time.Millisecond)
+	recordSetupDuration(3*time.Millisecond, counters)
+	recordRunDuration(5*time.Millisecond, counters)
+	recordCloneRuntimeOrgDuration(7*time.Millisecond, counters)
+	recordCloneRuntimeMachineDuration(11*time.Millisecond, counters)
 
-	stats := SnapshotPerfCounters()
+	stats := snapshotPerfCounters(counters)
 	if stats.SetupDurationMS != 3 {
 		t.Fatalf("SetupDurationMS = %d, want 3", stats.SetupDurationMS)
 	}
@@ -46,11 +85,12 @@ func TestPerfCountersCapturePhaseDurations(t *testing.T) {
 func TestPerfCountersIncludeStorageAndVMStats(t *testing.T) {
 	ResetPerfCounters()
 	t.Cleanup(ResetPerfCounters)
+	counters := newRunPerfCounters(true)
 
-	recordStorageCloneRollbackSnapshot()
-	vm.SetPerfCountersEnabled(true)
+	recordStorageCloneRollbackSnapshot(counters)
+	counters.captureVMPerf(vm.NewPerfRecorder().Snapshot())
 
-	stats := SnapshotPerfCounters()
+	stats := snapshotPerfCounters(counters)
 	if stats.StorageCloneStats.CloneRollbackSnapshotCalls == 0 {
 		t.Fatalf("storage clone stats missing rollback snapshot count: %#v", stats.StorageCloneStats)
 	}
@@ -60,8 +100,8 @@ func TestPerfCountersIncludeStorageAndVMStats(t *testing.T) {
 }
 
 func TestRunPerfCountersAreIndependent(t *testing.T) {
-	first := newRunPerfCounters()
-	second := newRunPerfCounters()
+	first := newRunPerfCounters(true)
+	second := newRunPerfCounters(true)
 
 	recordSetupDuration(3*time.Millisecond, first)
 	recordRunDuration(5*time.Millisecond, first)
@@ -92,5 +132,69 @@ func TestRunPerfCountersAreIndependent(t *testing.T) {
 	}
 	if secondStats.CloneClasses[0].Class != "SecondTest" {
 		t.Fatalf("second clone classes = %#v", secondStats.CloneClasses)
+	}
+}
+
+func TestRunPerfCountersVMFieldsAreMutationIsolated(t *testing.T) {
+	counters := newRunPerfCounters(true)
+	counters.captureVMPerf(vm.PerfCounters{
+		Enabled: true,
+		StaticAliasTopFields: []vm.StaticAliasFieldPerf{
+			{Field: "Registry.Values", Visits: 1},
+		},
+	})
+
+	first := snapshotPerfCounters(counters)
+	first.VMPerf.StaticAliasTopFields[0].Field = "Mutated.Values"
+	second := snapshotPerfCounters(counters)
+	if got := second.VMPerf.StaticAliasTopFields[0].Field; got != "Registry.Values" {
+		t.Fatalf("later snapshot field = %q, want isolated Registry.Values", got)
+	}
+}
+
+func TestPerfCountersLegacyZeroJSONShapeIsPreserved(t *testing.T) {
+	data, err := json.Marshal(PerfCounters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got map[string]json.RawMessage
+	if err := json.Unmarshal(data, &got); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{
+		"cloneRuntimeOrgCalls",
+		"journalRollbacks",
+		"cloneFallbacks",
+		"setupDurationMs",
+		"runDurationMs",
+		"cloneRuntimeOrgMs",
+		"cloneRuntimeMachineMs",
+		"storageCloneStats",
+		"vmPerf",
+	} {
+		if _, ok := got[key]; !ok {
+			t.Fatalf("legacy zero JSON missing %q: %s", key, data)
+		}
+	}
+	for _, key := range []string{"enabled", "phases", "cloneClasses", "cloneReasons"} {
+		if _, ok := got[key]; ok {
+			t.Fatalf("zero JSON unexpectedly includes %q: %s", key, data)
+		}
+	}
+	if string(got["storageCloneStats"]) != `{"cloneRuntimeCalls":0,"cloneRollbackSnapshotCalls":0}` {
+		t.Fatalf("storage clone JSON shape changed: %s", got["storageCloneStats"])
+	}
+	var vmShape map[string]json.RawMessage
+	if err := json.Unmarshal(got["vmPerf"], &vmShape); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := vmShape["staticAlias"]; !ok {
+		t.Fatalf("legacy VM JSON missing staticAlias: %s", got["vmPerf"])
+	}
+	if _, ok := vmShape["dml"]; !ok {
+		t.Fatalf("legacy VM JSON missing dml: %s", got["vmPerf"])
+	}
+	if _, ok := vmShape["scopeAlias"]; ok {
+		t.Fatalf("zero VM JSON unexpectedly includes new scopeAlias: %s", got["vmPerf"])
 	}
 }

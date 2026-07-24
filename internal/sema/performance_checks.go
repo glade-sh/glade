@@ -15,12 +15,15 @@ var staticFirstTouchMetadataPattern = regexp.MustCompile(`(?is)\bSchema\s*\.\s*(
 
 func (a *Analyzer) checkPerformancePatterns(index typesys.Index) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
-	sourceCache := make(map[string]string)
+	sources := a.sources
+	if sources == nil {
+		sources = newSemaSources(nil, nil)
+	}
 	for _, typ := range index.Types {
 		if skipPerformanceDiagnostics(typ) {
 			continue
 		}
-		source, ok := readSemaSourceForType(typ, sourceCache)
+		source, ok := sources.normalizedForType(typ)
 		if !ok {
 			continue
 		}

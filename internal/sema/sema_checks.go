@@ -113,12 +113,15 @@ func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnos
 		return nil
 	}
 	var diagnostics []diagnostic.Diagnostic
-	sourceCache := make(map[string]string)
+	sources := a.sources
+	if sources == nil {
+		sources = newSemaSources(nil, nil)
+	}
 	for _, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) || typ.File == "" {
 			continue
 		}
-		source, ok := readSemaSourceForType(typ, sourceCache)
+		source, ok := sources.normalizedForType(typ)
 		if !ok {
 			continue
 		}
@@ -130,7 +133,7 @@ func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnos
 type querySemanticsChecker struct {
 	namespace      string
 	objects        map[string]schema.Object
-	fields         map[string]map[string]schema.Field
+	providers      map[string]semaSObjectFieldProvider
 	declaredFields map[string]int
 	hasBaseline    bool
 }
@@ -139,7 +142,7 @@ func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Obj
 	checker := querySemanticsChecker{
 		namespace:      index.Project.Namespace,
 		objects:        make(map[string]schema.Object, len(index.Objects)),
-		fields:         make(map[string]map[string]schema.Field, len(index.Objects)),
+		providers:      make(map[string]semaSObjectFieldProvider, len(index.Objects)),
 		declaredFields: make(map[string]int, len(index.Objects)),
 		hasBaseline:    len(declaredObjects) > 0,
 	}
@@ -415,11 +418,11 @@ func (c querySemanticsChecker) object(name string) (schema.Object, bool) {
 		c.addObject(object)
 		return object, true
 	}
-	definition, ok := storage.StandardObjectDefinition(name)
+	canonical, ok := storage.ResolveKnownStandardObjectName(name)
 	if !ok {
 		return schema.Object{}, false
 	}
-	object := schemaObjectFromStorageDefinition(definition)
+	object := schema.Object{Name: canonical}
 	c.addObject(object)
 	return object, true
 }
@@ -429,32 +432,12 @@ func (c querySemanticsChecker) field(objectName, fieldName string) (schema.Field
 	if !ok {
 		return schema.Field{}, false
 	}
-	fields, ok := c.fields[normalizeName(object.Name)]
-	if !ok {
+	provider, ok := c.providers[normalizeName(object.Name)]
+	if !ok || provider == nil {
 		return schema.Field{}, false
 	}
-	if field, ok := fields[normalizeName(fieldName)]; ok {
+	if field, ok := provider.lookup(fieldName); ok {
 		return field, true
-	}
-	if local, ok := semaProjectLocalAPIName(c.namespace, fieldName); ok {
-		if field, ok := fields[normalizeName(local)]; ok {
-			return field, true
-		}
-	}
-	if namespaced, ok := semaProjectNamespacedAPIName(c.namespace, fieldName); ok {
-		if field, ok := fields[normalizeName(namespaced)]; ok {
-			return field, true
-		}
-	}
-	if namespaced, ok := semaOwnerNamespacedAPIName(object.Name, fieldName); ok {
-		if field, ok := fields[normalizeName(namespaced)]; ok {
-			return field, true
-		}
-	}
-	if local := semaSchemaLocalAPIName(fieldName); !strings.EqualFold(local, fieldName) {
-		if field, ok := fields[normalizeName(local)]; ok {
-			return field, true
-		}
 	}
 	if field, ok := c.locationComponentField(object.Name, fieldName); ok {
 		return field, true
@@ -490,8 +473,8 @@ func (c querySemanticsChecker) hasFieldMetadata(objectName string) bool {
 	if object.Partial {
 		return false
 	}
-	fields, ok := c.fields[normalizeName(object.Name)]
-	return ok && len(fields) > 0
+	provider, ok := c.providers[normalizeName(object.Name)]
+	return ok && provider != nil && provider.hasFields()
 }
 
 func (c querySemanticsChecker) hasDeclaredFieldMetadata(objectName string) bool {
@@ -535,29 +518,38 @@ func (c querySemanticsChecker) relationshipField(objectName, relationshipName st
 	if !ok {
 		return schema.Field{}, "", false
 	}
-	fields, ok := c.fields[normalizeName(object.Name)]
-	if !ok {
+	provider, ok := c.providers[normalizeName(object.Name)]
+	if !ok || provider == nil {
 		return c.inferredPackageParentRelationshipField(relationshipName)
 	}
-	for _, field := range fields {
-		if c.apiNamesMatch(field.RelationshipName, relationshipName) && len(field.ReferenceTo) > 0 {
-			target := field.ReferenceTo[0]
-			targetObject, hasTargetObject := c.object(target)
-			canonicalTarget, hasCanonicalTarget := c.standardTargetForPackageRelationship(field.RelationshipName, target)
-			if !hasCanonicalTarget {
-				canonicalTarget, hasCanonicalTarget = c.standardTargetForPackageRelationship(relationshipName, target)
-			}
-			if hasTargetObject && (!hasCanonicalTarget || c.hasDeclaredFieldMetadata(targetObject.Name)) {
-				return field, targetObject.Name, true
-			}
-			if hasCanonicalTarget {
-				target = canonicalTarget
-			}
-			if targetObject, ok := c.object(target); ok {
-				target = targetObject.Name
-			}
-			return field, target, true
+	var matched schema.Field
+	found := false
+	provider.visit(func(field schema.Field) {
+		if found {
+			return
 		}
+		if c.apiNamesMatch(field.RelationshipName, relationshipName) && len(field.ReferenceTo) > 0 {
+			matched = field
+			found = true
+		}
+	})
+	if found {
+		target := matched.ReferenceTo[0]
+		targetObject, hasTargetObject := c.object(target)
+		canonicalTarget, hasCanonicalTarget := c.standardTargetForPackageRelationship(matched.RelationshipName, target)
+		if !hasCanonicalTarget {
+			canonicalTarget, hasCanonicalTarget = c.standardTargetForPackageRelationship(relationshipName, target)
+		}
+		if hasTargetObject && (!hasCanonicalTarget || c.hasDeclaredFieldMetadata(targetObject.Name)) {
+			return matched, targetObject.Name, true
+		}
+		if hasCanonicalTarget {
+			target = canonicalTarget
+		}
+		if targetObject, ok := c.object(target); ok {
+			target = targetObject.Name
+		}
+		return matched, target, true
 	}
 	return c.inferredPackageParentRelationshipField(relationshipName)
 }
@@ -632,31 +624,27 @@ func (c querySemanticsChecker) inferredPackageParentRelationshipField(relationsh
 
 func (c querySemanticsChecker) childObjectForRelationship(parentObject, relationship string) (schema.Object, bool) {
 	for _, object := range c.objects {
-		for _, field := range object.Fields {
-			if !c.apiNamesMatch(field.ChildRelationshipName, relationship) {
-				continue
-			}
-			for _, target := range field.ReferenceTo {
-				if c.apiNamesMatch(target, parentObject) {
-					return object, true
-				}
-			}
-		}
-	}
-	for _, objectName := range storage.KnownStandardObjectNames() {
-		object, ok := c.object(objectName)
-		if !ok {
+		provider := c.providers[normalizeName(object.Name)]
+		if provider == nil {
 			continue
 		}
-		for _, field := range object.Fields {
+		matched := false
+		provider.visitDeclared(func(field schema.Field) {
+			if matched {
+				return
+			}
 			if !c.apiNamesMatch(field.ChildRelationshipName, relationship) {
-				continue
+				return
 			}
 			for _, target := range field.ReferenceTo {
 				if c.apiNamesMatch(target, parentObject) {
-					return object, true
+					matched = true
+					return
 				}
 			}
+		})
+		if matched {
+			return object, true
 		}
 	}
 	for _, relationshipMember := range semaStandardChildRelationshipMembers(parentObject) {
@@ -712,18 +700,17 @@ func (c querySemanticsChecker) addObject(object schema.Object) {
 	if !c.hasBaseline {
 		c.recordDeclaredFields(object)
 	}
-	object = mergeQueryStorageStandardFields(object)
-	object = mergeQuerySObjectSystemFields(object)
 	key := normalizeName(object.Name)
-	if existing, ok := c.objects[key]; ok {
+	existing, duplicate := c.objects[key]
+	if duplicate {
 		object = mergeQueryDuplicateObject(existing, object)
 	}
+	provider := newSemaSObjectFieldProvider(c.namespace, object)
 	c.objects[key] = object
-	fieldMap := queryFieldMap(object.Fields)
-	c.fields[key] = fieldMap
+	c.providers[key] = provider
 	if localName, ok := semaProjectLocalAPIName(c.namespace, object.Name); ok {
 		c.objects[normalizeName(localName)] = object
-		c.fields[normalizeName(localName)] = fieldMap
+		c.providers[normalizeName(localName)] = provider
 	}
 }
 
@@ -746,7 +733,11 @@ func (c querySemanticsChecker) recordDeclaredFields(object schema.Object) {
 
 func (c querySemanticsChecker) addActivityFieldsToTaskAndEvent() {
 	activity, ok := c.object("Activity")
-	if !ok || len(activity.Fields) == 0 {
+	if !ok {
+		return
+	}
+	activityProvider := c.providers[normalizeName(activity.Name)]
+	if activityProvider == nil || !activityProvider.hasFields() {
 		return
 	}
 	for _, target := range []string{"Task", "Event"} {
@@ -754,17 +745,19 @@ func (c querySemanticsChecker) addActivityFieldsToTaskAndEvent() {
 		if !ok {
 			object = schema.Object{Name: target}
 		}
-		object = mergeQueryDuplicateObject(object, schema.Object{Name: target, Fields: activity.Fields})
-		c.addObject(object)
+		if _, exists := c.providers[normalizeName(object.Name)]; !exists {
+			c.addObject(object)
+		}
+		targetProvider := c.providers[normalizeName(object.Name)]
+		provider := &semaLayeredSObjectFieldProvider{
+			layers:         []semaSObjectFieldProvider{targetProvider, activityProvider},
+			declaredLayers: 2,
+		}
+		c.providers[normalizeName(object.Name)] = provider
+		if localName, ok := semaProjectLocalAPIName(c.namespace, object.Name); ok {
+			c.providers[normalizeName(localName)] = provider
+		}
 	}
-}
-
-func queryFieldMap(fields []schema.Field) map[string]schema.Field {
-	fieldMap := make(map[string]schema.Field, len(fields))
-	for _, field := range fields {
-		fieldMap[normalizeName(field.Name)] = field
-	}
-	return fieldMap
 }
 
 func mergeQueryDuplicateObject(existing, incoming schema.Object) schema.Object {
@@ -973,216 +966,6 @@ func (c querySemanticsChecker) apiNamesMatch(left, right string) bool {
 		return true
 	}
 	return false
-}
-
-func mergeQueryStorageStandardFields(object schema.Object) schema.Object {
-	definition := storageDefinitionFromSchemaObject(object)
-	storage.EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
-	standard := schemaObjectFromStorageDefinition(definition)
-	if object.Label == "" {
-		object.Label = standard.Label
-	}
-	if object.PluralLabel == "" {
-		object.PluralLabel = standard.PluralLabel
-	}
-	if object.SharingModel == "" {
-		object.SharingModel = standard.SharingModel
-	}
-	seen := make(map[string]int, len(object.Fields)+len(standard.Fields))
-	for i, field := range object.Fields {
-		seen[normalizeName(field.Name)] = i
-	}
-	for _, field := range standard.Fields {
-		key := normalizeName(field.Name)
-		if i, ok := seen[key]; ok {
-			object.Fields[i] = mergeQueryField(object.Fields[i], field)
-			continue
-		}
-		object.Fields = append(object.Fields, field)
-		seen[key] = len(object.Fields) - 1
-	}
-	sort.Slice(object.Fields, func(i, j int) bool {
-		return object.Fields[i].Name < object.Fields[j].Name
-	})
-	return object
-}
-
-func storageDefinitionFromSchemaObject(object schema.Object) storage.ObjectDefinition {
-	definition := storage.ObjectDefinition{
-		APIName:      object.Name,
-		Label:        object.Label,
-		PluralLabel:  object.PluralLabel,
-		SharingModel: object.SharingModel,
-		Fields:       make(map[string]storage.Field, len(object.Fields)),
-		RecordTypes:  make([]storage.RecordTypeInfo, 0, len(object.RecordTypes)),
-	}
-	for _, field := range object.Fields {
-		if field.Name == "" {
-			continue
-		}
-		definition.Fields[field.Name] = storageFieldFromSchemaField(field)
-	}
-	for _, recordType := range object.RecordTypes {
-		definition.RecordTypes = append(definition.RecordTypes, storage.RecordTypeInfo{
-			DeveloperName:    recordType.DeveloperName,
-			Name:             recordType.Label,
-			Active:           recordType.Active,
-			Default:          recordType.Default,
-			Description:      recordType.Description,
-			PicklistDefaults: recordType.PicklistDefaults,
-		})
-	}
-	return definition
-}
-
-func storageFieldFromSchemaField(field schema.Field) storage.Field {
-	return storage.Field{
-		APIName:               field.Name,
-		Label:                 field.Label,
-		InlineHelpText:        field.InlineHelpText,
-		Type:                  storageFieldTypeFromSchemaField(field),
-		Length:                field.Length,
-		Precision:             field.Precision,
-		Scale:                 field.Scale,
-		Formula:               field.Formula,
-		DefaultValue:          field.DefaultValue,
-		SummarizedField:       field.SummarizedField,
-		SummaryForeignKey:     field.SummaryForeignKey,
-		SummaryOperation:      field.SummaryOperation,
-		Required:              field.Required,
-		ExternalID:            field.ExternalID,
-		Unique:                field.Unique,
-		Encrypted:             field.Encrypted,
-		IDLookup:              field.IDLookup,
-		ReferenceTo:           append([]string(nil), field.ReferenceTo...),
-		RelationshipName:      field.RelationshipName,
-		ChildRelationshipName: field.ChildRelationshipName,
-		PicklistController:    field.PicklistController,
-		PicklistValueSettings: storagePicklistSettingsFromSchema(field.PicklistValueSettings),
-		PicklistValues:        storagePicklistValuesFromSchema(field.PicklistValues),
-	}
-}
-
-func storageFieldTypeFromSchemaField(field schema.Field) storage.FieldType {
-	switch normalizeName(field.Type) {
-	case "id":
-		return storage.FieldID
-	case "checkbox", "boolean":
-		return storage.FieldBoolean
-	case "int", "integer":
-		return storage.FieldInteger
-	case "long", "double", "currency", "percent", "number", "summary":
-		return storage.FieldDecimal
-	case "date":
-		return storage.FieldDate
-	case "datetime":
-		return storage.FieldDateTime
-	case "time":
-		return storage.FieldString
-	case "base64", "blob":
-		return storage.FieldBlob
-	case "address":
-		return storage.FieldAddress
-	case "location":
-		return storage.FieldLocation
-	case "lookup", "masterdetail", "metadatarelationship", "externallookup", "indirectlookup", "reference":
-		return storage.FieldReference
-	case "picklist", "combobox":
-		return storage.FieldPicklist
-	case "multipicklist", "multiselectpicklist":
-		return storage.FieldMultiPicklist
-	case "text", "textarea", "longtextarea", "html", "encryptedtext", "email", "phone", "url", "autonumber":
-		return storage.FieldString
-	}
-	key := normalizeName(field.Name)
-	switch {
-	case key == "id" || strings.HasSuffix(key, "id"):
-		return storage.FieldID
-	case key == "isdeleted" || strings.HasPrefix(key, "is") || strings.HasPrefix(key, "has"):
-		return storage.FieldBoolean
-	default:
-		return storage.FieldString
-	}
-}
-
-func storagePicklistSettingsFromSchema(values []schema.PicklistSetting) []storage.PicklistSetting {
-	out := make([]storage.PicklistSetting, 0, len(values))
-	for _, value := range values {
-		out = append(out, storage.PicklistSetting{
-			ValueName:              value.ValueName,
-			ControllingFieldValues: append([]string(nil), value.ControllingFieldValues...),
-		})
-	}
-	return out
-}
-
-func storagePicklistValuesFromSchema(values []schema.PicklistValue) []storage.PicklistValue {
-	out := make([]storage.PicklistValue, 0, len(values))
-	for _, value := range values {
-		out = append(out, storage.PicklistValue{
-			Value:   value.FullName,
-			Label:   value.Label,
-			Default: value.Default,
-			Active:  value.Active,
-		})
-	}
-	return out
-}
-
-func mergeQuerySObjectSystemFields(object schema.Object) schema.Object {
-	added := make(map[string]int, len(object.Fields)+8)
-	for i, field := range object.Fields {
-		added[normalizeName(field.Name)] = i
-	}
-	addField := func(field schema.Field) {
-		if field.Name == "" {
-			return
-		}
-		key := normalizeName(field.Name)
-		if _, ok := added[key]; ok {
-			return
-		}
-		object.Fields = append(object.Fields, field)
-		added[key] = len(object.Fields) - 1
-	}
-	mergeReferenceField := func(field schema.Field) {
-		if field.Name == "" {
-			return
-		}
-		key := normalizeName(field.Name)
-		if i, ok := added[key]; ok {
-			object.Fields[i] = mergeQueryField(object.Fields[i], field)
-			if strings.EqualFold(field.Name, "OwnerId") || strings.EqualFold(field.Name, "SetupOwnerId") || strings.EqualFold(field.Name, "RecordTypeId") {
-				object.Fields[i].ReferenceTo = append([]string(nil), field.ReferenceTo...)
-				object.Fields[i].RelationshipName = field.RelationshipName
-			}
-			return
-		}
-		object.Fields = append(object.Fields, field)
-		added[key] = len(object.Fields) - 1
-	}
-	addField(schema.Field{Name: "Id", Type: "Id"})
-	addField(schema.Field{Name: "Name", Type: "Text"})
-	addField(schema.Field{Name: "IsDeleted", Type: "Checkbox"})
-	addField(schema.Field{Name: "CreatedDate", Type: "DateTime"})
-	addField(schema.Field{Name: "CreatedById", Type: "Lookup", ReferenceTo: []string{"User"}, RelationshipName: "CreatedBy"})
-	addField(schema.Field{Name: "LastActivityDate", Type: "Date"})
-	addField(schema.Field{Name: "LastModifiedDate", Type: "DateTime"})
-	addField(schema.Field{Name: "LastModifiedById", Type: "Lookup", ReferenceTo: []string{"User"}, RelationshipName: "LastModifiedBy"})
-	addField(schema.Field{Name: "SystemModstamp", Type: "DateTime"})
-	if storage.IsOwnerBackedObject(object.Name) || strings.HasSuffix(object.Name, "__c") || hasQuerySchemaField(object.Fields, "OwnerId") {
-		mergeReferenceField(schema.Field{Name: "OwnerId", Type: "Lookup", ReferenceTo: []string{"Name"}, RelationshipName: "Owner"})
-	}
-	if strings.EqualFold(object.CustomSettingsType, "Hierarchy") || hasQuerySchemaField(object.Fields, "SetupOwnerId") {
-		mergeReferenceField(schema.Field{Name: "SetupOwnerId", Type: "Lookup", ReferenceTo: []string{"Name"}, RelationshipName: "SetupOwner"})
-	}
-	if len(object.RecordTypes) > 0 || hasQuerySchemaField(object.Fields, "RecordTypeId") {
-		mergeReferenceField(schema.Field{Name: "RecordTypeId", Type: "Lookup", ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"})
-	}
-	sort.Slice(object.Fields, func(i, j int) bool {
-		return object.Fields[i].Name < object.Fields[j].Name
-	})
-	return object
 }
 
 func hasQuerySchemaField(fields []schema.Field, name string) bool {
@@ -1647,13 +1430,16 @@ func (a *Analyzer) checkManagedPackageAccess(index typesys.Index) []diagnostic.D
 		typesByNamespace[strings.ToLower(typ.Namespace)] = append(typesByNamespace[strings.ToLower(typ.Namespace)], typ)
 	}
 	var diagnostics []diagnostic.Diagnostic
-	sourceCache := make(map[string]string)
+	sources := a.sources
+	if sources == nil {
+		sources = newSemaSources(nil, nil)
+	}
 	seen := make(map[string]bool)
 	for _, typ := range index.Types {
 		if typ.Dependency {
 			continue
 		}
-		source, ok := readSemaSourceForType(typ, sourceCache)
+		source, ok := sources.normalizedForType(typ)
 		if !ok {
 			continue
 		}
@@ -1714,9 +1500,20 @@ func semaDependencyBackedByArtifact(index typesys.Index, namespace string) bool 
 }
 
 func (a *Analyzer) checkInheritanceContracts(index typesys.Index) []diagnostic.Diagnostic {
-	model := buildTypeMembers(index)
-	defer unregisterSemaShortCandidateIndex(model)
+	return a.checkInheritanceContractsWithRecorder(index, nil)
+}
+
+func (a *Analyzer) checkInheritanceContractsWithRecorder(index typesys.Index, recorder *perfRecorder) []diagnostic.Diagnostic {
+	return a.checkInheritanceContractsWithState(index, buildSemaTypeMemberState(index, recorder, a.sources), recorder)
+}
+
+func (a *Analyzer) checkInheritanceContractsWithState(index typesys.Index, state *semaTypeMemberState, recorder *perfRecorder) []diagnostic.Diagnostic {
+	return a.checkInheritanceContractsWithView(index, state.view(), recorder)
+}
+
+func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
+	inheritanceStarted := recorder.beginPhase()
 	for _, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) {
 			continue
@@ -1767,10 +1564,13 @@ func (a *Analyzer) checkInheritanceContracts(index typesys.Index) []diagnostic.D
 		}
 		diagnostics = append(diagnostics, checkDatabaseBatchableGenericContract(model, typ)...)
 	}
+	if recorder != nil {
+		recorder.endPhase(&recorder.counters.Inheritance, inheritanceStarted)
+	}
 	return diagnostics
 }
 
-func semaTypeMissingSuperclass(model map[string]typeMembers, typ typesys.TypeSymbol) bool {
+func semaTypeMissingSuperclass(model *semaTypeMemberView, typ typesys.TypeSymbol) bool {
 	superClass := strings.TrimSpace(typ.SuperClass)
 	if superClass == "" {
 		return false
@@ -1780,11 +1580,11 @@ func semaTypeMissingSuperclass(model map[string]typeMembers, typ typesys.TypeSym
 	if resolved == "" {
 		resolved = superClass
 	}
-	_, ok := model[normalizeName(resolved)]
+	_, ok := model.lookup(normalizeName(resolved))
 	return !ok
 }
 
-func checkDatabaseBatchableGenericContract(model map[string]typeMembers, typ typesys.TypeSymbol) []diagnostic.Diagnostic {
+func checkDatabaseBatchableGenericContract(model *semaTypeMemberView, typ typesys.TypeSymbol) []diagnostic.Diagnostic {
 	members, _, ok := semaLookupTypeMembers(model, typ.Name)
 	if !ok {
 		return nil
@@ -1819,10 +1619,10 @@ func checkDatabaseBatchableGenericContract(model map[string]typeMembers, typ typ
 	return diagnostics
 }
 
-func concreteMethodsByName(model map[string]typeMembers, typeName, methodName string) []typesys.MemberSymbol {
+func concreteMethodsByName(model *semaTypeMemberView, typeName, methodName string) []typesys.MemberSymbol {
 	var out []typesys.MemberSymbol
 	for current := typeName; current != ""; {
-		members, ok := model[normalizeName(current)]
+		members, ok := model.lookup(normalizeName(current))
 		if !ok {
 			return out
 		}
@@ -1836,7 +1636,7 @@ func concreteMethodsByName(model map[string]typeMembers, typeName, methodName st
 	return out
 }
 
-func databaseBatchableMethodCompatible(methodName, itemType string, methods []typesys.MemberSymbol, model map[string]typeMembers) bool {
+func databaseBatchableMethodCompatible(methodName, itemType string, methods []typesys.MemberSymbol, model *semaTypeMemberView) bool {
 	for _, method := range methods {
 		switch strings.ToLower(methodName) {
 		case "start":
@@ -1867,7 +1667,7 @@ func databaseBatchableMethodCompatible(methodName, itemType string, methods []ty
 	return false
 }
 
-func databaseBatchableExecuteScopeCompatible(itemType, scopeType string, model map[string]typeMembers) bool {
+func databaseBatchableExecuteScopeCompatible(itemType, scopeType string, model *semaTypeMemberView) bool {
 	required := "List<" + itemType + ">"
 	if sameSemaSignatureType(scopeType, required) {
 		return true
@@ -1879,7 +1679,7 @@ func databaseBatchableExecuteScopeCompatible(itemType, scopeType string, model m
 	return semaAssignableToType(itemType, scopeArgs[0], model) || semaAssignableToType(scopeArgs[0], itemType, model)
 }
 
-func databaseBatchableStartReturnCompatible(itemType, returnType string, model map[string]typeMembers) bool {
+func databaseBatchableStartReturnCompatible(itemType, returnType string, model *semaTypeMemberView) bool {
 	returnType = semaCanonicalPlatformAlias(returnType)
 	base, args := semaGenericBaseAndArgs(returnType)
 	if (!strings.EqualFold(base, "Iterable") && !strings.EqualFold(base, "List")) || len(args) != 1 {
@@ -1890,7 +1690,7 @@ func databaseBatchableStartReturnCompatible(itemType, returnType string, model m
 		semaAssignableToType(args[0], itemType, model)
 }
 
-func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model map[string]typeMembers) []diagnostic.Diagnostic {
+func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	body := scan.body
 	for _, match := range scan.assignmentMatches {
@@ -1939,7 +1739,7 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 	}
 	return diagnostics
 }
-func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model map[string]typeMembers) []diagnostic.Diagnostic {
+func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	if member.Type == "" {
 		return nil
 	}
@@ -1990,7 +1790,7 @@ func semaBodyContainsReturnKeyword(body string) bool {
 
 var semaReturnKeywordPattern = regexp.MustCompile(`\breturn\b`)
 
-func (a *Analyzer) checkBodyTernaryConditions(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model map[string]typeMembers) []diagnostic.Diagnostic {
+func (a *Analyzer) checkBodyTernaryConditions(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	seen := make(map[int]bool)
 	for _, expr := range scan.expressions() {
@@ -2002,7 +1802,7 @@ func (a *Analyzer) checkBodyTernaryConditions(typ typesys.TypeSymbol, member typ
 	}
 	return diagnostics
 }
-func checkSemaTernaryCondition(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr string, exprStart int, source string, scope map[string]string, model map[string]typeMembers) []diagnostic.Diagnostic {
+func checkSemaTernaryCondition(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr string, exprStart int, source string, scope map[string]string, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	question, colon, ok := semaTernaryPositions(expr)
 	if !ok {
 		return nil
@@ -2064,7 +1864,7 @@ func (a *Analyzer) checkSemaExpressionTypeReferences(typ typesys.TypeSymbol, mem
 	}
 	return diagnostics
 }
-func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []semaArg, start, end int, source string, scope map[string]string, model map[string]typeMembers, receiverMode string) ([]diagnostic.Diagnostic, bool) {
+func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []semaArg, start, end int, source string, scope map[string]string, model *semaTypeMemberView, receiverMode string) ([]diagnostic.Diagnostic, bool) {
 	if strings.EqualFold(receiverType, "System") && strings.EqualFold(method, "runAs") && len(args) == 1 {
 		return nil, true
 	}
@@ -2096,7 +1896,7 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	}
 	return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), start, end, source)}, true
 }
-func checkGeneratedPlatformStaticAccess(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method, receiverMode string, start, end int, source string, model map[string]typeMembers) (diagnostic.Diagnostic, bool) {
+func checkGeneratedPlatformStaticAccess(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method, receiverMode string, start, end int, source string, model *semaTypeMemberView) (diagnostic.Diagnostic, bool) {
 	switch receiverMode {
 	case "class", "instance", "implicit":
 	default:
@@ -2112,7 +1912,7 @@ func checkGeneratedPlatformStaticAccess(typ typesys.TypeSymbol, member typesys.M
 	if len(candidates) == 0 {
 		return diagnostic.Diagnostic{}, false
 	}
-	if owner, ok := model[normalizeName(candidates[0].owner)]; !ok || (!owner.dependency && !owner.sobject) {
+	if owner, ok := model.lookup(normalizeName(candidates[0].owner)); !ok || (!owner.dependency && !owner.sobject) {
 		return diagnostic.Diagnostic{}, false
 	}
 	if len(filterGeneratedPlatformMethodsByReceiverMode(candidates, receiverMode)) != 0 {

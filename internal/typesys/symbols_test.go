@@ -621,6 +621,9 @@ func TestUpdateApexFilesReplacesChangedSymbolsAndDropsDeleted(t *testing.T) {
 	}
 
 	writeFile(t, second, "public class Second { public void newName() {} }")
+	if err := os.Remove(trigger); err != nil {
+		t.Fatal(err)
+	}
 	updated := UpdateApexFiles(idx, []string{second}, []string{trigger})
 	if updated.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", updated.Diagnostics)

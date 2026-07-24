@@ -11,6 +11,35 @@ import (
 	"github.com/glade-sh/glade/internal/vm"
 )
 
+type signalingRequestReader struct {
+	read chan struct{}
+}
+
+func (r *signalingRequestReader) ReadRequest() (Request, error) {
+	close(r.read)
+	return Request{Seq: 1, Type: MessageTypeRequest, Command: CommandInitialize}, nil
+}
+
+func TestReadRequestPumpStopsWhenSessionIsDone(t *testing.T) {
+	reader := &signalingRequestReader{read: make(chan struct{})}
+	requests := make(chan requestReadResult)
+	sessionDone := make(chan struct{})
+	pumpDone := make(chan struct{})
+	go func() {
+		readRequests(reader, requests, sessionDone)
+		close(pumpDone)
+	}()
+
+	<-reader.read
+	close(sessionDone)
+
+	select {
+	case <-pumpDone:
+	case <-time.After(time.Second):
+		t.Fatal("request reader pump remained blocked after session ended")
+	}
+}
+
 func TestServePublishesLiveStoppedEvent(t *testing.T) {
 	handler := NewHandler(Snapshot{})
 	handler.SetLaunchHandler(func(request LaunchRequest) error {
@@ -24,6 +53,10 @@ func TestServePublishesLiveStoppedEvent(t *testing.T) {
 
 	inR, inW := io.Pipe()
 	outR, outW := io.Pipe()
+	t.Cleanup(func() {
+		_ = inW.Close()
+		_ = outR.Close()
+	})
 	done := make(chan error, 1)
 	go func() {
 		defer outW.Close()
@@ -81,6 +114,10 @@ func TestServeWaitsForConfigurationDoneBeforeLiveLaunch(t *testing.T) {
 
 	inR, inW := io.Pipe()
 	outR, outW := io.Pipe()
+	t.Cleanup(func() {
+		_ = inW.Close()
+		_ = outR.Close()
+	})
 	done := make(chan error, 1)
 	go func() {
 		defer outW.Close()
@@ -141,6 +178,10 @@ func TestServePublishesSystemDebugOutputEvent(t *testing.T) {
 
 	inR, inW := io.Pipe()
 	outR, outW := io.Pipe()
+	t.Cleanup(func() {
+		_ = inW.Close()
+		_ = outR.Close()
+	})
 	done := make(chan error, 1)
 	go func() {
 		defer outW.Close()

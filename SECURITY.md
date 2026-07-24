@@ -6,8 +6,9 @@ Security fixes ship on the current release line. Install the latest release
 unless your team has pinned a version for review.
 
 Release archives are built by GitHub Actions from tagged source and published
-with `SHA256SUMS.txt` and CycloneDX SBOM files. The release workflow attempts
-GitHub artifact attestations when the repository host supports them.
+with `SHA256SUMS.txt`, CycloneDX SBOM files, and GitHub artifact attestations.
+The tagged commit must have an exact-SHA successful `Required CI` push run.
+Archive provenance and CycloneDX attestations must verify before upload.
 
 ## Report a vulnerability
 
@@ -66,7 +67,7 @@ The repository runs:
 - GitHub Dependency Review on pull requests.
 - OpenSSF Scorecard with results ready for a public badge after repository
   publication.
-- Release smoke checks, checksums, SBOM generation, and best-effort artifact
+- Release smoke checks, checksums, SBOM generation, and blocking artifact
   attestations.
 
 `gosec` is uploaded to code scanning while the baseline is being triaged. Treat
@@ -80,11 +81,12 @@ curl -L -o glade.tar.gz "$GLADE_RELEASE_URL"
 curl -L -o SHA256SUMS.txt "$GLADE_CHECKSUMS_URL"
 shasum -a 256 -c SHA256SUMS.txt
 gh attestation verify glade.tar.gz -R glade-sh/glade
+gh attestation verify glade.tar.gz -R glade-sh/glade \
+  --predicate-type https://cyclonedx.org/bom
 tar -xzf glade.tar.gz
 ./glade version
 ./glade doctor
 ```
 
-If the release does not publish an attestation, rely on the checksum and the
-matching `*.sbom.json` release asset, then compare the dependency inventory with
-your internal allowlist.
+Compare the matching `*.sbom.json` release asset with your internal dependency
+allowlist when policy requires an inventory review.

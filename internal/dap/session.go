@@ -9,19 +9,31 @@ type requestReadResult struct {
 	err     error
 }
 
+type requestReader interface {
+	ReadRequest() (Request, error)
+}
+
+func readRequests(reader requestReader, requests chan<- requestReadResult, done <-chan struct{}) {
+	defer close(requests)
+	for {
+		request, err := reader.ReadRequest()
+		select {
+		case requests <- requestReadResult{request: request, err: err}:
+		case <-done:
+			return
+		}
+		if err != nil {
+			return
+		}
+	}
+}
+
 func Serve(r io.Reader, w io.Writer, handler *Handler) error {
 	reader := NewReader(r)
 	requests := make(chan requestReadResult)
-	go func() {
-		defer close(requests)
-		for {
-			request, err := reader.ReadRequest()
-			requests <- requestReadResult{request: request, err: err}
-			if err != nil {
-				return
-			}
-		}
-	}()
+	done := make(chan struct{})
+	defer close(done)
+	go readRequests(reader, requests, done)
 	for {
 		select {
 		case result, ok := <-requests:

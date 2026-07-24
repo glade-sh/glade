@@ -28,7 +28,16 @@ func servePaths(projectRoot string) (socket string, pid string) {
 	if len(localSocket) <= maxUnixSocketPathLen {
 		return localSocket, localPID
 	}
+	base, relative := privateServeDir(projectRoot)
+	runtimeDir := filepath.Join(base, relative)
+	return filepath.Join(runtimeDir, "serve.sock"), filepath.Join(runtimeDir, "serve.pid")
+}
+
+func privateServeDir(projectRoot string) (base, relative string) {
+	localSocket := filepath.Join(projectRoot, serveDir, "serve.sock")
+	if len(localSocket) <= maxUnixSocketPathLen {
+		return projectRoot, filepath.FromSlash(serveDir)
+	}
 	sum := sha256.Sum256([]byte(filepath.Clean(projectRoot)))
-	base := "glade-test-serve-" + hex.EncodeToString(sum[:8])
-	return filepath.Join(os.TempDir(), base+".sock"), filepath.Join(os.TempDir(), base+".pid")
+	return os.TempDir(), "glade-test-serve-" + hex.EncodeToString(sum[:8])
 }

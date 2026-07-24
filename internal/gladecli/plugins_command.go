@@ -16,42 +16,60 @@ import (
 	"github.com/glade-sh/glade/internal/pluginhost"
 )
 
-var pluginListManifestTimeout = 3 * time.Second
+const defaultPluginListManifestTimeout = 3 * time.Second
+
+type pluginsCommandConfig struct {
+	storeRoot   string
+	registryURL string
+	ci          bool
+}
+
+func defaultPluginsCommandConfig() pluginsCommandConfig {
+	return pluginsCommandConfig{
+		storeRoot:   pluginhost.DefaultRoot(),
+		registryURL: pluginhost.RegistryURL(),
+		ci:          os.Getenv("CI") != "",
+	}
+}
 
 func runPlugins(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+	return runPluginsWithConfig(ctx, args, stdout, stderr, defaultPluginsCommandConfig())
+}
+
+func runPluginsWithConfig(ctx context.Context, args []string, stdout, stderr io.Writer, config pluginsCommandConfig) error {
 	if len(args) == 0 || isHelpArg(args[0]) {
 		_ = cliui.WriteCommandHelp(stdout, []string{"plugins"})
 		return nil
 	}
 	switch args[0] {
 	case "list":
-		return runPluginsList(ctx, args[1:], stdout)
+		return runPluginsList(ctx, args[1:], stdout, config)
 	case "available":
-		return runPluginsAvailable(ctx, args[1:], stdout, stderr)
+		return runPluginsAvailable(ctx, args[1:], stdout, stderr, config)
 	case "search":
-		return runPluginsSearch(ctx, args[1:], stdout, stderr)
+		return runPluginsSearch(ctx, args[1:], stdout, stderr, config)
 	case "info":
-		return runPluginsInfo(ctx, args[1:], stdout, stderr)
+		return runPluginsInfo(ctx, args[1:], stdout, stderr, config)
 	case "link":
-		return runPluginsLink(ctx, args[1:], stdout)
+		return runPluginsLink(ctx, args[1:], stdout, config)
 	case "install":
-		return runPluginsInstall(ctx, args[1:], stdout, stderr)
+		return runPluginsInstall(ctx, args[1:], stdout, stderr, config)
 	case "remove":
-		return runPluginsRemove(args[1:], stdout)
+		return runPluginsRemove(args[1:], stdout, config)
 	case "which":
-		return runPluginsWhich(args[1:], stdout)
+		return runPluginsWhich(args[1:], stdout, config)
 	case "doctor":
-		return runPluginsDoctor(ctx, args[1:], stdout, stderr)
+		return runPluginsDoctor(ctx, args[1:], stdout, stderr, config)
 	case "lock":
-		return runPluginsLock(args[1:], stdout)
+		return runPluginsLock(args[1:], stdout, config)
 	case "restore":
-		return runPluginsRestore(ctx, args[1:], stdout, stderr)
+		return runPluginsRestore(ctx, args[1:], stdout, stderr, config)
 	default:
 		return fmt.Errorf("unknown plugins command %q", args[0])
 	}
 }
 
-func runPluginsList(ctx context.Context, args []string, stdout io.Writer) error {
+func runPluginsList(ctx context.Context, args []string, stdout io.Writer, config pluginsCommandConfig) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -59,7 +77,7 @@ func runPluginsList(ctx context.Context, args []string, stdout io.Writer) error 
 	if err != nil {
 		return err
 	}
-	plugins, err := pluginhost.NewStore(pluginhost.DefaultRoot()).ListInstalled()
+	plugins, err := pluginhost.NewStore(config.storeRoot).ListInstalled()
 	if err != nil {
 		return err
 	}
@@ -98,6 +116,10 @@ type pluginListEntryJSON struct {
 }
 
 func writePluginsListJSON(ctx context.Context, w io.Writer, plugins []pluginhost.InstalledPlugin) error {
+	return writePluginsListJSONWithManifestTimeout(ctx, w, plugins, defaultPluginListManifestTimeout)
+}
+
+func writePluginsListJSONWithManifestTimeout(ctx context.Context, w io.Writer, plugins []pluginhost.InstalledPlugin, manifestTimeout time.Duration) error {
 	out := pluginsListJSON{Plugins: make([]pluginListEntryJSON, 0, len(plugins))}
 	for _, plugin := range plugins {
 		entry := pluginListEntryJSON{
@@ -111,7 +133,7 @@ func writePluginsListJSON(ctx context.Context, w io.Writer, plugins []pluginhost
 			ManifestPath: plugin.Manifest,
 			Source:       plugin.Source,
 		}
-		if manifest, ok, err := loadInstalledPluginManifest(ctx, plugin); err != nil {
+		if manifest, ok, err := loadInstalledPluginManifest(ctx, plugin, manifestTimeout); err != nil {
 			return err
 		} else if ok {
 			entry.Editor = manifest.Editor
@@ -126,13 +148,13 @@ func writePluginsListJSON(ctx context.Context, w io.Writer, plugins []pluginhost
 	})
 }
 
-func loadInstalledPluginManifest(ctx context.Context, plugin pluginhost.InstalledPlugin) (pluginhost.Manifest, bool, error) {
+func loadInstalledPluginManifest(ctx context.Context, plugin pluginhost.InstalledPlugin, manifestTimeout time.Duration) (pluginhost.Manifest, bool, error) {
 	if plugin.Manifest != "" {
 		manifest, err := pluginhost.LoadManifestFromFile(plugin.Manifest)
 		return manifest, true, err
 	}
 	if plugin.Linked && plugin.Executable != "" {
-		manifestCtx, cancel := context.WithTimeout(ctx, pluginListManifestTimeout)
+		manifestCtx, cancel := context.WithTimeout(ctx, manifestTimeout)
 		defer cancel()
 		manifest, err := pluginhost.LoadManifestFromExecutable(manifestCtx, plugin.Executable)
 		return manifest, true, err
@@ -195,7 +217,7 @@ func parsePluginProgressFlags(jsonOut bool, args []string) ([]string, cliui.Prog
 	return filtered, progressModeForFlags(jsonOut, progress, progressJSON, noProgress), nil
 }
 
-func runPluginsLink(ctx context.Context, args []string, stdout io.Writer) error {
+func runPluginsLink(ctx context.Context, args []string, stdout io.Writer, config pluginsCommandConfig) error {
 	executable := ""
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
@@ -212,7 +234,7 @@ func runPluginsLink(ctx context.Context, args []string, stdout io.Writer) error 
 	if executable == "" {
 		return errors.New("usage: glade plugins link --exec <plugin-executable>")
 	}
-	plugin, err := pluginhost.NewStore(pluginhost.DefaultRoot()).LinkExecutable(ctx, executable, "link:"+executable)
+	plugin, err := pluginhost.NewStore(config.storeRoot).LinkExecutable(ctx, executable, "link:"+executable)
 	if err != nil {
 		return err
 	}
@@ -269,12 +291,12 @@ func parsePluginsInstallArgs(args []string) (pluginsInstallOptions, error) {
 	return opts, nil
 }
 
-func runPluginsInstall(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+func runPluginsInstall(ctx context.Context, args []string, stdout, stderr io.Writer, config pluginsCommandConfig) error {
 	opts, err := parsePluginsInstallArgs(args)
 	if err != nil {
 		return err
 	}
-	store := pluginhost.NewStore(pluginhost.DefaultRoot())
+	store := pluginhost.NewStore(config.storeRoot)
 	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: stderr, Mode: opts.progressMode})
 	failInstall := func(err error) error {
 		renderer.Finish(cliui.Result{OK: false, Label: "plugins install failed"})
@@ -285,7 +307,7 @@ func runPluginsInstall(ctx context.Context, args []string, stdout, stderr io.Wri
 		plugin pluginhost.InstalledPlugin
 	)
 	if isRemoteArchiveInstallArg(opts.target) {
-		if err := enforcePluginTrustBeforeInstall(opts.target, "unlisted", opts.yes); err != nil {
+		if err := enforcePluginTrustBeforeInstall(opts.target, "unlisted", opts.yes, config.ci); err != nil {
 			return failInstall(err)
 		}
 		renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "plugins install", Label: "Downloading archive", Current: 1, Total: 3})
@@ -298,7 +320,7 @@ func runPluginsInstall(ctx context.Context, args []string, stdout, stderr io.Wri
 		if parseErr != nil {
 			return failInstall(parseErr)
 		}
-		registryURL := pluginhost.RegistryURL()
+		registryURL := config.registryURL
 		if opts.registry != "" {
 			registryURL = opts.registry
 		}
@@ -307,12 +329,12 @@ func runPluginsInstall(ctx context.Context, args []string, stdout, stderr io.Wri
 		if fetchErr != nil {
 			return failInstall(fetchErr)
 		}
-		if os.Getenv("CI") != "" && !opts.yes {
+		if config.ci && !opts.yes {
 			registryPlugin, _, ok := index.AssetForRef(ref, runtime.GOOS, runtime.GOARCH)
 			if !ok {
 				return index.NotFoundErrorForRef(ref, runtime.GOOS, runtime.GOARCH)
 			}
-			if err := enforcePluginTrustBeforeInstall(registryPlugin.Name, registryPlugin.Trust, opts.yes); err != nil {
+			if err := enforcePluginTrustBeforeInstall(registryPlugin.Name, registryPlugin.Trust, opts.yes, config.ci); err != nil {
 				return failInstall(err)
 			}
 		}
@@ -323,7 +345,7 @@ func runPluginsInstall(ctx context.Context, args []string, stdout, stderr io.Wri
 		return failInstall(err)
 	}
 	if plugin.Trust == "community" || plugin.Trust == "unlisted" {
-		if os.Getenv("CI") != "" && !opts.yes {
+		if config.ci && !opts.yes {
 			return failInstall(fmt.Errorf("plugin %s is %s; rerun with --yes or restore from a lock file in CI", plugin.IdentityName(), plugin.Trust))
 		}
 		fmt.Fprintf(stderr, "warning: plugin %s is %s; review its source before use\n", plugin.IdentityName(), plugin.Trust)
@@ -333,8 +355,8 @@ func runPluginsInstall(ctx context.Context, args []string, stdout, stderr io.Wri
 	return nil
 }
 
-func enforcePluginTrustBeforeInstall(name, trust string, yes bool) error {
-	if os.Getenv("CI") == "" || yes {
+func enforcePluginTrustBeforeInstall(name, trust string, yes, ci bool) error {
+	if !ci || yes {
 		return nil
 	}
 	if trust == "community" || trust == "unlisted" {
@@ -357,7 +379,7 @@ func isArchiveInstallArg(arg string) bool {
 	return strings.ContainsAny(arg, `/\`)
 }
 
-func runPluginsAvailable(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+func runPluginsAvailable(ctx context.Context, args []string, stdout, stderr io.Writer, config pluginsCommandConfig) error {
 	filtered, progressMode, err := parsePluginProgressFlags(false, args)
 	if err != nil {
 		return err
@@ -365,18 +387,18 @@ func runPluginsAvailable(ctx context.Context, args []string, stdout, stderr io.W
 	if len(filtered) != 0 {
 		return errors.New("usage: glade plugins available")
 	}
-	return runPluginsSearchWithMode(ctx, nil, stdout, stderr, progressMode)
+	return runPluginsSearchWithMode(ctx, nil, stdout, stderr, progressMode, config)
 }
 
-func runPluginsSearch(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+func runPluginsSearch(ctx context.Context, args []string, stdout, stderr io.Writer, config pluginsCommandConfig) error {
 	filtered, progressMode, err := parsePluginProgressFlags(false, args)
 	if err != nil {
 		return err
 	}
-	return runPluginsSearchWithMode(ctx, filtered, stdout, stderr, progressMode)
+	return runPluginsSearchWithMode(ctx, filtered, stdout, stderr, progressMode, config)
 }
 
-func runPluginsSearchWithMode(ctx context.Context, args []string, stdout, stderr io.Writer, progressMode cliui.ProgressMode) error {
+func runPluginsSearchWithMode(ctx context.Context, args []string, stdout, stderr io.Writer, progressMode cliui.ProgressMode, config pluginsCommandConfig) error {
 	if len(args) > 1 {
 		return errors.New("usage: glade plugins search [query]")
 	}
@@ -386,7 +408,7 @@ func runPluginsSearchWithMode(ctx context.Context, args []string, stdout, stderr
 	}
 	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: stderr, Mode: progressMode})
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "plugins search", Label: "Fetching registry"})
-	index, err := fetchPluginRegistryForCLI(ctx, pluginhost.RegistryURL())
+	index, err := fetchPluginRegistryForCLI(ctx, config.registryURL)
 	if err != nil {
 		renderer.Finish(cliui.Result{OK: false, Label: "plugins search failed"})
 		return err
@@ -411,7 +433,7 @@ func runPluginsSearchWithMode(ctx context.Context, args []string, stdout, stderr
 	return nil
 }
 
-func runPluginsInfo(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+func runPluginsInfo(ctx context.Context, args []string, stdout, stderr io.Writer, config pluginsCommandConfig) error {
 	args, progressMode, err := parsePluginProgressFlags(false, args)
 	if err != nil {
 		return err
@@ -425,7 +447,7 @@ func runPluginsInfo(ctx context.Context, args []string, stdout, stderr io.Writer
 	}
 	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: stderr, Mode: progressMode})
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "plugins info", Label: "Fetching registry"})
-	index, err := fetchPluginRegistryForCLI(ctx, pluginhost.RegistryURL())
+	index, err := fetchPluginRegistryForCLI(ctx, config.registryURL)
 	if err != nil {
 		renderer.Finish(cliui.Result{OK: false, Label: "plugins info failed"})
 		return err
@@ -464,22 +486,22 @@ func formatPluginRegistryFetchError(registryURL string, err error) error {
 	return fmt.Errorf("default plugin registry is in preview and is not reachable at %s; set GLADE_PLUGIN_REGISTRY_URL for a configured registry, install a direct archive, or run `glade plugins link --exec <path>` for a local plugin; detail: %w", registryURL, err)
 }
 
-func runPluginsRemove(args []string, stdout io.Writer) error {
+func runPluginsRemove(args []string, stdout io.Writer, config pluginsCommandConfig) error {
 	if len(args) != 1 {
 		return errors.New("usage: glade plugins remove <plugin-name>")
 	}
-	if err := pluginhost.NewStore(pluginhost.DefaultRoot()).Remove(args[0]); err != nil {
+	if err := pluginhost.NewStore(config.storeRoot).Remove(args[0]); err != nil {
 		return err
 	}
 	fmt.Fprintf(stdout, "Removed plugin %s.\n", args[0])
 	return nil
 }
 
-func runPluginsWhich(args []string, stdout io.Writer) error {
+func runPluginsWhich(args []string, stdout io.Writer, config pluginsCommandConfig) error {
 	if len(args) != 1 {
 		return errors.New("usage: glade plugins which <command>")
 	}
-	state, err := pluginhost.NewStore(pluginhost.DefaultRoot()).ReadInstalled()
+	state, err := pluginhost.NewStore(config.storeRoot).ReadInstalled()
 	if err != nil {
 		return err
 	}
@@ -492,14 +514,14 @@ func runPluginsWhich(args []string, stdout io.Writer) error {
 	return nil
 }
 
-func runPluginsDoctor(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+func runPluginsDoctor(ctx context.Context, args []string, stdout, stderr io.Writer, config pluginsCommandConfig) error {
 	jsonOut, progressMode, err := parseJSONProgressFlags("glade plugins doctor", args)
 	if err != nil {
 		return err
 	}
 	renderer := cliui.NewRenderer(cliui.RendererOptions{Stderr: stderr, Mode: progressMode})
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseStart, Phase: "plugins doctor", Label: "Checking plugins"})
-	results, err := pluginhost.NewStore(pluginhost.DefaultRoot()).Doctor(ctx)
+	results, err := pluginhost.NewStore(config.storeRoot).Doctor(ctx)
 	if err != nil {
 		renderer.Finish(cliui.Result{OK: false, Label: "plugins doctor failed"})
 		return err
@@ -563,7 +585,7 @@ func writePluginsDoctorJSON(w io.Writer, results []pluginhost.DoctorResult) erro
 	return enc.Encode(out)
 }
 
-func runPluginsLock(args []string, stdout io.Writer) error {
+func runPluginsLock(args []string, stdout io.Writer, config pluginsCommandConfig) error {
 	includeLinked := false
 	for _, arg := range args {
 		switch arg {
@@ -573,7 +595,7 @@ func runPluginsLock(args []string, stdout io.Writer) error {
 			return fmt.Errorf("unknown plugins lock argument %q", arg)
 		}
 	}
-	state, err := pluginhost.NewStore(pluginhost.DefaultRoot()).ReadInstalled()
+	state, err := pluginhost.NewStore(config.storeRoot).ReadInstalled()
 	if err != nil {
 		return err
 	}
@@ -585,7 +607,7 @@ func runPluginsLock(args []string, stdout io.Writer) error {
 	return nil
 }
 
-func runPluginsRestore(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+func runPluginsRestore(ctx context.Context, args []string, stdout, stderr io.Writer, config pluginsCommandConfig) error {
 	args, progressMode, err := parsePluginProgressFlags(false, args)
 	if err != nil {
 		return err
@@ -600,7 +622,7 @@ func runPluginsRestore(ctx context.Context, args []string, stdout, stderr io.Wri
 		renderer.Finish(cliui.Result{OK: false, Label: "plugins restore failed"})
 		return err
 	}
-	store := pluginhost.NewStore(pluginhost.DefaultRoot())
+	store := pluginhost.NewStore(config.storeRoot)
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "plugins restore", Label: "Installing locked plugins", Current: 1, Total: 2})
 	if err := store.RestoreLock(ctx, lock, nil); err != nil {
 		renderer.Finish(cliui.Result{OK: false, Label: "plugins restore failed"})
@@ -614,10 +636,13 @@ func runPluginsRestore(ctx context.Context, args []string, stdout, stderr io.Wri
 }
 
 func runInstalledPluginCommand(ctx context.Context, args []string, stdout, stderr io.Writer) (int, bool) {
+	return runInstalledPluginCommandWithStore(ctx, args, stdout, stderr, pluginhost.NewStore(pluginhost.DefaultRoot()))
+}
+
+func runInstalledPluginCommandWithStore(ctx context.Context, args []string, stdout, stderr io.Writer, store pluginhost.Store) (int, bool) {
 	if len(args) == 0 {
 		return 0, false
 	}
-	store := pluginhost.NewStore(pluginhost.DefaultRoot())
 	state, err := store.ReadInstalled()
 	if err != nil {
 		writeCommandError(stderr, args[0], fmt.Errorf("read plugin state: %w", err))

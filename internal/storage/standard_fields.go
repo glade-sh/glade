@@ -824,7 +824,7 @@ func VisitStandardObjectRelationships(objectName string, features []string, visi
 			if !personAccounts && isPersonAccountRelationship(relationship) {
 				continue
 			}
-			visit(relationship)
+			visit(cloneRelationship(relationship))
 		}
 		found = true
 	}
@@ -836,7 +836,7 @@ func VisitStandardObjectRelationships(objectName string, features []string, visi
 		if !personAccounts && isPersonAccountRelationship(relationship) {
 			continue
 		}
-		visit(relationship)
+		visit(cloneRelationship(relationship))
 	}
 	return true
 }
@@ -1344,11 +1344,16 @@ func mergeStandardRelationships(definition *ObjectDefinition, relationships []Re
 			}
 		}
 		if !found {
-			copy := relationship
-			copy.ParentObjects = append([]string(nil), relationship.ParentObjects...)
-			definition.Relations = append(definition.Relations, copy)
+			definition.Relations = append(definition.Relations, cloneRelationship(relationship))
 		}
 	}
+}
+
+func cloneRelationship(relationship Relationship) Relationship {
+	relationship.ParentObjects = append([]string(nil), relationship.ParentObjects...)
+	relationship.JunctionIDListNames = append([]string(nil), relationship.JunctionIDListNames...)
+	relationship.JunctionReferenceTo = append([]string(nil), relationship.JunctionReferenceTo...)
+	return relationship
 }
 
 func sameStandardRelationship(left, right Relationship) bool {
@@ -1391,15 +1396,39 @@ func mergeStandardRecordTypes(definition *ObjectDefinition, recordTypes []Record
 			}
 		}
 		if !found {
-			definition.RecordTypes = append(definition.RecordTypes, recordType)
+			definition.RecordTypes = append(definition.RecordTypes, cloneRecordTypeInfo(recordType))
 		}
 	}
+}
+
+func cloneRecordTypeInfo(recordType RecordTypeInfo) RecordTypeInfo {
+	if recordType.PicklistDefaults != nil {
+		picklistDefaults := recordType.PicklistDefaults
+		recordType.PicklistDefaults = make(map[string]string, len(recordType.PicklistDefaults))
+		for field, value := range picklistDefaults {
+			recordType.PicklistDefaults[field] = value
+		}
+	}
+	return recordType
 }
 
 func cloneField(field Field) Field {
 	field.SummaryFilterItems = append([]SummaryFilterItem(nil), field.SummaryFilterItems...)
 	field.FilteredLookupInfo = cloneFilteredLookupInfo(field.FilteredLookupInfo)
+	field.Nillable = cloneBoolFlag(field.Nillable)
+	field.DefaultedOnCreate = cloneBoolFlag(field.DefaultedOnCreate)
+	field.Accessible = cloneBoolFlag(field.Accessible)
+	field.Createable = cloneBoolFlag(field.Createable)
+	field.Updateable = cloneBoolFlag(field.Updateable)
+	field.Filterable = cloneBoolFlag(field.Filterable)
+	field.Groupable = cloneBoolFlag(field.Groupable)
+	field.Sortable = cloneBoolFlag(field.Sortable)
+	field.Aggregatable = cloneBoolFlag(field.Aggregatable)
+	field.Permissionable = cloneBoolFlag(field.Permissionable)
+	field.DeprecatedAndHidden = cloneBoolFlag(field.DeprecatedAndHidden)
+	field.RelationshipOrder = cloneIntFlag(field.RelationshipOrder)
 	field.ReferenceTo = append([]string(nil), field.ReferenceTo...)
+	field.PicklistValueSettings = clonePicklistSettings(field.PicklistValueSettings)
 	field.PicklistValues = append([]PicklistValue(nil), field.PicklistValues...)
 	return field
 }
@@ -1410,6 +1439,14 @@ func cloneFilteredLookupInfo(value FilteredLookupInfo) FilteredLookupInfo {
 }
 
 func cloneBoolFlag(flag *bool) *bool {
+	if flag == nil {
+		return nil
+	}
+	value := *flag
+	return &value
+}
+
+func cloneIntFlag(flag *int) *int {
 	if flag == nil {
 		return nil
 	}

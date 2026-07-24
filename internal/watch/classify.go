@@ -9,6 +9,7 @@ type FileKind string
 
 const (
 	FileKindIgnored               FileKind = "ignored"
+	FileKindTopology              FileKind = "topology"
 	FileKindApexClass             FileKind = "apex_class"
 	FileKindApexTrigger           FileKind = "apex_trigger"
 	FileKindObjectMeta            FileKind = "object_metadata"
@@ -36,6 +37,12 @@ func ClassifyPath(path string) FileClassification {
 	lowerSlash := strings.ToLower(slash)
 
 	switch {
+	case lowerBase == "sfdx-project.json" || lowerBase == "glade.yml":
+		return FileClassification{
+			Path:      clean,
+			Kind:      FileKindIgnored,
+			Watchable: true,
+		}
 	case strings.HasSuffix(lowerBase, ".cls"):
 		return FileClassification{
 			Path:      clean,

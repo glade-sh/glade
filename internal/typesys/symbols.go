@@ -1,9 +1,12 @@
 package typesys
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"sort"
 	"strings"
@@ -17,6 +20,8 @@ import (
 	"github.com/glade-sh/glade/internal/schema"
 )
 
+// Index is an immutable snapshot. Nested payloads may be structurally shared
+// between snapshots; callers must not mutate an Index after publication.
 type Index struct {
 	Project               ProjectInfo                       `json:"project"`
 	Types                 []TypeSymbol                      `json:"types"`
@@ -27,6 +32,8 @@ type Index struct {
 	CodeIntelUses         []packageartifact.CodeIntelUse    `json:"codeIntelUses,omitempty"`
 	Dependencies          []DependencyInfo                  `json:"dependencies,omitempty"`
 	Diagnostics           []diagnostic.Diagnostic           `json:"diagnostics,omitempty"`
+	projectIdentity       string
+	sourceDigests         *SourceDigestSet
 }
 
 type ProjectInfo struct {
@@ -90,6 +97,21 @@ type DependencyInfo struct {
 }
 
 func Build(p project.Project, s schema.Schema) (idx Index) {
+	idx, _ = BuildWithArtifacts(p, s)
+	return idx
+}
+
+// BuildWithArtifacts builds the type index and returns the source artifacts
+// produced during the build.
+func BuildWithArtifacts(p project.Project, s schema.Schema) (idx Index, artifacts BuildArtifacts) {
+	return buildWithWorkspaceSources(p, s, NewWorkspaceSources())
+}
+
+func buildWithWorkspaceSources(p project.Project, s schema.Schema, sources *WorkspaceSources) (idx Index, artifacts BuildArtifacts) {
+	if sources == nil {
+		sources = NewWorkspaceSources()
+	}
+	artifacts.Sources = sources
 	parser := apexast.NewParser()
 	idx = Index{
 		Project: ProjectInfo{
@@ -99,6 +121,7 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 		},
 		Objects:               s.Objects,
 		CustomMetadataRecords: s.CustomMetadataRecords,
+		projectIdentity:       incrementalProjectIdentity(p),
 	}
 	defer func() {
 		if recovered := recover(); recovered != nil {
@@ -155,7 +178,7 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 		depSchema = namespaceDependencySchema(depSchema, dep.Namespace)
 		beforeTypes := len(idx.Types)
 		appendFlowInterviewSymbols(&idx, *dep.Project, dep.Namespace, true)
-		appendProjectSymbols(&idx, parser, *dep.Project, true, dep.Namespace, dep.Version, seenTypes)
+		appendProjectSymbols(&idx, parser, *dep.Project, true, dep.Namespace, dep.Version, seenTypes, sources)
 		idx.Objects = append(idx.Objects, depSchema.Objects...)
 		idx.CustomMetadataRecords = append(idx.CustomMetadataRecords, depSchema.CustomMetadataRecords...)
 		idx.Dependencies = append(idx.Dependencies, DependencyInfo{
@@ -170,14 +193,16 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 		})
 	}
 	for _, shim := range p.PackageShims {
-		appendPackageShimSymbols(&idx, parser, shim, seenTypes)
+		appendPackageShimSymbols(&idx, parser, shim, seenTypes, sources)
 	}
 	appendFlowInterviewSymbols(&idx, p, "", false)
 	if p.Namespace != "" {
 		appendFlowInterviewSymbols(&idx, p, p.Namespace, false)
 	}
 	appendDataWeaveScriptResourceSymbols(&idx, p)
-	appendProjectSymbols(&idx, parser, p, false, p.Namespace, "", seenTypes)
+	appendProjectSymbols(&idx, parser, p, false, p.Namespace, "", seenTypes, sources)
+	artifacts.SourceDigests = sources.sourceDigestSet()
+	idx.sourceDigests = artifacts.SourceDigests
 
 	sort.Slice(idx.Types, func(i, j int) bool {
 		if idx.Types[i].Namespace == idx.Types[j].Namespace {
@@ -191,15 +216,15 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 		}
 		return idx.Triggers[i].Namespace < idx.Triggers[j].Namespace
 	})
-	return idx
+	return idx, artifacts
 }
 
-func appendPackageShimSymbols(idx *Index, parser *apexast.Parser, shim project.PackageShim, seenTypes map[string][]seenTypeSymbol) {
+func appendPackageShimSymbols(idx *Index, parser *apexast.Parser, shim project.PackageShim, seenTypes map[string][]seenTypeSymbol, sources *WorkspaceSources) {
 	if shim.Status != "loaded" || shim.Project == nil {
 		return
 	}
 	beforeTypes := len(idx.Types)
-	appendProjectSymbols(idx, parser, *shim.Project, true, shim.Namespace, "", seenTypes)
+	appendProjectSymbols(idx, parser, *shim.Project, true, shim.Namespace, "", seenTypes, sources)
 	idx.Dependencies = append(idx.Dependencies, DependencyInfo{
 		Namespace:  shim.Namespace,
 		SourceRoot: shim.SourceRoot,
@@ -301,12 +326,15 @@ func memberSymbolsFromArtifact(members []packageartifact.ApexMember) []MemberSym
 	return out
 }
 
-func appendProjectSymbols(idx *Index, parser *apexast.Parser, p project.Project, dependency bool, namespace, version string, seenTypes map[string][]seenTypeSymbol) {
+func appendProjectSymbols(idx *Index, parser *apexast.Parser, p project.Project, dependency bool, namespace, version string, seenTypes map[string][]seenTypeSymbol, sources *WorkspaceSources) {
 	var sourceRemaps []namespaceremap.Rule
 	if dependency {
 		sourceRemaps = p.NamespaceRemaps
 	}
-	for _, file := range projectSymbolFiles(parser, p, dependency, namespace, version, sourceRemaps) {
+	for _, file := range projectSymbolFiles(parser, p, dependency, namespace, version, sourceRemaps, sources) {
+		if file.Source != nil {
+			sources.record(*file.Source)
+		}
 		if !dependency {
 			idx.Diagnostics = append(idx.Diagnostics, file.Diagnostics...)
 		}
@@ -473,14 +501,15 @@ type projectSymbolFile struct {
 	Diagnostics []diagnostic.Diagnostic
 	Types       []TypeSymbol
 	Triggers    []TriggerSymbol
+	Source      *WorkspaceSource
 }
 
-func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule) []projectSymbolFile {
+func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule, sources *WorkspaceSources) []projectSymbolFile {
 	if len(p.ApexFiles) == 0 {
 		return nil
 	}
 	if len(p.ApexFiles) == 1 {
-		return []projectSymbolFile{projectSymbolFileFromPath(parser, p.ApexFiles[0], p.Root, dependency, namespace, version, sourceRemaps)}
+		return []projectSymbolFile{projectSymbolFileFromPath(parser, p.ApexFiles[0], p.Root, dependency, namespace, version, sourceRemaps, sources)}
 	}
 	workers := runtime.GOMAXPROCS(0)
 	if workers < 1 {
@@ -512,7 +541,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 			for job := range jobs {
 				results <- result{
 					Index: job.Index,
-					File:  projectSymbolFileFromPath(localParser, job.Path, p.Root, dependency, namespace, version, sourceRemaps),
+					File:  projectSymbolFileFromPath(localParser, job.Path, p.Root, dependency, namespace, version, sourceRemaps, sources),
 				}
 			}
 		}()
@@ -533,9 +562,16 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 	return out
 }
 
-func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule) projectSymbolFile {
+func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule, sources *WorkspaceSources) projectSymbolFile {
 	var out projectSymbolFile
-	data, err := os.ReadFile(path)
+	source, err := sources.load(SourceMetadata{
+		RequestedPath:   path,
+		Root:            root,
+		Namespace:       namespace,
+		Version:         version,
+		Dependency:      dependency,
+		NamespaceRemaps: sourceRemaps,
+	})
 	if err != nil {
 		out.Diagnostics = append(out.Diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
@@ -545,9 +581,9 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 		})
 		return out
 	}
-	source := project.NormalizeApexNamespaceTokens(string(data), namespace)
-	source = namespaceremap.ApplySource(sourceRemaps, source)
-	file := parser.ParseSource(path, source)
+	out.Source = &source
+	normalized := source.NormalizedString()
+	file := parser.ParseSource(path, normalized)
 	out.Diagnostics = append(out.Diagnostics, file.Diagnostics...)
 	if len(file.Diagnostics) > 0 {
 		return out
@@ -555,7 +591,7 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 	for _, decl := range file.Declarations {
 		switch decl.Kind {
 		case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-			for _, sym := range typeSymbolsFromDeclaration(path, decl, "", false, source) {
+			for _, sym := range typeSymbolsFromDeclaration(path, decl, "", false, normalized) {
 				sym.Namespace = namespace
 				sym.SourceNamespaceRemaps = append([]namespaceremap.Rule(nil), sourceRemaps...)
 				sym.SourceRoot = root
@@ -681,76 +717,697 @@ func duplicateSymbolsConflict(currentPackage, previousPackage string) bool {
 	return true
 }
 
-func UpdateApexFiles(previous Index, changedPaths, deletedPaths []string) (idx Index) {
-	parser := apexast.NewParser()
-	idx = Index{
-		Project: previous.Project,
-		Objects: previous.Objects,
+func UpdateApexFiles(previous Index, changedPaths, deletedPaths []string) Index {
+	idx, err := UpdateApexFilesChecked(previous, changedPaths, deletedPaths)
+	if err != nil {
+		return incrementalFallbackFailure(previous, err)
+	}
+	return idx
+}
+
+// UpdateApexFilesChecked updates Apex sources and reports an error when the
+// authoritative fallback index cannot be loaded.
+func UpdateApexFilesChecked(previous Index, changedPaths, deletedPaths []string) (Index, error) {
+	return updateApexFilesCheckedWithIdentityOps(previous, changedPaths, deletedPaths, incrementalFileIdentityOps{})
+}
+
+// TryUpdateApexFilesChecked applies only an exact incremental update. The
+// boolean is false when the caller must reload one authoritative project and
+// rebuild from it; no fallback index is returned in that case.
+func TryUpdateApexFilesChecked(previous Index, changedPaths, deletedPaths []string) (Index, bool, error) {
+	return tryUpdateApexFilesCheckedWithIdentityOps(previous, changedPaths, deletedPaths, incrementalFileIdentityOps{})
+}
+
+// TryUpdateApexFilesCheckedWithLoadedProject applies only an exact
+// incremental update while reusing an authoritative project already loaded by
+// the caller. The boolean is false when the caller must rebuild the complete
+// index from p.
+func TryUpdateApexFilesCheckedWithLoadedProject(previous Index, changedPaths, deletedPaths []string, p project.Project) (Index, bool, error) {
+	identityOps := incrementalIdentityOpsWithDefaults(incrementalFileIdentityOps{})
+	if idx, ok := updateApexFilesIncrementalWithLoadedProject(previous, changedPaths, deletedPaths, identityOps, p); ok {
+		return idx, true, nil
+	}
+	return Index{}, false, nil
+}
+
+// MatchesProjectIdentity reports whether p has the same configuration and
+// dependency identity as the authoritative project used to build idx.
+func MatchesProjectIdentity(idx Index, p project.Project) bool {
+	return idx.projectIdentity != "" && idx.projectIdentity == incrementalProjectIdentity(p) &&
+		p.Root == idx.Project.Root && p.Namespace == idx.Project.Namespace &&
+		p.SourceAPIVersion == idx.Project.SourceAPIVersion
+}
+
+// SameProjectIdentity reports whether two immutable indexes were built from
+// the same project configuration and dependency identity.
+func SameProjectIdentity(left, right Index) bool {
+	return left.projectIdentity != "" && left.projectIdentity == right.projectIdentity
+}
+
+// ProjectIdentityDigest returns the immutable private project and dependency
+// identity captured by the build that produced idx. The digest deliberately
+// does not expose the private identity payload to callers.
+func ProjectIdentityDigest(idx Index) ([sha256.Size]byte, bool) {
+	if idx.projectIdentity == "" {
+		return [sha256.Size]byte{}, false
+	}
+	return sha256.Sum256([]byte(idx.projectIdentity)), true
+}
+
+// SourceDigest returns the raw source digest retained by the build that
+// produced idx. It never reads the filesystem.
+func (idx Index) SourceDigest(path string) ([32]byte, bool) {
+	return idx.sourceDigests.Digest(path)
+}
+
+// RequiresAuthoritativeApexRebuild reports whether the change shape cannot use
+// the exact incremental updater without first loading project identity.
+func RequiresAuthoritativeApexRebuild(previous Index, changedPaths, deletedPaths []string) bool {
+	return !incrementalUpdateShapeSupported(previous, changedPaths, deletedPaths)
+}
+
+func updateApexFilesCheckedWithIdentityOps(previous Index, changedPaths, deletedPaths []string, identityOps incrementalFileIdentityOps) (Index, error) {
+	idx, exact, p, err := tryUpdateApexFilesCheckedWithLoadedProject(previous, changedPaths, deletedPaths, identityOps)
+	if err != nil {
+		return Index{}, err
+	}
+	if exact {
+		return idx, nil
+	}
+	s, err := schema.LoadProject(p)
+	if err != nil {
+		return Index{}, err
+	}
+	return Build(p, s), nil
+}
+
+func tryUpdateApexFilesCheckedWithIdentityOps(previous Index, changedPaths, deletedPaths []string, identityOps incrementalFileIdentityOps) (Index, bool, error) {
+	idx, exact, _, err := tryUpdateApexFilesCheckedWithLoadedProject(previous, changedPaths, deletedPaths, identityOps)
+	return idx, exact, err
+}
+
+func tryUpdateApexFilesCheckedWithLoadedProject(previous Index, changedPaths, deletedPaths []string, identityOps incrementalFileIdentityOps) (Index, bool, project.Project, error) {
+	identityOps = incrementalIdentityOpsWithDefaults(identityOps)
+	p, err := identityOps.loadProject(previous.Project.Root)
+	if err != nil {
+		return Index{}, false, project.Project{}, err
+	}
+	if idx, ok := updateApexFilesIncrementalWithLoadedProject(previous, changedPaths, deletedPaths, identityOps, p); ok {
+		return idx, true, p, nil
+	}
+	return Index{}, false, p, nil
+}
+
+func incrementalFallbackFailure(previous Index, err error) Index {
+	idx := previous
+	idx.Diagnostics = append(append([]diagnostic.Diagnostic(nil), previous.Diagnostics...), diagnostic.Diagnostic{
+		Severity: diagnostic.Error,
+		Code:     "GLADETYPE000",
+		Message:  fmt.Sprintf("incremental fallback build failed: %v", err),
+	})
+	return idx
+}
+
+type incrementalFileIdentityOps struct {
+	stat        func(string) (os.FileInfo, error)
+	lstat       func(string) (os.FileInfo, error)
+	sameFile    func(os.FileInfo, os.FileInfo) bool
+	loadProject func(string) (project.Project, error)
+}
+
+func incrementalIdentityOpsWithDefaults(identityOps incrementalFileIdentityOps) incrementalFileIdentityOps {
+	if identityOps.stat == nil {
+		identityOps.stat = os.Stat
+	}
+	if identityOps.lstat == nil {
+		identityOps.lstat = os.Lstat
+	}
+	if identityOps.sameFile == nil {
+		identityOps.sameFile = os.SameFile
+	}
+	if identityOps.loadProject == nil {
+		identityOps.loadProject = project.Load
+	}
+	return identityOps
+}
+
+type incrementalSourceMetadata struct {
+	namespace       string
+	namespaceRemaps []namespaceremap.Rule
+	root            string
+	version         string
+	dependency      bool
+}
+
+type incrementalSourceOwner struct {
+	project         project.Project
+	metadata        incrementalSourceMetadata
+	dependencyIndex int
+	supported       bool
+}
+
+type incrementalResolvedSource struct {
+	owner       incrementalSourceOwner
+	path        string
+	packagePath string
+}
+
+type incrementalProjectConfigIdentity struct {
+	Root               string
+	Namespace          string
+	SourceAPIVersion   string
+	PackageDirectories []project.PackageDirectory
+	NamespaceRemaps    []namespaceremap.Rule
+}
+
+type incrementalManagedDependencyIdentity struct {
+	Namespace    string
+	SourceRoot   string
+	ArtifactPath string
+	Version      string
+	Status       string
+	Project      *incrementalProjectConfigIdentity
+}
+
+type incrementalPackageShimIdentity struct {
+	Namespace  string
+	SourceRoot string
+	Status     string
+	Project    *incrementalProjectConfigIdentity
+}
+
+type incrementalProjectIdentityLedger struct {
+	Project               incrementalProjectConfigIdentity
+	ManagedDependencies   []incrementalManagedDependencyIdentity
+	PackageShims          []incrementalPackageShimIdentity
+	DependencyDiagnostics []project.DependencyDiagnostic
+}
+
+func incrementalProjectConfigForIdentity(p project.Project) incrementalProjectConfigIdentity {
+	return incrementalProjectConfigIdentity{
+		Root:               p.Root,
+		Namespace:          p.Namespace,
+		SourceAPIVersion:   p.SourceAPIVersion,
+		PackageDirectories: p.PackageDirectories,
+		NamespaceRemaps:    p.NamespaceRemaps,
+	}
+}
+
+func incrementalProjectIdentity(p project.Project) string {
+	ledger := incrementalProjectIdentityLedger{
+		Project:               incrementalProjectConfigForIdentity(p),
+		DependencyDiagnostics: p.DependencyDiagnostics,
+	}
+	for _, dep := range p.ManagedPackageDependencies {
+		identity := incrementalManagedDependencyIdentity{
+			Namespace:    dep.Namespace,
+			SourceRoot:   dep.SourceRoot,
+			ArtifactPath: dep.ArtifactPath,
+			Version:      dep.Version,
+			Status:       dep.Status,
+		}
+		if dep.Project != nil {
+			projectIdentity := incrementalProjectConfigForIdentity(*dep.Project)
+			identity.Project = &projectIdentity
+		}
+		ledger.ManagedDependencies = append(ledger.ManagedDependencies, identity)
+	}
+	for _, shim := range p.PackageShims {
+		identity := incrementalPackageShimIdentity{
+			Namespace:  shim.Namespace,
+			SourceRoot: shim.SourceRoot,
+			Status:     shim.Status,
+		}
+		if shim.Project != nil {
+			projectIdentity := incrementalProjectConfigForIdentity(*shim.Project)
+			identity.Project = &projectIdentity
+		}
+		ledger.PackageShims = append(ledger.PackageShims, identity)
+	}
+	data, err := json.Marshal(ledger)
+	if err != nil {
+		return ""
+	}
+	return string(data)
+}
+
+func cloneIncrementalNamespaceRemaps(in []namespaceremap.Rule) []namespaceremap.Rule {
+	if in == nil {
+		return nil
+	}
+	out := make([]namespaceremap.Rule, len(in))
+	copy(out, in)
+	return out
+}
+
+func sameIncrementalSourceMetadata(left, right incrementalSourceMetadata) bool {
+	if left.namespace != right.namespace || left.root != right.root || left.version != right.version || left.dependency != right.dependency || len(left.namespaceRemaps) != len(right.namespaceRemaps) {
+		return false
+	}
+	for i := range left.namespaceRemaps {
+		if left.namespaceRemaps[i] != right.namespaceRemaps[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func incrementalSourceOwners(previous Index, p project.Project) ([]incrementalSourceOwner, bool) {
+	if previous.projectIdentity == "" || previous.projectIdentity != incrementalProjectIdentity(p) || p.Root != previous.Project.Root || p.Namespace != previous.Project.Namespace || p.SourceAPIVersion != previous.Project.SourceAPIVersion {
+		return nil, false
+	}
+	owners := []incrementalSourceOwner{{
+		project: p,
+		metadata: incrementalSourceMetadata{
+			namespace: p.Namespace,
+			root:      p.Root,
+		},
+		dependencyIndex: -1,
+		supported:       true,
+	}}
+	for _, dep := range p.ManagedPackageDependencies {
+		if dep.Status != "loaded" || dep.Project == nil {
+			continue
+		}
+		dependencyIndex := -1
+		for i, info := range previous.Dependencies {
+			if info.Namespace != dep.Namespace || info.SourceRoot != dep.SourceRoot || info.Version != dep.Version || info.Status != dep.Status {
+				continue
+			}
+			if dependencyIndex != -1 {
+				return nil, false
+			}
+			dependencyIndex = i
+		}
+		owners = append(owners, incrementalSourceOwner{
+			project: *dep.Project,
+			metadata: incrementalSourceMetadata{
+				namespace:       dep.Namespace,
+				namespaceRemaps: cloneIncrementalNamespaceRemaps(dep.Project.NamespaceRemaps),
+				root:            dep.Project.Root,
+				version:         dep.Version,
+				dependency:      true,
+			},
+			dependencyIndex: dependencyIndex,
+			supported:       dependencyIndex != -1,
+		})
+	}
+	for _, shim := range p.PackageShims {
+		if shim.Status != "loaded" || shim.Project == nil {
+			continue
+		}
+		owners = append(owners, incrementalSourceOwner{
+			project: *shim.Project,
+			metadata: incrementalSourceMetadata{
+				namespace:  shim.Namespace,
+				root:       shim.Project.Root,
+				dependency: true,
+			},
+			dependencyIndex: -1,
+			supported:       false,
+		})
+	}
+	return owners, true
+}
+
+func resolveIncrementalSource(owners []incrementalSourceOwner, path string, requireListed bool) (incrementalResolvedSource, bool) {
+	key := cleanFilePath(path)
+	var matches []incrementalResolvedSource
+	for _, owner := range owners {
+		listedPath := ""
+		for _, apexPath := range owner.project.ApexFiles {
+			if cleanFilePath(apexPath) == key {
+				if listedPath != "" && listedPath != apexPath {
+					return incrementalResolvedSource{}, false
+				}
+				listedPath = apexPath
+			}
+		}
+		if requireListed && listedPath == "" {
+			continue
+		}
+		if !requireListed && listedPath != "" {
+			return incrementalResolvedSource{}, false
+		}
+		packagePath := ""
+		deepestRoot := ""
+		deepestMatches := 0
+		for _, pkg := range owner.project.PackageDirectories {
+			if pkg.Path == "" {
+				continue
+			}
+			root := cleanFilePath(filepath.Join(owner.project.Root, filepath.FromSlash(pkg.Path)))
+			if key != root && !strings.HasPrefix(key, root+string(os.PathSeparator)) {
+				continue
+			}
+			switch {
+			case len(root) > len(deepestRoot):
+				deepestRoot = root
+				deepestMatches = 1
+				packagePath = filepath.ToSlash(filepath.Clean(pkg.Path))
+			case len(root) == len(deepestRoot):
+				deepestMatches++
+			}
+		}
+		if deepestMatches == 0 {
+			continue
+		}
+		if deepestMatches != 1 {
+			return incrementalResolvedSource{}, false
+		}
+		if listedPath == "" {
+			listedPath = path
+		}
+		matches = append(matches, incrementalResolvedSource{owner: owner, path: listedPath, packagePath: packagePath})
+	}
+	if len(matches) != 1 || !matches[0].owner.supported {
+		return incrementalResolvedSource{}, false
+	}
+	return matches[0], true
+}
+
+func updateApexFilesIncremental(previous Index, changedPaths, deletedPaths []string) (Index, bool) {
+	return updateApexFilesIncrementalWithIdentityOps(previous, changedPaths, deletedPaths, incrementalFileIdentityOps{})
+}
+
+func updateApexFilesIncrementalWithIdentityOps(previous Index, changedPaths, deletedPaths []string, identityOps incrementalFileIdentityOps) (idx Index, ok bool) {
+	if !incrementalUpdateShapeSupported(previous, changedPaths, deletedPaths) {
+		return Index{}, false
+	}
+	identityOps = incrementalIdentityOpsWithDefaults(identityOps)
+	p, err := identityOps.loadProject(previous.Project.Root)
+	if err != nil {
+		return Index{}, false
+	}
+	return updateApexFilesIncrementalWithLoadedProject(previous, changedPaths, deletedPaths, identityOps, p)
+}
+
+func incrementalUpdateShapeSupported(previous Index, changedPaths, deletedPaths []string) bool {
+	if len(previous.Diagnostics) != 0 {
+		return false
 	}
 	deleted := pathSet(deletedPaths)
 	changed := pathSet(changedPaths)
+	if len(changed) > 1 || len(deleted) > 1 || len(changed)+len(deleted) == 0 {
+		return false
+	}
+	for key := range changed {
+		if deleted[key] {
+			return false
+		}
+	}
+	return true
+}
+
+func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, deletedPaths []string, identityOps incrementalFileIdentityOps, p project.Project) (idx Index, ok bool) {
+	if !incrementalUpdateShapeSupported(previous, changedPaths, deletedPaths) {
+		return Index{}, false
+	}
+	deleted := pathSet(deletedPaths)
+	changed := pathSet(changedPaths)
+	owners, ownersOK := incrementalSourceOwners(previous, p)
+	if !ownersOK {
+		return Index{}, false
+	}
+	var changedSource incrementalResolvedSource
+	var deletedSource incrementalResolvedSource
+	if len(changed) == 1 {
+		for path := range changed {
+			var resolved bool
+			changedSource, resolved = resolveIncrementalSource(owners, path, true)
+			if !resolved {
+				return Index{}, false
+			}
+		}
+	}
+	if len(deleted) == 1 {
+		for path := range deleted {
+			if _, err := identityOps.lstat(path); !os.IsNotExist(err) {
+				return Index{}, false
+			}
+			var resolved bool
+			deletedSource, resolved = resolveIncrementalSource(owners, path, false)
+			if !resolved {
+				return Index{}, false
+			}
+		}
+	}
+	if len(changed) == 1 && len(deleted) == 1 {
+		if !sameIncrementalSourceMetadata(changedSource.owner.metadata, deletedSource.owner.metadata) || changedSource.packagePath != deletedSource.packagePath || !strings.EqualFold(filepath.Ext(changedSource.path), filepath.Ext(deletedSource.path)) {
+			return Index{}, false
+		}
+	}
+
+	idx = Index{
+		Project:               previous.Project,
+		Objects:               previous.Objects,
+		CustomMetadataRecords: previous.CustomMetadataRecords,
+		CodeIntelSymbols:      previous.CodeIntelSymbols,
+		CodeIntelUses:         previous.CodeIntelUses,
+		Dependencies:          previous.Dependencies,
+		projectIdentity:       previous.projectIdentity,
+		sourceDigests:         previous.sourceDigests,
+	}
+	for path := range deleted {
+		idx.sourceDigests = idx.sourceDigests.withoutSource(path)
+	}
+	identityPathByRequestedKey := make(map[string]string)
+	ambiguousIdentity := false
+	recordFileIdentity := func(key, path string) {
+		if len(changed) == 0 {
+			return
+		}
+		if existing, exists := identityPathByRequestedKey[key]; exists {
+			if existing != path {
+				ambiguousIdentity = true
+			}
+			return
+		}
+		identityPathByRequestedKey[key] = path
+	}
+	sameTypeMetadata := func(typ TypeSymbol, metadata incrementalSourceMetadata) bool {
+		return typ.Namespace == metadata.namespace && typ.SourceRoot == metadata.root && typ.Version == metadata.version && typ.Dependency == metadata.dependency && reflect.DeepEqual(typ.SourceNamespaceRemaps, metadata.namespaceRemaps)
+	}
+	sameTriggerMetadata := func(trigger TriggerSymbol, metadata incrementalSourceMetadata) bool {
+		return trigger.Namespace == metadata.namespace && trigger.Dependency == metadata.dependency && reflect.DeepEqual(trigger.SourceNamespaceRemaps, metadata.namespaceRemaps)
+	}
+	knownChanged := false
+	knownDeleted := false
+	oldChangedTypes := 0
+	oldDeletedTypes := 0
+	oldChangedTriggers := 0
+	oldDeletedTriggers := 0
+	previousTriggerKeys := make(map[string]bool, len(previous.Triggers))
+	for _, trigger := range previous.Triggers {
+		key := namespaceTypeKey(trigger.Namespace, trigger.Name)
+		if previousTriggerKeys[key] {
+			return Index{}, false
+		}
+		previousTriggerKeys[key] = true
+	}
+	for _, typ := range previous.Types {
+		key := cleanFilePath(typ.File)
+		isSource := !typ.Artifact && typ.File != "" && strings.HasSuffix(strings.ToLower(typ.File), ".cls")
+		if !deleted[key] && isSource {
+			recordFileIdentity(key, typ.File)
+		}
+		if changed[key] {
+			if !isSource || !sameTypeMetadata(typ, changedSource.owner.metadata) {
+				return Index{}, false
+			}
+			knownChanged = true
+			oldChangedTypes++
+		}
+		if deleted[key] {
+			if !isSource || !sameTypeMetadata(typ, deletedSource.owner.metadata) {
+				return Index{}, false
+			}
+			knownDeleted = true
+			oldDeletedTypes++
+		}
+	}
+	for _, trigger := range previous.Triggers {
+		key := cleanFilePath(trigger.File)
+		isSource := trigger.File != "" && strings.HasSuffix(strings.ToLower(trigger.File), ".trigger")
+		if !deleted[key] && isSource {
+			recordFileIdentity(key, trigger.File)
+		}
+		if changed[key] {
+			if !isSource || !sameTriggerMetadata(trigger, changedSource.owner.metadata) {
+				return Index{}, false
+			}
+			knownChanged = true
+			oldChangedTriggers++
+		}
+		if deleted[key] {
+			if !isSource || !sameTriggerMetadata(trigger, deletedSource.owner.metadata) {
+				return Index{}, false
+			}
+			knownDeleted = true
+			oldDeletedTriggers++
+		}
+	}
+	if len(deleted) == 1 && !knownDeleted {
+		return Index{}, false
+	}
+	if len(changed) == 1 && len(deleted) == 1 && knownChanged {
+		return Index{}, false
+	}
+	if len(changed) == 1 {
+		key := cleanFilePath(changedSource.path)
+		recordFileIdentity(key, changedSource.path)
+		if ambiguousIdentity {
+			return Index{}, false
+		}
+		identityByRequestedKey := make(map[string]os.FileInfo, len(identityPathByRequestedKey))
+		for requestedKey, path := range identityPathByRequestedKey {
+			info, err := identityOps.stat(path)
+			if err != nil {
+				return Index{}, false
+			}
+			identityByRequestedKey[requestedKey] = info
+		}
+		identity, exists := identityByRequestedKey[key]
+		if !exists {
+			return Index{}, false
+		}
+		for requestedKey, candidateIdentity := range identityByRequestedKey {
+			if requestedKey != key && identityOps.sameFile(identity, candidateIdentity) {
+				return Index{}, false
+			}
+		}
+	}
+
 	seenTypes := make(map[string]TypeSymbol)
 	for _, typ := range previous.Types {
 		if deleted[cleanFilePath(typ.File)] || changed[cleanFilePath(typ.File)] {
 			continue
 		}
-		key := strings.ToLower(typ.Name)
+		key := namespaceTypeKey(typ.Namespace, typ.Name)
+		if _, exists := seenTypes[key]; exists {
+			return Index{}, false
+		}
 		seenTypes[key] = typ
 		idx.Types = append(idx.Types, typ)
 	}
+	seenTriggers := make(map[string]bool, len(previous.Triggers)+1)
 	for _, trigger := range previous.Triggers {
 		if deleted[cleanFilePath(trigger.File)] || changed[cleanFilePath(trigger.File)] {
 			continue
 		}
+		seenTriggers[namespaceTypeKey(trigger.Namespace, trigger.Name)] = true
 		idx.Triggers = append(idx.Triggers, trigger)
 	}
-	for _, path := range changedPaths {
-		data, err := os.ReadFile(path)
+	newTypes := 0
+	newTriggers := 0
+	if len(changed) == 1 {
+		path := changedSource.path
+		data, err := os.ReadFile(path) // #nosec G304 -- path is the single changed source already admitted to the loaded project index.
 		if err != nil {
-			idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
-				Severity: diagnostic.Error,
-				Code:     "GLADETYPE000",
-				Message:  err.Error(),
-				File:     path,
-			})
-			continue
+			return Index{}, false
 		}
-		source := project.NormalizeApexNamespaceTokens(string(data), previous.Project.Namespace)
+		idx.sourceDigests = idx.sourceDigests.withSourceDigest(path, data)
+		metadata := changedSource.owner.metadata
+		source := project.NormalizeApexNamespaceTokens(string(data), metadata.namespace)
+		source = namespaceremap.ApplySource(metadata.namespaceRemaps, source)
+		parser := apexast.NewParser()
 		file := parser.ParseSource(path, source)
-		idx.Diagnostics = append(idx.Diagnostics, file.Diagnostics...)
 		if len(file.Diagnostics) > 0 {
-			continue
+			return Index{}, false
 		}
 		for _, decl := range file.Declarations {
 			switch decl.Kind {
 			case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
 				for _, sym := range typeSymbolsFromDeclaration(path, decl, "", false, source) {
-					key := strings.ToLower(sym.Name)
-					if previous, ok := seenTypes[key]; ok {
-						idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous))
+					sym.Namespace = metadata.namespace
+					sym.SourceNamespaceRemaps = cloneIncrementalNamespaceRemaps(metadata.namespaceRemaps)
+					sym.SourceRoot = metadata.root
+					sym.Version = metadata.version
+					sym.Dependency = metadata.dependency
+					key := namespaceTypeKey(sym.Namespace, sym.Name)
+					if _, exists := seenTypes[key]; exists {
+						return Index{}, false
 					} else {
 						seenTypes[key] = sym
 					}
 					idx.Types = append(idx.Types, sym)
+					newTypes++
 				}
 			case apexast.DeclarationTrigger:
-				idx.Triggers = append(idx.Triggers, TriggerSymbol{
-					Name:       decl.Name,
-					ObjectName: decl.ObjectName,
-					Events:     decl.Events,
-					File:       path,
-					Range:      decl.Range,
-				})
+				trigger := TriggerSymbol{
+					Name:                  decl.Name,
+					Namespace:             metadata.namespace,
+					SourceNamespaceRemaps: cloneIncrementalNamespaceRemaps(metadata.namespaceRemaps),
+					ObjectName:            decl.ObjectName,
+					Events:                decl.Events,
+					File:                  path,
+					Dependency:            metadata.dependency,
+					Range:                 decl.Range,
+				}
+				triggerKey := namespaceTypeKey(trigger.Namespace, trigger.Name)
+				if seenTriggers[triggerKey] {
+					return Index{}, false
+				}
+				seenTriggers[triggerKey] = true
+				idx.Triggers = append(idx.Triggers, trigger)
+				newTriggers++
 			}
 		}
+		extension := strings.ToLower(filepath.Ext(path))
+		if extension == ".cls" {
+			if newTypes == 0 || newTriggers != 0 {
+				return Index{}, false
+			}
+		} else if extension == ".trigger" {
+			if newTypes != 0 || newTriggers != 1 {
+				return Index{}, false
+			}
+		} else {
+			return Index{}, false
+		}
+	}
+	if len(changed) == 1 && len(deleted) == 0 && knownChanged && changedSource.owner.metadata.dependency && oldChangedTypes != newTypes {
+		return Index{}, false
+	}
+	if len(changed) == 1 && len(deleted) == 0 && knownChanged && oldChangedTriggers != newTriggers {
+		return Index{}, false
+	}
+	if len(changed) == 1 && len(deleted) == 1 && (oldDeletedTypes != newTypes || oldDeletedTriggers != newTriggers) {
+		return Index{}, false
+	}
+	dependencyIndex := -1
+	dependencyTypeDelta := 0
+	if len(changed) == 1 && changedSource.owner.metadata.dependency {
+		dependencyIndex = changedSource.owner.dependencyIndex
+		dependencyTypeDelta += newTypes - oldChangedTypes
+	}
+	if len(deleted) == 1 && deletedSource.owner.metadata.dependency {
+		if dependencyIndex != -1 && dependencyIndex != deletedSource.owner.dependencyIndex {
+			return Index{}, false
+		}
+		dependencyIndex = deletedSource.owner.dependencyIndex
+		dependencyTypeDelta -= oldDeletedTypes
+	}
+	if dependencyTypeDelta != 0 {
+		if dependencyIndex < 0 || dependencyIndex >= len(previous.Dependencies) || previous.Dependencies[dependencyIndex].ApexTypes+dependencyTypeDelta < 0 {
+			return Index{}, false
+		}
+		idx.Dependencies = append([]DependencyInfo(nil), previous.Dependencies...)
+		idx.Dependencies[dependencyIndex].ApexTypes += dependencyTypeDelta
 	}
 	sort.Slice(idx.Types, func(i, j int) bool {
+		if idx.Types[i].Namespace != idx.Types[j].Namespace {
+			return idx.Types[i].Namespace < idx.Types[j].Namespace
+		}
 		return idx.Types[i].Name < idx.Types[j].Name
 	})
 	sort.Slice(idx.Triggers, func(i, j int) bool {
+		if idx.Triggers[i].Namespace != idx.Triggers[j].Namespace {
+			return idx.Triggers[i].Namespace < idx.Triggers[j].Namespace
+		}
 		return idx.Triggers[i].Name < idx.Triggers[j].Name
 	})
-	return idx
+	return idx, true
 }
 
 func (idx Index) HasErrors() bool {

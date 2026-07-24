@@ -1,0 +1,8 @@
+{"Action":"run","Package":"example.test/pkg","Test":"TestDeliberateFailure"}
+{"Action":"output","Package":"example.test/pkg","Test":"TestDeliberateFailure","Output":"=== RUN   TestDeliberateFailure\n"}
+{"Action":"output","Package":"example.test/pkg","Test":"TestDeliberateFailure","Output":"    failure_test.go:16: diagnostic log line\n"}
+{"Action":"output","Package":"example.test/pkg","Test":"TestDeliberateFailure","Output":"    failure_test.go:17: values differ: got 1, want 2\n"}
+{"Action":"output","Package":"example.test/pkg","Test":"TestDeliberateFailure","Output":"--- FAIL: TestDeliberateFailure (0.00s)\n"}
+{"Action":"fail","Package":"example.test/pkg","Test":"TestDeliberateFailure","Elapsed":0}
+{"Action":"output","Package":"example.test/pkg","Output":"FAIL\texample.test/pkg\t0.001s\n"}
+{"Action":"fail","Package":"example.test/pkg","Elapsed":0.001}

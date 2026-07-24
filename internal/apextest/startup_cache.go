@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/startupcache"
@@ -15,7 +16,7 @@ import (
 
 var disableDiskCache atomic.Bool
 
-const testRuntimeCacheABI = "apextest-runtime-v4"
+const testRuntimeCacheABI = "apextest-runtime-v5"
 
 func DisableDiskCacheForTesting() func() {
 	wasDisabled := disableDiskCache.Load()
@@ -30,6 +31,11 @@ func diskCacheEnabled() bool {
 }
 
 func tryLoadDiskRuntime(index typesys.Index) (runtimeCacheEntry, bool) {
+	key := runtimeKey(index)
+	return tryLoadDiskRuntimeWithSourceDigests(index, nil, key)
+}
+
+func tryLoadDiskRuntimeWithSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet, key runtimeCacheKey) (runtimeCacheEntry, bool) {
 	if !diskCacheEnabled() {
 		return runtimeCacheEntry{}, false
 	}
@@ -38,14 +44,32 @@ func tryLoadDiskRuntime(index typesys.Index) (runtimeCacheEntry, bool) {
 		return runtimeCacheEntry{}, false
 	}
 	root = filepath.Clean(root)
-	entry, err := startupcache.Read(root, startupcache.SubdirTest)
-	if err != nil || entry == nil || !startupcache.FreshRuntime(entry, root, startupcache.Version, testRuntimeCacheABI) {
+	entry, err := startupcache.ReadFreshRuntimeWithSourceDigests(root, startupcache.SubdirTest, startupcache.Version, testRuntimeCacheABI, string(key), digests)
+	if err != nil || entry == nil {
 		return runtimeCacheEntry{}, false
 	}
-	return runtimeCacheEntryFromStartup(*entry), true
+	return runtimeCacheEntryFromStartup(*entry)
 }
 
-func persistDiskRuntime(index typesys.Index, entry runtimeCacheEntry) {
+func tryLoadDiskRuntimeWithPerf(index typesys.Index, digests *typesys.SourceDigestSet, key runtimeCacheKey, counters *runPerfCounters) (runtimeCacheEntry, bool) {
+	if !diskCacheEnabled() {
+		return runtimeCacheEntry{}, false
+	}
+	root := strings.TrimSpace(index.Project.Root)
+	if root == "" {
+		return runtimeCacheEntry{}, false
+	}
+	root = filepath.Clean(root)
+	entry, stats, err := startupcache.ReadFreshRuntimeWithSourceDigestsAndStats(root, startupcache.SubdirTest, startupcache.Version, testRuntimeCacheABI, string(key), digests)
+	counters.phases.cacheValidateNS.Add(stats.ValidationNS)
+	counters.phases.cacheDecodeNS.Add(stats.DecodeNS)
+	if err != nil || entry == nil {
+		return runtimeCacheEntry{}, false
+	}
+	return runtimeCacheEntryFromStartupWithPerf(*entry, counters)
+}
+
+func persistDiskRuntime(index typesys.Index, digests *typesys.SourceDigestSet, key runtimeCacheKey, org storage.OrgState, entry runtimeCacheEntry) {
 	if !diskCacheEnabled() {
 		return
 	}
@@ -57,17 +81,42 @@ func persistDiskRuntime(index typesys.Index, entry runtimeCacheEntry) {
 	if err != nil {
 		return
 	}
-	cacheEntry := startupcache.NewEntry(root, p, index, entry.Org, startupcache.CompiledRuntime{
+	cacheEntry := startupcache.NewEntryWithSourceDigests(root, p, index, digests, org, startupcache.CompiledRuntime{
 		Methods:   entry.Methods,
 		Classes:   entry.Classes,
 		Triggers:  entry.Triggers,
 		PageNames: entry.PageNames,
 	})
 	cacheEntry.RuntimeABI = testRuntimeCacheABI
+	cacheEntry.RuntimeKey = string(key)
 	_ = startupcache.Write(&cacheEntry, startupcache.SubdirTest)
 }
 
-func runtimeCacheEntryFromStartup(entry startupcache.Entry) runtimeCacheEntry {
+func persistDiskRuntimeWithPerf(index typesys.Index, digests *typesys.SourceDigestSet, key runtimeCacheKey, org storage.OrgState, entry runtimeCacheEntry, counters *runPerfCounters) {
+	if !diskCacheEnabled() {
+		return
+	}
+	root := strings.TrimSpace(index.Project.Root)
+	if root == "" {
+		return
+	}
+	p, err := project.Load(root)
+	if err != nil {
+		return
+	}
+	cacheEntry := startupcache.NewEntryWithSourceDigests(root, p, index, digests, org, startupcache.CompiledRuntime{
+		Methods:   entry.Methods,
+		Classes:   entry.Classes,
+		Triggers:  entry.Triggers,
+		PageNames: entry.PageNames,
+	})
+	cacheEntry.RuntimeABI = testRuntimeCacheABI
+	cacheEntry.RuntimeKey = string(key)
+	stats, _ := startupcache.WriteWithStats(&cacheEntry, startupcache.SubdirTest)
+	counters.phases.cacheEncodeNS.Add(stats.EncodeNS)
+}
+
+func runtimeCacheEntryFromStartup(entry startupcache.Entry) (runtimeCacheEntry, bool) {
 	runtime := CompiledProjectRuntime{
 		Methods:   entry.Runtime.Methods,
 		Classes:   entry.Runtime.Classes,
@@ -80,19 +129,59 @@ func runtimeCacheEntryFromStartup(entry startupcache.Entry) runtimeCacheEntry {
 	registerVisualforcePages(baseMachine, pageNames)
 	baseErr := registerBaseRuntime(baseMachine, runtime.Methods, runtime.Classes, runtime.Triggers)
 	org := entry.Org
-	template := storage.NewRuntimeTemplate(org)
-	vm.PrimeRuntimeTemplateSchema(&template)
-	return runtimeCacheEntry{
+	return validateRestoredRuntimeEntry(runtimeCacheEntry{
 		Methods:       runtime.Methods,
 		Classes:       runtime.Classes,
 		Triggers:      runtime.Triggers,
 		TriggerErrors: nil,
-		Org:           org,
-		Template:      template,
 		PageNames:     pageNames,
-		BaseMachine:   baseMachine,
 		BaseErr:       baseErr,
+		restored:      vm.NewRestoredRuntimeTemplate(org, baseMachine),
+	})
+}
+
+func runtimeCacheEntryFromStartupWithPerf(entry startupcache.Entry, counters *runPerfCounters) (runtimeCacheEntry, bool) {
+	projectStarted := time.Now()
+	runtime := CompiledProjectRuntime{
+		Methods:   entry.Runtime.Methods,
+		Classes:   entry.Runtime.Classes,
+		Triggers:  entry.Runtime.Triggers,
+		PageNames: entry.Runtime.PageNames,
 	}
+	pageNames := append([]string(nil), runtime.PageNames...)
+	baseMachine := vm.New(nil)
+	baseMachine.SetTraceEnabled(false)
+	registerVisualforcePages(baseMachine, pageNames)
+	baseErr := registerBaseRuntime(baseMachine, runtime.Methods, runtime.Classes, runtime.Triggers)
+	counters.phases.projectCompileNS.Add(time.Since(projectStarted).Nanoseconds())
+
+	orgStarted := time.Now()
+	org := entry.Org
+	restored := vm.NewRestoredRuntimeTemplate(org, baseMachine)
+	counters.phases.orgBuildNS.Add(time.Since(orgStarted).Nanoseconds())
+	return validateRestoredRuntimeEntry(runtimeCacheEntry{
+		Methods:       runtime.Methods,
+		Classes:       runtime.Classes,
+		Triggers:      runtime.Triggers,
+		TriggerErrors: nil,
+		PageNames:     pageNames,
+		BaseErr:       baseErr,
+		restored:      restored,
+	})
+}
+
+func validateRestoredRuntimeEntry(entry runtimeCacheEntry) (runtimeCacheEntry, bool) {
+	if !entry.restored.Valid() {
+		return runtimeCacheEntry{}, false
+	}
+	// Disk payloads are decoded and rebuilt outside the in-memory compiler
+	// boundary. Validate their complete structure exactly once before they can
+	// be published for narrow runner projections. The marker is not serialized.
+	if _, ok := cloneRuntimeCacheEntryChecked(entry); !ok {
+		return runtimeCacheEntry{}, false
+	}
+	entry.executionProjectionValidated = true
+	return entry, true
 }
 
 type standardFieldScanResult struct {

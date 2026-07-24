@@ -1235,6 +1235,29 @@ System.assertEquals(Schema.SOAPType.ID, ownerField.getDescribe().getSOAPType());
 	}
 }
 
+func TestExecCareProgramDescribeUsesStandardCatalogRelationship(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeFieldResult parentProgram = CareProgram.SObjectType.getDescribe().fields.getMap().get('ParentProgramId').getDescribe();
+System.assertEquals('Care Program', CareProgram.SObjectType.getDescribe().getLabel());
+System.assertEquals('ParentProgram', parentProgram.getRelationshipName());
+System.assertEquals(1, parentProgram.getReferenceTo().size());
+System.assertEquals(CareProgram.SObjectType, parentProgram.getReferenceTo()[0]);
+System.assertEquals(true, parentProgram.isNillable());
+System.assertEquals(true, parentProgram.isCreateable());
+System.assertEquals(true, parentProgram.isUpdateable());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "CareProgram")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializedCustomSObjectGetByFieldToken(t *testing.T) {
 	program, err := CompileAnonymous(`
 OrderItem__c row = (OrderItem__c)JSON.deserialize('{"TransactionDate__c":"2026-05-02"}', OrderItem__c.class);

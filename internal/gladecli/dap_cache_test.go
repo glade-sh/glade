@@ -10,7 +10,7 @@ import (
 	"github.com/glade-sh/glade/internal/startupcache"
 )
 
-func TestLoadDAPStartupStateCachesAndReusesState(t *testing.T) {
+func TestLoadDAPStartupStateCachesReusesAndInvalidates(t *testing.T) {
 	t.Parallel()
 
 	root := t.TempDir()
@@ -26,14 +26,7 @@ func TestLoadDAPStartupStateCachesAndReusesState(t *testing.T) {
 		t.Fatalf("expected methods in first cached runtime")
 	}
 
-	cacheOne, err := os.ReadFile(cachePath)
-	if err != nil {
-		t.Fatalf("cache file missing after first load: %v", err)
-	}
-	var parsedOne startupcache.Entry
-	if err := json.Unmarshal(cacheOne, &parsedOne); err != nil {
-		t.Fatalf("parse first cache: %v", err)
-	}
+	parsedOne := readDAPCacheEntry(t, cachePath)
 	if parsedOne.BuiltAt == "" {
 		t.Fatal("cache did not record builtAt")
 	}
@@ -42,47 +35,17 @@ func TestLoadDAPStartupStateCachesAndReusesState(t *testing.T) {
 	}
 
 	time.Sleep(2 * time.Millisecond)
-	_, _, err = loadDAPStartupState(root)
+	_, runtimeTwo, err := loadDAPStartupState(root)
 	if err != nil {
 		t.Fatalf("second load: %v", err)
 	}
-
-	cacheTwo, err := os.ReadFile(cachePath)
-	if err != nil {
-		t.Fatalf("cache file missing after second load: %v", err)
+	if len(runtimeTwo.Methods) == 0 {
+		t.Fatal("expected methods in reused cached runtime")
 	}
-	var parsedTwo startupcache.Entry
-	if err := json.Unmarshal(cacheTwo, &parsedTwo); err != nil {
-		t.Fatalf("parse second cache: %v", err)
-	}
+	parsedTwo := readDAPCacheEntry(t, cachePath)
 
 	if parsedOne.BuiltAt != parsedTwo.BuiltAt {
 		t.Fatalf("cache was rebuilt unexpectedly (builtAt changed from %s to %s)", parsedOne.BuiltAt, parsedTwo.BuiltAt)
-	}
-}
-
-func TestLoadDAPStartupStateInvalidatesCacheOnProjectChange(t *testing.T) {
-	t.Parallel()
-
-	root := t.TempDir()
-	writeTestProject(t, root)
-
-	cachePath := filepath.Join(root, ".glade", "dap", "startup.json")
-	_, _, err := loadDAPStartupState(root)
-	if err != nil {
-		t.Fatalf("initial load: %v", err)
-	}
-
-	cacheBefore, err := os.ReadFile(cachePath)
-	if err != nil {
-		t.Fatalf("cache file missing after initial load: %v", err)
-	}
-	var parsedBefore startupcache.Entry
-	if err := json.Unmarshal(cacheBefore, &parsedBefore); err != nil {
-		t.Fatalf("parse initial cache: %v", err)
-	}
-	if parsedBefore.BuiltAt == "" {
-		t.Fatal("initial builtAt empty")
 	}
 
 	source := filepath.Join(root, "force-app", "main", "classes", "MathUtil.cls")
@@ -94,20 +57,35 @@ func TestLoadDAPStartupStateInvalidatesCacheOnProjectChange(t *testing.T) {
 		t.Fatalf("edit source for invalidation: %v", err)
 	}
 	time.Sleep(2 * time.Millisecond)
-	_, _, err = loadDAPStartupState(root)
+	_, runtimeThree, err := loadDAPStartupState(root)
 	if err != nil {
 		t.Fatalf("reload after edit: %v", err)
 	}
-
-	cacheAfter, err := os.ReadFile(cachePath)
-	if err != nil {
-		t.Fatalf("cache file missing after reload: %v", err)
+	if len(runtimeThree.Methods) == 0 {
+		t.Fatal("expected methods in rebuilt cached runtime")
 	}
-	var parsedAfter startupcache.Entry
-	if err := json.Unmarshal(cacheAfter, &parsedAfter); err != nil {
-		t.Fatalf("parse reloaded cache: %v", err)
+	parsedThree := readDAPCacheEntry(t, cachePath)
+	if parsedThree.BuiltAt == "" {
+		t.Fatal("rebuilt cache did not record builtAt")
 	}
-	if parsedBefore.BuiltAt == parsedAfter.BuiltAt {
+	if len(parsedThree.Runtime.Methods) == 0 {
+		t.Fatal("expected compiled runtime methods persisted in rebuilt DAP cache")
+	}
+	if parsedOne.BuiltAt == parsedThree.BuiltAt || parsedTwo.BuiltAt == parsedThree.BuiltAt {
 		t.Fatalf("cache was not rebuilt after source change")
 	}
+}
+
+func readDAPCacheEntry(t *testing.T, path string) startupcache.Entry {
+	t.Helper()
+
+	contents, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read DAP cache entry: %v", err)
+	}
+	var entry startupcache.Entry
+	if err := json.Unmarshal(contents, &entry); err != nil {
+		t.Fatalf("parse DAP cache entry: %v", err)
+	}
+	return entry
 }

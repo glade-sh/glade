@@ -267,8 +267,6 @@ func runDB(ctx context.Context, args []string, w io.Writer, progressW io.Writer)
 	}
 }
 
-var dbUIOpenURL = openURL
-
 type dbUIOptions struct {
 	addr      string
 	dbPath    string
@@ -287,6 +285,14 @@ type dbUIReadyFile struct {
 }
 
 func runDBUI(ctx context.Context, args []string, w io.Writer, progressW io.Writer) error {
+	return runDBUIWithOpenURL(ctx, args, w, progressW, openURL)
+}
+
+func runDBUIWithOpenURL(ctx context.Context, args []string, w io.Writer, progressW io.Writer, opener func(string) error) error {
+	return runDBUIWithOpenURLAndListen(ctx, args, w, progressW, opener, net.Listen)
+}
+
+func runDBUIWithOpenURLAndListen(ctx context.Context, args []string, w io.Writer, progressW io.Writer, opener func(string) error, listen func(string, string) (net.Listener, error)) error {
 	opts, err := parseDBUIOptions(args)
 	if err != nil {
 		return err
@@ -307,7 +313,7 @@ func runDBUI(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	}
 	defer store.Close()
 	renderer.Render(cliui.Event{Kind: cliui.EventPhaseTick, Phase: "db ui", Label: "Starting listener", Current: 1, Total: 2})
-	listener, err := net.Listen("tcp", opts.addr)
+	listener, err := listen("tcp", opts.addr)
 	if err != nil {
 		renderer.Finish(cliui.Result{OK: false, Label: "db ui failed"})
 		return err
@@ -322,7 +328,7 @@ func runDBUI(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		}
 	}
 	if opts.open {
-		if err := dbUIOpenURL(url); err != nil {
+		if err := opener(url); err != nil {
 			_ = listener.Close()
 			renderer.Finish(cliui.Result{OK: false, Label: "db ui failed"})
 			return err

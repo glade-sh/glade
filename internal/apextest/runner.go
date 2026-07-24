@@ -2,6 +2,7 @@ package apextest
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"encoding/xml"
@@ -49,10 +50,23 @@ type Options struct {
 	Parallelism         int
 	ParallelMethods     bool
 	NoDiskCache         bool
-	ClassDurationMS     map[string]int64
-	MethodDurationMS    map[string]int64
-	PerfCounters        bool
-	Progress            func(TestProgress)
+	// RestoredRuntimeMultiWorker is an internal, default-off experiment that
+	// permits disk-restored runtimes with parallel method workers. Product
+	// configuration and CLI surfaces intentionally do not expose it.
+	RestoredRuntimeMultiWorker bool
+	ClassDurationMS            map[string]int64
+	MethodDurationMS           map[string]int64
+	PerfCounters               bool
+	PreRunPhaseDurations       PreRunPhaseDurations
+	SourceDigests              *typesys.SourceDigestSet
+	Progress                   func(TestProgress)
+}
+
+type PreRunPhaseDurations struct {
+	ProjectLoad time.Duration
+	SchemaLoad  time.Duration
+	IndexBuild  time.Duration
+	Discover    time.Duration
 }
 
 type permissionSetMetadata struct {
@@ -192,17 +206,29 @@ func RunContext(ctx context.Context, index typesys.Index, opts Options) testrepo
 type runExecution struct {
 	diskCacheEnabled bool
 	counters         *runPerfCounters
+	vmPerf           *vm.PerfRecorder
 }
 
 func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cases []TestCase) testreport.Run {
-	storage.ResetCloneStats()
-	vm.ResetPerfCounters()
-	vm.SetPerfCountersEnabled(opts.PerfCounters)
 	runState := runExecution{
 		diskCacheEnabled: useDiskRuntimeCache(opts),
-		counters:         newRunPerfCounters(),
+		counters:         newRunPerfCounters(opts.PerfCounters),
 	}
-	defer publishPerfCounters(runState.counters)
+	if opts.PerfCounters {
+		runState.vmPerf = vm.NewPerfRecorder()
+	}
+	defer func() {
+		if runState.vmPerf != nil {
+			runState.counters.captureVMPerf(runState.vmPerf.Snapshot())
+		}
+		publishPerfCounters(runState.counters)
+	}()
+	if runState.counters.enabled {
+		runState.counters.phases.projectLoadNS.Store(opts.PreRunPhaseDurations.ProjectLoad.Nanoseconds())
+		runState.counters.phases.schemaLoadNS.Store(opts.PreRunPhaseDurations.SchemaLoad.Nanoseconds())
+		runState.counters.phases.indexBuildNS.Store(opts.PreRunPhaseDurations.IndexBuild.Nanoseconds())
+		runState.counters.phases.discoverNS.Store(opts.PreRunPhaseDurations.Discover.Nanoseconds())
+	}
 	started := time.Now()
 	emitProgress := opts.Progress != nil
 	if cases == nil {
@@ -212,30 +238,84 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_start"})
 	}
-	runtimeKey, runtime := runtimeFromIndex(index, sources, runState.diskCacheEnabled)
-	setups, setupErrors, setupInvokePrograms, setupInvokeErrors := compileTestSetupsCached(index, runtimeKey, testCaseClassSet(cases), sources)
+	var runtimeKey runtimeCacheKey
+	var runtime runtimeExecutionView
+	var runtimeErr error
+	if runState.counters.enabled {
+		runtimeKey, runtime, runtimeErr = runtimeFromIndexForExecutionWithSourceDigestsAndPerf(index, opts.SourceDigests, sources, runState.diskCacheEnabled, runState.counters)
+	} else {
+		runtimeKey, runtime, runtimeErr = runtimeFromIndexForExecutionWithSourceDigests(index, opts.SourceDigests, sources, runState.diskCacheEnabled)
+	}
+	if runtimeErr != nil {
+		return compileErrorRun(cases, runtimeErr, started, opts)
+	}
+	var testCompileStarted time.Time
+	if runState.counters.enabled {
+		testCompileStarted = time.Now()
+	}
+	setups, setupErrors, setupInvokePrograms, setupInvokeErrors, setupSourceErr := compileTestSetupsCached(index, runtimeKey, testCaseClassSet(cases), sources)
+	if setupSourceErr != nil {
+		return compileErrorRun(cases, setupSourceErr, started, opts)
+	}
 	triggerErrors := runtime.TriggerErrors
-	testMethods, testMethodErrors, testInvokePrograms, testInvokeErrors := compileTestsCached(index, runtimeKey, cases, sources)
+	testMethods, testMethodErrors, testInvokePrograms, testInvokeErrors, testSourceErr := compileTestsCached(index, runtimeKey, cases, sources)
+	if testSourceErr != nil {
+		return compileErrorRun(cases, testSourceErr, started, opts)
+	}
+	if runState.counters.enabled {
+		runState.counters.phases.testCompileNS.Add(time.Since(testCompileStarted).Nanoseconds())
+	}
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_done", DurationMS: time.Since(started).Milliseconds(), Status: "pass"})
 	}
+	var orgSetupStarted time.Time
+	if runState.counters.enabled {
+		orgSetupStarted = time.Now()
+	}
 	recordStorageCloneRuntime(runState.counters)
-	org := runtime.Template.CloneRuntimeOrg()
+	recordCloneReason("", "run-base", "org-template", runState.counters)
+	org := runtime.restored.CloneOrg()
 	initializeTestOrg(&org)
-	baseMachine := cloneRuntimeMachine(runtime.BaseMachine, runState.counters)
+	if runState.counters.enabled {
+		runState.counters.phases.orgBuildNS.Add(time.Since(orgSetupStarted).Nanoseconds())
+	}
+	recordCloneReason("", "run-base", "vm-runtime", runState.counters)
+	machineCloneStarted := time.Now()
+	baseMachine := runtime.restored.CloneMachine(nil)
+	recordCloneRuntimeMachineDuration(time.Since(machineCloneStarted), runState.counters)
+	baseMachine.SetPerfRecorder(runState.vmPerf)
 	baseMachine.SetTraceEnabled(false)
 	baseMachine.EnableTestContext()
 	// Prime the schema stamp so per-test clones inherit it and reuse the shared
 	// schema-describe caches instead of rebuilding them on every clone.
+	if runState.counters.enabled {
+		orgSetupStarted = time.Now()
+	}
 	baseMachine.PrimeMetadataSchema(&org)
+	if runState.counters.enabled {
+		runState.counters.phases.orgBuildNS.Add(time.Since(orgSetupStarted).Nanoseconds())
+	}
 	baseRuntimeErr := runtime.BaseErr
 	if baseRuntimeErr == nil {
+		if runState.counters.enabled {
+			testCompileStarted = time.Now()
+		}
 		baseRuntimeErr = registerTestRuntime(baseMachine, append(flattenSetupMethods(setups), methodMapValues(testMethods)...))
+		if runState.counters.enabled {
+			runState.counters.phases.testCompileNS.Add(time.Since(testCompileStarted).Nanoseconds())
+		}
 	}
 	// Freeze the alias/class lookup into a shared immutable index now that all
 	// classes and test methods are registered. Per-test clones then share it by
 	// pointer instead of rebuilding it on every CloneRuntime.
+	var freezeStarted time.Time
+	if runState.counters.enabled {
+		freezeStarted = time.Now()
+	}
 	baseMachine.FreezeClassLookup()
+	if runState.counters.enabled {
+		runState.counters.phases.projectCompileNS.Add(time.Since(freezeStarted).Nanoseconds())
+	}
 	suites := make(map[string][]testreport.Case)
 	order := make([]string, 0)
 	classSeen := make(map[string]bool)
@@ -274,6 +354,7 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 			})
 		}
 	}
+	var reportStarted time.Time
 	if noSetupFastPath(setups, setupErrors, setupInvokeErrors) && allClassesHaveSingleMethod(suiteIndexes) {
 		for i := range planned {
 			if results[i].Status != "" {
@@ -291,6 +372,9 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	}
 	runTestPlansWithSetups(ctx, order, suiteIndexes, planned, results, baseMachine, baseRuntimeErr, setups, setupErrors, setupInvokePrograms, setupInvokeErrors, triggerErrors, org, opts, runState.counters)
 assemble:
+	if runState.counters.enabled {
+		reportStarted = time.Now()
+	}
 	for className, indexes := range suiteIndexes {
 		for _, index := range indexes {
 			suites[className] = append(suites[className], results[index])
@@ -304,6 +388,44 @@ assemble:
 	for _, name := range order {
 		run.Suites = append(run.Suites, testreport.Suite{Name: name, Cases: suites[name]})
 	}
+	if runState.counters.enabled {
+		runState.counters.phases.reportAssemblyNS.Add(time.Since(reportStarted).Nanoseconds())
+	}
+	return run
+}
+
+func compileErrorRun(cases []TestCase, compileErr error, started time.Time, opts Options) testreport.Run {
+	run := testreport.Run{
+		Name:       "glade test",
+		DurationMS: time.Since(started).Milliseconds(),
+	}
+	suiteIndexes := make(map[string]int)
+	for _, testCase := range cases {
+		index, ok := suiteIndexes[testCase.ClassName]
+		if !ok {
+			index = len(run.Suites)
+			suiteIndexes[testCase.ClassName] = index
+			run.Suites = append(run.Suites, testreport.Suite{Name: testCase.ClassName})
+		}
+		result := testreport.Case{
+			ClassName:  testCase.ClassName,
+			MethodName: testCase.MethodName,
+			Status:     testreport.StatusCompileError,
+			Problem:    problem("CompileError", compileErr.Error(), testCase),
+		}
+		run.Suites[index].Cases = append(run.Suites[index].Cases, result)
+	}
+	if opts.Progress != nil {
+		reportProgress(opts, TestProgress{Event: "compile_done", DurationMS: time.Since(started).Milliseconds(), Status: "fail"})
+		for _, testCase := range cases {
+			reportProgress(opts, TestProgress{
+				Event:      "test_done",
+				ClassName:  testCase.ClassName,
+				MethodName: testCase.MethodName,
+				Status:     string(testreport.StatusCompileError),
+			})
+		}
+	}
 	return run
 }
 
@@ -311,7 +433,10 @@ func useDiskRuntimeCache(opts Options) bool {
 	if opts.NoDiskCache || !diskCacheEnabled() {
 		return false
 	}
-	return !(opts.ParallelMethods && opts.Parallelism > 1)
+	if opts.ParallelMethods && opts.Parallelism > 1 {
+		return opts.RestoredRuntimeMultiWorker
+	}
+	return true
 }
 
 type testCasePlan struct {
@@ -335,15 +460,25 @@ type testSetupResult struct {
 type runtimeCacheKey string
 
 type runtimeCacheEntry struct {
-	Methods       map[string]vm.Method
-	Classes       []vm.Class
-	Triggers      []vm.Trigger
+	Methods                      map[string]vm.Method
+	Classes                      []vm.Class
+	Triggers                     []vm.Trigger
+	TriggerErrors                []error
+	PageNames                    []string
+	BaseErr                      error
+	restored                     vm.RestoredRuntimeTemplate
+	patchAuthority               *runtimePatchAuthority
+	executionProjectionValidated bool
+}
+
+// runtimeExecutionView is the immutable subset of a compiled runtime needed by
+// RunCasesContext after project compilation. The full compiled payload remains
+// cache-owned so runner startup does not deep-clone methods, classes, triggers,
+// page names, or patch authority that it never reads.
+type runtimeExecutionView struct {
 	TriggerErrors []error
-	Org           storage.OrgState
-	Template      storage.RuntimeTemplate
-	PageNames     []string
-	BaseMachine   *vm.VM
 	BaseErr       error
+	restored      vm.RestoredRuntimeTemplate
 }
 
 type CompiledProjectRuntime struct {
@@ -377,24 +512,70 @@ var (
 )
 
 func runtimeKey(index typesys.Index) runtimeCacheKey {
+	return runtimeKeyWithSourceDigests(index, nil, os.ReadFile)
+}
+
+// RuntimeContentKey returns the exact key used by compiled-runtime caches.
+func RuntimeContentKey(index typesys.Index, digests *typesys.SourceDigestSet) string {
+	return string(runtimeKeyWithSourceDigests(index, digests, os.ReadFile))
+}
+
+func runtimeKeyWithSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error)) runtimeCacheKey {
+	var lookup func(string) ([sha256.Size]byte, bool)
+	if digests != nil {
+		lookup = digests.Digest
+	}
+	return runtimeKeyWithDigestLookup(index, lookup, readFile)
+}
+
+func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha256.Size]byte, bool), readFile func(string) ([]byte, error)) runtimeCacheKey {
+	if readFile == nil {
+		readFile = os.ReadFile
+	}
 	h := fnv.New128a()
 	write := func(s string) {
 		_, _ = h.Write([]byte(s))
 		_, _ = h.Write([]byte{0})
 	}
 	seenFiles := make(map[string]bool)
+	for _, typ := range index.Types {
+		if typ.File != "" {
+			seenFiles[typ.File] = true
+		}
+	}
+	for _, trigger := range index.Triggers {
+		if trigger.File != "" {
+			seenFiles[trigger.File] = true
+		}
+	}
+	useSnapshot := lookup != nil
+	if useSnapshot {
+		for file := range seenFiles {
+			if _, ok := lookup(file); !ok {
+				useSnapshot = false
+				break
+			}
+		}
+	}
+	clear(seenFiles)
 	writeFileBody := func(file string) {
 		if file == "" || seenFiles[file] {
 			return
 		}
 		seenFiles[file] = true
 		write("file:" + file)
-		data, err := os.ReadFile(file)
-		if err != nil {
-			write("read-error:" + err.Error())
-			return
+		var digest [sha256.Size]byte
+		if useSnapshot {
+			digest, _ = lookup(file)
+		} else {
+			data, err := readFile(file)
+			if err != nil {
+				write("read-error:" + err.Error())
+				return
+			}
+			digest = sha256.Sum256(data)
 		}
-		_, _ = h.Write(data)
+		_, _ = h.Write(digest[:])
 		_, _ = h.Write([]byte{0})
 	}
 	write(index.Project.Root)
@@ -419,41 +600,237 @@ func runtimeKey(index typesys.Index) runtimeCacheKey {
 }
 
 func cloneRuntimeCacheEntry(in runtimeCacheEntry) runtimeCacheEntry {
-	return runtimeCacheEntry{
-		Methods:       in.Methods,
-		Classes:       in.Classes,
-		Triggers:      in.Triggers,
-		TriggerErrors: in.TriggerErrors,
-		Org:           in.Org,
-		Template:      in.Template,
-		PageNames:     in.PageNames,
-		BaseMachine:   in.BaseMachine,
-		BaseErr:       in.BaseErr,
+	out, _ := cloneRuntimeCacheEntryChecked(in)
+	return out
+}
+
+func cloneRuntimeCacheEntryChecked(in runtimeCacheEntry) (runtimeCacheEntry, bool) {
+	methods, ok := runtimePatchCloneMethods(in.Methods)
+	if !ok {
+		return runtimeCacheEntry{}, false
 	}
+	var classes []vm.Class
+	if in.Classes != nil {
+		classes = make([]vm.Class, len(in.Classes))
+	}
+	for i, class := range in.Classes {
+		classes[i], ok = runtimePatchCloneClass(class)
+		if !ok {
+			return runtimeCacheEntry{}, false
+		}
+	}
+	var triggers []vm.Trigger
+	if in.Triggers != nil {
+		triggers = make([]vm.Trigger, len(in.Triggers))
+	}
+	for i, trigger := range in.Triggers {
+		program, programOK := runtimePatchCloneProgram(trigger.Program, make(map[*ir.Expr]bool), 0)
+		if !programOK {
+			return runtimeCacheEntry{}, false
+		}
+		triggers[i] = trigger
+		triggers[i].Program = program
+	}
+	var authority *runtimePatchAuthority
+	if in.patchAuthority != nil {
+		copied := *in.patchAuthority
+		if in.patchAuthority.sourceReferences != nil {
+			copied.sourceReferences = make(map[string]string, len(in.patchAuthority.sourceReferences))
+			for path, reference := range in.patchAuthority.sourceReferences {
+				copied.sourceReferences[path] = reference
+			}
+		}
+		copied.affected = runtimePatchCloneSlice(in.patchAuthority.affected)
+		authority = &copied
+	}
+	return runtimeCacheEntry{
+		Methods:        methods,
+		Classes:        classes,
+		Triggers:       triggers,
+		TriggerErrors:  runtimePatchCloneSlice(in.TriggerErrors),
+		PageNames:      runtimePatchCloneSlice(in.PageNames),
+		BaseErr:        in.BaseErr,
+		restored:       in.restored,
+		patchAuthority: authority,
+		// A successful full structural clone is itself a validation boundary.
+		executionProjectionValidated: true,
+	}, true
+}
+
+func runtimeExecutionViewFromEntry(in runtimeCacheEntry) (runtimeExecutionView, bool) {
+	if !in.restored.Valid() {
+		return runtimeExecutionView{}, false
+	}
+	return runtimeExecutionView{
+		TriggerErrors: runtimePatchCloneSlice(in.TriggerErrors),
+		BaseErr:       in.BaseErr,
+		restored:      in.restored,
+	}, true
+}
+
+func runtimeExecutionProjection(in runtimeCacheEntry) (runtimeExecutionView, bool) {
+	// The marker is internal and never serialized. Only compiler-owned entries,
+	// structurally validated disk entries, and successful full clones receive
+	// it. Hand-injected or malformed entries therefore fail closed.
+	if !in.executionProjectionValidated {
+		return runtimeExecutionView{}, false
+	}
+	return runtimeExecutionViewFromEntry(in)
+}
+
+func runtimeCacheEntryUsable(entry runtimeCacheEntry) bool {
+	return entry.restored.Valid() && (entry.patchAuthority == nil || runtimePatchAuthorityMatchesPayload(entry))
+}
+
+func validMemoryRuntimeEntry(key runtimeCacheKey) (runtimeCacheEntry, bool) {
+	return validMemoryRuntimeProjection(key, cloneRuntimeCacheEntryChecked)
+}
+
+func validMemoryRuntimeExecution(key runtimeCacheKey) (runtimeExecutionView, bool) {
+	return validMemoryRuntimeProjection(key, runtimeExecutionProjection)
+}
+
+func validMemoryRuntimeProjection[T any](key runtimeCacheKey, project func(runtimeCacheEntry) (T, bool)) (T, bool) {
+	runtimeCacheMu.RLock()
+	cached, ok := runtimeCache[key]
+	if ok && runtimeCacheEntryUsable(cached) {
+		projected, projectedOK := project(cached)
+		runtimeCacheMu.RUnlock()
+		if projectedOK {
+			return projected, true
+		}
+		return recheckMemoryRuntimeProjectionAfterInvalidObservation(key, project)
+	}
+	runtimeCacheMu.RUnlock()
+	if !ok {
+		var zero T
+		return zero, false
+	}
+	return recheckMemoryRuntimeProjectionAfterInvalidObservation(key, project)
+}
+
+func recheckMemoryRuntimeEntryAfterInvalidObservation(key runtimeCacheKey) (runtimeCacheEntry, bool) {
+	return recheckMemoryRuntimeProjectionAfterInvalidObservation(key, cloneRuntimeCacheEntryChecked)
+}
+
+func recheckMemoryRuntimeProjectionAfterInvalidObservation[T any](key runtimeCacheKey, project func(runtimeCacheEntry) (T, bool)) (T, bool) {
+	// Recheck under the write lock so an invalid observation cannot evict a
+	// concurrently published valid replacement.
+	runtimeCacheMu.Lock()
+	cached, ok := runtimeCache[key]
+	var projected T
+	if ok && runtimeCacheEntryUsable(cached) {
+		var projectedOK bool
+		projected, projectedOK = project(cached)
+		if !projectedOK {
+			delete(runtimeCache, key)
+			ok = false
+		}
+	} else if ok {
+		delete(runtimeCache, key)
+		ok = false
+	}
+	runtimeCacheMu.Unlock()
+	if !ok {
+		var zero T
+		return zero, false
+	}
+	return projected, true
+}
+
+func authoritativeRuntimeSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet) *typesys.SourceDigestSet {
+	if digests == nil {
+		return nil
+	}
+	seen := make(map[string]bool)
+	complete := true
+	check := func(file string) {
+		if file == "" || seen[file] {
+			return
+		}
+		seen[file] = true
+		if _, ok := digests.Digest(file); !ok {
+			complete = false
+		}
+	}
+	for _, typ := range index.Types {
+		check(typ.File)
+	}
+	for _, trigger := range index.Triggers {
+		check(trigger.File)
+	}
+	if !complete {
+		return nil
+	}
+	return digests
+}
+
+func preloadRuntimeSources(index typesys.Index, sources *sourceCache) error {
+	seen := make(map[string]bool)
+	preload := func(file string) error {
+		if file == "" || seen[file] {
+			return nil
+		}
+		seen[file] = true
+		_, err := sources.read(file)
+		return err
+	}
+	for _, typ := range index.Types {
+		if err := preload(typ.File); err != nil {
+			return err
+		}
+	}
+	for _, trigger := range index.Triggers {
+		if err := preload(trigger.File); err != nil {
+			return err
+		}
+	}
+	return sources.sourceSnapshotError()
 }
 
 func runtimeFromIndex(index typesys.Index, sources *sourceCache, useDiskCache ...bool) (runtimeCacheKey, runtimeCacheEntry) {
-	if sources != nil {
-		sources.configureNamespaceRemaps(index.Types, index.Triggers)
+	key, entry, _ := runtimeFromIndexWithSourceDigests(index, nil, sources, useDiskCache...)
+	return key, entry
+}
+
+func runtimeFromIndexWithSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, useDiskCache ...bool) (runtimeCacheKey, runtimeCacheEntry, error) {
+	return runtimeFromIndexWithSourceDigestsProjected(index, digests, sources, cloneRuntimeCacheEntryChecked, useDiskCache...)
+}
+
+func runtimeFromIndexForExecutionWithSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, useDiskCache ...bool) (runtimeCacheKey, runtimeExecutionView, error) {
+	return runtimeFromIndexWithSourceDigestsProjected(index, digests, sources, runtimeExecutionProjection, useDiskCache...)
+}
+
+func runtimeFromIndexWithSourceDigestsProjected[T any](index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, project func(runtimeCacheEntry) (T, bool), useDiskCache ...bool) (runtimeCacheKey, T, error) {
+	var zero T
+	digests = authoritativeRuntimeSourceDigests(index, digests)
+	if sources == nil {
+		sources = newSourceCache()
 	}
+	sources.configureNamespaceRemaps(index.Types, index.Triggers)
+	sources.bindSourceDigests(digests)
 	diskCacheAllowed := diskCacheEnabled()
 	if len(useDiskCache) > 0 {
 		diskCacheAllowed = useDiskCache[0]
 	}
-	key := runtimeKey(index)
-	runtimeCacheMu.RLock()
-	if cached, ok := runtimeCache[key]; ok {
-		runtimeCacheMu.RUnlock()
-		return key, cloneRuntimeCacheEntry(cached)
+	key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
+	if cached, ok := validMemoryRuntimeProjection(key, project); ok {
+		return key, cached, nil
 	}
-	runtimeCacheMu.RUnlock()
 
 	if diskCacheAllowed {
-		if diskEntry, ok := tryLoadDiskRuntime(index); ok {
-			runtimeCacheMu.Lock()
-			runtimeCache[key] = diskEntry
-			runtimeCacheMu.Unlock()
-			return key, cloneRuntimeCacheEntry(diskEntry)
+		if diskEntry, ok := tryLoadDiskRuntimeWithSourceDigests(index, digests, key); ok {
+			if projected, projectOK := project(diskEntry); projectOK {
+				runtimeCacheMu.Lock()
+				runtimeCache[key] = diskEntry
+				runtimeCacheMu.Unlock()
+				return key, projected, nil
+			}
+		}
+	}
+	if digests != nil {
+		if err := preloadRuntimeSources(index, sources); err != nil {
+			return key, zero, err
 		}
 	}
 
@@ -461,31 +838,135 @@ func runtimeFromIndex(index typesys.Index, sources *sourceCache, useDiskCache ..
 	classes := compileProjectClasses(index, methods, sources)
 	triggers, triggerErrors := compileProjectTriggers(index, sources)
 	org := orgFromIndex(index, sources)
-	template := storage.NewRuntimeTemplate(org)
-	vm.PrimeRuntimeTemplateSchema(&template)
 	pageNames := visualforcePageNames(index)
 	baseMachine := vm.New(nil)
 	baseMachine.SetTraceEnabled(false)
 	registerVisualforcePages(baseMachine, pageNames)
 	baseErr := registerBaseRuntime(baseMachine, methods, classes, triggers)
+	if err := sources.sourceSnapshotError(); err != nil {
+		return key, zero, err
+	}
 	entry := runtimeCacheEntry{
-		Methods:       methods,
-		Classes:       classes,
-		Triggers:      triggers,
-		TriggerErrors: triggerErrors,
-		Org:           org,
-		Template:      template,
-		PageNames:     pageNames,
-		BaseMachine:   baseMachine,
-		BaseErr:       baseErr,
+		Methods:                      methods,
+		Classes:                      classes,
+		Triggers:                     triggers,
+		TriggerErrors:                triggerErrors,
+		PageNames:                    pageNames,
+		BaseErr:                      baseErr,
+		restored:                     vm.NewRestoredRuntimeTemplate(org, baseMachine),
+		executionProjectionValidated: true,
+	}
+	entry.patchAuthority = newRuntimePatchAuthority(index, key, digests, sources, entry, org)
+	projected, projectOK := project(entry)
+	if !projectOK {
+		return key, zero, fmt.Errorf("compiled runtime payload cannot be cloned safely")
 	}
 	runtimeCacheMu.Lock()
 	runtimeCache[key] = entry
 	runtimeCacheMu.Unlock()
 	if diskCacheAllowed {
-		persistDiskRuntime(index, entry)
+		persistDiskRuntime(index, digests, key, org, entry)
 	}
-	return key, cloneRuntimeCacheEntry(entry)
+	return key, projected, nil
+}
+
+func runtimeFromIndexWithPerf(index typesys.Index, sources *sourceCache, diskCacheAllowed bool, counters *runPerfCounters) (runtimeCacheKey, runtimeCacheEntry) {
+	key, entry, _ := runtimeFromIndexWithSourceDigestsAndPerf(index, nil, sources, diskCacheAllowed, counters)
+	return key, entry
+}
+
+func runtimeFromIndexWithSourceDigestsAndPerf(index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, diskCacheAllowed bool, counters *runPerfCounters) (runtimeCacheKey, runtimeCacheEntry, error) {
+	return runtimeFromIndexWithSourceDigestsAndPerfProjected(index, digests, sources, diskCacheAllowed, counters, cloneRuntimeCacheEntryChecked)
+}
+
+func runtimeFromIndexForExecutionWithSourceDigestsAndPerf(index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, diskCacheAllowed bool, counters *runPerfCounters) (runtimeCacheKey, runtimeExecutionView, error) {
+	return runtimeFromIndexWithSourceDigestsAndPerfProjected(index, digests, sources, diskCacheAllowed, counters, runtimeExecutionProjection)
+}
+
+func runtimeFromIndexWithSourceDigestsAndPerfProjected[T any](index typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, diskCacheAllowed bool, counters *runPerfCounters, project func(runtimeCacheEntry) (T, bool)) (runtimeCacheKey, T, error) {
+	var zero T
+	digests = authoritativeRuntimeSourceDigests(index, digests)
+	if sources == nil {
+		sources = newSourceCache()
+	}
+	sources.configureNamespaceRemaps(index.Types, index.Triggers)
+	sources.bindSourceDigests(digests)
+	keyStarted := time.Now()
+	key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
+	counters.phases.runtimeKeyNS.Add(time.Since(keyStarted).Nanoseconds())
+	if cached, ok := validMemoryRuntimeProjection(key, project); ok {
+		counters.phases.memoryCacheHits.Add(1)
+		return key, cached, nil
+	}
+
+	if diskCacheAllowed {
+		if diskEntry, ok := tryLoadDiskRuntimeWithPerf(index, digests, key, counters); ok {
+			if projected, projectOK := project(diskEntry); projectOK {
+				runtimeCacheMu.Lock()
+				runtimeCache[key] = diskEntry
+				runtimeCacheMu.Unlock()
+				counters.phases.diskCacheHits.Add(1)
+				return key, projected, nil
+			}
+		}
+	}
+	counters.phases.cacheMisses.Add(1)
+	if digests != nil {
+		bindingStarted := time.Now()
+		err := preloadRuntimeSources(index, sources)
+		counters.phases.runtimeKeyNS.Add(time.Since(bindingStarted).Nanoseconds())
+		if err != nil {
+			return key, zero, err
+		}
+	}
+
+	compileStarted := time.Now()
+	methods := compileProjectMethods(index, sources)
+	classes := compileProjectClasses(index, methods, sources)
+	triggers, triggerErrors := compileProjectTriggers(index, sources)
+	counters.phases.projectCompileNS.Add(time.Since(compileStarted).Nanoseconds())
+
+	orgStarted := time.Now()
+	org := orgFromIndex(index, sources)
+	counters.phases.orgBuildNS.Add(time.Since(orgStarted).Nanoseconds())
+
+	compileStarted = time.Now()
+	pageNames := visualforcePageNames(index)
+	baseMachine := vm.New(nil)
+	baseMachine.SetTraceEnabled(false)
+	registerVisualforcePages(baseMachine, pageNames)
+	baseErr := registerBaseRuntime(baseMachine, methods, classes, triggers)
+	counters.phases.projectCompileNS.Add(time.Since(compileStarted).Nanoseconds())
+	restoredStarted := time.Now()
+	restored := vm.NewRestoredRuntimeTemplate(org, baseMachine)
+	counters.phases.orgBuildNS.Add(time.Since(restoredStarted).Nanoseconds())
+	if err := sources.sourceSnapshotError(); err != nil {
+		return key, zero, err
+	}
+	authorityStarted := time.Now()
+	entry := runtimeCacheEntry{
+		Methods:                      methods,
+		Classes:                      classes,
+		Triggers:                     triggers,
+		TriggerErrors:                triggerErrors,
+		PageNames:                    pageNames,
+		BaseErr:                      baseErr,
+		restored:                     restored,
+		executionProjectionValidated: true,
+	}
+	entry.patchAuthority = newRuntimePatchAuthority(index, key, digests, sources, entry, org)
+	counters.phases.projectCompileNS.Add(time.Since(authorityStarted).Nanoseconds())
+	projected, projectOK := project(entry)
+	if !projectOK {
+		return key, zero, fmt.Errorf("compiled runtime payload cannot be cloned safely")
+	}
+	runtimeCacheMu.Lock()
+	runtimeCache[key] = entry
+	runtimeCacheMu.Unlock()
+	if diskCacheAllowed {
+		persistDiskRuntimeWithPerf(index, digests, key, org, entry, counters)
+	}
+	return key, projected, nil
 }
 
 func classSetKey(classes map[string]bool) string {
@@ -544,35 +1025,41 @@ func allClassesHaveSingleMethod(classIndexes map[string][]int) bool {
 	return true
 }
 
-func compileTestSetupsCached(index typesys.Index, baseKey runtimeCacheKey, selectedClasses map[string]bool, sources *sourceCache) (map[string][]vm.Method, map[string]error, map[string][]ir.Program, map[string]error) {
+func compileTestSetupsCached(index typesys.Index, baseKey runtimeCacheKey, selectedClasses map[string]bool, sources *sourceCache) (map[string][]vm.Method, map[string]error, map[string][]ir.Program, map[string]error, error) {
 	key := string(baseKey) + "|setup|" + classSetKey(selectedClasses)
 	setupCacheMu.RLock()
 	if cached, ok := setupCache[key]; ok {
 		setupCacheMu.RUnlock()
-		return cached.Methods, cached.Errors, cached.Programs, cached.ProgramErrs
+		return cached.Methods, cached.Errors, cached.Programs, cached.ProgramErrs, nil
 	}
 	setupCacheMu.RUnlock()
 	methods, errs, programs, programErrs := compileTestSetupMethodsForClasses(index, selectedClasses, sources)
+	if err := sources.sourceSnapshotError(); err != nil {
+		return methods, errs, programs, programErrs, err
+	}
 	setupCacheMu.Lock()
 	setupCache[key] = setupCompileCacheEntry{Methods: methods, Errors: errs, Programs: programs, ProgramErrs: programErrs}
 	setupCacheMu.Unlock()
-	return methods, errs, programs, programErrs
+	return methods, errs, programs, programErrs, nil
 }
 
-func compileTestsCached(index typesys.Index, baseKey runtimeCacheKey, cases []TestCase, sources *sourceCache) (map[string]vm.Method, map[string]error, map[string]ir.Program, map[string]error) {
+func compileTestsCached(index typesys.Index, baseKey runtimeCacheKey, cases []TestCase, sources *sourceCache) (map[string]vm.Method, map[string]error, map[string]ir.Program, map[string]error, error) {
 	key := string(baseKey) + "|tests|" + caseSetKey(cases)
 	testCacheMu.RLock()
 	if cached, ok := testCache[key]; ok {
 		testCacheMu.RUnlock()
-		return cached.Methods, cached.MethodErrs, cached.Programs, cached.ProgramErrs
+		return cached.Methods, cached.MethodErrs, cached.Programs, cached.ProgramErrs, nil
 	}
 	testCacheMu.RUnlock()
 	methods, methodErrs := compileTestMethods(cases, sources)
 	programs, programErrs := compileTestInvokePrograms(cases)
+	if err := sources.sourceSnapshotError(); err != nil {
+		return methods, methodErrs, programs, programErrs, err
+	}
 	testCacheMu.Lock()
 	testCache[key] = testCompileCacheEntry{Methods: methods, MethodErrs: methodErrs, Programs: programs, ProgramErrs: programErrs}
 	testCacheMu.Unlock()
-	return methods, methodErrs, programs, programErrs
+	return methods, methodErrs, programs, programErrs, nil
 }
 
 func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options, counters *runPerfCounters) map[string]testSetupResult {
@@ -584,7 +1071,10 @@ func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm
 			if emitProgress {
 				reportProgress(opts, TestProgress{Event: "setup_start", ClassName: className})
 			}
-			started := time.Now()
+			var started time.Time
+			if emitProgress {
+				started = time.Now()
+			}
 			setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
 			setupOrg, setupRandom, setupErr, shared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts, counters)
 			if setupCancel != nil {
@@ -615,7 +1105,10 @@ func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm
 				if emitProgress {
 					reportProgress(opts, TestProgress{Event: "setup_start", ClassName: className})
 				}
-				started := time.Now()
+				var started time.Time
+				if emitProgress {
+					started = time.Now()
+				}
 				setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
 				setupOrg, setupRandom, setupErr, shared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts, counters)
 				if setupCancel != nil {
@@ -679,7 +1172,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 	if parallelism > len(classOrder) {
 		parallelism = len(classOrder)
 	}
-	sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS)
+	sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS, counters)
 	jobs := make(chan string)
 	var wg sync.WaitGroup
 	for worker := 0; worker < parallelism; worker++ {
@@ -688,7 +1181,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 			defer wg.Done()
 			for className := range jobs {
 				methodIndexes := append([]int(nil), classIndexes[className]...)
-				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS)
+				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS, counters)
 				for _, i := range methodIndexes {
 					if results[i].Status != "" {
 						continue
@@ -739,7 +1232,7 @@ func runNoSetupJournalPlans(ctx context.Context, planned []testCasePlan, results
 		journal := storage.NewIsolationJournal(&org)
 		for _, className := range classOrder {
 			methodIndexes := append([]int(nil), classIndexes[className]...)
-			sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS)
+			sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS, counters)
 			for _, i := range methodIndexes {
 				runJournaledNoSetupPlan(ctx, i, planned, results, journal, 0, baseMachine, baseRuntimeErr, triggerErrors, opts, counters, emitProgress)
 			}
@@ -749,7 +1242,7 @@ func runNoSetupJournalPlans(ctx context.Context, planned []testCasePlan, results
 	if parallelism > len(classOrder) {
 		parallelism = len(classOrder)
 	}
-	sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS)
+	sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS, counters)
 	jobs := make(chan string)
 	var wg sync.WaitGroup
 	for worker := 0; worker < parallelism; worker++ {
@@ -760,7 +1253,7 @@ func runNoSetupJournalPlans(ctx context.Context, planned []testCasePlan, results
 			journal := storage.NewIsolationJournal(&workerOrg)
 			for className := range jobs {
 				methodIndexes := append([]int(nil), classIndexes[className]...)
-				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS)
+				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS, counters)
 				for _, i := range methodIndexes {
 					runJournaledNoSetupPlan(ctx, i, planned, results, journal, 0, baseMachine, baseRuntimeErr, triggerErrors, opts, counters, emitProgress)
 				}
@@ -808,11 +1301,18 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 		parallelism = len(classOrder)
 	}
 	if parallelism > 1 {
-		sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS)
+		sortClassRunOrder(classOrder, classIndexes, opts.ClassDurationMS, counters)
 	}
 	adaptiveBudgets := map[string]int{}
 	if opts.ParallelMethods {
+		var adaptiveHistoryStarted time.Time
+		if counters != nil && counters.enabled && len(opts.ClassDurationMS) > 0 {
+			adaptiveHistoryStarted = time.Now()
+		}
 		adaptiveBudgets = adaptiveClassMethodBudget(opts.Parallelism, classScheduleInputs(classOrder, classIndexes, opts.ClassDurationMS))
+		if counters != nil && counters.enabled && len(opts.ClassDurationMS) > 0 {
+			counters.phases.historyApplyNS.Add(time.Since(adaptiveHistoryStarted).Nanoseconds())
+		}
 		reservedMethodWorkers := 0
 		for _, budget := range adaptiveBudgets {
 			if budget > 1 && budget-1 > reservedMethodWorkers {
@@ -827,7 +1327,14 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 		}
 	}
 	costHints := aggregateClassCostHints(classOrder, planned)
+	var historyStarted time.Time
+	if counters != nil && counters.enabled && len(opts.ClassDurationMS) > 0 {
+		historyStarted = time.Now()
+	}
 	dispatcher := newClassDispatcher(classOrder, costHints, opts.ClassDurationMS)
+	if counters != nil && counters.enabled && len(opts.ClassDurationMS) > 0 {
+		counters.phases.historyApplyNS.Add(time.Since(historyStarted).Nanoseconds())
+	}
 	defer dispatcher.close()
 	var wg sync.WaitGroup
 	for worker := 0; worker < parallelism; worker++ {
@@ -843,7 +1350,10 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 				if emitProgress {
 					reportProgress(opts, TestProgress{Event: "setup_start", ClassName: className})
 				}
-				started := time.Now()
+				var started time.Time
+				if emitProgress {
+					started = time.Now()
+				}
 				setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
 				setupOrg, setupRandom, setupErr, setupShared := prepareTestSetupOrg(setupCtx, className, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts, counters)
 				if setupCancel != nil {
@@ -853,7 +1363,7 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 					reportProgress(opts, TestProgress{Event: "setup_done", ClassName: className, DurationMS: time.Since(started).Milliseconds(), Status: progressStatus(setupErr)})
 				}
 				methodIndexes := append([]int(nil), classIndexes[className]...)
-				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS)
+				sortMethodIndexes(methodIndexes, planned, opts.MethodDurationMS, counters)
 				if opts.ParallelMethods && len(methodIndexes) > 1 {
 					methodParallelism := methodParallelismForClassRun(opts.Parallelism, parallelism, len(methodIndexes), dispatcher.unfinishedClassCount())
 					if extra := adaptiveBudgets[className]; extra > methodParallelism {
@@ -1032,7 +1542,13 @@ func methodParallelismForClassRun(totalParallelism, classParallelism, methods, u
 	return parallelism
 }
 
-func sortClassRunOrder(classOrder []string, classIndexes map[string][]int, classDurationMS map[string]int64) {
+func sortClassRunOrder(classOrder []string, classIndexes map[string][]int, classDurationMS map[string]int64, counters ...*runPerfCounters) {
+	c := perfCounterFor(counters)
+	var started time.Time
+	if c.enabled && len(classDurationMS) > 0 {
+		started = time.Now()
+		defer func() { c.phases.historyApplyNS.Add(time.Since(started).Nanoseconds()) }()
+	}
 	sort.SliceStable(classOrder, func(i, j int) bool {
 		left := classOrder[i]
 		right := classOrder[j]
@@ -1048,9 +1564,15 @@ func sortClassRunOrder(classOrder []string, classIndexes map[string][]int, class
 	})
 }
 
-func sortMethodIndexes(indexes []int, planned []testCasePlan, methodDurationMS map[string]int64) {
+func sortMethodIndexes(indexes []int, planned []testCasePlan, methodDurationMS map[string]int64, counters ...*runPerfCounters) {
 	if len(indexes) <= 1 || len(methodDurationMS) == 0 {
 		return
+	}
+	c := perfCounterFor(counters)
+	var started time.Time
+	if c.enabled {
+		started = time.Now()
+		defer func() { c.phases.historyApplyNS.Add(time.Since(started).Nanoseconds()) }()
 	}
 	sort.SliceStable(indexes, func(i, j int) bool {
 		left := planned[indexes[i]].TestCase
@@ -1175,7 +1697,7 @@ func runSingleClassTestPlans(ctx context.Context, planned []testCasePlan, result
 	for i := range planned {
 		indexes = append(indexes, i)
 	}
-	sortMethodIndexes(indexes, planned, opts.MethodDurationMS)
+	sortMethodIndexes(indexes, planned, opts.MethodDurationMS, counters)
 	for _, i := range indexes {
 		jobs <- i
 	}
@@ -1232,7 +1754,7 @@ func prepareTestSetupOrg(ctx context.Context, className string, baseMachine *vm.
 		return org, 0, nil, true
 	}
 	setupOrg := cloneRuntimeOrgForClass(org, className, "setup", counters)
-	machine := cloneRuntimeMachine(baseMachine, counters)
+	machine := cloneRuntimeMachineFor(baseMachine, className, "setup", counters)
 	machine.SetTraceEnabled(false)
 	if opts.LimitMode != "" {
 		machine.SetLimitMode(opts.LimitMode)
@@ -1303,7 +1825,7 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 		out.Problem = problem("UnsupportedFeature", invokeErr.Error(), testCase)
 		return out
 	}
-	machine := cloneRuntimeMachine(baseMachine, counters)
+	machine := cloneRuntimeMachineFor(baseMachine, testCase.ClassName, "test", counters)
 	machine.SetDeterministicRandomState(setupRandom)
 	machine.SetTraceEnabled(opts.TraceAll || opts.TraceBlocked || opts.SlowTestThresholdMS > 0)
 	if opts.LimitMode != "" {
@@ -1410,6 +1932,7 @@ func registerRuntime(machine *vm.VM, methods map[string]vm.Method, classes []vm.
 func cloneRuntimeOrg(org storage.OrgState, counters ...*runPerfCounters) storage.OrgState {
 	recordCloneRuntimeOrg("", "", counters...)
 	recordStorageCloneRollbackSnapshot(counters...)
+	recordCloneReason("", "rollback-snapshot", "org-rollback-snapshot", counters...)
 	started := time.Now()
 	clone := org.CloneRollbackSnapshot()
 	recordCloneRuntimeOrgDuration(time.Since(started), counters...)
@@ -1419,6 +1942,13 @@ func cloneRuntimeOrg(org storage.OrgState, counters ...*runPerfCounters) storage
 func cloneRuntimeOrgForClass(org storage.OrgState, className, phase string, counters ...*runPerfCounters) storage.OrgState {
 	recordCloneRuntimeOrg(className, phase, counters...)
 	recordStorageCloneRuntime(counters...)
+	capability := "org-frozen-shared"
+	if phase == "test-worker" {
+		capability = "journal-worker"
+	} else if phase == "test" {
+		capability = "full-method-isolation"
+	}
+	recordCloneReason(className, phase, capability, counters...)
 	started := time.Now()
 	clone := org.CloneRuntimeFrozenShared()
 	recordCloneRuntimeOrgDuration(time.Since(started), counters...)
@@ -1426,9 +1956,14 @@ func cloneRuntimeOrgForClass(org storage.OrgState, className, phase string, coun
 }
 
 func cloneRuntimeMachine(machine *vm.VM, counters ...*runPerfCounters) *vm.VM {
+	return cloneRuntimeMachineFor(machine, "", "runtime", perfCounterFor(counters))
+}
+
+func cloneRuntimeMachineFor(machine *vm.VM, className, phase string, counters *runPerfCounters) *vm.VM {
+	recordCloneReason(className, phase, "vm-runtime", counters)
 	started := time.Now()
 	clone := machine.CloneRuntime(nil)
-	recordCloneRuntimeMachineDuration(time.Since(started), counters...)
+	recordCloneRuntimeMachineDuration(time.Since(started), counters)
 	return clone
 }
 
@@ -1487,9 +2022,19 @@ func RegisterProjectRuntimeForRequest(machine *vm.VM, index typesys.Index) error
 }
 
 func CompileProjectRuntimeForRequest(index typesys.Index) CompiledProjectRuntime {
+	runtime, _ := CompileProjectRuntimeForRequestWithSourceDigests(index, nil)
+	return runtime
+}
+
+// CompileProjectRuntimeForRequestWithSourceDigests reuses the exact source
+// snapshot that produced index when building runtime cache keys.
+func CompileProjectRuntimeForRequestWithSourceDigests(index typesys.Index, digests *typesys.SourceDigestSet) (CompiledProjectRuntime, error) {
 	sources := newSourceCache()
-	_, runtime := runtimeFromIndex(index, sources)
-	return compiledProjectRuntimeFromEntry(runtime)
+	_, runtime, err := runtimeFromIndexWithSourceDigests(index, digests, sources)
+	if err != nil {
+		return CompiledProjectRuntime{}, err
+	}
+	return compiledProjectRuntimeFromEntry(runtime), nil
 }
 
 func RegisterCompiledProjectRuntimeForRequest(machine *vm.VM, runtime CompiledProjectRuntime) error {
@@ -1597,13 +2142,48 @@ func registerVisualforcePages(machine *vm.VM, names []string) {
 }
 
 type sourceCache struct {
-	mu         sync.RWMutex
-	files      map[string]string
-	fileRemaps map[string][]namespaceremap.Rule
+	mu                   sync.RWMutex
+	expectedDigests      *typesys.SourceDigestSet
+	expectedDigestLookup func(string) ([sha256.Size]byte, bool)
+	snapshotErr          error
+	files                map[string]string
+	rawFiles             map[string]string
+	apiVersions          map[string]string
+	fileRemaps           map[string][]namespaceremap.Rule
+}
+
+// SourceSnapshotMismatchError reports that an authoritative source snapshot no
+// longer matches the raw bytes available for compilation.
+type SourceSnapshotMismatchError struct {
+	File           string
+	ExpectedSHA256 string
+	ActualSHA256   string
+	Cause          error
+}
+
+func (e *SourceSnapshotMismatchError) Error() string {
+	if e == nil {
+		return "source snapshot mismatch"
+	}
+	message := fmt.Sprintf("source snapshot mismatch for %s: expected sha256 %s", e.File, e.ExpectedSHA256)
+	if e.ActualSHA256 != "" {
+		return message + ", got " + e.ActualSHA256
+	}
+	if e.Cause != nil {
+		return message + ": " + e.Cause.Error()
+	}
+	return message
+}
+
+func (e *SourceSnapshotMismatchError) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return e.Cause
 }
 
 func newSourceCache() *sourceCache {
-	return &sourceCache{files: make(map[string]string)}
+	return &sourceCache{files: make(map[string]string), rawFiles: make(map[string]string), apiVersions: make(map[string]string)}
 }
 
 func sourceCacheFor(caches []*sourceCache) *sourceCache {
@@ -1611,6 +2191,107 @@ func sourceCacheFor(caches []*sourceCache) *sourceCache {
 		return caches[0]
 	}
 	return newSourceCache()
+}
+
+func (cache *sourceCache) bindSourceDigests(digests *typesys.SourceDigestSet) {
+	if cache == nil {
+		return
+	}
+	cache.mu.Lock()
+	cache.apiVersions = make(map[string]string)
+	if cache.expectedDigests != digests || cache.expectedDigestLookup != nil {
+		cache.files = make(map[string]string)
+		cache.rawFiles = make(map[string]string)
+		cache.snapshotErr = nil
+	}
+	cache.expectedDigests = digests
+	cache.expectedDigestLookup = nil
+	cache.mu.Unlock()
+}
+
+func (cache *sourceCache) bindSourceDigestLookup(lookup func(string) ([sha256.Size]byte, bool)) {
+	if cache == nil {
+		return
+	}
+	cache.mu.Lock()
+	cache.files = make(map[string]string)
+	cache.rawFiles = make(map[string]string)
+	cache.apiVersions = make(map[string]string)
+	cache.snapshotErr = nil
+	cache.expectedDigests = nil
+	cache.expectedDigestLookup = lookup
+	cache.mu.Unlock()
+}
+
+func (cache *sourceCache) expectedDigest(file string) ([sha256.Size]byte, bool) {
+	if cache == nil {
+		return [sha256.Size]byte{}, false
+	}
+	cache.mu.RLock()
+	digests := cache.expectedDigests
+	lookup := cache.expectedDigestLookup
+	cache.mu.RUnlock()
+	if lookup != nil {
+		return lookup(file)
+	}
+	if digests == nil {
+		return [sha256.Size]byte{}, false
+	}
+	return digests.Digest(file)
+}
+
+func (cache *sourceCache) recordSnapshotMismatch(file string, expected [sha256.Size]byte, actual *[sha256.Size]byte, cause error) error {
+	mismatch := &SourceSnapshotMismatchError{
+		File:           file,
+		ExpectedSHA256: hex.EncodeToString(expected[:]),
+		Cause:          cause,
+	}
+	if actual != nil {
+		mismatch.ActualSHA256 = hex.EncodeToString(actual[:])
+	}
+	cache.mu.Lock()
+	if cache.snapshotErr == nil {
+		cache.snapshotErr = mismatch
+	}
+	err := cache.snapshotErr
+	cache.mu.Unlock()
+	return err
+}
+
+func (cache *sourceCache) sourceSnapshotError() error {
+	if cache == nil {
+		return nil
+	}
+	cache.mu.RLock()
+	defer cache.mu.RUnlock()
+	return cache.snapshotErr
+}
+
+func (cache *sourceCache) retainedRawSource(file string) (string, bool) {
+	if cache == nil {
+		return "", false
+	}
+	cache.mu.RLock()
+	defer cache.mu.RUnlock()
+	source, ok := cache.rawFiles[file]
+	return source, ok
+}
+
+func (cache *sourceCache) apexAPIVersion(file string) string {
+	if cache == nil {
+		return apiVersionForApexFile(file)
+	}
+	cache.mu.Lock()
+	defer cache.mu.Unlock()
+	if version, ok := cache.apiVersions[file]; ok {
+		return version
+	}
+	version := apiVersionForApexFile(file)
+	if cache.apiVersions == nil {
+		cache.apiVersions = make(map[string]string)
+	}
+	cache.apiVersions[file] = version
+	return version
 }
 
 func (cache *sourceCache) read(file string) (string, error) {
@@ -1657,13 +2338,24 @@ func (cache *sourceCache) readWithRemaps(file string, remaps []namespaceremap.Ru
 		cache.mu.RUnlock()
 		return source, nil
 	}
+	rawSource, rawOK := cache.rawFiles[file]
 	cache.mu.RUnlock()
 
-	data, err := os.ReadFile(file)
-	if err != nil {
-		return "", err
+	if !rawOK {
+		data, err := os.ReadFile(file) // #nosec G304 -- file is an indexed project source path bound to the loaded project snapshot.
+		if err != nil {
+			if expected, ok := cache.expectedDigest(file); ok {
+				return "", cache.recordSnapshotMismatch(file, expected, nil, err)
+			}
+			return "", err
+		}
+		digest := sha256.Sum256(data)
+		if expected, ok := cache.expectedDigest(file); ok && expected != digest {
+			return "", cache.recordSnapshotMismatch(file, expected, &digest, nil)
+		}
+		rawSource = string(data)
 	}
-	source := string(data)
+	source := rawSource
 	if len(remaps) > 0 {
 		source = namespaceremap.ApplySource(remaps, source)
 	}
@@ -1672,6 +2364,15 @@ func (cache *sourceCache) readWithRemaps(file string, remaps []namespaceremap.Ru
 	defer cache.mu.Unlock()
 	if existing, ok := cache.files[key]; ok {
 		return existing, nil
+	}
+	if cache.files == nil {
+		cache.files = make(map[string]string)
+	}
+	if cache.rawFiles == nil {
+		cache.rawFiles = make(map[string]string)
+	}
+	if _, ok := cache.rawFiles[file]; !ok {
+		cache.rawFiles[file] = rawSource
 	}
 	cache.files[key] = source
 	return source, nil

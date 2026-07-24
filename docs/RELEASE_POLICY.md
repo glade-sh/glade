@@ -7,8 +7,10 @@ platform archives and `SHA256SUMS.txt` from the tagged source.
 
 A release can be promoted when:
 
+- The tagged commit has an exact-SHA successful `Required CI` authority.
 - `scripts/release-check.sh` passes.
 - `glade doctor` reports `Ready.` for release archives.
+- Every platform archive has verified provenance and CycloneDX attestations.
 - Public support docs describe the current command surface and unsupported
   boundaries.
 
@@ -66,7 +68,8 @@ Use this workflow for an easy, repeatable distribution pass.
    - Confirm docs reflect the current command names and setup steps.
    - Run the first project check from `INSTALL.md` on at least one SFDX project.
 
-2. Cut and push a tag.
+2. Push the release commit and wait for its `Required CI` job to pass. Then cut
+   and push a tag at that exact commit.
 
 ```bash
 git tag vX.Y.Z
@@ -74,8 +77,11 @@ git push <remote> vX.Y.Z
 ```
 
 3. Let the `Release` workflow publish artifacts.
+   - The tag gate records the exact successful `Required CI` run and job.
    - Artifacts are built to `dist/` with CGO enabled on macOS and Linux runners.
    - `glade doctor` must report `Ready.` before an archive is written.
+   - Provenance and CycloneDX attestations must verify before platform assets
+     are uploaded.
    - `SHA256SUMS.txt`, `index.json`, and `latest/release-manifest.json` are
      published with the release assets.
 

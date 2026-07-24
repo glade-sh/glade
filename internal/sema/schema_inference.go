@@ -9,16 +9,19 @@ import (
 )
 
 func enrichIndexWithProjectReferencedSchemaFields(index typesys.Index) typesys.Index {
+	return enrichIndexWithProjectReferencedSchemaFieldsWithSources(index, newSemaSources(nil, nil))
+}
+
+func enrichIndexWithProjectReferencedSchemaFieldsWithSources(index typesys.Index, sources *semaSources) typesys.Index {
 	if len(index.Types) == 0 {
 		return index
 	}
 	ctx := newSemaProjectReferencedSchemaContext(index.Objects, index.Project.Namespace)
-	sourceCache := make(map[string]string)
 	for _, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) || typ.File == "" {
 			continue
 		}
-		source, ok := readSemaSourceForType(typ, sourceCache)
+		source, ok := sources.normalizedForType(typ)
 		if !ok {
 			continue
 		}

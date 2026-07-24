@@ -12,14 +12,19 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/dap"
+	"github.com/glade-sh/glade/internal/pluginhost"
+	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/testdaemon"
+	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 	"github.com/glade-sh/glade/internal/watch"
 )
@@ -742,10 +747,28 @@ func TestRenderIsNotPublicCommand(t *testing.T) {
 	}
 }
 
+func testPluginsCommandConfig(t *testing.T) pluginsCommandConfig {
+	t.Helper()
+	return pluginsCommandConfig{
+		storeRoot:   t.TempDir(),
+		registryURL: pluginhost.DefaultRegistryURL,
+		ci:          false,
+	}
+}
+
+func runPluginsForTest(ctx context.Context, args []string, stdout, stderr io.Writer, config pluginsCommandConfig) int {
+	if err := runPluginsWithConfig(ctx, args, stdout, stderr, config); err != nil {
+		writeCommandError(stderr, "plugins", err)
+		return 1
+	}
+	return 0
+}
+
 func TestPluginsListEmpty(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "list"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"list"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
@@ -755,8 +778,10 @@ func TestPluginsListEmpty(t *testing.T) {
 }
 
 func TestPluginsListJSONIncludesEditorMetadata(t *testing.T) {
+	t.Parallel()
 	home := t.TempDir()
-	t.Setenv("GLADE_HOME", home)
+	config := testPluginsCommandConfig(t)
+	config.storeRoot = home
 	manifestPath := filepath.Join(home, "plugins", "compat", "0.1.0", "plugin.json")
 	if err := os.MkdirAll(filepath.Dir(manifestPath), 0o755); err != nil {
 		t.Fatal(err)
@@ -772,7 +797,7 @@ func TestPluginsListJSONIncludesEditorMetadata(t *testing.T) {
 	}
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "list", "--json"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"list", "--json"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("list exit=%d stderr=%s", code, stderr.String())
 	}
@@ -827,11 +852,13 @@ func TestPluginsListJSONIncludesEditorMetadata(t *testing.T) {
 }
 
 func TestPluginsListJSONIncludesLinkedExecutableEditorMetadata(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS == "windows" {
 		t.Skip("shell helper uses sh")
 	}
 	home := t.TempDir()
-	t.Setenv("GLADE_HOME", home)
+	config := testPluginsCommandConfig(t)
+	config.storeRoot = home
 	exe := filepath.Join(home, "glade-plugin-compat")
 	script := `#!/bin/sh
 if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
@@ -844,13 +871,13 @@ fi
 	}
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "link", "--exec", exe}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"link", "--exec", exe}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("link exit=%d stderr=%s", code, stderr.String())
 	}
 	stdout.Reset()
 	stderr.Reset()
-	code = Run(context.Background(), []string{"plugins", "list", "--json"}, &stdout, &stderr)
+	code = runPluginsForTest(context.Background(), []string{"list", "--json"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("list exit=%d stderr=%s", code, stderr.String())
 	}
@@ -878,47 +905,208 @@ fi
 	}
 }
 
-func TestPluginsListJSONTimesOutLinkedExecutableEditorMetadata(t *testing.T) {
+func TestPluginsListJSONCancellationCleansUpLinkedExecutableDescendant(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS == "windows" {
 		t.Skip("shell helper uses sh")
 	}
-	home := t.TempDir()
-	t.Setenv("GLADE_HOME", home)
-	exe := filepath.Join(home, "glade-plugin-compat")
+	exe := filepath.Join(t.TempDir(), "glade-plugin-compat")
+	pidPath := exe + ".pid"
+	cleanupNeeded := true
+	t.Cleanup(func() {
+		if cleanupNeeded {
+			bestEffortKillCLIRecordedPID(pidPath)
+		}
+	})
 	script := `#!/bin/sh
 if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
-  sleep 5
-  exit 0
+	  sleep 30 &
+	  child=$!
+	  printf '%s\n' "$child" > "$0.pid"
+	  wait "$child"
 fi
 `
 	if err := os.WriteFile(exe, []byte(script), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	statePath := filepath.Join(home, "plugins", "installed.json")
-	if err := os.MkdirAll(filepath.Dir(statePath), 0o755); err != nil {
-		t.Fatal(err)
+	if err := exec.Command(exe, "prewarm").Run(); err != nil {
+		t.Fatalf("prewarm helper: %v", err)
 	}
-	state := fmt.Sprintf(`{"version":1,"plugins":[{"name":"compat","version":"0.1.0","commands":["compat"],"executable":%q,"source":"link:test","linked":true}]}`+"\n", exe)
-	if err := os.WriteFile(statePath, []byte(state), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	oldTimeout := pluginListManifestTimeout
-	pluginListManifestTimeout = 25 * time.Millisecond
-	t.Cleanup(func() { pluginListManifestTimeout = oldTimeout })
 
-	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "list", "--json"}, &stdout, &stderr)
-	if code == 0 {
-		t.Fatalf("list unexpectedly succeeded:\n%s", stdout.String())
+	var stdout bytes.Buffer
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- writePluginsListJSONWithManifestTimeout(ctx, &stdout, []pluginhost.InstalledPlugin{{
+			Name:       "compat",
+			Version:    "0.1.0",
+			Executable: exe,
+			Source:     "link:test",
+			Linked:     true,
+			Commands:   []string{"compat"},
+		}}, 30*time.Second)
+	}()
+
+	pid, err := waitForCLIRecordedPID(pidPath, 10*time.Second)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if !strings.Contains(stderr.String(), "context deadline exceeded") {
-		t.Fatalf("stderr did not include timeout diagnostic: %q", stderr.String())
+	started := time.Now()
+	cancel()
+	if err := <-errCh; !errors.Is(err, context.Canceled) {
+		t.Fatalf("error = %v, want context canceled", err)
+	}
+	if elapsed := time.Since(started); elapsed >= time.Second {
+		t.Fatalf("plugin list cancellation took %s, want <1s", elapsed)
+	}
+	waitForCLIProcessAbsent(t, pid, time.Second)
+	cleanupNeeded = false
+}
+
+func TestPluginsListJSONTimeoutBeforePIDWriteDoesNotRequirePIDFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell helper uses sh")
+	}
+	exe := filepath.Join(t.TempDir(), "glade-plugin-compat")
+	pidPath := exe + ".pid"
+	cleanupNeeded := true
+	t.Cleanup(func() {
+		if cleanupNeeded {
+			bestEffortKillCLIRecordedPID(pidPath)
+		}
+	})
+	script := `#!/bin/sh
+if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
+	  sleep 30
+	  printf '%s\n' "$$" > "$0.pid"
+fi
+`
+	if err := os.WriteFile(exe, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout bytes.Buffer
+	err := writePluginsListJSONWithManifestTimeout(context.Background(), &stdout, []pluginhost.InstalledPlugin{{
+		Name:       "compat",
+		Version:    "0.1.0",
+		Executable: exe,
+		Source:     "link:test",
+		Linked:     true,
+		Commands:   []string{"compat"},
+	}}, 25*time.Millisecond)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("error = %v, want context deadline exceeded", err)
+	}
+	pid, present, readErr := readCLIRecordedPIDIfPresent(pidPath)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if present {
+		waitForCLIProcessAbsent(t, pid, time.Second)
+	}
+	cleanupNeeded = false
+}
+
+func TestReadCLIRecordedPIDIfPresent(t *testing.T) {
+	t.Run("missing", func(t *testing.T) {
+		pid, present, err := readCLIRecordedPIDIfPresent(filepath.Join(t.TempDir(), "missing.pid"))
+		if err != nil || present || pid != 0 {
+			t.Fatalf("pid=%d present=%t err=%v, want absent without error", pid, present, err)
+		}
+	})
+	t.Run("valid", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "valid.pid")
+		if err := os.WriteFile(path, []byte(strconv.Itoa(os.Getpid())+"\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		pid, present, err := readCLIRecordedPIDIfPresent(path)
+		if err != nil || !present || pid != os.Getpid() {
+			t.Fatalf("pid=%d present=%t err=%v, want pid %d", pid, present, err, os.Getpid())
+		}
+	})
+	t.Run("invalid", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "invalid.pid")
+		if err := os.WriteFile(path, []byte("not-a-pid\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if _, _, err := readCLIRecordedPIDIfPresent(path); err == nil {
+			t.Fatal("invalid PID unexpectedly succeeded")
+		}
+	})
+	t.Run("read error", func(t *testing.T) {
+		if _, _, err := readCLIRecordedPIDIfPresent(t.TempDir()); err == nil {
+			t.Fatal("directory read unexpectedly succeeded")
+		}
+	})
+}
+
+func readCLIRecordedPIDIfPresent(path string) (int, bool, error) {
+	data, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, fmt.Errorf("read recorded PID: %w", err)
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
+	if err != nil {
+		return 0, false, fmt.Errorf("invalid recorded PID %q: %w", data, err)
+	}
+	if pid <= 0 {
+		return 0, false, fmt.Errorf("invalid recorded PID %q: must be positive", data)
+	}
+	return pid, true, nil
+}
+
+func waitForCLIRecordedPID(path string, timeout time.Duration) (int, error) {
+	deadline := time.Now().Add(timeout)
+	for {
+		pid, present, err := readCLIRecordedPIDIfPresent(path)
+		if err != nil {
+			return 0, err
+		}
+		if present {
+			return pid, nil
+		}
+		if time.Now().After(deadline) {
+			return 0, fmt.Errorf("timed out waiting for PID file %s", path)
+		}
+		time.Sleep(5 * time.Millisecond)
 	}
 }
 
+func waitForCLIProcessAbsent(t *testing.T, pid int, timeout time.Duration) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for {
+		if err := exec.Command("kill", "-0", strconv.Itoa(pid)).Run(); err != nil {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("descendant PID %d remained after %s", pid, timeout)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+func bestEffortKillCLIRecordedPID(path string) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
+	if err != nil || pid <= 0 {
+		return
+	}
+	_ = exec.Command("kill", "-KILL", strconv.Itoa(pid)).Run()
+}
+
 func TestPluginsListAndWhichUseCanonicalIdentity(t *testing.T) {
+	t.Parallel()
 	home := t.TempDir()
-	t.Setenv("GLADE_HOME", home)
+	config := testPluginsCommandConfig(t)
+	config.storeRoot = home
 	statePath := filepath.Join(home, "plugins", "installed.json")
 	if err := os.MkdirAll(filepath.Dir(statePath), 0o755); err != nil {
 		t.Fatal(err)
@@ -928,7 +1116,7 @@ func TestPluginsListAndWhichUseCanonicalIdentity(t *testing.T) {
 	}
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "list"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"list"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("list exit=%d stderr=%s", code, stderr.String())
 	}
@@ -938,7 +1126,7 @@ func TestPluginsListAndWhichUseCanonicalIdentity(t *testing.T) {
 
 	stdout.Reset()
 	stderr.Reset()
-	code = Run(context.Background(), []string{"plugins", "which", "compat"}, &stdout, &stderr)
+	code = runPluginsForTest(context.Background(), []string{"which", "compat"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("which exit=%d stderr=%s", code, stderr.String())
 	}
@@ -948,11 +1136,13 @@ func TestPluginsListAndWhichUseCanonicalIdentity(t *testing.T) {
 }
 
 func TestPluginsDoctorJSON(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS == "windows" {
 		t.Skip("shell helper uses sh")
 	}
 	home := t.TempDir()
-	t.Setenv("GLADE_HOME", home)
+	config := testPluginsCommandConfig(t)
+	config.storeRoot = home
 	exe := filepath.Join(home, "glade-plugin-compat")
 	script := `#!/bin/sh
 if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
@@ -973,7 +1163,7 @@ fi
 	}
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "doctor", "--json"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"doctor", "--json"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("doctor exit=%d stderr=%s", code, stderr.String())
 	}
@@ -995,11 +1185,13 @@ fi
 }
 
 func TestPluginsLinkListsPlugin(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS == "windows" {
 		t.Skip("shell helper uses sh")
 	}
 	home := t.TempDir()
-	t.Setenv("GLADE_HOME", home)
+	config := testPluginsCommandConfig(t)
+	config.storeRoot = home
 	exe := filepath.Join(home, "glade-plugin-compat")
 	script := `#!/bin/sh
 if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
@@ -1011,13 +1203,13 @@ fi
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "link", "--exec", exe}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"link", "--exec", exe}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("link exit=%d stderr=%s", code, stderr.String())
 	}
 	stdout.Reset()
 	stderr.Reset()
-	code = Run(context.Background(), []string{"plugins", "list"}, &stdout, &stderr)
+	code = runPluginsForTest(context.Background(), []string{"list"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("list exit=%d stderr=%s", code, stderr.String())
 	}
@@ -1027,11 +1219,12 @@ fi
 }
 
 func TestPluginsInstallMissingArchiveDoesNotFetchRegistry(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
-	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", "http://127.0.0.1:1/index.json")
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
+	config.registryURL = "http://127.0.0.1:1/index.json"
 	var stdout, stderr bytes.Buffer
 
-	code := Run(context.Background(), []string{"plugins", "install", "./missing-plugin.tar.gz"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"install", "./missing-plugin.tar.gz"}, &stdout, &stderr, config)
 	if code != 1 {
 		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
 	}
@@ -1044,15 +1237,16 @@ func TestPluginsInstallMissingArchiveDoesNotFetchRegistry(t *testing.T) {
 }
 
 func TestPluginsSearchAndInfoUseRegistry(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `{"version":1,"plugins":[{"name":"@glade/compat","aliases":["compat"],"version":"0.1.0","publisher":"glade","trust":"first-party","summary":"Compatibility fixtures.","commands":["compat","surface"],"docsURL":"https://glade.sh/guide/plugins/compat","assets":[{"os":%q,"arch":%q,"url":"https://example.test/compat.tar.gz","sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]}]}`, runtime.GOOS, runtime.GOARCH)
 	}))
 	defer server.Close()
-	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", server.URL)
+	config.registryURL = server.URL
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "search", "surface"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"search", "surface"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("search exit=%d stderr=%s", code, stderr.String())
 	}
@@ -1062,7 +1256,7 @@ func TestPluginsSearchAndInfoUseRegistry(t *testing.T) {
 
 	stdout.Reset()
 	stderr.Reset()
-	code = Run(context.Background(), []string{"plugins", "info", "@glade/compat"}, &stdout, &stderr)
+	code = runPluginsForTest(context.Background(), []string{"info", "@glade/compat"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("info exit=%d stderr=%s", code, stderr.String())
 	}
@@ -1072,15 +1266,16 @@ func TestPluginsSearchAndInfoUseRegistry(t *testing.T) {
 }
 
 func TestPluginsAvailableListsRegistry(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `{"version":1,"plugins":[{"name":"@glade/compat","aliases":["compat"],"version":"0.1.0","publisher":"glade","trust":"first-party","summary":"Compatibility fixtures.","commands":["compat","surface"],"assets":[{"os":%q,"arch":%q,"url":"https://example.test/compat.tar.gz","sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]},{"name":"@glade/performance","aliases":["performance"],"version":"0.1.0","publisher":"glade","trust":"first-party","summary":"Performance scans.","commands":["performance"],"assets":[{"os":%q,"arch":%q,"url":"https://example.test/performance.tar.gz","sha256":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}]}]}`, runtime.GOOS, runtime.GOARCH, runtime.GOOS, runtime.GOARCH)
 	}))
 	defer server.Close()
-	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", server.URL)
+	config.registryURL = server.URL
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "available"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"available"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("available exit=%d stderr=%s", code, stderr.String())
 	}
@@ -1091,8 +1286,7 @@ func TestPluginsAvailableListsRegistry(t *testing.T) {
 }
 
 func TestPluginsAvailableDefaultRegistryPreviewError(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
-	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", "")
+	config := testPluginsCommandConfig(t)
 	restoreHTTPClient := replaceDefaultHTTPClient(t, func(req *http.Request) (*http.Response, error) {
 		if got, want := req.URL.String(), "https://plugins.glade.sh/index.json"; got != want {
 			t.Fatalf("registry URL = %q, want %q", got, want)
@@ -1102,7 +1296,7 @@ func TestPluginsAvailableDefaultRegistryPreviewError(t *testing.T) {
 	defer restoreHTTPClient()
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "available"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"available"}, &stdout, &stderr, config)
 	if code != 1 {
 		t.Fatalf("available exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
 	}
@@ -1124,8 +1318,7 @@ func TestPluginsAvailableDefaultRegistryPreviewError(t *testing.T) {
 }
 
 func TestPluginsInstallDefaultRegistryPreviewError(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
-	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", "")
+	config := testPluginsCommandConfig(t)
 	restoreHTTPClient := replaceDefaultHTTPClient(t, func(req *http.Request) (*http.Response, error) {
 		if got, want := req.URL.String(), "https://plugins.glade.sh/index.json"; got != want {
 			t.Fatalf("registry URL = %q, want %q", got, want)
@@ -1135,7 +1328,7 @@ func TestPluginsInstallDefaultRegistryPreviewError(t *testing.T) {
 	defer restoreHTTPClient()
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "install", "@glade/compat"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"install", "@glade/compat"}, &stdout, &stderr, config)
 	if code != 1 {
 		t.Fatalf("install exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
 	}
@@ -1154,15 +1347,15 @@ func TestPluginsInstallDefaultRegistryPreviewError(t *testing.T) {
 }
 
 func TestPluginsAvailableCustomRegistryKeepsEndpointError(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
-	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", "https://registry.example.test/index.json")
+	config := testPluginsCommandConfig(t)
+	config.registryURL = "https://registry.example.test/index.json"
 	restoreHTTPClient := replaceDefaultHTTPClient(t, func(req *http.Request) (*http.Response, error) {
 		return nil, fmt.Errorf("dial tcp: lookup registry.example.test: no such host")
 	})
 	defer restoreHTTPClient()
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "available"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"available"}, &stdout, &stderr, config)
 	if code != 1 {
 		t.Fatalf("available exit=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
 	}
@@ -1181,8 +1374,10 @@ func TestPluginsAvailableCustomRegistryKeepsEndpointError(t *testing.T) {
 }
 
 func TestPluginsAvailableRejectsArguments(t *testing.T) {
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "available", "quality"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"available", "quality"}, &stdout, &stderr, config)
 	if code != 1 {
 		t.Fatalf("available exit=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
 	}
@@ -1192,15 +1387,16 @@ func TestPluginsAvailableRejectsArguments(t *testing.T) {
 }
 
 func TestPluginsSearchWithoutQueryListsRegistry(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `{"version":1,"plugins":[{"name":"@glade/compat","version":"0.1.0","trust":"first-party","summary":"Compatibility fixtures.","assets":[{"os":%q,"arch":%q,"url":"https://example.test/compat.tar.gz","sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]}]}`, runtime.GOOS, runtime.GOARCH)
 	}))
 	defer server.Close()
-	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", server.URL)
+	config.registryURL = server.URL
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "search"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"search"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("search exit=%d stderr=%s", code, stderr.String())
 	}
@@ -1210,8 +1406,10 @@ func TestPluginsSearchWithoutQueryListsRegistry(t *testing.T) {
 }
 
 func TestPluginsHelpShowsAvailable(t *testing.T) {
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "--help"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"--help"}, &stdout, &stderr, config)
 	if code != 0 {
 		t.Fatalf("help exit=%d stderr=%s", code, stderr.String())
 	}
@@ -1361,10 +1559,10 @@ func TestCodeIntelligenceHelpListsProductCommands(t *testing.T) {
 }
 
 func TestPluginsInstallRemoteURLRequiresSHA256(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
-	t.Setenv("CI", "")
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "install", "https://example.test/plugin.tar.gz"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"install", "https://example.test/plugin.tar.gz"}, &stdout, &stderr, config)
 	if code != 1 {
 		t.Fatalf("exit=%d, want 1", code)
 	}
@@ -1374,10 +1572,11 @@ func TestPluginsInstallRemoteURLRequiresSHA256(t *testing.T) {
 }
 
 func TestPluginsInstallRemoteURLProgressFinishesOnTrustError(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
-	t.Setenv("CI", "1")
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
+	config.ci = true
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "install", "https://example.test/plugin.tar.gz", "--progress"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"install", "https://example.test/plugin.tar.gz", "--progress"}, &stdout, &stderr, config)
 	if code != 1 {
 		t.Fatalf("exit=%d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
 	}
@@ -1389,8 +1588,9 @@ func TestPluginsInstallRemoteURLProgressFinishesOnTrustError(t *testing.T) {
 }
 
 func TestPluginsInstallCommunityRegistryInCIStopsBeforeDownload(t *testing.T) {
-	t.Setenv("GLADE_HOME", t.TempDir())
-	t.Setenv("CI", "1")
+	t.Parallel()
+	config := testPluginsCommandConfig(t)
+	config.ci = true
 	downloaded := false
 	var server *httptest.Server
 	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -1406,10 +1606,10 @@ func TestPluginsInstallCommunityRegistryInCIStopsBeforeDownload(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	t.Setenv("GLADE_PLUGIN_REGISTRY_URL", server.URL+"/index.json")
+	config.registryURL = server.URL + "/index.json"
 
 	var stdout, stderr bytes.Buffer
-	code := Run(context.Background(), []string{"plugins", "install", "@acme/quality"}, &stdout, &stderr)
+	code := runPluginsForTest(context.Background(), []string{"install", "@acme/quality"}, &stdout, &stderr, config)
 	if code != 1 {
 		t.Fatalf("exit=%d, want 1", code)
 	}
@@ -1422,6 +1622,7 @@ func TestPluginsInstallCommunityRegistryInCIStopsBeforeDownload(t *testing.T) {
 }
 
 func TestScopedPluginCoordinateIsNotArchiveInstallArg(t *testing.T) {
+	t.Parallel()
 	if isArchiveInstallArg("@glade/compat") {
 		t.Fatal("@glade/compat was classified as an archive path")
 	}
@@ -1431,11 +1632,13 @@ func TestScopedPluginCoordinateIsNotArchiveInstallArg(t *testing.T) {
 }
 
 func TestCompatDispatchesToLinkedPlugin(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS == "windows" {
 		t.Skip("shell helper uses sh")
 	}
 	home := t.TempDir()
-	t.Setenv("GLADE_HOME", home)
+	config := testPluginsCommandConfig(t)
+	config.storeRoot = home
 	exe := filepath.Join(home, "glade-plugin-compat")
 	script := `#!/bin/sh
 if [ "$1" = "manifest" ] && [ "$2" = "--json" ]; then
@@ -1448,12 +1651,15 @@ echo "called plugin with $*"
 		t.Fatal(err)
 	}
 	var stdout, stderr bytes.Buffer
-	if code := Run(context.Background(), []string{"plugins", "link", "--exec", exe}, &stdout, &stderr); code != 0 {
+	if code := runPluginsForTest(context.Background(), []string{"link", "--exec", exe}, &stdout, &stderr, config); code != 0 {
 		t.Fatalf("link failed: %s", stderr.String())
 	}
 	stdout.Reset()
 	stderr.Reset()
-	code := Run(context.Background(), []string{"compat", "local-tests", "--help"}, &stdout, &stderr)
+	code, ok := runInstalledPluginCommandWithStore(context.Background(), []string{"compat", "local-tests", "--help"}, &stdout, &stderr, pluginhost.NewStore(config.storeRoot))
+	if !ok {
+		t.Fatal("compat command was not dispatched to installed plugin")
+	}
 	if code != 0 {
 		t.Fatalf("dispatch failed code=%d stderr=%s", code, stderr.String())
 	}
@@ -1481,7 +1687,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "test flag help",
 			args: []string{"test", "--help"},
-			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "--no-cache", "--connect", "--daemon"},
+			want: []string{"Usage:", "glade test", "glade test serve", "clear-cache", "--no-cache", "--connect", "--daemon", "--cpu-profile", "--mem-profile", "--perf-json"},
 		},
 		{
 			name: "test serve help",
@@ -1496,7 +1702,7 @@ func TestRunCommandHelp(t *testing.T) {
 		{
 			name: "help check",
 			args: []string{"help", "check"},
-			want: []string{"Usage:", "glade check", "--project <root>", "--progress-json", "Examples:"},
+			want: []string{"Usage:", "glade check", "--project <root>", "--progress-json", "--cpu-profile", "--mem-profile", "--perf-json", "Examples:"},
 		},
 		{
 			name: "schema subcommand help",
@@ -1833,30 +2039,47 @@ func TestRunTopLevelHelpAlignment(t *testing.T) {
 	}
 }
 
+type editorCommandTestEnv map[string]string
+
+func (env editorCommandTestEnv) getenv(name string) string {
+	return env[name]
+}
+
+func testEditorCommandDeps(t *testing.T, deps editorCommandDeps) (editorCommandDeps, editorCommandTestEnv) {
+	t.Helper()
+	env := make(editorCommandTestEnv)
+	userShareDir := filepath.Join(t.TempDir(), "user-share")
+	deps.getenv = env.getenv
+	deps.userShareDir = func() string { return userShareDir }
+	deps.executable = func() (string, error) { return "", os.ErrNotExist }
+	deps.getwd = func() (string, error) { return "", os.ErrNotExist }
+	return deps, env
+}
+
 func TestRunEditorInstallVSCodeUsesVSIX(t *testing.T) {
+	t.Parallel()
 	vsix := filepath.Join(t.TempDir(), "vscode-glade.vsix")
 	if err := os.WriteFile(vsix, []byte("vsix"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	var ranName string
 	var ranArgs []string
-	restore := stubEditorCommandDeps(t,
-		func(name string) (string, error) {
+	deps, _ := testEditorCommandDeps(t, editorCommandDeps{
+		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
 			}
 			return "/usr/local/bin/code", nil
 		},
-		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			ranName = name
 			ranArgs = append([]string(nil), args...)
 			return []byte("installed\n"), nil
 		},
-	)
-	defer restore()
+	})
 
 	var stdout bytes.Buffer
-	if err := runEditor(context.Background(), []string{"install", "vscode", "--vsix", vsix, "--force"}, &stdout); err != nil {
+	if err := runEditorWithCommandDeps(context.Background(), []string{"install", "vscode", "--vsix", vsix, "--force"}, &stdout, deps); err != nil {
 		t.Fatal(err)
 	}
 	if ranName != "/usr/local/bin/code" {
@@ -1872,25 +2095,25 @@ func TestRunEditorInstallVSCodeUsesVSIX(t *testing.T) {
 }
 
 func TestRunEditorInstallVSCodeSuppressesSuccessfulEditorOutput(t *testing.T) {
+	t.Parallel()
 	vsix := filepath.Join(t.TempDir(), "vscode-glade.vsix")
 	if err := os.WriteFile(vsix, []byte("vsix"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	restore := stubEditorCommandDeps(t,
-		func(name string) (string, error) {
+	deps, _ := testEditorCommandDeps(t, editorCommandDeps{
+		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
 			}
 			return "/usr/local/bin/code", nil
 		},
-		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			return []byte("Installing extensions...\nExtension 'vscode-glade-0.0.1.vsix' was successfully installed.\n(node:5882) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized.\n"), nil
 		},
-	)
-	defer restore()
+	})
 
 	var stdout bytes.Buffer
-	if err := runEditor(context.Background(), []string{"install", "vscode", "--vsix", vsix, "--force"}, &stdout); err != nil {
+	if err := runEditorWithCommandDeps(context.Background(), []string{"install", "vscode", "--vsix", vsix, "--force"}, &stdout, deps); err != nil {
 		t.Fatal(err)
 	}
 	want := fmt.Sprintf("installed vscode extension: %s\n", vsix)
@@ -1900,9 +2123,10 @@ func TestRunEditorInstallVSCodeSuppressesSuccessfulEditorOutput(t *testing.T) {
 }
 
 func TestRunEditorDoctorVSCodeReportsPaths(t *testing.T) {
+	t.Parallel()
 	gladePath := filepath.Join(t.TempDir(), "bin", "glade")
-	restore := stubEditorCommandDeps(t,
-		func(name string) (string, error) {
+	deps, _ := testEditorCommandDeps(t, editorCommandDeps{
+		lookPath: func(name string) (string, error) {
 			switch name {
 			case "code":
 				return "/usr/local/bin/code", nil
@@ -1912,14 +2136,13 @@ func TestRunEditorDoctorVSCodeReportsPaths(t *testing.T) {
 				return "", os.ErrNotExist
 			}
 		},
-		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			return nil, nil
 		},
-	)
-	defer restore()
+	})
 
 	var stdout bytes.Buffer
-	if err := runEditor(context.Background(), []string{"doctor", "vscode"}, &stdout); err != nil {
+	if err := runEditorWithCommandDeps(context.Background(), []string{"doctor", "vscode"}, &stdout, deps); err != nil {
 		t.Fatal(err)
 	}
 	out := stdout.String()
@@ -1934,6 +2157,7 @@ func TestRunEditorDoctorVSCodeReportsPaths(t *testing.T) {
 }
 
 func TestRunEditorDoctorVSCodeJSONReportsBundledVSIX(t *testing.T) {
+	t.Parallel()
 	home := t.TempDir()
 	vsix := filepath.Join(home, "editor", "vscode-glade.vsix")
 	if err := os.MkdirAll(filepath.Dir(vsix), 0o755); err != nil {
@@ -1942,9 +2166,8 @@ func TestRunEditorDoctorVSCodeJSONReportsBundledVSIX(t *testing.T) {
 	if err := os.WriteFile(vsix, []byte("vsix"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("GLADE_HOME", home)
-	restore := stubEditorCommandDeps(t,
-		func(name string) (string, error) {
+	deps, env := testEditorCommandDeps(t, editorCommandDeps{
+		lookPath: func(name string) (string, error) {
 			switch name {
 			case "code":
 				return "/usr/local/bin/code", nil
@@ -1954,14 +2177,14 @@ func TestRunEditorDoctorVSCodeJSONReportsBundledVSIX(t *testing.T) {
 				return "", os.ErrNotExist
 			}
 		},
-		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			return nil, nil
 		},
-	)
-	defer restore()
+	})
+	env["GLADE_HOME"] = home
 
 	var stdout bytes.Buffer
-	if err := runEditor(context.Background(), []string{"doctor", "vscode", "--json"}, &stdout); err != nil {
+	if err := runEditorWithCommandDeps(context.Background(), []string{"doctor", "vscode", "--json"}, &stdout, deps); err != nil {
 		t.Fatal(err)
 	}
 	var got struct {
@@ -1993,28 +2216,28 @@ func TestRunEditorDoctorVSCodeJSONReportsBundledVSIX(t *testing.T) {
 }
 
 func TestRunEditorInstallVSCodeUsesBundledVSIXWhenPathOmitted(t *testing.T) {
+	t.Parallel()
 	vsix := filepath.Join(t.TempDir(), "vscode-glade.vsix")
 	if err := os.WriteFile(vsix, []byte("vsix"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("GLADE_VSCODE_VSIX", vsix)
 	var ranArgs []string
-	restore := stubEditorCommandDeps(t,
-		func(name string) (string, error) {
+	deps, env := testEditorCommandDeps(t, editorCommandDeps{
+		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
 			}
 			return "/usr/local/bin/code", nil
 		},
-		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			ranArgs = append([]string(nil), args...)
 			return []byte("installed\n"), nil
 		},
-	)
-	defer restore()
+	})
+	env["GLADE_VSCODE_VSIX"] = vsix
 
 	var stdout bytes.Buffer
-	if err := runEditor(context.Background(), []string{"install", "vscode", "--force"}, &stdout); err != nil {
+	if err := runEditorWithCommandDeps(context.Background(), []string{"install", "vscode", "--force"}, &stdout, deps); err != nil {
 		t.Fatal(err)
 	}
 	wantArgs := []string{"--install-extension", vsix, "--force"}
@@ -2024,6 +2247,7 @@ func TestRunEditorInstallVSCodeUsesBundledVSIXWhenPathOmitted(t *testing.T) {
 }
 
 func TestRunEditorInstallVSCodeUsesGladeHomeBundledVSIX(t *testing.T) {
+	t.Parallel()
 	home := t.TempDir()
 	vsix := filepath.Join(home, "editor", "vscode-glade.vsix")
 	if err := os.MkdirAll(filepath.Dir(vsix), 0o755); err != nil {
@@ -2032,25 +2256,24 @@ func TestRunEditorInstallVSCodeUsesGladeHomeBundledVSIX(t *testing.T) {
 	if err := os.WriteFile(vsix, []byte("vsix"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("GLADE_HOME", home)
-	t.Setenv("GLADE_VSCODE_VSIX", "")
 	var ranArgs []string
-	restore := stubEditorCommandDeps(t,
-		func(name string) (string, error) {
+	deps, env := testEditorCommandDeps(t, editorCommandDeps{
+		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
 			}
 			return "/usr/local/bin/code", nil
 		},
-		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			ranArgs = append([]string(nil), args...)
 			return []byte("installed\n"), nil
 		},
-	)
-	defer restore()
+	})
+	env["GLADE_HOME"] = home
+	env["GLADE_VSCODE_VSIX"] = ""
 
 	var stdout bytes.Buffer
-	if err := runEditor(context.Background(), []string{"install", "vscode", "--force"}, &stdout); err != nil {
+	if err := runEditorWithCommandDeps(context.Background(), []string{"install", "vscode", "--force"}, &stdout, deps); err != nil {
 		t.Fatal(err)
 	}
 	wantArgs := []string{"--install-extension", vsix, "--force"}
@@ -2060,6 +2283,7 @@ func TestRunEditorInstallVSCodeUsesGladeHomeBundledVSIX(t *testing.T) {
 }
 
 func TestRunEditorInstallVSCodePrefersSourceCheckoutOverUserShareVSIX(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module github.com/glade-sh/glade\n"), 0o644); err != nil {
 		t.Fatal(err)
@@ -2086,39 +2310,26 @@ func TestRunEditorInstallVSCodePrefersSourceCheckoutOverUserShareVSIX(t *testing
 	if err := os.WriteFile(userShareVSIX, []byte("stale-user-share-vsix"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	t.Setenv("GLADE_VSCODE_VSIX", "")
-	t.Setenv("GLADE_HOME", "")
-	t.Setenv("XDG_DATA_HOME", xdg)
-	originalCWD, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(extensionRoot); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := os.Chdir(originalCWD); err != nil {
-			t.Fatalf("restore cwd: %v", err)
-		}
-	})
-
 	var ranArgs []string
-	restore := stubEditorCommandDeps(t,
-		func(name string) (string, error) {
+	deps, env := testEditorCommandDeps(t, editorCommandDeps{
+		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
 			}
 			return "/usr/local/bin/code", nil
 		},
-		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			ranArgs = append([]string(nil), args...)
 			return []byte("installed\n"), nil
 		},
-	)
-	defer restore()
+	})
+	env["GLADE_VSCODE_VSIX"] = ""
+	env["GLADE_HOME"] = ""
+	deps.userShareDir = func() string { return filepath.Join(xdg, "glade") }
+	deps.getwd = func() (string, error) { return filepath.EvalSymlinks(extensionRoot) }
 
 	var stdout bytes.Buffer
-	if err := runEditor(context.Background(), []string{"install", "vscode"}, &stdout); err != nil {
+	if err := runEditorWithCommandDeps(context.Background(), []string{"install", "vscode"}, &stdout, deps); err != nil {
 		t.Fatal(err)
 	}
 	wantArgs := []string{"--install-extension", sourceVSIX}
@@ -2128,6 +2339,7 @@ func TestRunEditorInstallVSCodePrefersSourceCheckoutOverUserShareVSIX(t *testing
 }
 
 func TestRunEditorInstallVSCodeFindsSourceCheckoutVSIX(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module github.com/glade-sh/glade\n"), 0o644); err != nil {
 		t.Fatal(err)
@@ -2146,56 +2358,33 @@ func TestRunEditorInstallVSCodeFindsSourceCheckoutVSIX(t *testing.T) {
 	if resolved, err := filepath.EvalSymlinks(vsix); err == nil {
 		vsix = resolved
 	}
-	t.Setenv("GLADE_VSCODE_VSIX", "")
-	t.Setenv("GLADE_HOME", filepath.Join(root, "missing-glade-home"))
-	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "xdg"))
-	originalCWD, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(filepath.Join(root, "contrib", "vscode-glade")); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := os.Chdir(originalCWD); err != nil {
-			t.Fatalf("restore cwd: %v", err)
-		}
-	})
-
 	var ranArgs []string
-	restore := stubEditorCommandDeps(t,
-		func(name string) (string, error) {
+	deps, env := testEditorCommandDeps(t, editorCommandDeps{
+		lookPath: func(name string) (string, error) {
 			if name != "code" {
 				t.Fatalf("looked up %q, want code", name)
 			}
 			return "/usr/local/bin/code", nil
 		},
-		func(ctx context.Context, name string, args ...string) ([]byte, error) {
+		run: func(ctx context.Context, name string, args ...string) ([]byte, error) {
 			ranArgs = append([]string(nil), args...)
 			return []byte("installed\n"), nil
 		},
-	)
-	defer restore()
+	})
+	env["GLADE_VSCODE_VSIX"] = ""
+	env["GLADE_HOME"] = filepath.Join(root, "missing-glade-home")
+	deps.userShareDir = func() string { return filepath.Join(root, "xdg", "glade") }
+	deps.getwd = func() (string, error) {
+		return filepath.EvalSymlinks(filepath.Join(root, "contrib", "vscode-glade"))
+	}
 
 	var stdout bytes.Buffer
-	if err := runEditor(context.Background(), []string{"install", "vscode"}, &stdout); err != nil {
+	if err := runEditorWithCommandDeps(context.Background(), []string{"install", "vscode"}, &stdout, deps); err != nil {
 		t.Fatal(err)
 	}
 	wantArgs := []string{"--install-extension", vsix}
 	if strings.Join(ranArgs, "\x00") != strings.Join(wantArgs, "\x00") {
 		t.Fatalf("ran args = %#v, want %#v", ranArgs, wantArgs)
-	}
-}
-
-func stubEditorCommandDeps(t *testing.T, lookPath func(string) (string, error), run func(context.Context, string, ...string) ([]byte, error)) func() {
-	t.Helper()
-	origLookPath := editorCommandLookPath
-	origRun := editorCommandRun
-	editorCommandLookPath = lookPath
-	editorCommandRun = run
-	return func() {
-		editorCommandLookPath = origLookPath
-		editorCommandRun = origRun
 	}
 }
 
@@ -2682,6 +2871,68 @@ public class QueryInLoop {
 	}
 	if strings.Contains(stdout.String(), "GLADEPERF") {
 		t.Fatalf("check JSON reported performance diagnostics:\n%s", stdout.String())
+	}
+}
+
+func TestNewCheckSemaPerfIncludesSourceArenaCounters(t *testing.T) {
+	got := newCheckSemaPerf(sema.PerfCounters{
+		Enabled:                  true,
+		WorkspacePhysicalReads:   1,
+		WorkspacePhysicalSources: 1,
+		WorkspaceLogicalViews:    2,
+		WorkspaceOccurrences:     3,
+		SourceArenaHits:          17,
+		SourceArenaMisses:        0,
+		SourceArenaFallbackReads: 0,
+	})
+	data, err := json.Marshal(got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		`"workspacePhysicalReads":1`, `"workspacePhysicalSources":1`,
+		`"workspaceLogicalViews":2`, `"workspaceOccurrences":3`,
+		`"sourceArenaHits":17`, `"sourceArenaMisses":0`, `"sourceArenaFallbackReads":0`,
+	} {
+		if !bytes.Contains(data, []byte(want)) {
+			t.Fatalf("perf JSON missing %s: %s", want, data)
+		}
+	}
+}
+
+func TestRunCheckPerfJSONReportsSinglePhysicalSourceRead(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Arena.cls"), `public class Arena { public void run() { System.debug('arena'); } }`)
+	perfPath := filepath.Join(t.TempDir(), "check-perf.json")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"check", "--project", root, "--json", "--no-progress", "--perf-json", perfPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	data, err := os.ReadFile(perfPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var perf struct {
+		SemaPerf struct {
+			WorkspacePhysicalReads   uint64 `json:"workspacePhysicalReads"`
+			WorkspacePhysicalSources uint64 `json:"workspacePhysicalSources"`
+			WorkspaceOccurrences     uint64 `json:"workspaceOccurrences"`
+			SourceArenaHits          uint64 `json:"sourceArenaHits"`
+			SourceArenaMisses        uint64 `json:"sourceArenaMisses"`
+			SourceArenaFallbackReads uint64 `json:"sourceArenaFallbackReads"`
+		} `json:"semaPerf"`
+	}
+	if err := json.Unmarshal(data, &perf); err != nil {
+		t.Fatal(err)
+	}
+	got := perf.SemaPerf
+	if got.WorkspacePhysicalReads != 1 || got.WorkspacePhysicalSources != 1 || got.WorkspaceOccurrences != 1 {
+		t.Fatalf("workspace source counts = %#v", got)
+	}
+	if got.SourceArenaHits == 0 || got.SourceArenaMisses != 0 || got.SourceArenaFallbackReads != 0 {
+		t.Fatalf("source arena counts = %#v", got)
 	}
 }
 
@@ -3257,6 +3508,10 @@ const dapTestTimeout = 45 * time.Second
 func TestRunDAPLaunchEmitsStopped(t *testing.T) {
 	inR, inW := io.Pipe()
 	outR, outW := io.Pipe()
+	t.Cleanup(func() {
+		_ = inW.Close()
+		_ = outR.Close()
+	})
 	done := make(chan error, 1)
 	go func() {
 		defer outW.Close()
@@ -4868,6 +5123,69 @@ func TestWatchIndexUpdateUsesIncrementalForApexOnlyChanges(t *testing.T) {
 	}
 	if len(updated.Types) != 1 || len(updated.Types[0].Members) != 1 || updated.Types[0].Members[0].Name != "newName" {
 		t.Fatalf("types = %#v", updated.Types)
+	}
+}
+
+func TestWatchIndexUpdateReturnsFailedFallbackWithoutCandidate(t *testing.T) {
+	root := t.TempDir()
+	manifestPath := filepath.Join(root, "sfdx-project.json")
+	classPath := filepath.Join(root, "force-app/main/default/classes/Stable.cls")
+	writeTestFile(t, manifestPath, `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, classPath, "public class Stable { public void beforeEdit() {} }")
+	index, err := loadIndex(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	writeTestFile(t, manifestPath, "{")
+	writeTestFile(t, classPath, "public class Stable {")
+	updated, err := updateWatchIndex(root, index, []watch.Change{{
+		Path: classPath,
+		Op:   watch.ChangeModified,
+		Kind: watch.FileKindApexClass,
+		Name: "Stable",
+	}})
+	if err == nil {
+		t.Fatal("updateWatchIndex succeeded after authoritative fallback failed")
+	}
+	if updated.Project != (typesys.ProjectInfo{}) || len(updated.Types) != 0 || len(updated.Triggers) != 0 || len(updated.Diagnostics) != 0 {
+		t.Errorf("updateWatchIndex returned a candidate after failed fallback: %#v", updated)
+	}
+}
+
+func TestWatchIndexStatePreservesLiveStateAndRecoversAfterFailedFallback(t *testing.T) {
+	root := t.TempDir()
+	manifestPath := filepath.Join(root, "sfdx-project.json")
+	classPath := filepath.Join(root, "force-app/main/default/classes/Stable.cls")
+	manifest := `{"packageDirectories":[{"path":"force-app","default":true}]}`
+	writeTestFile(t, manifestPath, manifest)
+	writeTestFile(t, classPath, "public class Stable { public void beforeEdit() {} }")
+	index, err := loadIndex(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	graph := watch.BuildReferenceGraph(index)
+	beforeIndex := index
+	beforeGraph := watch.BuildReferenceGraph(index)
+
+	writeTestFile(t, manifestPath, "{")
+	writeTestFile(t, classPath, "public class Stable {")
+	index, graph, err = updateWatchIndexState(root, index, graph, []watch.Change{{Path: classPath, Op: watch.ChangeModified, Kind: watch.FileKindApexClass, Name: "Stable"}})
+	if err == nil {
+		t.Fatal("watch state update succeeded after fallback failure")
+	}
+	if !reflect.DeepEqual(index, beforeIndex) || !reflect.DeepEqual(graph, beforeGraph) {
+		t.Errorf("failed fallback changed live watch state:\nindex: %#v\ngraph: %#v", index, graph)
+	}
+
+	writeTestFile(t, manifestPath, manifest)
+	writeTestFile(t, classPath, "public class Stable { public void afterEdit() {} }")
+	index, graph, err = updateWatchIndexState(root, index, graph, []watch.Change{{Path: classPath, Op: watch.ChangeModified, Kind: watch.FileKindApexClass, Name: "Stable"}})
+	if err != nil {
+		t.Fatalf("subsequent valid change failed: %v", err)
+	}
+	if len(index.Types) != 1 || len(index.Types[0].Members) != 1 || index.Types[0].Members[0].Name != "afterEdit" || graph == nil {
+		t.Errorf("subsequent valid change did not use retained state: index=%#v graph=%#v", index, graph)
 	}
 }
 

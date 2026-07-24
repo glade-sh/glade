@@ -88,6 +88,18 @@ func TestClassifyPath(t *testing.T) {
 			watchable: true,
 		},
 		{
+			name:      "Salesforce project config",
+			path:      "sfdx-project.json",
+			kind:      FileKindIgnored,
+			watchable: true,
+		},
+		{
+			name:      "Glade project config",
+			path:      "glade.yml",
+			kind:      FileKindIgnored,
+			watchable: true,
+		},
+		{
 			name:      "ignored",
 			path:      filepath.Join("force-app", "README.md"),
 			kind:      FileKindIgnored,

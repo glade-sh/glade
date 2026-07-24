@@ -2,10 +2,15 @@ package pluginhost
 
 import (
 	"context"
+	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestLoadManifestFromFile(t *testing.T) {
@@ -43,6 +48,209 @@ exit 7
 	if manifest.Name != "compat" {
 		t.Fatalf("unexpected manifest: %#v", manifest)
 	}
+}
+
+func TestLoadManifestFromExecutableAcceptsCompleteManifestAfterPipeDelay(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell helper and process probe use POSIX commands")
+	}
+	pidPath := filepath.Join(t.TempDir(), "descendant.pid")
+	cleanupNeeded := true
+	t.Cleanup(func() {
+		if cleanupNeeded {
+			bestEffortKillRecordedPID(pidPath)
+		}
+	})
+	t.Setenv("GLADE_PLUGIN_TEST_PID_FILE", pidPath)
+	exe := writeShellPlugin(t, t.TempDir(), "compat", `#!/bin/sh
+sleep 30 &
+child=$!
+printf '%s\n' "$child" > "$GLADE_PLUGIN_TEST_PID_FILE"
+printf '{"apiVersion":"glade.plugin.v1","name":"compat","version":"0.1.0","commands":[{"path":["compat"],"summary":"Compat commands."}]}'
+exit 0
+`)
+
+	manifest, err := LoadManifestFromExecutable(context.Background(), exe)
+	if err != nil {
+		t.Fatalf("LoadManifestFromExecutable: %v", err)
+	}
+	if manifest.Name != "compat" {
+		t.Fatalf("unexpected manifest: %#v", manifest)
+	}
+
+	pid := readRecordedPID(t, pidPath)
+	waitForProcessAbsent(t, pid, time.Second)
+	cleanupNeeded = false
+}
+
+func TestLoadManifestFromExecutableRejectsTruncatedManifestAfterPipeDelay(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell helper and process probe use POSIX commands")
+	}
+	pidPath := filepath.Join(t.TempDir(), "descendant.pid")
+	cleanupNeeded := true
+	t.Cleanup(func() {
+		if cleanupNeeded {
+			bestEffortKillRecordedPID(pidPath)
+		}
+	})
+	t.Setenv("GLADE_PLUGIN_TEST_PID_FILE", pidPath)
+	exe := writeShellPlugin(t, t.TempDir(), "compat", `#!/bin/sh
+sleep 30 &
+child=$!
+printf '%s\n' "$child" > "$GLADE_PLUGIN_TEST_PID_FILE"
+printf '{"apiVersion":"glade.plugin.v1","name":"compat"'
+exit 0
+`)
+
+	_, err := LoadManifestFromExecutable(context.Background(), exe)
+	if !errors.Is(err, exec.ErrWaitDelay) {
+		t.Fatalf("error = %v, want exec.ErrWaitDelay", err)
+	}
+
+	pid := readRecordedPID(t, pidPath)
+	waitForProcessAbsent(t, pid, time.Second)
+	cleanupNeeded = false
+}
+
+func TestLoadManifestFromExecutableCancellationCleansUpDescendant(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell helper and process probe use POSIX commands")
+	}
+	pidPath := filepath.Join(t.TempDir(), "descendant.pid")
+	cleanupNeeded := true
+	t.Cleanup(func() {
+		if cleanupNeeded {
+			bestEffortKillRecordedPID(pidPath)
+		}
+	})
+	t.Setenv("GLADE_PLUGIN_TEST_PID_FILE", pidPath)
+	exe := writeShellPlugin(t, t.TempDir(), "compat", `#!/bin/sh
+if [ "$1" = "prewarm" ]; then
+	exit 0
+fi
+sleep 30 &
+child=$!
+printf '%s\n' "$child" > "$GLADE_PLUGIN_TEST_PID_FILE"
+wait "$child"
+`)
+	if err := exec.Command(exe, "prewarm").Run(); err != nil {
+		t.Fatalf("prewarm helper: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	errCh := make(chan error, 1)
+	go func() {
+		_, err := LoadManifestFromExecutable(ctx, exe)
+		errCh <- err
+	}()
+
+	pid := readRecordedPID(t, pidPath)
+	started := time.Now()
+	cancel()
+	if err := <-errCh; !errors.Is(err, context.Canceled) {
+		t.Fatalf("error = %v, want context canceled", err)
+	}
+	if elapsed := time.Since(started); elapsed >= time.Second {
+		t.Fatalf("cancellation cleanup took %s, want <1s", elapsed)
+	}
+
+	waitForProcessAbsent(t, pid, time.Second)
+	cleanupNeeded = false
+}
+
+func TestLoadManifestFromExecutablePreservesOrdinaryFailure(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell helper uses sh")
+	}
+	exe := writeShellPlugin(t, t.TempDir(), "compat", `#!/bin/sh
+printf 'manifest failure sentinel\n' >&2
+exit 7
+`)
+
+	_, err := LoadManifestFromExecutable(context.Background(), exe)
+	if err == nil {
+		t.Fatal("LoadManifestFromExecutable unexpectedly succeeded")
+	}
+	if !strings.Contains(err.Error(), "exit status 7") || !strings.Contains(err.Error(), "manifest failure sentinel") {
+		t.Fatalf("error did not preserve exit status and stderr: %v", err)
+	}
+}
+
+func TestConfigureManifestCommandWithoutStartedProcessReportsProcessDone(t *testing.T) {
+	cmd := exec.CommandContext(context.Background(), "unused")
+	configureManifestCommand(cmd)
+
+	err := cmd.Cancel()
+	if !errors.Is(err, os.ErrProcessDone) {
+		t.Fatalf("Cancel error = %v, want os.ErrProcessDone", err)
+	}
+}
+
+func TestConfigureManifestCommandAfterProcessExitReportsProcessDone(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell helper uses sh")
+	}
+	cmd := exec.CommandContext(context.Background(), "sh", "-c", "exit 0")
+	configureManifestCommand(cmd)
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+
+	err := cmd.Cancel()
+	if !errors.Is(err, os.ErrProcessDone) {
+		t.Fatalf("Cancel error = %v, want os.ErrProcessDone", err)
+	}
+}
+
+func readRecordedPID(t *testing.T, path string) int {
+	t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	for {
+		data, err := os.ReadFile(path)
+		if err == nil {
+			pid, convErr := strconv.Atoi(strings.TrimSpace(string(data)))
+			if convErr != nil || pid <= 0 {
+				t.Fatalf("invalid recorded PID %q: %v", data, convErr)
+			}
+			return pid
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("read recorded PID: %v", err)
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("timed out waiting for PID file %s", path)
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+}
+
+func waitForProcessAbsent(t *testing.T, pid int, timeout time.Duration) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for {
+		err := exec.Command("kill", "-0", strconv.Itoa(pid)).Run()
+		if err != nil {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("descendant PID %d remained after %s", pid, timeout)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+func bestEffortKillRecordedPID(path string) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
+	if err != nil || pid <= 0 {
+		return
+	}
+	_ = exec.Command("kill", "-KILL", strconv.Itoa(pid)).Run()
 }
 
 func TestLinkExecutableStoresManifest(t *testing.T) {

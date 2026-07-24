@@ -19,12 +19,16 @@ import (
 
 	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/cliui"
+	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/enterprise"
 	"github.com/glade-sh/glade/internal/flagparse"
+	"github.com/glade-sh/glade/internal/project"
+	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/testdaemon"
 	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/trace"
 	"github.com/glade-sh/glade/internal/tui"
+	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 	"github.com/glade-sh/glade/internal/watch"
 )
@@ -141,7 +145,9 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	debounce := watch.DefaultDebounce
 	backend := watch.BackendAuto
 	var compileDoneMS int64
-	var discoverTimeMS int64
+	var perfRunStarted time.Time
+	var perfSnapshot apextest.PerfCounters
+	var historyWriteNS int64
 	parsed, err := flagparse.New("glade test").
 		String("project", "p").
 		String("filter", "f").
@@ -235,6 +241,9 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		parsedShardCount, err := strconv.Atoi(parsed.String("shard-count"))
 		if err != nil || parsedShardCount <= 0 {
 			return testreport.Run{}, errors.New("--shard-count must be a positive integer")
+		}
+		if parsedShardCount > testdaemon.MaxClassShardCountV1 {
+			return testreport.Run{}, fmt.Errorf("--shard-count cannot exceed %d", testdaemon.MaxClassShardCountV1)
 		}
 		shardCount = parsedShardCount
 	}
@@ -347,6 +356,26 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		}
 		backend = parsedBackend
 	}
+	perfEnabled := strings.TrimSpace(perfJSONPath) != ""
+	if perfEnabled {
+		switch {
+		case connectMode:
+			return testreport.Run{}, errors.New("--perf-json cannot be combined with --connect")
+		case daemonMode:
+			return testreport.Run{}, errors.New("--perf-json cannot be combined with --daemon")
+		case watchOnce:
+			return testreport.Run{}, errors.New("--perf-json cannot be combined with --watch-once")
+		case watchMode:
+			return testreport.Run{}, errors.New("--perf-json cannot be combined with --watch")
+		case wizard:
+			return testreport.Run{}, errors.New("--perf-json cannot be combined with --wizard")
+		case lastFailed:
+			return testreport.Run{}, errors.New("--perf-json cannot be combined with --last-failed")
+		case writeClassShardsDir != "":
+			return testreport.Run{}, errors.New("--perf-json cannot be combined with --write-class-shards")
+		}
+		noServe = true
+	}
 	if wizard {
 		if err := writeTestWizard(ctx, root, w); err != nil {
 			return testreport.Run{}, err
@@ -377,6 +406,43 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	durationHistoryWritePath := ""
 	if !durationHistoryExplicit && shouldPersistCLIDurationHistory(filter, selectedClasses, methodName, changedSince, shardCount, writeClassShardsDir) {
 		durationHistoryWritePath = defaultDurationHistoryPath
+	}
+	historyDestination := cliArtifactDestination{}
+	switch {
+	case durationHistoryExplicit:
+		historyDestination = cliArtifactDestination{Name: "--duration-history", Path: durationHistoryPath}
+	case durationHistoryWritePath != "":
+		historyDestination = cliArtifactDestination{Name: "automatic duration history", Path: durationHistoryWritePath}
+	case durationHistoryPath != "":
+		historyDestination = cliArtifactDestination{Name: "automatic duration history", Path: durationHistoryPath}
+	}
+	if err := validateDistinctCLIArtifactDestinations(
+		cliArtifactDestination{Name: "--perf-json", Path: strings.TrimSpace(perfJSONPath)},
+		cliArtifactDestination{Name: "--cpu-profile", Path: strings.TrimSpace(cpuProfilePath)},
+		cliArtifactDestination{Name: "--mem-profile", Path: strings.TrimSpace(memProfilePath)},
+		cliArtifactDestination{Name: "--trace", Path: tracePath},
+		cliArtifactDestination{Name: "--junit", Path: junitPath},
+		historyDestination,
+	); err != nil {
+		return testreport.Run{}, err
+	}
+	if connectMode {
+		switch {
+		case watchMode:
+			return testreport.Run{}, errors.New("--connect cannot be combined with --watch or --watch-once")
+		case daemonMode:
+			return testreport.Run{}, errors.New("--connect cannot be combined with --daemon")
+		case debug:
+			return testreport.Run{}, errors.New("--connect cannot be combined with --debug")
+		case strings.TrimSpace(cpuProfilePath) != "":
+			return testreport.Run{}, errors.New("--connect cannot be combined with --cpu-profile")
+		case strings.TrimSpace(memProfilePath) != "":
+			return testreport.Run{}, errors.New("--connect cannot be combined with --mem-profile")
+		case strings.TrimSpace(servicesPath) != "":
+			return testreport.Run{}, errors.New("--connect cannot be combined with --services")
+		case noServe:
+			return testreport.Run{}, errors.New("--connect cannot be combined with --no-serve")
+		}
 	}
 	stopProfile, err := startCLIProfiler(cpuProfilePath, memProfilePath)
 	if err != nil {
@@ -409,7 +475,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		ParallelMethods:     parallelMethods,
 		TimeoutMS:           testTimeout.Milliseconds(),
 		NoDiskCache:         noCache,
-		PerfCounters:        strings.TrimSpace(perfJSONPath) != "",
+		PerfCounters:        perfEnabled,
 	}
 	durationHistory, err := loadCLIDurationHistory(durationHistoryPath)
 	if err != nil {
@@ -430,27 +496,74 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		testOpts.Parallelism = parallelismOverride
 	case parallelMethods:
 		testOpts.Parallelism = runtime.GOMAXPROCS(0)
+	default:
+		testOpts.Parallelism = 1
+	}
+	effectiveShardCount := shardCount
+	if writeClassShardsDir != "" && effectiveShardCount <= 0 {
+		effectiveShardCount = testOpts.Parallelism
+	}
+	if writeClassShardsDir != "" && effectiveShardCount > testdaemon.MaxClassShardCountV1 {
+		return testreport.Run{}, fmt.Errorf("test shard count cannot exceed %d", testdaemon.MaxClassShardCountV1)
 	}
 	applyTestMemoryLimits(gcAggressive)
 
-	if noCache {
+	if noCache && !connectMode {
 		noServe = true
 	}
-	localOnlyTestOptions := len(selectedClasses) != 0 || methodName != "" || shardCount > 0 || durationHistoryExplicit || writeClassShardsDir != "" || tracePath != "" || servicesPath != ""
-	if connectMode && localOnlyTestOptions {
-		return testreport.Run{}, errors.New("--connect cannot be combined with local-only test options")
-	}
+	localOnlyTestOptions := perfEnabled || strings.TrimSpace(cpuProfilePath) != "" || strings.TrimSpace(memProfilePath) != "" || servicesPath != ""
 	if localOnlyTestOptions {
 		noServe = true
 	}
 	if !noServe && !watchMode && !daemonMode && !debug {
-		if result, used, err := tryTestServerRun(ctx, root, connectMode, filter, changedSince, format, junitPath, debug, w); used || err != nil {
-			if used && err == nil {
-				if writeErr := maybeWriteCLIDurationHistory(durationHistoryWritePath, result, durationHistory); writeErr != nil {
-					return result, writeErr
+		request := testdaemon.NewRunRequestV1(testOpts, changedSince, effectiveShardCount, shardIndex, writeClassShardsDir != "")
+		if response, used, err := tryTestServerRequest(ctx, root, connectMode, request); used || err != nil {
+			if err != nil {
+				return testreport.Run{}, err
+			}
+			if !response.OK {
+				message := strings.TrimSpace(response.Error)
+				if message == "" {
+					message = "test server run failed"
+				}
+				return testreport.Run{}, errors.New(message)
+			}
+			if writeClassShardsDir != "" && (response.Run == nil || response.Run.Summary().Total == 0) {
+				if response.ShardPlan == nil {
+					return testreport.Run{}, errors.New("test server did not return a class shard plan")
+				}
+				return testreport.Run{}, writeCLIClassShardPlan(writeClassShardsDir, *response.ShardPlan, effectiveShardCount)
+			}
+			if response.Run == nil {
+				message := strings.TrimSpace(response.Error)
+				if message == "" {
+					message = "test server run failed"
+				}
+				return testreport.Run{}, errors.New(message)
+			}
+			result := *response.Run
+			if err := maybeWriteCLIDurationHistory(durationHistoryWritePath, result, durationHistory); err != nil {
+				return result, err
+			}
+			if tracePath != "" {
+				if err := writeTestTraceFile(tracePath, result); err != nil {
+					return result, err
 				}
 			}
-			return result, err
+			if err := writeLastFailedTests(root, result); err != nil {
+				return result, err
+			}
+			if junitPath != "" {
+				if err := writeJUnitFile(junitPath, result); err != nil {
+					return result, err
+				}
+			}
+			switch format {
+			case "json":
+				return result, writeTestJSONEnvelope(w, result, junitPath)
+			default:
+				return result, testreport.WriteConsole(w, result)
+			}
 		}
 	}
 
@@ -462,15 +575,20 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		if watchMode {
 			return runWatchTestsDaemon(ctx, root, daemon, testOpts, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
 		}
-		var result testreport.Run
-		if strings.TrimSpace(changedSince) != "" {
-			run, _, err := daemon.RunChangedSinceOptions(changedSince, testOpts)
-			if err != nil {
-				return testreport.Run{}, err
+		request := testdaemon.NewRunRequestV1(testOpts, changedSince, effectiveShardCount, shardIndex, writeClassShardsDir != "")
+		var setProgressTotal func(int)
+		if progressReporter != nil {
+			setProgressTotal = progressReporter.setTotal
+		}
+		result, _, shardPlan, err := daemon.RunRequestV1(ctx, request, testOpts.Progress, setProgressTotal)
+		if err != nil {
+			return testreport.Run{}, err
+		}
+		if writeClassShardsDir != "" && result.Summary().Total == 0 {
+			if shardPlan == nil {
+				return testreport.Run{}, errors.New("test daemon did not return a class shard plan")
 			}
-			result = run
-		} else {
-			result = daemon.RunOptions(testOpts)
+			return testreport.Run{}, writeCLIClassShardPlan(writeClassShardsDir, *shardPlan, effectiveShardCount)
 		}
 		if err := writeLastFailedTests(root, result); err != nil {
 			return result, err
@@ -485,7 +603,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			}
 			stopProfile = nil
 		}
-		if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath, 0, 0, result.Summary().DurationMS); err != nil {
+		if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath, apextest.PerfCounters{}, 0, 0); err != nil {
 			return result, err
 		}
 		if err := maybeWriteCLIDurationHistory(durationHistoryWritePath, result, durationHistory); err != nil {
@@ -511,9 +629,15 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			return result, testreport.WriteConsole(w, result)
 		}
 	}
-	index, err := loadIndex(root)
+	if perfEnabled {
+		perfRunStarted = time.Now()
+	}
+	loadedProject, index, preRunPhases, err := loadTestIndexWithPerfPhases(root, perfEnabled)
 	if err != nil {
 		return testreport.Run{}, err
+	}
+	if perfEnabled {
+		testOpts.PreRunPhaseDurations = preRunPhases
 	}
 	if progressReporter != nil && len(index.Project.Root) > 0 {
 		progressReporter.warn("startup cache: " + testStartupCacheStatus(index.Project.Root))
@@ -529,11 +653,19 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		}
 	}
 	if watchMode {
-		return runWatchTests(ctx, root, index, testOpts, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
+		return runWatchTests(ctx, root, loadedProject, index, testOpts, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
 	}
 	var result testreport.Run
 	if strings.TrimSpace(changedSince) != "" {
+		var discoverStarted time.Time
+		if perfEnabled {
+			discoverStarted = time.Now()
+		}
 		cases := apextest.Discover(index, testOpts)
+		if perfEnabled {
+			testOpts.PreRunPhaseDurations.Discover = time.Since(discoverStarted)
+			perfSnapshot = preRunPerfSnapshot(testOpts.PreRunPhaseDurations)
+		}
 		selectorOpts := testOpts
 		selectorOpts.Filter = ""
 		selectorCases := cases
@@ -551,11 +683,9 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			if err != nil {
 				return testreport.Run{}, err
 			}
-			discoverStart := time.Now()
 			cases = filterSelectedTestCases(cases, selection)
-			discoverTimeMS = time.Since(discoverStart).Milliseconds()
 			if strings.TrimSpace(writeClassShardsDir) != "" {
-				return testreport.Run{}, writeCLIClassShards(writeClassShardsDir, cases, durationHistoryPath, shardCount, parallelismOverride)
+				return testreport.Run{}, writeCLIClassShards(writeClassShardsDir, cases, durationHistoryPath, effectiveShardCount)
 			}
 			cases, err = applyCLIClassShard(cases, durationHistoryPath, shardCount, shardIndex)
 			if err != nil {
@@ -565,11 +695,20 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 				progressReporter.setTotal(len(cases))
 			}
 			result = apextest.RunCasesContext(ctx, index, testOpts, cases)
+			if perfEnabled {
+				perfSnapshot = apextest.SnapshotPerfCounters()
+			}
 		}
 	} else {
-		discoverStart := time.Now()
+		var discoverStarted time.Time
+		if perfEnabled {
+			discoverStarted = time.Now()
+		}
 		cases := apextest.Discover(index, testOpts)
-		discoverTimeMS = time.Since(discoverStart).Milliseconds()
+		if perfEnabled {
+			testOpts.PreRunPhaseDurations.Discover = time.Since(discoverStarted)
+			perfSnapshot = preRunPerfSnapshot(testOpts.PreRunPhaseDurations)
+		}
 		selectorOpts := testOpts
 		selectorOpts.Filter = ""
 		selectorCases := cases
@@ -584,7 +723,7 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 			result = selectorRun
 		} else {
 			if strings.TrimSpace(writeClassShardsDir) != "" {
-				return testreport.Run{}, writeCLIClassShards(writeClassShardsDir, cases, durationHistoryPath, shardCount, parallelismOverride)
+				return testreport.Run{}, writeCLIClassShards(writeClassShardsDir, cases, durationHistoryPath, effectiveShardCount)
 			}
 			cases, err = applyCLIClassShard(cases, durationHistoryPath, shardCount, shardIndex)
 			if err != nil {
@@ -594,12 +733,14 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 				progressReporter.setTotal(len(cases))
 			}
 			result = apextest.RunCasesContext(ctx, index, testOpts, cases)
+			if perfEnabled {
+				perfSnapshot = apextest.SnapshotPerfCounters()
+			}
 		}
 	}
 	if progressReporter != nil {
 		result.DurationMS = time.Since(progressReporter.started).Milliseconds()
 	}
-	runDurationMS := result.Summary().DurationMS
 	if progressReporter != nil && compileDoneMS > 10000 && index.Project.Root != "" && index.Project.Root != "." {
 		progressReporter.warn(fmt.Sprintf("compile test harness took %dms", compileDoneMS))
 		progressReporter.warn(fmt.Sprintf("for this workspace, try: --project %s", index.Project.Root))
@@ -607,18 +748,39 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 	if progressReporter != nil {
 		progressReporter.finish()
 	}
-	if stopProfile != nil {
-		if stopErr := stopProfile(); stopErr != nil {
+	if !perfEnabled && stopProfile != nil {
+		stop := stopProfile
+		stopProfile = nil
+		if stopErr := stop(); stopErr != nil {
 			return result, stopErr
 		}
-		stopProfile = nil
 	}
 	result.Dependencies = append(result.Dependencies, index.Dependencies...)
-	if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath, discoverTimeMS, compileDoneMS, runDurationMS); err != nil {
-		return result, err
+	var historyStarted time.Time
+	if perfEnabled && durationHistoryWritePath != "" && result.Summary().Total > 0 {
+		historyStarted = time.Now()
 	}
 	if err := maybeWriteCLIDurationHistory(durationHistoryWritePath, result, durationHistory); err != nil {
 		return result, err
+	}
+	if !historyStarted.IsZero() {
+		historyWriteNS = time.Since(historyStarted).Nanoseconds()
+	}
+	var totalMS int64
+	if perfEnabled {
+		totalMS = time.Since(perfRunStarted).Milliseconds()
+	}
+	if perfEnabled && stopProfile != nil {
+		stop := stopProfile
+		stopProfile = nil
+		if stopErr := stop(); stopErr != nil {
+			return result, stopErr
+		}
+	}
+	if perfEnabled {
+		if err := maybeWriteRunPerfJSON(perfJSONPath, root, result, cpuProfilePath, memProfilePath, perfSnapshot, totalMS, historyWriteNS); err != nil {
+			return result, err
+		}
 	}
 	if tracePath != "" {
 		if err := writeTestTraceFile(tracePath, result); err != nil {
@@ -641,6 +803,49 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		return result, writeTestJSONEnvelope(w, result, junitPath)
 	default:
 		return result, testreport.WriteConsole(w, result)
+	}
+}
+
+func loadTestIndexWithPerfPhases(root string, enabled bool) (project.Project, typesys.Index, apextest.PreRunPhaseDurations, error) {
+	if !enabled {
+		p, index, err := loadProjectIndex(root)
+		return p, index, apextest.PreRunPhaseDurations{}, err
+	}
+	var phases apextest.PreRunPhaseDurations
+	started := time.Now()
+	p, err := project.Load(root)
+	phases.ProjectLoad = time.Since(started)
+	if err != nil {
+		return project.Project{}, typesys.Index{}, phases, err
+	}
+	started = time.Now()
+	s, schemaErr := gladeschema.LoadProject(p)
+	phases.SchemaLoad = time.Since(started)
+	started = time.Now()
+	if schemaErr != nil {
+		index := typesys.Build(p, gladeschema.Schema{})
+		phases.IndexBuild = time.Since(started)
+		index.Diagnostics = append(index.Diagnostics, diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "GLADESCHEMA001",
+			Message:  fmt.Sprintf("metadata schema load failed: %v", schemaErr),
+		})
+		return p, index, phases, nil
+	}
+	index := typesys.Build(p, s)
+	phases.IndexBuild = time.Since(started)
+	return p, index, phases, nil
+}
+
+func preRunPerfSnapshot(phases apextest.PreRunPhaseDurations) apextest.PerfCounters {
+	return apextest.PerfCounters{
+		Enabled: true,
+		Phases: apextest.RunnerPhasePerfCounters{
+			ProjectLoadNS: phases.ProjectLoad.Nanoseconds(),
+			SchemaLoadNS:  phases.SchemaLoad.Nanoseconds(),
+			IndexBuildNS:  phases.IndexBuild.Nanoseconds(),
+			DiscoverNS:    phases.Discover.Nanoseconds(),
+		},
 	}
 }
 
@@ -780,11 +985,6 @@ type cliClassShard struct {
 	Classes         []string
 }
 
-type cliClassWeight struct {
-	Class  string
-	Weight int64
-}
-
 func applyCLIClassShard(cases []apextest.TestCase, historyPath string, shardCount, shardIndex int) ([]apextest.TestCase, error) {
 	if shardCount <= 0 {
 		return cases, nil
@@ -807,21 +1007,22 @@ func applyCLIClassShard(cases []apextest.TestCase, historyPath string, shardCoun
 	return out, nil
 }
 
-func writeCLIClassShards(dir string, cases []apextest.TestCase, historyPath string, shardCount, parallelism int) error {
-	if shardCount <= 0 {
-		shardCount = parallelism
-	}
-	if shardCount <= 0 {
-		shardCount = runtime.GOMAXPROCS(0)
-	}
-	if shardCount <= 0 {
-		shardCount = 1
+func writeCLIClassShards(dir string, cases []apextest.TestCase, historyPath string, shardCount int) error {
+	if shardCount < 1 || shardCount > testdaemon.MaxClassShardCountV1 {
+		return fmt.Errorf("test shard count must be between 1 and %d", testdaemon.MaxClassShardCountV1)
 	}
 	durations, err := loadCLIClassDurationHistory(historyPath)
 	if err != nil {
 		return err
 	}
-	shards := planCLIClassShards(cases, durations, shardCount)
+	return writeCLIClassShardPlan(dir, testdaemon.PlanClassShards(cases, durations, shardCount), shardCount)
+}
+
+func writeCLIClassShardPlan(dir string, plan testdaemon.ClassShardPlanV1, expectedCount int) error {
+	if err := validateCLIClassShardPlan(plan, expectedCount); err != nil {
+		return err
+	}
+	shards := plan.Shards
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
@@ -830,8 +1031,9 @@ func writeCLIClassShards(dir string, cases []apextest.TestCase, historyPath stri
 		width = 3
 	}
 	for _, shard := range shards {
-		sort.Strings(shard.Classes)
-		data := strings.Join(shard.Classes, "\n")
+		classes := append([]string(nil), shard.Classes...)
+		sort.Strings(classes)
+		data := strings.Join(classes, "\n")
 		if data != "" {
 			data += "\n"
 		}
@@ -843,64 +1045,37 @@ func writeCLIClassShards(dir string, cases []apextest.TestCase, historyPath stri
 	return nil
 }
 
-func planCLIClassShards(cases []apextest.TestCase, durations map[string]int64, shardCount int) []cliClassShard {
-	if shardCount <= 0 {
-		return nil
+func validateCLIClassShardPlan(plan testdaemon.ClassShardPlanV1, expectedCount int) error {
+	if expectedCount < 1 || expectedCount > testdaemon.MaxClassShardCountV1 {
+		return fmt.Errorf("test shard plan count must be between 1 and %d", testdaemon.MaxClassShardCountV1)
 	}
-	shards := make([]cliClassShard, shardCount)
-	for i := range shards {
-		shards[i].Index = i
+	if len(plan.Shards) != expectedCount {
+		return fmt.Errorf("test shard plan contains %d shards; expected %d", len(plan.Shards), expectedCount)
 	}
-	weights := cliClassWeights(cases, durations)
-	if len(durations) == 0 {
-		sort.Slice(weights, func(i, j int) bool {
-			return weights[i].Class < weights[j].Class
-		})
-		for i, weight := range weights {
-			target := i % shardCount
-			shards[target].Classes = append(shards[target].Classes, weight.Class)
-			shards[target].TotalDurationMS += weight.Weight
+	seen := make([]bool, expectedCount)
+	for _, shard := range plan.Shards {
+		if shard.Index < 0 || shard.Index >= expectedCount {
+			return fmt.Errorf("test shard plan index %d is outside 0..%d", shard.Index, expectedCount-1)
 		}
-		return shards
-	}
-	for _, weight := range weights {
-		target := 0
-		for i := 1; i < len(shards); i++ {
-			if shards[i].TotalDurationMS < shards[target].TotalDurationMS {
-				target = i
-			}
+		if seen[shard.Index] {
+			return fmt.Errorf("test shard plan contains duplicate index %d", shard.Index)
 		}
-		shards[target].Classes = append(shards[target].Classes, weight.Class)
-		shards[target].TotalDurationMS += weight.Weight
+		seen[shard.Index] = true
 	}
-	for i := range shards {
-		sort.Strings(shards[i].Classes)
-	}
-	return shards
+	return nil
 }
 
-func cliClassWeights(cases []apextest.TestCase, durations map[string]int64) []cliClassWeight {
-	methodCounts := map[string]int64{}
-	for _, testCase := range cases {
-		if testCase.ClassName != "" {
-			methodCounts[testCase.ClassName]++
-		}
+func planCLIClassShards(cases []apextest.TestCase, durations map[string]int64, shardCount int) []cliClassShard {
+	plan := testdaemon.PlanClassShards(cases, durations, shardCount)
+	shards := make([]cliClassShard, 0, len(plan.Shards))
+	for _, shard := range plan.Shards {
+		shards = append(shards, cliClassShard{
+			Index:           shard.Index,
+			TotalDurationMS: shard.TotalDurationMS,
+			Classes:         append([]string(nil), shard.Classes...),
+		})
 	}
-	weights := make([]cliClassWeight, 0, len(methodCounts))
-	for className, methodCount := range methodCounts {
-		weight := durations[className]
-		if weight <= 0 {
-			weight = methodCount
-		}
-		weights = append(weights, cliClassWeight{Class: className, Weight: weight})
-	}
-	sort.Slice(weights, func(i, j int) bool {
-		if weights[i].Weight == weights[j].Weight {
-			return weights[i].Class < weights[j].Class
-		}
-		return weights[i].Weight > weights[j].Weight
-	})
-	return weights
+	return shards
 }
 
 type cliDurationHistory struct {
@@ -1083,6 +1258,9 @@ Common flags:
   --daemon                  Keep index warm in-process for --watch loops.
   --json                    Write JSON test results.
   --junit <path>            Write JUnit XML results.
+  --cpu-profile <path>      Write a CPU profile for this local one-shot run.
+  --mem-profile <path>      Write a heap profile after this local one-shot run.
+  --perf-json <path>        Write opt-in performance counters for this local one-shot run.
   --trace <path>            Write a Chrome trace JSON document for this run.
   --services <path>         Validate a services.yml virtualization config.
   --progress                Show progress on stderr; uses a progress bar on TTY and line output when redirected.
@@ -1434,12 +1612,18 @@ func (r *cliTestProgressReporter) finish() {
 }
 
 type runPerfSummary struct {
+	SchemaVersion   string                `json:"schemaVersion"`
+	Command         string                `json:"command"`
 	GeneratedAt     string                `json:"generatedAt"`
 	Project         string                `json:"project"`
+	Status          string                `json:"status"`
+	ExitCode        int                   `json:"exitCode"`
 	DurationMS      int64                 `json:"durationMs"`
 	DiscoverMS      int64                 `json:"discoverMs"`
 	CompileMS       int64                 `json:"compileMs"`
+	StartupMS       int64                 `json:"startupMs"`
 	TotalMS         int64                 `json:"totalMs"`
+	HistoryWriteNS  int64                 `json:"historyWriteNs"`
 	Summary         testreport.Summary    `json:"summary"`
 	ApexPerf        apextest.PerfCounters `json:"apexPerf"`
 	ClassDurations  map[string]int64      `json:"classDurations,omitempty"`
@@ -1502,34 +1686,47 @@ func startCLIProfiler(cpuProfilePath, memProfilePath string) (func() error, erro
 	}, nil
 }
 
-func maybeWriteRunPerfJSON(perfJSONPath, root string, result testreport.Run, cpuProfilePath, memProfilePath string, discoverMS, compileMS, totalMS int64) error {
+func maybeWriteRunPerfJSON(perfJSONPath, root string, result testreport.Run, cpuProfilePath, memProfilePath string, counters apextest.PerfCounters, totalMS, historyWriteNS int64) error {
 	if strings.TrimSpace(perfJSONPath) == "" {
 		return nil
 	}
 	absRoot, _ := filepath.Abs(root)
+	summary := result.Summary()
+	ok := summary.Failed == 0 && summary.Errors == 0
+	phases := counters.Phases
+	discoverMS := phases.DiscoverNS / int64(time.Millisecond)
+	compileMS := (phases.ProjectCompileNS + phases.TestCompileNS) / int64(time.Millisecond)
+	startupNS := phases.ProjectLoadNS + phases.SchemaLoadNS + phases.IndexBuildNS + phases.DiscoverNS + phases.RuntimeKeyNS +
+		phases.CacheValidateNS + phases.CacheDecodeNS + phases.CacheEncodeNS + phases.OrgBuildNS + phases.ProjectCompileNS + phases.TestCompileNS
 	perf := runPerfSummary{
+		SchemaVersion:   "1.0",
+		Command:         "test",
 		GeneratedAt:     time.Now().UTC().Format(time.RFC3339),
 		Project:         absRoot,
-		DurationMS:      result.Summary().DurationMS,
+		Status:          statusForOK(ok),
+		ExitCode:        exitCodeForOK(ok),
+		DurationMS:      summary.DurationMS,
 		DiscoverMS:      discoverMS,
 		CompileMS:       compileMS,
+		StartupMS:       startupNS / int64(time.Millisecond),
 		TotalMS:         totalMS,
-		Summary:         result.Summary(),
-		ApexPerf:        apextest.SnapshotPerfCounters(),
+		HistoryWriteNS:  historyWriteNS,
+		Summary:         summary,
+		ApexPerf:        counters,
 		ClassDurations:  runClassDurations(result),
 		MethodDurations: runMethodDurations(result),
 		CPUProfilePath:  strings.TrimSpace(cpuProfilePath),
 		MemProfilePath:  strings.TrimSpace(memProfilePath),
 	}
 	perf.TopSlowClasses = runTopSlowClasses(result, 15)
-	if err := os.MkdirAll(filepath.Dir(perfJSONPath), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(perfJSONPath), 0o700); err != nil {
 		return err
 	}
 	data, err := json.MarshalIndent(perf, "", "  ")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(perfJSONPath, append(data, '\n'), 0o644)
+	return os.WriteFile(perfJSONPath, append(data, '\n'), 0o600)
 }
 
 func runClassDurations(result testreport.Run) map[string]int64 {

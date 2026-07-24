@@ -1,16 +1,12 @@
 package sema
 
 import (
-	"os"
-	"reflect"
 	"sort"
 	"strings"
 	"sync"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
-	"github.com/glade-sh/glade/internal/namespaceremap"
-	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -34,6 +30,325 @@ type typeMembers struct {
 	standardSObjectFieldsLoaded bool
 }
 
+type semaTypeMemberModel struct {
+	members         map[string]typeMembers
+	shortCandidates map[string][]string
+	platform        *semaLazyPlatformTypeMemberModel
+}
+
+type semaLazyPlatformTypeMemberModel struct {
+	symbols        []typesys.TypeSymbol
+	symbolsByKey   map[string]*typesys.TypeSymbol
+	candidates     map[string][]string
+	lookups        sync.Map
+	fieldNamesOnce sync.Once
+	fieldNames     map[string]struct{}
+}
+
+type semaPlatformTypeMemberLookup struct {
+	members typeMembers
+	ok      bool
+}
+
+func (m *semaTypeMemberModel) lookup(key string) (typeMembers, bool) {
+	if m == nil {
+		return typeMembers{}, false
+	}
+	if members, ok := m.members[key]; ok {
+		return members, true
+	}
+	if m.platform != nil {
+		return m.platform.lookup(key)
+	}
+	return typeMembers{}, false
+}
+
+func (m *semaTypeMemberModel) candidateKeys(short string) []string {
+	if m == nil {
+		return nil
+	}
+	if candidates := m.shortCandidates[short]; len(candidates) > 0 {
+		return candidates
+	}
+	if m.platform != nil {
+		return m.platform.candidateKeys(short)
+	}
+	return nil
+}
+
+func (m *semaTypeMemberModel) hasField(key string) bool {
+	if m == nil || key == "" {
+		return false
+	}
+	for _, members := range m.members {
+		if _, ok := members.fields[key]; ok {
+			return true
+		}
+	}
+	return m.platform != nil && m.platform.hasField(key)
+}
+
+type semaTypeMemberState struct {
+	base     *semaTypeMemberModel
+	platform *semaTypeMemberModel
+}
+
+type semaTypeMemberView struct {
+	state    *semaTypeMemberState
+	current  map[string]typeMembers
+	hydrated map[string]typeMembers
+}
+
+func newSemaTypeMemberState(base *semaTypeMemberModel) *semaTypeMemberState {
+	return newSemaTypeMemberStateWithPlatform(base, semaPlatformTypeMemberModel())
+}
+
+func newSemaTypeMemberStateWithPlatform(base, platform *semaTypeMemberModel) *semaTypeMemberState {
+	return &semaTypeMemberState{
+		base:     base,
+		platform: platform,
+	}
+}
+
+func (s *semaTypeMemberState) view() *semaTypeMemberView {
+	return &semaTypeMemberView{
+		state:    s,
+		hydrated: make(map[string]typeMembers),
+	}
+}
+
+func (v *semaTypeMemberView) lookup(key string) (typeMembers, bool) {
+	if v == nil || v.state == nil {
+		return typeMembers{}, false
+	}
+	if members, ok := v.current[key]; ok {
+		return members, true
+	}
+	if members, ok := v.hydrated[key]; ok {
+		return members, true
+	}
+	if v.state.base != nil {
+		if members, ok := v.state.base.lookup(key); ok {
+			return members, true
+		}
+	}
+	if v.state.platform != nil {
+		members, ok := v.state.platform.lookup(key)
+		if ok {
+			v.hydrated[key] = members
+		}
+		return members, ok
+	}
+	return typeMembers{}, false
+}
+
+func (v *semaTypeMemberView) get(key string) typeMembers {
+	members, _ := v.lookup(key)
+	return members
+}
+
+func (v *semaTypeMemberView) storeHydrated(key string, members typeMembers) {
+	if v == nil || v.state == nil || key == "" {
+		return
+	}
+	v.hydrated[key] = members
+}
+
+func (v *semaTypeMemberView) shortCandidateKeys(short string) []string {
+	if v == nil || v.state == nil {
+		return nil
+	}
+	var base, platform []string
+	if v.state.base != nil {
+		base = v.state.base.candidateKeys(short)
+	}
+	if v.state.platform != nil {
+		platform = v.state.platform.candidateKeys(short)
+	}
+	if len(base) == 0 {
+		return platform
+	}
+	if len(platform) == 0 {
+		return base
+	}
+	out := make([]string, 0, len(base)+len(platform))
+	out = append(out, base...)
+	seen := make(map[string]bool, len(base))
+	for _, key := range base {
+		seen[key] = true
+	}
+	for _, key := range platform {
+		if !seen[key] {
+			out = append(out, key)
+		}
+	}
+	return out
+}
+
+var semaPlatformTypeMemberModelCache struct {
+	once  sync.Once
+	model *semaTypeMemberModel
+}
+
+func semaPlatformTypeMemberModel() *semaTypeMemberModel {
+	semaPlatformTypeMemberModelCache.once.Do(func() {
+		semaPlatformTypeMemberModelCache.model = buildSemaPlatformTypeMemberModel()
+	})
+	return semaPlatformTypeMemberModelCache.model
+}
+
+func buildSemaPlatformTypeMemberModel() *semaTypeMemberModel {
+	symbols := typesys.StandardPlatformSymbolView()
+	return &semaTypeMemberModel{
+		members:  map[string]typeMembers{},
+		platform: newSemaLazyPlatformTypeMemberModel(symbols),
+	}
+}
+
+func newSemaLazyPlatformTypeMemberModel(symbols []typesys.TypeSymbol) *semaLazyPlatformTypeMemberModel {
+	// The typesys view is process-immutable. Index names once, then materialize
+	// member maps only for symbols an analysis actually resolves.
+	model := &semaLazyPlatformTypeMemberModel{
+		symbols:      symbols,
+		symbolsByKey: make(map[string]*typesys.TypeSymbol, len(symbols)*2),
+		candidates:   make(map[string][]string),
+	}
+	shortAliases := make(map[string]*typesys.TypeSymbol)
+	ambiguousShortAliases := make(map[string]bool)
+	for i := range symbols {
+		symbol := &symbols[i]
+		localKey := normalizeName(symbol.Name)
+		qualifiedKey := localKey
+		if symbol.Namespace != "" {
+			qualifiedKey = normalizeName(symbol.Namespace) + "." + localKey
+		}
+		if _, exists := model.symbolsByKey[localKey]; !exists {
+			model.symbolsByKey[localKey] = symbol
+		}
+		model.symbolsByKey[qualifiedKey] = symbol
+		short := semaShortTypeKeyFromNormalizedKey(localKey)
+		if short == "" {
+			continue
+		}
+		if short != localKey {
+			if existing, exists := shortAliases[short]; !exists {
+				shortAliases[short] = symbol
+			} else if existing != symbol {
+				ambiguousShortAliases[short] = true
+			}
+			model.candidates[short] = appendUniqueSemaCandidate(model.candidates[short], short)
+		}
+		model.candidates[short] = appendUniqueSemaCandidate(model.candidates[short], localKey)
+		model.candidates[short] = appendUniqueSemaCandidate(model.candidates[short], qualifiedKey)
+	}
+	for short, symbol := range shortAliases {
+		if !ambiguousShortAliases[short] {
+			if _, exists := model.symbolsByKey[short]; !exists {
+				model.symbolsByKey[short] = symbol
+			}
+		}
+	}
+	for short := range ambiguousShortAliases {
+		if _, exists := model.symbolsByKey[short]; exists {
+			continue
+		}
+		candidates := model.candidates[short]
+		filtered := candidates[:0]
+		for _, candidate := range candidates {
+			if candidate != short {
+				filtered = append(filtered, candidate)
+			}
+		}
+		model.candidates[short] = filtered
+	}
+	return model
+}
+
+func appendUniqueSemaCandidate(candidates []string, key string) []string {
+	for _, existing := range candidates {
+		if existing == key {
+			return candidates
+		}
+	}
+	return append(candidates, key)
+}
+
+func (m *semaLazyPlatformTypeMemberModel) lookup(key string) (typeMembers, bool) {
+	if m == nil || key == "" {
+		return typeMembers{}, false
+	}
+	if cached, ok := m.lookups.Load(key); ok {
+		result := cached.(semaPlatformTypeMemberLookup)
+		return semaCloneTypeMembers(result.members), result.ok
+	}
+	result := semaPlatformTypeMemberLookup{}
+	if objectName, ok := semaStandardSObjectNameForKey(key); ok {
+		result.members = semaStandardSObjectPlaceholder(objectName)
+		result.ok = true
+	} else if symbol, ok := m.symbolsByKey[key]; ok {
+		result.members = semaTypeMembersFromPlatformSymbol(*symbol)
+		result.ok = true
+	} else {
+		return typeMembers{}, false
+	}
+	actual, _ := m.lookups.LoadOrStore(key, result)
+	result = actual.(semaPlatformTypeMemberLookup)
+	return semaCloneTypeMembers(result.members), result.ok
+}
+
+func (m *semaLazyPlatformTypeMemberModel) candidateKeys(short string) []string {
+	if m == nil || short == "" {
+		return nil
+	}
+	return append([]string(nil), m.candidates[short]...)
+}
+
+func (m *semaLazyPlatformTypeMemberModel) hasField(key string) bool {
+	if m == nil || key == "" {
+		return false
+	}
+	m.fieldNamesOnce.Do(func() {
+		fields := make(map[string]struct{})
+		for i := range m.symbols {
+			for _, member := range m.symbols[i].Members {
+				if member.Kind == apexast.DeclarationField || member.Kind == apexast.DeclarationProperty {
+					fields[normalizeName(member.Name)] = struct{}{}
+				}
+			}
+		}
+		m.fieldNames = fields
+	})
+	_, ok := m.fieldNames[key]
+	return ok
+}
+
+func semaTypeMembersFromPlatformSymbol(symbol typesys.TypeSymbol) typeMembers {
+	members := typeMembers{
+		name:       semaTypeMembersName(symbol),
+		shortKey:   semaShortTypeKey(symbol.Name),
+		namespace:  symbol.Namespace,
+		dependency: true,
+		kind:       symbol.Kind,
+		superClass: symbol.SuperClass,
+		interfaces: append([]string(nil), symbol.Interfaces...),
+		methods:    make(map[string][]typesys.MemberSymbol),
+		fields:     make(map[string]typesys.MemberSymbol),
+	}
+	for _, member := range symbol.Members {
+		member = semaCloneMemberSymbol(member)
+		switch member.Kind {
+		case apexast.DeclarationMethod:
+			key := normalizeName(member.Name)
+			members.methods[key] = append(members.methods[key], member)
+		case apexast.DeclarationConstructor:
+			members.constructors = append(members.constructors, member)
+		case apexast.DeclarationField, apexast.DeclarationProperty:
+			members.fields[normalizeName(member.Name)] = member
+		}
+	}
+	return members
+}
+
 const semaCurrentTypeScopeKey = "__glade_current_type"
 
 const semaInferenceDepthScopeKey = "__glade_inference_depth"
@@ -41,13 +356,84 @@ const semaInferenceDepthScopeKey = "__glade_inference_depth"
 const semaSyntheticStandardSObjectFieldModifier = "__glade_standard_sobject_field"
 
 func (a *Analyzer) checkMethodBodies(index typesys.Index) []diagnostic.Diagnostic {
-	model := buildTypeMembers(index)
-	defer unregisterSemaShortCandidateIndex(model)
+	return a.checkMethodBodiesWithRecorder(index, nil)
+}
+
+func (a *Analyzer) checkMethodBodiesWithRecorder(index typesys.Index, recorder *perfRecorder) []diagnostic.Diagnostic {
+	return a.checkMethodBodiesWithState(index, buildSemaTypeMemberState(index, recorder, a.sources), recorder)
+}
+
+func buildSemaTypeMemberState(index typesys.Index, recorder *perfRecorder, sourceResolvers ...*semaSources) *semaTypeMemberState {
+	modelStarted := recorder.beginPhase()
+	var sources *semaSources
+	if len(sourceResolvers) > 0 {
+		sources = sourceResolvers[0]
+	}
+	model := buildTypeMembersWithSources(index, sources)
+	if recorder != nil {
+		recorder.endPhase(&recorder.counters.TypeMemberModel, modelStarted)
+	}
+	return newSemaTypeMemberState(model)
+}
+
+func (a *Analyzer) checkMethodBodiesWithState(index typesys.Index, state *semaTypeMemberState, recorder *perfRecorder) []diagnostic.Diagnostic {
+	return a.checkMethodBodiesWithView(index, state.view(), recorder)
+}
+
+func (a *Analyzer) checkMethodBodiesWithView(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder) []diagnostic.Diagnostic {
+	return a.checkMethodBodiesWithViewWorkers(index, model, recorder, 1)
+}
+
+func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder, workerCount int) []diagnostic.Diagnostic {
 	constructability := buildConstructability(index)
 	duplicateTypes := semaDuplicateTypeKeys(index)
-	sources := make(map[string]string)
+	sources := a.sources
+	if sources == nil {
+		sources = newSemaSources(nil, recorder)
+	}
 	var diagnostics []diagnostic.Diagnostic
-	for _, typ := range index.Types {
+	bodyStarted := recorder.beginPhase()
+	workItems := buildSemaMethodBodyWorkItems(index, sources)
+	if workerCount > 1 {
+		tasks := buildSemaMethodBodyTasks(index, workItems)
+		if workerCount > len(tasks) {
+			workerCount = len(tasks)
+		}
+		if workerCount > 1 {
+			results := make([]semaMethodBodyResult, len(index.Types))
+			views := make([]*semaTypeMemberView, workerCount)
+			views[0] = model
+			for workerID := 1; workerID < workerCount; workerID++ {
+				views[workerID] = model.state.view()
+			}
+			var workers sync.WaitGroup
+			for workerID := 0; workerID < workerCount; workerID++ {
+				workerID := workerID
+				workers.Add(1)
+				go func() {
+					defer workers.Done()
+					for taskIndex := workerID; taskIndex < len(tasks); taskIndex += workerCount {
+						task := tasks[taskIndex]
+						results[task.typeIndex] = a.checkSemaMethodBodyTask(index, task, workItems, views[workerID], duplicateTypes, constructability)
+					}
+				}()
+			}
+			workers.Wait()
+			for typeIndex := range index.Types {
+				result := results[typeIndex]
+				if result.recovered != nil {
+					panic(result.recovered)
+				}
+				diagnostics = append(diagnostics, result.diagnostics...)
+			}
+			if recorder != nil {
+				recorder.endPhase(&recorder.counters.MethodBodies, bodyStarted)
+			}
+			return diagnostics
+		}
+	}
+	workItemIndex := 0
+	for typeIndex, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) {
 			continue
 		}
@@ -55,44 +441,217 @@ func (a *Analyzer) checkMethodBodies(index typesys.Index) []diagnostic.Diagnosti
 		if duplicateTypes[semaTypeSymbolKey(typ)] > 1 {
 			bodyModel = semaModelWithCurrentType(model, typ)
 		}
-		for _, member := range typ.Members {
+		for workItemIndex < len(workItems) && workItems[workItemIndex].typeIndex == typeIndex {
+			item := workItems[workItemIndex]
+			workItemIndex++
+			itemType, member, ok := resolveSemaMethodBodyWorkItem(index, item)
+			if !ok {
+				continue
+			}
+			diagnostics = append(diagnostics, a.checkBodyText(itemType, member, item.body, item.bodyOffset, item.source, bodyModel, constructability)...)
+		}
+	}
+	if recorder != nil {
+		recorder.endPhase(&recorder.counters.MethodBodies, bodyStarted)
+	}
+	return diagnostics
+}
+
+type semaMethodBodyTask struct {
+	typeIndex     int
+	workItemStart int
+	workItemEnd   int
+}
+
+type semaMethodBodyResult struct {
+	diagnostics []diagnostic.Diagnostic
+	recovered   any
+}
+
+func buildSemaMethodBodyTasks(index typesys.Index, workItems []semaMethodBodyWorkItem) []semaMethodBodyTask {
+	tasks := make([]semaMethodBodyTask, 0, len(index.Types))
+	workItemIndex := 0
+	for typeIndex, typ := range index.Types {
+		if skipProjectDiagnosticType(typ) {
+			continue
+		}
+		workItemStart := workItemIndex
+		for workItemIndex < len(workItems) && workItems[workItemIndex].typeIndex == typeIndex {
+			workItemIndex++
+		}
+		tasks = append(tasks, semaMethodBodyTask{
+			typeIndex:     typeIndex,
+			workItemStart: workItemStart,
+			workItemEnd:   workItemIndex,
+		})
+	}
+	return tasks
+}
+
+func (a *Analyzer) checkSemaMethodBodyTask(index typesys.Index, task semaMethodBodyTask, workItems []semaMethodBodyWorkItem, model *semaTypeMemberView, duplicateTypes map[string]int, constructability map[string]typesys.TypeSymbol) (result semaMethodBodyResult) {
+	defer func() {
+		result.recovered = recover()
+	}()
+	typ := index.Types[task.typeIndex]
+	bodyModel := model
+	if duplicateTypes[semaTypeSymbolKey(typ)] > 1 {
+		bodyModel = semaModelWithCurrentType(model, typ)
+	}
+	for workItemIndex := task.workItemStart; workItemIndex < task.workItemEnd; workItemIndex++ {
+		item := workItems[workItemIndex]
+		itemType, member, ok := resolveSemaMethodBodyWorkItem(index, item)
+		if !ok {
+			continue
+		}
+		result.diagnostics = append(result.diagnostics, a.checkBodyText(itemType, member, item.body, item.bodyOffset, item.source, bodyModel, constructability)...)
+	}
+	return result
+}
+
+type semaMethodBodyWorkItem struct {
+	typeIndex     int
+	memberIndex   int
+	accessorIndex int
+	body          string
+	bodyOffset    int
+	source        string
+}
+
+const semaMethodBodyNoAccessor = -1
+
+type semaMethodBodySource struct {
+	typeIndex int
+	source    string
+}
+
+func buildSemaMethodBodyWorkItems(index typesys.Index, sources *semaSources) []semaMethodBodyWorkItem {
+	bodySources, workItemCount := collectSemaMethodBodySources(index, sources)
+	workItems := make([]semaMethodBodyWorkItem, 0, workItemCount)
+	for _, bodySource := range bodySources {
+		typeIndex := bodySource.typeIndex
+		typ := index.Types[typeIndex]
+		source := bodySource.source
+		appendBody := func(memberIndex, accessorIndex int, bodyRange diagnostic.Range) {
+			body, bodyOffset, extracted := extractBodyForSema(source, bodyRange)
+			if !extracted {
+				return
+			}
+			workItems = append(workItems, semaMethodBodyWorkItem{
+				typeIndex:     typeIndex,
+				memberIndex:   memberIndex,
+				accessorIndex: accessorIndex,
+				body:          body,
+				bodyOffset:    bodyOffset,
+				source:        source,
+			})
+		}
+		for memberIndex, member := range typ.Members {
 			switch member.Kind {
 			case apexast.DeclarationMethod, apexast.DeclarationConstructor, apexast.DeclarationInitializer:
-				source, ok := readSemaSourceForType(typ, sources)
-				if !ok {
-					continue
-				}
-				body, bodyOffset, ok := extractBodyForSema(source, member.Range)
-				if !ok {
-					continue
-				}
-				diagnostics = append(diagnostics, a.checkBodyText(typ, member, body, bodyOffset, source, bodyModel, constructability)...)
+				appendBody(memberIndex, semaMethodBodyNoAccessor, member.Range)
 			case apexast.DeclarationProperty:
-				for _, accessor := range member.Accessors {
-					if !accessor.HasBody {
-						continue
+				for accessorIndex, accessor := range member.Accessors {
+					if accessor.HasBody {
+						appendBody(memberIndex, accessorIndex, accessor.Range)
 					}
-					source, ok := readSemaSourceForType(typ, sources)
-					if !ok {
-						continue
-					}
-					body, bodyOffset, ok := extractBodyForSema(source, accessor.Range)
-					if !ok {
-						continue
-					}
-					accessorMember := member
-					accessorMember.Kind = apexast.DeclarationMethod
-					accessorMember.Name = member.Name + "." + accessor.Kind
-					if accessor.Kind == "set" {
-						accessorMember.Type = "void"
-						accessorMember.Parameters = []apexast.Parameter{{Name: "value", Type: member.Type}}
-					}
-					diagnostics = append(diagnostics, a.checkBodyText(typ, accessorMember, body, bodyOffset, source, bodyModel, constructability)...)
 				}
 			}
 		}
 	}
-	return diagnostics
+	return workItems
+}
+
+func resolveSemaMethodBodyWorkItem(index typesys.Index, item semaMethodBodyWorkItem) (typesys.TypeSymbol, typesys.MemberSymbol, bool) {
+	if item.typeIndex < 0 || item.typeIndex >= len(index.Types) {
+		return typesys.TypeSymbol{}, typesys.MemberSymbol{}, false
+	}
+	typ := index.Types[item.typeIndex]
+	if item.memberIndex < 0 || item.memberIndex >= len(typ.Members) {
+		return typesys.TypeSymbol{}, typesys.MemberSymbol{}, false
+	}
+	member := typ.Members[item.memberIndex]
+	if item.accessorIndex == semaMethodBodyNoAccessor {
+		switch member.Kind {
+		case apexast.DeclarationMethod, apexast.DeclarationConstructor, apexast.DeclarationInitializer:
+			return typ, member, true
+		default:
+			return typesys.TypeSymbol{}, typesys.MemberSymbol{}, false
+		}
+	}
+	if member.Kind != apexast.DeclarationProperty || item.accessorIndex < 0 || item.accessorIndex >= len(member.Accessors) {
+		return typesys.TypeSymbol{}, typesys.MemberSymbol{}, false
+	}
+	accessor := member.Accessors[item.accessorIndex]
+	if !accessor.HasBody {
+		return typesys.TypeSymbol{}, typesys.MemberSymbol{}, false
+	}
+	member.Kind = apexast.DeclarationMethod
+	member.Name += "." + accessor.Kind
+	if accessor.Kind == "set" {
+		propertyType := member.Type
+		member.Type = "void"
+		member.Parameters = []apexast.Parameter{{Name: "value", Type: propertyType}}
+	}
+	return typ, member, true
+}
+
+func collectSemaMethodBodySources(index typesys.Index, sources *semaSources) ([]semaMethodBodySource, int) {
+	var bodySources []semaMethodBodySource
+	workItemCount := 0
+	for typeIndex, typ := range index.Types {
+		if skipProjectDiagnosticType(typ) || !semaTypeHasMethodBodyWork(typ) {
+			continue
+		}
+		source, ok := sources.normalizedForType(typ)
+		if !ok {
+			continue
+		}
+		count := countExtractableSemaMethodBodyRanges(typ, source)
+		if count == 0 {
+			continue
+		}
+		bodySources = append(bodySources, semaMethodBodySource{typeIndex: typeIndex, source: source})
+		workItemCount += count
+	}
+	return bodySources, workItemCount
+}
+
+func countExtractableSemaMethodBodyRanges(typ typesys.TypeSymbol, source string) int {
+	count := 0
+	countRange := func(bodyRange diagnostic.Range) {
+		if _, _, extracted := extractBodyForSema(source, bodyRange); extracted {
+			count++
+		}
+	}
+	for _, member := range typ.Members {
+		switch member.Kind {
+		case apexast.DeclarationMethod, apexast.DeclarationConstructor, apexast.DeclarationInitializer:
+			countRange(member.Range)
+		case apexast.DeclarationProperty:
+			for _, accessor := range member.Accessors {
+				if accessor.HasBody {
+					countRange(accessor.Range)
+				}
+			}
+		}
+	}
+	return count
+}
+
+func semaTypeHasMethodBodyWork(typ typesys.TypeSymbol) bool {
+	for _, member := range typ.Members {
+		switch member.Kind {
+		case apexast.DeclarationMethod, apexast.DeclarationConstructor, apexast.DeclarationInitializer:
+			return true
+		case apexast.DeclarationProperty:
+			for _, accessor := range member.Accessors {
+				if accessor.HasBody {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 func semaDuplicateTypeKeys(index typesys.Index) map[string]int {
@@ -110,15 +669,16 @@ func semaTypeSymbolKey(typ typesys.TypeSymbol) string {
 	return normalizeName(typ.Name)
 }
 
-func semaModelWithCurrentType(model map[string]typeMembers, typ typesys.TypeSymbol) map[string]typeMembers {
-	out := make(map[string]typeMembers, len(model)+1)
-	for key, members := range model {
-		out[key] = members
+func semaModelWithCurrentType(model *semaTypeMemberView, typ typesys.TypeSymbol) *semaTypeMemberView {
+	out := &semaTypeMemberView{
+		state:    model.state,
+		current:  make(map[string]typeMembers, 2),
+		hydrated: model.hydrated,
 	}
 	members := semaTypeMembersFromSymbol(typ)
-	out[normalizeName(typ.Name)] = members
+	out.current[normalizeName(typ.Name)] = members
 	if typ.Namespace != "" {
-		out[normalizeName(typ.Namespace+"."+typ.Name)] = members
+		out.current[normalizeName(typ.Namespace+"."+typ.Name)] = members
 	}
 	members.superClass = resolveNestedTypeName(out, members.name, members.superClass)
 	for i, iface := range members.interfaces {
@@ -142,9 +702,9 @@ func semaModelWithCurrentType(model map[string]typeMembers, typ typesys.TypeSymb
 			members.constructors[i].Parameters[j].Type = resolveNestedTypeReference(out, members.name, members.constructors[i].Parameters[j].Type)
 		}
 	}
-	out[normalizeName(typ.Name)] = members
+	out.current[normalizeName(typ.Name)] = members
 	if typ.Namespace != "" {
-		out[normalizeName(typ.Namespace+"."+typ.Name)] = members
+		out.current[normalizeName(typ.Namespace+"."+typ.Name)] = members
 	}
 	return out
 }
@@ -185,40 +745,18 @@ func semaTypeMembersFromSymbol(typ typesys.TypeSymbol) typeMembers {
 	return members
 }
 
-func readSemaSource(path string, cache map[string]string) (string, bool) {
-	return readSemaSourceWithRemaps(path, "", nil, cache)
+func buildTypeMembers(index typesys.Index) *semaTypeMemberModel {
+	return buildTypeMembersWithSources(index, newSemaSources(nil, nil))
 }
 
-func readSemaSourceForType(typ typesys.TypeSymbol, cache map[string]string) (string, bool) {
-	return readSemaSourceWithRemaps(typ.File, typ.Namespace, typ.SourceNamespaceRemaps, cache)
+func buildTypeMembersWithSources(index typesys.Index, sources *semaSources) *semaTypeMemberModel {
+	return buildTypeMemberLayerWithSources(index, sources, semaPlatformTypeMemberModel())
 }
 
-func readSemaSourceWithRemaps(path, namespace string, remaps []namespaceremap.Rule, cache map[string]string) (string, bool) {
-	if path == "" {
-		return "", false
+func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, platform *semaTypeMemberModel) *semaTypeMemberModel {
+	if sources == nil {
+		sources = newSemaSources(nil, nil)
 	}
-	key := semaSourceCacheKey(path, namespace, remaps)
-	if source, ok := cache[key]; ok {
-		return source, true
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return "", false
-	}
-	source := project.NormalizeApexNamespaceTokens(string(data), namespace)
-	if len(remaps) > 0 {
-		source = namespaceremap.ApplySource(remaps, source)
-	}
-	cache[key] = source
-	return source, true
-}
-
-func semaSourceCacheKey(path, namespace string, remaps []namespaceremap.Rule) string {
-	fingerprint := namespaceremap.Fingerprint(remaps)
-	return path + "\x00" + namespace + "\x00" + fingerprint
-}
-
-func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 	out := make(map[string]typeMembers)
 	shortAliases := make(map[string][]string)
 	projectNamespace := index.Project.Namespace
@@ -260,7 +798,12 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 					File:  typ.File,
 					Range: member.Range,
 				}
-				for _, value := range semaEnumValues(enumType) {
+				enumType.Namespace = typ.Namespace
+				enumType.SourceNamespaceRemaps = append(enumType.SourceNamespaceRemaps, typ.SourceNamespaceRemaps...)
+				enumType.SourceRoot = typ.SourceRoot
+				enumType.Version = typ.Version
+				enumType.Dependency = typ.Dependency
+				for _, value := range semaEnumValuesWithSources(enumType, sources) {
 					enumMembers.fields[normalizeName(value)] = typesys.MemberSymbol{
 						Kind:      apexast.DeclarationField,
 						Name:      value,
@@ -281,7 +824,7 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 			}
 		}
 		if typ.Kind == apexast.DeclarationEnum {
-			for _, value := range semaEnumValues(typ) {
+			for _, value := range semaEnumValuesWithSources(typ, sources) {
 				members.fields[normalizeName(value)] = typesys.MemberSymbol{
 					Kind:      apexast.DeclarationField,
 					Name:      value,
@@ -334,59 +877,8 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 		if objectMembers.fields == nil {
 			objectMembers.fields = make(map[string]typesys.MemberSymbol)
 		}
-		semaAddCommonSObjectFields(objectMembers.fields)
-		if semaObjectSupportsRecordTypeRelationship(object) {
-			semaAddSObjectRecordTypeRelationship(objectMembers.fields)
-		}
+		semaAddSObjectProviderMembers(&objectMembers, newSemaSObjectFieldProvider(projectNamespace, object), projectNamespace, index.Objects)
 		for _, field := range object.Fields {
-			if field.Name != "" {
-				fieldType := semaApexTypeForSchemaFieldInObjects(index.Objects, field)
-				if fieldType == "" {
-					if _, exists := objectMembers.fields[normalizeName(field.Name)]; exists {
-						continue
-					}
-				}
-				semaAddSchemaFieldMember(objectMembers.fields, projectNamespace, typesys.MemberSymbol{
-					Kind:      apexast.DeclarationField,
-					Name:      field.Name,
-					Type:      fieldType,
-					Modifiers: []string{"public"},
-				})
-				if strings.EqualFold(field.Type, "Location") {
-					for _, componentName := range semaLocationComponentFieldNames(field.Name) {
-						semaAddSchemaFieldMember(objectMembers.fields, projectNamespace, typesys.MemberSymbol{
-							Kind:      apexast.DeclarationField,
-							Name:      componentName,
-							Type:      "Decimal",
-							Modifiers: []string{"public"},
-						})
-					}
-				}
-			}
-			if field.RelationshipName != "" && len(field.ReferenceTo) != 0 {
-				relationshipType := "SObject"
-				if len(field.ReferenceTo) == 1 {
-					relationshipType = field.ReferenceTo[0]
-				}
-				semaAddSchemaFieldMember(objectMembers.fields, projectNamespace, typesys.MemberSymbol{
-					Kind:      apexast.DeclarationField,
-					Name:      field.RelationshipName,
-					Type:      relationshipType,
-					Modifiers: []string{"public"},
-				})
-			}
-			if relationshipFieldName := semaParentRelationshipFieldName(field.Name); relationshipFieldName != "" && len(field.ReferenceTo) != 0 {
-				relationshipType := "SObject"
-				if len(field.ReferenceTo) == 1 {
-					relationshipType = field.ReferenceTo[0]
-				}
-				semaAddSchemaFieldMember(objectMembers.fields, projectNamespace, typesys.MemberSymbol{
-					Kind:      apexast.DeclarationField,
-					Name:      relationshipFieldName,
-					Type:      relationshipType,
-					Modifiers: []string{"public"},
-				})
-			}
 			childRelationshipNames := []string{}
 			if field.ChildRelationshipName != "" {
 				childRelationshipNames = append(childRelationshipNames, field.ChildRelationshipName)
@@ -454,7 +946,6 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 		}
 		semaStoreSObjectTypeMembers(out, projectNamespace, object.Name, objectMembers)
 	}
-	addStandardSObjectMembers(out)
 	semaApplyPlatformInterfaceOverlays(out)
 	semaApplyPlatformFieldOverlays(out)
 	for short, names := range shortAliases {
@@ -465,6 +956,8 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 			out[short] = out[normalizeName(names[0])]
 		}
 	}
+	model := &semaTypeMemberModel{members: out}
+	view := newSemaTypeMemberStateWithPlatform(model, platform).view()
 	for key, members := range out {
 		if members.shortKey == "" {
 			members.shortKey = semaShortTypeKey(members.name)
@@ -473,32 +966,36 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 			out[key] = members
 			continue
 		}
-		members.superClass = resolveNestedTypeName(out, members.name, members.superClass)
+		members.superClass = resolveNestedTypeName(view, members.name, members.superClass)
 		for i, iface := range members.interfaces {
-			members.interfaces[i] = resolveNestedTypeName(out, members.name, iface)
+			members.interfaces[i] = resolveNestedTypeName(view, members.name, iface)
 		}
 		for fieldKey, field := range members.fields {
-			field.Type = resolveNestedTypeReference(out, members.name, field.Type)
+			field.Type = resolveNestedTypeReference(view, members.name, field.Type)
 			members.fields[fieldKey] = field
 		}
 		for methodKey, overloads := range members.methods {
 			for i := range overloads {
-				overloads[i].Type = resolveNestedTypeReference(out, members.name, overloads[i].Type)
+				overloads[i].Type = resolveNestedTypeReference(view, members.name, overloads[i].Type)
 				for j := range overloads[i].Parameters {
-					overloads[i].Parameters[j].Type = resolveNestedTypeReference(out, members.name, overloads[i].Parameters[j].Type)
+					overloads[i].Parameters[j].Type = resolveNestedTypeReference(view, members.name, overloads[i].Parameters[j].Type)
 				}
 			}
 			members.methods[methodKey] = overloads
 		}
 		for i := range members.constructors {
 			for j := range members.constructors[i].Parameters {
-				members.constructors[i].Parameters[j].Type = resolveNestedTypeReference(out, members.name, members.constructors[i].Parameters[j].Type)
+				members.constructors[i].Parameters[j].Type = resolveNestedTypeReference(view, members.name, members.constructors[i].Parameters[j].Type)
 			}
 		}
 		out[key] = members
 	}
-	registerSemaShortCandidateIndex(out)
-	return out
+	model.shortCandidates = buildSemaShortCandidateIndex(out, semaTypeMemberCandidateKeys(index))
+	return model
+}
+
+func buildSemaTypeMemberView(index typesys.Index) *semaTypeMemberView {
+	return newSemaTypeMemberState(buildTypeMembers(index)).view()
 }
 
 func semaRequiresQualifiedDependencyName(typ typesys.TypeSymbol) bool {
@@ -510,6 +1007,36 @@ func semaCloneMemberSymbol(member typesys.MemberSymbol) typesys.MemberSymbol {
 	member.Parameters = semaCloneParameters(member.Parameters)
 	member.Accessors = semaCloneAccessors(member.Accessors)
 	return member
+}
+
+func semaCloneTypeMembers(members typeMembers) typeMembers {
+	clone := members
+	if members.interfaces != nil {
+		clone.interfaces = append([]string(nil), members.interfaces...)
+	}
+	if members.methods != nil {
+		clone.methods = make(map[string][]typesys.MemberSymbol, len(members.methods))
+		for key, overloads := range members.methods {
+			copied := make([]typesys.MemberSymbol, len(overloads))
+			for i, overload := range overloads {
+				copied[i] = semaCloneMemberSymbol(overload)
+			}
+			clone.methods[key] = copied
+		}
+	}
+	if members.constructors != nil {
+		clone.constructors = make([]typesys.MemberSymbol, len(members.constructors))
+		for i, constructor := range members.constructors {
+			clone.constructors[i] = semaCloneMemberSymbol(constructor)
+		}
+	}
+	if members.fields != nil {
+		clone.fields = make(map[string]typesys.MemberSymbol, len(members.fields))
+		for key, field := range members.fields {
+			clone.fields[key] = semaCloneMemberSymbol(field)
+		}
+	}
+	return clone
 }
 
 func semaCloneParameters(parameters []apexast.Parameter) []apexast.Parameter {
@@ -558,25 +1085,77 @@ func semaShouldStoreTypeMembers(existing typeMembers, typ typesys.TypeSymbol) bo
 	return existing.dependency && !typ.Dependency
 }
 
-var semaShortCandidateIndexes sync.Map
+func semaTypeMemberCandidateKeys(index typesys.Index) []string {
+	keys := make([]string, 0, len(index.Types)*2)
+	for _, typ := range index.Types {
+		for _, member := range typ.Members {
+			if member.Kind != apexast.DeclarationEnum {
+				continue
+			}
+			nestedName := typ.Name + "." + member.Name
+			if !semaRequiresQualifiedDependencyName(typ) {
+				keys = append(keys, normalizeName(nestedName))
+			}
+			if typ.Namespace != "" {
+				keys = append(keys, normalizeName(typ.Namespace+"."+nestedName))
+			}
+		}
+		if !semaRequiresQualifiedDependencyName(typ) {
+			keys = append(keys, normalizeName(typ.Name))
+		}
+		if typ.Namespace != "" {
+			keys = append(keys, normalizeName(typ.Namespace+"."+typ.Name))
+		}
+		if short := shortNestedTypeName(typ.Name); !semaRequiresQualifiedDependencyName(typ) && short != typ.Name {
+			keys = append(keys, normalizeName(short))
+		}
+	}
+	return keys
+}
 
-func registerSemaShortCandidateIndex(model map[string]typeMembers) {
+func buildSemaShortCandidateIndex(model map[string]typeMembers, preferredKeys []string) map[string][]string {
 	index := make(map[string][]string)
-	for key, members := range model {
+	seen := make(map[string]bool, len(model))
+	add := func(key string) {
+		if seen[key] {
+			return
+		}
+		members, ok := model[key]
+		if !ok {
+			return
+		}
+		seen[key] = true
 		short := members.shortKey
 		if short == "" {
 			short = semaShortTypeKeyFromNormalizedKey(key)
 		}
 		if short == "" {
-			continue
+			return
 		}
 		index[short] = append(index[short], key)
 	}
-	semaShortCandidateIndexes.Store(semaModelCacheKey(model), index)
+	for _, key := range preferredKeys {
+		add(key)
+	}
+	remaining := make([]string, 0, len(model)-len(seen))
+	for key := range model {
+		if !seen[key] {
+			remaining = append(remaining, key)
+		}
+	}
+	sort.Strings(remaining)
+	for _, key := range remaining {
+		add(key)
+	}
+	return index
 }
 
-func unregisterSemaShortCandidateIndex(model map[string]typeMembers) {
-	semaShortCandidateIndexes.Delete(semaModelCacheKey(model))
+func semaTypeMemberViewFromMembers(members map[string]typeMembers) *semaTypeMemberView {
+	model := &semaTypeMemberModel{
+		members:         members,
+		shortCandidates: buildSemaShortCandidateIndex(members, nil),
+	}
+	return newSemaTypeMemberState(model).view()
 }
 
 func semaAddSchemaFieldMember(fields map[string]typesys.MemberSymbol, namespace string, member typesys.MemberSymbol) {
@@ -631,47 +1210,8 @@ func semaStoreSObjectTypeMembers(out map[string]typeMembers, namespace, objectNa
 	}
 }
 
-func semaShortCandidateKeys(model map[string]typeMembers, short string) []string {
-	if cached, ok := semaShortCandidateIndexes.Load(semaModelCacheKey(model)); ok {
-		if index, ok := cached.(map[string][]string); ok {
-			return index[short]
-		}
-	}
-	var keys []string
-	for candidateKey, members := range model {
-		if members.shortKey == short {
-			keys = append(keys, candidateKey)
-		}
-	}
-	return keys
-}
-
-func semaModelCacheKey(model map[string]typeMembers) uintptr {
-	return reflect.ValueOf(model).Pointer()
-}
-
-func addStandardSObjectMembers(out map[string]typeMembers) {
-	names, _ := semaStandardSObjectMembers()
-	for _, objectName := range names {
-		key := normalizeName(objectName)
-		if key == "" {
-			continue
-		}
-		members, ok := out[key]
-		if ok && !members.sobject && !semaShouldMergeStandardSObjectMembers(objectName, members) {
-			continue
-		}
-		if !ok {
-			out[key] = semaStandardSObjectPlaceholder(objectName)
-			continue
-		}
-		members.sobject = true
-		if members.fields == nil {
-			members.fields = make(map[string]typesys.MemberSymbol)
-		}
-		addStandardSObjectFields(&members, objectName, false)
-		out[key] = members
-	}
+func semaShortCandidateKeys(model *semaTypeMemberView, short string) []string {
+	return model.shortCandidateKeys(short)
 }
 
 func semaShouldMergeStandardSObjectMembers(objectName string, members typeMembers) bool {
@@ -695,11 +1235,10 @@ func semaShouldMergeStandardSObjectMembers(objectName string, members typeMember
 var semaStandardSObjectMembersCache struct {
 	once      sync.Once
 	names     []string
-	members   map[string]typeMembers
 	nameByKey map[string]string
 }
 
-func semaStandardSObjectMembers() ([]string, map[string]typeMembers) {
+func ensureSemaStandardSObjectMembers() {
 	semaStandardSObjectMembersCache.once.Do(func() {
 		sourceNames := append(storage.KnownStandardObjectNames(), semaAdditionalStandardSObjectNames()...)
 		sourceNames = append(sourceNames, semaStandardChangeEventNames(sourceNames)...)
@@ -716,10 +1255,8 @@ func semaStandardSObjectMembers() ([]string, map[string]typeMembers) {
 			nameByKey[key] = objectName
 		}
 		semaStandardSObjectMembersCache.names = names
-		semaStandardSObjectMembersCache.members = map[string]typeMembers{}
 		semaStandardSObjectMembersCache.nameByKey = nameByKey
 	})
-	return semaStandardSObjectMembersCache.names, semaStandardSObjectMembersCache.members
 }
 
 func semaStandardSObjectPlaceholder(objectName string) typeMembers {
@@ -740,7 +1277,7 @@ func semaBuildStandardSObjectMembers(objectName string) typeMembers {
 	return members
 }
 
-func semaEnsureStandardSObjectTypeMembers(model map[string]typeMembers, key string, members typeMembers) typeMembers {
+func semaEnsureStandardSObjectTypeMembers(model *semaTypeMemberView, key string, members typeMembers) typeMembers {
 	if !members.syntheticStandardSObject || members.standardSObjectFieldsLoaded {
 		return members
 	}
@@ -755,7 +1292,7 @@ func semaEnsureStandardSObjectTypeMembers(model map[string]typeMembers, key stri
 		key = normalizeName(members.name)
 	}
 	if key != "" {
-		model[key] = hydrated
+		model.storeHydrated(key, hydrated)
 	}
 	return hydrated
 }
@@ -841,7 +1378,7 @@ var semaStandardChildRelationshipCache struct {
 	byParent map[string][]semaStandardChildRelationshipMember
 }
 
-func semaStandardChildRelationshipMembers(objectName string) []semaStandardChildRelationshipMember {
+func ensureSemaStandardChildRelationshipMembers() {
 	semaStandardChildRelationshipCache.once.Do(func() {
 		byParent := make(map[string][]semaStandardChildRelationshipMember)
 		seen := make(map[string]bool)
@@ -878,15 +1415,26 @@ func semaStandardChildRelationshipMembers(objectName string) []semaStandardChild
 		}
 		semaStandardChildRelationshipCache.byParent = byParent
 	})
+}
+
+func semaStandardChildRelationshipKey(objectName string) string {
 	key := normalizeName(objectName)
 	if canonical, ok := storage.ResolveKnownStandardObjectName(objectName); ok {
 		key = normalizeName(canonical)
 	}
-	return semaStandardChildRelationshipCache.byParent[key]
+	return key
+}
+
+func semaStandardChildRelationshipMembers(objectName string) []semaStandardChildRelationshipMember {
+	ensureSemaStandardChildRelationshipMembers()
+	key := semaStandardChildRelationshipKey(objectName)
+	return append([]semaStandardChildRelationshipMember(nil), semaStandardChildRelationshipCache.byParent[key]...)
 }
 
 func semaStandardChildRelationshipMemberForKey(objectName, fieldKey string) (typesys.MemberSymbol, bool) {
-	for _, relationship := range semaStandardChildRelationshipMembers(objectName) {
+	ensureSemaStandardChildRelationshipMembers()
+	key := semaStandardChildRelationshipKey(objectName)
+	for _, relationship := range semaStandardChildRelationshipCache.byParent[key] {
 		if normalizeName(relationship.name) != fieldKey {
 			continue
 		}
@@ -901,7 +1449,7 @@ func semaStandardChildRelationshipMemberForKey(objectName, fieldKey string) (typ
 }
 
 func semaStandardSObjectNameForKey(key string) (string, bool) {
-	semaStandardSObjectMembers()
+	ensureSemaStandardSObjectMembers()
 	name, ok := semaStandardSObjectMembersCache.nameByKey[key]
 	return name, ok
 }
@@ -1116,6 +1664,70 @@ func semaAddCommonSObjectFields(fields map[string]typesys.MemberSymbol) {
 	}
 }
 
+func semaAddSObjectProviderMembers(members *typeMembers, provider semaSObjectFieldProvider, namespace string, objects []schema.Object) {
+	if members == nil || provider == nil {
+		return
+	}
+	if members.fields == nil {
+		members.fields = make(map[string]typesys.MemberSymbol)
+	}
+	if _, exists := members.fields[normalizeName("SObjectType")]; !exists {
+		members.fields[normalizeName("SObjectType")] = typesys.MemberSymbol{
+			Kind:      apexast.DeclarationField,
+			Name:      "SObjectType",
+			Type:      "Schema.SObjectType",
+			Modifiers: []string{"public", "static", semaSyntheticStandardSObjectFieldModifier},
+		}
+	}
+	provider.visit(func(field schema.Field) {
+		fieldType := semaApexTypeForSchemaFieldInObjects(objects, field)
+		if strings.EqualFold(field.Name, "ChangeEventHeader") && strings.EqualFold(field.Type, "EventBus.ChangeEventHeader") {
+			fieldType = "EventBus.ChangeEventHeader"
+		}
+		if fieldType != "" {
+			semaAddSchemaFieldMemberIfAbsent(members.fields, namespace, typesys.MemberSymbol{
+				Kind:      apexast.DeclarationField,
+				Name:      field.Name,
+				Type:      fieldType,
+				Modifiers: []string{"public"},
+			})
+		}
+		if strings.EqualFold(field.Type, "Location") {
+			for _, componentName := range semaLocationComponentFieldNames(field.Name) {
+				semaAddSchemaFieldMemberIfAbsent(members.fields, namespace, typesys.MemberSymbol{
+					Kind:      apexast.DeclarationField,
+					Name:      componentName,
+					Type:      "Decimal",
+					Modifiers: []string{"public"},
+				})
+			}
+		}
+		if len(field.ReferenceTo) == 0 {
+			return
+		}
+		relationshipType := "SObject"
+		if len(field.ReferenceTo) == 1 {
+			relationshipType = field.ReferenceTo[0]
+		}
+		if field.RelationshipName != "" {
+			semaAddSchemaFieldMemberIfAbsent(members.fields, namespace, typesys.MemberSymbol{
+				Kind:      apexast.DeclarationField,
+				Name:      field.RelationshipName,
+				Type:      relationshipType,
+				Modifiers: []string{"public"},
+			})
+		}
+		if relationshipFieldName := semaParentRelationshipFieldName(field.Name); relationshipFieldName != "" {
+			semaAddSchemaFieldMemberIfAbsent(members.fields, namespace, typesys.MemberSymbol{
+				Kind:      apexast.DeclarationField,
+				Name:      relationshipFieldName,
+				Type:      relationshipType,
+				Modifiers: []string{"public"},
+			})
+		}
+	})
+}
+
 func semaObjectSupportsRecordTypeRelationship(object schema.Object) bool {
 	if strings.HasSuffix(strings.ToLower(object.Name), "__c") {
 		return true
@@ -1129,26 +1741,6 @@ func semaObjectSupportsRecordTypeRelationship(object schema.Object) bool {
 		}
 	}
 	return false
-}
-
-func semaAddSObjectRecordTypeRelationship(fields map[string]typesys.MemberSymbol) {
-	if _, exists := fields[normalizeName("RecordTypeId")]; !exists {
-		fields[normalizeName("RecordTypeId")] = typesys.MemberSymbol{
-			Kind:      apexast.DeclarationField,
-			Name:      "RecordTypeId",
-			Type:      "Id",
-			Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
-		}
-	}
-	if _, exists := fields[normalizeName("RecordType")]; exists {
-		return
-	}
-	fields[normalizeName("RecordType")] = typesys.MemberSymbol{
-		Kind:      apexast.DeclarationField,
-		Name:      "RecordType",
-		Type:      "RecordType",
-		Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
-	}
 }
 
 func semaFallbackStandardSObjectFields(objectName string, synthetic bool) []schema.Field {
@@ -1273,7 +1865,7 @@ func semaApexTypeForSchemaFieldInObjects(objects []schema.Object, field schema.F
 		return "Integer"
 	case "long":
 		return "Long"
-	case "double", "currency", "percent", "number", "summary":
+	case "decimal", "double", "currency", "percent", "number", "summary":
 		return "Decimal"
 	case "date":
 		return "Date"
@@ -1291,7 +1883,7 @@ func semaApexTypeForSchemaFieldInObjects(objects []schema.Object, field schema.F
 		return "String"
 	case "lookup", "masterdetail", "externallookup", "indirectlookup", "reference":
 		return "Id"
-	case "text", "textarea", "longtextarea", "html", "encryptedtext", "email", "phone", "url", "picklist", "multipicklist", "multiselectpicklist", "combobox", "autonumber":
+	case "string", "text", "textarea", "longtextarea", "html", "encryptedtext", "email", "phone", "url", "picklist", "multipicklist", "multiselectpicklist", "combobox", "autonumber":
 		return "String"
 	}
 	if field.Name != "" {
@@ -1389,14 +1981,17 @@ func semaApexTypeForStorageField(field storage.Field) string {
 }
 
 func semaEnumValues(typ typesys.TypeSymbol) []string {
+	return semaEnumValuesWithSources(typ, newSemaSources(nil, nil))
+}
+
+func semaEnumValuesWithSources(typ typesys.TypeSymbol, sources *semaSources) []string {
 	if typ.File == "" || typ.Range.Start.Offset < 0 || typ.Range.End.Offset <= typ.Range.Start.Offset {
 		return nil
 	}
-	data, err := os.ReadFile(typ.File)
-	if err != nil {
+	source, ok := sources.rawForType(typ)
+	if !ok {
 		return nil
 	}
-	source := string(data)
 	if typ.Range.End.Offset > len(source) {
 		return nil
 	}
@@ -1470,7 +2065,7 @@ func shortNestedTypeName(typeName string) string {
 	return typeName
 }
 
-func resolveNestedTypeName(model map[string]typeMembers, owner, typeName string) string {
+func resolveNestedTypeName(model *semaTypeMemberView, owner, typeName string) string {
 	typeName = strings.TrimSpace(typeName)
 	if typeName == "" {
 		return typeName
@@ -1481,18 +2076,18 @@ func resolveNestedTypeName(model map[string]typeMembers, owner, typeName string)
 	if strings.Contains(typeName, ".") {
 		if owner != "" {
 			candidate := owner + "." + typeName
-			if _, ok := model[normalizeName(candidate)]; ok {
+			if _, ok := model.lookup(normalizeName(candidate)); ok {
 				return candidate
 			}
 		}
 		ownerParts := strings.Split(owner, ".")
 		for i := len(ownerParts) - 1; i > 0; i-- {
 			candidate := strings.Join(append(append([]string{}, ownerParts[:i]...), typeName), ".")
-			if _, ok := model[normalizeName(candidate)]; ok {
+			if _, ok := model.lookup(normalizeName(candidate)); ok {
 				return candidate
 			}
 		}
-		if _, ok := model[normalizeName(typeName)]; ok {
+		if _, ok := model.lookup(normalizeName(typeName)); ok {
 			return typeName
 		}
 		return semaCanonicalPlatformAlias(typeName)
@@ -1502,26 +2097,26 @@ func resolveNestedTypeName(model map[string]typeMembers, owner, typeName string)
 		return typeName
 	}
 	if semaIsCustomAPIName(typeName) {
-		if _, ok := model[normalizeName(typeName)]; ok {
+		if _, ok := model.lookup(normalizeName(typeName)); ok {
 			return typeName
 		}
 	}
 	if namespace := semaOwnerTypeNamespace(model, owner); namespace != "" {
 		if namespaced, ok := semaProjectNamespacedAPIName(namespace, typeName); ok {
-			if _, exists := model[normalizeName(namespaced)]; exists {
+			if _, exists := model.lookup(normalizeName(namespaced)); exists {
 				return namespaced
 			}
 		}
 	}
 	if owner != "" {
 		candidate := owner + "." + typeName
-		if _, ok := model[normalizeName(candidate)]; ok {
+		if _, ok := model.lookup(normalizeName(candidate)); ok {
 			return candidate
 		}
 	}
 	for i := len(ownerParts) - 1; i > 0; i-- {
 		candidate := strings.Join(append(append([]string{}, ownerParts[:i]...), typeName), ".")
-		if _, ok := model[normalizeName(candidate)]; ok {
+		if _, ok := model.lookup(normalizeName(candidate)); ok {
 			return candidate
 		}
 	}
@@ -1537,7 +2132,7 @@ func resolveNestedTypeName(model map[string]typeMembers, owner, typeName string)
 	return semaCanonicalPlatformAlias(typeName)
 }
 
-func resolveNestedTypeNameFromSuperclasses(model map[string]typeMembers, owner, typeName string) string {
+func resolveNestedTypeNameFromSuperclasses(model *semaTypeMemberView, owner, typeName string) string {
 	seen := make(map[string]bool)
 	for current := owner; current != ""; {
 		key := normalizeName(current)
@@ -1545,12 +2140,12 @@ func resolveNestedTypeNameFromSuperclasses(model map[string]typeMembers, owner, 
 			break
 		}
 		seen[key] = true
-		members, ok := model[key]
+		members, ok := model.lookup(key)
 		if !ok || strings.TrimSpace(members.superClass) == "" {
 			break
 		}
 		candidate := members.superClass + "." + typeName
-		if _, ok := model[normalizeName(candidate)]; ok {
+		if _, ok := model.lookup(normalizeName(candidate)); ok {
 			return candidate
 		}
 		current = members.superClass
@@ -1566,7 +2161,7 @@ func semaShouldPreserveExplicitPlatformType(typeName string) bool {
 	return !strings.EqualFold(canonical, typeName)
 }
 
-func semaOwnerTypeNamespace(model map[string]typeMembers, owner string) string {
+func semaOwnerTypeNamespace(model *semaTypeMemberView, owner string) string {
 	members, _, ok := semaLookupTypeMembers(model, owner)
 	if !ok || strings.TrimSpace(members.namespace) == "" {
 		return ""
@@ -1574,7 +2169,7 @@ func semaOwnerTypeNamespace(model map[string]typeMembers, owner string) string {
 	return members.namespace
 }
 
-func resolveNestedTypeReference(model map[string]typeMembers, owner, typeName string) string {
+func resolveNestedTypeReference(model *semaTypeMemberView, owner, typeName string) string {
 	base, args := semaGenericBaseAndArgs(typeName)
 	if len(args) == 0 {
 		return resolveNestedTypeName(model, owner, typeName)

@@ -6,13 +6,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/storage"
+	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
 
 func benchmarkEntry(t testing.TB, root string, classCount int, objectCount int) Entry {
 	t.Helper()
-	files := make([]File, 0, classCount)
 	classes := make([]vm.Class, 0, classCount)
 	methods := make(map[string]vm.Method, classCount)
 	for i := 0; i < classCount; i++ {
@@ -25,11 +26,6 @@ func benchmarkEntry(t testing.TB, root string, classCount int, objectCount int) 
 		if err := os.WriteFile(path, body, 0o644); err != nil {
 			t.Fatalf("WriteFile() error = %v", err)
 		}
-		fp, ok := statFile(root, path)
-		if !ok {
-			t.Fatalf("statFile(%q) failed", path)
-		}
-		files = append(files, fp)
 		classes = append(classes, vm.Class{Name: name})
 		methods[name+".run"] = vm.Method{Name: "run", ClassName: name}
 	}
@@ -48,23 +44,21 @@ func benchmarkEntry(t testing.TB, root string, classCount int, objectCount int) 
 			},
 		}
 	}
-	return Entry{
-		Version:     Version,
-		ProjectRoot: root,
-		BuiltAt:     "2026-06-16T00:00:00Z",
-		Manifest: Manifest{
-			ProjectRoot: root,
-			Files:       files,
-		},
-		Org: storage.OrgState{
-			APIVersion: "64.0",
-			Objects:    objects,
-		},
-		Runtime: CompiledRuntime{
-			Methods: methods,
-			Classes: classes,
-		},
+	loaded, err := project.Load(root)
+	if err != nil {
+		t.Fatalf("project.Load() error = %v", err)
 	}
+	entry := NewEntry(root, loaded, typesys.Index{}, storage.NewOrgState(), CompiledRuntime{})
+	entry.BuiltAt = "2026-06-16T00:00:00Z"
+	entry.Org = storage.OrgState{
+		APIVersion: "64.0",
+		Objects:    objects,
+	}
+	entry.Runtime = CompiledRuntime{
+		Methods: methods,
+		Classes: classes,
+	}
+	return entry
 }
 
 func BenchmarkTestCacheWrite(b *testing.B) {

@@ -1,6 +1,8 @@
 package vm
 
 import (
+	"context"
+	"errors"
 	"strconv"
 	"strings"
 	"testing"
@@ -818,6 +820,71 @@ func TestExecRecursiveMethodReturnsRuntimeError(t *testing.T) {
 	_, err = machine.Execute(program)
 	if err == nil || !strings.Contains(err.Error(), "maximum Apex call stack depth exceeded") {
 		t.Fatalf("expected call depth error, got %v", err)
+	}
+}
+
+func TestCallMethodWithReceiverPreservesContextErrors(t *testing.T) {
+	tests := []struct {
+		name string
+		want error
+	}{
+		{name: "canceled", want: context.Canceled},
+		{name: "deadline exceeded", want: context.DeadlineExceeded},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			switch tt.want {
+			case context.Canceled:
+				canceledCtx, cancel := context.WithCancel(ctx)
+				cancel()
+				ctx = canceledCtx
+			case context.DeadlineExceeded:
+				deadlineCtx, cancel := context.WithDeadline(ctx, time.Unix(0, 0))
+				t.Cleanup(cancel)
+				ctx = deadlineCtx
+			}
+
+			instructions := make([]ir.Instruction, 64)
+			for i := range instructions {
+				instructions[i] = ir.Instruction{Op: ir.OpBlock}
+			}
+			method := Method{
+				Name:    "ContextProbe.run",
+				Program: ir.Program{Instructions: instructions},
+			}
+			machine := New(nil)
+			machine.SetContext(ctx)
+
+			_, err := machine.callMethodWithReceiver(method, Null, nil, &Result{})
+			if !errors.Is(err, tt.want) {
+				t.Fatalf("err = %v, want errors.Is(err, %v)", err, tt.want)
+			}
+			var runtimeErr *RuntimeError
+			if errors.As(err, &runtimeErr) {
+				t.Fatalf("err = %#v, want context error without RuntimeError conversion", err)
+			}
+		})
+	}
+}
+
+func TestCallMethodWithReceiverWrapsOrdinaryProgramErrorWithStack(t *testing.T) {
+	method := Method{
+		Name: "ErrorProbe.run",
+		Program: ir.Program{Instructions: []ir.Instruction{
+			{Op: ir.Op("test-ordinary-error")},
+		}},
+	}
+	machine := New(nil)
+
+	_, err := machine.callMethodWithReceiver(method, Null, nil, &Result{})
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) {
+		t.Fatalf("err = %#v, want RuntimeError", err)
+	}
+	if len(runtimeErr.Stack) == 0 {
+		t.Fatalf("RuntimeError stack = %#v, want method frame", runtimeErr.Stack)
 	}
 }
 

@@ -10,8 +10,25 @@ import (
 type PerfCounters struct {
 	Enabled              bool                    `json:"enabled,omitempty"`
 	StaticAlias          StaticAliasPerfCounters `json:"staticAlias,omitempty"`
+	ScopeAlias           ScopeAliasPerfCounters  `json:"scopeAlias,omitzero"`
 	StaticAliasTopFields []StaticAliasFieldPerf  `json:"staticAliasTopFields,omitempty"`
 	DML                  DMLPerfCounters         `json:"dml,omitempty"`
+}
+
+type ScopeAliasPerfCounters struct {
+	Calls                     uint64 `json:"calls,omitempty"`
+	Roots                     uint64 `json:"roots,omitempty"`
+	RecursiveVisits           uint64 `json:"recursiveVisits,omitempty"`
+	ContainmentCacheHits      uint64 `json:"containmentCacheHits,omitempty"`
+	ContainmentCacheMisses    uint64 `json:"containmentCacheMisses,omitempty"`
+	ContainmentCacheClears    uint64 `json:"containmentCacheClears,omitempty"`
+	ContainmentEntriesEvicted uint64 `json:"containmentEntriesEvicted,omitempty"`
+	MutationEpochAdvances     uint64 `json:"mutationEpochAdvances,omitempty"`
+	MaxMutationEpoch          uint64 `json:"maxMutationEpoch,omitempty"`
+	ReplacedRoots             uint64 `json:"replacedRoots,omitempty"`
+	ContainmentNS             int64  `json:"containmentNs,omitempty"`
+	ReplacementNS             int64  `json:"replacementNs,omitempty"`
+	DurationNS                int64  `json:"durationNs,omitempty"`
 }
 
 type StaticAliasPerfCounters struct {
@@ -44,112 +61,167 @@ type DMLPerfCounters struct {
 	TemporaryJournalPoints uint64 `json:"temporaryJournalPoints,omitempty"`
 }
 
-var perfCountersEnabled atomic.Bool
-
-var staticAliasPerf struct {
-	calls           atomic.Uint64
-	refMisses       atomic.Uint64
-	locationVisits  atomic.Uint64
-	childHintHits   atomic.Uint64
-	directChildHits atomic.Uint64
-	changed         atomic.Uint64
-	noChange        atomic.Uint64
-	durationNS      atomic.Int64
-	collectCalls    atomic.Uint64
-	collectNS       atomic.Int64
-	mu              sync.Mutex
-	fields          map[string]*StaticAliasFieldPerf
+// PerfRecorder is an opaque, concurrency-safe aggregation session. A runtime
+// clone shares its recorder pointer with its source VM so one run owns all VM
+// measurements produced by its worker clones.
+type PerfRecorder struct {
+	staticAlias struct {
+		calls           atomic.Uint64
+		refMisses       atomic.Uint64
+		locationVisits  atomic.Uint64
+		childHintHits   atomic.Uint64
+		directChildHits atomic.Uint64
+		changed         atomic.Uint64
+		noChange        atomic.Uint64
+		durationNS      atomic.Int64
+		collectCalls    atomic.Uint64
+		collectNS       atomic.Int64
+		mu              sync.Mutex
+		fields          map[string]*StaticAliasFieldPerf
+	}
+	scopeAlias struct {
+		calls                     atomic.Uint64
+		roots                     atomic.Uint64
+		recursiveVisits           atomic.Uint64
+		containmentCacheHits      atomic.Uint64
+		containmentCacheMisses    atomic.Uint64
+		containmentCacheClears    atomic.Uint64
+		containmentEntriesEvicted atomic.Uint64
+		mutationEpochAdvances     atomic.Uint64
+		maxMutationEpoch          atomic.Uint64
+		replacedRoots             atomic.Uint64
+		containmentNS             atomic.Int64
+		replacementNS             atomic.Int64
+		durationNS                atomic.Int64
+	}
+	dml struct {
+		rollbackPoints         atomic.Uint64
+		snapshotRollbackPoints atomic.Uint64
+		journalRollbackPoints  atomic.Uint64
+		temporaryJournalPoints atomic.Uint64
+	}
 }
 
-var dmlPerf struct {
-	rollbackPoints         atomic.Uint64
-	snapshotRollbackPoints atomic.Uint64
-	journalRollbackPoints  atomic.Uint64
-	temporaryJournalPoints atomic.Uint64
+var compatibilityPerfRecorder atomic.Pointer[PerfRecorder]
+
+func NewPerfRecorder() *PerfRecorder {
+	return &PerfRecorder{}
 }
 
-func SetPerfCountersEnabled(enabled bool) {
-	perfCountersEnabled.Store(enabled)
-}
-
-func perfEnabled() bool {
-	return perfCountersEnabled.Load()
-}
-
-func ResetPerfCounters() {
-	perfCountersEnabled.Store(false)
-	resetStaticAliasPerf()
-	resetDMLPerf()
-}
-
-func SnapshotPerfCounters() PerfCounters {
-	if !perfEnabled() {
+func (recorder *PerfRecorder) Snapshot() PerfCounters {
+	if recorder == nil {
 		return PerfCounters{}
 	}
 	return PerfCounters{
 		Enabled:              true,
-		StaticAlias:          snapshotStaticAliasPerf(),
-		StaticAliasTopFields: snapshotStaticAliasTopFields(20),
-		DML:                  snapshotDMLPerf(),
+		StaticAlias:          recorder.snapshotStaticAlias(),
+		ScopeAlias:           recorder.snapshotScopeAlias(),
+		StaticAliasTopFields: recorder.snapshotStaticAliasTopFields(20),
+		DML:                  recorder.snapshotDML(),
 	}
 }
 
-func resetStaticAliasPerf() {
-	staticAliasPerf.calls.Store(0)
-	staticAliasPerf.refMisses.Store(0)
-	staticAliasPerf.locationVisits.Store(0)
-	staticAliasPerf.childHintHits.Store(0)
-	staticAliasPerf.directChildHits.Store(0)
-	staticAliasPerf.changed.Store(0)
-	staticAliasPerf.noChange.Store(0)
-	staticAliasPerf.durationNS.Store(0)
-	staticAliasPerf.collectCalls.Store(0)
-	staticAliasPerf.collectNS.Store(0)
-	staticAliasPerf.mu.Lock()
-	staticAliasPerf.fields = nil
-	staticAliasPerf.mu.Unlock()
+// SetPerfCountersEnabled preserves the package-level compatibility surface for
+// direct VM callers. New VMs capture the current compatibility recorder.
+func SetPerfCountersEnabled(enabled bool) {
+	if !enabled {
+		compatibilityPerfRecorder.Store(nil)
+		return
+	}
+	compatibilityPerfRecorder.Store(NewPerfRecorder())
 }
 
-func snapshotStaticAliasPerf() StaticAliasPerfCounters {
+func ResetPerfCounters() {
+	compatibilityPerfRecorder.Store(nil)
+}
+
+func SnapshotPerfCounters() PerfCounters {
+	return compatibilityPerfRecorder.Load().Snapshot()
+}
+
+func (recorder *PerfRecorder) snapshotScopeAlias() ScopeAliasPerfCounters {
+	return ScopeAliasPerfCounters{
+		Calls:                     recorder.scopeAlias.calls.Load(),
+		Roots:                     recorder.scopeAlias.roots.Load(),
+		RecursiveVisits:           recorder.scopeAlias.recursiveVisits.Load(),
+		ContainmentCacheHits:      recorder.scopeAlias.containmentCacheHits.Load(),
+		ContainmentCacheMisses:    recorder.scopeAlias.containmentCacheMisses.Load(),
+		ContainmentCacheClears:    recorder.scopeAlias.containmentCacheClears.Load(),
+		ContainmentEntriesEvicted: recorder.scopeAlias.containmentEntriesEvicted.Load(),
+		MutationEpochAdvances:     recorder.scopeAlias.mutationEpochAdvances.Load(),
+		MaxMutationEpoch:          recorder.scopeAlias.maxMutationEpoch.Load(),
+		ReplacedRoots:             recorder.scopeAlias.replacedRoots.Load(),
+		ContainmentNS:             recorder.scopeAlias.containmentNS.Load(),
+		ReplacementNS:             recorder.scopeAlias.replacementNS.Load(),
+		DurationNS:                recorder.scopeAlias.durationNS.Load(),
+	}
+}
+
+type scopeAliasProbe struct {
+	roots                  uint64
+	recursiveVisits        uint64
+	containmentCacheHits   uint64
+	containmentCacheMisses uint64
+	replacedRoots          uint64
+	containmentDuration    time.Duration
+	replacementDuration    time.Duration
+}
+
+func (recorder *PerfRecorder) recordScopeAliasProbe(probe scopeAliasProbe, duration time.Duration) {
+	recorder.scopeAlias.calls.Add(1)
+	recorder.scopeAlias.roots.Add(probe.roots)
+	recorder.scopeAlias.recursiveVisits.Add(probe.recursiveVisits)
+	recorder.scopeAlias.containmentCacheHits.Add(probe.containmentCacheHits)
+	recorder.scopeAlias.containmentCacheMisses.Add(probe.containmentCacheMisses)
+	recorder.scopeAlias.replacedRoots.Add(probe.replacedRoots)
+	recorder.scopeAlias.containmentNS.Add(probe.containmentDuration.Nanoseconds())
+	recorder.scopeAlias.replacementNS.Add(probe.replacementDuration.Nanoseconds())
+	recorder.scopeAlias.durationNS.Add(duration.Nanoseconds())
+}
+
+func (recorder *PerfRecorder) recordScopeAliasContainmentCacheClear(entries int) {
+	recorder.scopeAlias.containmentCacheClears.Add(1)
+	if entries > 0 {
+		recorder.scopeAlias.containmentEntriesEvicted.Add(uint64(entries))
+	}
+}
+
+func (recorder *PerfRecorder) recordScopeAliasMutationEpoch(epoch uint64) {
+	recorder.scopeAlias.mutationEpochAdvances.Add(1)
+	for {
+		current := recorder.scopeAlias.maxMutationEpoch.Load()
+		if epoch <= current || recorder.scopeAlias.maxMutationEpoch.CompareAndSwap(current, epoch) {
+			return
+		}
+	}
+}
+
+func (recorder *PerfRecorder) snapshotStaticAlias() StaticAliasPerfCounters {
 	return StaticAliasPerfCounters{
-		Calls:           staticAliasPerf.calls.Load(),
-		RefMisses:       staticAliasPerf.refMisses.Load(),
-		LocationVisits:  staticAliasPerf.locationVisits.Load(),
-		ChildHintHits:   staticAliasPerf.childHintHits.Load(),
-		DirectChildHits: staticAliasPerf.directChildHits.Load(),
-		Changed:         staticAliasPerf.changed.Load(),
-		NoChange:        staticAliasPerf.noChange.Load(),
-		DurationNS:      staticAliasPerf.durationNS.Load(),
-		CollectCalls:    staticAliasPerf.collectCalls.Load(),
-		CollectNS:       staticAliasPerf.collectNS.Load(),
+		Calls:           recorder.staticAlias.calls.Load(),
+		RefMisses:       recorder.staticAlias.refMisses.Load(),
+		LocationVisits:  recorder.staticAlias.locationVisits.Load(),
+		ChildHintHits:   recorder.staticAlias.childHintHits.Load(),
+		DirectChildHits: recorder.staticAlias.directChildHits.Load(),
+		Changed:         recorder.staticAlias.changed.Load(),
+		NoChange:        recorder.staticAlias.noChange.Load(),
+		DurationNS:      recorder.staticAlias.durationNS.Load(),
+		CollectCalls:    recorder.staticAlias.collectCalls.Load(),
+		CollectNS:       recorder.staticAlias.collectNS.Load(),
 	}
 }
 
-func recordStaticAliasChildHintHit() {
-	if !perfEnabled() {
-		return
-	}
-	staticAliasPerf.childHintHits.Add(1)
-}
-
-func recordStaticAliasDirectChildHit() {
-	if !perfEnabled() {
-		return
-	}
-	staticAliasPerf.directChildHits.Add(1)
-}
-
-func snapshotStaticAliasTopFields(limit int) []StaticAliasFieldPerf {
+func (recorder *PerfRecorder) snapshotStaticAliasTopFields(limit int) []StaticAliasFieldPerf {
 	if limit <= 0 {
 		return nil
 	}
-	staticAliasPerf.mu.Lock()
-	defer staticAliasPerf.mu.Unlock()
-	if len(staticAliasPerf.fields) == 0 {
+	recorder.staticAlias.mu.Lock()
+	defer recorder.staticAlias.mu.Unlock()
+	if len(recorder.staticAlias.fields) == 0 {
 		return nil
 	}
-	out := make([]StaticAliasFieldPerf, 0, len(staticAliasPerf.fields))
-	for _, field := range staticAliasPerf.fields {
+	out := make([]StaticAliasFieldPerf, 0, len(recorder.staticAlias.fields))
+	for _, field := range recorder.staticAlias.fields {
 		out = append(out, *field)
 	}
 	sort.Slice(out, func(i, j int) bool {
@@ -167,44 +239,46 @@ func snapshotStaticAliasTopFields(limit int) []StaticAliasFieldPerf {
 	return out
 }
 
-func recordStaticAliasPerf(duration time.Duration, refMiss bool, locationVisits uint64, changed bool) {
-	if !perfEnabled() {
-		return
-	}
-	staticAliasPerf.calls.Add(1)
+func (recorder *PerfRecorder) recordStaticAliasChildHintHit() {
+	recorder.staticAlias.childHintHits.Add(1)
+}
+
+func (recorder *PerfRecorder) recordStaticAliasDirectChildHit() {
+	recorder.staticAlias.directChildHits.Add(1)
+}
+
+func (recorder *PerfRecorder) recordStaticAliasPerf(duration time.Duration, refMiss bool, locationVisits uint64, changed bool) {
+	recorder.staticAlias.calls.Add(1)
 	if refMiss {
-		staticAliasPerf.refMisses.Add(1)
+		recorder.staticAlias.refMisses.Add(1)
 	}
-	staticAliasPerf.locationVisits.Add(locationVisits)
+	recorder.staticAlias.locationVisits.Add(locationVisits)
 	if changed {
-		staticAliasPerf.changed.Add(1)
+		recorder.staticAlias.changed.Add(1)
 	} else {
-		staticAliasPerf.noChange.Add(1)
+		recorder.staticAlias.noChange.Add(1)
 	}
-	staticAliasPerf.durationNS.Add(duration.Nanoseconds())
+	recorder.staticAlias.durationNS.Add(duration.Nanoseconds())
 }
 
-func recordStaticAliasCollectPerf(duration time.Duration) {
-	if !perfEnabled() {
-		return
-	}
-	staticAliasPerf.collectCalls.Add(1)
-	staticAliasPerf.collectNS.Add(duration.Nanoseconds())
+func (recorder *PerfRecorder) recordStaticAliasCollectPerf(duration time.Duration) {
+	recorder.staticAlias.collectCalls.Add(1)
+	recorder.staticAlias.collectNS.Add(duration.Nanoseconds())
 }
 
-func recordStaticAliasFieldPerf(field, kind string, maxChildren int, duration time.Duration, changed bool) {
-	if !perfEnabled() || field == "" {
+func (recorder *PerfRecorder) recordStaticAliasFieldPerf(field, kind string, maxChildren int, duration time.Duration, changed bool) {
+	if field == "" {
 		return
 	}
-	staticAliasPerf.mu.Lock()
-	defer staticAliasPerf.mu.Unlock()
-	if staticAliasPerf.fields == nil {
-		staticAliasPerf.fields = make(map[string]*StaticAliasFieldPerf)
+	recorder.staticAlias.mu.Lock()
+	defer recorder.staticAlias.mu.Unlock()
+	if recorder.staticAlias.fields == nil {
+		recorder.staticAlias.fields = make(map[string]*StaticAliasFieldPerf)
 	}
-	entry := staticAliasPerf.fields[field]
+	entry := recorder.staticAlias.fields[field]
 	if entry == nil {
 		entry = &StaticAliasFieldPerf{Field: field}
-		staticAliasPerf.fields[field] = entry
+		recorder.staticAlias.fields[field] = entry
 	}
 	entry.Visits++
 	if changed {
@@ -218,6 +292,24 @@ func recordStaticAliasFieldPerf(field, kind string, maxChildren int, duration ti
 	}
 	if maxChildren > entry.MaxChildren {
 		entry.MaxChildren = maxChildren
+	}
+}
+
+func recordStaticAliasPerf(duration time.Duration, refMiss bool, locationVisits uint64, changed bool) {
+	if recorder := compatibilityPerfRecorder.Load(); recorder != nil {
+		recorder.recordStaticAliasPerf(duration, refMiss, locationVisits, changed)
+	}
+}
+
+func recordStaticAliasCollectPerf(duration time.Duration) {
+	if recorder := compatibilityPerfRecorder.Load(); recorder != nil {
+		recorder.recordStaticAliasCollectPerf(duration)
+	}
+}
+
+func recordStaticAliasFieldPerf(field, kind string, maxChildren int, duration time.Duration, changed bool) {
+	if recorder := compatibilityPerfRecorder.Load(); recorder != nil {
+		recorder.recordStaticAliasFieldPerf(field, kind, maxChildren, duration, changed)
 	}
 }
 
@@ -236,43 +328,36 @@ func staticAliasPerfValueShape(value Value) (string, int) {
 	}
 }
 
-func resetDMLPerf() {
-	dmlPerf.rollbackPoints.Store(0)
-	dmlPerf.snapshotRollbackPoints.Store(0)
-	dmlPerf.journalRollbackPoints.Store(0)
-	dmlPerf.temporaryJournalPoints.Store(0)
-}
-
-func snapshotDMLPerf() DMLPerfCounters {
+func (recorder *PerfRecorder) snapshotDML() DMLPerfCounters {
 	return DMLPerfCounters{
-		RollbackPoints:         dmlPerf.rollbackPoints.Load(),
-		SnapshotRollbackPoints: dmlPerf.snapshotRollbackPoints.Load(),
-		JournalRollbackPoints:  dmlPerf.journalRollbackPoints.Load(),
-		TemporaryJournalPoints: dmlPerf.temporaryJournalPoints.Load(),
+		RollbackPoints:         recorder.dml.rollbackPoints.Load(),
+		SnapshotRollbackPoints: recorder.dml.snapshotRollbackPoints.Load(),
+		JournalRollbackPoints:  recorder.dml.journalRollbackPoints.Load(),
+		TemporaryJournalPoints: recorder.dml.temporaryJournalPoints.Load(),
 	}
 }
 
 func (vm *VM) recordSnapshotDMLRollbackPoint() {
-	if !perfEnabled() {
+	if vm == nil || vm.perfRecorder == nil {
 		return
 	}
-	dmlPerf.rollbackPoints.Add(1)
-	dmlPerf.snapshotRollbackPoints.Add(1)
+	vm.perfRecorder.dml.rollbackPoints.Add(1)
+	vm.perfRecorder.dml.snapshotRollbackPoints.Add(1)
 }
 
 func (vm *VM) recordJournalDMLRollbackPoint() {
-	if !perfEnabled() {
+	if vm == nil || vm.perfRecorder == nil {
 		return
 	}
-	dmlPerf.rollbackPoints.Add(1)
-	dmlPerf.journalRollbackPoints.Add(1)
+	vm.perfRecorder.dml.rollbackPoints.Add(1)
+	vm.perfRecorder.dml.journalRollbackPoints.Add(1)
 }
 
 func (vm *VM) recordTemporaryDMLJournalPoint() {
-	if !perfEnabled() {
+	if vm == nil || vm.perfRecorder == nil {
 		return
 	}
-	dmlPerf.rollbackPoints.Add(1)
-	dmlPerf.journalRollbackPoints.Add(1)
-	dmlPerf.temporaryJournalPoints.Add(1)
+	vm.perfRecorder.dml.rollbackPoints.Add(1)
+	vm.perfRecorder.dml.journalRollbackPoints.Add(1)
+	vm.perfRecorder.dml.temporaryJournalPoints.Add(1)
 }

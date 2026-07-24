@@ -182,16 +182,18 @@ type VM struct {
 	metadataCacheStamp           string
 	isolationJournal             *storage.IsolationJournal
 	// --- Static-field reference tracking (alias invalidation) ---
-	staticValueRefs           map[uint64]bool
-	staticValueRefFields      map[uint64]staticFieldRefSet
-	staticAliasChildHints     map[staticAliasChildHintKey]staticAliasChildHint
-	staticAliasDirectChildren map[staticFieldRef]staticAliasDirectChildIndex
-	localOnlyCollectionRefs   map[uint64]bool
-	collectionMutationSeq     uint64
-	collectionRefMutationSeq  map[uint64]uint64
-	aliasContainmentCache     map[aliasContainmentCacheKey]bool
-	frameworkRecorderRollback *frameworkMethodCountRecorderRollback
-	runtimeArtifactsShared    bool
+	staticValueRefs             map[uint64]bool
+	staticValueRefFields        map[uint64]staticFieldRefSet
+	staticAliasChildHints       map[staticAliasChildHintKey]staticAliasChildHint
+	staticAliasDirectChildren   map[staticFieldRef]staticAliasDirectChildIndex
+	localOnlyCollectionRefs     map[uint64]bool
+	collectionMutationSeq       uint64
+	collectionRefMutationSeq    map[uint64]uint64
+	aliasContainmentCache       map[aliasContainmentCacheKey]bool
+	frameworkRecorderRollback   *frameworkMethodCountRecorderRollback
+	perfRecorder                *PerfRecorder
+	scopeAliasTraversalObserver scopeAliasTraversalObserver
+	runtimeArtifactsShared      bool
 }
 
 type VisualforceActionInvoker func(actionExpr string, pageURL string) (Value, error)
@@ -512,6 +514,10 @@ type Trigger struct {
 }
 
 func New(stdout io.Writer) *VM {
+	return newVM(stdout, compatibilityPerfRecorder.Load())
+}
+
+func newVM(stdout io.Writer, recorder *PerfRecorder) *VM {
 	warmGeneratedPlatformRuntimeIndexes()
 	return &VM{
 		Globals:                      make(map[string]Value),
@@ -569,6 +575,13 @@ func New(stdout io.Writer) *VM {
 		lazyChildRelCache:            newLazyChildRelationshipLookupCache(),
 		objectNameCache:              make(map[string]objectNameLookup),
 		recentlyViewed:               make(map[string]map[storage.ID]recentlyViewedEntry),
+		perfRecorder:                 recorder,
+	}
+}
+
+func (vm *VM) SetPerfRecorder(recorder *PerfRecorder) {
+	if vm != nil {
+		vm.perfRecorder = recorder
 	}
 }
 
@@ -576,7 +589,7 @@ func New(stdout io.Writer) *VM {
 // classes, and triggers. Mutable runtime state such as globals, limits, org
 // state, current user, and static field values remains request-local.
 func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
-	clone := New(stdout)
+	clone := newVM(stdout, vm.perfRecorder)
 	// Methods, MethodOverloads, MethodFolded, and Triggers are compiled
 	// artifacts that are only mutated by Register*/unregister* at setup, never
 	// during execution. Share the maps by pointer and mark them shared so
@@ -889,6 +902,7 @@ func copyCacheMap(in map[string]map[string]cacheEntry) map[string]map[string]cac
 	for partition, entries := range in {
 		copied := make(map[string]cacheEntry, len(entries))
 		for key, entry := range entries {
+			entry.Value = cloneValue(entry.Value)
 			copied[key] = entry
 		}
 		out[partition] = copied

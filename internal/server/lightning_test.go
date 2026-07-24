@@ -1530,6 +1530,45 @@ func TestLightningWireGetObjectInfoEnsuresKnownStandardObject(t *testing.T) {
 	}
 }
 
+func TestLightningWireGetObjectInfoIncludesCareProgramParentLookup(t *testing.T) {
+	org := storage.NewOrgState()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/lightning/wire/getObjectInfo", strings.NewReader(`{"objectApiName":"CareProgram"}`))
+	req.Header.Set("Content-Type", "application/json")
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var out lwcbrowser.WireResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &out); err != nil {
+		t.Fatal(err)
+	}
+	if out.Error != nil {
+		t.Fatalf("error = %#v", out.Error)
+	}
+	payload, ok := out.Data.(map[string]any)
+	if !ok {
+		t.Fatalf("data = %#v", out.Data)
+	}
+	if payload["label"] != "Care Program" {
+		t.Fatalf("CareProgram label = %#v", payload["label"])
+	}
+	fields, ok := payload["fields"].(map[string]any)
+	if !ok {
+		t.Fatalf("fields = %#v", payload["fields"])
+	}
+	parent := assertUIAPIFieldDataTypeWithoutRESTType(t, fields, "ParentProgramId", "Reference")
+	if parent["relationshipName"] != "ParentProgram" {
+		t.Fatalf("ParentProgramId = %#v", parent)
+	}
+	references, ok := parent["referenceToInfos"].([]any)
+	if !ok || len(references) != 1 || references[0].(map[string]any)["apiName"] != "CareProgram" {
+		t.Fatalf("ParentProgramId referenceToInfos = %#v", parent["referenceToInfos"])
+	}
+}
+
 func TestLightningWireGetObjectInfoIncludesRecordTypesPicklistsAndFieldPermissions(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]
