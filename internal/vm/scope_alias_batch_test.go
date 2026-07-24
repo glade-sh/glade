@@ -46,6 +46,38 @@ func TestTask31TwoTargetMethodReturnPreservesAliasShapes(t *testing.T) {
 	assertTask31MethodReturnFixture(t, prepared)
 }
 
+func TestTask31MethodReturnFallbackPropagatesReceiverToStatic(t *testing.T) {
+	method := newTask31MutatingMethod(t)
+	prepared := prepareTask31MutatingMethod(t, method, false, false)
+	defer ResetPerfCounters()
+
+	prepared.receiver.Fields = map[string]Value{"Name": String("receiver-before")}
+	staticReceiver := cloneValuePreserveRefs(prepared.receiver)
+	if sameMapBacking(staticReceiver.Fields, prepared.receiver.Fields) {
+		t.Fatal("test requires a detached static alias with the same receiver reference")
+	}
+	prepared.machine.Classes["pkg.StaticHolder"] = Class{
+		Name: "pkg.StaticHolder",
+		StaticFields: map[string]Field{
+			"Receiver": {
+				Name:  "Receiver",
+				Type:  "pkg.AliasReceiver",
+				Value: staticReceiver,
+			},
+		},
+	}
+	observer := &task31ScopeAliasTraversalObserver{}
+	prepared.machine.scopeAliasTraversalObserver = observer
+
+	callTask31MutatingMethod(t, prepared)
+
+	if observer.fallbacks == 0 {
+		t.Fatal("primitive-only caller did not force the legacy fallback")
+	}
+	got := prepared.machine.Classes["pkg.StaticHolder"].StaticFields["Receiver"].Value
+	assertTask31Alias(t, got, prepared.receiver.Ref, "pkg.AliasReceiver", "receiver-updated")
+}
+
 func TestTask31TwoTargetMethodReturnVisitsEachCallerRootOnce(t *testing.T) {
 	method := newTask31MutatingMethod(t)
 	prepared := prepareTask31MutatingMethod(t, method, true, false)
