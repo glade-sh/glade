@@ -47,30 +47,33 @@ Skipped when `--no-cache` is set.
 
 ## When it is reused
 
-On each run (unless `--no-cache`), Glade reads `startup.meta.json` and checks
-**freshness**:
+On each run (unless `--no-cache` or a running test server handles the request),
+Glade reads `startup.meta.json` and checks **freshness**:
 
-- Cache format version matches (currently **2**)
-- Project root matches
-- Tracked project files match recorded size and modification time
-- Config files (`sfdx-project.json`, `glade.yml`, scratch defs, `cumulusci.yml`,
-  etc.) match
-- Package root directories match recorded modification time
+- Cache format version matches (currently **4**), along with manifest schema,
+  platform ABI, and test-runtime ABI.
+- Project root and the canonical project digest match. The digest covers API
+  version, namespace and remaps, package directories, managed dependencies,
+  artifacts, package shims, and effective org-shape features.
+- Reloading the project produces the exact recorded input set. Additions,
+  deletions, and renames are stale.
+- Every tracked file matches its recorded size, modification time, and SHA-256
+  content hash. Size and time are early rejection checks, not acceptance by
+  themselves.
 
 If anything fails, Glade cold-builds and writes a new cache. Corrupt or
 mismatched payloads are ignored. A legacy `startup.gob` is read only when no
 split header exists.
 
-## Trust: when the cache can lie
+## Trust and recovery
 
-Fingerprinting is fast but imperfect:
+Cache acceptance uses both the rebuilt input set and content hashes. New,
+deleted, renamed, or changed tracked inputs produce a safe miss. Corrupt or
+incompatible headers and payloads also produce a cold rebuild.
 
-- **New files** added after the cache was written may not invalidate it until
-  another tracked path changes.
-- **Deleted files** may not invalidate the cache by themselves.
-- **`glade test serve`** keeps in-memory state after `clear-cache` until you
-  restart the server.
-- **Glade upgrades** may change behavior without bumping the cache version.
+`glade test serve` keeps separate in-memory state after `clear-cache`; restart
+the server when that warm process must reload. Glade upgrades that change the
+cache, runtime, or platform ABI also produce a safe miss.
 
 If tests act like an old project is still loaded, use `--no-cache` once, then
 `glade test clear-cache`.

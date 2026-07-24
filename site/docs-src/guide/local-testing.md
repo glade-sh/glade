@@ -56,6 +56,16 @@ glade test --project . --class RefinementServiceTest --method testRefinesFileRow
 
 Use exact class and method selectors for the short inner loop. Then run the wider suite before shipping.
 
+Use `--parallelism` to set the total worker budget. Method-level parallelism is
+enabled by default; within that fixed budget, the scheduler uses recorded class
+durations when available and shifts freed capacity to methods in the remaining
+classes. Use `--no-parallel-methods` only for tests that share mutable local
+state.
+
+```bash
+glade test --project . --parallelism 8 --json
+```
+
 ## Limit modes
 
 Glade supports limit modes for local execution. `strict` enforces supported governor limits closer to Salesforce behavior. `permissive` keeps the local loop moving when a project depends on unfinished areas.
