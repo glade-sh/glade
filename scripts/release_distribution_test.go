@@ -26,16 +26,16 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 	workflowText := string(workflow)
 	for _, want := range []string{
 		"macos-15-intel",
-		"actions/checkout@v6",
-		"actions/setup-go@v6",
+		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
+		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0",
 		`go-version: "1.26.5"`,
-		"actions/setup-node@v6",
+		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0",
 		`node-version: "22"`,
 		"shared-payload:",
 		"glade-release-shared-payload",
 		"retention-days: 1",
-		"actions/upload-artifact@v4",
-		"actions/download-artifact@v4",
+		"actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2",
+		"actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0",
 		"release-v1-go-",
 		"release-v1-npm-",
 		"cyclonedx-gomod@v1.10.0",
@@ -49,29 +49,88 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 		}
 	}
 	requiredCIBlock := releaseWorkflowJobBlock(t, workflowText, "required-ci-attestation", "prepare")
-	if got := strings.Count(requiredCIBlock, "actions/upload-artifact@v4"); got != 1 {
+	if got := strings.Count(requiredCIBlock, "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2"); got != 1 {
 		t.Fatalf("Required CI attestation upload count = %d, want 1", got)
 	}
 	sharedBlock := releaseWorkflowJobBlock(t, workflowText, "shared-payload", "build")
-	if got := strings.Count(sharedBlock, "actions/upload-artifact@v4"); got != 1 {
+	if got := strings.Count(sharedBlock, "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2"); got != 1 {
 		t.Fatalf("shared payload upload count = %d, want 1", got)
 	}
-	if got := strings.Count(workflowText, "actions/download-artifact@v4"); got != 1 {
-		t.Fatalf("shared payload download count = %d, want 1", got)
+	if got := strings.Count(workflowText, "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0"); got != 2 {
+		t.Fatalf("release artifact download count = %d, want shared plus platform handoff", got)
 	}
-	if got := strings.Count(workflowText, "actions/setup-node@v6"); got != 1 {
+	if got := strings.Count(workflowText, "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0"); got != 1 {
 		t.Fatalf("setup-node count = %d, want shared job only", got)
 	}
-	buildBlock := releaseWorkflowJobBlock(t, workflowText, "build", "publish")
-	for _, forbidden := range []string{"actions/setup-node", "npm ci", "npm run package"} {
+	buildBlock := releaseWorkflowJobBlock(t, workflowText, "build", "attest-and-upload")
+	for _, forbidden := range []string{
+		"actions/setup-node", "npm ci", "npm run package", "contents: write", "id-token: write",
+		"attestations: write", "actions/attest@", "gh release", "gh attestation",
+	} {
 		if strings.Contains(buildBlock, forbidden) {
 			t.Fatalf("matrix build job contains %q", forbidden)
 		}
 	}
-	for _, want := range []string{"needs: [prepare, shared-payload]", "cache: false", "RELEASE_SHARED_PAYLOAD_ARCHIVE", "cyclonedx-gomod bin", "json.load"} {
+	for _, want := range []string{
+		"needs: [prepare, shared-payload]", "contents: read", "cache: false", "RELEASE_SHARED_PAYLOAD_ARCHIVE",
+		"cyclonedx-gomod bin", "json.load", "Upload platform workflow artifacts",
+		"name: glade-release-platform-${{ matrix.artifact }}", "retention-days: 7",
+	} {
 		if !strings.Contains(buildBlock, want) {
 			t.Fatalf("matrix build job missing %q", want)
 		}
+	}
+
+	attestBlock := releaseWorkflowJobBlock(t, workflowText, "attest-and-upload", "publish")
+	for _, want := range []string{
+		"needs: [prepare, build]", "if: startsWith(github.ref, 'refs/tags/')", "contents: write",
+		"id-token: write", "attestations: write", "Download platform workflow artifacts",
+		"name: glade-release-platform-${{ matrix.artifact }}", "Attest platform archive", "Attest platform SBOM",
+		"Verify platform attestations", "Upload platform release assets",
+	} {
+		if !strings.Contains(attestBlock, want) {
+			t.Fatalf("tag-only attestation job missing %q", want)
+		}
+	}
+	if got := strings.Count(attestBlock, "actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0"); got != 2 {
+		t.Fatalf("tag-only attestation action count = %d, want 2", got)
+	}
+	if strings.Contains(attestBlock, "actions/checkout@") {
+		t.Fatal("tag-only attestation job does not need a source checkout")
+	}
+	if !strings.Contains(workflowText, "publish:\n    needs: attest-and-upload") {
+		t.Fatal("publish job can run before all tag-only attestation jobs complete")
+	}
+	checkoutPin := "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3"
+	if checkouts, hardened := strings.Count(workflowText, checkoutPin), strings.Count(workflowText, "persist-credentials: false"); checkouts != hardened {
+		t.Fatalf("release checkout hardening count = %d, want one for each of %d checkouts", hardened, checkouts)
+	}
+}
+
+func TestReleaseManualBuildHasNoPublishingAuthority(t *testing.T) {
+	workflowPath := filepath.Join("..", ".github", "workflows", "release.yml")
+	workflow, err := os.ReadFile(workflowPath)
+	if err != nil {
+		t.Fatalf("read %s: %v", workflowPath, err)
+	}
+	text := string(workflow)
+	shared := releaseWorkflowJobBlock(t, text, "shared-payload", "build")
+	build := releaseWorkflowJobBlock(t, text, "build", "attest-and-upload")
+	for name, block := range map[string]string{"shared-payload": shared, "build": build} {
+		for _, forbidden := range []string{"contents: write", "id-token: write", "attestations: write", "gh release", "actions/attest@"} {
+			if strings.Contains(block, forbidden) {
+				t.Errorf("manual %s job retains %q", name, forbidden)
+			}
+		}
+		if !strings.Contains(block, "permissions:\n      contents: read") {
+			t.Errorf("manual %s job lacks explicit contents: read permissions", name)
+		}
+	}
+	if !strings.Contains(build, "needs.prepare.result == 'success' || needs.prepare.result == 'skipped'") {
+		t.Fatal("manual build no longer accepts the intentionally skipped tag-only prepare job")
+	}
+	if strings.Contains(build, "startsWith(github.ref, 'refs/tags/')") {
+		t.Fatal("manual platform build became tag-only")
 	}
 }
 

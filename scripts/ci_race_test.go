@@ -234,7 +234,7 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 		"fetch-depth: 0", "scripts/ci-race-packages.sh", "fromJSON(needs.plan.outputs.packages)",
 		"fail-fast: false", "max-parallel: 4", "GOMAXPROCS: \"2\"", "go-version: \"1.26.5\"",
 		`scripts/ci-race-test.sh "$PACKAGE" "$SLUG"`, "if: always()",
-		"actions/upload-artifact@v6", "ci-artifacts/race/", "if-no-files-found: error",
+		"actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0", "ci-artifacts/race/", "if-no-files-found: error",
 		"npm ci --prefix third_party/lwc", "contains(fromJSON('[\"./internal/gladecli\"",
 	} {
 		if !strings.Contains(workflow, marker) {

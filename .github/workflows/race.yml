@@ -24,10 +24,10 @@ jobs:
       has-packages: ${{ steps.classify.outputs.has-packages }}
       mode: ${{ steps.classify.outputs.mode }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: "1.26.5"
           cache: false
@@ -63,7 +63,7 @@ jobs:
           printf '{"mode":"%s","packages":%s}\n' "$mode" "$packages" >ci-artifacts/race-plan/plan.json
       - name: Upload race plan
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: race-plan-${{ github.run_id }}-${{ github.run_attempt }}
           path: ci-artifacts/race-plan/plan.json
@@ -82,12 +82,12 @@ jobs:
     env:
       GOMAXPROCS: "2"
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
         with:
           go-version: "1.26.5"
           cache: false
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         if: ${{ contains(fromJSON('["./internal/gladecli","./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package) }}
         with:
           node-version: "22"
@@ -112,7 +112,7 @@ jobs:
         run: scripts/ci-race-test.sh "$PACKAGE" "$SLUG"
       - name: Upload race evidence
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: race-${{ steps.artifact.outputs.slug }}
           path: ci-artifacts/race/

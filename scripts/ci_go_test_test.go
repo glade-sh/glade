@@ -566,7 +566,7 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 	matrix := jobs["apextest"]
 	refresh := jobs["apextest-history"]
 	for _, want := range []string{
-		"actions/cache/restore@v4", "apextest-duration-history-v1", "runner.os", "runner.arch", "1.26.5", "hashFiles('go.sum')",
+		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "apextest-duration-history-v1", "runner.os", "runner.arch", "1.26.5", "hashFiles('go.sum')",
 		"CI_APEXTEST_HISTORY_PATH", "github.sha", "github.run_id", "github.run_attempt",
 	} {
 		if !strings.Contains(matrix, want) {
@@ -577,15 +577,15 @@ func TestCIApexDurationHistoryWorkflowOwnership(t *testing.T) {
 		t.Error("matrix job must be read-only for duration history")
 	}
 	for _, want := range []string{
-		"needs: apextest", "if: ${{ success() }}", "actions/download-artifact@v7", "apex-shard-*", "scripts/ci-go-test.sh apex-history-refresh",
-		"actions/cache/save@v4", "actions/upload-artifact@v6", "apextest-duration-history-v1", "github.sha", "github.run_id", "github.run_attempt",
+		"needs: apextest", "if: ${{ success() }}", "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0", "apex-shard-*", "scripts/ci-go-test.sh apex-history-refresh",
+		"actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0", "apextest-duration-history-v1", "github.sha", "github.run_id", "github.run_attempt",
 	} {
 		if !strings.Contains(refresh, want) {
 			t.Errorf("single-writer refresh job missing %q", want)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@v4") != 16 {
-		t.Errorf("cache save count = %d, want existing DAG writers plus Apex and sema history writers", strings.Count(workflow, "actions/cache/save@v4"))
+	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 16 {
+		t.Errorf("cache save count = %d, want existing DAG writers plus Apex and sema history writers", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
 	if strings.Count(workflow, "shard: [0, 1]") != 2 {
 		t.Error("workflow must contain the Apex and sema two-native-shard matrices")
@@ -678,29 +678,29 @@ func TestCIGoCacheOwnership(t *testing.T) {
 	ci := workflowJobBlocks(t, ciWorkflow)["test"]
 	security := readWorkflow("security.yml")
 
-	if got := strings.Count(ci, "actions/setup-go@v6"); got != 1 {
+	if got := strings.Count(ci, "actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0"); got != 1 {
 		t.Fatalf("ci.yml setup-go uses = %d, want 1", got)
 	}
 	if got := strings.Count(ci, "cache: false"); got != 1 {
 		t.Fatalf("ci.yml setup-go cache opt-outs = %d, want 1", got)
 	}
-	if got := strings.Count(security, "actions/setup-go@v6"); got != 3 {
+	if got := strings.Count(security, "actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0"); got != 3 {
 		t.Fatalf("security.yml setup-go uses = %d, want 3", got)
 	}
 	if got := strings.Count(security, "cache: false"); got != 3 {
 		t.Fatalf("security.yml setup-go cache opt-outs = %d, want 3", got)
 	}
 
-	if got := strings.Count(ci, "actions/cache/restore@v4"); got != 2 {
+	if got := strings.Count(ci, "actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"); got != 2 {
 		t.Fatalf("ci.yml cache restores = %d, want 2", got)
 	}
-	if got := strings.Count(ci, "actions/cache/save@v4"); got != 2 {
+	if got := strings.Count(ci, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"); got != 2 {
 		t.Fatalf("ci.yml cache saves = %d, want 2", got)
 	}
-	if got := strings.Count(security, "actions/cache/restore@v4"); got != 6 {
+	if got := strings.Count(security, "actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"); got != 6 {
 		t.Fatalf("security.yml cache restores = %d, want 6", got)
 	}
-	if got := strings.Count(security, "actions/cache/save@v4"); got != 0 {
+	if got := strings.Count(security, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"); got != 0 {
 		t.Fatalf("security.yml cache saves = %d, want 0", got)
 	}
 	if got := strings.Count(ci, "continue-on-error: true"); got != 4 {
@@ -836,7 +836,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		t.Fatalf("security.yml jobs = %v, want %v", gotJobs, wantJobs)
 	}
 	for _, jobName := range wantJobs {
-		for _, marker := range []string{"runs-on: ubuntu-latest", "uses: actions/checkout@v6"} {
+		for _, marker := range []string{"runs-on: ubuntu-latest", "uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3"} {
 			if !strings.Contains(jobs[jobName], marker) {
 				t.Errorf("%s job missing preserved marker %q", jobName, marker)
 			}
@@ -868,8 +868,8 @@ func TestSecurityWorkflowContract(t *testing.T) {
 		"id: go/allocation-size-overflow",
 		"build-mode: manual",
 		`run: go build -o "${RUNNER_TEMP}/glade-codeql" ./cmd/glade`,
-		"github/codeql-action/init@v4",
-		"github/codeql-action/analyze@v4",
+		"github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1",
+		"github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1",
 	} {
 		if !strings.Contains(codeql, want) {
 			t.Errorf("codeql job missing %q", want)
@@ -883,7 +883,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	}
 
 	for _, jobName := range []string{"govulncheck", "codeql", "gosec"} {
-		setupGo := workflowStepBlock(t, jobs[jobName], "uses: actions/setup-go@v6")
+		setupGo := workflowStepBlock(t, jobs[jobName], "uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0")
 		if !strings.Contains(setupGo, "cache: false") {
 			t.Errorf("%s setup-go step missing cache: false", jobName)
 		}
@@ -891,19 +891,19 @@ func TestSecurityWorkflowContract(t *testing.T) {
 			t.Errorf("%s setup-go step retains cache-dependency-path", jobName)
 		}
 	}
-	if count := strings.Count(workflowText, "uses: actions/setup-go@v6"); count != 3 {
+	if count := strings.Count(workflowText, "uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0"); count != 3 {
 		t.Errorf("security.yml setup-go step count = %d, want 3", count)
 	}
 	if strings.Contains(workflowText, "cache-dependency-path:") {
 		t.Error("security.yml must not retain cache-dependency-path")
 	}
 	coverageMarkers := map[string][]string{
-		"govulncheck":       {"go run golang.org/x/vuln/cmd/govulncheck@latest ./..."},
+		"govulncheck":       {"go run golang.org/x/vuln/cmd/govulncheck@v1.6.0 ./... # v1.6.0"},
 		"codeql":            {"actions: read", "contents: read", "security-events: write"},
-		"gosec":             {"actions: read", "contents: read", "security-events: write", gosecPin, "args: -no-fail -fmt sarif -out gosec.sarif ./...", "github/codeql-action/upload-sarif@v4", "sarif_file: gosec.sarif"},
-		"npm-audit":         {"actions/setup-node@v6", `node-version: "22"`, "npm audit --omit=dev --audit-level=high", "working-directory: third_party/lwc", "working-directory: contrib/vscode-glade"},
-		"dependency-review": {"if: github.event_name == 'pull_request'", "contents: read", "actions/dependency-review-action@v5", "fail-on-severity: high"},
-		"scorecard":         {"actions: read", "contents: read", "id-token: write", "security-events: write", scorecardPin, "results_file: scorecard.sarif", "results_format: sarif", "publish_results: true", "github/codeql-action/upload-sarif@v4", "sarif_file: scorecard.sarif"},
+		"gosec":             {"actions: read", "contents: read", "security-events: write", gosecPin, "args: -no-fail -fmt sarif -out gosec.sarif ./...", "github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1", "sarif_file: gosec.sarif"},
+		"npm-audit":         {"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0", `node-version: "22"`, "npm audit --omit=dev --audit-level=high", "working-directory: third_party/lwc", "working-directory: contrib/vscode-glade"},
+		"dependency-review": {"if: github.event_name == 'pull_request'", "contents: read", "actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0", "fail-on-severity: high"},
+		"scorecard":         {"actions: read", "contents: read", "id-token: write", "security-events: write", scorecardPin, "results_file: scorecard.sarif", "results_format: sarif", "publish_results: true", "github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1", "sarif_file: scorecard.sarif"},
 	}
 	for jobName, markers := range coverageMarkers {
 		for _, marker := range markers {
@@ -1619,7 +1619,7 @@ func browserWorkflowProblem(workflow string) string {
 		"GOMAXPROCS: \"2\"",
 		"GLADE_LWC_BROWSER: \"1\"",
 		"PLAYWRIGHT_BROWSERS_PATH: /home/runner/.cache/ms-playwright",
-		"uses: actions/checkout@v6",
+		"uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
 		"fetch-depth: 0",
 		"persist-credentials: false",
 		"path: source",
@@ -1646,10 +1646,10 @@ func browserWorkflowProblem(workflow string) string {
 		".github/workflows/browser.yml",
 		"github.event_name != 'pull_request'",
 		"run_expensive=$UNCONDITIONAL",
-		"uses: actions/setup-go@v6",
+		"uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0",
 		"go-version: \"1.26.5\"",
 		"cache: false",
-		"uses: actions/setup-node@v6",
+		"uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0",
 		"node-version: \"22\"",
 		"third_party/lwc/package-lock.json",
 		"lwcruntime/package-lock.json",
@@ -1658,8 +1658,8 @@ func browserWorkflowProblem(workflow string) string {
 		`npm exec --prefix lwcruntime -- playwright install --with-deps chromium 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/playwright-install.log"`,
 		`printf '{"scope":"%s"}\n' "$run_expensive" >"$GITHUB_WORKSPACE/ci-artifacts/browser/validation-summary.json"`,
 		"timeout-minutes: 10",
-		"uses: actions/cache/restore@v4",
-		"uses: actions/cache/save@v4",
+		"uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0",
+		"uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0",
 		"go-mod-ci-browser",
 		"go-build-ci-browser",
 		"playwright-browser",
@@ -1718,7 +1718,7 @@ func browserWorkflowProblem(workflow string) string {
 		"if (( pipeline_rc != 0 ))",
 		"if (( validator_rc != 0 ))",
 		"if: always()",
-		"uses: actions/upload-artifact@v6",
+		"uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0",
 		"name: browser-${{ github.run_id }}-${{ github.run_attempt }}",
 		"path: ci-artifacts/browser/**",
 		"if-no-files-found: error",
@@ -1774,9 +1774,9 @@ func browserWorkflowProblem(workflow string) string {
 		}
 	}
 	for _, later := range []string{
-		"      - uses: actions/checkout@v6",
+		"      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
 		"      - name: Determine browser test scope",
-		"      - uses: actions/setup-go@v6",
+		"      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0",
 		"      - name: Install LWC compiler dependencies",
 		"      - name: Run browser authorities",
 	} {
@@ -1790,8 +1790,8 @@ func browserWorkflowProblem(workflow string) string {
 	if strings.Count(workflow, "working-directory: source") != 5 {
 		return fmt.Sprintf("source working-directory count = %d, want 5 repo-dependent run steps", strings.Count(workflow, "working-directory: source"))
 	}
-	if strings.Count(workflow, "uses: actions/cache/save@v4") != 3 {
-		return fmt.Sprintf("cache save count = %d, want 3", strings.Count(workflow, "uses: actions/cache/save@v4"))
+	if strings.Count(workflow, "uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 3 {
+		return fmt.Sprintf("cache save count = %d, want 3", strings.Count(workflow, "uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
 	if strings.Count(workflow, "if: steps.scope.outputs.run_expensive == 'true' && success()") != 3 {
 		return fmt.Sprintf("success-only cache save conditions = %d, want 3", strings.Count(workflow, "if: steps.scope.outputs.run_expensive == 'true' && success()"))
@@ -2002,7 +2002,7 @@ func TestCIBrowserWorkflowContract(t *testing.T) {
 		},
 		"eighth evidence file": func(s string) string {
 			line := `          printf 'not run\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/extra.log"`
-			return strings.Replace(s, "      - uses: actions/checkout@v6", line+"\n\n      - uses: actions/checkout@v6", 1)
+			return strings.Replace(s, "      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3", line+"\n\n      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3", 1)
 		},
 		"evidence files reordered": func(s string) string {
 			first := `          printf 'not run\n' >"$GITHUB_WORKSPACE/ci-artifacts/browser/npm-ci-third-party-lwc.log"`
@@ -2576,11 +2576,11 @@ func TestCINodeIntegrationWorkflowAndPurePartition(t *testing.T) {
 	node := jobs["node-integration"]
 	for _, marker := range []string{
 		"runs-on: ubuntu-latest", "timeout-minutes: 30", "GOMAXPROCS: \"2\"",
-		"actions/setup-go@v6", "go-version: \"1.26.5\"", "cache: false",
-		"actions/setup-node@v6", "node-version: \"22\"", "cache: npm",
+		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.5\"", "cache: false",
+		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0", "node-version: \"22\"", "cache: npm",
 		"cache-dependency-path: third_party/lwc/package-lock.json", "npm ci --prefix third_party/lwc",
 		"scripts/ci-go-test.sh node-integration", "ci-node-integration",
-		"actions/cache/restore@v4", "actions/cache/save@v4", "continue-on-error: true", "if: success()",
+		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "continue-on-error: true", "if: success()",
 		"go-test-node-integration", "if: always()", "ci-artifacts/go-test-node-integration/", "if-no-files-found: error",
 	} {
 		if !strings.Contains(node, marker) {
@@ -2596,7 +2596,7 @@ func TestCINodeIntegrationWorkflowAndPurePartition(t *testing.T) {
 		}
 	}
 	testJob := jobs["test"]
-	if !strings.Contains(testJob, "actions/setup-node@v6") || !strings.Contains(testJob, `node-version: "22"`) {
+	if !strings.Contains(testJob, "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0") || !strings.Contains(testJob, `node-version: "22"`) {
 		t.Error("pure test job must retain Node 22 runtime")
 	}
 	for _, forbidden := range []string{"cache: npm", "cache-dependency-path:", "npm ci --prefix third_party/lwc"} {
@@ -2744,7 +2744,7 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 	}
 	for jobName, artifact := range wantArtifacts {
 		job := jobs[jobName]
-		for _, marker := range []string{"if: always()", "actions/upload-artifact@v6", "name: " + artifact} {
+		for _, marker := range []string{"if: always()", "actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0", "name: " + artifact} {
 			if !strings.Contains(job, marker) {
 				t.Errorf("%s raw artifact missing %q", jobName, marker)
 			}
@@ -2762,7 +2762,7 @@ func TestCIParallelDAGLaneCommandsAndArtifacts(t *testing.T) {
 		}
 	}
 	nodeJob := jobs["node-integration"]
-	setupIndex := strings.Index(nodeJob, "actions/setup-node@v6")
+	setupIndex := strings.Index(nodeJob, "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0")
 	installIndex := strings.Index(nodeJob, "npm ci --prefix third_party/lwc")
 	laneIndex := strings.Index(nodeJob, "scripts/ci-go-test.sh node-integration")
 	if setupIndex < 0 || installIndex < setupIndex || laneIndex < installIndex {
@@ -2792,8 +2792,8 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 		job := jobs[jobName]
 		sumPath := "go.sum"
 		for _, marker := range []string{
-			"GOMAXPROCS: \"2\"", "actions/setup-go@v6", "go-version: \"1.26.5\"", "cache: false",
-			"actions/cache/restore@v4", "actions/cache/save@v4", "continue-on-error: true", "if: success()",
+			"GOMAXPROCS: \"2\"", "actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0", "go-version: \"1.26.5\"", "cache: false",
+			"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0", "continue-on-error: true", "if: success()",
 			"${{ runner.os }}-${{ runner.arch }}-1.26.5-" + namespace,
 			"${{ hashFiles('" + sumPath + "') }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
 		} {
@@ -2801,7 +2801,7 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 				t.Errorf("%s cache contract missing %q", jobName, marker)
 			}
 		}
-		if strings.Count(job, "actions/cache/restore@v4") != 2 || strings.Count(job, "actions/cache/save@v4") != 2 {
+		if strings.Count(job, "actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 2 || strings.Count(job, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 2 {
 			t.Errorf("%s does not own one module/build restore-save pair", jobName)
 		}
 		for _, line := range strings.Split(job, "\n") {
@@ -2817,8 +2817,8 @@ func TestCIParallelDAGCacheOwnership(t *testing.T) {
 			t.Errorf("%s lacks the ci-test digest seed fallback", jobName)
 		}
 	}
-	if strings.Count(workflow, "actions/cache/save@v4") != 16 {
-		t.Errorf("cache save count = %d, want existing DAG and two history writers", strings.Count(workflow, "actions/cache/save@v4"))
+	if strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0") != 16 {
+		t.Errorf("cache save count = %d, want existing DAG and two history writers", strings.Count(workflow, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"))
 	}
 }
 
@@ -2828,15 +2828,15 @@ func TestCIParallelDAGPreservesApexAndUsesRootCheckout(t *testing.T) {
 	history := jobs["apextest-history"]
 	for _, marker := range []string{
 		"shard: [0, 1]", "timeout-minutes: 35", "scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
-		"CI_APEXTEST_HISTORY_PATH", "actions/cache@v5", "name: apex-shard-${{ matrix.shard }}",
+		"CI_APEXTEST_HISTORY_PATH", "actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0", "name: apex-shard-${{ matrix.shard }}",
 	} {
 		if !strings.Contains(apex, marker) {
 			t.Errorf("Apex matrix contract missing %q", marker)
 		}
 	}
 	for _, marker := range []string{
-		"needs: apextest", "if: ${{ success() }}", "timeout-minutes: 5", "actions/download-artifact@v7",
-		"scripts/ci-go-test.sh apex-history-refresh", "actions/cache/save@v4",
+		"needs: apextest", "if: ${{ success() }}", "timeout-minutes: 5", "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0",
+		"scripts/ci-go-test.sh apex-history-refresh", "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0",
 	} {
 		if !strings.Contains(history, marker) {
 			t.Errorf("Apex history contract missing %q", marker)
@@ -2844,15 +2844,15 @@ func TestCIParallelDAGPreservesApexAndUsesRootCheckout(t *testing.T) {
 	}
 	testJob := jobs["test"]
 	for _, marker := range []string{
-		"actions/checkout@v6", "hashFiles('go.sum')",
+		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3", "hashFiles('go.sum')",
 		"ci-artifacts/go-test/test-repoguard.json", "ci-artifacts/go-test/test-remaining-go.json",
 	} {
 		if !strings.Contains(testJob, marker) {
 			t.Errorf("root test checkout contract missing %q", marker)
 		}
 	}
-	if strings.Count(testJob, "actions/checkout@v6") != 1 {
-		t.Errorf("test checkout count = %d, want 1", strings.Count(testJob, "actions/checkout@v6"))
+	if strings.Count(testJob, "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3") != 1 {
+		t.Errorf("test checkout count = %d, want 1", strings.Count(testJob, "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3"))
 	}
 	for _, forbidden := range []string{
 		"actions/create-github-app-token", "app-token", "Resolve glade-tools ref", "GLADE_TOOLS_REMOTE",
@@ -2918,9 +2918,9 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 		"timeout-minutes: 30",
 		"GOMAXPROCS: \"2\"",
 		"go-version: \"1.26.5\"",
-		"actions/checkout@v6",
-		"actions/setup-go@v6",
-		"actions/setup-node@v6",
+		"actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3",
+		"actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0",
+		"actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0",
 		"scripts/ci-go-test.sh lane remaining-go",
 		"apextest:",
 		"matrix:",
@@ -2931,7 +2931,7 @@ func TestCIGoTestLogWrapperIsWired(t *testing.T) {
 		"go-build-v1-1.26.5-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('go.sum') }}-ci-apextest-${{ matrix.shard }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}",
 		"scripts/ci-go-test.sh apex-shard \"${{ matrix.shard }}\"",
 		"if: always()",
-		"actions/upload-artifact@v6",
+		"actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0",
 		"CI_APEXTEST_ARTIFACT_DIR: ci-artifacts/apextest-${{ matrix.shard }}",
 		"ci-artifacts/apextest-${{ matrix.shard }}/discovery-stderr.txt",
 		"ci-artifacts/apextest-${{ matrix.shard }}/discovery-command.txt",
