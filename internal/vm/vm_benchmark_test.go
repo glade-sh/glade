@@ -42,6 +42,34 @@ for (Integer i = 0; i < 25; i++) {
 	}
 }
 
+func BenchmarkTask31TwoTargetMethodReturnScopeAliasBatch(b *testing.B) {
+	b.Cleanup(ResetPerfCounters)
+	method := newTask31MutatingMethod(b)
+	characterization := prepareTask31MutatingMethod(b, method, true, true)
+	observer := &task31ScopeAliasTraversalObserver{}
+	characterization.machine.scopeAliasTraversalObserver = observer
+	callTask31MutatingMethod(b, characterization)
+	stats := task31MutatingMethodStats(characterization)
+	if want := uint64(len(characterization.fixture.scope)); observer.rootVisits != want {
+		b.Fatalf("characterization visited %d caller roots, want %d", observer.rootVisits, want)
+	}
+	assertTask31MethodReturnFixture(b, characterization)
+	ResetPerfCounters()
+	b.ReportMetric(float64(stats.Calls), "scope_calls/op")
+	b.ReportMetric(float64(stats.Roots), "scope_roots/op")
+	b.ReportMetric(float64(observer.rootVisits), "scope_root_visits/op")
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.StopTimer()
+	for i := 0; i < b.N; i++ {
+		prepared := prepareTask31MutatingMethod(b, method, true, false)
+		b.StartTimer()
+		callTask31MutatingMethod(b, prepared)
+		b.StopTimer()
+		assertTask31MethodReturnFixture(b, prepared)
+	}
+}
+
 func BenchmarkCloneValuePreserveRefsLargeOrderGraph(b *testing.B) {
 	root := Object("OrderGraph")
 	lines := List()

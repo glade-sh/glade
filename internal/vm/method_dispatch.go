@@ -267,7 +267,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			}
 			previous := paramSnapshots[param.Name]
 			if valueAliasSnapshotMatch(previous, updated) {
-				if vm.propagateAliasSnapshotMutationToScope(vm.Globals, previous, paramOriginals[param.Name], updated, vm.collectionMutationSeq != collectionMutationSeqBefore) {
+				if vm.propagateMethodReturnAliasSnapshotMutationToScope(vm.Globals, previous, paramOriginals[param.Name], updated, vm.collectionMutationSeq != collectionMutationSeqBefore) {
 					vm.propagateAliasSnapshotToStatics(previous, updated)
 					vm.propagateUpdatedValueAliases(vm.Globals, updated)
 				}
@@ -285,7 +285,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 		if receiver.Kind != ValueNull {
 			if updated, ok := frame["this"]; ok && valueAliasSnapshotMatch(receiverSnapshot, updated) {
-				vm.propagateAliasSnapshotMutationToScope(vm.Globals, receiverSnapshot, receiverOriginal, updated, vm.collectionMutationSeq != collectionMutationSeqBefore)
+				vm.propagateMethodReturnAliasSnapshotMutationToScope(vm.Globals, receiverSnapshot, receiverOriginal, updated, vm.collectionMutationSeq != collectionMutationSeqBefore)
 				vm.propagateAliasSnapshotToStatics(receiverSnapshot, updated)
 				vm.propagateUpdatedValueAliases(vm.Globals, updated)
 			}
@@ -387,6 +387,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 		value = coerced
 	}
+	methodReturnAliasMutations := make([]methodReturnAliasMutation, 0, len(method.Params)+1)
 	for _, param := range method.Params {
 		updated, ok := frame[param.Name]
 		if !ok {
@@ -397,10 +398,12 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 		previous := paramSnapshots[param.Name]
 		if valueAliasSnapshotMatch(previous, updated) {
-			if vm.propagateAliasSnapshotMutationToScope(caller, previous, paramOriginals[param.Name], updated, vm.collectionMutationSeq != collectionMutationSeqBefore) {
-				vm.propagateAliasSnapshotToStatics(previous, updated)
-				vm.propagateUpdatedValueAliases(caller, updated)
-			}
+			methodReturnAliasMutations = append(methodReturnAliasMutations, methodReturnAliasMutation{
+				previous:                 previous,
+				original:                 paramOriginals[param.Name],
+				updated:                  updated,
+				refreshNestedCollections: vm.collectionMutationSeq != collectionMutationSeqBefore,
+			})
 			continue
 		}
 		for _, arg := range args {
@@ -415,9 +418,32 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	}
 	if receiver.Kind != ValueNull {
 		if updated, ok := frame["this"]; ok && valueAliasSnapshotMatch(receiverSnapshot, updated) {
-			vm.propagateAliasSnapshotMutationToScope(caller, receiverSnapshot, receiverOriginal, updated, vm.collectionMutationSeq != collectionMutationSeqBefore)
-			vm.propagateAliasSnapshotToStatics(receiverSnapshot, updated)
-			vm.propagateUpdatedValueAliases(caller, updated)
+			methodReturnAliasMutations = append(methodReturnAliasMutations, methodReturnAliasMutation{
+				previous:                 receiverSnapshot,
+				original:                 receiverOriginal,
+				updated:                  updated,
+				refreshNestedCollections: vm.collectionMutationSeq != collectionMutationSeqBefore,
+			})
+		}
+	}
+	if vm.tryPropagateMethodReturnAliasSnapshotMutationsToScope(caller, methodReturnAliasMutations) {
+		for _, mutation := range methodReturnAliasMutations {
+			vm.propagateAliasSnapshotToStatics(mutation.previous, mutation.updated)
+			vm.propagateUpdatedValueAliases(caller, mutation.updated)
+		}
+	} else {
+		for _, mutation := range methodReturnAliasMutations {
+			if !vm.propagateMethodReturnAliasSnapshotMutationToScope(
+				caller,
+				mutation.previous,
+				mutation.original,
+				mutation.updated,
+				mutation.refreshNestedCollections,
+			) {
+				continue
+			}
+			vm.propagateAliasSnapshotToStatics(mutation.previous, mutation.updated)
+			vm.propagateUpdatedValueAliases(caller, mutation.updated)
 		}
 	}
 	if method.IsConstructor {

@@ -182,17 +182,18 @@ type VM struct {
 	metadataCacheStamp           string
 	isolationJournal             *storage.IsolationJournal
 	// --- Static-field reference tracking (alias invalidation) ---
-	staticValueRefs           map[uint64]bool
-	staticValueRefFields      map[uint64]staticFieldRefSet
-	staticAliasChildHints     map[staticAliasChildHintKey]staticAliasChildHint
-	staticAliasDirectChildren map[staticFieldRef]staticAliasDirectChildIndex
-	localOnlyCollectionRefs   map[uint64]bool
-	collectionMutationSeq     uint64
-	collectionRefMutationSeq  map[uint64]uint64
-	aliasContainmentCache     map[aliasContainmentCacheKey]bool
-	frameworkRecorderRollback *frameworkMethodCountRecorderRollback
-	perfRecorder              *PerfRecorder
-	runtimeArtifactsShared    bool
+	staticValueRefs             map[uint64]bool
+	staticValueRefFields        map[uint64]staticFieldRefSet
+	staticAliasChildHints       map[staticAliasChildHintKey]staticAliasChildHint
+	staticAliasDirectChildren   map[staticFieldRef]staticAliasDirectChildIndex
+	localOnlyCollectionRefs     map[uint64]bool
+	collectionMutationSeq       uint64
+	collectionRefMutationSeq    map[uint64]uint64
+	aliasContainmentCache       map[aliasContainmentCacheKey]bool
+	frameworkRecorderRollback   *frameworkMethodCountRecorderRollback
+	perfRecorder                *PerfRecorder
+	scopeAliasTraversalObserver scopeAliasTraversalObserver
+	runtimeArtifactsShared      bool
 }
 
 type VisualforceActionInvoker func(actionExpr string, pageURL string) (Value, error)
