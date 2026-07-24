@@ -1275,7 +1275,7 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 		if strings.Count(browser, validation) != 1 {
 			return "browser benchmark cache-pair validation command is not exact"
 		}
-		checkoutAt := strings.Index(browser, "      - uses: actions/checkout@v6")
+		checkoutAt := strings.Index(browser, "      - uses: actions/checkout@")
 		validationAt := strings.Index(browser, validation)
 		cacheAt := workflowFirstCacheAccessAt(browser)
 		if checkoutAt < 0 || validationAt <= checkoutAt || cacheAt <= validationAt {
@@ -1303,7 +1303,7 @@ func benchmarkCachePairWorkflowProblem(name, workflow string) string {
 		if strings.Count(job, validation) != 1 {
 			return fmt.Sprintf("%s benchmark cache-pair validation command is not exact", jobName)
 		}
-		checkoutAt := strings.Index(job, "      - uses: actions/checkout@v6")
+		checkoutAt := strings.Index(job, "      - uses: actions/checkout@")
 		validationAt := strings.Index(job, validation)
 		cacheAt := workflowFirstCacheAccessAt(job)
 		if checkoutAt < 0 || validationAt <= checkoutAt || cacheAt <= validationAt {

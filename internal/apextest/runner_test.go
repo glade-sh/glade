@@ -2054,8 +2054,8 @@ func TestRunPerfCountersOwnVMRecordersAcrossOverlapAndPostRunActivity(t *testing
 	}
 	expectedA := runAndSnapshot(indexA, casesA, Options{PerfCounters: true, NoDiskCache: true})
 	expectedB := runAndSnapshot(indexB, casesB, Options{PerfCounters: true, NoDiskCache: true})
-	if expectedA.Calls == 0 || expectedB.Calls == 0 {
-		t.Fatalf("fixtures did not exercise scope alias instrumentation: A=%#v B=%#v", expectedA, expectedB)
+	if expectedA.MutationEpochAdvances == 0 || expectedB.MutationEpochAdvances == 0 {
+		t.Fatalf("fixtures did not exercise scope alias mutation instrumentation: A=%#v B=%#v", expectedA, expectedB)
 	}
 
 	InvalidateRuntimeCaches()
