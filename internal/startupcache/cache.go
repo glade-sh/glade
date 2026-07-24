@@ -625,7 +625,7 @@ func fingerprintFileWithSourceDigest(projectRoot, path string, includeHash bool,
 		return fp, nil
 	}
 	if readFile == nil {
-		file, err := os.Open(path)
+		file, err := os.Open(path) // #nosec G304 -- callers pass a discovered project input path; this function fingerprints that exact file.
 		if err != nil {
 			return File{}, err
 		}
@@ -1032,7 +1032,7 @@ func collectConfigPaths(p project.Project) ([]string, error) {
 	}
 	for _, name := range []string{"cumulusci.yml", "cumulusci.template.yml"} {
 		configPath := filepath.Join(root, name)
-		data, err := os.ReadFile(configPath)
+		data, err := os.ReadFile(configPath) // #nosec G304 -- configPath is constructed from the loaded project root and a fixed filename.
 		if errors.Is(err, os.ErrNotExist) {
 			continue
 		}

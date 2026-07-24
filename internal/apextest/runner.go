@@ -2342,7 +2342,7 @@ func (cache *sourceCache) readWithRemaps(file string, remaps []namespaceremap.Ru
 	cache.mu.RUnlock()
 
 	if !rawOK {
-		data, err := os.ReadFile(file)
+		data, err := os.ReadFile(file) // #nosec G304 -- file is an indexed project source path bound to the loaded project snapshot.
 		if err != nil {
 			if expected, ok := cache.expectedDigest(file); ok {
 				return "", cache.recordSnapshotMismatch(file, expected, nil, err)

@@ -162,7 +162,7 @@ func decodeStandardDescribeCatalogV2Member(pack []byte, entry standardDescribeCa
 }
 
 func decodeStandardDescribeCatalogV2MemberBytes(pack []byte, entry standardDescribeCatalogV2IndexEntry, magic []byte, count int) ([]byte, error) {
-	if len(pack) < standardDescribeCatalogV2HeaderSize || !bytes.Equal(pack[:8], magic) || binary.BigEndian.Uint32(pack[8:12]) != 2 || uint64(binary.BigEndian.Uint32(pack[12:16])) != uint64(count) {
+	if len(pack) < standardDescribeCatalogV2HeaderSize || !bytes.Equal(pack[:8], magic) || binary.BigEndian.Uint32(pack[8:12]) != 2 || int64(binary.BigEndian.Uint32(pack[12:16])) != int64(count) {
 		return nil, fmt.Errorf("decode standard describe member %q: invalid pack header", entry.Name)
 	}
 	end := entry.Offset + uint64(entry.CompressedLength)

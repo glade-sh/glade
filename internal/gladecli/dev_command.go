@@ -775,7 +775,6 @@ func runWatchTests(ctx context.Context, root string, p project.Project, index ty
 	if err != nil {
 		return testreport.Run{}, err
 	}
-	p = replacement.project
 	index = replacement.index
 	graph := replacement.graph
 	watcher := replacement.watcher
@@ -875,7 +874,6 @@ func runWatchTests(ctx context.Context, root string, p project.Project, index ty
 					scopeProject = &update.project
 				}
 				if update.reusable {
-					p = update.project
 					index = update.index
 					graph = update.graph
 				}
@@ -891,7 +889,6 @@ func runWatchTests(ctx context.Context, root string, p project.Project, index ty
 				oldWatcher := watcher
 				watcher = replacement.watcher
 				cfg = replacement.cfg
-				p = replacement.project
 				index = replacement.index
 				graph = replacement.graph
 				_ = oldWatcher.Close()

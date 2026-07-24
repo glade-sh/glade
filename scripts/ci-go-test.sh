@@ -1011,7 +1011,7 @@ PY
 }
 
 refresh_apextest_history() {
-	refresh_test_history "${1:-}" "${2:-}" "${3:-}" "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "279"
+	refresh_test_history "${1:-}" "${2:-}" "${3:-}" "github.com/glade-sh/glade/internal/apextest" "Apex" "apextest" "0"
 }
 
 refresh_sema_history() {

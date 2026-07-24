@@ -149,13 +149,19 @@ func writeJSONFixture(t *testing.T, path string, value any) {
 
 func newApexHistoryFixture(t *testing.T, shardElapsed [2]float64) apexHistoryFixture {
 	t.Helper()
+	return newApexHistoryFixtureWithCount(t, 279, shardElapsed)
+}
+
+func newApexHistoryFixtureWithCount(t *testing.T, count int, shardElapsed [2]float64) apexHistoryFixture {
+	t.Helper()
 	fixture := apexHistoryFixture{root: t.TempDir()}
 	fixture.output = filepath.Join(fixture.root, "history", "apextest-duration-history.json")
-	names := make([]string, 279)
+	names := make([]string, count)
 	for i := range names {
 		names[i] = fmt.Sprintf("TestHistory%03d", i)
 	}
-	shardTests := [2][]string{names[:140], names[140:]}
+	split := (len(names) + 1) / 2
+	shardTests := [2][]string{names[:split], names[split:]}
 	shards := make([]map[string]any, 2)
 	for index := range shards {
 		regex := "^(?:" + strings.Join(shardTests[index], "|") + ")$"
@@ -237,6 +243,14 @@ func TestCIApexDurationHistoryRefresh(t *testing.T) {
 	}
 	if history.Tests[0].DurationMillis != 1000 || history.Tests[140].DurationMillis != 1000 {
 		t.Fatalf("history durations did not come from shard events: first=%d second=%d", history.Tests[0].DurationMillis, history.Tests[140].DurationMillis)
+	}
+}
+
+func TestCIApexDurationHistoryAcceptsDiscoveryGrowth(t *testing.T) {
+	fixture := newApexHistoryFixtureWithCount(t, 332, [2]float64{1, 1})
+	out, err := runApexHistoryRefresh(t, fixture)
+	if err != nil {
+		t.Fatalf("refresh rejected current discovery count: %v\n%s", err, out)
 	}
 }
 
@@ -1655,7 +1669,7 @@ func browserWorkflowProblem(workflow string) string {
 		"lwcruntime/package-lock.json",
 		`npm ci --prefix third_party/lwc 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/npm-ci-third-party-lwc.log"`,
 		`npm ci --prefix lwcruntime 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/npm-ci-lwcruntime.log"`,
-		`npm exec --prefix lwcruntime -- playwright install --with-deps chromium 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/playwright-install.log"`,
+		`./lwcruntime/node_modules/.bin/playwright install --with-deps chromium 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/browser/playwright-install.log"`,
 		`printf '{"scope":"%s"}\n' "$run_expensive" >"$GITHUB_WORKSPACE/ci-artifacts/browser/validation-summary.json"`,
 		"timeout-minutes: 10",
 		"uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0",
