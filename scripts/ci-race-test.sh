@@ -11,7 +11,11 @@ slug="$2"
 go_command="${CI_RACE_GO_COMMAND:-go}"
 resource_runner="${CI_RACE_RESOURCE_RUNNER:-scripts/ci-resource-run.sh}"
 shard_planner="${CI_RACE_SHARD_PLANNER:-}"
+git_command="${CI_RACE_GIT_COMMAND:-git}"
 artifact_dir="ci-artifacts/race/${slug}"
+apextest_shard_indexes="${CI_RACE_APEXTEST_SHARD_INDEXES:-}"
+apextest_runner="${CI_RACE_APEXTEST_RUNNER:-}"
+apextest_head_sha="${CI_RACE_HEAD_SHA:-}"
 
 if [[ ! "${package}" =~ ^\./[A-Za-z0-9._/-]+$ ]] || [[ "${package}" == *...* ]]; then
 	printf '[ci] invalid exact race package %q\n' "${package}" >&2
@@ -149,6 +153,43 @@ printf '{"schema_version":1,"package":"%s","discovered_count":0,"shard_counts":%
 mv "${union_sentinel}" "${union_validation}"
 
 if [[ "${package}" == "./internal/apextest" ]]; then
+	assigned_apextest_indexes=(0 1 2 3 4 5 6 7)
+	if [[ -n "${apextest_shard_indexes}" || -n "${apextest_runner}" || -n "${apextest_head_sha}" ]]; then
+		if [[ ! "${apextest_head_sha}" =~ ^[0-9a-f]{40}$ ]]; then
+			printf '[ci] apextest runner requires a 40-character lowercase head SHA\n' >&2
+			exit 2
+		fi
+		case "${apextest_runner}:${apextest_shard_indexes}" in
+			a:0,1,2,3,4,5,6)
+				assigned_apextest_indexes=(0 1 2 3 4 5 6)
+				;;
+			b:7)
+				assigned_apextest_indexes=(7)
+				;;
+			*)
+				printf '[ci] invalid apextest runner assignment %q:%q\n' "${apextest_runner}" "${apextest_shard_indexes}" >&2
+				exit 2
+				;;
+		esac
+		if [[ "${git_command}" == */* ]]; then
+			[[ -x "${git_command}" ]] || { printf '[ci] git command is not executable: %s\n' "${git_command}" >&2; exit 2; }
+		elif ! command -v "${git_command}" >/dev/null 2>&1; then
+			printf '[ci] git command was not found: %s\n' "${git_command}" >&2
+			exit 2
+		fi
+		if ! actual_apextest_head="$("${git_command}" rev-parse HEAD)"; then
+			printf '[ci] could not resolve apextest runner checkout HEAD\n' >&2
+			exit 2
+		fi
+		if [[ ! "${actual_apextest_head}" =~ ^[0-9a-f]{40}$ ]]; then
+			printf '[ci] apextest runner checkout HEAD is not a 40-character lowercase SHA\n' >&2
+			exit 2
+		fi
+		if [[ "${actual_apextest_head}" != "${apextest_head_sha}" ]]; then
+			printf '[ci] apextest runner checkout HEAD does not match expected head\n' >&2
+			exit 2
+		fi
+	fi
 	binary_metadata="${artifact_dir}/binary.json"
 	binary_path="$(mktemp "${TMPDIR:-/tmp}/glade-race-apextest.test.XXXXXX")"
 	rm -f "${binary_path}"
@@ -441,7 +482,10 @@ if mode == "playground":
 PY
 
 if [[ "${package}" == "./internal/apextest" ]]; then
-	lane_names=(shard-0 shard-1 shard-2 shard-3 shard-4 shard-5 shard-6 shard-7)
+	lane_names=()
+	for index in "${assigned_apextest_indexes[@]}"; do
+		lane_names+=("shard-${index}")
+	done
 	event_paths=()
 	for lane_name in "${lane_names[@]}"; do
 		shard_dir="${artifact_dir}/${lane_name}"
@@ -538,6 +582,57 @@ for name in expected:
 PY
 		event_paths+=("${events}")
 	done
+
+	if [[ -n "${apextest_runner}" ]]; then
+		cleanup_apextest_binary
+		trap - EXIT HUP INT TERM
+		python3 - "${discovery}" "${plan}" "${binary_metadata}" "${artifact_dir}/runner-validation.json" "${package_name}" "${apextest_runner}" "${actual_apextest_head}" "${assigned_apextest_indexes[@]}" <<'PY'
+import hashlib
+import json
+import os
+import sys
+import tempfile
+
+discovery_path, plan_path, binary_path, output_path, package, runner, head_sha, *indexes = sys.argv[1:]
+indexes = [int(index) for index in indexes]
+with open(discovery_path, "rb") as source:
+    discovery = source.read()
+with open(plan_path, "rb") as source:
+    plan = source.read()
+with open(binary_path, encoding="utf-8") as source:
+    binary = json.load(source)
+if not isinstance(binary, dict) or set(binary) != {"schema_version", "package", "sha256", "size_bytes", "removed"}:
+    raise SystemExit("race apextest binary metadata has an invalid schema after cleanup")
+if binary["schema_version"] != 1 or binary["package"] != package or binary["removed"] is not True:
+    raise SystemExit("race apextest binary metadata has invalid cleanup state")
+value = {
+    "schema_version": 1,
+    "runner": runner,
+    "package": package,
+    "head_sha": head_sha,
+    "assigned_indexes": indexes,
+    "discovered_count": len(discovery.splitlines()),
+    "discovery_sha256": hashlib.sha256(discovery).hexdigest(),
+    "plan_sha256": hashlib.sha256(plan).hexdigest(),
+    "binary_sha256": binary["sha256"],
+    "binary_size_bytes": binary["size_bytes"],
+    "binary_removed": True,
+}
+descriptor, temporary = tempfile.mkstemp(prefix=".runner-validation.", dir=os.path.dirname(output_path), text=True)
+try:
+    with os.fdopen(descriptor, "w", encoding="utf-8") as target:
+        json.dump(value, target, sort_keys=True, separators=(",", ":"))
+        target.write("\n")
+    os.replace(temporary, output_path)
+except BaseException:
+    try:
+        os.unlink(temporary)
+    except FileNotFoundError:
+        pass
+    raise
+PY
+		exit 0
+	fi
 
 	python3 - "${discovery}" "${package_name}" "${union_validation}" "${event_paths[@]}" <<'PY'
 import hashlib

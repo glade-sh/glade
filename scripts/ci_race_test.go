@@ -236,6 +236,10 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 		`scripts/ci-race-test.sh "$PACKAGE" "$SLUG"`, "if: always()",
 		"actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0", "ci-artifacts/race/", "if-no-files-found: error",
 		"npm ci --prefix third_party/lwc", "contains(fromJSON('[\"./internal/gladecli\"",
+		"non-apextest-packages", "has-non-apextest-packages", "race-apextest-a:", "race-apextest-b:", "race-apextest-aggregate:",
+		"CI_RACE_APEXTEST_RUNNER: a", "CI_RACE_APEXTEST_SHARD_INDEXES: 0,1,2,3,4,5,6", "CI_RACE_APEXTEST_RUNNER: b", "CI_RACE_APEXTEST_SHARD_INDEXES: 7",
+		"CI_RACE_HEAD_SHA: ${{ github.sha }}",
+		"if: always() && contains(fromJSON(needs.plan.outputs.packages), './internal/apextest')", "scripts/ci-race-apextest-aggregate.sh ci-artifacts/race/apextest-a ci-artifacts/race/apextest-b", "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0",
 	} {
 		if !strings.Contains(workflow, marker) {
 			t.Errorf("race workflow missing %q", marker)
@@ -835,6 +839,370 @@ func TestCIRacePackageRunnerApextestBuildsOnceAndUsesEightDirectShards(t *testin
 		if strings.Contains(entry.Name(), "apextest.test") {
 			t.Fatalf("temporary race binary remained: %s", entry.Name())
 		}
+	}
+}
+
+func TestCIRacePackageRunnerApextestRunsOnlyAssignedShards(t *testing.T) {
+	root := t.TempDir()
+	logPath := filepath.Join(root, "calls.log")
+	testNames := []string{"TestAlpha", "TestBeta", "TestDelta", "TestEpsilon", "TestEta", "TestGamma", "TestTheta", "TestZeta"}
+	goCommand := writeRaceFixture(t, "fake-go", raceApextestGoFixture())
+	planner := writeRaceFixture(t, "fake-planner", raceApextestPlannerFixture())
+	resource := writeRaceFixture(t, "fake-resource", raceResourceFixture())
+	gitCommand := writeRaceFixture(t, "fake-git", "#!/usr/bin/env bash\nprintf '%s\\n' 0123456789abcdef0123456789abcdef01234567\n")
+	out, err := runRacePackage(t, root, []string{
+		"CI_RACE_GO_COMMAND=" + goCommand, "CI_RACE_SHARD_PLANNER=" + planner,
+		"CI_RACE_RESOURCE_RUNNER=" + resource, "CI_RACE_GIT_COMMAND=" + gitCommand, "CI_RACE_CALL_LOG=" + logPath,
+		"CI_RACE_TEST_NAMES=" + strings.Join(testNames, "\n") + "\n",
+		"CI_RACE_BINARY_DISCOVERY_PASS=1", "CI_RACE_APEXTEST_SHARD_INDEXES=7",
+		"CI_RACE_APEXTEST_RUNNER=b", "CI_RACE_HEAD_SHA=0123456789abcdef0123456789abcdef01234567",
+		"TMPDIR=" + root,
+	}, "./internal/apextest", "internal-apextest")
+	if err != nil {
+		t.Fatalf("assigned apex shard failed: %v\n%s", err, out)
+	}
+	logData, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	log := string(logData)
+	if strings.Count(log, "start race-internal-apextest-shard-") != 1 || !strings.Contains(log, "start race-internal-apextest-shard-7") {
+		t.Fatalf("assigned runner started unexpected shard lanes:\n%s", log)
+	}
+	artifactDir := filepath.Join(root, "ci-artifacts", "race", "internal-apextest")
+	if _, err := os.Stat(filepath.Join(artifactDir, "shard-7", "events.json")); err != nil {
+		t.Fatalf("assigned shard evidence: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(artifactDir, "shard-0", "events.json")); !os.IsNotExist(err) {
+		t.Fatalf("unassigned shard evidence exists or failed unexpectedly: %v", err)
+	}
+	runnerData, err := os.ReadFile(filepath.Join(artifactDir, "runner-validation.json"))
+	if err != nil {
+		t.Fatalf("runner validation evidence: %v", err)
+	}
+	var runner struct {
+		Runner          string `json:"runner"`
+		HeadSHA         string `json:"head_sha"`
+		AssignedIndexes []int  `json:"assigned_indexes"`
+		DiscoveredCount int    `json:"discovered_count"`
+		BinaryRemoved   bool   `json:"binary_removed"`
+	}
+	if err := json.Unmarshal(runnerData, &runner); err != nil || runner.Runner != "b" || runner.HeadSHA != "0123456789abcdef0123456789abcdef01234567" || !reflect.DeepEqual(runner.AssignedIndexes, []int{7}) || runner.DiscoveredCount != 8 || !runner.BinaryRemoved {
+		t.Fatalf("runner validation = %#v err=%v data=%s", runner, err, runnerData)
+	}
+}
+
+func TestCIRacePackageRunnerApextestRejectsUnexpectedCheckoutHead(t *testing.T) {
+	root := t.TempDir()
+	logPath := filepath.Join(root, "calls.log")
+	testNames := []string{"TestAlpha", "TestBeta", "TestDelta", "TestEpsilon", "TestEta", "TestGamma", "TestTheta", "TestZeta"}
+	goCommand := writeRaceFixture(t, "fake-go", raceApextestGoFixture())
+	planner := writeRaceFixture(t, "fake-planner", raceApextestPlannerFixture())
+	resource := writeRaceFixture(t, "fake-resource", raceResourceFixture())
+	gitCommand := writeRaceFixture(t, "fake-git", "#!/usr/bin/env bash\nprintf '%s\\n' fedcba9876543210fedcba9876543210fedcba98\n")
+	out, err := runRacePackage(t, root, []string{
+		"CI_RACE_GO_COMMAND=" + goCommand, "CI_RACE_SHARD_PLANNER=" + planner,
+		"CI_RACE_RESOURCE_RUNNER=" + resource, "CI_RACE_GIT_COMMAND=" + gitCommand,
+		"CI_RACE_CALL_LOG=" + logPath, "CI_RACE_TEST_NAMES=" + strings.Join(testNames, "\n") + "\n",
+		"CI_RACE_APEXTEST_SHARD_INDEXES=7", "CI_RACE_APEXTEST_RUNNER=b",
+		"CI_RACE_HEAD_SHA=0123456789abcdef0123456789abcdef01234567", "TMPDIR=" + root,
+	}, "./internal/apextest", "internal-apextest")
+	if err == nil || !strings.Contains(out, "checkout HEAD does not match expected head") {
+		t.Fatalf("unexpected checkout head accepted: %v\n%s", err, out)
+	}
+	if data, readErr := os.ReadFile(logPath); readErr == nil && strings.Contains(string(data), "start race-") {
+		t.Fatalf("unexpected checkout started a resource lane:\n%s", data)
+	}
+}
+
+func writeApextestAggregateArtifact(t *testing.T, root, runner string, indexes []int, headSHA string, testCount int) {
+	t.Helper()
+	artifactDir := filepath.Join(root, runner)
+	if err := os.MkdirAll(artifactDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	names := make([]string, testCount)
+	for index := range names {
+		names[index] = fmt.Sprintf("TestCase%03d", index)
+	}
+	discovery := strings.Join(names, "\n") + "\n"
+	if err := os.WriteFile(filepath.Join(artifactDir, "discovery.txt"), []byte(discovery), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	shards := make([]map[string]any, 8)
+	for index := range shards {
+		shardTests := make([]string, 0, 42)
+		for nameIndex := index; nameIndex < len(names); nameIndex += len(shards) {
+			shardTests = append(shardTests, names[nameIndex])
+		}
+		shards[index] = map[string]any{"index": index, "tests": shardTests, "estimatedDurationMillis": 0, "regex": "^(?:" + strings.Join(shardTests, "|") + ")$"}
+	}
+	plan := map[string]any{"version": 1, "package": "github.com/glade-sh/glade/internal/apextest", "historyUsed": false, "shards": shards}
+	planData, err := json.Marshal(plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	planData = append(planData, '\n')
+	if err := os.WriteFile(filepath.Join(artifactDir, "plan.json"), planData, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	discoveryHash := fmt.Sprintf("%x", sha256.Sum256([]byte(discovery)))
+	planHash := fmt.Sprintf("%x", sha256.Sum256(planData))
+	runnerData, err := json.Marshal(map[string]any{
+		"schema_version": 1, "runner": runner, "package": "github.com/glade-sh/glade/internal/apextest", "head_sha": headSHA,
+		"assigned_indexes": indexes, "discovered_count": len(names), "discovery_sha256": discoveryHash, "plan_sha256": planHash,
+		"binary_sha256": strings.Repeat("a", 64), "binary_size_bytes": 1, "binary_removed": true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(artifactDir, "runner-validation.json"), append(runnerData, '\n'), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	binaryData := []byte(`{"schema_version":1,"package":"github.com/glade-sh/glade/internal/apextest","sha256":"` + strings.Repeat("a", 64) + `","size_bytes":1,"removed":true}` + "\n")
+	if err := os.WriteFile(filepath.Join(artifactDir, "binary.json"), binaryData, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	resource := `{"schema_version":1,"lane":"race-internal-apextest-build","elapsed_seconds":0,"user_seconds":0,"system_seconds":0,"max_rss_kb":1,"exit_status":0}` + "\n"
+	if err := os.WriteFile(filepath.Join(artifactDir, "build-resource.json"), []byte(resource), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for _, index := range indexes {
+		shardDir := filepath.Join(artifactDir, fmt.Sprintf("shard-%d", index))
+		if err := os.MkdirAll(shardDir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		selection, err := json.Marshal(shards[index])
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(shardDir, "selection.json"), append(selection, '\n'), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		shardTests := shards[index]["tests"].([]string)
+		events := make([]string, 0, len(shardTests))
+		for _, name := range shardTests {
+			events = append(events, fmt.Sprintf(`{"Action":"pass","Package":"github.com/glade-sh/glade/internal/apextest","Test":"%s"}`, name))
+		}
+		if err := os.WriteFile(filepath.Join(shardDir, "events.json"), []byte(strings.Join(events, "\n")+"\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		resource := fmt.Sprintf(`{"schema_version":1,"lane":"race-internal-apextest-shard-%d","elapsed_seconds":0,"user_seconds":0,"system_seconds":0,"max_rss_kb":1,"exit_status":0}`+"\n", index)
+		if err := os.WriteFile(filepath.Join(shardDir, "resource.json"), []byte(resource), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestCIRaceApextestAggregateRejectsMismatchedEvidence(t *testing.T) {
+	root := t.TempDir()
+	headSHA := "0123456789abcdef0123456789abcdef01234567"
+	writeApextestAggregateArtifact(t, root, "a", []int{0, 1, 2, 3, 4, 5, 6}, headSHA, 332)
+	writeApextestAggregateArtifact(t, root, "b", []int{7}, headSHA, 332)
+	script, err := filepath.Abs("ci-race-apextest-aggregate.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(root, "aggregate.json")
+	command := func() (string, error) {
+		result, runErr := exec.Command("bash", script, filepath.Join(root, "a"), filepath.Join(root, "b"), out, headSHA).CombinedOutput()
+		return string(result), runErr
+	}
+	if output, runErr := command(); runErr != nil {
+		t.Fatalf("valid aggregate evidence rejected: %v\n%s", runErr, output)
+	}
+	data, err := os.ReadFile(out)
+	if err != nil || !strings.Contains(string(data), `"discovered_count":332`) || !strings.Contains(string(data), `"valid":true`) {
+		t.Fatalf("aggregate evidence = %s err=%v", data, err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "b", "runner-validation.json"), []byte(`{"schema_version":1}`+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if output, runErr := command(); runErr == nil || !strings.Contains(output, "invalid runner validation") {
+		t.Fatalf("malformed runner evidence accepted: %v\n%s", runErr, output)
+	}
+}
+
+func TestCIRaceApextestAggregateDerivesDiscoveryCount(t *testing.T) {
+	root := t.TempDir()
+	headSHA := "0123456789abcdef0123456789abcdef01234567"
+	writeApextestAggregateArtifact(t, root, "a", []int{0, 1, 2, 3, 4, 5, 6}, headSHA, 333)
+	writeApextestAggregateArtifact(t, root, "b", []int{7}, headSHA, 333)
+	script, err := filepath.Abs("ci-race-apextest-aggregate.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(root, "aggregate.json")
+	result, err := exec.Command("bash", script, filepath.Join(root, "a"), filepath.Join(root, "b"), out, headSHA).CombinedOutput()
+	if err != nil {
+		t.Fatalf("aggregate rejected matching 333-test discovery: %v\n%s", err, result)
+	}
+	data, err := os.ReadFile(out)
+	if err != nil || !strings.Contains(string(data), `"discovered_count":333`) || !strings.Contains(string(data), `"valid":true`) {
+		t.Fatalf("derived aggregate evidence = %s err=%v", data, err)
+	}
+}
+
+func TestCIRaceApextestAggregateRejectsAdversarialEvidence(t *testing.T) {
+	headSHA := "0123456789abcdef0123456789abcdef01234567"
+	tests := []struct {
+		name   string
+		mutate func(t *testing.T, root string)
+	}{
+		{name: "mismatched head", mutate: func(t *testing.T, root string) {
+			t.Helper()
+			path := filepath.Join(root, "b", "runner-validation.json")
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, []byte(strings.Replace(string(data), headSHA, "fedcba9876543210fedcba9876543210fedcba98", 1)), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{name: "mismatched package", mutate: func(t *testing.T, root string) {
+			t.Helper()
+			path := filepath.Join(root, "b", "runner-validation.json")
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, []byte(strings.Replace(string(data), "github.com/glade-sh/glade/internal/apextest", "wrong/package", 1)), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{name: "mismatched plan", mutate: func(t *testing.T, root string) {
+			path := filepath.Join(root, "b", "plan.json")
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"historyUsed":false`, `"historyUsed":true`, 1)), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{name: "missing shard index", mutate: func(t *testing.T, root string) {
+			t.Helper()
+			path := filepath.Join(root, "b", "runner-validation.json")
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"assigned_indexes":[7]`, `"assigned_indexes":[]`, 1)), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{name: "duplicate shard index", mutate: func(t *testing.T, root string) {
+			t.Helper()
+			path := filepath.Join(root, "b", "runner-validation.json")
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"assigned_indexes":[7]`, `"assigned_indexes":[6,7]`, 1)), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{name: "malformed resource", mutate: func(t *testing.T, root string) {
+			if err := os.WriteFile(filepath.Join(root, "b", "shard-7", "resource.json"), []byte("{}\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{name: "skipped terminal", mutate: func(t *testing.T, root string) {
+			path := filepath.Join(root, "b", "shard-7", "events.json")
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"Action":"pass"`, `"Action":"skip"`, 1)), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{name: "failed terminal", mutate: func(t *testing.T, root string) {
+			path := filepath.Join(root, "b", "shard-7", "events.json")
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, []byte(strings.Replace(string(data), `"Action":"pass"`, `"Action":"fail"`, 1)), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{name: "duplicate terminal", mutate: func(t *testing.T, root string) {
+			path := filepath.Join(root, "b", "shard-7", "events.json")
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			first, _, found := strings.Cut(string(data), "\n")
+			if !found {
+				t.Fatal("missing fixture event")
+			}
+			if err := os.WriteFile(path, append(data, []byte(first+"\n")...), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{name: "plan union mismatch", mutate: func(t *testing.T, root string) {
+			planPath := filepath.Join(root, "b", "plan.json")
+			planData, err := os.ReadFile(planPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var plan map[string]any
+			if err := json.Unmarshal(planData, &plan); err != nil {
+				t.Fatal(err)
+			}
+			shards := plan["shards"].([]any)
+			shard := shards[4].(map[string]any)
+			tests := shard["tests"].([]any)
+			shard["tests"] = tests[:len(tests)-1]
+			remaining := make([]string, len(tests)-1)
+			for index, raw := range tests[:len(tests)-1] {
+				remaining[index] = raw.(string)
+			}
+			shard["regex"] = "^(?:" + strings.Join(remaining, "|") + ")$"
+			updatedPlan, err := json.Marshal(plan)
+			if err != nil {
+				t.Fatal(err)
+			}
+			updatedPlan = append(updatedPlan, '\n')
+			if err := os.WriteFile(planPath, updatedPlan, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			runnerPath := filepath.Join(root, "b", "runner-validation.json")
+			runnerData, err := os.ReadFile(runnerPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var runner map[string]any
+			if err := json.Unmarshal(runnerData, &runner); err != nil {
+				t.Fatal(err)
+			}
+			runner["plan_sha256"] = fmt.Sprintf("%x", sha256.Sum256(updatedPlan))
+			updatedRunner, err := json.Marshal(runner)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(runnerPath, append(updatedRunner, '\n'), 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}},
+	}
+	for _, fixture := range tests {
+		t.Run(fixture.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeApextestAggregateArtifact(t, root, "a", []int{0, 1, 2, 3, 4, 5, 6}, headSHA, 333)
+			writeApextestAggregateArtifact(t, root, "b", []int{7}, headSHA, 333)
+			fixture.mutate(t, root)
+			script, err := filepath.Abs("ci-race-apextest-aggregate.sh")
+			if err != nil {
+				t.Fatal(err)
+			}
+			output, err := exec.Command("bash", script, filepath.Join(root, "a"), filepath.Join(root, "b"), filepath.Join(root, "aggregate.json"), headSHA).CombinedOutput()
+			if err == nil {
+				t.Fatalf("adversarial evidence accepted:\n%s", output)
+			}
+		})
 	}
 }
 
