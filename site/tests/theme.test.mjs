@@ -522,17 +522,17 @@ test("security trust surface is public, checked, and release-backed", () => {
   assert.match(securityTrust, /Local storage/);
 
   assert.match(securityWorkflow, /name: Security/);
-  assert.match(securityWorkflow, /golang\.org\/x\/vuln\/cmd\/govulncheck@latest/);
-  assert.match(securityWorkflow, /github\/codeql-action\/init@v/);
+  assert.match(securityWorkflow, /golang\.org\/x\/vuln\/cmd\/govulncheck@v1\.6\.0/);
+  assert.match(securityWorkflow, /github\/codeql-action\/init@[0-9a-f]{40}/);
   assert.match(securityWorkflow, /- uses: security-extended/);
   assert.match(securityWorkflow, /id: go\/allocation-size-overflow/);
-  assert.match(securityWorkflow, /github\/codeql-action\/analyze@v/);
+  assert.match(securityWorkflow, /github\/codeql-action\/analyze@[0-9a-f]{40}/);
   assert.match(securityWorkflow, /securego\/gosec@/);
   assert.match(securityWorkflow, /upload-sarif/);
   assert.match(securityWorkflow, /npm audit --omit=dev --audit-level=high/);
   assert.match(securityWorkflow, /working-directory: third_party\/lwc/);
   assert.match(securityWorkflow, /working-directory: contrib\/vscode-glade/);
-  assert.match(securityWorkflow, /actions\/dependency-review-action@v/);
+  assert.match(securityWorkflow, /actions\/dependency-review-action@[0-9a-f]{40}/);
   assert.match(securityWorkflow, /ossf\/scorecard-action@[0-9a-f]{40}/);
   assert.match(securityWorkflow, /publish_results: true/);
 
@@ -542,7 +542,7 @@ test("security trust surface is public, checked, and release-backed", () => {
   assert.match(releaseWorkflow, /tar -xzf "\$archive" -C "\$extract_dir" glade/);
   assert.match(releaseWorkflow, /cyclonedx-gomod bin -json -version "\$VERSION" -output "\$sbom" "\$extract_dir\/glade"/);
   assert.match(releaseWorkflow, /glade_.*\.sbom\.json/);
-  assert.match(releaseWorkflow, /actions\/attest@v/);
+  assert.match(releaseWorkflow, /actions\/attest@[0-9a-f]{40}/);
   assert.match(releaseWorkflow, /attestations: write/);
 
   assert.match(repoInstallDocs, /Security verification/);
