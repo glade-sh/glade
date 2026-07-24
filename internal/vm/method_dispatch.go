@@ -121,8 +121,8 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	resolutionClass := vm.methodTypeResolutionClass(method)
 	for i, param := range method.Params {
 		paramType := vm.resolveTypeNameInClass(resolutionClass, param.Type)
-		paramOriginals[param.Name] = args[i]
-		arg := args[i]
+		paramOriginals[param.Name] = args[i] // #nosec G602 -- argument count is checked against method.Params before this loop.
+		arg := args[i]                       // #nosec G602 -- argument count is checked against method.Params before this loop.
 		if isImplicitCurrentPageNull(arg) && strings.EqualFold(paramType, "PageReference") {
 			if vm.currentPage.Kind == "" {
 				vm.currentPage = newPageReference("")

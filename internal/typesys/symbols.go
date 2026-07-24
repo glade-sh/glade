@@ -1302,7 +1302,7 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 	newTriggers := 0
 	if len(changed) == 1 {
 		path := changedSource.path
-		data, err := os.ReadFile(path)
+		data, err := os.ReadFile(path) // #nosec G304 -- path is the single changed source already admitted to the loaded project index.
 		if err != nil {
 			return Index{}, false
 		}

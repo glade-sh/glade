@@ -247,7 +247,7 @@ func readFreshSplitTestRuntimeWithSourceDigests(projectRoot, subdir string, expe
 }
 
 func readTestCacheHeader(path string) (*testCacheHeader, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- path is the fixed header path beneath the caller-selected local project cache.
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, os.ErrNotExist
@@ -265,7 +265,7 @@ func readTestCachePayload(path string, wantHash string, wantSize int64) (testCac
 	if strings.TrimSpace(wantHash) == "" || wantSize < 0 {
 		return testCachePayload{}, fmt.Errorf("invalid payload header")
 	}
-	file, err := os.Open(path)
+	file, err := os.Open(path) // #nosec G304 -- path is the payload named by the authenticated cache header beneath the local project cache.
 	if err != nil {
 		return testCachePayload{}, err
 	}
@@ -297,7 +297,7 @@ func readTestCachePayload(path string, wantHash string, wantSize int64) (testCac
 
 func readLegacyGob(projectRoot, subdir string) (*Entry, error) {
 	path := filepath.Join(projectRoot, filepath.FromSlash(subdir), stateGobFile)
-	file, err := os.Open(path)
+	file, err := os.Open(path) // #nosec G304 -- path is the fixed legacy cache path beneath the caller-selected local project root.
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, nil
@@ -325,7 +325,7 @@ func writeGob(entry *Entry, subdir string) error {
 
 func writeSplitTestCache(entry *Entry, subdir string) error {
 	cacheDir := filepath.Join(entry.ProjectRoot, filepath.FromSlash(subdir))
-	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil { // #nosec G301 -- project-local cache directories intentionally retain normal project traversal permissions.
 		return err
 	}
 	payload := testCachePayload{Org: entry.Org, Runtime: entry.Runtime}
@@ -650,7 +650,7 @@ func pruneInactiveTestPayloadsInRoot(cacheRoot *os.Root, activePayloadFile strin
 
 func writeLegacyGob(entry *Entry, subdir string) error {
 	cacheDir := filepath.Join(entry.ProjectRoot, filepath.FromSlash(subdir))
-	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil { // #nosec G301 -- legacy project-local cache directories retain the established traversal contract.
 		return err
 	}
 	path := filepath.Join(cacheDir, stateGobFile)

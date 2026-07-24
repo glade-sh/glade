@@ -195,7 +195,7 @@ func writeJSON(entry *Entry, subdir string) error {
 		return errors.New("startup cache entry requires project root")
 	}
 	cacheDir := filepath.Join(entry.ProjectRoot, filepath.FromSlash(subdir))
-	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil { // #nosec G301 -- project-local cache directories intentionally retain normal project traversal permissions.
 		return err
 	}
 	path := filepath.Join(cacheDir, stateFile)

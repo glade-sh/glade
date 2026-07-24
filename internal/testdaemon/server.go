@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -11,6 +13,8 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -34,11 +38,13 @@ type ServerConfig struct {
 }
 
 type Server struct {
-	daemon   *Daemon
-	socket   string
-	pidPath  string
-	listener net.Listener
-	watchOn  bool
+	daemon        *Daemon
+	socket        string
+	pidPath       string
+	pidRoot       *os.Root
+	listener      net.Listener
+	watchOn       bool
+	defaultSocket bool
 
 	warmMu   sync.Mutex
 	warmDone chan struct{}
@@ -72,13 +78,27 @@ func NewServer(cfg ServerConfig) (*Server, error) {
 	}
 	pidPath := ServePIDPath(root)
 
-	if err := claimServeSocket(socket, pidPath); err != nil {
+	privateBase, privateRelative := privateServeDir(root)
+	pidRoot, err := openPrivateDaemonDir(privateBase, privateRelative)
+	if err != nil {
 		return nil, err
 	}
-	if err := os.MkdirAll(filepath.Dir(socket), 0o755); err != nil {
+	keepPIDRoot := false
+	defer func() {
+		if !keepPIDRoot {
+			_ = pidRoot.Close()
+		}
+	}()
+	defaultSocket := socket == ServeSocketPath(root)
+	if !defaultSocket {
+		if err := os.MkdirAll(filepath.Dir(socket), 0o700); err != nil {
+			return nil, err
+		}
+	}
+	if err := claimServeSocket(socket, pidPath, pidRoot, defaultSocket); err != nil {
 		return nil, err
 	}
-	_ = os.Remove(socket)
+	removeServeSocket(socket, pidRoot, defaultSocket)
 
 	daemon, err := New(root)
 	if err != nil {
@@ -86,12 +106,15 @@ func NewServer(cfg ServerConfig) (*Server, error) {
 	}
 
 	s := &Server{
-		daemon:   daemon,
-		socket:   socket,
-		pidPath:  pidPath,
-		watchOn:  cfg.Watch,
-		warmDone: make(chan struct{}),
+		daemon:        daemon,
+		socket:        socket,
+		pidPath:       pidPath,
+		pidRoot:       pidRoot,
+		watchOn:       cfg.Watch,
+		defaultSocket: defaultSocket,
+		warmDone:      make(chan struct{}),
 	}
+	keepPIDRoot = true
 	if cfg.Warm {
 		// Warm begins in ListenAndServe so status logs reach the user.
 	} else {
@@ -151,9 +174,16 @@ func (s *Server) ListenAndServe(ctx context.Context, log io.Writer) error {
 	if err != nil {
 		return err
 	}
+	if err := chmodServeSocket(s.socket, s.pidRoot, s.defaultSocket); err != nil {
+		_ = listener.Close()
+		removeServeSocket(s.socket, s.pidRoot, s.defaultSocket)
+		return fmt.Errorf("restrict test server socket: %w", err)
+	}
 	s.listener = listener
-	if err := writePID(s.pidPath); err != nil && log != nil {
-		fmt.Fprintf(log, "glade test serve: warning: could not write pid file: %v\n", err)
+	if err := writePID(s.pidRoot, filepath.Base(s.pidPath), s.pidPath); err != nil {
+		_ = listener.Close()
+		removeServeSocket(s.socket, s.pidRoot, s.defaultSocket)
+		return fmt.Errorf("publish test server PID: %w", err)
 	}
 	if log != nil {
 		fmt.Fprintf(log, "glade test serve: listening on %s\n", s.socket)
@@ -201,8 +231,11 @@ func (s *Server) Close() error {
 	if s.listener != nil {
 		_ = s.listener.Close()
 	}
-	_ = os.Remove(s.socket)
-	_ = os.Remove(s.pidPath)
+	removeServeSocket(s.socket, s.pidRoot, s.defaultSocket)
+	if s.pidRoot != nil {
+		_ = s.pidRoot.Remove(filepath.Base(s.pidPath))
+		_ = s.pidRoot.Close()
+	}
 	return nil
 }
 
@@ -559,23 +592,150 @@ func (s *Server) watchLoop(ctx context.Context, root string) {
 	}
 }
 
-func writePID(path string) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+func writePID(root *os.Root, name, path string) error {
+	if root == nil {
+		return errors.New("PID directory is not open")
+	}
+	if name == "." || name == string(os.PathSeparator) {
+		return fmt.Errorf("invalid PID path %q", path)
+	}
+	if info, err := root.Lstat(name); err == nil {
+		if info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("PID path %q must not be a symlink", path)
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
-	return os.WriteFile(path, []byte(fmt.Sprintf("%d\n", os.Getpid())), 0o644)
+	tmp, tmpName, err := createDaemonTemp(root)
+	if err != nil {
+		return err
+	}
+	defer root.Remove(tmpName)
+	if _, err := fmt.Fprintf(tmp, "%d\n", os.Getpid()); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	return root.Rename(tmpName, name)
 }
 
-func claimServeSocket(socket, pidPath string) error {
-	pid, err := readPID(pidPath)
+func openPrivateDaemonDir(base, relative string) (*os.Root, error) {
+	cleanRelative := filepath.Clean(relative)
+	if filepath.IsAbs(cleanRelative) || cleanRelative == "." || cleanRelative == ".." || strings.HasPrefix(cleanRelative, ".."+string(os.PathSeparator)) {
+		return nil, fmt.Errorf("daemon directory %q must stay within %q", relative, base)
+	}
+	current, err := os.OpenRoot(base)
 	if err != nil {
+		return nil, err
+	}
+	for _, component := range strings.Split(cleanRelative, string(os.PathSeparator)) {
+		if err := current.Mkdir(component, 0o700); err != nil && !errors.Is(err, os.ErrExist) {
+			_ = current.Close()
+			return nil, err
+		}
+		beforeOpen, err := current.Lstat(component)
+		if err != nil {
+			_ = current.Close()
+			return nil, err
+		}
+		if beforeOpen.Mode()&os.ModeSymlink != 0 {
+			_ = current.Close()
+			return nil, fmt.Errorf("daemon directory component %q must not be a symlink", component)
+		}
+		if !beforeOpen.IsDir() {
+			_ = current.Close()
+			return nil, fmt.Errorf("daemon path component %q is not a directory", component)
+		}
+		next, err := current.OpenRoot(component)
+		if err != nil {
+			_ = current.Close()
+			return nil, err
+		}
+		afterOpen, err := next.Stat(".")
+		if err != nil {
+			_ = next.Close()
+			_ = current.Close()
+			return nil, err
+		}
+		if !os.SameFile(beforeOpen, afterOpen) {
+			_ = next.Close()
+			_ = current.Close()
+			return nil, fmt.Errorf("daemon directory component %q changed while opening", component)
+		}
+		_ = current.Close()
+		current = next
+	}
+	if runtime.GOOS != "windows" {
+		if err := current.Chmod(".", 0o700); err != nil {
+			_ = current.Close()
+			return nil, fmt.Errorf("restrict daemon directory %q: %w", relative, err)
+		}
+	}
+	return current, nil
+}
+
+func createDaemonTemp(root *os.Root) (*os.File, string, error) {
+	var random [16]byte
+	for range 100 {
+		if _, err := rand.Read(random[:]); err != nil {
+			return nil, "", err
+		}
+		name := ".serve-pid-" + hex.EncodeToString(random[:])
+		file, err := root.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+		if err == nil {
+			return file, name, nil
+		}
+		if !errors.Is(err, os.ErrExist) {
+			return nil, "", err
+		}
+	}
+	return nil, "", errors.New("could not allocate unique daemon PID temporary file")
+}
+
+func chmodServeSocket(socket string, root *os.Root, useRoot bool) error {
+	if useRoot {
+		info, err := root.Lstat(filepath.Base(socket))
+		if err != nil {
+			return err
+		}
+		if info.Mode()&os.ModeSocket == 0 {
+			return fmt.Errorf("test server socket %q is not a socket", socket)
+		}
+		return root.Chmod(filepath.Base(socket), 0o600)
+	}
+	return os.Chmod(socket, 0o600)
+}
+
+func removeServeSocket(socket string, root *os.Root, useRoot bool) {
+	if useRoot && root != nil {
+		_ = root.Remove(filepath.Base(socket))
+		return
+	}
+	_ = os.Remove(socket)
+}
+
+func claimServeSocket(socket, pidPath string, pidRoot *os.Root, defaultSocket bool) error {
+	pidFile, err := pidRoot.Open(filepath.Base(pidPath))
+	if err != nil {
+		return nil
+	}
+	data, readErr := io.ReadAll(pidFile)
+	closeErr := pidFile.Close()
+	if readErr != nil || closeErr != nil {
+		return nil
+	}
+	var pid int
+	_, err = fmt.Sscanf(string(data), "%d", &pid)
+	if err != nil || pid <= 0 {
 		return nil
 	}
 	if processAlive(pid) {
 		return fmt.Errorf("test server already running (pid %d)", pid)
 	}
-	_ = os.Remove(socket)
-	_ = os.Remove(pidPath)
+	removeServeSocket(socket, pidRoot, defaultSocket)
+	_ = pidRoot.Remove(filepath.Base(pidPath))
 	return nil
 }
 

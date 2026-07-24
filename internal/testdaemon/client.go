@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"os"
 	"time"
 )
 
@@ -150,17 +149,4 @@ func ServerReachable(ctx context.Context, socket string) bool {
 	defer cancel()
 	resp, err := PingV1(ctx, socket)
 	return err == nil && resp.OK
-}
-
-func readPID(path string) (int, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return 0, err
-	}
-	var pid int
-	_, err = fmt.Sscanf(string(data), "%d", &pid)
-	if err != nil || pid <= 0 {
-		return 0, fmt.Errorf("invalid pid file %s", path)
-	}
-	return pid, nil
 }
