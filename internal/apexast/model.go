@@ -24,6 +24,7 @@ type Declaration struct {
 	Name           string           `json:"name,omitempty"`
 	Type           string           `json:"type,omitempty"`
 	Modifiers      []string         `json:"modifiers,omitempty"`
+	Annotations    []Annotation     `json:"annotations,omitempty"`
 	Parameters     []Parameter      `json:"parameters,omitempty"`
 	Accessors      []Accessor       `json:"accessors,omitempty"`
 	ObjectName     string           `json:"objectName,omitempty"`
@@ -34,18 +35,32 @@ type Declaration struct {
 	Members        []Declaration    `json:"members,omitempty"`
 }
 
+type Annotation struct {
+	Name      string               `json:"name"`
+	Arguments []AnnotationArgument `json:"arguments,omitempty"`
+	Range     diagnostic.Range     `json:"range"`
+}
+
+type AnnotationArgument struct {
+	Name  string           `json:"name,omitempty"`
+	Value string           `json:"value"`
+	Range diagnostic.Range `json:"range"`
+}
+
 type Accessor struct {
-	Kind      string           `json:"kind"`
-	Modifiers []string         `json:"modifiers,omitempty"`
-	Range     diagnostic.Range `json:"range"`
-	HasBody   bool             `json:"hasBody,omitempty"`
+	Kind        string           `json:"kind"`
+	Modifiers   []string         `json:"modifiers,omitempty"`
+	Annotations []Annotation     `json:"annotations,omitempty"`
+	Range       diagnostic.Range `json:"range"`
+	HasBody     bool             `json:"hasBody,omitempty"`
 }
 
 type Parameter struct {
-	Name      string           `json:"name"`
-	Type      string           `json:"type"`
-	Modifiers []string         `json:"modifiers,omitempty"`
-	Range     diagnostic.Range `json:"range"`
+	Name        string           `json:"name"`
+	Type        string           `json:"type"`
+	Modifiers   []string         `json:"modifiers,omitempty"`
+	Annotations []Annotation     `json:"annotations,omitempty"`
+	Range       diagnostic.Range `json:"range"`
 }
 
 type DeclarationKind string

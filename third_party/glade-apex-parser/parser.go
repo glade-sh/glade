@@ -171,6 +171,7 @@ func treeSitterClass(node *tree_sitter.Node, source string, lineMap LineMap) Dec
 		Kind:           DeclarationClass,
 		Name:           nodeText(childByField(node, "name"), source),
 		Modifiers:      treeSitterModifiers(node, source),
+		Annotations:    treeSitterAnnotations(node, source, lineMap),
 		TypeParameters: treeSitterTypeParameters(node, source),
 		Range:          treeSitterRange(node, lineMap),
 	}
@@ -185,6 +186,7 @@ func treeSitterInterface(node *tree_sitter.Node, source string, lineMap LineMap)
 		Kind:           DeclarationInterface,
 		Name:           nodeText(childByField(node, "name"), source),
 		Modifiers:      treeSitterModifiers(node, source),
+		Annotations:    treeSitterAnnotations(node, source, lineMap),
 		TypeParameters: treeSitterTypeParameters(node, source),
 		Range:          treeSitterRange(node, lineMap),
 	}
@@ -200,10 +202,11 @@ func treeSitterInterface(node *tree_sitter.Node, source string, lineMap LineMap)
 
 func treeSitterEnum(node *tree_sitter.Node, source string, lineMap LineMap) Declaration {
 	decl := Declaration{
-		Kind:      DeclarationEnum,
-		Name:      nodeText(childByField(node, "name"), source),
-		Modifiers: treeSitterModifiers(node, source),
-		Range:     treeSitterRange(node, lineMap),
+		Kind:        DeclarationEnum,
+		Name:        nodeText(childByField(node, "name"), source),
+		Modifiers:   treeSitterModifiers(node, source),
+		Annotations: treeSitterAnnotations(node, source, lineMap),
+		Range:       treeSitterRange(node, lineMap),
 	}
 	if body := childByField(node, "body"); body != nil {
 		for _, child := range namedChildren(body) {
@@ -284,24 +287,26 @@ func treeSitterMembers(body *tree_sitter.Node, source string, lineMap LineMap) [
 
 func treeSitterMethod(node *tree_sitter.Node, source string, lineMap LineMap) Declaration {
 	return Declaration{
-		Kind:       DeclarationMethod,
-		Name:       nodeText(childByField(node, "name"), source),
-		Type:       treeSitterTypeText(childByField(node, "type"), source),
-		Modifiers:  treeSitterModifiers(node, source),
-		Parameters: treeSitterParameters(childByField(node, "parameters"), source, lineMap),
-		HasBody:    childByField(node, "body") != nil,
-		Range:      treeSitterRange(node, lineMap),
+		Kind:        DeclarationMethod,
+		Name:        nodeText(childByField(node, "name"), source),
+		Type:        treeSitterTypeText(childByField(node, "type"), source),
+		Modifiers:   treeSitterModifiers(node, source),
+		Annotations: treeSitterAnnotations(node, source, lineMap),
+		Parameters:  treeSitterParameters(childByField(node, "parameters"), source, lineMap),
+		HasBody:     childByField(node, "body") != nil,
+		Range:       treeSitterRange(node, lineMap),
 	}
 }
 
 func treeSitterConstructor(node *tree_sitter.Node, source string, lineMap LineMap) Declaration {
 	return Declaration{
-		Kind:       DeclarationConstructor,
-		Name:       nodeText(childByField(node, "name"), source),
-		Modifiers:  treeSitterModifiers(node, source),
-		Parameters: treeSitterParameters(childByField(node, "parameters"), source, lineMap),
-		HasBody:    childByField(node, "body") != nil,
-		Range:      treeSitterRange(node, lineMap),
+		Kind:        DeclarationConstructor,
+		Name:        nodeText(childByField(node, "name"), source),
+		Modifiers:   treeSitterModifiers(node, source),
+		Annotations: treeSitterAnnotations(node, source, lineMap),
+		Parameters:  treeSitterParameters(childByField(node, "parameters"), source, lineMap),
+		HasBody:     childByField(node, "body") != nil,
+		Range:       treeSitterRange(node, lineMap),
 	}
 }
 
@@ -337,11 +342,12 @@ func treeSitterFields(node *tree_sitter.Node, source string, lineMap LineMap) []
 	for _, variable := range childrenByField(node, "declarator") {
 		nameNode := childByField(&variable, "name")
 		decl := Declaration{
-			Kind:      DeclarationField,
-			Name:      nodeText(nameNode, source),
-			Type:      treeSitterTypeText(typeNode, source),
-			Modifiers: mods,
-			Range:     treeSitterRange(&variable, lineMap),
+			Kind:        DeclarationField,
+			Name:        nodeText(nameNode, source),
+			Type:        treeSitterTypeText(typeNode, source),
+			Modifiers:   mods,
+			Annotations: treeSitterAnnotations(node, source, lineMap),
+			Range:       treeSitterRange(&variable, lineMap),
 		}
 		if accessors != nil {
 			decl.Kind = DeclarationProperty
@@ -360,8 +366,9 @@ func treeSitterAccessors(node *tree_sitter.Node, source string, lineMap LineMap)
 			continue
 		}
 		accessor := Accessor{
-			Modifiers: treeSitterModifiers(&child, source),
-			Range:     treeSitterRange(&child, lineMap),
+			Modifiers:   treeSitterModifiers(&child, source),
+			Annotations: treeSitterAnnotations(&child, source, lineMap),
+			Range:       treeSitterRange(&child, lineMap),
 		}
 		for i := uint(0); i < child.ChildCount(); i++ {
 			token := child.Child(i)
@@ -392,10 +399,11 @@ func treeSitterParameters(node *tree_sitter.Node, source string, lineMap LineMap
 			continue
 		}
 		params = append(params, Parameter{
-			Name:      nodeText(childByField(&child, "name"), source),
-			Type:      treeSitterTypeText(childByField(&child, "type"), source),
-			Modifiers: treeSitterModifiers(&child, source),
-			Range:     treeSitterRange(&child, lineMap),
+			Name:        nodeText(childByField(&child, "name"), source),
+			Type:        treeSitterTypeText(childByField(&child, "type"), source),
+			Modifiers:   treeSitterModifiers(&child, source),
+			Annotations: treeSitterAnnotations(&child, source, lineMap),
+			Range:       treeSitterRange(&child, lineMap),
 		})
 	}
 	return params
@@ -417,6 +425,70 @@ func treeSitterModifiers(node *tree_sitter.Node, source string) []string {
 		}
 	}
 	return mods
+}
+
+func treeSitterAnnotations(node *tree_sitter.Node, source string, lineMap LineMap) []Annotation {
+	modNode := firstChildOfKind(node, "modifiers")
+	if modNode == nil {
+		return nil
+	}
+	var annotations []Annotation
+	for _, child := range namedChildren(modNode) {
+		if child.Kind() != "annotation" {
+			continue
+		}
+		text := strings.TrimSpace(nodeText(&child, source))
+		if text == "" || text[0] != '@' {
+			continue
+		}
+		annotation := Annotation{Range: treeSitterRange(&child, lineMap)}
+		body := strings.TrimSpace(text[1:])
+		nameEnd := strings.IndexByte(body, '(')
+		if nameEnd < 0 {
+			annotation.Name = strings.TrimSpace(body)
+		} else {
+			annotation.Name = strings.TrimSpace(body[:nameEnd])
+			args := strings.TrimSuffix(strings.TrimSpace(body[nameEnd+1:]), ")")
+			for _, argument := range splitAnnotationArguments(args) {
+				argument = strings.TrimSpace(argument)
+				if argument == "" {
+					continue
+				}
+				parsed := AnnotationArgument{Value: argument, Range: annotation.Range}
+				if name, value, ok := strings.Cut(argument, "="); ok {
+					parsed.Name, parsed.Value = strings.TrimSpace(name), strings.TrimSpace(value)
+				}
+				annotation.Arguments = append(annotation.Arguments, parsed)
+			}
+		}
+		annotations = append(annotations, annotation)
+	}
+	return annotations
+}
+
+func splitAnnotationArguments(text string) []string {
+	var out []string
+	start, depth := 0, 0
+	for i := 0; i < len(text); i++ {
+		if text[i] == '\'' {
+			i = skipApexString(text, i)
+			continue
+		}
+		switch text[i] {
+		case '(', '[', '{':
+			depth++
+		case ')', ']', '}':
+			if depth > 0 {
+				depth--
+			}
+		case ',':
+			if depth == 0 {
+				out = append(out, text[start:i])
+				start = i + 1
+			}
+		}
+	}
+	return append(out, text[start:])
 }
 
 func normalizeModifierText(kind, text string) string {

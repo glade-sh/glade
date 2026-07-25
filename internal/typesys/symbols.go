@@ -56,6 +56,7 @@ type TypeSymbol struct {
 	Dependency            bool                    `json:"dependency,omitempty"`
 	Artifact              bool                    `json:"artifact,omitempty"`
 	Modifiers             []string                `json:"modifiers,omitempty"`
+	Annotations           []apexast.Annotation    `json:"annotations,omitempty"`
 	TypeParameters        []string                `json:"typeParameters,omitempty"`
 	IsTest                bool                    `json:"isTest,omitempty"`
 	SuperClass            string                  `json:"superClass,omitempty"`
@@ -65,15 +66,16 @@ type TypeSymbol struct {
 }
 
 type MemberSymbol struct {
-	Kind       apexast.DeclarationKind `json:"kind"`
-	Name       string                  `json:"name"`
-	Type       string                  `json:"type,omitempty"`
-	Modifiers  []string                `json:"modifiers,omitempty"`
-	Parameters []apexast.Parameter     `json:"parameters,omitempty"`
-	Accessors  []apexast.Accessor      `json:"accessors,omitempty"`
-	HasBody    bool                    `json:"hasBody,omitempty"`
-	IsTest     bool                    `json:"isTest,omitempty"`
-	Range      diagnostic.Range        `json:"range"`
+	Kind        apexast.DeclarationKind `json:"kind"`
+	Name        string                  `json:"name"`
+	Type        string                  `json:"type,omitempty"`
+	Modifiers   []string                `json:"modifiers,omitempty"`
+	Annotations []apexast.Annotation    `json:"annotations,omitempty"`
+	Parameters  []apexast.Parameter     `json:"parameters,omitempty"`
+	Accessors   []apexast.Accessor      `json:"accessors,omitempty"`
+	HasBody     bool                    `json:"hasBody,omitempty"`
+	IsTest      bool                    `json:"isTest,omitempty"`
+	Range       diagnostic.Range        `json:"range"`
 }
 
 type TriggerSymbol struct {
@@ -1498,6 +1500,7 @@ func typeSymbolFromDeclaration(path string, decl apexast.Declaration, parent str
 		NestingDepth:   nestingDepth,
 		File:           path,
 		Modifiers:      decl.Modifiers,
+		Annotations:    decl.Annotations,
 		TypeParameters: append([]string(nil), decl.TypeParameters...),
 		IsTest:         parentIsTest || hasTestModifier(decl.Modifiers),
 		Range:          decl.Range,
@@ -1507,15 +1510,16 @@ func typeSymbolFromDeclaration(path string, decl apexast.Declaration, parent str
 			continue
 		}
 		sym.Members = append(sym.Members, MemberSymbol{
-			Kind:       member.Kind,
-			Name:       member.Name,
-			Type:       member.Type,
-			Modifiers:  member.Modifiers,
-			Parameters: member.Parameters,
-			Accessors:  member.Accessors,
-			HasBody:    member.HasBody,
-			IsTest:     hasTestModifier(member.Modifiers) || (member.Kind == apexast.DeclarationMethod && hasModifier(member.Modifiers, "testmethod")),
-			Range:      member.Range,
+			Kind:        member.Kind,
+			Name:        member.Name,
+			Type:        member.Type,
+			Modifiers:   member.Modifiers,
+			Annotations: member.Annotations,
+			Parameters:  member.Parameters,
+			Accessors:   member.Accessors,
+			HasBody:     member.HasBody,
+			IsTest:      hasTestModifier(member.Modifiers) || (member.Kind == apexast.DeclarationMethod && hasModifier(member.Modifiers, "testmethod")),
+			Range:       member.Range,
 		})
 	}
 	return sym

@@ -65,6 +65,7 @@ func convertDeclaration(decl external.Declaration) Declaration {
 		Name:           decl.Name,
 		Type:           decl.Type,
 		Modifiers:      decl.Modifiers,
+		Annotations:    convertAnnotations(decl.Annotations),
 		Parameters:     convertParameters(decl.Parameters),
 		Accessors:      convertAccessors(decl.Accessors),
 		ObjectName:     decl.ObjectName,
@@ -76,6 +77,18 @@ func convertDeclaration(decl external.Declaration) Declaration {
 	}
 }
 
+func convertAnnotations(items []external.Annotation) []Annotation {
+	out := make([]Annotation, 0, len(items))
+	for _, item := range items {
+		annotation := Annotation{Name: item.Name, Range: convertRange(item.Range)}
+		for _, argument := range item.Arguments {
+			annotation.Arguments = append(annotation.Arguments, AnnotationArgument{Name: argument.Name, Value: argument.Value, Range: convertRange(argument.Range)})
+		}
+		out = append(out, annotation)
+	}
+	return out
+}
+
 func convertParameters(params []external.Parameter) []Parameter {
 	if len(params) == 0 {
 		return nil
@@ -83,10 +96,11 @@ func convertParameters(params []external.Parameter) []Parameter {
 	out := make([]Parameter, 0, len(params))
 	for _, param := range params {
 		out = append(out, Parameter{
-			Name:      param.Name,
-			Type:      param.Type,
-			Modifiers: param.Modifiers,
-			Range:     convertRange(param.Range),
+			Name:        param.Name,
+			Type:        param.Type,
+			Modifiers:   param.Modifiers,
+			Annotations: convertAnnotations(param.Annotations),
+			Range:       convertRange(param.Range),
 		})
 	}
 	return out
@@ -99,10 +113,11 @@ func convertAccessors(accessors []external.Accessor) []Accessor {
 	out := make([]Accessor, 0, len(accessors))
 	for _, accessor := range accessors {
 		out = append(out, Accessor{
-			Kind:      accessor.Kind,
-			Modifiers: accessor.Modifiers,
-			Range:     convertRange(accessor.Range),
-			HasBody:   accessor.HasBody,
+			Kind:        accessor.Kind,
+			Modifiers:   accessor.Modifiers,
+			Annotations: convertAnnotations(accessor.Annotations),
+			Range:       convertRange(accessor.Range),
+			HasBody:     accessor.HasBody,
 		})
 	}
 	return out

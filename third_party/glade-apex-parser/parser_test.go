@@ -629,6 +629,26 @@ func TestResultHasErrors(t *testing.T) {
 	}
 }
 
+func TestParseStructuredAnnotations(t *testing.T) {
+	file := NewParser().ParseSource("Probe.cls", `
+@IsTest(SeeAllData = false)
+public class Probe {
+  @AuraEnabled(cacheable = true)
+  public static String run() { return 'ok'; }
+}`)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	decl := file.Declarations[0]
+	if len(decl.Annotations) != 1 || decl.Annotations[0].Name != "IsTest" || len(decl.Annotations[0].Arguments) != 1 {
+		t.Fatalf("class annotations = %#v", decl.Annotations)
+	}
+	method := decl.Members[0]
+	if len(method.Annotations) != 1 || method.Annotations[0].Name != "AuraEnabled" || method.Annotations[0].Arguments[0].Name != "cacheable" {
+		t.Fatalf("method annotations = %#v", method.Annotations)
+	}
+}
+
 func TestLineMapAndFileURI(t *testing.T) {
 	lineMap := NewLineMap("one\ntwo\n")
 	pos := lineMap.Position(5)
