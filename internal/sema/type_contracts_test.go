@@ -23,6 +23,21 @@ func TestTypeContractRejectsInvalidSourceTypesAndLiterals(t *testing.T) {
 	}
 }
 
+func TestTypeContractIgnoresNumericTextInStringsAndComments(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": `
+public class Probe {
+  public void run() {
+    String salesforceId = '003000000000001';
+    String exponent = '1e3';
+    // 2147483648 and 1e3 are not source literals.
+  }
+}
+`})
+	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA019") {
+		t.Fatalf("numeric text outside code was rejected: %#v", result.Diagnostics)
+	}
+}
+
 func TestTypeContractRejectsInvalidOperators(t *testing.T) {
 	t.Parallel()
 	for name, expression := range map[string]string{

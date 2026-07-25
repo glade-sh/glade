@@ -38,13 +38,23 @@ func (a *Analyzer) checkSourceTypeContracts(index typesys.Index) []diagnostic.Di
 		if !ok {
 			continue
 		}
+		spans := newSemaCodeSpans(source)
 		for _, match := range typeContractRawCollectionConstructor.FindAllStringIndex(source, -1) {
+			if !spans.contains(match[0]) {
+				continue
+			}
 			diagnostics = append(diagnostics, typeContractDiagnostic(typ, typesys.MemberSymbol{}, "raw collection construction requires type arguments", match[0], match[1], source))
 		}
 		for _, match := range typeContractScientificLiteral.FindAllStringIndex(source, -1) {
+			if !spans.contains(match[0]) {
+				continue
+			}
 			diagnostics = append(diagnostics, typeContractDiagnostic(typ, typesys.MemberSymbol{}, "scientific notation is not valid Apex numeric literal syntax", match[0], match[1], source))
 		}
 		for _, match := range typeContractIntegerLiteral.FindAllStringIndex(source, -1) {
+			if !spans.contains(match[0]) {
+				continue
+			}
 			literal := source[match[0]:match[1]]
 			value, err := strconv.ParseInt(literal, 10, 64)
 			if err != nil || value > 2147483647 {
@@ -52,6 +62,9 @@ func (a *Analyzer) checkSourceTypeContracts(index typesys.Index) []diagnostic.Di
 			}
 		}
 		for _, match := range typeContractSafeAssignment.FindAllStringIndex(source, -1) {
+			if !spans.contains(match[0]) {
+				continue
+			}
 			diagnostics = append(diagnostics, typeContractDiagnostic(typ, typesys.MemberSymbol{}, "safe navigation cannot be an assignment target", match[0], match[1], source))
 		}
 	}
