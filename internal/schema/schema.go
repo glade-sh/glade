@@ -63,6 +63,10 @@ type Field struct {
 	Required              bool               `json:"required,omitempty"`
 	ExternalID            bool               `json:"externalId,omitempty"`
 	IDLookup              bool               `json:"idLookup,omitempty"`
+	Filterable            *bool              `json:"filterable,omitempty"`
+	Groupable             *bool              `json:"groupable,omitempty"`
+	Sortable              *bool              `json:"sortable,omitempty"`
+	Aggregatable          *bool              `json:"aggregatable,omitempty"`
 	Unique                bool               `json:"unique,omitempty"`
 	Encrypted             bool               `json:"encrypted,omitempty"`
 	Formula               string             `json:"formula,omitempty"`

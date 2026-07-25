@@ -75,6 +75,28 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsEnforcesDescribeBackedFieldCapabilities(t *testing.T) {
+	no := false
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    List<Account> filtered = [SELECT Id FROM Account WHERE NoFilter__c = 'x'];
+    List<AggregateResult> grouped = [SELECT NoGroup__c, COUNT(Id) total FROM Account GROUP BY NoGroup__c];
+    List<Account> sorted = [SELECT Id FROM Account ORDER BY NoSort__c];
+    List<AggregateResult> aggregated = [SELECT SUM(NoAggregate__c) total FROM Account];
+  }
+}
+`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{
+		{Name: "NoFilter__c", Type: "Text", Filterable: &no},
+		{Name: "NoGroup__c", Type: "Text", Groupable: &no},
+		{Name: "NoSort__c", Type: "Text", Sortable: &no},
+		{Name: "NoAggregate__c", Type: "Number", Aggregatable: &no},
+	}}}})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CAPABILITY") {
+		t.Fatalf("expected describe capability diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestQuerySemanticsRejectsMissingInlineBind(t *testing.T) {
 	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {

@@ -139,10 +139,23 @@ func (f Field) ToSchemaField(childRelationshipName string) schema.Field {
 		DefaultValue:          defaultString(f.DefaultValue),
 		Required:              requiredForCreate(f),
 		ExternalID:            f.ExternalID,
+		IDLookup:              f.IDLookup,
+		Filterable:            cloneBoolPtr(f.Filterable),
+		Groupable:             cloneBoolPtr(f.Groupable),
+		Sortable:              cloneBoolPtr(f.Sortable),
+		Aggregatable:          cloneBoolPtr(f.Aggregatable),
 		Unique:                f.Unique,
 		Formula:               strings.TrimSpace(f.Formula),
 		PicklistValues:        schemaPicklistValues(f.PicklistValues),
 	}
+}
+
+func cloneBoolPtr(value *bool) *bool {
+	if value == nil {
+		return nil
+	}
+	copy := *value
+	return &copy
 }
 
 func (r RecordTypeInfo) ToSchemaRecordType() schema.RecordType {

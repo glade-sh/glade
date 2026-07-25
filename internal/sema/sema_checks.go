@@ -318,9 +318,11 @@ func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName strin
 			aggregateAliases[strings.ToLower(aggregate.Alias)] = true
 		}
 		diagnostics = append(diagnostics, c.checkSOQLField(object.Name, aggregate.Field, ctx, cursor)...)
+		diagnostics = append(diagnostics, c.checkSOQLFieldCapability(object.Name, aggregate.Field, "aggregatable", ctx, cursor)...)
 	}
 	for _, field := range query.Fields {
 		diagnostics = append(diagnostics, c.checkSOQLField(object.Name, field, ctx, cursor)...)
+		diagnostics = append(diagnostics, c.checkSOQLFieldCapability(object.Name, field, "groupable", ctx, cursor)...)
 	}
 	for _, field := range query.GroupBy {
 		if aggregateAliases[strings.ToLower(field)] {
@@ -333,6 +335,7 @@ func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName strin
 			continue
 		}
 		diagnostics = append(diagnostics, c.checkSOQLField(object.Name, order.Field, ctx, cursor)...)
+		diagnostics = append(diagnostics, c.checkSOQLFieldCapability(object.Name, order.Field, "sortable", ctx, cursor)...)
 	}
 	if query.Where != nil {
 		diagnostics = append(diagnostics, c.checkSOQLCondition(object.Name, *query.Where, ctx, cursor, aggregateAliases)...)
@@ -418,6 +421,7 @@ func (c querySemanticsChecker) checkSOQLCondition(objectName string, condition s
 	var diagnostics []diagnostic.Diagnostic
 	if condition.Field != "" && !aggregateAliases[strings.ToLower(condition.Field)] {
 		diagnostics = append(diagnostics, c.checkSOQLField(objectName, condition.Field, ctx, cursor)...)
+		diagnostics = append(diagnostics, c.checkSOQLFieldCapability(objectName, condition.Field, "filterable", ctx, cursor)...)
 	}
 	if condition.Subquery != nil {
 		diagnostics = append(diagnostics, c.checkSOQLQuery(*condition.Subquery, condition.Subquery.Object, ctx, cursor, nil)...)
@@ -429,6 +433,33 @@ func (c querySemanticsChecker) checkSOQLCondition(objectName string, condition s
 		diagnostics = append(diagnostics, c.checkSOQLCondition(objectName, child, ctx, cursor, aggregateAliases)...)
 	}
 	return diagnostics
+}
+
+func (c querySemanticsChecker) checkSOQLFieldCapability(objectName, fieldPath, capability string, ctx queryTextContext, cursor int) []diagnostic.Diagnostic {
+	fieldPath = semaSOQLFieldReference(fieldPath)
+	if fieldPath == "" || strings.Contains(fieldPath, ".") || strings.Contains(fieldPath, "(") || !c.hasFieldMetadata(objectName) {
+		return nil
+	}
+	field, ok := c.field(objectName, fieldPath)
+	if !ok {
+		return nil
+	}
+	var supported *bool
+	switch capability {
+	case "filterable":
+		supported = field.Filterable
+	case "groupable":
+		supported = field.Groupable
+	case "sortable":
+		supported = field.Sortable
+	case "aggregatable":
+		supported = field.Aggregatable
+	}
+	if supported == nil || *supported {
+		return nil
+	}
+	offset := findQueryIdentifier(ctx.queryText, fieldPath, cursor)
+	return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_CAPABILITY", fmt.Sprintf("SOQL field %s.%s is not %s according to describe metadata", objectName, fieldPath, capability), fieldPath, offset)}
 }
 
 func (c querySemanticsChecker) checkSOQLField(objectName, fieldPath string, ctx queryTextContext, cursor int) []diagnostic.Diagnostic {
