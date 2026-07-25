@@ -5149,12 +5149,13 @@ public abstract class ManagerBase {
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/BatchManager.cls"), `
 public abstract class BatchManager extends ManagerBase {
+  private static BatchManager singleton;
   public static BatchManager Instance {
     get {
-      if (Instance == null) {
-        Instance = (BatchManager)new WithSharing();
+      if (singleton == null) {
+        singleton = (BatchManager)new WithSharing();
       }
-      return Instance;
+      return singleton;
     }
   }
 
@@ -7684,10 +7685,10 @@ func TestRunAssignsDottedPathThroughStaticFieldRoot(t *testing.T) {
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/BaseControllerProbe.cls"), `
 public virtual class BaseControllerProbe {
-  private String marker;
+  private String markerValue;
   public String Marker {
-    get { return marker; }
-    set { marker = value; }
+    get { return markerValue; }
+    set { markerValue = value; }
   }
 }
 `)
@@ -7724,15 +7725,15 @@ public class JSONPropertySetterPayload {
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/JSONPropertySetterEnvelope.cls"), `
 public class JSONPropertySetterEnvelope {
-  private JSONPropertySetterPayload payload;
+  private JSONPropertySetterPayload backingPayload;
   public JSONPropertySetterPayload Payload {
     get {
-      if (payload == null) {
-        payload = new JSONPropertySetterPayload();
+      if (backingPayload == null) {
+        backingPayload = new JSONPropertySetterPayload();
       }
-      return payload;
+      return backingPayload;
     }
-    private set { payload = value; }
+    private set { backingPayload = value; }
   }
 }
 `)
@@ -7839,29 +7840,29 @@ func TestRunJSONGeneratorRoundTripsCustomPropertyBackingField(t *testing.T) {
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/JSONBackedPropertyPayload.cls"), `
 public class JSONBackedPropertyPayload {
-  private Boolean enabled = false;
+  private transient Boolean enabledValue = false;
   public Boolean Enabled {
-    get { return enabled; }
-    set { enabled = value; }
+    get { return enabledValue; }
+    set { enabledValue = value; }
   }
 }
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/JSONBackedPropertyEnvelope.cls"), `
 public class JSONBackedPropertyEnvelope {
-  private JSONBackedPropertyPayload payload;
+  private transient JSONBackedPropertyPayload backingPayload;
   public JSONBackedPropertyPayload Payload {
     get {
-      if (payload == null) {
-        payload = new JSONBackedPropertyPayload();
+      if (backingPayload == null) {
+        backingPayload = new JSONBackedPropertyPayload();
       }
-      return payload;
+      return backingPayload;
     }
-    set { payload = value; }
+    set { backingPayload = value; }
   }
   public void saveTo(Account account) {
     JSONGenerator gen = JSON.createGenerator(false);
     gen.writeStartObject();
-    gen.writeObjectField('Payload', payload);
+    gen.writeObjectField('Payload', backingPayload);
     gen.writeEndObject();
     account.Description = gen.getAsString();
   }

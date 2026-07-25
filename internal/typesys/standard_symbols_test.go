@@ -32,6 +32,13 @@ func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) 
 		t.Fatalf("Cache.Visibility kind = %q, want enum", visibility.Kind)
 	}
 	requireStandardProperty(t, visibility, "ALL", "Cache.Visibility")
+
+	for _, name := range []string{"Cache.CacheBuilder", "Finalizer"} {
+		symbol := requireStandardSymbol(t, symbols, name)
+		if symbol.Kind != apexast.DeclarationInterface {
+			t.Fatalf("%s kind = %q, want interface", name, symbol.Kind)
+		}
+	}
 }
 
 func TestStandardPlatformSymbolsTypeConnectApiCollectionProperties(t *testing.T) {

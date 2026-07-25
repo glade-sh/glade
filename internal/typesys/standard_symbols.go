@@ -1228,7 +1228,9 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 }
 
 var standardPlatformSymbolOverlays = []StandardSymbolSpec{
+	{Name: "Cache.CacheBuilder", Kind: apexast.DeclarationInterface},
 	{Name: "CommerceExtension.ResolutionStrategy", Kind: apexast.DeclarationInterface},
+	{Name: "Finalizer", Kind: apexast.DeclarationInterface},
 	{Name: "Readiness.ProductEvaluator", Kind: apexast.DeclarationInterface},
 	{Name: "DataSource.AsyncDeleteCallback", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "processDelete", ReturnType: "void", Parameters: []string{"Database.DeleteResult"}}}},
 	{Name: "DataSource.AsyncSaveCallback", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "processSave", ReturnType: "void", Parameters: []string{"Database.SaveResult"}}}},
