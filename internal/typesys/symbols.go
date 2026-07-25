@@ -45,6 +45,9 @@ type ProjectInfo struct {
 type TypeSymbol struct {
 	Kind                  apexast.DeclarationKind `json:"kind"`
 	Name                  string                  `json:"name"`
+	LocalName             string                  `json:"localName,omitempty"`
+	OwnerName             string                  `json:"ownerName,omitempty"`
+	NestingDepth          int                     `json:"nestingDepth,omitempty"`
 	File                  string                  `json:"file"`
 	Namespace             string                  `json:"namespace,omitempty"`
 	SourceNamespaceRemaps []namespaceremap.Rule   `json:"sourceNamespaceRemaps,omitempty"`
@@ -593,7 +596,7 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 	for _, decl := range file.Declarations {
 		switch decl.Kind {
 		case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-			for _, sym := range typeSymbolsFromDeclaration(path, decl, "", false, normalized) {
+			for _, sym := range typeSymbolsFromDeclaration(path, decl, "", 0, false, normalized) {
 				sym.Namespace = namespace
 				sym.SourceNamespaceRemaps = append([]namespaceremap.Rule(nil), sourceRemaps...)
 				sym.SourceRoot = root
@@ -1331,7 +1334,7 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 		for _, decl := range file.Declarations {
 			switch decl.Kind {
 			case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-				for _, sym := range typeSymbolsFromDeclaration(path, decl, "", false, source) {
+				for _, sym := range typeSymbolsFromDeclaration(path, decl, "", 0, false, source) {
 					sym.Namespace = metadata.namespace
 					sym.SourceNamespaceRemaps = cloneIncrementalNamespaceRemaps(metadata.namespaceRemaps)
 					sym.SourceRoot = metadata.root
@@ -1450,31 +1453,39 @@ func cleanFilePath(path string) string {
 	return filepath.Clean(path)
 }
 
-func typeSymbolsFromDeclaration(path string, decl apexast.Declaration, parent string, parentIsTest bool, source string) []TypeSymbol {
-	sym := typeSymbolFromDeclaration(path, decl, parent, parentIsTest)
+func typeSymbolsFromDeclaration(path string, decl apexast.Declaration, parent string, parentDepth int, parentIsTest bool, source string) []TypeSymbol {
+	sym := typeSymbolFromDeclaration(path, decl, parent, parentDepth, parentIsTest)
 	sym.SuperClass, sym.Interfaces = parseTypeInheritance(source, decl.Range)
 	out := []TypeSymbol{sym}
 	for _, member := range decl.Members {
 		switch member.Kind {
 		case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-			out = append(out, typeSymbolsFromDeclaration(path, member, sym.Name, sym.IsTest, source)...)
+			out = append(out, typeSymbolsFromDeclaration(path, member, sym.Name, sym.NestingDepth, sym.IsTest, source)...)
 		}
 	}
 	return out
 }
 
-func typeSymbolFromDeclaration(path string, decl apexast.Declaration, parent string, parentIsTest bool) TypeSymbol {
-	name := decl.Name
+func typeSymbolFromDeclaration(path string, decl apexast.Declaration, parent string, parentDepth int, parentIsTest bool) TypeSymbol {
+	localName := decl.Name
+	name := localName
+	ownerName := ""
+	nestingDepth := 0
 	if parent != "" {
-		name = parent + "." + decl.Name
+		name = parent + "." + localName
+		ownerName = parent
+		nestingDepth = parentDepth + 1
 	}
 	sym := TypeSymbol{
-		Kind:      decl.Kind,
-		Name:      name,
-		File:      path,
-		Modifiers: decl.Modifiers,
-		IsTest:    parentIsTest || hasTestModifier(decl.Modifiers),
-		Range:     decl.Range,
+		Kind:         decl.Kind,
+		Name:         name,
+		LocalName:    localName,
+		OwnerName:    ownerName,
+		NestingDepth: nestingDepth,
+		File:         path,
+		Modifiers:    decl.Modifiers,
+		IsTest:       parentIsTest || hasTestModifier(decl.Modifiers),
+		Range:        decl.Range,
 	}
 	for _, member := range decl.Members {
 		if member.Name == "" {
@@ -1622,11 +1633,22 @@ func hasModifier(modifiers []string, expected string) bool {
 }
 
 func duplicateDiagnostic(current, previous TypeSymbol) diagnostic.Diagnostic {
+	severity := diagnostic.Warning
+	if sameOwnerDuplicate(current, previous) {
+		severity = diagnostic.Error
+	}
 	return diagnostic.Diagnostic{
-		Severity: diagnostic.Warning,
+		Severity: severity,
 		Code:     "GLADETYPE001",
 		Message:  fmt.Sprintf("duplicate top-level symbol %q; first seen in %s", current.Name, previous.File),
 		File:     current.File,
 		Range:    &current.Range,
 	}
+}
+
+func sameOwnerDuplicate(current, previous TypeSymbol) bool {
+	if cleanFilePath(current.File) != cleanFilePath(previous.File) {
+		return false
+	}
+	return strings.EqualFold(current.OwnerName, previous.OwnerName)
 }

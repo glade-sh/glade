@@ -71,6 +71,67 @@ func TestBuildIndexDuplicateType(t *testing.T) {
 	}
 }
 
+func TestBuildIndexDuplicateTypeSameOwnerIsError(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "ProbeDuplicateTypeName.cls")
+	writeFile(t, path, `public class ProbeDuplicateTypeName {
+  class Item {}
+  interface Item {}
+}`)
+
+	idx := Build(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+	if !idx.HasErrors() {
+		t.Fatalf("same-owner duplicate type should be an error: %#v", idx.Diagnostics)
+	}
+	found := false
+	for _, diag := range idx.Diagnostics {
+		if diag.Code == "GLADETYPE001" && diag.Severity == diagnostic.Error {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected GLADETYPE001 error for same-owner duplicate, got %#v", idx.Diagnostics)
+	}
+}
+
+func TestTypeSymbolPreservesOwnerAndNesting(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Outer.cls")
+	writeFile(t, path, `public class Outer {
+  class Mid {
+    class Deep {}
+  }
+}`)
+
+	idx := Build(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+	byName := map[string]TypeSymbol{}
+	for _, typ := range idx.Types {
+		byName[typ.Name] = typ
+	}
+	outer, ok := byName["Outer"]
+	if !ok {
+		t.Fatalf("missing Outer: %#v", idx.Types)
+	}
+	if outer.LocalName != "Outer" || outer.OwnerName != "" || outer.NestingDepth != 0 {
+		t.Fatalf("Outer identity = local=%q owner=%q depth=%d", outer.LocalName, outer.OwnerName, outer.NestingDepth)
+	}
+	mid, ok := byName["Outer.Mid"]
+	if !ok {
+		t.Fatalf("missing Outer.Mid: %#v", idx.Types)
+	}
+	if mid.LocalName != "Mid" || mid.OwnerName != "Outer" || mid.NestingDepth != 1 {
+		t.Fatalf("Outer.Mid identity = local=%q owner=%q depth=%d", mid.LocalName, mid.OwnerName, mid.NestingDepth)
+	}
+	deep, ok := byName["Outer.Mid.Deep"]
+	if !ok {
+		t.Fatalf("missing Outer.Mid.Deep: %#v", idx.Types)
+	}
+	if deep.LocalName != "Deep" || deep.OwnerName != "Outer.Mid" || deep.NestingDepth != 2 {
+		t.Fatalf("Outer.Mid.Deep identity = local=%q owner=%q depth=%d", deep.LocalName, deep.OwnerName, deep.NestingDepth)
+	}
+}
+
 func TestBuildIndexAllowsDuplicateTypesAcrossPackageDirectories(t *testing.T) {
 	root := t.TempDir()
 	first := filepath.Join(root, "packages/one/classes/Shared.cls")
