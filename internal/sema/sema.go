@@ -324,6 +324,11 @@ func downgradeSourceDependencySemanticDiagnostics(diagnostics []diagnostic.Diagn
 		if out[i].Severity != diagnostic.Error {
 			continue
 		}
+		// Same-owner declaration/member collisions must stay hard errors even when
+		// source-backed dependencies are loaded (see GLADETYPE001 severity semantics).
+		if out[i].Code == "GLADESEMA031" {
+			continue
+		}
 		if strings.HasPrefix(out[i].Code, "GLADESEMA") || strings.HasPrefix(out[i].Code, "dependency_") {
 			out[i].Severity = diagnostic.Warning
 		}

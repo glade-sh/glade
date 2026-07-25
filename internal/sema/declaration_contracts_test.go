@@ -1,6 +1,7 @@
 package sema
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -112,6 +113,59 @@ public class DupFields {
 	}
 	if !declarationDiagnosticMatching(result, "value") {
 		t.Fatalf("expected diagnostic naming the field, got %#v", result.Diagnostics)
+	}
+}
+
+func TestDuplicateMemberRemainsErrorWithSourceBackedDependency(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	for _, dir := range []string{depRoot, consumerRoot} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	depFile := filepath.Join(depRoot, "DepHelper.cls")
+	consumerFile := filepath.Join(consumerRoot, "DupFields.cls")
+	writeSemaFile(t, depFile, `
+global class DepHelper {
+  global static String ok() { return 'ok'; }
+}
+`)
+	writeSemaFile(t, consumerFile, `
+public class DupFields {
+  public Integer value;
+  public String Value;
+}
+`)
+	depProject := project.Project{
+		Root:      depRoot,
+		Namespace: "deppkg",
+		ApexFiles: []string{depFile},
+	}
+	result := Analyze(typesys.Build(project.Project{
+		Root:      consumerRoot,
+		ApexFiles: []string{consumerFile},
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace:  "deppkg",
+			SourceRoot: depRoot,
+			Project:    &depProject,
+			Status:     "loaded",
+		}},
+	}, schema.Schema{}))
+	if !result.HasErrors() {
+		t.Fatalf("same-owner duplicate member must remain an error with source-backed deps: %#v", result.Diagnostics)
+	}
+	found := false
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA031" && diag.Severity == diagnostic.Error {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected GLADESEMA031 error, got %#v", result.Diagnostics)
 	}
 }
 
