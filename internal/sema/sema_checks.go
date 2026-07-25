@@ -223,7 +223,6 @@ func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Obj
 func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagnostic {
 	locator := newSemaSourceLocator(source)
 	spans := newSemaCodeSpans(source)
-	bindings := semaDeclaredBindings(source)
 	var diagnostics []diagnostic.Diagnostic
 	for _, literal := range semaSOQLLiterals(source, spans) {
 		query, err := soql.Parse(literal.text)
@@ -239,6 +238,7 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 			locator:     locator,
 		}
 		diagnostics = append(diagnostics, c.checkSOQLQuery(query, query.Object, ctx, 0, nil)...)
+		bindings := semaDeclaredBindingsAt(source, literal.queryOffset, spans)
 		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings)...)
 		diagnostics = append(diagnostics, queryWindowBindDiagnostics(query, ctx, bindings)...)
 	}
@@ -256,6 +256,7 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 			locator:     locator,
 		}
 		diagnostics = append(diagnostics, c.checkSOSLQuery(query, ctx)...)
+		bindings := semaDeclaredBindingsAt(source, literal.queryOffset, spans)
 		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings)...)
 	}
 	return diagnostics
@@ -266,18 +267,130 @@ var (
 	semaBindingDeclaration = regexp.MustCompile(`(?m)(?:^|[;({,])\s*(?:(?:public|private|protected|global|static|final|transient)\s+)*([A-Za-z_][A-Za-z0-9_]*(?:\s*<[^;=(){}]+>)?(?:\[\])?)\s+([A-Za-z_][A-Za-z0-9_]*)\b`)
 )
 
-// semaDeclaredBindings supplies the lexical names required to reject a query
-// bind that cannot resolve anywhere in the enclosing source. Body IR remains
-// the authority for expression typing; this conservative first pass prevents
-// inline SOQL/SOSL from silently treating an undeclared bind as a string token.
-func semaDeclaredBindings(source string) map[string]string {
+// semaDeclaredBindingsAt returns parameter, field, and local declarations that
+// are visible at a query literal. This is deliberately source-backed because
+// query literals are checked before their surrounding body has semantic IR.
+func semaDeclaredBindingsAt(source string, offset int, spans semaCodeSpans) map[string]string {
 	bindings := make(map[string]string)
+	methodStart, headerStart, typeStart := semaEnclosingMethod(source, offset, spans)
+	if methodStart < 0 {
+		return bindings
+	}
+	semaAddBindingDeclarations(bindings, source[headerStart:methodStart])
+	activeScopes := semaActiveBraces(source, methodStart+1, offset, spans)
+	for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(source[methodStart+1:offset], -1) {
+		if len(match) != 6 || !semaDeclarationInActiveScope(source, methodStart+1, methodStart+1+match[0], activeScopes, spans) {
+			continue
+		}
+		name := source[methodStart+1+match[4] : methodStart+1+match[5]]
+		typeName := source[methodStart+1+match[2] : methodStart+1+match[3]]
+		bindings[strings.ToLower(name)] = strings.TrimSpace(typeName)
+	}
+	if typeStart >= 0 {
+		for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(source[typeStart+1:methodStart], -1) {
+			if len(match) != 6 || !semaDeclarationAtTypeScope(source, typeStart+1, typeStart+1+match[0], spans) {
+				continue
+			}
+			name := source[typeStart+1+match[4] : typeStart+1+match[5]]
+			typeName := source[typeStart+1+match[2] : typeStart+1+match[3]]
+			bindings[strings.ToLower(name)] = strings.TrimSpace(typeName)
+		}
+	}
+	return bindings
+}
+
+func semaAddBindingDeclarations(bindings map[string]string, source string) {
 	for _, match := range semaBindingDeclaration.FindAllStringSubmatch(source, -1) {
 		if len(match) == 3 {
 			bindings[strings.ToLower(match[2])] = strings.TrimSpace(match[1])
 		}
 	}
-	return bindings
+}
+
+func semaEnclosingMethod(source string, offset int, spans semaCodeSpans) (methodStart, headerStart, typeStart int) {
+	braces := semaOpenBraces(source, 0, offset, spans)
+	for i := len(braces) - 1; i >= 0; i-- {
+		brace := braces[i]
+		header := semaHeaderStart(source, brace, spans)
+		if !semaMethodHeader(source[header:brace]) {
+			continue
+		}
+		typeBrace := -1
+		if i > 0 {
+			typeBrace = braces[i-1]
+		}
+		return brace, header, typeBrace
+	}
+	return -1, -1, -1
+}
+
+func semaMethodHeader(header string) bool {
+	header = strings.TrimSpace(header)
+	open := strings.LastIndex(header, "(")
+	if open < 0 || !strings.HasSuffix(header, ")") {
+		return false
+	}
+	nameFields := strings.Fields(header[:open])
+	if len(nameFields) == 0 {
+		return false
+	}
+	switch strings.ToLower(nameFields[len(nameFields)-1]) {
+	case "if", "for", "while", "switch", "catch":
+		return false
+	}
+	return true
+}
+
+func semaHeaderStart(source string, brace int, spans semaCodeSpans) int {
+	for i := brace - 1; i >= 0; i-- {
+		if !spans.contains(i) {
+			continue
+		}
+		switch source[i] {
+		case '{', '}', ';':
+			return i + 1
+		}
+	}
+	return 0
+}
+
+func semaOpenBraces(source string, start, offset int, spans semaCodeSpans) []int {
+	var braces []int
+	for i := start; i < offset && i < len(source); i++ {
+		if !spans.contains(i) {
+			continue
+		}
+		switch source[i] {
+		case '{':
+			braces = append(braces, i)
+		case '}':
+			if len(braces) > 0 {
+				braces = braces[:len(braces)-1]
+			}
+		}
+	}
+	return braces
+}
+
+func semaActiveBraces(source string, start, offset int, spans semaCodeSpans) map[int]bool {
+	active := make(map[int]bool)
+	for _, brace := range semaOpenBraces(source, start, offset, spans) {
+		active[brace] = true
+	}
+	return active
+}
+
+func semaDeclarationInActiveScope(source string, start, declaration int, active map[int]bool, spans semaCodeSpans) bool {
+	for _, brace := range semaOpenBraces(source, start, declaration, spans) {
+		if !active[brace] {
+			return false
+		}
+	}
+	return true
+}
+
+func semaDeclarationAtTypeScope(source string, start, declaration int, spans semaCodeSpans) bool {
+	return len(semaOpenBraces(source, start, declaration, spans)) == 0
 }
 
 func inlineQueryBindDiagnostics(ctx queryTextContext, bindings map[string]string) []diagnostic.Diagnostic {

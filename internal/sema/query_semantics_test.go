@@ -149,6 +149,51 @@ public class QueryProbe {
 		t.Fatalf("numeric query window binds rejected: %#v", valid)
 	}
 }
+
+func TestQuerySemanticsResolvesBindsInTheirLexicalMethodScope(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void first() {
+    String elsewhere = 'x';
+  }
+  public void second() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :elsewhere];
+    List<Account> later = [SELECT Id FROM Account WHERE Name = :declaredLater];
+    String declaredLater = 'x';
+  }
+}
+`)
+	if !hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("out-of-scope and later bind names were accepted: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsAcceptsMethodParameterBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run(String name) {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :name];
+  }
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("method parameter bind rejected: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsAcceptsInstanceFieldBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  private String name;
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :name];
+  }
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("instance field bind rejected: %#v", diagnostics)
+	}
+}
 func TestQuerySemanticsFieldProviderKeepsProjectAuthority(t *testing.T) {
 	checker := newQuerySemanticsChecker(typesys.Index{
 		Project: typesys.ProjectInfo{Namespace: "pkg"},
