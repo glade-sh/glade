@@ -957,6 +957,11 @@ Current blocker (2026-07-25): the local Salesforce CLI hangs on `sf org list
 --json` and returns no authenticated scratch-org alias. The comparator remains
 ready but cannot be replayed until an org is available.
 
+Recheck (2026-07-25): a bounded 20-second `sf org list --json` attempt
+returned no stdout or stderr before timeout, left no CLI process behind, and
+found no configured org metadata files. This is an environment/authentication
+blocker, not a comparator failure.
+
 - [ ] **Step 7: Run the stronger compatibility gate**
 
 Run NU after the final high-risk semantic packet and again before release. Do
