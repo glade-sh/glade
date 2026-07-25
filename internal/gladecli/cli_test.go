@@ -3279,7 +3279,8 @@ trigger ContentVersionTrigger on ContentVersion (before delete, after delete) {
 func TestRunCheckAndTestRejectReservedApexIdentifier(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeTestFile(t, filepath.Join(root, "force-app/main/classes/ReservedCurrencyTest.cls"), `
+	reservedPath := filepath.Join(root, "force-app/main/classes/ReservedCurrencyTest.cls")
+	writeTestFile(t, reservedPath, `
 @isTest
 private class ReservedCurrencyTest {
   @isTest
@@ -3289,6 +3290,12 @@ private class ReservedCurrencyTest {
   }
 }
 `)
+
+	var parseStdout, parseStderr bytes.Buffer
+	parseCode := Run(context.Background(), []string{"parse", reservedPath, "--json", "--no-progress"}, &parseStdout, &parseStderr)
+	if parseCode != 1 || !strings.Contains(parseStdout.String(), "APEXPARSE002") || !strings.Contains(parseStdout.String(), "Identifier name is reserved: currency") {
+		t.Fatalf("parse did not reject reserved identifier: code=%d stdout=%q stderr=%q", parseCode, parseStdout.String(), parseStderr.String())
+	}
 
 	var checkStdout, checkStderr bytes.Buffer
 	checkCode := Run(context.Background(), []string{"check", "--project", root, "--json", "--no-progress"}, &checkStdout, &checkStderr)

@@ -22,7 +22,7 @@ func TestPlanRenameRejectsInvalidSourceIdentifiers(t *testing.T) {
 	sourcePath := writeRenameFile(t, root, "classes/InvoiceService.cls", "public class InvoiceService {}\n")
 	index := renameIndex(root, sourcePath, "InvoiceService", nil)
 
-	for _, to := range []string{"_Billing", "Billing_", "Bill__ing", "A" + strings.Repeat("a", 255)} {
+	for _, to := range []string{"_Billing", "Billing_", "Bill__ing", "currency", "A" + strings.Repeat("a", 255)} {
 		_, err := refactor.PlanRename(index, refactor.RenameOptions{Symbol: "InvoiceService", To: to})
 		if err == nil || !strings.Contains(err.Error(), "Invalid identifier") {
 			t.Fatalf("PlanRename(%q) error = %v, want Invalid identifier", to, err)

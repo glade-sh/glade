@@ -261,6 +261,10 @@ func validateRenameTarget(symbol codeintel.Symbol, to string) error {
 		if err := apexparser.ValidateSourceIdentifier(to); err != nil {
 			return err
 		}
+		methodName := symbol.Kind == codeintel.SymbolApexMember && symbol.Metadata["declarationKind"] == "method"
+		if apexparser.IsReservedSourceIdentifier(to, methodName) {
+			return fmt.Errorf("Invalid identifier: %s", to)
+		}
 		return nil
 	}
 }
