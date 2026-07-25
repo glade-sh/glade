@@ -827,6 +827,13 @@ Follow-up (2026-07-25): `List<T>` and `Set<T>` binds now require `IN` or
 `NOT IN` and validate `T` against the described field type. SOSL returning
 clause structure and dotted bind-expression typing remain open.
 
+Additional finding (2026-07-25): the offline Apex guide confirms that inline
+SOQL and SOSL binds allow expressions, including `:A.Id`, arithmetic, method
+calls, nested query-result expressions, and SOSL `FIND`, `WHERE`, `LIMIT`,
+and `WITH DIVISION` clauses. Do not add a name-shape shortcut for dotted
+expressions: Apex type names are case-insensitive, so correct diagnostics need
+body-IR receiver/type resolution and a scratch-proven expression matrix.
+
 - [x] **Step 5: Add field capability metadata only from evidence**
 
 Carry filterable/groupable/sortable/aggregate capabilities when describe data
