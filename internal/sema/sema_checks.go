@@ -266,6 +266,7 @@ type queryTextContext struct {
 
 func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName string, ctx queryTextContext, cursor int, aggregateAliases map[string]bool) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
+	diagnostics = append(diagnostics, queryShapeDiagnostics(query, ctx)...)
 	object, ok := c.object(objectName)
 	objectCursor := findSOQLFromObject(ctx.queryText, objectName, cursor)
 	if !ok {
@@ -325,6 +326,31 @@ func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName strin
 		}
 		for _, field := range spec.Else {
 			diagnostics = append(diagnostics, c.checkSOQLField(object.Name, spec.Relationship+"."+field, ctx, cursor)...)
+		}
+	}
+	return diagnostics
+}
+
+func queryShapeDiagnostics(query soql.Query, ctx queryTextContext) []diagnostic.Diagnostic {
+	var diagnostics []diagnostic.Diagnostic
+	diagnosticFor := func(message, token string) {
+		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", message, token, findQueryIdentifier(ctx.queryText, token, 0)))
+	}
+	if len(query.Aggregates) > 0 && query.HasLimit && len(query.GroupBy) == 0 {
+		diagnosticFor("aggregate SOQL queries require GROUP BY before LIMIT", "LIMIT")
+	}
+	if strings.EqualFold(query.GroupMode, "ROLLUP") && len(query.GroupBy) > 2 {
+		diagnosticFor("ROLLUP supports at most two grouping fields", "ROLLUP")
+	}
+	if len(query.Typeofs) > 0 && len(query.GroupBy) > 0 {
+		diagnosticFor("TYPEOF cannot be combined with GROUP BY", "TYPEOF")
+	}
+	if query.ForUpdate && len(query.Order) > 0 {
+		diagnosticFor("FOR UPDATE cannot be combined with ORDER BY", "FOR UPDATE")
+	}
+	for _, field := range query.Fields {
+		if strings.EqualFold(strings.TrimSpace(field), "FIELDS(ALL)") && !query.HasLimit {
+			diagnosticFor("FIELDS(ALL) requires LIMIT in Apex", "FIELDS(ALL)")
 		}
 	}
 	return diagnostics

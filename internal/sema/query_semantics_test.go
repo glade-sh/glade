@@ -46,6 +46,22 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsRejectsInvalidQueryShapes(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    List<AggregateResult> limited = [SELECT COUNT(Id) total FROM Account LIMIT 1];
+    List<AggregateResult> rollup = [SELECT Name, Rating, Type, COUNT(Id) total FROM Account GROUP BY ROLLUP(Name, Rating, Type)];
+    List<Account> locked = [SELECT Id FROM Account ORDER BY Name FOR UPDATE];
+    List<Account> allFields = [SELECT FIELDS(ALL) FROM Account];
+  }
+}
+`, queryDiagnosticSchema())
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CONTRACT") {
+		t.Fatalf("expected query contract diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestQuerySemanticsFieldProviderKeepsProjectAuthority(t *testing.T) {
 	checker := newQuerySemanticsChecker(typesys.Index{
 		Project: typesys.ProjectInfo{Namespace: "pkg"},
