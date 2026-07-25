@@ -919,8 +919,7 @@ still red in `internal/repoguard` because tracked planning/audit documents are
 not release-surface documentation: this plan, the earlier reserved-identifier
 plan, and the audit use a generic example name. The CI package manifest gap for
 the new `internal/apexlang` package was corrected and its focused scripts gate
-passes. `scripts/smoke.sh` passed before this final manifest correction and
-needs one final replay after the documentation policy is resolved.
+passes. `scripts/smoke.sh` passed after the manifest correction.
 
 - [ ] **Step 6: Replay the checked oracle**
 
