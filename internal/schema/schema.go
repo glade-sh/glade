@@ -24,10 +24,21 @@ type Object struct {
 	PluralLabel        string           `json:"pluralLabel,omitempty"`
 	SharingModel       string           `json:"sharingModel,omitempty"`
 	CustomSettingsType string           `json:"customSettingsType,omitempty"`
+	Triggerable        *bool            `json:"triggerable,omitempty"`
 	NameField          NameField        `json:"nameField,omitempty"`
 	Fields             []Field          `json:"fields,omitempty"`
 	RecordTypes        []RecordType     `json:"recordTypes,omitempty"`
 	ValidationRules    []ValidationRule `json:"validationRules,omitempty"`
+}
+
+// SupportsTriggers reports whether the object accepts Apex triggers, and
+// whether a describe source stated the capability at all. Local metadata does
+// not carry the flag, so an absent value must never be read as a rejection.
+func (o Object) SupportsTriggers() (supported, known bool) {
+	if o.Triggerable == nil {
+		return false, false
+	}
+	return *o.Triggerable, true
 }
 
 type NameField struct {

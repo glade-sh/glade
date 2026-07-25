@@ -449,3 +449,32 @@ func writeFile(t *testing.T, path, content string) {
 		t.Fatal(err)
 	}
 }
+
+func TestObjectTriggerCapabilityRequiresDescribeEvidence(t *testing.T) {
+	root := t.TempDir()
+	objectPath := filepath.Join(root, "force-app/main/objects/Thing__c/Thing__c.object-meta.xml")
+	writeFile(t, objectPath, `<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Thing</label>
+</CustomObject>`)
+
+	loaded, err := LoadProject(project.Project{ObjectFiles: []string{objectPath}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(loaded.Objects) != 1 {
+		t.Fatalf("objects = %#v", loaded.Objects)
+	}
+	if supported, known := loaded.Objects[0].SupportsTriggers(); known || supported {
+		t.Fatalf("local metadata stated trigger capability: supported=%t known=%t", supported, known)
+	}
+
+	no := false
+	yes := true
+	if supported, known := (Object{Name: "ApexClass", Triggerable: &no}).SupportsTriggers(); !known || supported {
+		t.Fatalf("describe-provided false = supported %t, known %t", supported, known)
+	}
+	if supported, known := (Object{Name: "Account", Triggerable: &yes}).SupportsTriggers(); !known || !supported {
+		t.Fatalf("describe-provided true = supported %t, known %t", supported, known)
+	}
+}

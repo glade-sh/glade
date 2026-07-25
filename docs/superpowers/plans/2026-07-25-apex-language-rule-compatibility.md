@@ -157,7 +157,7 @@ go run ./cmd/glade-tools apex-rules validate \
 - Modify: `internal/apextest/runner_test.go`
 - Modify: `internal/gladecli/cli_test.go`
 
-- [ ] **Step 1: Add RED runner tests**
+- [x] **Step 1: Add RED runner tests**
 
 Add:
 
@@ -166,14 +166,14 @@ Add:
 - a CLI test whose invalid method body produces one compile error and zero
   executed/passed tests.
 
-- [ ] **Step 2: Run the focused tests and confirm RED**
+- [x] **Step 2: Run the focused tests and confirm RED**
 
 ```bash
 go test ./internal/apextest -run 'Semantic|Compile'
 go test ./internal/gladecli -run 'Semantic.*Test|Compile.*Test'
 ```
 
-- [ ] **Step 3: Run semantic analysis before discovery/runtime compilation**
+- [x] **Step 3: Run semantic analysis before discovery/runtime compilation**
 
 At the start of `RunCasesContext`, obtain the same non-performance semantic
 diagnostics used by `glade check`. Convert error-severity diagnostics into
@@ -183,13 +183,13 @@ discoverable, retain the synthetic `project compile` case.
 Do not run a second divergent validator. If repeated analysis is measurable,
 cache the result by the existing source digest identity.
 
-- [ ] **Step 4: Preserve declared test method shape**
+- [x] **Step 4: Preserve declared test method shape**
 
 Stop passing hard-coded `"void"` and `[]string{"static"}` to
 `compileProjectMethod`. Use the indexed member type and modifiers. This must
 keep the Salesforce-accepted value-returning `@IsTest` control runnable.
 
-- [ ] **Step 5: Verify GREEN**
+- [x] **Step 5: Verify GREEN**
 
 ```bash
 go test ./internal/apextest
@@ -215,7 +215,7 @@ go test ./internal/gladecli -run 'Test.*Test|Semantic|Compile'
 - Modify: `internal/schema/schema_test.go`
 - Modify: `internal/gladecli/cli_test.go`
 
-- [ ] **Step 1: Add RED trigger regressions**
+- [x] **Step 1: Add RED trigger regressions**
 
 Cover:
 
@@ -227,14 +227,14 @@ Cover:
 - Salesforce-accepted static trigger local and ContentVersion delete controls;
 - full-build/incremental source retrieval and changed-body equivalence.
 
-- [ ] **Step 2: Preserve trigger source occurrence metadata**
+- [x] **Step 2: Preserve trigger source occurrence metadata**
 
 Extend `TriggerSymbol` with the source metadata required by
 `BuildArtifacts.SourceForTrigger` and `semaSources.normalizedForTrigger`.
 `TriggerSymbol.Range` already spans the declaration; do not add a redundant
 body parser.
 
-- [ ] **Step 3: Add trigger body work items**
+- [x] **Step 3: Add trigger body work items**
 
 Implement `buildSemaTriggerBodyWorkItems` and
 `Analyzer.checkTriggerBodiesWithView`. Extract the body using
@@ -244,13 +244,13 @@ void trigger member plus the legal trigger scope.
 Invoke trigger body analysis with the same type-member view and constructability
 model used for method bodies.
 
-- [ ] **Step 4: Validate event identity and object capability**
+- [x] **Step 4: Validate event identity and object capability**
 
 Extend `checkTriggers` to reject duplicate normalized events. Add explicit
 triggerability/event capability to schema objects when the describe source
 provides it. Distinguish "known object" from "object supports triggers".
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```bash
 go test ./internal/typesys -run 'Trigger|SourceForTrigger|Incremental'

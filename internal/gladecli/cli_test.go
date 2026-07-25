@@ -3215,6 +3215,67 @@ func TestRunCheckJSONOmitsDuplicateDataDiagnostics(t *testing.T) {
 	}
 }
 
+func TestRunTriggerBodyCheckReportsBodyAndCapabilityDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/triggers/BadBody.trigger"), `
+trigger BadBody on Account (before insert) {
+  Integer value = 'wrong';
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/triggers/DuplicateEvent.trigger"), `
+trigger DuplicateEvent on Account (before insert, before insert) {}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/triggers/NotTriggerable.trigger"), `
+trigger NotTriggerable on ApexClass (before insert) {}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"check", "--project", root, "--json", "--no-progress"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	for _, want := range []string{"GLADESEMA018", "GLADESEMA029", "GLADESEMA030"} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("check JSON missing %s:\n%s", want, stdout.String())
+		}
+	}
+}
+
+func TestRunTriggerBodyCheckAcceptsSalesforceLegalTriggers(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/AccountHandler.cls"), `
+public class AccountHandler {
+  public static void handle(List<Account> accounts) {
+    System.debug(accounts.size());
+  }
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/triggers/AccountTrigger.trigger"), `
+trigger AccountTrigger on Account (before insert, after update) {
+  static Integer processed = 0;
+  processed++;
+  AccountHandler.handle(Trigger.new);
+  if (Trigger.isUpdate) {
+    Account previous = Trigger.oldMap.get(Trigger.new[0].Id);
+    System.debug(previous);
+  }
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/triggers/ContentVersionTrigger.trigger"), `
+trigger ContentVersionTrigger on ContentVersion (before delete, after delete) {
+  System.debug(Trigger.old.size());
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"check", "--project", root, "--json", "--no-progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+}
+
 func TestRunCheckAndTestRejectReservedApexIdentifier(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

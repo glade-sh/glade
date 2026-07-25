@@ -75,6 +75,8 @@ type TriggerSymbol struct {
 	Name                  string                `json:"name"`
 	Namespace             string                `json:"namespace,omitempty"`
 	SourceNamespaceRemaps []namespaceremap.Rule `json:"sourceNamespaceRemaps,omitempty"`
+	SourceRoot            string                `json:"sourceRoot,omitempty"`
+	Version               string                `json:"version,omitempty"`
 	ObjectName            string                `json:"objectName"`
 	Events                []string              `json:"events,omitempty"`
 	File                  string                `json:"file"`
@@ -604,6 +606,8 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 				Name:                  decl.Name,
 				Namespace:             namespace,
 				SourceNamespaceRemaps: append([]namespaceremap.Rule(nil), sourceRemaps...),
+				SourceRoot:            root,
+				Version:               version,
 				ObjectName:            decl.ObjectName,
 				Events:                decl.Events,
 				File:                  path,
@@ -1198,7 +1202,7 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 		return typ.Namespace == metadata.namespace && typ.SourceRoot == metadata.root && typ.Version == metadata.version && typ.Dependency == metadata.dependency && reflect.DeepEqual(typ.SourceNamespaceRemaps, metadata.namespaceRemaps)
 	}
 	sameTriggerMetadata := func(trigger TriggerSymbol, metadata incrementalSourceMetadata) bool {
-		return trigger.Namespace == metadata.namespace && trigger.Dependency == metadata.dependency && reflect.DeepEqual(trigger.SourceNamespaceRemaps, metadata.namespaceRemaps)
+		return trigger.Namespace == metadata.namespace && trigger.SourceRoot == metadata.root && trigger.Version == metadata.version && trigger.Dependency == metadata.dependency && reflect.DeepEqual(trigger.SourceNamespaceRemaps, metadata.namespaceRemaps)
 	}
 	knownChanged := false
 	knownDeleted := false
@@ -1347,6 +1351,8 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 					Name:                  decl.Name,
 					Namespace:             metadata.namespace,
 					SourceNamespaceRemaps: cloneIncrementalNamespaceRemaps(metadata.namespaceRemaps),
+					SourceRoot:            metadata.root,
+					Version:               metadata.version,
 					ObjectName:            decl.ObjectName,
 					Events:                decl.Events,
 					File:                  path,

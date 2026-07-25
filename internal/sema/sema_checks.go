@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"unicode"
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
@@ -21,18 +22,81 @@ func (a *Analyzer) checkTriggers(index typesys.Index) []diagnostic.Diagnostic {
 		if trigger.Dependency {
 			continue
 		}
-		if trigger.ObjectName == "" || a.hasKnown(trigger.ObjectName) {
+		diagnostics = append(diagnostics, triggerEventDiagnostics(trigger)...)
+		if trigger.ObjectName == "" {
+			continue
+		}
+		if !a.hasKnown(trigger.ObjectName) {
+			diagnostics = append(diagnostics, diagnostic.Diagnostic{
+				Severity: diagnostic.Error,
+				Code:     "GLADESEMA001",
+				Message:  fmt.Sprintf("trigger %q references unknown SObject %q", trigger.Name, trigger.ObjectName),
+				File:     trigger.File,
+				Range:    &trigger.Range,
+			})
+			continue
+		}
+		if supported, known := triggerObjectSupportsTriggers(index, trigger.ObjectName); known && !supported {
+			diagnostics = append(diagnostics, diagnostic.Diagnostic{
+				Severity: diagnostic.Error,
+				Code:     "GLADESEMA029",
+				Message:  fmt.Sprintf("trigger %q targets SObject %q, which does not support triggers", trigger.Name, trigger.ObjectName),
+				File:     trigger.File,
+				Range:    &trigger.Range,
+			})
+		}
+	}
+	return diagnostics
+}
+
+func triggerEventDiagnostics(trigger typesys.TriggerSymbol) []diagnostic.Diagnostic {
+	var diagnostics []diagnostic.Diagnostic
+	seen := make(map[string]bool, len(trigger.Events))
+	for _, event := range trigger.Events {
+		canonical := normalizeTriggerEvent(event)
+		if canonical == "" {
+			continue
+		}
+		if !seen[canonical] {
+			seen[canonical] = true
 			continue
 		}
 		diagnostics = append(diagnostics, diagnostic.Diagnostic{
 			Severity: diagnostic.Error,
-			Code:     "GLADESEMA001",
-			Message:  fmt.Sprintf("trigger %q references unknown SObject %q", trigger.Name, trigger.ObjectName),
+			Code:     "GLADESEMA030",
+			Message:  fmt.Sprintf("trigger %q declares duplicate event %q", trigger.Name, event),
 			File:     trigger.File,
 			Range:    &trigger.Range,
 		})
 	}
 	return diagnostics
+}
+
+func normalizeTriggerEvent(event string) string {
+	var canonical strings.Builder
+	for _, r := range strings.ToLower(event) {
+		if unicode.IsSpace(r) {
+			continue
+		}
+		canonical.WriteRune(r)
+	}
+	return canonical.String()
+}
+
+// triggerObjectSupportsTriggers reports describe-provided trigger capability.
+// Project metadata never states the flag, so an object without describe
+// evidence stays allowed.
+func triggerObjectSupportsTriggers(index typesys.Index, objectName string) (supported, known bool) {
+	for _, object := range index.Objects {
+		if !strings.EqualFold(object.Name, objectName) {
+			continue
+		}
+		if supported, known := object.SupportsTriggers(); known {
+			return supported, true
+		}
+		break
+	}
+	return storage.StandardObjectTriggerable(objectName)
 }
 func (a *Analyzer) checkMemberTypes(index typesys.Index) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic

@@ -155,6 +155,7 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 		typeMemberState := buildSemaTypeMemberState(index, recorder, a.sources)
 		typeMemberView := typeMemberState.view()
 		result.Diagnostics = append(result.Diagnostics, a.checkMethodBodiesWithView(index, typeMemberView, recorder)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkTriggerBodiesWithView(index, typeMemberView, recorder)...)
 		if !opts.SuppressPerformanceDiagnostics {
 			result.Diagnostics = append(result.Diagnostics, a.checkPerformancePatterns(index)...)
 		}

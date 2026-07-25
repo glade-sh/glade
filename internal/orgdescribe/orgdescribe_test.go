@@ -151,6 +151,19 @@ func TestSObjectToSchemaObjectMapsDescribeShape(t *testing.T) {
 	if len(schemaObject.RecordTypes) != 1 || schemaObject.RecordTypes[0].DeveloperName != "Enterprise" || !schemaObject.RecordTypes[0].Default {
 		t.Fatalf("record types = %#v", schemaObject.RecordTypes)
 	}
+	if supported, known := schemaObject.SupportsTriggers(); known || supported {
+		t.Fatalf("describe without triggerable stated capability: supported=%t known=%t", supported, known)
+	}
+}
+
+func TestSObjectToSchemaObjectMapsTriggerCapability(t *testing.T) {
+	triggerable := false
+	object := SObject{Name: "ApexClass", Triggerable: &triggerable}
+
+	schemaObject := object.ToSchemaObject(nil)
+	if supported, known := schemaObject.SupportsTriggers(); !known || supported {
+		t.Fatalf("trigger capability = supported %t, known %t", supported, known)
+	}
 }
 
 func TestDescribeFieldMappingPreservesRuntimeShape(t *testing.T) {

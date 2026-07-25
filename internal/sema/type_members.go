@@ -457,6 +457,123 @@ func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *
 	return diagnostics
 }
 
+// semaTriggerContextTypeKey is the member-model key for the platform `Trigger`
+// context type.
+const semaTriggerContextTypeKey = "trigger"
+
+type semaTriggerBodyWorkItem struct {
+	triggerIndex int
+	body         string
+	bodyOffset   int
+	source       string
+}
+
+func buildSemaTriggerBodyWorkItems(index typesys.Index, sources *semaSources) []semaTriggerBodyWorkItem {
+	var workItems []semaTriggerBodyWorkItem
+	for triggerIndex, trigger := range index.Triggers {
+		if trigger.Dependency || trigger.File == "" {
+			continue
+		}
+		source, ok := sources.normalizedForTrigger(trigger)
+		if !ok {
+			continue
+		}
+		body, bodyOffset, extracted := extractBodyForSema(source, trigger.Range)
+		if !extracted {
+			continue
+		}
+		workItems = append(workItems, semaTriggerBodyWorkItem{
+			triggerIndex: triggerIndex,
+			body:         body,
+			bodyOffset:   bodyOffset,
+			source:       source,
+		})
+	}
+	return workItems
+}
+
+func (a *Analyzer) checkTriggerBodiesWithView(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder) []diagnostic.Diagnostic {
+	sources := a.sources
+	if sources == nil {
+		sources = newSemaSources(nil, recorder)
+	}
+	bodyStarted := recorder.beginPhase()
+	workItems := buildSemaTriggerBodyWorkItems(index, sources)
+	var diagnostics []diagnostic.Diagnostic
+	if len(workItems) > 0 {
+		constructability := buildConstructability(index)
+		for _, item := range workItems {
+			trigger := index.Triggers[item.triggerIndex]
+			typ, member := semaTriggerBodyDeclaration(trigger)
+			bodyModel := semaModelWithTriggerScope(model, trigger)
+			diagnostics = append(diagnostics, a.checkBodyText(typ, member, item.body, item.bodyOffset, item.source, bodyModel, constructability)...)
+		}
+	}
+	if recorder != nil {
+		recorder.endPhase(&recorder.counters.MethodBodies, bodyStarted)
+	}
+	return diagnostics
+}
+
+// semaTriggerBodyDeclaration models a trigger body as the static void member it
+// behaves like: no owning class state, no parameters, and no return value.
+func semaTriggerBodyDeclaration(trigger typesys.TriggerSymbol) (typesys.TypeSymbol, typesys.MemberSymbol) {
+	typ := typesys.TypeSymbol{
+		Kind:      apexast.DeclarationClass,
+		Name:      trigger.Name,
+		File:      trigger.File,
+		Namespace: trigger.Namespace,
+		Range:     trigger.Range,
+	}
+	member := typesys.MemberSymbol{
+		Kind:      apexast.DeclarationTrigger,
+		Name:      trigger.Name,
+		Type:      "void",
+		Modifiers: []string{"static"},
+		Range:     trigger.Range,
+	}
+	return typ, member
+}
+
+// semaModelWithTriggerScope specializes the platform `Trigger` context to the
+// object the trigger is declared on, matching how Salesforce types
+// Trigger.new/old/newMap/oldMap inside a trigger body.
+func semaModelWithTriggerScope(model *semaTypeMemberView, trigger typesys.TriggerSymbol) *semaTypeMemberView {
+	objectName := strings.TrimSpace(trigger.ObjectName)
+	if objectName == "" {
+		return model
+	}
+	context, ok := model.lookup(semaTriggerContextTypeKey)
+	if !ok {
+		return model
+	}
+	context = semaCloneTypeMembers(context)
+	recordType := map[string]string{
+		"new":    "List<" + objectName + ">",
+		"old":    "List<" + objectName + ">",
+		"newmap": "Map<Id," + objectName + ">",
+		"oldmap": "Map<Id," + objectName + ">",
+	}
+	for key, fieldType := range recordType {
+		field, exists := context.fields[key]
+		if !exists {
+			continue
+		}
+		field.Type = fieldType
+		context.fields[key] = field
+	}
+	out := &semaTypeMemberView{
+		state:    model.state,
+		current:  make(map[string]typeMembers, len(model.current)+1),
+		hydrated: model.hydrated,
+	}
+	for key, members := range model.current {
+		out.current[key] = members
+	}
+	out.current[semaTriggerContextTypeKey] = context
+	return out
+}
+
 type semaMethodBodyTask struct {
 	typeIndex     int
 	workItemStart int

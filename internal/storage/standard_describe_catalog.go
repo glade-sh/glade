@@ -22,9 +22,38 @@ type standardDescribeObject struct {
 	Label              string                              `json:"label"`
 	LabelPlural        string                              `json:"labelPlural"`
 	KeyPrefix          string                              `json:"keyPrefix"`
+	Triggerable        *bool                               `json:"triggerable"`
 	Fields             []standardDescribeField             `json:"fields"`
 	ChildRelationships []standardDescribeChildRelationship `json:"childRelationships"`
 	RecordTypeInfos    []standardDescribeRecordTypeInfo    `json:"recordTypeInfos"`
+}
+
+var standardObjectTriggerableCache sync.Map
+
+// StandardObjectTriggerable reports the describe-provided `triggerable` flag for
+// a standard object. The second result is false when the embedded describe
+// catalog does not cover objectName, so callers can distinguish "known but not
+// triggerable" from "no evidence".
+func StandardObjectTriggerable(objectName string) (triggerable, known bool) {
+	canonical, ok := standardDescribeCatalogCanonicalName(objectName)
+	if !ok {
+		return false, false
+	}
+	if cached, ok := standardObjectTriggerableCache.Load(canonical); ok {
+		flag, _ := cached.(*bool)
+		if flag == nil {
+			return false, false
+		}
+		return *flag, true
+	}
+	describe, found, err := lookupStandardDescribeCatalogV2(canonical)
+	if err != nil || !found || describe.Triggerable == nil {
+		standardObjectTriggerableCache.Store(canonical, (*bool)(nil))
+		return false, false
+	}
+	value := *describe.Triggerable
+	standardObjectTriggerableCache.Store(canonical, &value)
+	return value, true
 }
 
 type standardDescribeField struct {

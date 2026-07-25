@@ -662,3 +662,26 @@ func codeIntelIDPresent(symbols []packageartifact.CodeIntelSymbol, id string) bo
 	}
 	return false
 }
+
+func TestBuildTriggerSymbolRecordsSourceOccurrenceMetadata(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "ThingTrigger.trigger")
+	writeFile(t, path, "trigger ThingTrigger on Thing__c (before insert) {}")
+
+	idx := Build(project.Project{
+		Root:             root,
+		Namespace:        "runtime",
+		SourceAPIVersion: "62.0",
+		ApexFiles:        []string{path},
+	}, schema.Schema{})
+	if len(idx.Triggers) != 1 {
+		t.Fatalf("triggers = %#v", idx.Triggers)
+	}
+	trigger := idx.Triggers[0]
+	if trigger.SourceRoot != root {
+		t.Fatalf("trigger SourceRoot = %q, want %q", trigger.SourceRoot, root)
+	}
+	if trigger.Version != "" {
+		t.Fatalf("trigger Version = %q, want empty for a non-dependency source", trigger.Version)
+	}
+}

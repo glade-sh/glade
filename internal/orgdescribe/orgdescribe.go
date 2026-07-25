@@ -27,6 +27,7 @@ type SObject struct {
 	Createable         bool                `json:"createable,omitempty"`
 	Updateable         bool                `json:"updateable,omitempty"`
 	Deletable          bool                `json:"deletable,omitempty"`
+	Triggerable        *bool               `json:"triggerable,omitempty"`
 	Fields             []Field             `json:"fields,omitempty"`
 	ChildRelationships []ChildRelationship `json:"childRelationships,omitempty"`
 	RecordTypeInfos    []RecordTypeInfo    `json:"recordTypeInfos,omitempty"`
@@ -113,6 +114,10 @@ func (o SObject) ToSchemaObject(childNames map[string]string) schema.Object {
 		PluralLabel: o.LabelPlural,
 		Fields:      make([]schema.Field, 0, len(o.Fields)),
 		RecordTypes: make([]schema.RecordType, 0, len(o.RecordTypeInfos)),
+	}
+	if o.Triggerable != nil {
+		triggerable := *o.Triggerable
+		object.Triggerable = &triggerable
 	}
 	for _, field := range sortedFields(o.Fields) {
 		object.Fields = append(object.Fields, field.ToSchemaField(childNames[field.Name]))

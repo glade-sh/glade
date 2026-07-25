@@ -1848,3 +1848,29 @@ func assertNoIncrementalDiagnosticCode(t *testing.T, idx Index, code string) {
 		}
 	}
 }
+
+func TestUpdateApexFilesTriggerBodyChangeMatchesFullBuild(t *testing.T) {
+	fixture := newCleanIncrementalEquivalenceFixture(t)
+	previous := fixture.buildFresh(t)
+	writeFile(t, fixture.localTrigger, "trigger LocalTrigger on Account (before insert) { Integer changed = 1; }")
+
+	candidate, fastPath := updateApexFilesIncremental(previous, []string{fixture.localTrigger}, nil)
+	if !fastPath {
+		t.Fatal("trigger body-only edit did not use fast path")
+	}
+	fresh := fixture.buildFresh(t)
+	if !reflect.DeepEqual(candidate, fresh) {
+		t.Errorf("trigger body-only fast path differs from full Build:\nincremental: %#v\nfull: %#v", candidate, fresh)
+	}
+	for _, index := range []Index{candidate, fresh} {
+		for _, trigger := range index.Triggers {
+			if trigger.File != fixture.localTrigger {
+				continue
+			}
+			source, ok := BuildArtifacts{}.SourceForTrigger(trigger)
+			if ok || source.NormalizedString() != "" {
+				t.Fatalf("empty artifacts resolved trigger source: %#v", source)
+			}
+		}
+	}
+}
