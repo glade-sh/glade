@@ -61,3 +61,20 @@ public class Probe {
 		t.Fatalf("unexpected compatible expression diagnostic: %#v", result.Diagnostics)
 	}
 }
+
+func TestTypeContractRejectsPropertyCapabilityAndSafeNavigationMisuse(t *testing.T) {
+	t.Parallel()
+	for name, source := range map[string]string{
+		"writes get-only property":          `public class Probe { public String ReadOnly { get; } public void run() { ReadOnly = 'value'; } }`,
+		"reads set-only property":           `public class Probe { public String WriteOnly { set; } public void run() { System.debug(WriteOnly); } }`,
+		"safe navigation static receiver":   `public class Probe { public static String label; public void run() { System.debug(Probe?.label); } }`,
+		"safe navigation assignment target": `public class Probe { public String label; public void run(Probe value) { value?.label = 'value'; } }`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
+			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA019") {
+				t.Fatalf("expected property/safe-navigation contract diagnostic, got %#v", result.Diagnostics)
+			}
+		})
+	}
+}

@@ -478,7 +478,7 @@ go test ./internal/sema -run 'Inheritance|Interface|Generic|Batchable|NamespaceP
 - Modify: `internal/vm/compiler.go`
 - Modify: `internal/vm/vm_test.go`
 
-- [ ] **Step 1: Add RED source-type and collection tests**
+- [x] **Step 1: Add RED source-type and collection tests**
 
 Cover source-level `Currency`, raw List/Map construction, wrong generic arity,
 the scratch-proven collection-depth boundary, unsupported user generic types,
@@ -486,7 +486,7 @@ and an unsuffixed integer outside Integer range.
 
 Keep schema metadata `Currency` and `AnyType` behavior as separate controls.
 
-- [ ] **Step 2: Add recursive expression contract tests**
+- [x] **Step 2: Add recursive expression contract tests**
 
 Cover `!1`, Boolean ordering, String multiplication, incompatible cast,
 impossible and always-true `instanceof`, incompatible coalescing, safe
@@ -496,20 +496,20 @@ notation, and valid numeric widening/casts.
 Even matched hard rejects need owning-rule tests; do not rely on a later return
 or assignment mismatch.
 
-- [ ] **Step 3: Preserve property capabilities and receiver mode**
+- [x] **Step 3: Preserve property capabilities and receiver mode**
 
 Member resolution must distinguish field, get-only property, set-only
 property, static receiver, instance receiver, and static method context.
 Assignments require write capability; reads require read capability.
 
-- [ ] **Step 4: Implement source-type and expression validators**
+- [x] **Step 4: Implement source-type and expression validators**
 
 Add a recursive `checkIRExpressionContract` using the existing type inference
 and assignability model. Validate operand families, cast viability,
 `instanceof`, common coalescing type, safe-navigation placement, and literal
 range/syntax.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```bash
 go test ./internal/vm -run 'Literal|Expression'

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -15,6 +16,7 @@ var (
 	typeContractRawCollectionConstructor = regexp.MustCompile(`\bnew\s+(List|Map|Set)\s*\(\s*\)`)
 	typeContractScientificLiteral        = regexp.MustCompile(`\b\d+(?:\.\d+)?[eE][+-]?\d+\b`)
 	typeContractIntegerLiteral           = regexp.MustCompile(`\b\d{10,}\b`)
+	typeContractSafeAssignment           = regexp.MustCompile(`\?\.\s*[A-Za-z_][A-Za-z0-9_]*\s*=`)
 )
 
 func (a *Analyzer) checkSourceTypeContracts(index typesys.Index) []diagnostic.Diagnostic {
@@ -48,6 +50,9 @@ func (a *Analyzer) checkSourceTypeContracts(index typesys.Index) []diagnostic.Di
 			if err != nil || value > 2147483647 {
 				diagnostics = append(diagnostics, typeContractDiagnostic(typ, typesys.MemberSymbol{}, "unsuffixed integer literal exceeds the Integer range", match[0], match[1], source))
 			}
+		}
+		for _, match := range typeContractSafeAssignment.FindAllStringIndex(source, -1) {
+			diagnostics = append(diagnostics, typeContractDiagnostic(typ, typesys.MemberSymbol{}, "safe navigation cannot be an assignment target", match[0], match[1], source))
 		}
 	}
 	return diagnostics
@@ -190,6 +195,28 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 				}
 			}
 		case ir.ExprCall:
+			if (strings.HasPrefix(current.Callee, "__safe_field:") || strings.HasPrefix(current.Callee, "__safe_call:")) && current.Left != nil {
+				if semaIRExprLooksLikeTypeReceiver(*current.Left, scope, model) {
+					appendDiagnostic("safe navigation cannot use a static receiver")
+				}
+			}
+			if strings.HasPrefix(current.Callee, "__assignField:") && current.Left != nil {
+				if strings.HasPrefix(current.Left.Callee, "__safe_field:") {
+					appendDiagnostic("safe navigation cannot be an assignment target")
+				}
+				receiverType := a.inferIRExprType(*current.Left, scope, model, typ.Name)
+				field := strings.TrimPrefix(current.Callee, "__assignField:")
+				if target, ok := semaResolveFieldPath(model, receiverType, field); ok && target.member.Kind == apexast.DeclarationProperty && !typeContractPropertyHasAccessor(target.member, "set") {
+					appendDiagnostic("property has no setter")
+				}
+			}
+			if strings.HasPrefix(current.Callee, "__field:") && current.Left != nil {
+				receiverType := a.inferIRExprType(*current.Left, scope, model, typ.Name)
+				field := strings.TrimPrefix(current.Callee, "__field:")
+				if target, ok := semaResolveFieldPath(model, receiverType, field); ok && target.member.Kind == apexast.DeclarationProperty && !typeContractPropertyHasAccessor(target.member, "get") {
+					appendDiagnostic("property has no getter")
+				}
+			}
 			if strings.HasPrefix(current.Callee, "__cast:") && len(current.Args) == 1 {
 				target := strings.TrimPrefix(current.Callee, "__cast:")
 				value := a.inferIRExprType(current.Args[0], scope, model, typ.Name)
@@ -204,8 +231,24 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 					appendDiagnostic("coalesce operands do not share a compatible type")
 				}
 			}
+		case ir.ExprVariable:
+			if target, ok := semaResolveFieldPath(model, typ.Name, current.Name); ok && target.member.Kind == apexast.DeclarationProperty && !typeContractPropertyHasAccessor(target.member, "get") {
+				appendDiagnostic("property has no getter")
+			}
 		}
 	}
 	walk(expr)
 	return diagnostics
+}
+
+func typeContractPropertyHasAccessor(member typesys.MemberSymbol, kind string) bool {
+	if len(member.Accessors) == 0 {
+		return true
+	}
+	for _, accessor := range member.Accessors {
+		if strings.EqualFold(accessor.Kind, kind) {
+			return true
+		}
+	}
+	return false
 }

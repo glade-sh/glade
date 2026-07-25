@@ -1060,6 +1060,12 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 }
 
 func (a *Analyzer) checkIRAssignmentTarget(typ typesys.TypeSymbol, member typesys.MemberSymbol, name string, scope irSemaScope, pos, bodyOffset int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
+	if strings.Contains(name, "?.") {
+		return []diagnostic.Diagnostic{typeContractDiagnostic(typ, member, "safe navigation cannot be an assignment target", bodyOffset+pos, bodyOffset+pos+max(1, len(name)), source)}
+	}
+	if target, ok := semaResolveFieldPath(model, typ.Name, name); ok && target.member.Kind == apexast.DeclarationProperty && !typeContractPropertyHasAccessor(target.member, "set") {
+		return []diagnostic.Diagnostic{typeContractDiagnostic(typ, member, "property has no setter", bodyOffset+pos, bodyOffset+pos+max(1, len(name)), source)}
+	}
 	if diag, ok := a.irVariableDiagnostic(typ, member, name, scope, model, bodyOffset+pos, source); ok {
 		return []diagnostic.Diagnostic{diag}
 	}
