@@ -936,6 +936,10 @@ go run ./cmd/glade-tools apex-rules compare \
 
 Require zero accept/reject mismatches for rows marked `supported`.
 
+Current blocker (2026-07-25): the local Salesforce CLI hangs on `sf org list
+--json` and returns no authenticated scratch-org alias. The comparator remains
+ready but cannot be replayed until an org is available.
+
 - [ ] **Step 7: Run the stronger compatibility gate**
 
 Run NU after the final high-risk semantic packet and again before release. Do
