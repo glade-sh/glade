@@ -526,7 +526,7 @@ go test ./internal/sema -run 'TypeContract|Operator|Cast|Instanceof|Coalesce|Saf
 - Modify: `internal/sema/sema_text.go`
 - Create: `internal/sema/statement_contracts_test.go`
 
-- [ ] **Step 1: Add RED/positive matrices**
+- [x] **Step 1: Add RED/positive matrices**
 
 Cover:
 
@@ -538,17 +538,17 @@ Cover:
 - custom Exception suffix;
 - unreachable instructions after unconditional termination.
 
-- [ ] **Step 2: Thread statement context through IR checking**
+- [x] **Step 2: Thread statement context through IR checking**
 
 Use an explicit context carrying loop and switch depth. Do not infer placement
 from text after IR compilation.
 
-- [ ] **Step 3: Use the type hierarchy for throw/catch coverage**
+- [x] **Step 3: Use the type hierarchy for throw/catch coverage**
 
 Validate assignability to `System.Exception` and compare catch coverage in
 source order. Use existing type-distance helpers instead of name-only checks.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 go test ./internal/sema -run 'StatementContext|SwitchContract|Throw|Catch|CustomException|Unreachable'

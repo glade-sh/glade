@@ -152,6 +152,7 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 		result.Diagnostics = append(result.Diagnostics, a.checkDeclarationContracts(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkMemberTypes(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkSourceTypeContracts(index)...)
+		result.Diagnostics = append(result.Diagnostics, checkCustomExceptionNames(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkMethodParameters(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkAnnotations(index)...)
 		typeMemberState := buildSemaTypeMemberState(index, recorder, a.sources)
