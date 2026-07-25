@@ -13,11 +13,15 @@ original arguments, and streams stdout and stderr.
 Glade ships a small product runtime. Heavier maintenance and advisory tools
 ship as first-party plugins.
 
-| Plugin | Alias | Command roots | Purpose |
+| Plugin | Alias | Representative command roots | Purpose |
 | --- | --- | --- | --- |
 | `@glade/compat` | `compat` | `compat`, `surface`, `local-tests`, `post-parity`, `examples`, `dashboard`, `gaps`, `stdlib` | Maintainer support tools, fixtures, surface ledgers, and parity scanners. |
 | `@glade/performance` | `performance` | `performance` | Advisory Salesforce project performance scans. Replaces the old base `glade inspect performance` path. |
 | `@glade/orgpackage` | `orgpackage` | `orgpackage` | Captures installed package contracts from Salesforce orgs into Glade package artifacts. |
+
+The packaged manifest and registry row are authoritative for the complete
+command-root list. The `@glade/compat` examples above show the common entry
+points rather than all of its maintainer commands.
 
 The first-party plugin source lives in the sibling `glade-tools` workspace.
 Users install and run plugins through `glade plugins`. The product repository
@@ -25,10 +29,11 @@ does not depend on `glade-tools` internals.
 
 ## Install And List
 
-The public plugin registry is preview. Coordinate installs need a live
-registry or custom registry. Direct archives and local links are the reliable
-fallbacks for private plugin installs and plugin development until the
-production registry is published.
+The default public registry is `https://plugins.glade.sh/index.json`. It
+serves `@glade/compat`, `@glade/orgpackage`, and `@glade/performance` at
+`0.2.9`. Direct archives and local links remain available for offline, private,
+and development use. Set `GLADE_PLUGIN_REGISTRY_URL` when a team needs a
+custom registry.
 
 Install first-party plugins with canonical coordinates:
 
@@ -48,9 +53,9 @@ catalog coordinate use their manifest name.
 Maintainers can install `@glade/compat` when they need support ledgers, fixtures,
 or parity scanners.
 
-Name installs use the configured plugin registry. The default registry URL is
-`https://plugins.glade.sh/index.json` once that service is live. Local
-development can set `GLADE_PLUGIN_REGISTRY_URL` to a test or staging registry.
+Name installs use the default public registry unless
+`GLADE_PLUGIN_REGISTRY_URL` selects a custom registry. Local development can
+use that variable for a test or staging registry.
 
 List, search, and inspect the marketplace:
 
@@ -70,7 +75,7 @@ source URL.
 Install a local release archive:
 
 ```bash
-glade plugins install ./glade-plugin-compat_0.1.0_darwin_arm64.tar.gz
+glade plugins install ./glade-plugin-compat_X.Y.Z_darwin_arm64.tar.gz
 ```
 
 Install a remote archive with a required digest:
@@ -212,10 +217,12 @@ checksums.txt
 bin/glade-plugin-quality
 ```
 
-`checksums.txt` contains SHA-256 rows for each archived file. Glade rejects
-absolute paths, parent directory traversal, checksum mismatches, unsafe
-manifest names, unsafe versions, and command roots that collide with core
-commands.
+`checksums.txt` contains SHA-256 rows for each archived file. Archives may
+contain only regular files and directories; links and special entries are
+rejected. Glade extracts accepted entries through rooted install confinement,
+then rejects absolute paths, parent directory traversal, checksum mismatches,
+unsafe manifest names, unsafe versions, and command roots that collide with
+core commands.
 
 Minimal `checksums.txt`:
 
@@ -237,11 +244,11 @@ verifies the archive SHA-256, then installs the archive.
     {
       "name": "@glade/compat",
       "aliases": ["compat"],
-      "version": "0.1.0",
+      "version": "X.Y.Z",
       "publisher": "glade",
       "trust": "first-party",
       "summary": "Compatibility fixtures, support ledgers, and maintenance scanners.",
-      "commands": ["compat", "surface", "local-tests", "post-parity", "examples", "dashboard", "gaps", "stdlib"],
+      "commands": ["<all command roots derived from the packaged plugin.json>"],
       "docsURL": "https://glade.sh/guide/plugins/first-party",
       "sourceURL": "https://github.com/glade-sh/glade-tools",
       "minimumGladeVersion": "0.1.0",
@@ -249,7 +256,7 @@ verifies the archive SHA-256, then installs the archive.
         {
           "os": "darwin",
           "arch": "arm64",
-          "url": "https://plugins.glade.sh/v0.1.0/glade-plugin-compat_0.1.0_darwin_arm64.tar.gz",
+          "url": "https://plugins.glade.sh/vX.Y.Z/glade-plugin-compat_X.Y.Z_darwin_arm64.tar.gz",
           "sha256": "<archive sha256>"
         }
       ]

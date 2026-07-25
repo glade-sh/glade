@@ -8,10 +8,12 @@ Use plugins when you need a first-party extension that stays outside the base ru
 Glade plugins are standalone executables installed and run through
 `glade plugins`.
 
-::: warning Registry preview
-Registry commands below need a configured registry, a direct archive URL, or a
-locally linked plugin.
-Base Glade install and local Apex workflows do not require plugins.
+::: tip Default registry
+The default public registry at `https://plugins.glade.sh/index.json` serves
+`@glade/compat`, `@glade/orgpackage`, and `@glade/performance` at `0.2.9`.
+Base Glade install and local Apex workflows do not require plugins. Direct
+archives and local links remain available for offline, private, and development
+use.
 :::
 
 ## First-party plugins
@@ -21,7 +23,6 @@ Base Glade install and local Apex workflows do not require plugins.
   into a Glade package artifact.
 
 ```bash
-# Requires a live plugin registry or configured custom registry.
 glade plugins available
 glade plugins install @glade/performance
 glade plugins install @glade/orgpackage
@@ -38,10 +39,9 @@ fixtures, runtime capability reports, compatibility dashboards, and support
 scanners used to extend and check Glade itself. Keep that work out of the
 base runtime. Use the maintainer lane when you need it.
 
-## Registry preview plugins
+## Registry and third-party plugins
 
 ```bash
-# Requires a live plugin registry or configured custom registry.
 glade plugins available
 glade plugins search
 glade plugins search quality

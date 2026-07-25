@@ -30,6 +30,9 @@ const repoCompatibilityDashboard = await readFile(new URL("../../docs/COMPATIBIL
 const repoLwcSupport = await readFile(new URL("../../docs/LWC_SUPPORT.md", import.meta.url), "utf8");
 const releaseNotes = await readFile(new URL("../../docs/RELEASE_NOTES.md", import.meta.url), "utf8");
 const repoInstallDocs = await readFile(new URL("../../docs/INSTALL.md", import.meta.url), "utf8");
+const repoLocalTesting = await readFile(new URL("../../docs/LOCAL_TESTING.md", import.meta.url), "utf8");
+const repoPlugins = await readFile(new URL("../../docs/PLUGINS.md", import.meta.url), "utf8");
+const repoDistributionWorkflow = await readFile(new URL("../../docs/DISTRIBUTION_WORKFLOW.md", import.meta.url), "utf8");
 const storageSchema = await readFile(new URL("../../docs/storage-schema.md", import.meta.url), "utf8");
 const highlight = await readFile(new URL("../docs-src/public/js/highlight.js", import.meta.url), "utf8");
 const homeScript = await readFile(new URL("../docs-src/public/js/home.js", import.meta.url), "utf8");
@@ -140,14 +143,44 @@ test("home page names the latest stable release from release notes", () => {
   assert.doesNotMatch(index, /Latest stable release[\s\S]*0\.0\.0-dev/);
 });
 
-test("release notes cover the next stable release", () => {
-  assert.match(releaseNotes, /^## v0\.2\.8 - 2026-07-04/m);
-  assert.match(releaseNotes, /Terminal UI and local data workflows/);
-  assert.match(releaseNotes, /LWC Workbench Console/);
-  assert.match(releaseNotes, /Apex debug log replay and editor analysis/);
-  assert.match(releaseNotes, /Runtime, semantic checks, and performance/);
+test("release notes cover the latest stable release", () => {
+  assert.match(releaseNotes, /^## v0\.2\.9 - 2026-07-25/m);
+  assert.match(releaseNotes, /11\.45% lower duration/);
+  assert.match(releaseNotes, /11,526-test corpus/);
+  assert.match(releaseNotes, /filesystem\/root confinement/);
   assert.match(releaseNotes, /Security and release trust/);
-  assert.doesNotMatch(releaseNotes, /^## Unreleased\n\nNo changes yet\.\n\n## v0\.2\.7/m);
+  assert.match(releaseNotes, /duplicate asset name fails instead of replacing published bytes/);
+});
+
+test("v0.2.9 docs describe the live registry and release safety", () => {
+  for (const publicPage of [index, plugins, firstPartyPlugins, pluginInstallManage, pluginLockCi, testerFieldGuide]) {
+    assert.doesNotMatch(publicPage, /registry (?:commands (?:are )?)?is (?:still )?preview|registry is not live yet|once the registry .* serves|until the registry is published/i);
+  }
+  assert.match(index, /The default public registry serves the first-party plugin catalog/);
+  assert.match(firstPartyPlugins, /https:\/\/plugins\.glade\.sh\/index\.json/);
+  assert.match(firstPartyPlugins, /Common command roots/);
+  assert.match(firstPartyPlugins, /registry row are authoritative for[\s\S]*complete command-root list/);
+  assert.match(pluginInstallManage, /Direct archives and local links remain available for offline, private, and development use/);
+  assert.match(repoPlugins, /The default public registry is `https:\/\/plugins\.glade\.sh\/index\.json`/);
+  assert.match(repoPlugins, /only regular files and directories/);
+  assert.match(repoPlugins, /Representative command roots/);
+  assert.match(repoPlugins, /all command roots derived from the packaged plugin\.json/);
+  assert.match(repoPlugins, /links and special entries are\s+rejected/);
+  assert.match(repoDistributionWorkflow, /conditional create/i);
+  assert.match(repoDistributionWorkflow, /mutable pointers last/i);
+  assert.doesNotMatch(repoDistributionWorkflow, /wrangler r2 object put glade-downloads\/vX\.Y\.Z\//);
+});
+
+test("v0.2.9 docs expose local performance artifacts without weakening Salesforce validation", () => {
+  for (const testDocs of [repoLocalTesting, localTesting, cliReference]) {
+    assert.match(testDocs, /--cpu-profile/);
+    assert.match(testDocs, /--mem-profile/);
+    assert.match(testDocs, /--perf-json/);
+  }
+  assert.match(localTesting, /do not replace Salesforce validation/i);
+  assert.doesNotMatch(repoLocalTesting, /only the edited file is re-scanned, never the whole project/);
+  assert.match(repoLocalTesting, /authoritative rebuild/i);
+  assert.match(repoLocalTesting, /unsafe paths and symlink escapes are\s+rejected/i);
 });
 
 test("repo compatibility CLI surface matches contributor guide inventory", () => {
@@ -304,7 +337,7 @@ test("home page uses a static local proof and final go-live workflow copy", () =
   assert.match(index, /aria-label="Optional plugins"/);
   assert.match(index, /<h2 class="home-h2">Optional plugins<\/h2>/);
   assert.match(index, /The base runtime stays focused on local Apex workflows\. Add plugins only when a project needs capability reports, advisory scans, or custom local checks\./);
-  assert.match(index, /Base Glade workflows do not require plugins\. Registry commands are preview until a registry, archive URL, or linked plugin is configured\./);
+  assert.match(index, /Base Glade workflows do not require plugins\. The default public registry serves the first-party plugin catalog\./);
   assert.match(index, /glade plugins list/);
   assert.match(index, /glade plugins install @glade\/performance/);
   assert.match(index, /glade plugins install @glade\/orgpackage/);
@@ -1320,9 +1353,22 @@ test("Cloudflare Pages build publishes the install route itself", () => {
   assert.doesNotMatch(pagesWorkflow, /deploy-pages|upload-pages-artifact|github-pages|configure-pages/);
   assert.match(siteReadme, /## Cloudflare Pages/);
   assert.match(siteReadme, /Root directory: site/);
+  assert.match(siteReadme, /Project name: glade-sh/);
   assert.match(siteReadme, /Build command: npm run build/);
   assert.match(siteReadme, /Build output directory: \.vitepress\/dist/);
   assert.match(siteReadme, /Production branch: main/);
+  assert.match(siteReadme, /npm ci/);
+  assert.match(siteReadme, /wrangler pages deploy \.vitepress\/dist --project-name glade-sh --branch main/);
+  assert.match(siteReadme, /pages deployment list --project-name glade-sh/);
+  assert.match(siteReadme, /--environment production --json/);
+  assert.match(siteReadme, /rev-parse --short=7 HEAD/);
+  assert.match(siteReadme, /\.\[0\]\.Source/);
+  assert.match(siteReadme, /guide\/local-testing\?v=\$cache_bust/);
+  assert.match(siteReadme, /--cpu-profile/);
+  assert.match(siteReadme, /--mem-profile/);
+  assert.match(siteReadme, /--perf-json/);
+  assert.match(siteReadme, /do not replace Salesforce validation/);
+  assert.match(siteReadme, /Latest stable release:<span class="home-release-version">vX\.Y\.Z<\/span>/);
   assert.doesNotMatch(siteReadme, /GitHub Pages/);
 });
 
@@ -1617,7 +1663,7 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   assert.match(testerFieldGuide, /exact hosted Visualforce\s+behavior/);
   assert.doesNotMatch(testerFieldGuide, /Visualforce rendering path/);
   assert.match(testerFieldGuide, /Useful first-run feedback includes:/);
-  assert.match(testerFieldGuide, /default public plugin registry is preview/);
+  assert.match(testerFieldGuide, /default public plugin registry serves the three first-party packages/);
   assert.match(ciArtifacts, /fetch-depth: 0/);
   assert.match(installation, /^## Install VS Code Extension/m);
   assert.match(installation, /glade editor doctor vscode/);
@@ -1666,24 +1712,24 @@ test("public launch docs avoid stale public routes and registry promises", () =>
   }
   assert.match(plugins, /Maintainer support tools/);
   assert.doesNotMatch(plugins, /glade plugins link --exec \.\/glade-plugin-quality/);
-  assert.match(firstPartyPlugins, /install commands below[\s\S]*canonical coordinates once the registry/);
+  assert.match(firstPartyPlugins, /default public registry[\s\S]*https:\/\/plugins\.glade\.sh\/index\.json/);
   assert.match(firstPartyPlugins, /Maintainer support tools/);
   assert.doesNotMatch(firstPartyPlugins, /glade plugins install @glade\/compat/);
   assert.match(firstPartyPlugins, /@glade\/orgpackage/);
   assert.match(firstPartyPlugins, /glade package capture --target-org packaging/);
-  assert.match(pluginInstallManage, /Direct archives and local links are the[\s\S]*fallback paths/);
+  assert.match(pluginInstallManage, /Direct archives and local links remain available for offline, private, and development use/);
   assert.doesNotMatch(pluginInstallManage, /glade plugins install @glade\/compat/);
   assert.match(pluginInstallManage, /glade plugins install @glade\/orgpackage/);
   assert.match(pluginLockCi, /^# Plugin lock files and CI/m);
-  assert.match(pluginLockCi, /The default public plugin registry is not live yet/);
+  assert.match(pluginLockCi, /default public registry serves the three first-party packages/);
   assert.doesNotMatch(pluginLockCi, /glade plugins install @glade\/compat/);
   assert.match(pluginLockCi, /glade plugins install @glade\/orgpackage/);
   assert.match(maintainerIndex, /glade stays the product front door/);
   assert.match(extendRuntime, /Write the failing fixture or product test first/);
   assert.match(extendRuntime, /go test \.\/internal\/vm \.\/internal\/apextest/);
   assert.match(gladeToolsMaintainer, /go run \.\/cmd\/glade-plugin-compat manifest --json/);
-  assert.match(gladeToolsMaintainer, /scripts\/build-plugin-archives\.sh 0\.2\.0/);
-  assert.match(gladeToolsMaintainer, /@glade\/maintainer/);
+  assert.match(gladeToolsMaintainer, /scripts\/build-plugin-archives\.sh X\.Y\.Z/);
+  assert.match(gladeToolsMaintainer, /@glade\/compat` is the published maintainer package/);
   assert.doesNotMatch(gladeToolsMaintainer, /\/maintainer\/tools/);
   assert.match(pluginRuntime, /Plugins are executable processes/);
   assert.doesNotMatch(config, /link: '\/maintainer\/tools\/'/);

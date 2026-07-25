@@ -2,14 +2,14 @@
 
 `glade plugins lock` records exact plugin state for repeatable CI runs.
 
-::: warning Registry preview
-The default public plugin registry is not live yet. Coordinate installs and
-lock restores need a live registry or custom registry. Direct archives and
-local links remain available for private plugin installs and plugin development.
+::: tip Default registry
+The default public registry serves the three first-party packages at `0.2.9`.
+Its URL is `https://plugins.glade.sh/index.json`.
+Direct archives and local links remain available for offline, private, and
+development use.
 :::
 
 ```bash
-# Requires a live plugin registry or configured custom registry.
 glade plugins install @glade/performance
 glade plugins install @glade/orgpackage
 glade plugins lock
@@ -27,7 +27,7 @@ identity:
   "plugins": [
     {
       "name": "@glade/performance",
-      "version": "0.1.0",
+      "version": "X.Y.Z",
       "registry": "https://plugins.glade.sh/index.json",
       "os": "darwin",
       "arch": "arm64",

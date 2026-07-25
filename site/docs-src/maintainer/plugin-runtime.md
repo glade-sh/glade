@@ -3,9 +3,9 @@
 Plugins are executable processes. Glade installs them, checks their manifests,
 writes lock files, and invokes their commands.
 
-Keep plugin authoring out of the user guide until the registry is ready for a
-larger public surface. User docs should show first-party install and lock-file
-flows. Maintainer docs can show the runtime contract.
+Keep plugin authoring in the maintainer guide. User docs show first-party
+install and lock-file flows; maintainer docs own the executable and archive
+contracts.
 
 ## Runtime contract
 

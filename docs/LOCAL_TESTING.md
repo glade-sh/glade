@@ -253,12 +253,31 @@ glade test --project . --class RefinementServiceTest --json
 glade test --project . --class RefinementServiceTest --method testRefinesFileRow --json
 ```
 
+## Capture Local Run Telemetry
+
+`glade check` and local `glade test` runs can write CPU and heap profiles. A
+local one-shot run can also write opt-in performance counters. Keep each
+artifact path distinct:
+
+```bash
+mkdir -p reports
+glade check --project . --cpu-profile reports/check.cpu.pprof --mem-profile reports/check.mem.pprof --perf-json reports/check.perf.json
+glade test --project . --no-serve --no-cache --cpu-profile reports/test.cpu.pprof --mem-profile reports/test.mem.pprof --perf-json reports/test.perf.json
+```
+
+These files are local telemetry artifacts. They help investigate local runtime
+costs; they do not replace Salesforce validation. CPU and heap profiles capture
+the lifetime of the local command and may also profile daemon or watch mode;
+they are written when that command exits and cannot be used with `--connect`.
+`--perf-json` is for a local one-shot run and cannot be combined with daemon,
+watch, or connect modes.
+
 ## Run a Performance Risk Scan
 
 Generate an advisory performance report from source and metadata first:
 
 ```bash
-# Requires a live plugin registry, custom registry, direct archive, or linked plugin.
+# Uses the default public registry; custom registries, archives, and links are also supported.
 mkdir -p reports
 glade plugins install @glade/performance
 glade performance scan --project . --format json > reports/glade-performance.json
@@ -425,8 +444,10 @@ disk-cache warm build.
 ### Keep the index warm inside one watch loop
 
 For a single long-lived watch session, `--daemon` holds a warm, incrementally
-updated index and reference graph in-process. Selection on each change is near
-instant — only the edited file is re-scanned, never the whole project.
+updated index and reference graph in-process. Eligible Apex-only edits update
+incrementally. Metadata, configuration, project-topology, uncertain, and
+recovery changes fall back to an authoritative rebuild. Selection remains
+conservative, so a change that cannot be proven safe runs the full suite.
 
 ```bash
 glade test --project . --daemon --watch
@@ -513,3 +534,7 @@ glade playground --project . --db .glade/playground/org.sqlite --open
 
 The playground runs on localhost and uses the same compiler, VM, and storage
 layers as `glade test` and `glade exec`.
+
+Static resources and playground workspaces accept only regular, supported files
+that resolve beneath their selected roots. Unsafe paths and symlink escapes are
+rejected.
