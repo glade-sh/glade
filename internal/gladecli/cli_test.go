@@ -3995,6 +3995,16 @@ public class LocalProbe {
 	}
 }
 
+func TestRunExecWithProjectRejectsAnonymousSemanticDiagnosticsBeforeExecution(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"exec", "--project", root, "String value = 'x'; insert value;"}, &stdout, &stderr)
+	if code == 0 || !strings.Contains(stderr.String(), "GLADESEMA034") {
+		t.Fatalf("anonymous semantic error must fail before execution: code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+}
+
 func TestRunExecLoadsCurrentProjectOrgFeaturesByDefault(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)

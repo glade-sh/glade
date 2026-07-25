@@ -2524,10 +2524,7 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 		return errors.New("usage: glade exec [--project <root>] [--db <path>] [--dry-run] [--json] [--trace <path>] [--debug-log <path>] [--limit-mode <mode>] '<anonymous apex>'")
 	}
 
-	program, err := vm.CompileAnonymous(strings.Join(sourceParts, " "))
-	if err != nil {
-		return err
-	}
+	anonymousSource := strings.Join(sourceParts, " ")
 
 	stdout := w
 	if jsonOut || debug || debugLogMode == "summary" || debugLogMode == "raw" || debugLogPath != "" {
@@ -2571,9 +2568,18 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 		machine.SetCurrentNamespace(org.Namespace)
 	}
 	if hasProjectRuntime {
+		analysis := sema.AnalyzeAnonymous(projectIndex, anonymousSource)
+		if len(analysis.Diagnostics) > 0 {
+			first := analysis.Diagnostics[0]
+			return fmt.Errorf("%s: %s", first.Code, first.Message)
+		}
 		if err := apextest.RegisterProjectRuntimeForRequest(machine, projectIndex); err != nil {
 			return err
 		}
+	}
+	program, err := vm.CompileAnonymous(anonymousSource)
+	if err != nil {
+		return err
 	}
 	result, execErr := machine.Execute(program)
 	logPathForSummary := debugLogPath
