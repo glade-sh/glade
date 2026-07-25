@@ -237,6 +237,17 @@ glade check --project . --format sarif --output glade-check.sarif
 glade check --project . --format github
 ```
 
+For local telemetry, `--cpu-profile <path>` writes a CPU profile,
+`--mem-profile <path>` writes a heap profile, and `--perf-json <path>` writes
+opt-in check performance counters:
+
+```bash
+mkdir -p reports
+glade check --project . --cpu-profile reports/check.cpu.pprof --mem-profile reports/check.mem.pprof --perf-json reports/check.perf.json
+```
+
+These artifacts describe local work and do not replace Salesforce validation.
+
 ## `glade report assess`
 
 Generate an enterprise assessment report.
@@ -287,6 +298,20 @@ Discover and run local Apex tests. Useful flags include `changed --since <ref>`,
 `--watch`, `--watch-once`, `--last-failed`, `--wizard`, `--daemon`,
 `--connect`, `--no-serve`, `--class`, `--method`, `--json`, `--junit`, and `--limit-mode`.
 
+`--cpu-profile <path>` writes a CPU profile, `--mem-profile <path>` writes a
+heap profile, and `--perf-json <path>` writes opt-in performance counters. CPU
+and heap profiles capture the lifetime of the local command, including daemon
+or watch mode, and are written when it exits; they cannot be combined with
+`--connect`. `--perf-json` is for a local one-shot run and cannot be combined
+with daemon, watch, or connect modes:
+
+```bash
+mkdir -p reports
+glade test --project . --no-serve --no-cache --cpu-profile reports/test.cpu.pprof --mem-profile reports/test.mem.pprof --perf-json reports/test.perf.json
+```
+
+They are local telemetry artifacts and do not replace Salesforce validation.
+
 `glade test serve` keeps the runtime warm across CLI invocations. Later runs
 auto-connect through `.glade/test/serve.sock` unless `--no-serve` is set.
 
@@ -310,6 +335,10 @@ glade test --project . --daemon --watch
 glade test --project . --limit-mode permissive --json
 glade test daemon stop --project .
 ```
+
+For daemon-backed watch loops, eligible Apex-only edits update incrementally.
+Metadata, configuration, project-topology, uncertain, and recovery changes
+fall back to an authoritative rebuild; selection remains conservative.
 
 Clear the on-disk startup cache or skip it for one run:
 
@@ -413,7 +442,7 @@ plugins provide advisory scanners and org package capture without putting that
 work in the base runtime.
 
 ```bash
-# Requires a live plugin registry, custom registry, direct archive, or linked plugin.
+# Uses the default public registry; custom registries, archives, and links are also supported.
 glade plugins available
 glade plugins install @glade/performance
 glade plugins install @glade/orgpackage

@@ -178,7 +178,8 @@ Install advisory scanners when needed. They are plugins, not product runtime
 packages:
 
 ```bash
-# Requires a live plugin registry, custom registry, direct archive, or linked plugin.
+# Uses the default public registry. Custom registries, direct archives, and local
+# links are also supported.
 glade plugins available
 glade plugins install @glade/performance
 glade performance scan --project . --json
@@ -196,9 +197,11 @@ glade package capture --target-org packaging --namespace pkg --output .glade/pac
 `@glade/orgpackage` plugin is installed or linked. The short aliases
 `performance` and `orgpackage` resolve to `@glade/performance` and
 `@glade/orgpackage`. `@glade/compat` is maintainer-facing support tooling. The
-public plugin registry is preview. Direct archives and local links are the fallback paths until a
-registry is configured. The first-party plugin catalog, local archive install
-path, and author contract are documented in [PLUGINS.md](PLUGINS.md).
+default public registry is `https://plugins.glade.sh/index.json` and serves the
+three first-party packages. Direct archives and local links remain available
+for offline, private, and development use. The first-party plugin catalog,
+local archive install path, and author contract are documented in
+[PLUGINS.md](PLUGINS.md).
 
 Run a focused class or only tests affected by changes since a git ref:
 

@@ -145,7 +145,7 @@ glade org create refinement-local</code></pre>
   </div>
   <div>
     <p class="home-p">The base runtime stays focused on local Apex workflows. Add plugins only when a project needs capability reports, advisory scans, or custom local checks.</p>
-    <p class="home-p">Base Glade workflows do not require plugins. Registry commands are preview until a registry, archive URL, or linked plugin is configured.</p>
+    <p class="home-p">Base Glade workflows do not require plugins. The default public registry serves the first-party plugin catalog.</p>
     <div class="home-command-block">
       <pre><code>glade plugins list
 glade plugins install @glade/performance

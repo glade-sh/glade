@@ -37,6 +37,10 @@ It may add a uniquely named asset; a duplicate asset name fails rather than
 replace published bytes. The notes script fails if the section is missing,
 empty, or contains a literal `\n` sequence.
 
+GitHub product and plugin release assets and notes are immutable on rerun.
+Do not repair a published artifact in place. Cut a new version with corrected
+assets and notes instead.
+
 Tag `glade-tools` with the same version when the plugin rail is part of the
 release. Product CI falls back to `glade-tools` `main` when a matching tools tag
 does not exist, so a product-only tag does not fail before the plugin rail is
@@ -103,15 +107,25 @@ mkdir -p dist
 tar -C dist -xzf "$tmp/glade-release-artifacts-vX.Y.Z.tar.gz"
 ```
 
-```bash
-npx --yes wrangler r2 object put glade-downloads/index.json --remote --file dist/index.json
-npx --yes wrangler r2 object put glade-downloads/latest/release-manifest.json --remote --file dist/latest/release-manifest.json
-npx --yes wrangler r2 object put glade-downloads/vX.Y.Z/release-manifest.json --remote --file dist/release-manifest.json
-npx --yes wrangler r2 object put glade-downloads/vX.Y.Z/SHA256SUMS.txt --remote --file dist/vX.Y.Z/SHA256SUMS.txt
-npx --yes wrangler r2 object put glade-downloads/vX.Y.Z/glade_VERSION_darwin_arm64.tar.gz --remote --file dist/vX.Y.Z/glade_VERSION_darwin_arm64.tar.gz
-```
+Use a publication tool that performs a **conditional create** for every
+`vX.Y.Z/**` object. Its write must carry `If-None-Match: *`, or it must use an
+equivalent no-clobber primitive enforced by the publisher. Do not use a bare
+`wrangler r2 object put` command for versioned objects: it can replace
+published bytes.
 
-Upload each platform archive under `glade-downloads/vX.Y.Z/`. Then check:
+Publish the pinned manifest, checksums, and every platform archive under
+`glade-downloads/vX.Y.Z/`. Read each versioned object back and compare its
+bytes and SHA-256 value with the GitHub Release artifact before publishing any
+pointer. The same conditional-create and readback rule applies to every
+versioned plugin archive and checksum under `plugins.glade.sh/vX.Y.Z/`.
+
+Only after every versioned object has been created and verified, update the
+channel index and latest manifest. In other words, **mutable pointers last**:
+`downloads.glade.sh/index.json`,
+`downloads.glade.sh/latest/release-manifest.json`, and the plugin
+`index.json` are the only mutable publication objects.
+
+Then check:
 
 ```bash
 curl -fsSL https://downloads.glade.sh/index.json

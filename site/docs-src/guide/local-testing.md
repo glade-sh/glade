@@ -40,6 +40,23 @@ mkdir -p reports
 glade test --project . --junit reports/glade-junit.xml
 ```
 
+## Capture local telemetry
+
+Write CPU and heap profiles for `check` or a local test run. A local one-shot
+test run can also write opt-in performance counters:
+
+```bash
+mkdir -p reports
+glade check --project . --cpu-profile reports/check.cpu.pprof --mem-profile reports/check.mem.pprof --perf-json reports/check.perf.json
+glade test --project . --no-serve --no-cache --cpu-profile reports/test.cpu.pprof --mem-profile reports/test.mem.pprof --perf-json reports/test.perf.json
+```
+
+These local telemetry artifacts do not replace Salesforce validation. CPU and
+heap profiles capture the lifetime of the local command and may also profile
+daemon or watch mode; they are written when that command exits and cannot be
+used with `--connect`. `--perf-json` is for a local one-shot run and cannot be
+combined with daemon, watch, or connect modes.
+
 ## Filter tests
 
 Run a test class:
@@ -96,6 +113,11 @@ Run the daemon-backed watch loop:
 ```bash
 glade test --project . --daemon --watch
 ```
+
+Eligible Apex-only edits update incrementally. Metadata, configuration,
+project-topology, uncertain, and recovery changes use an authoritative rebuild.
+Selection remains conservative and runs the full suite when Glade cannot prove
+a narrower set is safe.
 
 Run tests affected by a git ref without remembering the lower-level flag:
 

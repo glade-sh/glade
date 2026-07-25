@@ -135,11 +135,12 @@ Install user-facing plugins as `@glade/performance` and `@glade/orgpackage`.
 `performance` and `orgpackage` resolve to those canonical names. Third-party
 plugins use the same executable manifest contract.
 
-The public plugin registry is still preview. Coordinate installs need a live
-registry or custom registry. Direct archives and local links are the fallback
-paths for private plugin installs and plugin development.
+The default public plugin registry at `https://plugins.glade.sh/index.json`
+serves the first-party plugin catalog: `@glade/compat`,
+`@glade/orgpackage`, and `@glade/performance`. Direct archives and local links
+remain available for offline, private, and development use.
 
-List installable marketplace plugins when a registry is configured:
+List installable marketplace plugins:
 
 ```bash
 glade plugins available

@@ -2,14 +2,13 @@
 
 Use canonical coordinates for marketplace installs.
 
-::: warning Registry preview
-The default public plugin registry is not live yet. Coordinate installs need a
-live registry or custom registry. Direct archives and local links are the
-fallback paths until the registry is published.
+::: tip Default registry
+The default public registry is `https://plugins.glade.sh/index.json`. It
+serves `@glade/compat`, `@glade/orgpackage`, and `@glade/performance` at
+`0.2.9`. Direct archives and local links remain available for offline, private, and development use.
 :::
 
 ```bash
-# Requires a live plugin registry or configured custom registry.
 glade plugins available
 glade plugins install @glade/performance
 glade plugins install @glade/orgpackage

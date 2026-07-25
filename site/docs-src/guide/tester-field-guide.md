@@ -183,8 +183,9 @@ Create `reports/` before running commands that write report files.
 | Compare managed-package artifacts | `glade package diff old.glade.json new.glade.json --json` |
 
 Advisory performance scans and compatibility reports are plugin commands. The
-default public plugin registry is preview. Use them only when you have a live
-registry, a direct archive, or a locally linked first-party plugin:
+default public plugin registry serves the three first-party packages:
+`@glade/compat`, `@glade/orgpackage`, and `@glade/performance`. Direct archives
+and local links remain available for offline, private, and development use:
 
 ```bash
 glade plugins available

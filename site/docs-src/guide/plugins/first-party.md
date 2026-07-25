@@ -8,16 +8,15 @@ Install these only when the base local runtime is not enough for the job.
 org-backed package artifact capture. `@glade/compat` is maintainer-facing
 support tooling and is not part of first-run setup.
 
-::: warning Registry preview
-The default public plugin registry is not live yet. The install commands below
-are the canonical coordinates once the registry or a custom registry serves
-the archives. Until then, install from a direct archive or link a local plugin
-executable for private plugin installs and plugin development.
+::: tip Default registry
+The default public registry is `https://plugins.glade.sh/index.json`. It serves `@glade/compat`,
+`@glade/orgpackage`, and `@glade/performance` at `0.2.9`. Direct archives and
+local links remain available for offline, private, and development use.
 :::
 
 ## Maintainer support tools
 
-Commands:
+Common command roots:
 
 - `glade compat ...`
 - `glade surface ...`
@@ -29,8 +28,9 @@ Commands:
 - `glade stdlib ...`
 
 `@glade/compat` owns maintainer support tools, fixtures, surface ledgers, and
-parity scanners. Use the [glade-tools maintainer guide](/maintainer/glade-tools)
-when you need it.
+parity scanners. Its packaged manifest and registry row are authoritative for
+the complete command-root list. Use the
+[glade-tools maintainer guide](/maintainer/glade-tools) when you need it.
 
 ## `@glade/performance`
 
