@@ -815,7 +815,7 @@ in the checked ledger before tightening it further.
 Carry filterable/groupable/sortable/aggregate capabilities when describe data
 provides them. Never infer a capability from a field name.
 
-- [ ] **Step 6: Add `checkIRDMLContract`**
+- [x] **Step 6: Add `checkIRDMLContract`**
 
 For `ir.OpDML`, require operation-specific sObject or sObject-collection
 operands. Validate upsert external-ID/idLookup keys and compatible merge
