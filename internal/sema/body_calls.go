@@ -2385,6 +2385,32 @@ func semaShortTypeKeyFromNormalizedKey(key string) string {
 	return key
 }
 
+// semaResolveConstructedExpressionType infers expr's type and resolves nested-class
+// names relative to owner, same as resolveNestedTypeReference(model, owner,
+// inferSemaArgTypeWithModel(expr, scope, model)). When expr is a `new Type(field =
+// value, ...)` SObject field-initializer call, that constructor syntax only exists for
+// real SObjects, so a genuine standard SObject named Type takes precedence over a
+// same-named nested Apex class that nested-class resolution would otherwise prefer.
+func semaResolveConstructedExpressionType(model *semaTypeMemberView, owner, expr string, scope map[string]string) string {
+	resolved := resolveNestedTypeReference(model, owner, inferSemaArgTypeWithModel(expr, scope, model))
+	match := newExprPattern.FindStringSubmatch(strings.TrimSpace(expr))
+	if len(match) != 2 {
+		return resolved
+	}
+	bareName := match[1]
+	if strings.EqualFold(resolved, bareName) || !newExprSObjectFieldArgPattern.MatchString(expr) {
+		return resolved
+	}
+	standard, ok := model.lookup(normalizeName(bareName))
+	if !ok || !standard.sobject {
+		return resolved
+	}
+	if nested, ok := model.lookup(normalizeName(resolved)); ok && nested.sobject {
+		return resolved
+	}
+	return bareName
+}
+
 func inferSemaArgTypeWithModel(arg string, scope map[string]string, model *semaTypeMemberView) string {
 	if !enterSemaInference(scope) {
 		return ""

@@ -3100,6 +3100,7 @@ var (
 	callPattern                    = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)\s*\(`)
 	constructorPattern             = regexp.MustCompile(`(?i)\bnew\s+([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?)\s*\(`)
 	newExprPattern                 = regexp.MustCompile(`(?is)^new\s+([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s*(?:\([^)]*\)|\{.*\})\s*$`)
+	newExprSObjectFieldArgPattern  = regexp.MustCompile(`(?is)\(\s*[A-Za-z_][A-Za-z0-9_]*\s*=[^=]`)
 	decimalLiteralPattern          = regexp.MustCompile(`^-?(?:[0-9]+\.[0-9]*|[0-9]*\.[0-9]+)$`)
 	intLiteralPattern              = regexp.MustCompile(`^-?[0-9]+$`)
 	returnPattern                  = regexp.MustCompile(`(?is)(?:^|[;{}\n])\s*return(?:\s+([^;\s][^;]*)|(\([^;]+))?\s*;`)

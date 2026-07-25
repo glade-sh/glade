@@ -135,16 +135,23 @@ func semaEnclosingTypeNames(typeName string) []string {
 }
 
 func semaResolveField(model *semaTypeMemberView, typeName, fieldName string, seen map[string]bool) (resolvedMember, bool) {
-	return semaResolveFieldByKey(model, typeName, normalizeName(fieldName), seen)
+	return semaResolveFieldByKey(model, typeName, normalizeName(fieldName), fieldName, seen)
 }
 
-func semaResolveFieldByKey(model *semaTypeMemberView, typeName, fieldKey string, seen map[string]bool) (resolvedMember, bool) {
+// semaResolveFieldByKey resolves fieldKey (a case-normalized field name) starting at
+// typeName and walking up the superclass chain. exactName carries the field name as
+// written at the reference site: Apex field names are case-insensitive, but a subclass
+// can declare its own field that only case-insensitively collides with an inherited
+// field of a different declared case (e.g. subclass "jobType" vs superclass "JobType").
+// An exact-case match anywhere in the hierarchy is preferred over a same-class
+// case-insensitive collision, so the correct field (and its own accessibility) is used.
+func semaResolveFieldByKey(model *semaTypeMemberView, typeName, fieldKey, exactName string, seen map[string]bool) (resolvedMember, bool) {
 	key := normalizeName(typeName)
 	if key == "" || seen[key] {
 		return resolvedMember{}, false
 	}
 	if schemaMembers, _, schemaOK := semaExplicitSchemaSObjectMembers(typeName, model); schemaOK {
-		if field, ok := semaResolveFieldFromMembers(model, schemaMembers, fieldKey, seen); ok {
+		if field, ok := semaResolveFieldFromMembers(model, schemaMembers, fieldKey, exactName, seen); ok {
 			return field, true
 		}
 	}
@@ -156,19 +163,28 @@ func semaResolveFieldByKey(model *semaTypeMemberView, typeName, fieldKey string,
 				continue
 			}
 			candidate := model.get(candidateKey)
-			if field, ok := semaResolveFieldByKey(model, candidate.name, fieldKey, seen); ok {
+			if field, ok := semaResolveFieldByKey(model, candidate.name, fieldKey, exactName, seen); ok {
 				return field, true
 			}
 		}
 		return resolvedMember{}, false
 	}
-	return semaResolveFieldFromMembers(model, members, fieldKey, seen)
+	return semaResolveFieldFromMembers(model, members, fieldKey, exactName, seen)
 }
 
-func semaResolveFieldFromMembers(model *semaTypeMemberView, members typeMembers, fieldKey string, seen map[string]bool) (resolvedMember, bool) {
+func semaResolveFieldFromMembers(model *semaTypeMemberView, members typeMembers, fieldKey, exactName string, seen map[string]bool) (resolvedMember, bool) {
 	members = semaEnsureStandardSObjectTypeMembers(model, normalizeName(members.name), members)
 	if field, ok := members.fields[fieldKey]; ok {
-		return resolvedMember{owner: members.name, member: field}, true
+		resolved := resolvedMember{owner: members.name, member: field}
+		if exactName == "" || field.Name == exactName {
+			return resolved, true
+		}
+		// Case-insensitive collision with this class's own field: prefer an
+		// exact-case match further up the hierarchy, but keep this as a fallback.
+		if fromSuper, ok := semaResolveFieldByKey(model, members.superClass, fieldKey, exactName, seen); ok {
+			return fromSuper, true
+		}
+		return resolved, true
 	}
 	if namespaced, ok := semaOwnerNamespacedAPIName(members.name, fieldKey); ok {
 		if field, ok := members.fields[normalizeName(namespaced)]; ok {
@@ -189,7 +205,7 @@ func semaResolveFieldFromMembers(model *semaTypeMemberView, members typeMembers,
 			return resolvedMember{owner: members.name, member: field}, true
 		}
 	}
-	if field, ok := semaResolveFieldByKey(model, members.superClass, fieldKey, seen); ok {
+	if field, ok := semaResolveFieldByKey(model, members.superClass, fieldKey, exactName, seen); ok {
 		return field, true
 	}
 	return resolvedMember{}, false
@@ -1673,6 +1689,7 @@ func semaIRExprLooksLikeIndexAssignmentValue(expr ir.Expr, source string, pos in
 
 func (a *Analyzer) checkIRReturnType(typ typesys.TypeSymbol, member typesys.MemberSymbol, returnType string, expr ir.Expr, scope *irSemaScope, pos, bodyOffset int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	valueType := resolveNestedTypeReference(model, typ.Name, a.inferIRExprType(expr, *scope, model, typ.Name))
+	valueType = semaIRSObjectConstructorPrecedence(model, valueType, expr)
 	if valueType == "" || valueType == "null" || semaAssignableToType(returnType, valueType, model) || (expr.Kind == ir.ExprSOQL && semaSOQLSingletonAssignable(returnType, valueType, "["+expr.Value+"]", model)) {
 		return nil
 	}
@@ -1680,6 +1697,29 @@ func (a *Analyzer) checkIRReturnType(typ typesys.TypeSymbol, member typesys.Memb
 		return nil
 	}
 	return []diagnostic.Diagnostic{returnTypeDiagnostic(typ, member, fmt.Sprintf("returns %s from %s method", valueType, returnType), bodyOffset+pos, bodyOffset+pos+max(1, len(valueType)), source)}
+}
+
+// semaIRSObjectConstructorPrecedence mirrors semaResolveConstructedExpressionType for the
+// IR-based type inference path: when expr is a `new Type(field = value, ...)` call, that
+// SObject field-initializer syntax only exists for real SObjects, so a genuine standard
+// SObject named Type takes precedence over a same-named nested Apex class that nested-class
+// resolution would otherwise prefer.
+func semaIRSObjectConstructorPrecedence(model *semaTypeMemberView, resolved string, expr ir.Expr) string {
+	if expr.Kind != ir.ExprCall || !strings.HasPrefix(expr.Callee, "new:") || len(expr.NamedArgs) == 0 {
+		return resolved
+	}
+	bareName := strings.TrimPrefix(expr.Callee, "new:")
+	if strings.EqualFold(resolved, bareName) {
+		return resolved
+	}
+	standard, ok := model.lookup(normalizeName(bareName))
+	if !ok || !standard.sobject {
+		return resolved
+	}
+	if nested, ok := model.lookup(normalizeName(resolved)); ok && nested.sobject {
+		return resolved
+	}
+	return bareName
 }
 
 func semaMemberReturnSourceLooksBoolean(source string, start, end int) bool {

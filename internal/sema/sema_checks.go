@@ -1682,12 +1682,20 @@ func databaseBatchableExecuteScopeCompatible(itemType, scopeType string, model *
 func databaseBatchableStartReturnCompatible(itemType, returnType string, model *semaTypeMemberView) bool {
 	returnType = semaCanonicalPlatformAlias(returnType)
 	base, args := semaGenericBaseAndArgs(returnType)
-	if (!strings.EqualFold(base, "Iterable") && !strings.EqualFold(base, "List")) || len(args) != 1 {
+	if (strings.EqualFold(base, "Iterable") || strings.EqualFold(base, "List")) && len(args) == 1 {
+		return sameSemaSignatureType(args[0], itemType) ||
+			semaAssignableToType(itemType, args[0], model) ||
+			semaAssignableToType(args[0], itemType, model)
+	}
+	// A concrete class implementing Iterable<T> is also a valid start() return type
+	// (e.g. a custom scratch-proven Iterable), not just the literal Iterable<T>/List<T> spelling.
+	elementType, ok := semaIterableElementTypeInModel(returnType, model)
+	if !ok {
 		return false
 	}
-	return sameSemaSignatureType(args[0], itemType) ||
-		semaAssignableToType(itemType, args[0], model) ||
-		semaAssignableToType(args[0], itemType, model)
+	return sameSemaSignatureType(elementType, itemType) ||
+		semaAssignableToType(itemType, elementType, model) ||
+		semaAssignableToType(elementType, itemType, model)
 }
 
 func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model *semaTypeMemberView) []diagnostic.Diagnostic {
@@ -1764,7 +1772,7 @@ func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.Membe
 			continue
 		}
 		value := trimSemaArg(body, valueStart, valueEnd)
-		valueType := resolveNestedTypeReference(model, typ.Name, inferSemaArgTypeWithModel(value.text, scopes.flatAt(value.start), model))
+		valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flatAt(value.start))
 		if strings.EqualFold(returnType, "Boolean") && semaExprContainsComparison(value.text) {
 			valueType = "Boolean"
 		}

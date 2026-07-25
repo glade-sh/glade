@@ -585,7 +585,7 @@ private class QConditionTest {
 `)
 
 	run := Run(loadTestIndex(t, root), Options{})
-	if got := run.Summary(); got.Total != 1 || got.Failed != 1 {
+	if got := run.Summary(); got.Total != 1 || got.CompileErrors != 1 {
 		t.Fatalf("summary = %#v problem=%q run=%#v", got, firstRunProblem(run), run)
 	}
 	if problem := firstRunProblem(run); !strings.Contains(problem, "isIn") {
@@ -4507,6 +4507,7 @@ public class Counter {
 	writeFile(t, filepath.Join(root, "force-app/main/classes/CounterTest.cls"), `
 @isTest
 private class CounterTest {
+  class MyException extends Exception {}
   @isTest static void statefulRuntimeFeaturesWork() {
     Counter c = new Counter(1);
     List<Integer> values = new List<Integer>{1, 2, 3};
