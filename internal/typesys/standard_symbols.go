@@ -341,7 +341,7 @@ func mergeStandardSymbolSpecs(specs []StandardSymbolSpec) []StandardSymbolSpec {
 			continue
 		}
 		existing := &out[existingIndex]
-		if existing.Kind == "" {
+		if spec.Kind != "" {
 			existing.Kind = spec.Kind
 		}
 		if existing.SuperClass == "" {
@@ -1228,6 +1228,8 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 }
 
 var standardPlatformSymbolOverlays = []StandardSymbolSpec{
+	{Name: "CommerceExtension.ResolutionStrategy", Kind: apexast.DeclarationInterface},
+	{Name: "Readiness.ProductEvaluator", Kind: apexast.DeclarationInterface},
 	{Name: "DataSource.AsyncDeleteCallback", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "processDelete", ReturnType: "void", Parameters: []string{"Database.DeleteResult"}}}},
 	{Name: "DataSource.AsyncSaveCallback", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "processSave", ReturnType: "void", Parameters: []string{"Database.SaveResult"}}}},
 	{Name: "Metadata.DeployResult", Properties: []StandardPropertySpec{
