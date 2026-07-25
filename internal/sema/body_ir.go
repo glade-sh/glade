@@ -931,7 +931,39 @@ func (a *Analyzer) checkIRDMLContract(typ typesys.TypeSymbol, member typesys.Mem
 	if strings.EqualFold(inst.Name, "merge") && len(operandTypes) == 2 && !semaDMLMergeTypesCompatible(operandTypes[0], operandTypes[1], model) {
 		return []diagnostic.Diagnostic{irDMLContractDiagnostic(typ, member, inst, bodyOffset, source, "merge requires master and duplicate operands of the same SObject type")}
 	}
+	if strings.EqualFold(inst.Name, "upsert") && inst.Field != "" && !a.semaUpsertSelectorAllowed(operandTypes[0], inst.Field) {
+		return []diagnostic.Diagnostic{irDMLContractDiagnostic(typ, member, inst, bodyOffset, source, fmt.Sprintf("upsert field %q must be an external ID or idLookup field for %s", inst.Field, semaDMLObjectType(operandTypes[0])))}
+	}
 	return nil
+}
+
+func (a *Analyzer) semaUpsertSelectorAllowed(operandType, selector string) bool {
+	objectName := semaDMLObjectType(operandType)
+	selectorObject, fieldName, qualified := strings.Cut(selector, ".")
+	if !qualified || objectName == "" || !strings.EqualFold(selectorObject, objectName) || fieldName == "" {
+		return false
+	}
+	for _, object := range a.queryDeclaredObjects {
+		if !strings.EqualFold(object.Name, objectName) {
+			continue
+		}
+		for _, field := range object.Fields {
+			if strings.EqualFold(field.Name, fieldName) {
+				return field.ExternalID || field.IDLookup
+			}
+		}
+		return false
+	}
+	// Do not infer a selector capability from a field name. An unavailable
+	// describe source remains unknown rather than a synthetic rejection.
+	return true
+}
+
+func semaDMLObjectType(typeName string) string {
+	if base, args := semaGenericBaseAndArgs(typeName); (strings.EqualFold(base, "List") || strings.EqualFold(base, "Set")) && len(args) == 1 {
+		return strings.TrimSpace(args[0])
+	}
+	return strings.TrimSpace(typeName)
 }
 
 func semaDMLTargetType(typeName string, model *semaTypeMemberView) bool {

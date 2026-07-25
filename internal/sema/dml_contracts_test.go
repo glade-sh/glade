@@ -1,6 +1,10 @@
 package sema
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/glade-sh/glade/internal/schema"
+)
 
 func TestDMLContractsRejectNonSObjectOperands(t *testing.T) {
 	t.Parallel()
@@ -24,5 +28,40 @@ func TestDMLContractsAllowSObjectAndSObjectListOperands(t *testing.T) {
 	})
 	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA034") {
 		t.Fatalf("unexpected DML contract diagnostic: %#v", result.Diagnostics)
+	}
+}
+
+func TestDMLContractsRequireUpsertExternalIDOrIDLookupField(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class Probe {
+  public void run() {
+    Account account = new Account();
+    upsert account Account.Not_External__c;
+  }
+}
+`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Not_External__c", Type: "Text"}}}}})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA034") {
+		t.Fatalf("expected upsert field contract diagnostic: %#v", result.Diagnostics)
+	}
+}
+
+func TestDMLContractsAllowUpsertExternalIDAndIDLookupFields(t *testing.T) {
+	for name, field := range map[string]schema.Field{
+		"external ID": {Name: "External_Key__c", Type: "Text", ExternalID: true},
+		"id lookup":   {Name: "Lookup_Key__c", Type: "Text", IDLookup: true},
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeQueryProbe(t, `
+public class Probe {
+  public void run() {
+    Account account = new Account();
+    upsert account Account.`+field.Name+`;
+  }
+}
+`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{field}}}})
+			if hasDiagnosticCode(result.Diagnostics, "GLADESEMA034") {
+				t.Fatalf("valid upsert selector rejected: %#v", result.Diagnostics)
+			}
+		})
 	}
 }
