@@ -810,7 +810,7 @@ binding lookup is source-wide and name-only until it is wired to body-IR scope
 and field/clause type compatibility. Keep the full per-scope/type oracle rows
 in the checked ledger before tightening it further.
 
-- [ ] **Step 5: Add field capability metadata only from evidence**
+- [x] **Step 5: Add field capability metadata only from evidence**
 
 Carry filterable/groupable/sortable/aggregate capabilities when describe data
 provides them. Never infer a capability from a field name.
