@@ -46,8 +46,8 @@ private class ReservedCurrencyTest {
   static void rejectsReservedIdentifier() {
     String currency = 'USD';
     System.assertEquals('USD', currency);
-  }
-}
+	  }
+	}
 `)
 
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
@@ -65,6 +65,26 @@ private class ReservedCurrencyTest {
 	}
 	if problem := firstRunProblem(run); !strings.Contains(problem, "Identifier name is reserved: currency") {
 		t.Fatalf("problem = %q", problem)
+	}
+}
+
+func TestRunFailsClosedOnInvalidTestAnnotations(t *testing.T) {
+	for name, source := range map[string]string{
+		"test method outside test class": `public class Probe { @IsTest static void run() {} }`,
+		"nonstatic test method":          `@IsTest private class Probe { @IsTest void run() {} }`,
+		"parameterized test method":      `@IsTest private class Probe { @IsTest static void run(String value) {} }`,
+		"duplicate setup":                `@IsTest private class Probe { @TestSetup static void one() {} @TestSetup static void two() {} @IsTest static void run() {} }`,
+		"see all data setup":             `@IsTest(SeeAllData=true) private class Probe { @TestSetup static void setup() {} @IsTest static void run() {} }`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			root := t.TempDir()
+			path := filepath.Join(root, "Probe.cls")
+			writeFile(t, path, source)
+			run := Run(typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{}), Options{NoDiskCache: true})
+			if summary := run.Summary(); summary.CompileErrors == 0 || summary.Passed != 0 || summary.Failed != 0 {
+				t.Fatalf("invalid test annotation executed instead of failing compile: %#v problem=%q", summary, firstRunProblem(run))
+			}
+		})
 	}
 }
 
