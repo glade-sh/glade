@@ -962,6 +962,18 @@ ready but cannot be replayed until an org is available.
 Run NU after the final high-risk semantic packet and again before release. Do
 not trade Salesforce correctness for corpus pass rate or performance.
 
+Current NU result (2026-07-25): the post-packet run discovered and ran 11,526
+cases with four workers in 194,888 ms, but all were blocked by current
+project-level semantic diagnostics. The first project compile report contains
+13 diagnostic families: inheritance contracts (748 occurrences), source
+contracts (229), unsupported annotations (31), query binds (43), query parser
+coverage (29), and smaller declaration/exposure/query-contract groups. Examples
+include safe-navigation reads misread as assignment targets, `:true`, spaced
+`: name` binds, `@SuppressWarnings`, and advanced query forms. The NU corpus
+is evidence of compatibility candidates, not a Salesforce oracle: add each
+representative to the ledger and replay it before relaxing an established
+compiler rule. The gate remains red.
+
 ---
 
 ## Completion criteria
