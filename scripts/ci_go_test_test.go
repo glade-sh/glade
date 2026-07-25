@@ -875,11 +875,12 @@ func TestSecurityWorkflowContract(t *testing.T) {
 
 	codeql := jobs["codeql"]
 	for _, want := range []string{
+		"name: CodeQL",
 		"timeout-minutes: 60",
 		"languages: go",
 		"config: |",
 		"- uses: security-extended",
-		"id: go/allocation-size-overflow",
+		"- go/allocation-size-overflow",
 		"build-mode: manual",
 		`run: go build -o "${RUNNER_TEMP}/glade-codeql" ./cmd/glade`,
 		"github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1",
@@ -887,6 +888,69 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	} {
 		if !strings.Contains(codeql, want) {
 			t.Errorf("codeql job missing %q", want)
+		}
+	}
+	fullBranchWaivers := []string{
+		"go/reflected-xss",
+		"go/weak-sensitive-data-hashing",
+		"go/bad-redirect-check",
+		"go/incorrect-integer-conversion",
+		"go/uncontrolled-allocation-size",
+	}
+	const initPin = "uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1"
+	if count := strings.Count(codeql, initPin); count != 2 {
+		t.Fatalf("codeql init step count = %d, want 2", count)
+	}
+	prInit := workflowStepBlock(t, codeql, "name: Initialize pull request CodeQL")
+	for _, want := range []string{
+		"if: github.event_name == 'pull_request'",
+		initPin,
+		"id: go/allocation-size-overflow",
+	} {
+		if !strings.Contains(prInit, want) {
+			t.Errorf("pull-request CodeQL init step missing %q", want)
+		}
+	}
+	for _, query := range fullBranchWaivers {
+		if strings.Contains(prInit, query) {
+			t.Errorf("pull-request CodeQL init step excludes full-branch waiver %q", query)
+		}
+	}
+	fullInit := workflowStepBlock(t, codeql, "name: Initialize full-branch CodeQL")
+	for _, want := range []string{
+		"if: github.event_name != 'pull_request'",
+		initPin,
+		"id:",
+		"- go/allocation-size-overflow",
+	} {
+		if !strings.Contains(fullInit, want) {
+			t.Errorf("full-branch CodeQL init step missing %q", want)
+		}
+	}
+	if strings.Contains(fullInit, "disable-default-queries:") {
+		t.Error("full-branch CodeQL init step must retain the default query suite")
+	}
+	for _, query := range fullBranchWaivers {
+		if !strings.Contains(fullInit, "- "+query) {
+			t.Errorf("full-branch CodeQL init step does not exclude %q", query)
+		}
+	}
+	if strings.Contains(fullInit, "go/request-forgery") {
+		t.Error("full-branch CodeQL init step must retain the proven request-forgery query")
+	}
+	const analyzePin = "uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1"
+	if count := strings.Count(codeql, analyzePin); count != 1 {
+		t.Fatalf("codeql analyze step count = %d, want 1", count)
+	}
+	analyze := workflowStepBlock(t, codeql, "name: Analyze CodeQL")
+	for _, unwanted := range []string{"threads:", "category:", "CODEQL_ACTION_EXTRA_OPTIONS"} {
+		if strings.Contains(analyze, unwanted) {
+			t.Errorf("CodeQL analyze step unexpectedly contains %q", unwanted)
+		}
+	}
+	for _, unwanted := range []string{"strategy:", "matrix.", "fromJSON("} {
+		if strings.Contains(codeql, unwanted) {
+			t.Errorf("CodeQL job retains experimental matrix marker %q", unwanted)
 		}
 	}
 	if strings.Contains(codeql, "queries: +security-extended") {

@@ -135,21 +135,45 @@ jobs:
             bytes="$(du -sb "$HOME/.cache/go-build" 2>/dev/null | awk '{print $1}')" || bytes=0
           fi
           echo "[cache] build bytes=$bytes"
-      - uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+      - name: Initialize pull request CodeQL
+        if: github.event_name == 'pull_request'
+        uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
           languages: go
           config: |
             queries:
               - uses: security-extended
             query-filters:
-              # This query alone exceeded the 60-minute job timeout after the
-              # other 36 queries completed in about one minute (run 29155739678).
               - exclude:
+                  # This query alone exceeded 60 minutes in run 29155739678.
                   id: go/allocation-size-overflow
+          build-mode: manual
+      - name: Initialize full-branch CodeQL
+        if: github.event_name != 'pull_request'
+        uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        with:
+          languages: go
+          config: |
+            queries:
+              - uses: security-extended
+            query-filters:
+              - exclude:
+                  id:
+                    # This query alone exceeded 60 minutes in run 29155739678.
+                    - go/allocation-size-overflow
+                    # These five did not terminate in isolated four-thread jobs,
+                    # including with a 10 GiB evaluator cache (runs 30133474104
+                    # and 30134359448). PR diff-informed analysis retains them.
+                    - go/reflected-xss
+                    - go/weak-sensitive-data-hashing
+                    - go/bad-redirect-check
+                    - go/incorrect-integer-conversion
+                    - go/uncontrolled-allocation-size
           build-mode: manual
       - name: Build Glade for CodeQL
         run: go build -o "${RUNNER_TEMP}/glade-codeql" ./cmd/glade
-      - uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+      - name: Analyze CodeQL
+        uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
 
   gosec:
     name: gosec

@@ -39,7 +39,7 @@ export class GladeLspClient implements vscode.Disposable {
         { scheme: "file", language: "apex" },
         { scheme: "untitled", language: "apex" },
       ],
-      outputChannel: this.output,
+      outputChannelName: "Glade LSP",
     };
     const client = new LanguageClient("gladeLsp", "Glade Local Apex", serverOptions, clientOptions);
     this.client = client;

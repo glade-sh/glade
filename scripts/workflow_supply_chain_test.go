@@ -44,8 +44,8 @@ func TestWorkflowExecutableReferencesAreImmutable(t *testing.T) {
 			}
 		}
 	}
-	if querySuiteUses != 1 {
-		t.Fatalf("CodeQL query-suite uses = %d, want exactly security-extended", querySuiteUses)
+	if querySuiteUses != 2 {
+		t.Fatalf("CodeQL query-suite uses = %d, want exactly 2 event-specific security-extended configs", querySuiteUses)
 	}
 }
 
