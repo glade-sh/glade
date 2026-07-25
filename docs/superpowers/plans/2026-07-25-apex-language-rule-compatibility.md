@@ -804,6 +804,12 @@ Walk inline query and SOSL binds, diagnose missing variables, and apply
 field/clause-compatible type checks. Cover Name/Integer, LIMIT/OFFSET numeric,
 and SOSL numeric bind rows.
 
+Current implementation note (2026-07-25): bare undeclared inline bind names
+now produce `GLADESEMA_QUERY_BIND`. This is deliberately not checked off:
+binding lookup is source-wide and name-only until it is wired to body-IR scope
+and field/clause type compatibility. Keep the full per-scope/type oracle rows
+in the checked ledger before tightening it further.
+
 - [ ] **Step 5: Add field capability metadata only from evidence**
 
 Carry filterable/groupable/sortable/aggregate capabilities when describe data
