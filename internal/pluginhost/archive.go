@@ -67,7 +67,7 @@ func extractArchive(archivePath, parent string) (extractedArchive, error) {
 		}
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := root.MkdirAll(name, os.FileMode(header.Mode)&0o777); err != nil {
+			if err := root.MkdirAll(name, os.FileMode(header.Mode&0o777)); err != nil {
 				return extractedArchive{}, err
 			}
 		case tar.TypeReg, tar.TypeRegA:
@@ -76,7 +76,7 @@ func extractArchive(archivePath, parent string) (extractedArchive, error) {
 					return extractedArchive{}, err
 				}
 			}
-			mode := os.FileMode(header.Mode) & 0o777
+			mode := os.FileMode(header.Mode & 0o777)
 			if mode == 0 {
 				mode = 0o644
 			}

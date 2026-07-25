@@ -82,7 +82,7 @@ func (w *Workspace) openRoot() (*os.Root, error) {
 	if w.Managed {
 		return w.openManagedRoot(false)
 	}
-	if err := os.MkdirAll(w.Root, 0o755); err != nil {
+	if err := os.MkdirAll(w.Root, 0o750); err != nil {
 		return nil, err
 	}
 	return os.OpenRoot(w.Root)
@@ -92,7 +92,7 @@ func (w *Workspace) openManagedRoot(reset bool) (*os.Root, error) {
 	if err := validateWorkspaceID(w.ID); err != nil {
 		return nil, err
 	}
-	if err := os.MkdirAll(w.DataRoot, 0o755); err != nil {
+	if err := os.MkdirAll(w.DataRoot, 0o700); err != nil {
 		return nil, err
 	}
 	data, err := os.OpenRoot(w.DataRoot)

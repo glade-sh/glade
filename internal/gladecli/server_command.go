@@ -789,7 +789,7 @@ func resetPlaygroundState(dataRoot, workspaceID, dbPath string) error {
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(dataRoot, 0o755); err != nil {
+	if err := os.MkdirAll(dataRoot, 0o700); err != nil {
 		return err
 	}
 	root, err := os.OpenRoot(dataRoot)

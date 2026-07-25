@@ -929,12 +929,16 @@ func unsupportedBaseComponentModuleJS(def baseComponentDefinition) string {
 	if err != nil {
 		raw = []byte(`{"message":"GLADELWC060 base component unsupported","module":"","tagName":""}`)
 	}
-	return fmt.Sprintf(`import { reportDiagnostic } from "@glade/shell/diagnostics";
-const payload = %s;
+	var module strings.Builder
+	module.WriteString(`import { reportDiagnostic } from "@glade/shell/diagnostics";
+const payload = `)
+	module.Write(raw)
+	module.WriteString(`;
 reportDiagnostic({ code: "GLADELWC060", severity: "warning", message: payload.message, module: payload.module, tagName: payload.tagName });
 throw new Error(payload.message);
 export default undefined;
-`, raw)
+`)
+	return module.String()
 }
 
 func unsupportedLightningBaseComponentNames() []string {
