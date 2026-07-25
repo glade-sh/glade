@@ -36,6 +36,38 @@ func firstRunProblem(run testreport.Run) string {
 	return ""
 }
 
+func TestRunFailsClosedOnReservedIdentifierDiagnostic(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "ReservedCurrencyTest.cls")
+	writeFile(t, path, `
+@isTest
+private class ReservedCurrencyTest {
+  @isTest
+  static void rejectsReservedIdentifier() {
+    String currency = 'USD';
+    System.assertEquals('USD', currency);
+  }
+}
+`)
+
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	if !index.HasErrors() {
+		t.Fatal("reserved identifier should produce an index error")
+	}
+	cases := Discover(index, Options{})
+	if len(cases) != 1 {
+		t.Fatalf("discovered cases = %#v, diagnostics = %#v", cases, index.Diagnostics)
+	}
+
+	run := Run(index, Options{NoDiskCache: true})
+	if summary := run.Summary(); summary.Total != 1 || summary.CompileErrors != 1 || summary.Passed != 0 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+	if problem := firstRunProblem(run); !strings.Contains(problem, "Identifier name is reserved: currency") {
+		t.Fatalf("problem = %q", problem)
+	}
+}
+
 func TestRuntimeKeyWithSourceDigestsAvoidsRereadsAndMatchesDiskFallback(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "force-app", "main", "default", "classes", "Unicode.cls")
@@ -4519,33 +4551,33 @@ func TestTypeDeclarationSourceFallsBackToFullDeclarationLine(t *testing.T) {
 
 func TestCompileProjectClassesPrefersIndexedInterfaces(t *testing.T) {
 	root := t.TempDir()
-	file := filepath.Join(root, "Outer.cls")
-	writeFile(t, file, "public class Outer {}\n")
+	file := filepath.Join(root, "Container.cls")
+	writeFile(t, file, "public class Container {}\n")
 	index := typesys.Index{Types: []typesys.TypeSymbol{
 		{
 			Kind:  apexast.DeclarationInterface,
-			Name:  "Outer.Marker",
+			Name:  "Container.Marker",
 			File:  file,
 			Range: diagnostic.Range{Start: diagnostic.Position{Offset: 0}, End: diagnostic.Position{Offset: 1}},
 		},
 		{
 			Kind:       apexast.DeclarationClass,
-			Name:       "Outer.Impl",
+			Name:       "Container.Impl",
 			File:       file,
-			Interfaces: []string{"Outer.Marker"},
+			Interfaces: []string{"Container.Marker"},
 			Range:      diagnostic.Range{Start: diagnostic.Position{Offset: 0}, End: diagnostic.Position{Offset: 1}},
 		},
 	}}
 	classes := compileProjectClasses(index, nil)
 	for _, class := range classes {
-		if class.Name == "Outer.Impl" {
-			if len(class.Interfaces) != 1 || class.Interfaces[0] != "Outer.Marker" {
+		if class.Name == "Container.Impl" {
+			if len(class.Interfaces) != 1 || class.Interfaces[0] != "Container.Marker" {
 				t.Fatalf("interfaces = %#v", class.Interfaces)
 			}
 			return
 		}
 	}
-	t.Fatal("Outer.Impl class not compiled")
+	t.Fatal("Container.Impl class not compiled")
 }
 
 func TestRunRegistersPassiveGeneratedSystemStubClasses(t *testing.T) {
@@ -5174,9 +5206,9 @@ private class ResultTest {
 func TestRunExecutesNestedClassMethod(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "force-app/main/classes/Outer.cls"), `
-public class Outer {
-  public class Inner {
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Container.cls"), `
+public class Container {
+  public class Nested {
     public static Integer count = 1;
     public static String staticLabel() {
       return 'static-inner';
@@ -5187,15 +5219,15 @@ public class Outer {
   }
 }
 `)
-	writeFile(t, filepath.Join(root, "force-app/main/classes/OuterTest.cls"), `
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ContainerTest.cls"), `
 @isTest
-private class OuterTest {
+private class ContainerTest {
   @isTest static void nestedClassRuns() {
-    Outer.Inner inner = new Outer.Inner();
-    System.assertEquals('inner', inner.label());
-    System.assertEquals('static-inner', Outer.Inner.staticLabel());
-    Outer.Inner.count = 3;
-    System.assertEquals(3, Outer.Inner.count);
+    Container.Nested nestedValue = new Container.Nested();
+    System.assertEquals('inner', nestedValue.label());
+    System.assertEquals('static-inner', Container.Nested.staticLabel());
+    Container.Nested.count = 3;
+    System.assertEquals(3, Container.Nested.count);
   }
 }
 `)
@@ -5209,23 +5241,23 @@ private class OuterTest {
 func TestRunNestedExceptionGetTypeNameKeepsOuterClass(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "force-app/main/classes/Outer.cls"), `
-public class Outer {
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ExceptionHost.cls"), `
+public class ExceptionHost {
   public static void raise() {
     throw new InnerException('blocked');
   }
   public class InnerException extends Exception {}
 }
 `)
-	writeFile(t, filepath.Join(root, "force-app/main/classes/OuterTest.cls"), `
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ExceptionHostTest.cls"), `
 @isTest
-private class OuterTest {
+private class ExceptionHostTest {
   @isTest static void nestedExceptionCarriesQualifiedTypeName() {
     try {
-      Outer.raise();
+      ExceptionHost.raise();
       System.assert(false, 'expected exception');
     } catch (Exception e) {
-      System.assertEquals('Outer.InnerException', e.getTypeName());
+      System.assertEquals('ExceptionHost.InnerException', e.getTypeName());
     }
   }
 }
@@ -5240,8 +5272,8 @@ private class OuterTest {
 func TestRunPropertyGetterNestedExceptionGetTypeNameKeepsOuterClass(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "force-app/main/classes/Outer.cls"), `
-public class Outer {
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PropertyExceptionHost.cls"), `
+public class PropertyExceptionHost {
   public static String Value {
     get {
       throw new InnerException('blocked');
@@ -5250,15 +5282,15 @@ public class Outer {
   public class InnerException extends Exception {}
 }
 `)
-	writeFile(t, filepath.Join(root, "force-app/main/classes/OuterTest.cls"), `
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PropertyExceptionHostTest.cls"), `
 @isTest
-private class OuterTest {
+private class PropertyExceptionHostTest {
   @isTest static void propertyExceptionCarriesQualifiedTypeName() {
     try {
-      String ignored = Outer.Value;
+      String ignored = PropertyExceptionHost.Value;
       System.assert(false, 'expected exception');
     } catch (Exception e) {
-      System.assertEquals('Outer.InnerException', e.getTypeName());
+      System.assertEquals('PropertyExceptionHost.InnerException', e.getTypeName());
     }
   }
 }
@@ -5306,8 +5338,8 @@ private class WorkflowProcessTest {
 func TestRunPrefersNestedInstanceFieldOverCaseFoldedInnerType(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "force-app/main/classes/Outer.cls"), `
-public class Outer {
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FilterHost.cls"), `
+public class FilterHost {
   public interface Filter {
     Boolean hasValue();
   }
@@ -5327,11 +5359,11 @@ public class Outer {
   }
 }
 `)
-	writeFile(t, filepath.Join(root, "force-app/main/classes/OuterTest.cls"), `
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FilterHostTest.cls"), `
 @isTest
-private class OuterTest {
+private class FilterHostTest {
   @isTest static void nestedFieldWins() {
-    System.assertEquals(true, new Outer.Adapter(new Outer.Impl()).run());
+    System.assertEquals(true, new FilterHost.Adapter(new FilterHost.Impl()).run());
   }
 }
 `)
@@ -5514,16 +5546,16 @@ private class BindingCaseProbeTest {
 func TestRunExecutesNestedTypesWithConstructorsInterfacesEnumsAndIdentity(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "force-app/main/classes/Outer.cls"), `
-public class Outer {
+	writeFile(t, filepath.Join(root, "force-app/main/classes/NestedTypesHost.cls"), `
+public class NestedTypesHost {
   public static Integer seed = 2;
   public interface Named {
     String name();
   }
-  public class Inner {
+  public class NestedValue {
     public Integer value;
-    public Inner(Integer input) {
-      value = input + Outer.seed;
+    public NestedValue(Integer input) {
+      value = input + NestedTypesHost.seed;
     }
     public String label() {
       return 'inner-' + value;
@@ -5534,8 +5566,8 @@ public class Outer {
       return 'nested-iface';
     }
   }
-  public static Inner makeInner(Integer input) {
-    Inner made = new Inner(input);
+  public static NestedValue makeNestedValue(Integer input) {
+    NestedValue made = new NestedValue(input);
     return made;
   }
   public enum Choice {
@@ -5544,24 +5576,24 @@ public class Outer {
   }
 }
 `)
-	writeFile(t, filepath.Join(root, "force-app/main/classes/OuterTypesTest.cls"), `
+	writeFile(t, filepath.Join(root, "force-app/main/classes/NestedTypesHostTest.cls"), `
 @isTest
-private class OuterTypesTest {
+private class NestedTypesHostTest {
   @isTest static void nestedTypesRun() {
-    Outer.Inner first = new Outer.Inner(3);
-    Outer.Inner alias = first;
-    Outer.Inner second = new Outer.Inner(3);
+    NestedTypesHost.NestedValue first = new NestedTypesHost.NestedValue(3);
+    NestedTypesHost.NestedValue alias = first;
+    NestedTypesHost.NestedValue second = new NestedTypesHost.NestedValue(3);
     System.assertEquals(5, first.value);
     System.assertEquals('inner-5', first.label());
     System.assert(first == alias);
     System.assert(first != second);
-    Outer.Named named = new Outer.NamedImpl();
+    NestedTypesHost.Named named = new NestedTypesHost.NamedImpl();
     System.assertEquals('nested-iface', named.name());
-    Outer.Inner made = Outer.makeInner(4);
+    NestedTypesHost.NestedValue made = NestedTypesHost.makeNestedValue(4);
     System.assertEquals(6, made.value);
-    System.assertEquals('Two', Outer.Choice.Two.name());
-    System.assertEquals(1, Outer.Choice.Two.ordinal());
-    List<Outer.Choice> choices = Outer.Choice.values();
+    System.assertEquals('Two', NestedTypesHost.Choice.Two.name());
+    System.assertEquals(1, NestedTypesHost.Choice.Two.ordinal());
+    List<NestedTypesHost.Choice> choices = NestedTypesHost.Choice.values();
     System.assertEquals(2, choices.size());
   }
 }
@@ -7792,17 +7824,17 @@ func TestProjectRuntimeInitializesNestedInstanceFields(t *testing.T) {
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/NestedInitializer.cls"), `
 public class NestedInitializer {
-  public static Inner StaticInner { get; private set; }
+  public static NestedState StaticNested { get; private set; }
   public static TestFactory Test { get; private set; }
   static {
-    StaticInner = new Inner();
+    StaticNested = new NestedState();
     Test = new TestFactory();
   }
-  public class Inner {
+  public class NestedState {
     private List<String> values = new List<String>();
     public Child child = new Child();
     public Child Database = new Child();
-    private Inner() {
+    private NestedState() {
     }
     public Integer size() {
       values.add('x');
@@ -7828,7 +7860,7 @@ public class NestedInitializer {
     }
   }
   public static Integer run() {
-    return new Inner().size();
+    return new NestedState().size();
   }
 }
 `)
@@ -7837,8 +7869,8 @@ public class NestedInitializer {
 private class NestedInitializerTest {
   @isTest static void initializes() {
     System.assertEquals(1, NestedInitializer.run());
-    System.assertEquals(7, NestedInitializer.StaticInner.child.value());
-    System.assertEquals(7, NestedInitializer.StaticInner.Database.value());
+    System.assertEquals(7, NestedInitializer.StaticNested.child.value());
+    System.assertEquals(7, NestedInitializer.StaticNested.Database.value());
     System.assert(NestedInitializer.Test.Database.hasRecords());
   }
 }

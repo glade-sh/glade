@@ -84,6 +84,7 @@ func (p *Parser) ParseSource(path, source string) File {
 		}
 	}
 	lineMap := NewLineMap(source)
+	out.Diagnostics = append(out.Diagnostics, reservedIdentifierDiagnostics(path, source, root, lineMap)...)
 	for _, child := range namedChildren(root) {
 		decl, ok := treeSitterDeclaration(&child, source, lineMap)
 		if !ok {
@@ -142,6 +143,7 @@ func (p *Parser) ParseSourceAST(path, source string) ASTFile {
 			out.Diagnostics = append(out.Diagnostics, diag)
 		}
 	}
+	out.Diagnostics = append(out.Diagnostics, reservedIdentifierDiagnostics(path, source, root, lineMap)...)
 	return out
 }
 

@@ -511,10 +511,10 @@ global class PostInstall implements InstallHandler {
 
 func TestBuildIndexPromotesNestedTypes(t *testing.T) {
 	root := t.TempDir()
-	classPath := filepath.Join(root, "Outer.cls")
+	classPath := filepath.Join(root, "Container.cls")
 	writeFile(t, classPath, `
-public class Outer {
-  public class Inner {
+public class Container {
+  public class Nested {
     public String label() { return 'inner'; }
   }
   public interface Marker {
@@ -531,13 +531,13 @@ public class Outer {
 	for _, typ := range idx.Types {
 		types[typ.Name] = typ
 	}
-	for _, name := range []string{"Outer", "Outer.Inner", "Outer.Marker"} {
+	for _, name := range []string{"Container", "Container.Nested", "Container.Marker"} {
 		if _, ok := types[name]; !ok {
 			t.Fatalf("missing nested type %s in %#v", name, idx.Types)
 		}
 	}
-	if len(types["Outer.Inner"].Members) != 1 || types["Outer.Inner"].Members[0].Name != "label" {
-		t.Fatalf("inner members = %#v", types["Outer.Inner"].Members)
+	if len(types["Container.Nested"].Members) != 1 || types["Container.Nested"].Members[0].Name != "label" {
+		t.Fatalf("inner members = %#v", types["Container.Nested"].Members)
 	}
 }
 

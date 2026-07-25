@@ -176,10 +176,10 @@ func TestParseDeclarations(t *testing.T) {
 		},
 		{
 			name:   "nested type",
-			source: `public class Outer { public class Inner { public void run() {} } }`,
+			source: `public class Container { public class Nested { public void run() {} } }`,
 			check: func(t *testing.T, file File) {
 				outer := file.Declarations[0]
-				if len(outer.Members) != 1 || outer.Members[0].Kind != DeclarationClass || outer.Members[0].Name != "Inner" {
+				if len(outer.Members) != 1 || outer.Members[0].Kind != DeclarationClass || outer.Members[0].Name != "Nested" {
 					t.Fatalf("outer = %#v", outer)
 				}
 			},
@@ -292,6 +292,128 @@ func TestParseSyntaxError(t *testing.T) {
 	}
 	if file.Diagnostics[0].Range == nil || file.Diagnostics[0].Range.Start.Line == 0 {
 		t.Fatalf("diagnostic = %#v", file.Diagnostics[0])
+	}
+}
+
+func TestParseRejectsEverySalesforceReservedVariableName(t *testing.T) {
+	reserved := strings.Fields(`abstract activate and any array as asc autonomous
+		begin bigdecimal blob boolean break bulk by byte case cast catch char class
+		collect commit const continue currency date datetime decimal default delete
+		desc do double else end enum exception exit export extends false final finally
+		float for from global goto group having hint if implements import in inner
+		insert instanceof int integer interface into join like limit list long loop
+		map merge new not null nulls number object of on or outer override package
+		parallel pragma private protected public retrieve return rollback select set
+		short sObject sort static string super switch synchronized system testmethod
+		then this throw time transaction trigger true try undelete update upsert using
+		virtual void webservice when where while`)
+	if len(reserved) != 121 || len(salesforceReservedIdentifiers) != 121 {
+		t.Fatalf("reserved word counts = test:%d implementation:%d, want 121", len(reserved), len(salesforceReservedIdentifiers))
+	}
+	parser := NewParser()
+	for _, word := range reserved {
+		t.Run(word, func(t *testing.T) {
+			source := fmt.Sprintf("class Probe { void run() { String %s = 'x'; } }", word)
+			if file := parser.ParseSource("Probe.cls", source); !file.HasErrors() {
+				t.Fatalf("%q was accepted as a variable name", word)
+			}
+		})
+	}
+}
+
+func TestParseRejectsReservedIdentifiersCaseInsensitively(t *testing.T) {
+	source := "class Probe { void run() { String Currency = 'USD'; } }"
+	file := NewParser().ParseSource("Probe.cls", source)
+	for _, diag := range file.Diagnostics {
+		if diag.Code == "APEXPARSE002" && diag.Message == "Identifier name is reserved: Currency" {
+			return
+		}
+	}
+	t.Fatalf("missing mixed-case reserved identifier diagnostic: %#v", file.Diagnostics)
+}
+
+func TestParseRejectsReservedIdentifiersInDeclarationContexts(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+	}{
+		{
+			name:   "field",
+			source: "class Probe { String currency; }",
+		},
+		{
+			name:   "local",
+			source: "class Probe { void run() { String currency = 'USD'; } }",
+		},
+		{
+			name:   "parameter",
+			source: "class Probe { void run(String currency) {} }",
+		},
+		{
+			name:   "enhanced for",
+			source: "class Probe { void run() { for (String currency : new List<String>()) {} } }",
+		},
+		{
+			name:   "catch",
+			source: "class Probe { void run() { try {} catch (Exception currency) {} } }",
+		},
+		{
+			name:   "enum constant",
+			source: "enum Probe { currency }",
+		},
+	}
+	parser := NewParser()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			file := parser.ParseSource("Probe.cls", tt.source)
+			var reserved *Diagnostic
+			for i := range file.Diagnostics {
+				if file.Diagnostics[i].Code == "APEXPARSE002" {
+					reserved = &file.Diagnostics[i]
+					break
+				}
+			}
+			if reserved == nil {
+				t.Fatalf("missing reserved identifier diagnostic: %#v", file.Diagnostics)
+			}
+			if reserved.Message != "Identifier name is reserved: currency" {
+				t.Fatalf("message = %q", reserved.Message)
+			}
+			if reserved.Range == nil {
+				t.Fatalf("diagnostic range = %#v", reserved)
+			}
+			start, end := reserved.Range.Start.Offset, reserved.Range.End.Offset
+			if start < 0 || end > len(tt.source) || start >= end || tt.source[start:end] != "currency" {
+				t.Fatalf("range = %#v, source slice %q", reserved.Range, tt.source[start:end])
+			}
+		})
+	}
+}
+
+func TestParsePreservesSalesforceContextualIdentifiersAndMethodNames(t *testing.T) {
+	permitted := []string{
+		"after", "before", "count", "excludes", "first", "includes",
+		"last", "order", "sharing", "with", "id",
+	}
+	parser := NewParser()
+	for _, word := range permitted {
+		t.Run("variable "+word, func(t *testing.T) {
+			source := fmt.Sprintf("class Probe { void run() { String %s = 'x'; } }", word)
+			if file := parser.ParseSource("Probe.cls", source); file.HasErrors() {
+				t.Fatalf("%q should remain a valid variable name: %#v", word, file.Diagnostics)
+			}
+		})
+	}
+	for _, word := range []string{"currency", "void"} {
+		t.Run("method "+word, func(t *testing.T) {
+			source := fmt.Sprintf("class Probe { String %s() { return 'x'; } }", word)
+			if file := parser.ParseSource("Probe.cls", source); file.HasErrors() {
+				t.Fatalf("%q should remain a valid method name: %#v", word, file.Diagnostics)
+			}
+		})
+	}
+	if file := parser.ParseSource("Probe.cls", "class Probe { String trigger() { return 'x'; } }"); !file.HasErrors() {
+		t.Fatal(`"trigger" should remain reserved as a method name`)
 	}
 }
 

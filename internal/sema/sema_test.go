@@ -618,22 +618,22 @@ func TestAnalyzeProjectNamespaceQualifiedTypes(t *testing.T) {
 func TestAnalyzeNestedTypeReferences(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	writeSemaFile(t, filepath.Join(root, "Outer.cls"), `
-public class Outer {
-  public class Inner {}
+	writeSemaFile(t, filepath.Join(root, "Container.cls"), `
+public class Container {
+  public class Nested {}
 }
 `)
-	writeSemaFile(t, filepath.Join(root, "UsesInner.cls"), `
-public class UsesInner {
-  public Outer.Inner build() {
-    Outer.Inner value = new Outer.Inner();
+	writeSemaFile(t, filepath.Join(root, "UsesNested.cls"), `
+public class UsesNested {
+  public Container.Nested build() {
+    Container.Nested value = new Container.Nested();
     return value;
   }
 }
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
-		filepath.Join(root, "Outer.cls"),
-		filepath.Join(root, "UsesInner.cls"),
+		filepath.Join(root, "Container.cls"),
+		filepath.Join(root, "UsesNested.cls"),
 	}}, schema.Schema{})
 
 	result := Analyze(index)
@@ -2067,7 +2067,7 @@ public class OuterHelper {
     return String.valueOf(value);
   }
 
-  private class Inner {
+  private class NestedHelper {
     public String run(Object value) {
       return toString(value);
     }
@@ -5936,27 +5936,27 @@ func TestAnalyzeSchemaSoapTypeAliases(t *testing.T) {
 func TestAnalyzeNestedTypeRelativeReferencesInsideOwner(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	writeSemaFile(t, filepath.Join(root, "Outer.cls"), `
-public class Outer {
+	writeSemaFile(t, filepath.Join(root, "Container.cls"), `
+public class Container {
   public interface Named {
     String name();
   }
-  public class Inner {
-    public Inner(Integer value) {}
+  public class NestedValue {
+    public NestedValue(Integer value) {}
   }
   public class NamedImpl implements Named {
     public String name() {
       return 'named';
     }
   }
-  public static Inner build(Integer value) {
-    Inner made = new Inner(value);
+  public static NestedValue build(Integer value) {
+    NestedValue made = new NestedValue(value);
     return made;
   }
 }
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
-		filepath.Join(root, "Outer.cls"),
+		filepath.Join(root, "Container.cls"),
 	}}, schema.Schema{})
 
 	result := Analyze(index)
@@ -5968,8 +5968,8 @@ public class Outer {
 func TestAnalyzeChainedStaticPropertyNestedFieldCall(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	writeSemaFile(t, filepath.Join(root, "Outer.cls"), `
-public class Outer {
+	writeSemaFile(t, filepath.Join(root, "Container.cls"), `
+public class Container {
   public static Factory Test { get; private set; }
   public class Factory {
     public MockDatabase Database = new MockDatabase();
@@ -5979,16 +5979,16 @@ public class Outer {
   }
 }
 `)
-	writeSemaFile(t, filepath.Join(root, "UsesOuter.cls"), `
-public class UsesOuter {
+	writeSemaFile(t, filepath.Join(root, "UsesContainer.cls"), `
+public class UsesContainer {
   public void run(Opportunity opp) {
-    Outer.Test.Database.onUpdate(new List<Opportunity> { opp }, new Map<Id, Opportunity> { opp.Id => opp });
+    Container.Test.Database.onUpdate(new List<Opportunity> { opp }, new Map<Id, Opportunity> { opp.Id => opp });
   }
 }
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
-		filepath.Join(root, "Outer.cls"),
-		filepath.Join(root, "UsesOuter.cls"),
+		filepath.Join(root, "Container.cls"),
+		filepath.Join(root, "UsesContainer.cls"),
 	}}, schema.Schema{
 		Objects: []schema.Object{{Name: "Opportunity"}},
 	})
@@ -9795,8 +9795,8 @@ func TestAnalyzeSuppressesUnknownCallsThroughNestedTypeMissingSuperclass(t *test
 public class Base extends MissingBase {
 }
 `)
-	writeSemaFile(t, filepath.Join(root, "Outer.cls"), `
-public class Outer {
+	writeSemaFile(t, filepath.Join(root, "Container.cls"), `
+public class Container {
   public class Child extends Base {
   }
   public void run() {
@@ -9807,7 +9807,7 @@ public class Outer {
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
 		filepath.Join(root, "Base.cls"),
-		filepath.Join(root, "Outer.cls"),
+		filepath.Join(root, "Container.cls"),
 	}}, schema.Schema{})
 
 	result := Analyze(index)

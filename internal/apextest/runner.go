@@ -238,6 +238,9 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_start"})
 	}
+	if compileErr := indexCompileError(index.Diagnostics); compileErr != nil {
+		return compileErrorRun(cases, compileErr, started, opts)
+	}
 	var runtimeKey runtimeCacheKey
 	var runtime runtimeExecutionView
 	var runtimeErr error
@@ -399,6 +402,12 @@ func compileErrorRun(cases []TestCase, compileErr error, started time.Time, opts
 		Name:       "glade test",
 		DurationMS: time.Since(started).Milliseconds(),
 	}
+	if len(cases) == 0 {
+		cases = []TestCase{{
+			ClassName:  "project",
+			MethodName: "compile",
+		}}
+	}
 	suiteIndexes := make(map[string]int)
 	for _, testCase := range cases {
 		index, ok := suiteIndexes[testCase.ClassName]
@@ -427,6 +436,33 @@ func compileErrorRun(cases []TestCase, compileErr error, started time.Time, opts
 		}
 	}
 	return run
+}
+
+func indexCompileError(diagnostics []diagnostic.Diagnostic) error {
+	var messages []string
+	for _, diag := range diagnostics {
+		if diag.Severity != diagnostic.Error {
+			continue
+		}
+		var message strings.Builder
+		if diag.File != "" {
+			message.WriteString(diag.File)
+			if diag.Range != nil && diag.Range.Start.Line > 0 {
+				_, _ = fmt.Fprintf(&message, ":%d:%d", diag.Range.Start.Line, diag.Range.Start.Column)
+			}
+			message.WriteString(": ")
+		}
+		if diag.Code != "" {
+			message.WriteString(diag.Code)
+			message.WriteString(": ")
+		}
+		message.WriteString(diag.Message)
+		messages = append(messages, message.String())
+	}
+	if len(messages) == 0 {
+		return nil
+	}
+	return errors.New(strings.Join(messages, "\n"))
 }
 
 func useDiskRuntimeCache(opts Options) bool {

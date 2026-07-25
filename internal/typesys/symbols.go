@@ -585,7 +585,7 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 	normalized := source.NormalizedString()
 	file := parser.ParseSource(path, normalized)
 	out.Diagnostics = append(out.Diagnostics, file.Diagnostics...)
-	if len(file.Diagnostics) > 0 {
+	if hasBlockingParserDiagnostic(file.Diagnostics) {
 		return out
 	}
 	for _, decl := range file.Declarations {
@@ -613,6 +613,15 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 		}
 	}
 	return out
+}
+
+func hasBlockingParserDiagnostic(diagnostics []diagnostic.Diagnostic) bool {
+	for _, diag := range diagnostics {
+		if diag.Code != "APEXPARSE002" {
+			return true
+		}
+	}
+	return false
 }
 
 func namespaceTypeKey(namespace, name string) string {

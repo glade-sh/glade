@@ -21,9 +21,11 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/dap"
+	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/pluginhost"
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/testdaemon"
+	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 	"github.com/glade-sh/glade/internal/watch"
@@ -3210,6 +3212,75 @@ func TestRunCheckJSONOmitsDuplicateDataDiagnostics(t *testing.T) {
 	}
 	if _, ok := got.Data["diagnostics"]; ok {
 		t.Fatalf("data duplicated diagnostics:\n%s", stdout.String())
+	}
+}
+
+func TestRunCheckAndTestRejectReservedApexIdentifier(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/ReservedCurrencyTest.cls"), `
+@isTest
+private class ReservedCurrencyTest {
+  @isTest
+  static void rejectsReservedIdentifier() {
+    String currency = 'USD';
+    System.assertEquals('USD', currency);
+  }
+}
+`)
+
+	var checkStdout, checkStderr bytes.Buffer
+	checkCode := Run(context.Background(), []string{"check", "--project", root, "--json", "--no-progress"}, &checkStdout, &checkStderr)
+	if checkCode != 1 {
+		t.Fatalf("check exit code = %d, want 1; stderr=%q stdout=%q", checkCode, checkStderr.String(), checkStdout.String())
+	}
+	var checkEnvelope struct {
+		Status      string                  `json:"status"`
+		ExitCode    int                     `json:"exitCode"`
+		Diagnostics []diagnostic.Diagnostic `json:"diagnostics"`
+	}
+	if err := json.Unmarshal(checkStdout.Bytes(), &checkEnvelope); err != nil {
+		t.Fatalf("check stdout is not JSON: %v\n%s", err, checkStdout.String())
+	}
+	if checkEnvelope.Status != "failed" || checkEnvelope.ExitCode != 1 {
+		t.Fatalf("check envelope = %#v", checkEnvelope)
+	}
+	var foundReserved bool
+	for _, diag := range checkEnvelope.Diagnostics {
+		if diag.Code == "APEXPARSE002" && diag.Message == "Identifier name is reserved: currency" {
+			foundReserved = true
+			break
+		}
+	}
+	if !foundReserved {
+		t.Fatalf("check diagnostics = %#v", checkEnvelope.Diagnostics)
+	}
+
+	var testStdout, testStderr bytes.Buffer
+	testCode := Run(context.Background(), []string{"test", "--project", root, "--json", "--no-progress", "--no-cache"}, &testStdout, &testStderr)
+	if testCode != 1 {
+		t.Fatalf("test exit code = %d, want 1; stderr=%q stdout=%q", testCode, testStderr.String(), testStdout.String())
+	}
+	var testEnvelope struct {
+		Status   string             `json:"status"`
+		ExitCode int                `json:"exitCode"`
+		Summary  testreport.Summary `json:"summary"`
+		Tests    []struct {
+			Problem *testreport.Problem `json:"problem"`
+		} `json:"tests"`
+	}
+	if err := json.Unmarshal(testStdout.Bytes(), &testEnvelope); err != nil {
+		t.Fatalf("test stdout is not JSON: %v\n%s", err, testStdout.String())
+	}
+	if testEnvelope.Status != "failed" || testEnvelope.ExitCode != 1 {
+		t.Fatalf("test envelope = %#v", testEnvelope)
+	}
+	if testEnvelope.Summary.Total != 1 || testEnvelope.Summary.CompileErrors != 1 || testEnvelope.Summary.Passed != 0 {
+		t.Fatalf("test summary = %#v", testEnvelope.Summary)
+	}
+	if len(testEnvelope.Tests) != 1 || testEnvelope.Tests[0].Problem == nil ||
+		!strings.Contains(testEnvelope.Tests[0].Problem.Message, "Identifier name is reserved: currency") {
+		t.Fatalf("test cases = %#v", testEnvelope.Tests)
 	}
 }
 

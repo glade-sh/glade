@@ -89,9 +89,9 @@ public class UsesSchemaAccount {
 func TestAnalyzeInnerTypeWinsBeforeNamespaceType(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	writeSemaFile(t, filepath.Join(root, "Outer.cls"), `
-public class Outer {
-  public class Inner {
+	writeSemaFile(t, filepath.Join(root, "Container.cls"), `
+public class Container {
+  public class Nested {
     public String localValue;
   }
 }
@@ -115,7 +115,7 @@ public class UsesInnerPrecedence {
   }
 }
 `)
-	result := analyzeFiles(t, root, "Outer.cls", "A.cls", "UsesInnerPrecedence.cls")
+	result := analyzeFiles(t, root, "Container.cls", "A.cls", "UsesInnerPrecedence.cls")
 	if result.HasErrors() {
 		t.Fatalf("unexpected inner-before-namespace diagnostics: %#v", result.Diagnostics)
 	}
