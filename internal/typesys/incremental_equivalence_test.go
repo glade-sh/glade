@@ -1745,6 +1745,49 @@ func incrementalDormantStateMismatches(got, want Index) []string {
 	return mismatches
 }
 
+func TestUpdateApexFilesPreservesEnumMembersAndHasBody(t *testing.T) {
+	root := t.TempDir()
+	enumPath := filepath.Join(root, "Color.cls")
+	classPath := filepath.Join(root, "Shape.cls")
+	writeFile(t, enumPath, `public enum Color { Red, Green }`)
+	writeFile(t, classPath, `public abstract class Shape {
+  public abstract void draw();
+  public void paint() {}
+}`)
+	proj := project.Project{Root: root, ApexFiles: []string{enumPath, classPath}}
+	previous := Build(proj, schema.Schema{})
+	writeFile(t, enumPath, `public enum Color { Red, Green, Blue }`)
+	writeFile(t, classPath, `public abstract class Shape {
+  public abstract void draw();
+  public void paint() { System.debug('x'); }
+  public Shape() {}
+}`)
+	updated := UpdateApexFiles(previous, []string{enumPath, classPath}, nil)
+	fresh := Build(project.Project{Root: root, ApexFiles: []string{enumPath, classPath}}, schema.Schema{})
+	compareIncrementalTypeSymbolAtPath(t, enumPath, updated, fresh)
+	compareIncrementalTypeSymbolAtPath(t, classPath, updated, fresh)
+	color, ok := incrementalTypeSymbolAtPath(updated, enumPath)
+	if !ok || len(color.Members) != 3 {
+		t.Fatalf("updated enum members = %#v ok=%v", color.Members, ok)
+	}
+	shape, ok := incrementalTypeSymbolAtPath(updated, classPath)
+	if !ok {
+		t.Fatal("missing Shape")
+	}
+	foundCtor := false
+	for _, member := range shape.Members {
+		if member.Kind == apexast.DeclarationConstructor && member.HasBody {
+			foundCtor = true
+		}
+		if member.Name == "paint" && !member.HasBody {
+			t.Fatalf("paint HasBody lost: %#v", member)
+		}
+	}
+	if !foundCtor {
+		t.Fatalf("constructor HasBody missing: %#v", shape.Members)
+	}
+}
+
 func compareIncrementalTypeSymbolAtPath(t *testing.T, path string, got, want Index) {
 	t.Helper()
 	gotSymbol, gotOK := incrementalTypeSymbolAtPath(got, path)

@@ -9,6 +9,8 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
+const maxApexParameters = 32
+
 func (a *Analyzer) checkDeclarationContracts(index typesys.Index) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, typ := range index.Types {
@@ -16,9 +18,21 @@ func (a *Analyzer) checkDeclarationContracts(index typesys.Index) []diagnostic.D
 			continue
 		}
 		diagnostics = append(diagnostics, declarationIdentityDiagnostics(typ)...)
+		if declarationFromParsedSource(typ) {
+			diagnostics = append(diagnostics, declarationModifierDiagnostics(typ)...)
+			diagnostics = append(diagnostics, memberModifierDiagnostics(typ)...)
+		}
 		diagnostics = append(diagnostics, memberIdentityDiagnostics(typ)...)
 	}
 	return diagnostics
+}
+
+func declarationFromParsedSource(typ typesys.TypeSymbol) bool {
+	if typ.LocalName == "" || typ.File == "" {
+		return false
+	}
+	// Flow interview symbols are synthesized from metadata, not Apex declarations.
+	return !strings.HasSuffix(strings.ToLower(typ.File), ".flow-meta.xml")
 }
 
 func declarationIdentityDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnostic {
@@ -37,6 +51,49 @@ func declarationIdentityDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnos
 		}
 	}
 	return nil
+}
+
+func declarationModifierDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnostic {
+	var diagnostics []diagnostic.Diagnostic
+	mods := typ.Modifiers
+
+	if typ.NestingDepth == 0 {
+		hasPrivate := hasModifier(mods, "private")
+		hasProtected := hasModifier(mods, "protected")
+		// Omitted access modifiers are common in synthetic unit fixtures; only
+		// reject an explicit illegal top-level visibility. @IsTest private remains allowed.
+		if hasProtected || (hasPrivate && !typ.IsTest) {
+			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, typ.Range,
+				fmt.Sprintf("top-level %s %q must be public or global", typ.Kind, typ.Name)))
+		}
+	}
+	if typ.NestingDepth > 1 && (typ.Kind == apexast.DeclarationClass || typ.Kind == apexast.DeclarationInterface) {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, typ.Range,
+			fmt.Sprintf("type %q nests deeper than one inner level", typ.Name)))
+	}
+	if typ.Kind == apexast.DeclarationClass {
+		if hasModifier(mods, "static") {
+			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, typ.Range,
+				fmt.Sprintf("class %q cannot be declared static", typ.Name)))
+		}
+		if hasModifier(mods, "final") {
+			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, typ.Range,
+				fmt.Sprintf("class %q cannot be declared final", typ.Name)))
+		}
+		if hasModifier(mods, "abstract") && hasModifier(mods, "virtual") {
+			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, typ.Range,
+				fmt.Sprintf("class %q cannot be both abstract and virtual", typ.Name)))
+		}
+	}
+	if sharingModifierCount(mods) > 1 {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, typ.Range,
+			fmt.Sprintf("type %q declares mutually exclusive sharing modifiers", typ.Name)))
+	}
+	if len(typ.TypeParameters) > 0 {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, typ.Range,
+			fmt.Sprintf("%s %q cannot declare type parameters", typ.Kind, typ.Name)))
+	}
+	return diagnostics
 }
 
 func memberIdentityDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnostic {
@@ -73,6 +130,122 @@ func memberIdentityDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnostic {
 	return diagnostics
 }
 
+func memberModifierDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnostic {
+	var diagnostics []diagnostic.Diagnostic
+	for _, member := range typ.Members {
+		switch member.Kind {
+		case apexast.DeclarationMethod:
+			diagnostics = append(diagnostics, methodContractDiagnostics(typ, member)...)
+		case apexast.DeclarationConstructor:
+			diagnostics = append(diagnostics, constructorContractDiagnostics(typ, member)...)
+		case apexast.DeclarationInitializer:
+			if typ.NestingDepth > 0 && hasModifier(member.Modifiers, "static") {
+				diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+					fmt.Sprintf("inner type %q cannot declare a static initializer", typ.Name)))
+			}
+		case apexast.DeclarationProperty:
+			diagnostics = append(diagnostics, propertyAccessorDiagnostics(typ, member)...)
+		}
+	}
+	return diagnostics
+}
+
+func methodContractDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymbol) []diagnostic.Diagnostic {
+	var diagnostics []diagnostic.Diagnostic
+	mods := member.Modifiers
+	abstract := hasModifier(mods, "abstract")
+	virtual := hasModifier(mods, "virtual")
+	override := hasModifier(mods, "override")
+	static := hasModifier(mods, "static")
+
+	if abstract && virtual {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+			fmt.Sprintf("method %q cannot be both abstract and virtual", member.Name)))
+	}
+	if abstract && override {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+			fmt.Sprintf("method %q cannot be both abstract and override", member.Name)))
+	}
+	if abstract && static {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+			fmt.Sprintf("method %q cannot be both abstract and static", member.Name)))
+	}
+	if virtual && static {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+			fmt.Sprintf("method %q cannot be both virtual and static", member.Name)))
+	}
+	if override && static {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+			fmt.Sprintf("method %q cannot be both override and static", member.Name)))
+	}
+	if len(member.Parameters) > maxApexParameters {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+			fmt.Sprintf("method %q exceeds the %d parameter limit", member.Name, maxApexParameters)))
+	}
+
+	switch typ.Kind {
+	case apexast.DeclarationInterface:
+		if member.HasBody {
+			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+				fmt.Sprintf("interface method %q cannot have a body", member.Name)))
+		}
+	case apexast.DeclarationClass:
+		if abstract && member.HasBody {
+			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+				fmt.Sprintf("abstract method %q cannot have a body", member.Name)))
+		}
+		if !abstract && !member.HasBody {
+			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+				fmt.Sprintf("method %q must have a body", member.Name)))
+		}
+	}
+	return diagnostics
+}
+
+func constructorContractDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymbol) []diagnostic.Diagnostic {
+	var diagnostics []diagnostic.Diagnostic
+	if len(member.Parameters) > maxApexParameters {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+			fmt.Sprintf("constructor for %q exceeds the %d parameter limit", typ.Name, maxApexParameters)))
+	}
+	if !member.HasBody {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+			fmt.Sprintf("constructor for %q must have a body", typ.Name)))
+	}
+	return diagnostics
+}
+
+func propertyAccessorDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymbol) []diagnostic.Diagnostic {
+	var diagnostics []diagnostic.Diagnostic
+	gets, sets := 0, 0
+	propVis := declarationVisibilityRank(member.Modifiers)
+	for _, accessor := range member.Accessors {
+		switch strings.ToLower(accessor.Kind) {
+		case "get":
+			gets++
+		case "set":
+			sets++
+		}
+		if len(accessor.Modifiers) == 0 {
+			continue
+		}
+		accVis := declarationVisibilityRank(accessor.Modifiers)
+		if accVis > propVis {
+			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, accessor.Range,
+				fmt.Sprintf("property %q accessor visibility cannot be wider than the property", member.Name)))
+		}
+	}
+	if gets > 1 {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+			fmt.Sprintf("property %q declares duplicate getter", member.Name)))
+	}
+	if sets > 1 {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+			fmt.Sprintf("property %q declares duplicate setter", member.Name)))
+	}
+	return diagnostics
+}
+
 func duplicateMemberDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, previousKind apexast.DeclarationKind) diagnostic.Diagnostic {
 	kind := string(member.Kind)
 	if previousKind != member.Kind {
@@ -94,6 +267,16 @@ func duplicateMemberDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymb
 	}
 }
 
+func declarationContractDiagnostic(typ typesys.TypeSymbol, r diagnostic.Range, message string) diagnostic.Diagnostic {
+	return diagnostic.Diagnostic{
+		Severity: diagnostic.Error,
+		Code:     "GLADESEMA032",
+		Message:  message,
+		File:     typ.File,
+		Range:    &r,
+	}
+}
+
 func memberSignatureKey(member typesys.MemberSymbol) string {
 	return normalizeName(member.Name) + "(" + parameterTypeKey(member.Parameters) + ")"
 }
@@ -111,4 +294,34 @@ func parameterTypeKey(params []apexast.Parameter) string {
 		parts[i] = normalizeName(param.Type)
 	}
 	return strings.Join(parts, ",")
+}
+
+func hasTopLevelVisibility(modifiers []string) bool {
+	return hasModifier(modifiers, "public") || hasModifier(modifiers, "global")
+}
+
+func sharingModifierCount(modifiers []string) int {
+	count := 0
+	for _, mod := range modifiers {
+		switch strings.ToLower(strings.Join(strings.Fields(mod), " ")) {
+		case "with sharing", "without sharing", "inherited sharing":
+			count++
+		}
+	}
+	return count
+}
+
+func declarationVisibilityRank(modifiers []string) int {
+	switch {
+	case hasModifier(modifiers, "global"):
+		return 3
+	case hasModifier(modifiers, "public"):
+		return 2
+	case hasModifier(modifiers, "protected"):
+		return 1
+	case hasModifier(modifiers, "private"):
+		return 0
+	default:
+		return 0
+	}
 }

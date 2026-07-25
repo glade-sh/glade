@@ -56,6 +56,7 @@ type TypeSymbol struct {
 	Dependency            bool                    `json:"dependency,omitempty"`
 	Artifact              bool                    `json:"artifact,omitempty"`
 	Modifiers             []string                `json:"modifiers,omitempty"`
+	TypeParameters        []string                `json:"typeParameters,omitempty"`
 	IsTest                bool                    `json:"isTest,omitempty"`
 	SuperClass            string                  `json:"superClass,omitempty"`
 	Interfaces            []string                `json:"interfaces,omitempty"`
@@ -70,6 +71,7 @@ type MemberSymbol struct {
 	Modifiers  []string                `json:"modifiers,omitempty"`
 	Parameters []apexast.Parameter     `json:"parameters,omitempty"`
 	Accessors  []apexast.Accessor      `json:"accessors,omitempty"`
+	HasBody    bool                    `json:"hasBody,omitempty"`
 	IsTest     bool                    `json:"isTest,omitempty"`
 	Range      diagnostic.Range        `json:"range"`
 }
@@ -1480,15 +1482,16 @@ func typeSymbolFromDeclaration(path string, decl apexast.Declaration, parent str
 		nestingDepth = parentDepth + 1
 	}
 	sym := TypeSymbol{
-		Kind:         decl.Kind,
-		Name:         name,
-		LocalName:    localName,
-		OwnerName:    ownerName,
-		NestingDepth: nestingDepth,
-		File:         path,
-		Modifiers:    decl.Modifiers,
-		IsTest:       parentIsTest || hasTestModifier(decl.Modifiers),
-		Range:        decl.Range,
+		Kind:           decl.Kind,
+		Name:           name,
+		LocalName:      localName,
+		OwnerName:      ownerName,
+		NestingDepth:   nestingDepth,
+		File:           path,
+		Modifiers:      decl.Modifiers,
+		TypeParameters: append([]string(nil), decl.TypeParameters...),
+		IsTest:         parentIsTest || hasTestModifier(decl.Modifiers),
+		Range:          decl.Range,
 	}
 	for _, member := range decl.Members {
 		if member.Name == "" {
@@ -1501,6 +1504,7 @@ func typeSymbolFromDeclaration(path string, decl apexast.Declaration, parent str
 			Modifiers:  member.Modifiers,
 			Parameters: member.Parameters,
 			Accessors:  member.Accessors,
+			HasBody:    member.HasBody,
 			IsTest:     hasTestModifier(member.Modifiers) || (member.Kind == apexast.DeclarationMethod && hasModifier(member.Modifiers, "testmethod")),
 			Range:      member.Range,
 		})

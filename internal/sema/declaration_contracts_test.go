@@ -1,6 +1,7 @@
 package sema
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -256,5 +257,310 @@ public class DupCase {
 	}
 	if !declarationDiagnosticMatching(result, "run") {
 		t.Fatalf("expected diagnostic naming the method, got %#v", result.Diagnostics)
+	}
+}
+
+func TestDeclarationContractTopLevelVisibility(t *testing.T) {
+	t.Parallel()
+	privateResult := analyzeDeclarationProject(t, map[string]string{
+		"Hidden.cls": `private class Hidden {}`,
+	})
+	if !privateResult.HasErrors() || !declarationDiagnosticMatching(privateResult, "public or global") {
+		t.Fatalf("expected top-level visibility error, got %#v", privateResult.Diagnostics)
+	}
+
+	isTestResult := analyzeDeclarationProject(t, map[string]string{
+		"HiddenTest.cls": `
+@IsTest
+private class HiddenTest {
+  @IsTest static Integer run() { return 1; }
+}
+`,
+	})
+	if declarationDiagnosticMatching(isTestResult, "public or global") {
+		t.Fatalf("@IsTest private top-level must remain allowed: %#v", isTestResult.Diagnostics)
+	}
+
+	publicResult := analyzeDeclarationProject(t, map[string]string{
+		"Visible.cls": `public class Visible {}`,
+	})
+	if publicResult.HasErrors() {
+		t.Fatalf("public top-level should pass: %#v", publicResult.Diagnostics)
+	}
+}
+
+func TestDeclarationContractNestingDepth(t *testing.T) {
+	t.Parallel()
+	ok := analyzeDeclarationProject(t, map[string]string{
+		"Outer.cls": `
+public class Outer {
+  class Inner {}
+}
+`,
+	})
+	if declarationDiagnosticMatching(ok, "nests deeper") {
+		t.Fatalf("one inner level should be allowed: %#v", ok.Diagnostics)
+	}
+
+	deep := analyzeDeclarationProject(t, map[string]string{
+		"Outer.cls": `
+public class Outer {
+  class Mid {
+    class Deep {}
+  }
+}
+`,
+	})
+	if !deep.HasErrors() || !declarationDiagnosticMatching(deep, "nests deeper") {
+		t.Fatalf("expected deeper nesting error, got %#v", deep.Diagnostics)
+	}
+}
+
+func TestDeclarationContractIllegalClassModifiers(t *testing.T) {
+	t.Parallel()
+	for name, source := range map[string]string{
+		"StaticClass.cls":   `public static class StaticClass {}`,
+		"FinalClass.cls":    `public final class FinalClass {}`,
+		"AbstractVirtual.cls": `public abstract virtual class AbstractVirtual {}`,
+	} {
+		result := analyzeDeclarationProject(t, map[string]string{name: source})
+		if !result.HasErrors() {
+			t.Fatalf("%s: expected modifier error, got %#v", name, result.Diagnostics)
+		}
+	}
+}
+
+func TestDeclarationContractIllegalMethodModifierCombinations(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"BadMethods.cls": `
+public abstract class BadMethods {
+  public abstract virtual void both() {}
+  public abstract override void absOverride() {}
+  public abstract static void absStatic() {}
+  public virtual static void virtStatic() {}
+  public override static void overStatic() {}
+}
+`,
+	})
+	if !result.HasErrors() {
+		t.Fatalf("expected method modifier errors, got %#v", result.Diagnostics)
+	}
+	for _, needle := range []string{"abstract and virtual", "abstract and override", "abstract and static", "virtual and static", "override and static"} {
+		if !declarationDiagnosticMatching(result, needle) {
+			t.Fatalf("missing %q diagnostic in %#v", needle, result.Diagnostics)
+		}
+	}
+}
+
+func TestDeclarationContractInnerStaticInitializerAndSharing(t *testing.T) {
+	t.Parallel()
+	innerInit := analyzeDeclarationProject(t, map[string]string{
+		"Outer.cls": `
+public class Outer {
+  class Inner {
+    static { Integer x = 1; }
+  }
+}
+`,
+	})
+	if !innerInit.HasErrors() || !declarationDiagnosticMatching(innerInit, "static initializer") {
+		t.Fatalf("expected inner static initializer error, got %#v", innerInit.Diagnostics)
+	}
+
+	sharing := analyzeDeclarationProject(t, map[string]string{
+		"Share.cls": `public with sharing without sharing class Share {}`,
+	})
+	if !sharing.HasErrors() || !declarationDiagnosticMatching(sharing, "sharing") {
+		t.Fatalf("expected mutually exclusive sharing error, got %#v", sharing.Diagnostics)
+	}
+}
+
+func TestDeclarationContractParameterLimit(t *testing.T) {
+	t.Parallel()
+	okParams := make([]string, 32)
+	overParams := make([]string, 33)
+	for i := range okParams {
+		okParams[i] = fmt.Sprintf("Integer p%d", i)
+	}
+	for i := range overParams {
+		overParams[i] = fmt.Sprintf("Integer p%d", i)
+	}
+	ok := analyzeDeclarationProject(t, map[string]string{
+		"OkParams.cls": fmt.Sprintf(`
+public class OkParams {
+  public void run(%s) {}
+  public OkParams(%s) {}
+}
+`, strings.Join(okParams, ", "), strings.Join(okParams, ", ")),
+	})
+	if declarationDiagnosticMatching(ok, "parameter limit") {
+		t.Fatalf("32 parameters should be allowed: %#v", ok.Diagnostics)
+	}
+
+	over := analyzeDeclarationProject(t, map[string]string{
+		"OverParams.cls": fmt.Sprintf(`
+public class OverParams {
+  public void run(%s) {}
+  public OverParams(%s) {}
+}
+`, strings.Join(overParams, ", "), strings.Join(overParams, ", ")),
+	})
+	if !over.HasErrors() || !declarationDiagnosticMatching(over, "parameter limit") {
+		t.Fatalf("expected parameter limit error, got %#v", over.Diagnostics)
+	}
+}
+
+func TestDeclarationContractMethodBodyConsistency(t *testing.T) {
+	t.Parallel()
+	iface := analyzeDeclarationProject(t, map[string]string{
+		"IFace.cls": `public interface IFace { void run() { System.debug('x'); } }`,
+	})
+	if !iface.HasErrors() || !declarationDiagnosticMatching(iface, "cannot have a body") {
+		t.Fatalf("expected interface body error, got %#v", iface.Diagnostics)
+	}
+
+	absBody := analyzeDeclarationProject(t, map[string]string{
+		"Abs.cls": `
+public abstract class Abs {
+  public abstract void run() { System.debug('x'); }
+}
+`,
+	})
+	if !absBody.HasErrors() || !declarationDiagnosticMatching(absBody, "abstract method") {
+		t.Fatalf("expected abstract-with-body error, got %#v", absBody.Diagnostics)
+	}
+
+	missing := analyzeDeclarationProject(t, map[string]string{
+		"Missing.cls": `
+public class Missing {
+  public void run();
+}
+`,
+	})
+	if !missing.HasErrors() || !declarationDiagnosticMatching(missing, "must have a body") {
+		t.Fatalf("expected missing body error, got %#v", missing.Diagnostics)
+	}
+}
+
+func TestDeclarationContractAccessorVisibilityAndDuplicates(t *testing.T) {
+	t.Parallel()
+	vis := analyzeDeclarationProject(t, map[string]string{
+		"Wide.cls": `
+public class Wide {
+  private String Name { get; public set; }
+}
+`,
+	})
+	if !vis.HasErrors() || !declarationDiagnosticMatching(vis, "accessor visibility") {
+		t.Fatalf("expected accessor visibility error, got %#v", vis.Diagnostics)
+	}
+
+	dup := analyzeDeclarationProject(t, map[string]string{
+		"DupGet.cls": `
+public class DupGet {
+  public String Name { get; get; set; }
+}
+`,
+	})
+	if !dup.HasErrors() || !declarationDiagnosticMatching(dup, "duplicate getter") {
+		t.Fatalf("expected duplicate getter error, got %#v", dup.Diagnostics)
+	}
+}
+
+func TestDeclarationContractUserGenericClass(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Box.cls": `public class Box<T> { public T value; }`,
+	})
+	if !result.HasErrors() || !declarationDiagnosticMatching(result, "type parameters") {
+		t.Fatalf("expected user generic error, got %#v", result.Diagnostics)
+	}
+}
+
+func TestDeclarationContractConstructorChaining(t *testing.T) {
+	t.Parallel()
+	notFirst := analyzeDeclarationProject(t, map[string]string{
+		"Base.cls":  `public class Base { public Base(Integer value) {} }`,
+		"Child.cls": `
+public class Child extends Base {
+  public Child() {
+    Integer x = 1;
+    super(x);
+  }
+}
+`,
+	})
+	if !notFirst.HasErrors() || !declarationDiagnosticMatching(notFirst, "first statement") {
+		t.Fatalf("expected chain-must-be-first error, got %#v", notFirst.Diagnostics)
+	}
+
+	twoChains := analyzeDeclarationProject(t, map[string]string{
+		"Plain.cls": `
+public class Plain {
+  public Plain() { this(1); }
+  public Plain(Integer value) {
+    this();
+    super();
+  }
+}
+`,
+	})
+	if !twoChains.HasErrors() || !declarationDiagnosticMatching(twoChains, "at most one") {
+		t.Fatalf("expected at-most-one chain error, got %#v", twoChains.Diagnostics)
+	}
+
+	implicit := analyzeDeclarationProject(t, map[string]string{
+		"Base.cls": `public class Base { public Base(Integer value) {} }`,
+		"Child.cls": `
+public class Child extends Base {
+  public Child() {}
+}
+`,
+	})
+	if !implicit.HasErrors() || !declarationDiagnosticMatching(implicit, "implicit super()") {
+		t.Fatalf("expected implicit super() error, got %#v", implicit.Diagnostics)
+	}
+
+	ok := analyzeDeclarationProject(t, map[string]string{
+		"Base.cls": `public class Base { public Base() {} public Base(Integer value) {} }`,
+		"Child.cls": `
+public class Child extends Base {
+  public Child() { super(1); }
+  public Child(String value) { this(); }
+}
+`,
+	})
+	if declarationDiagnosticMatching(ok, "first statement") || declarationDiagnosticMatching(ok, "implicit super()") {
+		t.Fatalf("valid chaining rejected: %#v", ok.Diagnostics)
+	}
+}
+
+func TestDeclarationContractAmbiguousNullOverload(t *testing.T) {
+	t.Parallel()
+	ambiguous := analyzeDeclarationProject(t, map[string]string{
+		"Over.cls": `
+public class Over {
+  public void run(String value) {}
+  public void run(Integer value) {}
+  public void call() { run(null); }
+}
+`,
+	})
+	if !ambiguous.HasErrors() || !declarationDiagnosticMatching(ambiguous, "ambiguous") {
+		t.Fatalf("expected ambiguous null overload error, got %#v", ambiguous.Diagnostics)
+	}
+
+	specific := analyzeDeclarationProject(t, map[string]string{
+		"Over.cls": `
+public class Over {
+  public void run(Object value) {}
+  public void run(String value) {}
+  public void call() { run(null); }
+}
+`,
+	})
+	if declarationDiagnosticMatching(specific, "ambiguous") {
+		t.Fatalf("most-specific overload should win for null: %#v", specific.Diagnostics)
 	}
 }

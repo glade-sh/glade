@@ -168,10 +168,11 @@ func treeSitterDeclaration(node *tree_sitter.Node, source string, lineMap LineMa
 
 func treeSitterClass(node *tree_sitter.Node, source string, lineMap LineMap) Declaration {
 	decl := Declaration{
-		Kind:      DeclarationClass,
-		Name:      nodeText(childByField(node, "name"), source),
-		Modifiers: treeSitterModifiers(node, source),
-		Range:     treeSitterRange(node, lineMap),
+		Kind:           DeclarationClass,
+		Name:           nodeText(childByField(node, "name"), source),
+		Modifiers:      treeSitterModifiers(node, source),
+		TypeParameters: treeSitterTypeParameters(node, source),
+		Range:          treeSitterRange(node, lineMap),
 	}
 	if body := childByField(node, "body"); body != nil {
 		decl.Members = treeSitterMembers(body, source, lineMap)
@@ -181,10 +182,11 @@ func treeSitterClass(node *tree_sitter.Node, source string, lineMap LineMap) Dec
 
 func treeSitterInterface(node *tree_sitter.Node, source string, lineMap LineMap) Declaration {
 	decl := Declaration{
-		Kind:      DeclarationInterface,
-		Name:      nodeText(childByField(node, "name"), source),
-		Modifiers: treeSitterModifiers(node, source),
-		Range:     treeSitterRange(node, lineMap),
+		Kind:           DeclarationInterface,
+		Name:           nodeText(childByField(node, "name"), source),
+		Modifiers:      treeSitterModifiers(node, source),
+		TypeParameters: treeSitterTypeParameters(node, source),
+		Range:          treeSitterRange(node, lineMap),
 	}
 	if body := childByField(node, "body"); body != nil {
 		for _, child := range namedChildren(body) {
@@ -197,12 +199,36 @@ func treeSitterInterface(node *tree_sitter.Node, source string, lineMap LineMap)
 }
 
 func treeSitterEnum(node *tree_sitter.Node, source string, lineMap LineMap) Declaration {
-	return Declaration{
+	decl := Declaration{
 		Kind:      DeclarationEnum,
 		Name:      nodeText(childByField(node, "name"), source),
 		Modifiers: treeSitterModifiers(node, source),
 		Range:     treeSitterRange(node, lineMap),
 	}
+	if body := childByField(node, "body"); body != nil {
+		for _, child := range namedChildren(body) {
+			if child.Kind() != "enum_constant" {
+				continue
+			}
+			name := nodeText(childByField(&child, "name"), source)
+			if name == "" {
+				if id := firstChildOfKind(&child, "identifier"); id != nil {
+					name = nodeText(id, source)
+				}
+			}
+			if name == "" {
+				continue
+			}
+			decl.Members = append(decl.Members, Declaration{
+				Kind:      DeclarationField,
+				Name:      name,
+				Type:      decl.Name,
+				Modifiers: []string{"public", "static"},
+				Range:     treeSitterRange(&child, lineMap),
+			})
+		}
+	}
+	return decl
 }
 
 func treeSitterTrigger(node *tree_sitter.Node, source string, lineMap LineMap) Declaration {
@@ -263,6 +289,7 @@ func treeSitterMethod(node *tree_sitter.Node, source string, lineMap LineMap) De
 		Type:       treeSitterTypeText(childByField(node, "type"), source),
 		Modifiers:  treeSitterModifiers(node, source),
 		Parameters: treeSitterParameters(childByField(node, "parameters"), source, lineMap),
+		HasBody:    childByField(node, "body") != nil,
 		Range:      treeSitterRange(node, lineMap),
 	}
 }
@@ -273,8 +300,33 @@ func treeSitterConstructor(node *tree_sitter.Node, source string, lineMap LineMa
 		Name:       nodeText(childByField(node, "name"), source),
 		Modifiers:  treeSitterModifiers(node, source),
 		Parameters: treeSitterParameters(childByField(node, "parameters"), source, lineMap),
+		HasBody:    childByField(node, "body") != nil,
 		Range:      treeSitterRange(node, lineMap),
 	}
+}
+
+func treeSitterTypeParameters(node *tree_sitter.Node, source string) []string {
+	params := childByField(node, "type_parameters")
+	if params == nil {
+		params = firstChildOfKind(node, "type_parameters")
+	}
+	if params == nil {
+		return nil
+	}
+	var out []string
+	for _, child := range namedChildren(params) {
+		if child.Kind() != "type_parameter" {
+			continue
+		}
+		name := nodeText(firstChildOfKind(&child, "type_identifier"), source)
+		if name == "" {
+			name = nodeText(childByField(&child, "name"), source)
+		}
+		if name != "" {
+			out = append(out, name)
+		}
+	}
+	return out
 }
 
 func treeSitterFields(node *tree_sitter.Node, source string, lineMap LineMap) []Declaration {

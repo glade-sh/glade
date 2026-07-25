@@ -108,7 +108,7 @@ func TestWorkspaceSourcesPreservesRawNormalizedDigestAndMetadata(t *testing.T) {
 func TestWorkspaceSourcesPreservesUTF8CRLFRangesAndPath(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "Utf8.cls")
-	raw := []byte("public class Utf8 {\r\n  String café = '東京';\r\n  public void run() {}\r\n}\r\n")
+	raw := []byte("public class Utf8 {\r\n  String label = '東京';\r\n  public void run() {}\r\n}\r\n")
 	if err := os.WriteFile(path, raw, 0o644); err != nil {
 		t.Fatal(err)
 	}

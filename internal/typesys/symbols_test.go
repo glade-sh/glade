@@ -705,6 +705,46 @@ func TestUpdateApexFilesReplacesChangedSymbolsAndDropsDeleted(t *testing.T) {
 	}
 }
 
+func TestTypeSymbolPreservesEnumMembersAndHasBody(t *testing.T) {
+	root := t.TempDir()
+	enumPath := filepath.Join(root, "Color.cls")
+	classPath := filepath.Join(root, "Shape.cls")
+	writeFile(t, enumPath, `public enum Color { Red, Green }`)
+	writeFile(t, classPath, `public abstract class Shape {
+  public abstract void draw();
+  public void paint() {}
+}`)
+
+	idx := Build(project.Project{Root: root, ApexFiles: []string{enumPath, classPath}}, schema.Schema{})
+	byName := map[string]TypeSymbol{}
+	for _, typ := range idx.Types {
+		byName[typ.Name] = typ
+	}
+	color, ok := byName["Color"]
+	if !ok {
+		t.Fatalf("missing Color: %#v", idx.Types)
+	}
+	if len(color.Members) != 2 || color.Members[0].Name != "Red" || color.Members[1].Name != "Green" {
+		t.Fatalf("enum members = %#v", color.Members)
+	}
+	shape, ok := byName["Shape"]
+	if !ok {
+		t.Fatalf("missing Shape: %#v", idx.Types)
+	}
+	var draw, paint MemberSymbol
+	for _, member := range shape.Members {
+		switch member.Name {
+		case "draw":
+			draw = member
+		case "paint":
+			paint = member
+		}
+	}
+	if draw.HasBody || !paint.HasBody {
+		t.Fatalf("HasBody draw=%v paint=%v members=%#v", draw.HasBody, paint.HasBody, shape.Members)
+	}
+}
+
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

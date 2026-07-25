@@ -590,6 +590,7 @@ func (a *Analyzer) checkBodyIRWithCompileStatus(typ typesys.TypeSymbol, member t
 	}
 	diagnostics = append(diagnostics, a.checkIRExpressionTypeReferences(typ, member, program.Instructions, body, bodyOffset, source)...)
 	diagnostics = append(diagnostics, a.checkIRInstructions(typ, member, program.Instructions, &scope, bodyOffset, source, model, constructability)...)
+	diagnostics = append(diagnostics, a.checkConstructorChainingIR(typ, member, program.Instructions, bodyOffset, source, model)...)
 	returnType := strings.TrimSpace(member.Type)
 	memberSource := ""
 	if member.Range.Start.Offset >= 0 && member.Range.End.Offset > member.Range.Start.Offset && member.Range.End.Offset <= len(source) {
@@ -599,6 +600,72 @@ func (a *Analyzer) checkBodyIRWithCompileStatus(typ typesys.TypeSymbol, member t
 		diagnostics = append(diagnostics, returnTypeDiagnostic(typ, member, fmt.Sprintf("method must return %s on all paths", returnType), member.Range.Start.Offset, member.Range.End.Offset, source))
 	}
 	return diagnostics, true
+}
+
+func (a *Analyzer) checkConstructorChainingIR(typ typesys.TypeSymbol, member typesys.MemberSymbol, instructions []ir.Instruction, bodyOffset int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
+	if member.Kind != apexast.DeclarationConstructor {
+		return nil
+	}
+	var chainIndexes []int
+	for i, inst := range instructions {
+		if isConstructorChainInstruction(inst) {
+			chainIndexes = append(chainIndexes, i)
+		}
+	}
+	var diagnostics []diagnostic.Diagnostic
+	if len(chainIndexes) > 1 {
+		inst := instructions[chainIndexes[1]]
+		diagnostics = append(diagnostics, constructorDiagnostic(typ, member, irConstructorChainCallee(inst), "constructor may contain at most one this(...)/super(...) call", bodyOffset+inst.Pos, bodyOffset+inst.Pos+1, source))
+	}
+	if len(chainIndexes) == 1 && chainIndexes[0] != 0 {
+		inst := instructions[chainIndexes[0]]
+		diagnostics = append(diagnostics, constructorDiagnostic(typ, member, irConstructorChainCallee(inst), "this(...)/super(...) must be the first statement in a constructor", bodyOffset+inst.Pos, bodyOffset+inst.Pos+1, source))
+	}
+	if len(chainIndexes) == 0 {
+		diagnostics = append(diagnostics, a.checkImplicitSuperConstructor(typ, member, bodyOffset, source, model)...)
+	}
+	return diagnostics
+}
+
+func isConstructorChainInstruction(inst ir.Instruction) bool {
+	if inst.Op != ir.OpExpr || inst.Expr.Kind != ir.ExprCall {
+		return false
+	}
+	return strings.EqualFold(inst.Expr.Callee, "this") || strings.EqualFold(inst.Expr.Callee, "super")
+}
+
+func irConstructorChainCallee(inst ir.Instruction) string {
+	if strings.EqualFold(inst.Expr.Callee, "super") {
+		return "super"
+	}
+	return "this"
+}
+
+func (a *Analyzer) checkImplicitSuperConstructor(typ typesys.TypeSymbol, member typesys.MemberSymbol, bodyOffset int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
+	superName := strings.TrimSpace(typ.SuperClass)
+	if superName == "" {
+		return nil
+	}
+	if resolved := resolveNestedTypeName(model, typ.Name, superName); resolved != "" {
+		superName = resolved
+	}
+	target, ok := model.lookup(normalizeName(superName))
+	if !ok {
+		return nil
+	}
+	if len(target.constructors) == 0 {
+		return nil
+	}
+	for _, ctor := range target.constructors {
+		if len(ctor.Parameters) != 0 {
+			continue
+		}
+		if _, blocked := checkSemaMemberAccess(typ, member, "super", resolvedMember{owner: target.name, member: ctor}, member.Range.Start.Offset, member.Range.End.Offset, source, model); blocked {
+			continue
+		}
+		return nil
+	}
+	return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "super", fmt.Sprintf("implicit super() requires an accessible no-argument constructor on %s", superName), member.Range.Start.Offset, member.Range.End.Offset, source)}
 }
 
 func (a *Analyzer) checkIRExpressionTypeReferences(typ typesys.TypeSymbol, member typesys.MemberSymbol, instructions []ir.Instruction, body string, bodyOffset int, source string) []diagnostic.Diagnostic {
@@ -1232,7 +1299,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 		}
 		return nil
 	} else if ambiguous {
-		if semaArgTypesContainNullish(argTypes) {
+		if semaArgTypesContainUnknown(argTypes) {
 			return nil
 		}
 		if semaAmbiguousNewListHelper(method, candidates, argTypes) {
@@ -1272,13 +1339,17 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 		return nil
 	}
 	if textArgTypes := irVariableTextArgTypes(expr.Args, scope, model); len(textArgTypes) == len(expr.Args) {
-		if _, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, textArgTypes, model); ok || (ambiguous && semaArgTypesContainNullish(textArgTypes)) {
+		if _, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, textArgTypes, model); ok {
 			return nil
+		} else if ambiguous && !semaArgTypesContainUnknown(textArgTypes) {
+			return []diagnostic.Diagnostic{ambiguousCallDiagnostic(typ, member, expr.Callee, len(expr.Args), bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
 		}
 	}
 	if sourceArgTypes := irSourceArgTypesForCall(source, bodyOffset+pos, expr.Callee, scope, model); len(sourceArgTypes) == len(expr.Args) {
-		if _, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, sourceArgTypes, model); ok || (ambiguous && semaArgTypesContainNullish(sourceArgTypes)) {
+		if _, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, sourceArgTypes, model); ok {
 			return nil
+		} else if ambiguous && !semaArgTypesContainUnknown(sourceArgTypes) {
+			return []diagnostic.Diagnostic{ambiguousCallDiagnostic(typ, member, expr.Callee, len(expr.Args), bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
 		}
 	}
 	return []diagnostic.Diagnostic{{
@@ -1507,7 +1578,7 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 			}
 			return nil
 		} else if ambiguous {
-			if semaAllowAmbiguousPlatformConstructor(resolvedTypeName, argTypes) || semaArgTypesContainNullish(argTypes) {
+			if semaAllowAmbiguousPlatformConstructor(resolvedTypeName, argTypes) || semaArgTypesContainUnknown(argTypes) {
 				return nil
 			}
 			return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("ambiguous %s constructor with %d argument(s)", typeName, len(expr.Args)+len(expr.NamedArgs)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
@@ -1519,7 +1590,7 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 		}
 		return nil
 	} else if ambiguous {
-		if semaAllowAmbiguousPlatformConstructor(resolvedTypeName, argTypes) || semaArgTypesContainNullish(argTypes) {
+		if semaAllowAmbiguousPlatformConstructor(resolvedTypeName, argTypes) || semaArgTypesContainUnknown(argTypes) {
 			return nil
 		}
 		return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("ambiguous %s constructor with %d argument(s)", typeName, len(expr.Args)+len(expr.NamedArgs)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}

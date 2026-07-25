@@ -142,6 +142,22 @@ func TestParseDeclarations(t *testing.T) {
 				if file.Kind != FileKindEnum || file.Declarations[0].Name != "Color" {
 					t.Fatalf("enum = %#v", file)
 				}
+				members := file.Declarations[0].Members
+				if len(members) != 2 || members[0].Name != "Red" || members[1].Name != "Green" {
+					t.Fatalf("enum members = %#v", members)
+				}
+				if members[0].Kind != DeclarationField || members[0].Type != "Color" {
+					t.Fatalf("enum constant = %#v", members[0])
+				}
+			},
+		},
+		{
+			name:   "user generic class declaration",
+			source: `public class Box<T> { public T value; }`,
+			check: func(t *testing.T, file File) {
+				if got := file.Declarations[0].TypeParameters; len(got) != 1 || got[0] != "T" {
+					t.Fatalf("type parameters = %#v", got)
+				}
 			},
 		},
 		{
@@ -282,6 +298,39 @@ func TestParseDeclarations(t *testing.T) {
 			}
 			tt.check(t, file)
 		})
+	}
+}
+
+func TestParseMethodConstructorHasBody(t *testing.T) {
+	file := NewParser().ParseSource("Shape.cls", `public abstract class Shape {
+  public abstract void draw();
+  public void paint() { System.debug('paint'); }
+  public Shape() {}
+}
+public interface Drawable { void draw(); }`)
+	if len(file.Declarations) != 2 {
+		t.Fatalf("declarations = %#v", file.Declarations)
+	}
+	shape := file.Declarations[0]
+	if shape.Members[0].HasBody {
+		t.Fatalf("abstract method should not have body: %#v", shape.Members[0])
+	}
+	if !shape.Members[1].HasBody {
+		t.Fatalf("concrete method should have body: %#v", shape.Members[1])
+	}
+	if !shape.Members[2].HasBody {
+		t.Fatalf("constructor should have body: %#v", shape.Members[2])
+	}
+	iface := file.Declarations[1]
+	if iface.Members[0].HasBody {
+		t.Fatalf("interface method should not have body: %#v", iface.Members[0])
+	}
+}
+
+func TestParseEnumUserMethodSyntax(t *testing.T) {
+	file := NewParser().ParseSource("Color.cls", `public enum Color { Red, Green; public void run() {} }`)
+	if !file.HasErrors() {
+		t.Fatalf("expected enum method syntax error, got %#v", file)
 	}
 }
 

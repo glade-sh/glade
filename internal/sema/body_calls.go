@@ -484,7 +484,7 @@ func (a *Analyzer) diagnoseConstructorChain(typ typesys.TypeSymbol, member types
 		}
 		return nil
 	} else if ambiguous {
-		if semaArgTypesContainNullish(argTypes) {
+		if semaArgTypesContainUnknown(argTypes) {
 			return nil
 		}
 		return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, callee, fmt.Sprintf("ambiguous %s constructor with %d argument(s)", targetType, len(args)), start, end, source)}
@@ -622,7 +622,7 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 		}
 		return nil
 	} else if ambiguous {
-		if semaArgTypesContainNullish(argTypes) {
+		if semaArgTypesContainUnknown(argTypes) {
 			return nil
 		}
 		if semaAmbiguousNewListHelper(callee, candidates, argTypes) {

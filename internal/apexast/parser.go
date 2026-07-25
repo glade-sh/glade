@@ -61,16 +61,18 @@ func convertDeclarations(decls []external.Declaration) []Declaration {
 
 func convertDeclaration(decl external.Declaration) Declaration {
 	return Declaration{
-		Kind:       DeclarationKind(decl.Kind),
-		Name:       decl.Name,
-		Type:       decl.Type,
-		Modifiers:  decl.Modifiers,
-		Parameters: convertParameters(decl.Parameters),
-		Accessors:  convertAccessors(decl.Accessors),
-		ObjectName: decl.ObjectName,
-		Events:     decl.Events,
-		Range:      convertRange(decl.Range),
-		Members:    convertDeclarations(decl.Members),
+		Kind:           DeclarationKind(decl.Kind),
+		Name:           decl.Name,
+		Type:           decl.Type,
+		Modifiers:      decl.Modifiers,
+		Parameters:     convertParameters(decl.Parameters),
+		Accessors:      convertAccessors(decl.Accessors),
+		ObjectName:     decl.ObjectName,
+		Events:         decl.Events,
+		TypeParameters: append([]string(nil), decl.TypeParameters...),
+		HasBody:        decl.HasBody,
+		Range:          convertRange(decl.Range),
+		Members:        convertDeclarations(decl.Members),
 	}
 }
 

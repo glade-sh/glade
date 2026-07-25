@@ -504,6 +504,7 @@ public interface Greeter {
 }
 `)
 	writeSemaFile(t, filepath.Join(root, "GreeterProvider.cls"), `
+@IsTest
 private class GreeterProvider implements System.StubProvider {
   public Object handleMethodCall(Object stubbedObject, String stubbedMethodName, Type returnType, List<Type> listOfParamTypes, List<String> listOfParamNames, List<Object> listOfArgs) {
     return 'stubbed';
@@ -511,6 +512,7 @@ private class GreeterProvider implements System.StubProvider {
 }
 `)
 	writeSemaFile(t, filepath.Join(root, "MockResponse.cls"), `
+@IsTest
 private class MockResponse implements HttpCalloutMock {
   public HttpResponse respond(HttpRequest request) {
     return new HttpResponse();
@@ -4910,7 +4912,7 @@ public class Conditions {
 	}
 }
 
-func TestAnalyzeAmbiguousNullOverloadsAccepted(t *testing.T) {
+func TestAnalyzeAmbiguousNullOverloadsRejected(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesNullOverloads.cls"), `
@@ -4932,8 +4934,17 @@ public class UsesNullOverloads {
 		ApexFiles: []string{filepath.Join(root, "UsesNullOverloads.cls")},
 	}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
 	result := Analyze(index)
-	if result.HasErrors() {
-		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	if !result.HasErrors() {
+		t.Fatalf("expected ambiguous null overload errors, got %#v", result.Diagnostics)
+	}
+	var ambiguous int
+	for _, diag := range result.Diagnostics {
+		if strings.Contains(strings.ToLower(diag.Message), "ambiguous") {
+			ambiguous++
+		}
+	}
+	if ambiguous < 2 {
+		t.Fatalf("expected constructor and method ambiguity, got %#v", result.Diagnostics)
 	}
 }
 

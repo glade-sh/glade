@@ -192,6 +192,41 @@ public class PaymentGatewayService {
 	}
 }
 
+func TestParseEnumMembersAndHasBody(t *testing.T) {
+	file := NewParser().ParseSource("Color.cls", `public enum Color { Red, Green }`)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	members := file.Declarations[0].Members
+	if len(members) != 2 || members[0].Name != "Red" || members[1].Name != "Green" {
+		t.Fatalf("enum members = %#v", members)
+	}
+	shape := NewParser().ParseSource("Shape.cls", `public abstract class Shape {
+  public abstract void draw();
+  public void paint() {}
+}`)
+	if shape.Declarations[0].Members[0].HasBody || !shape.Declarations[0].Members[1].HasBody {
+		t.Fatalf("HasBody = %#v", shape.Declarations[0].Members)
+	}
+}
+
+func TestParseEnumUserMethodSyntax(t *testing.T) {
+	file := NewParser().ParseSource("Color.cls", `public enum Color { Red, Green; public void run() {} }`)
+	if len(file.Diagnostics) == 0 {
+		t.Fatalf("expected enum method syntax error, got %#v", file)
+	}
+}
+
+func TestParseUserGenericClassDeclaration(t *testing.T) {
+	file := NewParser().ParseSource("Box.cls", `public class Box<T> { public T value; }`)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	if got := file.Declarations[0].TypeParameters; len(got) != 1 || got[0] != "T" {
+		t.Fatalf("type parameters = %#v", got)
+	}
+}
+
 func TestParseSyntaxError(t *testing.T) {
 	file := NewParser().ParseSource("Broken.cls", "public class Broken {")
 	if len(file.Diagnostics) == 0 {

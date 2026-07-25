@@ -326,7 +326,7 @@ func downgradeSourceDependencySemanticDiagnostics(diagnostics []diagnostic.Diagn
 		}
 		// Same-owner declaration/member collisions must stay hard errors even when
 		// source-backed dependencies are loaded (see GLADETYPE001 severity semantics).
-		if out[i].Code == "GLADESEMA031" {
+		if out[i].Code == "GLADESEMA031" || out[i].Code == "GLADESEMA032" {
 			continue
 		}
 		if strings.HasPrefix(out[i].Code, "GLADESEMA") || strings.HasPrefix(out[i].Code, "dependency_") {
@@ -2265,6 +2265,15 @@ func semaArgsMatchAny(params [][]string, args []string, model *semaTypeMemberVie
 func semaArgTypesContainNullish(argTypes []string) bool {
 	for _, argType := range argTypes {
 		if argType == "" || strings.EqualFold(argType, "null") {
+			return true
+		}
+	}
+	return false
+}
+
+func semaArgTypesContainUnknown(argTypes []string) bool {
+	for _, argType := range argTypes {
+		if argType == "" {
 			return true
 		}
 	}
