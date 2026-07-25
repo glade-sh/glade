@@ -68,6 +68,95 @@ private class ReservedCurrencyTest {
 	}
 }
 
+func TestRunCasesContextRejectsSemanticDiagnosticsBeforeExecution(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "BadBodyTest.cls")
+	writeFile(t, path, `
+@isTest
+private class BadBodyTest {
+  @isTest
+  static void constructsUnknownType() {
+    Object thing = new MissingHelper();
+    System.assert(false);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index unexpectedly has errors: %#v", index.Diagnostics)
+	}
+	cases := Discover(index, Options{})
+	if len(cases) != 1 {
+		t.Fatalf("discovered cases = %#v", cases)
+	}
+
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true}, cases)
+	if summary := run.Summary(); summary.Total != 1 || summary.CompileErrors != 1 || summary.Passed != 0 || summary.Failed != 0 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+	if problem := firstRunProblem(run); !strings.Contains(problem, "constructs unknown type") || !strings.Contains(problem, "MissingHelper") {
+		t.Fatalf("problem = %q", problem)
+	}
+}
+
+func TestRunCasesContextSynthesizesProjectCompileCaseWhenNoTestsDiscovered(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "BadBodyHelper.cls")
+	writeFile(t, path, `
+public class BadBodyHelper {
+  public static void run() {
+    Object thing = new MissingHelper();
+    System.debug(thing);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index unexpectedly has errors: %#v", index.Diagnostics)
+	}
+	cases := Discover(index, Options{})
+	if len(cases) != 0 {
+		t.Fatalf("expected no discoverable test cases, got %#v", cases)
+	}
+
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true}, nil)
+	if summary := run.Summary(); summary.Total != 1 || summary.CompileErrors != 1 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+	if len(run.Suites) != 1 || len(run.Suites[0].Cases) != 1 ||
+		run.Suites[0].Name != "project" || run.Suites[0].Cases[0].MethodName != "compile" {
+		t.Fatalf("suites = %#v", run.Suites)
+	}
+	if problem := firstRunProblem(run); !strings.Contains(problem, "constructs unknown type") || !strings.Contains(problem, "MissingHelper") {
+		t.Fatalf("problem = %q", problem)
+	}
+}
+
+func TestRunCasesContextRunsValueReturningIsTestMethod(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "ValueReturningTest.cls")
+	writeFile(t, path, `
+@isTest
+private class ValueReturningTest {
+  @isTest
+  static Integer runsAndReturnsAValue() {
+    System.assertEquals(2, 1 + 1);
+    return 1;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	cases := Discover(index, Options{})
+	if len(cases) != 1 || cases[0].ReturnType != "Integer" {
+		t.Fatalf("discovered cases = %#v", cases)
+	}
+
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true}, cases)
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+}
+
 func TestRuntimeKeyWithSourceDigestsAvoidsRereadsAndMatchesDiskFallback(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "force-app", "main", "default", "classes", "Unicode.cls")

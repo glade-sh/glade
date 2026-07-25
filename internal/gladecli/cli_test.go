@@ -3284,6 +3284,50 @@ private class ReservedCurrencyTest {
 	}
 }
 
+func TestRunTestRejectsInvalidMethodBodyBeforeExecution(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/BadBodyTest.cls"), `
+@isTest
+private class BadBodyTest {
+  @isTest
+  static void constructsUnknownType() {
+    Object thing = new MissingHelper();
+    System.assert(false);
+  }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--json", "--no-progress", "--no-cache"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	var envelope struct {
+		Status   string             `json:"status"`
+		ExitCode int                `json:"exitCode"`
+		Summary  testreport.Summary `json:"summary"`
+		Tests    []struct {
+			Problem *testreport.Problem `json:"problem"`
+		} `json:"tests"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &envelope); err != nil {
+		t.Fatalf("stdout is not JSON: %v\n%s", err, stdout.String())
+	}
+	if envelope.Status != "failed" || envelope.ExitCode != 1 {
+		t.Fatalf("envelope = %#v", envelope)
+	}
+	if envelope.Summary.Total != 1 || envelope.Summary.CompileErrors != 1 ||
+		envelope.Summary.Passed != 0 || envelope.Summary.Failed != 0 {
+		t.Fatalf("summary = %#v", envelope.Summary)
+	}
+	if len(envelope.Tests) != 1 || envelope.Tests[0].Problem == nil ||
+		!strings.Contains(envelope.Tests[0].Problem.Message, "constructs unknown type") ||
+		!strings.Contains(envelope.Tests[0].Problem.Message, "MissingHelper") {
+		t.Fatalf("test cases = %#v", envelope.Tests)
+	}
+}
+
 func TestRunCheckUnknownType(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
