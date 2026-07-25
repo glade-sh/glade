@@ -8,7 +8,6 @@ import (
 	"mime"
 	"net"
 	"net/http"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -212,6 +211,9 @@ func (s *Server) loadSource(id string) (WorkspaceMetadata, error) {
 	}
 	for _, ref := range s.projectRefs {
 		if ref.ID == id {
+			if s.public {
+				return s.workspace.LoadProjectReferenceLimited(ref, s.maxWorkspaceFiles, s.maxWorkspaceBytes)
+			}
 			return s.workspace.LoadProjectReference(ref)
 		}
 	}
@@ -410,7 +412,7 @@ func (s *Server) handleSeed(w http.ResponseWriter, r *http.Request) {
 	}
 	reader := r.Body
 	if r.ContentLength == 0 {
-		file, err := os.Open(filepath.Join(s.workspace.Root, "seed.json"))
+		file, _, err := s.workspace.openFile("seed.json")
 		if err != nil {
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
@@ -428,12 +430,16 @@ func (s *Server) handleSeed(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) serveWorkspaceFile(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/")
-	full, err := s.workspace.SafePath(path)
+	file, info, err := s.workspace.openFile(path)
 	if err != nil {
 		writeError(w, http.StatusNotFound, "unknown playground route")
 		return
 	}
-	http.ServeFile(w, r, full)
+	defer file.Close()
+	if contentType := mime.TypeByExtension(filepath.Ext(path)); contentType != "" {
+		w.Header().Set("Content-Type", contentType)
+	}
+	http.ServeContent(w, r, filepath.Base(path), info.ModTime(), file)
 }
 
 func defaultPublicLimitCaps() vm.LimitCaps {
@@ -524,11 +530,10 @@ func (l *fixedWindowRateLimiter) pruneLocked(now time.Time) {
 }
 
 func (s *Server) checkPublicWorkspaceBudget(req FileSaveRequest) error {
-	full, err := s.workspace.SafePath(req.Path)
+	rel, err := normalizedWorkspacePath(req.Path)
 	if err != nil {
 		return err
 	}
-	rel := slashRel(s.workspace.Root, full)
 	meta, err := s.workspace.Metadata()
 	if err != nil {
 		return err

@@ -2,11 +2,8 @@ package playground
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -168,7 +165,7 @@ func (r *Runner) Run(ctx context.Context, req RunRequest) (RunResult, error) {
 	if err != nil {
 		return RunResult{}, err
 	}
-	seedHash := fileHash(filepath.Join(r.workspace.Root, "seed.json"))
+	seedHash := r.workspace.FileHash("seed.json")
 	cacheKey := CacheKey{
 		WorkspaceHash: workspaceHash,
 		AnonymousBody: req.AnonymousBody,
@@ -437,15 +434,6 @@ func baselineOrg() storage.OrgState {
 	}
 	storage.EnsureDeterministicPlatformData(&org)
 	return org
-}
-
-func fileHash(path string) string {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return ""
-	}
-	sum := sha256.Sum256(data)
-	return "sha256:" + hex.EncodeToString(sum[:])
 }
 
 func runID(t time.Time) string {

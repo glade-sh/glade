@@ -57,9 +57,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release edit "$GITHUB_REF_NAME" \
-              --title "$GITHUB_REF_NAME" \
-              --notes-file release-notes.md
+            echo "Release $GITHUB_REF_NAME already exists; reusing it without mutation"
           else
             gh release create "$GITHUB_REF_NAME" \
               --title "$GITHUB_REF_NAME" \
@@ -265,9 +263,10 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           gh release upload "$GITHUB_REF_NAME" \
-            dist/glade_* \
-            dist/release-manifest-${{ matrix.artifact }}.json \
-            --clobber
+            dist/glade_${{ github.ref_name }}_${{ matrix.archive }}.tar.gz \
+            dist/glade_${{ github.ref_name }}_${{ matrix.archive }}.tar.gz.sha256 \
+            dist/glade_${{ github.ref_name }}_${{ matrix.archive }}.tar.gz.sbom.json \
+            dist/release-manifest-${{ matrix.artifact }}.json
 
   publish:
     needs: attest-and-upload
@@ -353,15 +352,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          VERSION: ${{ github.ref_name }}
         run: |
-          files="$(find dist -maxdepth 1 -type f -print)"
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" $files --clobber
-            gh release edit "$GITHUB_REF_NAME" \
-              --title "$GITHUB_REF_NAME" \
-              --notes-file release-notes.md
-          else
-            gh release create "$GITHUB_REF_NAME" $files \
-              --title "$GITHUB_REF_NAME" \
-              --notes-file release-notes.md
-          fi
+          gh release upload "$GITHUB_REF_NAME" \
+            dist/SHA256SUMS.txt \
+            dist/index.json \
+            dist/release-manifest.json \
+            dist/glade-release-artifacts-$VERSION.tar.gz

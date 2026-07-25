@@ -30,9 +30,12 @@ git push <remote> vX.Y.Z
 The `Release` GitHub Actions workflow builds parser-capable macOS and Linux
 archives on matching CGO-enabled runners, verifies `glade doctor` reports
 `Ready.`, and publishes `SHA256SUMS.txt` plus release manifests for the
-installer. The workflow creates or edits the GitHub release with the matching
-section from [RELEASE_NOTES.md](RELEASE_NOTES.md). The notes script fails if the
-section is missing, empty, or contains a literal `\n` sequence.
+installer. If the GitHub release is absent, the workflow creates it once with
+the matching section from [RELEASE_NOTES.md](RELEASE_NOTES.md). If it already
+exists, the workflow reuses its metadata, title, and body without editing them.
+It may add a uniquely named asset; a duplicate asset name fails rather than
+replace published bytes. The notes script fails if the section is missing,
+empty, or contains a literal `\n` sequence.
 
 Tag `glade-tools` with the same version when the plugin rail is part of the
 release. Product CI falls back to `glade-tools` `main` when a matching tools tag

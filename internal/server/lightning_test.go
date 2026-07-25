@@ -356,8 +356,14 @@ func TestStaticResourceServesDirectorySubpathFromPackageRoot(t *testing.T) {
 	handler := NewWithSource(&org, source)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/resource/Fixture_Assets/css/main.css", nil))
-	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), ".fixture") {
+	if rec.Code != http.StatusOK || rec.Body.String() != ".fixture{}" {
 		t.Fatalf("status/body = %d %q", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Content-Type"); !strings.HasPrefix(got, "text/css") {
+		t.Fatalf("content type = %q", got)
+	}
+	if got := rec.Header().Get("Cache-Control"); got != devNoStoreCacheControl {
+		t.Fatalf("Cache-Control = %q", got)
 	}
 }
 
@@ -381,7 +387,116 @@ func TestStaticResourceServesZipSubpathFromPackageRoot(t *testing.T) {
 	handler := NewWithSource(&org, source)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/resource/Bundle/css/site.css", nil))
-	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "steelblue") {
+	if rec.Code != http.StatusOK || rec.Body.String() != "body { color: steelblue; }" {
+		t.Fatalf("status/body = %d %q", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Content-Type"); !strings.HasPrefix(got, "text/css") {
+		t.Fatalf("content type = %q", got)
+	}
+}
+
+func TestStaticResourceRejectsEncodedResourceNameTraversal(t *testing.T) {
+	root := t.TempDir()
+	writeLightningFixtureFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeLightningFixtureFile(t, filepath.Join(root, "force-app/main/default/private.resource"), "private sentinel")
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	handler := NewWithSource(&org, source)
+
+	for _, requestPath := range []string{"/resource/..%2fprivate", "/resource/Bundle/..%2fprivate"} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, requestPath, nil))
+		if rec.Code == http.StatusOK || !strings.Contains(rec.Body.String(), "unknown static resource") {
+			t.Fatalf("%s status/body = %d %q", requestPath, rec.Code, rec.Body.String())
+		}
+	}
+}
+
+func TestStaticResourceRejectsEncodedFilesMapTraversal(t *testing.T) {
+	outside := filepath.Join(t.TempDir(), "outside.css")
+	if err := os.WriteFile(outside, []byte("outside sentinel"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Metadata.StaticResources = []storage.StaticResourceMetadata{{
+		Name:  "Bundle",
+		Files: map[string]string{"../outside": outside},
+	}}
+	handler := New(&org)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/resource/Bundle/%2e%2e%2foutside", nil))
+	if rec.Code == http.StatusOK || strings.Contains(rec.Body.String(), "outside sentinel") || !strings.Contains(rec.Body.String(), "unknown static resource") {
+		t.Fatalf("status/body = %d %q", rec.Code, rec.Body.String())
+	}
+}
+
+func TestStaticResourceServesInlineContentWithoutSharedTempFile(t *testing.T) {
+	const name = "InlineNoTemp"
+	legacyPath := filepath.Join(os.TempDir(), "glade-static-resource", name+".resource")
+	if err := os.Remove(legacyPath); err != nil && !os.IsNotExist(err) {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Remove(legacyPath) })
+
+	org := storage.NewOrgState()
+	org.Metadata.StaticResources = []storage.StaticResourceMetadata{{Name: name, Content: "inline bytes", ContentType: "text/plain"}}
+	handler := New(&org)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/resource/"+name, nil))
+	if rec.Code != http.StatusOK || rec.Body.String() != "inline bytes" {
+		t.Fatalf("status/body = %d %q", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Content-Type"); !strings.HasPrefix(got, "text/plain") {
+		t.Fatalf("content type = %q", got)
+	}
+	if _, err := os.Stat(legacyPath); !os.IsNotExist(err) {
+		t.Fatalf("legacy inline static-resource file exists: %v", err)
+	}
+}
+
+func TestStaticResourceServesFlatContentPathBytesAndMIME(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "flat.css")
+	if err := os.WriteFile(path, []byte(".flat{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Metadata.StaticResources = []storage.StaticResourceMetadata{{Name: "Flat", ContentPath: path}}
+	handler := New(&org)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/resource/Flat", nil))
+	if rec.Code != http.StatusOK || rec.Body.String() != ".flat{}" {
+		t.Fatalf("status/body = %d %q", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Content-Type"); !strings.HasPrefix(got, "text/css") {
+		t.Fatalf("content type = %q", got)
+	}
+}
+
+func TestStaticResourceReportsDiscoveredUnsafeBundleAsUnreadable(t *testing.T) {
+	resourcePath := filepath.Join(t.TempDir(), "staticresources", "Bundle.resource")
+	if err := os.MkdirAll(filepath.Dir(resourcePath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	outside := filepath.Join(t.TempDir(), "outside.resource")
+	if err := os.WriteFile(outside, []byte("outside sentinel"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, resourcePath); err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	source := SourceMetadata{Project: project.Project{StaticResourceFiles: []string{resourcePath}}}
+	handler := NewWithSource(&org, source)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/resource/Bundle/css/site.css", nil))
+	if rec.Code == http.StatusOK || !strings.Contains(rec.Body.String(), "static resource not readable") {
 		t.Fatalf("status/body = %d %q", rec.Code, rec.Body.String())
 	}
 }

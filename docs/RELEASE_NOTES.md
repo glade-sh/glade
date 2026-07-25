@@ -4,6 +4,37 @@
 
 No changes yet.
 
+## v0.2.9 - 2026-07-25
+
+Glade v0.2.9 prepares a faster large local Salesforce test path while
+tightening security and release safety. The changes preserve documented CLI and
+test behavior; Salesforce remains the validation gate for supported local work.
+
+Performance and compatibility:
+
+- A controlled comparison used identical normalized 4,565-test legs. Each leg
+  reported 4,561 passes and the same four 60-second cap timeouts. The optimized
+  path reported 11.45% lower duration, 11.35% lower wall time, 8.00% lower
+  maximum RSS, and 9.00% lower peak footprint.
+- The exhaustive optimized 11,526-test corpus reported zero failures,
+  unsupported results, load errors, compile errors, and internal errors.
+- Test selection and result parity were preserved. The daemon, startup-cache,
+  semantic, and local execution improvements underlying this comparison were
+  already merged.
+- This release preserves compatibility: it changes no documented CLI flag,
+  fixture format, persistent database schema, or supported Apex behavior.
+
+Security and release trust:
+
+- Added filesystem/root confinement for plugin archives, playground workspaces,
+  and static-resource reads, plus safe JSON serialization for LWC diagnostic
+  data.
+- Tightened CI attribution so required checks identify the exact commit they
+  validated.
+- The release workflow creates an absent release once. Existing release metadata,
+  title, and body are reused without editing; a new uniquely named asset may be
+  added, while a duplicate asset name fails instead of replacing published bytes.
+
 ## v0.2.8 - 2026-07-04
 
 Glade v0.2.8 ships the local terminal UI, richer debug-log tooling, local data

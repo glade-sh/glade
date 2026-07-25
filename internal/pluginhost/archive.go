@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -38,6 +39,12 @@ func extractArchive(archivePath, parent string) (extractedArchive, error) {
 	if err != nil {
 		return extractedArchive{}, err
 	}
+	root, err := os.OpenRoot(tmp)
+	if err != nil {
+		os.RemoveAll(tmp)
+		return extractedArchive{}, err
+	}
+	defer root.Close()
 	out := extractedArchive{dir: tmp, files: map[string]extractedFile{}}
 	cleanup := true
 	defer func() {
@@ -58,24 +65,25 @@ func extractArchive(archivePath, parent string) (extractedArchive, error) {
 		if err != nil {
 			return extractedArchive{}, err
 		}
-		target := filepath.Join(tmp, filepath.FromSlash(name))
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(target, os.FileMode(header.Mode)&0o777); err != nil {
+			if err := root.MkdirAll(name, os.FileMode(header.Mode&0o777)); err != nil {
 				return extractedArchive{}, err
 			}
 		case tar.TypeReg, tar.TypeRegA:
-			if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
-				return extractedArchive{}, err
+			if parent := path.Dir(name); parent != "." {
+				if err := root.MkdirAll(parent, 0o755); err != nil {
+					return extractedArchive{}, err
+				}
 			}
-			mode := os.FileMode(header.Mode) & 0o777
+			mode := os.FileMode(header.Mode & 0o777)
 			if mode == 0 {
 				mode = 0o644
 			}
-			if err := writeArchiveFile(target, tr, mode); err != nil {
+			if err := writeArchiveFile(root, name, tr, mode); err != nil {
 				return extractedArchive{}, err
 			}
-			out.files[name] = extractedFile{path: target, mode: mode}
+			out.files[name] = extractedFile{path: filepath.Join(tmp, filepath.FromSlash(name)), mode: mode}
 		default:
 			return extractedArchive{}, fmt.Errorf("unsupported archive entry %q", header.Name)
 		}
@@ -84,8 +92,8 @@ func extractArchive(archivePath, parent string) (extractedArchive, error) {
 	return out, nil
 }
 
-func writeArchiveFile(path string, r io.Reader, mode os.FileMode) error {
-	out, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)
+func writeArchiveFile(root *os.Root, name string, r io.Reader, mode os.FileMode) error {
+	out, err := root.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)
 	if err != nil {
 		return err
 	}
@@ -96,7 +104,7 @@ func writeArchiveFile(path string, r io.Reader, mode os.FileMode) error {
 	if err := out.Close(); err != nil {
 		return err
 	}
-	return os.Chmod(path, mode)
+	return root.Chmod(name, mode)
 }
 
 func safeArchivePath(name string) (string, error) {

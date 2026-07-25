@@ -913,18 +913,32 @@ func lightningBaseComponentClassName(name string) string {
 	return out.String()
 }
 
+type unsupportedBaseComponentDiagnosticPayload struct {
+	Message string `json:"message"`
+	Module  string `json:"module"`
+	TagName string `json:"tagName"`
+}
+
 func unsupportedBaseComponentModuleJS(def baseComponentDefinition) string {
 	message := "GLADELWC060 base component unsupported: " + def.Tag
-	raw, err := json.Marshal(message)
+	raw, err := json.Marshal(unsupportedBaseComponentDiagnosticPayload{
+		Message: message,
+		Module:  def.Name,
+		TagName: def.Tag,
+	})
 	if err != nil {
-		raw = []byte(`"GLADELWC060 base component unsupported"`)
+		raw = []byte(`{"message":"GLADELWC060 base component unsupported","module":"","tagName":""}`)
 	}
-	return fmt.Sprintf(`import { reportDiagnostic } from "@glade/shell/diagnostics";
-const message = %s;
-reportDiagnostic({ code: "GLADELWC060", severity: "warning", message, module: %q, tagName: %q });
-throw new Error(message);
+	var module strings.Builder
+	module.WriteString(`import { reportDiagnostic } from "@glade/shell/diagnostics";
+const payload = `)
+	module.Write(raw)
+	module.WriteString(`;
+reportDiagnostic({ code: "GLADELWC060", severity: "warning", message: payload.message, module: payload.module, tagName: payload.tagName });
+throw new Error(payload.message);
 export default undefined;
-`, raw, def.Name, def.Tag)
+`)
+	return module.String()
 }
 
 func unsupportedLightningBaseComponentNames() []string {

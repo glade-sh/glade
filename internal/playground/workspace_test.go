@@ -3,6 +3,7 @@ package playground
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -98,6 +99,178 @@ func TestWorkspaceRejectsUnsafePaths(t *testing.T) {
 		if _, err := ws.SafePath(rel); err == nil {
 			t.Fatalf("SafePath(%q) succeeded, want error", rel)
 		}
+	}
+}
+
+func TestOpenWorkspaceRejectsUnsafeIDs(t *testing.T) {
+	dataRoot := t.TempDir()
+	for _, id := range []string{"../outside", "a/b", `a\\b`, "/absolute", ".", ".."} {
+		if _, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: id}); err == nil {
+			t.Fatalf("OpenWorkspace(%q) succeeded, want error", id)
+		}
+	}
+	for _, id := range []string{"", "   ", "normal"} {
+		ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: id})
+		if err != nil {
+			t.Fatalf("OpenWorkspace(%q) error = %v", id, err)
+		}
+		if id == "normal" && ws.ID != id {
+			t.Fatalf("workspace ID = %q, want %q", ws.ID, id)
+		}
+	}
+}
+
+func TestOpenWorkspaceDirectProjectRootPreservesLegacyID(t *testing.T) {
+	projectRoot := t.TempDir()
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ProjectRoot: projectRoot, ID: "a/b"})
+	if err != nil {
+		t.Fatalf("OpenWorkspace() error = %v", err)
+	}
+	if ws.Managed {
+		t.Fatal("workspace unexpectedly managed")
+	}
+	if ws.Root != projectRoot || ws.ProjectRoot != projectRoot || ws.ID != "a/b" {
+		t.Fatalf("workspace = %#v", ws)
+	}
+	if _, err := os.Stat(filepath.Join(projectRoot, "sfdx-project.json")); err != nil {
+		t.Fatalf("direct project root default file missing: %v", err)
+	}
+}
+
+func TestWorkspaceSymlinkFilesDoNotEscape(t *testing.T) {
+	dataRoot := t.TempDir()
+	outside := filepath.Join(t.TempDir(), "outside.cls")
+	if err := os.WriteFile(outside, []byte("outside sentinel"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	leaf := filepath.Join(ws.Root, "force-app/main/default/classes/Outside.cls")
+	if err := os.Symlink(outside, leaf); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ws.SaveFile(FileSaveRequest{Path: "force-app/main/default/classes/Outside.cls", Content: "changed", Version: 0}); err == nil {
+		t.Fatal("SaveFile through leaf symlink succeeded")
+	}
+	if err := ws.DeleteFile("force-app/main/default/classes/Outside.cls"); err == nil {
+		t.Fatal("DeleteFile through leaf symlink succeeded")
+	}
+	if meta, err := ws.Metadata(); err != nil || strings.Contains(meta.AnonymousBody, "outside sentinel") {
+		t.Fatalf("Metadata() = %#v, %v", meta, err)
+	}
+	if _, err := ws.Hash(); err != nil {
+		t.Fatalf("Hash() error = %v", err)
+	}
+	data, err := os.ReadFile(outside)
+	if err != nil || string(data) != "outside sentinel" {
+		t.Fatalf("outside = %q, %v", data, err)
+	}
+	parentOutside := filepath.Join(t.TempDir(), "parent")
+	if err := os.MkdirAll(parentOutside, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	parent := filepath.Join(ws.Root, "force-app/main/default/classes")
+	if err := os.RemoveAll(parent); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(parentOutside, parent); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ws.SaveFile(FileSaveRequest{Path: "force-app/main/default/classes/Parent.cls", Content: "changed", Version: 0}); err == nil {
+		t.Fatal("SaveFile through parent symlink succeeded")
+	}
+	if _, err := os.Stat(filepath.Join(parentOutside, "Parent.cls")); !os.IsNotExist(err) {
+		t.Fatalf("parent symlink wrote outside: %v", err)
+	}
+}
+
+func TestManagedWorkspaceRejectsReplacedRootPaths(t *testing.T) {
+	dataRoot := t.TempDir()
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	outside := t.TempDir()
+	sentinel := filepath.Join(outside, "sentinel.cls")
+	if err := os.WriteFile(sentinel, []byte("keep"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	idPath := filepath.Join(dataRoot, "workspaces", "default")
+	if err := os.RemoveAll(idPath); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, idPath); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ws.SaveFile(FileSaveRequest{Path: "force-app/main/default/classes/Escape.cls", Content: "public class Escape {}"}); err == nil {
+		t.Fatal("SaveFile() through replaced managed root succeeded")
+	}
+	if data, _ := os.ReadFile(sentinel); string(data) != "keep" {
+		t.Fatalf("outside sentinel = %q", data)
+	}
+
+	if err := os.Remove(idPath); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.RemoveAll(filepath.Join(dataRoot, "workspaces")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(dataRoot, "workspaces")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ws.LoadExample("trigger-contact-task"); err == nil {
+		t.Fatal("LoadExample() through replaced workspaces root succeeded")
+	}
+	if data, _ := os.ReadFile(sentinel); string(data) != "keep" {
+		t.Fatalf("outside sentinel = %q", data)
+	}
+}
+
+func TestManagedWorkspaceRejectsInternalSymlinkAuthority(t *testing.T) {
+	dataRoot := t.TempDir()
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: dataRoot, ID: "default"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	other := filepath.Join(dataRoot, "other")
+	writePlaygroundTestFile(t, filepath.Join(other, "sentinel.cls"), "keep")
+	idPath := filepath.Join(dataRoot, "workspaces", "default")
+	if err := os.RemoveAll(idPath); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(other, idPath); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ws.SaveFile(FileSaveRequest{Path: "force-app/main/default/classes/Escape.cls", Content: "public class Escape {}"}); err == nil {
+		t.Fatal("internal ID symlink save succeeded")
+	}
+	if data, _ := os.ReadFile(filepath.Join(other, "sentinel.cls")); string(data) != "keep" {
+		t.Fatalf("sentinel = %q", data)
+	}
+}
+
+func TestProjectReferenceSymlinkIsNotCopied(t *testing.T) {
+	projectRoot := t.TempDir()
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), sfdxProjectJSON)
+	outside := filepath.Join(t.TempDir(), "outside.cls")
+	if err := os.WriteFile(outside, []byte("outside sentinel"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(projectRoot, "force-app/main/default/classes/Outside.cls")
+	if err := os.MkdirAll(filepath.Dir(link), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, link); err != nil {
+		t.Fatal(err)
+	}
+	files, err := collectProjectReferenceFiles(ProjectReference{Path: projectRoot})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := files["force-app/main/default/classes/Outside.cls"]; ok {
+		t.Fatal("project reference copied symlink target")
 	}
 }
 

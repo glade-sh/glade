@@ -1,9 +1,9 @@
 package server
 
 import (
+	"errors"
 	"mime"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -25,21 +25,24 @@ func (s *Server) handleStaticResource(w http.ResponseWriter, r *http.Request, pa
 		writeSalesforceError(w, errUnknownEndpoint, "missing static resource name")
 		return
 	}
-	subpath := strings.Join(parts[1:], "/")
-
-	contentPath, contentType, ok := s.lookupStaticResource(name, subpath)
-	if !ok {
+	if err := visualforce.ValidateStaticResourceName(name); err != nil {
 		writeSalesforceError(w, errUnknownEndpoint, "unknown static resource")
 		return
 	}
-	content, err := os.ReadFile(contentPath)
+	subpath := strings.Join(parts[1:], "/")
+
+	content, filename, contentType, ok, err := s.lookupStaticResource(name, subpath)
 	if err != nil {
 		writeSalesforceError(w, errUnknownEndpoint, "static resource not readable")
 		return
 	}
+	if !ok {
+		writeSalesforceError(w, errUnknownEndpoint, "unknown static resource")
+		return
+	}
 	if contentType != "" {
 		w.Header().Set("Content-Type", contentType)
-	} else if ext := filepath.Ext(contentPath); ext != "" {
+	} else if ext := filepath.Ext(filename); ext != "" {
 		if guessed := mime.TypeByExtension(ext); guessed != "" {
 			w.Header().Set("Content-Type", guessed)
 		}
@@ -49,20 +52,26 @@ func (s *Server) handleStaticResource(w http.ResponseWriter, r *http.Request, pa
 	_, _ = w.Write(content)
 }
 
-func (s *Server) lookupStaticResource(name, subpath string) (path string, contentType string, ok bool) {
+func (s *Server) lookupStaticResource(name, subpath string) (content []byte, filename string, contentType string, ok bool, readErr error) {
 	if s.Org != nil {
 		for _, resource := range s.Org.Metadata.StaticResources {
 			if strings.EqualFold(resource.Name, name) {
 				if subpath != "" {
-					if resolved, ok := staticResourceSubpath(resource, subpath); ok {
-						return resolved, resource.ContentType, true
+					if content, filename, ok, err := staticResourceSubpath(resource, subpath); err != nil {
+						return nil, "", "", false, err
+					} else if ok {
+						return content, filename, resource.ContentType, true, nil
 					}
 				}
 				if subpath == "" && resource.ContentPath != "" {
-					return resource.ContentPath, resource.ContentType, true
+					if content, filename, err := visualforce.ReadStaticResourceContentPath(resource.ContentPath, resource.Name, ""); err == nil {
+						return content, filename, resource.ContentType, true, nil
+					} else {
+						return nil, "", "", false, err
+					}
 				}
 				if subpath == "" && resource.Content != "" {
-					return writeInlineStaticResource(name, resource.Content)
+					return []byte(resource.Content), resource.Name + ".resource", resource.ContentType, true, nil
 				}
 			}
 		}
@@ -70,38 +79,56 @@ func (s *Server) lookupStaticResource(name, subpath string) (path string, conten
 	for _, resource := range s.Source.ToolingOrg.Metadata.StaticResources {
 		if strings.EqualFold(resource.Name, name) {
 			if subpath != "" {
-				if resolved, ok := staticResourceSubpath(resource, subpath); ok {
-					return resolved, resource.ContentType, true
+				if content, filename, ok, err := staticResourceSubpath(resource, subpath); err != nil {
+					return nil, "", "", false, err
+				} else if ok {
+					return content, filename, resource.ContentType, true, nil
 				}
 			}
 			if subpath == "" && resource.ContentPath != "" {
-				return resource.ContentPath, resource.ContentType, true
+				if content, filename, err := visualforce.ReadStaticResourceContentPath(resource.ContentPath, resource.Name, ""); err == nil {
+					return content, filename, resource.ContentType, true, nil
+				} else {
+					return nil, "", "", false, err
+				}
 			}
 		}
 	}
 	for _, path := range s.Source.Project.StaticResourceFiles {
 		resourceName, resourceSubpath, ok := projectStaticResourceNameAndSubpath(path)
 		if ok && strings.EqualFold(resourceName, name) && subpath != "" && cleanResourceSubpath(resourceSubpath) == cleanResourceSubpath(subpath) {
-			return path, "", true
+			if content, filename, err := visualforce.ReadStaticResourceContentPath(path, resourceName, ""); err == nil {
+				return content, filename, "", true, nil
+			} else {
+				return nil, "", "", false, err
+			}
 		}
 		if ok && strings.EqualFold(resourceName, name) && resourceSubpath == "" && subpath != "" {
-			if resolved, err := visualforce.ResolveStaticResourceContentPath(path, resourceName, subpath); err == nil {
-				return resolved, "", true
+			if content, filename, err := visualforce.ReadStaticResourceContentPath(path, resourceName, subpath); err == nil {
+				return content, filename, "", true, nil
+			} else if !errors.Is(err, visualforce.ErrStaticResourceNotFound) {
+				return nil, "", "", false, err
 			}
 		}
 	}
 	if s.Source.Project.Root != "" {
-		if resolved, err := visualforce.ResolveStaticResourceFile(s.Source.Project.Root, name, subpath); err == nil {
-			return resolved, "", true
+		if content, filename, err := visualforce.ReadStaticResource(s.Source.Project.Root, name, subpath); err == nil {
+			return content, filename, "", true, nil
+		} else if !errors.Is(err, visualforce.ErrStaticResourceNotFound) {
+			return nil, "", "", false, err
 		}
 	}
 	for _, path := range s.Source.Project.StaticResourceFiles {
 		base := strings.TrimSuffix(filepath.Base(path), ".resource")
 		if strings.EqualFold(base, name) && subpath == "" {
-			return path, "", true
+			if content, filename, err := visualforce.ReadStaticResourceContentPath(path, base, ""); err == nil {
+				return content, filename, "", true, nil
+			} else {
+				return nil, "", "", false, err
+			}
 		}
 	}
-	return "", "", false
+	return nil, "", "", false, nil
 }
 
 func projectStaticResourceNameAndSubpath(file string) (name string, subpath string, ok bool) {
@@ -122,42 +149,30 @@ func cleanResourceSubpath(subpath string) string {
 	return strings.Trim(strings.ReplaceAll(filepath.ToSlash(subpath), "\\", "/"), "/")
 }
 
-func staticResourceSubpath(resource storage.StaticResourceMetadata, subpath string) (string, bool) {
+func staticResourceSubpath(resource storage.StaticResourceMetadata, subpath string) ([]byte, string, bool, error) {
 	subpath = strings.Trim(strings.TrimSpace(subpath), "/")
-	if subpath == "" {
-		return "", false
+	normalizedSubpath, err := visualforce.NormalizeStaticResourceSubpath(subpath)
+	if err != nil || normalizedSubpath == "" {
+		return nil, "", false, nil
 	}
 	if resource.Files != nil {
-		if path := resource.Files[subpath]; path != "" {
-			return path, true
+		if path := resource.Files[normalizedSubpath]; path != "" {
+			content, filename, err := visualforce.ReadStaticResourceContentPath(path, resource.Name, "")
+			if err == nil {
+				return content, filename, true, nil
+			}
+			return nil, "", false, err
 		}
 	}
 	if resource.ContentPath == "" {
-		return "", false
+		return nil, "", false, nil
 	}
-	if resolved, err := visualforce.ResolveStaticResourceContentPath(resource.ContentPath, resource.Name, subpath); err == nil {
-		return resolved, true
+	if content, filename, err := visualforce.ReadStaticResourceContentPath(resource.ContentPath, resource.Name, normalizedSubpath); err == nil {
+		return content, filename, true, nil
+	} else if !errors.Is(err, visualforce.ErrStaticResourceNotFound) {
+		return nil, "", false, err
 	}
-	root := filepath.Clean(resource.ContentPath)
-	info, err := os.Stat(root)
-	if err != nil || !info.IsDir() {
-		return "", false
-	}
-	candidate := filepath.Clean(filepath.Join(root, filepath.FromSlash(subpath)))
-	if candidate != root && strings.HasPrefix(candidate, root+string(filepath.Separator)) {
-		return candidate, true
-	}
-	return "", false
-}
-
-func writeInlineStaticResource(name, content string) (string, string, bool) {
-	dir := filepath.Join(os.TempDir(), "glade-static-resource")
-	_ = os.MkdirAll(dir, 0o755)
-	path := filepath.Join(dir, name+".resource")
-	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
-		return "", "", false
-	}
-	return path, "", true
+	return nil, "", false, nil
 }
 
 func resourceForName(resources []storage.StaticResourceMetadata, name string) (storage.StaticResourceMetadata, bool) {

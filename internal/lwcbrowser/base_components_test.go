@@ -1,6 +1,7 @@
 package lwcbrowser
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -48,6 +49,45 @@ func readRuntimeLightningFile(t *testing.T, rel string) string {
 		t.Fatalf("read runtime lightning file %s: %v", rel, err)
 	}
 	return string(data)
+}
+
+func TestUnsupportedBaseComponentModuleJSSerializesDiagnosticPayload(t *testing.T) {
+	def := baseComponentDefinition{
+		Name: "module\"\\\n</script>\u2028\u2029",
+		Tag:  "lightning-tag\"\\\n</script>\u2028\u2029",
+	}
+	js := unsupportedBaseComponentModuleJS(def)
+
+	const prefix = "const payload = "
+	start := strings.Index(js, prefix)
+	if start < 0 {
+		t.Fatalf("generated module missing payload declaration: %q", js)
+	}
+	start += len(prefix)
+	end := strings.Index(js[start:], ";\nreportDiagnostic")
+	if end < 0 {
+		t.Fatalf("generated module missing payload terminator: %q", js)
+	}
+	var payload struct {
+		Message string `json:"message"`
+		Module  string `json:"module"`
+		TagName string `json:"tagName"`
+	}
+	if err := json.Unmarshal([]byte(js[start:start+end]), &payload); err != nil {
+		t.Fatalf("unmarshal diagnostic payload: %v", err)
+	}
+	if want := "GLADELWC060 base component unsupported: " + def.Tag; payload.Message != want {
+		t.Fatalf("payload message = %q, want %q", payload.Message, want)
+	}
+	if payload.Module != def.Name {
+		t.Fatalf("payload module = %q, want %q", payload.Module, def.Name)
+	}
+	if payload.TagName != def.Tag {
+		t.Fatalf("payload tagName = %q, want %q", payload.TagName, def.Tag)
+	}
+	if strings.Contains(js, "</script>") {
+		t.Fatalf("generated module contains raw closing script tag: %q", js)
+	}
 }
 
 func TestLightningBaseComponentSupportTiers(t *testing.T) {
