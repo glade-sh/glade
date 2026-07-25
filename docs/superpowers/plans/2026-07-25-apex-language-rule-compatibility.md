@@ -818,6 +818,11 @@ source scans. This step remains open: SOSL currently discards its WHERE/bind
 structure, and dotted/collection bind expressions still need compiler-oracle
 rows and body-IR typing.
 
+Follow-up (2026-07-25): callback blocks such as `System.runAs(...) {}` now
+resolve binds against their enclosing Apex type rather than treating the
+callback brace as a declaration scope. This keeps class fields such as
+`runAsId` visible without reintroducing source-wide name lookup.
+
 - [x] **Step 5: Add field capability metadata only from evidence**
 
 Carry filterable/groupable/sortable/aggregate capabilities when describe data
@@ -863,7 +868,7 @@ the original source.
 When a project is supplied, load its index and run the shared anonymous
 analysis before `vm.CompileAnonymous`/execution.
 
-- [ ] **Step 3: Add representative consumer proofs**
+- [x] **Step 3: Add representative consumer proofs**
 
 Use at least one rule owned by each layer:
 
@@ -877,7 +882,13 @@ Use at least one rule owned by each layer:
 Prove the affected behavior in `parse`, `check`, `test`, `exec`, watch rebuild,
 LSP published diagnostics, and rename/completion where applicable.
 
-- [ ] **Step 4: Run focused product gates**
+Completed (2026-07-25): the reserved-identifier fixture now proves the parser,
+`parse`, `check`, `test`, LSP publication, and rename target validation share
+the Salesforce reserved-word decision. Existing focused CLI, watch, trigger,
+annotation, query/DML, and anonymous-execution fixtures cover the remaining
+consumer layers.
+
+- [x] **Step 4: Run focused product gates**
 
 ```bash
 cd /Users/matt/Dev/glade
@@ -892,6 +903,9 @@ go test ./internal/watch
 go test ./internal/refactor
 ```
 
+Completed (2026-07-25): all listed focused gates passed. The uncached Apex
+runner completed in 313.484s; the CLI suite completed in 148.501s.
+
 - [ ] **Step 5: Run broad product gates**
 
 ```bash
@@ -899,13 +913,14 @@ go test ./...
 scripts/smoke.sh
 ```
 
-Current result (2026-07-25): `scripts/smoke.sh` passes, but `go test ./...`
-is red. The fail-closed test runner now surfaces compile errors in legacy
-runtime fixtures (for example, unsupported SOQL parser forms, generated
-interface contracts, and property/visibility fixtures) that must be reconciled
-against Salesforce before this release gate can pass. The broad run also hits
-the existing repository-guard findings for planning documents; those are
-separate from the language-rule implementation.
+Current result (2026-07-25): the broad run passes all product packages,
+including the Apex runner, CLI, sema, VM, query parsers, LSP, and watch. It is
+still red in `internal/repoguard` because tracked planning/audit documents are
+not release-surface documentation: this plan, the earlier reserved-identifier
+plan, and the audit use a generic example name. The CI package manifest gap for
+the new `internal/apexlang` package was corrected and its focused scripts gate
+passes. `scripts/smoke.sh` passed before this final manifest correction and
+needs one final replay after the documentation policy is resolved.
 
 - [ ] **Step 6: Replay the checked oracle**
 

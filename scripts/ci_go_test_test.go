@@ -3056,8 +3056,8 @@ func TestCIPackageLanesRouteThroughCheckedManifest(t *testing.T) {
 	for _, packages := range document.Lanes {
 		totalPackages += len(packages)
 	}
-	if totalPackages != 61 {
-		t.Fatalf("manifest package union = %d, want 61", totalPackages)
+	if totalPackages != 62 {
+		t.Fatalf("manifest package union = %d, want 62", totalPackages)
 	}
 	remaining := document.Lanes["remaining-go"]
 	if len(remaining) == 0 {
