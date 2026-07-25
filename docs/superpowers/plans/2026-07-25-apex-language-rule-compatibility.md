@@ -81,7 +81,7 @@ to override a current scratch-org compilation result.
 - Create: `internal/toolcli/apex_rules_command_test.go`
 - Modify: `plugins/compat/plugin.json`
 
-- [ ] **Step 1: Define and validate the catalog schema**
+- [x] **Step 1: Define and validate the catalog schema**
 
 Use explicit states so runtime, package-history, preview, and unresolved rows
 are not silently omitted:
@@ -106,7 +106,7 @@ type Rule struct {
 `Validate` must reject duplicate IDs, missing evidence, unknown outcomes, and a
 `supported` row without a product test.
 
-- [ ] **Step 2: Add Salesforce and Glade runners**
+- [x] **Step 2: Add Salesforce and Glade runners**
 
 `RunSalesforce` creates disposable Tooling API `ApexClass` or `ApexTrigger`
 records, records accept/reject plus compiler problems, and deletes accepted
@@ -126,7 +126,7 @@ Import both audit matrices. Mark every row as one of:
 - `preview-disabled`;
 - `oracle-pending`.
 
-- [ ] **Step 4: Add the compat-plugin command**
+- [x] **Step 4: Add the compat-plugin command**
 
 ```text
 glade-tools apex-rules compare \
@@ -138,7 +138,7 @@ glade-tools apex-rules compare \
 
 Base Glade must not gain this maintenance command or import `glade-tools`.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```bash
 cd /Users/matt/Dev/glade-tools
@@ -688,7 +688,7 @@ go test ./internal/apextest -run 'InvalidTest|TestSetup|Compile'
 - Modify: `internal/sema/annotation_contracts.go`
 - Create: `internal/sema/version_contracts_test.go`
 
-- [ ] **Step 1: Resolve effective per-source API versions**
+- [x] **Step 1: Resolve effective per-source API versions**
 
 Read companion `.cls-meta.xml` and `.trigger-meta.xml`, store the effective
 version on type/trigger symbols, and fall back to
@@ -699,14 +699,14 @@ version on type/trigger symbols, and fall back to
 Use the declaration's effective version for API 65 access requirements and
 other rows only after paired oracle fixtures exist.
 
-- [ ] **Step 3: Keep unavailable evidence explicit**
+- [x] **Step 3: Keep unavailable evidence explicit**
 
 Released-package `@Deprecated` behavior remains
 `package-history-pending` until package artifact/history input exists.
 `@IntegrationTest` and `@TearDown` remain preview-disabled unless an explicit
 feature state is available; API 67 alone is insufficient.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 go test ./internal/project ./internal/typesys -run 'SourceAPIVersion|APIVersion|Incremental'
@@ -723,7 +723,7 @@ go test ./internal/sema -run 'APIVersion|VersionContract|Deprecated|IntegrationT
 - Create: `internal/sema/web_exposure_contracts_test.go`
 - Modify: `internal/sema/sema.go`
 
-- [ ] **Step 1: Add RED REST matrices**
+- [x] **Step 1: Add RED REST matrices**
 
 Cover global/top-level RestResource ownership, required URL mapping, leading
 slash, 255-character limit, terminal wildcard, global/static HTTP methods,
@@ -732,19 +732,19 @@ signature failures.
 
 Keep the accepted multiple-HTTP-annotations control.
 
-- [ ] **Step 2: Add RED SOAP matrices**
+- [x] **Step 2: Add RED SOAP matrices**
 
 Cover top-level/global owner, static method, interface/inner placement,
 same-name overload prohibition, Map/Set, and every additional wire type backed
 by a scratch row. Keep `System.LoggingLevel` positive.
 
-- [ ] **Step 3: Implement one exposed-type validator**
+- [x] **Step 3: Implement one exposed-type validator**
 
 Share type-shape traversal between REST and SOAP, but parameterize their
 different allowlists. Do not ban nested REST collections or cyclic user types
 based only on XML/request-time behavior.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 go test ./internal/sema -run 'Webservice|RestResource|Http|RemoteAction|AuraEnabled|ExposedType'
@@ -768,7 +768,7 @@ go test ./internal/sema -run 'Webservice|RestResource|Http|RemoteAction|AuraEnab
 - Modify: `internal/schema/schema.go`
 - Modify: `internal/schema/schema_test.go`
 
-- [ ] **Step 1: Add RED query-shape fixtures**
+- [x] **Step 1: Add RED query-shape fixtures**
 
 Cover the confirmed rows:
 
@@ -785,14 +785,14 @@ Keep accepted duplicate SOSL RETURNING objects and Account Description grouping
 as positive controls. Add an owning-rule test for aggregate-in-WHERE even
 though the current fixture already hard-rejects indirectly.
 
-- [ ] **Step 2: Stop discarding parser errors**
+- [x] **Step 2: Stop discarding parser errors**
 
 Convert `soql.Parse`/`sosl.Parse` failures in
 `querySemanticsChecker.checkFile` into stable diagnostics. Before enabling
 fail-closed behavior, run the positive SOQL/SOSL corpus so valid unsupported
 syntax is not misclassified.
 
-- [ ] **Step 3: Add query-clause contracts**
+- [x] **Step 3: Add query-clause contracts**
 
 Preserve the ordered query structure needed to validate aggregate/grouping,
 HAVING, semi-join, TYPEOF, locking, and FIELDS combinations. Reuse this
@@ -821,7 +821,7 @@ For `ir.OpDML`, require operation-specific sObject or sObject-collection
 operands. Validate upsert external-ID/idLookup keys and compatible merge
 master/duplicate types before runtime.
 
-- [ ] **Step 7: Verify**
+- [x] **Step 7: Verify**
 
 ```bash
 go test ./internal/soql ./internal/sosl
@@ -844,13 +844,13 @@ go test ./internal/sema -run 'QueryContract|QueryParse|SOQL|SOSL|Bind|DMLContrac
 - Modify: `internal/lsp/handler_test.go`
 - Modify: `internal/refactor/rename_test.go`
 
-- [ ] **Step 1: Add shared anonymous semantic analysis**
+- [x] **Step 1: Add shared anonymous semantic analysis**
 
 Implement `sema.AnalyzeAnonymous(index, source)` using a synthetic static void
 context and the project type/member model. Translate wrapper offsets back to
 the original source.
 
-- [ ] **Step 2: Gate execute-anonymous before VM execution**
+- [x] **Step 2: Gate execute-anonymous before VM execution**
 
 When a project is supplied, load its index and run the shared anonymous
 analysis before `vm.CompileAnonymous`/execution.
