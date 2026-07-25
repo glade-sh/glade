@@ -227,6 +227,8 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 	for _, literal := range semaSOQLLiterals(source, spans) {
 		query, err := soql.Parse(literal.text)
 		if err != nil {
+			ctx := queryTextContext{file: file, queryText: literal.text, queryOffset: literal.queryOffset, locator: locator}
+			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_PARSE", fmt.Sprintf("invalid SOQL query: %v", err), literal.text, 0))
 			continue
 		}
 		ctx := queryTextContext{
@@ -240,6 +242,8 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 	for _, literal := range semaSOSLLiterals(source, spans) {
 		query, err := sosl.Parse(literal.text)
 		if err != nil {
+			ctx := queryTextContext{file: file, queryText: literal.text, queryOffset: literal.queryOffset, locator: locator}
+			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_SOSL_PARSE", fmt.Sprintf("invalid SOSL query: %v", err), literal.text, 0))
 			continue
 		}
 		ctx := queryTextContext{

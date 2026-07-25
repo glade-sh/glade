@@ -32,6 +32,20 @@ public class QueryProbe {
 	assertDiagnosticAt(t, result, "GLADESEMA_QUERY_OBJECT", "Missing__c", 7, 39)
 }
 
+func TestQuerySemanticsFailsClosedOnParserErrors(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    List<Account> brokenSoql = [SELECT Id];
+    List<List<SObject>> brokenSosl = [FIND 'probe'];
+  }
+}
+`)
+	if !hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_PARSE") || !hasDiagnosticCode(diagnostics, "GLADESEMA_SOSL_PARSE") {
+		t.Fatalf("expected query parser diagnostics: %#v", diagnostics)
+	}
+}
+
 func TestQuerySemanticsFieldProviderKeepsProjectAuthority(t *testing.T) {
 	checker := newQuerySemanticsChecker(typesys.Index{
 		Project: typesys.ProjectInfo{Namespace: "pkg"},
