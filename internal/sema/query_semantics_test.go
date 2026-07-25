@@ -62,6 +62,19 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsRejectsSelfSemiJoin(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Id IN (SELECT Id FROM Account)];
+  }
+}
+`, queryDiagnosticSchema())
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CONTRACT") {
+		t.Fatalf("expected self semi-join contract: %#v", result.Diagnostics)
+	}
+}
+
 func TestQuerySemanticsRejectsMissingInlineBind(t *testing.T) {
 	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {

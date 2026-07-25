@@ -383,6 +383,9 @@ func queryShapeDiagnostics(query soql.Query, ctx queryTextContext) []diagnostic.
 	if len(query.Typeofs) > 0 && len(query.GroupBy) > 0 {
 		diagnosticFor("TYPEOF cannot be combined with GROUP BY", "TYPEOF")
 	}
+	if query.Where != nil && containsSelfSemiJoin(*query.Where, query.Object) {
+		diagnosticFor("SOQL semi-join subqueries cannot reference the same SObject as the outer query", "SELECT")
+	}
 	if query.ForUpdate && len(query.Order) > 0 {
 		diagnosticFor("FOR UPDATE cannot be combined with ORDER BY", "FOR UPDATE")
 	}
@@ -392,6 +395,23 @@ func queryShapeDiagnostics(query soql.Query, ctx queryTextContext) []diagnostic.
 		}
 	}
 	return diagnostics
+}
+
+func containsSelfSemiJoin(condition soql.Condition, outerObject string) bool {
+	if condition.Subquery != nil && strings.EqualFold(condition.Subquery.Object, outerObject) {
+		return true
+	}
+	for _, child := range condition.And {
+		if containsSelfSemiJoin(child, outerObject) {
+			return true
+		}
+	}
+	for _, child := range condition.Or {
+		if containsSelfSemiJoin(child, outerObject) {
+			return true
+		}
+	}
+	return false
 }
 
 func (c querySemanticsChecker) checkSOQLCondition(objectName string, condition soql.Condition, ctx queryTextContext, cursor int, aggregateAliases map[string]bool) []diagnostic.Diagnostic {
