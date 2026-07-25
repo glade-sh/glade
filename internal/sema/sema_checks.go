@@ -551,6 +551,14 @@ func (c querySemanticsChecker) queryFieldBindDiagnostics(query soql.Query, ctx q
 				continue
 			}
 			typeName := bindings[strings.ToLower(name)]
+			if elementType, collection := queryBindCollectionElementType(typeName); collection {
+				if condition.Op != "IN" && condition.Op != "NOT IN" {
+					offset := findQueryIdentifier(ctx.queryText, ":"+name, 0)
+					diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("collection bind variable %q is only valid with IN or NOT IN", name), ":"+name, offset))
+					continue
+				}
+				typeName = elementType
+			}
 			if typeName == "" || queryFieldAcceptsBindType(field.Type, typeName) {
 				continue
 			}
@@ -560,6 +568,20 @@ func (c querySemanticsChecker) queryFieldBindDiagnostics(query soql.Query, ctx q
 	}
 	check(*query.Where)
 	return diagnostics
+}
+
+func queryBindCollectionElementType(typeName string) (string, bool) {
+	typeName = strings.TrimSpace(typeName)
+	open := strings.Index(typeName, "<")
+	if open <= 0 || !strings.HasSuffix(typeName, ">") {
+		return "", false
+	}
+	switch strings.ToLower(strings.TrimSpace(typeName[:open])) {
+	case "list", "set":
+		return strings.TrimSpace(typeName[open+1 : len(typeName)-1]), true
+	default:
+		return "", false
+	}
 }
 
 func soqlBindName(value storage.Value) (string, bool) {

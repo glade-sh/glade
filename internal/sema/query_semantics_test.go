@@ -164,6 +164,29 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsValidatesCollectionBindOperatorAndElementType(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    List<Integer> numbers = new List<Integer>{1};
+    List<String> names = new List<String>{'Acme'};
+    List<Account> wrongOperator = [SELECT Id FROM Account WHERE Name = :names];
+    List<Account> wrongElement = [SELECT Id FROM Account WHERE Name IN :numbers];
+    List<Account> valid = [SELECT Id FROM Account WHERE Name IN :names];
+  }
+}
+	`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Name", Type: "Text"}}}}})
+	var count int
+	for _, item := range result.Diagnostics {
+		if item.Code == "GLADESEMA_QUERY_BIND" {
+			count++
+		}
+	}
+	if count != 2 {
+		t.Fatalf("collection bind diagnostics = %d, want 2: %#v", count, result.Diagnostics)
+	}
+}
+
 func TestQuerySemanticsResolvesBindsInTheirLexicalMethodScope(t *testing.T) {
 	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {
