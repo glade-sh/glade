@@ -241,6 +241,7 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 		diagnostics = append(diagnostics, c.checkSOQLQuery(query, query.Object, ctx, 0, nil)...)
 		bindings := bindingResolver.bindingsAt(literal.queryOffset)
 		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings)...)
+		diagnostics = append(diagnostics, c.queryFieldBindDiagnostics(query, ctx, bindings)...)
 		diagnostics = append(diagnostics, queryWindowBindDiagnostics(query, ctx, bindings)...)
 	}
 	for _, literal := range semaSOSLLiterals(source, spans) {
@@ -506,6 +507,82 @@ func queryWindowBindDiagnostics(query soql.Query, ctx queryTextContext, bindings
 		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("%s bind variable %q must have a numeric type", bind.clause, bind.name), ":"+bind.name, offset))
 	}
 	return diagnostics
+}
+
+func (c querySemanticsChecker) queryFieldBindDiagnostics(query soql.Query, ctx queryTextContext, bindings map[string]string) []diagnostic.Diagnostic {
+	if query.Where == nil {
+		return nil
+	}
+	var diagnostics []diagnostic.Diagnostic
+	var check func(soql.Condition)
+	check = func(condition soql.Condition) {
+		for _, nested := range condition.And {
+			check(nested)
+		}
+		for _, nested := range condition.Or {
+			check(nested)
+		}
+		if condition.Subquery != nil {
+			return
+		}
+		field, ok := c.field(query.Object, condition.Field)
+		if !ok {
+			return
+		}
+		values := append([]storage.Value{condition.Value, condition.Value2}, condition.Values...)
+		for _, value := range values {
+			name, ok := soqlBindName(value)
+			if !ok {
+				continue
+			}
+			typeName := bindings[strings.ToLower(name)]
+			if typeName == "" || queryFieldAcceptsBindType(field.Type, typeName) {
+				continue
+			}
+			offset := findQueryIdentifier(ctx.queryText, ":"+name, 0)
+			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("query bind variable %q of type %s is incompatible with field %s", name, typeName, field.Name), ":"+name, offset))
+		}
+	}
+	check(*query.Where)
+	return diagnostics
+}
+
+func soqlBindName(value storage.Value) (string, bool) {
+	if value.Kind != storage.ValueID {
+		return "", false
+	}
+	name := string(value.ID)
+	if !strings.HasPrefix(name, ":") || !semaBindName(name[1:]) {
+		return "", false
+	}
+	return name[1:], true
+}
+
+func semaBindName(name string) bool {
+	for index, char := range name {
+		if (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || char == '_' || (index > 0 && char >= '0' && char <= '9') {
+			continue
+		}
+		return false
+	}
+	return name != ""
+}
+
+func queryFieldAcceptsBindType(fieldType, bindType string) bool {
+	fieldType = strings.ToLower(strings.ReplaceAll(fieldType, " ", ""))
+	bindType = strings.ToLower(strings.ReplaceAll(bindType, " ", ""))
+	if strings.Contains(bindType, "<") || bindType == "object" || bindType == "sobject" {
+		return true
+	}
+	switch fieldType {
+	case "text", "textarea", "longtextarea", "richtextarea", "email", "phone", "url", "picklist", "multipicklist", "encryptedtext":
+		return bindType == "string" || bindType == "id"
+	case "number", "currency", "percent", "double", "integer", "long":
+		return bindType == "integer" || bindType == "int" || bindType == "long" || bindType == "decimal" || bindType == "double"
+	case "checkbox", "boolean":
+		return bindType == "boolean"
+	}
+	return true
 }
 
 type queryTextContext struct {

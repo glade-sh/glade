@@ -150,6 +150,20 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsRejectsIncompatibleFieldBindType(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    Integer name = 1;
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :name];
+  }
+}
+`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Name", Type: "Text"}}}}})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("incompatible field bind accepted: %#v", result.Diagnostics)
+	}
+}
+
 func TestQuerySemanticsResolvesBindsInTheirLexicalMethodScope(t *testing.T) {
 	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {
