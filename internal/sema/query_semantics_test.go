@@ -194,6 +194,20 @@ public class QueryProbe {
 		t.Fatalf("instance field bind rejected: %#v", diagnostics)
 	}
 }
+
+func TestQuerySemanticsAcceptsInstanceFieldDeclaredAfterMethod(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :name];
+  }
+  private String name;
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("later instance field bind rejected: %#v", diagnostics)
+	}
+}
 func TestQuerySemanticsFieldProviderKeepsProjectAuthority(t *testing.T) {
 	checker := newQuerySemanticsChecker(typesys.Index{
 		Project: typesys.ProjectInfo{Namespace: "pkg"},

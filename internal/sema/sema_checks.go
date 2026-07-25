@@ -223,6 +223,7 @@ func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Obj
 func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagnostic {
 	locator := newSemaSourceLocator(source)
 	spans := newSemaCodeSpans(source)
+	bindingResolver := newSemaBindingResolver(source, spans)
 	var diagnostics []diagnostic.Diagnostic
 	for _, literal := range semaSOQLLiterals(source, spans) {
 		query, err := soql.Parse(literal.text)
@@ -238,7 +239,7 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 			locator:     locator,
 		}
 		diagnostics = append(diagnostics, c.checkSOQLQuery(query, query.Object, ctx, 0, nil)...)
-		bindings := semaDeclaredBindingsAt(source, literal.queryOffset, spans)
+		bindings := bindingResolver.bindingsAt(literal.queryOffset)
 		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings)...)
 		diagnostics = append(diagnostics, queryWindowBindDiagnostics(query, ctx, bindings)...)
 	}
@@ -256,7 +257,7 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 			locator:     locator,
 		}
 		diagnostics = append(diagnostics, c.checkSOSLQuery(query, ctx)...)
-		bindings := semaDeclaredBindingsAt(source, literal.queryOffset, spans)
+		bindings := bindingResolver.bindingsAt(literal.queryOffset)
 		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings)...)
 	}
 	return diagnostics
@@ -267,61 +268,127 @@ var (
 	semaBindingDeclaration = regexp.MustCompile(`(?m)(?:^|[;({,])\s*(?:(?:public|private|protected|global|static|final|transient)\s+)*([A-Za-z_][A-Za-z0-9_]*(?:\s*<[^;=(){}]+>)?(?:\[\])?)\s+([A-Za-z_][A-Za-z0-9_]*)\b`)
 )
 
-// semaDeclaredBindingsAt returns parameter, field, and local declarations that
-// are visible at a query literal. This is deliberately source-backed because
-// query literals are checked before their surrounding body has semantic IR.
-func semaDeclaredBindingsAt(source string, offset int, spans semaCodeSpans) map[string]string {
+type semaBindingResolver struct {
+	source    string
+	spans     semaCodeSpans
+	locations []semaMethodLocation
+	methods   map[int]semaBindingScope
+}
+
+type semaMethodLocation struct {
+	methodStart int
+	methodEnd   int
+	headerStart int
+	typeStart   int
+	typeEnd     int
+}
+
+type semaBindingScope struct {
+	methodStart int
+	typeStart   int
+	bindings    []semaScopedBinding
+}
+
+type semaScopedBinding struct {
+	name     string
+	typeName string
+	start    int
+	end      int
+	field    bool
+}
+
+func newSemaBindingResolver(source string, spans semaCodeSpans) *semaBindingResolver {
+	return &semaBindingResolver{source: source, spans: spans, locations: semaMethodLocations(source, spans), methods: make(map[int]semaBindingScope)}
+}
+
+// bindingsAt returns source-backed parameter, field, and local declarations
+// visible at a query literal. Per-method declarations are cached because large
+// classes commonly contain many literals in the same method.
+func (r *semaBindingResolver) bindingsAt(offset int) map[string]string {
 	bindings := make(map[string]string)
-	methodStart, headerStart, typeStart := semaEnclosingMethod(source, offset, spans)
-	if methodStart < 0 {
+	location, ok := r.methodAt(offset)
+	if !ok {
 		return bindings
 	}
-	semaAddBindingDeclarations(bindings, source[headerStart:methodStart])
-	activeScopes := semaActiveBraces(source, methodStart+1, offset, spans)
-	for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(source[methodStart+1:offset], -1) {
-		if len(match) != 6 || !semaDeclarationInActiveScope(source, methodStart+1, methodStart+1+match[0], activeScopes, spans) {
+	scope, ok := r.methods[location.methodStart]
+	if !ok {
+		scope = semaBuildBindingScope(r.source, location.methodStart, location.methodEnd, location.headerStart, location.typeStart, location.typeEnd, r.spans)
+		r.methods[location.methodStart] = scope
+	}
+	for _, binding := range scope.bindings {
+		if !binding.field && (binding.start >= offset || offset > binding.end) {
 			continue
 		}
-		name := source[methodStart+1+match[4] : methodStart+1+match[5]]
-		typeName := source[methodStart+1+match[2] : methodStart+1+match[3]]
-		bindings[strings.ToLower(name)] = strings.TrimSpace(typeName)
-	}
-	if typeStart >= 0 {
-		for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(source[typeStart+1:methodStart], -1) {
-			if len(match) != 6 || !semaDeclarationAtTypeScope(source, typeStart+1, typeStart+1+match[0], spans) {
-				continue
-			}
-			name := source[typeStart+1+match[4] : typeStart+1+match[5]]
-			typeName := source[typeStart+1+match[2] : typeStart+1+match[3]]
-			bindings[strings.ToLower(name)] = strings.TrimSpace(typeName)
-		}
+		bindings[strings.ToLower(binding.name)] = binding.typeName
 	}
 	return bindings
 }
 
-func semaAddBindingDeclarations(bindings map[string]string, source string) {
-	for _, match := range semaBindingDeclaration.FindAllStringSubmatch(source, -1) {
-		if len(match) == 3 {
-			bindings[strings.ToLower(match[2])] = strings.TrimSpace(match[1])
-		}
-	}
-}
-
-func semaEnclosingMethod(source string, offset int, spans semaCodeSpans) (methodStart, headerStart, typeStart int) {
-	braces := semaOpenBraces(source, 0, offset, spans)
-	for i := len(braces) - 1; i >= 0; i-- {
-		brace := braces[i]
-		header := semaHeaderStart(source, brace, spans)
-		if !semaMethodHeader(source[header:brace]) {
+func (r *semaBindingResolver) methodAt(offset int) (semaMethodLocation, bool) {
+	var found semaMethodLocation
+	for _, location := range r.locations {
+		if offset <= location.methodStart || offset >= location.methodEnd || (found.methodStart != 0 && location.methodStart <= found.methodStart) {
 			continue
 		}
-		typeBrace := -1
-		if i > 0 {
-			typeBrace = braces[i-1]
-		}
-		return brace, header, typeBrace
+		found = location
 	}
-	return -1, -1, -1
+	return found, found.methodStart != 0
+}
+
+func semaMethodLocations(source string, spans semaCodeSpans) []semaMethodLocation {
+	var locations []semaMethodLocation
+	var braces []int
+	for i := 0; i < len(source); i++ {
+		if !spans.contains(i) {
+			continue
+		}
+		switch source[i] {
+		case '{':
+			headerStart := semaHeaderStart(source, i, spans)
+			if semaMethodHeader(source[headerStart:i]) {
+				if end := semaMatchingCodeBrace(source, i, spans); end >= 0 {
+					typeStart, typeEnd := -1, -1
+					if len(braces) > 0 {
+						typeStart = braces[len(braces)-1]
+						typeEnd = semaMatchingCodeBrace(source, typeStart, spans)
+					}
+					locations = append(locations, semaMethodLocation{methodStart: i, methodEnd: end, headerStart: headerStart, typeStart: typeStart, typeEnd: typeEnd})
+				}
+			}
+			braces = append(braces, i)
+		case '}':
+			if len(braces) > 0 {
+				braces = braces[:len(braces)-1]
+			}
+		}
+	}
+	return locations
+}
+
+func semaBuildBindingScope(source string, methodStart, methodEnd, headerStart, typeStart, typeEnd int, spans semaCodeSpans) semaBindingScope {
+	scope := semaBindingScope{methodStart: methodStart, typeStart: typeStart}
+	for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(source[headerStart:methodStart], -1) {
+		if len(match) != 6 {
+			continue
+		}
+		scope.bindings = append(scope.bindings, semaScopedBinding{name: source[headerStart+match[4] : headerStart+match[5]], typeName: strings.TrimSpace(source[headerStart+match[2] : headerStart+match[3]]), start: headerStart + match[0], end: methodEnd})
+	}
+	for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(source[methodStart+1:methodEnd], -1) {
+		if len(match) != 6 {
+			continue
+		}
+		start := methodStart + 1 + match[0]
+		scope.bindings = append(scope.bindings, semaScopedBinding{name: source[methodStart+1+match[4] : methodStart+1+match[5]], typeName: strings.TrimSpace(source[methodStart+1+match[2] : methodStart+1+match[3]]), start: start, end: semaEnclosingCodeBraceEnd(source, methodStart+1, start, spans)})
+	}
+	if typeStart >= 0 && typeEnd > typeStart {
+		for _, match := range semaBindingDeclaration.FindAllStringSubmatchIndex(source[typeStart+1:typeEnd], -1) {
+			if len(match) != 6 || !semaDeclarationAtTypeScope(source, typeStart+1, typeStart+1+match[0], spans) {
+				continue
+			}
+			scope.bindings = append(scope.bindings, semaScopedBinding{name: source[typeStart+1+match[4] : typeStart+1+match[5]], typeName: strings.TrimSpace(source[typeStart+1+match[2] : typeStart+1+match[3]]), field: true})
+		}
+	}
+	return scope
 }
 
 func semaMethodHeader(header string) bool {
@@ -372,21 +439,34 @@ func semaOpenBraces(source string, start, offset int, spans semaCodeSpans) []int
 	return braces
 }
 
-func semaActiveBraces(source string, start, offset int, spans semaCodeSpans) map[int]bool {
-	active := make(map[int]bool)
-	for _, brace := range semaOpenBraces(source, start, offset, spans) {
-		active[brace] = true
-	}
-	return active
-}
-
-func semaDeclarationInActiveScope(source string, start, declaration int, active map[int]bool, spans semaCodeSpans) bool {
-	for _, brace := range semaOpenBraces(source, start, declaration, spans) {
-		if !active[brace] {
-			return false
+func semaMatchingCodeBrace(source string, start int, spans semaCodeSpans) int {
+	depth := 0
+	for i := start; i < len(source); i++ {
+		if !spans.contains(i) {
+			continue
+		}
+		switch source[i] {
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				return i
+			}
 		}
 	}
-	return true
+	return -1
+}
+
+func semaEnclosingCodeBraceEnd(source string, start, offset int, spans semaCodeSpans) int {
+	braces := semaOpenBraces(source, start, offset, spans)
+	if len(braces) == 0 {
+		return len(source)
+	}
+	if end := semaMatchingCodeBrace(source, braces[len(braces)-1], spans); end >= 0 {
+		return end
+	}
+	return len(source)
 }
 
 func semaDeclarationAtTypeScope(source string, start, declaration int, spans semaCodeSpans) bool {
