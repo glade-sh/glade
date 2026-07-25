@@ -1132,7 +1132,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 		explicitReceiver = true
 		method = callee
 		if receiverExpr, methodName, ok := splitSemaMethodPath(expr.Callee); ok {
-			if semaKnownPlatformTypeReceiver(receiverExpr) {
+			if semaKnownPlatformTypeReceiver(receiverExpr) && !semaProjectTypeShadowsPlatform(model, receiverExpr) {
 				if _, ok := semaPlatformMethodSignatureForMode(model, receiverExpr, methodName, "class"); ok {
 					receiverType = receiverExpr
 					method = methodName
@@ -1496,6 +1496,9 @@ func (a *Analyzer) checkIRCollectionCall(typ typesys.TypeSymbol, member typesys.
 }
 
 func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []ir.Expr, scope irSemaScope, pos, bodyOffset int, source string, model *semaTypeMemberView, receiverMode string) ([]diagnostic.Diagnostic, bool) {
+	if semaProjectTypeShadowsPlatform(model, receiverType) {
+		return nil, false
+	}
 	if semaDatabaseDynamicQueryCall(receiverType, method) {
 		return nil, true
 	}
@@ -2222,6 +2225,9 @@ func semaResolvedIRCallReturnType(a *Analyzer, model *semaTypeMemberView, receiv
 	platformBackedCandidates := semaResolvedMembersAllPlatformBacked(model, candidates)
 	if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok && !platformBackedCandidates {
 		return semaResolvedMemberReturnType(model, candidate)
+	}
+	if semaProjectTypeShadowsPlatform(model, receiverType) {
+		return ""
 	}
 	if sig, ok := semaCollectionMethodSignature(receiverType, method); ok {
 		return sig.returnType

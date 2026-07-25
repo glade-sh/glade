@@ -271,30 +271,30 @@ go test ./internal/gladecli -run 'Trigger.*Check|Trigger.*Test'
 - Create: `internal/sema/declaration_contracts_test.go`
 - Modify: `internal/sema/sema.go`
 
-- [ ] **Step 1: Add RED identity tests**
+- [x] **Step 1: Add RED identity tests**
 
 Cover same-owner class/interface names, inner type equal to an ancestor,
 case-insensitive duplicate fields/properties, duplicate constructors, duplicate
 methods, methods differing only by return type, and case-only method names.
 Keep a cross-file workspace ambiguity warning control.
 
-- [ ] **Step 2: Preserve structural identity**
+- [x] **Step 2: Preserve structural identity**
 
 Add explicit `LocalName`, `OwnerName`, and `NestingDepth` to `TypeSymbol`.
 Populate them in `typeSymbolsFromDeclaration`; do not infer ownership later by
 splitting qualified names.
 
-- [ ] **Step 3: Split duplicate severity**
+- [x] **Step 3: Split duplicate severity**
 
 Make an unambiguous same-file/same-owner collision an error. Preserve warning
 severity only for intentional cross-file/workspace ambiguity.
 
-- [ ] **Step 4: Add member identity validation**
+- [x] **Step 4: Add member identity validation**
 
 Normalize names and parameter types case-insensitively. Ignore return type when
 deciding method signature identity.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```bash
 go test ./internal/typesys -run 'Duplicate|Owner|Nesting'
@@ -364,12 +364,12 @@ go test ./internal/sema -run 'Identifier|DuplicateLocal|Shadow|Scope'
 - Modify: `internal/sema/declaration_contracts_test.go`
 - Modify: `internal/sema/body_ir.go`
 
-- [ ] **Step 1: Preserve body state and enum members**
+- [x] **Step 1: Preserve body state and enum members**
 
 Add `HasBody` to declarations/member symbols. Retain enum body members instead
 of dropping them. Prove full and incremental indexes remain equivalent.
 
-- [ ] **Step 2: Add RED declaration matrices**
+- [x] **Step 2: Add RED declaration matrices**
 
 Cover:
 
@@ -385,24 +385,24 @@ Cover:
 - user generic class declarations;
 - ambiguous `null` overload calls.
 
-- [ ] **Step 3: Implement `checkDeclarationContracts`**
+- [x] **Step 3: Implement `checkDeclarationContracts`**
 
 Use owner, kind, nesting, normalized modifiers, `HasBody`, and effective API
 version. Keep grammar-shaped failures at the parser boundary and semantic
 owner/modifier combinations in sema.
 
-- [ ] **Step 4: Validate constructor chaining**
+- [x] **Step 4: Validate constructor chaining**
 
 In body IR, require `this(...)` or `super(...)` to be the first instruction and
 at most one explicit chain call. Resolve an implicit `super()` to an accessible
 no-argument constructor.
 
-- [ ] **Step 5: Diagnose ambiguous overload resolution**
+- [x] **Step 5: Diagnose ambiguous overload resolution**
 
 When two incomparable overloads are equally applicable to `null`, emit a
 compiler error. Retain a positive row where a most-specific overload exists.
 
-- [ ] **Step 6: Verify**
+- [x] **Step 6: Verify**
 
 ```bash
 (cd third_party/glade-apex-parser && go test ./... -run 'Declaration|Enum|Body')
@@ -424,7 +424,7 @@ go test ./internal/sema -run 'DeclarationContract|Modifier|ParameterLimit|Constr
 - Modify: `internal/sema/namespace_precedence_test.go`
 - Create: `internal/sema/inheritance_contracts_test.go`
 
-- [ ] **Step 1: Add RED inheritance fixtures**
+- [x] **Step 1: Add RED inheritance fixtures**
 
 Cover class-implements-class, class-extends-interface,
 interface-extends-class, non-virtual superclass/method, missing `override`,
@@ -435,25 +435,25 @@ wrong `Iterator<T>`/`Iterable<T>` returns.
 Keep positive controls for a public static interface implementation and both
 scratch-proven Batchable execute-scope variance forms.
 
-- [ ] **Step 2: Preserve declaration-kind-aware inheritance**
+- [x] **Step 2: Preserve declaration-kind-aware inheritance**
 
 Represent a class superclass, implemented interfaces, and interface parents
 without conflating their target kinds.
 
-- [ ] **Step 3: Substitute generic interface arguments**
+- [x] **Step 3: Substitute generic interface arguments**
 
 `collectRequiredMethods` must instantiate `Iterator<T>`, `Iterable<T>`, and
 other supported platform generic requirements before signature and return
 comparison. `hasConcreteMethodSignature` must enforce public/global visibility
 but must not reject a public static implementation that the oracle accepts.
 
-- [ ] **Step 4: Make project namespaces authoritative**
+- [x] **Step 4: Make project namespaces authoritative**
 
 Once `Database` resolves to a project type, a missing `Database.query` must not
 fall back to `System.Database`. Apply the same authority rule in IR call return
 inference, platform-call diagnostics, and ordinary method-call resolution.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```bash
 go test ./internal/typesys -run 'Iterator|Iterable|Batchable'

@@ -619,8 +619,12 @@ func collectRequiredMethods(model *semaTypeMemberView, typeName, sourceKind stri
 		return nil
 	}
 	var out []methodRequirement
+	if semaDatabaseBatchableInterface(typeName) {
+		return nil
+	}
 	for _, overloads := range orderedMethodFamilies(members.methods) {
 		for _, method := range overloads {
+			method = semaInstantiateInterfaceMethod(method, typeName)
 			if semaImplicitObjectInterfaceMethod(method) {
 				continue
 			}
@@ -653,7 +657,7 @@ func semaImplicitObjectInterfaceMethod(method typesys.MemberSymbol) bool {
 	}
 }
 
-func hasConcreteMethodSignature(model *semaTypeMemberView, typeName string, required typesys.MemberSymbol) bool {
+func hasConcreteMethodSignature(model *semaTypeMemberView, typeName string, required typesys.MemberSymbol, requirePublic bool) bool {
 	for current := typeName; current != ""; {
 		members, ok := model.lookup(normalizeName(current))
 		if !ok {
@@ -662,13 +666,57 @@ func hasConcreteMethodSignature(model *semaTypeMemberView, typeName string, requ
 		for _, method := range members.methods[normalizeName(required.Name)] {
 			if (sameSemaSignature(method, required) || semaOverrideCompatibleSignature(method, required, model)) &&
 				semaInterfaceReturnCompatible(method, required, model) &&
-				!hasModifier(method.Modifiers, "abstract") {
+				!hasModifier(method.Modifiers, "abstract") &&
+				(!requirePublic || hasModifier(method.Modifiers, "public") || hasModifier(method.Modifiers, "global")) {
 				return true
 			}
 		}
 		current = members.superClass
 	}
 	return false
+}
+
+func semaInstantiateInterfaceMethod(method typesys.MemberSymbol, interfaceType string) typesys.MemberSymbol {
+	base, args := semaGenericBaseAndArgs(interfaceType)
+	if len(args) != 1 || strings.TrimSpace(args[0]) == "" {
+		return method
+	}
+	argument := strings.TrimSpace(args[0])
+	switch normalizeName(base) {
+	case "iterator", "system.iterator":
+		if strings.EqualFold(method.Name, "next") {
+			method.Type = argument
+		}
+	case "iterable", "system.iterable":
+		if strings.EqualFold(method.Name, "iterator") {
+			method.Type = "Iterator<" + argument + ">"
+		}
+	case "database.batchable", "batchable":
+		switch strings.ToLower(method.Name) {
+		case "start":
+			if strings.EqualFold(method.Type, "Iterable") {
+				method.Type = "Iterable<" + argument + ">"
+			}
+		case "execute":
+			if len(method.Parameters) == 2 && strings.EqualFold(method.Parameters[1].Type, "List<Object>") {
+				method.Parameters[1].Type = "List<" + argument + ">"
+			}
+		}
+	}
+	return method
+}
+
+func semaDatabaseBatchableInterface(typeName string) bool {
+	base, _ := semaGenericBaseAndArgs(typeName)
+	return strings.EqualFold(base, "Database.Batchable") || strings.EqualFold(base, "Batchable")
+}
+
+func semaProjectTypeShadowsPlatform(model *semaTypeMemberView, receiverType string) bool {
+	if model == nil || model.state == nil || model.state.base == nil || strings.Contains(strings.TrimSpace(receiverType), ".") {
+		return false
+	}
+	members, ok := model.state.base.lookup(normalizeName(receiverType))
+	return ok && !members.dependency
 }
 
 func semaInterfaceReturnCompatible(method, required typesys.MemberSymbol, model *semaTypeMemberView) bool {

@@ -1582,20 +1582,49 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 		if skipProjectDiagnosticType(typ) {
 			continue
 		}
+		diagnostics = append(diagnostics, inheritanceTargetDiagnostics(model, typ)...)
 		if typ.Kind != apexast.DeclarationClass {
 			continue
 		}
 		abstractClass := hasModifier(typ.Modifiers, "abstract")
 		missingSuperclass := semaTypeMissingSuperclass(model, typ)
+		if !missingSuperclass && !semaSuperclassCanBeExtended(index, model, typ) {
+			diagnostics = append(diagnostics, diagnostic.Diagnostic{
+				Severity: diagnostic.Error,
+				Code:     "GLADESEMA017",
+				Message:  fmt.Sprintf("class %q cannot extend non-virtual superclass %q", typ.Name, typ.SuperClass),
+				File:     typ.File,
+				Range:    &typ.Range,
+			})
+		}
 		for _, member := range typ.Members {
 			if member.Kind != apexast.DeclarationMethod {
 				continue
 			}
-			if hasModifier(member.Modifiers, "override") && !missingSuperclass && !hasInheritedMethodSignature(model, typ, member) {
+			overridden, hasOverridden := overridableInheritedMethod(model, typ, member)
+			if hasModifier(member.Modifiers, "override") && !missingSuperclass && !hasOverridden && !hasPlatformInheritedMethodSignature(typ, member) {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
 					Code:     "GLADESEMA016",
 					Message:  fmt.Sprintf("method %q is marked override but no inherited method has the same signature", member.Name),
+					File:     typ.File,
+					Range:    &member.Range,
+				})
+			}
+			if !hasModifier(member.Modifiers, "override") && hasOverridden {
+				diagnostics = append(diagnostics, diagnostic.Diagnostic{
+					Severity: diagnostic.Error,
+					Code:     "GLADESEMA016",
+					Message:  fmt.Sprintf("method %q overrides inherited method and must use the override modifier", member.Name),
+					File:     typ.File,
+					Range:    &member.Range,
+				})
+			}
+			if hasModifier(member.Modifiers, "override") && hasOverridden && !semaOverriddenMethodFromDependency(model, typ, member) && hasExplicitDeclarationVisibility(member.Modifiers) && declarationVisibilityRank(member.Modifiers) < declarationVisibilityRank(overridden.Modifiers) {
+				diagnostics = append(diagnostics, diagnostic.Diagnostic{
+					Severity: diagnostic.Error,
+					Code:     "GLADESEMA016",
+					Message:  fmt.Sprintf("method %q cannot reduce inherited visibility", member.Name),
 					File:     typ.File,
 					Range:    &member.Range,
 				})
@@ -1615,7 +1644,7 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 		}
 		required := requiredMethodSignatures(model, typ)
 		for _, requirement := range required {
-			if hasConcreteMethodSignature(model, typ.Name, requirement.member) {
+			if hasConcreteMethodSignature(model, typ.Name, requirement.member, requirement.sourceKind == "interface") {
 				continue
 			}
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
@@ -1648,6 +1677,101 @@ func semaTypeMissingSuperclass(model *semaTypeMemberView, typ typesys.TypeSymbol
 	return !ok
 }
 
+func semaSuperclassCanBeExtended(index typesys.Index, model *semaTypeMemberView, typ typesys.TypeSymbol) bool {
+	superClass := strings.TrimSpace(typ.SuperClass)
+	if superClass == "" {
+		return true
+	}
+	resolved := resolveNestedTypeName(model, semaTypeMembersName(typ), superClass)
+	if resolved == "" {
+		resolved = superClass
+	}
+	for _, candidate := range index.Types {
+		if !strings.EqualFold(candidate.Name, resolved) && !strings.EqualFold(semaTypeMembersName(candidate), resolved) {
+			continue
+		}
+		return hasModifier(candidate.Modifiers, "virtual") || hasModifier(candidate.Modifiers, "abstract")
+	}
+	return true
+}
+
+func hasExplicitDeclarationVisibility(modifiers []string) bool {
+	return hasModifier(modifiers, "private") || hasModifier(modifiers, "protected") || hasModifier(modifiers, "public") || hasModifier(modifiers, "global")
+}
+
+func inheritanceTargetDiagnostics(model *semaTypeMemberView, typ typesys.TypeSymbol) []diagnostic.Diagnostic {
+	if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface {
+		return nil
+	}
+	var diagnostics []diagnostic.Diagnostic
+	checkTarget := func(target, role string, expected apexast.DeclarationKind) {
+		if strings.TrimSpace(target) == "" {
+			return
+		}
+		resolved := resolveNestedTypeName(model, typ.Name, target)
+		if resolved == "" {
+			resolved = target
+		}
+		members, _, ok := semaLookupTypeMembers(model, resolved)
+		if !ok || members.kind == expected {
+			return
+		}
+		diagnostics = append(diagnostics, diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "GLADESEMA017",
+			Message:  fmt.Sprintf("%s %q cannot use %s %q", typ.Kind, typ.Name, role, target),
+			File:     typ.File,
+			Range:    &typ.Range,
+		})
+	}
+	if typ.Kind == apexast.DeclarationClass {
+		checkTarget(typ.SuperClass, "extends", apexast.DeclarationClass)
+		for _, iface := range typ.Interfaces {
+			checkTarget(iface, "implements", apexast.DeclarationInterface)
+		}
+	} else {
+		for _, parent := range typ.Interfaces {
+			checkTarget(parent, "extends", apexast.DeclarationInterface)
+		}
+	}
+	return diagnostics
+}
+
+func overridableInheritedMethod(model *semaTypeMemberView, typ typesys.TypeSymbol, member typesys.MemberSymbol) (typesys.MemberSymbol, bool) {
+	if isObjectOverrideSignature(member) {
+		return typesys.MemberSymbol{Modifiers: []string{"public", "virtual"}}, true
+	}
+	for current := typ.SuperClass; current != ""; {
+		members, ok := model.lookup(normalizeName(current))
+		if !ok {
+			break
+		}
+		for _, candidate := range members.methods[normalizeName(member.Name)] {
+			if sameSemaSignature(candidate, member) && (hasModifier(candidate.Modifiers, "virtual") || hasModifier(candidate.Modifiers, "abstract")) {
+				return candidate, true
+			}
+		}
+		current = members.superClass
+	}
+	return typesys.MemberSymbol{}, false
+}
+
+func semaOverriddenMethodFromDependency(model *semaTypeMemberView, typ typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	for current := typ.SuperClass; current != ""; {
+		members, ok := model.lookup(normalizeName(current))
+		if !ok {
+			return false
+		}
+		for _, candidate := range members.methods[normalizeName(member.Name)] {
+			if sameSemaSignature(candidate, member) && (hasModifier(candidate.Modifiers, "virtual") || hasModifier(candidate.Modifiers, "abstract")) {
+				return members.dependency
+			}
+		}
+		current = members.superClass
+	}
+	return false
+}
+
 func checkDatabaseBatchableGenericContract(model *semaTypeMemberView, typ typesys.TypeSymbol) []diagnostic.Diagnostic {
 	members, _, ok := semaLookupTypeMembers(model, typ.Name)
 	if !ok {
@@ -1659,6 +1783,16 @@ func checkDatabaseBatchableGenericContract(model *semaTypeMemberView, typ typesy
 		if !strings.EqualFold(base, "Database.Batchable") && !strings.EqualFold(base, "Batchable") {
 			continue
 		}
+		if len(args) != 1 || strings.TrimSpace(args[0]) == "" {
+			diagnostics = append(diagnostics, diagnostic.Diagnostic{
+				Severity: diagnostic.Error,
+				Code:     "GLADESEMA017",
+				Message:  fmt.Sprintf("concrete class %q must parameterize Database.Batchable", typ.Name),
+				File:     typ.File,
+				Range:    &typ.Range,
+			})
+			continue
+		}
 		itemType := "Object"
 		if len(args) == 1 && strings.TrimSpace(args[0]) != "" {
 			itemType = strings.TrimSpace(args[0])
@@ -1666,6 +1800,13 @@ func checkDatabaseBatchableGenericContract(model *semaTypeMemberView, typ typesy
 		for _, methodName := range []string{"start", "execute", "finish"} {
 			methods := concreteMethodsByName(model, typ.Name, methodName)
 			if len(methods) == 0 {
+				diagnostics = append(diagnostics, diagnostic.Diagnostic{
+					Severity: diagnostic.Error,
+					Code:     "GLADESEMA017",
+					Message:  fmt.Sprintf("concrete class %q must implement Database.Batchable<%s> method %q with the matching signature", typ.Name, itemType, methodName),
+					File:     typ.File,
+					Range:    &typ.Range,
+				})
 				continue
 			}
 			if databaseBatchableMethodCompatible(methodName, itemType, methods, model) {
@@ -1937,6 +2078,9 @@ func (a *Analyzer) checkSemaExpressionTypeReferences(typ typesys.TypeSymbol, mem
 	return diagnostics
 }
 func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []semaArg, start, end int, source string, scope map[string]string, model *semaTypeMemberView, receiverMode string) ([]diagnostic.Diagnostic, bool) {
+	if semaProjectTypeShadowsPlatform(model, receiverType) {
+		return nil, false
+	}
 	if strings.EqualFold(receiverType, "System") && strings.EqualFold(method, "runAs") && len(args) == 1 {
 		return nil, true
 	}

@@ -56,6 +56,25 @@ public class UsesSystemDatabase {
 	}
 }
 
+func TestAnalyzeProjectDatabaseDoesNotFallBackToSystemDatabase(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Database.cls"), `
+public class Database {}
+`)
+	writeSemaFile(t, filepath.Join(root, "UsesDatabase.cls"), `
+public class UsesDatabase {
+  public void run() {
+    Database.query('SELECT Id FROM Account');
+  }
+}
+`)
+	result := analyzeFiles(t, root, "Database.cls", "UsesDatabase.cls")
+	if !result.HasErrors() {
+		t.Fatalf("expected project Database to prevent System.Database fallback, got %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeSchemaQualifierDisambiguatesShadowedSObject(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()

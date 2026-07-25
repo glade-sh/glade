@@ -1460,7 +1460,16 @@ func cleanFilePath(path string) string {
 
 func typeSymbolsFromDeclaration(path string, decl apexast.Declaration, parent string, parentDepth int, parentIsTest bool, source string) []TypeSymbol {
 	sym := typeSymbolFromDeclaration(path, decl, parent, parentDepth, parentIsTest)
-	sym.SuperClass, sym.Interfaces = parseTypeInheritance(source, decl.Range)
+	superClass, interfaces := parseTypeInheritance(source, decl.Range)
+	if decl.Kind == apexast.DeclarationInterface {
+		if superClass != "" {
+			interfaces = append([]string{superClass}, interfaces...)
+		}
+		sym.Interfaces = interfaces
+	} else {
+		sym.SuperClass = superClass
+		sym.Interfaces = interfaces
+	}
 	out := []TypeSymbol{sym}
 	for _, member := range decl.Members {
 		switch member.Kind {
