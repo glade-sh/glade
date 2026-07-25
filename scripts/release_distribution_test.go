@@ -988,35 +988,74 @@ func TestReleaseWorkflowCopiesVersionManifestIntoVersionDirectory(t *testing.T) 
 }
 
 func TestReleaseNotesScriptExtractsVersionSectionWithRealLineBreaks(t *testing.T) {
-	cmd := exec.Command("bash", "release-notes.sh", "v0.2.3")
+	releaseNotesPath := filepath.Join("..", "docs", "RELEASE_NOTES.md")
+	releaseNotes, err := os.ReadFile(releaseNotesPath)
+	if err != nil {
+		t.Fatalf("read %s: %v", releaseNotesPath, err)
+	}
+	if !strings.Contains(string(releaseNotes), "## v0.2.9 - 2026-07-25") {
+		t.Fatalf("release notes missing v0.2.9 planned release date\n%s", releaseNotes)
+	}
+
+	cmd := exec.Command("bash", "release-notes.sh", "v0.2.9")
 	cmd.Dir = "."
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Fatalf("release-notes.sh v0.2.3 failed: %v\n%s", err, out)
+		t.Fatalf("release-notes.sh v0.2.9 failed: %v\n%s", err, out)
 	}
 	notes := string(out)
 	if strings.TrimSpace(notes) == "" {
 		t.Fatal("release notes were empty")
 	}
+	normalizedNotes := strings.Join(strings.Fields(notes), " ")
 	for _, want := range []string{
-		"Glade v0.2.3 ships the latest fixes after v0.2.2.",
-		"Issue closeout:",
-		"5,005 Apex types",
-		"duplicate top-level Apex",
-		"classes inside its configured",
+		"11.45%",
+		"11.35%",
+		"8.00%",
+		"9.00%",
+		"4,565",
+		"4,561 passes",
+		"11,526",
+		"same four 60-second cap timeouts",
+		"zero failures, unsupported results, load errors, compile errors, and internal errors.",
+		"filesystem/root confinement",
+		"safe JSON serialization",
+		"compatibility",
+		"creates an absent release once",
+		"metadata, title, and body are reused without editing",
+		"duplicate asset name fails instead of replacing published bytes",
 	} {
-		if !strings.Contains(notes, want) {
+		if !strings.Contains(normalizedNotes, want) {
 			t.Fatalf("release notes missing %q\n%s", want, notes)
 		}
 	}
 	for _, notWant := range []string{
 		`\n`,
-		"## v0.2.3",
-		"## v0.2.2",
+		"## v0.2.9",
+		"## v0.2.8",
 		"## Unreleased",
 	} {
 		if strings.Contains(notes, notWant) {
 			t.Fatalf("release notes unexpectedly contain %q\n%s", notWant, notes)
+		}
+	}
+	for _, forbidden := range []struct {
+		pattern  *regexp.Regexp
+		mutation string
+	}{
+		{regexp.MustCompile(`(?i)\b4,?565\s*(?:/|of)\s*4,?565\b`), "4,565/4,565 passed"},
+		{regexp.MustCompile(`(?i)\b(?:all|every)\s+4,?565\s+(?:tests?\s+)?(?:pass(?:ed)?|succeeded)\b`), "All 4,565 tests passed"},
+		{regexp.MustCompile(`(?i)\b4,?565\s+(?:tests?\s+)?(?:pass(?:ed)?|succeeded)\b`), "4,565 passed"},
+		{regexp.MustCompile(`(?i)\b(?:zero|no)\s+(?:60-second\s+cap\s+)?timeouts?\b`), "No 60-second cap timeouts"},
+		{regexp.MustCompile(`(?i)\btimeouts?\s*[:=-]?\s*(?:zero|none|0)\b`), "timeouts: none"},
+		{regexp.MustCompile(`(?i)\b(?:zero|no)\s+tests?\s+timed\s+out\b`), "No tests timed out"},
+		{regexp.MustCompile(`(?i)\b(?:all\s+salesforce\s+behaviou?r\s+is\s+certified|universal\s+salesforce\s+(?:compatibility|certification))\b`), "All Salesforce behavior is certified"},
+	} {
+		if !forbidden.pattern.MatchString(forbidden.mutation) {
+			t.Fatalf("release note guard does not reject mutation %q", forbidden.mutation)
+		}
+		if forbidden.pattern.MatchString(normalizedNotes) {
+			t.Fatalf("release notes overclaim controlled comparison with %q\n%s", forbidden.pattern, notes)
 		}
 	}
 }
