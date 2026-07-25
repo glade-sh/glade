@@ -501,7 +501,7 @@ func TestCompletionContextForMemberAccessAndTests(t *testing.T) {
 		detail   string
 		notLabel string
 	}{
-		{name: "annotation", line: 0, char: 1, label: "isTest", detail: "Apex annotation"},
+		{name: "annotation", line: 0, char: 1, label: "IsTest", detail: "Apex annotation"},
 		{name: "test method", line: 3, char: 10, label: "testSetup", detail: "Apex test method modifier"},
 		{name: "local class variable", line: 9, char: 8, label: "run", detail: "InvoiceService.run"},
 		{name: "sobject variable", line: 10, char: 12, label: "Name", detail: "Account.Name"},
