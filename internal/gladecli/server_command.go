@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net"
 	"net/http"
 	"net/url"
@@ -780,14 +781,48 @@ func isAllowedPlaygroundCLIExtension(ext string) bool {
 }
 
 func resetPlaygroundState(dataRoot, workspaceID, dbPath string) error {
-	root, err := playgroundWorkspaceRoot(dataRoot, workspaceID)
+	id := strings.TrimSpace(workspaceID)
+	if id == "" {
+		id = "default"
+	}
+	_, err := playgroundWorkspaceRoot(dataRoot, workspaceID)
 	if err != nil {
 		return err
 	}
-	if err := os.RemoveAll(root); err != nil {
+	if err := os.MkdirAll(dataRoot, 0o755); err != nil {
 		return err
 	}
-	if err := os.RemoveAll(filepath.Join(dataRoot, "cache")); err != nil {
+	root, err := os.OpenRoot(dataRoot)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	workspaces, err := openVerifiedPlaygroundDirectory(root, "workspaces")
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	if err == nil {
+		defer workspaces.Close()
+		workspace, err := openVerifiedPlaygroundDirectory(workspaces, id)
+		if errors.Is(err, os.ErrNotExist) {
+			workspace = nil
+		} else if err != nil {
+			return err
+		}
+		if workspace != nil {
+			defer workspace.Close()
+			entries, err := fs.ReadDir(workspace.FS(), ".")
+			if err != nil {
+				return err
+			}
+			for _, entry := range entries {
+				if err := workspace.RemoveAll(entry.Name()); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	if err := root.RemoveAll("cache"); err != nil {
 		return err
 	}
 	if dbPath != "" {
@@ -796,6 +831,32 @@ func resetPlaygroundState(dataRoot, workspaceID, dbPath string) error {
 		}
 	}
 	return nil
+}
+
+func openVerifiedPlaygroundDirectory(parent *os.Root, name string) (*os.Root, error) {
+	info, err := parent.Lstat(name)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, err
+	}
+	if err != nil {
+		return nil, err
+	}
+	if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
+		return nil, fmt.Errorf("playground directory is not safe: %s", name)
+	}
+	child, err := parent.OpenRoot(name)
+	if err != nil {
+		return nil, err
+	}
+	opened, err := child.Stat(".")
+	if err != nil || !os.SameFile(info, opened) {
+		child.Close()
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("playground directory changed while opening: %s", name)
+	}
+	return child, nil
 }
 
 func playgroundWorkspaceRoot(dataRoot, workspaceID string) (string, error) {

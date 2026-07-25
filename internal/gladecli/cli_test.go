@@ -4345,6 +4345,44 @@ func TestResetPlaygroundStateRejectsEscapingWorkspaceID(t *testing.T) {
 	}
 }
 
+func TestResetPlaygroundStateRejectsSymlinkedWorkspaces(t *testing.T) {
+	dataRoot := filepath.Join(t.TempDir(), "playground")
+	outside := t.TempDir()
+	sentinel := filepath.Join(outside, "default", "sentinel.txt")
+	writeTestFile(t, sentinel, "keep")
+	if err := os.MkdirAll(dataRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(dataRoot, "workspaces")); err != nil {
+		t.Fatal(err)
+	}
+	if err := resetPlaygroundState(dataRoot, "default", ""); err == nil {
+		t.Fatal("resetPlaygroundState() succeeded through symlink")
+	}
+	if data, err := os.ReadFile(sentinel); err != nil || string(data) != "keep" {
+		t.Fatalf("sentinel = %q, %v", data, err)
+	}
+}
+
+func TestResetPlaygroundStateRejectsInternalSymlinkedWorkspace(t *testing.T) {
+	dataRoot := filepath.Join(t.TempDir(), "playground")
+	other := filepath.Join(dataRoot, "other")
+	sentinel := filepath.Join(other, "sentinel.txt")
+	writeTestFile(t, sentinel, "keep")
+	if err := os.MkdirAll(filepath.Join(dataRoot, "workspaces"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(other, filepath.Join(dataRoot, "workspaces", "default")); err != nil {
+		t.Fatal(err)
+	}
+	if err := resetPlaygroundState(dataRoot, "default", ""); err == nil {
+		t.Fatal("resetPlaygroundState() succeeded through internal symlink")
+	}
+	if data, err := os.ReadFile(sentinel); err != nil || string(data) != "keep" {
+		t.Fatalf("sentinel = %q, %v", data, err)
+	}
+}
+
 func TestRunPlaygroundRejectsEscapingWorkspaceID(t *testing.T) {
 	parent := t.TempDir()
 	dataRoot := filepath.Join(parent, "playground")

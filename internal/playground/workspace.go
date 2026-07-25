@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -41,6 +42,11 @@ func OpenWorkspace(opts WorkspaceOptions) (*Workspace, error) {
 	}
 	root := opts.ProjectRoot
 	managed := root == ""
+	if managed {
+		if err := validateWorkspaceID(id); err != nil {
+			return nil, err
+		}
+	}
 	if root == "" {
 		root = filepath.Join(dataRoot, "workspaces", id)
 	}
@@ -65,22 +71,195 @@ func OpenWorkspace(opts WorkspaceOptions) (*Workspace, error) {
 	return ws, nil
 }
 
+func validateWorkspaceID(id string) error {
+	if id == "" || id == "." || id == ".." || strings.ContainsAny(id, `/\\`) || filepath.IsAbs(id) {
+		return fmt.Errorf("invalid workspace ID %q", id)
+	}
+	return nil
+}
+
+func (w *Workspace) openRoot() (*os.Root, error) {
+	if w.Managed {
+		return w.openManagedRoot(false)
+	}
+	if err := os.MkdirAll(w.Root, 0o755); err != nil {
+		return nil, err
+	}
+	return os.OpenRoot(w.Root)
+}
+
+func (w *Workspace) openManagedRoot(reset bool) (*os.Root, error) {
+	if err := validateWorkspaceID(w.ID); err != nil {
+		return nil, err
+	}
+	if err := os.MkdirAll(w.DataRoot, 0o755); err != nil {
+		return nil, err
+	}
+	data, err := os.OpenRoot(w.DataRoot)
+	if err != nil {
+		return nil, err
+	}
+	defer data.Close()
+	workspaces, err := openVerifiedDirectory(data, "workspaces")
+	if err != nil {
+		return nil, err
+	}
+	defer workspaces.Close()
+	workspace, err := openVerifiedDirectory(workspaces, w.ID)
+	if err != nil {
+		return nil, err
+	}
+	if reset {
+		if err := clearRoot(workspace); err != nil {
+			workspace.Close()
+			return nil, err
+		}
+	}
+	return workspace, nil
+}
+
+func openVerifiedDirectory(parent *os.Root, name string) (*os.Root, error) {
+	info, err := parent.Lstat(name)
+	if errors.Is(err, os.ErrNotExist) {
+		if err := parent.Mkdir(name, 0o755); err != nil {
+			return nil, err
+		}
+		info, err = parent.Lstat(name)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
+		return nil, fmt.Errorf("directory is not a safe directory: %s", name)
+	}
+	child, err := parent.OpenRoot(name)
+	if err != nil {
+		return nil, err
+	}
+	opened, err := child.Stat(".")
+	if err != nil || !os.SameFile(info, opened) {
+		child.Close()
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("directory changed while opening: %s", name)
+	}
+	return child, nil
+}
+
+func clearRoot(root *os.Root) error {
+	entries, err := fs.ReadDir(root.FS(), ".")
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if err := root.RemoveAll(entry.Name()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func normalizedWorkspacePath(rel string) (string, error) {
+	rel = strings.TrimSpace(strings.ReplaceAll(rel, "\\", "/"))
+	if rel == "" || strings.HasPrefix(rel, "/") || filepath.IsAbs(rel) {
+		return "", fmt.Errorf("path is required or absolute: %s", rel)
+	}
+	clean := filepath.Clean(filepath.FromSlash(rel))
+	if clean == "." || clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("path escapes workspace: %s", rel)
+	}
+	if !isAllowedPlaygroundExtension(filepath.Ext(clean)) {
+		return "", fmt.Errorf("unsupported playground file extension %q", filepath.Ext(clean))
+	}
+	return filepath.ToSlash(clean), nil
+}
+
+func confinedLstat(root *os.Root, rel string) (os.FileInfo, error) {
+	if err := rejectSymlinkComponents(root, rel); err != nil {
+		return nil, err
+	}
+	info, err := root.Lstat(rel)
+	if err != nil {
+		return nil, err
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		return nil, fmt.Errorf("symbolic links are not allowed: %s", rel)
+	}
+	return info, nil
+}
+
+func rejectSymlinkComponents(root *os.Root, rel string) error {
+	parts := strings.Split(filepath.ToSlash(rel), "/")
+	for i := range parts {
+		name := strings.Join(parts[:i+1], "/")
+		info, err := root.Lstat(name)
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("symbolic links are not allowed: %s", name)
+		}
+	}
+	return nil
+}
+
+func (w *Workspace) openFile(rel string) (*os.File, os.FileInfo, error) {
+	rel, err := normalizedWorkspacePath(rel)
+	if err != nil {
+		return nil, nil, err
+	}
+	root, err := w.openRoot()
+	if err != nil {
+		return nil, nil, err
+	}
+	defer root.Close()
+	if _, err := confinedLstat(root, rel); err != nil {
+		return nil, nil, err
+	}
+	file, err := root.Open(rel)
+	if err != nil {
+		return nil, nil, err
+	}
+	info, err := file.Stat()
+	if err != nil {
+		file.Close()
+		return nil, nil, err
+	}
+	if !info.Mode().IsRegular() {
+		file.Close()
+		return nil, nil, fmt.Errorf("not a regular file: %s", rel)
+	}
+	return file, info, nil
+}
+
 func (w *Workspace) ensureDefaultFiles() error {
+	root, err := w.openRoot()
+	if err != nil {
+		return err
+	}
+	defer root.Close()
 	hasFiles := false
-	if err := filepath.WalkDir(w.Root, func(path string, d fs.DirEntry, err error) error {
+	if err := fs.WalkDir(root.FS(), ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				return nil
 			}
 			return err
 		}
-		if path != w.Root && strings.HasPrefix(d.Name(), ".") {
+		if path != "." && strings.HasPrefix(d.Name(), ".") {
 			if d.IsDir() {
 				return filepath.SkipDir
 			}
 			return nil
 		}
 		if d.IsDir() {
+			return nil
+		}
+		if d.Type()&fs.ModeSymlink != 0 {
 			return nil
 		}
 		if isAllowedPlaygroundExtension(filepath.Ext(path)) {
@@ -114,16 +293,18 @@ func (w *Workspace) ensureDefaultFiles() error {
 		"seed.json":      "{}\n",
 	}
 	for rel, content := range defaults {
-		path := filepath.Join(w.Root, filepath.FromSlash(rel))
-		if _, err := os.Stat(path); err == nil {
+		if err := rejectSymlinkComponents(root, rel); err != nil {
+			return err
+		}
+		if _, err := root.Lstat(rel); err == nil {
 			continue
 		} else if !errors.Is(err, os.ErrNotExist) {
 			return err
 		}
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		if err := root.MkdirAll(filepath.ToSlash(filepath.Dir(rel)), 0o755); err != nil {
 			return err
 		}
-		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		if err := root.WriteFile(rel, []byte(content), 0o644); err != nil {
 			return err
 		}
 	}
@@ -139,7 +320,11 @@ func (w *Workspace) LoadExample(id string) (WorkspaceMetadata, error) {
 }
 
 func (w *Workspace) LoadProjectReference(ref ProjectReference) (WorkspaceMetadata, error) {
-	files, err := collectProjectReferenceFiles(ref)
+	return w.LoadProjectReferenceLimited(ref, 0, 0)
+}
+
+func (w *Workspace) LoadProjectReferenceLimited(ref ProjectReference, maxFiles int, maxBytes int64) (WorkspaceMetadata, error) {
+	files, err := collectProjectReferenceFilesLimited(ref, maxFiles, maxBytes)
 	if err != nil {
 		return WorkspaceMetadata{}, err
 	}
@@ -155,10 +340,16 @@ func (w *Workspace) loadFiles(sourceID string, files map[string]string, readOnly
 		w.mu.Unlock()
 		return WorkspaceMetadata{}, errors.New("workspace root is required")
 	}
-	if err := os.RemoveAll(w.Root); err != nil {
+	if err := validateWorkspaceID(w.ID); err != nil {
 		w.mu.Unlock()
 		return WorkspaceMetadata{}, err
 	}
+	root, err := w.openManagedRoot(true)
+	if err != nil {
+		w.mu.Unlock()
+		return WorkspaceMetadata{}, err
+	}
+	defer root.Close()
 	w.versions = make(map[string]int)
 	w.readOnly = make(map[string]bool)
 	paths := make([]string, 0, len(files))
@@ -167,16 +358,16 @@ func (w *Workspace) loadFiles(sourceID string, files map[string]string, readOnly
 	}
 	sort.Strings(paths)
 	for _, rel := range paths {
-		path, err := w.SafePath(rel)
+		rel, err := normalizedWorkspacePath(rel)
 		if err != nil {
 			w.mu.Unlock()
 			return WorkspaceMetadata{}, err
 		}
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		if err := root.MkdirAll(filepath.ToSlash(filepath.Dir(rel)), 0o755); err != nil {
 			w.mu.Unlock()
 			return WorkspaceMetadata{}, err
 		}
-		if err := os.WriteFile(path, []byte(files[rel]), 0o644); err != nil {
+		if err := root.WriteFile(rel, []byte(files[rel]), 0o644); err != nil {
 			w.mu.Unlock()
 			return WorkspaceMetadata{}, err
 		}
@@ -199,6 +390,10 @@ func isProjectReferenceReadOnlyPath(path string) bool {
 }
 
 func collectProjectReferenceFiles(ref ProjectReference) (map[string]string, error) {
+	return collectProjectReferenceFilesLimited(ref, 0, 0)
+}
+
+func collectProjectReferenceFilesLimited(ref ProjectReference, maxFiles int, maxBytes int64) (map[string]string, error) {
 	root := strings.TrimSpace(ref.Path)
 	if root == "" {
 		return nil, errors.New("project reference path is required")
@@ -210,7 +405,13 @@ func collectProjectReferenceFiles(ref ProjectReference) (map[string]string, erro
 	if !info.IsDir() {
 		return nil, fmt.Errorf("project reference is not a directory: %s", root)
 	}
+	confined, err := os.OpenRoot(root)
+	if err != nil {
+		return nil, err
+	}
+	defer confined.Close()
 	files := make(map[string]string)
+	var totalBytes int64
 	if err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -227,22 +428,49 @@ func collectProjectReferenceFiles(ref ProjectReference) (map[string]string, erro
 			}
 			return nil
 		}
+		if entry.Type()&fs.ModeSymlink != 0 {
+			return nil
+		}
 		rel := slashRel(root, path)
 		if !isAllowedPlaygroundExtension(filepath.Ext(rel)) {
 			return nil
 		}
-		info, err := entry.Info()
+		info, err := confinedLstat(confined, rel)
 		if err != nil {
 			return err
+		}
+		if info.Mode()&fs.ModeSymlink != 0 || !info.Mode().IsRegular() {
+			return nil
 		}
 		if info.Size() > maxPlaygroundFileSize {
 			return fmt.Errorf("project reference file exceeds %d byte limit: %s", maxPlaygroundFileSize, rel)
 		}
-		data, err := os.ReadFile(path)
+		if maxFiles > 0 && len(files)+1 > maxFiles {
+			return fmt.Errorf("project reference file limit exceeded: %d", maxFiles)
+		}
+		if maxBytes > 0 && totalBytes+info.Size() > maxBytes {
+			return fmt.Errorf("project reference size limit exceeded: %d bytes", maxBytes)
+		}
+		file, err := confined.Open(rel)
 		if err != nil {
 			return err
 		}
+		data, readErr := io.ReadAll(io.LimitReader(file, maxPlaygroundFileSize+1))
+		closeErr := file.Close()
+		if readErr != nil {
+			return readErr
+		}
+		if closeErr != nil {
+			return closeErr
+		}
+		if len(data) > maxPlaygroundFileSize {
+			return fmt.Errorf("project reference file exceeds %d byte limit: %s", maxPlaygroundFileSize, rel)
+		}
+		if maxBytes > 0 && totalBytes+int64(len(data)) > maxBytes {
+			return fmt.Errorf("project reference size limit exceeded: %d bytes", maxBytes)
+		}
 		files[rel] = string(data)
+		totalBytes += int64(len(data))
 		return nil
 	}); err != nil {
 		return nil, err
@@ -263,7 +491,26 @@ func collectProjectReferenceFiles(ref ProjectReference) (map[string]string, erro
 	if _, ok := files["seed.json"]; !ok {
 		files["seed.json"] = "{}\n"
 	}
+	if err := enforceProjectReferenceLimits(files, maxFiles, maxBytes); err != nil {
+		return nil, err
+	}
 	return files, nil
+}
+
+func enforceProjectReferenceLimits(files map[string]string, maxFiles int, maxBytes int64) error {
+	if maxFiles > 0 && len(files) > maxFiles {
+		return fmt.Errorf("project reference file limit exceeded: %d", maxFiles)
+	}
+	if maxBytes > 0 {
+		var total int64
+		for _, content := range files {
+			total += int64(len(content))
+		}
+		if total > maxBytes {
+			return fmt.Errorf("project reference size limit exceeded: %d bytes", maxBytes)
+		}
+	}
+	return nil
 }
 
 func shouldSkipProjectReferenceDir(name string) bool {
@@ -305,8 +552,15 @@ func (w *Workspace) refreshVersions() error {
 }
 
 func (w *Workspace) loadReadOnlyManifest() error {
-	path := filepath.Join(w.Root, readOnlyManifestFile)
-	data, err := os.ReadFile(path)
+	root, err := w.openRoot()
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	if _, err := confinedLstat(root, readOnlyManifestFile); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	data, err := root.ReadFile(readOnlyManifestFile)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil
 	}
@@ -328,9 +582,16 @@ func (w *Workspace) loadReadOnlyManifest() error {
 }
 
 func (w *Workspace) writeReadOnlyManifestLocked() error {
-	path := filepath.Join(w.Root, readOnlyManifestFile)
+	root, err := w.openRoot()
+	if err != nil {
+		return err
+	}
+	defer root.Close()
 	if len(w.readOnly) == 0 {
-		if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+		if _, err := confinedLstat(root, readOnlyManifestFile); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+		if err := root.Remove(readOnlyManifestFile); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return err
 		}
 		return nil
@@ -340,26 +601,22 @@ func (w *Workspace) writeReadOnlyManifestLocked() error {
 		paths = append(paths, rel)
 	}
 	sort.Strings(paths)
-	return writeJSONFile(path, paths)
+	data, err := json.MarshalIndent(paths, "", "  ")
+	if err != nil {
+		return err
+	}
+	if _, err := confinedLstat(root, readOnlyManifestFile); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	return root.WriteFile(readOnlyManifestFile, append(data, '\n'), 0o644)
 }
 
 func (w *Workspace) SafePath(rel string) (string, error) {
-	rel = strings.TrimSpace(strings.ReplaceAll(rel, "\\", "/"))
-	if rel == "" {
-		return "", errors.New("path is required")
+	clean, err := normalizedWorkspacePath(rel)
+	if err != nil {
+		return "", err
 	}
-	if strings.HasPrefix(rel, "/") || filepath.IsAbs(rel) {
-		return "", fmt.Errorf("absolute paths are not allowed: %s", rel)
-	}
-	clean := filepath.Clean(filepath.FromSlash(rel))
-	if clean == "." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) || clean == ".." {
-		return "", fmt.Errorf("path escapes workspace: %s", rel)
-	}
-	ext := strings.ToLower(filepath.Ext(clean))
-	if !isAllowedPlaygroundExtension(ext) {
-		return "", fmt.Errorf("unsupported playground file extension %q", ext)
-	}
-	full := filepath.Join(w.Root, clean)
+	full := filepath.Join(w.Root, filepath.FromSlash(clean))
 	root, err := filepath.Abs(w.Root)
 	if err != nil {
 		return "", err
@@ -390,11 +647,10 @@ func (w *Workspace) SaveFile(req FileSaveRequest) (FileSaveResponse, error) {
 	if len(req.Content) > maxPlaygroundFileSize {
 		return FileSaveResponse{}, fmt.Errorf("file exceeds %d byte limit", maxPlaygroundFileSize)
 	}
-	path, err := w.SafePath(req.Path)
+	rel, err := normalizedWorkspacePath(req.Path)
 	if err != nil {
 		return FileSaveResponse{}, err
 	}
-	rel := slashRel(w.Root, path)
 	current := w.versions[rel]
 	if w.readOnly[rel] {
 		return FileSaveResponse{}, ErrReadOnlyFile{Path: rel}
@@ -402,10 +658,23 @@ func (w *Workspace) SaveFile(req FileSaveRequest) (FileSaveResponse, error) {
 	if current > 0 && req.Version != current {
 		return FileSaveResponse{}, ErrVersionConflict{Path: rel, Expected: current, Got: req.Version}
 	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	root, err := w.openRoot()
+	if err != nil {
 		return FileSaveResponse{}, err
 	}
-	if err := os.WriteFile(path, []byte(req.Content), 0o644); err != nil {
+	defer root.Close()
+	if info, err := root.Lstat(rel); err == nil && info.Mode()&os.ModeSymlink != 0 {
+		return FileSaveResponse{}, fmt.Errorf("symbolic links are not allowed: %s", rel)
+	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return FileSaveResponse{}, err
+	}
+	if err := rejectSymlinkComponents(root, rel); err != nil {
+		return FileSaveResponse{}, err
+	}
+	if err := root.MkdirAll(filepath.ToSlash(filepath.Dir(rel)), 0o755); err != nil {
+		return FileSaveResponse{}, err
+	}
+	if err := root.WriteFile(rel, []byte(req.Content), 0o644); err != nil {
 		return FileSaveResponse{}, err
 	}
 	w.versions[rel] = current + 1
@@ -427,19 +696,26 @@ func (w *Workspace) DeleteFile(rel string) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	path, err := w.SafePath(rel)
+	rel, err := normalizedWorkspacePath(rel)
 	if err != nil {
 		return err
 	}
-	rel = slashRel(w.Root, path)
 	if w.readOnly[rel] {
 		return ErrReadOnlyFile{Path: rel}
 	}
-	if filepath.Base(path) == "sfdx-project.json" {
+	if filepath.Base(rel) == "sfdx-project.json" {
 		return errors.New("sfdx-project.json cannot be deleted")
 	}
+	root, err := w.openRoot()
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	if _, err := confinedLstat(root, rel); err != nil {
+		return err
+	}
 	delete(w.versions, rel)
-	return os.Remove(path)
+	return root.Remove(rel)
 }
 
 func (w *Workspace) Metadata() (WorkspaceMetadata, error) {
@@ -454,7 +730,15 @@ func (w *Workspace) Metadata() (WorkspaceMetadata, error) {
 	if err != nil {
 		return WorkspaceMetadata{}, err
 	}
-	anonymous, _ := os.ReadFile(filepath.Join(w.Root, "anonymous.apex"))
+	anonymous := []byte(nil)
+	if root, err := w.openRoot(); err == nil {
+		if _, err := confinedLstat(root, "anonymous.apex"); err == nil {
+			if data, err := root.ReadFile("anonymous.apex"); err == nil {
+				anonymous = data
+			}
+		}
+		root.Close()
+	}
 	exampleID := w.ExampleID
 	if exampleID == "" {
 		exampleID = w.detectExampleIDLocked(files)
@@ -488,8 +772,14 @@ func (w *Workspace) detectExampleIDLocked(files []WorkspaceFile) string {
 				matched = false
 				break
 			}
-			data, err := os.ReadFile(filepath.Join(w.Root, filepath.FromSlash(rel)))
-			if err != nil || string(data) != content {
+			file, _, err := w.openFile(rel)
+			if err != nil {
+				matched = false
+				break
+			}
+			data, readErr := io.ReadAll(file)
+			file.Close()
+			if readErr != nil || string(data) != content {
 				matched = false
 				break
 			}
@@ -525,11 +815,16 @@ func (w *Workspace) RuntimeSourceHash() (string, error) {
 
 func (w *Workspace) listFilesLocked() ([]WorkspaceFile, error) {
 	var files []WorkspaceFile
-	if err := filepath.WalkDir(w.Root, func(path string, entry fs.DirEntry, err error) error {
+	root, err := w.openRoot()
+	if err != nil {
+		return nil, err
+	}
+	defer root.Close()
+	if err := fs.WalkDir(root.FS(), ".", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if path != w.Root && strings.HasPrefix(entry.Name(), ".") {
+		if path != "." && strings.HasPrefix(entry.Name(), ".") {
 			if entry.IsDir() {
 				return filepath.SkipDir
 			}
@@ -538,13 +833,14 @@ func (w *Workspace) listFilesLocked() ([]WorkspaceFile, error) {
 		if entry.IsDir() {
 			return nil
 		}
-		rel := slashRel(w.Root, path)
-		if _, err := w.SafePath(rel); err != nil {
-			if rel != "sfdx-project.json" {
-				return nil
-			}
+		if entry.Type()&fs.ModeSymlink != 0 {
+			return nil
 		}
-		info, err := entry.Info()
+		rel, err := normalizedWorkspacePath(path)
+		if err != nil {
+			return nil
+		}
+		info, err := confinedLstat(root, rel)
 		if err != nil {
 			return err
 		}
@@ -562,13 +858,20 @@ func (w *Workspace) listFilesLocked() ([]WorkspaceFile, error) {
 }
 
 func (w *Workspace) hashLocked(files []WorkspaceFile) (string, error) {
+	root, err := w.openRoot()
+	if err != nil {
+		return "", err
+	}
+	defer root.Close()
 	h := sha256.New()
 	for _, file := range files {
 		if file.Kind == "other" {
 			continue
 		}
-		path := filepath.Join(w.Root, filepath.FromSlash(file.Path))
-		body, err := os.ReadFile(path)
+		if _, err := confinedLstat(root, file.Path); err != nil {
+			return "", err
+		}
+		body, err := root.ReadFile(file.Path)
 		if err != nil {
 			return "", err
 		}
@@ -578,6 +881,20 @@ func (w *Workspace) hashLocked(files []WorkspaceFile) (string, error) {
 		h.Write([]byte{0})
 	}
 	return "sha256:" + hex.EncodeToString(h.Sum(nil)), nil
+}
+
+func (w *Workspace) FileHash(rel string) string {
+	file, _, err := w.openFile(rel)
+	if err != nil {
+		return ""
+	}
+	defer file.Close()
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return ""
+	}
+	sum := sha256.Sum256(data)
+	return "sha256:" + hex.EncodeToString(sum[:])
 }
 
 func selectRuntimeSourceFiles(files []WorkspaceFile) []WorkspaceFile {

@@ -43,6 +43,50 @@ func TestServerWorkspaceAndRunRoutes(t *testing.T) {
 	}
 }
 
+func TestServeWorkspaceSymlinkReturnsNotFound(t *testing.T) {
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	outside := filepath.Join(t.TempDir(), "outside.cls")
+	if err := os.WriteFile(outside, []byte("outside sentinel"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(ws.Root, "force-app/main/default/classes/Outside.cls")
+	if err := os.Symlink(outside, link); err != nil {
+		t.Fatal(err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test"})
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/force-app/main/default/classes/Outside.cls", nil))
+	if rec.Code != http.StatusNotFound || strings.Contains(rec.Body.String(), "outside sentinel") {
+		t.Fatalf("GET symlink = %d %q", rec.Code, rec.Body.String())
+	}
+}
+
+func TestSeedSymlinkDoesNotReadOutsideFile(t *testing.T) {
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	outside := filepath.Join(t.TempDir(), "seed.json")
+	if err := os.WriteFile(outside, []byte(`{"records":[]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(filepath.Join(ws.Root, "seed.json")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(ws.Root, "seed.json")); err != nil {
+		t.Fatal(err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test"})
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/playground/api/seed", nil))
+	if rec.Code == http.StatusOK || strings.Contains(rec.Body.String(), "outside sentinel") {
+		t.Fatalf("seed symlink = %d %q", rec.Code, rec.Body.String())
+	}
+}
+
 func TestServerWorkspaceIncludesConfiguredDBPath(t *testing.T) {
 	dataRoot := t.TempDir()
 	dbPath := filepath.Join(t.TempDir(), "org.sqlite")
@@ -474,6 +518,7 @@ func TestServerListsLoadsAndRunsLocalProjectReference(t *testing.T) {
     return 'local-ref-loaded';
   }
 }
+
 `)
 	writePlaygroundTestFile(t, filepath.Join(projectRoot, "anonymous.apex"), `System.debug(LocalProbe.run());
 `)
@@ -613,6 +658,56 @@ func TestServerListsLoadsAndRunsLocalProjectReference(t *testing.T) {
 	}
 	if meta.ExampleID != "" {
 		t.Fatalf("reopened example id = %q, want empty without expensive project-ref match", meta.ExampleID)
+	}
+}
+
+func TestPublicProjectReferenceRespectsWorkspaceLimits(t *testing.T) {
+	projectRoot := t.TempDir()
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), sfdxProjectJSON)
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/One.cls"), "public class One {}")
+	writePlaygroundTestFile(t, filepath.Join(projectRoot, "force-app/main/default/classes/Two.cls"), "public class Two {}")
+	ws, err := OpenWorkspace(WorkspaceOptions{DataRoot: t.TempDir(), ID: "default"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewServer(ws, ServerOptions{Version: "test", Public: true, MaxWorkspaceFiles: 2, MaxWorkspaceBytes: 1024, ProjectReferences: []ProjectReference{{Name: "Local", Path: projectRoot}}})
+	before, err := ws.Metadata()
+	if err != nil {
+		t.Fatal(err)
+	}
+	request, _ := json.Marshal(map[string]string{"id": handler.projectRefs[0].ID})
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/playground/api/examples/load", bytes.NewReader(request)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("count-limited load = %d %s", rec.Code, rec.Body.String())
+	}
+	after, err := ws.Metadata()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if after.WorkspaceHash != before.WorkspaceHash {
+		t.Fatal("workspace changed after rejected project reference")
+	}
+	handler = NewServer(ws, ServerOptions{Version: "test", Public: true, MaxWorkspaceFiles: 16, MaxWorkspaceBytes: 10, ProjectReferences: []ProjectReference{{Name: "Local", Path: projectRoot}}})
+	request, _ = json.Marshal(map[string]string{"id": handler.projectRefs[0].ID})
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/playground/api/examples/load", bytes.NewReader(request)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("byte-limited load = %d %s", rec.Code, rec.Body.String())
+	}
+	handler = NewServer(ws, ServerOptions{Version: "test", Public: true, MaxWorkspaceFiles: 5, MaxWorkspaceBytes: 1024, ProjectReferences: []ProjectReference{{Name: "Local", Path: projectRoot}}})
+	request, _ = json.Marshal(map[string]string{"id": handler.projectRefs[0].ID})
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/playground/api/examples/load", bytes.NewReader(request)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("bounded load = %d %s", rec.Code, rec.Body.String())
+	}
+	meta, err := ws.Metadata()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if file := workspaceFileByPath(meta.Files, "force-app/main/default/classes/One.cls"); file == nil || !file.ReadOnly {
+		t.Fatalf("bounded project file = %#v", file)
 	}
 }
 
