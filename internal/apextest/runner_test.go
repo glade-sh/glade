@@ -4199,12 +4199,13 @@ func TestRunCallsInstanceMethodThroughStaticProperty(t *testing.T) {
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/Context.cls"), `
 public class Context {
+  private static Context singleton;
   public static Context Instance {
     get {
-      if (Instance == null) {
-        Instance = new Context();
+      if (singleton == null) {
+        singleton = new Context();
       }
-      return Instance;
+      return singleton;
     }
   }
   public Context() {
@@ -4235,12 +4236,13 @@ func TestRunCallsStaticPropertyReceiverInsideMapLiteral(t *testing.T) {
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/Context.cls"), `
 public class Context {
+  private static Context singleton;
   public static Context Instance {
     get {
-      if (Instance == null) {
-        Instance = new Context();
+      if (singleton == null) {
+        singleton = new Context();
       }
-      return Instance;
+      return singleton;
     }
   }
   public Id getId(Schema.SObjectType typ) {
