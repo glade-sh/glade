@@ -899,6 +899,14 @@ go test ./...
 scripts/smoke.sh
 ```
 
+Current result (2026-07-25): `scripts/smoke.sh` passes, but `go test ./...`
+is red. The fail-closed test runner now surfaces compile errors in legacy
+runtime fixtures (for example, unsupported SOQL parser forms, generated
+interface contracts, and property/visibility fixtures) that must be reconciled
+against Salesforce before this release gate can pass. The broad run also hits
+the existing repository-guard findings for planning documents; those are
+separate from the language-rule implementation.
+
 - [ ] **Step 6: Replay the checked oracle**
 
 ```bash
