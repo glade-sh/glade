@@ -203,8 +203,8 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 				}
 			case "instanceof":
 				target := strings.TrimSpace(current.Right.Name)
-				if left != "" && target != "" && (semaAssignableToType(target, left, model) || !compatible(left, target)) {
-					appendDiagnostic("instanceof comparison is always true or impossible")
+				if left != "" && target != "" && !compatible(left, target) {
+					appendDiagnostic("instanceof comparison is impossible")
 				}
 			}
 		case ir.ExprCall:
