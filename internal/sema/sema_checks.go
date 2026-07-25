@@ -1721,7 +1721,7 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 		targetType, ok := scopes.visibleAt(target, match[2])
 		if ok {
 			value := trimSemaArg(body, match[1], semaStatementEnd(body, match[1]))
-			valueType := inferSemaArgTypeWithModel(value.text, scopes.flat(), model)
+			valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flat())
 			if valueType == "" || valueType == "null" || semaAssignableToType(targetType, valueType, model) {
 				continue
 			}

@@ -3722,6 +3722,43 @@ private class ModelTest {
 	}
 }
 
+// TestStandardSObjectConstructorWinsOverNestedClassWithSameNameInLocalDeclaration covers
+// the same SObject-vs-nested-class precedence as
+// TestStandardSObjectConstructorWinsOverNestedClassWithSameName, but for a local
+// declaration initializer (`SObject row = new Contact(...)`) instead of a return
+// statement, matching a false-positive gap fixed alongside that test.
+func TestStandardSObjectConstructorWinsOverNestedClassWithSameNameInLocalDeclaration(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Model.cls"), `
+public class Model {
+  public class Contact {
+    public String firstName;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ModelTest.cls"), `
+@isTest
+private class ModelTest {
+  @isTest static void sobjectConstructorWinsInLocalDeclaration() {
+    SObject row = new Contact(FirstName = 'Ada', LastName = 'Lovelace');
+    System.assertEquals(Contact.SObjectType, row.getSObjectType());
+    System.assertEquals('Ada', (String)row.get('FirstName'));
+  }
+  @isTest static void sobjectConstructorWinsAsCallArgument() {
+    List<SObject> rows = new List<SObject>();
+    rows.add(new Contact(FirstName = 'Grace', LastName = 'Hopper'));
+    System.assertEquals(Contact.SObjectType, rows[0].getSObjectType());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestNamespacedTypeParameterCanBeForwardedToCreateStub(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)

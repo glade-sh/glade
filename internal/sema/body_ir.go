@@ -1594,7 +1594,8 @@ func semaMapConstructorAccepts(keyType, valueType, argType string, model *semaTy
 func irCallArgTypes(a *Analyzer, args []ir.Expr, scope irSemaScope, model *semaTypeMemberView, currentType string) []string {
 	argTypes := make([]string, len(args))
 	for i, arg := range args {
-		argTypes[i] = resolveNestedTypeReference(model, currentType, a.inferIRExprType(arg, scope, model, currentType))
+		argType := resolveNestedTypeReference(model, currentType, a.inferIRExprType(arg, scope, model, currentType))
+		argTypes[i] = semaIRSObjectConstructorPrecedence(model, argType, arg)
 	}
 	return argTypes
 }
@@ -1608,7 +1609,8 @@ func irCallNamedArgTypes(a *Analyzer, args []ir.NamedArg, scope irSemaScope, mod
 		if arg.Name == "" {
 			continue
 		}
-		argTypes[arg.Name] = resolveNestedTypeReference(model, currentType, a.inferIRExprType(arg.Expr, scope, model, currentType))
+		argType := resolveNestedTypeReference(model, currentType, a.inferIRExprType(arg.Expr, scope, model, currentType))
+		argTypes[arg.Name] = semaIRSObjectConstructorPrecedence(model, argType, arg.Expr)
 	}
 	return argTypes
 }
@@ -1629,6 +1631,7 @@ func irCallArgsMatch(a *Analyzer, params []apexast.Parameter, args []ir.Expr, sc
 func (a *Analyzer) checkIRAssignmentType(typ typesys.TypeSymbol, member typesys.MemberSymbol, targetType, target string, expr ir.Expr, scope *irSemaScope, pos, bodyOffset int, source string, model *semaTypeMemberView, verb string) []diagnostic.Diagnostic {
 	targetType = resolveNestedTypeReference(model, typ.Name, targetType)
 	valueType := resolveNestedTypeReference(model, typ.Name, a.inferIRExprType(expr, *scope, model, typ.Name))
+	valueType = semaIRSObjectConstructorPrecedence(model, valueType, expr)
 	if strings.EqualFold(valueType, "void") && semaIRExprLooksLikeIndexAssignmentValue(expr, source, bodyOffset+pos) {
 		valueType = resolveNestedTypeReference(model, typ.Name, a.inferIRExprType(expr.Args[1], *scope, model, typ.Name))
 	}
@@ -1709,17 +1712,7 @@ func semaIRSObjectConstructorPrecedence(model *semaTypeMemberView, resolved stri
 		return resolved
 	}
 	bareName := strings.TrimPrefix(expr.Callee, "new:")
-	if strings.EqualFold(resolved, bareName) {
-		return resolved
-	}
-	standard, ok := model.lookup(normalizeName(bareName))
-	if !ok || !standard.sobject {
-		return resolved
-	}
-	if nested, ok := model.lookup(normalizeName(resolved)); ok && nested.sobject {
-		return resolved
-	}
-	return bareName
+	return semaSObjectConstructorPrecedence(model, resolved, bareName, true)
 }
 
 func semaMemberReturnSourceLooksBoolean(source string, start, end int) bool {

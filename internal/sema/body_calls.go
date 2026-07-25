@@ -469,7 +469,7 @@ func (a *Analyzer) diagnoseConstructorChain(typ typesys.TypeSymbol, member types
 	}
 	argTypes := make([]string, len(args))
 	for i, arg := range args {
-		argTypes[i] = resolveNestedTypeReference(model, typ.Name, inferSemaArgTypeWithModel(arg.text, map[string]string{}, model))
+		argTypes[i] = semaResolveConstructedExpressionType(model, typ.Name, arg.text, map[string]string{})
 		if argTypes[i] == "" {
 			for _, ctor := range target.constructors {
 				if len(ctor.Parameters) == len(args) {
@@ -2391,14 +2391,28 @@ func semaShortTypeKeyFromNormalizedKey(key string) string {
 // value, ...)` SObject field-initializer call, that constructor syntax only exists for
 // real SObjects, so a genuine standard SObject named Type takes precedence over a
 // same-named nested Apex class that nested-class resolution would otherwise prefer.
+// This applies at every expression-typing site (returns, local declarations,
+// assignments, call arguments), not just returns: the ambiguity is intrinsic to the
+// expression's syntax, not to where the expression happens to appear.
 func semaResolveConstructedExpressionType(model *semaTypeMemberView, owner, expr string, scope map[string]string) string {
 	resolved := resolveNestedTypeReference(model, owner, inferSemaArgTypeWithModel(expr, scope, model))
 	match := newExprPattern.FindStringSubmatch(strings.TrimSpace(expr))
 	if len(match) != 2 {
 		return resolved
 	}
-	bareName := match[1]
-	if strings.EqualFold(resolved, bareName) || !newExprSObjectFieldArgPattern.MatchString(expr) {
+	return semaSObjectConstructorPrecedence(model, resolved, match[1], newExprSObjectFieldArgPattern.MatchString(expr))
+}
+
+// semaSObjectConstructorPrecedence holds the narrow precedence rule shared by the
+// regex-based (semaResolveConstructedExpressionType) and IR-based
+// (semaIRSObjectConstructorPrecedence) expression-typing paths: a `new Type(field =
+// value, ...)` SObject field-initializer only exists for real SObjects, so a genuine
+// standard SObject named bareName takes precedence over a same-named non-SObject nested
+// Apex class that ordinary nested-class resolution would otherwise prefer. This does not
+// broadly invert nested-class-wins: it only fires when the constructor call used named
+// field arguments and the nested-resolved type is not itself an SObject.
+func semaSObjectConstructorPrecedence(model *semaTypeMemberView, resolved, bareName string, hasSObjectFieldArgs bool) string {
+	if bareName == "" || strings.EqualFold(resolved, bareName) || !hasSObjectFieldArgs {
 		return resolved
 	}
 	standard, ok := model.lookup(normalizeName(bareName))
