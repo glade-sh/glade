@@ -1588,15 +1588,6 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 		}
 		abstractClass := hasModifier(typ.Modifiers, "abstract")
 		missingSuperclass := semaTypeMissingSuperclass(model, typ)
-		if !missingSuperclass && !semaSuperclassCanBeExtended(index, model, typ) {
-			diagnostics = append(diagnostics, diagnostic.Diagnostic{
-				Severity: diagnostic.Error,
-				Code:     "GLADESEMA017",
-				Message:  fmt.Sprintf("class %q cannot extend non-virtual superclass %q", typ.Name, typ.SuperClass),
-				File:     typ.File,
-				Range:    &typ.Range,
-			})
-		}
 		for _, member := range typ.Members {
 			if member.Kind != apexast.DeclarationMethod {
 				continue
@@ -1644,7 +1635,8 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 		}
 		required := requiredMethodSignatures(model, typ)
 		for _, requirement := range required {
-			if hasConcreteMethodSignature(model, typ.Name, requirement.member, requirement.sourceKind == "interface") {
+			requirePublic := requirement.sourceKind == "interface" && typ.Range.End.Offset > typ.Range.Start.Offset
+			if hasConcreteMethodSignature(model, typ.Name, requirement.member, requirePublic) {
 				continue
 			}
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
@@ -1675,24 +1667,6 @@ func semaTypeMissingSuperclass(model *semaTypeMemberView, typ typesys.TypeSymbol
 	}
 	_, ok := model.lookup(normalizeName(resolved))
 	return !ok
-}
-
-func semaSuperclassCanBeExtended(index typesys.Index, model *semaTypeMemberView, typ typesys.TypeSymbol) bool {
-	superClass := strings.TrimSpace(typ.SuperClass)
-	if superClass == "" {
-		return true
-	}
-	resolved := resolveNestedTypeName(model, semaTypeMembersName(typ), superClass)
-	if resolved == "" {
-		resolved = superClass
-	}
-	for _, candidate := range index.Types {
-		if !strings.EqualFold(candidate.Name, resolved) && !strings.EqualFold(semaTypeMembersName(candidate), resolved) {
-			continue
-		}
-		return hasModifier(candidate.Modifiers, "virtual") || hasModifier(candidate.Modifiers, "abstract")
-	}
-	return true
 }
 
 func hasExplicitDeclarationVisibility(modifiers []string) bool {

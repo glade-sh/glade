@@ -46,32 +46,22 @@ public class Child extends Base {
 	}
 }
 
-func TestInheritanceContractsRejectNonVirtualInheritance(t *testing.T) {
+func TestInheritanceContractsRejectNonVirtualMethodOverride(t *testing.T) {
 	t.Parallel()
-	for name, files := range map[string]map[string]string{
-		"non-virtual superclass": {
-			"Base.cls":  `public class Base {}`,
-			"Child.cls": `public class Child extends Base {}`,
-		},
-		"non-virtual method": {
-			"Base.cls": `
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Base.cls": `
 public virtual class Base {
   public void run() {}
 }
 `,
-			"Child.cls": `
+		"Child.cls": `
 public class Child extends Base {
   public override void run() {}
 }
 `,
-		},
-	} {
-		t.Run(name, func(t *testing.T) {
-			result := analyzeDeclarationProject(t, files)
-			if !result.HasErrors() {
-				t.Fatalf("expected virtuality diagnostic, got %#v", result.Diagnostics)
-			}
-		})
+	})
+	if !result.HasErrors() {
+		t.Fatalf("expected virtuality diagnostic, got %#v", result.Diagnostics)
 	}
 }
 

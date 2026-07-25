@@ -780,6 +780,9 @@ func semaNormalizeMemberTypes(model *semaTypeMemberView, owner string, member ty
 func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.MemberSymbol, instructions []ir.Instruction, scope *irSemaScope, bodyOffset int, source string, model *semaTypeMemberView, constructability map[string]typesys.TypeSymbol) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, inst := range instructions {
+		if inst.Expr.Kind != "" {
+			diagnostics = append(diagnostics, a.checkIRExpressionContract(typ, member, inst.Expr, *scope, inst.Pos, bodyOffset, source, model)...)
+		}
 		switch inst.Op {
 		case ir.OpDeclare:
 			diagnostics = append(diagnostics, a.checkIRExprVariables(typ, member, inst.Expr, scope, inst.Pos, bodyOffset, source, model, constructability)...)

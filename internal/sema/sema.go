@@ -151,6 +151,7 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 		result.Diagnostics = append(result.Diagnostics, a.checkTriggers(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkDeclarationContracts(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkMemberTypes(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkSourceTypeContracts(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkMethodParameters(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkAnnotations(index)...)
 		typeMemberState := buildSemaTypeMemberState(index, recorder, a.sources)
@@ -664,8 +665,10 @@ func hasConcreteMethodSignature(model *semaTypeMemberView, typeName string, requ
 			return false
 		}
 		for _, method := range members.methods[normalizeName(required.Name)] {
-			if (sameSemaSignature(method, required) || semaOverrideCompatibleSignature(method, required, model)) &&
-				semaInterfaceReturnCompatible(method, required, model) &&
+			method = semaNormalizeMemberTypes(model, members.name, method)
+			normalizedRequired := semaNormalizeMemberTypes(model, typeName, required)
+			if (sameSemaSignature(method, normalizedRequired) || semaOverrideCompatibleSignature(method, normalizedRequired, model)) &&
+				semaInterfaceReturnCompatible(method, normalizedRequired, model) &&
 				!hasModifier(method.Modifiers, "abstract") &&
 				(!requirePublic || hasModifier(method.Modifiers, "public") || hasModifier(method.Modifiers, "global")) {
 				return true
@@ -712,7 +715,7 @@ func semaDatabaseBatchableInterface(typeName string) bool {
 }
 
 func semaProjectTypeShadowsPlatform(model *semaTypeMemberView, receiverType string) bool {
-	if model == nil || model.state == nil || model.state.base == nil || strings.Contains(strings.TrimSpace(receiverType), ".") {
+	if model == nil || model.state == nil || model.state.base == nil || strings.Contains(strings.TrimSpace(receiverType), ".") || !semaKnownPlatformTypeReceiver(receiverType) {
 		return false
 	}
 	members, ok := model.state.base.lookup(normalizeName(receiverType))

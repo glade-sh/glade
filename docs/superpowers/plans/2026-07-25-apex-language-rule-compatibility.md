@@ -427,10 +427,14 @@ go test ./internal/sema -run 'DeclarationContract|Modifier|ParameterLimit|Constr
 - [x] **Step 1: Add RED inheritance fixtures**
 
 Cover class-implements-class, class-extends-interface,
-interface-extends-class, non-virtual superclass/method, missing `override`,
+interface-extends-class, non-virtual override target, missing `override`,
 visibility narrowing, transitive interface requirements, raw
 `Database.Batchable`, missing public/global implementation visibility, and
 wrong `Iterator<T>`/`Iterable<T>` returns.
+
+Keep the existing positive control that an ordinary project class can extend a
+non-virtual project superclass; the incompatible case is an `override` of a
+non-virtual inherited method.
 
 Keep positive controls for a public static interface implementation and both
 scratch-proven Batchable execute-scope variance forms.
