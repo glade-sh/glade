@@ -155,6 +155,7 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 		result.Diagnostics = append(result.Diagnostics, checkCustomExceptionNames(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkMethodParameters(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkAnnotations(index)...)
+		result.Diagnostics = append(result.Diagnostics, checkAnnotationCatalog(index)...)
 		typeMemberState := buildSemaTypeMemberState(index, recorder, a.sources)
 		typeMemberView := typeMemberState.view()
 		result.Diagnostics = append(result.Diagnostics, a.checkMethodBodiesWithView(index, typeMemberView, recorder)...)

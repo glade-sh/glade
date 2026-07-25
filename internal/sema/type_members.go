@@ -1138,6 +1138,7 @@ func semaRequiresQualifiedDependencyName(typ typesys.TypeSymbol) bool {
 
 func semaCloneMemberSymbol(member typesys.MemberSymbol) typesys.MemberSymbol {
 	member.Modifiers = append([]string(nil), member.Modifiers...)
+	member.Annotations = append([]apexast.Annotation(nil), member.Annotations...)
 	member.Parameters = semaCloneParameters(member.Parameters)
 	member.Accessors = semaCloneAccessors(member.Accessors)
 	return member
