@@ -2858,12 +2858,13 @@ public class PrivateSelectorChild extends PrivateSelectorBase {
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/DMLHelper.cls"), `
 public virtual class DMLHelper {
+  private static DMLHelper singleton;
   public static DMLHelper Instance {
     get {
-      if (Instance == null) {
-        Instance = new WithoutSharing();
+      if (singleton == null) {
+        singleton = new WithoutSharing();
       }
-      return Instance;
+      return singleton;
     }
   }
   public virtual String updateRecords(List<SObject> records) {
@@ -2884,8 +2885,8 @@ global virtual class TriggerHandlersBase {
 }
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/ConcreteTriggerHandlers.cls"), `
-public class ConcreteTriggerHandlers extends TriggerHandlersBase {
-  public override void onBeforeUpdate(Map<Id, SObject> newRecordMap, Map<Id, SObject> oldRecordMap) {
+global class ConcreteTriggerHandlers extends TriggerHandlersBase {
+  global override void onBeforeUpdate(Map<Id, SObject> newRecordMap, Map<Id, SObject> oldRecordMap) {
     DispatchState.Value = 'child';
   }
 }
@@ -4290,12 +4291,13 @@ public abstract class BaseBuilder {
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/ChildBuilder.cls"), `
 public class ChildBuilder extends BaseBuilder {
+  private static ChildBuilder singleton;
   public static ChildBuilder Instance {
     get {
-      if (Instance == null) {
-        Instance = new ChildBuilder();
+      if (singleton == null) {
+        singleton = new ChildBuilder();
       }
-      return Instance;
+      return singleton;
     }
   }
   protected override Map<String, Object> getDefaults() {
@@ -4307,12 +4309,13 @@ public class ChildBuilder extends BaseBuilder {
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/OtherBuilder.cls"), `
 public class OtherBuilder extends BaseBuilder {
+  private static OtherBuilder singleton;
   public static OtherBuilder Instance {
     get {
-      if (Instance == null) {
-        Instance = new OtherBuilder();
+      if (singleton == null) {
+        singleton = new OtherBuilder();
       }
-      return Instance;
+      return singleton;
     }
   }
   protected override Map<String, Object> getDefaults() {
