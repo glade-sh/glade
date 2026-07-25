@@ -628,7 +628,7 @@ go test ./internal/apexlang ./internal/lsp -run Annotation
 - Modify: `internal/sema/sema_checks.go`
 - Modify: `internal/apextest/runner_test.go`
 
-- [ ] **Step 1: Replace fragment checks with two passes**
+- [x] **Step 1: Replace fragment checks with two passes**
 
 `checkAnnotationContracts` must perform:
 
@@ -636,7 +636,7 @@ go test ./internal/apexlang ./internal/lsp -run Annotation
 2. owner-level count, companion, visibility, signature, and overload
    validation.
 
-- [ ] **Step 2: Cover confirmed test rules**
+- [x] **Step 2: Cover confirmed test rules**
 
 Validate `@IsTest` owner/kind/nesting/static/no-argument rules,
 `SeeAllData`/`IsParallel`, `@TestSetup` cardinality and owner state, and
@@ -645,7 +645,7 @@ method-level `critical`/`testFor`.
 Do not require a void return: Salesforce accepted the value-returning test
 control.
 
-- [ ] **Step 3: Cover other confirmed annotations**
+- [x] **Step 3: Cover other confirmed annotations**
 
 Implement:
 
@@ -661,12 +661,12 @@ Implement:
 Future-to-future, Batchable/future, and non-test `System.runAs` remain
 compile-time controls unless a later runtime packet owns them.
 
-- [ ] **Step 4: Prove runner fail-closed behavior**
+- [x] **Step 4: Prove runner fail-closed behavior**
 
 Invalid owner, nonstatic method, parameterized method, duplicate TestSetup, and
 SeeAllData/TestSetup fixtures must execute zero tests.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```bash
 go test ./internal/sema -run 'Annotation|IsTest|TestSetup|Future|AuraEnabled|Invocable|JsonAccess|NamespaceAccessible|RemoteAction|ReadOnly'
