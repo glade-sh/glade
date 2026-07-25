@@ -32,6 +32,22 @@ func TestBuildIndex(t *testing.T) {
 	}
 }
 
+func TestBuildRecordsEffectiveSourceAPIVersion(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "Hello.cls")
+	triggerPath := filepath.Join(root, "Hello.trigger")
+	writeFile(t, classPath, "public class Hello {}")
+	writeFile(t, classPath+"-meta.xml", `<ApexClass><apiVersion>65.0</apiVersion></ApexClass>`)
+	writeFile(t, triggerPath, "trigger Hello on Account (before insert) {}")
+	idx := Build(project.Project{Root: root, SourceAPIVersion: "64.0", ApexFiles: []string{classPath, triggerPath}}, schema.Schema{})
+	if got := idx.Types[0].EffectiveAPIVersion; got != "65.0" {
+		t.Fatalf("type API version = %q", got)
+	}
+	if got := idx.Triggers[0].EffectiveAPIVersion; got != "64.0" {
+		t.Fatalf("trigger API version = %q", got)
+	}
+}
+
 func TestBuildParsesNamespaceTokenApex(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "UsesTokens.cls")

@@ -99,6 +99,19 @@ func TestLoadSFDXProject(t *testing.T) {
 	}
 }
 
+func TestEffectiveSourceAPIVersionUsesCompanionMetadata(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Probe.cls")
+	writeFile(t, path, "public class Probe {}")
+	if got := EffectiveSourceAPIVersion(path, "64.0"); got != "64.0" {
+		t.Fatalf("fallback version = %q", got)
+	}
+	writeFile(t, path+"-meta.xml", `<ApexClass xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>65.0</apiVersion></ApexClass>`)
+	if got := EffectiveSourceAPIVersion(path, "64.0"); got != "65.0" {
+		t.Fatalf("metadata version = %q", got)
+	}
+}
+
 func TestNormalizeApexNamespaceTokensForUnnamespacedProject(t *testing.T) {
 	source := `public class UsesTokens {
   public void run() {

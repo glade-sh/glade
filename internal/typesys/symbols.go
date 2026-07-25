@@ -53,6 +53,7 @@ type TypeSymbol struct {
 	SourceNamespaceRemaps []namespaceremap.Rule   `json:"sourceNamespaceRemaps,omitempty"`
 	SourceRoot            string                  `json:"sourceRoot,omitempty"`
 	Version               string                  `json:"version,omitempty"`
+	EffectiveAPIVersion   string                  `json:"effectiveApiVersion,omitempty"`
 	Dependency            bool                    `json:"dependency,omitempty"`
 	Artifact              bool                    `json:"artifact,omitempty"`
 	Modifiers             []string                `json:"modifiers,omitempty"`
@@ -84,6 +85,7 @@ type TriggerSymbol struct {
 	SourceNamespaceRemaps []namespaceremap.Rule `json:"sourceNamespaceRemaps,omitempty"`
 	SourceRoot            string                `json:"sourceRoot,omitempty"`
 	Version               string                `json:"version,omitempty"`
+	EffectiveAPIVersion   string                `json:"effectiveApiVersion,omitempty"`
 	ObjectName            string                `json:"objectName"`
 	Events                []string              `json:"events,omitempty"`
 	File                  string                `json:"file"`
@@ -518,7 +520,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 		return nil
 	}
 	if len(p.ApexFiles) == 1 {
-		return []projectSymbolFile{projectSymbolFileFromPath(parser, p.ApexFiles[0], p.Root, dependency, namespace, version, sourceRemaps, sources)}
+		return []projectSymbolFile{projectSymbolFileFromPath(parser, p.ApexFiles[0], p.Root, p.SourceAPIVersion, dependency, namespace, version, sourceRemaps, sources)}
 	}
 	workers := runtime.GOMAXPROCS(0)
 	if workers < 1 {
@@ -550,7 +552,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 			for job := range jobs {
 				results <- result{
 					Index: job.Index,
-					File:  projectSymbolFileFromPath(localParser, job.Path, p.Root, dependency, namespace, version, sourceRemaps, sources),
+					File:  projectSymbolFileFromPath(localParser, job.Path, p.Root, p.SourceAPIVersion, dependency, namespace, version, sourceRemaps, sources),
 				}
 			}
 		}()
@@ -571,7 +573,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 	return out
 }
 
-func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule, sources *WorkspaceSources) projectSymbolFile {
+func projectSymbolFileFromPath(parser *apexast.Parser, path, root, fallbackAPIVersion string, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule, sources *WorkspaceSources) projectSymbolFile {
 	var out projectSymbolFile
 	source, err := sources.load(SourceMetadata{
 		RequestedPath:   path,
@@ -592,6 +594,7 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 	}
 	out.Source = &source
 	normalized := source.NormalizedString()
+	effectiveAPIVersion := project.EffectiveSourceAPIVersion(path, fallbackAPIVersion)
 	file := parser.ParseSource(path, normalized)
 	out.Diagnostics = append(out.Diagnostics, file.Diagnostics...)
 	if hasBlockingParserDiagnostic(file.Diagnostics) {
@@ -605,6 +608,7 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 				sym.SourceNamespaceRemaps = append([]namespaceremap.Rule(nil), sourceRemaps...)
 				sym.SourceRoot = root
 				sym.Version = version
+				sym.EffectiveAPIVersion = effectiveAPIVersion
 				sym.Dependency = dependency
 				out.Types = append(out.Types, sym)
 			}
@@ -615,6 +619,7 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 				SourceNamespaceRemaps: append([]namespaceremap.Rule(nil), sourceRemaps...),
 				SourceRoot:            root,
 				Version:               version,
+				EffectiveAPIVersion:   effectiveAPIVersion,
 				ObjectName:            decl.ObjectName,
 				Events:                decl.Events,
 				File:                  path,
