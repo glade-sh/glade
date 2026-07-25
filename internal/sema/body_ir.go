@@ -812,6 +812,9 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 			}
 		case ir.OpExpr, ir.OpThrow, ir.OpDML, ir.OpRunAs:
 			diagnostics = append(diagnostics, a.checkIRExprVariables(typ, member, inst.Expr, scope, inst.Pos, bodyOffset, source, model, constructability)...)
+			if inst.Op == ir.OpDML {
+				diagnostics = append(diagnostics, a.checkIRDMLContract(typ, member, inst, *scope, bodyOffset, source, model)...)
+			}
 			if inst.Op == ir.OpRunAs {
 				scope.push()
 				diagnostics = append(diagnostics, a.checkIRInstructions(typ, member, inst.Then, scope, bodyOffset, source, model, constructability)...)
@@ -911,6 +914,42 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 		}
 	}
 	return diagnostics
+}
+
+func (a *Analyzer) checkIRDMLContract(typ typesys.TypeSymbol, member typesys.MemberSymbol, inst ir.Instruction, scope irSemaScope, bodyOffset int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
+	operands := []ir.Expr{inst.Expr}
+	if strings.EqualFold(inst.Name, "merge") && inst.Expr.Kind == ir.ExprCall && len(inst.Expr.Args) >= 2 {
+		operands = inst.Expr.Args[:2]
+	}
+	operandTypes := make([]string, len(operands))
+	for i, operand := range operands {
+		operandTypes[i] = a.inferIRExprType(operand, scope, model, typ.Name)
+		if !semaDMLTargetType(operandTypes[i], model) {
+			return []diagnostic.Diagnostic{irDMLContractDiagnostic(typ, member, inst, bodyOffset, source, fmt.Sprintf("%s requires an SObject or SObject collection operand, got %s", inst.Name, operandTypes[i]))}
+		}
+	}
+	if strings.EqualFold(inst.Name, "merge") && len(operandTypes) == 2 && !semaDMLMergeTypesCompatible(operandTypes[0], operandTypes[1], model) {
+		return []diagnostic.Diagnostic{irDMLContractDiagnostic(typ, member, inst, bodyOffset, source, "merge requires master and duplicate operands of the same SObject type")}
+	}
+	return nil
+}
+
+func semaDMLTargetType(typeName string, model *semaTypeMemberView) bool {
+	typeName = strings.TrimSpace(typeName)
+	if isSemaSObjectLike(typeName, model) {
+		return true
+	}
+	base, args := semaGenericBaseAndArgs(typeName)
+	return (strings.EqualFold(base, "List") || strings.EqualFold(base, "Set")) && len(args) == 1 && isSemaSObjectLike(args[0], model)
+}
+
+func semaDMLMergeTypesCompatible(left, right string, model *semaTypeMemberView) bool {
+	return isSemaSObjectLike(left, model) && isSemaSObjectLike(right, model) && strings.EqualFold(normalizeName(left), normalizeName(right))
+}
+
+func irDMLContractDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, inst ir.Instruction, bodyOffset int, source, message string) diagnostic.Diagnostic {
+	start := bodyOffset + inst.Pos
+	return diagnostic.Diagnostic{Severity: diagnostic.Error, Code: "GLADESEMA034", Message: fmt.Sprintf("%s %q %s", member.Kind, member.Name, message), File: typ.File, Range: semaRange(source, start, start+max(1, len(inst.Name)))}
 }
 
 func irSwitchTypeCase(expr ir.Expr) (string, string, bool) {
