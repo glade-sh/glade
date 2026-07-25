@@ -884,6 +884,7 @@ type incrementalSourceMetadata struct {
 	namespaceRemaps []namespaceremap.Rule
 	root            string
 	version         string
+	apiVersion      string
 	dependency      bool
 }
 
@@ -989,7 +990,7 @@ func cloneIncrementalNamespaceRemaps(in []namespaceremap.Rule) []namespaceremap.
 }
 
 func sameIncrementalSourceMetadata(left, right incrementalSourceMetadata) bool {
-	if left.namespace != right.namespace || left.root != right.root || left.version != right.version || left.dependency != right.dependency || len(left.namespaceRemaps) != len(right.namespaceRemaps) {
+	if left.namespace != right.namespace || left.root != right.root || left.version != right.version || left.apiVersion != right.apiVersion || left.dependency != right.dependency || len(left.namespaceRemaps) != len(right.namespaceRemaps) {
 		return false
 	}
 	for i := range left.namespaceRemaps {
@@ -1007,8 +1008,9 @@ func incrementalSourceOwners(previous Index, p project.Project) ([]incrementalSo
 	owners := []incrementalSourceOwner{{
 		project: p,
 		metadata: incrementalSourceMetadata{
-			namespace: p.Namespace,
-			root:      p.Root,
+			namespace:  p.Namespace,
+			root:       p.Root,
+			apiVersion: p.SourceAPIVersion,
 		},
 		dependencyIndex: -1,
 		supported:       true,
@@ -1034,6 +1036,7 @@ func incrementalSourceOwners(previous Index, p project.Project) ([]incrementalSo
 				namespaceRemaps: cloneIncrementalNamespaceRemaps(dep.Project.NamespaceRemaps),
 				root:            dep.Project.Root,
 				version:         dep.Version,
+				apiVersion:      dep.Project.SourceAPIVersion,
 				dependency:      true,
 			},
 			dependencyIndex: dependencyIndex,
@@ -1049,6 +1052,7 @@ func incrementalSourceOwners(previous Index, p project.Project) ([]incrementalSo
 			metadata: incrementalSourceMetadata{
 				namespace:  shim.Namespace,
 				root:       shim.Project.Root,
+				apiVersion: shim.Project.SourceAPIVersion,
 				dependency: true,
 			},
 			dependencyIndex: -1,
@@ -1336,6 +1340,7 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 		}
 		idx.sourceDigests = idx.sourceDigests.withSourceDigest(path, data)
 		metadata := changedSource.owner.metadata
+		effectiveAPIVersion := project.EffectiveSourceAPIVersion(path, metadata.apiVersion)
 		source := project.NormalizeApexNamespaceTokens(string(data), metadata.namespace)
 		source = namespaceremap.ApplySource(metadata.namespaceRemaps, source)
 		parser := apexast.NewParser()
@@ -1351,6 +1356,7 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 					sym.SourceNamespaceRemaps = cloneIncrementalNamespaceRemaps(metadata.namespaceRemaps)
 					sym.SourceRoot = metadata.root
 					sym.Version = metadata.version
+					sym.EffectiveAPIVersion = effectiveAPIVersion
 					sym.Dependency = metadata.dependency
 					key := namespaceTypeKey(sym.Namespace, sym.Name)
 					if _, exists := seenTypes[key]; exists {
@@ -1368,6 +1374,7 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 					SourceNamespaceRemaps: cloneIncrementalNamespaceRemaps(metadata.namespaceRemaps),
 					SourceRoot:            metadata.root,
 					Version:               metadata.version,
+					EffectiveAPIVersion:   effectiveAPIVersion,
 					ObjectName:            decl.ObjectName,
 					Events:                decl.Events,
 					File:                  path,
