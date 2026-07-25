@@ -208,18 +208,20 @@ func (p *parser) parseQuery() (Query, error) {
 			q.OrderBy = order[0].Field
 			q.OrderDesc = order[0].Desc
 		case p.matchWord("LIMIT"):
-			limit, err := p.parseInt()
+			limit, bind, err := p.parseIntOrBind()
 			if err != nil {
 				return Query{}, err
 			}
 			q.Limit = limit
+			q.LimitBind = bind
 			q.HasLimit = true
 		case p.matchWord("OFFSET"):
-			offset, err := p.parseInt()
+			offset, bind, err := p.parseIntOrBind()
 			if err != nil {
 				return Query{}, err
 			}
 			q.Offset = offset
+			q.OffsetBind = bind
 		case p.matchWord("FOR"):
 			switch {
 			case p.matchWord("UPDATE"):
@@ -1669,6 +1671,28 @@ func (p *parser) parseInt() (int, error) {
 		return 0, p.errorf("expected non-negative integer")
 	}
 	return value, nil
+}
+
+func (p *parser) parseIntOrBind() (int, string, error) {
+	text := p.advance().text
+	if len(text) > 1 && text[0] == ':' && isSOQLBindName(text[1:]) {
+		return 0, text[1:], nil
+	}
+	value, err := strconv.Atoi(text)
+	if err != nil || value < 0 {
+		return 0, "", p.errorf("expected non-negative integer or bind")
+	}
+	return value, "", nil
+}
+
+func isSOQLBindName(name string) bool {
+	for index, char := range name {
+		if (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || char == '_' || (index > 0 && char >= '0' && char <= '9') {
+			continue
+		}
+		return false
+	}
+	return name != ""
 }
 func (p *parser) match(text string) bool {
 	if p.peek().text != text {

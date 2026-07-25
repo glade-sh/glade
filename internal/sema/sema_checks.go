@@ -240,6 +240,7 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 		}
 		diagnostics = append(diagnostics, c.checkSOQLQuery(query, query.Object, ctx, 0, nil)...)
 		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings)...)
+		diagnostics = append(diagnostics, queryWindowBindDiagnostics(query, ctx, bindings)...)
 	}
 	for _, literal := range semaSOSLLiterals(source, spans) {
 		query, err := sosl.Parse(literal.text)
@@ -262,35 +263,54 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 
 var (
 	semaInlineBindPattern  = regexp.MustCompile(`:([A-Za-z_][A-Za-z0-9_]*)`)
-	semaBindingDeclaration = regexp.MustCompile(`(?m)(?:^|[;({,])\s*(?:(?:public|private|protected|global|static|final|transient)\s+)*(?:[A-Za-z_][A-Za-z0-9_]*(?:\s*<[^;=(){}]+>)?(?:\[\])?)\s+([A-Za-z_][A-Za-z0-9_]*)\b`)
+	semaBindingDeclaration = regexp.MustCompile(`(?m)(?:^|[;({,])\s*(?:(?:public|private|protected|global|static|final|transient)\s+)*([A-Za-z_][A-Za-z0-9_]*(?:\s*<[^;=(){}]+>)?(?:\[\])?)\s+([A-Za-z_][A-Za-z0-9_]*)\b`)
 )
 
 // semaDeclaredBindings supplies the lexical names required to reject a query
 // bind that cannot resolve anywhere in the enclosing source. Body IR remains
 // the authority for expression typing; this conservative first pass prevents
 // inline SOQL/SOSL from silently treating an undeclared bind as a string token.
-func semaDeclaredBindings(source string) map[string]bool {
-	bindings := make(map[string]bool)
+func semaDeclaredBindings(source string) map[string]string {
+	bindings := make(map[string]string)
 	for _, match := range semaBindingDeclaration.FindAllStringSubmatch(source, -1) {
-		if len(match) == 2 {
-			bindings[strings.ToLower(match[1])] = true
+		if len(match) == 3 {
+			bindings[strings.ToLower(match[2])] = strings.TrimSpace(match[1])
 		}
 	}
 	return bindings
 }
 
-func inlineQueryBindDiagnostics(ctx queryTextContext, bindings map[string]bool) []diagnostic.Diagnostic {
+func inlineQueryBindDiagnostics(ctx queryTextContext, bindings map[string]string) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, match := range semaInlineBindPattern.FindAllStringSubmatchIndex(ctx.queryText, -1) {
 		if len(match) != 4 {
 			continue
 		}
 		name := ctx.queryText[match[2]:match[3]]
-		if bindings[strings.ToLower(name)] {
+		if _, ok := bindings[strings.ToLower(name)]; ok {
 			continue
 		}
 		offset := match[0]
 		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("query bind variable %q is not declared", name), ctx.queryText[match[0]:match[1]], offset))
+	}
+	return diagnostics
+}
+
+func queryWindowBindDiagnostics(query soql.Query, ctx queryTextContext, bindings map[string]string) []diagnostic.Diagnostic {
+	var diagnostics []diagnostic.Diagnostic
+	for _, bind := range []struct {
+		name   string
+		clause string
+	}{{query.LimitBind, "LIMIT"}, {query.OffsetBind, "OFFSET"}} {
+		if bind.name == "" {
+			continue
+		}
+		typeName := strings.ToLower(strings.TrimSpace(bindings[strings.ToLower(bind.name)]))
+		if typeName == "integer" || typeName == "int" || typeName == "long" || typeName == "decimal" || typeName == "double" {
+			continue
+		}
+		offset := findQueryIdentifier(ctx.queryText, ":"+bind.name, 0)
+		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("%s bind variable %q must have a numeric type", bind.clause, bind.name), ":"+bind.name, offset))
 	}
 	return diagnostics
 }
@@ -322,13 +342,13 @@ func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName strin
 	}
 	for _, field := range query.Fields {
 		diagnostics = append(diagnostics, c.checkSOQLField(object.Name, field, ctx, cursor)...)
-		diagnostics = append(diagnostics, c.checkSOQLFieldCapability(object.Name, field, "groupable", ctx, cursor)...)
 	}
 	for _, field := range query.GroupBy {
 		if aggregateAliases[strings.ToLower(field)] {
 			continue
 		}
 		diagnostics = append(diagnostics, c.checkSOQLField(object.Name, field, ctx, cursor)...)
+		diagnostics = append(diagnostics, c.checkSOQLFieldCapability(object.Name, field, "groupable", ctx, cursor)...)
 	}
 	for _, order := range query.Order {
 		if aggregateAliases[strings.ToLower(order.Field)] {

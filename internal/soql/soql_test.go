@@ -43,6 +43,16 @@ func TestParseSimpleQuery(t *testing.T) {
 	}
 }
 
+func TestParseSupportsBoundLimitAndOffset(t *testing.T) {
+	query, err := Parse("SELECT Id FROM Account LIMIT :limitValue OFFSET :offsetValue")
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if !query.HasLimit || query.LimitBind != "limitValue" || query.OffsetBind != "offsetValue" {
+		t.Fatalf("bound window = %#v", query)
+	}
+}
+
 func TestParseRootObjectAlias(t *testing.T) {
 	query, err := Parse("SELECT a.Id FROM Account a WHERE a.Name = 'Acme' ORDER BY a.Name LIMIT 1")
 	if err != nil {

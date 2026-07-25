@@ -123,6 +123,32 @@ public class QueryProbe {
 		t.Fatalf("declared bind rejected: %#v", diagnostics)
 	}
 }
+
+func TestQuerySemanticsRequiresNumericLimitAndOffsetBinds(t *testing.T) {
+	invalid := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    String limitValue = '1';
+    List<Account> accounts = [SELECT Id FROM Account LIMIT :limitValue];
+  }
+}
+`)
+	if !hasDiagnosticCode(invalid, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("expected nonnumeric LIMIT bind diagnostic: %#v", invalid)
+	}
+	valid := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    Integer limitValue = 1;
+    Long offsetValue = 0;
+    List<Account> accounts = [SELECT Id FROM Account LIMIT :limitValue OFFSET :offsetValue];
+  }
+}
+`)
+	if hasDiagnosticCode(valid, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("numeric query window binds rejected: %#v", valid)
+	}
+}
 func TestQuerySemanticsFieldProviderKeepsProjectAuthority(t *testing.T) {
 	checker := newQuerySemanticsChecker(typesys.Index{
 		Project: typesys.ProjectInfo{Namespace: "pkg"},
