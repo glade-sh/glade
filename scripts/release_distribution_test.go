@@ -107,6 +107,155 @@ func TestReleaseWorkflowMatchesCIToolchain(t *testing.T) {
 	}
 }
 
+func TestReleaseWorkflowDoesNotOverwritePublishedAssets(t *testing.T) {
+	workflowPath := filepath.Join("..", ".github", "workflows", "release.yml")
+	workflow, err := os.ReadFile(workflowPath)
+	if err != nil {
+		t.Fatalf("read %s: %v", workflowPath, err)
+	}
+	text := string(workflow)
+
+	if strings.Contains(text, "gh release edit") {
+		t.Fatal("release workflow must not mutate an existing release")
+	}
+	uploads := releaseWorkflowCommands(text, "upload")
+	for _, command := range uploads {
+		if strings.Contains(command, "--clobber") {
+			t.Fatalf("release upload can replace a published asset: %q", command)
+		}
+	}
+
+	prepare := releaseWorkflowJobBlock(t, text, "prepare", "shared-payload")
+	if !strings.Contains(prepare, `gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1`) ||
+		!strings.Contains(prepare, `echo "Release $GITHUB_REF_NAME already exists; reusing it without mutation"`) {
+		t.Fatal("prepare job must explicitly reuse an existing release without changing it")
+	}
+	if got := strings.Count(prepare, "gh release create"); got != 1 {
+		t.Fatalf("prepare release create count = %d, want 1", got)
+	}
+	for _, want := range []string{`--title "$GITHUB_REF_NAME"`, "--notes-file release-notes.md"} {
+		if !strings.Contains(prepare, want) {
+			t.Fatalf("new release creation missing checked release metadata %q", want)
+		}
+	}
+
+	attest := releaseWorkflowJobBlock(t, text, "attest-and-upload", "publish")
+	publish := releaseWorkflowJobBlockUntilEnd(t, text, "publish")
+	publishUploads := releaseWorkflowCommands(publish, "upload")
+	if len(publishUploads) != 1 {
+		t.Fatalf("final publish upload command count = %d, want 1", len(publishUploads))
+	}
+	finalAssets := []string{
+		"dist/SHA256SUMS.txt",
+		"dist/index.json",
+		"dist/release-manifest.json",
+		"dist/glade-release-artifacts-$VERSION.tar.gz",
+	}
+	requireExactReleaseWorkflowAssets(t, releaseWorkflowUploadAssets(publishUploads[0]), finalAssets)
+	downloads := releaseWorkflowCommands(publish, "download")
+	if len(downloads) != 1 || !strings.Contains(downloads[0], "--clobber") {
+		t.Fatal("local release download command must retain --clobber for a clean workspace")
+	}
+	if !strings.Contains(publish, "VERSION: ${{ github.ref_name }}") {
+		t.Fatal("final publish must bind VERSION before referencing its aggregate tarball")
+	}
+	for _, want := range []string{
+		"dist/glade_${{ github.ref_name }}_${{ matrix.archive }}.tar.gz",
+		"dist/glade_${{ github.ref_name }}_${{ matrix.archive }}.tar.gz.sha256",
+		"dist/glade_${{ github.ref_name }}_${{ matrix.archive }}.tar.gz.sbom.json",
+		"dist/release-manifest-${{ matrix.artifact }}.json",
+	} {
+		if !strings.Contains(attest, want) {
+			t.Fatalf("platform attestation job does not own %q", want)
+		}
+		if strings.Contains(publish, want) {
+			t.Fatalf("final publish must not re-upload platform asset %q", want)
+		}
+	}
+	if strings.Contains(publish, "find dist") {
+		t.Fatal("final publish must name its aggregate assets explicitly")
+	}
+	seen := make(map[string]int)
+	for commandIndex, command := range uploads {
+		for _, asset := range releaseWorkflowUploadAssets(command) {
+			if previous, exists := seen[asset]; exists {
+				t.Fatalf("published asset %q is uploaded by commands %d and %d", asset, previous, commandIndex)
+			}
+			seen[asset] = commandIndex
+		}
+	}
+	for _, want := range []string{
+		"dist/glade_${{ github.ref_name }}_${{ matrix.archive }}.tar.gz",
+		"dist/glade_${{ github.ref_name }}_${{ matrix.archive }}.tar.gz.sha256",
+		"dist/glade_${{ github.ref_name }}_${{ matrix.archive }}.tar.gz.sbom.json",
+		"dist/release-manifest-${{ matrix.artifact }}.json",
+		"dist/SHA256SUMS.txt",
+		"dist/index.json",
+		"dist/release-manifest.json",
+		"dist/glade-release-artifacts-$VERSION.tar.gz",
+	} {
+		if _, exists := seen[want]; !exists {
+			t.Fatalf("release upload commands omit %q", want)
+		}
+	}
+}
+
+func releaseWorkflowCommands(workflow, operation string) []string {
+	prefix := "gh release " + operation
+	var commands []string
+	var command []string
+	for _, line := range strings.Split(workflow, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if command == nil {
+			if strings.HasPrefix(trimmed, prefix+" ") {
+				command = append(command, trimmed)
+			}
+			continue
+		}
+		command = append(command, trimmed)
+		if !strings.HasSuffix(strings.TrimRight(trimmed, " \t"), "\\") {
+			commands = append(commands, strings.Join(command, "\n"))
+			command = nil
+		}
+	}
+	if len(command) > 0 {
+		commands = append(commands, strings.Join(command, "\n"))
+	}
+	return commands
+}
+
+func releaseWorkflowUploadAssets(command string) []string {
+	var assets []string
+	for _, line := range strings.Split(command, "\n") {
+		asset := strings.TrimSpace(line)
+		asset = strings.TrimSpace(strings.TrimSuffix(asset, "\\"))
+		if strings.HasPrefix(asset, "dist/") {
+			assets = append(assets, asset)
+		}
+	}
+	return assets
+}
+
+func requireExactReleaseWorkflowAssets(t *testing.T, got, want []string) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Fatalf("release upload asset count = %d, want %d; got %#v", len(got), len(want), got)
+	}
+	wanted := make(map[string]struct{}, len(want))
+	for _, asset := range want {
+		wanted[asset] = struct{}{}
+	}
+	for _, asset := range got {
+		if _, exists := wanted[asset]; !exists {
+			t.Fatalf("release upload includes unexpected asset %q; got %#v", asset, got)
+		}
+		delete(wanted, asset)
+	}
+	if len(wanted) > 0 {
+		t.Fatalf("release upload omits aggregate assets %#v", wanted)
+	}
+}
+
 func TestReleaseManualBuildHasNoPublishingAuthority(t *testing.T) {
 	workflowPath := filepath.Join("..", ".github", "workflows", "release.yml")
 	workflow, err := os.ReadFile(workflowPath)
@@ -412,6 +561,16 @@ func releaseWorkflowJobBlock(t *testing.T, workflow, start, end string) string {
 		t.Fatalf("workflow missing job %q after %q", end, start)
 	}
 	return workflow[startAt : startAt+len(startMarker)+endAt]
+}
+
+func releaseWorkflowJobBlockUntilEnd(t *testing.T, workflow, start string) string {
+	t.Helper()
+	startMarker := "  " + start + ":"
+	startAt := strings.Index(workflow, startMarker)
+	if startAt < 0 {
+		t.Fatalf("workflow missing job %q", start)
+	}
+	return workflow[startAt:]
 }
 
 func makeReleaseBuildFixture(t *testing.T) (string, string) {
