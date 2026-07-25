@@ -122,6 +122,23 @@ func TestTextDocumentSyncPublishesOverlayDiagnostics(t *testing.T) {
 	}
 }
 
+func TestTextDocumentSyncPublishesReservedIdentifierDiagnostic(t *testing.T) {
+	handler := NewHandler(sampleIndex(t))
+	uri := uriFromPath(filepath.Join(t.TempDir(), "Reserved.cls"))
+	notifications := handler.DidOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{
+		URI:     uri,
+		Version: 1,
+		Text:    "public class Reserved { void run() { String currency = 'USD'; } }\n",
+	}})
+	if len(notifications) != 1 {
+		t.Fatalf("notifications = %#v", notifications)
+	}
+	payload, ok := notifications[0].Params.(PublishDiagnosticsParams)
+	if !ok || len(payload.Diagnostics) != 1 || payload.Diagnostics[0].Code != "APEXPARSE002" {
+		t.Fatalf("reserved identifier diagnostics = %#v", notifications)
+	}
+}
+
 func TestDidCloseRestoresProjectDiagnostics(t *testing.T) {
 	idx := sampleIndex(t)
 	file := idx.Types[0].File
