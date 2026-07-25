@@ -2,6 +2,7 @@ package pluginhost
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"context"
 	"crypto/sha256"
@@ -42,12 +43,57 @@ func TestInstallArchiveInstallsExecutable(t *testing.T) {
 	if _, err := os.Stat(plugin.Executable); err != nil {
 		t.Fatal(err)
 	}
+	got, err := os.ReadFile(plugin.Executable)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != string(exe) {
+		t.Fatalf("executable contents = %q, want %q", got, exe)
+	}
+	info, err := os.Stat(plugin.Executable)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0o755 {
+		t.Fatalf("executable mode = %o, want 755", info.Mode().Perm())
+	}
 	state, err := store.ReadInstalled()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(state.Plugins) != 1 || state.Plugins[0].Commands[0] != "compat" {
 		t.Fatalf("unexpected installed state: %#v", state)
+	}
+}
+
+func TestWriteArchiveFileRejectsSymlinkEscape(t *testing.T) {
+	parent := t.TempDir()
+	extractionRoot := filepath.Join(parent, "extract")
+	if err := os.Mkdir(extractionRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	sentinel := filepath.Join(parent, "sentinel")
+	if err := os.WriteFile(sentinel, []byte("original"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(sentinel, filepath.Join(extractionRoot, "escape")); err != nil {
+		t.Fatal(err)
+	}
+	root, err := os.OpenRoot(extractionRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer root.Close()
+
+	if err := writeArchiveFile(root, "escape", bytes.NewReader([]byte("replacement")), 0o644); err == nil {
+		t.Fatal("expected symlink escape to fail")
+	}
+	got, err := os.ReadFile(sentinel)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != "original" {
+		t.Fatalf("outside sentinel changed to %q", got)
 	}
 }
 
