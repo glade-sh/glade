@@ -106,7 +106,7 @@ func checkTypeAnnotationContracts(typ typesys.TypeSymbol) []diagnostic.Diagnosti
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "JsonAccess is only valid on classes with boolean properties"))
 			}
 		case strings.EqualFold(annotation.Name, "NamespaceAccessible"):
-			if typ.Kind != apexast.DeclarationClass || !hasAnyModifier(typ.Modifiers, "public", "global") {
+			if typ.Kind != apexast.DeclarationClass || !hasEitherModifier(typ.Modifiers, "public", "global") {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "NamespaceAccessible is only valid on public or global classes"))
 			}
 		case strings.EqualFold(annotation.Name, "RestResource"):
@@ -135,19 +135,19 @@ func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.Membe
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "future methods must be static void methods with supported parameter types"))
 			}
 		case strings.EqualFold(annotation.Name, "InvocableMethod"):
-			if member.Kind != apexast.DeclarationMethod || !hasAnyModifier(member.Modifiers, "public", "global") || !hasModifier(member.Modifiers, "static") || len(member.Parameters) != 1 || !isListType(member.Parameters[0].Type) || (!strings.EqualFold(member.Type, "void") && !isListType(member.Type)) {
+			if member.Kind != apexast.DeclarationMethod || !hasEitherModifier(member.Modifiers, "public", "global") || !hasModifier(member.Modifiers, "static") || len(member.Parameters) != 1 || !isListType(member.Parameters[0].Type) || (!strings.EqualFold(member.Type, "void") && !isListType(member.Type)) {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "InvocableMethod must be a public or global static method with one List parameter and a void or List return type"))
 			}
 		case strings.EqualFold(annotation.Name, "InvocableVariable"):
-			if member.Kind != apexast.DeclarationField || !hasAnyModifier(member.Modifiers, "public", "global") || hasModifier(member.Modifiers, "static") || hasModifier(member.Modifiers, "final") {
+			if member.Kind != apexast.DeclarationField || !hasEitherModifier(member.Modifiers, "public", "global") || hasModifier(member.Modifiers, "static") || hasModifier(member.Modifiers, "final") {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "InvocableVariable must annotate a public or global nonstatic nonfinal field"))
 			}
 		case strings.EqualFold(annotation.Name, "RemoteAction"):
-			if member.Kind != apexast.DeclarationMethod || !hasAnyModifier(member.Modifiers, "public", "global") || !hasModifier(member.Modifiers, "static") {
+			if member.Kind != apexast.DeclarationMethod || !hasEitherModifier(member.Modifiers, "public", "global") || !hasModifier(member.Modifiers, "static") {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "RemoteAction must annotate a public or global static method"))
 			}
 		case strings.EqualFold(annotation.Name, "ReadOnly"):
-			if member.Kind != apexast.DeclarationMethod || !hasAnyModifier(member.Modifiers, "public", "global") {
+			if member.Kind != apexast.DeclarationMethod || !hasEitherModifier(member.Modifiers, "public", "global") {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "ReadOnly is only valid on public or global methods"))
 			}
 		}

@@ -3098,6 +3098,10 @@ func semaHasNamespaceToken(name string) bool {
 }
 
 func hasAnyModifier(modifiers []string, left, right string) bool {
+	return hasModifier(modifiers, left) && hasModifier(modifiers, right)
+}
+
+func hasEitherModifier(modifiers []string, left, right string) bool {
 	return hasModifier(modifiers, left) || hasModifier(modifiers, right)
 }
 
