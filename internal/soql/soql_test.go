@@ -53,6 +53,16 @@ func TestParseSupportsBoundLimitAndOffset(t *testing.T) {
 	}
 }
 
+func TestParseSupportsMethodCallBindExpression(t *testing.T) {
+	query, err := Parse("SELECT FiscalYearStartMonth FROM Organization WHERE Id = :UserInfo.getOrganizationId()")
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if query.Where == nil || query.Where.Value.Kind != storage.ValueID || string(query.Where.Value.ID) != ":UserInfo.getOrganizationId()" {
+		t.Fatalf("where = %#v", query.Where)
+	}
+}
+
 func TestParseRootObjectAlias(t *testing.T) {
 	query, err := Parse("SELECT a.Id FROM Account a WHERE a.Name = 'Acme' ORDER BY a.Name LIMIT 1")
 	if err != nil {

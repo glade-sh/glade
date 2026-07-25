@@ -76,6 +76,30 @@ func lex(input string) ([]token, error) {
 				i++
 			}
 			return nil, fmt.Errorf("soql: unterminated string literal")
+		case input[i] == ':':
+			start := i
+			i++
+			depth := 0
+			for i < len(input) {
+				if input[i] == '(' {
+					depth++
+					i++
+					continue
+				}
+				if input[i] == ')' {
+					if depth == 0 {
+						break
+					}
+					depth--
+					i++
+					continue
+				}
+				if depth == 0 && (soqlTokenBoundaryBytes[input[i]] || input[i] == ':') {
+					break
+				}
+				i++
+			}
+			out = append(out, token{text: input[start:i]})
 		case soqlSeparatorBytes[input[i]]:
 			if i+1 < len(input) && input[i:i+2] == "!=" {
 				out = append(out, token{text: "!="})
