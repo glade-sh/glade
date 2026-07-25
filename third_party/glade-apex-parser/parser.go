@@ -449,14 +449,16 @@ func treeSitterAnnotations(node *tree_sitter.Node, source string, lineMap LineMa
 		} else {
 			annotation.Name = strings.TrimSpace(body[:nameEnd])
 			args := strings.TrimSuffix(strings.TrimSpace(body[nameEnd+1:]), ")")
+			argsOffset := int(child.StartByte()) + 1 + nameEnd + 1 + strings.Index(body[nameEnd+1:], args)
 			for _, argument := range splitAnnotationArguments(args) {
-				argument = strings.TrimSpace(argument)
-				if argument == "" {
+				trimmed := strings.TrimSpace(argument.text)
+				if trimmed == "" {
 					continue
 				}
-				parsed := AnnotationArgument{Value: argument, Range: annotation.Range}
-				if name, value, ok := strings.Cut(argument, "="); ok {
-					parsed.Name, parsed.Value = strings.TrimSpace(name), strings.TrimSpace(value)
+				leading := len(argument.text) - len(strings.TrimLeft(argument.text, " \t\r\n"))
+				parsed := AnnotationArgument{Value: trimmed, Range: Range{Start: lineMap.Position(argsOffset + argument.start + leading), End: lineMap.Position(argsOffset + argument.start + leading + len(trimmed))}}
+				if name, value, ok := splitAnnotationArgumentNameValue(trimmed); ok {
+					parsed.Name, parsed.Value = name, value
 				}
 				annotation.Arguments = append(annotation.Arguments, parsed)
 			}
@@ -466,12 +468,17 @@ func treeSitterAnnotations(node *tree_sitter.Node, source string, lineMap LineMa
 	return annotations
 }
 
-func splitAnnotationArguments(text string) []string {
-	var out []string
+type annotationArgumentText struct {
+	text  string
+	start int
+}
+
+func splitAnnotationArguments(text string) []annotationArgumentText {
+	var out []annotationArgumentText
 	start, depth := 0, 0
 	for i := 0; i < len(text); i++ {
 		if text[i] == '\'' {
-			i = skipApexString(text, i)
+			i = skipApexString(text, i) - 1
 			continue
 		}
 		switch text[i] {
@@ -483,12 +490,25 @@ func splitAnnotationArguments(text string) []string {
 			}
 		case ',':
 			if depth == 0 {
-				out = append(out, text[start:i])
+				out = append(out, annotationArgumentText{text: text[start:i], start: start})
 				start = i + 1
 			}
 		}
 	}
-	return append(out, text[start:])
+	return append(out, annotationArgumentText{text: text[start:], start: start})
+}
+
+func splitAnnotationArgumentNameValue(text string) (string, string, bool) {
+	for i := 0; i < len(text); i++ {
+		if text[i] == '\'' {
+			i = skipApexString(text, i) - 1
+			continue
+		}
+		if text[i] == '=' {
+			return strings.TrimSpace(text[:i]), strings.TrimSpace(text[i+1:]), true
+		}
+	}
+	return "", "", false
 }
 
 func normalizeModifierText(kind, text string) string {

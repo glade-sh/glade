@@ -369,6 +369,32 @@ func TestCompletionIncludesTopLevelApexTypesAndSObjects(t *testing.T) {
 	}
 }
 
+func TestCompletionIncludesCatalogAnnotationsWithoutPreviewEntries(t *testing.T) {
+	idx := sampleIndex(t)
+	handler := NewHandler(idx)
+	uri := uriFromPath(filepath.Join(idx.Project.Root, "Draft.cls"))
+	handler.DidOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{
+		URI:  uri,
+		Text: "@",
+	}})
+	items := handler.Completion(CompletionParams{
+		TextDocument: TextDocumentIdentifier{URI: uri},
+		Position:     Position{Line: 0, Character: 1},
+	}).Items
+	labels := make([]string, 0, len(items))
+	for _, item := range items {
+		labels = append(labels, item.Label)
+	}
+	for _, want := range []string{"AuraEnabled", "RestResource", "HttpGet"} {
+		if !containsString(labels, want) {
+			t.Fatalf("missing %s in %#v", want, labels)
+		}
+	}
+	if containsString(labels, "IntegrationTest") || containsString(labels, "TearDown") {
+		t.Fatalf("preview annotations leaked into completion: %#v", labels)
+	}
+}
+
 func TestCompletionRanksSObjectFieldsBeforeTopLevelNamesInsideSOQLSelect(t *testing.T) {
 	idx := sampleIndex(t)
 	handler := NewHandler(idx)

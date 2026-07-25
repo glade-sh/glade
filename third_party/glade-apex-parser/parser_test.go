@@ -649,6 +649,20 @@ public class Probe {
 	}
 }
 
+func TestParseStructuredAnnotationArgumentsPreserveStringsAndRanges(t *testing.T) {
+	source := `@InvocableMethod(label = 'a = b', description = 'hello world') public class Probe {}`
+	file := NewParser().ParseSource("Probe.cls", source)
+	annotation := file.Declarations[0].Annotations[0]
+	if len(annotation.Arguments) != 2 || annotation.Arguments[0].Name != "label" || annotation.Arguments[0].Value != "'a = b'" {
+		t.Fatalf("arguments = %#v", annotation.Arguments)
+	}
+	for _, argument := range annotation.Arguments {
+		if argument.Range.Start.Offset < 0 || argument.Range.End.Offset <= argument.Range.Start.Offset || source[argument.Range.Start.Offset:argument.Range.End.Offset] == "" {
+			t.Fatalf("argument range = %#v", argument.Range)
+		}
+	}
+}
+
 func TestLineMapAndFileURI(t *testing.T) {
 	lineMap := NewLineMap("one\ntwo\n")
 	pos := lineMap.Position(5)

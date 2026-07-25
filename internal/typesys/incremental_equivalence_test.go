@@ -101,6 +101,31 @@ func TestUpdateApexFilesCleanRichSamePathUsesFastPath(t *testing.T) {
 	}
 }
 
+func TestUpdateApexFilesPreservesAnnotations(t *testing.T) {
+	fixture := newCleanIncrementalEquivalenceFixture(t)
+	previous := fixture.buildFresh(t)
+	writeFile(t, fixture.localClass, `@IsTest(SeeAllData = false)
+public class LocalService {
+  @AuraEnabled(cacheable = true)
+  public static String value() { return 'changed'; }
+}`)
+	updated := UpdateApexFiles(previous, []string{fixture.localClass}, nil)
+	fresh := fixture.buildFresh(t)
+	if mismatches := incrementalIndexMismatches(updated, fresh); len(mismatches) > 0 {
+		t.Fatalf("incremental annotations differ from full Build: %v", mismatches)
+	}
+	var typ *TypeSymbol
+	for i := range updated.Types {
+		if updated.Types[i].Name == "LocalService" {
+			typ = &updated.Types[i]
+			break
+		}
+	}
+	if typ == nil || len(typ.Annotations) != 1 || typ.Annotations[0].Name != "IsTest" || len(typ.Members) != 1 || len(typ.Members[0].Annotations) != 1 || typ.Members[0].Annotations[0].Name != "AuraEnabled" {
+		t.Fatalf("annotations were not retained in symbols: %#v", typ)
+	}
+}
+
 func TestUpdateApexFilesCleanLifecycleUsesFastPath(t *testing.T) {
 	tests := []struct {
 		name   string

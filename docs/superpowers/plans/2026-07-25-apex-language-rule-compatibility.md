@@ -573,12 +573,12 @@ go test ./internal/sema -run 'StatementContext|SwitchContract|Throw|Catch|Custom
 - Modify: `internal/lsp/handler.go`
 - Modify: `internal/lsp/handler_test.go`
 
-- [ ] **Step 1: Add RED structured parsing tests**
+- [x] **Step 1: Add RED structured parsing tests**
 
 Cover named/positional arguments, whitespace/comments, strings containing
 spaces or `=`, exact ranges, unknown annotations, and unknown properties.
 
-- [ ] **Step 2: Add annotation structures**
+- [x] **Step 2: Add annotation structures**
 
 ```go
 type Annotation struct {
@@ -598,17 +598,17 @@ Add `Annotations` to declarations, parameters/accessors where supported,
 `TypeSymbol`, and `MemberSymbol`. Preserve annotation strings in `Modifiers`
 during migration, but all new validation must use the structured form.
 
-- [ ] **Step 3: Add the product annotation catalog**
+- [x] **Step 3: Add the product annotation catalog**
 
 Catalog current Apex annotations, supported target kinds, property names/value
 kinds, positional forms, API gates, and preview state. Unknown annotations
 must hard-fail.
 
-- [ ] **Step 4: Drive LSP completion from the catalog**
+- [x] **Step 4: Drive LSP completion from the catalog**
 
 Replace the four hard-coded completion items. Exclude disabled preview entries.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```bash
 (cd third_party/glade-apex-parser && go test ./... -run Annotation)

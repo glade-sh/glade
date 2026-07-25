@@ -67,6 +67,31 @@ public class Hello {
 	}
 }
 
+func TestParseStructuredAnnotations(t *testing.T) {
+	src := `@IsTest(SeeAllData = false)
+public class Hello {
+  @AuraEnabled(cacheable = true)
+  public static void run() {}
+}`
+	file := NewParser().ParseSource("Hello.cls", src)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	class := file.Declarations[0]
+	if got := class.Annotations; len(got) != 1 || got[0].Name != "IsTest" || len(got[0].Arguments) != 1 || got[0].Arguments[0].Name != "SeeAllData" || got[0].Arguments[0].Value != "false" {
+		t.Fatalf("class annotations = %#v", got)
+	}
+	method := class.Members[0]
+	if got := method.Annotations; len(got) != 1 || got[0].Name != "AuraEnabled" || got[0].Arguments[0].Name != "cacheable" || got[0].Arguments[0].Value != "true" {
+		t.Fatalf("method annotations = %#v", got)
+	}
+	for _, argument := range class.Annotations[0].Arguments {
+		if argument.Range.Start.Offset < 0 || argument.Range.End.Offset <= argument.Range.Start.Offset || src[argument.Range.Start.Offset:argument.Range.End.Offset] == "" {
+			t.Fatalf("argument range = %#v", argument.Range)
+		}
+	}
+}
+
 func TestParseInitializerBlocks(t *testing.T) {
 	src := `
 public class Hello {
