@@ -223,6 +223,7 @@ func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Obj
 func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagnostic {
 	locator := newSemaSourceLocator(source)
 	spans := newSemaCodeSpans(source)
+	bindings := semaDeclaredBindings(source)
 	var diagnostics []diagnostic.Diagnostic
 	for _, literal := range semaSOQLLiterals(source, spans) {
 		query, err := soql.Parse(literal.text)
@@ -238,6 +239,7 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 			locator:     locator,
 		}
 		diagnostics = append(diagnostics, c.checkSOQLQuery(query, query.Object, ctx, 0, nil)...)
+		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings)...)
 	}
 	for _, literal := range semaSOSLLiterals(source, spans) {
 		query, err := sosl.Parse(literal.text)
@@ -253,6 +255,42 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 			locator:     locator,
 		}
 		diagnostics = append(diagnostics, c.checkSOSLQuery(query, ctx)...)
+		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings)...)
+	}
+	return diagnostics
+}
+
+var (
+	semaInlineBindPattern  = regexp.MustCompile(`:([A-Za-z_][A-Za-z0-9_]*)`)
+	semaBindingDeclaration = regexp.MustCompile(`(?m)(?:^|[;({,])\s*(?:(?:public|private|protected|global|static|final|transient)\s+)*(?:[A-Za-z_][A-Za-z0-9_]*(?:\s*<[^;=(){}]+>)?(?:\[\])?)\s+([A-Za-z_][A-Za-z0-9_]*)\b`)
+)
+
+// semaDeclaredBindings supplies the lexical names required to reject a query
+// bind that cannot resolve anywhere in the enclosing source. Body IR remains
+// the authority for expression typing; this conservative first pass prevents
+// inline SOQL/SOSL from silently treating an undeclared bind as a string token.
+func semaDeclaredBindings(source string) map[string]bool {
+	bindings := make(map[string]bool)
+	for _, match := range semaBindingDeclaration.FindAllStringSubmatch(source, -1) {
+		if len(match) == 2 {
+			bindings[strings.ToLower(match[1])] = true
+		}
+	}
+	return bindings
+}
+
+func inlineQueryBindDiagnostics(ctx queryTextContext, bindings map[string]bool) []diagnostic.Diagnostic {
+	var diagnostics []diagnostic.Diagnostic
+	for _, match := range semaInlineBindPattern.FindAllStringSubmatchIndex(ctx.queryText, -1) {
+		if len(match) != 4 {
+			continue
+		}
+		name := ctx.queryText[match[2]:match[3]]
+		if bindings[strings.ToLower(name)] {
+			continue
+		}
+		offset := match[0]
+		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("query bind variable %q is not declared", name), ctx.queryText[match[0]:match[1]], offset))
 	}
 	return diagnostics
 }

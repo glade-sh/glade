@@ -62,6 +62,32 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsRejectsMissingInlineBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :missing];
+  }
+}
+`)
+	if !hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("expected missing bind diagnostic: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsAcceptsDeclaredInlineBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    String name = 'ok';
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :name];
+  }
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("declared bind rejected: %#v", diagnostics)
+	}
+}
 func TestQuerySemanticsFieldProviderKeepsProjectAuthority(t *testing.T) {
 	checker := newQuerySemanticsChecker(typesys.Index{
 		Project: typesys.ProjectInfo{Namespace: "pkg"},
