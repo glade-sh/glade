@@ -823,6 +823,10 @@ resolve binds against their enclosing Apex type rather than treating the
 callback brace as a declaration scope. This keeps class fields such as
 `runAsId` visible without reintroducing source-wide name lookup.
 
+Follow-up (2026-07-25): `List<T>` and `Set<T>` binds now require `IN` or
+`NOT IN` and validate `T` against the described field type. SOSL returning
+clause structure and dotted bind-expression typing remain open.
+
 - [x] **Step 5: Add field capability metadata only from evidence**
 
 Carry filterable/groupable/sortable/aggregate capabilities when describe data
