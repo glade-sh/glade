@@ -15,6 +15,7 @@ func checkWebExposureContracts(index typesys.Index) []diagnostic.Diagnostic {
 		if skipProjectDiagnosticType(typ) {
 			continue
 		}
+		diagnostics = append(diagnostics, checkSOAPExposureContracts(typ)...)
 		rest, isRest := findAnnotation(typ.Annotations, "RestResource")
 		if !isRest {
 			continue
@@ -30,7 +31,7 @@ func checkWebExposureContracts(index typesys.Index) []diagnostic.Diagnostic {
 					continue
 				}
 				verbs[verb]++
-				if member.Kind != apexast.DeclarationMethod || !hasModifier(member.Modifiers, "global") || !hasModifier(member.Modifiers, "static") || ((verb == "get" || verb == "delete") && len(member.Parameters) != 0) {
+				if member.Kind != apexast.DeclarationMethod || !hasModifier(member.Modifiers, "global") || !hasModifier(member.Modifiers, "static") || ((verb == "get" || verb == "delete") && len(member.Parameters) != 0) || !validRESTMethodTypes(member) {
 					diagnostics = append(diagnostics, webExposureDiagnostic(typ.File, annotation.Range, fmt.Sprintf("Http%s requires a global static method%s", strings.Title(verb), map[bool]string{true: " with no parameters", false: ""}[verb == "get" || verb == "delete"])))
 				}
 			}
@@ -42,6 +43,48 @@ func checkWebExposureContracts(index typesys.Index) []diagnostic.Diagnostic {
 		}
 	}
 	return diagnostics
+}
+
+func validRESTMethodTypes(member typesys.MemberSymbol) bool {
+	if !validSOAPType(member.Type) {
+		return false
+	}
+	for _, parameter := range member.Parameters {
+		if !validSOAPType(parameter.Type) {
+			return false
+		}
+	}
+	return true
+}
+
+func checkSOAPExposureContracts(typ typesys.TypeSymbol) []diagnostic.Diagnostic {
+	var diagnostics []diagnostic.Diagnostic
+	methodNames := map[string]int{}
+	for _, member := range typ.Members {
+		if !hasModifier(member.Modifiers, "webservice") {
+			continue
+		}
+		methodNames[strings.ToLower(member.Name)]++
+		if typ.Kind != apexast.DeclarationClass || typ.NestingDepth != 0 || !hasModifier(typ.Modifiers, "global") || member.Kind != apexast.DeclarationMethod || !hasModifier(member.Modifiers, "static") || !validSOAPType(member.Type) {
+			diagnostics = append(diagnostics, webExposureDiagnostic(typ.File, member.Range, "webservice methods require a top-level global class, static method, and supported wire types"))
+		}
+		for _, parameter := range member.Parameters {
+			if !validSOAPType(parameter.Type) {
+				diagnostics = append(diagnostics, webExposureDiagnostic(typ.File, parameter.Range, "webservice parameters cannot use Map, Set, or Blob types"))
+			}
+		}
+	}
+	for name, count := range methodNames {
+		if count > 1 {
+			diagnostics = append(diagnostics, webExposureDiagnostic(typ.File, typ.Range, fmt.Sprintf("webservice methods cannot be overloaded: %s", name)))
+		}
+	}
+	return diagnostics
+}
+
+func validSOAPType(typ string) bool {
+	name := strings.ToLower(strings.ReplaceAll(typ, " ", ""))
+	return !strings.Contains(name, "map<") && !strings.Contains(name, "set<") && !strings.Contains(name, "blob")
 }
 
 func findAnnotation(annotations []apexast.Annotation, name string) (apexast.Annotation, bool) {
