@@ -810,6 +810,14 @@ binding lookup is source-wide and name-only until it is wired to body-IR scope
 and field/clause type compatibility. Keep the full per-scope/type oracle rows
 in the checked ledger before tightening it further.
 
+Follow-up (2026-07-25): lookup is now lexical to the enclosing method,
+including parameters and instance fields, and rejects a scalar bind whose
+known type is incompatible with a known SOQL field (for example, `Integer`
+bound to `Account.Name`). The resolver is cached per method to avoid repeated
+source scans. This step remains open: SOSL currently discards its WHERE/bind
+structure, and dotted/collection bind expressions still need compiler-oracle
+rows and body-IR typing.
+
 - [x] **Step 5: Add field capability metadata only from evidence**
 
 Carry filterable/groupable/sortable/aggregate capabilities when describe data
