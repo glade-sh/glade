@@ -417,6 +417,96 @@ func TestParsePreservesSalesforceContextualIdentifiersAndMethodNames(t *testing.
 	}
 }
 
+func TestParseRejectsInvalidIdentifierShapesAndLengths(t *testing.T) {
+	longOK := "A" + strings.Repeat("a", 254)
+	longBad := "A" + strings.Repeat("a", 255)
+	if len(longOK) != 255 || len(longBad) != 256 {
+		t.Fatalf("fixture lengths = %d/%d, want 255/256", len(longOK), len(longBad))
+	}
+	tests := []struct {
+		name   string
+		ident  string
+		source string
+	}{
+		{name: "leading underscore", ident: "_value", source: "class Probe { void run() { String _value = 'x'; } }"},
+		{name: "trailing underscore", ident: "value_", source: "class Probe { void run() { String value_ = 'x'; } }"},
+		{name: "consecutive underscores", ident: "value__name", source: "class Probe { void run() { String value__name = 'x'; } }"},
+		{name: "256 characters", ident: longBad, source: fmt.Sprintf("class Probe { void run() { String %s = 'x'; } }", longBad)},
+	}
+	parser := NewParser()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			file := parser.ParseSource("Probe.cls", tt.source)
+			var invalid *Diagnostic
+			for i := range file.Diagnostics {
+				if file.Diagnostics[i].Code == "APEXPARSE003" {
+					invalid = &file.Diagnostics[i]
+					break
+				}
+			}
+			if invalid == nil {
+				t.Fatalf("missing APEXPARSE003 for %q: %#v", tt.ident, file.Diagnostics)
+			}
+			wantMsg := "Invalid identifier: " + tt.ident
+			if invalid.Message != wantMsg {
+				t.Fatalf("message = %q, want %q", invalid.Message, wantMsg)
+			}
+			if invalid.Range == nil {
+				t.Fatalf("diagnostic range = %#v", invalid)
+			}
+			start, end := invalid.Range.Start.Offset, invalid.Range.End.Offset
+			if start < 0 || end > len(tt.source) || start >= end || tt.source[start:end] != tt.ident {
+				t.Fatalf("range = %#v, source slice %q", invalid.Range, tt.source[start:end])
+			}
+		})
+	}
+	if file := parser.ParseSource("Probe.cls", fmt.Sprintf("class Probe { void run() { String %s = 'x'; } }", longOK)); file.HasErrors() {
+		t.Fatalf("255-character identifier should remain valid: %#v", file.Diagnostics)
+	}
+}
+
+func TestParseRejectsInvalidIdentifiersInDeclarationContexts(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+	}{
+		{name: "field", source: "class Probe { String value__name; }"},
+		{name: "local", source: "class Probe { void run() { String value__name = 'x'; } }"},
+		{name: "parameter", source: "class Probe { void run(String value__name) {} }"},
+		{name: "enhanced for", source: "class Probe { void run() { for (String value__name : new List<String>()) {} } }"},
+		{name: "catch", source: "class Probe { void run() { try {} catch (Exception value__name) {} } }"},
+		{name: "method", source: "class Probe { void value__name() {} }"},
+		{name: "class", source: "class value__name {}"},
+		{name: "enum constant", source: "enum Probe { value__name }"},
+	}
+	parser := NewParser()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			file := parser.ParseSource("Probe.cls", tt.source)
+			found := false
+			for _, diag := range file.Diagnostics {
+				if diag.Code == "APEXPARSE003" && diag.Message == "Invalid identifier: value__name" {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Fatalf("missing APEXPARSE003 in %s context: %#v", tt.name, file.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestParseDoesNotApplySourceIdentifierRulesToSchemaTypeReferences(t *testing.T) {
+	source := "class Probe { void run() { Account__c row; Custom_Field__c value; } }"
+	file := NewParser().ParseSource("Probe.cls", source)
+	for _, diag := range file.Diagnostics {
+		if diag.Code == "APEXPARSE003" {
+			t.Fatalf("schema/API type references must not use source-identifier rules: %#v", file.Diagnostics)
+		}
+	}
+}
+
 func TestParseRanges(t *testing.T) {
 	source := "public class Hello {\n  public static void run() {}\n}\n"
 	file := NewParser().ParseSource("Hello.cls", source)

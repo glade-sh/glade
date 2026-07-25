@@ -862,11 +862,8 @@ func (a *Analyzer) collectAdditionalSemaLocalDecls(typ typesys.TypeSymbol, membe
 			if j < len(segment) && segment[j] != '=' && segment[j] != ',' && segment[j] != ';' {
 				continue
 			}
-			if _, exists := scopes.localInBlock(name, scopeStart, scopeEnd); exists {
-				continue
-			}
 			visibleStart := semaLocalVisibleStart(body, statementStart+j, statementStart+j)
-			scopes.locals = append(scopes.locals, semaLocal{name: name, typeName: resolveNestedTypeReference(model, typ.Name, typeName), start: visibleStart, scopeStart: scopeStart, scopeEnd: scopeEnd})
+			diagnostics = append(diagnostics, scopes.declareLocal(typ, member, name, resolveNestedTypeReference(model, typ.Name, typeName), visibleStart, scopeStart, scopeEnd, bodyOffset, source, nameStart, j)...)
 		}
 	}
 	return diagnostics
@@ -925,18 +922,6 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 	}
 	scopeStart, scopeEnd := blockBoundsAt(body, match[0])
 	visibleStart := semaLocalVisibleStart(body, match[1]-1, match[5])
-	if existing, exists := scopes.localInBlock(name, scopeStart, scopeEnd); exists {
-		if existing.start == visibleStart {
-			return nil
-		}
-		return []diagnostic.Diagnostic{{
-			Severity: diagnostic.Error,
-			Code:     "GLADESEMA014",
-			Message:  fmt.Sprintf("%s %q redeclares local variable %q in the same scope", member.Kind, member.Name, name),
-			File:     typ.File,
-			Range:    semaRange(source, bodyOffset+match[4], bodyOffset+match[5]),
-		}}
-	}
 	for _, ref := range extractTypeNames(typeName) {
 		if !a.hasKnown(ref) {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
@@ -962,7 +947,7 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 			})
 		}
 	}
-	scopes.locals = append(scopes.locals, semaLocal{name: name, typeName: resolveNestedTypeReference(model, typ.Name, typeName), start: visibleStart, scopeStart: scopeStart, scopeEnd: scopeEnd})
+	diagnostics = append(diagnostics, scopes.declareLocal(typ, member, name, resolveNestedTypeReference(model, typ.Name, typeName), visibleStart, scopeStart, scopeEnd, bodyOffset, source, match[4], match[5])...)
 	return diagnostics
 }
 

@@ -624,7 +624,10 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 
 func hasBlockingParserDiagnostic(diagnostics []diagnostic.Diagnostic) bool {
 	for _, diag := range diagnostics {
-		if diag.Code != "APEXPARSE002" {
+		switch diag.Code {
+		case "APEXPARSE002", "APEXPARSE003":
+			continue
+		default:
 			return true
 		}
 	}

@@ -676,7 +676,8 @@ func (p *parser) parseDeclaration(pos int) (ir.Instruction, error) {
 	if len(insts) == 1 {
 		return insts[0], nil
 	}
-	return ir.Instruction{Op: ir.OpBlock, Then: insts, Pos: pos}, nil
+	// Multi-declarator statements share the enclosing scope; do not use OpBlock.
+	return ir.Instruction{Op: ir.OpDeclGroup, Then: insts, Pos: pos}, nil
 }
 
 func (p *parser) parseForDeclarationPart(pos int) (ir.Instruction, error) {

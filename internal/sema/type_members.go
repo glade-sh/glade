@@ -355,6 +355,23 @@ const semaInferenceDepthScopeKey = "__glade_inference_depth"
 
 const semaSyntheticStandardSObjectFieldModifier = "__glade_standard_sobject_field"
 
+// semaMemberParameterNames returns the case-insensitive parameter name set for
+// a method or constructor. Locals and nested bindings may not reuse these names.
+func semaMemberParameterNames(member typesys.MemberSymbol) map[string]struct{} {
+	if len(member.Parameters) == 0 {
+		return nil
+	}
+	out := make(map[string]struct{}, len(member.Parameters))
+	for _, param := range member.Parameters {
+		name := strings.TrimSpace(param.Name)
+		if name == "" {
+			continue
+		}
+		out[normalizeName(name)] = struct{}{}
+	}
+	return out
+}
+
 func (a *Analyzer) checkMethodBodies(index typesys.Index) []diagnostic.Diagnostic {
 	return a.checkMethodBodiesWithRecorder(index, nil)
 }

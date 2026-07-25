@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 
+	apexparser "github.com/glade-sh/apex-parser"
 	"github.com/glade-sh/glade/internal/codeintel"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -247,6 +248,8 @@ func findRenameSymbolAtLocation(graph codeintel.Graph, file string, line, column
 func validateRenameTarget(symbol codeintel.Symbol, to string) error {
 	switch symbol.Kind {
 	case codeintel.SymbolSObject, codeintel.SymbolSObjectField:
+		// Schema/API names may contain consecutive underscores (e.g. Amount__c).
+		// Do not apply Apex source-identifier shape rules here.
 		if !apexIdentifierRE.MatchString(to) {
 			return fmt.Errorf("invalid Apex identifier %q", to)
 		}
@@ -255,8 +258,8 @@ func validateRenameTarget(symbol codeintel.Symbol, to string) error {
 		}
 		return nil
 	default:
-		if !apexIdentifierRE.MatchString(to) {
-			return fmt.Errorf("invalid Apex identifier %q", to)
+		if err := apexparser.ValidateSourceIdentifier(to); err != nil {
+			return err
 		}
 		return nil
 	}

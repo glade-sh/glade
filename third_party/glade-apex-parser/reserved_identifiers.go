@@ -53,8 +53,13 @@ func wordSet(words string) map[string]struct{} {
 }
 
 func reservedIdentifierDiagnostics(path, source string, root *tree_sitter.Node, lineMap LineMap) []Diagnostic {
+	return declarationIdentifierDiagnostics(path, source, root, lineMap)
+}
+
+func declarationIdentifierDiagnostics(path, source string, root *tree_sitter.Node, lineMap LineMap) []Diagnostic {
 	var diagnostics []Diagnostic
-	seen := make(map[[2]uint]struct{})
+	seenReserved := make(map[[2]uint]struct{})
+	seenShape := make(map[[2]uint]struct{})
 
 	var visit func(*tree_sitter.Node)
 	visit = func(node *tree_sitter.Node) {
@@ -65,19 +70,32 @@ func reservedIdentifierDiagnostics(path, source string, root *tree_sitter.Node, 
 			name := childByField(node, "name")
 			if name != nil {
 				word := nodeText(name, source)
+				key := [2]uint{name.StartByte(), name.EndByte()}
 				reserved := salesforceReservedIdentifiers
 				if node.Kind() == "method_declaration" {
 					reserved = salesforceAlwaysKeywords
 				}
 				if _, ok := reserved[strings.ToLower(word)]; ok {
-					key := [2]uint{name.StartByte(), name.EndByte()}
-					if _, duplicate := seen[key]; !duplicate {
-						seen[key] = struct{}{}
+					if _, duplicate := seenReserved[key]; !duplicate {
+						seenReserved[key] = struct{}{}
 						r := treeSitterRange(name, lineMap)
 						diagnostics = append(diagnostics, Diagnostic{
 							Severity: Error,
 							Code:     "APEXPARSE002",
 							Message:  "Identifier name is reserved: " + word,
+							File:     path,
+							Range:    &r,
+							Excerpt:  excerpt(source, r.Start.Line),
+						})
+					}
+				} else if err := ValidateSourceIdentifier(word); err != nil {
+					if _, duplicate := seenShape[key]; !duplicate {
+						seenShape[key] = struct{}{}
+						r := treeSitterRange(name, lineMap)
+						diagnostics = append(diagnostics, Diagnostic{
+							Severity: Error,
+							Code:     "APEXPARSE003",
+							Message:  sourceIdentifierErrorMessage(word),
 							File:     path,
 							Range:    &r,
 							Excerpt:  excerpt(source, r.Start.Line),

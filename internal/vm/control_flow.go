@@ -116,7 +116,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 				return execOutcome{}, err
 			}
 			return execOutcome{value: value, signal: signalReturn}, nil
-		case ir.OpBlock:
+		case ir.OpBlock, ir.OpDeclGroup:
 			out, err := vm.executeProgram(childProgram(program, inst.Then), result)
 			if err != nil || out.signal != signalNone {
 				return out, err

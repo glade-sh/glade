@@ -316,29 +316,29 @@ go test ./internal/sema -run 'DuplicateDeclaration|DuplicateMember|InnerType'
 - Modify: `internal/sema/type_members.go`
 - Create: `internal/sema/scope_contracts_test.go`
 
-- [ ] **Step 1: Add RED identifier fixtures**
+- [x] **Step 1: Add RED identifier fixtures**
 
 Cover `_value`, `value_`, `value__name`, 255/256 characters, every declaration
 context, duplicate parameters, duplicate locals, parent-block redeclaration,
 loop/catch collisions, and valid sibling scopes.
 
-- [ ] **Step 2: Add one context-aware parser validator**
+- [x] **Step 2: Add one context-aware parser validator**
 
 Keep the existing 121-word reserved table and method-name exceptions. Add the
 Salesforce-proven start/end, consecutive-underscore, and length checks. Do not
 apply source-identifier rules to schema/API reference names.
 
-- [ ] **Step 3: Share validation with rename**
+- [x] **Step 3: Share validation with rename**
 
 Reject a rename target that would produce invalid Apex before emitting edits.
 
-- [ ] **Step 4: Add Apex local declaration rules**
+- [x] **Step 4: Add Apex local declaration rules**
 
 Teach `collectBodyScopes` or `irSemaScope.declare` to retain declaration origin
 and diagnose Salesforce-invalid redeclaration across parameter/local/nested
 block/loop/catch scopes.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```bash
 (cd third_party/glade-apex-parser && go test ./...)
