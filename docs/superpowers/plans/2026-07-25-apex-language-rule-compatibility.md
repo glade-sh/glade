@@ -699,6 +699,12 @@ version on type/trigger symbols, and fall back to
 Use the declaration's effective version for API 65 access requirements and
 other rows only after paired oracle fixtures exist.
 
+Evidence conflict (2026-07-25): the offline version-history page says
+`WITH SECURITY_ENFORCED` is unsupported at API 67+, while the prior scratch
+matrix records an API-67 accepted control. Treat that row as oracle-pending
+until the current scratch comparator can replay the exact paired sources; do
+not make a documentation-only source-version change.
+
 - [x] **Step 3: Keep unavailable evidence explicit**
 
 Released-package `@Deprecated` behavior remains
