@@ -267,6 +267,7 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 var (
 	semaInlineBindPattern  = regexp.MustCompile(`:([A-Za-z_][A-Za-z0-9_]*)`)
 	semaBindingDeclaration = regexp.MustCompile(`(?m)(?:^|[;({,])\s*(?:(?:public|private|protected|global|static|final|transient)\s+)*([A-Za-z_][A-Za-z0-9_]*(?:\s*<[^;=(){}]+>)?(?:\[\])?)\s+([A-Za-z_][A-Za-z0-9_]*)\b`)
+	semaTypeHeader         = regexp.MustCompile(`(?i)\b(?:class|interface|enum|trigger)\s+[A-Za-z_][A-Za-z0-9_]*`)
 )
 
 type semaBindingResolver struct {
@@ -348,11 +349,7 @@ func semaMethodLocations(source string, spans semaCodeSpans) []semaMethodLocatio
 			headerStart := semaHeaderStart(source, i, spans)
 			if semaMethodHeader(source[headerStart:i]) {
 				if end := semaMatchingCodeBrace(source, i, spans); end >= 0 {
-					typeStart, typeEnd := -1, -1
-					if len(braces) > 0 {
-						typeStart = braces[len(braces)-1]
-						typeEnd = semaMatchingCodeBrace(source, typeStart, spans)
-					}
+					typeStart, typeEnd := semaEnclosingTypeRange(source, braces, spans)
 					locations = append(locations, semaMethodLocation{methodStart: i, methodEnd: end, headerStart: headerStart, typeStart: typeStart, typeEnd: typeEnd})
 				}
 			}
@@ -364,6 +361,21 @@ func semaMethodLocations(source string, spans semaCodeSpans) []semaMethodLocatio
 		}
 	}
 	return locations
+}
+
+// semaEnclosingTypeRange identifies the closest containing type rather than
+// merely the closest brace. Apex callback blocks such as System.runAs(...) use
+// braces too, and query binds inside them still see the containing class fields.
+func semaEnclosingTypeRange(source string, braces []int, spans semaCodeSpans) (int, int) {
+	for i := len(braces) - 1; i >= 0; i-- {
+		start := braces[i]
+		headerStart := semaHeaderStart(source, start, spans)
+		if !semaTypeHeader.MatchString(source[headerStart:start]) {
+			continue
+		}
+		return start, semaMatchingCodeBrace(source, start, spans)
+	}
+	return -1, -1
 }
 
 func semaBuildBindingScope(source string, methodStart, methodEnd, headerStart, typeStart, typeEnd int, spans semaCodeSpans) semaBindingScope {

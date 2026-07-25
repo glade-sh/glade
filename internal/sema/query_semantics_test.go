@@ -209,6 +209,22 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsAcceptsStaticFieldBindInsideRunAs(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  private static Id runAsId = '005000000000001';
+  public void run() {
+    System.runAs(new User(Id = runAsId)) {
+      List<Account> accounts = [SELECT Id FROM Account WHERE OwnerId = :runAsId];
+    }
+  }
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("static field bind inside runAs rejected: %#v", diagnostics)
+	}
+}
+
 func TestQuerySemanticsAcceptsInstanceFieldDeclaredAfterMethod(t *testing.T) {
 	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {
