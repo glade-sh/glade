@@ -215,7 +215,7 @@ func TestRenderMarkupTreePropagatesVisibleExpressionTemplateErrors(t *testing.T)
 	}
 }
 
-func TestResolveStaticResourceFileReadsNestedZipResourceEntry(t *testing.T) {
+func TestReadStaticResourceReadsNestedZipResourceEntry(t *testing.T) {
 	root := t.TempDir()
 	resourcePath := filepath.Join(root, "force-app/main/default/staticresources", "Bundle.resource")
 	writeStaticResourceZip(t, resourcePath, map[string]string{
@@ -223,20 +223,19 @@ func TestResolveStaticResourceFileReadsNestedZipResourceEntry(t *testing.T) {
 		"img/logo.svg": "<svg></svg>",
 	})
 
-	resolved, err := ResolveStaticResourceFile(root, "Bundle", "css/site.css")
-	if err != nil {
-		t.Fatal(err)
-	}
-	content, err := os.ReadFile(resolved)
+	content, filename, err := ReadStaticResource(root, "Bundle", "css/site.css")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if string(content) != "body { color: steelblue; }" {
 		t.Fatalf("content = %q", content)
 	}
+	if filename != "css/site.css" {
+		t.Fatalf("filename = %q", filename)
+	}
 }
 
-func TestResolveStaticResourceFileKeepsDirectoryBundleBehavior(t *testing.T) {
+func TestReadStaticResourceReadsDirectoryBundleBytes(t *testing.T) {
 	root := t.TempDir()
 	resourcePath := filepath.Join(root, "force-app/main/default/staticresources", "Bundle", "css", "site.css")
 	if err := os.MkdirAll(filepath.Dir(resourcePath), 0o755); err != nil {
@@ -246,16 +245,19 @@ func TestResolveStaticResourceFileKeepsDirectoryBundleBehavior(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resolved, err := ResolveStaticResourceFile(root, "Bundle", "css/site.css")
+	content, filename, err := ReadStaticResource(root, "Bundle", "css/site.css")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resolved != resourcePath {
-		t.Fatalf("resolved = %q, want %q", resolved, resourcePath)
+	if string(content) != "body { color: green; }" {
+		t.Fatalf("content = %q", content)
+	}
+	if filename != "css/site.css" {
+		t.Fatalf("filename = %q", filename)
 	}
 }
 
-func TestResolveStaticResourceFileKeepsFlatResourceBehavior(t *testing.T) {
+func TestReadStaticResourceReadsFlatResourceBytes(t *testing.T) {
 	root := t.TempDir()
 	resourcePath := filepath.Join(root, "force-app/main/default/staticresources", "Logo.resource")
 	if err := os.MkdirAll(filepath.Dir(resourcePath), 0o755); err != nil {
@@ -265,51 +267,96 @@ func TestResolveStaticResourceFileKeepsFlatResourceBehavior(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resolved, err := ResolveStaticResourceFile(root, "Logo", "")
+	content, filename, err := ReadStaticResource(root, "Logo", "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resolved != resourcePath {
-		t.Fatalf("resolved = %q, want %q", resolved, resourcePath)
+	if string(content) != "plain bytes" {
+		t.Fatalf("content = %q", content)
+	}
+	if filename != "Logo.resource" {
+		t.Fatalf("filename = %q", filename)
 	}
 }
 
-func TestResolveStaticResourceFileReportsMissingZipResourceEntry(t *testing.T) {
+func TestReadStaticResourceReportsMissingZipResourceEntry(t *testing.T) {
 	root := t.TempDir()
 	resourcePath := filepath.Join(root, "force-app/main/default/staticresources", "Bundle.resource")
 	writeStaticResourceZip(t, resourcePath, map[string]string{
 		"css/site.css": "body {}",
 	})
 
-	_, err := ResolveStaticResourceFile(root, "Bundle", "css/missing.css")
+	_, _, err := ReadStaticResource(root, "Bundle", "css/missing.css")
 	if err == nil || !strings.Contains(err.Error(), "css/missing.css") {
 		t.Fatalf("err = %v, want missing zip entry name", err)
 	}
 }
 
-func TestResolveStaticResourceFileRejectsUnsafeZipResourcePath(t *testing.T) {
+func TestReadStaticResourceRejectsUnsafeZipResourcePath(t *testing.T) {
 	root := t.TempDir()
 	resourcePath := filepath.Join(root, "force-app/main/default/staticresources", "Bundle.resource")
 	writeStaticResourceZip(t, resourcePath, map[string]string{
 		"css/site.css": "body {}",
 	})
 
-	_, err := ResolveStaticResourceFile(root, "Bundle", "../outside.css")
+	_, _, err := ReadStaticResource(root, "Bundle", "../outside.css")
 	if err == nil || !strings.Contains(err.Error(), "invalid static resource path") {
 		t.Fatalf("err = %v, want invalid static resource path", err)
 	}
 }
 
-func TestResolveStaticResourceFileIgnoresUnsafeZipResourceEntry(t *testing.T) {
+func TestReadStaticResourceIgnoresUnsafeZipResourceEntry(t *testing.T) {
 	root := t.TempDir()
 	resourcePath := filepath.Join(root, "force-app/main/default/staticresources", "Bundle.resource")
 	writeStaticResourceZip(t, resourcePath, map[string]string{
 		"css/../site.css": "body {}",
 	})
 
-	_, err := ResolveStaticResourceFile(root, "Bundle", "site.css")
+	_, _, err := ReadStaticResource(root, "Bundle", "site.css")
 	if err == nil || !strings.Contains(err.Error(), "site.css") {
 		t.Fatalf("err = %v, want missing zip entry name", err)
+	}
+}
+
+func TestReadStaticResourceRejectsUnsafeResourceNames(t *testing.T) {
+	root := t.TempDir()
+	for _, name := range []string{"../Bundle", "..", "a/b", `a\\b`, "Bundle\x00evil"} {
+		t.Run(name, func(t *testing.T) {
+			_, _, err := ReadStaticResource(root, name, "")
+			if err == nil || !strings.Contains(err.Error(), "invalid static resource name") {
+				t.Fatalf("err = %v, want invalid static resource name", err)
+			}
+		})
+	}
+}
+
+func TestReadStaticResourceRejectsDirectoryBundleSymlinkEscape(t *testing.T) {
+	root := t.TempDir()
+	bundle := filepath.Join(root, "force-app/main/default/staticresources", "Bundle")
+	if err := os.MkdirAll(filepath.Join(bundle, "css"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(bundle, "css", "site.css"), []byte("safe bytes"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	outside := filepath.Join(t.TempDir(), "outside.css")
+	if err := os.WriteFile(outside, []byte("outside sentinel"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(bundle, "css", "outside.css")); err != nil {
+		t.Fatal(err)
+	}
+
+	content, _, err := ReadStaticResource(root, "Bundle", "css/site.css")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(content) != "safe bytes" {
+		t.Fatalf("content = %q", content)
+	}
+	_, _, err = ReadStaticResource(root, "Bundle", "css/outside.css")
+	if err == nil {
+		t.Fatal("ReadStaticResource succeeded through bundle symlink")
 	}
 }
 

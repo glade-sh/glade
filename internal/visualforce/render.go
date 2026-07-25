@@ -2,7 +2,6 @@ package visualforce
 
 import (
 	"archive/zip"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"html"
@@ -11,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/glade-sh/glade/internal/lwcbrowser"
 	"github.com/glade-sh/glade/internal/project"
@@ -1658,81 +1658,98 @@ func firstNonEmpty(values ...string) string {
 	return ""
 }
 
-func staticResourceBundleDir(projectRoot, resourceName string) string {
-	candidates := []string{
-		filepath.Join(projectRoot, "force-app/main/default/staticresources", resourceName),
-		filepath.Join(projectRoot, "force-app/main/staticresources", resourceName),
+// ReadStaticResource reads a project static resource without exposing a path
+// that callers could read outside the project root.
+func ReadStaticResource(projectRoot, resourceName, subpath string) ([]byte, string, error) {
+	if err := ValidateStaticResourceName(resourceName); err != nil {
+		return nil, "", err
 	}
-	for _, candidate := range candidates {
-		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
-			return candidate
-		}
-	}
-	return ""
-}
-
-func ResolveStaticResourceFile(projectRoot, resourceName, subpath string) (string, error) {
-	normalizedSubpath, err := normalizeStaticResourceSubpath(subpath)
+	normalizedSubpath, err := NormalizeStaticResourceSubpath(subpath)
 	if err != nil {
-		return "", err
+		return nil, "", fmt.Errorf("%w: %v", ErrStaticResourceNotFound, err)
 	}
-	if bundle := staticResourceBundleDir(projectRoot, resourceName); bundle != "" {
-		if normalizedSubpath == "" {
-			return "", fmt.Errorf("static resource bundle requires subpath")
+	root, err := os.OpenRoot(projectRoot)
+	if err != nil {
+		return nil, "", err
+	}
+	defer root.Close()
+	for _, directory := range []string{
+		"force-app/main/default/staticresources",
+		"force-app/main/staticresources",
+	} {
+		resourceRoot, err := root.OpenRoot(filepath.Join(directory, resourceName))
+		if err != nil {
+			if staticResourceCandidateAbsent(err) {
+				continue
+			}
+			return nil, "", err
 		}
-		full := filepath.Join(bundle, filepath.FromSlash(normalizedSubpath))
-		if info, err := os.Stat(full); err == nil && !info.IsDir() {
-			return full, nil
-		}
+		content, filename, readErr := readStaticResourceBundle(resourceRoot, normalizedSubpath)
+		resourceRoot.Close()
+		return content, filename, readErr
 	}
 	singleCandidates := []string{
-		filepath.Join(projectRoot, "force-app/main/default/staticresources", resourceName+".resource"),
-		filepath.Join(projectRoot, "force-app/main/staticresources", resourceName+".resource"),
+		filepath.Join("force-app/main/default/staticresources", resourceName+".resource"),
+		filepath.Join("force-app/main/staticresources", resourceName+".resource"),
 	}
 	var missingZipEntry bool
 	for _, candidate := range singleCandidates {
-		resolved, err := ResolveStaticResourceContentPath(candidate, resourceName, normalizedSubpath)
+		content, filename, err := readStaticResourceContent(root, candidate, normalizedSubpath)
 		if err == nil {
-			return resolved, nil
+			return content, filename, nil
 		}
 		if errors.Is(err, errStaticResourceZipEntryMissing) {
 			missingZipEntry = true
 		}
+		if !staticResourceCandidateAbsent(err) {
+			return nil, "", err
+		}
 	}
 	if missingZipEntry {
-		return "", fmt.Errorf("static resource entry %q not found in %s.resource", normalizedSubpath, resourceName)
+		return nil, "", fmt.Errorf("%w: entry %q not found in %s.resource", ErrStaticResourceNotFound, normalizedSubpath, resourceName)
 	}
-	return "", fmt.Errorf("static resource not found")
+	return nil, "", ErrStaticResourceNotFound
 }
 
-func ResolveStaticResourceContentPath(contentPath, resourceName, subpath string) (string, error) {
-	normalizedSubpath, err := normalizeStaticResourceSubpath(subpath)
+// ReadStaticResourceContentPath reads an absolute metadata content path using
+// its parent as a confined root.
+func ReadStaticResourceContentPath(contentPath, resourceName, subpath string) ([]byte, string, error) {
+	if err := ValidateStaticResourceName(resourceName); err != nil {
+		return nil, "", err
+	}
+	normalizedSubpath, err := NormalizeStaticResourceSubpath(subpath)
 	if err != nil {
-		return "", err
+		return nil, "", fmt.Errorf("%w: %v", ErrStaticResourceNotFound, err)
 	}
-	info, err := os.Stat(contentPath)
+	root, err := os.OpenRoot(filepath.Dir(contentPath))
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
-	if info.IsDir() {
-		if normalizedSubpath == "" {
-			return "", fmt.Errorf("static resource bundle requires subpath")
-		}
-		full := filepath.Join(contentPath, filepath.FromSlash(normalizedSubpath))
-		if info, err := os.Stat(full); err == nil && !info.IsDir() {
-			return full, nil
-		}
-		return "", fmt.Errorf("static resource not found")
-	}
-	if normalizedSubpath == "" {
-		return contentPath, nil
-	}
-	return resolveZippedStaticResourceFile(contentPath, resourceName, normalizedSubpath)
+	defer root.Close()
+	return readStaticResourceContent(root, filepath.Base(contentPath), normalizedSubpath)
 }
 
-var errStaticResourceZipEntryMissing = errors.New("static resource zip entry missing")
+var (
+	// ErrStaticResourceNotFound reports a missing resource or bundle entry.
+	ErrStaticResourceNotFound        = errors.New("static resource not found")
+	errStaticResourceZipEntryMissing = errors.New("static resource zip entry missing")
+)
 
-func normalizeStaticResourceSubpath(subpath string) (string, error) {
+// ValidateStaticResourceName accepts one non-empty path-safe name segment.
+func ValidateStaticResourceName(resourceName string) error {
+	if resourceName == "" || resourceName == "." || resourceName == ".." || strings.ContainsAny(resourceName, "/\\\x00") {
+		return fmt.Errorf("invalid static resource name")
+	}
+	return nil
+}
+
+func staticResourceCandidateAbsent(err error) bool {
+	return errors.Is(err, ErrStaticResourceNotFound) || errors.Is(err, os.ErrNotExist) || errors.Is(err, syscall.ENOTDIR)
+}
+
+// NormalizeStaticResourceSubpath validates a relative resource path and
+// returns its slash-normalized form.
+func NormalizeStaticResourceSubpath(subpath string) (string, error) {
 	subpath = strings.ReplaceAll(filepath.ToSlash(subpath), "\\", "/")
 	subpath = strings.TrimPrefix(subpath, "/")
 	if subpath == "" {
@@ -1753,53 +1770,79 @@ func normalizeStaticResourceSubpath(subpath string) (string, error) {
 	return clean, nil
 }
 
-func resolveZippedStaticResourceFile(zipPath, resourceName, subpath string) (string, error) {
-	reader, err := zip.OpenReader(zipPath)
-	if err != nil {
-		return "", err
+func readStaticResourceBundle(root *os.Root, subpath string) ([]byte, string, error) {
+	if subpath == "" {
+		return nil, "", fmt.Errorf("static resource bundle requires subpath")
 	}
-	defer reader.Close()
+	content, err := root.ReadFile(filepath.FromSlash(subpath))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, "", fmt.Errorf("%w: %v", ErrStaticResourceNotFound, err)
+		}
+		return nil, "", err
+	}
+	return content, subpath, nil
+}
+
+func readStaticResourceContent(root *os.Root, contentName, subpath string) ([]byte, string, error) {
+	info, err := root.Stat(contentName)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, "", fmt.Errorf("%w: %v", ErrStaticResourceNotFound, err)
+		}
+		return nil, "", err
+	}
+	if info.IsDir() {
+		bundle, err := root.OpenRoot(contentName)
+		if err != nil {
+			return nil, "", err
+		}
+		defer bundle.Close()
+		return readStaticResourceBundle(bundle, subpath)
+	}
+	if subpath == "" {
+		content, err := root.ReadFile(contentName)
+		if err != nil {
+			return nil, "", err
+		}
+		return content, filepath.Base(contentName), nil
+	}
+	return readZippedStaticResource(root, contentName, subpath)
+}
+
+func readZippedStaticResource(root *os.Root, zipName, subpath string) ([]byte, string, error) {
+	file, err := root.Open(zipName)
+	if err != nil {
+		return nil, "", err
+	}
+	defer file.Close()
+	info, err := file.Stat()
+	if err != nil {
+		return nil, "", err
+	}
+	reader, err := zip.NewReader(file, info.Size())
+	if err != nil {
+		return nil, "", err
+	}
 	for _, entry := range reader.File {
-		entryName, err := normalizeStaticResourceSubpath(entry.Name)
+		entryName, err := NormalizeStaticResourceSubpath(entry.Name)
 		if err != nil || entryName != subpath || entry.FileInfo().IsDir() {
 			continue
 		}
-		return extractStaticResourceZipEntry(zipPath, resourceName, subpath, entry)
+		content, err := readStaticResourceZipEntry(entry)
+		if err != nil {
+			return nil, "", err
+		}
+		return content, entryName, nil
 	}
-	return "", errStaticResourceZipEntryMissing
+	return nil, "", fmt.Errorf("%w: %w", ErrStaticResourceNotFound, errStaticResourceZipEntryMissing)
 }
 
-func extractStaticResourceZipEntry(zipPath, resourceName, subpath string, entry *zip.File) (string, error) {
+func readStaticResourceZipEntry(entry *zip.File) ([]byte, error) {
 	source, err := entry.Open()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer source.Close()
-	target := staticResourceZipCachePath(zipPath, resourceName, subpath)
-	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
-		return "", err
-	}
-	output, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
-	if err != nil {
-		return "", err
-	}
-	_, copyErr := io.Copy(output, source)
-	closeErr := output.Close()
-	if copyErr != nil {
-		return "", copyErr
-	}
-	if closeErr != nil {
-		return "", closeErr
-	}
-	return target, nil
-}
-
-func staticResourceZipCachePath(zipPath, resourceName, subpath string) string {
-	info, _ := os.Stat(zipPath)
-	keyInput := zipPath
-	if info != nil {
-		keyInput = fmt.Sprintf("%s:%d:%d", zipPath, info.ModTime().UnixNano(), info.Size())
-	}
-	sum := sha256.Sum256([]byte(keyInput))
-	return filepath.Join(os.TempDir(), "glade-static-resource", "zip", resourceName, fmt.Sprintf("%x", sum[:8]), filepath.FromSlash(subpath))
+	return io.ReadAll(source)
 }
