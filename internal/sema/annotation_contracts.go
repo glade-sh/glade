@@ -66,6 +66,7 @@ func checkAnnotationContracts(index typesys.Index) []diagnostic.Diagnostic {
 		}
 		diagnostics = append(diagnostics, checkTypeAnnotationContracts(typ)...)
 		testSetups := 0
+		invocableMethods := 0
 		auraMethods := map[string]int{}
 		for _, member := range typ.Members {
 			for _, annotation := range member.Annotations {
@@ -75,11 +76,17 @@ func checkAnnotationContracts(index typesys.Index) []diagnostic.Diagnostic {
 				if strings.EqualFold(annotation.Name, "AuraEnabled") && member.Kind == apexast.DeclarationMethod {
 					auraMethods[strings.ToLower(member.Name)]++
 				}
+				if strings.EqualFold(annotation.Name, "InvocableMethod") && member.Kind == apexast.DeclarationMethod {
+					invocableMethods++
+				}
 			}
 			diagnostics = append(diagnostics, checkMemberAnnotationContracts(typ, member)...)
 		}
 		if testSetups > 1 {
 			diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, typ.Range, "an IsTest class can declare only one TestSetup method"))
+		}
+		if invocableMethods > 1 {
+			diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, typ.Range, "a class can declare only one InvocableMethod"))
 		}
 		if testSetups > 0 && annotationPropertyTrue(typ.Annotations, "IsTest", "SeeAllData") {
 			diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, typ.Range, "TestSetup cannot be combined with IsTest(SeeAllData=true)"))
@@ -138,8 +145,14 @@ func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.Membe
 			if member.Kind != apexast.DeclarationMethod || !hasEitherModifier(member.Modifiers, "public", "global") || !hasModifier(member.Modifiers, "static") || len(member.Parameters) != 1 || !isListType(member.Parameters[0].Type) || (!strings.EqualFold(member.Type, "void") && !isListType(member.Type)) {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "InvocableMethod must be a public or global static method with one List parameter and a void or List return type"))
 			}
+			for _, other := range member.Annotations {
+				if !strings.EqualFold(other.Name, "InvocableMethod") && !strings.EqualFold(other.Name, "Deprecated") {
+					diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "InvocableMethod can only be combined with Deprecated"))
+					break
+				}
+			}
 		case strings.EqualFold(annotation.Name, "InvocableVariable"):
-			if member.Kind != apexast.DeclarationField || !hasEitherModifier(member.Modifiers, "public", "global") || hasModifier(member.Modifiers, "static") || hasModifier(member.Modifiers, "final") {
+			if member.Kind != apexast.DeclarationField || !hasEitherModifier(member.Modifiers, "public", "global") || hasModifier(member.Modifiers, "static") || hasModifier(member.Modifiers, "final") || strings.EqualFold(member.Type, "Object") {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "InvocableVariable must annotate a public or global nonstatic nonfinal field"))
 			}
 		case strings.EqualFold(annotation.Name, "RemoteAction"):
@@ -152,9 +165,22 @@ func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.Membe
 			}
 		case strings.EqualFold(annotation.Name, "JsonAccess"):
 			diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "JsonAccess is only valid on classes with serialization control properties"))
+		case strings.EqualFold(annotation.Name, "NamespaceAccessible"):
+			if (!hasAnnotation(typ.Annotations, "NamespaceAccessible") && !hasModifier(typ.Modifiers, "global")) || hasAnnotation(member.Annotations, "AuraEnabled") || hasAnnotation(member.Annotations, "InvocableMethod") {
+				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "NamespaceAccessible methods require a NamespaceAccessible or global owner and cannot be combined with AuraEnabled or InvocableMethod"))
+			}
 		}
 	}
 	return diagnostics
+}
+
+func hasAnnotation(annotations []apexast.Annotation, name string) bool {
+	for _, annotation := range annotations {
+		if strings.EqualFold(annotation.Name, name) {
+			return true
+		}
+	}
+	return false
 }
 
 func annotationContractDiagnostic(file string, r diagnostic.Range, detail string) diagnostic.Diagnostic {

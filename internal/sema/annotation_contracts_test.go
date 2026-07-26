@@ -41,15 +41,19 @@ func TestAnnotationCatalogAllowsSuppressWarnings(t *testing.T) {
 func TestAnnotationContractsRejectInvalidOwnersAndSignatures(t *testing.T) {
 	t.Parallel()
 	for name, source := range map[string]string{
-		"test method outside test class":           `public class Probe { @IsTest static void run() {} }`,
-		"test method requires static no args":      `@IsTest private class Probe { @IsTest void run(String value) {} }`,
-		"duplicate test setup":                     `@IsTest private class Probe { @TestSetup static void one() {} @TestSetup static void two() {} }`,
-		"aura enabled overload":                    `public class Probe { @AuraEnabled public static void run() {} @AuraEnabled public static void run(String value) {} }`,
-		"invocable method requires list parameter": `public class Probe { @InvocableMethod public static void run(String value) {} }`,
-		"invocable variable cannot be static":      `public class Probe { @InvocableVariable public static String value; }`,
-		"remote action requires public static":     `public class Probe { @RemoteAction private void run() {} }`,
-		"JsonAccess requires a parameter":          `@JsonAccess public class Probe {}`,
-		"JsonAccess cannot annotate a method":      `public class Probe { @JsonAccess(serializable=true) public void run() {} }`,
+		"test method outside test class":            `public class Probe { @IsTest static void run() {} }`,
+		"test method requires static no args":       `@IsTest private class Probe { @IsTest void run(String value) {} }`,
+		"duplicate test setup":                      `@IsTest private class Probe { @TestSetup static void one() {} @TestSetup static void two() {} }`,
+		"aura enabled overload":                     `public class Probe { @AuraEnabled public static void run() {} @AuraEnabled public static void run(String value) {} }`,
+		"invocable method requires list parameter":  `public class Probe { @InvocableMethod public static void run(String value) {} }`,
+		"invocable variable cannot be static":       `public class Probe { @InvocableVariable public static String value; }`,
+		"remote action requires public static":      `public class Probe { @RemoteAction private void run() {} }`,
+		"JsonAccess requires a parameter":           `@JsonAccess public class Probe {}`,
+		"JsonAccess cannot annotate a method":       `public class Probe { @JsonAccess(serializable=true) public void run() {} }`,
+		"NamespaceAccessible cannot be AuraEnabled": `public class Probe { @AuraEnabled @NamespaceAccessible public static void run() {} }`,
+		"NamespaceAccessible member needs owner":    `public class Probe { @NamespaceAccessible public void run() {} }`,
+		"InvocableMethod allows no annotation mix":  `public class Probe { @future @InvocableMethod public static void run(List<String> values) {} }`,
+		"InvocableVariable cannot use Object":       `public class Probe { @InvocableVariable public Object value; }`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
@@ -57,6 +61,16 @@ func TestAnnotationContractsRejectInvalidOwnersAndSignatures(t *testing.T) {
 				t.Fatalf("expected annotation contract diagnostic: %#v", result.Diagnostics)
 			}
 		})
+	}
+}
+
+func TestAnnotationContractsRejectMultipleInvocableMethods(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { @InvocableMethod public static void first(List<String> values) {} @InvocableMethod public static void second(List<String> values) {} }`,
+	})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA032") {
+		t.Fatalf("multiple InvocableMethods accepted: %#v", result.Diagnostics)
 	}
 }
 
