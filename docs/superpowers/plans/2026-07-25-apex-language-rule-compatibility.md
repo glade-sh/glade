@@ -1006,6 +1006,13 @@ modifiers such as `virtual` and terminates generic parameter types at their
 own closing angle bracket. This restores scope for parameters such as
 `Set<String> newEmails` in inline SOQL.
 
+Follow-up (2026-07-25): annotated class fields such as
+`@testVisible private static final String OIC_TRIGGER` now participate in
+lexical bind resolution. A local declared before a nested block already had
+the correct scope. The remaining NU collection-comparison forms remain
+oracle-pending because they conflict with the documented `IN`/`NOT IN` bind
+contract.
+
 ---
 
 ## Completion criteria
