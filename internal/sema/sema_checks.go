@@ -493,7 +493,7 @@ func inlineQueryBindDiagnostics(ctx queryTextContext, bindings map[string]string
 			continue
 		}
 		name := ctx.queryText[match[2]:match[3]]
-		if strings.EqualFold(name, "true") || strings.EqualFold(name, "false") || strings.EqualFold(name, "null") {
+		if strings.EqualFold(name, "true") || strings.EqualFold(name, "false") || strings.EqualFold(name, "null") || strings.EqualFold(name, "new") {
 			continue
 		}
 		if match[3] < len(ctx.queryText) && (ctx.queryText[match[3]] == '.' || ctx.queryText[match[3]] == '(') {

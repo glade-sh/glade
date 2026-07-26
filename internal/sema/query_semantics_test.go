@@ -171,9 +171,23 @@ public class QueryProbe {
     List<Account> accounts = [SELECT Id FROM Account LIMIT :Limits.getLimitQueries()];
   }
 }
+
 `)
 	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
 		t.Fatalf("expression window bind was rejected: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsAcceptsCollectionConstructorBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run(Id firstId, Id secondId) {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Id IN :new Set<Id>{firstId, secondId}];
+  }
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("collection constructor bind was rejected: %#v", diagnostics)
 	}
 }
 

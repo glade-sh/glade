@@ -83,6 +83,11 @@ func lex(input string) ([]token, error) {
 				i++
 			}
 			bindStart := i
+			if end, ok := scanSOQLBindCollectionConstructor(input, bindStart); ok {
+				out = append(out, token{text: ":" + strings.TrimSpace(input[bindStart:end])})
+				i = end
+				continue
+			}
 			depth := 0
 			for i < len(input) {
 				if input[i] == '(' {
@@ -133,6 +138,30 @@ func lex(input string) ([]token, error) {
 	}
 	out = append(out, token{text: ""})
 	return out, nil
+}
+
+func scanSOQLBindCollectionConstructor(input string, start int) (int, bool) {
+	if start+3 >= len(input) || !strings.EqualFold(input[start:start+3], "new") || input[start+3] != ' ' {
+		return 0, false
+	}
+	open := strings.IndexByte(input[start+4:], '{')
+	if open < 0 {
+		return 0, false
+	}
+	open += start + 4
+	depth := 0
+	for index := open; index < len(input); index++ {
+		switch input[index] {
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				return index + 1, true
+			}
+		}
+	}
+	return 0, false
 }
 
 type parser struct {

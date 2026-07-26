@@ -83,6 +83,16 @@ func TestParseSupportsExpressionLimitBind(t *testing.T) {
 	}
 }
 
+func TestParseSupportsCollectionConstructorBind(t *testing.T) {
+	query, err := Parse("SELECT Id FROM Account WHERE Id IN :new Set<Id>{firstId, secondId}")
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if query.Where == nil || len(query.Where.Values) != 1 || query.Where.Values[0].Kind != storage.ValueID || string(query.Where.Values[0].ID) != ":new Set<Id>{firstId, secondId}" {
+		t.Fatalf("where = %#v", query.Where)
+	}
+}
+
 func TestParseRootObjectAlias(t *testing.T) {
 	query, err := Parse("SELECT a.Id FROM Account a WHERE a.Name = 'Acme' ORDER BY a.Name LIMIT 1")
 	if err != nil {
