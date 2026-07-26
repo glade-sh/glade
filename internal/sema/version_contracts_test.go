@@ -36,7 +36,7 @@ func TestPreviewAnnotationsRemainDisabledAtLatestAPIVersion(t *testing.T) {
 	}
 }
 
-func TestSecurityEnforcedQueryRemainsAcceptedAtAPIVersion67AndLater(t *testing.T) {
+func TestSecurityEnforcedQueryIsRejectedAtAPIVersion67AndLater(t *testing.T) {
 	source := `
 public class Probe {
   public static void run() {
@@ -46,14 +46,16 @@ public class Probe {
 `
 	for _, test := range []struct {
 		apiVersion string
+		wantReject bool
 	}{
-		{apiVersion: "66.0"},
-		{apiVersion: "67.0"},
+		{apiVersion: "66.0", wantReject: false},
+		{apiVersion: "67.0", wantReject: true},
 	} {
 		t.Run(test.apiVersion, func(t *testing.T) {
 			result := analyzeQueryProbeWithProject(t, source, typesys.ProjectInfo{SourceAPIVersion: test.apiVersion}, queryDiagnosticSchema())
-			if hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CONTRACT") {
-				t.Fatalf("API %s query diagnostics = %#v, want acceptance", test.apiVersion, result.Diagnostics)
+			gotReject := hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CONTRACT")
+			if gotReject != test.wantReject {
+				t.Fatalf("API %s query rejection = %v diagnostics=%#v", test.apiVersion, gotReject, result.Diagnostics)
 			}
 		})
 	}

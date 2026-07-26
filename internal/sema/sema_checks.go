@@ -805,8 +805,9 @@ func semaSOQLNumericAggregateFieldType(fieldType string) bool {
 }
 
 func queryVersionDiagnostics(query soql.Query, ctx queryTextContext, apiVersion float64) []diagnostic.Diagnostic {
-	// WITH SECURITY_ENFORCED remains accepted at API 67.0. Do not infer a
-	// version restriction from the availability of WITH USER_MODE.
+	if apiVersion >= 67 && strings.EqualFold(query.SecurityMode, "SECURITY_ENFORCED") {
+		return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", "WITH SECURITY_ENFORCED is no longer supported at API 67.0; use WITH USER_MODE", "SECURITY_ENFORCED", findQueryIdentifier(ctx.queryText, "SECURITY_ENFORCED", 0))}
+	}
 	return nil
 }
 
@@ -2273,6 +2274,22 @@ func inheritanceTargetDiagnostics(model *semaTypeMemberView, typ typesys.TypeSym
 	}
 	if typ.Kind == apexast.DeclarationClass {
 		checkTarget(typ.SuperClass, "extends", apexast.DeclarationClass)
+		if superClass := strings.TrimSpace(typ.SuperClass); superClass != "" {
+			resolved := resolveNestedTypeName(model, typ.Name, superClass)
+			if resolved == "" {
+				resolved = superClass
+			}
+			if members, ok := inheritanceTargetMembers(model, resolved); ok && !members.dependency && members.kind == apexast.DeclarationClass &&
+				!hasModifier(members.modifiers, "virtual") && !hasModifier(members.modifiers, "abstract") {
+				diagnostics = append(diagnostics, diagnostic.Diagnostic{
+					Severity: diagnostic.Error,
+					Code:     "GLADESEMA017",
+					Message:  fmt.Sprintf("class %q cannot extend non-virtual, non-abstract class %q", typ.Name, superClass),
+					File:     typ.File,
+					Range:    &typ.Range,
+				})
+			}
+		}
 		for _, iface := range typ.Interfaces {
 			checkTarget(iface, "implements", apexast.DeclarationInterface)
 		}
