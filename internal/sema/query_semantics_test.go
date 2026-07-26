@@ -236,6 +236,61 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsRequiresNumericSOSLReturningLimitAndOffsetBinds(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    String returningLimit = '1';
+    String offsetValue = '0';
+    Integer limitValue = 1;
+    List<List<SObject>> rows = [FIND 'acme' RETURNING Account(Id LIMIT :returningLimit OFFSET :offsetValue) LIMIT :limitValue];
+  }
+}
+`)
+	count := 0
+	for _, item := range diagnostics {
+		if item.Code == "GLADESEMA_QUERY_BIND" {
+			count++
+		}
+	}
+	if count != 2 {
+		t.Fatalf("numeric SOSL returning LIMIT and OFFSET diagnostics = %d, want 2: %#v", count, diagnostics)
+	}
+}
+
+func TestQuerySemanticsRequiresStringSOSLDivisionBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    Integer division = 1;
+    List<List<SObject>> rows = [FIND 'acme' RETURNING Account(Id) WITH DIVISION = :division];
+  }
+}
+`)
+	if !hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("expected non-string SOSL WITH DIVISION bind diagnostic: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsAcceptsDocumentedSOSLBindClauses(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    String term = 'aaa';
+    String name = 'bbb';
+    Integer returningLimit = 1;
+    Integer returningOffset = 0;
+    String division = 'Global';
+    Integer limitValue = 2;
+    List<List<SObject>> rows = [FIND :term IN ALL FIELDS RETURNING Account(Id, Name WHERE Name LIKE :name LIMIT :returningLimit OFFSET :returningOffset) WITH DIVISION = :division LIMIT :limitValue];
+  }
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") || hasDiagnosticCode(diagnostics, "GLADESEMA_SOSL_PARSE") {
+		t.Fatalf("documented SOSL bind clauses rejected: %#v", diagnostics)
+	}
+}
+
 func TestQuerySemanticsRequiresNumericSOSLLimitBindInOneLineMethod(t *testing.T) {
 	result := analyzeQueryProbe(t, "public class QueryProbe { public void run() { String limitValue = '1'; List<List<SObject>> rows = [FIND 'acme' RETURNING Account(Id) LIMIT :limitValue]; } }", schema.Schema{})
 	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_BIND") {

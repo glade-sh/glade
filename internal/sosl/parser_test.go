@@ -63,6 +63,32 @@ func TestParseSOSLReturningObjectsAndFields(t *testing.T) {
 			input: "FIND 'Acme' RETURNING Account(Id) LIMIT :limitValue",
 			want:  sosl.Query{Returning: []sosl.ReturningObject{{Object: "Account", Fields: []string{"Id"}}}, LimitBind: "limitValue"},
 		},
+		{
+			name:  "all documented SOSL bind clauses",
+			input: "FIND :term IN ALL FIELDS RETURNING Account(Id, Name WHERE Name LIKE :name LIMIT :perObjectLimit OFFSET :offsetValue) WITH DIVISION = :division LIMIT :limitValue",
+			want: sosl.Query{
+				Returning: []sosl.ReturningObject{
+					{Object: "Account", Fields: []string{"Id", "Name"}, LimitBind: "perObjectLimit", OffsetBind: "offsetValue"},
+				},
+				DivisionBind: "division",
+				LimitBind:    "limitValue",
+			},
+		},
+		{
+			name:  "literal limits",
+			input: "FIND 'Acme' RETURNING Account(Id LIMIT 5 OFFSET 1) LIMIT 10",
+			want:  sosl.Query{Returning: []sosl.ReturningObject{{Object: "Account", Fields: []string{"Id"}}}},
+		},
+		{
+			name:  "literal division",
+			input: "FIND 'Acme' RETURNING Account(Id) WITH DIVISION = 'Global'",
+			want:  sosl.Query{Returning: []sosl.ReturningObject{{Object: "Account", Fields: []string{"Id"}}}},
+		},
+		{
+			name:  "returning order by is not a field",
+			input: "FIND 'Acme' RETURNING Account(Id, Name ORDER BY Name LIMIT 100 OFFSET 10)",
+			want:  sosl.Query{Returning: []sosl.ReturningObject{{Object: "Account", Fields: []string{"Id", "Name"}}}},
+		},
 	}
 
 	for _, tt := range tests {

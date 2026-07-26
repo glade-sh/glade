@@ -273,6 +273,11 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 		bindings := bindingResolver.bindingsAt(literal.queryOffset)
 		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings, c.knownTypes)...)
 		diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, query.LimitBind, "LIMIT")...)
+		diagnostics = append(diagnostics, queryStringBindDiagnostics(ctx, bindings, query.DivisionBind, "WITH DIVISION")...)
+		for _, returning := range query.Returning {
+			diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, returning.LimitBind, "RETURNING LIMIT")...)
+			diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, returning.OffsetBind, "RETURNING OFFSET")...)
+		}
 		diagnostics = append(diagnostics, c.soslFieldBindDiagnostics(query, ctx, bindings)...)
 	}
 	return diagnostics
@@ -576,6 +581,18 @@ func queryNumericBindDiagnostics(ctx queryTextContext, bindings map[string]strin
 	}
 	offset := findQueryIdentifier(ctx.queryText, ":"+name, 0)
 	return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("%s bind variable %q must have a numeric type", clause, name), ":"+name, offset)}
+}
+
+func queryStringBindDiagnostics(ctx queryTextContext, bindings map[string]string, name, clause string) []diagnostic.Diagnostic {
+	if name == "" || !semaBindName(name) {
+		return nil
+	}
+	typeName := strings.ToLower(strings.TrimSpace(bindings[strings.ToLower(name)]))
+	if typeName == "string" {
+		return nil
+	}
+	offset := findQueryIdentifier(ctx.queryText, ":"+name, 0)
+	return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("%s bind variable %q must have a String type", clause, name), ":"+name, offset)}
 }
 
 func (c querySemanticsChecker) queryFieldBindDiagnostics(query soql.Query, ctx queryTextContext, bindings map[string]string) []diagnostic.Diagnostic {
