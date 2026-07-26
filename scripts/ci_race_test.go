@@ -230,7 +230,7 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 	}
 	workflow := string(data)
 	for _, marker := range []string{
-		"name: Race", "pull_request:", "branches: [main]", "schedule:", "workflow_dispatch:",
+		"name: Race", "branches: [main]", "schedule:", "workflow_dispatch:",
 		"fetch-depth: 0", "scripts/ci-race-packages.sh", "fromJSON(needs.plan.outputs.packages)",
 		"fail-fast: false", "max-parallel: 4", "GOMAXPROCS: \"2\"", "go-version: \"1.26.5\"",
 		`scripts/ci-race-test.sh "$PACKAGE" "$SLUG"`, "if: always()",
@@ -245,10 +245,16 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 			t.Errorf("race workflow missing %q", marker)
 		}
 	}
-	for _, forbidden := range []string{"pull_request_target:", "continue-on-error:", "runs-on: ubuntu-latest-", "go test -race ./..."} {
+	for _, forbidden := range []string{"pull_request:", "pull_request_target:", "continue-on-error:", "runs-on: ubuntu-latest-", "go test -race ./..."} {
 		if strings.Contains(workflow, forbidden) {
 			t.Errorf("race workflow contains forbidden %q", forbidden)
 		}
+	}
+	if !strings.Contains(workflow, "push)\n              mode=full\n              packages=\"$(scripts/ci-race-packages.sh full)\"") {
+		t.Fatal("race workflow must run the exhaustive manifest after every main push")
+	}
+	if !strings.Contains(workflow, "group: race-${{ github.run_id }}") || strings.Contains(workflow, "group: race-${{ github.ref") {
+		t.Fatal("race workflow must give every event a unique concurrency group")
 	}
 	if strings.Contains(workflow, "Required CI") || strings.Contains(workflow, "required-ci") {
 		t.Fatal("race workflow is coupled to normal Required CI")

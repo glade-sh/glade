@@ -1,7 +1,6 @@
 name: Race
 
 on:
-  pull_request:
   push:
     branches: [main]
   schedule:
@@ -12,8 +11,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: race-${{ github.event.pull_request.number || github.ref || github.run_id }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: race-${{ github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   plan:
@@ -35,18 +34,11 @@ jobs:
           cache: false
       - name: Classify race packages
         id: classify
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           case "${{ github.event_name }}" in
-            pull_request)
-              mode=changed
-              packages="$(scripts/ci-race-packages.sh changed "$BASE_SHA" "$HEAD_SHA")"
-              ;;
             push)
-              mode=high-risk
-              packages="$(scripts/ci-race-packages.sh high-risk)"
+              mode=full
+              packages="$(scripts/ci-race-packages.sh full)"
               ;;
             schedule|workflow_dispatch)
               mode=full

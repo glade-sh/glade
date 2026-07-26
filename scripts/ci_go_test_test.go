@@ -1602,6 +1602,16 @@ func TestCIWorkflowConcurrencyContract(t *testing.T) {
 	}
 }
 
+func TestCIWorkflowDoesNotDuplicatePullRequestBranchPushes(t *testing.T) {
+	workflow, _ := readCIWorkflow(t)
+	if !strings.Contains(workflow, "  push:\n    branches:\n      - main\n  pull_request:") {
+		t.Fatal("CI must run branch pushes only on main and use pull_request for feature branches")
+	}
+	if strings.Contains(workflow, `      - "**"`) {
+		t.Fatal("CI feature-branch push trigger duplicates pull_request checks")
+	}
+}
+
 func TestCISemaShardWorkflowContract(t *testing.T) {
 	workflow, jobs := readCIWorkflow(t)
 	if !strings.Contains(workflow, "  schedule:\n    - cron: '17 9 * * 1'") {
