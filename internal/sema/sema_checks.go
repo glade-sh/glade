@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -196,6 +197,7 @@ func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnos
 
 type querySemanticsChecker struct {
 	namespace      string
+	apiVersion     float64
 	objects        map[string]schema.Object
 	providers      map[string]semaSObjectFieldProvider
 	declaredFields map[string]int
@@ -210,6 +212,7 @@ func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Obj
 		declaredFields: make(map[string]int, len(index.Objects)),
 		hasBaseline:    len(declaredObjects) > 0,
 	}
+	checker.apiVersion, _ = strconv.ParseFloat(strings.TrimSpace(index.Project.SourceAPIVersion), 64)
 	for _, object := range declaredObjects {
 		checker.recordDeclaredFields(object)
 	}
@@ -566,11 +569,6 @@ func (c querySemanticsChecker) queryFieldBindDiagnostics(query soql.Query, ctx q
 			}
 			typeName := bindings[strings.ToLower(name)]
 			if elementType, collection := queryBindCollectionElementType(typeName); collection {
-				if condition.Op != "IN" && condition.Op != "NOT IN" {
-					offset := findQueryIdentifier(ctx.queryText, ":"+name, 0)
-					diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("collection bind variable %q is only valid with IN or NOT IN", name), ":"+name, offset))
-					continue
-				}
 				typeName = elementType
 			}
 			if typeName == "" || queryFieldAcceptsBindType(field.Type, typeName) {
@@ -645,6 +643,7 @@ type queryTextContext struct {
 
 func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName string, ctx queryTextContext, cursor int, aggregateAliases map[string]bool) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
+	diagnostics = append(diagnostics, queryVersionDiagnostics(query, ctx, c.apiVersion)...)
 	diagnostics = append(diagnostics, queryShapeDiagnostics(query, ctx)...)
 	object, ok := c.object(objectName)
 	objectCursor := findSOQLFromObject(ctx.queryText, objectName, cursor)
@@ -711,6 +710,13 @@ func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName strin
 		}
 	}
 	return diagnostics
+}
+
+func queryVersionDiagnostics(query soql.Query, ctx queryTextContext, apiVersion float64) []diagnostic.Diagnostic {
+	if apiVersion < 67 || !strings.EqualFold(query.SecurityMode, "SECURITY_ENFORCED") {
+		return nil
+	}
+	return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", "WITH SECURITY_ENFORCED is not supported in API version 67.0 or later; use WITH USER_MODE instead", "WITH SECURITY_ENFORCED", findQueryIdentifier(ctx.queryText, "WITH SECURITY_ENFORCED", 0))}
 }
 
 func queryShapeDiagnostics(query soql.Query, ctx queryTextContext) []diagnostic.Diagnostic {
@@ -2071,7 +2077,7 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 					Range:    &member.Range,
 				})
 			}
-			if hasModifier(member.Modifiers, "override") && hasOverridden && !semaOverriddenMethodFromDependency(model, typ, member) && hasExplicitDeclarationVisibility(member.Modifiers) && declarationVisibilityRank(member.Modifiers) < declarationVisibilityRank(overridden.Modifiers) {
+			if hasModifier(member.Modifiers, "override") && hasOverridden && !semaOverriddenMethodFromDependency(model, typ, member) && hasExplicitDeclarationVisibility(member.Modifiers) && declarationVisibilityRank(member.Modifiers) < declarationVisibilityRank(overridden.Modifiers) && !semaGlobalMethodMayBePublicOverride(overridden, member) {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
 					Code:     "GLADESEMA016",
@@ -2113,6 +2119,10 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 		recorder.endPhase(&recorder.counters.Inheritance, inheritanceStarted)
 	}
 	return diagnostics
+}
+
+func semaGlobalMethodMayBePublicOverride(overridden, member typesys.MemberSymbol) bool {
+	return hasModifier(overridden.Modifiers, "global") && hasModifier(member.Modifiers, "public")
 }
 
 func semaTypeMissingSuperclass(model *semaTypeMemberView, typ typesys.TypeSymbol) bool {

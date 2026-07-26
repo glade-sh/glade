@@ -205,13 +205,13 @@ public class QueryProbe {
 	}
 }
 
-func TestQuerySemanticsValidatesCollectionBindOperatorAndElementType(t *testing.T) {
+func TestQuerySemanticsAcceptsCollectionBindInEqualityAndValidatesElementType(t *testing.T) {
 	result := analyzeQueryProbe(t, `
 public class QueryProbe {
   public void run() {
     List<Integer> numbers = new List<Integer>{1};
     List<String> names = new List<String>{'Acme'};
-    List<Account> wrongOperator = [SELECT Id FROM Account WHERE Name = :names];
+	List<Account> validEquality = [SELECT Id FROM Account WHERE Name = :names];
     List<Account> wrongElement = [SELECT Id FROM Account WHERE Name IN :numbers];
     List<Account> valid = [SELECT Id FROM Account WHERE Name IN :names];
   }
@@ -223,8 +223,8 @@ public class QueryProbe {
 			count++
 		}
 	}
-	if count != 2 {
-		t.Fatalf("collection bind diagnostics = %d, want 2: %#v", count, result.Diagnostics)
+	if count != 1 {
+		t.Fatalf("collection bind diagnostics = %d, want 1: %#v", count, result.Diagnostics)
 	}
 }
 

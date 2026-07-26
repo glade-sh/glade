@@ -62,8 +62,8 @@ public class ProbeDuplicateTypeName {
 func TestDuplicateDeclarationCrossFileWorkspaceAmbiguityRemainsWarning(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{
-		"One.cls":  "public class Hello {}",
-		"Two.cls":  "public class hello {}",
+		"One.cls": "public class Hello {}",
+		"Two.cls": "public class hello {}",
 	})
 	if result.HasErrors() {
 		t.Fatalf("cross-file workspace ambiguity should remain warning-only: %#v", result.Diagnostics)
@@ -96,6 +96,42 @@ public class Holder {
 	}
 	if !declarationDiagnosticMatching(result, "ancestor") && !declarationDiagnosticMatching(result, "already in use") {
 		t.Fatalf("expected ancestor/type-name diagnostic, got %#v", result.Diagnostics)
+	}
+}
+
+func TestOverrideMayUsePublicVisibilityForGlobalProjectMethod(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"GlobalBase.cls": `
+global virtual class GlobalBase {
+  global virtual String value() { return 'base'; }
+}
+`,
+		"PublicChild.cls": `
+public class PublicChild extends GlobalBase {
+  public override String value() { return 'child'; }
+}
+`,
+	})
+	if declarationDiagnosticMatching(result, "cannot reduce inherited visibility") {
+		t.Fatalf("public override of global method rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestOverrideRejectsProtectedVisibilityForGlobalProjectMethod(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"GlobalBase.cls": `
+global virtual class GlobalBase {
+  global virtual String value() { return 'base'; }
+}
+`,
+		"ProtectedChild.cls": `
+public class ProtectedChild extends GlobalBase {
+  protected override String value() { return 'child'; }
+}
+`,
+	})
+	if !declarationDiagnosticMatching(result, "cannot reduce inherited visibility") {
+		t.Fatalf("protected override of global method accepted: %#v", result.Diagnostics)
 	}
 }
 
@@ -319,8 +355,8 @@ public class Outer {
 func TestDeclarationContractIllegalClassModifiers(t *testing.T) {
 	t.Parallel()
 	for name, source := range map[string]string{
-		"StaticClass.cls":   `public static class StaticClass {}`,
-		"FinalClass.cls":    `public final class FinalClass {}`,
+		"StaticClass.cls":     `public static class StaticClass {}`,
+		"FinalClass.cls":      `public final class FinalClass {}`,
 		"AbstractVirtual.cls": `public abstract virtual class AbstractVirtual {}`,
 	} {
 		result := analyzeDeclarationProject(t, map[string]string{name: source})
@@ -481,7 +517,7 @@ func TestDeclarationContractUserGenericClass(t *testing.T) {
 func TestDeclarationContractConstructorChaining(t *testing.T) {
 	t.Parallel()
 	notFirst := analyzeDeclarationProject(t, map[string]string{
-		"Base.cls":  `public class Base { public Base(Integer value) {} }`,
+		"Base.cls": `public class Base { public Base(Integer value) {} }`,
 		"Child.cls": `
 public class Child extends Base {
   public Child() {
