@@ -276,6 +276,37 @@ public class QueryProbe {
 	}
 }
 
+func TestSemaBindingResolverKeepsLocalAfterNestedBlock(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    Id recordId = '001000000000001';
+    if (true) { System.debug(recordId); }
+    List<Account> accounts = [SELECT Id FROM Account WHERE Id = :recordId];
+  }
+}`
+	offset := strings.Index(source, ":recordId")
+	bindings := newSemaBindingResolver(source, newSemaCodeSpans(source)).bindingsAt(offset)
+	if got := bindings["recordid"]; got != "Id" {
+		t.Fatalf("recordId binding = %q, want Id; all = %#v", got, bindings)
+	}
+}
+
+func TestSemaBindingResolverFindsAnnotatedStaticField(t *testing.T) {
+	source := `
+public class QueryProbe {
+  @testVisible private static final String queryName = 'name';
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :queryName];
+  }
+}`
+	offset := strings.Index(source, ":queryName")
+	bindings := newSemaBindingResolver(source, newSemaCodeSpans(source)).bindingsAt(offset)
+	if got := bindings["queryname"]; got != "String" {
+		t.Fatalf("queryName binding = %q, want String; all = %#v", got, bindings)
+	}
+}
+
 func TestQuerySemanticsAcceptsInstanceFieldBind(t *testing.T) {
 	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {
