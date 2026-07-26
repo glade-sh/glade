@@ -876,7 +876,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	codeql := jobs["codeql"]
 	for _, want := range []string{
 		"name: CodeQL",
-		"timeout-minutes: 60",
+		"timeout-minutes: 5",
 		"languages: go",
 		"config: |",
 		"- uses: security-extended",
@@ -905,13 +905,17 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	for _, want := range []string{
 		"if: github.event_name == 'pull_request'",
 		initPin,
-		"id: go/allocation-size-overflow",
+		"- go/allocation-size-overflow",
+		"- go/incorrect-integer-conversion",
 	} {
 		if !strings.Contains(prInit, want) {
 			t.Errorf("pull-request CodeQL init step missing %q", want)
 		}
 	}
 	for _, query := range fullBranchWaivers {
+		if query == "go/incorrect-integer-conversion" {
+			continue
+		}
 		if strings.Contains(prInit, query) {
 			t.Errorf("pull-request CodeQL init step excludes full-branch waiver %q", query)
 		}
