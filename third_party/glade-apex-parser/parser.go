@@ -493,6 +493,27 @@ func splitAnnotationArguments(text string) []annotationArgumentText {
 				out = append(out, annotationArgumentText{text: text[start:i], start: start})
 				start = i + 1
 			}
+		case ' ', '\t', '\r', '\n':
+			if depth != 0 {
+				continue
+			}
+			next := i
+			for next < len(text) && strings.ContainsRune(" \t\r\n", rune(text[next])) {
+				next++
+			}
+			nameEnd := next
+			for nameEnd < len(text) && (text[nameEnd] == '_' || text[nameEnd] >= 'A' && text[nameEnd] <= 'Z' || text[nameEnd] >= 'a' && text[nameEnd] <= 'z' || nameEnd > next && text[nameEnd] >= '0' && text[nameEnd] <= '9') {
+				nameEnd++
+			}
+			equals := nameEnd
+			for equals < len(text) && strings.ContainsRune(" \t\r\n", rune(text[equals])) {
+				equals++
+			}
+			if next < nameEnd && equals < len(text) && text[equals] == '=' {
+				out = append(out, annotationArgumentText{text: text[start:i], start: start})
+				start = next
+				i = next - 1
+			}
 		}
 	}
 	return append(out, annotationArgumentText{text: text[start:], start: start})

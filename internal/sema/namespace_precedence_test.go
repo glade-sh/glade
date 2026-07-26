@@ -119,6 +119,27 @@ public class UsesLimits {
 	}
 }
 
+func TestAnalyzePlatformReceiverSpellingIsCaseInsensitive(t *testing.T) {
+	t.Parallel()
+	for _, test := range []struct {
+		name       string
+		method     string
+		wantErrors bool
+	}{
+		{name: "known method", method: "getLimitCallouts", wantErrors: false},
+		{name: "unknown method", method: "noSuchMethod", wantErrors: true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{
+				"Probe.cls": `public class Probe { public static Integer run() { return limits.` + test.method + `(); } }`,
+			})
+			if result.HasErrors() != test.wantErrors {
+				t.Fatalf("lowercase Limits.%s errors = %v diagnostics=%#v", test.method, result.HasErrors(), result.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestAnalyzeSchemaQualifierDisambiguatesShadowedSObject(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()

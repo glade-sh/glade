@@ -61,6 +61,78 @@ public class Probe {
 	}
 }
 
+func TestSecurityEnforcedQueryUsesEffectiveSourceAPIVersion(t *testing.T) {
+	source := `
+public class Probe {
+  public static void run() {
+    List<Account> rows = [SELECT Id FROM Account WITH SECURITY_ENFORCED];
+  }
+}
+`
+	for _, test := range []struct {
+		projectVersion string
+		sourceVersion  string
+		wantReject     bool
+	}{
+		{projectVersion: "66.0", sourceVersion: "67.0", wantReject: true},
+		{projectVersion: "67.0", sourceVersion: "66.0", wantReject: false},
+	} {
+		t.Run(test.projectVersion+"_source_"+test.sourceVersion, func(t *testing.T) {
+			root := t.TempDir()
+			path := filepath.Join(root, "Probe.cls")
+			writeSemaFile(t, path, source)
+			metadata := "<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>" + test.sourceVersion + "</apiVersion></ApexClass>"
+			if err := os.WriteFile(path+"-meta.xml", []byte(metadata), 0o600); err != nil {
+				t.Fatalf("write metadata: %v", err)
+			}
+			index := typesys.Build(project.Project{Root: root, SourceAPIVersion: test.projectVersion, ApexFiles: []string{path}}, queryDiagnosticSchema())
+			result := Analyze(index)
+			gotReject := hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CONTRACT")
+			if gotReject != test.wantReject {
+				t.Fatalf("project API %s source API %s query rejection = %v diagnostics=%#v", test.projectVersion, test.sourceVersion, gotReject, result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestReadOnlyRESTMethodRemoteActionVersionGate(t *testing.T) {
+	source := `@RestResource(urlMapping='/probe') global class Probe { @ReadOnly @HttpGet global static void run() {} }`
+	for _, test := range []struct {
+		apiVersion string
+		wantReject bool
+	}{
+		{apiVersion: "48.0", wantReject: true},
+		{apiVersion: "49.0", wantReject: false},
+	} {
+		t.Run(test.apiVersion, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, test.apiVersion)
+			gotReject := hasDiagnosticCode(result.Diagnostics, "GLADESEMA032")
+			if gotReject != test.wantReject {
+				t.Fatalf("API %s ReadOnly REST rejection = %v diagnostics=%#v", test.apiVersion, gotReject, result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestAuraEnabledGlobalScopeVersionGate(t *testing.T) {
+	source := `public class Probe { @AuraEnabled(cacheable=true scope='global') public static String run() { return 'ok'; } }`
+	for _, test := range []struct {
+		apiVersion string
+		wantReject bool
+	}{
+		{apiVersion: "54.0", wantReject: true},
+		{apiVersion: "55.0", wantReject: false},
+	} {
+		t.Run(test.apiVersion, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, test.apiVersion)
+			gotReject := hasDiagnosticCode(result.Diagnostics, "GLADESEMA032")
+			if gotReject != test.wantReject {
+				t.Fatalf("API %s AuraEnabled scope rejection = %v diagnostics=%#v", test.apiVersion, gotReject, result.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestPropertyGetterMutationRemainsAcceptedAtTestedAPIVersions(t *testing.T) {
 	source := `public class Probe { public Integer Value { get { Value = 1; return Value; } set; } }`
 	for _, apiVersion := range []string{"41.0", "42.0"} {

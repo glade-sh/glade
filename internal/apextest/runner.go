@@ -682,10 +682,31 @@ func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha25
 	write(index.Project.Namespace)
 	write(index.Project.SourceAPIVersion)
 	write(fmt.Sprintf("types:%d triggers:%d objects:%d cmdt:%d", len(index.Types), len(index.Triggers), len(index.Objects), len(index.CustomMetadataRecords)))
+	semanticMetadata, err := json.Marshal(struct {
+		Objects               []schema.Object               `json:"objects"`
+		CustomMetadataRecords []schema.CustomMetadataRecord `json:"customMetadataRecords,omitempty"`
+		Dependencies          []typesys.DependencyInfo      `json:"dependencies,omitempty"`
+		Diagnostics           []diagnostic.Diagnostic       `json:"diagnostics,omitempty"`
+	}{
+		Objects:               index.Objects,
+		CustomMetadataRecords: index.CustomMetadataRecords,
+		Dependencies:          index.Dependencies,
+		Diagnostics:           index.Diagnostics,
+	})
+	if err != nil {
+		write("semantic-metadata-error:" + err.Error())
+	} else {
+		_, _ = h.Write(semanticMetadata)
+		_, _ = h.Write([]byte{0})
+	}
 	for _, typ := range index.Types {
 		write(typ.File)
 		write(typ.Name)
 		write(typ.Namespace)
+		write(typ.SourceRoot)
+		write(typ.Version)
+		write(typ.EffectiveAPIVersion)
+		write(fmt.Sprintf("dependency:%t artifact:%t", typ.Dependency, typ.Artifact))
 		write(namespaceremap.Fingerprint(typ.SourceNamespaceRemaps))
 		writeFileBody(typ.File)
 	}
@@ -693,6 +714,10 @@ func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha25
 		write(trig.File)
 		write(trig.Name)
 		write(trig.ObjectName)
+		write(trig.SourceRoot)
+		write(trig.Version)
+		write(trig.EffectiveAPIVersion)
+		write(fmt.Sprintf("dependency:%t", trig.Dependency))
 		write(namespaceremap.Fingerprint(trig.SourceNamespaceRemaps))
 		writeFileBody(trig.File)
 	}

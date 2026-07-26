@@ -187,7 +187,11 @@ func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnos
 		if !ok {
 			continue
 		}
-		diagnostics = append(diagnostics, checker.checkFile(typ.File, source)...)
+		sourceChecker := checker
+		if version, err := strconv.ParseFloat(strings.TrimSpace(typ.EffectiveAPIVersion), 64); err == nil {
+			sourceChecker.apiVersion = version
+		}
+		diagnostics = append(diagnostics, sourceChecker.checkFile(typ.File, source)...)
 	}
 	return diagnostics
 }

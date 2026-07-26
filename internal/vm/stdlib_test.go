@@ -2700,12 +2700,12 @@ System.assertEquals('System.QueryException:bad query', caught);
 
 func TestExecCoreExceptionCauseStdlibMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
-Exception outer = new DmlException('outer');
-System.assertEquals(null, outer.getCause());
+Exception wrapperError = new DmlException('outer');
+System.assertEquals(null, wrapperError.getCause());
 Exception cause = new QueryException('root cause');
-Exception returned = outer.initCause(cause);
-System.assert(outer.equals(returned));
-Exception recovered = outer.getCause();
+Exception returned = wrapperError.initCause(cause);
+System.assert(wrapperError.equals(returned));
+Exception recovered = wrapperError.getCause();
 System.assertEquals('System.QueryException', recovered.getTypeName());
 System.assertEquals('root cause', recovered.getMessage());
 Exception constructedCause = new DmlException('wrapped', cause);
@@ -2714,14 +2714,14 @@ System.assertEquals('root cause', constructedCause.getCause().getMessage());
 
 Boolean repeatCaught = false;
 try {
-	outer.initCause(null);
+	wrapperError.initCause(null);
 } catch (Exception e) {
 	repeatCaught = true;
 	System.assertEquals('System.IllegalStateException', e.getTypeName());
 	System.assertEquals('Can''t overwrite cause', e.getMessage());
 }
 System.assert(repeatCaught, 'repeat initCause should throw');
-System.assertEquals('root cause', outer.getCause().getMessage());
+System.assertEquals('root cause', wrapperError.getCause().getMessage());
 
 Exception nullable = new DmlException('nullable');
 nullable.initCause(null);

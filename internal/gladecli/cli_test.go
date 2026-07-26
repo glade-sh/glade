@@ -3930,6 +3930,27 @@ func TestRunExec(t *testing.T) {
 	}
 }
 
+func TestRunExecRejectsReservedLocalIdentifiersWithAndWithoutProject(t *testing.T) {
+	projectRoot := t.TempDir()
+	writeTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"66.0"}`)
+
+	for _, test := range []struct {
+		name string
+		args []string
+	}{
+		{name: "projectless", args: []string{"exec", "String CuRrEnCy = 'USD';"}},
+		{name: "project", args: []string{"exec", "--project", projectRoot, "String CuRrEnCy = 'USD';"}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			code := Run(context.Background(), test.args, &stdout, &stderr)
+			if code == 0 || !strings.Contains(strings.ToLower(stderr.String()), "identifier name is reserved: currency") {
+				t.Fatalf("reserved anonymous local must fail: code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+			}
+		})
+	}
+}
+
 func TestRunExecSummaryCapsDebugLines(t *testing.T) {
 	var result vm.Result
 	for i := 0; i < 82; i++ {

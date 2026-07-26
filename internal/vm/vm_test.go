@@ -1634,6 +1634,12 @@ System.assertEquals('Original', insertedOpp.Name);
 	}
 }
 
+func TestCompileAnonymousRejectsReservedLocalIdentifier(t *testing.T) {
+	if _, err := CompileAnonymous("String CuRrEnCy = 'USD';"); err == nil || !strings.Contains(strings.ToLower(err.Error()), "identifier name is reserved: currency") {
+		t.Fatalf("CompileAnonymous reserved identifier error = %v", err)
+	}
+}
+
 func TestCompileAcceptsApexCastSyntax(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object raw = 'trail';

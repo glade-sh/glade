@@ -3513,17 +3513,17 @@ func semaPlatformReceiverSpellingMatches(receiver string, members typeMembers) b
 		return true
 	}
 	receiver = strings.TrimSpace(receiver)
-	if receiver == members.name {
+	if strings.EqualFold(receiver, members.name) {
 		return true
 	}
 	canonical := semaCanonicalPlatformAlias(members.name)
-	if receiver == canonical {
+	if strings.EqualFold(receiver, canonical) {
 		return true
 	}
-	if lastDot := strings.LastIndex(canonical, "."); lastDot >= 0 && receiver == canonical[lastDot+1:] {
+	if lastDot := strings.LastIndex(canonical, "."); lastDot >= 0 && strings.EqualFold(receiver, canonical[lastDot+1:]) {
 		return true
 	}
-	if strings.Contains(receiver, ".") && semaCanonicalPlatformAlias(receiver) == canonical {
+	if strings.Contains(receiver, ".") && strings.EqualFold(semaCanonicalPlatformAlias(receiver), canonical) {
 		return true
 	}
 	return false

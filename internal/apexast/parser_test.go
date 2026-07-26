@@ -92,6 +92,23 @@ public class Hello {
 	}
 }
 
+func TestParseMultipleAuraEnabledArguments(t *testing.T) {
+	file := NewParser().ParseSource("Probe.cls", `public class Probe {
+  @AuraEnabled(cacheable=true scope='global')
+  public static String run() { return 'ok'; }
+}`)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	annotations := file.Declarations[0].Members[0].Annotations
+	if len(annotations) != 1 || len(annotations[0].Arguments) != 2 {
+		t.Fatalf("annotations = %#v", annotations)
+	}
+	if annotations[0].Arguments[1].Name != "scope" || annotations[0].Arguments[1].Value != "'global'" {
+		t.Fatalf("scope argument = %#v", annotations[0].Arguments[1])
+	}
+}
+
 func TestParseInitializerBlocks(t *testing.T) {
 	src := `
 public class Hello {

@@ -104,7 +104,7 @@ func (s *semaSources) forOccurrence(file, namespace string, remaps []namespacere
 	if s.recorder != nil {
 		s.recorder.counters.SourceArenaFallbackReads++
 	}
-	data, err := os.ReadFile(file)
+	data, err := os.ReadFile(file) // #nosec G304 -- file is an indexed project source path carried by the analyzed type or trigger occurrence.
 	if err != nil {
 		s.fallback[key] = semaSourceResult{}
 		return semaSourceText{}, false

@@ -7404,9 +7404,9 @@ System.assertNotEquals(null, insertResult.getId());
 System.assertEquals(1, ((List<Account>)Database.query('SELECT Id FROM Account WHERE Name = ''Queued''')).size());
 
 List<Account> accounts = new List<Account>{new Account(Name = 'One'), new Account(Name = 'Two')};
-Database.UnitOfWork bulk = new Database.UnitOfWork();
-List<Database.SaveResult> results = bulk.insertRecords(accounts);
-bulk.commitWork();
+Database.UnitOfWork batchWork = new Database.UnitOfWork();
+List<Database.SaveResult> results = batchWork.insertRecords(accounts);
+batchWork.commitWork();
 System.assertEquals(2, results.size());
 System.assertEquals(true, results.get(0).isSuccess());
 System.assertEquals(true, results.get(1).isSuccess());
@@ -8362,8 +8362,8 @@ System.Assert.isInstanceOfType(value, qualified);
 
 func TestExecTypeForNameNamespacedNestedClassPreservesNamespace(t *testing.T) {
 	program, err := CompileAnonymous(`
-Type inner = Type.forName('PKG', 'SystemUtilTest.TestInnerClass');
-System.assertEquals('PKG.SystemUtilTest.TestInnerClass', inner.getName());
+Type nestedType = Type.forName('PKG', 'SystemUtilTest.TestInnerClass');
+System.assertEquals('PKG.SystemUtilTest.TestInnerClass', nestedType.getName());
 `)
 	if err != nil {
 		t.Fatal(err)

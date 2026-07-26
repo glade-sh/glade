@@ -619,8 +619,8 @@ func TestExecRegisteredStaticMethod(t *testing.T) {
 
 func TestExecStringValueOfNestedClassUsesLocalName(t *testing.T) {
 	program, err := CompileAnonymous(`
-Outer.Inner inner = new Outer.Inner();
-System.assertEquals('Inner:{}', String.valueOf(inner));
+Outer.Inner nestedValue = new Outer.Inner();
+System.assertEquals('Inner:{}', String.valueOf(nestedValue));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -10494,8 +10494,8 @@ func TestRuntimeNestedClassReadsOuterPrivateStaticField(t *testing.T) {
 		t.Fatal(err)
 	}
 	program, err := CompileAnonymous(`
-Outer.Inner inner = new Outer.Inner();
-System.assertEquals('spruce', inner.read());
+Outer.Inner nestedValue = new Outer.Inner();
+System.assertEquals('spruce', nestedValue.read());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -10533,8 +10533,8 @@ func TestRuntimeNestedClassCallsOuterPrivateStaticMethod(t *testing.T) {
 		t.Fatal(err)
 	}
 	program, err := CompileAnonymous(`
-Outer.Inner inner = new Outer.Inner();
-System.assertEquals('spruce', inner.run('spruce'));
+Outer.Inner nestedValue = new Outer.Inner();
+System.assertEquals('spruce', nestedValue.run('spruce'));
 `)
 	if err != nil {
 		t.Fatal(err)

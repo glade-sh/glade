@@ -237,6 +237,50 @@ func TestRuntimeKeyWithIncompleteSourceDigestsFallsBackEntirely(t *testing.T) {
 	}
 }
 
+func TestRuntimeKeyIncludesSemanticMetadata(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Probe.cls")
+	writeFile(t, path, "public class Probe {}\n")
+	triggerable := true
+	index := typesys.Index{
+		Project: typesys.ProjectInfo{Root: root, SourceAPIVersion: "66.0"},
+		Types: []typesys.TypeSymbol{{
+			Name:                "Probe",
+			File:                path,
+			EffectiveAPIVersion: "66.0",
+		}},
+		Objects: []gladeschema.Object{{
+			Name:        "Account",
+			Triggerable: &triggerable,
+			Fields:      []gladeschema.Field{{Name: "Amount", Type: "Currency", Filterable: &triggerable}},
+		}},
+	}
+	base := runtimeKeyWithSourceDigests(index, nil, os.ReadFile)
+
+	apiChanged := index
+	apiChanged.Types = append([]typesys.TypeSymbol(nil), index.Types...)
+	apiChanged.Types[0].EffectiveAPIVersion = "67.0"
+	if got := runtimeKeyWithSourceDigests(apiChanged, nil, os.ReadFile); got == base {
+		t.Fatal("effective source API version change did not change runtime key")
+	}
+
+	fieldChanged := index
+	fieldChanged.Objects = append([]gladeschema.Object(nil), index.Objects...)
+	fieldChanged.Objects[0].Fields = append([]gladeschema.Field(nil), index.Objects[0].Fields...)
+	fieldChanged.Objects[0].Fields[0].Type = "Text"
+	if got := runtimeKeyWithSourceDigests(fieldChanged, nil, os.ReadFile); got == base {
+		t.Fatal("schema field type change did not change runtime key")
+	}
+
+	notTriggerable := false
+	capabilityChanged := index
+	capabilityChanged.Objects = append([]gladeschema.Object(nil), index.Objects...)
+	capabilityChanged.Objects[0].Triggerable = &notTriggerable
+	if got := runtimeKeyWithSourceDigests(capabilityChanged, nil, os.ReadFile); got == base {
+		t.Fatal("object triggerability change did not change runtime key")
+	}
+}
+
 func TestRunWithSourceDigestsPersistsExactV5RuntimeKey(t *testing.T) {
 	if testRuntimeCacheABI != "apextest-runtime-v5" {
 		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v5", testRuntimeCacheABI)

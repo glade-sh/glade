@@ -1,6 +1,10 @@
 package sema
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/glade-sh/glade/internal/apexast"
+)
 
 func TestAnnotationCatalogRejectsUnknownAnnotationsAndProperties(t *testing.T) {
 	t.Parallel()
@@ -18,10 +22,24 @@ func TestAnnotationCatalogRejectsUnknownAnnotationsAndProperties(t *testing.T) {
 	}
 }
 
+func TestAnnotationCatalogChecksParametersAndAccessors(t *testing.T) {
+	for name, source := range map[string]string{
+		"parameter": `public class Probe { public void run(@DoesNotExist String value) {} }`,
+		"accessor":  `public class Probe { public String Value { @DoesNotExist get; set; } }`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
+			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA031") {
+				t.Fatalf("unknown %s annotation was accepted: %#v", name, result.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestAnnotationCatalogAllowsKnownProperties(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{
-		"Probe.cls": `@IsTest(SeeAllData=false) private class Probe { @AuraEnabled(cacheable=true) public static String run() { return 'ok'; } }`,
+		"Probe.cls": `@IsTest(SeeAllData=false) private class Probe { @AuraEnabled(cacheable=true scope='global') public static String run() { return 'ok'; } }`,
 	})
 	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA031") {
 		t.Fatalf("unexpected catalog diagnostic: %#v", result.Diagnostics)
@@ -82,5 +100,45 @@ func TestAnnotationContractsAllowValueReturningTestMethod(t *testing.T) {
 	})
 	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA032") {
 		t.Fatalf("unexpected annotation contract diagnostic: %#v", result.Diagnostics)
+	}
+}
+
+func TestFutureParametersRequirePrimitiveValues(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		typ     string
+		allowed bool
+	}{
+		{name: "primitive", typ: "Id", allowed: true},
+		{name: "primitive array", typ: "String[]", allowed: true},
+		{name: "primitive list", typ: "List<Id>", allowed: true},
+		{name: "primitive map", typ: "Map<Id, String>", allowed: true},
+		{name: "sobject list", typ: "List<Account>", allowed: false},
+		{name: "sobject map value", typ: "Map<Id, Account>", allowed: false},
+		{name: "object list", typ: "List<Object>", allowed: false},
+		{name: "nested collection", typ: "List<List<Id>>", allowed: false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got := futureParametersAllowed([]apexast.Parameter{{Type: test.typ}})
+			if got != test.allowed {
+				t.Fatalf("future parameter %s allowed = %v, want %v", test.typ, got, test.allowed)
+			}
+		})
+	}
+}
+
+func TestAnnotationContractsRejectInvalidTargetsAndValues(t *testing.T) {
+	for name, source := range map[string]string{
+		"AuraEnabled class target":        `@AuraEnabled public class Probe {}`,
+		"AuraEnabled positional value":    `public class Probe { @AuraEnabled('x') public static void run() {} }`,
+		"AuraEnabled nonboolean property": `public class Probe { @AuraEnabled(cacheable='yes') public static void run() {} }`,
+		"ReadOnly REST method needs verb": `@RestResource(urlMapping='/probe') global class Probe { @ReadOnly global static void run() {} }`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
+			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA032") && !hasDiagnosticCode(result.Diagnostics, "GLADESEMA033") {
+				t.Fatalf("invalid annotation contract was accepted: %#v", result.Diagnostics)
+			}
+		})
 	}
 }

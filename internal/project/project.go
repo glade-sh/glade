@@ -17,7 +17,7 @@ import (
 // EffectiveSourceAPIVersion returns an Apex source file's companion metadata
 // apiVersion when present, otherwise the project's configured API version.
 func EffectiveSourceAPIVersion(path, fallback string) string {
-	data, err := os.ReadFile(path + "-meta.xml")
+	data, err := os.ReadFile(path + "-meta.xml") // #nosec G304 -- path is an indexed Apex source path; this reads its fixed companion metadata file.
 	if err != nil {
 		return fallback
 	}

@@ -9,7 +9,7 @@ type AnnotationSpec struct {
 }
 
 var annotations = []AnnotationSpec{
-	{Name: "AuraEnabled", AllowedArguments: set("cacheable")},
+	{Name: "AuraEnabled", AllowedArguments: set("cacheable", "scope")},
 	{Name: "future", AllowedArguments: set("callout")},
 	{Name: "InvocableMethod", AllowedArguments: set("label", "description", "category", "callout")},
 	{Name: "InvocableVariable", AllowedArguments: set("label", "description", "required")},

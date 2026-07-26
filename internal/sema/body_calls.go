@@ -99,7 +99,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 				if strings.EqualFold(method, "addError") && semaReceiverExprResolvesFieldPath(receiverExpr, scope, model) {
 					continue
 				}
-				if semaKnownPlatformTypeReceiver(receiverExpr) && !semaProjectTypeShadowsPlatform(model, receiverExpr) {
+				if scope[normalizeName(receiverExpr)] == "" && semaKnownPlatformTypeReceiver(receiverExpr) && !semaProjectTypeShadowsPlatform(model, receiverExpr) {
 					if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, receiverExpr, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model, "class"); handled {
 						diagnostics = append(diagnostics, platformDiagnostics...)
 						continue
@@ -226,6 +226,14 @@ func semaClassMembersForReceiver(model *semaTypeMemberView, current typesys.Type
 		}
 	}
 	return typeMembers{}, "", false
+}
+
+func semaUnshadowedPlatformTypeReceiver(model *semaTypeMemberView, scope map[string]string, receiver string) bool {
+	if scope[normalizeName(receiver)] != "" || semaProjectTypeShadowsPlatform(model, receiver) {
+		return false
+	}
+	members, ok := model.lookup(normalizeName(receiver))
+	return ok && members.dependency && semaKnownPlatformTypeReceiver(members.name) && semaPlatformReceiverSpellingMatches(receiver, members)
 }
 
 func semaCurrentClassMembers(model *semaTypeMemberView, current typesys.TypeSymbol) (typeMembers, string, bool) {
@@ -524,6 +532,12 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 			if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, typ.Name, callee, args, start, end, source, scope, model, "implicit"); handled {
 				return platformDiagnostics
 			}
+		}
+		if receiverExpr, method, ok := splitSemaMethodPath(callee); ok && semaUnshadowedPlatformTypeReceiver(model, scope, receiverExpr) {
+			if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, receiverExpr, method, args, start, end, source, scope, model, receiverMode); handled {
+				return platformDiagnostics
+			}
+			return []diagnostic.Diagnostic{unknownCallDiagnostic(typ, member, callee, start, end, source)}
 		}
 		if receiverExpr, method, ok := strings.Cut(callee, "."); ok && receiverExpr != "" && method != "" {
 			if lastDot := strings.LastIndex(callee, "."); lastDot > 0 && lastDot < len(callee)-1 {

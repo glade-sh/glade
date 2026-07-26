@@ -6,6 +6,7 @@ import (
 	"strings"
 	"unicode"
 
+	apexparser "github.com/glade-sh/apex-parser"
 	"github.com/glade-sh/glade/internal/ir"
 )
 
@@ -380,6 +381,9 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 			if err != nil {
 				return ir.Instruction{}, err
 			}
+			if err := validateLocalIdentifier(catchName); err != nil {
+				return ir.Instruction{}, err
+			}
 			if _, err := p.expect(tokenSymbol, ")"); err != nil {
 				return ir.Instruction{}, err
 			}
@@ -527,6 +531,9 @@ func (p *parser) parseFor(pos int) (ir.Instruction, error) {
 		if err != nil {
 			return ir.Instruction{}, err
 		}
+		if err := validateLocalIdentifier(name); err != nil {
+			return ir.Instruction{}, err
+		}
 		if p.match(tokenSymbol, ":") {
 			iterable, err := p.parseExpression()
 			if err != nil {
@@ -628,6 +635,9 @@ func (p *parser) parseForDeclarationParts() ([]ir.Instruction, error) {
 		if err != nil {
 			return nil, err
 		}
+		if err := validateLocalIdentifier(name); err != nil {
+			return nil, err
+		}
 		inst := ir.Instruction{Op: ir.OpDeclare, Type: typeName, Name: name.text, Pos: start.pos}
 		if p.match(tokenSymbol, "=") {
 			expr, err := p.parseExpression()
@@ -689,6 +699,9 @@ func (p *parser) parseForDeclarationPart(pos int) (ir.Instruction, error) {
 	if err != nil {
 		return ir.Instruction{}, err
 	}
+	if err := validateLocalIdentifier(name); err != nil {
+		return ir.Instruction{}, err
+	}
 	inst := ir.Instruction{Op: ir.OpDeclare, Type: typeName, Name: name.text, Pos: pos}
 	if p.match(tokenSymbol, "=") {
 		expr, err := p.parseExpression()
@@ -698,6 +711,13 @@ func (p *parser) parseForDeclarationPart(pos int) (ir.Instruction, error) {
 		inst.Expr = expr
 	}
 	return inst, nil
+}
+
+func validateLocalIdentifier(name token) error {
+	if apexparser.IsReservedSourceIdentifier(name.text, false) {
+		return fmt.Errorf("identifier name is reserved: %s at byte %d", name.text, name.pos)
+	}
+	return nil
 }
 
 func (p *parser) parseAssignmentLike(requireSemicolon bool) (ir.Instruction, bool, error) {

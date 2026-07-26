@@ -2,6 +2,7 @@ package sema
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexast"
@@ -19,6 +20,12 @@ func checkAnnotationCatalog(index typesys.Index) []diagnostic.Diagnostic {
 		diagnostics = append(diagnostics, annotationCatalogDiagnostics(typ.File, typ.Range, typ.Annotations)...)
 		for _, member := range typ.Members {
 			diagnostics = append(diagnostics, annotationCatalogDiagnostics(typ.File, member.Range, member.Annotations)...)
+			for _, parameter := range member.Parameters {
+				diagnostics = append(diagnostics, annotationCatalogDiagnostics(typ.File, parameter.Range, parameter.Annotations)...)
+			}
+			for _, accessor := range member.Accessors {
+				diagnostics = append(diagnostics, annotationCatalogDiagnostics(typ.File, accessor.Range, accessor.Annotations)...)
+			}
 		}
 	}
 	return diagnostics
@@ -120,6 +127,8 @@ func checkTypeAnnotationContracts(typ typesys.TypeSymbol) []diagnostic.Diagnosti
 			if typ.Kind != apexast.DeclarationClass {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "RestResource is only valid on classes"))
 			}
+		case strings.EqualFold(annotation.Name, "AuraEnabled"):
+			diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "AuraEnabled is only valid on methods, fields, and properties"))
 		}
 	}
 	return diagnostics
@@ -141,6 +150,11 @@ func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.Membe
 			if member.Kind != apexast.DeclarationMethod || !hasModifier(member.Modifiers, "static") || !strings.EqualFold(member.Type, "void") || !annotationBooleanArguments(annotation, "callout") || !futureParametersAllowed(member.Parameters) {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "future methods must be static void methods with supported parameter types"))
 			}
+		case strings.EqualFold(annotation.Name, "AuraEnabled"):
+			validTarget := member.Kind == apexast.DeclarationMethod || member.Kind == apexast.DeclarationField || member.Kind == apexast.DeclarationProperty
+			if !validTarget || !auraEnabledArgumentsAllowed(typ, annotation) {
+				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "AuraEnabled is only valid on methods, fields, and properties with supported property values"))
+			}
 		case strings.EqualFold(annotation.Name, "InvocableMethod"):
 			if member.Kind != apexast.DeclarationMethod || !hasEitherModifier(member.Modifiers, "public", "global") || !hasModifier(member.Modifiers, "static") || len(member.Parameters) != 1 || !isListType(member.Parameters[0].Type) || (!strings.EqualFold(member.Type, "void") && !isListType(member.Type)) {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "InvocableMethod must be a public or global static method with one List parameter and a void or List return type"))
@@ -160,7 +174,14 @@ func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.Membe
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "RemoteAction must annotate a public or global static method"))
 			}
 		case strings.EqualFold(annotation.Name, "ReadOnly"):
-			if member.Kind != apexast.DeclarationMethod || !hasEitherModifier(member.Modifiers, "public", "global") || (hasModifier(member.Modifiers, "static") && !hasAnnotation(typ.Annotations, "RestResource")) {
+			valid := member.Kind == apexast.DeclarationMethod && hasEitherModifier(member.Modifiers, "public", "global")
+			if valid && hasModifier(member.Modifiers, "static") {
+				valid = hasAnnotation(typ.Annotations, "RestResource") && memberHasRESTVerb(member)
+				if version, err := strconv.ParseFloat(strings.TrimSpace(typ.EffectiveAPIVersion), 64); err == nil && version < 49 {
+					valid = valid && hasAnnotation(member.Annotations, "RemoteAction")
+				}
+			}
+			if !valid {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "ReadOnly is only valid on public or global instance methods, or REST methods"))
 			}
 		case strings.EqualFold(annotation.Name, "JsonAccess"):
@@ -177,6 +198,15 @@ func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.Membe
 func hasAnnotation(annotations []apexast.Annotation, name string) bool {
 	for _, annotation := range annotations {
 		if strings.EqualFold(annotation.Name, name) {
+			return true
+		}
+	}
+	return false
+}
+
+func memberHasRESTVerb(member typesys.MemberSymbol) bool {
+	for _, annotation := range member.Annotations {
+		if restVerb(annotation.Name) != "" {
 			return true
 		}
 	}
@@ -203,19 +233,77 @@ func annotationBooleanArguments(annotation apexast.Annotation, names ...string) 
 	return true
 }
 
-func futureParametersAllowed(parameters []apexast.Parameter) bool {
-	for _, parameter := range parameters {
-		name := strings.ToLower(strings.ReplaceAll(parameter.Type, " ", ""))
-		if strings.HasPrefix(name, "list<") || strings.HasPrefix(name, "set<") || strings.HasPrefix(name, "map<") {
-			continue
-		}
-		switch name {
-		case "boolean", "date", "datetime", "decimal", "double", "id", "integer", "long", "string", "time":
+func auraEnabledArgumentsAllowed(typ typesys.TypeSymbol, annotation apexast.Annotation) bool {
+	for _, argument := range annotation.Arguments {
+		switch strings.ToLower(argument.Name) {
+		case "cacheable":
+			if !strings.EqualFold(argument.Value, "true") && !strings.EqualFold(argument.Value, "false") {
+				return false
+			}
+		case "scope":
+			if !strings.EqualFold(strings.Trim(argument.Value, "'\""), "global") {
+				return false
+			}
+			if version, err := strconv.ParseFloat(strings.TrimSpace(typ.EffectiveAPIVersion), 64); err == nil && version < 55 {
+				return false
+			}
 		default:
 			return false
 		}
 	}
 	return true
+}
+
+func futureParametersAllowed(parameters []apexast.Parameter) bool {
+	for _, parameter := range parameters {
+		name := strings.ToLower(strings.ReplaceAll(parameter.Type, " ", ""))
+		if strings.HasSuffix(name, "[]") {
+			name = strings.TrimSuffix(name, "[]")
+			if !futurePrimitiveType(name) {
+				return false
+			}
+			continue
+		}
+		if strings.HasPrefix(name, "list<") || strings.HasPrefix(name, "set<") {
+			arguments, ok := genericTypeArguments(name)
+			if !ok || len(arguments) != 1 || !futurePrimitiveType(arguments[0]) {
+				return false
+			}
+			continue
+		}
+		if strings.HasPrefix(name, "map<") {
+			arguments, ok := genericTypeArguments(name)
+			if !ok || len(arguments) != 2 || !futurePrimitiveType(arguments[0]) || !futurePrimitiveType(arguments[1]) {
+				return false
+			}
+			continue
+		}
+		if !futurePrimitiveType(name) {
+			return false
+		}
+	}
+	return true
+}
+
+func futurePrimitiveType(name string) bool {
+	switch name {
+	case "blob", "boolean", "date", "datetime", "decimal", "double", "id", "integer", "long", "string", "time":
+		return true
+	default:
+		return false
+	}
+}
+
+func genericTypeArguments(name string) ([]string, bool) {
+	open := strings.IndexByte(name, '<')
+	if open < 1 || !strings.HasSuffix(name, ">") {
+		return nil, false
+	}
+	body := name[open+1 : len(name)-1]
+	if body == "" || strings.ContainsAny(body, "<>") {
+		return nil, false
+	}
+	return strings.Split(body, ","), true
 }
 
 func isListType(name string) bool {

@@ -1270,7 +1270,8 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 		explicitReceiver = true
 		method = callee
 		if receiverExpr, methodName, ok := splitSemaMethodPath(expr.Callee); ok {
-			if semaKnownPlatformTypeReceiver(receiverExpr) && !semaProjectTypeShadowsPlatform(model, receiverExpr) {
+			_, receiverScoped := scope.lookup(receiverExpr)
+			if !receiverScoped && semaKnownPlatformTypeReceiver(receiverExpr) && !semaProjectTypeShadowsPlatform(model, receiverExpr) {
 				if _, ok := semaPlatformMethodSignatureForMode(model, receiverExpr, methodName, "class"); ok {
 					receiverType = receiverExpr
 					method = methodName

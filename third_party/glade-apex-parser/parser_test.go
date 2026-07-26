@@ -663,6 +663,15 @@ func TestParseStructuredAnnotationArgumentsPreserveStringsAndRanges(t *testing.T
 	}
 }
 
+func TestParseStructuredAnnotationArgumentsSupportWhitespaceSeparation(t *testing.T) {
+	source := `public class Probe { @AuraEnabled(cacheable=true scope='global') public static String run() { return 'ok'; } }`
+	file := NewParser().ParseSource("Probe.cls", source)
+	annotation := file.Declarations[0].Members[0].Annotations[0]
+	if len(annotation.Arguments) != 2 || annotation.Arguments[0].Name != "cacheable" || annotation.Arguments[0].Value != "true" || annotation.Arguments[1].Name != "scope" || annotation.Arguments[1].Value != "'global'" {
+		t.Fatalf("arguments = %#v", annotation.Arguments)
+	}
+}
+
 func TestLineMapAndFileURI(t *testing.T) {
 	lineMap := NewLineMap("one\ntwo\n")
 	pos := lineMap.Position(5)
