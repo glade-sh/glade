@@ -16,7 +16,7 @@ var (
 	typeContractRawCollectionConstructor = regexp.MustCompile(`\bnew\s+(List|Map|Set)\s*\(\s*\)`)
 	typeContractScientificLiteral        = regexp.MustCompile(`\b\d+(?:\.\d+)?[eE][+-]?\d+\b`)
 	typeContractIntegerLiteral           = regexp.MustCompile(`\b\d{10,}\b`)
-	typeContractSafeAssignment           = regexp.MustCompile(`\?\.\s*[A-Za-z_][A-Za-z0-9_]*\s*=`)
+	typeContractSafeAssignment           = regexp.MustCompile(`\?\.\s*[A-Za-z_][A-Za-z0-9_]*\s*=(?:[^=]|$)`)
 )
 
 func (a *Analyzer) checkSourceTypeContracts(index typesys.Index) []diagnostic.Diagnostic {

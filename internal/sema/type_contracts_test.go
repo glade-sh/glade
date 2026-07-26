@@ -93,3 +93,16 @@ func TestTypeContractRejectsPropertyCapabilityAndSafeNavigationMisuse(t *testing
 		})
 	}
 }
+
+func TestTypeContractAcceptsSafeNavigationEqualityRead(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": `
+public class Probe {
+  public Boolean label;
+  public void run(Probe value) {
+    if (value?.label == true) {}
+  }
+}`})
+	if result.HasErrors() {
+		t.Fatalf("safe-navigation equality read was rejected: %#v", result.Diagnostics)
+	}
+}
