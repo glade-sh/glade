@@ -221,6 +221,28 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsRequiresNumericSOSLLimitBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    String limitValue = '1';
+    List<List<SObject>> rows = [FIND 'acme' RETURNING Account(Id) LIMIT :limitValue];
+  }
+}
+
+`)
+	if !hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("expected nonnumeric SOSL LIMIT bind diagnostic: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsRequiresNumericSOSLLimitBindInOneLineMethod(t *testing.T) {
+	result := analyzeQueryProbe(t, "public class QueryProbe { public void run() { String limitValue = '1'; List<List<SObject>> rows = [FIND 'acme' RETURNING Account(Id) LIMIT :limitValue]; } }", schema.Schema{})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("expected nonnumeric one-line SOSL LIMIT bind diagnostic: %#v", result.Diagnostics)
+	}
+}
+
 func TestQuerySemanticsAcceptsExpressionWindowBind(t *testing.T) {
 	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {

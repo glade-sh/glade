@@ -174,9 +174,6 @@ func (a *Analyzer) checkSchemaReferences(index typesys.Index) []diagnostic.Diagn
 
 func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnostic {
 	checker := newQuerySemanticsChecker(index, a.queryDeclaredObjects...)
-	if len(checker.objects) == 0 {
-		return nil
-	}
 	var diagnostics []diagnostic.Diagnostic
 	sources := a.sources
 	if sources == nil {
@@ -275,6 +272,7 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 		diagnostics = append(diagnostics, c.checkSOSLQuery(query, ctx)...)
 		bindings := bindingResolver.bindingsAt(literal.queryOffset)
 		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings, c.knownTypes)...)
+		diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, query.LimitBind, "LIMIT")...)
 	}
 	return diagnostics
 }
@@ -543,23 +541,21 @@ func queryWindowBindDiagnostics(query soql.Query, ctx queryTextContext, bindings
 		name   string
 		clause string
 	}{{query.LimitBind, "LIMIT"}, {query.OffsetBind, "OFFSET"}} {
-		if bind.name == "" {
-			continue
-		}
-		if !semaBindName(bind.name) {
-			// Inline SOQL permits expressions in window clauses. Their return
-			// types require body-IR resolution rather than the simple local
-			// declaration map used here.
-			continue
-		}
-		typeName := strings.ToLower(strings.TrimSpace(bindings[strings.ToLower(bind.name)]))
-		if typeName == "integer" || typeName == "int" || typeName == "long" || typeName == "decimal" || typeName == "double" {
-			continue
-		}
-		offset := findQueryIdentifier(ctx.queryText, ":"+bind.name, 0)
-		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("%s bind variable %q must have a numeric type", bind.clause, bind.name), ":"+bind.name, offset))
+		diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, bind.name, bind.clause)...)
 	}
 	return diagnostics
+}
+
+func queryNumericBindDiagnostics(ctx queryTextContext, bindings map[string]string, name, clause string) []diagnostic.Diagnostic {
+	if name == "" || !semaBindName(name) {
+		return nil
+	}
+	typeName := strings.ToLower(strings.TrimSpace(bindings[strings.ToLower(name)]))
+	if typeName == "integer" || typeName == "int" || typeName == "long" || typeName == "decimal" || typeName == "double" {
+		return nil
+	}
+	offset := findQueryIdentifier(ctx.queryText, ":"+name, 0)
+	return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("%s bind variable %q must have a numeric type", clause, name), ":"+name, offset)}
 }
 
 func (c querySemanticsChecker) queryFieldBindDiagnostics(query soql.Query, ctx queryTextContext, bindings map[string]string) []diagnostic.Diagnostic {

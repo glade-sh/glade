@@ -8,6 +8,7 @@ import (
 
 type Query struct {
 	Returning []ReturningObject
+	LimitBind string
 }
 
 type ReturningObject struct {
@@ -49,6 +50,15 @@ func (p *parser) parseReturning() (Query, error) {
 	for {
 		p.skipCommas()
 		if p.peek().kind == tokenEOF {
+			break
+		}
+		if p.peek().kind == tokenIdent && equalFold(p.peek().text, "LIMIT") {
+			p.next()
+			bind := p.next()
+			if bind.kind != tokenIdent {
+				return Query{}, fmt.Errorf("sosl: expected LIMIT bind")
+			}
+			query.LimitBind = bind.text
 			break
 		}
 		object := p.next()

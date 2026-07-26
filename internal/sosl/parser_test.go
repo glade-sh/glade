@@ -45,6 +45,11 @@ func TestParseSOSLReturningObjectsAndFields(t *testing.T) {
 				Fields: []string{"LastName", "Account.Name"},
 			}}},
 		},
+		{
+			name:  "bound limit",
+			input: "FIND 'Acme' RETURNING Account(Id) LIMIT :limitValue",
+			want:  sosl.Query{Returning: []sosl.ReturningObject{{Object: "Account", Fields: []string{"Id"}}}, LimitBind: "limitValue"},
+		},
 	}
 
 	for _, tt := range tests {
