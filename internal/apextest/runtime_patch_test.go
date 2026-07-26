@@ -1496,14 +1496,20 @@ func runtimeTransitionCanonicalValue(value any) any {
 		}
 		return value
 	case []any:
-		for i := range value {
-			value[i] = runtimeTransitionCanonicalValue(value[i])
+		type canonicalItem struct {
+			value any
+			json  string
 		}
-		sort.Slice(value, func(i, j int) bool {
-			left, _ := json.Marshal(value[i])
-			right, _ := json.Marshal(value[j])
-			return string(left) < string(right)
-		})
+		items := make([]canonicalItem, len(value))
+		for i := range value {
+			items[i].value = runtimeTransitionCanonicalValue(value[i])
+			encoded, _ := json.Marshal(items[i].value)
+			items[i].json = string(encoded)
+		}
+		sort.Slice(items, func(i, j int) bool { return items[i].json < items[j].json })
+		for i := range items {
+			value[i] = items[i].value
+		}
 		return value
 	default:
 		return value
