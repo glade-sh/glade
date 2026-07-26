@@ -997,6 +997,10 @@ Follow-up (2026-07-25): `LIMIT` and `OFFSET` now retain complex inline bind
 expressions such as `:Limits.getLimitQueries()` for body-IR type resolution,
 rather than rejecting valid query syntax as a malformed numeric bind.
 
+Follow-up (2026-07-25): the SOQL lexer now retains inline collection
+constructor expressions such as `:new Set<Id>{firstId, secondId}` as one bind
+operand. Parser and semantic bind regressions cover that form.
+
 ---
 
 ## Completion criteria
