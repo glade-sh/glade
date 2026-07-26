@@ -272,6 +272,7 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 		diagnostics = append(diagnostics, c.checkSOSLQuery(query, ctx)...)
 		bindings := bindingResolver.bindingsAt(literal.queryOffset)
 		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings, c.knownTypes)...)
+		diagnostics = append(diagnostics, soslAssignmentDiagnostics(source, literal, ctx)...)
 		diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, query.LimitBind, "LIMIT")...)
 		diagnostics = append(diagnostics, queryStringBindDiagnostics(ctx, bindings, query.DivisionBind, "WITH DIVISION")...)
 		for _, returning := range query.Returning {
@@ -306,7 +307,22 @@ var (
 	semaInlineBindPattern  = regexp.MustCompile(`:([A-Za-z_][A-Za-z0-9_]*)`)
 	semaBindingDeclaration = regexp.MustCompile(`(?m)(?:^|[;({,])\s*(?:@[A-Za-z_][A-Za-z0-9_]*(?:\([^)]*\))?\s*)*(?:(?:public|private|protected|global|static|final|transient|virtual|abstract|override|webservice)\s+)*([A-Za-z_][A-Za-z0-9_]*(?:\s*\.\s*[A-Za-z_][A-Za-z0-9_]*)*(?:\s*<[^;=(){}]+?>)?(?:\[\])?)\s+([A-Za-z_][A-Za-z0-9_]*)\b`)
 	semaTypeHeader         = regexp.MustCompile(`(?i)\b(?:class|interface|enum|trigger)\s+[A-Za-z_][A-Za-z0-9_]*`)
+	semaSOSLAssignmentType = regexp.MustCompile(`(?s)([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s+[A-Za-z_][A-Za-z0-9_]*\s*=\s*$`)
 )
+
+func soslAssignmentDiagnostics(source string, literal semaQueryLiteral, ctx queryTextContext) []diagnostic.Diagnostic {
+	if literal.queryOffset <= 0 || literal.queryOffset > len(source) {
+		return nil
+	}
+	prefix := strings.TrimSpace(source[:literal.queryOffset])
+	prefix = strings.TrimSpace(strings.TrimSuffix(prefix, "["))
+	statementStart := strings.LastIndexAny(prefix, ";{}\n") + 1
+	match := semaSOSLAssignmentType.FindStringSubmatch(prefix[statementStart:])
+	if len(match) != 2 || sameSemaSignatureType(match[1], "List<List<SObject>>") {
+		return nil
+	}
+	return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA018", fmt.Sprintf("SOSL query result List<List<SObject>> is not assignable to %s", strings.TrimSpace(match[1])), "FIND", findQueryIdentifier(ctx.queryText, "FIND", 0))}
+}
 
 type semaBindingResolver struct {
 	source    string
@@ -2496,6 +2512,12 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 		if ok {
 			value := trimSemaArg(body, match[1], semaStatementEnd(body, match[1]))
 			valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flat())
+			queryText := strings.TrimSpace(value.text)
+			if strings.HasPrefix(queryText, "[") && strings.HasSuffix(queryText, "]") {
+				if queryType := semaSOQLLiteralType(queryText); queryType != "" {
+					valueType = queryType
+				}
+			}
 			if valueType == "" || valueType == "null" || semaAssignableToType(targetType, valueType, model) {
 				continue
 			}

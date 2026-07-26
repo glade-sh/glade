@@ -12,6 +12,15 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
+func TestQuerySemanticsRejectsWrongSOSLAssignmentType(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run() { List<Account> values = [FIND 'probe' RETURNING Account(Id)]; } }`,
+	})
+	if !result.HasErrors() {
+		t.Fatalf("SOSL result assigned to List<Account> was accepted: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeSOQLQueryDiagnosticsUseSchemaResolution(t *testing.T) {
 	t.Parallel()
 	source := `
