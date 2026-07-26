@@ -989,6 +989,10 @@ confirmed with a source regression and fixed; the matcher now distinguishes
 `?.field == value` from a safe-navigation assignment. Remaining NU families
 still require representative oracle classification.
 
+Follow-up (2026-07-25): query compatibility now accepts inline literal binds
+(`:true`, `:false`, and `:null`) and normalizes whitespace after a bind colon
+(`: name`) before SOQL parsing. Focused SOQL and sema bind tests pass.
+
 ---
 
 ## Completion criteria
