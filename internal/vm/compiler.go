@@ -717,6 +717,9 @@ func validateLocalIdentifier(name token) error {
 	if apexparser.IsReservedSourceIdentifier(name.text, false) {
 		return fmt.Errorf("identifier name is reserved: %s at byte %d", name.text, name.pos)
 	}
+	if err := apexparser.ValidateSourceIdentifier(name.text); err != nil {
+		return fmt.Errorf("%v at byte %d", err, name.pos)
+	}
 	return nil
 }
 
@@ -919,8 +922,11 @@ func (p *parser) parseSwitch(pos int) (ir.Instruction, error) {
 				return ir.Instruction{}, err
 			}
 			if caseExpr.Kind == ir.ExprVariable && p.peek(tokenIdent, "") {
-				binding := p.advance().text
-				caseExpr.Name = "__typecase:" + caseExpr.Name + ":" + binding
+				binding := p.advance()
+				if err := validateLocalIdentifier(binding); err != nil {
+					return ir.Instruction{}, err
+				}
+				caseExpr.Name = "__typecase:" + caseExpr.Name + ":" + binding.text
 			}
 			exprs = append(exprs, caseExpr)
 			if !p.match(tokenSymbol, ",") {

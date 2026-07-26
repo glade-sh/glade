@@ -5,14 +5,18 @@ import "testing"
 func TestTypeContractRejectsInvalidSourceTypesAndLiterals(t *testing.T) {
 	t.Parallel()
 	for name, source := range map[string]string{
-		"currency source type":  `public class Probe { public Currency value; }`,
-		"raw list construction": `public class Probe { public void run() { System.debug(new List()); } }`,
-		"raw map construction":  `public class Probe { public void run() { System.debug(new Map()); } }`,
-		"list generic arity":    `public class Probe { public List<String, Integer> values; }`,
-		"map generic arity":     `public class Probe { public Map<String> values; }`,
-		"collection depth":      `public class Probe { public List<List<List<List<List<List<List<List<List<String>>>>>>>>> values; }`,
-		"integer overflow":      `public class Probe { public void run() { System.debug(2147483648); } }`,
-		"scientific notation":   `public class Probe { public void run() { System.debug(1e3); } }`,
+		"currency source type":      `public class Probe { public Currency value; }`,
+		"raw list construction":     `public class Probe { public void run() { System.debug(new List()); } }`,
+		"raw map construction":      `public class Probe { public void run() { System.debug(new Map()); } }`,
+		"list generic arity":        `public class Probe { public List<String, Integer> values; }`,
+		"map generic arity":         `public class Probe { public Map<String> values; }`,
+		"collection depth":          `public class Probe { public List<List<List<List<List<List<List<List<List<String>>>>>>>>> values; }`,
+		"integer overflow":          `public class Probe { public void run() { System.debug(2147483648); } }`,
+		"minimum integer magnitude": `public class Probe { public Integer value() { return -2147483648; } }`,
+		"cast minimum magnitude":    `public class Probe { public Integer value() { return (Integer) -2147483648; } }`,
+		"binary integer overflow":   `public class Probe { public void run() { System.debug(0 - 2147483648); } }`,
+		"postfix binary overflow":   `public class Probe { public void run() { Integer value = 0; System.debug(value++ - 2147483648); } }`,
+		"scientific notation":       `public class Probe { public void run() { System.debug(1e3); } }`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
@@ -35,6 +39,37 @@ public class Probe {
 `})
 	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA019") {
 		t.Fatalf("numeric text outside code was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestTypeContractAllowsLargeDecimalLiteral(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public Decimal value() { return 2147483648.0; } }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("large Decimal literal was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestTypeContractAllowsLongSuffixLiteral(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public Long value() { return 2147483648L; } }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("Long suffix literal was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestTypeContractRejectsRawCollectionConstructorsCaseInsensitively(t *testing.T) {
+	for _, constructor := range []string{"lIsT", "mAp", "SET"} {
+		t.Run(constructor, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{
+				"Probe.cls": "public class Probe { public void run() { System.debug(new " + constructor + "()); } }",
+			})
+			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA019") {
+				t.Fatalf("raw %s constructor was accepted: %#v", constructor, result.Diagnostics)
+			}
+		})
 	}
 }
 

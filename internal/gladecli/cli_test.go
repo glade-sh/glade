@@ -3951,6 +3951,17 @@ func TestRunExecRejectsReservedLocalIdentifiersWithAndWithoutProject(t *testing.
 	}
 }
 
+func TestRunExecRejectsSemanticErrorsWithoutProject(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"exec",
+		"switch on true { when true { System.debug(true); } }",
+	}, &stdout, &stderr)
+	if code == 0 || !strings.Contains(stderr.String(), "switch does not support Boolean selectors") {
+		t.Fatalf("standalone exec must run semantic analysis: code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+}
+
 func TestRunExecSummaryCapsDebugLines(t *testing.T) {
 	var result vm.Result
 	for i := 0; i < 82; i++ {

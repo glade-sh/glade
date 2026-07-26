@@ -570,6 +570,49 @@ public class QueryProbe {
 	}
 }
 
+func TestSemaBindingResolverLexicalBindingsShadowFields(t *testing.T) {
+	for name, test := range map[string]struct {
+		source     string
+		want       string
+		wantReject bool
+	}{
+		"parameter": {
+			source: `
+public class QueryProbe {
+  public void run(String value) {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :value];
+  }
+  private Integer value;
+}`,
+			want: "String",
+		},
+		"local": {
+			source: `
+public class QueryProbe {
+  public void run() {
+    Integer value = 1;
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :value];
+  }
+  private String value;
+}`,
+			want:       "Integer",
+			wantReject: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			offset := strings.Index(test.source, ":value")
+			bindings := newSemaBindingResolver(test.source, newSemaCodeSpans(test.source)).bindingsAt(offset)
+			if got := bindings["value"]; got != test.want {
+				t.Fatalf("shadowed value binding = %q, want %q; all = %#v", got, test.want, bindings)
+			}
+			result := analyzeDeclarationProject(t, map[string]string{"QueryProbe.cls": test.source})
+			if gotReject := hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_BIND"); gotReject != test.wantReject {
+				t.Fatalf("query bind rejection = %v, want %v; diagnostics=%#v", gotReject, test.wantReject, result.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestQuerySemanticsAcceptsInstanceFieldBind(t *testing.T) {
 	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {

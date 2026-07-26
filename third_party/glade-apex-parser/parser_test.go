@@ -672,6 +672,13 @@ func TestParseStructuredAnnotationArgumentsSupportWhitespaceSeparation(t *testin
 	}
 }
 
+func TestParseRejectsMultipleSuppressWarningsArguments(t *testing.T) {
+	file := NewParser().ParseSource("Probe.cls", `@SuppressWarnings('one', 'two') public class Probe {}`)
+	if !file.HasErrors() {
+		t.Fatalf("multiple SuppressWarnings arguments were accepted: %#v", file)
+	}
+}
+
 func TestLineMapAndFileURI(t *testing.T) {
 	lineMap := NewLineMap("one\ntwo\n")
 	pos := lineMap.Position(5)

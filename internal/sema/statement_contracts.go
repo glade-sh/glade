@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/ir"
 	"github.com/glade-sh/glade/internal/typesys"
@@ -29,9 +30,10 @@ func checkCustomExceptionNames(index typesys.Index) []diagnostic.Diagnostic {
 }
 
 func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member typesys.MemberSymbol, instructions []ir.Instruction, scope irSemaScope, bodyOffset int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
+	scope = cloneIRStatementScope(scope)
 	var diagnostics []diagnostic.Diagnostic
-	var walk func([]ir.Instruction, irStatementContext)
-	walk = func(items []ir.Instruction, context irStatementContext) {
+	var walk func([]ir.Instruction, irStatementContext, *irSemaScope)
+	walk = func(items []ir.Instruction, context irStatementContext, currentScope *irSemaScope) {
 		terminated := false
 		for _, inst := range items {
 			if terminated {
@@ -48,13 +50,14 @@ func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member type
 					diagnostics = append(diagnostics, statementContractDiagnostic(typ, member, "continue is only valid inside a loop", bodyOffset+inst.Pos, source))
 				}
 			case ir.OpThrow:
-				thrownType := a.inferIRExprType(inst.Expr, scope, model, typ.Name)
+				thrownType := a.inferIRExprType(inst.Expr, *currentScope, model, typ.Name)
 				if thrownType != "" && !semaAssignableToType("Exception", thrownType, model) {
 					diagnostics = append(diagnostics, statementContractDiagnostic(typ, member, "throw requires an Exception value", bodyOffset+inst.Pos, source))
 				}
 			case ir.OpSwitch:
-				selectorType := a.inferIRExprType(inst.Expr, scope, model, typ.Name)
-				if strings.EqualFold(selectorType, "Boolean") || strings.EqualFold(selectorType, "Decimal") || strings.EqualFold(selectorType, "Date") {
+				selectorType := a.inferIRExprType(inst.Expr, *currentScope, model, typ.Name)
+				selectorType = semaResolveSwitchSelectorType(selectorType, typ.Name, model)
+				if selectorType != "" && !semaSupportedSwitchSelector(selectorType, model) {
 					diagnostics = append(diagnostics, statementContractDiagnostic(typ, member, fmt.Sprintf("switch does not support %s selectors", selectorType), bodyOffset+inst.Pos, source))
 				}
 				seenCaseValues := make(map[string]bool)
@@ -67,8 +70,24 @@ func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member type
 						seenElse = true
 					}
 					for _, caseExpr := range switchCase.Exprs {
-						if _, _, typeCase := irSwitchTypeCase(caseExpr); typeCase {
+						if caseType, _, typeCase := irSwitchTypeCase(caseExpr); typeCase {
+							key := "__typecase:" + normalizeName(caseType)
+							if seenCaseValues[key] {
+								diagnostics = append(diagnostics, statementContractDiagnostic(typ, member, "duplicate switch branch type", bodyOffset+switchCase.Pos, source))
+							}
+							seenCaseValues[key] = true
+							if selectorType != "" && !semaSwitchTypeCaseCompatible(selectorType, caseType, model) {
+								diagnostics = append(diagnostics, statementContractDiagnostic(typ, member, fmt.Sprintf("switch type branch %s is incompatible with selector type %s", caseType, selectorType), bodyOffset+switchCase.Pos, source))
+							}
 							continue
+						}
+						if !semaSwitchValueCaseAllowed(selectorType, caseExpr, model) {
+							diagnostics = append(diagnostics, statementContractDiagnostic(typ, member, "switch branch must be a literal or enum constant", bodyOffset+switchCase.Pos, source))
+							continue
+						}
+						caseType := a.inferIRExprType(caseExpr, *currentScope, model, typ.Name)
+						if selectorType != "" && caseType != "" && !semaSwitchCaseTypeCompatible(selectorType, caseType, model) {
+							diagnostics = append(diagnostics, statementContractDiagnostic(typ, member, fmt.Sprintf("switch branch type %s is incompatible with selector type %s", caseType, selectorType), bodyOffset+switchCase.Pos, source))
 						}
 						key := normalizeName(strings.TrimSpace(string(caseExpr.Kind) + ":" + caseExpr.Value + ":" + caseExpr.Name))
 						if key != "::" && seenCaseValues[key] {
@@ -76,15 +95,39 @@ func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member type
 						}
 						seenCaseValues[key] = true
 					}
-					walk(switchCase.Body, irStatementContext{loopDepth: context.loopDepth, switchDepth: context.switchDepth + 1})
+					caseScope := *currentScope
+					caseScope.push()
+					for _, caseExpr := range switchCase.Exprs {
+						if caseType, binding, ok := irSwitchTypeCase(caseExpr); ok {
+							caseScope.declare(binding, resolveNestedTypeReference(model, typ.Name, caseType))
+						}
+					}
+					walk(switchCase.Body, irStatementContext{loopDepth: context.loopDepth, switchDepth: context.switchDepth + 1}, &caseScope)
 				}
 			case ir.OpWhile, ir.OpDoWhile, ir.OpFor, ir.OpForEach:
-				walk(inst.Then, irStatementContext{loopDepth: context.loopDepth + 1, switchDepth: context.switchDepth})
+				loopScope := *currentScope
+				loopScope.push()
+				if inst.Op == ir.OpFor {
+					inits := inst.Inits
+					if len(inits) == 0 && inst.Init != nil {
+						inits = []ir.Instruction{*inst.Init}
+					}
+					walk(inits, context, &loopScope)
+				} else if inst.Op == ir.OpForEach {
+					loopScope.declare(inst.Name, resolveNestedTypeReference(model, typ.Name, inst.Type))
+				}
+				walk(inst.Then, irStatementContext{loopDepth: context.loopDepth + 1, switchDepth: context.switchDepth}, &loopScope)
 			case ir.OpIf:
-				walk(inst.Then, context)
-				walk(inst.Else, context)
+				thenScope := *currentScope
+				thenScope.push()
+				walk(inst.Then, context, &thenScope)
+				elseScope := *currentScope
+				elseScope.push()
+				walk(inst.Else, context, &elseScope)
 			case ir.OpTry:
-				walk(inst.Then, context)
+				tryScope := *currentScope
+				tryScope.push()
+				walk(inst.Then, context, &tryScope)
 				seenCatchTypes := make(map[string]bool)
 				var priorCatchTypes []string
 				for _, catchClause := range catchClauses(inst) {
@@ -105,19 +148,113 @@ func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member type
 						}
 						priorCatchTypes = append(priorCatchTypes, catchType)
 					}
-					walk(catchClause.Body, context)
+					catchScope := *currentScope
+					catchScope.push()
+					if catchClause.Name != "" {
+						catchType := "Exception"
+						if len(catchClause.Types) > 0 {
+							catchType = catchClause.Types[0]
+						}
+						catchScope.declare(catchClause.Name, resolveNestedTypeReference(model, typ.Name, catchType))
+					}
+					walk(catchClause.Body, context, &catchScope)
 				}
-				walk(inst.Finally, context)
-			case ir.OpBlock, ir.OpDeclGroup:
-				walk(inst.Then, context)
+				finallyScope := *currentScope
+				finallyScope.push()
+				walk(inst.Finally, context, &finallyScope)
+			case ir.OpBlock:
+				blockScope := *currentScope
+				blockScope.push()
+				walk(inst.Then, context, &blockScope)
+			case ir.OpDeclGroup:
+				walk(inst.Then, context, currentScope)
+			}
+			if inst.Op == ir.OpDeclare {
+				currentScope.declare(inst.Name, resolveNestedTypeReference(model, typ.Name, inst.Type))
 			}
 			if inst.Op != ir.OpThrow && irInstructionTerminates(inst) {
 				terminated = true
 			}
 		}
 	}
-	walk(instructions, irStatementContext{})
+	walk(instructions, irStatementContext{}, &scope)
 	return diagnostics
+}
+
+func cloneIRStatementScope(scope irSemaScope) irSemaScope {
+	clone := irSemaScope{frames: make([]map[string]irSemaBinding, len(scope.frames))}
+	for index, frame := range scope.frames {
+		clone.frames[index] = make(map[string]irSemaBinding, len(frame))
+		for name, binding := range frame {
+			clone.frames[index][name] = binding
+		}
+	}
+	return clone
+}
+
+func semaResolveSwitchSelectorType(typeName, owner string, model *semaTypeMemberView) string {
+	if typeName == "" {
+		return typeName
+	}
+	resolved := resolveNestedTypeName(model, owner, typeName)
+	if _, ok := model.lookup(normalizeName(resolved)); ok {
+		return resolved
+	}
+	if _, ok := model.lookup(normalizeName(typeName)); ok {
+		return typeName
+	}
+	return typeName
+}
+
+func semaSupportedSwitchSelector(typeName string, model *semaTypeMemberView) bool {
+	switch strings.ToLower(strings.TrimSpace(typeName)) {
+	case "integer", "int", "long", "string":
+		return true
+	}
+	if isSemaSObjectLike(typeName, model) {
+		return true
+	}
+	if members, ok := model.lookup(normalizeName(typeName)); ok {
+		return members.kind == apexast.DeclarationEnum
+	}
+	return false
+}
+
+func semaSwitchCaseTypeCompatible(selectorType, caseType string, model *semaTypeMemberView) bool {
+	if strings.EqualFold(strings.TrimSpace(caseType), "null") {
+		return true
+	}
+	selector := strings.ToLower(strings.TrimSpace(selectorType))
+	branch := strings.ToLower(strings.TrimSpace(caseType))
+	switch selector {
+	case "integer", "int":
+		return branch == "integer" || branch == "int"
+	case "long":
+		return branch == "integer" || branch == "int" || branch == "long"
+	}
+	return semaAssignableToType(selectorType, caseType, model)
+}
+
+func semaSwitchTypeCaseCompatible(selectorType, caseType string, model *semaTypeMemberView) bool {
+	if !isSemaSObjectLike(selectorType, model) || !isSemaSObjectLike(caseType, model) {
+		return false
+	}
+	return semaAssignableToType(selectorType, caseType, model) || semaAssignableToType(caseType, selectorType, model)
+}
+
+func semaSwitchValueCaseAllowed(selectorType string, expr ir.Expr, model *semaTypeMemberView) bool {
+	if expr.Kind == ir.ExprLiteral {
+		return true
+	}
+	if expr.Kind != ir.ExprVariable || selectorType == "" {
+		return false
+	}
+	members, ok := model.lookup(normalizeName(selectorType))
+	if !ok || members.kind != apexast.DeclarationEnum {
+		return false
+	}
+	field, ok := semaResolveField(model, selectorType, expr.Name, make(map[string]bool))
+	return ok && field.member.Kind == apexast.DeclarationField && hasModifier(field.member.Modifiers, "static")
 }
 
 func statementContractDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, detail string, start int, source string) diagnostic.Diagnostic {

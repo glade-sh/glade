@@ -2567,12 +2567,12 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 		machine.SetOrg(&org)
 		machine.SetCurrentNamespace(org.Namespace)
 	}
+	analysis := sema.AnalyzeAnonymous(projectIndex, anonymousSource)
+	if len(analysis.Diagnostics) > 0 {
+		first := analysis.Diagnostics[0]
+		return fmt.Errorf("%s: %s", first.Code, first.Message)
+	}
 	if hasProjectRuntime {
-		analysis := sema.AnalyzeAnonymous(projectIndex, anonymousSource)
-		if len(analysis.Diagnostics) > 0 {
-			first := analysis.Diagnostics[0]
-			return fmt.Errorf("%s: %s", first.Code, first.Message)
-		}
 		if err := apextest.RegisterProjectRuntimeForRequest(machine, projectIndex); err != nil {
 			return err
 		}

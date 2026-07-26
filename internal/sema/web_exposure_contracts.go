@@ -100,8 +100,40 @@ func validRestMapping(annotation apexast.Annotation) bool {
 	if len(annotation.Arguments) != 1 || !strings.EqualFold(annotation.Arguments[0].Name, "urlMapping") {
 		return false
 	}
-	mapping := strings.Trim(annotation.Arguments[0].Value, "'\"")
-	return strings.HasPrefix(mapping, "/") && len(mapping) <= 255 && (!strings.Contains(mapping, "*") || strings.HasSuffix(mapping, "/*"))
+	mapping, ok := apexStringLiteralValue(annotation.Arguments[0].Value)
+	if !ok || !strings.HasPrefix(mapping, "/") || len(mapping) > 255 {
+		return false
+	}
+	for index, char := range mapping {
+		if char != '*' {
+			continue
+		}
+		if index == 0 || mapping[index-1] != '/' || index+1 < len(mapping) && mapping[index+1] != '/' {
+			return false
+		}
+	}
+	return true
+}
+
+func apexStringLiteralValue(raw string) (string, bool) {
+	raw = strings.TrimSpace(raw)
+	if len(raw) < 2 || raw[0] != '\'' {
+		return "", false
+	}
+	for index := 1; index < len(raw); index++ {
+		if raw[index] == '\\' {
+			index++
+			continue
+		}
+		if raw[index] != '\'' {
+			continue
+		}
+		if index != len(raw)-1 {
+			return "", false
+		}
+		return raw[1:index], true
+	}
+	return "", false
 }
 
 func restVerb(name string) string {

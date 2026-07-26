@@ -375,8 +375,14 @@ func (r *semaBindingResolver) bindingsAt(offset int) map[string]string {
 		scope = semaBuildBindingScope(r.source, location.methodStart, location.methodEnd, location.headerStart, location.typeStart, location.typeEnd, r.spans)
 		r.methods[location.methodStart] = scope
 	}
+	for _, field := range scope.bindings {
+		if !field.field {
+			continue
+		}
+		bindings[strings.ToLower(field.name)] = field.typeName
+	}
 	for _, binding := range scope.bindings {
-		if !binding.field && (binding.start >= offset || offset > binding.end) {
+		if binding.field || binding.start >= offset || offset > binding.end {
 			continue
 		}
 		bindings[strings.ToLower(binding.name)] = binding.typeName

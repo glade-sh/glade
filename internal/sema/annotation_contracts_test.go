@@ -9,9 +9,18 @@ import (
 func TestAnnotationCatalogRejectsUnknownAnnotationsAndProperties(t *testing.T) {
 	t.Parallel()
 	for name, source := range map[string]string{
-		"unknown annotation": `@DoesNotExist public class Probe {}`,
-		"unknown property":   `public class Probe { @AuraEnabled(doesNotExist=true) public static void run() {} }`,
-		"preview annotation": `@IntegrationTest public class Probe {}`,
+		"unknown annotation":  `@DoesNotExist public class Probe {}`,
+		"webservice modifier": `@webservice public class Probe {}`,
+		"unknown property":    `public class Probe { @AuraEnabled(doesNotExist=true) public static void run() {} }`,
+		"unexpected positional argument": `@RestResource(urlMapping='/probe') global class Probe {
+			@HttpGet('unexpected') global static void run() {}
+		}`,
+		"non-string suppress warnings argument": `@SuppressWarnings(1) public class Probe {}`,
+		"duplicate property":                    `public class Probe { @AuraEnabled(cacheable=true cacheable=false) public static void run() {} }`,
+		"InvocableMethod string property":       `public class Probe { @InvocableMethod(label=true) public static void run(List<String> values) {} }`,
+		"InvocableMethod boolean property":      `public class Probe { @InvocableMethod(callout='yes') public static void run(List<String> values) {} }`,
+		"InvocableVariable boolean property":    `public class Probe { @InvocableVariable(required='true') public String value; }`,
+		"preview annotation":                    `@IntegrationTest public class Probe {}`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
@@ -46,6 +55,124 @@ func TestAnnotationCatalogAllowsKnownProperties(t *testing.T) {
 	}
 }
 
+func TestAnnotationCatalogAllowsDocumentedInvocableMethodProperties(t *testing.T) {
+	for name, properties := range map[string]string{
+		"icon property":                `iconName='slds:standard:account'`,
+		"capability property":          `capabilityType='PromptTemplateType://SalesEmail'`,
+		"configurationEditor property": `configurationEditor='c-editor'`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			source := `
+public class Probe {
+  @InvocableMethod(` + properties + `)
+  public static void run(List<String> values) {}
+}
+`
+			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
+			if result.HasErrors() {
+				t.Fatalf("documented InvocableMethod properties were rejected: %#v", result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestAnnotationCatalogAllowsDocumentedInvocableVariableProperties(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  @InvocableVariable(defaultValue='hello' placeholderText='Enter a value')
+  public String value;
+  @InvocableVariable(placeholderText='true')
+  public Boolean booleanValue;
+  @InvocableVariable(placeholderText='1.5')
+  public Decimal decimalValue;
+  @InvocableVariable(placeholderText='10L')
+  public Long longValue;
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("documented InvocableVariable properties were rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestInvocableVariablePropertyContracts(t *testing.T) {
+	for name, source := range map[string]string{
+		"default with required":     `public class Probe { @InvocableVariable(defaultValue='value' required=true) public String value; }`,
+		"default unsupported type":  `public class Probe { @InvocableVariable(defaultValue='2026-01-01') public Date value; }`,
+		"Boolean default":           `public class Probe { @InvocableVariable(defaultValue='sometimes') public Boolean value; }`,
+		"Double default suffix":     `public class Probe { @InvocableVariable(defaultValue='1.5') public Double value; }`,
+		"Integer default shape":     `public class Probe { @InvocableVariable(defaultValue='1.5') public Integer value; }`,
+		"Long default suffix":       `public class Probe { @InvocableVariable(defaultValue='10') public Long value; }`,
+		"placeholder unsupported":   `public class Probe { @InvocableVariable(placeholderText='2026-01-01') public Date value; }`,
+		"Double placeholder suffix": `public class Probe { @InvocableVariable(placeholderText='1.5') public Double value; }`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
+			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA032") {
+				t.Fatalf("invalid InvocableVariable property was accepted: %#v", result.Diagnostics)
+			}
+		})
+	}
+
+	for name, source := range map[string]string{
+		"Boolean":                  `public class Probe { @InvocableVariable(defaultValue='TRUE' placeholderText='false') public Boolean value; }`,
+		"Decimal":                  `public class Probe { @InvocableVariable(defaultValue='1.5' placeholderText='2.5') public Decimal value; }`,
+		"Double":                   `public class Probe { @InvocableVariable(defaultValue='1.5D' placeholderText='2D') public Double value; }`,
+		"Integer":                  `public class Probe { @InvocableVariable(defaultValue='-1' placeholderText='2') public Integer value; }`,
+		"Long":                     `public class Probe { @InvocableVariable(defaultValue='10L' placeholderText='20L') public Long value; }`,
+		"String":                   `public class Probe { @InvocableVariable(defaultValue='' placeholderText='Enter a value') public String value; }`,
+		"System.String":            `public class Probe { @InvocableVariable(defaultValue='value') public System.String value; }`,
+		"System.Integer":           `public class Probe { @InvocableVariable(defaultValue='1') public System.Integer value; }`,
+		"required without default": `public class Probe { @InvocableVariable(required=true) public String value; }`,
+	} {
+		t.Run("valid "+name, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
+			if result.HasErrors() {
+				t.Fatalf("valid InvocableVariable property was rejected: %#v", result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestInvocableMethodCapabilityTypeFormat(t *testing.T) {
+	source := `public class Probe { @InvocableMethod(capabilityType='not a capability') public static void run(List<String> values) {} }`
+	result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA032") {
+		t.Fatalf("invalid capabilityType was accepted: %#v", result.Diagnostics)
+	}
+}
+
+func TestIsTestClassAllowsCriticalAndTestForAtAPIVersion66(t *testing.T) {
+	for name, property := range map[string]string{
+		"critical": "critical=true",
+		"testFor":  "testFor='ApexClass:Probe'",
+	} {
+		t.Run(name, func(t *testing.T) {
+			source := "@IsTest(" + property + ") private class Probe {}"
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, "66.0")
+			if result.HasErrors() {
+				t.Fatalf("API 66 IsTest class property was rejected: %#v", result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestIsTestClassRejectsCriticalAndTestForBeforeAPIVersion66(t *testing.T) {
+	for name, property := range map[string]string{
+		"critical": "critical=true",
+		"testFor":  "testFor='ApexClass:Probe'",
+	} {
+		t.Run(name, func(t *testing.T) {
+			source := "@IsTest(" + property + ") private class Probe {}"
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, "65.0")
+			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA032") {
+				t.Fatalf("API 65 IsTest property was accepted: %#v", result.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestAnnotationCatalogAllowsSuppressWarnings(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{
@@ -53,6 +180,20 @@ func TestAnnotationCatalogAllowsSuppressWarnings(t *testing.T) {
 	})
 	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA031") {
 		t.Fatalf("unexpected catalog diagnostic: %#v", result.Diagnostics)
+	}
+}
+
+func TestSuppressWarningsRequiresSingleStringArgument(t *testing.T) {
+	for name, source := range map[string]string{
+		"multiple arguments":  `@SuppressWarnings('one', 'two') public class Probe {}`,
+		"non-string argument": `@SuppressWarnings(1) public class Probe {}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
+			if !result.HasErrors() {
+				t.Fatalf("invalid SuppressWarnings arguments were accepted: %#v", result.Diagnostics)
+			}
+		})
 	}
 }
 

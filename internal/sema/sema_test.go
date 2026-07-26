@@ -1245,10 +1245,10 @@ public class UsesBroadSystemShapes {
     }
     List<EntityDefinition> entityDefinitions = new List<SObject>();
     switch on 'equals' {
-      when equals {
+      when 'equals' {
         body = 'equal';
       }
-      when not_equals {
+      when 'not_equals' {
         body = 'not equal';
       }
     }

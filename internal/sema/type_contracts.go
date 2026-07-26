@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	typeContractRawCollectionConstructor = regexp.MustCompile(`\bnew\s+(List|Map|Set)\s*\(\s*\)`)
+	typeContractRawCollectionConstructor = regexp.MustCompile(`(?i)\bnew\s+(list|map|set)\s*\(\s*\)`)
 	typeContractScientificLiteral        = regexp.MustCompile(`\b\d+(?:\.\d+)?[eE][+-]?\d+\b`)
 	typeContractIntegerLiteral           = regexp.MustCompile(`\b\d{10,}\b`)
 	typeContractSafeAssignment           = regexp.MustCompile(`\?\.\s*[A-Za-z_][A-Za-z0-9_]*\s*=(?:[^=]|$)`)
@@ -53,6 +53,9 @@ func (a *Analyzer) checkSourceTypeContracts(index typesys.Index) []diagnostic.Di
 		}
 		for _, match := range typeContractIntegerLiteral.FindAllStringIndex(source, -1) {
 			if !spans.contains(match[0]) {
+				continue
+			}
+			if match[0] > 0 && source[match[0]-1] == '.' || match[1] < len(source) && source[match[1]] == '.' {
 				continue
 			}
 			literal := source[match[0]:match[1]]

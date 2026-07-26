@@ -2,6 +2,7 @@ package sema
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -9,6 +10,11 @@ import (
 	"github.com/glade-sh/glade/internal/apexlang"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/typesys"
+)
+
+var (
+	invocableDecimalValue    = regexp.MustCompile(`^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$`)
+	invocableCapabilityValue = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*://[A-Za-z][A-Za-z0-9_]*$`)
 )
 
 func checkAnnotationCatalog(index typesys.Index) []diagnostic.Diagnostic {
@@ -50,12 +56,40 @@ func annotationCatalogDiagnostics(file string, fallback diagnostic.Range, annota
 		if spec.Preview {
 			diagnostics = append(diagnostics, annotationCatalogDiagnostic(file, r, fmt.Sprintf("Apex annotation @%s is preview-disabled", annotation.Name)))
 		}
+		seenArguments := make(map[string]bool, len(annotation.Arguments))
+		positionalArguments := 0
 		for _, argument := range annotation.Arguments {
 			if argument.Name == "" {
+				positionalArguments++
+				if positionalArguments > spec.MaxPositionalArguments {
+					diagnostics = append(diagnostics, annotationCatalogDiagnostic(file, argument.Range, fmt.Sprintf("annotation @%s does not support positional arguments", annotation.Name)))
+				} else if spec.PositionalArgumentLiteral {
+					if _, ok := apexStringLiteralValue(argument.Value); !ok {
+						diagnostics = append(diagnostics, annotationCatalogDiagnostic(file, argument.Range, fmt.Sprintf("annotation @%s requires a string literal argument", annotation.Name)))
+					}
+				}
 				continue
 			}
-			if _, allowed := spec.AllowedArguments[strings.ToLower(argument.Name)]; !allowed {
+			name := strings.ToLower(argument.Name)
+			if seenArguments[name] {
+				diagnostics = append(diagnostics, annotationCatalogDiagnostic(file, argument.Range, fmt.Sprintf("annotation @%s repeats property %q", annotation.Name, argument.Name)))
+				continue
+			}
+			seenArguments[name] = true
+			kind, allowed := spec.Arguments[name]
+			if !allowed {
 				diagnostics = append(diagnostics, annotationCatalogDiagnostic(file, argument.Range, fmt.Sprintf("annotation @%s does not support property %q", annotation.Name, argument.Name)))
+				continue
+			}
+			switch kind {
+			case apexlang.AnnotationStringArgument:
+				if _, ok := apexStringLiteralValue(argument.Value); !ok {
+					diagnostics = append(diagnostics, annotationCatalogDiagnostic(file, argument.Range, fmt.Sprintf("annotation @%s property %q requires a string literal", annotation.Name, argument.Name)))
+				}
+			case apexlang.AnnotationBooleanArgument:
+				if !strings.EqualFold(strings.TrimSpace(argument.Value), "true") && !strings.EqualFold(strings.TrimSpace(argument.Value), "false") {
+					diagnostics = append(diagnostics, annotationCatalogDiagnostic(file, argument.Range, fmt.Sprintf("annotation @%s property %q requires a Boolean literal", annotation.Name, argument.Name)))
+				}
 			}
 		}
 	}
@@ -112,8 +146,8 @@ func checkTypeAnnotationContracts(typ typesys.TypeSymbol) []diagnostic.Diagnosti
 	for _, annotation := range typ.Annotations {
 		switch {
 		case strings.EqualFold(annotation.Name, "IsTest"):
-			if typ.Kind != apexast.DeclarationClass || typ.NestingDepth != 0 || !annotationBooleanArguments(annotation, "seealldata", "isparallel", "oninstall") {
-				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "IsTest is only valid on top-level classes with boolean properties"))
+			if typ.Kind != apexast.DeclarationClass || typ.NestingDepth != 0 || !isTestTypeArgumentsAllowed(typ, annotation) {
+				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "IsTest is only valid on top-level classes with supported properties"))
 			}
 		case strings.EqualFold(annotation.Name, "JsonAccess"):
 			if typ.Kind != apexast.DeclarationClass || len(annotation.Arguments) == 0 || !annotationBooleanArguments(annotation, "serializable", "deserializable") {
@@ -156,7 +190,7 @@ func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.Membe
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "AuraEnabled is only valid on methods, fields, and properties with supported property values"))
 			}
 		case strings.EqualFold(annotation.Name, "InvocableMethod"):
-			if member.Kind != apexast.DeclarationMethod || !hasEitherModifier(member.Modifiers, "public", "global") || !hasModifier(member.Modifiers, "static") || len(member.Parameters) != 1 || !isListType(member.Parameters[0].Type) || (!strings.EqualFold(member.Type, "void") && !isListType(member.Type)) {
+			if member.Kind != apexast.DeclarationMethod || !hasEitherModifier(member.Modifiers, "public", "global") || !hasModifier(member.Modifiers, "static") || len(member.Parameters) != 1 || !isListType(member.Parameters[0].Type) || (!strings.EqualFold(member.Type, "void") && !isListType(member.Type)) || !invocableMethodArgumentsAllowed(annotation) {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "InvocableMethod must be a public or global static method with one List parameter and a void or List return type"))
 			}
 			for _, other := range member.Annotations {
@@ -166,7 +200,7 @@ func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.Membe
 				}
 			}
 		case strings.EqualFold(annotation.Name, "InvocableVariable"):
-			if member.Kind != apexast.DeclarationField || !hasEitherModifier(member.Modifiers, "public", "global") || hasModifier(member.Modifiers, "static") || hasModifier(member.Modifiers, "final") || strings.EqualFold(member.Type, "Object") {
+			if member.Kind != apexast.DeclarationField || !hasEitherModifier(member.Modifiers, "public", "global") || hasModifier(member.Modifiers, "static") || hasModifier(member.Modifiers, "final") || strings.EqualFold(member.Type, "Object") || !invocableVariableArgumentsAllowed(member.Type, annotation) {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "InvocableVariable must annotate a public or global nonstatic nonfinal field"))
 			}
 		case strings.EqualFold(annotation.Name, "RemoteAction"):
@@ -227,6 +261,109 @@ func annotationBooleanArguments(annotation apexast.Annotation, names ...string) 
 			return false
 		}
 		if _, ok := allowed[strings.ToLower(argument.Name)]; !ok || (!strings.EqualFold(argument.Value, "true") && !strings.EqualFold(argument.Value, "false")) {
+			return false
+		}
+	}
+	return true
+}
+
+func invocableMethodArgumentsAllowed(annotation apexast.Annotation) bool {
+	for _, argument := range annotation.Arguments {
+		if !strings.EqualFold(argument.Name, "capabilityType") {
+			continue
+		}
+		value, ok := apexStringLiteralValue(argument.Value)
+		if !ok || !invocableCapabilityValue.MatchString(value) {
+			return false
+		}
+	}
+	return true
+}
+
+func invocableVariableArgumentsAllowed(typeName string, annotation apexast.Annotation) bool {
+	var defaultValue, placeholderText *string
+	requiredPresent := false
+	for _, argument := range annotation.Arguments {
+		switch strings.ToLower(argument.Name) {
+		case "defaultvalue":
+			value, ok := apexStringLiteralValue(argument.Value)
+			if !ok {
+				return false
+			}
+			defaultValue = &value
+		case "placeholdertext":
+			value, ok := apexStringLiteralValue(argument.Value)
+			if !ok {
+				return false
+			}
+			placeholderText = &value
+		case "required":
+			requiredPresent = true
+		}
+	}
+	if defaultValue != nil && requiredPresent {
+		return false
+	}
+	canonicalType := semaCanonicalPlatformAlias(strings.TrimSpace(typeName))
+	base, _ := semaGenericBaseAndArgs(canonicalType)
+	if defaultValue != nil && !invocableVariableTextValueAllowed(base, *defaultValue) {
+		return false
+	}
+	if placeholderText != nil && !invocableVariableTextValueAllowed(base, *placeholderText) {
+		return false
+	}
+	return true
+}
+
+func invocableVariableTextValueAllowed(typeName, value string) bool {
+	switch strings.ToLower(strings.TrimSpace(typeName)) {
+	case "string":
+		return true
+	case "integer", "int":
+		_, err := strconv.ParseInt(value, 10, 32)
+		return err == nil
+	case "double":
+		if len(value) < 2 || value[len(value)-1] != 'd' && value[len(value)-1] != 'D' {
+			return false
+		}
+		return invocableDecimalValue.MatchString(value[:len(value)-1])
+	case "boolean":
+		return strings.EqualFold(value, "true") || strings.EqualFold(value, "false")
+	case "decimal":
+		return invocableDecimalValue.MatchString(value)
+	case "long":
+		if len(value) < 2 || value[len(value)-1] != 'l' && value[len(value)-1] != 'L' {
+			return false
+		}
+		_, err := strconv.ParseInt(value[:len(value)-1], 10, 64)
+		return err == nil
+	default:
+		return false
+	}
+}
+
+func isTestTypeArgumentsAllowed(typ typesys.TypeSymbol, annotation apexast.Annotation) bool {
+	for _, argument := range annotation.Arguments {
+		switch strings.ToLower(argument.Name) {
+		case "seealldata", "isparallel", "oninstall":
+			if !strings.EqualFold(argument.Value, "true") && !strings.EqualFold(argument.Value, "false") {
+				return false
+			}
+		case "critical":
+			if !strings.EqualFold(argument.Value, "true") && !strings.EqualFold(argument.Value, "false") {
+				return false
+			}
+			if version, err := strconv.ParseFloat(strings.TrimSpace(typ.EffectiveAPIVersion), 64); err == nil && version < 66 {
+				return false
+			}
+		case "testfor":
+			if _, ok := apexStringLiteralValue(argument.Value); !ok {
+				return false
+			}
+			if version, err := strconv.ParseFloat(strings.TrimSpace(typ.EffectiveAPIVersion), 64); err == nil && version < 66 {
+				return false
+			}
+		default:
 			return false
 		}
 	}

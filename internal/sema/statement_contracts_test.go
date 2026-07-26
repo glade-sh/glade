@@ -58,10 +58,17 @@ func TestStatementContractsAllowInstructionsAfterThrow(t *testing.T) {
 func TestSwitchContractsRejectUnsupportedSelectorsAndDuplicateValues(t *testing.T) {
 	t.Parallel()
 	for name, source := range map[string]string{
-		"Boolean selector": `public class Probe { public void run() { switch on true { when true { } } } }`,
-		"Decimal selector": `public class Probe { public void run() { switch on 1.0 { when 1.0 { } } } }`,
-		"Date selector":    `public class Probe { public void run() { switch on Date.today() { when Date.today() { } } } }`,
-		"duplicate branch": `public class Probe { public void run() { switch on 1 { when 1 { } when 1 { } } } }`,
+		"Boolean selector":              `public class Probe { public void run() { switch on true { when true { } } } }`,
+		"Decimal selector":              `public class Probe { public void run() { switch on 1.0 { when 1.0 { } } } }`,
+		"Date selector":                 `public class Probe { public void run() { switch on Date.today() { when Date.today() { } } } }`,
+		"Datetime selector":             `public class Probe { public void run() { switch on Datetime.now() { when else { } } } }`,
+		"mismatched branch":             `public class Probe { public void run() { switch on 'value' { when 1 { } } } }`,
+		"numeric mismatch":              `public class Probe { public void run() { switch on 1 { when 1.0 { } } } }`,
+		"duplicate branch":              `public class Probe { public void run() { switch on 1 { when 1 { } when 1 { } } } }`,
+		"variable branch":               `public class Probe { public void run() { String expected = 'value'; switch on 'value' { when expected { } } } }`,
+		"type branch on scalar":         `public class Probe { public void run() { switch on 'value' { when Account selected { } } } }`,
+		"unrelated sobject type branch": `public class Probe { public void run(Account value) { switch on value { when Contact selected { } } } }`,
+		"duplicate sobject type branch": `public class Probe { public void run(SObject value) { switch on value { when Account first { } when Account second { } } } }`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
@@ -69,6 +76,59 @@ func TestSwitchContractsRejectUnsupportedSelectorsAndDuplicateValues(t *testing.
 				t.Fatalf("expected switch-contract diagnostic, got %#v", result.Diagnostics)
 			}
 		})
+	}
+}
+
+func TestSwitchContractsAllowSupportedSelectorTypes(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public enum Choice { One, Two }
+  public void run(Integer integerValue, Long longValue, String stringValue, Choice enumValue, Account accountValue) {
+    switch on integerValue { when 1 { } }
+    switch on longValue { when 1 { } }
+    switch on stringValue { when 'value' { } }
+    switch on enumValue { when One { } }
+    switch on accountValue { when Account selected { } }
+  }
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("supported switch selector was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestSwitchContractsResolveNestedEnumFromGenericReturn(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public enum Choice { One, Two }
+  private static Map<String, Choice> choices = new Map<String, Choice>{'one' => Choice.One};
+  public void run() {
+    Choice value = choices.get('one');
+    switch on value { when One { } when else { } }
+  }
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("nested enum returned from a generic was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestSwitchContractsResolveClassicForInitializerEnum(t *testing.T) {
+	enumResult := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public enum Choice { One, Two }
+  public void run() {
+    for (Choice value = Choice.One; false; value = Choice.Two) {
+      switch on value { when One { } when else { } }
+    }
+  }
+}`,
+	})
+	if enumResult.HasErrors() {
+		t.Fatalf("enum for-loop selector was rejected: %#v", enumResult.Diagnostics)
 	}
 }
 

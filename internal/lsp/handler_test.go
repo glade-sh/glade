@@ -410,6 +410,9 @@ func TestCompletionIncludesCatalogAnnotationsWithoutPreviewEntries(t *testing.T)
 	if containsString(labels, "IntegrationTest") || containsString(labels, "TearDown") {
 		t.Fatalf("preview annotations leaked into completion: %#v", labels)
 	}
+	if containsString(labels, "webservice") {
+		t.Fatalf("webservice modifier leaked into annotation completion: %#v", labels)
+	}
 }
 
 func TestCompletionRanksSObjectFieldsBeforeTopLevelNamesInsideSOQLSelect(t *testing.T) {
