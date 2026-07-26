@@ -273,6 +273,26 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 		bindings := bindingResolver.bindingsAt(literal.queryOffset)
 		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings, c.knownTypes)...)
 		diagnostics = append(diagnostics, queryNumericBindDiagnostics(ctx, bindings, query.LimitBind, "LIMIT")...)
+		diagnostics = append(diagnostics, c.soslFieldBindDiagnostics(query, ctx, bindings)...)
+	}
+	return diagnostics
+}
+
+func (c querySemanticsChecker) soslFieldBindDiagnostics(query sosl.Query, ctx queryTextContext, bindings map[string]string) []diagnostic.Diagnostic {
+	var diagnostics []diagnostic.Diagnostic
+	for _, returning := range query.Returning {
+		for _, bind := range returning.WhereBinds {
+			field, ok := c.field(returning.Object, bind.Field)
+			if !ok {
+				continue
+			}
+			typeName := bindings[strings.ToLower(bind.Name)]
+			if typeName == "" || queryFieldAcceptsBindType(field.Type, typeName) {
+				continue
+			}
+			offset := findQueryIdentifier(ctx.queryText, ":"+bind.Name, 0)
+			diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("query bind variable %q of type %s is incompatible with field %s", bind.Name, typeName, field.Name), ":"+bind.Name, offset))
+		}
 	}
 	return diagnostics
 }

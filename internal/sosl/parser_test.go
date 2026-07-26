@@ -31,10 +31,11 @@ func TestParseSOSLReturningObjectsAndFields(t *testing.T) {
 		},
 		{
 			name:  "bind find with where clause",
-			input: "FIND :term RETURNING Invoice__c(Id, Amount__c WHERE Amount__c > 0)",
+			input: "FIND :term RETURNING Invoice__c(Id, Amount__c WHERE Amount__c = :value)",
 			want: sosl.Query{Returning: []sosl.ReturningObject{{
-				Object: "Invoice__c",
-				Fields: []string{"Id", "Amount__c"},
+				Object:     "Invoice__c",
+				Fields:     []string{"Id", "Amount__c"},
+				WhereBinds: []sosl.WhereBind{{Field: "Amount__c", Name: "value"}},
 			}}},
 		},
 		{

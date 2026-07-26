@@ -2,6 +2,7 @@ package sosl
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -12,9 +13,17 @@ type Query struct {
 }
 
 type ReturningObject struct {
-	Object string
-	Fields []string
+	Object     string
+	Fields     []string
+	WhereBinds []WhereBind
 }
+
+type WhereBind struct {
+	Field string
+	Name  string
+}
+
+var whereEqualityBind = regexp.MustCompile(`(?i)\bWHERE\s+([A-Za-z_][A-Za-z0-9_.]*)\s*=\s*:\s*([A-Za-z_][A-Za-z0-9_]*)`)
 
 type tokenKind int
 
@@ -33,7 +42,7 @@ type token struct {
 
 func Parse(input string) (Query, error) {
 	tokens := lex(input)
-	p := parser{tokens: tokens}
+	p := parser{tokens: tokens, input: input}
 	if !p.skipToKeyword("RETURNING") {
 		return Query{}, fmt.Errorf("sosl: missing RETURNING")
 	}
@@ -43,6 +52,7 @@ func Parse(input string) (Query, error) {
 type parser struct {
 	tokens []token
 	pos    int
+	input  string
 }
 
 func (p *parser) parseReturning() (Query, error) {
@@ -72,10 +82,14 @@ func (p *parser) parseReturning() (Query, error) {
 		if err != nil {
 			return Query{}, err
 		}
-		query.Returning = append(query.Returning, ReturningObject{
+		returning := ReturningObject{
 			Object: object.text,
 			Fields: fields,
-		})
+		}
+		if match := whereEqualityBind.FindStringSubmatch(p.input); len(match) == 3 {
+			returning.WhereBinds = append(returning.WhereBinds, WhereBind{Field: match[1], Name: match[2]})
+		}
+		query.Returning = append(query.Returning, returning)
 	}
 	if len(query.Returning) == 0 {
 		return Query{}, fmt.Errorf("sosl: empty RETURNING clause")

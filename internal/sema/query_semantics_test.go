@@ -243,6 +243,20 @@ func TestQuerySemanticsRequiresNumericSOSLLimitBindInOneLineMethod(t *testing.T)
 	}
 }
 
+func TestQuerySemanticsRejectsIncompatibleSOSLWhereBind(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    Integer value = 1;
+    List<List<SObject>> rows = [FIND 'acme' RETURNING Account(Id WHERE Name = :value)];
+  }
+}
+`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Id", Type: "Id"}, {Name: "Name", Type: "Text"}}}}})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("expected incompatible SOSL WHERE bind diagnostic: %#v", result.Diagnostics)
+	}
+}
+
 func TestQuerySemanticsAcceptsExpressionWindowBind(t *testing.T) {
 	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {
