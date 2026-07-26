@@ -993,6 +993,10 @@ Follow-up (2026-07-25): query compatibility now accepts inline literal binds
 (`:true`, `:false`, and `:null`) and normalizes whitespace after a bind colon
 (`: name`) before SOQL parsing. Focused SOQL and sema bind tests pass.
 
+Follow-up (2026-07-25): `LIMIT` and `OFFSET` now retain complex inline bind
+expressions such as `:Limits.getLimitQueries()` for body-IR type resolution,
+rather than rejecting valid query syntax as a malformed numeric bind.
+
 ---
 
 ## Completion criteria
