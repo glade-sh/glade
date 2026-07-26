@@ -1001,6 +1001,11 @@ Follow-up (2026-07-25): the SOQL lexer now retains inline collection
 constructor expressions such as `:new Set<Id>{firstId, secondId}` as one bind
 operand. Parser and semantic bind regressions cover that form.
 
+Follow-up (2026-07-25): lexical bind resolution now recognizes Apex method
+modifiers such as `virtual` and terminates generic parameter types at their
+own closing angle bracket. This restores scope for parameters such as
+`Set<String> newEmails` in inline SOQL.
+
 ---
 
 ## Completion criteria
