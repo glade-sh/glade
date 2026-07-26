@@ -7001,6 +7001,26 @@ public class Handler {
 	}
 }
 
+func TestAnalyzeProjectStandardSObjectStaticGetSObjectType(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	path := filepath.Join(root, "Probe.cls")
+	writeSemaFile(t, path, `
+public class Probe {
+  public static Schema.SObjectType run() {
+    return Account.getSObjectType();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{Objects: []schema.Object{{Name: "Account", Partial: true}}})
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "Account.getSObjectType") {
+			t.Fatalf("project standard sObject static call rejected: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeStandardApexClassSelectorPatterns(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()

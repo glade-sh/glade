@@ -723,7 +723,7 @@ func semaProjectTypeShadowsPlatform(model *semaTypeMemberView, receiverType stri
 		return false
 	}
 	members, ok := model.state.base.members[normalizeName(receiverType)]
-	return ok && !members.dependency && members.nestingDepth == 0
+	return ok && !members.dependency && !members.sobject && members.nestingDepth == 0
 }
 
 func semaInterfaceReturnCompatible(method, required typesys.MemberSymbol, model *semaTypeMemberView) bool {
