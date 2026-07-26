@@ -984,6 +984,11 @@ is evidence of compatibility candidates, not a Salesforce oracle: add each
 representative to the ledger and replay it before relaxing an established
 compiler rule. The gate remains red.
 
+Follow-up (2026-07-25): the safe-navigation equality false positive was
+confirmed with a source regression and fixed; the matcher now distinguishes
+`?.field == value` from a safe-navigation assignment. Remaining NU families
+still require representative oracle classification.
+
 ---
 
 ## Completion criteria
