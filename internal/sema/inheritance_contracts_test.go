@@ -27,6 +27,17 @@ func TestInheritanceContractsRejectInvalidInheritanceTargets(t *testing.T) {
 	}
 }
 
+func TestInheritanceContractsRejectExtendingNonVirtualSuperclass(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Base.cls":  `public class Base {}`,
+		"Child.cls": `public class Child extends Base {}`,
+	})
+	if !result.HasErrors() {
+		t.Fatalf("expected non-virtual superclass diagnostic, got %#v", result.Diagnostics)
+	}
+}
+
 func TestInheritanceContractsRequireOverrideModifier(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{

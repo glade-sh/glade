@@ -678,7 +678,7 @@ func queryFieldAcceptsBindType(fieldType, bindType string) bool {
 		return true
 	}
 	switch fieldType {
-	case "text", "textarea", "longtextarea", "richtextarea", "email", "phone", "url", "picklist", "multipicklist", "encryptedtext":
+	case "text", "string", "textarea", "longtextarea", "richtextarea", "email", "phone", "url", "picklist", "multipicklist", "encryptedtext":
 		return bindType == "string" || bindType == "id"
 	case "number", "currency", "percent", "double", "integer", "long":
 		return bindType == "integer" || bindType == "int" || bindType == "long" || bindType == "decimal" || bindType == "double"
@@ -767,10 +767,9 @@ func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName strin
 }
 
 func queryVersionDiagnostics(query soql.Query, ctx queryTextContext, apiVersion float64) []diagnostic.Diagnostic {
-	if apiVersion < 67 || !strings.EqualFold(query.SecurityMode, "SECURITY_ENFORCED") {
-		return nil
-	}
-	return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", "WITH SECURITY_ENFORCED is not supported in API version 67.0 or later; use WITH USER_MODE instead", "WITH SECURITY_ENFORCED", findQueryIdentifier(ctx.queryText, "WITH SECURITY_ENFORCED", 0))}
+	// WITH SECURITY_ENFORCED remains accepted at API 67.0. Do not infer a
+	// version restriction from the availability of WITH USER_MODE.
+	return nil
 }
 
 func queryShapeDiagnostics(query soql.Query, ctx queryTextContext) []diagnostic.Diagnostic {
@@ -2224,6 +2223,22 @@ func inheritanceTargetDiagnostics(model *semaTypeMemberView, typ typesys.TypeSym
 	}
 	if typ.Kind == apexast.DeclarationClass {
 		checkTarget(typ.SuperClass, "extends", apexast.DeclarationClass)
+		if superClass := strings.TrimSpace(typ.SuperClass); superClass != "" {
+			resolved := resolveNestedTypeName(model, typ.Name, superClass)
+			if resolved == "" {
+				resolved = superClass
+			}
+			if members, ok := inheritanceTargetMembers(model, resolved); ok && !members.dependency && members.kind == apexast.DeclarationClass &&
+				!hasModifier(members.modifiers, "virtual") && !hasModifier(members.modifiers, "abstract") {
+				diagnostics = append(diagnostics, diagnostic.Diagnostic{
+					Severity: diagnostic.Error,
+					Code:     "GLADESEMA017",
+					Message:  fmt.Sprintf("class %q cannot extend non-virtual, non-abstract class %q", typ.Name, superClass),
+					File:     typ.File,
+					Range:    &typ.Range,
+				})
+			}
+		}
 		for _, iface := range typ.Interfaces {
 			checkTarget(iface, "implements", apexast.DeclarationInterface)
 		}
@@ -2233,6 +2248,20 @@ func inheritanceTargetDiagnostics(model *semaTypeMemberView, typ typesys.TypeSym
 		}
 	}
 	return diagnostics
+}
+
+// inheritanceTargetMembers gives a declared project type precedence over a
+// same-named schema object hydrated while body analysis runs. Extends clauses
+// name Apex declarations, never schema objects.
+func inheritanceTargetMembers(model *semaTypeMemberView, typeName string) (typeMembers, bool) {
+	key := normalizeName(typeName)
+	if model != nil && model.state != nil && model.state.base != nil {
+		if members, ok := model.state.base.lookup(key); ok {
+			return members, true
+		}
+	}
+	members, _, ok := semaLookupTypeMembers(model, typeName)
+	return members, ok
 }
 
 func overridableInheritedMethod(model *semaTypeMemberView, typ typesys.TypeSymbol, member typesys.MemberSymbol) (typesys.MemberSymbol, bool) {
@@ -2421,6 +2450,11 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 		if semaAssignmentLooksLikeLocalDeclaration(body, match[2]) {
 			continue
 		}
+		if field, found := semaResolveField(model, typ.Name, target, make(map[string]bool)); found &&
+			hasModifier(field.member.Modifiers, "final") && hasModifier(field.member.Modifiers, "static") {
+			diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, target, "final static fields can only be assigned in their declaration", bodyOffset+match[2], bodyOffset+match[3], source))
+			continue
+		}
 		targetType, ok := scopes.visibleAt(target, match[2])
 		if ok {
 			value := trimSemaArg(body, match[1], semaStatementEnd(body, match[1]))
@@ -2437,6 +2471,16 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 			})
 			continue
 		}
+		if field, found := semaResolveField(model, typ.Name, target, make(map[string]bool)); found {
+			if hasModifier(field.member.Modifiers, "final") && hasModifier(field.member.Modifiers, "static") {
+				diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, target, "final static fields can only be assigned in their declaration", bodyOffset+match[2], bodyOffset+match[3], source))
+				continue
+			}
+			if hasModifier(member.Modifiers, "static") && !hasModifier(field.member.Modifiers, "static") {
+				diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, target, "instance fields cannot be accessed from a static method", bodyOffset+match[2], bodyOffset+match[3], source))
+			}
+			continue
+		}
 		if semaAnyKnownField(model, target) {
 			continue
 		}
@@ -2448,7 +2492,32 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 			Range:    semaRange(source, bodyOffset+match[2], bodyOffset+match[3]),
 		})
 	}
+	for _, match := range dottedAssignmentPattern.FindAllStringSubmatchIndex(body, -1) {
+		if semaOffsetInIgnoredText(body, match[0]) {
+			continue
+		}
+		receiver := body[match[2]:match[3]]
+		fieldName := body[match[4]:match[5]]
+		receiverType, visible := scopes.visibleAt(receiver, match[2])
+		if !visible {
+			continue
+		}
+		field, found := semaResolveFieldPath(model, receiverType, fieldName)
+		if found && hasModifier(field.member.Modifiers, "static") {
+			diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, receiver+"."+fieldName, "static fields cannot be accessed through an instance", bodyOffset+match[2], bodyOffset+match[5], source))
+		}
+	}
 	return diagnostics
+}
+
+func semaFieldAccessDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, field, detail string, start, end int, source string) diagnostic.Diagnostic {
+	return diagnostic.Diagnostic{
+		Severity: diagnostic.Error,
+		Code:     "GLADESEMA027",
+		Message:  fmt.Sprintf("method %q accesses field %q incorrectly: %s", member.Name, field, detail),
+		File:     typ.File,
+		Range:    semaRange(source, start, end),
+	}
 }
 func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	if member.Type == "" {
@@ -2475,6 +2544,12 @@ func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.Membe
 			continue
 		}
 		value := trimSemaArg(body, valueStart, valueEnd)
+		if hasModifier(member.Modifiers, "static") && simpleIdentifierPattern.MatchString(value.text) {
+			if field, found := semaResolveField(model, typ.Name, value.text, make(map[string]bool)); found && !hasModifier(field.member.Modifiers, "static") {
+				diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, value.text, "instance fields cannot be accessed from a static method", bodyOffset+value.start, bodyOffset+value.end, source))
+				continue
+			}
+		}
 		valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flatAt(value.start))
 		if strings.EqualFold(returnType, "Boolean") && semaExprContainsComparison(value.text) {
 			valueType = "Boolean"

@@ -2951,14 +2951,16 @@ public class UsesInitializerTernary {
 func TestAnalyzeStaticCallWithListConstructedFromSetArgument(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Rollup.cls"), `
+public class Rollup {
+  public enum InvocationPoint { FROM_FULL_RECALC_FLOW }
+  public static String performBulkFullRecalcWithParentIds(String serializedMetadata, String invokePointName, List<String> parentIds) {
+    return '';
+  }
+}
+`)
 	writeSemaFile(t, filepath.Join(root, "UsesSetListArg.cls"), `
 public class UsesSetListArg {
-  public class Rollup {
-    public enum InvocationPoint { FROM_FULL_RECALC_FLOW }
-    public static String performBulkFullRecalcWithParentIds(String serializedMetadata, String invokePointName, List<String> parentIds) {
-      return '';
-    }
-  }
   public void run(Set<String> optionalParentIds) {
     String enqueuedJobId = Rollup.performBulkFullRecalcWithParentIds(
       JSON.serialize(new List<String>()),
@@ -2970,7 +2972,7 @@ public class UsesSetListArg {
 `)
 	index := typesys.Build(project.Project{
 		Root:      root,
-		ApexFiles: []string{filepath.Join(root, "UsesSetListArg.cls")},
+		ApexFiles: []string{filepath.Join(root, "Rollup.cls"), filepath.Join(root, "UsesSetListArg.cls")},
 	}, schema.Schema{})
 	result := Analyze(index)
 	if result.HasErrors() {
@@ -3866,14 +3868,16 @@ public class UsesMapFromList {
 func TestAnalyzeEnhancedForLocalDoesNotShadowClassAfterLoop(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Rollup.cls"), `
+public class Rollup {
+  public enum InvocationPoint { FROM_FULL_RECALC_FLOW }
+  public static String performBulkFullRecalcWithParentIds(String serializedMetadata, String invokePointName, List<String> parentIds) {
+    return '';
+  }
+}
+`)
 	writeSemaFile(t, filepath.Join(root, "UsesLoopShadow.cls"), `
 public class UsesLoopShadow {
-  public class Rollup {
-    public enum InvocationPoint { FROM_FULL_RECALC_FLOW }
-    public static String performBulkFullRecalcWithParentIds(String serializedMetadata, String invokePointName, List<String> parentIds) {
-      return '';
-    }
-  }
   public void run(List<String> values, Set<String> optionalParentIds) {
     for (String rollup : values) {
       String copy = rollup;
@@ -3888,7 +3892,7 @@ public class UsesLoopShadow {
 `)
 	index := typesys.Build(project.Project{
 		Root:      root,
-		ApexFiles: []string{filepath.Join(root, "UsesLoopShadow.cls")},
+		ApexFiles: []string{filepath.Join(root, "Rollup.cls"), filepath.Join(root, "UsesLoopShadow.cls")},
 	}, schema.Schema{})
 	result := Analyze(index)
 	if result.HasErrors() {
@@ -7720,7 +7724,7 @@ func TestAnalyzeMapInitializerValueChainedCall(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Base.cls"), `
-public class Base {
+public virtual class Base {
   protected Schema.RecordTypeInfo getRecordType(String name) {
     return null;
   }
@@ -9699,7 +9703,7 @@ public interface Worker {
 }
 `)
 	writeSemaFile(t, filepath.Join(root, "Base.cls"), `
-public class Base {
+public virtual class Base {
   public void inherited(String value) {}
 }
 `)
@@ -10802,7 +10806,7 @@ func TestAnalyzeConstructorChainingBaseline(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Base.cls"), `
-public class Base {
+public virtual class Base {
   public Base(Integer value) {}
 }
 `)

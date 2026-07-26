@@ -61,9 +61,9 @@ func declarationModifierDiagnostics(typ typesys.TypeSymbol) []diagnostic.Diagnos
 	if typ.NestingDepth == 0 {
 		hasPrivate := hasModifier(mods, "private")
 		hasProtected := hasModifier(mods, "protected")
-		// Omitted access modifiers are common in synthetic unit fixtures; only
-		// reject an explicit illegal top-level visibility. @IsTest private remains allowed.
-		if hasProtected || (hasPrivate && !typ.IsTest) {
+		// Apex top-level declarations require public or global visibility. @IsTest
+		// private declarations remain the one documented exception.
+		if !typ.IsTest && (!hasAnyAccessModifier(mods) || hasPrivate || hasProtected) {
 			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, typ.Range,
 				fmt.Sprintf("top-level %s %q must be public or global", typ.Kind, typ.Name)))
 		}
@@ -158,6 +158,7 @@ func methodContractDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymb
 	virtual := hasModifier(mods, "virtual")
 	override := hasModifier(mods, "override")
 	static := hasModifier(mods, "static")
+	final := hasModifier(mods, "final")
 
 	if abstract && virtual {
 		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
@@ -178,6 +179,22 @@ func methodContractDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymb
 	if override && static {
 		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
 			fmt.Sprintf("method %q cannot be both override and static", member.Name)))
+	}
+	if typ.NestingDepth > 0 && static {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+			fmt.Sprintf("inner type %q cannot declare a static method %q", typ.Name, member.Name)))
+	}
+	if static && hasModifier(mods, "protected") {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+			fmt.Sprintf("protected method %q cannot be static", member.Name)))
+	}
+	if hasModifier(mods, "global") && !hasModifier(typ.Modifiers, "global") {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+			fmt.Sprintf("global method %q requires a global enclosing type", member.Name)))
+	}
+	if final {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+			fmt.Sprintf("method %q cannot explicitly declare final", member.Name)))
 	}
 	if (abstract || override) && typeUsesAPIVersionAtLeast(typ, 65) && !hasAnyAccessModifier(mods) {
 		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,

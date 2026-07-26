@@ -380,6 +380,18 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsRejectsIncompatibleStandardFieldBindType(t *testing.T) {
+	if _, ok := newQuerySemanticsChecker(typesys.Index{}).field("Account", "Name"); !ok {
+		t.Fatal("standard Account.Name metadata is unavailable")
+	}
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run() { Integer numberValue = 1; List<Account> values = [SELECT Id FROM Account WHERE Name = :numberValue]; } }`,
+	})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("incompatible standard-field bind accepted: %#v", result.Diagnostics)
+	}
+}
+
 func TestQuerySemanticsAcceptsCollectionBindInEqualityAndValidatesElementType(t *testing.T) {
 	result := analyzeQueryProbe(t, `
 public class QueryProbe {

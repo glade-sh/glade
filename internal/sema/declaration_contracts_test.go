@@ -311,7 +311,8 @@ func TestDeclarationContractTopLevelVisibility(t *testing.T) {
 private class HiddenTest {
   @IsTest static Integer run() { return 1; }
 }
-`,
+
+	`,
 	})
 	if declarationDiagnosticMatching(isTestResult, "public or global") {
 		t.Fatalf("@IsTest private top-level must remain allowed: %#v", isTestResult.Diagnostics)
@@ -322,6 +323,19 @@ private class HiddenTest {
 	})
 	if publicResult.HasErrors() {
 		t.Fatalf("public top-level should pass: %#v", publicResult.Diagnostics)
+	}
+}
+
+func TestDeclarationContractRejectsOmittedTopLevelVisibility(t *testing.T) {
+	t.Parallel()
+	for name, source := range map[string]string{
+		"class":     `class HiddenClass {}`,
+		"interface": `interface HiddenInterface { void run(); }`,
+	} {
+		result := analyzeDeclarationProject(t, map[string]string{"Hidden.cls": source})
+		if !result.HasErrors() || !declarationDiagnosticMatching(result, "public or global") {
+			t.Fatalf("%s: expected top-level visibility error, got %#v", name, result.Diagnostics)
+		}
 	}
 }
 
@@ -385,6 +399,43 @@ public abstract class BadMethods {
 	for _, needle := range []string{"abstract and virtual", "abstract and override", "abstract and static", "virtual and static", "override and static"} {
 		if !declarationDiagnosticMatching(result, needle) {
 			t.Fatalf("missing %q diagnostic in %#v", needle, result.Diagnostics)
+		}
+	}
+}
+
+func TestDeclarationContractRejectsAdditionalStaticAndAccessContracts(t *testing.T) {
+	t.Parallel()
+	for name, files := range map[string]map[string]string{
+		"inner static method": {
+			"Outer.cls": `public class Outer { public class Worker { public static void run() {} } }`,
+		},
+		"protected static method": {
+			"Probe.cls": `public class Probe { protected static void run() {} }`,
+		},
+		"global member in public owner": {
+			"Probe.cls": `public class Probe { global void run() {} }`,
+		},
+		"explicit final method": {
+			"Probe.cls": `public class Probe { public final void run() {} }`,
+		},
+	} {
+		result := analyzeDeclarationProject(t, files)
+		if !result.HasErrors() {
+			t.Fatalf("%s: expected declaration diagnostic, got %#v", name, result.Diagnostics)
+		}
+	}
+}
+
+func TestDeclarationContractRejectsStaticAndFinalFieldMisuse(t *testing.T) {
+	t.Parallel()
+	for name, source := range map[string]string{
+		"final static reassignment":         `public class Probe { public static final Integer Value = 1; public static void run() { Value = 2; } }`,
+		"static field through instance":     `public class Probe { public static Integer Value; public void run() { Probe item = new Probe(); item.Value = 1; } }`,
+		"instance field from static method": `public class Probe { public Integer Value; public static Integer run() { return Value; } }`,
+	} {
+		result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
+		if !result.HasErrors() {
+			t.Fatalf("%s: expected field access diagnostic, got %#v", name, result.Diagnostics)
 		}
 	}
 }

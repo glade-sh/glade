@@ -24,6 +24,7 @@ type typeMembers struct {
 	kind                        apexast.DeclarationKind
 	superClass                  string
 	interfaces                  []string
+	modifiers                   []string
 	methods                     map[string][]typesys.MemberSymbol
 	constructors                []typesys.MemberSymbol
 	fields                      map[string]typesys.MemberSymbol
@@ -332,6 +333,7 @@ func semaTypeMembersFromPlatformSymbol(symbol typesys.TypeSymbol) typeMembers {
 		kind:       symbol.Kind,
 		superClass: symbol.SuperClass,
 		interfaces: append([]string(nil), symbol.Interfaces...),
+		modifiers:  append([]string(nil), symbol.Modifiers...),
 		methods:    make(map[string][]typesys.MemberSymbol),
 		fields:     make(map[string]typesys.MemberSymbol),
 	}
@@ -854,6 +856,7 @@ func semaTypeMembersFromSymbol(typ typesys.TypeSymbol) typeMembers {
 		kind:         typ.Kind,
 		superClass:   typ.SuperClass,
 		interfaces:   append([]string(nil), typ.Interfaces...),
+		modifiers:    append([]string(nil), typ.Modifiers...),
 		methods:      make(map[string][]typesys.MemberSymbol),
 		fields:       make(map[string]typesys.MemberSymbol),
 	}
@@ -906,6 +909,7 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 			kind:         typ.Kind,
 			superClass:   typ.SuperClass,
 			interfaces:   append([]string(nil), typ.Interfaces...),
+			modifiers:    append([]string(nil), typ.Modifiers...),
 			methods:      make(map[string][]typesys.MemberSymbol),
 			fields:       make(map[string]typesys.MemberSymbol),
 		}
@@ -1151,6 +1155,9 @@ func semaCloneTypeMembers(members typeMembers) typeMembers {
 	clone := members
 	if members.interfaces != nil {
 		clone.interfaces = append([]string(nil), members.interfaces...)
+	}
+	if members.modifiers != nil {
+		clone.modifiers = append([]string(nil), members.modifiers...)
 	}
 	if members.methods != nil {
 		clone.methods = make(map[string][]typesys.MemberSymbol, len(members.methods))
