@@ -292,6 +292,41 @@ public class QueryProbe {
 	}
 }
 
+func TestSemaBindingResolverFindsLocalAfterMultilineCall(t *testing.T) {
+	source := `
+@IsTest
+public class QueryProbe {
+  private static BundleComponentRequest setupDonationProductAndBuildComponentRequest() {
+    return setupDonationProductAndBuildComponentRequest(null);
+  }
+  private static BundleComponentRequest run(String nameOverride) {
+    Entity__c entity = DataFactoryEntity.insertEntity();
+    Product__c product = DataFactoryProduct.insertDonationProduct('name', entity.Id);
+    Account account = DataFactoryAccount.insertIndividualAccount();
+    CurrencyService.Instance.mockCurrencyIsoCode = 'USD';
+    Id priceClassId = DataFactoryPriceClass.insertDefaultPriceClass().Id;
+    MembershipType__c membershipType = DataFactoryMembershipType.insertDefaultMembershipType(entity.Id);
+    Id mtplId = DataFactoryMembershipTypeProductLink.insertMembershipTypeProdLink(
+        membershipType.Id,
+        product.Id,
+        Constant.STAGE_BOTH,
+        Constant.PURPOSE_DONATION).Id;
+    if (String.isNotBlank(nameOverride)) {
+      MembershipTypeProductLink__c mtpl = [SELECT Id FROM MembershipTypeProductLink__c WHERE Id = :mtplId LIMIT 1];
+    }
+  }
+}`
+	offset := strings.LastIndex(source, ":mtplId")
+	bindings := newSemaBindingResolver(source, newSemaCodeSpans(source)).bindingsAt(offset)
+	if got := bindings["mtplid"]; got != "Id" {
+		t.Fatalf("mtplId binding = %q, want Id; all = %#v", got, bindings)
+	}
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", source)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("outer local bind inside an if block rejected: %#v", diagnostics)
+	}
+}
+
 func TestSemaBindingResolverFindsAnnotatedStaticField(t *testing.T) {
 	source := `
 public class QueryProbe {

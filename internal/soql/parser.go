@@ -83,6 +83,14 @@ func lex(input string) ([]token, error) {
 				i++
 			}
 			bindStart := i
+			if bindStart == len(input) || !soqlBindIdentifierStart(input[bindStart]) {
+				// A numbered date literal accepts optional whitespace after its
+				// colon (for example, N_MONTHS_AGO : 1). Only absorb whitespace
+				// into an Apex bind when the following token starts an identifier.
+				out = append(out, token{text: ":"})
+				i = start + 1
+				continue
+			}
 			if end, ok := scanSOQLBindCollectionConstructor(input, bindStart); ok {
 				out = append(out, token{text: ":" + strings.TrimSpace(input[bindStart:end])})
 				i = end
@@ -138,6 +146,10 @@ func lex(input string) ([]token, error) {
 	}
 	out = append(out, token{text: ""})
 	return out, nil
+}
+
+func soqlBindIdentifierStart(value byte) bool {
+	return value == '_' || value >= 'a' && value <= 'z' || value >= 'A' && value <= 'Z'
 }
 
 func scanSOQLBindCollectionConstructor(input string, start int) (int, bool) {

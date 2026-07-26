@@ -406,6 +406,11 @@ func semaBuildBindingScope(source string, methodStart, methodEnd, headerStart, t
 
 func semaMethodHeader(header string) bool {
 	header = strings.TrimSpace(header)
+	for _, control := range []string{"if", "for", "while", "switch", "catch", "else"} {
+		if strings.HasPrefix(header, control) && (len(header) == len(control) || !semaIdentifierByte(header[len(control)])) {
+			return false
+		}
+	}
 	open := strings.LastIndex(header, "(")
 	if open < 0 || !strings.HasSuffix(header, ")") {
 		return false
@@ -414,11 +419,11 @@ func semaMethodHeader(header string) bool {
 	if len(nameFields) == 0 {
 		return false
 	}
-	switch strings.ToLower(nameFields[len(nameFields)-1]) {
-	case "if", "for", "while", "switch", "catch":
-		return false
-	}
 	return true
+}
+
+func semaIdentifierByte(value byte) bool {
+	return value == '_' || value >= 'a' && value <= 'z' || value >= 'A' && value <= 'Z' || value >= '0' && value <= '9'
 }
 
 func semaHeaderStart(source string, brace int, spans semaCodeSpans) int {

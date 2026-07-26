@@ -1013,6 +1013,15 @@ the correct scope. The remaining NU collection-comparison forms remain
 oracle-pending because they conflict with the documented `IN`/`NOT IN` bind
 contract.
 
+Follow-up (2026-07-25): a control block whose condition contains a call (for
+example, `if (String.isNotBlank(nameOverride))`) was being mistaken for a
+method, hiding outer locals from queries nested in that block. Control headers
+are now excluded before method-scope selection; the `mtplId` corpus false
+positive is gone. The fresh focused NU compile took 172.73 seconds and left
+only the two duplicated collection-comparison diagnostics (six occurrences).
+The lexer also now distinguishes a spaced bind (`: name`) from a spaced
+numbered date literal (`N_MONTHS_AGO : 1`).
+
 ---
 
 ## Completion criteria
