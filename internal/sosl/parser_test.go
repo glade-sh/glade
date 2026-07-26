@@ -39,6 +39,18 @@ func TestParseSOSLReturningObjectsAndFields(t *testing.T) {
 			}}},
 		},
 		{
+			name:  "where bind stays with its returning object",
+			input: "FIND :term RETURNING Account(Id), Contact(Id, LastName WHERE LastName = :value)",
+			want: sosl.Query{Returning: []sosl.ReturningObject{
+				{Object: "Account", Fields: []string{"Id"}},
+				{
+					Object:     "Contact",
+					Fields:     []string{"Id", "LastName"},
+					WhereBinds: []sosl.WhereBind{{Field: "LastName", Name: "value"}},
+				},
+			}},
+		},
+		{
 			name:  "relationship field path",
 			input: "FIND :term RETURNING Contact(LastName, Account.Name)",
 			want: sosl.Query{Returning: []sosl.ReturningObject{{

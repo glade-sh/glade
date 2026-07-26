@@ -2,7 +2,6 @@ package sosl
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 	"unicode"
 )
@@ -23,8 +22,6 @@ type WhereBind struct {
 	Name  string
 }
 
-var whereEqualityBind = regexp.MustCompile(`(?i)\bWHERE\s+([A-Za-z_][A-Za-z0-9_.]*)\s*=\s*:\s*([A-Za-z_][A-Za-z0-9_]*)`)
-
 type tokenKind int
 
 const (
@@ -33,6 +30,8 @@ const (
 	tokenComma
 	tokenLParen
 	tokenRParen
+	tokenColon
+	tokenEqual
 )
 
 type token struct {
@@ -42,7 +41,7 @@ type token struct {
 
 func Parse(input string) (Query, error) {
 	tokens := lex(input)
-	p := parser{tokens: tokens, input: input}
+	p := parser{tokens: tokens}
 	if !p.skipToKeyword("RETURNING") {
 		return Query{}, fmt.Errorf("sosl: missing RETURNING")
 	}
@@ -52,7 +51,6 @@ func Parse(input string) (Query, error) {
 type parser struct {
 	tokens []token
 	pos    int
-	input  string
 }
 
 func (p *parser) parseReturning() (Query, error) {
@@ -64,6 +62,9 @@ func (p *parser) parseReturning() (Query, error) {
 		}
 		if p.peek().kind == tokenIdent && equalFold(p.peek().text, "LIMIT") {
 			p.next()
+			if p.peek().kind == tokenColon {
+				p.next()
+			}
 			bind := p.next()
 			if bind.kind != tokenIdent {
 				return Query{}, fmt.Errorf("sosl: expected LIMIT bind")
@@ -78,16 +79,14 @@ func (p *parser) parseReturning() (Query, error) {
 		if got := p.next(); got.kind != tokenLParen {
 			return Query{}, fmt.Errorf("sosl: expected fields for %s", object.text)
 		}
-		fields, err := p.parseFields()
+		fields, whereBinds, err := p.parseFields()
 		if err != nil {
 			return Query{}, err
 		}
 		returning := ReturningObject{
-			Object: object.text,
-			Fields: fields,
-		}
-		if match := whereEqualityBind.FindStringSubmatch(p.input); len(match) == 3 {
-			returning.WhereBinds = append(returning.WhereBinds, WhereBind{Field: match[1], Name: match[2]})
+			Object:     object.text,
+			Fields:     fields,
+			WhereBinds: whereBinds,
 		}
 		query.Returning = append(query.Returning, returning)
 	}
@@ -97,43 +96,55 @@ func (p *parser) parseReturning() (Query, error) {
 	return query, nil
 }
 
-func (p *parser) parseFields() ([]string, error) {
+func (p *parser) parseFields() ([]string, []WhereBind, error) {
 	var fields []string
 	for {
 		tok := p.next()
 		switch tok.kind {
 		case tokenIdent:
 			if equalFold(tok.text, "WHERE") {
-				p.skipUntilObjectEnd()
-				return fields, nil
+				return fields, p.parseWhereBinds(), nil
 			}
 			fields = append(fields, tok.text)
 		case tokenComma:
 			continue
 		case tokenRParen:
-			return fields, nil
+			return fields, nil, nil
 		case tokenEOF:
-			return nil, fmt.Errorf("sosl: unterminated field list")
+			return nil, nil, fmt.Errorf("sosl: unterminated field list")
 		default:
-			return nil, fmt.Errorf("sosl: expected field")
+			return nil, nil, fmt.Errorf("sosl: expected field")
 		}
 	}
 }
 
-func (p *parser) skipUntilObjectEnd() {
+func (p *parser) parseWhereBinds() []WhereBind {
+	var binds []WhereBind
 	depth := 0
 	for {
 		tok := p.next()
 		switch tok.kind {
 		case tokenEOF:
-			return
+			return binds
 		case tokenLParen:
 			depth++
 		case tokenRParen:
 			if depth == 0 {
-				return
+				return binds
 			}
 			depth--
+		case tokenIdent:
+			if p.peek().kind != tokenEqual {
+				continue
+			}
+			p.next()
+			if p.next().kind != tokenColon {
+				continue
+			}
+			name := p.next()
+			if name.kind == tokenIdent {
+				binds = append(binds, WhereBind{Field: tok.text, Name: name.text})
+			}
 		}
 	}
 }
@@ -186,6 +197,12 @@ func lex(input string) []token {
 			i++
 		case ')':
 			tokens = append(tokens, token{kind: tokenRParen, text: ")"})
+			i++
+		case ':':
+			tokens = append(tokens, token{kind: tokenColon, text: ":"})
+			i++
+		case '=':
+			tokens = append(tokens, token{kind: tokenEqual, text: "="})
 			i++
 		default:
 			if isIdentStart(input[i]) {
