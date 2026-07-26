@@ -266,7 +266,7 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 
 var (
 	semaInlineBindPattern  = regexp.MustCompile(`:([A-Za-z_][A-Za-z0-9_]*)`)
-	semaBindingDeclaration = regexp.MustCompile(`(?m)(?:^|[;({,])\s*(?:(?:public|private|protected|global|static|final|transient)\s+)*([A-Za-z_][A-Za-z0-9_]*(?:\s*<[^;=(){}]+>)?(?:\[\])?)\s+([A-Za-z_][A-Za-z0-9_]*)\b`)
+	semaBindingDeclaration = regexp.MustCompile(`(?m)(?:^|[;({,])\s*(?:(?:public|private|protected|global|static|final|transient|virtual|abstract|override|webservice)\s+)*([A-Za-z_][A-Za-z0-9_]*(?:\s*<[^;=(){}]+?>)?(?:\[\])?)\s+([A-Za-z_][A-Za-z0-9_]*)\b`)
 	semaTypeHeader         = regexp.MustCompile(`(?i)\b(?:class|interface|enum|trigger)\s+[A-Za-z_][A-Za-z0-9_]*`)
 )
 

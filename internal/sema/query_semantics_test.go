@@ -259,6 +259,23 @@ public class QueryProbe {
 	}
 }
 
+func TestSemaBindingResolverFindsGenericMethodParameters(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public virtual List<Account> run(Set<String> newEmails, List<Account> newAccounts) {
+    return [SELECT Id FROM Account WHERE Name IN :newEmails AND Id NOT IN :newAccounts];
+  }
+}`
+	offset := strings.Index(source, ":newEmails")
+	bindings := newSemaBindingResolver(source, newSemaCodeSpans(source)).bindingsAt(offset)
+	if got := bindings["newemails"]; got != "Set<String>" {
+		t.Fatalf("newEmails binding = %q, want Set<String>; all = %#v", got, bindings)
+	}
+	if got := bindings["newaccounts"]; got != "List<Account>" {
+		t.Fatalf("newAccounts binding = %q, want List<Account>; all = %#v", got, bindings)
+	}
+}
+
 func TestQuerySemanticsAcceptsInstanceFieldBind(t *testing.T) {
 	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {
