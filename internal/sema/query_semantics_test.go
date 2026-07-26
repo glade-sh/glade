@@ -181,6 +181,19 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsAcceptsQualifiedParameterBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run(Outer.Response response) {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Id IN :response.CartIds];
+  }
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("qualified parameter bind rejected: %#v", diagnostics)
+	}
+}
+
 func TestQuerySemanticsRequiresNumericLimitAndOffsetBinds(t *testing.T) {
 	invalid := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {

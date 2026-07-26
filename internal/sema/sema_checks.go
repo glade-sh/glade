@@ -219,6 +219,12 @@ func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Obj
 		checker.knownTypes[strings.ToLower(typ.Name)] = true
 		checker.knownTypes[strings.ToLower(typ.LocalName)] = true
 	}
+	for _, typ := range typesys.StandardPlatformSymbolView() {
+		checker.knownTypes[strings.ToLower(typ.Name)] = true
+		if typ.Namespace != "" {
+			checker.knownTypes[strings.ToLower(typ.Namespace+"."+typ.Name)] = true
+		}
+	}
 	for _, object := range declaredObjects {
 		checker.recordDeclaredFields(object)
 	}
@@ -275,7 +281,7 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 
 var (
 	semaInlineBindPattern  = regexp.MustCompile(`:([A-Za-z_][A-Za-z0-9_]*)`)
-	semaBindingDeclaration = regexp.MustCompile(`(?m)(?:^|[;({,])\s*(?:@[A-Za-z_][A-Za-z0-9_]*(?:\([^)]*\))?\s*)*(?:(?:public|private|protected|global|static|final|transient|virtual|abstract|override|webservice)\s+)*([A-Za-z_][A-Za-z0-9_]*(?:\s*<[^;=(){}]+?>)?(?:\[\])?)\s+([A-Za-z_][A-Za-z0-9_]*)\b`)
+	semaBindingDeclaration = regexp.MustCompile(`(?m)(?:^|[;({,])\s*(?:@[A-Za-z_][A-Za-z0-9_]*(?:\([^)]*\))?\s*)*(?:(?:public|private|protected|global|static|final|transient|virtual|abstract|override|webservice)\s+)*([A-Za-z_][A-Za-z0-9_]*(?:\s*\.\s*[A-Za-z_][A-Za-z0-9_]*)*(?:\s*<[^;=(){}]+?>)?(?:\[\])?)\s+([A-Za-z_][A-Za-z0-9_]*)\b`)
 	semaTypeHeader         = regexp.MustCompile(`(?i)\b(?:class|interface|enum|trigger)\s+[A-Za-z_][A-Za-z0-9_]*`)
 )
 
@@ -513,8 +519,15 @@ func inlineQueryBindDiagnostics(ctx queryTextContext, bindings map[string]string
 		if _, ok := bindings[strings.ToLower(name)]; ok {
 			continue
 		}
-		if match[3] < len(ctx.queryText) && (ctx.queryText[match[3]] == '.' || ctx.queryText[match[3]] == '(') {
-			if knownTypes[strings.ToLower(name)] || semaKnownPlatformTypeReceiver(name) {
+		if match[3] < len(ctx.queryText) && ctx.queryText[match[3]] == '(' {
+			// Call expressions require the enclosing type/member model, including
+			// inherited methods. The lexical bind resolver intentionally leaves
+			// them to body semantic analysis rather than mistaking the call head
+			// for a variable.
+			continue
+		}
+		if match[3] < len(ctx.queryText) && ctx.queryText[match[3]] == '.' {
+			if knownTypes[strings.ToLower(name)] {
 				continue
 			}
 		}
