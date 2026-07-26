@@ -1,6 +1,7 @@
 package sema
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -42,6 +43,7 @@ public class Probe {
     List<Account> rows = [SELECT Id FROM Account WITH SECURITY_ENFORCED];
   }
 }
+
 `
 	for _, test := range []struct {
 		apiVersion string
@@ -57,5 +59,37 @@ public class Probe {
 				t.Fatalf("API %s query diagnostics = %#v, want reject=%v", test.apiVersion, result.Diagnostics, test.wantReject)
 			}
 		})
+	}
+}
+
+func TestAbstractMethodRequiresExplicitAccessAtAPIVersion65(t *testing.T) {
+	source := `public abstract class Probe { abstract String value(); }`
+	for _, test := range []struct {
+		apiVersion string
+		wantReject bool
+	}{
+		{apiVersion: "64.0", wantReject: false},
+		{apiVersion: "65.0", wantReject: true},
+	} {
+		t.Run(test.apiVersion, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, test.apiVersion)
+			gotReject := hasDiagnosticCode(result.Diagnostics, "GLADESEMA032")
+			if gotReject != test.wantReject {
+				t.Fatalf("API %s diagnostics = %#v, want reject=%v", test.apiVersion, result.Diagnostics, test.wantReject)
+			}
+		})
+	}
+}
+
+func TestAbstractMethodVersionGateUsesEffectiveSourceAPIVersion(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Probe.cls")
+	writeSemaFile(t, path, `public abstract class Probe { abstract String value(); }`)
+	if err := os.WriteFile(filepath.Join(root, "Probe.cls-meta.xml"), []byte("<ApexClass xmlns=\"http://soap.sforce.com/2006/04/metadata\"><apiVersion>65.0</apiVersion></ApexClass>"), 0o600); err != nil {
+		t.Fatalf("write metadata: %v", err)
+	}
+	result := Analyze(typesys.Build(project.Project{Root: root, SourceAPIVersion: "64.0", ApexFiles: []string{path}}, schema.Schema{}))
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA032") {
+		t.Fatalf("effective API 65 source was accepted: %#v", result.Diagnostics)
 	}
 }

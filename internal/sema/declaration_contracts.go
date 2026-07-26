@@ -2,6 +2,7 @@ package sema
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/glade-sh/glade/internal/apexast"
@@ -178,6 +179,10 @@ func methodContractDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymb
 		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
 			fmt.Sprintf("method %q cannot be both override and static", member.Name)))
 	}
+	if (abstract || override) && typeUsesAPIVersionAtLeast(typ, 65) && !hasAnyAccessModifier(mods) {
+		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+			fmt.Sprintf("%s method %q requires an explicit protected, public, or global access modifier in API version 65.0 or later", methodModifierKind(abstract), member.Name)))
+	}
 	if len(member.Parameters) > maxApexParameters {
 		diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
 			fmt.Sprintf("method %q exceeds the %d parameter limit", member.Name, maxApexParameters)))
@@ -200,6 +205,22 @@ func methodContractDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymb
 		}
 	}
 	return diagnostics
+}
+
+func typeUsesAPIVersionAtLeast(typ typesys.TypeSymbol, minimum float64) bool {
+	version, err := strconv.ParseFloat(strings.TrimSpace(typ.EffectiveAPIVersion), 64)
+	return err == nil && version >= minimum
+}
+
+func hasAnyAccessModifier(modifiers []string) bool {
+	return hasModifier(modifiers, "protected") || hasModifier(modifiers, "public") || hasModifier(modifiers, "global")
+}
+
+func methodModifierKind(abstract bool) string {
+	if abstract {
+		return "abstract"
+	}
+	return "override"
 }
 
 func constructorContractDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymbol) []diagnostic.Diagnostic {
