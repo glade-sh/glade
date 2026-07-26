@@ -489,17 +489,31 @@ public class OkParams {
 		t.Fatalf("32 parameters should be allowed: %#v", ok.Diagnostics)
 	}
 
-	over := analyzeDeclarationProject(t, map[string]string{
-		"OverParams.cls": fmt.Sprintf(`
-public class OverParams {
+	t.Run("method over limit", func(t *testing.T) {
+		over := analyzeDeclarationProject(t, map[string]string{
+			"OverMethodParams.cls": fmt.Sprintf(`
+public class OverMethodParams {
   public void run(%s) {}
-  public OverParams(%s) {}
 }
-`, strings.Join(overParams, ", "), strings.Join(overParams, ", ")),
+`, strings.Join(overParams, ", ")),
+		})
+		if !over.HasErrors() || !declarationDiagnosticMatching(over, "parameter limit") {
+			t.Fatalf("expected method parameter limit error, got %#v", over.Diagnostics)
+		}
 	})
-	if !over.HasErrors() || !declarationDiagnosticMatching(over, "parameter limit") {
-		t.Fatalf("expected parameter limit error, got %#v", over.Diagnostics)
-	}
+
+	t.Run("constructor over limit", func(t *testing.T) {
+		over := analyzeDeclarationProject(t, map[string]string{
+			"OverConstructorParams.cls": fmt.Sprintf(`
+public class OverConstructorParams {
+  public OverConstructorParams(%s) {}
+}
+`, strings.Join(overParams, ", ")),
+		})
+		if !over.HasErrors() || !declarationDiagnosticMatching(over, "parameter limit") {
+			t.Fatalf("expected constructor parameter limit error, got %#v", over.Diagnostics)
+		}
+	})
 }
 
 func TestDeclarationContractMethodBodyConsistency(t *testing.T) {

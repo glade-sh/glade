@@ -201,12 +201,14 @@ func TestAnnotationContractsRejectInvalidOwnersAndSignatures(t *testing.T) {
 	t.Parallel()
 	for name, source := range map[string]string{
 		"test method outside test class":            `public class Probe { @IsTest static void run() {} }`,
-		"test method requires static no args":       `@IsTest private class Probe { @IsTest void run(String value) {} }`,
+		"test method requires no args":              `@IsTest private class Probe { @IsTest static void run(String value) {} }`,
+		"test method requires static":               `@IsTest private class Probe { @IsTest void run() {} }`,
 		"duplicate test setup":                      `@IsTest private class Probe { @TestSetup static void one() {} @TestSetup static void two() {} }`,
 		"aura enabled overload":                     `public class Probe { @AuraEnabled public static void run() {} @AuraEnabled public static void run(String value) {} }`,
 		"invocable method requires list parameter":  `public class Probe { @InvocableMethod public static void run(String value) {} }`,
 		"invocable variable cannot be static":       `public class Probe { @InvocableVariable public static String value; }`,
-		"remote action requires public static":      `public class Probe { @RemoteAction private void run() {} }`,
+		"remote action requires public":             `public class Probe { @RemoteAction private static void run() {} }`,
+		"remote action requires static":             `public class Probe { @RemoteAction public void run() {} }`,
 		"ReadOnly static method needs a web owner":  `public class Probe { @ReadOnly public static void run() {} }`,
 		"JsonAccess requires a parameter":           `@JsonAccess public class Probe {}`,
 		"JsonAccess cannot annotate a method":       `public class Probe { @JsonAccess(serializable=true) public void run() {} }`,
