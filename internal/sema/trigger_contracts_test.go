@@ -76,6 +76,17 @@ trigger AccountTrigger on Account (before insert) {
 		t.Fatalf("expected unknown call diagnostic, got %#v", result.Diagnostics)
 	}
 
+	unknownReceiver := analyzeTriggerProject(t, map[string]string{
+		"AccountTrigger.trigger": `
+trigger AccountTrigger on Account (before insert) {
+  DefinitelyMissing.run();
+}
+`,
+	}, schema.Object{Name: "Account"})
+	if !triggerDiagnosticMatching(unknownReceiver, "DefinitelyMissing.run") {
+		t.Fatalf("expected unknown receiver diagnostic, got %#v", unknownReceiver.Diagnostics)
+	}
+
 	localResult := analyzeTriggerProject(t, map[string]string{
 		"AccountTrigger.trigger": `
 trigger AccountTrigger on Account (before insert) {

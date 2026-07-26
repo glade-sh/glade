@@ -613,6 +613,14 @@ public class Child extends Base {
 		t.Fatalf("expected implicit super() error, got %#v", implicit.Diagnostics)
 	}
 
+	implicitDefault := analyzeDeclarationProject(t, map[string]string{
+		"Base.cls":  `public virtual class Base { public Base(Integer value) {} }`,
+		"Child.cls": `public class Child extends Base {}`,
+	})
+	if !implicitDefault.HasErrors() || !declarationDiagnosticMatching(implicitDefault, "implicit super()") {
+		t.Fatalf("expected implicit default constructor error, got %#v", implicitDefault.Diagnostics)
+	}
+
 	ok := analyzeDeclarationProject(t, map[string]string{
 		"Base.cls": `public class Base { public Base() {} public Base(Integer value) {} }`,
 		"Child.cls": `

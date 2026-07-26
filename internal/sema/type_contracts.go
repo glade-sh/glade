@@ -205,7 +205,7 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 				target := strings.TrimSpace(current.Right.Name)
 				if left != "" && target != "" && !compatible(left, target) {
 					appendDiagnostic("instanceof comparison is impossible")
-				} else if typeUsesAPIVersionAtLeast(typ, 60) && semaInstanceofAlwaysTrue(left, target, typ.Name, model) {
+				} else if typeUsesAPIVersionAtLeast(typ, 60) && semaNestedIterableInstanceofAlwaysTrue(left, target, typ.Name, model) {
 					appendDiagnostic("instanceof comparison is always true")
 				}
 			}
@@ -256,19 +256,23 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 	return diagnostics
 }
 
-func semaInstanceofAlwaysTrue(left, target, owner string, model *semaTypeMemberView) bool {
-	if left == "" || target == "" {
-		return false
-	}
-	if semaAssignableToType(target, left, model) {
-		return true
-	}
+func semaNestedIterableInstanceofAlwaysTrue(left, target, owner string, model *semaTypeMemberView) bool {
 	leftBase, leftArgs := semaGenericBaseAndArgs(left)
 	targetBase, targetArgs := semaGenericBaseAndArgs(target)
 	if len(leftArgs) != 1 || len(targetArgs) != 1 || !strings.EqualFold(leftBase, "List") || !strings.EqualFold(targetBase, "Iterable") {
 		return false
 	}
+	if strings.EqualFold(strings.TrimSpace(targetArgs[0]), "SObject") {
+		return false
+	}
 	targetArgument := resolveNestedTypeName(model, owner, targetArgs[0])
+	if !strings.Contains(targetArgument, ".") {
+		return false
+	}
+	targetMembers, ok := model.lookup(normalizeName(targetArgument))
+	if !ok || targetMembers.dependency || targetMembers.nestingDepth == 0 {
+		return false
+	}
 	return semaAssignableToType(targetArgument, leftArgs[0], model)
 }
 

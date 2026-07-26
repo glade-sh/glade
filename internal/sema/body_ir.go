@@ -26,7 +26,6 @@ func (a *Analyzer) checkBodyText(typ typesys.TypeSymbol, member typesys.MemberSy
 	bodyScan := newSemaBodyExpressionScan(body)
 	scopes, diagnostics := a.collectBodyScopes(typ, member, body, bodyOffset, source, baseScope, model)
 	diagnostics = append(diagnostics, staticThisDiagnostics(typ, member, body, bodyOffset, source)...)
-	diagnostics = append(diagnostics, propertyGetterMutationDiagnostics(typ, member, bodyScan, bodyOffset, source, model)...)
 	irDiagnostics, irOK := a.checkBodyIRWithCompileStatus(typ, member, body, bodyOffset, source, baseScope, model, constructability)
 	diagnostics = append(diagnostics, irDiagnostics...)
 	for _, ctor := range constructorTypes(body) {
@@ -698,6 +697,35 @@ func (a *Analyzer) checkImplicitSuperConstructor(typ typesys.TypeSymbol, member 
 	return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "super", fmt.Sprintf("implicit super() requires an accessible no-argument constructor on %s", superName), member.Range.Start.Offset, member.Range.End.Offset, source)}
 }
 
+func (a *Analyzer) checkImplicitDefaultConstructors(index typesys.Index, model *semaTypeMemberView) []diagnostic.Diagnostic {
+	if a.sources == nil {
+		return nil
+	}
+	var diagnostics []diagnostic.Diagnostic
+	for _, typ := range index.Types {
+		if skipProjectDiagnosticType(typ) || typ.Kind != apexast.DeclarationClass || strings.TrimSpace(typ.SuperClass) == "" || !declarationFromParsedSource(typ) {
+			continue
+		}
+		hasConstructor := false
+		for _, member := range typ.Members {
+			if member.Kind == apexast.DeclarationConstructor {
+				hasConstructor = true
+				break
+			}
+		}
+		if hasConstructor {
+			continue
+		}
+		source, ok := a.sources.normalizedForType(typ)
+		if !ok {
+			continue
+		}
+		member := typesys.MemberSymbol{Kind: apexast.DeclarationConstructor, Name: typ.LocalName, Range: typ.Range}
+		diagnostics = append(diagnostics, a.checkImplicitSuperConstructor(typ, member, typ.Range.Start.Offset, source, model)...)
+	}
+	return diagnostics
+}
+
 func (a *Analyzer) checkIRExpressionTypeReferences(typ typesys.TypeSymbol, member typesys.MemberSymbol, instructions []ir.Instruction, body string, bodyOffset int, source string) []diagnostic.Diagnostic {
 	var seen map[string]bool
 	var diagnostics []diagnostic.Diagnostic
@@ -1274,6 +1302,9 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 					} else if a.hasKnown(receiver) {
 						return nil
 					} else {
+						if strings.Count(expr.Callee, ".") == 1 {
+							return []diagnostic.Diagnostic{unknownCallDiagnostic(typ, member, expr.Callee, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
+						}
 						return nil
 					}
 				}
@@ -1391,7 +1422,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 		if semaKnownFluentHelperMethod(method) {
 			return nil
 		}
-		if semaSourceHasDottedCall(source, method) {
+		if strings.Count(expr.Callee, ".") != 1 && semaSourceHasDottedCall(source, method) {
 			return nil
 		}
 		if explicitReceiver && a.hasKnown(receiverType) {
@@ -1442,7 +1473,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 			}
 		}
 	}
-	if semaSourceHasDottedCall(source, method) {
+	if strings.Count(expr.Callee, ".") != 1 && semaSourceHasDottedCall(source, method) {
 		return nil
 	}
 	if semaKnownFluentHelperMethod(method) {

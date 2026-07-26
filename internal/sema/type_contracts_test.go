@@ -59,21 +59,25 @@ func TestTypeContractRejectsInvalidOperators(t *testing.T) {
 	}
 }
 
-func TestTypeContractRejectsAlwaysTrueInstanceofAtAPIVersion60(t *testing.T) {
-	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
-		"Probe.cls": `public class Probe { public virtual class Base {} public class Sub extends Base {} public void run(List<Sub> values) { Boolean check = values instanceof Iterable<Base>; } }`,
-	}, "60.0")
-	if !result.HasErrors() || !declarationDiagnosticMatching(result, "always true") {
-		t.Fatalf("always-true instanceof was accepted: %#v", result.Diagnostics)
+func TestTypeContractAllowsIterableInstanceofAtAllTestedAPIVersions(t *testing.T) {
+	for _, apiVersion := range []string{"59.0", "60.0"} {
+		t.Run(apiVersion, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+				"Probe.cls": `public class Probe { public Boolean run(List<Account> values) { return values instanceof Iterable<SObject>; } }`,
+			}, apiVersion)
+			if result.HasErrors() {
+				t.Fatalf("Iterable instanceof control was rejected: %#v", result.Diagnostics)
+			}
+		})
 	}
 }
 
-func TestTypeContractAllowsAlwaysTrueInstanceofBeforeAPIVersion60(t *testing.T) {
+func TestTypeContractRejectsAlwaysTrueNestedIterableInstanceofAtAPIVersion60(t *testing.T) {
 	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
-		"Probe.cls": `public class Probe { public virtual class Base {} public class Sub extends Base {} public void run(List<Sub> values) { Boolean check = values instanceof Iterable<Base>; } }`,
-	}, "59.0")
-	if result.HasErrors() {
-		t.Fatalf("pre-60 instanceof control was rejected: %#v", result.Diagnostics)
+		"Probe.cls": `public class Probe { public virtual class Base {} public class Sub extends Base {} public Boolean run() { List<Sub> values = new List<Sub>(); return values instanceof Iterable<Base>; } }`,
+	}, "60.0")
+	if !result.HasErrors() || !declarationDiagnosticMatching(result, "always true") {
+		t.Fatalf("always-true nested Iterable instanceof was accepted: %#v", result.Diagnostics)
 	}
 }
 

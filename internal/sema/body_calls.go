@@ -581,7 +581,7 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 		if semaKnownAddressValueCall(callee) {
 			return nil
 		}
-		if semaSourceHasDottedCall(source, callee) {
+		if strings.Count(callee, ".") != 1 && semaSourceHasDottedCall(source, callee) {
 			return nil
 		}
 		if receiverMode != "implicit" && semaCalleeDependencyRoot(callee, scope, model) {
