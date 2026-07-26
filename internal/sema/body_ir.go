@@ -25,6 +25,7 @@ func (a *Analyzer) checkBodyText(typ typesys.TypeSymbol, member typesys.MemberSy
 	}
 	bodyScan := newSemaBodyExpressionScan(body)
 	scopes, diagnostics := a.collectBodyScopes(typ, member, body, bodyOffset, source, baseScope, model)
+	diagnostics = append(diagnostics, staticThisDiagnostics(typ, member, body, bodyOffset, source)...)
 	irDiagnostics, irOK := a.checkBodyIRWithCompileStatus(typ, member, body, bodyOffset, source, baseScope, model, constructability)
 	diagnostics = append(diagnostics, irDiagnostics...)
 	for _, ctor := range constructorTypes(body) {
@@ -61,6 +62,33 @@ func (a *Analyzer) checkBodyText(typ typesys.TypeSymbol, member typesys.MemberSy
 	}
 	diagnostics = append(diagnostics, a.checkBodyCalls(typ, member, body, bodyOffset, source, scopes, model)...)
 	return dedupeBodyDiagnostics(diagnostics)
+}
+
+func staticThisDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string) []diagnostic.Diagnostic {
+	if !hasModifier(member.Modifiers, "static") {
+		return nil
+	}
+	lower := strings.ToLower(body)
+	var diagnostics []diagnostic.Diagnostic
+	for cursor := 0; cursor < len(lower); {
+		offset := strings.Index(lower[cursor:], "this")
+		if offset < 0 {
+			break
+		}
+		offset += cursor
+		end := offset + len("this")
+		leftBoundary := offset == 0 || !isApexIdentifierChar(lower[offset-1])
+		rightBoundary := end == len(lower) || !isApexIdentifierChar(lower[end])
+		if leftBoundary && rightBoundary && !semaOffsetInIgnoredText(body, offset) {
+			diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, "this", "this cannot be referenced from a static method", bodyOffset+offset, bodyOffset+end, source))
+		}
+		cursor = end
+	}
+	return diagnostics
+}
+
+func isApexIdentifierChar(value byte) bool {
+	return value == '_' || (value >= 'a' && value <= 'z') || (value >= 'A' && value <= 'Z') || (value >= '0' && value <= '9')
 }
 
 func isConstructableType(typ typesys.TypeSymbol) bool {

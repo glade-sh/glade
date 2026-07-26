@@ -432,6 +432,7 @@ func TestDeclarationContractRejectsStaticAndFinalFieldMisuse(t *testing.T) {
 		"final static reassignment":         `public class Probe { public static final Integer Value = 1; public static void run() { Value = 2; } }`,
 		"static field through instance":     `public class Probe { public static Integer Value; public void run() { Probe item = new Probe(); item.Value = 1; } }`,
 		"instance field from static method": `public class Probe { public Integer Value; public static Integer run() { return Value; } }`,
+		"this from static method":           `public class Probe { public static Probe run() { return this; } }`,
 	} {
 		result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
 		if !result.HasErrors() {
