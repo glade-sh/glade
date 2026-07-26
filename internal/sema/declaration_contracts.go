@@ -207,6 +207,10 @@ func methodContractDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymb
 
 	switch typ.Kind {
 	case apexast.DeclarationInterface:
+		if hasModifier(typ.Modifiers, "global") && hasModifier(mods, "public") {
+			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
+				fmt.Sprintf("method %q cannot explicitly declare public in a global interface", member.Name)))
+		}
 		if member.HasBody {
 			diagnostics = append(diagnostics, declarationContractDiagnostic(typ, member.Range,
 				fmt.Sprintf("interface method %q cannot have a body", member.Name)))

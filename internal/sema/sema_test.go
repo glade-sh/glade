@@ -459,26 +459,29 @@ func TestAnalyzeRecognizesCallableAndStubProviderTypes(t *testing.T) {
 				Interfaces: []string{"Database.Batchable<Account>"},
 				Members: []typesys.MemberSymbol{
 					{
-						Kind: apexast.DeclarationMethod,
-						Name: "start",
-						Type: "Database.QueryLocator",
+						Kind:      apexast.DeclarationMethod,
+						Name:      "start",
+						Type:      "Database.QueryLocator",
+						Modifiers: []string{"public"},
 						Parameters: []apexast.Parameter{
 							{Name: "context", Type: "Database.BatchableContext"},
 						},
 					},
 					{
-						Kind: apexast.DeclarationMethod,
-						Name: "execute",
-						Type: "void",
+						Kind:      apexast.DeclarationMethod,
+						Name:      "execute",
+						Type:      "void",
+						Modifiers: []string{"public"},
 						Parameters: []apexast.Parameter{
 							{Name: "context", Type: "Database.BatchableContext"},
 							{Name: "records", Type: "List<Account>"},
 						},
 					},
 					{
-						Kind: apexast.DeclarationMethod,
-						Name: "finish",
-						Type: "void",
+						Kind:      apexast.DeclarationMethod,
+						Name:      "finish",
+						Type:      "void",
+						Modifiers: []string{"public"},
 						Parameters: []apexast.Parameter{
 							{Name: "context", Type: "Database.BatchableContext"},
 						},

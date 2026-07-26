@@ -712,6 +712,7 @@ func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName strin
 			aggregateAliases[strings.ToLower(aggregate.Alias)] = true
 		}
 		diagnostics = append(diagnostics, c.checkSOQLField(object.Name, aggregate.Field, ctx, cursor)...)
+		diagnostics = append(diagnostics, c.checkSOQLAggregateFieldType(object.Name, aggregate, ctx, cursor)...)
 		diagnostics = append(diagnostics, c.checkSOQLFieldCapability(object.Name, aggregate.Field, "aggregatable", ctx, cursor)...)
 	}
 	for _, field := range query.Fields {
@@ -764,6 +765,27 @@ func (c querySemanticsChecker) checkSOQLQuery(query soql.Query, objectName strin
 		}
 	}
 	return diagnostics
+}
+
+func (c querySemanticsChecker) checkSOQLAggregateFieldType(objectName string, aggregate soql.Aggregate, ctx queryTextContext, cursor int) []diagnostic.Diagnostic {
+	function := strings.ToUpper(strings.TrimSpace(aggregate.Func))
+	if function != "SUM" && function != "AVG" {
+		return nil
+	}
+	field, ok := c.field(objectName, aggregate.Field)
+	if !ok || semaSOQLNumericAggregateFieldType(field.Type) {
+		return nil
+	}
+	return []diagnostic.Diagnostic{ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", fmt.Sprintf("SOQL %s requires a numeric field; %s.%s is %s", function, objectName, aggregate.Field, field.Type), aggregate.Field, findQueryIdentifier(ctx.queryText, aggregate.Field, cursor))}
+}
+
+func semaSOQLNumericAggregateFieldType(fieldType string) bool {
+	switch strings.ToLower(strings.ReplaceAll(strings.TrimSpace(fieldType), " ", "")) {
+	case "number", "currency", "percent", "double", "decimal", "integer", "int", "long":
+		return true
+	default:
+		return false
+	}
 }
 
 func queryVersionDiagnostics(query soql.Query, ctx queryTextContext, apiVersion float64) []diagnostic.Diagnostic {
@@ -1603,6 +1625,10 @@ func schemaObjectFromStorageDefinition(definition storage.ObjectDefinition) sche
 			Required:              field.Required,
 			ExternalID:            field.ExternalID,
 			IDLookup:              field.IDLookup,
+			Filterable:            semaCloneBoolPointer(field.Filterable),
+			Groupable:             semaCloneBoolPointer(field.Groupable),
+			Sortable:              semaCloneBoolPointer(field.Sortable),
+			Aggregatable:          semaCloneBoolPointer(field.Aggregatable),
 			Unique:                field.Unique,
 			Encrypted:             field.Encrypted,
 			Formula:               field.Formula,
@@ -1629,6 +1655,14 @@ func schemaObjectFromStorageDefinition(definition storage.ObjectDefinition) sche
 		return object.Fields[i].Name < object.Fields[j].Name
 	})
 	return object
+}
+
+func semaCloneBoolPointer(value *bool) *bool {
+	if value == nil {
+		return nil
+	}
+	clone := *value
+	return &clone
 }
 
 func (ctx queryTextContext) diagnostic(code, message, token string, queryOffset int) diagnostic.Diagnostic {
@@ -2370,6 +2404,9 @@ func concreteMethodsByName(model *semaTypeMemberView, typeName, methodName strin
 
 func databaseBatchableMethodCompatible(methodName, itemType string, methods []typesys.MemberSymbol, model *semaTypeMemberView) bool {
 	for _, method := range methods {
+		if !hasModifier(method.Modifiers, "public") && !hasModifier(method.Modifiers, "global") {
+			continue
+		}
 		switch strings.ToLower(methodName) {
 		case "start":
 			if len(method.Parameters) != 1 || !sameSemaSignatureType(method.Parameters[0].Type, "Database.BatchableContext") {

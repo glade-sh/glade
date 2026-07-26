@@ -418,6 +418,9 @@ func TestDeclarationContractRejectsAdditionalStaticAndAccessContracts(t *testing
 		"explicit final method": {
 			"Probe.cls": `public class Probe { public final void run() {} }`,
 		},
+		"global interface explicit public method": {
+			"Probe.cls": `global interface Probe { public void run(); }`,
+		},
 	} {
 		result := analyzeDeclarationProject(t, files)
 		if !result.HasErrors() {

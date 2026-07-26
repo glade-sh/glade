@@ -62,6 +62,29 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsRejectsAggregateOnNonAggregatableField(t *testing.T) {
+	no := false
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    List<AggregateResult> values = [SELECT SUM(Amount__c) total FROM Account];
+  }
+}
+`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Amount__c", Type: "Number", Aggregatable: &no}}}}})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CAPABILITY") {
+		t.Fatalf("SUM on a non-aggregatable field was accepted: %#v", result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsRejectsAggregateOnStandardTextField(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run() { List<AggregateResult> values = [SELECT SUM(Name) total FROM Account]; } }`,
+	})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CONTRACT") {
+		t.Fatalf("SUM on standard Account.Name was accepted: %#v", result.Diagnostics)
+	}
+}
+
 func TestQuerySemanticsRejectsSelfSemiJoin(t *testing.T) {
 	result := analyzeQueryProbe(t, `
 public class QueryProbe {

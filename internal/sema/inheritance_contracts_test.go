@@ -168,6 +168,16 @@ public class Probe implements Database.Batchable {
 	}
 }
 
+func TestInheritanceContractsRequireVisibleBatchableMethods(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe implements Database.Batchable<SObject> { Database.QueryLocator start(Database.BatchableContext context) { return null; } void execute(Database.BatchableContext context, List<SObject> scope) {} void finish(Database.BatchableContext context) {} }`,
+	})
+	if !result.HasErrors() {
+		t.Fatalf("package-interface methods without public/global access were accepted: %#v", result.Diagnostics)
+	}
+}
+
 func TestInheritanceContractsAllowBatchableScopeVariance(t *testing.T) {
 	t.Parallel()
 	for name, source := range map[string]string{
