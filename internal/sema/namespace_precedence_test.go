@@ -75,6 +75,50 @@ public class UsesDatabase {
 	}
 }
 
+func TestAnalyzeNestedProjectTypeDoesNotShadowSystemLimits(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "QPlugin.cls"), `
+public class QPlugin {
+  public virtual class Limits {
+    public Integer getLimits() { return 0; }
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "UsesLimits.cls"), `
+public class UsesLimits {
+  public Integer run() {
+    return Limits.getLimitCallouts();
+  }
+}
+`)
+	result := analyzeFiles(t, root, "QPlugin.cls", "UsesLimits.cls")
+	if result.HasErrors() {
+		t.Fatalf("nested project type shadowed System.Limits: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeTopLevelProjectTypeShadowsSystemLimits(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Limits.cls"), `
+public class Limits {
+  public Integer getLimits() { return 0; }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "UsesLimits.cls"), `
+public class UsesLimits {
+  public Integer run() {
+    return Limits.getLimitCallouts();
+  }
+}
+`)
+	result := analyzeFiles(t, root, "Limits.cls", "UsesLimits.cls")
+	if !result.HasErrors() {
+		t.Fatalf("top-level project type did not shadow System.Limits: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeSchemaQualifierDisambiguatesShadowedSObject(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()

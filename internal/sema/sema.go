@@ -722,8 +722,8 @@ func semaProjectTypeShadowsPlatform(model *semaTypeMemberView, receiverType stri
 	if model == nil || model.state == nil || model.state.base == nil || strings.Contains(strings.TrimSpace(receiverType), ".") || !semaKnownPlatformTypeReceiver(receiverType) {
 		return false
 	}
-	members, ok := model.state.base.lookup(normalizeName(receiverType))
-	return ok && !members.dependency
+	members, ok := model.state.base.members[normalizeName(receiverType)]
+	return ok && !members.dependency && members.nestingDepth == 0
 }
 
 func semaInterfaceReturnCompatible(method, required typesys.MemberSymbol, model *semaTypeMemberView) bool {

@@ -2555,13 +2555,16 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	if _, ok := semaCollectionMethodSignature(receiverType, method); ok {
 		return nil, false
 	}
-	if candidates := resolveMemberMethods(model, receiverType, method); len(candidates) != 0 && !semaResolvedMembersAllPlatformBacked(model, candidates) {
+	if candidates := resolveMemberMethods(model, receiverType, method); len(candidates) != 0 && !semaResolvedMembersAllPlatformBacked(model, candidates) && !semaCallSpellsUnqualifiedPlatformReceiver(source, start, end, receiverType) {
 		return nil, false
 	}
 	if staticDiagnostic, blocked := checkGeneratedPlatformStaticAccess(typ, member, receiverType, method, receiverMode, start, end, source, model); blocked {
 		return []diagnostic.Diagnostic{staticDiagnostic}, true
 	}
 	sig, ok := semaPlatformMethodSignatureForMode(model, receiverType, method, receiverMode)
+	if !ok && semaCallSpellsUnqualifiedPlatformReceiver(source, start, end, receiverType) {
+		sig, ok = semaUnshadowedGeneratedPlatformMethodSignature(model, receiverType, method, receiverMode)
+	}
 	if !ok {
 		return nil, false
 	}
@@ -2576,6 +2579,25 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 		return nil, true
 	}
 	return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), start, end, source)}, true
+}
+
+func semaCallSpellsUnqualifiedPlatformReceiver(source string, start, end int, receiverType string) bool {
+	if start < 0 || end > len(source) || start >= end || strings.Contains(strings.TrimSpace(receiverType), ".") || !semaKnownPlatformTypeReceiver(receiverType) {
+		return false
+	}
+	receiver, _, ok := strings.Cut(strings.TrimSpace(source[start:end]), ".")
+	return ok && strings.EqualFold(strings.TrimSpace(receiver), strings.TrimSpace(receiverType))
+}
+
+func semaUnshadowedGeneratedPlatformMethodSignature(model *semaTypeMemberView, receiverType, method, receiverMode string) (semaCollectionSignature, bool) {
+	if model == nil || model.state == nil || model.state.platform == nil || semaProjectTypeShadowsPlatform(model, receiverType) {
+		return semaCollectionSignature{}, false
+	}
+	platformModel := &semaTypeMemberView{
+		state:    &semaTypeMemberState{base: model.state.platform},
+		hydrated: make(map[string]typeMembers),
+	}
+	return semaGeneratedPlatformMethodSignature(platformModel, receiverType, method, receiverMode)
 }
 func checkGeneratedPlatformStaticAccess(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method, receiverMode string, start, end int, source string, model *semaTypeMemberView) (diagnostic.Diagnostic, bool) {
 	switch receiverMode {

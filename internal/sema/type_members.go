@@ -20,6 +20,7 @@ type typeMembers struct {
 	sobject                     bool
 	externalPackageSObject      bool
 	partialSObject              bool
+	nestingDepth                int
 	kind                        apexast.DeclarationKind
 	superClass                  string
 	interfaces                  []string
@@ -845,15 +846,16 @@ func semaModelWithCurrentType(model *semaTypeMemberView, typ typesys.TypeSymbol)
 
 func semaTypeMembersFromSymbol(typ typesys.TypeSymbol) typeMembers {
 	members := typeMembers{
-		name:       semaTypeMembersName(typ),
-		shortKey:   semaShortTypeKey(typ.Name),
-		namespace:  typ.Namespace,
-		dependency: typ.Dependency,
-		kind:       typ.Kind,
-		superClass: typ.SuperClass,
-		interfaces: append([]string(nil), typ.Interfaces...),
-		methods:    make(map[string][]typesys.MemberSymbol),
-		fields:     make(map[string]typesys.MemberSymbol),
+		name:         semaTypeMembersName(typ),
+		shortKey:     semaShortTypeKey(typ.Name),
+		namespace:    typ.Namespace,
+		dependency:   typ.Dependency,
+		nestingDepth: typ.NestingDepth,
+		kind:         typ.Kind,
+		superClass:   typ.SuperClass,
+		interfaces:   append([]string(nil), typ.Interfaces...),
+		methods:      make(map[string][]typesys.MemberSymbol),
+		fields:       make(map[string]typesys.MemberSymbol),
 	}
 	for _, member := range typ.Members {
 		member = semaCloneMemberSymbol(member)
@@ -896,15 +898,16 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 	projectNamespace := index.Project.Namespace
 	for _, typ := range index.Types {
 		members := typeMembers{
-			name:       semaTypeMembersName(typ),
-			shortKey:   semaShortTypeKey(typ.Name),
-			namespace:  typ.Namespace,
-			dependency: typ.Dependency,
-			kind:       typ.Kind,
-			superClass: typ.SuperClass,
-			interfaces: append([]string(nil), typ.Interfaces...),
-			methods:    make(map[string][]typesys.MemberSymbol),
-			fields:     make(map[string]typesys.MemberSymbol),
+			name:         semaTypeMembersName(typ),
+			shortKey:     semaShortTypeKey(typ.Name),
+			namespace:    typ.Namespace,
+			dependency:   typ.Dependency,
+			nestingDepth: typ.NestingDepth,
+			kind:         typ.Kind,
+			superClass:   typ.SuperClass,
+			interfaces:   append([]string(nil), typ.Interfaces...),
+			methods:      make(map[string][]typesys.MemberSymbol),
+			fields:       make(map[string]typesys.MemberSymbol),
 		}
 		for _, member := range typ.Members {
 			member = semaCloneMemberSymbol(member)
