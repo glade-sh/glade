@@ -63,6 +63,16 @@ func TestParseSupportsMethodCallBindExpression(t *testing.T) {
 	}
 }
 
+func TestParseSupportsDocumentedLiteralMethodBindExpression(t *testing.T) {
+	query, err := Parse("SELECT Id FROM Account WHERE Name = :'XXXX'.substring(0, 3)")
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if query.Where == nil || query.Where.Value.Kind != storage.ValueID || string(query.Where.Value.ID) != ":'XXXX'.substring(0, 3)" {
+		t.Fatalf("where = %#v", query.Where)
+	}
+}
+
 func TestParseSupportsWhitespaceAfterBindColon(t *testing.T) {
 	query, err := Parse("SELECT Id FROM Account WHERE Name = : name")
 	if err != nil {

@@ -83,6 +83,11 @@ func lex(input string) ([]token, error) {
 				i++
 			}
 			bindStart := i
+			if end, ok := scanSOQLStringMethodBind(input, bindStart); ok {
+				out = append(out, token{text: ":" + input[bindStart:end]})
+				i = end
+				continue
+			}
 			if bindStart == len(input) || !soqlBindIdentifierStart(input[bindStart]) {
 				// A numbered date literal accepts optional whitespace after its
 				// colon (for example, N_MONTHS_AGO : 1). Only absorb whitespace
@@ -146,6 +151,80 @@ func lex(input string) ([]token, error) {
 	}
 	out = append(out, token{text: ""})
 	return out, nil
+}
+
+// scanSOQLStringMethodBind retains documented Apex binds such as
+// :'XXXX'.substring(0, 3) as one SOQL value token. The expression itself is
+// parsed by Apex before query execution, so the SOQL lexer must not split the
+// literal from its member call.
+func scanSOQLStringMethodBind(input string, start int) (int, bool) {
+	if start >= len(input) || input[start] != '\'' {
+		return 0, false
+	}
+	i := start + 1
+	escaped := false
+	for i < len(input) {
+		if escaped {
+			escaped = false
+			i++
+			continue
+		}
+		if input[i] == '\\' {
+			escaped = true
+			i++
+			continue
+		}
+		if input[i] != '\'' {
+			i++
+			continue
+		}
+		if i+1 < len(input) && input[i+1] == '\'' {
+			i += 2
+			continue
+		}
+		i++
+		break
+	}
+	if i > len(input) || i == len(input) && input[i-1] != '\'' {
+		return 0, false
+	}
+	if i == len(input) || input[i] != '.' {
+		return i, true
+	}
+	for i < len(input) && input[i] == '.' {
+		i++
+		memberStart := i
+		for i < len(input) && soqlBindIdentifierPart(input[i]) {
+			i++
+		}
+		if memberStart == i {
+			return 0, false
+		}
+		if i == len(input) || input[i] != '(' {
+			continue
+		}
+		depth := 0
+		for i < len(input) {
+			switch input[i] {
+			case '(':
+				depth++
+			case ')':
+				depth--
+				if depth == 0 {
+					i++
+					goto nextMember
+				}
+			}
+			i++
+		}
+		return 0, false
+	nextMember:
+	}
+	return i, true
+}
+
+func soqlBindIdentifierPart(value byte) bool {
+	return soqlBindIdentifierStart(value) || value >= '0' && value <= '9'
 }
 
 func soqlBindIdentifierStart(value byte) bool {

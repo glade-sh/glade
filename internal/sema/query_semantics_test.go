@@ -340,6 +340,19 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsAcceptsDocumentedLiteralMethodBind(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :'XXXX'.substring(0, 3)];
+  }
+}
+`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Name", Type: "Text"}}}}})
+	if result.HasErrors() {
+		t.Fatalf("documented literal method bind was rejected: %#v", result.Diagnostics)
+	}
+}
+
 func TestQuerySemanticsAcceptsCollectionConstructorBind(t *testing.T) {
 	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {
