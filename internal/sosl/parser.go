@@ -188,6 +188,17 @@ func (p *parser) parseWhereBinds() ([]WhereBind, string, string, error) {
 				return binds, limitBind, offsetBind, err
 			}
 			if p.peek().kind != tokenEqual {
+				if p.peek().kind != tokenIdent || !equalFold(p.peek().text, "LIKE") {
+					continue
+				}
+				p.next()
+				if p.next().kind != tokenColon {
+					continue
+				}
+				name := p.next()
+				if name.kind == tokenIdent {
+					binds = append(binds, WhereBind{Field: tok.text, Name: name.text})
+				}
 				continue
 			}
 			p.next()

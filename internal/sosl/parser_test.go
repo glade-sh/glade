@@ -39,6 +39,15 @@ func TestParseSOSLReturningObjectsAndFields(t *testing.T) {
 			}}},
 		},
 		{
+			name:  "like bind with where clause",
+			input: "FIND :term RETURNING Account(Id, Name WHERE Name LIKE :value)",
+			want: sosl.Query{Returning: []sosl.ReturningObject{{
+				Object:     "Account",
+				Fields:     []string{"Id", "Name"},
+				WhereBinds: []sosl.WhereBind{{Field: "Name", Name: "value"}},
+			}}},
+		},
+		{
 			name:  "where bind stays with its returning object",
 			input: "FIND :term RETURNING Account(Id), Contact(Id, LastName WHERE LastName = :value)",
 			want: sosl.Query{Returning: []sosl.ReturningObject{
@@ -68,7 +77,7 @@ func TestParseSOSLReturningObjectsAndFields(t *testing.T) {
 			input: "FIND :term IN ALL FIELDS RETURNING Account(Id, Name WHERE Name LIKE :name LIMIT :perObjectLimit OFFSET :offsetValue) WITH DIVISION = :division LIMIT :limitValue",
 			want: sosl.Query{
 				Returning: []sosl.ReturningObject{
-					{Object: "Account", Fields: []string{"Id", "Name"}, LimitBind: "perObjectLimit", OffsetBind: "offsetValue"},
+					{Object: "Account", Fields: []string{"Id", "Name"}, WhereBinds: []sosl.WhereBind{{Field: "Name", Name: "name"}}, LimitBind: "perObjectLimit", OffsetBind: "offsetValue"},
 				},
 				DivisionBind: "division",
 				LimitBind:    "limitValue",
