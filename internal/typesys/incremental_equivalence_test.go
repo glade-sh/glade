@@ -101,6 +101,31 @@ func TestUpdateApexFilesCleanRichSamePathUsesFastPath(t *testing.T) {
 	}
 }
 
+func TestUpdateApexFilesPreservesAnnotations(t *testing.T) {
+	fixture := newCleanIncrementalEquivalenceFixture(t)
+	previous := fixture.buildFresh(t)
+	writeFile(t, fixture.localClass, `@IsTest(SeeAllData = false)
+public class LocalService {
+  @AuraEnabled(cacheable = true)
+  public static String value() { return 'changed'; }
+}`)
+	updated := UpdateApexFiles(previous, []string{fixture.localClass}, nil)
+	fresh := fixture.buildFresh(t)
+	if mismatches := incrementalIndexMismatches(updated, fresh); len(mismatches) > 0 {
+		t.Fatalf("incremental annotations differ from full Build: %v", mismatches)
+	}
+	var typ *TypeSymbol
+	for i := range updated.Types {
+		if updated.Types[i].Name == "LocalService" {
+			typ = &updated.Types[i]
+			break
+		}
+	}
+	if typ == nil || len(typ.Annotations) != 1 || typ.Annotations[0].Name != "IsTest" || len(typ.Members) != 1 || len(typ.Members[0].Annotations) != 1 || typ.Members[0].Annotations[0].Name != "AuraEnabled" {
+		t.Fatalf("annotations were not retained in symbols: %#v", typ)
+	}
+}
+
 func TestUpdateApexFilesCleanLifecycleUsesFastPath(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -1745,6 +1770,49 @@ func incrementalDormantStateMismatches(got, want Index) []string {
 	return mismatches
 }
 
+func TestUpdateApexFilesPreservesEnumMembersAndHasBody(t *testing.T) {
+	root := t.TempDir()
+	enumPath := filepath.Join(root, "Color.cls")
+	classPath := filepath.Join(root, "Shape.cls")
+	writeFile(t, enumPath, `public enum Color { Red, Green }`)
+	writeFile(t, classPath, `public abstract class Shape {
+  public abstract void draw();
+  public void paint() {}
+}`)
+	proj := project.Project{Root: root, ApexFiles: []string{enumPath, classPath}}
+	previous := Build(proj, schema.Schema{})
+	writeFile(t, enumPath, `public enum Color { Red, Green, Blue }`)
+	writeFile(t, classPath, `public abstract class Shape {
+  public abstract void draw();
+  public void paint() { System.debug('x'); }
+  public Shape() {}
+}`)
+	updated := UpdateApexFiles(previous, []string{enumPath, classPath}, nil)
+	fresh := Build(project.Project{Root: root, ApexFiles: []string{enumPath, classPath}}, schema.Schema{})
+	compareIncrementalTypeSymbolAtPath(t, enumPath, updated, fresh)
+	compareIncrementalTypeSymbolAtPath(t, classPath, updated, fresh)
+	color, ok := incrementalTypeSymbolAtPath(updated, enumPath)
+	if !ok || len(color.Members) != 3 {
+		t.Fatalf("updated enum members = %#v ok=%v", color.Members, ok)
+	}
+	shape, ok := incrementalTypeSymbolAtPath(updated, classPath)
+	if !ok {
+		t.Fatal("missing Shape")
+	}
+	foundCtor := false
+	for _, member := range shape.Members {
+		if member.Kind == apexast.DeclarationConstructor && member.HasBody {
+			foundCtor = true
+		}
+		if member.Name == "paint" && !member.HasBody {
+			t.Fatalf("paint HasBody lost: %#v", member)
+		}
+	}
+	if !foundCtor {
+		t.Fatalf("constructor HasBody missing: %#v", shape.Members)
+	}
+}
+
 func compareIncrementalTypeSymbolAtPath(t *testing.T, path string, got, want Index) {
 	t.Helper()
 	gotSymbol, gotOK := incrementalTypeSymbolAtPath(got, path)
@@ -1845,6 +1913,32 @@ func assertNoIncrementalDiagnosticCode(t *testing.T, idx Index, code string) {
 	for _, diag := range idx.Diagnostics {
 		if diag.Code == code {
 			t.Errorf("stale diagnostic %s retained: %#v", code, diag)
+		}
+	}
+}
+
+func TestUpdateApexFilesTriggerBodyChangeMatchesFullBuild(t *testing.T) {
+	fixture := newCleanIncrementalEquivalenceFixture(t)
+	previous := fixture.buildFresh(t)
+	writeFile(t, fixture.localTrigger, "trigger LocalTrigger on Account (before insert) { Integer changed = 1; }")
+
+	candidate, fastPath := updateApexFilesIncremental(previous, []string{fixture.localTrigger}, nil)
+	if !fastPath {
+		t.Fatal("trigger body-only edit did not use fast path")
+	}
+	fresh := fixture.buildFresh(t)
+	if !reflect.DeepEqual(candidate, fresh) {
+		t.Errorf("trigger body-only fast path differs from full Build:\nincremental: %#v\nfull: %#v", candidate, fresh)
+	}
+	for _, index := range []Index{candidate, fresh} {
+		for _, trigger := range index.Triggers {
+			if trigger.File != fixture.localTrigger {
+				continue
+			}
+			source, ok := BuildArtifacts{}.SourceForTrigger(trigger)
+			if ok || source.NormalizedString() != "" {
+				t.Fatalf("empty artifacts resolved trigger source: %#v", source)
+			}
 		}
 	}
 }

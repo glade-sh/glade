@@ -20,9 +20,11 @@ type typeMembers struct {
 	sobject                     bool
 	externalPackageSObject      bool
 	partialSObject              bool
+	nestingDepth                int
 	kind                        apexast.DeclarationKind
 	superClass                  string
 	interfaces                  []string
+	modifiers                   []string
 	methods                     map[string][]typesys.MemberSymbol
 	constructors                []typesys.MemberSymbol
 	fields                      map[string]typesys.MemberSymbol
@@ -331,6 +333,7 @@ func semaTypeMembersFromPlatformSymbol(symbol typesys.TypeSymbol) typeMembers {
 		kind:       symbol.Kind,
 		superClass: symbol.SuperClass,
 		interfaces: append([]string(nil), symbol.Interfaces...),
+		modifiers:  append([]string(nil), symbol.Modifiers...),
 		methods:    make(map[string][]typesys.MemberSymbol),
 		fields:     make(map[string]typesys.MemberSymbol),
 	}
@@ -354,6 +357,23 @@ const semaCurrentTypeScopeKey = "__glade_current_type"
 const semaInferenceDepthScopeKey = "__glade_inference_depth"
 
 const semaSyntheticStandardSObjectFieldModifier = "__glade_standard_sobject_field"
+
+// semaMemberParameterNames returns the case-insensitive parameter name set for
+// a method or constructor. Locals and nested bindings may not reuse these names.
+func semaMemberParameterNames(member typesys.MemberSymbol) map[string]struct{} {
+	if len(member.Parameters) == 0 {
+		return nil
+	}
+	out := make(map[string]struct{}, len(member.Parameters))
+	for _, param := range member.Parameters {
+		name := strings.TrimSpace(param.Name)
+		if name == "" {
+			continue
+		}
+		out[normalizeName(name)] = struct{}{}
+	}
+	return out
+}
 
 func (a *Analyzer) checkMethodBodies(index typesys.Index) []diagnostic.Diagnostic {
 	return a.checkMethodBodiesWithRecorder(index, nil)
@@ -455,6 +475,123 @@ func (a *Analyzer) checkMethodBodiesWithViewWorkers(index typesys.Index, model *
 		recorder.endPhase(&recorder.counters.MethodBodies, bodyStarted)
 	}
 	return diagnostics
+}
+
+// semaTriggerContextTypeKey is the member-model key for the platform `Trigger`
+// context type.
+const semaTriggerContextTypeKey = "trigger"
+
+type semaTriggerBodyWorkItem struct {
+	triggerIndex int
+	body         string
+	bodyOffset   int
+	source       string
+}
+
+func buildSemaTriggerBodyWorkItems(index typesys.Index, sources *semaSources) []semaTriggerBodyWorkItem {
+	var workItems []semaTriggerBodyWorkItem
+	for triggerIndex, trigger := range index.Triggers {
+		if trigger.Dependency || trigger.File == "" {
+			continue
+		}
+		source, ok := sources.normalizedForTrigger(trigger)
+		if !ok {
+			continue
+		}
+		body, bodyOffset, extracted := extractBodyForSema(source, trigger.Range)
+		if !extracted {
+			continue
+		}
+		workItems = append(workItems, semaTriggerBodyWorkItem{
+			triggerIndex: triggerIndex,
+			body:         body,
+			bodyOffset:   bodyOffset,
+			source:       source,
+		})
+	}
+	return workItems
+}
+
+func (a *Analyzer) checkTriggerBodiesWithView(index typesys.Index, model *semaTypeMemberView, recorder *perfRecorder) []diagnostic.Diagnostic {
+	sources := a.sources
+	if sources == nil {
+		sources = newSemaSources(nil, recorder)
+	}
+	bodyStarted := recorder.beginPhase()
+	workItems := buildSemaTriggerBodyWorkItems(index, sources)
+	var diagnostics []diagnostic.Diagnostic
+	if len(workItems) > 0 {
+		constructability := buildConstructability(index)
+		for _, item := range workItems {
+			trigger := index.Triggers[item.triggerIndex]
+			typ, member := semaTriggerBodyDeclaration(trigger)
+			bodyModel := semaModelWithTriggerScope(model, trigger)
+			diagnostics = append(diagnostics, a.checkBodyText(typ, member, item.body, item.bodyOffset, item.source, bodyModel, constructability)...)
+		}
+	}
+	if recorder != nil {
+		recorder.endPhase(&recorder.counters.MethodBodies, bodyStarted)
+	}
+	return diagnostics
+}
+
+// semaTriggerBodyDeclaration models a trigger body as the static void member it
+// behaves like: no owning class state, no parameters, and no return value.
+func semaTriggerBodyDeclaration(trigger typesys.TriggerSymbol) (typesys.TypeSymbol, typesys.MemberSymbol) {
+	typ := typesys.TypeSymbol{
+		Kind:      apexast.DeclarationClass,
+		Name:      trigger.Name,
+		File:      trigger.File,
+		Namespace: trigger.Namespace,
+		Range:     trigger.Range,
+	}
+	member := typesys.MemberSymbol{
+		Kind:      apexast.DeclarationTrigger,
+		Name:      trigger.Name,
+		Type:      "void",
+		Modifiers: []string{"static"},
+		Range:     trigger.Range,
+	}
+	return typ, member
+}
+
+// semaModelWithTriggerScope specializes the platform `Trigger` context to the
+// object the trigger is declared on, matching how Salesforce types
+// Trigger.new/old/newMap/oldMap inside a trigger body.
+func semaModelWithTriggerScope(model *semaTypeMemberView, trigger typesys.TriggerSymbol) *semaTypeMemberView {
+	objectName := strings.TrimSpace(trigger.ObjectName)
+	if objectName == "" {
+		return model
+	}
+	context, ok := model.lookup(semaTriggerContextTypeKey)
+	if !ok {
+		return model
+	}
+	context = semaCloneTypeMembers(context)
+	recordType := map[string]string{
+		"new":    "List<" + objectName + ">",
+		"old":    "List<" + objectName + ">",
+		"newmap": "Map<Id," + objectName + ">",
+		"oldmap": "Map<Id," + objectName + ">",
+	}
+	for key, fieldType := range recordType {
+		field, exists := context.fields[key]
+		if !exists {
+			continue
+		}
+		field.Type = fieldType
+		context.fields[key] = field
+	}
+	out := &semaTypeMemberView{
+		state:    model.state,
+		current:  make(map[string]typeMembers, len(model.current)+1),
+		hydrated: model.hydrated,
+	}
+	for key, members := range model.current {
+		out.current[key] = members
+	}
+	out.current[semaTriggerContextTypeKey] = context
+	return out
 }
 
 type semaMethodBodyTask struct {
@@ -711,15 +848,17 @@ func semaModelWithCurrentType(model *semaTypeMemberView, typ typesys.TypeSymbol)
 
 func semaTypeMembersFromSymbol(typ typesys.TypeSymbol) typeMembers {
 	members := typeMembers{
-		name:       semaTypeMembersName(typ),
-		shortKey:   semaShortTypeKey(typ.Name),
-		namespace:  typ.Namespace,
-		dependency: typ.Dependency,
-		kind:       typ.Kind,
-		superClass: typ.SuperClass,
-		interfaces: append([]string(nil), typ.Interfaces...),
-		methods:    make(map[string][]typesys.MemberSymbol),
-		fields:     make(map[string]typesys.MemberSymbol),
+		name:         semaTypeMembersName(typ),
+		shortKey:     semaShortTypeKey(typ.Name),
+		namespace:    typ.Namespace,
+		dependency:   typ.Dependency,
+		nestingDepth: typ.NestingDepth,
+		kind:         typ.Kind,
+		superClass:   typ.SuperClass,
+		interfaces:   append([]string(nil), typ.Interfaces...),
+		modifiers:    append([]string(nil), typ.Modifiers...),
+		methods:      make(map[string][]typesys.MemberSymbol),
+		fields:       make(map[string]typesys.MemberSymbol),
 	}
 	for _, member := range typ.Members {
 		member = semaCloneMemberSymbol(member)
@@ -762,15 +901,17 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 	projectNamespace := index.Project.Namespace
 	for _, typ := range index.Types {
 		members := typeMembers{
-			name:       semaTypeMembersName(typ),
-			shortKey:   semaShortTypeKey(typ.Name),
-			namespace:  typ.Namespace,
-			dependency: typ.Dependency,
-			kind:       typ.Kind,
-			superClass: typ.SuperClass,
-			interfaces: append([]string(nil), typ.Interfaces...),
-			methods:    make(map[string][]typesys.MemberSymbol),
-			fields:     make(map[string]typesys.MemberSymbol),
+			name:         semaTypeMembersName(typ),
+			shortKey:     semaShortTypeKey(typ.Name),
+			namespace:    typ.Namespace,
+			dependency:   typ.Dependency,
+			nestingDepth: typ.NestingDepth,
+			kind:         typ.Kind,
+			superClass:   typ.SuperClass,
+			interfaces:   append([]string(nil), typ.Interfaces...),
+			modifiers:    append([]string(nil), typ.Modifiers...),
+			methods:      make(map[string][]typesys.MemberSymbol),
+			fields:       make(map[string]typesys.MemberSymbol),
 		}
 		for _, member := range typ.Members {
 			member = semaCloneMemberSymbol(member)
@@ -1004,6 +1145,7 @@ func semaRequiresQualifiedDependencyName(typ typesys.TypeSymbol) bool {
 
 func semaCloneMemberSymbol(member typesys.MemberSymbol) typesys.MemberSymbol {
 	member.Modifiers = append([]string(nil), member.Modifiers...)
+	member.Annotations = append([]apexast.Annotation(nil), member.Annotations...)
 	member.Parameters = semaCloneParameters(member.Parameters)
 	member.Accessors = semaCloneAccessors(member.Accessors)
 	return member
@@ -1013,6 +1155,9 @@ func semaCloneTypeMembers(members typeMembers) typeMembers {
 	clone := members
 	if members.interfaces != nil {
 		clone.interfaces = append([]string(nil), members.interfaces...)
+	}
+	if members.modifiers != nil {
+		clone.modifiers = append([]string(nil), members.modifiers...)
 	}
 	if members.methods != nil {
 		clone.methods = make(map[string][]typesys.MemberSymbol, len(members.methods))

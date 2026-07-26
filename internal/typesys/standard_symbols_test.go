@@ -11,6 +11,17 @@ import (
 
 func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) {
 	symbols := StandardPlatformSymbols()
+	comparable := requireStandardSymbol(t, symbols, "Comparable")
+	if comparable.Kind != apexast.DeclarationInterface {
+		t.Fatalf("Comparable kind = %q, want interface", comparable.Kind)
+	}
+	requireStandardMethod(t, comparable, "compareTo", []string{"Object"}, false)
+	batchableContext := requireStandardSymbol(t, symbols, "Database.BatchableContext")
+	if batchableContext.Kind != apexast.DeclarationInterface {
+		t.Fatalf("Database.BatchableContext kind = %q, want interface", batchableContext.Kind)
+	}
+	requireStandardMethod(t, batchableContext, "getChildJobId", []string{}, false)
+	requireStandardMethod(t, batchableContext, "getJobId", []string{}, false)
 
 	operations := requireStandardSymbol(t, symbols, "Metadata.Operations")
 	requireStandardMethod(t, operations, "retrieve", []string{"Metadata.MetadataType", "List<String>", "Boolean"}, true)
@@ -32,6 +43,13 @@ func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) 
 		t.Fatalf("Cache.Visibility kind = %q, want enum", visibility.Kind)
 	}
 	requireStandardProperty(t, visibility, "ALL", "Cache.Visibility")
+
+	for _, name := range []string{"Cache.CacheBuilder", "Finalizer"} {
+		symbol := requireStandardSymbol(t, symbols, name)
+		if symbol.Kind != apexast.DeclarationInterface {
+			t.Fatalf("%s kind = %q, want interface", name, symbol.Kind)
+		}
+	}
 }
 
 func TestStandardPlatformSymbolsTypeConnectApiCollectionProperties(t *testing.T) {

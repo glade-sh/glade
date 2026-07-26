@@ -108,7 +108,7 @@ func TestWorkspaceSourcesPreservesRawNormalizedDigestAndMetadata(t *testing.T) {
 func TestWorkspaceSourcesPreservesUTF8CRLFRangesAndPath(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "Utf8.cls")
-	raw := []byte("public class Utf8 {\r\n  String café = '東京';\r\n  public void run() {}\r\n}\r\n")
+	raw := []byte("public class Utf8 {\r\n  String label = '東京';\r\n  public void run() {}\r\n}\r\n")
 	if err := os.WriteFile(path, raw, 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -656,5 +656,28 @@ func TestSourceDigestSetWithoutSourceRetainsPhysicalLookupForAnotherAlias(t *tes
 	}
 	if _, exists := updated.requested[physical]; exists {
 		t.Fatal("deleted requested alias remained in digest snapshot")
+	}
+}
+
+func TestBuildArtifactsSourceForTriggerReturnsRecordedLogicalViewWithoutReading(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "ThingTrigger.trigger")
+	writeFile(t, path, "trigger ThingTrigger on %%%NAMESPACE%%%Thing__c (before insert) {}")
+	sources := newWorkspaceSources(func(path string) ([]byte, error) { return os.ReadFile(path) })
+	idx, artifacts := buildWithWorkspaceSources(project.Project{
+		Root: root, Namespace: "runtime", ApexFiles: []string{path},
+	}, schema.Schema{}, sources)
+	if len(idx.Triggers) != 1 {
+		t.Fatalf("triggers = %#v", idx.Triggers)
+	}
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	source, ok := artifacts.SourceForTrigger(idx.Triggers[0])
+	if !ok {
+		t.Fatal("SourceForTrigger missed recorded logical occurrence")
+	}
+	if got, want := source.NormalizedString(), "trigger ThingTrigger on runtime__Thing__c (before insert) {}"; got != want {
+		t.Fatalf("normalized = %q, want %q", got, want)
 	}
 }

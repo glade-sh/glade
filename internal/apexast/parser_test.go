@@ -67,6 +67,48 @@ public class Hello {
 	}
 }
 
+func TestParseStructuredAnnotations(t *testing.T) {
+	src := `@IsTest(SeeAllData = false)
+public class Hello {
+  @AuraEnabled(cacheable = true)
+  public static void run() {}
+}`
+	file := NewParser().ParseSource("Hello.cls", src)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	class := file.Declarations[0]
+	if got := class.Annotations; len(got) != 1 || got[0].Name != "IsTest" || len(got[0].Arguments) != 1 || got[0].Arguments[0].Name != "SeeAllData" || got[0].Arguments[0].Value != "false" {
+		t.Fatalf("class annotations = %#v", got)
+	}
+	method := class.Members[0]
+	if got := method.Annotations; len(got) != 1 || got[0].Name != "AuraEnabled" || got[0].Arguments[0].Name != "cacheable" || got[0].Arguments[0].Value != "true" {
+		t.Fatalf("method annotations = %#v", got)
+	}
+	for _, argument := range class.Annotations[0].Arguments {
+		if argument.Range.Start.Offset < 0 || argument.Range.End.Offset <= argument.Range.Start.Offset || src[argument.Range.Start.Offset:argument.Range.End.Offset] == "" {
+			t.Fatalf("argument range = %#v", argument.Range)
+		}
+	}
+}
+
+func TestParseMultipleAuraEnabledArguments(t *testing.T) {
+	file := NewParser().ParseSource("Probe.cls", `public class Probe {
+  @AuraEnabled(cacheable=true scope='global')
+  public static String run() { return 'ok'; }
+}`)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	annotations := file.Declarations[0].Members[0].Annotations
+	if len(annotations) != 1 || len(annotations[0].Arguments) != 2 {
+		t.Fatalf("annotations = %#v", annotations)
+	}
+	if annotations[0].Arguments[1].Name != "scope" || annotations[0].Arguments[1].Value != "'global'" {
+		t.Fatalf("scope argument = %#v", annotations[0].Arguments[1])
+	}
+}
+
 func TestParseInitializerBlocks(t *testing.T) {
 	src := `
 public class Hello {
@@ -189,6 +231,41 @@ public class PaymentGatewayService {
 	}
 	if runType != "void" {
 		t.Fatalf("run return type = %q", runType)
+	}
+}
+
+func TestParseEnumMembersAndHasBody(t *testing.T) {
+	file := NewParser().ParseSource("Color.cls", `public enum Color { Red, Green }`)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	members := file.Declarations[0].Members
+	if len(members) != 2 || members[0].Name != "Red" || members[1].Name != "Green" {
+		t.Fatalf("enum members = %#v", members)
+	}
+	shape := NewParser().ParseSource("Shape.cls", `public abstract class Shape {
+  public abstract void draw();
+  public void paint() {}
+}`)
+	if shape.Declarations[0].Members[0].HasBody || !shape.Declarations[0].Members[1].HasBody {
+		t.Fatalf("HasBody = %#v", shape.Declarations[0].Members)
+	}
+}
+
+func TestParseEnumUserMethodSyntax(t *testing.T) {
+	file := NewParser().ParseSource("Color.cls", `public enum Color { Red, Green; public void run() {} }`)
+	if len(file.Diagnostics) == 0 {
+		t.Fatalf("expected enum method syntax error, got %#v", file)
+	}
+}
+
+func TestParseUserGenericClassDeclaration(t *testing.T) {
+	file := NewParser().ParseSource("Box.cls", `public class Box<T> { public T value; }`)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	if got := file.Declarations[0].TypeParameters; len(got) != 1 || got[0] != "T" {
+		t.Fatalf("type parameters = %#v", got)
 	}
 }
 

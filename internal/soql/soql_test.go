@@ -43,6 +43,66 @@ func TestParseSimpleQuery(t *testing.T) {
 	}
 }
 
+func TestParseSupportsBoundLimitAndOffset(t *testing.T) {
+	query, err := Parse("SELECT Id FROM Account LIMIT :limitValue OFFSET :offsetValue")
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if !query.HasLimit || query.LimitBind != "limitValue" || query.OffsetBind != "offsetValue" {
+		t.Fatalf("bound window = %#v", query)
+	}
+}
+
+func TestParseSupportsMethodCallBindExpression(t *testing.T) {
+	query, err := Parse("SELECT FiscalYearStartMonth FROM Organization WHERE Id = :UserInfo.getOrganizationId()")
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if query.Where == nil || query.Where.Value.Kind != storage.ValueID || string(query.Where.Value.ID) != ":UserInfo.getOrganizationId()" {
+		t.Fatalf("where = %#v", query.Where)
+	}
+}
+
+func TestParseSupportsDocumentedLiteralMethodBindExpression(t *testing.T) {
+	query, err := Parse("SELECT Id FROM Account WHERE Name = :'XXXX'.substring(0, 3)")
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if query.Where == nil || query.Where.Value.Kind != storage.ValueID || string(query.Where.Value.ID) != ":'XXXX'.substring(0, 3)" {
+		t.Fatalf("where = %#v", query.Where)
+	}
+}
+
+func TestParseSupportsWhitespaceAfterBindColon(t *testing.T) {
+	query, err := Parse("SELECT Id FROM Account WHERE Name = : name")
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if query.Where == nil || query.Where.Value.Kind != storage.ValueID || string(query.Where.Value.ID) != ":name" {
+		t.Fatalf("where = %#v", query.Where)
+	}
+}
+
+func TestParseSupportsExpressionLimitBind(t *testing.T) {
+	query, err := Parse("SELECT Id FROM Account LIMIT :Limits.getLimitQueries()")
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if !query.HasLimit || query.LimitBind != "Limits.getLimitQueries()" {
+		t.Fatalf("limit bind = %#v", query)
+	}
+}
+
+func TestParseSupportsCollectionConstructorBind(t *testing.T) {
+	query, err := Parse("SELECT Id FROM Account WHERE Id IN :new Set<Id>{firstId, secondId}")
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if query.Where == nil || len(query.Where.Values) != 1 || query.Where.Values[0].Kind != storage.ValueID || string(query.Where.Values[0].ID) != ":new Set<Id>{firstId, secondId}" {
+		t.Fatalf("where = %#v", query.Where)
+	}
+}
+
 func TestParseRootObjectAlias(t *testing.T) {
 	query, err := Parse("SELECT a.Id FROM Account a WHERE a.Name = 'Acme' ORDER BY a.Name LIMIT 1")
 	if err != nil {

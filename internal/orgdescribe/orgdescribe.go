@@ -27,6 +27,7 @@ type SObject struct {
 	Createable         bool                `json:"createable,omitempty"`
 	Updateable         bool                `json:"updateable,omitempty"`
 	Deletable          bool                `json:"deletable,omitempty"`
+	Triggerable        *bool               `json:"triggerable,omitempty"`
 	Fields             []Field             `json:"fields,omitempty"`
 	ChildRelationships []ChildRelationship `json:"childRelationships,omitempty"`
 	RecordTypeInfos    []RecordTypeInfo    `json:"recordTypeInfos,omitempty"`
@@ -114,6 +115,10 @@ func (o SObject) ToSchemaObject(childNames map[string]string) schema.Object {
 		Fields:      make([]schema.Field, 0, len(o.Fields)),
 		RecordTypes: make([]schema.RecordType, 0, len(o.RecordTypeInfos)),
 	}
+	if o.Triggerable != nil {
+		triggerable := *o.Triggerable
+		object.Triggerable = &triggerable
+	}
 	for _, field := range sortedFields(o.Fields) {
 		object.Fields = append(object.Fields, field.ToSchemaField(childNames[field.Name]))
 	}
@@ -134,10 +139,23 @@ func (f Field) ToSchemaField(childRelationshipName string) schema.Field {
 		DefaultValue:          defaultString(f.DefaultValue),
 		Required:              requiredForCreate(f),
 		ExternalID:            f.ExternalID,
+		IDLookup:              f.IDLookup,
+		Filterable:            cloneBoolPtr(f.Filterable),
+		Groupable:             cloneBoolPtr(f.Groupable),
+		Sortable:              cloneBoolPtr(f.Sortable),
+		Aggregatable:          cloneBoolPtr(f.Aggregatable),
 		Unique:                f.Unique,
 		Formula:               strings.TrimSpace(f.Formula),
 		PicklistValues:        schemaPicklistValues(f.PicklistValues),
 	}
+}
+
+func cloneBoolPtr(value *bool) *bool {
+	if value == nil {
+		return nil
+	}
+	copy := *value
+	return &copy
 }
 
 func (r RecordTypeInfo) ToSchemaRecordType() schema.RecordType {

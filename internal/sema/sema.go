@@ -149,12 +149,20 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 
 	if opts.Diagnostics {
 		result.Diagnostics = append(result.Diagnostics, a.checkTriggers(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkDeclarationContracts(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkMemberTypes(index)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkSourceTypeContracts(index)...)
+		result.Diagnostics = append(result.Diagnostics, checkCustomExceptionNames(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkMethodParameters(index)...)
 		result.Diagnostics = append(result.Diagnostics, a.checkAnnotations(index)...)
+		result.Diagnostics = append(result.Diagnostics, checkAnnotationCatalog(index)...)
+		result.Diagnostics = append(result.Diagnostics, checkAnnotationContracts(index)...)
+		result.Diagnostics = append(result.Diagnostics, checkWebExposureContracts(index)...)
 		typeMemberState := buildSemaTypeMemberState(index, recorder, a.sources)
 		typeMemberView := typeMemberState.view()
 		result.Diagnostics = append(result.Diagnostics, a.checkMethodBodiesWithView(index, typeMemberView, recorder)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkImplicitDefaultConstructors(index, typeMemberView)...)
+		result.Diagnostics = append(result.Diagnostics, a.checkTriggerBodiesWithView(index, typeMemberView, recorder)...)
 		if !opts.SuppressPerformanceDiagnostics {
 			result.Diagnostics = append(result.Diagnostics, a.checkPerformancePatterns(index)...)
 		}
@@ -320,6 +328,11 @@ func downgradeSourceDependencySemanticDiagnostics(diagnostics []diagnostic.Diagn
 	out := append([]diagnostic.Diagnostic(nil), diagnostics...)
 	for i := range out {
 		if out[i].Severity != diagnostic.Error {
+			continue
+		}
+		// Same-owner declaration/member collisions must stay hard errors even when
+		// source-backed dependencies are loaded (see GLADETYPE001 severity semantics).
+		if out[i].Code == "GLADESEMA031" || out[i].Code == "GLADESEMA032" {
 			continue
 		}
 		if strings.HasPrefix(out[i].Code, "GLADESEMA") || strings.HasPrefix(out[i].Code, "dependency_") {
@@ -612,8 +625,12 @@ func collectRequiredMethods(model *semaTypeMemberView, typeName, sourceKind stri
 		return nil
 	}
 	var out []methodRequirement
+	if semaDatabaseBatchableInterface(typeName) {
+		return nil
+	}
 	for _, overloads := range orderedMethodFamilies(members.methods) {
 		for _, method := range overloads {
+			method = semaInstantiateInterfaceMethod(method, typeName)
 			if semaImplicitObjectInterfaceMethod(method) {
 				continue
 			}
@@ -646,22 +663,68 @@ func semaImplicitObjectInterfaceMethod(method typesys.MemberSymbol) bool {
 	}
 }
 
-func hasConcreteMethodSignature(model *semaTypeMemberView, typeName string, required typesys.MemberSymbol) bool {
+func hasConcreteMethodSignature(model *semaTypeMemberView, typeName string, required typesys.MemberSymbol, requirePublic bool) bool {
 	for current := typeName; current != ""; {
 		members, ok := model.lookup(normalizeName(current))
 		if !ok {
 			return false
 		}
 		for _, method := range members.methods[normalizeName(required.Name)] {
-			if (sameSemaSignature(method, required) || semaOverrideCompatibleSignature(method, required, model)) &&
-				semaInterfaceReturnCompatible(method, required, model) &&
-				!hasModifier(method.Modifiers, "abstract") {
+			method = semaNormalizeMemberTypes(model, members.name, method)
+			normalizedRequired := semaNormalizeMemberTypes(model, typeName, required)
+			if (sameSemaSignature(method, normalizedRequired) || semaOverrideCompatibleSignature(method, normalizedRequired, model)) &&
+				semaInterfaceReturnCompatible(method, normalizedRequired, model) &&
+				!hasModifier(method.Modifiers, "abstract") &&
+				(!requirePublic || hasModifier(method.Modifiers, "public") || hasModifier(method.Modifiers, "global")) {
 				return true
 			}
 		}
 		current = members.superClass
 	}
 	return false
+}
+
+func semaInstantiateInterfaceMethod(method typesys.MemberSymbol, interfaceType string) typesys.MemberSymbol {
+	base, args := semaGenericBaseAndArgs(interfaceType)
+	if len(args) != 1 || strings.TrimSpace(args[0]) == "" {
+		return method
+	}
+	argument := strings.TrimSpace(args[0])
+	switch normalizeName(base) {
+	case "iterator", "system.iterator":
+		if strings.EqualFold(method.Name, "next") {
+			method.Type = argument
+		}
+	case "iterable", "system.iterable":
+		if strings.EqualFold(method.Name, "iterator") {
+			method.Type = "Iterator<" + argument + ">"
+		}
+	case "database.batchable", "batchable":
+		switch strings.ToLower(method.Name) {
+		case "start":
+			if strings.EqualFold(method.Type, "Iterable") {
+				method.Type = "Iterable<" + argument + ">"
+			}
+		case "execute":
+			if len(method.Parameters) == 2 && strings.EqualFold(method.Parameters[1].Type, "List<Object>") {
+				method.Parameters[1].Type = "List<" + argument + ">"
+			}
+		}
+	}
+	return method
+}
+
+func semaDatabaseBatchableInterface(typeName string) bool {
+	base, _ := semaGenericBaseAndArgs(typeName)
+	return strings.EqualFold(base, "Database.Batchable") || strings.EqualFold(base, "Batchable")
+}
+
+func semaProjectTypeShadowsPlatform(model *semaTypeMemberView, receiverType string) bool {
+	if model == nil || model.state == nil || model.state.base == nil || strings.Contains(strings.TrimSpace(receiverType), ".") || !semaKnownPlatformTypeReceiver(receiverType) {
+		return false
+	}
+	members, ok := model.state.base.members[normalizeName(receiverType)]
+	return ok && !members.dependency && !members.sobject && members.nestingDepth == 0
 }
 
 func semaInterfaceReturnCompatible(method, required typesys.MemberSymbol, model *semaTypeMemberView) bool {
@@ -855,11 +918,8 @@ func (a *Analyzer) collectAdditionalSemaLocalDecls(typ typesys.TypeSymbol, membe
 			if j < len(segment) && segment[j] != '=' && segment[j] != ',' && segment[j] != ';' {
 				continue
 			}
-			if _, exists := scopes.localInBlock(name, scopeStart, scopeEnd); exists {
-				continue
-			}
 			visibleStart := semaLocalVisibleStart(body, statementStart+j, statementStart+j)
-			scopes.locals = append(scopes.locals, semaLocal{name: name, typeName: resolveNestedTypeReference(model, typ.Name, typeName), start: visibleStart, scopeStart: scopeStart, scopeEnd: scopeEnd})
+			diagnostics = append(diagnostics, scopes.declareLocal(typ, member, name, resolveNestedTypeReference(model, typ.Name, typeName), visibleStart, scopeStart, scopeEnd, bodyOffset, source, nameStart, j)...)
 		}
 	}
 	return diagnostics
@@ -918,18 +978,6 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 	}
 	scopeStart, scopeEnd := blockBoundsAt(body, match[0])
 	visibleStart := semaLocalVisibleStart(body, match[1]-1, match[5])
-	if existing, exists := scopes.localInBlock(name, scopeStart, scopeEnd); exists {
-		if existing.start == visibleStart {
-			return nil
-		}
-		return []diagnostic.Diagnostic{{
-			Severity: diagnostic.Error,
-			Code:     "GLADESEMA014",
-			Message:  fmt.Sprintf("%s %q redeclares local variable %q in the same scope", member.Kind, member.Name, name),
-			File:     typ.File,
-			Range:    semaRange(source, bodyOffset+match[4], bodyOffset+match[5]),
-		}}
-	}
 	for _, ref := range extractTypeNames(typeName) {
 		if !a.hasKnown(ref) {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
@@ -944,7 +992,7 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 	if match[1] > 0 && body[match[1]-1] == '=' {
 		value := trimSemaArg(body, match[1], semaLocalInitializerEnd(body, match[1]))
 		resolvedTypeName := resolveNestedTypeReference(model, typ.Name, typeName)
-		valueType := resolveNestedTypeReference(model, typ.Name, inferSemaArgTypeWithModel(value.text, scopes.flat(), model))
+		valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flat())
 		if valueType != "" && valueType != "null" && !semaAssignableToType(resolvedTypeName, valueType, model) && !semaSOQLSingletonAssignable(resolvedTypeName, valueType, value.text, model) {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
@@ -955,7 +1003,7 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 			})
 		}
 	}
-	scopes.locals = append(scopes.locals, semaLocal{name: name, typeName: resolveNestedTypeReference(model, typ.Name, typeName), start: visibleStart, scopeStart: scopeStart, scopeEnd: scopeEnd})
+	diagnostics = append(diagnostics, scopes.declareLocal(typ, member, name, resolveNestedTypeReference(model, typ.Name, typeName), visibleStart, scopeStart, scopeEnd, bodyOffset, source, match[4], match[5])...)
 	return diagnostics
 }
 
@@ -2279,6 +2327,15 @@ func semaArgTypesContainNullish(argTypes []string) bool {
 	return false
 }
 
+func semaArgTypesContainUnknown(argTypes []string) bool {
+	for _, argType := range argTypes {
+		if argType == "" {
+			return true
+		}
+	}
+	return false
+}
+
 func semaSystemRunAsBlockCall(receiverType, method, callee string, args []ir.Expr) bool {
 	if len(args) != 1 {
 		return false
@@ -3045,6 +3102,10 @@ func hasAnyModifier(modifiers []string, left, right string) bool {
 	return hasModifier(modifiers, left) && hasModifier(modifiers, right)
 }
 
+func hasEitherModifier(modifiers []string, left, right string) bool {
+	return hasModifier(modifiers, left) || hasModifier(modifiers, right)
+}
+
 func hasAnyAnnotation(modifiers []string, names ...string) bool {
 	for _, name := range names {
 		if hasModifier(modifiers, name) {
@@ -3097,9 +3158,11 @@ var (
 	forHeaderPattern               = regexp.MustCompile(`(?i)\bfor\s*\(`)
 	catchLocalPattern              = regexp.MustCompile(`(?im)\bcatch\s*\(\s*([A-Za-z_][A-Za-z0-9_.]*(?:\s*\|\s*[A-Za-z_][A-Za-z0-9_.]*)*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\)`)
 	assignmentPattern              = regexp.MustCompile(`(?m)(?:^|[;{}\n])\s*([A-Za-z_][A-Za-z0-9_]*)\s=`)
+	dottedAssignmentPattern        = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)\s=`)
 	callPattern                    = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)\s*\(`)
 	constructorPattern             = regexp.MustCompile(`(?i)\bnew\s+([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?)\s*\(`)
 	newExprPattern                 = regexp.MustCompile(`(?is)^new\s+([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s*(?:\([^)]*\)|\{.*\})\s*$`)
+	newExprSObjectFieldArgPattern  = regexp.MustCompile(`(?is)\(\s*[A-Za-z_][A-Za-z0-9_]*\s*=[^=]`)
 	decimalLiteralPattern          = regexp.MustCompile(`^-?(?:[0-9]+\.[0-9]*|[0-9]*\.[0-9]+)$`)
 	intLiteralPattern              = regexp.MustCompile(`^-?[0-9]+$`)
 	returnPattern                  = regexp.MustCompile(`(?is)(?:^|[;{}\n])\s*return(?:\s+([^;\s][^;]*)|(\([^;]+))?\s*;`)
@@ -3450,17 +3513,17 @@ func semaPlatformReceiverSpellingMatches(receiver string, members typeMembers) b
 		return true
 	}
 	receiver = strings.TrimSpace(receiver)
-	if receiver == members.name {
+	if strings.EqualFold(receiver, members.name) {
 		return true
 	}
 	canonical := semaCanonicalPlatformAlias(members.name)
-	if receiver == canonical {
+	if strings.EqualFold(receiver, canonical) {
 		return true
 	}
-	if lastDot := strings.LastIndex(canonical, "."); lastDot >= 0 && receiver == canonical[lastDot+1:] {
+	if lastDot := strings.LastIndex(canonical, "."); lastDot >= 0 && strings.EqualFold(receiver, canonical[lastDot+1:]) {
 		return true
 	}
-	if strings.Contains(receiver, ".") && semaCanonicalPlatformAlias(receiver) == canonical {
+	if strings.Contains(receiver, ".") && strings.EqualFold(semaCanonicalPlatformAlias(receiver), canonical) {
 		return true
 	}
 	return false

@@ -195,12 +195,12 @@ func TestRefGraphRefreshedReturnsOwnedCleanEquivalentGraph(t *testing.T) {
 
 func TestRefGraphRefreshedUpdatesEveryNestedTypeInModifiedFile(t *testing.T) {
 	root := t.TempDir()
-	shared := filepath.Join(root, "Outer.cls")
-	writeWatchFile(t, shared, "public class Outer { class Inner {} }")
+	shared := filepath.Join(root, "Container.cls")
+	writeWatchFile(t, shared, "public class Container { class Nested {} }")
 	writeWatchFile(t, filepath.Join(root, "BaseA.cls"), "public class BaseA {}")
 	writeWatchFile(t, filepath.Join(root, "BaseB.cls"), "public class BaseB {}")
-	outer := classSymbol(root, "Outer", false, "BaseA")
-	inner := classSymbol(root, "Inner", false, "BaseA")
+	outer := classSymbol(root, "Container", false, "BaseA")
+	inner := classSymbol(root, "Nested", false, "BaseA")
 	outer.File, inner.File = shared, shared
 	initial := typesys.Index{Project: typesys.ProjectInfo{Root: root}, Types: []typesys.TypeSymbol{
 		classSymbol(root, "BaseA", false, ""),
@@ -215,7 +215,7 @@ func TestRefGraphRefreshedUpdatesEveryNestedTypeInModifiedFile(t *testing.T) {
 	updated := initial
 	updated.Types = append([]typesys.TypeSymbol(nil), initial.Types...)
 	updated.Types[2], updated.Types[3] = outer, inner
-	refreshed := graph.Refreshed(updated, []Change{{Path: shared, Op: ChangeModified, Kind: FileKindApexClass, Name: "Outer"}})
+	refreshed := graph.Refreshed(updated, []Change{{Path: shared, Op: ChangeModified, Kind: FileKindApexClass, Name: "Container"}})
 	if !reflect.DeepEqual(refreshed, BuildReferenceGraph(updated)) {
 		t.Fatal("nested structural refresh differs from clean build")
 	}
@@ -226,10 +226,10 @@ func TestRefGraphRefreshedUpdatesEveryNestedTypeInModifiedFile(t *testing.T) {
 
 func TestRefGraphRefreshedRebuildsWhenNestedTypeSetChanges(t *testing.T) {
 	root := t.TempDir()
-	shared := filepath.Join(root, "Outer.cls")
-	writeWatchFile(t, shared, "public class Outer { class Inner {} }")
-	outer := classSymbol(root, "Outer", false, "")
-	inner := classSymbol(root, "Inner", false, "")
+	shared := filepath.Join(root, "Container.cls")
+	writeWatchFile(t, shared, "public class Container { class Nested {} }")
+	outer := classSymbol(root, "Container", false, "")
+	inner := classSymbol(root, "Nested", false, "")
 	outer.File, inner.File = shared, shared
 	initial := typesys.Index{Project: typesys.ProjectInfo{Root: root}, Types: []typesys.TypeSymbol{outer, inner}}
 	for _, tc := range []struct {

@@ -76,6 +76,56 @@ func lex(input string) ([]token, error) {
 				i++
 			}
 			return nil, fmt.Errorf("soql: unterminated string literal")
+		case input[i] == ':':
+			start := i
+			i++
+			for i < len(input) && (input[i] == ' ' || input[i] == '\n' || input[i] == '\t' || input[i] == '\r') {
+				i++
+			}
+			bindStart := i
+			if end, ok := scanSOQLStringMethodBind(input, bindStart); ok {
+				out = append(out, token{text: ":" + input[bindStart:end]})
+				i = end
+				continue
+			}
+			if bindStart == len(input) || !soqlBindIdentifierStart(input[bindStart]) {
+				// A numbered date literal accepts optional whitespace after its
+				// colon (for example, N_MONTHS_AGO : 1). Only absorb whitespace
+				// into an Apex bind when the following token starts an identifier.
+				out = append(out, token{text: ":"})
+				i = start + 1
+				continue
+			}
+			if end, ok := scanSOQLBindCollectionConstructor(input, bindStart); ok {
+				out = append(out, token{text: ":" + strings.TrimSpace(input[bindStart:end])})
+				i = end
+				continue
+			}
+			depth := 0
+			for i < len(input) {
+				if input[i] == '(' {
+					depth++
+					i++
+					continue
+				}
+				if input[i] == ')' {
+					if depth == 0 {
+						break
+					}
+					depth--
+					i++
+					continue
+				}
+				if depth == 0 && (soqlTokenBoundaryBytes[input[i]] || input[i] == ':') {
+					break
+				}
+				i++
+			}
+			if bindStart == i {
+				out = append(out, token{text: input[start:i]})
+			} else {
+				out = append(out, token{text: ":" + input[bindStart:i]})
+			}
 		case soqlSeparatorBytes[input[i]]:
 			if i+1 < len(input) && input[i:i+2] == "!=" {
 				out = append(out, token{text: "!="})
@@ -101,6 +151,108 @@ func lex(input string) ([]token, error) {
 	}
 	out = append(out, token{text: ""})
 	return out, nil
+}
+
+// scanSOQLStringMethodBind retains documented Apex binds such as
+// :'XXXX'.substring(0, 3) as one SOQL value token. The expression itself is
+// parsed by Apex before query execution, so the SOQL lexer must not split the
+// literal from its member call.
+func scanSOQLStringMethodBind(input string, start int) (int, bool) {
+	if start >= len(input) || input[start] != '\'' {
+		return 0, false
+	}
+	i := start + 1
+	escaped := false
+	for i < len(input) {
+		if escaped {
+			escaped = false
+			i++
+			continue
+		}
+		if input[i] == '\\' {
+			escaped = true
+			i++
+			continue
+		}
+		if input[i] != '\'' {
+			i++
+			continue
+		}
+		if i+1 < len(input) && input[i+1] == '\'' {
+			i += 2
+			continue
+		}
+		i++
+		break
+	}
+	if i > len(input) || i == len(input) && input[i-1] != '\'' {
+		return 0, false
+	}
+	if i == len(input) || input[i] != '.' {
+		return i, true
+	}
+	for i < len(input) && input[i] == '.' {
+		i++
+		memberStart := i
+		for i < len(input) && soqlBindIdentifierPart(input[i]) {
+			i++
+		}
+		if memberStart == i {
+			return 0, false
+		}
+		if i == len(input) || input[i] != '(' {
+			continue
+		}
+		depth := 0
+		for i < len(input) {
+			switch input[i] {
+			case '(':
+				depth++
+			case ')':
+				depth--
+				if depth == 0 {
+					i++
+					goto nextMember
+				}
+			}
+			i++
+		}
+		return 0, false
+	nextMember:
+	}
+	return i, true
+}
+
+func soqlBindIdentifierPart(value byte) bool {
+	return soqlBindIdentifierStart(value) || value >= '0' && value <= '9'
+}
+
+func soqlBindIdentifierStart(value byte) bool {
+	return value == '_' || value >= 'a' && value <= 'z' || value >= 'A' && value <= 'Z'
+}
+
+func scanSOQLBindCollectionConstructor(input string, start int) (int, bool) {
+	if start+3 >= len(input) || !strings.EqualFold(input[start:start+3], "new") || input[start+3] != ' ' {
+		return 0, false
+	}
+	open := strings.IndexByte(input[start+4:], '{')
+	if open < 0 {
+		return 0, false
+	}
+	open += start + 4
+	depth := 0
+	for index := open; index < len(input); index++ {
+		switch input[index] {
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				return index + 1, true
+			}
+		}
+	}
+	return 0, false
 }
 
 type parser struct {
@@ -208,18 +360,20 @@ func (p *parser) parseQuery() (Query, error) {
 			q.OrderBy = order[0].Field
 			q.OrderDesc = order[0].Desc
 		case p.matchWord("LIMIT"):
-			limit, err := p.parseInt()
+			limit, bind, err := p.parseIntOrBind()
 			if err != nil {
 				return Query{}, err
 			}
 			q.Limit = limit
+			q.LimitBind = bind
 			q.HasLimit = true
 		case p.matchWord("OFFSET"):
-			offset, err := p.parseInt()
+			offset, bind, err := p.parseIntOrBind()
 			if err != nil {
 				return Query{}, err
 			}
 			q.Offset = offset
+			q.OffsetBind = bind
 		case p.matchWord("FOR"):
 			switch {
 			case p.matchWord("UPDATE"):
@@ -1669,6 +1823,28 @@ func (p *parser) parseInt() (int, error) {
 		return 0, p.errorf("expected non-negative integer")
 	}
 	return value, nil
+}
+
+func (p *parser) parseIntOrBind() (int, string, error) {
+	text := p.advance().text
+	if len(text) > 1 && text[0] == ':' {
+		return 0, text[1:], nil
+	}
+	value, err := strconv.Atoi(text)
+	if err != nil || value < 0 {
+		return 0, "", p.errorf("expected non-negative integer or bind")
+	}
+	return value, "", nil
+}
+
+func isSOQLBindName(name string) bool {
+	for index, char := range name {
+		if (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || char == '_' || (index > 0 && char >= '0' && char <= '9') {
+			continue
+		}
+		return false
+	}
+	return name != ""
 }
 func (p *parser) match(text string) bool {
 	if p.peek().text != text {

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"unicode"
 
+	apexparser "github.com/glade-sh/apex-parser"
 	"github.com/glade-sh/glade/internal/ir"
 )
 
@@ -380,6 +381,9 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 			if err != nil {
 				return ir.Instruction{}, err
 			}
+			if err := validateLocalIdentifier(catchName); err != nil {
+				return ir.Instruction{}, err
+			}
 			if _, err := p.expect(tokenSymbol, ")"); err != nil {
 				return ir.Instruction{}, err
 			}
@@ -527,6 +531,9 @@ func (p *parser) parseFor(pos int) (ir.Instruction, error) {
 		if err != nil {
 			return ir.Instruction{}, err
 		}
+		if err := validateLocalIdentifier(name); err != nil {
+			return ir.Instruction{}, err
+		}
 		if p.match(tokenSymbol, ":") {
 			iterable, err := p.parseExpression()
 			if err != nil {
@@ -628,6 +635,9 @@ func (p *parser) parseForDeclarationParts() ([]ir.Instruction, error) {
 		if err != nil {
 			return nil, err
 		}
+		if err := validateLocalIdentifier(name); err != nil {
+			return nil, err
+		}
 		inst := ir.Instruction{Op: ir.OpDeclare, Type: typeName, Name: name.text, Pos: start.pos}
 		if p.match(tokenSymbol, "=") {
 			expr, err := p.parseExpression()
@@ -676,7 +686,8 @@ func (p *parser) parseDeclaration(pos int) (ir.Instruction, error) {
 	if len(insts) == 1 {
 		return insts[0], nil
 	}
-	return ir.Instruction{Op: ir.OpBlock, Then: insts, Pos: pos}, nil
+	// Multi-declarator statements share the enclosing scope; do not use OpBlock.
+	return ir.Instruction{Op: ir.OpDeclGroup, Then: insts, Pos: pos}, nil
 }
 
 func (p *parser) parseForDeclarationPart(pos int) (ir.Instruction, error) {
@@ -688,6 +699,9 @@ func (p *parser) parseForDeclarationPart(pos int) (ir.Instruction, error) {
 	if err != nil {
 		return ir.Instruction{}, err
 	}
+	if err := validateLocalIdentifier(name); err != nil {
+		return ir.Instruction{}, err
+	}
 	inst := ir.Instruction{Op: ir.OpDeclare, Type: typeName, Name: name.text, Pos: pos}
 	if p.match(tokenSymbol, "=") {
 		expr, err := p.parseExpression()
@@ -697,6 +711,16 @@ func (p *parser) parseForDeclarationPart(pos int) (ir.Instruction, error) {
 		inst.Expr = expr
 	}
 	return inst, nil
+}
+
+func validateLocalIdentifier(name token) error {
+	if apexparser.IsReservedSourceIdentifier(name.text, false) {
+		return fmt.Errorf("identifier name is reserved: %s at byte %d", name.text, name.pos)
+	}
+	if err := apexparser.ValidateSourceIdentifier(name.text); err != nil {
+		return fmt.Errorf("%v at byte %d", err, name.pos)
+	}
+	return nil
 }
 
 func (p *parser) parseAssignmentLike(requireSemicolon bool) (ir.Instruction, bool, error) {
@@ -898,8 +922,11 @@ func (p *parser) parseSwitch(pos int) (ir.Instruction, error) {
 				return ir.Instruction{}, err
 			}
 			if caseExpr.Kind == ir.ExprVariable && p.peek(tokenIdent, "") {
-				binding := p.advance().text
-				caseExpr.Name = "__typecase:" + caseExpr.Name + ":" + binding
+				binding := p.advance()
+				if err := validateLocalIdentifier(binding); err != nil {
+					return ir.Instruction{}, err
+				}
+				caseExpr.Name = "__typecase:" + caseExpr.Name + ":" + binding.text
 			}
 			exprs = append(exprs, caseExpr)
 			if !p.match(tokenSymbol, ",") {

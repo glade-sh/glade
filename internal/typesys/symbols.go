@@ -45,14 +45,20 @@ type ProjectInfo struct {
 type TypeSymbol struct {
 	Kind                  apexast.DeclarationKind `json:"kind"`
 	Name                  string                  `json:"name"`
+	LocalName             string                  `json:"localName,omitempty"`
+	OwnerName             string                  `json:"ownerName,omitempty"`
+	NestingDepth          int                     `json:"nestingDepth,omitempty"`
 	File                  string                  `json:"file"`
 	Namespace             string                  `json:"namespace,omitempty"`
 	SourceNamespaceRemaps []namespaceremap.Rule   `json:"sourceNamespaceRemaps,omitempty"`
 	SourceRoot            string                  `json:"sourceRoot,omitempty"`
 	Version               string                  `json:"version,omitempty"`
+	EffectiveAPIVersion   string                  `json:"effectiveApiVersion,omitempty"`
 	Dependency            bool                    `json:"dependency,omitempty"`
 	Artifact              bool                    `json:"artifact,omitempty"`
 	Modifiers             []string                `json:"modifiers,omitempty"`
+	Annotations           []apexast.Annotation    `json:"annotations,omitempty"`
+	TypeParameters        []string                `json:"typeParameters,omitempty"`
 	IsTest                bool                    `json:"isTest,omitempty"`
 	SuperClass            string                  `json:"superClass,omitempty"`
 	Interfaces            []string                `json:"interfaces,omitempty"`
@@ -61,20 +67,25 @@ type TypeSymbol struct {
 }
 
 type MemberSymbol struct {
-	Kind       apexast.DeclarationKind `json:"kind"`
-	Name       string                  `json:"name"`
-	Type       string                  `json:"type,omitempty"`
-	Modifiers  []string                `json:"modifiers,omitempty"`
-	Parameters []apexast.Parameter     `json:"parameters,omitempty"`
-	Accessors  []apexast.Accessor      `json:"accessors,omitempty"`
-	IsTest     bool                    `json:"isTest,omitempty"`
-	Range      diagnostic.Range        `json:"range"`
+	Kind        apexast.DeclarationKind `json:"kind"`
+	Name        string                  `json:"name"`
+	Type        string                  `json:"type,omitempty"`
+	Modifiers   []string                `json:"modifiers,omitempty"`
+	Annotations []apexast.Annotation    `json:"annotations,omitempty"`
+	Parameters  []apexast.Parameter     `json:"parameters,omitempty"`
+	Accessors   []apexast.Accessor      `json:"accessors,omitempty"`
+	HasBody     bool                    `json:"hasBody,omitempty"`
+	IsTest      bool                    `json:"isTest,omitempty"`
+	Range       diagnostic.Range        `json:"range"`
 }
 
 type TriggerSymbol struct {
 	Name                  string                `json:"name"`
 	Namespace             string                `json:"namespace,omitempty"`
 	SourceNamespaceRemaps []namespaceremap.Rule `json:"sourceNamespaceRemaps,omitempty"`
+	SourceRoot            string                `json:"sourceRoot,omitempty"`
+	Version               string                `json:"version,omitempty"`
+	EffectiveAPIVersion   string                `json:"effectiveApiVersion,omitempty"`
 	ObjectName            string                `json:"objectName"`
 	Events                []string              `json:"events,omitempty"`
 	File                  string                `json:"file"`
@@ -509,7 +520,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 		return nil
 	}
 	if len(p.ApexFiles) == 1 {
-		return []projectSymbolFile{projectSymbolFileFromPath(parser, p.ApexFiles[0], p.Root, dependency, namespace, version, sourceRemaps, sources)}
+		return []projectSymbolFile{projectSymbolFileFromPath(parser, p.ApexFiles[0], p.Root, p.SourceAPIVersion, dependency, namespace, version, sourceRemaps, sources)}
 	}
 	workers := runtime.GOMAXPROCS(0)
 	if workers < 1 {
@@ -541,7 +552,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 			for job := range jobs {
 				results <- result{
 					Index: job.Index,
-					File:  projectSymbolFileFromPath(localParser, job.Path, p.Root, dependency, namespace, version, sourceRemaps, sources),
+					File:  projectSymbolFileFromPath(localParser, job.Path, p.Root, p.SourceAPIVersion, dependency, namespace, version, sourceRemaps, sources),
 				}
 			}
 		}()
@@ -562,7 +573,7 @@ func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bo
 	return out
 }
 
-func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule, sources *WorkspaceSources) projectSymbolFile {
+func projectSymbolFileFromPath(parser *apexast.Parser, path, root, fallbackAPIVersion string, dependency bool, namespace, version string, sourceRemaps []namespaceremap.Rule, sources *WorkspaceSources) projectSymbolFile {
 	var out projectSymbolFile
 	source, err := sources.load(SourceMetadata{
 		RequestedPath:   path,
@@ -583,19 +594,21 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 	}
 	out.Source = &source
 	normalized := source.NormalizedString()
+	effectiveAPIVersion := project.EffectiveSourceAPIVersion(path, fallbackAPIVersion)
 	file := parser.ParseSource(path, normalized)
 	out.Diagnostics = append(out.Diagnostics, file.Diagnostics...)
-	if len(file.Diagnostics) > 0 {
+	if hasBlockingParserDiagnostic(file.Diagnostics) {
 		return out
 	}
 	for _, decl := range file.Declarations {
 		switch decl.Kind {
 		case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-			for _, sym := range typeSymbolsFromDeclaration(path, decl, "", false, normalized) {
+			for _, sym := range typeSymbolsFromDeclaration(path, decl, "", 0, false, normalized) {
 				sym.Namespace = namespace
 				sym.SourceNamespaceRemaps = append([]namespaceremap.Rule(nil), sourceRemaps...)
 				sym.SourceRoot = root
 				sym.Version = version
+				sym.EffectiveAPIVersion = effectiveAPIVersion
 				sym.Dependency = dependency
 				out.Types = append(out.Types, sym)
 			}
@@ -604,6 +617,9 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 				Name:                  decl.Name,
 				Namespace:             namespace,
 				SourceNamespaceRemaps: append([]namespaceremap.Rule(nil), sourceRemaps...),
+				SourceRoot:            root,
+				Version:               version,
+				EffectiveAPIVersion:   effectiveAPIVersion,
 				ObjectName:            decl.ObjectName,
 				Events:                decl.Events,
 				File:                  path,
@@ -613,6 +629,18 @@ func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, depend
 		}
 	}
 	return out
+}
+
+func hasBlockingParserDiagnostic(diagnostics []diagnostic.Diagnostic) bool {
+	for _, diag := range diagnostics {
+		switch diag.Code {
+		case "APEXPARSE002", "APEXPARSE003":
+			continue
+		default:
+			return true
+		}
+	}
+	return false
 }
 
 func namespaceTypeKey(namespace, name string) string {
@@ -856,6 +884,7 @@ type incrementalSourceMetadata struct {
 	namespaceRemaps []namespaceremap.Rule
 	root            string
 	version         string
+	apiVersion      string
 	dependency      bool
 }
 
@@ -961,7 +990,7 @@ func cloneIncrementalNamespaceRemaps(in []namespaceremap.Rule) []namespaceremap.
 }
 
 func sameIncrementalSourceMetadata(left, right incrementalSourceMetadata) bool {
-	if left.namespace != right.namespace || left.root != right.root || left.version != right.version || left.dependency != right.dependency || len(left.namespaceRemaps) != len(right.namespaceRemaps) {
+	if left.namespace != right.namespace || left.root != right.root || left.version != right.version || left.apiVersion != right.apiVersion || left.dependency != right.dependency || len(left.namespaceRemaps) != len(right.namespaceRemaps) {
 		return false
 	}
 	for i := range left.namespaceRemaps {
@@ -979,8 +1008,9 @@ func incrementalSourceOwners(previous Index, p project.Project) ([]incrementalSo
 	owners := []incrementalSourceOwner{{
 		project: p,
 		metadata: incrementalSourceMetadata{
-			namespace: p.Namespace,
-			root:      p.Root,
+			namespace:  p.Namespace,
+			root:       p.Root,
+			apiVersion: p.SourceAPIVersion,
 		},
 		dependencyIndex: -1,
 		supported:       true,
@@ -1006,6 +1036,7 @@ func incrementalSourceOwners(previous Index, p project.Project) ([]incrementalSo
 				namespaceRemaps: cloneIncrementalNamespaceRemaps(dep.Project.NamespaceRemaps),
 				root:            dep.Project.Root,
 				version:         dep.Version,
+				apiVersion:      dep.Project.SourceAPIVersion,
 				dependency:      true,
 			},
 			dependencyIndex: dependencyIndex,
@@ -1021,6 +1052,7 @@ func incrementalSourceOwners(previous Index, p project.Project) ([]incrementalSo
 			metadata: incrementalSourceMetadata{
 				namespace:  shim.Namespace,
 				root:       shim.Project.Root,
+				apiVersion: shim.Project.SourceAPIVersion,
 				dependency: true,
 			},
 			dependencyIndex: -1,
@@ -1189,7 +1221,7 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 		return typ.Namespace == metadata.namespace && typ.SourceRoot == metadata.root && typ.Version == metadata.version && typ.Dependency == metadata.dependency && reflect.DeepEqual(typ.SourceNamespaceRemaps, metadata.namespaceRemaps)
 	}
 	sameTriggerMetadata := func(trigger TriggerSymbol, metadata incrementalSourceMetadata) bool {
-		return trigger.Namespace == metadata.namespace && trigger.Dependency == metadata.dependency && reflect.DeepEqual(trigger.SourceNamespaceRemaps, metadata.namespaceRemaps)
+		return trigger.Namespace == metadata.namespace && trigger.SourceRoot == metadata.root && trigger.Version == metadata.version && trigger.Dependency == metadata.dependency && reflect.DeepEqual(trigger.SourceNamespaceRemaps, metadata.namespaceRemaps)
 	}
 	knownChanged := false
 	knownDeleted := false
@@ -1308,6 +1340,7 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 		}
 		idx.sourceDigests = idx.sourceDigests.withSourceDigest(path, data)
 		metadata := changedSource.owner.metadata
+		effectiveAPIVersion := project.EffectiveSourceAPIVersion(path, metadata.apiVersion)
 		source := project.NormalizeApexNamespaceTokens(string(data), metadata.namespace)
 		source = namespaceremap.ApplySource(metadata.namespaceRemaps, source)
 		parser := apexast.NewParser()
@@ -1318,11 +1351,12 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 		for _, decl := range file.Declarations {
 			switch decl.Kind {
 			case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-				for _, sym := range typeSymbolsFromDeclaration(path, decl, "", false, source) {
+				for _, sym := range typeSymbolsFromDeclaration(path, decl, "", 0, false, source) {
 					sym.Namespace = metadata.namespace
 					sym.SourceNamespaceRemaps = cloneIncrementalNamespaceRemaps(metadata.namespaceRemaps)
 					sym.SourceRoot = metadata.root
 					sym.Version = metadata.version
+					sym.EffectiveAPIVersion = effectiveAPIVersion
 					sym.Dependency = metadata.dependency
 					key := namespaceTypeKey(sym.Namespace, sym.Name)
 					if _, exists := seenTypes[key]; exists {
@@ -1338,6 +1372,9 @@ func updateApexFilesIncrementalWithLoadedProject(previous Index, changedPaths, d
 					Name:                  decl.Name,
 					Namespace:             metadata.namespace,
 					SourceNamespaceRemaps: cloneIncrementalNamespaceRemaps(metadata.namespaceRemaps),
+					SourceRoot:            metadata.root,
+					Version:               metadata.version,
+					EffectiveAPIVersion:   effectiveAPIVersion,
 					ObjectName:            decl.ObjectName,
 					Events:                decl.Events,
 					File:                  path,
@@ -1435,45 +1472,66 @@ func cleanFilePath(path string) string {
 	return filepath.Clean(path)
 }
 
-func typeSymbolsFromDeclaration(path string, decl apexast.Declaration, parent string, parentIsTest bool, source string) []TypeSymbol {
-	sym := typeSymbolFromDeclaration(path, decl, parent, parentIsTest)
-	sym.SuperClass, sym.Interfaces = parseTypeInheritance(source, decl.Range)
+func typeSymbolsFromDeclaration(path string, decl apexast.Declaration, parent string, parentDepth int, parentIsTest bool, source string) []TypeSymbol {
+	sym := typeSymbolFromDeclaration(path, decl, parent, parentDepth, parentIsTest)
+	superClass, interfaces := parseTypeInheritance(source, decl.Range)
+	if decl.Kind == apexast.DeclarationInterface {
+		if superClass != "" {
+			interfaces = append([]string{superClass}, interfaces...)
+		}
+		sym.Interfaces = interfaces
+	} else {
+		sym.SuperClass = superClass
+		sym.Interfaces = interfaces
+	}
 	out := []TypeSymbol{sym}
 	for _, member := range decl.Members {
 		switch member.Kind {
 		case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-			out = append(out, typeSymbolsFromDeclaration(path, member, sym.Name, sym.IsTest, source)...)
+			out = append(out, typeSymbolsFromDeclaration(path, member, sym.Name, sym.NestingDepth, sym.IsTest, source)...)
 		}
 	}
 	return out
 }
 
-func typeSymbolFromDeclaration(path string, decl apexast.Declaration, parent string, parentIsTest bool) TypeSymbol {
-	name := decl.Name
+func typeSymbolFromDeclaration(path string, decl apexast.Declaration, parent string, parentDepth int, parentIsTest bool) TypeSymbol {
+	localName := decl.Name
+	name := localName
+	ownerName := ""
+	nestingDepth := 0
 	if parent != "" {
-		name = parent + "." + decl.Name
+		name = parent + "." + localName
+		ownerName = parent
+		nestingDepth = parentDepth + 1
 	}
 	sym := TypeSymbol{
-		Kind:      decl.Kind,
-		Name:      name,
-		File:      path,
-		Modifiers: decl.Modifiers,
-		IsTest:    parentIsTest || hasTestModifier(decl.Modifiers),
-		Range:     decl.Range,
+		Kind:           decl.Kind,
+		Name:           name,
+		LocalName:      localName,
+		OwnerName:      ownerName,
+		NestingDepth:   nestingDepth,
+		File:           path,
+		Modifiers:      decl.Modifiers,
+		Annotations:    decl.Annotations,
+		TypeParameters: append([]string(nil), decl.TypeParameters...),
+		IsTest:         parentIsTest || hasTestModifier(decl.Modifiers),
+		Range:          decl.Range,
 	}
 	for _, member := range decl.Members {
 		if member.Name == "" {
 			continue
 		}
 		sym.Members = append(sym.Members, MemberSymbol{
-			Kind:       member.Kind,
-			Name:       member.Name,
-			Type:       member.Type,
-			Modifiers:  member.Modifiers,
-			Parameters: member.Parameters,
-			Accessors:  member.Accessors,
-			IsTest:     hasTestModifier(member.Modifiers) || (member.Kind == apexast.DeclarationMethod && hasModifier(member.Modifiers, "testmethod")),
-			Range:      member.Range,
+			Kind:        member.Kind,
+			Name:        member.Name,
+			Type:        member.Type,
+			Modifiers:   member.Modifiers,
+			Annotations: member.Annotations,
+			Parameters:  member.Parameters,
+			Accessors:   member.Accessors,
+			HasBody:     member.HasBody,
+			IsTest:      hasTestModifier(member.Modifiers) || (member.Kind == apexast.DeclarationMethod && hasModifier(member.Modifiers, "testmethod")),
+			Range:       member.Range,
 		})
 	}
 	return sym
@@ -1607,11 +1665,22 @@ func hasModifier(modifiers []string, expected string) bool {
 }
 
 func duplicateDiagnostic(current, previous TypeSymbol) diagnostic.Diagnostic {
+	severity := diagnostic.Warning
+	if sameOwnerDuplicate(current, previous) {
+		severity = diagnostic.Error
+	}
 	return diagnostic.Diagnostic{
-		Severity: diagnostic.Warning,
+		Severity: severity,
 		Code:     "GLADETYPE001",
 		Message:  fmt.Sprintf("duplicate top-level symbol %q; first seen in %s", current.Name, previous.File),
 		File:     current.File,
 		Range:    &current.Range,
 	}
+}
+
+func sameOwnerDuplicate(current, previous TypeSymbol) bool {
+	if cleanFilePath(current.File) != cleanFilePath(previous.File) {
+		return false
+	}
+	return strings.EqualFold(current.OwnerName, previous.OwnerName)
 }

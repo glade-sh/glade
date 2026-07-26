@@ -1634,6 +1634,34 @@ System.assertEquals('Original', insertedOpp.Name);
 	}
 }
 
+func TestCompileAnonymousRejectsReservedLocalIdentifier(t *testing.T) {
+	if _, err := CompileAnonymous("String CuRrEnCy = 'USD';"); err == nil || !strings.Contains(strings.ToLower(err.Error()), "identifier name is reserved: currency") {
+		t.Fatalf("CompileAnonymous reserved identifier error = %v", err)
+	}
+}
+
+func TestCompileAnonymousRejectsInvalidLocalIdentifierShapes(t *testing.T) {
+	for _, name := range []string{
+		"_value",
+		"value_",
+		"value__part",
+		"A" + strings.Repeat("a", 255),
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := CompileAnonymous("String " + name + " = 'x';"); err == nil || !strings.Contains(strings.ToLower(err.Error()), "invalid identifier") {
+				t.Fatalf("CompileAnonymous invalid identifier %q error = %v", name, err)
+			}
+		})
+	}
+}
+
+func TestCompileAnonymousRejectsInvalidSwitchBindingIdentifier(t *testing.T) {
+	source := "SObject value = new Account(); switch on value { when Account _account { System.debug(_account); } }"
+	if _, err := CompileAnonymous(source); err == nil || !strings.Contains(strings.ToLower(err.Error()), "invalid identifier") {
+		t.Fatalf("CompileAnonymous invalid switch binding error = %v", err)
+	}
+}
+
 func TestCompileAcceptsApexCastSyntax(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object raw = 'trail';

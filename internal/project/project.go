@@ -2,6 +2,7 @@ package project
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"os"
@@ -12,6 +13,22 @@ import (
 	"github.com/glade-sh/glade/internal/config"
 	"github.com/glade-sh/glade/internal/namespaceremap"
 )
+
+// EffectiveSourceAPIVersion returns an Apex source file's companion metadata
+// apiVersion when present, otherwise the project's configured API version.
+func EffectiveSourceAPIVersion(path, fallback string) string {
+	data, err := os.ReadFile(path + "-meta.xml") // #nosec G304 -- path is an indexed Apex source path; this reads its fixed companion metadata file.
+	if err != nil {
+		return fallback
+	}
+	var metadata struct {
+		APIVersion string `xml:"apiVersion"`
+	}
+	if err := xml.Unmarshal(data, &metadata); err != nil || strings.TrimSpace(metadata.APIVersion) == "" {
+		return fallback
+	}
+	return strings.TrimSpace(metadata.APIVersion)
+}
 
 type Project struct {
 	Root                       string                     `json:"root"`

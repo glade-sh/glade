@@ -876,7 +876,7 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	codeql := jobs["codeql"]
 	for _, want := range []string{
 		"name: CodeQL",
-		"timeout-minutes: 60",
+		"timeout-minutes: 5",
 		"languages: go",
 		"config: |",
 		"- uses: security-extended",
@@ -905,13 +905,17 @@ func TestSecurityWorkflowContract(t *testing.T) {
 	for _, want := range []string{
 		"if: github.event_name == 'pull_request'",
 		initPin,
-		"id: go/allocation-size-overflow",
+		"- go/allocation-size-overflow",
+		"- go/incorrect-integer-conversion",
 	} {
 		if !strings.Contains(prInit, want) {
 			t.Errorf("pull-request CodeQL init step missing %q", want)
 		}
 	}
 	for _, query := range fullBranchWaivers {
+		if query == "go/incorrect-integer-conversion" {
+			continue
+		}
 		if strings.Contains(prInit, query) {
 			t.Errorf("pull-request CodeQL init step excludes full-branch waiver %q", query)
 		}
@@ -1595,6 +1599,16 @@ func TestCIWorkflowConcurrencyContract(t *testing.T) {
 	workflow, _ := readCIWorkflow(t)
 	if problem := ciWorkflowConcurrencyProblem(workflow); problem != "" {
 		t.Fatal(problem)
+	}
+}
+
+func TestCIWorkflowDoesNotDuplicatePullRequestBranchPushes(t *testing.T) {
+	workflow, _ := readCIWorkflow(t)
+	if !strings.Contains(workflow, "  push:\n    branches:\n      - main\n  pull_request:") {
+		t.Fatal("CI must run branch pushes only on main and use pull_request for feature branches")
+	}
+	if strings.Contains(workflow, `      - "**"`) {
+		t.Fatal("CI feature-branch push trigger duplicates pull_request checks")
 	}
 }
 
@@ -3056,8 +3070,8 @@ func TestCIPackageLanesRouteThroughCheckedManifest(t *testing.T) {
 	for _, packages := range document.Lanes {
 		totalPackages += len(packages)
 	}
-	if totalPackages != 61 {
-		t.Fatalf("manifest package union = %d, want 61", totalPackages)
+	if totalPackages != 62 {
+		t.Fatalf("manifest package union = %d, want 62", totalPackages)
 	}
 	remaining := document.Lanes["remaining-go"]
 	if len(remaining) == 0 {

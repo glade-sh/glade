@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/apexlang"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sema"
@@ -542,12 +543,14 @@ func (h *Handler) annotationCompletionItems(text string, offset int) []Completio
 	if strings.TrimSpace(prefix[lineStart:]) != "@" {
 		return nil
 	}
-	return []CompletionItem{
-		{Label: "isTest", Kind: completionItemKindKeyword, Detail: "Apex annotation"},
-		{Label: "testSetup", Kind: completionItemKindKeyword, Detail: "Apex annotation"},
-		{Label: "future", Kind: completionItemKindKeyword, Detail: "Apex annotation"},
-		{Label: "AuraEnabled", Kind: completionItemKindKeyword, Detail: "Apex annotation"},
+	var out []CompletionItem
+	for _, annotation := range apexlang.AllAnnotations() {
+		if annotation.Preview {
+			continue
+		}
+		out = append(out, CompletionItem{Label: annotation.Name, Kind: completionItemKindKeyword, Detail: "Apex annotation"})
 	}
+	return out
 }
 
 func (h *Handler) testMethodCompletionItems(text string, offset int) []CompletionItem {

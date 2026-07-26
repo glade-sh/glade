@@ -21,9 +21,11 @@ import (
 
 	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/dap"
+	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/pluginhost"
 	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/testdaemon"
+	"github.com/glade-sh/glade/internal/testreport"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 	"github.com/glade-sh/glade/internal/watch"
@@ -3213,6 +3215,187 @@ func TestRunCheckJSONOmitsDuplicateDataDiagnostics(t *testing.T) {
 	}
 }
 
+func TestRunTriggerBodyCheckReportsBodyAndCapabilityDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/triggers/BadBody.trigger"), `
+trigger BadBody on Account (before insert) {
+  Integer value = 'wrong';
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/triggers/DuplicateEvent.trigger"), `
+trigger DuplicateEvent on Account (before insert, before insert) {}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/triggers/NotTriggerable.trigger"), `
+trigger NotTriggerable on ApexClass (before insert) {}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"check", "--project", root, "--json", "--no-progress"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	for _, want := range []string{"GLADESEMA018", "GLADESEMA029", "GLADESEMA030"} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("check JSON missing %s:\n%s", want, stdout.String())
+		}
+	}
+}
+
+func TestRunTriggerBodyCheckAcceptsSalesforceLegalTriggers(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/AccountHandler.cls"), `
+public class AccountHandler {
+  public static void handle(List<Account> accounts) {
+    System.debug(accounts.size());
+  }
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/triggers/AccountTrigger.trigger"), `
+trigger AccountTrigger on Account (before insert, after update) {
+  static Integer processed = 0;
+  processed++;
+  AccountHandler.handle(Trigger.new);
+  if (Trigger.isUpdate) {
+    Account previous = Trigger.oldMap.get(Trigger.new[0].Id);
+    System.debug(previous);
+  }
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/triggers/ContentVersionTrigger.trigger"), `
+trigger ContentVersionTrigger on ContentVersion (before delete, after delete) {
+  System.debug(Trigger.old.size());
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"check", "--project", root, "--json", "--no-progress"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+}
+
+func TestRunCheckAndTestRejectReservedApexIdentifier(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	reservedPath := filepath.Join(root, "force-app/main/classes/ReservedCurrencyTest.cls")
+	writeTestFile(t, reservedPath, `
+@isTest
+private class ReservedCurrencyTest {
+  @isTest
+  static void rejectsReservedIdentifier() {
+    String currency = 'USD';
+    System.assertEquals('USD', currency);
+  }
+}
+`)
+
+	var parseStdout, parseStderr bytes.Buffer
+	parseCode := Run(context.Background(), []string{"parse", reservedPath, "--json", "--no-progress"}, &parseStdout, &parseStderr)
+	if parseCode != 1 || !strings.Contains(parseStdout.String(), "APEXPARSE002") || !strings.Contains(parseStdout.String(), "Identifier name is reserved: currency") {
+		t.Fatalf("parse did not reject reserved identifier: code=%d stdout=%q stderr=%q", parseCode, parseStdout.String(), parseStderr.String())
+	}
+
+	var checkStdout, checkStderr bytes.Buffer
+	checkCode := Run(context.Background(), []string{"check", "--project", root, "--json", "--no-progress"}, &checkStdout, &checkStderr)
+	if checkCode != 1 {
+		t.Fatalf("check exit code = %d, want 1; stderr=%q stdout=%q", checkCode, checkStderr.String(), checkStdout.String())
+	}
+	var checkEnvelope struct {
+		Status      string                  `json:"status"`
+		ExitCode    int                     `json:"exitCode"`
+		Diagnostics []diagnostic.Diagnostic `json:"diagnostics"`
+	}
+	if err := json.Unmarshal(checkStdout.Bytes(), &checkEnvelope); err != nil {
+		t.Fatalf("check stdout is not JSON: %v\n%s", err, checkStdout.String())
+	}
+	if checkEnvelope.Status != "failed" || checkEnvelope.ExitCode != 1 {
+		t.Fatalf("check envelope = %#v", checkEnvelope)
+	}
+	var foundReserved bool
+	for _, diag := range checkEnvelope.Diagnostics {
+		if diag.Code == "APEXPARSE002" && diag.Message == "Identifier name is reserved: currency" {
+			foundReserved = true
+			break
+		}
+	}
+	if !foundReserved {
+		t.Fatalf("check diagnostics = %#v", checkEnvelope.Diagnostics)
+	}
+
+	var testStdout, testStderr bytes.Buffer
+	testCode := Run(context.Background(), []string{"test", "--project", root, "--json", "--no-progress", "--no-cache"}, &testStdout, &testStderr)
+	if testCode != 1 {
+		t.Fatalf("test exit code = %d, want 1; stderr=%q stdout=%q", testCode, testStderr.String(), testStdout.String())
+	}
+	var testEnvelope struct {
+		Status   string             `json:"status"`
+		ExitCode int                `json:"exitCode"`
+		Summary  testreport.Summary `json:"summary"`
+		Tests    []struct {
+			Problem *testreport.Problem `json:"problem"`
+		} `json:"tests"`
+	}
+	if err := json.Unmarshal(testStdout.Bytes(), &testEnvelope); err != nil {
+		t.Fatalf("test stdout is not JSON: %v\n%s", err, testStdout.String())
+	}
+	if testEnvelope.Status != "failed" || testEnvelope.ExitCode != 1 {
+		t.Fatalf("test envelope = %#v", testEnvelope)
+	}
+	if testEnvelope.Summary.Total != 1 || testEnvelope.Summary.CompileErrors != 1 || testEnvelope.Summary.Passed != 0 {
+		t.Fatalf("test summary = %#v", testEnvelope.Summary)
+	}
+	if len(testEnvelope.Tests) != 1 || testEnvelope.Tests[0].Problem == nil ||
+		!strings.Contains(testEnvelope.Tests[0].Problem.Message, "Identifier name is reserved: currency") {
+		t.Fatalf("test cases = %#v", testEnvelope.Tests)
+	}
+}
+
+func TestRunTestRejectsInvalidMethodBodyBeforeExecution(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/BadBodyTest.cls"), `
+@isTest
+private class BadBodyTest {
+  @isTest
+  static void constructsUnknownType() {
+    Object thing = new MissingHelper();
+    System.assert(false);
+  }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--json", "--no-progress", "--no-cache"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	var envelope struct {
+		Status   string             `json:"status"`
+		ExitCode int                `json:"exitCode"`
+		Summary  testreport.Summary `json:"summary"`
+		Tests    []struct {
+			Problem *testreport.Problem `json:"problem"`
+		} `json:"tests"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &envelope); err != nil {
+		t.Fatalf("stdout is not JSON: %v\n%s", err, stdout.String())
+	}
+	if envelope.Status != "failed" || envelope.ExitCode != 1 {
+		t.Fatalf("envelope = %#v", envelope)
+	}
+	if envelope.Summary.Total != 1 || envelope.Summary.CompileErrors != 1 ||
+		envelope.Summary.Passed != 0 || envelope.Summary.Failed != 0 {
+		t.Fatalf("summary = %#v", envelope.Summary)
+	}
+	if len(envelope.Tests) != 1 || envelope.Tests[0].Problem == nil ||
+		!strings.Contains(envelope.Tests[0].Problem.Message, "constructs unknown type") ||
+		!strings.Contains(envelope.Tests[0].Problem.Message, "MissingHelper") {
+		t.Fatalf("test cases = %#v", envelope.Tests)
+	}
+}
+
 func TestRunCheckUnknownType(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -3747,6 +3930,38 @@ func TestRunExec(t *testing.T) {
 	}
 }
 
+func TestRunExecRejectsReservedLocalIdentifiersWithAndWithoutProject(t *testing.T) {
+	projectRoot := t.TempDir()
+	writeTestFile(t, filepath.Join(projectRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"66.0"}`)
+
+	for _, test := range []struct {
+		name string
+		args []string
+	}{
+		{name: "projectless", args: []string{"exec", "String CuRrEnCy = 'USD';"}},
+		{name: "project", args: []string{"exec", "--project", projectRoot, "String CuRrEnCy = 'USD';"}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			code := Run(context.Background(), test.args, &stdout, &stderr)
+			if code == 0 || !strings.Contains(strings.ToLower(stderr.String()), "identifier name is reserved: currency") {
+				t.Fatalf("reserved anonymous local must fail: code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+			}
+		})
+	}
+}
+
+func TestRunExecRejectsSemanticErrorsWithoutProject(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"exec",
+		"switch on true { when true { System.debug(true); } }",
+	}, &stdout, &stderr)
+	if code == 0 || !strings.Contains(stderr.String(), "switch does not support Boolean selectors") {
+		t.Fatalf("standalone exec must run semantic analysis: code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+}
+
 func TestRunExecSummaryCapsDebugLines(t *testing.T) {
 	var result vm.Result
 	for i := 0; i < 82; i++ {
@@ -3816,6 +4031,16 @@ public class LocalProbe {
 	}, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exec failed code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+}
+
+func TestRunExecWithProjectRejectsAnonymousSemanticDiagnosticsBeforeExecution(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"63.0"}`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"exec", "--project", root, "String value = 'x'; insert value;"}, &stdout, &stderr)
+	if code == 0 || !strings.Contains(stderr.String(), "GLADESEMA034") {
+		t.Fatalf("anonymous semantic error must fail before execution: code=%d stdout=%q stderr=%q", code, stdout.String(), stderr.String())
 	}
 }
 

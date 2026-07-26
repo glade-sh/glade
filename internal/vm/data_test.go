@@ -5229,8 +5229,8 @@ func TestExecDescribeFieldResultDefaultFormulaCanStripQuoteCharacters(t *testing
 	program, err := CompileAnonymous(`
 String ns = String.valueOf(Account.Advancement_Namespace__c.getDescribe().getDefaultValueFormula()).remove('\"');
 System.assertEquals('gem', ns);
-Schema.DescribeSObjectResult[] desc = Schema.describeSObjects(new String[]{ns + '__Advancement_Setting__mdt'});
-System.assertEquals('gem__Advancement_Setting__mdt', desc[0].getName());
+Schema.DescribeSObjectResult[] descriptions = Schema.describeSObjects(new String[]{ns + '__Advancement_Setting__mdt'});
+System.assertEquals('gem__Advancement_Setting__mdt', descriptions[0].getName());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -10251,11 +10251,11 @@ func TestExecDescribeDataCategoriesFromLocalMetadata(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Object> groups = Schema.describeDataCategoryGroups(new List<String>{'Knowledge__kav'});
 System.assertEquals(1, groups.size());
-Object group = groups[0];
-System.assertEquals('Products', group.getName());
-System.assertEquals('Products', group.getLabel());
-System.assertEquals('Knowledge__kav', group.getSobject());
-System.assertEquals(2, group.getCategoryCount());
+Object categoryGroup = groups[0];
+System.assertEquals('Products', categoryGroup.getName());
+System.assertEquals('Products', categoryGroup.getLabel());
+System.assertEquals('Knowledge__kav', categoryGroup.getSobject());
+System.assertEquals(2, categoryGroup.getCategoryCount());
 
 Schema.DataCategoryGroupSobjectTypePair pair = new Schema.DataCategoryGroupSobjectTypePair();
 pair.setSobject('Knowledge__kav');

@@ -459,26 +459,29 @@ func TestAnalyzeRecognizesCallableAndStubProviderTypes(t *testing.T) {
 				Interfaces: []string{"Database.Batchable<Account>"},
 				Members: []typesys.MemberSymbol{
 					{
-						Kind: apexast.DeclarationMethod,
-						Name: "start",
-						Type: "Database.QueryLocator",
+						Kind:      apexast.DeclarationMethod,
+						Name:      "start",
+						Type:      "Database.QueryLocator",
+						Modifiers: []string{"public"},
 						Parameters: []apexast.Parameter{
 							{Name: "context", Type: "Database.BatchableContext"},
 						},
 					},
 					{
-						Kind: apexast.DeclarationMethod,
-						Name: "execute",
-						Type: "void",
+						Kind:      apexast.DeclarationMethod,
+						Name:      "execute",
+						Type:      "void",
+						Modifiers: []string{"public"},
 						Parameters: []apexast.Parameter{
 							{Name: "context", Type: "Database.BatchableContext"},
 							{Name: "records", Type: "List<Account>"},
 						},
 					},
 					{
-						Kind: apexast.DeclarationMethod,
-						Name: "finish",
-						Type: "void",
+						Kind:      apexast.DeclarationMethod,
+						Name:      "finish",
+						Type:      "void",
+						Modifiers: []string{"public"},
 						Parameters: []apexast.Parameter{
 							{Name: "context", Type: "Database.BatchableContext"},
 						},
@@ -504,6 +507,7 @@ public interface Greeter {
 }
 `)
 	writeSemaFile(t, filepath.Join(root, "GreeterProvider.cls"), `
+@IsTest
 private class GreeterProvider implements System.StubProvider {
   public Object handleMethodCall(Object stubbedObject, String stubbedMethodName, Type returnType, List<Type> listOfParamTypes, List<String> listOfParamNames, List<Object> listOfArgs) {
     return 'stubbed';
@@ -511,6 +515,7 @@ private class GreeterProvider implements System.StubProvider {
 }
 `)
 	writeSemaFile(t, filepath.Join(root, "MockResponse.cls"), `
+@IsTest
 private class MockResponse implements HttpCalloutMock {
   public HttpResponse respond(HttpRequest request) {
     return new HttpResponse();
@@ -618,22 +623,22 @@ func TestAnalyzeProjectNamespaceQualifiedTypes(t *testing.T) {
 func TestAnalyzeNestedTypeReferences(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	writeSemaFile(t, filepath.Join(root, "Outer.cls"), `
-public class Outer {
-  public class Inner {}
+	writeSemaFile(t, filepath.Join(root, "Container.cls"), `
+public class Container {
+  public class Nested {}
 }
 `)
-	writeSemaFile(t, filepath.Join(root, "UsesInner.cls"), `
-public class UsesInner {
-  public Outer.Inner build() {
-    Outer.Inner value = new Outer.Inner();
+	writeSemaFile(t, filepath.Join(root, "UsesNested.cls"), `
+public class UsesNested {
+  public Container.Nested build() {
+    Container.Nested value = new Container.Nested();
     return value;
   }
 }
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
-		filepath.Join(root, "Outer.cls"),
-		filepath.Join(root, "UsesInner.cls"),
+		filepath.Join(root, "Container.cls"),
+		filepath.Join(root, "UsesNested.cls"),
 	}}, schema.Schema{})
 
 	result := Analyze(index)
@@ -1240,10 +1245,10 @@ public class UsesBroadSystemShapes {
     }
     List<EntityDefinition> entityDefinitions = new List<SObject>();
     switch on 'equals' {
-      when equals {
+      when 'equals' {
         body = 'equal';
       }
-      when not_equals {
+      when 'not_equals' {
         body = 'not equal';
       }
     }
@@ -2067,7 +2072,7 @@ public class OuterHelper {
     return String.valueOf(value);
   }
 
-  private class Inner {
+  private class NestedHelper {
     public String run(Object value) {
       return toString(value);
     }
@@ -2949,14 +2954,16 @@ public class UsesInitializerTernary {
 func TestAnalyzeStaticCallWithListConstructedFromSetArgument(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Rollup.cls"), `
+public class Rollup {
+  public enum InvocationPoint { FROM_FULL_RECALC_FLOW }
+  public static String performBulkFullRecalcWithParentIds(String serializedMetadata, String invokePointName, List<String> parentIds) {
+    return '';
+  }
+}
+`)
 	writeSemaFile(t, filepath.Join(root, "UsesSetListArg.cls"), `
 public class UsesSetListArg {
-  public class Rollup {
-    public enum InvocationPoint { FROM_FULL_RECALC_FLOW }
-    public static String performBulkFullRecalcWithParentIds(String serializedMetadata, String invokePointName, List<String> parentIds) {
-      return '';
-    }
-  }
   public void run(Set<String> optionalParentIds) {
     String enqueuedJobId = Rollup.performBulkFullRecalcWithParentIds(
       JSON.serialize(new List<String>()),
@@ -2968,7 +2975,7 @@ public class UsesSetListArg {
 `)
 	index := typesys.Build(project.Project{
 		Root:      root,
-		ApexFiles: []string{filepath.Join(root, "UsesSetListArg.cls")},
+		ApexFiles: []string{filepath.Join(root, "Rollup.cls"), filepath.Join(root, "UsesSetListArg.cls")},
 	}, schema.Schema{})
 	result := Analyze(index)
 	if result.HasErrors() {
@@ -3864,14 +3871,16 @@ public class UsesMapFromList {
 func TestAnalyzeEnhancedForLocalDoesNotShadowClassAfterLoop(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Rollup.cls"), `
+public class Rollup {
+  public enum InvocationPoint { FROM_FULL_RECALC_FLOW }
+  public static String performBulkFullRecalcWithParentIds(String serializedMetadata, String invokePointName, List<String> parentIds) {
+    return '';
+  }
+}
+`)
 	writeSemaFile(t, filepath.Join(root, "UsesLoopShadow.cls"), `
 public class UsesLoopShadow {
-  public class Rollup {
-    public enum InvocationPoint { FROM_FULL_RECALC_FLOW }
-    public static String performBulkFullRecalcWithParentIds(String serializedMetadata, String invokePointName, List<String> parentIds) {
-      return '';
-    }
-  }
   public void run(List<String> values, Set<String> optionalParentIds) {
     for (String rollup : values) {
       String copy = rollup;
@@ -3886,7 +3895,7 @@ public class UsesLoopShadow {
 `)
 	index := typesys.Build(project.Project{
 		Root:      root,
-		ApexFiles: []string{filepath.Join(root, "UsesLoopShadow.cls")},
+		ApexFiles: []string{filepath.Join(root, "Rollup.cls"), filepath.Join(root, "UsesLoopShadow.cls")},
 	}, schema.Schema{})
 	result := Analyze(index)
 	if result.HasErrors() {
@@ -4910,7 +4919,7 @@ public class Conditions {
 	}
 }
 
-func TestAnalyzeAmbiguousNullOverloadsAccepted(t *testing.T) {
+func TestAnalyzeAmbiguousNullOverloadsRejected(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesNullOverloads.cls"), `
@@ -4932,8 +4941,17 @@ public class UsesNullOverloads {
 		ApexFiles: []string{filepath.Join(root, "UsesNullOverloads.cls")},
 	}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
 	result := Analyze(index)
-	if result.HasErrors() {
-		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	if !result.HasErrors() {
+		t.Fatalf("expected ambiguous null overload errors, got %#v", result.Diagnostics)
+	}
+	var ambiguous int
+	for _, diag := range result.Diagnostics {
+		if strings.Contains(strings.ToLower(diag.Message), "ambiguous") {
+			ambiguous++
+		}
+	}
+	if ambiguous < 2 {
+		t.Fatalf("expected constructor and method ambiguity, got %#v", result.Diagnostics)
 	}
 }
 
@@ -5936,27 +5954,27 @@ func TestAnalyzeSchemaSoapTypeAliases(t *testing.T) {
 func TestAnalyzeNestedTypeRelativeReferencesInsideOwner(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	writeSemaFile(t, filepath.Join(root, "Outer.cls"), `
-public class Outer {
+	writeSemaFile(t, filepath.Join(root, "Container.cls"), `
+public class Container {
   public interface Named {
     String name();
   }
-  public class Inner {
-    public Inner(Integer value) {}
+  public class NestedValue {
+    public NestedValue(Integer value) {}
   }
   public class NamedImpl implements Named {
     public String name() {
       return 'named';
     }
   }
-  public static Inner build(Integer value) {
-    Inner made = new Inner(value);
+  public static NestedValue build(Integer value) {
+    NestedValue made = new NestedValue(value);
     return made;
   }
 }
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
-		filepath.Join(root, "Outer.cls"),
+		filepath.Join(root, "Container.cls"),
 	}}, schema.Schema{})
 
 	result := Analyze(index)
@@ -5968,8 +5986,8 @@ public class Outer {
 func TestAnalyzeChainedStaticPropertyNestedFieldCall(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	writeSemaFile(t, filepath.Join(root, "Outer.cls"), `
-public class Outer {
+	writeSemaFile(t, filepath.Join(root, "Container.cls"), `
+public class Container {
   public static Factory Test { get; private set; }
   public class Factory {
     public MockDatabase Database = new MockDatabase();
@@ -5979,16 +5997,16 @@ public class Outer {
   }
 }
 `)
-	writeSemaFile(t, filepath.Join(root, "UsesOuter.cls"), `
-public class UsesOuter {
+	writeSemaFile(t, filepath.Join(root, "UsesContainer.cls"), `
+public class UsesContainer {
   public void run(Opportunity opp) {
-    Outer.Test.Database.onUpdate(new List<Opportunity> { opp }, new Map<Id, Opportunity> { opp.Id => opp });
+    Container.Test.Database.onUpdate(new List<Opportunity> { opp }, new Map<Id, Opportunity> { opp.Id => opp });
   }
 }
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
-		filepath.Join(root, "Outer.cls"),
-		filepath.Join(root, "UsesOuter.cls"),
+		filepath.Join(root, "Container.cls"),
+		filepath.Join(root, "UsesContainer.cls"),
 	}}, schema.Schema{
 		Objects: []schema.Object{{Name: "Opportunity"}},
 	})
@@ -6990,6 +7008,26 @@ public class Handler {
 	}
 }
 
+func TestAnalyzeProjectStandardSObjectStaticGetSObjectType(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	path := filepath.Join(root, "Probe.cls")
+	writeSemaFile(t, path, `
+public class Probe {
+  public static Schema.SObjectType run() {
+    return Account.getSObjectType();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{Objects: []schema.Object{{Name: "Account", Partial: true}}})
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA008" && strings.Contains(diag.Message, "Account.getSObjectType") {
+			t.Fatalf("project standard sObject static call rejected: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeStandardApexClassSelectorPatterns(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
@@ -7689,7 +7727,7 @@ func TestAnalyzeMapInitializerValueChainedCall(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Base.cls"), `
-public class Base {
+public virtual class Base {
   protected Schema.RecordTypeInfo getRecordType(String name) {
     return null;
   }
@@ -9668,7 +9706,7 @@ public interface Worker {
 }
 `)
 	writeSemaFile(t, filepath.Join(root, "Base.cls"), `
-public class Base {
+public virtual class Base {
   public void inherited(String value) {}
 }
 `)
@@ -9795,8 +9833,8 @@ func TestAnalyzeSuppressesUnknownCallsThroughNestedTypeMissingSuperclass(t *test
 public class Base extends MissingBase {
 }
 `)
-	writeSemaFile(t, filepath.Join(root, "Outer.cls"), `
-public class Outer {
+	writeSemaFile(t, filepath.Join(root, "Container.cls"), `
+public class Container {
   public class Child extends Base {
   }
   public void run() {
@@ -9807,7 +9845,7 @@ public class Outer {
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
 		filepath.Join(root, "Base.cls"),
-		filepath.Join(root, "Outer.cls"),
+		filepath.Join(root, "Container.cls"),
 	}}, schema.Schema{})
 
 	result := Analyze(index)
@@ -10771,7 +10809,7 @@ func TestAnalyzeConstructorChainingBaseline(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Base.cls"), `
-public class Base {
+public virtual class Base {
   public Base(Integer value) {}
 }
 `)

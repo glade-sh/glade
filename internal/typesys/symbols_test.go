@@ -32,6 +32,22 @@ func TestBuildIndex(t *testing.T) {
 	}
 }
 
+func TestBuildRecordsEffectiveSourceAPIVersion(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "Hello.cls")
+	triggerPath := filepath.Join(root, "Hello.trigger")
+	writeFile(t, classPath, "public class Hello {}")
+	writeFile(t, classPath+"-meta.xml", `<ApexClass><apiVersion>65.0</apiVersion></ApexClass>`)
+	writeFile(t, triggerPath, "trigger Hello on Account (before insert) {}")
+	idx := Build(project.Project{Root: root, SourceAPIVersion: "64.0", ApexFiles: []string{classPath, triggerPath}}, schema.Schema{})
+	if got := idx.Types[0].EffectiveAPIVersion; got != "65.0" {
+		t.Fatalf("type API version = %q", got)
+	}
+	if got := idx.Triggers[0].EffectiveAPIVersion; got != "64.0" {
+		t.Fatalf("trigger API version = %q", got)
+	}
+}
+
 func TestBuildParsesNamespaceTokenApex(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "UsesTokens.cls")
@@ -68,6 +84,67 @@ func TestBuildIndexDuplicateType(t *testing.T) {
 	}
 	if len(idx.Diagnostics) != 1 || idx.Diagnostics[0].Code != "GLADETYPE001" || idx.Diagnostics[0].Severity != diagnostic.Warning {
 		t.Fatalf("expected duplicate warning diagnostic: %#v", idx.Diagnostics)
+	}
+}
+
+func TestBuildIndexDuplicateTypeSameOwnerIsError(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "ProbeDuplicateTypeName.cls")
+	writeFile(t, path, `public class ProbeDuplicateTypeName {
+  class Item {}
+  interface Item {}
+}`)
+
+	idx := Build(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+	if !idx.HasErrors() {
+		t.Fatalf("same-owner duplicate type should be an error: %#v", idx.Diagnostics)
+	}
+	found := false
+	for _, diag := range idx.Diagnostics {
+		if diag.Code == "GLADETYPE001" && diag.Severity == diagnostic.Error {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected GLADETYPE001 error for same-owner duplicate, got %#v", idx.Diagnostics)
+	}
+}
+
+func TestTypeSymbolPreservesOwnerAndNesting(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "Outer.cls")
+	writeFile(t, path, `public class Outer {
+  class Mid {
+    class Deep {}
+  }
+}`)
+
+	idx := Build(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+	byName := map[string]TypeSymbol{}
+	for _, typ := range idx.Types {
+		byName[typ.Name] = typ
+	}
+	outer, ok := byName["Outer"]
+	if !ok {
+		t.Fatalf("missing Outer: %#v", idx.Types)
+	}
+	if outer.LocalName != "Outer" || outer.OwnerName != "" || outer.NestingDepth != 0 {
+		t.Fatalf("Outer identity = local=%q owner=%q depth=%d", outer.LocalName, outer.OwnerName, outer.NestingDepth)
+	}
+	mid, ok := byName["Outer.Mid"]
+	if !ok {
+		t.Fatalf("missing Outer.Mid: %#v", idx.Types)
+	}
+	if mid.LocalName != "Mid" || mid.OwnerName != "Outer" || mid.NestingDepth != 1 {
+		t.Fatalf("Outer.Mid identity = local=%q owner=%q depth=%d", mid.LocalName, mid.OwnerName, mid.NestingDepth)
+	}
+	deep, ok := byName["Outer.Mid.Deep"]
+	if !ok {
+		t.Fatalf("missing Outer.Mid.Deep: %#v", idx.Types)
+	}
+	if deep.LocalName != "Deep" || deep.OwnerName != "Outer.Mid" || deep.NestingDepth != 2 {
+		t.Fatalf("Outer.Mid.Deep identity = local=%q owner=%q depth=%d", deep.LocalName, deep.OwnerName, deep.NestingDepth)
 	}
 }
 
@@ -511,10 +588,10 @@ global class PostInstall implements InstallHandler {
 
 func TestBuildIndexPromotesNestedTypes(t *testing.T) {
 	root := t.TempDir()
-	classPath := filepath.Join(root, "Outer.cls")
+	classPath := filepath.Join(root, "Container.cls")
 	writeFile(t, classPath, `
-public class Outer {
-  public class Inner {
+public class Container {
+  public class Nested {
     public String label() { return 'inner'; }
   }
   public interface Marker {
@@ -531,13 +608,13 @@ public class Outer {
 	for _, typ := range idx.Types {
 		types[typ.Name] = typ
 	}
-	for _, name := range []string{"Outer", "Outer.Inner", "Outer.Marker"} {
+	for _, name := range []string{"Container", "Container.Nested", "Container.Marker"} {
 		if _, ok := types[name]; !ok {
 			t.Fatalf("missing nested type %s in %#v", name, idx.Types)
 		}
 	}
-	if len(types["Outer.Inner"].Members) != 1 || types["Outer.Inner"].Members[0].Name != "label" {
-		t.Fatalf("inner members = %#v", types["Outer.Inner"].Members)
+	if len(types["Container.Nested"].Members) != 1 || types["Container.Nested"].Members[0].Name != "label" {
+		t.Fatalf("inner members = %#v", types["Container.Nested"].Members)
 	}
 }
 
@@ -644,6 +721,46 @@ func TestUpdateApexFilesReplacesChangedSymbolsAndDropsDeleted(t *testing.T) {
 	}
 }
 
+func TestTypeSymbolPreservesEnumMembersAndHasBody(t *testing.T) {
+	root := t.TempDir()
+	enumPath := filepath.Join(root, "Color.cls")
+	classPath := filepath.Join(root, "Shape.cls")
+	writeFile(t, enumPath, `public enum Color { Red, Green }`)
+	writeFile(t, classPath, `public abstract class Shape {
+  public abstract void draw();
+  public void paint() {}
+}`)
+
+	idx := Build(project.Project{Root: root, ApexFiles: []string{enumPath, classPath}}, schema.Schema{})
+	byName := map[string]TypeSymbol{}
+	for _, typ := range idx.Types {
+		byName[typ.Name] = typ
+	}
+	color, ok := byName["Color"]
+	if !ok {
+		t.Fatalf("missing Color: %#v", idx.Types)
+	}
+	if len(color.Members) != 2 || color.Members[0].Name != "Red" || color.Members[1].Name != "Green" {
+		t.Fatalf("enum members = %#v", color.Members)
+	}
+	shape, ok := byName["Shape"]
+	if !ok {
+		t.Fatalf("missing Shape: %#v", idx.Types)
+	}
+	var draw, paint MemberSymbol
+	for _, member := range shape.Members {
+		switch member.Name {
+		case "draw":
+			draw = member
+		case "paint":
+			paint = member
+		}
+	}
+	if draw.HasBody || !paint.HasBody {
+		t.Fatalf("HasBody draw=%v paint=%v members=%#v", draw.HasBody, paint.HasBody, shape.Members)
+	}
+}
+
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
@@ -661,4 +778,27 @@ func codeIntelIDPresent(symbols []packageartifact.CodeIntelSymbol, id string) bo
 		}
 	}
 	return false
+}
+
+func TestBuildTriggerSymbolRecordsSourceOccurrenceMetadata(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "ThingTrigger.trigger")
+	writeFile(t, path, "trigger ThingTrigger on Thing__c (before insert) {}")
+
+	idx := Build(project.Project{
+		Root:             root,
+		Namespace:        "runtime",
+		SourceAPIVersion: "62.0",
+		ApexFiles:        []string{path},
+	}, schema.Schema{})
+	if len(idx.Triggers) != 1 {
+		t.Fatalf("triggers = %#v", idx.Triggers)
+	}
+	trigger := idx.Triggers[0]
+	if trigger.SourceRoot != root {
+		t.Fatalf("trigger SourceRoot = %q, want %q", trigger.SourceRoot, root)
+	}
+	if trigger.Version != "" {
+		t.Fatalf("trigger Version = %q, want empty for a non-dependency source", trigger.Version)
+	}
 }

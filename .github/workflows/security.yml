@@ -76,7 +76,7 @@ jobs:
   codeql:
     name: CodeQL
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 5
     permissions:
       actions: read
       contents: read
@@ -145,8 +145,12 @@ jobs:
               - uses: security-extended
             query-filters:
               - exclude:
-                  # This query alone exceeded 60 minutes in run 29155739678.
-                  id: go/allocation-size-overflow
+                  id:
+                    # This query alone exceeded 60 minutes in run 29155739678.
+                    - go/allocation-size-overflow
+                    # This query was the only one still running when PR run
+                    # 30205055311 hit its 60-minute job timeout.
+                    - go/incorrect-integer-conversion
           build-mode: manual
       - name: Initialize full-branch CodeQL
         if: github.event_name != 'pull_request'

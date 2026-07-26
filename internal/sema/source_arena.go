@@ -64,13 +64,26 @@ func (s *semaSources) rawForType(typ typesys.TypeSymbol) (string, bool) {
 	return text.raw, ok
 }
 
+func (s *semaSources) normalizedForTrigger(trigger typesys.TriggerSymbol) (string, bool) {
+	text, ok := s.forOccurrence(trigger.File, trigger.Namespace, trigger.SourceNamespaceRemaps, func() (typesys.WorkspaceSource, bool) {
+		return s.artifacts.SourceForTrigger(trigger)
+	})
+	return text.normalized, ok
+}
+
 func (s *semaSources) forType(typ typesys.TypeSymbol) (semaSourceText, bool) {
-	if typ.File == "" {
+	return s.forOccurrence(typ.File, typ.Namespace, typ.SourceNamespaceRemaps, func() (typesys.WorkspaceSource, bool) {
+		return s.artifacts.SourceForType(typ)
+	})
+}
+
+func (s *semaSources) forOccurrence(file, namespace string, remaps []namespaceremap.Rule, fromArtifacts func() (typesys.WorkspaceSource, bool)) (semaSourceText, bool) {
+	if file == "" {
 		s.miss()
 		return semaSourceText{}, false
 	}
 	if s.artifacts != nil {
-		source, ok := s.artifacts.SourceForType(typ)
+		source, ok := fromArtifacts()
 		if !ok {
 			s.miss()
 			return semaSourceText{}, false
@@ -78,7 +91,7 @@ func (s *semaSources) forType(typ typesys.TypeSymbol) (semaSourceText, bool) {
 		s.hit()
 		return semaSourceText{raw: source.RawString(), normalized: source.NormalizedString()}, true
 	}
-	key := semaSourceCacheKey(typ.File, typ.Namespace, typ.SourceNamespaceRemaps)
+	key := semaSourceCacheKey(file, namespace, remaps)
 	if result, resolved := s.fallback[key]; resolved {
 		if result.ok {
 			s.hit()
@@ -91,15 +104,15 @@ func (s *semaSources) forType(typ typesys.TypeSymbol) (semaSourceText, bool) {
 	if s.recorder != nil {
 		s.recorder.counters.SourceArenaFallbackReads++
 	}
-	data, err := os.ReadFile(typ.File)
+	data, err := os.ReadFile(file) // #nosec G304 -- file is an indexed project source path carried by the analyzed type or trigger occurrence.
 	if err != nil {
 		s.fallback[key] = semaSourceResult{}
 		return semaSourceText{}, false
 	}
 	raw := string(data)
-	normalized := project.NormalizeApexNamespaceTokens(raw, typ.Namespace)
-	if len(typ.SourceNamespaceRemaps) > 0 {
-		normalized = namespaceremap.ApplySource(typ.SourceNamespaceRemaps, normalized)
+	normalized := project.NormalizeApexNamespaceTokens(raw, namespace)
+	if len(remaps) > 0 {
+		normalized = namespaceremap.ApplySource(remaps, normalized)
 	}
 	text := semaSourceText{raw: raw, normalized: normalized}
 	s.fallback[key] = semaSourceResult{text: text, ok: true}

@@ -1,6 +1,9 @@
 package apextest
 
-import "github.com/glade-sh/glade/internal/typesys"
+import (
+	"github.com/glade-sh/glade/internal/diagnostic"
+	"github.com/glade-sh/glade/internal/typesys"
+)
 
 // WarmRuntime builds and caches the project test runtime in-process.
 // A persistent test server should call this once at startup so client runs
@@ -31,4 +34,8 @@ func InvalidateRuntimeCaches() {
 	testCacheMu.Lock()
 	testCache = make(map[string]testCompileCacheEntry)
 	testCacheMu.Unlock()
+
+	semaDiagnosticsCacheMu.Lock()
+	semaDiagnosticsCache = make(map[runtimeCacheKey][]diagnostic.Diagnostic)
+	semaDiagnosticsCacheMu.Unlock()
 }

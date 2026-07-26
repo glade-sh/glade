@@ -96,8 +96,8 @@ func TestCIRaceClassifierFullMatchesManifest(t *testing.T) {
 		}
 	}
 	sort.Strings(want)
-	if len(got) != 61 || !reflect.DeepEqual(got, want) {
-		t.Fatalf("full packages = %d/%v, want 61 exact manifest packages", len(got), got)
+	if len(got) != 62 || !reflect.DeepEqual(got, want) {
+		t.Fatalf("full packages = %d/%v, want 62 exact manifest packages", len(got), got)
 	}
 }
 
@@ -162,7 +162,7 @@ func TestCIRaceClassifierFallsBackToFullOnDiffFailure(t *testing.T) {
 	if err != nil {
 		t.Fatalf("diff failure did not fall back: %v\n%s", err, diagnostic)
 	}
-	if len(got) != 61 || !strings.Contains(diagnostic, "git diff failed") {
+	if len(got) != 62 || !strings.Contains(diagnostic, "git diff failed") {
 		t.Fatalf("diff failure selected %d packages without diagnostic: %s", len(got), diagnostic)
 	}
 }
@@ -177,7 +177,7 @@ func TestCIRaceClassifierFallsBackToFullOnGoDeletion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("deletion did not fall back: %v\n%s", err, diagnostic)
 	}
-	if len(got) != 61 || !strings.Contains(diagnostic, "deleted Go file") {
+	if len(got) != 62 || !strings.Contains(diagnostic, "deleted Go file") {
 		t.Fatalf("deletion selected %d packages without diagnostic: %s", len(got), diagnostic)
 	}
 }
@@ -192,8 +192,8 @@ func TestCIRaceClassifierFallsBackToFullOnNestedModuleChange(t *testing.T) {
 	if err != nil {
 		t.Fatalf("nested module change did not fall back: %v\n%s", err, diagnostic)
 	}
-	if len(got) != 61 {
-		t.Fatalf("nested module change selected %d packages, want full 61", len(got))
+	if len(got) != 62 {
+		t.Fatalf("nested module change selected %d packages, want full 62", len(got))
 	}
 }
 
@@ -218,7 +218,7 @@ esac
 	if err != nil {
 		t.Fatalf("graph failure did not fall back: %v\n%s", err, diagnostic)
 	}
-	if len(got) != 61 || !strings.Contains(diagnostic, "dependency graph failed") {
+	if len(got) != 62 || !strings.Contains(diagnostic, "dependency graph failed") {
 		t.Fatalf("graph failure selected %d packages without diagnostic: %s", len(got), diagnostic)
 	}
 }
@@ -230,7 +230,7 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 	}
 	workflow := string(data)
 	for _, marker := range []string{
-		"name: Race", "pull_request:", "branches: [main]", "schedule:", "workflow_dispatch:",
+		"name: Race", "branches: [main]", "schedule:", "workflow_dispatch:",
 		"fetch-depth: 0", "scripts/ci-race-packages.sh", "fromJSON(needs.plan.outputs.packages)",
 		"fail-fast: false", "max-parallel: 4", "GOMAXPROCS: \"2\"", "go-version: \"1.26.5\"",
 		`scripts/ci-race-test.sh "$PACKAGE" "$SLUG"`, "if: always()",
@@ -245,10 +245,16 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 			t.Errorf("race workflow missing %q", marker)
 		}
 	}
-	for _, forbidden := range []string{"pull_request_target:", "continue-on-error:", "runs-on: ubuntu-latest-", "go test -race ./..."} {
+	for _, forbidden := range []string{"pull_request:", "pull_request_target:", "continue-on-error:", "runs-on: ubuntu-latest-", "go test -race ./..."} {
 		if strings.Contains(workflow, forbidden) {
 			t.Errorf("race workflow contains forbidden %q", forbidden)
 		}
+	}
+	if !strings.Contains(workflow, "push)\n              mode=full\n              packages=\"$(scripts/ci-race-packages.sh full)\"") {
+		t.Fatal("race workflow must run the exhaustive manifest after every main push")
+	}
+	if !strings.Contains(workflow, "group: race-${{ github.run_id }}") || strings.Contains(workflow, "group: race-${{ github.ref") {
+		t.Fatal("race workflow must give every event a unique concurrency group")
 	}
 	if strings.Contains(workflow, "Required CI") || strings.Contains(workflow, "required-ci") {
 		t.Fatal("race workflow is coupled to normal Required CI")

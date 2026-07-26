@@ -30,30 +30,47 @@ const (
 )
 
 type Declaration struct {
-	Kind       DeclarationKind `json:"kind"`
-	Name       string          `json:"name,omitempty"`
-	Type       string          `json:"type,omitempty"`
-	Modifiers  []string        `json:"modifiers,omitempty"`
-	Parameters []Parameter     `json:"parameters,omitempty"`
-	Accessors  []Accessor      `json:"accessors,omitempty"`
-	ObjectName string          `json:"objectName,omitempty"`
-	Events     []string        `json:"events,omitempty"`
-	Range      Range           `json:"range"`
-	Members    []Declaration   `json:"members,omitempty"`
+	Kind           DeclarationKind `json:"kind"`
+	Name           string          `json:"name,omitempty"`
+	Type           string          `json:"type,omitempty"`
+	Modifiers      []string        `json:"modifiers,omitempty"`
+	Annotations    []Annotation    `json:"annotations,omitempty"`
+	Parameters     []Parameter     `json:"parameters,omitempty"`
+	Accessors      []Accessor      `json:"accessors,omitempty"`
+	ObjectName     string          `json:"objectName,omitempty"`
+	Events         []string        `json:"events,omitempty"`
+	TypeParameters []string        `json:"typeParameters,omitempty"`
+	HasBody        bool            `json:"hasBody,omitempty"`
+	Range          Range           `json:"range"`
+	Members        []Declaration   `json:"members,omitempty"`
+}
+
+type Annotation struct {
+	Name      string               `json:"name"`
+	Arguments []AnnotationArgument `json:"arguments,omitempty"`
+	Range     Range                `json:"range"`
+}
+
+type AnnotationArgument struct {
+	Name  string `json:"name,omitempty"`
+	Value string `json:"value"`
+	Range Range  `json:"range"`
 }
 
 type Accessor struct {
-	Kind      string   `json:"kind"`
-	Modifiers []string `json:"modifiers,omitempty"`
-	Range     Range    `json:"range"`
-	HasBody   bool     `json:"hasBody,omitempty"`
+	Kind        string       `json:"kind"`
+	Modifiers   []string     `json:"modifiers,omitempty"`
+	Annotations []Annotation `json:"annotations,omitempty"`
+	Range       Range        `json:"range"`
+	HasBody     bool         `json:"hasBody,omitempty"`
 }
 
 type Parameter struct {
-	Name      string   `json:"name"`
-	Type      string   `json:"type"`
-	Modifiers []string `json:"modifiers,omitempty"`
-	Range     Range    `json:"range"`
+	Name        string       `json:"name"`
+	Type        string       `json:"type"`
+	Modifiers   []string     `json:"modifiers,omitempty"`
+	Annotations []Annotation `json:"annotations,omitempty"`
+	Range       Range        `json:"range"`
 }
 
 type DeclarationKind string

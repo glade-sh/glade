@@ -142,6 +142,22 @@ func TestParseDeclarations(t *testing.T) {
 				if file.Kind != FileKindEnum || file.Declarations[0].Name != "Color" {
 					t.Fatalf("enum = %#v", file)
 				}
+				members := file.Declarations[0].Members
+				if len(members) != 2 || members[0].Name != "Red" || members[1].Name != "Green" {
+					t.Fatalf("enum members = %#v", members)
+				}
+				if members[0].Kind != DeclarationField || members[0].Type != "Color" {
+					t.Fatalf("enum constant = %#v", members[0])
+				}
+			},
+		},
+		{
+			name:   "user generic class declaration",
+			source: `public class Box<T> { public T value; }`,
+			check: func(t *testing.T, file File) {
+				if got := file.Declarations[0].TypeParameters; len(got) != 1 || got[0] != "T" {
+					t.Fatalf("type parameters = %#v", got)
+				}
 			},
 		},
 		{
@@ -176,10 +192,10 @@ func TestParseDeclarations(t *testing.T) {
 		},
 		{
 			name:   "nested type",
-			source: `public class Outer { public class Inner { public void run() {} } }`,
+			source: `public class Container { public class Nested { public void run() {} } }`,
 			check: func(t *testing.T, file File) {
 				outer := file.Declarations[0]
-				if len(outer.Members) != 1 || outer.Members[0].Kind != DeclarationClass || outer.Members[0].Name != "Inner" {
+				if len(outer.Members) != 1 || outer.Members[0].Kind != DeclarationClass || outer.Members[0].Name != "Nested" {
 					t.Fatalf("outer = %#v", outer)
 				}
 			},
@@ -285,6 +301,39 @@ func TestParseDeclarations(t *testing.T) {
 	}
 }
 
+func TestParseMethodConstructorHasBody(t *testing.T) {
+	file := NewParser().ParseSource("Shape.cls", `public abstract class Shape {
+  public abstract void draw();
+  public void paint() { System.debug('paint'); }
+  public Shape() {}
+}
+public interface Drawable { void draw(); }`)
+	if len(file.Declarations) != 2 {
+		t.Fatalf("declarations = %#v", file.Declarations)
+	}
+	shape := file.Declarations[0]
+	if shape.Members[0].HasBody {
+		t.Fatalf("abstract method should not have body: %#v", shape.Members[0])
+	}
+	if !shape.Members[1].HasBody {
+		t.Fatalf("concrete method should have body: %#v", shape.Members[1])
+	}
+	if !shape.Members[2].HasBody {
+		t.Fatalf("constructor should have body: %#v", shape.Members[2])
+	}
+	iface := file.Declarations[1]
+	if iface.Members[0].HasBody {
+		t.Fatalf("interface method should not have body: %#v", iface.Members[0])
+	}
+}
+
+func TestParseEnumUserMethodSyntax(t *testing.T) {
+	file := NewParser().ParseSource("Color.cls", `public enum Color { Red, Green; public void run() {} }`)
+	if !file.HasErrors() {
+		t.Fatalf("expected enum method syntax error, got %#v", file)
+	}
+}
+
 func TestParseSyntaxError(t *testing.T) {
 	file := NewParser().ParseSource("Broken.cls", "public class Broken {")
 	if len(file.Diagnostics) == 0 {
@@ -292,6 +341,218 @@ func TestParseSyntaxError(t *testing.T) {
 	}
 	if file.Diagnostics[0].Range == nil || file.Diagnostics[0].Range.Start.Line == 0 {
 		t.Fatalf("diagnostic = %#v", file.Diagnostics[0])
+	}
+}
+
+func TestParseRejectsEverySalesforceReservedVariableName(t *testing.T) {
+	reserved := strings.Fields(`abstract activate and any array as asc autonomous
+		begin bigdecimal blob boolean break bulk by byte case cast catch char class
+		collect commit const continue currency date datetime decimal default delete
+		desc do double else end enum exception exit export extends false final finally
+		float for from global goto group having hint if implements import in inner
+		insert instanceof int integer interface into join like limit list long loop
+		map merge new not null nulls number object of on or outer override package
+		parallel pragma private protected public retrieve return rollback select set
+		short sObject sort static string super switch synchronized system testmethod
+		then this throw time transaction trigger true try undelete update upsert using
+		virtual void webservice when where while`)
+	if len(reserved) != 121 || len(salesforceReservedIdentifiers) != 121 {
+		t.Fatalf("reserved word counts = test:%d implementation:%d, want 121", len(reserved), len(salesforceReservedIdentifiers))
+	}
+	parser := NewParser()
+	for _, word := range reserved {
+		t.Run(word, func(t *testing.T) {
+			source := fmt.Sprintf("class Probe { void run() { String %s = 'x'; } }", word)
+			if file := parser.ParseSource("Probe.cls", source); !file.HasErrors() {
+				t.Fatalf("%q was accepted as a variable name", word)
+			}
+		})
+	}
+}
+
+func TestParseRejectsReservedIdentifiersCaseInsensitively(t *testing.T) {
+	source := "class Probe { void run() { String Currency = 'USD'; } }"
+	file := NewParser().ParseSource("Probe.cls", source)
+	for _, diag := range file.Diagnostics {
+		if diag.Code == "APEXPARSE002" && diag.Message == "Identifier name is reserved: Currency" {
+			return
+		}
+	}
+	t.Fatalf("missing mixed-case reserved identifier diagnostic: %#v", file.Diagnostics)
+}
+
+func TestParseRejectsReservedIdentifiersInDeclarationContexts(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+	}{
+		{
+			name:   "field",
+			source: "class Probe { String currency; }",
+		},
+		{
+			name:   "local",
+			source: "class Probe { void run() { String currency = 'USD'; } }",
+		},
+		{
+			name:   "parameter",
+			source: "class Probe { void run(String currency) {} }",
+		},
+		{
+			name:   "enhanced for",
+			source: "class Probe { void run() { for (String currency : new List<String>()) {} } }",
+		},
+		{
+			name:   "catch",
+			source: "class Probe { void run() { try {} catch (Exception currency) {} } }",
+		},
+		{
+			name:   "enum constant",
+			source: "enum Probe { currency }",
+		},
+	}
+	parser := NewParser()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			file := parser.ParseSource("Probe.cls", tt.source)
+			var reserved *Diagnostic
+			for i := range file.Diagnostics {
+				if file.Diagnostics[i].Code == "APEXPARSE002" {
+					reserved = &file.Diagnostics[i]
+					break
+				}
+			}
+			if reserved == nil {
+				t.Fatalf("missing reserved identifier diagnostic: %#v", file.Diagnostics)
+			}
+			if reserved.Message != "Identifier name is reserved: currency" {
+				t.Fatalf("message = %q", reserved.Message)
+			}
+			if reserved.Range == nil {
+				t.Fatalf("diagnostic range = %#v", reserved)
+			}
+			start, end := reserved.Range.Start.Offset, reserved.Range.End.Offset
+			if start < 0 || end > len(tt.source) || start >= end || tt.source[start:end] != "currency" {
+				t.Fatalf("range = %#v, source slice %q", reserved.Range, tt.source[start:end])
+			}
+		})
+	}
+}
+
+func TestParsePreservesSalesforceContextualIdentifiersAndMethodNames(t *testing.T) {
+	permitted := []string{
+		"after", "before", "count", "excludes", "first", "includes",
+		"last", "order", "sharing", "with", "id",
+	}
+	parser := NewParser()
+	for _, word := range permitted {
+		t.Run("variable "+word, func(t *testing.T) {
+			source := fmt.Sprintf("class Probe { void run() { String %s = 'x'; } }", word)
+			if file := parser.ParseSource("Probe.cls", source); file.HasErrors() {
+				t.Fatalf("%q should remain a valid variable name: %#v", word, file.Diagnostics)
+			}
+		})
+	}
+	for _, word := range []string{"currency", "void"} {
+		t.Run("method "+word, func(t *testing.T) {
+			source := fmt.Sprintf("class Probe { String %s() { return 'x'; } }", word)
+			if file := parser.ParseSource("Probe.cls", source); file.HasErrors() {
+				t.Fatalf("%q should remain a valid method name: %#v", word, file.Diagnostics)
+			}
+		})
+	}
+	if file := parser.ParseSource("Probe.cls", "class Probe { String trigger() { return 'x'; } }"); !file.HasErrors() {
+		t.Fatal(`"trigger" should remain reserved as a method name`)
+	}
+}
+
+func TestParseRejectsInvalidIdentifierShapesAndLengths(t *testing.T) {
+	longOK := "A" + strings.Repeat("a", 254)
+	longBad := "A" + strings.Repeat("a", 255)
+	if len(longOK) != 255 || len(longBad) != 256 {
+		t.Fatalf("fixture lengths = %d/%d, want 255/256", len(longOK), len(longBad))
+	}
+	tests := []struct {
+		name   string
+		ident  string
+		source string
+	}{
+		{name: "leading underscore", ident: "_value", source: "class Probe { void run() { String _value = 'x'; } }"},
+		{name: "trailing underscore", ident: "value_", source: "class Probe { void run() { String value_ = 'x'; } }"},
+		{name: "consecutive underscores", ident: "value__name", source: "class Probe { void run() { String value__name = 'x'; } }"},
+		{name: "256 characters", ident: longBad, source: fmt.Sprintf("class Probe { void run() { String %s = 'x'; } }", longBad)},
+	}
+	parser := NewParser()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			file := parser.ParseSource("Probe.cls", tt.source)
+			var invalid *Diagnostic
+			for i := range file.Diagnostics {
+				if file.Diagnostics[i].Code == "APEXPARSE003" {
+					invalid = &file.Diagnostics[i]
+					break
+				}
+			}
+			if invalid == nil {
+				t.Fatalf("missing APEXPARSE003 for %q: %#v", tt.ident, file.Diagnostics)
+			}
+			wantMsg := "Invalid identifier: " + tt.ident
+			if invalid.Message != wantMsg {
+				t.Fatalf("message = %q, want %q", invalid.Message, wantMsg)
+			}
+			if invalid.Range == nil {
+				t.Fatalf("diagnostic range = %#v", invalid)
+			}
+			start, end := invalid.Range.Start.Offset, invalid.Range.End.Offset
+			if start < 0 || end > len(tt.source) || start >= end || tt.source[start:end] != tt.ident {
+				t.Fatalf("range = %#v, source slice %q", invalid.Range, tt.source[start:end])
+			}
+		})
+	}
+	if file := parser.ParseSource("Probe.cls", fmt.Sprintf("class Probe { void run() { String %s = 'x'; } }", longOK)); file.HasErrors() {
+		t.Fatalf("255-character identifier should remain valid: %#v", file.Diagnostics)
+	}
+}
+
+func TestParseRejectsInvalidIdentifiersInDeclarationContexts(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+	}{
+		{name: "field", source: "class Probe { String value__name; }"},
+		{name: "local", source: "class Probe { void run() { String value__name = 'x'; } }"},
+		{name: "parameter", source: "class Probe { void run(String value__name) {} }"},
+		{name: "enhanced for", source: "class Probe { void run() { for (String value__name : new List<String>()) {} } }"},
+		{name: "catch", source: "class Probe { void run() { try {} catch (Exception value__name) {} } }"},
+		{name: "method", source: "class Probe { void value__name() {} }"},
+		{name: "class", source: "class value__name {}"},
+		{name: "enum constant", source: "enum Probe { value__name }"},
+	}
+	parser := NewParser()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			file := parser.ParseSource("Probe.cls", tt.source)
+			found := false
+			for _, diag := range file.Diagnostics {
+				if diag.Code == "APEXPARSE003" && diag.Message == "Invalid identifier: value__name" {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Fatalf("missing APEXPARSE003 in %s context: %#v", tt.name, file.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestParseDoesNotApplySourceIdentifierRulesToSchemaTypeReferences(t *testing.T) {
+	source := "class Probe { void run() { Account__c row; Custom_Field__c value; } }"
+	file := NewParser().ParseSource("Probe.cls", source)
+	for _, diag := range file.Diagnostics {
+		if diag.Code == "APEXPARSE003" {
+			t.Fatalf("schema/API type references must not use source-identifier rules: %#v", file.Diagnostics)
+		}
 	}
 }
 
@@ -365,6 +626,56 @@ func TestResultHasErrors(t *testing.T) {
 	reportBad := Result{Diagnostics: []Diagnostic{{Severity: Error, Message: "broken"}}}
 	if !reportBad.HasErrors() {
 		t.Fatal("expected report diagnostic error")
+	}
+}
+
+func TestParseStructuredAnnotations(t *testing.T) {
+	file := NewParser().ParseSource("Probe.cls", `
+@IsTest(SeeAllData = false)
+public class Probe {
+  @AuraEnabled(cacheable = true)
+  public static String run() { return 'ok'; }
+}`)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	decl := file.Declarations[0]
+	if len(decl.Annotations) != 1 || decl.Annotations[0].Name != "IsTest" || len(decl.Annotations[0].Arguments) != 1 {
+		t.Fatalf("class annotations = %#v", decl.Annotations)
+	}
+	method := decl.Members[0]
+	if len(method.Annotations) != 1 || method.Annotations[0].Name != "AuraEnabled" || method.Annotations[0].Arguments[0].Name != "cacheable" {
+		t.Fatalf("method annotations = %#v", method.Annotations)
+	}
+}
+
+func TestParseStructuredAnnotationArgumentsPreserveStringsAndRanges(t *testing.T) {
+	source := `@InvocableMethod(label = 'a = b', description = 'hello world') public class Probe {}`
+	file := NewParser().ParseSource("Probe.cls", source)
+	annotation := file.Declarations[0].Annotations[0]
+	if len(annotation.Arguments) != 2 || annotation.Arguments[0].Name != "label" || annotation.Arguments[0].Value != "'a = b'" {
+		t.Fatalf("arguments = %#v", annotation.Arguments)
+	}
+	for _, argument := range annotation.Arguments {
+		if argument.Range.Start.Offset < 0 || argument.Range.End.Offset <= argument.Range.Start.Offset || source[argument.Range.Start.Offset:argument.Range.End.Offset] == "" {
+			t.Fatalf("argument range = %#v", argument.Range)
+		}
+	}
+}
+
+func TestParseStructuredAnnotationArgumentsSupportWhitespaceSeparation(t *testing.T) {
+	source := `public class Probe { @AuraEnabled(cacheable=true scope='global') public static String run() { return 'ok'; } }`
+	file := NewParser().ParseSource("Probe.cls", source)
+	annotation := file.Declarations[0].Members[0].Annotations[0]
+	if len(annotation.Arguments) != 2 || annotation.Arguments[0].Name != "cacheable" || annotation.Arguments[0].Value != "true" || annotation.Arguments[1].Name != "scope" || annotation.Arguments[1].Value != "'global'" {
+		t.Fatalf("arguments = %#v", annotation.Arguments)
+	}
+}
+
+func TestParseRejectsMultipleSuppressWarningsArguments(t *testing.T) {
+	file := NewParser().ParseSource("Probe.cls", `@SuppressWarnings('one', 'two') public class Probe {}`)
+	if !file.HasErrors() {
+		t.Fatalf("multiple SuppressWarnings arguments were accepted: %#v", file)
 	}
 }
 

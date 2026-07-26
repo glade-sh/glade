@@ -204,6 +204,22 @@ func (a BuildArtifacts) SourceForType(typ TypeSymbol) (WorkspaceSource, bool) {
 	})
 }
 
+// SourceForTrigger returns the exact logical source occurrence used to build
+// trigger. It never reads the filesystem.
+func (a BuildArtifacts) SourceForTrigger(trigger TriggerSymbol) (WorkspaceSource, bool) {
+	if a.Sources == nil {
+		return WorkspaceSource{}, false
+	}
+	return a.Sources.sourceForMetadata(SourceMetadata{
+		RequestedPath:   trigger.File,
+		Root:            trigger.SourceRoot,
+		Namespace:       trigger.Namespace,
+		Version:         trigger.Version,
+		Dependency:      trigger.Dependency,
+		NamespaceRemaps: trigger.SourceNamespaceRemaps,
+	})
+}
+
 // WorkspaceSourceStats reports source-arena work for one index build.
 type WorkspaceSourceStats struct {
 	PhysicalReadAttempts uint64

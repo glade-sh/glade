@@ -81,18 +81,23 @@ func TestCatalogToObjectDefinitionsStitchesChildRelationships(t *testing.T) {
 }
 
 func TestSObjectToSchemaObjectMapsDescribeShape(t *testing.T) {
+	notCapable := false
 	object := SObject{
 		Name:        "Opportunity",
 		Label:       "Opportunity",
 		LabelPlural: "Opportunities",
 		Fields: []Field{
 			{
-				Name:       "StageName",
-				Label:      "Stage",
-				Type:       "picklist",
-				Nillable:   false,
-				Createable: true,
-				Updateable: true,
+				Name:         "StageName",
+				Label:        "Stage",
+				Type:         "picklist",
+				Nillable:     false,
+				Createable:   true,
+				Updateable:   true,
+				Filterable:   &notCapable,
+				Groupable:    &notCapable,
+				Sortable:     &notCapable,
+				Aggregatable: &notCapable,
 				PicklistValues: []PicklistValue{
 					{Value: "Prospecting", Label: "Prospecting", Active: true, Default: true},
 					{Value: "Closed Won", Label: "Closed Won", Active: true},
@@ -142,6 +147,14 @@ func TestSObjectToSchemaObjectMapsDescribeShape(t *testing.T) {
 	if got := fields["StageName"]; got.Type != "Picklist" || !got.Required || got.Picklists != 2 {
 		t.Fatalf("StageName mapping = %#v", got)
 	}
+	for _, field := range schemaObject.Fields {
+		if field.Name != "StageName" {
+			continue
+		}
+		if field.Filterable == nil || *field.Filterable || field.Groupable == nil || *field.Groupable || field.Sortable == nil || *field.Sortable || field.Aggregatable == nil || *field.Aggregatable {
+			t.Fatalf("describe capabilities not mapped to schema field: %#v", field)
+		}
+	}
 	if got := fields["OwnerId"]; got.Type != "Lookup" || got.RelationshipName != "Owner" || got.ChildRelationshipName != "OwnedOpportunities" {
 		t.Fatalf("OwnerId mapping = %#v", got)
 	}
@@ -150,6 +163,19 @@ func TestSObjectToSchemaObjectMapsDescribeShape(t *testing.T) {
 	}
 	if len(schemaObject.RecordTypes) != 1 || schemaObject.RecordTypes[0].DeveloperName != "Enterprise" || !schemaObject.RecordTypes[0].Default {
 		t.Fatalf("record types = %#v", schemaObject.RecordTypes)
+	}
+	if supported, known := schemaObject.SupportsTriggers(); known || supported {
+		t.Fatalf("describe without triggerable stated capability: supported=%t known=%t", supported, known)
+	}
+}
+
+func TestSObjectToSchemaObjectMapsTriggerCapability(t *testing.T) {
+	triggerable := false
+	object := SObject{Name: "ApexClass", Triggerable: &triggerable}
+
+	schemaObject := object.ToSchemaObject(nil)
+	if supported, known := schemaObject.SupportsTriggers(); !known || supported {
+		t.Fatalf("trigger capability = supported %t, known %t", supported, known)
 	}
 }
 

@@ -99,7 +99,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 				if strings.EqualFold(method, "addError") && semaReceiverExprResolvesFieldPath(receiverExpr, scope, model) {
 					continue
 				}
-				if semaKnownPlatformTypeReceiver(receiverExpr) {
+				if scope[normalizeName(receiverExpr)] == "" && semaKnownPlatformTypeReceiver(receiverExpr) && !semaProjectTypeShadowsPlatform(model, receiverExpr) {
 					if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, receiverExpr, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model, "class"); handled {
 						diagnostics = append(diagnostics, platformDiagnostics...)
 						continue
@@ -226,6 +226,14 @@ func semaClassMembersForReceiver(model *semaTypeMemberView, current typesys.Type
 		}
 	}
 	return typeMembers{}, "", false
+}
+
+func semaUnshadowedPlatformTypeReceiver(model *semaTypeMemberView, scope map[string]string, receiver string) bool {
+	if scope[normalizeName(receiver)] != "" || semaProjectTypeShadowsPlatform(model, receiver) {
+		return false
+	}
+	members, ok := model.lookup(normalizeName(receiver))
+	return ok && members.dependency && semaKnownPlatformTypeReceiver(members.name) && semaPlatformReceiverSpellingMatches(receiver, members)
 }
 
 func semaCurrentClassMembers(model *semaTypeMemberView, current typesys.TypeSymbol) (typeMembers, string, bool) {
@@ -469,7 +477,7 @@ func (a *Analyzer) diagnoseConstructorChain(typ typesys.TypeSymbol, member types
 	}
 	argTypes := make([]string, len(args))
 	for i, arg := range args {
-		argTypes[i] = resolveNestedTypeReference(model, typ.Name, inferSemaArgTypeWithModel(arg.text, map[string]string{}, model))
+		argTypes[i] = semaResolveConstructedExpressionType(model, typ.Name, arg.text, map[string]string{})
 		if argTypes[i] == "" {
 			for _, ctor := range target.constructors {
 				if len(ctor.Parameters) == len(args) {
@@ -484,7 +492,7 @@ func (a *Analyzer) diagnoseConstructorChain(typ typesys.TypeSymbol, member types
 		}
 		return nil
 	} else if ambiguous {
-		if semaArgTypesContainNullish(argTypes) {
+		if semaArgTypesContainUnknown(argTypes) {
 			return nil
 		}
 		return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, callee, fmt.Sprintf("ambiguous %s constructor with %d argument(s)", targetType, len(args)), start, end, source)}
@@ -524,6 +532,12 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 			if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, typ.Name, callee, args, start, end, source, scope, model, "implicit"); handled {
 				return platformDiagnostics
 			}
+		}
+		if receiverExpr, method, ok := splitSemaMethodPath(callee); ok && semaUnshadowedPlatformTypeReceiver(model, scope, receiverExpr) {
+			if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, receiverExpr, method, args, start, end, source, scope, model, receiverMode); handled {
+				return platformDiagnostics
+			}
+			return []diagnostic.Diagnostic{unknownCallDiagnostic(typ, member, callee, start, end, source)}
 		}
 		if receiverExpr, method, ok := strings.Cut(callee, "."); ok && receiverExpr != "" && method != "" {
 			if lastDot := strings.LastIndex(callee, "."); lastDot > 0 && lastDot < len(callee)-1 {
@@ -581,7 +595,7 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 		if semaKnownAddressValueCall(callee) {
 			return nil
 		}
-		if semaSourceHasDottedCall(source, callee) {
+		if strings.Count(callee, ".") != 1 && semaSourceHasDottedCall(source, callee) {
 			return nil
 		}
 		if receiverMode != "implicit" && semaCalleeDependencyRoot(callee, scope, model) {
@@ -622,7 +636,7 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 		}
 		return nil
 	} else if ambiguous {
-		if semaArgTypesContainNullish(argTypes) {
+		if semaArgTypesContainUnknown(argTypes) {
 			return nil
 		}
 		if semaAmbiguousNewListHelper(callee, candidates, argTypes) {
@@ -2383,6 +2397,46 @@ func semaShortTypeKeyFromNormalizedKey(key string) string {
 		return key[idx+1:]
 	}
 	return key
+}
+
+// semaResolveConstructedExpressionType infers expr's type and resolves nested-class
+// names relative to owner, same as resolveNestedTypeReference(model, owner,
+// inferSemaArgTypeWithModel(expr, scope, model)). When expr is a `new Type(field =
+// value, ...)` SObject field-initializer call, that constructor syntax only exists for
+// real SObjects, so a genuine standard SObject named Type takes precedence over a
+// same-named nested Apex class that nested-class resolution would otherwise prefer.
+// This applies at every expression-typing site (returns, local declarations,
+// assignments, call arguments), not just returns: the ambiguity is intrinsic to the
+// expression's syntax, not to where the expression happens to appear.
+func semaResolveConstructedExpressionType(model *semaTypeMemberView, owner, expr string, scope map[string]string) string {
+	resolved := resolveNestedTypeReference(model, owner, inferSemaArgTypeWithModel(expr, scope, model))
+	match := newExprPattern.FindStringSubmatch(strings.TrimSpace(expr))
+	if len(match) != 2 {
+		return resolved
+	}
+	return semaSObjectConstructorPrecedence(model, resolved, match[1], newExprSObjectFieldArgPattern.MatchString(expr))
+}
+
+// semaSObjectConstructorPrecedence holds the narrow precedence rule shared by the
+// regex-based (semaResolveConstructedExpressionType) and IR-based
+// (semaIRSObjectConstructorPrecedence) expression-typing paths: a `new Type(field =
+// value, ...)` SObject field-initializer only exists for real SObjects, so a genuine
+// standard SObject named bareName takes precedence over a same-named non-SObject nested
+// Apex class that ordinary nested-class resolution would otherwise prefer. This does not
+// broadly invert nested-class-wins: it only fires when the constructor call used named
+// field arguments and the nested-resolved type is not itself an SObject.
+func semaSObjectConstructorPrecedence(model *semaTypeMemberView, resolved, bareName string, hasSObjectFieldArgs bool) string {
+	if bareName == "" || strings.EqualFold(resolved, bareName) || !hasSObjectFieldArgs {
+		return resolved
+	}
+	standard, ok := model.lookup(normalizeName(bareName))
+	if !ok || !standard.sobject {
+		return resolved
+	}
+	if nested, ok := model.lookup(normalizeName(resolved)); ok && nested.sobject {
+		return resolved
+	}
+	return bareName
 }
 
 func inferSemaArgTypeWithModel(arg string, scope map[string]string, model *semaTypeMemberView) string {

@@ -122,6 +122,23 @@ func TestTextDocumentSyncPublishesOverlayDiagnostics(t *testing.T) {
 	}
 }
 
+func TestTextDocumentSyncPublishesReservedIdentifierDiagnostic(t *testing.T) {
+	handler := NewHandler(sampleIndex(t))
+	uri := uriFromPath(filepath.Join(t.TempDir(), "Reserved.cls"))
+	notifications := handler.DidOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{
+		URI:     uri,
+		Version: 1,
+		Text:    "public class Reserved { void run() { String currency = 'USD'; } }\n",
+	}})
+	if len(notifications) != 1 {
+		t.Fatalf("notifications = %#v", notifications)
+	}
+	payload, ok := notifications[0].Params.(PublishDiagnosticsParams)
+	if !ok || len(payload.Diagnostics) != 1 || payload.Diagnostics[0].Code != "APEXPARSE002" {
+		t.Fatalf("reserved identifier diagnostics = %#v", notifications)
+	}
+}
+
 func TestDidCloseRestoresProjectDiagnostics(t *testing.T) {
 	idx := sampleIndex(t)
 	file := idx.Types[0].File
@@ -369,6 +386,35 @@ func TestCompletionIncludesTopLevelApexTypesAndSObjects(t *testing.T) {
 	}
 }
 
+func TestCompletionIncludesCatalogAnnotationsWithoutPreviewEntries(t *testing.T) {
+	idx := sampleIndex(t)
+	handler := NewHandler(idx)
+	uri := uriFromPath(filepath.Join(idx.Project.Root, "Draft.cls"))
+	handler.DidOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{
+		URI:  uri,
+		Text: "@",
+	}})
+	items := handler.Completion(CompletionParams{
+		TextDocument: TextDocumentIdentifier{URI: uri},
+		Position:     Position{Line: 0, Character: 1},
+	}).Items
+	labels := make([]string, 0, len(items))
+	for _, item := range items {
+		labels = append(labels, item.Label)
+	}
+	for _, want := range []string{"AuraEnabled", "RestResource", "HttpGet"} {
+		if !containsString(labels, want) {
+			t.Fatalf("missing %s in %#v", want, labels)
+		}
+	}
+	if containsString(labels, "IntegrationTest") || containsString(labels, "TearDown") {
+		t.Fatalf("preview annotations leaked into completion: %#v", labels)
+	}
+	if containsString(labels, "webservice") {
+		t.Fatalf("webservice modifier leaked into annotation completion: %#v", labels)
+	}
+}
+
 func TestCompletionRanksSObjectFieldsBeforeTopLevelNamesInsideSOQLSelect(t *testing.T) {
 	idx := sampleIndex(t)
 	handler := NewHandler(idx)
@@ -475,7 +521,7 @@ func TestCompletionContextForMemberAccessAndTests(t *testing.T) {
 		detail   string
 		notLabel string
 	}{
-		{name: "annotation", line: 0, char: 1, label: "isTest", detail: "Apex annotation"},
+		{name: "annotation", line: 0, char: 1, label: "IsTest", detail: "Apex annotation"},
 		{name: "test method", line: 3, char: 10, label: "testSetup", detail: "Apex test method modifier"},
 		{name: "local class variable", line: 9, char: 8, label: "run", detail: "InvoiceService.run"},
 		{name: "sobject variable", line: 10, char: 12, label: "Name", detail: "Account.Name"},

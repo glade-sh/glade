@@ -18,7 +18,9 @@ type Query struct {
 	Order            []OrderSpec
 	Limit            int
 	HasLimit         bool
+	LimitBind        string
 	Offset           int
+	OffsetBind       string
 	Count            bool
 	ForUpdate        bool
 	ForView          bool

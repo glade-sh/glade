@@ -56,6 +56,90 @@ public class UsesSystemDatabase {
 	}
 }
 
+func TestAnalyzeProjectDatabaseDoesNotFallBackToSystemDatabase(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Database.cls"), `
+public class Database {}
+`)
+	writeSemaFile(t, filepath.Join(root, "UsesDatabase.cls"), `
+public class UsesDatabase {
+  public void run() {
+    Database.query('SELECT Id FROM Account');
+  }
+}
+`)
+	result := analyzeFiles(t, root, "Database.cls", "UsesDatabase.cls")
+	if !result.HasErrors() {
+		t.Fatalf("expected project Database to prevent System.Database fallback, got %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeNestedProjectTypeDoesNotShadowSystemLimits(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "QPlugin.cls"), `
+public class QPlugin {
+  public virtual class Limits {
+    public Integer getLimits() { return 0; }
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "UsesLimits.cls"), `
+public class UsesLimits {
+  public Integer run() {
+    return Limits.getLimitCallouts();
+  }
+}
+`)
+	result := analyzeFiles(t, root, "QPlugin.cls", "UsesLimits.cls")
+	if result.HasErrors() {
+		t.Fatalf("nested project type shadowed System.Limits: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeTopLevelProjectTypeShadowsSystemLimits(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Limits.cls"), `
+public class Limits {
+  public Integer getLimits() { return 0; }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "UsesLimits.cls"), `
+public class UsesLimits {
+  public Integer run() {
+    return Limits.getLimitCallouts();
+  }
+}
+`)
+	result := analyzeFiles(t, root, "Limits.cls", "UsesLimits.cls")
+	if !result.HasErrors() {
+		t.Fatalf("top-level project type did not shadow System.Limits: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzePlatformReceiverSpellingIsCaseInsensitive(t *testing.T) {
+	t.Parallel()
+	for _, test := range []struct {
+		name       string
+		method     string
+		wantErrors bool
+	}{
+		{name: "known method", method: "getLimitCallouts", wantErrors: false},
+		{name: "unknown method", method: "noSuchMethod", wantErrors: true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{
+				"Probe.cls": `public class Probe { public static Integer run() { return limits.` + test.method + `(); } }`,
+			})
+			if result.HasErrors() != test.wantErrors {
+				t.Fatalf("lowercase Limits.%s errors = %v diagnostics=%#v", test.method, result.HasErrors(), result.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestAnalyzeSchemaQualifierDisambiguatesShadowedSObject(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
@@ -89,33 +173,22 @@ public class UsesSchemaAccount {
 func TestAnalyzeInnerTypeWinsBeforeNamespaceType(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	writeSemaFile(t, filepath.Join(root, "Outer.cls"), `
-public class Outer {
-  public class Inner {
-    public String localValue;
-  }
-}
-`)
-	writeSemaFile(t, filepath.Join(root, "A.cls"), `
-public class A {
-  public class B {
-    public String value;
-  }
+	writeSemaFile(t, filepath.Join(root, "Shared.cls"), `
+public class Shared {
+  public String value;
 }
 `)
 	writeSemaFile(t, filepath.Join(root, "UsesInnerPrecedence.cls"), `
 public class UsesInnerPrecedence {
-  public class A {
-    public class B {
-      public Integer value;
-    }
+  public class Shared {
+    public Integer value;
   }
   public void run(Object obj) {
-    Integer value = ((A.B)obj).value;
+    Integer value = ((Shared)obj).value;
   }
 }
 `)
-	result := analyzeFiles(t, root, "Outer.cls", "A.cls", "UsesInnerPrecedence.cls")
+	result := analyzeFiles(t, root, "Shared.cls", "UsesInnerPrecedence.cls")
 	if result.HasErrors() {
 		t.Fatalf("unexpected inner-before-namespace diagnostics: %#v", result.Diagnostics)
 	}

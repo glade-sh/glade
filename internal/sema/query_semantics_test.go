@@ -12,6 +12,15 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
+func TestQuerySemanticsRejectsWrongSOSLAssignmentType(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run() { List<Account> values = [FIND 'probe' RETURNING Account(Id)]; } }`,
+	})
+	if !result.HasErrors() {
+		t.Fatalf("SOSL result assigned to List<Account> was accepted: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeSOQLQueryDiagnosticsUseSchemaResolution(t *testing.T) {
 	t.Parallel()
 	source := `
@@ -32,6 +41,621 @@ public class QueryProbe {
 	assertDiagnosticAt(t, result, "GLADESEMA_QUERY_OBJECT", "Missing__c", 7, 39)
 }
 
+func TestQuerySemanticsFailsClosedOnParserErrors(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    List<Account> brokenSoql = [SELECT Id];
+    List<List<SObject>> brokenSosl = [FIND 'probe'];
+  }
+}
+`)
+	if !hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_PARSE") || !hasDiagnosticCode(diagnostics, "GLADESEMA_SOSL_PARSE") {
+		t.Fatalf("expected query parser diagnostics: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsRejectsInvalidQueryShapes(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    List<AggregateResult> limited = [SELECT COUNT(Id) total FROM Account LIMIT 1];
+    List<AggregateResult> rollup = [SELECT Name, Rating, Type, COUNT(Id) total FROM Account GROUP BY ROLLUP(Name, Rating, Type)];
+    List<Account> locked = [SELECT Id FROM Account ORDER BY Name FOR UPDATE];
+    List<Account> allFields = [SELECT FIELDS(ALL) FROM Account];
+  }
+}
+`, queryDiagnosticSchema())
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CONTRACT") {
+		t.Fatalf("expected query contract diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsRejectsAggregateOnNonAggregatableField(t *testing.T) {
+	no := false
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    List<AggregateResult> values = [SELECT SUM(Amount__c) total FROM Account];
+  }
+}
+`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Amount__c", Type: "Number", Aggregatable: &no}}}}})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CAPABILITY") {
+		t.Fatalf("SUM on a non-aggregatable field was accepted: %#v", result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsRejectsAggregateOnStandardTextField(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run() { List<AggregateResult> values = [SELECT SUM(Name) total FROM Account]; } }`,
+	})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CONTRACT") {
+		t.Fatalf("SUM on standard Account.Name was accepted: %#v", result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsRejectsFieldsAllInApexEvenWithLimit(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run() { List<Account> values = [SELECT FIELDS(ALL) FROM Account LIMIT 1]; } }`,
+	})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CONTRACT") {
+		t.Fatalf("FIELDS(ALL) in Apex was accepted: %#v", result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsRejectsSelfSemiJoin(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Id IN (SELECT Id FROM Account)];
+  }
+}
+`, queryDiagnosticSchema())
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CONTRACT") {
+		t.Fatalf("expected self semi-join contract: %#v", result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsEnforcesDescribeBackedFieldCapabilities(t *testing.T) {
+	no := false
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    List<Account> filtered = [SELECT Id FROM Account WHERE NoFilter__c = 'x'];
+    List<AggregateResult> grouped = [SELECT NoGroup__c, COUNT(Id) total FROM Account GROUP BY NoGroup__c];
+    List<Account> sorted = [SELECT Id FROM Account ORDER BY NoSort__c];
+    List<AggregateResult> aggregated = [SELECT SUM(NoAggregate__c) total FROM Account];
+  }
+}
+`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{
+		{Name: "NoFilter__c", Type: "Text", Filterable: &no},
+		{Name: "NoGroup__c", Type: "Text", Groupable: &no},
+		{Name: "NoSort__c", Type: "Text", Sortable: &no},
+		{Name: "NoAggregate__c", Type: "Number", Aggregatable: &no},
+	}}}})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CAPABILITY") {
+		t.Fatalf("expected describe capability diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsRejectsMissingInlineBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :missing];
+  }
+}
+`)
+	if !hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("expected missing bind diagnostic: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsValidatesDottedBindReceivers(t *testing.T) {
+	for name, test := range map[string]struct {
+		source     string
+		wantReject bool
+	}{
+		"declared receiver": {
+			source: `
+public class QueryProbe {
+  public void run(Account account) {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Id = :account.Id];
+  }
+}
+`,
+		},
+		"different field type": {
+			source: `
+public class QueryProbe {
+  public void run(Account account) {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :account.Id];
+  }
+}
+`,
+		},
+		"missing receiver": {
+			source: `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Id = :missing.Id];
+  }
+}
+	`,
+			wantReject: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", test.source)
+			gotReject := hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND")
+			if gotReject != test.wantReject {
+				t.Fatalf("diagnostics = %#v, want reject=%v", diagnostics, test.wantReject)
+			}
+		})
+	}
+}
+
+func TestQuerySemanticsAcceptsInlineBooleanLiteralExpression(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Active__c = :true];
+  }
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("inline Boolean literal expression was rejected: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsAcceptsDeclaredInlineBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    String name = 'ok';
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :name];
+  }
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("declared bind rejected: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsAcceptsQualifiedParameterBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run(Outer.Response response) {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Id IN :response.CartIds];
+  }
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("qualified parameter bind rejected: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsRequiresNumericLimitAndOffsetBinds(t *testing.T) {
+	invalid := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    String limitValue = '1';
+    List<Account> accounts = [SELECT Id FROM Account LIMIT :limitValue];
+  }
+}
+
+`)
+	if !hasDiagnosticCode(invalid, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("expected nonnumeric LIMIT bind diagnostic: %#v", invalid)
+	}
+	valid := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    Integer limitValue = 1;
+    Long offsetValue = 0;
+    List<Account> accounts = [SELECT Id FROM Account LIMIT :limitValue OFFSET :offsetValue];
+  }
+}
+`)
+	if hasDiagnosticCode(valid, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("numeric query window binds rejected: %#v", valid)
+	}
+}
+
+func TestQuerySemanticsRequiresNumericSOSLLimitBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    String limitValue = '1';
+    List<List<SObject>> rows = [FIND 'acme' RETURNING Account(Id) LIMIT :limitValue];
+  }
+}
+
+`)
+	if !hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("expected nonnumeric SOSL LIMIT bind diagnostic: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsRequiresNumericSOSLReturningLimitAndOffsetBinds(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    String returningLimit = '1';
+    String offsetValue = '0';
+    Integer limitValue = 1;
+    List<List<SObject>> rows = [FIND 'acme' RETURNING Account(Id LIMIT :returningLimit OFFSET :offsetValue) LIMIT :limitValue];
+  }
+}
+`)
+	count := 0
+	for _, item := range diagnostics {
+		if item.Code == "GLADESEMA_QUERY_BIND" {
+			count++
+		}
+	}
+	if count != 2 {
+		t.Fatalf("numeric SOSL returning LIMIT and OFFSET diagnostics = %d, want 2: %#v", count, diagnostics)
+	}
+}
+
+func TestQuerySemanticsRequiresStringSOSLDivisionBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    Integer division = 1;
+    List<List<SObject>> rows = [FIND 'acme' RETURNING Account(Id) WITH DIVISION = :division];
+  }
+}
+`)
+	if !hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("expected non-string SOSL WITH DIVISION bind diagnostic: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsAcceptsDocumentedSOSLBindClauses(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    String term = 'aaa';
+    String name = 'bbb';
+    Integer returningLimit = 1;
+    Integer returningOffset = 0;
+    String division = 'Global';
+    Integer limitValue = 2;
+    List<List<SObject>> rows = [FIND :term IN ALL FIELDS RETURNING Account(Id, Name WHERE Name LIKE :name LIMIT :returningLimit OFFSET :returningOffset) WITH DIVISION = :division LIMIT :limitValue];
+  }
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") || hasDiagnosticCode(diagnostics, "GLADESEMA_SOSL_PARSE") {
+		t.Fatalf("documented SOSL bind clauses rejected: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsRequiresNumericSOSLLimitBindInOneLineMethod(t *testing.T) {
+	result := analyzeQueryProbe(t, "public class QueryProbe { public void run() { String limitValue = '1'; List<List<SObject>> rows = [FIND 'acme' RETURNING Account(Id) LIMIT :limitValue]; } }", schema.Schema{})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("expected nonnumeric one-line SOSL LIMIT bind diagnostic: %#v", result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsRejectsIncompatibleSOSLWhereBind(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    Integer value = 1;
+    List<List<SObject>> rows = [FIND 'acme' RETURNING Account(Id WHERE Name = :value)];
+  }
+}
+`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Id", Type: "Id"}, {Name: "Name", Type: "Text"}}}}})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("expected incompatible SOSL WHERE bind diagnostic: %#v", result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsRejectsIncompatibleSOSLLikeBind(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    Integer value = 1;
+    List<List<SObject>> rows = [FIND 'acme' RETURNING Account(Id, Name WHERE Name LIKE :value)];
+  }
+}
+`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Id", Type: "Id"}, {Name: "Name", Type: "Text"}}}}})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("expected incompatible SOSL LIKE bind diagnostic: %#v", result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsAcceptsExpressionWindowBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account LIMIT :Limits.getLimitQueries()];
+  }
+}
+
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("expression window bind was rejected: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsAcceptsDocumentedLiteralMethodBind(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :'XXXX'.substring(0, 3)];
+  }
+}
+`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Name", Type: "Text"}}}}})
+	if result.HasErrors() {
+		t.Fatalf("documented literal method bind was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsAcceptsCollectionConstructorBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run(Id firstId, Id secondId) {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Id IN :new Set<Id>{firstId, secondId}];
+  }
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("collection constructor bind was rejected: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsRejectsIncompatibleFieldBindType(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    Integer name = 1;
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :name];
+  }
+}
+`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Name", Type: "Text"}}}}})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("incompatible field bind accepted: %#v", result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsRejectsIncompatibleStandardFieldBindType(t *testing.T) {
+	if _, ok := newQuerySemanticsChecker(typesys.Index{}).field("Account", "Name"); !ok {
+		t.Fatal("standard Account.Name metadata is unavailable")
+	}
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run() { Integer numberValue = 1; List<Account> values = [SELECT Id FROM Account WHERE Name = :numberValue]; } }`,
+	})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("incompatible standard-field bind accepted: %#v", result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsAcceptsCollectionBindInEqualityAndValidatesElementType(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    List<Integer> numbers = new List<Integer>{1};
+    List<String> names = new List<String>{'Acme'};
+	List<Account> validEquality = [SELECT Id FROM Account WHERE Name = :names];
+    List<Account> wrongElement = [SELECT Id FROM Account WHERE Name IN :numbers];
+    List<Account> valid = [SELECT Id FROM Account WHERE Name IN :names];
+  }
+}
+	`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Name", Type: "Text"}}}}})
+	var count int
+	for _, item := range result.Diagnostics {
+		if item.Code == "GLADESEMA_QUERY_BIND" {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Fatalf("collection bind diagnostics = %d, want 1: %#v", count, result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsResolvesBindsInTheirLexicalMethodScope(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void first() {
+    String elsewhere = 'x';
+  }
+  public void second() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :elsewhere];
+    List<Account> later = [SELECT Id FROM Account WHERE Name = :declaredLater];
+    String declaredLater = 'x';
+  }
+}
+`)
+	if !hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("out-of-scope and later bind names were accepted: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsAcceptsMethodParameterBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run(String name) {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :name];
+  }
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("method parameter bind rejected: %#v", diagnostics)
+	}
+}
+
+func TestSemaBindingResolverFindsGenericMethodParameters(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public virtual List<Account> run(Set<String> newEmails, List<Account> newAccounts) {
+    return [SELECT Id FROM Account WHERE Name IN :newEmails AND Id NOT IN :newAccounts];
+  }
+}`
+	offset := strings.Index(source, ":newEmails")
+	bindings := newSemaBindingResolver(source, newSemaCodeSpans(source)).bindingsAt(offset)
+	if got := bindings["newemails"]; got != "Set<String>" {
+		t.Fatalf("newEmails binding = %q, want Set<String>; all = %#v", got, bindings)
+	}
+	if got := bindings["newaccounts"]; got != "List<Account>" {
+		t.Fatalf("newAccounts binding = %q, want List<Account>; all = %#v", got, bindings)
+	}
+}
+
+func TestSemaBindingResolverKeepsLocalAfterNestedBlock(t *testing.T) {
+	source := `
+public class QueryProbe {
+  public void run() {
+    Id recordId = '001000000000001';
+    if (true) { System.debug(recordId); }
+    List<Account> accounts = [SELECT Id FROM Account WHERE Id = :recordId];
+  }
+}`
+	offset := strings.Index(source, ":recordId")
+	bindings := newSemaBindingResolver(source, newSemaCodeSpans(source)).bindingsAt(offset)
+	if got := bindings["recordid"]; got != "Id" {
+		t.Fatalf("recordId binding = %q, want Id; all = %#v", got, bindings)
+	}
+}
+
+func TestSemaBindingResolverFindsLocalAfterMultilineCall(t *testing.T) {
+	source := `
+@IsTest
+public class QueryProbe {
+  private static BundleComponentRequest setupDonationProductAndBuildComponentRequest() {
+    return setupDonationProductAndBuildComponentRequest(null);
+  }
+  private static BundleComponentRequest run(String nameOverride) {
+    Entity__c entity = DataFactoryEntity.insertEntity();
+    Product__c product = DataFactoryProduct.insertDonationProduct('name', entity.Id);
+    Account account = DataFactoryAccount.insertIndividualAccount();
+    CurrencyService.Instance.mockCurrencyIsoCode = 'USD';
+    Id priceClassId = DataFactoryPriceClass.insertDefaultPriceClass().Id;
+    MembershipType__c membershipType = DataFactoryMembershipType.insertDefaultMembershipType(entity.Id);
+    Id mtplId = DataFactoryMembershipTypeProductLink.insertMembershipTypeProdLink(
+        membershipType.Id,
+        product.Id,
+        Constant.STAGE_BOTH,
+        Constant.PURPOSE_DONATION).Id;
+    if (String.isNotBlank(nameOverride)) {
+      MembershipTypeProductLink__c mtpl = [SELECT Id FROM MembershipTypeProductLink__c WHERE Id = :mtplId LIMIT 1];
+    }
+  }
+}`
+	offset := strings.LastIndex(source, ":mtplId")
+	bindings := newSemaBindingResolver(source, newSemaCodeSpans(source)).bindingsAt(offset)
+	if got := bindings["mtplid"]; got != "Id" {
+		t.Fatalf("mtplId binding = %q, want Id; all = %#v", got, bindings)
+	}
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", source)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("outer local bind inside an if block rejected: %#v", diagnostics)
+	}
+}
+
+func TestSemaBindingResolverFindsAnnotatedStaticField(t *testing.T) {
+	source := `
+public class QueryProbe {
+  @testVisible private static final String queryName = 'name';
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :queryName];
+  }
+}`
+	offset := strings.Index(source, ":queryName")
+	bindings := newSemaBindingResolver(source, newSemaCodeSpans(source)).bindingsAt(offset)
+	if got := bindings["queryname"]; got != "String" {
+		t.Fatalf("queryName binding = %q, want String; all = %#v", got, bindings)
+	}
+}
+
+func TestSemaBindingResolverLexicalBindingsShadowFields(t *testing.T) {
+	for name, test := range map[string]struct {
+		source     string
+		want       string
+		wantReject bool
+	}{
+		"parameter": {
+			source: `
+public class QueryProbe {
+  public void run(String value) {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :value];
+  }
+  private Integer value;
+}`,
+			want: "String",
+		},
+		"local": {
+			source: `
+public class QueryProbe {
+  public void run() {
+    Integer value = 1;
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :value];
+  }
+  private String value;
+}`,
+			want:       "Integer",
+			wantReject: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			offset := strings.Index(test.source, ":value")
+			bindings := newSemaBindingResolver(test.source, newSemaCodeSpans(test.source)).bindingsAt(offset)
+			if got := bindings["value"]; got != test.want {
+				t.Fatalf("shadowed value binding = %q, want %q; all = %#v", got, test.want, bindings)
+			}
+			result := analyzeDeclarationProject(t, map[string]string{"QueryProbe.cls": test.source})
+			if gotReject := hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_BIND"); gotReject != test.wantReject {
+				t.Fatalf("query bind rejection = %v, want %v; diagnostics=%#v", gotReject, test.wantReject, result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestQuerySemanticsAcceptsInstanceFieldBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  private String name;
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :name];
+  }
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("instance field bind rejected: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsAcceptsStaticFieldBindInsideRunAs(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  private static Id runAsId = '005000000000001';
+  public void run() {
+    System.runAs(new User(Id = runAsId)) {
+      List<Account> accounts = [SELECT Id FROM Account WHERE OwnerId = :runAsId];
+    }
+  }
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("static field bind inside runAs rejected: %#v", diagnostics)
+	}
+}
+
+func TestQuerySemanticsAcceptsInstanceFieldDeclaredAfterMethod(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :name];
+  }
+  private String name;
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("later instance field bind rejected: %#v", diagnostics)
+	}
+}
 func TestQuerySemanticsFieldProviderKeepsProjectAuthority(t *testing.T) {
 	checker := newQuerySemanticsChecker(typesys.Index{
 		Project: typesys.ProjectInfo{Namespace: "pkg"},

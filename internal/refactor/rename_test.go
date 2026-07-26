@@ -17,6 +17,34 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
+func TestPlanRenameRejectsInvalidSourceIdentifiers(t *testing.T) {
+	root := t.TempDir()
+	sourcePath := writeRenameFile(t, root, "classes/InvoiceService.cls", "public class InvoiceService {}\n")
+	index := renameIndex(root, sourcePath, "InvoiceService", nil)
+
+	for _, to := range []string{"_Billing", "Billing_", "Bill__ing", "currency", "A" + strings.Repeat("a", 255)} {
+		_, err := refactor.PlanRename(index, refactor.RenameOptions{Symbol: "InvoiceService", To: to})
+		if err == nil || !strings.Contains(err.Error(), "Invalid identifier") {
+			t.Fatalf("PlanRename(%q) error = %v, want Invalid identifier", to, err)
+		}
+	}
+}
+
+func TestPlanRenameAllowsSchemaAPINamesWithConsecutiveUnderscores(t *testing.T) {
+	root := t.TempDir()
+	apexPath := writeRenameFile(t, root, "classes/Reader.cls", "public class Reader { Decimal v = new Invoice__c(Amount__c = 1).Amount__c; }\n")
+	fieldPath := writeRenameFile(t, root, "objects/Invoice__c/fields/Amount__c.field-meta.xml", `<CustomField><fullName>Amount__c</fullName></CustomField>`)
+	index := schemaRenameIndex(root, apexPath, fieldPath)
+
+	plan, err := refactor.PlanRename(index, refactor.RenameOptions{Symbol: "Invoice__c.Amount__c", To: "Total__c"})
+	if err != nil {
+		t.Fatalf("schema rename target Total__c should remain valid: %v", err)
+	}
+	if plan.To != "Total__c" {
+		t.Fatalf("plan.To = %q", plan.To)
+	}
+}
+
 func TestPlanRenameDryRunReturnsEditsWithoutWriting(t *testing.T) {
 	root := t.TempDir()
 	sourcePath := writeRenameFile(t, root, "classes/InvoiceService.cls", "public class InvoiceService {}\n")

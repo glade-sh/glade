@@ -27,6 +27,7 @@ import (
 	"github.com/glade-sh/glade/internal/project"
 	"github.com/glade-sh/glade/internal/resource"
 	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/sema"
 	"github.com/glade-sh/glade/internal/sobject"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/testreport"
@@ -106,6 +107,11 @@ type TestCase struct {
 	Body       string
 	SeeAllData bool
 	CostHint   int64 // generic, history-free cost signal used by the priority dispatcher
+	// ReturnType and Modifiers preserve the indexed method declaration shape
+	// so compilation does not force a void/static signature onto a
+	// Salesforce-accepted value-returning or differently-modified test method.
+	ReturnType string
+	Modifiers  []string
 }
 
 type TestProgress struct {
@@ -155,6 +161,8 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 				Range:      member.Range,
 				SeeAllData: isSeeAllDataTest(member.Modifiers),
 				CostHint:   testCaseCostHint(typ.File),
+				ReturnType: member.Type,
+				Modifiers:  member.Modifiers,
 			})
 		}
 	}
@@ -237,6 +245,9 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	sources := newSourceCache()
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_start"})
+	}
+	if compileErr := semanticCompileError(index, opts.SourceDigests); compileErr != nil {
+		return compileErrorRun(cases, compileErr, started, opts)
 	}
 	var runtimeKey runtimeCacheKey
 	var runtime runtimeExecutionView
@@ -399,6 +410,12 @@ func compileErrorRun(cases []TestCase, compileErr error, started time.Time, opts
 		Name:       "glade test",
 		DurationMS: time.Since(started).Milliseconds(),
 	}
+	if len(cases) == 0 {
+		cases = []TestCase{{
+			ClassName:  "project",
+			MethodName: "compile",
+		}}
+	}
 	suiteIndexes := make(map[string]int)
 	for _, testCase := range cases {
 		index, ok := suiteIndexes[testCase.ClassName]
@@ -427,6 +444,89 @@ func compileErrorRun(cases []TestCase, compileErr error, started time.Time, opts
 		}
 	}
 	return run
+}
+
+func indexCompileError(diagnostics []diagnostic.Diagnostic) error {
+	var messages []string
+	for _, diag := range diagnostics {
+		if diag.Severity != diagnostic.Error {
+			continue
+		}
+		var message strings.Builder
+		if diag.File != "" {
+			message.WriteString(diag.File)
+			if diag.Range != nil && diag.Range.Start.Line > 0 {
+				_, _ = fmt.Fprintf(&message, ":%d:%d", diag.Range.Start.Line, diag.Range.Start.Column)
+			}
+			message.WriteString(": ")
+		}
+		if diag.Code != "" {
+			message.WriteString(diag.Code)
+			message.WriteString(": ")
+		}
+		message.WriteString(diag.Message)
+		messages = append(messages, message.String())
+	}
+	if len(messages) == 0 {
+		return nil
+	}
+	return errors.New(strings.Join(messages, "\n"))
+}
+
+var (
+	semaDiagnosticsCacheMu sync.RWMutex
+	semaDiagnosticsCache   = make(map[runtimeCacheKey][]diagnostic.Diagnostic)
+)
+
+// semanticCompileError runs the same non-performance semantic analysis used
+// by `glade check` (sema.AnalyzeWithOptions with SuppressPerformanceDiagnostics)
+// before any test discovery, caching, or method compilation, so invalid Apex
+// never executes as a test. index.Diagnostics (parse/index errors) are
+// already included in the analyzer's Result.Diagnostics, so this is the one
+// validator for both index and semantic error diagnostics; there is no
+// separate/divergent check. The result is cached by the same source-digest
+// identity used by the runtime compile caches, since semantic analysis is
+// otherwise repeated on every call with unchanged sources.
+func semanticCompileError(index typesys.Index, digests *typesys.SourceDigestSet) error {
+	key := runtimeKeyWithSourceDigests(index, digests, os.ReadFile)
+	semaDiagnosticsCacheMu.RLock()
+	diagnostics, ok := semaDiagnosticsCache[key]
+	semaDiagnosticsCacheMu.RUnlock()
+	if !ok {
+		result := sema.AnalyzeWithOptions(semanticAnalysisIndex(index), sema.AnalyzeOptions{
+			Diagnostics:                    true,
+			SuppressPerformanceDiagnostics: true,
+		})
+		diagnostics = result.Diagnostics
+		semaDiagnosticsCacheMu.Lock()
+		semaDiagnosticsCache[key] = diagnostics
+		semaDiagnosticsCacheMu.Unlock()
+	}
+	return indexCompileError(diagnostics)
+}
+
+// semanticAnalysisIndex returns a copy of index whose Objects/Fields slices
+// do not alias the caller's backing arrays. typesys.Index documents that
+// nested payloads may be structurally shared between snapshots and must not
+// be mutated after publication, but sema's schema-inference passes upsert
+// inferred fields onto index.Objects[i].Fields in place. RunCasesContext
+// reuses the same index for runtime/org construction after this check, so
+// without this copy sema's inferred-field synthesis (e.g. a Name field
+// missing the Required flag a full schema load would set) would leak into
+// the org the test actually runs against.
+func semanticAnalysisIndex(index typesys.Index) typesys.Index {
+	if len(index.Objects) == 0 {
+		return index
+	}
+	objects := make([]schema.Object, len(index.Objects))
+	for i, object := range index.Objects {
+		if len(object.Fields) > 0 {
+			object.Fields = append([]schema.Field(nil), object.Fields...)
+		}
+		objects[i] = object
+	}
+	index.Objects = objects
+	return index
 }
 
 func useDiskRuntimeCache(opts Options) bool {
@@ -582,10 +682,31 @@ func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha25
 	write(index.Project.Namespace)
 	write(index.Project.SourceAPIVersion)
 	write(fmt.Sprintf("types:%d triggers:%d objects:%d cmdt:%d", len(index.Types), len(index.Triggers), len(index.Objects), len(index.CustomMetadataRecords)))
+	semanticMetadata, err := json.Marshal(struct {
+		Objects               []schema.Object               `json:"objects"`
+		CustomMetadataRecords []schema.CustomMetadataRecord `json:"customMetadataRecords,omitempty"`
+		Dependencies          []typesys.DependencyInfo      `json:"dependencies,omitempty"`
+		Diagnostics           []diagnostic.Diagnostic       `json:"diagnostics,omitempty"`
+	}{
+		Objects:               index.Objects,
+		CustomMetadataRecords: index.CustomMetadataRecords,
+		Dependencies:          index.Dependencies,
+		Diagnostics:           index.Diagnostics,
+	})
+	if err != nil {
+		write("semantic-metadata-error:" + err.Error())
+	} else {
+		_, _ = h.Write(semanticMetadata)
+		_, _ = h.Write([]byte{0})
+	}
 	for _, typ := range index.Types {
 		write(typ.File)
 		write(typ.Name)
 		write(typ.Namespace)
+		write(typ.SourceRoot)
+		write(typ.Version)
+		write(typ.EffectiveAPIVersion)
+		write(fmt.Sprintf("dependency:%t artifact:%t", typ.Dependency, typ.Artifact))
 		write(namespaceremap.Fingerprint(typ.SourceNamespaceRemaps))
 		writeFileBody(typ.File)
 	}
@@ -593,6 +714,10 @@ func runtimeKeyWithDigestLookup(index typesys.Index, lookup func(string) ([sha25
 		write(trig.File)
 		write(trig.Name)
 		write(trig.ObjectName)
+		write(trig.SourceRoot)
+		write(trig.Version)
+		write(trig.EffectiveAPIVersion)
+		write(fmt.Sprintf("dependency:%t", trig.Dependency))
 		write(namespaceremap.Fingerprint(trig.SourceNamespaceRemaps))
 		writeFileBody(trig.File)
 	}
@@ -2775,7 +2900,15 @@ func compileTestMethods(cases []TestCase, caches ...*sourceCache) (map[string]vm
 			errs[key] = err
 			continue
 		}
-		method, err := compileProjectMethod(testCase.ClassName, testCase.MethodName, "void", []string{"static"}, testCase.File, testCase.Range, source)
+		returnType := testCase.ReturnType
+		if returnType == "" {
+			returnType = "void"
+		}
+		modifiers := testCase.Modifiers
+		if len(modifiers) == 0 {
+			modifiers = []string{"static"}
+		}
+		method, err := compileProjectMethod(testCase.ClassName, testCase.MethodName, returnType, modifiers, testCase.File, testCase.Range, source)
 		if err != nil {
 			errs[key] = err
 			continue
@@ -4893,6 +5026,8 @@ func sourceBytePosition(source string, pos diagnostic.Position) (int, bool) {
 }
 
 func compileFieldInitializer(typeName, fieldName string, r diagnostic.Range, source string) (vm.Value, bool) {
+	const resultName = "gladeFieldInitializerValue"
+
 	expr, ok := fieldInitializerExpr(fieldName, r, source)
 	if !ok {
 		return vm.Value{}, false
@@ -4903,7 +5038,7 @@ func compileFieldInitializer(typeName, fieldName string, r diagnostic.Range, sou
 	if !canEvaluateFieldInitializerEagerly(expr) {
 		return vm.Value{}, false
 	}
-	program, err := vm.CompileAnonymous(typeName + " __field = " + expr + ";")
+	program, err := vm.CompileAnonymous(typeName + " " + resultName + " = " + expr + ";")
 	if err != nil {
 		return vm.Value{}, false
 	}
@@ -4912,7 +5047,7 @@ func compileFieldInitializer(typeName, fieldName string, r diagnostic.Range, sou
 	if err != nil {
 		return vm.Value{}, false
 	}
-	value, ok := result.Vars["__field"]
+	value, ok := result.Vars[resultName]
 	return value, ok
 }
 
