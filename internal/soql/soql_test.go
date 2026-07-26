@@ -63,6 +63,16 @@ func TestParseSupportsMethodCallBindExpression(t *testing.T) {
 	}
 }
 
+func TestParseSupportsWhitespaceAfterBindColon(t *testing.T) {
+	query, err := Parse("SELECT Id FROM Account WHERE Name = : name")
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if query.Where == nil || query.Where.Value.Kind != storage.ValueID || string(query.Where.Value.ID) != ":name" {
+		t.Fatalf("where = %#v", query.Where)
+	}
+}
+
 func TestParseRootObjectAlias(t *testing.T) {
 	query, err := Parse("SELECT a.Id FROM Account a WHERE a.Name = 'Acme' ORDER BY a.Name LIMIT 1")
 	if err != nil {

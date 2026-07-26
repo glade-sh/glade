@@ -79,6 +79,10 @@ func lex(input string) ([]token, error) {
 		case input[i] == ':':
 			start := i
 			i++
+			for i < len(input) && (input[i] == ' ' || input[i] == '\n' || input[i] == '\t' || input[i] == '\r') {
+				i++
+			}
+			bindStart := i
 			depth := 0
 			for i < len(input) {
 				if input[i] == '(' {
@@ -99,7 +103,11 @@ func lex(input string) ([]token, error) {
 				}
 				i++
 			}
-			out = append(out, token{text: input[start:i]})
+			if bindStart == i {
+				out = append(out, token{text: input[start:i]})
+			} else {
+				out = append(out, token{text: ":" + input[bindStart:i]})
+			}
 		case soqlSeparatorBytes[input[i]]:
 			if i+1 < len(input) && input[i:i+2] == "!=" {
 				out = append(out, token{text: "!="})
