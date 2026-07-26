@@ -59,6 +59,24 @@ func TestTypeContractRejectsInvalidOperators(t *testing.T) {
 	}
 }
 
+func TestTypeContractRejectsAlwaysTrueInstanceofAtAPIVersion60(t *testing.T) {
+	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+		"Probe.cls": `public class Probe { public virtual class Base {} public class Sub extends Base {} public void run(List<Sub> values) { Boolean check = values instanceof Iterable<Base>; } }`,
+	}, "60.0")
+	if !result.HasErrors() || !declarationDiagnosticMatching(result, "always true") {
+		t.Fatalf("always-true instanceof was accepted: %#v", result.Diagnostics)
+	}
+}
+
+func TestTypeContractAllowsAlwaysTrueInstanceofBeforeAPIVersion60(t *testing.T) {
+	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+		"Probe.cls": `public class Probe { public virtual class Base {} public class Sub extends Base {} public void run(List<Sub> values) { Boolean check = values instanceof Iterable<Base>; } }`,
+	}, "59.0")
+	if result.HasErrors() {
+		t.Fatalf("pre-60 instanceof control was rejected: %#v", result.Diagnostics)
+	}
+}
+
 func TestTypeContractAllowsNumericWideningAndCompatibleCasts(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{

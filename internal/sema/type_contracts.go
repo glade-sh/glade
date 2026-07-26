@@ -205,6 +205,8 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 				target := strings.TrimSpace(current.Right.Name)
 				if left != "" && target != "" && !compatible(left, target) {
 					appendDiagnostic("instanceof comparison is impossible")
+				} else if typeUsesAPIVersionAtLeast(typ, 60) && semaInstanceofAlwaysTrue(left, target, typ.Name, model) {
+					appendDiagnostic("instanceof comparison is always true")
 				}
 			}
 		case ir.ExprCall:
@@ -252,6 +254,22 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 	}
 	walk(expr)
 	return diagnostics
+}
+
+func semaInstanceofAlwaysTrue(left, target, owner string, model *semaTypeMemberView) bool {
+	if left == "" || target == "" {
+		return false
+	}
+	if semaAssignableToType(target, left, model) {
+		return true
+	}
+	leftBase, leftArgs := semaGenericBaseAndArgs(left)
+	targetBase, targetArgs := semaGenericBaseAndArgs(target)
+	if len(leftArgs) != 1 || len(targetArgs) != 1 || !strings.EqualFold(leftBase, "List") || !strings.EqualFold(targetBase, "Iterable") {
+		return false
+	}
+	targetArgument := resolveNestedTypeName(model, owner, targetArgs[0])
+	return semaAssignableToType(targetArgument, leftArgs[0], model)
 }
 
 func typeContractPropertyHasAccessor(member typesys.MemberSymbol, kind string) bool {
