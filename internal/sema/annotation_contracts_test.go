@@ -48,6 +48,8 @@ func TestAnnotationContractsRejectInvalidOwnersAndSignatures(t *testing.T) {
 		"invocable method requires list parameter": `public class Probe { @InvocableMethod public static void run(String value) {} }`,
 		"invocable variable cannot be static":      `public class Probe { @InvocableVariable public static String value; }`,
 		"remote action requires public static":     `public class Probe { @RemoteAction private void run() {} }`,
+		"JsonAccess requires a parameter":          `@JsonAccess public class Probe {}`,
+		"JsonAccess cannot annotate a method":      `public class Probe { @JsonAccess(serializable=true) public void run() {} }`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})

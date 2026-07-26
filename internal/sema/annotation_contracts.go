@@ -102,7 +102,7 @@ func checkTypeAnnotationContracts(typ typesys.TypeSymbol) []diagnostic.Diagnosti
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "IsTest is only valid on top-level classes with boolean properties"))
 			}
 		case strings.EqualFold(annotation.Name, "JsonAccess"):
-			if typ.Kind != apexast.DeclarationClass || !annotationBooleanArguments(annotation, "serializable", "deserializable") {
+			if typ.Kind != apexast.DeclarationClass || len(annotation.Arguments) == 0 || !annotationBooleanArguments(annotation, "serializable", "deserializable") {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "JsonAccess is only valid on classes with boolean properties"))
 			}
 		case strings.EqualFold(annotation.Name, "NamespaceAccessible"):
@@ -150,6 +150,8 @@ func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.Membe
 			if member.Kind != apexast.DeclarationMethod || !hasEitherModifier(member.Modifiers, "public", "global") {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "ReadOnly is only valid on public or global methods"))
 			}
+		case strings.EqualFold(annotation.Name, "JsonAccess"):
+			diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "JsonAccess is only valid on classes with serialization control properties"))
 		}
 	}
 	return diagnostics
