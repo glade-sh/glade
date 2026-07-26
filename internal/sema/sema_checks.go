@@ -517,6 +517,12 @@ func queryWindowBindDiagnostics(query soql.Query, ctx queryTextContext, bindings
 		if bind.name == "" {
 			continue
 		}
+		if !semaBindName(bind.name) {
+			// Inline SOQL permits expressions in window clauses. Their return
+			// types require body-IR resolution rather than the simple local
+			// declaration map used here.
+			continue
+		}
 		typeName := strings.ToLower(strings.TrimSpace(bindings[strings.ToLower(bind.name)]))
 		if typeName == "integer" || typeName == "int" || typeName == "long" || typeName == "decimal" || typeName == "double" {
 			continue

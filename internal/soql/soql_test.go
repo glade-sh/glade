@@ -73,6 +73,16 @@ func TestParseSupportsWhitespaceAfterBindColon(t *testing.T) {
 	}
 }
 
+func TestParseSupportsExpressionLimitBind(t *testing.T) {
+	query, err := Parse("SELECT Id FROM Account LIMIT :Limits.getLimitQueries()")
+	if err != nil {
+		t.Fatalf("Parse() error = %v", err)
+	}
+	if !query.HasLimit || query.LimitBind != "Limits.getLimitQueries()" {
+		t.Fatalf("limit bind = %#v", query)
+	}
+}
+
 func TestParseRootObjectAlias(t *testing.T) {
 	query, err := Parse("SELECT a.Id FROM Account a WHERE a.Name = 'Acme' ORDER BY a.Name LIMIT 1")
 	if err != nil {

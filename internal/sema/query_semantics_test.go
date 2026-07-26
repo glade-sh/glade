@@ -145,6 +145,7 @@ public class QueryProbe {
     List<Account> accounts = [SELECT Id FROM Account LIMIT :limitValue];
   }
 }
+
 `)
 	if !hasDiagnosticCode(invalid, "GLADESEMA_QUERY_BIND") {
 		t.Fatalf("expected nonnumeric LIMIT bind diagnostic: %#v", invalid)
@@ -160,6 +161,19 @@ public class QueryProbe {
 `)
 	if hasDiagnosticCode(valid, "GLADESEMA_QUERY_BIND") {
 		t.Fatalf("numeric query window binds rejected: %#v", valid)
+	}
+}
+
+func TestQuerySemanticsAcceptsExpressionWindowBind(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account LIMIT :Limits.getLimitQueries()];
+  }
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("expression window bind was rejected: %#v", diagnostics)
 	}
 }
 

@@ -1707,7 +1707,7 @@ func (p *parser) parseInt() (int, error) {
 
 func (p *parser) parseIntOrBind() (int, string, error) {
 	text := p.advance().text
-	if len(text) > 1 && text[0] == ':' && isSOQLBindName(text[1:]) {
+	if len(text) > 1 && text[0] == ':' {
 		return 0, text[1:], nil
 	}
 	value, err := strconv.Atoi(text)
