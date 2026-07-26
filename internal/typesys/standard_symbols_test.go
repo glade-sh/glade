@@ -11,6 +11,11 @@ import (
 
 func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) {
 	symbols := StandardPlatformSymbols()
+	comparable := requireStandardSymbol(t, symbols, "Comparable")
+	if comparable.Kind != apexast.DeclarationInterface {
+		t.Fatalf("Comparable kind = %q, want interface", comparable.Kind)
+	}
+	requireStandardMethod(t, comparable, "compareTo", []string{"Object"}, false)
 
 	operations := requireStandardSymbol(t, symbols, "Metadata.Operations")
 	requireStandardMethod(t, operations, "retrieve", []string{"Metadata.MetadataType", "List<String>", "Boolean"}, true)
