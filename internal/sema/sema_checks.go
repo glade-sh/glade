@@ -201,6 +201,7 @@ type querySemanticsChecker struct {
 	objects        map[string]schema.Object
 	providers      map[string]semaSObjectFieldProvider
 	declaredFields map[string]int
+	knownTypes     map[string]bool
 	hasBaseline    bool
 }
 
@@ -210,9 +211,14 @@ func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Obj
 		objects:        make(map[string]schema.Object, len(index.Objects)),
 		providers:      make(map[string]semaSObjectFieldProvider, len(index.Objects)),
 		declaredFields: make(map[string]int, len(index.Objects)),
+		knownTypes:     make(map[string]bool, len(index.Types)),
 		hasBaseline:    len(declaredObjects) > 0,
 	}
 	checker.apiVersion, _ = strconv.ParseFloat(strings.TrimSpace(index.Project.SourceAPIVersion), 64)
+	for _, typ := range index.Types {
+		checker.knownTypes[strings.ToLower(typ.Name)] = true
+		checker.knownTypes[strings.ToLower(typ.LocalName)] = true
+	}
 	for _, object := range declaredObjects {
 		checker.recordDeclaredFields(object)
 	}
@@ -243,7 +249,7 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 		}
 		diagnostics = append(diagnostics, c.checkSOQLQuery(query, query.Object, ctx, 0, nil)...)
 		bindings := bindingResolver.bindingsAt(literal.queryOffset)
-		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings)...)
+		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings, c.knownTypes)...)
 		diagnostics = append(diagnostics, c.queryFieldBindDiagnostics(query, ctx, bindings)...)
 		diagnostics = append(diagnostics, queryWindowBindDiagnostics(query, ctx, bindings)...)
 	}
@@ -262,7 +268,7 @@ func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagn
 		}
 		diagnostics = append(diagnostics, c.checkSOSLQuery(query, ctx)...)
 		bindings := bindingResolver.bindingsAt(literal.queryOffset)
-		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings)...)
+		diagnostics = append(diagnostics, inlineQueryBindDiagnostics(ctx, bindings, c.knownTypes)...)
 	}
 	return diagnostics
 }
@@ -494,7 +500,7 @@ func semaDeclarationAtTypeScope(source string, start, declaration int, spans sem
 	return len(semaOpenBraces(source, start, declaration, spans)) == 0
 }
 
-func inlineQueryBindDiagnostics(ctx queryTextContext, bindings map[string]string) []diagnostic.Diagnostic {
+func inlineQueryBindDiagnostics(ctx queryTextContext, bindings map[string]string, knownTypes map[string]bool) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, match := range semaInlineBindPattern.FindAllStringSubmatchIndex(ctx.queryText, -1) {
 		if len(match) != 4 {
@@ -504,11 +510,13 @@ func inlineQueryBindDiagnostics(ctx queryTextContext, bindings map[string]string
 		if strings.EqualFold(name, "true") || strings.EqualFold(name, "false") || strings.EqualFold(name, "null") || strings.EqualFold(name, "new") {
 			continue
 		}
-		if match[3] < len(ctx.queryText) && (ctx.queryText[match[3]] == '.' || ctx.queryText[match[3]] == '(') {
-			continue
-		}
 		if _, ok := bindings[strings.ToLower(name)]; ok {
 			continue
+		}
+		if match[3] < len(ctx.queryText) && (ctx.queryText[match[3]] == '.' || ctx.queryText[match[3]] == '(') {
+			if knownTypes[strings.ToLower(name)] || semaKnownPlatformTypeReceiver(name) {
+				continue
+			}
 		}
 		offset := match[0]
 		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_BIND", fmt.Sprintf("query bind variable %q is not declared", name), ctx.queryText[match[0]:match[1]], offset))

@@ -110,6 +110,50 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsValidatesDottedBindReceivers(t *testing.T) {
+	for name, test := range map[string]struct {
+		source     string
+		wantReject bool
+	}{
+		"declared receiver": {
+			source: `
+public class QueryProbe {
+  public void run(Account account) {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Id = :account.Id];
+  }
+}
+`,
+		},
+		"different field type": {
+			source: `
+public class QueryProbe {
+  public void run(Account account) {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Name = :account.Id];
+  }
+}
+`,
+		},
+		"missing receiver": {
+			source: `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Id = :missing.Id];
+  }
+}
+	`,
+			wantReject: true,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", test.source)
+			gotReject := hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND")
+			if gotReject != test.wantReject {
+				t.Fatalf("diagnostics = %#v, want reject=%v", diagnostics, test.wantReject)
+			}
+		})
+	}
+}
+
 func TestQuerySemanticsAcceptsInlineBooleanLiteralExpression(t *testing.T) {
 	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {
