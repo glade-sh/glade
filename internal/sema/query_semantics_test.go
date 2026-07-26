@@ -94,6 +94,15 @@ func TestQuerySemanticsRejectsAggregateOnStandardTextField(t *testing.T) {
 	}
 }
 
+func TestQuerySemanticsRejectsFieldsAllInApexEvenWithLimit(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run() { List<Account> values = [SELECT FIELDS(ALL) FROM Account LIMIT 1]; } }`,
+	})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CONTRACT") {
+		t.Fatalf("FIELDS(ALL) in Apex was accepted: %#v", result.Diagnostics)
+	}
+}
+
 func TestQuerySemanticsRejectsSelfSemiJoin(t *testing.T) {
 	result := analyzeQueryProbe(t, `
 public class QueryProbe {

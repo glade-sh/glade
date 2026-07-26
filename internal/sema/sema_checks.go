@@ -831,8 +831,8 @@ func queryShapeDiagnostics(query soql.Query, ctx queryTextContext) []diagnostic.
 		diagnosticFor("FOR UPDATE cannot be combined with ORDER BY", "FOR UPDATE")
 	}
 	for _, field := range query.Fields {
-		if strings.EqualFold(strings.TrimSpace(field), "FIELDS(ALL)") && !query.HasLimit {
-			diagnosticFor("FIELDS(ALL) requires LIMIT in Apex", "FIELDS(ALL)")
+		if strings.EqualFold(strings.TrimSpace(field), "FIELDS(ALL)") {
+			diagnosticFor("FIELDS(ALL) is not supported in Apex", "FIELDS(ALL)")
 		}
 	}
 	return diagnostics
