@@ -16,6 +16,12 @@ func TestStandardPlatformSymbolsMergeProductNamespaceDeclarations(t *testing.T) 
 		t.Fatalf("Comparable kind = %q, want interface", comparable.Kind)
 	}
 	requireStandardMethod(t, comparable, "compareTo", []string{"Object"}, false)
+	batchableContext := requireStandardSymbol(t, symbols, "Database.BatchableContext")
+	if batchableContext.Kind != apexast.DeclarationInterface {
+		t.Fatalf("Database.BatchableContext kind = %q, want interface", batchableContext.Kind)
+	}
+	requireStandardMethod(t, batchableContext, "getChildJobId", []string{}, false)
+	requireStandardMethod(t, batchableContext, "getJobId", []string{}, false)
 
 	operations := requireStandardSymbol(t, symbols, "Metadata.Operations")
 	requireStandardMethod(t, operations, "retrieve", []string{"Metadata.MetadataType", "List<String>", "Boolean"}, true)
