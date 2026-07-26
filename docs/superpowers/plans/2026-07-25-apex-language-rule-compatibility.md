@@ -930,13 +930,18 @@ go test ./...
 scripts/smoke.sh
 ```
 
-Current result (2026-07-25): the broad run passes all product packages,
-including the Apex runner, CLI, sema, VM, query parsers, LSP, and watch. It is
-still red in `internal/repoguard` because tracked planning/audit documents are
-not release-surface documentation: this plan, the earlier reserved-identifier
-plan, and the audit use a generic example name. The CI package manifest gap for
-the new `internal/apexlang` package was corrected and its focused scripts gate
-passes. `scripts/smoke.sh` passed after the manifest correction.
+Current result (2026-07-25): the aggregate `go test ./...` remains red. It
+timed out in `internal/apextest` after 10 minutes while
+`TestRuntimeTransitionRejectsDuplicateRequestedClosureOnCurrentHit` was
+running, but that test passes in 4.209s in isolation and the uncached package
+passes alone in 337.286s. The aggregate run also remains red in
+`internal/repoguard` because tracked planning/audit documents are not
+release-surface documentation: this plan, the earlier reserved-identifier
+plan, and the audit use a generic example name. Every other completed product
+package in that run passed, including CLI, sema, VM, query parsers, LSP, watch,
+and CI sharding. The CI package manifest gap for the new `internal/apexlang`
+package was corrected and its focused scripts gate passes. `scripts/smoke.sh`
+passed after the manifest correction.
 
 - [ ] **Step 6: Replay the checked oracle**
 
