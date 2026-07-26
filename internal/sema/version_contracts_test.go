@@ -43,7 +43,6 @@ public class Probe {
     List<Account> rows = [SELECT Id FROM Account WITH SECURITY_ENFORCED];
   }
 }
-
 `
 	for _, test := range []struct {
 		apiVersion string
@@ -55,6 +54,24 @@ public class Probe {
 			result := analyzeQueryProbeWithProject(t, source, typesys.ProjectInfo{SourceAPIVersion: test.apiVersion}, queryDiagnosticSchema())
 			if hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CONTRACT") {
 				t.Fatalf("API %s query diagnostics = %#v, want acceptance", test.apiVersion, result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestPropertyGetterMutationIsRejectedFromAPIVersion42(t *testing.T) {
+	source := `public class Probe { public Integer Value { get { Value = 1; return Value; } set; } }`
+	for _, test := range []struct {
+		apiVersion string
+		wantError  bool
+	}{
+		{apiVersion: "41.0", wantError: false},
+		{apiVersion: "42.0", wantError: true},
+	} {
+		t.Run(test.apiVersion, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, test.apiVersion)
+			if result.HasErrors() != test.wantError {
+				t.Fatalf("API %s diagnostics = %#v, want error=%v", test.apiVersion, result.Diagnostics, test.wantError)
 			}
 		})
 	}

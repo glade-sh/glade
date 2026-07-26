@@ -2569,6 +2569,28 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 	return diagnostics
 }
 
+func propertyGetterMutationDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
+	propertyName, getter := strings.CutSuffix(member.Name, ".get")
+	if !getter || !typeUsesAPIVersionAtLeast(typ, 42) {
+		return nil
+	}
+	field, found := semaResolveField(model, typ.Name, propertyName, make(map[string]bool))
+	if !found || field.member.Kind != apexast.DeclarationProperty {
+		return nil
+	}
+	var diagnostics []diagnostic.Diagnostic
+	for _, match := range scan.assignmentMatches {
+		if semaOffsetInIgnoredText(scan.body, match[0]) || semaAssignmentLooksLikeComparison(scan.body, match[1]) || semaAssignmentLooksLikeNamedArg(scan.body, match[2]) || semaAssignmentLooksLikeMapEntry(scan.body, match[1]) || semaAssignmentLooksLikeLocalDeclaration(scan.body, match[2]) {
+			continue
+		}
+		if !strings.EqualFold(strings.TrimSpace(scan.body[match[2]:match[3]]), propertyName) {
+			continue
+		}
+		diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, propertyName, "a property cannot be assigned from its getter in API version 42.0 or later", bodyOffset+match[2], bodyOffset+match[3], source))
+	}
+	return diagnostics
+}
+
 func semaFieldAccessDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, field, detail string, start, end int, source string) diagnostic.Diagnostic {
 	return diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
