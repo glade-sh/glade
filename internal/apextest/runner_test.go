@@ -4729,6 +4729,17 @@ func TestFieldInitializerExprFallsBackToFullDeclarationStatement(t *testing.T) {
 	}
 }
 
+func TestCompileFieldInitializerUsesLegalSyntheticLocal(t *testing.T) {
+	source := "private Integer value = 7;"
+	value, ok := compileFieldInitializer("Integer", "value", diagnostic.Range{
+		Start: diagnostic.Position{Offset: 0},
+		End:   diagnostic.Position{Offset: len(source)},
+	}, source)
+	if !ok || value.Kind != vm.ValueInt || value.Int != 7 {
+		t.Fatalf("compileFieldInitializer() = %#v, %v; want integer 7", value, ok)
+	}
+}
+
 func TestTypeDeclarationSourceFallsBackToFullDeclarationLine(t *testing.T) {
 	source := "\t\tpublic class InterfaceBackedFactory implements DomainFactory.IConstructable\n\t\t{\n\t\t\tpublic Object construct() { return null; }\n\t\t}\n"
 	start := strings.Index(source, "InterfaceBackedFactory")

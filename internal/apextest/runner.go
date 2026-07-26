@@ -5026,6 +5026,8 @@ func sourceBytePosition(source string, pos diagnostic.Position) (int, bool) {
 }
 
 func compileFieldInitializer(typeName, fieldName string, r diagnostic.Range, source string) (vm.Value, bool) {
+	const resultName = "gladeFieldInitializerValue"
+
 	expr, ok := fieldInitializerExpr(fieldName, r, source)
 	if !ok {
 		return vm.Value{}, false
@@ -5036,7 +5038,7 @@ func compileFieldInitializer(typeName, fieldName string, r diagnostic.Range, sou
 	if !canEvaluateFieldInitializerEagerly(expr) {
 		return vm.Value{}, false
 	}
-	program, err := vm.CompileAnonymous(typeName + " __field = " + expr + ";")
+	program, err := vm.CompileAnonymous(typeName + " " + resultName + " = " + expr + ";")
 	if err != nil {
 		return vm.Value{}, false
 	}
@@ -5045,7 +5047,7 @@ func compileFieldInitializer(typeName, fieldName string, r diagnostic.Range, sou
 	if err != nil {
 		return vm.Value{}, false
 	}
-	value, ok := result.Vars["__field"]
+	value, ok := result.Vars[resultName]
 	return value, ok
 }
 
