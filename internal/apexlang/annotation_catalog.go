@@ -16,6 +16,7 @@ var annotations = []AnnotationSpec{
 	{Name: "IsTest", AllowedArguments: set("SeeAllData", "IsParallel", "OnInstall")},
 	{Name: "TestSetup"},
 	{Name: "TestVisible"},
+	{Name: "SuppressWarnings"},
 	{Name: "Deprecated"},
 	{Name: "JsonAccess", AllowedArguments: set("serializable", "deserializable")},
 	{Name: "NamespaceAccessible"},

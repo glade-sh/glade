@@ -28,6 +28,16 @@ func TestAnnotationCatalogAllowsKnownProperties(t *testing.T) {
 	}
 }
 
+func TestAnnotationCatalogAllowsSuppressWarnings(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `@SuppressWarnings('PMD.EmptyStatementBlock') public class Probe { public static void run() {} }`,
+	})
+	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA031") {
+		t.Fatalf("unexpected catalog diagnostic: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnnotationContractsRejectInvalidOwnersAndSignatures(t *testing.T) {
 	t.Parallel()
 	for name, source := range map[string]string{
