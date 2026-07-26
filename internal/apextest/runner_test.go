@@ -3789,7 +3789,7 @@ public interface Widget {
 }
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/Provider.cls"), `
-public class Provider implements System.StubProvider {
+public virtual class Provider implements System.StubProvider {
   public Object handleMethodCall(Object stubbedObject, String stubbedMethodName, Type returnType, List<Type> listOfParamTypes, List<String> listOfParamNames, List<Object> listOfArgs) {
     return 'ok';
   }
@@ -4831,7 +4831,7 @@ func TestRunExecutesConstructorChaining(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/BaseCounter.cls"), `
-public class BaseCounter {
+public virtual class BaseCounter {
   public Integer base { get; set; }
 
   public BaseCounter(Integer seed) {
@@ -6304,7 +6304,7 @@ public class CountingBatch implements Database.Batchable<Integer> {
 }
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/ObjectCountingBatch.cls"), `
-public class ObjectCountingBatch implements Database.Batchable<Object> {
+public virtual class ObjectCountingBatch implements Database.Batchable<Object> {
   public List<Object> start(Database.BatchableContext bc) {
     return new List<Object>{1, 2, 3};
   }
