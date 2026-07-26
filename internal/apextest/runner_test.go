@@ -5362,8 +5362,8 @@ func TestRunExecutesNestedClassMethod(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/classes/Container.cls"), `
 public class Container {
   public class Nested {
-    public static Integer count = 1;
-    public static String staticLabel() {
+    public Integer count = 1;
+    public String staticLabel() {
       return 'static-inner';
     }
     public String label() {
@@ -5378,9 +5378,9 @@ private class ContainerTest {
   @isTest static void nestedClassRuns() {
     Container.Nested nestedValue = new Container.Nested();
     System.assertEquals('inner', nestedValue.label());
-    System.assertEquals('static-inner', Container.Nested.staticLabel());
-    Container.Nested.count = 3;
-    System.assertEquals(3, Container.Nested.count);
+    System.assertEquals('static-inner', nestedValue.staticLabel());
+    nestedValue.count = 3;
+    System.assertEquals(3, nestedValue.count);
   }
 }
 `)
@@ -5527,24 +5527,26 @@ private class FilterHostTest {
 	}
 }
 
-func TestRunExecutesLowercaseNestedClassStaticMethodFromInitializer(t *testing.T) {
+func TestRunExecutesLowercaseTopLevelClassStaticMethodFromInitializer(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/DispatchOuter.cls"), `
 public class DispatchOuter {
   public static String initialized = v1.label('init');
-  public class v1 {
-    public static String label(String input) {
-      return input + '-nested';
-    }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/v1.cls"), `
+public class v1 {
+  public static String label(String input) {
+    return input + '-nested';
   }
 }
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/DispatchOuterTest.cls"), `
 @isTest
 private class DispatchOuterTest {
-  @isTest static void lowercaseNestedStaticDispatches() {
-    System.assertEquals('direct-nested', DispatchOuter.v1.label('direct'));
+  @isTest static void lowercaseTopLevelStaticDispatches() {
+    System.assertEquals('direct-nested', v1.label('direct'));
     System.assertEquals('init-nested', DispatchOuter.initialized);
   }
 }

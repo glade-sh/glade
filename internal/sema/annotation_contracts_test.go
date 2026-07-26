@@ -48,6 +48,7 @@ func TestAnnotationContractsRejectInvalidOwnersAndSignatures(t *testing.T) {
 		"invocable method requires list parameter":  `public class Probe { @InvocableMethod public static void run(String value) {} }`,
 		"invocable variable cannot be static":       `public class Probe { @InvocableVariable public static String value; }`,
 		"remote action requires public static":      `public class Probe { @RemoteAction private void run() {} }`,
+		"ReadOnly static method needs a web owner":  `public class Probe { @ReadOnly public static void run() {} }`,
 		"JsonAccess requires a parameter":           `@JsonAccess public class Probe {}`,
 		"JsonAccess cannot annotate a method":       `public class Probe { @JsonAccess(serializable=true) public void run() {} }`,
 		"NamespaceAccessible cannot be AuraEnabled": `public class Probe { @AuraEnabled @NamespaceAccessible public static void run() {} }`,

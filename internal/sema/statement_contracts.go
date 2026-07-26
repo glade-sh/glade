@@ -111,7 +111,7 @@ func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member type
 			case ir.OpBlock, ir.OpDeclGroup:
 				walk(inst.Then, context)
 			}
-			if irInstructionTerminates(inst) {
+			if inst.Op != ir.OpThrow && irInstructionTerminates(inst) {
 				terminated = true
 			}
 		}

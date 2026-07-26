@@ -160,8 +160,8 @@ func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.Membe
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "RemoteAction must annotate a public or global static method"))
 			}
 		case strings.EqualFold(annotation.Name, "ReadOnly"):
-			if member.Kind != apexast.DeclarationMethod || !hasEitherModifier(member.Modifiers, "public", "global") {
-				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "ReadOnly is only valid on public or global methods"))
+			if member.Kind != apexast.DeclarationMethod || !hasEitherModifier(member.Modifiers, "public", "global") || (hasModifier(member.Modifiers, "static") && !hasAnnotation(typ.Annotations, "RestResource")) {
+				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "ReadOnly is only valid on public or global instance methods, or REST methods"))
 			}
 		case strings.EqualFold(annotation.Name, "JsonAccess"):
 			diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "JsonAccess is only valid on classes with serialization control properties"))

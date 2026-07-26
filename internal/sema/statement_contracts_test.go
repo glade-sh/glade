@@ -45,6 +45,16 @@ func TestStatementContractsRejectUnreachableInstructions(t *testing.T) {
 	}
 }
 
+func TestStatementContractsAllowInstructionsAfterThrow(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run() { throw new NullPointerException(); Integer value = 1; } }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("instructions after throw must remain compiler-compatible: %#v", result.Diagnostics)
+	}
+}
+
 func TestSwitchContractsRejectUnsupportedSelectorsAndDuplicateValues(t *testing.T) {
 	t.Parallel()
 	for name, source := range map[string]string{
