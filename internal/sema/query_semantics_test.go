@@ -110,6 +110,19 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsAcceptsInlineBooleanLiteralExpression(t *testing.T) {
+	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
+public class QueryProbe {
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Active__c = :true];
+  }
+}
+`)
+	if hasDiagnosticCode(diagnostics, "GLADESEMA_QUERY_BIND") {
+		t.Fatalf("inline Boolean literal expression was rejected: %#v", diagnostics)
+	}
+}
+
 func TestQuerySemanticsAcceptsDeclaredInlineBind(t *testing.T) {
 	diagnostics := newQuerySemanticsChecker(typesys.Index{}).checkFile("QueryProbe.cls", `
 public class QueryProbe {
