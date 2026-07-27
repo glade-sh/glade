@@ -149,12 +149,10 @@ test("home page names the latest stable release from release notes", () => {
 });
 
 test("release notes cover the latest stable release", () => {
-  assert.match(releaseNotes, /^## v0\.2\.9 - 2026-07-25/m);
-  assert.match(releaseNotes, /11\.45% lower duration/);
-  assert.match(releaseNotes, /11,526-test corpus/);
-  assert.match(releaseNotes, /filesystem\/root confinement/);
-  assert.match(releaseNotes, /Security and release trust/);
-  assert.match(releaseNotes, /duplicate asset name fails instead of replacing published bytes/);
+  assert.match(releaseNotes, /^## v0\.2\.10 - 2026-07-27/m);
+  assert.match(releaseNotes, /all 121 Salesforce reserved words/);
+  assert.match(releaseNotes, /400-row Salesforce language-rule evidence catalog/);
+  assert.match(releaseNotes, /bounded to five minutes/);
 });
 
 test("v0.2.9 docs describe the live registry and release safety", () => {

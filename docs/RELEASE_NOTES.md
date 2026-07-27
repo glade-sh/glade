@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+No changes yet.
+
+## v0.2.10 - 2026-07-27
+
+Glade v0.2.10 aligns local Apex language checks with Salesforce compiler
+behavior for reserved and malformed identifiers, expands the checked compiler
+rule set, and makes the compatibility gate faster and fail-closed.
+
 Apex language compatibility:
 
 - Added case-insensitive rejection for all 121 Salesforce reserved words in
@@ -18,12 +26,15 @@ Apex language compatibility:
   row points to its Salesforce evidence, expected outcome, owning subsystem,
   product regression test, and exact Glade commit.
 
-CI:
+Glade Tools and CI:
 
 - Kept the routine Glade Tools pull-request gate bounded to five minutes. It
   validates the exact Glade commit pin, catalog structure, product-test
   pointers, and repository tests without waiting for an authenticated scratch
   org comparison.
+- Fixed Darwin process-group cleanup in the Glade Tools comparison harness so a
+  transient permission result keeps polling until cleanup is confirmed or the
+  existing deadline expires.
 
 ## v0.2.9 - 2026-07-25
 
