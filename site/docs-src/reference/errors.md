@@ -8,7 +8,8 @@ The detailed guide explains codes, `glade explain`, and next commands.
 ## Start here
 
 Copy the exact code from the terminal or report.
-Run `glade explain <code>` when the binary is at hand.
+Run `glade explain <code>` when the installed binary has an entry for that
+code. If it reports an unknown code, use the detailed guide.
 Open the detailed guide when you need the hosted explanation.
 
 Error codes mark local checks and known unsupported surfaces.
@@ -22,5 +23,6 @@ Keep a Salesforce gate for surfaces Glade names as hosted.
 ## Related workflows
 
 - [Support map](/guide/support-map)
+- [Apex language compatibility](/reference/apex-language-compatibility)
 - [Apex support map](/reference/apex-support)
 - [LWC support matrix](/reference/lwc-support)

@@ -132,6 +132,7 @@ export default defineConfig({
           { text: 'Automation and JSON', link: '/guide/automation' },
           { text: 'Exit codes', link: '/guide/exit-codes' },
           { text: 'Error codes', link: '/reference/errors' },
+          { text: 'Apex language compatibility', link: '/reference/apex-language-compatibility' },
           { text: 'Apex support map', link: '/reference/apex-support' },
           { text: 'LWC support matrix', link: '/reference/lwc-support' },
           { text: 'Visualforce support matrix', link: '/reference/visualforce-support' },

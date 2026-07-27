@@ -2,7 +2,28 @@
 
 ## Unreleased
 
-No changes yet.
+Apex language compatibility:
+
+- Added case-insensitive rejection for all 121 Salesforce reserved words in
+  non-method Apex source identifier contexts, including `currency`, while
+  preserving Salesforce's contextual method-name exceptions.
+- Added checked identifier shape and length rules. Project parser diagnostics
+  flow through `parse`, `check`, `test`, and LSP; anonymous `exec` fails before
+  execution with its anonymous-parse diagnostic; and Apex rename rejects an
+  invalid target before creating edits.
+- Expanded compiler checks for annotations, declarations, types, inheritance,
+  statements, triggers, web exposure, SOQL/SOSL, and source API-version
+  behavior.
+- Added a 400-row Salesforce language-rule evidence catalog. Every supported
+  row points to its Salesforce evidence, expected outcome, owning subsystem,
+  product regression test, and exact Glade commit.
+
+CI:
+
+- Kept the routine Glade Tools pull-request gate bounded to five minutes. It
+  validates the exact Glade commit pin, catalog structure, product-test
+  pointers, and repository tests without waiting for an authenticated scratch
+  org comparison.
 
 ## v0.2.9 - 2026-07-25
 

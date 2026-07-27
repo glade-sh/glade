@@ -79,6 +79,7 @@ cache_bust="$(date +%s)"
 curl -fsSL "https://glade.sh/install.sh?v=$cache_bust" | head -n 5
 curl -fsSI "https://glade.sh/install.sh?v=$cache_bust" | grep -i content-type
 curl -fsSL "https://glade.sh/guide/support-map?v=$cache_bust" >/dev/null
+curl -fsSL "https://glade.sh/reference/apex-language-compatibility?v=$cache_bust" | grep -F '121 Salesforce reserved words'
 curl -fsSL "https://glade.sh/?v=$cache_bust" | grep -F 'Latest stable release:<span class="home-release-version">vX.Y.Z</span>'
 curl -fsSL "https://glade.sh/guide/plugins/first-party?v=$cache_bust" | grep -F 'https://plugins.glade.sh/index.json'
 curl -fsSL "https://glade.sh/guide/local-testing?v=$cache_bust" | grep -F -- '--cpu-profile'

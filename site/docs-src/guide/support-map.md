@@ -46,9 +46,9 @@ These areas are the main local development contract.
 
 | Area | What to expect |
 | --- | --- |
-| Apex parsing and project indexing | Large SFDX projects, nested types, namespace tokens, and stable parse diagnostics. |
+| Apex parsing and project indexing | Large SFDX projects, nested types, namespace tokens, stable parse diagnostics, and case-insensitive rejection of all 121 Salesforce reserved words in non-method source identifier contexts. See [Apex language compatibility](/reference/apex-language-compatibility). |
 | Project configuration and package contracts | `glade.yml` and SFDX discovery cover package dirs, default namespace, namespace remaps, source-backed managed package dependencies, captured package artifacts, package shims, org features, storage, and local limits. |
-| Semantic checks | Type references, inheritance, interfaces, overloads, locals, assignments, return paths, and token ranges for the supported VM subset. |
+| Semantic checks | Checked annotation, declaration, type, inheritance, trigger, statement, SOQL/SOSL, API-version, local, assignment, overload, and return-path rules, with token ranges for the supported VM subset. |
 | Local Apex tests | `@isTest`, `@TestSetup`, isolated org state, static reset, governor windows, async drain, stack frames, JSON, and JUnit output. |
 | SOQL, DML, triggers, and SObjects | Static and dynamic SOQL, DML statements, `Database.*` result objects, trigger context, schema-backed SObjects, and local SQLite-backed storage. |
 | Local API server | Salesforce-style REST discovery, SObject CRUD, query/queryAll, limits and record counts, userinfo stubs, Tooling `executeAnonymous`, local Tooling source/schema metadata queries, Composite sObject insert, Composite Batch, Tree, and Graph local requests, Bulk API v2 simple query jobs, layout/default-value metadata, metadata job status, reset endpoints, and optional SQLite persistence. |
@@ -98,7 +98,7 @@ UnsupportedFeature: unsupported call "Answers.findSimilar local Answers zone sea
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| Apex front end | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Parser, project loader, symbols, semantic checks, LSP, and diagnostics form the starting point. |
+| Apex front end | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Parser, project loader, symbols, semantic checks, LSP, and diagnostics form the starting point. The checked compiler contract contains 400 language-rule rows. |
 | Runtime and tests | <span class="docs-status-chip docs-status-supported">Runs locally</span> | VM execution, local tests, SObjects, SOQL, DML, triggers, async drain, and local storage are the core contract. |
 | Local Salesforce API | <span class="docs-status-chip docs-status-supported">Runs locally</span> | Useful for local REST, SObject CRUD/query, record count, Tooling `executeAnonymous`, and local source/schema metadata flows. It is not a hosted-org replacement. |
 | Standard library | <span class="docs-status-chip docs-status-supported">Runs locally</span> | The checked standard-library report has 267 supported rows, 19 unsupported hosted-boundary rows, and 0 partial rows. |

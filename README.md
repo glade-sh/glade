@@ -76,7 +76,7 @@ repository.
 
 | Area | Current support |
 | --- | --- |
-| Apex parse, indexing, and semantic checks | Works well for the local development contract. |
+| Apex parse, indexing, and semantic checks | Works well for the local development contract. All 121 Salesforce reserved words are rejected case-insensitively in non-method source identifier contexts, with Salesforce's method-name exceptions preserved. |
 | Project configuration | `glade.yml` and `sfdx-project.json` discovery cover package directories, default namespace, namespace remaps, source-backed managed package dependencies, captured package artifacts, package shims, and org features. Storage and limit modes are selected by CLI flags. |
 | Local Apex tests | Works well for the VM subset, with isolated test data, statics, limits, async drain, and JSON/JUnit output. |
 | SOQL, DML, triggers, SObjects, and storage | Work well for the checked local data runtime contract. |
@@ -232,6 +232,7 @@ glade report refactor-proof --project . --since origin/main --format html --out 
 - [Test startup cache](docs/TEST_STARTUP_CACHE.md)
 - [Plugins](docs/PLUGINS.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Apex language compatibility](docs/APEX_LANGUAGE_COMPATIBILITY.md)
 - [Compatibility policy](docs/COMPATIBILITY.md)
 - [Standard library coverage](docs/STDLIB_COVERAGE.md)
 - [Local LWC support](docs/LWC_SUPPORT.md)
