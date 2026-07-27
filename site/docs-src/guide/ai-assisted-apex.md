@@ -89,5 +89,6 @@ For a refactor, the first Glade pass should preserve behavior before source
 movement starts, then affected tests should run after the movement.
 
 Use the [affected tests](/guide/affected-tests), [local testing](/guide/local-testing),
-and [support map](/guide/support-map) guides when the agent needs a narrower
-test selector or a clear local runtime boundary.
+[Apex language compatibility](/reference/apex-language-compatibility), and
+[support map](/guide/support-map) guides when the agent needs a narrower test
+selector, the reserved-identifier contract, or a clear local runtime boundary.

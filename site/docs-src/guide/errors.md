@@ -1,6 +1,8 @@
 # Error codes and `glade explain`
 
-Actionable diagnostics include stable codes. Use `glade explain <code>` for the short local note.
+Actionable diagnostics include stable codes. Use `glade explain <code>` for
+codes registered with the installed binary. The parser codes documented below
+do not currently have `glade explain` entries.
 
 ```bash
 glade explain GLADESEMA002
@@ -22,8 +24,36 @@ Try:
 
 | Code | Meaning | First command |
 | --- | --- | --- |
+| `APEXPARSE002` | Reserved Apex source identifier | `glade check --project .` |
+| `APEXPARSE003` | Invalid Apex source identifier shape or length | `glade check --project .` |
 | `GLADESEMA002` | Unknown Apex or metadata type | `glade schema load --project .` |
 | `GLADESCHEMA001` | Local metadata schema load failed | `glade schema load --project .` |
+
+`APEXPARSE002` and `APEXPARSE003` are emitted by project parsing but are not
+currently accepted by `glade explain`. Use the guidance below and rerun
+`glade check`.
+
+## APEXPARSE002
+
+Glade found a case-insensitive Salesforce reserved word in a source identifier
+context. Rename the declaration and rerun:
+
+```bash
+glade check --project .
+```
+
+Salesforce permits most reserved words as method names. See
+[Apex language compatibility](/reference/apex-language-compatibility) before
+renaming a method.
+
+## APEXPARSE003
+
+Glade found an Apex source identifier with an invalid shape or length. Apex
+source identifiers must start with an ASCII letter, use only ASCII letters,
+digits, and underscores, contain no consecutive or trailing underscores, and
+be no longer than 255 characters.
+
+Schema and API names such as `Invoice__c` have a separate contract.
 
 ## GLADESEMA002
 

@@ -26,6 +26,9 @@ const agentGuide = await readFile(new URL("../../AGENTS.md", import.meta.url), "
 const repoReadme = await readFile(new URL("../../README.md", import.meta.url), "utf8");
 const repoSecurityPolicy = await readFile(new URL("../../SECURITY.md", import.meta.url), "utf8").catch(() => "");
 const repoCompatibility = await readFile(new URL("../../docs/COMPATIBILITY.md", import.meta.url), "utf8");
+const repoApexLanguageCompatibility = await readFile(new URL("../../docs/APEX_LANGUAGE_COMPATIBILITY.md", import.meta.url), "utf8").catch(() => "");
+const repoDocsIndex = await readFile(new URL("../../docs/README.md", import.meta.url), "utf8");
+const reservedIdentifierImplementation = await readFile(new URL("../../third_party/glade-apex-parser/reserved_identifier_words.go", import.meta.url), "utf8");
 const repoCompatibilityDashboard = await readFile(new URL("../../docs/COMPATIBILITY_DASHBOARD.md", import.meta.url), "utf8");
 const repoLwcSupport = await readFile(new URL("../../docs/LWC_SUPPORT.md", import.meta.url), "utf8");
 const releaseNotes = await readFile(new URL("../../docs/RELEASE_NOTES.md", import.meta.url), "utf8");
@@ -39,6 +42,7 @@ const homeScript = await readFile(new URL("../docs-src/public/js/home.js", impor
 const ciArtifacts = await readFile(new URL("../docs-src/guide/ci-artifacts.md", import.meta.url), "utf8");
 const automation = await readFile(new URL("../docs-src/guide/automation.md", import.meta.url), "utf8");
 const configuration = await readFile(new URL("../docs-src/guide/configuration.md", import.meta.url), "utf8");
+const guideErrors = await readFile(new URL("../docs-src/guide/errors.md", import.meta.url), "utf8");
 const installation = await readFile(new URL("../docs-src/guide/installation.md", import.meta.url), "utf8");
 const overview = await readFile(new URL("../docs-src/guide/overview.md", import.meta.url), "utf8");
 const securityTrust = await readFile(new URL("../docs-src/guide/security-trust.md", import.meta.url), "utf8").catch(() => "");
@@ -66,6 +70,7 @@ const modulePlugins = await readFile(new URL("../docs-src/guide/modules/plugins.
 const referenceCli = await readFile(new URL("../docs-src/reference/cli.md", import.meta.url), "utf8").catch(() => "");
 const referenceConfig = await readFile(new URL("../docs-src/reference/config.md", import.meta.url), "utf8").catch(() => "");
 const referenceErrors = await readFile(new URL("../docs-src/reference/errors.md", import.meta.url), "utf8").catch(() => "");
+const referenceApexLanguageCompatibility = await readFile(new URL("../docs-src/reference/apex-language-compatibility.md", import.meta.url), "utf8").catch(() => "");
 const referenceApexSupport = await readFile(new URL("../docs-src/reference/apex-support.md", import.meta.url), "utf8").catch(() => "");
 const referenceLwcSupport = await readFile(new URL("../docs-src/reference/lwc-support.md", import.meta.url), "utf8").catch(() => "");
 const referenceVisualforceSupport = await readFile(new URL("../docs-src/reference/visualforce-support.md", import.meta.url), "utf8").catch(() => "");
@@ -420,6 +425,7 @@ test("docs navigation exposes workflows modules and references as separate trail
   assertConfigLink("CLI reference", "/reference/cli");
   assertConfigLink("Config reference", "/reference/config");
   assertConfigLink("Error codes", "/reference/errors");
+  assertConfigLink("Apex language compatibility", "/reference/apex-language-compatibility");
   assertConfigLink("Apex support map", "/reference/apex-support");
   assertConfigLink("LWC support matrix", "/reference/lwc-support");
   assertConfigLink("Visualforce support matrix", "/reference/visualforce-support");
@@ -460,10 +466,44 @@ test("new docs pages use clear page roles and link to deeper references", () => 
   assert.match(referenceCli, /^# CLI reference/m);
   assert.match(referenceConfig, /^# Config reference/m);
   assert.match(referenceErrors, /^# Error codes/m);
+  assert.match(referenceApexLanguageCompatibility, /^# Apex language compatibility/m);
   assert.match(referenceApexSupport, /^# Apex support map/m);
   assert.match(referenceLwcSupport, /^# LWC support matrix/m);
   assert.match(referenceVisualforceSupport, /^# Visualforce support matrix/m);
   assert.match(referenceLocalApiRoutes, /^# Local API routes/m);
+});
+
+test("Apex language compatibility docs publish the checked identifier contract", () => {
+  const implementationMatch = reservedIdentifierImplementation.match(/salesforceReservedIdentifiers = wordSet\(`([\s\S]*?)`\)/);
+  assert.ok(implementationMatch, "reserved identifier implementation should expose its checked word set");
+  const implementationWords = implementationMatch[1].trim().toLowerCase().split(/\s+/);
+
+  for (const docs of [repoApexLanguageCompatibility, referenceApexLanguageCompatibility]) {
+    assert.match(docs, /121 Salesforce\s+reserved words/);
+    assert.match(docs, /case-insensitive/i);
+    assert.match(docs, /`currency`/);
+    assert.match(docs, /method names/i);
+    assert.match(docs, /`APEXPARSE002`/);
+    assert.match(docs, /`APEXPARSE003`/);
+    assert.match(docs, /`GLADESEMA_ANONYMOUS_PARSE`/);
+    assert.match(docs, /Invalid identifier/);
+    assert.match(docs, /400 checked language-rule rows/);
+    assert.match(docs, /Salesforce remains the validation gate/);
+
+    const documentedMatch = docs.match(/```text\n([\s\S]*?)\n```/);
+    assert.ok(documentedMatch, "compatibility reference should publish the reserved word set");
+    assert.deepEqual(documentedMatch[1].trim().toLowerCase().split(/\s+/), implementationWords);
+  }
+
+  assert.match(repoReadme, /\[Apex language compatibility\]\(docs\/APEX_LANGUAGE_COMPATIBILITY\.md\)/);
+  assert.match(repoDocsIndex, /\[APEX_LANGUAGE_COMPATIBILITY\.md\]\(APEX_LANGUAGE_COMPATIBILITY\.md\)/);
+  assert.match(repoCompatibility, /121 Salesforce reserved words/);
+  assert.match(releaseNotes, /121 Salesforce reserved words/);
+  assert.match(supportMap, /\[Apex language compatibility\]\(\/reference\/apex-language-compatibility\)/);
+  assert.match(moduleApexRuntime, /\[Apex language compatibility\]\(\/reference\/apex-language-compatibility\)/);
+  assert.match(referenceApexSupport, /\[Apex language compatibility\]\(\/reference\/apex-language-compatibility\)/);
+  assert.match(guideErrors, /APEXPARSE002[\s\S]*not\s+currently accepted by `glade explain`/);
+  assert.match(referenceErrors, /If it reports an unknown code, use the detailed guide/);
 });
 
 test("site copy is task-first and names local capabilities plainly", () => {

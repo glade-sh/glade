@@ -38,6 +38,24 @@ semantic analysis, LSP, watch, replay, and test discovery:
 It does not execute Apex (the VM has its own anonymous-Apex parser) and does not
 provide formatting.
 
+## Identifier validation
+
+The parser validates Apex declaration identifiers against Salesforce's
+case-insensitive naming rules. It rejects all 121 Salesforce reserved words in
+non-method source identifier contexts with `APEXPARSE002`, while preserving
+Salesforce's contextual exception that permits most reserved words as method
+names. It also reports `APEXPARSE003` for invalid identifier shapes and names
+longer than 255 characters.
+
+The check covers type, constructor, field, property, parameter, local,
+enhanced-for, catch, trigger, and enum-constant declarations. Schema and API
+references such as `Invoice__c` use their own naming contract and do not receive
+source-identifier shape diagnostics.
+
+See [Apex Language Compatibility](APEX_LANGUAGE_COMPATIBILITY.md) for the full
+reserved-word table, command propagation, and the broader 400-row language-rule
+evidence boundary.
+
 ## CGO requirement
 
 Real parsing requires CGO: the parser uses a generated tree-sitter Apex grammar

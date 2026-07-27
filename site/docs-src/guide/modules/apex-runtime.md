@@ -37,4 +37,5 @@ metadata behavior, and any platform feature Glade reports as unsupported.
 
 ## Reference
 
+- [Apex language compatibility](/reference/apex-language-compatibility)
 - [Apex support](/reference/apex-support)

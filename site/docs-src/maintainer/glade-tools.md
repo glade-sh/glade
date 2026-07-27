@@ -26,6 +26,32 @@ scripts/build-plugin-archives.sh X.Y.Z
 
 Repo-only notes and generated tool reports stay in the tools checkout.
 
+## Apex language-rule evidence
+
+The checked Glade Tools catalog contains 400 compiler programs: 121 reserved
+identifier rejections plus 279 additional annotation, declaration, type,
+inheritance, statement, trigger, query, and version controls. Each supported
+row points to Salesforce evidence, an expected accept or reject outcome, an
+exact Glade product test, and a full `gladeCommit` SHA.
+
+Routine pull requests validate the catalog and pinned product checkout without
+requiring Salesforce authentication. A maintainer can explicitly compare all
+rows with a scratch org:
+
+```bash
+go run ./cmd/glade-tools apex-rules validate \
+  --catalog docs/fixtures/apex-language-rules.json
+(cd ../glade && go build -o /tmp/glade-apex-rules ./cmd/glade)
+go run ./cmd/glade-tools apex-rules compare \
+  --catalog docs/fixtures/apex-language-rules.json \
+  --target-org <scratch-alias> \
+  --glade-bin /tmp/glade-apex-rules \
+  --json
+```
+
+The compare command fails for either a supported Glade mismatch or Salesforce
+oracle drift.
+
 ## Local-test comparison
 
 Use `glade compat local-tests compare` only with an external target manifest.

@@ -19,6 +19,9 @@ Use first-party plugins for generated capability reports.
 
 [What Glade runs locally](/guide/support-map)
 
+For compiler rules, reserved identifiers, and diagnostic propagation, see
+[Apex language compatibility](/reference/apex-language-compatibility).
+
 ## Related workflows
 
 - [Apex runtime](/guide/modules/apex-runtime)
