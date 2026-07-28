@@ -168,25 +168,25 @@ func TestSwitchContractsPreferSelectorEnumWhenValueMatchesNestedType(t *testing.
 	result := analyzeDeclarationProject(t, map[string]string{
 		"Probe.cls": `
 public class Probe {
-  public License provider;
-  public License license;
-  public License dea;
-  public License boardCert;
-  public class License {
-    public String sfObject;
-    public Boolean hasSfObject() { return sfObject != null; }
+  public Archive primary;
+  public Archive archive;
+  public Archive secondary;
+  public Archive fallback;
+  public class Archive {
+    public String target;
+    public Boolean hasTarget() { return target != null; }
   }
-  public String run(MapType mapType) {
-    License mapObject;
-    switch on mapType {
-      when PROVIDER { mapObject = this.provider; }
-      when LICENSE { mapObject = this.license; }
-      when DEA { mapObject = this.dea; }
-      when BOARDCERT { mapObject = this.boardCert; }
+  public String run(RouteType routeType) {
+    Archive selected;
+    switch on routeType {
+      when PRIMARY { selected = this.primary; }
+      when ARCHIVE { selected = this.archive; }
+      when SECONDARY { selected = this.secondary; }
+      when FALLBACK { selected = this.fallback; }
     }
-    return mapObject.hasSfObject() ? mapObject.sfObject : null;
+    return selected.hasTarget() ? selected.target : null;
   }
-  public enum MapType { PROVIDER, LICENSE, DEA, BOARDCERT }
+  public enum RouteType { PRIMARY, ARCHIVE, SECONDARY, FALLBACK }
 }
 `,
 	})
@@ -201,7 +201,7 @@ func TestSwitchContractsKeepStringBranchValuesCaseSensitive(t *testing.T) {
 public class Probe {
   public void run(String value) {
     switch on value {
-      when 'Nsc', 'NSC' {}
+      when 'Ready', 'READY' {}
       when else {}
     }
   }
