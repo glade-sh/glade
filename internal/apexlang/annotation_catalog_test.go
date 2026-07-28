@@ -33,6 +33,8 @@ func TestAnnotationCatalogIncludesDocumentedModifierValueKinds(t *testing.T) {
 		{annotation: "InvocableMethod", argument: "iconName", kind: AnnotationStringArgument},
 		{annotation: "InvocableVariable", argument: "defaultValue", kind: AnnotationStringArgument},
 		{annotation: "InvocableVariable", argument: "placeholderText", kind: AnnotationStringArgument},
+		{annotation: "JsonAccess", argument: "serializable", kind: AnnotationStringArgument},
+		{annotation: "JsonAccess", argument: "deserializable", kind: AnnotationStringArgument},
 	}
 	for _, test := range tests {
 		t.Run(test.annotation+"/"+test.argument, func(t *testing.T) {

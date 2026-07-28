@@ -15,14 +15,7 @@ import (
 
 func (a *Analyzer) checkBodyText(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, model *semaTypeMemberView, constructability map[string]typesys.TypeSymbol) []diagnostic.Diagnostic {
 	member = semaNormalizeMemberTypes(model, typ.Name, member)
-	baseScope := make(map[string]string)
-	baseScope[semaCurrentTypeScopeKey] = typ.Name
-	for name, fieldType := range semaFieldScope(model, typ.Name, make(map[string]bool)) {
-		baseScope[name] = fieldType
-	}
-	for _, param := range member.Parameters {
-		baseScope[normalizeName(param.Name)] = param.Type
-	}
+	baseScope := semaBodyBaseScope(typ, member, model)
 	bodyScan := newSemaBodyExpressionScan(body)
 	scopes, diagnostics := a.collectBodyScopes(typ, member, body, bodyOffset, source, baseScope, model)
 	diagnostics = append(diagnostics, staticThisDiagnostics(typ, member, body, bodyOffset, source)...)
@@ -62,6 +55,18 @@ func (a *Analyzer) checkBodyText(typ typesys.TypeSymbol, member typesys.MemberSy
 	}
 	diagnostics = append(diagnostics, a.checkBodyCalls(typ, member, body, bodyOffset, source, scopes, model)...)
 	return dedupeBodyDiagnostics(diagnostics)
+}
+
+func semaBodyBaseScope(typ typesys.TypeSymbol, member typesys.MemberSymbol, model *semaTypeMemberView) map[string]string {
+	baseScope := make(map[string]string)
+	baseScope[semaCurrentTypeScopeKey] = typ.Name
+	for name, fieldType := range semaFieldScope(model, typ.Name, make(map[string]bool)) {
+		baseScope[name] = fieldType
+	}
+	for _, param := range member.Parameters {
+		baseScope[normalizeName(param.Name)] = param.Type
+	}
+	return baseScope
 }
 
 func staticThisDiagnostics(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string) []diagnostic.Diagnostic {
@@ -591,6 +596,179 @@ func (s irSemaScope) lookup(name string) (string, bool) {
 	return "", false
 }
 
+func (s irSemaScope) hasNonFieldBinding(name string) bool {
+	key := normalizeName(name)
+	for i := len(s.frames) - 1; i >= 0; i-- {
+		if binding, ok := s.frames[i][key]; ok {
+			return binding.origin != irSemaOriginField
+		}
+	}
+	return false
+}
+
+func semaStaticInitializer(member typesys.MemberSymbol) bool {
+	return member.Kind == apexast.DeclarationInitializer && hasModifier(member.Modifiers, "static")
+}
+
+func (a *Analyzer) staticFinalFieldsAssignedBefore(typ typesys.TypeSymbol, member typesys.MemberSymbol, source string, model *semaTypeMemberView, baseScope map[string]string) map[string]bool {
+	assigned := make(map[string]bool)
+	if !semaStaticInitializer(member) {
+		return assigned
+	}
+	for _, earlier := range typ.Members {
+		if earlier.Range.Start.Offset >= member.Range.Start.Offset {
+			continue
+		}
+		if earlier.Kind == apexast.DeclarationField && hasModifier(earlier.Modifiers, "final") && hasModifier(earlier.Modifiers, "static") {
+			if semaStaticFinalFieldHasDeclarationInitializer(earlier, source) {
+				assigned[normalizeName(earlier.Name)] = true
+			}
+			continue
+		}
+		if !semaStaticInitializer(earlier) {
+			continue
+		}
+		body, _, ok := extractBodyForSema(source, earlier.Range)
+		if !ok {
+			continue
+		}
+		program, err := vm.CompileAnonymous(body)
+		if err != nil {
+			continue
+		}
+		scope := newIRSemaScopeWithOrigins(baseScope, nil)
+		a.collectStaticFinalFieldWrites(typ, program.Instructions, &scope, model, assigned)
+	}
+	return assigned
+}
+
+func semaStaticFinalFieldHasDeclarationInitializer(member typesys.MemberSymbol, source string) bool {
+	declaration, _, ok := memberSource(source, member.Range)
+	if !ok {
+		return false
+	}
+	parenDepth := 0
+	bracketDepth := 0
+	braceDepth := 0
+	for index := 0; index < len(declaration); index++ {
+		if semaOffsetInIgnoredText(declaration, index) {
+			continue
+		}
+		switch declaration[index] {
+		case '(':
+			parenDepth++
+		case ')':
+			if parenDepth > 0 {
+				parenDepth--
+			}
+		case '[':
+			bracketDepth++
+		case ']':
+			if bracketDepth > 0 {
+				bracketDepth--
+			}
+		case '{':
+			braceDepth++
+		case '}':
+			if braceDepth > 0 {
+				braceDepth--
+			}
+		case '=':
+			if parenDepth != 0 || bracketDepth != 0 || braceDepth != 0 ||
+				(index > 0 && strings.ContainsRune("!<>=", rune(declaration[index-1]))) ||
+				(index+1 < len(declaration) && declaration[index+1] == '=') {
+				continue
+			}
+			return true
+		}
+		if declaration[index] == ';' && parenDepth == 0 && bracketDepth == 0 && braceDepth == 0 {
+			return false
+		}
+	}
+	return false
+}
+
+func (a *Analyzer) collectStaticFinalFieldWrites(typ typesys.TypeSymbol, instructions []ir.Instruction, scope *irSemaScope, model *semaTypeMemberView, assigned map[string]bool) {
+	for _, inst := range instructions {
+		switch inst.Op {
+		case ir.OpDeclare:
+			scope.declare(inst.Name, resolveNestedTypeReference(model, typ.Name, inst.Type))
+		case ir.OpAssign:
+			if scope.hasNonFieldBinding(inst.Name) {
+				continue
+			}
+			field, found := semaResolveField(model, typ.Name, inst.Name, make(map[string]bool))
+			if found && hasModifier(field.member.Modifiers, "final") && hasModifier(field.member.Modifiers, "static") {
+				assigned[normalizeName(inst.Name)] = true
+			}
+		case ir.OpBlock:
+			scope.push()
+			a.collectStaticFinalFieldWrites(typ, inst.Then, scope, model, assigned)
+			scope.pop()
+		case ir.OpDeclGroup:
+			a.collectStaticFinalFieldWrites(typ, inst.Then, scope, model, assigned)
+		case ir.OpIf, ir.OpWhile, ir.OpDoWhile, ir.OpRunAs:
+			scope.push()
+			a.collectStaticFinalFieldWrites(typ, inst.Then, scope, model, assigned)
+			scope.pop()
+			if inst.Op == ir.OpIf {
+				scope.push()
+				a.collectStaticFinalFieldWrites(typ, inst.Else, scope, model, assigned)
+				scope.pop()
+			}
+		case ir.OpFor:
+			scope.push()
+			inits := inst.Inits
+			if len(inits) == 0 && inst.Init != nil {
+				inits = []ir.Instruction{*inst.Init}
+			}
+			a.collectStaticFinalFieldWrites(typ, inits, scope, model, assigned)
+			a.collectStaticFinalFieldWrites(typ, inst.Then, scope, model, assigned)
+			updates := inst.Updates
+			if len(updates) == 0 && inst.Update != nil {
+				updates = []ir.Instruction{*inst.Update}
+			}
+			a.collectStaticFinalFieldWrites(typ, updates, scope, model, assigned)
+			scope.pop()
+		case ir.OpForEach:
+			scope.push()
+			scope.declare(inst.Name, resolveNestedTypeReference(model, typ.Name, inst.Type))
+			a.collectStaticFinalFieldWrites(typ, inst.Then, scope, model, assigned)
+			scope.pop()
+		case ir.OpTry:
+			scope.push()
+			a.collectStaticFinalFieldWrites(typ, inst.Then, scope, model, assigned)
+			scope.pop()
+			for _, catchClause := range catchClauses(inst) {
+				scope.push()
+				if catchClause.Name != "" {
+					catchType := "Exception"
+					if len(catchClause.Types) > 0 {
+						catchType = catchClause.Types[0]
+					}
+					scope.declare(catchClause.Name, catchType)
+				}
+				a.collectStaticFinalFieldWrites(typ, catchClause.Body, scope, model, assigned)
+				scope.pop()
+			}
+			scope.push()
+			a.collectStaticFinalFieldWrites(typ, inst.Finally, scope, model, assigned)
+			scope.pop()
+		case ir.OpSwitch:
+			for _, switchCase := range inst.Cases {
+				scope.push()
+				for _, expr := range switchCase.Exprs {
+					if caseType, binding, ok := irSwitchTypeCase(expr); ok {
+						scope.declare(binding, caseType)
+					}
+				}
+				a.collectStaticFinalFieldWrites(typ, switchCase.Body, scope, model, assigned)
+				scope.pop()
+			}
+		}
+	}
+}
+
 func (s irSemaScope) flat() map[string]string {
 	out := make(map[string]string)
 	for _, frame := range s.frames {
@@ -1000,15 +1178,21 @@ func (a *Analyzer) semaUpsertSelectorAllowed(operandType, selector string) bool 
 	if !qualified || objectName == "" || !strings.EqualFold(selectorObject, objectName) || fieldName == "" {
 		return false
 	}
+	foundObject := false
 	for _, object := range a.queryDeclaredObjects {
 		if !strings.EqualFold(object.Name, objectName) {
 			continue
 		}
+		foundObject = true
 		for _, field := range object.Fields {
 			if strings.EqualFold(field.Name, fieldName) {
-				return field.ExternalID || field.IDLookup
+				if field.ExternalID || field.IDLookup {
+					return true
+				}
 			}
 		}
+	}
+	if foundObject {
 		return false
 	}
 	// Do not infer a selector capability from a field name. An unavailable
@@ -1191,6 +1375,9 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 func (a *Analyzer) checkIRAssignmentTarget(typ typesys.TypeSymbol, member typesys.MemberSymbol, name string, scope irSemaScope, pos, bodyOffset int, source string, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	if strings.Contains(name, "?.") {
 		return []diagnostic.Diagnostic{typeContractDiagnostic(typ, member, "safe navigation cannot be an assignment target", bodyOffset+pos, bodyOffset+pos+max(1, len(name)), source)}
+	}
+	if !strings.Contains(name, ".") && scope.hasNonFieldBinding(name) {
+		return nil
 	}
 	if target, ok := semaResolveFieldPath(model, typ.Name, name); ok && target.member.Kind == apexast.DeclarationProperty && !typeContractPropertyHasAccessor(target.member, "set") {
 		return []diagnostic.Diagnostic{typeContractDiagnostic(typ, member, "property has no setter", bodyOffset+pos, bodyOffset+pos+max(1, len(name)), source)}
@@ -2771,6 +2958,16 @@ type semaLocal struct {
 type semaScopeModel struct {
 	base   map[string]string
 	locals []semaLocal
+}
+
+func (s semaScopeModel) localVisibleAt(name string, pos int) bool {
+	key := normalizeName(name)
+	for _, local := range s.locals {
+		if normalizeName(local.name) == key && pos >= local.start && pos <= local.scopeEnd {
+			return true
+		}
+	}
+	return false
 }
 
 func (a *Analyzer) collectBodyScopes(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, base map[string]string, model *semaTypeMemberView) (semaScopeModel, []diagnostic.Diagnostic) {

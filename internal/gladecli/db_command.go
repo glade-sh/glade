@@ -447,7 +447,7 @@ func writeDBUIReadyFile(path, addr, dbPath, root, envName string) error {
 		return err
 	}
 	data = append(data, '\n')
-	return os.WriteFile(path, data, 0o644)
+	return writeReadyFileAtomically(path, data, 0o644, os.Rename)
 }
 
 func printDBUIStartupSummary(w io.Writer, url, addr, dbPath, root string) {

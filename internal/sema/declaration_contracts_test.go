@@ -444,6 +444,140 @@ func TestDeclarationContractRejectsStaticAndFinalFieldMisuse(t *testing.T) {
 	}
 }
 
+func TestDeclarationContractAllowsStaticFinalAssignmentInStaticInitializer(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public static final String Value;
+  static {
+    Value = 'initialized';
+  }
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("static initializer assignment to static final field was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestDeclarationContractAllowsStaticFinalDeclarationInitialization(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public static final String Value = 'initialized'; }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("static final declaration initialization was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestDeclarationContractRejectsStaticFinalReassignmentInSecondStaticInitializer(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public static final String Value;
+  static {
+    Value = 'initialized';
+  }
+  static {
+    Value = 'reassigned';
+  }
+}`,
+	})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA027") {
+		t.Fatalf("second static initializer assignment to static final field was accepted: %#v", result.Diagnostics)
+	}
+}
+
+func TestDeclarationContractIgnoresAnnotationArgumentsWhenTrackingStaticFinalInitialization(t *testing.T) {
+	source := `
+public class Probe {
+  @AuraEnabled(cacheable=true)
+  public static final String Value;
+  static {
+    Value = 'first';
+  }
+  static {
+    Value = 'second';
+  }
+}`
+	result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
+	var staticFinalDiagnostics []diagnostic.Diagnostic
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA027" {
+			staticFinalDiagnostics = append(staticFinalDiagnostics, diag)
+		}
+	}
+	if len(staticFinalDiagnostics) != 1 {
+		t.Fatalf("expected only the second static initializer assignment to be rejected, got %#v", result.Diagnostics)
+	}
+	secondAssignment := strings.LastIndex(source, "Value = 'second'")
+	if staticFinalDiagnostics[0].Range == nil || staticFinalDiagnostics[0].Range.Start.Offset != secondAssignment {
+		t.Fatalf("expected static-final diagnostic at second assignment offset %d, got %#v", secondAssignment, staticFinalDiagnostics)
+	}
+}
+
+func TestStaticFinalFieldDeclarationInitializerExcludesAnnotationArguments(t *testing.T) {
+	source := "@AuraEnabled(cacheable=true) public static final String Value;"
+	member := typesys.MemberSymbol{Range: diagnostic.Range{End: diagnostic.Position{Offset: len(source)}}}
+	if semaStaticFinalFieldHasDeclarationInitializer(member, source) {
+		t.Fatalf("annotation argument was mistaken for a static-final declaration initializer")
+	}
+}
+
+func TestDeclarationContractRejectsStaticFinalReassignmentAfterLaterInnerLocalShadow(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public static final String Value;
+  static {
+    Value = 'first';
+    if (true) {
+      String Value;
+      Value = 'inner';
+    }
+  }
+  static {
+    Value = 'second';
+  }
+}`,
+	})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA027") {
+		t.Fatalf("static final reassignment after an inner local shadow was accepted: %#v", result.Diagnostics)
+	}
+}
+
+func TestDeclarationContractAllowsStaticFinalInitializationAfterSameNamedLocalAssignment(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public static final String Value;
+  static {
+    String Value;
+    Value = 'local';
+  }
+  static {
+    Value = 'initialized';
+  }
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("same-named local assignment prevented static final initialization: %#v", result.Diagnostics)
+	}
+}
+
+func TestDeclarationContractRejectsStaticFinalReassignmentAfterDeclarationInitialization(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public static final String Value = 'initial';
+  static {
+    Value = 'reassigned';
+  }
+}`,
+	})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA027") {
+		t.Fatalf("static initializer reassignment after declaration initialization was accepted: %#v", result.Diagnostics)
+	}
+}
+
 func TestDeclarationContractInnerStaticInitializerAndSharing(t *testing.T) {
 	t.Parallel()
 	innerInit := analyzeDeclarationProject(t, map[string]string{

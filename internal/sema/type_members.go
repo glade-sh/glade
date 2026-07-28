@@ -986,7 +986,7 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 				out[key] = members
 			}
 		}
-		if short := shortNestedTypeName(typ.Name); !semaRequiresQualifiedDependencyName(typ) && short != typ.Name {
+		if short := shortNestedTypeName(typ.Name); !semaGeneratedFlowInterviewType(typ) && !semaRequiresQualifiedDependencyName(typ) && short != typ.Name {
 			shortAliases[normalizeName(short)] = append(shortAliases[normalizeName(short)], typ.Name)
 		}
 	}
@@ -1143,6 +1143,10 @@ func semaRequiresQualifiedDependencyName(typ typesys.TypeSymbol) bool {
 	return semaRequiresQualifiedDependencyNameValues(typ.Namespace, typ.Dependency, typ.Artifact, typ.SourceRoot)
 }
 
+func semaGeneratedFlowInterviewType(typ typesys.TypeSymbol) bool {
+	return strings.EqualFold(typ.SuperClass, "Flow.Interview") && strings.HasPrefix(strings.ToLower(typ.Name), "flow.interview.")
+}
+
 func semaCloneMemberSymbol(member typesys.MemberSymbol) typesys.MemberSymbol {
 	member.Modifiers = append([]string(nil), member.Modifiers...)
 	member.Annotations = append([]apexast.Annotation(nil), member.Annotations...)
@@ -1251,7 +1255,7 @@ func semaTypeMemberCandidateKeys(index typesys.Index) []string {
 		if typ.Namespace != "" {
 			keys = append(keys, normalizeName(typ.Namespace+"."+typ.Name))
 		}
-		if short := shortNestedTypeName(typ.Name); !semaRequiresQualifiedDependencyName(typ) && short != typ.Name {
+		if short := shortNestedTypeName(typ.Name); !semaGeneratedFlowInterviewType(typ) && !semaRequiresQualifiedDependencyName(typ) && short != typ.Name {
 			keys = append(keys, normalizeName(short))
 		}
 	}

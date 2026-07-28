@@ -2182,7 +2182,7 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 					Range:    &member.Range,
 				})
 			}
-			if !hasModifier(member.Modifiers, "override") && hasOverridden {
+			if !hasModifier(member.Modifiers, "override") && hasOverridden && !hasModifier(overridden.Modifiers, "abstract") {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
 					Code:     "GLADESEMA016",
@@ -2497,6 +2497,7 @@ func databaseBatchableStartReturnCompatible(itemType, returnType string, model *
 func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	body := scan.body
+	assignedStaticFinalFields := a.staticFinalFieldsAssignedBefore(typ, member, source, model, scopes.base)
 	for _, match := range scan.assignmentMatches {
 		if semaOffsetInIgnoredText(body, match[0]) {
 			continue
@@ -2514,10 +2515,14 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 		if semaAssignmentLooksLikeLocalDeclaration(body, match[2]) {
 			continue
 		}
-		if field, found := semaResolveField(model, typ.Name, target, make(map[string]bool)); found &&
+		if field, found := semaResolveField(model, typ.Name, target, make(map[string]bool)); !scopes.localVisibleAt(target, match[2]) && found &&
 			hasModifier(field.member.Modifiers, "final") && hasModifier(field.member.Modifiers, "static") {
-			diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, target, "final static fields can only be assigned in their declaration", bodyOffset+match[2], bodyOffset+match[3], source))
-			continue
+			fieldKey := normalizeName(target)
+			if !semaStaticInitializer(member) || assignedStaticFinalFields[fieldKey] {
+				diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, target, "final static fields can only be assigned in their declaration", bodyOffset+match[2], bodyOffset+match[3], source))
+				continue
+			}
+			assignedStaticFinalFields[fieldKey] = true
 		}
 		targetType, ok := scopes.visibleAt(target, match[2])
 		if ok {

@@ -98,6 +98,21 @@ public class Probe {
 	}
 }
 
+func TestSwitchContractsAllowQualifiedPlatformEnumConstants(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public void run(JSONToken token, Schema.DisplayType displayType) {
+    switch on token { when JSONToken.START_OBJECT { } when else { } }
+    switch on displayType { when Schema.DisplayType.String { } when else { } }
+  }
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("qualified platform enum constants were rejected: %#v", result.Diagnostics)
+	}
+}
+
 func TestSwitchContractsResolveNestedEnumFromGenericReturn(t *testing.T) {
 	result := analyzeDeclarationProject(t, map[string]string{
 		"Probe.cls": `

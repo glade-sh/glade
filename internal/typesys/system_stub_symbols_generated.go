@@ -114394,11 +114394,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 	},
 	{
-		Name:       "Messaging.InboundEmailHandler",
-		SuperClass: "Object",
-		ConstructorSpecs: []StandardConstructorSpec{
-			{Parameters: []StandardParameterSpec{}},
-		},
+		Name: "Messaging.InboundEmailHandler",
+		Kind: apexast.DeclarationInterface,
 		Methods: []StandardMethodSpec{
 			{Name: "handleInboundEmail", ReturnType: "Messaging.InboundEmailResult", ParameterSpecs: []StandardParameterSpec{{Name: "param1", Type: "Messaging.InboundEmail"}, {Name: "param2", Type: "Messaging.InboundEnvelope"}}},
 		},
@@ -144316,7 +144313,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 	},
 	{
 		Name:       "UnsupportedOperationException",
-		SuperClass: "Object",
+		SuperClass: "Exception",
 		ConstructorSpecs: []StandardConstructorSpec{
 			{Parameters: []StandardParameterSpec{}},
 			{Parameters: []StandardParameterSpec{{Name: "param1", Type: "Exception"}}},

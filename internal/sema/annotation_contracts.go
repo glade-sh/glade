@@ -25,6 +25,9 @@ func checkAnnotationCatalog(index typesys.Index) []diagnostic.Diagnostic {
 		}
 		diagnostics = append(diagnostics, annotationCatalogDiagnostics(typ.File, typ.Range, typ.Annotations)...)
 		for _, member := range typ.Members {
+			if member.Kind == apexast.DeclarationClass || member.Kind == apexast.DeclarationInterface || member.Kind == apexast.DeclarationEnum {
+				continue
+			}
 			diagnostics = append(diagnostics, annotationCatalogDiagnostics(typ.File, member.Range, member.Annotations)...)
 			for _, parameter := range member.Parameters {
 				diagnostics = append(diagnostics, annotationCatalogDiagnostics(typ.File, parameter.Range, parameter.Annotations)...)
@@ -110,6 +113,9 @@ func checkAnnotationContracts(index typesys.Index) []diagnostic.Diagnostic {
 		invocableMethods := 0
 		auraMethods := map[string]int{}
 		for _, member := range typ.Members {
+			if member.Kind == apexast.DeclarationClass || member.Kind == apexast.DeclarationInterface || member.Kind == apexast.DeclarationEnum {
+				continue
+			}
 			for _, annotation := range member.Annotations {
 				if strings.EqualFold(annotation.Name, "TestSetup") {
 					testSetups++
@@ -150,12 +156,12 @@ func checkTypeAnnotationContracts(typ typesys.TypeSymbol) []diagnostic.Diagnosti
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "IsTest is only valid on top-level classes with supported properties"))
 			}
 		case strings.EqualFold(annotation.Name, "JsonAccess"):
-			if typ.Kind != apexast.DeclarationClass || len(annotation.Arguments) == 0 || !annotationBooleanArguments(annotation, "serializable", "deserializable") {
-				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "JsonAccess is only valid on classes with boolean properties"))
+			if typ.Kind != apexast.DeclarationClass || !jsonAccessArgumentsAllowed(annotation) {
+				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "JsonAccess is only valid on classes with supported serialization modes"))
 			}
 		case strings.EqualFold(annotation.Name, "NamespaceAccessible"):
-			if typ.Kind != apexast.DeclarationClass || !hasEitherModifier(typ.Modifiers, "public", "global") {
-				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "NamespaceAccessible is only valid on public or global classes"))
+			if annotationAPIVersionAtLeast(typ, 50) && ((typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface) || !hasEitherModifier(typ.Modifiers, "public", "global")) {
+				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "NamespaceAccessible is only valid on public or global classes and interfaces at API version 50.0 or later"))
 			}
 		case strings.EqualFold(annotation.Name, "RestResource"):
 			if typ.Kind != apexast.DeclarationClass {
@@ -173,7 +179,7 @@ func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.Membe
 	for _, annotation := range member.Annotations {
 		switch {
 		case strings.EqualFold(annotation.Name, "IsTest"):
-			if member.Kind != apexast.DeclarationMethod || !typ.IsTest || !hasModifier(member.Modifiers, "static") || len(member.Parameters) != 0 || len(annotation.Arguments) != 0 {
+			if member.Kind != apexast.DeclarationMethod || !typ.IsTest || !hasModifier(member.Modifiers, "static") || len(member.Parameters) != 0 || !isTestMethodArgumentsAllowed(typ, annotation) {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "IsTest methods must be static no-argument methods inside an IsTest class"))
 			}
 		case strings.EqualFold(annotation.Name, "TestSetup"):
@@ -190,8 +196,8 @@ func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.Membe
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "AuraEnabled is only valid on methods, fields, and properties with supported property values"))
 			}
 		case strings.EqualFold(annotation.Name, "InvocableMethod"):
-			if member.Kind != apexast.DeclarationMethod || !hasEitherModifier(member.Modifiers, "public", "global") || !hasModifier(member.Modifiers, "static") || len(member.Parameters) != 1 || !isListType(member.Parameters[0].Type) || (!strings.EqualFold(member.Type, "void") && !isListType(member.Type)) || !invocableMethodArgumentsAllowed(annotation) {
-				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "InvocableMethod must be a public or global static method with one List parameter and a void or List return type"))
+			if member.Kind != apexast.DeclarationMethod || !hasEitherModifier(member.Modifiers, "public", "global") || !hasModifier(member.Modifiers, "static") || (len(member.Parameters) == 1 && !isListType(member.Parameters[0].Type)) || len(member.Parameters) > 1 || (!strings.EqualFold(member.Type, "void") && !isListType(member.Type)) || !invocableMethodArgumentsAllowed(annotation) {
+				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "InvocableMethod must be a public or global static method with zero or one List parameter and a void or List return type"))
 			}
 			for _, other := range member.Annotations {
 				if !strings.EqualFold(other.Name, "InvocableMethod") && !strings.EqualFold(other.Name, "Deprecated") {
@@ -221,7 +227,7 @@ func checkMemberAnnotationContracts(typ typesys.TypeSymbol, member typesys.Membe
 		case strings.EqualFold(annotation.Name, "JsonAccess"):
 			diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "JsonAccess is only valid on classes with serialization control properties"))
 		case strings.EqualFold(annotation.Name, "NamespaceAccessible"):
-			if (!hasAnnotation(typ.Annotations, "NamespaceAccessible") && !hasModifier(typ.Modifiers, "global")) || hasAnnotation(member.Annotations, "AuraEnabled") || hasAnnotation(member.Annotations, "InvocableMethod") {
+			if annotationAPIVersionAtLeast(typ, 50) && ((!hasAnnotation(typ.Annotations, "NamespaceAccessible") && !hasModifier(typ.Modifiers, "global")) || hasAnnotation(member.Annotations, "AuraEnabled") || hasAnnotation(member.Annotations, "InvocableMethod")) {
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "NamespaceAccessible methods require a NamespaceAccessible or global owner and cannot be combined with AuraEnabled or InvocableMethod"))
 			}
 		}
@@ -254,7 +260,7 @@ func annotationContractDiagnostic(file string, r diagnostic.Range, detail string
 func annotationBooleanArguments(annotation apexast.Annotation, names ...string) bool {
 	allowed := make(map[string]struct{}, len(names))
 	for _, name := range names {
-		allowed[name] = struct{}{}
+		allowed[strings.ToLower(name)] = struct{}{}
 	}
 	for _, argument := range annotation.Arguments {
 		if argument.Name == "" {
@@ -265,6 +271,36 @@ func annotationBooleanArguments(annotation apexast.Annotation, names ...string) 
 		}
 	}
 	return true
+}
+
+func jsonAccessArgumentsAllowed(annotation apexast.Annotation) bool {
+	if len(annotation.Arguments) == 0 {
+		return false
+	}
+	for _, argument := range annotation.Arguments {
+		if !strings.EqualFold(argument.Name, "serializable") && !strings.EqualFold(argument.Name, "deserializable") {
+			return false
+		}
+		value, ok := apexStringLiteralValue(argument.Value)
+		if !ok {
+			return false
+		}
+		switch strings.ToLower(value) {
+		case "always", "samenamespace", "samepackage", "never":
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+func annotationAPIVersionAtLeast(typ typesys.TypeSymbol, minimum float64) bool {
+	version, err := strconv.ParseFloat(strings.TrimSpace(typ.EffectiveAPIVersion), 64)
+	return err == nil && version >= minimum
+}
+
+func isTestMethodArgumentsAllowed(typ typesys.TypeSymbol, annotation apexast.Annotation) bool {
+	return annotationBooleanArguments(annotation, "SeeAllData") && (len(annotation.Arguments) == 0 || annotationAPIVersionAtLeast(typ, 24))
 }
 
 func invocableMethodArgumentsAllowed(annotation apexast.Annotation) bool {

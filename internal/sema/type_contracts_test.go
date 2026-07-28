@@ -151,6 +151,22 @@ func TestTypeContractRejectsPropertyCapabilityAndSafeNavigationMisuse(t *testing
 	}
 }
 
+func TestTypeContractAllowsLocalToShadowGetOnlyPropertyOnAssignment(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public String VALUE { get; }
+  public void run() {
+    String value;
+    VaLuE = 'local';
+  }
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("local assignment was resolved as a get-only property: %#v", result.Diagnostics)
+	}
+}
+
 func TestTypeContractAcceptsSafeNavigationEqualityRead(t *testing.T) {
 	result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": `
 public class Probe {

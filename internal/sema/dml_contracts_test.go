@@ -65,3 +65,20 @@ public class Probe {
 		})
 	}
 }
+
+func TestDMLContractsAllowUpsertExternalIDFromMatchingDuplicateSchemaObject(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class Probe {
+  public void run() {
+    Account account = new Account();
+    upsert account Account.External_Key__c;
+  }
+}
+`, schema.Schema{Objects: []schema.Object{
+		{Name: "Account", Fields: []schema.Field{{Name: "External_Key__c", Type: "Text"}}},
+		{Name: "Account", Fields: []schema.Field{{Name: "External_Key__c", Type: "Text", ExternalID: true}}},
+	}})
+	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA034") {
+		t.Fatalf("external ID from a matching schema object was rejected: %#v", result.Diagnostics)
+	}
+}
