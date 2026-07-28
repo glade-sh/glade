@@ -98,6 +98,32 @@ func TestTypeContractRejectsInvalidOperators(t *testing.T) {
 	}
 }
 
+func TestTypeContractsAllowTimeOrdering(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"TimeOrdering.cls": `
+public class TimeOrdering {
+  public Integer compare(Time left, Time right) {
+    return left < right ? -1 : 1;
+  }
+}
+`,
+	})
+	assertNoDiagnosticContaining(t, result, "GLADESEMA019", "ordering operator")
+}
+
+func TestTypeContractsAllowDateAndDatetimeOrdering(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"DateOrdering.cls": `
+public class DateOrdering {
+  public Boolean compare(Date day, Datetime instant) {
+    return day <= instant && instant > day;
+  }
+}
+`,
+	})
+	assertNoDiagnosticContaining(t, result, "GLADESEMA019", "ordering operator")
+}
+
 func TestTypeContractAllowsIterableInstanceofAtAllTestedAPIVersions(t *testing.T) {
 	for _, apiVersion := range []string{"59.0", "60.0"} {
 		t.Run(apiVersion, func(t *testing.T) {

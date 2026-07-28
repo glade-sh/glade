@@ -64,7 +64,7 @@ func TestParseSupportsMethodCallBindExpression(t *testing.T) {
 }
 
 func TestParseSupportsConcatenatedMethodCallBindExpression(t *testing.T) {
-	const bind = ":NpdbRelatedRecordsCleanUpBatch.class.getName() + ' Test'"
+	const bind = ":ScheduledCleanupBatch.class.getName() + ' Test'"
 	query, err := Parse("SELECT COUNT() FROM CronJobDetail WHERE Name = " + bind)
 	if err != nil {
 		t.Fatalf("Parse: %v", err)

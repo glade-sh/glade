@@ -1,6 +1,15 @@
 package sema
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/glade-sh/glade/internal/project"
+	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/typesys"
+)
 
 func TestInheritanceContractsRejectInvalidInheritanceTargets(t *testing.T) {
 	t.Parallel()
@@ -55,6 +64,105 @@ public class Child extends Base {
 	if !result.HasErrors() {
 		t.Fatalf("expected missing override diagnostic, got %#v", result.Diagnostics)
 	}
+}
+
+func TestInheritanceContractsRespectCrossNamespaceMethodVisibility(t *testing.T) {
+	result := analyzeCrossNamespaceInheritanceFixture(t, `
+public class MockProduct extends dep.ProductBase {
+  public void setVariants(List<String> values) {}
+  public override void setGlobalVariants(List<String> values) {}
+}
+`)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA016" && (strings.Contains(diag.Message, "setVariants") || strings.Contains(diag.Message, "setGlobalVariants")) {
+			t.Fatalf("cross-namespace method visibility produced an override diagnostic: %#v", result.Diagnostics)
+		}
+	}
+
+	missingOverride := analyzeCrossNamespaceInheritanceFixture(t, `
+public class MockProduct extends dep.ProductBase {
+  public void setGlobalVariants(List<String> values) {}
+}
+`)
+	if !hasDiagnosticCode(missingOverride.Diagnostics, "GLADESEMA016") {
+		t.Fatalf("cross-namespace global method did not require override: %#v", missingOverride.Diagnostics)
+	}
+}
+
+func TestInheritanceContractsAllowTestVisiblePrivateOverrideInTestSubclass(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Base.cls": `
+public virtual class Base {
+  @TestVisible
+  private virtual void run() {}
+}
+`,
+		"BaseTest.cls": `
+@IsTest
+private class BaseTest {
+  private class Child extends Base {
+    private override void run() {}
+  }
+}
+`,
+	})
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA016" && strings.Contains(diag.Message, "run") {
+			t.Fatalf("@TestVisible private virtual method was not visible to a test subclass: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestInheritanceContractsRejectCrossNamespaceTestVisiblePrivateOverride(t *testing.T) {
+	result := analyzeCrossNamespaceInheritanceFixture(t, `
+@IsTest
+private class MockProduct extends dep.ProductBase {
+  private override void setTestOnlyVariants(List<String> values) {}
+}
+`)
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA016") {
+		t.Fatalf("cross-namespace @TestVisible private method was treated as inherited: %#v", result.Diagnostics)
+	}
+}
+
+func analyzeCrossNamespaceInheritanceFixture(t *testing.T, childSource string) Result {
+	t.Helper()
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dependency")
+	consumerRoot := filepath.Join(root, "consumer")
+	if err := os.MkdirAll(depRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(consumerRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	basePath := filepath.Join(depRoot, "ProductBase.cls")
+	childPath := filepath.Join(consumerRoot, "MockProduct.cls")
+	writeSemaFile(t, basePath, `
+global virtual class ProductBase {
+  public virtual void setVariants(List<String> values) {}
+  global virtual void setGlobalVariants(List<String> values) {}
+  @TestVisible private virtual void setTestOnlyVariants(List<String> values) {}
+}
+`)
+	writeSemaFile(t, childPath, childSource)
+	dependency := project.Project{
+		Root:      depRoot,
+		Namespace: "dep",
+		ApexFiles: []string{basePath},
+	}
+	index := typesys.Build(project.Project{
+		Root:      consumerRoot,
+		Namespace: "consumer",
+		ApexFiles: []string{childPath},
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace:  "dep",
+			SourceRoot: depRoot,
+			Project:    &dependency,
+			Status:     "loaded",
+		}},
+	}, schema.Schema{})
+	return Analyze(index)
 }
 
 func TestInheritanceContractsAllowObjectEqualityMethodsWithoutOverride(t *testing.T) {

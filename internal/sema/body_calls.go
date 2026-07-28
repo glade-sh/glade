@@ -2411,16 +2411,20 @@ func semaExplicitSchemaSObjectMembers(typeName string, model *semaTypeMemberView
 	if !ok || schemaName == "" {
 		return typeMembers{}, "", false
 	}
+	qualifiedKey := normalizeName("Schema." + schemaName)
+	if members, ok := model.lookup(qualifiedKey); ok && members.sobject {
+		return semaEnsureStandardSObjectTypeMembers(model, qualifiedKey, members), qualifiedKey, true
+	}
 	schemaKey := normalizeName(schemaName)
 	if members, ok := model.lookup(schemaKey); ok && members.sobject {
-		return semaEnsureStandardSObjectTypeMembers(model, schemaKey, members), schemaKey, true
+		return semaEnsureStandardSObjectTypeMembers(model, qualifiedKey, members), qualifiedKey, true
 	}
 	if objectName, ok := semaStandardSObjectNameForKey(schemaKey); ok {
 		members := semaBuildStandardSObjectMembers(objectName)
-		model.storeHydrated(schemaKey, members)
-		return members, schemaKey, true
+		model.storeHydrated(qualifiedKey, members)
+		return members, qualifiedKey, true
 	}
-	return typeMembers{}, schemaKey, false
+	return typeMembers{}, qualifiedKey, false
 }
 
 func semaSchemaQualifiedTypeName(typeName string) (string, bool) {

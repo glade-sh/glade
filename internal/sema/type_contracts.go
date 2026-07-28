@@ -203,8 +203,7 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 					appendDiagnostic("operator + requires numeric or String operands")
 				}
 			case "<", "<=", ">", ">=":
-				dateLike := (strings.EqualFold(left, "Date") && strings.EqualFold(right, "Date")) || (strings.EqualFold(left, "Datetime") && strings.EqualFold(right, "Datetime"))
-				if left != "" && right != "" && !dateLike && (!isSemaNumericType(left) || !isSemaNumericType(right)) {
+				if left != "" && right != "" && !semaOrderablePrimitivePair(left, right) && (!isSemaNumericType(left) || !isSemaNumericType(right)) {
 					appendDiagnostic("ordering operator requires numeric operands")
 				}
 			case "instanceof":
@@ -260,6 +259,23 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 	}
 	walk(expr)
 	return diagnostics
+}
+
+func semaOrderablePrimitivePair(left, right string) bool {
+	left = strings.ToLower(strings.TrimSpace(left))
+	right = strings.ToLower(strings.TrimSpace(right))
+	if (left == "date" || left == "datetime") && (right == "date" || right == "datetime") {
+		return true
+	}
+	if left != right {
+		return false
+	}
+	switch left {
+	case "time", "string", "id":
+		return true
+	default:
+		return false
+	}
 }
 
 func semaDateDayArithmetic(operator, left, right string) bool {

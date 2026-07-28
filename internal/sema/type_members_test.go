@@ -770,8 +770,8 @@ public class EmailTemplateWrapper extends EmailTemplate {
 			count++
 		}
 	}
-	if count != 1 {
-		t.Fatalf("cross-phase override diagnostics = %d, want legacy one-worker result 1: %#v", count, result.Diagnostics)
+	if count != 0 {
+		t.Fatalf("explicit Schema.EmailTemplate hydration shadowed the project EmailTemplate class: %#v", result.Diagnostics)
 	}
 }
 
@@ -850,11 +850,6 @@ func TestAnalyzeDuplicateOverlayHydrationPreservesUnknownCallOrder(t *testing.T)
 		return *semaRange(orderedCallsSource, start, start+len(callee))
 	}
 	want := []identity{
-		{
-			code:    "GLADESEMA008",
-			message: `method "run" calls unknown method "EmailTemplate.known"`,
-			range_:  expectedRange("EmailTemplate.known"),
-		},
 		{
 			code:    "GLADESEMA008",
 			message: `method "run" calls unknown method "EmailTemplate.missingFirst"`,
@@ -1138,29 +1133,8 @@ public class EmailTemplateWrapper extends EmailTemplate {
 	}
 
 	inheritanceDiagnostics := analyzer.checkInheritanceContractsWithView(index, primary, nil)
-	if len(inheritanceDiagnostics) != 1 {
-		t.Fatalf("cross-phase inheritance diagnostics = %d, want 1: %#v", len(inheritanceDiagnostics), inheritanceDiagnostics)
-	}
-	var getIDRange diagnostic.Range
-	for _, typ := range index.Types {
-		if typ.Name != "EmailTemplateWrapper" {
-			continue
-		}
-		for _, member := range typ.Members {
-			if member.Kind == apexast.DeclarationMethod && member.Name == "getId" {
-				getIDRange = member.Range
-			}
-		}
-	}
-	want := diagnostic.Diagnostic{
-		Severity: diagnostic.Error,
-		Code:     "GLADESEMA016",
-		Message:  `method "getId" is marked override but no inherited method has the same signature`,
-		File:     wrapperFile,
-		Range:    &getIDRange,
-	}
-	if !reflect.DeepEqual(inheritanceDiagnostics[0], want) {
-		t.Fatalf("cross-phase inheritance diagnostic\nwant: %#v\n got: %#v", want, inheritanceDiagnostics[0])
+	if len(inheritanceDiagnostics) != 0 {
+		t.Fatalf("explicit Schema.EmailTemplate hydration shadowed the project superclass: %#v", inheritanceDiagnostics)
 	}
 }
 
@@ -1397,23 +1371,23 @@ func TestCountExtractableMethodBodyRangesDoesNotAllocatePerAccessor(t *testing.T
 
 func TestTypeMemberResolutionPrefersTopLevelTypeOverUnrelatedNestedShortName(t *testing.T) {
 	result := analyzeDeclarationProject(t, map[string]string{
-		"Caqh.cls": `
-public class Caqh {
-  public class DeaRegistration {}
+		"ExternalProfile.cls": `
+public class ExternalProfile {
+  public class LicenseRecord {}
 }
 `,
-		"DeaRegistration.cls": `
-public class DeaRegistration {
-  public static List<DeaRegistration> parseList(List<Object> values) {
-    return new List<DeaRegistration>();
+		"LicenseRecord.cls": `
+public class LicenseRecord {
+  public static List<LicenseRecord> parseList(List<Object> values) {
+    return new List<LicenseRecord>();
   }
 }
 `,
-		"ProfessionalIdentificationNumbers.cls": `
-public class ProfessionalIdentificationNumbers {
-  public List<DeaRegistration> deaRegistration;
-  public static List<DeaRegistration> parse(List<Object> values) {
-    return DeaRegistration.parseList(values);
+		"ProviderIdentifiers.cls": `
+public class ProviderIdentifiers {
+  public List<LicenseRecord> licenses;
+  public static List<LicenseRecord> parse(List<Object> values) {
+    return LicenseRecord.parseList(values);
   }
 }
 `,

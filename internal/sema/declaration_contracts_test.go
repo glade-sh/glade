@@ -470,13 +470,13 @@ public class Probe {
   }
   public void run(List<ScanRecord> scanRecords) {
     for (ScanRecord scanRecord : scanRecords) {
-      List<Sanction_Exclusion_Scan_Result__c> results =
-        (List<Sanction_Exclusion_Scan_Result__c>) scanRecord.getSObjects('Results__r');
+      List<Audit_Result__c> results =
+        (List<Audit_Result__c>) scanRecord.getSObjects('AuditResults__r');
       if (results?.isEmpty() == false) {
         for (Integer i = 0; i < results.size(); i++) {
           try {
-            Sanction_Exclusion_Scan_Result__c result = results[i];
-            result.Is_Ignored__c = true;
+            Audit_Result__c result = results[i];
+            result.Reviewed__c = true;
           } catch (Exception e) {
             break;
           }

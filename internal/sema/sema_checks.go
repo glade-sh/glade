@@ -2341,7 +2341,9 @@ func overridableInheritedMethod(model *semaTypeMemberView, typ typesys.TypeSymbo
 			break
 		}
 		for _, candidate := range members.methods[normalizeName(member.Name)] {
-			if sameSemaSignature(candidate, member) && (hasModifier(candidate.Modifiers, "virtual") || hasModifier(candidate.Modifiers, "abstract")) {
+			if sameSemaSignature(candidate, member) &&
+				(hasModifier(candidate.Modifiers, "virtual") || hasModifier(candidate.Modifiers, "abstract")) &&
+				semaInheritedMethodVisible(typ, members, candidate) {
 				return candidate, true, false
 			}
 		}
@@ -2351,6 +2353,18 @@ func overridableInheritedMethod(model *semaTypeMemberView, typ typesys.TypeSymbo
 		return typesys.MemberSymbol{Modifiers: []string{"public", "virtual"}}, true, true
 	}
 	return typesys.MemberSymbol{}, false, false
+}
+
+func semaInheritedMethodVisible(child typesys.TypeSymbol, owner typeMembers, member typesys.MemberSymbol) bool {
+	if hasModifier(member.Modifiers, "private") {
+		return strings.EqualFold(strings.TrimSpace(child.Namespace), strings.TrimSpace(owner.namespace)) &&
+			child.IsTest &&
+			hasAnnotation(member.Annotations, "TestVisible")
+	}
+	if strings.EqualFold(strings.TrimSpace(child.Namespace), strings.TrimSpace(owner.namespace)) {
+		return true
+	}
+	return hasModifier(member.Modifiers, "global") || hasModifier(member.Modifiers, "protected")
 }
 
 func semaOverriddenMethodFromDependency(model *semaTypeMemberView, typ typesys.TypeSymbol, member typesys.MemberSymbol) bool {
