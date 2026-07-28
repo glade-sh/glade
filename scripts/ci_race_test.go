@@ -19,11 +19,59 @@ import (
 )
 
 const (
-	playgroundGroupOne   = "TestExampleProjectsRunAnonymousGroupOne"
-	playgroundGroupTwo   = "TestExampleProjectsRunAnonymousGroupTwo"
-	playgroundGroupThree = "TestExampleProjectsRunAnonymousGroupThree"
-	playgroundGroupFour  = "TestExampleProjectsRunAnonymousGroupFour"
+	playgroundGroupOne             = "TestExampleProjectsRunAnonymousGroupOne"
+	playgroundGroupTwo             = "TestExampleProjectsRunAnonymousGroupTwo"
+	playgroundGroupThree           = "TestExampleProjectsRunAnonymousGroupThree"
+	playgroundGroupFour            = "TestExampleProjectsRunAnonymousGroupFour"
+	ciRaceStartupFallback          = 30 * time.Second
+	ciRacePostSignalCleanupReserve = 3 * time.Second
 )
+
+func ciRaceStartupDeadline(now, testDeadline time.Time, hasTestDeadline bool) time.Time {
+	if !hasTestDeadline {
+		return now.Add(ciRaceStartupFallback)
+	}
+	startupDeadline := testDeadline.Add(-ciRacePostSignalCleanupReserve)
+	if startupDeadline.Before(now) {
+		return now
+	}
+	return startupDeadline
+}
+
+func stopCIRaceCommand(cmd *exec.Cmd, waited <-chan error) {
+	if cmd.Process != nil {
+		_ = cmd.Process.Kill()
+	}
+	<-waited
+}
+
+func TestCIRaceStartupDeadlineUsesBoundedFallbackAndReservesSignalCleanup(t *testing.T) {
+	now := time.Date(2026, time.July, 27, 12, 0, 0, 0, time.UTC)
+	if got, want := ciRaceStartupDeadline(now, time.Time{}, false), now.Add(ciRaceStartupFallback); !got.Equal(want) {
+		t.Fatalf("no-deadline startup bound = %s, want %s", got, want)
+	}
+	testDeadline := now.Add(10 * time.Second)
+	if got, want := ciRaceStartupDeadline(now, testDeadline, true), testDeadline.Add(-ciRacePostSignalCleanupReserve); !got.Equal(want) {
+		t.Fatalf("test-deadline startup bound = %s, want %s", got, want)
+	}
+}
+
+func TestStopCIRaceCommandKillsAndWaits(t *testing.T) {
+	cmd := exec.Command("sleep", "300")
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	waited := make(chan error, 1)
+	go func() { waited <- cmd.Wait() }()
+
+	stopCIRaceCommand(cmd, waited)
+	if cmd.ProcessState == nil {
+		t.Fatal("race command was not reaped")
+	}
+	if err := cmd.Process.Signal(syscall.Signal(0)); err == nil {
+		t.Fatal("race command still accepts signals after cleanup")
+	}
+}
 
 func playgroundRaceDiscovery(extra ...string) string {
 	names := []string{playgroundGroupOne, playgroundGroupTwo, playgroundGroupThree, playgroundGroupFour, "TestAlpha", "TestBeta", "TestDelta", "TestEpsilon", "TestGamma"}
@@ -1367,14 +1415,21 @@ exit "$rc"
 			if err := cmd.Start(); err != nil {
 				t.Fatal(err)
 			}
-			deadline := time.Now().Add(5 * time.Second)
+			waited := make(chan error, 1)
+			go func() { waited <- cmd.Wait() }()
+			testDeadline, hasTestDeadline := t.Deadline()
+			deadline := ciRaceStartupDeadline(time.Now(), testDeadline, hasTestDeadline)
 			for {
 				if _, err := os.Stat(runnerPIDPath); err == nil {
 					break
 				}
+				select {
+				case err := <-waited:
+					t.Fatalf("direct lane exited before startup: %v:\n%s", err, output.String())
+				default:
+				}
 				if time.Now().After(deadline) {
-					_ = cmd.Process.Kill()
-					_ = cmd.Wait()
+					stopCIRaceCommand(cmd, waited)
 					t.Fatalf("direct lane did not start:\n%s", output.String())
 				}
 				time.Sleep(10 * time.Millisecond)
@@ -1382,8 +1437,6 @@ exit "$rc"
 			if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
 				t.Fatal(err)
 			}
-			waited := make(chan error, 1)
-			go func() { waited <- cmd.Wait() }()
 			select {
 			case err := <-waited:
 				if raceExitCode(err) != 143 {
@@ -1394,8 +1447,7 @@ exit "$rc"
 				if runnerPID := strings.TrimSpace(string(pidData)); runnerPID != "" {
 					_ = exec.Command("kill", "-TERM", runnerPID).Run()
 				}
-				_ = cmd.Process.Kill()
-				<-waited
+				stopCIRaceCommand(cmd, waited)
 				t.Fatal("signal did not promptly stop the active Apex resource lane")
 			}
 			entries, err := os.ReadDir(root)

@@ -555,6 +555,11 @@ func hasPlatformInheritedMethodSignature(typ typesys.TypeSymbol, member typesys.
 	superClass := normalizeName(typ.SuperClass)
 	name := normalizeName(member.Name)
 	switch superClass {
+	case "exception":
+		return len(member.Parameters) == 0 &&
+			name == "getmessage" &&
+			sameSemaSignatureType(member.Type, "String") &&
+			(hasModifier(member.Modifiers, "public") || hasModifier(member.Modifiers, "global"))
 	case "visualeditor.dynamicpicklist":
 		return len(member.Parameters) == 0 && (name == "getdefaultvalue" || name == "getvalues")
 	case "metadata.deploycallbackcontext":
@@ -2217,6 +2222,17 @@ func semaGeneratedPlatformMethodSignature(model *semaTypeMemberView, receiverTyp
 		return semaCollectionSignature{}, false
 	}
 	candidates := resolveMemberMethods(model, receiverType, method)
+	if semaKnownPlatformTypeReceiver(receiverType) && model != nil && model.state != nil && model.state.platform != nil && model.state.platform.platform != nil {
+		if platformSymbol, ok := model.state.platform.platform.symbolsByKey[normalizeName(receiverType)]; ok {
+			platformMembers := semaTypeMembersFromPlatformSymbol(*platformSymbol)
+			if platformMethods := platformMembers.methods[normalizeName(method)]; len(platformMethods) > 0 {
+				candidates = make([]resolvedMember, 0, len(platformMethods))
+				for _, platformMethod := range platformMethods {
+					candidates = append(candidates, resolvedMember{owner: platformMembers.name, member: platformMethod})
+				}
+			}
+		}
+	}
 	if len(candidates) == 0 {
 		canonical := semaCanonicalPlatformAlias(receiverType)
 		if !strings.EqualFold(canonical, receiverType) {
@@ -3716,6 +3732,7 @@ var platformTypes = []string{
 	"JSONParser",
 	"JSONToken",
 	"Limits",
+	"Location",
 	"LoggingLevel",
 	"Matcher",
 	"Messaging",

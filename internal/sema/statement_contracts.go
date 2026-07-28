@@ -249,6 +249,9 @@ func semaSwitchValueCaseAllowed(selectorType string, expr ir.Expr, model *semaTy
 	if expr.Kind != ir.ExprVariable || selectorType == "" {
 		return false
 	}
+	if enumType := semaEnumValuePathType(model, expr.Name); enumType != "" {
+		return sameSemaSignatureType(selectorType, enumType)
+	}
 	members, ok := model.lookup(normalizeName(selectorType))
 	if !ok || members.kind != apexast.DeclarationEnum {
 		return false

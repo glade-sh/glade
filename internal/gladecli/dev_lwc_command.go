@@ -524,7 +524,7 @@ func writeDevLWCReadyFile(path, addr string, p project.Project, selection devLWC
 		return err
 	}
 	data = append(data, '\n')
-	return os.WriteFile(path, data, 0o644)
+	return writeReadyFileAtomically(path, data, 0o644, os.Rename)
 }
 
 func devLWCSelectedURL(baseURL string, ctx lwcshell.PageContext) string {

@@ -309,6 +309,26 @@ func TestStandardPlatformSymbolsIncludeBaseExceptionConstructors(t *testing.T) {
 	requireStandardConstructor(t, exception, []string{"String", "Exception"})
 }
 
+func TestStandardPlatformSymbolsCorrectInboundEmailAndUnsupportedOperationExceptionShapes(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	inboundEmailHandler := requireStandardSymbol(t, symbols, "Messaging.InboundEmailHandler")
+	if inboundEmailHandler.Kind != apexast.DeclarationInterface {
+		t.Fatalf("Messaging.InboundEmailHandler kind = %q, want interface", inboundEmailHandler.Kind)
+	}
+	for _, member := range inboundEmailHandler.Members {
+		if member.Kind == apexast.DeclarationConstructor {
+			t.Fatalf("Messaging.InboundEmailHandler unexpectedly has constructor: %#v", member)
+		}
+	}
+	requireStandardMethod(t, inboundEmailHandler, "handleInboundEmail", []string{"Messaging.InboundEmail", "Messaging.InboundEnvelope"}, false)
+
+	unsupported := requireStandardSymbol(t, symbols, "UnsupportedOperationException")
+	if unsupported.SuperClass != "Exception" {
+		t.Fatalf("UnsupportedOperationException superclass = %q, want Exception", unsupported.SuperClass)
+	}
+}
+
 func TestStandardPlatformSymbolsIncludePassiveLimitsGetterShapeRows(t *testing.T) {
 	symbols := StandardPlatformSymbols()
 	limits := requireStandardSymbol(t, symbols, "Limits")

@@ -55,6 +55,37 @@ func TestAnnotationCatalogAllowsKnownProperties(t *testing.T) {
 	}
 }
 
+func TestJsonAccessAllowsDocumentedStringModes(t *testing.T) {
+	for _, mode := range []string{"always", "sameNamespace", "samePackage", "never"} {
+		t.Run(mode, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{
+				"Probe.cls": "@JsonAccess(serializable='" + mode + "' deserializable='" + mode + "') public class Probe {}",
+			})
+			if result.HasErrors() {
+				t.Fatalf("JsonAccess mode %q was rejected: %#v", mode, result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestJsonAccessRejectsUnknownStringModeOnceForNestedType(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe {
+  @JsonAccess(serializable='sometimes')
+  public class Nested {}
+}`,
+	})
+	count := 0
+	for _, diagnostic := range result.Diagnostics {
+		if diagnostic.Code == "GLADESEMA032" {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Fatalf("nested JsonAccess diagnostics = %d, want 1: %#v", count, result.Diagnostics)
+	}
+}
+
 func TestAnnotationCatalogAllowsDocumentedInvocableMethodProperties(t *testing.T) {
 	for name, properties := range map[string]string{
 		"icon property":                `iconName='slds:standard:account'`,
@@ -200,22 +231,20 @@ func TestSuppressWarningsRequiresSingleStringArgument(t *testing.T) {
 func TestAnnotationContractsRejectInvalidOwnersAndSignatures(t *testing.T) {
 	t.Parallel()
 	for name, source := range map[string]string{
-		"test method outside test class":            `public class Probe { @IsTest static void run() {} }`,
-		"test method requires no args":              `@IsTest private class Probe { @IsTest static void run(String value) {} }`,
-		"test method requires static":               `@IsTest private class Probe { @IsTest void run() {} }`,
-		"duplicate test setup":                      `@IsTest private class Probe { @TestSetup static void one() {} @TestSetup static void two() {} }`,
-		"aura enabled overload":                     `public class Probe { @AuraEnabled public static void run() {} @AuraEnabled public static void run(String value) {} }`,
-		"invocable method requires list parameter":  `public class Probe { @InvocableMethod public static void run(String value) {} }`,
-		"invocable variable cannot be static":       `public class Probe { @InvocableVariable public static String value; }`,
-		"remote action requires public":             `public class Probe { @RemoteAction private static void run() {} }`,
-		"remote action requires static":             `public class Probe { @RemoteAction public void run() {} }`,
-		"ReadOnly static method needs a web owner":  `public class Probe { @ReadOnly public static void run() {} }`,
-		"JsonAccess requires a parameter":           `@JsonAccess public class Probe {}`,
-		"JsonAccess cannot annotate a method":       `public class Probe { @JsonAccess(serializable=true) public void run() {} }`,
-		"NamespaceAccessible cannot be AuraEnabled": `public class Probe { @AuraEnabled @NamespaceAccessible public static void run() {} }`,
-		"NamespaceAccessible member needs owner":    `public class Probe { @NamespaceAccessible public void run() {} }`,
-		"InvocableMethod allows no annotation mix":  `public class Probe { @future @InvocableMethod public static void run(List<String> values) {} }`,
-		"InvocableVariable cannot use Object":       `public class Probe { @InvocableVariable public Object value; }`,
+		"test method outside test class":           `public class Probe { @IsTest static void run() {} }`,
+		"test method requires no args":             `@IsTest private class Probe { @IsTest static void run(String value) {} }`,
+		"test method requires static":              `@IsTest private class Probe { @IsTest void run() {} }`,
+		"duplicate test setup":                     `@IsTest private class Probe { @TestSetup static void one() {} @TestSetup static void two() {} }`,
+		"aura enabled overload":                    `public class Probe { @AuraEnabled public static void run() {} @AuraEnabled public static void run(String value) {} }`,
+		"invocable method requires list parameter": `public class Probe { @InvocableMethod public static void run(String value) {} }`,
+		"invocable variable cannot be static":      `public class Probe { @InvocableVariable public static String value; }`,
+		"remote action requires public":            `public class Probe { @RemoteAction private static void run() {} }`,
+		"remote action requires static":            `public class Probe { @RemoteAction public void run() {} }`,
+		"ReadOnly static method needs a web owner": `public class Probe { @ReadOnly public static void run() {} }`,
+		"JsonAccess requires a parameter":          `@JsonAccess public class Probe {}`,
+		"JsonAccess cannot annotate a method":      `public class Probe { @JsonAccess(serializable=true) public void run() {} }`,
+		"InvocableMethod allows no annotation mix": `public class Probe { @future @InvocableMethod public static void run(List<String> values) {} }`,
+		"InvocableVariable cannot use Object":      `public class Probe { @InvocableVariable public Object value; }`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
@@ -243,6 +272,103 @@ func TestAnnotationContractsAllowValueReturningTestMethod(t *testing.T) {
 	})
 	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA032") {
 		t.Fatalf("unexpected annotation contract diagnostic: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnnotationContractsGateMethodIsTestSeeAllDataAtAPIVersion24(t *testing.T) {
+	for _, test := range []struct {
+		apiVersion string
+		wantError  bool
+	}{
+		{apiVersion: "23.0", wantError: true},
+		{apiVersion: "24.0", wantError: false},
+	} {
+		t.Run(test.apiVersion, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+				"Probe.cls": `@IsTest private class Probe { @IsTest(SeeAllData=true) static void run() {} }`,
+			}, test.apiVersion)
+			if got := hasDiagnosticCode(result.Diagnostics, "GLADESEMA032"); got != test.wantError {
+				t.Fatalf("API %s method IsTest(SeeAllData=true) error = %v, want %v: %#v", test.apiVersion, got, test.wantError, result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestAnnotationContractsAllowMethodIsTestSeeAllDataWithoutEffectiveAPIVersion(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `@IsTest private class Probe { @IsTest(SeeAllData=true) static void run() {} }`,
+	})
+	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA032") {
+		t.Fatalf("method IsTest(SeeAllData=true) without an effective API version was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnnotationContractsAllowZeroParameterInvocableMethod(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { @InvocableMethod public static void run() {} }`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("zero-parameter InvocableMethod was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestNamespaceAccessibleIsAPIVersionGatedAndAllowsPublicInterfaces(t *testing.T) {
+	source := `@NamespaceAccessible public interface Probe { @NamespaceAccessible void run(); }`
+	for _, test := range []struct {
+		apiVersion string
+		wantError  bool
+	}{
+		{apiVersion: "49.0", wantError: false},
+		{apiVersion: "50.0", wantError: false},
+	} {
+		t.Run(test.apiVersion, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, test.apiVersion)
+			if got := hasDiagnosticCode(result.Diagnostics, "GLADESEMA032"); got != test.wantError {
+				t.Fatalf("API %s NamespaceAccessible error = %v, want %v: %#v", test.apiVersion, got, test.wantError, result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestNamespaceAccessibleMemberIsAPIVersionGatedOnGlobalOwner(t *testing.T) {
+	source := `global class Probe { @NamespaceAccessible global void run() {} }`
+	for _, test := range []struct {
+		apiVersion string
+		wantError  bool
+	}{
+		{apiVersion: "49.0", wantError: false},
+		{apiVersion: "50.0", wantError: false},
+	} {
+		t.Run(test.apiVersion, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, test.apiVersion)
+			if got := hasDiagnosticCode(result.Diagnostics, "GLADESEMA032"); got != test.wantError {
+				t.Fatalf("API %s NamespaceAccessible member error = %v, want %v: %#v", test.apiVersion, got, test.wantError, result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestNamespaceAccessibleSkipsContractsWithoutAnEffectiveAPIVersion(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `@NamespaceAccessible public class Probe { @NamespaceAccessible public static void run() {} }`,
+	})
+	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA032") {
+		t.Fatalf("NamespaceAccessible source without an effective API version was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestNamespaceAccessibleRejectsInvalidOwnersAtAPIVersion50(t *testing.T) {
+	for name, source := range map[string]string{
+		"private type":                  `@NamespaceAccessible private class Probe {}`,
+		"member no owner":               `public class Probe { @NamespaceAccessible public void run() {} }`,
+		"member mixed with AuraEnabled": `public class Probe { @AuraEnabled @NamespaceAccessible public static void run() {} }`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, "50.0")
+			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA032") {
+				t.Fatalf("API 50 invalid NamespaceAccessible %s was accepted: %#v", name, result.Diagnostics)
+			}
+		})
 	}
 }
 

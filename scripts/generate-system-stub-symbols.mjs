@@ -795,6 +795,19 @@ function addReferencedPlaceholders(specs) {
 
 function applyGeneratedCompatibilityOverrides(specs) {
   const byName = new Map(specs.map((spec) => [spec.name.toLowerCase(), spec]));
+
+	const inboundEmailHandler = byName.get("messaging.inboundemailhandler");
+	if (inboundEmailHandler) {
+		inboundEmailHandler.kind = "DeclarationInterface";
+		inboundEmailHandler.superClass = "";
+		inboundEmailHandler.constructors = [];
+	}
+
+	const unsupportedOperationException = byName.get("unsupportedoperationexception");
+	if (unsupportedOperationException) {
+		unsupportedOperationException.superClass = "Exception";
+	}
+
   forcePropertyType(byName, "RestResponse", "responseBody", false, "Object");
   forcePropertyType(byName, "ConnectApi.OrchestrationStageInstance", "status", false, "ConnectApi.OrchestrationInstanceStatus");
   forcePropertyType(byName, "ConnectApi.OrchestrationStepInstance", "status", false, "ConnectApi.OrchestrationInstanceStatus");

@@ -27,7 +27,7 @@ var annotations = []AnnotationSpec{
 	{Name: "TestVisible"},
 	{Name: "SuppressWarnings", MaxPositionalArguments: 1, PositionalArgumentLiteral: true},
 	{Name: "Deprecated"},
-	{Name: "JsonAccess", Arguments: arguments(booleanArguments("serializable", "deserializable"))},
+	{Name: "JsonAccess", Arguments: arguments(stringArguments("serializable", "deserializable"))},
 	{Name: "NamespaceAccessible"},
 	{Name: "ReadOnly"},
 	{Name: "RemoteAction"},

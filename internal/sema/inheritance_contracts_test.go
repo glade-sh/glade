@@ -57,6 +57,70 @@ public class Child extends Base {
 	}
 }
 
+func TestInheritanceContractsAllowAbstractImplementationWithoutOverrideAtAPIVersions64And65(t *testing.T) {
+	files := map[string]string{
+		"Base.cls": `
+public abstract class Base {
+  public abstract void run();
+}
+`,
+		"Child.cls": `
+public class Child extends Base {
+  public void run() {}
+}
+`,
+	}
+	for _, apiVersion := range []string{"64.0", "65.0"} {
+		t.Run(apiVersion, func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, files, apiVersion)
+			if result.HasErrors() {
+				t.Fatalf("API %s abstract implementation without override was rejected: %#v", apiVersion, result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestInheritanceContractsGateAbstractAndOverrideAccessModifiersAtAPIVersion65(t *testing.T) {
+	for name, source := range map[string]string{
+		"abstract": `public abstract class Probe { abstract void run(); }`,
+		"override": `
+public virtual class Base { public virtual void run() {} }
+public class Probe extends Base { override void run() {} }
+`,
+	} {
+		for _, test := range []struct {
+			apiVersion string
+			wantReject bool
+		}{
+			{apiVersion: "64.0", wantReject: false},
+			{apiVersion: "65.0", wantReject: true},
+		} {
+			t.Run(name+"_"+test.apiVersion, func(t *testing.T) {
+				result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, test.apiVersion)
+				gotReject := hasDiagnosticCode(result.Diagnostics, "GLADESEMA032")
+				if gotReject != test.wantReject {
+					t.Fatalf("API %s %s access rejection = %v, want %v: %#v", test.apiVersion, name, gotReject, test.wantReject, result.Diagnostics)
+				}
+			})
+		}
+	}
+
+	for name, source := range map[string]string{
+		"abstract": `public abstract class Probe { public abstract void run(); }`,
+		"override": `
+public virtual class Base { public virtual void run() {} }
+public class Probe extends Base { public override void run() {} }
+`,
+	} {
+		t.Run(name+"_positive_access", func(t *testing.T) {
+			result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{"Probe.cls": source}, "65.0")
+			if result.HasErrors() {
+				t.Fatalf("API 65 %s declaration with explicit access was rejected: %#v", name, result.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestInheritanceContractsRejectNonVirtualMethodOverride(t *testing.T) {
 	t.Parallel()
 	result := analyzeDeclarationProject(t, map[string]string{

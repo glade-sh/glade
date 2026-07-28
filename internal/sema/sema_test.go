@@ -1837,6 +1837,101 @@ public class UsesDmlException {
 	}
 }
 
+func TestAnalyzeLocationPlatformMethodsAndExceptionGetMessageOverride(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "LocationFunctions.cls"), `
+public class LocationFunctions {
+  public Double distance() {
+    Location here = Location.newInstance(37.775, -122.418);
+    Location there = Location.newInstance(37.776, -122.419);
+    return here.getDistance(there, 'mi');
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "ExpressionException.cls"), `
+public class ExpressionException extends Exception {
+  public override String getMessage() {
+    return 'expression error';
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "InboundHandler.cls"), `
+public class InboundHandler implements Messaging.InboundEmailHandler {
+  public Messaging.InboundEmailResult handleInboundEmail(Messaging.InboundEmail email, Messaging.InboundEnvelope envelope) {
+    return new Messaging.InboundEmailResult();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "LocationFunctions.cls"),
+		filepath.Join(root, "ExpressionException.cls"),
+		filepath.Join(root, "InboundHandler.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("Location platform methods and Exception.getMessage override should analyze: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeProjectLocationMethodShadowsPlatformLocation(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Location.cls"), `
+public class Location {
+  public static String newInstance(String marker) {
+    return marker;
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "UsesLocation.cls"), `
+public class UsesLocation {
+  public String run() {
+    return Location.newInstance('local');
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Location.cls"),
+		filepath.Join(root, "UsesLocation.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("project Location.newInstance should shadow the platform Location: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeExceptionGetMessageOverrideRejectsWrongReturnAndVisibility(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "InvalidExceptions.cls"), `
+public class WrongReturnException extends Exception {
+  public override Integer getMessage() {
+    return 1;
+  }
+}
+public class PrivateException extends Exception {
+  private override String getMessage() {
+    return 'private';
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "InvalidExceptions.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	invalidOverrides := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA016" && strings.Contains(diag.Message, "getMessage") {
+			invalidOverrides++
+		}
+	}
+	if invalidOverrides != 2 {
+		t.Fatalf("invalid getMessage overrides = %d, want 2: %#v", invalidOverrides, result.Diagnostics)
+	}
+}
+
 func TestSemaPlatformConstructorSignaturesUseStandardSymbols(t *testing.T) {
 	for _, tc := range []struct {
 		name string
@@ -5003,6 +5098,34 @@ public class UsesFlow {
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeFlowNamedTestDoesNotShadowSystemTest(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	flowPath := filepath.Join(root, "force-app/main/default/flows/Test.flow-meta.xml")
+	if err := os.MkdirAll(filepath.Dir(flowPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeSemaFile(t, flowPath, "<Flow/>")
+	writeSemaFile(t, filepath.Join(root, "UsesTest.cls"), `
+public class UsesTest {
+  public void run(Map<String, Object> inputs) {
+    Test.startTest();
+    Test.stopTest();
+    Flow.Interview.Test interview = new Flow.Interview.Test(inputs);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesTest.cls")},
+		FlowFiles: []string{flowPath},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("flow named Test shadowed System.Test: %#v", result.Diagnostics)
 	}
 }
 
