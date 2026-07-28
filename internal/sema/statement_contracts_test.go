@@ -113,6 +113,106 @@ public class Probe {
 	}
 }
 
+func TestSwitchContractsAllowUnqualifiedJSONTokenCasesFromMethodResult(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public void run(JSONParser parser) {
+    switch on parser.getCurrentToken() {
+      when START_ARRAY, START_OBJECT {}
+      when else {}
+    }
+  }
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("JSONParser token switch was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestSwitchContractsAllowUnqualifiedTriggerOperationCases(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public void run() {
+    switch on Trigger.operationType {
+      when BEFORE_INSERT, AFTER_UPDATE {}
+      when else {}
+    }
+  }
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("Trigger operation switch was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestSwitchContractsAllowUnqualifiedAccessTypeCases(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public void run(System.AccessType accessType) {
+    switch on accessType {
+      when CREATABLE, UPDATABLE {}
+      when else {}
+    }
+  }
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("AccessType switch was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestSwitchContractsPreferSelectorEnumWhenValueMatchesNestedType(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public Archive primary;
+  public Archive archive;
+  public Archive secondary;
+  public Archive fallback;
+  public class Archive {
+    public String target;
+    public Boolean hasTarget() { return target != null; }
+  }
+  public String run(RouteType routeType) {
+    Archive selected;
+    switch on routeType {
+      when PRIMARY { selected = this.primary; }
+      when ARCHIVE { selected = this.archive; }
+      when SECONDARY { selected = this.secondary; }
+      when FALLBACK { selected = this.fallback; }
+    }
+    return selected.hasTarget() ? selected.target : null;
+  }
+  public enum RouteType { PRIMARY, ARCHIVE, SECONDARY, FALLBACK }
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("selector enum value colliding with nested type was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestSwitchContractsKeepStringBranchValuesCaseSensitive(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public void run(String value) {
+    switch on value {
+      when 'Ready', 'READY' {}
+      when else {}
+    }
+  }
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("case-distinct String switch values were rejected: %#v", result.Diagnostics)
+	}
+}
+
 func TestSwitchContractsResolveNestedEnumFromGenericReturn(t *testing.T) {
 	result := analyzeDeclarationProject(t, map[string]string{
 		"Probe.cls": `

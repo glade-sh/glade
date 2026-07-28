@@ -1,6 +1,10 @@
 package sema
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/glade-sh/glade/internal/typesys"
+)
 
 func TestTypeContractRejectsInvalidSourceTypesAndLiterals(t *testing.T) {
 	t.Parallel()
@@ -94,6 +98,32 @@ func TestTypeContractRejectsInvalidOperators(t *testing.T) {
 	}
 }
 
+func TestTypeContractsAllowTimeOrdering(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"TimeOrdering.cls": `
+public class TimeOrdering {
+  public Integer compare(Time left, Time right) {
+    return left < right ? -1 : 1;
+  }
+}
+`,
+	})
+	assertNoDiagnosticContaining(t, result, "GLADESEMA019", "ordering operator")
+}
+
+func TestTypeContractsAllowDateAndDatetimeOrdering(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"DateOrdering.cls": `
+public class DateOrdering {
+  public Boolean compare(Date day, Datetime instant) {
+    return day <= instant && instant > day;
+  }
+}
+`,
+	})
+	assertNoDiagnosticContaining(t, result, "GLADESEMA019", "ordering operator")
+}
+
 func TestTypeContractAllowsIterableInstanceofAtAllTestedAPIVersions(t *testing.T) {
 	for _, apiVersion := range []string{"59.0", "60.0"} {
 		t.Run(apiVersion, func(t *testing.T) {
@@ -131,6 +161,91 @@ public class Probe {
 	})
 	if result.HasErrors() {
 		t.Fatalf("unexpected compatible expression diagnostic: %#v", result.Diagnostics)
+	}
+}
+
+func TestTypeContractAllowsDateAndDatetimeDayArithmetic(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public void run() {
+    Date yesterday = Date.today() - 1;
+    Date nextYear = System.today() + 365;
+    Datetime earlier = System.now() - 1;
+    Datetime later = Datetime.now() + 1;
+  }
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("Date and Datetime day arithmetic was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestTypeContractAllowsRuntimeCastsBetweenInterfacesAndClasses(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public interface Selector {}
+  public abstract class BaseSelector {}
+  public void run(Selector selector) {
+    if (selector instanceof BaseSelector) {
+      BaseSelector base = (BaseSelector) selector;
+    }
+  }
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("runtime interface/class cast was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestRuntimeTypeTestCompatibilityIsConservativeForIncompleteExternalTypes(t *testing.T) {
+	model := newSemaTypeMemberState(buildTypeMembers(typesys.Index{})).view()
+	if !semaRuntimeTypeTestCompatible("", "external.Selector", "external.BaseSelector", model) {
+		t.Fatal("incomplete external runtime types were treated as definitely incompatible")
+	}
+}
+
+func TestTypeContractAllowsExplicitSObjectListCasts(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public void run(List<SObject> records) {
+    List<Account> accounts = (List<Account>) records;
+  }
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("explicit SObject list cast was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestTypeContractRejectsIncompatibleParameterizedCollectionCasts(t *testing.T) {
+	for name, source := range map[string]string{
+		"different collection bases": `
+public class Probe {
+  public void run() {
+    Set<Integer> values = (Set<Integer>) new List<String>();
+  }
+}
+`,
+		"incompatible list elements": `
+public class Probe {
+  public void run() {
+    List<Integer> values = (List<Integer>) new List<String>();
+  }
+}
+`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
+			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA019") {
+				t.Fatalf("incompatible parameterized cast was accepted: %#v", result.Diagnostics)
+			}
+		})
 	}
 }
 

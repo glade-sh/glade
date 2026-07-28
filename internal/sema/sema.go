@@ -574,8 +574,10 @@ func isObjectOverrideSignature(member typesys.MemberSymbol) bool {
 		return false
 	}
 	switch normalizeName(member.Name) {
-	case "tostring", "hashcode":
-		return true
+	case "tostring":
+		return sameSemaSignatureType(member.Type, "String")
+	case "hashcode":
+		return sameSemaSignatureType(member.Type, "Integer")
 	default:
 		return false
 	}
@@ -997,7 +999,7 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 	if match[1] > 0 && body[match[1]-1] == '=' {
 		value := trimSemaArg(body, match[1], semaLocalInitializerEnd(body, match[1]))
 		resolvedTypeName := resolveNestedTypeReference(model, typ.Name, typeName)
-		valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flat())
+		valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flatAt(value.start))
 		if valueType != "" && valueType != "null" && !semaAssignableToType(resolvedTypeName, valueType, model) && !semaSOQLSingletonAssignable(resolvedTypeName, valueType, value.text, model) {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,

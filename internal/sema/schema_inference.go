@@ -16,6 +16,7 @@ func enrichIndexWithProjectReferencedSchemaFieldsWithSources(index typesys.Index
 	if len(index.Types) == 0 {
 		return index
 	}
+	index.Objects = semaMergeEquivalentSchemaObjects(index.Objects)
 	ctx := newSemaProjectReferencedSchemaContext(index.Objects, index.Project.Namespace)
 	for _, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) || typ.File == "" {
@@ -29,6 +30,114 @@ func enrichIndexWithProjectReferencedSchemaFieldsWithSources(index typesys.Index
 	}
 	index.Objects = ctx.objects
 	return index
+}
+
+func semaMergeEquivalentSchemaObjects(objects []schema.Object) []schema.Object {
+	if len(objects) < 2 {
+		return objects
+	}
+	merged := make([]schema.Object, 0, len(objects))
+	indexes := make(map[string]int, len(objects))
+	for _, object := range objects {
+		key := semaProjectReferencedSchemaNameKey(object.Name)
+		if key == "" {
+			merged = append(merged, object)
+			continue
+		}
+		if idx, ok := indexes[key]; ok {
+			merged[idx] = semaMergeSchemaObjectDefinitions(merged[idx], object)
+			continue
+		}
+		indexes[key] = len(merged)
+		merged = append(merged, object)
+	}
+	return merged
+}
+
+func semaMergeSchemaObjectDefinitions(existing, incoming schema.Object) schema.Object {
+	primary, supplemental := existing, incoming
+	if existing.Partial && !incoming.Partial {
+		primary, supplemental = incoming, existing
+	}
+	primary.Partial = existing.Partial && incoming.Partial
+	if primary.Label == "" {
+		primary.Label = supplemental.Label
+	}
+	if primary.PluralLabel == "" {
+		primary.PluralLabel = supplemental.PluralLabel
+	}
+	if primary.SharingModel == "" {
+		primary.SharingModel = supplemental.SharingModel
+	}
+	if primary.CustomSettingsType == "" {
+		primary.CustomSettingsType = supplemental.CustomSettingsType
+	}
+	if primary.Triggerable == nil {
+		primary.Triggerable = supplemental.Triggerable
+	}
+	if primary.NameField.Label == "" {
+		primary.NameField.Label = supplemental.NameField.Label
+	}
+	if primary.NameField.Type == "" {
+		primary.NameField.Type = supplemental.NameField.Type
+	}
+	if primary.NameField.DisplayFormat == "" {
+		primary.NameField.DisplayFormat = supplemental.NameField.DisplayFormat
+	}
+	primary.Fields = semaMergeSchemaObjectFields(primary.Fields, supplemental.Fields)
+	primary.RecordTypes = semaMergeSchemaRecordTypes(primary.RecordTypes, supplemental.RecordTypes)
+	primary.ValidationRules = semaMergeSchemaValidationRules(primary.ValidationRules, supplemental.ValidationRules)
+	return primary
+}
+
+func semaMergeSchemaObjectFields(primary, supplemental []schema.Field) []schema.Field {
+	out := append([]schema.Field(nil), primary...)
+	indexes := make(map[string]int, len(out))
+	for i, field := range out {
+		indexes[normalizeName(field.Name)] = i
+	}
+	for _, field := range supplemental {
+		key := normalizeName(field.Name)
+		if idx, ok := indexes[key]; ok {
+			out[idx] = semaEnrichSObjectProviderField(out[idx], field)
+			continue
+		}
+		indexes[key] = len(out)
+		out = append(out, field)
+	}
+	return out
+}
+
+func semaMergeSchemaRecordTypes(primary, supplemental []schema.RecordType) []schema.RecordType {
+	out := append([]schema.RecordType(nil), primary...)
+	seen := make(map[string]bool, len(out))
+	for _, recordType := range out {
+		seen[normalizeName(recordType.DeveloperName)] = true
+	}
+	for _, recordType := range supplemental {
+		key := normalizeName(recordType.DeveloperName)
+		if !seen[key] {
+			seen[key] = true
+			out = append(out, recordType)
+		}
+	}
+	return out
+}
+
+func semaMergeSchemaValidationRules(primary, supplemental []schema.ValidationRule) []schema.ValidationRule {
+	out := append([]schema.ValidationRule(nil), primary...)
+	seen := make(map[string]bool, len(out))
+	for _, rule := range out {
+		seen[normalizeName(rule.Name)] = true
+	}
+	for _, rule := range supplemental {
+		key := normalizeName(rule.Name)
+		if !seen[key] {
+			seen[key] = true
+			out = append(out, rule)
+		}
+	}
+	return out
 }
 
 type semaProjectReferencedSchemaContext struct {

@@ -1171,21 +1171,29 @@ func (a *Analyzer) checkIRDMLContract(typ typesys.TypeSymbol, member typesys.Mem
 
 func (a *Analyzer) semaUpsertSelectorAllowed(operandType, selector string) bool {
 	objectName := semaDMLObjectType(operandType)
-	selectorObject, fieldName, qualified := strings.Cut(selector, ".")
-	if !qualified || objectName == "" || !strings.EqualFold(selectorObject, objectName) || fieldName == "" {
+	selectorObject, fieldName, qualified := strings.Cut(strings.TrimSpace(selector), ".")
+	if objectName == "" {
+		return false
+	}
+	if !qualified {
+		fieldName = selectorObject
+	} else if !semaProjectReferencedSchemaAPINamesMatch(a.namespace, selectorObject, objectName) {
+		return false
+	}
+	fieldName = strings.TrimSpace(fieldName)
+	if fieldName == "" {
 		return false
 	}
 	foundObject := false
 	for _, object := range a.queryDeclaredObjects {
-		if !strings.EqualFold(object.Name, objectName) {
+		if !semaProjectReferencedSchemaAPINamesMatch(a.namespace, object.Name, objectName) {
 			continue
 		}
 		foundObject = true
 		for _, field := range object.Fields {
-			if strings.EqualFold(field.Name, fieldName) {
-				if field.ExternalID || field.IDLookup {
-					return true
-				}
+			if semaProjectReferencedSchemaAPINamesMatch(a.namespace, field.Name, fieldName) &&
+				(field.ExternalID || field.IDLookup) {
+				return true
 			}
 		}
 	}
@@ -1442,6 +1450,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	explicitReceiver := false
 	classLiteralReceiver := false
 	platformClassReceiver := false
+	projectClassReceiver := false
 	if expr.Left != nil {
 		explicitReceiver = true
 		if inferred := a.inferIRExprType(*expr.Left, scope, model, typ.Name); inferred != "" {
@@ -1477,7 +1486,17 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 						receiverType = members.superClass
 					}
 				default:
-					if scoped, ok := scope.lookup(receiver); ok {
+					if lookupName, ok := semaStaticContextTypeReceiver(
+						model,
+						typ,
+						member,
+						receiver,
+						method,
+						scope.hasNonFieldBinding(receiver),
+					); ok {
+						receiverType = lookupName
+						projectClassReceiver = true
+					} else if scoped, ok := scope.lookup(receiver); ok {
 						receiverType = scoped
 					} else if members, ok := model.lookup(normalizeName(receiver)); ok {
 						if !semaPlatformReceiverSpellingMatches(receiver, members) {
@@ -1508,7 +1527,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	receiverMode := "implicit"
 	if explicitReceiver {
 		receiverMode = "instance"
-		if platformClassReceiver {
+		if platformClassReceiver || projectClassReceiver {
 			receiverMode = "class"
 		}
 		if expr.Left != nil && semaIRExprLooksLikeTypeReceiver(*expr.Left, scope, model) {

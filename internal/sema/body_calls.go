@@ -105,6 +105,31 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 						continue
 					}
 				}
+				if lookupName, ok := semaStaticContextTypeReceiver(
+					model,
+					typ,
+					member,
+					receiverExpr,
+					method,
+					scopes.localVisibleAt(receiverExpr, match[0]),
+				); ok {
+					candidates := resolveMemberMethods(model, lookupName, method)
+					diagnostics = append(diagnostics, a.diagnoseMethodCall(
+						typ,
+						member,
+						callee,
+						candidates,
+						args,
+						haveArgs,
+						"class",
+						bodyOffset+match[2],
+						bodyOffset+match[3],
+						source,
+						scope,
+						model,
+					)...)
+					continue
+				}
 				if receiverType := inferSemaFieldAccessType(receiverExpr, scope, model); receiverType != "" {
 					receiverMode := "instance"
 					if semaTextReceiverExprLooksLikeType(receiverExpr, scope, model) {
@@ -226,6 +251,33 @@ func semaClassMembersForReceiver(model *semaTypeMemberView, current typesys.Type
 		}
 	}
 	return typeMembers{}, "", false
+}
+
+func semaStaticContextTypeReceiver(
+	model *semaTypeMemberView,
+	current typesys.TypeSymbol,
+	context typesys.MemberSymbol,
+	receiver,
+	method string,
+	hasNonFieldBinding bool,
+) (string, bool) {
+	if !hasModifier(context.Modifiers, "static") || hasNonFieldBinding {
+		return "", false
+	}
+	field, found := semaResolveField(model, current.Name, receiver, make(map[string]bool))
+	if !found || hasModifier(field.member.Modifiers, "static") {
+		return "", false
+	}
+	_, lookupName, ok := semaClassMembersForReceiver(model, current, receiver)
+	if !ok {
+		return "", false
+	}
+	for _, candidate := range resolveMemberMethods(model, lookupName, method) {
+		if hasModifier(candidate.member.Modifiers, "static") {
+			return lookupName, true
+		}
+	}
+	return "", false
 }
 
 func semaUnshadowedPlatformTypeReceiver(model *semaTypeMemberView, scope map[string]string, receiver string) bool {
@@ -2359,16 +2411,20 @@ func semaExplicitSchemaSObjectMembers(typeName string, model *semaTypeMemberView
 	if !ok || schemaName == "" {
 		return typeMembers{}, "", false
 	}
+	qualifiedKey := normalizeName("Schema." + schemaName)
+	if members, ok := model.lookup(qualifiedKey); ok && members.sobject {
+		return semaEnsureStandardSObjectTypeMembers(model, qualifiedKey, members), qualifiedKey, true
+	}
 	schemaKey := normalizeName(schemaName)
 	if members, ok := model.lookup(schemaKey); ok && members.sobject {
-		return semaEnsureStandardSObjectTypeMembers(model, schemaKey, members), schemaKey, true
+		return semaEnsureStandardSObjectTypeMembers(model, qualifiedKey, members), qualifiedKey, true
 	}
 	if objectName, ok := semaStandardSObjectNameForKey(schemaKey); ok {
 		members := semaBuildStandardSObjectMembers(objectName)
-		model.storeHydrated(schemaKey, members)
-		return members, schemaKey, true
+		model.storeHydrated(qualifiedKey, members)
+		return members, qualifiedKey, true
 	}
-	return typeMembers{}, schemaKey, false
+	return typeMembers{}, qualifiedKey, false
 }
 
 func semaSchemaQualifiedTypeName(typeName string) (string, bool) {

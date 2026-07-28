@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/typesys"
 )
 
 func TestDMLContractsRejectNonSObjectOperands(t *testing.T) {
@@ -80,5 +81,50 @@ public class Probe {
 	}})
 	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA034") {
 		t.Fatalf("external ID from a matching schema object was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestDMLContractsResolveUnqualifiedUpsertSelectorsAgainstNamespacedSchema(t *testing.T) {
+	for _, test := range []struct {
+		name           string
+		localField     string
+		field          schema.Field
+		wantDiagnostic bool
+	}{
+		{
+			name:       "external ID",
+			localField: "External_Key__c",
+			field: schema.Field{
+				Name:       "pkg__External_Key__c",
+				Type:       "Text",
+				ExternalID: true,
+			},
+		},
+		{
+			name:           "non external field",
+			localField:     "Not_External__c",
+			field:          schema.Field{Name: "pkg__Not_External__c", Type: "Text"},
+			wantDiagnostic: true,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			result := analyzeQueryProbeWithProject(t, `
+public class Probe {
+  public void run() {
+    Thing__c row = new Thing__c();
+    upsert row `+test.localField+`;
+  }
+}
+`, typesys.ProjectInfo{Namespace: "pkg"}, schema.Schema{
+				Objects: []schema.Object{{
+					Name:   "pkg__Thing__c",
+					Fields: []schema.Field{test.field},
+				}},
+			})
+			got := hasDiagnosticCode(result.Diagnostics, "GLADESEMA034")
+			if got != test.wantDiagnostic {
+				t.Fatalf("GLADESEMA034 = %v, want %v: %#v", got, test.wantDiagnostic, result.Diagnostics)
+			}
+		})
 	}
 }
