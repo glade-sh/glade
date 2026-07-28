@@ -294,6 +294,15 @@ func TestAnnotationContractsGateMethodIsTestSeeAllDataAtAPIVersion24(t *testing.
 	}
 }
 
+func TestAnnotationContractsAllowMethodIsTestSeeAllDataWithoutEffectiveAPIVersion(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `@IsTest private class Probe { @IsTest(SeeAllData=true) static void run() {} }`,
+	})
+	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA032") {
+		t.Fatalf("method IsTest(SeeAllData=true) without an effective API version was rejected: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnnotationContractsAllowZeroParameterInvocableMethod(t *testing.T) {
 	result := analyzeDeclarationProject(t, map[string]string{
 		"Probe.cls": `public class Probe { @InvocableMethod public static void run() {} }`,

@@ -2497,7 +2497,7 @@ func databaseBatchableStartReturnCompatible(itemType, returnType string, model *
 func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.MemberSymbol, scan *semaBodyExpressionScan, bodyOffset int, source string, scopes semaScopeModel, model *semaTypeMemberView) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	body := scan.body
-	assignedStaticFinalFields := a.staticFinalFieldsAssignedBefore(typ, member, source, model, scopes.base)
+	assignedStaticFinalFields := a.staticFinalFieldsInitializedElsewhere(typ, member, source, model, scopes.base)
 	for _, match := range scan.assignmentMatches {
 		if semaOffsetInIgnoredText(body, match[0]) {
 			continue
@@ -2518,7 +2518,7 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 		if field, found := semaResolveField(model, typ.Name, target, make(map[string]bool)); !scopes.localVisibleAt(target, match[2]) && found &&
 			hasModifier(field.member.Modifiers, "final") && hasModifier(field.member.Modifiers, "static") {
 			fieldKey := normalizeName(target)
-			if !semaStaticInitializer(member) || assignedStaticFinalFields[fieldKey] {
+			if !semaStaticInitializer(member) || !strings.EqualFold(field.owner, typ.Name) || assignedStaticFinalFields[fieldKey] {
 				diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, target, "final static fields can only be assigned in their declaration", bodyOffset+match[2], bodyOffset+match[3], source))
 				continue
 			}

@@ -610,25 +610,22 @@ func semaStaticInitializer(member typesys.MemberSymbol) bool {
 	return member.Kind == apexast.DeclarationInitializer && hasModifier(member.Modifiers, "static")
 }
 
-func (a *Analyzer) staticFinalFieldsAssignedBefore(typ typesys.TypeSymbol, member typesys.MemberSymbol, source string, model *semaTypeMemberView, baseScope map[string]string) map[string]bool {
+func (a *Analyzer) staticFinalFieldsInitializedElsewhere(typ typesys.TypeSymbol, member typesys.MemberSymbol, source string, model *semaTypeMemberView, baseScope map[string]string) map[string]bool {
 	assigned := make(map[string]bool)
 	if !semaStaticInitializer(member) {
 		return assigned
 	}
-	for _, earlier := range typ.Members {
-		if earlier.Range.Start.Offset >= member.Range.Start.Offset {
-			continue
-		}
-		if earlier.Kind == apexast.DeclarationField && hasModifier(earlier.Modifiers, "final") && hasModifier(earlier.Modifiers, "static") {
-			if semaStaticFinalFieldHasDeclarationInitializer(earlier, source) {
-				assigned[normalizeName(earlier.Name)] = true
+	for _, candidate := range typ.Members {
+		if candidate.Kind == apexast.DeclarationField && hasModifier(candidate.Modifiers, "final") && hasModifier(candidate.Modifiers, "static") {
+			if semaStaticFinalFieldHasDeclarationInitializer(candidate, source) {
+				assigned[normalizeName(candidate.Name)] = true
 			}
 			continue
 		}
-		if !semaStaticInitializer(earlier) {
+		if candidate.Range.Start.Offset >= member.Range.Start.Offset || !semaStaticInitializer(candidate) {
 			continue
 		}
-		body, _, ok := extractBodyForSema(source, earlier.Range)
+		body, _, ok := extractBodyForSema(source, candidate.Range)
 		if !ok {
 			continue
 		}

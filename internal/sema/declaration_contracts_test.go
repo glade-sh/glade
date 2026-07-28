@@ -578,6 +578,42 @@ public class Probe {
 	}
 }
 
+func TestDeclarationContractRejectsStaticFinalAssignmentBeforeDeclarationInitialization(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  static {
+    Value = 'first';
+  }
+  public static final String Value = 'second';
+}`,
+	})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA027") {
+		t.Fatalf("static initializer assignment before declaration initialization was accepted: %#v", result.Diagnostics)
+	}
+}
+
+func TestDeclarationContractRejectsInheritedStaticFinalAssignment(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Base.cls": `
+public virtual class Base {
+  public static final String Value;
+  static {
+    Value = 'base';
+  }
+}`,
+		"Child.cls": `
+public class Child extends Base {
+  static {
+    Value = 'child';
+  }
+}`,
+	})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA027") {
+		t.Fatalf("inherited static final field assignment was accepted: %#v", result.Diagnostics)
+	}
+}
+
 func TestDeclarationContractInnerStaticInitializerAndSharing(t *testing.T) {
 	t.Parallel()
 	innerInit := analyzeDeclarationProject(t, map[string]string{

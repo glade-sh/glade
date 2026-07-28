@@ -299,8 +299,13 @@ func annotationAPIVersionAtLeast(typ typesys.TypeSymbol, minimum float64) bool {
 	return err == nil && version >= minimum
 }
 
+func annotationAPIVersionBefore(typ typesys.TypeSymbol, minimum float64) bool {
+	version, err := strconv.ParseFloat(strings.TrimSpace(typ.EffectiveAPIVersion), 64)
+	return err == nil && version < minimum
+}
+
 func isTestMethodArgumentsAllowed(typ typesys.TypeSymbol, annotation apexast.Annotation) bool {
-	return annotationBooleanArguments(annotation, "SeeAllData") && (len(annotation.Arguments) == 0 || annotationAPIVersionAtLeast(typ, 24))
+	return annotationBooleanArguments(annotation, "SeeAllData") && (len(annotation.Arguments) == 0 || !annotationAPIVersionBefore(typ, 24))
 }
 
 func invocableMethodArgumentsAllowed(annotation apexast.Annotation) bool {
