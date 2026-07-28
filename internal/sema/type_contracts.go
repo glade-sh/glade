@@ -155,6 +155,9 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 			semaAssignableToType(left, right, model) || semaAssignableToType(right, left, model) ||
 			(isSemaNumericType(left) && isSemaNumericType(right))
 	}
+	runtimeCompatible := func(left, right string) bool {
+		return compatible(left, right) || semaRuntimeTypeTestCompatible(typ.Name, left, right, model)
+	}
 	walk = func(current ir.Expr) {
 		if current.Left != nil {
 			walk(*current.Left)
@@ -192,11 +195,11 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 			right := a.inferIRExprType(*current.Right, scope, model, typ.Name)
 			switch current.Operator {
 			case "*", "/", "%", "-":
-				if left != "" && right != "" && (!isSemaNumericType(left) || !isSemaNumericType(right)) {
+				if left != "" && right != "" && !semaDateDayArithmetic(current.Operator, left, right) && (!isSemaNumericType(left) || !isSemaNumericType(right)) {
 					appendDiagnostic("arithmetic operator requires numeric operands")
 				}
 			case "+":
-				if left != "" && right != "" && !isSemaNumericType(left) && !isSemaNumericType(right) && !strings.EqualFold(left, "String") && !strings.EqualFold(right, "String") {
+				if left != "" && right != "" && !semaDateDayArithmetic(current.Operator, left, right) && !isSemaNumericType(left) && !isSemaNumericType(right) && !strings.EqualFold(left, "String") && !strings.EqualFold(right, "String") {
 					appendDiagnostic("operator + requires numeric or String operands")
 				}
 			case "<", "<=", ">", ">=":
@@ -206,7 +209,7 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 				}
 			case "instanceof":
 				target := strings.TrimSpace(current.Right.Name)
-				if left != "" && target != "" && !compatible(left, target) {
+				if left != "" && target != "" && !runtimeCompatible(left, target) {
 					appendDiagnostic("instanceof comparison is impossible")
 				} else if typeUsesAPIVersionAtLeast(typ, 60) && semaNestedIterableInstanceofAlwaysTrue(left, target, typ.Name, model) {
 					appendDiagnostic("instanceof comparison is always true")
@@ -238,7 +241,7 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 			if strings.HasPrefix(current.Callee, "__cast:") && len(current.Args) == 1 {
 				target := strings.TrimPrefix(current.Callee, "__cast:")
 				value := a.inferIRExprType(current.Args[0], scope, model, typ.Name)
-				if value != "" && !compatible(target, value) {
+				if value != "" && !runtimeCompatible(target, value) {
 					appendDiagnostic("cast is incompatible with its operand")
 				}
 			}
@@ -257,6 +260,53 @@ func (a *Analyzer) checkIRExpressionContract(typ typesys.TypeSymbol, member type
 	}
 	walk(expr)
 	return diagnostics
+}
+
+func semaDateDayArithmetic(operator, left, right string) bool {
+	if operator != "+" && operator != "-" {
+		return false
+	}
+	return (strings.EqualFold(left, "Date") || strings.EqualFold(left, "Datetime")) &&
+		strings.EqualFold(right, "Integer")
+}
+
+func semaRuntimeTypeTestCompatible(owner, left, right string, model *semaTypeMemberView) bool {
+	left = resolveNestedTypeReference(model, owner, left)
+	right = resolveNestedTypeReference(model, owner, right)
+	leftBase, leftArgs := semaGenericBaseAndArgs(left)
+	rightBase, rightArgs := semaGenericBaseAndArgs(right)
+	if len(leftArgs) > 0 || len(rightArgs) > 0 {
+		if len(leftArgs) == 0 || len(leftArgs) != len(rightArgs) || !strings.EqualFold(leftBase, rightBase) {
+			return false
+		}
+		for i := range leftArgs {
+			if strings.EqualFold(leftArgs[i], rightArgs[i]) ||
+				semaAssignableToType(leftArgs[i], rightArgs[i], model) ||
+				semaAssignableToType(rightArgs[i], leftArgs[i], model) {
+				continue
+			}
+			if !semaRuntimeTypeTestCompatible(owner, leftArgs[i], rightArgs[i], model) {
+				return false
+			}
+		}
+		return true
+	}
+	leftMembers, leftOK := model.lookup(normalizeName(left))
+	rightMembers, rightOK := model.lookup(normalizeName(right))
+	if !leftOK || !rightOK {
+		return true
+	}
+	if leftMembers.kind == apexast.DeclarationInterface {
+		return rightMembers.kind == apexast.DeclarationInterface ||
+			hasModifier(rightMembers.modifiers, "abstract") ||
+			hasModifier(rightMembers.modifiers, "virtual")
+	}
+	if rightMembers.kind == apexast.DeclarationInterface {
+		return leftMembers.kind == apexast.DeclarationInterface ||
+			hasModifier(leftMembers.modifiers, "abstract") ||
+			hasModifier(leftMembers.modifiers, "virtual")
+	}
+	return false
 }
 
 func semaNestedIterableInstanceofAlwaysTrue(left, target, owner string, model *semaTypeMemberView) bool {

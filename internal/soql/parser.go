@@ -84,6 +84,7 @@ func lex(input string) ([]token, error) {
 			}
 			bindStart := i
 			if end, ok := scanSOQLStringMethodBind(input, bindStart); ok {
+				end = scanSOQLBindAdditiveTail(input, end)
 				out = append(out, token{text: ":" + input[bindStart:end]})
 				i = end
 				continue
@@ -121,10 +122,11 @@ func lex(input string) ([]token, error) {
 				}
 				i++
 			}
+			i = scanSOQLBindAdditiveTail(input, i)
 			if bindStart == i {
 				out = append(out, token{text: input[start:i]})
 			} else {
-				out = append(out, token{text: ":" + input[bindStart:i]})
+				out = append(out, token{text: ":" + strings.TrimSpace(input[bindStart:i])})
 			}
 		case soqlSeparatorBytes[input[i]]:
 			if i+1 < len(input) && input[i:i+2] == "!=" {
@@ -221,6 +223,57 @@ func scanSOQLStringMethodBind(input string, start int) (int, bool) {
 	nextMember:
 	}
 	return i, true
+}
+
+func scanSOQLBindAdditiveTail(input string, start int) int {
+	end := start
+	for {
+		operator := end
+		for operator < len(input) && (input[operator] == ' ' || input[operator] == '\n' || input[operator] == '\t' || input[operator] == '\r') {
+			operator++
+		}
+		if operator == len(input) || input[operator] != '+' {
+			return end
+		}
+		operand := operator + 1
+		for operand < len(input) && (input[operand] == ' ' || input[operand] == '\n' || input[operand] == '\t' || input[operand] == '\r') {
+			operand++
+		}
+		operandEnd, ok := scanSOQLBindAdditiveOperand(input, operand)
+		if !ok {
+			return end
+		}
+		end = operandEnd
+	}
+}
+
+func scanSOQLBindAdditiveOperand(input string, start int) (int, bool) {
+	if start >= len(input) {
+		return 0, false
+	}
+	if input[start] == '\'' {
+		return scanSOQLStringMethodBind(input, start)
+	}
+	if !soqlBindIdentifierStart(input[start]) && (input[start] < '0' || input[start] > '9') {
+		return 0, false
+	}
+	depth := 0
+	for i := start; i < len(input); i++ {
+		switch input[i] {
+		case '(':
+			depth++
+		case ')':
+			if depth == 0 {
+				return i, i > start
+			}
+			depth--
+		default:
+			if depth == 0 && (soqlTokenBoundaryBytes[input[i]] || input[i] == ':') {
+				return i, i > start
+			}
+		}
+	}
+	return len(input), true
 }
 
 func soqlBindIdentifierPart(value byte) bool {

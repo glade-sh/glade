@@ -105,6 +105,31 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 						continue
 					}
 				}
+				if lookupName, ok := semaStaticContextTypeReceiver(
+					model,
+					typ,
+					member,
+					receiverExpr,
+					method,
+					scopes.localVisibleAt(receiverExpr, match[0]),
+				); ok {
+					candidates := resolveMemberMethods(model, lookupName, method)
+					diagnostics = append(diagnostics, a.diagnoseMethodCall(
+						typ,
+						member,
+						callee,
+						candidates,
+						args,
+						haveArgs,
+						"class",
+						bodyOffset+match[2],
+						bodyOffset+match[3],
+						source,
+						scope,
+						model,
+					)...)
+					continue
+				}
 				if receiverType := inferSemaFieldAccessType(receiverExpr, scope, model); receiverType != "" {
 					receiverMode := "instance"
 					if semaTextReceiverExprLooksLikeType(receiverExpr, scope, model) {
@@ -226,6 +251,33 @@ func semaClassMembersForReceiver(model *semaTypeMemberView, current typesys.Type
 		}
 	}
 	return typeMembers{}, "", false
+}
+
+func semaStaticContextTypeReceiver(
+	model *semaTypeMemberView,
+	current typesys.TypeSymbol,
+	context typesys.MemberSymbol,
+	receiver,
+	method string,
+	hasNonFieldBinding bool,
+) (string, bool) {
+	if !hasModifier(context.Modifiers, "static") || hasNonFieldBinding {
+		return "", false
+	}
+	field, found := semaResolveField(model, current.Name, receiver, make(map[string]bool))
+	if !found || hasModifier(field.member.Modifiers, "static") {
+		return "", false
+	}
+	_, lookupName, ok := semaClassMembersForReceiver(model, current, receiver)
+	if !ok {
+		return "", false
+	}
+	for _, candidate := range resolveMemberMethods(model, lookupName, method) {
+		if hasModifier(candidate.member.Modifiers, "static") {
+			return lookupName, true
+		}
+	}
+	return "", false
 }
 
 func semaUnshadowedPlatformTypeReceiver(model *semaTypeMemberView, scope map[string]string, receiver string) bool {

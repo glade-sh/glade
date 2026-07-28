@@ -160,8 +160,9 @@ func checkTypeAnnotationContracts(typ typesys.TypeSymbol) []diagnostic.Diagnosti
 				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "JsonAccess is only valid on classes with supported serialization modes"))
 			}
 		case strings.EqualFold(annotation.Name, "NamespaceAccessible"):
-			if annotationAPIVersionAtLeast(typ, 50) && ((typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface) || !hasEitherModifier(typ.Modifiers, "public", "global")) {
-				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "NamespaceAccessible is only valid on public or global classes and interfaces at API version 50.0 or later"))
+			validKind := typ.Kind == apexast.DeclarationClass || typ.Kind == apexast.DeclarationInterface || typ.Kind == apexast.DeclarationEnum
+			if annotationAPIVersionAtLeast(typ, 50) && (!validKind || !hasEitherModifier(typ.Modifiers, "public", "global")) {
+				diagnostics = append(diagnostics, annotationContractDiagnostic(typ.File, annotation.Range, "NamespaceAccessible is only valid on public or global classes, interfaces, and enums at API version 50.0 or later"))
 			}
 		case strings.EqualFold(annotation.Name, "RestResource"):
 			if typ.Kind != apexast.DeclarationClass {

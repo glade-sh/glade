@@ -113,6 +113,106 @@ public class Probe {
 	}
 }
 
+func TestSwitchContractsAllowUnqualifiedJSONTokenCasesFromMethodResult(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public void run(JSONParser parser) {
+    switch on parser.getCurrentToken() {
+      when START_ARRAY, START_OBJECT {}
+      when else {}
+    }
+  }
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("JSONParser token switch was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestSwitchContractsAllowUnqualifiedTriggerOperationCases(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public void run() {
+    switch on Trigger.operationType {
+      when BEFORE_INSERT, AFTER_UPDATE {}
+      when else {}
+    }
+  }
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("Trigger operation switch was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestSwitchContractsAllowUnqualifiedAccessTypeCases(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public void run(System.AccessType accessType) {
+    switch on accessType {
+      when CREATABLE, UPDATABLE {}
+      when else {}
+    }
+  }
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("AccessType switch was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestSwitchContractsPreferSelectorEnumWhenValueMatchesNestedType(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public License provider;
+  public License license;
+  public License dea;
+  public License boardCert;
+  public class License {
+    public String sfObject;
+    public Boolean hasSfObject() { return sfObject != null; }
+  }
+  public String run(MapType mapType) {
+    License mapObject;
+    switch on mapType {
+      when PROVIDER { mapObject = this.provider; }
+      when LICENSE { mapObject = this.license; }
+      when DEA { mapObject = this.dea; }
+      when BOARDCERT { mapObject = this.boardCert; }
+    }
+    return mapObject.hasSfObject() ? mapObject.sfObject : null;
+  }
+  public enum MapType { PROVIDER, LICENSE, DEA, BOARDCERT }
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("selector enum value colliding with nested type was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestSwitchContractsKeepStringBranchValuesCaseSensitive(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public void run(String value) {
+    switch on value {
+      when 'Nsc', 'NSC' {}
+      when else {}
+    }
+  }
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("case-distinct String switch values were rejected: %#v", result.Diagnostics)
+	}
+}
+
 func TestSwitchContractsResolveNestedEnumFromGenericReturn(t *testing.T) {
 	result := analyzeDeclarationProject(t, map[string]string{
 		"Probe.cls": `

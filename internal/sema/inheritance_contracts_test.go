@@ -57,6 +57,56 @@ public class Child extends Base {
 	}
 }
 
+func TestInheritanceContractsAllowObjectEqualityMethodsWithoutOverride(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"ValueObject.cls": `
+public class ValueObject {
+  public Integer hashCode() { return 1; }
+  public Boolean equals(Object other) { return other != null; }
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("Object equality methods without override were rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestInheritanceContractsRequireOverrideForNonObjectHashCodeSignature(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Base.cls": `
+public virtual class Base {
+  public virtual String hashCode() { return 'base'; }
+}
+`,
+		"Child.cls": `
+public class Child extends Base {
+  public String hashCode() { return 'child'; }
+}
+`,
+	})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA016") {
+		t.Fatalf("non-Object hashCode signature bypassed override enforcement: %#v", result.Diagnostics)
+	}
+}
+
+func TestInheritanceContractsRequireOverrideForUserDeclaredObjectHashCodeSignature(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Base.cls": `
+public virtual class Base {
+  public virtual Integer hashCode() { return 1; }
+}
+`,
+		"Child.cls": `
+public class Child extends Base {
+  public Integer hashCode() { return 2; }
+}
+`,
+	})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA016") {
+		t.Fatalf("user-declared Object-shaped method bypassed override enforcement: %#v", result.Diagnostics)
+	}
+}
+
 func TestInheritanceContractsAllowAbstractImplementationWithoutOverrideAtAPIVersions64And65(t *testing.T) {
 	files := map[string]string{
 		"Base.cls": `

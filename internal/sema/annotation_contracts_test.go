@@ -330,6 +330,32 @@ func TestNamespaceAccessibleIsAPIVersionGatedAndAllowsPublicInterfaces(t *testin
 	}
 }
 
+func TestNamespaceAccessibleAllowsPublicEnumsAtAPIVersion50(t *testing.T) {
+	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+		"Probe.cls": `@NamespaceAccessible
+public class Probe {
+  @NamespaceAccessible
+  public enum Action { Generate, Preview }
+}`,
+	}, "50.0")
+	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA032") {
+		t.Fatalf("API 50 public NamespaceAccessible enum was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestNamespaceAccessibleRejectsPrivateEnumsAtAPIVersion50(t *testing.T) {
+	result := analyzeDeclarationProjectWithAPIVersion(t, map[string]string{
+		"Probe.cls": `@NamespaceAccessible
+public class Probe {
+  @NamespaceAccessible
+  private enum Action { Generate, Preview }
+}`,
+	}, "50.0")
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA032") {
+		t.Fatalf("API 50 private NamespaceAccessible enum was accepted: %#v", result.Diagnostics)
+	}
+}
+
 func TestNamespaceAccessibleMemberIsAPIVersionGatedOnGlobalOwner(t *testing.T) {
 	source := `global class Probe { @NamespaceAccessible global void run() {} }`
 	for _, test := range []struct {

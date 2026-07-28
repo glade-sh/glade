@@ -165,6 +165,16 @@ public class QueryProbe {
 }
 `,
 		},
+		"this field receiver": {
+			source: `
+public class QueryProbe {
+  private Id accountId;
+  public void run() {
+    List<Account> accounts = [SELECT Id FROM Account WHERE Id = :this.accountId];
+  }
+}
+`,
+		},
 		"different field type": {
 			source: `
 public class QueryProbe {
@@ -391,6 +401,39 @@ public class QueryProbe {
 `, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Name", Type: "Text"}}}}})
 	if result.HasErrors() {
 		t.Fatalf("documented literal method bind was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsAcceptsConcatenatedMethodCallBind(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    Integer countJobs = [SELECT COUNT() FROM CronJobDetail WHERE Name = :QueryProbe.class.getName() + ' Test'];
+  }
+}
+`, schema.Schema{Objects: []schema.Object{{Name: "CronJobDetail", Fields: []schema.Field{{Name: "Name", Type: "Text"}}}}})
+	if result.HasErrors() {
+		t.Fatalf("concatenated method-call bind was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsChecksSourceWithNestedTypesOnce(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public class Nested {}
+  public void run() {
+    List<Account> accounts = [SELECT Missing__c FROM Account];
+  }
+}
+`, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Id", Type: "Id"}}}}})
+	var count int
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA_QUERY_FIELD" {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Fatalf("query field diagnostic count = %d, want 1: %#v", count, result.Diagnostics)
 	}
 }
 

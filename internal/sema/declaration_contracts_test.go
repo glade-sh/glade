@@ -444,6 +444,55 @@ func TestDeclarationContractRejectsStaticAndFinalFieldMisuse(t *testing.T) {
 	}
 }
 
+func TestDeclarationContractsAllowStaticMethodLocalToShadowInstanceFieldOnReturn(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public String value;
+  public static String run() {
+    String value = 'local';
+    return value;
+  }
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("static local shadow was resolved as an instance field: %#v", result.Diagnostics)
+	}
+}
+
+func TestDeclarationContractsInferIndexedListElementInsideNestedTry(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public class ScanRecord {
+    public List<SObject> getSObjects(String relationshipName) { return null; }
+  }
+  public void run(List<ScanRecord> scanRecords) {
+    for (ScanRecord scanRecord : scanRecords) {
+      List<Sanction_Exclusion_Scan_Result__c> results =
+        (List<Sanction_Exclusion_Scan_Result__c>) scanRecord.getSObjects('Results__r');
+      if (results?.isEmpty() == false) {
+        for (Integer i = 0; i < results.size(); i++) {
+          try {
+            Sanction_Exclusion_Scan_Result__c result = results[i];
+            result.Is_Ignored__c = true;
+          } catch (Exception e) {
+            break;
+          }
+        }
+      }
+    }
+    List<Database.SaveResult> results = null;
+  }
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("indexed list element inside nested try was mis-typed: %#v", result.Diagnostics)
+	}
+}
+
 func TestDeclarationContractAllowsStaticFinalAssignmentInStaticInitializer(t *testing.T) {
 	result := analyzeDeclarationProject(t, map[string]string{
 		"Probe.cls": `

@@ -85,11 +85,14 @@ func (a *Analyzer) checkIRStatementContracts(typ typesys.TypeSymbol, member type
 							diagnostics = append(diagnostics, statementContractDiagnostic(typ, member, "switch branch must be a literal or enum constant", bodyOffset+switchCase.Pos, source))
 							continue
 						}
-						caseType := a.inferIRExprType(caseExpr, *currentScope, model, typ.Name)
+						caseType := semaSwitchSelectorEnumCaseType(selectorType, caseExpr, model)
+						if caseType == "" {
+							caseType = a.inferIRExprType(caseExpr, *currentScope, model, typ.Name)
+						}
 						if selectorType != "" && caseType != "" && !semaSwitchCaseTypeCompatible(selectorType, caseType, model) {
 							diagnostics = append(diagnostics, statementContractDiagnostic(typ, member, fmt.Sprintf("switch branch type %s is incompatible with selector type %s", caseType, selectorType), bodyOffset+switchCase.Pos, source))
 						}
-						key := normalizeName(strings.TrimSpace(string(caseExpr.Kind) + ":" + caseExpr.Value + ":" + caseExpr.Name))
+						key := semaSwitchCaseValueKey(selectorType, caseExpr)
 						if key != "::" && seenCaseValues[key] {
 							diagnostics = append(diagnostics, statementContractDiagnostic(typ, member, "duplicate switch branch value", bodyOffset+switchCase.Pos, source))
 						}
@@ -207,6 +210,7 @@ func semaResolveSwitchSelectorType(typeName, owner string, model *semaTypeMember
 }
 
 func semaSupportedSwitchSelector(typeName string, model *semaTypeMemberView) bool {
+	typeName = semaCanonicalPlatformAlias(typeName)
 	switch strings.ToLower(strings.TrimSpace(typeName)) {
 	case "integer", "int", "long", "string":
 		return true
@@ -249,6 +253,7 @@ func semaSwitchValueCaseAllowed(selectorType string, expr ir.Expr, model *semaTy
 	if expr.Kind != ir.ExprVariable || selectorType == "" {
 		return false
 	}
+	selectorType = semaCanonicalPlatformAlias(selectorType)
 	if enumType := semaEnumValuePathType(model, expr.Name); enumType != "" {
 		return sameSemaSignatureType(selectorType, enumType)
 	}
@@ -257,7 +262,32 @@ func semaSwitchValueCaseAllowed(selectorType string, expr ir.Expr, model *semaTy
 		return false
 	}
 	field, ok := semaResolveField(model, selectorType, expr.Name, make(map[string]bool))
-	return ok && field.member.Kind == apexast.DeclarationField && hasModifier(field.member.Modifiers, "static")
+	return ok &&
+		(field.member.Kind == apexast.DeclarationField || field.member.Kind == apexast.DeclarationProperty) &&
+		hasModifier(field.member.Modifiers, "static")
+}
+
+func semaSwitchCaseValueKey(selectorType string, expr ir.Expr) string {
+	if expr.Kind == ir.ExprLiteral && strings.EqualFold(strings.TrimSpace(selectorType), "String") {
+		return string(expr.Kind) + ":" + strings.TrimSpace(expr.Value) + ":" + expr.Name
+	}
+	return normalizeName(strings.TrimSpace(string(expr.Kind) + ":" + expr.Value + ":" + expr.Name))
+}
+
+func semaSwitchSelectorEnumCaseType(selectorType string, expr ir.Expr, model *semaTypeMemberView) string {
+	if expr.Kind != ir.ExprVariable {
+		return ""
+	}
+	selectorType = semaCanonicalPlatformAlias(selectorType)
+	members, ok := model.lookup(normalizeName(selectorType))
+	if !ok || members.kind != apexast.DeclarationEnum {
+		return ""
+	}
+	field, ok := semaResolveField(model, selectorType, expr.Name, make(map[string]bool))
+	if !ok || !hasModifier(field.member.Modifiers, "static") {
+		return ""
+	}
+	return selectorType
 }
 
 func statementContractDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, detail string, start int, source string) diagnostic.Diagnostic {

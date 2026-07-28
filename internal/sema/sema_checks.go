@@ -179,10 +179,16 @@ func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnos
 	if sources == nil {
 		sources = newSemaSources(nil, nil)
 	}
+	seenSources := make(map[string]bool)
 	for _, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) || typ.File == "" {
 			continue
 		}
+		sourceKey := semaSourceCacheKey(typ.File, typ.Namespace, typ.SourceNamespaceRemaps) + "\x00" + typ.EffectiveAPIVersion
+		if seenSources[sourceKey] {
+			continue
+		}
+		seenSources[sourceKey] = true
 		source, ok := sources.normalizedForType(typ)
 		if !ok {
 			continue
@@ -576,6 +582,9 @@ func inlineQueryBindDiagnostics(ctx queryTextContext, bindings map[string]string
 			continue
 		}
 		if match[3] < len(ctx.queryText) && ctx.queryText[match[3]] == '.' {
+			if strings.EqualFold(name, "this") {
+				continue
+			}
 			if knownTypes[strings.ToLower(name)] {
 				continue
 			}
@@ -2172,7 +2181,7 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 			if member.Kind != apexast.DeclarationMethod {
 				continue
 			}
-			overridden, hasOverridden := overridableInheritedMethod(model, typ, member)
+			overridden, hasOverridden, objectFallback := overridableInheritedMethod(model, typ, member)
 			if hasModifier(member.Modifiers, "override") && !missingSuperclass && !hasOverridden && !hasPlatformInheritedMethodSignature(typ, member) {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
@@ -2182,7 +2191,7 @@ func (a *Analyzer) checkInheritanceContractsWithView(index typesys.Index, model 
 					Range:    &member.Range,
 				})
 			}
-			if !hasModifier(member.Modifiers, "override") && hasOverridden && !hasModifier(overridden.Modifiers, "abstract") {
+			if !hasModifier(member.Modifiers, "override") && hasOverridden && !hasModifier(overridden.Modifiers, "abstract") && !objectFallback {
 				diagnostics = append(diagnostics, diagnostic.Diagnostic{
 					Severity: diagnostic.Error,
 					Code:     "GLADESEMA016",
@@ -2325,10 +2334,7 @@ func inheritanceTargetMembers(model *semaTypeMemberView, typeName string) (typeM
 	return members, ok
 }
 
-func overridableInheritedMethod(model *semaTypeMemberView, typ typesys.TypeSymbol, member typesys.MemberSymbol) (typesys.MemberSymbol, bool) {
-	if isObjectOverrideSignature(member) {
-		return typesys.MemberSymbol{Modifiers: []string{"public", "virtual"}}, true
-	}
+func overridableInheritedMethod(model *semaTypeMemberView, typ typesys.TypeSymbol, member typesys.MemberSymbol) (typesys.MemberSymbol, bool, bool) {
 	for current := typ.SuperClass; current != ""; {
 		members, ok := model.lookup(normalizeName(current))
 		if !ok {
@@ -2336,12 +2342,15 @@ func overridableInheritedMethod(model *semaTypeMemberView, typ typesys.TypeSymbo
 		}
 		for _, candidate := range members.methods[normalizeName(member.Name)] {
 			if sameSemaSignature(candidate, member) && (hasModifier(candidate.Modifiers, "virtual") || hasModifier(candidate.Modifiers, "abstract")) {
-				return candidate, true
+				return candidate, true, false
 			}
 		}
 		current = members.superClass
 	}
-	return typesys.MemberSymbol{}, false
+	if isObjectOverrideSignature(member) {
+		return typesys.MemberSymbol{Modifiers: []string{"public", "virtual"}}, true, true
+	}
+	return typesys.MemberSymbol{}, false, false
 }
 
 func semaOverriddenMethodFromDependency(model *semaTypeMemberView, typ typesys.TypeSymbol, member typesys.MemberSymbol) bool {
@@ -2619,7 +2628,7 @@ func (a *Analyzer) checkBodyReturns(typ typesys.TypeSymbol, member typesys.Membe
 			continue
 		}
 		value := trimSemaArg(body, valueStart, valueEnd)
-		if hasModifier(member.Modifiers, "static") && simpleIdentifierPattern.MatchString(value.text) {
+		if hasModifier(member.Modifiers, "static") && simpleIdentifierPattern.MatchString(value.text) && !scopes.localVisibleAt(value.text, value.start) {
 			if field, found := semaResolveField(model, typ.Name, value.text, make(map[string]bool)); found && !hasModifier(field.member.Modifiers, "static") {
 				diagnostics = append(diagnostics, semaFieldAccessDiagnostic(typ, member, value.text, "instance fields cannot be accessed from a static method", bodyOffset+value.start, bodyOffset+value.end, source))
 				continue

@@ -63,6 +63,28 @@ func TestParseSupportsMethodCallBindExpression(t *testing.T) {
 	}
 }
 
+func TestParseSupportsConcatenatedMethodCallBindExpression(t *testing.T) {
+	const bind = ":NpdbRelatedRecordsCleanUpBatch.class.getName() + ' Test'"
+	query, err := Parse("SELECT COUNT() FROM CronJobDetail WHERE Name = " + bind)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if query.Where == nil || query.Where.Value.Kind != storage.ValueID || string(query.Where.Value.ID) != bind {
+		t.Fatalf("where = %#v", query.Where)
+	}
+}
+
+func TestParseSupportsConcatenatedLiteralMethodBindExpression(t *testing.T) {
+	const bind = ":'XXXX'.substring(0, 3) + ' Test'"
+	query, err := Parse("SELECT Id FROM Account WHERE Name = " + bind)
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	if query.Where == nil || query.Where.Value.Kind != storage.ValueID || string(query.Where.Value.ID) != bind {
+		t.Fatalf("where = %#v", query.Where)
+	}
+}
+
 func TestParseSupportsDocumentedLiteralMethodBindExpression(t *testing.T) {
 	query, err := Parse("SELECT Id FROM Account WHERE Name = :'XXXX'.substring(0, 3)")
 	if err != nil {

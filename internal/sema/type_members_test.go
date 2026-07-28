@@ -1395,6 +1395,34 @@ func TestCountExtractableMethodBodyRangesDoesNotAllocatePerAccessor(t *testing.T
 	}
 }
 
+func TestTypeMemberResolutionPrefersTopLevelTypeOverUnrelatedNestedShortName(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Caqh.cls": `
+public class Caqh {
+  public class DeaRegistration {}
+}
+`,
+		"DeaRegistration.cls": `
+public class DeaRegistration {
+  public static List<DeaRegistration> parseList(List<Object> values) {
+    return new List<DeaRegistration>();
+  }
+}
+`,
+		"ProfessionalIdentificationNumbers.cls": `
+public class ProfessionalIdentificationNumbers {
+  public List<DeaRegistration> deaRegistration;
+  public static List<DeaRegistration> parse(List<Object> values) {
+    return DeaRegistration.parseList(values);
+  }
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("unrelated nested short name shadowed top-level type: %#v", result.Diagnostics)
+	}
+}
+
 func TestTypeMemberProjectOverlayShadowsPlatformWithoutMutation(t *testing.T) {
 	const sentinel = "projectSentinel"
 	projectMath := typesys.TypeSymbol{
