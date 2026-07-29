@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
+	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/dap"
 	"github.com/glade-sh/glade/internal/diagnostic"
 	"github.com/glade-sh/glade/internal/pluginhost"
@@ -5327,6 +5328,37 @@ private class CacheHintTest {
 	}
 	if !strings.Contains(stderr.String(), "startup cache:") {
 		t.Fatalf("stderr missing cache hint:\n%s", stderr.String())
+	}
+}
+
+func TestRunTestProgressReportsFreshCacheAndParallelBypass(t *testing.T) {
+	restoreDiskCache := apextest.EnableDiskCacheForTesting()
+	t.Cleanup(restoreDiskCache)
+	previousGOMAXPROCS := runtime.GOMAXPROCS(2)
+	t.Cleanup(func() { runtime.GOMAXPROCS(previousGOMAXPROCS) })
+
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/CacheHintTest.cls"), `
+@isTest
+private class CacheHintTest {
+  @isTest static void passes() { System.assert(true); }
+}
+`)
+	writeFreshTestStartupCache(t, root)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--filter", "CacheHintTest", "--progress", "--no-serve"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	for _, want := range []string{
+		"startup cache: fresh",
+		"one-shot cache: bypassed for parallel methods with more than one worker; the startup cache will not be read or written for this run. Use glade test serve --project " + root,
+	} {
+		if !strings.Contains(stderr.String(), want) {
+			t.Fatalf("stderr missing %q:\n%s", want, stderr.String())
+		}
 	}
 }
 
