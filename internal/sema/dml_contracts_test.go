@@ -47,6 +47,22 @@ func TestDMLContractsRejectAggregateResultMergeOperands(t *testing.T) {
 	}
 }
 
+func TestDMLContractsRejectIncompatibleMergePairings(t *testing.T) {
+	for name, source := range map[string]string{
+		"aggregate master":           `public class Probe { public void run(AggregateResult master, Account duplicate) { merge master duplicate; } }`,
+		"aggregate scalar duplicate": `public class Probe { public void run(Account master, AggregateResult duplicate) { merge master duplicate; } }`,
+		"aggregate list duplicate":   `public class Probe { public void run(Account master, List<AggregateResult> duplicates) { merge master duplicates; } }`,
+		"cross type list duplicate":  `public class Probe { public void run(Account master, List<Contact> duplicates) { merge master duplicates; } }`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
+			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA034") {
+				t.Fatalf("incompatible merge pairing was accepted: %#v", result.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestDMLContractsAllowSObjectAndSObjectListOperands(t *testing.T) {
 	result := analyzeDeclarationProject(t, map[string]string{
 		"Probe.cls": `public class Probe { public void run() { Account account = new Account(); List<Account> accounts = new List<Account>{account}; insert account; update accounts; } }`,
