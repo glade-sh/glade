@@ -781,14 +781,7 @@ func copyApexString(out *strings.Builder, source string, start int) int {
 		current := source[i]
 		out.WriteByte(current)
 		i++
-		if current == '\\' {
-			if i < len(source) {
-				out.WriteByte(source[i])
-				i++
-			}
-			continue
-		}
-		if current == '\'' && i > start+1 {
+		if current == '\'' && i > start+1 && !hasOddPrecedingBackslashes(source, i-1) {
 			if i < len(source) && source[i] == '\'' {
 				out.WriteByte(source[i])
 				i++
@@ -803,14 +796,7 @@ func copyApexString(out *strings.Builder, source string, start int) int {
 func skipApexString(source string, start int) int {
 	i := start + 1
 	for i < len(source) {
-		if source[i] == '\\' {
-			i++
-			if i < len(source) {
-				i++
-			}
-			continue
-		}
-		if source[i] == '\'' {
+		if source[i] == '\'' && !hasOddPrecedingBackslashes(source, i) {
 			if i+1 < len(source) && source[i+1] == '\'' {
 				i += 2
 				continue
@@ -820,6 +806,15 @@ func skipApexString(source string, start int) int {
 		i++
 	}
 	return i
+}
+
+func hasOddPrecedingBackslashes(source string, index int) bool {
+	count := 0
+	for index > 0 && source[index-1] == '\\' {
+		count++
+		index--
+	}
+	return count%2 == 1
 }
 
 func copyUntilNewline(out *strings.Builder, source string, start int) int {

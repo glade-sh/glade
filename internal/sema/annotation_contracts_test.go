@@ -148,8 +148,8 @@ func TestAnnotationCatalogAllowsSalesforceInvocableVariableWithEscapedApostrophe
 		"Probe.cls": `public class Probe {
   @InvocableVariable(
     Required=false
-    Description='The Salesforce Id of the Organization-Wide email address to use as the "From" in emails. If this isn\'t set, the email address of the user sending the email is used instead.'
     Label='Email From Org-Wide Id'
+    Description='The Salesforce Id of the Organization-Wide email address to use as the "From" in emails. If this isn\'t set, the email address of the user sending the email is used instead.'
   )
   public String value;
 }`,

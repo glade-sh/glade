@@ -673,17 +673,58 @@ func TestParseStructuredAnnotationArgumentsSupportWhitespaceSeparation(t *testin
 }
 
 func TestParseAnnotationModifierPreservesBackslashEscapedApostrophe(t *testing.T) {
-	source := `public class Probe {
-  @InvocableVariable(Description='This isn\'t positional')
-  public String value;
-}`
-	file := NewParser().ParseSource("Probe.cls", source)
-	if len(file.Diagnostics) != 0 {
-		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	for name, tc := range map[string]struct {
+		source string
+		want   string
+	}{
+		"one preceding backslash": {
+			source: `Description='This isn\'t positional'`,
+			want:   `@InvocableVariable(Description='This isn\'t positional')`,
+		},
+		"two preceding backslashes": {
+			source: `Description='ends with two backslashes\\' Label='after'`,
+			want:   `@InvocableVariable(Description='ends with two backslashes\\'Label='after')`,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			source := "public class Probe {\n  @InvocableVariable(" + tc.source + ")\n  public String value;\n}"
+			file := NewParser().ParseSource("Probe.cls", source)
+			if len(file.Diagnostics) != 0 {
+				t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+			}
+			modifiers := file.Declarations[0].Members[0].Modifiers
+			if len(modifiers) == 0 || modifiers[0] != tc.want {
+				t.Fatalf("modifiers = %#v", modifiers)
+			}
+		})
 	}
-	modifiers := file.Declarations[0].Members[0].Modifiers
-	if len(modifiers) == 0 || modifiers[0] != "@InvocableVariable(Description='This isn\\'t positional')" {
-		t.Fatalf("modifiers = %#v", modifiers)
+}
+
+func TestAnnotationStringScannerHandlesDoubledApostrophe(t *testing.T) {
+	arguments := splitAnnotationArguments(`Description='it''s doubled' Label='after'`)
+	if len(arguments) != 2 || strings.TrimSpace(arguments[0].text) != `Description='it''s doubled'` || strings.TrimSpace(arguments[1].text) != `Label='after'` {
+		t.Fatalf("arguments = %#v", arguments)
+	}
+	if got, want := normalizeAnnotationText(`@InvocableVariable(Description='it''s doubled' Label='after')`), `@InvocableVariable(Description='it''s doubled'Label='after')`; got != want {
+		t.Fatalf("normalized annotation = %q, want %q", got, want)
+	}
+}
+
+func TestHasOddPrecedingBackslashes(t *testing.T) {
+	for name, tc := range map[string]struct {
+		source string
+		index  int
+		want   bool
+	}{
+		"one":     {source: `'one\'two'`, index: len(`'one\`), want: true},
+		"two":     {source: `'two\\'`, index: len(`'two\\`), want: false},
+		"doubled": {source: `'it''s'`, index: len(`'it`), want: false},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if got := hasOddPrecedingBackslashes(tc.source, tc.index); got != tc.want {
+				t.Fatalf("hasOddPrecedingBackslashes(%q, %d) = %t, want %t", tc.source, tc.index, got, tc.want)
+			}
+		})
 	}
 }
 
@@ -691,8 +732,8 @@ func TestParseSalesforceInvocableVariableWithEscapedApostrophe(t *testing.T) {
 	source := `public class Probe {
   @InvocableVariable(
     Required=false
-    Description='The Salesforce Id of the Organization-Wide email address to use as the "From" in emails. If this isn\'t set, the email address of the user sending the email is used instead.'
     Label='Email From Org-Wide Id'
+    Description='The Salesforce Id of the Organization-Wide email address to use as the "From" in emails. If this isn\'t set, the email address of the user sending the email is used instead.'
   )
   public String value;
 }`
@@ -701,10 +742,10 @@ func TestParseSalesforceInvocableVariableWithEscapedApostrophe(t *testing.T) {
 		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
 	}
 	arguments := file.Declarations[0].Members[0].Annotations[0].Arguments
-	if len(arguments) != 3 || arguments[1].Name != "Description" || arguments[2].Name != "Label" {
+	if len(arguments) != 3 || arguments[1].Name != "Label" || arguments[2].Name != "Description" {
 		t.Fatalf("arguments = %#v", arguments)
 	}
-	if got, want := arguments[1].Value, `'The Salesforce Id of the Organization-Wide email address to use as the "From" in emails. If this isn\'t set, the email address of the user sending the email is used instead.'`; got != want {
+	if got, want := arguments[2].Value, `'The Salesforce Id of the Organization-Wide email address to use as the "From" in emails. If this isn\'t set, the email address of the user sending the email is used instead.'`; got != want {
 		t.Fatalf("description = %q, want %q", got, want)
 	}
 }
