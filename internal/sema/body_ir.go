@@ -1214,26 +1214,34 @@ func semaDMLObjectType(typeName string) string {
 
 func semaDMLTargetType(typeName string, model *semaTypeMemberView) bool {
 	typeName = strings.TrimSpace(typeName)
-	if isSemaSObjectLike(typeName, model) {
+	if semaDMLRecordType(typeName, model) {
 		return true
 	}
 	base, args := semaGenericBaseAndArgs(typeName)
-	return (strings.EqualFold(base, "List") || strings.EqualFold(base, "Set")) && len(args) == 1 && isSemaSObjectLike(args[0], model)
+	return (strings.EqualFold(base, "List") || strings.EqualFold(base, "Set")) && len(args) == 1 && semaDMLRecordType(args[0], model)
 }
 
 func semaDMLMergeTypesCompatible(left, right string, model *semaTypeMemberView) bool {
-	if !isSemaSObjectLike(left, model) {
+	if !semaDMLRecordType(left, model) {
 		return false
 	}
 	rightObject := right
-	if !isSemaSObjectLike(right, model) {
+	if !semaDMLRecordType(right, model) {
 		base, args := semaGenericBaseAndArgs(right)
-		if !strings.EqualFold(base, "List") || len(args) != 1 || !isSemaSObjectLike(args[0], model) {
+		if !strings.EqualFold(base, "List") || len(args) != 1 || !semaDMLRecordType(args[0], model) {
 			return false
 		}
 		rightObject = args[0]
 	}
 	return strings.EqualFold(normalizeName(left), normalizeName(rightObject))
+}
+
+func semaDMLRecordType(typeName string, model *semaTypeMemberView) bool {
+	typeName = strings.TrimSpace(typeName)
+	if schemaName, ok := semaSchemaQualifiedTypeName(typeName); ok {
+		typeName = schemaName
+	}
+	return !strings.EqualFold(typeName, "AggregateResult") && isSemaSObjectLike(typeName, model)
 }
 
 func irDMLContractDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, inst ir.Instruction, bodyOffset int, source, message string) diagnostic.Diagnostic {

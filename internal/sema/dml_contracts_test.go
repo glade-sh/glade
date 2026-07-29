@@ -33,6 +33,20 @@ func TestDMLContractsAllowMergeOfSObjectAndSameSObjectCollection(t *testing.T) {
 	}
 }
 
+func TestDMLContractsRejectAggregateResultMergeOperands(t *testing.T) {
+	for name, source := range map[string]string{
+		"scalar": `public class Probe { public void run(AggregateResult master, AggregateResult duplicate) { merge master duplicate; } }`,
+		"list":   `public class Probe { public void run(AggregateResult master, List<AggregateResult> duplicates) { merge master duplicates; } }`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
+			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA034") {
+				t.Fatalf("AggregateResult merge operand was accepted: %#v", result.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestDMLContractsAllowSObjectAndSObjectListOperands(t *testing.T) {
 	result := analyzeDeclarationProject(t, map[string]string{
 		"Probe.cls": `public class Probe { public void run() { Account account = new Account(); List<Account> accounts = new List<Account>{account}; insert account; update accounts; } }`,
