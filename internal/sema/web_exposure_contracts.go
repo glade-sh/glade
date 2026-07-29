@@ -64,14 +64,23 @@ func checkSOAPExposureContracts(typ typesys.TypeSymbol) []diagnostic.Diagnostic 
 		if !hasModifier(member.Modifiers, "webservice") {
 			continue
 		}
-		methodNames[strings.ToLower(member.Name)]++
-		if typ.Kind != apexast.DeclarationClass || typ.NestingDepth != 0 || !hasModifier(typ.Modifiers, "global") || member.Kind != apexast.DeclarationMethod || !hasModifier(member.Modifiers, "static") || !validSOAPType(member.Type) {
-			diagnostics = append(diagnostics, webExposureDiagnostic(typ.File, member.Range, "webservice methods require a top-level global class, static method, and supported wire types"))
-		}
-		for _, parameter := range member.Parameters {
-			if !validSOAPType(parameter.Type) {
-				diagnostics = append(diagnostics, webExposureDiagnostic(typ.File, parameter.Range, "webservice parameters cannot use Map, Set, or Blob types"))
+		switch member.Kind {
+		case apexast.DeclarationMethod:
+			methodNames[strings.ToLower(member.Name)]++
+			if typ.Kind != apexast.DeclarationClass || typ.NestingDepth != 0 || !hasModifier(typ.Modifiers, "global") || !hasModifier(member.Modifiers, "static") || !validSOAPType(member.Type) {
+				diagnostics = append(diagnostics, webExposureDiagnostic(typ.File, member.Range, "webservice methods require a top-level global class, static method, and supported wire types"))
 			}
+			for _, parameter := range member.Parameters {
+				if !validSOAPType(parameter.Type) {
+					diagnostics = append(diagnostics, webExposureDiagnostic(typ.File, parameter.Range, "webservice parameters cannot use Map, Set, or Blob types"))
+				}
+			}
+		case apexast.DeclarationProperty:
+			if typ.Kind != apexast.DeclarationClass || typ.NestingDepth == 0 || !hasModifier(typ.Modifiers, "global") || !validSOAPType(member.Type) {
+				diagnostics = append(diagnostics, webExposureDiagnostic(typ.File, member.Range, "webservice properties require a nested global class and supported wire types"))
+			}
+		default:
+			diagnostics = append(diagnostics, webExposureDiagnostic(typ.File, member.Range, "webservice applies only to methods and properties"))
 		}
 	}
 	for name, count := range methodNames {
