@@ -63,6 +63,41 @@ type Options struct {
 	Progress                   func(TestProgress)
 }
 
+// DiskRuntimeCachePolicyReason identifies the reason a test run will or will
+// not read and write the on-disk runtime cache.
+type DiskRuntimeCachePolicyReason string
+
+const (
+	DiskRuntimeCacheEnabled              DiskRuntimeCachePolicyReason = "enabled"
+	DiskRuntimeCacheNoDiskCache          DiskRuntimeCachePolicyReason = "no_disk_cache"
+	DiskRuntimeCacheDisabledEnvironment  DiskRuntimeCachePolicyReason = "disabled_environment"
+	DiskRuntimeCacheParallelMethodBypass DiskRuntimeCachePolicyReason = "parallel_method_bypass"
+)
+
+// DiskRuntimeCachePolicy is the effective on-disk runtime-cache decision for
+// one test invocation. A persistent test server keeps an in-process runtime
+// independently of this policy.
+type DiskRuntimeCachePolicy struct {
+	Enabled bool
+	Reason  DiskRuntimeCachePolicyReason
+}
+
+// ResolveDiskRuntimeCachePolicy returns the effective cache policy after
+// applying command options, process configuration, and the default-off
+// multi-worker restored-runtime guard.
+func ResolveDiskRuntimeCachePolicy(opts Options) DiskRuntimeCachePolicy {
+	if opts.NoDiskCache {
+		return DiskRuntimeCachePolicy{Reason: DiskRuntimeCacheNoDiskCache}
+	}
+	if !diskCacheEnabled() {
+		return DiskRuntimeCachePolicy{Reason: DiskRuntimeCacheDisabledEnvironment}
+	}
+	if opts.ParallelMethods && opts.Parallelism > 1 && !opts.RestoredRuntimeMultiWorker {
+		return DiskRuntimeCachePolicy{Reason: DiskRuntimeCacheParallelMethodBypass}
+	}
+	return DiskRuntimeCachePolicy{Enabled: true, Reason: DiskRuntimeCacheEnabled}
+}
+
 type PreRunPhaseDurations struct {
 	ProjectLoad time.Duration
 	SchemaLoad  time.Duration
@@ -530,13 +565,7 @@ func semanticAnalysisIndex(index typesys.Index) typesys.Index {
 }
 
 func useDiskRuntimeCache(opts Options) bool {
-	if opts.NoDiskCache || !diskCacheEnabled() {
-		return false
-	}
-	if opts.ParallelMethods && opts.Parallelism > 1 {
-		return opts.RestoredRuntimeMultiWorker
-	}
-	return true
+	return ResolveDiskRuntimeCachePolicy(opts).Enabled
 }
 
 type testCasePlan struct {

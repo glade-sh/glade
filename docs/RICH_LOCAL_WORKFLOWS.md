@@ -18,6 +18,24 @@ Use `--progress-json` when an editor or wrapper wants NDJSON progress events.
 Use `--no-progress` for silent scripts. Commands that already had `--quiet`
 keep it as an alias.
 
+## Daily Test Loop
+
+The default `glade test` run executes methods in parallel. Until restored
+multi-worker startup caching is promoted, those runs deliberately bypass the
+on-disk test runtime cache. The test wizard and progress output state that
+policy for the effective command.
+
+For repeated commands from separate terminals, keep the runtime warm in a
+persistent server:
+
+```bash
+glade test serve --project .
+glade test --project . --filter AccountServiceTest
+```
+
+Use `--no-cache` when a run must neither read nor write the on-disk startup
+cache. A serial method run can use that cache without the persistent server.
+
 ## Terminal UI
 
 Use `glade tui` when you want one terminal surface for common local work. It

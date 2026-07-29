@@ -8,9 +8,11 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
+	"github.com/glade-sh/glade/internal/apextest"
 	"github.com/glade-sh/glade/internal/flagparse"
 	"github.com/glade-sh/glade/internal/startupcache"
 	"github.com/glade-sh/glade/internal/testdaemon"
@@ -143,7 +145,7 @@ func writeTestWizard(ctx context.Context, root string, w io.Writer) error {
 	fmt.Fprintln(w, "Test wizard")
 	fmt.Fprintf(w, "project: %s\n", absRoot)
 	fmt.Fprintf(w, "daemon: %s\n", daemon)
-	fmt.Fprintf(w, "cache: %s\n", testStartupCacheStatus(absRoot))
+	fmt.Fprintf(w, "cache: %s\n", testStartupCacheStatus(absRoot, defaultTestRuntimeCacheOptions()))
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Suggested commands:")
 	fmt.Fprintf(w, "  glade test changed --project %s --since HEAD\n", absRoot)
@@ -153,7 +155,23 @@ func writeTestWizard(ctx context.Context, root string, w io.Writer) error {
 	return nil
 }
 
-func testStartupCacheStatus(root string) string {
+func defaultTestRuntimeCacheOptions() apextest.Options {
+	return apextest.Options{
+		ParallelMethods: true,
+		Parallelism:     runtime.GOMAXPROCS(0),
+	}
+}
+
+func testStartupCacheStatus(root string, opts apextest.Options) string {
+	policy := apextest.ResolveDiskRuntimeCachePolicy(opts)
+	switch policy.Reason {
+	case apextest.DiskRuntimeCacheNoDiskCache:
+		return "disabled by --no-cache; the startup cache will not be read or written for this run"
+	case apextest.DiskRuntimeCacheDisabledEnvironment:
+		return "disabled in this process; the startup cache will not be read or written for this run"
+	case apextest.DiskRuntimeCacheParallelMethodBypass:
+		return "bypassed for parallel methods with more than one worker; the startup cache will not be read or written for this run. Use glade test serve to keep repeated runs warm"
+	}
 	entry, err := startupcache.Read(root, startupcache.SubdirTest)
 	if err != nil {
 		return "unreadable; run glade test clear-cache --project " + root

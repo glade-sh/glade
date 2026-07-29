@@ -49,6 +49,54 @@ func TestParallelMethodDiskRuntimeGuardRemainsEnabled(t *testing.T) {
 	}
 }
 
+func TestDiskRuntimeCachePolicyReportsWhyCacheIsUnavailable(t *testing.T) {
+	wasDisabled := disableDiskCache.Load()
+	disableDiskCache.Store(false)
+	t.Cleanup(func() { disableDiskCache.Store(wasDisabled) })
+
+	tests := []struct {
+		name        string
+		opts        Options
+		disable     bool
+		wantEnabled bool
+		wantReason  DiskRuntimeCachePolicyReason
+	}{
+		{
+			name:       "explicit-no-disk-cache",
+			opts:       Options{NoDiskCache: true},
+			wantReason: DiskRuntimeCacheNoDiskCache,
+		},
+		{
+			name:       "disabled-environment",
+			disable:    true,
+			wantReason: DiskRuntimeCacheDisabledEnvironment,
+		},
+		{
+			name:       "parallel-method-workers-bypass-restored-cache",
+			opts:       Options{ParallelMethods: true, Parallelism: 2},
+			wantReason: DiskRuntimeCacheParallelMethodBypass,
+		},
+		{
+			name:        "serial-enabled",
+			opts:        Options{ParallelMethods: true, Parallelism: 1},
+			wantEnabled: true,
+			wantReason:  DiskRuntimeCacheEnabled,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			disableDiskCache.Store(test.disable)
+			policy := ResolveDiskRuntimeCachePolicy(test.opts)
+			if policy.Enabled != test.wantEnabled {
+				t.Fatalf("policy.Enabled = %t, want %t", policy.Enabled, test.wantEnabled)
+			}
+			if policy.Reason != test.wantReason {
+				t.Fatalf("policy.Reason = %q, want %q", policy.Reason, test.wantReason)
+			}
+		})
+	}
+}
+
 func TestDiskRuntimeIsolationDeterministicWorkers(t *testing.T) {
 	fixture := buildDiskRuntimeIsolationFixture(t)
 	want := runDiskRuntimeIsolationState(t, fixture, "built-no-disk", 1, fixture.cases, nil)
