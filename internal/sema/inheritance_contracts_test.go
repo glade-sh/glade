@@ -66,6 +66,27 @@ public class Child extends Base {
 	}
 }
 
+func TestInheritanceContractsAllowStaticMethodToShareInheritedInstanceSignature(t *testing.T) {
+	t.Parallel()
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Base.cls": `
+public virtual class Base {
+  public virtual String describe(String value) { return value; }
+}
+`,
+		"Child.cls": `
+public class Child extends Base {
+  private static String describe(String value) { return value; }
+}
+`,
+	})
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA016" && strings.Contains(diag.Message, "describe") {
+			t.Fatalf("static child method was treated as an inherited instance override: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestInheritanceContractsRespectCrossNamespaceMethodVisibility(t *testing.T) {
 	result := analyzeCrossNamespaceInheritanceFixture(t, `
 public class MockProduct extends dep.ProductBase {

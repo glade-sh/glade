@@ -82,3 +82,53 @@ func TestSOAPExposureAllowsLoggingLevel(t *testing.T) {
 		t.Fatalf("unexpected SOAP contract: %#v", result.Diagnostics)
 	}
 }
+
+func TestSOAPExposureAllowsNestedGlobalWrapperProperties(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": `
+global class Probe {
+    global class Wrapper {
+        webservice String value { get; set; }
+        webservice List<String> values { get; set; }
+    }
+}`})
+	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA033") {
+		t.Fatalf("nested global SOAP wrapper properties were rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestSOAPExposureRejectsUnsupportedWrapperProperties(t *testing.T) {
+	for name, source := range map[string]string{
+		"map":  `global class Probe { global class Wrapper { webservice Map<String, String> value { get; set; } } }`,
+		"set":  `global class Probe { global class Wrapper { webservice Set<String> value { get; set; } } }`,
+		"blob": `global class Probe { global class Wrapper { webservice Blob value { get; set; } } }`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
+			if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA033") {
+				t.Fatalf("unsupported SOAP wrapper property was accepted: %#v", result.Diagnostics)
+			}
+		})
+	}
+}
+
+func TestSOAPExposureRejectsNonGlobalWrapperProperties(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": `
+global class Probe {
+    public class Wrapper {
+        webservice String value { get; set; }
+    }
+}`})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA033") {
+		t.Fatalf("non-global SOAP wrapper property was accepted: %#v", result.Diagnostics)
+	}
+}
+
+func TestSOAPExposureRejectsTopLevelProperties(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": `
+global class Probe {
+    webservice String value { get; set; }
+}`})
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA033") {
+		t.Fatalf("top-level SOAP property was accepted: %#v", result.Diagnostics)
+	}
+}

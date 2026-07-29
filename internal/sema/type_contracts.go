@@ -287,10 +287,17 @@ func semaDateDayArithmetic(operator, left, right string) bool {
 }
 
 func semaRuntimeTypeTestCompatible(owner, left, right string, model *semaTypeMemberView) bool {
-	left = resolveNestedTypeReference(model, owner, left)
-	right = resolveNestedTypeReference(model, owner, right)
+	left = semaCanonicalAssignableType(resolveNestedTypeReference(model, owner, left))
+	right = semaCanonicalAssignableType(resolveNestedTypeReference(model, owner, right))
 	leftBase, leftArgs := semaGenericBaseAndArgs(left)
 	rightBase, rightArgs := semaGenericBaseAndArgs(right)
+	leftIterable := strings.EqualFold(leftBase, "Iterable") && len(leftArgs) == 1
+	rightIterable := strings.EqualFold(rightBase, "Iterable") && len(rightArgs) == 1
+	leftQueryLocator := strings.EqualFold(leftBase, "Database.QueryLocator") && len(leftArgs) == 0
+	rightQueryLocator := strings.EqualFold(rightBase, "Database.QueryLocator") && len(rightArgs) == 0
+	if (leftIterable && rightQueryLocator) || (leftQueryLocator && rightIterable) {
+		return true
+	}
 	if len(leftArgs) > 0 || len(rightArgs) > 0 {
 		if len(leftArgs) == 0 || len(leftArgs) != len(rightArgs) || !strings.EqualFold(leftBase, rightBase) {
 			return false
@@ -315,12 +322,14 @@ func semaRuntimeTypeTestCompatible(owner, left, right string, model *semaTypeMem
 	if leftMembers.kind == apexast.DeclarationInterface {
 		return rightMembers.kind == apexast.DeclarationInterface ||
 			hasModifier(rightMembers.modifiers, "abstract") ||
-			hasModifier(rightMembers.modifiers, "virtual")
+			hasModifier(rightMembers.modifiers, "virtual") ||
+			semaAssignableToType(left, right, model)
 	}
 	if rightMembers.kind == apexast.DeclarationInterface {
 		return leftMembers.kind == apexast.DeclarationInterface ||
 			hasModifier(leftMembers.modifiers, "abstract") ||
-			hasModifier(leftMembers.modifiers, "virtual")
+			hasModifier(leftMembers.modifiers, "virtual") ||
+			semaAssignableToType(right, left, model)
 	}
 	return false
 }

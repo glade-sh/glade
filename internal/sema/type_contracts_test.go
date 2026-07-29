@@ -3,6 +3,7 @@ package sema
 import (
 	"testing"
 
+	"github.com/glade-sh/glade/internal/apexast"
 	"github.com/glade-sh/glade/internal/typesys"
 )
 
@@ -201,6 +202,43 @@ public class Probe {
 	}
 }
 
+func TestTypeContractAllowsInterfaceValueInstanceofNestedImplementer(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Calculator.cls": `public interface Calculator {}`,
+		"Probe.cls": `
+public class Probe {
+  private class LocalCalculator implements Calculator {}
+  public void assertLocalCalculator(Calculator calculator) {
+    System.assert(calculator instanceof LocalCalculator);
+  }
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("interface value instanceof its nested implementation was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestRuntimeTypeTestCompatibilityAllowsNestedConcreteInterfaceImplementer(t *testing.T) {
+	model := newSemaTypeMemberState(buildTypeMembers(typesys.Index{Types: []typesys.TypeSymbol{
+		{Kind: apexast.DeclarationInterface, Name: "Calculator"},
+		{Kind: apexast.DeclarationClass, Name: "Probe.LocalCalculator", NestingDepth: 1, Interfaces: []string{"Calculator"}},
+	}})).view()
+	if !semaRuntimeTypeTestCompatible("Probe", "Calculator", "LocalCalculator", model) {
+		t.Fatal("interface value instanceof nested concrete implementer was treated as impossible")
+	}
+}
+
+func TestRuntimeTypeTestCompatibilityRejectsUnrelatedConcreteClass(t *testing.T) {
+	model := newSemaTypeMemberState(buildTypeMembers(typesys.Index{Types: []typesys.TypeSymbol{
+		{Kind: apexast.DeclarationInterface, Name: "Calculator"},
+		{Kind: apexast.DeclarationClass, Name: "Probe.Unrelated", NestingDepth: 1},
+	}})).view()
+	if semaRuntimeTypeTestCompatible("Probe", "Calculator", "Unrelated", model) {
+		t.Fatal("interface value instanceof unrelated concrete class was accepted")
+	}
+}
+
 func TestRuntimeTypeTestCompatibilityIsConservativeForIncompleteExternalTypes(t *testing.T) {
 	model := newSemaTypeMemberState(buildTypeMembers(typesys.Index{})).view()
 	if !semaRuntimeTypeTestCompatible("", "external.Selector", "external.BaseSelector", model) {
@@ -220,6 +258,67 @@ public class Probe {
 	})
 	if result.HasErrors() {
 		t.Fatalf("explicit SObject list cast was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestTypeContractAllowsQueryLocatorRuntimeCasts(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public void run(Iterable<Object> values) {
+    Database.QueryLocator locator = (Database.QueryLocator) values;
+    Iterator<Object> iterator = locator.iterator();
+  }
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("QueryLocator runtime cast was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestTypeContractAllowsQueryLocatorRuntimeTypeTests(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public void run(Database.QueryLocator locator, Iterable<Object> values) {
+    Iterable<Object> iterable = (Iterable<Object>) locator;
+    if (values instanceof Database.QueryLocator) {}
+    if (locator instanceof Iterable<Object>) {}
+  }
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("QueryLocator runtime type test was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestTypeContractAllowsQueryLocatorRuntimeTypesForAnyIterableElement(t *testing.T) {
+	for name, iterable := range map[string]string{
+		"Object":                 "Iterable<Object>",
+		"SObject":                "Iterable<SObject>",
+		"Account":                "Iterable<Account>",
+		"System Iterable Object": "System.Iterable<Object>",
+		"String":                 "Iterable<String>",
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{
+				"Probe.cls": `
+public class Probe {
+  public void run(Database.QueryLocator locator, ` + iterable + ` values) {
+    Database.QueryLocator fromIterable = (Database.QueryLocator) values;
+    ` + iterable + ` fromLocator = (` + iterable + `) locator;
+    if (values instanceof Database.QueryLocator) {}
+    if (locator instanceof ` + iterable + `) {}
+  }
+}
+`,
+			})
+			if result.HasErrors() {
+				t.Fatalf("QueryLocator runtime relation rejected %s: %#v", iterable, result.Diagnostics)
+			}
+		})
 	}
 }
 

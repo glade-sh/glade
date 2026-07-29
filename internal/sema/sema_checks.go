@@ -835,7 +835,7 @@ func queryShapeDiagnostics(query soql.Query, ctx queryTextContext) []diagnostic.
 	diagnosticFor := func(message, token string) {
 		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", message, token, findQueryIdentifier(ctx.queryText, token, 0)))
 	}
-	if len(query.Aggregates) > 0 && query.HasLimit && len(query.GroupBy) == 0 {
+	if len(query.Aggregates) > 0 && !query.Count && query.HasLimit && len(query.GroupBy) == 0 {
 		diagnosticFor("aggregate SOQL queries require GROUP BY before LIMIT", "LIMIT")
 	}
 	if strings.EqualFold(query.GroupMode, "ROLLUP") && len(query.GroupBy) > 2 {
@@ -2335,6 +2335,9 @@ func inheritanceTargetMembers(model *semaTypeMemberView, typeName string) (typeM
 }
 
 func overridableInheritedMethod(model *semaTypeMemberView, typ typesys.TypeSymbol, member typesys.MemberSymbol) (typesys.MemberSymbol, bool, bool) {
+	if hasModifier(member.Modifiers, "static") {
+		return typesys.MemberSymbol{}, false, false
+	}
 	for current := typ.SuperClass; current != ""; {
 		members, ok := model.lookup(normalizeName(current))
 		if !ok {
@@ -2824,7 +2827,7 @@ func checkGeneratedPlatformStaticAccess(typ typesys.TypeSymbol, member typesys.M
 	if owner, ok := model.lookup(normalizeName(candidates[0].owner)); !ok || (!owner.dependency && !owner.sobject) {
 		return diagnostic.Diagnostic{}, false
 	}
-	if len(filterGeneratedPlatformMethodsByReceiverMode(candidates, receiverMode)) != 0 {
+	if len(filterResolvedMethodsByReceiverMode(candidates, receiverMode)) != 0 {
 		return diagnostic.Diagnostic{}, false
 	}
 	return checkSemaStaticAccess(typ, member, method, candidates[0], receiverMode, start, end, source)

@@ -26,6 +26,17 @@ func DisableDiskCacheForTesting() func() {
 	}
 }
 
+// EnableDiskCacheForTesting enables the disk cache until the returned restore
+// function is called. It lets integration tests exercise cache-enabled paths
+// when their package test harness disables disk I/O by default.
+func EnableDiskCacheForTesting() func() {
+	wasDisabled := disableDiskCache.Load()
+	disableDiskCache.Store(false)
+	return func() {
+		disableDiskCache.Store(wasDisabled)
+	}
+}
+
 func diskCacheEnabled() bool {
 	return !disableDiskCache.Load()
 }

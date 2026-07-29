@@ -71,6 +71,32 @@ public class QueryProbe {
 	}
 }
 
+func TestQuerySemanticsAllowsUngroupedScalarCountWithLimit(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    Integer countRows = [SELECT COUNT() FROM Account LIMIT 1];
+  }
+}
+`, queryDiagnosticSchema())
+	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CONTRACT") {
+		t.Fatalf("ungrouped scalar COUNT() with LIMIT was rejected: %#v", result.Diagnostics)
+	}
+}
+
+func TestQuerySemanticsRejectsUngroupedAggregateWithLimit(t *testing.T) {
+	result := analyzeQueryProbe(t, `
+public class QueryProbe {
+  public void run() {
+    List<AggregateResult> aggregateRows = [SELECT COUNT(Id) total FROM Account LIMIT 1];
+  }
+}
+`, queryDiagnosticSchema())
+	if !hasDiagnosticCode(result.Diagnostics, "GLADESEMA_QUERY_CONTRACT") {
+		t.Fatalf("ungrouped aggregate with LIMIT was accepted: %#v", result.Diagnostics)
+	}
+}
+
 func TestQuerySemanticsRejectsAggregateOnNonAggregatableField(t *testing.T) {
 	no := false
 	result := analyzeQueryProbe(t, `

@@ -1154,9 +1154,13 @@ func (a *Analyzer) checkIRDMLContract(typ typesys.TypeSymbol, member typesys.Mem
 		operands = inst.Expr.Args[:2]
 	}
 	operandTypes := make([]string, len(operands))
+	mergeIDDuplicates := false
 	for i, operand := range operands {
 		operandTypes[i] = a.inferIRExprType(operand, scope, model, typ.Name)
-		if !semaDMLTargetType(operandTypes[i], model) {
+		if i == 1 && strings.EqualFold(inst.Name, "merge") && len(operandTypes) == 2 {
+			mergeIDDuplicates = semaDMLMergeIDDuplicateTypesCompatible(operandTypes[0], operandTypes[1], model)
+		}
+		if !semaDMLTargetType(operandTypes[i], model) && !(i == 1 && mergeIDDuplicates) {
 			return []diagnostic.Diagnostic{irDMLContractDiagnostic(typ, member, inst, bodyOffset, source, fmt.Sprintf("%s requires an SObject or SObject collection operand, got %s", inst.Name, operandTypes[i]))}
 		}
 	}
@@ -1214,15 +1218,53 @@ func semaDMLObjectType(typeName string) string {
 
 func semaDMLTargetType(typeName string, model *semaTypeMemberView) bool {
 	typeName = strings.TrimSpace(typeName)
-	if isSemaSObjectLike(typeName, model) {
+	if semaDMLRecordType(typeName, model) {
 		return true
 	}
 	base, args := semaGenericBaseAndArgs(typeName)
-	return (strings.EqualFold(base, "List") || strings.EqualFold(base, "Set")) && len(args) == 1 && isSemaSObjectLike(args[0], model)
+	return (strings.EqualFold(base, "List") || strings.EqualFold(base, "Set")) && len(args) == 1 && semaDMLRecordType(args[0], model)
 }
 
 func semaDMLMergeTypesCompatible(left, right string, model *semaTypeMemberView) bool {
-	return isSemaSObjectLike(left, model) && isSemaSObjectLike(right, model) && strings.EqualFold(normalizeName(left), normalizeName(right))
+	if !semaDMLRecordType(left, model) {
+		return false
+	}
+	if semaDMLMergeIDDuplicateTypesCompatible(left, right, model) {
+		return true
+	}
+	rightObject := right
+	if !semaDMLRecordType(right, model) {
+		base, args := semaGenericBaseAndArgs(right)
+		if !strings.EqualFold(base, "List") || len(args) != 1 || !semaDMLRecordType(args[0], model) {
+			return false
+		}
+		rightObject = args[0]
+	}
+	return strings.EqualFold(normalizeName(left), normalizeName(rightObject))
+}
+
+func semaDMLMergeIDDuplicateTypesCompatible(master, duplicates string, model *semaTypeMemberView) bool {
+	if !semaDMLConcreteRecordType(master, model) {
+		return false
+	}
+	base, args := semaGenericBaseAndArgs(duplicates)
+	return strings.EqualFold(base, "List") && len(args) == 1 && strings.EqualFold(strings.TrimSpace(args[0]), "Id")
+}
+
+func semaDMLConcreteRecordType(typeName string, model *semaTypeMemberView) bool {
+	typeName = strings.TrimSpace(typeName)
+	if schemaName, ok := semaSchemaQualifiedTypeName(typeName); ok {
+		typeName = schemaName
+	}
+	return !strings.EqualFold(typeName, "SObject") && semaDMLRecordType(typeName, model)
+}
+
+func semaDMLRecordType(typeName string, model *semaTypeMemberView) bool {
+	typeName = strings.TrimSpace(typeName)
+	if schemaName, ok := semaSchemaQualifiedTypeName(typeName); ok {
+		typeName = schemaName
+	}
+	return !strings.EqualFold(typeName, "AggregateResult") && isSemaSObjectLike(typeName, model)
 }
 
 func irDMLContractDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, inst ir.Instruction, bodyOffset int, source, message string) diagnostic.Diagnostic {
@@ -1541,7 +1583,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 			}
 		}
 	}
-	candidates := resolveMemberMethods(model, receiverType, method)
+	candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, receiverType, method), receiverMode)
 	if !explicitReceiver {
 		candidates = resolveImplicitMemberMethods(model, receiverType, method)
 	}
@@ -1561,7 +1603,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 			receiverType = chainedReceiver
 			explicitReceiver = true
 			receiverMode = "instance"
-			candidates = resolveMemberMethods(model, receiverType, method)
+			candidates = preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, receiverType, method), receiverMode)
 			argTypes := irCallArgTypes(a, expr.Args, scope, model, typ.Name)
 			if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok && !semaResolvedMembersAllPlatformBacked(model, candidates) {
 				if staticDiagnostic, blocked := checkSemaStaticAccessWithModel(typ, member, expr.Callee, candidate, receiverMode, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source, model); blocked {
@@ -1797,6 +1839,26 @@ func semaIRExprLooksLikeTypeReceiver(expr ir.Expr, scope irSemaScope, model *sem
 	}
 	canonical := semaCanonicalPlatformAlias(path)
 	return !strings.EqualFold(canonical, path) && semaKnownPlatformTypeReceiver(path) && semaModelHasType(model, canonical)
+}
+
+func semaIRCallReceiverMode(expr ir.Expr, scope irSemaScope, model *semaTypeMemberView) string {
+	if expr.Left != nil {
+		if semaIRExprLooksLikeTypeReceiver(*expr.Left, scope, model) {
+			return "class"
+		}
+		return "instance"
+	}
+	receiver, _, ok := strings.Cut(expr.Callee, ".")
+	if !ok || receiver == "" {
+		return "implicit"
+	}
+	if strings.EqualFold(receiver, "super") {
+		return "super"
+	}
+	if semaReceiverExprLooksLikeType(receiver, scope, model) {
+		return "class"
+	}
+	return "instance"
 }
 
 func semaIRExprTypeReceiverPath(expr ir.Expr) (string, bool) {
@@ -2407,7 +2469,7 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model *semaT
 			if sig, ok := semaEnumMethodSignature(model, receiverType, method); ok {
 				return sig.returnType
 			}
-			if typ := semaResolvedIRCallReturnType(a, model, receiverType, method, expr.Args, scope, currentType); typ != "" {
+			if typ := semaResolvedIRCallReturnType(a, model, receiverType, method, expr.Args, scope, currentType, semaIRCallReceiverMode(expr, scope, model)); typ != "" {
 				return typ
 			}
 			if sig, ok := semaSObjectCloneSignature(model, receiverType, method); ok {
@@ -2426,9 +2488,9 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model *semaT
 		}
 		if receiver, method, ok := splitSemaMethodPath(expr.Callee); ok {
 			receiverType := semaTextReceiverType(receiver, scope.flat(), model)
-			return semaResolvedIRCallReturnType(a, model, receiverType, method, expr.Args, scope, currentType)
+			return semaResolvedIRCallReturnType(a, model, receiverType, method, expr.Args, scope, currentType, semaTextCallReceiverMode(receiver, scope.flat(), model))
 		}
-		return semaResolvedIRCallReturnType(a, model, currentType, expr.Callee, expr.Args, scope, currentType)
+		return semaResolvedIRCallReturnType(a, model, currentType, expr.Callee, expr.Args, scope, currentType, "implicit")
 	case ir.ExprUnary:
 		switch expr.Operator {
 		case "!":
@@ -2555,7 +2617,7 @@ func (a *Analyzer) inferFlattenedIRCallType(expr ir.Expr, scope irSemaScope, mod
 	return ""
 }
 
-func semaResolvedIRCallReturnType(a *Analyzer, model *semaTypeMemberView, receiverType, method string, args []ir.Expr, scope irSemaScope, currentType string) string {
+func semaResolvedIRCallReturnType(a *Analyzer, model *semaTypeMemberView, receiverType, method string, args []ir.Expr, scope irSemaScope, currentType, receiverMode string) string {
 	argTypes := make([]string, len(args))
 	for i, arg := range args {
 		argTypes[i] = a.inferIRExprType(arg, scope, model, currentType)
@@ -2566,7 +2628,7 @@ func semaResolvedIRCallReturnType(a *Analyzer, model *semaTypeMemberView, receiv
 	if sig, ok := semaEnumMethodSignature(model, receiverType, method); ok {
 		return sig.returnType
 	}
-	candidates := resolveMemberMethods(model, receiverType, method)
+	candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, receiverType, method), receiverMode)
 	platformBackedCandidates := semaResolvedMembersAllPlatformBacked(model, candidates)
 	if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok && !platformBackedCandidates {
 		return semaResolvedMemberReturnType(model, candidate)
@@ -2991,6 +3053,9 @@ func (a *Analyzer) collectBodyScopes(typ typesys.TypeSymbol, member typesys.Memb
 	var diagnostics []diagnostic.Diagnostic
 	diagnostics = append(diagnostics, declareSemaParameters(typ, member, body, bodyOffset, source, &scopes)...)
 	for _, match := range enhancedForLocalPattern.FindAllStringSubmatchIndex(body, -1) {
+		if semaOffsetInIgnoredText(body, match[0]) {
+			continue
+		}
 		typeName := strings.TrimSpace(body[match[2]:match[3]])
 		name := strings.TrimSpace(body[match[4]:match[5]])
 		if isSemaKeyword(typeName) {

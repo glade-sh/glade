@@ -248,6 +248,81 @@ func TestTypeMembersKeepProjectSObjectFieldTypeOverStandard(t *testing.T) {
 	}
 }
 
+func TestTypeMembersParentRelationshipReplacesSyntheticChildAliasInEitherOrder(t *testing.T) {
+	child := schema.Object{
+		Name: "pkg__Merchandise__c",
+		Fields: []schema.Field{{
+			Name:                          "pkg__OrderItemLine__c",
+			Type:                          "Lookup",
+			ReferenceTo:                   []string{"pkg__OrderItemLine__c"},
+			ChildRelationshipName:         "pkg__Merchandise__r",
+			ChildRelationshipNameInferred: true,
+		}},
+	}
+	parent := schema.Object{
+		Name: "pkg__OrderItemLine__c",
+		Fields: []schema.Field{{
+			Name:             "pkg__Merchandise__c",
+			Type:             "Lookup",
+			ReferenceTo:      []string{"pkg__Merchandise__c"},
+			RelationshipName: "pkg__Merchandise__r",
+		}},
+	}
+
+	for _, test := range []struct {
+		name    string
+		objects []schema.Object
+	}{
+		{name: "child first", objects: []schema.Object{child, parent}},
+		{name: "parent first", objects: []schema.Object{parent, child}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			model := buildSemaTypeMemberView(typesys.Index{Project: typesys.ProjectInfo{Namespace: "pkg"}, Objects: test.objects})
+			resolved, ok := semaResolveField(model, "pkg__OrderItemLine__c", "pkg__Merchandise__r", map[string]bool{})
+			if !ok || resolved.member.Type != "pkg__Merchandise__c" {
+				t.Fatalf("parent relationship = %#v, %v; want pkg__Merchandise__c", resolved, ok)
+			}
+		})
+	}
+}
+
+func TestTypeMembersKeepCanonicalChildRelationshipWhenItCollidesWithParentName(t *testing.T) {
+	child := schema.Object{
+		Name: "pkg__Merchandise__c",
+		Fields: []schema.Field{{
+			Name:                  "pkg__OrderItemLine__c",
+			Type:                  "Lookup",
+			ReferenceTo:           []string{"pkg__OrderItemLine__c"},
+			ChildRelationshipName: "pkg__Merchandise__r",
+		}},
+	}
+	parent := schema.Object{
+		Name: "pkg__OrderItemLine__c",
+		Fields: []schema.Field{{
+			Name:             "pkg__Merchandise__c",
+			Type:             "Lookup",
+			ReferenceTo:      []string{"pkg__Merchandise__c"},
+			RelationshipName: "pkg__Merchandise__r",
+		}},
+	}
+
+	for _, test := range []struct {
+		name    string
+		objects []schema.Object
+	}{
+		{name: "child first", objects: []schema.Object{child, parent}},
+		{name: "parent first", objects: []schema.Object{parent, child}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			model := buildSemaTypeMemberView(typesys.Index{Project: typesys.ProjectInfo{Namespace: "pkg"}, Objects: test.objects})
+			resolved, ok := semaResolveField(model, "pkg__OrderItemLine__c", "pkg__Merchandise__r", map[string]bool{})
+			if !ok || resolved.member.Type != "List<pkg__Merchandise__c>" {
+				t.Fatalf("canonical child relationship = %#v, %v; want List<pkg__Merchandise__c>", resolved, ok)
+			}
+		})
+	}
+}
+
 func TestTypeMembersKeepStandardRelationshipWhenPartialProjectFieldUsesRelationshipName(t *testing.T) {
 	object := schema.Object{
 		Name:    "Contact",

@@ -109,6 +109,50 @@ func TestParseMultipleAuraEnabledArguments(t *testing.T) {
 	}
 }
 
+func TestParseMultilineAnnotationArgumentWithEscapedApostrophe(t *testing.T) {
+	src := `public class Probe {
+  @InvocableVariable(
+    Required=false
+    Label='A label'
+    Description='This isn\'t positional'
+  )
+  public String value;
+}`
+	file := NewParser().ParseSource("Probe.cls", src)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	arguments := file.Declarations[0].Members[0].Annotations[0].Arguments
+	if len(arguments) != 3 {
+		t.Fatalf("arguments = %#v", arguments)
+	}
+	if got := arguments[2]; got.Name != "Description" || got.Value != "'This isn\\'t positional'" {
+		t.Fatalf("description argument = %#v", got)
+	}
+}
+
+func TestParseSalesforceInvocableVariableWithEscapedApostrophe(t *testing.T) {
+	src := `public class Probe {
+  @InvocableVariable(
+    Required=false
+    Label='Email From Org-Wide Id'
+    Description='The Salesforce Id of the Organization-Wide email address to use as the "From" in emails. If this isn\'t set, the email address of the user sending the email is used instead.'
+  )
+  public String value;
+}`
+	file := NewParser().ParseSource("Probe.cls", src)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	arguments := file.Declarations[0].Members[0].Annotations[0].Arguments
+	if len(arguments) != 3 || arguments[1].Name != "Label" || arguments[2].Name != "Description" {
+		t.Fatalf("arguments = %#v", arguments)
+	}
+	if got, want := arguments[2].Value, `'The Salesforce Id of the Organization-Wide email address to use as the "From" in emails. If this isn\'t set, the email address of the user sending the email is used instead.'`; got != want {
+		t.Fatalf("description = %q, want %q", got, want)
+	}
+}
+
 func TestParseInitializerBlocks(t *testing.T) {
 	src := `
 public class Hello {
