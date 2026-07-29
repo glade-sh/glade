@@ -1816,7 +1816,7 @@ func inferSemaMethodCallType(arg string, scope map[string]string, model *semaTyp
 	}
 	if receiverExpr, method, args, ok := splitLastSemaCall(arg); ok {
 		receiverType := semaTextReceiverType(receiverExpr, scope, model)
-		return semaResolvedCallReturnType(model, receiverType, method, args, scope)
+		return semaResolvedCallReturnType(model, receiverType, method, args, scope, semaTextCallReceiverMode(receiverExpr, scope, model))
 	}
 	open := strings.Index(arg, "(")
 	if open < 0 || !strings.HasSuffix(arg, ")") {
@@ -1833,7 +1833,7 @@ func inferSemaMethodCallType(arg string, scope map[string]string, model *semaTyp
 			return ""
 		}
 		receiverType := semaTextReceiverType(receiver, scope, model)
-		return semaResolvedCallReturnType(model, receiverType, method, args, scope)
+		return semaResolvedCallReturnType(model, receiverType, method, args, scope, semaTextCallReceiverMode(receiver, scope, model))
 	}
 	if currentType := scope[semaCurrentTypeScopeKey]; currentType != "" {
 		return semaResolvedImplicitCallReturnType(model, currentType, callee, args, scope)
@@ -1855,12 +1855,14 @@ func inferSemaCallChainType(arg string, scope map[string]string, model *semaType
 	if receiverType == "" {
 		return "", true
 	}
+	receiverMode := semaTextCallReceiverMode(base, scope, model)
 	for _, call := range calls {
-		nextType := semaResolvedCallReturnType(model, receiverType, call.method, call.args, scope)
+		nextType := semaResolvedCallReturnType(model, receiverType, call.method, call.args, scope, receiverMode)
 		if nextType == "" {
 			return "", true
 		}
 		receiverType = nextType
+		receiverMode = "instance"
 	}
 	return receiverType, true
 }
@@ -1952,7 +1954,7 @@ func semaTextReceiverType(receiver string, scope map[string]string, model *semaT
 	return receiver
 }
 
-func semaResolvedCallReturnType(model *semaTypeMemberView, receiverType, method string, args []semaArg, scope map[string]string) string {
+func semaResolvedCallReturnType(model *semaTypeMemberView, receiverType, method string, args []semaArg, scope map[string]string, receiverMode string) string {
 	argTypes := make([]string, len(args))
 	for i, arg := range args {
 		argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
@@ -1963,7 +1965,7 @@ func semaResolvedCallReturnType(model *semaTypeMemberView, receiverType, method 
 	if sig, ok := semaEnumMethodSignature(model, receiverType, method); ok {
 		return sig.returnType
 	}
-	candidates := resolveMemberMethods(model, receiverType, method)
+	candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, receiverType, method), receiverMode)
 	platformBackedCandidates := semaResolvedMembersAllPlatformBacked(model, candidates)
 	if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok && !platformBackedCandidates {
 		return semaResolvedMemberReturnType(model, candidate)
@@ -1987,6 +1989,20 @@ func semaResolvedCallReturnType(model *semaTypeMemberView, receiverType, method 
 		return sig.returnType
 	}
 	return ""
+}
+
+func semaTextCallReceiverMode(receiver string, scope map[string]string, model *semaTypeMemberView) string {
+	receiver = strings.TrimSpace(receiver)
+	switch {
+	case receiver == "":
+		return "implicit"
+	case strings.EqualFold(receiver, "super"):
+		return "super"
+	case semaTextReceiverExprLooksLikeType(receiver, scope, model):
+		return "class"
+	default:
+		return "instance"
+	}
 }
 
 func semaCreateStubReturnTypeFromIR(model *semaTypeMemberView, receiverType, method string, args []ir.Expr, currentType string) string {
@@ -2607,7 +2623,7 @@ func semaChainedCallReceiver(body string, callStart int, scope map[string]string
 	}
 	if receiverType == "" {
 		if method, args, ok := splitBareSemaCall(receiverExpr); ok {
-			receiverType = semaResolvedCallReturnType(model, currentType, method, args, scope)
+			receiverType = semaResolvedCallReturnType(model, currentType, method, args, scope, "implicit")
 		}
 	}
 	if receiverType == "" {

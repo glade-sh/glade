@@ -5055,12 +5055,12 @@ func TestAnalyzeReceiverQualifiedNullOverloadsUseOnlyReceiverModeCandidates(t *t
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "ReceiverQualifiedNullOverloads.cls"), `
 public class ReceiverQualifiedNullOverloads {
-  public void configure(SObject value) {}
-  public static void configure(Account value) {}
+  public Integer configure(SObject value) { return 1; }
+  public static String configure(Account value) { return 'class'; }
 
   public void run() {
-    this.configure(null);
-    ReceiverQualifiedNullOverloads.configure(null);
+    Integer instanceResult = this.configure(null);
+    String classResult = ReceiverQualifiedNullOverloads.configure(null);
   }
 }
 `)

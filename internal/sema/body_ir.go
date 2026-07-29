@@ -1818,6 +1818,26 @@ func semaIRExprLooksLikeTypeReceiver(expr ir.Expr, scope irSemaScope, model *sem
 	return !strings.EqualFold(canonical, path) && semaKnownPlatformTypeReceiver(path) && semaModelHasType(model, canonical)
 }
 
+func semaIRCallReceiverMode(expr ir.Expr, scope irSemaScope, model *semaTypeMemberView) string {
+	if expr.Left != nil {
+		if semaIRExprLooksLikeTypeReceiver(*expr.Left, scope, model) {
+			return "class"
+		}
+		return "instance"
+	}
+	receiver, _, ok := strings.Cut(expr.Callee, ".")
+	if !ok || receiver == "" {
+		return "implicit"
+	}
+	if strings.EqualFold(receiver, "super") {
+		return "super"
+	}
+	if semaReceiverExprLooksLikeType(receiver, scope, model) {
+		return "class"
+	}
+	return "instance"
+}
+
 func semaIRExprTypeReceiverPath(expr ir.Expr) (string, bool) {
 	switch expr.Kind {
 	case ir.ExprVariable:
@@ -2426,7 +2446,7 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model *semaT
 			if sig, ok := semaEnumMethodSignature(model, receiverType, method); ok {
 				return sig.returnType
 			}
-			if typ := semaResolvedIRCallReturnType(a, model, receiverType, method, expr.Args, scope, currentType); typ != "" {
+			if typ := semaResolvedIRCallReturnType(a, model, receiverType, method, expr.Args, scope, currentType, semaIRCallReceiverMode(expr, scope, model)); typ != "" {
 				return typ
 			}
 			if sig, ok := semaSObjectCloneSignature(model, receiverType, method); ok {
@@ -2445,9 +2465,9 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model *semaT
 		}
 		if receiver, method, ok := splitSemaMethodPath(expr.Callee); ok {
 			receiverType := semaTextReceiverType(receiver, scope.flat(), model)
-			return semaResolvedIRCallReturnType(a, model, receiverType, method, expr.Args, scope, currentType)
+			return semaResolvedIRCallReturnType(a, model, receiverType, method, expr.Args, scope, currentType, semaTextCallReceiverMode(receiver, scope.flat(), model))
 		}
-		return semaResolvedIRCallReturnType(a, model, currentType, expr.Callee, expr.Args, scope, currentType)
+		return semaResolvedIRCallReturnType(a, model, currentType, expr.Callee, expr.Args, scope, currentType, "implicit")
 	case ir.ExprUnary:
 		switch expr.Operator {
 		case "!":
@@ -2574,7 +2594,7 @@ func (a *Analyzer) inferFlattenedIRCallType(expr ir.Expr, scope irSemaScope, mod
 	return ""
 }
 
-func semaResolvedIRCallReturnType(a *Analyzer, model *semaTypeMemberView, receiverType, method string, args []ir.Expr, scope irSemaScope, currentType string) string {
+func semaResolvedIRCallReturnType(a *Analyzer, model *semaTypeMemberView, receiverType, method string, args []ir.Expr, scope irSemaScope, currentType, receiverMode string) string {
 	argTypes := make([]string, len(args))
 	for i, arg := range args {
 		argTypes[i] = a.inferIRExprType(arg, scope, model, currentType)
@@ -2585,7 +2605,7 @@ func semaResolvedIRCallReturnType(a *Analyzer, model *semaTypeMemberView, receiv
 	if sig, ok := semaEnumMethodSignature(model, receiverType, method); ok {
 		return sig.returnType
 	}
-	candidates := resolveMemberMethods(model, receiverType, method)
+	candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, receiverType, method), receiverMode)
 	platformBackedCandidates := semaResolvedMembersAllPlatformBacked(model, candidates)
 	if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok && !platformBackedCandidates {
 		return semaResolvedMemberReturnType(model, candidate)
