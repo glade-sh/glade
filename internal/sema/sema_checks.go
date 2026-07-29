@@ -2335,6 +2335,9 @@ func inheritanceTargetMembers(model *semaTypeMemberView, typeName string) (typeM
 }
 
 func overridableInheritedMethod(model *semaTypeMemberView, typ typesys.TypeSymbol, member typesys.MemberSymbol) (typesys.MemberSymbol, bool, bool) {
+	if hasModifier(member.Modifiers, "static") {
+		return typesys.MemberSymbol{}, false, false
+	}
 	for current := typ.SuperClass; current != ""; {
 		members, ok := model.lookup(normalizeName(current))
 		if !ok {
