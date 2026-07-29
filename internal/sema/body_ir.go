@@ -1154,9 +1154,13 @@ func (a *Analyzer) checkIRDMLContract(typ typesys.TypeSymbol, member typesys.Mem
 		operands = inst.Expr.Args[:2]
 	}
 	operandTypes := make([]string, len(operands))
+	mergeIDDuplicates := false
 	for i, operand := range operands {
 		operandTypes[i] = a.inferIRExprType(operand, scope, model, typ.Name)
-		if !semaDMLTargetType(operandTypes[i], model) {
+		if i == 1 && strings.EqualFold(inst.Name, "merge") && len(operandTypes) == 2 {
+			mergeIDDuplicates = semaDMLMergeIDDuplicateTypesCompatible(operandTypes[0], operandTypes[1], model)
+		}
+		if !semaDMLTargetType(operandTypes[i], model) && !(i == 1 && mergeIDDuplicates) {
 			return []diagnostic.Diagnostic{irDMLContractDiagnostic(typ, member, inst, bodyOffset, source, fmt.Sprintf("%s requires an SObject or SObject collection operand, got %s", inst.Name, operandTypes[i]))}
 		}
 	}
@@ -1225,6 +1229,9 @@ func semaDMLMergeTypesCompatible(left, right string, model *semaTypeMemberView) 
 	if !semaDMLRecordType(left, model) {
 		return false
 	}
+	if semaDMLMergeIDDuplicateTypesCompatible(left, right, model) {
+		return true
+	}
 	rightObject := right
 	if !semaDMLRecordType(right, model) {
 		base, args := semaGenericBaseAndArgs(right)
@@ -1234,6 +1241,22 @@ func semaDMLMergeTypesCompatible(left, right string, model *semaTypeMemberView) 
 		rightObject = args[0]
 	}
 	return strings.EqualFold(normalizeName(left), normalizeName(rightObject))
+}
+
+func semaDMLMergeIDDuplicateTypesCompatible(master, duplicates string, model *semaTypeMemberView) bool {
+	if !semaDMLConcreteRecordType(master, model) {
+		return false
+	}
+	base, args := semaGenericBaseAndArgs(duplicates)
+	return strings.EqualFold(base, "List") && len(args) == 1 && strings.EqualFold(strings.TrimSpace(args[0]), "Id")
+}
+
+func semaDMLConcreteRecordType(typeName string, model *semaTypeMemberView) bool {
+	typeName = strings.TrimSpace(typeName)
+	if schemaName, ok := semaSchemaQualifiedTypeName(typeName); ok {
+		typeName = schemaName
+	}
+	return !strings.EqualFold(typeName, "SObject") && semaDMLRecordType(typeName, model)
 }
 
 func semaDMLRecordType(typeName string, model *semaTypeMemberView) bool {
