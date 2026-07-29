@@ -1071,7 +1071,7 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 					if field.ChildRelationshipNameInferred {
 						semaAddSyntheticChildRelationshipAlias(&parentMembers, projectNamespace, childRelationship)
 					} else {
-						semaAddSchemaFieldMemberIfAbsent(parentMembers.fields, projectNamespace, childRelationship)
+						semaAddDeclaredChildRelationshipMember(&parentMembers, projectNamespace, childRelationship)
 					}
 					if strings.HasSuffix(childRelationshipName, "__r") {
 						continue
@@ -1361,6 +1361,17 @@ func semaAddSchemaParentRelationshipMember(members *typeMembers, namespace strin
 	}
 	semaAddSchemaFieldMember(members.fields, namespace, member)
 	delete(members.syntheticChildRelationshipAliases, key)
+	if localName, ok := semaProjectLocalAPIName(namespace, member.Name); ok {
+		delete(members.syntheticChildRelationshipAliases, normalizeName(localName))
+	}
+}
+
+func semaAddDeclaredChildRelationshipMember(members *typeMembers, namespace string, member typesys.MemberSymbol) {
+	if members == nil || members.fields == nil || strings.TrimSpace(member.Name) == "" {
+		return
+	}
+	semaAddSchemaFieldMember(members.fields, namespace, member)
+	delete(members.syntheticChildRelationshipAliases, normalizeName(member.Name))
 	if localName, ok := semaProjectLocalAPIName(namespace, member.Name); ok {
 		delete(members.syntheticChildRelationshipAliases, normalizeName(localName))
 	}

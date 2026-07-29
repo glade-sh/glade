@@ -306,10 +306,20 @@ func TestTypeMembersKeepCanonicalChildRelationshipWhenItCollidesWithParentName(t
 		}},
 	}
 
-	model := buildSemaTypeMemberView(typesys.Index{Project: typesys.ProjectInfo{Namespace: "pkg"}, Objects: []schema.Object{child, parent}})
-	resolved, ok := semaResolveField(model, "pkg__OrderItemLine__c", "pkg__Merchandise__r", map[string]bool{})
-	if !ok || resolved.member.Type != "List<pkg__Merchandise__c>" {
-		t.Fatalf("canonical child relationship = %#v, %v; want List<pkg__Merchandise__c>", resolved, ok)
+	for _, test := range []struct {
+		name    string
+		objects []schema.Object
+	}{
+		{name: "child first", objects: []schema.Object{child, parent}},
+		{name: "parent first", objects: []schema.Object{parent, child}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			model := buildSemaTypeMemberView(typesys.Index{Project: typesys.ProjectInfo{Namespace: "pkg"}, Objects: test.objects})
+			resolved, ok := semaResolveField(model, "pkg__OrderItemLine__c", "pkg__Merchandise__r", map[string]bool{})
+			if !ok || resolved.member.Type != "List<pkg__Merchandise__c>" {
+				t.Fatalf("canonical child relationship = %#v, %v; want List<pkg__Merchandise__c>", resolved, ok)
+			}
+		})
 	}
 }
 
