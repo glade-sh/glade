@@ -223,6 +223,22 @@ public class Probe {
 	}
 }
 
+func TestTypeContractAllowsQueryLocatorRuntimeCasts(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `
+public class Probe {
+  public void run(Iterable<Object> values) {
+    Database.QueryLocator locator = (Database.QueryLocator) values;
+    Iterator<Object> iterator = locator.iterator();
+  }
+}
+`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("QueryLocator runtime cast was rejected: %#v", result.Diagnostics)
+	}
+}
+
 func TestTypeContractRejectsIncompatibleParameterizedCollectionCasts(t *testing.T) {
 	for name, source := range map[string]string{
 		"different collection bases": `

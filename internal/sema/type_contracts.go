@@ -287,10 +287,17 @@ func semaDateDayArithmetic(operator, left, right string) bool {
 }
 
 func semaRuntimeTypeTestCompatible(owner, left, right string, model *semaTypeMemberView) bool {
-	left = resolveNestedTypeReference(model, owner, left)
-	right = resolveNestedTypeReference(model, owner, right)
+	left = semaCanonicalAssignableType(resolveNestedTypeReference(model, owner, left))
+	right = semaCanonicalAssignableType(resolveNestedTypeReference(model, owner, right))
 	leftBase, leftArgs := semaGenericBaseAndArgs(left)
 	rightBase, rightArgs := semaGenericBaseAndArgs(right)
+	leftIterableObject := strings.EqualFold(leftBase, "Iterable") && len(leftArgs) == 1 && strings.EqualFold(leftArgs[0], "Object")
+	rightIterableObject := strings.EqualFold(rightBase, "Iterable") && len(rightArgs) == 1 && strings.EqualFold(rightArgs[0], "Object")
+	leftQueryLocator := strings.EqualFold(leftBase, "Database.QueryLocator") && len(leftArgs) == 0
+	rightQueryLocator := strings.EqualFold(rightBase, "Database.QueryLocator") && len(rightArgs) == 0
+	if (leftIterableObject && rightQueryLocator) || (leftQueryLocator && rightIterableObject) {
+		return true
+	}
 	if len(leftArgs) > 0 || len(rightArgs) > 0 {
 		if len(leftArgs) == 0 || len(leftArgs) != len(rightArgs) || !strings.EqualFold(leftBase, rightBase) {
 			return false
