@@ -1560,7 +1560,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 			}
 		}
 	}
-	candidates := resolveMemberMethods(model, receiverType, method)
+	candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, receiverType, method), receiverMode)
 	if !explicitReceiver {
 		candidates = resolveImplicitMemberMethods(model, receiverType, method)
 	}
@@ -1580,7 +1580,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 			receiverType = chainedReceiver
 			explicitReceiver = true
 			receiverMode = "instance"
-			candidates = resolveMemberMethods(model, receiverType, method)
+			candidates = preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, receiverType, method), receiverMode)
 			argTypes := irCallArgTypes(a, expr.Args, scope, model, typ.Name)
 			if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok && !semaResolvedMembersAllPlatformBacked(model, candidates) {
 				if staticDiagnostic, blocked := checkSemaStaticAccessWithModel(typ, member, expr.Callee, candidate, receiverMode, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source, model); blocked {

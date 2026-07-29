@@ -2244,7 +2244,7 @@ func semaGeneratedPlatformMethodSignature(model *semaTypeMemberView, receiverTyp
 	if len(candidates) == 0 {
 		return semaCollectionSignature{}, false
 	}
-	candidates = filterGeneratedPlatformMethodsByReceiverMode(candidates, receiverMode)
+	candidates = filterResolvedMethodsByReceiverMode(candidates, receiverMode)
 	if len(candidates) == 0 {
 		return semaCollectionSignature{}, false
 	}
@@ -2281,7 +2281,7 @@ func semaGeneratedPlatformMethodSignature(model *semaTypeMemberView, receiverTyp
 	return semaCollectionSignature{returnType: returnType, params: params}, true
 }
 
-func filterGeneratedPlatformMethodsByReceiverMode(candidates []resolvedMember, receiverMode string) []resolvedMember {
+func filterResolvedMethodsByReceiverMode(candidates []resolvedMember, receiverMode string) []resolvedMember {
 	switch receiverMode {
 	case "class":
 		filtered := make([]resolvedMember, 0, len(candidates))
@@ -2302,6 +2302,18 @@ func filterGeneratedPlatformMethodsByReceiverMode(candidates []resolvedMember, r
 	default:
 		return candidates
 	}
+}
+
+// preferResolvedMethodsByReceiverMode excludes receiver-invalid overloads from
+// resolution when at least one overload is valid for the receiver. When no
+// overload is valid, it preserves the original candidates so callers can
+// produce the existing static-access diagnostic instead of an unknown-call
+// diagnostic.
+func preferResolvedMethodsByReceiverMode(candidates []resolvedMember, receiverMode string) []resolvedMember {
+	if filtered := filterResolvedMethodsByReceiverMode(candidates, receiverMode); len(filtered) != 0 {
+		return filtered
+	}
+	return candidates
 }
 
 func semaCustomDataStaticMethodSignature(receiverType, method string) (semaCollectionSignature, bool) {

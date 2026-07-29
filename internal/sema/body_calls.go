@@ -42,7 +42,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 				diagnostics = append(diagnostics, enumDiagnostics...)
 				continue
 			}
-			candidates := resolveMemberMethods(model, receiverType, method)
+			candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, receiverType, method), "instance")
 			if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, semaArgTypes(args, scope, model), model); ok && !semaResolvedMembersAllPlatformBacked(model, candidates) {
 				if staticDiagnostic, blocked := checkSemaStaticAccessWithModel(typ, member, method, candidate, "instance", bodyOffset+match[2], bodyOffset+match[3], source, model); blocked {
 					diagnostics = append(diagnostics, staticDiagnostic)
@@ -113,7 +113,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 					method,
 					scopes.localVisibleAt(receiverExpr, match[0]),
 				); ok {
-					candidates := resolveMemberMethods(model, lookupName, method)
+					candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, lookupName, method), "class")
 					diagnostics = append(diagnostics, a.diagnoseMethodCall(
 						typ,
 						member,
@@ -156,7 +156,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 							diagnostics = append(diagnostics, enumDiagnostics...)
 							continue
 						}
-						candidates := resolveMemberMethods(model, lookupName, method)
+						candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, lookupName, method), "class")
 						if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, semaArgTypes(args, scope, model), model); ok && !semaResolvedMembersAllPlatformBacked(model, candidates) {
 							if staticDiagnostic, blocked := checkSemaStaticAccessWithModel(typ, member, callee, candidate, "class", bodyOffset+match[2], bodyOffset+match[3], source, model); blocked {
 								diagnostics = append(diagnostics, staticDiagnostic)
@@ -206,7 +206,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 				continue
 			}
 			if classMembers, lookupName, ok := semaClassMembersForReceiver(model, typ, receiver); ok {
-				candidates := resolveMemberMethods(model, lookupName, method)
+				candidates := preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, lookupName, method), "class")
 				if candidate, ok, _ := bestResolvedMemberByArgTypes(candidates, semaArgTypes(args, scope, model), model); ok && !semaResolvedMembersAllPlatformBacked(model, candidates) {
 					if staticDiagnostic, blocked := checkSemaStaticAccessWithModel(typ, member, callee, candidate, "class", bodyOffset+match[2], bodyOffset+match[3], source, model); blocked {
 						diagnostics = append(diagnostics, staticDiagnostic)
@@ -566,6 +566,7 @@ func constructorDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 }
 
 func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, candidates []resolvedMember, args []semaArg, haveArgs bool, receiverMode string, start, end int, source string, scope map[string]string, model *semaTypeMemberView) []diagnostic.Diagnostic {
+	candidates = preferResolvedMethodsByReceiverMode(candidates, receiverMode)
 	var argTypes []string
 	if haveArgs {
 		argTypes = make([]string, len(args))
@@ -801,7 +802,7 @@ func semaImmediateDottedCallResolved(body string, callStart int, args []semaArg,
 		return false
 	}
 	argTypes := semaArgTypes(args, scope, model)
-	if _, ok, _ := bestResolvedMemberByArgTypes(resolveMemberMethods(model, receiverType, method), argTypes, model); ok {
+	if _, ok, _ := bestResolvedMemberByArgTypes(preferResolvedMethodsByReceiverMode(resolveMemberMethods(model, receiverType, method), "instance"), argTypes, model); ok {
 		return true
 	}
 	if sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method); ok && semaArgsMatchAny(sig.params, argTypes, model) {

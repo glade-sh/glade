@@ -2824,7 +2824,7 @@ func checkGeneratedPlatformStaticAccess(typ typesys.TypeSymbol, member typesys.M
 	if owner, ok := model.lookup(normalizeName(candidates[0].owner)); !ok || (!owner.dependency && !owner.sobject) {
 		return diagnostic.Diagnostic{}, false
 	}
-	if len(filterGeneratedPlatformMethodsByReceiverMode(candidates, receiverMode)) != 0 {
+	if len(filterResolvedMethodsByReceiverMode(candidates, receiverMode)) != 0 {
 		return diagnostic.Diagnostic{}, false
 	}
 	return checkSemaStaticAccess(typ, member, method, candidates[0], receiverMode, start, end, source)

@@ -5050,6 +5050,59 @@ public class UsesNullOverloads {
 	}
 }
 
+func TestAnalyzeReceiverQualifiedNullOverloadsUseOnlyReceiverModeCandidates(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "ReceiverQualifiedNullOverloads.cls"), `
+public class ReceiverQualifiedNullOverloads {
+  public void configure(SObject value) {}
+  public static void configure(Account value) {}
+
+  public void run() {
+    this.configure(null);
+    ReceiverQualifiedNullOverloads.configure(null);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "ReceiverQualifiedNullOverloads.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("receiver-qualified calls should resolve only candidates valid for their receiver: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeReceiverQualifiedSameModeNullOverloadsRemainAmbiguous(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "ReceiverQualifiedSameModeNullOverloads.cls"), `
+public class ReceiverQualifiedSameModeNullOverloads {
+  public void configure(Account value) {}
+  public void configure(Contact value) {}
+
+  public void run() {
+    this.configure(null);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "ReceiverQualifiedSameModeNullOverloads.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Account"}, {Name: "Contact"}}})
+	result := Analyze(index)
+	if !result.HasErrors() {
+		t.Fatalf("same-mode null overloads must remain ambiguous: %#v", result.Diagnostics)
+	}
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA022" {
+			return
+		}
+	}
+	t.Fatalf("expected ambiguous same-mode overload diagnostic, got %#v", result.Diagnostics)
+}
+
 func TestAnalyzeSystemTypeAliasAssignment(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
