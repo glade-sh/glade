@@ -13,6 +13,7 @@ func TestDMLContractsRejectNonSObjectOperands(t *testing.T) {
 		"insert string":            `public class Probe { public void run() { String value = 'x'; insert value; } }`,
 		"update string list":       `public class Probe { public void run() { List<String> values = new List<String>(); update values; } }`,
 		"merge different sobjects": `public class Probe { public void run() { Account account = new Account(); Contact contact = new Contact(); merge account contact; } }`,
+		"merge string list":        `public class Probe { public void run() { Account account = new Account(); List<String> values = new List<String>(); merge account values; } }`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			result := analyzeDeclarationProject(t, map[string]string{"Probe.cls": source})
@@ -20,6 +21,15 @@ func TestDMLContractsRejectNonSObjectOperands(t *testing.T) {
 				t.Fatalf("expected DML contract diagnostic: %#v", result.Diagnostics)
 			}
 		})
+	}
+}
+
+func TestDMLContractsAllowMergeOfSObjectAndSameSObjectCollection(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe { public void run() { Account master = new Account(); List<Account> duplicates = new List<Account>{new Account()}; merge master duplicates; } }`,
+	})
+	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA034") {
+		t.Fatalf("merge of an SObject master and same-SObject collection was rejected: %#v", result.Diagnostics)
 	}
 }
 

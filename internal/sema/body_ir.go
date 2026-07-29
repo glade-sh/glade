@@ -1222,7 +1222,18 @@ func semaDMLTargetType(typeName string, model *semaTypeMemberView) bool {
 }
 
 func semaDMLMergeTypesCompatible(left, right string, model *semaTypeMemberView) bool {
-	return isSemaSObjectLike(left, model) && isSemaSObjectLike(right, model) && strings.EqualFold(normalizeName(left), normalizeName(right))
+	if !isSemaSObjectLike(left, model) {
+		return false
+	}
+	rightObject := right
+	if !isSemaSObjectLike(right, model) {
+		base, args := semaGenericBaseAndArgs(right)
+		if !strings.EqualFold(base, "List") || len(args) != 1 || !isSemaSObjectLike(args[0], model) {
+			return false
+		}
+		rightObject = args[0]
+	}
+	return strings.EqualFold(normalizeName(left), normalizeName(rightObject))
 }
 
 func irDMLContractDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, inst ir.Instruction, bodyOffset int, source, message string) diagnostic.Diagnostic {

@@ -835,7 +835,7 @@ func queryShapeDiagnostics(query soql.Query, ctx queryTextContext) []diagnostic.
 	diagnosticFor := func(message, token string) {
 		diagnostics = append(diagnostics, ctx.diagnostic("GLADESEMA_QUERY_CONTRACT", message, token, findQueryIdentifier(ctx.queryText, token, 0)))
 	}
-	if len(query.Aggregates) > 0 && query.HasLimit && len(query.GroupBy) == 0 {
+	if len(query.Aggregates) > 0 && !query.Count && query.HasLimit && len(query.GroupBy) == 0 {
 		diagnosticFor("aggregate SOQL queries require GROUP BY before LIMIT", "LIMIT")
 	}
 	if strings.EqualFold(query.GroupMode, "ROLLUP") && len(query.GroupBy) > 2 {
