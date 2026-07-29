@@ -30,7 +30,7 @@ persistent server:
 
 ```bash
 glade test serve --project .
-glade test --project . --filter AccountServiceTest
+glade test --project . --filter TrailAccessTest
 ```
 
 Use `--no-cache` when a run must neither read nor write the on-disk startup
