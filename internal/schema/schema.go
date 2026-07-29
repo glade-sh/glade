@@ -48,38 +48,39 @@ type NameField struct {
 }
 
 type Field struct {
-	Name                  string             `json:"name"`
-	Label                 string             `json:"label,omitempty"`
-	InlineHelpText        string             `json:"inlineHelpText,omitempty"`
-	Type                  string             `json:"type,omitempty"`
-	Length                int                `json:"length,omitempty"`
-	Precision             int                `json:"precision,omitempty"`
-	Scale                 int                `json:"scale,omitempty"`
-	ReferenceTo           []string           `json:"referenceTo,omitempty"`
-	RelationshipName      string             `json:"relationshipName,omitempty"`
-	ChildRelationshipName string             `json:"childRelationshipName,omitempty"`
-	DeleteConstraint      string             `json:"deleteConstraint,omitempty"`
-	DefaultValue          string             `json:"defaultValue,omitempty"`
-	Required              bool               `json:"required,omitempty"`
-	ExternalID            bool               `json:"externalId,omitempty"`
-	IDLookup              bool               `json:"idLookup,omitempty"`
-	Filterable            *bool              `json:"filterable,omitempty"`
-	Groupable             *bool              `json:"groupable,omitempty"`
-	Sortable              *bool              `json:"sortable,omitempty"`
-	Aggregatable          *bool              `json:"aggregatable,omitempty"`
-	Unique                bool               `json:"unique,omitempty"`
-	Encrypted             bool               `json:"encrypted,omitempty"`
-	Formula               string             `json:"formula,omitempty"`
-	SummarizedField       string             `json:"summarizedField,omitempty"`
-	SummaryForeignKey     string             `json:"summaryForeignKey,omitempty"`
-	SummaryOperation      string             `json:"summaryOperation,omitempty"`
-	SummaryFilterItems    []SummaryFilter    `json:"summaryFilterItems,omitempty"`
-	FilteredLookupInfo    FilteredLookupInfo `json:"filteredLookupInfo,omitempty"`
-	PicklistController    string             `json:"picklistController,omitempty"`
-	PicklistValueSettings []PicklistSetting  `json:"picklistValueSettings,omitempty"`
-	ValueSetName          string             `json:"valueSetName,omitempty"`
-	RestrictedPicklist    bool               `json:"restrictedPicklist,omitempty"`
-	PicklistValues        []PicklistValue    `json:"picklistValues,omitempty"`
+	Name                          string             `json:"name"`
+	Label                         string             `json:"label,omitempty"`
+	InlineHelpText                string             `json:"inlineHelpText,omitempty"`
+	Type                          string             `json:"type,omitempty"`
+	Length                        int                `json:"length,omitempty"`
+	Precision                     int                `json:"precision,omitempty"`
+	Scale                         int                `json:"scale,omitempty"`
+	ReferenceTo                   []string           `json:"referenceTo,omitempty"`
+	RelationshipName              string             `json:"relationshipName,omitempty"`
+	ChildRelationshipName         string             `json:"childRelationshipName,omitempty"`
+	ChildRelationshipNameInferred bool               `json:"-"`
+	DeleteConstraint              string             `json:"deleteConstraint,omitempty"`
+	DefaultValue                  string             `json:"defaultValue,omitempty"`
+	Required                      bool               `json:"required,omitempty"`
+	ExternalID                    bool               `json:"externalId,omitempty"`
+	IDLookup                      bool               `json:"idLookup,omitempty"`
+	Filterable                    *bool              `json:"filterable,omitempty"`
+	Groupable                     *bool              `json:"groupable,omitempty"`
+	Sortable                      *bool              `json:"sortable,omitempty"`
+	Aggregatable                  *bool              `json:"aggregatable,omitempty"`
+	Unique                        bool               `json:"unique,omitempty"`
+	Encrypted                     bool               `json:"encrypted,omitempty"`
+	Formula                       string             `json:"formula,omitempty"`
+	SummarizedField               string             `json:"summarizedField,omitempty"`
+	SummaryForeignKey             string             `json:"summaryForeignKey,omitempty"`
+	SummaryOperation              string             `json:"summaryOperation,omitempty"`
+	SummaryFilterItems            []SummaryFilter    `json:"summaryFilterItems,omitempty"`
+	FilteredLookupInfo            FilteredLookupInfo `json:"filteredLookupInfo,omitempty"`
+	PicklistController            string             `json:"picklistController,omitempty"`
+	PicklistValueSettings         []PicklistSetting  `json:"picklistValueSettings,omitempty"`
+	ValueSetName                  string             `json:"valueSetName,omitempty"`
+	RestrictedPicklist            bool               `json:"restrictedPicklist,omitempty"`
+	PicklistValues                []PicklistValue    `json:"picklistValues,omitempty"`
 }
 
 type FilteredLookupInfo struct {
@@ -660,41 +661,44 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 	}
 	relationshipName := raw.RelationshipName
 	childRelationshipName := raw.ChildRelationshipName
+	childRelationshipNameInferred := false
 	if strings.HasSuffix(name, "__c") && relationshipName != "" && !strings.HasSuffix(relationshipName, "__r") {
 		if childRelationshipName == "" {
 			childRelationshipName = relationshipName + "__r"
+			childRelationshipNameInferred = true
 		}
 		relationshipName = strings.TrimSuffix(name, "__c") + "__r"
 	}
 	return Field{
-		Name:                  name,
-		Label:                 raw.Label,
-		InlineHelpText:        strings.TrimSpace(raw.InlineHelpText),
-		Type:                  raw.Type,
-		Length:                raw.Length,
-		Precision:             raw.Precision,
-		Scale:                 raw.Scale,
-		ReferenceTo:           raw.ReferenceTo,
-		RelationshipName:      relationshipName,
-		ChildRelationshipName: childRelationshipName,
-		DeleteConstraint:      raw.DeleteConstraint,
-		DefaultValue:          strings.TrimSpace(raw.DefaultValue),
-		Required:              raw.Required,
-		ExternalID:            raw.ExternalID,
-		IDLookup:              raw.IDLookup,
-		Unique:                raw.Unique,
-		Encrypted:             strings.EqualFold(raw.Type, "EncryptedText"),
-		Formula:               strings.TrimSpace(raw.Formula),
-		SummarizedField:       strings.TrimSpace(raw.SummarizedField),
-		SummaryForeignKey:     strings.TrimSpace(raw.SummaryForeignKey),
-		SummaryOperation:      strings.TrimSpace(raw.SummaryOperation),
-		SummaryFilterItems:    summaryFiltersFromXML(raw.SummaryFilterItems),
-		FilteredLookupInfo:    filteredLookupInfoFromXML(raw.LookupFilter),
-		PicklistController:    strings.TrimSpace(raw.ValueSet.ControllingField),
-		PicklistValueSettings: picklistSettings(raw.ValueSet.ValueSettings),
-		ValueSetName:          strings.TrimSpace(raw.ValueSet.Name),
-		RestrictedPicklist:    raw.ValueSet.Restricted,
-		PicklistValues:        picklistValues(raw.ValueSet.Definition.Values),
+		Name:                          name,
+		Label:                         raw.Label,
+		InlineHelpText:                strings.TrimSpace(raw.InlineHelpText),
+		Type:                          raw.Type,
+		Length:                        raw.Length,
+		Precision:                     raw.Precision,
+		Scale:                         raw.Scale,
+		ReferenceTo:                   raw.ReferenceTo,
+		RelationshipName:              relationshipName,
+		ChildRelationshipName:         childRelationshipName,
+		ChildRelationshipNameInferred: childRelationshipNameInferred,
+		DeleteConstraint:              raw.DeleteConstraint,
+		DefaultValue:                  strings.TrimSpace(raw.DefaultValue),
+		Required:                      raw.Required,
+		ExternalID:                    raw.ExternalID,
+		IDLookup:                      raw.IDLookup,
+		Unique:                        raw.Unique,
+		Encrypted:                     strings.EqualFold(raw.Type, "EncryptedText"),
+		Formula:                       strings.TrimSpace(raw.Formula),
+		SummarizedField:               strings.TrimSpace(raw.SummarizedField),
+		SummaryForeignKey:             strings.TrimSpace(raw.SummaryForeignKey),
+		SummaryOperation:              strings.TrimSpace(raw.SummaryOperation),
+		SummaryFilterItems:            summaryFiltersFromXML(raw.SummaryFilterItems),
+		FilteredLookupInfo:            filteredLookupInfoFromXML(raw.LookupFilter),
+		PicklistController:            strings.TrimSpace(raw.ValueSet.ControllingField),
+		PicklistValueSettings:         picklistSettings(raw.ValueSet.ValueSettings),
+		ValueSetName:                  strings.TrimSpace(raw.ValueSet.Name),
+		RestrictedPicklist:            raw.ValueSet.Restricted,
+		PicklistValues:                picklistValues(raw.ValueSet.Definition.Values),
 	}
 }
 

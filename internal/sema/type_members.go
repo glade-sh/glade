@@ -13,23 +13,24 @@ import (
 )
 
 type typeMembers struct {
-	name                        string
-	shortKey                    string
-	namespace                   string
-	dependency                  bool
-	sobject                     bool
-	externalPackageSObject      bool
-	partialSObject              bool
-	nestingDepth                int
-	kind                        apexast.DeclarationKind
-	superClass                  string
-	interfaces                  []string
-	modifiers                   []string
-	methods                     map[string][]typesys.MemberSymbol
-	constructors                []typesys.MemberSymbol
-	fields                      map[string]typesys.MemberSymbol
-	syntheticStandardSObject    bool
-	standardSObjectFieldsLoaded bool
+	name                              string
+	shortKey                          string
+	namespace                         string
+	dependency                        bool
+	sobject                           bool
+	externalPackageSObject            bool
+	partialSObject                    bool
+	nestingDepth                      int
+	kind                              apexast.DeclarationKind
+	superClass                        string
+	interfaces                        []string
+	modifiers                         []string
+	methods                           map[string][]typesys.MemberSymbol
+	constructors                      []typesys.MemberSymbol
+	fields                            map[string]typesys.MemberSymbol
+	syntheticChildRelationshipAliases map[string]struct{}
+	syntheticStandardSObject          bool
+	standardSObjectFieldsLoaded       bool
 }
 
 type semaTypeMemberModel struct {
@@ -1061,17 +1062,22 @@ func buildTypeMemberLayerWithSources(index typesys.Index, sources *semaSources, 
 					parentMembers.fields = make(map[string]typesys.MemberSymbol)
 				}
 				for _, childRelationshipName := range childRelationshipNames {
-					semaAddSchemaFieldMemberIfAbsent(parentMembers.fields, projectNamespace, typesys.MemberSymbol{
+					childRelationship := typesys.MemberSymbol{
 						Kind:      apexast.DeclarationField,
 						Name:      childRelationshipName,
 						Type:      "List<" + object.Name + ">",
 						Modifiers: []string{"public"},
-					})
+					}
+					if field.ChildRelationshipNameInferred {
+						semaAddSyntheticChildRelationshipAlias(&parentMembers, projectNamespace, childRelationship)
+					} else {
+						semaAddSchemaFieldMemberIfAbsent(parentMembers.fields, projectNamespace, childRelationship)
+					}
 					if strings.HasSuffix(childRelationshipName, "__r") {
 						continue
 					}
 					childRelationshipAlias := childRelationshipName + "__r"
-					semaAddSchemaFieldMemberIfAbsent(parentMembers.fields, projectNamespace, typesys.MemberSymbol{
+					semaAddSyntheticChildRelationshipAlias(&parentMembers, projectNamespace, typesys.MemberSymbol{
 						Kind:      apexast.DeclarationField,
 						Name:      childRelationshipAlias,
 						Type:      "List<" + object.Name + ">",
@@ -1183,6 +1189,12 @@ func semaCloneTypeMembers(members typeMembers) typeMembers {
 		clone.fields = make(map[string]typesys.MemberSymbol, len(members.fields))
 		for key, field := range members.fields {
 			clone.fields[key] = semaCloneMemberSymbol(field)
+		}
+	}
+	if members.syntheticChildRelationshipAliases != nil {
+		clone.syntheticChildRelationshipAliases = make(map[string]struct{}, len(members.syntheticChildRelationshipAliases))
+		for key := range members.syntheticChildRelationshipAliases {
+			clone.syntheticChildRelationshipAliases[key] = struct{}{}
 		}
 	}
 	return clone
@@ -1337,14 +1349,39 @@ func semaAddSchemaFieldMemberIfAbsent(fields map[string]typesys.MemberSymbol, na
 	}
 }
 
-func semaAddSchemaParentRelationshipMember(fields map[string]typesys.MemberSymbol, namespace string, member typesys.MemberSymbol) {
-	if fields == nil || strings.TrimSpace(member.Name) == "" {
+func semaAddSchemaParentRelationshipMember(members *typeMembers, namespace string, member typesys.MemberSymbol) {
+	if members == nil || members.fields == nil || strings.TrimSpace(member.Name) == "" {
 		return
 	}
-	if existing, ok := fields[normalizeName(member.Name)]; ok && !strings.HasPrefix(existing.Type, "List<") {
+	key := normalizeName(member.Name)
+	if _, exists := members.fields[key]; exists {
+		if _, synthetic := members.syntheticChildRelationshipAliases[key]; !synthetic {
+			return
+		}
+	}
+	semaAddSchemaFieldMember(members.fields, namespace, member)
+	delete(members.syntheticChildRelationshipAliases, key)
+	if localName, ok := semaProjectLocalAPIName(namespace, member.Name); ok {
+		delete(members.syntheticChildRelationshipAliases, normalizeName(localName))
+	}
+}
+
+func semaAddSyntheticChildRelationshipAlias(members *typeMembers, namespace string, member typesys.MemberSymbol) {
+	if members == nil || members.fields == nil || strings.TrimSpace(member.Name) == "" {
 		return
 	}
-	semaAddSchemaFieldMember(fields, namespace, member)
+	key := normalizeName(member.Name)
+	if _, exists := members.fields[key]; exists {
+		return
+	}
+	semaAddSchemaFieldMember(members.fields, namespace, member)
+	if members.syntheticChildRelationshipAliases == nil {
+		members.syntheticChildRelationshipAliases = make(map[string]struct{})
+	}
+	members.syntheticChildRelationshipAliases[key] = struct{}{}
+	if localName, ok := semaProjectLocalAPIName(namespace, member.Name); ok {
+		members.syntheticChildRelationshipAliases[normalizeName(localName)] = struct{}{}
+	}
 }
 
 func semaLocationComponentFieldNames(fieldName string) []string {
@@ -1869,7 +1906,7 @@ func semaAddSObjectProviderMembers(members *typeMembers, provider semaSObjectFie
 			relationshipType = field.ReferenceTo[0]
 		}
 		if field.RelationshipName != "" {
-			semaAddSchemaParentRelationshipMember(members.fields, namespace, typesys.MemberSymbol{
+			semaAddSchemaParentRelationshipMember(members, namespace, typesys.MemberSymbol{
 				Kind:      apexast.DeclarationField,
 				Name:      field.RelationshipName,
 				Type:      relationshipType,
@@ -1877,7 +1914,7 @@ func semaAddSObjectProviderMembers(members *typeMembers, provider semaSObjectFie
 			})
 		}
 		if relationshipFieldName := semaParentRelationshipFieldName(field.Name); relationshipFieldName != "" {
-			semaAddSchemaParentRelationshipMember(members.fields, namespace, typesys.MemberSymbol{
+			semaAddSchemaParentRelationshipMember(members, namespace, typesys.MemberSymbol{
 				Kind:      apexast.DeclarationField,
 				Name:      relationshipFieldName,
 				Type:      relationshipType,

@@ -65,6 +65,9 @@ func TestLoadProject(t *testing.T) {
 	if got := parent.ChildRelationshipName; got != "Children__r" {
 		t.Fatalf("child relationship name = %q", got)
 	}
+	if parent.ChildRelationshipNameInferred {
+		t.Fatalf("explicit child relationship marked inferred: %#v", parent)
+	}
 	if !parent.FilteredLookupInfo.OptionalFilter || !parent.FilteredLookupInfo.Dependent || len(parent.FilteredLookupInfo.ControllingFields) != 1 || parent.FilteredLookupInfo.ControllingFields[0] != "Account.Name" {
 		t.Fatalf("filtered lookup info = %#v", parent.FilteredLookupInfo)
 	}
@@ -214,6 +217,9 @@ func TestLoadProjectNormalizesLookupParentAndChildRelationshipNames(t *testing.T
 	field := objectsByName(s.Objects)["Order__c"].Fields[0]
 	if field.RelationshipName != "Entity__r" || field.ChildRelationshipName != "Orders__r" {
 		t.Fatalf("field = %#v", field)
+	}
+	if !field.ChildRelationshipNameInferred {
+		t.Fatalf("derived child relationship not marked inferred: %#v", field)
 	}
 }
 
