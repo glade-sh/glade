@@ -109,6 +109,28 @@ func TestParseMultipleAuraEnabledArguments(t *testing.T) {
 	}
 }
 
+func TestParseMultilineAnnotationArgumentWithEscapedApostrophe(t *testing.T) {
+	src := `public class Probe {
+  @InvocableVariable(
+    Required=false
+    Label='A label'
+    Description='This isn\'t positional'
+  )
+  public String value;
+}`
+	file := NewParser().ParseSource("Probe.cls", src)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	arguments := file.Declarations[0].Members[0].Annotations[0].Arguments
+	if len(arguments) != 3 {
+		t.Fatalf("arguments = %#v", arguments)
+	}
+	if got := arguments[2]; got.Name != "Description" || got.Value != "'This isn\\'t positional'" {
+		t.Fatalf("description argument = %#v", got)
+	}
+}
+
 func TestParseInitializerBlocks(t *testing.T) {
 	src := `
 public class Hello {

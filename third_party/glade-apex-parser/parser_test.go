@@ -672,6 +672,32 @@ func TestParseStructuredAnnotationArgumentsSupportWhitespaceSeparation(t *testin
 	}
 }
 
+func TestParseAnnotationModifierPreservesBackslashEscapedApostrophe(t *testing.T) {
+	source := `public class Probe {
+  @InvocableVariable(Description='This isn\'t positional')
+  public String value;
+}`
+	file := NewParser().ParseSource("Probe.cls", source)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	modifiers := file.Declarations[0].Members[0].Modifiers
+	if len(modifiers) == 0 || modifiers[0] != "@InvocableVariable(Description='This isn\\'t positional')" {
+		t.Fatalf("modifiers = %#v", modifiers)
+	}
+}
+
+func TestParseRejectsUnterminatedAnnotationStringAfterEscapedApostrophe(t *testing.T) {
+	source := `public class Probe {
+  @InvocableVariable(Description='This isn\'t)
+  public String value;
+}`
+	file := NewParser().ParseSource("Probe.cls", source)
+	if !file.HasErrors() {
+		t.Fatalf("unterminated annotation string was accepted: %#v", file)
+	}
+}
+
 func TestParseRejectsMultipleSuppressWarningsArguments(t *testing.T) {
 	file := NewParser().ParseSource("Probe.cls", `@SuppressWarnings('one', 'two') public class Probe {}`)
 	if !file.HasErrors() {

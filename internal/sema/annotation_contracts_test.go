@@ -127,6 +127,22 @@ public class Probe {
 	}
 }
 
+func TestAnnotationCatalogAllowsEscapedApostropheInNamedStringArgument(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe {
+  @InvocableVariable(
+    Required=false
+    Description='This isn\'t positional'
+    Label='A label'
+  )
+  public String value;
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("escaped named string argument was rejected: %#v", result.Diagnostics)
+	}
+}
+
 func TestInvocableVariablePropertyContracts(t *testing.T) {
 	for name, source := range map[string]string{
 		"default with required":     `public class Probe { @InvocableVariable(defaultValue='value' required=true) public String value; }`,

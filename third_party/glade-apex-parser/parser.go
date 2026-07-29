@@ -777,21 +777,25 @@ func isCastOperandStart(b byte) bool {
 
 func copyApexString(out *strings.Builder, source string, start int) int {
 	i := start
-	out.WriteByte(source[i])
-	i++
 	for i < len(source) {
-		out.WriteByte(source[i])
-		if source[i] == '\'' {
-			if i+1 < len(source) && source[i+1] == '\'' {
+		current := source[i]
+		out.WriteByte(current)
+		i++
+		if current == '\\' {
+			if i < len(source) {
+				out.WriteByte(source[i])
 				i++
+			}
+			continue
+		}
+		if current == '\'' && i > start+1 {
+			if i < len(source) && source[i] == '\'' {
 				out.WriteByte(source[i])
 				i++
 				continue
 			}
-			i++
 			break
 		}
-		i++
 	}
 	return i
 }
@@ -799,6 +803,13 @@ func copyApexString(out *strings.Builder, source string, start int) int {
 func skipApexString(source string, start int) int {
 	i := start + 1
 	for i < len(source) {
+		if source[i] == '\\' {
+			i++
+			if i < len(source) {
+				i++
+			}
+			continue
+		}
 		if source[i] == '\'' {
 			if i+1 < len(source) && source[i+1] == '\'' {
 				i += 2
