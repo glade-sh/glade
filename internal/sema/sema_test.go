@@ -132,6 +132,56 @@ public class UsesNamespacedFields {
 	}
 }
 
+func TestAnalyzeLoadsNestedSchemaCustomObjectsRelationshipTraversal(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	for _, dir := range []string{
+		"src/main/default/classes",
+		"src/main/schema/customObjects/objects/OrderItemLine__c/fields",
+		"src/main/schema/customObjects/objects/Merchandise__c/fields",
+	} {
+		if err := os.MkdirAll(filepath.Join(root, dir), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	writeSemaFile(t, filepath.Join(root, "sfdx-project.json"), `{
+  "packageDirectories": [{"path":"src","default":true}],
+  "namespace": "pkg"
+}`)
+	writeSemaFile(t, filepath.Join(root, "src/main/default/classes/UsesNestedSchema.cls"), `
+public class UsesNestedSchema {
+  public void run(OrderItemLine__c row) {
+    Id productId = row.Merchandise__r.Product2__c;
+    Id accountId = row.Merchandise__r.Account2__c;
+    System.assertEquals(productId, row.Merchandise__r.Product2__c);
+    System.assertEquals(accountId, row.Merchandise__r.Account2__c);
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "src/main/schema/customObjects/objects/OrderItemLine__c/OrderItemLine__c.object-meta.xml"), `<CustomObject/>`)
+	writeSemaFile(t, filepath.Join(root, "src/main/schema/customObjects/objects/OrderItemLine__c/fields/Merchandise__c.field-meta.xml"), `<CustomField><fullName>Merchandise__c</fullName><type>Lookup</type><referenceTo>Merchandise__c</referenceTo><relationshipName>OrderItemLines</relationshipName></CustomField>`)
+	writeSemaFile(t, filepath.Join(root, "src/main/schema/customObjects/objects/Merchandise__c/Merchandise__c.object-meta.xml"), `<CustomObject/>`)
+	writeSemaFile(t, filepath.Join(root, "src/main/schema/customObjects/objects/Merchandise__c/fields/OrderItemLine__c.field-meta.xml"), `<CustomField><fullName>OrderItemLine__c</fullName><type>Lookup</type><referenceTo>OrderItemLine__c</referenceTo><relationshipName>Merchandise</relationshipName></CustomField>`)
+	writeSemaFile(t, filepath.Join(root, "src/main/schema/customObjects/objects/Merchandise__c/fields/Product2__c.field-meta.xml"), `<CustomField><fullName>Product2__c</fullName><type>Lookup</type><referenceTo>Product2</referenceTo><relationshipName>Merchandise2</relationshipName></CustomField>`)
+	writeSemaFile(t, filepath.Join(root, "src/main/schema/customObjects/objects/Merchandise__c/fields/Account2__c.field-meta.xml"), `<CustomField><fullName>Account2__c</fullName><type>Lookup</type><referenceTo>Account</referenceTo><relationshipName>Merchandise2</relationshipName></CustomField>`)
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sch, err := schema.LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index := typesys.Build(p, sch)
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "GLADESEMA021" {
+			t.Fatalf("unexpected nested schema relationship diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeCommonSObjectRelationshipsResolveStandardChains(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()

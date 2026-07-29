@@ -1337,6 +1337,16 @@ func semaAddSchemaFieldMemberIfAbsent(fields map[string]typesys.MemberSymbol, na
 	}
 }
 
+func semaAddSchemaParentRelationshipMember(fields map[string]typesys.MemberSymbol, namespace string, member typesys.MemberSymbol) {
+	if fields == nil || strings.TrimSpace(member.Name) == "" {
+		return
+	}
+	if existing, ok := fields[normalizeName(member.Name)]; ok && !strings.HasPrefix(existing.Type, "List<") {
+		return
+	}
+	semaAddSchemaFieldMember(fields, namespace, member)
+}
+
 func semaLocationComponentFieldNames(fieldName string) []string {
 	if !strings.HasSuffix(fieldName, "__c") {
 		return nil
@@ -1859,7 +1869,7 @@ func semaAddSObjectProviderMembers(members *typeMembers, provider semaSObjectFie
 			relationshipType = field.ReferenceTo[0]
 		}
 		if field.RelationshipName != "" {
-			semaAddSchemaFieldMemberIfAbsent(members.fields, namespace, typesys.MemberSymbol{
+			semaAddSchemaParentRelationshipMember(members.fields, namespace, typesys.MemberSymbol{
 				Kind:      apexast.DeclarationField,
 				Name:      field.RelationshipName,
 				Type:      relationshipType,
@@ -1867,7 +1877,7 @@ func semaAddSObjectProviderMembers(members *typeMembers, provider semaSObjectFie
 			})
 		}
 		if relationshipFieldName := semaParentRelationshipFieldName(field.Name); relationshipFieldName != "" {
-			semaAddSchemaFieldMemberIfAbsent(members.fields, namespace, typesys.MemberSymbol{
+			semaAddSchemaParentRelationshipMember(members.fields, namespace, typesys.MemberSymbol{
 				Kind:      apexast.DeclarationField,
 				Name:      relationshipFieldName,
 				Type:      relationshipType,
