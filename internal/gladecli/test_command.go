@@ -640,7 +640,8 @@ func runTest(ctx context.Context, args []string, w io.Writer, progressW io.Write
 		testOpts.PreRunPhaseDurations = preRunPhases
 	}
 	if progressReporter != nil && len(index.Project.Root) > 0 {
-		progressReporter.warn("startup cache: " + testStartupCacheStatus(index.Project.Root, testOpts))
+		progressReporter.warn("startup cache: " + testStartupCacheStatus(index.Project.Root))
+		progressReporter.warn("one-shot cache: " + testOneShotCacheStatus(testOpts))
 		if root != index.Project.Root && root == "." {
 			root = "."
 		}

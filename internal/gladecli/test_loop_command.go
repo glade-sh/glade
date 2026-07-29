@@ -145,7 +145,8 @@ func writeTestWizard(ctx context.Context, root string, w io.Writer) error {
 	fmt.Fprintln(w, "Test wizard")
 	fmt.Fprintf(w, "project: %s\n", absRoot)
 	fmt.Fprintf(w, "daemon: %s\n", daemon)
-	fmt.Fprintf(w, "cache: %s\n", testStartupCacheStatus(absRoot, defaultTestRuntimeCacheOptions()))
+	fmt.Fprintf(w, "cache: %s\n", testStartupCacheStatus(absRoot))
+	fmt.Fprintf(w, "one-shot cache: %s\n", testOneShotCacheStatus(defaultTestRuntimeCacheOptions()))
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Suggested commands:")
 	fmt.Fprintf(w, "  glade test changed --project %s --since HEAD\n", absRoot)
@@ -162,7 +163,7 @@ func defaultTestRuntimeCacheOptions() apextest.Options {
 	}
 }
 
-func testStartupCacheStatus(root string, opts apextest.Options) string {
+func testOneShotCacheStatus(opts apextest.Options) string {
 	policy := apextest.ResolveDiskRuntimeCachePolicy(opts)
 	switch policy.Reason {
 	case apextest.DiskRuntimeCacheNoDiskCache:
@@ -172,6 +173,10 @@ func testStartupCacheStatus(root string, opts apextest.Options) string {
 	case apextest.DiskRuntimeCacheParallelMethodBypass:
 		return "bypassed for parallel methods with more than one worker; the startup cache will not be read or written for this run. Use glade test serve to keep repeated runs warm"
 	}
+	return "enabled"
+}
+
+func testStartupCacheStatus(root string) string {
 	entry, err := startupcache.Read(root, startupcache.SubdirTest)
 	if err != nil {
 		return "unreadable; run glade test clear-cache --project " + root
