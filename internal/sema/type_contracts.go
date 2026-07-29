@@ -322,12 +322,14 @@ func semaRuntimeTypeTestCompatible(owner, left, right string, model *semaTypeMem
 	if leftMembers.kind == apexast.DeclarationInterface {
 		return rightMembers.kind == apexast.DeclarationInterface ||
 			hasModifier(rightMembers.modifiers, "abstract") ||
-			hasModifier(rightMembers.modifiers, "virtual")
+			hasModifier(rightMembers.modifiers, "virtual") ||
+			semaAssignableToType(left, right, model)
 	}
 	if rightMembers.kind == apexast.DeclarationInterface {
 		return leftMembers.kind == apexast.DeclarationInterface ||
 			hasModifier(leftMembers.modifiers, "abstract") ||
-			hasModifier(leftMembers.modifiers, "virtual")
+			hasModifier(leftMembers.modifiers, "virtual") ||
+			semaAssignableToType(right, left, model)
 	}
 	return false
 }
