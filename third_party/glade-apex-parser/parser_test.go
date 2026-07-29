@@ -687,6 +687,28 @@ func TestParseAnnotationModifierPreservesBackslashEscapedApostrophe(t *testing.T
 	}
 }
 
+func TestParseSalesforceInvocableVariableWithEscapedApostrophe(t *testing.T) {
+	source := `public class Probe {
+  @InvocableVariable(
+    Required=false
+    Description='The Salesforce Id of the Organization-Wide email address to use as the "From" in emails. If this isn\'t set, the email address of the user sending the email is used instead.'
+    Label='Email From Org-Wide Id'
+  )
+  public String value;
+}`
+	file := NewParser().ParseSource("Probe.cls", source)
+	if len(file.Diagnostics) != 0 {
+		t.Fatalf("unexpected diagnostics: %#v", file.Diagnostics)
+	}
+	arguments := file.Declarations[0].Members[0].Annotations[0].Arguments
+	if len(arguments) != 3 || arguments[1].Name != "Description" || arguments[2].Name != "Label" {
+		t.Fatalf("arguments = %#v", arguments)
+	}
+	if got, want := arguments[1].Value, `'The Salesforce Id of the Organization-Wide email address to use as the "From" in emails. If this isn\'t set, the email address of the user sending the email is used instead.'`; got != want {
+		t.Fatalf("description = %q, want %q", got, want)
+	}
+}
+
 func TestParseRejectsUnterminatedAnnotationStringAfterEscapedApostrophe(t *testing.T) {
 	source := `public class Probe {
   @InvocableVariable(Description='This isn\'t)

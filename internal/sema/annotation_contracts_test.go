@@ -143,6 +143,22 @@ func TestAnnotationCatalogAllowsEscapedApostropheInNamedStringArgument(t *testin
 	}
 }
 
+func TestAnnotationCatalogAllowsSalesforceInvocableVariableWithEscapedApostrophe(t *testing.T) {
+	result := analyzeDeclarationProject(t, map[string]string{
+		"Probe.cls": `public class Probe {
+  @InvocableVariable(
+    Required=false
+    Description='The Salesforce Id of the Organization-Wide email address to use as the "From" in emails. If this isn\'t set, the email address of the user sending the email is used instead.'
+    Label='Email From Org-Wide Id'
+  )
+  public String value;
+}`,
+	})
+	if result.HasErrors() {
+		t.Fatalf("Salesforce InvocableVariable annotation was rejected: %#v", result.Diagnostics)
+	}
+}
+
 func TestInvocableVariablePropertyContracts(t *testing.T) {
 	for name, source := range map[string]string{
 		"default with required":     `public class Probe { @InvocableVariable(defaultValue='value' required=true) public String value; }`,
