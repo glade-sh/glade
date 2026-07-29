@@ -128,8 +128,13 @@ public class Probe {
     {
       String value = 'b';
     }
-    for (String item : new List<String>()) {}
-    for (String item : new List<String>()) {}
+    for (Id cartId : new List<Id>()) {
+      System.debug(cartId);
+    }
+    Integer completed = 1;
+    for (Id cartId : new List<Id>()) {
+      System.debug(cartId);
+    }
   }
 }
 `)
@@ -137,6 +142,46 @@ public class Probe {
 		if diag.Code == "GLADESEMA014" {
 			t.Fatalf("sibling scopes should allow reused names: %#v", result.Diagnostics)
 		}
+	}
+}
+
+func TestNestedEnhancedForLocalCannotRedeclareOuterLoopLocal(t *testing.T) {
+	t.Parallel()
+	result := analyzeScopeProject(t, `
+public class Probe {
+  void run() {
+    for (Id cartId : new List<Id>()) {
+      for (Id cartId : new List<Id>()) {
+        System.debug(cartId);
+      }
+    }
+  }
+}
+`)
+	if !hasScopeRedeclareDiagnostic(result, "cartId") {
+		t.Fatalf("expected nested enhanced-for redeclaration diagnostic, got %#v", result.Diagnostics)
+	}
+}
+
+func TestCommentedSiblingEnhancedForLocalsDoNotRedeclare(t *testing.T) {
+	t.Parallel()
+	result := analyzeScopeProject(t, `
+public class Probe {
+  void run() {
+    /*
+    for (Id cartId : new List<Id>()) {
+      System.debug(cartId);
+    }
+    Integer completed = 1;
+    for (Id cartId : new List<Id>()) {
+      System.debug(cartId);
+    }
+    */
+  }
+}
+`)
+	if hasScopeRedeclareDiagnostic(result, "cartId") {
+		t.Fatalf("commented enhanced-for locals must not redeclare: %#v", result.Diagnostics)
 	}
 }
 

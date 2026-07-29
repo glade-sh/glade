@@ -3053,6 +3053,9 @@ func (a *Analyzer) collectBodyScopes(typ typesys.TypeSymbol, member typesys.Memb
 	var diagnostics []diagnostic.Diagnostic
 	diagnostics = append(diagnostics, declareSemaParameters(typ, member, body, bodyOffset, source, &scopes)...)
 	for _, match := range enhancedForLocalPattern.FindAllStringSubmatchIndex(body, -1) {
+		if semaOffsetInIgnoredText(body, match[0]) {
+			continue
+		}
 		typeName := strings.TrimSpace(body[match[2]:match[3]])
 		name := strings.TrimSpace(body[match[4]:match[5]])
 		if isSemaKeyword(typeName) {
