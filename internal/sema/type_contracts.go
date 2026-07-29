@@ -291,11 +291,11 @@ func semaRuntimeTypeTestCompatible(owner, left, right string, model *semaTypeMem
 	right = semaCanonicalAssignableType(resolveNestedTypeReference(model, owner, right))
 	leftBase, leftArgs := semaGenericBaseAndArgs(left)
 	rightBase, rightArgs := semaGenericBaseAndArgs(right)
-	leftIterableObject := strings.EqualFold(leftBase, "Iterable") && len(leftArgs) == 1 && strings.EqualFold(leftArgs[0], "Object")
-	rightIterableObject := strings.EqualFold(rightBase, "Iterable") && len(rightArgs) == 1 && strings.EqualFold(rightArgs[0], "Object")
+	leftIterable := strings.EqualFold(leftBase, "Iterable") && len(leftArgs) == 1
+	rightIterable := strings.EqualFold(rightBase, "Iterable") && len(rightArgs) == 1
 	leftQueryLocator := strings.EqualFold(leftBase, "Database.QueryLocator") && len(leftArgs) == 0
 	rightQueryLocator := strings.EqualFold(rightBase, "Database.QueryLocator") && len(rightArgs) == 0
-	if (leftIterableObject && rightQueryLocator) || (leftQueryLocator && rightIterableObject) {
+	if (leftIterable && rightQueryLocator) || (leftQueryLocator && rightIterable) {
 		return true
 	}
 	if len(leftArgs) > 0 || len(rightArgs) > 0 {

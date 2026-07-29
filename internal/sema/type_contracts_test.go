@@ -256,6 +256,34 @@ public class Probe {
 	}
 }
 
+func TestTypeContractAllowsQueryLocatorRuntimeTypesForAnyIterableElement(t *testing.T) {
+	for name, iterable := range map[string]string{
+		"Object":                 "Iterable<Object>",
+		"SObject":                "Iterable<SObject>",
+		"Account":                "Iterable<Account>",
+		"System Iterable Object": "System.Iterable<Object>",
+		"String":                 "Iterable<String>",
+	} {
+		t.Run(name, func(t *testing.T) {
+			result := analyzeDeclarationProject(t, map[string]string{
+				"Probe.cls": `
+public class Probe {
+  public void run(Database.QueryLocator locator, ` + iterable + ` values) {
+    Database.QueryLocator fromIterable = (Database.QueryLocator) values;
+    ` + iterable + ` fromLocator = (` + iterable + `) locator;
+    if (values instanceof Database.QueryLocator) {}
+    if (locator instanceof ` + iterable + `) {}
+  }
+}
+`,
+			})
+			if result.HasErrors() {
+				t.Fatalf("QueryLocator runtime relation rejected %s: %#v", iterable, result.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestTypeContractRejectsIncompatibleParameterizedCollectionCasts(t *testing.T) {
 	for name, source := range map[string]string{
 		"different collection bases": `
