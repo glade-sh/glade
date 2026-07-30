@@ -78,7 +78,7 @@ func (writer *runtimePatchFingerprintWriter) writeBytes(values []byte) {
 		}
 		n := copy(writer.buffer[writer.buffered:], values)
 		writer.buffered += n
-		writer.bytes += uint64(n)
+		writer.bytes += uint64(n) // #nosec G115 -- copy counts are guaranteed nonnegative and fit in uint64.
 		values = values[n:]
 	}
 }
@@ -106,7 +106,15 @@ func (writer *runtimePatchFingerprintWriter) fixed(tag byte, value uint64) {
 }
 
 func (writer *runtimePatchFingerprintWriter) integer(tag byte, value int64) {
-	writer.fixed(tag, uint64(value))
+	writer.fixed(tag, uint64(value)) // #nosec G115 -- preserve the signed value's two's-complement bit pattern.
+}
+
+func (writer *runtimePatchFingerprintWriter) count(tag byte, value int) {
+	if value < 0 {
+		writer.ok = false
+		return
+	}
+	writer.fixed(tag, uint64(value)) // #nosec G115 -- value is nonnegative and an int always fits in uint64.
 }
 
 func (writer *runtimePatchFingerprintWriter) boolean(tag byte, value bool) {
@@ -127,7 +135,7 @@ func (writer *runtimePatchFingerprintWriter) decimal(tag byte, value float64) {
 
 func (writer *runtimePatchFingerprintWriter) string(tag byte, value string) {
 	writer.raw(tag)
-	writer.fixed(0, uint64(len(value)))
+	writer.count(0, len(value))
 	if !writer.ok || value == "" {
 		return
 	}
@@ -137,7 +145,7 @@ func (writer *runtimePatchFingerprintWriter) string(tag byte, value string) {
 func (writer *runtimePatchFingerprintWriter) container(tag byte, isNil bool, length int) {
 	writer.raw(tag)
 	writer.boolean(0, isNil)
-	writer.fixed(0, uint64(length))
+	writer.count(0, length)
 }
 
 func (writer *runtimePatchFingerprintWriter) strings(tag byte, values []string, preserveNil bool) {

@@ -623,7 +623,7 @@ func sourceStillMatches(path string, expected [sha256.Size]byte) bool {
 }
 
 func metadataStillMatches(path string, expected ApexMetadataInput) bool {
-	data, err := os.ReadFile(path + "-meta.xml")
+	data, err := os.ReadFile(path + "-meta.xml") // #nosec G304 -- fixed metadata companion for the indexed Apex source.
 	if err != nil {
 		return !expected.Present && os.IsNotExist(err)
 	}

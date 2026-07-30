@@ -44,7 +44,7 @@ func WarmRuntimeWithBuildArtifacts(ctx context.Context, index typesys.Index, art
 	if err != nil {
 		return err
 	}
-	if err := semanticCompileErrorWithHooks(ctx, index, artifacts, digests, sources, generation, semanticGateHooks{}, true); err != nil {
+	if err := semanticCompileErrorWithHooks(ctx, index, artifacts, sources, generation, semanticGateHooks{}, true); err != nil {
 		return err
 	}
 	_, _, err = runtimeFromIndexWithPreparedGenerationProjected(index, digests, sources, &generation, cloneRuntimeCacheEntryChecked, true)

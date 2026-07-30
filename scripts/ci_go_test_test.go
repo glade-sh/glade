@@ -3076,10 +3076,20 @@ func TestCIPackageLanesRouteThroughCheckedManifest(t *testing.T) {
 	if len(remaining) == 0 {
 		t.Fatal("remaining-go must be explicitly enumerated")
 	}
+	if got, want := document.Lanes["sema"], []string{"github.com/glade-sh/glade/internal/sema"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("sharded sema lane = %v, want exact target %v", got, want)
+	}
+	semanticCacheOwned := false
 	for _, pkg := range remaining {
 		if strings.Contains(pkg, "...") || strings.ContainsAny(pkg, "*?") {
 			t.Fatalf("remaining-go contains catch-all %q", pkg)
 		}
+		if pkg == "github.com/glade-sh/glade/internal/semanticcache" {
+			semanticCacheOwned = true
+		}
+	}
+	if !semanticCacheOwned {
+		t.Fatal("remaining-go must execute the semantic cache companion package")
 	}
 	script, err := os.ReadFile("ci-go-test.sh")
 	if err != nil {
@@ -3566,7 +3576,14 @@ func TestCILocalReleaseExecutesExactAuthoritativeInventory(t *testing.T) {
 		{"./cmd/glade", "-timeout=30m"},
 	} {
 		for _, line := range strings.Split(strings.TrimSpace(calls), "\n") {
-			if strings.HasPrefix(line, "test ") && strings.Contains(line, tc.packageArg) && !strings.Contains(line, tc.timeout) {
+			ownsPackage := false
+			for _, argument := range strings.Fields(line) {
+				if argument == tc.packageArg {
+					ownsPackage = true
+					break
+				}
+			}
+			if strings.HasPrefix(line, "test ") && ownsPackage && !strings.Contains(line, tc.timeout) {
 				t.Fatalf("%s missing explicit %s: %s", tc.packageArg, tc.timeout, line)
 			}
 		}

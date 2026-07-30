@@ -31,7 +31,7 @@ var packageLaneNames = []string{
 var specializedPackageLanes = map[string][]string{
 	"apextest":              {"github.com/glade-sh/glade/internal/apextest"},
 	"gladecli":              {"github.com/glade-sh/glade/internal/gladecli"},
-	"sema":                  {"github.com/glade-sh/glade/internal/sema", "github.com/glade-sh/glade/internal/semanticcache"},
+	"sema":                  {"github.com/glade-sh/glade/internal/sema"},
 	"server-and-playground": {"github.com/glade-sh/glade/internal/playground", "github.com/glade-sh/glade/internal/server"},
 	"repoguard":             {"github.com/glade-sh/glade/internal/repoguard"},
 }

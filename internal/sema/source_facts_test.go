@@ -120,6 +120,20 @@ func TestSourceFactsMatchingBracesPreserveMalformedBehavior(t *testing.T) {
 	}
 }
 
+func TestSourceFactsMatchBracesBeyondInlineStackCapacity(t *testing.T) {
+	t.Parallel()
+
+	const depth = 256
+	source := strings.Repeat("{", depth) + strings.Repeat("}", depth)
+	facts := newSourceFacts(source)
+	for openOffset := 0; openOffset < depth; openOffset++ {
+		want := len(source) - openOffset - 1
+		if got := facts.matchingBrace(openOffset); got != want {
+			t.Fatalf("matchingBrace(%d) = %d, want %d", openOffset, got, want)
+		}
+	}
+}
+
 func TestSourceFactsRemainAnalysisLocal(t *testing.T) {
 	t.Parallel()
 

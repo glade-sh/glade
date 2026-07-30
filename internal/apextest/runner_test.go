@@ -383,7 +383,7 @@ func TestLegacySemanticGateCannotCacheSourceABAUnderCapturedKey(t *testing.T) {
 	}
 	mutated := false
 	restored := false
-	firstErr := semanticCompileErrorWithHooks(context.Background(), index, nil, nil, sources, generation, semanticGateHooks{
+	firstErr := semanticCompileErrorWithHooks(context.Background(), index, nil, sources, generation, semanticGateHooks{
 		afterIdentity: func() {
 			mutated = true
 			writeFile(t, path, sourceB)
@@ -408,7 +408,7 @@ func TestLegacySemanticGateCannotCacheSourceABAUnderCapturedKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if freshErr := semanticCompileErrorWithHooks(context.Background(), index, nil, nil, freshSources, freshGeneration, semanticGateHooks{}, true, newRunPerfCounters(true)); freshErr != nil {
+	if freshErr := semanticCompileErrorWithHooks(context.Background(), index, nil, freshSources, freshGeneration, semanticGateHooks{}, true, newRunPerfCounters(true)); freshErr != nil {
 		t.Errorf("fresh A semantic gate reused poisoned diagnostics: %v", freshErr)
 	}
 }
@@ -826,7 +826,7 @@ func TestBuildArtifactSemanticGateDoesNotReuseRestoredLegacyMetadataGeneration(t
 		t.Fatal(err)
 	}
 	legacyCounters := newRunPerfCounters(true)
-	if err := semanticCompileErrorWithHooks(context.Background(), index, nil, nil, legacySources, legacyGeneration, semanticGateHooks{}, true, legacyCounters); err != nil {
+	if err := semanticCompileErrorWithHooks(context.Background(), index, nil, legacySources, legacyGeneration, semanticGateHooks{}, true, legacyCounters); err != nil {
 		t.Fatal(err)
 	}
 	if phases := snapshotPerfCounters(legacyCounters).Phases; phases.SemanticCacheMisses != 1 || phases.SemanticMemoryCacheHits != 0 {
@@ -843,7 +843,7 @@ func TestBuildArtifactSemanticGateDoesNotReuseRestoredLegacyMetadataGeneration(t
 		t.Fatal(err)
 	}
 	artifactCounters := newRunPerfCounters(true)
-	if err := semanticCompileErrorWithHooks(context.Background(), index, &artifacts, artifacts.SourceDigests, artifactSources, artifactGeneration, semanticGateHooks{}, true, artifactCounters); err != nil {
+	if err := semanticCompileErrorWithHooks(context.Background(), index, &artifacts, artifactSources, artifactGeneration, semanticGateHooks{}, true, artifactCounters); err != nil {
 		t.Fatal(err)
 	}
 	if phases := snapshotPerfCounters(artifactCounters).Phases; phases.SemanticCacheMisses != 1 || phases.SemanticMemoryCacheHits != 0 {

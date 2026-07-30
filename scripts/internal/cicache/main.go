@@ -131,7 +131,7 @@ func checkWorkflowDir(dir string) ([]string, error) {
 		return nil, err
 	}
 	for _, path := range paths {
-		data, err := os.ReadFile(path)
+		data, err := os.ReadFile(path) // #nosec G304 -- path comes from the caller-owned workflow directory glob above.
 		if err != nil {
 			return nil, err
 		}
@@ -152,7 +152,7 @@ func cacheIdentitiesDir(dir string) (map[string]bool, error) {
 		return nil, err
 	}
 	for _, path := range paths {
-		data, err := os.ReadFile(path)
+		data, err := os.ReadFile(path) // #nosec G304 -- path comes from the caller-owned workflow directory glob above.
 		if err != nil {
 			return nil, err
 		}

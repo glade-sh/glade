@@ -48,7 +48,8 @@ func marshalTestCacheHeader(header testCacheHeader) ([]byte, error) {
 	var fixed [4]byte
 	binary.BigEndian.PutUint16(fixed[:2], testCacheHeaderEncodingVersion)
 	data = append(data, fixed[:2]...)
-	binary.BigEndian.PutUint32(fixed[:], uint32(len(writer.body)))
+	bodyLength := uint32(len(writer.body)) // #nosec G115 -- the body is bounded to 16 MiB above.
+	binary.BigEndian.PutUint32(fixed[:], bodyLength)
 	data = append(data, fixed[:]...)
 	data = append(data, writer.body...)
 	sum := sha256.Sum256(data)
@@ -485,10 +486,11 @@ func (r *testCacheHeaderReader) count() (int, error) {
 	if err != nil || value > maxTestCacheHeaderItems {
 		return 0, errMalformedTestCacheHeader
 	}
-	if value > uint64(r.remaining()) {
+	count := int(value) // #nosec G115 -- value is bounded to 100,000 above.
+	if count > r.remaining() {
 		return 0, errMalformedTestCacheHeader
 	}
-	return int(value), nil
+	return count, nil
 }
 
 func (r *testCacheHeaderReader) path() (string, error) {
@@ -501,10 +503,14 @@ func (r *testCacheHeaderReader) string() (string, error) {
 
 func (r *testCacheHeaderReader) limitedString(limit uint64) (string, error) {
 	length, err := r.unsigned()
-	if err != nil || length > limit || length > uint64(r.remaining()) {
+	if err != nil || limit > maxTestCacheHeaderStringBytes || length > limit {
 		return "", errMalformedTestCacheHeader
 	}
-	data, err := r.take(int(length))
+	size := int(length) // #nosec G115 -- limit is bounded to at most 1 MiB above.
+	if size > r.remaining() {
+		return "", errMalformedTestCacheHeader
+	}
+	data, err := r.take(size)
 	if err != nil {
 		return "", errMalformedTestCacheHeader
 	}

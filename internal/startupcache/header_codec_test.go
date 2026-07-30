@@ -2,6 +2,7 @@ package startupcache
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -150,6 +151,21 @@ func TestTestCacheHeaderBinaryRejectsOversizedPathsAndLengths(t *testing.T) {
 	}
 	if _, err := readTestCacheHeaderAtPath(t, path); !errors.Is(err, errMalformedTestCacheHeader) {
 		t.Fatalf("readTestCacheHeader() oversized error = %v, want %v", err, errMalformedTestCacheHeader)
+	}
+}
+
+func TestTestCacheHeaderReaderRejectsLengthsBeforeNativeIntConversion(t *testing.T) {
+	var encoded [binary.MaxVarintLen64]byte
+	size := binary.PutUvarint(encoded[:], ^uint64(0))
+
+	reader := testCacheHeaderReader{body: encoded[:size]}
+	if _, err := reader.count(); !errors.Is(err, errMalformedTestCacheHeader) {
+		t.Fatalf("count() error = %v, want %v", err, errMalformedTestCacheHeader)
+	}
+
+	reader = testCacheHeaderReader{body: encoded[:size]}
+	if _, err := reader.string(); !errors.Is(err, errMalformedTestCacheHeader) {
+		t.Fatalf("string() error = %v, want %v", err, errMalformedTestCacheHeader)
 	}
 }
 

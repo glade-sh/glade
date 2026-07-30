@@ -105,7 +105,7 @@ func newSourceFacts(source string) *sourceFacts {
 				facts.braces = append(facts.braces, sourceBrace{offset: offset, match: -1, open: true})
 				openIndex := len(facts.braces) - 1
 				if braceDepth < len(braceStack) {
-					braceStack[braceDepth] = openIndex
+					braceStack[braceDepth] = openIndex // #nosec G602 -- guarded by braceDepth < len(braceStack).
 				} else {
 					braceOverflow = append(braceOverflow, openIndex)
 				}
@@ -117,7 +117,7 @@ func newSourceFacts(source string) *sourceFacts {
 					braceDepth--
 					openIndex := 0
 					if braceDepth < len(braceStack) {
-						openIndex = braceStack[braceDepth]
+						openIndex = braceStack[braceDepth] // #nosec G602 -- guarded by braceDepth < len(braceStack).
 					} else {
 						openIndex = braceOverflow[len(braceOverflow)-1]
 						braceOverflow = braceOverflow[:len(braceOverflow)-1]

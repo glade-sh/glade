@@ -8,8 +8,7 @@
       "github.com/glade-sh/glade/internal/gladecli"
     ],
     "sema": [
-      "github.com/glade-sh/glade/internal/sema",
-      "github.com/glade-sh/glade/internal/semanticcache"
+      "github.com/glade-sh/glade/internal/sema"
     ],
     "server-and-playground": [
       "github.com/glade-sh/glade/internal/playground",
@@ -59,6 +58,7 @@
       "github.com/glade-sh/glade/internal/resource",
       "github.com/glade-sh/glade/internal/runartifact",
       "github.com/glade-sh/glade/internal/schema",
+      "github.com/glade-sh/glade/internal/semanticcache",
       "github.com/glade-sh/glade/internal/sobject",
       "github.com/glade-sh/glade/internal/soql",
       "github.com/glade-sh/glade/internal/sosl",

@@ -1,6 +1,7 @@
 package apextest
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"math"
 	"testing"
@@ -17,6 +18,23 @@ func (err runtimeFingerprintErrorA) Error() string { return string(err) }
 type runtimeFingerprintErrorB string
 
 func (err runtimeFingerprintErrorB) Error() string { return string(err) }
+
+func TestRuntimePatchFingerprintWriterRejectsNegativeCountsAndPreservesSignedIntegers(t *testing.T) {
+	writer := runtimePatchFingerprintWriter{
+		hash: sha256.New(),
+		ok:   true,
+	}
+	writer.count(0x01, -1)
+	if writer.ok {
+		t.Fatal("negative count remained eligible for fingerprint publication")
+	}
+
+	requireDifferentRuntimePayloadFingerprints(
+		t,
+		runtimeFingerprintValueEntry(vm.Int(-1)),
+		runtimeFingerprintValueEntry(vm.Int(1)),
+	)
+}
 
 func TestRuntimePatchFingerprintIgnoresMapInsertionOrder(t *testing.T) {
 	first := runtimeFingerprintFixture(8)

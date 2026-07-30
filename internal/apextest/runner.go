@@ -319,7 +319,7 @@ func runCasesContextWithSemanticGateHooks(ctx context.Context, index typesys.Ind
 	if emitProgress {
 		reportProgress(opts, TestProgress{Event: "compile_start"})
 	}
-	if compileErr := semanticCompileErrorWithHooks(ctx, index, opts.BuildArtifacts, opts.SourceDigests, sources, generation, hooks, !opts.NoDiskCache && diskCacheEnabled(), runState.counters); compileErr != nil {
+	if compileErr := semanticCompileErrorWithHooks(ctx, index, opts.BuildArtifacts, sources, generation, hooks, !opts.NoDiskCache && diskCacheEnabled(), runState.counters); compileErr != nil {
 		return compileErrorRun(cases, compileErr, started, opts)
 	}
 	var runtimeKey runtimeCacheKey
@@ -585,10 +585,7 @@ func invokeSnapshotValidationHook(stage string) {
 // identity used by the runtime compile caches, since semantic analysis is
 // otherwise repeated on every call with unchanged sources.
 
-func semanticCompileErrorWithHooks(ctx context.Context, index typesys.Index, artifacts *typesys.BuildArtifacts, digests *typesys.SourceDigestSet, sources *sourceCache, generation runtimeGeneration, hooks semanticGateHooks, cacheAllowed bool, counters ...*runPerfCounters) error {
-	if artifacts != nil {
-		digests = artifacts.SourceDigests
-	}
+func semanticCompileErrorWithHooks(ctx context.Context, index typesys.Index, artifacts *typesys.BuildArtifacts, sources *sourceCache, generation runtimeGeneration, hooks semanticGateHooks, cacheAllowed bool, counters ...*runPerfCounters) error {
 	validateGeneration := func() error {
 		if artifacts != nil {
 			return validateCapturedBuildGeneration(index, artifacts)
