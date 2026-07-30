@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -42,6 +43,31 @@ for (Integer i = 0; i < 25; i++) {
 	}
 }
 
+func BenchmarkDMLTracePreparation(b *testing.B) {
+	program, err := CompileAnonymous(`insert new Account(Name = 'benchmark');`)
+	if err != nil {
+		b.Fatal(err)
+	}
+	for _, traceEnabled := range []bool{false, true} {
+		name := "off"
+		if traceEnabled {
+			name = "on"
+		}
+		b.Run(name, func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				machine := New(nil)
+				org := testDataOrg()
+				machine.SetOrg(&org)
+				machine.SetTraceEnabled(traceEnabled)
+				if _, err := machine.Execute(program); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
 func BenchmarkTask31TwoTargetMethodReturnScopeAliasBatch(b *testing.B) {
 	b.Cleanup(ResetPerfCounters)
 	method := newTask31MutatingMethod(b)
@@ -68,6 +94,129 @@ func BenchmarkTask31TwoTargetMethodReturnScopeAliasBatch(b *testing.B) {
 		b.StopTimer()
 		assertTask31MethodReturnFixture(b, prepared)
 	}
+}
+
+func BenchmarkMethodReturnAliasBookkeeping(b *testing.B) {
+	noTargetProgram, err := CompileAnonymous(`Integer localValue = 1;`)
+	if err != nil {
+		b.Fatal(err)
+	}
+	oneTargetProgram, err := CompileAnonymous(`value.put('result', 'unchanged-reference');`)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.Run("no-target", func(b *testing.B) {
+		method := Method{Name: "NoTarget.run", ReturnType: "void", Program: noTargetProgram}
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			machine := New(nil)
+			if _, err := machine.callMethodWithReceiver(method, Null, nil, &Result{}); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	b.Run("one-target", func(b *testing.B) {
+		method := Method{
+			Name:       "OneTarget.run",
+			ReturnType: "void",
+			Params:     []Param{{Name: "value", Type: "Map<String,String>"}},
+			Program:    oneTargetProgram,
+		}
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			machine := New(nil)
+			value := Map()
+			value.Type = "Map<String,String>"
+			machine.Globals["alias"] = value
+			if _, err := machine.callMethodWithReceiver(method, Null, []Value{value}, &Result{}); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+}
+
+func BenchmarkMapCoercionNoEntryChanges(b *testing.B) {
+	machine := New(nil)
+	value := Map()
+	value.Type = "Map<Object,Object>"
+	for i := 0; i < 1000; i++ {
+		text := fmt.Sprintf("key-%04d", i)
+		rawKey := mapKey(String(text))
+		value.Map[rawKey] = String(text)
+		value.MapKeys[rawKey] = String(text)
+		value.MapOrder = append(value.MapOrder, rawKey)
+	}
+	b.Run("copy-on-change", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			coerced, err := machine.coerceAssignable("Map<String,String>", value)
+			if err != nil {
+				b.Fatal(err)
+			}
+			if !sameMapBacking(coerced.MapKeys, value.MapKeys) ||
+				!sameSliceBacking(coerced.MapOrder, value.MapOrder) {
+				b.Fatal("no-change coercion replaced map representation")
+			}
+		}
+	})
+	b.Run("eager-reference", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			coerced, err := benchmarkEagerMapCoercion(machine, "Map<String,String>", value)
+			if err != nil {
+				b.Fatal(err)
+			}
+			if sameMapBacking(coerced.MapKeys, value.MapKeys) ||
+				sameSliceBacking(coerced.MapOrder, value.MapOrder) {
+				b.Fatal("eager reference unexpectedly retained map representation")
+			}
+		}
+	})
+}
+
+func benchmarkEagerMapCoercion(machine *VM, typeName string, value Value) (Value, error) {
+	sourceType := value.Type
+	keyType, valueType, ok := mapTypeArgs(typeName)
+	if !ok {
+		value.Type = typeName
+		return value, nil
+	}
+	type entry struct {
+		key      string
+		keyValue Value
+		value    Value
+	}
+	entries := make([]entry, 0, len(value.Map))
+	for _, rawKey := range orderedValueMapKeys(value) {
+		keyValue := mapStoredKey(value, rawKey)
+		coercedKey, err := machine.coerceAssignable(keyType, keyValue)
+		if err != nil {
+			return Null, err
+		}
+		coercedValue, err := machine.coerceAssignable(valueType, value.Map[rawKey])
+		if err != nil {
+			return Null, err
+		}
+		entries = append(entries, entry{key: machine.mapKey(coercedKey), keyValue: coercedKey, value: coercedValue})
+	}
+	for rawKey := range value.Map {
+		delete(value.Map, rawKey)
+	}
+	value.MapKeys = make(map[string]Value, len(entries))
+	value.MapOrder = make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if _, exists := value.Map[entry.key]; !exists {
+			value.MapOrder = append(value.MapOrder, entry.key)
+		}
+		value.Map[entry.key] = entry.value
+		value.MapKeys[entry.key] = entry.keyValue
+	}
+	if strings.EqualFold(valueType, "sObject") && mapConcreteSObjectValueType(sourceType) != "" {
+		value.Type = sourceType
+	} else {
+		value.Type = typeName
+	}
+	return value, nil
 }
 
 func BenchmarkCloneValuePreserveRefsLargeOrderGraph(b *testing.B) {

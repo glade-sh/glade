@@ -3,6 +3,8 @@ package vm
 import (
 	"fmt"
 	"math"
+	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -1289,45 +1291,124 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			value.Type = typeName
 			return value, nil
 		}
+		resultType := typeName
+		if strings.EqualFold(valueType, "sObject") && mapConcreteSObjectValueType(sourceType) != "" {
+			resultType = sourceType
+		}
 		type coercedEntry struct {
 			key      string
 			keyValue Value
 			value    Value
 		}
-		entries := make([]coercedEntry, 0, len(value.Map))
-		for _, rawKey := range orderedValueMapKeys(value) {
+		rawKeys := orderedValueMapKeys(value)
+		rollback := captureCoercionMapBranches(value, rawKeys)
+		canonicalRepresentation := value.MapKeys != nil &&
+			len(value.MapKeys) == len(value.Map) &&
+			(len(value.Map) == 0 ||
+				(value.MapOrder != nil && slices.Equal(value.MapOrder, rawKeys)))
+		if canonicalRepresentation {
+			for _, rawKey := range rawKeys {
+				if _, ok := value.MapKeys[rawKey]; !ok {
+					canonicalRepresentation = false
+					break
+				}
+			}
+		}
+		var entries []coercedEntry
+		if !canonicalRepresentation {
+			entries = make([]coercedEntry, 0, len(value.Map))
+		}
+		for index, rawKey := range rawKeys {
 			item := value.Map[rawKey]
 			keyValue := mapStoredKey(value, rawKey)
 			coercedKey, err := vm.coerceAssignable(keyType, keyValue)
 			if err != nil {
+				rollback.restore()
 				return Null, fmt.Errorf("key: %w", err)
 			}
 			coercedValue, err := vm.coerceAssignable(valueType, item)
 			if err != nil {
+				rollback.restore()
 				return Null, fmt.Errorf("value: %w", err)
 			}
-			entries = append(entries, coercedEntry{key: vm.mapKey(coercedKey), keyValue: coercedKey, value: coercedValue})
-		}
-		for rawKey := range value.Map {
-			delete(value.Map, rawKey)
-		}
-		value.MapKeys = make(map[string]Value, len(entries))
-		value.MapOrder = make([]string, 0, len(entries))
-		for _, entry := range entries {
-			if _, exists := value.Map[entry.key]; !exists {
-				value.MapOrder = append(value.MapOrder, entry.key)
+			entry := coercedEntry{key: vm.mapKey(coercedKey), keyValue: coercedKey, value: coercedValue}
+			if entries == nil &&
+				(entry.key != rawKey ||
+					!sameCoercionRepresentation(entry.keyValue, keyValue) ||
+					!sameCoercionRepresentation(entry.value, item)) {
+				entries = make([]coercedEntry, 0, len(value.Map))
+				for _, previousKey := range rawKeys[:index] {
+					entries = append(entries, coercedEntry{
+						key:      previousKey,
+						keyValue: mapStoredKey(value, previousKey),
+						value:    value.Map[previousKey],
+					})
+				}
 			}
-			value.Map[entry.key] = entry.value
-			value.MapKeys[entry.key] = entry.keyValue
+			if entries != nil {
+				entries = append(entries, entry)
+			}
 		}
-		if strings.EqualFold(valueType, "sObject") && mapConcreteSObjectValueType(sourceType) != "" {
-			value.Type = sourceType
+		value.Type = resultType
+		if entries == nil {
+			return value, nil
+		}
+		uniqueEntryCount := 0
+		seenEntryKeys := make(map[string]bool, len(entries))
+		for _, entry := range entries {
+			if !seenEntryKeys[entry.key] {
+				seenEntryKeys[entry.key] = true
+				uniqueEntryCount++
+			}
+		}
+		published := value
+		preserveAliasRepresentation := canonicalRepresentation && uniqueEntryCount == len(value.MapOrder)
+		if preserveAliasRepresentation {
+			clear(published.Map)
+			clear(published.MapKeys)
+			published.MapOrder = published.MapOrder[:0]
 		} else {
-			value.Type = typeName
+			published.Ref = newValueRef()
+			published.Map = make(map[string]Value, uniqueEntryCount)
+			published.MapKeys = make(map[string]Value, uniqueEntryCount)
+			published.MapOrder = make([]string, 0, uniqueEntryCount)
 		}
-		return value, nil
+		for _, entry := range entries {
+			if _, exists := published.Map[entry.key]; !exists {
+				published.MapOrder = append(published.MapOrder, entry.key)
+			}
+			published.Map[entry.key] = entry.value
+			published.MapKeys[entry.key] = entry.keyValue
+		}
+		return published, nil
 	}
 	return coerceAssignable(typeName, value)
+}
+
+func sameCoercionRepresentation(left, right Value) bool {
+	if left.Kind != right.Kind ||
+		left.Int != right.Int ||
+		left.Decimal != right.Decimal ||
+		left.Bool != right.Bool ||
+		left.Text != right.Text ||
+		left.Type != right.Type ||
+		left.Static != right.Static ||
+		left.Runtime != right.Runtime ||
+		left.Ref != right.Ref {
+		return false
+	}
+	switch left.Kind {
+	case ValueNull, ValueInt, ValueDecimal, ValueBool, ValueString:
+		if left.Fields == nil && right.Fields == nil &&
+			left.List == nil && right.List == nil &&
+			left.Set == nil && right.Set == nil &&
+			left.Map == nil && right.Map == nil &&
+			left.MapKeys == nil && right.MapKeys == nil &&
+			left.MapOrder == nil && right.MapOrder == nil {
+			return true
+		}
+	}
+	return reflect.DeepEqual(left, right)
 }
 
 func (vm *VM) typedJSONMapKey(typeName, key string) (Value, error) {

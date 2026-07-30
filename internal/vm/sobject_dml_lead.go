@@ -109,7 +109,7 @@ func (vm *VM) convertLeadAccountID(convert Value, lead storage.Record, result *R
 		if name == "" {
 			name = storageRecordStringField(lead, "LastName")
 		}
-		setExplicitSObjectField(&account, "Name", String(name))
+		vm.setExplicitSObjectFieldValue(&account, "Name", String(name))
 	}
 	results, err := vm.applyDML("insert", account, true, "", dml.Options{}, result)
 	if err != nil {
@@ -132,14 +132,14 @@ func (vm *VM) convertLeadContactID(convert Value, lead storage.Record, accountID
 	}
 	if _, _, ok := objectFieldValue(contact, "FirstName"); !ok {
 		if first := storageRecordStringField(lead, "FirstName"); first != "" {
-			setExplicitSObjectField(&contact, "FirstName", String(first))
+			vm.setExplicitSObjectFieldValue(&contact, "FirstName", String(first))
 		}
 	}
 	if _, _, ok := objectFieldValue(contact, "LastName"); !ok {
-		setExplicitSObjectField(&contact, "LastName", String(storageRecordStringField(lead, "LastName")))
+		vm.setExplicitSObjectFieldValue(&contact, "LastName", String(storageRecordStringField(lead, "LastName")))
 	}
 	if _, _, ok := objectFieldValue(contact, "AccountId"); !ok {
-		setExplicitSObjectField(&contact, "AccountId", platformScalar("Id", string(accountID)))
+		vm.setExplicitSObjectFieldValue(&contact, "AccountId", platformScalar("Id", string(accountID)))
 	}
 	results, err := vm.applyDML("insert", contact, true, "", dml.Options{}, result)
 	if err != nil {
@@ -171,16 +171,16 @@ func (vm *VM) convertLeadOpportunityID(convert Value, lead storage.Record, accou
 		if name == "" {
 			name = storageRecordStringField(lead, "LastName")
 		}
-		setExplicitSObjectField(&opportunity, "Name", String(name))
+		vm.setExplicitSObjectFieldValue(&opportunity, "Name", String(name))
 	}
 	if _, _, ok := objectFieldValue(opportunity, "AccountId"); !ok {
-		setExplicitSObjectField(&opportunity, "AccountId", platformScalar("Id", string(accountID)))
+		vm.setExplicitSObjectFieldValue(&opportunity, "AccountId", platformScalar("Id", string(accountID)))
 	}
 	if _, _, ok := objectFieldValue(opportunity, "StageName"); !ok {
-		setExplicitSObjectField(&opportunity, "StageName", String("Prospecting"))
+		vm.setExplicitSObjectFieldValue(&opportunity, "StageName", String("Prospecting"))
 	}
 	if _, _, ok := objectFieldValue(opportunity, "CloseDate"); !ok {
-		setExplicitSObjectField(&opportunity, "CloseDate", platformScalar("Date", vm.fakeNow.Format("2006-01-02")))
+		vm.setExplicitSObjectFieldValue(&opportunity, "CloseDate", platformScalar("Date", vm.fakeNow.Format("2006-01-02")))
 	}
 	results, err := vm.applyDML("insert", opportunity, true, "", dml.Options{}, result)
 	if err != nil {

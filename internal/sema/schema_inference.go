@@ -18,15 +18,21 @@ func enrichIndexWithProjectReferencedSchemaFieldsWithSources(index typesys.Index
 	}
 	index.Objects = semaMergeEquivalentSchemaObjects(index.Objects)
 	ctx := newSemaProjectReferencedSchemaContext(index.Objects, index.Project.Namespace)
+	seenSources := make(map[string]bool)
 	for _, typ := range index.Types {
 		if skipProjectDiagnosticType(typ) || typ.File == "" {
 			continue
 		}
-		source, ok := sources.normalizedForType(typ)
+		sourceKey := semaSourceCacheKey(typ.File, typ.Namespace, typ.SourceNamespaceRemaps)
+		if seenSources[sourceKey] {
+			continue
+		}
+		seenSources[sourceKey] = true
+		facts, ok := sources.factsForType(typ)
 		if !ok {
 			continue
 		}
-		semaProjectReferencedSchemaFieldsFromSource(ctx, source)
+		semaProjectReferencedSchemaFieldsFromFacts(ctx, facts)
 	}
 	index.Objects = ctx.objects
 	return index
@@ -316,7 +322,11 @@ func semaProjectReferencedSchemaNameKeys(namespace, name string) []string {
 }
 
 func semaProjectReferencedSchemaFieldsFromSource(ctx *semaProjectReferencedSchemaContext, source string) {
-	scanSource := semaProjectReferencedSchemaScanSource(source)
+	semaProjectReferencedSchemaFieldsFromFacts(ctx, newSourceFacts(source))
+}
+
+func semaProjectReferencedSchemaFieldsFromFacts(ctx *semaProjectReferencedSchemaContext, facts *sourceFacts) {
+	scanSource := facts.schemaScanSource()
 	if ctx.inferObjectReferences {
 		semaProjectReferencedSchemaObjectReferences(ctx, scanSource, semaProjectReferencedSchemaObjectReferenceOptions{
 			includeFrom:     true,
@@ -1040,61 +1050,5 @@ func semaProjectReferencedMatchingParen(source string, open int) (int, bool) {
 }
 
 func semaProjectReferencedSchemaScanSource(source string) string {
-	out := []byte(source)
-	mask := func(start, end int) {
-		if start < 0 {
-			start = 0
-		}
-		if end > len(out) {
-			end = len(out)
-		}
-		for i := start; i < end; i++ {
-			if out[i] != '\n' && out[i] != '\r' {
-				out[i] = ' '
-			}
-		}
-	}
-	for i := 0; i < len(out); {
-		switch {
-		case i+1 < len(out) && out[i] == '/' && out[i+1] == '/':
-			start := i
-			i += 2
-			for i < len(out) && out[i] != '\n' && out[i] != '\r' {
-				i++
-			}
-			mask(start, i)
-		case i+1 < len(out) && out[i] == '/' && out[i+1] == '*':
-			start := i
-			i += 2
-			for i+1 < len(out) && !(out[i] == '*' && out[i+1] == '/') {
-				i++
-			}
-			if i+1 < len(out) {
-				i += 2
-			}
-			mask(start, i)
-		case out[i] == '\'':
-			start := i
-			i++
-			for i < len(out) {
-				if out[i] == '\'' {
-					if i+1 < len(out) && out[i+1] == '\'' {
-						i += 2
-						continue
-					}
-					i++
-					break
-				}
-				if out[i] == '\\' && i+1 < len(out) {
-					i += 2
-					continue
-				}
-				i++
-			}
-			mask(start, i)
-		default:
-			i++
-		}
-	}
-	return string(out)
+	return newSourceFacts(source).schemaScanSource()
 }

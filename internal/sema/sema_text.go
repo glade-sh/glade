@@ -96,7 +96,7 @@ func (s semaScopeModel) flat() map[string]string {
 	}
 	starts := make(map[string]int, len(s.locals))
 	for _, local := range s.locals {
-		key := normalizeName(local.name)
+		key := s.localKey(local)
 		if local.start >= starts[key] {
 			out[key] = local.typeName
 			starts[key] = local.start
@@ -111,7 +111,7 @@ func (s semaScopeModel) flatAt(pos int) map[string]string {
 	}
 	starts := make(map[string]int, len(s.locals))
 	for _, local := range s.locals {
-		key := normalizeName(local.name)
+		key := s.localKey(local)
 		if pos >= local.start && pos <= local.scopeEnd && local.start >= starts[key] {
 			out[key] = local.typeName
 			starts[key] = local.start

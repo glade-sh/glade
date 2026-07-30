@@ -1,6 +1,7 @@
 package sema
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -17,6 +18,16 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
+
+// SemanticABI identifies the behavior of semantic diagnostics, inference,
+// visibility, and exported types. Any change to those behaviors must bump this
+// value so persisted semantic results fail closed.
+const SemanticABI = "sema-v1"
+
+// PlatformABI identifies the built-in Salesforce platform model consumed by
+// semantic analysis. Changes to built-in signatures, aliases, or visibility
+// must bump this value so persisted semantic results fail closed.
+const PlatformABI = "salesforce-platform-v1"
 
 type Result struct {
 	Project     typesys.ProjectInfo      `json:"project"`
@@ -49,6 +60,7 @@ const (
 
 type Analyzer struct {
 	known                         map[string]TypeReference
+	canonicalNames                *semaCanonicalNames
 	namespace                     string
 	deps                          map[string]bool
 	includePerformanceDiagnostics bool
@@ -62,10 +74,40 @@ type AnalyzeOptions struct {
 	SuppressPerformanceDiagnostics bool
 	PerfCounters                   *PerfCounters
 	BuildArtifacts                 *typesys.BuildArtifacts
+	// CapturedSource transports request-scoped raw source bytes whose content
+	// is already bound into the caller's analysis identity. It is not an
+	// independent semantic behavior option. When nonnil, a missing source is
+	// authoritative and must not fall back to the live filesystem.
+	CapturedSource func(string) (string, bool)
+}
+
+// AnalyzeOptionsFingerprint returns a stable identity for every
+// behavior-affecting semantic option. PerfCounters is instrumentation,
+// BuildArtifacts is part of the caller-supplied content identity, and
+// CapturedSource only transports content already bound into that identity.
+func AnalyzeOptionsFingerprint(opts AnalyzeOptions) string {
+	payload, err := json.Marshal(struct {
+		Version                        int  `json:"version"`
+		Diagnostics                    bool `json:"diagnostics"`
+		ExportTypes                    bool `json:"exportTypes"`
+		SuppressPerformanceDiagnostics bool `json:"suppressPerformanceDiagnostics"`
+	}{
+		Version:                        1,
+		Diagnostics:                    opts.Diagnostics,
+		ExportTypes:                    opts.ExportTypes,
+		SuppressPerformanceDiagnostics: opts.SuppressPerformanceDiagnostics,
+	})
+	if err != nil {
+		panic(fmt.Sprintf("encode semantic options fingerprint: %v", err))
+	}
+	return fmt.Sprintf("%x", sha256.Sum256(payload))
 }
 
 func NewAnalyzer() *Analyzer {
-	a := &Analyzer{known: make(map[string]TypeReference)}
+	a := &Analyzer{
+		known:          make(map[string]TypeReference),
+		canonicalNames: newSemaCanonicalNames(semaAnalysisCanonicalNameLimit),
+	}
 	for _, name := range builtinTypes {
 		a.addKnown(name, TypeBuiltin, "")
 	}
@@ -197,6 +239,7 @@ func (a *Analyzer) analyzeWithOptions(index typesys.Index, opts AnalyzeOptions, 
 }
 
 func (a *Analyzer) prepareAnalysisContext(index typesys.Index, opts AnalyzeOptions, recorder ...*perfRecorder) {
+	a.canonicalNames = newSemaCanonicalNames(semaAnalysisCanonicalNameLimit)
 	a.namespace = index.Project.Namespace
 	a.deps = make(map[string]bool)
 	a.includePerformanceDiagnostics = opts.Diagnostics && !opts.SuppressPerformanceDiagnostics
@@ -205,7 +248,7 @@ func (a *Analyzer) prepareAnalysisContext(index typesys.Index, opts AnalyzeOptio
 	if len(recorder) > 0 {
 		perf = recorder[0]
 	}
-	a.sources = newSemaSources(opts.BuildArtifacts, perf)
+	a.sources = newSemaSourcesWithCaptured(opts.BuildArtifacts, opts.CapturedSource, perf)
 	if perf != nil && opts.BuildArtifacts != nil && opts.BuildArtifacts.Sources != nil {
 		stats := opts.BuildArtifacts.Sources.Stats()
 		perf.counters.WorkspacePhysicalReads = stats.PhysicalReadAttempts
@@ -996,9 +1039,9 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 			})
 		}
 	}
+	resolvedTypeName := resolveNestedTypeReference(model, typ.Name, typeName)
 	if match[1] > 0 && body[match[1]-1] == '=' {
 		value := trimSemaArg(body, match[1], semaLocalInitializerEnd(body, match[1]))
-		resolvedTypeName := resolveNestedTypeReference(model, typ.Name, typeName)
 		valueType := semaResolveConstructedExpressionType(model, typ.Name, value.text, scopes.flatAt(value.start))
 		if valueType != "" && valueType != "null" && !semaAssignableToType(resolvedTypeName, valueType, model) && !semaSOQLSingletonAssignable(resolvedTypeName, valueType, value.text, model) {
 			diagnostics = append(diagnostics, diagnostic.Diagnostic{
@@ -1010,7 +1053,7 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 			})
 		}
 	}
-	diagnostics = append(diagnostics, scopes.declareLocal(typ, member, name, resolveNestedTypeReference(model, typ.Name, typeName), visibleStart, scopeStart, scopeEnd, bodyOffset, source, match[4], match[5])...)
+	diagnostics = append(diagnostics, scopes.declareLocal(typ, member, name, resolvedTypeName, visibleStart, scopeStart, scopeEnd, bodyOffset, source, match[4], match[5])...)
 	return diagnostics
 }
 
@@ -1108,12 +1151,12 @@ func firstCatchType(typeName string) string {
 }
 
 func (s semaScopeModel) visibleAt(name string, pos int) (string, bool) {
-	key := normalizeName(name)
+	key := s.canonicalName(name)
 	bestStart := -1
 	bestType := ""
 	for i := range s.locals {
 		local := s.locals[i]
-		if normalizeName(local.name) == key && pos >= local.start && pos <= local.scopeEnd && local.start >= bestStart {
+		if s.localKey(local) == key && pos >= local.start && pos <= local.scopeEnd && local.start >= bestStart {
 			bestStart = local.start
 			bestType = local.typeName
 		}
@@ -1126,9 +1169,9 @@ func (s semaScopeModel) visibleAt(name string, pos int) (string, bool) {
 }
 
 func (s semaScopeModel) localInBlock(name string, start, end int) (semaLocal, bool) {
-	key := normalizeName(name)
+	key := s.canonicalName(name)
 	for _, local := range s.locals {
-		if normalizeName(local.name) == key && local.scopeStart == start && local.scopeEnd == end {
+		if s.localKey(local) == key && local.scopeStart == start && local.scopeEnd == end {
 			return local, true
 		}
 	}
@@ -3001,12 +3044,12 @@ func (a *Analyzer) hasKnown(name string) bool {
 	if name == "" {
 		return true
 	}
-	if _, ok := a.known[normalizeName(name)]; ok {
+	if _, ok := a.known[a.canonicalName(name)]; ok {
 		return true
 	}
 	canonical := semaCanonicalPlatformAlias(name)
 	if !strings.EqualFold(canonical, name) {
-		if _, ok := a.known[normalizeName(canonical)]; ok {
+		if _, ok := a.known[a.canonicalName(canonical)]; ok {
 			return true
 		}
 	}
@@ -3017,17 +3060,17 @@ func (a *Analyzer) hasKnown(name string) bool {
 		return true
 	}
 	if a.namespace != "" {
-		if _, ok := a.known[normalizeName(a.namespace+"."+name)]; ok {
+		if _, ok := a.known[a.canonicalName(a.namespace+"."+name)]; ok {
 			return true
 		}
 		if namespaced, ok := semaProjectNamespacedAPIName(a.namespace, name); ok {
-			if _, ok := a.known[normalizeName(namespaced)]; ok {
+			if _, ok := a.known[a.canonicalName(namespaced)]; ok {
 				return true
 			}
 		}
-		ns := normalizeName(a.namespace)
+		ns := a.canonicalName(a.namespace)
 		prefix := ns + "."
-		normalized := normalizeName(name)
+		normalized := a.canonicalName(name)
 		if strings.HasPrefix(normalized, prefix) {
 			if _, ok := a.known[strings.TrimPrefix(normalized, prefix)]; ok {
 				return true
@@ -3042,20 +3085,27 @@ func (a *Analyzer) hasKnown(name string) bool {
 	}
 	parts := strings.Split(name, ".")
 	if len(parts) > 1 {
-		_, ok := a.known[normalizeName(parts[0])]
+		_, ok := a.known[a.canonicalName(parts[0])]
 		return ok
 	}
 	return false
 }
 
 func (a *Analyzer) hasExternalDependencyName(name string) bool {
-	normalized := normalizeName(name)
+	normalized := a.canonicalName(name)
 	for namespace := range a.deps {
 		if strings.HasPrefix(normalized, namespace+".") || strings.HasPrefix(normalized, namespace+"__") {
 			return true
 		}
 	}
 	return false
+}
+
+func (a *Analyzer) canonicalName(name string) string {
+	if a == nil || a.canonicalNames == nil {
+		return normalizeName(name)
+	}
+	return a.canonicalNames.canonical(name)
 }
 
 func semaLooksLikeUnconfiguredManagedPackageType(name string) bool {

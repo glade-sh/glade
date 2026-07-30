@@ -17,6 +17,12 @@ import (
 	"github.com/glade-sh/glade/internal/watch"
 )
 
+var (
+	helpCommandNamePattern     = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
+	markdownHeadingLinePattern = regexp.MustCompile(`^ {0,3}#{1,6}\s+`)
+	builtHelpSubcommandPattern = regexp.MustCompile(`^\s{2}([a-z][a-z0-9-]*(?: [a-z][a-z0-9-]*)*)\s{2,}\S`)
+)
+
 func TestBuiltHelpMatchesAuthoritativeCheckedCommandCatalog(t *testing.T) {
 	root := repoRoot(t)
 	bin := buildGladeForHelpContract(t, root)
@@ -187,13 +193,12 @@ func parseBuiltCommandInventory(t *testing.T, output string) []string {
 	t.Helper()
 	var commands []string
 	seen := make(map[string]struct{})
-	namePattern := regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
 	for _, line := range strings.Split(output, "\n") {
 		if !strings.HasPrefix(line, "  ") {
 			continue
 		}
 		fields := strings.Fields(line)
-		if len(fields) < 2 || !namePattern.MatchString(fields[0]) {
+		if len(fields) < 2 || !helpCommandNamePattern.MatchString(fields[0]) {
 			continue
 		}
 		if _, ok := seen[fields[0]]; ok {
@@ -255,7 +260,7 @@ func siteCLIReferenceHeadingCommands(t *testing.T, text string) []string {
 			inFence = !inFence
 			continue
 		}
-		if inFence || !regexp.MustCompile(`^ {0,3}#{1,6}\s+`).MatchString(line) {
+		if inFence || !markdownHeadingLinePattern.MatchString(line) {
 			continue
 		}
 		for _, match := range pattern.FindAllStringSubmatch(line, -1) {
@@ -294,7 +299,7 @@ func parseBuiltHelpCommandPaths(t *testing.T, output string) []string {
 			}
 			var command []string
 			for _, field := range fields[1:] {
-				if !regexp.MustCompile(`^[a-z][a-z0-9-]*$`).MatchString(field) {
+				if !helpCommandNamePattern.MatchString(field) {
 					break
 				}
 				command = append(command, field)
@@ -303,7 +308,7 @@ func parseBuiltHelpCommandPaths(t *testing.T, output string) []string {
 				paths[strings.Join(command, " ")] = struct{}{}
 			}
 		case "Subcommands":
-			match := regexp.MustCompile(`^\s{2}([a-z][a-z0-9-]*(?: [a-z][a-z0-9-]*)*)\s{2,}\S`).FindStringSubmatch(line)
+			match := builtHelpSubcommandPattern.FindStringSubmatch(line)
 			if len(match) != 2 {
 				continue
 			}
@@ -327,7 +332,7 @@ func parseBuiltHelpCommandPaths(t *testing.T, output string) []string {
 func builtHelpRootCommand(output string) string {
 	for _, line := range strings.Split(output, "\n") {
 		fields := strings.Fields(line)
-		if len(fields) >= 2 && fields[0] == "glade" && regexp.MustCompile(`^[a-z][a-z0-9-]*$`).MatchString(fields[1]) {
+		if len(fields) >= 2 && fields[0] == "glade" && helpCommandNamePattern.MatchString(fields[1]) {
 			return fields[1]
 		}
 	}
@@ -527,6 +532,28 @@ func markdownParagraphs(text string) []string {
 		}
 	}
 	return paragraphs
+}
+
+func TestHelpContractLinePatternsRetainExistingMatching(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		pattern *regexp.Regexp
+		text    string
+		want    bool
+	}{
+		{name: "command name", pattern: helpCommandNamePattern, text: "cache-format", want: true},
+		{name: "command name rejects space", pattern: helpCommandNamePattern, text: "cache format", want: false},
+		{name: "markdown heading", pattern: markdownHeadingLinePattern, text: "### `glade test`", want: true},
+		{name: "markdown heading rejects prose", pattern: markdownHeadingLinePattern, text: "Run glade test", want: false},
+		{name: "subcommand line", pattern: builtHelpSubcommandPattern, text: "  cache clear  remove cached files", want: true},
+		{name: "subcommand line rejects one space", pattern: builtHelpSubcommandPattern, text: " cache clear  remove cached files", want: false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if got := test.pattern.MatchString(test.text); got != test.want {
+				t.Fatalf("%s.MatchString(%q) = %v, want %v", test.pattern, test.text, got, test.want)
+			}
+		})
+	}
 }
 
 func helpContractClass(root, name string, isTest bool) typesys.TypeSymbol {

@@ -127,6 +127,104 @@ func TestRunTestWritesTraceFile(t *testing.T) {
 	}
 }
 
+func TestRunTestPerfJSONRecordsEffectiveExecutionProvenance(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/PerfExecutionTest.cls"), `
+@isTest
+private class PerfExecutionTest {
+  @isTest static void passes() { System.assertEquals(2, 1 + 1); }
+}
+`)
+	perfPath := filepath.Join(t.TempDir(), "test-perf.json")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"test", "--project", root, "--json", "--no-progress", "--no-serve", "--no-cache",
+		"--no-parallel-methods", "--parallelism", "3", "--perf-json", perfPath,
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	perf := readPerfJSONObject(t, perfPath)
+	if perf["schemaVersion"] != "1.1" {
+		t.Fatalf("schemaVersion = %#v, want 1.1", perf["schemaVersion"])
+	}
+	execution := requireJSONObject(t, perf, "execution")
+	if execution["executionMode"] != "local" {
+		t.Fatalf("execution.executionMode = %#v, want local", execution["executionMode"])
+	}
+	if execution["parallelMethods"] != false || execution["requestedParallelism"] != float64(3) || execution["effectiveParallelism"] != float64(3) {
+		t.Fatalf("execution parallelism = %#v", execution)
+	}
+	if execution["gomaxprocs"] != float64(runtime.GOMAXPROCS(0)) {
+		t.Fatalf("execution.gomaxprocs = %#v, want %d", execution["gomaxprocs"], runtime.GOMAXPROCS(0))
+	}
+	if execution["diskCachePolicy"] != string(apextest.DiskRuntimeCacheNoDiskCache) {
+		t.Fatalf("execution.diskCachePolicy = %#v", execution["diskCachePolicy"])
+	}
+	args := execution["arguments"].([]any)
+	if len(args) == 0 || args[0] != "test" {
+		t.Fatalf("execution.arguments = %#v", args)
+	}
+	phases := requireJSONObject(t, requireJSONObject(t, perf, "apexPerf"), "phases")
+	compileWant := int64(requireJSONNumber(t, phases, "semanticGateNs")+requireJSONNumber(t, phases, "projectCompileNs")+requireJSONNumber(t, phases, "testCompileNs")) / int64(time.Millisecond)
+	if got := int64(requireJSONNumber(t, perf, "compileMs")); got != compileWant {
+		t.Fatalf("compileMs = %d, want %d", got, compileWant)
+	}
+	startupWant := int64(requireJSONNumber(t, phases, "semanticKeyNs")+requireJSONNumber(t, phases, "semanticGateNs")+requireJSONNumber(t, phases, "projectLoadNs")+requireJSONNumber(t, phases, "schemaLoadNs")+requireJSONNumber(t, phases, "indexBuildNs")+requireJSONNumber(t, phases, "discoverNs")+requireJSONNumber(t, phases, "runtimeKeyNs")+optionalJSONNumber(t, phases, "cacheValidateNs")+optionalJSONNumber(t, phases, "cacheDecodeNs")+optionalJSONNumber(t, phases, "cacheEncodeNs")+optionalJSONNumber(t, phases, "orgBuildNs")+optionalJSONNumber(t, phases, "projectCompileNs")+optionalJSONNumber(t, phases, "testCompileNs")) / int64(time.Millisecond)
+	if got := int64(requireJSONNumber(t, perf, "startupMs")); got != startupWant {
+		t.Fatalf("startupMs = %d, want %d", got, startupWant)
+	}
+}
+
+func TestLoadTestIndexWithPerfPhasesRetainsBuildArtifactsAcrossSchemaBranches(t *testing.T) {
+	for _, tt := range []struct {
+		name          string
+		perfEnabled   bool
+		malformedMeta bool
+	}{
+		{name: "schema loaded", perfEnabled: false},
+		{name: "schema fallback", perfEnabled: true, malformedMeta: true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			root := t.TempDir()
+			classPath := filepath.Join(root, "force-app/main/default/classes/SnapshotGenerationTest.cls")
+			writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+			writeTestFile(t, classPath, `@isTest private class SnapshotGenerationTest { @isTest static void passes() { System.assertEquals(1, 1); } }`)
+			if tt.malformedMeta {
+				writeTestFile(t, filepath.Join(root, "force-app/main/default/objects/Snapshot__c/Snapshot__c.object-meta.xml"), `<CustomObject>`)
+			}
+
+			generation, err := loadTestIndexWithPerfPhases(root, tt.perfEnabled)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if generation.Artifacts.Sources == nil || generation.Artifacts.SourceDigests == nil {
+				t.Fatalf("build artifacts = %#v, want source arena and digests", generation.Artifacts)
+			}
+			var found typesys.TypeSymbol
+			for _, typ := range generation.Index.Types {
+				if typ.Name == "SnapshotGenerationTest" {
+					found = typ
+					break
+				}
+			}
+			if found.File == "" {
+				t.Fatalf("index types = %#v, want SnapshotGenerationTest", generation.Index.Types)
+			}
+			if _, ok := generation.Artifacts.SourceForType(found); !ok {
+				t.Fatalf("artifact source missing for %#v", found)
+			}
+			if _, ok := generation.Artifacts.SourceDigests.Digest(found.File); !ok {
+				t.Fatalf("artifact digest missing for %q", found.File)
+			}
+			if tt.malformedMeta && !generation.Index.HasErrors() {
+				t.Fatalf("fallback index diagnostics = %#v, want GLADESCHEMA001", generation.Index.Diagnostics)
+			}
+		})
+	}
+}
+
 func TestRunTestRejectsTraceWithWatch(t *testing.T) {
 	root := filepath.Join("..", "..", "testdata", "local-tests", "basic")
 	tracePath := filepath.Join(t.TempDir(), "trace.json")
@@ -2850,6 +2948,147 @@ func TestRunCheckReportsMalformedMetadataAsDiagnostic(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), `"code": "GLADESCHEMA001"`) || !strings.Contains(stdout.String(), `"types": 1`) {
 		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCheckRejectsGenerationChangedAfterIndexBeforeSemanticAnalysis(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		mutate func(root, source string)
+	}{
+		{
+			name: "Apex source",
+			mutate: func(_ string, source string) {
+				writeTestFile(t, source, "public class Generation { public static Integer value() { return 2; } }\n")
+			},
+		},
+		{
+			name: "Apex metadata sidecar",
+			mutate: func(_ string, source string) {
+				writeTestFile(t, source+"-meta.xml", "<ApexClass><status>Active</status></ApexClass>\n")
+			},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+			source := filepath.Join(root, "force-app/main/default/classes/Generation.cls")
+			writeTestFile(t, source, "public class Generation { public static Integer value() { return 1; } }\n")
+			restore := setCheckGenerationValidationHookForTesting(func() { test.mutate(root, source) })
+			t.Cleanup(restore)
+
+			var stdout, stderr bytes.Buffer
+			code := Run(context.Background(), []string{"check", "--project", root, "--json", "--no-progress"}, &stdout, &stderr)
+			if code != 1 {
+				t.Fatalf("exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+			}
+			if !strings.Contains(stdout.String(), `"code": "GLADEGEN001"`) || !strings.Contains(stdout.String(), "source snapshot mismatch") {
+				t.Fatalf("stdout = %q", stdout.String())
+			}
+		})
+	}
+}
+
+func TestRunCheckSemanticDiskCachePreservesExactResult(t *testing.T) {
+	t.Setenv("GLADE_DISABLE_DISK_CACHE", "")
+	restoreDisk := apextest.EnableDiskCacheForTesting()
+	t.Cleanup(restoreDisk)
+	checkSemanticResults.Reset()
+	t.Cleanup(checkSemanticResults.Reset)
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/CachedCheck.cls"), `public class CachedCheck { public static MissingCachedCheck value; }`)
+
+	run := func(perfPath string) (int, string, string) {
+		var stdout, stderr bytes.Buffer
+		code := Run(context.Background(), []string{"check", "--project", root, "--json", "--no-progress", "--perf-json", perfPath}, &stdout, &stderr)
+		return code, stdout.String(), stderr.String()
+	}
+	firstPerf := filepath.Join(t.TempDir(), "first.json")
+	firstCode, firstOutput, firstErr := run(firstPerf)
+	if firstCode != 1 {
+		t.Fatalf("first code = %d stderr=%q stdout=%q", firstCode, firstErr, firstOutput)
+	}
+	first := readPerfJSONObject(t, firstPerf)
+	firstCache := requireJSONObject(t, first, "semanticCache")
+	if firstCache["source"] != "build" {
+		t.Fatalf("first semantic cache = %#v", firstCache)
+	}
+	optionsFingerprint := requireJSONObject(t, firstCache, "identity")["optionsFingerprint"].(string)
+	cachePath := filepath.Join(root, ".glade", "semantic", "result-"+optionsFingerprint+".json")
+	if info, err := os.Stat(cachePath); err != nil {
+		t.Fatalf("semantic cache file stat = %v", err)
+	} else if info.Size() == 0 {
+		t.Fatal("semantic cache file is empty")
+	}
+
+	checkSemanticResults.Reset()
+	secondPerf := filepath.Join(t.TempDir(), "second.json")
+	secondCode, secondOutput, secondErr := run(secondPerf)
+	if secondCode != firstCode || secondOutput != firstOutput {
+		t.Fatalf("disk-hit result changed\nfirst code/output: %d %q\nsecond code/output: %d %q\nstderr=%q", firstCode, firstOutput, secondCode, secondOutput, secondErr)
+	}
+	second := readPerfJSONObject(t, secondPerf)
+	if cache := requireJSONObject(t, second, "semanticCache"); cache["source"] != "disk" {
+		t.Fatalf("second semantic cache = %#v; first=%#v", cache, firstCache)
+	}
+	if semaPerf := requireJSONObject(t, second, "semaPerf"); requireJSONNumber(t, semaPerf, "totalNs") != 0 {
+		t.Fatalf("disk hit performed semantic analysis: %#v", semaPerf)
+	}
+}
+
+func TestRunCheckNoCacheDoesNotReadWriteOrRetainSemanticResult(t *testing.T) {
+	t.Setenv("GLADE_DISABLE_DISK_CACHE", "")
+	restoreDisk := apextest.EnableDiskCacheForTesting()
+	t.Cleanup(restoreDisk)
+	checkSemanticResults.Reset()
+	t.Cleanup(checkSemanticResults.Reset)
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/NoCachedCheck.cls"), `public class NoCachedCheck {}`)
+
+	for i := 0; i < 2; i++ {
+		perfPath := filepath.Join(t.TempDir(), fmt.Sprintf("no-cache-%d.json", i))
+		var stdout, stderr bytes.Buffer
+		code := Run(context.Background(), []string{"check", "--project", root, "--json", "--no-progress", "--no-cache", "--perf-json", perfPath}, &stdout, &stderr)
+		if code != 0 {
+			t.Fatalf("run %d code=%d stderr=%q stdout=%q", i, code, stderr.String(), stdout.String())
+		}
+		perf := readPerfJSONObject(t, perfPath)
+		if cache := requireJSONObject(t, perf, "semanticCache"); cache["source"] != "build" {
+			t.Fatalf("run %d semantic cache = %#v", i, cache)
+		}
+	}
+	if stats := checkSemanticResults.Stats(); stats.Entries != 0 || stats.RetainedBytes != 0 {
+		t.Fatalf("no-cache retained state = %#v", stats)
+	}
+	if _, err := os.Stat(filepath.Join(root, ".glade", "semantic")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("semantic cache directory stat = %v, want not exist", err)
+	}
+}
+
+func TestRunCheckRejectsMutationAfterSemanticIdentityBeforePublication(t *testing.T) {
+	t.Setenv("GLADE_DISABLE_DISK_CACHE", "")
+	restoreDisk := apextest.EnableDiskCacheForTesting()
+	t.Cleanup(restoreDisk)
+	checkSemanticResults.Reset()
+	t.Cleanup(checkSemanticResults.Reset)
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	source := filepath.Join(root, "force-app/main/default/classes/IdentityRace.cls")
+	writeTestFile(t, source, `public class IdentityRace { public static Integer value() { return 1; } }`)
+	restore := setCheckSemanticIdentityHookForTesting(func() {
+		writeTestFile(t, source, `public class IdentityRace { public static Integer value() { return 2; } }`)
+	})
+	t.Cleanup(restore)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"check", "--project", root, "--json", "--no-progress"}, &stdout, &stderr)
+	if code != 1 || !strings.Contains(stdout.String(), `"code": "GLADEGEN001"`) || !strings.Contains(stdout.String(), "source snapshot mismatch") {
+		t.Fatalf("code=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if stats := checkSemanticResults.Stats(); stats.Entries != 0 {
+		t.Fatalf("mutated generation was published: %#v", stats)
 	}
 }
 

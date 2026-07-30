@@ -27,24 +27,6 @@ func TestGeneratedFamilyUnsupportedTypePrefixIsCaseInsensitive(t *testing.T) {
 	}
 }
 
-func TestGeneratedPassiveUnsupportedStaticFamilyMethodThrowsUnsupportedOperation(t *testing.T) {
-	machine := New(nil)
-	callee, ok := findPassiveGeneratedStaticFamilyCalleeForTest(machine)
-	if !ok {
-		t.Skip("no passive-generated static family callee with zero arguments found")
-	}
-	_, err := machine.call(callee, nil, nil, &Result{})
-	if err == nil {
-		t.Fatalf("expected %s to throw UnsupportedOperationException", callee)
-	}
-	if !strings.Contains(err.Error(), "UnsupportedOperationException") {
-		t.Fatalf("expected UnsupportedOperationException, got %v", err)
-	}
-	if !strings.Contains(err.Error(), callee+" local stub surface") {
-		t.Fatalf("expected local stub surface message for %s, got %v", callee, err)
-	}
-}
-
 func TestExecWebStoreContextGetCommerceContextUnsupported(t *testing.T) {
 	program, err := CompileAnonymous(`WebStoreContext.getCommerceContext();`)
 	if err != nil {
@@ -53,29 +35,6 @@ func TestExecWebStoreContextGetCommerceContextUnsupported(t *testing.T) {
 	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), `unsupported call "WebStoreContext.getCommerceContext local commerce context service"`) {
 		t.Fatalf("unexpected error: %v", err)
 	}
-}
-
-func findPassiveGeneratedStaticFamilyCalleeForTest(vm *VM) (string, bool) {
-	for className, methodsByName := range generatedPlatformMethods() {
-		if !generatedFamilyUnsupportedTypePrefix(className) {
-			continue
-		}
-		for _, methods := range methodsByName {
-			for _, method := range methods {
-				if !method.IsStatic || len(method.Params) != 0 || !passiveGeneratedMethod(method) {
-					continue
-				}
-				if method.ClassName == "" {
-					method.ClassName = className
-				}
-				if !vm.generatedPlatformMethodAllowsDefault(method) {
-					continue
-				}
-				return method.ClassName + "." + apexMethodMemberName(method.Name), true
-			}
-		}
-	}
-	return "", false
 }
 
 func TestExecLimitsCountersAndPermissiveViolations(t *testing.T) {

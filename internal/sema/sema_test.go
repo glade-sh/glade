@@ -11666,6 +11666,56 @@ func TestAnalyzeWithArtifactsMissingSourceDoesNotFallBackToDisk(t *testing.T) {
 	}
 }
 
+func TestAnalyzeWithCapturedSourcePrefersRetainedBytesOverLiveFilesystem(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "CapturedResolver.cls")
+	sourceA := `public class CapturedResolver { public static void run() { Integer value = 1; } }`
+	sourceB := `public class CapturedResolver { public static void run() { Missing value = 1; } }`
+	writeSemaFile(t, file, sourceA)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{file}}, schema.Schema{})
+	writeSemaFile(t, file, sourceB)
+	counters := PerfCounters{Enabled: true}
+	result := AnalyzeWithOptions(index, AnalyzeOptions{
+		Diagnostics:  true,
+		PerfCounters: &counters,
+		CapturedSource: func(path string) (string, bool) {
+			if path != file {
+				return "", false
+			}
+			return sourceA, true
+		},
+	})
+	if hasDiagnosticCode(result.Diagnostics, "GLADESEMA006") {
+		t.Fatalf("captured source analysis read live source: %#v", result.Diagnostics)
+	}
+	if counters.SourceArenaFallbackReads != 0 || counters.SourceArenaHits == 0 {
+		t.Fatalf("captured source counters = %#v", counters)
+	}
+}
+
+func TestAnalyzeWithCapturedSourceMissDoesNotFallBackToLiveFilesystem(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "CapturedResolverMiss.cls")
+	writeSemaFile(t, file, `public class CapturedResolverMiss { public static void run() { Integer value = 1; } }`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{file}}, schema.Schema{})
+	calls := 0
+	counters := PerfCounters{Enabled: true}
+	_ = AnalyzeWithOptions(index, AnalyzeOptions{
+		Diagnostics:  true,
+		PerfCounters: &counters,
+		CapturedSource: func(string) (string, bool) {
+			calls++
+			return "", false
+		},
+	})
+	if calls == 0 {
+		t.Fatal("captured source resolver was not consulted")
+	}
+	if counters.SourceArenaFallbackReads != 0 || counters.SourceArenaMisses == 0 {
+		t.Fatalf("captured source miss counters = %#v", counters)
+	}
+}
+
 func TestSemaSourcesCachesFallbackMissForEntireAnalysis(t *testing.T) {
 	root := t.TempDir()
 	file := filepath.Join(root, "AppearsLater.cls")

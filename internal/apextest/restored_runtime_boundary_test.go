@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/ir"
+	"github.com/glade-sh/glade/internal/startupcache"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/vm"
 )
@@ -146,6 +148,62 @@ func TestInvalidRestoredRuntimeEntryIsRejected(t *testing.T) {
 	entry, ok := validateRestoredRuntimeEntry(runtimeCacheEntry{})
 	if ok {
 		t.Fatalf("zero restored disk entry accepted: %#v", entry)
+	}
+}
+
+func TestDecodedDiskRuntimeRejectsStructurallyCorruptPayload(t *testing.T) {
+	deepInstruction := ir.Instruction{Op: ir.OpReturn}
+	for range 300 {
+		nested := deepInstruction
+		deepInstruction = ir.Instruction{Op: ir.OpReturn, Init: &nested}
+	}
+	decoded := startupcache.Entry{
+		Org: storage.NewOrgState(),
+		Runtime: startupcache.CompiledRuntime{
+			Methods: map[string]vm.Method{"Generic.run": {
+				Name:    "run",
+				Program: ir.Program{Instructions: []ir.Instruction{deepInstruction}},
+			}},
+		},
+	}
+	if restored, ok := runtimeCacheEntryFromStartup(decoded); ok {
+		t.Fatalf("structurally corrupt decoded disk runtime accepted: %#v", restored)
+	}
+}
+
+func TestDecodedDiskRuntimeRejectsDeepExpressionPayloads(t *testing.T) {
+	deepArgs := ir.Expr{}
+	deepNamedArgs := ir.Expr{}
+	deepPointers := ir.Expr{}
+	for range runtimeStructuralMaxDepth + 32 {
+		deepArgs = ir.Expr{Args: []ir.Expr{deepArgs}}
+		deepNamedArgs = ir.Expr{NamedArgs: []ir.NamedArg{{Name: "value", Expr: deepNamedArgs}}}
+		nested := deepPointers
+		deepPointers = ir.Expr{Left: &nested}
+	}
+
+	for name, expr := range map[string]ir.Expr{
+		"arguments":       deepArgs,
+		"named arguments": deepNamedArgs,
+		"pointers":        deepPointers,
+	} {
+		t.Run(name, func(t *testing.T) {
+			decoded := startupcache.Entry{
+				Org: storage.NewOrgState(),
+				Runtime: startupcache.CompiledRuntime{
+					Methods: map[string]vm.Method{"Generic.run": {
+						Name: "run",
+						Program: ir.Program{Instructions: []ir.Instruction{{
+							Op:   ir.OpReturn,
+							Expr: expr,
+						}}},
+					}},
+				},
+			}
+			if restored, ok := runtimeCacheEntryFromStartup(decoded); ok {
+				t.Fatalf("decoded disk runtime accepted deeply nested %s: %#v", name, restored)
+			}
+		})
 	}
 }
 

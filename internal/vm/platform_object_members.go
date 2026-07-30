@@ -1811,7 +1811,7 @@ func (vm *VM) generatedPlatformMethodDefaultReturn(method Method, receiver Value
 			}
 		}
 		if suffix, ok := passiveAccessorSuffix(methodName, "set"); ok && len(args) == 1 {
-			receiver.Fields[passiveAccessorFieldName(receiver, suffix)] = args[0]
+			vm.setGraphFieldValue(&receiver, passiveAccessorFieldName(receiver, suffix), args[0])
 		}
 	}
 	switch strings.ToLower(returnType) {

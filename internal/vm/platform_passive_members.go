@@ -229,7 +229,12 @@ func canvasContextJSON(receiver Value) (string, error) {
 	return string(raw), nil
 }
 
-func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
+func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Value, result *Result) (value Value, updated Value, mutated bool, handled bool, err error) {
+	defer func() {
+		if mutated {
+			vm.advanceAliasContainmentMutation()
+		}
+	}()
 	method = canonicalPlatformObjectMemberName(receiver.Type, method)
 	if value, handled, err := vm.callTypeObjectMember(receiver, method, args, result); handled || err != nil {
 		return value, receiver, false, true, err
@@ -1191,16 +1196,17 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				})
 			})
 			describe := vm.describeSObjectValue(objectName, definition)
+			optionOverride := ""
 			if len(args) == 1 && args[0].Text != "" {
-				describe = cloneValue(describe)
-				describe.Fields["sObjectDescribeOption"] = sObjectDescribeOptionsValue(strings.ToUpper(args[0].Text))
+				optionOverride = strings.ToUpper(args[0].Text)
 			}
+			nameOverride := ""
 			if vm.sObjectTypeDescribeShouldUseLocalName(objectName) {
-				describe = cloneValue(describe)
 				if name, ok := describe.Fields["name"]; ok && name.Kind == ValueString {
-					describe.Fields["name"] = String(localSchemaName(name.Text))
+					nameOverride = localSchemaName(name.Text)
 				}
 			}
+			describe = overlaySObjectDescribe(describe, nameOverride, optionOverride)
 			return describe, receiver, false, true, nil
 		case "getRecordTypeInfosByName", "getRecordTypeInfosById",
 			"getName", "getLabel", "getLabelPlural", "getKeyPrefix",
@@ -1227,7 +1233,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			appendTraceLazy(result, "apex.describe.fields", "apex.describe", func() map[string]any {
 				return vm.traceDescribeArgs("fields.getMap", nil)
 			})
-			return receiver.Fields["map"], receiver, false, true, nil
+			return privateDescribeCollection(receiver.Fields["map"]), receiver, false, true, nil
 		}
 	case "Schema.FieldSetMap":
 		switch method {
@@ -1238,7 +1244,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			appendTraceLazy(result, "apex.describe.fieldSets", "apex.describe", func() map[string]any {
 				return vm.traceDescribeArgs("fieldSets.getMap", nil)
 			})
-			return receiver.Fields["map"], receiver, false, true, nil
+			return privateDescribeCollection(receiver.Fields["map"]), receiver, false, true, nil
 		case "get":
 			if len(args) != 1 || args[0].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSetMap.get expects field set name")
@@ -1263,7 +1269,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSet.getFields expects 0 arguments")
 			}
-			return receiver.Fields["fields"], receiver, false, true, nil
+			return privateDescribeCollection(receiver.Fields["fields"]), receiver, false, true, nil
 		case "getLabel":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSet.getLabel expects 0 arguments")
@@ -1338,6 +1344,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
+			describe = overlaySObjectDescribe(describe, "", "")
 			if systemField, ok := syntheticSObjectSystemField(fieldValue.Text); ok {
 				if _, ok := describe.Fields["type"]; !ok {
 					describe.Fields["type"] = schemaDisplayTypeValue(systemField.DisplayType)
@@ -1596,12 +1603,12 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getReferenceTo expects 0 arguments")
 			}
 			if references, ok := receiver.Fields["referenceTo"]; ok && references.Kind == ValueList && len(references.List) > 0 {
-				return references, receiver, false, true, nil
+				return privateDescribeCollection(references), receiver, false, true, nil
 			}
 			if fieldName, ok := receiver.Fields["name"]; ok && fieldName.Kind == ValueString && isSObjectSystemUserReferenceField(fieldName.Text) {
 				return List(sObjectTypeToken("User")), receiver, false, true, nil
 			}
-			return receiver.Fields["referenceTo"], receiver, false, true, nil
+			return privateDescribeCollection(receiver.Fields["referenceTo"]), receiver, false, true, nil
 		case "getRelationshipName":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getRelationshipName expects 0 arguments")
@@ -1646,7 +1653,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getPicklistValues expects 0 arguments")
 			}
-			return receiver.Fields["picklistValues"], receiver, false, true, nil
+			return privateDescribeCollection(receiver.Fields["picklistValues"]), receiver, false, true, nil
 		case "getController":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.%s expects 0 arguments", method)
@@ -1660,7 +1667,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.%s expects 0 arguments", method)
 			}
 			if value, ok := receiver.Fields["controllerValues"]; ok {
-				return value, receiver, false, true, nil
+				return privateDescribeCollection(value), receiver, false, true, nil
 			}
 			return typedMap("Map<String,Integer>"), receiver, false, true, nil
 		case "isAccessible", "isCreateable", "isUpdateable":
@@ -1734,7 +1741,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.FilteredLookupInfo.getControllingFields expects 0 arguments")
 			}
 			if fields, ok := receiver.Fields["controllingFields"]; ok {
-				return fields, receiver, false, true, nil
+				return privateDescribeCollection(fields), receiver, false, true, nil
 			}
 			return typedList("List<String>"), receiver, false, true, nil
 		case "isDependent":
@@ -2583,28 +2590,28 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getRecordTypeInfos expects 0 arguments")
 			}
-			return receiver.Fields["recordTypeInfos"], receiver, false, true, nil
+			return privateDescribeCollection(receiver.Fields["recordTypeInfos"]), receiver, false, true, nil
 		case "getRecordTypeInfosByName":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getRecordTypeInfosByName expects 0 arguments")
 			}
-			return receiver.Fields["recordTypeInfosByName"], receiver, false, true, nil
+			return privateDescribeCollection(receiver.Fields["recordTypeInfosByName"]), receiver, false, true, nil
 		case "getRecordTypeInfosByDeveloperName":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getRecordTypeInfosByDeveloperName expects 0 arguments")
 			}
-			return receiver.Fields["recordTypeInfosByDeveloperName"], receiver, false, true, nil
+			return privateDescribeCollection(receiver.Fields["recordTypeInfosByDeveloperName"]), receiver, false, true, nil
 		case "getRecordTypeInfosById":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getRecordTypeInfosById expects 0 arguments")
 			}
-			return receiver.Fields["recordTypeInfosById"], receiver, false, true, nil
+			return privateDescribeCollection(receiver.Fields["recordTypeInfosById"]), receiver, false, true, nil
 		case "getChildRelationships":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getChildRelationships expects 0 arguments")
 			}
 			value, err := vm.describeChildRelationshipsForDescribe(&receiver)
-			return value, receiver, false, true, err
+			return privateDescribeCollection(value), receiver, false, true, err
 		case "getSObjectType", "getSobjectType":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.%s expects 0 arguments", method)
@@ -2763,7 +2770,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.ChildRelationship.getJunctionIdListNames expects 0 arguments")
 			}
 			if value, ok := receiver.Fields["junctionIdListNames"]; ok {
-				return value, receiver, false, true, nil
+				return privateDescribeCollection(value), receiver, false, true, nil
 			}
 			return typedList("List<String>"), receiver, false, true, nil
 		case "getJunctionReferenceTo":
@@ -2771,7 +2778,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.ChildRelationship.getJunctionReferenceTo expects 0 arguments")
 			}
 			if value, ok := receiver.Fields["junctionReferenceTo"]; ok {
-				return value, receiver, false, true, nil
+				return privateDescribeCollection(value), receiver, false, true, nil
 			}
 			return typedList("List<Schema.SObjectType>"), receiver, false, true, nil
 		}

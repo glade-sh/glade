@@ -189,7 +189,7 @@ func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnos
 			continue
 		}
 		seenSources[sourceKey] = true
-		source, ok := sources.normalizedForType(typ)
+		facts, ok := sources.factsForType(typ)
 		if !ok {
 			continue
 		}
@@ -197,7 +197,7 @@ func (a *Analyzer) checkQuerySemantics(index typesys.Index) []diagnostic.Diagnos
 		if version, err := strconv.ParseFloat(strings.TrimSpace(typ.EffectiveAPIVersion), 64); err == nil {
 			sourceChecker.apiVersion = version
 		}
-		diagnostics = append(diagnostics, sourceChecker.checkFile(typ.File, source)...)
+		diagnostics = append(diagnostics, sourceChecker.checkFileWithFacts(typ.File, facts)...)
 	}
 	return diagnostics
 }
@@ -243,8 +243,13 @@ func newQuerySemanticsChecker(index typesys.Index, declaredObjects ...schema.Obj
 }
 
 func (c querySemanticsChecker) checkFile(file, source string) []diagnostic.Diagnostic {
+	return c.checkFileWithFacts(file, newSourceFacts(source))
+}
+
+func (c querySemanticsChecker) checkFileWithFacts(file string, facts *sourceFacts) []diagnostic.Diagnostic {
+	source := facts.sourceText()
 	locator := newSemaSourceLocator(source)
-	spans := newSemaCodeSpans(source)
+	spans := facts.codeSpans()
 	bindingResolver := newSemaBindingResolver(source, spans)
 	var diagnostics []diagnostic.Diagnostic
 	for _, literal := range semaSOQLLiterals(source, spans) {
@@ -509,41 +514,12 @@ func semaHeaderStart(source string, brace int, spans semaCodeSpans) int {
 	return 0
 }
 
-func semaOpenBraces(source string, start, offset int, spans semaCodeSpans) []int {
-	var braces []int
-	for i := start; i < offset && i < len(source); i++ {
-		if !spans.contains(i) {
-			continue
-		}
-		switch source[i] {
-		case '{':
-			braces = append(braces, i)
-		case '}':
-			if len(braces) > 0 {
-				braces = braces[:len(braces)-1]
-			}
-		}
-	}
-	return braces
+func semaOpenBraces(_ string, start, offset int, spans semaCodeSpans) []int {
+	return spans.openBraces(start, offset)
 }
 
-func semaMatchingCodeBrace(source string, start int, spans semaCodeSpans) int {
-	depth := 0
-	for i := start; i < len(source); i++ {
-		if !spans.contains(i) {
-			continue
-		}
-		switch source[i] {
-		case '{':
-			depth++
-		case '}':
-			depth--
-			if depth == 0 {
-				return i
-			}
-		}
-	}
-	return -1
+func semaMatchingCodeBrace(_ string, start int, spans semaCodeSpans) int {
+	return spans.matchingBrace(start)
 }
 
 func semaEnclosingCodeBraceEnd(source string, start, offset int, spans semaCodeSpans) int {
@@ -1764,66 +1740,30 @@ func semaSOSLLiterals(source string, spans semaCodeSpans) []semaQueryLiteral {
 	return out
 }
 
-type semaCodeSpans []bool
+type semaCodeSpans struct {
+	facts *sourceFacts
+}
 
 func newSemaCodeSpans(source string) semaCodeSpans {
-	spans := make(semaCodeSpans, len(source))
-	for i := range spans {
-		spans[i] = true
-	}
-	for i := 0; i < len(source); i++ {
-		if source[i] == '/' && i+1 < len(source) {
-			switch source[i+1] {
-			case '/':
-				spans[i], spans[i+1] = false, false
-				i += 2
-				for i < len(source) && source[i] != '\n' {
-					spans[i] = false
-					i++
-				}
-				i--
-				continue
-			case '*':
-				spans[i], spans[i+1] = false, false
-				i += 2
-				for i < len(source) {
-					spans[i] = false
-					if source[i] == '*' && i+1 < len(source) && source[i+1] == '/' {
-						spans[i+1] = false
-						i++
-						break
-					}
-					i++
-				}
-				continue
-			}
-		}
-		if source[i] == '\'' || source[i] == '"' {
-			quote := source[i]
-			spans[i] = false
-			i++
-			for i < len(source) {
-				spans[i] = false
-				if source[i] == '\\' {
-					i++
-					if i < len(source) {
-						spans[i] = false
-					}
-					i++
-					continue
-				}
-				if source[i] == quote {
-					break
-				}
-				i++
-			}
-		}
-	}
-	return spans
+	return newSourceFacts(source).codeSpans()
 }
 
 func (s semaCodeSpans) contains(offset int) bool {
-	return offset >= 0 && offset < len(s) && s[offset]
+	return s.facts != nil && s.facts.containsCode(offset)
+}
+
+func (s semaCodeSpans) openBraces(start, offset int) []int {
+	if s.facts == nil {
+		return nil
+	}
+	return s.facts.openBraces(start, offset)
+}
+
+func (s semaCodeSpans) matchingBrace(offset int) int {
+	if s.facts == nil {
+		return -1
+	}
+	return s.facts.matchingBrace(offset)
 }
 
 func semaMatchingBracket(source string, start int) int {

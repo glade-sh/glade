@@ -17,6 +17,110 @@ import (
 	"github.com/glade-sh/glade/internal/watch"
 )
 
+func TestServerWarmFailureIsNotPublishedReady(t *testing.T) {
+	root := newDaemonLifecycleProject(t)
+	d, err := New(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := errors.New("semantic warm failed")
+	d.warmRuntimeFn = func(context.Context, typesys.Index, *typesys.BuildArtifacts) error {
+		return want
+	}
+	server := &Server{daemon: d, warmDone: make(chan struct{})}
+	server.startWarm(io.Discard)
+	if err := server.waitReady(context.Background()); !errors.Is(err, want) {
+		t.Fatalf("waitReady() = %v, want %v", err, want)
+	}
+	if ready, warming := server.status(); ready || warming {
+		t.Fatalf("status = ready:%v warming:%v", ready, warming)
+	}
+}
+
+func TestServerCloseWaitsForWarmActivity(t *testing.T) {
+	root := newDaemonLifecycleProject(t)
+	d, err := New(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	started := make(chan struct{})
+	release := make(chan struct{})
+	d.warmRuntimeFn = func(context.Context, typesys.Index, *typesys.BuildArtifacts) error {
+		close(started)
+		<-release
+		return nil
+	}
+	server := &Server{daemon: d, warmDone: make(chan struct{})}
+	server.startWarm(io.Discard)
+	<-started
+
+	closed := make(chan error, 1)
+	go func() { closed <- server.Close() }()
+	select {
+	case err := <-closed:
+		t.Fatalf("Close returned before warm finished: %v", err)
+	case <-time.After(20 * time.Millisecond):
+	}
+	close(release)
+	if err := <-closed; err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestServerCloseWaitsForActiveConnectionActivity(t *testing.T) {
+	server := &Server{}
+	if !server.beginActivity() {
+		t.Fatal("server rejected activity before close")
+	}
+	closed := make(chan error, 1)
+	go func() { closed <- server.Close() }()
+	select {
+	case err := <-closed:
+		t.Fatalf("Close returned before connection activity finished: %v", err)
+	case <-time.After(20 * time.Millisecond):
+	}
+	server.endActivity()
+	if err := <-closed; err != nil {
+		t.Fatal(err)
+	}
+	if server.beginActivity() {
+		t.Fatal("server admitted connection activity after close")
+	}
+}
+
+func TestServerCloseCancelsAndWaitsForOwnedLifecycle(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	runtimeCacheDrained := make(chan struct{})
+	server := &Server{
+		serveCancel: cancel,
+		waitRuntimeCacheWorkFn: func() {
+			close(runtimeCacheDrained)
+		},
+	}
+	if !server.beginActivity() {
+		t.Fatal("server rejected owned lifecycle before close")
+	}
+	activityDone := make(chan struct{})
+	go func() {
+		<-ctx.Done()
+		server.endActivity()
+		close(activityDone)
+	}()
+	if err := server.Close(); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-activityDone:
+	default:
+		t.Fatal("Close returned before owned lifecycle stopped")
+	}
+	select {
+	case <-runtimeCacheDrained:
+	default:
+		t.Fatal("Close did not drain runtime cache work")
+	}
+}
+
 func TestServerWatchLoopSameScopeFallbackKeepsWatcherAndQueuesNextBatch(t *testing.T) {
 	root := newDaemonLifecycleProject(t)
 	d, err := New(root)

@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -156,7 +157,13 @@ func TestDistributionSmokeStructure(t *testing.T) {
 		"archive_name",
 		"manifest_asset",
 		"validate_archive_members",
-		`reference == "https://downloads.glade.sh/smoke/release-manifest.json"`,
+		`root manifest version is invalid`,
+		`dist / version / "release-manifest.json"`,
+		`index.get("latest") == version`,
+		`entry.get("version") == version`,
+		`f"https://downloads.glade.sh/{version}/release-manifest.json"`,
+		`"${GLADE}" doctor --json`,
+		`release binary doctor parser verification failed`,
 		"binary.lstat()",
 		"resolved.relative_to(root)",
 	} {
@@ -171,6 +178,10 @@ type distributionFixtureOptions struct {
 	archiveKind         string
 	indexReference      string
 	mutateRuntimeBinary bool
+	version             string
+	doctorFails         bool
+	doctorOutput        string
+	doctorExitCode      int
 }
 
 func distributionFixture(t *testing.T, corruptChecksum bool) (string, string) {
@@ -210,9 +221,20 @@ printf '%s\n' "$1" >"$(dirname "${BASH_SOURCE[0]}")/../runtime.log"
 	if archiveKind == "" {
 		archiveKind = "tar"
 	}
+	version := options.version
+	if version == "" {
+		version = "smoke"
+	}
 	indexReference := options.indexReference
 	if indexReference == "" {
-		indexReference = "https://downloads.glade.sh/smoke/release-manifest.json"
+		indexReference = "https://downloads.glade.sh/" + version + "/release-manifest.json"
+	}
+	doctorOutput := `{"status":"passed","exitCode":0,"parserOK":true}`
+	if options.doctorFails {
+		doctorOutput = `{"status":"failed","exitCode":1,"parserOK":false}`
+	}
+	if options.doctorOutput != "" {
+		doctorOutput = options.doctorOutput
 	}
 	writeExecutable(t, filepath.Join(scripts, "release-build.sh"), `#!/usr/bin/env bash
 set -euo pipefail
@@ -222,7 +244,14 @@ work="$(mktemp -d)"
 trap 'rm -rf "${work}"' EXIT
 cat >"${work}/glade" <<'BIN'
 #!/usr/bin/env bash
-if [[ "${1:-}" == version ]]; then printf 'glade smoke fixture\n'; else exit 9; fi
+if [[ "${1:-}" == version ]]; then
+  printf 'glade smoke fixture\n'
+elif [[ "${1:-}" == doctor && "${2:-}" == --json ]]; then
+  printf '`+doctorOutput+`\n'
+  exit `+strconv.Itoa(options.doctorExitCode)+`
+else
+  exit 9
+fi
 BIN
 chmod +x "${work}/glade"
 kind='`+archiveKind+`'
@@ -301,20 +330,21 @@ chmod +x "${work}/decoy"
 tar -C "${work}" -czf "${DIST_DIR}/decoy.tar.gz" decoy
 digest="$(shasum -a 256 "${DIST_DIR}/${archive}" | awk '{print $1}')"
 if [[ "`+corrupt+`" == 1 ]]; then manifest_digest="$(printf '0%.0s' {1..64})"; else manifest_digest="${digest}"; fi
-export FIXTURE_DIST="${DIST_DIR}" FIXTURE_DIGEST="${manifest_digest}" FIXTURE_REAL_DIGEST="${digest}" FIXTURE_ARCHIVE="${archive}" FIXTURE_OS="${asset_os}" FIXTURE_INDEX_REFERENCE='`+indexReference+`'
+export FIXTURE_DIST="${DIST_DIR}" FIXTURE_DIGEST="${manifest_digest}" FIXTURE_REAL_DIGEST="${digest}" FIXTURE_ARCHIVE="${archive}" FIXTURE_OS="${asset_os}" FIXTURE_VERSION='`+version+`' FIXTURE_INDEX_REFERENCE='`+indexReference+`'
 python3 - <<'PY'
 import json, os, pathlib
 d=pathlib.Path(os.environ['FIXTURE_DIST'])
-m={'schemaVersion':2,'channel':'stable','version':'smoke','assets':[{'os':os.environ['FIXTURE_OS'],'arch':'arm64','url':'https://downloads.example/smoke/'+os.environ['FIXTURE_ARCHIVE'],'sha256':os.environ['FIXTURE_DIGEST']}], 'installScript':'https://example/install.sh','pluginRegistry':'https://example/plugins.json','verification':{'versionOutput':'glade smoke fixture','doctor':'passed','parserSmoke':'passed','vscodeExtensionPackage':'not present'}}
-for p in (d/'release-manifest.json', d/('release-manifest-'+os.environ['FIXTURE_OS']+'-arm64.json'), d/'latest/release-manifest.json', d/'smoke/release-manifest.json'):
+version=os.environ['FIXTURE_VERSION']
+m={'schemaVersion':2,'channel':'stable','version':version,'assets':[{'os':os.environ['FIXTURE_OS'],'arch':'arm64','url':'https://downloads.example/'+version+'/'+os.environ['FIXTURE_ARCHIVE'],'sha256':os.environ['FIXTURE_DIGEST']}], 'installScript':'https://example/install.sh','pluginRegistry':'https://example/plugins.json','verification':{'versionOutput':'glade smoke fixture','doctor':'passed','parserSmoke':'passed','vscodeExtensionPackage':'not present'}}
+for p in (d/'release-manifest.json', d/('release-manifest-'+os.environ['FIXTURE_OS']+'-arm64.json'), d/'latest/release-manifest.json', d/version/'release-manifest.json'):
  p.write_text(json.dumps(m,sort_keys=True)+'\n')
-i={'schemaVersion':1,'channel':'stable','latest':'smoke','versions':[{'version':'smoke','manifest':os.environ['FIXTURE_INDEX_REFERENCE']}]}
+i={'schemaVersion':1,'channel':'stable','latest':version,'versions':[{'version':version,'manifest':os.environ['FIXTURE_INDEX_REFERENCE']}]}
 (d/'index.json').write_text(json.dumps(i,sort_keys=True)+'\n')
 name=os.environ['FIXTURE_ARCHIVE']; digest=os.environ['FIXTURE_REAL_DIGEST']
 (d/(name+'.sha256')).write_text(digest+'  ./'+name+'\n')
 (d/'SHA256SUMS.txt').write_text(digest+'  ./'+name+'\n')
 for n in (name,name+'.sha256','SHA256SUMS.txt'):
- (d/'smoke'/n).write_bytes((d/n).read_bytes())
+ (d/version/n).write_bytes((d/n).read_bytes())
 PY
 `)
 	return root, filepath.Join(root, "runtime.log")

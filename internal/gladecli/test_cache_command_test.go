@@ -3,11 +3,14 @@ package gladecli
 import (
 	"bytes"
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/semanticcache"
 	"github.com/glade-sh/glade/internal/startupcache"
 )
 
@@ -31,6 +34,17 @@ func TestTestClearCache(t *testing.T) {
 	if len(payloads) == 0 {
 		t.Fatal("no startup payload files before clear")
 	}
+	semanticIdentity := semanticcache.Identity{
+		ProjectContentSHA256: strings.Repeat("1", 64),
+		SchemaContentSHA256:  strings.Repeat("2", 64),
+		DependencySHA256:     strings.Repeat("3", 64),
+		SemanticABI:          sema.SemanticABI,
+		PlatformABI:          sema.PlatformABI,
+		OptionsFingerprint:   strings.Repeat("4", 64),
+	}
+	if err := semanticcache.Store(root, ".glade/semantic/result.json", semanticIdentity, sema.Result{}); err != nil {
+		t.Fatalf("Store() semantic cache error = %v", err)
+	}
 	var stdout bytes.Buffer
 	code := Run(context.Background(), []string{"test", "clear-cache", "--project", root}, &stdout, &stderrDiscard{})
 	if code != 0 {
@@ -51,6 +65,9 @@ func TestTestClearCache(t *testing.T) {
 	}
 	if len(payloads) != 0 {
 		t.Fatalf("startup payload files still present: %v", payloads)
+	}
+	if _, err := semanticcache.Load(root, ".glade/semantic/result.json", semanticIdentity); !errors.Is(err, semanticcache.ErrMiss) {
+		t.Fatalf("semantic cache after clear = %v, want miss", err)
 	}
 }
 

@@ -57,9 +57,13 @@ type VM struct {
 	methodResolveCache       map[string]methodResolution
 	Classes                  map[string]Class
 	classLookup              map[string]Class
-	sharedClassLookupKeys    map[string]string
+	frozenClassLookup        *frozenClassLookup
 	sharedClassCopyPlan      *classCopyPlan
+	classLookupGeneration    uint64
 	classLookupNameCache     map[string]classLookupNameResult
+	classLookupNameOrder     []string
+	classLookupNameBytes     int
+	classLookupNameStats     classLookupNameCacheStats
 	namespaceClassLookup     map[string]map[string]namespaceClassLookup
 	classNamespaceCache      map[string]string
 	classForAccessCache      map[classForAccessKey]classForAccessLookup
@@ -71,6 +75,8 @@ type VM struct {
 	topLevelTypeCache        map[string]uniqueNestedTypeLookup
 	topLevelClassLookup      map[string]topLevelClassLookup
 	classNameSearchCache     []classNameSearchEntry
+	ownedStaticClasses       map[string]bool
+	sharedStaticClasses      bool
 	// --- Org storage, triggers, and active execution frame ---
 	Org                     *storage.OrgState
 	Triggers                map[string][]Trigger
@@ -188,10 +194,11 @@ type VM struct {
 	staticAliasDirectChildren   map[staticFieldRef]staticAliasDirectChildIndex
 	localOnlyCollectionRefs     map[uint64]bool
 	collectionMutationSeq       uint64
-	collectionRefMutationSeq    map[uint64]uint64
-	aliasContainmentCache       map[aliasContainmentCacheKey]bool
+	aliasContainmentMutationSeq uint64
+	aliasContainmentCache       map[aliasContainmentCacheKey]uint64
 	frameworkRecorderRollback   *frameworkMethodCountRecorderRollback
 	perfRecorder                *PerfRecorder
+	classLookupPerf             *classLookupPerfShard
 	scopeAliasTraversalObserver scopeAliasTraversalObserver
 	runtimeArtifactsShared      bool
 }
@@ -260,8 +267,17 @@ type classForAccessLookup struct {
 }
 
 type classLookupNameResult struct {
-	Alias string
-	OK    bool
+	Alias      string
+	Generation uint64
+	OK         bool
+}
+
+type classLookupNameCacheStats struct {
+	Hits          uint64
+	Misses        uint64
+	Evictions     uint64
+	Entries       int
+	RetainedBytes int
 }
 
 // classForAccessKey is the cache key for classForAccess. Using the raw
@@ -519,7 +535,7 @@ func New(stdout io.Writer) *VM {
 
 func newVM(stdout io.Writer, recorder *PerfRecorder) *VM {
 	warmGeneratedPlatformRuntimeIndexes()
-	return &VM{
+	machine := &VM{
 		Globals:                      make(map[string]Value),
 		VarTypes:                     make(map[string]string),
 		Methods:                      make(map[string]Method),
@@ -558,7 +574,6 @@ func newVM(stdout io.Writer, recorder *PerfRecorder) *VM {
 		ctx:                          context.Background(),
 		activeGetters:                make(map[string]int),
 		activeSetters:                make(map[string]int),
-		staticInitState:              make(map[string]staticInitState),
 		frameworkIDSequences:         make(map[string]uint64),
 		describeCache:                make(map[string]Value),
 		fieldDescribeCache:           make(map[string]Value),
@@ -575,20 +590,40 @@ func newVM(stdout io.Writer, recorder *PerfRecorder) *VM {
 		lazyChildRelCache:            newLazyChildRelationshipLookupCache(),
 		objectNameCache:              make(map[string]objectNameLookup),
 		recentlyViewed:               make(map[string]map[storage.ID]recentlyViewedEntry),
-		perfRecorder:                 recorder,
 	}
+	machine.SetPerfRecorder(recorder)
+	return machine
 }
 
 func (vm *VM) SetPerfRecorder(recorder *PerfRecorder) {
-	if vm != nil {
-		vm.perfRecorder = recorder
+	if vm == nil {
+		return
 	}
+	if vm.perfRecorder == recorder && (recorder == nil || vm.classLookupPerf != nil) {
+		return
+	}
+	vm.perfRecorder = recorder
+	vm.classLookupPerf = recorder.newClassLookupPerfShard()
 }
 
 // CloneRuntime returns a fresh VM with the same registered Apex methods,
 // classes, and triggers. Mutable runtime state such as globals, limits, org
 // state, current user, and static field values remains request-local.
 func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
+	return vm.cloneRuntime(stdout, false)
+}
+
+// CloneRuntimeFrozenShared returns an isolated runtime while sharing frozen
+// static templates until their first runtime access. The caller must freeze
+// class lookup after registration. Unfrozen machines fall back to CloneRuntime.
+func (vm *VM) CloneRuntimeFrozenShared(stdout io.Writer) *VM {
+	if vm == nil || vm.frozenClassLookup == nil {
+		return vm.CloneRuntime(stdout)
+	}
+	return vm.cloneRuntime(stdout, true)
+}
+
+func (vm *VM) cloneRuntime(stdout io.Writer, shareFrozenStatics bool) *VM {
 	clone := newVM(stdout, vm.perfRecorder)
 	// Methods, MethodOverloads, MethodFolded, and Triggers are compiled
 	// artifacts that are only mutated by Register*/unregister* at setup, never
@@ -603,22 +638,27 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	clone.MethodFolded = vm.MethodFolded
 	clone.Triggers = vm.Triggers
 	clone.runtimeArtifactsShared = true
-	if vm.sharedClassCopyPlan != nil {
+	if shareFrozenStatics && vm.sharedClassCopyPlan != nil {
+		clone.Classes = copyClassMapSharedStaticsWithPlan(vm.Classes, vm.sharedClassCopyPlan)
+		clone.sharedClassCopyPlan = vm.sharedClassCopyPlan
+		clone.sharedStaticClasses = true
+	} else if shareFrozenStatics {
+		clone.Classes = copyClassMapSharedStatics(vm.Classes)
+		clone.sharedStaticClasses = true
+	} else if vm.sharedClassCopyPlan != nil {
 		clone.Classes = copyClassMapWithPlan(vm.Classes, vm.sharedClassCopyPlan)
 		clone.sharedClassCopyPlan = vm.sharedClassCopyPlan
 	} else {
 		clone.Classes = copyClassMap(vm.Classes)
 	}
-	// classLookup is a case/alias-normalized index over Classes. The canonical
-	// key -> live Classes key mapping is pure compiled metadata, identical for
-	// every clone of the same base. When the base has been frozen
-	// (FreezeClassLookup), share the immutable string index by pointer and skip
-	// the per-clone rebuild (re-canonicalizing ~2x len(Classes) keys). Per-test
-	// clones resolve through their own Classes map, so clone-local static field
-	// state stays isolated. The (setup-only) registration path copies-on-write
-	// via unshareClassLookup, so the shared index is never mutated.
-	if vm.sharedClassLookupKeys != nil {
-		clone.sharedClassLookupKeys = vm.sharedClassLookupKeys
+	// frozenClassLookup binds canonical class-name results to one exact runtime
+	// generation. Clones share that immutable artifact by pointer and resolve
+	// aliases through their own Classes map, preserving clone-local static
+	// state. Post-freeze registration invalidates the artifact and falls back
+	// to a new private generation with a bounded result overlay.
+	if vm.frozenClassLookup != nil {
+		clone.frozenClassLookup = vm.frozenClassLookup
+		clone.classLookupGeneration = vm.frozenClassLookup.generation
 		clone.classLookup = nil
 		clone.classNameSearchCache = vm.classNameSearchCache
 		clone.topLevelClassLookup = vm.topLevelClassLookup
@@ -630,9 +670,9 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	// methods are protected by the cache's RWMutex.
 	clone.triggerMatchCache = vm.triggerMatchCache
 	// Relationship describe caches depend only on immutable schema metadata.
-	// Share them only when a schema stamp proves the shape. A later SetOrg or
-	// metadata overlay mutation that changes the stamp clears these pointers and
-	// gives the clone private caches before it answers from stale metadata.
+	// A non-empty stamp permits tentative sharing during clone construction;
+	// SetOrg always clears these pointers before installing any mutable org
+	// because the compact stamp is not a complete schema manifest.
 	clone.metadataCacheStamp = vm.metadataCacheStamp
 	if strings.TrimSpace(vm.metadataCacheStamp) != "" {
 		clone.jsonChildRelTypeCache = vm.jsonChildRelTypeCache
@@ -657,7 +697,7 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	}
 	clone.traceEnabled = vm.traceEnabled
 	clone.toolingExecuteAnonymous = vm.toolingExecuteAnonymous
-	clone.staticInitState = copyStaticInitStateMap(vm.staticInitState)
+	clone.staticInitState = nil
 	clone.pageReferences = copyStringMap(vm.pageReferences)
 	clone.platformCache = copyCacheMap(vm.platformCache)
 	clone.managedFeatureValues = copyValueMap(vm.managedFeatureValues)
@@ -798,6 +838,25 @@ func copyClassMapWithPlan(in map[string]Class, plan *classCopyPlan) map[string]C
 	return out
 }
 
+func copyClassMapSharedStaticsWithPlan(in map[string]Class, plan *classCopyPlan) map[string]Class {
+	out := make(map[string]Class, len(in))
+	for _, name := range plan.primaries {
+		out[name] = in[name]
+	}
+	for alias, primary := range plan.aliases {
+		out[alias] = out[primary]
+	}
+	return out
+}
+
+func copyClassMapSharedStatics(in map[string]Class) map[string]Class {
+	out := make(map[string]Class, len(in))
+	for name, class := range in {
+		out[name] = class
+	}
+	return out
+}
+
 func copyClassMap(in map[string]Class) map[string]Class {
 	out := make(map[string]Class, len(in))
 	// byCanonicalName dedups aliases that resolve to the same class so every
@@ -818,6 +877,50 @@ func copyClassMap(in map[string]Class) map[string]Class {
 	clear(byCanonicalName)
 	classCopyDedupPool.Put(byCanonicalName)
 	return out
+}
+
+func (vm *VM) ensureMutableClass(name string) (Class, bool) {
+	if !vm.sharedStaticClasses {
+		class, ok := vm.Classes[name]
+		return class, ok
+	}
+	class, ok := vm.lookupClass(name)
+	if !ok {
+		return Class{}, false
+	}
+	canonical := runtimeClassName(class)
+	if vm.ownedStaticClasses != nil && vm.ownedStaticClasses[canonical] {
+		return class, true
+	}
+	class.StaticFields = copyFieldMap(class.StaticFields)
+	if vm.ownedStaticClasses == nil {
+		vm.ownedStaticClasses = make(map[string]bool)
+	}
+	vm.ownedStaticClasses[canonical] = true
+	vm.storeClassValue(class)
+	class, ok = vm.lookupClass(canonical)
+	return class, ok
+}
+
+func (vm *VM) storeMutableClassAtAlias(alias string, class Class) {
+	if vm.sharedStaticClasses {
+		vm.storeClassValue(class)
+		return
+	}
+	vm.Classes[alias] = class
+}
+
+func staticFieldValueMayMutate(field Field) bool {
+	switch field.Value.Kind {
+	case ValueObject, ValueList, ValueSet, ValueMap:
+		return true
+	}
+	return field.Value.Fields != nil ||
+		field.Value.Map != nil ||
+		field.Value.MapKeys != nil ||
+		field.Value.MapOrder != nil ||
+		field.Value.List != nil ||
+		field.Value.Set != nil
 }
 
 func copyClass(class Class) Class {
@@ -865,6 +968,9 @@ func copyTriggerSliceMap(in map[string][]Trigger) map[string][]Trigger {
 }
 
 func copyStaticInitStateMap(in map[string]staticInitState) map[string]staticInitState {
+	if len(in) == 0 {
+		return nil
+	}
 	out := make(map[string]staticInitState, len(in))
 	for name, state := range in {
 		out[name] = state
@@ -995,16 +1101,16 @@ func (vm *VM) SetCurrentPageURLNull() {
 }
 
 func (vm *VM) SetOrg(org *storage.OrgState) {
-	currentStamp := vm.schemaCacheStamp()
-	nextStamp := trustedSchemaCacheStampForOrg(org)
-	schemaChanged := currentStamp != "" && nextStamp != "" && currentStamp != nextStamp
-	if vm.Org != org || schemaChanged {
-		if currentStamp != "" && nextStamp != "" && currentStamp == nextStamp {
-			vm.metadataCacheStamp = nextStamp
-		} else {
-			vm.clearMetadataCaches()
-			vm.metadataCacheStamp = nextStamp
-		}
+	nextStamp := runtimeSchemaStampHintForOrg(org)
+	if nextStamp == "" {
+		nextStamp = schemaCacheStampForOrg(org)
+	}
+	if vm.Org != nil || org != nil {
+		// OrgState exposes mutable schema maps. Every SetOrg boundary that can
+		// install or retain an org must fail closed: the compact schema stamp is
+		// not a complete manifest of every describe-visible field.
+		vm.clearMetadataCaches()
+		vm.metadataCacheStamp = nextStamp
 	}
 	vm.Org = org
 	if vm.Org != nil && strings.TrimSpace(vm.metadataCacheStamp) != "" && vm.soqlExecutionCache == nil {
@@ -1019,22 +1125,18 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 	}
 }
 
-func (vm *VM) schemaCacheStamp() string {
-	if strings.TrimSpace(vm.metadataCacheStamp) != "" {
-		return vm.metadataCacheStamp
-	}
-	return trustedSchemaCacheStampForOrg(vm.Org)
-}
-
-// PrimeMetadataSchema records the schema stamp for org without touching the org
-// or clearing caches. Priming the base machine before cloning lets every clone
-// inherit a non-empty stamp so SetOrg reuses the shared schema-describe caches
-// (CloneRuntime) instead of clearing them on each clone's first SetOrg.
+// PrimeMetadataSchema records the compact schema stamp for org without touching
+// the org or clearing caches. Clones may tentatively share the base cache graph,
+// but SetOrg always detaches it before installing mutable org state.
 func (vm *VM) PrimeMetadataSchema(org *storage.OrgState) {
 	if vm == nil {
 		return
 	}
-	if stamp := trustedSchemaCacheStampForOrg(org); stamp != "" {
+	stamp := runtimeSchemaStampHintForOrg(org)
+	if stamp == "" {
+		stamp = schemaCacheStampForOrg(org)
+	}
+	if stamp != "" {
 		vm.metadataCacheStamp = stamp
 	}
 }
@@ -1048,14 +1150,15 @@ func PrimeRuntimeTemplateSchema(template *storage.RuntimeTemplate) {
 	template.Org.RuntimeSchemaStamp = stamp
 }
 
-func trustedSchemaCacheStampForOrg(org *storage.OrgState) string {
+// runtimeSchemaStampHintForOrg returns the stamp computed when an immutable
+// runtime template was created. SetOrg never uses this hint to retain caches:
+// it clears every shared metadata cache before recording the hint. Avoiding a
+// full schema walk here keeps the per-test clone boundary constant-time.
+func runtimeSchemaStampHintForOrg(org *storage.OrgState) string {
 	if org == nil {
 		return ""
 	}
-	if stamp := strings.TrimSpace(org.RuntimeSchemaStamp); stamp != "" {
-		return stamp
-	}
-	return schemaCacheStampForOrg(org)
+	return strings.TrimSpace(org.RuntimeSchemaStamp)
 }
 
 const (
@@ -1101,13 +1204,12 @@ func schemaStampHashLower(h uint64, s string) uint64 {
 	return h
 }
 
-// schemaCacheStampForOrg returns a compact content fingerprint of the org schema
-// used only for equality comparison (schema-unchanged detection for the
-// metadata describe caches). It streams the same canonical content the previous
-// implementation serialized, but accumulates it into a 64-bit FNV-1a hash
-// instead of materializing a multi-megabyte string on every SetOrg, eliminating
-// the dominant allocation on the per-test clone path. Distinct schemas yield
-// distinct stamps; the comparison semantics are unchanged.
+// schemaCacheStampForOrg returns a compact structural fingerprint of the org
+// schema. It streams the same canonical content the previous implementation
+// serialized, but accumulates it into a 64-bit FNV-1a hash instead of
+// materializing a multi-megabyte string on every SetOrg. The fingerprint is not
+// a complete manifest of describe-visible metadata and must not authorize cache
+// retention across a SetOrg boundary.
 func schemaCacheStampForOrg(org *storage.OrgState) string {
 	if org == nil {
 		return ""
@@ -1576,14 +1678,15 @@ func (vm *VM) ResetStatics() error {
 		if len(class.StaticFields) == 0 {
 			continue
 		}
+		class, _ = vm.ensureMutableClass(className)
 		for fieldName, field := range class.StaticFields {
 			field.Value = defaultStaticCollectionFieldValue(className, fieldName, field)
 			class.StaticFields[fieldName] = field
 		}
-		vm.Classes[className] = class
+		vm.storeMutableClassAtAlias(className, class)
 	}
 	vm.invalidateStaticValueRefs()
-	vm.staticInitState = make(map[string]staticInitState)
+	vm.staticInitState = nil
 	vm.ResetApexPageState()
 	return nil
 }
@@ -1596,6 +1699,7 @@ func (vm *VM) ResetTestAsyncStaticCollections() error {
 		}
 		resetAny := classHasStaticCollectionField(class)
 		if resetAny {
+			class, _ = vm.ensureMutableClass(className)
 			for fieldName, field := range class.StaticFields {
 				if !resetTestAsyncStaticField(field) && !resetTestAsyncStaticFieldForReinitialization(class, field) {
 					continue
@@ -1604,7 +1708,7 @@ func (vm *VM) ResetTestAsyncStaticCollections() error {
 				class.StaticFields[fieldName] = field
 			}
 		}
-		vm.Classes[className] = class
+		vm.storeMutableClassAtAlias(className, class)
 		if resetAny {
 			resetClasses[runtimeClassName(class)] = class
 		}
@@ -1660,9 +1764,6 @@ func (vm *VM) markStaticInitializationUninitialized(class Class) {
 	canonical := runtimeClassName(class)
 	if canonical != "" {
 		delete(vm.staticInitState, canonical)
-	}
-	if class.Name != "" {
-		delete(vm.staticInitState, class.Name)
 	}
 }
 

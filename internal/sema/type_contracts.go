@@ -34,11 +34,12 @@ func (a *Analyzer) checkSourceTypeContracts(index typesys.Index) []diagnostic.Di
 		if a.sources == nil {
 			continue
 		}
-		source, ok := a.sources.normalizedForType(typ)
+		facts, ok := a.sources.factsForType(typ)
 		if !ok {
 			continue
 		}
-		spans := newSemaCodeSpans(source)
+		source := facts.sourceText()
+		spans := facts.codeSpans()
 		for _, match := range typeContractRawCollectionConstructor.FindAllStringIndex(source, -1) {
 			if !spans.contains(match[0]) {
 				continue

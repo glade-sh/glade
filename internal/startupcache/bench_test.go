@@ -117,3 +117,35 @@ func BenchmarkTestCacheReadStaleHeader(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkTestCacheHeaderMarshal(b *testing.B) {
+	header := representativeTestCacheHeader(filepath.Clean("/tmp/generic-project"), 1200)
+	data, err := marshalTestCacheHeader(header)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.SetBytes(int64(len(data)))
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := marshalTestCacheHeader(header); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkTestCacheHeaderUnmarshal(b *testing.B) {
+	header := representativeTestCacheHeader(filepath.Clean("/tmp/generic-project"), 1200)
+	data, err := marshalTestCacheHeader(header)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.SetBytes(int64(len(data)))
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := unmarshalTestCacheHeader(data); err != nil {
+			b.Fatal(err)
+		}
+	}
+}

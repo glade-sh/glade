@@ -101,6 +101,27 @@ func TestUpdateApexFilesCleanRichSamePathUsesFastPath(t *testing.T) {
 	}
 }
 
+func TestUpdateApexFilesLegacySourceSymbolsRetainFastPath(t *testing.T) {
+	fixture := newCleanIncrementalEquivalenceFixture(t)
+	previous := fixture.buildFresh(t)
+	for i := range previous.Types {
+		if previous.Types[i].File == fixture.localClass {
+			previous.Types[i].SourceBacked = false
+		}
+	}
+
+	writeFile(t, fixture.localClass, "public class LocalService { public static String changed() { return 'changed'; } }")
+	updated, fastPath := updateApexFilesIncremental(previous, []string{fixture.localClass}, nil)
+	if !fastPath {
+		t.Fatal("legacy source symbol did not use the incremental fast path")
+	}
+	fresh := fixture.buildFresh(t)
+	if mismatches := incrementalDormantStateMismatches(updated, fresh); len(mismatches) > 0 {
+		t.Fatalf("legacy incremental snapshot differs from full Build: %v", mismatches)
+	}
+	compareIncrementalTypeSymbolAtPath(t, fixture.localClass, updated, fresh)
+}
+
 func TestUpdateApexFilesPreservesAnnotations(t *testing.T) {
 	fixture := newCleanIncrementalEquivalenceFixture(t)
 	previous := fixture.buildFresh(t)
@@ -678,6 +699,74 @@ func TestUpdateApexFilesDependencyApexTypeDeltaPreservesFlowTypes(t *testing.T) 
 	}
 	if fresh := fixture.buildFresh(t); !reflect.DeepEqual(deleted, fresh) {
 		t.Errorf("dependency delete with flow baseline differs from full Build")
+	}
+}
+
+func TestUpdateApexFilesDropsDeletedApexMetadataOccurrences(t *testing.T) {
+	tests := []struct {
+		name   string
+		update func(t *testing.T, fixture *incrementalEquivalenceFixture) (changed, deleted []string)
+	}{
+		{
+			name: "delete only",
+			update: func(t *testing.T, fixture *incrementalEquivalenceFixture) (changed, deleted []string) {
+				fixture.deleteFile(t, &fixture.localApexFiles, fixture.localClass)
+				return nil, []string{fixture.localClass}
+			},
+		},
+		{
+			name: "rename",
+			update: func(t *testing.T, fixture *incrementalEquivalenceFixture) (changed, deleted []string) {
+				fixture.renameFile(t, &fixture.localApexFiles, fixture.localClass, fixture.localRenamedClass)
+				writeFile(t, fixture.localRenamedClass, "public class LocalRenamed {}")
+				return []string{fixture.localRenamedClass}, []string{fixture.localClass}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fixture := newCleanIncrementalEquivalenceFixture(t)
+			previous := fixture.buildFresh(t)
+			deletedKey := sourceOccurrenceKeyForMetadata(SourceMetadata{
+				RequestedPath: fixture.localClass,
+				Root:          fixture.consumerRoot,
+				Namespace:     "localpkg",
+			})
+			if _, ok := previous.apexMetadataInputs[deletedKey]; !ok {
+				t.Fatalf("missing initial metadata occurrence for %q", fixture.localClass)
+			}
+			aliasPath := filepath.Join(fixture.consumerRoot, "force-app/main/default/classes/RetainedAlias.cls")
+			aliasKey := sourceOccurrenceKeyForMetadata(SourceMetadata{
+				RequestedPath: aliasPath,
+				Root:          fixture.consumerRoot,
+				Namespace:     "localpkg",
+			})
+			aliasInput := ApexMetadataInput{Present: true}
+			previous.apexMetadataInputs[aliasKey] = aliasInput
+
+			changed, deleted := test.update(t, fixture)
+			candidate, fastPath := updateApexFilesIncremental(previous, changed, deleted)
+			if !fastPath {
+				t.Fatal("clean incremental update did not use fast path")
+			}
+			if _, ok := candidate.apexMetadataInputs[deletedKey]; ok {
+				t.Fatalf("deleted metadata occurrence %q remained: %#v", fixture.localClass, candidate.apexMetadataInputs)
+			}
+			if got, ok := candidate.apexMetadataInputs[aliasKey]; !ok || got != aliasInput {
+				t.Fatalf("unrelated alias metadata occurrence = %#v, %t; want %#v, true", got, ok, aliasInput)
+			}
+			if len(changed) == 1 {
+				newKey := sourceOccurrenceKeyForMetadata(SourceMetadata{
+					RequestedPath: changed[0],
+					Root:          fixture.consumerRoot,
+					Namespace:     "localpkg",
+				})
+				if _, ok := candidate.apexMetadataInputs[newKey]; !ok {
+					t.Fatalf("renamed metadata occurrence %q missing", changed[0])
+				}
+			}
+		})
 	}
 }
 

@@ -48,6 +48,99 @@ func TestBuildRecordsEffectiveSourceAPIVersion(t *testing.T) {
 	}
 }
 
+func TestBuildWithArtifactsCapturesAPIMetadataAndVersionFromOneRead(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "CapturedMetadata.cls")
+	metadata := path + "-meta.xml"
+	oldMetadata := `<ApexClass><apiVersion>61.0</apiVersion></ApexClass>`
+	newMetadata := `<ApexClass><apiVersion>62.0</apiVersion></ApexClass>`
+	writeFile(t, path, "public class CapturedMetadata {}")
+	writeFile(t, metadata, oldMetadata)
+	mutated := false
+	t.Cleanup(setApexMetadataCaptureHookForTesting(func(capturedPath string) {
+		if capturedPath == path && !mutated {
+			mutated = true
+			writeFile(t, metadata, newMetadata)
+		}
+	}))
+	idx, artifacts := BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+	if !mutated {
+		t.Fatal("metadata capture hook did not run")
+	}
+	if !idx.HasErrors() {
+		t.Fatal("metadata mutation during capture was accepted")
+	}
+	_ = artifacts
+}
+
+func TestIncrementalUpdateCapturesAPIMetadataAndVersionFromOneRead(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	path := filepath.Join(root, "force-app", "main", "default", "classes", "IncrementalMetadata.cls")
+	metadata := path + "-meta.xml"
+	writeFile(t, path, "public class IncrementalMetadata { public static Integer value() { return 1; } }")
+	writeFile(t, metadata, `<ApexClass><apiVersion>61.0</apiVersion></ApexClass>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	previous := Build(p, schema.Schema{})
+	writeFile(t, path, "public class IncrementalMetadata { public static Integer value() { return 2; } }")
+	mutated := false
+	t.Cleanup(setApexMetadataCaptureHookForTesting(func(capturedPath string) {
+		if capturedPath == path && !mutated {
+			mutated = true
+			writeFile(t, metadata, `<ApexClass><apiVersion>62.0</apiVersion></ApexClass>`)
+		}
+	}))
+	updated, fast := updateApexFilesIncremental(previous, []string{path}, nil)
+	if fast {
+		t.Fatal("incremental update accepted metadata mutation during capture")
+	}
+	if !mutated {
+		t.Fatal("metadata capture hook did not run")
+	}
+	_ = updated
+}
+
+func TestBuildWithArtifactsRejectsSourceMutationAfterMetadataCapture(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "AtomicSource.cls")
+	writeFile(t, path, "public class AtomicSource { public static Integer value() { return 1; } }")
+	writeFile(t, path+"-meta.xml", `<ApexClass><apiVersion>61.0</apiVersion></ApexClass>`)
+	t.Cleanup(setApexMetadataCaptureHookForTesting(func(capturedPath string) {
+		if capturedPath == path {
+			writeFile(t, path, "public class AtomicSource { public static Integer value() { return 2; } }")
+		}
+	}))
+	idx, _ := BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, schema.Schema{})
+	if !idx.HasErrors() {
+		t.Fatalf("source mutation during build was accepted: %#v", idx)
+	}
+}
+
+func TestIncrementalUpdateRejectsSourceMutationAfterMetadataCapture(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	path := filepath.Join(root, "force-app", "main", "default", "classes", "AtomicIncremental.cls")
+	writeFile(t, path, "public class AtomicIncremental { public static Integer value() { return 1; } }")
+	writeFile(t, path+"-meta.xml", `<ApexClass><apiVersion>61.0</apiVersion></ApexClass>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	previous := Build(p, schema.Schema{})
+	writeFile(t, path, "public class AtomicIncremental { public static Integer value() { return 2; } }")
+	t.Cleanup(setApexMetadataCaptureHookForTesting(func(capturedPath string) {
+		if capturedPath == path {
+			writeFile(t, path, "public class AtomicIncremental { public static Integer value() { return 3; } }")
+		}
+	}))
+	if _, fast := updateApexFilesIncremental(previous, []string{path}, nil); fast {
+		t.Fatal("incremental source mutation during metadata capture was accepted")
+	}
+}
+
 func TestBuildParsesNamespaceTokenApex(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "UsesTokens.cls")

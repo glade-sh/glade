@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/gob"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"hash"
@@ -21,9 +20,11 @@ import (
 )
 
 const (
-	stateGobFile           = "startup.gob"
+	stateGobFile = "startup.gob"
+	// Keep the historical filename so an older JSON header is observed and
+	// rejected instead of accidentally enabling legacy-gob fallback.
 	stateHeaderFile        = "startup.meta.json"
-	testCacheFormatVersion = 1
+	testCacheFormatVersion = 2
 	payloadFilePrefix      = "startup.payload."
 	payloadFileSuffix      = ".gob"
 )
@@ -55,9 +56,16 @@ func Clear(projectRoot, subdir string) error {
 		return err
 	}
 	root = filepath.Clean(root)
-	cacheDir := filepath.Join(root, filepath.FromSlash(subdir))
+	cacheRoot, err := openPrivateStartupCacheDir(root, subdir, false)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+		return err
+	}
+	defer cacheRoot.Close()
 	removeFile := func(name string) error {
-		err := os.Remove(filepath.Join(cacheDir, name))
+		err := cacheRoot.Remove(name)
 		if errors.Is(err, os.ErrNotExist) {
 			return nil
 		}
@@ -72,12 +80,20 @@ func Clear(projectRoot, subdir string) error {
 	if err := removeFile(stateGobFile); err != nil {
 		return err
 	}
-	entries, err := os.ReadDir(cacheDir)
+	directory, err := cacheRoot.Open(".")
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil
 		}
 		return err
+	}
+	entries, readErr := directory.ReadDir(-1)
+	closeErr := directory.Close()
+	if readErr != nil {
+		return readErr
+	}
+	if closeErr != nil {
+		return closeErr
 	}
 	for _, entry := range entries {
 		name := entry.Name()
@@ -103,11 +119,18 @@ func readGob(projectRoot, subdir string) (*Entry, error) {
 }
 
 func readSplitTestCache(projectRoot, subdir string) (*Entry, error) {
-	cacheDir := filepath.Join(projectRoot, filepath.FromSlash(subdir))
-	header, err := readTestCacheHeader(filepath.Join(cacheDir, stateHeaderFile))
+	cacheRoot, err := openPrivateStartupCacheDir(projectRoot, subdir, false)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return readLegacyGob(projectRoot, subdir)
+			return nil, nil
+		}
+		return nil, err
+	}
+	defer cacheRoot.Close()
+	header, err := readTestCacheHeader(cacheRoot)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return readLegacyGobInRoot(cacheRoot)
 		}
 		if errors.Is(err, errMalformedTestCacheHeader) {
 			return nil, nil
@@ -115,7 +138,7 @@ func readSplitTestCache(projectRoot, subdir string) (*Entry, error) {
 		return nil, err
 	}
 	if header == nil {
-		return readLegacyGob(projectRoot, subdir)
+		return readLegacyGobInRoot(cacheRoot)
 	}
 	if header.FormatVersion != testCacheFormatVersion {
 		return nil, nil
@@ -126,8 +149,7 @@ func readSplitTestCache(projectRoot, subdir string) (*Entry, error) {
 	if !validPayloadFileName(header.PayloadFile, header.PayloadSHA256) {
 		return nil, nil
 	}
-	payloadPath := filepath.Join(cacheDir, header.PayloadFile)
-	payload, err := readTestCachePayload(payloadPath, header.PayloadSHA256, header.PayloadSize)
+	payload, err := readTestCachePayload(cacheRoot, header.PayloadFile, header.PayloadSHA256, header.PayloadSize)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, err
@@ -150,13 +172,21 @@ func readSplitTestCache(projectRoot, subdir string) (*Entry, error) {
 func readSplitTestCacheWithStats(projectRoot, subdir string) (*Entry, ReadStats, error) {
 	var stats ReadStats
 	validationStarted := time.Now()
-	cacheDir := filepath.Join(projectRoot, filepath.FromSlash(subdir))
-	header, err := readTestCacheHeader(filepath.Join(cacheDir, stateHeaderFile))
+	cacheRoot, err := openPrivateStartupCacheDir(projectRoot, subdir, false)
+	if err != nil {
+		stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, stats, nil
+		}
+		return nil, stats, err
+	}
+	defer cacheRoot.Close()
+	header, err := readTestCacheHeader(cacheRoot)
 	if err != nil {
 		stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
 		if errors.Is(err, os.ErrNotExist) {
 			decodeStarted := time.Now()
-			entry, legacyErr := readLegacyGob(projectRoot, subdir)
+			entry, legacyErr := readLegacyGobInRoot(cacheRoot)
 			stats.DecodeNS = time.Since(decodeStarted).Nanoseconds()
 			return entry, stats, legacyErr
 		}
@@ -168,7 +198,7 @@ func readSplitTestCacheWithStats(projectRoot, subdir string) (*Entry, ReadStats,
 	if header == nil {
 		stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
 		decodeStarted := time.Now()
-		entry, legacyErr := readLegacyGob(projectRoot, subdir)
+		entry, legacyErr := readLegacyGobInRoot(cacheRoot)
 		stats.DecodeNS = time.Since(decodeStarted).Nanoseconds()
 		return entry, stats, legacyErr
 	}
@@ -179,9 +209,8 @@ func readSplitTestCacheWithStats(projectRoot, subdir string) (*Entry, ReadStats,
 		return nil, stats, nil
 	}
 	stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
-	payloadPath := filepath.Join(cacheDir, header.PayloadFile)
 	decodeStarted := time.Now()
-	payload, err := readTestCachePayload(payloadPath, header.PayloadSHA256, header.PayloadSize)
+	payload, err := readTestCachePayload(cacheRoot, header.PayloadFile, header.PayloadSHA256, header.PayloadSize)
 	stats.DecodeNS = time.Since(decodeStarted).Nanoseconds()
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -205,8 +234,16 @@ func readSplitTestCacheWithStats(projectRoot, subdir string) (*Entry, ReadStats,
 func readFreshSplitTestRuntimeWithSourceDigests(projectRoot, subdir string, expectedVersion int, expectedRuntimeABI, expectedRuntimeKey string, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error)) (*Entry, ReadStats, error) {
 	var stats ReadStats
 	validationStarted := time.Now()
-	cacheDir := filepath.Join(projectRoot, filepath.FromSlash(subdir))
-	header, err := readTestCacheHeader(filepath.Join(cacheDir, stateHeaderFile))
+	cacheRoot, err := openPrivateStartupCacheDir(projectRoot, subdir, false)
+	if err != nil {
+		stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, stats, nil
+		}
+		return nil, stats, err
+	}
+	defer cacheRoot.Close()
+	header, err := readTestCacheHeader(cacheRoot)
 	if err != nil {
 		stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
 		if errors.Is(err, os.ErrNotExist) || errors.Is(err, errMalformedTestCacheHeader) {
@@ -223,9 +260,8 @@ func readFreshSplitTestRuntimeWithSourceDigests(projectRoot, subdir string, expe
 		return nil, stats, nil
 	}
 	stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
-	payloadPath := filepath.Join(cacheDir, header.PayloadFile)
 	decodeStarted := time.Now()
-	payload, err := readTestCachePayload(payloadPath, header.PayloadSHA256, header.PayloadSize)
+	payload, err := readTestCachePayload(cacheRoot, header.PayloadFile, header.PayloadSHA256, header.PayloadSize)
 	stats.DecodeNS = time.Since(decodeStarted).Nanoseconds()
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -246,26 +282,88 @@ func readFreshSplitTestRuntimeWithSourceDigests(projectRoot, subdir string, expe
 	}, stats, nil
 }
 
-func readTestCacheHeader(path string) (*testCacheHeader, error) {
-	data, err := os.ReadFile(path) // #nosec G304 -- path is the fixed header path beneath the caller-selected local project cache.
+func readFreshSplitTestRuntimeWithValidatedInput(projectRoot, subdir string, expectedVersion int, expectedRuntimeABI, expectedRuntimeKey string, input *ValidatedInput) (*Entry, ReadStats, error) {
+	var stats ReadStats
+	validationStarted := time.Now()
+	cacheRoot, err := openPrivateStartupCacheDir(projectRoot, subdir, false)
+	if err != nil {
+		stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, stats, nil
+		}
+		return nil, stats, err
+	}
+	defer cacheRoot.Close()
+	header, err := readTestCacheHeader(cacheRoot)
+	if err != nil {
+		stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
+		if errors.Is(err, os.ErrNotExist) || errors.Is(err, errMalformedTestCacheHeader) {
+			return nil, stats, nil
+		}
+		return nil, stats, err
+	}
+	if header == nil || header.FormatVersion != testCacheFormatVersion ||
+		!validPayloadFileName(header.PayloadFile, header.PayloadSHA256) || header.PayloadSize < 0 ||
+		expectedRuntimeABI == "" || header.RuntimeABI != expectedRuntimeABI ||
+		expectedRuntimeKey == "" || header.RuntimeKey != expectedRuntimeKey ||
+		!freshManifestWithValidatedInput(header.Version, header.ProjectRoot, header.PlatformABI, header.Manifest, projectRoot, expectedVersion, input) {
+		stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
+		return nil, stats, nil
+	}
+	stats.ValidationNS = time.Since(validationStarted).Nanoseconds()
+	decodeStarted := time.Now()
+	payload, err := readTestCachePayload(cacheRoot, header.PayloadFile, header.PayloadSHA256, header.PayloadSize)
+	stats.DecodeNS = time.Since(decodeStarted).Nanoseconds()
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, stats, err
+		}
+		return nil, stats, nil
+	}
+	return &Entry{
+		Version:     header.Version,
+		ProjectRoot: header.ProjectRoot,
+		BuiltAt:     header.BuiltAt,
+		PlatformABI: header.PlatformABI,
+		RuntimeABI:  header.RuntimeABI,
+		RuntimeKey:  header.RuntimeKey,
+		Manifest:    header.Manifest,
+		Org:         payload.Org,
+		Runtime:     payload.Runtime,
+	}, stats, nil
+}
+
+func readTestCacheHeader(cacheRoot *os.Root) (*testCacheHeader, error) {
+	file, err := cacheRoot.Open(stateHeaderFile)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, os.ErrNotExist
 		}
 		return nil, err
 	}
-	var header testCacheHeader
-	if err := json.Unmarshal(data, &header); err != nil {
+	defer file.Close()
+	data, err := io.ReadAll(io.LimitReader(file, maxEncodedTestCacheHeaderBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(data) > maxEncodedTestCacheHeaderBytes {
+		return nil, errMalformedTestCacheHeader
+	}
+	header, err := unmarshalTestCacheHeader(data)
+	if err != nil {
 		return nil, fmt.Errorf("%w: %v", errMalformedTestCacheHeader, err)
 	}
 	return &header, nil
 }
 
-func readTestCachePayload(path string, wantHash string, wantSize int64) (testCachePayload, error) {
+func readTestCachePayload(cacheRoot *os.Root, name, wantHash string, wantSize int64) (testCachePayload, error) {
 	if strings.TrimSpace(wantHash) == "" || wantSize < 0 {
 		return testCachePayload{}, fmt.Errorf("invalid payload header")
 	}
-	file, err := os.Open(path) // #nosec G304 -- path is the payload named by the authenticated cache header beneath the local project cache.
+	if !validPayloadFileName(name, wantHash) {
+		return testCachePayload{}, fmt.Errorf("invalid payload file name")
+	}
+	file, err := cacheRoot.Open(name)
 	if err != nil {
 		return testCachePayload{}, err
 	}
@@ -296,8 +394,19 @@ func readTestCachePayload(path string, wantHash string, wantSize int64) (testCac
 }
 
 func readLegacyGob(projectRoot, subdir string) (*Entry, error) {
-	path := filepath.Join(projectRoot, filepath.FromSlash(subdir), stateGobFile)
-	file, err := os.Open(path) // #nosec G304 -- path is the fixed legacy cache path beneath the caller-selected local project root.
+	cacheRoot, err := openPrivateStartupCacheDir(projectRoot, subdir, false)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	defer cacheRoot.Close()
+	return readLegacyGobInRoot(cacheRoot)
+}
+
+func readLegacyGobInRoot(cacheRoot *os.Root) (*Entry, error) {
+	file, err := cacheRoot.Open(stateGobFile)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, nil
@@ -324,55 +433,8 @@ func writeGob(entry *Entry, subdir string) error {
 }
 
 func writeSplitTestCache(entry *Entry, subdir string) error {
-	cacheDir := filepath.Join(entry.ProjectRoot, filepath.FromSlash(subdir))
-	if err := os.MkdirAll(cacheDir, 0o755); err != nil { // #nosec G301 -- project-local cache directories intentionally retain normal project traversal permissions.
-		return err
-	}
-	payload := testCachePayload{Org: entry.Org, Runtime: entry.Runtime}
-	tmp, err := os.CreateTemp(cacheDir, "startup-payload-*.gob")
-	if err != nil {
-		return err
-	}
-	tmpPath := tmp.Name()
-	hasher := sha256.New()
-	counting := &countingWriter{writer: io.MultiWriter(tmp, hasher)}
-	writeErr := func() error {
-		defer os.Remove(tmpPath)
-		if err := gob.NewEncoder(counting).Encode(payload); err != nil {
-			_ = tmp.Close()
-			return err
-		}
-		if err := tmp.Close(); err != nil {
-			return err
-		}
-		sum := hex.EncodeToString(hasher.Sum(nil))
-		payloadFile := payloadFilePrefix + sum + payloadFileSuffix
-		if err := activateTestPayload(cacheDir, tmpPath, payloadFile, counting.n); err != nil {
-			return err
-		}
-		header := testCacheHeader{
-			FormatVersion: testCacheFormatVersion,
-			Version:       entry.Version,
-			ProjectRoot:   entry.ProjectRoot,
-			BuiltAt:       entry.BuiltAt,
-			PlatformABI:   entry.PlatformABI,
-			RuntimeABI:    entry.RuntimeABI,
-			RuntimeKey:    entry.RuntimeKey,
-			Manifest:      entry.Manifest,
-			PayloadFile:   payloadFile,
-			PayloadSHA256: sum,
-			PayloadSize:   counting.n,
-		}
-		if err := writeTestCacheHeader(cacheDir, header); err != nil {
-			return err
-		}
-		return pruneInactiveTestPayloads(cacheDir, payloadFile)
-	}()
-	if writeErr != nil {
-		_ = os.Remove(tmpPath)
-		return writeErr
-	}
-	return nil
+	_, err := writeSplitTestCacheWithStats(entry, subdir)
+	return err
 }
 
 func writeSplitTestCacheWithStats(entry *Entry, subdir string) (WriteStats, error) {
@@ -462,10 +524,18 @@ func createTestCacheTemp(cacheRoot *os.Root, prefix, suffix string) (*os.File, s
 }
 
 func openPrivateTestCacheDir(projectRoot, subdir string) (*os.Root, error) {
-	return openPrivateTestCacheDirAfterLstat(projectRoot, subdir, nil)
+	return openPrivateStartupCacheDirAfterLstat(projectRoot, subdir, true, nil)
 }
 
 func openPrivateTestCacheDirAfterLstat(projectRoot, subdir string, afterLstat func(component string) error) (*os.Root, error) {
+	return openPrivateStartupCacheDirAfterLstat(projectRoot, subdir, true, afterLstat)
+}
+
+func openPrivateStartupCacheDir(projectRoot, subdir string, create bool) (*os.Root, error) {
+	return openPrivateStartupCacheDirAfterLstat(projectRoot, subdir, create, nil)
+}
+
+func openPrivateStartupCacheDirAfterLstat(projectRoot, subdir string, create bool, afterLstat func(component string) error) (*os.Root, error) {
 	cleanSubdir := filepath.Clean(filepath.FromSlash(subdir))
 	if filepath.IsAbs(cleanSubdir) || cleanSubdir == "." || cleanSubdir == ".." || strings.HasPrefix(cleanSubdir, ".."+string(os.PathSeparator)) {
 		return nil, fmt.Errorf("startup cache subdirectory %q must stay within the project root", subdir)
@@ -475,9 +545,11 @@ func openPrivateTestCacheDirAfterLstat(projectRoot, subdir string, afterLstat fu
 		return nil, err
 	}
 	for _, component := range strings.Split(cleanSubdir, string(os.PathSeparator)) {
-		if err := current.Mkdir(component, 0o700); err != nil && !errors.Is(err, os.ErrExist) {
-			_ = current.Close()
-			return nil, err
+		if create {
+			if err := current.Mkdir(component, 0o700); err != nil && !errors.Is(err, os.ErrExist) {
+				_ = current.Close()
+				return nil, err
+			}
 		}
 		beforeOpen, err := current.Lstat(component)
 		if err != nil {
@@ -517,7 +589,7 @@ func openPrivateTestCacheDirAfterLstat(projectRoot, subdir string, afterLstat fu
 		_ = current.Close()
 		current = next
 	}
-	if runtime.GOOS != "windows" {
+	if create && runtime.GOOS != "windows" {
 		if err := current.Chmod(".", 0o700); err != nil {
 			_ = current.Close()
 			return nil, fmt.Errorf("restrict startup cache directory: %w", err)
@@ -526,53 +598,18 @@ func openPrivateTestCacheDirAfterLstat(projectRoot, subdir string, afterLstat fu
 	return current, nil
 }
 
-func activateTestPayload(cacheDir, tmpPath, payloadFile string, payloadSize int64) error {
-	payloadPath := filepath.Join(cacheDir, payloadFile)
-	if info, err := os.Stat(payloadPath); err == nil {
-		if info.Size() == payloadSize {
-			return os.Remove(tmpPath)
-		}
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return err
-	}
-	return os.Rename(tmpPath, payloadPath)
-}
-
 func activateTestPayloadInRoot(cacheRoot *os.Root, tmpName, payloadFile string, payloadSize int64) error {
-	if info, err := cacheRoot.Stat(payloadFile); err == nil {
-		if info.Size() == payloadSize {
+	if info, err := cacheRoot.Lstat(payloadFile); err == nil {
+		if info.Mode()&os.ModeSymlink != 0 || !info.Mode().IsRegular() {
+			return fmt.Errorf("startup cache payload %q must be a regular file", payloadFile)
+		}
+		if info.Size() == payloadSize && info.Mode().Perm() == 0o600 {
 			return cacheRoot.Remove(tmpName)
 		}
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
 	return cacheRoot.Rename(tmpName, payloadFile)
-}
-
-func writeTestCacheHeader(cacheDir string, header testCacheHeader) error {
-	tmp, err := os.CreateTemp(cacheDir, "startup-header-*.json")
-	if err != nil {
-		return err
-	}
-	tmpPath := tmp.Name()
-	writeErr := func() error {
-		defer os.Remove(tmpPath)
-		enc := json.NewEncoder(tmp)
-		enc.SetIndent("", "  ")
-		if err := enc.Encode(header); err != nil {
-			_ = tmp.Close()
-			return err
-		}
-		if err := tmp.Close(); err != nil {
-			return err
-		}
-		return os.Rename(tmpPath, filepath.Join(cacheDir, stateHeaderFile))
-	}()
-	if writeErr != nil {
-		_ = os.Remove(tmpPath)
-		return writeErr
-	}
-	return nil
 }
 
 func writeTestCacheHeaderInRoot(cacheRoot *os.Root, header testCacheHeader) error {
@@ -582,9 +619,16 @@ func writeTestCacheHeaderInRoot(cacheRoot *os.Root, header testCacheHeader) erro
 	}
 	writeErr := func() error {
 		defer cacheRoot.Remove(tmpName)
-		enc := json.NewEncoder(tmp)
-		enc.SetIndent("", "  ")
-		if err := enc.Encode(header); err != nil {
+		data, err := marshalTestCacheHeader(header)
+		if err != nil {
+			_ = tmp.Close()
+			return err
+		}
+		if err := tmp.Chmod(0o600); err != nil {
+			_ = tmp.Close()
+			return err
+		}
+		if _, err := tmp.Write(data); err != nil {
 			_ = tmp.Close()
 			return err
 		}
@@ -596,26 +640,6 @@ func writeTestCacheHeaderInRoot(cacheRoot *os.Root, header testCacheHeader) erro
 	if writeErr != nil {
 		_ = cacheRoot.Remove(tmpName)
 		return writeErr
-	}
-	return nil
-}
-
-func pruneInactiveTestPayloads(cacheDir, activePayloadFile string) error {
-	entries, err := os.ReadDir(cacheDir)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil
-		}
-		return err
-	}
-	for _, entry := range entries {
-		name := entry.Name()
-		if name == activePayloadFile {
-			continue
-		}
-		if strings.HasPrefix(name, payloadFilePrefix) && strings.HasSuffix(name, payloadFileSuffix) {
-			_ = os.Remove(filepath.Join(cacheDir, name))
-		}
 	}
 	return nil
 }

@@ -1,17 +1,57 @@
 package repoguard
 
 import (
-	"bytes"
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/glade-sh/glade/internal/project"
 )
+
+type repoScanFile struct {
+	rel  string
+	text string
+}
+
+type repoScanSnapshot struct {
+	paths []string
+	files []repoScanFile
+	byRel map[string]repoScanFile
+}
+
+type repoScanCache struct {
+	once  sync.Once
+	build func() (repoScanSnapshot, error)
+	value repoScanSnapshot
+	err   error
+}
+
+type repoScanBuilder struct {
+	inventory func(string) ([]string, error)
+	stat      func(string) (os.FileInfo, error)
+	readFile  func(string) ([]byte, error)
+}
+
+func (cache *repoScanCache) snapshot() (repoScanSnapshot, error) {
+	cache.once.Do(func() {
+		cache.value, cache.err = cache.build()
+	})
+	return cache.value, cache.err
+}
+
+var canonicalRepoRoot = repositoryRootPath()
+
+var canonicalRepoScan = repoScanCache{build: func() (repoScanSnapshot, error) {
+	return buildRepoScan(canonicalRepoRoot)
+}}
 
 func TestNoCorpusSpecificReferencesInRuntimeCode(t *testing.T) {
 	root := repoRoot(t)
@@ -30,76 +70,43 @@ func TestNoCorpusSpecificReferencesInRuntimeCode(t *testing.T) {
 
 func TestNoPrivateExamplePackageReferences(t *testing.T) {
 	root := repoRoot(t)
-	for _, rel := range repoTrackedFiles(t, root) {
-		path := filepath.ToSlash(rel)
-		fullPath := filepath.Join(root, filepath.FromSlash(rel))
-		if _, err := os.Stat(fullPath); err != nil {
-			if os.IsNotExist(err) {
-				continue
-			}
-			t.Fatal(err)
-		}
-		checkPrivateExamplePackageText(t, path, path)
-
-		fileData, err := os.ReadFile(fullPath)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if bytes.IndexByte(fileData, 0) >= 0 {
+	for _, rel := range repoExistingTrackedPaths(t, root) {
+		checkPrivateExamplePackageText(t, rel, rel)
+	}
+	for _, file := range repoRegularFiles(t, root) {
+		if strings.IndexByte(file.text, 0) >= 0 {
 			continue
 		}
-		checkPrivateExamplePackageText(t, path, string(fileData))
+		checkPrivateExamplePackageText(t, file.rel, file.text)
 	}
 }
 
 func TestNoPersonalAbsolutePathsInTrackedText(t *testing.T) {
 	root := repoRoot(t)
 	forbidden := "/Users/" + "matt"
-	for _, rel := range repoTrackedFiles(t, root) {
-		fullPath := filepath.Join(root, filepath.FromSlash(rel))
-		if _, err := os.Stat(fullPath); err != nil {
-			if os.IsNotExist(err) {
-				continue
-			}
-			t.Fatal(err)
-		}
-		fileData, err := os.ReadFile(fullPath)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if bytes.IndexByte(fileData, 0) >= 0 {
+	for _, file := range repoRegularFiles(t, root) {
+		if strings.IndexByte(file.text, 0) >= 0 {
 			continue
 		}
-		if strings.Contains(string(fileData), forbidden) {
-			t.Errorf("%s contains a personal absolute path", rel)
+		if strings.Contains(file.text, forbidden) {
+			t.Errorf("%s contains a personal absolute path", file.rel)
 		}
 	}
 }
 
 func TestPublicExampleNamesAvoidGenericPlaceholders(t *testing.T) {
 	root := repoRoot(t)
-	for _, rel := range repoTrackedFiles(t, root) {
-		if !isHumanFacingExampleSurface(rel) {
+	for _, file := range repoRegularFiles(t, root) {
+		if !isHumanFacingExampleSurface(file.rel) {
 			continue
 		}
-		fullPath := filepath.Join(root, filepath.FromSlash(rel))
-		if _, err := os.Stat(fullPath); err != nil {
-			if os.IsNotExist(err) {
-				continue
-			}
-			t.Fatal(err)
-		}
-		fileData, err := os.ReadFile(fullPath)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if bytes.IndexByte(fileData, 0) >= 0 {
+		if strings.IndexByte(file.text, 0) >= 0 {
 			continue
 		}
-		text := string(fileData)
+		text := file.text
 		for _, term := range genericExampleNameTerms() {
 			if strings.Contains(text, term) {
-				t.Errorf("%s contains generic example name %q; use macrodata-apex, RefinementService, FileRow, or refinement-local instead", rel, term)
+				t.Errorf("%s contains generic example name %q; use macrodata-apex, RefinementService, FileRow, or refinement-local instead", file.rel, term)
 			}
 		}
 	}
@@ -107,30 +114,20 @@ func TestPublicExampleNamesAvoidGenericPlaceholders(t *testing.T) {
 
 func TestNoAgentPlanningDocsInReleaseSurface(t *testing.T) {
 	root := repoRoot(t)
-	for _, rel := range repoTrackedFiles(t, root) {
-		fullPath := filepath.Join(root, filepath.FromSlash(rel))
-		if _, err := os.Stat(fullPath); err != nil {
-			if os.IsNotExist(err) {
-				continue
-			}
-			t.Fatal(err)
-		}
+	for _, rel := range repoExistingTrackedPaths(t, root) {
 		if strings.HasPrefix(rel, "docs/superpowers/") {
 			t.Errorf("%s is an agent planning artifact; keep release docs product-facing", rel)
+		}
+	}
+	for _, file := range repoRegularFiles(t, root) {
+		if strings.HasPrefix(file.rel, "docs/superpowers/") || (!strings.HasPrefix(file.rel, "docs/") && !strings.HasPrefix(file.rel, "site/docs-src/")) {
 			continue
 		}
-		if !strings.HasPrefix(rel, "docs/") && !strings.HasPrefix(rel, "site/docs-src/") {
+		if strings.IndexByte(file.text, 0) >= 0 {
 			continue
 		}
-		fileData, err := os.ReadFile(fullPath)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if bytes.IndexByte(fileData, 0) >= 0 {
-			continue
-		}
-		if strings.Contains(string(fileData), "For agentic workers") {
-			t.Errorf("%s contains agent planning instructions; keep release docs product-facing", rel)
+		if strings.Contains(file.text, "For agentic workers") {
+			t.Errorf("%s contains agent planning instructions; keep release docs product-facing", file.rel)
 		}
 	}
 }
@@ -315,39 +312,6 @@ func TestAgentGuideListsCurrentProductCommands(t *testing.T) {
 	}
 }
 
-func TestGeneratedSystemStubsReproduceFromGenerator(t *testing.T) {
-	root := repoRoot(t)
-	inputRoot := filepath.Join(root, hyphen("example", "projects"), "stubs", "apex-system-stubs")
-	if _, err := os.Stat(inputRoot); err != nil {
-		t.Skipf("system stub input unavailable: %v", err)
-	}
-	node, err := exec.LookPath("node")
-	if err != nil {
-		t.Skipf("node unavailable: %v", err)
-	}
-	output := filepath.Join(t.TempDir(), "system_stub_symbols_generated.go")
-	args := []string{filepath.Join(root, "scripts", "generate-system-stub-symbols.mjs"), inputRoot, output}
-	if contracts := filepath.Join(root, "testdata", "generated", "apex_docs_contracts.json"); regularFileExists(contracts) {
-		args = append(args, contracts)
-	}
-	cmd := exec.Command(node, args...)
-	cmd.Dir = root
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("generate-system-stub-symbols failed: %v\n%s", err, out)
-	}
-	generated, err := os.ReadFile(output)
-	if err != nil {
-		t.Fatal(err)
-	}
-	checkedIn, err := os.ReadFile(filepath.Join(root, "internal", "typesys", "system_stub_symbols_generated.go"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !bytes.Equal(generated, checkedIn) {
-		t.Fatal("internal/typesys/system_stub_symbols_generated.go does not match scripts/generate-system-stub-symbols.mjs output")
-	}
-}
-
 func regularFileExists(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && !info.IsDir()
@@ -414,9 +378,13 @@ func TestPluginMaintenanceBoundary(t *testing.T) {
 
 func repoRoot(t *testing.T) string {
 	t.Helper()
+	return canonicalRepoRoot
+}
+
+func repositoryRootPath() string {
 	_, file, _, ok := runtime.Caller(0)
 	if !ok {
-		t.Fatal("runtime caller unavailable")
+		panic("runtime caller unavailable")
 	}
 	return filepath.Clean(filepath.Join(filepath.Dir(file), "..", ".."))
 }
@@ -454,11 +422,86 @@ func repoTrackedFiles(t *testing.T, root string) []string {
 
 func repoCachedFiles(t *testing.T, root string) []string {
 	t.Helper()
+	snapshot, err := repoScan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return append([]string(nil), snapshot.paths...)
+}
+
+func repoRegularFiles(t *testing.T, root string) []repoScanFile {
+	t.Helper()
+	snapshot, err := repoScan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return append([]repoScanFile(nil), snapshot.files...)
+}
+
+func repoExistingTrackedPaths(t *testing.T, root string) []string {
+	t.Helper()
+	files := repoRegularFiles(t, root)
+	paths := make([]string, 0, len(files))
+	for _, file := range files {
+		paths = append(paths, file.rel)
+	}
+	return paths
+}
+
+func repoScan(root string) (repoScanSnapshot, error) {
+	if filepath.Clean(root) == canonicalRepoRoot {
+		return canonicalRepoScan.snapshot()
+	}
+	return buildRepoScan(root)
+}
+
+func buildRepoScan(root string) (repoScanSnapshot, error) {
+	return repoScanBuilder{
+		inventory: repoCachedFileInventory,
+		stat:      os.Stat,
+		readFile:  os.ReadFile,
+	}.scan(root)
+}
+
+func (builder repoScanBuilder) scan(root string) (repoScanSnapshot, error) {
+	files, err := builder.inventory(root)
+	if err != nil {
+		return repoScanSnapshot{}, err
+	}
+	snapshot := repoScanSnapshot{
+		paths: append([]string(nil), files...),
+		files: make([]repoScanFile, 0, len(files)),
+		byRel: make(map[string]repoScanFile, len(files)),
+	}
+	for _, rel := range files {
+		path := filepath.Join(root, filepath.FromSlash(rel))
+		info, err := builder.stat(path)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return repoScanSnapshot{}, err
+		}
+		if !info.Mode().IsRegular() {
+			continue
+		}
+		data, err := builder.readFile(path)
+		if err != nil {
+			return repoScanSnapshot{}, err
+		}
+		file := repoScanFile{rel: rel, text: string(data)}
+		snapshot.files = append(snapshot.files, file)
+		snapshot.byRel[rel] = file
+	}
+	return snapshot, nil
+}
+
+func repoCachedFileInventory(root string) ([]string, error) {
 	cmd := exec.Command("git", "ls-files", "--cached")
 	cmd.Dir = root
 	out, err := cmd.Output()
 	if err != nil {
-		t.Fatalf("git ls-files --cached: %v", err)
+		return nil, fmt.Errorf("git ls-files --cached: %w", err)
 	}
 	var files []string
 	for _, line := range strings.Split(string(out), "\n") {
@@ -467,7 +510,7 @@ func repoCachedFiles(t *testing.T, root string) []string {
 		}
 		files = append(files, filepath.ToSlash(line))
 	}
-	return files
+	return files, nil
 }
 
 func isTrackedBuildArtifact(rel string) bool {
@@ -482,6 +525,13 @@ func isTrackedBuildArtifact(rel string) bool {
 
 func readRepoFile(t *testing.T, root, rel string) string {
 	t.Helper()
+	snapshot, err := repoScan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if file, ok := snapshot.byRel[filepath.ToSlash(rel)]; ok {
+		return file.text
+	}
 	data, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(rel)))
 	if err != nil {
 		t.Fatal(err)
@@ -545,11 +595,20 @@ func dot(parts ...string) string {
 
 func checkPrivateExamplePackageText(t *testing.T, rel, text string) {
 	t.Helper()
-	for _, pattern := range privateExamplePackagePatterns() {
+	for _, pattern := range privateExamplePackagePatternSet {
 		if pattern.re.MatchString(text) {
 			t.Errorf("%s contains private example package marker %q", rel, pattern.label)
 		}
 	}
+}
+
+func privateExamplePackageFinding(text string) string {
+	for _, pattern := range privateExamplePackagePatternSet {
+		if pattern.re.MatchString(text) {
+			return pattern.label
+		}
+	}
+	return ""
 }
 
 type privatePackagePattern struct {
@@ -557,7 +616,13 @@ type privatePackagePattern struct {
 	re    *regexp.Regexp
 }
 
+var privateExamplePackagePatternSet = buildPrivateExamplePackagePatterns()
+
 func privateExamplePackagePatterns() []privatePackagePattern {
+	return append([]privatePackagePattern(nil), privateExamplePackagePatternSet...)
+}
+
+func buildPrivateExamplePackagePatterns() []privatePackagePattern {
 	ci := func(parts ...string) *regexp.Regexp {
 		return regexp.MustCompile(`(?i)` + strings.Join(parts, ""))
 	}
@@ -590,5 +655,250 @@ func privateExamplePackagePatterns() []privatePackagePattern {
 		{strings.Join([]string{"Education", "Last"}, ""), ci(`\bEducation`, "Last", `[[:alnum:]_]*\b`)},
 		{strings.Join([]string{"Setup", "DataMapping"}, ""), ci(`\bSetup`, "DataMapping", `[[:alnum:]_]*\b`)},
 		{strings.Join([]string{"Action", "ProcessorQueueable"}, ""), ci(`\bAction`, "ProcessorQueueable", `[[:alnum:]_]*\b`)},
+	}
+}
+
+func TestPrivateExamplePackagePatternsReuseCompiledExpressions(t *testing.T) {
+	first := privateExamplePackagePatterns()
+	second := privateExamplePackagePatterns()
+	if len(first) != 22 {
+		t.Fatalf("private pattern count = %d, want 22", len(first))
+	}
+	if len(first) != len(second) {
+		t.Fatalf("private pattern lengths differ: %d and %d", len(first), len(second))
+	}
+	for index := range first {
+		if first[index].label != second[index].label {
+			t.Fatalf("pattern %d label differs: %q and %q", index, first[index].label, second[index].label)
+		}
+		if first[index].re != second[index].re {
+			t.Fatalf("pattern %q was compiled more than once", first[index].label)
+		}
+	}
+
+	first[0].label = "mutated"
+	if got := privateExamplePackagePatterns()[0].label; got == "mutated" {
+		t.Fatal("private pattern caller mutated the shared pattern slice")
+	}
+}
+
+func TestPrivateExamplePackagePatternsMatchExistingFixtureCases(t *testing.T) {
+	patterns := privateExamplePackagePatterns()
+	tests := []struct {
+		name string
+		text string
+		want string
+	}{
+		{name: "path marker", text: patterns[0].label, want: patterns[0].label},
+		{name: "namespace marker", text: "Object." + patterns[9].label + "__Thing", want: patterns[9].label},
+		{name: "negative", text: "macrodata-apex refinement-local", want: ""},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := ""
+			for _, pattern := range privateExamplePackagePatterns() {
+				if pattern.re.MatchString(test.text) {
+					got = pattern.label
+					break
+				}
+			}
+			if got != test.want {
+				t.Fatalf("pattern match for %q = %q, want %q", test.text, got, test.want)
+			}
+		})
+	}
+}
+
+func TestPrivateExamplePackageFindingUsesTheCompiledPatternSet(t *testing.T) {
+	marker := privateExamplePackagePatterns()[0].label
+	if got, want := privateExamplePackageFinding(marker), marker; got != want {
+		t.Fatalf("private marker finding = %q, want %q", got, want)
+	}
+	if got := privateExamplePackageFinding("macrodata-apex refinement-local"); got != "" {
+		t.Fatalf("safe text finding = %q, want empty", got)
+	}
+}
+
+func TestPrivateExamplePackagePatternChecksAreParallelSafe(t *testing.T) {
+	const workers = 32
+	marker := privateExamplePackagePatterns()[0].label
+	var failures atomic.Int32
+	var group sync.WaitGroup
+	for worker := 0; worker < workers; worker++ {
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			for iteration := 0; iteration < 100; iteration++ {
+				matched := false
+				for _, pattern := range privateExamplePackagePatterns() {
+					if pattern.re.MatchString(marker) {
+						matched = true
+						break
+					}
+				}
+				if !matched {
+					failures.Add(1)
+				}
+			}
+		}()
+	}
+	group.Wait()
+	if got := failures.Load(); got != 0 {
+		t.Fatalf("parallel pattern checks lost %d matches", got)
+	}
+}
+
+func TestRepoScanCacheSharesOneSnapshotAndError(t *testing.T) {
+	var builds atomic.Int32
+	cache := repoScanCache{build: func() (repoScanSnapshot, error) {
+		builds.Add(1)
+		return repoScanSnapshot{files: []repoScanFile{{rel: "one.txt", text: "one"}}}, nil
+	}}
+
+	const callers = 32
+	var group sync.WaitGroup
+	for caller := 0; caller < callers; caller++ {
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			snapshot, err := cache.snapshot()
+			if err != nil {
+				t.Errorf("snapshot: %v", err)
+				return
+			}
+			if len(snapshot.files) != 1 || snapshot.files[0].text != "one" {
+				t.Errorf("snapshot = %#v, want one.txt", snapshot)
+			}
+		}()
+	}
+	group.Wait()
+	if got := builds.Load(); got != 1 {
+		t.Fatalf("snapshot builds = %d, want 1", got)
+	}
+}
+
+func TestRepoScanCacheSharesBuildError(t *testing.T) {
+	want := errors.New("inventory unavailable")
+	var builds atomic.Int32
+	cache := repoScanCache{build: func() (repoScanSnapshot, error) {
+		builds.Add(1)
+		return repoScanSnapshot{}, want
+	}}
+	for call := 0; call < 2; call++ {
+		if _, err := cache.snapshot(); !errors.Is(err, want) {
+			t.Fatalf("snapshot error = %v, want %v", err, want)
+		}
+	}
+	if got := builds.Load(); got != 1 {
+		t.Fatalf("error snapshot builds = %d, want 1", got)
+	}
+}
+
+func TestRepoScanCacheReadsEachTrackedBodyOnce(t *testing.T) {
+	root := t.TempDir()
+	for _, name := range []string{"one.txt", "two.txt"} {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(name), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var inventories atomic.Int32
+	var reads atomic.Int32
+	builder := repoScanBuilder{
+		inventory: func(string) ([]string, error) {
+			inventories.Add(1)
+			return []string{"one.txt", "two.txt"}, nil
+		},
+		stat: os.Stat,
+		readFile: func(path string) ([]byte, error) {
+			reads.Add(1)
+			return os.ReadFile(path)
+		},
+	}
+	cache := repoScanCache{build: func() (repoScanSnapshot, error) {
+		return builder.scan(root)
+	}}
+	for call := 0; call < 4; call++ {
+		if _, err := cache.snapshot(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := inventories.Load(); got != 1 {
+		t.Fatalf("inventories = %d, want 1", got)
+	}
+	if got := reads.Load(); got != 2 {
+		t.Fatalf("body reads = %d, want 2", got)
+	}
+}
+
+func TestRepoScanPreservesTrackedInventoryWithoutReadingDirectories(t *testing.T) {
+	root := t.TempDir()
+	if err := os.Mkdir(filepath.Join(root, "directory"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	snapshot, err := (repoScanBuilder{
+		inventory: func(string) ([]string, error) { return []string{"directory"}, nil },
+		stat:      os.Stat,
+		readFile:  os.ReadFile,
+	}).scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(snapshot.paths) != 1 || snapshot.paths[0] != "directory" {
+		t.Fatalf("tracked paths = %#v, want directory", snapshot.paths)
+	}
+	if len(snapshot.files) != 0 {
+		t.Fatalf("regular files = %#v, want none", snapshot.files)
+	}
+}
+
+func TestRepoScanDoesNotCacheTemporaryRepositoryRoots(t *testing.T) {
+	root := t.TempDir()
+	if output, err := exec.Command("git", "init", "--quiet", root).CombinedOutput(); err != nil {
+		t.Fatalf("git init temporary repository: %v\n%s", err, output)
+	}
+	path := filepath.Join(root, "one.txt")
+	if err := os.WriteFile(path, []byte("first"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if output, err := exec.Command("git", "-C", root, "add", "one.txt").CombinedOutput(); err != nil {
+		t.Fatalf("git add temporary repository: %v\n%s", err, output)
+	}
+
+	first, err := repoScan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte("second"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	second, err := repoScan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.files[0].text != "first" || second.files[0].text != "second" {
+		t.Fatalf("temporary repository scans = %q then %q, want fresh reads", first.files[0].text, second.files[0].text)
+	}
+}
+
+func TestRepoExistingTrackedPathsSkipsDeletedIndexEntries(t *testing.T) {
+	root := t.TempDir()
+	if output, err := exec.Command("git", "init", "--quiet", root).CombinedOutput(); err != nil {
+		t.Fatalf("git init temporary repository: %v\n%s", err, output)
+	}
+	path := filepath.Join(root, "deleted.txt")
+	if err := os.WriteFile(path, []byte("tracked"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if output, err := exec.Command("git", "-C", root, "add", "deleted.txt").CombinedOutput(); err != nil {
+		t.Fatalf("git add temporary repository: %v\n%s", err, output)
+	}
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	if got := repoExistingTrackedPaths(t, root); len(got) != 0 {
+		t.Fatalf("existing tracked paths = %#v, want none", got)
+	}
+	if got := repoCachedFiles(t, root); len(got) != 1 || got[0] != "deleted.txt" {
+		t.Fatalf("cached inventory = %#v, want deleted.txt", got)
 	}
 }

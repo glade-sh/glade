@@ -58,6 +58,7 @@
       "github.com/glade-sh/glade/internal/resource",
       "github.com/glade-sh/glade/internal/runartifact",
       "github.com/glade-sh/glade/internal/schema",
+      "github.com/glade-sh/glade/internal/semanticcache",
       "github.com/glade-sh/glade/internal/sobject",
       "github.com/glade-sh/glade/internal/soql",
       "github.com/glade-sh/glade/internal/sosl",
@@ -72,6 +73,7 @@
       "github.com/glade-sh/glade/internal/vm",
       "github.com/glade-sh/glade/internal/watch",
       "github.com/glade-sh/glade/scripts",
+      "github.com/glade-sh/glade/scripts/internal/cicache",
       "github.com/glade-sh/glade/scripts/internal/cishard",
       "github.com/glade-sh/glade/scripts/internal/testlog"
     ]

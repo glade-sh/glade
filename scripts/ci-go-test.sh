@@ -16,6 +16,7 @@ testlog_renderer_dir=""
 testlog_status_files=()
 owned_child_roots=()
 package_map_temp=""
+package_test_metadata_temp=""
 package_lane_rows=""
 
 cleanup_testlog_renderer() {
@@ -29,6 +30,9 @@ cleanup_testlog_renderer() {
 	fi
 	if [[ -n "${package_map_temp}" ]]; then
 		rm -f "${package_map_temp}"
+	fi
+	if [[ -n "${package_test_metadata_temp}" ]]; then
+		rm -f "${package_test_metadata_temp}"
 	fi
 }
 trap cleanup_testlog_renderer EXIT
@@ -221,7 +225,10 @@ run_json_with_heartbeat() {
 	if [[ "${renderer_rc}" -ne 0 ]]; then
 		printf '[ci] testlog renderer failed with status %s; raw events: %s\n' "${renderer_rc}" "${artifact}" >&2
 	fi
-	return "${native_rc}"
+	if [[ "${native_rc}" -ne 0 ]]; then
+		return "${native_rc}"
+	fi
+	return "${tee_rc}"
 }
 
 testlog_artifact() {
@@ -238,7 +245,9 @@ load_package_lanes() {
 	fi
 	local go_command="${CI_GO_COMMAND:-go}"
 	package_map_temp="$(mktemp "${TMPDIR:-/tmp}/glade-ci-packages.XXXXXX")"
-	(cd "${repo_root}" && "${go_command}" list ./...) >"${package_map_temp}"
+	package_test_metadata_temp="$(mktemp "${TMPDIR:-/tmp}/glade-ci-package-tests.XXXXXX")"
+	(cd "${repo_root}" && "${go_command}" list -f '{{.ImportPath}}{{printf "\t"}}{{if or .TestGoFiles .XTestGoFiles}}has-tests{{else}}no-tests{{end}}' ./...) >"${package_test_metadata_temp}"
+	awk -F '\t' 'NF == 2 && ($2 == "has-tests" || $2 == "no-tests") { print $1; next } { exit 1 }' "${package_test_metadata_temp}" >"${package_map_temp}"
 	package_lane_rows="$(cd "${repo_root}" && "${go_command}" run ./scripts/internal/cishard --package-manifest "${script_dir}/ci-package-lanes.json" --packages "${package_map_temp}")"
 }
 
@@ -513,6 +522,216 @@ run_ci_package_lane() {
 run_full_tests() {
 	run_package_lane "apextest" test 30m 0
 	run_core_tests
+}
+
+local_release_jobs() {
+	local requested="${LOCAL_GO_TEST_JOBS:-auto}"
+	case "${requested}" in
+		auto)
+			# No low-memory overlap has passed the resource matrix yet. Keep the
+			# automatic mode serial until that evidence exists; an explicit positive
+			# value is an intentional local override.
+			printf '1\n'
+			;;
+		*[!0-9]*|0|'')
+			echo "[ci] LOCAL_GO_TEST_JOBS must be auto or a positive integer" >&2
+			return 2
+			;;
+		*)
+			printf '%s\n' "${requested}"
+			;;
+	esac
+}
+
+validate_local_release_package_summary() {
+	local lane="$1"
+	local label="$2"
+	local events_path="$3"
+	local summary_path="$4"
+	local package_metadata_path="$5"
+	shift 5
+	python3 - "${lane}" "${label}" "${events_path}" "${summary_path}" "${package_metadata_path}" "$@" <<'PY'
+import json
+import os
+import sys
+
+lane, label, events_path, summary_path, package_metadata_path, *arguments = sys.argv[1:]
+module = "github.com/glade-sh/glade"
+expected = []
+for argument in arguments:
+    if argument == ".":
+        expected.append(module)
+    elif argument.startswith("./"):
+        expected.append(module + argument[1:])
+    else:
+        expected.append(argument)
+summary = {"version": 1, "lane": lane, "label": label, "valid": False,
+           "expected": sorted(expected), "passed": [], "errors": []}
+try:
+    if len(expected) != len(set(expected)):
+        raise ValueError("expected package list contains duplicates")
+    test_files = {}
+    with open(package_metadata_path, encoding="utf-8") as source:
+        for line_number, line in enumerate(source, 1):
+            package, separator, status = line.rstrip("\n").partition("\t")
+            if not separator or not package or status not in ("has-tests", "no-tests") or package in test_files:
+                raise ValueError(f"invalid package test-file metadata at line {line_number}")
+            test_files[package] = status
+    metadata_missing = sorted(set(expected) - set(test_files))
+    if metadata_missing:
+        raise ValueError("package test-file metadata is missing: " + ", ".join(metadata_missing))
+    terminal = {}
+    skipped_tests = []
+    with open(events_path, encoding="utf-8") as source:
+        for line_number, line in enumerate(source, 1):
+            if not line.strip():
+                continue
+            event = json.loads(line)
+            if not isinstance(event, dict):
+                raise ValueError(f"event {line_number} is not an object")
+            package = event.get("Package")
+            action = event.get("Action")
+            test = event.get("Test")
+            if test not in (None, ""):
+                # A package pass only says its process reached a terminal
+                # state. It cannot excuse a skipped top-level test or subtest.
+                if action == "skip":
+                    skipped_tests.append(f"{package}/{test}")
+                continue
+            if not isinstance(package, str) or action not in ("pass", "fail", "skip"):
+                continue
+            terminal.setdefault(package, []).append(action)
+    missing = sorted(set(expected) - set(terminal))
+    duplicates = sorted(package for package, actions in terminal.items() if len(actions) != 1)
+    skipped = sorted(package for package, actions in terminal.items() if actions == ["skip"] and test_files.get(package) != "no-tests")
+    failed = sorted(package for package, actions in terminal.items() if actions == ["fail"])
+    extra = sorted(set(terminal) - set(expected))
+    if missing:
+        summary["errors"].append("missing package results: " + ", ".join(missing))
+    if duplicates:
+        summary["errors"].append("duplicate package results: " + ", ".join(duplicates))
+    if skipped:
+        summary["errors"].append("skipped package results: " + ", ".join(skipped))
+    if skipped_tests:
+        summary["errors"].append("skipped test results: " + ", ".join(sorted(skipped_tests)))
+    if failed:
+        summary["errors"].append("failed package results: " + ", ".join(failed))
+    if extra:
+        summary["errors"].append("extra package results: " + ", ".join(extra))
+    summary["passed"] = sorted(package for package, actions in terminal.items() if actions in (["pass"], ["skip"]) and package in expected)
+    summary["valid"] = not summary["errors"] and summary["passed"] == sorted(expected)
+    if not summary["valid"] and not summary["errors"]:
+        summary["errors"].append("package summary is incomplete")
+except Exception as error:
+    summary["errors"].append(str(error))
+os.makedirs(os.path.dirname(summary_path) or ".", exist_ok=True)
+with open(summary_path, "w", encoding="utf-8") as target:
+    json.dump(summary, target, sort_keys=True, indent=2)
+    target.write("\n")
+if not summary["valid"]:
+    for error in summary["errors"]:
+        print(f"[ci] {label} package summary rejected: {error}", file=sys.stderr)
+    raise SystemExit(1)
+PY
+}
+
+run_local_release_lane() {
+	local lane="$1"
+	local label="$2"
+	local timeout="$3"
+	local artifact_root="$4"
+	local skip_regex="${5:-}"
+	local lane_dir="${artifact_root}/${label}"
+	local events_path="${lane_dir}/events.json"
+	local summary_path="${lane_dir}/package-summary.json"
+	local native_rc validation_rc=0
+	local -a packages=()
+	# Load in this shell so the authoritative test-file metadata survives the
+	# package collection; process substitution would otherwise hide its globals.
+	load_package_lanes
+	while IFS= read -r package; do
+		packages+=("${package}")
+	done < <(awk -F '\t' -v lane="${lane}" '$1 == lane { print $2 }' <<<"${package_lane_rows}")
+	if [[ "${#packages[@]}" -eq 0 ]]; then
+		echo "[ci] local-release lane ${lane} is empty" >&2
+		return 1
+	fi
+	mkdir -p "${lane_dir}"
+	python3 - "${lane}" "${label}" "${summary_path}" <<'PY'
+import json
+import sys
+
+lane, label, summary_path = sys.argv[1:]
+with open(summary_path, "w", encoding="utf-8") as target:
+    json.dump({
+        "version": 1,
+        "lane": lane,
+        "label": label,
+        "valid": False,
+        "errors": ["lane did not reach result validation"],
+    }, target, sort_keys=True, indent=2)
+    target.write("\n")
+PY
+	set +e
+	local -a test_args=(-count=1 -timeout="${timeout}")
+	if [[ -n "${skip_regex}" ]]; then
+		test_args+=(-skip "${skip_regex}")
+	fi
+	run_json_with_heartbeat "go test local-release ${label}" "${events_path}" "${test_args[@]}" "${packages[@]}"
+	native_rc="$?"
+	set -e
+	validate_local_release_package_summary "${lane}" "${label}" "${events_path}" "${summary_path}" "${package_test_metadata_temp}" "${packages[@]}" || validation_rc="$?"
+	if [[ "${native_rc}" -ne 0 ]]; then
+		return "${native_rc}"
+	fi
+	return "${validation_rc}"
+}
+
+wait_local_release_lane() {
+	local pid="$1"
+	local rc=0
+	wait "${pid}" || rc="$?"
+	unregister_owned_child "${pid}"
+	return "${rc}"
+}
+
+run_local_release() {
+	local jobs
+	jobs="$(local_release_jobs)"
+	local artifact_root="${CI_LOCAL_RELEASE_ARTIFACT_DIR:-ci-artifacts/local-release}"
+	local server_pid=""
+	local remaining_pid=""
+	mkdir -p "${artifact_root}"
+	printf '[ci] local release lanes: jobs=%s artifact_dir=%s\n' "${jobs}" "${artifact_root}"
+	# Keep this order stable: it puts repository and compiler failures ahead of
+	# the expensive Apex lane. The existing checked manifest remains the sole
+	# package inventory authority after go list ./... validates it.
+	run_with_heartbeat "go vet ./..." go vet ./...
+	run_local_release_lane "repoguard" "guard" 15m "${artifact_root}"
+	run_local_release_lane "gladecli" "cli-ui" 30m "${artifact_root}"
+	run_local_release_lane "sema" "sema" 45m "${artifact_root}"
+	run_local_release_lane "apextest" "apex" 45m "${artifact_root}"
+	if [[ "${jobs}" -eq 1 ]]; then
+		run_local_release_lane "server-and-playground" "server-playground" 30m "${artifact_root}"
+		run_local_release_lane "remaining-go" "remaining" 30m "${artifact_root}" '^(?:TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$'
+		return
+	fi
+	# Only a caller that explicitly chooses jobs > 1 can overlap these final
+	# two lanes. Auto stays serial until a resource-matrix measurement proves a
+	# safe low-memory overlap.
+	run_local_release_lane "server-and-playground" "server-playground" 30m "${artifact_root}" &
+	server_pid="$!"
+	register_owned_child "${server_pid}"
+	run_local_release_lane "remaining-go" "remaining" 30m "${artifact_root}" '^(?:TestBrowserRuntimeSuite|TestGeneratedPhase3BaseComponentsRunInBrowser)$' &
+	remaining_pid="$!"
+	register_owned_child "${remaining_pid}"
+	local server_rc=0 remaining_rc=0
+	wait_local_release_lane "${server_pid}" || server_rc="$?"
+	wait_local_release_lane "${remaining_pid}" || remaining_rc="$?"
+	if [[ "${server_rc}" -ne 0 ]]; then
+		return "${server_rc}"
+	fi
+	return "${remaining_rc}"
 }
 
 run_race_tests() {
@@ -1148,6 +1367,10 @@ main() {
 		core)
 			run_core_tests
 			;;
+		local-release)
+			if [[ "$#" -ne 1 ]]; then echo "usage: scripts/ci-go-test.sh local-release" >&2; return 2; fi
+			run_local_release
+			;;
 		race)
 			run_race_tests
 			;;
@@ -1185,7 +1408,7 @@ main() {
 			validate_sema_equivalence "${2:-}" "${3:-}" "${4:-}" "${5:-}"
 			;;
 		*)
-			echo "usage: scripts/ci-go-test.sh [core|test|race|lane NAME|node-integration|apex-shard 0|1|apex-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-shard 0|1|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
+			echo "usage: scripts/ci-go-test.sh [core|test|race|local-release|lane NAME|node-integration|apex-shard 0|1|apex-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-shard 0|1|sema-history-refresh SHARD_0_DIR SHARD_1_DIR OUTPUT|sema-full|sema-equivalence SHARD_0_DIR SHARD_1_DIR FULL_DIR OUTPUT]" >&2
 			return 2
 			;;
 	esac

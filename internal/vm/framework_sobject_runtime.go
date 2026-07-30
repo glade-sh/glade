@@ -511,6 +511,7 @@ func (vm *VM) callFrameworkSObjectUnitOfWorkMember(receiver Value, method string
 			if len(args) != 1 || !messagingEmailAssignable(args[0].Type, "Messaging.Email") {
 				return Null, true, fmt.Errorf("framework_SObjectUnitOfWork.SendEmailWork.registerEmail expects Messaging.Email")
 			}
+			vm.advanceAliasContainmentMutation()
 			emails, ok := receiver.Fields["emails"]
 			if !ok || emails.Kind != ValueList {
 				emails = typedList("List<Messaging.Email>")
@@ -578,6 +579,7 @@ func (vm *VM) callFrameworkSObjectUnitOfWorkMember(receiver Value, method string
 			if !ok || relationships.Kind != ValueList {
 				relationships = typedList("List<framework_SObjectUnitOfWork.IRelationship>")
 			}
+			vm.advanceAliasContainmentMutation()
 			relationships.List = append(relationships.List, relationship)
 			receiver.Fields["m_relationships"] = relationships
 			return Null, true, nil
@@ -591,29 +593,40 @@ func (vm *VM) callFrameworkSObjectUnitOfWorkMember(receiver Value, method string
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("framework_SObjectUnitOfWork.commitWork expects 0 arguments")
 		}
+		vm.advanceAliasContainmentMutation()
 		return Null, true, vm.commitFrameworkSObjectUnitOfWork(receiver, result)
 	case "handleregistertype":
+		vm.advanceAliasContainmentMutation()
 		return vm.callFrameworkSObjectUnitOfWorkHandleRegisterType(receiver, args)
 	case "registernew":
+		vm.advanceAliasContainmentMutation()
 		return Null, true, vm.registerFrameworkSObjectUnitOfWorkNew(receiver, args)
 	case "registerdirty":
+		vm.advanceAliasContainmentMutation()
 		return Null, true, vm.registerFrameworkSObjectUnitOfWorkDirty(receiver, args)
 	case "registerdeleted":
+		vm.advanceAliasContainmentMutation()
 		return Null, true, vm.registerFrameworkSObjectUnitOfWorkRecords(receiver, "m_deletedMapByType", args, true)
 	case "registerupsert":
+		vm.advanceAliasContainmentMutation()
 		return Null, true, vm.registerFrameworkSObjectUnitOfWorkUpsert(receiver, args)
 	case "registeremptyrecyclebin":
+		vm.advanceAliasContainmentMutation()
 		return Null, true, vm.registerFrameworkSObjectUnitOfWorkRecords(receiver, "m_emptyRecycleBinMapByType", args, true)
 	case "registerpermanentlydeleted":
+		vm.advanceAliasContainmentMutation()
 		if err := vm.registerFrameworkSObjectUnitOfWorkRecords(receiver, "m_emptyRecycleBinMapByType", args, true); err != nil {
 			return Null, true, err
 		}
 		return Null, true, vm.registerFrameworkSObjectUnitOfWorkRecords(receiver, "m_deletedMapByType", args, true)
 	case "registerpublishbeforetransaction":
+		vm.advanceAliasContainmentMutation()
 		return Null, true, vm.registerFrameworkSObjectUnitOfWorkRecords(receiver, "m_publishBeforeListByType", args, false)
 	case "registerpublishaftersuccesstransaction":
+		vm.advanceAliasContainmentMutation()
 		return Null, true, vm.registerFrameworkSObjectUnitOfWorkRecords(receiver, "m_publishAfterSuccessListByType", args, false)
 	case "registerpublishafterfailuretransaction":
+		vm.advanceAliasContainmentMutation()
 		return Null, true, vm.registerFrameworkSObjectUnitOfWorkRecords(receiver, "m_publishAfterFailureListByType", args, false)
 	default:
 		return Null, false, nil
@@ -857,7 +870,7 @@ func (vm *VM) addFrameworkSObjectUnitOfWorkDirtyRecord(receiver Value, record Va
 			value = Null
 			actual = field
 		}
-		setExplicitSObjectField(&existing, actual, value)
+		vm.setExplicitSObjectFieldValue(&existing, actual, value)
 	}
 	return vm.addFrameworkSObjectUnitOfWorkRecord(receiver, "m_dirtyMapByType", existing, true)
 }
@@ -1435,7 +1448,7 @@ func (vm *VM) resolveFrameworkSObjectUnitOfWorkRelationship(receiver Value, rela
 		return err
 	}
 	previous := snapshotAlias(record)
-	setExplicitSObjectField(&record, fieldName, relatedID)
+	vm.setExplicitSObjectFieldValue(&record, fieldName, relatedID)
 	relationship.Fields["Record"] = record
 	replaced, changed := replaceAliasSnapshot(receiver, previous, record, make(map[uint64]bool))
 	if changed && replaced.Kind == ValueObject {
@@ -1528,7 +1541,7 @@ func (vm *VM) frameworkSObjectUnitOfWorkOutOfOrderUpdate(relationship Value) (Va
 	}
 	updateRecord := Object(record.Type)
 	updateRecord.Fields["Id"] = recordID
-	setExplicitSObjectField(&updateRecord, fieldName, relatedID)
+	vm.setExplicitSObjectFieldValue(&updateRecord, fieldName, relatedID)
 	return updateRecord, true, nil
 }
 func (vm *VM) persistedSObjectFieldValue(record Value, fieldName string) (Value, bool, bool) {

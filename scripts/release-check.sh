@@ -7,9 +7,6 @@ cd "${ROOT}"
 export GOMAXPROCS="${GOMAXPROCS:-2}"
 
 git diff --check
-go test ./internal/repoguard
-go test ./internal/gladecli ./internal/cliui
-npm test --prefix site
-npm run build --prefix site
-go test -count=1 -p=1 ./...
+npm run release:check --prefix site
+scripts/ci-go-test.sh local-release
 scripts/smoke.sh

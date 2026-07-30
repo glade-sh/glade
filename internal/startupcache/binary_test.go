@@ -2,7 +2,6 @@ package startupcache
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -16,6 +15,34 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
+
+func mustMarshalTestCacheHeader(t testing.TB, header testCacheHeader) []byte {
+	t.Helper()
+	data, err := marshalTestCacheHeader(header)
+	if err != nil {
+		t.Fatalf("marshalTestCacheHeader() error = %v", err)
+	}
+	return data
+}
+
+func mustUnmarshalTestCacheHeader(t testing.TB, data []byte) testCacheHeader {
+	t.Helper()
+	header, err := unmarshalTestCacheHeader(data)
+	if err != nil {
+		t.Fatalf("unmarshalTestCacheHeader() error = %v", err)
+	}
+	return header
+}
+
+func readTestCacheHeaderAtPath(t testing.TB, path string) (*testCacheHeader, error) {
+	t.Helper()
+	root, err := os.OpenRoot(filepath.Dir(path))
+	if err != nil {
+		return nil, err
+	}
+	defer root.Close()
+	return readTestCacheHeader(root)
+}
 
 func TestWriteWithStatsCreatesPrivateTestCacheDirectory(t *testing.T) {
 	if runtime.GOOS == "windows" {
@@ -144,7 +171,7 @@ func TestSplitCacheRuntimeKeyRoundTripsAndKeylessEntryRemainsReadable(t *testing
 	if got.RuntimeKey != entry.RuntimeKey {
 		t.Fatalf("RuntimeKey = %q, want %q", got.RuntimeKey, entry.RuntimeKey)
 	}
-	header, err := readTestCacheHeader(filepath.Join(root, ".glade", "test", stateHeaderFile))
+	header, err := readTestCacheHeaderAtPath(t, filepath.Join(root, ".glade", "test", stateHeaderFile))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -199,7 +226,7 @@ func TestReadFreshRuntimeWithSourceDigestsValidatesKeyBeforePayload(t *testing.T
 		t.Fatal("eligible header did not validate non-Apex manifest inputs")
 	}
 
-	header, err := readTestCacheHeader(filepath.Join(root, ".glade", "test", stateHeaderFile))
+	header, err := readTestCacheHeaderAtPath(t, filepath.Join(root, ".glade", "test", stateHeaderFile))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,6 +300,201 @@ func TestWriteWithStatsRejectsSymlinkTestCacheDirectoryWithoutChangingTarget(t *
 	}
 	if got, want := info.Mode().Perm(), os.FileMode(0o755); got != want {
 		t.Fatalf("symlink target permissions = %04o, want unchanged %04o", got, want)
+	}
+}
+
+func TestReadRejectsSymlinkedCacheAncestorWithoutReadingTarget(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix symlink behavior is not available on Windows")
+	}
+	for _, test := range []struct {
+		name   string
+		subdir string
+		entry  Entry
+	}{
+		{
+			name:   "split test cache",
+			subdir: SubdirTest,
+			entry:  Entry{Version: Version},
+		},
+		{
+			name:   "JSON cache",
+			subdir: SubdirDAP,
+			entry:  Entry{Version: DAPCacheVersion},
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			projectRoot := t.TempDir()
+			targetRoot := t.TempDir()
+			test.entry.ProjectRoot = targetRoot
+			test.entry.Manifest.ProjectRoot = targetRoot
+			if err := Write(&test.entry, test.subdir); err != nil {
+				t.Fatalf("Write() target cache error = %v", err)
+			}
+			if err := os.Symlink(filepath.Join(targetRoot, ".glade"), filepath.Join(projectRoot, ".glade")); err != nil {
+				t.Skipf("symlinks unavailable: %v", err)
+			}
+
+			if _, err := Read(projectRoot, test.subdir); err == nil {
+				t.Fatal("Read() error = nil, want symlinked cache ancestor rejection")
+			}
+		})
+	}
+}
+
+func TestClearRejectsSymlinkedCacheAncestorWithoutChangingTarget(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix symlink behavior is not available on Windows")
+	}
+	for _, test := range []struct {
+		name      string
+		subdir    string
+		entry     Entry
+		stateName string
+	}{
+		{
+			name:      "split test cache",
+			subdir:    SubdirTest,
+			entry:     Entry{Version: Version},
+			stateName: stateHeaderFile,
+		},
+		{
+			name:      "JSON cache",
+			subdir:    SubdirDAP,
+			entry:     Entry{Version: DAPCacheVersion},
+			stateName: stateFile,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			projectRoot := t.TempDir()
+			targetRoot := t.TempDir()
+			test.entry.ProjectRoot = targetRoot
+			test.entry.Manifest.ProjectRoot = targetRoot
+			if err := Write(&test.entry, test.subdir); err != nil {
+				t.Fatalf("Write() target cache error = %v", err)
+			}
+			targetState := filepath.Join(targetRoot, filepath.FromSlash(test.subdir), test.stateName)
+			if err := os.Symlink(filepath.Join(targetRoot, ".glade"), filepath.Join(projectRoot, ".glade")); err != nil {
+				t.Skipf("symlinks unavailable: %v", err)
+			}
+
+			if err := Clear(projectRoot, test.subdir); err == nil {
+				t.Fatal("Clear() error = nil, want symlinked cache ancestor rejection")
+			}
+			if _, err := os.Stat(targetState); err != nil {
+				t.Fatalf("Clear() changed symlink target: %v", err)
+			}
+		})
+	}
+}
+
+func TestWriteRejectsExistingPayloadSymlinkWithoutChangingTarget(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix symlink and permission behavior is not available on Windows")
+	}
+	dir := t.TempDir()
+	entry := Entry{
+		Version:     Version,
+		ProjectRoot: dir,
+		BuiltAt:     "2026-07-29T00:00:00Z",
+		Manifest:    Manifest{ProjectRoot: dir},
+		Runtime: CompiledRuntime{
+			Methods: map[string]vm.Method{"Payload.safe": {Name: "safe", ClassName: "Payload"}},
+		},
+	}
+	if err := Write(&entry, SubdirTest); err != nil {
+		t.Fatalf("Write() first error = %v", err)
+	}
+	cacheDir := filepath.Join(dir, ".glade", "test")
+	headerData, err := os.ReadFile(filepath.Join(cacheDir, stateHeaderFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	header := mustUnmarshalTestCacheHeader(t, headerData)
+	payloadPath := filepath.Join(cacheDir, header.PayloadFile)
+	payload, err := os.ReadFile(payloadPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(payloadPath); err != nil {
+		t.Fatal(err)
+	}
+	external := filepath.Join(t.TempDir(), "external-payload")
+	if err := os.WriteFile(external, payload, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(external, payloadPath); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+
+	if err := Write(&entry, SubdirTest); err == nil {
+		t.Fatal("Write() error = nil, want existing payload symlink rejection")
+	}
+	info, err := os.Stat(external)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := info.Mode().Perm(), os.FileMode(0o644); got != want {
+		t.Fatalf("external payload permissions = %04o, want unchanged %04o", got, want)
+	}
+	got, err := os.ReadFile(external)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got, payload) {
+		t.Fatal("external payload contents changed")
+	}
+}
+
+func TestWriteRejectsExistingInCachePayloadSymlinkWithoutChangingTarget(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix symlink and permission behavior is not available on Windows")
+	}
+	dir := t.TempDir()
+	entry := Entry{
+		Version:     Version,
+		ProjectRoot: dir,
+		BuiltAt:     "2026-07-29T00:00:00Z",
+		Manifest:    Manifest{ProjectRoot: dir},
+		Runtime: CompiledRuntime{
+			Methods: map[string]vm.Method{"Payload.local": {Name: "local", ClassName: "Payload"}},
+		},
+	}
+	if err := Write(&entry, SubdirTest); err != nil {
+		t.Fatalf("Write() first error = %v", err)
+	}
+	cacheDir := filepath.Join(dir, ".glade", "test")
+	headerData, err := os.ReadFile(filepath.Join(cacheDir, stateHeaderFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	header := mustUnmarshalTestCacheHeader(t, headerData)
+	payloadPath := filepath.Join(cacheDir, header.PayloadFile)
+	payload, err := os.ReadFile(payloadPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(payloadPath); err != nil {
+		t.Fatal(err)
+	}
+	targetName := "existing-payload-target"
+	target := filepath.Join(cacheDir, targetName)
+	if err := os.WriteFile(target, payload, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(targetName, payloadPath); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+
+	if err := Write(&entry, SubdirTest); err == nil {
+		t.Fatal("Write() error = nil, want in-cache payload symlink rejection")
+	}
+	info, err := os.Stat(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := info.Mode().Perm(), os.FileMode(0o644); got != want {
+		t.Fatalf("payload symlink target permissions = %04o, want unchanged %04o", got, want)
 	}
 }
 
@@ -481,12 +703,60 @@ func TestWriteWithStatsContinuesInOpenedCacheAfterPathSwap(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read header from opened cache: %v", err)
 	}
-	var header testCacheHeader
-	if err := json.Unmarshal(headerData, &header); err != nil {
-		t.Fatal(err)
-	}
+	header := mustUnmarshalTestCacheHeader(t, headerData)
 	if _, err := os.Stat(filepath.Join(displacedCache, header.PayloadFile)); err != nil {
 		t.Fatalf("stat payload in opened cache: %v", err)
+	}
+}
+
+func TestWriteWithStatsRejectsPayloadSymlinkSwappedAfterCacheRootOpen(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix symlink and permission behavior is not available on Windows")
+	}
+	dir := t.TempDir()
+	entry := Entry{
+		Version:     Version,
+		ProjectRoot: dir,
+		BuiltAt:     "2026-07-29T00:00:00Z",
+		Manifest:    Manifest{ProjectRoot: dir},
+		Runtime: CompiledRuntime{
+			Methods: map[string]vm.Method{"Payload.swap": {Name: "swap", ClassName: "Payload"}},
+		},
+	}
+	if err := Write(&entry, SubdirTest); err != nil {
+		t.Fatalf("Write() first error = %v", err)
+	}
+	cacheDir := filepath.Join(dir, ".glade", "test")
+	headerData, err := os.ReadFile(filepath.Join(cacheDir, stateHeaderFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	header := mustUnmarshalTestCacheHeader(t, headerData)
+	payloadPath := filepath.Join(cacheDir, header.PayloadFile)
+	payload, err := os.ReadFile(payloadPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	external := filepath.Join(t.TempDir(), "external-payload")
+	if err := os.WriteFile(external, payload, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	hook := func() error {
+		if err := os.Remove(payloadPath); err != nil {
+			return err
+		}
+		return os.Symlink(external, payloadPath)
+	}
+
+	if _, err := writeSplitTestCacheWithStatsAfterRootOpened(&entry, SubdirTest, hook); err == nil {
+		t.Fatal("writeSplitTestCacheWithStatsAfterRootOpened() error = nil, want swapped payload symlink rejection")
+	}
+	info, err := os.Stat(external)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := info.Mode().Perm(), os.FileMode(0o644); got != want {
+		t.Fatalf("swapped payload target permissions = %04o, want unchanged %04o", got, want)
 	}
 }
 
@@ -555,10 +825,7 @@ func TestClearRemovesGob(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadFile() error = %v", err)
 	}
-	var header testCacheHeader
-	if err := json.Unmarshal(headerData, &header); err != nil {
-		t.Fatalf("Unmarshal() error = %v", err)
-	}
+	header := mustUnmarshalTestCacheHeader(t, headerData)
 	if err := Clear(dir, SubdirTest); err != nil {
 		t.Fatalf("Clear() error = %v", err)
 	}
@@ -1246,10 +1513,7 @@ func TestSplitCacheWritesHeaderAndHashedPayload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("header missing: %v", err)
 	}
-	var header testCacheHeader
-	if err := json.Unmarshal(headerData, &header); err != nil {
-		t.Fatalf("header json error = %v", err)
-	}
+	header := mustUnmarshalTestCacheHeader(t, headerData)
 	if header.RuntimeABI != entry.RuntimeABI {
 		t.Fatalf("header runtime ABI = %q, want %q", header.RuntimeABI, entry.RuntimeABI)
 	}
@@ -1310,10 +1574,7 @@ func TestSplitCacheWriteStatsRecordEncode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var header testCacheHeader
-	if err := json.Unmarshal(normalHeader, &header); err != nil {
-		t.Fatal(err)
-	}
+	header := mustUnmarshalTestCacheHeader(t, normalHeader)
 	normalPayload, err := os.ReadFile(filepath.Join(cacheDir, header.PayloadFile))
 	if err != nil {
 		t.Fatal(err)
@@ -1333,9 +1594,7 @@ func TestSplitCacheWriteStatsRecordEncode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := json.Unmarshal(measuredHeader, &header); err != nil {
-		t.Fatal(err)
-	}
+	header = mustUnmarshalTestCacheHeader(t, measuredHeader)
 	measuredPayload, err := os.ReadFile(filepath.Join(cacheDir, header.PayloadFile))
 	if err != nil {
 		t.Fatal(err)
@@ -1368,10 +1627,7 @@ func TestSplitCacheReusesExistingPayloadOnIdenticalRewrite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadFile() first header error = %v", err)
 	}
-	var first testCacheHeader
-	if err := json.Unmarshal(headerData, &first); err != nil {
-		t.Fatalf("Unmarshal() first header error = %v", err)
-	}
+	first := mustUnmarshalTestCacheHeader(t, headerData)
 	payloadPath := filepath.Join(dir, ".glade", "test", first.PayloadFile)
 	oldTime := time.Unix(1000, 0)
 	if err := os.Chtimes(payloadPath, oldTime, oldTime); err != nil {
@@ -1386,10 +1642,7 @@ func TestSplitCacheReusesExistingPayloadOnIdenticalRewrite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadFile() second header error = %v", err)
 	}
-	var second testCacheHeader
-	if err := json.Unmarshal(headerData, &second); err != nil {
-		t.Fatalf("Unmarshal() second header error = %v", err)
-	}
+	second := mustUnmarshalTestCacheHeader(t, headerData)
 	if second.PayloadFile != first.PayloadFile || second.PayloadSHA256 != first.PayloadSHA256 || second.PayloadSize != first.PayloadSize {
 		t.Fatalf("payload changed on identical rewrite: first=%#v second=%#v", first, second)
 	}
@@ -1436,10 +1689,7 @@ func TestSplitCacheRejectsStaleHeaderWithoutPayloadDecode(t *testing.T) {
 		PayloadSHA256: "bad",
 		PayloadSize:   1,
 	}
-	data, err := json.Marshal(header)
-	if err != nil {
-		t.Fatalf("Marshal() error = %v", err)
-	}
+	data := mustMarshalTestCacheHeader(t, header)
 	if err := os.WriteFile(filepath.Join(cacheDir, stateHeaderFile), data, 0o644); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -1470,10 +1720,7 @@ func TestSplitCacheFreshHeaderMissingPayloadReturnsError(t *testing.T) {
 		PayloadSHA256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		PayloadSize:   1,
 	}
-	data, err := json.Marshal(header)
-	if err != nil {
-		t.Fatalf("Marshal() error = %v", err)
-	}
+	data := mustMarshalTestCacheHeader(t, header)
 	if err := os.WriteFile(filepath.Join(cacheDir, stateHeaderFile), data, 0o644); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -1497,10 +1744,7 @@ func TestSplitCacheRejectsPayloadHashMismatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadFile() error = %v", err)
 	}
-	var header testCacheHeader
-	if err := json.Unmarshal(headerData, &header); err != nil {
-		t.Fatalf("Unmarshal() error = %v", err)
-	}
+	header := mustUnmarshalTestCacheHeader(t, headerData)
 	cacheDir := filepath.Join(dir, ".glade", "test")
 	originalPayloadPath := filepath.Join(cacheDir, header.PayloadFile)
 	fakeHash := "0000000000000000000000000000000000000000000000000000000000000000"
@@ -1514,10 +1758,7 @@ func TestSplitCacheRejectsPayloadHashMismatch(t *testing.T) {
 	}
 	header.PayloadSHA256 = fakeHash
 	header.PayloadFile = fakePayloadFile
-	headerData, err = json.Marshal(header)
-	if err != nil {
-		t.Fatalf("Marshal() error = %v", err)
-	}
+	headerData = mustMarshalTestCacheHeader(t, header)
 	if err := os.WriteFile(headerPath, headerData, 0o644); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
@@ -1556,7 +1797,8 @@ func TestSplitCacheMalformedHeaderDoesNotFallBackToLegacyGob(t *testing.T) {
 		mutate func(*testCacheHeader)
 		raw    []byte
 	}{
-		{name: "malformed JSON", raw: []byte("{not json\n")},
+		{name: "malformed bytes", raw: []byte("{not a cache header\n")},
+		{name: "legacy JSON header", raw: []byte(`{"formatVersion":1,"version":4,"projectRoot":"/tmp/generic-project"}`)},
 		{name: "format version", mutate: func(header *testCacheHeader) { header.FormatVersion++ }},
 		{name: "manifest schema", mutate: func(header *testCacheHeader) { header.Manifest.SchemaVersion++ }},
 		{name: "platform ABI", mutate: func(header *testCacheHeader) { header.PlatformABI = "foreign-platform-abi" }},
@@ -1587,11 +1829,7 @@ func TestSplitCacheMalformedHeaderDoesNotFallBackToLegacyGob(t *testing.T) {
 			}
 			data := tc.raw
 			if data == nil {
-				var err error
-				data, err = json.Marshal(header)
-				if err != nil {
-					t.Fatalf("Marshal() error = %v", err)
-				}
+				data = mustMarshalTestCacheHeader(t, header)
 			}
 			headerPath := filepath.Join(dir, ".glade", "test", stateHeaderFile)
 			if err := os.WriteFile(headerPath, data, 0o644); err != nil {
@@ -1622,10 +1860,7 @@ func TestSplitCachePrunesOldPayloadsOnRewrite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadFile() first header error = %v", err)
 	}
-	var first testCacheHeader
-	if err := json.Unmarshal(headerData, &first); err != nil {
-		t.Fatalf("Unmarshal() first header error = %v", err)
-	}
+	first := mustUnmarshalTestCacheHeader(t, headerData)
 	firstPayloadPath := filepath.Join(dir, ".glade", "test", first.PayloadFile)
 	if _, err := os.Stat(firstPayloadPath); err != nil {
 		t.Fatalf("first payload missing: %v", err)
@@ -1639,10 +1874,7 @@ func TestSplitCachePrunesOldPayloadsOnRewrite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadFile() second header error = %v", err)
 	}
-	var second testCacheHeader
-	if err := json.Unmarshal(headerData, &second); err != nil {
-		t.Fatalf("Unmarshal() second header error = %v", err)
-	}
+	second := mustUnmarshalTestCacheHeader(t, headerData)
 	secondPayloadPath := filepath.Join(dir, ".glade", "test", second.PayloadFile)
 	if _, err := os.Stat(secondPayloadPath); err != nil {
 		t.Fatalf("second payload missing: %v", err)

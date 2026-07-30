@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
@@ -31,6 +32,7 @@ import (
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
 	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/semanticcache"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
@@ -39,6 +41,56 @@ import (
 var Version = "0.0.0-dev"
 
 var errCLIConfig = errors.New("cli config error")
+
+var (
+	checkGenerationValidationHookMu sync.RWMutex
+	checkGenerationValidationHook   func()
+	checkSemanticIdentityHookMu     sync.RWMutex
+	checkSemanticIdentityHook       func()
+	checkSemanticResults            = semanticcache.NewManager(semanticcache.Limits{MaxEntries: 8, MaxBytes: 512 << 20})
+)
+
+func setCheckGenerationValidationHookForTesting(hook func()) func() {
+	checkGenerationValidationHookMu.Lock()
+	previous := checkGenerationValidationHook
+	checkGenerationValidationHook = hook
+	checkGenerationValidationHookMu.Unlock()
+	return func() {
+		checkGenerationValidationHookMu.Lock()
+		checkGenerationValidationHook = previous
+		checkGenerationValidationHookMu.Unlock()
+	}
+}
+
+func invokeCheckGenerationValidationHook() {
+	checkGenerationValidationHookMu.RLock()
+	hook := checkGenerationValidationHook
+	checkGenerationValidationHookMu.RUnlock()
+	if hook != nil {
+		hook()
+	}
+}
+
+func setCheckSemanticIdentityHookForTesting(hook func()) func() {
+	checkSemanticIdentityHookMu.Lock()
+	previous := checkSemanticIdentityHook
+	checkSemanticIdentityHook = hook
+	checkSemanticIdentityHookMu.Unlock()
+	return func() {
+		checkSemanticIdentityHookMu.Lock()
+		checkSemanticIdentityHook = previous
+		checkSemanticIdentityHookMu.Unlock()
+	}
+}
+
+func invokeCheckSemanticIdentityHook() {
+	checkSemanticIdentityHookMu.RLock()
+	hook := checkSemanticIdentityHook
+	checkSemanticIdentityHookMu.RUnlock()
+	if hook != nil {
+		hook()
+	}
+}
 
 type versionInfo struct {
 	Version string `json:"version"`
@@ -1949,24 +2001,35 @@ type checkOptions struct {
 	cpuProfilePath string
 	memProfilePath string
 	perfJSONPath   string
+	noCache        bool
 }
 
 type checkPerfSummary struct {
-	SchemaVersion  string        `json:"schemaVersion"`
-	Command        string        `json:"command"`
-	GeneratedAt    string        `json:"generatedAt"`
-	Project        string        `json:"project"`
-	Status         string        `json:"status"`
-	ExitCode       int           `json:"exitCode"`
-	TotalMS        int64         `json:"totalMs"`
-	Summary        sema.Summary  `json:"summary"`
-	ProjectLoadNS  int64         `json:"projectLoadNs"`
-	SchemaLoadNS   int64         `json:"schemaLoadNs"`
-	IndexBuildNS   int64         `json:"indexBuildNs"`
-	OutputNS       int64         `json:"outputNs"`
-	SemaPerf       checkSemaPerf `json:"semaPerf"`
-	CPUProfilePath string        `json:"cpuProfilePath,omitempty"`
-	MemProfilePath string        `json:"memProfilePath,omitempty"`
+	SchemaVersion  string                 `json:"schemaVersion"`
+	Command        string                 `json:"command"`
+	GeneratedAt    string                 `json:"generatedAt"`
+	Project        string                 `json:"project"`
+	Status         string                 `json:"status"`
+	ExitCode       int                    `json:"exitCode"`
+	TotalMS        int64                  `json:"totalMs"`
+	Summary        sema.Summary           `json:"summary"`
+	ProjectLoadNS  int64                  `json:"projectLoadNs"`
+	SchemaLoadNS   int64                  `json:"schemaLoadNs"`
+	IndexBuildNS   int64                  `json:"indexBuildNs"`
+	OutputNS       int64                  `json:"outputNs"`
+	SemaPerf       checkSemaPerf          `json:"semaPerf"`
+	SemanticCache  checkSemanticCachePerf `json:"semanticCache"`
+	CPUProfilePath string                 `json:"cpuProfilePath,omitempty"`
+	MemProfilePath string                 `json:"memProfilePath,omitempty"`
+}
+
+type checkSemanticCachePerf struct {
+	Identity      semanticcache.Identity   `json:"identity"`
+	Source        semanticcache.Source     `json:"source,omitempty"`
+	Waited        bool                     `json:"waited,omitempty"`
+	MissReason    semanticcache.MissReason `json:"missReason,omitempty"`
+	RetainedBytes int64                    `json:"retainedBytes,omitempty"`
+	Evictions     uint64                   `json:"evictions,omitempty"`
 }
 
 type checkSemaPerf struct {
@@ -2104,16 +2167,75 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 		Total:   4,
 	})
 	var semaCounters *sema.PerfCounters
+	var semanticCachePerf checkSemanticCachePerf
 	if perfEnabled {
 		semaCounters = &sema.PerfCounters{Enabled: true}
 	}
-	result = sema.AnalyzeWithOptions(index, sema.AnalyzeOptions{
-		Diagnostics:                    true,
-		ExportTypes:                    true,
-		SuppressPerformanceDiagnostics: true,
-		PerfCounters:                   semaCounters,
-		BuildArtifacts:                 &buildArtifacts,
-	})
+	invokeCheckGenerationValidationHook()
+	if generationErr := typesys.ValidateBuildGeneration(index, &buildArtifacts); generationErr != nil {
+		diagnostics := append([]diagnostic.Diagnostic(nil), index.Diagnostics...)
+		diagnostics = append(diagnostics, diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "GLADEGEN001",
+			Message:  generationErr.Error(),
+		})
+		result = sema.Result{
+			Project: index.Project,
+			Summary: sema.Summary{
+				Types:       len(index.Types),
+				Triggers:    len(index.Triggers),
+				Objects:     len(index.Objects),
+				Diagnostics: len(diagnostics),
+			},
+			Diagnostics: diagnostics,
+		}
+	} else {
+		analyzeOptions := sema.AnalyzeOptions{
+			Diagnostics:                    true,
+			ExportTypes:                    true,
+			SuppressPerformanceDiagnostics: true,
+			PerfCounters:                   semaCounters,
+			BuildArtifacts:                 &buildArtifacts,
+		}
+		identity, identityErr := semanticcache.IdentityForBuild(index, &buildArtifacts, analyzeOptions)
+		if identityErr != nil {
+			return sema.Result{}, identityErr
+		}
+		cacheAllowed := apextest.ResolveDiskRuntimeCachePolicy(apextest.Options{NoDiskCache: opts.noCache}).Enabled
+		semanticCachePerf.Identity = identity
+		invokeCheckSemanticIdentityHook()
+		cachePath := filepath.Join(".glade", "semantic", "result-"+identity.OptionsFingerprint+".json")
+		cachedResult, access, cacheErr := checkSemanticResults.GetOrCompute(ctx, semanticcache.Request{
+			Identity:     identity,
+			ProjectRoot:  index.Project.Root,
+			RelativePath: cachePath,
+			NoDisk:       !cacheAllowed,
+			BypassMemory: !cacheAllowed,
+		}, func() (sema.Result, error) {
+			analyzed := sema.AnalyzeWithOptions(index, analyzeOptions)
+			if err := typesys.ValidateBuildGeneration(index, &buildArtifacts); err != nil {
+				return sema.Result{}, err
+			}
+			return analyzed, nil
+		})
+		semanticCachePerf.Source = access.Source
+		semanticCachePerf.Waited = access.Waited
+		semanticCachePerf.MissReason = access.DiskMissReason
+		semanticCachePerf.RetainedBytes = access.RetainedBytes
+		semanticCachePerf.Evictions = access.Evictions
+		if cacheErr != nil {
+			var mismatch *typesys.SourceSnapshotMismatchError
+			if !errors.As(cacheErr, &mismatch) {
+				return sema.Result{}, cacheErr
+			}
+			result = checkGenerationErrorResult(index, cacheErr)
+		} else if generationErr := typesys.ValidateBuildGeneration(index, &buildArtifacts); generationErr != nil {
+			checkSemanticResults.Evict(identity)
+			result = checkGenerationErrorResult(index, generationErr)
+		} else {
+			result = cachedResult
+		}
+	}
 	renderer.Render(cliui.Event{
 		Kind:    cliui.EventPhaseEnd,
 		Phase:   "check",
@@ -2197,6 +2319,7 @@ func runCheck(ctx context.Context, args []string, w io.Writer, progressW io.Writ
 			OutputNS:       outputNS,
 			TotalMS:        time.Since(totalStarted).Milliseconds(),
 			SemaPerf:       newCheckSemaPerf(*semaCounters),
+			SemanticCache:  semanticCachePerf,
 			CPUProfilePath: strings.TrimSpace(opts.cpuProfilePath),
 			MemProfilePath: strings.TrimSpace(opts.memProfilePath),
 		}); err != nil {
@@ -2220,6 +2343,7 @@ func parseCheckFlags(args []string) (checkOptions, error) {
 		Bool("progress-json", "").
 		Bool("no-progress", "").
 		Bool("quiet", "q").
+		Bool("no-cache", "").
 		Parse(args)
 	if err != nil {
 		return checkOptions{}, err
@@ -2242,8 +2366,28 @@ func parseCheckFlags(args []string) (checkOptions, error) {
 	opts.cpuProfilePath = parsed.String("cpu-profile")
 	opts.memProfilePath = parsed.String("mem-profile")
 	opts.perfJSONPath = parsed.String("perf-json")
+	opts.noCache = parsed.Bool("no-cache")
 	opts.progressMode = progressModeForFlags(opts.outputFormat == "json", parsed.Bool("progress"), parsed.Bool("progress-json"), parsed.Bool("no-progress") || parsed.Bool("quiet"))
 	return opts, nil
+}
+
+func checkGenerationErrorResult(index typesys.Index, generationErr error) sema.Result {
+	diagnostics := append([]diagnostic.Diagnostic(nil), index.Diagnostics...)
+	diagnostics = append(diagnostics, diagnostic.Diagnostic{
+		Severity: diagnostic.Error,
+		Code:     "GLADEGEN001",
+		Message:  generationErr.Error(),
+	})
+	return sema.Result{
+		Project: index.Project,
+		Summary: sema.Summary{
+			Types:       len(index.Types),
+			Triggers:    len(index.Triggers),
+			Objects:     len(index.Objects),
+			Diagnostics: len(diagnostics),
+		},
+		Diagnostics: diagnostics,
+	}
 }
 
 func newCheckSemaPerf(counters sema.PerfCounters) checkSemaPerf {

@@ -7,8 +7,13 @@
     "help:screenshot": "bash scripts/capture-help-screenshot-target.sh",
     "help:check": "node scripts/check-help-screenshots.mjs",
     "dev": "vitepress dev .",
-    "build": "npm run check:routes && npm run generate:editor-support -- --check && npm run help:check && vitepress build . && cp install.sh .vitepress/dist/install.sh",
-    "test": "npm run check:routes && npm run generate:editor-support -- --check && npm run help:check && node --test tests/*.test.mjs",
+    "verify": "npm run check:routes && npm run generate:editor-support -- --check && npm run help:check",
+    "test:unit": "node --test tests/*.test.mjs",
+    "test:release": "node --test scripts/release-check.test.mjs",
+    "build:site": "vitepress build . && cp install.sh .vitepress/dist/install.sh",
+    "release:check": "node scripts/release-check.mjs",
+    "build": "npm run verify && npm run build:site",
+    "test": "npm run verify && npm run test:unit",
     "preview": "vitepress preview ."
   },
   "devDependencies": {

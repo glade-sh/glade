@@ -55,7 +55,7 @@ def normalize(info):
     return info
 
 with open(archive, "wb") as raw:
-    with gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as compressed:
+    with gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0, compresslevel=6) as compressed:
         with tarfile.open(fileobj=compressed, mode="w") as tar:
             for current, dirs, files in os.walk(source):
                 dirs.sort()

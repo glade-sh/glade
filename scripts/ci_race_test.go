@@ -115,7 +115,7 @@ func TestCIRaceClassifierHighRiskSet(t *testing.T) {
 	}
 	want := []string{
 		"./internal/apextest", "./internal/gladecli", "./internal/playground",
-		"./internal/sema", "./internal/server", "./internal/startupcache", "./internal/storage",
+		"./internal/sema", "./internal/semanticcache", "./internal/server", "./internal/startupcache", "./internal/storage",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("high-risk packages = %v, want %v", got, want)
@@ -144,8 +144,8 @@ func TestCIRaceClassifierFullMatchesManifest(t *testing.T) {
 		}
 	}
 	sort.Strings(want)
-	if len(got) != 62 || !reflect.DeepEqual(got, want) {
-		t.Fatalf("full packages = %d/%v, want 62 exact manifest packages", len(got), got)
+	if len(got) != 64 || !reflect.DeepEqual(got, want) {
+		t.Fatalf("full packages = %d/%v, want 64 exact manifest packages", len(got), got)
 	}
 }
 
@@ -210,7 +210,7 @@ func TestCIRaceClassifierFallsBackToFullOnDiffFailure(t *testing.T) {
 	if err != nil {
 		t.Fatalf("diff failure did not fall back: %v\n%s", err, diagnostic)
 	}
-	if len(got) != 62 || !strings.Contains(diagnostic, "git diff failed") {
+	if len(got) != 64 || !strings.Contains(diagnostic, "git diff failed") {
 		t.Fatalf("diff failure selected %d packages without diagnostic: %s", len(got), diagnostic)
 	}
 }
@@ -225,7 +225,7 @@ func TestCIRaceClassifierFallsBackToFullOnGoDeletion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("deletion did not fall back: %v\n%s", err, diagnostic)
 	}
-	if len(got) != 62 || !strings.Contains(diagnostic, "deleted Go file") {
+	if len(got) != 64 || !strings.Contains(diagnostic, "deleted Go file") {
 		t.Fatalf("deletion selected %d packages without diagnostic: %s", len(got), diagnostic)
 	}
 }
@@ -240,8 +240,8 @@ func TestCIRaceClassifierFallsBackToFullOnNestedModuleChange(t *testing.T) {
 	if err != nil {
 		t.Fatalf("nested module change did not fall back: %v\n%s", err, diagnostic)
 	}
-	if len(got) != 62 {
-		t.Fatalf("nested module change selected %d packages, want full 62", len(got))
+	if len(got) != 64 {
+		t.Fatalf("nested module change selected %d packages, want full 64", len(got))
 	}
 }
 
@@ -266,7 +266,7 @@ esac
 	if err != nil {
 		t.Fatalf("graph failure did not fall back: %v\n%s", err, diagnostic)
 	}
-	if len(got) != 62 || !strings.Contains(diagnostic, "dependency graph failed") {
+	if len(got) != 64 || !strings.Contains(diagnostic, "dependency graph failed") {
 		t.Fatalf("graph failure selected %d packages without diagnostic: %s", len(got), diagnostic)
 	}
 }
@@ -309,6 +309,60 @@ func TestCIRaceWorkflowContract(t *testing.T) {
 	}
 	if strings.Contains(workflow, "scripts/ci-resource-run.sh") || strings.Contains(workflow, "go test -race") {
 		t.Fatal("race workflow bypasses the package race runner")
+	}
+	planJob := workflow[strings.Index(workflow, "  plan:"):strings.Index(workflow, "  race:")]
+	raceJob := workflow[strings.Index(workflow, "  race:"):strings.Index(workflow, "  race-apextest-a:")]
+	for _, marker := range []string{
+		"timeout-minutes: 15",
+		"name: Resolve race npm cache path",
+		"id: race-npm-cache",
+		"name: Restore race npm cache",
+		"id: race-npm-cache-restore",
+		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0",
+		"name: Install shared LWC toolchain",
+		"npm ci --prefix third_party/lwc",
+		"name: Save race npm cache",
+		"actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0",
+		"path: ${{ steps.race-npm-cache.outputs.dir }}",
+		"key: race-npm-v1-${{ runner.os }}-${{ runner.arch }}-22-${{ hashFiles('third_party/lwc/package-lock.json') }}",
+		"key: ${{ steps.race-npm-cache-restore.outputs.cache-primary-key }}",
+		"if: ${{ contains(fromJSON(steps.classify.outputs.non-apextest-packages), './internal/gladecli') }}",
+	} {
+		if !strings.Contains(planJob, marker) {
+			t.Errorf("race plan cache owner missing %q", marker)
+		}
+	}
+	if got := strings.Count(planJob, "actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0"); got != 1 {
+		t.Fatalf("race plan npm cache save count = %d, want one static owner", got)
+	}
+	if strings.Contains(planJob, "cache: npm") {
+		t.Fatal("race plan setup-node must not own an implicit npm cache")
+	}
+	if got := strings.Count(raceJob, "actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0"); got != 1 {
+		t.Fatalf("race Node setup count = %d, want one setup shared by all LWC consumers", got)
+	}
+	if strings.Contains(raceJob, "cache: npm") {
+		t.Fatal("race setup-node must not own an implicit npm cache")
+	}
+	for _, marker := range []string{
+		"name: Resolve npm cache path",
+		"id: npm-cache",
+		"name: Restore LWC npm cache",
+		"id: npm-cache-restore",
+		"actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0",
+		"path: ${{ steps.npm-cache.outputs.dir }}",
+		"key: race-npm-v1-${{ runner.os }}-${{ runner.arch }}-22-${{ hashFiles('third_party/lwc/package-lock.json') }}",
+	} {
+		if !strings.Contains(raceJob, marker) {
+			t.Errorf("race explicit npm cache missing %q", marker)
+		}
+	}
+	const lwcConsumers = `contains(fromJSON('["./internal/gladecli","./internal/gladehome","./internal/lwc/compile","./internal/lwcbrowser","./internal/server"]'), matrix.package)`
+	if got := strings.Count(raceJob, lwcConsumers); got != 4 {
+		t.Fatalf("race LWC consumer selector count = %d, want setup, path, restore, and install", got)
+	}
+	if strings.Contains(raceJob, "actions/cache/save") || strings.Contains(raceJob, "cache: npm") {
+		t.Fatal("dynamic race matrix must be restore-only for npm cache")
 	}
 }
 

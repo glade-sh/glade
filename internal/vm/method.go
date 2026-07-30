@@ -209,13 +209,7 @@ func (vm *VM) RegisterClass(class Class) error {
 		class.Constructors[i].IsConstructor = true
 	}
 	vm.storeClassAliases(class)
-	if vm.staticInitState == nil {
-		vm.staticInitState = make(map[string]staticInitState)
-	}
-	vm.staticInitState[class.Name] = staticInitUninitialized
-	if class.Namespace != "" && !strings.Contains(class.Name, ".") {
-		vm.staticInitState[class.Namespace+"."+class.Name] = staticInitUninitialized
-	}
+	vm.markStaticInitializationUninitialized(class)
 	return nil
 }
 
@@ -542,20 +536,14 @@ func (vm *VM) ensureClassInitialized(className string) error {
 	vm.staticInitState[canonical] = staticInitRunning
 	if superClass := vm.resolvedSuperClassName(class); superClass != "" {
 		if err := vm.ensureClassInitialized(superClass); err != nil {
-			vm.staticInitState[canonical] = staticInitUninitialized
+			delete(vm.staticInitState, canonical)
 			return err
 		}
 	}
 	if err := vm.runStaticInitializers(class); err != nil {
-		vm.staticInitState[canonical] = staticInitUninitialized
+		delete(vm.staticInitState, canonical)
 		return err
 	}
 	vm.staticInitState[canonical] = staticInitDone
-	if class.Namespace == "" {
-		vm.staticInitState[class.Name] = staticInitDone
-	}
-	if class.Namespace != "" && !strings.Contains(class.Name, ".") {
-		vm.staticInitState[class.Namespace+"."+class.Name] = staticInitDone
-	}
 	return nil
 }

@@ -18,6 +18,8 @@ import (
 	"github.com/glade-sh/glade/internal/packageartifact"
 	"github.com/glade-sh/glade/internal/project"
 	gladeschema "github.com/glade-sh/glade/internal/schema"
+	"github.com/glade-sh/glade/internal/sema"
+	"github.com/glade-sh/glade/internal/semanticcache"
 	"github.com/glade-sh/glade/internal/startupcache"
 	"github.com/glade-sh/glade/internal/storage"
 	"github.com/glade-sh/glade/internal/testreport"
@@ -34,6 +36,16 @@ func firstRunProblem(run testreport.Run) string {
 		}
 	}
 	return ""
+}
+
+func runCaseStatuses(run testreport.Run) map[string]testreport.Status {
+	statuses := make(map[string]testreport.Status)
+	for _, suite := range run.Suites {
+		for _, testCase := range suite.Cases {
+			statuses[testCase.MethodName] = testCase.Status
+		}
+	}
+	return statuses
 }
 
 func TestRunFailsClosedOnReservedIdentifierDiagnostic(t *testing.T) {
@@ -116,6 +128,900 @@ private class BadBodyTest {
 	}
 	if problem := firstRunProblem(run); !strings.Contains(problem, "constructs unknown type") || !strings.Contains(problem, "MissingHelper") {
 		t.Fatalf("problem = %q", problem)
+	}
+}
+
+func TestRunCasesContextUsesCapturedBuildArtifactsForSemanticDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "CapturedSemanticTest.cls")
+	writeFile(t, path, `
+@isTest
+private class CapturedSemanticTest {
+  @isTest
+  static void retainsCapturedSemanticFailure() {
+    Object value = new MissingCapturedHelper();
+    System.assertEquals(null, value);
+  }
+}
+`)
+	p := project.Project{Root: root, ApexFiles: []string{path}}
+	index, artifacts := typesys.BuildWithArtifacts(p, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index unexpectedly has errors: %#v", index.Diagnostics)
+	}
+	cases := Discover(index, Options{})
+	if len(cases) != 1 {
+		t.Fatalf("discovered cases = %#v", cases)
+	}
+
+	writeFile(t, path, `
+@isTest
+private class CapturedSemanticTest {
+  @isTest
+  static void retainsCapturedSemanticFailure() {
+    System.assertEquals(1, 1);
+  }
+}
+`)
+
+	run := RunCasesContext(context.Background(), index, Options{
+		NoDiskCache:    true,
+		BuildArtifacts: &artifacts,
+		SourceDigests:  artifacts.SourceDigests,
+	}, cases)
+	if summary := run.Summary(); summary.Total != 1 || summary.CompileErrors != 1 || summary.Passed != 0 || summary.Failed != 0 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+	if problem := firstRunProblem(run); !strings.Contains(problem, "source snapshot mismatch") {
+		t.Fatalf("problem = %q", problem)
+	}
+}
+
+func TestSemanticCacheDiskHitPreservesExactCompileFailure(t *testing.T) {
+	restoreDisk := EnableDiskCacheForTesting()
+	t.Cleanup(restoreDisk)
+	t.Cleanup(InvalidateRuntimeCaches)
+	InvalidateRuntimeCaches()
+
+	root := t.TempDir()
+	path := filepath.Join(root, "SemanticDiskTest.cls")
+	writeFile(t, path, `
+@isTest
+private class SemanticDiskTest {
+  @isTest static void fails() {
+    Object value = new MissingSemanticDiskType();
+    System.assertEquals(null, value);
+  }
+}
+`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	cases := Discover(index, Options{})
+	first := RunCasesContext(context.Background(), index, Options{BuildArtifacts: &artifacts, PerfCounters: true}, cases)
+	firstProblem := firstRunProblem(first)
+	if !strings.Contains(firstProblem, "MissingSemanticDiskType") {
+		t.Fatalf("first problem = %q", firstProblem)
+	}
+	firstCounters := SnapshotPerfCounters().Phases
+	if firstCounters.SemanticCacheMisses != 1 || firstCounters.SemanticDiskCacheHits != 0 {
+		t.Fatalf("first semantic counters = %#v", firstCounters)
+	}
+
+	InvalidateRuntimeCaches()
+	second := RunCasesContext(context.Background(), index, Options{BuildArtifacts: &artifacts, PerfCounters: true}, cases)
+	if got := firstRunProblem(second); got != firstProblem {
+		t.Fatalf("disk-hit problem changed\nwant: %q\n got: %q", firstProblem, got)
+	}
+	secondCounters := SnapshotPerfCounters().Phases
+	if secondCounters.SemanticDiskCacheHits != 1 || secondCounters.SemanticCacheMisses != 0 {
+		t.Fatalf("second semantic counters = %#v, want one disk hit and no analysis", secondCounters)
+	}
+}
+
+func TestSemanticNoCacheReadsWritesOrRetainsNothing(t *testing.T) {
+	restoreDisk := EnableDiskCacheForTesting()
+	t.Cleanup(restoreDisk)
+	t.Cleanup(InvalidateRuntimeCaches)
+	InvalidateRuntimeCaches()
+
+	root := t.TempDir()
+	path := filepath.Join(root, "SemanticNoCacheTest.cls")
+	writeFile(t, path, `@isTest private class SemanticNoCacheTest { @isTest static void passes() { System.assertEquals(1, 1); } }`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	cases := Discover(index, Options{})
+	options := sema.AnalyzeOptions{Diagnostics: true, SuppressPerformanceDiagnostics: true, BuildArtifacts: &artifacts}
+	identity, err := semanticcache.IdentityForBuild(semanticAnalysisIndex(index), &artifacts, options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cachePath := filepath.Join(root, semanticResultCachePath(identity))
+
+	for i := 0; i < 2; i++ {
+		run := RunCasesContext(context.Background(), index, Options{
+			BuildArtifacts: &artifacts,
+			NoDiskCache:    true,
+			PerfCounters:   true,
+		}, cases)
+		if summary := run.Summary(); summary.Passed != 1 {
+			t.Fatalf("run %d summary = %#v problem=%q", i, summary, firstRunProblem(run))
+		}
+		counters := SnapshotPerfCounters().Phases
+		if counters.SemanticCacheMisses != 1 || counters.SemanticMemoryCacheHits != 0 || counters.SemanticDiskCacheHits != 0 {
+			t.Fatalf("run %d semantic counters = %#v", i, counters)
+		}
+	}
+	if _, err := os.Stat(cachePath); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("no-cache semantic file stat = %v, want not exist", err)
+	}
+	if stats := semanticResults.Stats(); stats.Entries != 0 || stats.RetainedBytes != 0 {
+		t.Fatalf("no-cache retained semantic state = %#v", stats)
+	}
+	key := buildArtifactRuntimeKey(t, index, &artifacts)
+	semaDiagnosticsCacheMu.RLock()
+	_, retainedLegacyDiagnostics := semaDiagnosticsCache[key]
+	semaDiagnosticsCacheMu.RUnlock()
+	if retainedLegacyDiagnostics {
+		t.Fatal("no-cache artifact run retained legacy semantic diagnostics")
+	}
+}
+
+func TestSemanticGateRejectsSameSizeLiveEditWithoutCachingCleanGeneration(t *testing.T) {
+	restoreDisk := DisableDiskCacheForTesting()
+	t.Cleanup(restoreDisk)
+	t.Cleanup(InvalidateRuntimeCaches)
+	InvalidateRuntimeCaches()
+
+	root := t.TempDir()
+	path := filepath.Join(root, "SemanticGateRaceTest.cls")
+	sourceA := `
+@IsTest
+private class SemanticGateRaceTest {
+  @IsTest static void failsSemantically() {
+    Object value = new MissingSemanticGateType();
+    System.assertEquals(null, value);
+  }
+}
+`
+	sourceB := sameSizeApexSource(t, sourceA, `
+@IsTest
+private class SemanticGateRaceTest {
+  @IsTest static void failsSemantically() {
+    Object value = null;
+    System.assertEquals(null, value);
+  }
+}
+`)
+	writeFile(t, path, sourceA)
+	infoA, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := project.Project{Root: root, ApexFiles: []string{path}}
+	index, artifacts := typesys.BuildWithArtifacts(p, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	cases := Discover(index, Options{})
+	if len(cases) != 1 {
+		t.Fatalf("cases = %#v", cases)
+	}
+
+	identityReached := make(chan struct{})
+	resumeAnalysis := make(chan struct{})
+	runDone := make(chan testreport.Run, 1)
+	go func() {
+		runDone <- runCasesContextWithSemanticGateHooks(context.Background(), index, Options{
+			NoDiskCache:    true,
+			BuildArtifacts: &artifacts,
+		}, cases, semanticGateHooks{afterIdentity: func() {
+			close(identityReached)
+			<-resumeAnalysis
+		}})
+	}()
+	<-identityReached
+	writeFile(t, path, sourceB)
+	if err := os.Chtimes(path, infoA.ModTime(), infoA.ModTime()); err != nil {
+		t.Fatal(err)
+	}
+	close(resumeAnalysis)
+
+	traced := <-runDone
+	if summary := traced.Summary(); summary.Total != 1 || summary.CompileErrors != 1 || summary.Passed != 0 {
+		t.Fatalf("raced summary = %#v, problem=%q", summary, firstRunProblem(traced))
+	}
+	if problem := firstRunProblem(traced); !strings.Contains(problem, "source snapshot mismatch") {
+		t.Fatalf("raced problem = %q, want source snapshot mismatch instead of clean B", problem)
+	}
+	key := buildArtifactRuntimeKey(t, index, &artifacts)
+	semaDiagnosticsCacheMu.RLock()
+	_, semanticCachedDuringRace := semaDiagnosticsCache[key]
+	semaDiagnosticsCacheMu.RUnlock()
+	if semanticCachedDuringRace {
+		t.Fatal("raced semantic gate retained a cache entry for the live clean generation")
+	}
+	assertNoCompiledGenerationCaches(t, key)
+
+	writeFile(t, path, sourceA)
+	if err := os.Chtimes(path, infoA.ModTime(), infoA.ModTime()); err != nil {
+		t.Fatal(err)
+	}
+	restored := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, cases)
+	if summary := restored.Summary(); summary.Total != 1 || summary.CompileErrors != 1 || summary.Passed != 0 {
+		t.Fatalf("restored summary = %#v, problem=%q", summary, firstRunProblem(restored))
+	}
+	if problem := firstRunProblem(restored); !strings.Contains(problem, "MissingSemanticGateType") {
+		t.Fatalf("restored problem = %q, want captured A semantic diagnostic", problem)
+	}
+
+	semaDiagnosticsCacheMu.RLock()
+	_, semanticCached := semaDiagnosticsCache[key]
+	semaDiagnosticsCacheMu.RUnlock()
+	if semanticCached {
+		t.Fatal("no-cache restored run retained semantic diagnostics")
+	}
+	assertNoCompiledGenerationCaches(t, key)
+}
+
+func TestLegacySemanticGateCannotCacheSourceABAUnderCapturedKey(t *testing.T) {
+	t.Cleanup(InvalidateRuntimeCaches)
+	InvalidateRuntimeCaches()
+	root := t.TempDir()
+	path := filepath.Join(root, "SemanticABATest.cls")
+	sourceA := `public class SemanticABATest { public static void run() { Integer value = 1; } }`
+	sourceB := `public class SemanticABATest { public static void run() { Missing value = 1; } }`
+	if len(sourceA) != len(sourceB) {
+		t.Fatalf("ABA sources differ in size: %d != %d", len(sourceA), len(sourceB))
+	}
+	writeFile(t, path, sourceA)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	sources := newSourceCache()
+	generation, err := prepareRuntimeGeneration(index, nil, sources)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mutated := false
+	restored := false
+	firstErr := semanticCompileErrorWithHooks(context.Background(), index, nil, sources, generation, semanticGateHooks{
+		afterIdentity: func() {
+			mutated = true
+			writeFile(t, path, sourceB)
+		},
+		afterAnalysis: func() {
+			restored = true
+			writeFile(t, path, sourceA)
+		},
+	}, true, newRunPerfCounters(true))
+	if !mutated || !restored {
+		t.Fatalf("semantic ABA hooks mutated=%v restored=%v", mutated, restored)
+	}
+	if firstErr != nil {
+		var mismatch *SourceSnapshotMismatchError
+		if !errors.As(firstErr, &mismatch) {
+			t.Errorf("first semantic gate cached a non-A diagnostic: %v", firstErr)
+		}
+	}
+
+	freshSources := newSourceCache()
+	freshGeneration, err := prepareRuntimeGeneration(index, nil, freshSources)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if freshErr := semanticCompileErrorWithHooks(context.Background(), index, nil, freshSources, freshGeneration, semanticGateHooks{}, true, newRunPerfCounters(true)); freshErr != nil {
+		t.Errorf("fresh A semantic gate reused poisoned diagnostics: %v", freshErr)
+	}
+}
+
+func sameSizeApexSource(t *testing.T, wantSize string, source string) string {
+	t.Helper()
+	if len(source) > len(wantSize) {
+		t.Fatalf("source is %d bytes, want at most %d", len(source), len(wantSize))
+	}
+	if len(source) == len(wantSize) {
+		return source
+	}
+	return source + strings.Repeat(" ", len(wantSize)-len(source))
+}
+
+func assertNoCompiledGenerationCaches(t *testing.T, key runtimeCacheKey) {
+	t.Helper()
+	runtimeCacheMu.RLock()
+	_, runtimeCached := runtimeCache[key]
+	runtimeCacheMu.RUnlock()
+	if runtimeCached {
+		t.Fatalf("runtime cache retained clean generation key %q", key)
+	}
+	prefix := string(key) + "|"
+	setupCacheMu.RLock()
+	for cacheKey := range setupCache {
+		if strings.HasPrefix(cacheKey, prefix) {
+			setupCacheMu.RUnlock()
+			t.Fatalf("setup cache retained clean generation key %q", cacheKey)
+		}
+	}
+	setupCacheMu.RUnlock()
+	testCacheMu.RLock()
+	for cacheKey := range testCache {
+		if strings.HasPrefix(cacheKey, prefix) {
+			testCacheMu.RUnlock()
+			t.Fatalf("test cache retained clean generation key %q", cacheKey)
+		}
+	}
+	testCacheMu.RUnlock()
+}
+
+func buildArtifactRuntimeKey(t *testing.T, index typesys.Index, artifacts *typesys.BuildArtifacts) runtimeCacheKey {
+	t.Helper()
+	sources := newSourceCache()
+	if err := sources.seedBuildArtifacts(index, artifacts); err != nil {
+		t.Fatalf("seedBuildArtifacts() = %v", err)
+	}
+	base := runtimeKeyWithSourceDigests(index, artifacts.SourceDigests, os.ReadFile)
+	return runtimeKeyWithMetadataGeneration(base, sources.metadataGeneration())
+}
+
+func TestRunCasesContextRejectsIncompleteBuildArtifactsBeforeDiscovery(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "IncompleteSnapshotTest.cls")
+	writeFile(t, path, `
+@isTest
+private class IncompleteSnapshotTest {
+  @isTest static void runs() { System.assertEquals(1, 1); }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{path}}, gladeschema.Schema{})
+
+	run := RunCasesContext(context.Background(), index, Options{
+		NoDiskCache:    true,
+		BuildArtifacts: &typesys.BuildArtifacts{},
+	}, nil)
+	if summary := run.Summary(); summary.Total != 1 || summary.CompileErrors != 1 || summary.Passed != 0 || summary.Failed != 0 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+	if !strings.Contains(firstRunProblem(run), "source snapshot") {
+		t.Fatalf("problem = %q, want source snapshot failure", firstRunProblem(run))
+	}
+}
+
+func TestValidateBuildArtifactsRequiresOnlySourceBackedApexSymbols(t *testing.T) {
+	root := t.TempDir()
+	testPath := filepath.Join(root, "SnapshotBackedTest.cls")
+	dataWeavePath := filepath.Join(root, "helloWorld.dwl")
+	flowPath := filepath.Join(root, "DemoFlow.flow-meta.xml")
+	artifactPath := filepath.Join(root, "external.glade-package.json")
+	writeFile(t, testPath, `@isTest private class SnapshotBackedTest { @isTest static void passes() { System.assertEquals(1, 1); } }`)
+	writeFile(t, dataWeavePath, "%dw 2.0\noutput application/json\n---\n{}")
+	writeFile(t, flowPath, "<Flow/>")
+	writeFile(t, artifactPath, `{
+  "namespace": "external",
+  "version": "1.0",
+  "apexTypes": [{
+    "kind": "class",
+    "name": "SerializedDependency",
+    "file": "serialized/external/SerializedDependency.cls",
+    "modifiers": ["global"]
+  }]
+}`)
+
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{
+		Root:           root,
+		ApexFiles:      []string{testPath},
+		DataWeaveFiles: []string{dataWeavePath},
+		FlowFiles:      []string{flowPath},
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace:    "external",
+			ArtifactPath: artifactPath,
+			Version:      "1.0",
+			Status:       "loaded",
+		}},
+	}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	for _, name := range []string{
+		"DataWeaveScriptResource.helloWorld",
+		"Flow.Interview.DemoFlow",
+		"SerializedDependency",
+	} {
+		var found typesys.TypeSymbol
+		for _, typ := range index.Types {
+			if typ.Name == name {
+				found = typ
+				break
+			}
+		}
+		if found.File == "" {
+			t.Fatalf("missing generated or artifact type %q in %#v", name, index.Types)
+		}
+		if found.SourceBacked {
+			t.Fatalf("non-Apex source type %q marked source-backed: %#v", name, found)
+		}
+	}
+	if err := validateBuildArtifacts(index, &artifacts); err != nil {
+		t.Fatalf("validateBuildArtifacts() = %v", err)
+	}
+}
+
+func TestRunCasesContextMixedGeneratedSymbolsRejectsMutatedApexSnapshotWithoutCachePublish(t *testing.T) {
+	InvalidateRuntimeCaches()
+	t.Cleanup(InvalidateRuntimeCaches)
+	root := t.TempDir()
+	helperPath := filepath.Join(root, "SnapshotMixedHelper.cls")
+	testPath := filepath.Join(root, "SnapshotMixedTest.cls")
+	dataWeavePath := filepath.Join(root, "mixed.dwl")
+	flowPath := filepath.Join(root, "MixedFlow.flow-meta.xml")
+	artifactPath := filepath.Join(root, "mixed.glade-package.json")
+	writeFile(t, helperPath, `public class SnapshotMixedHelper { public static Integer value() { return 1; } }`)
+	writeFile(t, testPath, `@isTest private class SnapshotMixedTest { @isTest static void passes() { System.assertEquals(1, SnapshotMixedHelper.value()); } }`)
+	writeFile(t, dataWeavePath, "%dw 2.0\noutput application/json\n---\n{}")
+	writeFile(t, flowPath, "<Flow/>")
+	writeFile(t, artifactPath, `{
+  "namespace": "external",
+  "version": "1.0",
+  "apexTypes": [{
+    "kind": "class",
+    "name": "SerializedMixedDependency",
+    "file": "serialized/external/SerializedMixedDependency.cls",
+    "modifiers": ["global"]
+  }]
+}`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{
+		Root:           root,
+		ApexFiles:      []string{helperPath, testPath},
+		DataWeaveFiles: []string{dataWeavePath},
+		FlowFiles:      []string{flowPath},
+		ManagedPackageDependencies: []project.ManagedPackageDependency{{
+			Namespace:    "external",
+			ArtifactPath: artifactPath,
+			Version:      "1.0",
+			Status:       "loaded",
+		}},
+	}, gladeschema.Schema{})
+	if index.HasErrors() {
+		t.Fatalf("index diagnostics = %#v", index.Diagnostics)
+	}
+	staleKey := buildArtifactRuntimeKey(t, index, &artifacts)
+	writeFile(t, helperPath, `public class SnapshotMixedHelper { public static Integer value() { return 2; } }`)
+	actualKey := runtimeCacheKey(RuntimeContentKey(index, nil))
+
+	run := RunCasesContext(context.Background(), index, Options{
+		NoDiskCache:    true,
+		BuildArtifacts: &artifacts,
+		SourceDigests:  artifacts.SourceDigests,
+	}, Discover(index, Options{}))
+	if summary := run.Summary(); summary.Total != 1 || summary.CompileErrors != 1 || summary.Failed != 0 || summary.Passed != 0 {
+		t.Fatalf("summary = %#v, problem = %q", summary, firstRunProblem(run))
+	}
+	if problem := firstRunProblem(run); !strings.Contains(problem, "source snapshot mismatch") {
+		t.Fatalf("problem = %q", problem)
+	}
+	runtimeCacheMu.RLock()
+	_, stalePublished := runtimeCache[staleKey]
+	_, actualPublished := runtimeCache[actualKey]
+	runtimeCacheMu.RUnlock()
+	if stalePublished || actualPublished {
+		t.Fatalf("mutated runtime cache published stale=%v actual=%v", stalePublished, actualPublished)
+	}
+}
+
+func TestRunCasesContextArtifactSnapshotRejectsMutationBeforeWarmRuntimeReuse(t *testing.T) {
+	restoreDisk := DisableDiskCacheForTesting()
+	t.Cleanup(restoreDisk)
+	t.Cleanup(InvalidateRuntimeCaches)
+	InvalidateRuntimeCaches()
+	root := t.TempDir()
+	helperPath := filepath.Join(root, "WarmArtifactHelper.cls")
+	testPath := filepath.Join(root, "WarmArtifactTest.cls")
+	writeFile(t, helperPath, `public class WarmArtifactHelper { public static Integer value() { return 1; } }`)
+	writeFile(t, testPath, `@isTest private class WarmArtifactTest { @isTest static void runs() { System.assertEquals(1, WarmArtifactHelper.value()); } }`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{helperPath, testPath}}, gladeschema.Schema{})
+	cases := Discover(index, Options{})
+	first := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, cases)
+	if summary := first.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("initial summary = %#v problem=%q", summary, firstRunProblem(first))
+	}
+
+	writeFile(t, helperPath, `public class WarmArtifactHelper { public static Integer value() { return 2; } }`)
+	ResetPerfCounters()
+	mutated := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, PerfCounters: true, BuildArtifacts: &artifacts}, cases)
+	if summary := mutated.Summary(); summary.Total != 1 || summary.CompileErrors != 1 || summary.Passed != 0 {
+		t.Fatalf("mutated summary = %#v problem=%q", summary, firstRunProblem(mutated))
+	}
+	if problem := firstRunProblem(mutated); !strings.Contains(problem, "source snapshot mismatch") {
+		t.Fatalf("mutated problem = %q", problem)
+	}
+	if phases := SnapshotPerfCounters().Phases; phases.MemoryCacheHits != 0 || phases.DiskCacheHits != 0 {
+		t.Fatalf("mutated run reused runtime cache: %#v", phases)
+	}
+}
+
+func TestBuildArtifactRuntimeUsesCapturedSourceAndEffectiveAPIVersion(t *testing.T) {
+	restoreDisk := DisableDiskCacheForTesting()
+	t.Cleanup(restoreDisk)
+	t.Cleanup(InvalidateRuntimeCaches)
+	InvalidateRuntimeCaches()
+	root := t.TempDir()
+	helperPath := filepath.Join(root, "CapturedRuntimeHelper.cls")
+	testPath := filepath.Join(root, "CapturedRuntimeTest.cls")
+	writeFile(t, helperPath, `public class CapturedRuntimeHelper { public static Integer value() { return 1; } }`)
+	writeFile(t, helperPath+"-meta.xml", `<ApexClass><apiVersion>61.0</apiVersion></ApexClass>`)
+	writeFile(t, testPath, `@isTest private class CapturedRuntimeTest { @isTest static void runs() { System.assertEquals(1, CapturedRuntimeHelper.value()); } }`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{helperPath, testPath}}, gladeschema.Schema{})
+	writeFile(t, helperPath+"-meta.xml", `<ApexClass><apiVersion>62.0</apiVersion></ApexClass>`)
+	run := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, Discover(index, Options{}))
+	if summary := run.Summary(); summary.Total != 1 || summary.CompileErrors != 1 || summary.Passed != 0 {
+		t.Fatalf("metadata-mutated summary = %#v problem=%q", summary, firstRunProblem(run))
+	}
+	if problem := firstRunProblem(run); !strings.Contains(problem, "source snapshot mismatch") {
+		t.Fatalf("metadata-mutated problem = %q", problem)
+	}
+	key := buildArtifactRuntimeKey(t, index, &artifacts)
+	runtimeCacheMu.RLock()
+	_, cached := runtimeCache[key]
+	runtimeCacheMu.RUnlock()
+	if cached {
+		t.Fatalf("metadata-mutated run published runtime key %q", key)
+	}
+
+	sources := newSourceCache()
+	sources.bindSourceDigests(artifacts.SourceDigests)
+	if err := sources.seedBuildArtifacts(index, &artifacts); err != nil {
+		t.Fatalf("seedBuildArtifacts() = %v", err)
+	}
+	writeFile(t, helperPath, `public class CapturedRuntimeHelper { public static Integer value() { return 2; } }`)
+	methods := compileProjectMethods(index, sources)
+	var method vm.Method
+	for _, candidate := range methods {
+		if candidate.Name == "CapturedRuntimeHelper.value" {
+			method = candidate
+			break
+		}
+	}
+	if method.Name == "" {
+		t.Fatalf("captured method missing: %#v", methods)
+	}
+	if method.APIVersion != "61.0" {
+		t.Fatalf("captured method API version = %q, want 61.0", method.APIVersion)
+	}
+	if source, err := sources.read(helperPath); err != nil || !strings.Contains(source, "return 1") {
+		t.Fatalf("captured runtime source = %q, %v", source, err)
+	}
+}
+
+func TestBuildArtifactSnapshotRejectsMutationAtSemanticAndRuntimeCacheBoundaries(t *testing.T) {
+	tests := []struct {
+		name  string
+		stage string
+		warm  bool
+	}{
+		{name: "semantic cache hit", stage: "semantic_after_initial_validation", warm: true},
+		{name: "semantic cache publication", stage: "semantic_before_cache_publication"},
+		{name: "runtime cache hit", stage: "runtime_after_initial_validation", warm: true},
+		{name: "runtime cache publication", stage: "runtime_after_initial_validation"},
+		{name: "setup cache hit", stage: "setup_before_cache_return", warm: true},
+		{name: "setup cache publication", stage: "setup_before_cache_publication"},
+		{name: "test cache hit", stage: "test_before_cache_return", warm: true},
+		{name: "test cache publication", stage: "test_before_cache_publication"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			restoreDisk := DisableDiskCacheForTesting()
+			t.Cleanup(restoreDisk)
+			t.Cleanup(InvalidateRuntimeCaches)
+			InvalidateRuntimeCaches()
+			root := t.TempDir()
+			helperPath := filepath.Join(root, "BoundaryHelper.cls")
+			testPath := filepath.Join(root, "BoundaryTest.cls")
+			writeFile(t, helperPath, `public class BoundaryHelper { public static Integer value() { return 1; } }`)
+			writeFile(t, testPath, `@isTest private class BoundaryTest { @isTest static void runs() { System.assertEquals(1, BoundaryHelper.value()); } }`)
+			index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{helperPath, testPath}}, gladeschema.Schema{})
+			cases := Discover(index, Options{})
+			if tt.warm {
+				warm := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, cases)
+				if summary := warm.Summary(); summary.Total != 1 || summary.Passed != 1 {
+					t.Fatalf("warm summary = %#v problem=%q", summary, firstRunProblem(warm))
+				}
+			}
+			mutated := false
+			t.Cleanup(setSnapshotValidationHookForTesting(func(stage string) {
+				if stage == tt.stage && !mutated {
+					mutated = true
+					writeFile(t, helperPath, `public class BoundaryHelper { public static Integer value() { return 2; } }`)
+				}
+			}))
+			result := RunCasesContext(context.Background(), index, Options{NoDiskCache: true, BuildArtifacts: &artifacts}, cases)
+			if !mutated {
+				t.Fatalf("snapshot hook did not run at %q", tt.stage)
+			}
+			if summary := result.Summary(); summary.Total != 1 || summary.CompileErrors != 1 || summary.Passed != 0 {
+				t.Fatalf("result summary = %#v problem=%q", summary, firstRunProblem(result))
+			}
+			if problem := firstRunProblem(result); !strings.Contains(problem, "source snapshot mismatch") {
+				t.Fatalf("result problem = %q", problem)
+			}
+			key := buildArtifactRuntimeKey(t, index, &artifacts)
+			runtimeCacheMu.RLock()
+			_, runtimeCached := runtimeCache[key]
+			runtimeCacheMu.RUnlock()
+			if runtimeCached {
+				t.Fatal("runtime cache retained or published a mismatched snapshot")
+			}
+			semaDiagnosticsCacheMu.RLock()
+			_, semaCached := semaDiagnosticsCache[key]
+			semaDiagnosticsCacheMu.RUnlock()
+			if semaCached {
+				t.Fatal("semantic cache retained or published a mismatched snapshot")
+			}
+			prefix := string(key) + "|"
+			setupCacheMu.RLock()
+			for cacheKey := range setupCache {
+				if strings.HasPrefix(cacheKey, prefix) {
+					setupCacheMu.RUnlock()
+					t.Fatalf("setup cache retained mismatched snapshot key %q", cacheKey)
+				}
+			}
+			setupCacheMu.RUnlock()
+			testCacheMu.RLock()
+			for cacheKey := range testCache {
+				if strings.HasPrefix(cacheKey, prefix) {
+					testCacheMu.RUnlock()
+					t.Fatalf("test cache retained mismatched snapshot key %q", cacheKey)
+				}
+			}
+			testCacheMu.RUnlock()
+		})
+	}
+}
+
+func TestBuildArtifactSnapshotMismatchClearsDerivedAndDiskCaches(t *testing.T) {
+	restoreDisk := EnableDiskCacheForTesting()
+	t.Cleanup(restoreDisk)
+	t.Cleanup(InvalidateRuntimeCaches)
+	InvalidateRuntimeCaches()
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	helperPath := filepath.Join(root, "force-app", "main", "default", "classes", "DiskBoundaryHelper.cls")
+	testPath := filepath.Join(root, "force-app", "main", "default", "classes", "DiskBoundaryTest.cls")
+	writeFile(t, helperPath, `public class DiskBoundaryHelper { public static Integer value() { return 1; } }`)
+	writeFile(t, testPath, `@isTest private class DiskBoundaryTest { @isTest static void runs() { System.assertEquals(1, DiskBoundaryHelper.value()); } }`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index, artifacts := typesys.BuildWithArtifacts(p, gladeschema.Schema{})
+	cases := Discover(index, Options{})
+	warm := RunCasesContext(context.Background(), index, Options{BuildArtifacts: &artifacts}, cases)
+	if summary := warm.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("warm summary = %#v problem=%q", summary, firstRunProblem(warm))
+	}
+	if entry, err := startupcache.Read(root, startupcache.SubdirTest); err != nil || entry == nil {
+		t.Fatalf("warm disk runtime = %#v, %v", entry, err)
+	}
+
+	writeFile(t, helperPath, `public class DiskBoundaryHelper { public static Integer value() { return 2; } }`)
+	mutated := RunCasesContext(context.Background(), index, Options{BuildArtifacts: &artifacts}, cases)
+	if summary := mutated.Summary(); summary.Total != 1 || summary.CompileErrors != 1 || summary.Passed != 0 {
+		t.Fatalf("mutated summary = %#v problem=%q", summary, firstRunProblem(mutated))
+	}
+	if entry, err := startupcache.Read(root, startupcache.SubdirTest); err != nil || entry != nil {
+		t.Fatalf("mismatched disk runtime = %#v, %v", entry, err)
+	}
+}
+
+func TestBuildArtifactSemanticGateDoesNotReuseRestoredLegacyMetadataGeneration(t *testing.T) {
+	t.Cleanup(InvalidateRuntimeCaches)
+	InvalidateRuntimeCaches()
+	root := t.TempDir()
+	helperPath := filepath.Join(root, "SemanticMetadataHelper.cls")
+	metadataPath := helperPath + "-meta.xml"
+	writeFile(t, helperPath, `public class SemanticMetadataHelper { public static Integer value() { return 1; } }`)
+	writeFile(t, metadataPath, `<ApexClass><apiVersion>61.0</apiVersion></ApexClass>`)
+	index, artifacts := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{helperPath}}, gladeschema.Schema{})
+
+	writeFile(t, metadataPath, `<ApexClass><apiVersion>62.0</apiVersion></ApexClass>`)
+	legacySources := newSourceCache()
+	legacyGeneration, err := prepareRuntimeGeneration(index, nil, legacySources)
+	if err != nil {
+		t.Fatal(err)
+	}
+	legacyCounters := newRunPerfCounters(true)
+	if err := semanticCompileErrorWithHooks(context.Background(), index, nil, legacySources, legacyGeneration, semanticGateHooks{}, true, legacyCounters); err != nil {
+		t.Fatal(err)
+	}
+	if phases := snapshotPerfCounters(legacyCounters).Phases; phases.SemanticCacheMisses != 1 || phases.SemanticMemoryCacheHits != 0 {
+		t.Fatalf("legacy semantic cache counters = %#v, want one miss", phases)
+	}
+
+	writeFile(t, metadataPath, `<ApexClass><apiVersion>61.0</apiVersion></ApexClass>`)
+	artifactSources := newSourceCache()
+	if err := artifactSources.seedBuildArtifacts(index, &artifacts); err != nil {
+		t.Fatal(err)
+	}
+	artifactGeneration, err := prepareRuntimeGeneration(index, artifacts.SourceDigests, artifactSources)
+	if err != nil {
+		t.Fatal(err)
+	}
+	artifactCounters := newRunPerfCounters(true)
+	if err := semanticCompileErrorWithHooks(context.Background(), index, &artifacts, artifactSources, artifactGeneration, semanticGateHooks{}, true, artifactCounters); err != nil {
+		t.Fatal(err)
+	}
+	if phases := snapshotPerfCounters(artifactCounters).Phases; phases.SemanticCacheMisses != 1 || phases.SemanticMemoryCacheHits != 0 {
+		t.Fatalf("artifact semantic cache counters = %#v, want an authority-isolated miss", phases)
+	}
+}
+
+func TestRuntimeDiskPublicationRejectsLiveMetadataMutation(t *testing.T) {
+	restoreDisk := EnableDiskCacheForTesting()
+	t.Cleanup(restoreDisk)
+	t.Cleanup(InvalidateRuntimeCaches)
+	InvalidateRuntimeCaches()
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	helperPath := filepath.Join(root, "force-app", "main", "default", "classes", "DiskMetadataHelper.cls")
+	metadataPath := helperPath + "-meta.xml"
+	writeFile(t, helperPath, `public class DiskMetadataHelper { public static Integer value() { return 1; } }`)
+	writeFile(t, metadataPath, `<ApexClass><apiVersion>61.0</apiVersion></ApexClass>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	index, artifacts := typesys.BuildWithArtifacts(p, gladeschema.Schema{})
+
+	mutated := false
+	t.Cleanup(setSnapshotValidationHookForTesting(func(stage string) {
+		if stage == "runtime_before_disk_cache_publication" && !mutated {
+			mutated = true
+			writeFile(t, metadataPath, `<ApexClass><apiVersion>62.0</apiVersion></ApexClass>`)
+		}
+	}))
+	_, _, err = runtimeFromIndexWithSourceDigests(index, artifacts.SourceDigests, newSourceCache(), true)
+	if !mutated {
+		t.Fatal("runtime did not reach disk cache publication")
+	}
+	var mismatch *SourceSnapshotMismatchError
+	if !errors.As(err, &mismatch) {
+		t.Fatalf("runtimeFromIndexWithSourceDigests() error = %T %v, want SourceSnapshotMismatchError", err, err)
+	}
+	if mismatch.File != metadataPath {
+		t.Fatalf("mismatch file = %q, want %q", mismatch.File, metadataPath)
+	}
+	if entry, readErr := startupcache.Read(root, startupcache.SubdirTest); readErr != nil || entry != nil {
+		t.Fatalf("mismatched disk runtime = %#v, %v", entry, readErr)
+	}
+}
+
+func TestLegacyRuntimeMemoryCacheCannotPublishSourceABAUnderCapturedKey(t *testing.T) {
+	t.Cleanup(InvalidateRuntimeCaches)
+	InvalidateRuntimeCaches()
+	fixture := newRuntimeTransitionFixture(t)
+	index, _ := fixture.fullIndex(t)
+	sourceA := `public class ChangedOwner { public static Integer value() { return 1; } }`
+	sourceB := `public class ChangedOwner { public static Integer value() { return 2; } }`
+	mutated := false
+	restored := false
+	restoreHook := setSnapshotValidationHookForTesting(func(stage string) {
+		switch {
+		case stage == "runtime_after_initial_validation" && !mutated:
+			mutated = true
+			writeFile(t, fixture.changed, sourceB)
+		case stage == "runtime_before_memory_cache_publication" && mutated && !restored:
+			restored = true
+			writeFile(t, fixture.changed, sourceA)
+		}
+	})
+
+	_, first, firstErr := runtimeFromIndexWithSourceDigests(index, nil, newSourceCache(), false)
+	restoreHook()
+	if !mutated || !restored {
+		t.Fatalf("source ABA hooks mutated=%v restored=%v", mutated, restored)
+	}
+	if firstErr == nil {
+		if got := transitionMethod(t, first.Methods, "ChangedOwner", "value").Program.Source; !strings.Contains(got, "return 1") {
+			t.Fatalf("first runtime compiled source outside captured generation: %q", got)
+		}
+	} else {
+		var mismatch *SourceSnapshotMismatchError
+		if !errors.As(firstErr, &mismatch) {
+			t.Fatalf("first runtime error = %T %v, want source mismatch", firstErr, firstErr)
+		}
+	}
+
+	_, second, err := runtimeFromIndexWithSourceDigests(index, nil, newSourceCache(), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := transitionMethod(t, second.Methods, "ChangedOwner", "value").Program.Source; !strings.Contains(got, "return 1") {
+		t.Fatalf("memory cache reloaded poisoned source generation: %q", got)
+	}
+}
+
+func TestLegacyRuntimeDiskCacheCannotPersistSourceABAUnderCapturedKey(t *testing.T) {
+	restoreDisk := EnableDiskCacheForTesting()
+	t.Cleanup(restoreDisk)
+	t.Cleanup(InvalidateRuntimeCaches)
+	InvalidateRuntimeCaches()
+	fixture := newRuntimeTransitionFixture(t)
+	index, _ := fixture.fullIndex(t)
+	sourceA := `public class ChangedOwner { public static Integer value() { return 1; } }`
+	sourceB := `public class ChangedOwner { public static Integer value() { return 2; } }`
+	mutated := false
+	restored := false
+	restoreHook := setSnapshotValidationHookForTesting(func(stage string) {
+		switch {
+		case stage == "runtime_after_initial_validation" && !mutated:
+			mutated = true
+			writeFile(t, fixture.changed, sourceB)
+		case stage == "runtime_before_memory_cache_publication" && mutated && !restored:
+			restored = true
+			writeFile(t, fixture.changed, sourceA)
+		}
+	})
+
+	_, _, firstErr := runtimeFromIndexWithSourceDigests(index, nil, newSourceCache(), true)
+	restoreHook()
+	if !mutated || !restored {
+		t.Fatalf("source ABA hooks mutated=%v restored=%v", mutated, restored)
+	}
+	if firstErr != nil {
+		var mismatch *SourceSnapshotMismatchError
+		if !errors.As(firstErr, &mismatch) {
+			t.Fatalf("first runtime error = %T %v, want source mismatch", firstErr, firstErr)
+		}
+	}
+
+	InvalidateRuntimeCaches()
+	_, restoredRuntime, err := runtimeFromIndexWithSourceDigests(index, nil, newSourceCache(), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := transitionMethod(t, restoredRuntime.Methods, "ChangedOwner", "value").Program.Source; !strings.Contains(got, "return 1") {
+		t.Fatalf("disk cache reloaded poisoned source generation: %q", got)
+	}
+}
+
+func TestCompileProjectRuntimeDoesNotReadNonSourceBackedSymbolFiles(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "missing")
+	dataWeave := typesys.TypeSymbol{
+		Kind: apexast.DeclarationClass,
+		Name: "DataWeaveScriptResource.Generated",
+		File: filepath.Join(missing, "Generated.dwl"),
+		Members: []typesys.MemberSymbol{{
+			Kind: apexast.DeclarationMethod, Name: "execute", Type: "DataWeave.Result", Modifiers: []string{"public", "passive-generated"},
+		}},
+	}
+	flow := typesys.TypeSymbol{
+		Kind:       apexast.DeclarationClass,
+		Name:       "Flow.Interview.Generated",
+		File:       filepath.Join(missing, "Generated.flow-meta.xml"),
+		SuperClass: "Flow.Interview",
+		Members: []typesys.MemberSymbol{{
+			Kind: apexast.DeclarationConstructor, Name: "Generated", Modifiers: []string{"public"},
+		}},
+	}
+	artifact := typesys.TypeSymbol{
+		Kind:     apexast.DeclarationClass,
+		Name:     "SerializedDependency",
+		File:     filepath.Join(missing, "SerializedDependency.cls"),
+		Artifact: true,
+		Members:  []typesys.MemberSymbol{{Kind: apexast.DeclarationConstructor, Name: "SerializedDependency", Modifiers: []string{"global"}}},
+	}
+	index := typesys.Index{Types: []typesys.TypeSymbol{dataWeave, flow, artifact}}
+	methods := compileProjectMethods(index, newSourceCache())
+	classes := compileProjectClasses(index, methods, newSourceCache())
+	byName := make(map[string]vm.Class, len(classes))
+	var names []string
+	for _, class := range classes {
+		byName[class.Name] = class
+		names = append(names, class.Name)
+	}
+	for _, name := range []string{dataWeave.Name, flow.Name, artifact.Name} {
+		if _, ok := byName[name]; !ok {
+			t.Fatalf("runtime class names = %#v, missing %s", names, name)
+		}
+	}
+	if len(byName[artifact.Name].Constructors) != 1 || byName[artifact.Name].Constructors[0].Unsupported == "" {
+		t.Fatalf("artifact runtime class = %#v, want unsupported constructor", byName[artifact.Name])
 	}
 }
 
@@ -281,9 +1187,9 @@ func TestRuntimeKeyIncludesSemanticMetadata(t *testing.T) {
 	}
 }
 
-func TestRunWithSourceDigestsPersistsExactV5RuntimeKey(t *testing.T) {
-	if testRuntimeCacheABI != "apextest-runtime-v5" {
-		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v5", testRuntimeCacheABI)
+func TestRunWithSourceDigestsPersistsExactV6RuntimeKey(t *testing.T) {
+	if testRuntimeCacheABI != "apextest-runtime-v6" {
+		t.Fatalf("test runtime ABI = %q, want apextest-runtime-v6", testRuntimeCacheABI)
 	}
 	wasDisabled := disableDiskCache.Load()
 	disableDiskCache.Store(false)
@@ -518,7 +1424,7 @@ func TestRunWithSourceDigestsRejectsLazySourceMutationWithoutCachePoison(t *test
 	}
 }
 
-func TestRunWithSourceDigestsFullyWarmSkipsSourceReread(t *testing.T) {
+func TestRunWithSourceDigestsFullyWarmRejectsDeletedSource(t *testing.T) {
 	restoreDisk := DisableDiskCacheForTesting()
 	t.Cleanup(restoreDisk)
 	t.Cleanup(InvalidateRuntimeCaches)
@@ -540,11 +1446,50 @@ func TestRunWithSourceDigestsFullyWarmSkipsSourceReread(t *testing.T) {
 	}
 	ResetPerfCounters()
 	warm := Run(index, Options{SourceDigests: artifacts.SourceDigests, PerfCounters: true})
-	if summary := warm.Summary(); summary.Total != 1 || summary.Passed != 1 {
+	if summary := warm.Summary(); summary.Total != 1 || summary.CompileErrors != 1 || summary.Passed != 0 {
 		t.Fatalf("fully warm summary = %#v problem=%q", summary, firstRunProblem(warm))
 	}
-	if phases := SnapshotPerfCounters().Phases; phases.MemoryCacheHits != 1 || phases.CacheMisses != 0 {
-		t.Fatalf("fully warm phases = %#v", phases)
+	if problem := firstRunProblem(warm); !strings.Contains(problem, "source snapshot mismatch") {
+		t.Fatalf("fully warm problem = %q", problem)
+	}
+}
+
+func TestCompileProjectRuntimeWithIncompleteSourceDigestsFailsClosed(t *testing.T) {
+	InvalidateRuntimeCaches()
+	t.Cleanup(InvalidateRuntimeCaches)
+	root := t.TempDir()
+	first := filepath.Join(root, "First.cls")
+	second := filepath.Join(root, "Second.cls")
+	writeFile(t, first, "public class First {}\n")
+	writeFile(t, second, "public class Second {}\n")
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{first, second}}, gladeschema.Schema{})
+	_, partial := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{first}}, gladeschema.Schema{})
+
+	_, err := CompileProjectRuntimeForRequestWithSourceDigests(index, partial.SourceDigests)
+	var mismatch *SourceSnapshotMismatchError
+	if !errors.As(err, &mismatch) {
+		t.Fatalf("CompileProjectRuntimeForRequestWithSourceDigests() error = %T %v, want SourceSnapshotMismatchError", err, err)
+	}
+	if !strings.Contains(mismatch.Error(), "incomplete") {
+		t.Fatalf("mismatch = %v, want incomplete source snapshot", mismatch)
+	}
+}
+
+func TestRegisterProjectRuntimeForRequestWithSourceDigestsRejectsIncompleteSnapshot(t *testing.T) {
+	InvalidateRuntimeCaches()
+	t.Cleanup(InvalidateRuntimeCaches)
+	root := t.TempDir()
+	first := filepath.Join(root, "First.cls")
+	second := filepath.Join(root, "Second.cls")
+	writeFile(t, first, "public class First {}\n")
+	writeFile(t, second, "public class Second {}\n")
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{first, second}}, gladeschema.Schema{})
+	_, partial := typesys.BuildWithArtifacts(project.Project{Root: root, ApexFiles: []string{first}}, gladeschema.Schema{})
+
+	err := RegisterProjectRuntimeForRequestWithSourceDigests(vm.New(nil), index, partial.SourceDigests)
+	var mismatch *SourceSnapshotMismatchError
+	if !errors.As(err, &mismatch) {
+		t.Fatalf("RegisterProjectRuntimeForRequestWithSourceDigests() error = %T %v, want SourceSnapshotMismatchError", err, err)
 	}
 }
 
@@ -796,6 +1741,81 @@ private class BillingTest {
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v problem=%q run=%#v", got, firstRunProblem(run), run)
+	}
+}
+
+func TestCapturedPackagePartialShimUsesBodyAndKeepsUnmatchedMethodUnsupported(t *testing.T) {
+	root := t.TempDir()
+	writeCapturedBillingArtifact(t, filepath.Join(root, "packages/pkg.glade-package.json"))
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "glade.yml"), `project:
+  managedPackageDependencies: ["pkg:artifact:packages/pkg.glade-package.json:1.0"]
+  packageShims: ["pkg:test-support/package-shims/pkg"]
+`)
+	writeFile(t, filepath.Join(root, "test-support/package-shims/pkg/sfdx-project.json"), `{"packageDirectories":[{"path":"classes","default":true}]}`)
+	writeFile(t, filepath.Join(root, "test-support/package-shims/pkg/classes/BillingGateway.cls"), `
+global class BillingGateway {
+  global static Boolean authorize(Decimal amount) {
+    return amount > 0;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BillingTest.cls"), `
+@isTest
+private class BillingTest {
+  @isTest static void shimmedMethodRuns() {
+    System.assertEquals(true, pkg.BillingGateway.authorize(1.00));
+  }
+  @isTest static void unmatchedMethodStaysUnsupported() {
+    pkg.BillingGateway.captureOnly('invoice');
+  }
+}
+`)
+	run := Run(loadTestIndex(t, root), Options{})
+	statuses := runCaseStatuses(run)
+	problem := firstRunProblem(run)
+	if got := run.Summary(); got.Total != 2 || got.Passed != 1 || got.Failed != 1 ||
+		statuses["shimmedMethodRuns"] != testreport.StatusPass ||
+		statuses["unmatchedMethodStaysUnsupported"] != testreport.StatusFail ||
+		!strings.Contains(problem, "captured package member has no local body") {
+		t.Fatalf("summary = %#v statuses=%#v problem=%q run=%#v", got, statuses, problem, run)
+	}
+}
+
+func TestCapturedPackagePartialShimUsesConstructorAndKeepsUnmatchedConstructorUnsupported(t *testing.T) {
+	root := t.TempDir()
+	writeCapturedBillingArtifact(t, filepath.Join(root, "packages/pkg.glade-package.json"))
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "glade.yml"), `project:
+  managedPackageDependencies: ["pkg:artifact:packages/pkg.glade-package.json:1.0"]
+  packageShims: ["pkg:test-support/package-shims/pkg"]
+`)
+	writeFile(t, filepath.Join(root, "test-support/package-shims/pkg/sfdx-project.json"), `{"packageDirectories":[{"path":"classes","default":true}]}`)
+	writeFile(t, filepath.Join(root, "test-support/package-shims/pkg/classes/BillingGateway.cls"), `
+global class BillingGateway {
+  global BillingGateway(Decimal amount) {
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BillingTest.cls"), `
+@isTest
+private class BillingTest {
+  @isTest static void shimmedConstructorRuns() {
+    System.assertNotEquals(null, new pkg.BillingGateway(1.00));
+  }
+  @isTest static void unmatchedConstructorStaysUnsupported() {
+    new pkg.BillingGateway('invoice');
+  }
+}
+`)
+	run := Run(loadTestIndex(t, root), Options{})
+	statuses := runCaseStatuses(run)
+	problem := firstRunProblem(run)
+	if got := run.Summary(); got.Total != 2 || got.Passed != 1 || got.Failed != 1 ||
+		statuses["shimmedConstructorRuns"] != testreport.StatusPass ||
+		statuses["unmatchedConstructorStaysUnsupported"] != testreport.StatusFail ||
+		!strings.Contains(problem, "captured package member has no local body") {
+		t.Fatalf("summary = %#v statuses=%#v problem=%q run=%#v", got, statuses, problem, run)
 	}
 }
 
@@ -10933,12 +11953,29 @@ func writeCapturedBillingArtifact(t *testing.T, path string) {
 					Type: "Decimal",
 				}},
 			}, {
+				Kind:      apexast.DeclarationMethod,
+				Name:      "captureOnly",
+				Type:      "Boolean",
+				Modifiers: []string{"global", "static"},
+				Parameters: []apexast.Parameter{{
+					Name: "kind",
+					Type: "String",
+				}},
+			}, {
 				Kind:      apexast.DeclarationConstructor,
 				Name:      "BillingGateway",
 				Modifiers: []string{"global"},
 				Parameters: []apexast.Parameter{{
 					Name: "amount",
 					Type: "Decimal",
+				}},
+			}, {
+				Kind:      apexast.DeclarationConstructor,
+				Name:      "BillingGateway",
+				Modifiers: []string{"global"},
+				Parameters: []apexast.Parameter{{
+					Name: "kind",
+					Type: "String",
 				}},
 			}},
 		}},

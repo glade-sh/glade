@@ -1,15 +1,19 @@
 package apextest
 
 import (
+	"context"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/glade-sh/glade/internal/apexast"
@@ -20,6 +24,8 @@ import (
 	"github.com/glade-sh/glade/internal/typesys"
 	"github.com/glade-sh/glade/internal/vm"
 )
+
+const runtimePatchABI = "apextest-runtime-patch-v2"
 
 // runtimePatchAuthority is attached only to runtimes compiled from a complete,
 // immutable Index source snapshot. Disk-restored entries intentionally have no
@@ -42,6 +48,197 @@ type runtimePatchAffectedOwner struct {
 	Path      string
 }
 
+type runtimePatchTransitionFlightIdentity struct {
+	PredecessorKey                runtimeCacheKey
+	PredecessorFingerprint        string
+	PredecessorPayloadFingerprint string
+	CurrentKey                    runtimeCacheKey
+	CurrentFingerprint            string
+	RuntimeInputsFingerprint      string
+	AffectedOwners                []runtimePatchAffectedOwner
+	ABI                           string
+}
+
+func (identity runtimePatchTransitionFlightIdentity) key() (string, bool) {
+	if identity.PredecessorKey == "" ||
+		identity.PredecessorFingerprint == "" ||
+		identity.PredecessorPayloadFingerprint == "" ||
+		identity.CurrentKey == "" ||
+		identity.CurrentFingerprint == "" ||
+		identity.RuntimeInputsFingerprint == "" ||
+		len(identity.AffectedOwners) == 0 ||
+		identity.ABI == "" {
+		return "", false
+	}
+	owners := make([]string, 0, len(identity.AffectedOwners))
+	seen := make(map[string]bool, len(identity.AffectedOwners))
+	for _, owner := range identity.AffectedOwners {
+		key := runtimePatchOwnerKey(owner)
+		if key == "" || seen[key] {
+			return "", false
+		}
+		seen[key] = true
+		owners = append(owners, key)
+	}
+	sort.Strings(owners)
+	h := sha256.New()
+	write := func(value string) {
+		var size [8]byte
+		binary.BigEndian.PutUint64(size[:], uint64(len(value)))
+		_, _ = h.Write(size[:])
+		_, _ = h.Write([]byte(value))
+	}
+	write(string(identity.PredecessorKey))
+	write(identity.PredecessorFingerprint)
+	write(identity.PredecessorPayloadFingerprint)
+	write(string(identity.CurrentKey))
+	write(identity.CurrentFingerprint)
+	write(identity.RuntimeInputsFingerprint)
+	write(identity.ABI)
+	for _, owner := range owners {
+		write(owner)
+	}
+	return hex.EncodeToString(h.Sum(nil)), true
+}
+
+type runtimePatchTransitionFlightResult struct {
+	key            runtimeCacheKey
+	entry          runtimeCacheEntry
+	outcome        runtimePatchOutcome
+	applied        bool
+	estimatedBytes uint64
+}
+
+type runtimePatchTransitionFlight struct {
+	done   chan struct{}
+	epoch  uint64
+	result runtimePatchTransitionFlightResult
+	err    error
+}
+
+type runtimePatchTransitionFlightGroup struct {
+	mu            sync.Mutex
+	publicationMu sync.Mutex
+	workMu        sync.Mutex
+	workCond      *sync.Cond
+	activeWork    int
+	flights       map[string]*runtimePatchTransitionFlight
+	epoch         uint64
+}
+
+var errRuntimePatchTransitionReset = errors.New("runtime patch transition reset during shared work")
+
+func (group *runtimePatchTransitionFlightGroup) do(
+	ctx context.Context,
+	key string,
+	build func(epoch uint64) runtimePatchTransitionFlightResult,
+) (runtimePatchTransitionFlightResult, bool, error) {
+	if err := ctx.Err(); err != nil {
+		return runtimePatchTransitionFlightResult{}, false, err
+	}
+	group.mu.Lock()
+	if group.flights == nil {
+		group.flights = make(map[string]*runtimePatchTransitionFlight)
+	}
+	if existing := group.flights[key]; existing != nil {
+		group.mu.Unlock()
+		invokeSnapshotValidationHook("runtime_patch_transition_flight_waiter")
+		select {
+		case <-existing.done:
+			return existing.result, true, existing.err
+		case <-ctx.Done():
+			return runtimePatchTransitionFlightResult{}, true, ctx.Err()
+		}
+	}
+	flight := &runtimePatchTransitionFlight{done: make(chan struct{}), epoch: group.epoch}
+	group.flights[key] = flight
+	group.beginWork()
+	group.mu.Unlock()
+
+	go func() {
+		defer group.endWork()
+		invokeSnapshotValidationHook("runtime_patch_transition_flight_leader")
+		result := build(flight.epoch)
+
+		group.mu.Lock()
+		if group.epoch == flight.epoch {
+			flight.result = result
+		} else {
+			flight.err = errRuntimePatchTransitionReset
+		}
+		if group.flights[key] == flight {
+			delete(group.flights, key)
+		}
+		close(flight.done)
+		group.mu.Unlock()
+	}()
+	select {
+	case <-flight.done:
+		return flight.result, false, flight.err
+	case <-ctx.Done():
+		return runtimePatchTransitionFlightResult{}, false, ctx.Err()
+	}
+}
+
+func (group *runtimePatchTransitionFlightGroup) publish(epoch uint64, publish func() bool) bool {
+	group.publicationMu.Lock()
+	defer group.publicationMu.Unlock()
+	group.mu.Lock()
+	current := group.epoch == epoch
+	group.mu.Unlock()
+	return current && publish()
+}
+
+func (group *runtimePatchTransitionFlightGroup) reset(resetPublishedState func()) {
+	group.publicationMu.Lock()
+	group.mu.Lock()
+	group.epoch++
+	group.flights = make(map[string]*runtimePatchTransitionFlight)
+	group.mu.Unlock()
+	if resetPublishedState != nil {
+		resetPublishedState()
+	}
+	group.publicationMu.Unlock()
+}
+
+func (group *runtimePatchTransitionFlightGroup) Reset() {
+	group.reset(nil)
+}
+
+// Wait blocks until all detached transition computations have completed.
+// Callers must first stop admitting new work.
+func (group *runtimePatchTransitionFlightGroup) Wait() {
+	group.workMu.Lock()
+	for group.activeWork != 0 {
+		group.workCondition().Wait()
+	}
+	group.workMu.Unlock()
+}
+
+func (group *runtimePatchTransitionFlightGroup) beginWork() {
+	group.workMu.Lock()
+	group.activeWork++
+	group.workMu.Unlock()
+}
+
+func (group *runtimePatchTransitionFlightGroup) endWork() {
+	group.workMu.Lock()
+	group.activeWork--
+	if group.activeWork == 0 {
+		group.workCondition().Broadcast()
+	}
+	group.workMu.Unlock()
+}
+
+func (group *runtimePatchTransitionFlightGroup) workCondition() *sync.Cond {
+	if group.workCond == nil {
+		group.workCond = sync.NewCond(&group.workMu)
+	}
+	return group.workCond
+}
+
+var runtimePatchTransitionFlights runtimePatchTransitionFlightGroup
+
 // runtimePatchOutcome contains structural facts for callers that plan a wider
 // affected-owner closure. Policy and fallback reason strings belong outside
 // the runtime transition engine.
@@ -57,6 +254,10 @@ type runtimePatchOutcome struct {
 }
 
 func newRuntimePatchAuthority(index typesys.Index, key runtimeCacheKey, digests *typesys.SourceDigestSet, sources *sourceCache, entry runtimeCacheEntry, org storage.OrgState) *runtimePatchAuthority {
+	return newRuntimePatchAuthorityWithPerf(index, key, digests, sources, entry, org, nil)
+}
+
+func newRuntimePatchAuthorityWithPerf(index typesys.Index, key runtimeCacheKey, digests *typesys.SourceDigestSet, sources *sourceCache, entry runtimeCacheEntry, org storage.OrgState, counters *runPerfCounters) *runtimePatchAuthority {
 	if digests == nil || !runtimePatchDigestSetsEqual(index, digests.Digest) {
 		return nil
 	}
@@ -64,7 +265,7 @@ func newRuntimePatchAuthority(index typesys.Index, key runtimeCacheKey, digests 
 	if !ok {
 		return nil
 	}
-	payloadFingerprint, ok := runtimePatchCompiledPayloadFingerprint(entry)
+	payloadFingerprint, ok := runtimePatchCompiledPayloadFingerprintWithPerf(entry, counters)
 	if !ok {
 		return nil
 	}
@@ -91,7 +292,7 @@ func runtimePatchAuthorityFromRetainedSources(index typesys.Index, key runtimeCa
 	return &runtimePatchAuthority{key: key, fingerprint: fingerprint, runtimeInputsFingerprint: runtimeInputsFingerprint, payloadFingerprint: payloadFingerprint, sourceReferences: references}
 }
 
-func runtimePatchAuthorityFromTransition(index typesys.Index, key, predecessorKey runtimeCacheKey, predecessorFingerprint, runtimeInputsFingerprint string, previous *runtimePatchAuthority, affected []runtimePatchAffectedOwner, sources *sourceCache, entry runtimeCacheEntry) *runtimePatchAuthority {
+func runtimePatchAuthorityFromTransition(index typesys.Index, key, predecessorKey runtimeCacheKey, predecessorFingerprint, runtimeInputsFingerprint string, previous *runtimePatchAuthority, affected []runtimePatchAffectedOwner, sources *sourceCache, entry runtimeCacheEntry, counters *runPerfCounters) *runtimePatchAuthority {
 	if previous == nil {
 		return nil
 	}
@@ -99,7 +300,7 @@ func runtimePatchAuthorityFromTransition(index typesys.Index, key, predecessorKe
 	if !ok {
 		return nil
 	}
-	payloadFingerprint, ok := runtimePatchCompiledPayloadFingerprint(entry)
+	payloadFingerprint, ok := runtimePatchCompiledPayloadFingerprintWithPerf(entry, counters)
 	if !ok {
 		return nil
 	}
@@ -128,205 +329,6 @@ func runtimePatchAuthorityFromTransition(index typesys.Index, key, predecessorKe
 	}
 }
 
-type runtimePatchPayload struct {
-	Methods       map[string]vm.Method `json:"methods"`
-	Classes       []vm.Class           `json:"classes"`
-	Triggers      []vm.Trigger         `json:"triggers"`
-	TriggerErrors []string             `json:"triggerErrors"`
-	PageNames     []string             `json:"pageNames"`
-	BaseError     string               `json:"baseError"`
-}
-
-type runtimePatchValueFingerprint struct {
-	Kind        vm.ValueKind                       `json:"kind"`
-	Int         int64                              `json:"int"`
-	Decimal     float64                            `json:"decimal"`
-	Bool        bool                               `json:"bool"`
-	Text        string                             `json:"text"`
-	Type        string                             `json:"type"`
-	Static      string                             `json:"static"`
-	Runtime     string                             `json:"runtime"`
-	Ref         uint64                             `json:"ref"`
-	FieldsNil   bool                               `json:"fieldsNil"`
-	Fields      []runtimePatchValueFingerprintPair `json:"fields"`
-	ListNil     bool                               `json:"listNil"`
-	List        []runtimePatchValueFingerprint     `json:"list"`
-	SetNil      bool                               `json:"setNil"`
-	Set         []runtimePatchValueFingerprint     `json:"set"`
-	MapNil      bool                               `json:"mapNil"`
-	Map         []runtimePatchValueFingerprintPair `json:"map"`
-	MapKeysNil  bool                               `json:"mapKeysNil"`
-	MapKeys     []runtimePatchValueFingerprintPair `json:"mapKeys"`
-	MapOrderNil bool                               `json:"mapOrderNil"`
-	MapOrder    []string                           `json:"mapOrder"`
-}
-
-type runtimePatchValueFingerprintPair struct {
-	Key   string                       `json:"key"`
-	Value runtimePatchValueFingerprint `json:"value"`
-}
-
-type runtimePatchFieldValueFingerprint struct {
-	ClassIndex   int                          `json:"classIndex"`
-	Static       bool                         `json:"static"`
-	Name         string                       `json:"name"`
-	Value        runtimePatchValueFingerprint `json:"value"`
-	InitialValue runtimePatchValueFingerprint `json:"initialValue"`
-}
-
-type runtimePatchValueContainerIdentity struct {
-	kind byte
-	ptr  uintptr
-}
-
-func runtimePatchCompiledPayloadFingerprint(entry runtimeCacheEntry) (string, bool) {
-	triggerErrors := make([]string, len(entry.TriggerErrors))
-	for i, err := range entry.TriggerErrors {
-		triggerErrors[i] = runtimePatchErrorIdentity(err)
-	}
-	payloadBytes, err := json.Marshal(runtimePatchPayload{
-		Methods:       entry.Methods,
-		Classes:       entry.Classes,
-		Triggers:      entry.Triggers,
-		TriggerErrors: triggerErrors,
-		PageNames:     entry.PageNames,
-		BaseError:     runtimePatchErrorIdentity(entry.BaseErr),
-	})
-	if err != nil {
-		return "", false
-	}
-	values, ok := runtimePatchClassValueFingerprints(entry.Classes)
-	if !ok {
-		return "", false
-	}
-	valueBytes, err := json.Marshal(values)
-	if err != nil {
-		return "", false
-	}
-	h := sha256.New()
-	_, _ = h.Write(payloadBytes)
-	_, _ = h.Write([]byte{0})
-	_, _ = h.Write(valueBytes)
-	return hex.EncodeToString(h.Sum(nil)), true
-}
-
-func runtimePatchErrorIdentity(err error) string {
-	if err == nil {
-		return ""
-	}
-	return fmt.Sprintf("%T:%s", err, err.Error())
-}
-
-func runtimePatchClassValueFingerprints(classes []vm.Class) ([]runtimePatchFieldValueFingerprint, bool) {
-	var out []runtimePatchFieldValueFingerprint
-	for classIndex, class := range classes {
-		for _, fields := range []struct {
-			static bool
-			values map[string]vm.Field
-		}{{values: class.Fields}, {static: true, values: class.StaticFields}} {
-			names := make([]string, 0, len(fields.values))
-			for name := range fields.values {
-				names = append(names, name)
-			}
-			sort.Strings(names)
-			for _, name := range names {
-				field := fields.values[name]
-				active := make(map[runtimePatchValueContainerIdentity]bool)
-				value, ok := runtimePatchValuePayload(field.Value, active, 0)
-				if !ok {
-					return nil, false
-				}
-				initialValue, ok := runtimePatchValuePayload(field.InitialValue, active, 0)
-				if !ok {
-					return nil, false
-				}
-				out = append(out, runtimePatchFieldValueFingerprint{
-					ClassIndex: classIndex, Static: fields.static, Name: name,
-					Value: value, InitialValue: initialValue,
-				})
-			}
-		}
-	}
-	return out, true
-}
-
-func runtimePatchValuePayload(value vm.Value, active map[runtimePatchValueContainerIdentity]bool, depth int) (runtimePatchValueFingerprint, bool) {
-	if depth > 256 {
-		return runtimePatchValueFingerprint{}, false
-	}
-	out := runtimePatchValueFingerprint{
-		Kind: value.Kind, Int: value.Int, Decimal: value.Decimal, Bool: value.Bool,
-		Text: value.Text, Type: value.Type, Static: value.Static, Runtime: value.Runtime, Ref: value.Ref,
-		FieldsNil: value.Fields == nil, ListNil: value.List == nil, SetNil: value.Set == nil,
-		MapNil: value.Map == nil, MapKeysNil: value.MapKeys == nil, MapOrderNil: value.MapOrder == nil,
-		MapOrder: append([]string(nil), value.MapOrder...),
-	}
-	var ok bool
-	if out.Fields, ok = runtimePatchValueMapPayload('f', value.Fields, active, depth+1); !ok {
-		return runtimePatchValueFingerprint{}, false
-	}
-	if out.List, ok = runtimePatchValueSlicePayload('l', value.List, active, depth+1); !ok {
-		return runtimePatchValueFingerprint{}, false
-	}
-	if out.Set, ok = runtimePatchValueSlicePayload('s', value.Set, active, depth+1); !ok {
-		return runtimePatchValueFingerprint{}, false
-	}
-	if out.Map, ok = runtimePatchValueMapPayload('m', value.Map, active, depth+1); !ok {
-		return runtimePatchValueFingerprint{}, false
-	}
-	if out.MapKeys, ok = runtimePatchValueMapPayload('k', value.MapKeys, active, depth+1); !ok {
-		return runtimePatchValueFingerprint{}, false
-	}
-	return out, true
-}
-
-func runtimePatchValueMapPayload(kind byte, values map[string]vm.Value, active map[runtimePatchValueContainerIdentity]bool, depth int) ([]runtimePatchValueFingerprintPair, bool) {
-	if values == nil {
-		return nil, true
-	}
-	identity := runtimePatchValueContainerIdentity{kind: kind, ptr: reflect.ValueOf(values).Pointer()}
-	if active[identity] {
-		return nil, false
-	}
-	active[identity] = true
-	defer delete(active, identity)
-	names := make([]string, 0, len(values))
-	for name := range values {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	out := make([]runtimePatchValueFingerprintPair, 0, len(names))
-	for _, name := range names {
-		value, ok := runtimePatchValuePayload(values[name], active, depth)
-		if !ok {
-			return nil, false
-		}
-		out = append(out, runtimePatchValueFingerprintPair{Key: name, Value: value})
-	}
-	return out, true
-}
-
-func runtimePatchValueSlicePayload(kind byte, values []vm.Value, active map[runtimePatchValueContainerIdentity]bool, depth int) ([]runtimePatchValueFingerprint, bool) {
-	if values == nil {
-		return nil, true
-	}
-	identity := runtimePatchValueContainerIdentity{kind: kind, ptr: reflect.ValueOf(values).Pointer()}
-	if active[identity] {
-		return nil, false
-	}
-	active[identity] = true
-	defer delete(active, identity)
-	out := make([]runtimePatchValueFingerprint, len(values))
-	for i, value := range values {
-		fingerprint, ok := runtimePatchValuePayload(value, active, depth)
-		if !ok {
-			return nil, false
-		}
-		out[i] = fingerprint
-	}
-	return out, true
-}
-
 func runtimePatchAuthorityMatchesPayload(entry runtimeCacheEntry) bool {
 	if entry.patchAuthority == nil || entry.patchAuthority.payloadFingerprint == "" {
 		return false
@@ -337,7 +339,7 @@ func runtimePatchAuthorityMatchesPayload(entry runtimeCacheEntry) bool {
 
 func runtimeFromIndexWithSourceDigestsAfter(previous, current typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, diskCacheAllowed bool) (runtimeCacheKey, runtimeCacheEntry, error) {
 	affected, _ := runtimePatchOneModifiedOwner(previous, current)
-	key, entry, _, err := runtimeFromIndexTransition(previous, current, digests, sources, diskCacheAllowed, nil, affected)
+	key, entry, _, err := runtimeFromIndexTransitionContext(context.Background(), previous, current, digests, sources, diskCacheAllowed, nil, affected)
 	return key, entry, err
 }
 
@@ -345,11 +347,21 @@ func runtimeFromIndexWithSourceDigestsAfterAndPerf(previous, current typesys.Ind
 	planningStarted := time.Now()
 	affected, _ := runtimePatchOneModifiedOwner(previous, current)
 	counters.phases.runtimeKeyNS.Add(time.Since(planningStarted).Nanoseconds())
-	key, entry, _, err := runtimeFromIndexTransition(previous, current, digests, sources, diskCacheAllowed, counters, affected)
+	key, entry, _, err := runtimeFromIndexTransitionContext(context.Background(), previous, current, digests, sources, diskCacheAllowed, counters, affected)
 	return key, entry, err
 }
 
 func runtimeFromIndexTransition(previous, current typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, diskCacheAllowed bool, counters *runPerfCounters, affected []runtimePatchAffectedOwner) (runtimeCacheKey, runtimeCacheEntry, runtimePatchOutcome, error) {
+	return runtimeFromIndexTransitionContext(context.Background(), previous, current, digests, sources, diskCacheAllowed, counters, affected)
+}
+
+func runtimeFromIndexTransitionContext(ctx context.Context, previous, current typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, diskCacheAllowed bool, counters *runPerfCounters, affected []runtimePatchAffectedOwner) (runtimeCacheKey, runtimeCacheEntry, runtimePatchOutcome, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if err := ctx.Err(); err != nil {
+		return "", runtimeCacheEntry{}, runtimePatchOutcome{}, err
+	}
 	digestCheckStarted := time.Now()
 	suppliedDigestsValid := digests == nil || runtimePatchDigestSetsEqual(current, digests.Digest)
 	if counters != nil {
@@ -363,19 +375,34 @@ func runtimeFromIndexTransition(previous, current typesys.Index, digests *typesy
 		}
 		return key, runtimeCacheEntry{}, runtimePatchOutcome{Key: key}, fmt.Errorf("supplied source digests do not match current immutable index")
 	}
+	if sources == nil {
+		sources = newSourceCache()
+	}
+	generation, err := prepareRuntimeGeneration(current, digests, sources)
+	if err != nil {
+		keyStarted := time.Now()
+		key := runtimeKeyWithDigestLookup(current, current.SourceDigest, os.ReadFile)
+		if counters != nil {
+			counters.phases.runtimeKeyNS.Add(time.Since(keyStarted).Nanoseconds())
+		}
+		evictSnapshotCaches(key)
+		return key, runtimeCacheEntry{}, runtimePatchOutcome{Key: key}, err
+	}
 	var key runtimeCacheKey
 	var entry runtimeCacheEntry
 	var outcome runtimePatchOutcome
 	var applied bool
-	key, entry, outcome, applied = tryRuntimePatchTransition(previous, current, sources, counters, affected)
+	key, entry, outcome, applied, err = tryRuntimePatchTransitionContext(ctx, previous, current, digests, sources, generation, counters, affected)
+	if err != nil {
+		return key, runtimeCacheEntry{}, runtimePatchOutcome{Key: key}, err
+	}
 	if applied {
 		return key, entry, outcome, nil
 	}
-	var err error
 	if counters == nil {
-		key, entry, err = runtimeFromIndexWithSourceDigests(current, digests, sources, diskCacheAllowed)
+		key, entry, err = runtimeFromIndexWithPreparedGenerationProjected(current, digests, sources, &generation, cloneRuntimeCacheEntryChecked, diskCacheAllowed)
 	} else {
-		key, entry, err = runtimeFromIndexWithSourceDigestsAndPerf(current, digests, sources, diskCacheAllowed, counters)
+		key, entry, err = runtimeFromIndexWithPreparedGenerationAndPerfProjected(current, digests, sources, &generation, diskCacheAllowed, counters, cloneRuntimeCacheEntryChecked)
 	}
 	if err != nil {
 		return key, entry, runtimePatchOutcome{Key: key}, err
@@ -384,23 +411,179 @@ func runtimeFromIndexTransition(previous, current typesys.Index, digests *typesy
 	return key, entry, outcome, err
 }
 
-func tryRuntimePatchTransition(previous, current typesys.Index, sources *sourceCache, counters *runPerfCounters, affected []runtimePatchAffectedOwner) (runtimeCacheKey, runtimeCacheEntry, runtimePatchOutcome, bool) {
+func tryRuntimePatchTransitionContext(ctx context.Context, previous, current typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, generation runtimeGeneration, counters *runPerfCounters, affected []runtimePatchAffectedOwner) (runtimeCacheKey, runtimeCacheEntry, runtimePatchOutcome, bool, error) {
 	started := time.Now()
 	currentFingerprint, currentOK := runtimePatchIndexFingerprint(current)
 	previousFingerprint, previousOK := runtimePatchIndexFingerprint(previous)
-	currentKey := runtimeKeyWithDigestLookup(current, current.SourceDigest, os.ReadFile)
-	previousKey := runtimeKeyWithDigestLookup(previous, previous.SourceDigest, os.ReadFile)
+	currentKey := generation.key
+	previousBaseKey := runtimeKeyWithDigestLookup(previous, previous.SourceDigest, os.ReadFile)
+	previousKey := runtimeKeyWithMetadataGeneration(previousBaseKey, generation.metadata)
+	if counters != nil {
+		counters.phases.runtimeKeyNS.Add(time.Since(started).Nanoseconds())
+	}
+	if !currentOK || !previousOK || len(affected) == 0 || !runtimePatchTransitionShapeSafe(previous, current, affected) {
+		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false, nil
+	}
+
+	ambientStarted := time.Now()
+	currentOrg := orgFromIndex(current, sources)
+	currentPageNames := visualforcePageNames(current)
+	currentAmbientFingerprint, ambientOK := runtimePatchAmbientFingerprint(currentOrg, currentPageNames)
+	if counters != nil {
+		counters.phases.orgBuildNS.Add(time.Since(ambientStarted).Nanoseconds())
+	}
+	if !ambientOK || sources.sourceSnapshotError() != nil {
+		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false, nil
+	}
+
+	if cached, ok := validMemoryRuntimeEntry(currentKey); ok {
+		currentAPIVersionFingerprint, apiVersionsOK := runtimePatchLiveAPIVersionFingerprint(cached.Methods, sources)
+		currentRuntimeInputsFingerprint := runtimePatchRuntimeInputsFingerprintFromParts(currentAmbientFingerprint, currentAPIVersionFingerprint)
+		if apiVersionsOK {
+			if outcome, trusted := runtimePatchTrustedCacheOutcome(current, currentKey, currentFingerprint, currentRuntimeInputsFingerprint, previousKey, previousFingerprint, affected, cached); trusted {
+				invokeSnapshotValidationHook("runtime_patch_before_memory_cache_return")
+				if err := sources.validateCapturedSourceGeneration(); err != nil {
+					evictSnapshotCaches(currentKey)
+					return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false, nil
+				}
+				if counters != nil {
+					counters.phases.memoryCacheHits.Add(1)
+				}
+				return currentKey, cached, outcome, true, nil
+			}
+		}
+		runtimePatchEvictUntrustedCurrentEntry(current, currentKey, currentFingerprint, currentRuntimeInputsFingerprint, previousKey, previousFingerprint, affected)
+	}
+
+	previousEntry, ok := runtimePatchTransitionBaseSnapshot(previousKey, previousFingerprint)
+	if !ok {
+		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false, nil
+	}
+	currentAPIVersionFingerprint, apiVersionsOK := runtimePatchLiveAPIVersionFingerprint(previousEntry.Methods, sources)
+	if !apiVersionsOK {
+		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false, nil
+	}
+	currentRuntimeInputsFingerprint := runtimePatchRuntimeInputsFingerprintFromParts(currentAmbientFingerprint, currentAPIVersionFingerprint)
+	if previousEntry.patchAuthority.runtimeInputsFingerprint != currentRuntimeInputsFingerprint ||
+		!runtimePatchAffectedClosureValid(current, affected) {
+		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false, nil
+	}
+	flightKey, ok := (runtimePatchTransitionFlightIdentity{
+		PredecessorKey:                previousKey,
+		PredecessorFingerprint:        previousFingerprint,
+		PredecessorPayloadFingerprint: previousEntry.patchAuthority.payloadFingerprint,
+		CurrentKey:                    currentKey,
+		CurrentFingerprint:            currentFingerprint,
+		RuntimeInputsFingerprint:      currentRuntimeInputsFingerprint,
+		AffectedOwners:                affected,
+		ABI:                           runtimePatchABI,
+	}).key()
+	if !ok {
+		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false, nil
+	}
+
+	result, shared, waitErr := runtimePatchTransitionFlights.do(ctx, flightKey, func(epoch uint64) runtimePatchTransitionFlightResult {
+		key, _, outcome, applied := buildRuntimePatchTransition(previous, current, digests, sources, generation, counters, affected, epoch)
+		result := runtimePatchTransitionFlightResult{key: key, outcome: outcome, applied: applied}
+		if !applied {
+			return result
+		}
+		runtimeCacheMu.RLock()
+		published, exists := runtimeCache[key]
+		runtimeCacheMu.RUnlock()
+		if !exists {
+			result.applied = false
+			return result
+		}
+		result.entry = published
+		result.estimatedBytes = runtimePatchEstimatedCompiledBytes(published)
+		return result
+	})
+	if counters != nil {
+		if shared {
+			counters.runtimeTransitionWaiters.Add(1)
+		} else {
+			counters.runtimeTransitionLeaders.Add(1)
+		}
+	}
+	if waitErr != nil {
+		if counters != nil && errors.Is(waitErr, context.Canceled) {
+			counters.runtimeTransitionCancellations.Add(1)
+		}
+		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false, waitErr
+	}
+	if !result.applied {
+		if counters != nil && shared {
+			counters.runtimeTransitionSharedFallbacks.Add(1)
+		}
+		return result.key, runtimeCacheEntry{}, result.outcome, false, nil
+	}
+	privateEntry, cloneOK := cloneRuntimeCacheEntryChecked(result.entry)
+	if !cloneOK || !privateEntry.restored.Valid() {
+		return result.key, runtimeCacheEntry{}, runtimePatchOutcome{}, false, nil
+	}
+	invokeSnapshotValidationHook("runtime_patch_before_memory_cache_return")
+	if err := sources.validateCapturedSourceGeneration(); err != nil {
+		evictSnapshotCaches(result.key)
+		return result.key, runtimeCacheEntry{}, runtimePatchOutcome{}, false, nil
+	}
+	if counters != nil && shared {
+		counters.runtimeTransitionSavedBytes.Add(result.estimatedBytes)
+		counters.phases.memoryCacheHits.Add(1)
+	}
+	return result.key, privateEntry, cloneRuntimePatchOutcome(result.outcome), true, nil
+}
+
+func cloneRuntimePatchOutcome(outcome runtimePatchOutcome) runtimePatchOutcome {
+	outcome.RecompiledOwners = append([]string(nil), outcome.RecompiledOwners...)
+	outcome.RecompiledPaths = append([]string(nil), outcome.RecompiledPaths...)
+	outcome.ReusedOwners = append([]string(nil), outcome.ReusedOwners...)
+	outcome.ReusedPaths = append([]string(nil), outcome.ReusedPaths...)
+	return outcome
+}
+
+func runtimePatchTransitionBaseSnapshot(key runtimeCacheKey, fingerprint string) (runtimeCacheEntry, bool) {
+	runtimeCacheMu.RLock()
+	entry, ok := runtimeCache[key]
+	runtimeCacheMu.RUnlock()
+	if !ok || !entry.restored.Valid() || entry.patchAuthority == nil ||
+		entry.patchAuthority.key != key ||
+		entry.patchAuthority.fingerprint != fingerprint ||
+		entry.patchAuthority.payloadFingerprint == "" ||
+		entry.BaseErr != nil || len(entry.TriggerErrors) != 0 {
+		return runtimeCacheEntry{}, false
+	}
+	return entry, true
+}
+
+func runtimePatchEstimatedCompiledBytes(entry runtimeCacheEntry) uint64 {
+	estimated := uint64(len(entry.Methods))*192 +
+		uint64(len(entry.Classes))*256 +
+		uint64(len(entry.Triggers))*192 +
+		uint64(len(entry.PageNames))*32
+	for name, method := range entry.Methods {
+		estimated += uint64(len(name) + len(method.Name) + len(method.ClassName) + len(method.Program.Source))
+		estimated += uint64(len(method.Program.Instructions)) * 64
+	}
+	if estimated == 0 {
+		return 1
+	}
+	return estimated
+}
+
+func buildRuntimePatchTransition(previous, current typesys.Index, digests *typesys.SourceDigestSet, sources *sourceCache, generation runtimeGeneration, counters *runPerfCounters, affected []runtimePatchAffectedOwner, flightEpoch uint64) (runtimeCacheKey, runtimeCacheEntry, runtimePatchOutcome, bool) {
+	started := time.Now()
+	currentFingerprint, currentOK := runtimePatchIndexFingerprint(current)
+	previousFingerprint, previousOK := runtimePatchIndexFingerprint(previous)
+	currentKey := generation.key
+	previousBaseKey := runtimeKeyWithDigestLookup(previous, previous.SourceDigest, os.ReadFile)
+	previousKey := runtimeKeyWithMetadataGeneration(previousBaseKey, generation.metadata)
 	if counters != nil {
 		counters.phases.runtimeKeyNS.Add(time.Since(started).Nanoseconds())
 	}
 	if !currentOK || !previousOK || len(affected) == 0 || !runtimePatchTransitionShapeSafe(previous, current, affected) {
 		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false
 	}
-	if sources == nil {
-		sources = newSourceCache()
-	}
-	sources.configureNamespaceRemaps(current.Types, current.Triggers)
-	sources.bindSourceDigestLookup(current.SourceDigest)
 	ambientStarted := time.Now()
 	currentOrg := orgFromIndex(current, sources)
 	currentPageNames := visualforcePageNames(current)
@@ -416,6 +599,11 @@ func tryRuntimePatchTransition(previous, current typesys.Index, sources *sourceC
 		currentRuntimeInputsFingerprint := runtimePatchRuntimeInputsFingerprintFromParts(currentAmbientFingerprint, currentAPIVersionFingerprint)
 		if apiVersionsOK {
 			if outcome, trusted := runtimePatchTrustedCacheOutcome(current, currentKey, currentFingerprint, currentRuntimeInputsFingerprint, previousKey, previousFingerprint, affected, cached); trusted {
+				invokeSnapshotValidationHook("runtime_patch_before_memory_cache_return")
+				if err := sources.validateCapturedSourceGeneration(); err != nil {
+					evictSnapshotCaches(currentKey)
+					return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false
+				}
 				if counters != nil {
 					counters.phases.memoryCacheHits.Add(1)
 				}
@@ -492,7 +680,7 @@ func tryRuntimePatchTransition(previous, current typesys.Index, sources *sourceC
 		restored:      restored,
 	}
 	authorityStarted := time.Now()
-	patchAuthority := runtimePatchAuthorityFromTransition(current, currentKey, previousKey, previousFingerprint, currentRuntimeInputsFingerprint, previousEntry.patchAuthority, affected, sources, entry)
+	patchAuthority := runtimePatchAuthorityFromTransition(current, currentKey, previousKey, previousFingerprint, currentRuntimeInputsFingerprint, previousEntry.patchAuthority, affected, sources, entry, counters)
 	if counters != nil {
 		counters.phases.projectCompileNS.Add(time.Since(authorityStarted).Nanoseconds())
 	}
@@ -505,33 +693,51 @@ func tryRuntimePatchTransition(previous, current typesys.Index, sources *sourceC
 		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false
 	}
 	entry.executionProjectionValidated = true
-
-	runtimeCacheMu.Lock()
-	base, baseOK := runtimeCache[previousKey]
-	baseAuthorityOK := baseOK && runtimePatchBaseEntryTrusted(base, previousKey, previousFingerprint, currentRuntimeInputsFingerprint)
-	if !baseAuthorityOK {
-		runtimeCacheMu.Unlock()
+	invokeSnapshotValidationHook("runtime_patch_before_memory_cache_publication")
+	if err := sources.validateCapturedSourceGeneration(); err != nil {
+		evictSnapshotCaches(currentKey)
 		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false
 	}
-	if published, exists := runtimeCache[currentKey]; exists && published.restored.Valid() {
-		if outcome, trusted := runtimePatchTrustedCacheOutcome(current, currentKey, currentFingerprint, currentRuntimeInputsFingerprint, previousKey, previousFingerprint, affected, published); trusted {
-			cloned, clonedOK := cloneRuntimeCacheEntryChecked(published)
-			if clonedOK && cloned.restored.Valid() {
-				runtimeCacheMu.Unlock()
-				if counters != nil {
-					counters.phases.memoryCacheHits.Add(1)
-				}
-				return currentKey, cloned, outcome, true
-			}
+
+	var resultEntry runtimeCacheEntry
+	var resultOutcome runtimePatchOutcome
+	cacheHit := false
+	published := runtimePatchTransitionFlights.publish(flightEpoch, func() bool {
+		runtimeCacheMu.Lock()
+		defer runtimeCacheMu.Unlock()
+		base, baseOK := runtimeCache[previousKey]
+		baseAuthorityOK := baseOK && runtimePatchBaseEntryTrusted(base, previousKey, previousFingerprint, currentRuntimeInputsFingerprint)
+		if !baseAuthorityOK {
+			return false
 		}
-		delete(runtimeCache, currentKey)
+		if existing, exists := runtimeCache[currentKey]; exists && existing.restored.Valid() {
+			if outcome, trusted := runtimePatchTrustedCacheOutcome(current, currentKey, currentFingerprint, currentRuntimeInputsFingerprint, previousKey, previousFingerprint, affected, existing); trusted {
+				cloned, clonedOK := cloneRuntimeCacheEntryChecked(existing)
+				if clonedOK && cloned.restored.Valid() {
+					resultEntry = cloned
+					resultOutcome = outcome
+					cacheHit = true
+					return true
+				}
+			}
+			delete(runtimeCache, currentKey)
+		}
+		runtimeCache[currentKey] = entry
+		resultEntry = clonedEntry
+		resultOutcome = runtimePatchAppliedOutcome(current, affected, currentKey, clonedEntry)
+		return true
+	})
+	if !published {
+		return currentKey, runtimeCacheEntry{}, runtimePatchOutcome{}, false
 	}
-	runtimeCache[currentKey] = entry
-	runtimeCacheMu.Unlock()
 	if counters != nil {
-		counters.phases.cacheMisses.Add(1)
+		if cacheHit {
+			counters.phases.memoryCacheHits.Add(1)
+		} else {
+			counters.phases.cacheMisses.Add(1)
+		}
 	}
-	return currentKey, clonedEntry, runtimePatchAppliedOutcome(current, affected, currentKey, clonedEntry), true
+	return currentKey, resultEntry, resultOutcome, true
 }
 
 func runtimePatchBaseEntryTrusted(entry runtimeCacheEntry, key runtimeCacheKey, fingerprint, runtimeInputsFingerprint string) bool {

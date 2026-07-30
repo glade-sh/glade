@@ -88,8 +88,81 @@ type WriteStats struct {
 	EncodeNS int64 `json:"encodeNs,omitempty"`
 }
 
-func cachePath(projectRoot, subdir string) string {
-	return filepath.Join(projectRoot, filepath.FromSlash(subdir), stateFile)
+// ValidatedInput is an immutable, content-exact startup-cache input
+// generation. Cache readers may share one proof for a request instead of
+// repeating project loading, directory discovery, and file hashing.
+type ValidatedInput struct {
+	projectRoot string
+	manifest    Manifest
+	digest      string
+}
+
+// ValidateInputWithSourceDigests builds one full content-hash proof for the
+// current project generation. A complete Apex source digest snapshot avoids
+// rereading those source bodies; all other inputs are hashed from disk.
+func ValidateInputWithSourceDigests(projectRoot string, digests *typesys.SourceDigestSet) (*ValidatedInput, error) {
+	return validateInputWithSourceDigests(projectRoot, digests, nil)
+}
+
+func validateInputWithSourceDigests(projectRoot string, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error)) (*ValidatedInput, error) {
+	root, err := filepath.Abs(projectRoot)
+	if err != nil {
+		return nil, err
+	}
+	root = filepath.Clean(root)
+	loaded, err := project.Load(root)
+	if err != nil {
+		return nil, err
+	}
+	manifest, err := buildManifestWithSourceDigests(root, loaded, true, digests, readFile)
+	if err != nil {
+		return nil, err
+	}
+	if !manifest.Complete {
+		return nil, errors.New("startup cache validated input manifest is incomplete")
+	}
+	encoded, err := json.Marshal(manifest)
+	if err != nil {
+		return nil, err
+	}
+	sum := sha256.Sum256(encoded)
+	return &ValidatedInput{
+		projectRoot: root,
+		manifest:    cloneManifest(manifest),
+		digest:      hex.EncodeToString(sum[:]),
+	}, nil
+}
+
+// ProjectRoot returns the canonical root bound to this proof.
+func (input *ValidatedInput) ProjectRoot() string {
+	if input == nil {
+		return ""
+	}
+	return input.projectRoot
+}
+
+// Digest returns the canonical identity of every input in this proof.
+func (input *ValidatedInput) Digest() string {
+	if input == nil {
+		return ""
+	}
+	return input.digest
+}
+
+// Manifest returns a detached copy so callers cannot mutate the proof.
+func (input *ValidatedInput) Manifest() Manifest {
+	if input == nil {
+		return Manifest{}
+	}
+	return cloneManifest(input.manifest)
+}
+
+func cloneManifest(manifest Manifest) Manifest {
+	manifest.Features = append([]string(nil), manifest.Features...)
+	manifest.Files = append([]File(nil), manifest.Files...)
+	manifest.ConfigFiles = append([]File(nil), manifest.ConfigFiles...)
+	manifest.PackageRoots = append([]Directory(nil), manifest.PackageRoots...)
+	return manifest
 }
 
 func Read(projectRoot, subdir string) (*Entry, error) {
@@ -135,6 +208,42 @@ func ReadFreshRuntimeWithSourceDigestsAndStats(projectRoot, subdir string, expec
 	return readFreshRuntimeWithSourceDigestsAndStats(projectRoot, subdir, expectedVersion, expectedRuntimeABI, expectedRuntimeKey, digests, nil)
 }
 
+// ReadFreshRuntimeWithValidatedInput compares a cache entry against a
+// previously established immutable input proof. It performs no project load,
+// directory walk, or input hashing.
+func ReadFreshRuntimeWithValidatedInput(projectRoot, subdir string, expectedVersion int, expectedRuntimeABI, expectedRuntimeKey string, input *ValidatedInput) (*Entry, error) {
+	entry, _, err := ReadFreshRuntimeWithValidatedInputAndStats(projectRoot, subdir, expectedVersion, expectedRuntimeABI, expectedRuntimeKey, input)
+	return entry, err
+}
+
+// ReadFreshRuntimeWithValidatedInputAndStats is the measured variant of
+// ReadFreshRuntimeWithValidatedInput.
+func ReadFreshRuntimeWithValidatedInputAndStats(projectRoot, subdir string, expectedVersion int, expectedRuntimeABI, expectedRuntimeKey string, input *ValidatedInput) (*Entry, ReadStats, error) {
+	root, err := filepath.Abs(projectRoot)
+	if err != nil {
+		return nil, ReadStats{}, err
+	}
+	root = filepath.Clean(root)
+	if subdir == SubdirTest {
+		return readFreshSplitTestRuntimeWithValidatedInput(root, subdir, expectedVersion, expectedRuntimeABI, expectedRuntimeKey, input)
+	}
+	started := time.Now()
+	entry, err := readJSON(root, subdir)
+	stats := ReadStats{ValidationNS: time.Since(started).Nanoseconds()}
+	if err != nil || entry == nil {
+		return entry, stats, err
+	}
+	validationStarted := time.Now()
+	if !freshManifestWithValidatedInput(entry.Version, entry.ProjectRoot, entry.PlatformABI, entry.Manifest, root, expectedVersion, input) ||
+		expectedRuntimeKey == "" || entry.RuntimeKey != expectedRuntimeKey ||
+		(expectedRuntimeABI != "" && entry.RuntimeABI != expectedRuntimeABI) {
+		stats.ValidationNS += time.Since(validationStarted).Nanoseconds()
+		return nil, stats, nil
+	}
+	stats.ValidationNS += time.Since(validationStarted).Nanoseconds()
+	return entry, stats, nil
+}
+
 func readFreshRuntimeWithSourceDigestsAndStats(projectRoot, subdir string, expectedVersion int, expectedRuntimeABI, expectedRuntimeKey string, digests *typesys.SourceDigestSet, readFile func(string) ([]byte, error)) (*Entry, ReadStats, error) {
 	root, err := filepath.Abs(projectRoot)
 	if err != nil {
@@ -162,7 +271,15 @@ func readFreshRuntimeWithSourceDigestsAndStats(projectRoot, subdir string, expec
 }
 
 func readJSON(projectRoot, subdir string) (*Entry, error) {
-	data, err := os.ReadFile(cachePath(projectRoot, subdir))
+	cacheRoot, err := openPrivateStartupCacheDir(projectRoot, subdir, false)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	defer cacheRoot.Close()
+	data, err := cacheRoot.ReadFile(stateFile)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, nil
@@ -286,6 +403,20 @@ func freshManifestWithSourceDigests(version int, entryProjectRoot, entryPlatform
 		}
 	}
 	return true
+}
+
+func freshManifestWithValidatedInput(version int, entryProjectRoot, entryPlatformABI string, manifest Manifest, projectRoot string, expectedVersion int, input *ValidatedInput) bool {
+	if input == nil || input.digest == "" || version != expectedVersion || entryPlatformABI == "" || entryPlatformABI != currentPlatformABI() {
+		return false
+	}
+	root, err := filepath.Abs(projectRoot)
+	if err != nil {
+		return false
+	}
+	root = filepath.Clean(root)
+	return filepath.Clean(entryProjectRoot) == root &&
+		input.projectRoot == root &&
+		reflect.DeepEqual(manifest, input.manifest)
 }
 
 func BuildManifest(projectRoot string, p project.Project, index typesys.Index) Manifest {
@@ -534,6 +665,23 @@ func NewEntryWithSourceDigests(projectRoot string, p project.Project, index type
 		Org:         org,
 		Runtime:     runtime,
 	}
+}
+
+// NewEntryWithValidatedInput creates a cache entry bound to an already
+// validated input generation without reloading or rehashing project inputs.
+func NewEntryWithValidatedInput(input *ValidatedInput, org storage.OrgState, runtime CompiledRuntime) (Entry, error) {
+	if input == nil || input.projectRoot == "" || input.digest == "" || !input.manifest.Complete {
+		return Entry{}, errors.New("startup cache entry requires a complete validated input")
+	}
+	return Entry{
+		Version:     Version,
+		ProjectRoot: input.projectRoot,
+		BuiltAt:     time.Now().Format(time.RFC3339Nano),
+		PlatformABI: currentPlatformABI(),
+		Manifest:    cloneManifest(input.manifest),
+		Org:         org,
+		Runtime:     runtime,
+	}, nil
 }
 
 func fileFingerprintMatches(projectRoot string, expected File, required bool) bool {
