@@ -235,6 +235,7 @@ glade check --project .
 glade check --project . --json
 glade check --project . --format sarif --output glade-check.sarif
 glade check --project . --format github
+glade check --project . --no-cache
 ```
 
 For local telemetry, `--cpu-profile <path>` writes a CPU profile,
@@ -247,6 +248,11 @@ glade check --project . --cpu-profile reports/check.cpu.pprof --mem-profile repo
 ```
 
 These artifacts describe local work and do not replace Salesforce validation.
+Exact results can be reused under `.glade/semantic/` from memory, disk, or
+build. `--no-cache` bypasses semantic disk and memory reuse. Cache identity
+covers immutable project source and companion metadata, schema, dependencies,
+analyzer and platform ABIs, and analysis options; invalid or corrupt entries
+fail closed.
 
 ## `glade report assess`
 
@@ -296,14 +302,18 @@ glade exec --project . --limit-mode strict "System.debug(Limits.getDmlStatements
 
 Discover and run local Apex tests. Useful flags include `changed --since <ref>`,
 `--watch`, `--watch-once`, `--last-failed`, `--wizard`, `--daemon`,
-`--connect`, `--no-serve`, `--class`, `--method`, `--json`, `--junit`, and `--limit-mode`.
+`--connect`, `--no-serve`, `--class`, `--method`, `--class-file`,
+`--shard-count`, `--shard-index`, `--duration-history`,
+`--write-class-shards`, `--test-timeout`, `--gc-aggressive`, `--json`,
+`--junit`, and `--limit-mode`.
 
 `--cpu-profile <path>` writes a CPU profile, `--mem-profile <path>` writes a
 heap profile, and `--perf-json <path>` writes opt-in performance counters. CPU
 and heap profiles capture the lifetime of the local command, including daemon
 or watch mode, and are written when it exits; they cannot be combined with
 `--connect`. `--perf-json` is for a local one-shot run and cannot be combined
-with daemon, watch, or connect modes:
+with daemon, watch, watch-once, connect, wizard, last-failed, or
+shard-plan-only modes:
 
 ```bash
 mkdir -p reports
@@ -311,12 +321,18 @@ glade test --project . --no-serve --no-cache --cpu-profile reports/test.cpu.ppro
 ```
 
 They are local telemetry artifacts and do not replace Salesforce validation.
+The versioned JSON records effective execution and cache policy.
+`semanticCache.source` identifies memory, disk, or build provenance, alongside
+safe-miss reasons, waits, retained bytes, and evictions.
 
 `glade test serve` keeps the runtime warm across CLI invocations. Later runs
 auto-connect through `.glade/test/serve.sock` unless `--no-serve` is set.
 
-Warmed harness state is cached on disk at `.glade/test/startup.meta.json` plus a
-hashed payload after a cold build. See
+Eligible modes cache warmed harness state on disk at
+`.glade/test/startup.meta.json` plus a hashed payload after a cold build.
+One-shot parallel-method runs with more than one effective worker bypass this
+restored-runtime payload. Semantic results are independent and live under
+`.glade/semantic/`. See
 [Test Startup Cache](/guide/test-startup-cache) for freshness rules.
 
 ```bash
@@ -340,12 +356,29 @@ For daemon-backed watch loops, eligible Apex-only edits update incrementally.
 Metadata, configuration, project-topology, uncertain, and recovery changes
 fall back to an authoritative rebuild; selection remains conservative.
 
-Clear the on-disk startup cache or skip it for one run:
+Clear the project-local startup and semantic caches, or bypass both for one
+run:
 
 ```bash
 glade test clear-cache --project .
 glade test --project . --no-cache --class RefinementServiceTest
 ```
+
+Use exact class files, deterministic shards, saved duration history, and
+per-test timeouts for larger suites:
+
+```bash
+glade test --project . --class-file test-classes.txt
+glade test --project . --shard-count 4 --shard-index 0
+glade test --project . --shard-count 4 --duration-history .glade/test-durations.json --write-class-shards reports/test-shards
+glade test --project . --test-timeout 2m
+```
+
+`--write-class-shards` writes balanced `shard-NNN.txt` class lists and exits.
+Unfiltered, unsharded runs maintain the default duration history. Test
+`--no-cache` bypasses startup and semantic cache disk operations plus semantic
+memory reuse. On memory-constrained hosts, `--gc-aggressive` reduces heap
+growth at the cost of more frequent garbage collection.
 
 Run `glade help test` for the full flag list.
 
@@ -396,9 +429,11 @@ glade dev lwc --project . --context accountRecord --open
 glade dev lwc --project . --addr 127.0.0.1:0 --ready-file /tmp/glade-lwc-ready.json
 ```
 
-The printed base URL opens the local workbench, with `/lwc` available as a
-stable link. The workbench includes a filterable LWC catalog and draft page
-composer. The shell also prints `/lwc/preview/component/<namespace>/<component>`,
+The printed base URL opens the Workbench Console, with `/lwc` available as a
+stable link. Component Lab filters exposed LWCs and edits their preview
+properties and context. Page Workbench groups discovered routes, and
+`/lwc/builder` opens the draft page composer. The shell also provides
+`/lwc/preview/component/<namespace>/<component>`,
 `/lwc/preview/cmp/<namespace>/<component>?c__name=value`,
 `/lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>`,
 `/lwc/preview/app/<Page>`, `/lwc/preview/home/<Page>`,

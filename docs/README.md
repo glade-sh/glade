@@ -24,6 +24,24 @@ This map keeps first-use docs in one place.
    - Reference: <https://glade.sh/reference/cli>
    - Support map: <https://glade.sh/guide/support-map>
 
+## Checked Support Artifacts
+
+These are checked published outputs from the first-party compatibility tooling.
+Base `glade` consumes or publishes them; it does not regenerate them.
+
+- [COMPATIBILITY.md](COMPATIBILITY.md) — support policy and top-level surface.
+- [COMPATIBILITY_DASHBOARD.md](COMPATIBILITY_DASHBOARD.md) — checked capability
+  rollup.
+- [KNOWN_GAPS.md](KNOWN_GAPS.md) — explicit unsupported and unresolved rows.
+- [STANDARD_OBJECT_COVERAGE.md](STANDARD_OBJECT_COVERAGE.md) — standard-object
+  coverage evidence.
+- [STANDARD_OBJECT_SCHEMA.md](STANDARD_OBJECT_SCHEMA.md) — checked standard
+  object and field catalog.
+- [STDLIB_COVERAGE.md](STDLIB_COVERAGE.md) — method-level platform library
+  coverage.
+- [LWC_SUPPORT.md](LWC_SUPPORT.md) — local LWC support boundary.
+- [RELEASE_NOTES.md](RELEASE_NOTES.md) — stable and unreleased product changes.
+
 ## If You Want To Contribute
 
 1. Runtime architecture: [ARCHITECTURE.md](ARCHITECTURE.md)

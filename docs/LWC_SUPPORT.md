@@ -10,10 +10,12 @@ builder route `/lwc/builder`, and `/lwc/preview/*` routes. Visualforce appears
 here only where a Visualforce-backed tab or shared Lightning Out runtime
 affects an LWC.
 
-The local shell UI is the Workbench Console. It is designed for developer
-preview and debugging of local LWCs in component, record page, builder, tab, and
-app contexts. It exposes local diagnostics for Apex, LDS, navigation,
-PageReference, and runtime issues.
+The local shell UI is the Workbench Console. Component Lab filters exposed
+LWCs, reads target metadata and `@api` properties, edits preview properties and
+page context, and switches desktop, tablet, and phone form factors. Page
+Workbench groups discovered tab, app, home, record, Flow, action, utility, and
+community routes. The debug dock records Console, Apex, LDS Cache, Network,
+Events, and Issues, including recent save and rebuild runs.
 
 Generated capture rows live in
 [generated/LWC_SHELL_SUPPORT.md](generated/LWC_SHELL_SUPPORT.md). They are
@@ -25,7 +27,7 @@ Salesforce target org.
 
 | Host | Status | Support key | Notes |
 | --- | --- | --- | --- |
-| LWC workbench | Preview feature | `lwc.host.lightning-shell` | The printed base URL at `/` and `/lwc` opens a local home page with tabs and discovered routes. `/lwc/builder` opens the draft page composer with a filterable available-LWC catalog, drag-and-drop placement, layout switching, target-specific context controls, DB-backed object and record search for record pages, active context, and diagnostics. |
+| LWC workbench | Preview feature | `lwc.host.lightning-shell` | The printed base URL at `/` and `/lwc` opens the Workbench Console with Component Lab and Page Workbench tabs. `/lwc/builder` opens the draft page composer with a filterable available-LWC catalog, drag-and-drop placement, layout switching, target-specific context controls, DB-backed object and record search for record pages, active context, and diagnostics. |
 | Direct component shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/component/<namespace>/<component>` mounts one exposed component for local development. |
 | Record page shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/record/<Object>/<recordId>?page=<FlexiPage>` resolves FlexiPage regions and record context. |
 | App page shell | Preview feature | `lwc.host.lightning-shell` | `/lwc/preview/app/<Page>` resolves app-page FlexiPage metadata. |
@@ -99,6 +101,10 @@ the builder's record-page object and record pickers.
 | `@salesforce/community` and `@salesforce/site` | Local support with context limits | LWC shell community routes. Supports `@salesforce/community/basePath`, `@salesforce/community/Id`, `@salesforce/site/Id`, and `@salesforce/site/activeLanguages`; missing IDs export empty strings and report `GLADELWC102`. |
 | `@salesforce/apexContinuation` | Local simulated support | LWC shell and shared runtime imports. Continuation helpers return Promise-shaped local results with explicit simulated diagnostics; hosted servlet scheduling remains Salesforce-only. |
 | Experience Cloud context | Local support with builder limits | LWC shell community routes. Supports site, base path, site ID, network ID, guest mode, language, `lightningCommunity__Page`, `lightningCommunity__Default`, and `lightningCommunity__Theme_Layout` wrapper boundaries from local metadata and `glade.lwc.json`. |
+| `experience/cmsDeliveryApi` | Local support with context limits | Deterministic managed-content reads use the active local community context. Hosted delivery, personalization, and cache behavior remain Salesforce checks. |
+| `experience/cmsEditorApi` | Local read-only support | Reads local editor context and selection. Mutations reject explicitly with `GLADELWC094`. |
+| `experience/blockBuilderApi` | Local read-only support | Reads local block-builder context and selection. Mutations reject explicitly with `GLADELWC093`. |
+| `lightning/uiLearningPlatformApi` | Hosted-only boundary | Learning item and program calls reject explicitly with `GLADELWC095`; Glade does not simulate the hosted learning platform. |
 | `lightning/navigation` | Local support with route limits | LWC shell and Visualforce Lightning Out. Includes standard local route generation plus `standard__flow`, `standard__externalRecordPage`, `standard__externalRecordRelationshipPage`, `standard__knowledgeArticlePage`, `comm__namedPage`, `comm__loginPage`, `comm__managedContentPage`, `comm__recordPage`, and `comm__recordRelationshipPage`; unsupported PageReferences report named diagnostics such as `GLADELWC042` or `GLADELWC103`. |
 | `lightning/messageService` | Local support for in-page publish and subscribe | LWC shell and Visualforce Lightning Out. Message channel metadata imports resolve to local channel tokens. |
 | `lightning/flow` and `lightning/flowSupport` | Local Flow screen support with limits | The shell can host local Flow screen components and dispatch Flow navigation/attribute events. It is not Flow Builder and does not execute hosted Flow interviews. |
@@ -141,7 +147,7 @@ the builder's record-page object and record pickers.
 | Missing LWC, FlexiPage, app, or tab metadata | Returns a named `GLADELWC` diagnostic. |
 | Invalid or missing context preset fields | Returns a named `GLADELWC` diagnostic. |
 | Full Lightning Experience | Not modeled. Use Salesforce for hosted chrome, app state, console APIs, live auth, permissions, and final gates. |
-| Full Experience Cloud runtime | Not modeled. Menus, managed content delivery, personalization, builder data sources, auth flows, and exact hosted chrome stay Salesforce checks. |
+| Full Experience Cloud runtime | Bounded local context and deterministic managed-content reads are modeled. Menus, hosted delivery and caching, personalization, builder mutations and data sources, auth flows, and exact hosted chrome stay Salesforce checks. |
 | `lightning/uiListApi` `getListUi` | Unsupported locally. Reports `GLADELWC050`; use `getRelatedListRecords` or local SOQL-backed Apex. |
 | Full UI API | The local shell has selected LDS/UI API shims and local field layout sections. It is not broad UI API parity. |
 | Full base component parity | Use the supported modules in this build. Keep a Salesforce browser check for exact hosted base-component behavior. |

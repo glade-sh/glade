@@ -21,7 +21,8 @@
 
 ### 1. Inspect the active environment in VS Code
 
-Open the Glade side view. Use Data Environments and Local Org to see the active DB.
+Open the Glade side view. Use Data Environments and Data Browser to see the
+active DB.
 
 ![VS Code showing Glade local data environments](/help/screenshots/local-data-environments-01-sidebar.png)
 

@@ -15,6 +15,8 @@ runs.
 ```bash
 glade editor doctor vscode
 glade editor install vscode --force
+glade editor doctor vscode --editor cursor
+glade editor install vscode --editor windsurf --force
 glade lsp --project . --diagnostics-once
 ```
 

@@ -5,7 +5,9 @@ Use canonical coordinates for marketplace installs.
 ::: tip Default registry
 The default public registry is `https://plugins.glade.sh/index.json`. It
 serves `@glade/compat`, `@glade/orgpackage`, and `@glade/performance` at
-`0.2.9`. Direct archives and local links remain available for offline, private, and development use.
+their current published versions. Use `glade plugins available` to inspect
+them. Direct archives and local links remain available for offline, private,
+and development use.
 :::
 
 ```bash

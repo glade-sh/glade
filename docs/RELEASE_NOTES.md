@@ -2,7 +2,34 @@
 
 ## Unreleased
 
-No changes yet.
+Performance and correctness:
+
+- Added an exact, checksummed semantic result cache for `glade check` and the
+  local test semantic gate. Reuse is tied to immutable project source,
+  companion metadata, schema, dependency, analyzer, platform, and option
+  identity. Mismatched or corrupt entries fail closed.
+- Bounded semantic results retained in a warm process and collapsed duplicate
+  analysis work. `--no-cache` bypasses both disk and memory semantic reuse when
+  a cache-independent run is required.
+- Reduced repeated source reads, temporary allocations, startup-cache
+  validation work, payload copies, and cache write I/O. Generation checks
+  prevent a changed source or metadata snapshot from being published or
+  returned as current.
+- Expanded opt-in performance telemetry for cache provenance, source reads,
+  allocation and garbage-collection cost, execution policy, and slow tests.
+  These optimizations preserve Salesforce correctness and do not broaden the
+  documented compatibility surface.
+
+Local checks and releases:
+
+- Split the local Go release proof into fail-closed package lanes with validated
+  machine-readable results. The default remains serial for predictable memory
+  use; parallel overlap requires an explicit maintainer choice.
+- Made the site release proof run verification, unit tests, and the production
+  build exactly once while checking that its source inputs stay unchanged.
+- Added a measurement wrapper that records release check time, memory, file I/O,
+  toolchain, commit, and caller-declared cache state without changing the
+  correctness gate or priming caches.
 
 ## v0.2.10 - 2026-07-27
 
@@ -199,7 +226,7 @@ Runtime and performance:
 - Narrowed bulk DML SObject alias indexing to the record refs being written,
   while preserving Salesforce-style alias merge behavior and fallback
   boundaries.
-- Reduced wall time on profiled large NU test methods without changing
+- Reduced wall time on profiled large-package test methods without changing
   Salesforce DML, trigger, or alias semantics.
 
 ## v0.2.5 - 2026-06-23

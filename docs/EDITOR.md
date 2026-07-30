@@ -13,7 +13,12 @@ install the bundled VSIX:
 ```bash
 glade editor doctor vscode
 glade editor install vscode --force
+glade editor doctor vscode --editor cursor
+glade editor install vscode --editor windsurf --force
 ```
+
+Omit `--editor` for VS Code. Cursor and Windsurf use the same bundled VSIX
+through their own install targets.
 
 From a source checkout, build the local VSIX once and run the same install
 command from anywhere inside the checkout:
@@ -40,13 +45,14 @@ The sidebar shows:
 
 - Start Here: SFDX root, active local data environment, local DB state, watch
   state, last run state, plugin action count, and a shortcut into Glade Home.
-- Local Runs: changed tests, failed tests, and warm watch controls.
+- Tests: changed tests, failed tests, and warm watch controls.
 - Data Environments: named SQLite-backed local org states.
-- Local Org: inspect, seed, reset, and export for the active environment.
-- Exec & SOQL: SOQL scratch buffers, saved SOQL entries, describes, and last
+- Data Browser: inspect the active local data environment. Seed, reset, export,
+  and environment actions remain available from Glade Home.
+- Apex & SOQL: anonymous Apex and SOQL scratch buffers, saved entries, and last
   results.
-- Debug: active Apex breakpoint count and local debug actions.
-- Plugins: installed plugins, plugin actions, and plugin artifacts.
+- Debug and Plugins: optional views for breakpoints, local debug actions,
+  installed plugins, plugin actions, and plugin artifacts.
 
 ## Daily Local Apex Loop
 
@@ -54,28 +60,30 @@ Open the Glade Activity Bar and start in **Start Here**.
 Use **Glade: Open Home** when you want the task-first hub. Its first tab keeps
 run, data, debug, Salesforce, and ship actions together. Its state tab shows
 project root, active Glade org, active data environment, Salesforce target,
-tests, watch state, and plugin findings.
+tests, watch state, and plugin reports.
 
 1. Confirm the SFDX root and active local data environment.
 2. Click **Run local proof** before pushing work to a scratch org.
-3. Use **Data Environments** to clone, seed, reset, inspect, and export local state.
-4. Use org-backed tools for deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
+3. Create or start the Glade org when you need the local Salesforce-shaped
+   API. It is separate from the active SQLite data environment.
+4. Use Glade Home to clone, seed, reset, inspect, and export local state.
+5. Use org-backed tools for deploy, retrieve, org tests, SOQL Builder, and Code Analyzer.
 
 Glade actions are local. Salesforce actions stay org-backed.
 
 ## Native VS Code Surfaces
 
 Glade uses one Activity Bar item and one Status Bar item. The sidebar shows
-Start Here, Local Runs, Data Environments, Local Org, Exec & SOQL, Debug, and
-Plugins.
+Start Here, Tests, Data Environments, Data Browser, Apex & SOQL, and optional
+Debug and Plugins views.
 
 Local Apex tests appear in the native VS Code Testing view under `Glade Apex`.
 Glade does not add a second Apex Tests sidebar tree. Breakpoints stay in the
 normal editor gutter and debug state stays in VS Code Run and Debug.
 
 The Status Bar shows short local state, such as `Glade: dev`,
-`Glade: dev 18ms`, `Glade: dev no DB`, or `Glade: plugin 2 findings`.
-Details stay in the tooltip: project root, active DB, plugin finding counts,
+`Glade: dev 18ms`, `Glade: dev no DB`, or `Glade: plugin 2 reports`.
+Details stay in the tooltip: project root, active DB, plugin report counts,
 and last command. Click it to switch data, inspect local data, run local proof,
 manage plugins, or open output.
 
@@ -121,13 +129,14 @@ glade dev lwc --project . --context accountRecord --open
 glade dev vf --project . --port 8080
 ```
 
-LWC opens the Workbench Console, also available at `/lwc`. The console has
-route discovery, a preview canvas, editable context, and debug panes for Apex,
-LDS, network calls, navigation/events, and runtime issues. Raw preview routes
-use `/lwc/preview/...`. Builder mode is `/lwc/builder`; its mobile preview uses
-the main canvas viewport control instead of a permanent side-by-side phone
-panel. Visualforce routes use `/apex/<Page>`. Visualforce-backed LWC tab routes
-resolve through the LWC shell and then open the Visualforce page.
+LWC opens the Workbench Console, also available at `/lwc`. Component Lab
+filters exposed LWCs, reads target metadata and `@api` properties, edits preview
+properties and page context, and switches desktop, tablet, and phone form
+factors. Page Workbench groups discovered tab, app, home, record, Flow, action,
+utility, and community routes. The debug dock records Console, Apex, LDS Cache,
+Network, Events, and Issues, including recent save and rebuild runs. Raw
+preview routes use `/lwc/preview/...`. Builder mode is `/lwc/builder`.
+Visualforce routes use `/apex/<Page>`.
 
 ## Plugin Actions And Findings
 
@@ -137,8 +146,8 @@ The extension reads installed and linked plugins through:
 glade plugins list --json
 ```
 
-Installed plugins may declare editor actions for Start Here, Local Runs, Local
-Org, Debug, or Plugins views. Linked local plugins work the same way
+Installed plugins may declare editor actions for Start Here, Tests, Data
+Browser, Debug, or Plugins views. Linked local plugins work the same way
 after `glade plugins link --exec <plugin-executable>` because they appear in
 the same installed plugin state as archive or registry installs.
 
@@ -350,41 +359,42 @@ not require a Salesforce org.
 Protocol over stdio. `glade dap --project .` starts a standalone adapter that
 accepts `initialize`, `launch`, breakpoints, stepping, variable inspection, and
 disconnect. Use the contrib VS Code extension or a stdio-capable DAP client.
+A test launch requires both `className` and `methodName`; DAP launches one
+program or test method rather than a whole class or suite.
 
 ```json
 {
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "glade: debug all tests",
+      "name": "Glade: debug one test method",
       "type": "glade",
       "request": "launch",
-      "program": "MathUtilTest.adds",
       "project": "${workspaceFolder}",
-      "cwd": "${workspaceFolder}"
+      "source": "${input:testMethod}();",
+      "className": "${input:testClass}",
+      "methodName": "${input:testMethod}",
+      "dbPath": "${workspaceFolder}/.glade/envs/dev.sqlite"
     },
     {
-      "name": "glade: debug one test class",
+      "name": "Glade: debug anonymous Apex",
       "type": "glade",
       "request": "launch",
-      "program": "${input:testClass}",
+      "source": "${input:anonymousApex}",
       "project": "${workspaceFolder}",
-      "cwd": "${workspaceFolder}"
-    },
-    {
-      "name": "glade: debug anonymous Apex",
-      "type": "glade",
-      "request": "launch",
-      "program": "${input:anonymousApex}",
-      "project": "${workspaceFolder}",
-      "cwd": "${workspaceFolder}"
+      "dbPath": "${workspaceFolder}/.glade/envs/dev.sqlite"
     }
   ],
   "inputs": [
     {
       "id": "testClass",
       "type": "promptString",
-      "description": "Apex test class filter"
+      "description": "Apex test class"
+    },
+    {
+      "id": "testMethod",
+      "type": "promptString",
+      "description": "Apex test method"
     },
     {
       "id": "anonymousApex",
@@ -437,10 +447,9 @@ glade test changed --project . --since origin/main --json --no-progress
 
 ## Test Startup Cache
 
-`glade test` persists warmed org and compiled runtime state in
+Eligible `glade test` modes persist warmed org and compiled runtime state in
 `.glade/test/startup.meta.json` plus a hashed `startup.payload.<sha256>.gob`.
-That cache keeps large projects from rebuilding local org inference and helper
-compilation on every CLI invocation.
+The exact semantic result cache is separate under `.glade/semantic/`.
 
 See **[TEST_STARTUP_CACHE.md](TEST_STARTUP_CACHE.md)** for when the cache is
 created, how freshness checks work, limitations that can leave a stale cache
@@ -451,8 +460,9 @@ glade test clear-cache --project .
 glade test --project . --no-cache --class RefinementServiceTest
 ```
 
-Clear the cache after branch switches or Glade upgrades. Restart
-`glade test serve` after `clear-cache` if the server was already running.
+`clear-cache` removes the project-local startup and semantic caches.
+`--no-cache` bypasses both for one run. Restart `glade test serve` after
+`clear-cache` if the server was already running.
 
 ## DAP Startup Cache
 

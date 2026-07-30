@@ -10,6 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/glade-sh/glade/actions/workflows/security.yml"><img alt="Security workflow" src="https://github.com/glade-sh/glade/actions/workflows/security.yml/badge.svg?branch=main"></a>
+  <a href="https://scorecard.dev/viewer/?uri=github.com/glade-sh/glade"><img alt="OpenSSF Scorecard" src="https://api.scorecard.dev/projects/github.com/glade-sh/glade/badge"></a>
 </p>
 
 <p align="center">
@@ -99,6 +100,10 @@ glade report assess --project . --format html --out reports/glade-assessment.htm
 ```
 
 - Public support map: <https://glade.sh/guide/support-map>
+- Compatibility dashboard: [docs/COMPATIBILITY_DASHBOARD.md](docs/COMPATIBILITY_DASHBOARD.md)
+- Known gaps: [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md)
+- Standard-object coverage: [docs/STANDARD_OBJECT_COVERAGE.md](docs/STANDARD_OBJECT_COVERAGE.md)
+- Standard-object schema: [docs/STANDARD_OBJECT_SCHEMA.md](docs/STANDARD_OBJECT_SCHEMA.md)
 - Method-level standard library coverage: [docs/STDLIB_COVERAGE.md](docs/STDLIB_COVERAGE.md)
 
 The rule is simple. A supported row has code and checked coverage.
@@ -159,9 +164,9 @@ glade editor doctor vscode
 glade editor install vscode --force
 ```
 
-The extension adds Glade Home, Start Here, Local Runs, Data Environments, Local
-Org, Exec & SOQL, Debug, and Plugins views without taking over org-backed
-Salesforce commands.
+The extension adds Glade Home, Start Here, Tests, Data Environments, Data
+Browser, Apex & SOQL, and optional Debug and Plugins views without taking over
+org-backed Salesforce commands.
 
 Serve the Visualforce preview feature for useful local `/apex` rendering:
 
@@ -234,6 +239,10 @@ glade report refactor-proof --project . --since origin/main --format html --out 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Apex language compatibility](docs/APEX_LANGUAGE_COMPATIBILITY.md)
 - [Compatibility policy](docs/COMPATIBILITY.md)
+- [Compatibility dashboard](docs/COMPATIBILITY_DASHBOARD.md)
+- [Known gaps](docs/KNOWN_GAPS.md)
+- [Standard-object coverage](docs/STANDARD_OBJECT_COVERAGE.md)
+- [Standard-object schema](docs/STANDARD_OBJECT_SCHEMA.md)
 - [Standard library coverage](docs/STDLIB_COVERAGE.md)
 - [Local LWC support](docs/LWC_SUPPORT.md)
 - [Editor and debug setup](docs/EDITOR.md)

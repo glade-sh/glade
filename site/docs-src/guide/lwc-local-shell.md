@@ -42,13 +42,14 @@ glade dev lwc --project . --db .glade/envs/lwc-preview.sqlite --open
 ```
 
 The printed base URL opens the Workbench Console at `/`; `/lwc` is the stable
-home link. The console has route discovery, a preview canvas, editable context,
-and debug panes for Apex, LDS, network calls, navigation/events, and runtime
-issues. Use the **Open builder** link or `/lwc/builder` to compose a local page,
-drag LWCs into canvas regions, switch layouts, keep record fields out of app and
-home contexts, search objects and records from the active local DB for record
-pages, and tune app, community, Flow, and PageReference context. Mobile preview
-uses the main canvas viewport control and does not reserve a side-by-side phone panel.
+home link. Component Lab filters exposed LWCs, reads target metadata and `@api`
+properties, edits preview properties and page context, and switches desktop,
+tablet, and phone form factors. Page Workbench groups discovered tab, app,
+home, record, Flow, action, utility, and community routes. The debug dock
+records Console, Apex, LDS Cache, Network, Events, and Issues, including recent
+save and rebuild runs. Use **Open builder** or `/lwc/builder` to compose a local
+page, drag LWCs into canvas regions, switch layouts, and search active local DB
+objects and records for record pages.
 
 Open a named context:
 
@@ -74,9 +75,11 @@ Use a fixed local port when browser bookmarks or local tools expect one:
 glade dev lwc --project . --port 8080 --open
 ```
 
-The ready file includes `url`, `selectedUrl`, `selectedContext`, and the route
-list. The VS Code extension does not manage this server yet. Start, stop, and
-route selection stay in the terminal while this preview workflow matures.
+The ready file includes `url`, `selectedUrl`, `selectedContext`, and the
+complete route list. Startup prints the route count and at most eight routes,
+then reports the omitted count. Use `--ready-file` or
+`/lightning/local/context.json` for the complete list. The VS Code extension
+does not manage this server yet.
 
 ## Context presets
 
@@ -195,10 +198,10 @@ Direct flags override preset fields.
 ## Routes
 
 The printed base URL opens the Workbench Console at `/`. `/lwc` opens the same
-console for stable links. It lists available LWCs, filters by search text and
-selected target, lets you place components into draft app, home, record, tab,
-URL-addressable, action, and community contexts, and keeps active context and
-diagnostics visible. Raw preview routes remain stable for scripts and bookmarks:
+console for stable links. Component Lab handles one exposed component and Page
+Workbench groups discovered routes. The startup banner shows at most eight
+routes; the list below documents the stable route shapes for scripts and
+bookmarks:
 
 ```text
 /
@@ -332,6 +335,13 @@ The LWC shell supports:
 - `@salesforce/community/basePath`, `@salesforce/community/Id`,
   `@salesforce/site/Id`, and `@salesforce/site/activeLanguages` for active
   community routes. Missing IDs export empty strings and report `GLADELWC102`.
+- `experience/cmsDeliveryApi` for deterministic managed-content reads from the
+  active local community context. Hosted delivery, personalization, and cache
+  behavior remain Salesforce checks.
+- `experience/cmsEditorApi` and `experience/blockBuilderApi` for local context
+  and selection reads. Mutations reject with `GLADELWC094` and `GLADELWC093`.
+- `lightning/uiLearningPlatformApi` is hosted-only; learning item and program
+  calls reject with `GLADELWC095`.
 - `@salesforce/apexContinuation` as a simulated local continuation helper for
   Promise-shaped controller flows. Hosted servlet continuation scheduling stays
   Salesforce-only.
@@ -443,17 +453,18 @@ missing SLDS assets, and unsupported Salesforce services return named
 community context and navigation issues use `GLADELWC100` through
 `GLADELWC103`, and Lightning Out host issues use `GLADELWC080` through
 `GLADELWC082`.
-Look in the Workbench Console debug panes for Apex, LDS, network calls,
-navigation/events, and runtime issues. The workbench context panel, browser
-console, and `/lightning/local/context.json` expose the same local state for
-tools and deeper checks.
+The Workbench Console debug dock records Console, Apex, LDS Cache, Network,
+Events, and Issues. It includes recent save and rebuild runs, text and problem
+filters, clearing, collapse, and resize controls. The context panel, browser
+console, and `/lightning/local/context.json` expose the same local state.
 
 ## Current Limits
 
 Glade serves a local Lightning shell. It does not replace hosted Lightning
 Experience, live auth, permissions, full UI API, broad LDS cross-adapter
 coalescing, every `lightning-*` base component edge, exact SLDS fidelity, full
-Experience Cloud menus and managed content, hosted validation behavior, or
+Experience Cloud menus, hosted managed-content delivery and mutations, hosted
+validation behavior, or
 every Lightning Out edge. The workspace API models console state for
 development; exact hosted console behavior remains a Salesforce check. The
 Flow shell is not Flow Builder, and local EMP API is deterministic in-page event

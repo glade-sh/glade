@@ -10,13 +10,32 @@ npm ci
 npm run dev
 ```
 
-Open the URL printed by VitePress. The landing page is at `/` and the docs at `/guide/`.
+Open the URL printed by VitePress. The landing page is at `/` and the docs at
+`/guide/overview`.
 
 For a production build preview:
 
 ```bash
 npm run build
 npm run preview
+```
+
+## Checks and release proof
+
+Use `npm test` for the fast source verification and unit-test loop. Run the
+release-orchestrator regression tests when its behavior changes:
+
+```bash
+npm test
+npm run test:release
+```
+
+`npm run release:check` is the exact site release proof. It runs `verify`,
+`test:unit`, and `build:site` once each, rejects source changes during the run,
+and writes `.vitepress/release-check.json`:
+
+```bash
+npm run release:check
 ```
 
 ## Cloudflare Pages

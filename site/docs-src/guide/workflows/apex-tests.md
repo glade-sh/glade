@@ -29,6 +29,23 @@ Run one method:
 glade test --project . --class RefinementServiceTest --method testRefinesFileRow
 ```
 
+Split a larger suite with exact class lists or deterministic shards:
+
+```bash
+glade test --project . --class-file test-classes.txt
+glade test --project . --shard-count 4 --shard-index 0
+glade test --project . \
+  --shard-count 4 \
+  --duration-history .glade/test-durations.json \
+  --write-class-shards reports/test-shards
+glade test --project . --test-timeout 2m
+```
+
+Class files contain one exact class per line. Duration history balances later
+shards; the assignment is deterministic for the same selected classes, shard
+count, and history. `--write-class-shards` writes `shard-NNN.txt` class lists
+and exits. The default per-test timeout is five minutes.
+
 Run tests affected by a git ref:
 
 ```bash

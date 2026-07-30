@@ -30,10 +30,10 @@ does not depend on `glade-tools` internals.
 ## Install And List
 
 The default public registry is `https://plugins.glade.sh/index.json`. It
-serves `@glade/compat`, `@glade/orgpackage`, and `@glade/performance` at
-`0.2.9`. Direct archives and local links remain available for offline, private,
-and development use. Set `GLADE_PLUGIN_REGISTRY_URL` when a team needs a
-custom registry.
+serves `@glade/compat`, `@glade/orgpackage`, and `@glade/performance`.
+`glade plugins available` shows the current published versions. Direct archives
+and local links remain available for offline, private, and development use.
+Set `GLADE_PLUGIN_REGISTRY_URL` when a team needs a custom registry.
 
 Install first-party plugins with canonical coordinates:
 

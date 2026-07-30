@@ -3,12 +3,54 @@
 Use one command for the product proof.
 
 ```bash
+npm ci --prefix site
+npm ci --prefix third_party/lwc
 scripts/release-check.sh
 ```
+
+Install both lockfile-pinned dependency sets before the long gate. The site
+proof needs the VitePress toolchain. LWC integration tests need the checked
+compiler/runtime toolchain; the release summary rejects dependency-missing
+skips instead of accepting incomplete proof.
 
 That command is the local gate. It checks Go, the site, the installer, the
 release manifest, and smoke coverage. Add to the script when the release train
 gains a new rail.
+
+The gate runs, in order:
+
+1. `git diff --check`
+2. `npm run release:check --prefix site`
+3. `scripts/ci-go-test.sh local-release`
+4. `scripts/smoke.sh`
+
+The site command runs `verify`, `test:unit`, and `build:site` exactly once,
+rejects source changes during the run, and writes
+`site/.vitepress/release-check.json`. For a fast site-only loop, use
+`npm test`; when changing the release orchestrator, use
+`npm run test:release`; use `npm run release:check` for exact site release
+proof.
+
+The Go phase checks one authoritative package inventory and writes raw events
+plus a validated `package-summary.json` for every lane under
+`ci-artifacts/local-release/`. Automatic execution stays serial for predictable
+memory use. Only an explicit `LOCAL_GO_TEST_JOBS` value greater than one can
+overlap the final independent lanes.
+
+Measure the unchanged gate when comparing resource use:
+
+```bash
+scripts/perf-release-check.sh \
+  --label release-check-warm \
+  --cache-mode warm \
+  --output /tmp/glade-release-check-warm \
+  -- scripts/release-check.sh
+```
+
+The wrapper writes `release-check.json` with timing, maximum RSS, file I/O,
+toolchain, commit, command, and caller-declared cache mode. It neither clears
+nor primes caches and is not a gate. Keep measurement output outside the
+repository. `scripts/release-check.sh` remains the correctness authority.
 
 ## Product release
 

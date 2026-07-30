@@ -22,6 +22,9 @@ node_modules/
 # Ad-hoc compat run result dumps
 /test-results/
 
+# Local CI and release-check evidence
+/ci-artifacts/
+
 # Generated Salesforce local tool caches
 **/testdata/**/.glade/
 **/testdata/**/.sf/

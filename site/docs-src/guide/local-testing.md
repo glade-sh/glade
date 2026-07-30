@@ -55,7 +55,25 @@ These local telemetry artifacts do not replace Salesforce validation. CPU and
 heap profiles capture the lifetime of the local command and may also profile
 daemon or watch mode; they are written when that command exits and cannot be
 used with `--connect`. `--perf-json` is for a local one-shot run and cannot be
-combined with daemon, watch, or connect modes.
+combined with daemon, watch, watch-once, connect, wizard, last-failed, or
+shard-plan-only modes.
+
+Check performance JSON reports the project and semantic cache provenance.
+`semanticCache.source` records whether the exact result came from memory, disk,
+or build; related fields cover waits, safe-miss reasons, retained bytes, and
+evictions. Check counters also cover source reads, reused logical views,
+allocations, and garbage collection.
+
+Test performance JSON adds an `execution` object with invocation arguments,
+requested and effective parallelism, method-parallel policy, `GOMAXPROCS`, disk
+cache policy, and execution mode. Its remaining counters cover cache phases
+and slow classes or methods. These versioned local artifacts contain project
+paths and, for tests, command arguments, so review them before sharing.
+
+`glade check` and the test semantic gate keep exact results under
+`.glade/semantic/`. Use `glade check --no-cache` or test `--no-cache` to bypass
+semantic cache reads, writes, and memory reuse. Immutable source-generation
+validation still runs before a cached result is published or returned.
 
 ## Filter tests
 
@@ -82,6 +100,29 @@ state.
 ```bash
 glade test --project . --parallelism 8 --json
 ```
+
+## Split and balance suites
+
+Use an exact class file, one class per line, when a wrapper already owns
+selection. Blank and `#` comment lines are ignored:
+
+```bash
+glade test --project . --class-file test-classes.txt
+glade test --project . --shard-count 4 --shard-index 0
+glade test --project . \
+  --shard-count 4 \
+  --duration-history .glade/test-durations.json \
+  --write-class-shards reports/test-shards
+glade test --project . --test-timeout 2m
+```
+
+Unfiltered, unsharded runs maintain `.glade/test-durations.json`. Duration
+history balances later shards; the assignment is deterministic for the same
+selected classes, shard count, and history. `--write-class-shards` writes
+`shard-NNN.txt` class lists and exits without running tests. The default
+per-test timeout is five minutes. On memory-constrained hosts,
+`--gc-aggressive` trades more frequent garbage collection for lower heap
+growth.
 
 ## Limit modes
 
@@ -150,9 +191,16 @@ LWC and Visualforce preview have their own workflow and product pages.
 ## Warm startup across CLI runs
 
 Large projects rebuild local org state and helper compilation on cold start.
-`glade test` writes that harness to `.glade/test/startup.meta.json` plus a
-hashed payload after the first cold build and reloads it when fingerprint checks
-pass.
+Eligible `glade test` modes write that harness to
+`.glade/test/startup.meta.json` plus a hashed payload and reload it when
+fingerprint checks pass. One-shot parallel-method runs with more than one
+effective worker deliberately bypass restored-runtime disk caching to protect
+test isolation; `glade test --wizard` prints the effective policy.
+
+Semantic analysis is independent. `glade check` and `glade test` can reuse an
+exact result under `.glade/semantic/` from memory, disk, or build even when the
+restored-runtime payload is bypassed. Exact source, companion metadata, schema,
+dependency, analyzer and platform ABI, and option identity must match.
 
 **[Test Startup Cache](/guide/test-startup-cache)** explains when the cache is
 created, how it stays up to date, when it can be wrong, and how to recover.
@@ -166,8 +214,10 @@ glade test clear-cache --project .
 glade test --project . --no-cache --class RefinementServiceTest
 ```
 
-Clear the cache after `git pull` or Glade upgrades. Use `--no-cache` when
-debugging harness issues.
+`glade test clear-cache` removes the startup and semantic caches for the
+project. Test `--no-cache` bypasses the startup and semantic caches, including
+semantic memory reuse, when debugging harness or analysis issues. A separately
+running test server keeps its own memory until stopped or restarted.
 
 ## CI pattern
 

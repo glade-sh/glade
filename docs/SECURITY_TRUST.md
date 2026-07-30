@@ -13,8 +13,8 @@ of checked facts, not one badge.
   production dependencies in the LWC toolchain and VS Code extension.
 - GitHub Dependency Review blocks pull requests that add high-severity
   vulnerable dependencies.
-- OpenSSF Scorecard records repository posture. Its public badge becomes useful
-  after the repository is public.
+- [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/glade-sh/glade)
+  publishes repository-posture results.
 
 ## Release proof
 
@@ -34,13 +34,14 @@ CycloneDX attestation must then verify before any platform asset is uploaded.
 Verify a release archive:
 
 ```bash
-curl -L -o glade.tar.gz "$GLADE_RELEASE_URL"
+GLADE_ARCHIVE=glade_vX.Y.Z_linux_amd64.tar.gz
+curl -L -o "$GLADE_ARCHIVE" "$GLADE_RELEASE_URL"
 curl -L -o SHA256SUMS.txt "$GLADE_CHECKSUMS_URL"
-shasum -a 256 -c SHA256SUMS.txt
-gh attestation verify glade.tar.gz -R glade-sh/glade
-gh attestation verify glade.tar.gz -R glade-sh/glade \
+grep -F "  ./$GLADE_ARCHIVE" SHA256SUMS.txt | shasum -a 256 -c -
+gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade
+gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
   --predicate-type https://cyclonedx.org/bom
-tar -xzf glade.tar.gz
+tar -xzf "$GLADE_ARCHIVE"
 ./glade doctor
 ```
 
@@ -80,7 +81,8 @@ index or supplied on the command line.
 Glade can write:
 
 - `glade.yml` project config.
-- `.glade/` run artifacts and project state.
+- `.glade/` run artifacts and project state, including private local caches
+  under `.glade/test/` and `.glade/semantic/`.
 - SQLite files named by `--db`.
 - User-level plugin, editor, and LWC toolchain data under the OS user data
   directory.
@@ -93,5 +95,5 @@ Give reviewers:
 - [Install guide](INSTALL.md).
 - [Release policy](RELEASE_POLICY.md).
 - Latest GitHub release assets, checksums, SBOMs, and attestations.
-- The Security workflow badge, CodeQL/gosec code scanning status, and OpenSSF
-  Scorecard results for public display after repository publication.
+- The Security workflow badge, CodeQL/gosec code scanning status, and published
+  OpenSSF Scorecard results.

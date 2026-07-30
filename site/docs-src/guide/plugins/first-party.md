@@ -10,8 +10,9 @@ support tooling and is not part of first-run setup.
 
 ::: tip Default registry
 The default public registry is `https://plugins.glade.sh/index.json`. It serves `@glade/compat`,
-`@glade/orgpackage`, and `@glade/performance` at `0.2.9`. Direct archives and
-local links remain available for offline, private, and development use.
+`@glade/orgpackage`, and `@glade/performance`. Run
+`glade plugins available` for the current published versions. Direct archives
+and local links remain available for offline, private, and development use.
 :::
 
 ## Maintainer support tools

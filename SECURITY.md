@@ -65,8 +65,7 @@ The repository runs:
 - `npm audit --omit=dev --audit-level=high` for packaged JavaScript
   production dependencies.
 - GitHub Dependency Review on pull requests.
-- OpenSSF Scorecard with results ready for a public badge after repository
-  publication.
+- OpenSSF Scorecard with published repository-posture results.
 - Release smoke checks, checksums, SBOM generation, and blocking artifact
   attestations.
 
@@ -77,13 +76,14 @@ positives.
 ## Verify a release archive
 
 ```bash
-curl -L -o glade.tar.gz "$GLADE_RELEASE_URL"
+GLADE_ARCHIVE=glade_vX.Y.Z_linux_amd64.tar.gz
+curl -L -o "$GLADE_ARCHIVE" "$GLADE_RELEASE_URL"
 curl -L -o SHA256SUMS.txt "$GLADE_CHECKSUMS_URL"
-shasum -a 256 -c SHA256SUMS.txt
-gh attestation verify glade.tar.gz -R glade-sh/glade
-gh attestation verify glade.tar.gz -R glade-sh/glade \
+grep -F "  ./$GLADE_ARCHIVE" SHA256SUMS.txt | shasum -a 256 -c -
+gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade
+gh attestation verify "$GLADE_ARCHIVE" -R glade-sh/glade \
   --predicate-type https://cyclonedx.org/bom
-tar -xzf glade.tar.gz
+tar -xzf "$GLADE_ARCHIVE"
 ./glade version
 ./glade doctor
 ```

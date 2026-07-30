@@ -14,6 +14,13 @@ A release can be promoted when:
 - Public support docs describe the current command surface and unsupported
   boundaries.
 
+The local gate runs site verification, unit tests, and the production build
+exactly once, then validates the checked Go package inventory through
+memory-safe release lanes. Raw lane events and each validated
+`package-summary.json` are written under `ci-artifacts/local-release/`. The
+default is serial; do not raise `LOCAL_GO_TEST_JOBS` without host-specific
+resource evidence.
+
 ## Release Gate Labels
 
 Use these labels narrowly. They are claims about checked gates from the current
@@ -119,3 +126,20 @@ go test -run '^$' -bench . ./internal/apexast ./internal/typesys ./internal/sema
 
 Use a fixed `-benchtime` and compare on the same machine when evaluating
 regressions.
+
+To measure the complete local gate without changing its cache state, wrap it:
+
+```bash
+scripts/perf-release-check.sh \
+  --label release-check-warm \
+  --cache-mode warm \
+  --output /tmp/glade-release-check-warm \
+  -- scripts/release-check.sh
+```
+
+The wrapper records time, maximum RSS, file I/O, toolchain, commit, command,
+and caller-declared cache mode in `release-check.json`. It does not clear,
+prime, or replace caches, and it is not a release gate. The wrapped
+`scripts/release-check.sh` result remains authoritative. Its validated Go lane
+evidence remains under `ci-artifacts/local-release/`, including
+`package-summary.json` for each lane.

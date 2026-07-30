@@ -274,7 +274,9 @@ screencapture -x -R80,80,1100,750 "$SHOT/anonymous-apex-scratch-02-run.png"
 
 Article: `local-data-environments.md`.
 
-In the clean VS Code profile, open the Glade Activity Bar, then open Data Environments and Local Org. Keep only the Glade side view open. Capture from a second shell:
+In the clean VS Code profile, open the Glade Activity Bar, then open Data
+Environments and Data Browser. Keep only the Glade side view open. Capture from
+a second shell:
 
 ```bash
 screencapture -x -R80,80,1100,750 "$SHOT/local-data-environments-01-sidebar.png"

@@ -61,7 +61,7 @@ glade editor install vscode --force
 
 Open the SFDX project root in VS Code. The extension adds Glade Home, the Glade
 Activity Bar, local Apex tests in Test Explorer, local CodeLens actions, DAP
-debug launches, named SQLite-backed data environments, Exec & SOQL scratch
+debug launches, named SQLite-backed data environments, Apex & SOQL scratch
 buffers, and plugin actions.
 
 ## Daily local loop
@@ -85,8 +85,9 @@ Start with one focused class or method when bringing up a large project. Move
 to `glade test changed` after the first known-good run. Use the whole suite
 before trusting a release branch.
 
-Clear the startup cache after branch switches, Glade upgrades, or stale-looking
-results:
+Clear the project-local startup and semantic caches after branch switches,
+Glade upgrades, or stale-looking results. `--no-cache` bypasses both for one
+run:
 
 ```bash
 glade test clear-cache --project .

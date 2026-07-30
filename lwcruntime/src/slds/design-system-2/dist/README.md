@@ -157,4 +157,4 @@ This ensures tokens and component styles cascade correctly regardless of stylesh
 
 ## License
 
-See [LICENSE.txt](LICENSE.txt) in this package.
+See [LICENSE.txt](../LICENSE.txt) in this package.

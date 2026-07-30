@@ -83,3 +83,22 @@ glade report refactor-proof --project . --since origin/main --fail-on-api-break 
 The report records the git diff, parse and semantic status, graph impact,
 affected-test selection, optional trace summary, and public or global API
 surface warnings.
+
+## Repository release proof
+
+Maintainers run `scripts/release-check.sh` before a tag. Its Go phase validates
+the checked package inventory and writes local evidence beneath
+`ci-artifacts/local-release/`. Each lane contains:
+
+| File | Purpose |
+| --- | --- |
+| `events.json` | Raw `go test -json` events for the lane. |
+| `package-summary.json` | Validated package ownership and result summary. |
+
+The default lane execution is serial to bound memory. An explicit
+`LOCAL_GO_TEST_JOBS` value greater than one may overlap only the final
+independent lanes. The site phase runs its proofs exactly once and writes
+`site/.vitepress/release-check.json`.
+
+These are local maintainer artifacts, not product command output. Do not commit
+them.

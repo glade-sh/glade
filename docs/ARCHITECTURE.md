@@ -27,7 +27,9 @@ and composed by the CLI.
 - `internal/orgdescribe`: captured describe-symbol support for local
   intelligence.
 - `internal/typesys`: first symbol index for declarations, members, triggers,
-  and schema objects.
+  and schema objects, plus immutable source and companion-metadata build
+  artifacts. One physical source byte snapshot can back multiple logical
+  namespace or dependency views without another filesystem read.
 - `internal/codeintel`: editor-neutral project intelligence built from the type
   index, metadata schema, dependency artifacts, cached describe symbols, and
   source files. It powers symbol inspection, reference queries, conservative
@@ -93,7 +95,9 @@ and composed by the CLI.
   terminal UI, Visualforce, Aura/LWC analysis, runtime asset, and shell support.
 - `internal/namespaceremap`, `internal/refactor`, and `internal/refactorproof`:
   namespace aliasing and conservative refactor/proof support.
-- `internal/startupcache`: local startup-cache metadata.
+- `internal/startupcache`: validated local test-runtime startup state.
+- `internal/semanticcache`: checksummed, bounded exact semantic results for
+  checks and the test semantic gate.
 - Maintenance scanners, compatibility fixtures, capability catalogs, advisory
   performance scans, docs inventory, and surface ledgers ship as plugins.
   Salesforce docs inventory extraction lives in the compat plugin because it
@@ -102,11 +106,13 @@ and composed by the CLI.
 
 ## Runtime Pipeline
 
-1. Load project configuration and Salesforce metadata.
-2. Parse Apex source through `internal/apexast`.
-3. Build declarations through `internal/typesys`.
+1. Load project configuration and Salesforce metadata into one captured source
+   generation.
+2. Parse the captured Apex source through `internal/apexast`.
+3. Build declarations and immutable build artifacts through `internal/typesys`.
 4. Build cross-source symbol references through `internal/codeintel`.
-5. Type-check through `internal/sema`.
+5. Type-check through `internal/sema`, optionally reusing a semantic result only
+   when its exact content and ABI identity matches the captured generation.
 6. Lower checked code into `internal/ir`.
 7. Execute with `internal/vm`, routing SObject, SOQL, DML, trigger, limit, and
    platform calls into dedicated packages where behavior has a supported
@@ -121,6 +127,12 @@ and composed by the CLI.
 - Keep the parser behind an adapter so grammar dependencies can change.
 - Attach source ranges early and preserve them through diagnostics and runtime
   traces.
+- Keep source and companion metadata in one immutable generation. Validate that
+  generation before publishing or returning cached diagnostics or runtime
+  state; a mismatch fails with an explicit generation diagnostic.
+- Keep startup-runtime caching and semantic-result caching independent. Cache
+  reuse changes latency and resource use, not the Salesforce behavior being
+  modeled or the documented compatibility boundary.
 - Return explicit unsupported-feature diagnostics instead of panicking.
 - Keep Salesforce behavior claims tied to compatibility fixtures.
 
