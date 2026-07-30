@@ -66,9 +66,10 @@ test('browser projects do not report conditional no-op cases as passes', () => {
   assert.doesNotMatch(performanceTests, /if \(testInfo\.project\.name !== 'desktop-1440'\) return/)
 })
 
-test('performance policy compares local timing only on the captured runner platform', () => {
+test('performance policy gates timing only when the runner is calibrated', () => {
   assert.equal(typeof performanceBaseline.runner.platform, 'string')
-  assert.match(performanceTests, /process\.platform === baseline\.runner\.platform/)
+  assert.match(performanceTests, /performancePolicy\(baseline\.runner, process\.platform\)/)
+  assert.match(performanceTests, /if \(policy\.enforceTimingBudgets\)/)
   assert.doesNotMatch(performanceTests, /stored\.tbtMs \* 1\.15/)
   assert.match(performanceTests, /TBT budget/)
 })

@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { expect, test, type Browser } from '@playwright/test'
+import { performancePolicy } from '../../scripts/performance-policy.mjs'
 
 type Metrics = {
   jsCssBytes: number
@@ -11,6 +12,7 @@ type Metrics = {
 type Baseline = {
   runner: {
     platform: string
+    runs: number
   }
   routes: Record<string, { median: Metrics }>
 }
@@ -66,12 +68,13 @@ async function capture(browser: Browser, route: string) {
   return result
 }
 
-test('five-run performance medians stay inside stable budgets and a comparable baseline', async ({ browser }) => {
+test('asset size and calibrated performance stay inside their stored budgets', async ({ browser }) => {
   test.setTimeout(120_000)
+  const policy = performancePolicy(baseline.runner, process.platform)
 
   for (const route of ['/', '/guide/quickstart']) {
     const samples: Metrics[] = []
-    for (let run = 0; run < 5; run += 1) samples.push(await capture(browser, route))
+    for (let run = 0; run < policy.runs; run += 1) samples.push(await capture(browser, route))
     const current = {
       jsCssBytes: median(samples, 'jsCssBytes'),
       lcpMs: median(samples, 'lcpMs'),
@@ -81,20 +84,20 @@ test('five-run performance medians stay inside stable budgets and a comparable b
     const stored = baseline.routes[route].median
 
     expect(current.jsCssBytes, `${route} JS/CSS bytes`).toBeLessThanOrEqual(stored.jsCssBytes * 1.05)
-    // Timing from a stored local capture is not comparable across operating
-    // systems. CI still enforces deterministic asset growth and the absolute
-    // web-vitals budgets below.
-    if (process.platform === baseline.runner.platform) {
+    // Real CDP throttling inherits the host's CPU speed. Keep deterministic
+    // asset growth checked everywhere, but compare lab timing only on the
+    // platform where this profile was calibrated.
+    if (policy.enforceTimingBudgets) {
       // LCP entries are reported in whole milliseconds. Round the percentage
       // boundary up so a sub-millisecond fraction cannot fail an integer sample.
       expect(current.lcpMs, `${route} LCP baseline`).toBeLessThanOrEqual(Math.ceil(stored.lcpMs * 1.15))
       expect(current.cls, `${route} CLS baseline`).toBeLessThanOrEqual(Math.max(stored.cls * 1.15, 0.01))
+      expect(current.lcpMs, `${route} LCP budget`).toBeLessThanOrEqual(2_500)
+      expect(current.cls, `${route} CLS budget`).toBeLessThanOrEqual(0.1)
+      // Near-zero TBT varies with scheduler contention even on the same runner.
+      // Keep it as an absolute user-facing budget instead of a relative gate.
+      expect(current.tbtMs, `${route} TBT budget`).toBeLessThanOrEqual(200)
     }
-    expect(current.lcpMs, `${route} LCP budget`).toBeLessThanOrEqual(2_500)
-    expect(current.cls, `${route} CLS budget`).toBeLessThanOrEqual(0.1)
-    // Near-zero TBT varies with scheduler contention even on the same runner.
-    // Keep it as an absolute user-facing budget instead of a noisy relative gate.
-    expect(current.tbtMs, `${route} TBT budget`).toBeLessThanOrEqual(200)
   }
 })
 
