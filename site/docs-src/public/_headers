@@ -1,0 +1,24 @@
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), geolocation=(), microphone=(), payment=(), usb=()
+
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/guide/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/reference/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/help/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/maintainer/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/install.sh
+  Cache-Control: public, max-age=0, must-revalidate

@@ -1,4 +1,4 @@
-# Add Glade to CI
+# Glade CI quickstart
 
 Use Glade in CI when pull requests need local checks, affected tests, saved
 reports, and stable process exits.

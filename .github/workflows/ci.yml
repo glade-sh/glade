@@ -59,6 +59,26 @@ jobs:
       - run: npm ci --prefix site
       - run: npm test --prefix site
       - run: npm run build --prefix site
+      - run: npm run check:built --prefix site
+      - name: Install Playwright Chromium
+        working-directory: site
+        run: npx playwright install --with-deps chromium
+      - name: Run rendered site checks
+        env:
+          GLADE_SITE_PREBUILT: "1"
+        run: npm run test:browser --prefix site
+      - name: Smoke-test the built preview
+        run: |
+          npm run preview --prefix site -- --host 127.0.0.1 --port 4173 >/tmp/glade-site-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid"' EXIT
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          npm run smoke:preview --prefix site -- http://127.0.0.1:4173
 
   vet:
     if: ${{ github.event_name != 'workflow_dispatch' || (inputs.benchmark_cache_pair >= 0 && inputs.benchmark_cache_pair <= 999999) }}

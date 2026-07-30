@@ -1,6 +1,7 @@
 {
   "scripts": {
     "check:routes": "node scripts/check-doc-routes.mjs",
+    "check:built": "node scripts/check-built-site.mjs",
     "generate:editor-support": "node scripts/build-editor-support.mjs",
     "help:project": "node scripts/help-project/setup.mjs",
     "help:capture": "bash scripts/capture-help-screenshots.sh",
@@ -9,6 +10,9 @@
     "dev": "vitepress dev .",
     "verify": "npm run check:routes && npm run generate:editor-support -- --check && npm run help:check",
     "test:unit": "node --test tests/*.test.mjs",
+    "test:browser": "playwright test",
+    "smoke:preview": "node scripts/preview-smoke.mjs",
+    "smoke:postdeploy": "node scripts/postdeploy-smoke.mjs",
     "test:release": "node --test scripts/release-check.test.mjs",
     "build:site": "vitepress build . && cp install.sh .vitepress/dist/install.sh",
     "release:check": "node scripts/release-check.mjs",
@@ -17,8 +21,11 @@
     "preview": "vitepress preview ."
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@fontsource-variable/host-grotesk": "^5.2.8",
     "@fontsource/monaspace-argon": "^5.2.5",
+    "@playwright/test": "^1.62.1",
+    "axe-core": "^4.12.1",
     "vitepress": "2.0.0-alpha.17"
   },
   "overrides": {

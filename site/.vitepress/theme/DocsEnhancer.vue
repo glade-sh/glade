@@ -3,6 +3,7 @@ import { onContentUpdated, useRoute } from 'vitepress'
 import { nextTick, onMounted, watch } from 'vue'
 
 const route = useRoute()
+const loadedScripts = new Map<string, Promise<void>>()
 
 declare global {
   interface Window {
@@ -39,20 +40,42 @@ function updateSidebarCurrent() {
     .forEach((link) => link.setAttribute('aria-current', 'page'))
 }
 
+function repairSidebarDisclosureControls() {
+  document.querySelectorAll<HTMLElement>('.VPSidebar .item[role="button"] .caret[role="button"]').forEach((caret) => {
+    caret.removeAttribute('role')
+    caret.removeAttribute('tabindex')
+    caret.removeAttribute('aria-label')
+  })
+}
+
 function setupCommandFilter() {
   document.querySelectorAll<HTMLInputElement>('[data-command-filter]').forEach((input) => {
     if (input.dataset.enhanced === 'true') return
 
     const targetSelector = input.dataset.commandFilter || '.docs-command-card'
     const cards = Array.from(document.querySelectorAll<HTMLElement>(targetSelector))
+    let result = input.parentElement?.querySelector<HTMLElement>('[data-command-filter-status]')
+    if (!result) {
+      result = document.createElement('p')
+      result.dataset.commandFilterStatus = ''
+      result.className = 'docs-command-filter-status'
+      result.setAttribute('role', 'status')
+      result.setAttribute('aria-live', 'polite')
+      input.insertAdjacentElement('afterend', result)
+    }
 
     const update = () => {
       const query = input.value.trim().toLowerCase()
+      let visible = 0
 
       cards.forEach((card) => {
         const haystack = card.textContent?.toLowerCase() || ''
         card.hidden = query.length > 0 && !haystack.includes(query)
+        if (!card.hidden) visible += 1
       })
+      result!.textContent = query.length > 0
+        ? `${visible} command group${visible === 1 ? '' : 's'} match “${input.value.trim()}”.${visible === 0 ? ' Try a different command or browse the full list.' : ''}`
+        : `${visible} command groups available.`
     }
 
     input.dataset.enhanced = 'true'
@@ -61,10 +84,35 @@ function setupCommandFilter() {
   })
 }
 
-function enhanceDocs() {
+async function loadRouteAssets() {
+  await loadScript('/js/highlight.js')
+  if (route.path === '/' || route.path === '/guide/workbench') {
+    await loadScript('/js/home.js')
+  }
+}
+
+function loadScript(src: string) {
+  const existing = loadedScripts.get(src)
+  if (existing) return existing
+  const loaded = new Promise<void>((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = src
+    script.async = true
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error(`could not load ${src}`))
+    document.head.appendChild(script)
+  })
+  loadedScripts.set(src, loaded)
+  return loaded
+}
+
+async function enhanceDocs() {
   if (typeof document === 'undefined') return
 
+  await loadRouteAssets()
+
   nextTick(() => {
+    repairSidebarDisclosureControls()
     updateSidebarCurrent()
     setupCommandFilter()
     window.gladeHighlightAllCodeBlocks?.()

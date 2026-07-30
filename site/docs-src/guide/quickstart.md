@@ -1,16 +1,16 @@
-# Quickstart: Check and Test an SFDX Project
+# Run your first local Apex check
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Start</p>
-  <p>Use this path when you want the shortest install, doctor, check, and test loop for an SFDX project.</p>
+  <p>Use this path when you want the shortest install, project setup, doctor, check, and test loop for a Salesforce DX project.</p>
   <ul>
     <li>Install the binary.</li>
     <li>Initialize local project config.</li>
-    <li>Run one check and one focused test.</li>
+    <li>Run one check and the project's discovered local tests.</li>
   </ul>
 </div>
 
-This path installs Glade, checks the project, and runs one focused test.
+This path installs Glade, checks the project, and runs its discovered local tests.
 For VS Code, CI, and report workflows, use the
 [Tester field guide](/guide/tester-field-guide).
 
@@ -19,10 +19,27 @@ For VS Code, CI, and report workflows, use the
 ```bash
 curl -fsSL https://glade.sh/install.sh | sh
 glade version
-glade doctor
 ```
 
 If `glade` is not found, add `~/.local/bin` to `PATH` and restart your shell.
+
+Expected: `glade version` prints the installed version.
+
+## 2. Open a Salesforce DX project
+
+```bash
+cd path/to/salesforce-dx-project
+glade init --project . --yes
+glade config validate --project .
+```
+
+Expected: `glade.yml` exists, and config validation exits with code `0`.
+
+## 3. Check the local environment
+
+```bash
+glade doctor
+```
 
 Expected:
 
@@ -43,17 +60,7 @@ Next:
   glade playground --examples --open
 ```
 
-## 2. Open an SFDX project
-
-```bash
-cd path/to/sfdx-project
-glade init --project . --yes
-glade config validate --project .
-```
-
-Expected: `glade.yml` exists, and config validation exits with code `0`.
-
-## 3. Check source
+## 4. Check source
 
 ```bash
 glade check --project .
@@ -64,15 +71,21 @@ Expected:
 - zero diagnostics and exit code `0`
 - or one or more file/line diagnostics and exit code `1`
 
-## 4. Run one test
+## 5. Run local tests
 
 ```bash
-glade test --project . --class RefinementServiceTest
+glade test --project .
 ```
 
 Expected: a selected/passed/failed summary, plus file and method details for any failure.
 
-## 5. Run affected tests
+After the first run, narrow a command to a class that exists in your project:
+
+```bash
+glade test --project . --class <YourTestClass>
+```
+
+## 6. Run affected tests
 
 ```bash
 glade test changed --project . --since origin/main
@@ -80,7 +93,7 @@ glade test changed --project . --since origin/main
 
 Expected: Glade maps changed Apex and metadata to the smallest local test set it can prove.
 
-## 6. Open the playground
+## 7. Open the playground
 
 ```bash
 glade playground --examples --open
@@ -88,7 +101,7 @@ glade playground --examples --open
 
 Expected: Glade starts the browser workbench and prints the local URL, example mode, database mode, and stop command.
 
-## 7. Know the limits
+## 8. Know the limits
 
 Glade is a local runtime, not a Salesforce emulator. Check [what Glade runs locally](/guide/support-map)
 before relying on platform service APIs, live auth, exact hosted Visualforce

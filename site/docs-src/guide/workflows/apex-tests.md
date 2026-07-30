@@ -79,6 +79,6 @@ need Salesforce validation.
 
 ## Deeper reference
 
-- [Test runner](/guide/modules/test-runner)
+- [Test runner](/guide/modules#test-runner)
 - [Test startup cache](/guide/test-startup-cache)
 - [Exit codes](/guide/exit-codes)

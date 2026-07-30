@@ -47,4 +47,4 @@ Expected: the JSON report records the profile status, summary limits, and hot ev
 ## Next
 
 - [Use anonymous Apex scratch in VS Code](/help/anonymous-apex-scratch)
-- [CLI reference](/guide/cli-reference)
+- [CLI reference](/reference/cli)

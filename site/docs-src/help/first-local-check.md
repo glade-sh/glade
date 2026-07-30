@@ -1,39 +1,37 @@
-# Install Glade and Run the First Local Check
+# Run the first local check
 
 <div class="docs-intro">
   <p class="docs-intro-eyebrow">Guided help</p>
-  <p>Install Glade, prove the binary, and run the first local check from a terminal.</p>
+  <p>Initialize a Salesforce DX project, prove the local environment, and run the first local check from a terminal.</p>
   <ul>
+    <li>Initialize a Salesforce DX project.</li>
     <li>Run `glade doctor`.</li>
-    <li>Initialize an SFDX project.</li>
     <li>Read the first `glade check` result.</li>
   </ul>
 </div>
 
 ## Before you start
 
-- You have a terminal open at the project root.
-- You have an SFDX project open at the project root.
-- Your shell can find `glade` on `PATH`.
+- You have a terminal open at the Salesforce DX project root.
+- `glade version` works in that terminal. If it does not, [install Glade](/guide/installation) first.
 
 ## Steps
 
-### 1. Prove the install
-
-```bash
-glade version
-glade doctor
-```
-
-Expected: `glade doctor` ends with `Ready.`
-
-![Terminal showing glade doctor ready output](/help/screenshots/first-local-check-01-doctor.png)
-
-### 2. Initialize and check the project
+### 1. Initialize the project
 
 ```bash
 test -f glade.yml || glade init --project . --yes
 glade config validate --project .
+glade doctor
+```
+
+Expected: `glade.yml` exists and `glade doctor` ends with `Ready.`
+
+![Terminal showing glade doctor ready output](/help/screenshots/first-local-check-01-doctor.png)
+
+### 2. Check the project
+
+```bash
 glade check --project .
 ```
 

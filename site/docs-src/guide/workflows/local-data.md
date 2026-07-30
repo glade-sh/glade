@@ -90,6 +90,6 @@ load the wrong object or field shape.
 
 ## Deeper reference
 
-- [Local org and data](/guide/modules/local-org-data)
+- [Local org and data](/guide/modules#local-org-and-data)
 - [Use Glade as an sf target](/guide/glade-orgs)
 - [Local API routes](/reference/local-api-routes)
